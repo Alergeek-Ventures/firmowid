@@ -1,0 +1,79 @@
+<.header>
+  Listing Imported transactions
+  <:actions>
+    <.link patch={~p"/imported_transactions/new"}>
+      <.button>New Imported transaction</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="imported_transactions"
+  rows={@streams.imported_transactions}
+  row_click={
+    fn {_transaction_id, imported_transaction} ->
+      JS.navigate(~p"/imported_transactions/#{imported_transaction}")
+    end
+  }
+>
+  <:col :let={{_transaction_id, imported_transaction}} label="Transaction">
+    <%= imported_transaction.transaction_id %>
+  </:col>
+  <:col :let={{_transaction_id, imported_transaction}} label="Debtor name">
+    <%= imported_transaction.debtor_name %>
+  </:col>
+  <:col :let={{_transaction_id, imported_transaction}} label="Debtor account">
+    <%= imported_transaction.debtor_account %>
+  </:col>
+  <:col :let={{_transaction_id, imported_transaction}} label="Creditor name">
+    <%= imported_transaction.creditor_name %>
+  </:col>
+  <:col :let={{_transaction_id, imported_transaction}} label="Creditor account">
+    <%= imported_transaction.creditor_account %>
+  </:col>
+  <:col :let={{_transaction_id, imported_transaction}} label="Amount">
+    <%= imported_transaction.amount %>
+  </:col>
+  <:col :let={{_transaction_id, imported_transaction}} label="Internal transaction code">
+    <%= imported_transaction.internal_transaction_id %>
+  </:col>
+  <:col :let={{_transaction_id, imported_transaction}} label="Booking date">
+    <%= imported_transaction.booking_date %>
+  </:col>
+  <:col :let={{_transaction_id, imported_transaction}} label="Value date">
+    <%= imported_transaction.value_date %>
+  </:col>
+  <:action :let={{_transaction_id, imported_transaction}}>
+    <div class="sr-only">
+      <.link navigate={~p"/imported_transactions/#{imported_transaction}"}>Show</.link>
+    </div>
+    <.link patch={~p"/imported_transactions/#{imported_transaction}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{transaction_id, imported_transaction}}>
+    <.link
+      phx-click={
+        JS.push("delete", value: %{id: imported_transaction.transaction_id})
+        |> hide("##{transaction_id}")
+      }
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal
+  :if={@live_action in [:new, :edit]}
+  id="imported_transaction-modal"
+  show
+  on_cancel={JS.patch(~p"/imported_transactions")}
+>
+  <.live_component
+    module={FirmowidWeb.ImportedTransactionLive.FormComponent}
+    id={@imported_transaction.transaction_id || :new}
+    title={@page_title}
+    action={@live_action}
+    imported_transaction={@imported_transaction}
+    patch={~p"/imported_transactions"}
+  />
+</.modal>

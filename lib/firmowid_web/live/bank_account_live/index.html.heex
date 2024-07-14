@@ -1,0 +1,41 @@
+<.header>
+  Listing Bank accounts
+  <:actions>
+    <.link patch={~p"/bank_accounts/new"}>
+      <.button>New Bank account</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="bank_accounts"
+  rows={@streams.bank_accounts}
+  row_click={fn {_id, bank_account} -> JS.navigate(~p"/bank_accounts/#{bank_account}") end}
+>
+  <:col :let={{_id, bank_account}} label="Iban"><%= bank_account.iban %></:col>
+  <:action :let={{_id, bank_account}}>
+    <div class="sr-only">
+      <.link navigate={~p"/bank_accounts/#{bank_account}"}>Show</.link>
+    </div>
+    <.link patch={~p"/bank_accounts/#{bank_account}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, bank_account}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: bank_account.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="bank_account-modal" show on_cancel={JS.patch(~p"/bank_accounts")}>
+  <.live_component
+    module={FirmowidWeb.BankAccountLive.FormComponent}
+    id={@bank_account.id || :new}
+    title={@page_title}
+    action={@live_action}
+    bank_account={@bank_account}
+    patch={~p"/bank_accounts"}
+  />
+</.modal>

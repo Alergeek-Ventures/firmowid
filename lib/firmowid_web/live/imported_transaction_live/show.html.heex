@@ -1,0 +1,47 @@
+<.header>
+  Imported transaction <%= @imported_transaction.transaction_id %>
+  <:subtitle>This is a imported_transaction record from your database.</:subtitle>
+  <:actions>
+    <.link
+      patch={~p"/imported_transactions/#{@imported_transaction}/show/edit"}
+      phx-click={JS.push_focus()}
+    >
+      <.button>Edit imported_transaction</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Transaction"><%= @imported_transaction.transaction_id %></:item>
+  <:item title="Debtor name"><%= @imported_transaction.debtor_name %></:item>
+  <:item title="Debtor account"><%= @imported_transaction.debtor_account %></:item>
+  <:item title="Transaction amount"><%= @imported_transaction.transaction_amount %></:item>
+  <:item title="Transaction currency"><%= @imported_transaction.transaction_currency %></:item>
+  <:item title="Internal transaction ID">
+    <%= @imported_transaction.internal_transaction_id %>
+  </:item>
+  <:item title="Booking date"><%= @imported_transaction.booking_date %></:item>
+  <:item title="Value date"><%= @imported_transaction.value_date %></:item>
+  <:item title="Remittance information unstructured">
+    <%= @imported_transaction.remittance_information_unstructured %>
+  </:item>
+  <:item title="Your IBAN"><%= @imported_transaction.bank_account.iban %></:item>
+</.list>
+
+<.back navigate={~p"/imported_transactions"}>Back to imported_transactions</.back>
+
+<.modal
+  :if={@live_action == :edit}
+  id="imported_transaction-modal"
+  show
+  on_cancel={JS.patch(~p"/imported_transactions/#{@imported_transaction}")}
+>
+  <.live_component
+    module={FirmowidWeb.ImportedTransactionLive.FormComponent}
+    id={@imported_transaction.id}
+    title={@page_title}
+    action={@live_action}
+    imported_transaction={@imported_transaction}
+    patch={~p"/imported_transactions/#{@imported_transaction}"}
+  />
+</.modal>

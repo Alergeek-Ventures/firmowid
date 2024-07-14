@@ -31,6 +31,9 @@ config :firmowid, FirmowidWeb.Endpoint,
 # at the `config/runtime.exs`.
 config :firmowid, Firmowid.Mailer, adapter: Swoosh.Adapters.Local
 
+config :firmowid, Firmowid.Cldr, locales: ["pl"]
+config :ex_money, default_cldr_backend: Firmowid.Cldr
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.17.11",

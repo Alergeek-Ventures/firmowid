@@ -18,6 +18,20 @@ defmodule FirmowidWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+
+    live "/bank_accounts", BankAccountLive.Index, :index
+    live "/bank_accounts/new", BankAccountLive.Index, :new
+    live "/bank_accounts/:id/edit", BankAccountLive.Index, :edit
+
+    live "/bank_accounts/:id", BankAccountLive.Show, :show
+    live "/bank_accounts/:id/show/edit", BankAccountLive.Show, :edit
+
+    live "/imported_transactions", ImportedTransactionLive.Index, :index
+    live "/imported_transactions/new", ImportedTransactionLive.Index, :new
+    live "/imported_transactions/:id/edit", ImportedTransactionLive.Index, :edit
+
+    live "/imported_transactions/:id", ImportedTransactionLive.Show, :show
+    live "/imported_transactions/:id/show/edit", ImportedTransactionLive.Show, :edit
   end
 
   # Other scopes may use custom stacks.
