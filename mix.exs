@@ -61,7 +61,8 @@ defmodule Firmowid.MixProject do
       {:bandit, "~> 1.5"},
       {:ex_cldr, "~> 2.37"},
       {:ex_money, "~> 5.0"},
-      {:faker, "~> 0.18"}
+      {:faker, "~> 0.18"},
+      {:req, "~> 0.5.2"}
     ]
   end
 

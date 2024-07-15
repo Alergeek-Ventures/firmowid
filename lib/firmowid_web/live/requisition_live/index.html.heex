@@ -1,0 +1,56 @@
+<.header>
+  Listing Requisitions
+  <:actions>
+    <.link patch={~p"/requisitions/new"}>
+      <.button>New Requisition</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<div class="flex flex-row gap-4 p-4">
+  <.table id="institutions" rows={@institutions}>
+    <:col :let={{_id, institution}} label="Logo">
+      <img width="48" height="48" src={institution["logo"]} alt="Logo" />
+    </:col>
+    <:col :let={{_id, institution}} label="Institution"><%= institution["name"] %></:col>
+  </.table>
+
+  <.table
+    id="requisitions"
+    rows={@streams.requisitions}
+    row_click={fn {_id, requisition} -> JS.navigate(~p"/requisitions/#{requisition}") end}
+  >
+    <:col :let={{_id, requisition}} label="Requisition"><%= requisition.requisition_id %></:col>
+    <:col :let={{_id, requisition}} label="Status"><%= requisition.status %></:col>
+    <:action :let={{_id, requisition}}>
+      <div class="sr-only">
+        <.link navigate={~p"/requisitions/#{requisition}"}>Show</.link>
+      </div>
+      <.link patch={~p"/requisitions/#{requisition}/edit"}>Edit</.link>
+    </:action>
+    <:action :let={{id, requisition}}>
+      <.link
+        phx-click={JS.push("delete", value: %{id: requisition.id}) |> hide("##{id}")}
+        data-confirm="Are you sure?"
+      >
+        Delete
+      </.link>
+    </:action>
+  </.table>
+
+  <.modal
+    :if={@live_action in [:new, :edit]}
+    id="requisition-modal"
+    show
+    on_cancel={JS.patch(~p"/requisitions")}
+  >
+    <.live_component
+      module={FirmowidWeb.RequisitionLive.FormComponent}
+      id={@requisition.id || :new}
+      title={@page_title}
+      action={@live_action}
+      requisition={@requisition}
+      patch={~p"/requisitions"}
+    />
+  </.modal>
+</div>

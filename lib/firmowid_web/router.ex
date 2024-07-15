@@ -32,6 +32,13 @@ defmodule FirmowidWeb.Router do
 
     live "/imported_transactions/:id", ImportedTransactionLive.Show, :show
     live "/imported_transactions/:id/show/edit", ImportedTransactionLive.Show, :edit
+
+    live "/requisitions", RequisitionLive.Index, :index
+    live "/requisitions/new", RequisitionLive.Index, :new
+    live "/requisitions/:id/edit", RequisitionLive.Index, :edit
+
+    live "/requisitions/:id", RequisitionLive.Show, :show
+    live "/requisitions/:id/show/edit", RequisitionLive.Show, :edit
   end
 
   # Other scopes may use custom stacks.

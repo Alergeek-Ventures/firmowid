@@ -1,0 +1,27 @@
+<.header>
+  Requisition <%= @requisition.id %>
+  <:subtitle>This is a requisition record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/requisitions/#{@requisition}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit requisition</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Requisition"><%= @requisition.requisition_id %></:item>
+  <:item title="Status"><%= @requisition.status %></:item>
+</.list>
+
+<.back navigate={~p"/requisitions"}>Back to requisitions</.back>
+
+<.modal :if={@live_action == :edit} id="requisition-modal" show on_cancel={JS.patch(~p"/requisitions/#{@requisition}")}>
+  <.live_component
+    module={FirmowidWeb.RequisitionLive.FormComponent}
+    id={@requisition.id}
+    title={@page_title}
+    action={@live_action}
+    requisition={@requisition}
+    patch={~p"/requisitions/#{@requisition}"}
+  />
+</.modal>

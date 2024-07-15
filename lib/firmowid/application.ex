@@ -11,14 +11,12 @@ defmodule Firmowid.Application do
       FirmowidWeb.Telemetry,
       Firmowid.Repo,
       {Ecto.Migrator,
-        repos: Application.fetch_env!(:firmowid, :ecto_repos),
-        skip: skip_migrations?()},
+       repos: Application.fetch_env!(:firmowid, :ecto_repos), skip: skip_migrations?()},
       {DNSCluster, query: Application.get_env(:firmowid, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Firmowid.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: Firmowid.Finch},
-      # Start a worker by calling: Firmowid.Worker.start_link(arg)
-      # {Firmowid.Worker, arg},
+      {Firmowid.GoLimitless.TokenManager, []},
       # Start to serve requests, typically the last entry
       FirmowidWeb.Endpoint
     ]
