@@ -1,22 +1,11 @@
-defmodule FirmowidWeb.RequisitionLive.Index do
-  alias Swoosh.ApiClient
+defmodule FirmowidWeb.BankSyncLive.Index do
   use FirmowidWeb, :live_view
 
   alias Firmowid.GoLimitless
-  alias Firmowid.GoLimitless.ApiClient
   alias Firmowid.GoLimitless.Requisition
 
   @impl true
   def mount(_params, _session, socket) do
-    institutions =
-      ApiClient.get_available_institutions()
-      |> Enum.map(&{&1["id"], &1})
-      |> Enum.slice(10..20)
-
-    socket =
-      socket
-      |> assign(institutions: institutions)
-
     {:ok,
      stream(
        socket,
@@ -30,21 +19,14 @@ defmodule FirmowidWeb.RequisitionLive.Index do
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
   end
 
-  defp apply_action(socket, :edit, %{"id" => id}) do
-    socket
-    |> assign(:page_title, "Edit Requisition")
-    |> assign(:requisition, GoLimitless.get_requisition!(id))
-  end
-
   defp apply_action(socket, :new, _params) do
     socket
-    |> assign(:page_title, "New Requisition")
     |> assign(:requisition, %Requisition{})
   end
 
   defp apply_action(socket, :index, _params) do
     socket
-    |> assign(:page_title, "Listing Requisitions")
+    |> assign(:page_title, "Synchronizacja konta bankowego z Firmowidem")
     |> assign(:requisition, nil)
   end
 

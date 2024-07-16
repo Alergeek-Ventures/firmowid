@@ -2,7 +2,6 @@ defmodule FirmowidWeb.ImportedTransactionLive.Index do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Finances
-  alias Firmowid.Finances.ImportedTransaction
 
   @impl true
   def mount(_params, _session, socket) do
@@ -36,18 +35,6 @@ defmodule FirmowidWeb.ImportedTransactionLive.Index do
        socket.assigns.live_action,
        params
      )}
-  end
-
-  defp apply_action(socket, :edit, %{"transaction_id" => transaction_id}) do
-    socket
-    |> assign(:page_title, "Edit Imported transaction")
-    |> assign(:imported_transaction, Finances.get_imported_transaction!(transaction_id))
-  end
-
-  defp apply_action(socket, :new, _params) do
-    socket
-    |> assign(:page_title, "New Imported transaction")
-    |> assign(:imported_transaction, %ImportedTransaction{})
   end
 
   defp apply_action(socket, :index, _params) do

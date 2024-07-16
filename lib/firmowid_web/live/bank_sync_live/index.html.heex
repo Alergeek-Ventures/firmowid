@@ -1,0 +1,31 @@
+<.header>
+  Lista połączeń z bankiem
+</.header>
+
+<div class="flex flex-row gap-4 p-4">
+  <.table id="requisitions" rows={@streams.requisitions}>
+    <:col :let={{_id, requisition}} label="Identyfikator połączenia">
+      <code>
+        <%= requisition.requisition_id %>
+      </code>
+    </:col>
+    <:col :let={{_id, requisition}} label="Status">
+      <%= case requisition.status do %>
+        <% :accepted -> %>
+          <.icon name="hero-check-circle-solid" class="h-5 w-5 text-green-500" />
+        <% :pending -> %>
+          <.icon name="hero-exclamation-triangle-solid" class="h-5 w-5 text-yellow-500" />
+        <% :rejected -> %>
+          <.icon name="hero-x-circle-solid" class="h-5 w-5 text-red-500" />
+      <% end %>
+    </:col>
+    <:action :let={{id, requisition}}>
+      <.link
+        phx-click={JS.push("delete", value: %{id: requisition.id}) |> hide("##{id}")}
+        data-confirm="Czy jesteś pewny?"
+      >
+        Usuń
+      </.link>
+    </:action>
+  </.table>
+</div>

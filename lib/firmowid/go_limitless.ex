@@ -4,9 +4,11 @@ defmodule Firmowid.GoLimitless do
   """
 
   import Ecto.Query, warn: false
+  alias Firmowid.GoLimitless
   alias Firmowid.Repo
 
   alias Firmowid.GoLimitless.Requisition
+  alias Firmowid.GoLimitless.ApiClient
 
   @doc """
   Returns the list of requisitions.
@@ -19,6 +21,12 @@ defmodule Firmowid.GoLimitless do
   """
   def list_requisitions do
     Repo.all(Requisition)
+    |> Enum.map(
+      &Map.merge(
+        &1,
+        %{accounts: ApiClient.get_accounts_for_requisition(&1.requisition_id)}
+      )
+    )
   end
 
   @doc """
@@ -36,6 +44,10 @@ defmodule Firmowid.GoLimitless do
 
   """
   def get_requisition!(id), do: Repo.get!(Requisition, id)
+
+  def get_accounts_for_requisition(requisition_id) do
+    GoLimitless.ApiClient.get_accounts_for_requisition(requisition_id)
+  end
 
   @doc """
   Creates a requisition.

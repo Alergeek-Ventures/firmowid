@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.PageHTML do
+defmodule FirmowidWeb.ContentHTML do
   @moduledoc """
   This module contains pages rendered by PageController.
 
@@ -6,5 +6,5 @@ defmodule FirmowidWeb.PageHTML do
   """
   use FirmowidWeb, :html
 
-  embed_templates "page_html/*"
+  embed_templates "content_html/*"
 end
