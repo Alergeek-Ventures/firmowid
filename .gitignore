@@ -39,3 +39,5 @@ npm-debug.log
 *.db
 *.db-*
 
+# Language server files
+.elixir_ls
