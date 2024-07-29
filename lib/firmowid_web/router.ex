@@ -23,6 +23,8 @@ defmodule FirmowidWeb.Router do
     live "/finances/budget", BudgetLive.Index, :index
     live "/finances/imported-transactions", ImportedTransactionLive.Index, :index
 
+    live "/documents", DocumentsLive.Index, :index
+
     get "/settings", ContentController, :settings
     live "/settings/bank-sync", BankSyncLive.Index, :index
   end

@@ -62,7 +62,9 @@ defmodule Firmowid.MixProject do
       {:ex_cldr, "~> 2.37"},
       {:ex_money, "~> 5.0"},
       {:faker, "~> 0.18"},
-      {:req, "~> 0.5.2"}
+      {:req, "~> 0.5.2"},
+      {:waffle, "~> 1.1"},
+      {:waffle_ecto, "~> 0.0"}
     ]
   end
 

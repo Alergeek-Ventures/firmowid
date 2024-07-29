@@ -1,0 +1,20 @@
+<div>
+  <.simple_form for={@form} id="document-form" phx-change="validate" phx-submit="save">
+    <.input field={@form[:issue_date]} type="date" label="Data wydania" />
+    <.live_file_input upload={@uploads[:file]} />
+    <:actions>
+      <.button phx-disable-with="Saving...">Dodaj dokument</.button>
+    </:actions>
+  </.simple_form>
+</div>
+
+<h1>Twoje dokumenty</h1>
+
+<div>
+  <%= for document <- @documents do %>
+    <div>
+      <p>Data: <%= document.issue_date %></p>
+      <p>Link: <%= FirmowidWeb.Uploaders.DocumentUploader.url(document.file) %></p>
+    </div>
+  <% end %>
+</div>
