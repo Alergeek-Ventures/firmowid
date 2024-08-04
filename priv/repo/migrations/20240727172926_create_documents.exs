@@ -12,7 +12,7 @@ defmodule Firmowid.Repo.Migrations.CreateDocuments do
       add :total_amount, :float
       add :currency, :string
 
-      add :file, :string
+      add :file_name, :string
 
       timestamps(type: :utc_datetime)
     end

@@ -1,20 +1,70 @@
-<div>
-  <.simple_form for={@form} id="document-form" phx-change="validate" phx-submit="save">
-    <.input field={@form[:issue_date]} type="date" label="Data wydania" />
-    <.live_file_input upload={@uploads[:file]} />
-    <:actions>
-      <.button phx-disable-with="Saving...">Dodaj dokument</.button>
-    </:actions>
-  </.simple_form>
-</div>
+<.simple_form for={@form} id="document-form" phx-submit="save" phx-change="validate">
+  <div class="hidden">
+    <.input class="hidden" field={@form[:title]} type="text" label="Nazwa" />
+  </div>
+  <.live_file_input upload={@uploads[:file]} />
+  <:actions>
+    <.button class="!bg-gray-200 !text-black" phx-disable-with="Zapisywanie...">
+      Dodaj dokument
+    </.button>
+  </:actions>
+</.simple_form>
 
-<h1>Twoje dokumenty</h1>
+<div class="mt-10 flex flex-col gap-4">
+  <h1 class="text-3xl font-bold">Dokumenty oczekujące na wrzucenie</h1>
 
-<div>
-  <%= for document <- @documents do %>
-    <div>
-      <p>Data: <%= document.issue_date %></p>
-      <p>Link: <%= FirmowidWeb.Uploaders.DocumentUploader.url(document.file) %></p>
+  <%= for document <- @documents_pending_extraction do %>
+    <div class="flex flex-row gap-2 items-center my-2">
+      <p>ID: <code><%= document.id %></code></p>
+      <.link class="underline" target="_blank" href={document.file_url}>Otwórz dokument</.link>
+      <.button
+        class="!bg-gray-200 !text-black !px-2 !py-1"
+        phx-click="extract-metadata"
+        phx-value-document-id={document.id}
+      >
+        Pobierz metadane
+      </.button>
+      <.button
+        class="!bg-gray-200 !text-black !px-2 !py-1"
+        phx-click="delete"
+        phx-value-document-id={document.id}
+      >
+        Usuń
+      </.button>
     </div>
   <% end %>
+
+  <h1 class="text-3xl font-bold">Twoje dokumenty</h1>
+
+  <.table id="documents" rows={@documents}>
+    <:col :let={document} label="ID">
+      <.link class="underline" target="_blank" href={document.file_url}>
+        <%= document.id %>
+      </.link>
+    </:col>
+    <:col :let={document} label="Sprzedający">
+      <%= document.seller %>
+    </:col>
+    <:col :let={document} label="Data sprzedaży">
+      <%= document.sale_date %>
+    </:col>
+    <:col :let={document} label="Data wystawienia">
+      <%= document.issue_date %>
+    </:col>
+    <:col :let={document} label="Termin zapłaty">
+      <%= document.due_date %>
+    </:col>
+    <:col :let={document} label="Kwota">
+      <%= document.amount %>
+    </:col>
+    <:action :let={document}>
+      <.button
+        class="!bg-gray-200 !text-black !px-2 !py-1"
+        phx-click="delete"
+        phx-value-document-id={document.id}
+      >
+        Usuń
+      </.button>
+    </:action>
+  </.table>
 </div>

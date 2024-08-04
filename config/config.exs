@@ -36,6 +36,14 @@ config :firmowid, Firmowid.Mailer, adapter: Swoosh.Adapters.Local
 config :firmowid, Firmowid.Cldr, locales: ["pl"]
 config :ex_money, default_cldr_backend: Firmowid.Cldr
 
+config :ex_aws,
+  access_key_id: "REMOVED_TIGRIS_ACCESS_KEY",
+  secret_access_key: "REMOVED_TIGRIS_SECRET_KEY+i"
+
+config :ex_aws, :s3,
+  scheme: "https://",
+  host: "fly.storage.tigris.dev"
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.17.11",

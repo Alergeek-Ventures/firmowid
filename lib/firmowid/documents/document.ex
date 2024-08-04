@@ -1,7 +1,5 @@
 defmodule Firmowid.Documents.Document do
   use Ecto.Schema
-  use Waffle.Ecto.Schema
-
   import Ecto.Changeset
 
   schema "documents" do
@@ -14,7 +12,7 @@ defmodule Firmowid.Documents.Document do
     field :total_amount, :float
     field :currency, :string
 
-    field :file, FirmowidWeb.Uploaders.DocumentUploader.Type
+    field :file_name, :string
 
     timestamps(type: :utc_datetime)
   end
@@ -22,8 +20,14 @@ defmodule Firmowid.Documents.Document do
   @doc false
   def changeset(document, attrs \\ %{}) do
     document
-    |> cast(attrs, [:issue_date])
-    |> cast_attachments(attrs, [:file])
-    |> validate_required([:issue_date])
+    |> cast(attrs, [
+      :seller,
+      :sale_date,
+      :issue_date,
+      :due_date,
+      :total_amount,
+      :currency,
+      :file_name
+    ])
   end
 end

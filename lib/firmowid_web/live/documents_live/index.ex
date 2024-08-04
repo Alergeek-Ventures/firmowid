@@ -9,22 +9,27 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     socket =
       socket
       |> assign(:form, to_form(Document.changeset(%Document{})))
-      |> assign(:documents, Documents.list_documents())
-      |> allow_upload(:file, accept: ~w(.pdf), max_entries: 1)
+      |> allow_upload(:file, accept: ~w(.pdf))
+      |> assign(:documents_pending_extraction, Documents.list_documents_without_metadata())
+      |> assign(:documents, Documents.list_documents_with_metadata())
 
     {:ok, socket}
   end
 
   @impl true
   def handle_params(params, _url, socket) do
-    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+    socket =
+      socket
+      |> apply_action(socket.assigns.live_action, params)
+
+    {:noreply, socket}
   end
 
   @impl true
   def handle_event("validate", %{"document" => document_params}, socket) do
     changeset =
-      Document.changeset(%Document{}, document_params)
-      |> Map.put(:action, :validate)
+      %Document{}
+      |> Document.changeset(document_params)
 
     socket =
       socket
@@ -34,15 +39,47 @@ defmodule FirmowidWeb.DocumentsLive.Index do
   end
 
   @impl true
-  def handle_event("save", %{"document" => document_params}, socket) do
-    with {:ok, document} <- Documents.create_document(document_params) do
-      socket =
-        socket
-        |> put_flash(:info, "Dokument został dodany.")
-        |> assign(:documents, [document | socket.assigns.documents])
+  def handle_event("save", _, socket) do
+    consume_uploaded_entries(socket, :file, fn %{path: path}, _entry ->
+      {:ok, _document} =
+        Documents.create_document({path, ".pdf"})
 
-      {:noreply, socket}
-    end
+      {:ok, nil}
+    end)
+
+    socket =
+      socket
+      |> put_flash(:info, "Dokument został dodany")
+      |> assign(:documents, Documents.list_documents_with_metadata())
+      |> assign(:documents_pending_extraction, Documents.list_documents_without_metadata())
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("extract-metadata", %{"document-id" => document_id}, socket) do
+    Documents.extract_invoice_info(document_id)
+
+    socket =
+      socket
+      |> put_flash(:info, "Dokument został zaktualizowany")
+      |> assign(:documents, Documents.list_documents_with_metadata())
+      |> assign(:documents_pending_extraction, Documents.list_documents_without_metadata())
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("delete", %{"document-id" => document_id}, socket) do
+    Documents.delete_document(document_id)
+
+    socket =
+      socket
+      |> put_flash(:info, "Dokument został usunięty.")
+      |> assign(:documents, Documents.list_documents_with_metadata())
+      |> assign(:documents_pending_extraction, Documents.list_documents_without_metadata())
+
+    {:noreply, socket}
   end
 
   defp apply_action(socket, :index, _params) do
