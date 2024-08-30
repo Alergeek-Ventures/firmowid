@@ -1,0 +1,65 @@
+<div class="flex flex-col gap-4">
+  <h1 class="text-3xl font-bold">Faktura <%= @document.id %></h1>
+  <.table id="documents" rows={[@document]}>
+    <:col :let={document} label="ID">
+      <.link class="underline" target="_blank" href={document.file_url}>
+        <%= document.id %>
+      </.link>
+    </:col>
+    <:col :let={document} label="Sprzedający">
+      <%= document.seller %>
+    </:col>
+    <:col :let={document} label="Data sprzedaży">
+      <%= document.sale_date %>
+    </:col>
+    <:col :let={document} label="Data wystawienia">
+      <%= document.issue_date %>
+    </:col>
+    <:col :let={document} label="Termin zapłaty">
+      <%= document.due_date %>
+    </:col>
+    <:col :let={document} label="Kwota">
+      <%= document.amount %>
+    </:col>
+    <:action :let={document}>
+      <.button
+        class="!bg-gray-200 !text-black !px-2 !py-1"
+        phx-click="delete"
+        phx-value-document-id={document.id}
+      >
+        Usuń
+      </.button>
+    </:action>
+  </.table>
+
+  <h1 class="text-3xl font-bold">Transakcje, które mogą zostać dopasowane</h1>
+  <.table id="transactions" rows={@potential_transactions}>
+    <:col :let={imported_transaction} label="Transaction">
+      <%= imported_transaction.transaction_id %>
+    </:col>
+    <:col :let={imported_transaction} label="Debtor name">
+      <%= imported_transaction.debtor_name %>
+    </:col>
+    <:col :let={imported_transaction} label="Debtor account">
+      <%= imported_transaction.debtor_account %>
+    </:col>
+    <:col :let={imported_transaction} label="Creditor name">
+      <%= imported_transaction.creditor_name %>
+    </:col>
+    <:col :let={imported_transaction} label="Creditor account">
+      <%= imported_transaction.creditor_account %>
+    </:col>
+    <:col :let={imported_transaction} label="Amount">
+      <%= imported_transaction.amount %>
+    </:col>
+    <:col :let={imported_transaction} label="Internal transaction code">
+      <%= imported_transaction.internal_transaction_id %>
+    </:col>
+    <:col :let={imported_transaction} label="Booking date">
+      <%= imported_transaction.booking_date %>
+    </:col>
+    <:col :let={imported_transaction} label="Value date">
+      <%= imported_transaction.value_date %>
+    </:col>
+  </.table>
+</div>

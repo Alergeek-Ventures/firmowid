@@ -1,10 +1,24 @@
 defmodule Firmowid.Documents do
+  @pubsub_topic "documents"
+
   import Ecto.Query, warn: false
+
   alias ExAws.S3
   alias MIME
 
   alias Firmowid.Repo
   alias Firmowid.Documents.Document
+  alias Firmowid.Documents.Reducto
+
+  alias Firmowid.Finances
+
+  def subscribe() do
+    Phoenix.PubSub.subscribe(Firmowid.PubSub, @pubsub_topic)
+  end
+
+  def broadcast_document_update(document) do
+    Phoenix.PubSub.broadcast(Firmowid.PubSub, @pubsub_topic, {:document_updated, document})
+  end
 
   def list_documents_with_metadata() do
     # the ones with total_amount not being null
@@ -32,7 +46,7 @@ defmodule Firmowid.Documents do
     |> Enum.map(&Map.put(&1, :file_url, get_file_url(&1.id)))
   end
 
-  defp get_file_url(document_id) do
+  def get_file_url(document_id) do
     document =
       Repo.get!(Document, document_id)
 
@@ -66,6 +80,20 @@ defmodule Firmowid.Documents do
     # file)
   end
 
+  def start_extraction_job(document_id) do
+    Reducto.start_extraction_job(document_id)
+  end
+
+  def update_document(document_id, attrs) do
+    result =
+      Document.changeset(Repo.get!(Document, document_id), attrs)
+      |> Repo.update()
+
+    broadcast_document_update(result)
+
+    result
+  end
+
   def delete_document(id) do
     changeset = Repo.get!(Document, id)
 
@@ -75,75 +103,11 @@ defmodule Firmowid.Documents do
     Repo.delete!(changeset)
   end
 
-  def extract_invoice_info(document_id) do
-    file_url = get_file_url(document_id)
+  def get_potential_transactions(document) do
+    Finances.get_potential_transactions(document)
+  end
 
-    invoice_extraction_schema = %{
-      type: "object",
-      properties: %{
-        sale_date: %{
-          type: "string",
-          format: "date",
-          description: "The date of the sale"
-        },
-        issue_date: %{
-          type: "string",
-          format: "date",
-          description: "The issue date of the invoice"
-        },
-        due_date: %{
-          type: "string",
-          format: "date",
-          description: "The payment deadline date"
-        },
-        seller: %{
-          type: "string",
-          description: "From whom the invoice is"
-        },
-        total_amount: %{
-          type: "number",
-          description: "The total amount of the invoice"
-        },
-        currency: %{
-          type: "string",
-          description:
-            "The currency of the total amount of the invoice, as three letter ISO 4217 code"
-        }
-      },
-      required: [
-        "seller",
-        "sale_date",
-        "issue_date",
-        "due_date",
-        "total_amount",
-        "currency"
-      ]
-    }
-
-    dbg(invoice_extraction_schema)
-
-    reducto_extract_response =
-      Req.post!(
-        "https://v1.api.reducto.ai/extract",
-        auth:
-          {:bearer,
-           "f6db515168d1b7c99dcecfd0517062dcbfd083a6ba1e42d0e3bcc623d832288087949aa99728f0d65ff5da7044e9fecc"},
-        json: %{
-          document_url: file_url,
-          async: %{
-            enabled: false
-          },
-          schema: invoice_extraction_schema
-        }
-      )
-
-    [extracted_metadata] = reducto_extract_response.body["result"]
-    dbg(extracted_metadata)
-
-    document = Repo.get!(Document, document_id)
-
-    document
-    |> Document.changeset(extracted_metadata)
-    |> Repo.update!()
+  def get_document(id) do
+    Repo.get!(Document, id)
   end
 end

@@ -2,15 +2,7 @@
   Zaimportowane transakcje
 </.header>
 
-<.table
-  id="imported_transactions"
-  rows={@streams.imported_transactions}
-  row_click={
-    fn {_transaction_id, imported_transaction} ->
-      JS.navigate(~p"/imported_transactions/#{imported_transaction}")
-    end
-  }
->
+<.table id="imported_transactions" rows={@streams.imported_transactions} row_click={}>
   <:col :let={{_transaction_id, imported_transaction}} label="Transaction">
     <%= imported_transaction.transaction_id %>
   </:col>

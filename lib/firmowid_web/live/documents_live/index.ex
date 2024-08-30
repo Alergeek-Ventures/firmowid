@@ -6,14 +6,39 @@ defmodule FirmowidWeb.DocumentsLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
+    if connected?(socket), do: Documents.subscribe()
+
     socket =
       socket
       |> assign(:form, to_form(Document.changeset(%Document{})))
-      |> allow_upload(:file, accept: ~w(.pdf))
+      |> allow_upload(:file, accept: ~w(.pdf), progress: &handle_progress/3, auto_upload: true)
       |> assign(:documents_pending_extraction, Documents.list_documents_without_metadata())
       |> assign(:documents, Documents.list_documents_with_metadata())
 
     {:ok, socket}
+  end
+
+  defp handle_progress(:file, entry, socket) do
+    if entry.done? do
+      consume_uploaded_entries(socket, :file, fn %{path: path}, _entry ->
+        {:ok, document} =
+          Documents.create_document({path, ".pdf"})
+
+        Documents.start_extraction_job(document.id)
+
+        {:ok, nil}
+      end)
+
+      socket =
+        socket
+        |> put_flash(:info, "Dokument został dodany")
+        |> assign(:documents, Documents.list_documents_with_metadata())
+        |> assign(:documents_pending_extraction, Documents.list_documents_without_metadata())
+
+      {:noreply, socket}
+    else
+      {:noreply, socket}
+    end
   end
 
   @impl true
@@ -26,46 +51,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
   end
 
   @impl true
-  def handle_event("validate", %{"document" => document_params}, socket) do
-    changeset =
-      %Document{}
-      |> Document.changeset(document_params)
-
-    socket =
-      socket
-      |> assign(:form, to_form(changeset))
-
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event("save", _, socket) do
-    consume_uploaded_entries(socket, :file, fn %{path: path}, _entry ->
-      {:ok, _document} =
-        Documents.create_document({path, ".pdf"})
-
-      {:ok, nil}
-    end)
-
-    socket =
-      socket
-      |> put_flash(:info, "Dokument został dodany")
-      |> assign(:documents, Documents.list_documents_with_metadata())
-      |> assign(:documents_pending_extraction, Documents.list_documents_without_metadata())
-
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event("extract-metadata", %{"document-id" => document_id}, socket) do
-    Documents.extract_invoice_info(document_id)
-
-    socket =
-      socket
-      |> put_flash(:info, "Dokument został zaktualizowany")
-      |> assign(:documents, Documents.list_documents_with_metadata())
-      |> assign(:documents_pending_extraction, Documents.list_documents_without_metadata())
-
+  def handle_event("upload", _, socket) do
     {:noreply, socket}
   end
 
@@ -76,6 +62,16 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     socket =
       socket
       |> put_flash(:info, "Dokument został usunięty.")
+      |> assign(:documents, Documents.list_documents_with_metadata())
+      |> assign(:documents_pending_extraction, Documents.list_documents_without_metadata())
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:document_updated, _}, socket) do
+    socket =
+      socket
       |> assign(:documents, Documents.list_documents_with_metadata())
       |> assign(:documents_pending_extraction, Documents.list_documents_without_metadata())
 

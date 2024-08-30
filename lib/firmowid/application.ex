@@ -17,6 +17,7 @@ defmodule Firmowid.Application do
       # Start the Finch HTTP client for sending emails
       {Finch, name: Firmowid.Finch},
       {Firmowid.GoLimitless.TokenManager, []},
+      Firmowid.Documents.Reducto,
       # Start to serve requests, typically the last entry
       FirmowidWeb.Endpoint
     ]

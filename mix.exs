@@ -67,7 +67,8 @@ defmodule Firmowid.MixProject do
       {:ex_aws_s3, "~> 2.0"},
       {:hackney, "~> 1.9"},
       {:sweet_xml, "~> 0.6"},
-      {:mime, "~> 2.0"}
+      {:mime, "~> 2.0"},
+      {:akin, "~> 0.2.0"}
     ]
   end
 
