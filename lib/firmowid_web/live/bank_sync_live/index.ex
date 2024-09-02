@@ -36,6 +36,20 @@ defmodule FirmowidWeb.BankSyncLive.Index do
   end
 
   @impl true
+  def handle_event("sync", %{"id" => id}, socket) do
+    requisition = GoLimitless.get_requisition!(id)
+
+    dbg(requisition)
+
+    GoLimitless.ApiClient.sync_transaction_for_account(
+      "PL33105014451000009081121700",
+      requisition.requisition_id
+    )
+
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     requisition = GoLimitless.get_requisition!(id)
     {:ok, _} = GoLimitless.delete_requisition(requisition)

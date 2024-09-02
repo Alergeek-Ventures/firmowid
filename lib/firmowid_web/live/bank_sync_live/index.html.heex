@@ -9,6 +9,13 @@
         <%= requisition.requisition_id %>
       </code>
     </:col>
+    <:col :let={{_id, requisition}} label="Accounts">
+      <%= for account <- requisition.accounts do %>
+        <code>
+          <%= account["iban"] %>
+        </code>
+      <% end %>
+    </:col>
     <:col :let={{_id, requisition}} label="Status">
       <%= case requisition.status do %>
         <% :accepted -> %>
@@ -19,6 +26,14 @@
           <.icon name="hero-x-circle-solid" class="h-5 w-5 text-red-500" />
       <% end %>
     </:col>
+    <:action :let={{_id, requisition}}>
+      <.button
+        phx-click={JS.push("sync", value: %{id: requisition.id})}
+        disabled={requisition.status != :accepted}
+      >
+        Synchronizuj
+      </.button>
+    </:action>
     <:action :let={{id, requisition}}>
       <.link
         phx-click={JS.push("delete", value: %{id: requisition.id}) |> hide("##{id}")}

@@ -7,19 +7,6 @@ defmodule FirmowidWeb.DocumentsLive.Show do
   def mount(params, _session, socket) do
     document = Documents.get_document(params["id"])
 
-    document =
-      Map.merge(
-        document,
-        %{
-          file_url: Documents.get_file_url(document.id),
-          amount:
-            Money.from_float!(
-              document.currency,
-              document.total_amount
-            )
-        }
-      )
-
     potential_transactions =
       Documents.get_potential_transactions(document)
       |> Enum.map(fn t ->
@@ -45,6 +32,49 @@ defmodule FirmowidWeb.DocumentsLive.Show do
     socket =
       socket
       |> apply_action(socket.assigns.live_action, params)
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event(
+        "connect",
+        %{
+          "document-id" => document_id,
+          "imported-transaction-id" => imported_transaction_id
+        },
+        socket
+      ) do
+    Documents.create_documents_imported_transactions_connection(
+      document_id,
+      imported_transaction_id
+    )
+
+    document = Documents.get_document(document_id)
+
+    socket =
+      socket
+      |> assign(:document, document)
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event(
+        "disconnect",
+        %{"document-id" => document_id, "imported-transaction-id" => imported_transaction_id},
+        socket
+      ) do
+    Documents.delete_documents_imported_transactions_connection(
+      document_id,
+      imported_transaction_id
+    )
+
+    document = Documents.get_document(document_id)
+
+    socket =
+      socket
+      |> assign(:document, document)
 
     {:noreply, socket}
   end

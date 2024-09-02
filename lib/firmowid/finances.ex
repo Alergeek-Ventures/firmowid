@@ -117,6 +117,15 @@ defmodule Firmowid.Finances do
   """
   def list_imported_transactions do
     Repo.all(ImportedTransaction)
+    |> Enum.map(fn t ->
+      Map.merge(t, %{
+        amount:
+          Money.from_float!(
+            t.transaction_currency,
+            t.transaction_amount
+          )
+      })
+    end)
   end
 
   @doc """
@@ -133,10 +142,19 @@ defmodule Firmowid.Finances do
       ** (Ecto.NoResultsError)
 
   """
-  def get_imported_transaction!(transaction_id),
-    do:
+  def get_imported_transaction!(transaction_id) do
+    transaction =
       Repo.get!(ImportedTransaction, transaction_id)
       |> Repo.preload(:bank_account)
+
+    Map.merge(transaction, %{
+      amount:
+        Money.from_float!(
+          transaction.transaction_currency,
+          transaction.transaction_amount
+        )
+    })
+  end
 
   @doc """
   Creates a imported_transaction.

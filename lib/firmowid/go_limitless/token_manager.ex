@@ -17,6 +17,7 @@ defmodule Firmowid.GoLimitless.TokenManager do
 
   @impl true
   def init(state) do
+    dbg("Token manager started")
     :ets.new(:token_table, [:named_table, :public, read_concurrency: true])
     schedule_token_refresh()
     {:ok, state}
@@ -24,7 +25,12 @@ defmodule Firmowid.GoLimitless.TokenManager do
 
   @impl true
   def handle_info(:refresh_token, state) do
+    dbg("Refreshing token")
+
     {:ok, tokens} = fetch_new_access_token()
+
+    dbg("Token refreshed")
+    dbg(tokens)
 
     :ets.insert(:token_table, {:access_token, tokens["access"]})
     :ets.insert(:token_table, {:refresh_token, tokens["refresh"]})
@@ -46,6 +52,8 @@ defmodule Firmowid.GoLimitless.TokenManager do
         _ ->
           1
       end
+
+    dbg("Scheduling token refresh in #{refresh_interval} seconds")
 
     Process.send_after(self(), :refresh_token, refresh_interval * 1000)
   end

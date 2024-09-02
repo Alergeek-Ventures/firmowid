@@ -2,9 +2,10 @@ defmodule Firmowid.Finances.ImportedTransaction do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @primary_key {:transaction_id, :binary_id, autogenerate: false}
-  @derive {Phoenix.Param, key: :transaction_id}
+  alias Firmowid.Documents
+
   schema "imported_transactions" do
+    field :transaction_id, :string
     field :internal_transaction_id, :string
     field :creditor_name, :string
     field :creditor_account, :string
@@ -19,6 +20,14 @@ defmodule Firmowid.Finances.ImportedTransaction do
     belongs_to :bank_account,
                Firmowid.Finances.BankAccount
 
+    many_to_many :document_transactions,
+                 Documents.Document,
+                 join_through: "documents_imported_transactions",
+                 join_keys: [
+                   imported_transaction_id: :id,
+                   document_id: :id
+                 ]
+
     timestamps(type: :utc_datetime)
   end
 
@@ -27,25 +36,26 @@ defmodule Firmowid.Finances.ImportedTransaction do
     imported_transaction
     |> cast(attrs, [
       :transaction_id,
+      :internal_transaction_id,
+      :creditor_name,
+      :creditor_account,
       :debtor_name,
       :debtor_account,
       :transaction_amount,
       :transaction_currency,
-      :bank_transaction_code,
       :booking_date,
       :value_date,
-      :remittance_information_unstructured
+      :remittance_information_unstructured,
+      :transaction_id
     ])
     |> validate_required([
-      :transaction_id,
+      :creditor_name,
+      :creditor_account,
       :debtor_name,
       :debtor_account,
       :transaction_amount,
       :transaction_currency,
-      :bank_transaction_code,
-      :booking_date,
-      :value_date,
-      :remittance_information_unstructured
+      :booking_date
     ])
   end
 end

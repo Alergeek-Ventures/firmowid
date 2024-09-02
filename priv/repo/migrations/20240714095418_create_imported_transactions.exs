@@ -2,8 +2,8 @@ defmodule Firmowid.Repo.Migrations.CreateImportedTransactions do
   use Ecto.Migration
 
   def change do
-    create table(:imported_transactions, primary_key: false) do
-      add :transaction_id, :uuid, primary_key: true
+    create table(:imported_transactions) do
+      add :transaction_id, :string
       add :internal_transaction_id, :string
       add :creditor_name, :string
       add :creditor_account, :string

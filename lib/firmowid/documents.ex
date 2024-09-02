@@ -9,6 +9,7 @@ defmodule Firmowid.Documents do
   alias Firmowid.Repo
   alias Firmowid.Documents.Document
   alias Firmowid.Documents.Reducto
+  alias Firmowid.Documents.DocumentsTransactions
 
   alias Firmowid.Finances
 
@@ -86,8 +87,9 @@ defmodule Firmowid.Documents do
 
   def update_document(document_id, attrs) do
     result =
-      Document.changeset(Repo.get!(Document, document_id), attrs)
-      |> Repo.update()
+      Repo.get!(Document, document_id)
+      |> Document.changeset(attrs)
+      |> Repo.update!()
 
     broadcast_document_update(result)
 
@@ -108,6 +110,40 @@ defmodule Firmowid.Documents do
   end
 
   def get_document(id) do
-    Repo.get!(Document, id)
+    document =
+      Repo.get!(Document, id)
+      |> Repo.preload(:imported_transactions)
+
+    document =
+      Map.merge(
+        document,
+        %{
+          file_url: get_file_url(document.id),
+          amount:
+            Money.from_float!(
+              document.currency,
+              document.total_amount
+            )
+        }
+      )
+
+    document
+  end
+
+  def create_documents_imported_transactions_connection(document_id, imported_transaction_id) do
+    %DocumentsTransactions{}
+    |> DocumentsTransactions.changeset(%{
+      document_id: document_id,
+      imported_transaction_id: imported_transaction_id
+    })
+    |> Repo.insert!()
+  end
+
+  def delete_documents_imported_transactions_connection(document_id, imported_transaction_id) do
+    Repo.get_by!(DocumentsTransactions,
+      document_id: document_id,
+      imported_transaction_id: imported_transaction_id
+    )
+    |> Repo.delete!()
   end
 end

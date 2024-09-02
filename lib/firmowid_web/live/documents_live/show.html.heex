@@ -32,8 +32,19 @@
     </:action>
   </.table>
 
-  <h1 class="text-3xl font-bold">Transakcje, które mogą zostać dopasowane</h1>
-  <.table id="transactions" rows={@potential_transactions}>
+  <h1 class="text-3xl font-bold">
+    <%= if @document.imported_transactions == [],
+      do: "Potencjalne transakcje dla dokumentu",
+      else: "Dokument ma przypisane transakcje" %>
+  </h1>
+  <.table
+    id="transactions"
+    rows={
+      if @document.imported_transactions == [],
+        do: @potential_transactions,
+        else: @document.imported_transactions
+    }
+  >
     <:col :let={imported_transaction} label="Transaction">
       <%= imported_transaction.transaction_id %>
     </:col>
@@ -49,9 +60,6 @@
     <:col :let={imported_transaction} label="Creditor account">
       <%= imported_transaction.creditor_account %>
     </:col>
-    <:col :let={imported_transaction} label="Amount">
-      <%= imported_transaction.amount %>
-    </:col>
     <:col :let={imported_transaction} label="Internal transaction code">
       <%= imported_transaction.internal_transaction_id %>
     </:col>
@@ -61,5 +69,24 @@
     <:col :let={imported_transaction} label="Value date">
       <%= imported_transaction.value_date %>
     </:col>
+    <:action :let={imported_transaction}>
+      <%= if @document.imported_transactions == [] do %>
+        <.button
+          phx-click="connect"
+          phx-value-document-id={@document.id}
+          phx-value-imported-transaction-id={imported_transaction.id}
+        >
+          Zatwierdź
+        </.button>
+      <% else %>
+        <.button
+          phx-click="disconnect"
+          phx-value-document-id={@document.id}
+          phx-value-imported-transaction-id={imported_transaction.id}
+        >
+          Usuń połączenie
+        </.button>
+      <% end %>
+    </:action>
   </.table>
 </div>

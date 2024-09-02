@@ -14,6 +14,14 @@ defmodule Firmowid.Documents.Document do
 
     field :file_name, :string
 
+    many_to_many :imported_transactions,
+                 Firmowid.Finances.ImportedTransaction,
+                 join_through: "documents_imported_transactions",
+                 join_keys: [
+                   document_id: :id,
+                   imported_transaction_id: :id
+                 ]
+
     timestamps(type: :utc_datetime)
   end
 
@@ -29,5 +37,6 @@ defmodule Firmowid.Documents.Document do
       :currency,
       :file_name
     ])
+    |> cast_assoc(:imported_transactions)
   end
 end

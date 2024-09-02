@@ -4,6 +4,8 @@ defmodule Firmowid.GoLimitless.ApiClient do
   """
   alias Firmowid.GoLimitless.TokenManager
 
+  alias Firmowid.Finances
+
   def get_accounts_for_requisition(requisition_id) do
     access_token = get_access_token()
 
@@ -13,7 +15,9 @@ defmodule Firmowid.GoLimitless.ApiClient do
         auth: {:bearer, access_token}
       )
 
-    accounts_response.body["accounts"]
+    accounts = Map.get(accounts_response.body, "accounts", [])
+
+    accounts
     |> Enum.map(fn account ->
       Req.get!("https://bankaccountdata.gocardless.com/api/v2/accounts/#{account}",
         auth: {:bearer, access_token}
@@ -62,6 +66,72 @@ defmodule Firmowid.GoLimitless.ApiClient do
       )
 
     institutions_response.body
+  end
+
+  def sync_transaction_for_account(iban, requisition_id) do
+    access_token = get_access_token()
+
+    accounts_list =
+      Req.get!(
+        "https://bankaccountdata.gocardless.com/api/v2/requisitions/#{requisition_id}",
+        auth: {:bearer, access_token}
+      )
+
+    dbg(accounts_list.body)
+
+    gocardless_account_id =
+      accounts_list.body["accounts"]
+      |> Enum.find(fn account_id ->
+        account_data =
+          Req.get!("https://bankaccountdata.gocardless.com/api/v2/accounts/#{account_id}",
+            auth: {:bearer, access_token}
+          )
+
+        dbg(account_data.body)
+
+        account_data.body["iban"] == iban
+      end)
+
+    dbg(gocardless_account_id)
+
+    all_accounts = Finances.list_bank_accounts()
+
+    dbg(all_accounts)
+
+    bank_account =
+      all_accounts
+      |> Enum.find(fn a -> a.iban == iban end)
+
+    dbg(bank_account.iban)
+
+    accounts_transaction_response =
+      Req.get!(
+        "https://bankaccountdata.gocardless.com/api/v2/accounts/#{gocardless_account_id}/transactions",
+        auth: {:bearer, access_token}
+      )
+
+    booked_transactions = accounts_transaction_response.body["transactions"]["booked"]
+
+    dbg(length(booked_transactions))
+
+    Enum.each(booked_transactions, fn t ->
+      Finances.create_imported_transaction(%{
+        transaction_id: t["transactionId"],
+        internal_transaction_id: t["internalTransactionId"],
+        debtor_name: t["debtorName"],
+        debtor_account: t["debtorAccount"]["iban"],
+        creditor_name: t["creditorName"],
+        creditor_account: t["creditorAccount"]["iban"],
+        transaction_amount:
+          t["transactionAmount"]["amount"]
+          |> String.to_float(),
+        transaction_currency: t["transactionAmount"]["currency"],
+        booking_date: t["bookingDate"] |> Date.from_iso8601!(),
+        value_date: t["valueDate"] |> Date.from_iso8601!(),
+        remittance_information_unstructured: t["remittanceInformationUnstructured"],
+        bank_account_id: bank_account.id
+      })
+    end)
   end
 
   defp get_access_token() do
