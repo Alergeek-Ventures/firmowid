@@ -8,8 +8,6 @@ defmodule Firmowid.Finances do
 
   alias Firmowid.Finances.BankAccount
 
-  alias Akin
-
   @doc """
   Returns the list of bank_accounts.
 
@@ -115,8 +113,15 @@ defmodule Firmowid.Finances do
       [%ImportedTransaction{}, ...]
 
   """
-  def list_imported_transactions do
-    Repo.all(ImportedTransaction)
+  def list_imported_transactions(from \\ nil, to \\ nil) do
+    Repo.all(
+      if from == nil and to == nil do
+        from(t in ImportedTransaction)
+      else
+        from t in ImportedTransaction,
+          where: t.value_date >= ^from and t.value_date <= ^to
+      end
+    )
     |> Enum.map(fn t ->
       Map.merge(t, %{
         amount:
@@ -219,33 +224,5 @@ defmodule Firmowid.Finances do
   """
   def change_imported_transaction(%ImportedTransaction{} = imported_transaction, attrs \\ %{}) do
     ImportedTransaction.changeset(imported_transaction, attrs)
-  end
-
-  def get_potential_transactions(document) do
-    # date range -> between issue_date and payment_deadline
-    issue_date = document.issue_date |> Date.add(-1)
-    payment_deadline = document.due_date |> Date.add(3)
-
-    # amount - within 10% of total amount
-    total_amount = -document.total_amount
-
-    max_amount = total_amount * 0.9
-    min_amount = total_amount * 1.1
-
-    candidates =
-      ImportedTransaction
-      |> where([i], i.booking_date >= ^issue_date and i.booking_date <= ^payment_deadline)
-      |> where([i], i.transaction_amount >= ^min_amount and i.transaction_amount <= ^max_amount)
-      |> Repo.all()
-
-    candidates =
-      Enum.filter(candidates, fn candidate_transaction ->
-        Akin.compare(
-          candidate_transaction.creditor_name,
-          document.seller
-        ).jaro_winkler > 0.5
-      end)
-
-    candidates
   end
 end

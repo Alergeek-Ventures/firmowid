@@ -22,35 +22,38 @@
 </div>
 
 <div class="mt-2 flex flex-col gap-4">
-  <.table id="documents" rows={@documents} row_click={&JS.navigate(~p"/documents/#{&1.id}")}>
-    <:col :let={document} label="ID">
-      <.link class="underline" target="_blank" href={document.file_url}>
-        <%= document.id %>
-      </.link>
+  <FirmowidWeb.DocumentsLive.DocumentsTable.table rows={@invoice_matchers} id="invoice_matchers">
+    <:col :let={invoice_matcher} label="Podgląd">
+      <%= if invoice_matcher.file_url == nil do %>
+        <.icon name="hero-document-minus-mini" class="w-6 h-6 text-gray-400" />
+      <% else %>
+        <.link class="underline" target="_blank" href={invoice_matcher.file_url}>
+          <.icon name="hero-document-mini" class="w-6 h-6" />
+        </.link>
+      <% end %>
     </:col>
-    <:col :let={document} label="Sprzedający">
-      <%= document.seller %>
+    <:col :let={invoice_matcher} label="Kontrahent">
+      <%= invoice_matcher.seller %>
     </:col>
-    <:col :let={document} label="Data sprzedaży">
-      <%= document.sale_date %>
+    <:col :let={invoice_matcher} label="Wystawiono">
+      <%= invoice_matcher.sale_date %>
     </:col>
-    <:col :let={document} label="Data wystawienia">
-      <%= document.issue_date %>
+    <:col :let={invoice_matcher} label="Termin płatności">
+      <%= invoice_matcher.due_date %>
     </:col>
-    <:col :let={document} label="Termin zapłaty">
-      <%= document.due_date %>
+    <:col :let={invoice_matcher} label="Status">
+      <%= if length(invoice_matcher.imported_transactions) == 0 do %>
+        Dokument
+      <% else %>
+        <%= if length(invoice_matcher.documents) == 0 do %>
+          Transakcja
+        <% else %>
+          Komplet
+        <% end %>
+      <% end %>
     </:col>
-    <:col :let={document} label="Kwota">
-      <%= document.amount %>
+    <:col :let={invoice_matcher} label="Kwota">
+      <%= invoice_matcher.amount %>
     </:col>
-    <:action :let={document}>
-      <.button
-        class="!bg-gray-200 !text-black !px-2 !py-1"
-        phx-click="delete"
-        phx-value-document-id={document.id}
-      >
-        Usuń
-      </.button>
-    </:action>
-  </.table>
+  </FirmowidWeb.DocumentsLive.DocumentsTable.table>
 </div>

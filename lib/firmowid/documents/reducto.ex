@@ -85,17 +85,8 @@ defmodule Firmowid.Documents.Reducto do
 
     [extracted_metadata] = reducto_extract_response.body["result"]
 
-    # Process.sleep(5000)
-
-    # extracted_metadata = %{
-    #   id: document_id,
-    #   seller: "Reducto",
-    #   issue_date: ~D[2020-01-01],
-    #   sale_date: ~D[2020-01-01],
-    #   due_date: ~D[2020-01-01],
-    #   total_amount: 100.0,
-    #   currency: "PLN"
-    # }
+    extracted_metadata =
+      Map.put(extracted_metadata, "total_amount", -extracted_metadata["total_amount"])
 
     Documents.update_document(document_id, extracted_metadata)
   end

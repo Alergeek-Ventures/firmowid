@@ -11,8 +11,6 @@ defmodule Firmowid.Documents do
   alias Firmowid.Documents.Reducto
   alias Firmowid.Documents.DocumentsTransactions
 
-  alias Firmowid.Finances
-
   def subscribe() do
     Phoenix.PubSub.subscribe(Firmowid.PubSub, @pubsub_topic)
   end
@@ -21,12 +19,14 @@ defmodule Firmowid.Documents do
     Phoenix.PubSub.broadcast(Firmowid.PubSub, @pubsub_topic, {:document_updated, document})
   end
 
-  def list_documents_with_metadata() do
+  def list_documents_with_metadata(from \\ Date.utc_today(), to \\ Date.utc_today()) do
     # the ones with total_amount not being null
     Document
     |> where([d], not is_nil(d.total_amount))
+    |> where([d], d.issue_date >= ^from and d.issue_date <= ^to)
     |> order_by(desc: :issue_date)
     |> Repo.all()
+    |> Repo.preload(:imported_transactions)
     |> Enum.map(&Map.put(&1, :file_url, get_file_url(&1.id)))
     |> Enum.map(
       &Map.put(
@@ -103,10 +103,6 @@ defmodule Firmowid.Documents do
     |> ExAws.request!()
 
     Repo.delete!(changeset)
-  end
-
-  def get_potential_transactions(document) do
-    Finances.get_potential_transactions(document)
   end
 
   def get_document(id) do

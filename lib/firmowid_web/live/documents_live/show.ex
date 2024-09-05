@@ -2,13 +2,14 @@ defmodule FirmowidWeb.DocumentsLive.Show do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Documents
+  alias Firmowid.InvoiceMatcher
 
   @impl true
   def mount(params, _session, socket) do
     document = Documents.get_document(params["id"])
 
     potential_transactions =
-      Documents.get_potential_transactions(document)
+      InvoiceMatcher.get_potential_transactions_for_document(document)
       |> Enum.map(fn t ->
         Map.merge(t, %{
           amount:
