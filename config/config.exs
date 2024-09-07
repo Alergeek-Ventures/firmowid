@@ -34,7 +34,12 @@ config :firmowid, FirmowidWeb.Endpoint,
 config :firmowid, Firmowid.Mailer, adapter: Swoosh.Adapters.Local
 
 config :firmowid, Firmowid.Cldr, locales: ["pl"]
-config :ex_money, default_cldr_backend: Firmowid.Cldr
+
+config :ex_money,
+  default_cldr_backend: Firmowid.Cldr,
+  auto_start_exchange_rate_service: true,
+  exchange_rates_retrieve_every: 300_000,
+  open_exchange_rates_app_id: "b1c5dcca1ebd4066ae1b8c7ef0205be6"
 
 config :ex_aws,
   access_key_id: "REMOVED_TIGRIS_ACCESS_KEY",

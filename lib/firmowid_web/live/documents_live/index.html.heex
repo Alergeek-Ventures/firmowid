@@ -1,59 +1,34 @@
-<div class="w-full flex items-center justify-end" phx-drop-target={@uploads[:file].ref}>
-  <.simple_form phx-change="upload" phx-submit="upload" for={@form}>
-    <div class="hidden">
-      <.live_file_input upload={@uploads[:file]} />
+<div class="w-full flex items-end justify-between pb-8">
+  <.simple_form phx-change="change-date" phx-submit="change-date" for={@date_range_form}>
+    <div class="flex flex-row gap-4 items-center">
+      <.input type="date" label="Od" field={@date_range_form[:from]} />
+      <.input type="date" label="Do" field={@date_range_form[:to]} />
     </div>
-    <label
-      for={@uploads[:file].ref}
-      class="relative flex flex-row gap-4 items-center justify-center w-full border-2
-      border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50
-      hover:bg-gray-200 px-4 py-8"
-    >
-      <%= if length(@documents_pending_extraction) > 0 do %>
-        <span class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-blue-400
-      flex justify-center items-center items animate-bounce">
-          <span><%= length(@documents_pending_extraction) %></span>
-        </span>
-      <% end %>
-      <.icon name="hero-document" class="w-6 h-6" /> Dodaj dokument
-      (lub przeciągnij tutaj, aby załadować)
-    </label>
   </.simple_form>
+  <div phx-drop-target={@uploads[:file].ref}>
+    <.simple_form phx-change="upload" phx-submit="upload" for={@upload_form}>
+      <div class="hidden">
+        <.live_file_input upload={@uploads[:file]} />
+      </div>
+      <label
+        for={@uploads[:file].ref}
+        class="relative flex flex-row gap-4 items-center justify-center w-full border-2
+      border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50
+      hover:bg-gray-200 px-3 py-2"
+      >
+        <%= if length(@documents_pending_extraction) > 0 do %>
+          <span class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-blue-400
+      flex justify-center items-center items animate-bounce">
+            <span><%= length(@documents_pending_extraction) %></span>
+          </span>
+        <% end %>
+        <.icon name="hero-document" class="w-6 h-6" /> Dodaj dokument
+        (lub przeciągnij tutaj, aby załadować)
+      </label>
+    </.simple_form>
+  </div>
 </div>
 
 <div class="mt-2 flex flex-col gap-4">
-  <FirmowidWeb.DocumentsLive.DocumentsTable.table rows={@invoice_matchers} id="invoice_matchers">
-    <:col :let={invoice_matcher} label="Podgląd">
-      <%= if invoice_matcher.file_url == nil do %>
-        <.icon name="hero-document-minus-mini" class="w-6 h-6 text-gray-400" />
-      <% else %>
-        <.link class="underline" target="_blank" href={invoice_matcher.file_url}>
-          <.icon name="hero-document-mini" class="w-6 h-6" />
-        </.link>
-      <% end %>
-    </:col>
-    <:col :let={invoice_matcher} label="Kontrahent">
-      <%= invoice_matcher.seller %>
-    </:col>
-    <:col :let={invoice_matcher} label="Wystawiono">
-      <%= invoice_matcher.sale_date %>
-    </:col>
-    <:col :let={invoice_matcher} label="Termin płatności">
-      <%= invoice_matcher.due_date %>
-    </:col>
-    <:col :let={invoice_matcher} label="Status">
-      <%= if length(invoice_matcher.imported_transactions) == 0 do %>
-        Dokument
-      <% else %>
-        <%= if length(invoice_matcher.documents) == 0 do %>
-          Transakcja
-        <% else %>
-          Komplet
-        <% end %>
-      <% end %>
-    </:col>
-    <:col :let={invoice_matcher} label="Kwota">
-      <%= invoice_matcher.amount %>
-    </:col>
-  </FirmowidWeb.DocumentsLive.DocumentsTable.table>
+  <FirmowidWeb.DocumentsLive.DocumentsTable.table invoice_matchers={@invoice_matchers} />
 </div>

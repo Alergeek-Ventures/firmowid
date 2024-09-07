@@ -77,8 +77,6 @@ defmodule Firmowid.GoLimitless.ApiClient do
         auth: {:bearer, access_token}
       )
 
-    dbg(accounts_list.body)
-
     gocardless_account_id =
       accounts_list.body["accounts"]
       |> Enum.find(fn account_id ->
@@ -87,22 +85,14 @@ defmodule Firmowid.GoLimitless.ApiClient do
             auth: {:bearer, access_token}
           )
 
-        dbg(account_data.body)
-
         account_data.body["iban"] == iban
       end)
 
-    dbg(gocardless_account_id)
-
     all_accounts = Finances.list_bank_accounts()
-
-    dbg(all_accounts)
 
     bank_account =
       all_accounts
       |> Enum.find(fn a -> a.iban == iban end)
-
-    dbg(bank_account.iban)
 
     accounts_transaction_response =
       Req.get!(
@@ -112,16 +102,19 @@ defmodule Firmowid.GoLimitless.ApiClient do
 
     booked_transactions = accounts_transaction_response.body["transactions"]["booked"]
 
-    dbg(length(booked_transactions))
+    # booked_transactions =
+    #   Jason.decode!(File.read!("priv/repo/booked_transactions.json"))
+    #
+    # dbg(length(booked_transactions))
 
     Enum.each(booked_transactions, fn t ->
-      Finances.create_imported_transaction(%{
+      Finances.create_or_update_imported_transaction(%{
         transaction_id: t["transactionId"],
         internal_transaction_id: t["internalTransactionId"],
         debtor_name: t["debtorName"],
-        debtor_account: t["debtorAccount"]["iban"],
+        debtor_account: t["debtorAccount"]["iban"] || "N/A",
         creditor_name: t["creditorName"],
-        creditor_account: t["creditorAccount"]["iban"],
+        creditor_account: t["creditorAccount"]["iban"] || "N/A",
         transaction_amount:
           t["transactionAmount"]["amount"]
           |> String.to_float(),

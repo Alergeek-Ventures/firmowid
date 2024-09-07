@@ -113,15 +113,29 @@ defmodule Firmowid.Finances do
       [%ImportedTransaction{}, ...]
 
   """
-  def list_imported_transactions(from \\ nil, to \\ nil) do
-    Repo.all(
-      if from == nil and to == nil do
-        from(t in ImportedTransaction)
-      else
-        from t in ImportedTransaction,
-          where: t.value_date >= ^from and t.value_date <= ^to
-      end
-    )
+  def list_imported_transactions(from \\ nil, to \\ nil, opts \\ []) do
+    if Keyword.get(opts, :only_costs) == true do
+      Repo.all(
+        if from == nil and to == nil do
+          from(t in ImportedTransaction, where: t.transaction_amount < 0.0)
+        else
+          from t in ImportedTransaction,
+            where:
+              t.value_date >= ^from and t.value_date <= ^to and
+                t.transaction_amount < 0.0
+        end
+      )
+    else
+      Repo.all(
+        if from == nil and to == nil do
+          from(t in ImportedTransaction)
+        else
+          from t in ImportedTransaction,
+            where: t.value_date >= ^from and t.value_date <= ^to
+        end
+      )
+    end
+    |> Repo.preload(:document_transactions)
     |> Enum.map(fn t ->
       Map.merge(t, %{
         amount:
@@ -151,6 +165,7 @@ defmodule Firmowid.Finances do
     transaction =
       Repo.get!(ImportedTransaction, transaction_id)
       |> Repo.preload(:bank_account)
+      |> Repo.preload(:document_transactions)
 
     Map.merge(transaction, %{
       amount:
@@ -173,10 +188,13 @@ defmodule Firmowid.Finances do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_imported_transaction(attrs \\ %{}) do
+  def create_or_update_imported_transaction(attrs \\ %{}) do
     %ImportedTransaction{}
     |> ImportedTransaction.changeset(attrs)
-    |> Repo.insert()
+    |> Repo.insert!(
+      on_conflict: {:replace_all_except, [:id, :inserted_at]},
+      conflict_target: [:transaction_id]
+    )
   end
 
   @doc """

@@ -21,7 +21,11 @@ defmodule Firmowid.Repo.Migrations.CreateImportedTransactions do
             on_delete: :nothing
           )
 
+      add :skip_invoicing, :boolean
+
       timestamps(type: :utc_datetime)
     end
+
+    create unique_index(:imported_transactions, [:transaction_id])
   end
 end

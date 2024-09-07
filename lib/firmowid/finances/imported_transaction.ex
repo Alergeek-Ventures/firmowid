@@ -5,6 +5,7 @@ defmodule Firmowid.Finances.ImportedTransaction do
   alias Firmowid.Documents
 
   schema "imported_transactions" do
+    # imported data
     field :transaction_id, :string
     field :internal_transaction_id, :string
     field :creditor_name, :string
@@ -16,6 +17,9 @@ defmodule Firmowid.Finances.ImportedTransaction do
     field :booking_date, :date
     field :value_date, :date
     field :remittance_information_unstructured, :string
+
+    # firmowid data
+    field :skip_invoicing, :boolean, default: false
 
     belongs_to :bank_account,
                Firmowid.Finances.BankAccount

@@ -23,7 +23,11 @@ defmodule Firmowid.Documents do
     # the ones with total_amount not being null
     Document
     |> where([d], not is_nil(d.total_amount))
-    |> where([d], d.issue_date >= ^from and d.issue_date <= ^to)
+    |> where(
+      [d],
+      (d.issue_date >= ^from and d.issue_date <= ^to) or
+        (d.due_date >= ^from and d.due_date <= ^to)
+    )
     |> order_by(desc: :issue_date)
     |> Repo.all()
     |> Repo.preload(:imported_transactions)

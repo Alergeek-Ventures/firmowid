@@ -22,6 +22,7 @@ defmodule FirmowidWeb.Router do
     get "/finances", ContentController, :finances
     live "/finances/budget", BudgetLive.Index, :index
     live "/finances/imported-transactions", ImportedTransactionLive.Index, :index
+    live "/finances/imported-transactions/:id", ImportedTransactionLive.Show, :index
 
     live "/documents", DocumentsLive.Index, :index
     live "/documents/:id", DocumentsLive.Show, :index
