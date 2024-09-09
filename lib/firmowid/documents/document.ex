@@ -14,6 +14,8 @@ defmodule Firmowid.Documents.Document do
 
     field :file_name, :string
 
+    field :skip_invoicing, :boolean, default: false
+
     many_to_many :imported_transactions,
                  Firmowid.Finances.ImportedTransaction,
                  join_through: "documents_imported_transactions",
@@ -35,7 +37,8 @@ defmodule Firmowid.Documents.Document do
       :due_date,
       :total_amount,
       :currency,
-      :file_name
+      :file_name,
+      :skip_invoicing
     ])
     |> cast_assoc(:imported_transactions)
   end

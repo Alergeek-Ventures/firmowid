@@ -19,6 +19,7 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
 
     get_status = fn invoice_matcher ->
       case invoice_matcher do
+        %{skip_invoicing: true} -> "Pominięte"
         %{documents: [], imported_transactions: _} -> "Transakcja"
         %{documents: _, imported_transactions: []} -> "Dokument"
         _ -> "Komplet"
@@ -33,6 +34,9 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
     <table class="table-fixed">
       <thead>
         <tr>
+          <th class="text-left">
+            <.icon name="hero-information-circle" class="w-5 h-5" />
+          </th>
           <th
             :for={column <- columns}
             class={[
@@ -45,18 +49,18 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
         </tr>
       </thead>
       <tbody>
-        <tr
-          :for={invoice_matcher <- invoice_matchers}
-          phx-click={
-            if length(invoice_matcher.documents) == 0 do
-              JS.navigate(
+        <tr :for={invoice_matcher <- invoice_matchers}>
+          <td>
+            <.link navigate={
+              if length(invoice_matcher.documents) == 0 do
                 ~p"/finances/imported-transactions/#{hd(invoice_matcher.imported_transactions).id}"
-              )
-            else
-              JS.navigate(~p"/documents/#{hd(invoice_matcher.documents).id}")
-            end
-          }
-        >
+              else
+                ~p"/documents/#{hd(invoice_matcher.documents).id}"
+              end
+            }>
+              <.icon name="hero-arrow-right-mini" />
+            </.link>
+          </td>
           <td :for={column <- columns}>
             <%= if column.key == "status" do %>
               <.status_cell status={get_status.(invoice_matcher)} />
@@ -93,6 +97,7 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
     ~H"""
     <div class={[
       "flex flex-row justify-between items-center py-2 px-3 rounded-md mr-2",
+      status == "Pominięte" && "bg-gray-200 text-gray-500",
       status == "Transakcja" && "bg-red-200 text-red-800",
       status == "Dokument" && "bg-gray-200 text-gray-800",
       status == "Komplet" && "bg-green-200 text-green-800"
@@ -104,6 +109,7 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
             "Transakcja" -> "hero-credit-card"
             "Dokument" -> "hero-document-text"
             "Komplet" -> "hero-check-circle"
+            "Pominięte" -> "hero-document-minus"
           end
         }
         class="h-4 w-4"

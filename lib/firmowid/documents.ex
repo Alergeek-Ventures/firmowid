@@ -20,8 +20,8 @@ defmodule Firmowid.Documents do
   end
 
   def list_documents_with_metadata(from \\ Date.utc_today(), to \\ Date.utc_today()) do
-    # the ones with total_amount not being null
     Document
+    # the ones with total_amount not being null
     |> where([d], not is_nil(d.total_amount))
     |> where(
       [d],

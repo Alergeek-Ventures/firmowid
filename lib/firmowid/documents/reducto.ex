@@ -85,6 +85,18 @@ defmodule Firmowid.Documents.Reducto do
 
     [extracted_metadata] = reducto_extract_response.body["result"]
 
+    # keeping this so you can comment out Reducto
+    # and get quick metadata here
+
+    # extracted_metadata = %{
+    #   "seller" => "Mocked Reducto",
+    #   "sale_date" => ~D[2024-06-01],
+    #   "issue_date" => ~D[2024-06-01],
+    #   "due_date" => ~D[2024-07-01],
+    #   "total_amount" => 100.0,
+    #   "currency" => "PLN"
+    # }
+
     extracted_metadata =
       Map.put(extracted_metadata, "total_amount", -extracted_metadata["total_amount"])
 

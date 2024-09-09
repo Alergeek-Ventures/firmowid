@@ -3,7 +3,6 @@ defmodule FirmowidWeb.DocumentsLive.Index do
 
   alias Firmowid.Documents
   alias Firmowid.InvoiceMatcher
-  alias Firmowid.Documents.Document
 
   @impl true
   def mount(_params, _session, socket) do
@@ -13,12 +12,16 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     # date_range_from = Date.beginning_of_month(previous_month_date)
     # date_range_to = Date.end_of_month(previous_month_date)
 
-    date_range_from = ~D[2024-07-01]
-    date_range_to = ~D[2024-07-31]
+    date_range_from = ~D[2024-06-01]
+    date_range_to = ~D[2024-06-30]
 
     socket =
       socket
-      |> assign(:upload_form, to_form(Document.changeset(%Document{})))
+      # uploading indicator
+      |> assign(:documents_pending_extraction, Documents.list_documents_without_metadata())
+      # upload form
+      |> allow_upload(:file, accept: ~w(.pdf), progress: &handle_progress/3, auto_upload: true)
+      # UI controls
       |> assign(
         :date_range_form,
         to_form(%{
@@ -26,8 +29,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
           "to" => Date.to_iso8601(date_range_to)
         })
       )
-      |> allow_upload(:file, accept: ~w(.pdf), progress: &handle_progress/3, auto_upload: true)
-      |> assign(:documents_pending_extraction, Documents.list_documents_without_metadata())
+      # actual data
       |> assign(
         :invoice_matchers,
         InvoiceMatcher.get_invoice_matchers(

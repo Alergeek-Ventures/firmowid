@@ -14,7 +14,8 @@ defmodule Firmowid.InvoiceMatcher do
     :due_date,
     :file_url,
     :seller,
-    :buyer
+    :buyer,
+    :skip_invoicing
   ]
 
   import Ecto.Query, warn: false
@@ -54,7 +55,8 @@ defmodule Firmowid.InvoiceMatcher do
       sale_date: document.sale_date,
       due_date: document.due_date,
       seller: document.seller,
-      file_url: document.file_url
+      file_url: document.file_url,
+      skip_invoicing: document.skip_invoicing
     }
   end
 
@@ -66,7 +68,8 @@ defmodule Firmowid.InvoiceMatcher do
       amount: Money.from_float!(transaction.transaction_currency, transaction.transaction_amount),
       amount_numeric: transaction.transaction_amount,
       sale_date: transaction.value_date,
-      seller: transaction.creditor_name
+      seller: transaction.creditor_name,
+      skip_invoicing: transaction.skip_invoicing
     }
   end
 
@@ -80,6 +83,7 @@ defmodule Firmowid.InvoiceMatcher do
         {document.total_amount, document.total_amount}
       else
         # amount - within 10% of total amount
+        # when doing currency conversion
         {:ok, amount} =
           Money.to_currency(
             Money.from_float!(
@@ -90,7 +94,6 @@ defmodule Firmowid.InvoiceMatcher do
             Money.ExchangeRates.historic_rates(document.issue_date)
           )
 
-        dbg(amount)
         amount = amount |> Money.to_decimal() |> Decimal.to_float()
 
         max_amount = amount * 0.9
@@ -99,6 +102,8 @@ defmodule Firmowid.InvoiceMatcher do
         {min_amount, max_amount}
       end
 
+    # golden matches - where date is in range, amount is exact (or almost exact
+    # when converting currency) and name of seller is similar via Jaro Winkler
     candidates =
       ImportedTransaction
       |> where([i], i.booking_date >= ^issue_date and i.booking_date <= ^payment_deadline)
@@ -111,7 +116,7 @@ defmodule Firmowid.InvoiceMatcher do
         Akin.compare(
           candidate_transaction.creditor_name,
           document.seller
-        ).jaro_winkler > 0.4
+        ).jaro_winkler > 0.5
       end)
 
     candidates

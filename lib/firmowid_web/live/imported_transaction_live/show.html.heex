@@ -31,54 +31,56 @@
         Usuń
       </.button>
     </:action>
+    <:action :let={_transaction}>
+      <.button class="!bg-gray-200 !text-black !px-2 !py-1" phx-click="toggle-skip-invoicing">
+        <%= if @imported_transaction.skip_invoicing do %>
+          Włącz szukanie transakcji
+        <% else %>
+          Pomiń szukanie transakcji
+        <% end %>
+      </.button>
+    </:action>
   </.table>
 
-  <%!-- <h1 class="text-3xl font-bold"> --%>
-  <%!--   <%= if @imported_transaction.document_transactions == [], --%>
-  <%!--     do: "Potencjalne dokumenty dla transakcji", --%>
-  <%!--     else: "Transakcja ma przypisany dokument" %> --%>
-  <%!-- </h1> --%>
-  <%!-- <.table --%>
-  <%!--   id="documents" --%>
-  <%!--   rows={ --%>
-  <%!--     if @imported_transaction.document_transactions == [], --%>
-  <%!--       do: @potential_documents, --%>
-  <%!--       else: @imported_transaction.document_transactions --%>
-  <%!--   } --%>
-  <%!-- > --%>
-  <%!--   <:col :let={document} label="Sprzedający"> --%>
-  <%!--     <%= document.seller %> --%>
-  <%!--   </:col> --%>
-  <%!--   <:col :let={document} label="Data sprzedaży"> --%>
-  <%!--     <%= document.sale_date %> --%>
-  <%!--   </:col> --%>
-  <%!--   <:col :let={document} label="Data wystawienia"> --%>
-  <%!--     <%= document.issue_date %> --%>
-  <%!--   </:col> --%>
-  <%!--   <:col :let={document} label="Termin zapłaty"> --%>
-  <%!--     <%= document.due_date %> --%>
-  <%!--   </:col> --%>
-  <%!--   <:col :let={document} label="Kwota"> --%>
-  <%!--     <%= document.total_amount %> --%>
-  <%!--   </:col> --%>
-  <%!--   <:action :let={document}> --%>
-  <%!--     <%= if @imported_transaction.document_transactions == [] do %> --%>
-  <%!--       <.button --%>
-  <%!--         phx-click="connect" --%>
-  <%!--         phx-value-document-id={document.id} --%>
-  <%!--         phx-value-imported-transaction-id={@imported_transaction.id} --%>
-  <%!--       > --%>
-  <%!--         Zatwierdź --%>
-  <%!--       </.button> --%>
-  <%!--     <% else %> --%>
-  <%!--       <.button --%>
-  <%!--         phx-click="disconnect" --%>
-  <%!--         phx-value-document-id={document.id} --%>
-  <%!--         phx-value-imported-transaction-id={@imported_transaction.id} --%>
-  <%!--       > --%>
-  <%!--         Usuń połączenie --%>
-  <%!--       </.button> --%>
-  <%!--     <% end %> --%>
-  <%!--   </:action> --%>
-  <%!-- </.table> --%>
+  <%= if @imported_transaction.document_transactions != [] do %>
+    <h1 class="text-3xl font-bold">
+      Transakcja ma przypisany dokument
+    </h1>
+    <.table id="documents" rows={@imported_transaction.document_transactions}>
+      <:col :let={document} label="Sprzedający">
+        <%= document.seller %>
+      </:col>
+      <:col :let={document} label="Data sprzedaży">
+        <%= document.sale_date %>
+      </:col>
+      <:col :let={document} label="Data wystawienia">
+        <%= document.issue_date %>
+      </:col>
+      <:col :let={document} label="Termin zapłaty">
+        <%= document.due_date %>
+      </:col>
+      <:col :let={document} label="Kwota">
+        <%= document.total_amount %>
+      </:col>
+      <:action :let={document}>
+        <%= if @imported_transaction.document_transactions == [] do %>
+          <.button
+            phx-click="connect"
+            phx-value-document-id={document.id}
+            phx-value-imported-transaction-id={@imported_transaction.id}
+          >
+            Zatwierdź
+          </.button>
+        <% else %>
+          <.button
+            phx-click="disconnect"
+            phx-value-document-id={document.id}
+            phx-value-imported-transaction-id={@imported_transaction.id}
+          >
+            Usuń połączenie
+          </.button>
+        <% end %>
+      </:action>
+    </.table>
+  <% end %>
 </div>

@@ -1,92 +1,101 @@
-<div class="flex flex-col gap-4">
-  <h1 class="text-3xl font-bold">Faktura <%= @document.id %></h1>
-  <.table id="documents" rows={[@document]}>
-    <:col :let={document} label="ID">
-      <.link class="underline" target="_blank" href={document.file_url}>
-        <%= document.id %>
-      </.link>
-    </:col>
-    <:col :let={document} label="Sprzedający">
-      <%= document.seller %>
-    </:col>
-    <:col :let={document} label="Data sprzedaży">
-      <%= document.sale_date %>
-    </:col>
-    <:col :let={document} label="Data wystawienia">
-      <%= document.issue_date %>
-    </:col>
-    <:col :let={document} label="Termin zapłaty">
-      <%= document.due_date %>
-    </:col>
-    <:col :let={document} label="Kwota">
-      <%= document.amount %>
-    </:col>
-    <:action :let={document}>
-      <.button
-        class="!bg-gray-200 !text-black !px-2 !py-1"
-        phx-click="delete"
-        phx-value-document-id={document.id}
-      >
-        Usuń
-      </.button>
-    </:action>
-  </.table>
+<div class="flex flex-row gap-8">
+  <div>
+    <embed type="application/pdf" src={@document.file_url} width="500" height="875" />
+  </div>
+  <div class="flex flex-col gap-4">
+    <h1 class="text-3xl font-bold">Faktura <%= @document.id %></h1>
+    <.table id="documents" rows={[@document]}>
+      <:col :let={document} label="ID">
+        <.link class="underline" target="_blank" href={document.file_url}>
+          <%= document.id %>
+        </.link>
+      </:col>
+      <:col :let={document} label="Sprzedający">
+        <%= document.seller %>
+      </:col>
+      <:col :let={document} label="Data sprzedaży">
+        <%= document.sale_date %>
+      </:col>
+      <:col :let={document} label="Data wystawienia">
+        <%= document.issue_date %>
+      </:col>
+      <:col :let={document} label="Termin zapłaty">
+        <%= document.due_date %>
+      </:col>
+      <:col :let={document} label="Kwota">
+        <%= document.amount %>
+      </:col>
+      <:action :let={_document}>
+        <.button class="!bg-gray-200 !text-black !px-2 !py-1" phx-click="toggle-skip-invoicing">
+          <%= if @document.skip_invoicing do %>
+            Włącz szukanie transakcji
+          <% else %>
+            Pomiń szukanie transakcji
+          <% end %>
+        </.button>
+      </:action>
+      <:action :let={document}>
+        <.button
+          class="!bg-gray-200 !text-black !px-2 !py-1"
+          phx-click="delete"
+          phx-value-document-id={document.id}
+        >
+          Usuń
+        </.button>
+      </:action>
+    </.table>
 
-  <h1 class="text-3xl font-bold">
-    <%= if @document.imported_transactions == [],
-      do: "Potencjalne transakcje dla dokumentu",
-      else: "Dokument ma przypisane transakcje" %>
-  </h1>
-  <.table
-    id="transactions"
-    rows={
-      if @document.imported_transactions == [],
-        do: @potential_transactions,
-        else: @document.imported_transactions
-    }
-  >
-    <:col :let={imported_transaction} label="Transaction">
-      <%= imported_transaction.transaction_id %>
-    </:col>
-    <:col :let={imported_transaction} label="Debtor name">
-      <%= imported_transaction.debtor_name %>
-    </:col>
-    <:col :let={imported_transaction} label="Debtor account">
-      <%= imported_transaction.debtor_account %>
-    </:col>
-    <:col :let={imported_transaction} label="Creditor name">
-      <%= imported_transaction.creditor_name %>
-    </:col>
-    <:col :let={imported_transaction} label="Creditor account">
-      <%= imported_transaction.creditor_account %>
-    </:col>
-    <:col :let={imported_transaction} label="Internal transaction code">
-      <%= imported_transaction.internal_transaction_id %>
-    </:col>
-    <:col :let={imported_transaction} label="Booking date">
-      <%= imported_transaction.booking_date %>
-    </:col>
-    <:col :let={imported_transaction} label="Value date">
-      <%= imported_transaction.value_date %>
-    </:col>
-    <:action :let={imported_transaction}>
-      <%= if @document.imported_transactions == [] do %>
-        <.button
-          phx-click="connect"
-          phx-value-document-id={@document.id}
-          phx-value-imported-transaction-id={imported_transaction.id}
-        >
-          Zatwierdź
-        </.button>
-      <% else %>
-        <.button
-          phx-click="disconnect"
-          phx-value-document-id={@document.id}
-          phx-value-imported-transaction-id={imported_transaction.id}
-        >
-          Usuń połączenie
-        </.button>
-      <% end %>
-    </:action>
-  </.table>
+    <%= if @document.skip_invoicing do %>
+      <h1>Fakturowanie pominięte dla dokumentu</h1>
+    <% else %>
+      <h1 class="text-3xl font-bold">
+        <%= if @document.imported_transactions == [],
+          do: "Potencjalne transakcje dla dokumentu",
+          else: "Dokument ma przypisane transakcje" %>
+      </h1>
+      <.table
+        id="transactions"
+        rows={
+          if @document.imported_transactions == [],
+            do: @potential_transactions,
+            else: @document.imported_transactions
+        }
+      >
+        <:col :let={imported_transaction} label="Creditor name">
+          <%= imported_transaction.creditor_name %>
+        </:col>
+        <:col :let={imported_transaction} label="Creditor account">
+          <%= imported_transaction.creditor_account %>
+        </:col>
+        <:col :let={imported_transaction} label="Booking date">
+          <%= imported_transaction.booking_date %>
+        </:col>
+        <:col :let={imported_transaction} label="Value date">
+          <%= imported_transaction.value_date %>
+        </:col>
+        <:col :let={imported_transaction} label="Amount">
+          <%= imported_transaction.transaction_amount %>
+        </:col>
+        <:action :let={imported_transaction}>
+          <%= if @document.imported_transactions == [] do %>
+            <.button
+              phx-click="connect"
+              phx-value-document-id={@document.id}
+              phx-value-imported-transaction-id={imported_transaction.id}
+            >
+              Zatwierdź
+            </.button>
+          <% else %>
+            <.button
+              phx-click="disconnect"
+              phx-value-document-id={@document.id}
+              phx-value-imported-transaction-id={imported_transaction.id}
+            >
+              Usuń połączenie
+            </.button>
+          <% end %>
+        </:action>
+      </.table>
+    <% end %>
+  </div>
 </div>

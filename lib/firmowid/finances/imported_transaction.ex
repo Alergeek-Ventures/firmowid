@@ -50,7 +50,8 @@ defmodule Firmowid.Finances.ImportedTransaction do
       :booking_date,
       :value_date,
       :remittance_information_unstructured,
-      :transaction_id
+      :transaction_id,
+      :skip_invoicing
     ])
     |> validate_required([
       :creditor_name,

@@ -209,10 +209,15 @@ defmodule Firmowid.Finances do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_imported_transaction(%ImportedTransaction{} = imported_transaction, attrs) do
-    imported_transaction
-    |> ImportedTransaction.changeset(attrs)
-    |> Repo.update()
+  def update_imported_transaction(imported_transaction_id, attrs) do
+    dbg(attrs)
+
+    changeset =
+      get_imported_transaction!(imported_transaction_id)
+      |> ImportedTransaction.changeset(attrs)
+
+    dbg(changeset)
+    Repo.update!(changeset)
   end
 
   @doc """

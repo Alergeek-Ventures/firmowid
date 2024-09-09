@@ -14,6 +14,8 @@ defmodule Firmowid.Repo.Migrations.CreateDocuments do
 
       add :file_name, :string
 
+      add :skip_invoicing, :boolean, default: false
+
       timestamps(type: :utc_datetime)
     end
   end

@@ -81,6 +81,23 @@ defmodule FirmowidWeb.DocumentsLive.Show do
   end
 
   @impl true
+  def handle_event("toggle-skip-invoicing", _, socket) do
+    skip_invoicing = socket.assigns.document.skip_invoicing
+
+    Documents.update_document(socket.assigns.document.id, %{
+      skip_invoicing: !skip_invoicing
+    })
+
+    document = Documents.get_document(socket.assigns.document.id)
+
+    socket =
+      socket
+      |> assign(:document, document)
+
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_event(
         "delete",
         %{"document-id" => document_id},

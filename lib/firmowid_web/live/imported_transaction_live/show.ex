@@ -3,20 +3,14 @@ defmodule FirmowidWeb.ImportedTransactionLive.Show do
 
   alias Firmowid.Documents
   alias Firmowid.Finances
-  # alias Firmowid.InvoiceMatcher
 
   @impl true
   def mount(params, _session, socket) do
     imported_transaction = Finances.get_imported_transaction!(params["id"])
 
-    # potential_documents =
-    #   InvoiceMatcher.get_potential_transactions_for_imported_transaction(imported_transaction)
-
     socket =
       socket
       |> assign(:imported_transaction, imported_transaction)
-
-    # |> assign(:potential_documents, potential_documents)
 
     {:ok, socket}
   end
@@ -26,6 +20,25 @@ defmodule FirmowidWeb.ImportedTransactionLive.Show do
     socket =
       socket
       |> apply_action(socket.assigns.live_action, params)
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("toggle-skip-invoicing", _, socket) do
+    Finances.update_imported_transaction(
+      socket.assigns.imported_transaction.id,
+      %{
+        skip_invoicing: !socket.assigns.imported_transaction.skip_invoicing
+      }
+    )
+
+    imported_transaction =
+      Finances.get_imported_transaction!(socket.assigns.imported_transaction.id)
+
+    socket =
+      socket
+      |> assign(:imported_transaction, imported_transaction)
 
     {:noreply, socket}
   end
