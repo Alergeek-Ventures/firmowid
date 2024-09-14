@@ -102,22 +102,28 @@ defmodule Firmowid.InvoiceMatcher do
         {min_amount, max_amount}
       end
 
-    # golden matches - where date is in range, amount is exact (or almost exact
-    # when converting currency) and name of seller is similar via Jaro Winkler
+    # transactions with exact amount (or in the range for non-PLN) that are between issue_date and payment_deadline
     candidates =
       ImportedTransaction
       |> where([i], i.booking_date >= ^issue_date and i.booking_date <= ^payment_deadline)
       |> where([i], i.transaction_amount >= ^min_amount and i.transaction_amount <= ^max_amount)
       |> Repo.all()
 
+    # use Jaro-Winkler name similarity to check if seller matches
     candidates =
-      Enum.filter(candidates, fn candidate_transaction ->
-        # seller name from transaction and from document are similar
-        Akin.compare(
-          candidate_transaction.creditor_name,
-          document.seller
-        ).jaro_winkler > 0.5
+      candidates
+      |> Enum.map(fn candidate_transaction ->
+        similarity =
+          Akin.compare(candidate_transaction.creditor_name, document.seller).jaro_winkler
+
+        {candidate_transaction, similarity}
       end)
+      |> Enum.filter(fn {_candidate, similarity} ->
+        similarity > 0.45
+      end)
+      |> Enum.sort_by(fn {_candidate, similarity} -> similarity end, :desc)
+      |> Enum.map(fn {candidate, _similarity} -> candidate end)
+      |> Enum.take(3)
 
     candidates
   end
