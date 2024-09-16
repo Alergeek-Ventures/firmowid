@@ -3,6 +3,7 @@ defmodule FirmowidWeb.BankSyncLive.Index do
 
   alias Firmowid.GoLimitless
   alias Firmowid.GoLimitless.Requisition
+  alias Firmowid.InvoiceMatcher
 
   @impl true
   def mount(_params, _session, socket) do
@@ -39,12 +40,17 @@ defmodule FirmowidWeb.BankSyncLive.Index do
   def handle_event("sync", %{"id" => id}, socket) do
     requisition = GoLimitless.get_requisition!(id)
 
-    dbg(requisition)
-
     GoLimitless.ApiClient.sync_transaction_for_account(
       "PL33105014451000009081121700",
       requisition.requisition_id
     )
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("auto-match-documents", _, socket) do
+    InvoiceMatcher.match_all_good_candidates_for_unconnected_documents()
 
     {:noreply, socket}
   end

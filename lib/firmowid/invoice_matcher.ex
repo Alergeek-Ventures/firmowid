@@ -32,6 +32,8 @@ defmodule Firmowid.InvoiceMatcher do
 
     imported_transactions =
       Finances.list_imported_transactions(from, to, only_costs: true)
+      # already matched will have a transaction inside a `document.imported_transactions`
+      # prevent duplication here
       |> Enum.filter(fn t ->
         Enum.all?(documents, fn d ->
           Enum.all?(d.imported_transactions, fn i -> i.transaction_id != t.transaction_id end)
@@ -41,7 +43,7 @@ defmodule Firmowid.InvoiceMatcher do
     documents
     |> Enum.map(&from_document/1)
     |> Enum.concat(Enum.map(imported_transactions, &from_imported_transaction/1))
-    |> Enum.sort_by(& &1.sale_date, :desc)
+    |> Enum.sort(&(Date.compare(&1.issue_date, &2.issue_date) != :lt))
   end
 
   defp from_document(document) do
@@ -67,6 +69,7 @@ defmodule Firmowid.InvoiceMatcher do
       imported_transactions: [transaction],
       amount: Money.from_float!(transaction.transaction_currency, transaction.transaction_amount),
       amount_numeric: transaction.transaction_amount,
+      issue_date: transaction.booking_date,
       sale_date: transaction.value_date,
       seller: transaction.creditor_name,
       skip_invoicing: transaction.skip_invoicing
@@ -74,14 +77,14 @@ defmodule Firmowid.InvoiceMatcher do
   end
 
   def get_potential_transactions_for_document(document, opts \\ []) do
-    opts = Keyword.validate!(opts, siimilarity_threshold: 0.3, max_results: 5)
+    opts = Keyword.validate!(opts, similarity_threshold: 0.1, max_results: 5)
 
-    similarity_threshold = Keyword.fetch!(opts, :siimilarity_threshold)
+    similarity_threshold = Keyword.fetch!(opts, :similarity_threshold)
     max_results = Keyword.fetch!(opts, :max_results)
 
     # date range -> between issue_date and payment_deadline
-    issue_date = document.issue_date |> Date.add(-1)
-    payment_deadline = document.due_date |> Date.add(3)
+    issue_date = document.issue_date |> Date.add(-3)
+    payment_deadline = document.due_date |> Date.add(6)
 
     {min_amount, max_amount} =
       if document.currency == "PLN" do
@@ -133,10 +136,28 @@ defmodule Firmowid.InvoiceMatcher do
     candidates
   end
 
-  def match_all_good_candidates_for_unconnected_documents() do
-    documents = Documents.list_unmatched_documents()
+  # def match_with_transaction_combo() do
+  #   # when there are multiple transactions on the same invoice
+  #   # typically - services / goods that you get across the month
+  #     |> Enum.group_by(&"#{&1.creditor_name}#{&1.booking_date.year}#{&1.booking_date.month}")
+  #     |> Enum.map(fn
+  #       {_, [imported_transaction]} ->
+  #         imported_transaction
+  #
+  #       {_, [first_transaction | rest]} ->
+  #         first_transaction
+  #         |> Map.put(
+  #           :transaction_amount,
+  #           Enum.sum(Enum.map(rest, & &1.transaction_amount))
+  #         )
+  #         |> Map.put(:booking_date, Enum.at(rest, -1).booking_date)
+  #     end)
+  # end
 
+  def match_all_good_candidates_for_unconnected_documents() do
     for similarity_threshold <- [0.8, 0.7, 0.6] do
+      documents = Documents.list_unmatched_documents()
+
       documents
       |> Enum.map(fn document ->
         {document,
@@ -147,16 +168,25 @@ defmodule Firmowid.InvoiceMatcher do
       end)
       |> Enum.each(fn
         {document, [golden_candidate]} ->
-          dbg("Matched #{document.id} with #{golden_candidate.id}")
-
           Documents.create_documents_imported_transactions_connection(
-            document.id,
-            golden_candidate.id
+            Integer.to_string(document.id),
+            Integer.to_string(golden_candidate.id)
           )
 
         _ ->
           nil
       end)
     end
+  end
+end
+
+defimpl Phoenix.HTML.Safe, for: Firmowid.InvoiceMatcher do
+  def to_iodata(invoice_matcher) do
+    document_ids = invoice_matcher.documents |> Enum.map(& &1.id) |> Enum.join(", ")
+
+    imported_transaction_ids =
+      invoice_matcher.imported_transactions |> Enum.map(& &1.id) |> Enum.join(", ")
+
+    "#{document_ids} | #{imported_transaction_ids}"
   end
 end

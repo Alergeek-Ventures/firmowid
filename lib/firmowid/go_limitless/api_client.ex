@@ -102,11 +102,6 @@ defmodule Firmowid.GoLimitless.ApiClient do
 
     booked_transactions = accounts_transaction_response.body["transactions"]["booked"]
 
-    # booked_transactions =
-    #   Jason.decode!(File.read!("priv/repo/booked_transactions.json"))
-    #
-    # dbg(length(booked_transactions))
-
     Enum.each(booked_transactions, fn t ->
       Finances.create_or_update_imported_transaction(%{
         transaction_id: t["transactionId"],

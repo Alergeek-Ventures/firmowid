@@ -26,10 +26,6 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
       end
     end
 
-    # <pre>
-    # <%= inspect(hd(invoice_matchers)) %>
-    # </pre>
-
     ~H"""
     <table class="table-fixed">
       <thead>
@@ -46,6 +42,7 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
           >
             <%= column.label %>
           </th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -83,6 +80,18 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
                   <% end %>
                 </div>
               <% end %>
+            <% end %>
+          </td>
+          <td>
+            <%= if invoice_matcher.skip_invoicing or
+              (invoice_matcher.documents != []
+              and invoice_matcher.imported_transactions != [])
+                do %>
+              -
+            <% else %>
+              <.button phx-click="skip-invoicing" phx-value-invoice-matcher={invoice_matcher}>
+                Pomiń
+              </.button>
             <% end %>
           </td>
         </tr>

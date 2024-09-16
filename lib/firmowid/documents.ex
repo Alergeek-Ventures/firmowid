@@ -26,7 +26,8 @@ defmodule Firmowid.Documents do
     |> where(
       [d],
       (d.issue_date >= ^from and d.issue_date <= ^to) or
-        (d.due_date >= ^from and d.due_date <= ^to)
+        (d.due_date >= ^from and d.due_date <= ^to) or
+        (d.sale_date >= ^from and d.sale_date <= ^to)
     )
     |> order_by(desc: :issue_date)
     |> Repo.all()
@@ -52,8 +53,13 @@ defmodule Firmowid.Documents do
   end
 
   def list_unmatched_documents() do
-    Document
-    |> where([d], is_nil(d.total_amount))
+    from(d in Document,
+      left_join: i in assoc(d, :imported_transactions),
+      where: not is_nil(d.total_amount),
+      group_by: d.id,
+      having: count(i.id) == 0,
+      select: d
+    )
     |> Repo.all()
     |> Enum.map(&Map.put(&1, :file_url, get_file_url(&1.id)))
   end

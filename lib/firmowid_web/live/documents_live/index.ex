@@ -2,6 +2,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Documents
+  alias Firmowid.Finances
   alias Firmowid.InvoiceMatcher
 
   @impl true
@@ -12,8 +13,8 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     # date_range_from = Date.beginning_of_month(previous_month_date)
     # date_range_to = Date.end_of_month(previous_month_date)
 
-    date_range_from = ~D[2024-06-01]
-    date_range_to = ~D[2024-06-30]
+    date_range_from = ~D[2024-07-01]
+    date_range_to = ~D[2024-08-31]
 
     socket =
       socket
@@ -104,6 +105,41 @@ defmodule FirmowidWeb.DocumentsLive.Index do
         InvoiceMatcher.get_invoice_matchers(
           Date.from_iso8601!(date_range_form["from"]),
           Date.from_iso8601!(date_range_form["to"])
+        )
+      )
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("skip-invoicing", invoice_matcher, socket) do
+    case String.split(invoice_matcher["invoice-matcher"], "|") do
+      [document_id, " "] ->
+        document_id
+        |> String.trim()
+        |> String.to_integer()
+        |> Documents.update_document(%{
+          skip_invoicing: true
+        })
+
+      [" ", imported_transaction_id] ->
+        imported_transaction_id
+        |> String.trim()
+        |> String.to_integer()
+        |> Finances.update_imported_transaction(%{
+          skip_invoicing: true
+        })
+    end
+
+    date_range_form = socket.assigns.date_range_form
+
+    socket =
+      socket
+      |> assign(
+        :invoice_matchers,
+        InvoiceMatcher.get_invoice_matchers(
+          Date.from_iso8601!(date_range_form["from"].value),
+          Date.from_iso8601!(date_range_form["to"].value)
         )
       )
 

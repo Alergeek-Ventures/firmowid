@@ -210,13 +210,10 @@ defmodule Firmowid.Finances do
 
   """
   def update_imported_transaction(imported_transaction_id, attrs) do
-    dbg(attrs)
-
     changeset =
       get_imported_transaction!(imported_transaction_id)
       |> ImportedTransaction.changeset(attrs)
 
-    dbg(changeset)
     Repo.update!(changeset)
   end
 
