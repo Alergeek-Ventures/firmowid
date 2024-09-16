@@ -73,7 +73,12 @@ defmodule Firmowid.InvoiceMatcher do
     }
   end
 
-  def get_potential_transactions_for_document(document) do
+  def get_potential_transactions_for_document(document, opts \\ []) do
+    opts = Keyword.validate!(opts, siimilarity_threshold: 0.3, max_results: 5)
+
+    similarity_threshold = Keyword.fetch!(opts, :siimilarity_threshold)
+    max_results = Keyword.fetch!(opts, :max_results)
+
     # date range -> between issue_date and payment_deadline
     issue_date = document.issue_date |> Date.add(-1)
     payment_deadline = document.due_date |> Date.add(3)
@@ -119,12 +124,39 @@ defmodule Firmowid.InvoiceMatcher do
         {candidate_transaction, similarity}
       end)
       |> Enum.filter(fn {_candidate, similarity} ->
-        similarity > 0.45
+        similarity > similarity_threshold
       end)
       |> Enum.sort_by(fn {_candidate, similarity} -> similarity end, :desc)
       |> Enum.map(fn {candidate, _similarity} -> candidate end)
-      |> Enum.take(3)
+      |> Enum.take(max_results)
 
     candidates
+  end
+
+  def match_all_good_candidates_for_unconnected_documents() do
+    documents = Documents.list_unmatched_documents()
+
+    for similarity_threshold <- [0.8, 0.7, 0.6] do
+      documents
+      |> Enum.map(fn document ->
+        {document,
+         get_potential_transactions_for_document(document,
+           similarity_threshold: similarity_threshold,
+           max_results: 5
+         )}
+      end)
+      |> Enum.each(fn
+        {document, [golden_candidate]} ->
+          dbg("Matched #{document.id} with #{golden_candidate.id}")
+
+          Documents.create_documents_imported_transactions_connection(
+            document.id,
+            golden_candidate.id
+          )
+
+        _ ->
+          nil
+      end)
+    end
   end
 end

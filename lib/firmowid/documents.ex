@@ -51,6 +51,13 @@ defmodule Firmowid.Documents do
     |> Enum.map(&Map.put(&1, :file_url, get_file_url(&1.id)))
   end
 
+  def list_unmatched_documents() do
+    Document
+    |> where([d], is_nil(d.total_amount))
+    |> Repo.all()
+    |> Enum.map(&Map.put(&1, :file_url, get_file_url(&1.id)))
+  end
+
   def get_file_url(document_id) do
     document =
       Repo.get!(Document, document_id)
