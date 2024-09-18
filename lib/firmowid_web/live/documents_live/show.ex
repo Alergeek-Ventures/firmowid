@@ -9,7 +9,12 @@ defmodule FirmowidWeb.DocumentsLive.Show do
     document = Documents.get_document(params["id"])
 
     potential_transactions =
-      InvoiceMatcher.get_potential_transactions_for_document(document)
+      InvoiceMatcher.get_potential_transactions_for_document(document,
+        similarity_threshold: 0.0,
+        days_before: 15,
+        days_after: 10,
+        exact_amount: false
+      )
       |> Enum.map(fn t ->
         Map.merge(t, %{
           amount:
@@ -19,6 +24,8 @@ defmodule FirmowidWeb.DocumentsLive.Show do
             )
         })
       end)
+
+    InvoiceMatcher.match_with_transaction_combo(document)
 
     socket =
       socket

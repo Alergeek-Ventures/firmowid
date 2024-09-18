@@ -18,12 +18,8 @@ defmodule Firmowid.InvoiceMatcher do
     :skip_invoicing
   ]
 
-  import Ecto.Query, warn: false
   alias Akin
 
-  alias Firmowid.Finances.ImportedTransaction
-
-  alias Firmowid.Repo
   alias Firmowid.Documents
   alias Firmowid.Finances
 
@@ -77,20 +73,37 @@ defmodule Firmowid.InvoiceMatcher do
   end
 
   def get_potential_transactions_for_document(document, opts \\ []) do
-    opts = Keyword.validate!(opts, similarity_threshold: 0.1, max_results: 5)
+    opts =
+      Keyword.validate!(opts,
+        similarity_threshold: 0.1,
+        exact_amount: true,
+        max_results: 5,
+        days_before: 3,
+        days_after: 6
+      )
 
     similarity_threshold = Keyword.fetch!(opts, :similarity_threshold)
     max_results = Keyword.fetch!(opts, :max_results)
+    exact_amount = Keyword.fetch!(opts, :exact_amount)
+
+    days_before = Keyword.fetch!(opts, :days_before)
+    days_after = Keyword.fetch!(opts, :days_after)
 
     # date range -> between issue_date and payment_deadline
-    issue_date = document.issue_date |> Date.add(-3)
-    payment_deadline = document.due_date |> Date.add(6)
+    issue_date = document.issue_date |> Date.add(-days_before)
+    payment_deadline = document.due_date |> Date.add(days_after)
 
+    # either an exact match or within ~10% deviation
     {min_amount, max_amount} =
       if document.currency == "PLN" do
-        {document.total_amount, document.total_amount}
+        # allow deviation even for PLN if option provided
+        if exact_amount do
+          {document.total_amount, document.total_amount}
+        else
+          {document.total_amount * 1.1, document.total_amount * 0.9}
+        end
       else
-        # amount - within 10% of total amount
+        # deviation always allowed
         # when doing currency conversion
         {:ok, amount} =
           Money.to_currency(
@@ -110,12 +123,17 @@ defmodule Firmowid.InvoiceMatcher do
         {min_amount, max_amount}
       end
 
+    unmatched_transactions =
+      Finances.list_unmatched_imported_transactions()
+
     # transactions with exact amount (or in the range for non-PLN) that are between issue_date and payment_deadline
     candidates =
-      ImportedTransaction
-      |> where([i], i.booking_date >= ^issue_date and i.booking_date <= ^payment_deadline)
-      |> where([i], i.transaction_amount >= ^min_amount and i.transaction_amount <= ^max_amount)
-      |> Repo.all()
+      unmatched_transactions
+      |> Enum.filter(fn i ->
+        Date.compare(i.booking_date, issue_date) != :lt and
+          Date.compare(i.booking_date, payment_deadline) != :gt and
+          i.transaction_amount >= min_amount and i.transaction_amount <= max_amount
+      end)
 
     # use Jaro-Winkler name similarity to check if seller matches
     candidates =
@@ -127,7 +145,7 @@ defmodule Firmowid.InvoiceMatcher do
         {candidate_transaction, similarity}
       end)
       |> Enum.filter(fn {_candidate, similarity} ->
-        similarity > similarity_threshold
+        similarity >= similarity_threshold
       end)
       |> Enum.sort_by(fn {_candidate, similarity} -> similarity end, :desc)
       |> Enum.map(fn {candidate, _similarity} -> candidate end)
@@ -136,23 +154,39 @@ defmodule Firmowid.InvoiceMatcher do
     candidates
   end
 
-  # def match_with_transaction_combo() do
-  #   # when there are multiple transactions on the same invoice
-  #   # typically - services / goods that you get across the month
-  #     |> Enum.group_by(&"#{&1.creditor_name}#{&1.booking_date.year}#{&1.booking_date.month}")
-  #     |> Enum.map(fn
-  #       {_, [imported_transaction]} ->
-  #         imported_transaction
-  #
-  #       {_, [first_transaction | rest]} ->
-  #         first_transaction
-  #         |> Map.put(
-  #           :transaction_amount,
-  #           Enum.sum(Enum.map(rest, & &1.transaction_amount))
-  #         )
-  #         |> Map.put(:booking_date, Enum.at(rest, -1).booking_date)
-  #     end)
-  # end
+  def match_with_transaction_combo(document) do
+    # when there are multiple transactions on the same invoice
+    # typically - services / goods that you get across the month
+
+    # highly experimental!
+
+    issue_date = document.issue_date |> Date.add(-35)
+    payment_deadline = document.issue_date
+
+    Finances.list_unmatched_imported_transactions()
+    |> Enum.filter(fn i ->
+      Date.compare(i.booking_date, issue_date) != :lt and
+        Date.compare(i.booking_date, payment_deadline) != :gt
+    end)
+    |> Enum.group_by(&"#{&1.creditor_name} #{&1.booking_date.year}-#{&1.booking_date.month}")
+    |> Enum.filter(fn {_, transactions} -> length(transactions) > 1 end)
+    |> Enum.map(fn
+      {_label, transactions} ->
+        grouped_transaction =
+          hd(transactions)
+          |> Map.put(
+            :transaction_amount,
+            Enum.sum(Enum.map(transactions, & &1.transaction_amount))
+          )
+          |> Map.put(:booking_date, Enum.at(transactions, -1).booking_date)
+
+        {grouped_transaction, transactions}
+    end)
+    |> Enum.filter(fn {grouped_transaction, _transactions} ->
+      grouped_transaction.transaction_amount == document.total_amount and
+        Akin.compare(grouped_transaction.creditor_name, document.seller).jaro_winkler > 0.5
+    end)
+  end
 
   def match_all_good_candidates_for_unconnected_documents() do
     for similarity_threshold <- [0.8, 0.7, 0.6] do
@@ -177,6 +211,26 @@ defmodule Firmowid.InvoiceMatcher do
           nil
       end)
     end
+
+    documents = Documents.list_unmatched_documents()
+
+    documents
+    |> Enum.each(fn document ->
+      combo_matches = match_with_transaction_combo(document)
+
+      case combo_matches do
+        [{_grouped_transaction, transactions}] ->
+          Enum.each(transactions, fn transaction ->
+            Documents.create_documents_imported_transactions_connection(
+              Integer.to_string(document.id),
+              Integer.to_string(transaction.id)
+            )
+          end)
+
+        _ ->
+          nil
+      end
+    end)
   end
 end
 

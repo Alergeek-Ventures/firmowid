@@ -147,6 +147,18 @@ defmodule Firmowid.Finances do
     end)
   end
 
+  def list_unmatched_imported_transactions do
+    # all transactions that have skip_invoicing set to false (so we match for
+    # them)
+    # and don't have any document_transactions (so not matched yet)
+    from(t in ImportedTransaction,
+      left_join: dt in assoc(t, :document_transactions),
+      where: not t.skip_invoicing,
+      where: is_nil(dt.id)
+    )
+    |> Repo.all()
+  end
+
   @doc """
   Gets a single imported_transaction.
 
