@@ -13,6 +13,7 @@ defmodule Firmowid.Repo.Migrations.CreateDocuments do
       add :currency, :string
 
       add :description, :string
+      add :invoice_identifier, :string
 
       add :file_name, :string
 

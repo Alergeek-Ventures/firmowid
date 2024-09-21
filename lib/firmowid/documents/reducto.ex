@@ -57,9 +57,14 @@ defmodule Firmowid.Documents.Reducto do
           description:
             "The currency of the total amount of the invoice, as three letter ISO 4217 code"
         },
+        invoice_identifier: %{
+          type: "string",
+          description: "The identifier (typically number) of the invoice"
+        },
         description: %{
           type: "string",
-          description: "Based on the invoice list, provide a brief description of the invoice"
+          description:
+            "Based on the invoice list, provide a brief description of the invoice in Polish"
         }
       },
       required: [

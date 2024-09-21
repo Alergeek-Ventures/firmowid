@@ -3,14 +3,14 @@
     <embed type="application/pdf" src={@document.file_url} width="500" height="875" />
   </div>
   <div class="flex flex-col gap-4">
-    <h1 class="text-3xl font-bold">Faktura <%= @document.id %></h1>
+    <h1 class="text-3xl font-bold">Faktura <%= @document.invoice_identifier %></h1>
     <blockquote>
       Opis: <%= @document.description %>
     </blockquote>
     <.table id="documents" rows={[@document]}>
-      <:col :let={document} label="ID">
+      <:col :let={document} label="Numer faktury">
         <.link class="underline" target="_blank" href={document.file_url}>
-          <%= document.id %>
+          <%= document.invoice_identifier %>
         </.link>
       </:col>
       <:col :let={document} label="Sprzedający">

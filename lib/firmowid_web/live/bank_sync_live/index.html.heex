@@ -19,11 +19,11 @@
     <:col :let={{_id, requisition}} label="Status">
       <%= case requisition.status do %>
         <% :accepted -> %>
-          <.icon name="hero-check-circle-solid" class="h-5 w-5 text-green-500" />
+          <.icon name="hero-check-circle-solid" class="h-5 w-5 text-greenText" />
         <% :pending -> %>
-          <.icon name="hero-exclamation-triangle-solid" class="h-5 w-5 text-yellow-500" />
+          <.icon name="hero-exclamation-triangle-solid" class="h-5 w-5 text-blueText" />
         <% :rejected -> %>
-          <.icon name="hero-x-circle-solid" class="h-5 w-5 text-red-500" />
+          <.icon name="hero-x-circle-solid" class="h-5 w-5 text-redText" />
       <% end %>
     </:col>
     <:action :let={{_id, requisition}}>

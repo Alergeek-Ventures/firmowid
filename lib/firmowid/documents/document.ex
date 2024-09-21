@@ -13,6 +13,7 @@ defmodule Firmowid.Documents.Document do
     field :currency, :string
 
     field :description, :string
+    field :invoice_identifier, :string
 
     field :file_name, :string
 
@@ -41,6 +42,7 @@ defmodule Firmowid.Documents.Document do
       :currency,
       :file_name,
       :description,
+      :invoice_identifier,
       :skip_invoicing
     ])
     |> cast_assoc(:imported_transactions)

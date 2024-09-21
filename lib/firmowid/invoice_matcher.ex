@@ -264,8 +264,28 @@ defmodule Firmowid.InvoiceMatcher do
     call_llm = fn transaction ->
       {:ok, response} =
         OpenAI.chat_completion(
-          model: "chatgpt-4o-latest",
-          max_tokens: 5,
+          model: "gpt-4o-mini",
+          max_completion_tokens: 20,
+          response_format: %{
+            type: "json_schema",
+            json_schema: %{
+              name: "grading_response",
+              strict: true,
+              schema: %{
+                type: "object",
+                properties: %{
+                  grade: %{
+                    type: "number",
+                    additionalProperties: false
+                    # minimum: 0,
+                    # maximum: 1
+                  }
+                },
+                required: ["grade"],
+                additionalProperties: false
+              }
+            }
+          },
           messages: [
             %{
               role: "system",
@@ -277,6 +297,7 @@ defmodule Firmowid.InvoiceMatcher do
               content: "
               This is the metadata of a document I want to match: 
               {
+                invoice_identifier: #{document.invoice_identifier},
                 description: #{document.description},
                 issue_date: #{document.issue_date},
                 total_amount: #{document.total_amount},
@@ -298,7 +319,7 @@ defmodule Firmowid.InvoiceMatcher do
               please give me a score between 0 and 1. Take into consideration
               whether the name of seller matches with creditor name, dates and
               if the amount matches. Also look at the description of the document.
-              Reply only with the score:
+              Reply only with the score.
               " |> String.trim()
             }
           ]
@@ -309,13 +330,15 @@ defmodule Firmowid.InvoiceMatcher do
 
     candidates
     |> Enum.map(fn candidate ->
-      {candidate,
-       call_llm.(candidate).choices
-       |> List.first()
-       |> Map.get("message")
-       |> Map.get("content")
-       |> Float.parse()
-       |> elem(0)}
+      content =
+        call_llm.(candidate).choices
+        |> List.first()
+        |> Map.get("message")
+        |> Map.get("content")
+        |> Jason.decode!()
+        |> Map.get("grade")
+
+      {candidate, content}
     end)
   end
 end
