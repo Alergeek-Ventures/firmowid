@@ -68,7 +68,8 @@ defmodule Firmowid.MixProject do
       {:hackney, "~> 1.9"},
       {:sweet_xml, "~> 0.6"},
       {:mime, "~> 2.0"},
-      {:akin, "~> 0.2.0"}
+      {:akin, "~> 0.2.0"},
+      {:openai, "~> 0.6.2"}
     ]
   end
 

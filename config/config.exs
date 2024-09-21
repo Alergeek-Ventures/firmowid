@@ -49,6 +49,11 @@ config :ex_aws, :s3,
   scheme: "https://",
   host: "fly.storage.tigris.dev"
 
+config :openai,
+  api_key:
+    "REMOVED_OPENAI_KEY",
+  organization_key: "REMOVED_OPENAI_ORGANIZATION"
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.17.11",

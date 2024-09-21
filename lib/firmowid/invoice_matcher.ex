@@ -19,6 +19,7 @@ defmodule Firmowid.InvoiceMatcher do
   ]
 
   alias Akin
+  alias OpenAI
 
   alias Firmowid.Documents
   alias Firmowid.Finances
@@ -189,27 +190,53 @@ defmodule Firmowid.InvoiceMatcher do
   end
 
   def match_all_good_candidates_for_unconnected_documents() do
-    for similarity_threshold <- [0.8, 0.7, 0.6] do
+    for similarity_threshold <- [0.8, 0.7, 0.6, 0] do
       documents = Documents.list_unmatched_documents()
 
-      documents
-      |> Enum.map(fn document ->
-        {document,
-         get_potential_transactions_for_document(document,
-           similarity_threshold: similarity_threshold,
-           max_results: 5
-         )}
-      end)
-      |> Enum.each(fn
-        {document, [golden_candidate]} ->
-          Documents.create_documents_imported_transactions_connection(
-            Integer.to_string(document.id),
-            Integer.to_string(golden_candidate.id)
-          )
+      if similarity_threshold == 0 do
+        documents
+        |> Enum.map(fn document ->
+          {document,
+           get_potential_transactions_for_document(document,
+             similarity_threshold: similarity_threshold,
+             max_results: 10
+           )}
+        end)
+        |> Enum.each(fn {document, candidates} ->
+          matches =
+            llm_re_grade_matches(document, candidates)
+            |> Enum.filter(fn {_transaction, grade} -> grade >= 0.8 end)
+            |> Enum.map(fn {transaction, _grade} -> transaction end)
 
-        _ ->
-          nil
-      end)
+          if length(matches) == 1 do
+            [match] = matches
+
+            Documents.create_documents_imported_transactions_connection(
+              Integer.to_string(document.id),
+              Integer.to_string(match.id)
+            )
+          end
+        end)
+      else
+        documents
+        |> Enum.map(fn document ->
+          {document,
+           get_potential_transactions_for_document(document,
+             similarity_threshold: similarity_threshold,
+             max_results: 5
+           )}
+        end)
+        |> Enum.each(fn
+          {document, [golden_candidate]} ->
+            Documents.create_documents_imported_transactions_connection(
+              Integer.to_string(document.id),
+              Integer.to_string(golden_candidate.id)
+            )
+
+          _ ->
+            nil
+        end)
+      end
     end
 
     documents = Documents.list_unmatched_documents()
@@ -230,6 +257,65 @@ defmodule Firmowid.InvoiceMatcher do
         _ ->
           nil
       end
+    end)
+  end
+
+  def llm_re_grade_matches(document, candidates) do
+    call_llm = fn transaction ->
+      {:ok, response} =
+        OpenAI.chat_completion(
+          model: "chatgpt-4o-latest",
+          max_tokens: 5,
+          messages: [
+            %{
+              role: "system",
+              content:
+                "You are a assistant to a finance person. You help matching between documents and transactions, to complete the paper trail."
+            },
+            %{
+              role: "user",
+              content: "
+              This is the metadata of a document I want to match: 
+              {
+                description: #{document.description},
+                issue_date: #{document.issue_date},
+                total_amount: #{document.total_amount},
+                currency: #{document.currency},
+                seller: #{document.seller},
+              }
+
+              Here is a transaction that I selected as possible match:
+              {
+                booking_date: #{transaction.booking_date},
+                value_date: #{transaction.value_date},
+                transaction_currency: #{transaction.transaction_currency},
+                transaction_amount: #{transaction.transaction_amount},
+                creditor_name: #{transaction.creditor_name},
+                remittance_information_unstructured: #{transaction.remittance_information_unstructured},
+              }
+
+              Considering  metadata of them and the metadata of the document,
+              please give me a score between 0 and 1. Take into consideration
+              whether the name of seller matches with creditor name, dates and
+              if the amount matches. Also look at the description of the document.
+              Reply only with the score:
+              " |> String.trim()
+            }
+          ]
+        )
+
+      response
+    end
+
+    candidates
+    |> Enum.map(fn candidate ->
+      {candidate,
+       call_llm.(candidate).choices
+       |> List.first()
+       |> Map.get("message")
+       |> Map.get("content")
+       |> Float.parse()
+       |> elem(0)}
     end)
   end
 end

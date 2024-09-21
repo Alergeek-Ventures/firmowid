@@ -13,7 +13,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     # date_range_from = Date.beginning_of_month(previous_month_date)
     # date_range_to = Date.end_of_month(previous_month_date)
 
-    date_range_from = ~D[2024-07-01]
+    date_range_from = ~D[2024-08-01]
     date_range_to = ~D[2024-08-31]
 
     socket =

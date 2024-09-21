@@ -4,6 +4,9 @@
   </div>
   <div class="flex flex-col gap-4">
     <h1 class="text-3xl font-bold">Faktura <%= @document.id %></h1>
+    <blockquote>
+      Opis: <%= @document.description %>
+    </blockquote>
     <.table id="documents" rows={[@document]}>
       <:col :let={document} label="ID">
         <.link class="underline" target="_blank" href={document.file_url}>
@@ -58,7 +61,7 @@
         rows={
           if @document.imported_transactions == [],
             do: @potential_transactions,
-            else: @document.imported_transactions
+            else: @document.imported_transactions |> Enum.map(&Map.put(&1, :llm_eval, 0.5))
         }
       >
         <:col :let={imported_transaction} label="Informacje">
@@ -78,6 +81,9 @@
         </:col>
         <:col :let={imported_transaction} label="Amount">
           <%= imported_transaction.transaction_amount %>
+        </:col>
+        <:col :let={imported_transaction} label="Ocena AI">
+          <%= imported_transaction.llm_eval %>
         </:col>
         <:action :let={imported_transaction}>
           <%= if @document.imported_transactions == [] do %>

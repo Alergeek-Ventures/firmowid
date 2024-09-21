@@ -12,6 +12,8 @@ defmodule Firmowid.Repo.Migrations.CreateDocuments do
       add :total_amount, :float
       add :currency, :string
 
+      add :description, :string
+
       add :file_name, :string
 
       add :skip_invoicing, :boolean, default: false

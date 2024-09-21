@@ -25,7 +25,12 @@ defmodule FirmowidWeb.DocumentsLive.Show do
         })
       end)
 
-    InvoiceMatcher.match_with_transaction_combo(document)
+    potential_transactions =
+      InvoiceMatcher.llm_re_grade_matches(
+        document,
+        potential_transactions
+      )
+      |> Enum.map(fn {t, grade} -> Map.put(t, :llm_eval, grade) end)
 
     socket =
       socket

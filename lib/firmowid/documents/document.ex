@@ -12,6 +12,8 @@ defmodule Firmowid.Documents.Document do
     field :total_amount, :float
     field :currency, :string
 
+    field :description, :string
+
     field :file_name, :string
 
     field :skip_invoicing, :boolean, default: false
@@ -38,6 +40,7 @@ defmodule Firmowid.Documents.Document do
       :total_amount,
       :currency,
       :file_name,
+      :description,
       :skip_invoicing
     ])
     |> cast_assoc(:imported_transactions)
