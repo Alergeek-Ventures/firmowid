@@ -27,17 +27,24 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
     end
 
     ~H"""
-    <table class="table-fixed">
+    <table class="table-fixed border-separate border-spacing-y-3">
+      <col
+        :for={column <- columns}
+        class={[
+          column.key == "sale_date" && "max-2xl:w-36",
+          column.key == "due_date" && "max-2xl:w-36",
+          column.key == "status" && "w-40",
+          column.key == "amount" && "w-44"
+        ]}
+      />
       <thead>
         <tr>
-          <th class="text-left">
-            <.icon name="hero-information-circle" class="w-5 h-5" />
-          </th>
           <th
             :for={column <- columns}
             class={[
-              "text-left",
-              column.key == "amount" && "text-right"
+              "font-normal text-left text-darkGrey text-xs uppercase",
+              column.key == "seller" && "pl-5",
+              column.key == "amount" && "hidden"
             ]}
           >
             <%= column.label %>
@@ -47,18 +54,20 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
       </thead>
       <tbody>
         <tr :for={invoice_matcher <- invoice_matchers}>
-          <td>
-            <.link navigate={
-              if length(invoice_matcher.documents) == 0 do
-                ~p"/finances/imported-transactions/#{hd(invoice_matcher.imported_transactions).id}"
-              else
-                ~p"/documents/#{hd(invoice_matcher.documents).id}"
-              end
-            }>
-              <.icon name="hero-arrow-right-mini" />
-            </.link>
-          </td>
-          <td :for={column <- columns}>
+          <td
+            :for={column <- columns}
+            class={[
+              "bg-white py-2",
+              column.key == "seller" && "rounded-l-md pl-5 pr-5 text-ellipsis max-xl:max-w-72",
+              column.key == "sale_date" && "font-light",
+              column.key == "due_date" && "font-light",
+              column.key == "amount" && "rounded-r-md",
+              column.key == "amount" && invoice_matcher.amount_numeric >= 0 &&
+                "text-blueText !bg-blueBg",
+              column.key == "amount" && invoice_matcher.amount_numeric < 0 &&
+                "text-orangeText !bg-orangeBg"
+            ]}
+          >
             <%= if column.key == "status" do %>
               <.status_cell status={get_status.(invoice_matcher)} />
             <% else %>
@@ -68,7 +77,23 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
                   amount={invoice_matcher.amount}
                 />
               <% else %>
-                <div>
+                <%= if column.key == "seller" do %>
+                  <.link
+                    class="hover:underline"
+                    navigate={
+                      if length(invoice_matcher.documents) == 0 do
+                        ~p"/finances/imported-transactions/#{hd(invoice_matcher.imported_transactions).id}"
+                      else
+                        ~p"/documents/#{hd(invoice_matcher.documents).id}"
+                      end
+                    }
+                  >
+                    <%= get_in(
+                      invoice_matcher,
+                      [Access.key!(String.to_atom(column.key))]
+                    ) %>
+                  </.link>
+                <% else %>
                   <%= if get_in(invoice_matcher,
                   [Access.key!(String.to_atom(column.key))]) != nil do %>
                     <%= get_in(
@@ -76,22 +101,12 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
                       [Access.key!(String.to_atom(column.key))]
                     ) %>
                   <% else %>
-                    <span class="text-zinc-400">-</span>
+                    <span class="text-darkGrey opacity-50">
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-
+                    </span>
                   <% end %>
-                </div>
+                <% end %>
               <% end %>
-            <% end %>
-          </td>
-          <td>
-            <%= if invoice_matcher.skip_invoicing or
-              (invoice_matcher.documents != []
-              and invoice_matcher.imported_transactions != [])
-                do %>
-              -
-            <% else %>
-              <.button phx-click="skip-invoicing" phx-value-invoice-matcher={invoice_matcher}>
-                Pomiń
-              </.button>
             <% end %>
           </td>
         </tr>
@@ -105,19 +120,20 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
 
     ~H"""
     <div class={[
-      "flex flex-row justify-between items-center py-2 px-3 rounded-md mr-2",
-      status == "Pominięte" && "bg-gray-200 text-gray-500",
-      status == "Transakcja" && "bg-red-200 text-red-800",
-      status == "Dokument" && "bg-gray-200 text-gray-800",
-      status == "Komplet" && "bg-green-200 text-green-800"
+      "text-xs h-6 w-32",
+      "flex flex-row justify-between items-center py-2 px-2 rounded-md",
+      status == "Pominięte" && "bg-greenBg text-greenText",
+      status == "Transakcja" && "bg-redBg text-redText",
+      status == "Dokument" && "bg-lightGreyBg text-darkGrey",
+      status == "Komplet" && "bg-greenBg text-greenText"
     ]}>
-      <div class="font-bold uppercase"><%= status %></div>
+      <div class="font-normal uppercase"><%= status %></div>
       <.icon
         name={
           case status do
-            "Transakcja" -> "hero-credit-card"
-            "Dokument" -> "hero-document-text"
-            "Komplet" -> "hero-check-circle"
+            "Transakcja" -> "hero-credit-card-mini"
+            "Dokument" -> "hero-document-currency-dollar-mini"
+            "Komplet" -> "hero-document-check-mini"
             "Pominięte" -> "hero-document-minus"
           end
         }
@@ -129,18 +145,12 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
 
   def amount_cell(assigns) do
     amount = assigns.amount
-    amount_numeric = assigns.amount_numeric
 
     ~H"""
-    <pre>
-    </pre>
     <div class={[
-      "flex flex-row justify-end items-center py-2 px-3 rounded-md ml-2",
-      "text-right",
-      amount_numeric >= 0 && "text-blue-400",
-      amount_numeric < 0 && "text-red-400"
+      "text-right pr-5 py-2"
     ]}>
-      <div class="font-bold"><%= amount %></div>
+      <%= amount %>
     </div>
     """
   end

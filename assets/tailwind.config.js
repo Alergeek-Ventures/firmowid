@@ -12,10 +12,22 @@ module.exports = {
     "../lib/firmowid_web/**/*.*ex",
   ],
   theme: {
-    extend: {
-      colors: {
-        brand: "#FD4F00",
-      },
+    fontFamily: {
+      sans: ["Lexend", "ui-sans-serif", "system-ui", "sans-serif"],
+    },
+    colors: {
+      white: "#FFFFFF",
+      orangeText: "#8B3F13",
+      orangeBg: "#E6D7CE",
+      greenText: "#475E45",
+      greenBg: "#D0E6CE",
+      redText: "#A22A2A",
+      redBg: "#E6CECE",
+      blueText: "#455E5E",
+      blueBg: "#CEE6E6",
+      greyButtonBg: "#DDDDDD",
+      darkGrey: "#4E4E4E",
+      lightGreyBg: "#F5F5F5",
     },
   },
   plugins: [
