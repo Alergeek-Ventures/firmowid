@@ -77,33 +77,56 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
                   amount={invoice_matcher.amount}
                 />
               <% else %>
-                <%= if column.key == "seller" do %>
+                <%= if column.key == "seller" and invoice_matcher.documents != [] do %>
                   <.link
                     class="hover:underline"
-                    navigate={
-                      if length(invoice_matcher.documents) == 0 do
-                        ~p"/finances/imported-transactions/#{hd(invoice_matcher.imported_transactions).id}"
-                      else
-                        ~p"/documents/#{hd(invoice_matcher.documents).id}"
-                      end
-                    }
+                    navigate={~p"/documents/#{hd(invoice_matcher.documents).id}"}
                   >
-                    <%= get_in(
-                      invoice_matcher,
-                      [Access.key!(String.to_atom(column.key))]
-                    ) %>
+                    <span>
+                      <%= get_in(
+                        invoice_matcher,
+                        [Access.key!(String.to_atom(column.key))]
+                      ) %>
+                    </span>
+                    <span class="text-darkGrey opacity-50 text-sm">
+                      <%= if invoice_matcher.imported_transactions != [] do %>
+                        <%= hd(invoice_matcher.imported_transactions).remittance_information_unstructured %>
+                      <% else %>
+                        <%= if invoice_matcher.documents != [] do %>
+                          <%= hd(invoice_matcher.documents).description %>
+                        <% end %>
+                      <% end %>
+                    </span>
                   </.link>
                 <% else %>
-                  <%= if get_in(invoice_matcher,
-                  [Access.key!(String.to_atom(column.key))]) != nil do %>
-                    <%= get_in(
-                      invoice_matcher,
-                      [Access.key!(String.to_atom(column.key))]
-                    ) %>
-                  <% else %>
-                    <span class="text-darkGrey opacity-50">
-                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-
+                  <%= if column.key == "seller" do %>
+                    <span>
+                      <%= get_in(
+                        invoice_matcher,
+                        [Access.key!(String.to_atom(column.key))]
+                      ) %>
                     </span>
+                    <span class="text-darkGrey opacity-50 text-sm">
+                      <%= if invoice_matcher.imported_transactions != [] do %>
+                        <%= hd(invoice_matcher.imported_transactions).remittance_information_unstructured %>
+                      <% else %>
+                        <%= if invoice_matcher.documents != [] do %>
+                          <%= hd(invoice_matcher.documents).description %>
+                        <% end %>
+                      <% end %>
+                    </span>
+                  <% else %>
+                    <%= if get_in(invoice_matcher,
+                  [Access.key!(String.to_atom(column.key))]) != nil do %>
+                      <%= get_in(
+                        invoice_matcher,
+                        [Access.key!(String.to_atom(column.key))]
+                      ) %>
+                    <% else %>
+                      <span class="text-darkGrey opacity-50">
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-
+                      </span>
+                    <% end %>
                   <% end %>
                 <% end %>
               <% end %>
