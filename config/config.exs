@@ -38,7 +38,7 @@ config :firmowid, Firmowid.Cldr, locales: ["pl"]
 config :ex_money,
   default_cldr_backend: Firmowid.Cldr,
   auto_start_exchange_rate_service: true,
-  exchange_rates_retrieve_every: 300_000,
+  exchange_rates_retrieve_every: :never,
   open_exchange_rates_app_id: "b1c5dcca1ebd4066ae1b8c7ef0205be6"
 
 config :ex_aws,
