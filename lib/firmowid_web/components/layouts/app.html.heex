@@ -1,23 +1,26 @@
-<nav class="px-4 sm:px-6 lg:px-8">
-  <div class="flex items-center justify-between border-b border-zinc-100 py-3 text-sm">
-    <div class="flex items-center gap-4">
-      <a href="/">
-        <img src={~p"/images/logo.svg"} width="24" />
-      </a>
-    </div>
-    <div class="flex items-center gap-4 font-semibold leading-6 text-zinc-900">
-      <.link navigate={~p"/documents"}>
-        Dokumenty
-      </.link>
-      <.link navigate={~p"/finances"}>
-        Finanse
-      </.link>
-      <.link navigate={~p"/settings"}>
-        Ustawienia
-      </.link>
+<nav class="px-4 sm:px-6 lg:px-8 bg-black text-white flex items-center uppercase 
+  justify-between py-6 text-sm sticky top-0">
+  <.link navigate={~p"/"} class="font-bold text-xl">
+    Firmowid
+  </.link>
+  <div class="flex items-center gap-16">
+    <.link navigate={~p"/documents"} class="hover:underline flex items-center gap-2">
+      <.icon name="hero-document-duplicate" class="w-5 h-5" /> Dokumenty
+    </.link>
+    <.link navigate={~p"/finances"} class="hover:underline flex items-center gap-2">
+      <.icon name="hero-presentation-chart-line" class="w-5 h-5" /> Budżet
+    </.link>
+    <div class="flex items-center gap-2 opacity-20">
+      <.icon name="hero-clock" class="w-5 h-5" /> Czasośledź
     </div>
   </div>
+  <div>
+    <.link navigate={~p"/settings"}>
+      <.icon name="hero-user" class="w-5 h-5" />
+    </.link>
+  </div>
 </nav>
+
 <main class="px-4 py-4 sm:px-6 lg:px-8">
   <div class="mx-auto">
     <.flash_group flash={@flash} />
