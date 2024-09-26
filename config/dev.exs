@@ -2,7 +2,10 @@ import Config
 
 # Configure your database
 config :firmowid, Firmowid.Repo,
-  database: Path.expand("../firmowid_dev.db", __DIR__),
+  database: System.get_env("DB_NAME", "firmowid"),
+  hostname: System.get_env("DB_HOST", "localhost"),
+  username: System.get_env("DB_USER", "postgres"),
+  password: System.get_env("DB_PASS", "postgres"),
   pool_size: 5,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true

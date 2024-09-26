@@ -37,7 +37,7 @@ defmodule Firmowid.Documents do
       &Map.put(
         &1,
         :amount,
-        Money.from_float!(
+        Money.new(
           &1.total_amount,
           &1.currency
         )
@@ -133,7 +133,7 @@ defmodule Firmowid.Documents do
         %{
           file_url: get_file_url(document.id),
           amount:
-            Money.from_float!(
+            Money.new(
               document.currency,
               document.total_amount
             )

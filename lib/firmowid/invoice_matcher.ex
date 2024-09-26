@@ -48,7 +48,7 @@ defmodule Firmowid.InvoiceMatcher do
       id: document.id,
       documents: [document],
       imported_transactions: document.imported_transactions,
-      amount: Money.from_float!(document.currency, document.total_amount),
+      amount: Money.new(document.currency, document.total_amount),
       amount_numeric: document.total_amount,
       issue_date: document.issue_date,
       sale_date: document.sale_date,
@@ -64,7 +64,7 @@ defmodule Firmowid.InvoiceMatcher do
       id: transaction.id,
       documents: transaction.document_transactions,
       imported_transactions: [transaction],
-      amount: Money.from_float!(transaction.transaction_currency, transaction.transaction_amount),
+      amount: Money.new(transaction.transaction_currency, transaction.transaction_amount),
       amount_numeric: transaction.transaction_amount,
       issue_date: transaction.booking_date,
       sale_date: transaction.value_date,
@@ -101,14 +101,15 @@ defmodule Firmowid.InvoiceMatcher do
         if exact_amount do
           {document.total_amount, document.total_amount}
         else
-          {document.total_amount * 1.1, document.total_amount * 0.9}
+          {Decimal.mult(document.total_amount, Decimal.from_float(1.1)),
+           Decimal.mult(document.total_amount, Decimal.from_float(0.9))}
         end
       else
         # deviation always allowed
         # when doing currency conversion
         {:ok, amount} =
           Money.to_currency(
-            Money.from_float!(
+            Money.new(
               document.currency,
               document.total_amount
             ),
@@ -116,12 +117,10 @@ defmodule Firmowid.InvoiceMatcher do
             Money.ExchangeRates.historic_rates(document.issue_date)
           )
 
-        amount = amount |> Money.to_decimal() |> Decimal.to_float()
+        amount = amount |> Money.to_decimal()
 
-        max_amount = amount * 0.9
-        min_amount = amount * 1.1
-
-        {min_amount, max_amount}
+        {Decimal.mult(amount, Decimal.from_float(1.1)),
+         Decimal.mult(amount, Decimal.from_float(0.9))}
       end
 
     unmatched_transactions =
@@ -133,7 +132,10 @@ defmodule Firmowid.InvoiceMatcher do
       |> Enum.filter(fn i ->
         Date.compare(i.booking_date, issue_date) != :lt and
           Date.compare(i.booking_date, payment_deadline) != :gt and
-          i.transaction_amount >= min_amount and i.transaction_amount <= max_amount
+          Decimal.compare(i.transaction_amount, min_amount) != :lt and
+          Decimal.compare(i.transaction_amount, max_amount) != :gt
+
+        # i.transaction_amount >= min_amount and i.transaction_amount <= max_amount
       end)
 
     # use Jaro-Winkler name similarity to check if seller matches

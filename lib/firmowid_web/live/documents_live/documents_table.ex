@@ -62,9 +62,10 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
               column.key == "sale_date" && "font-light",
               column.key == "due_date" && "font-light",
               column.key == "amount" && "rounded-r-md",
-              column.key == "amount" && invoice_matcher.amount_numeric >= 0 &&
+              column.key == "amount" &&
+                Decimal.gt?(invoice_matcher.amount_numeric, 0) &&
                 "text-blueText !bg-blueBg",
-              column.key == "amount" && invoice_matcher.amount_numeric < 0 &&
+              column.key == "amount" && Decimal.lt?(invoice_matcher.amount_numeric, 0) &&
                 "text-orangeText !bg-orangeBg"
             ]}
           >

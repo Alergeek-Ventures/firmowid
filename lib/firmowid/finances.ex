@@ -139,7 +139,7 @@ defmodule Firmowid.Finances do
     |> Enum.map(fn t ->
       Map.merge(t, %{
         amount:
-          Money.from_float!(
+          Money.new(
             t.transaction_currency,
             t.transaction_amount
           )
@@ -181,7 +181,7 @@ defmodule Firmowid.Finances do
 
     Map.merge(transaction, %{
       amount:
-        Money.from_float!(
+        Money.new(
           transaction.transaction_currency,
           transaction.transaction_amount
         )

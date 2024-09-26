@@ -18,7 +18,7 @@ defmodule FirmowidWeb.DocumentsLive.Show do
       |> Enum.map(fn t ->
         Map.merge(t, %{
           amount:
-            Money.from_float!(
+            Money.new(
               t.transaction_currency,
               t.transaction_amount
             )

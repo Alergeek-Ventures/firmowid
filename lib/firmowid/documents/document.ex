@@ -9,7 +9,7 @@ defmodule Firmowid.Documents.Document do
     field :issue_date, :date
     field :due_date, :date
 
-    field :total_amount, :float
+    field :total_amount, :decimal
     field :currency, :string
 
     field :description, :string

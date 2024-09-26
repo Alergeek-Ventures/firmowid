@@ -12,7 +12,7 @@ defmodule Firmowid.Finances.ImportedTransaction do
     field :creditor_account, :string
     field :debtor_name, :string
     field :debtor_account, :string
-    field :transaction_amount, :float
+    field :transaction_amount, :decimal
     field :transaction_currency, :string
     field :booking_date, :date
     field :value_date, :date
