@@ -1,5 +1,13 @@
 <main class="prose">
   <h1>Ustawienia</h1>
 
-  <.link navigate={~p"/settings/bank-sync"}>Synchronizacja z bankiem</.link>
+  <ul>
+    <li><.link navigate={~p"/settings/bank-sync"}>Synchronizacja z
+        bankiem</.link></li>
+    <li>
+      <.link href={~p"/users/log_out"} method="delete">
+        Wyloguj
+      </.link>
+    </li>
+  </ul>
 </main>

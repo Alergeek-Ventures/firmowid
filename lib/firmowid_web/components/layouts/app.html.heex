@@ -1,24 +1,29 @@
 <nav class="px-4 sm:px-6 lg:px-8 bg-black text-white flex items-center uppercase 
-  justify-between py-6 text-sm sticky top-0">
+  justify-between py-6 text-sm sticky top-0 z-50">
   <.link navigate={~p"/"} class="font-bold text-xl">
     Firmowid
   </.link>
-  <div class="flex items-center gap-16">
-    <.link navigate={~p"/documents"} class="hover:underline flex items-center gap-2">
-      <.icon name="hero-document-duplicate" class="w-5 h-5" /> Dokumenty
-    </.link>
-    <.link navigate={~p"/finances"} class="hover:underline flex items-center gap-2">
-      <.icon name="hero-presentation-chart-line" class="w-5 h-5" /> Budżet
-    </.link>
-    <div class="flex items-center gap-2 opacity-20">
-      <.icon name="hero-clock" class="w-5 h-5" /> Czasośledź
+  <%= if @current_user do %>
+    <div class="flex items-center gap-16">
+      <.link navigate={~p"/documents"} class="hover:underline flex items-center gap-2">
+        <.icon name="hero-document-duplicate" class="w-5 h-5" /> Dokumenty
+      </.link>
+      <.link navigate={~p"/finances"} class="hover:underline flex items-center gap-2">
+        <.icon name="hero-presentation-chart-line" class="w-5 h-5" /> Budżet
+      </.link>
+      <div class="flex items-center gap-2 opacity-20">
+        <.icon name="hero-clock" class="w-5 h-5" /> Czasośledź
+      </div>
     </div>
-  </div>
-  <div>
-    <.link navigate={~p"/settings"}>
-      <.icon name="hero-user" class="w-5 h-5" />
-    </.link>
-  </div>
+    <div>
+      <.link navigate={~p"/settings"}>
+        <.icon name="hero-user" class="w-5 h-5 mr-1" />
+        <span class="lowercase text-xs">
+          <%= @current_user.email %>
+        </span>
+      </.link>
+    </div>
+  <% end %>
 </nav>
 
 <main class="px-4 py-4 sm:px-6 lg:px-8">
