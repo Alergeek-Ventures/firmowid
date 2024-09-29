@@ -7,6 +7,12 @@ import Config
 # before starting your production server.
 config :firmowid, FirmowidWeb.Endpoint, cache_static_manifest: "priv/static/cache_manifest.json"
 
+config :firmowid, uploads_bucket: "firmowid-uploads-prod"
+
+config :ex_aws,
+  access_key_id: "REMOVED_TIGRIS_ACCESS_KEY",
+  secret_access_key: "REMOVED_TIGRIS_SECRET_KEY"
+
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: Firmowid.Finch
 
