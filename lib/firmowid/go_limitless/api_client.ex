@@ -68,7 +68,7 @@ defmodule Firmowid.GoLimitless.ApiClient do
     institutions_response.body
   end
 
-  def sync_transaction_for_account(iban, requisition_id) do
+  def sync_transaction_for_account(iban, requisition_id, organization_id) do
     access_token = get_access_token()
 
     accounts_list =
@@ -88,7 +88,7 @@ defmodule Firmowid.GoLimitless.ApiClient do
         account_data.body["iban"] == iban
       end)
 
-    all_accounts = Finances.list_bank_accounts()
+    all_accounts = Finances.list_bank_accounts(organization_id)
 
     bank_account =
       all_accounts

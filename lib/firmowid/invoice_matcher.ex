@@ -24,11 +24,11 @@ defmodule Firmowid.InvoiceMatcher do
   alias Firmowid.Documents
   alias Firmowid.Finances
 
-  def get_invoice_matchers(from, to) do
-    documents = Documents.list_documents_with_metadata(from, to)
+  def get_invoice_matchers(organization_id, from, to) do
+    documents = Documents.list_documents_with_metadata(organization_id, from, to)
 
     imported_transactions =
-      Finances.list_imported_transactions(from, to, only_costs: true)
+      Finances.list_imported_transactions(organization_id, from, to, only_costs: true)
       # already matched will have a transaction inside a `document.imported_transactions`
       # prevent duplication here
       |> Enum.filter(fn t ->
@@ -73,7 +73,7 @@ defmodule Firmowid.InvoiceMatcher do
     }
   end
 
-  def get_potential_transactions_for_document(document, opts \\ []) do
+  def get_potential_transactions_for_document(document, organization_id, opts \\ []) do
     opts =
       Keyword.validate!(opts,
         similarity_threshold: 0.1,
@@ -124,7 +124,7 @@ defmodule Firmowid.InvoiceMatcher do
       end
 
     unmatched_transactions =
-      Finances.list_unmatched_imported_transactions()
+      Finances.list_unmatched_imported_transactions(organization_id)
 
     # transactions with exact amount (or in the range for non-PLN) that are between issue_date and payment_deadline
     candidates =
@@ -157,7 +157,7 @@ defmodule Firmowid.InvoiceMatcher do
     candidates
   end
 
-  def match_with_transaction_combo(document) do
+  def match_with_transaction_combo(document, organization_id) do
     # when there are multiple transactions on the same invoice
     # typically - services / goods that you get across the month
 
@@ -166,7 +166,7 @@ defmodule Firmowid.InvoiceMatcher do
     issue_date = document.issue_date |> Date.add(-35)
     payment_deadline = document.issue_date
 
-    Finances.list_unmatched_imported_transactions()
+    Finances.list_unmatched_imported_transactions(organization_id)
     |> Enum.filter(fn i ->
       Date.compare(i.booking_date, issue_date) != :lt and
         Date.compare(i.booking_date, payment_deadline) != :gt
@@ -191,9 +191,9 @@ defmodule Firmowid.InvoiceMatcher do
     end)
   end
 
-  def match_all_good_candidates_for_unconnected_documents() do
+  def match_all_good_candidates_for_unconnected_documents(organization_id) do
     for similarity_threshold <- [0.8, 0.7, 0.6, 0] do
-      documents = Documents.list_unmatched_documents()
+      documents = Documents.list_unmatched_documents(organization_id)
 
       if similarity_threshold == 0 do
         documents
@@ -215,7 +215,8 @@ defmodule Firmowid.InvoiceMatcher do
 
             Documents.create_documents_imported_transactions_connection(
               Integer.to_string(document.id),
-              Integer.to_string(match.id)
+              Integer.to_string(match.id),
+              organization_id
             )
           end
         end)
@@ -223,7 +224,9 @@ defmodule Firmowid.InvoiceMatcher do
         documents
         |> Enum.map(fn document ->
           {document,
-           get_potential_transactions_for_document(document,
+           get_potential_transactions_for_document(
+             document,
+             organization_id,
              similarity_threshold: similarity_threshold,
              max_results: 5
            )}
@@ -232,7 +235,8 @@ defmodule Firmowid.InvoiceMatcher do
           {document, [golden_candidate]} ->
             Documents.create_documents_imported_transactions_connection(
               Integer.to_string(document.id),
-              Integer.to_string(golden_candidate.id)
+              Integer.to_string(golden_candidate.id),
+              organization_id
             )
 
           _ ->
@@ -241,18 +245,19 @@ defmodule Firmowid.InvoiceMatcher do
       end
     end
 
-    documents = Documents.list_unmatched_documents()
+    documents = Documents.list_unmatched_documents(organization_id)
 
     documents
     |> Enum.each(fn document ->
-      combo_matches = match_with_transaction_combo(document)
+      combo_matches = match_with_transaction_combo(document, organization_id)
 
       case combo_matches do
         [{_grouped_transaction, transactions}] ->
           Enum.each(transactions, fn transaction ->
             Documents.create_documents_imported_transactions_connection(
               Integer.to_string(document.id),
-              Integer.to_string(transaction.id)
+              Integer.to_string(transaction.id),
+              organization_id
             )
           end)
 
@@ -297,7 +302,7 @@ defmodule Firmowid.InvoiceMatcher do
             %{
               role: "user",
               content: "
-              This is the metadata of a document I want to match: 
+              This is the metadata of a document I want to match:
               {
                 invoice_identifier: #{document.invoice_identifier},
                 description: #{document.description},

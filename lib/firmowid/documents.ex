@@ -1,6 +1,4 @@
 defmodule Firmowid.Documents do
-  @pubsub_topic "documents"
-
   import Ecto.Query, warn: false
 
   alias ExAws.S3
@@ -11,15 +9,11 @@ defmodule Firmowid.Documents do
   alias Firmowid.Documents.Reducto
   alias Firmowid.Documents.DocumentsTransactions
 
-  def subscribe() do
-    Phoenix.PubSub.subscribe(Firmowid.PubSub, @pubsub_topic)
-  end
-
-  def broadcast_document_update(document) do
-    Phoenix.PubSub.broadcast(Firmowid.PubSub, @pubsub_topic, {:document_updated, document})
-  end
-
-  def list_documents_with_metadata(from \\ Date.utc_today(), to \\ Date.utc_today()) do
+  def list_documents_with_metadata(
+        organization_id,
+        from \\ Date.utc_today(),
+        to \\ Date.utc_today()
+      ) do
     Document
     # the ones with total_amount not being null
     |> where([d], not is_nil(d.total_amount))
@@ -30,9 +24,9 @@ defmodule Firmowid.Documents do
         (d.sale_date >= ^from and d.sale_date <= ^to)
     )
     |> order_by(desc: :issue_date)
-    |> Repo.all()
-    |> Repo.preload(:imported_transactions)
-    |> Enum.map(&Map.put(&1, :file_url, get_file_url(&1.id)))
+    |> Repo.all(organization_id: organization_id)
+    |> Repo.preload(:imported_transactions, organization_id: organization_id)
+    |> Enum.map(&Map.put(&1, :file_url, get_file_url(&1.id, organization_id)))
     |> Enum.map(
       &Map.put(
         &1,
@@ -45,14 +39,14 @@ defmodule Firmowid.Documents do
     )
   end
 
-  def list_documents_without_metadata() do
+  def list_documents_without_metadata(organization_id) do
     Document
     |> where([d], is_nil(d.total_amount))
-    |> Repo.all()
-    |> Enum.map(&Map.put(&1, :file_url, get_file_url(&1.id)))
+    |> Repo.all(organization_id: organization_id)
+    |> Enum.map(&Map.put(&1, :file_url, get_file_url(&1.id, organization_id)))
   end
 
-  def list_unmatched_documents() do
+  def list_unmatched_documents(organization_id) do
     from(d in Document,
       left_join: i in assoc(d, :imported_transactions),
       where: not is_nil(d.total_amount),
@@ -60,78 +54,97 @@ defmodule Firmowid.Documents do
       having: count(i.id) == 0,
       select: d
     )
-    |> Repo.all()
-    |> Enum.map(&Map.put(&1, :file_url, get_file_url(&1.id)))
+    |> Repo.all(organization_id: organization_id)
+    |> Enum.map(&Map.put(&1, :file_url, get_file_url(&1.id, organization_id)))
   end
 
-  def get_file_url(document_id) do
+  def get_file_url(document_id, organization_id) do
     document =
-      Repo.get!(Document, document_id)
+      Repo.get!(Document, document_id, organization_id: organization_id)
 
     {:ok, url} =
       :s3
       |> ExAws.Config.new([])
-      |> S3.presigned_url(:get, "firmowid-documents", document.file_name, expires_in: 200)
+      |> S3.presigned_url(
+        :get,
+        Application.get_env(:firmowid, :uploads_bucket),
+        document.file_name,
+        expires_in: 200
+      )
 
     url
   end
 
-  def create_document({upload_path, content_type}) do
-    {:ok, document} =
-      %Document{}
-      |> Repo.insert()
+  def create_document({upload_path, content_type}, organization_id) do
+    case Repo.insert(%Document{organization_id: organization_id}) do
+      {:ok, document} ->
+        possible_extensions = MIME.extensions(content_type)
+        extension = Enum.at(possible_extensions, 0, "pdf")
+        file_name = "#{organization_id}/#{Path.basename("#{document.id}.#{extension}")}"
+        IO.inspect(file_name, label: "file_name during creation")
 
-    possible_extensions = MIME.extensions(content_type)
-    extension = Enum.at(possible_extensions, 0, "pdf")
-    file_name = Path.basename("#{document.id}.#{extension}")
+        with _ <-
+               dbg(
+                 upload_path
+                 |> S3.Upload.stream_file()
+                 |> S3.upload(
+                   Application.get_env(:firmowid, :uploads_bucket),
+                   file_name
+                 )
+                 |> ExAws.request!()
+               ),
+             {:ok, _} <-
+               document
+               |> Document.changeset(%{file_name: file_name})
+               |> Repo.update() do
+          {:ok, document}
+        else
+          _ ->
+            Repo.delete!(document)
+            {:error, :operation_failed}
+        end
 
-    upload_path
-    |> S3.Upload.stream_file()
-    |> S3.upload("firmowid-documents", file_name)
-    |> ExAws.request!()
-
-    document
-    |> Document.changeset(%{file_name: file_name})
-    |> Repo.update()
-
-    # TODO: add proper error handling (e.g. removal of document in case of upload
-    # file)
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
-  def start_extraction_job(document_id) do
-    Reducto.start_extraction_job(document_id)
+  def start_extraction_job(document_id, organization_id) do
+    Reducto.start_extraction_job(document_id, organization_id)
   end
 
-  def update_document(document_id, attrs) do
+  def update_document(organization_id, document_id, attrs) do
     result =
-      Repo.get!(Document, document_id)
+      Repo.get!(Document, document_id, organization_id: organization_id)
       |> Document.changeset(attrs)
       |> Repo.update!()
-
-    broadcast_document_update(result)
 
     result
   end
 
-  def delete_document(id) do
-    changeset = Repo.get!(Document, id)
+  def delete_document(organization_id, id) do
+    changeset = Repo.get!(Document, id, organization_id: organization_id)
 
-    S3.delete_object("firmowid-documents", changeset.file_name, version_id: nil)
+    S3.delete_object(
+      Application.get_env(:firmowid, :uploads_bucket),
+      changeset.file_name,
+      version_id: nil
+    )
     |> ExAws.request!()
 
-    Repo.delete!(changeset)
+    Repo.delete!(changeset, organization_id: organization_id)
   end
 
-  def get_document(id) do
+  def get_document(organization_id, id) do
     document =
-      Repo.get!(Document, id)
-      |> Repo.preload(:imported_transactions)
+      Repo.get!(Document, id, organization_id: organization_id)
+      |> Repo.preload(:imported_transactions, organization_id: organization_id)
 
     document =
       Map.merge(
         document,
         %{
-          file_url: get_file_url(document.id),
+          file_url: get_file_url(document.id, organization_id),
           amount:
             Money.new(
               document.currency,
@@ -143,19 +156,29 @@ defmodule Firmowid.Documents do
     document
   end
 
-  def create_documents_imported_transactions_connection(document_id, imported_transaction_id) do
+  def create_documents_imported_transactions_connection(
+        document_id,
+        imported_transaction_id,
+        organization_id
+      ) do
     %DocumentsTransactions{}
     |> DocumentsTransactions.changeset(%{
       document_id: document_id,
-      imported_transaction_id: imported_transaction_id
+      imported_transaction_id: imported_transaction_id,
+      organization_id: organization_id
     })
     |> Repo.insert!()
   end
 
-  def delete_documents_imported_transactions_connection(document_id, imported_transaction_id) do
-    Repo.get_by!(DocumentsTransactions,
-      document_id: document_id,
-      imported_transaction_id: imported_transaction_id
+  def delete_documents_imported_transactions_connection(
+        organization_id,
+        document_id,
+        imported_transaction_id
+      ) do
+    Repo.get_by!(
+      DocumentsTransactions,
+      [document_id: document_id, imported_transaction_id: imported_transaction_id],
+      organization_id: organization_id
     )
     |> Repo.delete!()
   end

@@ -5,6 +5,13 @@ defmodule Firmowid.Repo.Migrations.CreatePostgresSchema do
     create table(:bank_accounts) do
       add :iban, :string
 
+      add :organization_id,
+          references(:organizations,
+            on_delete: :delete_all,
+            type: :uuid
+          ),
+          null: false
+
       timestamps()
     end
 
@@ -25,8 +32,17 @@ defmodule Firmowid.Repo.Migrations.CreatePostgresSchema do
 
       add :bank_account_id, references(:bank_accounts, on_delete: :delete_all)
 
+      add :organization_id,
+          references(:organizations,
+            on_delete: :delete_all,
+            type: :uuid
+          ),
+          null: false
+
       timestamps()
     end
+
+    create unique_index(:imported_transactions, [:transaction_id, :organization_id])
 
     create table(:documents) do
       add :seller, :string
@@ -45,6 +61,13 @@ defmodule Firmowid.Repo.Migrations.CreatePostgresSchema do
 
       add :skip_invoicing, :boolean, default: false
 
+      add :organization_id,
+          references(:organizations,
+            on_delete: :delete_all,
+            type: :uuid
+          ),
+          null: false
+
       timestamps()
     end
 
@@ -60,6 +83,13 @@ defmodule Firmowid.Repo.Migrations.CreatePostgresSchema do
 
       add :requisition_id, :string
 
+      add :organization_id,
+          references(:organizations,
+            on_delete: :delete_all,
+            type: :uuid
+          ),
+          null: false
+
       timestamps()
     end
 
@@ -68,6 +98,13 @@ defmodule Firmowid.Repo.Migrations.CreatePostgresSchema do
 
       add :imported_transaction_id, references(:imported_transactions, on_delete: :delete_all),
         null: false
+
+      add :organization_id,
+          references(:organizations,
+            on_delete: :delete_all,
+            type: :uuid
+          ),
+          null: false
 
       timestamps(type: :utc_datetime)
     end

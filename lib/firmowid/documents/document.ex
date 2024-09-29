@@ -27,6 +27,8 @@ defmodule Firmowid.Documents.Document do
                    imported_transaction_id: :id
                  ]
 
+    belongs_to :organization, Firmowid.Accounts.Organization, type: :binary_id
+
     timestamps(type: :utc_datetime)
   end
 

@@ -17,12 +17,6 @@ defmodule FirmowidWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/", FirmowidWeb do
-    pipe_through :browser
-
-    get "/", ContentController, :home
-  end
-
   # Other scopes may use custom stacks.
   # scope "/api", FirmowidWeb do
   #   pipe_through :api
@@ -69,12 +63,7 @@ defmodule FirmowidWeb.Router do
       live "/users/settings", UserSettingsLive, :edit
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
 
-      get "/finances", ContentController, :finances
-      live "/finances/budget", BudgetLive.Index, :index
-      live "/finances/imported-transactions", ImportedTransactionLive.Index, :index
-      live "/finances/imported-transactions/:id", ImportedTransactionLive.Show, :index
-
-      live "/documents", DocumentsLive.Index, :index
+      live "/", DocumentsLive.Index, :index
       live "/documents/:id", DocumentsLive.Show, :index
 
       get "/settings", ContentController, :settings

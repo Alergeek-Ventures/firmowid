@@ -7,11 +7,14 @@ defmodule FirmowidWeb.BankSyncLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
+    user = socket.assigns.current_user
+    organization_id = user.organization_id
+
     {:ok,
      stream(
        socket,
        :requisitions,
-       GoLimitless.list_requisitions()
+       GoLimitless.list_requisitions(organization_id)
      )}
   end
 
@@ -38,11 +41,15 @@ defmodule FirmowidWeb.BankSyncLive.Index do
 
   @impl true
   def handle_event("sync", %{"id" => id}, socket) do
+    user = socket.assigns.current_user
+    organization_id = user.organization_id
+
     requisition = GoLimitless.get_requisition!(id)
 
     GoLimitless.ApiClient.sync_transaction_for_account(
       "PL33105014451000009081121700",
-      requisition.requisition_id
+      requisition.requisition_id,
+      organization_id
     )
 
     {:noreply, socket}
@@ -50,7 +57,9 @@ defmodule FirmowidWeb.BankSyncLive.Index do
 
   @impl true
   def handle_event("auto-match-documents", _, socket) do
-    InvoiceMatcher.match_all_good_candidates_for_unconnected_documents()
+    user = socket.assigns.current_user
+    organization_id = user.organization_id
+    InvoiceMatcher.match_all_good_candidates_for_unconnected_documents(organization_id)
 
     {:noreply, socket}
   end

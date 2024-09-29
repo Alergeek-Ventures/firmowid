@@ -32,6 +32,8 @@ defmodule Firmowid.Finances.ImportedTransaction do
                    document_id: :id
                  ]
 
+    belongs_to :organization, Firmowid.Accounts.Organization, type: :binary_id
+
     timestamps(type: :utc_datetime)
   end
 
@@ -51,7 +53,9 @@ defmodule Firmowid.Finances.ImportedTransaction do
       :value_date,
       :remittance_information_unstructured,
       :transaction_id,
-      :skip_invoicing
+      :skip_invoicing,
+      :bank_account_id,
+      :organization_id
     ])
     |> validate_required([
       :creditor_name,
@@ -60,7 +64,9 @@ defmodule Firmowid.Finances.ImportedTransaction do
       :debtor_account,
       :transaction_amount,
       :transaction_currency,
-      :booking_date
+      :booking_date,
+      :bank_account_id,
+      :organization_id
     ])
   end
 end

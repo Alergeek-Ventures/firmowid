@@ -5,12 +5,12 @@
   </.link>
   <%= if @current_user do %>
     <div class="flex items-center gap-16">
-      <.link navigate={~p"/documents"} class="hover:underline flex items-center gap-2">
+      <.link navigate={~p"/"} class="hover:underline flex items-center gap-2">
         <.icon name="hero-document-duplicate" class="w-5 h-5" /> Dokumenty
       </.link>
-      <.link navigate={~p"/finances"} class="hover:underline flex items-center gap-2">
+      <div class="hover:underline flex items-center gap-2 opacity-20">
         <.icon name="hero-presentation-chart-line" class="w-5 h-5" /> Budżet
-      </.link>
+      </div>
       <div class="flex items-center gap-2 opacity-20">
         <.icon name="hero-clock" class="w-5 h-5" /> Czasośledź
       </div>

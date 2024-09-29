@@ -6,10 +6,17 @@ defmodule FirmowidWeb.DocumentsLive.Show do
 
   @impl true
   def mount(params, _session, socket) do
-    document = Documents.get_document(params["id"])
+    user = socket.assigns.current_user
+    organization_id = user.organization_id
+
+    document_id = params["id"]
+
+    document = Documents.get_document(organization_id, document_id)
 
     potential_transactions =
-      InvoiceMatcher.get_potential_transactions_for_document(document,
+      InvoiceMatcher.get_potential_transactions_for_document(
+        document,
+        organization_id,
         similarity_threshold: 0.0,
         days_before: 15,
         days_after: 10,
@@ -58,12 +65,16 @@ defmodule FirmowidWeb.DocumentsLive.Show do
         },
         socket
       ) do
+    user = socket.assigns.current_user
+    organization_id = user.organization_id
+
     Documents.create_documents_imported_transactions_connection(
       document_id,
-      imported_transaction_id
+      imported_transaction_id,
+      organization_id
     )
 
-    document = Documents.get_document(document_id)
+    document = Documents.get_document(organization_id, document_id)
 
     socket =
       socket
@@ -78,12 +89,16 @@ defmodule FirmowidWeb.DocumentsLive.Show do
         %{"document-id" => document_id, "imported-transaction-id" => imported_transaction_id},
         socket
       ) do
+    user = socket.assigns.current_user
+    organization_id = user.organization_id
+
     Documents.delete_documents_imported_transactions_connection(
+      organization_id,
       document_id,
       imported_transaction_id
     )
 
-    document = Documents.get_document(document_id)
+    document = Documents.get_document(organization_id, document_id)
 
     socket =
       socket
@@ -94,13 +109,24 @@ defmodule FirmowidWeb.DocumentsLive.Show do
 
   @impl true
   def handle_event("toggle-skip-invoicing", _, socket) do
+    user = socket.assigns.current_user
+    organization_id = user.organization_id
+
     skip_invoicing = socket.assigns.document.skip_invoicing
 
-    Documents.update_document(socket.assigns.document.id, %{
-      skip_invoicing: !skip_invoicing
-    })
+    Documents.update_document(
+      organization_id,
+      socket.assigns.document.id,
+      %{
+        skip_invoicing: !skip_invoicing
+      }
+    )
 
-    document = Documents.get_document(socket.assigns.document.id)
+    document =
+      Documents.get_document(
+        organization_id,
+        socket.assigns.document.id
+      )
 
     socket =
       socket
@@ -115,12 +141,18 @@ defmodule FirmowidWeb.DocumentsLive.Show do
         %{"document-id" => document_id},
         socket
       ) do
-    Documents.delete_document(document_id)
+    user = socket.assigns.current_user
+    organization_id = user.organization_id
+
+    Documents.delete_document(
+      organization_id,
+      document_id
+    )
 
     socket =
       socket
       |> put_flash(:info, "Dokument został usunięty.")
-      |> push_navigate(to: ~p"/documents")
+      |> push_navigate(to: ~p"/")
 
     {:noreply, socket}
   end

@@ -19,8 +19,8 @@ defmodule Firmowid.GoLimitless do
       [%Requisition{}, ...]
 
   """
-  def list_requisitions do
-    Repo.all(Requisition)
+  def list_requisitions(organization_id) do
+    Repo.all(Requisition, organization_id: organization_id)
     |> Enum.map(
       &Map.merge(
         &1,

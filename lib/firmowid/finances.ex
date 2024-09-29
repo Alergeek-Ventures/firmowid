@@ -17,8 +17,8 @@ defmodule Firmowid.Finances do
       [%BankAccount{}, ...]
 
   """
-  def list_bank_accounts do
-    Repo.all(BankAccount)
+  def list_bank_accounts(organization_id) do
+    Repo.all(BankAccount, organization_id: organization_id)
   end
 
   @doc """
@@ -35,7 +35,8 @@ defmodule Firmowid.Finances do
       ** (Ecto.NoResultsError)
 
   """
-  def get_bank_account!(id), do: Repo.get!(BankAccount, id)
+  def get_bank_account!(id, organization_id),
+    do: Repo.get!(BankAccount, id, organization_id: organization_id)
 
   @doc """
   Creates a bank_account.
@@ -113,7 +114,7 @@ defmodule Firmowid.Finances do
       [%ImportedTransaction{}, ...]
 
   """
-  def list_imported_transactions(from \\ nil, to \\ nil, opts \\ []) do
+  def list_imported_transactions(organization_id, from \\ nil, to \\ nil, opts \\ []) do
     if Keyword.get(opts, :only_costs) == true do
       Repo.all(
         if from == nil and to == nil do
@@ -123,7 +124,8 @@ defmodule Firmowid.Finances do
             where:
               t.value_date >= ^from and t.value_date <= ^to and
                 t.transaction_amount < 0.0
-        end
+        end,
+        organization_id: organization_id
       )
     else
       Repo.all(
@@ -132,10 +134,11 @@ defmodule Firmowid.Finances do
         else
           from t in ImportedTransaction,
             where: t.value_date >= ^from and t.value_date <= ^to
-        end
+        end,
+        organization_id: organization_id
       )
     end
-    |> Repo.preload(:document_transactions)
+    |> Repo.preload(:document_transactions, organization_id: organization_id)
     |> Enum.map(fn t ->
       Map.merge(t, %{
         amount:
@@ -147,7 +150,7 @@ defmodule Firmowid.Finances do
     end)
   end
 
-  def list_unmatched_imported_transactions do
+  def list_unmatched_imported_transactions(organization_id) do
     # all transactions that have skip_invoicing set to false (so we match for
     # them)
     # and don't have any document_transactions (so not matched yet)
@@ -156,7 +159,7 @@ defmodule Firmowid.Finances do
       where: not t.skip_invoicing,
       where: is_nil(dt.id)
     )
-    |> Repo.all()
+    |> Repo.all(organization_id: organization_id)
   end
 
   @doc """
@@ -173,9 +176,9 @@ defmodule Firmowid.Finances do
       ** (Ecto.NoResultsError)
 
   """
-  def get_imported_transaction!(transaction_id) do
+  def get_imported_transaction!(organization_id, transaction_id) do
     transaction =
-      Repo.get!(ImportedTransaction, transaction_id)
+      Repo.get!(ImportedTransaction, transaction_id, organization_id: organization_id)
       |> Repo.preload(:bank_account)
       |> Repo.preload(:document_transactions)
 
@@ -205,7 +208,7 @@ defmodule Firmowid.Finances do
     |> ImportedTransaction.changeset(attrs)
     |> Repo.insert!(
       on_conflict: {:replace_all_except, [:id, :inserted_at]},
-      conflict_target: [:transaction_id]
+      conflict_target: [:transaction_id, :organization_id]
     )
   end
 
@@ -221,9 +224,9 @@ defmodule Firmowid.Finances do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_imported_transaction(imported_transaction_id, attrs) do
+  def update_imported_transaction(organization_id, imported_transaction_id, attrs) do
     changeset =
-      get_imported_transaction!(imported_transaction_id)
+      get_imported_transaction!(organization_id, imported_transaction_id)
       |> ImportedTransaction.changeset(attrs)
 
     Repo.update!(changeset)

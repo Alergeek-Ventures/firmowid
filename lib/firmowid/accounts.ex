@@ -6,7 +6,7 @@ defmodule Firmowid.Accounts do
   import Ecto.Query, warn: false
   alias Firmowid.Repo
 
-  alias Firmowid.Accounts.{User, UserToken, UserNotifier}
+  alias Firmowid.Accounts.{User, UserToken, UserNotifier, Organization}
 
   ## Database getters
 
@@ -23,7 +23,7 @@ defmodule Firmowid.Accounts do
 
   """
   def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: email)
+    Repo.get_by(User, [email: email], skip_organization_id: true)
   end
 
   @doc """
@@ -40,7 +40,7 @@ defmodule Firmowid.Accounts do
   """
   def get_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
-    user = Repo.get_by(User, email: email)
+    user = Repo.get_by(User, [email: email], skip_organization_id: true)
     if User.valid_password?(user, password), do: user
   end
 
@@ -58,7 +58,7 @@ defmodule Firmowid.Accounts do
       ** (Ecto.NoResultsError)
 
   """
-  def get_user!(id), do: Repo.get!(User, id)
+  def get_user!(id), do: Repo.get!(User, id, skip_organization_id: true)
 
   ## User registration
 
@@ -231,7 +231,7 @@ defmodule Firmowid.Accounts do
   """
   def get_user_by_session_token(token) do
     {:ok, query} = UserToken.verify_session_token_query(token)
-    Repo.one(query)
+    Repo.one(query, skip_organization_id: true)
   end
 
   @doc """
@@ -348,6 +348,64 @@ defmodule Firmowid.Accounts do
     |> case do
       {:ok, %{user: user}} -> {:ok, user}
       {:error, :user, changeset, _} -> {:error, changeset}
+    end
+  end
+
+  @doc """
+  Creates an organization with the given attributes and sets the owner.
+
+  ## Examples
+
+      iex> create_organization(%{field: value}, owner)
+      {:ok, %Organization{}}
+
+      iex> create_organization(%{field: bad_value}, owner)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_organization(attrs \\ %{}, owner) do
+    %Organization{}
+    |> Organization.changeset(attrs)
+    |> Ecto.Changeset.put_assoc(:owner, owner)
+    |> Repo.insert()
+    |> case do
+      {:ok, organization} ->
+        # Update the owner's organization
+        owner
+        |> User.organization_changeset(%{organization_id: organization.id})
+        |> Repo.update()
+
+        {:ok, organization}
+
+      error ->
+        error
+    end
+  end
+
+  @doc """
+  Deletes an organization.
+
+  ## Examples
+
+      iex> delete_organization(organization)
+      {:ok, %Organization{}}
+
+      iex> delete_organization(organization)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_organization(%Organization{} = organization) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.update_all(
+      :update_users,
+      from(u in User, where: u.organization_id == ^organization.id),
+      set: [organization_id: nil]
+    )
+    |> Ecto.Multi.delete(:delete_org, organization)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{delete_org: org}} -> {:ok, org}
+      {:error, _operation, value, _changes} -> {:error, value}
     end
   end
 end

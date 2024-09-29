@@ -11,7 +11,8 @@ config :firmowid,
   ecto_repos: [Firmowid.Repo],
   generators: [timestamp_type: :utc_datetime],
   go_limitless_secret_id: System.get_env("GO_LIMITLESS_SECRET_ID"),
-  go_limitless_secret_key: System.get_env("GO_LIMITLESS_SECRET_KEY")
+  go_limitless_secret_key: System.get_env("GO_LIMITLESS_SECRET_KEY"),
+  uploads_bucket: "firmowid-uploads-dev"
 
 # Configures the endpoint
 config :firmowid, FirmowidWeb.Endpoint,
@@ -43,7 +44,7 @@ config :ex_money,
 
 config :ex_aws,
   access_key_id: "REMOVED_TIGRIS_ACCESS_KEY",
-  secret_access_key: "REMOVED_TIGRIS_SECRET_KEY+i"
+  secret_access_key: "REMOVED_TIGRIS_SECRET_KEY"
 
 config :ex_aws, :s3,
   scheme: "https://",

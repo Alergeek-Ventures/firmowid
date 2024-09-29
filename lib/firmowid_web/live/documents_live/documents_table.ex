@@ -27,6 +27,7 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
     end
 
     ~H"""
+    <%= if length(invoice_matchers) > 0 do %>
     <table class="table-fixed border-separate border-spacing-y-3">
       <col
         :for={column <- columns}
@@ -135,7 +136,10 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
           </td>
         </tr>
       </tbody>
-    </table>
+      </table>
+    <% else %>
+      <div class="text-center text-darkGrey">Brak dokumentów i transakcji - nie mamy niczego do wyświetlenia...</div>
+    <% end %>
     """
   end
 

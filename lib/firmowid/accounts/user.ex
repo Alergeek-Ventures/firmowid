@@ -2,12 +2,14 @@ defmodule Firmowid.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @primary_key {:id, UUIDv7, autogenerate: true}
   schema "users" do
     field :email, :string
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
+    belongs_to :organization, Firmowid.Accounts.Organization, type: :binary_id
 
     timestamps(type: :utc_datetime)
   end
@@ -79,7 +81,7 @@ defmodule Firmowid.Accounts.User do
   defp maybe_validate_unique_email(changeset, opts) do
     if Keyword.get(opts, :validate_email, true) do
       changeset
-      |> unsafe_validate_unique(:email, Firmowid.Repo)
+      |> unsafe_validate_unique(:email, Firmowid.Repo, repo_opts: [skip_organization_id: true])
       |> unique_constraint(:email)
     else
       changeset
@@ -118,6 +120,12 @@ defmodule Firmowid.Accounts.User do
     |> cast(attrs, [:password])
     |> validate_confirmation(:password, message: "does not match password")
     |> validate_password(opts)
+  end
+
+  def organization_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:organization_id])
+    |> validate_required([:organization_id])
   end
 
   @doc """

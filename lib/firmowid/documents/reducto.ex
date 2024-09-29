@@ -7,8 +7,8 @@ defmodule Firmowid.Documents.Reducto do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
-  def start_extraction_job(document_id) do
-    GenServer.cast(__MODULE__, {:extract_invoice_info, document_id})
+  def start_extraction_job(document_id, organization_id) do
+    GenServer.cast(__MODULE__, {:extract_invoice_info, document_id, organization_id})
   end
 
   @impl true
@@ -17,14 +17,14 @@ defmodule Firmowid.Documents.Reducto do
   end
 
   @impl true
-  def handle_cast({:extract_invoice_info, document_id}, state) do
-    extract_invoice_info(document_id)
+  def handle_cast({:extract_invoice_info, document_id, organization_id}, state) do
+    extract_invoice_info(document_id, organization_id)
 
     {:noreply, state}
   end
 
-  defp extract_invoice_info(document_id) do
-    file_url = Documents.get_file_url(document_id)
+  defp extract_invoice_info(document_id, organization_id) do
+    file_url = Documents.get_file_url(document_id, organization_id)
 
     invoice_extraction_schema = %{
       type: "object",
@@ -110,6 +110,6 @@ defmodule Firmowid.Documents.Reducto do
     extracted_metadata =
       Map.put(extracted_metadata, "total_amount", -extracted_metadata["total_amount"])
 
-    Documents.update_document(document_id, extracted_metadata)
+    Documents.update_document(organization_id, document_id, extracted_metadata)
   end
 end
