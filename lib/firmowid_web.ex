@@ -43,7 +43,7 @@ defmodule FirmowidWeb do
         layouts: [html: FirmowidWeb.Layouts]
 
       import Plug.Conn
-      import FirmowidWeb.Gettext
+      use Gettext, backend: FirmowidWeb.Gettext
 
       unquote(verified_routes())
     end
@@ -85,7 +85,7 @@ defmodule FirmowidWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import FirmowidWeb.CoreComponents
-      import FirmowidWeb.Gettext
+      use Gettext, backend: FirmowidWeb.Gettext
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS

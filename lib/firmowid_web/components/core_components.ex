@@ -17,7 +17,7 @@ defmodule FirmowidWeb.CoreComponents do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
-  import FirmowidWeb.Gettext
+  use Gettext, backend: FirmowidWeb.Gettext
 
   @doc """
   Renders a modal.
