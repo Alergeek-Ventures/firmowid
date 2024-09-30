@@ -15,7 +15,7 @@ defmodule FirmowidWeb.UserSessionController do
   end
 
   def create(conn, params) do
-    create(conn, params, "Welcome back!")
+    create(conn, params, "Zalogowano.")
   end
 
   defp create(conn, %{"user" => user_params}, info) do
@@ -36,7 +36,8 @@ defmodule FirmowidWeb.UserSessionController do
 
   def delete(conn, _params) do
     conn
-    |> put_flash(:info, "Logged out successfully.")
+    |> put_flash(:info, "Wylogowano")
     |> UserAuth.log_out_user()
+    |> redirect(to: ~p"/users/log_in")
   end
 end
