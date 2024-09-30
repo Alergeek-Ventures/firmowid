@@ -10,6 +10,7 @@ module.exports = {
     "./js/**/*.js",
     "../lib/firmowid_web.ex",
     "../lib/firmowid_web/**/*.*ex",
+    "../deps/live_toast/lib/**/*.*ex",
   ],
   theme: {
     fontFamily: {

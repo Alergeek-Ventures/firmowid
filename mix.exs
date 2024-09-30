@@ -71,7 +71,8 @@ defmodule Firmowid.MixProject do
       {:sweet_xml, "~> 0.6"},
       {:mime, "~> 2.0"},
       {:akin, "~> 0.2.0"},
-      {:openai, "~> 0.6.2"}
+      {:openai, "~> 0.6.2"},
+      {:live_toast, "~> 0.6.4"}
     ]
   end
 

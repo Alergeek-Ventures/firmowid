@@ -12,7 +12,6 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     date_range_to = Date.end_of_month(previous_month_date)
 
     user = socket.assigns.current_user
-    IO.inspect(user)
     organization_id = user.organization_id
 
     socket =

@@ -238,7 +238,10 @@ defmodule Firmowid.Accounts do
   Deletes the signed token with the given context.
   """
   def delete_user_session_token(token) do
-    Repo.delete_all(UserToken.by_token_and_context_query(token, "session"))
+    Repo.delete_all(UserToken.by_token_and_context_query(token, "session"),
+      skip_organization_id: true
+    )
+
     :ok
   end
 

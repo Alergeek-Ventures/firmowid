@@ -81,7 +81,6 @@ defmodule Firmowid.Documents do
         possible_extensions = MIME.extensions(content_type)
         extension = Enum.at(possible_extensions, 0, "pdf")
         file_name = "#{organization_id}/#{Path.basename("#{document.id}.#{extension}")}"
-        IO.inspect(file_name, label: "file_name during creation")
 
         with _ <-
                dbg(
