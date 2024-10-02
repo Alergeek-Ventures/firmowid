@@ -38,6 +38,7 @@
   class="fixed top-[10lvw] left-[5lvw] w-[90lvw] h-[80lvh] bg-[#CEE6E666]
   rounded-lg items-center justify-center z-50 bg-opacity-50 opacity-0
   transition-opacity flex hidden"
+  phx-hook="FileUploadDragNDrop"
   phx-drop-target={@uploads.file.ref}
 >
   <div class="absolute top-0 left-0 border-2 border-blueBg rounded-lg w-full
@@ -51,36 +52,3 @@
     </p>
   </div>
 </div>
-
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const dropArea = document.getElementById('file-drop-overlay');
-
-    const showDropArea = () => {
-      dropArea.classList.remove('hidden');
-      dropArea.classList.add('opacity-100');
-    }
-
-    let hideDropAreaTimeout = null;
-
-    const hideDropArea = () => {
-      setTimeout(() => dropArea.classList.add('hidden'), 160);
-      dropArea.classList.remove('opacity-100');
-    }
-
-    const handleDragover = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      showDropArea();
-      clearTimeout(hideDropAreaTimeout);
-      hideDropAreaTimeout = setTimeout(hideDropArea, 200);
-    }
-
-    // Preventing default browser behavior when dragging a file over the container
-    dropArea.addEventListener('dragover', handleDragover);
-    dropArea.addEventListener('dragenter', handleDragover);
-
-    document.body.addEventListener('dragover', handleDragover);
-    document.body.addEventListener('dragenter', handleDragover);
-  });
-</script>

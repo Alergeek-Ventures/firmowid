@@ -31,6 +31,44 @@ let liveSocket = new LiveSocket("/live", Socket, {
   params: { _csrf_token: csrfToken },
   hooks: {
     LiveToast: createLiveToastHook(),
+    FileUploadDragNDrop: {
+      updated() {
+        this.attachListeners();
+      },
+      mounted() {
+        this.attachListeners();
+      },
+      attachListeners() {
+        const dropArea = this.el;
+
+        const showDropArea = () => {
+          dropArea.classList.remove("hidden");
+          dropArea.classList.add("opacity-100");
+        };
+
+        let hideDropAreaTimeout = null;
+
+        const hideDropArea = () => {
+          setTimeout(() => dropArea.classList.add("hidden"), 160);
+          dropArea.classList.remove("opacity-100");
+        };
+
+        const handleDragover = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          showDropArea();
+          clearTimeout(hideDropAreaTimeout);
+          hideDropAreaTimeout = setTimeout(hideDropArea, 200);
+        };
+
+        // Preventing default browser behavior when dragging a file over the container
+        dropArea.addEventListener("dragover", handleDragover);
+        dropArea.addEventListener("dragenter", handleDragover);
+
+        document.body.addEventListener("dragover", handleDragover);
+        document.body.addEventListener("dragenter", handleDragover);
+      },
+    },
   },
 });
 
