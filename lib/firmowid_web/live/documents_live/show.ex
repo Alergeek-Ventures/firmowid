@@ -149,9 +149,11 @@ defmodule FirmowidWeb.DocumentsLive.Show do
       document_id
     )
 
+    LiveToast.send_toast(
+      :info, "Dokument został usunięty.")
+
     socket =
       socket
-      |> put_flash(:info, "Dokument został usunięty.")
       |> push_navigate(to: ~p"/")
 
     {:noreply, socket}

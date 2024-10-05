@@ -22,7 +22,12 @@ defmodule FirmowidWeb.DocumentsLive.Index do
         Documents.list_documents_without_metadata(organization_id)
       )
       # upload form
-      |> allow_upload(:file, accept: ~w(.pdf), progress: &handle_progress/3, auto_upload: true)
+      |> allow_upload(:file,
+        max_entries: 50,
+        accept: ~w(.pdf),
+        progress: &handle_progress/3,
+        auto_upload: true
+      )
       # UI controls
       |> assign(
         :date_range_form,
@@ -44,14 +49,13 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     {:ok, socket}
   end
 
-  defp handle_progress(:file, entry, socket) do
+  defp handle_progress(:file, _entry, socket) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
-    if entry.done? do
+    if Enum.all?(socket.assigns.uploads.file.entries, fn entry -> entry.done? end) do
       consume_uploaded_entries(socket, :file, fn %{path: path}, _entry ->
         document = Documents.create_document({path, ".pdf"}, organization_id)
-        dbg(document)
 
         case document do
           {:ok, document} -> Documents.start_extraction_job(document.id, organization_id)
@@ -60,9 +64,21 @@ defmodule FirmowidWeb.DocumentsLive.Index do
         {:ok, nil}
       end)
 
+      LiveToast.send_toast(
+        :info,
+        if length(socket.assigns.uploads.file.entries) == 1 do
+          "Dokument został załadowany."
+        else
+          if length(socket.assigns.uploads.file.entries) > 5 do
+            "#{length(socket.assigns.uploads.file.entries)} dokumentów zostało załadowanych."
+          else
+            "#{length(socket.assigns.uploads.file.entries)} dokumenty zostały załadowane."
+          end
+        end
+      )
+
       socket =
         socket
-        |> put_flash(:info, "Dokument został dodany")
         |> assign(:documents, Documents.list_documents_with_metadata(organization_id))
         |> assign(
           :documents_pending_extraction,
@@ -96,9 +112,10 @@ defmodule FirmowidWeb.DocumentsLive.Index do
 
     Documents.delete_document(organization_id, document_id)
 
+    LiveToast.send_toast(:info, "Dokument został usunięty.")
+
     socket =
       socket
-      |> put_flash(:info, "Dokument został usunięty.")
       |> assign(:documents, Documents.list_documents_with_metadata(organization_id))
       |> assign(
         :documents_pending_extraction,

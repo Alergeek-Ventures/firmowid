@@ -16,10 +16,10 @@
       border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50
       hover:bg-gray-200 px-3 py-2"
       >
-        <%= if length(@documents_pending_extraction) > 0 do %>
+        <%= if length(Enum.filter(@uploads.file.entries, & !&1.done?)) > 0 do %>
           <span class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-blueBg
           text-blueText flex justify-center items-center items animate-bounce">
-            <span><%= length(@documents_pending_extraction) %></span>
+            <span><%= length(Enum.filter(@uploads.file.entries, &(!&1.done?))) %></span>
           </span>
         <% end %>
         <.icon name="hero-document" class="w-6 h-6" /> Dodaj dokument

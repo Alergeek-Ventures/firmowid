@@ -78,34 +78,40 @@ defmodule Firmowid.Documents.Reducto do
       ]
     }
 
-    reducto_extract_response =
-      Req.post!(
-        "https://v1.api.reducto.ai/extract",
-        auth:
-          {:bearer,
-           "f6db515168d1b7c99dcecfd0517062dcbfd083a6ba1e42d0e3bcc623d832288087949aa99728f0d65ff5da7044e9fecc"},
-        json: %{
-          document_url: file_url,
-          async: %{
-            enabled: false
-          },
-          schema: invoice_extraction_schema
+    # switch here to mock reducto
+    extracted_metadata =
+      if true do
+        reducto_extract_response =
+          Req.post!(
+            "https://v1.api.reducto.ai/extract",
+            auth:
+              {:bearer,
+               "f6db515168d1b7c99dcecfd0517062dcbfd083a6ba1e42d0e3bcc623d832288087949aa99728f0d65ff5da7044e9fecc"},
+            json: %{
+              document_url: file_url,
+              async: %{
+                enabled: false
+              },
+              schema: invoice_extraction_schema
+            }
+          )
+
+        # it returns as list, so we take first item
+        Enum.at(reducto_extract_response.body["result"], 0)
+      else
+        %{
+          "description" => "Mocked Reducto invoice for $100",
+          "invoice_identifier" => "01/09/2024",
+          "seller" => "Mocked Reducto",
+          "sale_date" => ~D[2024-09-30],
+          "issue_date" => ~D[2024-09-30],
+          "due_date" => ~D[2024-10-31],
+          "total_amount" => 100.0,
+          "currency" => "PLN"
         }
-      )
+      end
 
-    [extracted_metadata] = reducto_extract_response.body["result"]
-
-    # keeping this so you can comment out Reducto
-    # and get quick metadata here
-
-    # extracted_metadata = %{
-    #   "seller" => "Mocked Reducto",
-    #   "sale_date" => ~D[2024-06-01],
-    #   "issue_date" => ~D[2024-06-01],
-    #   "due_date" => ~D[2024-07-01],
-    #   "total_amount" => 100.0,
-    #   "currency" => "PLN"
-    # }
+    dbg(extracted_metadata)
 
     extracted_metadata =
       Map.put(extracted_metadata, "total_amount", -extracted_metadata["total_amount"])

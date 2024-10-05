@@ -83,15 +83,13 @@ defmodule Firmowid.Documents do
         file_name = "#{organization_id}/#{Path.basename("#{document.id}.#{extension}")}"
 
         with _ <-
-               dbg(
-                 upload_path
-                 |> S3.Upload.stream_file()
-                 |> S3.upload(
-                   Application.get_env(:firmowid, :uploads_bucket),
-                   file_name
-                 )
-                 |> ExAws.request!()
-               ),
+               upload_path
+               |> S3.Upload.stream_file()
+               |> S3.upload(
+                 Application.get_env(:firmowid, :uploads_bucket),
+                 file_name
+               )
+               |> ExAws.request!(),
              {:ok, _} <-
                document
                |> Document.changeset(%{file_name: file_name})
