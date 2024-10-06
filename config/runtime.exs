@@ -22,9 +22,11 @@ end
 
 if config_env() == :prod do
   config :firmowid, Firmowid.Repo,
-    ssl: false,
-    socket_options: [:inet6],
-    url: System.get_env("DATABASE_URL", "postgres"),
+    ssl: [
+      verify: :verify_peer,
+      cacertfile: :certifi.cacertfile()
+    ],
+    url: System.get_env("DATABASE_URL", "firmowid"),
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10")
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
@@ -55,6 +57,11 @@ if config_env() == :prod do
       port: port
     ],
     secret_key_base: secret_key_base
+
+  # configures Swoosh SMTP client
+  config :firmowid, Firmowid.Mailer,
+    adapter: Swoosh.Adapters.Sendgrid,
+    api_key: System.get_env("SENDGRID_API_KEY")
 
   # ## SSL Support
   #

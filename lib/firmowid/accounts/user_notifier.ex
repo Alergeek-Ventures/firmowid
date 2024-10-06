@@ -8,7 +8,7 @@ defmodule Firmowid.Accounts.UserNotifier do
     email =
       new()
       |> to(recipient)
-      |> from({"Firmowid", "contact@example.com"})
+      |> from({"Firmowid", "piotr@firmowid.pl"})
       |> subject(subject)
       |> text_body(body)
 
