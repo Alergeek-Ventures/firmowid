@@ -22,24 +22,24 @@ defmodule FirmowidWeb.UserSessionController do
     %{"email" => email, "password" => password} = user_params
 
     if user = Accounts.get_user_by_email_and_password(email, password) do
+      LiveToast.send_toast(:info, info)
+
       conn
       |> UserAuth.log_in_user(user, user_params)
-
-      LiveToast.send_toast(:info, info)
     else
       # In order to prevent user enumeration attacks, don't disclose whether the email is registered.
+      LiveToast.send_toast(:error, "Niewłaściwy email lub hasło")
+
       conn
       |> redirect(to: ~p"/users/log_in")
-
-      LiveToast.send_toast(:error, "Niewłaściwy email lub hasło")
     end
   end
 
   def delete(conn, _params) do
+    LiveToast.send_toast(:info, "Wylogowano.")
+
     conn
     |> UserAuth.log_out_user()
     |> redirect(to: ~p"/users/log_in")
-
-    LiveToast.send_toast(:info, "Wylogowano.")
   end
 end

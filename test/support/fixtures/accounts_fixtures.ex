@@ -28,4 +28,21 @@ defmodule Firmowid.AccountsFixtures do
     [_, token | _] = String.split(captured_email.text_body, "[TOKEN]")
     token
   end
+
+  @doc """
+  Generate a organization_invites.
+  """
+  def organization_invites_fixture(attrs \\ %{}) do
+    {:ok, organization_invites} =
+      attrs
+      |> Enum.into(%{
+        expires_at: ~U[2024-10-05 17:16:00Z],
+        invite_code: "some invite_code",
+        issued_by: "7488a646-e31f-11e4-aace-600308960662",
+        organization_id: "7488a646-e31f-11e4-aace-600308960662"
+      })
+      |> Firmowid.Accounts.create_organization_invites()
+
+    organization_invites
+  end
 end

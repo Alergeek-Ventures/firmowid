@@ -42,6 +42,33 @@ defmodule FirmowidWeb.Router do
   ## Authentication routes
 
   scope "/", FirmowidWeb do
+    pipe_through [:browser, :require_authenticated_user_without_organization]
+
+    live_session :require_authenticated_user_without_organization,
+      on_mount: [{FirmowidWeb.UserAuth, :ensure_authenticated_without_organization}] do
+      live "/organization/", OrganizationLive, :index
+    end
+  end
+
+  scope "/", FirmowidWeb do
+    pipe_through [:browser, :require_authenticated_user_with_organization]
+
+    live_session :require_authenticated_user_with_organization,
+      on_mount: [{FirmowidWeb.UserAuth, :ensure_authenticated_with_organization}] do
+      live "/users/settings", UserSettingsLive, :edit
+      live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
+
+      live "/", DocumentsLive.Index, :index
+      live "/documents/:id", DocumentsLive.Show, :index
+
+      live "/organization_invites", OrganizationInvitesLive.Index, :index
+
+      get "/settings", ContentController, :settings
+      live "/settings/bank-sync", BankSyncLive.Index, :index
+    end
+  end
+
+  scope "/", FirmowidWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
     live_session :redirect_if_user_is_authenticated,
@@ -53,22 +80,6 @@ defmodule FirmowidWeb.Router do
     end
 
     post "/users/log_in", UserSessionController, :create
-  end
-
-  scope "/", FirmowidWeb do
-    pipe_through [:browser, :require_authenticated_user]
-
-    live_session :require_authenticated_user,
-      on_mount: [{FirmowidWeb.UserAuth, :ensure_authenticated}] do
-      live "/users/settings", UserSettingsLive, :edit
-      live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
-
-      live "/", DocumentsLive.Index, :index
-      live "/documents/:id", DocumentsLive.Show, :index
-
-      get "/settings", ContentController, :settings
-      live "/settings/bank-sync", BankSyncLive.Index, :index
-    end
   end
 
   scope "/", FirmowidWeb do

@@ -149,15 +149,40 @@ defmodule FirmowidWeb.UserAuth do
     {:cont, mount_current_user(socket, session)}
   end
 
-  def on_mount(:ensure_authenticated, _params, session, socket) do
+  def on_mount(:ensure_authenticated_without_organization, _params, session, socket) do
     socket = mount_current_user(socket, session)
 
-    if socket.assigns.current_user do
+    if not is_nil(socket.assigns.current_user) and
+         is_nil(socket.assigns.current_user.organization_id) do
       {:cont, socket}
     else
+      LiveToast.send_toast(
+        :error,
+        "Ten widok jest dostępny tylko dla użytkowników z przypisaną organizacją"
+      )
+
       socket =
         socket
-        |> Phoenix.LiveView.put_flash(:error, "Musisz się zalogować, żeby wejść na tę stronę.")
+        |> Phoenix.LiveView.redirect(to: ~p"/organization")
+
+      {:halt, socket}
+    end
+  end
+
+  def on_mount(:ensure_authenticated_with_organization, _params, session, socket) do
+    socket = mount_current_user(socket, session)
+
+    if not is_nil(socket.assigns.current_user) and
+         not is_nil(socket.assigns.current_user.organization_id) do
+      {:cont, socket}
+    else
+      LiveToast.send_toast(
+        :error,
+        "Musisz się zalogować, żeby wejść na tę stronę."
+      )
+
+      socket =
+        socket
         |> Phoenix.LiveView.redirect(to: ~p"/users/log_in")
 
       {:halt, socket}
@@ -168,7 +193,11 @@ defmodule FirmowidWeb.UserAuth do
     socket = mount_current_user(socket, session)
 
     if socket.assigns.current_user do
-      {:halt, Phoenix.LiveView.redirect(socket, to: signed_in_path(socket))}
+      if is_nil(socket.assigns.current_user.organization_id) do
+        {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/organization")}
+      else
+        {:halt, Phoenix.LiveView.redirect(socket, to: signed_in_path(socket))}
+      end
     else
       {:cont, socket}
     end
@@ -188,7 +217,13 @@ defmodule FirmowidWeb.UserAuth do
   def redirect_if_user_is_authenticated(conn, _opts) do
     if conn.assigns[:current_user] do
       conn
-      |> redirect(to: signed_in_path(conn))
+      |> redirect(
+        to:
+          if(is_nil(conn.assigns[:current_user].organization_id),
+            do: ~p"/organization",
+            else: signed_in_path(conn)
+          )
+      )
       |> halt()
     else
       conn
@@ -201,14 +236,36 @@ defmodule FirmowidWeb.UserAuth do
   If you want to enforce the user email is confirmed before
   they use the application at all, here would be a good place.
   """
-  def require_authenticated_user(conn, _opts) do
-    if conn.assigns[:current_user] do
+  def require_authenticated_user_with_organization(conn, _opts) do
+    if not is_nil(conn.assigns[:current_user]) and
+         not is_nil(conn.assigns[:current_user].organization_id) do
       conn
     else
+      LiveToast.send_toast(
+        :error,
+        "Ten widok jest dostępny tylko dla użytkowników z przypisaną organizacją"
+      )
+
       conn
-      |> put_flash(:error, "Musisz się zalogować, żeby wejść na tę stronę.")
       |> maybe_store_return_to()
       |> redirect(to: ~p"/users/log_in")
+      |> halt()
+    end
+  end
+
+  def require_authenticated_user_without_organization(conn, _opts) do
+    if not is_nil(conn.assigns[:current_user]) and
+         is_nil(conn.assigns[:current_user].organization_id) do
+      conn
+    else
+      LiveToast.send_toast(
+        :error,
+        "Musisz się zalogować, żeby wejść na tę stronę."
+      )
+
+      conn
+      |> maybe_store_return_to()
+      |> redirect(to: ~p"/organization")
       |> halt()
     end
   end

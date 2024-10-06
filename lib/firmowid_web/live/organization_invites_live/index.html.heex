@@ -1,0 +1,39 @@
+<.header>
+  Zaproszenia do Twojej organizacji
+  <:actions>
+    <.button phx-click="create">Przygotuj zaproszenie</.button>
+  </:actions>
+</.header>
+
+<.table id="organization_invites" rows={@organization_invites}>
+  <:col :let={organization_invite} label="Data">
+    <%= if is_nil(organization_invite.consumed_at) do %>
+      <%= organization_invite.expires_at |> Date.to_string() %>
+    <% else %>
+      <%= organization_invite.consumed_at |> Date.to_string() %>
+    <% end %>
+  </:col>
+  <:col :let={organization_invite} label="Kod zaproszenia">
+    <code class="p-2 bg-blueText text-white rounded-md">
+      <%= organization_invite.invite_code %>
+    </code>
+  </:col>
+  <:col :let={organization_invite} label="Wydane przez">
+    <%= organization_invite.issued_by.email %>
+  </:col>
+  <:col :let={organization_invite} label="Wykorzystane przez">
+    <%= if is_nil(organization_invite.consumed_by) do %>
+      -
+    <% else %>
+      <%= organization_invite.consumed_by.email %>
+    <% end %>
+  </:col>
+  <:action :let={organization_invite}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: organization_invite.id})}
+      data-confirm="Jesteś pewny?"
+    >
+      Usuń
+    </.link>
+  </:action>
+</.table>

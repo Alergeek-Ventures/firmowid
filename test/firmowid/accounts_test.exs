@@ -505,4 +505,64 @@ defmodule Firmowid.AccountsTest do
       refute inspect(%User{password: "123456"}) =~ "password: \"123456\""
     end
   end
+
+  describe "organization_invites" do
+    alias Firmowid.Accounts.OrganizationInvites
+
+    import Firmowid.AccountsFixtures
+
+    @invalid_attrs %{organization_id: nil, expires_at: nil, invite_code: nil, issued_by: nil}
+
+    test "list_organization_invites/0 returns all organization_invites" do
+      organization_invites = organization_invites_fixture()
+      assert Accounts.list_organization_invites() == [organization_invites]
+    end
+
+    test "get_organization_invites!/1 returns the organization_invites with given id" do
+      organization_invites = organization_invites_fixture()
+      assert Accounts.get_organization_invites!(organization_invites.id) == organization_invites
+    end
+
+    test "create_organization_invites/1 with valid data creates a organization_invites" do
+      valid_attrs = %{organization_id: "7488a646-e31f-11e4-aace-600308960662", expires_at: ~U[2024-10-05 17:16:00Z], invite_code: "some invite_code", issued_by: "7488a646-e31f-11e4-aace-600308960662"}
+
+      assert {:ok, %OrganizationInvites{} = organization_invites} = Accounts.create_organization_invites(valid_attrs)
+      assert organization_invites.organization_id == "7488a646-e31f-11e4-aace-600308960662"
+      assert organization_invites.expires_at == ~U[2024-10-05 17:16:00Z]
+      assert organization_invites.invite_code == "some invite_code"
+      assert organization_invites.issued_by == "7488a646-e31f-11e4-aace-600308960662"
+    end
+
+    test "create_organization_invites/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Accounts.create_organization_invites(@invalid_attrs)
+    end
+
+    test "update_organization_invites/2 with valid data updates the organization_invites" do
+      organization_invites = organization_invites_fixture()
+      update_attrs = %{organization_id: "7488a646-e31f-11e4-aace-600308960668", expires_at: ~U[2024-10-06 17:16:00Z], invite_code: "some updated invite_code", issued_by: "7488a646-e31f-11e4-aace-600308960668"}
+
+      assert {:ok, %OrganizationInvites{} = organization_invites} = Accounts.update_organization_invites(organization_invites, update_attrs)
+      assert organization_invites.organization_id == "7488a646-e31f-11e4-aace-600308960668"
+      assert organization_invites.expires_at == ~U[2024-10-06 17:16:00Z]
+      assert organization_invites.invite_code == "some updated invite_code"
+      assert organization_invites.issued_by == "7488a646-e31f-11e4-aace-600308960668"
+    end
+
+    test "update_organization_invites/2 with invalid data returns error changeset" do
+      organization_invites = organization_invites_fixture()
+      assert {:error, %Ecto.Changeset{}} = Accounts.update_organization_invites(organization_invites, @invalid_attrs)
+      assert organization_invites == Accounts.get_organization_invites!(organization_invites.id)
+    end
+
+    test "delete_organization_invites/1 deletes the organization_invites" do
+      organization_invites = organization_invites_fixture()
+      assert {:ok, %OrganizationInvites{}} = Accounts.delete_organization_invites(organization_invites)
+      assert_raise Ecto.NoResultsError, fn -> Accounts.get_organization_invites!(organization_invites.id) end
+    end
+
+    test "change_organization_invites/1 returns a organization_invites changeset" do
+      organization_invites = organization_invites_fixture()
+      assert %Ecto.Changeset{} = Accounts.change_organization_invites(organization_invites)
+    end
+  end
 end
