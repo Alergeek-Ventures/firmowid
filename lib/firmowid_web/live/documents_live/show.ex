@@ -150,7 +150,9 @@ defmodule FirmowidWeb.DocumentsLive.Show do
     )
 
     LiveToast.send_toast(
-      :info, "Dokument został usunięty.")
+      :info,
+      "Dokument został usunięty."
+    )
 
     socket =
       socket
