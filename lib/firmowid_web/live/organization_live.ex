@@ -15,17 +15,40 @@ defmodule FirmowidWeb.OrganizationLive do
         </p>
 
         <div class="flex md:flex-row items-center justify-between">
-          <div class="flex flex-col justify-between gap-8 max-w-56">
-            <p>Jesteś właścicielem przedsiębiorstwa? Już wkrótce będziesz mógł
-              utworzyć organizację wewnątrz Firmowida.</p>
-            <.button disabled class="opacity-50 cursor-not-allowed" phx-click="create">
-              Utwórz organizację
-            </.button>
+          <div class="flex flex-col justify-between gap-8 max-w-[500px]">
+            <p>Jesteś właścicielem przedsiębiorstwa? Wypełnij formularz,
+              aby utworzyć organizację wewnątrz Firmowida.</p>
+            <.simple_form for={@organization_form} id="organization_form" phx-submit="create">
+              <.input
+                field={@organization_form[:name]}
+                type="text"
+                label="Nazwa organizacji"
+                required
+              />
+              <.input
+                field={@organization_form[:identification_number]}
+                type="text"
+                label="Identyfikator (NIP)"
+                required
+              />
+              <.input
+                field={@organization_form[:address]}
+                type="text"
+                label="Adres organizacji"
+                required
+              />
+
+              <:actions>
+                <.button phx-disable-with="Tworzenie organizacji...">
+                  Utwórz organizację
+                </.button>
+              </:actions>
+            </.simple_form>
           </div>
 
-          <div class="max-w-56">
-            <.simple_form for={@organization_form} id="organization_form" phx-submit="join">
-              <.input field={@organization_form[:code]} type="text" label="Kod organizacji" required />
+          <div class="max-w-[500px]">
+            <.simple_form for={@join_form} id="join_form" phx-submit="join">
+              <.input field={@join_form[:code]} type="text" label="Kod organizacji" required />
               <:actions>
                 <.button class="w-full" phx-disable-with="Dołączanie...">
                   Dołącz do organizacji
@@ -42,6 +65,29 @@ defmodule FirmowidWeb.OrganizationLive do
       <h1>Do tego konta jest juz przypisany organizacja</h1>
     <% end %>
     """
+  end
+
+  @impl true
+  def handle_event("create", organization, socket) do
+    user = socket.assigns.current_user
+
+    dbg(organization)
+
+    organization_slug =
+      organization["name"]
+      |> String.downcase()
+      |> String.replace(" ", "-")
+      |> String.replace(".", "-")
+      |> String.replace("/", "-")
+      |> String.replace(",", "-")
+      |> String.trim()
+
+    Map.put(organization, "slug", organization_slug)
+    |> Accounts.create_organization(user)
+
+    LiveToast.send_toast(:success, "Pomyślnie utworzono organizację")
+
+    {:noreply, redirect(socket, to: "/")}
   end
 
   @impl true
@@ -70,6 +116,14 @@ defmodule FirmowidWeb.OrganizationLive do
         socket
         |> assign(
           :organization_form,
+          to_form(%{
+            "name" => "",
+            "identification_number" => "",
+            "address" => ""
+          })
+        )
+        |> assign(
+          :join_form,
           to_form(%{
             "code" => ""
           })

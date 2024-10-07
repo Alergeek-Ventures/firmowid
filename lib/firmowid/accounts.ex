@@ -385,8 +385,7 @@ defmodule Firmowid.Accounts do
   def create_organization(attrs \\ %{}, owner) do
     organization =
       %Organization{}
-      |> Organization.changeset(attrs)
-      |> Ecto.Changeset.put_assoc(:owner, owner)
+      |> Organization.changeset(Map.put(attrs, "owner_id", owner.id))
       |> Repo.insert!(skip_organization_id: true)
 
     owner

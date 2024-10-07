@@ -16,10 +16,11 @@ defmodule Firmowid.Accounts.Organization do
   end
 
   @doc false
-  def changeset(organization, attrs) do
+  def changeset(organization, attrs \\ %{}) do
     organization
     |> cast(attrs, [:identification_number, :address, :name, :slug, :owner_id])
     |> validate_required([:identification_number, :name, :slug, :owner_id])
+    |> assoc_constraint(:owner)
     |> unique_constraint(:slug)
   end
 end

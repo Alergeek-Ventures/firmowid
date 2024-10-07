@@ -26,10 +26,10 @@ defmodule Firmowid.AccountsFixtures do
     {:ok, organization} =
       Firmowid.Accounts.create_organization(
         %{
-          identification_number: "1234567890",
-          name: "Test Organization",
-          owner_id: user.id,
-          slug: "test-organization"
+          "identification_number" => "1234567890",
+          "name" => "Test Organization",
+          "owner_id" => user.id,
+          "slug" => "test-organization"
         },
         user
       )
