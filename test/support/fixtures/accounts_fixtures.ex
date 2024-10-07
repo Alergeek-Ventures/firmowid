@@ -4,6 +4,9 @@ defmodule Firmowid.AccountsFixtures do
   entities via the `Firmowid.Accounts` context.
   """
 
+  alias Firmowid.Accounts.User
+  alias Firmowid.Repo
+
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
   def valid_user_password, do: "hello world!"
 
@@ -20,29 +23,25 @@ defmodule Firmowid.AccountsFixtures do
       |> valid_user_attributes()
       |> Firmowid.Accounts.register_user()
 
+    {:ok, organization} =
+      Firmowid.Accounts.create_organization(
+        %{
+          identification_number: "1234567890",
+          name: "Test Organization",
+          owner_id: user.id,
+          slug: "test-organization"
+        },
+        user
+      )
+
     user
+    |> User.organization_changeset(%{organization_id: organization.id})
+    |> Repo.update!(skip_organization_id: true)
   end
 
   def extract_user_token(fun) do
     {:ok, captured_email} = fun.(&"[TOKEN]#{&1}[TOKEN]")
     [_, token | _] = String.split(captured_email.text_body, "[TOKEN]")
     token
-  end
-
-  @doc """
-  Generate a organization_invites.
-  """
-  def organization_invites_fixture(attrs \\ %{}) do
-    {:ok, organization_invites} =
-      attrs
-      |> Enum.into(%{
-        expires_at: ~U[2024-10-05 17:16:00Z],
-        invite_code: "some invite_code",
-        issued_by: "7488a646-e31f-11e4-aace-600308960662",
-        organization_id: "7488a646-e31f-11e4-aace-600308960662"
-      })
-      |> Firmowid.Accounts.create_organization_invites()
-
-    organization_invites
   end
 end

@@ -125,7 +125,6 @@ defmodule Firmowid.Accounts.User do
   def organization_changeset(user, attrs) do
     user
     |> cast(attrs, [:organization_id])
-    |> validate_required([:organization_id])
   end
 
   @doc """

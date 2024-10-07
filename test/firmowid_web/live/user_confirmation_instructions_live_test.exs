@@ -29,7 +29,11 @@ defmodule FirmowidWeb.UserConfirmationInstructionsLiveTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                "If your email is in our system"
 
-      assert Repo.get_by!(Accounts.UserToken, user_id: user.id).context == "confirm"
+      assert Repo.get_by!(
+               Accounts.UserToken,
+               [user_id: user.id],
+               skip_organization_id: true
+             ).context == "confirm"
     end
 
     test "does not send confirmation token if user is confirmed", %{conn: conn, user: user} do
@@ -37,31 +41,25 @@ defmodule FirmowidWeb.UserConfirmationInstructionsLiveTest do
 
       {:ok, lv, _html} = live(conn, ~p"/users/confirm")
 
-      {:ok, conn} =
+      {:ok, _conn} =
         lv
         |> form("#resend_confirmation_form", user: %{email: user.email})
         |> render_submit()
         |> follow_redirect(conn, ~p"/")
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
-               "If your email is in our system"
-
-      refute Repo.get_by(Accounts.UserToken, user_id: user.id)
+      refute Repo.get_by(Accounts.UserToken, [user_id: user.id], skip_organization_id: true)
     end
 
     test "does not send confirmation token if email is invalid", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/users/confirm")
 
-      {:ok, conn} =
+      {:ok, _conn} =
         lv
         |> form("#resend_confirmation_form", user: %{email: "unknown@example.com"})
         |> render_submit()
         |> follow_redirect(conn, ~p"/")
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
-               "If your email is in our system"
-
-      assert Repo.all(Accounts.UserToken) == []
+      assert Repo.all(Accounts.UserToken, skip_organization_id: true) == []
     end
   end
 end

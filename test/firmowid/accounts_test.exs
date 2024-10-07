@@ -38,7 +38,7 @@ defmodule Firmowid.AccountsTest do
   describe "get_user!/1" do
     test "raises if id is invalid" do
       assert_raise Ecto.NoResultsError, fn ->
-        Accounts.get_user!(-1)
+        Accounts.get_user!(Ecto.UUID.generate())
       end
     end
 
@@ -186,7 +186,20 @@ defmodule Firmowid.AccountsTest do
         end)
 
       {:ok, token} = Base.url_decode64(token, padding: false)
-      assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
+
+      assert user_token =
+               Repo.get_by(
+                 UserToken,
+                 [
+                   token:
+                     :crypto.hash(
+                       :sha256,
+                       token
+                     )
+                 ],
+                 skip_organization_id: true
+               )
+
       assert user_token.user_id == user.id
       assert user_token.sent_to == user.email
       assert user_token.context == "change:current@example.com"
@@ -208,31 +221,37 @@ defmodule Firmowid.AccountsTest do
 
     test "updates the email with a valid token", %{user: user, token: token, email: email} do
       assert Accounts.update_user_email(user, token) == :ok
-      changed_user = Repo.get!(User, user.id)
+      changed_user = Repo.get!(User, user.id, skip_organization_id: true)
       assert changed_user.email != user.email
       assert changed_user.email == email
       assert changed_user.confirmed_at
       assert changed_user.confirmed_at != user.confirmed_at
-      refute Repo.get_by(UserToken, user_id: user.id)
+      refute Repo.get_by(UserToken, [user_id: user.id], skip_organization_id: true)
     end
 
     test "does not update email with invalid token", %{user: user} do
       assert Accounts.update_user_email(user, "oops") == :error
-      assert Repo.get!(User, user.id).email == user.email
-      assert Repo.get_by(UserToken, user_id: user.id)
+      assert Repo.get!(User, user.id, skip_organization_id: true).email == user.email
+      assert Repo.get_by(UserToken, [user_id: user.id], skip_organization_id: true)
     end
 
     test "does not update email if user email changed", %{user: user, token: token} do
       assert Accounts.update_user_email(%{user | email: "current@example.com"}, token) == :error
-      assert Repo.get!(User, user.id).email == user.email
-      assert Repo.get_by(UserToken, user_id: user.id)
+      assert Repo.get!(User, user.id, skip_organization_id: true).email == user.email
+      assert Repo.get_by(UserToken, [user_id: user.id], skip_organization_id: true)
     end
 
     test "does not update email if token expired", %{user: user, token: token} do
-      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      {1, nil} =
+        Repo.update_all(
+          UserToken,
+          [set: [inserted_at: ~N[2020-01-01 00:00:00]]],
+          skip_organization_id: true
+        )
+
       assert Accounts.update_user_email(user, token) == :error
-      assert Repo.get!(User, user.id).email == user.email
-      assert Repo.get_by(UserToken, user_id: user.id)
+      assert Repo.get!(User, user.id, skip_organization_id: true).email == user.email
+      assert Repo.get_by(UserToken, [user_id: user.id], skip_organization_id: true)
     end
   end
 
@@ -306,7 +325,7 @@ defmodule Firmowid.AccountsTest do
           password: "new valid password"
         })
 
-      refute Repo.get_by(UserToken, user_id: user.id)
+      refute Repo.get_by(UserToken, [user_id: user.id], skip_organization_id: true)
     end
   end
 
@@ -317,7 +336,7 @@ defmodule Firmowid.AccountsTest do
 
     test "generates a token", %{user: user} do
       token = Accounts.generate_user_session_token(user)
-      assert user_token = Repo.get_by(UserToken, token: token)
+      assert user_token = Repo.get_by(UserToken, [token: token], skip_organization_id: true)
       assert user_token.context == "session"
 
       # Creating the same token for another user should fail
@@ -348,7 +367,11 @@ defmodule Firmowid.AccountsTest do
     end
 
     test "does not return user for expired token", %{token: token} do
-      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      {1, nil} =
+        Repo.update_all(UserToken, [set: [inserted_at: ~N[2020-01-01 00:00:00]]],
+          skip_organization_id: true
+        )
+
       refute Accounts.get_user_by_session_token(token)
     end
   end
@@ -374,7 +397,20 @@ defmodule Firmowid.AccountsTest do
         end)
 
       {:ok, token} = Base.url_decode64(token, padding: false)
-      assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
+
+      assert user_token =
+               Repo.get_by(
+                 UserToken,
+                 [
+                   token:
+                     :crypto.hash(
+                       :sha256,
+                       token
+                     )
+                 ],
+                 skip_organization_id: true
+               )
+
       assert user_token.user_id == user.id
       assert user_token.sent_to == user.email
       assert user_token.context == "confirm"
@@ -397,21 +433,25 @@ defmodule Firmowid.AccountsTest do
       assert {:ok, confirmed_user} = Accounts.confirm_user(token)
       assert confirmed_user.confirmed_at
       assert confirmed_user.confirmed_at != user.confirmed_at
-      assert Repo.get!(User, user.id).confirmed_at
-      refute Repo.get_by(UserToken, user_id: user.id)
+      assert Repo.get!(User, user.id, skip_organization_id: true).confirmed_at
+      refute Repo.get_by(UserToken, [user_id: user.id], skip_organization_id: true)
     end
 
     test "does not confirm with invalid token", %{user: user} do
       assert Accounts.confirm_user("oops") == :error
-      refute Repo.get!(User, user.id).confirmed_at
-      assert Repo.get_by(UserToken, user_id: user.id)
+      refute Repo.get!(User, user.id, skip_organization_id: true).confirmed_at
+      assert Repo.get_by(UserToken, [user_id: user.id], skip_organization_id: true)
     end
 
     test "does not confirm email if token expired", %{user: user, token: token} do
-      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      {1, nil} =
+        Repo.update_all(UserToken, [set: [inserted_at: ~N[2020-01-01 00:00:00]]],
+          skip_organization_id: true
+        )
+
       assert Accounts.confirm_user(token) == :error
-      refute Repo.get!(User, user.id).confirmed_at
-      assert Repo.get_by(UserToken, user_id: user.id)
+      refute Repo.get!(User, user.id, skip_organization_id: true).confirmed_at
+      assert Repo.get_by(UserToken, [user_id: user.id], skip_organization_id: true)
     end
   end
 
@@ -427,7 +467,20 @@ defmodule Firmowid.AccountsTest do
         end)
 
       {:ok, token} = Base.url_decode64(token, padding: false)
-      assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
+
+      assert user_token =
+               Repo.get_by(
+                 UserToken,
+                 [
+                   token:
+                     :crypto.hash(
+                       :sha256,
+                       token
+                     )
+                 ],
+                 skip_organization_id: true
+               )
+
       assert user_token.user_id == user.id
       assert user_token.sent_to == user.email
       assert user_token.context == "reset_password"
@@ -448,18 +501,22 @@ defmodule Firmowid.AccountsTest do
 
     test "returns the user with valid token", %{user: %{id: id}, token: token} do
       assert %User{id: ^id} = Accounts.get_user_by_reset_password_token(token)
-      assert Repo.get_by(UserToken, user_id: id)
+      assert Repo.get_by(UserToken, [user_id: id], skip_organization_id: true)
     end
 
     test "does not return the user with invalid token", %{user: user} do
       refute Accounts.get_user_by_reset_password_token("oops")
-      assert Repo.get_by(UserToken, user_id: user.id)
+      assert Repo.get_by(UserToken, [user_id: user.id], skip_organization_id: true)
     end
 
     test "does not return the user if token expired", %{user: user, token: token} do
-      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      {1, nil} =
+        Repo.update_all(UserToken, [set: [inserted_at: ~N[2020-01-01 00:00:00]]],
+          skip_organization_id: true
+        )
+
       refute Accounts.get_user_by_reset_password_token(token)
-      assert Repo.get_by(UserToken, user_id: user.id)
+      assert Repo.get_by(UserToken, [user_id: user.id], skip_organization_id: true)
     end
   end
 
@@ -496,73 +553,13 @@ defmodule Firmowid.AccountsTest do
     test "deletes all tokens for the given user", %{user: user} do
       _ = Accounts.generate_user_session_token(user)
       {:ok, _} = Accounts.reset_user_password(user, %{password: "new valid password"})
-      refute Repo.get_by(UserToken, user_id: user.id)
+      refute Repo.get_by(UserToken, [user_id: user.id], skip_organization_id: true)
     end
   end
 
   describe "inspect/2 for the User module" do
     test "does not include password" do
       refute inspect(%User{password: "123456"}) =~ "password: \"123456\""
-    end
-  end
-
-  describe "organization_invites" do
-    alias Firmowid.Accounts.OrganizationInvites
-
-    import Firmowid.AccountsFixtures
-
-    @invalid_attrs %{organization_id: nil, expires_at: nil, invite_code: nil, issued_by: nil}
-
-    test "list_organization_invites/0 returns all organization_invites" do
-      organization_invites = organization_invites_fixture()
-      assert Accounts.list_organization_invites() == [organization_invites]
-    end
-
-    test "get_organization_invites!/1 returns the organization_invites with given id" do
-      organization_invites = organization_invites_fixture()
-      assert Accounts.get_organization_invites!(organization_invites.id) == organization_invites
-    end
-
-    test "create_organization_invites/1 with valid data creates a organization_invites" do
-      valid_attrs = %{organization_id: "7488a646-e31f-11e4-aace-600308960662", expires_at: ~U[2024-10-05 17:16:00Z], invite_code: "some invite_code", issued_by: "7488a646-e31f-11e4-aace-600308960662"}
-
-      assert {:ok, %OrganizationInvites{} = organization_invites} = Accounts.create_organization_invites(valid_attrs)
-      assert organization_invites.organization_id == "7488a646-e31f-11e4-aace-600308960662"
-      assert organization_invites.expires_at == ~U[2024-10-05 17:16:00Z]
-      assert organization_invites.invite_code == "some invite_code"
-      assert organization_invites.issued_by == "7488a646-e31f-11e4-aace-600308960662"
-    end
-
-    test "create_organization_invites/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Accounts.create_organization_invites(@invalid_attrs)
-    end
-
-    test "update_organization_invites/2 with valid data updates the organization_invites" do
-      organization_invites = organization_invites_fixture()
-      update_attrs = %{organization_id: "7488a646-e31f-11e4-aace-600308960668", expires_at: ~U[2024-10-06 17:16:00Z], invite_code: "some updated invite_code", issued_by: "7488a646-e31f-11e4-aace-600308960668"}
-
-      assert {:ok, %OrganizationInvites{} = organization_invites} = Accounts.update_organization_invites(organization_invites, update_attrs)
-      assert organization_invites.organization_id == "7488a646-e31f-11e4-aace-600308960668"
-      assert organization_invites.expires_at == ~U[2024-10-06 17:16:00Z]
-      assert organization_invites.invite_code == "some updated invite_code"
-      assert organization_invites.issued_by == "7488a646-e31f-11e4-aace-600308960668"
-    end
-
-    test "update_organization_invites/2 with invalid data returns error changeset" do
-      organization_invites = organization_invites_fixture()
-      assert {:error, %Ecto.Changeset{}} = Accounts.update_organization_invites(organization_invites, @invalid_attrs)
-      assert organization_invites == Accounts.get_organization_invites!(organization_invites.id)
-    end
-
-    test "delete_organization_invites/1 deletes the organization_invites" do
-      organization_invites = organization_invites_fixture()
-      assert {:ok, %OrganizationInvites{}} = Accounts.delete_organization_invites(organization_invites)
-      assert_raise Ecto.NoResultsError, fn -> Accounts.get_organization_invites!(organization_invites.id) end
-    end
-
-    test "change_organization_invites/1 returns a organization_invites changeset" do
-      organization_invites = organization_invites_fixture()
-      assert %Ecto.Changeset{} = Accounts.change_organization_invites(organization_invites)
     end
   end
 end

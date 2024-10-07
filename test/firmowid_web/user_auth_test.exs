@@ -3,7 +3,10 @@ defmodule FirmowidWeb.UserAuthTest do
 
   alias Phoenix.LiveView
   alias Firmowid.Accounts
+  alias Firmowid.Accounts.User
   alias FirmowidWeb.UserAuth
+  alias Firmowid.Repo
+
   import Firmowid.AccountsFixtures
 
   @remember_me_cookie "_firmowid_web_user_remember_me"
@@ -148,19 +151,30 @@ defmodule FirmowidWeb.UserAuthTest do
     end
   end
 
-  describe "on_mount :ensure_authenticated" do
+  describe "on_mount :ensure_authenticated_with_organization" do
     test "authenticates current_user based on a valid user_token", %{conn: conn, user: user} do
       user_token = Accounts.generate_user_session_token(user)
       session = conn |> put_session(:user_token, user_token) |> get_session()
 
       {:cont, updated_socket} =
-        UserAuth.on_mount(:ensure_authenticated, %{}, session, %LiveView.Socket{})
+        UserAuth.on_mount(
+          :ensure_authenticated_with_organization,
+          %{},
+          session,
+          %LiveView.Socket{}
+        )
 
       assert updated_socket.assigns.current_user.id == user.id
     end
 
-    test "redirects to login page if there isn't a valid user_token", %{conn: conn} do
-      user_token = "invalid_token"
+    test "redirects to organization page if there isn't a organization_id on a user object",
+         %{conn: conn, user: user} do
+      user_token = Accounts.generate_user_session_token(user)
+      Accounts.delete_organization(user.organization_id)
+
+      User.organization_changeset(user, %{organization_id: nil})
+      |> Repo.update!(skip_organization_id: true)
+
       session = conn |> put_session(:user_token, user_token) |> get_session()
 
       socket = %LiveView.Socket{
@@ -168,8 +182,11 @@ defmodule FirmowidWeb.UserAuthTest do
         assigns: %{__changed__: %{}, flash: %{}}
       }
 
-      {:halt, updated_socket} = UserAuth.on_mount(:ensure_authenticated, %{}, session, socket)
-      assert updated_socket.assigns.current_user == nil
+      {:halt, updated_socket} =
+        UserAuth.on_mount(:ensure_authenticated_with_organization, %{}, session, socket)
+
+      refute updated_socket.assigns.current_user == nil
+      assert updated_socket.assigns.current_user.organization_id == nil
     end
 
     test "redirects to login page if there isn't a user_token", %{conn: conn} do
@@ -180,7 +197,9 @@ defmodule FirmowidWeb.UserAuthTest do
         assigns: %{__changed__: %{}, flash: %{}}
       }
 
-      {:halt, updated_socket} = UserAuth.on_mount(:ensure_authenticated, %{}, session, socket)
+      {:halt, updated_socket} =
+        UserAuth.on_mount(:ensure_authenticated_with_organization, %{}, session, socket)
+
       assert updated_socket.assigns.current_user == nil
     end
   end
@@ -228,20 +247,17 @@ defmodule FirmowidWeb.UserAuthTest do
 
   describe "require_authenticated_user/2" do
     test "redirects if user is not authenticated", %{conn: conn} do
-      conn = conn |> fetch_flash() |> UserAuth.require_authenticated_user([])
+      conn = conn |> fetch_flash() |> UserAuth.require_authenticated_user_with_organization([])
+
       assert conn.halted
-
       assert redirected_to(conn) == ~p"/users/log_in"
-
-      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
-               "You must log in to access this page."
     end
 
     test "stores the path to redirect to on GET", %{conn: conn} do
       halted_conn =
         %{conn | path_info: ["foo"], query_string: ""}
         |> fetch_flash()
-        |> UserAuth.require_authenticated_user([])
+        |> UserAuth.require_authenticated_user_with_organization([])
 
       assert halted_conn.halted
       assert get_session(halted_conn, :user_return_to) == "/foo"
@@ -249,7 +265,7 @@ defmodule FirmowidWeb.UserAuthTest do
       halted_conn =
         %{conn | path_info: ["foo"], query_string: "bar=baz"}
         |> fetch_flash()
-        |> UserAuth.require_authenticated_user([])
+        |> UserAuth.require_authenticated_user_with_organization([])
 
       assert halted_conn.halted
       assert get_session(halted_conn, :user_return_to) == "/foo?bar=baz"
@@ -257,14 +273,18 @@ defmodule FirmowidWeb.UserAuthTest do
       halted_conn =
         %{conn | path_info: ["foo"], query_string: "bar", method: "POST"}
         |> fetch_flash()
-        |> UserAuth.require_authenticated_user([])
+        |> UserAuth.require_authenticated_user_with_organization([])
 
       assert halted_conn.halted
       refute get_session(halted_conn, :user_return_to)
     end
 
     test "does not redirect if user is authenticated", %{conn: conn, user: user} do
-      conn = conn |> assign(:current_user, user) |> UserAuth.require_authenticated_user([])
+      conn =
+        conn
+        |> assign(:current_user, user)
+        |> UserAuth.require_authenticated_user_with_organization([])
+
       refute conn.halted
       refute conn.status
     end

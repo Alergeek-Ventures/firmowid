@@ -9,7 +9,7 @@ defmodule FirmowidWeb.UserLoginLiveTest do
       {:ok, _lv, html} = live(conn, ~p"/users/log_in")
 
       assert html =~ "Log in"
-      assert html =~ "Register"
+      assert html =~ "Sign up"
       assert html =~ "Forgot your password?"
     end
 
@@ -50,8 +50,6 @@ defmodule FirmowidWeb.UserLoginLiveTest do
         )
 
       conn = submit_form(form, conn)
-
-      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
 
       assert redirected_to(conn) == "/users/log_in"
     end

@@ -153,8 +153,12 @@ defmodule Firmowid.Accounts do
       |> User.confirm_changeset()
 
     Ecto.Multi.new()
-    |> Ecto.Multi.update(:user, changeset)
-    |> Ecto.Multi.delete_all(:tokens, UserToken.by_user_and_contexts_query(user, [context]))
+    |> Ecto.Multi.update(:user, changeset, skip_organization_id: true)
+    |> Ecto.Multi.delete_all(
+      :tokens,
+      UserToken.by_user_and_contexts_query(user, [context]),
+      skip_organization_id: true
+    )
   end
 
   @doc ~S"""
@@ -206,8 +210,12 @@ defmodule Firmowid.Accounts do
       |> User.validate_current_password(password)
 
     Ecto.Multi.new()
-    |> Ecto.Multi.update(:user, changeset)
-    |> Ecto.Multi.delete_all(:tokens, UserToken.by_user_and_contexts_query(user, :all))
+    |> Ecto.Multi.update(:user, changeset, skip_organization_id: true)
+    |> Ecto.Multi.delete_all(
+      :tokens,
+      UserToken.by_user_and_contexts_query(user, :all),
+      skip_organization_id: true
+    )
     |> Repo.transaction()
     |> case do
       {:ok, %{user: user}} -> {:ok, user}
@@ -278,7 +286,7 @@ defmodule Firmowid.Accounts do
   """
   def confirm_user(token) do
     with {:ok, query} <- UserToken.verify_email_token_query(token, "confirm"),
-         %User{} = user <- Repo.one(query),
+         %User{} = user <- Repo.one(query, skip_organization_id: true),
          {:ok, %{user: user}} <- Repo.transaction(confirm_user_multi(user)) do
       {:ok, user}
     else
@@ -288,8 +296,12 @@ defmodule Firmowid.Accounts do
 
   defp confirm_user_multi(user) do
     Ecto.Multi.new()
-    |> Ecto.Multi.update(:user, User.confirm_changeset(user))
-    |> Ecto.Multi.delete_all(:tokens, UserToken.by_user_and_contexts_query(user, ["confirm"]))
+    |> Ecto.Multi.update(:user, User.confirm_changeset(user), skip_organization_id: true)
+    |> Ecto.Multi.delete_all(
+      :tokens,
+      UserToken.by_user_and_contexts_query(user, ["confirm"]),
+      skip_organization_id: true
+    )
   end
 
   ## Reset password
@@ -371,22 +383,17 @@ defmodule Firmowid.Accounts do
 
   """
   def create_organization(attrs \\ %{}, owner) do
-    %Organization{}
-    |> Organization.changeset(attrs)
-    |> Ecto.Changeset.put_assoc(:owner, owner)
-    |> Repo.insert()
-    |> case do
-      {:ok, organization} ->
-        # Update the owner's organization
-        owner
-        |> User.organization_changeset(%{organization_id: organization.id})
-        |> Repo.update()
+    organization =
+      %Organization{}
+      |> Organization.changeset(attrs)
+      |> Ecto.Changeset.put_assoc(:owner, owner)
+      |> Repo.insert!(skip_organization_id: true)
 
-        {:ok, organization}
+    owner
+    |> User.organization_changeset(%{organization_id: organization.id})
+    |> Repo.update!()
 
-      error ->
-        error
-    end
+    {:ok, organization}
   end
 
   @doc """
@@ -401,14 +408,18 @@ defmodule Firmowid.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_organization(%Organization{} = organization) do
+  def delete_organization(organization_id) do
     Ecto.Multi.new()
     |> Ecto.Multi.update_all(
       :update_users,
-      from(u in User, where: u.organization_id == ^organization.id),
-      set: [organization_id: nil]
+      from(u in User, where: u.organization_id == ^organization_id),
+      [set: [organization_id: nil]],
+      skip_organization_id: true
     )
-    |> Ecto.Multi.delete(:delete_org, organization)
+    |> Ecto.Multi.delete(
+      :delete_org,
+      Repo.get!(Organization, organization_id, skip_organization_id: true)
+    )
     |> Repo.transaction()
     |> case do
       {:ok, %{delete_org: org}} -> {:ok, org}
