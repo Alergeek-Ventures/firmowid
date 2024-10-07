@@ -65,7 +65,7 @@ defmodule Firmowid.MixProject do
       {:ex_money, "~> 5.0"},
       {:faker, "~> 0.18"},
       {:req, "~> 0.5.2"},
-      {:ex_aws, "~> 2.1.2"},
+      {:ex_aws, "~> 2.5.5"},
       {:ex_aws_s3, "~> 2.0"},
       {:hackney, "~> 1.9"},
       {:sweet_xml, "~> 0.6"},
