@@ -95,6 +95,28 @@ defmodule Firmowid.BankData.ApiClient do
     accounts_transaction_response.body["transactions"]["booked"]
   end
 
+  def delete_requisition(requisition_id) do
+    access_token = get_access_token()
+
+    requisition =
+      Req.get!(
+        "https://bankaccountdata.gocardless.com/api/v2/requisitions/#{requisition_id}",
+        auth: {:bearer, access_token}
+      )
+
+    Req.delete!(
+      "https://bankaccountdata.gocardless.com/api/v2/requisitions/#{requisition_id}",
+      auth: {:bearer, access_token}
+    )
+
+    Req.delete!(
+      "https://bankaccountdata.gocardless.com/api/v2/agreements/#{requisition.body["agreement"]}",
+      auth: {:bearer, access_token}
+    )
+
+    {:ok, requisition}
+  end
+
   defp get_access_token() do
     TokenManager.get_access_token()
   end

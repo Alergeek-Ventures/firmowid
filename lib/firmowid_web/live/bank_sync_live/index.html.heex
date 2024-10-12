@@ -9,8 +9,8 @@
 </div>
 
 <div class="flex flex-row gap-4 p-4 w-full">
-  <.table id="requisitions" rows={@streams.requisitions}>
-    <:col :let={{_id, requisition}} label="Status">
+  <.table id="requisitions" rows={@requisitions}>
+    <:col :let={requisition} label="Status">
       <%= case requisition.status do %>
         <% :accepted -> %>
           <.icon name="hero-check-circle-solid" class="h-5 w-5 text-greenText" />
@@ -20,7 +20,7 @@
           <.icon name="hero-x-circle-solid" class="h-5 w-5 text-redText" />
       <% end %>
     </:col>
-    <:col :let={{_id, requisition}} label="Konta bankowe">
+    <:col :let={requisition} label="Konta bankowe">
       <%= if requisition.bank_accounts == [] do %>
         -
       <% else %>
@@ -29,9 +29,10 @@
         <% end %>
       <% end %>
     </:col>
-    <:action :let={{_id, requisition}}>
+    <:action :let={requisition}>
       <.button
-        phx-click={JS.push("sync", value: %{requisition_id: requisition.requisition_id})}
+        phx-click="sync"
+        phx-value-requisition-id={requisition.id}
         disabled={requisition.status != :accepted}
       >
         Synchronizuj
@@ -40,6 +41,11 @@
     <:action>
       <.button phx-click="auto-match-documents">
         Połącz dokumenty z transakcjami
+      </.button>
+    </:action>
+    <:action :let={requisition}>
+      <.button phx-click="delete" phx-value-requisition-id={requisition.id}>
+        Usuń połączenie
       </.button>
     </:action>
   </.table>

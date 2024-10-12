@@ -119,7 +119,11 @@ defmodule Firmowid.BankData do
     end)
   end
 
-  def delete_requisition(%Requisition{} = requisition) do
-    Repo.delete(requisition)
+  def delete_requisition(requisition_id, organization_id) do
+    with requisition <- Repo.get(Requisition, requisition_id, organization_id: organization_id),
+         {:ok, _} <- ApiClient.delete_requisition(requisition.requisition_id),
+         {:ok, _} <- Repo.delete(requisition, organization_id: organization_id) do
+      {:ok, requisition}
+    end
   end
 end

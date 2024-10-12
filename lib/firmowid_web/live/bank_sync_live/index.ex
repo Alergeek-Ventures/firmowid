@@ -2,7 +2,6 @@ defmodule FirmowidWeb.BankSyncLive.Index do
   use FirmowidWeb, :live_view
 
   alias Firmowid.BankData
-  alias Firmowid.BankData.Requisition
   alias Firmowid.InvoiceMatcher
 
   @impl true
@@ -10,41 +9,46 @@ defmodule FirmowidWeb.BankSyncLive.Index do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
-    {:ok,
-     stream(
-       socket,
-       :requisitions,
-       BankData.list_requisitions(organization_id)
-     )}
+    socket =
+      socket
+      |> assign(
+        :requisitions,
+        BankData.list_requisitions(organization_id)
+      )
+
+    {:ok, socket}
   end
 
   @impl true
-  def handle_params(params, _url, socket) do
-    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
-  end
-
-  defp apply_action(socket, :new, _params) do
-    socket
-    |> assign(:requisition, %Requisition{})
-  end
-
-  defp apply_action(socket, :index, _params) do
-    socket
-    |> assign(:page_title, "Synchronizacja konta bankowego z Firmowidem")
-    |> assign(:requisition, nil)
+  def handle_params(_params, _url, socket) do
+    {:noreply,
+     socket
+     |> assign(:page_title, "Synchronizacja konta bankowego z Firmowidem")}
   end
 
   @impl true
-  def handle_info({FirmowidWeb.RequisitionLive.FormComponent, {:saved, requisition}}, socket) do
-    {:noreply, stream_insert(socket, :requisitions, requisition)}
-  end
-
-  @impl true
-  def handle_event("sync", %{"requisition_id" => requisition_id}, socket) do
+  def handle_event("sync", %{"requisition-id" => requisition_id}, socket) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
     BankData.sync_requisition(requisition_id, organization_id)
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("delete", %{"requisition-id" => requisition_id}, socket) do
+    user = socket.assigns.current_user
+    organization_id = user.organization_id
+
+    BankData.delete_requisition(requisition_id, organization_id)
+
+    socket =
+      socket
+      |> assign(
+        :requisitions,
+        BankData.list_requisitions(organization_id)
+      )
 
     {:noreply, socket}
   end
