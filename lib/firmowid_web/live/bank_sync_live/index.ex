@@ -1,8 +1,8 @@
 defmodule FirmowidWeb.BankSyncLive.Index do
   use FirmowidWeb, :live_view
 
-  alias Firmowid.GoLimitless
-  alias Firmowid.GoLimitless.Requisition
+  alias Firmowid.BankData
+  alias Firmowid.BankData.Requisition
   alias Firmowid.InvoiceMatcher
 
   @impl true
@@ -14,7 +14,7 @@ defmodule FirmowidWeb.BankSyncLive.Index do
      stream(
        socket,
        :requisitions,
-       GoLimitless.list_requisitions(organization_id)
+       BankData.list_requisitions(organization_id)
      )}
   end
 
@@ -40,17 +40,11 @@ defmodule FirmowidWeb.BankSyncLive.Index do
   end
 
   @impl true
-  def handle_event("sync", %{"id" => id}, socket) do
+  def handle_event("sync", %{"requisition_id" => requisition_id}, socket) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
-    requisition = GoLimitless.get_requisition!(id)
-
-    GoLimitless.ApiClient.sync_transaction_for_account(
-      "PL33105014451000009081121700",
-      requisition.requisition_id,
-      organization_id
-    )
+    BankData.sync_requisition(requisition_id, organization_id)
 
     {:noreply, socket}
   end
@@ -62,13 +56,5 @@ defmodule FirmowidWeb.BankSyncLive.Index do
     InvoiceMatcher.match_all_good_candidates_for_unconnected_documents(organization_id)
 
     {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event("delete", %{"id" => id}, socket) do
-    requisition = GoLimitless.get_requisition!(id)
-    {:ok, _} = GoLimitless.delete_requisition(requisition)
-
-    {:noreply, stream_delete(socket, :requisitions, requisition)}
   end
 end

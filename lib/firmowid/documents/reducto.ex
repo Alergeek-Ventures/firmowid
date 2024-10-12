@@ -78,9 +78,9 @@ defmodule Firmowid.Documents.Reducto do
       ]
     }
 
-    # switch here to mock reducto
     extracted_metadata =
       if true do
+        # switch here to mock reducto
         reducto_extract_response =
           Req.post!(
             "https://v1.api.reducto.ai/extract",
@@ -110,8 +110,6 @@ defmodule Firmowid.Documents.Reducto do
           "currency" => "PLN"
         }
       end
-
-    dbg(extracted_metadata)
 
     extracted_metadata =
       Map.put(extracted_metadata, "total_amount", -extracted_metadata["total_amount"])

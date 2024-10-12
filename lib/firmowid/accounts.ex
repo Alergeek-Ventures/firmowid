@@ -475,8 +475,6 @@ defmodule Firmowid.Accounts do
   def create_organization_invites(organization_id, issued_by_id) do
     random_code = :crypto.strong_rand_bytes(20) |> Base.url_encode64()
 
-    dbg(random_code)
-
     %OrganizationInvites{}
     |> OrganizationInvites.changeset(%{
       issued_by_id: issued_by_id,

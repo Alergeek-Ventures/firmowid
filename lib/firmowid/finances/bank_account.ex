@@ -5,6 +5,7 @@ defmodule Firmowid.Finances.BankAccount do
   schema "bank_accounts" do
     field :iban, :string
     belongs_to :organization, Firmowid.Accounts.Organization, type: :binary_id
+    belongs_to :requisition, Firmowid.BankData.Requisition
 
     has_many :imported_transactions,
              Firmowid.Finances.ImportedTransaction
@@ -15,7 +16,7 @@ defmodule Firmowid.Finances.BankAccount do
   @doc false
   def changeset(bank_account, attrs) do
     bank_account
-    |> cast(attrs, [:iban, :organization_id])
-    |> validate_required([:iban, :organization_id])
+    |> cast(attrs, [:iban, :organization_id, :requisition_id])
+    |> validate_required([:iban, :organization_id, :requisition_id])
   end
 end

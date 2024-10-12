@@ -1,4 +1,4 @@
-defmodule Firmowid.GoLimitless.TokenManager do
+defmodule Firmowid.BankData.TokenManager do
   use GenServer
 
   # seconds before expiry to refresh the token

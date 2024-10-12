@@ -64,7 +64,9 @@ defmodule FirmowidWeb.Router do
       live "/organization_invites", OrganizationInvitesLive.Index, :index
 
       get "/settings", ContentController, :settings
+
       live "/settings/bank-sync", BankSyncLive.Index, :index
+      live "/settings/bank-sync/create", BankSyncLive.Create, :index
     end
   end
 

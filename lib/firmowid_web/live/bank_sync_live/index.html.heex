@@ -2,33 +2,36 @@
   Lista połączeń z bankiem
 </.header>
 
-<div class="flex flex-row gap-4 p-4">
+<div class="flex flex-row justify-end gap-4 p-4 w-full">
+  <.link class="underline font-bold" navigate={~p"/settings/bank-sync/create"}>
+    Dodaj konto bankowe
+  </.link>
+</div>
+
+<div class="flex flex-row gap-4 p-4 w-full">
   <.table id="requisitions" rows={@streams.requisitions}>
-    <:col :let={{_id, requisition}} label="Identyfikator połączenia">
-      <code>
-        <%= requisition.requisition_id %>
-      </code>
-    </:col>
-    <:col :let={{_id, requisition}} label="Accounts">
-      <%= for account <- requisition.accounts do %>
-        <code>
-          <%= account["iban"] %>
-        </code>
-      <% end %>
-    </:col>
     <:col :let={{_id, requisition}} label="Status">
       <%= case requisition.status do %>
         <% :accepted -> %>
           <.icon name="hero-check-circle-solid" class="h-5 w-5 text-greenText" />
         <% :pending -> %>
-          <.icon name="hero-exclamation-triangle-solid" class="h-5 w-5 text-blueText" />
+          <.icon name="hero-arrow-path" class="h-5 w-5 text-blueText" />
         <% :rejected -> %>
           <.icon name="hero-x-circle-solid" class="h-5 w-5 text-redText" />
       <% end %>
     </:col>
+    <:col :let={{_id, requisition}} label="Konta bankowe">
+      <%= if requisition.bank_accounts == [] do %>
+        -
+      <% else %>
+        <%= for bank_account <- requisition.bank_accounts do %>
+          <pre><%= bank_account.iban %></pre>
+        <% end %>
+      <% end %>
+    </:col>
     <:action :let={{_id, requisition}}>
       <.button
-        phx-click={JS.push("sync", value: %{id: requisition.id})}
+        phx-click={JS.push("sync", value: %{requisition_id: requisition.requisition_id})}
         disabled={requisition.status != :accepted}
       >
         Synchronizuj
@@ -38,14 +41,6 @@
       <.button phx-click="auto-match-documents">
         Połącz dokumenty z transakcjami
       </.button>
-    </:action>
-    <:action :let={{id, requisition}}>
-      <.link
-        phx-click={JS.push("delete", value: %{id: requisition.id}) |> hide("##{id}")}
-        data-confirm="Czy jesteś pewny?"
-      >
-        Usuń
-      </.link>
     </:action>
   </.table>
 </div>

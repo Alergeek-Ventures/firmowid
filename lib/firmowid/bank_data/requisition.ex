@@ -1,4 +1,4 @@
-defmodule Firmowid.GoLimitless.Requisition do
+defmodule Firmowid.BankData.Requisition do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -8,6 +8,8 @@ defmodule Firmowid.GoLimitless.Requisition do
           values: [:pending, :accepted, :rejected]
 
     field :requisition_id, :string
+
+    has_many :bank_accounts, Firmowid.Finances.BankAccount, on_delete: :delete_all
 
     belongs_to :organization, Firmowid.Accounts.Organization, type: :binary_id
 

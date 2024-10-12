@@ -71,8 +71,6 @@ defmodule FirmowidWeb.OrganizationLive do
   def handle_event("create", organization, socket) do
     user = socket.assigns.current_user
 
-    dbg(organization)
-
     organization_slug =
       organization["name"]
       |> String.downcase()
