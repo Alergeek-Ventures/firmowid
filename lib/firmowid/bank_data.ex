@@ -68,8 +68,11 @@ defmodule Firmowid.BankData do
     end
   end
 
-  def sync_requisition(requisition_id, organization_id) do
-    accounts = ApiClient.get_accounts_for_requisition(requisition_id)
+  def sync_requisition(firmowid_requisition_id, organization_id) do
+    gocardless_requisition_id =
+      Repo.get_by!(Requisition, [id: firmowid_requisition_id], organization_id: organization_id).requisition_id
+
+    accounts = ApiClient.get_accounts_for_requisition(gocardless_requisition_id)
 
     accounts
     |> Enum.each(fn go_cardless_account ->

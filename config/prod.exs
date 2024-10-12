@@ -6,7 +6,9 @@ import Config
 # which you should run after static files are built and
 # before starting your production server.
 config :firmowid, FirmowidWeb.Endpoint, cache_static_manifest: "priv/static/cache_manifest.json"
-config :firmowid, uploads_bucket: "firmowid-uploads-prod"
+
+config :firmowid,
+  uploads_bucket: "firmowid-uploads-prod"
 
 config :ex_aws,
   access_key_id: "REMOVED_TIGRIS_ACCESS_KEY",

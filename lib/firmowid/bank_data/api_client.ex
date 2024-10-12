@@ -118,6 +118,6 @@ defmodule Firmowid.BankData.ApiClient do
   end
 
   defp get_access_token() do
-    TokenManager.get_access_token()
+    GenServer.call(TokenManager, :get_access_token)
   end
 end

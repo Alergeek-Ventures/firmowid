@@ -10,8 +10,7 @@ defmodule Firmowid.Application do
     children = [
       FirmowidWeb.Telemetry,
       Firmowid.Repo,
-      {Ecto.Migrator,
-       repos: Application.fetch_env!(:firmowid, :ecto_repos), skip: skip_migrations?()},
+      {Ecto.Migrator, repos: Application.fetch_env!(:firmowid, :ecto_repos)},
       {DNSCluster, query: Application.get_env(:firmowid, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Firmowid.PubSub},
       # Start the Finch HTTP client for sending emails
@@ -34,10 +33,5 @@ defmodule Firmowid.Application do
   def config_change(changed, _new, removed) do
     FirmowidWeb.Endpoint.config_change(changed, removed)
     :ok
-  end
-
-  defp skip_migrations?() do
-    # By default, sqlite migrations are run when using a release
-    System.get_env("RELEASE_NAME") != nil
   end
 end

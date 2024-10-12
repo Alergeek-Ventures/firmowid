@@ -21,9 +21,11 @@ defmodule FirmowidWeb.BankSyncLive.Index do
 
   @impl true
   def handle_params(_params, _url, socket) do
-    {:noreply,
-     socket
-     |> assign(:page_title, "Synchronizacja konta bankowego z Firmowidem")}
+    socket =
+      socket
+      |> assign(:page_title, "Synchronizacja konta bankowego z Firmowidem")
+
+    {:noreply, socket}
   end
 
   @impl true

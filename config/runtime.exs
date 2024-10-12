@@ -58,6 +58,11 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
+  config :firmowid,
+    go_limitless_secret_id: "REMOVED_GOCARDLESS_SECRET_ID",
+    go_limitless_secret_key:
+      "REMOVED_GOCARDLESS_SECRET_KEY"
+
   # configures Swoosh SMTP client
   config :firmowid, Firmowid.Mailer,
     adapter: Swoosh.Adapters.Sendgrid,
