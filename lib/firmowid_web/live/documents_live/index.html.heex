@@ -22,6 +22,12 @@
             <span><%= length(Enum.filter(@uploads.file.entries, &(!&1.done?))) %></span>
           </span>
         <% end %>
+        <%= if length(@documents_pending_extraction) > 0 do %>
+          <span class="absolute -top-2 -left-2 h-6 w-6 rounded-full bg-blueBg
+          text-blueText flex justify-center items-center items animate-bounce">
+            <span><%= length(@documents_pending_extraction) %></span>
+          </span>
+        <% end %>
         <.icon name="hero-document" class="w-6 h-6" /> Dodaj dokument
         (lub przeciągnij tutaj, aby załadować)
       </label>

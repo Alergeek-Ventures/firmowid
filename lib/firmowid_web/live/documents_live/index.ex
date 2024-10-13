@@ -7,6 +7,8 @@ defmodule FirmowidWeb.DocumentsLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
+    if connected?(socket), do: Documents.subscribe_to_documents_changes()
+
     previous_month_date = Date.utc_today() |> Date.add(-Date.days_in_month(Date.utc_today()))
     date_range_from = Date.beginning_of_month(previous_month_date)
     date_range_to = Date.end_of_month(previous_month_date)
@@ -79,7 +81,6 @@ defmodule FirmowidWeb.DocumentsLive.Index do
 
       socket =
         socket
-        |> assign(:documents, Documents.list_documents_with_metadata(organization_id))
         |> assign(
           :documents_pending_extraction,
           Documents.list_documents_without_metadata(organization_id)
@@ -116,7 +117,6 @@ defmodule FirmowidWeb.DocumentsLive.Index do
 
     socket =
       socket
-      |> assign(:documents, Documents.list_documents_with_metadata(organization_id))
       |> assign(
         :documents_pending_extraction,
         Documents.list_documents_without_metadata(organization_id)
@@ -194,13 +194,25 @@ defmodule FirmowidWeb.DocumentsLive.Index do
   end
 
   @impl true
-  def handle_info({:document_updated, _}, socket) do
+  def handle_info({:document_changed, _}, socket) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
+    date_range = socket.assigns.date_range_form
+    date_range_from = Date.from_iso8601!(date_range["from"].value)
+    date_range_to = Date.from_iso8601!(date_range["to"].value)
+
     socket =
       socket
-      |> assign(:documents, Documents.list_documents_with_metadata(organization_id))
+      # actual data
+      |> assign(
+        :invoice_matchers,
+        InvoiceMatcher.get_invoice_matchers(
+          organization_id,
+          date_range_from,
+          date_range_to
+        )
+      )
       |> assign(
         :documents_pending_extraction,
         Documents.list_documents_without_metadata(organization_id)

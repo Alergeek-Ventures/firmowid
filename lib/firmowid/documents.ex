@@ -9,6 +9,20 @@ defmodule Firmowid.Documents do
   alias Firmowid.Documents.Reducto
   alias Firmowid.Documents.DocumentsTransactions
 
+  @pub_sub_topic "documents"
+
+  def subscribe_to_documents_changes() do
+    Phoenix.PubSub.subscribe(Firmowid.PubSub, @pub_sub_topic)
+  end
+
+  def broadcast_document_change(document_id) do
+    Phoenix.PubSub.broadcast(
+      Firmowid.PubSub,
+      @pub_sub_topic,
+      {:document_changed, document_id}
+    )
+  end
+
   def list_documents_with_metadata(
         organization_id,
         from \\ Date.utc_today(),
@@ -116,6 +130,8 @@ defmodule Firmowid.Documents do
       |> Document.changeset(attrs)
       |> Repo.update!()
 
+    broadcast_document_change(document_id)
+
     result
   end
 
@@ -130,6 +146,8 @@ defmodule Firmowid.Documents do
     |> ExAws.request!()
 
     Repo.delete!(changeset, organization_id: organization_id)
+
+    broadcast_document_change(id)
   end
 
   def get_document(organization_id, id) do
@@ -165,6 +183,8 @@ defmodule Firmowid.Documents do
       organization_id: organization_id
     })
     |> Repo.insert!()
+
+    broadcast_document_change(document_id)
   end
 
   def delete_documents_imported_transactions_connection(
@@ -178,5 +198,7 @@ defmodule Firmowid.Documents do
       organization_id: organization_id
     )
     |> Repo.delete!()
+
+    broadcast_document_change(document_id)
   end
 end
