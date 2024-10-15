@@ -10,9 +10,6 @@ config :argon2_elixir, t_cost: 1, m_cost: 8
 # Run `mix help test` for more information.
 config :firmowid, Firmowid.Repo,
   database: System.get_env("DB_NAME", "firmowid-test"),
-  hostname: System.get_env("DB_HOST", "localhost"),
-  username: System.get_env("DB_USER", "postgres"),
-  password: System.get_env("DB_PASS", "postgres"),
   pool_size: 5,
   pool: Ecto.Adapters.SQL.Sandbox
 

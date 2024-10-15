@@ -14,6 +14,16 @@ config :firmowid,
   go_limitless_secret_key: System.get_env("GO_LIMITLESS_SECRET_KEY"),
   uploads_bucket: "firmowid-uploads-dev"
 
+config :firmowid, Firmowid.Repo,
+  database: System.get_env("DB_NAME", "firmowid"),
+  hostname: System.get_env("DB_HOST", "localhost"),
+  username: System.get_env("DB_USER", "postgres"),
+  password: System.get_env("DB_PASS", "postgres"),
+  port: System.get_env("DB_PORT", "5432"),
+  pool_size: 5,
+  stacktrace: true,
+  show_sensitive_data_on_connection_error: true
+
 # Configures the endpoint
 config :firmowid, FirmowidWeb.Endpoint,
   url: [host: "localhost"],
