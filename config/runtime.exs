@@ -20,10 +20,9 @@ if System.get_env("PHX_SERVER") do
   config :firmowid, FirmowidWeb.Endpoint, server: true
 end
 
-
 config :firmowid,
-    go_limitless_secret_id: "REMOVED_GOCARDLESS_SECRET_ID",
-    go_limitless_secret_key:
+  go_limitless_secret_id: "REMOVED_GOCARDLESS_SECRET_ID",
+  go_limitless_secret_key:
     "REMOVED_GOCARDLESS_SECRET_KEY"
 
 if config_env() == :prod do

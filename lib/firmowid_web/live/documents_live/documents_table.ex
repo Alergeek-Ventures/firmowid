@@ -34,8 +34,8 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
         <col
           :for={column <- @columns}
           class={[
-            column.key == "sale_date" && "max-2xl:w-36",
-            column.key == "due_date" && "max-2xl:w-36",
+            column.key == "sale_date" && "w-36",
+            column.key == "due_date" && "w-44",
             column.key == "status" && "w-40",
             column.key == "amount" && "w-44"
           ]}
@@ -73,7 +73,10 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
               ]}
             >
               <%= if column.key == "status" do %>
-                <.status_cell status={@get_status.(invoice_matcher)} />
+                <.status_cell
+                  status={@get_status.(invoice_matcher)}
+                  invoice_matcher={invoice_matcher}
+                />
               <% else %>
                 <%= if column.key == "amount" do %>
                   <.amount_cell
@@ -149,26 +152,64 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
 
   def status_cell(assigns) do
     ~H"""
-    <div class={[
-      "text-xs h-6 w-32",
-      "flex flex-row justify-between items-center py-2 px-2 rounded-md",
-      @status == "Pominięte" && "bg-greenBg text-greenText",
-      @status == "Transakcja" && "bg-redBg text-redText",
-      @status == "Dokument" && "bg-lightGreyBg text-darkGrey",
-      @status == "Komplet" && "bg-greenBg text-greenText"
-    ]}>
-      <div class="font-normal uppercase"><%= @status %></div>
-      <.icon
-        name={
-          case @status do
-            "Transakcja" -> "hero-credit-card-mini"
-            "Dokument" -> "hero-document-currency-dollar-mini"
-            "Komplet" -> "hero-document-check-mini"
-            "Pominięte" -> "hero-document-minus"
-          end
-        }
-        class="h-4 w-4"
-      />
+    <div class="flex flex-row gap-2 w-32 overflow-hidden">
+      <div class={[
+        "text-xs h-6",
+        "flex flex-row justify-center items-center py-2 px-2 rounded-md",
+        "transition-all duration-500",
+        @status != "Pominięte" && "w-10",
+        @status == "Pominięte" && "w-20 bg-greenBg text-greenText",
+        @status == "Transakcja" && "bg-redBg text-redText",
+        @status == "Dokument" && "bg-lightGreyBg text-darkGrey",
+        @status == "Komplet" && "!w-full justify-between bg-greenBg text-greenText"
+      ]}>
+        <%= if @status == "Komplet" do %>
+          <div class="font-normal uppercase"><%= @status %></div>
+        <% end %>
+        <.icon
+          name={
+            case @status do
+              "Transakcja" ->
+                "hero-credit-card-mini"
+
+              "Dokument" ->
+                "hero-document-text-solid"
+
+              "Komplet" ->
+                "hero-check-micro"
+
+              "Pominięte" ->
+                if @invoice_matcher.documents == [] do
+                  "hero-credit-card-mini"
+                else
+                  "hero-document-text-solid"
+                end
+            end
+          }
+          class={[
+            "h-4 w-4",
+            @status == "Komplet" && "w-5 h-5"
+          ]}
+        />
+      </div>
+      <%= if @status != "Komplet" do %>
+        <button
+          phx-click="skip-invoicing"
+          phx-value-invoice-matcher={@invoice_matcher}
+          class={[
+            "transition-all duration-500",
+            @status != "Pominięte" && "w-20",
+            @status == "Pominięte" && "w-10",
+            "h-6 uppercase text-xs text-darkGrey bg-lightGreyBg rounded-md"
+          ]}
+        >
+          <%= if @status == "Pominięte" do %>
+            <.icon name="hero-arrow-uturn-left-micro" class="h-4 w-4" />
+          <% else %>
+            Pomiń
+          <% end %>
+        </button>
+      <% end %>
     </div>
     """
   end

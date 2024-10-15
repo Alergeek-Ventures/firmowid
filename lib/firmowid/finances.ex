@@ -82,8 +82,8 @@ defmodule Firmowid.Finances do
   def get_imported_transaction!(organization_id, transaction_id) do
     transaction =
       Repo.get!(ImportedTransaction, transaction_id, organization_id: organization_id)
-      |> Repo.preload(:bank_account)
-      |> Repo.preload(:document_transactions)
+      |> Repo.preload(:bank_account, organization_id: organization_id)
+      |> Repo.preload(:document_transactions, organization_id: organization_id)
 
     Map.merge(transaction, %{
       amount:

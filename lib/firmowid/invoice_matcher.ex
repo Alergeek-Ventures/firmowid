@@ -179,7 +179,7 @@ defmodule Firmowid.InvoiceMatcher do
           hd(transactions)
           |> Map.put(
             :transaction_amount,
-            Enum.sum(Enum.map(transactions, & &1.transaction_amount))
+            Enum.sum(Enum.map(transactions, &Decimal.to_float(&1.transaction_amount)))
           )
           |> Map.put(:booking_date, Enum.at(transactions, -1).booking_date)
 
@@ -199,7 +199,9 @@ defmodule Firmowid.InvoiceMatcher do
         documents
         |> Enum.map(fn document ->
           {document,
-           get_potential_transactions_for_document(document,
+           get_potential_transactions_for_document(
+             document,
+             organization_id,
              similarity_threshold: similarity_threshold,
              max_results: 10
            )}

@@ -149,30 +149,40 @@ defmodule FirmowidWeb.DocumentsLive.Index do
   end
 
   @impl true
-  def handle_event("skip-invoicing", invoice_matcher, socket) do
+  def handle_event("skip-invoicing", %{"invoice-matcher" => invoice_matcher}, socket) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
-    case String.split(invoice_matcher["invoice-matcher"], "|") do
+    case String.split(invoice_matcher, "|") do
       [document_id, " "] ->
-        document_id
-        |> String.trim()
-        |> String.to_integer()
-        |> Documents.update_document(
+        document_id =
+          document_id
+          |> String.trim()
+          |> String.to_integer()
+
+        Documents.update_document(
           organization_id,
+          document_id,
           %{
-            skip_invoicing: true
+            skip_invoicing: !Documents.get_document(organization_id, document_id).skip_invoicing
           }
         )
 
       [" ", imported_transaction_id] ->
-        imported_transaction_id
-        |> String.trim()
-        |> String.to_integer()
-        |> Finances.update_imported_transaction(
+        imported_transaction_id =
+          imported_transaction_id
+          |> String.trim()
+          |> String.to_integer()
+
+        Finances.update_imported_transaction(
           organization_id,
+          imported_transaction_id,
           %{
-            skip_invoicing: true
+            skip_invoicing:
+              !Finances.get_imported_transaction!(
+                organization_id,
+                imported_transaction_id
+              ).skip_invoicing
           }
         )
     end
