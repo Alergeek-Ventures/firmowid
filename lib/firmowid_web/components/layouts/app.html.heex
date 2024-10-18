@@ -26,7 +26,10 @@
   <% end %>
 </nav>
 
-<main class="px-4 py-4 sm:px-6 lg:px-8">
+<main class={[
+  is_nil(assigns[:no_padding]) &&
+    "px-4 py-4 sm:px-6 lg:px-8"
+]}>
   <div class="mx-auto">
     <LiveToast.toast_group
       flash={@flash}

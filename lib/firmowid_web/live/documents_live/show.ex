@@ -44,6 +44,9 @@ defmodule FirmowidWeb.DocumentsLive.Show do
       |> assign(:document, document)
       |> assign(:potential_transactions, potential_transactions)
 
+      # styling
+      |> assign(:no_padding, true)
+
     {:ok, socket}
   end
 

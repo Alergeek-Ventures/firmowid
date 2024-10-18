@@ -13,6 +13,15 @@ module.exports = {
     "../deps/live_toast/lib/**/*.*ex",
   ],
   theme: {
+    fontSize: {
+      xs: "11px",
+      sm: "14px",
+      base: "16px",
+      lg: "20px",
+      xl: "23px",
+      "2xl": "27px",
+      "3xl": "40px",
+    },
     fontFamily: {
       sans: ["Lexend", "ui-sans-serif", "system-ui", "sans-serif"],
     },
