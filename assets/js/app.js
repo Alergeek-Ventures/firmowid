@@ -139,6 +139,79 @@ let liveSocket = new LiveSocket("/live", Socket, {
         tippy(this.el);
       },
     },
+    AirDatepicker: {
+      mounted() {
+        this.mountDatepicker();
+      },
+      updated() {
+        this.mountDatepicker();
+      },
+      mountDatepicker() {
+        const initialDate = new Date(this.el.getAttribute("data-initial-date"));
+
+        new AirDatepicker(this.el, {
+          selectedDates: [initialDate],
+          toggleSelected: false,
+          view: "months",
+          minView: "months",
+          locale: {
+            days: [
+              "Niedziela",
+              "Poniedziałek",
+              "Wtorek",
+              "Środa",
+              "Czwartek",
+              "Piątek",
+              "Sobota",
+            ],
+            daysShort: ["Nie", "Pon", "Wto", "Śro", "Czw", "Pią", "Sob"],
+            daysMin: ["Nd", "Pn", "Wt", "Śr", "Czw", "Pt", "So"],
+            months: [
+              "Styczeń",
+              "Luty",
+              "Marzec",
+              "Kwiecień",
+              "Maj",
+              "Czerwiec",
+              "Lipiec",
+              "Sierpień",
+              "Wrzesień",
+              "Październik",
+              "Listopad",
+              "Grudzień",
+            ],
+            monthsShort: [
+              "Sty",
+              "Lut",
+              "Mar",
+              "Kwi",
+              "Maj",
+              "Cze",
+              "Lip",
+              "Sie",
+              "Wrz",
+              "Paź",
+              "Lis",
+              "Gru",
+            ],
+            today: "Dzisiaj",
+            clear: "Wyczyść",
+            dateFormat: "yyyy-MM-dd",
+            timeFormat: "hh:mm:aa",
+            firstDay: 1,
+          },
+          dateFormat: "MMMM yyyy",
+          onSelect: ({ date }) => {
+            // set time to mid-day to avoid timezone issues
+            const newDate = new Date(date);
+            newDate.setTime(newDate.getTime() + 12 * 60 * 60 * 1000);
+            this.pushEvent("change-month", {
+              month: newDate.toISOString().split("T")[0],
+            });
+          },
+        });
+      },
+    },
   },
 });
 

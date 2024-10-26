@@ -32,11 +32,8 @@ defmodule FirmowidWeb.DocumentsLive.Index do
       )
       # UI controls
       |> assign(
-        :date_range_form,
-        to_form(%{
-          "from" => Date.to_iso8601(date_range_from),
-          "to" => Date.to_iso8601(date_range_to)
-        })
+        :month,
+        previous_month_date
       )
       # actual data
       |> assign(
@@ -126,13 +123,18 @@ defmodule FirmowidWeb.DocumentsLive.Index do
   end
 
   @impl true
-  def handle_event("change-date", date_range_form, socket) do
+  def handle_event("change-month", %{"month" => month}, socket) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
+    month = Date.from_iso8601!(month)
+
     socket =
       socket
-      |> assign(:date_range_form, to_form(date_range_form))
+      |> assign(:month, month)
+
+    date_range_from = Date.beginning_of_month(month)
+    date_range_to = Date.end_of_month(month)
 
     socket =
       socket
@@ -140,8 +142,8 @@ defmodule FirmowidWeb.DocumentsLive.Index do
         :invoice_matchers,
         InvoiceMatcher.get_invoice_matchers(
           organization_id,
-          Date.from_iso8601!(date_range_form["from"]),
-          Date.from_iso8601!(date_range_form["to"])
+          date_range_from,
+          date_range_to
         )
       )
 
@@ -187,7 +189,9 @@ defmodule FirmowidWeb.DocumentsLive.Index do
         )
     end
 
-    date_range_form = socket.assigns.date_range_form
+    month = socket.assigns.month
+    date_range_from = Date.beginning_of_month(month)
+    date_range_to = Date.end_of_month(month)
 
     socket =
       socket
@@ -195,8 +199,8 @@ defmodule FirmowidWeb.DocumentsLive.Index do
         :invoice_matchers,
         InvoiceMatcher.get_invoice_matchers(
           organization_id,
-          Date.from_iso8601!(date_range_form["from"].value),
-          Date.from_iso8601!(date_range_form["to"].value)
+          date_range_from,
+          date_range_to
         )
       )
 
@@ -208,9 +212,9 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
-    date_range = socket.assigns.date_range_form
-    date_range_from = Date.from_iso8601!(date_range["from"].value)
-    date_range_to = Date.from_iso8601!(date_range["to"].value)
+    month = socket.assigns.month
+    date_range_from = Date.beginning_of_month(month)
+    date_range_to = Date.end_of_month(month)
 
     socket =
       socket

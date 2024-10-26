@@ -1,10 +1,13 @@
-<div class="w-full flex items-end justify-between pb-8">
-  <.simple_form phx-change="change-date" phx-submit="change-date" for={@date_range_form}>
-    <div class="flex flex-row gap-4 items-center">
-      <.input type="date" label="Od" field={@date_range_form["from"]} />
-      <.input type="date" label="Do" field={@date_range_form["to"]} />
-    </div>
-  </.simple_form>
+<div class="w-full flex items-start justify-between pb-8">
+  <div class="flex flex-col gap-4 flex-grow max-w-xl items-start justify-center">
+    <input
+      class="w-52 h-10 border border-darkGrey rounded-lg"
+      type="button"
+      id="month"
+      phx-hook="AirDatepicker"
+      data-initial-date={@month}
+    />
+  </div>
   <div phx-drop-target={@uploads.file.ref}>
     <form id="upload-form" phx-change="upload" phx-submit="upload">
       <div class="hidden">
@@ -12,24 +15,21 @@
       </div>
       <label
         for={@uploads.file.ref}
-        class="relative flex flex-row gap-4 items-center justify-center w-full border-2
-      border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50
-      hover:bg-gray-200 px-3 py-2"
+        class="relative flex flex-row gap-4 items-center justify-center w-full
+        border-2 rounded-lg px-3 py-2 text-white bg-black"
       >
-        <%= if length(Enum.filter(@uploads.file.entries, & !&1.done?)) > 0 do %>
+        <%= if length(Enum.filter(@uploads.file.entries, & !&1.done?)) +
+          length(@documents_pending_extraction)
+          > 0 do %>
           <span class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-blueBg
           text-blueText flex justify-center items-center items animate-bounce">
-            <span><%= length(Enum.filter(@uploads.file.entries, &(!&1.done?))) %></span>
+            <span>
+              <%= length(Enum.filter(@uploads.file.entries, &(!&1.done?)))
+              +length(@documents_pending_extraction) %>
+            </span>
           </span>
         <% end %>
-        <%= if length(@documents_pending_extraction) > 0 do %>
-          <span class="absolute -top-2 -left-2 h-6 w-6 rounded-full bg-blueBg
-          text-blueText flex justify-center items-center items animate-bounce">
-            <span><%= length(@documents_pending_extraction) %></span>
-          </span>
-        <% end %>
-        <.icon name="hero-document" class="w-6 h-6" /> Dodaj dokument
-        (lub przeciągnij tutaj, aby załadować)
+        <.icon name="hero-plus" class="w-6 h-6" /> Dodaj dokument
       </label>
     </form>
   </div>

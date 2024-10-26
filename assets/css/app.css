@@ -3,4 +3,20 @@
 @import "tailwindcss/base";
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
+
+.air-datepicker {
+    --adp-background-color-selected-other-month-focused: #455E5E;
+    --adp-background-color-selected-other-month: #455E5E;
+    --adp-accent-color: #455E5E;
+    --adp-color-current-date: var(--adp-accent-color);
+    --adp-day-name-color: var(--adp-accent-color);
+    --adp-day-name-color-hover: var(--adp-accent-color);
+    --adp-cell-background-color-selected: var(--adp-accent-color);
+    --adp-cell-background-color-selected-hover: var(--adp-accent-color);
+    --adp-cell-background-color-in-range: rgba(233, 84, 32, 0.1);
+    --adp-cell-background-color-in-range-hover: rgba(233, 84, 32, 0.2);
+    --adp-cell-border-color-in-range: var(--adp-cell-background-color-selected);
+    --adp-btn-color: var(--adp-accent-color);
+    --adp-font-family: "Lexend", sans-serif;
+}
 /* This file is for your main application CSS */

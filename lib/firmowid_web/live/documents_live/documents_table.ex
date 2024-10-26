@@ -226,7 +226,7 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
           phx-click="skip-invoicing"
           phx-value-invoice-matcher={@invoice_matcher}
           class={[
-            "transition-all duration-500",
+            "transition-all duration-500 cursor-auto",
             @status != "Pominięte" && "w-20",
             @status == "Pominięte" && "w-10",
             "h-6 uppercase text-xs text-darkGrey bg-lightGreyBg rounded-md"
