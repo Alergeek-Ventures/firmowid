@@ -152,7 +152,36 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
 
   def status_cell(assigns) do
     ~H"""
-    <div class="flex flex-row gap-2 w-32 overflow-hidden">
+    <div
+      id={"status-#{@invoice_matcher.id}"}
+      phx-hook="tippy"
+      data-tippy-delay="1000"
+      data-tippy-content={
+        case @status do
+          "Komplet" ->
+            "Udało się połączyć transakcje i dokument - to oznacza, " <>
+              "że faktura jest opłacona i przygotowana do zaksięgowania."
+
+          "Transakcja" ->
+            "Z Twojego konta zsynchronizowaliśmy transakcje - to znaczy, że " <>
+              "do wydatku należy przyporządkować dokument. "
+
+          "Dokument" ->
+            "Dodałeś plik, zawierający fakturę kosztową. Aby potwierdzić jej " <>
+              "opłacenie, przyporządkujemy odpowiednią transakcję z konta - lub " <>
+              "kliknij 'pomiń', aby zasygnalizować opłacenie jej innym sposobem " <>
+              "(np. gotówką)"
+
+          "Pominięte" -> 
+            if @invoice_matcher.documents != [] do
+              "Dokument został pominięty. Transakcje nie będą do niego przypisywane"
+            else
+              "Transakcja została pominięta. Dokumenty nie będą do niej przypisywane"
+            end
+        end
+      }
+      class="flex flex-row gap-2 w-32 overflow-hidden"
+    >
       <div class={[
         "text-xs h-6",
         "flex flex-row justify-center items-center py-2 px-2 rounded-md",
