@@ -1,5 +1,8 @@
-<div class="grid gap-y-2 gap-x-4 grid-cols-12
-  grid-rows-[max-content_max-content_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr]">
+<div class={[
+  "grid gap-y-2 gap-x-4",
+  "grid-cols-[60px_repeat(10,1fr)_60px]",
+  "grid-rows-[minmax(10px,100px)_minmax(10px,100px)_48px_30px_60px_30px_60px_90px_40px_60px_40px_60px_1fr]"
+]}>
   <div class={[
     "row-start-1 row-end-2 col-start-1 col-end-2",
     "self-end justify-self-center",
@@ -36,7 +39,17 @@
     @document.imported_transactions != [] && "row-end-13",
     @document.imported_transactions == [] && "row-end-9"
   ]}>
-    <embed type="application/pdf" src={@document.file_url} width="100%" height="100%" />
+    <div
+      class="w-full h-full max-h-[80vh] border-black border-2 rounded-lg
+      overflow-x-hidden overflow-y-scroll bg-white"
+      id="document-details"
+      data-pdf-url={@document.file_url}
+      phx-hook="PDFViewer"
+    >
+      <div class="w-full h-full flex items-center justify-center font-bold">
+        Ładowanie dokumentu...
+      </div>
+    </div>
   </div>
   <p class={[
     "row-start-3 row-end-4 col-start-2 col-end-4",
@@ -67,49 +80,39 @@
     <p><%= @document.invoice_identifier %></p>
   </div>
   <p class={[
-    "row-start-4 row-end-5 col-start-4 col-end-7",
+    "row-start-4 row-end-5 col-start-5 col-end-7",
     "self-end justify-self-start",
     "text-sm text-darkGrey"
   ]}>
-    Sprzedający
+    Data wystawienia
   </p>
-  <div class="row-start-5 row-end-6 col-start-4 col-end-7">
-    <p><%= @document.seller %></p>
+  <div class="row-start-5 row-end-6 col-start-5 col-end-7">
+    <p><%= @document.issue_date %></p>
   </div>
   <p class={[
     "row-start-6 row-end-7 col-start-2 col-end-5",
     "self-end justify-self-start",
     "text-sm text-darkGrey"
   ]}>
-    Data wystawienia
-  </p>
-  <div class="row-start-7 row-end-8 col-start-2 col-end-5">
-    <p><%= @document.issue_date %></p>
-  </div>
-  <p class={[
-    "row-start-6 row-end-7 col-start-4 col-end-5",
-    "self-end justify-self-start",
-    "text-sm text-darkGrey"
-  ]}>
     Data sprzedaży
   </p>
-  <div class="row-start-7 row-end-8 col-start-4 col-end-5">
+  <div class="row-start-7 row-end-8 col-start-2 col-end-5">
     <p><%= @document.sale_date %></p>
   </div>
   <p class={[
-    "row-start-6 row-end-7 col-start-6 col-end-8",
+    "row-start-6 row-end-7 col-start-5 col-end-8",
     "self-end justify-self-start",
     "text-sm text-darkGrey"
   ]}>
     Termin zapłaty
   </p>
-  <div class="row-start-7 row-end-8 col-start-6 col-end-8">
+  <div class="row-start-7 row-end-8 col-start-5 col-end-8">
     <p><%= @document.due_date %></p>
   </div>
   <%= case @document.imported_transactions do %>
     <% [single] -> %>
       <p class={[
-        "row-start-8 row-end-9 col-start-2 col-end-4",
+        "row-start-8 row-end-9 col-start-2 col-end-6",
         "self-end justify-self-start",
         "uppercase"
       ]}>
@@ -144,8 +147,7 @@
         "self-center justify-self-end",
         "text-lg text-darkGrey mr-8"
       ]}>
-        <%!-- <%= Money.new(single.transaction_amount, single.transaction_currency) %> --%>
-        <%= single.transaction_amount %>
+        <%= Money.new(single.transaction_amount, single.transaction_currency) %>
       </p>
       <p class={[
         "row-start-11 row-end-12 col-start-2 col-end-8",
@@ -167,43 +169,82 @@
         phx-value-document-id={@document.id}
         phx-value-imported-transaction-id={single.id}
       >
-        Cofnij <.icon name="hero-arrow-uturn-left-micro" class="w-4 h-4" />
+        Cofnij <.icon name="hero-arrow-uturn-left-micro xl:inline-block hidden" class="w-4 h-4" />
       </.button>
     <% _ -> %>
-      <div class="row-start-10 row-end-13 col-start-2 col-end-12">
+      <div class="row-start-9 row-end-13 col-start-2 col-end-12">
         <%= if @document.skip_invoicing do %>
           <h1>Fakturowanie pominięte dla dokumentu</h1>
         <% else %>
-          <h1 class="text-3xl font-bold">
+          <h1 class="text-xl font-bold">
             Potencjalne transakcje dla dokumentu
           </h1>
           <.table id="transactions" rows={@potential_transactions}>
             <:col :let={imported_transaction} label="Informacje">
               <%= imported_transaction.remittance_information_unstructured %>
             </:col>
-            <:col :let={imported_transaction} label="Creditor name">
+            <:col :let={imported_transaction} label="Wierzyciel">
               <%= imported_transaction.creditor_name %>
             </:col>
-            <:col :let={imported_transaction} label="Creditor account">
-              <%= imported_transaction.creditor_account %>
-            </:col>
-            <:col :let={imported_transaction} label="Booking date">
-              <%= imported_transaction.booking_date %>
-            </:col>
-            <:col :let={imported_transaction} label="Value date">
+            <:col :let={imported_transaction} label="Data">
               <%= imported_transaction.value_date %>
             </:col>
-            <:col :let={imported_transaction} label="Amount">
-              <%= imported_transaction.transaction_amount %>
+            <:col :let={imported_transaction} label="Kwota">
+              <%= Money.new(
+                imported_transaction.transaction_amount,
+                imported_transaction.transaction_currency
+              ) %>
             </:col>
-            <:col :let={imported_transaction} label="Ocena AI">
-              <%= imported_transaction.llm_eval %>
+            <:col :let={imported_transaction} label="">
+              <div
+                id="match-llm-eval"
+                phx-hook="tippy"
+                data-tippy-content={"Wykorzystując AI, rekomendujemy transakcję
+                z Twojego konta, która pasuje do danej faktury kosztowej. Ocena
+                jest #{
+                cond do
+                  imported_transaction.llm_eval >= 0.75 -> "wysoka"
+                  imported_transaction.llm_eval >= 0.5 -> "średnia"
+                  true -> "niska"
+                end} dla tej transakcji."}
+                class={[
+                  "flex flex-col justify-center items-start gap-1 pl-2",
+                  "w-10 h-10 rounded-md",
+                  imported_transaction.llm_eval >= 0.75 && "bg-greenBg",
+                  imported_transaction.llm_eval >= 0.5 and imported_transaction.llm_eval < 0.75 &&
+                    "bg-orangeBg",
+                  imported_transaction.llm_eval < 0.5 && "bg-redBg"
+                ]}
+              >
+                <div class={[
+                  "w-[75%] rounded-md bg-white h-1",
+                  imported_transaction.llm_eval >= 0.75 && "bg-greenText"
+                ]} />
+                <div class={[
+                  "w-[55%] rounded-md bg-white h-1",
+                  imported_transaction.llm_eval >= 0.75 && "bg-greenText",
+                  imported_transaction.llm_eval >= 0.5 and imported_transaction.llm_eval < 0.75 &&
+                    "bg-orangeText"
+                ]} />
+                <div class={[
+                  "w-[35%] rounded-md bg-white h-1",
+                  imported_transaction.llm_eval >= 0.75 &&
+                    "bg-greenText",
+                  imported_transaction.llm_eval >= 0.5 and imported_transaction.llm_eval < 0.75 &&
+                    "bg-orangeText",
+                  imported_transaction.llm_eval < 0.5 && "bg-redText"
+                ]} />
+              </div>
             </:col>
             <:action :let={imported_transaction}>
               <.button
                 phx-click="connect"
                 phx-value-document-id={@document.id}
                 phx-value-imported-transaction-id={imported_transaction.id}
+                class={[
+                  imported_transaction.llm_eval < 0.75 && "!bg-lightGreyBg !text-darkGrey",
+                  imported_transaction.llm_eval >= 0.75 && "!bg-darkGrey !text-white"
+                ]}
               >
                 Zatwierdź
               </.button>

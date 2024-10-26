@@ -38,6 +38,7 @@ defmodule FirmowidWeb.DocumentsLive.Show do
         potential_transactions
       )
       |> Enum.map(fn {t, grade} -> Map.put(t, :llm_eval, grade) end)
+      |> Enum.sort_by(& &1.llm_eval, :desc)
 
     socket =
       socket
@@ -103,9 +104,37 @@ defmodule FirmowidWeb.DocumentsLive.Show do
 
     document = Documents.get_document(organization_id, document_id)
 
+    potential_transactions =
+      InvoiceMatcher.get_potential_transactions_for_document(
+        document,
+        organization_id,
+        similarity_threshold: 0.0,
+        days_before: 15,
+        days_after: 10,
+        exact_amount: false
+      )
+      |> Enum.map(fn t ->
+        Map.merge(t, %{
+          amount:
+            Money.new(
+              t.transaction_currency,
+              t.transaction_amount
+            )
+        })
+      end)
+
+    potential_transactions =
+      InvoiceMatcher.llm_re_grade_matches(
+        document,
+        potential_transactions
+      )
+      |> Enum.map(fn {t, grade} -> Map.put(t, :llm_eval, grade) end)
+      |> Enum.sort_by(& &1.llm_eval, :desc)
+
     socket =
       socket
       |> assign(:document, document)
+      |> assign(:potential_transactions, potential_transactions)
 
     {:noreply, socket}
   end
