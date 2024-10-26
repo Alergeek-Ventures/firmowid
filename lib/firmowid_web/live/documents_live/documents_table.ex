@@ -172,7 +172,7 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
               "kliknij 'pomiń', aby zasygnalizować opłacenie jej innym sposobem " <>
               "(np. gotówką)"
 
-          "Pominięte" -> 
+          "Pominięte" ->
             if @invoice_matcher.documents != [] do
               "Dokument został pominięty. Transakcje nie będą do niego przypisywane"
             else
