@@ -218,21 +218,21 @@
               >
                 <div class={[
                   "w-[75%] rounded-md bg-white h-1",
-                  imported_transaction.llm_eval >= 0.75 && "bg-greenText"
+                  imported_transaction.llm_eval >= 0.75 && "!bg-greenText"
                 ]} />
                 <div class={[
                   "w-[55%] rounded-md bg-white h-1",
-                  imported_transaction.llm_eval >= 0.75 && "bg-greenText",
+                  imported_transaction.llm_eval >= 0.75 && "!bg-greenText",
                   imported_transaction.llm_eval >= 0.5 and imported_transaction.llm_eval < 0.75 &&
-                    "bg-orangeText"
+                    "!bg-orangeText"
                 ]} />
                 <div class={[
                   "w-[35%] rounded-md bg-white h-1",
                   imported_transaction.llm_eval >= 0.75 &&
-                    "bg-greenText",
+                    "!bg-greenText",
                   imported_transaction.llm_eval >= 0.5 and imported_transaction.llm_eval < 0.75 &&
-                    "bg-orangeText",
-                  imported_transaction.llm_eval < 0.5 && "bg-redText"
+                    "!bg-orangeText",
+                  imported_transaction.llm_eval < 0.5 && "!bg-redText"
                 ]} />
               </div>
             </:col>
