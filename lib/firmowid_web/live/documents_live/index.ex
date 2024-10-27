@@ -6,10 +6,20 @@ defmodule FirmowidWeb.DocumentsLive.Index do
   alias Firmowid.InvoiceMatcher
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
     if connected?(socket), do: Documents.subscribe_to_documents_changes()
 
-    previous_month_date = Date.utc_today() |> Date.add(-Date.days_in_month(Date.utc_today()))
+    previous_month_date =
+      Map.get(
+        params,
+        "month",
+        Date.utc_today()
+        |> Date.add(-Date.days_in_month(Date.utc_today()))
+        |> Date.beginning_of_month()
+        |> Date.to_iso8601()
+      )
+      |> Date.from_iso8601!()
+
     date_range_from = Date.beginning_of_month(previous_month_date)
     date_range_to = Date.end_of_month(previous_month_date)
 
@@ -95,6 +105,17 @@ defmodule FirmowidWeb.DocumentsLive.Index do
       socket
       |> apply_action(socket.assigns.live_action, params)
 
+    month_from_params = Map.get(params, "month", "1990-09-01") |> Date.from_iso8601!()
+    month_from_socket = socket.assigns.month
+
+    socket =
+      if month_from_params != month_from_socket do
+        socket
+        |> push_patch(to: ~p"/?month=#{month_from_socket |> Date.to_iso8601()}")
+      else
+        socket
+      end
+
     {:noreply, socket}
   end
 
@@ -132,6 +153,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     socket =
       socket
       |> assign(:month, month)
+      |> push_patch(to: ~p"/?month=#{month |> Date.to_iso8601()}")
 
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
