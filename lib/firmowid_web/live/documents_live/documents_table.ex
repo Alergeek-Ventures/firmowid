@@ -153,7 +153,17 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
   def status_cell(assigns) do
     ~H"""
     <div
-      id={"status-#{@invoice_matcher.id}"}
+      id={"status-#{
+        @invoice_matcher.id
+      }-#{
+        @invoice_matcher.documents
+        |> Enum.map(fn d -> d.id end)
+        |> Enum.join(",")
+      }-#{
+        @invoice_matcher.imported_transactions
+        |> Enum.map(fn t -> t.id end)
+        |> Enum.join(",")
+      }"}
       phx-hook="tippy"
       data-tippy-delay="1000"
       data-tippy-content={
