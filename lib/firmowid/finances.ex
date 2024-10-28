@@ -73,6 +73,7 @@ defmodule Firmowid.Finances do
     # and don't have any document_transactions (so not matched yet)
     from(t in ImportedTransaction,
       left_join: dt in assoc(t, :document_transactions),
+      where: t.transaction_amount <= 0.0,
       where: not t.skip_invoicing,
       where: is_nil(dt.id)
     )

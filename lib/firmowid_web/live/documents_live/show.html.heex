@@ -1,6 +1,7 @@
 <div class={[
   "grid gap-y-2 gap-x-4",
   "grid-cols-[60px_repeat(10,1fr)_60px]",
+  "grid-rows-[minmax(10px,100px)_minmax(10px,100px)_48px_30px_60px_30px_60px_90px_40px_60px_40px_60px_1fr]",
   "grid-rows-[minmax(10px,100px)_minmax(10px,100px)_48px_30px_60px_30px_60px_90px_40px_60px_40px_60px_1fr]"
 ]}>
   <div class={[
@@ -36,8 +37,8 @@
   </blockquote>
   <div class={[
     "row-start-1 col-start-8 col-end-13 px-8 pt-8",
-    @document.imported_transactions != [] && "row-end-13",
-    @document.imported_transactions == [] && "row-end-9"
+    @document.imported_transactions == [] && "row-end-9",
+    @document.imported_transactions != [] && "row-end-13"
   ]}>
     <div
       class="w-full h-full max-h-[80vh] border-black border-2 rounded-lg
@@ -109,6 +110,7 @@
   <div class="row-start-7 row-end-8 col-start-5 col-end-8">
     <p><%= @document.due_date %></p>
   </div>
+
   <%= case @document.imported_transactions do %>
     <% [single] -> %>
       <p class={[
@@ -171,35 +173,69 @@
       >
         Cofnij <.icon name="hero-arrow-uturn-left-micro xl:inline-block hidden" class="w-4 h-4" />
       </.button>
-    <% _ -> %>
+    <% [] -> %>
       <div class="row-start-9 row-end-13 col-start-2 col-end-12">
         <%= if @document.skip_invoicing do %>
           <h1>Fakturowanie pominięte dla dokumentu</h1>
         <% else %>
-          <h1 class="text-xl font-bold">
-            Potencjalne transakcje dla dokumentu
-          </h1>
-          <.table id="transactions" rows={@potential_transactions}>
-            <:col :let={imported_transaction} label="Informacje">
-              <%= imported_transaction.remittance_information_unstructured %>
-            </:col>
-            <:col :let={imported_transaction} label="Wierzyciel">
-              <%= imported_transaction.creditor_name %>
-            </:col>
-            <:col :let={imported_transaction} label="Data">
-              <%= imported_transaction.value_date %>
-            </:col>
-            <:col :let={imported_transaction} label="Kwota">
-              <%= Money.new(
-                imported_transaction.transaction_amount,
-                imported_transaction.transaction_currency
-              ) %>
-            </:col>
-            <:col :let={imported_transaction} label="">
-              <div
-                id="match-llm-eval"
-                phx-hook="tippy"
-                data-tippy-content={"Wykorzystując AI, rekomendujemy transakcję
+          <%= if @grouped_potential_transactions != [] do %>
+            <%= for {group, potential_transactions} <- @grouped_potential_transactions do %>
+              <div class="flex flex-row justify-between align-center">
+                <h1 class="font-bold text-lg">Wykryto transakcje łączone</h1>
+                <div class="flex flex-row gap-4">
+                  <.button
+                    phx-click="connect-group"
+                    phx-value-group-id={group.id}
+                    class="w-full h-10"
+                  >
+                    Potwierdź
+                  </.button>
+                </div>
+              </div>
+              <.table id="grouped-transactions" rows={potential_transactions}>
+                <:col :let={imported_transaction} label="Informacje">
+                  <%= imported_transaction.remittance_information_unstructured %>
+                </:col>
+                <:col :let={imported_transaction} label="Wierzyciel">
+                  <%= imported_transaction.creditor_name %>
+                </:col>
+                <:col :let={imported_transaction} label="Data">
+                  <%= imported_transaction.value_date %>
+                </:col>
+                <:col :let={imported_transaction} label="Kwota">
+                  <%= Money.new(
+                    imported_transaction.transaction_amount,
+                    imported_transaction.transaction_currency
+                  ) %>
+                </:col>
+              </.table>
+            <% end %>
+          <% else %>
+            <%= if @potential_transactions != [] do %>
+              <h1 class="text-xl font-bold">
+                Potencjalne transakcje dla dokumentu
+              </h1>
+              <.table id="transactions" rows={@potential_transactions}>
+                <:col :let={imported_transaction} label="Informacje">
+                  <%= imported_transaction.remittance_information_unstructured %>
+                </:col>
+                <:col :let={imported_transaction} label="Wierzyciel">
+                  <%= imported_transaction.creditor_name %>
+                </:col>
+                <:col :let={imported_transaction} label="Data">
+                  <%= imported_transaction.value_date %>
+                </:col>
+                <:col :let={imported_transaction} label="Kwota">
+                  <%= Money.new(
+                    imported_transaction.transaction_amount,
+                    imported_transaction.transaction_currency
+                  ) %>
+                </:col>
+                <:col :let={imported_transaction} label="">
+                  <div
+                    id="match-llm-eval"
+                    phx-hook="tippy"
+                    data-tippy-content={"Wykorzystując AI, rekomendujemy transakcję
                 z Twojego konta, która pasuje do danej faktury kosztowej. Ocena
                 jest #{
                 cond do
@@ -207,50 +243,128 @@
                   imported_transaction.llm_eval >= 0.5 -> "średnia"
                   true -> "niska"
                 end} dla tej transakcji."}
-                class={[
-                  "flex flex-col justify-center items-start gap-1 pl-2",
-                  "w-10 h-10 rounded-md",
-                  imported_transaction.llm_eval >= 0.75 && "bg-greenBg",
-                  imported_transaction.llm_eval >= 0.5 and imported_transaction.llm_eval < 0.75 &&
-                    "bg-orangeBg",
-                  imported_transaction.llm_eval < 0.5 && "bg-redBg"
-                ]}
-              >
-                <div class={[
-                  "w-[75%] rounded-md bg-white h-1",
-                  imported_transaction.llm_eval >= 0.75 && "!bg-greenText"
-                ]} />
-                <div class={[
-                  "w-[55%] rounded-md bg-white h-1",
-                  imported_transaction.llm_eval >= 0.75 && "!bg-greenText",
-                  imported_transaction.llm_eval >= 0.5 and imported_transaction.llm_eval < 0.75 &&
-                    "!bg-orangeText"
-                ]} />
-                <div class={[
-                  "w-[35%] rounded-md bg-white h-1",
-                  imported_transaction.llm_eval >= 0.75 &&
-                    "!bg-greenText",
-                  imported_transaction.llm_eval >= 0.5 and imported_transaction.llm_eval < 0.75 &&
-                    "!bg-orangeText",
-                  imported_transaction.llm_eval < 0.5 && "!bg-redText"
-                ]} />
-              </div>
-            </:col>
-            <:action :let={imported_transaction}>
-              <.button
-                phx-click="connect"
-                phx-value-document-id={@document.id}
-                phx-value-imported-transaction-id={imported_transaction.id}
-                class={[
-                  imported_transaction.llm_eval < 0.75 && "!bg-lightGreyBg !text-darkGrey",
-                  imported_transaction.llm_eval >= 0.75 && "!bg-darkGrey !text-white"
-                ]}
-              >
-                Zatwierdź
-              </.button>
-            </:action>
-          </.table>
+                    class={[
+                      "flex flex-col justify-center items-start gap-1 pl-2",
+                      "w-10 h-10 rounded-md",
+                      imported_transaction.llm_eval >= 0.75 && "bg-greenBg",
+                      imported_transaction.llm_eval >= 0.5 and
+                        imported_transaction.llm_eval < 0.75 &&
+                        "bg-orangeBg",
+                      imported_transaction.llm_eval < 0.5 && "bg-redBg"
+                    ]}
+                  >
+                    <div class={[
+                      "w-[75%] rounded-md bg-white h-1",
+                      imported_transaction.llm_eval >= 0.75 && "!bg-greenText"
+                    ]} />
+                    <div class={[
+                      "w-[55%] rounded-md bg-white h-1",
+                      imported_transaction.llm_eval >= 0.75 && "!bg-greenText",
+                      imported_transaction.llm_eval >= 0.5 and
+                        imported_transaction.llm_eval < 0.75 &&
+                        "!bg-orangeText"
+                    ]} />
+                    <div class={[
+                      "w-[35%] rounded-md bg-white h-1",
+                      imported_transaction.llm_eval >= 0.75 &&
+                        "!bg-greenText",
+                      imported_transaction.llm_eval >= 0.5 and
+                        imported_transaction.llm_eval < 0.75 &&
+                        "!bg-orangeText",
+                      imported_transaction.llm_eval < 0.5 && "!bg-redText"
+                    ]} />
+                  </div>
+                </:col>
+                <:action :let={imported_transaction}>
+                  <.button
+                    phx-click="connect"
+                    phx-value-document-id={@document.id}
+                    phx-value-imported-transaction-id={imported_transaction.id}
+                    class={[
+                      imported_transaction.llm_eval < 0.75 && "!bg-lightGreyBg !text-darkGrey",
+                      imported_transaction.llm_eval >= 0.75 && "!bg-darkGrey !text-white"
+                    ]}
+                  >
+                    Zatwierdź
+                  </.button>
+                </:action>
+              </.table>
+            <% end %>
+          <% end %>
         <% end %>
       </div>
+    <% [head | tail] -> %>
+      <p class={[
+        "row-start-8 row-end-9 col-start-2 col-end-6",
+        "self-end justify-self-start",
+        "uppercase"
+      ]}>
+        Dopasowane transakcje
+      </p>
+      <div class={[
+        "-z-10 row-start-9 row-end-13 col-start-1 col-end-8",
+        "bg-greenBg w-full h-full rounded-r-lg"
+      ]} />
+      <p class={[
+        "row-start-9 row-end-10 col-start-2 col-end-5",
+        "self-end justify-self-start",
+        "text-sm text-darkGrey"
+      ]}>
+        Kontrahent
+      </p>
+      <div class="row-start-10 row-end-11 col-start-2 col-end-5">
+        <p>
+          <span class="font-bold">
+            <%= length([
+              head
+              | tail
+            ]) %> transakcji od
+          </span>
+          <%= head.creditor_name %>
+        </p>
+      </div>
+      <p class={[
+        "row-start-9 row-end-10 col-start-5 col-end-6",
+        "self-end justify-self-start",
+        "text-sm text-darkGrey"
+      ]}>
+        Zaksięgowano
+      </p>
+      <div class="row-start-10 row-end-13 col-start-5 col-end-6">
+        <p><%= head.booking_date %></p>
+      </div>
+      <p class={[
+        "row-start-8 row-end-13 col-start-6 col-end-8",
+        "self-center justify-self-end",
+        "text-lg text-darkGrey mr-8"
+      ]}>
+        <%= Money.new(
+          [head | tail]
+          |> Enum.reduce(Decimal.new(0), fn t, acc -> Decimal.add(acc, t.transaction_amount) end),
+          head.transaction_currency
+        ) %>
+      </p>
+      <p class={[
+        "row-start-11 row-end-12 col-start-2 col-end-8",
+        "self-end justify-self-start",
+        "text-sm text-darkGrey"
+      ]}>
+        Informacje
+      </p>
+      <div class="row-start-12 row-end-13 col-start-2 col-end-7">
+        <p><%= head.remittance_information_unstructured %></p>
+      </div>
+      <.button
+        class={[
+          "row-start-12 row-end-13 col-start-7 col-end-8",
+          "self-start justify-self-end",
+          "w-full h-10 mr-8 mb-8"
+        ]}
+        phx-click="disconnect-group"
+        phx-value-document-id={@document.id}
+        phx-value-imported-transaction-id={head.id}
+      >
+        Cofnij <.icon name="hero-arrow-uturn-left-micro xl:inline-block hidden" class="w-4 h-4" />
+      </.button>
   <% end %>
 </div>

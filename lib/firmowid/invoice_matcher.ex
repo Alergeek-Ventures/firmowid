@@ -166,29 +166,46 @@ defmodule Firmowid.InvoiceMatcher do
     issue_date = document.issue_date |> Date.add(-35)
     payment_deadline = document.issue_date
 
-    Finances.list_unmatched_imported_transactions(organization_id)
-    |> Enum.filter(fn i ->
-      Date.compare(i.booking_date, issue_date) != :lt and
-        Date.compare(i.booking_date, payment_deadline) != :gt
-    end)
-    |> Enum.group_by(&"#{&1.creditor_name} #{&1.booking_date.year}-#{&1.booking_date.month}")
-    |> Enum.filter(fn {_, transactions} -> length(transactions) > 1 end)
-    |> Enum.map(fn
-      {_label, transactions} ->
-        grouped_transaction =
-          hd(transactions)
-          |> Map.put(
-            :transaction_amount,
-            Enum.sum(Enum.map(transactions, &Decimal.to_float(&1.transaction_amount)))
-          )
-          |> Map.put(:booking_date, Enum.at(transactions, -1).booking_date)
+    all_found =
+      Finances.list_unmatched_imported_transactions(organization_id)
+      |> Enum.filter(fn i ->
+        Date.compare(i.booking_date, issue_date) != :lt and
+          Date.compare(i.booking_date, payment_deadline) != :gt
+      end)
+      |> Enum.group_by(&"#{&1.creditor_name} #{&1.booking_date.year}-#{&1.booking_date.month}")
+      |> Enum.filter(fn {_, transactions} -> length(transactions) > 1 end)
+      |> Enum.map(fn
+        {_label, transactions} ->
+          grouped_transaction =
+            hd(transactions)
+            |> Map.put(
+              :transaction_amount,
+              Enum.map(
+                transactions,
+                &Decimal.to_float(&1.transaction_amount)
+              )
+              |> Enum.sum()
+              |> Decimal.from_float()
+            )
+            |> Map.put(:booking_date, Enum.at(transactions, -1).booking_date)
 
-        {grouped_transaction, transactions}
-    end)
-    |> Enum.filter(fn {grouped_transaction, _transactions} ->
-      grouped_transaction.transaction_amount == document.total_amount and
-        Akin.compare(grouped_transaction.creditor_name, document.seller).jaro_winkler > 0.5
-    end)
+          {grouped_transaction, transactions}
+      end)
+
+    all_found =
+      all_found
+      |> Enum.filter(fn {grouped_transaction, _transactions} ->
+        are_amounts_equal =
+          Decimal.compare(
+            grouped_transaction.transaction_amount,
+            document.total_amount
+          )
+
+        are_amounts_equal == :eq and
+          Akin.compare(grouped_transaction.creditor_name, document.seller).jaro_winkler > 0.4
+      end)
+
+    all_found
   end
 
   def match_all_good_candidates_for_unconnected_documents(organization_id) do
