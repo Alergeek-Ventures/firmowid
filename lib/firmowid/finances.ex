@@ -99,7 +99,7 @@ defmodule Firmowid.Finances do
     %ImportedTransaction{}
     |> ImportedTransaction.changeset(attrs)
     |> Repo.insert!(
-      on_conflict: {:replace_all_except, [:id, :inserted_at]},
+      on_conflict: {:replace_all_except, [:id, :skip_invoicing, :inserted_at]},
       conflict_target: [:internal_transaction_id, :organization_id]
     )
   end
