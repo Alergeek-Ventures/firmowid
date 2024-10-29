@@ -186,7 +186,7 @@ defmodule Firmowid.InvoiceMatcher do
     # highly experimental!
 
     issue_date = document.issue_date |> Date.add(-35)
-    payment_deadline = document.issue_date
+    payment_deadline = document.due_date |> Date.add(7)
 
     all_found =
       Finances.list_unmatched_imported_transactions(organization_id)

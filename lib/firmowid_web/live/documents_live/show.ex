@@ -44,8 +44,12 @@ defmodule FirmowidWeb.DocumentsLive.Show do
         []
       end
 
+    is_llm_certain = Enum.all?(potential_transactions, fn t -> t.llm_eval > 0.9 end)
+
     grouped_potential_transactions =
-      if document.imported_transactions == [] and potential_transactions == [] do
+      if document.imported_transactions == [] and
+           (potential_transactions == [] or
+              not is_llm_certain) do
         InvoiceMatcher.match_with_transaction_combo(document, organization_id)
       else
         []
