@@ -14,7 +14,6 @@ defmodule FirmowidWeb.DocumentsLive.Index do
         params,
         "month",
         Date.utc_today()
-        |> Date.add(-Date.days_in_month(Date.utc_today()))
         |> Date.beginning_of_month()
         |> Date.to_iso8601()
       )

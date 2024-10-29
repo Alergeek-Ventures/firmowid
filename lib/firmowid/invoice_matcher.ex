@@ -40,10 +40,32 @@ defmodule Firmowid.InvoiceMatcher do
     documents
     |> Enum.map(&from_document/1)
     |> Enum.concat(Enum.map(imported_transactions, &from_imported_transaction/1))
-    |> Enum.sort(&(Date.compare(&1.issue_date, &2.issue_date) != :lt))
+    |> Enum.sort(&compare_date_then_creditor_then_amount/2)
   end
 
-  defp from_document(document) do
+  def compare_date_then_creditor_then_amount(a, b) do
+    cond do
+      Date.compare(a.issue_date, b.issue_date) != :eq ->
+        Date.compare(a.issue_date, b.issue_date) == :gt
+
+      a.seller != b.seller ->
+        a.seller < b.seller
+
+      a.amount_numeric != b.amount_numeric ->
+        Decimal.compare(a.amount_numeric, b.amount_numeric) == :gt
+
+      a.documents != [] and b.documents != [] ->
+        Enum.at(a.documents, 0).id < Enum.at(b.documents, 0).id
+
+      a.imported_transactions != [] and b.imported_transactions != [] ->
+        Enum.at(a.imported_transactions, 0).id < Enum.at(b.imported_transactions, 0).id
+
+      true ->
+        true
+    end
+  end
+
+  def from_document(document) do
     %__MODULE__{
       id: document.id,
       documents: [document],
