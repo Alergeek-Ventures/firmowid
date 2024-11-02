@@ -13,7 +13,7 @@ kill_signal = 'SIGTERM'
   release_command = '/app/bin/migrate'
 
 [env]
-  PHX_HOST = 'firmowid-redux.fly.dev'
+  PHX_HOST = 'new.firmowid.pl'
   PORT = '8080'
 
 [http_service]
