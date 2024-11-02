@@ -111,6 +111,49 @@ defmodule Firmowid.Documents do
       {:ok, document} ->
         possible_extensions = MIME.extensions(content_type)
         extension = Enum.at(possible_extensions, 0, "pdf")
+
+        upload_path =
+          if extension != "pdf" do
+            {:ok, path} = Briefly.create()
+
+            # resize image down, so that's it's max size is 1000x1000
+            image = Image.open!(upload_path)
+            width = Image.width(image)
+            height = Image.height(image)
+
+            # Calculate scale while preventing division by zero
+            scale =
+              cond do
+                width == 0 or height == 0 -> 1.0
+                width > height -> min(1.0, 1000 / width)
+                true -> min(1.0, 1000 / height)
+              end
+
+            # Only resize if the image is larger than 1000px
+            resized_image =
+              if scale < 1.0 do
+                Image.resize!(image, scale)
+              else
+                image
+              end
+
+            # Ensure extension starts without a dot
+            clean_extension = String.trim_leading(extension, ".")
+
+            # Convert stream to binary data before writing
+            binary_data =
+              resized_image
+              |> Image.stream!(suffix: ".#{clean_extension}")
+              |> Enum.to_list()
+              |> IO.iodata_to_binary()
+
+            File.write!(path, binary_data)
+
+            path
+          else
+            upload_path
+          end
+
         file_name = "#{organization_id}/#{Path.basename("#{document.id}.#{extension}")}"
 
         with _ <-

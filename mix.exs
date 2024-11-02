@@ -74,6 +74,8 @@ defmodule Firmowid.MixProject do
       {:openai, "~> 0.6.2"},
       {:live_toast, "~> 0.6.4"},
       {:packmatic, "~> 1.2.0"},
+      {:image, "~> 0.37"},
+      {:briefly, "~> 0.5.0"},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false}
     ]
   end
