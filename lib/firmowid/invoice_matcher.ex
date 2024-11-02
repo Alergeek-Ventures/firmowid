@@ -234,7 +234,7 @@ defmodule Firmowid.InvoiceMatcher do
   end
 
   def match_all_good_candidates_for_unconnected_documents(organization_id) do
-    for similarity_threshold <- [0.8, 0.7, 0.6, 0] do
+    for similarity_threshold <- [0.9, 0.8, 0] do
       documents = Documents.list_unmatched_documents(organization_id)
 
       if similarity_threshold == 0 do
@@ -245,7 +245,7 @@ defmodule Firmowid.InvoiceMatcher do
              document,
              organization_id,
              similarity_threshold: similarity_threshold,
-             max_results: 10
+             max_results: 5
            )}
         end)
         |> Enum.each(fn {document, candidates} ->
@@ -328,8 +328,6 @@ defmodule Firmowid.InvoiceMatcher do
                   grade: %{
                     type: "number",
                     additionalProperties: false
-                    # minimum: 0,
-                    # maximum: 1
                   }
                 },
                 required: ["grade"],
