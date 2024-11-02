@@ -32,7 +32,8 @@ defmodule FirmowidWeb.BankSyncLive.Create do
              BankData.confirm_requisition(
                requisition_id,
                organization_id
-             ) do
+             ),
+           BankData.sync_requisition(requisition_id, organization_id) do
         {:noreply, redirect(socket, to: ~p"/")}
       else
         _ ->

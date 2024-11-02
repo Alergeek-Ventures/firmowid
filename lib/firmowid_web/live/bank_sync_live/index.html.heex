@@ -24,29 +24,31 @@
       <%= if requisition.bank_accounts == [] do %>
         -
       <% else %>
-        <%= for bank_account <- requisition.bank_accounts do %>
-          <pre><%= bank_account.iban %></pre>
-        <% end %>
+        <div class="flex flex-row gap-2">
+          <%= for bank_account <- requisition.bank_accounts do %>
+            <pre><%= bank_account.iban %></pre>
+          <% end %>
+        </div>
       <% end %>
     </:col>
     <:action :let={requisition}>
-      <.button
-        phx-click="sync"
-        phx-value-requisition-id={requisition.id}
-        disabled={requisition.status != :accepted}
-      >
-        Synchronizuj
-      </.button>
-    </:action>
-    <:action>
-      <.button phx-click="auto-match-documents">
-        Połącz dokumenty z transakcjami
-      </.button>
-    </:action>
-    <:action :let={requisition}>
-      <.button phx-click="delete" phx-value-requisition-id={requisition.id}>
-        Usuń połączenie
-      </.button>
+      <div class="flex flex-row gap-2">
+        <.button
+          class="min-w-[145px] border border-darkGrey bg-white !text-darkGrey"
+          phx-click="delete"
+          phx-value-requisition-id={requisition.id}
+        >
+          Usuń połączenie
+        </.button>
+        <.button
+          phx-click="sync"
+          class="min-w-[200px] phx-click-loading:opacity-50 phx-click-loading:cursor-disabled"
+          phx-value-requisition-id={requisition.id}
+          disabled={requisition.status != :accepted}
+        >
+          Synchronizuj
+        </.button>
+      </div>
     </:action>
   </.table>
 </div>

@@ -34,6 +34,10 @@ defmodule FirmowidWeb.BankSyncLive.Index do
     organization_id = user.organization_id
 
     BankData.sync_requisition(requisition_id, organization_id)
+    InvoiceMatcher.match_all_good_candidates_for_unconnected_documents(organization_id)
+
+    LiveToast.send_toast(:info, "Transakcje zaimportowane, dopasowywanie dokumentów...")
+    LiveToast.send_toast(:info, "Dokumenty dopasowane!")
 
     {:noreply, socket}
   end
@@ -51,15 +55,6 @@ defmodule FirmowidWeb.BankSyncLive.Index do
         :requisitions,
         BankData.list_requisitions(organization_id)
       )
-
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event("auto-match-documents", _, socket) do
-    user = socket.assigns.current_user
-    organization_id = user.organization_id
-    InvoiceMatcher.match_all_good_candidates_for_unconnected_documents(organization_id)
 
     {:noreply, socket}
   end
