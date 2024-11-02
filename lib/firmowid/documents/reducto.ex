@@ -18,7 +18,11 @@ defmodule Firmowid.Documents.Reducto do
 
   @impl true
   def handle_cast({:extract_invoice_info, document_id, organization_id}, state) do
-    extract_invoice_info(document_id, organization_id)
+    try do
+      extract_invoice_info(document_id, organization_id)
+    rescue
+      _ -> Documents.delete_document(organization_id, document_id)
+    end
 
     {:noreply, state}
   end
@@ -48,6 +52,11 @@ defmodule Firmowid.Documents.Reducto do
           type: "string",
           description: "From whom the invoice is"
         },
+        seller_display_name: %{
+          type: "string",
+          description:
+            "Shortened version (2-5 words) of the name of the seller, that can easily be display in the UI."
+        },
         total_amount: %{
           type: "number",
           description: "The total amount of the invoice"
@@ -61,10 +70,26 @@ defmodule Firmowid.Documents.Reducto do
           type: "string",
           description: "The identifier (typically number) of the invoice"
         },
-        description: %{
-          type: "string",
-          description:
-            "Based on the invoice list, provide a brief description of the invoice in Polish"
+        items_list: %{
+          type: "array",
+          items: %{
+            type: "object",
+            properties: %{
+              name: %{
+                type: "string",
+                description: "The name of the item"
+              },
+              quantity: %{
+                type: "number",
+                description: "The quantity of the item"
+              },
+              price: %{
+                type: "number",
+                description: "The price of the item"
+              }
+            },
+            required: ["name", "quantity", "price"]
+          }
         }
       },
       required: [
@@ -74,7 +99,7 @@ defmodule Firmowid.Documents.Reducto do
         "due_date",
         "total_amount",
         "currency",
-        "description"
+        "items_list"
       ]
     }
 
@@ -100,7 +125,6 @@ defmodule Firmowid.Documents.Reducto do
         Enum.at(reducto_extract_response.body["result"], 0)
       else
         %{
-          "description" => "Mocked Reducto invoice for $100",
           "invoice_identifier" => "01/09/2024",
           "seller" => "Mocked Reducto",
           "sale_date" => ~D[2024-09-30],
@@ -114,6 +138,62 @@ defmodule Firmowid.Documents.Reducto do
     extracted_metadata =
       Map.put(extracted_metadata, "total_amount", -extracted_metadata["total_amount"])
 
+    extracted_metadata =
+      Map.put(extracted_metadata, "description", generate_description(extracted_metadata))
+
     Documents.update_document(organization_id, document_id, extracted_metadata)
+  end
+
+  defp generate_description(document) do
+    {:ok, response} =
+      OpenAI.chat_completion(
+        model: "gpt-4o-mini",
+        max_completion_tokens: 80,
+        messages: [
+          %{
+            role: "system",
+            content:
+              "Jesteś asystentem dla osób zajmujących się dokumentami " <>
+                "i transakcjami w przedsiębiorstwie. Pomagasz w opisywaniu " <>
+                "katalogowaniu i dopasowaniu ich do siebie."
+          },
+          dbg(%{
+            role: "user",
+            content: "
+              Oto metadane faktury sprzedażowej, którą chcą skatalogować:
+
+              {
+                sprzedawca: #{document["seller"]},
+                przedmioty na fakturze: #{inspect(document["items_list"])}                
+              }
+
+              Na podstawie tych danych, przygotuj opis faktury (w języku polskim)
+              Będzie on wykorzystywany przez osoby, które potencjalnie nie mają
+              informacji o tym, czym zajmuje się firma sprzedawcy, lub czym jest
+              dany artykuł wypisany w dokumencie.  Nie używaj słów 'faktura za'
+              (bo każdy dokument to faktura) oraz nie zawieraj w opisie
+              informacji, które są już dostępne w metadanych. Skup się na tym,
+              co zostało zakupione.
+
+              Dobre przykłady opisów:
+
+              - Paliwo do samochodu z nr rej. RZ941AY, zakupione w Krakowie na stacji Orlen.
+              - Abonament telekomunikacyjny, trzy numery telefonu oraz internet mobilny
+              - Komunikator, opłata za jedno miejsce na planie pro start
+              - Abonament na hosting email, plan Zoho Marketplace Mail Lite
+              
+              Postaraj się zamknąć w 5-10 słowach.
+              " |> String.trim()
+          })
+        ]
+      )
+
+    description =
+      response.choices
+      |> List.first()
+      |> Map.get("message")
+      |> Map.get("content")
+
+    description
   end
 end

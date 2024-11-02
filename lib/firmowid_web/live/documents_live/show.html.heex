@@ -1,25 +1,22 @@
 <div class={[
   "grid gap-y-2 gap-x-4",
-  "grid-cols-[60px_repeat(10,1fr)_60px]",
+  "grid-cols-[60px_repeat(11,1fr)_60px]",
   "grid-rows-[minmax(10px,100px)_minmax(10px,100px)_48px_30px_60px_30px_60px_90px_40px_60px_40px_60px_1fr]",
   "grid-rows-[minmax(10px,100px)_minmax(10px,100px)_48px_30px_60px_30px_60px_90px_40px_60px_40px_60px_1fr]"
 ]}>
-  <div class={[
-    "row-start-1 row-end-2 col-start-1 col-end-2",
-    "self-end justify-self-center",
-    "flex justify-center items-center"
-  ]}>
-    <.link navigate={~p"/"}>
-      <.icon name="hero-arrow-left-circle-solid" class="w-6 h-6" />
-    </.link>
-  </div>
   <div class="row-start-1 row-end-3 col-start-1 col-end-13 h-full w-screen bg-orangeBg -z-10" />
-  <h1 class={[
-    "row-start-1 row-end-2 col-start-2 col-end-6 pt-8",
-    "self-end justify-self-start",
-    "text-2xl"
-  ]}>
-    <%= @document.seller %>
+  <h1
+    id="seller-name"
+    data-tippy-content={@document.seller}
+    data-tippy-placement="bottom"
+    phx-hook="tippy"
+    class={[
+      "row-start-1 row-end-2 col-start-2 col-end-6 pt-8",
+      "self-end justify-self-start",
+      "text-2xl"
+    ]}
+  >
+    <%= @document.seller_display_name %>
   </h1>
   <h2 class={[
     "row-start-1 row-end-2 col-start-6 col-end-8",
@@ -36,7 +33,7 @@
     <%= @document.description %>
   </blockquote>
   <div class={[
-    "row-start-1 col-start-8 col-end-13 px-8 pt-8",
+    "row-start-1 col-start-8 col-end-13 pl-8 pt-8",
     @document.imported_transactions == [] && "row-end-9",
     @document.imported_transactions != [] && "row-end-13"
   ]}>

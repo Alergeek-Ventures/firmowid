@@ -90,28 +90,16 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
                       navigate={~p"/documents/#{hd(invoice_matcher.documents).id}"}
                     >
                       <span>
-                        <%= get_in(
-                          invoice_matcher,
-                          [Access.key!(String.to_atom(column.key))]
-                        ) %>
+                        <%= invoice_matcher.seller_display_name %>
                       </span>
                       <span class="text-darkGrey opacity-50 text-sm">
-                        <%= if invoice_matcher.imported_transactions != [] do %>
-                          <%= hd(invoice_matcher.imported_transactions).remittance_information_unstructured %>
-                        <% else %>
-                          <%= if invoice_matcher.documents != [] do %>
-                            <%= hd(invoice_matcher.documents).description %>
-                          <% end %>
-                        <% end %>
+                        <%= hd(invoice_matcher.documents).description %>
                       </span>
                     </.link>
                   <% else %>
                     <%= if column.key == "seller" do %>
                       <span>
-                        <%= get_in(
-                          invoice_matcher,
-                          [Access.key!(String.to_atom(column.key))]
-                        ) %>
+                        <%= invoice_matcher.seller_display_name %>
                       </span>
                       <span class="text-darkGrey opacity-50 text-sm">
                         <%= if invoice_matcher.imported_transactions != [] do %>

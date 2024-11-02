@@ -14,6 +14,7 @@ defmodule Firmowid.InvoiceMatcher do
     :due_date,
     :file_url,
     :seller,
+    :seller_display_name,
     :buyer,
     :skip_invoicing
   ]
@@ -76,6 +77,7 @@ defmodule Firmowid.InvoiceMatcher do
       sale_date: document.sale_date,
       due_date: document.due_date,
       seller: document.seller,
+      seller_display_name: document.seller_display_name,
       file_url: document.file_url,
       skip_invoicing: document.skip_invoicing
     }
@@ -91,6 +93,7 @@ defmodule Firmowid.InvoiceMatcher do
       issue_date: transaction.booking_date,
       sale_date: transaction.value_date,
       seller: transaction.creditor_name,
+      seller_display_name: transaction.creditor_name,
       skip_invoicing: transaction.skip_invoicing
     }
   end

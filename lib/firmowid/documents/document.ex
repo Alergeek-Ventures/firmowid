@@ -4,6 +4,7 @@ defmodule Firmowid.Documents.Document do
 
   schema "documents" do
     field :seller, :string
+    field :seller_display_name, :string
 
     field :sale_date, :date
     field :issue_date, :date
@@ -37,6 +38,7 @@ defmodule Firmowid.Documents.Document do
     document
     |> cast(attrs, [
       :seller,
+      :seller_display_name,
       :sale_date,
       :issue_date,
       :due_date,
