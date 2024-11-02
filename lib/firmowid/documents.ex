@@ -51,6 +51,23 @@ defmodule Firmowid.Documents do
         )
       )
     )
+    |> Enum.filter(fn document ->
+      # don't include documents that are issued for previous month and were
+      # paid in previous month
+
+      was_issued_last_month =
+        Date.compare(from, document.issue_date) == :gt
+
+      was_paid =
+        document.imported_transactions != []
+
+      was_paid_last_month =
+        was_paid and
+          document.imported_transactions
+          |> Enum.all?(fn i -> Date.compare(from, i.booking_date) == :gt end)
+
+      not (was_issued_last_month and was_paid_last_month)
+    end)
   end
 
   def list_documents_without_metadata(organization_id) do
