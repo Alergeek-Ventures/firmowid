@@ -60,6 +60,7 @@ defmodule FirmowidWeb.Router do
 
       live "/", DocumentsLive.Index, :index
       live "/documents/:id", DocumentsLive.Show, :index
+      get "/file", FileController, :batch
 
       live "/organization_invites", OrganizationInvitesLive.Index, :index
 

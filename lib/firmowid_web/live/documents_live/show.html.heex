@@ -63,17 +63,32 @@
   ]}>
     Dane faktury
   </p>
-  <.button
-    class={[
-      "row-start-3 row-end-4 col-start-7 col-end-8",
-      "place-self-end",
-      "!text-darkGrey bg-lightGreyBg"
-    ]}
-    phx-click="delete"
-    phx-value-document-id={@document.id}
-  >
-    <.icon name="hero-trash-solid" class="w-5 h-5" />
-  </.button>
+  <div class={[
+    "row-start-3 row-end-4 col-start-7 col-end-8",
+    "place-self-end",
+    "flex flex-row"
+  ]}>
+    <a
+      href={@document.file_url}
+      download
+      class="text-darkGrey text-center bg-lightGreyBg rounded-lg
+      hover:bg-greyButtonBg py-2 px-3 text-sm font-semibold leading-6
+      active:text-white/80 flex items-center justify-center"
+      phx-click="download"
+      phx-value-document-id={@document.id}
+    >
+      <.icon name="hero-arrow-down-tray-solid" class="w-5 h-5" />
+    </a>
+    <button
+      class="text-darkGrey text-center bg-lightGreyBg rounded-lg
+      hover:bg-greyButtonBg py-2 px-3 text-sm font-semibold leading-6
+      active:text-white/80 flex items-center justify-center"
+      phx-click="delete"
+      phx-value-document-id={@document.id}
+    >
+      <.icon name="hero-trash-solid" class="w-5 h-5" />
+    </button>
+  </div>
   <p class={[
     "row-start-4 row-end-5 col-start-2 col-end-5",
     "self-end justify-self-start",
