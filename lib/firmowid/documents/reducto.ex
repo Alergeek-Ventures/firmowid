@@ -50,7 +50,8 @@ defmodule Firmowid.Documents.Reducto do
         },
         seller: %{
           type: "string",
-          description: "From whom the invoice is"
+          description: "From whom the invoice is, include all of the available
+          info like full name, address, bank account etc."
         },
         seller_display_name: %{
           type: "string",
@@ -114,6 +115,9 @@ defmodule Firmowid.Documents.Reducto do
                "f6db515168d1b7c99dcecfd0517062dcbfd083a6ba1e42d0e3bcc623d832288087949aa99728f0d65ff5da7044e9fecc"},
             json: %{
               document_url: file_url,
+              options: %{
+                extraction_mode: "hybrid"
+              },
               async: %{
                 enabled: false
               },

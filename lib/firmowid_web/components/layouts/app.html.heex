@@ -4,11 +4,11 @@
     Firmowid
   </.link>
   <%= if @current_user do %>
-    <div class="flex items-center gap-16">
+    <div class="flex items-center gap-16 max-md:hidden">
       <.link navigate={~p"/"} class="hover:underline flex items-center gap-2">
         <.icon name="hero-document-duplicate" class="w-5 h-5" /> Dokumenty
       </.link>
-      <div class="hover:underline flex items-center gap-2 opacity-20">
+      <div class="flex items-center gap-2 opacity-20">
         <.icon name="hero-presentation-chart-line" class="w-5 h-5" /> Budżet
       </div>
       <div class="flex items-center gap-2 opacity-20">
@@ -18,7 +18,7 @@
     <div>
       <.link navigate={~p"/settings"}>
         <.icon name="hero-user" class="w-5 h-5 mr-1" />
-        <span class="lowercase text-xs">
+        <span class="lowercase text-xs max-md:hidden">
           <%= @current_user.email %>
         </span>
       </.link>

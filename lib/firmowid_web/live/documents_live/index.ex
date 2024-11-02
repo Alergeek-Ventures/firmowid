@@ -35,7 +35,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
       # upload form
       |> allow_upload(:file,
         max_entries: 50,
-        accept: ~w(.pdf),
+        accept: ["application/pdf", "image/*"],
         progress: &handle_progress/3,
         auto_upload: true
       )
@@ -62,8 +62,8 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     organization_id = user.organization_id
 
     if Enum.all?(socket.assigns.uploads.file.entries, fn entry -> entry.done? end) do
-      consume_uploaded_entries(socket, :file, fn %{path: path}, _entry ->
-        document = Documents.create_document({path, ".pdf"}, organization_id)
+      consume_uploaded_entries(socket, :file, fn %{path: path}, entry ->
+        document = Documents.create_document({path, entry.client_type}, organization_id)
 
         case document do
           {:ok, document} -> Documents.start_extraction_job(document.id, organization_id)

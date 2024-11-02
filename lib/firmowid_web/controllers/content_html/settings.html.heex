@@ -1,8 +1,9 @@
 <main class="prose">
   <h1>Ustawienia</h1>
+  <h2><%= @current_user.email %></h2>
 
   <ul>
-    <li><.link navigate={~p"/settings/bank-sync"}>Synchronizacja z
+    <li class="max-md:hidden"><.link navigate={~p"/settings/bank-sync"}>Synchronizacja z
         bankiem</.link></li>
     <li>
       <.link href={~p"/users/log_out"} method="delete">

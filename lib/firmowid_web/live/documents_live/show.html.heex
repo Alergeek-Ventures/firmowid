@@ -37,17 +37,24 @@
     @document.imported_transactions == [] && "row-end-9",
     @document.imported_transactions != [] && "row-end-13"
   ]}>
-    <div
-      class="w-full h-full max-h-[80vh] border-black border-2 rounded-lg
+    <%= if String.ends_with?(@document.file_name, ".pdf") do %>
+      <div
+        class="w-full h-full max-h-[80vh] border-black border-2 rounded-lg
       overflow-x-hidden overflow-y-scroll bg-white"
-      id="document-details"
-      data-pdf-url={@document.file_url}
-      phx-hook="PDFViewer"
-    >
-      <div class="w-full h-full flex items-center justify-center font-bold">
-        Ładowanie dokumentu...
+        id="document-details"
+        data-pdf-url={@document.file_url}
+        phx-hook="PDFViewer"
+      >
+        <div class="w-full h-full flex items-center justify-center font-bold">
+          Ładowanie dokumentu...
+        </div>
       </div>
-    </div>
+    <% else %>
+      <div class="w-full h-full max-h-[80vh] border-black border-2 rounded-lg
+    overflow-x-hidden overflow-y-scroll bg-black">
+        <img src={@document.file_url} class="w-full h-full object-contain" />
+      </div>
+    <% end %>
   </div>
   <p class={[
     "row-start-3 row-end-4 col-start-2 col-end-4",
