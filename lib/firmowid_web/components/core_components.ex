@@ -145,7 +145,8 @@ defmodule FirmowidWeb.CoreComponents do
     <button
       type={@type}
       class={[
-        "phx-submit-loading:opacity-75 rounded-md bg-darkGrey hover:bg-greyButtonBg py-2 px-3",
+        "phx-submit-loading:opacity-75 rounded-md bg-black transition-colors",
+        "duration-200 border hover:bg-greyButtonBg hover:text-black py-2 px-3",
         "text-sm font-semibold leading-6 text-white active:text-white/80",
         @class
       ]}
@@ -283,8 +284,8 @@ defmodule FirmowidWeb.CoreComponents do
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
     ~H"""
-    <div>
-      <.label for={@id}><%= @label %></.label>
+    <div class={@rest[:class]}>
+      <.label for={@id} class={@rest[:class]}><%= @label %></.label>
       <input
         type={@type}
         name={@name}
@@ -306,11 +307,13 @@ defmodule FirmowidWeb.CoreComponents do
   Renders a label.
   """
   attr :for, :string, default: nil
+  attr :class, :string, default: nil
   slot :inner_block, required: true
 
   def label(assigns) do
     ~H"""
-    <label for={@for} class="block text-sm font-semibold leading-6 text-zinc-800">
+    <label for={@for} class={["block text-sm font-semibold leading-6
+      text-zinc-800", @class]}>
       <%= render_slot(@inner_block) %>
     </label>
     """

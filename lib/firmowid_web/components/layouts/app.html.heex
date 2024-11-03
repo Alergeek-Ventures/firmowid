@@ -1,4 +1,4 @@
-<%= if @current_user do %>
+<%= if @current_user && !is_nil(@current_user.organization_id) do %>
   <nav class="px-4 sm:px-6 lg:px-8 bg-black text-white flex items-center uppercase 
   justify-between py-6 text-sm sticky top-0 z-50">
     <.link navigate={~p"/"} class="font-bold text-xl">

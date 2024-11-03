@@ -7,59 +7,82 @@ defmodule FirmowidWeb.OrganizationLive do
   def render(assigns) do
     ~H"""
     <%= if @current_user.organization_id == nil do %>
-      <div class="flex flex-col gap-16 text-center">
-        <h1 class="text-lg font-bold">Do tego konta nie przypisano jeszcze organizacji</h1>
-        <p>
-          Dołącz przez wpisanie kodu (jeżeli jesteś współpracownikiem), lub
-          utwórz własną.
-        </p>
+      <div class="w-screen h-screen overflow-clip flex relative justify-center items-center">
+        <img src="/images/figurine.png" class="h-[135vh] opacity-10 absolute -top-20 left-1/2 -z-10" />
+        <div class="flex-grow max-w-screen-md">
+          <h1 class="text-lg font-bold mb-16">Czas na przypisanie organizacji do Twojego konta</h1>
+          <div class="flex md:flex-row justify-between">
+            <div class="flex flex-col justify-between gap-4 max-w-[400px]">
+              <p>
+                Jesteś <span class="font-bold">właścicielem przedsiębiorstwa</span>?
+                Wypełnij formularz, aby utworzyć organizację wewnątrz Firmowida.
+              </p>
+              <.simple_form for={@organization_form} id="organization_form" phx-submit="create">
+                <.input
+                  field={@organization_form[:identification_number]}
+                  type="text"
+                  placeholder="Identyfikator (NIP)"
+                  required
+                />
+                <.input
+                  field={@organization_form[:name]}
+                  type="text"
+                  placeholder="Nazwa organizacji"
+                  required
+                />
+                <p class="m-0">Adres przedsiębiorstwa</p>
+                <div class="flex flex-row gap-2">
+                  <.input
+                    class="!w-3/4"
+                    field={@organization_form[:street]}
+                    placeholder="Ulica"
+                    type="text"
+                    required
+                  />
+                  <.input
+                    class="!w-1/4"
+                    field={@organization_form[:number]}
+                    placeholder="/"
+                    type="text"
+                    required
+                  />
+                </div>
+                <.input
+                  field={@organization_form[:postal_code]}
+                  placeholder="Kod pocztowy"
+                  type="text"
+                  required
+                />
+                <.input field={@organization_form[:city]} placeholder="Miasto" type="text" required />
 
-        <div class="flex md:flex-row items-center justify-between">
-          <div class="flex flex-col justify-between gap-8 max-w-[500px]">
-            <p>Jesteś właścicielem przedsiębiorstwa? Wypełnij formularz,
-              aby utworzyć organizację wewnątrz Firmowida.</p>
-            <.simple_form for={@organization_form} id="organization_form" phx-submit="create">
-              <.input
-                field={@organization_form[:name]}
-                type="text"
-                label="Nazwa organizacji"
-                required
-              />
-              <.input
-                field={@organization_form[:identification_number]}
-                type="text"
-                label="Identyfikator (NIP)"
-                required
-              />
-              <.input
-                field={@organization_form[:address]}
-                type="text"
-                label="Adres organizacji"
-                required
-              />
+                <:actions>
+                  <.button class="!w-full" phx-disable-with="Tworzenie organizacji...">
+                    Utwórz organizację
+                  </.button>
+                </:actions>
+              </.simple_form>
+            </div>
 
-              <:actions>
-                <.button phx-disable-with="Tworzenie organizacji...">
-                  Utwórz organizację
-                </.button>
-              </:actions>
-            </.simple_form>
+            <div class="max-w-[250px]">
+              <p>
+                Jesteś <span class="font-bold">współpracownikiem</span> i posiadasz kod (zaproszenie)?
+              </p>
+              <.simple_form for={@join_form} id="join_form" phx-submit="join">
+                <.input field={@join_form[:code]} type="text" label="Kod zaproszenia" required />
+                <:actions>
+                  <.button class="w-full" phx-disable-with="Dołączanie...">
+                    Dołącz do organizacji
+                  </.button>
+                </:actions>
+              </.simple_form>
+            </div>
           </div>
-
-          <div class="max-w-[500px]">
-            <.simple_form for={@join_form} id="join_form" phx-submit="join">
-              <.input field={@join_form[:code]} type="text" label="Kod organizacji" required />
-              <:actions>
-                <.button class="w-full" phx-disable-with="Dołączanie...">
-                  Dołącz do organizacji
-                </.button>
-              </:actions>
-            </.simple_form>
+          <div class="mt-8 text-center">
+            <.link class="underline" href={~p"/users/log_out"} method="delete">
+              Wyloguj
+            </.link>
           </div>
         </div>
-        <.link class="underline" href={~p"/users/log_out"} method="delete">
-          Wyloguj
-        </.link>
       </div>
     <% else %>
       <h1>Do tego konta jest juz przypisany organizacja</h1>
@@ -80,7 +103,18 @@ defmodule FirmowidWeb.OrganizationLive do
       |> String.replace(",", "-")
       |> String.trim()
 
-    Map.put(organization, "slug", organization_slug)
+    address = %{
+      street: organization["street"],
+      number: organization["number"],
+      postal_code: organization["postal_code"],
+      city: organization["city"]
+    }
+
+    address = "#{address.street} #{address.number}, #{address.postal_code} #{address.city}"
+
+    organization
+    |> Map.put("slug", organization_slug)
+    |> Map.put("address", address)
     |> Accounts.create_organization(user)
 
     LiveToast.send_toast(:success, "Pomyślnie utworzono organizację")
@@ -107,6 +141,8 @@ defmodule FirmowidWeb.OrganizationLive do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
+    socket = socket |> assign(:no_padding, true)
+
     if not is_nil(organization_id) do
       {:ok, redirect(socket, to: "/")}
     else
@@ -117,7 +153,10 @@ defmodule FirmowidWeb.OrganizationLive do
           to_form(%{
             "name" => "",
             "identification_number" => "",
-            "address" => ""
+            "street" => "",
+            "number" => "",
+            "postal_code" => "",
+            "city" => ""
           })
         )
         |> assign(
