@@ -8,9 +8,9 @@ defmodule FirmowidWeb.UserLoginLiveTest do
     test "renders log in page", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/users/log_in")
 
-      assert html =~ "Log in"
-      assert html =~ "Sign up"
-      assert html =~ "Forgot your password?"
+      assert html =~ "Zaloguj"
+      assert html =~ "Nie masz konta?"
+      assert html =~ "Zapomniałeś hasła?"
     end
 
     test "redirects if already logged in", %{conn: conn} do
@@ -61,11 +61,11 @@ defmodule FirmowidWeb.UserLoginLiveTest do
 
       {:ok, _login_live, login_html} =
         lv
-        |> element(~s|main a:fl-contains("Sign up")|)
+        |> element(~s|main a:fl-contains("Zarejestruj się")|)
         |> render_click()
         |> follow_redirect(conn, ~p"/users/register")
 
-      assert login_html =~ "Register"
+      assert login_html =~ "Zaloguj się"
     end
 
     test "redirects to forgot password page when the Forgot Password button is clicked", %{
@@ -75,7 +75,7 @@ defmodule FirmowidWeb.UserLoginLiveTest do
 
       {:ok, conn} =
         lv
-        |> element(~s|main a:fl-contains("Forgot your password?")|)
+        |> element(~s|main a:fl-contains("Zapomniałeś hasła?")|)
         |> render_click()
         |> follow_redirect(conn, ~p"/users/reset_password")
 

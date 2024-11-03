@@ -8,13 +8,12 @@ defmodule FirmowidWeb.UserRegistrationLive do
     ~H"""
     <div class="mx-auto max-w-sm">
       <.header class="text-center">
-        Register for an account
+        Zarejestruj się
         <:subtitle>
-          Already registered?
+          Masz już konto?
           <.link navigate={~p"/users/log_in"} class="font-semibold text-brand hover:underline">
-            Log in
+            Zaloguj się
           </.link>
-          to your account now.
         </:subtitle>
       </.header>
 
@@ -28,14 +27,16 @@ defmodule FirmowidWeb.UserRegistrationLive do
         method="post"
       >
         <.error :if={@check_errors}>
-          Oops, something went wrong! Please check the errors below.
+          Coś poszło nie tak...
         </.error>
 
         <.input field={@form[:email]} type="email" label="Email" required />
-        <.input field={@form[:password]} type="password" label="Password" required />
+        <.input field={@form[:password]} type="password" label="Hasło" required />
 
         <:actions>
-          <.button phx-disable-with="Creating account..." class="w-full">Create an account</.button>
+          <.button phx-disable-with="Tworzenie konta..." class="w-full">
+            Stwórz konto
+          </.button>
         </:actions>
       </.simple_form>
     </div>

@@ -1,9 +1,9 @@
-<nav class="px-4 sm:px-6 lg:px-8 bg-black text-white flex items-center uppercase 
+<%= if @current_user do %>
+  <nav class="px-4 sm:px-6 lg:px-8 bg-black text-white flex items-center uppercase 
   justify-between py-6 text-sm sticky top-0 z-50">
-  <.link navigate={~p"/"} class="font-bold text-xl">
-    Firmowid
-  </.link>
-  <%= if @current_user do %>
+    <.link navigate={~p"/"} class="font-bold text-xl">
+      Firmowid
+    </.link>
     <div class="flex items-center gap-16 max-md:hidden">
       <.link navigate={~p"/"} class="hover:underline flex items-center gap-2">
         <.icon name="hero-document-duplicate" class="w-5 h-5" /> Dokumenty
@@ -23,8 +23,8 @@
         </span>
       </.link>
     </div>
-  <% end %>
-</nav>
+  </nav>
+<% end %>
 
 <main class={[
   is_nil(assigns[:no_padding]) &&
