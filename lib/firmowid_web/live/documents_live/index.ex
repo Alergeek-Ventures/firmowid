@@ -4,6 +4,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
   alias Firmowid.Documents
   alias Firmowid.Finances
   alias Firmowid.InvoiceMatcher
+  alias Firmowid.BankData
 
   @impl true
   def mount(params, _session, socket) do
@@ -52,6 +53,17 @@ defmodule FirmowidWeb.DocumentsLive.Index do
           date_range_from,
           date_range_to
         )
+      )
+
+    connected_bank_accounts =
+      BankData.list_requisitions(organization_id)
+      |> Enum.count(&(&1.status == :accepted))
+
+    socket =
+      socket
+      |> assign(
+        :has_connected_bank_account,
+        connected_bank_accounts > 0
       )
 
     {:ok, socket}

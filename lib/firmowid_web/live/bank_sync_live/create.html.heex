@@ -3,11 +3,16 @@
     Dodaj konto bankowe
   </.header>
 
-  <p>
-    Za pomocą rozwiązania naszego partnera, GoCardless, połączymy Twoje konto z
-    Firmowidem. Sprawi to, że transakcje będą automatycznie synchronizowane, a
-    faktury automatycznie dopasowywane.
-  </p>
+  <div class="flex flex-col gap-1">
+    <p class="m-0">
+      Za pomocą rozwiązania naszego partnera, GoCardless, połączymy Twoje konto z
+      Firmowidem.
+    </p>
+    <p class="m-0">
+      Sprawi to, że transakcje będą automatycznie synchronizowane, a
+      faktury automatycznie dopasowywane.
+    </p>
+  </div>
 
   <%= if is_nil(@requisition_link) do %>
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 items-center">

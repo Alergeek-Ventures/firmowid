@@ -19,17 +19,20 @@
     />
   </div>
   <div phx-drop-target={@uploads.file.ref} class="flex flex-row gap-4">
-    <a
-      id="download-button"
-      data-tippy-content="Pobierz pliki dla wybranego miesiąca"
-      phx-hook="tippy"
-      href={"/file?month=#{@month}"}
-      download
-      class="relative flex flex-row gap-4 items-center justify-center w-full
-        border rounded-lg px-3 py-2 max-md:hidden"
-    >
-      <.icon name="hero-cloud-arrow-down" class="w-6 h-6" /> Pobierz
-    </a>
+    <%= if @invoice_matchers != [] do %>
+      <a
+        id="download-button"
+        data-tippy-content="Pobierz pliki dla wybranego miesiąca"
+        phx-hook="tippy"
+        href={"/file?month=#{@month}"}
+        download
+        class="relative flex flex-row gap-4 items-center justify-center w-full
+        border rounded-lg px-3 py-2 max-md:hidden min-h-[40px] hover:bg-greyButtonBg
+        transition-colors"
+      >
+        <.icon name="hero-cloud-arrow-down" class="w-6 h-6" /> Pobierz
+      </a>
+    <% end %>
     <form id="upload-form" phx-change="upload" phx-submit="upload">
       <div class="hidden">
         <.live_file_input upload={@uploads.file} />
@@ -38,7 +41,8 @@
         for={@uploads.file.ref}
         class="relative flex flex-row gap-4 items-center justify-center w-full
         border-2 rounded-lg px-3 py-2 text-white bg-black min-w-[210px]
-        max-md:w-[300px] max-md:min-h-[60px]"
+        max-md:w-[300px] min-h-[40px] max-md:min-h-[60px] hover:bg-greyButtonBg
+        hover:text-black transition-colors"
       >
         <%= if length(Enum.filter(@uploads.file.entries, & !&1.done?)) + length(@documents_pending_extraction) > 0 do %>
           <span class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-blueBg
@@ -56,7 +60,10 @@
 </div>
 
 <div class="mt-2 flex flex-col gap-4 max-md:hidden">
-  <FirmowidWeb.DocumentsLive.DocumentsTable.table invoice_matchers={@invoice_matchers} />
+  <FirmowidWeb.DocumentsLive.DocumentsTable.table
+    invoice_matchers={@invoice_matchers}
+    has_connected_bank_account={@has_connected_bank_account}
+  />
 </div>
 
 <div

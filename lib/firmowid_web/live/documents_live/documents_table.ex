@@ -2,9 +2,8 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
   import FirmowidWeb.CoreComponents
   use FirmowidWeb, :live_view
 
-  use Phoenix.Component
-
   attr :invoice_matchers, :list, required: true
+  attr :has_connected_bank_account, :boolean, default: false
 
   def table(assigns) do
     columns = [
@@ -131,9 +130,71 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
         </tbody>
       </table>
     <% else %>
-      <div class="text-center text-darkGrey">
-        Brak dokumentów i transakcji - nie mamy niczego do wyświetlenia...
-      </div>
+      <%= if @has_connected_bank_account do %>
+        <div class="flex flex-col gap-4 justify-center items-center min-h-[300px]">
+          <.icon name="hero-cloud-arrow-up" class="h-16 w-16 text-greenText" />
+          <p class="text-center text-black">
+            Brak transakcji i dokumentów dla wybranej daty
+          </p>
+          <p class="text-center text-darkGrey">
+            Przeciągnij pliki, aby je wgrać
+          </p>
+        </div>
+      <% else %>
+        <div class="flex flex-col gap-24 justify-center min-h-[300px]
+        px-8 mx-auto mt-16">
+          <div class="flex flex-col gap-8">
+            <h1 class="text-xl font-bold">Witaj w Firmowidzie!</h1>
+            <div class="flex flex-col gap-1">
+              <p>
+                Znajdujesz się w panelu, w którym pojawią się wszystkie Twoje faktury i transakcje.
+              </p>
+              <p>
+                Do pełnej funkcjonalności jeszcze tylko 2 kroki.
+              </p>
+            </div>
+          </div>
+          <div class="flex md:flex-row md:gap-20 gap-8 items-start justify-between">
+            <div class="max-w-[500px]">
+              <h2 class="text-xl font-bold mb-2 flex items-end gap-2">
+                <.icon name="hero-building-library" class="h-10 w-10 text-greenText" /> Krok 1.
+              </h2>
+              <h3 class="text-xl mb-4">Podepnij konto bankowe</h3>
+              <p class="mb-8">Dzięki temu wszystkie transakcje pojawią się w Firmowidzie
+                automatycznie. Co więcej, po wykryciu odpowiedniej faktury transakcja
+                połączy się z dokumentem.</p>
+              <.link
+                navigate={~p"/settings/bank-sync/create"}
+                class="bg-blueText rounded-md py-2
+                      px-4 text-white hover:bg-greyButtonBg hover:text-black
+                      transition-colors"
+              >
+                Synchronizacja z bankiem
+              </.link>
+            </div>
+            <div class="max-w-[400px]">
+              <h2 class="text-xl font-bold mb-2 flex items-end gap-2">
+                <.icon name="hero-cloud-arrow-up" class="h-10 w-10 text-greenText" /> Krok 2.
+              </h2>
+              <h3 class="text-xl mb-4">Wgraj faktury</h3>
+              <p class="mb-2">Możesz to zrobić:</p>
+              <ul class="list-disc space-y-2 list-outside ml-4">
+                <li>
+                  Za pomocą przycisku <span class="font-bold">+ Dodaj dokument</span>
+                  w prawym górnym rogu
+                </li>
+                <li>
+                  <span class="font-bold">Przeciągając pliki</span> bezpośrednio do tego panelu
+                </li>
+                <li>
+                  Logując się na stronę przez telefon komórkowy i <span class="font-bold">przesyłając
+                    zdjęcie dokumentu</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      <% end %>
     <% end %>
     """
   end
