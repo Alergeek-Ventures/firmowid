@@ -3,6 +3,8 @@ defmodule Firmowid.Documents.Reducto do
 
   alias Firmowid.Documents
 
+  require Logger
+
   def start_link(_) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
@@ -21,7 +23,12 @@ defmodule Firmowid.Documents.Reducto do
     try do
       extract_invoice_info(document_id, organization_id)
     rescue
-      _ -> Documents.delete_document(organization_id, document_id)
+      error ->
+        Logger.error(
+          "Failed to extract invoice info for document #{document_id}: #{inspect(error)}"
+        )
+
+        Documents.delete_document(organization_id, document_id)
     end
 
     {:noreply, state}
@@ -122,7 +129,9 @@ defmodule Firmowid.Documents.Reducto do
                 enabled: false
               },
               schema: invoice_extraction_schema
-            }
+            },
+            receive_timeout: 120_000,
+            connect_options: [timeout: 120_000]
           )
 
         # it returns as list, so we take first item
