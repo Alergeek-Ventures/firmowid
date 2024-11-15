@@ -55,18 +55,16 @@ defmodule Firmowid.Documents do
       # don't include documents that are issued for previous month and were
       # paid in previous month
 
-      was_issued_last_month =
-        Date.compare(from, document.issue_date) == :gt
-
       was_paid =
-        document.imported_transactions != []
+        document.imported_transactions != [] and
+          document.skip_invoicing ==
+            false
 
-      was_paid_last_month =
-        was_paid and
-          document.imported_transactions
-          |> Enum.all?(fn i -> Date.compare(from, i.booking_date) == :gt end)
+      was_issued_in_date_range =
+        Date.compare(from, document.issue_date) == :gt and
+          Date.compare(to, document.issue_date) == :lt
 
-      not (was_issued_last_month and was_paid_last_month)
+      was_paid and was_issued_in_date_range
     end)
   end
 
