@@ -10,6 +10,7 @@ defmodule Firmowid.Application do
     children = [
       FirmowidWeb.Telemetry,
       Firmowid.Repo,
+      ChromicPDF,
       {Ecto.Migrator, repos: Application.fetch_env!(:firmowid, :ecto_repos)},
       {DNSCluster, query: Application.get_env(:firmowid, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Firmowid.PubSub},

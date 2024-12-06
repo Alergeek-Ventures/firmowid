@@ -63,7 +63,10 @@ defmodule FirmowidWeb.Router do
       get "/file", FileController, :batch
 
       live "/organization_invites", OrganizationInvitesLive.Index, :index
-
+      live "/invoices", InvoicesLive.Index, :index
+      live "/invoices/:id", InvoicesLive.Index, :index
+      get "/invoices/:id/pdf", PdfController, :index
+      get "/invoices/:id/download", PdfController, :pdf
       get "/settings", ContentController, :settings
 
       live "/settings/bank-sync", BankSyncLive.Index, :index
