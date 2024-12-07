@@ -56,15 +56,14 @@ defmodule Firmowid.Documents do
       # paid in previous month
 
       was_paid =
-        document.imported_transactions != [] and
-          document.skip_invoicing ==
-            false
+        document.imported_transactions != [] or
+          document.skip_invoicing == true
 
       was_issued_in_date_range =
         Date.compare(from, document.issue_date) == :gt and
           Date.compare(to, document.issue_date) == :lt
 
-      was_paid and was_issued_in_date_range
+      !was_paid or (was_paid and was_issued_in_date_range)
     end)
   end
 
