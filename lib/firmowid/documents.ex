@@ -60,8 +60,8 @@ defmodule Firmowid.Documents do
           document.skip_invoicing == true
 
       was_issued_in_date_range =
-        Date.compare(from, document.issue_date) == :gt and
-          Date.compare(to, document.issue_date) == :lt
+        Date.compare(from, document.issue_date) == :lt and
+          Date.compare(to, document.issue_date) == :gt
 
       !was_paid or (was_paid and was_issued_in_date_range)
     end)
