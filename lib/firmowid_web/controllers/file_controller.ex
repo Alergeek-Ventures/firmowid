@@ -13,7 +13,11 @@ defmodule FirmowidWeb.FileController do
     date_range_to = Date.end_of_month(month)
 
     documents =
-      Documents.list_documents_with_metadata(organization_id, date_range_from, date_range_to)
+      Documents.list_documents_issued_by_with_metadata(
+        organization_id,
+        date_range_from,
+        date_range_to
+      )
 
     stream =
       documents

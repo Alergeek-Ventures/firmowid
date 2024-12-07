@@ -51,20 +51,34 @@ defmodule Firmowid.Documents do
         )
       )
     )
-    |> Enum.filter(fn document ->
-      # don't include documents that are issued for previous month and were
-      # paid in previous month
+  end
 
-      was_paid =
-        document.imported_transactions != [] or
-          document.skip_invoicing == true
-
-      was_issued_in_date_range =
-        Date.compare(from, document.issue_date) == :lt and
-          Date.compare(to, document.issue_date) == :gt
-
-      !was_paid or (was_paid and was_issued_in_date_range)
-    end)
+  def list_documents_issued_by_with_metadata(
+        organization_id,
+        from,
+        to
+      ) do
+    Document
+    # the ones with total_amount not being null
+    |> where([d], not is_nil(d.total_amount))
+    |> where(
+      [d],
+      d.issue_date >= ^from and d.issue_date <= ^to
+    )
+    |> order_by(desc: :issue_date)
+    |> Repo.all(organization_id: organization_id)
+    |> Repo.preload(:imported_transactions, organization_id: organization_id)
+    |> Enum.map(&Map.put(&1, :file_url, get_file_url(&1.id, organization_id)))
+    |> Enum.map(
+      &Map.put(
+        &1,
+        :amount,
+        Money.new(
+          &1.total_amount,
+          &1.currency
+        )
+      )
+    )
   end
 
   def list_documents_without_metadata(organization_id) do

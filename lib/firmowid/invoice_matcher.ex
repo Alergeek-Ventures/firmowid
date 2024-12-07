@@ -42,6 +42,30 @@ defmodule Firmowid.InvoiceMatcher do
     |> Enum.map(&from_document/1)
     |> Enum.concat(Enum.map(imported_transactions, &from_imported_transaction/1))
     |> Enum.sort(&compare_date_then_creditor_then_amount/2)
+    |> Enum.filter(fn invoice_matcher ->
+      # don't include documents that are issued for previous month and were
+      # paid in previous month
+
+      was_paid =
+        invoice_matcher.imported_transactions != [] or
+          invoice_matcher.skip_invoicing == true
+
+      was_issued_in_date_range =
+        Date.compare(from, invoice_matcher.issue_date) in [:lt, :eq] and
+          Date.compare(to, invoice_matcher.issue_date) in [:gt, :eq]
+
+      IO.inspect(%{
+        seller_display_name: invoice_matcher.seller_display_name,
+        was_paid: was_paid,
+        from: from,
+        to: to,
+        issue_date: invoice_matcher.issue_date,
+        from_compare: Date.compare(from, invoice_matcher.issue_date),
+        to_compare: Date.compare(to, invoice_matcher.issue_date)
+      })
+
+      !was_paid or (was_paid and was_issued_in_date_range)
+    end)
   end
 
   def compare_date_then_creditor_then_amount(a, b) do
