@@ -54,16 +54,6 @@ defmodule Firmowid.InvoiceMatcher do
         Date.compare(from, invoice_matcher.issue_date) in [:lt, :eq] and
           Date.compare(to, invoice_matcher.issue_date) in [:gt, :eq]
 
-      IO.inspect(%{
-        seller_display_name: invoice_matcher.seller_display_name,
-        was_paid: was_paid,
-        from: from,
-        to: to,
-        issue_date: invoice_matcher.issue_date,
-        from_compare: Date.compare(from, invoice_matcher.issue_date),
-        to_compare: Date.compare(to, invoice_matcher.issue_date)
-      })
-
       !was_paid or (was_paid and was_issued_in_date_range)
     end)
   end
