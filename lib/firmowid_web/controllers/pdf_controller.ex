@@ -39,12 +39,15 @@ defmodule FirmowidWeb.PdfController do
         |> send_resp(404, "Not found")
 
       invoice ->
+        url_with_protocol = FirmowidWeb.Endpoint.url()
+        domain = FirmowidWeb.Endpoint.host()
+
         ChromicPDF.print_to_pdf(
-          {:url, "http://localhost:4000/invoices/#{id}/pdf"},
+          {:url, "#{url_with_protocol}/invoices/#{id}/pdf"},
           set_cookie: %{
             name: "_firmowid_key",
             value: conn.cookies["_firmowid_key"],
-            domain: "localhost:4000"
+            domain: domain
           },
           output: fn path ->
             conn
