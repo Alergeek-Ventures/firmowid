@@ -122,7 +122,6 @@ defmodule Firmowid.Invoices.Invoice do
 
       :foreign ->
         invoice
-        |> put_change(:currency, "EUR")
         |> put_change(:is_cash_account, false)
 
       nil ->

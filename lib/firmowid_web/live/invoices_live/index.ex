@@ -44,17 +44,28 @@ defmodule FirmowidWeb.InvoicesLive.Index do
   def assign_invoice(socket, :new_invoice) do
     organization_id = socket.assigns.current_user.organization_id
 
-    invoice = %Invoice{
-      invoice_number: "",
-      issue_date: Date.utc_today(),
-      sale_date: Date.utc_today(),
-      due_date: Date.utc_today(),
-      invoice_type: :poland,
-      payment_method: "Przelew",
-      currency: "PLN",
-      organization_id: organization_id,
-      invoice_items: []
-    }
+    last_invoice = Invoices.get_latest_invoice(organization_id) || %{}
+
+    invoice =
+      struct(
+        Invoice,
+        %{
+          payment_method: "Przelew",
+          issue_date: Date.utc_today(),
+          sale_date: Date.utc_today(),
+          due_date: Date.utc_today()
+        }
+        |> Map.merge(Map.take(last_invoice, Invoice.__schema__(:fields)))
+        |> Map.merge(%{
+          invoice_number: "",
+          invoice_type: :poland,
+          currency: "PLN",
+          organization_id: organization_id,
+          invoice_items: [],
+          is_reverse_charge: false
+        })
+        |> Map.drop([:id])
+      )
 
     form =
       invoice

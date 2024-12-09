@@ -1,4 +1,5 @@
 defmodule Firmowid.Invoices do
+  import Ecto.Query, warn: false
   alias Firmowid.Repo
 
   alias Firmowid.Invoices.Invoice
@@ -10,6 +11,13 @@ defmodule Firmowid.Invoices do
   def get_invoice(organization_id, id) do
     Repo.get(Invoice, id, organization_id: organization_id)
     |> Repo.preload(:invoice_items, organization_id: organization_id)
+  end
+
+  def get_latest_invoice(organization_id) do
+    Invoice
+    |> order_by(desc: :updated_at)
+    |> limit(1)
+    |> Repo.one(organization_id: organization_id)
   end
 
   def create_invoice(%Invoice{} = invoice, attrs) do
