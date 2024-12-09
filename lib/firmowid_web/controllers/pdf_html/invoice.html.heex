@@ -30,16 +30,19 @@
         <%= @invoice.sale_date |> Calendar.strftime("%d.%m.%Y") %>
       </span>
     </div>
-    <div class="text-right">
-      <div class="font-bold text-sm">FAKTURA VAT</div>
-      <%= if @invoice.invoice_type == :foreign do %>
-        <div class="font-bold text-sm">VAT INVOICE</div>
-      <% end %>
-      <div class="text-[10px]">
-        <%= if @invoice.is_cash_account do %>
-          METODA KASOWA
+    <div class="flex gap-4">
+      <div class="text-right">
+        <div class="font-bold text-sm">FAKTURA VAT</div>
+        <%= if @invoice.invoice_type == :foreign do %>
+          <div class="font-bold text-sm">VAT INVOICE</div>
         <% end %>
+        <div class="text-[10px]">
+          <%= if @invoice.is_cash_account do %>
+            METODA KASOWA
+          <% end %>
+        </div>
       </div>
+      <img src="/images/av_logo.png" class="w-8 h-8 mt-1" />
     </div>
   </div>
   <hr class="border-greyButtonBg my-8" />
@@ -336,11 +339,14 @@
   <% end %>
   <!-- Footer -->
   <div class="absolute inset-0 flex items-end justify-center text-[8px] bottom-8">
-    <p>
-      Faktura wygenerowana za pomocą
-      <a class="font-black" href="https://firmowid.pl" target="_blank" rel="noreferrer noopener">
-        Firmowid.pl
-      </a>
-    </p>
+    <div class="flex flex-col items-center">
+      <img src="/images/invoice_firmowid_logo.png" class="w-10 h-10 mb-2" />
+      <p>
+        Faktura wygenerowana za pomocą
+        <a class="font-black" href="https://firmowid.pl" target="_blank" rel="noreferrer noopener">
+          Firmowid.pl
+        </a>
+      </p>
+    </div>
   </div>
 </div>
