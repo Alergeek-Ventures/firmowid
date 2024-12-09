@@ -44,7 +44,7 @@
         options={
           case @invoice.invoice_type do
             :poland -> ["PLN"]
-            :foreign -> ["EUR"]
+            :foreign -> ["PLN", "EUR"]
           end
         }
       />
@@ -63,9 +63,6 @@
       <div class="flex justify-between">
         <p class="text-darkGrey mb-4">
           Pozycje na fakturze
-          <%= if @invoice.are_invoice_items_confirmed do %>
-            Confirmed
-          <% end %>
         </p>
         <.button
           type="button"
@@ -264,32 +261,38 @@
                 ) %>
               </span>
             </div>
-            <div class="flex gap-2 justify-between mt-2 items-center">
-              <div class="flex flex-col">
-                <span class="text-sm">Kurs 1 EUR</span>
-                <span class="text-sm">
-                  Przewalutowanie wg NBP <br />
-                  z dnia: <%= Money.ExchangeRates.last_updated()
-                  |> elem(1)
-                  |> Calendar.strftime("%d.%m.%Y") %>
+            <%= if @invoice.currency != "PLN" do %>
+              <div class="flex gap-2 justify-between mt-2 items-center">
+                <div class="flex flex-col">
+                  <span class="text-sm">Kurs 1 <%= @invoice.currency %></span>
+                  <span class="text-sm">
+                    Przewalutowanie wg NBP <br />
+                    z dnia: <%= @invoice.issue_date
+                    |> Calendar.strftime("%d.%m.%Y") %>
+                  </span>
+                </div>
+                <span>
+                  <%= Money.cross_rate!(
+                    @invoice.currency,
+                    "PLN",
+                    Money.ExchangeRates.historic_rates(@invoice.issue_date)
+                  )
+                  |> Decimal.round(4) %> zł
                 </span>
               </div>
-              <span>
-                <%= Money.cross_rate!("EUR", "PLN") |> Decimal.round(4) %> zł
-              </span>
-            </div>
-            <div class="flex justify-between items-center mt-3">
-              <span class="text-sm">Suma EUR:</span>
-              <span class="font-bold text-xl">
-                <%= Money.to_currency!(
-                  Money.new(
-                    "PLN",
-                    @invoice |> Firmowid.Invoices.Invoice.get_net_value()
-                  ),
-                  @invoice.currency
-                ) %>
-              </span>
-            </div>
+              <div class="flex justify-between items-center mt-3">
+                <span class="text-sm">Suma <%= @invoice.currency %>:</span>
+                <span class="font-bold text-xl">
+                  <%= Money.to_currency!(
+                    Money.new(
+                      "PLN",
+                      @invoice |> Firmowid.Invoices.Invoice.get_net_value()
+                    ),
+                    @invoice.currency
+                  ) %>
+                </span>
+              </div>
+            <% end %>
           <% end %>
         </div>
       </div>
