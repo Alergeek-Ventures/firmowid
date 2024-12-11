@@ -33,6 +33,11 @@ defmodule FirmowidWeb.InvoicesLive.Index do
     |> assign(form: form)
     |> assign(invoice: invoice)
     |> assign(invoice_id: invoice.id)
+    |> assign(
+      currency_rate:
+        invoice.currency
+        |> Firmowid.Nbp.ApiClient.get_exchange_rate(Invoice.get_currency_conversion_date(invoice))
+    )
   end
 
   def assign_invoice(socket, nil) do
@@ -115,6 +120,13 @@ defmodule FirmowidWeb.InvoicesLive.Index do
           |> push_patch(to: "/invoices/#{db_invoice.id}")
           |> assign(invoice_id: db_invoice.id)
           |> assign(invoice: db_invoice)
+          |> assign(
+            currency_rate:
+              db_invoice.currency
+              |> Firmowid.Nbp.ApiClient.get_exchange_rate(
+                Invoice.get_currency_conversion_date(db_invoice)
+              )
+          )
 
         {:error, changeset} ->
           Logger.error("Failed to save invoice: #{inspect(changeset)}")

@@ -67,6 +67,22 @@ defmodule Firmowid.Invoices.Invoice do
     Decimal.add(get_net_value(invoice), get_vat_value(invoice))
   end
 
+  def get_currency_conversion_date(invoice) do
+    pick_date(
+      invoice.issue_date,
+      invoice.sale_date,
+      Date.compare(invoice.issue_date, invoice.sale_date)
+    )
+  end
+
+  defp pick_date(issue_date, _sale_date, :lt) do
+    issue_date
+  end
+
+  defp pick_date(_issue_date, sale_date, _comp) do
+    sale_date
+  end
+
   def changeset(invoice, attrs \\ %{}) do
     invoice
     |> cast(attrs, [

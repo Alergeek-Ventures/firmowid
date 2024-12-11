@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.PdfController do
+  alias Firmowid.Nbp
   alias Firmowid.Invoices
   use FirmowidWeb, :controller
 
@@ -13,10 +14,15 @@ defmodule FirmowidWeb.PdfController do
   end
 
   defp render_invoice(conn, %Invoices.Invoice{} = invoice) do
+    currency_conversion_date = Invoices.Invoice.get_currency_conversion_date(invoice)
+
+    currency_rate = Nbp.ApiClient.get_exchange_rate(invoice.currency, currency_conversion_date)
+
     conn
     |> render(:invoice,
       layout: false,
-      invoice: invoice
+      invoice: invoice,
+      currency_rate: currency_rate
     )
   end
 
@@ -42,32 +48,35 @@ defmodule FirmowidWeb.PdfController do
         url_with_protocol = FirmowidWeb.Endpoint.url()
         domain = FirmowidWeb.Endpoint.host()
 
-        ChromicPDF.print_to_pdf(
-          {:url, "#{url_with_protocol}/invoices/#{id}/pdf"},
-          set_cookie: %{
-            name: "_firmowid_key",
-            value: conn.cookies["_firmowid_key"],
-            domain: domain
-          },
-          output: fn path ->
-            conn
-            |> put_resp_header(
-              "content-disposition",
-              "attachment; filename=#{invoice.invoice_number}.pdf"
-            )
-            |> send_file(200, path)
-          end,
-          page_size: "A4",
-          evaluate: evaluate,
-          print_to_pdf: %{
-            marginTop: 0,
-            marginLeft: 0,
-            marginRight: 0,
-            marginBottom: 0,
-            scale: 1.3,
-            printBackground: true
-          }
-        )
+        {:ok, result} =
+          ChromicPDF.print_to_pdf(
+            {:url, "#{url_with_protocol}/invoices/#{id}/pdf"},
+            set_cookie: %{
+              name: "_firmowid_key",
+              value: conn.cookies["_firmowid_key"],
+              domain: domain
+            },
+            output: fn path ->
+              conn
+              |> put_resp_header(
+                "content-disposition",
+                "attachment; filename=#{invoice.invoice_number}.pdf"
+              )
+              |> send_file(200, path)
+            end,
+            page_size: "A4",
+            evaluate: evaluate,
+            print_to_pdf: %{
+              marginTop: 0,
+              marginLeft: 0,
+              marginRight: 0,
+              marginBottom: 0,
+              scale: 1.25,
+              printBackground: true
+            }
+          )
+
+        result
     end
   end
 end
