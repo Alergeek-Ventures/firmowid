@@ -83,6 +83,49 @@ defmodule Firmowid.Invoices.Invoice do
     sale_date
   end
 
+  def get_address_line_1(invoice) do
+    address =
+      case [
+        invoice.buyer_street,
+        invoice.buyer_house_number
+      ] do
+        [nil, nil] -> ""
+        [street, nil] -> street
+        [nil, _house_number] -> ""
+        [street, house_number] -> street <> " " <> house_number
+      end
+
+    case invoice.buyer_apartment_number do
+      nil ->
+        address
+
+      apartment_number ->
+        address <> "/" <> apartment_number
+    end
+  end
+
+  def get_address_line_2(invoice) do
+    Enum.join(
+      [
+        invoice.buyer_postal_code,
+        invoice.buyer_city
+      ]
+      |> Enum.reject(&is_nil/1),
+      " "
+    )
+    |> case do
+      "" -> nil
+      address -> address
+    end
+  end
+
+  def get_address_lines(invoice) do
+    Enum.join(
+      [get_address_line_1(invoice), get_address_line_2(invoice)] |> Enum.reject(&is_nil/1),
+      ", "
+    )
+  end
+
   def changeset(invoice, attrs \\ %{}) do
     invoice
     |> cast(attrs, [
@@ -135,10 +178,12 @@ defmodule Firmowid.Invoices.Invoice do
         invoice
         |> put_change(:currency, "PLN")
         |> put_change(:is_reverse_charge, false)
+        |> put_change(:is_basic_info_confirmed, false)
 
       :foreign ->
         invoice
         |> put_change(:is_cash_account, false)
+        |> put_change(:is_basic_info_confirmed, false)
 
       nil ->
         invoice
