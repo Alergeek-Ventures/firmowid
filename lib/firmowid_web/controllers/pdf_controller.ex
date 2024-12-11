@@ -14,9 +14,17 @@ defmodule FirmowidWeb.PdfController do
   end
 
   defp render_invoice(conn, %Invoices.Invoice{} = invoice) do
-    currency_conversion_date = Invoices.Invoice.get_currency_conversion_date(invoice)
+    currency_rate =
+      case invoice.currency do
+        "PLN" ->
+          nil
 
-    currency_rate = Nbp.ApiClient.get_exchange_rate(invoice.currency, currency_conversion_date)
+        currency ->
+          Nbp.ApiClient.get_exchange_rate(
+            currency,
+            Invoices.Invoice.get_currency_conversion_date(invoice)
+          )
+      end
 
     conn
     |> render(:invoice,

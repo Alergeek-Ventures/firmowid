@@ -48,12 +48,11 @@ defmodule FirmowidWeb.InvoicesLive.Index do
       |> Invoice.changeset()
       |> to_form
 
-    socket =
-      socket
-      |> assign(form: form)
-      |> assign(invoice: invoice)
-      |> assign(invoice_id: invoice.id)
-      |> assign_currency()
+    socket
+    |> assign(form: form)
+    |> assign(invoice: invoice)
+    |> assign(invoice_id: invoice.id)
+    |> assign_currency()
   end
 
   def assign_invoice(socket, nil) do
