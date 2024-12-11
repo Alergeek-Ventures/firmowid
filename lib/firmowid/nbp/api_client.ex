@@ -21,7 +21,7 @@ defmodule Firmowid.Nbp.ApiClient do
       }
     } =
       Req.get!(
-        "http://api.nbp.pl/api/exchangerates/rates/a/#{currency}/#{start_date_str}/#{end_date_str}"
+        "https://api.nbp.pl/api/exchangerates/rates/a/#{currency}/#{start_date_str}/#{end_date_str}"
       )
 
     %{"effectiveDate" => effective_date, "mid" => rate, "no" => table_number} = Enum.at(rates, -1)

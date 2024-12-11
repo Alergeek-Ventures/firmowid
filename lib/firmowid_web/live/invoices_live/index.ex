@@ -23,21 +23,37 @@ defmodule FirmowidWeb.InvoicesLive.Index do
      |> assign_invoice(invoice)}
   end
 
+  def assign_currency(socket) do
+    invoice = socket.assigns.invoice
+
+    case invoice.currency do
+      "PLN" ->
+        socket
+
+      currency ->
+        socket
+        |> assign(
+          currency_rate:
+            currency
+            |> Firmowid.Nbp.ApiClient.get_exchange_rate(
+              Invoice.get_currency_conversion_date(invoice)
+            )
+        )
+    end
+  end
+
   def assign_invoice(socket, %Invoice{} = invoice) do
     form =
       invoice
       |> Invoice.changeset()
       |> to_form
 
-    socket
-    |> assign(form: form)
-    |> assign(invoice: invoice)
-    |> assign(invoice_id: invoice.id)
-    |> assign(
-      currency_rate:
-        invoice.currency
-        |> Firmowid.Nbp.ApiClient.get_exchange_rate(Invoice.get_currency_conversion_date(invoice))
-    )
+    socket =
+      socket
+      |> assign(form: form)
+      |> assign(invoice: invoice)
+      |> assign(invoice_id: invoice.id)
+      |> assign_currency()
   end
 
   def assign_invoice(socket, nil) do
@@ -120,13 +136,7 @@ defmodule FirmowidWeb.InvoicesLive.Index do
           |> push_patch(to: "/invoices/#{db_invoice.id}")
           |> assign(invoice_id: db_invoice.id)
           |> assign(invoice: db_invoice)
-          |> assign(
-            currency_rate:
-              db_invoice.currency
-              |> Firmowid.Nbp.ApiClient.get_exchange_rate(
-                Invoice.get_currency_conversion_date(db_invoice)
-              )
-          )
+          |> assign_currency()
 
         {:error, changeset} ->
           Logger.error("Failed to save invoice: #{inspect(changeset)}")

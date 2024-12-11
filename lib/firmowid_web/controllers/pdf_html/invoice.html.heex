@@ -85,7 +85,7 @@
       </div>
     </div>
     <div>
-      <h2 class=" text-darkGrey/70 font-bold mb-2">
+      <h2 class=" text-darkGrey/70 text-[8px] font-bold mb-2">
         <%= case @invoice.invoice_type do
           :poland -> "NABYWCA"
           :foreign -> "NABYWCA / BUYER"
@@ -192,11 +192,11 @@
       </thead>
       <tbody class="text-[10px]">
         <%= for {item, index} <- Enum.with_index(@invoice.invoice_items, 1) do %>
-          <tr>
-            <td class="py-2"><%= index %>.</td>
-            <td class="py-2 max-w-40"><%= item.name %></td>
-            <td class="py-2 text-right"><%= item.quantity %></td>
-            <td class="py-2 text-right"><%= item.unit %></td>
+          <tr class="align-top">
+            <td class="py-1"><%= index %>.</td>
+            <td class="py-1 max-w-40"><%= item.name %></td>
+            <td class="py-1 text-right"><%= item.quantity %></td>
+            <td class="py-1 text-right"><%= item.unit %></td>
             <%= if @invoice.invoice_type == :poland do %>
               <td class="py-2 text-right">
                 <%= Money.new(
@@ -205,15 +205,15 @@
                   currency_symbol: ""
                 ) %>
               </td>
-              <td class="py-2 text-right"><%= item.vat_rate %>%</td>
-              <td class="py-2 text-right">
+              <td class="py-1 text-right"><%= item.vat_rate %>%</td>
+              <td class="py-1 text-right">
                 <%= Money.new(
                   @invoice.currency,
                   item |> Firmowid.Invoices.InvoiceItem.get_net_value(),
                   currency_symbol: ""
                 ) %>
               </td>
-              <td class="py-2 text-right">
+              <td class="py-1 text-right">
                 <%= Money.new(
                   @invoice.currency,
                   item |> Firmowid.Invoices.InvoiceItem.get_gross_value(),
@@ -222,11 +222,11 @@
               </td>
             <% end %>
             <%= if @invoice.invoice_type == :foreign do %>
-              <td class="py-2 text-right">
+              <td class="py-1 text-right">
                 <%= Money.new!(@invoice.currency, item.unit_price)
                 |> Money.to_string!(currency_symbol: "") %>
               </td>
-              <td class="py-2 text-right">
+              <td class="py-1 text-right">
                 <%= Money.new!(
                   @invoice.currency,
                   item |> Firmowid.Invoices.InvoiceItem.get_net_value()
@@ -324,7 +324,7 @@
       :foreign -> "Płatność / payment"
     end %>
   </h2>
-  <div class="flex flex-col w-fit text-[10px] leading-[14px]">
+  <div class="flex flex-col w-fit text-[10px] gap-1 leading-[14px]">
     <%= if @invoice.invoice_type == :poland do %>
       <div>
         Metoda płatności: <%= @invoice.payment_method %> | nr konta: <%= @invoice.seller_account_number %>
