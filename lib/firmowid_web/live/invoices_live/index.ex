@@ -1,6 +1,11 @@
 defmodule FirmowidWeb.InvoicesLive.Index do
   alias Firmowid.Invoices
   alias Firmowid.Invoices.Invoice
+  import FirmowidWeb.InvoicesLive.EditButton
+  import FirmowidWeb.InvoicesLive.BuyerForm
+  import FirmowidWeb.InvoicesLive.SellerForm
+  import FirmowidWeb.InvoicesLive.InvoiceItems
+
   use FirmowidWeb, :live_view
   require Logger
 
@@ -82,7 +87,10 @@ defmodule FirmowidWeb.InvoicesLive.Index do
           currency: "PLN",
           organization_id: organization_id,
           invoice_items: [],
-          is_reverse_charge: false
+          is_basic_info_confirmed: false,
+          is_seller_confirmed: false,
+          is_buyer_confirmed: false,
+          are_invoice_items_confirmed: false
         })
         |> Map.drop([:id])
       )

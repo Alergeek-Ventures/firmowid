@@ -1,11 +1,12 @@
-defmodule FirmowidWeb.InvoicesLive.SellerFormLive do
+defmodule FirmowidWeb.InvoicesLive.SellerForm do
   require Logger
-  use FirmowidWeb, :live_view
+  import FirmowidWeb.InvoicesLive.EditButton
+  use FirmowidWeb, :html
 
   attr :seller_form, :list, required: true
   attr :invoice, :map, required: true
 
-  def(render(assigns)) do
+  def seller_form(assigns) do
     ~H"""
     <div class="max-w-2xl">
       <p class="text-darkGrey mb-4">Sprzedający</p>
@@ -23,13 +24,9 @@ defmodule FirmowidWeb.InvoicesLive.SellerFormLive do
             <span class="text-darkGrey">Nr konta </span>
             <span><%= @invoice.seller_account_number %></span>
           </div>
-          <.button
-            type="button"
-            phx-click={JS.push("submit", value: %{"invoice" => %{"is_seller_confirmed" => false}})}
-            class="bg-lightGreyBg rounded hover:border-darkGrey"
-          >
-            <.icon name="hero-pencil-square" class="w-6 h-6 text-darkGrey" />
-          </.button>
+          <.edit_button phx-click={
+            JS.push("submit", value: %{"invoice" => %{"is_seller_confirmed" => false}})
+          } />
         </div>
       <% else %>
         <.form
@@ -78,7 +75,12 @@ defmodule FirmowidWeb.InvoicesLive.SellerFormLive do
             field={@seller_form[:is_seller_confirmed]}
             value="true"
           />
-          <.button class="bg-blueText font-bold py-2 px-4 rounded mt-2">Zatwierdź</.button>
+          <.button
+            phx-disable-with="Zapisywanie..."
+            class="bg-blueText font-bold py-2 px-4 rounded mt-2"
+          >
+            Zatwierdź
+          </.button>
         </.form>
       <% end %>
     </div>

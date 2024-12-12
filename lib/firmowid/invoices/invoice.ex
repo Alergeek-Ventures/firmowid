@@ -63,6 +63,13 @@ defmodule Firmowid.Invoices.Invoice do
     end)
   end
 
+  def is_confirmed(invoice) do
+    invoice.is_basic_info_confirmed &&
+      invoice.is_seller_confirmed &&
+      invoice.is_buyer_confirmed &&
+      invoice.are_invoice_items_confirmed
+  end
+
   def get_gross_value(invoice) do
     Decimal.add(get_net_value(invoice), get_vat_value(invoice))
   end

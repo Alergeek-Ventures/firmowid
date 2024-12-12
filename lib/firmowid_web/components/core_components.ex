@@ -146,8 +146,8 @@ defmodule FirmowidWeb.CoreComponents do
       type={@type}
       class={[
         "phx-submit-loading:opacity-75 rounded-md bg-black transition-colors",
-        "duration-200 border hover:bg-greyButtonBg hover:text-black py-2 px-3",
-        "text-sm font-semibold leading-6 text-white active:text-white/80",
+        "duration-200 border hover:enabled:bg-greyButtonBg hover:enabled:text-black py-2 px-3",
+        "text-sm font-semibold leading-6 disabled:opacity-40 text-white active:text-white/80",
         @class
       ]}
       {@rest}
