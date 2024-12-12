@@ -41,6 +41,7 @@
   <.form
     for={@form}
     phx-submit="submit"
+    phx-change="change"
     class={[
       "flex items-end mt-4 p-4 gap-8 rounded-md",
       @invoice.is_basic_info_confirmed && "border-greyButtonBg border border-solid",
@@ -113,11 +114,7 @@
       </div>
       <.input field={@form[:due_date]} type="date" label="Termin zapłaty" required />
       <.input type="hidden" class="hidden" field={@form[:is_basic_info_confirmed]} value="true" />
-      <.button
-        phx-disable-with="Zapisywanie..."
-        type="submit"
-        class="bg-blueText font-bold py-2 px-4 rounded"
-      >
+      <.button phx-disable-with="Zapisywanie..." class="bg-blueText font-bold py-2 px-4 rounded">
         Zatwierdź
       </.button>
     <% end %>

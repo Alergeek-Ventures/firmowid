@@ -111,7 +111,7 @@ defmodule FirmowidWeb.InvoicesLive.Index do
   def handle_event("change", %{"invoice" => invoice}, socket) do
     form =
       socket.assigns.invoice
-      |> Invoice.changeset(invoice)
+      |> Invoice.changeset(Map.merge(socket.assigns.form.params, invoice))
       |> to_form
 
     socket =

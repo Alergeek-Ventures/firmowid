@@ -30,6 +30,7 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
       <% else %>
         <.form
           phx-submit="submit"
+          phx-change="change"
           for={@buyer_form}
           class="bg-greyButtonBg bg-opacity-50 p-4 px-6 rounded-md"
         >
