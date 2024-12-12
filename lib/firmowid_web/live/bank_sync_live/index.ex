@@ -34,10 +34,7 @@ defmodule FirmowidWeb.BankSyncLive.Index do
     organization_id = user.organization_id
 
     BankData.sync_requisition(requisition_id, organization_id)
-    InvoiceMatcher.match_all_good_candidates_for_unconnected_documents(organization_id)
-
-    LiveToast.send_toast(:info, "Transakcje zaimportowane, dopasowywanie dokumentów...")
-    LiveToast.send_toast(:info, "Dokumenty dopasowane!")
+    LiveToast.send_toast(:info, "Zsynchronizowano konto bankowe.")
 
     {:noreply, socket}
   end
