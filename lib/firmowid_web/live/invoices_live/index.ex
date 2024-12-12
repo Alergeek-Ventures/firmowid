@@ -10,8 +10,6 @@ defmodule FirmowidWeb.InvoicesLive.Index do
   require Logger
 
   def mount(params, _session, socket) do
-    Money.ExchangeRates.Retriever.latest_rates()
-
     organization_id = socket.assigns.current_user.organization_id
 
     invoice =
