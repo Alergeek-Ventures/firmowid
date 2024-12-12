@@ -2,6 +2,7 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
   use FirmowidWeb, :live_view
 
   import FirmowidWeb.InvoicesLive.EditButton
+  import FirmowidWeb.Icons
 
   attr :form, :list, required: true
   attr :invoice, :map, required: true
@@ -228,9 +229,9 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
                 name="invoice[items_drop][]"
                 value={item.index}
                 phx-click={JS.dispatch("change")}
-                class="col-span-1 bg-redBg self-center border-redBg hover:border hover:border-redText hover:border-solid hover:bg-redBg size-8 ml-4 mt-2 !p-0"
+                class="col-span-1 h-7 w-9 bg-redBg self-center flex justify-center items-center !text-redText hover:border border-none hover:!bg-darkGrey/50 size-8 ml-5 mt-2 hover:!text-greyButtonBg !p-0"
               >
-                <.icon name="hero-trash" class="w-4 h-4 text-redText" />
+                <.trash_icon class="w-4 h-4" />
               </.button>
             </.inputs_for>
           </div>
