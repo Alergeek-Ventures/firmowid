@@ -247,11 +247,7 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
               Dodaj pozycję <.icon name="hero-plus" class="text-darkGrey h-4 w-4" />
             </.button>
             <.input type="hidden" field={@form[:are_invoice_items_confirmed]} value="true" />
-            <.button
-              phx-disable-with="Zapisywanie..."
-              type="submit"
-              class="bg-blueText font-bold py-2 px-4 rounded"
-            >
+            <.button phx-disable-with="Zapisywanie..." type="submit" color="green">
               Zatwierdź
             </.button>
           </div>

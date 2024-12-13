@@ -5,10 +5,7 @@ defmodule FirmowidWeb.PdfController do
 
   def index(conn, %{"id" => id}) do
     invoice =
-      Invoices.get_invoice(
-        conn.assigns.current_user.organization_id,
-        id
-      )
+      Invoices.get_invoice(id)
 
     conn |> render_invoice(invoice)
   end
@@ -39,15 +36,13 @@ defmodule FirmowidWeb.PdfController do
   end
 
   def pdf(conn, %{"id" => id}) do
-    organization_id = conn.assigns.current_user.organization_id
-
     evaluate = %{
       expression: """
       document.querySelector('body').classList.add('bg-white');
       """
     }
 
-    case Invoices.get_invoice(organization_id, id) do
+    case Invoices.get_invoice(id) do
       nil ->
         conn
         |> send_resp(404, "Not found")

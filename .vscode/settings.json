@@ -5,8 +5,18 @@
       "server": "localhost",
       "port": 5432,
       "driver": "PostgreSQL",
-      "name": "redux-postgres",
+      "name": "Firmowid",
       "database": "firmowid",
+      "username": "postgres",
+      "password": "postgres"
+    },
+    {
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "Firmowid Test",
+      "database": "firmowid-test",
       "username": "postgres",
       "password": "postgres"
     }

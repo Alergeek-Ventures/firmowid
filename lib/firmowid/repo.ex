@@ -6,6 +6,21 @@ defmodule Firmowid.Repo do
 
   require Ecto.Query
 
+  @tenant_key {__MODULE__, :organization_id}
+
+  def put_org_id(organization_id) do
+    Process.put(@tenant_key, organization_id)
+  end
+
+  def get_org_id() do
+    Process.get(@tenant_key)
+  end
+
+  @impl true
+  def default_options(_operation) do
+    [organization_id: get_org_id()]
+  end
+
   @impl true
   def prepare_query(_operation, query, opts) do
     cond do

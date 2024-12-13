@@ -5,11 +5,32 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
 
   attr :buyer_form, :list, required: true
   attr :invoice, :map, required: true
+  attr :buyers, :list, required: false, default: []
 
   def buyer_form(assigns) do
     ~H"""
     <div class="max-w-2xl">
       <p class="text-darkGrey mb-4">Nabywca</p>
+      <.form phx-change="submit" for={@buyer_form}>
+        <.input
+          type="hidden"
+          field={@buyer_form[:is_buyer_confirmed]}
+          value={
+            if !@invoice.buyer_id or @invoice.buyer_id == "" do
+              "true"
+            else
+              "false"
+            end
+          }
+        />
+        <.input
+          field={@buyer_form[:buyer_id]}
+          type="select"
+          class="bg-greyButtonBg text-darkGrey rounded-md border-none text-sm h-6 py-0 w-48 mb-2"
+          prompt="WYBIERZ Z LISTY"
+          options={@buyers |> Enum.map(fn s -> {s.display_name, s.id} end)}
+        />
+      </.form>
       <%= if @invoice.is_buyer_confirmed do %>
         <div class="w-[664px] flex justify-between items-start border border-greyButtonBg rounded-md p-5">
           <div class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2">
@@ -81,12 +102,26 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
             </div>
           </div>
           <.input type="hidden" class="hidden" field={@buyer_form[:is_buyer_confirmed]} value="true" />
-          <.button
-            phx-disable-with="Zapisywanie..."
-            class="bg-blueText font-bold py-2 px-4 rounded mt-2"
-          >
-            Zatwierdź
-          </.button>
+          <.input type="hidden" class="hidden" field={@buyer_form[:is_buyer_confirmed]} value="true" />
+          <div class="flex flex-row-reverse justify-start gap-2">
+            <.button phx-disable-with="Zapisywanie..." color="green" class="mt-2">
+              Zatwierdź
+            </.button>
+            <.button
+              phx-disable-with="Dodawanie..."
+              name="action"
+              value="add_and_confirm_buyer"
+              variant="outline"
+              color="green"
+              class="mt-2"
+            >
+              <%= if !@invoice.buyer_id or @invoice.buyer_id == "" do %>
+                Dodaj i zatwierdź
+              <% else %>
+                Zaktualizuj i zatwierdź
+              <% end %>
+            </.button>
+          </div>
         </.form>
       <% end %>
     </div>

@@ -171,9 +171,7 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
                 połączy się z dokumentem.</p>
               <.link
                 navigate={~p"/settings/bank-sync/create"}
-                class="bg-blueText rounded-md py-2
-                      px-4 text-white hover:bg-greyButtonBg hover:text-black
-                      transition-colors"
+                class={button_styles(%{color: "green"})}
               >
                 Synchronizacja z bankiem
               </.link>
@@ -281,11 +279,10 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
             end
           }
           class={
-            [
+            classes([
               "h-4 w-4",
               @status == "Komplet" && "w-5 h-5"
-            ]
-            |> Enum.join(" ")
+            ])
           }
         />
       </div>

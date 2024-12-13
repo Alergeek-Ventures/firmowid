@@ -182,12 +182,11 @@
       </div>
       <.button
         class={
-          [
+          classes([
             "row-start-12 row-end-13 col-start-7 col-end-8",
             "self-start justify-self-end",
             "w-full h-10 mr-8 mb-8"
-          ]
-          |> Enum.join(" ")
+          ])
         }
         phx-click="disconnect"
         phx-value-document-id={@document.id}
@@ -303,11 +302,10 @@
                     phx-value-document-id={@document.id}
                     phx-value-imported-transaction-id={imported_transaction.id}
                     class={
-                      [
+                      classes([
                         imported_transaction.llm_eval < 0.75 && "!bg-lightGreyBg !text-darkGrey",
                         imported_transaction.llm_eval >= 0.75 && "!bg-darkGrey !text-white"
-                      ]
-                      |> Enum.join(" ")
+                      ])
                     }
                   >
                     Zatwierdź
@@ -381,12 +379,11 @@
       </div>
       <.button
         class={
-          [
+          classes([
             "row-start-12 row-end-13 col-start-7 col-end-8",
             "self-start justify-self-end",
             "w-full h-10 mr-8 mb-8"
-          ]
-          |> Enum.join(" ")
+          ])
         }
         phx-click="disconnect-group"
         phx-value-document-id={@document.id}

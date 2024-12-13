@@ -18,6 +18,7 @@ defmodule FirmowidWeb.CoreComponents do
 
   alias Phoenix.LiveView.JS
   use Gettext, backend: FirmowidWeb.Gettext
+  import Tails
 
   @doc """
   Renders a modal.
@@ -91,6 +92,69 @@ defmodule FirmowidWeb.CoreComponents do
   end
 
   @doc """
+  Buttons allow users to take actions, and make choices, with a single tap.
+
+  ## Examples
+
+  ```heex
+  <.button>
+    Click me
+  </.button>
+  ```
+
+  """
+
+  attr :class, :any, doc: "Extend existing styles applied to the component."
+
+  attr :rest, :global, include: ~w(disabled form name value)
+  attr :color, :string, doc: "The button color.", default: "black", values: ["black", "green"]
+
+  attr :type, :string,
+    default: "submit",
+    doc: "The button type.",
+    values: ["submit", "button", "reset"]
+
+  attr :variant, :string, default: "solid", values: ["outline", "solid"]
+
+  slot :inner_block, required: true
+
+  def button(assigns) do
+    ~H"""
+    <button type={@type} class={button_styles(assigns)} {@rest}>
+      <%= render_slot(@inner_block) %>
+    </button>
+    """
+  end
+
+  def button_styles() do
+    button_styles()
+  end
+
+  def button_styles(assigns) do
+    classes([
+      "phx-submit-loading:opacity-75 cursor-pointer rounded-md transition-colors",
+      "duration-200 border py-2 px-3",
+      "text-sm font-semibold leading-6 disabled:opacity-40 active:text-white/80",
+      button_styles(:color, assigns),
+      assigns[:class]
+    ])
+  end
+
+  defp button_styles(:color, %{variant: "outline", color: "green"}) do
+    "border-blueText text-blueText bg-transparent hover:text-blueText hover:bg-greyButtonBg"
+  end
+
+  defp button_styles(:color, %{color: "green"}) do
+    "bg-blueText text-white hover:text-black hover:bg-greyButtonBg disabled:bg-blueText disabled:text-white disabled:cursor-default"
+  end
+
+  defp button_styles(:color, %{color: "black"}) do
+    "text-white bg-black hover:bg-greyButtonBg hover:text-black"
+  end
+
+  defp button_styles(:color, _), do: button_styles(:color, %{color: "black"})
+
+  @doc """
   Renders a simple form.
 
   ## Examples
@@ -123,37 +187,6 @@ defmodule FirmowidWeb.CoreComponents do
         </div>
       </div>
     </.form>
-    """
-  end
-
-  @doc """
-  Renders a button.
-
-  ## Examples
-
-      <.button>Send!</.button>
-      <.button phx-click="go" class="ml-2">Send!</.button>
-  """
-  attr :type, :string, default: nil
-  attr :class, :string, default: nil
-  attr :rest, :global, include: ~w(disabled form name value)
-
-  slot :inner_block, required: true
-
-  def button(assigns) do
-    ~H"""
-    <button
-      type={@type}
-      class={[
-        "phx-submit-loading:opacity-75 rounded-md bg-black transition-colors",
-        "duration-200 border hover:enabled:bg-greyButtonBg hover:enabled:text-black py-2 px-3",
-        "text-sm font-semibold leading-6 disabled:opacity-40 text-white active:text-white/80",
-        @class
-      ]}
-      {@rest}
-    >
-      {render_slot(@inner_block)}
-    </button>
     """
   end
 
@@ -250,7 +283,12 @@ defmodule FirmowidWeb.CoreComponents do
       <select
         id={@id}
         name={@name}
-        class="mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm"
+        class={
+          classes([
+            "mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm",
+            @rest[:class]
+          ])
+        }
         multiple={@multiple}
         {@rest}
       >

@@ -47,6 +47,8 @@ defmodule Firmowid.Invoices.Invoice do
 
     has_many :invoice_items, Firmowid.Invoices.InvoiceItem, on_replace: :delete
     belongs_to :organization, Firmowid.Accounts.Organization, type: :binary_id
+    belongs_to :buyer, Firmowid.Invoices.Buyer, type: :binary_id
+    belongs_to :seller, Firmowid.Invoices.Seller, type: :binary_id
 
     timestamps(type: :utc_datetime)
   end
@@ -137,7 +139,6 @@ defmodule Firmowid.Invoices.Invoice do
     invoice
     |> cast(attrs, [
       :invoice_type,
-      :organization_id,
       :invoice_number,
       :sale_date,
       :issue_date,
@@ -145,6 +146,7 @@ defmodule Firmowid.Invoices.Invoice do
       :payment_method,
       :currency,
       :is_basic_info_confirmed,
+      :seller_id,
       :seller_nip,
       :seller_display_name,
       :seller_address,
@@ -152,6 +154,7 @@ defmodule Firmowid.Invoices.Invoice do
       :seller_surname,
       :seller_account_number,
       :is_seller_confirmed,
+      :buyer_id,
       :buyer_type,
       :buyer_nip,
       :buyer_display_name,
@@ -177,6 +180,7 @@ defmodule Firmowid.Invoices.Invoice do
       drop_param: :items_drop
     )
     |> cast_based_on_type
+    |> put_change(:organization_id, Firmowid.Repo.get_org_id())
   end
 
   def cast_based_on_type(invoice) do

@@ -88,6 +88,7 @@ defmodule FirmowidWeb do
       # Core UI components and translation
       import FirmowidWeb.CoreComponents
       use Gettext, backend: FirmowidWeb.Gettext
+      import Tails
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS

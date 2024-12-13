@@ -36,12 +36,12 @@ defmodule Firmowid.Invoices.InvoiceItem do
       :unit,
       :unit_price,
       :vat_rate,
-      :order,
-      :organization_id
+      :order
     ])
     |> cast_assoc(:invoice)
     |> validate_number(:quantity, greater_than_or_equal_to: 0)
     |> validate_number(:unit_price, greater_than_or_equal_to: 0)
     |> validate_number(:vat_rate, greater_than_or_equal_to: 0)
+    |> put_change(:organization_id, Firmowid.Repo.get_org_id())
   end
 end

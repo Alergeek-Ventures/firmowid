@@ -174,6 +174,7 @@ defmodule FirmowidWeb.UserAuth do
 
     if not is_nil(socket.assigns.current_user) and
          not is_nil(socket.assigns.current_user.organization_id) do
+      Firmowid.Repo.put_org_id(socket.assigns.current_user.organization_id)
       {:cont, socket}
     else
       LiveToast.send_toast(
