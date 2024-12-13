@@ -199,7 +199,7 @@ defmodule FirmowidWeb.InvoicesLive.Index do
 
   def handle_event("submit", %{"invoice" => invoice} = params, socket) do
     invoice = invoice |> populate_seller() |> populate_buyer()
-    
+
     params = %{params | "invoice" => invoice}
 
     socket =

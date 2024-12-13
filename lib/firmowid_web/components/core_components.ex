@@ -121,7 +121,7 @@ defmodule FirmowidWeb.CoreComponents do
   def button(assigns) do
     ~H"""
     <button type={@type} class={button_styles(assigns)} {@rest}>
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </button>
     """
   end
