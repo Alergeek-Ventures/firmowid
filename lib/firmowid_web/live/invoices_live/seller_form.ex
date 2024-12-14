@@ -14,15 +14,15 @@ defmodule FirmowidWeb.InvoicesLive.SellerForm do
         <div class="w-[571px] flex justify-between items-start border border-greyButtonBg rounded-md p-5">
           <div class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2">
             <span class="text-darkGrey">NIP</span>
-            <span><%= @invoice.seller_nip %></span>
+            <span>{@invoice.seller_nip}</span>
             <span class="text-darkGrey">Nazwa firmy</span>
-            <span><%= @invoice.seller_display_name %></span>
+            <span>{@invoice.seller_display_name}</span>
             <span class="text-darkGrey">Imię i nazwisko</span>
-            <span><%= @invoice.seller_name %> <%= @invoice.seller_surname %></span>
+            <span>{@invoice.seller_name} {@invoice.seller_surname}</span>
             <span class="text-darkGrey">Adres </span>
-            <span><%= @invoice.seller_address %></span>
+            <span>{@invoice.seller_address}</span>
             <span class="text-darkGrey">Nr konta </span>
-            <span><%= @invoice.seller_account_number %></span>
+            <span>{@invoice.seller_account_number}</span>
           </div>
           <.edit_button phx-click={
             JS.push("submit", value: %{"invoice" => %{"is_seller_confirmed" => false}})

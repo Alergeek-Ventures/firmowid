@@ -62,20 +62,20 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
             <%= for item <- @invoice.invoice_items do %>
               <tr class="pt-3">
                 <td class="pt-3">
-                  <%= item.name %>
+                  {item.name}
                 </td>
                 <td>
-                  <%= item.quantity %>
+                  {item.quantity}
                 </td>
                 <td>
-                  <%= item.unit %>
+                  {item.unit}
                 </td>
                 <td>
-                  <%= item.unit_price %>
+                  {item.unit_price}
                 </td>
                 <td>
                   <%= if  @invoice.invoice_type == :poland do %>
-                    <%= item.vat_rate %>%
+                    {item.vat_rate}%
                   <% end %>
                   <%= if @invoice.invoice_type == :foreign do %>
                     np.
@@ -83,14 +83,14 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
                 </td>
                 <%= if  @invoice.invoice_type == :poland do %>
                   <td>
-                    <%= Money.new(
+                    {Money.new(
                       :PLN,
                       Decimal.mult(item.quantity, item.unit_price)
                     )
-                    |> Money.to_string!(currency_symbol: "") %>
+                    |> Money.to_string!(currency_symbol: "")}
                   </td>
                   <td>
-                    <%= Money.new(
+                    {Money.new(
                       :PLN,
                       Decimal.mult(item.quantity, item.unit_price)
                       |> Decimal.mult(
@@ -99,16 +99,16 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
                         |> Decimal.add(1)
                       )
                     )
-                    |> Money.to_string!(currency_symbol: "") %>
+                    |> Money.to_string!(currency_symbol: "")}
                   </td>
                 <% end %>
                 <%= if @invoice.invoice_type == :foreign do %>
                   <td>
-                    <%= Money.new(
+                    {Money.new(
                       @invoice.currency,
                       Decimal.mult(item.quantity, item.unit_price)
                     )
-                    |> Money.to_string!(currency_symbol: "") %>
+                    |> Money.to_string!(currency_symbol: "")}
                   </td>
                 <% end %>
               </tr>

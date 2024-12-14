@@ -2,7 +2,6 @@ defmodule FirmowidWeb.BankSyncLive.Index do
   use FirmowidWeb, :live_view
 
   alias Firmowid.BankData
-  alias Firmowid.InvoiceMatcher
 
   @impl true
   def mount(_params, _session, socket) do

@@ -48,8 +48,8 @@
           <span class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-blueBg
           text-blueText flex justify-center items-center items animate-bounce">
             <span>
-              <%= length(Enum.filter(@uploads.file.entries, &(!&1.done?))) +
-                length(@documents_pending_extraction) %>
+              {length(Enum.filter(@uploads.file.entries, &(!&1.done?))) +
+                length(@documents_pending_extraction)}
             </span>
           </span>
         <% end %>

@@ -14,13 +14,13 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
         <div class="w-[664px] flex justify-between items-start border border-greyButtonBg rounded-md p-5">
           <div class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2">
             <span class="text-darkGrey">NIP</span>
-            <span><%= @invoice.buyer_nip %></span>
+            <span>{@invoice.buyer_nip}</span>
             <span class="text-darkGrey">Nazwa firmy</span>
-            <span><%= @invoice.buyer_display_name %></span>
+            <span>{@invoice.buyer_display_name}</span>
             <span class="text-darkGrey">Imię i nazwisko</span>
-            <span><%= @invoice.buyer_name %> <%= @invoice.buyer_surname %></span>
+            <span>{@invoice.buyer_name} {@invoice.buyer_surname}</span>
             <span class="text-darkGrey">Adres </span>
-            <span><%= Firmowid.Invoices.Invoice.get_address_lines(@invoice) %></span>
+            <span>{Firmowid.Invoices.Invoice.get_address_lines(@invoice)}</span>
           </div>
 
           <.edit_button phx-click={

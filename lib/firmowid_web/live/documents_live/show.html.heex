@@ -16,21 +16,21 @@
       "text-2xl"
     ]}
   >
-    <%= @document.seller_display_name %>
+    {@document.seller_display_name}
   </h1>
   <h2 class={[
     "row-start-1 row-end-2 col-start-6 col-end-8",
     "self-end justify-self-end",
     "text-2xl text-orangeText"
   ]}>
-    <%= @document.amount %>
+    {@document.amount}
   </h2>
   <blockquote class={[
     "row-start-2 row-end-3 col-start-2 col-end-7 pb-8",
     "self-start justify-self-start",
     "text-darkGrey"
   ]}>
-    <%= @document.description %>
+    {@document.description}
   </blockquote>
   <div class={[
     "row-start-1 col-start-8 col-end-13 pl-8 pt-8",
@@ -97,7 +97,7 @@
     Numer faktury
   </p>
   <div class="row-start-5 row-end-6 col-start-2 col-end-5">
-    <p><%= @document.invoice_identifier %></p>
+    <p>{@document.invoice_identifier}</p>
   </div>
   <p class={[
     "row-start-4 row-end-5 col-start-5 col-end-7",
@@ -107,7 +107,7 @@
     Data wystawienia
   </p>
   <div class="row-start-5 row-end-6 col-start-5 col-end-7">
-    <p><%= @document.issue_date %></p>
+    <p>{@document.issue_date}</p>
   </div>
   <p class={[
     "row-start-6 row-end-7 col-start-2 col-end-5",
@@ -117,7 +117,7 @@
     Data sprzedaży
   </p>
   <div class="row-start-7 row-end-8 col-start-2 col-end-5">
-    <p><%= @document.sale_date %></p>
+    <p>{@document.sale_date}</p>
   </div>
   <p class={[
     "row-start-6 row-end-7 col-start-5 col-end-8",
@@ -127,7 +127,7 @@
     Termin zapłaty
   </p>
   <div class="row-start-7 row-end-8 col-start-5 col-end-8">
-    <p><%= @document.due_date %></p>
+    <p>{@document.due_date}</p>
   </div>
 
   <%= case @document.imported_transactions do %>
@@ -151,7 +151,7 @@
         Kontrahent
       </p>
       <div class="row-start-10 row-end-11 col-start-2 col-end-5">
-        <p><%= single.creditor_name %></p>
+        <p>{single.creditor_name}</p>
       </div>
       <p class={[
         "row-start-9 row-end-10 col-start-5 col-end-6",
@@ -161,14 +161,14 @@
         Zaksięgowano
       </p>
       <div class="row-start-10 row-end-11 col-start-5 col-end-6">
-        <p><%= single.booking_date %></p>
+        <p>{single.booking_date}</p>
       </div>
       <p class={[
         "row-start-9 row-end-11 col-start-6 col-end-8",
         "self-center justify-self-end",
         "text-lg text-darkGrey mr-8"
       ]}>
-        <%= Money.new(single.transaction_amount, single.transaction_currency) %>
+        {Money.new(single.transaction_amount, single.transaction_currency)}
       </p>
       <p class={[
         "row-start-11 row-end-12 col-start-2 col-end-8",
@@ -178,14 +178,17 @@
         Informacje
       </p>
       <div class="row-start-12 row-end-13 col-start-2 col-end-7">
-        <p><%= single.remittance_information_unstructured %></p>
+        <p>{single.remittance_information_unstructured}</p>
       </div>
       <.button
-        class={[
-          "row-start-12 row-end-13 col-start-7 col-end-8",
-          "self-start justify-self-end",
-          "w-full h-10 mr-8 mb-8"
-        ]}
+        class={
+          [
+            "row-start-12 row-end-13 col-start-7 col-end-8",
+            "self-start justify-self-end",
+            "w-full h-10 mr-8 mb-8"
+          ]
+          |> Enum.join(" ")
+        }
         phx-click="disconnect"
         phx-value-document-id={@document.id}
         phx-value-imported-transaction-id={single.id}
@@ -213,19 +216,19 @@
               </div>
               <.table id="grouped-transactions" rows={potential_transactions}>
                 <:col :let={imported_transaction} label="Informacje">
-                  <%= imported_transaction.remittance_information_unstructured %>
+                  {imported_transaction.remittance_information_unstructured}
                 </:col>
                 <:col :let={imported_transaction} label="Wierzyciel">
-                  <%= imported_transaction.creditor_name %>
+                  {imported_transaction.creditor_name}
                 </:col>
                 <:col :let={imported_transaction} label="Data">
-                  <%= imported_transaction.value_date %>
+                  {imported_transaction.value_date}
                 </:col>
                 <:col :let={imported_transaction} label="Kwota">
-                  <%= Money.new(
+                  {Money.new(
                     imported_transaction.transaction_amount,
                     imported_transaction.transaction_currency
-                  ) %>
+                  )}
                 </:col>
               </.table>
             <% end %>
@@ -236,19 +239,19 @@
               </h1>
               <.table id="transactions" rows={@potential_transactions}>
                 <:col :let={imported_transaction} label="Informacje">
-                  <%= imported_transaction.remittance_information_unstructured %>
+                  {imported_transaction.remittance_information_unstructured}
                 </:col>
                 <:col :let={imported_transaction} label="Wierzyciel">
-                  <%= imported_transaction.creditor_name %>
+                  {imported_transaction.creditor_name}
                 </:col>
                 <:col :let={imported_transaction} label="Data">
-                  <%= imported_transaction.value_date %>
+                  {imported_transaction.value_date}
                 </:col>
                 <:col :let={imported_transaction} label="Kwota">
-                  <%= Money.new(
+                  {Money.new(
                     imported_transaction.transaction_amount,
                     imported_transaction.transaction_currency
-                  ) %>
+                  )}
                 </:col>
                 <:col :let={imported_transaction} label="">
                   <div
@@ -299,10 +302,13 @@
                     phx-click="connect"
                     phx-value-document-id={@document.id}
                     phx-value-imported-transaction-id={imported_transaction.id}
-                    class={[
-                      imported_transaction.llm_eval < 0.75 && "!bg-lightGreyBg !text-darkGrey",
-                      imported_transaction.llm_eval >= 0.75 && "!bg-darkGrey !text-white"
-                    ]}
+                    class={
+                      [
+                        imported_transaction.llm_eval < 0.75 && "!bg-lightGreyBg !text-darkGrey",
+                        imported_transaction.llm_eval >= 0.75 && "!bg-darkGrey !text-white"
+                      ]
+                      |> Enum.join(" ")
+                    }
                   >
                     Zatwierdź
                   </.button>
@@ -334,12 +340,12 @@
       <div class="row-start-10 row-end-11 col-start-2 col-end-5">
         <p>
           <span class="font-bold">
-            <%= length([
+            {length([
               head
               | tail
-            ]) %> transakcji od
+            ])} transakcji od
           </span>
-          <%= head.creditor_name %>
+          {head.creditor_name}
         </p>
       </div>
       <p class={[
@@ -350,18 +356,18 @@
         Zaksięgowano
       </p>
       <div class="row-start-10 row-end-13 col-start-5 col-end-6">
-        <p><%= head.booking_date %></p>
+        <p>{head.booking_date}</p>
       </div>
       <p class={[
         "row-start-8 row-end-13 col-start-6 col-end-8",
         "self-center justify-self-end",
         "text-lg text-darkGrey mr-8"
       ]}>
-        <%= Money.new(
+        {Money.new(
           [head | tail]
           |> Enum.reduce(Decimal.new(0), fn t, acc -> Decimal.add(acc, t.transaction_amount) end),
           head.transaction_currency
-        ) %>
+        )}
       </p>
       <p class={[
         "row-start-11 row-end-12 col-start-2 col-end-8",
@@ -371,14 +377,17 @@
         Informacje
       </p>
       <div class="row-start-12 row-end-13 col-start-2 col-end-7">
-        <p><%= head.remittance_information_unstructured %></p>
+        <p>{head.remittance_information_unstructured}</p>
       </div>
       <.button
-        class={[
-          "row-start-12 row-end-13 col-start-7 col-end-8",
-          "self-start justify-self-end",
-          "w-full h-10 mr-8 mb-8"
-        ]}
+        class={
+          [
+            "row-start-12 row-end-13 col-start-7 col-end-8",
+            "self-start justify-self-end",
+            "w-full h-10 mr-8 mb-8"
+          ]
+          |> Enum.join(" ")
+        }
         phx-click="disconnect-group"
         phx-value-document-id={@document.id}
         phx-value-imported-transaction-id={head.id}

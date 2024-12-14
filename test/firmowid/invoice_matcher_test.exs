@@ -24,17 +24,6 @@ defmodule Firmowid.InvoiceMatcherTest do
         [b, c, a, d]
         |> Enum.sort(&InvoiceMatcher.compare_date_then_creditor_then_amount/2)
 
-      sorted_list_viewable =
-        sorted_list
-        |> Enum.map(
-          &%{
-            id: &1.id,
-            issue_date:
-              &1.issue_date
-              |> Date.to_iso8601()
-          }
-        )
-
       assert sorted_list == [c, d, a, b]
     end
 

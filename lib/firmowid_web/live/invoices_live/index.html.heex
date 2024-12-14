@@ -25,13 +25,16 @@
               }
             )
           }
-          class={[
-            "h-7 !px-2 !py-1 leading-tight rounded-md border border-greyButtonBg justify-end items-center",
-            @invoice.invoice_type == value && "bg-darkGrey text-greyButtonBg",
-            @invoice.invoice_type != value && "bg-lightGreyBg !text-darkGrey"
-          ]}
+          class={
+            [
+              "h-7 !px-2 !py-1 leading-tight rounded-md border border-greyButtonBg justify-end items-center",
+              @invoice.invoice_type == value && "bg-darkGrey text-greyButtonBg",
+              @invoice.invoice_type != value && "bg-lightGreyBg !text-darkGrey"
+            ]
+            |> Enum.join(" ")
+          }
         >
-          <div class="text-sm font-medium"><%= label %></div>
+          <div class="text-sm font-medium">{label}</div>
         </.button>
       <% end %>
     </div>
@@ -55,7 +58,7 @@
             Numer faktury
           </p>
           <p class="text-black">
-            <%= @invoice.invoice_number %>
+            {@invoice.invoice_number}
           </p>
         </div>
         <div class="flex flex-col gap-2">
@@ -63,7 +66,7 @@
             Data wystawienia
           </p>
           <p class="text-black">
-            <%= @invoice.issue_date |> Calendar.strftime("%d.%m.%Y") %>
+            {@invoice.issue_date |> Calendar.strftime("%d.%m.%Y")}
           </p>
         </div>
         <div class="flex flex-col gap-2">
@@ -71,7 +74,7 @@
             Data sprzedaży
           </p>
           <p class="text-black">
-            <%= @invoice.sale_date |> Calendar.strftime("%d.%m.%Y") %>
+            {@invoice.sale_date |> Calendar.strftime("%d.%m.%Y")}
           </p>
         </div>
         <div class="flex flex-col gap-2">
@@ -79,7 +82,7 @@
             Sposób płatności
           </p>
           <p class="text-black">
-            <%= @invoice.payment_method %> | <%= @invoice.currency %>
+            {@invoice.payment_method} | {@invoice.currency}
           </p>
         </div>
         <div class="flex flex-col gap-2">
@@ -87,7 +90,7 @@
             Termin płatności
           </p>
           <p class="text-black">
-            <%= @invoice.due_date |> Calendar.strftime("%d.%m.%Y") %>
+            {@invoice.due_date |> Calendar.strftime("%d.%m.%Y")}
           </p>
         </div>
       </div>
@@ -144,28 +147,28 @@
             <div class="flex justify-between items-center mt-2">
               <span class="text-sm text-darkGrey">Suma netto</span>
               <span>
-                <%= Money.new(
+                {Money.new(
                   @invoice.currency,
                   @invoice |> Firmowid.Invoices.Invoice.get_net_value()
-                ) %>
+                )}
               </span>
             </div>
             <div class="flex justify-between mt-2 items-center">
               <span class="text-sm text-darkGrey">Suma VAT</span>
               <span>
-                <%= Money.new(
+                {Money.new(
                   @invoice.currency,
                   @invoice |> Firmowid.Invoices.Invoice.get_vat_value()
-                ) %>
+                )}
               </span>
             </div>
             <div class="flex justify-between items-center mt-3">
               <span class="text-sm text-darkGrey">Suma brutto</span>
               <span class="font-bold text-xl">
-                <%= Money.new(
+                {Money.new(
                   @invoice.currency,
                   @invoice |> Firmowid.Invoices.Invoice.get_gross_value()
-                ) %>
+                )}
               </span>
             </div>
           <% end %>
@@ -173,30 +176,30 @@
             <%= if @invoice.currency != "PLN" do %>
               <div class="flex gap-2 justify-between items-center">
                 <div class="flex flex-col">
-                  <span class="text-sm">Kurs 1 <%= @invoice.currency %></span>
+                  <span class="text-sm">Kurs 1 {@invoice.currency}</span>
                   <span class="text-sm">
                     Przewalutowanie wg NBP <br /> z dnia:
                     <span class="font-bold">
-                      <%= @currency_rate.effective_date
+                      {@currency_rate.effective_date
                       |> Date.from_iso8601!()
-                      |> Calendar.strftime("%d.%m.%Y") %>
+                      |> Calendar.strftime("%d.%m.%Y")}
                     </span>
                   </span>
                 </div>
                 <span>
-                  <%= @currency_rate.rate
+                  {@currency_rate.rate
                   |> Decimal.from_float()
-                  |> Decimal.round(4) %> zł
+                  |> Decimal.round(4)} zł
                 </span>
               </div>
             <% end %>
             <div class="flex justify-between items-center mt-3">
-              <span class="text-sm">Suma <%= @invoice.currency %>:</span>
+              <span class="text-sm">Suma {@invoice.currency}:</span>
               <span class="font-bold text-xl">
-                <%= Money.new(
+                {Money.new(
                   @invoice.currency,
                   @invoice |> Firmowid.Invoices.Invoice.get_net_value()
-                ) %>
+                )}
               </span>
             </div>
           <% end %>

@@ -77,7 +77,8 @@ defmodule Firmowid.MixProject do
       {:packmatic, "~> 1.2.0"},
       {:image, "~> 0.37"},
       {:briefly, "~> 0.5.0"},
-      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false}
+      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
+      {:sentry, "~> 10.8.1"}
     ]
   end
 

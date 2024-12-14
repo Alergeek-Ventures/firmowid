@@ -3,32 +3,32 @@
   <div class="flex justify-between mt-1 text-[10px]">
     <div class="flex flex-col gap-x-2">
       <div class="text-sm uppercase font-bold">
-        <%= case @invoice.invoice_type do
+        {case @invoice.invoice_type do
           :poland -> "Faktura VAT"
           :foreign -> "Faktura VAT / VAT Invoice:"
-        end %>
-        <%= @invoice.invoice_number %>
+        end}
+        {@invoice.invoice_number}
       </div>
       <div class="mt-2">
         <span>
-          <%= case @invoice.invoice_type do
+          {case @invoice.invoice_type do
             :poland -> "Data wystawienia:"
             :foreign -> "Data wystawienia / Issue date:"
-          end %>
+          end}
         </span>
         <span class="font-bold">
-          <%= @invoice.issue_date |> Calendar.strftime("%d.%m.%Y") %>
+          {@invoice.issue_date |> Calendar.strftime("%d.%m.%Y")}
         </span>
       </div>
       <div class="mt-1">
         <span>
-          <%= case @invoice.invoice_type do
+          {case @invoice.invoice_type do
             :poland -> "Data sprzedaży:"
             :foreign -> "Data sprzedaży / Sale date:"
-          end %>
+          end}
         </span>
         <span class="font-bold">
-          <%= @invoice.sale_date |> Calendar.strftime("%d.%m.%Y") %>
+          {@invoice.sale_date |> Calendar.strftime("%d.%m.%Y")}
         </span>
       </div>
     </div>
@@ -51,66 +51,66 @@
   <div class="grid grid-cols-2 gap-7 text-[10px] leading-[14px]">
     <div>
       <h2 class=" text-darkGrey/70 text-[8px] font-bold mb-2">
-        <%= case @invoice.invoice_type do
+        {case @invoice.invoice_type do
           :poland -> "SPRZEDAWCA"
           :foreign -> "SPRZEDAWCA / SELLER"
-        end %>
+        end}
       </h2>
       <div class="grid grid-cols-[auto,_1fr] gap-1">
         <span>
-          <%= case @invoice.invoice_type do
+          {case @invoice.invoice_type do
             :poland -> "Nazwa:"
             :foreign -> "Nazwa / Name:"
-          end %>
+          end}
         </span>
         <span class="font-bold">
-          <%= @invoice.seller_display_name %>
+          {@invoice.seller_display_name}
         </span>
 
         <span>
-          <%= case @invoice.invoice_type do
+          {case @invoice.invoice_type do
             :poland -> "Adres:"
             :foreign -> "Adres / Address:"
-          end %>
+          end}
         </span>
-        <span><%= @invoice.seller_address %></span>
+        <span>{@invoice.seller_address}</span>
 
         <span>
-          <%= case @invoice.invoice_type do
+          {case @invoice.invoice_type do
             :poland -> "NIP:"
             :foreign -> "VAT-ID:"
-          end %>
+          end}
         </span>
-        <span><%= @invoice.seller_nip %></span>
+        <span>{@invoice.seller_nip}</span>
       </div>
     </div>
     <div>
       <h2 class=" text-darkGrey/70 text-[8px] font-bold mb-2">
-        <%= case @invoice.invoice_type do
+        {case @invoice.invoice_type do
           :poland -> "NABYWCA"
           :foreign -> "NABYWCA / BUYER"
-        end %>
+        end}
       </h2>
       <div class="grid grid-cols-[auto,_1fr] gap-1">
         <span>
-          <%= case @invoice.invoice_type do
+          {case @invoice.invoice_type do
             :poland -> "Nazwa:"
             :foreign -> "Nazwa / Name:"
-          end %>
+          end}
         </span>
         <span class="font-bold ">
-          <%= @invoice.buyer_display_name %>
+          {@invoice.buyer_display_name}
         </span>
 
         <span>
-          <%= case @invoice.invoice_type do
+          {case @invoice.invoice_type do
             :poland -> "Adres:"
             :foreign -> "Adres / Address:"
-          end %>
+          end}
         </span>
-        <%=  %>
+        {}
         <span>
-          <%= address =
+          {address =
             case [
               @invoice.buyer_street,
               @invoice.buyer_house_number
@@ -135,16 +135,16 @@
             [nil, city] -> address <> ", " <> city
             [postal_code, nil] -> address <> ", " <> postal_code
             [postal_code, city] -> address <> ", " <> postal_code <> " " <> city
-          end %>
+          end}
         </span>
 
         <span>
-          <%= case @invoice.invoice_type do
+          {case @invoice.invoice_type do
             :poland -> "NIP:"
             :foreign -> "VAT-ID:"
-          end %>
+          end}
         </span>
-        <span class="text-[10px]"><%= @invoice.buyer_nip %></span>
+        <span class="text-[10px]">{@invoice.buyer_nip}</span>
       </div>
     </div>
   </div>
@@ -152,10 +152,10 @@
   <!-- Items Table -->
   <div>
     <h2 class="text-[8px] text-darkGrey text-opacity-70 font-bold">
-      <%= case @invoice.invoice_type do
+      {case @invoice.invoice_type do
         :poland -> "TOWARY LUB USŁUGI"
         :foreign -> "TOWARY LUB USŁUGI / GOODS OR SERVICES"
-      end %>
+      end}
     </h2>
     <table class="w-full mt-1">
       <thead class="text-[8px] text-darkGrey/70">
@@ -193,45 +193,45 @@
       <tbody class="text-[10px]">
         <%= for {item, index} <- Enum.with_index(@invoice.invoice_items, 1) do %>
           <tr class="align-top">
-            <td class="py-1"><%= index %>.</td>
-            <td class="py-1 max-w-40"><%= item.name %></td>
-            <td class="py-1 text-right"><%= item.quantity %></td>
-            <td class="py-1 text-right"><%= item.unit %></td>
+            <td class="py-1">{index}.</td>
+            <td class="py-1 max-w-40">{item.name}</td>
+            <td class="py-1 text-right">{item.quantity}</td>
+            <td class="py-1 text-right">{item.unit}</td>
             <%= if @invoice.invoice_type == :poland do %>
               <td class="py-2 text-right">
-                <%= Money.new(
+                {Money.new(
                   @invoice.currency,
                   item.unit_price,
                   currency_symbol: ""
-                ) %>
+                )}
               </td>
-              <td class="py-1 text-right"><%= item.vat_rate %>%</td>
+              <td class="py-1 text-right">{item.vat_rate}%</td>
               <td class="py-1 text-right">
-                <%= Money.new(
+                {Money.new(
                   @invoice.currency,
                   item |> Firmowid.Invoices.InvoiceItem.get_net_value(),
                   currency_symbol: ""
-                ) %>
+                )}
               </td>
               <td class="py-1 text-right">
-                <%= Money.new(
+                {Money.new(
                   @invoice.currency,
                   item |> Firmowid.Invoices.InvoiceItem.get_gross_value(),
                   currency_symbol: ""
-                ) %>
+                )}
               </td>
             <% end %>
             <%= if @invoice.invoice_type == :foreign do %>
               <td class="py-1 text-right">
-                <%= Money.new!(@invoice.currency, item.unit_price)
-                |> Money.to_string!(currency_symbol: "") %>
+                {Money.new!(@invoice.currency, item.unit_price)
+                |> Money.to_string!(currency_symbol: "")}
               </td>
               <td class="py-1 text-right">
-                <%= Money.new!(
+                {Money.new!(
                   @invoice.currency,
                   item |> Firmowid.Invoices.InvoiceItem.get_net_value()
                 )
-                |> Money.to_string!(currency_symbol: "") %>
+                |> Money.to_string!(currency_symbol: "")}
               </td>
             <% end %>
           </tr>
@@ -242,38 +242,38 @@
   <!-- Summary -->
   <div class="bg-greyButtonBg/30 text-[10px]  gap-2 flex flex-col w-[347px] rounded-md px-4 py-2 mt-6 ml-auto">
     <h2 class=" text-[8px] text-darkGrey/70 font-bold uppercase">
-      <%= case @invoice.invoice_type do
+      {case @invoice.invoice_type do
         :poland -> "Podsumowanie"
         :foreign -> "Podsumowanie / Summary"
-      end %>
+      end}
     </h2>
 
     <%= if @invoice.invoice_type == :poland do %>
       <div class="flex justify-between items-center">
         <span>Wartość netto:</span>
         <span>
-          <%= Money.new(
+          {Money.new(
             @invoice.currency,
             @invoice |> Firmowid.Invoices.Invoice.get_net_value()
-          ) %>
+          )}
         </span>
       </div>
       <div class="flex justify-between items-center">
         <span>Wartość całkowita VAT:</span>
         <span>
-          <%= Money.new(
+          {Money.new(
             @invoice.currency,
             @invoice |> Firmowid.Invoices.Invoice.get_vat_value()
-          ) %>
+          )}
         </span>
       </div>
       <div class="flex justify-between items-center">
         <span>Razem do zapłaty:</span>
         <span class="font-bold leading-tight text-sm">
-          <%= Money.new(
+          {Money.new(
             @invoice.currency,
             @invoice |> Firmowid.Invoices.Invoice.get_gross_value()
-          ) %>
+          )}
         </span>
       </div>
     <% end %>
@@ -287,10 +287,10 @@
       <div class="flex font-bold justify-between items-center">
         <span>Razem do zapłaty / Total:</span>
         <span class="leading-snug text-sm">
-          <%= Money.new!(
+          {Money.new!(
             @invoice.currency,
             @invoice |> Firmowid.Invoices.Invoice.get_net_value()
-          ) %>
+          )}
         </span>
       </div>
     <% end %>
@@ -299,53 +299,53 @@
   <%= if @invoice.currency != "PLN" do %>
     <div class="mb-6">
       <h2 class="text-[8px] text-darkGrey text-opacity-70 font-bold mb-2 uppercase">
-        <%= case @invoice.invoice_type do
+        {case @invoice.invoice_type do
           :poland -> "Przewalutowanie"
           :foreign -> "Przewalutowanie / Currency conversion"
-        end %>
+        end}
       </h2>
       <div>
         <div class="text-[10px] leading-[14px]">
-          Kurs <%= @invoice.currency %> / <%= @invoice.currency %> exchange rate: <%= @currency_rate.rate
-          |> Firmowid.Cldr.Number.to_string!(format: "#0.0000 ¤¤", currency: "PLN") %>
+          Kurs {@invoice.currency} / {@invoice.currency} exchange rate: {@currency_rate.rate
+          |> Firmowid.Cldr.Number.to_string!(format: "#0.0000 ¤¤", currency: "PLN")}
         </div>
         <div class="text-[8px] mt-1">
-          Kurs waluty wg. tabeli kursów średnich nr <%= @currency_rate.table_number %> z dnia <%= @currency_rate.effective_date %>
+          Kurs waluty wg. tabeli kursów średnich nr {@currency_rate.table_number} z dnia {@currency_rate.effective_date}
           <br />
-          Exchange rate according to average exchange rate table No. <%= @currency_rate.table_number %> of <%= @currency_rate.effective_date %>
+          Exchange rate according to average exchange rate table No. {@currency_rate.table_number} of {@currency_rate.effective_date}
         </div>
       </div>
     </div>
   <% end %>
   <!-- Payment Details -->
   <h2 class="text-[8px] text-darkGrey text-opacity-70 font-bold mb-2 uppercase">
-    <%= case @invoice.invoice_type do
+    {case @invoice.invoice_type do
       :poland -> "Płatność"
       :foreign -> "Płatność / payment"
-    end %>
+    end}
   </h2>
   <div class="flex flex-col w-fit text-[10px] gap-1 leading-[14px]">
     <%= if @invoice.invoice_type == :poland do %>
       <div>
-        Metoda płatności: <%= @invoice.payment_method %> | nr konta: <%= @invoice.seller_account_number %>
+        Metoda płatności: {@invoice.payment_method} | nr konta: {@invoice.seller_account_number}
       </div>
     <% end %>
     <%= if @invoice.invoice_type == :foreign do %>
       <div>
-        Metoda płatności / Payment method: <%= @invoice.payment_method %>
+        Metoda płatności / Payment method: {@invoice.payment_method}
       </div>
       <div>
-        Nr konta / Bank account number: <%= @invoice.seller_account_number %>
+        Nr konta / Bank account number: {@invoice.seller_account_number}
       </div>
     <% end %>
     <div>
-      <%= case @invoice.invoice_type do
+      {case @invoice.invoice_type do
         :poland -> "Termin płatności:"
         :foreign -> "Termin płatności / Payment deadline:"
-      end %>
+      end}
 
       <span class="font-bold">
-        <%= @invoice.due_date |> Calendar.strftime("%d.%m.%Y") %>
+        {@invoice.due_date |> Calendar.strftime("%d.%m.%Y")}
       </span>
     </div>
   </div>

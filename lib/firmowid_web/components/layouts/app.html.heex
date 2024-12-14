@@ -19,7 +19,7 @@
       <.link navigate={~p"/settings"}>
         <.icon name="hero-user" class="w-5 h-5 mr-1" />
         <span class="lowercase text-xs max-md:hidden">
-          <%= @current_user.email %>
+          {@current_user.email}
         </span>
       </.link>
     </div>
@@ -36,7 +36,7 @@
       connected={assigns[:socket] != nil}
       toast_class_fn={&FirmowidWeb.toast_class_fn/1}
     />
-    <%= @inner_content %>
+    {@inner_content}
   </div>
 </main>
 

@@ -13,6 +13,13 @@ config :firmowid, FirmowidWeb.Endpoint,
 config :firmowid,
   uploads_bucket: "firmowid-uploads-prod"
 
+config :sentry,
+  dsn:
+    "REMOVED_RETIRED_SENTRY_DSN",
+  environment_name: Mix.env(),
+  enable_source_code_context: true,
+  root_source_code_paths: [File.cwd!()]
+
 config :ex_aws,
   access_key_id: "REMOVED_TIGRIS_ACCESS_KEY",
   secret_access_key: "REMOVED_TIGRIS_SECRET_KEY"

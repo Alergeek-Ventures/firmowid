@@ -32,24 +32,30 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
       <table class="table-fixed border-separate border-spacing-y-3">
         <col
           :for={column <- @columns}
-          class={[
-            column.key == "sale_date" && "w-36",
-            column.key == "due_date" && "w-44",
-            column.key == "status" && "w-40",
-            column.key == "amount" && "w-44"
-          ]}
+          class={
+            [
+              column.key == "sale_date" && "w-36",
+              column.key == "due_date" && "w-44",
+              column.key == "status" && "w-40",
+              column.key == "amount" && "w-44"
+            ]
+            |> Enum.join(" ")
+          }
         />
         <thead>
           <tr>
             <th
               :for={column <- @columns}
-              class={[
-                "font-normal text-left text-darkGrey text-xs uppercase",
-                column.key == "seller" && "pl-5",
-                column.key == "amount" && "hidden"
-              ]}
+              class={
+                [
+                  "font-normal text-left text-darkGrey text-xs uppercase",
+                  column.key == "seller" && "pl-5",
+                  column.key == "amount" && "hidden"
+                ]
+                |> Enum.join(" ")
+              }
             >
-              <%= column.label %>
+              {column.label}
             </th>
             <th></th>
           </tr>
@@ -89,33 +95,33 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
                       navigate={~p"/documents/#{hd(invoice_matcher.documents).id}"}
                     >
                       <span>
-                        <%= invoice_matcher.seller_display_name %>
+                        {invoice_matcher.seller_display_name}
                       </span>
                       <span class="text-darkGrey opacity-50 text-sm">
-                        <%= hd(invoice_matcher.documents).description %>
+                        {hd(invoice_matcher.documents).description}
                       </span>
                     </.link>
                   <% else %>
                     <%= if column.key == "seller" do %>
                       <span>
-                        <%= invoice_matcher.seller_display_name %>
+                        {invoice_matcher.seller_display_name}
                       </span>
                       <span class="text-darkGrey opacity-50 text-sm">
                         <%= if invoice_matcher.imported_transactions != [] do %>
-                          <%= hd(invoice_matcher.imported_transactions).remittance_information_unstructured %>
+                          {hd(invoice_matcher.imported_transactions).remittance_information_unstructured}
                         <% else %>
                           <%= if invoice_matcher.documents != [] do %>
-                            <%= hd(invoice_matcher.documents).description %>
+                            {hd(invoice_matcher.documents).description}
                           <% end %>
                         <% end %>
                       </span>
                     <% else %>
                       <%= if get_in(invoice_matcher,
                   [Access.key!(String.to_atom(column.key))]) != nil do %>
-                        <%= get_in(
+                        {get_in(
                           invoice_matcher,
                           [Access.key!(String.to_atom(column.key))]
-                        ) %>
+                        )}
                       <% else %>
                         <span class="text-darkGrey opacity-50">
                           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-
@@ -252,7 +258,7 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
         @status == "Komplet" && "!w-full justify-between bg-greenBg text-greenText"
       ]}>
         <%= if @status == "Komplet" do %>
-          <div class="font-normal uppercase"><%= @status %></div>
+          <div class="font-normal uppercase">{@status}</div>
         <% end %>
         <.icon
           name={
@@ -274,10 +280,13 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
                 end
             end
           }
-          class={[
-            "h-4 w-4",
-            @status == "Komplet" && "w-5 h-5"
-          ]}
+          class={
+            [
+              "h-4 w-4",
+              @status == "Komplet" && "w-5 h-5"
+            ]
+            |> Enum.join(" ")
+          }
         />
       </div>
       <%= if @status != "Komplet" do %>
@@ -307,7 +316,7 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
     <div class={[
       "text-right pr-5 py-2"
     ]}>
-      <%= @amount %>
+      {@amount}
     </div>
     """
   end
