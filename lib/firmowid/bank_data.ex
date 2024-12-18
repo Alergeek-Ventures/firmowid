@@ -54,11 +54,12 @@ defmodule Firmowid.BankData do
               })
             )
 
-            create_or_update_bank_accounts_for_requisition(
-              gocardless_requisition_id,
-              requisition_from_db.id,
-              organization_id
-            )
+            {:ok, _} =
+              create_or_update_bank_accounts_for_requisition(
+                gocardless_requisition_id,
+                requisition_from_db.id,
+                organization_id
+              )
 
             {:ok, requisition_from_api}
           else
@@ -91,11 +92,11 @@ defmodule Firmowid.BankData do
           internal_transaction_id: t["internalTransactionId"],
           debtor_name: t["debtorName"] || "N/A",
           debtor_account: t["debtorAccount"]["iban"] || "N/A",
-          creditor_name: t["creditorName"] || "N/A",
+          creditor_name: get_creditor_name_from_card_transaction(t) || "N/A",
           creditor_account: t["creditorAccount"]["iban"] || "N/A",
           transaction_amount:
             t["transactionAmount"]["amount"]
-            |> String.to_float(),
+            |> safe_to_float(),
           transaction_currency: t["transactionAmount"]["currency"],
           booking_date: t["bookingDate"] |> Date.from_iso8601!(),
           value_date: t["valueDate"] |> Date.from_iso8601!(),
@@ -120,6 +121,8 @@ defmodule Firmowid.BankData do
         requisition_id: firmowid_requisition_id
       })
     end)
+
+    {:ok, nil}
   end
 
   def delete_requisition(requisition_id, organization_id) do
@@ -127,6 +130,40 @@ defmodule Firmowid.BankData do
          {:ok, _} <- ApiClient.delete_requisition(requisition.requisition_id),
          {:ok, _} <- Repo.delete(requisition, organization_id: organization_id) do
       {:ok, requisition}
+    end
+  end
+
+  defp get_creditor_name_from_card_transaction(transaction) do
+    try do
+      if transaction["creditorName"] == "Nest Bank S.A." and
+           transaction["remittanceInformationUnstructured"] |> String.contains?("Nr karty") do
+        transaction["remittanceInformationUnstructured"]
+        |> String.split(",")
+        |> hd()
+      else
+        transaction["creditorAccount"]["name"]
+      end
+    rescue
+      _ -> transaction["creditorAccount"]["name"]
+    end
+  end
+
+  defp safe_to_float(value) do
+    case Float.parse(value) do
+      {float, _} ->
+        float
+
+      :error ->
+        try do
+          String.to_float(value <> ".0")
+        rescue
+          ArgumentError ->
+            try do
+              String.to_integer(value) |> :erlang.float_to_binary() |> String.to_float()
+            rescue
+              ArgumentError -> nil
+            end
+        end
     end
   end
 end

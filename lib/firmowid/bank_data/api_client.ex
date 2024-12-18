@@ -2,7 +2,7 @@ defmodule Firmowid.BankData.ApiClient do
   alias Firmowid.BankData.TokenManager
 
   def get_available_accounts_for_country(country) do
-    access_token = get_access_token()
+    {:ok, access_token} = get_access_token()
 
     Req.get!("https://bankaccountdata.gocardless.com/api/v2/institutions/?country=#{country}",
       auth: {:bearer, access_token}
@@ -11,7 +11,7 @@ defmodule Firmowid.BankData.ApiClient do
   end
 
   def get_requisition(requisition_id) do
-    access_token = get_access_token()
+    {:ok, access_token} = get_access_token()
 
     requisition_response =
       Req.get!(
@@ -23,15 +23,14 @@ defmodule Firmowid.BankData.ApiClient do
   end
 
   def create_requisition(institution_id, max_transaction_days, redirect_url) do
-    access_token = get_access_token()
-
-    with %{body: %{"id" => agreement_id}} <-
+    with {:ok, access_token} <- get_access_token(),
+         %{body: %{"id" => agreement_id}} <-
            Req.post!(
              "https://bankaccountdata.gocardless.com/api/v2/agreements/enduser/",
              auth: {:bearer, access_token},
              json: %{
                institution_id: institution_id,
-               max_historical_days: max(max_transaction_days, 90),
+               max_historical_days: min(max_transaction_days, 90),
                access_valid_for_days: 90,
                access_scope: ["balances", "details", "transactions"]
              }
@@ -52,7 +51,7 @@ defmodule Firmowid.BankData.ApiClient do
   end
 
   def get_accounts_for_requisition(requisition_id) do
-    access_token = get_access_token()
+    {:ok, access_token} = get_access_token()
 
     accounts_response =
       Req.get!(
@@ -72,7 +71,7 @@ defmodule Firmowid.BankData.ApiClient do
   end
 
   def get_available_institutions() do
-    access_token = get_access_token()
+    {:ok, access_token} = get_access_token()
 
     institutions_response =
       Req.get!(
@@ -84,7 +83,7 @@ defmodule Firmowid.BankData.ApiClient do
   end
 
   def get_transactions_for_account(account_id) do
-    access_token = get_access_token()
+    {:ok, access_token} = get_access_token()
 
     accounts_transaction_response =
       Req.get!(
@@ -96,7 +95,7 @@ defmodule Firmowid.BankData.ApiClient do
   end
 
   def delete_requisition(requisition_id) do
-    access_token = get_access_token()
+    {:ok, access_token} = get_access_token()
 
     requisition =
       Req.get!(
@@ -118,6 +117,12 @@ defmodule Firmowid.BankData.ApiClient do
   end
 
   defp get_access_token() do
-    GenServer.call(TokenManager, :get_access_token)
+    token = GenServer.call(TokenManager, :get_access_token)
+
+    if token == nil do
+      raise "Access token is not set"
+    end
+
+    {:ok, token}
   end
 end

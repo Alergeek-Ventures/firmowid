@@ -24,7 +24,15 @@ defmodule Firmowid.BankData.TokenManager do
 
   @impl true
   def handle_call(:get_access_token, _from, state) do
-    {:reply, state.access_token, state}
+    access_token = state.access_token
+
+    if is_nil(access_token) do
+      state = fetch_new_access_token()
+      schedule_token_refresh(state.refresh_expires)
+      {:reply, state.access_token, state}
+    else
+      {:reply, access_token, state}
+    end
   end
 
   @impl true
