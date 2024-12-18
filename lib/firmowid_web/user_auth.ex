@@ -240,6 +240,7 @@ defmodule FirmowidWeb.UserAuth do
   def require_authenticated_user_with_organization(conn, _opts) do
     if not is_nil(conn.assigns[:current_user]) and
          not is_nil(conn.assigns[:current_user].organization_id) do
+      Firmowid.Repo.put_org_id(conn.assigns[:current_user].organization_id)
       conn
     else
       LiveToast.send_toast(
