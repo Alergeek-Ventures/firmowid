@@ -27,11 +27,11 @@ defmodule FirmowidWeb.InvoicesLive.Index do
   end
 
   def assign_buyers(socket) do
-    socket |> assign(buyers: Invoices.list_buyers())
+    socket |> assign(buyers: Invoices.list_buyers()) |> assign(is_buyer_dirty: false)
   end
 
   def assign_sellers(socket) do
-    socket |> assign(sellers: Invoices.list_sellers())
+    socket |> assign(sellers: Invoices.list_sellers()) |> assign(is_seller_dirty: false)
   end
 
   def assign_currency(socket) do
@@ -75,6 +75,31 @@ defmodule FirmowidWeb.InvoicesLive.Index do
   def assign_invoice(socket, :new_invoice) do
     last_invoice = Invoices.get_latest_invoice() || %{}
 
+    seller =
+      if is_nil(last_invoice.seller_id) do
+        Invoices.list_sellers() |> Enum.at(0)
+      else
+        Invoices.get_seller!(last_invoice.seller_id)
+      end
+
+    seller_in_invoice =
+      case seller do
+        nil ->
+          %{}
+
+        _ ->
+          %{
+            seller_id: seller.id,
+            seller_nip: seller.nip,
+            seller_display_name: seller.display_name,
+            seller_address: seller.street,
+            seller_name: seller.name,
+            seller_surname: seller.surname,
+            seller_account_number: seller.account_number,
+            is_seller_confirmed: true
+          }
+      end
+
     invoice =
       struct(
         Invoice,
@@ -100,11 +125,13 @@ defmodule FirmowidWeb.InvoicesLive.Index do
           currency: "PLN",
           organization_id: Firmowid.Repo.get_org_id(),
           invoice_items: [],
+          buyer_type: :company,
           is_basic_info_confirmed: false,
           is_seller_confirmed: false,
           is_buyer_confirmed: false,
           are_invoice_items_confirmed: false
         })
+        |> Map.merge(seller_in_invoice)
       )
 
     form =
@@ -152,6 +179,7 @@ defmodule FirmowidWeb.InvoicesLive.Index do
   def populate_buyer(%{"buyer_id" => ""} = invoice) do
     Map.merge(invoice, %{
       "buyer_nip" => "",
+      "buyer_type" => :company,
       "buyer_display_name" => "",
       "buyer_name" => "",
       "buyer_surname" => "",
@@ -160,7 +188,10 @@ defmodule FirmowidWeb.InvoicesLive.Index do
       "buyer_apartment_number" => "",
       "buyer_postal_code" => "",
       "buyer_city" => "",
-      "buyer_country" => ""
+      "buyer_country" => "",
+      "buyer_email" => "",
+      "buyer_phone" => "",
+      "buyer_description" => ""
     })
   end
 
@@ -169,6 +200,8 @@ defmodule FirmowidWeb.InvoicesLive.Index do
 
     Map.merge(invoice, %{
       "buyer_nip" => buyer.nip,
+      "buyer_type" => buyer.buyer_type,
+      "buyer_pesel" => buyer.pesel,
       "buyer_display_name" => buyer.display_name,
       "buyer_name" => buyer.name,
       "buyer_surname" => buyer.surname,
@@ -178,6 +211,9 @@ defmodule FirmowidWeb.InvoicesLive.Index do
       "buyer_postal_code" => buyer.postal_code,
       "buyer_city" => buyer.city,
       "buyer_country" => buyer.country,
+      "buyer_email" => buyer.email,
+      "buyer_phone" => buyer.phone,
+      "buyer_description" => buyer.description,
       "is_buyer_confirmed" => true
     })
   end
@@ -185,14 +221,25 @@ defmodule FirmowidWeb.InvoicesLive.Index do
   def populate_buyer(invoice), do: invoice
 
   def handle_event("change", %{"invoice" => invoice}, socket) do
-    form =
+    whole_form = Map.merge(socket.assigns.form.params, invoice)
+
+    invoice_changeset =
       socket.assigns.invoice
-      |> Invoice.changeset(Map.merge(socket.assigns.form.params, invoice))
-      |> to_form
+      |> Invoice.changeset(whole_form)
+
+    seller_changeset =
+      socket.assigns.invoice
+      |> Invoice.seller_changeset(whole_form)
+
+    buyer_changeset = socket.assigns.invoice |> Invoice.buyer_changeset(whole_form)
+
+    form = invoice_changeset |> to_form()
 
     socket =
       socket
       |> assign(form: form)
+      |> assign(is_seller_dirty: seller_changeset.changes != %{})
+      |> assign(is_buyer_dirty: buyer_changeset.changes != %{})
 
     {:noreply, socket}
   end
@@ -231,7 +278,7 @@ defmodule FirmowidWeb.InvoicesLive.Index do
     handle_event("change", %{"invoice" => invoice}, socket)
   end
 
-  defp maybe_create_or_update_seller(socket, %{"action" => "add_and_confirm_seller"}, invoice) do
+  defp maybe_create_or_update_seller(socket, %{"action" => "add_or_update_seller"}, invoice) do
     case Invoices.create_or_update_seller(socket.assigns.invoice.seller_id, %{
            nip: invoice["seller_nip"],
            display_name: invoice["seller_display_name"],
@@ -258,12 +305,13 @@ defmodule FirmowidWeb.InvoicesLive.Index do
 
   defp maybe_create_or_update_seller(socket, _params, _invoice), do: socket
 
-  defp maybe_create_or_update_buyer(socket, %{"action" => "add_and_confirm_buyer"}, invoice) do
+  defp maybe_create_or_update_buyer(socket, %{"action" => "add_or_update_buyer"}, invoice) do
     case Invoices.create_or_update_buyer(
            socket.assigns.invoice.buyer_id,
            %{
-             buyer_type: :company,
+             buyer_type: invoice["buyer_type"],
              nip: invoice["buyer_nip"],
+             pesel: invoice["buyer_pesel"],
              display_name: invoice["buyer_display_name"],
              name: invoice["buyer_name"],
              surname: invoice["buyer_surname"],
@@ -272,7 +320,10 @@ defmodule FirmowidWeb.InvoicesLive.Index do
              apartment_number: invoice["buyer_apartment_number"],
              postal_code: invoice["buyer_postal_code"],
              city: invoice["buyer_city"],
-             country: invoice["buyer_country"]
+             country: invoice["buyer_country"],
+             email: invoice["buyer_email"],
+             phone: invoice["buyer_phone"],
+             description: invoice["buyer_description"]
            }
          ) do
       {:ok, buyer} ->

@@ -1,11 +1,13 @@
 defmodule FirmowidWeb.InvoicesLive.SellerForm do
   require Logger
   import FirmowidWeb.InvoicesLive.EditButton
+
   use FirmowidWeb, :html
 
   attr :seller_form, :list, required: true
   attr :invoice, :map, required: true
   attr :sellers, :list, required: false, default: []
+  attr :is_seller_dirty, :boolean, required: false, default: false
 
   def seller_form(assigns) do
     ~H"""
@@ -39,8 +41,10 @@ defmodule FirmowidWeb.InvoicesLive.SellerForm do
             <span>{@invoice.seller_nip}</span>
             <span class="text-darkGrey">Nazwa firmy</span>
             <span>{@invoice.seller_display_name}</span>
-            <span class="text-darkGrey">Imię i nazwisko</span>
-            <span>{@invoice.seller_name} {@invoice.seller_surname}</span>
+            <%= if !!@invoice.seller_name or !!@invoice.seller_surname do %>
+              <span class="text-darkGrey">Imię i nazwisko</span>
+              <span>{@invoice.seller_name} {@invoice.seller_surname}</span>
+            <% end %>
             <span class="text-darkGrey">Adres </span>
             <span>{@invoice.seller_address}</span>
             <span class="text-darkGrey">Nr konta </span>
@@ -51,71 +55,78 @@ defmodule FirmowidWeb.InvoicesLive.SellerForm do
           } />
         </div>
       <% else %>
-        <.form
-          phx-submit="submit"
-          phx-change="change"
-          for={@seller_form}
-          class="bg-greyButtonBg bg-opacity-50 p-4 px-6 rounded-md"
-        >
-          <div class="flex gap-2 items-end">
-            <div class="flex flex-col w-1/2">
-              <p class="text-sm text-darkGrey">NIP</p>
-              <.input
-                field={@seller_form[:seller_nip]}
-                type="text"
-                placeholder="Nip sprzedawcy"
-                required
-              />
-              <p class="text-sm text-darkGrey mt-5">Dane podstawowe</p>
-              <.input
-                field={@seller_form[:seller_display_name]}
-                type="text"
-                placeholder="Nazwa firmy"
-                required
-              />
-              <div class="flex gap-2">
-                <.input field={@seller_form[:seller_name]} type="text" placeholder="Imię" />
-                <.input field={@seller_form[:seller_surname]} type="text" placeholder="Nazwisko" />
-              </div>
-            </div>
-            <div class="flex flex-col w-1/2">
-              <div>
-                <p class="text-sm text-darkGrey">Dane adresowe</p>
+        <.form phx-submit="submit" phx-change="change" for={@seller_form}>
+          <div class="bg-greyButtonBg bg-opacity-50 p-4 px-6 rounded-md">
+            <div class="flex gap-2 items-end">
+              <div class="flex flex-col w-1/2">
+                <p class="text-sm text-darkGrey">NIP</p>
                 <.input
-                  field={@seller_form[:seller_address]}
+                  field={@seller_form[:seller_nip]}
                   type="text"
-                  placeholder="Adres"
+                  placeholder="Nip sprzedawcy"
                   required
                 />
+                <p class="text-sm text-darkGrey mt-5">Dane podstawowe</p>
+                <.input
+                  field={@seller_form[:seller_display_name]}
+                  type="text"
+                  placeholder="Nazwa firmy"
+                  required
+                />
+                <div class="flex gap-2">
+                  <.input field={@seller_form[:seller_name]} type="text" placeholder="Imię" />
+                  <.input field={@seller_form[:seller_surname]} type="text" placeholder="Nazwisko" />
+                </div>
               </div>
-              <p class="text-sm text-darkGrey mt-5">Numer konta</p>
-              <.input field={@seller_form[:seller_account_number]} type="text" required />
+              <div class="flex flex-col w-1/2">
+                <div>
+                  <p class="text-sm text-darkGrey">Dane adresowe</p>
+                  <.input
+                    field={@seller_form[:seller_address]}
+                    type="text"
+                    placeholder="Adres"
+                    required
+                  />
+                </div>
+                <p class="text-sm text-darkGrey mt-5">Numer konta</p>
+                <.input field={@seller_form[:seller_account_number]} type="text" required />
+              </div>
             </div>
-          </div>
-          <.input
-            type="hidden"
-            class="hidden"
-            field={@seller_form[:is_seller_confirmed]}
-            value="true"
-          />
-          <div class="flex flex-row-reverse justify-start gap-2">
-            <.button phx-disable-with="Zapisywanie..." color="green" class="mt-2">
-              Zatwierdź
-            </.button>
-            <.button
-              phx-disable-with="Dodawanie..."
-              name="action"
-              value="add_and_confirm_seller"
-              variant="outline"
-              color="green"
-              class="mt-2"
-            >
+            <div class="flex flex-row-reverse justify-start gap-2">
+              <.button
+                phx-disable-with="Zapisywanie..."
+                name={@seller_form[:is_seller_confirmed].name}
+                value="true"
+                color="green"
+                class="mt-2"
+              >
+                Zatwierdź
+              </.button>
               <%= if !@invoice.seller_id or @invoice.seller_id == "" do %>
-                Dodaj i zatwierdź
+                <.button
+                  phx-disable-with="Dodawanie..."
+                  variant="outline"
+                  name="action"
+                  value="add_or_update_seller"
+                  color="green"
+                  class="mt-2"
+                >
+                  Dodaj
+                </.button>
               <% else %>
-                Zaktualizuj i zatwierdź
+                <.button
+                  phx-disable-with="Aktualizowanie..."
+                  variant="outline"
+                  name="action"
+                  value="add_or_update_seller"
+                  color="green"
+                  class="mt-2"
+                  disabled={not @is_seller_dirty}
+                >
+                  Aktualizuj
+                </.button>
               <% end %>
-            </.button>
+            </div>
           </div>
         </.form>
       <% end %>

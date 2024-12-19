@@ -11,5 +11,6 @@
   "blueBg": "#CEE6E6",
   "greyButtonBg": "#DDDDDD",
   "darkGrey": "#4E4E4E",
-  "lightGreyBg": "#F5F5F5"
+  "lightGreyBg": "#F5F5F5",
+  "transparent": "transparent"
 }

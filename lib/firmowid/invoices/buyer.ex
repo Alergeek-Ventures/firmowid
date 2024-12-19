@@ -3,20 +3,21 @@ defmodule Firmowid.Invoices.Buyer do
   import Ecto.Changeset
 
   schema "buyers" do
-    field :name, :string
-    field :description, :string
-    field :country, :string
     field :buyer_type, Ecto.Enum, values: [:individual, :company]
     field :nip, :string
     field :display_name, :string
+    field :name, :string
     field :surname, :string
+    field :pesel, :string
     field :street, :string
     field :house_number, :string
     field :apartment_number, :string
     field :postal_code, :string
     field :city, :string
+    field :country, :string
     field :email, :string
     field :phone, :string
+    field :description, :string
     belongs_to :organization, Firmowid.Accounts.Organization
 
     timestamps(type: :utc_datetime)
@@ -31,6 +32,7 @@ defmodule Firmowid.Invoices.Buyer do
       :display_name,
       :name,
       :surname,
+      :pesel,
       :street,
       :house_number,
       :apartment_number,
@@ -43,8 +45,6 @@ defmodule Firmowid.Invoices.Buyer do
     ])
     |> validate_required([
       :buyer_type,
-      :nip,
-      :display_name,
       :street,
       :postal_code,
       :city,
@@ -52,4 +52,10 @@ defmodule Firmowid.Invoices.Buyer do
     ])
     |> put_change(:organization_id, Firmowid.Repo.get_org_id())
   end
+
+  def get_name(%{buyer_type: :individual, name: name, surname: surname}),
+    do: "#{name} #{surname}"
+
+  def get_name(%{buyer_type: :company, display_name: display_name}),
+    do: display_name
 end

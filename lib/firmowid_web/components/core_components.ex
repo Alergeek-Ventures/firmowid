@@ -141,7 +141,7 @@ defmodule FirmowidWeb.CoreComponents do
   end
 
   defp button_styles(:color, %{variant: "outline", color: "green"}) do
-    "border-blueText text-blueText bg-transparent hover:text-blueText hover:bg-greyButtonBg"
+    "border-blueText text-blueText bg-transparent hover:text-blueText hover:bg-greyButtonBg disabled:text-blueText disabled:cursor-default disabled:bg-transparent"
   end
 
   defp button_styles(:color, %{color: "green"}) do
@@ -224,7 +224,7 @@ defmodule FirmowidWeb.CoreComponents do
   attr :type, :string,
     default: "text",
     values: ~w(checkbox color date datetime-local email file month number password
-               range search select tel text textarea time url week hidden)
+               range search select tel text textarea time url week hidden radio)
 
   attr :field, Phoenix.HTML.FormField,
     doc: "a form field struct retrieved from the form, for example: @form[:email]"
@@ -234,6 +234,8 @@ defmodule FirmowidWeb.CoreComponents do
   attr :prompt, :string, default: nil, doc: "the prompt for select inputs"
   attr :options, :list, doc: "the options to pass to Phoenix.HTML.Form.options_for_select/2"
   attr :multiple, :boolean, default: false, doc: "the multiple flag for select inputs"
+
+  attr :input_class, :string, default: nil, doc: "the class to apply to the input tag"
 
   attr :rest, :global,
     include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
@@ -258,18 +260,41 @@ defmodule FirmowidWeb.CoreComponents do
 
     ~H"""
     <div>
-      <label class="flex items-center gap-4 text-sm leading-6 text-zinc-600">
+      <label
+        phx-disable-with=""
+        class={
+          classes([
+            "relative cursor-pointer has-[:disabled]:opacity-50 has-[:disabled]:cursor-default flex items-center",
+            @rest[:class]
+          ])
+        }
+      >
         <input type="hidden" name={@name} value="false" disabled={@rest[:disabled]} />
         <input
           type="checkbox"
           id={@id}
           name={@name}
           value="true"
+          phx-disable-with=""
           checked={@checked}
-          class="rounded-md border-zinc-300 text-zinc-900 focus:ring-0"
+          disabled={@rest[:disabled]}
+          class="hidden"
           {@rest}
         />
-        {@label}
+        <div class="w-4 h-4 border text-darkGrey border-darkGrey rounded-[3px] flex items-center justify-center">
+          <svg
+            :if={@checked}
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2.5"
+            stroke="currentColor"
+            class="size-6"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+          </svg>
+        </div>
+        <span class="ml-1 text-darkGrey text-sm">{@label}</span>
       </label>
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
@@ -285,7 +310,7 @@ defmodule FirmowidWeb.CoreComponents do
         name={@name}
         class={
           classes([
-            "mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm",
+            "mt-2 block phx-change-loading:opacity-50 w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm",
             @rest[:class]
           ])
         }
@@ -329,11 +354,14 @@ defmodule FirmowidWeb.CoreComponents do
         name={@name}
         id={@id}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-        class={[
-          "mt-2 block w-full rounded-md text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 read-only:cursor-default read-only:bg-gray-100",
-          @errors == [] && "border-zinc-300 focus:border-zinc-400",
-          @errors != [] && "border-rose-400 focus:border-rose-400"
-        ]}
+        class={
+          classes([
+            "mt-2 block w-full rounded-md text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 read-only:cursor-default read-only:bg-gray-100",
+            @errors == [] && "border-zinc-300 focus:border-zinc-400",
+            @errors != [] && "border-rose-400 focus:border-rose-400",
+            @input_class
+          ])
+        }
         {@rest}
       />
       <.error :for={msg <- @errors}>{msg}</.error>
@@ -350,8 +378,8 @@ defmodule FirmowidWeb.CoreComponents do
 
   def label(assigns) do
     ~H"""
-    <label for={@for} class={["block text-sm font-semibold leading-6
-      text-zinc-800", @class]}>
+    <label for={@for} class={classes(["block text-sm font-semibold leading-6
+      text-zinc-800", @class])}>
       {render_slot(@inner_block)}
     </label>
     """
@@ -368,6 +396,64 @@ defmodule FirmowidWeb.CoreComponents do
       <.icon name="hero-exclamation-circle-mini" class="mt-0.5 h-5 w-5 flex-none" />
       {render_slot(@inner_block)}
     </p>
+    """
+  end
+
+  @doc """
+  Provides a radio group input for a given form field.
+
+  ## Examples
+
+      <.radio_group field={@form[:tip]}>
+        <:radio value="0">No Tip</:radio>
+        <:radio value="10">10%</:radio>
+        <:radio value="20">20%</:radio>
+      </.radio_group>
+  """
+  attr :field, Phoenix.HTML.FormField, required: true
+  attr :class, :string, default: nil
+
+  slot :radio, required: true do
+    attr :value, :string, required: true
+  end
+
+  slot :inner_block
+
+  def radio_group(assigns) do
+    ~H"""
+    <div class={classes(["flex gap-2 ", @class])}>
+      {render_slot(@inner_block)}
+      <div :for={{%{value: value} = rad, idx} <- Enum.with_index(@radio)} }>
+        <label
+          for={"#{@field.id}-#{idx}"}
+          class="relative cursor-pointer has-[:disabled]:opacity-50 has-[:disabled]:cursor-default flex items-center"
+        >
+          <input
+            type="radio"
+            name={@field.name}
+            id={"#{@field.id}-#{idx}"}
+            phx-disable-with=""
+            value={value}
+            checked={to_string(@field.value) == to_string(value)}
+            class="hidden"
+          />
+          <div class="w-4 h-4 border text-darkGrey border-darkGrey rounded-[3px] flex items-center justify-center">
+            <svg
+              :if={to_string(@field.value) == to_string(value)}
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="2.5"
+              stroke="currentColor"
+              class="size-6"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+            </svg>
+          </div>
+          <span class="ml-1 text-darkGrey text-sm">{render_slot(rad)}</span>
+        </label>
+      </div>
+    </div>
     """
   end
 

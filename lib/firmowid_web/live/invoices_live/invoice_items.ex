@@ -14,17 +14,6 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
         <p class="text-darkGrey mb-4">
           Pozycje na fakturze
         </p>
-        <%= if !@invoice.are_invoice_items_confirmed do %>
-          <.button
-            type="button"
-            name="invoice[items_sort][]"
-            value="true"
-            phx-click={JS.dispatch("change")}
-            class="bg-greyButtonBg size-8 !p-0"
-          >
-            <.icon name="hero-plus" class="text-darkGrey h-4 w-4" />
-          </.button>
-        <% end %>
       </div>
       <%= if @invoice.are_invoice_items_confirmed do %>
         <div class="border flex justify-between items-start border-greyButtonBg rounded-md p-5">
@@ -228,6 +217,7 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
                 type="button"
                 name="invoice[items_drop][]"
                 value={item.index}
+                phx-disable-with=""
                 phx-click={JS.dispatch("change")}
                 class="col-span-1 h-7 w-9 bg-redBg self-center flex justify-center items-center !text-redText hover:border border-none hover:!bg-darkGrey/50 size-8 ml-5 mt-2 hover:!text-greyButtonBg !p-0"
               >
@@ -241,6 +231,7 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
               type="button"
               name="invoice[items_sort][]"
               value="true"
+              phx-disable-with="Dodawanie..."
               phx-click={JS.dispatch("change")}
               class="border-greyButtonBg border h-8 flex items-center gap-1 hover:bg-greyButtonBg !text-darkGrey text-sm bg-lightGreyBg font-medium uppercase !px-2 !py-1"
             >

@@ -21,12 +21,13 @@ defmodule Firmowid.Invoices.Invoice do
     field :seller_account_number, :string
     field :is_seller_confirmed, :boolean, default: false
 
-    field :buyer_type, Ecto.Enum, values: [:individual, :company]
+    field :buyer_type, Ecto.Enum, values: [:individual, :company], default: :company
 
     field :buyer_nip, :string
     field :buyer_display_name, :string
     field :buyer_name, :string
     field :buyer_surname, :string
+    field :buyer_pesel, :string
 
     field :buyer_street, :string
     field :buyer_house_number, :string
@@ -34,6 +35,12 @@ defmodule Firmowid.Invoices.Invoice do
     field :buyer_postal_code, :string
     field :buyer_city, :string
     field :buyer_country, :string
+
+    field :buyer_is_different_mail_address, :boolean, default: false
+    field :buyer_mail_street, :string
+    field :buyer_mail_postal_code, :string
+    field :buyer_mail_city, :string
+    field :buyer_mail_country, :string
 
     field :buyer_email, :string
     field :buyer_phone, :string
@@ -145,35 +152,14 @@ defmodule Firmowid.Invoices.Invoice do
       :due_date,
       :payment_method,
       :currency,
-      :is_basic_info_confirmed,
-      :seller_id,
-      :seller_nip,
-      :seller_display_name,
-      :seller_address,
-      :seller_name,
-      :seller_surname,
-      :seller_account_number,
       :is_seller_confirmed,
-      :buyer_id,
-      :buyer_type,
-      :buyer_nip,
-      :buyer_display_name,
-      :buyer_name,
-      :buyer_surname,
-      :buyer_street,
-      :buyer_house_number,
-      :buyer_apartment_number,
-      :buyer_postal_code,
-      :buyer_city,
-      :buyer_country,
-      :buyer_email,
-      :buyer_phone,
-      :buyer_description,
       :is_buyer_confirmed,
       :are_invoice_items_confirmed,
       :is_cash_account,
       :is_reverse_charge
     ])
+    |> buyer_changeset(attrs)
+    |> seller_changeset(attrs)
     |> cast_assoc(:invoice_items,
       with: &Firmowid.Invoices.InvoiceItem.changeset/2,
       sort_param: :items_sort,
@@ -181,6 +167,63 @@ defmodule Firmowid.Invoices.Invoice do
     )
     |> cast_based_on_type
     |> put_change(:organization_id, Firmowid.Repo.get_org_id())
+  end
+
+  def seller_changeset(invoice, attrs \\ %{}) do
+    invoice
+    |> cast(attrs, [
+      :seller_id,
+      :seller_nip,
+      :seller_display_name,
+      :seller_address,
+      :seller_name,
+      :seller_surname,
+      :seller_account_number
+    ])
+  end
+
+  def buyer_changeset(invoice, attrs \\ %{}) do
+    invoice
+    |> cast(attrs, [
+      :buyer_id,
+      :buyer_type,
+      :buyer_nip,
+      :buyer_display_name,
+      :buyer_name,
+      :buyer_surname,
+      :buyer_pesel,
+      :buyer_street,
+      :buyer_house_number,
+      :buyer_apartment_number,
+      :buyer_postal_code,
+      :buyer_city,
+      :buyer_country,
+      :buyer_is_different_mail_address,
+      :buyer_mail_street,
+      :buyer_mail_postal_code,
+      :buyer_mail_city,
+      :buyer_mail_country,
+      :buyer_email,
+      :buyer_phone,
+      :buyer_description
+    ])
+    |> cast_buyer_based_on_type
+  end
+
+  def cast_buyer_based_on_type(buyer) do
+    case get_change(buyer, :buyer_type) do
+      :individual ->
+        buyer
+        |> put_change(:buyer_nip, "")
+        |> put_change(:buyer_display_name, "")
+
+      :company ->
+        buyer
+        |> put_change(:buyer_pesel, nil)
+
+      nil ->
+        buyer
+    end
   end
 
   def cast_based_on_type(invoice) do

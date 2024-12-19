@@ -99,7 +99,9 @@ let liveSocket = new LiveSocket("/live", Socket, {
                 canvas.width = viewport.width;
                 canvas.height = viewport.height;
                 canvas.style.width = `${container.clientWidth}px`;
-                canvas.style.height = `${container.clientWidth / aspectRatio}px`;
+                canvas.style.height = `${
+                  container.clientWidth / aspectRatio
+                }px`;
                 container.appendChild(canvas);
 
                 // Render the page into the canvas context

@@ -97,11 +97,35 @@
         JS.push("submit", value: %{"invoice" => %{"is_basic_info_confirmed" => false}})
       } />
     <% else %>
-      <.input field={@form[:invoice_number]} type="text" label="Numer faktury" required />
-      <.input field={@form[:issue_date]} type="date" label="Data wystawienia" required />
-      <.input field={@form[:sale_date]} type="date" label="Data sprzedaży" required />
+      <.input
+        field={@form[:invoice_number]}
+        class="font-normal text-darkGrey"
+        type="text"
+        label="Numer faktury"
+        required
+      />
+      <.input
+        field={@form[:issue_date]}
+        class="font-normal text-darkGrey"
+        type="date"
+        label="Data wystawienia"
+        required
+      />
+      <.input
+        field={@form[:sale_date]}
+        class="font-normal text-darkGrey"
+        type="date"
+        label="Data sprzedaży"
+        required
+      />
       <div class="flex gap-2 items-end">
-        <.input field={@form[:payment_method]} type="text" label="Sposób płatności" required />
+        <.input
+          field={@form[:payment_method]}
+          class="font-normal text-darkGrey"
+          type="text"
+          label="Sposób płatności"
+          required
+        />
         <.input
           field={@form[:currency]}
           type="select"
@@ -114,28 +138,50 @@
           }
         />
       </div>
-      <.input field={@form[:due_date]} type="date" label="Termin zapłaty" required />
+      <.input
+        class="font-normal text-darkGrey"
+        field={@form[:due_date]}
+        type="date"
+        label="Termin zapłaty"
+        required
+      />
       <.input type="hidden" class="hidden" field={@form[:is_basic_info_confirmed]} value="true" />
-      <.button phx-disable-with="Zapisywanie..." color="green">
+      <.button disabled="true" phx-disable-with="Zapisywanie..." color="green">
         Zatwierdź
       </.button>
     <% end %>
   </.form>
   <div class="flex mt-16 gap-16">
-    <.seller_form invoice={@invoice} seller_form={@form} sellers={@sellers} />
-    <.buyer_form invoice={@invoice} buyer_form={@form} buyers={@buyers} />
+    <.seller_form
+      is_seller_dirty={@is_seller_dirty}
+      invoice={@invoice}
+      seller_form={@form}
+      sellers={@sellers}
+    />
+    <.buyer_form
+      is_buyer_dirty={@is_buyer_dirty}
+      invoice={@invoice}
+      buyer_form={@form}
+      buyers={@buyers}
+    />
   </div>
   <div class="mt-16">
     <.invoice_items invoice={@invoice} form={@form} />
     <div class="flex justify-between">
       <.form phx-change="submit" for={@form} class="mt-4">
         <%= if  @invoice.invoice_type == :poland do %>
-          <.input field={@form[:is_cash_account]} type="checkbox" label="Metoda kasowa" />
+          <.input
+            field={@form[:is_cash_account]}
+            type="checkbox"
+            label="Metoda kasowa"
+            class="font-normal text-darkGrey"
+          />
         <% end %>
         <%= if  @invoice.invoice_type == :foreign do %>
           <.input
             field={@form[:is_reverse_charge]}
             type="checkbox"
+            class="font-normal text-darkGrey"
             label="Odwrotne obciążenie i nieopodatkowanie VAT"
           />
         <% end %>

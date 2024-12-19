@@ -9,7 +9,12 @@ defmodule FirmowidWeb.InvoicesLive.EditButton do
 
   def edit_button(assigns) do
     ~H"""
-    <.button type="button" class="bg-lightGreyBg rounded border-none hover:border-darkGrey" {@rest}>
+    <.button
+      type="button"
+      phx-disable-with=""
+      class="bg-lightGreyBg rounded border-none hover:border-darkGrey disabled:bg-lightGreyBg disabled:cursor-default"
+      {@rest}
+    >
       <.edit_icon class="w-6 h-6 text-darkGrey" />
     </.button>
     """
