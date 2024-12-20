@@ -39,7 +39,7 @@ defmodule FirmowidWeb.InvoicesLive.Index do
 
     case invoice.currency do
       "PLN" ->
-        socket
+        socket |> assign(currency_rate: nil)
 
       currency ->
         socket
@@ -76,7 +76,7 @@ defmodule FirmowidWeb.InvoicesLive.Index do
     last_invoice = Invoices.get_latest_invoice() || %{}
 
     seller =
-      if is_nil(last_invoice.seller_id) do
+      if is_nil(Map.get(last_invoice, :seller_id)) do
         Invoices.list_sellers() |> Enum.at(0)
       else
         Invoices.get_seller!(last_invoice.seller_id)
@@ -229,11 +229,12 @@ defmodule FirmowidWeb.InvoicesLive.Index do
 
     seller_changeset =
       socket.assigns.invoice
-      |> Invoice.seller_changeset(whole_form)
+      |> Invoice.seller_changeset(invoice)
 
-    buyer_changeset = socket.assigns.invoice |> Invoice.buyer_changeset(whole_form)
+    buyer_changeset = socket.assigns.invoice |> Invoice.buyer_changeset(invoice)
 
     form = invoice_changeset |> to_form()
+    IO.inspect(buyer_changeset)
 
     socket =
       socket

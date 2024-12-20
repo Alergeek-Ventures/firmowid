@@ -27,7 +27,8 @@ defmodule FirmowidWeb.PdfController do
     |> render(:invoice,
       layout: false,
       invoice: invoice,
-      currency_rate: currency_rate
+      currency_rate: currency_rate,
+      class: "mx-auto"
     )
   end
 

@@ -1,15 +1,31 @@
 <div class="mx-8">
   <%= if @invoice_id do %>
-    <a
-      href={"/invoices/#{@invoice_id}/pdf"}
-      target="_blank"
-      class="group fixed flex gap-2 items-center bg-greyButtonBg p-4 rounded-md text-darkGrey right-0 translate-x-[67%] hover:translate-x-[0%] transition-transform top-36 h-10 box-border"
+    <div
+      id="invoice-preview"
+      class="fixed group aria-expanded:translate-x-0 translate-x-full transition-transform flex right-0 top-36 box-border z-10"
     >
-      <.icon name="hero-eye" class="w-7 h-7 stroke-2" />
-      <p class="uppercase text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-        Wyświetl podgląd
-      </p>
-    </a>
+      <button
+        phx-click={
+          JS.toggle_attribute({"aria-expanded", "true", "false"}, to: "#invoice-preview")
+        }
+        class="bg-greyButtonBg gap-2 items-center h-10 rounded-l-md p-4 -translate-x-[30%] flex hover:-translate-x-full group-aria-expanded:translate-x-[70%] transition-transform"
+      >
+        <.icon name="hero-eye" class="group-aria-expanded:hidden w-7 h-7 stroke-2" />
+        <.eye_closed_icon class="hidden group-aria-expanded:block w-7 h-7 stroke-2" />
+        <p class="uppercase text-darkGrey text-xs opacity-0 z-0 group-aria-expanded:opacity-0 group-hover:opacity-100 transition-opacity">
+          Wyświetl podgląd
+        </p>
+      </button>
+      <div class="p-10 bg-greyButtonBg rounded-bl-md z-10">
+        <div class="rounded-md overflow-hidden">
+          <FirmowidWeb.PdfHTML.invoice
+            class="max-h-[calc(100vh-9rem-4*theme('spacing.10'))] overflow-y-scroll"
+            invoice={@invoice}
+            currency_rate={@currency_rate}
+          />
+        </div>
+      </div>
+    </div>
   <% end %>
   <div class="flex gap-8 mt-6">
     <p class="text-darkGrey">Rodzaj faktury</p>
@@ -100,6 +116,7 @@
       <.input
         field={@form[:invoice_number]}
         class="font-normal text-darkGrey"
+        input_class="text-black"
         type="text"
         label="Numer faktury"
         required
@@ -107,6 +124,7 @@
       <.input
         field={@form[:issue_date]}
         class="font-normal text-darkGrey"
+        input_class="text-black"
         type="date"
         label="Data wystawienia"
         required
@@ -114,6 +132,7 @@
       <.input
         field={@form[:sale_date]}
         class="font-normal text-darkGrey"
+        input_class="text-black"
         type="date"
         label="Data sprzedaży"
         required
@@ -122,6 +141,7 @@
         <.input
           field={@form[:payment_method]}
           class="font-normal text-darkGrey"
+          input_class="text-black"
           type="text"
           label="Sposób płatności"
           required
@@ -140,13 +160,14 @@
       </div>
       <.input
         class="font-normal text-darkGrey"
+        input_class="text-black"
         field={@form[:due_date]}
         type="date"
         label="Termin zapłaty"
         required
       />
       <.input type="hidden" class="hidden" field={@form[:is_basic_info_confirmed]} value="true" />
-      <.button disabled="true" phx-disable-with="Zapisywanie..." color="green">
+      <.button phx-disable-with="Zapisywanie..." color="green">
         Zatwierdź
       </.button>
     <% end %>

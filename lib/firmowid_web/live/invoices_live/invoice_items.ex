@@ -1,5 +1,5 @@
 defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
-  use FirmowidWeb, :live_view
+  use FirmowidWeb, :html
 
   import FirmowidWeb.InvoicesLive.EditButton
   import FirmowidWeb.Icons

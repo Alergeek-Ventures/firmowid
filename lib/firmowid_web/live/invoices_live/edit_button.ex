@@ -1,7 +1,5 @@
 defmodule FirmowidWeb.InvoicesLive.EditButton do
-  use Phoenix.Component
-  import FirmowidWeb.CoreComponents
-  import FirmowidWeb.Icons
+  use FirmowidWeb, :html
 
   attr :rest, :global,
     include: ~w(autocomplete name rel action enctype method novalidate target multipart),

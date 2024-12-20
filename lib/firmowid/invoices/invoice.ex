@@ -152,6 +152,7 @@ defmodule Firmowid.Invoices.Invoice do
       :due_date,
       :payment_method,
       :currency,
+      :is_basic_info_confirmed,
       :is_seller_confirmed,
       :is_buyer_confirmed,
       :are_invoice_items_confirmed,

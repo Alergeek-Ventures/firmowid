@@ -110,6 +110,7 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
                   :if={to_string(@buyer_form[:buyer_type].value) == "company"}
                   field={@buyer_form[:buyer_display_name]}
                   type="text"
+                  required
                   placeholder="Nazwa firmy"
                 />
                 <div class="flex gap-2">

@@ -87,6 +87,7 @@ defmodule FirmowidWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import FirmowidWeb.CoreComponents
+      import FirmowidWeb.Icons
       use Gettext, backend: FirmowidWeb.Gettext
       import Tails
 
