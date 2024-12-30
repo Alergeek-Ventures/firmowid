@@ -144,6 +144,22 @@ defmodule Firmowid.InvoiceMatcher do
            Decimal.mult(document.total_amount, Decimal.from_float(0.9))}
         end
       else
+        rates =
+          case Money.ExchangeRates.historic_rates(document.issue_date) do
+            {:ok, rates} ->
+              {:ok, rates}
+
+            # fallback to some hardcoded rates if OpenExchange API is not
+            # available (like Bartek running dev on it and using our quota)
+            _ ->
+              {:ok,
+               %{
+                 EUR: Decimal.new("0.9"),
+                 PLN: Decimal.new("4.2"),
+                 USD: Decimal.new("1.1")
+               }}
+          end
+
         # deviation always allowed
         # when doing currency conversion
         {:ok, amount} =
@@ -153,7 +169,7 @@ defmodule Firmowid.InvoiceMatcher do
               document.total_amount
             ),
             "PLN",
-            Money.ExchangeRates.historic_rates(document.issue_date)
+            rates
           )
 
         amount = amount |> Money.to_decimal()
