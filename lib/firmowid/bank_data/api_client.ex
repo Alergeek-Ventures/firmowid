@@ -1,25 +1,38 @@
 defmodule Firmowid.BankData.ApiClient do
   alias Firmowid.BankData.TokenManager
 
-  def get_available_accounts_for_country(country) do
+  def get_available_institutions_for_country(country) do
     {:ok, access_token} = get_access_token()
 
-    Req.get!("https://bankaccountdata.gocardless.com/api/v2/institutions/?country=#{country}",
-      auth: {:bearer, access_token}
-    )
-    |> Map.get(:body)
+    options =
+      [
+        url: "https://bankaccountdata.gocardless.com/api/v2/institutions/?country=#{country}",
+        auth: {:bearer, access_token}
+      ]
+      |> Keyword.merge(Application.get_env(:firmowid, :bank_data_institutions, []))
+
+    with {:ok, response} <- Req.get(options) do
+      response |> Map.get(:body)
+    else
+      {:error, error} -> {:error, error}
+    end
   end
 
   def get_requisition(requisition_id) do
     {:ok, access_token} = get_access_token()
 
-    requisition_response =
-      Req.get!(
-        "https://bankaccountdata.gocardless.com/api/v2/requisitions/#{requisition_id}",
+    options =
+      [
+        url: "https://bankaccountdata.gocardless.com/api/v2/requisitions/#{requisition_id}",
         auth: {:bearer, access_token}
-      )
+      ]
+      |> Keyword.merge(Application.get_env(:firmowid, :bank_data_requisition, []))
 
-    requisition_response.body
+    with {:ok, response} <- Req.get(options) do
+      response |> Map.get(:body)
+    else
+      {:error, error} -> {:error, error}
+    end
   end
 
   def create_requisition(institution_id, max_transaction_days, redirect_url) do
@@ -53,67 +66,83 @@ defmodule Firmowid.BankData.ApiClient do
   def get_accounts_for_requisition(requisition_id) do
     {:ok, access_token} = get_access_token()
 
-    accounts_response =
-      Req.get!(
-        "https://bankaccountdata.gocardless.com/api/v2/requisitions/#{requisition_id}",
+    options =
+      [
+        url: "https://bankaccountdata.gocardless.com/api/v2/requisitions/#{requisition_id}",
         auth: {:bearer, access_token}
-      )
+      ]
+      |> Keyword.merge(Application.get_env(:firmowid, :bank_data_requisition, []))
 
-    accounts = Map.get(accounts_response.body, "accounts", [])
+    with {:ok, response} <- Req.get(options),
+         accounts <- Map.get(response.body, "accounts", []) do
+      options =
+        [
+          auth: {:bearer, access_token}
+        ]
+        |> Keyword.merge(Application.get_env(:firmowid, :bank_data_account, []))
 
-    accounts
-    |> Enum.map(fn account ->
-      Req.get!("https://bankaccountdata.gocardless.com/api/v2/accounts/#{account}",
+      accounts
+      |> Enum.map(fn account ->
+        with {:ok, account_response} <-
+               Req.get(
+                 options
+                 |> Keyword.put(
+                   :url,
+                   "https://bankaccountdata.gocardless.com/api/v2/accounts/#{account}"
+                 )
+               ) do
+          account_response |> Map.get(:body)
+        else
+          {:error, error} -> {:error, error}
+        end
+      end)
+    else
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  def get_booked_transactions_for_account(account_id) do
+    {:ok, access_token} = get_access_token()
+
+    options =
+      [
+        url: "https://bankaccountdata.gocardless.com/api/v2/accounts/#{account_id}/transactions",
         auth: {:bearer, access_token}
-      )
+      ]
+      |> Keyword.merge(Application.get_env(:firmowid, :bank_data_transactions, []))
+
+    with {:ok, accounts_transaction_response} <- Req.get(options) do
+      accounts_transaction_response
       |> Map.get(:body)
-    end)
-  end
-
-  def get_available_institutions() do
-    {:ok, access_token} = get_access_token()
-
-    institutions_response =
-      Req.get!(
-        "https://bankaccountdata.gocardless.com/api/v2/institutions?country=pl",
-        auth: {:bearer, access_token}
-      )
-
-    institutions_response.body
-  end
-
-  def get_transactions_for_account(account_id) do
-    {:ok, access_token} = get_access_token()
-
-    accounts_transaction_response =
-      Req.get!(
-        "https://bankaccountdata.gocardless.com/api/v2/accounts/#{account_id}/transactions",
-        auth: {:bearer, access_token}
-      )
-
-    accounts_transaction_response.body["transactions"]["booked"]
+      |> Map.get("transactions")
+      |> Map.get("booked")
+    else
+      {:error, error} -> {:error, error}
+    end
   end
 
   def delete_requisition(requisition_id) do
     {:ok, access_token} = get_access_token()
 
-    requisition =
-      Req.get!(
-        "https://bankaccountdata.gocardless.com/api/v2/requisitions/#{requisition_id}",
-        auth: {:bearer, access_token}
-      )
-
-    Req.delete!(
-      "https://bankaccountdata.gocardless.com/api/v2/requisitions/#{requisition_id}",
-      auth: {:bearer, access_token}
-    )
-
-    Req.delete!(
-      "https://bankaccountdata.gocardless.com/api/v2/agreements/#{requisition.body["agreement"]}",
-      auth: {:bearer, access_token}
-    )
-
-    {:ok, requisition}
+    with {:ok, requisition} <-
+           Req.get(
+             "https://bankaccountdata.gocardless.com/api/v2/requisitions/#{requisition_id}",
+             auth: {:bearer, access_token}
+           ),
+         {:ok, _} <-
+           Req.delete(
+             "https://bankaccountdata.gocardless.com/api/v2/requisitions/#{requisition_id}",
+             auth: {:bearer, access_token}
+           ),
+         {:ok, _} <-
+           Req.delete(
+             "https://bankaccountdata.gocardless.com/api/v2/agreements/#{requisition.body["agreement"]}",
+             auth: {:bearer, access_token}
+           ) do
+      {:ok, requisition}
+    else
+      {:error, error} -> {:error, error}
+    end
   end
 
   defp get_access_token() do

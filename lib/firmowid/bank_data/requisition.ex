@@ -17,7 +17,7 @@ defmodule Firmowid.BankData.Requisition do
   end
 
   @doc false
-  def changeset(requisition, attrs) do
+  def changeset(requisition, attrs \\ %{}) do
     requisition
     |> cast(attrs, [:requisition_id, :status, :organization_id])
     |> validate_required([:requisition_id, :status, :organization_id])

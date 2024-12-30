@@ -78,7 +78,8 @@ defmodule Firmowid.MixProject do
       {:image, "~> 0.37"},
       {:briefly, "~> 0.5.0"},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
-      {:sentry, "~> 10.8.1"}
+      {:sentry, "~> 10.8.1"},
+      {:recase, "~> 0.8.0"}
     ]
   end
 

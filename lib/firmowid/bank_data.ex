@@ -5,9 +5,10 @@ defmodule Firmowid.BankData do
   alias Firmowid.Finances
   alias Firmowid.BankData.Requisition
   alias Firmowid.BankData.ApiClient
+  alias Firmowid.BankData.Transaction
 
-  def get_available_accounts_for_country(country) do
-    ApiClient.get_available_accounts_for_country(country)
+  def get_available_institutions_for_country(country) do
+    ApiClient.get_available_institutions_for_country(country)
   end
 
   def list_requisitions(organization_id) do
@@ -84,26 +85,22 @@ defmodule Firmowid.BankData do
         |> Enum.find(fn a -> a.iban == go_cardless_account["iban"] end)
 
       booked_transactions =
-        ApiClient.get_transactions_for_account(go_cardless_account["id"])
+        ApiClient.get_booked_transactions_for_account(go_cardless_account["id"])
 
-      Enum.each(booked_transactions, fn t ->
-        Finances.create_or_update_imported_transaction(%{
-          transaction_id: t["transactionId"],
-          internal_transaction_id: t["internalTransactionId"],
-          debtor_name: t["debtorName"] || "N/A",
-          debtor_account: t["debtorAccount"]["iban"] || "N/A",
-          creditor_name: get_creditor_name_from_card_transaction(t) || "N/A",
-          creditor_account: t["creditorAccount"]["iban"] || "N/A",
-          transaction_amount:
-            t["transactionAmount"]["amount"]
-            |> safe_to_float(),
-          transaction_currency: t["transactionAmount"]["currency"],
-          booking_date: t["bookingDate"] |> Date.from_iso8601!(),
-          value_date: t["valueDate"] |> Date.from_iso8601!(),
-          remittance_information_unstructured: t["remittanceInformationUnstructured"],
-          bank_account_id: bank_account.id,
-          organization_id: organization_id
-        })
+      Enum.each(booked_transactions, fn transaction_from_api ->
+        converted_transaction =
+          transaction_from_api
+          |> Transaction.map_camel_to_snake()
+          |> Transaction.flatten_api_response()
+          |> Transaction.changeset()
+          |> Ecto.Changeset.apply_changes()
+
+        converted_transaction =
+          converted_transaction
+          |> Map.merge(%{bank_account_id: bank_account.id, organization_id: organization_id})
+          |> Map.from_struct()
+
+        Finances.create_or_update_imported_transaction(converted_transaction)
       end)
     end)
   end
@@ -130,40 +127,6 @@ defmodule Firmowid.BankData do
          {:ok, _} <- ApiClient.delete_requisition(requisition.requisition_id),
          {:ok, _} <- Repo.delete(requisition, organization_id: organization_id) do
       {:ok, requisition}
-    end
-  end
-
-  defp get_creditor_name_from_card_transaction(transaction) do
-    try do
-      if transaction["creditorName"] == "Nest Bank S.A." and
-           transaction["remittanceInformationUnstructured"] |> String.contains?("Nr karty") do
-        transaction["remittanceInformationUnstructured"]
-        |> String.split(",")
-        |> hd()
-      else
-        transaction["creditorAccount"]["name"]
-      end
-    rescue
-      _ -> transaction["creditorAccount"]["name"]
-    end
-  end
-
-  defp safe_to_float(value) do
-    case Float.parse(value) do
-      {float, _} ->
-        float
-
-      :error ->
-        try do
-          String.to_float(value <> ".0")
-        rescue
-          ArgumentError ->
-            try do
-              String.to_integer(value) |> :erlang.float_to_binary() |> String.to_float()
-            rescue
-              ArgumentError -> nil
-            end
-        end
     end
   end
 end

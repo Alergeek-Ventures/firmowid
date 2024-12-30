@@ -36,4 +36,17 @@ config :phoenix, :plug_init_mode, :runtime
 config :phoenix_live_view,
   enable_expensive_runtime_checks: true
 
-config :bypass, enable_debug_log: true
+# stubs for request testing (for now bank_data mostly)
+config :firmowid,
+  bank_data_institutions: [
+    plug: {Req.Test, :bank_data_institutions}
+  ],
+  bank_data_requisition: [
+    plug: {Req.Test, :bank_data_requisition}
+  ],
+  bank_data_account: [
+    plug: {Req.Test, :bank_data_account}
+  ],
+  bank_data_transactions: [
+    plug: {Req.Test, :bank_data_transactions}
+  ]

@@ -9,7 +9,7 @@ defmodule FirmowidWeb.BankSyncLive.Create do
       socket
       |> assign(
         :available_institutions,
-        BankData.get_available_accounts_for_country("pl")
+        BankData.get_available_institutions_for_country("pl")
       )
       |> assign(:requisition_link, nil)
 
@@ -32,8 +32,7 @@ defmodule FirmowidWeb.BankSyncLive.Create do
              BankData.confirm_requisition(
                requisition_id,
                organization_id
-             ),
-           BankData.sync_requisition(requisition_id, organization_id) do
+             ) do
         {:noreply, redirect(socket, to: ~p"/")}
       else
         _ ->

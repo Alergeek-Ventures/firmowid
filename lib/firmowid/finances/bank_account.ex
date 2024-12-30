@@ -14,7 +14,7 @@ defmodule Firmowid.Finances.BankAccount do
   end
 
   @doc false
-  def changeset(bank_account, attrs) do
+  def changeset(bank_account, attrs \\ %{}) do
     bank_account
     |> cast(attrs, [:iban, :organization_id, :requisition_id])
     |> validate_required([:iban, :organization_id, :requisition_id])

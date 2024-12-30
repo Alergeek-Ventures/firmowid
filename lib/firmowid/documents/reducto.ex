@@ -170,7 +170,7 @@ defmodule Firmowid.Documents.Reducto do
                 "i transakcjami w przedsiębiorstwie. Pomagasz w opisywaniu " <>
                 "katalogowaniu i dopasowaniu ich do siebie."
           },
-          dbg(%{
+          %{
             role: "user",
             content: "
               Oto metadane faktury sprzedażowej, którą chcą skatalogować:
@@ -197,7 +197,7 @@ defmodule Firmowid.Documents.Reducto do
               
               Postaraj się zamknąć w 5-10 słowach.
               " |> String.trim()
-          })
+          }
         ]
       )
 
