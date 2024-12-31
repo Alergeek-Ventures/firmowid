@@ -45,13 +45,19 @@ defmodule FirmowidWeb.DocumentsLive.Index do
         :month,
         previous_month_date
       )
+      # filter invoice matchers
+      |> assign(
+        :filter,
+        :all
+      )
       # actual data
       |> assign(
         :invoice_matchers,
         InvoiceMatcher.get_invoice_matchers(
           organization_id,
           date_range_from,
-          date_range_to
+          date_range_to,
+          :all
         )
       )
 
@@ -136,6 +142,30 @@ defmodule FirmowidWeb.DocumentsLive.Index do
   end
 
   @impl true
+  def handle_event("filter-change", %{"filter" => filter}, socket) do
+    filter = String.to_atom(filter)
+    organization_id = socket.assigns.current_user.organization_id
+    month = socket.assigns.month
+    date_range_from = Date.beginning_of_month(month)
+    date_range_to = Date.end_of_month(month)
+
+    socket =
+      socket
+      |> assign(:filter, filter)
+      |> assign(
+        :invoice_matchers,
+        InvoiceMatcher.get_invoice_matchers(
+          organization_id,
+          date_range_from,
+          date_range_to,
+          filter
+        )
+      )
+
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_event("delete", %{"document-id" => document_id}, socket) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
@@ -166,6 +196,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
       |> assign(:month, month)
       |> push_patch(to: ~p"/?month=#{month |> Date.to_iso8601()}")
 
+    filter = socket.assigns.filter
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
 
@@ -176,7 +207,8 @@ defmodule FirmowidWeb.DocumentsLive.Index do
         InvoiceMatcher.get_invoice_matchers(
           organization_id,
           date_range_from,
-          date_range_to
+          date_range_to,
+          filter
         )
       )
 
@@ -223,6 +255,8 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     end
 
     month = socket.assigns.month
+
+    filter = socket.assigns.filter
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
 
@@ -233,7 +267,8 @@ defmodule FirmowidWeb.DocumentsLive.Index do
         InvoiceMatcher.get_invoice_matchers(
           organization_id,
           date_range_from,
-          date_range_to
+          date_range_to,
+          filter
         )
       )
 
@@ -246,6 +281,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     organization_id = user.organization_id
 
     month = socket.assigns.month
+    filter = socket.assigns.filter
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
 
@@ -257,7 +293,8 @@ defmodule FirmowidWeb.DocumentsLive.Index do
         InvoiceMatcher.get_invoice_matchers(
           organization_id,
           date_range_from,
-          date_range_to
+          date_range_to,
+          filter
         )
       )
       |> assign(

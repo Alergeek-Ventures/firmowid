@@ -25,7 +25,7 @@ defmodule Firmowid.InvoiceMatcher do
   alias Firmowid.Documents
   alias Firmowid.Finances
 
-  def get_invoice_matchers(organization_id, from, to) do
+  def get_invoice_matchers(organization_id, from, to, filter) do
     documents = Documents.list_documents_with_metadata(organization_id, from, to)
 
     imported_transactions =
@@ -38,24 +38,44 @@ defmodule Firmowid.InvoiceMatcher do
         end)
       end)
 
-    documents
-    |> Enum.map(&from_document/1)
-    |> Enum.concat(Enum.map(imported_transactions, &from_imported_transaction/1))
-    |> Enum.sort(&compare_date_then_creditor_then_amount/2)
-    |> Enum.filter(fn invoice_matcher ->
-      # don't include documents that are issued for previous month and were
-      # paid in previous month
+    all =
+      documents
+      |> Enum.map(&from_document/1)
+      |> Enum.concat(Enum.map(imported_transactions, &from_imported_transaction/1))
+      |> Enum.sort(&compare_date_then_creditor_then_amount/2)
+      |> Enum.filter(fn invoice_matcher ->
+        # don't include documents that are issued for previous month and were
+        # paid in previous month
 
-      was_paid =
-        invoice_matcher.imported_transactions != [] or
-          invoice_matcher.skip_invoicing == true
+        was_paid =
+          invoice_matcher.imported_transactions != [] or
+            invoice_matcher.skip_invoicing == true
 
-      was_issued_in_date_range =
-        Date.compare(from, invoice_matcher.issue_date) in [:lt, :eq] and
-          Date.compare(to, invoice_matcher.issue_date) in [:gt, :eq]
+        was_issued_in_date_range =
+          Date.compare(from, invoice_matcher.issue_date) in [:lt, :eq] and
+            Date.compare(to, invoice_matcher.issue_date) in [:gt, :eq]
 
-      !was_paid or (was_paid and was_issued_in_date_range)
-    end)
+        !was_paid or (was_paid and was_issued_in_date_range)
+      end)
+
+    case filter do
+      :all ->
+        all
+
+      :unmatched ->
+        Enum.filter(
+          all,
+          &(((&1.documents == [] and &1.imported_transactions != []) or
+               (&1.documents != [] and &1.imported_transactions == [])) and
+              &1.skip_invoicing == false)
+        )
+
+      :invoices ->
+        Enum.filter(all, &(&1.documents != []))
+
+      :transactions ->
+        Enum.filter(all, &(&1.imported_transactions != []))
+    end
   end
 
   def compare_date_then_creditor_then_amount(a, b) do
@@ -181,7 +201,8 @@ defmodule Firmowid.InvoiceMatcher do
     unmatched_transactions =
       Finances.list_unmatched_imported_transactions(organization_id)
 
-    # transactions with exact amount (or in the range for non-PLN) that are between issue_date and payment_deadline
+    # transactions with exact amount (or in the range for non-PLN)
+    # that are between issue_date and payment_deadline
     candidates =
       unmatched_transactions
       |> Enum.filter(fn i ->

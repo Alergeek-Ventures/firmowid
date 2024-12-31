@@ -22,7 +22,7 @@
     <%= if @invoice_matchers != [] do %>
       <a
         id="download-button"
-        data-tippy-content="Pobierz pliki dla wybranego miesiąca"
+        data-tippy-content="Pobierz wszystkie faktury wystawione w tym miesiącu"
         phx-hook="tippy"
         href={"/file?month=#{@month}"}
         download
@@ -33,6 +33,16 @@
         <.icon name="hero-cloud-arrow-down" class="w-6 h-6" /> Pobierz
       </a>
     <% end %>
+    <.link
+      navigate={~p"/invoices"}
+      class="min-w-[200px]
+      relative flex flex-row gap-4 items-center justify-center w-full
+      border rounded-lg px-3 py-2 max-md:hidden min-h-[40px] hover:bg-greyButtonBg
+      transition-colors
+      "
+    >
+      <.icon name="hero-document-duplicate" class="w-5 h-5" /> Wystaw fakturę
+    </.link>
     <form id="upload-form" phx-change="upload" phx-submit="upload">
       <div class="hidden">
         <.live_file_input upload={@uploads.file} />
@@ -41,7 +51,7 @@
         for={@uploads.file.ref}
         class={
           button_styles(%{class: "relative flex flex-row gap-4 items-center justify-center w-full
-        border-2 rounded-lg px-3 py-2 min-w-[210px]
+        border-2 rounded-lg px-3 py-2 min-w-[210px] border-black
         max-md:w-[300px] min-h-[40px] max-md:min-h-[60px] hover:bg-greyButtonBg
         hover:text-black transition-colors"})
         }
@@ -58,10 +68,29 @@
         <.icon name="hero-plus" class="w-6 h-6" /> Dodaj dokument
       </label>
     </form>
-    <.link navigate={~p"/invoices"} class="hover:underline flex items-center gap-2">
-      <.icon name="hero-document-duplicate" class="w-5 h-5" /> Wystaw fakturę
-    </.link>
   </div>
+</div>
+
+<div class="flex flex-row gap-4">
+  <%= for {filter, label} <- [
+        {:all, "Wszystkie"},
+        {:unmatched, "Bez dopasowania"},
+        {:invoices, "Faktury"},
+        {:transactions, "Transakcje"}
+    ] do %>
+    <.button
+      class={[
+        @filter == filter && "!bg-darkGrey !text-white",
+        "text-darkGrey text-center bg-lightGreyBg rounded-lg border-none
+        hover:bg-greyButtonBg py-2 px-3 text-sm font-semibold leading-6
+        active:text-white/80 flex items-center justify-center"
+      ]}
+      phx-click="filter-change"
+      phx-value-filter={filter}
+    >
+      {label}
+    </.button>
+  <% end %>
 </div>
 
 <div class="mt-2 flex flex-col gap-4 max-md:hidden">
