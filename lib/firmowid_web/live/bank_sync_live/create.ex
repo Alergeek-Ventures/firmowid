@@ -1,5 +1,6 @@
 defmodule FirmowidWeb.BankSyncLive.Create do
   use FirmowidWeb, :live_view
+  require Logger
 
   alias Firmowid.BankData
 
@@ -18,25 +19,47 @@ defmodule FirmowidWeb.BankSyncLive.Create do
 
   @impl true
   def handle_params(params, url, socket) do
-    # save URL for BankData redirection
+    # extract domain for redirecting when submitting an account
+    # (makes it work for both localhost and production)
     socket = socket |> assign(:redirect_url, url |> String.split("?") |> List.first())
-
-    current_user = socket.assigns.current_user
-    organization_id = current_user.organization_id
 
     requisition_id = params["ref"]
 
     if not is_nil(requisition_id) do
-      # check and confirm requisition passed by query param
-      with {:ok, _} <-
-             BankData.confirm_requisition(
-               requisition_id,
-               organization_id
-             ) do
-        {:noreply, redirect(socket, to: ~p"/")}
+      error = params["error"]
+
+      if not is_nil(error) do
+        details = params["details"]
+
+        Sentry.capture_message("Failed to connect to bank. Error: #{error} #{details}")
+
+        Logger.info("Failed to connect to bank. Error: #{error} #{details}")
+
+        LiveToast.send_toast(
+          :error,
+          "Połączenie z bankiem nie zostało utworzone. Spróbuj ponownie wkrótce."
+        )
+
+        socket =
+          socket
+          |> push_patch(to: ~p"/")
+
+        {:noreply, socket}
       else
-        _ ->
-          {:noreply, push_patch(socket, to: ~p"/settings/bank-sync/create")}
+        current_user = socket.assigns.current_user
+        organization_id = current_user.organization_id
+
+        # check and confirm requisition passed by query param
+        with {:ok, _} <-
+               BankData.confirm_requisition(
+                 requisition_id,
+                 organization_id
+               ) do
+          {:noreply, redirect(socket, to: ~p"/")}
+        else
+          _ ->
+            {:noreply, push_patch(socket, to: ~p"/settings/bank-sync/create")}
+        end
       end
     else
       {:noreply, socket}

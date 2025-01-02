@@ -62,7 +62,7 @@ defmodule Firmowid.BankData.Transaction do
       )
     rescue
       error ->
-        Sentry.capture_exception(error)
+        Sentry.capture_exception(error, stacktrace: __STACKTRACE__)
 
         api_object_snake_cased
     end
@@ -118,7 +118,7 @@ defmodule Firmowid.BankData.Transaction do
       end
     rescue
       error ->
-        Sentry.capture_exception(error)
+        Sentry.capture_exception(error, stacktrace: __STACKTRACE__)
 
         transaction_changeset
     end
