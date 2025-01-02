@@ -16,7 +16,8 @@ defmodule Firmowid.InvoiceMatcher do
     :seller,
     :seller_display_name,
     :buyer,
-    :skip_invoicing
+    :skip_invoicing,
+    :inserted_at
   ]
 
   alias Akin
@@ -113,7 +114,8 @@ defmodule Firmowid.InvoiceMatcher do
       seller: document.seller,
       seller_display_name: document.seller_display_name,
       file_url: document.file_url,
-      skip_invoicing: document.skip_invoicing
+      skip_invoicing: document.skip_invoicing,
+      inserted_at: document.inserted_at
     }
   end
 
@@ -128,7 +130,8 @@ defmodule Firmowid.InvoiceMatcher do
       sale_date: transaction.value_date,
       seller: transaction.creditor_name,
       seller_display_name: transaction.creditor_name,
-      skip_invoicing: transaction.skip_invoicing
+      skip_invoicing: transaction.skip_invoicing,
+      inserted_at: transaction.inserted_at
     }
   end
 

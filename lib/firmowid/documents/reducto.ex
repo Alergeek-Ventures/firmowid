@@ -140,9 +140,9 @@ defmodule Firmowid.Documents.Reducto do
         %{
           "invoice_identifier" => "01/09/2024",
           "seller" => "Mocked Reducto",
-          "sale_date" => ~D[2024-09-30],
-          "issue_date" => ~D[2024-09-30],
-          "due_date" => ~D[2024-10-31],
+          "sale_date" => ~D[2024-11-20],
+          "issue_date" => ~D[2024-11-20],
+          "due_date" => ~D[2024-11-21],
           "total_amount" => 100.0,
           "currency" => "PLN"
         }
@@ -154,7 +154,7 @@ defmodule Firmowid.Documents.Reducto do
     extracted_metadata =
       Map.put(extracted_metadata, "description", generate_description(extracted_metadata))
 
-    Documents.update_document(organization_id, document_id, extracted_metadata)
+    Documents.update_document_metadata(organization_id, document_id, extracted_metadata)
   end
 
   defp generate_description(document) do

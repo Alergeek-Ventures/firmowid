@@ -85,8 +85,15 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
               <% else %>
                 <%= if column.key == "amount" do %>
                   <.amount_cell
+                    id={invoice_matcher.id}
                     amount_numeric={invoice_matcher.amount_numeric}
                     amount={invoice_matcher.amount}
+                    is_fresh={
+                      DateTime.compare(
+                        invoice_matcher.inserted_at,
+                        DateTime.add(DateTime.utc_now(), -120, :second)
+                      ) == :gt
+                    }
                   />
                 <% else %>
                   <%= if column.key == "seller" and invoice_matcher.documents != [] do %>
@@ -311,9 +318,26 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
   def amount_cell(assigns) do
     ~H"""
     <div class={[
-      "text-right pr-5 py-2"
+      "text-right pr-5 py-2 relative"
     ]}>
       {@amount}
+
+      <%= if @is_fresh do %>
+        <span
+          id={"amount-fresh-#{@id}"}
+          phx-hook="tippy"
+          data-tippy-delay="10"
+          data-tippy-content="Ten dokument właśnie został dodany!"
+          class="absolute top-[-10px] right-[-4px] flex h-3 w-3"
+        >
+          <span class={[
+            "animate-ping absolute inline-flex h-full w-full",
+            "rounded-full bg-blueText opacity-75"
+          ]}>
+          </span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-blueText"></span>
+        </span>
+      <% end %>
     </div>
     """
   end

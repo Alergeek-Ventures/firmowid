@@ -58,7 +58,8 @@ defmodule Firmowid.InvoiceMatcherTest do
             due_date: ~D[2022-01-31],
             sale_date: ~D[2022-01-01],
             file_url: "/doc.pdf",
-            skip_invoicing: false
+            skip_invoicing: false,
+            inserted_at: ~D[2022-01-01]
           },
           override_a
         )
@@ -79,7 +80,8 @@ defmodule Firmowid.InvoiceMatcherTest do
             due_date: ~D[2022-01-31],
             sale_date: ~D[2022-01-01],
             file_url: "/doc.pdf",
-            skip_invoicing: false
+            skip_invoicing: false,
+            inserted_at: ~D[2022-01-01]
           },
           override_b
         )

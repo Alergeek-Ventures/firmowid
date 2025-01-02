@@ -90,19 +90,6 @@ defmodule FirmowidWeb.DocumentsLive.Index do
         {:ok, nil}
       end)
 
-      LiveToast.send_toast(
-        :info,
-        if length(socket.assigns.uploads.file.entries) == 1 do
-          "Dokument został załadowany."
-        else
-          if length(socket.assigns.uploads.file.entries) > 5 do
-            "#{length(socket.assigns.uploads.file.entries)} dokumentów zostało załadowanych."
-          else
-            "#{length(socket.assigns.uploads.file.entries)} dokumenty zostały załadowane."
-          end
-        end
-      )
-
       socket =
         socket
         |> assign(
@@ -301,6 +288,51 @@ defmodule FirmowidWeb.DocumentsLive.Index do
         :documents_pending_extraction,
         Documents.list_documents_without_metadata(organization_id)
       )
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:document_metadata_added, _, issue_date}, socket) do
+    user = socket.assigns.current_user
+    organization_id = user.organization_id
+
+    month = socket.assigns.month
+    filter = socket.assigns.filter
+    date_range_from = Date.beginning_of_month(month)
+    date_range_to = Date.end_of_month(month)
+
+    socket =
+      socket
+      # actual data
+      |> assign(
+        :invoice_matchers,
+        InvoiceMatcher.get_invoice_matchers(
+          organization_id,
+          date_range_from,
+          date_range_to,
+          filter
+        )
+      )
+      |> assign(
+        :documents_pending_extraction,
+        Documents.list_documents_without_metadata(organization_id)
+      )
+
+    LiveToast.send_toast(
+      :info,
+      "Dokument został załadowany.",
+      action: fn assigns ->
+        assigns =
+          assigns
+          |> assign(:issue_date, issue_date |> Date.beginning_of_month() |> Date.to_iso8601())
+
+        ~H"""
+        <.link class="text-sm text-bold underline" navigate={~p"/?month=#{@issue_date}"}>
+          Wyświetl <.icon name="hero-arrow-right-solid" class="h-3 w-3" />
+        </.link>
+        """
+      end
+    )
 
     {:noreply, socket}
   end

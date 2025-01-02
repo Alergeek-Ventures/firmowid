@@ -23,6 +23,17 @@ defmodule Firmowid.Documents do
     )
   end
 
+  # only used when document is "added" from user perspective
+  # (until we extract metadata, it's hidden)
+  # TODO: error handling
+  def broadcast_document_metadata_added(document_id, issue_date) do
+    Phoenix.PubSub.broadcast(
+      Firmowid.PubSub,
+      @pub_sub_topic,
+      {:document_metadata_added, document_id, issue_date}
+    )
+  end
+
   def list_documents_with_metadata(
         organization_id,
         from \\ Date.utc_today(),
@@ -193,6 +204,17 @@ defmodule Firmowid.Documents do
 
   def start_extraction_job(document_id, organization_id) do
     Reducto.start_extraction_job(document_id, organization_id)
+  end
+
+  def update_document_metadata(organization_id, document_id, attrs) do
+    result =
+      Repo.get!(Document, document_id, organization_id: organization_id)
+      |> Document.changeset(attrs)
+      |> Repo.update!()
+
+    broadcast_document_metadata_added(document_id, result.issue_date)
+
+    result
   end
 
   def update_document(organization_id, document_id, attrs) do
