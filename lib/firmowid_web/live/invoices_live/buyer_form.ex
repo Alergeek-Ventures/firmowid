@@ -41,37 +41,63 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
     ~H"""
     <div class="max-w-2xl min-w-96">
       <p class="text-darkGrey mb-2">Nabywca</p>
-      <div class="flex gap-2">
-        <.form phx-change="submit" for={@buyer_form}>
-          <.input
-            type="hidden"
-            field={@buyer_form[:is_buyer_confirmed]}
-            value={
-              if !@invoice.buyer_id or @invoice.buyer_id == "" do
-                "true"
-              else
-                "false"
-              end
+      <%= if @invoice.is_buyer_confirmed do %>
+        <div class="flex gap-2 mt-4 mb-2">
+          <div
+            :if={@invoice.buyer_id}
+            class="text-blueText border text-sm flex justify-center items-center font-medium px-2 h-7 border-blueText rounded-md"
+          >
+            WYBRANY Z BAZY
+          </div>
+          <div
+            :if={!@invoice.buyer_id}
+            class="text-blueText border text-sm flex justify-center items-center font-medium px-2 h-7 border-blueText rounded-md"
+          >
+            WPROWADZONY RĘCZNIE
+          </div>
+        </div>
+      <% else %>
+        <div class="flex gap-2">
+          <.form phx-change="submit" for={@buyer_form}>
+            <.input
+              type="hidden"
+              field={@buyer_form[:is_buyer_confirmed]}
+              value={
+                if !@invoice.buyer_id or @invoice.buyer_id == "" do
+                  "true"
+                else
+                  "false"
+                end
+              }
+            />
+            <.input
+              field={@buyer_form[:buyer_id]}
+              type="select"
+              class="bg-greyButtonBg text-darkGrey rounded-md border-none text-sm h-7 py-0 w-auto max-w-80 mb-2"
+              prompt="WYBIERZ Z LISTY"
+              options={
+                @buyers
+                |> Enum.map(fn buyer -> {Firmowid.Invoices.Buyer.get_name(buyer), buyer.id} end)
+              }
+            />
+          </.form>
+          <button
+            phx-click={
+              JS.push("submit", value: %{"invoice" => %{"buyer_id" => ""}})
+              |> JS.push("update_buyer_state", value: %{"buyer_form_state" => :nip})
             }
-          />
-          <.input
-            field={@buyer_form[:buyer_id]}
-            type="select"
-            class="bg-greyButtonBg text-darkGrey rounded-md border-none text-sm h-6 py-0 w-auto max-w-80 mb-2"
-            prompt="WYBIERZ Z LISTY"
-            options={
-              @buyers |> Enum.map(fn buyer -> {Firmowid.Invoices.Buyer.get_name(buyer), buyer.id} end)
-            }
-          />
-        </.form>
-        <button
-          :if={!@invoice.buyer_id or @invoice.buyer_id == ""}
-          phx-click={JS.push("update_buyer_state", value: %{"buyer_form_state" => :nip})}
-          class="uppercase border flex items-center gap-1 border-greyButtonBg text-darkGrey text-sm rounded-md h-6 px-2 mt-2"
-        >
-          Wprowadź <.icon name="hero-plus" class="w-4 h-4" />
-        </button>
-      </div>
+            class={[
+              "uppercase border flex items-center gap-1 border-greyButtonBg text-darkGrey text-sm rounded-md h-7 px-2 mt-2 disabled:opacity-50 disabled:cursor-default",
+              (@buyer_form_state == "nip" or @buyer_form_state == "expanded") &&
+                (@invoice.buyer_id == "" or !@invoice.buyer_id) &&
+                "bg-darkGrey text-white"
+            ]}
+            phx-disable-with=""
+          >
+            Wprowadź <.icon name="hero-plus" class="w-4 h-4" />
+          </button>
+        </div>
+      <% end %>
       <%= if @invoice.is_buyer_confirmed do %>
         <div class="w-[664px] flex justify-between items-start border border-greyButtonBg rounded-md p-5">
           <div class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2">

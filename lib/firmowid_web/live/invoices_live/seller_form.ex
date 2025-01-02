@@ -29,7 +29,7 @@ defmodule FirmowidWeb.InvoicesLive.SellerForm do
         <.input
           field={@seller_form[:seller_id]}
           type="select"
-          class="bg-greyButtonBg text-darkGrey rounded-md border-none text-sm h-6 py-0 w-auto max-w-80 mb-2"
+          class="bg-greyButtonBg text-darkGrey rounded-md border-none text-sm h-7 py-0 w-auto max-w-80 mb-2"
           prompt="WYBIERZ Z LISTY"
           options={@sellers |> Enum.map(fn s -> {s.display_name, s.id} end)}
         />

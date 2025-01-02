@@ -282,7 +282,7 @@ defmodule FirmowidWeb.InvoicesLive.Index do
             "buyer_nip" => buyer_info.nip
           }
 
-        socket = socket |> assign(buyer_form_state: "expanded")
+        socket = socket |> assign_buyer_form_state("expanded")
         handle_event("change", %{"invoice" => buyer}, socket)
 
       {:error, :not_found} ->
