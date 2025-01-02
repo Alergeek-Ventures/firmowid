@@ -31,36 +31,47 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
   end
 
   attr :buyer_form, :list, required: true
+  attr :nip_form, :list, required: true
   attr :invoice, :map, required: true
   attr :buyers, :list, required: false, default: []
   attr :is_buyer_dirty, :boolean, required: false, default: false
+  attr :buyer_form_state, :atom, required: false
 
   def buyer_form(assigns) do
     ~H"""
-    <div class="max-w-2xl">
-      <p class="text-darkGrey mb-4">Nabywca</p>
-      <.form phx-change="submit" for={@buyer_form}>
-        <.input
-          type="hidden"
-          field={@buyer_form[:is_buyer_confirmed]}
-          value={
-            if !@invoice.buyer_id or @invoice.buyer_id == "" do
-              "true"
-            else
-              "false"
-            end
-          }
-        />
-        <.input
-          field={@buyer_form[:buyer_id]}
-          type="select"
-          class="bg-greyButtonBg text-darkGrey rounded-md border-none text-sm h-6 py-0 w-48 mb-2"
-          prompt="WYBIERZ Z LISTY"
-          options={
-            @buyers |> Enum.map(fn buyer -> {Firmowid.Invoices.Buyer.get_name(buyer), buyer.id} end)
-          }
-        />
-      </.form>
+    <div class="max-w-2xl min-w-96">
+      <p class="text-darkGrey mb-2">Nabywca</p>
+      <div class="flex gap-2">
+        <.form phx-change="submit" for={@buyer_form}>
+          <.input
+            type="hidden"
+            field={@buyer_form[:is_buyer_confirmed]}
+            value={
+              if !@invoice.buyer_id or @invoice.buyer_id == "" do
+                "true"
+              else
+                "false"
+              end
+            }
+          />
+          <.input
+            field={@buyer_form[:buyer_id]}
+            type="select"
+            class="bg-greyButtonBg text-darkGrey rounded-md border-none text-sm h-6 py-0 w-auto max-w-80 mb-2"
+            prompt="WYBIERZ Z LISTY"
+            options={
+              @buyers |> Enum.map(fn buyer -> {Firmowid.Invoices.Buyer.get_name(buyer), buyer.id} end)
+            }
+          />
+        </.form>
+        <button
+          :if={!@invoice.buyer_id or @invoice.buyer_id == ""}
+          phx-click={JS.push("update_buyer_state", value: %{"buyer_form_state" => :nip})}
+          class="uppercase border flex items-center gap-1 border-greyButtonBg text-darkGrey text-sm rounded-md h-6 px-2 mt-2"
+        >
+          Wprowadź <.icon name="hero-plus" class="w-4 h-4" />
+        </button>
+      </div>
       <%= if @invoice.is_buyer_confirmed do %>
         <div class="w-[664px] flex justify-between items-start border border-greyButtonBg rounded-md p-5">
           <div class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2">
@@ -87,163 +98,208 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
           } />
         </div>
       <% else %>
-        <.form phx-submit="submit" class="flex flex-col gap-2" phx-change="change" for={@buyer_form}>
-          <div class="bg-greyButtonBg/50 px-5 h-[50px] flex items-center  rounded-md">
-            <.radio_group class="gap-8" field={@buyer_form[:buyer_type]}>
-              <:radio value="company">Firma/ Jednoosobowa Działalność Gospodarcza</:radio>
-              <:radio value="individual">Osoba prywatna</:radio>
-            </.radio_group>
-          </div>
-          <div class="bg-greyButtonBg/50 py-4 px-5 rounded-md">
-            <div class="flex gap-2">
-              <div>
-                <.input
-                  :if={to_string(@buyer_form[:buyer_type].value) == "company"}
-                  field={@buyer_form[:buyer_nip]}
-                  type="text"
-                  input_class="mt-0 mb-5"
-                  placeholder="Nip klienta"
-                  required
-                />
-                <p class="text-sm text-darkGrey">Dane podstawowe</p>
-                <.input
-                  :if={to_string(@buyer_form[:buyer_type].value) == "company"}
-                  field={@buyer_form[:buyer_display_name]}
-                  type="text"
-                  required
-                  placeholder="Nazwa firmy"
-                />
-                <div class="flex gap-2">
-                  <.input
-                    field={@buyer_form[:buyer_name]}
-                    type="text"
-                    placeholder="Imię"
-                    required={to_string(@buyer_form[:buyer_type].value) == "individual"}
-                  />
-                  <.input
-                    field={@buyer_form[:buyer_surname]}
-                    type="text"
-                    placeholder="Nazwisko"
-                    required={to_string(@buyer_form[:buyer_type].value) == "individual"}
-                  />
-                </div>
-                <.input
-                  :if={to_string(@buyer_form[:buyer_type].value) == "individual"}
-                  field={@buyer_form[:buyer_pesel]}
-                  type="text"
-                  placeholder="PESEL (opcjonalnie)"
-                />
-              </div>
-              <div class={to_string(@buyer_form[:buyer_type].value) == "company" && "mt-3"}>
-                <p class="text-sm text-darkGrey">Dane adresowe</p>
-                <.input field={@buyer_form[:buyer_street]} type="text" placeholder="Adres" required />
-                <div class="flex gap-2">
-                  <.input
-                    field={@buyer_form[:buyer_postal_code]}
-                    type="text"
-                    placeholder="Kod pocztowy"
-                    required
-                  />
-                  <.input
-                    field={@buyer_form[:buyer_city]}
-                    type="text"
-                    placeholder="Miejscowość"
-                    required
-                  />
-                </div>
-                <.input field={@buyer_form[:buyer_country]} type="text" placeholder="Kraj" required />
-              </div>
-            </div>
-            <div
-              class="accordion-panel grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all transform ease-in duration-200"
-              id="seller-form-panel"
-              role="region"
+        <%= case @buyer_form_state do %>
+          <% "expanded" -> %>
+            <.form
+              phx-submit="submit"
+              class="flex flex-col gap-2"
+              phx-change="change"
+              for={@buyer_form}
             >
-              <div class="overflow-hidden">
-                <.input
-                  type="checkbox"
-                  field={@buyer_form[:buyer_is_different_mail_address]}
-                  class="text-darkGrey font-normal mt-2"
-                  label="Inny adres korespondencyjny"
-                />
-                <.different_mail_address
-                  :if={to_string(@buyer_form[:buyer_is_different_mail_address].value) == "true"}
-                  buyer_form={@buyer_form}
-                />
-                <p class="text-sm text-darkGrey mt-2">Dodatkowe informacje</p>
-                <div class="flex gap-2 items-end">
-                  <.input
-                    class="flex-1"
-                    field={@buyer_form[:buyer_email]}
-                    type="email"
-                    placeholder="E-mail"
-                  />
-                  <.input
-                    class="flex-1"
-                    field={@buyer_form[:buyer_phone]}
-                    type="tel"
-                    placeholder="Telefon"
-                  />
+              <div class="bg-greyButtonBg/50 px-5 h-[50px] flex items-center rounded-md">
+                <.radio_group class="gap-8" field={@buyer_form[:buyer_type]}>
+                  <:radio value="company">Firma/ Jednoosobowa Działalność Gospodarcza</:radio>
+                  <:radio value="individual">Osoba prywatna</:radio>
+                </.radio_group>
+              </div>
+              <div class="bg-greyButtonBg/50 py-4 px-5 rounded-md">
+                <div class="flex gap-2">
+                  <div>
+                    <.input
+                      :if={to_string(@buyer_form[:buyer_type].value) == "company"}
+                      field={@buyer_form[:buyer_nip]}
+                      type="text"
+                      input_class="mt-0 mb-5"
+                      placeholder="Nip klienta"
+                      required
+                    />
+                    <p class="text-sm text-darkGrey">Dane podstawowe</p>
+                    <.input
+                      :if={to_string(@buyer_form[:buyer_type].value) == "company"}
+                      field={@buyer_form[:buyer_display_name]}
+                      type="text"
+                      required
+                      placeholder="Nazwa firmy"
+                    />
+                    <div class="flex gap-2">
+                      <.input
+                        field={@buyer_form[:buyer_name]}
+                        type="text"
+                        placeholder="Imię"
+                        required={to_string(@buyer_form[:buyer_type].value) == "individual"}
+                      />
+                      <.input
+                        field={@buyer_form[:buyer_surname]}
+                        type="text"
+                        placeholder="Nazwisko"
+                        required={to_string(@buyer_form[:buyer_type].value) == "individual"}
+                      />
+                    </div>
+                    <.input
+                      :if={to_string(@buyer_form[:buyer_type].value) == "individual"}
+                      field={@buyer_form[:buyer_pesel]}
+                      type="text"
+                      placeholder="PESEL (opcjonalnie)"
+                    />
+                  </div>
+                  <div class={to_string(@buyer_form[:buyer_type].value) == "company" && "mt-3"}>
+                    <p class="text-sm text-darkGrey">Dane adresowe</p>
+                    <.input
+                      field={@buyer_form[:buyer_street]}
+                      type="text"
+                      placeholder="Adres"
+                      required
+                    />
+                    <div class="flex gap-2">
+                      <.input
+                        field={@buyer_form[:buyer_postal_code]}
+                        type="text"
+                        placeholder="Kod pocztowy"
+                        required
+                      />
+                      <.input
+                        field={@buyer_form[:buyer_city]}
+                        type="text"
+                        placeholder="Miejscowość"
+                        required
+                      />
+                    </div>
+                    <.input
+                      field={@buyer_form[:buyer_country]}
+                      type="text"
+                      placeholder="Kraj"
+                      required
+                    />
+                  </div>
                 </div>
-                <.input field={@buyer_form[:buyer_description]} type="textarea" placeholder="Opis" />
+                <div
+                  class="accordion-panel grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all transform ease-in duration-200"
+                  id="seller-form-panel"
+                  role="region"
+                >
+                  <div class="overflow-hidden">
+                    <.input
+                      type="checkbox"
+                      field={@buyer_form[:buyer_is_different_mail_address]}
+                      class="text-darkGrey font-normal mt-2"
+                      label="Inny adres korespondencyjny"
+                    />
+                    <.different_mail_address
+                      :if={to_string(@buyer_form[:buyer_is_different_mail_address].value) == "true"}
+                      buyer_form={@buyer_form}
+                    />
+                    <p class="text-sm text-darkGrey mt-2">Dodatkowe informacje</p>
+                    <div class="flex gap-2 items-end">
+                      <.input
+                        class="flex-1"
+                        field={@buyer_form[:buyer_email]}
+                        type="email"
+                        placeholder="E-mail"
+                      />
+                      <.input
+                        class="flex-1"
+                        field={@buyer_form[:buyer_phone]}
+                        type="tel"
+                        placeholder="Telefon"
+                      />
+                    </div>
+                    <.input
+                      field={@buyer_form[:buyer_description]}
+                      type="textarea"
+                      placeholder="Opis"
+                    />
+                  </div>
+                </div>
+                <div class="flex justify-between items-center">
+                  <h3>
+                    <button
+                      aria-controls="seller-form-panel"
+                      class={[
+                        "accordion-trigger text-blueText flex gap-2 items-center justify-center [&_.accordion-trigger-icon]:aria-expanded:rotate-180"
+                      ]}
+                      id="seller-form-trigger"
+                      phx-click={handle_open()}
+                      type="button"
+                    >
+                      więcej
+                      <.icon
+                        class="accordion-trigger-icon h-5 w-5 mt-1 transition-all ease-in-out duration-300"
+                        name="hero-chevron-down"
+                      />
+                    </button>
+                  </h3>
+                  <div class="flex flex-row-reverse justify-start gap-2 h-fit">
+                    <.button
+                      name={@buyer_form[:is_buyer_confirmed].name}
+                      value="true"
+                      phx-disable-with="Zapisywanie..."
+                      color="green"
+                      class="mt-2"
+                    >
+                      Zatwierdź
+                    </.button>
+                    <%= if !@invoice.buyer_id or @invoice.buyer_id == "" do %>
+                      <.button
+                        phx-disable-with="Dodawanie..."
+                        name="action"
+                        value="add_or_update_buyer"
+                        variant="outline"
+                        color="green"
+                        class="mt-2"
+                      >
+                        Dodaj
+                      </.button>
+                    <% else %>
+                      <.button
+                        phx-disable-with="Aktualizowanie..."
+                        name="action"
+                        value="add_or_update_buyer"
+                        variant="outline"
+                        color="green"
+                        class="mt-2"
+                        disabled={not @is_buyer_dirty}
+                      >
+                        Zaktualizuj
+                      </.button>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            </.form>
+          <% "closed" -> %>
+            <div />
+          <% "nip" -> %>
+            <div class="bg-greyButtonBg/50 flex flex-col p-4 rounded">
+              <div class="flex flex-col items-center gap-2">
+                <.form phx-submit="submit" class="gap-3 flex flex-col" for={@nip_form}>
+                  <.input field={@nip_form[:nip]} placeholder="Nip klienta" type="text" />
+                  <.button class="w-full" phx-disable-with="Wyszukiwanie..." color="green">
+                    Wyszukaj dane klienta
+                  </.button>
+                </.form>
+                <div class="text-sm mt-3">
+                  Lub
+                  <button
+                    class="text-blueText font-semibold"
+                    phx-value-buyer_form_state="expanded"
+                    phx-click="update_buyer_state"
+                  >
+                    uzupełnij dane klienta ręcznie
+                  </button>
+                </div>
               </div>
             </div>
-            <div class="flex justify-between items-center">
-              <h3>
-                <button
-                  aria-controls="seller-form-panel"
-                  class={[
-                    "accordion-trigger text-blueText flex gap-2 items-center justify-center [&_.accordion-trigger-icon]:aria-expanded:rotate-180"
-                  ]}
-                  id="seller-form-trigger"
-                  phx-click={handle_open()}
-                  type="button"
-                >
-                  więcej
-                  <.icon
-                    class="accordion-trigger-icon h-5 w-5 mt-1 transition-all ease-in-out duration-300"
-                    name="hero-chevron-down"
-                  />
-                </button>
-              </h3>
-              <div class="flex flex-row-reverse justify-start gap-2 h-fit">
-                <.button
-                  name={@buyer_form[:is_buyer_confirmed].name}
-                  value="true"
-                  phx-disable-with="Zapisywanie..."
-                  color="green"
-                  class="mt-2"
-                >
-                  Zatwierdź
-                </.button>
-                <%= if !@invoice.buyer_id or @invoice.buyer_id == "" do %>
-                  <.button
-                    phx-disable-with="Dodawanie..."
-                    name="action"
-                    value="add_or_update_buyer"
-                    variant="outline"
-                    color="green"
-                    class="mt-2"
-                  >
-                    Dodaj
-                  </.button>
-                <% else %>
-                  <.button
-                    phx-disable-with="Aktualizowanie..."
-                    name="action"
-                    value="add_or_update_buyer"
-                    variant="outline"
-                    color="green"
-                    class="mt-2"
-                    disabled={not @is_buyer_dirty}
-                  >
-                    Zaktualizuj
-                  </.button>
-                <% end %>
-              </div>
-            </div>
-          </div>
-        </.form>
+        <% end %>
       <% end %>
     </div>
     """

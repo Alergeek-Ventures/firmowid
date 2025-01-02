@@ -178,7 +178,7 @@ defmodule Firmowid.Documents.Reducto do
 
               {
                 sprzedawca: #{document["seller"]},
-                przedmioty na fakturze: #{inspect(document["items_list"])}                
+                przedmioty na fakturze: #{inspect(document["items_list"])}
               }
 
               Na podstawie tych danych, przygotuj opis faktury (w języku polskim)
@@ -195,7 +195,7 @@ defmodule Firmowid.Documents.Reducto do
               - Abonament telekomunikacyjny, trzy numery telefonu oraz internet mobilny
               - Komunikator, opłata za jedno miejsce na planie pro start
               - Abonament na hosting email, plan Zoho Marketplace Mail Lite
-              
+
               Postaraj się zamknąć w 5-10 słowach.
               " |> String.trim()
           }

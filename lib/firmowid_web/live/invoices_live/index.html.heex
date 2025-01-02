@@ -105,7 +105,10 @@
             Termin płatności
           </p>
           <p class="text-black">
-            {@invoice.due_date |> Calendar.strftime("%d.%m.%Y")}
+            {case Date.diff(@invoice.due_date, @invoice.issue_date) do
+              1 -> "1 dzień"
+              diff -> "#{abs(diff)} dni"
+            end} ({@invoice.due_date |> Calendar.strftime("%d.%m.%Y")})
           </p>
         </div>
       </div>
@@ -183,7 +186,9 @@
       is_buyer_dirty={@is_buyer_dirty}
       invoice={@invoice}
       buyer_form={@form}
+      nip_form={@nip_form}
       buyers={@buyers}
+      buyer_form_state={@buyer_form_state}
     />
   </div>
   <div class="mt-16">

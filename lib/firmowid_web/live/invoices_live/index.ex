@@ -23,7 +23,9 @@ defmodule FirmowidWeb.InvoicesLive.Index do
      socket
      |> assign_invoice(invoice)
      |> assign_buyers()
-     |> assign_sellers()}
+     |> assign_sellers()
+     |> assign(nip_form: to_form(%{"nip" => ""}))
+     |> assign_buyer_form_state("closed")}
   end
 
   def assign_buyers(socket) do
@@ -145,6 +147,25 @@ defmodule FirmowidWeb.InvoicesLive.Index do
     |> assign(invoice_id: nil)
   end
 
+  def assign_buyer_form_state(socket, desired_state) do
+    state =
+      case {socket.assigns.invoice.invoice_type, desired_state} do
+        {:foreign, "nip"} ->
+          "expanded"
+
+        _ ->
+          desired_state
+      end
+
+    state =
+      case socket.assigns.invoice.buyer_id do
+        nil -> state
+        _ -> "expanded"
+      end
+
+    socket |> assign(buyer_form_state: state)
+  end
+
   def handle_params(_params, _uri, socket) do
     {:noreply, socket}
   end
@@ -220,6 +241,10 @@ defmodule FirmowidWeb.InvoicesLive.Index do
 
   def populate_buyer(invoice), do: invoice
 
+  def handle_event("update_buyer_state", %{"buyer_form_state" => state}, socket) do
+    {:noreply, socket |> assign_buyer_form_state(state)}
+  end
+
   def handle_event("change", %{"invoice" => invoice}, socket) do
     whole_form = Map.merge(socket.assigns.form.params, invoice)
 
@@ -234,7 +259,6 @@ defmodule FirmowidWeb.InvoicesLive.Index do
     buyer_changeset = socket.assigns.invoice |> Invoice.buyer_changeset(invoice)
 
     form = invoice_changeset |> to_form()
-    IO.inspect(buyer_changeset)
 
     socket =
       socket
@@ -243,6 +267,39 @@ defmodule FirmowidWeb.InvoicesLive.Index do
       |> assign(is_buyer_dirty: buyer_changeset.changes != %{})
 
     {:noreply, socket}
+  end
+
+  def handle_event("submit", %{"nip" => nip}, socket) do
+    case Invoices.NipApiClient.fetch_org_data_by_nip(nip) do
+      {:ok, buyer_info} ->
+        buyer =
+          %{
+            "buyer_display_name" => buyer_info.name,
+            "buyer_street" => buyer_info.street,
+            "buyer_city" => buyer_info.city,
+            "buyer_country" => "Polska",
+            "buyer_postal_code" => buyer_info.postal_code,
+            "buyer_nip" => buyer_info.nip
+          }
+
+        socket = socket |> assign(buyer_form_state: "expanded")
+        handle_event("change", %{"invoice" => buyer}, socket)
+
+      {:error, :not_found} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Nie udało się znaleźć takiej firmy")}
+
+      {:error, :invalid_nip} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Niepoprawny NIP")}
+
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Niespodziewany błąd. Spróbuj ponownie później")}
+    end
   end
 
   def handle_event("submit", %{"invoice" => invoice} = params, socket) do
@@ -269,6 +326,13 @@ defmodule FirmowidWeb.InvoicesLive.Index do
         {:error, changeset} ->
           Logger.error("Failed to save invoice: #{inspect(changeset)}")
           socket |> put_flash(:error, "Nie udało się zapisać faktury")
+      end
+      |> case do
+        %{assigns: %{invoice: %{is_buyer_confirmed: false}}} = socket ->
+          socket |> assign(buyer_form_state: "expanded")
+
+        socket ->
+          socket
       end
 
     socket =
