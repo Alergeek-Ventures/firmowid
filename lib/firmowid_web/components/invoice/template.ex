@@ -1,8 +1,7 @@
 defmodule FirmowidWeb.Invoice.Template do
-  alias Firmowid.Invoices.Invoice
   use FirmowidWeb, :html
 
-  attr :invoice, Invoice, required: true
+  attr :invoice, :map, required: true
 
   defp invoice_header(assigns) do
     ~H"""
@@ -55,7 +54,7 @@ defmodule FirmowidWeb.Invoice.Template do
     """
   end
 
-  attr :invoice, Invoice, required: true
+  attr :invoice, :map, required: true
 
   defp seller_buyer_section(assigns) do
     ~H"""
@@ -162,7 +161,7 @@ defmodule FirmowidWeb.Invoice.Template do
     """
   end
 
-  attr :invoice, Invoice, required: true
+  attr :invoice, :map, required: true
 
   defp items_table(assigns) do
     ~H"""
@@ -258,7 +257,7 @@ defmodule FirmowidWeb.Invoice.Template do
     """
   end
 
-  attr :invoice, Invoice, required: true
+  attr :invoice, :map, required: true
 
   defp summary(assigns) do
     ~H"""
@@ -320,7 +319,7 @@ defmodule FirmowidWeb.Invoice.Template do
     """
   end
 
-  attr :invoice, Invoice, required: true
+  attr :invoice, :map, required: true
 
   defp payment_details(assigns) do
     ~H"""
@@ -374,7 +373,7 @@ defmodule FirmowidWeb.Invoice.Template do
     """
   end
 
-  attr :invoice, Invoice, required: true
+  attr :invoice, :map, required: true
 
   def invoice(assigns) do
     ~H"""
