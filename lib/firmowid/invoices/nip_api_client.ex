@@ -144,7 +144,7 @@ defmodule Firmowid.Invoices.NipApiClient do
              %{
                role: "user",
                content:
-                 "Here is the full address that I want to generate information for: #{full_address}. Please provide me with the postal code, city, and street. If you can't provide all the information fill the missing one with empty strings. Base your answer only on the provided full address. Format it like in the example below, make sure to correct the case and punctuation.
+                 "Here is the full address that I want to generate information for: #{full_address}. Please provide me with the postal code, city, and street. If you can't provide all the information fill the missing one with empty strings. Base your answer only on the provided full address, don't infer the city if it isn't specified in the address. Format it like in the example below, make sure to correct the case and punctuation.
 
                  Example:
                  {
