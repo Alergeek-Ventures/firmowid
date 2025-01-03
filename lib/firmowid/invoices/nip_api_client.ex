@@ -1,51 +1,10 @@
 defmodule Firmowid.Invoices.NipApiClient do
   @moduledoc """
-  Client for the Polish VAT Registry API using Req HTTP client.
+  Client for the Polish VAT Registry API using Req HTTP client and Ecto embedded schemas.
   """
+
   require Logger
-
-  @type pesel :: String.t()
-
-  @type entity_person :: %{
-          company_name: String.t() | nil,
-          first_name: String.t() | nil,
-          last_name: String.t() | nil,
-          pesel: pesel() | nil,
-          nip: String.t() | nil
-        }
-
-  @type entity :: %{
-          name: String.t(),
-          nip: String.t() | nil,
-          status_vat: String.t() | nil,
-          regon: String.t() | nil,
-          pesel: pesel() | nil,
-          krs: String.t() | nil,
-          residence_address: String.t() | nil,
-          working_address: String.t() | nil,
-          representatives: [entity_person()] | nil,
-          authorized_clerks: [entity_person()] | nil,
-          partners: [entity_person()] | nil,
-          registration_legal_date: String.t() | nil,
-          registration_denial_date: String.t() | nil,
-          registration_denial_basis: String.t() | nil,
-          restoration_date: String.t() | nil,
-          restoration_basis: String.t() | nil,
-          removal_date: String.t() | nil,
-          removal_basis: String.t() | nil,
-          account_numbers: [String.t()] | nil,
-          has_virtual_accounts: boolean() | nil
-        }
-
-  @type entity_item :: %{
-          optional(:subject) => entity(),
-          optional(:request_date_time) => String.t(),
-          optional(:request_id) => String.t()
-        }
-
-  @type api_response :: %{
-          optional(:result) => entity_item()
-        }
+  use Ecto.Schema
 
   @type organization :: %{
           name: String.t(),
@@ -54,6 +13,7 @@ defmodule Firmowid.Invoices.NipApiClient do
           street: String.t(),
           city: String.t()
         }
+
   @doc """
   Fetches organization data by NIP (tax identification number).
   Returns {:ok, response} or {:error, reason}.
@@ -77,18 +37,19 @@ defmodule Firmowid.Invoices.NipApiClient do
         {:error, :not_found}
 
       {:ok, %Req.Response{status: 200, body: body}} ->
-        response = validate_response(body)
+        with {:ok, response} <-
+               validate_response(Recase.Enumerable.convert_keys(body, &Recase.to_snake/1)) do
+          address_info = generate_address_info(response.result.subject.working_address)
 
-        address_info = generate_address_info(response.result.subject.working_address)
-
-        {:ok,
-         %{
-           name: response.result.subject.name,
-           nip: response.result.subject.nip,
-           postal_code: address_info["postal_code"],
-           street: address_info["street"],
-           city: address_info["city"]
-         }}
+          {:ok,
+           %{
+             name: response.result.subject.name,
+             nip: response.result.subject.nip,
+             postal_code: address_info["postal_code"],
+             street: address_info["street"],
+             city: address_info["city"]
+           }}
+        end
 
       {:ok, %Req.Response{status: 400}} ->
         {:error, :invalid_nip}
@@ -146,12 +107,12 @@ defmodule Firmowid.Invoices.NipApiClient do
                content:
                  "Here is the full address that I want to generate information for: #{full_address}. Please provide me with the postal code, city, and street. If you can't provide all the information fill the missing one with empty strings. Base your answer only on the provided full address, don't infer the city if it isn't specified in the address. Format it like in the example below, make sure to correct the case and punctuation.
 
-                 Example:
-                 {
-                    postal_code: '00-001',
-                    city: 'Warszawa',
-                    street: 'Skwer Kardynała Wyszyńskiego 1/2'
-                 }"
+           Example:
+           {
+              postal_code: '00-001',
+              city: 'Warszawa',
+              street: 'Skwer Kardynała Wyszyńskiego 1/2'
+           }"
                  |> String.trim()
              }
            ]
@@ -164,7 +125,7 @@ defmodule Firmowid.Invoices.NipApiClient do
         |> JSON.decode!()
 
       {:error, err} ->
-        Logger.error("Failed to generate address info: #{inspect(err)}")
+        Sentry.capture_exception(err)
 
         %{
           "postal_code" => "",
@@ -174,81 +135,30 @@ defmodule Firmowid.Invoices.NipApiClient do
     end
   end
 
-  @doc """
-  Validates the response against the expected schema.
-  In a production environment, you'd want to add more thorough validation.
-  """
-  @spec validate_response(map()) :: api_response()
-  def validate_response(body) when is_map(body) do
-    # In a real implementation, you'd want to add more validation here
-    # This is a simplified version that just ensures the basic structure
-    case body do
-      %{"result" => result} when is_map(result) ->
-        %{result: normalize_entity_item(result)}
+  defp validate_response(%{"result" => result}) when is_map(result) do
+    {:ok, subject} = normalize_entity(result["subject"])
 
-      _ ->
-        %{}
+    {:ok,
+     %{
+       result: %{
+         subject: subject,
+         request_date_time: result["requestDateTime"],
+         request_id: result["requestId"]
+       }
+     }}
+  end
+
+  defp validate_response(_), do: {:error, "Invalid response format"}
+
+  defp normalize_entity(entity) when is_map(entity) do
+    changeset = NipResponse.changeset(%NipResponse{}, Recase.Enumerable.atomize_keys(entity))
+
+    if changeset.valid? do
+      {:ok, Ecto.Changeset.apply_changes(changeset)}
+    else
+      {:error, "Invalid entity data"}
     end
   end
 
-  @spec normalize_entity_item(map()) :: entity_item()
-  defp normalize_entity_item(item) do
-    %{
-      subject: normalize_entity(item["subject"]),
-      request_date_time: item["requestDateTime"],
-      request_id: item["requestId"]
-    }
-  end
-
-  @spec normalize_entity(map()) :: entity() | nil
-  defp normalize_entity(entity) when is_map(entity) do
-    %{
-      name: entity["name"],
-      nip: entity["nip"],
-      status_vat: normalize_status_vat(entity["statusVat"]),
-      regon: entity["regon"],
-      pesel: entity["pesel"],
-      krs: entity["krs"],
-      residence_address: entity["residenceAddress"],
-      working_address: entity["workingAddress"],
-      representatives: normalize_persons(entity["representatives"]),
-      authorized_clerks: normalize_persons(entity["authorizedClerks"]),
-      partners: normalize_persons(entity["partners"]),
-      registration_legal_date: entity["registrationLegalDate"],
-      registration_denial_date: entity["registrationDenialDate"],
-      registration_denial_basis: entity["registrationDenialBasis"],
-      restoration_date: entity["restorationDate"],
-      restoration_basis: entity["restorationBasis"],
-      removal_date: entity["removalDate"],
-      removal_basis: entity["removalBasis"],
-      account_numbers: entity["accountNumbers"],
-      has_virtual_accounts: entity["hasVirtualAccounts"]
-    }
-  end
-
-  defp normalize_entity(_), do: nil
-
-  @spec normalize_status_vat(String.t() | nil) :: String.t() | nil
-  defp normalize_status_vat(status) when status in ["Czynny", "Zwolniony", "Niezarejestrowany"],
-    do: status
-
-  defp normalize_status_vat(_), do: nil
-
-  @spec normalize_persons(list(map()) | nil) :: [entity_person()] | nil
-  defp normalize_persons(nil), do: nil
-
-  defp normalize_persons(persons) when is_list(persons) do
-    Enum.map(persons, &normalize_person/1)
-  end
-
-  @spec normalize_person(map()) :: entity_person()
-  defp normalize_person(person) when is_map(person) do
-    %{
-      company_name: person["companyName"],
-      first_name: person["firstName"],
-      last_name: person["lastName"],
-      pesel: person["pesel"],
-      nip: person["nip"]
-    }
-  end
+  defp normalize_entity(_), do: {:error, "Invalid entity format"}
 end

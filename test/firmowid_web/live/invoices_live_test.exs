@@ -2,7 +2,7 @@ defmodule FirmowidWeb.InvoicesLiveTest do
   use FirmowidWeb.ConnCase, async: true
 
   alias Firmowid.Invoices
-  alias Firmowid.Accounts
+
   import Phoenix.LiveViewTest
   import Firmowid.AccountsFixtures
 
