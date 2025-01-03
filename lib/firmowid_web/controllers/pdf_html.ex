@@ -213,7 +213,7 @@ defmodule FirmowidWeb.PdfHTML do
               <td class="py-1 text-right">{item.quantity}</td>
               <td class="py-1 text-right">{item.unit}</td>
               <%= if @invoice.invoice_type == :poland do %>
-                <td class="py-2 text-right">
+                <td class="py-1 text-right">
                   {Money.new(
                     @invoice.currency,
                     item.unit_price,

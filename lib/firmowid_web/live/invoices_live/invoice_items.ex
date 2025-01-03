@@ -231,6 +231,7 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
               type="button"
               name="invoice[items_sort][]"
               value="true"
+              id="invoice_items_add_item"
               phx-disable-with="Dodawanie..."
               phx-click={JS.dispatch("change")}
               class="border-greyButtonBg border h-8 flex items-center gap-1 hover:bg-greyButtonBg !text-darkGrey text-sm bg-lightGreyBg font-medium uppercase !px-2 !py-1"

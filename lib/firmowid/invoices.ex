@@ -18,6 +18,7 @@ defmodule Firmowid.Invoices do
     |> order_by(desc: :updated_at)
     |> limit(1)
     |> Repo.one()
+    |> Repo.preload(:invoice_items)
   end
 
   def create_invoice(%Invoice{} = invoice, attrs) do

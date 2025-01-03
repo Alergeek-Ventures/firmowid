@@ -154,4 +154,49 @@ defmodule FirmowidWeb.InvoicesLiveTest do
       assert Invoices.get_latest_invoice().buyer_id == buyer.id
     end
   end
+
+  describe "invoice items" do
+    setup %{conn: conn} do
+      password = valid_user_password()
+      user = user_fixture(%{password: password})
+      %{conn: log_in_user(conn, user)}
+    end
+
+    test "adds invoice item and confirm it", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/invoices")
+
+      # Add new invoice item
+      lv
+      |> element("#invoice_items_form")
+      |> render_change(%{"invoice[items_sort][]" => "new"})
+
+      result =
+        lv
+        |> form("#invoice_items_form",
+          invoice: %{
+            "invoice_items" => %{
+              "0" => %{
+                "name" => "Koszty utrzymania",
+                "unit" => "godz.",
+                "unit_price" => "100",
+                "vat_rate" => "23",
+                "quantity" => "1"
+              }
+            }
+          }
+        )
+        |> render_submit
+
+      assert result =~ "Koszty utrzymania"
+      # Make sure that form is confirmed and locked
+      refute lv |> element("#invoice_items_form") |> render =~ "Zatwierdź"
+
+      invoice_item = Invoices.get_latest_invoice().invoice_items |> hd
+
+      assert invoice_item.name == "Koszty utrzymania"
+      assert invoice_item.unit_price == Decimal.new("100")
+      assert invoice_item.vat_rate == Decimal.new("23")
+      assert invoice_item.quantity == Decimal.new("1")
+    end
+  end
 end

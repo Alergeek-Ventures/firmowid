@@ -8,6 +8,11 @@ defmodule Firmowid.NipTest do
 
       assert org.name ==
                "ALERGEEK VENTURES SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ"
+
+      assert org.nip == "6793209719"
+      assert org.postal_code == "30-392"
+      assert org.street == "Jana Kantego Federowicza 5/96"
+      assert org.city == "Kraków"
     end
 
     test "returns not found when the nip is not found" do
