@@ -11,7 +11,7 @@ defmodule FirmowidWeb.InvoicesLive.SellerForm do
 
   def seller_form(assigns) do
     ~H"""
-    <div class="max-w-2xl">
+    <div class="w-full max-w-screen-lg">
       <p class="text-darkGrey mb-4">Sprzedający</p>
 
       <.form phx-change="submit" for={@seller_form}>
@@ -55,7 +55,7 @@ defmodule FirmowidWeb.InvoicesLive.SellerForm do
           } />
         </div>
       <% else %>
-        <.form phx-submit="submit" phx-change="change" for={@seller_form}>
+        <.form phx-submit="submit" id="seller_form" phx-change="change" for={@seller_form}>
           <div class="bg-greyButtonBg bg-opacity-50 p-4 px-6 rounded-md">
             <div class="flex gap-2 items-end">
               <div class="flex flex-col w-1/2">
@@ -99,6 +99,7 @@ defmodule FirmowidWeb.InvoicesLive.SellerForm do
                 value="true"
                 color="green"
                 class="mt-2"
+                id="seller_confirm_button"
               >
                 Zatwierdź
               </.button>

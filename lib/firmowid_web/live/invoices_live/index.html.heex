@@ -60,6 +60,7 @@
     for={@form}
     phx-submit="submit"
     phx-change="change"
+    id="basic_info_form"
     class={[
       "flex items-end mt-4 p-4 gap-8 rounded-md",
       @invoice.is_basic_info_confirmed && "border-greyButtonBg border border-solid",
@@ -175,7 +176,7 @@
       </.button>
     <% end %>
   </.form>
-  <div class="flex mt-16 gap-16">
+  <div class="flex mt-16 gap-16 justify-between">
     <.seller_form
       is_seller_dirty={@is_seller_dirty}
       invoice={@invoice}

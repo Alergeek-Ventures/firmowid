@@ -25,15 +25,17 @@ defmodule FirmowidWeb.InvoicesLive.Index do
      |> assign_buyers()
      |> assign_sellers()
      |> assign(nip_form: to_form(%{"nip" => ""}))
-     |> assign_buyer_form_state("closed")}
+     |> assign_buyer_form_state("closed")
+     |> assign(is_buyer_dirty: false)
+     |> assign(is_seller_dirty: false)}
   end
 
   def assign_buyers(socket) do
-    socket |> assign(buyers: Invoices.list_buyers()) |> assign(is_buyer_dirty: false)
+    socket |> assign(buyers: Invoices.list_buyers())
   end
 
   def assign_sellers(socket) do
-    socket |> assign(sellers: Invoices.list_sellers()) |> assign(is_seller_dirty: false)
+    socket |> assign(sellers: Invoices.list_sellers())
   end
 
   def assign_currency(socket) do
@@ -303,9 +305,13 @@ defmodule FirmowidWeb.InvoicesLive.Index do
   end
 
   def handle_event("submit", %{"invoice" => invoice} = params, socket) do
+    {socket, buyer_id} = socket |> maybe_create_or_update_buyer(params)
+    {socket, seller_id} = socket |> maybe_create_or_update_seller(params)
+
     invoice = invoice |> populate_seller() |> populate_buyer()
 
-    params = %{params | "invoice" => invoice}
+    invoice = if buyer_id != nil, do: Map.put(invoice, "buyer_id", buyer_id), else: invoice
+    invoice = if seller_id != nil, do: Map.put(invoice, "seller_id", seller_id), else: invoice
 
     socket =
       case socket.assigns do
@@ -335,15 +341,13 @@ defmodule FirmowidWeb.InvoicesLive.Index do
           socket
       end
 
-    socket =
-      socket
-      |> maybe_create_or_update_seller(params, invoice)
-      |> maybe_create_or_update_buyer(params, invoice)
-
     handle_event("change", %{"invoice" => invoice}, socket)
   end
 
-  defp maybe_create_or_update_seller(socket, %{"action" => "add_or_update_seller"}, invoice) do
+  defp maybe_create_or_update_seller(socket, %{
+         "action" => "add_or_update_seller",
+         "invoice" => invoice
+       }) do
     case Invoices.create_or_update_seller(socket.assigns.invoice.seller_id, %{
            nip: invoice["seller_nip"],
            display_name: invoice["seller_display_name"],
@@ -358,19 +362,21 @@ defmodule FirmowidWeb.InvoicesLive.Index do
            account_number: invoice["seller_account_number"]
          }) do
       {:ok, seller} ->
-        socket
-        |> assign(invoice: %Invoice{socket.assigns.invoice | seller_id: seller.id})
-        |> assign_sellers()
+        {socket
+         |> assign_sellers(), seller.id}
 
       {:error, changeset} ->
         Logger.error("Failed to save seller: #{inspect(changeset)}")
-        socket |> put_flash(:error, "Nie udało się zapisać sprzedawcy")
+        {socket |> put_flash(:error, "Nie udało się zapisać sprzedawcy"), nil}
     end
   end
 
-  defp maybe_create_or_update_seller(socket, _params, _invoice), do: socket
+  defp maybe_create_or_update_seller(socket, _params), do: {socket, nil}
 
-  defp maybe_create_or_update_buyer(socket, %{"action" => "add_or_update_buyer"}, invoice) do
+  defp maybe_create_or_update_buyer(socket, %{
+         "action" => "add_or_update_buyer",
+         "invoice" => invoice
+       }) do
     case Invoices.create_or_update_buyer(
            socket.assigns.invoice.buyer_id,
            %{
@@ -392,15 +398,14 @@ defmodule FirmowidWeb.InvoicesLive.Index do
            }
          ) do
       {:ok, buyer} ->
-        socket
-        |> assign(invoice: %Invoice{socket.assigns.invoice | buyer_id: buyer.id})
-        |> assign_buyers()
+        {socket
+         |> assign_buyers(), buyer.id}
 
       {:error, changeset} ->
         Logger.error("Failed to save buyer: #{inspect(changeset)}")
-        socket |> put_flash(:error, "Nie udało się zapisać nabywcy")
+        {socket |> put_flash(:error, "Nie udało się zapisać nabywcy"), nil}
     end
   end
 
-  defp maybe_create_or_update_buyer(socket, _params, _invoice), do: socket
+  defp maybe_create_or_update_buyer(socket, _params), do: {socket, nil}
 end

@@ -9,7 +9,7 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
 
   def invoice_items(assigns) do
     ~H"""
-    <.form phx-submit="submit" phx-change="change" for={@form}>
+    <.form id="invoice_items_form" phx-submit="submit" phx-change="change" for={@form}>
       <div class="flex justify-between">
         <p class="text-darkGrey mb-4">
           Pozycje na fakturze
