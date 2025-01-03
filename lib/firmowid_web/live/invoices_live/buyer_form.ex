@@ -329,7 +329,7 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
               </div>
             </.form>
           <% "closed" -> %>
-            <hr />
+            <hr class="border-t border-t-greyButtonBg" />
           <% "nip" -> %>
             <div class="bg-greyButtonBg/50 flex flex-col p-4 rounded">
               <div class="flex flex-col items-center gap-2">

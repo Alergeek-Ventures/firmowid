@@ -264,7 +264,7 @@ defmodule FirmowidWeb.CoreComponents do
         phx-disable-with=""
         class={
           classes([
-            "relative cursor-pointer has-[:disabled]:opacity-50 has-[:disabled]:cursor-default flex items-center",
+            "relative cursor-pointer has-[:disabled]:opacity-50 has-[:disabled]:cursor-default flex items-center font-normal text-darkGrey",
             @rest[:class]
           ])
         }
@@ -278,22 +278,9 @@ defmodule FirmowidWeb.CoreComponents do
           phx-disable-with=""
           checked={@checked}
           disabled={@rest[:disabled]}
-          class="hidden"
+          class="w-4 h-4 border text-darkGrey border-darkGrey rounded-[3px] focus:ring-0"
           {@rest}
         />
-        <div class="w-4 h-4 border text-darkGrey border-darkGrey rounded-[3px] flex items-center justify-center">
-          <svg
-            :if={@checked}
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="2.5"
-            stroke="currentColor"
-            class="size-6"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-          </svg>
-        </div>
         <span class="ml-1 text-darkGrey text-sm">{@label}</span>
       </label>
       <.error :for={msg <- @errors}>{msg}</.error>

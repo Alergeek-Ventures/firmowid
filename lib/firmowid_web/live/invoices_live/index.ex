@@ -333,13 +333,11 @@ defmodule FirmowidWeb.InvoicesLive.Index do
           Logger.error("Failed to save invoice: #{inspect(changeset)}")
           socket |> put_flash(:error, "Nie udało się zapisać faktury")
       end
-      |> case do
-        %{assigns: %{invoice: %{is_buyer_confirmed: false}}} = socket ->
-          socket |> assign(buyer_form_state: "expanded")
 
-        socket ->
-          socket
-      end
+    socket =
+      if Map.get(invoice, "is_buyer_confirmed"),
+        do: socket |> assign_buyer_form_state("expanded"),
+        else: socket
 
     handle_event("change", %{"invoice" => invoice}, socket)
   end
