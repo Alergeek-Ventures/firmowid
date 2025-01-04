@@ -50,3 +50,5 @@ config :firmowid,
   bank_data_transactions: [
     plug: {Req.Test, :bank_data_transactions}
   ]
+
+config :firmowid, Oban, testing: :inline

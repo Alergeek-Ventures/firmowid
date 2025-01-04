@@ -24,7 +24,7 @@ defmodule Firmowid.Repo do
   @impl true
   def prepare_query(_operation, query, opts) do
     cond do
-      opts[:skip_organization_id] || opts[:schema_migration] ->
+      opts[:skip_organization_id] || opts[:schema_migration] || opts[:prefix] == "oban" ->
         {query, opts}
 
       organization_id = opts[:organization_id] ->

@@ -70,6 +70,21 @@ defmodule Firmowid.BankData do
     end
   end
 
+  @doc """
+    This shouldn't be used in "userland" - only in "private" workers.
+    Please, be careful!
+  """
+  def sync_bank_account(bank_account_id) do
+    bank_account =
+      Finances.BankAccount
+      |> Repo.get!(bank_account_id, skip_organization_id: true)
+
+    booked_transactions =
+      ApiClient.get_booked_transactions_for_account(bank_account.gocardless_id)
+
+    upsert_booked_transactions(booked_transactions, bank_account_id, bank_account.organization_id)
+  end
+
   def sync_requisition(firmowid_requisition_id, organization_id) do
     gocardless_requisition_id =
       Repo.get_by!(Requisition, [id: firmowid_requisition_id], organization_id: organization_id).requisition_id
@@ -87,21 +102,26 @@ defmodule Firmowid.BankData do
       booked_transactions =
         ApiClient.get_booked_transactions_for_account(go_cardless_account["id"])
 
-      Enum.each(booked_transactions, fn transaction_from_api ->
-        converted_transaction =
-          transaction_from_api
-          |> Transaction.map_camel_to_snake()
-          |> Transaction.flatten_api_response()
-          |> Transaction.changeset()
-          |> Ecto.Changeset.apply_changes()
+      upsert_booked_transactions(booked_transactions, bank_account.id, organization_id)
+    end)
+  end
 
-        converted_transaction =
-          converted_transaction
-          |> Map.merge(%{bank_account_id: bank_account.id, organization_id: organization_id})
-          |> Map.from_struct()
+  defp upsert_booked_transactions(booked_transactions, bank_account_id, organization_id) do
+    booked_transactions
+    |> Enum.each(fn transaction_from_api ->
+      converted_transaction =
+        transaction_from_api
+        |> Transaction.map_camel_to_snake()
+        |> Transaction.flatten_api_response()
+        |> Transaction.changeset()
+        |> Ecto.Changeset.apply_changes()
 
-        Finances.create_or_update_imported_transaction(converted_transaction)
-      end)
+      converted_transaction =
+        converted_transaction
+        |> Map.merge(%{bank_account_id: bank_account_id, organization_id: organization_id})
+        |> Map.from_struct()
+
+      Finances.create_or_update_imported_transaction(converted_transaction)
     end)
   end
 
@@ -114,6 +134,7 @@ defmodule Firmowid.BankData do
     |> Enum.each(fn account ->
       Firmowid.Finances.create_bank_account(%{
         iban: account["iban"],
+        gocardless_id: account["id"],
         organization_id: organization_id,
         requisition_id: firmowid_requisition_id
       })

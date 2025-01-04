@@ -34,7 +34,12 @@ defmodule FirmowidWeb.Router do
     scope "/dev" do
       pipe_through :browser
 
-      live_dashboard "/dashboard", metrics: FirmowidWeb.Telemetry
+      live_dashboard "/dashboard",
+        metrics: FirmowidWeb.Telemetry,
+        additional_pages: [
+          oban: Oban.LiveDashboard
+        ]
+
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
   end

@@ -79,7 +79,9 @@ defmodule Firmowid.MixProject do
       {:briefly, "~> 0.5.0"},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:sentry, "~> 10.8.1"},
-      {:recase, "~> 0.8.0"}
+      {:recase, "~> 0.8.0"},
+      {:oban, "~> 2.17"},
+      {:oban_live_dashboard, "~> 0.1.0"}
     ]
   end
 

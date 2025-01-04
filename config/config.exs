@@ -103,6 +103,23 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# defined here because moving to firmowid/oban.ex makes dashboard misbehave :(
+config :firmowid, Oban,
+  repo: Firmowid.Repo,
+  prefix: "oban",
+  engine: Oban.Engines.Basic,
+  queues: [bank_data: 1],
+  plugins: [
+    {Oban.Plugins.Cron,
+     crontab: [
+       # this triggers job that's lightweight and runs every hour
+       # then in it, we create idempotent jobs for each day
+       # for each account. it's done like this to work around
+       # Fly.io suspending the machines
+       {"0 * * * *", Firmowid.BankData.Worker, %{args: %{name: "schedule_sync"}}}
+     ]}
+  ]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

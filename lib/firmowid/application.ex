@@ -18,6 +18,7 @@ defmodule Firmowid.Application do
       {Finch, name: Firmowid.Finch},
       Firmowid.BankData.TokenManager,
       Firmowid.Documents.Reducto,
+      {Oban, Application.fetch_env!(:firmowid, Oban)},
       # Start to serve requests, typically the last entry
       FirmowidWeb.Endpoint
     ]

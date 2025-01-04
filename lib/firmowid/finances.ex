@@ -5,6 +5,19 @@ defmodule Firmowid.Finances do
   alias Firmowid.Finances.ImportedTransaction
   alias Firmowid.Finances.BankAccount
 
+  @doc """
+    This shouldn't be used in "userland" - only in "private" workers.
+    Please, be careful!
+  """
+  def get_bank_accounts_for_sync() do
+    query =
+      from ba in BankAccount,
+        where: not is_nil(ba.gocardless_id)
+
+    query
+    |> Repo.all(skip_organization_id: true)
+  end
+
   def list_bank_accounts(organization_id) do
     Repo.all(BankAccount, organization_id: organization_id)
   end
