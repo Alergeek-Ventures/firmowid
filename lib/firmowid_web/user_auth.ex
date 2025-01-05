@@ -255,6 +255,17 @@ defmodule FirmowidWeb.UserAuth do
     end
   end
 
+  def require_superuser(conn, _opts) do
+    if conn.assigns[:current_user].system_role == "superuser" do
+      conn
+    else
+      conn
+      |> maybe_store_return_to()
+      |> redirect(to: ~p"/users/log_in")
+      |> halt()
+    end
+  end
+
   def require_authenticated_user_without_organization(conn, _opts) do
     if not is_nil(conn.assigns[:current_user]) and
          is_nil(conn.assigns[:current_user].organization_id) do

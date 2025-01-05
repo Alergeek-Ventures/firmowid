@@ -19,7 +19,7 @@ defmodule Firmowid.MixProject do
   def application do
     [
       mod: {Firmowid.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :os_mon]
     ]
   end
 
@@ -81,7 +81,8 @@ defmodule Firmowid.MixProject do
       {:sentry, "~> 10.8.1"},
       {:recase, "~> 0.8.0"},
       {:oban, "~> 2.17"},
-      {:oban_live_dashboard, "~> 0.1.0"}
+      {:oban_live_dashboard, "~> 0.1.0"},
+      {:ecto_psql_extras, "~> 0.6"}
     ]
   end
 

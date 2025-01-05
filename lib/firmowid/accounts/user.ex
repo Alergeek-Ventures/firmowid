@@ -4,6 +4,7 @@ defmodule Firmowid.Accounts.User do
 
   @primary_key {:id, UUIDv7, autogenerate: true}
   schema "users" do
+    field :system_role, :string, default: "user"
     field :email, :string
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
