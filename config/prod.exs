@@ -19,7 +19,15 @@ config :sentry,
     "REMOVED_RETIRED_SENTRY_DSN",
   environment_name: Mix.env(),
   enable_source_code_context: true,
-  root_source_code_paths: [File.cwd!()]
+  root_source_code_paths: [File.cwd!()],
+  integrations: [
+    oban: [
+      # Capture errors:
+      capture_errors: true,
+      # Monitor cron jobs:
+      cron: [enabled: true]
+    ]
+  ]
 
 config :ex_aws,
   access_key_id: "REMOVED_TIGRIS_ACCESS_KEY",

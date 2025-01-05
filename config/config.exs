@@ -110,6 +110,10 @@ config :firmowid, Oban,
   engine: Oban.Engines.Basic,
   queues: [bank_data: 1],
   plugins: [
+    # retry orphaned jobs after 30 minutes
+    {Oban.Plugins.Lifeline, rescue_after: :timer.minutes(30)},
+    # remove jobs after 30 days
+    {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 30},
     {Oban.Plugins.Cron,
      crontab: [
        # this triggers job that's lightweight and runs every hour
