@@ -6,7 +6,7 @@ defmodule Firmowid.BankData.Worker do
   @impl Oban.Worker
   def perform(job) do
     case job.args do
-      %{name: "bank_account_sync", bank_account_id: bank_account_id} ->
+      %{"name" => "bank_account_sync", "bank_account_id" => bank_account_id} ->
         Logger.info("Syncing bank account #{bank_account_id}")
 
         try do
@@ -22,7 +22,7 @@ defmodule Firmowid.BankData.Worker do
       # to work around Fly.io suspending the machines, every hour we
       # schedule a sync for all bank accounts
       # (when it wakes up it will start scheduling)
-      %{name: "schedule_sync"} ->
+      %{"name" => "schedule_sync"} ->
         bank_accounts = Firmowid.Finances.get_bank_accounts_for_sync()
 
         bank_accounts

@@ -120,7 +120,7 @@ config :firmowid, Oban,
        # then in it, we create idempotent jobs for each day
        # for each account. it's done like this to work around
        # Fly.io suspending the machines
-       {"0 * * * *", Firmowid.BankData.Worker, %{args: %{name: "schedule_sync"}}}
+       {"0 * * * *", Firmowid.BankData.Worker, args: %{name: "schedule_sync"}}
      ]}
   ]
 
