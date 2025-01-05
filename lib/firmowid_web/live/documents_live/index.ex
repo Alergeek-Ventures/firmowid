@@ -292,7 +292,16 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     {:noreply, socket}
   end
 
-  def handle_info({:document_metadata_added, _, issue_date}, socket) do
+  def handle_info({:document_upload_failed, _}, socket) do
+    LiveToast.send_toast(:error, "Nie udało się wgrać dokumentu")
+
+    {:noreply, socket}
+  end
+
+  def handle_info(
+        {:document_metadata_added, _, issue_date, seller_display_name, invoice_identifier},
+        socket
+      ) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
@@ -320,7 +329,8 @@ defmodule FirmowidWeb.DocumentsLive.Index do
 
     LiveToast.send_toast(
       :info,
-      "Dokument został załadowany.",
+      "#{invoice_identifier} / #{seller_display_name}",
+      title: "Faktura załadowana",
       action: fn assigns ->
         assigns =
           assigns

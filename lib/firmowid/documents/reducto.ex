@@ -28,6 +28,7 @@ defmodule Firmowid.Documents.Reducto do
           "Failed to extract invoice info for document #{document_id}: #{inspect(error)}"
         )
 
+        Documents.broadcast_document_upload_failed(document_id)
         Documents.delete_document(organization_id, document_id)
     end
 

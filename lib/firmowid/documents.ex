@@ -25,12 +25,21 @@ defmodule Firmowid.Documents do
 
   # only used when document is "added" from user perspective
   # (until we extract metadata, it's hidden)
-  # TODO: error handling
-  def broadcast_document_metadata_added(document_id, issue_date) do
+  #
+  # TODO: per org notifications, not global :sweaty_smile:
+  def broadcast_document_metadata_added(document_id, issue_date, display_name, invoice_identifier) do
     Phoenix.PubSub.broadcast(
       Firmowid.PubSub,
       @pub_sub_topic,
-      {:document_metadata_added, document_id, issue_date}
+      {:document_metadata_added, document_id, issue_date, display_name, invoice_identifier}
+    )
+  end
+
+  def broadcast_document_upload_failed(document_id) do
+    Phoenix.PubSub.broadcast(
+      Firmowid.PubSub,
+      @pub_sub_topic,
+      {:document_upload_failed, document_id}
     )
   end
 
@@ -212,7 +221,12 @@ defmodule Firmowid.Documents do
       |> Document.changeset(attrs)
       |> Repo.update!()
 
-    broadcast_document_metadata_added(document_id, result.issue_date)
+    broadcast_document_metadata_added(
+      document_id,
+      result.issue_date,
+      result.seller_display_name,
+      result.invoice_identifier
+    )
 
     result
   end
