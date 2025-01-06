@@ -42,6 +42,7 @@ defmodule Firmowid.BankData.Transaction do
           )
         else
           api_object_snake_cased
+          |> Map.put("creditor_account", "N/A")
         end
 
       api_object_snake_cased =
@@ -53,6 +54,7 @@ defmodule Firmowid.BankData.Transaction do
           )
         else
           api_object_snake_cased
+          |> Map.put("debtor_account", "N/A")
         end
 
       api_object_snake_cased
