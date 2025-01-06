@@ -9,44 +9,36 @@
 </div>
 
 <div class="flex flex-row gap-4 p-4 w-full">
-  <.table id="requisitions" rows={@requisitions}>
-    <:col :let={requisition} label="Status">
-      <%= case requisition.status do %>
-        <% :accepted -> %>
-          <.icon name="hero-check-circle-solid" class="h-5 w-5 text-greenText" />
-        <% :pending -> %>
-          <.icon name="hero-arrow-path" class="h-5 w-5 text-blueText" />
-        <% :rejected -> %>
+  <.table id="bank-accounts" rows={@bank_accounts}>
+    <:col :let={bank_account} label="Stan">
+      <div class="flex justify-center items-center max-w-[30px]">
+        <%= if is_nil(bank_account.gocardless_id) do %>
           <.icon name="hero-x-circle-solid" class="h-5 w-5 text-redText" />
-      <% end %>
+        <% else %>
+          <.icon name="hero-check-circle-solid" class="h-5 w-5 text-greenText" />
+        <% end %>
+      </div>
     </:col>
-    <:col :let={requisition} label="Konta bankowe">
-      <%= if requisition.bank_accounts == [] do %>
-        -
-      <% else %>
-        <div class="flex flex-row gap-2">
-          <%= for bank_account <- requisition.bank_accounts do %>
-            <pre><%= bank_account.iban %></pre>
-          <% end %>
-        </div>
-      <% end %>
+    <:col :let={bank_account} label="Nr konta">
+      <span class="text-xl">{bank_account.iban}</span>
     </:col>
-    <:action :let={requisition}>
+    <:col :let={_bank_account} label="Waluta">
+      🇵🇱 PLN
+    </:col>
+    <:action :let={bank_account}>
       <div class="flex flex-row gap-2">
         <.button
-          class="min-w-[145px] border border-darkGrey bg-white !text-darkGrey"
-          phx-click="delete"
-          phx-value-requisition-id={requisition.id}
-        >
-          Usuń połączenie
-        </.button>
-        <.button
           phx-click="sync"
-          class="min-w-[200px] phx-click-loading:opacity-50 phx-click-loading:cursor-disabled"
-          phx-value-requisition-id={requisition.id}
-          disabled={requisition.status != :accepted}
+          class="min-w-[140px] bg-white text-black border-none phx-click-loading:opacity-50 phx-click-loading:cursor-disabled"
+          phx-value-bank-account-id={bank_account.id}
+          disabled={is_nil(bank_account.gocardless_id)}
         >
           Synchronizuj
+          <.icon
+            class="phx-click-loading:animate-spin"
+            name="hero-arrow-path-solid"
+            class="w-4 h-4"
+          />
         </.button>
       </div>
     </:action>

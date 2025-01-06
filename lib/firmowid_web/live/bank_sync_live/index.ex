@@ -1,18 +1,16 @@
 defmodule FirmowidWeb.BankSyncLive.Index do
+  alias Firmowid.Finances
   use FirmowidWeb, :live_view
 
   alias Firmowid.BankData
 
   @impl true
   def mount(_params, _session, socket) do
-    user = socket.assigns.current_user
-    organization_id = user.organization_id
-
     socket =
       socket
       |> assign(
-        :requisitions,
-        BankData.list_requisitions(organization_id)
+        :bank_accounts,
+        Finances.list_bank_accounts()
       )
 
     {:ok, socket}
@@ -28,28 +26,22 @@ defmodule FirmowidWeb.BankSyncLive.Index do
   end
 
   @impl true
-  def handle_event("sync", %{"requisition-id" => requisition_id}, socket) do
-    user = socket.assigns.current_user
-    organization_id = user.organization_id
-
-    BankData.sync_requisition(requisition_id, organization_id)
+  def handle_event("sync", %{"bank-account-id" => bank_account_id}, socket) do
+    BankData.sync_bank_account(bank_account_id)
     LiveToast.send_toast(:info, "Zsynchronizowano konto bankowe.")
 
     {:noreply, socket}
   end
 
   @impl true
-  def handle_event("delete", %{"requisition-id" => requisition_id}, socket) do
-    user = socket.assigns.current_user
-    organization_id = user.organization_id
-
-    BankData.delete_requisition(requisition_id, organization_id)
+  def handle_event("delete", %{"bank-account-id" => bank_account_id}, socket) do
+    Finances.delete_bank_account(bank_account_id)
 
     socket =
       socket
       |> assign(
-        :requisitions,
-        BankData.list_requisitions(organization_id)
+        :bank_accounts,
+        Finances.list_bank_accounts()
       )
 
     {:noreply, socket}

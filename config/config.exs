@@ -20,15 +20,12 @@ config :firmowid, Firmowid.Repo,
   username: System.get_env("DB_USER", "postgres"),
   password: System.get_env("DB_PASS", "postgres"),
   port: System.get_env("DB_PORT", "5432"),
-  # url: System.get_env("DB_URL", "postgres:postgres@localhost:5432/firmowid"),
   pool_size: 5,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true
 
-# ssl: true,
-# ssl_opts: [
-#   verify: :verify_none
-# ]
+# url: System.get_env("DB_URL", "postgres:postgres@localhost:5432/firmowid"),
+# ssl: [cacerts: :public_key.cacerts_get()]
 
 # Configures the endpoint
 config :firmowid, FirmowidWeb.Endpoint,

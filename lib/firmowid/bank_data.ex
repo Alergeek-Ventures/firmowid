@@ -71,10 +71,11 @@ defmodule Firmowid.BankData do
   end
 
   @doc """
-    This shouldn't be used in "userland" - only in "private" workers.
-    Please, be careful!
+    If used just with an organization_id, this will use one from Process.
+    From e.g. Oban workers, pass also :skip_organization_id to avoid getting an
+    error. But be careful of doing that in "userland"!
   """
-  def sync_bank_account(bank_account_id) do
+  def sync_bank_account(bank_account_id, :skip_organization_id) do
     bank_account =
       Finances.BankAccount
       |> Repo.get!(bank_account_id, skip_organization_id: true)
@@ -85,25 +86,15 @@ defmodule Firmowid.BankData do
     upsert_booked_transactions(booked_transactions, bank_account_id, bank_account.organization_id)
   end
 
-  def sync_requisition(firmowid_requisition_id, organization_id) do
-    gocardless_requisition_id =
-      Repo.get_by!(Requisition, [id: firmowid_requisition_id], organization_id: organization_id).requisition_id
+  def sync_bank_account(bank_account_id) do
+    bank_account =
+      Finances.BankAccount
+      |> Repo.get!(bank_account_id)
 
-    accounts = ApiClient.get_accounts_for_requisition(gocardless_requisition_id)
+    booked_transactions =
+      ApiClient.get_booked_transactions_for_account(bank_account.gocardless_id)
 
-    accounts
-    |> Enum.each(fn go_cardless_account ->
-      all_firmowid_accounts = Finances.list_bank_accounts(organization_id)
-
-      bank_account =
-        all_firmowid_accounts
-        |> Enum.find(fn a -> a.iban == go_cardless_account["iban"] end)
-
-      booked_transactions =
-        ApiClient.get_booked_transactions_for_account(go_cardless_account["id"])
-
-      upsert_booked_transactions(booked_transactions, bank_account.id, organization_id)
-    end)
+    upsert_booked_transactions(booked_transactions, bank_account_id, bank_account.organization_id)
   end
 
   defp upsert_booked_transactions(booked_transactions, bank_account_id, organization_id) do

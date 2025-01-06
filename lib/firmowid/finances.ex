@@ -18,8 +18,10 @@ defmodule Firmowid.Finances do
     |> Repo.all(skip_organization_id: true)
   end
 
-  def list_bank_accounts(organization_id) do
-    Repo.all(BankAccount, organization_id: organization_id)
+  def list_bank_accounts() do
+    BankAccount
+    |> Repo.all()
+    |> Repo.preload(:requisition)
   end
 
   def get_bank_account!(id, organization_id),
@@ -40,8 +42,12 @@ defmodule Firmowid.Finances do
     |> Repo.update()
   end
 
-  def delete_bank_account(%BankAccount{} = bank_account) do
-    Repo.delete(bank_account)
+  def delete_bank_account(bank_account_id) do
+    # TODO: dangling requisitions should be deleted!
+    # not done yet, maybe via a worker?
+
+    Repo.get!(BankAccount, bank_account_id)
+    |> Repo.delete()
   end
 
   def list_imported_transactions(organization_id, from \\ nil, to \\ nil, opts \\ []) do

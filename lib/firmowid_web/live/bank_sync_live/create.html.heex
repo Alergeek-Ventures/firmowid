@@ -16,6 +16,27 @@
 
   <%= if is_nil(@requisition_link) do %>
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 items-center">
+      <form
+        id="instiution-SANDBOXFINANCE_SFIN0000"
+        phx-submit="institution_selected"
+        phx-value-institution-id="SANDBOXFINANCE_SFIN0000"
+        phx-value-institution-transaction-total-days={90}
+        phx-hook="tippy"
+        data-tippy-content="Kliknij aby dodać konto bankowe przygotowane przez nas, które zawiera kilkanaście transakcji i pozwala przetestować system."
+      >
+        <button class="flex flex-col gap-4 p-4 bg-white
+          rounded-xl items-center justify-center
+          text-center hover:bg-opacity-10 hover:border-opacity-100
+          transition-all w-full h-full
+          border-black border-opacity-20 border-2">
+          <div class="w-full h-full text-center">
+            <.icon name="hero-archive-box-x-mark-solid" class="w-20 h-20" />
+          </div>
+          <p>
+            Testowe konto zastępcze
+          </p>
+        </button>
+      </form>
       <%= for instiution <- @available_institutions do %>
         <form
           id={"instiution-#{instiution["id"]}"}

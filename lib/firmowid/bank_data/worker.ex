@@ -10,7 +10,7 @@ defmodule Firmowid.BankData.Worker do
         Logger.info("Syncing bank account #{bank_account_id}")
 
         try do
-          Firmowid.BankData.sync_bank_account(bank_account_id)
+          Firmowid.BankData.sync_bank_account(bank_account_id, :skip_organization_id)
         rescue
           error ->
             Sentry.capture_exception(error)

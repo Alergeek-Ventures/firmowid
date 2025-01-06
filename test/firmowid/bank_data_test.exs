@@ -139,16 +139,17 @@ defmodule Firmowid.BankDataTest do
       |> Firmowid.BankData.Requisition.changeset()
       |> Repo.insert(organization_id: organization.id)
 
-    {:ok, _} =
+    {:ok, bank_account} =
       %Firmowid.Finances.BankAccount{
         iban: "PL12345678901234567890123456",
         organization_id: organization.id,
-        requisition_id: requisition.id
+        requisition_id: requisition.id,
+        gocardless_id: "3fa85f64-5717-4562-b3fc-2c963f66afa5"
       }
       |> Firmowid.Finances.BankAccount.changeset()
       |> Repo.insert(organization_id: organization.id)
 
-    BankData.sync_requisition(requisition.id, organization.id)
+    BankData.sync_bank_account(bank_account.id, :skip_organization_id)
 
     imported_transactions =
       Firmowid.Finances.ImportedTransaction
