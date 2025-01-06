@@ -81,7 +81,7 @@ defmodule Firmowid.MixProject do
       {:sentry, "~> 10.8.1"},
       {:recase, "~> 0.8.0"},
       {:oban, "~> 2.17"},
-      {:oban_live_dashboard, "~> 0.1.0"},
+      {:oban_live_dashboard, "~> 0.2.1"},
       {:ecto_psql_extras, "~> 0.6"}
     ]
   end
