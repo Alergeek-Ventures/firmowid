@@ -1,5 +1,6 @@
 defmodule Firmowid.BankData do
   import Ecto.Query, warn: false
+  alias Firmowid.InvoiceMatcher
   alias Firmowid.Repo
 
   alias Firmowid.Finances
@@ -95,6 +96,11 @@ defmodule Firmowid.BankData do
       ApiClient.get_booked_transactions_for_account(bank_account.gocardless_id)
 
     upsert_booked_transactions(booked_transactions, bank_account_id, bank_account.organization_id)
+
+    # match added transactions
+    InvoiceMatcher.match_all_good_candidates_for_unconnected_documents(
+      bank_account.organization_id
+    )
   end
 
   defp upsert_booked_transactions(booked_transactions, bank_account_id, organization_id) do

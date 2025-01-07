@@ -15,17 +15,18 @@ config :firmowid,
   uploads_bucket: "firmowid-uploads-dev"
 
 config :firmowid, Firmowid.Repo,
-  database: System.get_env("DB_NAME", "firmowid"),
-  hostname: System.get_env("DB_HOST", "localhost"),
-  username: System.get_env("DB_USER", "postgres"),
-  password: System.get_env("DB_PASS", "postgres"),
-  port: System.get_env("DB_PORT", "5432"),
+  url:
+    System.get_env(
+      "DB_URL",
+      "postgresql://postgres:postgres@localhost:5433/firmowid?sslmode=prefer"
+    ),
+  # -- uncomment when accessing Neon-hosted DB --
+  # (forces SSL,doesn't work with docker)
+  # - we could probably force it, but not worth the hassle now -
+  # ssl: [cacerts: :public_key.cacerts_get()],
   pool_size: 5,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true
-
-# url: System.get_env("DB_URL", "postgres:postgres@localhost:5432/firmowid"),
-# ssl: [cacerts: :public_key.cacerts_get()]
 
 # Configures the endpoint
 config :firmowid, FirmowidWeb.Endpoint,

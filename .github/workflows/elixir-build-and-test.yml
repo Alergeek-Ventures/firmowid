@@ -25,8 +25,8 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: firmowid-test
-        ports: ["5432:5432"]
+          POSTGRES_DB: firmowid
+        ports: ["5433:5432"]
         options: >-
           --health-cmd pg_isready
           --health-interval 10s

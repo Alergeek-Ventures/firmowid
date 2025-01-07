@@ -25,50 +25,37 @@ defmodule Firmowid.BankData.Transaction do
   end
 
   def flatten_api_response(api_object_snake_cased) do
-    try do
-      api_object_snake_cased =
-        api_object_snake_cased
-        |> Map.put(
-          "transaction_currency",
-          api_object_snake_cased |> Map.get("transaction_amount") |> Map.get("currency")
-        )
-
-      api_object_snake_cased =
-        if Map.has_key?(api_object_snake_cased, "creditor_account") do
-          Map.replace(
-            api_object_snake_cased,
-            "creditor_account",
-            api_object_snake_cased |> Map.get("creditor_account") |> Map.get("iban")
-          )
-        else
-          api_object_snake_cased
-          |> Map.put("creditor_account", "N/A")
-        end
-
-      api_object_snake_cased =
-        if Map.has_key?(api_object_snake_cased, "debtor_account") do
-          api_object_snake_cased
-          |> Map.replace(
-            "debtor_account",
-            api_object_snake_cased |> Map.get("debtor_account") |> Map.get("iban")
-          )
-        else
-          api_object_snake_cased
-          |> Map.put("debtor_account", "N/A")
-        end
-
+    api_object_snake_cased =
       api_object_snake_cased
-      |> Map.replace(
-        "transaction_amount",
-        api_object_snake_cased |> Map.get("transaction_amount") |> Map.get("amount")
+      |> Map.put(
+        "transaction_currency",
+        api_object_snake_cased |> Map.get("transaction_amount") |> Map.get("currency")
       )
-    rescue
-      error ->
-        Sentry.capture_exception(error, stacktrace: __STACKTRACE__)
 
-        api_object_snake_cased
-    end
+    api_object_snake_cased =
+      Map.replace(
+        api_object_snake_cased,
+        "creditor_account",
+        extract_iban_or_bban(api_object_snake_cased |> Map.get("creditor_account"))
+      )
+
+    api_object_snake_cased =
+      Map.replace(
+        api_object_snake_cased,
+        "debtor_account",
+        extract_iban_or_bban(api_object_snake_cased |> Map.get("debtor_account"))
+      )
+
+    api_object_snake_cased
+    |> Map.replace(
+      "transaction_amount",
+      api_object_snake_cased |> Map.get("transaction_amount") |> Map.get("amount")
+    )
   end
+
+  defp extract_iban_or_bban(nil), do: "N/A"
+  defp extract_iban_or_bban(%{"iban" => iban}), do: iban
+  defp extract_iban_or_bban(%{"bban" => bban}), do: bban
 
   def changeset(attrs) do
     %__MODULE__{}
