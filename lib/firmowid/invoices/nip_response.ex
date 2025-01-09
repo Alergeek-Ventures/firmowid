@@ -1,4 +1,4 @@
-defmodule NipResponse do
+defmodule Firmowid.Invoices.NipResponse do
   @moduledoc """
   Embedded schema representing the complete response from the VAT registry
   """
