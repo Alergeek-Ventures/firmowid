@@ -1,11 +1,11 @@
 defmodule Firmowid.Finances.BankAccount do
-  use Ecto.Schema
+  use Firmowid.Schema
   import Ecto.Changeset
 
   schema "bank_accounts" do
     field :iban, :string
     field :gocardless_id, :string
-    belongs_to :organization, Firmowid.Accounts.Organization, type: :binary_id
+    belongs_to :organization, Firmowid.Accounts.Organization
     belongs_to :requisition, Firmowid.BankData.Requisition
 
     has_many :imported_transactions,

@@ -2,35 +2,91 @@ defmodule Firmowid.Repo.Migrations.CreateInvoice do
   use Ecto.Migration
 
   def change do
+    create table(:buyers) do
+      add :buyer_type, :string
+
+      add :nip, :string
+      add :pesel, :string
+      add :display_name, :string
+      add :name, :string
+      add :surname, :string
+
+      add :street, :string, null: false
+      add :postal_code, :string, null: false
+      add :city, :string, null: false
+      add :country, :string, null: false
+
+      add :email, :string
+      add :phone, :string
+      add :description, :string
+
+      add :is_different_mail_address, :boolean, null: false, default: false
+      add :mail_street, :string
+      add :mail_postal_code, :string
+      add :mail_city, :string
+      add :mail_country, :string
+
+      add :organization_id,
+          references(:organizations,
+            on_delete: :delete_all
+          ),
+          null: false
+
+      timestamps()
+    end
+
+    create table(:sellers) do
+      add :nip, :string
+      add :display_name, :string
+      add :name, :string
+      add :surname, :string
+
+      add :street, :string
+      add :postal_code, :string
+      add :city, :string
+      add :country, :string
+
+      add :account_number, :string
+
+      add :organization_id,
+          references(:organizations,
+            on_delete: :delete_all
+          ),
+          null: false
+
+      timestamps()
+    end
+
     create table(:invoices) do
-      add :invoice_type, :string
+      add :invoice_type, :string, null: false
 
       add :invoice_number, :string
       add :sale_date, :date
       add :issue_date, :date
       add :due_date, :date
       add :payment_method, :string
-      add :currency, :string
-      add :is_basic_info_confirmed, :boolean, default: false
+      add :currency, :string, null: false
+      add :is_basic_info_confirmed, :boolean, default: false, null: false
 
+      add :seller_id, references(:sellers, on_delete: :nilify_all)
       add :seller_nip, :string
       add :seller_display_name, :string
       add :seller_address, :string
       add :seller_account_number, :string
       add :seller_name, :string
       add :seller_surname, :string
-      add :is_seller_confirmed, :boolean, default: false
+      add :is_seller_confirmed, :boolean, default: false, null: false
 
-      add :buyer_type, :string
+      add :buyer_id, references(:buyers, on_delete: :nilify_all)
+      add :buyer_type, :string, null: false
 
       add :buyer_nip, :string
+      add :buyer_pesel, :string
       add :buyer_display_name, :string
       add :buyer_name, :string
       add :buyer_surname, :string
 
       add :buyer_street, :string
-      add :buyer_house_number, :string
-      add :buyer_apartment_number, :string
       add :buyer_postal_code, :string
       add :buyer_city, :string
       add :buyer_country, :string
@@ -39,45 +95,46 @@ defmodule Firmowid.Repo.Migrations.CreateInvoice do
       add :buyer_phone, :string
       add :buyer_description, :string
 
-      add :is_buyer_confirmed, :boolean, default: false
+      add :buyer_is_different_mail_address, :boolean, null: false, default: false
+      add :buyer_mail_street, :string
+      add :buyer_mail_postal_code, :string
+      add :buyer_mail_city, :string
+      add :buyer_mail_country, :string
 
-      add :are_invoice_items_confirmed, :boolean, default: false
+      add :is_buyer_confirmed, :boolean, default: false, null: false
 
-      add :is_cash_account, :boolean, default: false
-      add :is_reverse_charge, :boolean, default: false
+      add :are_invoice_items_confirmed, :boolean, default: false, null: false
+
+      add :is_cash_account, :boolean, default: false, null: false
+      add :is_reverse_charge, :boolean, default: false, null: false
 
       add :organization_id,
           references(:organizations,
-            on_delete: :delete_all,
-            type: :uuid
-          ),
-          null: false
-
-      timestamps(type: :utc_datetime)
-    end
-
-    create table(:invoice_items) do
-      add :name, :string
-      add :quantity, :decimal
-      add :unit, :string
-      add :unit_price, :decimal
-      add :vat_rate, :decimal
-      add :order, :integer
-
-      add :invoice_id,
-          references(:invoices,
             on_delete: :delete_all
           ),
           null: false
 
+      timestamps()
+    end
+
+    create table(:invoice_items) do
+      add :name, :string, null: false
+      add :quantity, :decimal, null: false
+      add :unit, :string, null: false
+      add :unit_price, :decimal, null: false
+      add :vat_rate, :decimal
+
+      add :invoice_id,
+          references(:invoices, on_delete: :delete_all),
+          null: false
+
       add :organization_id,
           references(:organizations,
-            on_delete: :delete_all,
-            type: :uuid
+            on_delete: :delete_all
           ),
           null: false
 
-      timestamps(type: :utc_datetime)
+      timestamps()
     end
   end
 end

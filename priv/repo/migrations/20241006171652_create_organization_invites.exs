@@ -10,16 +10,15 @@ defmodule Firmowid.Repo.Migrations.CreateOrganizationInvites do
 
       add :organization_id,
           references(:organizations,
-            type: :binary_id,
             on_delete: :delete_all
           ),
           null: false
 
-      add :issued_by_id, references(:users, type: :binary_id, on_delete: :delete_all), null: false
+      add :issued_by_id, references(:users, on_delete: :delete_all), null: false
 
-      add :consumed_by_id, references(:users, type: :binary_id, on_delete: :delete_all)
+      add :consumed_by_id, references(:users, on_delete: :delete_all)
 
-      timestamps(type: :utc_datetime)
+      timestamps()
     end
   end
 end

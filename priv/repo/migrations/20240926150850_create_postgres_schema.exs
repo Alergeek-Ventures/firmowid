@@ -2,18 +2,45 @@ defmodule Firmowid.Repo.Migrations.CreatePostgresSchema do
   use Ecto.Migration
 
   def change do
-    create table(:bank_accounts) do
-      add :iban, :string
+    create_requisition_status_query =
+      "CREATE TYPE requisition_status AS ENUM ('pending', 'accepted', 'rejected')"
+
+    execute(create_requisition_status_query)
+
+    create table(:requisitions) do
+      add :status, :requisition_status, null: false
+
+      add :gocardless_id, :string
 
       add :organization_id,
           references(:organizations,
-            on_delete: :delete_all,
-            type: :uuid
+            on_delete: :delete_all
           ),
           null: false
 
       timestamps()
     end
+
+    create table(:bank_accounts) do
+      add :iban, :string, null: false
+      add :gocardless_id, :string, default: nil
+
+      add :organization_id,
+          references(:organizations,
+            on_delete: :delete_all
+          ),
+          null: false
+
+      add :requisition_id,
+          references(:requisitions,
+            on_delete: :nilify_all
+          ),
+          null: false
+
+      timestamps()
+    end
+
+    create unique_index(:bank_accounts, [:iban, :organization_id])
 
     create table(:imported_transactions) do
       add :transaction_id, :string
@@ -34,18 +61,18 @@ defmodule Firmowid.Repo.Migrations.CreatePostgresSchema do
 
       add :organization_id,
           references(:organizations,
-            on_delete: :delete_all,
-            type: :uuid
+            on_delete: :delete_all
           ),
           null: false
 
       timestamps()
     end
 
-    create unique_index(:imported_transactions, [:transaction_id, :organization_id])
+    create unique_index(:imported_transactions, [:internal_transaction_id, :organization_id])
 
     create table(:documents) do
       add :seller, :string
+      add :seller_display_name, :string
 
       add :sale_date, :date
       add :issue_date, :date
@@ -73,26 +100,6 @@ defmodule Firmowid.Repo.Migrations.CreatePostgresSchema do
 
     create index(:documents, [:invoice_identifier])
 
-    create_requisition_status_query =
-      "CREATE TYPE requisition_status AS ENUM ('pending', 'accepted', 'rejected')"
-
-    execute(create_requisition_status_query)
-
-    create table(:requisitions) do
-      add :status, :requisition_status
-
-      add :requisition_id, :string
-
-      add :organization_id,
-          references(:organizations,
-            on_delete: :delete_all,
-            type: :uuid
-          ),
-          null: false
-
-      timestamps()
-    end
-
     create table(:documents_imported_transactions) do
       add :document_id, references(:documents, on_delete: :delete_all), null: false
 
@@ -106,7 +113,7 @@ defmodule Firmowid.Repo.Migrations.CreatePostgresSchema do
           ),
           null: false
 
-      timestamps(type: :utc_datetime)
+      timestamps()
     end
   end
 end

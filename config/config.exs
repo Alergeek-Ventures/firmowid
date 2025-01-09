@@ -26,7 +26,9 @@ config :firmowid, Firmowid.Repo,
   # ssl: [cacerts: :public_key.cacerts_get()],
   pool_size: 5,
   stacktrace: true,
-  show_sensitive_data_on_connection_error: true
+  show_sensitive_data_on_connection_error: true,
+  migration_primary_key: [name: :id, type: :binary_id],
+  migration_timestamps: [type: :utc_datetime]
 
 # Configures the endpoint
 config :firmowid, FirmowidWeb.Endpoint,

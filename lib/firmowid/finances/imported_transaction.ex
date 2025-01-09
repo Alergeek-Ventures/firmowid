@@ -1,5 +1,5 @@
 defmodule Firmowid.Finances.ImportedTransaction do
-  use Ecto.Schema
+  use Firmowid.Schema
   import Ecto.Changeset
 
   alias Firmowid.Documents
@@ -32,7 +32,7 @@ defmodule Firmowid.Finances.ImportedTransaction do
                    document_id: :id
                  ]
 
-    belongs_to :organization, Firmowid.Accounts.Organization, type: :binary_id
+    belongs_to :organization, Firmowid.Accounts.Organization
 
     timestamps(type: :utc_datetime)
   end

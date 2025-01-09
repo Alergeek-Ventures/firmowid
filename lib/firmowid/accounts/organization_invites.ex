@@ -1,5 +1,5 @@
 defmodule Firmowid.Accounts.OrganizationInvites do
-  use Ecto.Schema
+  use Firmowid.Schema
   import Ecto.Changeset
 
   schema "organization_invites" do
@@ -8,9 +8,9 @@ defmodule Firmowid.Accounts.OrganizationInvites do
 
     field :invite_code, :string
 
-    belongs_to :organization, Firmowid.Accounts.Organization, type: :binary_id
-    belongs_to :issued_by, Firmowid.Accounts.User, type: :binary_id
-    belongs_to :consumed_by, Firmowid.Accounts.User, type: :binary_id
+    belongs_to :organization, Firmowid.Accounts.Organization
+    belongs_to :issued_by, Firmowid.Accounts.User
+    belongs_to :consumed_by, Firmowid.Accounts.User
 
     timestamps(type: :utc_datetime)
   end

@@ -1,5 +1,5 @@
 defmodule Firmowid.Invoices.InvoiceItem do
-  use Ecto.Schema
+  use Firmowid.Schema
   import Ecto.Changeset
 
   schema "invoice_items" do
@@ -8,12 +8,11 @@ defmodule Firmowid.Invoices.InvoiceItem do
     field :unit, :string, default: "szt."
     field :unit_price, :decimal, default: 0
     field :vat_rate, :decimal, default: 0
-    field :order, :integer, default: 0
 
     belongs_to :invoice, Firmowid.Invoices.Invoice
-    belongs_to :organization, Firmowid.Accounts.Organization, type: :binary_id
+    belongs_to :organization, Firmowid.Accounts.Organization
 
-    timestamps(type: :utc_datetime)
+    timestamps()
   end
 
   def get_net_value(invoice_item) do
@@ -35,8 +34,7 @@ defmodule Firmowid.Invoices.InvoiceItem do
       :quantity,
       :unit,
       :unit_price,
-      :vat_rate,
-      :order
+      :vat_rate
     ])
     |> cast_assoc(:invoice)
     |> validate_number(:quantity, greater_than_or_equal_to: 0)

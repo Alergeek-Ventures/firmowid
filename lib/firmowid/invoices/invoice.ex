@@ -1,5 +1,5 @@
 defmodule Firmowid.Invoices.Invoice do
-  use Ecto.Schema
+  use Firmowid.Schema
   import Ecto.Changeset
 
   schema "invoices" do
@@ -30,8 +30,6 @@ defmodule Firmowid.Invoices.Invoice do
     field :buyer_pesel, :string
 
     field :buyer_street, :string
-    field :buyer_house_number, :string
-    field :buyer_apartment_number, :string
     field :buyer_postal_code, :string
     field :buyer_city, :string
     field :buyer_country, :string
@@ -53,11 +51,11 @@ defmodule Firmowid.Invoices.Invoice do
     field :is_reverse_charge, :boolean, default: false
 
     has_many :invoice_items, Firmowid.Invoices.InvoiceItem, on_replace: :delete
-    belongs_to :organization, Firmowid.Accounts.Organization, type: :binary_id
-    belongs_to :buyer, Firmowid.Invoices.Buyer, type: :binary_id
-    belongs_to :seller, Firmowid.Invoices.Seller, type: :binary_id
+    belongs_to :organization, Firmowid.Accounts.Organization
+    belongs_to :buyer, Firmowid.Invoices.Buyer
+    belongs_to :seller, Firmowid.Invoices.Seller
 
-    timestamps(type: :utc_datetime)
+    timestamps()
   end
 
   def get_net_value(invoice) do
@@ -100,24 +98,7 @@ defmodule Firmowid.Invoices.Invoice do
   end
 
   def get_address_line_1(invoice) do
-    address =
-      case [
-        invoice.buyer_street,
-        invoice.buyer_house_number
-      ] do
-        [nil, nil] -> ""
-        [street, nil] -> street
-        [nil, _house_number] -> ""
-        [street, house_number] -> street <> " " <> house_number
-      end
-
-    case invoice.buyer_apartment_number do
-      nil ->
-        address
-
-      apartment_number ->
-        address <> "/" <> apartment_number
-    end
+    invoice.buyer_street
   end
 
   def get_address_line_2(invoice) do
@@ -194,8 +175,6 @@ defmodule Firmowid.Invoices.Invoice do
       :buyer_surname,
       :buyer_pesel,
       :buyer_street,
-      :buyer_house_number,
-      :buyer_apartment_number,
       :buyer_postal_code,
       :buyer_city,
       :buyer_country,

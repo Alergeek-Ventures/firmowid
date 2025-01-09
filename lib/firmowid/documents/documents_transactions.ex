@@ -1,12 +1,12 @@
 defmodule Firmowid.Documents.DocumentsTransactions do
-  use Ecto.Schema
+  use Firmowid.Schema
   import Ecto.Changeset
 
   schema "documents_imported_transactions" do
     field :document_id, :integer
     field :imported_transaction_id, :integer
 
-    belongs_to :organization, Firmowid.Accounts.Organization, type: :binary_id
+    belongs_to :organization, Firmowid.Accounts.Organization
 
     timestamps(type: :utc_datetime)
   end

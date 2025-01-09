@@ -1,5 +1,5 @@
 defmodule Firmowid.BankData.Transaction do
-  use Ecto.Schema
+  use Firmowid.Schema
 
   import Ecto.Changeset
 

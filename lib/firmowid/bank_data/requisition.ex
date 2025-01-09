@@ -1,5 +1,5 @@
 defmodule Firmowid.BankData.Requisition do
-  use Ecto.Schema
+  use Firmowid.Schema
   import Ecto.Changeset
 
   schema "requisitions" do
@@ -7,11 +7,11 @@ defmodule Firmowid.BankData.Requisition do
           Ecto.Enum,
           values: [:pending, :accepted, :rejected]
 
-    field :requisition_id, :string
+    field :gocardless_id, :string
 
     has_many :bank_accounts, Firmowid.Finances.BankAccount, on_delete: :delete_all
 
-    belongs_to :organization, Firmowid.Accounts.Organization, type: :binary_id
+    belongs_to :organization, Firmowid.Accounts.Organization
 
     timestamps(type: :utc_datetime)
   end
@@ -19,7 +19,7 @@ defmodule Firmowid.BankData.Requisition do
   @doc false
   def changeset(requisition, attrs \\ %{}) do
     requisition
-    |> cast(attrs, [:requisition_id, :status, :organization_id])
-    |> validate_required([:requisition_id, :status, :organization_id])
+    |> cast(attrs, [:gocardless_id, :status, :organization_id])
+    |> validate_required([:gocardless_id, :status, :organization_id])
   end
 end

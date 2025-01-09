@@ -3,7 +3,7 @@
     {
       "previewLimit": 50,
       "server": "localhost",
-      "port": 5432,
+      "port": 5433,
       "driver": "PostgreSQL",
       "name": "Firmowid",
       "database": "firmowid",
@@ -13,7 +13,7 @@
     {
       "previewLimit": 50,
       "server": "localhost",
-      "port": 5432,
+      "port": 5433,
       "driver": "PostgreSQL",
       "name": "Firmowid Test",
       "database": "firmowid-test",

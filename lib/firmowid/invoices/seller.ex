@@ -9,14 +9,12 @@ defmodule Firmowid.Invoices.Seller do
     field :display_name, :string
     field :surname, :string
     field :street, :string
-    field :house_number, :string
-    field :apartment_number, :string
     field :postal_code, :string
     field :city, :string
     field :account_number, :string
     belongs_to :organization, Firmowid.Accounts.Organization
 
-    timestamps(type: :utc_datetime)
+    timestamps()
   end
 
   @doc false
@@ -28,8 +26,6 @@ defmodule Firmowid.Invoices.Seller do
       :name,
       :surname,
       :street,
-      :house_number,
-      :apartment_number,
       :postal_code,
       :city,
       :country,

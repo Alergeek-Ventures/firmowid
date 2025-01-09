@@ -1,5 +1,5 @@
 defmodule Firmowid.Accounts.User do
-  use Ecto.Schema
+  use Firmowid.Schema
   import Ecto.Changeset
 
   @primary_key {:id, UUIDv7, autogenerate: true}
@@ -10,7 +10,7 @@ defmodule Firmowid.Accounts.User do
     field :hashed_password, :string, redact: true
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
-    belongs_to :organization, Firmowid.Accounts.Organization, type: :binary_id
+    belongs_to :organization, Firmowid.Accounts.Organization
 
     timestamps(type: :utc_datetime)
   end

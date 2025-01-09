@@ -1,5 +1,5 @@
 defmodule Firmowid.Accounts.UserToken do
-  use Ecto.Schema
+  use Firmowid.Schema
   import Ecto.Query
   alias Firmowid.Accounts.UserToken
 
@@ -17,9 +17,9 @@ defmodule Firmowid.Accounts.UserToken do
     field :token, :binary
     field :context, :string
     field :sent_to, :string
-    belongs_to :user, Firmowid.Accounts.User, type: :binary_id
+    belongs_to :user, Firmowid.Accounts.User
 
-    timestamps(type: :utc_datetime, updated_at: false)
+    timestamps(updated_at: false)
   end
 
   @doc """

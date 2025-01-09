@@ -26,7 +26,7 @@ defmodule Firmowid.BankData do
            ),
          {:ok, _} <-
            Repo.insert(%Requisition{
-             requisition_id: requisition["id"],
+             gocardless_id: requisition["id"],
              status: :pending,
              organization_id: organization_id
            }) do
@@ -38,7 +38,7 @@ defmodule Firmowid.BankData do
     requisition_from_db =
       Repo.get_by(
         Requisition,
-        [requisition_id: gocardless_requisition_id],
+        [gocardless_id: gocardless_requisition_id],
         organization_id: organization_id
       )
 
@@ -142,7 +142,7 @@ defmodule Firmowid.BankData do
 
   def delete_requisition(requisition_id, organization_id) do
     with requisition <- Repo.get(Requisition, requisition_id, organization_id: organization_id),
-         {:ok, _} <- ApiClient.delete_requisition(requisition.requisition_id),
+         {:ok, _} <- ApiClient.delete_requisition(requisition.gocardless_id),
          {:ok, _} <- Repo.delete(requisition, organization_id: organization_id) do
       {:ok, requisition}
     end

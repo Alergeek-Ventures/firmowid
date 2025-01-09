@@ -1,14 +1,13 @@
 defmodule Firmowid.Accounts.Organization do
-  use Ecto.Schema
+  use Firmowid.Schema
   import Ecto.Changeset
 
-  @primary_key {:id, UUIDv7, autogenerate: true}
   schema "organizations" do
     field :identification_number, :string
     field :address, :string
     field :name, :string
     field :slug, :string
-    belongs_to :owner, Firmowid.Accounts.User, type: :binary_id
+    belongs_to :owner, Firmowid.Accounts.User
 
     has_many :users, Firmowid.Accounts.User
 
