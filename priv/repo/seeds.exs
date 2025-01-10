@@ -10,7 +10,6 @@ alias Firmowid.Accounts
   Accounts.create_organization(
     %{
       "name" => "Alergeek Ventures spółka z ograniczoną odpowiedzialnością",
-      "slug" => "Alergeek Ventures",
       "identification_number" => "PL1234567891",
       "address" => "Lipowa 3D, 30-702, Kraków",
       "owner_id" => franek.id

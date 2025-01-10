@@ -28,8 +28,7 @@ defmodule Firmowid.AccountsFixtures do
         %{
           "identification_number" => "1234567890",
           "name" => "Test Organization",
-          "owner_id" => user.id,
-          "slug" => "test-organization"
+          "owner_id" => user.id
         },
         user
       )

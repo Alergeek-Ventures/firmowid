@@ -94,15 +94,6 @@ defmodule FirmowidWeb.OrganizationLive do
   def handle_event("create", organization, socket) do
     user = socket.assigns.current_user
 
-    organization_slug =
-      organization["name"]
-      |> String.downcase()
-      |> String.replace(" ", "-")
-      |> String.replace(".", "-")
-      |> String.replace("/", "-")
-      |> String.replace(",", "-")
-      |> String.trim()
-
     address = %{
       street: organization["street"],
       number: organization["number"],
@@ -113,7 +104,6 @@ defmodule FirmowidWeb.OrganizationLive do
     address = "#{address.street} #{address.number}, #{address.postal_code} #{address.city}"
 
     organization
-    |> Map.put("slug", organization_slug)
     |> Map.put("address", address)
     |> Accounts.create_organization(user)
 
