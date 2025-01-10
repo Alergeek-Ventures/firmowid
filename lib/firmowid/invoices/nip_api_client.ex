@@ -11,9 +11,7 @@ defmodule Firmowid.Invoices.NipApiClient do
   @type organization :: %{
           name: String.t(),
           nip: String.t(),
-          postal_code: String.t(),
-          street: String.t(),
-          city: String.t()
+          address: String.t()
         }
 
   @doc """
@@ -41,15 +39,11 @@ defmodule Firmowid.Invoices.NipApiClient do
       {:ok, %Req.Response{status: 200, body: body}} ->
         with {:ok, response} <-
                validate_response(Recase.Enumerable.convert_keys(body, &Recase.to_snake/1)) do
-          address_info = generate_address_info(response.result.subject.working_address)
-
           {:ok,
            %{
              name: response.result.subject.name,
              nip: response.result.subject.nip,
-             postal_code: address_info["postal_code"],
-             street: address_info["street"],
-             city: address_info["city"]
+             address: response.result.subject.working_address
            }}
         end
 
@@ -61,79 +55,6 @@ defmodule Firmowid.Invoices.NipApiClient do
 
       {:error, reason} ->
         {:error, reason}
-    end
-  end
-
-  @spec generate_address_info(String.t()) :: %{
-          postal_code: String.t(),
-          city: String.t(),
-          street: String.t()
-        }
-  def generate_address_info(full_address) do
-    case OpenAI.chat_completion(
-           model: "gpt-4o-mini",
-           max_completion_tokens: 200,
-           response_format: %{
-             type: "json_schema",
-             json_schema: %{
-               name: "full_address_info",
-               strict: true,
-               schema: %{
-                 type: "object",
-                 properties: %{
-                   postal_code: %{
-                     type: "string"
-                   },
-                   city: %{
-                     type: "string"
-                   },
-                   street: %{
-                     type: "string",
-                     description:
-                       "Full street name with house number and if available apartment number"
-                   }
-                 },
-                 required: ["postal_code", "city", "street"],
-                 additionalProperties: false
-               }
-             }
-           },
-           messages: [
-             %{
-               role: "system",
-               content:
-                 "You are a helpful assistant that generates full address information based on the full address."
-             },
-             %{
-               role: "user",
-               content:
-                 "Here is the full address that I want to generate information for: #{full_address}. Please provide me with the postal code, city, and street. If you can't provide all the information fill the missing one with empty strings. Base your answer only on the provided full address, don't infer the city if it isn't specified in the address. Format it like in the example below, make sure to correct the case and punctuation.
-
-           Example:
-           {
-              postal_code: '00-001',
-              city: 'Warszawa',
-              street: 'Skwer Kardynała Wyszyńskiego 1/2'
-           }"
-                 |> String.trim()
-             }
-           ]
-         ) do
-      {:ok, response} ->
-        response.choices
-        |> List.first()
-        |> Map.get("message")
-        |> Map.get("content")
-        |> JSON.decode!()
-
-      {:error, err} ->
-        Sentry.capture_exception(err)
-
-        %{
-          "postal_code" => "",
-          "city" => "",
-          "street" => ""
-        }
     end
   end
 

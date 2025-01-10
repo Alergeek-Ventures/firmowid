@@ -9,18 +9,14 @@ defmodule Firmowid.Invoices.Buyer do
     field :name, :string
     field :surname, :string
     field :pesel, :string
-    field :street, :string
-    field :postal_code, :string
-    field :city, :string
+    field :address, :string
     field :country, :string
     field :email, :string
     field :phone, :string
     field :description, :string
 
     field :is_different_mail_address, :boolean, default: false
-    field :mail_street, :string
-    field :mail_postal_code, :string
-    field :mail_city, :string
+    field :mail_address, :string
     field :mail_country, :string
 
     belongs_to :organization, Firmowid.Accounts.Organization
@@ -38,24 +34,18 @@ defmodule Firmowid.Invoices.Buyer do
       :name,
       :surname,
       :pesel,
-      :street,
-      :postal_code,
-      :city,
+      :address,
       :country,
       :email,
       :phone,
       :description,
       :is_different_mail_address,
-      :mail_street,
-      :mail_postal_code,
-      :mail_city,
+      :mail_address,
       :mail_country
     ])
     |> validate_required([
       :buyer_type,
-      :street,
-      :postal_code,
-      :city,
+      :address,
       :country
     ])
     |> put_change(:organization_id, Firmowid.Repo.get_org_id())

@@ -96,7 +96,7 @@ defmodule FirmowidWeb.InvoicesLive.Index do
             seller_id: seller.id,
             seller_nip: seller.nip,
             seller_display_name: seller.display_name,
-            seller_address: seller.street,
+            seller_address: seller.address,
             seller_name: seller.name,
             seller_surname: seller.surname,
             seller_account_number: seller.account_number,
@@ -189,7 +189,7 @@ defmodule FirmowidWeb.InvoicesLive.Index do
     Map.merge(invoice, %{
       "seller_nip" => seller.nip,
       "seller_display_name" => seller.display_name,
-      "seller_address" => seller.street,
+      "seller_address" => seller.address,
       "seller_name" => seller.name,
       "seller_surname" => seller.surname,
       "seller_account_number" => seller.account_number,
@@ -206,9 +206,7 @@ defmodule FirmowidWeb.InvoicesLive.Index do
       "buyer_display_name" => "",
       "buyer_name" => "",
       "buyer_surname" => "",
-      "buyer_street" => "",
-      "buyer_postal_code" => "",
-      "buyer_city" => "",
+      "buyer_address" => "",
       "buyer_country" => "",
       "buyer_email" => "",
       "buyer_phone" => "",
@@ -226,9 +224,7 @@ defmodule FirmowidWeb.InvoicesLive.Index do
       "buyer_display_name" => buyer.display_name,
       "buyer_name" => buyer.name,
       "buyer_surname" => buyer.surname,
-      "buyer_street" => buyer.street,
-      "buyer_postal_code" => buyer.postal_code,
-      "buyer_city" => buyer.city,
+      "buyer_address" => buyer.address,
       "buyer_country" => buyer.country,
       "buyer_email" => buyer.email,
       "buyer_phone" => buyer.phone,
@@ -273,10 +269,8 @@ defmodule FirmowidWeb.InvoicesLive.Index do
         buyer =
           %{
             "buyer_display_name" => buyer_info.name,
-            "buyer_street" => buyer_info.street,
-            "buyer_city" => buyer_info.city,
+            "buyer_address" => buyer_info.address,
             "buyer_country" => "Polska",
-            "buyer_postal_code" => buyer_info.postal_code,
             "buyer_nip" => buyer_info.nip
           }
 
@@ -347,12 +341,7 @@ defmodule FirmowidWeb.InvoicesLive.Index do
            display_name: invoice["seller_display_name"],
            name: invoice["seller_name"],
            surname: invoice["seller_surname"],
-           street: invoice["seller_address"],
-           house_number: "",
-           apartment_number: "",
-           postal_code: "",
-           city: "",
-           country: "",
+           address: invoice["seller_address"],
            account_number: invoice["seller_account_number"]
          }) do
       {:ok, seller} ->
@@ -380,9 +369,7 @@ defmodule FirmowidWeb.InvoicesLive.Index do
              display_name: invoice["buyer_display_name"],
              name: invoice["buyer_name"],
              surname: invoice["buyer_surname"],
-             street: invoice["buyer_street"],
-             postal_code: invoice["buyer_postal_code"],
-             city: invoice["buyer_city"],
+             address: invoice["buyer_address"],
              country: invoice["buyer_country"],
              email: invoice["buyer_email"],
              phone: invoice["buyer_phone"],

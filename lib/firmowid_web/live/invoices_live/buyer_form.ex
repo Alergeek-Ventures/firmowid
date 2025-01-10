@@ -8,23 +8,8 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
   defp different_mail_address(assigns) do
     ~H"""
     <div>
-      <.input field={@buyer_form[:buyer_mail_street]} type="text" placeholder="Ulica" required />
-      <div class="flex gap-2">
-        <.input
-          field={@buyer_form[:buyer_mail_postal_code]}
-          type="text"
-          class="flex-1"
-          placeholder="Kod pocztowy"
-          required
-        />
-        <.input
-          field={@buyer_form[:buyer_mail_city]}
-          type="text"
-          class="flex-1"
-          placeholder="Miejscowość"
-          required
-        />
-      </div>
+      <.input field={@buyer_form[:buyer_mail_address]} type="text" placeholder="Ulica" required />
+
       <.input field={@buyer_form[:buyer_mail_country]} type="text" placeholder="Kraj" required />
     </div>
     """
@@ -125,7 +110,7 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
                   <span>{@invoice.buyer_pesel}</span>
                 <% end %>
                 <span class="text-darkGrey">Adres </span>
-                <span>{Firmowid.Invoices.Invoice.get_address_lines(@invoice)}</span>
+                <span>{@invoice.buyer_address}</span>
               </div>
               <div class="grid grid-cols-[max-content,1fr] h-min justify-start gap-x-4 gap-y-2">
                 <%= if @invoice.buyer_email do %>
@@ -166,7 +151,7 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
               </div>
               <div class="bg-greyButtonBg/50 py-4 px-5 rounded-md">
                 <div class="flex gap-2">
-                  <div>
+                  <div class="w-full">
                     <.input
                       :if={to_string(@buyer_form[:buyer_type].value) == "company"}
                       field={@buyer_form[:buyer_nip]}
@@ -204,39 +189,27 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
                       placeholder="PESEL (opcjonalnie)"
                     />
                   </div>
-                  <div class={to_string(@buyer_form[:buyer_type].value) == "company" && "mt-3"}>
+                  <div class={
+                    classes([
+                      to_string(@buyer_form[:buyer_type].value) == "company" && "mt-2",
+                      "w-full"
+                    ])
+                  }>
                     <p class="text-sm text-darkGrey">Dane adresowe</p>
                     <.input
-                      field={@buyer_form[:buyer_street]}
-                      type="text"
+                      field={@buyer_form[:buyer_address]}
+                      type="textarea"
+                      class="resize-none"
                       placeholder="Adres"
                       required
                     />
-                    <div class="flex gap-2">
-                      <.input
-                        field={@buyer_form[:buyer_postal_code]}
-                        type="text"
-                        placeholder="Kod pocztowy"
-                        required
-                      />
-                      <.input
-                        field={@buyer_form[:buyer_city]}
-                        type="text"
-                        placeholder="Miejscowość"
-                        required
-                      />
-                    </div>
-                    <.input
-                      field={@buyer_form[:buyer_country]}
-                      type="text"
-                      placeholder="Kraj"
-                      required
-                    />
+
+                    <.input field={@buyer_form[:buyer_country]} type="text" placeholder="Kraj" />
                   </div>
                 </div>
                 <div
                   class="accordion-panel grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all transform ease-in duration-200"
-                  id="seller-form-panel"
+                  id="buyer-form-panel"
                   role="region"
                 >
                   <div class="overflow-hidden">
@@ -275,7 +248,7 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
                 <div class="flex justify-between items-center">
                   <h3>
                     <button
-                      aria-controls="seller-form-panel"
+                      aria-controls="buyer-form-panel"
                       class={[
                         "accordion-trigger text-blueText flex gap-2 items-center justify-center [&_.accordion-trigger-icon]:aria-expanded:rotate-180"
                       ]}
@@ -364,7 +337,7 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
 
   defp handle_open() do
     {"aria-expanded", "true", "false"}
-    |> JS.toggle_attribute(to: "#seller-form-trigger")
-    |> JS.toggle_attribute({"data-expanded", ""}, to: "#seller-form-panel")
+    |> JS.toggle_attribute(to: "buyer-form-trigger")
+    |> JS.toggle_attribute({"data-expanded", ""}, to: "#buyer-form-panel")
   end
 end

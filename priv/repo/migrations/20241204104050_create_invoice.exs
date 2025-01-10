@@ -11,9 +11,7 @@ defmodule Firmowid.Repo.Migrations.CreateInvoice do
       add :name, :string
       add :surname, :string
 
-      add :street, :string, null: false
-      add :postal_code, :string, null: false
-      add :city, :string, null: false
+      add :address, :string, null: false
       add :country, :string, null: false
 
       add :email, :string
@@ -21,9 +19,7 @@ defmodule Firmowid.Repo.Migrations.CreateInvoice do
       add :description, :string
 
       add :is_different_mail_address, :boolean, null: false, default: false
-      add :mail_street, :string
-      add :mail_postal_code, :string
-      add :mail_city, :string
+      add :mail_address, :string
       add :mail_country, :string
 
       add :organization_id,
@@ -41,10 +37,7 @@ defmodule Firmowid.Repo.Migrations.CreateInvoice do
       add :name, :string
       add :surname, :string
 
-      add :street, :string
-      add :postal_code, :string
-      add :city, :string
-      add :country, :string
+      add :address, :string
 
       add :account_number, :string
 
@@ -86,9 +79,7 @@ defmodule Firmowid.Repo.Migrations.CreateInvoice do
       add :buyer_name, :string
       add :buyer_surname, :string
 
-      add :buyer_street, :string
-      add :buyer_postal_code, :string
-      add :buyer_city, :string
+      add :buyer_address, :string
       add :buyer_country, :string
 
       add :buyer_email, :string
@@ -96,9 +87,7 @@ defmodule Firmowid.Repo.Migrations.CreateInvoice do
       add :buyer_description, :string
 
       add :buyer_is_different_mail_address, :boolean, null: false, default: false
-      add :buyer_mail_street, :string
-      add :buyer_mail_postal_code, :string
-      add :buyer_mail_city, :string
+      add :buyer_mail_address, :string
       add :buyer_mail_country, :string
 
       add :is_buyer_confirmed, :boolean, default: false, null: false

@@ -120,17 +120,9 @@ defmodule FirmowidWeb.Invoice.Template do
           </span>
           {}
           <span>
-            {address =
-              case @invoice.buyer_street do
-                nil -> ""
-                street -> street
-              end
-
-            case [@invoice.buyer_postal_code, @invoice.buyer_city] do
-              [nil, nil] -> address
-              [nil, city] -> address <> ", " <> city
-              [postal_code, nil] -> address <> ", " <> postal_code
-              [postal_code, city] -> address <> ", " <> postal_code <> " " <> city
+            {case @invoice.buyer_address do
+              nil -> ""
+              address -> address
             end}
           </span>
 

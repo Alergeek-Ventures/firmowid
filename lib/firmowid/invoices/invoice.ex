@@ -29,15 +29,11 @@ defmodule Firmowid.Invoices.Invoice do
     field :buyer_surname, :string
     field :buyer_pesel, :string
 
-    field :buyer_street, :string
-    field :buyer_postal_code, :string
-    field :buyer_city, :string
+    field :buyer_address, :string
     field :buyer_country, :string
 
     field :buyer_is_different_mail_address, :boolean, default: false
-    field :buyer_mail_street, :string
-    field :buyer_mail_postal_code, :string
-    field :buyer_mail_city, :string
+    field :buyer_mail_address, :string
     field :buyer_mail_country, :string
 
     field :buyer_email, :string
@@ -97,32 +93,6 @@ defmodule Firmowid.Invoices.Invoice do
     sale_date
   end
 
-  def get_address_line_1(invoice) do
-    invoice.buyer_street
-  end
-
-  def get_address_line_2(invoice) do
-    Enum.join(
-      [
-        invoice.buyer_postal_code,
-        invoice.buyer_city
-      ]
-      |> Enum.reject(&is_nil/1),
-      " "
-    )
-    |> case do
-      "" -> nil
-      address -> address
-    end
-  end
-
-  def get_address_lines(invoice) do
-    Enum.join(
-      [get_address_line_1(invoice), get_address_line_2(invoice)] |> Enum.reject(&is_nil/1),
-      ", "
-    )
-  end
-
   def changeset(invoice, attrs \\ %{}) do
     invoice
     |> cast(attrs, [
@@ -174,14 +144,10 @@ defmodule Firmowid.Invoices.Invoice do
       :buyer_name,
       :buyer_surname,
       :buyer_pesel,
-      :buyer_street,
-      :buyer_postal_code,
-      :buyer_city,
+      :buyer_address,
       :buyer_country,
       :buyer_is_different_mail_address,
-      :buyer_mail_street,
-      :buyer_mail_postal_code,
-      :buyer_mail_city,
+      :buyer_mail_address,
       :buyer_mail_country,
       :buyer_email,
       :buyer_phone,

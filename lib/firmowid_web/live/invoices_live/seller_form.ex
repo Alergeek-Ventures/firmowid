@@ -35,7 +35,7 @@ defmodule FirmowidWeb.InvoicesLive.SellerForm do
         />
       </.form>
       <%= if @invoice.is_seller_confirmed do %>
-        <div class="w-[571px] flex justify-between items-start border border-greyButtonBg rounded-md p-5">
+        <div class="w-full flex justify-between items-start text-sm border border-greyButtonBg rounded-md p-5">
           <div class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2">
             <span class="text-darkGrey">NIP</span>
             <span>{@invoice.seller_nip}</span>

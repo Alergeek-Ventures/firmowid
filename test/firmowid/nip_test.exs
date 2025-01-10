@@ -11,9 +11,7 @@ defmodule Firmowid.NipTest do
                "ALERGEEK VENTURES SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ"
 
       assert org.nip == "6793209719"
-      assert org.postal_code == "30-392"
-      assert org.street == "Jana Kantego Federowicza 5/96"
-      assert org.city == "Kraków"
+      assert org.address == "JANA KANTEGO FEDEROWICZA 5/96, 30-392 KRAKÓW"
     end
 
     test "returns not found when the nip is not found" do
@@ -22,26 +20,6 @@ defmodule Firmowid.NipTest do
 
     test "returns error when the nip is invalid" do
       {:error, :invalid_nip} = NipApiClient.fetch_org_data_by_nip("123")
-    end
-
-    test "parses the address info" do
-      response = NipApiClient.generate_address_info("MARSZAŁKOWSKA 80/116, 00-517 WARSZAWA")
-
-      assert response == %{
-               "city" => "Warszawa",
-               "postal_code" => "00-517",
-               "street" => "Marszałkowska 80/116"
-             }
-    end
-
-    test "fills missing info with empty strings" do
-      response = NipApiClient.generate_address_info("MARSZAŁKOWSKA 80/116")
-
-      assert response == %{
-               "city" => "",
-               "postal_code" => "",
-               "street" => "Marszałkowska 80/116"
-             }
     end
   end
 end
