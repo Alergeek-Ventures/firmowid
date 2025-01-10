@@ -26,7 +26,7 @@ defmodule Firmowid.BankData do
            ),
          {:ok, _} <-
            Repo.insert(%Requisition{
-             gocardless_id: requisition["id"],
+             id: requisition["id"],
              status: :pending,
              organization_id: organization_id
            }) do
@@ -34,11 +34,11 @@ defmodule Firmowid.BankData do
     end
   end
 
-  def confirm_requisition(gocardless_requisition_id, organization_id) do
+  def confirm_requisition(requisition_id, organization_id) do
     requisition_from_db =
-      Repo.get_by(
+      Repo.get!(
         Requisition,
-        [gocardless_id: gocardless_requisition_id],
+        requisition_id,
         organization_id: organization_id
       )
 
@@ -48,7 +48,7 @@ defmodule Firmowid.BankData do
 
       _ ->
         with requisition_from_api <-
-               ApiClient.get_requisition(gocardless_requisition_id) do
+               ApiClient.get_requisition(requisition_id) do
           if requisition_from_api["status"] == "LN" do
             Repo.update!(
               Requisition.changeset(requisition_from_db, %{
@@ -58,7 +58,6 @@ defmodule Firmowid.BankData do
 
             {:ok, _} =
               create_or_update_bank_accounts_for_requisition(
-                gocardless_requisition_id,
                 requisition_from_db.id,
                 organization_id
               )
@@ -123,17 +122,16 @@ defmodule Firmowid.BankData do
   end
 
   defp create_or_update_bank_accounts_for_requisition(
-         gocardless_requisition_id,
-         firmowid_requisition_id,
+         requisition_id,
          organization_id
        ) do
-    ApiClient.get_accounts_for_requisition(gocardless_requisition_id)
+    ApiClient.get_accounts_for_requisition(requisition_id)
     |> Enum.each(fn account ->
       Firmowid.Finances.create_bank_account(%{
         iban: account["iban"],
         gocardless_id: account["id"],
         organization_id: organization_id,
-        requisition_id: firmowid_requisition_id
+        requisition_id: requisition_id
       })
     end)
 
@@ -142,7 +140,7 @@ defmodule Firmowid.BankData do
 
   def delete_requisition(requisition_id, organization_id) do
     with requisition <- Repo.get(Requisition, requisition_id, organization_id: organization_id),
-         {:ok, _} <- ApiClient.delete_requisition(requisition.gocardless_id),
+         {:ok, _} <- ApiClient.delete_requisition(requisition_id),
          {:ok, _} <- Repo.delete(requisition, organization_id: organization_id) do
       {:ok, requisition}
     end

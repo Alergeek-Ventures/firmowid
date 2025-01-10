@@ -7,10 +7,9 @@ defmodule Firmowid.Repo.Migrations.CreatePostgresSchema do
 
     execute(create_requisition_status_query)
 
-    create table(:requisitions) do
+    create table(:requisitions, primary_key: false) do
+      add :id, :uuid, primary_key: true
       add :status, :requisition_status, null: false
-
-      add :gocardless_id, :string
 
       add :organization_id,
           references(:organizations,
