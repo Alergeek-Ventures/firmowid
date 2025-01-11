@@ -16,8 +16,6 @@ defmodule Firmowid.Application do
       {Ecto.Migrator, repos: Application.fetch_env!(:firmowid, :ecto_repos)},
       {DNSCluster, query: Application.get_env(:firmowid, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Firmowid.PubSub},
-      # Start the Finch HTTP client for sending emails
-      {Finch, name: Firmowid.Finch},
       Firmowid.BankData.TokenManager,
       Firmowid.Documents.Reducto,
       {Oban, Application.fetch_env!(:firmowid, Oban)},

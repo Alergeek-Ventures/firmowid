@@ -34,7 +34,7 @@ config :ex_aws,
   secret_access_key: "REMOVED_TIGRIS_SECRET_KEY"
 
 # Configures Swoosh API Client
-config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: Firmowid.Finch
+config :swoosh, api_client: Swoosh.ApiClient.Req
 
 # Disable Swoosh Local Memory Storage
 config :swoosh, local: false
