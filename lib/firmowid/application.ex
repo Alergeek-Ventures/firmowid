@@ -17,7 +17,6 @@ defmodule Firmowid.Application do
       {DNSCluster, query: Application.get_env(:firmowid, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Firmowid.PubSub},
       Firmowid.BankData.TokenManager,
-      Firmowid.Documents.Reducto,
       {Oban, Application.fetch_env!(:firmowid, Oban)},
       # Start to serve requests, typically the last entry
       FirmowidWeb.Endpoint
