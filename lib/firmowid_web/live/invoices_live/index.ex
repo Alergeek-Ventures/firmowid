@@ -4,7 +4,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
   import FirmowidWeb.SalesInvoicesLive.EditButton
   import FirmowidWeb.SalesInvoicesLive.BuyerForm
   import FirmowidWeb.SalesInvoicesLive.SellerForm
-  import FirmowidWeb.SalesInvoicesLive.InvoiceItems
+  import FirmowidWeb.SalesInvoicesLive.SalesInvoiceItems
 
   use FirmowidWeb, :live_view
   require Logger
@@ -131,12 +131,12 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
           invoice_type: :poland,
           currency: "PLN",
           organization_id: Firmowid.Repo.get_org_id(),
-          invoice_items: [],
+          sales_invoice_items: [],
           buyer_type: :company,
           is_basic_info_confirmed: false,
           is_seller_confirmed: false,
           is_buyer_confirmed: false,
-          are_invoice_items_confirmed: false
+          are_sales_invoice_items_confirmed: false
         })
         |> Map.merge(seller_in_invoice)
       )

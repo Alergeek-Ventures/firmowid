@@ -167,14 +167,14 @@ defmodule FirmowidWeb.SalesInvoicesLiveTest do
 
       # Add new invoice item
       lv
-      |> element("#invoice_items_form")
+      |> element("#sales_invoice_items_form")
       |> render_change(%{"sales_invoice[items_sort][]" => "new"})
 
       result =
         lv
-        |> form("#invoice_items_form",
+        |> form("#sales_invoice_items_form",
           sales_invoice: %{
-            "invoice_items" => %{
+            "sales_invoice_items" => %{
               "0" => %{
                 "name" => "Koszty utrzymania",
                 "unit" => "godz.",
@@ -189,14 +189,14 @@ defmodule FirmowidWeb.SalesInvoicesLiveTest do
 
       assert result =~ "Koszty utrzymania"
       # Make sure that form is confirmed and locked
-      refute lv |> element("#invoice_items_form") |> render =~ "Zatwierdź"
+      refute lv |> element("#sales_invoice_items_form") |> render =~ "Zatwierdź"
 
-      invoice_item = SalesInvoices.get_latest_sales_invoice().invoice_items |> hd
+      sales_invoice_item = SalesInvoices.get_latest_sales_invoice().sales_invoice_items |> hd
 
-      assert invoice_item.name == "Koszty utrzymania"
-      assert invoice_item.unit_price == Decimal.new("100")
-      assert invoice_item.vat_rate == Decimal.new("23")
-      assert invoice_item.quantity == Decimal.new("1")
+      assert sales_invoice_item.name == "Koszty utrzymania"
+      assert sales_invoice_item.unit_price == Decimal.new("100")
+      assert sales_invoice_item.vat_rate == Decimal.new("23")
+      assert sales_invoice_item.quantity == Decimal.new("1")
     end
   end
 end

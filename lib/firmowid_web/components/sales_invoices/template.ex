@@ -184,7 +184,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
           <% end %>
         </thead>
         <tbody class="text-[10px]">
-          <%= for {item, index} <- Enum.with_index(@sales_invoice.invoice_items, 1) do %>
+          <%= for {item, index} <- Enum.with_index(@sales_invoice.sales_invoice_items, 1) do %>
             <tr class="align-top">
               <td class="py-1">{index}.</td>
               <td class="py-1 max-w-40">{item.name}</td>
@@ -202,14 +202,14 @@ defmodule FirmowidWeb.SalesInvoices.Template do
                 <td class="py-1 text-right">
                   {Money.new(
                     @sales_invoice.currency,
-                    item |> Firmowid.SalesInvoices.InvoiceItem.get_net_value(),
+                    item |> Firmowid.SalesInvoices.SalesInvoiceItem.get_net_value(),
                     currency_symbol: ""
                   )}
                 </td>
                 <td class="py-1 text-right">
                   {Money.new(
                     @sales_invoice.currency,
-                    item |> Firmowid.SalesInvoices.InvoiceItem.get_gross_value(),
+                    item |> Firmowid.SalesInvoices.SalesInvoiceItem.get_gross_value(),
                     currency_symbol: ""
                   )}
                 </td>
@@ -222,7 +222,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
                 <td class="py-1 text-right">
                   {Money.new!(
                     @sales_invoice.currency,
-                    item |> Firmowid.SalesInvoices.InvoiceItem.get_net_value()
+                    item |> Firmowid.SalesInvoices.SalesInvoiceItem.get_net_value()
                   )
                   |> Money.to_string!(currency_symbol: "")}
                 </td>

@@ -92,7 +92,7 @@ defmodule Firmowid.Repo.Migrations.CreateInvoice do
 
       add :is_buyer_confirmed, :boolean, default: false, null: false
 
-      add :are_invoice_items_confirmed, :boolean, default: false, null: false
+      add :are_sales_invoice_items_confirmed, :boolean, default: false, null: false
 
       add :is_cash_account, :boolean, default: false, null: false
       add :is_reverse_charge, :boolean, default: false, null: false
@@ -106,7 +106,7 @@ defmodule Firmowid.Repo.Migrations.CreateInvoice do
       timestamps()
     end
 
-    create table(:invoice_items) do
+    create table(:sales_invoice_items) do
       add :name, :string, null: false
       add :quantity, :decimal, null: false
       add :unit, :string, null: false

@@ -10,7 +10,7 @@ defmodule Firmowid.SalesInvoices do
 
   def get_sales_invoice(id) do
     Repo.get(SalesInvoice, id)
-    |> Repo.preload(:invoice_items)
+    |> Repo.preload(:sales_invoice_items)
   end
 
   def get_latest_sales_invoice() do
@@ -18,7 +18,7 @@ defmodule Firmowid.SalesInvoices do
     |> order_by(desc: :updated_at)
     |> limit(1)
     |> Repo.one()
-    |> Repo.preload(:invoice_items)
+    |> Repo.preload(:sales_invoice_items)
   end
 
   def create_sales_invoice(%SalesInvoice{} = invoice, attrs) do

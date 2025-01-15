@@ -193,7 +193,7 @@
     />
   </div>
   <div class="mt-16">
-    <.invoice_items sales_invoice={@sales_invoice} form={@form} />
+    <.sales_invoice_items_form sales_invoice={@sales_invoice} form={@form} />
     <div class="flex justify-between">
       <.form phx-change="submit" for={@form} class="mt-4">
         <%= if  @sales_invoice.invoice_type == :poland do %>

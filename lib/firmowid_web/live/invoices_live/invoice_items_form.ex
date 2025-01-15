@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.SalesInvoicesLive.InvoiceItems do
+defmodule FirmowidWeb.SalesInvoicesLive.SalesInvoiceItems do
   use FirmowidWeb, :html
 
   import FirmowidWeb.SalesInvoicesLive.EditButton
@@ -7,15 +7,15 @@ defmodule FirmowidWeb.SalesInvoicesLive.InvoiceItems do
   attr :form, :list, required: true
   attr :sales_invoice, :map, required: true
 
-  def invoice_items(assigns) do
+  def sales_invoice_items_form(assigns) do
     ~H"""
-    <.form id="invoice_items_form" phx-submit="submit" phx-change="change" for={@form}>
+    <.form id="sales_invoice_items_form" phx-submit="submit" phx-change="change" for={@form}>
       <div class="flex justify-between">
         <p class="text-darkGrey mb-4">
           Pozycje na fakturze
         </p>
       </div>
-      <%= if @sales_invoice.are_invoice_items_confirmed do %>
+      <%= if @sales_invoice.are_sales_invoice_items_confirmed do %>
         <div class="border flex justify-between items-start border-greyButtonBg rounded-md p-5">
           <table class="w-full">
             <tr class="text-darkGrey  font-normal">
@@ -48,7 +48,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.InvoiceItems do
                 </th>
               <% end %>
             </tr>
-            <%= for item <- @sales_invoice.invoice_items do %>
+            <%= for item <- @sales_invoice.sales_invoice_items do %>
               <tr class="pt-3">
                 <td class="pt-3">
                   {item.name}
@@ -104,7 +104,9 @@ defmodule FirmowidWeb.SalesInvoicesLive.InvoiceItems do
             <% end %>
           </table>
           <.edit_button phx-click={
-            JS.push("submit", value: %{"sales_invoice" => %{"are_invoice_items_confirmed" => false}})
+            JS.push("submit",
+              value: %{"sales_invoice" => %{"are_sales_invoice_items_confirmed" => false}}
+            )
           } />
         </div>
       <% else %>
@@ -139,7 +141,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.InvoiceItems do
               </div>
             <% end %>
 
-            <.inputs_for :let={item} field={@form[:invoice_items]}>
+            <.inputs_for :let={item} field={@form[:sales_invoice_items]}>
               <input type="hidden" name="sales_invoice[items_sort][]" value={item.index} />
               <div class="col-span-2">
                 <.input field={item[:name]} type="text" required />
@@ -237,7 +239,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.InvoiceItems do
             >
               Dodaj pozycję <.icon name="hero-plus" class="text-darkGrey h-4 w-4" />
             </.button>
-            <.input type="hidden" field={@form[:are_invoice_items_confirmed]} value="true" />
+            <.input type="hidden" field={@form[:are_sales_invoice_items_confirmed]} value="true" />
             <.button phx-disable-with="Zapisywanie..." type="submit" color="green">
               Zatwierdź
             </.button>

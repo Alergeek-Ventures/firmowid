@@ -41,12 +41,12 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     field :buyer_description, :string
     field :is_buyer_confirmed, :boolean, default: false
 
-    field :are_invoice_items_confirmed, :boolean, default: false
+    field :are_sales_invoice_items_confirmed, :boolean, default: false
 
     field :is_cash_account, :boolean, default: false
     field :is_reverse_charge, :boolean, default: false
 
-    has_many :invoice_items, Firmowid.SalesInvoices.InvoiceItem, on_replace: :delete
+    has_many :sales_invoice_items, Firmowid.SalesInvoices.SalesInvoiceItem, on_replace: :delete
     belongs_to :organization, Firmowid.Accounts.Organization
     belongs_to :buyer, Firmowid.SalesInvoices.Buyer
     belongs_to :seller, Firmowid.SalesInvoices.Seller
@@ -55,14 +55,14 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   end
 
   def get_net_value(sales_invoice) do
-    Enum.reduce(sales_invoice.invoice_items, Decimal.new(0), fn item, acc ->
-      Decimal.add(acc, Firmowid.SalesInvoices.InvoiceItem.get_net_value(item))
+    Enum.reduce(sales_invoice.sales_invoice_items, Decimal.new(0), fn item, acc ->
+      Decimal.add(acc, Firmowid.SalesInvoices.SalesInvoiceItem.get_net_value(item))
     end)
   end
 
   def get_vat_value(sales_invoice) do
-    Enum.reduce(sales_invoice.invoice_items, Decimal.new(0), fn item, acc ->
-      Decimal.add(acc, Firmowid.SalesInvoices.InvoiceItem.get_vat_value(item))
+    Enum.reduce(sales_invoice.sales_invoice_items, Decimal.new(0), fn item, acc ->
+      Decimal.add(acc, Firmowid.SalesInvoices.SalesInvoiceItem.get_vat_value(item))
     end)
   end
 
@@ -70,7 +70,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     sales_invoice.is_basic_info_confirmed &&
       sales_invoice.is_seller_confirmed &&
       sales_invoice.is_buyer_confirmed &&
-      sales_invoice.are_invoice_items_confirmed
+      sales_invoice.are_sales_invoice_items_confirmed
   end
 
   def get_gross_value(sales_invoice) do
@@ -106,14 +106,14 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       :is_basic_info_confirmed,
       :is_seller_confirmed,
       :is_buyer_confirmed,
-      :are_invoice_items_confirmed,
+      :are_sales_invoice_items_confirmed,
       :is_cash_account,
       :is_reverse_charge
     ])
     |> buyer_changeset(attrs)
     |> seller_changeset(attrs)
-    |> cast_assoc(:invoice_items,
-      with: &Firmowid.SalesInvoices.InvoiceItem.changeset/2,
+    |> cast_assoc(:sales_invoice_items,
+      with: &Firmowid.SalesInvoices.SalesInvoiceItem.changeset/2,
       sort_param: :items_sort,
       drop_param: :items_drop
     )

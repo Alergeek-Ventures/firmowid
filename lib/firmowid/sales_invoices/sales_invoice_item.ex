@@ -1,8 +1,8 @@
-defmodule Firmowid.SalesInvoices.InvoiceItem do
+defmodule Firmowid.SalesInvoices.SalesInvoiceItem do
   use Firmowid.Schema
   import Ecto.Changeset
 
-  schema "invoice_items" do
+  schema "sales_invoice_items" do
     field :name, :string, default: ""
     field :quantity, :decimal, default: 1
     field :unit, :string, default: "szt."
@@ -15,20 +15,20 @@ defmodule Firmowid.SalesInvoices.InvoiceItem do
     timestamps()
   end
 
-  def get_net_value(invoice_item) do
-    Decimal.mult(invoice_item.unit_price, invoice_item.quantity)
+  def get_net_value(sales_invoice_item) do
+    Decimal.mult(sales_invoice_item.unit_price, sales_invoice_item.quantity)
   end
 
-  def get_vat_value(invoice_item) do
-    Decimal.mult(get_net_value(invoice_item), Decimal.div(invoice_item.vat_rate, 100))
+  def get_vat_value(sales_invoice_item) do
+    Decimal.mult(get_net_value(sales_invoice_item), Decimal.div(sales_invoice_item.vat_rate, 100))
   end
 
-  def get_gross_value(invoice_item) do
-    Decimal.add(get_net_value(invoice_item), get_vat_value(invoice_item))
+  def get_gross_value(sales_invoice_item) do
+    Decimal.add(get_net_value(sales_invoice_item), get_vat_value(sales_invoice_item))
   end
 
-  def changeset(invoice_item, attrs \\ %{}) do
-    invoice_item
+  def changeset(sales_invoice_item, attrs \\ %{}) do
+    sales_invoice_item
     |> cast(attrs, [
       :name,
       :quantity,
