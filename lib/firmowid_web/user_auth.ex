@@ -175,7 +175,9 @@ defmodule FirmowidWeb.UserAuth do
     if not is_nil(socket.assigns.current_user) and
          not is_nil(socket.assigns.current_user.organization_id) do
       Firmowid.Repo.put_org_id(socket.assigns.current_user.organization_id)
-      {:cont, socket}
+
+      {:cont,
+       socket |> Phoenix.Component.assign(:current_org, socket.assigns.current_user.organization)}
     else
       LiveToast.send_toast(
         :error,
@@ -241,7 +243,8 @@ defmodule FirmowidWeb.UserAuth do
     if not is_nil(conn.assigns[:current_user]) and
          not is_nil(conn.assigns[:current_user].organization_id) do
       Firmowid.Repo.put_org_id(conn.assigns[:current_user].organization_id)
-      conn
+
+      conn |> assign(:current_org, conn.assigns[:current_user].organization)
     else
       LiveToast.send_toast(
         :error,

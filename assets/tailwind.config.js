@@ -13,6 +13,10 @@ module.exports = {
     "../deps/live_toast/lib/**/*.*ex",
   ],
   theme: {
+    container: {
+      center: true,
+      padding: "2rem",
+    },
     fontSize: {
       xs: "11px",
       sm: "14px",

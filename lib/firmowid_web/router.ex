@@ -58,7 +58,7 @@ defmodule FirmowidWeb.Router do
       live "/sales_invoices/:id", SalesInvoicesLive.Index, :index
       get "/sales_invoices/:id/pdf", PdfController, :index
       get "/sales_invoices/:id/download", PdfController, :pdf
-      get "/settings", ContentController, :settings
+      live "/settings", SettingsLive.Index, :index
 
       live "/settings/bank-sync", BankSyncLive.Index, :index
       live "/settings/bank-sync/create", BankSyncLive.Create, :index

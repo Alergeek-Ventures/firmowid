@@ -149,7 +149,7 @@ defmodule FirmowidWeb.CoreComponents do
   end
 
   defp button_styles(:color, %{color: "black"}) do
-    "text-white bg-black hover:bg-greyButtonBg hover:text-black"
+    "text-white bg-black hover:bg-greyButtonBg hover:text-black disabled:cursor-default disabled:bg-black disabled:text-white"
   end
 
   defp button_styles(:color, _), do: button_styles(:color, %{color: "black"})

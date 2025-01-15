@@ -239,9 +239,12 @@ defmodule Firmowid.Accounts do
   """
   def get_user_by_session_token(token) do
     {:ok, query} = UserToken.verify_session_token_query(token)
+
     Repo.one(query, skip_organization_id: true)
+    |> Repo.preload(:organization, skip_organization_id: true)
   end
 
+  @spec delete_user_session_token(any()) :: :ok
   @doc """
   Deletes the signed token with the given context.
   """
@@ -424,6 +427,24 @@ defmodule Firmowid.Accounts do
       {:ok, %{delete_org: org}} -> {:ok, org}
       {:error, _operation, value, _changes} -> {:error, value}
     end
+  end
+
+  @doc """
+  Updates an organization with the given attributes.
+
+  ## Examples
+
+      iex> update_organization(organization, %{field: new_value})
+      {:ok, %Organization{}}
+
+      iex> update_organization(organization, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_organization(%Organization{} = organization, attrs) do
+    organization
+    |> Organization.changeset(attrs)
+    |> Repo.update(skip_organization_id: true)
   end
 
   alias Firmowid.Accounts.OrganizationInvites

@@ -20,5 +20,14 @@
       "username": "postgres",
       "password": "postgres"
     }
-  ]
+  ],
+  "emmet.includeLanguages": {
+    "HTML (EEx)": "html",
+    "phoenix-heex": "html"
+  },
+  "[phoenix-heex]": {
+    "editor.foldingStrategy": "indentation",
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "JakeBecker.elixir-ls"
+  }
 }

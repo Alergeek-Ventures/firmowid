@@ -16,7 +16,7 @@
     <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}>
     </script>
   </head>
-  <body class="bg-lightGreyBg">
+  <body class={classes(["bg-lightGreyBg", assigns[:body_class]])}>
     {@inner_content}
   </body>
 </html>

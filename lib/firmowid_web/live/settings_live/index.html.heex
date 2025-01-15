@@ -1,0 +1,113 @@
+<div class="container mt-16">
+  <h1 class="text-2xl">Cześć!</h1>
+  <p>{@current_user.email}</p>
+
+  <div class="flex gap-10 font-semibold mt-16">
+    <%= for {tab, label} <- [
+      {"your_company", "Twoja firma"},
+      {"your_account", "Twoje konto"},
+      {"bank_accounts", "Konta bankowe"},
+      {"address_book", "Książka adresowa"}
+    ] do %>
+      <.link
+        patch={~p"/settings?active_tab=#{tab}"}
+        class={
+          classes([
+            @active_tab == tab && "text-orangeText",
+            "phx-click-loading:opacity-50"
+          ])
+        }
+      >
+        {label}
+      </.link>
+    <% end %>
+  </div>
+  <hr class="border-t border-t-greyButtonBg mt-4" />
+  <%= if @your_company_is_editing do %>
+    <div class="mt-6">
+      <div class="flex gap-1 bg-lightGreyBg p-4">
+        <h2 class="font-bold mt-0.5">Dane firmy</h2>
+        <.simple_form phx-submit="save" for={@your_company_form}>
+          <.input
+            field={@your_company_form[:organization_type]}
+            label="Rodzaj działalności"
+            class="font-normal"
+          />
+          <.input field={@your_company_form[:name]} label="Nazwa organizacji" class="font-normal" />
+          <.input
+            field={@your_company_form[:identification_number]}
+            label="NIP"
+            class="font-normal"
+          />
+          <.input
+            field={@your_company_form[:address]}
+            label="Adres przedsiębiorstwa"
+            class="font-normal"
+          />
+          <.input
+            field={@your_company_form[:phone_number]}
+            label="Numer telefonu"
+            class="font-normal"
+          />
+
+          <:actions>
+            <.button type="submit" phx-disable-with="Zapisywanie..." phx-value-form="your_company">
+              Zapisz
+            </.button>
+            <.button
+              type="button"
+              phx-click="edit"
+              phx-value-form="your_company"
+              phx-value-enabled="false"
+              phx-disable-with="Anulowanie..."
+              class="ml-2"
+            >
+              Anuluj
+            </.button>
+          </:actions>
+        </.simple_form>
+      </div>
+    </div>
+  <% else %>
+    <div class="mt-6">
+      <div class="flex gap-1">
+        <h2 class="font-bold mt-0.5">Dane firmy</h2>
+        <.edit_button phx-click="edit" phx-value-form="your_company" phx-value-enabled="true" />
+      </div>
+      <div class="space-y-4 mt-6">
+        <%= for {label, value} <- [
+          {"Rodzaj działalności", @current_org.organization_type},
+          {"Nazwa organizacji", @current_org.name},
+          {"NIP", @current_org.identification_number},
+          {"Adres przedsiębiorstwa", @current_org.address},
+          {"Numer telefonu", @current_org.phone_number}
+        ], value do %>
+          <div class="flex">
+            <div class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4">
+              {label}
+            </div>
+            <div class="flex-1">
+              <%= if is_list(value) do %>
+                <%= for line <- value do %>
+                  <div>{line}</div>
+                <% end %>
+              <% else %>
+                {value}
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%!-- <ul>
+    <li class="max-md:hidden"><.link navigate={~p"/settings/bank-sync"}>Synchronizacja z
+        bankiem</.link></li>
+    <li>
+      <.link href={~p"/users/log_out"} method="delete">
+        Wyloguj
+      </.link>
+    </li>
+  </ul> --%>
+</div>

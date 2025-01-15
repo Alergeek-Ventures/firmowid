@@ -8,6 +8,10 @@ defmodule Firmowid.Repo.Migrations.CreateUsersAuthTables do
       add :identification_number, :string, null: false
       add :address, :string
       add :name, :string, null: false
+      add :phone_number, :string
+      add :organization_type, :string
+      add :correspondence_name, :string
+      add :correspondence_address, :string
 
       timestamps()
     end
