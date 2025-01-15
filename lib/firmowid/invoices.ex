@@ -1,47 +1,47 @@
-defmodule Firmowid.Invoices do
+defmodule Firmowid.SalesInvoices do
   import Ecto.Query, warn: false
   alias Firmowid.Repo
 
-  alias Firmowid.Invoices.Invoice
+  alias Firmowid.SalesInvoices.SalesInvoice
 
-  def list_invoices do
-    Repo.all(Invoice)
+  def list_sales_invoices do
+    Repo.all(SalesInvoice)
   end
 
-  def get_invoice(id) do
-    Repo.get(Invoice, id)
+  def get_sales_invoice(id) do
+    Repo.get(SalesInvoice, id)
     |> Repo.preload(:invoice_items)
   end
 
-  def get_latest_invoice() do
-    Invoice
+  def get_latest_sales_invoice() do
+    SalesInvoice
     |> order_by(desc: :updated_at)
     |> limit(1)
     |> Repo.one()
     |> Repo.preload(:invoice_items)
   end
 
-  def create_invoice(%Invoice{} = invoice, attrs) do
+  def create_sales_invoice(%SalesInvoice{} = invoice, attrs) do
     invoice
-    |> Invoice.changeset(attrs)
+    |> SalesInvoice.changeset(attrs)
     |> Repo.insert()
   end
 
-  def update_invoice(%Invoice{} = invoice, attrs) do
+  def update_sales_invoice(%SalesInvoice{} = invoice, attrs) do
     invoice
-    |> Invoice.changeset(attrs)
+    |> SalesInvoice.changeset(attrs)
     |> Repo.update()
   end
 
-  def delete_invoice(%Invoice{} = invoice) do
+  def delete_sales_invoice(%SalesInvoice{} = invoice) do
     Repo.delete(invoice)
   end
 
-  def change_invoice(%Invoice{} = invoice, attrs \\ %{}) do
-    Invoice.changeset(invoice, attrs)
+  def change_sales_invoice(%SalesInvoice{} = invoice, attrs \\ %{}) do
+    SalesInvoice.changeset(invoice, attrs)
   end
 
-  alias Firmowid.Invoices.Buyer
+  alias Firmowid.SalesInvoices.Buyer
 
   def create_or_update_buyer("", attr) do
     create_buyer(attr)
@@ -81,7 +81,7 @@ defmodule Firmowid.Invoices do
     Buyer.changeset(buyer, attrs)
   end
 
-  alias Firmowid.Invoices.Seller
+  alias Firmowid.SalesInvoices.Seller
 
   def create_or_update_seller("", attr) do
     create_seller(attr)

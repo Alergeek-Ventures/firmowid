@@ -1,6 +1,6 @@
-defmodule FirmowidWeb.InvoicesLive.BuyerForm do
+defmodule FirmowidWeb.SalesInvoicesLive.BuyerForm do
   require Logger
-  import FirmowidWeb.InvoicesLive.EditButton
+  import FirmowidWeb.SalesInvoicesLive.EditButton
   use FirmowidWeb, :html
 
   attr :buyer_form, :list, required: true
@@ -17,7 +17,7 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
 
   attr :buyer_form, :list, required: true
   attr :nip_form, :list, required: true
-  attr :invoice, :map, required: true
+  attr :sales_invoice, :map, required: true
   attr :buyers, :list, required: false, default: []
   attr :is_buyer_dirty, :boolean, required: false, default: false
   attr :buyer_form_state, :atom, required: false
@@ -26,16 +26,16 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
     ~H"""
     <div class="w-full max-w-screen-lg">
       <p class="text-darkGrey mb-2">Nabywca</p>
-      <%= if @invoice.is_buyer_confirmed do %>
+      <%= if @sales_invoice.is_buyer_confirmed do %>
         <div class="flex gap-2 mt-4 mb-2">
           <div
-            :if={@invoice.buyer_id}
+            :if={@sales_invoice.buyer_id}
             class="text-blueText border text-sm flex justify-center items-center font-medium px-2 h-7 border-blueText rounded-md"
           >
             WYBRANY Z BAZY
           </div>
           <div
-            :if={!@invoice.buyer_id}
+            :if={!@sales_invoice.buyer_id}
             class="text-blueText border text-sm flex justify-center items-center font-medium px-2 h-7 border-blueText rounded-md"
           >
             WPROWADZONY RĘCZNIE
@@ -48,7 +48,7 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
               type="hidden"
               field={@buyer_form[:is_buyer_confirmed]}
               value={
-                if !@invoice.buyer_id or @invoice.buyer_id == "" do
+                if !@sales_invoice.buyer_id or @sales_invoice.buyer_id == "" do
                   "true"
                 else
                   "false"
@@ -62,20 +62,20 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
               prompt="WYBIERZ Z LISTY"
               options={
                 @buyers
-                |> Enum.map(fn buyer -> {Firmowid.Invoices.Buyer.get_name(buyer), buyer.id} end)
+                |> Enum.map(fn buyer -> {Firmowid.SalesInvoices.Buyer.get_name(buyer), buyer.id} end)
               }
             />
           </.form>
           <button
             phx-click={
-              JS.push("submit", value: %{"invoice" => %{"buyer_id" => ""}})
+              JS.push("submit", value: %{"sales_invoice" => %{"buyer_id" => ""}})
               |> JS.push("update_buyer_state", value: %{"buyer_form_state" => :nip})
             }
             id="buyer_expand_button"
             class={[
               "uppercase border flex items-center gap-1 border-greyButtonBg text-darkGrey text-sm rounded-md h-7 px-2 mt-2 disabled:opacity-50 disabled:cursor-default",
               (@buyer_form_state == "nip" or @buyer_form_state == "expanded") &&
-                (@invoice.buyer_id == "" or !@invoice.buyer_id) &&
+                (@sales_invoice.buyer_id == "" or !@sales_invoice.buyer_id) &&
                 "bg-darkGrey text-white"
             ]}
             phx-disable-with=""
@@ -84,53 +84,53 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
           </button>
         </div>
       <% end %>
-      <%= if @invoice.is_buyer_confirmed do %>
+      <%= if @sales_invoice.is_buyer_confirmed do %>
         <div class="flex justify-between items-start text-sm border border-greyButtonBg rounded-md p-5">
           <div>
             <p class="font-semibold text-darkGrey mb-8">
-              {case @invoice.buyer_type do
+              {case @sales_invoice.buyer_type do
                 :company -> "Firma/ Jednoosobowa Działalność Gospodarcza"
                 :individual -> "Osoba prywatna"
               end}
             </p>
             <div class="flex gap-4">
               <div class="grid grid-cols-[max-content,1fr] gap-x-4 gap-y-2">
-                <%= if @invoice.buyer_type == :company do %>
+                <%= if @sales_invoice.buyer_type == :company do %>
                   <span class="text-darkGrey">NIP</span>
-                  <span>{@invoice.buyer_nip}</span>
+                  <span>{@sales_invoice.buyer_nip}</span>
                   <span class="text-darkGrey">Nazwa firmy</span>
-                  <span>{@invoice.buyer_display_name}</span>
+                  <span>{@sales_invoice.buyer_display_name}</span>
                 <% end %>
-                <%= if !!@invoice.buyer_name or !!@invoice.buyer_surname do %>
+                <%= if !!@sales_invoice.buyer_name or !!@sales_invoice.buyer_surname do %>
                   <span class="text-darkGrey">Imię i nazwisko</span>
-                  <span>{@invoice.buyer_name} {@invoice.buyer_surname}</span>
+                  <span>{@sales_invoice.buyer_name} {@sales_invoice.buyer_surname}</span>
                 <% end %>
-                <%= if !!@invoice.buyer_pesel and @invoice.buyer_type == :individual do %>
+                <%= if !!@sales_invoice.buyer_pesel and @sales_invoice.buyer_type == :individual do %>
                   <span class="text-darkGrey">PESEL</span>
-                  <span>{@invoice.buyer_pesel}</span>
+                  <span>{@sales_invoice.buyer_pesel}</span>
                 <% end %>
                 <span class="text-darkGrey">Adres </span>
-                <span>{@invoice.buyer_address}</span>
+                <span>{@sales_invoice.buyer_address}</span>
               </div>
               <div class="grid grid-cols-[max-content,1fr] h-min justify-start gap-x-4 gap-y-2">
-                <%= if @invoice.buyer_email do %>
+                <%= if @sales_invoice.buyer_email do %>
                   <span class="text-darkGrey">e-mail</span>
-                  <span>{@invoice.buyer_email}</span>
+                  <span>{@sales_invoice.buyer_email}</span>
                 <% end %>
-                <%= if @invoice.buyer_phone do %>
+                <%= if @sales_invoice.buyer_phone do %>
                   <span class="text-darkGrey">Telefon</span>
-                  <span>{@invoice.buyer_phone}</span>
+                  <span>{@sales_invoice.buyer_phone}</span>
                 <% end %>
-                <%= if @invoice.buyer_description do %>
+                <%= if @sales_invoice.buyer_description do %>
                   <span class="text-darkGrey">Opis</span>
-                  <span>{@invoice.buyer_description}</span>
+                  <span>{@sales_invoice.buyer_description}</span>
                 <% end %>
               </div>
             </div>
           </div>
 
           <.edit_button phx-click={
-            JS.push("submit", value: %{"invoice" => %{"is_buyer_confirmed" => false}})
+            JS.push("submit", value: %{"sales_invoice" => %{"is_buyer_confirmed" => false}})
           } />
         </div>
       <% else %>
@@ -273,7 +273,7 @@ defmodule FirmowidWeb.InvoicesLive.BuyerForm do
                     >
                       Zatwierdź
                     </.button>
-                    <%= if !@invoice.buyer_id or @invoice.buyer_id == "" do %>
+                    <%= if !@sales_invoice.buyer_id or @sales_invoice.buyer_id == "" do %>
                       <.button
                         phx-disable-with="Dodawanie..."
                         name="action"

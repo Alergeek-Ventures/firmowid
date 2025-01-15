@@ -1,9 +1,9 @@
-defmodule Firmowid.Invoices.NipApiClient do
+defmodule Firmowid.SalesInvoices.NipApiClient do
   @moduledoc """
   Client for the Polish VAT Registry API using Req HTTP client and Ecto embedded schemas.
   """
 
-  alias Firmowid.Invoices.NipResponse
+  alias Firmowid.SalesInvoices.NipResponse
 
   require Logger
   use Ecto.Schema

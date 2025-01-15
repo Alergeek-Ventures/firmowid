@@ -34,7 +34,7 @@
       </a>
     <% end %>
     <.link
-      navigate={~p"/invoices"}
+      navigate={~p"/sales_invoices"}
       class="min-w-[200px]
       relative flex flex-row gap-4 items-center justify-center w-full
       border rounded-lg px-3 py-2 max-md:hidden min-h-[40px] hover:bg-greyButtonBg
@@ -75,7 +75,7 @@
   <%= for {filter, label} <- [
         {:all, "Wszystkie"},
         {:unmatched, "Bez dopasowania"},
-        {:invoices, "Faktury"},
+        {:sales_invoices, "Faktury"},
         {:transactions, "Transakcje"}
     ] do %>
     <.button

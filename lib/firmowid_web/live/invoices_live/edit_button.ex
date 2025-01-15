@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.InvoicesLive.EditButton do
+defmodule FirmowidWeb.SalesInvoicesLive.EditButton do
   use FirmowidWeb, :html
 
   attr :rest, :global,

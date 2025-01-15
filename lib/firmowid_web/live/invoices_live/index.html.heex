@@ -1,5 +1,5 @@
 <div class="mx-8">
-  <%= if @invoice_id do %>
+  <%= if @sales_invoice_id do %>
     <div
       id="invoice-preview"
       class="fixed group aria-expanded:translate-x-0 translate-x-full transition-transform flex right-0 top-36 box-border z-10"
@@ -18,9 +18,9 @@
       </button>
       <div class="p-10 bg-greyButtonBg rounded-bl-md z-10">
         <div class="rounded-md overflow-hidden">
-          <FirmowidWeb.PdfHTML.invoice
+          <FirmowidWeb.PdfHTML.sales_invoice
             class="max-h-[calc(100vh-9rem-4*theme('spacing.10'))] overflow-y-scroll"
-            invoice={@invoice}
+            sales_invoice={@sales_invoice}
             currency_rate={@currency_rate}
           />
         </div>
@@ -35,7 +35,7 @@
           phx-click={
             JS.push("submit",
               value: %{
-                "invoice" => %{
+                "sales_invoice" => %{
                   "invoice_type" => value
                 }
               }
@@ -44,8 +44,8 @@
           class={
             classes([
               "h-7 !px-2 !py-1 leading-tight rounded-md border border-greyButtonBg justify-end items-center",
-              @invoice.invoice_type == value && "bg-darkGrey text-greyButtonBg",
-              @invoice.invoice_type != value && "bg-lightGreyBg !text-darkGrey"
+              @sales_invoice.invoice_type == value && "bg-darkGrey text-greyButtonBg",
+              @sales_invoice.invoice_type != value && "bg-lightGreyBg !text-darkGrey"
             ])
           }
         >
@@ -63,18 +63,18 @@
     id="basic_info_form"
     class={[
       "flex items-end mt-4 p-4 gap-8 rounded-md",
-      @invoice.is_basic_info_confirmed && "border-greyButtonBg border border-solid",
-      !@invoice.is_basic_info_confirmed && "bg-greyButtonBg bg-opacity-50"
+      @sales_invoice.is_basic_info_confirmed && "border-greyButtonBg border border-solid",
+      !@sales_invoice.is_basic_info_confirmed && "bg-greyButtonBg bg-opacity-50"
     ]}
   >
-    <%= if @invoice.is_basic_info_confirmed do %>
+    <%= if @sales_invoice.is_basic_info_confirmed do %>
       <div class="grid w-full grid-cols-5">
         <div class="flex flex-col gap-2">
           <p class="text-sm leading-snug text-darkGrey" style="font-weight: 400;">
             Numer faktury
           </p>
           <p class="text-black">
-            {@invoice.invoice_number}
+            {@sales_invoice.invoice_number}
           </p>
         </div>
         <div class="flex flex-col gap-2">
@@ -82,7 +82,7 @@
             Data wystawienia
           </p>
           <p class="text-black">
-            {@invoice.issue_date |> Calendar.strftime("%d.%m.%Y")}
+            {@sales_invoice.issue_date |> Calendar.strftime("%d.%m.%Y")}
           </p>
         </div>
         <div class="flex flex-col gap-2">
@@ -90,7 +90,7 @@
             Data sprzedaży
           </p>
           <p class="text-black">
-            {@invoice.sale_date |> Calendar.strftime("%d.%m.%Y")}
+            {@sales_invoice.sale_date |> Calendar.strftime("%d.%m.%Y")}
           </p>
         </div>
         <div class="flex flex-col gap-2">
@@ -98,7 +98,7 @@
             Sposób płatności
           </p>
           <p class="text-black">
-            {@invoice.payment_method} | {@invoice.currency}
+            {@sales_invoice.payment_method} | {@sales_invoice.currency}
           </p>
         </div>
         <div class="flex flex-col gap-2">
@@ -106,15 +106,15 @@
             Termin płatności
           </p>
           <p class="text-black">
-            {case Date.diff(@invoice.due_date, @invoice.issue_date) do
+            {case Date.diff(@sales_invoice.due_date, @sales_invoice.issue_date) do
               1 -> "1 dzień"
               diff -> "#{abs(diff)} dni"
-            end} ({@invoice.due_date |> Calendar.strftime("%d.%m.%Y")})
+            end} ({@sales_invoice.due_date |> Calendar.strftime("%d.%m.%Y")})
           </p>
         </div>
       </div>
       <.edit_button phx-click={
-        JS.push("submit", value: %{"invoice" => %{"is_basic_info_confirmed" => false}})
+        JS.push("submit", value: %{"sales_invoice" => %{"is_basic_info_confirmed" => false}})
       } />
     <% else %>
       <.input
@@ -155,7 +155,7 @@
           type="select"
           required
           options={
-            case @invoice.invoice_type do
+            case @sales_invoice.invoice_type do
               :poland -> ["PLN"]
               :foreign -> ["EUR", "PLN"]
             end
@@ -179,13 +179,13 @@
   <div class="flex mt-16 gap-16 justify-between">
     <.seller_form
       is_seller_dirty={@is_seller_dirty}
-      invoice={@invoice}
+      sales_invoice={@sales_invoice}
       seller_form={@form}
       sellers={@sellers}
     />
     <.buyer_form
       is_buyer_dirty={@is_buyer_dirty}
-      invoice={@invoice}
+      sales_invoice={@sales_invoice}
       buyer_form={@form}
       nip_form={@nip_form}
       buyers={@buyers}
@@ -193,10 +193,10 @@
     />
   </div>
   <div class="mt-16">
-    <.invoice_items invoice={@invoice} form={@form} />
+    <.invoice_items sales_invoice={@sales_invoice} form={@form} />
     <div class="flex justify-between">
       <.form phx-change="submit" for={@form} class="mt-4">
-        <%= if  @invoice.invoice_type == :poland do %>
+        <%= if  @sales_invoice.invoice_type == :poland do %>
           <.input
             field={@form[:is_cash_account]}
             type="checkbox"
@@ -204,7 +204,7 @@
             class="font-normal text-darkGrey"
           />
         <% end %>
-        <%= if  @invoice.invoice_type == :foreign do %>
+        <%= if  @sales_invoice.invoice_type == :foreign do %>
           <.input
             field={@form[:is_reverse_charge]}
             type="checkbox"
@@ -215,13 +215,13 @@
       </.form>
       <div class="bg-greyButtonBg w-96 rounded-md px-4 py-3 mt-10 bg-opacity-30 ml-auto">
         <div class="flex flex-col justify-end">
-          <%= if  @invoice.invoice_type == :poland do %>
+          <%= if  @sales_invoice.invoice_type == :poland do %>
             <div class="flex justify-between items-center mt-2">
               <span class="text-sm text-darkGrey">Suma netto</span>
               <span>
                 {Money.new(
-                  @invoice.currency,
-                  @invoice |> Firmowid.Invoices.Invoice.get_net_value()
+                  @sales_invoice.currency,
+                  @sales_invoice |> Firmowid.SalesInvoices.SalesInvoice.get_net_value()
                 )}
               </span>
             </div>
@@ -229,8 +229,8 @@
               <span class="text-sm text-darkGrey">Suma VAT</span>
               <span>
                 {Money.new(
-                  @invoice.currency,
-                  @invoice |> Firmowid.Invoices.Invoice.get_vat_value()
+                  @sales_invoice.currency,
+                  @sales_invoice |> Firmowid.SalesInvoices.SalesInvoice.get_vat_value()
                 )}
               </span>
             </div>
@@ -238,17 +238,17 @@
               <span class="text-sm text-darkGrey">Suma brutto</span>
               <span class="font-bold text-xl">
                 {Money.new(
-                  @invoice.currency,
-                  @invoice |> Firmowid.Invoices.Invoice.get_gross_value()
+                  @sales_invoice.currency,
+                  @sales_invoice |> Firmowid.SalesInvoices.SalesInvoice.get_gross_value()
                 )}
               </span>
             </div>
           <% end %>
-          <%= if  @invoice.invoice_type == :foreign do %>
-            <%= if @invoice.currency != "PLN" do %>
+          <%= if  @sales_invoice.invoice_type == :foreign do %>
+            <%= if @sales_invoice.currency != "PLN" do %>
               <div class="flex gap-2 justify-between items-center">
                 <div class="flex flex-col">
-                  <span class="text-sm">Kurs 1 {@invoice.currency}</span>
+                  <span class="text-sm">Kurs 1 {@sales_invoice.currency}</span>
                   <span class="text-sm">
                     Przewalutowanie wg NBP <br /> z dnia:
                     <span class="font-bold">
@@ -266,11 +266,11 @@
               </div>
             <% end %>
             <div class="flex justify-between items-center mt-3">
-              <span class="text-sm">Suma {@invoice.currency}:</span>
+              <span class="text-sm">Suma {@sales_invoice.currency}:</span>
               <span class="font-bold text-xl">
                 {Money.new(
-                  @invoice.currency,
-                  @invoice |> Firmowid.Invoices.Invoice.get_net_value()
+                  @sales_invoice.currency,
+                  @sales_invoice |> Firmowid.SalesInvoices.SalesInvoice.get_net_value()
                 )}
               </span>
             </div>
@@ -279,16 +279,19 @@
       </div>
     </div>
     <div class="flex justify-end items-center gap-6 mb-8 mt-4">
-      <%= if not is_nil(@invoice_id) do %>
+      <%= if not is_nil(@sales_invoice_id) do %>
         <a
-          href={"/invoices/#{@invoice_id}/download"}
+          href={"/sales_invoices/#{@sales_invoice_id}/download"}
           download="fakturka.pdf"
           class="hover:text-darkGrey transition-colors"
         >
           Pobierz
         </a>
       <% end %>
-      <.button disabled={!Firmowid.Invoices.Invoice.is_confirmed(@invoice)} color="green">
+      <.button
+        disabled={!Firmowid.SalesInvoices.SalesInvoice.is_confirmed(@sales_invoice)}
+        color="green"
+      >
         Zapisz fakturę
       </.button>
     </div>

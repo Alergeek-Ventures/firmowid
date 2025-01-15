@@ -1,11 +1,11 @@
-defmodule FirmowidWeb.InvoicesLive.SellerForm do
+defmodule FirmowidWeb.SalesInvoicesLive.SellerForm do
   require Logger
-  import FirmowidWeb.InvoicesLive.EditButton
+  import FirmowidWeb.SalesInvoicesLive.EditButton
 
   use FirmowidWeb, :html
 
   attr :seller_form, :list, required: true
-  attr :invoice, :map, required: true
+  attr :sales_invoice, :map, required: true
   attr :sellers, :list, required: false, default: []
   attr :is_seller_dirty, :boolean, required: false, default: false
 
@@ -19,7 +19,7 @@ defmodule FirmowidWeb.InvoicesLive.SellerForm do
           type="hidden"
           field={@seller_form[:is_seller_confirmed]}
           value={
-            if !@invoice.seller_id or @invoice.seller_id == "" do
+            if !@sales_invoice.seller_id or @sales_invoice.seller_id == "" do
               "true"
             else
               "false"
@@ -34,24 +34,24 @@ defmodule FirmowidWeb.InvoicesLive.SellerForm do
           options={@sellers |> Enum.map(fn s -> {s.display_name, s.id} end)}
         />
       </.form>
-      <%= if @invoice.is_seller_confirmed do %>
+      <%= if @sales_invoice.is_seller_confirmed do %>
         <div class="w-full flex justify-between items-start text-sm border border-greyButtonBg rounded-md p-5">
           <div class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2">
             <span class="text-darkGrey">NIP</span>
-            <span>{@invoice.seller_nip}</span>
+            <span>{@sales_invoice.seller_nip}</span>
             <span class="text-darkGrey">Nazwa firmy</span>
-            <span>{@invoice.seller_display_name}</span>
-            <%= if !!@invoice.seller_name or !!@invoice.seller_surname do %>
+            <span>{@sales_invoice.seller_display_name}</span>
+            <%= if !!@sales_invoice.seller_name or !!@sales_invoice.seller_surname do %>
               <span class="text-darkGrey">Imię i nazwisko</span>
-              <span>{@invoice.seller_name} {@invoice.seller_surname}</span>
+              <span>{@sales_invoice.seller_name} {@sales_invoice.seller_surname}</span>
             <% end %>
             <span class="text-darkGrey">Adres </span>
-            <span>{@invoice.seller_address}</span>
+            <span>{@sales_invoice.seller_address}</span>
             <span class="text-darkGrey">Nr konta </span>
-            <span>{@invoice.seller_account_number}</span>
+            <span>{@sales_invoice.seller_account_number}</span>
           </div>
           <.edit_button phx-click={
-            JS.push("submit", value: %{"invoice" => %{"is_seller_confirmed" => false}})
+            JS.push("submit", value: %{"sales_invoice" => %{"is_seller_confirmed" => false}})
           } />
         </div>
       <% else %>
@@ -103,7 +103,7 @@ defmodule FirmowidWeb.InvoicesLive.SellerForm do
               >
                 Zatwierdź
               </.button>
-              <%= if !@invoice.seller_id or @invoice.seller_id == "" do %>
+              <%= if !@sales_invoice.seller_id or @sales_invoice.seller_id == "" do %>
                 <.button
                   phx-disable-with="Dodawanie..."
                   variant="outline"

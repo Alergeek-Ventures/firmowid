@@ -1,7 +1,7 @@
 defmodule Firmowid.NipTest do
   use Firmowid.DataCase
 
-  alias Firmowid.Invoices.NipApiClient
+  alias Firmowid.SalesInvoices.NipApiClient
 
   describe "nip api client" do
     test "fetches the org data by nip" do

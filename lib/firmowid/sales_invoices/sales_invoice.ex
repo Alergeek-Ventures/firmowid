@@ -1,8 +1,8 @@
-defmodule Firmowid.Invoices.Invoice do
+defmodule Firmowid.SalesInvoices.SalesInvoice do
   use Firmowid.Schema
   import Ecto.Changeset
 
-  schema "invoices" do
+  schema "sales_invoices" do
     field :invoice_type, Ecto.Enum, values: [:poland, :foreign], default: :poland
 
     field :invoice_number, :string
@@ -46,42 +46,42 @@ defmodule Firmowid.Invoices.Invoice do
     field :is_cash_account, :boolean, default: false
     field :is_reverse_charge, :boolean, default: false
 
-    has_many :invoice_items, Firmowid.Invoices.InvoiceItem, on_replace: :delete
+    has_many :invoice_items, Firmowid.SalesInvoices.InvoiceItem, on_replace: :delete
     belongs_to :organization, Firmowid.Accounts.Organization
-    belongs_to :buyer, Firmowid.Invoices.Buyer
-    belongs_to :seller, Firmowid.Invoices.Seller
+    belongs_to :buyer, Firmowid.SalesInvoices.Buyer
+    belongs_to :seller, Firmowid.SalesInvoices.Seller
 
     timestamps()
   end
 
-  def get_net_value(invoice) do
-    Enum.reduce(invoice.invoice_items, Decimal.new(0), fn item, acc ->
-      Decimal.add(acc, Firmowid.Invoices.InvoiceItem.get_net_value(item))
+  def get_net_value(sales_invoice) do
+    Enum.reduce(sales_invoice.invoice_items, Decimal.new(0), fn item, acc ->
+      Decimal.add(acc, Firmowid.SalesInvoices.InvoiceItem.get_net_value(item))
     end)
   end
 
-  def get_vat_value(invoice) do
-    Enum.reduce(invoice.invoice_items, Decimal.new(0), fn item, acc ->
-      Decimal.add(acc, Firmowid.Invoices.InvoiceItem.get_vat_value(item))
+  def get_vat_value(sales_invoice) do
+    Enum.reduce(sales_invoice.invoice_items, Decimal.new(0), fn item, acc ->
+      Decimal.add(acc, Firmowid.SalesInvoices.InvoiceItem.get_vat_value(item))
     end)
   end
 
-  def is_confirmed(invoice) do
-    invoice.is_basic_info_confirmed &&
-      invoice.is_seller_confirmed &&
-      invoice.is_buyer_confirmed &&
-      invoice.are_invoice_items_confirmed
+  def is_confirmed(sales_invoice) do
+    sales_invoice.is_basic_info_confirmed &&
+      sales_invoice.is_seller_confirmed &&
+      sales_invoice.is_buyer_confirmed &&
+      sales_invoice.are_invoice_items_confirmed
   end
 
-  def get_gross_value(invoice) do
-    Decimal.add(get_net_value(invoice), get_vat_value(invoice))
+  def get_gross_value(sales_invoice) do
+    Decimal.add(get_net_value(sales_invoice), get_vat_value(sales_invoice))
   end
 
-  def get_currency_conversion_date(invoice) do
+  def get_currency_conversion_date(sales_invoice) do
     pick_date(
-      invoice.issue_date,
-      invoice.sale_date,
-      Date.compare(invoice.issue_date, invoice.sale_date)
+      sales_invoice.issue_date,
+      sales_invoice.sale_date,
+      Date.compare(sales_invoice.issue_date, sales_invoice.sale_date)
     )
   end
 
@@ -93,8 +93,8 @@ defmodule Firmowid.Invoices.Invoice do
     sale_date
   end
 
-  def changeset(invoice, attrs \\ %{}) do
-    invoice
+  def changeset(sales_invoice, attrs \\ %{}) do
+    sales_invoice
     |> cast(attrs, [
       :invoice_type,
       :invoice_number,
@@ -113,7 +113,7 @@ defmodule Firmowid.Invoices.Invoice do
     |> buyer_changeset(attrs)
     |> seller_changeset(attrs)
     |> cast_assoc(:invoice_items,
-      with: &Firmowid.Invoices.InvoiceItem.changeset/2,
+      with: &Firmowid.SalesInvoices.InvoiceItem.changeset/2,
       sort_param: :items_sort,
       drop_param: :items_drop
     )
@@ -121,8 +121,8 @@ defmodule Firmowid.Invoices.Invoice do
     |> put_change(:organization_id, Firmowid.Repo.get_org_id())
   end
 
-  def seller_changeset(invoice, attrs \\ %{}) do
-    invoice
+  def seller_changeset(sales_invoice, attrs \\ %{}) do
+    sales_invoice
     |> cast(attrs, [
       :seller_id,
       :seller_nip,
@@ -134,8 +134,8 @@ defmodule Firmowid.Invoices.Invoice do
     ])
   end
 
-  def buyer_changeset(invoice, attrs \\ %{}) do
-    invoice
+  def buyer_changeset(sales_invoice, attrs \\ %{}) do
+    sales_invoice
     |> cast(attrs, [
       :buyer_id,
       :buyer_type,
@@ -172,21 +172,21 @@ defmodule Firmowid.Invoices.Invoice do
     end
   end
 
-  def cast_based_on_type(invoice) do
-    case get_change(invoice, :invoice_type) do
+  def cast_based_on_type(sales_invoice) do
+    case get_change(sales_invoice, :invoice_type) do
       :poland ->
-        invoice
+        sales_invoice
         |> put_change(:currency, "PLN")
         |> put_change(:is_reverse_charge, false)
         |> put_change(:is_basic_info_confirmed, false)
 
       :foreign ->
-        invoice
+        sales_invoice
         |> put_change(:is_cash_account, false)
         |> put_change(:is_basic_info_confirmed, false)
 
       nil ->
-        invoice
+        sales_invoice
     end
   end
 end

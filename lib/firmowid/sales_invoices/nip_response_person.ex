@@ -1,4 +1,4 @@
-defmodule Firmowid.Invoices.NipResponsePerson do
+defmodule Firmowid.SalesInvoices.NipResponsePerson do
   @moduledoc """
   Embedded schema representing a person entity (representative, clerk, or partner)
   """

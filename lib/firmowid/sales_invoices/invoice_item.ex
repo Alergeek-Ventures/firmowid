@@ -1,4 +1,4 @@
-defmodule Firmowid.Invoices.InvoiceItem do
+defmodule Firmowid.SalesInvoices.InvoiceItem do
   use Firmowid.Schema
   import Ecto.Changeset
 
@@ -9,7 +9,7 @@ defmodule Firmowid.Invoices.InvoiceItem do
     field :unit_price, :decimal, default: 0
     field :vat_rate, :decimal, default: 0
 
-    belongs_to :invoice, Firmowid.Invoices.Invoice
+    belongs_to :sales_invoice, Firmowid.SalesInvoices.SalesInvoice
     belongs_to :organization, Firmowid.Accounts.Organization
 
     timestamps()
@@ -36,7 +36,7 @@ defmodule Firmowid.Invoices.InvoiceItem do
       :unit_price,
       :vat_rate
     ])
-    |> cast_assoc(:invoice)
+    |> cast_assoc(:sales_invoice)
     |> validate_number(:quantity, greater_than_or_equal_to: 0)
     |> validate_number(:unit_price, greater_than_or_equal_to: 0)
     |> validate_number(:vat_rate, greater_than_or_equal_to: 0)

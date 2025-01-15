@@ -1,23 +1,23 @@
-defmodule FirmowidWeb.InvoicesLiveTest do
+defmodule FirmowidWeb.SalesInvoicesLiveTest do
   use FirmowidWeb.ConnCase, async: true
 
-  alias Firmowid.Invoices
+  alias Firmowid.SalesInvoices
 
   import Phoenix.LiveViewTest
   import Firmowid.AccountsFixtures
 
   describe "Invoice page works" do
-    test "renders invoices page", %{conn: conn} do
+    test "renders sales_invoices page", %{conn: conn} do
       {:ok, _lv, html} =
         conn
         |> log_in_user(user_fixture())
-        |> live(~p"/invoices")
+        |> live(~p"/sales_invoices")
 
       assert html =~ "Rodzaj faktury"
     end
 
     test "redirects if user is not logged in", %{conn: conn} do
-      assert {:error, redirect} = live(conn, ~p"/invoices")
+      assert {:error, redirect} = live(conn, ~p"/sales_invoices")
 
       assert {:redirect, %{to: path}} = redirect
       assert path == ~p"/users/log_in"
@@ -32,20 +32,20 @@ defmodule FirmowidWeb.InvoicesLiveTest do
     end
 
     test "makes section confirmed", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/invoices")
+      {:ok, lv, _html} = live(conn, ~p"/sales_invoices")
       invoice_number = "Numer mojej faktury"
 
       result =
         lv
         |> form("#basic_info_form",
-          invoice: %{
+          sales_invoice: %{
             "invoice_number" => invoice_number
           }
         )
         |> render_submit()
 
       assert result =~ invoice_number
-      assert Invoices.get_latest_invoice().invoice_number == invoice_number
+      assert SalesInvoices.get_latest_sales_invoice().invoice_number == invoice_number
     end
   end
 
@@ -57,12 +57,12 @@ defmodule FirmowidWeb.InvoicesLiveTest do
     end
 
     test "adds seller but doesnt confirm", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/invoices")
+      {:ok, lv, _html} = live(conn, ~p"/sales_invoices")
 
       form =
         lv
         |> form("#seller_form",
-          invoice: %{
+          sales_invoice: %{
             "seller_display_name" => "Franciszkowo",
             "seller_name" => "Franek",
             "seller_surname" => "Madej",
@@ -80,21 +80,21 @@ defmodule FirmowidWeb.InvoicesLiveTest do
       assert result =~ "Franek"
       assert result =~ "Zatwierdź"
 
-      seller = Invoices.list_sellers() |> hd
+      seller = SalesInvoices.list_sellers() |> hd
 
       assert seller.name == "Franek"
 
-      assert Invoices.get_latest_invoice().is_seller_confirmed == false
-      assert Invoices.get_latest_invoice().seller_id == seller.id
+      assert SalesInvoices.get_latest_sales_invoice().is_seller_confirmed == false
+      assert SalesInvoices.get_latest_sales_invoice().seller_id == seller.id
     end
 
     test "adds seller and confirms", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/invoices")
+      {:ok, lv, _html} = live(conn, ~p"/sales_invoices")
 
       form =
         lv
         |> form("#seller_form",
-          invoice: %{
+          sales_invoice: %{
             "seller_display_name" => "Franciszkowo",
             "seller_name" => "Franek",
             "seller_surname" => "Madej",
@@ -115,8 +115,8 @@ defmodule FirmowidWeb.InvoicesLiveTest do
 
       assert result =~ "Franek"
 
-      assert Invoices.get_latest_invoice().is_seller_confirmed == true
-      assert Invoices.get_latest_invoice().seller_name == "Franek"
+      assert SalesInvoices.get_latest_sales_invoice().is_seller_confirmed == true
+      assert SalesInvoices.get_latest_sales_invoice().seller_name == "Franek"
     end
   end
 
@@ -128,7 +128,7 @@ defmodule FirmowidWeb.InvoicesLiveTest do
     end
 
     test "adds buyer via nip", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/invoices")
+      {:ok, lv, _html} = live(conn, ~p"/sales_invoices")
 
       lv |> element("#buyer_expand_button") |> render_click()
 
@@ -144,14 +144,14 @@ defmodule FirmowidWeb.InvoicesLiveTest do
         |> put_submitter("button[name=action]")
         |> render_submit
 
-      buyer = Invoices.list_buyers() |> hd
+      buyer = SalesInvoices.list_buyers() |> hd
 
       assert result =~ "ALERGEEK VENTURES"
       assert result =~ "Zatwierdź"
       assert buyer.display_name == "ALERGEEK VENTURES SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ"
 
-      assert Invoices.get_latest_invoice().is_buyer_confirmed == false
-      assert Invoices.get_latest_invoice().buyer_id == buyer.id
+      assert SalesInvoices.get_latest_sales_invoice().is_buyer_confirmed == false
+      assert SalesInvoices.get_latest_sales_invoice().buyer_id == buyer.id
     end
   end
 
@@ -163,17 +163,17 @@ defmodule FirmowidWeb.InvoicesLiveTest do
     end
 
     test "adds invoice item and confirm it", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/invoices")
+      {:ok, lv, _html} = live(conn, ~p"/sales_invoices")
 
       # Add new invoice item
       lv
       |> element("#invoice_items_form")
-      |> render_change(%{"invoice[items_sort][]" => "new"})
+      |> render_change(%{"sales_invoice[items_sort][]" => "new"})
 
       result =
         lv
         |> form("#invoice_items_form",
-          invoice: %{
+          sales_invoice: %{
             "invoice_items" => %{
               "0" => %{
                 "name" => "Koszty utrzymania",
@@ -191,7 +191,7 @@ defmodule FirmowidWeb.InvoicesLiveTest do
       # Make sure that form is confirmed and locked
       refute lv |> element("#invoice_items_form") |> render =~ "Zatwierdź"
 
-      invoice_item = Invoices.get_latest_invoice().invoice_items |> hd
+      invoice_item = SalesInvoices.get_latest_sales_invoice().invoice_items |> hd
 
       assert invoice_item.name == "Koszty utrzymania"
       assert invoice_item.unit_price == Decimal.new("100")

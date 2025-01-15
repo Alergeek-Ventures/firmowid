@@ -1,11 +1,11 @@
-defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
+defmodule FirmowidWeb.SalesInvoicesLive.InvoiceItems do
   use FirmowidWeb, :html
 
-  import FirmowidWeb.InvoicesLive.EditButton
+  import FirmowidWeb.SalesInvoicesLive.EditButton
   import FirmowidWeb.Icons
 
   attr :form, :list, required: true
-  attr :invoice, :map, required: true
+  attr :sales_invoice, :map, required: true
 
   def invoice_items(assigns) do
     ~H"""
@@ -15,7 +15,7 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
           Pozycje na fakturze
         </p>
       </div>
-      <%= if @invoice.are_invoice_items_confirmed do %>
+      <%= if @sales_invoice.are_invoice_items_confirmed do %>
         <div class="border flex justify-between items-start border-greyButtonBg rounded-md p-5">
           <table class="w-full">
             <tr class="text-darkGrey  font-normal">
@@ -34,7 +34,7 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
               <th class="pr-2 pb-1 text-left font-normal">
                 VAT %
               </th>
-              <%= if  @invoice.invoice_type == :poland do %>
+              <%= if  @sales_invoice.invoice_type == :poland do %>
                 <th class="pr-2 pb-1 text-left font-normal">
                   Wartość netto
                 </th>
@@ -42,13 +42,13 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
                   Wartość brutto
                 </th>
               <% end %>
-              <%= if @invoice.invoice_type == :foreign do %>
+              <%= if @sales_invoice.invoice_type == :foreign do %>
                 <th class="pr-2 pb-1 text-left font-normal">
                   Wartość
                 </th>
               <% end %>
             </tr>
-            <%= for item <- @invoice.invoice_items do %>
+            <%= for item <- @sales_invoice.invoice_items do %>
               <tr class="pt-3">
                 <td class="pt-3">
                   {item.name}
@@ -63,14 +63,14 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
                   {item.unit_price}
                 </td>
                 <td>
-                  <%= if  @invoice.invoice_type == :poland do %>
+                  <%= if  @sales_invoice.invoice_type == :poland do %>
                     {item.vat_rate}%
                   <% end %>
-                  <%= if @invoice.invoice_type == :foreign do %>
+                  <%= if @sales_invoice.invoice_type == :foreign do %>
                     np.
                   <% end %>
                 </td>
-                <%= if  @invoice.invoice_type == :poland do %>
+                <%= if  @sales_invoice.invoice_type == :poland do %>
                   <td>
                     {Money.new(
                       :PLN,
@@ -91,10 +91,10 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
                     |> Money.to_string!(currency_symbol: "")}
                   </td>
                 <% end %>
-                <%= if @invoice.invoice_type == :foreign do %>
+                <%= if @sales_invoice.invoice_type == :foreign do %>
                   <td>
                     {Money.new(
-                      @invoice.currency,
+                      @sales_invoice.currency,
                       Decimal.mult(item.quantity, item.unit_price)
                     )
                     |> Money.to_string!(currency_symbol: "")}
@@ -104,7 +104,7 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
             <% end %>
           </table>
           <.edit_button phx-click={
-            JS.push("submit", value: %{"invoice" => %{"are_invoice_items_confirmed" => false}})
+            JS.push("submit", value: %{"sales_invoice" => %{"are_invoice_items_confirmed" => false}})
           } />
         </div>
       <% else %>
@@ -125,7 +125,7 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
             <div class="col-span-1 text-darkGrey">
               VAT %
             </div>
-            <%= if  @invoice.invoice_type == :poland do %>
+            <%= if  @sales_invoice.invoice_type == :poland do %>
               <div class="col-span-2 text-darkGrey">
                 Wartość netto
               </div>
@@ -133,14 +133,14 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
                 Wartość brutto
               </div>
             <% end %>
-            <%= if @invoice.invoice_type == :foreign do %>
+            <%= if @sales_invoice.invoice_type == :foreign do %>
               <div class="col-span-4 text-darkGrey">
                 Wartość
               </div>
             <% end %>
 
             <.inputs_for :let={item} field={@form[:invoice_items]}>
-              <input type="hidden" name="invoice[items_sort][]" value={item.index} />
+              <input type="hidden" name="sales_invoice[items_sort][]" value={item.index} />
               <div class="col-span-2">
                 <.input field={item[:name]} type="text" required />
               </div>
@@ -154,14 +154,14 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
                 <.input field={item[:unit_price]} type="number" required />
               </div>
               <div class="col-span-1">
-                <%= if  @invoice.invoice_type == :poland do %>
+                <%= if  @sales_invoice.invoice_type == :poland do %>
                   <.input field={item[:vat_rate]} type="number" required />
                 <% end %>
-                <%= if @invoice.invoice_type == :foreign do %>
+                <%= if @sales_invoice.invoice_type == :foreign do %>
                   <.input name={item[:vat_rate].name} type="text" disabled readonly value="np." />
                 <% end %>
               </div>
-              <%= if  @invoice.invoice_type == :poland do %>
+              <%= if  @sales_invoice.invoice_type == :poland do %>
                 <div class="col-span-2">
                   <.input
                     type="text"
@@ -196,7 +196,7 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
                   />
                 </div>
               <% end %>
-              <%= if @invoice.invoice_type == :foreign do %>
+              <%= if @sales_invoice.invoice_type == :foreign do %>
                 <div class="col-span-4">
                   <.input
                     type="text"
@@ -205,7 +205,7 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
                     readonly
                     value={
                       Money.new(
-                        @invoice.currency,
+                        @sales_invoice.currency,
                         Decimal.mult(item[:quantity].value, item[:unit_price].value)
                       )
                       |> Money.to_string!(currency_symbol: "")
@@ -215,7 +215,7 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
               <% end %>
               <.button
                 type="button"
-                name="invoice[items_drop][]"
+                name="sales_invoice[items_drop][]"
                 value={item.index}
                 phx-disable-with=""
                 phx-click={JS.dispatch("change")}
@@ -225,13 +225,12 @@ defmodule FirmowidWeb.InvoicesLive.InvoiceItems do
               </.button>
             </.inputs_for>
           </div>
-          <input type="hidden" name="invoice[items_drop][]" />
+          <input type="hidden" name="sales_invoice[items_drop][]" />
           <div class="flex justify-between mt-6">
             <.button
               type="button"
-              name="invoice[items_sort][]"
+              name="sales_invoice[items_sort][]"
               value="true"
-              id="invoice_items_add_item"
               phx-disable-with="Dodawanie..."
               phx-click={JS.dispatch("change")}
               class="border-greyButtonBg border h-8 flex items-center gap-1 hover:bg-greyButtonBg !text-darkGrey text-sm bg-lightGreyBg font-medium uppercase !px-2 !py-1"

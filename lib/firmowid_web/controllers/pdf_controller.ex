@@ -1,38 +1,38 @@
 defmodule FirmowidWeb.PdfController do
   alias Firmowid.Nbp
-  alias Firmowid.Invoices
+  alias Firmowid.SalesInvoices
   use FirmowidWeb, :controller
 
   def index(conn, %{"id" => id}) do
-    invoice =
-      Invoices.get_invoice(id)
+    sales_invoice =
+      SalesInvoices.get_sales_invoice(id)
 
-    conn |> render_invoice(invoice)
+    conn |> render_sales_invoice(sales_invoice)
   end
 
-  defp render_invoice(conn, %Invoices.Invoice{} = invoice) do
+  defp render_sales_invoice(conn, %SalesInvoices.SalesInvoice{} = sales_invoice) do
     currency_rate =
-      case invoice.currency do
+      case sales_invoice.currency do
         "PLN" ->
           nil
 
         currency ->
           Nbp.ApiClient.get_exchange_rate(
             currency,
-            Invoices.Invoice.get_currency_conversion_date(invoice)
+            SalesInvoices.SalesInvoice.get_currency_conversion_date(sales_invoice)
           )
       end
 
     conn
-    |> render(:invoice,
+    |> render(:sales_invoice,
       layout: false,
-      invoice: invoice,
+      sales_invoice: sales_invoice,
       currency_rate: currency_rate,
       class: "mx-auto"
     )
   end
 
-  defp render_invoice(conn, nil) do
+  defp render_sales_invoice(conn, nil) do
     conn |> send_resp(404, "Not found")
   end
 
@@ -43,18 +43,18 @@ defmodule FirmowidWeb.PdfController do
       """
     }
 
-    case Invoices.get_invoice(id) do
+    case SalesInvoices.get_sales_invoice(id) do
       nil ->
         conn
         |> send_resp(404, "Not found")
 
-      invoice ->
+      sales_invoice ->
         url_with_protocol = FirmowidWeb.Endpoint.url()
         domain = FirmowidWeb.Endpoint.host()
 
         {:ok, result} =
           ChromicPDF.print_to_pdf(
-            {:url, "#{url_with_protocol}/invoices/#{id}/pdf"},
+            {:url, "#{url_with_protocol}/sales_invoices/#{id}/pdf"},
             set_cookie: %{
               name: "_firmowid_key",
               value: conn.cookies["_firmowid_key"],
@@ -64,7 +64,7 @@ defmodule FirmowidWeb.PdfController do
               conn
               |> put_resp_header(
                 "content-disposition",
-                "attachment; filename=#{invoice.invoice_number}.pdf"
+                "attachment; filename=#{sales_invoice.invoice_number}.pdf"
               )
               |> send_file(200, path)
             end,

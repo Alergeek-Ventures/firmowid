@@ -50,7 +50,7 @@ defmodule Firmowid.Repo.Migrations.CreateInvoice do
       timestamps()
     end
 
-    create table(:invoices) do
+    create table(:sales_invoices) do
       add :invoice_type, :string, null: false
 
       add :invoice_number, :string
@@ -113,8 +113,8 @@ defmodule Firmowid.Repo.Migrations.CreateInvoice do
       add :unit_price, :decimal, null: false
       add :vat_rate, :decimal
 
-      add :invoice_id,
-          references(:invoices, on_delete: :delete_all),
+      add :sales_invoice_id,
+          references(:sales_invoices, on_delete: :delete_all),
           null: false
 
       add :organization_id,
