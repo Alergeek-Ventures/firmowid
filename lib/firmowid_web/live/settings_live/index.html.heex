@@ -279,86 +279,40 @@
       </div>
     <% "bank_accounts" -> %>
       <div class="mt-6">
-        <h2 class="font-bold">Konta bankowe</h2>
-        <div class="max-w-3xl py-4 font-sans">
-          <%= if Enum.any?(@bank_accounts) do %>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <%= for account <- @bank_accounts do %>
-                <div class="border rounded-lg p-4 relative">
-                  <div class="flex justify-between items-start">
+        <div class="flex gap-1">
+          <h2 class="font-bold mt-0.5">Konta bankowe</h2>
+        </div>
+        <div class="space-y-4 mt-6">
+          <%= for {institution, accounts} <- Enum.group_by(@bank_accounts, & &1.institution_name) do %>
+            <h3>{institution}</h3>
+            <div class="flex flex-wrap gap-4">
+              <%= for account <- accounts do %>
+                <div class="flex justify-between border rounded-md p-4 w-96">
+                  <div class="grid grid-cols-[auto,1fr] gap-4">
+                    <div class="mt-1 font-medium text-darkGrey uppercase text-xs pr-4">
+                      Nazwa
+                    </div>
                     <div>
-                      <div class="text-sm text-gray-600 mb-1">NAZWA</div>
-                      <div class="font-medium">{account.name}</div>
+                      {account.name}
                     </div>
-                    <button class="text-gray-400">•••</button>
-                  </div>
-                  <div class="mt-3">
-                    <div class="text-sm text-gray-600 mb-1">WALUTA</div>
-                    <div class="font-medium">{account.currency}</div>
-                  </div>
-                  <div class="mt-3">
-                    <div class="text-sm text-gray-600 mb-1">NUMER</div>
-                    <div class="font-medium flex items-center">
+                    <div class="mt-1 font-medium text-darkGrey uppercase text-xs pr-4">
+                      Waluta
+                    </div>
+                    <div>
+                      {account.currency}
+                    </div>
+                    <div class="mt-1 font-medium text-darkGrey uppercase text-xs text-left pr-4">
+                      Numer
+                    </div>
+                    <div>
                       {account.iban}
-                      <%= if account.gocardless_id do %>
-                        <svg
-                          class="w-4 h-4 ml-2 text-green-500"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M5 13l4 4L19 7"
-                          >
-                          </path>
-                        </svg>
-                      <% else %>
-                        <svg
-                          class="w-4 h-4 ml-2 text-red-500"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12"
-                          >
-                          </path>
-                        </svg>
-                      <% end %>
                     </div>
                   </div>
-                  <%!-- <%= if account.is_default do %>
-                    <div class="mt-4 -mx-4 -mb-4 bg-[#f5efeb] p-2 text-center text-sm text-gray-600">
-                      DOMYŚLNY DLA {account.currency}
-                    </div>
-                  <% else %>
-                    <div class="mt-4 -mx-4 -mb-4 bg-gray-700 p-2 text-center text-sm text-white cursor-pointer">
-                      POWIĄŻ
-                    </div>
-                  <% end %> --%>
+                  <div>
+                    <.icon name="hero-ellipsis-horizontal" />
+                  </div>
                 </div>
               <% end %>
-            </div>
-          <% else %>
-            <div class="text-left py-6 text-darkGrey">
-              <p>Nie masz jeszcze żadnych kont bankowych.</p>
-              <p class="text-sm mt-2">
-                Dodaj swoje pierwsze konto bankowe, aby móc wystawiać faktury.
-              </p>
-              <div class="mt-6">
-                <.link
-                  navigate={~p"/settings/bank-sync/create"}
-                  class={button_styles(%{variant: "outline"})}
-                >
-                  Podepnij konto
-                </.link>
-              </div>
             </div>
           <% end %>
         </div>
