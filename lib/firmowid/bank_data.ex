@@ -12,6 +12,8 @@ defmodule Firmowid.BankData do
     ApiClient.get_available_institutions_for_country(country)
   end
 
+  @spec list_requisitions(any()) ::
+          nil | [%{optional(atom()) => any()}] | %{optional(atom()) => any()}
   def list_requisitions(organization_id) do
     Repo.all(Requisition, organization_id: organization_id)
     |> Repo.preload(:bank_accounts, organization_id: organization_id)
@@ -102,6 +104,12 @@ defmodule Firmowid.BankData do
     )
   end
 
+  def list_bank_accounts() do
+    Finances.BankAccount
+    |> Repo.all()
+    |> Repo.preload(:requisition)
+  end
+
   defp upsert_booked_transactions(booked_transactions, bank_account_id, organization_id) do
     booked_transactions
     |> Enum.each(fn transaction_from_api ->
@@ -130,6 +138,14 @@ defmodule Firmowid.BankData do
       Firmowid.Finances.create_bank_account(%{
         iban: account["iban"],
         gocardless_id: account["id"],
+        bban: account["bban"],
+        owner_name: account["ownerName"],
+        institution_id: account["institution_id"],
+        institution_name: account["institution"]["name"],
+        currency: account["currency"],
+        name: account["name"],
+        product: account["product"],
+        cash_account_type: account["cashAccountType"],
         organization_id: organization_id,
         requisition_id: requisition_id
       })

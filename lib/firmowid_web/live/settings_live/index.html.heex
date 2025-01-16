@@ -4,16 +4,16 @@
 
   <div class="flex gap-10 font-semibold mt-16">
     <%= for {tab, label} <- [
-      {"your_company", "Twoja firma"},
-      {"your_account", "Twoje konto"},
+      {"company", "Twoja firma"},
+      {"account", "Twoje konto"},
       {"bank_accounts", "Konta bankowe"},
       {"address_book", "Książka adresowa"}
     ] do %>
       <.link
-        patch={~p"/settings?active_tab=#{tab}"}
+        patch={~p"/settings?tab=#{tab}"}
         class={
           classes([
-            @active_tab == tab && "text-orangeText",
+            @tab == tab && "text-orangeText",
             "phx-click-loading:opacity-50"
           ])
         }
@@ -23,91 +23,350 @@
     <% end %>
   </div>
   <hr class="border-t border-t-greyButtonBg mt-4" />
-  <%= if @your_company_is_editing do %>
-    <div class="mt-6">
-      <div class="flex gap-1 bg-lightGreyBg p-4">
-        <h2 class="font-bold mt-0.5">Dane firmy</h2>
-        <.simple_form phx-submit="save" for={@your_company_form}>
-          <.input
-            field={@your_company_form[:organization_type]}
-            label="Rodzaj działalności"
-            class="font-normal"
-          />
-          <.input field={@your_company_form[:name]} label="Nazwa organizacji" class="font-normal" />
-          <.input
-            field={@your_company_form[:identification_number]}
-            label="NIP"
-            class="font-normal"
-          />
-          <.input
-            field={@your_company_form[:address]}
-            label="Adres przedsiębiorstwa"
-            class="font-normal"
-          />
-          <.input
-            field={@your_company_form[:phone_number]}
-            label="Numer telefonu"
-            class="font-normal"
-          />
 
-          <:actions>
-            <.button type="submit" phx-disable-with="Zapisywanie..." phx-value-form="your_company">
-              Zapisz
-            </.button>
-            <.button
-              type="button"
-              phx-click="edit"
-              phx-value-form="your_company"
-              phx-value-enabled="false"
-              phx-disable-with="Anulowanie..."
-              class="ml-2"
-            >
-              Anuluj
-            </.button>
-          </:actions>
-        </.simple_form>
-      </div>
-    </div>
-  <% else %>
-    <div class="mt-6">
-      <div class="flex gap-1">
-        <h2 class="font-bold mt-0.5">Dane firmy</h2>
-        <.edit_button phx-click="edit" phx-value-form="your_company" phx-value-enabled="true" />
-      </div>
-      <div class="space-y-4 mt-6">
-        <%= for {label, value} <- [
-          {"Rodzaj działalności", @current_org.organization_type},
-          {"Nazwa organizacji", @current_org.name},
-          {"NIP", @current_org.identification_number},
-          {"Adres przedsiębiorstwa", @current_org.address},
-          {"Numer telefonu", @current_org.phone_number}
-        ], value do %>
+  <%= case @tab do %>
+    <% "company" -> %>
+      <%= if @company_form[:is_basic_info_editing].value do %>
+        <div class="mt-6">
+          <div class="flex gap-1 bg-lightGreyBg p-4">
+            <h2 class="font-bold mt-0.5">Dane firmy</h2>
+            <.simple_form phx-submit="save" for={@company_form}>
+              <.input
+                field={@company_form[:organization_type]}
+                label="Rodzaj działalności"
+                class="font-normal"
+              />
+              <.input field={@company_form[:name]} label="Nazwa organizacji" class="font-normal" />
+              <.input
+                field={@company_form[:identification_number]}
+                label="NIP"
+                class="font-normal"
+              />
+              <.input
+                field={@company_form[:address]}
+                label="Adres przedsiębiorstwa"
+                class="font-normal"
+              />
+              <.input
+                field={@company_form[:phone_number]}
+                label="Numer telefonu"
+                class="font-normal"
+              />
+              <.input type="hidden" field={@company_form[:is_basic_info_editing]} value="false" />
+
+              <:actions>
+                <.button type="submit" phx-disable-with="Zapisywanie...">
+                  Zapisz
+                </.button>
+                <.button
+                  type="button"
+                  phx-click={
+                    JS.push("save",
+                      value: %{
+                        organization: %{
+                          is_basic_info_editing: false
+                        }
+                      }
+                    )
+                  }
+                  phx-disable-with="Anulowanie..."
+                  class="ml-2"
+                >
+                  Anuluj
+                </.button>
+              </:actions>
+            </.simple_form>
+          </div>
+        </div>
+      <% else %>
+        <div class="mt-6">
+          <div class="flex gap-1">
+            <h2 class="font-bold mt-0.5">Dane firmy</h2>
+            <.form for={@company_form} phx-submit="save">
+              <.input type="hidden" field={@company_form[:is_basic_info_editing]} value="true" />
+              <.edit_button />
+            </.form>
+          </div>
+          <div class="space-y-4 mt-6">
+            <%= for {label, value} <- [
+              {"Rodzaj działalności", @current_org.organization_type},
+              {"Nazwa organizacji", @current_org.name},
+              {"NIP", @current_org.identification_number},
+              {"Adres przedsiębiorstwa", @current_org.address},
+              {"Numer telefonu", @current_org.phone_number}
+            ], value do %>
+              <div class="flex">
+                <div class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4">
+                  {label}
+                </div>
+                <div class="flex-1">
+                  <%= if is_list(value) do %>
+                    <%= for line <- value do %>
+                      <div>{line}</div>
+                    <% end %>
+                  <% else %>
+                    {value}
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <%= if @correspondence_form[:is_correspondence_editing].value do %>
+        <div class="mt-6">
+          <div class="flex gap-1 bg-lightGreyBg p-4">
+            <h2 class="font-bold mt-0.5">Adres korespondencyjny</h2>
+            <.simple_form phx-submit="save" for={@correspondence_form}>
+              <.input
+                field={@correspondence_form[:correspondence_name]}
+                label="Nazwa do korespondencji"
+                class="font-normal"
+              />
+              <.input
+                field={@correspondence_form[:correspondence_address]}
+                label="Adres do korespondencji"
+                class="font-normal"
+              />
+              <.input
+                type="hidden"
+                field={@correspondence_form[:is_correspondence_editing]}
+                value="false"
+              />
+
+              <:actions>
+                <.button type="submit" phx-disable-with="Zapisywanie...">
+                  Zapisz
+                </.button>
+                <.button
+                  type="button"
+                  phx-click={
+                    JS.push("save",
+                      value: %{
+                        organization: %{
+                          is_correspondence_editing: false
+                        }
+                      }
+                    )
+                  }
+                  phx-disable-with="Anulowanie..."
+                  class="ml-2"
+                >
+                  Anuluj
+                </.button>
+              </:actions>
+            </.simple_form>
+          </div>
+        </div>
+      <% else %>
+        <div class="mt-6">
+          <div class="flex gap-1">
+            <h2 class="font-bold mt-0.5">Adres korespondencyjny</h2>
+            <.form for={@correspondence_form} phx-submit="save">
+              <.input
+                type="hidden"
+                field={@correspondence_form[:is_correspondence_editing]}
+                value="true"
+              />
+              <.edit_button />
+            </.form>
+          </div>
+          <div class="space-y-4 mt-6">
+            <%= for {label, value} <- [
+              {"Nazwa do korespondencji", @current_org.correspondence_name},
+              {"Adres do korespondencji", @current_org.correspondence_address}
+            ], value do %>
+              <div class="flex">
+                <div class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4">
+                  {label}
+                </div>
+                <div class="flex-1">
+                  <%= if is_list(value) do %>
+                    <%= for line <- value do %>
+                      <div>{line}</div>
+                    <% end %>
+                  <% else %>
+                    {value}
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    <% "account" -> %>
+      <div class="mt-6">
+        <div class="flex gap-4">
+          <h2 class="font-bold">Dane dostępowe</h2>
+          <.link class="text-sm mt-0.5 hover:underline" navigate={~p"/users/settings"}>
+            Edytuj
+          </.link>
+        </div>
+        <div class="space-y-4 mt-6">
           <div class="flex">
             <div class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4">
-              {label}
+              Email
             </div>
             <div class="flex-1">
-              <%= if is_list(value) do %>
-                <%= for line <- value do %>
-                  <div>{line}</div>
-                <% end %>
-              <% else %>
-                {value}
-              <% end %>
+              {@current_user.email}
             </div>
           </div>
-        <% end %>
+          <div class="flex">
+            <div class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4">
+              Hasło
+            </div>
+            <div class="flex-1">
+              **************
+            </div>
+          </div>
+        </div>
+        <h2 class="font-bold mt-6">Zgoda marketingowa</h2>
+        <div class="flex items-center mt-6">
+          <label
+            for="marketing"
+            class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4"
+          >
+            Zgoda na przesyłanie informacji o charakterze marketingowym
+          </label>
+          <div>
+            <.input type="checkbox" id="marketing" name="marketing" />
+          </div>
+        </div>
+        <h2 class="font-bold mt-6">Zamykanie konta</h2>
+        <div class="flex items-center mt-6">
+          <div class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4">
+            Nazwa konta
+          </div>
+          <div class="flex-1 flex flex-col">
+            {@current_user.email}
+          </div>
+        </div>
+        <div class="flex mt-4">
+          <div class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4">
+          </div>
+          <div class="flex-1">
+            <.button phx-click={show_modal("confirm_modal")} variant="outline" color="red">
+              Zamknij konto
+            </.button>
+            <.modal id="confirm_modal">
+              <h3>Czy na pewno chcesz zamknąć konto? <b>Nie da się tego cofnąć!</b></h3>
+              <.simple_form
+                for={@delete_account_form}
+                phx-submit="delete_account"
+                id="delete_account_form"
+              >
+                <.input
+                  field={@delete_account_form[:current_password]}
+                  type="password"
+                  label="Twoje hasło"
+                  required
+                />
+                <:actions>
+                  <div class="flex gap-4">
+                    <.button variant="outline" color="red" phx-disable-with="Usuwam...">
+                      Zamknij konto
+                    </.button>
+                    <.button type="button" phx-click={hide_modal("confirm_modal")}>
+                      Anuluj
+                    </.button>
+                  </div>
+                </:actions>
+              </.simple_form>
+            </.modal>
+          </div>
+        </div>
       </div>
-    </div>
+    <% "bank_accounts" -> %>
+      <div class="mt-6">
+        <h2 class="font-bold">Konta bankowe</h2>
+        <div class="max-w-3xl py-4 font-sans">
+          <%= if Enum.any?(@bank_accounts) do %>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <%= for account <- @bank_accounts do %>
+                <div class="border rounded-lg p-4 relative">
+                  <div class="flex justify-between items-start">
+                    <div>
+                      <div class="text-sm text-gray-600 mb-1">NAZWA</div>
+                      <div class="font-medium">{account.name}</div>
+                    </div>
+                    <button class="text-gray-400">•••</button>
+                  </div>
+                  <div class="mt-3">
+                    <div class="text-sm text-gray-600 mb-1">WALUTA</div>
+                    <div class="font-medium">{account.currency}</div>
+                  </div>
+                  <div class="mt-3">
+                    <div class="text-sm text-gray-600 mb-1">NUMER</div>
+                    <div class="font-medium flex items-center">
+                      {account.iban}
+                      <%= if account.gocardless_id do %>
+                        <svg
+                          class="w-4 h-4 ml-2 text-green-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M5 13l4 4L19 7"
+                          >
+                          </path>
+                        </svg>
+                      <% else %>
+                        <svg
+                          class="w-4 h-4 ml-2 text-red-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"
+                          >
+                          </path>
+                        </svg>
+                      <% end %>
+                    </div>
+                  </div>
+                  <%!-- <%= if account.is_default do %>
+                    <div class="mt-4 -mx-4 -mb-4 bg-[#f5efeb] p-2 text-center text-sm text-gray-600">
+                      DOMYŚLNY DLA {account.currency}
+                    </div>
+                  <% else %>
+                    <div class="mt-4 -mx-4 -mb-4 bg-gray-700 p-2 text-center text-sm text-white cursor-pointer">
+                      POWIĄŻ
+                    </div>
+                  <% end %> --%>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <div class="text-left py-6 text-darkGrey">
+              <p>Nie masz jeszcze żadnych kont bankowych.</p>
+              <p class="text-sm mt-2">
+                Dodaj swoje pierwsze konto bankowe, aby móc wystawiać faktury.
+              </p>
+              <div class="mt-6">
+                <.link
+                  navigate={~p"/settings/bank-sync/create"}
+                  class={button_styles(%{variant: "outline"})}
+                >
+                  Podepnij konto
+                </.link>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% "address_book" -> %>
+      <div class="mt-6">
+        <h2 class="font-bold">Książka adresowa</h2>
+        <p class="mt-4">Ta funkcja nie jest jeszcze dostępna.</p>
+      </div>
   <% end %>
-
-  <%!-- <ul>
-    <li class="max-md:hidden"><.link navigate={~p"/settings/bank-sync"}>Synchronizacja z
-        bankiem</.link></li>
-    <li>
-      <.link href={~p"/users/log_out"} method="delete">
-        Wyloguj
-      </.link>
-    </li>
-  </ul> --%>
 </div>

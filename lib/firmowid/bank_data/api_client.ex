@@ -63,6 +63,65 @@ defmodule Firmowid.BankData.ApiClient do
     end
   end
 
+  def get_institution(go_cardless_institution_id) do
+    {:ok, access_token} = get_access_token()
+
+    options =
+      [
+        url:
+          "https://bankaccountdata.gocardless.com/api/v2/institutions/#{go_cardless_institution_id}",
+        auth: {:bearer, access_token}
+      ]
+      |> Keyword.merge(Application.get_env(:firmowid, :bank_data_institution, []))
+
+    with {:ok, response} <- Req.get(options) do
+      {:ok, response |> Map.get(:body)}
+    else
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  def get_account_details(gocardless_account_id) do
+    {:ok, access_token} = get_access_token()
+
+    options =
+      [
+        url:
+          "https://bankaccountdata.gocardless.com/api/v2/accounts/#{gocardless_account_id}/details",
+        auth: {:bearer, access_token}
+      ]
+      |> Keyword.merge(Application.get_env(:firmowid, :bank_data_requisition, []))
+
+    with {:ok, response} <- Req.get(options) do
+      {:ok, response |> Map.get(:body) |> Map.get("account")}
+    else
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  def get_account_status(gocardless_account_id) do
+    {:ok, access_token} = get_access_token()
+
+    options =
+      [
+        auth: {:bearer, access_token}
+      ]
+      |> Keyword.merge(Application.get_env(:firmowid, :bank_data_account, []))
+
+    with {:ok, account_response} <-
+           Req.get(
+             options
+             |> Keyword.put(
+               :url,
+               "https://bankaccountdata.gocardless.com/api/v2/accounts/#{gocardless_account_id}"
+             )
+           ) do
+      {:ok, account_response |> Map.get(:body)}
+    else
+      {:error, error} -> {:error, error}
+    end
+  end
+
   def get_accounts_for_requisition(requisition_id) do
     {:ok, access_token} = get_access_token()
 
@@ -75,23 +134,19 @@ defmodule Firmowid.BankData.ApiClient do
 
     with {:ok, response} <- Req.get(options),
          accounts <- Map.get(response.body, "accounts", []) do
-      options =
-        [
-          auth: {:bearer, access_token}
-        ]
-        |> Keyword.merge(Application.get_env(:firmowid, :bank_data_account, []))
-
       accounts
       |> Enum.map(fn account ->
         with {:ok, account_response} <-
-               Req.get(
-                 options
-                 |> Keyword.put(
-                   :url,
-                   "https://bankaccountdata.gocardless.com/api/v2/accounts/#{account}"
-                 )
-               ) do
-          account_response |> Map.get(:body)
+               get_account_status(account),
+             {:ok, account_details} <-
+               get_account_details(account) do
+          {:ok, institution} = get_institution(account_response["institution_id"])
+
+          Map.merge(account_response, account_details)
+          |> Map.put(
+            "institution",
+            institution
+          )
         else
           {:error, error} -> {:error, error}
         end
@@ -112,9 +167,10 @@ defmodule Firmowid.BankData.ApiClient do
       |> Keyword.merge(Application.get_env(:firmowid, :bank_data_transactions, []))
 
     with %{status: 200, body: accounts_transaction} <- Req.get!(options) do
-      accounts_transaction
-      |> Map.get("transactions")
-      |> Map.get("booked")
+      {:ok,
+       accounts_transaction
+       |> Map.get("transactions")
+       |> Map.get("booked")}
     else
       {:error, error} -> {:error, error}
     end
@@ -144,7 +200,7 @@ defmodule Firmowid.BankData.ApiClient do
     end
   end
 
-  defp get_access_token() do
+  def get_access_token() do
     token = GenServer.call(TokenManager, :get_access_token)
 
     if token == nil do

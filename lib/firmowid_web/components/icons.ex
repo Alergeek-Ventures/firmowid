@@ -49,6 +49,7 @@ defmodule FirmowidWeb.Icons do
 
   attr :class, :string, default: nil
 
+  @spec eye_closed_icon(map()) :: Phoenix.LiveView.Rendered.t()
   def eye_closed_icon(assigns) do
     ~H"""
     <svg

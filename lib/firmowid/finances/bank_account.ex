@@ -4,7 +4,15 @@ defmodule Firmowid.Finances.BankAccount do
 
   schema "bank_accounts" do
     field :iban, :string
+    field :bban, :string
     field :gocardless_id, :string
+    field :institution_id, :string
+    field :institution_name, :string
+    field :owner_name, :string
+    field :currency, :string
+    field :name, :string
+    field :product, :string
+    field :cash_account_type, :string
     belongs_to :organization, Firmowid.Accounts.Organization
     belongs_to :requisition, Firmowid.BankData.Requisition
 
@@ -17,7 +25,20 @@ defmodule Firmowid.Finances.BankAccount do
   @doc false
   def changeset(bank_account, attrs \\ %{}) do
     bank_account
-    |> cast(attrs, [:iban, :organization_id, :requisition_id, :gocardless_id])
+    |> cast(attrs, [
+      :iban,
+      :bban,
+      :organization_id,
+      :requisition_id,
+      :institution_id,
+      :institution_name,
+      :owner_name,
+      :gocardless_id,
+      :currency,
+      :name,
+      :product,
+      :cash_account_type
+    ])
     |> validate_required([:iban, :organization_id, :requisition_id])
   end
 end

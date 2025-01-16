@@ -11,6 +11,9 @@ defmodule Firmowid.Accounts.Organization do
     field :correspondence_name, :string
     field :correspondence_address, :string
 
+    field :is_basic_info_editing, :boolean, virtual: true, default: false
+    field :is_correspondence_editing, :boolean, virtual: true, default: false
+
     belongs_to :owner, Firmowid.Accounts.User
     has_many :users, Firmowid.Accounts.User
 
@@ -28,7 +31,9 @@ defmodule Firmowid.Accounts.Organization do
       :phone_number,
       :organization_type,
       :correspondence_name,
-      :correspondence_address
+      :correspondence_address,
+      :is_basic_info_editing,
+      :is_correspondence_editing
     ])
     |> validate_required([:identification_number, :name, :owner_id])
     |> assoc_constraint(:owner)

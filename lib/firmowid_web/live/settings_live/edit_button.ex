@@ -4,13 +4,12 @@ defmodule FirmowidWeb.SettingsLive.EditButton do
   attr :class, :string, default: nil
 
   attr :rest, :global,
-    include: ~w(autocomplete name rel action enctype method novalidate target multipart),
+    include: ~w(autocomplete name rel action enctype method novalidate target multipart type),
     doc: "the arbitrary HTML attributes to apply to the form tag"
 
   def edit_button(assigns) do
     ~H"""
     <.button
-      type="button"
       phx-disable-with=""
       class={
         classes([

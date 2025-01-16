@@ -129,6 +129,16 @@ defmodule Firmowid.Accounts.User do
   end
 
   @doc """
+  A user changeset for account deletion that only validates the password.
+  """
+  def delete_account_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:current_password])
+    |> validate_required([:current_password])
+    |> validate_current_password(attrs["current_password"])
+  end
+
+  @doc """
   Confirms the account by setting `confirmed_at`.
   """
   def confirm_changeset(user) do

@@ -51,7 +51,7 @@ defmodule FirmowidWeb.CoreComponents do
       data-cancel={JS.exec(@on_cancel, "phx-remove")}
       class="relative z-50 hidden"
     >
-      <div id={"#{@id}-bg"} class="bg-zinc-50/90 fixed inset-0 transition-opacity" aria-hidden="true" />
+      <div id={"#{@id}-bg"} class="bg-black/60 fixed inset-0 transition-opacity" aria-hidden="true" />
       <div
         class="fixed inset-0 overflow-y-auto"
         aria-labelledby={"#{@id}-title"}
@@ -67,7 +67,7 @@ defmodule FirmowidWeb.CoreComponents do
               phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
               phx-key="escape"
               phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
-              class="shadow-zinc-700/10 ring-zinc-700/10 relative hidden
+              class="shadow-darkGrey/10 ring-darkGrey/10 relative hidden
               rounded-md bg-white p-14 shadow-lg ring-1 transition"
             >
               <div class="absolute top-6 right-5">
@@ -107,7 +107,11 @@ defmodule FirmowidWeb.CoreComponents do
   attr :class, :any, doc: "Extend existing styles applied to the component."
 
   attr :rest, :global, include: ~w(disabled form name value)
-  attr :color, :string, doc: "The button color.", default: "black", values: ["black", "green"]
+
+  attr :color, :string,
+    doc: "The button color.",
+    default: "black",
+    values: ["black", "green", "red"]
 
   attr :type, :string,
     default: "submit",
@@ -140,8 +144,16 @@ defmodule FirmowidWeb.CoreComponents do
     ])
   end
 
+  defp button_styles(:color, %{variant: "outline", color: "black"}) do
+    "border-darkGrey text-darkGrey bg-transparent hover:text-white hover:bg-darkGrey disabled:cursor-default disabled:bg-transparent"
+  end
+
   defp button_styles(:color, %{variant: "outline", color: "green"}) do
     "border-blueText text-blueText bg-transparent hover:text-blueText hover:bg-greyButtonBg disabled:text-blueText disabled:cursor-default disabled:bg-transparent"
+  end
+
+  defp button_styles(:color, %{variant: "outline", color: "red"}) do
+    "border-redText text-redText bg-transparent hover:text-white hover:bg-redText disabled:cursor-default disabled:bg-transparent"
   end
 
   defp button_styles(:color, %{color: "green"}) do
@@ -151,6 +163,9 @@ defmodule FirmowidWeb.CoreComponents do
   defp button_styles(:color, %{color: "black"}) do
     "text-white bg-black hover:bg-greyButtonBg hover:text-black disabled:cursor-default disabled:bg-black disabled:text-white"
   end
+
+  defp button_styles(:color, %{variant: "outline"}),
+    do: button_styles(:color, %{color: "black", variant: "outline"})
 
   defp button_styles(:color, _), do: button_styles(:color, %{color: "black"})
 

@@ -589,4 +589,30 @@ defmodule Firmowid.Accounts do
   def change_organization_invites(%OrganizationInvites{} = organization_invites, attrs \\ %{}) do
     OrganizationInvites.changeset(organization_invites, attrs)
   end
+
+  @doc """
+  Deletes a user account after verifying the password.
+
+  Returns {:ok, %User{}} if successful, {:error, :invalid_password} if password is wrong
+  """
+  def delete_user(user, password) do
+    if User.valid_password?(user, password) do
+      Repo.delete(user, skip_organization_id: true)
+    else
+      {:error, :invalid_password}
+    end
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for deleting user account.
+
+  ## Examples
+
+      iex> change_user_delete_account(user)
+      %Ecto.Changeset{data: %User{}}
+
+  """
+  def change_user_delete_account(user, attrs \\ %{}) do
+    User.delete_account_changeset(user, attrs)
+  end
 end

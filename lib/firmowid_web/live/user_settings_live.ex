@@ -6,8 +6,8 @@ defmodule FirmowidWeb.UserSettingsLive do
   def render(assigns) do
     ~H"""
     <.header class="text-center">
-      Account Settings
-      <:subtitle>Manage your account email address and password settings</:subtitle>
+      Ustawienia Konta
+      <:subtitle>Zarządzaj adresem email i ustawieniami hasła</:subtitle>
     </.header>
 
     <div class="space-y-12 divide-y">
@@ -24,12 +24,12 @@ defmodule FirmowidWeb.UserSettingsLive do
             name="current_password"
             id="current_password_for_email"
             type="password"
-            label="Current password"
+            label="Aktualne hasło"
             value={@email_form_current_password}
             required
           />
           <:actions>
-            <.button phx-disable-with="Changing...">Change Email</.button>
+            <.button phx-disable-with="Zmieniam...">Zmień Email</.button>
           </:actions>
         </.simple_form>
       </div>
@@ -49,23 +49,23 @@ defmodule FirmowidWeb.UserSettingsLive do
             id="hidden_user_email"
             value={@current_email}
           />
-          <.input field={@password_form[:password]} type="password" label="New password" required />
+          <.input field={@password_form[:password]} type="password" label="Nowe hasło" required />
           <.input
             field={@password_form[:password_confirmation]}
             type="password"
-            label="Confirm new password"
+            label="Potwierdź nowe hasło"
           />
           <.input
             field={@password_form[:current_password]}
             name="current_password"
             type="password"
-            label="Current password"
+            label="Aktualne hasło"
             id="current_password_for_password"
             value={@current_password}
             required
           />
           <:actions>
-            <.button phx-disable-with="Changing...">Change Password</.button>
+            <.button phx-disable-with="Zmieniam...">Zmień Hasło</.button>
           </:actions>
         </.simple_form>
       </div>
@@ -77,10 +77,10 @@ defmodule FirmowidWeb.UserSettingsLive do
     socket =
       case Accounts.update_user_email(socket.assigns.current_user, token) do
         :ok ->
-          put_flash(socket, :info, "Email changed successfully.")
+          put_flash(socket, :info, "Email został zmieniony pomyślnie.")
 
         :error ->
-          put_flash(socket, :error, "Email change link is invalid or it has expired.")
+          put_flash(socket, :error, "Link do zmiany emaila jest nieprawidłowy lub wygasł.")
       end
 
     {:ok, push_navigate(socket, to: ~p"/users/settings")}
@@ -127,7 +127,7 @@ defmodule FirmowidWeb.UserSettingsLive do
           &url(~p"/users/settings/confirm_email/#{&1}")
         )
 
-        info = "A link to confirm your email change has been sent to the new address."
+        info = "Link potwierdzający zmianę adresu email został wysłany na nowy adres."
         {:noreply, socket |> put_flash(:info, info) |> assign(email_form_current_password: nil)}
 
       {:error, changeset} ->
