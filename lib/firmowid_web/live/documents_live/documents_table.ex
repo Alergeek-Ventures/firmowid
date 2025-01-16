@@ -19,8 +19,8 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
     get_status = fn invoice_matcher ->
       case invoice_matcher do
         %{skip_invoicing: true} -> "Pominięte"
-        %{documents: [], imported_transactions: _} -> "Transakcja"
-        %{documents: _, imported_transactions: []} -> "Dokument"
+        %{cost_invoices: [], transactions: _} -> "Transakcja"
+        %{cost_invoices: _, transactions: []} -> "Dokument"
         _ -> "Komplet"
       end
     end
@@ -96,16 +96,16 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
                     }
                   />
                 <% else %>
-                  <%= if column.key == "seller" and invoice_matcher.documents != [] do %>
+                  <%= if column.key == "seller" and invoice_matcher.cost_invoices != [] do %>
                     <.link
                       class="hover:underline"
-                      navigate={~p"/documents/#{hd(invoice_matcher.documents).id}"}
+                      navigate={~p"/documents/#{hd(invoice_matcher.cost_invoices).id}"}
                     >
                       <span>
                         {invoice_matcher.seller_display_name}
                       </span>
                       <span class="text-darkGrey opacity-50 text-sm">
-                        {hd(invoice_matcher.documents).description}
+                        {hd(invoice_matcher.cost_invoices).description}
                       </span>
                     </.link>
                   <% else %>
@@ -114,11 +114,11 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
                         {invoice_matcher.seller_display_name}
                       </span>
                       <span class="text-darkGrey opacity-50 text-sm">
-                        <%= if invoice_matcher.imported_transactions != [] do %>
-                          {hd(invoice_matcher.imported_transactions).remittance_information_unstructured}
+                        <%= if invoice_matcher.transactions != [] do %>
+                          {hd(invoice_matcher.transactions).remittance_information_unstructured}
                         <% else %>
-                          <%= if invoice_matcher.documents != [] do %>
-                            {hd(invoice_matcher.documents).description}
+                          <%= if invoice_matcher.cost_invoices != [] do %>
+                            {hd(invoice_matcher.cost_invoices).description}
                           <% end %>
                         <% end %>
                       </span>
@@ -216,11 +216,11 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
       id={"status-#{
         @invoice_matcher.id
       }-#{
-        @invoice_matcher.documents
+        @invoice_matcher.cost_invoices
         |> Enum.map(fn d -> d.id end)
         |> Enum.join(",")
       }-#{
-        @invoice_matcher.imported_transactions
+        @invoice_matcher.transactions
         |> Enum.map(fn t -> t.id end)
         |> Enum.join(",")
       }"}
@@ -243,7 +243,7 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
               "(np. gotówką)"
 
           "Pominięte" ->
-            if @invoice_matcher.documents != [] do
+            if @invoice_matcher.cost_invoices != [] do
               "Dokument został pominięty. Transakcje nie będą do niego przypisywane"
             else
               "Transakcja została pominięta. Dokumenty nie będą do niej przypisywane"
@@ -278,7 +278,7 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
                 "hero-check-micro"
 
               "Pominięte" ->
-                if @invoice_matcher.documents == [] do
+                if @invoice_matcher.cost_invoices == [] do
                   "hero-credit-card-mini"
                 else
                   "hero-document-text-solid"
@@ -295,7 +295,7 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
       </div>
       <%= if @status != "Komplet" do %>
         <button
-          phx-click="skip-invoicing"
+          phx-click="toggle-skip-invoicing"
           phx-value-invoice-matcher={@invoice_matcher}
           class={[
             "transition-all duration-500 cursor-auto",

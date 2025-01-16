@@ -41,7 +41,7 @@ defmodule Firmowid.Repo.Migrations.CreatePostgresSchema do
 
     create unique_index(:bank_accounts, [:iban, :organization_id])
 
-    create table(:imported_transactions) do
+    create table(:transactions) do
       add :transaction_id, :string
       add :internal_transaction_id, :string
       add :creditor_name, :string
@@ -67,25 +67,38 @@ defmodule Firmowid.Repo.Migrations.CreatePostgresSchema do
       timestamps()
     end
 
-    create unique_index(:imported_transactions, [:internal_transaction_id, :organization_id])
+    create unique_index(:transactions, [:internal_transaction_id, :organization_id])
 
-    create table(:documents) do
-      add :seller, :string
-      add :seller_display_name, :string
+    create table(:blobs) do
+      add :blob_path, :string, null: false
+      add :original_filename, :string, null: false
 
-      add :sale_date, :date
-      add :issue_date, :date
-      add :due_date, :date
+      add :organization_id,
+          references(:organizations,
+            on_delete: :delete_all
+          ),
+          null: false
 
-      add :total_amount, :decimal, precision: 10, scale: 2
-      add :currency, :string
+      timestamps()
+    end
 
-      add :invoice_identifier, :string
-      add :description, :text
+    create table(:cost_invoices) do
+      add :blob_id, references(:blobs, on_delete: :delete_all), null: false
 
-      add :file_name, :string
+      add :seller, :string, null: false
+      add :seller_display_name, :string, null: false
 
-      add :skip_invoicing, :boolean, default: false
+      add :sale_date, :date, null: false
+      add :issue_date, :date, null: false
+      add :due_date, :date, null: false
+
+      add :total_amount, :decimal, precision: 10, scale: 2, null: false
+      add :currency, :string, null: false
+
+      add :invoice_identifier, :string, null: false
+      add :description, :text, null: false
+
+      add :skip_invoicing, :boolean, default: false, null: false
 
       add :organization_id,
           references(:organizations,
@@ -97,13 +110,13 @@ defmodule Firmowid.Repo.Migrations.CreatePostgresSchema do
       timestamps()
     end
 
-    create index(:documents, [:invoice_identifier])
+    create unique_index(:cost_invoices, [:blob_id])
+    create index(:cost_invoices, [:invoice_identifier])
 
-    create table(:documents_imported_transactions) do
-      add :document_id, references(:documents, on_delete: :delete_all), null: false
+    create table(:cost_invoices_transactions) do
+      add :cost_invoice_id, references(:cost_invoices, on_delete: :delete_all), null: false
 
-      add :imported_transaction_id, references(:imported_transactions, on_delete: :delete_all),
-        null: false
+      add :transaction_id, references(:transactions, on_delete: :delete_all), null: false
 
       add :organization_id,
           references(:organizations,

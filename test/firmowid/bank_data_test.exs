@@ -150,28 +150,28 @@ defmodule Firmowid.BankDataTest do
 
     BankData.sync_bank_account(bank_account.id, :skip_organization_id)
 
-    imported_transactions =
-      Firmowid.Finances.ImportedTransaction
+    transactions =
+      Firmowid.Finances.Transaction
       |> Repo.all(organization_id: organization.id)
 
-    n26 = imported_transactions |> Enum.find(&(&1.creditor_name == "N26 Bank"))
+    n26 = transactions |> Enum.find(&(&1.creditor_name == "N26 Bank"))
 
     assert is_nil(n26) == false
     assert n26.transaction_amount == Decimal.new("-32.00")
 
-    nest_bank = imported_transactions |> Enum.find(&(&1.creditor_name == "Alergeek Ventures"))
+    nest_bank = transactions |> Enum.find(&(&1.creditor_name == "Alergeek Ventures"))
 
     assert is_nil(nest_bank) == false
     assert nest_bank.transaction_amount == Decimal.new("-12.45")
 
     notion_labs =
-      imported_transactions |> Enum.find(&(&1.creditor_name == "NOTION LABS, INC. NOTION.SO"))
+      transactions |> Enum.find(&(&1.creditor_name == "NOTION LABS, INC. NOTION.SO"))
 
     assert is_nil(notion_labs) == false
     assert notion_labs.transaction_amount == Decimal.new("-3630.82")
     assert notion_labs.creditor_account == "N/A"
 
-    assert length(imported_transactions) == 3
+    assert length(transactions) == 3
   end
 
   test "lists institutions properly" do

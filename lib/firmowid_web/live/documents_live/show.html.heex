@@ -7,7 +7,7 @@
   <div class="row-start-1 row-end-3 col-start-1 col-end-13 h-full w-screen bg-orangeBg -z-10" />
   <h1
     id="seller-name"
-    data-tippy-content={@document.seller}
+    data-tippy-content={@cost_invoice.seller}
     data-tippy-placement="bottom"
     phx-hook="tippy"
     class={[
@@ -16,33 +16,33 @@
       "text-2xl"
     ]}
   >
-    {@document.seller_display_name}
+    {@cost_invoice.seller_display_name}
   </h1>
   <h2 class={[
     "row-start-1 row-end-2 col-start-6 col-end-8",
     "self-end justify-self-end",
     "text-2xl text-orangeText"
   ]}>
-    {@document.amount}
+    {@cost_invoice.amount}
   </h2>
   <blockquote class={[
     "row-start-2 row-end-3 col-start-2 col-end-7 pb-8",
     "self-start justify-self-start",
     "text-darkGrey"
   ]}>
-    {@document.description}
+    {@cost_invoice.description}
   </blockquote>
   <div class={[
     "row-start-1 col-start-8 col-end-13 pl-8 pt-8",
-    @document.imported_transactions == [] && "row-end-9",
-    @document.imported_transactions != [] && "row-end-13"
+    @cost_invoice.transactions == [] && "row-end-9",
+    @cost_invoice.transactions != [] && "row-end-13"
   ]}>
-    <%= if String.ends_with?(@document.file_name, ".pdf") do %>
+    <%= if String.ends_with?(@cost_invoice.blob.blob_path, ".pdf") do %>
       <div
         class="w-full h-full max-h-[80vh] border-black border-2 rounded-lg
       overflow-x-hidden overflow-y-scroll bg-white"
-        id="document-details"
-        data-pdf-url={@document.file_url}
+        id="cost_invoice-details"
+        data-pdf-url={@cost_invoice.file_url}
         phx-hook="PDFViewer"
       >
         <div class="w-full h-full flex items-center justify-center font-bold">
@@ -52,7 +52,7 @@
     <% else %>
       <div class="w-full h-full max-h-[80vh] border-black border-2 rounded-lg
     overflow-x-hidden overflow-y-scroll bg-black">
-        <img src={@document.file_url} class="w-full h-full object-contain" />
+        <img src={@cost_invoice.file_url} class="w-full h-full object-contain" />
       </div>
     <% end %>
   </div>
@@ -69,13 +69,13 @@
     "flex flex-row gap-2"
   ]}>
     <a
-      href={@document.file_url}
+      href={@cost_invoice.file_url}
       download
       class="text-darkGrey text-center bg-lightGreyBg rounded-lg
       hover:bg-greyButtonBg py-2 px-3 text-sm font-semibold leading-6
       active:text-white/80 flex items-center justify-center"
       phx-click="download"
-      phx-value-document-id={@document.id}
+      phx-value-cost-invoice-id={@cost_invoice.id}
     >
       <.icon name="hero-arrow-down-tray-solid" class="w-5 h-5" />
     </a>
@@ -84,7 +84,7 @@
       hover:bg-greyButtonBg py-2 px-3 text-sm font-semibold leading-6
       active:text-white/80 flex items-center justify-center"
       phx-click="delete"
-      phx-value-document-id={@document.id}
+      phx-value-cost-invoice-id={@cost_invoice.id}
     >
       <.icon name="hero-trash-solid" class="w-5 h-5" />
     </button>
@@ -97,7 +97,7 @@
     Numer faktury
   </p>
   <div class="row-start-5 row-end-6 col-start-2 col-end-5">
-    <p>{@document.invoice_identifier}</p>
+    <p>{@cost_invoice.invoice_identifier}</p>
   </div>
   <p class={[
     "row-start-4 row-end-5 col-start-5 col-end-7",
@@ -107,7 +107,7 @@
     Data wystawienia
   </p>
   <div class="row-start-5 row-end-6 col-start-5 col-end-7">
-    <p>{@document.issue_date}</p>
+    <p>{@cost_invoice.issue_date}</p>
   </div>
   <p class={[
     "row-start-6 row-end-7 col-start-2 col-end-5",
@@ -117,7 +117,7 @@
     Data sprzedaży
   </p>
   <div class="row-start-7 row-end-8 col-start-2 col-end-5">
-    <p>{@document.sale_date}</p>
+    <p>{@cost_invoice.sale_date}</p>
   </div>
   <p class={[
     "row-start-6 row-end-7 col-start-5 col-end-8",
@@ -127,10 +127,10 @@
     Termin zapłaty
   </p>
   <div class="row-start-7 row-end-8 col-start-5 col-end-8">
-    <p>{@document.due_date}</p>
+    <p>{@cost_invoice.due_date}</p>
   </div>
 
-  <%= case @document.imported_transactions do %>
+  <%= case @cost_invoice.transactions do %>
     <% [single] -> %>
       <p class={[
         "row-start-8 row-end-9 col-start-2 col-end-6",
@@ -189,14 +189,14 @@
           ])
         }
         phx-click="disconnect"
-        phx-value-document-id={@document.id}
-        phx-value-imported-transaction-id={single.id}
+        phx-value-cost-invoice-id={@cost_invoice.id}
+        phx-value-transaction-id={single.id}
       >
         Cofnij <.icon name="hero-arrow-uturn-left-micro xl:inline-block hidden" class="w-4 h-4" />
       </.button>
     <% [] -> %>
       <div class="row-start-9 row-end-13 col-start-2 col-end-12">
-        <%= if @document.skip_invoicing do %>
+        <%= if @cost_invoice.skip_invoicing do %>
           <h1>Fakturowanie pominięte dla dokumentu</h1>
         <% else %>
           <%= if @grouped_potential_transactions != [] do %>
@@ -214,19 +214,19 @@
                 </div>
               </div>
               <.table id="grouped-transactions" rows={potential_transactions}>
-                <:col :let={imported_transaction} label="Informacje">
-                  {imported_transaction.remittance_information_unstructured}
+                <:col :let={transaction} label="Informacje">
+                  {transaction.remittance_information_unstructured}
                 </:col>
-                <:col :let={imported_transaction} label="Wierzyciel">
-                  {imported_transaction.creditor_name}
+                <:col :let={transaction} label="Wierzyciel">
+                  {transaction.creditor_name}
                 </:col>
-                <:col :let={imported_transaction} label="Data">
-                  {imported_transaction.value_date}
+                <:col :let={transaction} label="Data">
+                  {transaction.value_date}
                 </:col>
-                <:col :let={imported_transaction} label="Kwota">
+                <:col :let={transaction} label="Kwota">
                   {Money.new(
-                    imported_transaction.transaction_amount,
-                    imported_transaction.transaction_currency
+                    transaction.transaction_amount,
+                    transaction.transaction_currency
                   )}
                 </:col>
               </.table>
@@ -237,22 +237,22 @@
                 Potencjalne transakcje dla dokumentu
               </h1>
               <.table id="transactions" rows={@potential_transactions}>
-                <:col :let={imported_transaction} label="Informacje">
-                  {imported_transaction.remittance_information_unstructured}
+                <:col :let={transaction} label="Informacje">
+                  {transaction.remittance_information_unstructured}
                 </:col>
-                <:col :let={imported_transaction} label="Wierzyciel">
-                  {imported_transaction.creditor_name}
+                <:col :let={transaction} label="Wierzyciel">
+                  {transaction.creditor_name}
                 </:col>
-                <:col :let={imported_transaction} label="Data">
-                  {imported_transaction.value_date}
+                <:col :let={transaction} label="Data">
+                  {transaction.value_date}
                 </:col>
-                <:col :let={imported_transaction} label="Kwota">
+                <:col :let={transaction} label="Kwota">
                   {Money.new(
-                    imported_transaction.transaction_amount,
-                    imported_transaction.transaction_currency
+                    transaction.transaction_amount,
+                    transaction.transaction_currency
                   )}
                 </:col>
-                <:col :let={imported_transaction} label="">
+                <:col :let={transaction} label="">
                   <div
                     id="match-llm-eval"
                     phx-hook="tippy"
@@ -260,51 +260,51 @@
                 z Twojego konta, która pasuje do danej faktury kosztowej. Ocena
                 jest #{
                 cond do
-                  imported_transaction.llm_eval >= 0.75 -> "wysoka"
-                  imported_transaction.llm_eval >= 0.5 -> "średnia"
+                  transaction.llm_eval >= 0.75 -> "wysoka"
+                  transaction.llm_eval >= 0.5 -> "średnia"
                   true -> "niska"
                 end} dla tej transakcji."}
                     class={[
                       "flex flex-col justify-center items-start gap-1 pl-2",
                       "w-10 h-10 rounded-md",
-                      imported_transaction.llm_eval >= 0.75 && "bg-greenBg",
-                      (imported_transaction.llm_eval >= 0.5 and
-                         imported_transaction.llm_eval < 0.75) &&
+                      transaction.llm_eval >= 0.75 && "bg-greenBg",
+                      (transaction.llm_eval >= 0.5 and
+                         transaction.llm_eval < 0.75) &&
                         "bg-orangeBg",
-                      imported_transaction.llm_eval < 0.5 && "bg-redBg"
+                      transaction.llm_eval < 0.5 && "bg-redBg"
                     ]}
                   >
                     <div class={[
                       "w-[75%] rounded-md bg-white h-1",
-                      imported_transaction.llm_eval >= 0.75 && "!bg-greenText"
+                      transaction.llm_eval >= 0.75 && "!bg-greenText"
                     ]} />
                     <div class={[
                       "w-[55%] rounded-md bg-white h-1",
-                      imported_transaction.llm_eval >= 0.75 && "!bg-greenText",
-                      (imported_transaction.llm_eval >= 0.5 and
-                         imported_transaction.llm_eval < 0.75) &&
+                      transaction.llm_eval >= 0.75 && "!bg-greenText",
+                      (transaction.llm_eval >= 0.5 and
+                         transaction.llm_eval < 0.75) &&
                         "!bg-orangeText"
                     ]} />
                     <div class={[
                       "w-[35%] rounded-md bg-white h-1",
-                      imported_transaction.llm_eval >= 0.75 &&
+                      transaction.llm_eval >= 0.75 &&
                         "!bg-greenText",
-                      (imported_transaction.llm_eval >= 0.5 and
-                         imported_transaction.llm_eval < 0.75) &&
+                      (transaction.llm_eval >= 0.5 and
+                         transaction.llm_eval < 0.75) &&
                         "!bg-orangeText",
-                      imported_transaction.llm_eval < 0.5 && "!bg-redText"
+                      transaction.llm_eval < 0.5 && "!bg-redText"
                     ]} />
                   </div>
                 </:col>
-                <:action :let={imported_transaction}>
+                <:action :let={transaction}>
                   <.button
                     phx-click="connect"
-                    phx-value-document-id={@document.id}
-                    phx-value-imported-transaction-id={imported_transaction.id}
+                    phx-value-cost-invoice-id={@cost_invoice.id}
+                    phx-value-transaction-id={transaction.id}
                     class={
                       classes([
-                        imported_transaction.llm_eval < 0.75 && "!bg-lightGreyBg !text-darkGrey",
-                        imported_transaction.llm_eval >= 0.75 && "!bg-darkGrey !text-white"
+                        transaction.llm_eval < 0.75 && "!bg-lightGreyBg !text-darkGrey",
+                        transaction.llm_eval >= 0.75 && "!bg-darkGrey !text-white"
                       ])
                     }
                   >
@@ -386,8 +386,8 @@
           ])
         }
         phx-click="disconnect-group"
-        phx-value-document-id={@document.id}
-        phx-value-imported-transaction-id={head.id}
+        phx-value-cost-invoice-id={@cost_invoice.id}
+        phx-value-transaction-id={head.id}
       >
         Cofnij <.icon name="hero-arrow-uturn-left-micro xl:inline-block hidden" class="w-4 h-4" />
       </.button>

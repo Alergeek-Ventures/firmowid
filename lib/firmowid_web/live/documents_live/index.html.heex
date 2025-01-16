@@ -56,12 +56,13 @@
         hover:text-black transition-colors"})
         }
       >
-        <%= if length(Enum.filter(@uploads.file.entries, & !&1.done?)) + length(@documents_pending_extraction) > 0 do %>
+        <%= if (length(Enum.filter(@uploads.file.entries, & !&1.done?)) +
+      @processing_blobs_count) > 0 do %>
           <span class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-blueBg
           text-blueText flex justify-center items-center items animate-bounce">
             <span>
               {length(Enum.filter(@uploads.file.entries, &(!&1.done?))) +
-                length(@documents_pending_extraction)}
+                @processing_blobs_count}
             </span>
           </span>
         <% end %>
@@ -71,11 +72,11 @@
   </div>
 </div>
 
-<div class="flex flex-row gap-4">
+<div class="flex flex-row gap-4 max-md:hidden">
   <%= for {filter, label} <- [
         {:all, "Wszystkie"},
         {:unmatched, "Bez dopasowania"},
-        {:sales_invoices, "Faktury"},
+        {:invoices, "Faktury"},
         {:transactions, "Transakcje"}
     ] do %>
     <.button

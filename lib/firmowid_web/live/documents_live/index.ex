@@ -8,31 +8,16 @@ defmodule FirmowidWeb.DocumentsLive.Index do
 
   @impl true
   def mount(params, _session, socket) do
-    if connected?(socket), do: Documents.subscribe_to_documents_changes()
-
-    previous_month_date =
-      Map.get(
-        params,
-        "month",
-        Date.utc_today()
-        |> Date.beginning_of_month()
-        |> Date.to_iso8601()
-      )
-      |> Date.from_iso8601!()
-
-    date_range_from = Date.beginning_of_month(previous_month_date)
-    date_range_to = Date.end_of_month(previous_month_date)
+    if connected?(socket) do
+      Documents.subscribe_cost_invoice_broadcast(socket.assigns.current_user.organization_id)
+      Finances.subscribe_transaction_broadcast(socket.assigns.current_user.organization_id)
+    end
 
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
     socket =
       socket
-      # uploading indicator
-      |> assign(
-        :documents_pending_extraction,
-        Documents.list_documents_without_metadata(organization_id)
-      )
       # upload form
       |> allow_upload(:file,
         max_entries: 50,
@@ -43,23 +28,21 @@ defmodule FirmowidWeb.DocumentsLive.Index do
       # UI controls
       |> assign(
         :month,
-        previous_month_date
+        Map.get(
+          params,
+          "month",
+          Date.utc_today()
+          |> Date.beginning_of_month()
+          |> Date.to_iso8601()
+        )
+        |> Date.from_iso8601!()
       )
       # filter invoice matchers
       |> assign(
         :filter,
         :all
       )
-      # actual data
-      |> assign(
-        :invoice_matchers,
-        InvoiceMatcher.get_invoice_matchers(
-          organization_id,
-          date_range_from,
-          date_range_to,
-          :all
-        )
-      )
+      |> refetch_invoice_matchers()
 
     connected_bank_accounts =
       BankData.list_requisitions(organization_id)
@@ -76,26 +59,10 @@ defmodule FirmowidWeb.DocumentsLive.Index do
   end
 
   defp handle_progress(:file, _entry, socket) do
-    user = socket.assigns.current_user
-    organization_id = user.organization_id
-
     if Enum.all?(socket.assigns.uploads.file.entries, fn entry -> entry.done? end) do
       consume_uploaded_entries(socket, :file, fn %{path: path}, entry ->
-        document = Documents.create_document({path, entry.client_type}, organization_id)
-
-        case document do
-          {:ok, document} -> Documents.start_extraction_job(document.id, organization_id)
-        end
-
-        {:ok, nil}
+        {:ok, _} = Documents.upload_cost_invoice(path, entry.client_type, entry.client_name)
       end)
-
-      socket =
-        socket
-        |> assign(
-          :documents_pending_extraction,
-          Documents.list_documents_without_metadata(organization_id)
-        )
 
       {:noreply, socket}
     else
@@ -130,211 +97,91 @@ defmodule FirmowidWeb.DocumentsLive.Index do
 
   @impl true
   def handle_event("filter-change", %{"filter" => filter}, socket) do
-    filter = String.to_atom(filter)
-    organization_id = socket.assigns.current_user.organization_id
-    month = socket.assigns.month
-    date_range_from = Date.beginning_of_month(month)
-    date_range_to = Date.end_of_month(month)
-
     socket =
       socket
-      |> assign(:filter, filter)
-      |> assign(
-        :invoice_matchers,
-        InvoiceMatcher.get_invoice_matchers(
-          organization_id,
-          date_range_from,
-          date_range_to,
-          filter
-        )
-      )
-
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event("delete", %{"document-id" => document_id}, socket) do
-    user = socket.assigns.current_user
-    organization_id = user.organization_id
-
-    Documents.delete_document(organization_id, document_id)
-
-    LiveToast.send_toast(:info, "Dokument został usunięty.")
-
-    socket =
-      socket
-      |> assign(
-        :documents_pending_extraction,
-        Documents.list_documents_without_metadata(organization_id)
-      )
+      |> assign(:filter, filter |> String.to_atom())
+      |> refetch_invoice_matchers()
 
     {:noreply, socket}
   end
 
   @impl true
   def handle_event("change-month", %{"month" => month}, socket) do
-    user = socket.assigns.current_user
-    organization_id = user.organization_id
-
     month = Date.from_iso8601!(month)
 
     socket =
       socket
       |> assign(:month, month)
       |> push_patch(to: ~p"/?month=#{month |> Date.to_iso8601()}")
-
-    filter = socket.assigns.filter
-    date_range_from = Date.beginning_of_month(month)
-    date_range_to = Date.end_of_month(month)
-
-    socket =
-      socket
-      |> assign(
-        :invoice_matchers,
-        InvoiceMatcher.get_invoice_matchers(
-          organization_id,
-          date_range_from,
-          date_range_to,
-          filter
-        )
-      )
+      |> refetch_invoice_matchers()
 
     {:noreply, socket}
   end
 
   @impl true
-  def handle_event("skip-invoicing", %{"invoice-matcher" => invoice_matcher}, socket) do
-    user = socket.assigns.current_user
-    organization_id = user.organization_id
-
+  def handle_event("toggle-skip-invoicing", %{"invoice-matcher" => invoice_matcher}, socket) do
     case String.split(invoice_matcher, "|") do
-      [document_id, " "] ->
-        document_id =
-          document_id
-          |> String.trim()
-          |> String.to_integer()
-
-        Documents.update_document(
-          organization_id,
-          document_id,
-          %{
-            skip_invoicing: !Documents.get_document(organization_id, document_id).skip_invoicing
-          }
+      [cost_invoice_id, ""] ->
+        Documents.toggle_skip_invoicing(
+          :cost_invoice,
+          cost_invoice_id
         )
 
-      [" ", imported_transaction_id] ->
-        imported_transaction_id =
-          imported_transaction_id
-          |> String.trim()
-          |> String.to_integer()
-
-        Finances.update_imported_transaction(
-          organization_id,
-          imported_transaction_id,
-          %{
-            skip_invoicing:
-              !Finances.get_imported_transaction!(
-                organization_id,
-                imported_transaction_id
-              ).skip_invoicing
-          }
+      ["", transaction_id] ->
+        Finances.toggle_skip_invoicing(
+          :transaction,
+          transaction_id
         )
     end
 
-    month = socket.assigns.month
+    {:noreply, socket}
+  end
 
-    filter = socket.assigns.filter
-    date_range_from = Date.beginning_of_month(month)
-    date_range_to = Date.end_of_month(month)
-
+  @impl true
+  def handle_info(:transaction_list_updated, socket) do
     socket =
       socket
-      |> assign(
-        :invoice_matchers,
-        InvoiceMatcher.get_invoice_matchers(
-          organization_id,
-          date_range_from,
-          date_range_to,
-          filter
-        )
-      )
+      |> refetch_invoice_matchers()
 
     {:noreply, socket}
   end
 
   @impl true
-  def handle_info({:document_changed, _}, socket) do
-    user = socket.assigns.current_user
-    organization_id = user.organization_id
-
-    month = socket.assigns.month
-    filter = socket.assigns.filter
-    date_range_from = Date.beginning_of_month(month)
-    date_range_to = Date.end_of_month(month)
-
+  def handle_info(:cost_invoice_list_updated, socket) do
     socket =
       socket
-      # actual data
-      |> assign(
-        :invoice_matchers,
-        InvoiceMatcher.get_invoice_matchers(
-          organization_id,
-          date_range_from,
-          date_range_to,
-          filter
-        )
-      )
-      |> assign(
-        :documents_pending_extraction,
-        Documents.list_documents_without_metadata(organization_id)
-      )
+      |> refetch_invoice_matchers()
 
     {:noreply, socket}
   end
 
-  def handle_info({:document_upload_failed, _}, socket) do
-    LiveToast.send_toast(:error, "Nie udało się wgrać dokumentu")
+  def handle_info({:cost_invoice_failed_to_process, original_filename}, socket) do
+    LiveToast.send_toast(:error, original_filename, title: "Nie udało się wgrać pliku")
+
+    socket =
+      socket
+      |> refetch_invoice_matchers()
 
     {:noreply, socket}
   end
 
   def handle_info(
-        {:document_metadata_added, _, issue_date, seller_display_name, invoice_identifier},
+        {:cost_invoice_added, cost_invoice},
         socket
       ) do
-    user = socket.assigns.current_user
-    organization_id = user.organization_id
-
-    month = socket.assigns.month
-    filter = socket.assigns.filter
-    date_range_from = Date.beginning_of_month(month)
-    date_range_to = Date.end_of_month(month)
-
-    socket =
-      socket
-      # actual data
-      |> assign(
-        :invoice_matchers,
-        InvoiceMatcher.get_invoice_matchers(
-          organization_id,
-          date_range_from,
-          date_range_to,
-          filter
-        )
-      )
-      |> assign(
-        :documents_pending_extraction,
-        Documents.list_documents_without_metadata(organization_id)
-      )
+    socket = refetch_invoice_matchers(socket)
 
     LiveToast.send_toast(
       :info,
-      "#{invoice_identifier} / #{seller_display_name}",
+      "#{cost_invoice.invoice_identifier} / #{cost_invoice.seller_display_name}",
       title: "Faktura załadowana",
       action: fn assigns ->
         assigns =
           assigns
-          |> assign(:issue_date, issue_date |> Date.beginning_of_month() |> Date.to_iso8601())
+          |> assign(
+            :issue_date,
+            cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601()
+          )
 
         ~H"""
         <.link class="text-sm text-bold underline" navigate={~p"/?month=#{@issue_date}"}>
@@ -345,6 +192,35 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     )
 
     {:noreply, socket}
+  end
+
+  defp refetch_invoice_matchers(socket) do
+    user = socket.assigns.current_user
+    organization_id = user.organization_id
+
+    month = socket.assigns.month
+    filter = socket.assigns.filter
+    date_range_from = Date.beginning_of_month(month)
+    date_range_to = Date.end_of_month(month)
+
+    socket =
+      socket
+      # actual data
+      |> assign(
+        :invoice_matchers,
+        InvoiceMatcher.get_invoice_matchers(
+          organization_id,
+          date_range_from,
+          date_range_to,
+          filter
+        )
+      )
+      |> assign(
+        :processing_blobs_count,
+        Documents.get_processing_blobs_count()
+      )
+
+    socket
   end
 
   defp apply_action(socket, :index, _params) do

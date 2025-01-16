@@ -4,23 +4,19 @@ defmodule FirmowidWeb.FileController do
   alias Firmowid.Documents
 
   def batch(conn, params) do
-    user = conn.assigns.current_user
-    organization_id = user.organization_id
-
     month = params["month"] |> Date.from_iso8601!()
 
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
 
-    documents =
-      Documents.list_documents_issued_by_with_metadata(
-        organization_id,
+    cost_invoices =
+      Documents.list_invoices_issued_in_date_range(
         date_range_from,
         date_range_to
       )
 
     stream =
-      documents
+      cost_invoices
       |> Enum.map(fn document ->
         file_extension =
           document.file_url
@@ -30,8 +26,9 @@ defmodule FirmowidWeb.FileController do
           |> Path.extname()
 
         file_name =
-          document.invoice_identifier
+          "#{document.issue_date}_#{document.seller_display_name}"
           # drop all weird chars
+          |> String.downcase()
           |> String.trim()
           |> String.replace(" ", "_")
           |> String.replace(".", "_")

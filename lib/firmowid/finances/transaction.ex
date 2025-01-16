@@ -1,11 +1,11 @@
-defmodule Firmowid.Finances.ImportedTransaction do
+defmodule Firmowid.Finances.Transaction do
   use Firmowid.Schema
   import Ecto.Changeset
 
   alias Firmowid.Documents
 
-  schema "imported_transactions" do
-    # imported data
+  schema "transactions" do
+    # data fetched from Bank API
     field :transaction_id, :string
     field :internal_transaction_id, :string
     field :creditor_name, :string
@@ -24,13 +24,9 @@ defmodule Firmowid.Finances.ImportedTransaction do
     belongs_to :bank_account,
                Firmowid.Finances.BankAccount
 
-    many_to_many :document_transactions,
-                 Documents.Document,
-                 join_through: "documents_imported_transactions",
-                 join_keys: [
-                   imported_transaction_id: :id,
-                   document_id: :id
-                 ]
+    many_to_many :cost_invoices_transactions,
+                 Documents.CostInvoice,
+                 join_through: Documents.CostInvoicesTransactions
 
     belongs_to :organization, Firmowid.Accounts.Organization
 
@@ -38,8 +34,8 @@ defmodule Firmowid.Finances.ImportedTransaction do
   end
 
   @doc false
-  def changeset(imported_transaction, attrs) do
-    imported_transaction
+  def changeset(transaction, attrs) do
+    transaction
     |> cast(attrs, [
       :transaction_id,
       :internal_transaction_id,

@@ -44,12 +44,12 @@ defmodule Firmowid.InvoiceMatcherTest do
 
   defp prep_documents(override_a, override_b) do
     a =
-      InvoiceMatcher.from_document(
+      InvoiceMatcher.from_cost_invoice(
         Map.merge(
           %{
             id: 1,
             documents: [],
-            imported_transactions: [],
+            transactions: [],
             total_amount: Decimal.from_float(100.0),
             currency: "PLN",
             seller: "a",
@@ -66,12 +66,12 @@ defmodule Firmowid.InvoiceMatcherTest do
       )
 
     b =
-      InvoiceMatcher.from_document(
+      InvoiceMatcher.from_cost_invoice(
         Map.merge(
           %{
             id: 2,
             documents: [],
-            imported_transactions: [],
+            transactions: [],
             total_amount: Decimal.from_float(100.0),
             currency: "PLN",
             seller: "b",

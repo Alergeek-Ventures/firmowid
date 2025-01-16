@@ -1,56 +1,67 @@
 defmodule Firmowid.Documents do
-  import Ecto.Query, warn: false
+  import Ecto.Query, only: [from: 2, where: 3, order_by: 2]
 
   alias ExAws.S3
   alias MIME
 
   alias Firmowid.Repo
-  alias Firmowid.Documents.Document
-  alias Firmowid.Documents.Reducto
-  alias Firmowid.Documents.DocumentsTransactions
+  alias Firmowid.Documents.Blob
+  alias Firmowid.Documents.CostInvoice
+  alias Firmowid.Documents.CostInvoicesTransactions
 
-  @pub_sub_topic "documents"
+  @cost_invoice_broadcast_topic "cost_invoice_broadcast_topic"
 
-  def subscribe_to_documents_changes() do
-    Phoenix.PubSub.subscribe(Firmowid.PubSub, @pub_sub_topic)
-  end
-
-  def broadcast_document_change(document_id) do
-    Phoenix.PubSub.broadcast(
+  ## TODO: standardize pubsub / subscriptions / broadcasts
+  def subscribe_cost_invoice_broadcast(organization_id) do
+    Phoenix.PubSub.subscribe(
       Firmowid.PubSub,
-      @pub_sub_topic,
-      {:document_changed, document_id}
+      "#{@cost_invoice_broadcast_topic}:#{organization_id}"
     )
   end
 
-  # only used when document is "added" from user perspective
-  # (until we extract metadata, it's hidden)
-  #
-  # TODO: per org notifications, not global :sweaty_smile:
-  def broadcast_document_metadata_added(document_id, issue_date, display_name, invoice_identifier) do
+  def broadcast_cost_invoice_added(cost_invoice) do
     Phoenix.PubSub.broadcast(
       Firmowid.PubSub,
-      @pub_sub_topic,
-      {:document_metadata_added, document_id, issue_date, display_name, invoice_identifier}
+      "#{@cost_invoice_broadcast_topic}:#{cost_invoice.organization_id}",
+      {:cost_invoice_added, cost_invoice}
     )
   end
 
-  def broadcast_document_upload_failed(document_id) do
+  def broadcast_cost_invoice_list_updated(organization_id) do
     Phoenix.PubSub.broadcast(
       Firmowid.PubSub,
-      @pub_sub_topic,
-      {:document_upload_failed, document_id}
+      "#{@cost_invoice_broadcast_topic}:#{organization_id}",
+      :cost_invoice_list_updated
     )
   end
 
-  def list_documents_with_metadata(
-        organization_id,
+  def broadcast_cost_invoice_failed_to_process(original_filename, organization_id) do
+    Phoenix.PubSub.broadcast(
+      Firmowid.PubSub,
+      "#{@cost_invoice_broadcast_topic}:#{organization_id}",
+      {:cost_invoice_failed_to_process, original_filename}
+    )
+  end
+
+  def get_processing_blobs_count() do
+    # all blobs that exist and don't have cost_invoice metadata
+    # they will be either processed or removed by Oban worker
+
+    query =
+      from b in Blob,
+        left_join: ci in CostInvoice,
+        on: b.id == ci.blob_id,
+        where: is_nil(ci.id),
+        select: b.id
+
+    Repo.aggregate(query, :count, :id)
+  end
+
+  def list_cost_invoices(
         from \\ Date.utc_today(),
         to \\ Date.utc_today()
       ) do
-    Document
-    # the ones with total_amount not being null
-    |> where([d], not is_nil(d.total_amount))
+    CostInvoice
     |> where(
       [d],
       (d.issue_date >= ^from and d.issue_date <= ^to) or
@@ -58,9 +69,9 @@ defmodule Firmowid.Documents do
         (d.sale_date >= ^from and d.sale_date <= ^to)
     )
     |> order_by(desc: :issue_date)
-    |> Repo.all(organization_id: organization_id)
-    |> Repo.preload(:imported_transactions, organization_id: organization_id)
-    |> Enum.map(&Map.put(&1, :file_url, get_file_url(&1.id, organization_id)))
+    |> Repo.all()
+    |> Repo.preload(:transactions)
+    |> Enum.map(&Map.put(&1, :file_url, get_blob_url(&1.blob_id, Repo.get_org_id())))
     |> Enum.map(
       &Map.put(
         &1,
@@ -73,22 +84,32 @@ defmodule Firmowid.Documents do
     )
   end
 
-  def list_documents_issued_by_with_metadata(
-        organization_id,
-        from,
-        to
-      ) do
-    Document
-    # the ones with total_amount not being null
-    |> where([d], not is_nil(d.total_amount))
+  def list_invoices_issued_in_date_range(from, to) do
+    CostInvoice
     |> where(
       [d],
       d.issue_date >= ^from and d.issue_date <= ^to
     )
-    |> order_by(desc: :issue_date)
+    |> Repo.all()
+    |> Enum.map(&Map.put(&1, :file_url, get_blob_url(&1.blob_id, Repo.get_org_id())))
+  end
+
+  def list_unmatched_cost_invoices() do
+    organization_id = Repo.get_org_id()
+
+    if is_nil(organization_id) do
+      raise "Organization id is not set"
+    end
+
+    list_unmatched_cost_invoices(organization_id)
+  end
+
+  def list_unmatched_cost_invoices(organization_id) do
+    CostInvoice
+    |> where([d], is_nil(d.blob_id))
     |> Repo.all(organization_id: organization_id)
-    |> Repo.preload(:imported_transactions, organization_id: organization_id)
-    |> Enum.map(&Map.put(&1, :file_url, get_file_url(&1.id, organization_id)))
+    |> Repo.preload(:transactions)
+    |> Enum.map(&Map.put(&1, :file_url, get_blob_url(&1.id, organization_id)))
     |> Enum.map(
       &Map.put(
         &1,
@@ -101,28 +122,155 @@ defmodule Firmowid.Documents do
     )
   end
 
-  def list_documents_without_metadata(organization_id) do
-    Document
-    |> where([d], is_nil(d.total_amount))
-    |> Repo.all(organization_id: organization_id)
-    |> Enum.map(&Map.put(&1, :file_url, get_file_url(&1.id, organization_id)))
-  end
+  def get_cost_invoice!(cost_invoice_id) do
+    cost_invoice =
+      CostInvoice
+      |> Repo.get!(cost_invoice_id)
+      |> Repo.preload(:transactions)
+      |> Repo.preload(:blob)
 
-  def list_unmatched_documents(organization_id) do
-    from(d in Document,
-      left_join: i in assoc(d, :imported_transactions),
-      where: not is_nil(d.total_amount),
-      group_by: d.id,
-      having: count(i.id) == 0,
-      select: d
+    cost_invoice
+    |> Map.put(:file_url, get_blob_url(cost_invoice.blob_id, Repo.get_org_id()))
+    |> Map.put(
+      :amount,
+      Money.new(
+        cost_invoice.total_amount,
+        cost_invoice.currency
+      )
     )
-    |> Repo.all(organization_id: organization_id)
-    |> Enum.map(&Map.put(&1, :file_url, get_file_url(&1.id, organization_id)))
   end
 
-  def get_file_url(document_id, organization_id) do
-    document =
-      Repo.get!(Document, document_id, organization_id: organization_id)
+  def delete_cost_invoice(cost_invoice_id) do
+    # use SQL cascading
+    cost_invoice =
+      CostInvoice
+      |> Repo.get!(cost_invoice_id)
+      |> Repo.preload(:blob)
+
+    organization_id = cost_invoice.organization_id
+
+    blob_id = cost_invoice.blob_id
+    delete_blob(blob_id, cost_invoice.organization_id)
+
+    broadcast_cost_invoice_list_updated(organization_id)
+  end
+
+  def toggle_skip_invoicing(:cost_invoice, id) do
+    cost_invoice = get_cost_invoice!(id)
+
+    cost_invoice =
+      cost_invoice
+      |> CostInvoice.changeset(%{skip_invoicing: !cost_invoice.skip_invoicing})
+      |> Repo.update!()
+
+    broadcast_cost_invoice_list_updated(cost_invoice.organization_id)
+
+    cost_invoice
+  end
+
+  def upload_cost_invoice(upload_path, content_type, original_filename) do
+    with {:ok, blob} <-
+           Repo.transaction(fn ->
+             {:ok, blob} = create_blob(upload_path, content_type, original_filename)
+
+             %{
+               name: "extract_cost_invoice_metadata",
+               blob_id: blob.id,
+               organization_id: blob.organization_id
+             }
+             |> Firmowid.Documents.Worker.new()
+             |> Oban.insert!()
+
+             broadcast_cost_invoice_list_updated(blob.organization_id)
+
+             blob
+           end) do
+      {:ok, blob}
+    else
+      {:error, error} ->
+        Sentry.capture_exception(error)
+
+        {:error, :error}
+    end
+  end
+
+  def get_blob!(id, organization_id) do
+    Blob
+    |> Repo.get!(id, organization_id: organization_id)
+  end
+
+  def delete_blob(id, organization_id) do
+    blob =
+      Blob
+      |> Repo.get!(id, organization_id: organization_id)
+
+    S3.delete_object(
+      Application.get_env(:firmowid, :uploads_bucket),
+      blob.blob_path,
+      version_id: nil
+    )
+    |> ExAws.request!()
+
+    blob
+    |> Repo.delete!()
+  end
+
+  def create_cost_invoice(extracted_metadata) do
+    # allow worker to insert the invoice
+    organization_id = Map.get(extracted_metadata, "organization_id", Repo.get_org_id())
+
+    cost_invoice =
+      %CostInvoice{}
+      |> CostInvoice.changeset(extracted_metadata)
+      |> Firmowid.Repo.insert!(organization_id: organization_id)
+
+    broadcast_cost_invoice_added(cost_invoice)
+  end
+
+  def create_blob(upload_path, content_type, original_filename) do
+    with organization_id <- Repo.get_org_id(),
+         {:ok, blob} <-
+           Repo.transaction(fn ->
+             possible_extensions = MIME.extensions(content_type)
+             extension = Enum.at(possible_extensions, 0, "pdf")
+             upload_path = preprocess_blob(upload_path, extension)
+
+             blob_id = UUIDv7.autogenerate()
+             blob_path = "#{organization_id}/#{Path.basename("#{blob_id}.#{extension}")}"
+
+             upload_path
+             |> S3.Upload.stream_file()
+             |> S3.upload(
+               Application.get_env(:firmowid, :uploads_bucket),
+               blob_path
+             )
+             |> ExAws.request!()
+
+             %Blob{}
+             |> Blob.changeset(%{
+               id: blob_id,
+               blob_path: blob_path,
+               original_filename: original_filename,
+               organization_id: organization_id
+             })
+             |> Repo.insert!()
+           end) do
+      {:ok, blob}
+    else
+      {:error, error} ->
+        Sentry.capture_exception(error)
+
+        {:error, :blob_creation_failed}
+    end
+  end
+
+  def get_blob_url(id, organization_id) do
+    blob =
+      if organization_id == :skip_organization_id do
+        Repo.get!(Blob, id, skip_organization_id: true)
+      else
+        Repo.get!(Blob, id, organization_id: organization_id)
+      end
 
     {:ok, url} =
       :s3
@@ -130,182 +278,79 @@ defmodule Firmowid.Documents do
       |> S3.presigned_url(
         :get,
         Application.get_env(:firmowid, :uploads_bucket),
-        document.file_name,
+        blob.blob_path,
         expires_in: 200
       )
 
     url
   end
 
-  def create_document({upload_path, content_type}, organization_id) do
-    case Repo.insert(%Document{organization_id: organization_id}) do
-      {:ok, document} ->
-        possible_extensions = MIME.extensions(content_type)
-        extension = Enum.at(possible_extensions, 0, "pdf")
+  def preprocess_blob(path, "pdf"), do: path
 
-        upload_path =
-          if extension != "pdf" do
-            {:ok, path} = Briefly.create()
+  def preprocess_blob(path, "jpg"), do: shrink_image(path)
+  def preprocess_blob(path, "jpeg"), do: shrink_image(path)
+  def preprocess_blob(path, "png"), do: shrink_image(path)
 
-            # resize image down, so that's it's max size is 1000x1000
-            image = Image.open!(upload_path)
-            width = Image.width(image)
-            height = Image.height(image)
+  def shrink_image(image_path) do
+    with {:ok, path} <- Briefly.create(),
+         image = Image.open!(image_path) do
+      width = Image.width(image)
+      height = Image.height(image)
 
-            # Calculate scale while preventing division by zero
-            scale =
-              cond do
-                width == 0 or height == 0 -> 1.0
-                width > height -> min(1.0, 1000 / width)
-                true -> min(1.0, 1000 / height)
-              end
-
-            # Only resize if the image is larger than 1000px
-            resized_image =
-              if scale < 1.0 do
-                Image.resize!(image, scale)
-              else
-                image
-              end
-
-            # Ensure extension starts without a dot
-            clean_extension = String.trim_leading(extension, ".")
-
-            # Convert stream to binary data before writing
-            binary_data =
-              resized_image
-              |> Image.stream!(suffix: ".#{clean_extension}")
-              |> Enum.to_list()
-              |> IO.iodata_to_binary()
-
-            File.write!(path, binary_data)
-
-            path
-          else
-            upload_path
-          end
-
-        file_name = "#{organization_id}/#{Path.basename("#{document.id}.#{extension}")}"
-
-        with _ <-
-               upload_path
-               |> S3.Upload.stream_file()
-               |> S3.upload(
-                 Application.get_env(:firmowid, :uploads_bucket),
-                 file_name
-               )
-               |> ExAws.request!(),
-             {:ok, _} <-
-               document
-               |> Document.changeset(%{file_name: file_name})
-               |> Repo.update() do
-          {:ok, document}
-        else
-          _ ->
-            Repo.delete!(document)
-            {:error, :operation_failed}
+      # Calculate scale while preventing division by zero
+      scale =
+        cond do
+          width == 0 or height == 0 -> 1.0
+          width > height -> min(1.0, 1000 / width)
+          true -> min(1.0, 1000 / height)
         end
 
-      {:error, reason} ->
-        {:error, reason}
+      # Only resize if the image is larger than 1000px
+      resized_image =
+        if scale < 1.0 do
+          Image.resize!(image, scale)
+        else
+          image
+        end
+
+      # Convert stream to binary data before writing
+      binary_data =
+        resized_image
+        |> Image.stream!()
+        |> Enum.to_list()
+        |> IO.iodata_to_binary()
+
+      File.write!(path, binary_data)
+
+      path
     end
   end
 
-  def start_extraction_job(document_id, organization_id) do
-    Reducto.start_extraction_job(document_id, organization_id)
-  end
-
-  def update_document_metadata(organization_id, document_id, attrs) do
-    result =
-      Repo.get!(Document, document_id, organization_id: organization_id)
-      |> Document.changeset(attrs)
-      |> Repo.update!()
-
-    broadcast_document_metadata_added(
-      document_id,
-      result.issue_date,
-      result.seller_display_name,
-      result.invoice_identifier
-    )
-
-    result
-  end
-
-  def update_document(organization_id, document_id, attrs) do
-    result =
-      Repo.get!(Document, document_id, organization_id: organization_id)
-      |> Document.changeset(attrs)
-      |> Repo.update!()
-
-    broadcast_document_change(document_id)
-
-    result
-  end
-
-  def delete_document(organization_id, id) do
-    changeset = Repo.get!(Document, id, organization_id: organization_id)
-
-    S3.delete_object(
-      Application.get_env(:firmowid, :uploads_bucket),
-      changeset.file_name,
-      version_id: nil
-    )
-    |> ExAws.request!()
-
-    Repo.delete!(changeset, organization_id: organization_id)
-
-    broadcast_document_change(id)
-  end
-
-  def get_document(organization_id, id) do
-    document =
-      Repo.get!(Document, id, organization_id: organization_id)
-      |> Repo.preload(:imported_transactions, organization_id: organization_id)
-
-    document =
-      Map.merge(
-        document,
-        %{
-          file_url: get_file_url(document.id, organization_id),
-          amount:
-            Money.new(
-              document.currency,
-              document.total_amount
-            )
-        }
-      )
-
-    document
-  end
-
-  def create_documents_imported_transactions_connection(
-        document_id,
-        imported_transaction_id,
+  def create_cost_invoices_transactions_connection(
+        cost_invoice_id,
+        transaction_id,
         organization_id
       ) do
-    %DocumentsTransactions{}
-    |> DocumentsTransactions.changeset(%{
-      document_id: document_id,
-      imported_transaction_id: imported_transaction_id,
+    CostInvoicesTransactions.changeset(%{
+      cost_invoice_id: cost_invoice_id,
+      transaction_id: transaction_id,
       organization_id: organization_id
     })
     |> Repo.insert!()
-
-    broadcast_document_change(document_id)
   end
 
-  def delete_documents_imported_transactions_connection(
+  def delete_cost_invoices_transactions_connection(
         organization_id,
-        document_id,
-        imported_transaction_id
+        cost_invoice_id,
+        transaction_id
       ) do
     Repo.get_by!(
-      DocumentsTransactions,
-      [document_id: document_id, imported_transaction_id: imported_transaction_id],
+      CostInvoicesTransactions,
+      [cost_invoice_id: cost_invoice_id, transaction_id: transaction_id],
       organization_id: organization_id
     )
     |> Repo.delete!()
 
-    broadcast_document_change(document_id)
+    broadcast_cost_invoice_list_updated(organization_id)
   end
 end

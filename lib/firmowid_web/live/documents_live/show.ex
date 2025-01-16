@@ -9,15 +9,15 @@ defmodule FirmowidWeb.DocumentsLive.Show do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
-    document_id = params["id"]
+    cost_invoice_id = params["id"]
 
-    document = Documents.get_document(organization_id, document_id)
+    cost_invoice = Documents.get_cost_invoice!(cost_invoice_id)
 
     potential_transactions =
-      if document.imported_transactions == [] do
+      if cost_invoice.transactions == [] do
         potential_transactions =
-          InvoiceMatcher.get_potential_transactions_for_document(
-            document,
+          InvoiceMatcher.get_potential_transactions_for_cost_invoice(
+            cost_invoice,
             organization_id,
             similarity_threshold: 0.0,
             days_before: 15,
@@ -35,7 +35,7 @@ defmodule FirmowidWeb.DocumentsLive.Show do
           end)
 
         InvoiceMatcher.llm_re_grade_matches(
-          document,
+          cost_invoice,
           potential_transactions
         )
         |> Enum.map(fn {t, grade} -> Map.put(t, :llm_eval, grade) end)
@@ -47,17 +47,17 @@ defmodule FirmowidWeb.DocumentsLive.Show do
     is_llm_certain = Enum.all?(potential_transactions, fn t -> t.llm_eval > 0.9 end)
 
     grouped_potential_transactions =
-      if document.imported_transactions == [] and
+      if cost_invoice.transactions == [] and
            (potential_transactions == [] or
               not is_llm_certain) do
-        InvoiceMatcher.match_with_transaction_combo(document, organization_id)
+        InvoiceMatcher.match_with_transaction_combo(cost_invoice, organization_id)
       else
         []
       end
 
     socket =
       socket
-      |> assign(:document, document)
+      |> assign(:cost_invoice, cost_invoice)
       |> assign(:potential_transactions, potential_transactions)
       |> assign(:grouped_potential_transactions, grouped_potential_transactions)
 
@@ -84,29 +84,28 @@ defmodule FirmowidWeb.DocumentsLive.Show do
       ) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
-    group_id = String.to_integer(group_id)
 
-    document_id = socket.assigns.document.id
+    cost_invoice_id = socket.assigns.cost_invoice.id
 
     grouped_potential_transactions = socket.assigns.grouped_potential_transactions
 
-    {_group, imported_transactions} =
+    {_group, transactions} =
       Enum.find(grouped_potential_transactions, fn {group, _} -> group.id == group_id end)
 
-    imported_transactions
+    transactions
     |> Enum.map(fn t ->
-      Documents.create_documents_imported_transactions_connection(
-        document_id,
+      Documents.create_cost_invoices_transactions_connection(
+        cost_invoice_id,
         t.id,
         organization_id
       )
     end)
 
-    document = Documents.get_document(organization_id, document_id)
+    cost_invoice = Documents.get_cost_invoice!(cost_invoice_id)
 
     socket =
       socket
-      |> assign(:document, document)
+      |> assign(:cost_invoice, cost_invoice)
       |> assign(:grouped_potential_transactions, [])
       |> assign(:potential_transactions, [])
 
@@ -117,25 +116,25 @@ defmodule FirmowidWeb.DocumentsLive.Show do
   def handle_event(
         "connect",
         %{
-          "document-id" => document_id,
-          "imported-transaction-id" => imported_transaction_id
+          "cost-invoice-id" => cost_invoice_id,
+          "transaction-id" => transaction_id
         },
         socket
       ) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
-    Documents.create_documents_imported_transactions_connection(
-      document_id,
-      imported_transaction_id,
+    Documents.create_cost_invoices_transactions_connection(
+      cost_invoice_id,
+      transaction_id,
       organization_id
     )
 
-    document = Documents.get_document(organization_id, document_id)
+    cost_invoice = Documents.get_cost_invoice!(cost_invoice_id)
 
     socket =
       socket
-      |> assign(:document, document)
+      |> assign(:cost_invoice, cost_invoice)
 
     {:noreply, socket}
   end
@@ -143,23 +142,26 @@ defmodule FirmowidWeb.DocumentsLive.Show do
   @impl true
   def handle_event(
         "disconnect",
-        %{"document-id" => document_id, "imported-transaction-id" => imported_transaction_id},
+        %{
+          "cost-invoice-id" => cost_invoice_id,
+          "transaction-id" => transaction_id
+        },
         socket
       ) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
-    Documents.delete_documents_imported_transactions_connection(
+    Documents.delete_cost_invoices_transactions_connection(
       organization_id,
-      document_id,
-      imported_transaction_id
+      cost_invoice_id,
+      transaction_id
     )
 
-    document = Documents.get_document(organization_id, document_id)
+    cost_invoice = Documents.get_cost_invoice!(cost_invoice_id)
 
     potential_transactions =
-      InvoiceMatcher.get_potential_transactions_for_document(
-        document,
+      InvoiceMatcher.get_potential_transactions_for_cost_invoice(
+        cost_invoice,
         organization_id,
         similarity_threshold: 0.0,
         days_before: 15,
@@ -178,7 +180,7 @@ defmodule FirmowidWeb.DocumentsLive.Show do
 
     potential_transactions =
       InvoiceMatcher.llm_re_grade_matches(
-        document,
+        cost_invoice,
         potential_transactions
       )
       |> Enum.map(fn {t, grade} -> Map.put(t, :llm_eval, grade) end)
@@ -186,7 +188,7 @@ defmodule FirmowidWeb.DocumentsLive.Show do
 
     socket =
       socket
-      |> assign(:document, document)
+      |> assign(:cost_invoice, cost_invoice)
       |> assign(:potential_transactions, potential_transactions)
 
     {:noreply, socket}
@@ -195,28 +197,28 @@ defmodule FirmowidWeb.DocumentsLive.Show do
   @impl true
   def handle_event(
         "disconnect-group",
-        %{"document-id" => document_id},
+        %{"cost-invoice-id" => cost_invoice_id},
         socket
       ) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
-    document = Documents.get_document(organization_id, document_id)
+    cost_invoice = Documents.get_cost_invoice!(cost_invoice_id)
 
-    document.imported_transactions
+    cost_invoice.transactions
     |> Enum.map(fn t ->
-      Documents.delete_documents_imported_transactions_connection(
+      Documents.delete_cost_invoices_transactions_connection(
         organization_id,
-        document_id,
+        cost_invoice_id,
         t.id
       )
     end)
 
-    document = Documents.get_document(organization_id, document_id)
+    cost_invoice = Documents.get_cost_invoice!(cost_invoice_id)
 
     potential_transactions =
-      InvoiceMatcher.get_potential_transactions_for_document(
-        document,
+      InvoiceMatcher.get_potential_transactions_for_cost_invoice(
+        cost_invoice,
         organization_id,
         similarity_threshold: 0.0,
         days_before: 15,
@@ -235,22 +237,22 @@ defmodule FirmowidWeb.DocumentsLive.Show do
 
     potential_transactions =
       InvoiceMatcher.llm_re_grade_matches(
-        document,
+        cost_invoice,
         potential_transactions
       )
       |> Enum.map(fn {t, grade} -> Map.put(t, :llm_eval, grade) end)
       |> Enum.sort_by(& &1.llm_eval, :desc)
 
     grouped_potential_transactions =
-      if document.imported_transactions == [] and potential_transactions == [] do
-        InvoiceMatcher.match_with_transaction_combo(document, organization_id)
+      if cost_invoice.transactions == [] and potential_transactions == [] do
+        InvoiceMatcher.match_with_transaction_combo(cost_invoice, organization_id)
       else
         []
       end
 
     socket =
       socket
-      |> assign(:document, document)
+      |> assign(:cost_invoice, cost_invoice)
       |> assign(:potential_transactions, potential_transactions)
       |> assign(:grouped_potential_transactions, grouped_potential_transactions)
 
@@ -259,45 +261,22 @@ defmodule FirmowidWeb.DocumentsLive.Show do
 
   @impl true
   def handle_event("toggle-skip-invoicing", _, socket) do
-    user = socket.assigns.current_user
-    organization_id = user.organization_id
-
-    skip_invoicing = socket.assigns.document.skip_invoicing
-
-    Documents.update_document(
-      organization_id,
-      socket.assigns.document.id,
-      %{
-        skip_invoicing: !skip_invoicing
-      }
-    )
-
-    document =
-      Documents.get_document(
-        organization_id,
-        socket.assigns.document.id
+    cost_invoice =
+      Documents.toggle_skip_invoicing(
+        :cost_invoice,
+        socket.assigns.cost_invoice.id
       )
 
     socket =
       socket
-      |> assign(:document, document)
+      |> assign(:cost_invoice, cost_invoice)
 
     {:noreply, socket}
   end
 
   @impl true
-  def handle_event(
-        "delete",
-        %{"document-id" => document_id},
-        socket
-      ) do
-    user = socket.assigns.current_user
-    organization_id = user.organization_id
-
-    Documents.delete_document(
-      organization_id,
-      document_id
-    )
+  def handle_event("delete", %{"cost-invoice-id" => cost_invoice_id}, socket) do
+    Documents.delete_cost_invoice(cost_invoice_id)
 
     LiveToast.send_toast(
       :info,

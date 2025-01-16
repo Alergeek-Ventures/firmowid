@@ -2,7 +2,7 @@ defmodule Firmowid.Finances do
   import Ecto.Query, warn: false
   alias Firmowid.Repo
 
-  alias Firmowid.Finances.ImportedTransaction
+  alias Firmowid.Finances.Transaction
   alias Firmowid.Finances.BankAccount
 
   @doc """
@@ -16,6 +16,23 @@ defmodule Firmowid.Finances do
 
     query
     |> Repo.all(skip_organization_id: true)
+  end
+
+  @transaction_broadcast_topic "transaction_broadcast_topic"
+
+  def subscribe_transaction_broadcast(organization_id) do
+    Phoenix.PubSub.subscribe(
+      Firmowid.PubSub,
+      "#{@transaction_broadcast_topic}:#{organization_id}"
+    )
+  end
+
+  def broadcast_transaction_list_updated(organization_id) do
+    Phoenix.PubSub.broadcast(
+      Firmowid.PubSub,
+      "#{@transaction_broadcast_topic}:#{organization_id}",
+      :transaction_list_updated
+    )
   end
 
   def list_bank_accounts() do
@@ -50,13 +67,13 @@ defmodule Firmowid.Finances do
     |> Repo.delete()
   end
 
-  def list_imported_transactions(organization_id, from \\ nil, to \\ nil, opts \\ []) do
+  def list_transactions(organization_id, from \\ nil, to \\ nil, opts \\ []) do
     if Keyword.get(opts, :only_costs) == true do
       Repo.all(
         if from == nil and to == nil do
-          from(t in ImportedTransaction, where: t.transaction_amount < 0.0)
+          from(t in Transaction, where: t.transaction_amount < 0.0)
         else
-          from t in ImportedTransaction,
+          from t in Transaction,
             where:
               t.value_date >= ^from and t.value_date <= ^to and
                 t.transaction_amount < 0.0
@@ -66,15 +83,15 @@ defmodule Firmowid.Finances do
     else
       Repo.all(
         if from == nil and to == nil do
-          from(t in ImportedTransaction)
+          from(t in Transaction)
         else
-          from t in ImportedTransaction,
+          from t in Transaction,
             where: t.value_date >= ^from and t.value_date <= ^to
         end,
         organization_id: organization_id
       )
     end
-    |> Repo.preload(:document_transactions, organization_id: organization_id)
+    |> Repo.preload(:cost_invoices_transactions, organization_id: organization_id)
     |> Enum.map(fn t ->
       Map.merge(t, %{
         amount:
@@ -86,12 +103,12 @@ defmodule Firmowid.Finances do
     end)
   end
 
-  def list_unmatched_imported_transactions(organization_id) do
+  def list_unmatched_transactions(organization_id) do
     # all transactions that have skip_invoicing set to false (so we match for
     # them)
-    # and don't have any document_transactions (so not matched yet)
-    from(t in ImportedTransaction,
-      left_join: dt in assoc(t, :document_transactions),
+    # and don't have any cost_invoices_transactions (so not matched yet)
+    from(t in Transaction,
+      left_join: dt in assoc(t, :cost_invoices_transactions),
       where: t.transaction_amount <= 0.0,
       where: not t.skip_invoicing,
       where: is_nil(dt.id)
@@ -99,11 +116,11 @@ defmodule Firmowid.Finances do
     |> Repo.all(organization_id: organization_id)
   end
 
-  def get_imported_transaction!(organization_id, transaction_id) do
+  def get_transaction!(organization_id, transaction_id) do
     transaction =
-      Repo.get!(ImportedTransaction, transaction_id, organization_id: organization_id)
+      Repo.get!(Transaction, transaction_id, organization_id: organization_id)
       |> Repo.preload(:bank_account, organization_id: organization_id)
-      |> Repo.preload(:document_transactions, organization_id: organization_id)
+      |> Repo.preload(:cost_invoices_transactions, organization_id: organization_id)
 
     Map.merge(transaction, %{
       amount:
@@ -114,28 +131,41 @@ defmodule Firmowid.Finances do
     })
   end
 
-  def create_or_update_imported_transaction(attrs \\ %{}) do
-    %ImportedTransaction{}
-    |> ImportedTransaction.changeset(attrs)
-    |> Repo.insert!(
-      on_conflict: {:replace_all_except, [:id, :skip_invoicing, :inserted_at]},
-      conflict_target: [:internal_transaction_id, :organization_id]
-    )
+  def toggle_skip_invoicing(:transaction, id) do
+    transaction = Repo.get!(Transaction, id)
+
+    transaction
+    |> Ecto.Changeset.change(skip_invoicing: !transaction.skip_invoicing)
+    |> Repo.update!()
+
+    broadcast_transaction_list_updated(transaction.organization_id)
   end
 
-  def update_imported_transaction(organization_id, imported_transaction_id, attrs) do
+  def create_or_update_transaction(attrs \\ %{}) do
+    transaction =
+      %Transaction{}
+      |> Transaction.changeset(attrs)
+      |> Repo.insert!(
+        on_conflict: {:replace_all_except, [:id, :skip_invoicing, :inserted_at]},
+        conflict_target: [:internal_transaction_id, :organization_id]
+      )
+
+    broadcast_transaction_list_updated(transaction.organization_id)
+  end
+
+  def update_transaction(organization_id, transaction_id, attrs) do
     changeset =
-      get_imported_transaction!(organization_id, imported_transaction_id)
-      |> ImportedTransaction.changeset(attrs)
+      get_transaction!(organization_id, transaction_id)
+      |> Transaction.changeset(attrs)
 
     Repo.update!(changeset)
   end
 
-  def delete_imported_transaction(%ImportedTransaction{} = imported_transaction) do
-    Repo.delete(imported_transaction)
+  def delete_transaction(%Transaction{} = transaction) do
+    Repo.delete(transaction)
   end
 
-  def change_imported_transaction(%ImportedTransaction{} = imported_transaction, attrs \\ %{}) do
-    ImportedTransaction.changeset(imported_transaction, attrs)
+  def change_transaction(%Transaction{} = transaction, attrs \\ %{}) do
+    Transaction.changeset(transaction, attrs)
   end
 end

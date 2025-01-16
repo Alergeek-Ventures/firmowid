@@ -8,8 +8,8 @@ defmodule Firmowid.Finances.BankAccount do
     belongs_to :organization, Firmowid.Accounts.Organization
     belongs_to :requisition, Firmowid.BankData.Requisition
 
-    has_many :imported_transactions,
-             Firmowid.Finances.ImportedTransaction
+    has_many :transactions,
+             Firmowid.Finances.Transaction
 
     timestamps(type: :utc_datetime)
   end

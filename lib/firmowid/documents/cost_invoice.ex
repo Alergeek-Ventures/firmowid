@@ -1,8 +1,10 @@
-defmodule Firmowid.Documents.Document do
+defmodule Firmowid.Documents.CostInvoice do
   use Firmowid.Schema
   import Ecto.Changeset
 
-  schema "documents" do
+  schema "cost_invoices" do
+    belongs_to :blob, Firmowid.Documents.Blob
+
     field :seller, :string
     field :seller_display_name, :string
 
@@ -16,16 +18,14 @@ defmodule Firmowid.Documents.Document do
     field :description, :string
     field :invoice_identifier, :string
 
-    field :file_name, :string
-
     field :skip_invoicing, :boolean, default: false
 
-    many_to_many :imported_transactions,
-                 Firmowid.Finances.ImportedTransaction,
-                 join_through: "documents_imported_transactions",
+    many_to_many :transactions,
+                 Firmowid.Finances.Transaction,
+                 join_through: "cost_invoices_transactions",
                  join_keys: [
-                   document_id: :id,
-                   imported_transaction_id: :id
+                   cost_invoice_id: :id,
+                   transaction_id: :id
                  ]
 
     belongs_to :organization, Firmowid.Accounts.Organization
@@ -37,6 +37,7 @@ defmodule Firmowid.Documents.Document do
   def changeset(document, attrs \\ %{}) do
     document
     |> cast(attrs, [
+      :blob_id,
       :seller,
       :seller_display_name,
       :sale_date,
@@ -44,11 +45,23 @@ defmodule Firmowid.Documents.Document do
       :due_date,
       :total_amount,
       :currency,
-      :file_name,
       :description,
       :invoice_identifier,
-      :skip_invoicing
+      :skip_invoicing,
+      :organization_id
     ])
-    |> cast_assoc(:imported_transactions)
+    |> validate_required([
+      :seller,
+      :seller_display_name,
+      :sale_date,
+      :issue_date,
+      :due_date,
+      :total_amount,
+      :currency,
+      :description,
+      :invoice_identifier,
+      :skip_invoicing,
+      :organization_id
+    ])
   end
 end

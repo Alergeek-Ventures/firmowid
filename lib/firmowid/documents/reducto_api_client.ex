@@ -17,7 +17,7 @@ defmodule Firmowid.Documents.ReductoApiClient do
   Returns {:ok, response} or {:error, reason}.
   """
   @spec extract(String.t(), Map.t(), extract_options) :: {:ok, map()} | {:error, String.t()}
-  def extract(file_url, json_schema, options) do
+  def extract(file_url, json_schema, options \\ []) do
     extraction_mode =
       Keyword.get(options, :extraction_mode, :hybrid)
       |> Atom.to_string()

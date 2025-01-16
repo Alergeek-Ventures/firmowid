@@ -97,7 +97,7 @@ defmodule Firmowid.BankData do
     upsert_booked_transactions(booked_transactions, bank_account_id, bank_account.organization_id)
 
     # match added transactions
-    InvoiceMatcher.match_all_good_candidates_for_unconnected_documents(
+    InvoiceMatcher.match_all_good_candidates_for_unconnected_cost_invoices(
       bank_account.organization_id
     )
   end
@@ -117,7 +117,7 @@ defmodule Firmowid.BankData do
         |> Map.merge(%{bank_account_id: bank_account_id, organization_id: organization_id})
         |> Map.from_struct()
 
-      Finances.create_or_update_imported_transaction(converted_transaction)
+      Finances.create_or_update_transaction(converted_transaction)
     end)
   end
 

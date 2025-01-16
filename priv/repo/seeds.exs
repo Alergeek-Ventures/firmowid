@@ -1,3 +1,4 @@
+alias Firmowid.Repo
 alias Firmowid.Accounts
 
 {:ok, franek} =
@@ -5,6 +6,10 @@ alias Firmowid.Accounts
     email: "franek@alergeek.ventures",
     password: "kolejka123456"
   })
+
+# easier :x - allows you to visit /admin/dashboard
+qry = "UPDATE users SET system_role = 'superuser' WHERE email = 'franek@alergeek.ventures'"
+res = Ecto.Adapters.SQL.query!(Repo, qry, [])
 
 {:ok, _av} =
   Accounts.create_organization(

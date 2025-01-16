@@ -5,8 +5,8 @@ defmodule Firmowid.InvoiceMatcher do
   @enforce_keys [:amount, :sale_date]
   defstruct [
     :id,
-    :documents,
-    :imported_transactions,
+    :cost_invoices,
+    :transactions,
     :amount,
     :amount_numeric,
     :issue_date,
@@ -27,29 +27,29 @@ defmodule Firmowid.InvoiceMatcher do
   alias Firmowid.Finances
 
   def get_invoice_matchers(organization_id, from, to, filter) do
-    documents = Documents.list_documents_with_metadata(organization_id, from, to)
+    cost_invoices = Documents.list_cost_invoices(from, to)
 
-    imported_transactions =
-      Finances.list_imported_transactions(organization_id, from, to, only_costs: true)
-      # already matched will have a transaction inside a `document.imported_transactions`
+    transactions =
+      Finances.list_transactions(organization_id, from, to, only_costs: true)
+      # already matched will have a transaction inside a `cost_invoice.transactions`
       # prevent duplication here
       |> Enum.filter(fn t ->
-        Enum.all?(documents, fn d ->
-          Enum.all?(d.imported_transactions, fn i -> i.transaction_id != t.transaction_id end)
+        Enum.all?(cost_invoices, fn d ->
+          Enum.all?(d.transactions, fn i -> i.transaction_id != t.transaction_id end)
         end)
       end)
 
     all =
-      documents
-      |> Enum.map(&from_document/1)
-      |> Enum.concat(Enum.map(imported_transactions, &from_imported_transaction/1))
+      cost_invoices
+      |> Enum.map(&from_cost_invoice/1)
+      |> Enum.concat(Enum.map(transactions, &from_transaction/1))
       |> Enum.sort(&compare_date_then_creditor_then_amount/2)
       |> Enum.filter(fn invoice_matcher ->
-        # don't include documents that are issued for previous month and were
+        # don't include cost invoices that are issued for previous month and were
         # paid in previous month
 
         was_paid =
-          invoice_matcher.imported_transactions != [] or
+          invoice_matcher.transactions != [] or
             invoice_matcher.skip_invoicing == true
 
         was_issued_in_date_range =
@@ -66,16 +66,16 @@ defmodule Firmowid.InvoiceMatcher do
       :unmatched ->
         Enum.filter(
           all,
-          &(((&1.documents == [] and &1.imported_transactions != []) or
-               (&1.documents != [] and &1.imported_transactions == [])) and
+          &(((&1.cost_invoices == [] and &1.transactions != []) or
+               (&1.cost_invoices != [] and &1.transactions == [])) and
               &1.skip_invoicing == false)
         )
 
       :invoices ->
-        Enum.filter(all, &(&1.documents != []))
+        Enum.filter(all, &(&1.cost_invoices != []))
 
       :transactions ->
-        Enum.filter(all, &(&1.imported_transactions != []))
+        Enum.filter(all, &(&1.transactions != []))
     end
   end
 
@@ -90,40 +90,40 @@ defmodule Firmowid.InvoiceMatcher do
       a.amount_numeric != b.amount_numeric ->
         Decimal.compare(a.amount_numeric, b.amount_numeric) == :gt
 
-      a.documents != [] and b.documents != [] ->
-        Enum.at(a.documents, 0).id < Enum.at(b.documents, 0).id
+      a.cost_invoices != [] and b.cost_invoices != [] ->
+        Enum.at(a.cost_invoices, 0).id < Enum.at(b.cost_invoices, 0).id
 
-      a.imported_transactions != [] and b.imported_transactions != [] ->
-        Enum.at(a.imported_transactions, 0).id < Enum.at(b.imported_transactions, 0).id
+      a.transactions != [] and b.transactions != [] ->
+        Enum.at(a.transactions, 0).id < Enum.at(b.transactions, 0).id
 
       true ->
         true
     end
   end
 
-  def from_document(document) do
+  def from_cost_invoice(cost_invoice) do
     %__MODULE__{
-      id: document.id,
-      documents: [document],
-      imported_transactions: document.imported_transactions,
-      amount: Money.new(document.currency, document.total_amount),
-      amount_numeric: document.total_amount,
-      issue_date: document.issue_date,
-      sale_date: document.sale_date,
-      due_date: document.due_date,
-      seller: document.seller,
-      seller_display_name: document.seller_display_name,
-      file_url: document.file_url,
-      skip_invoicing: document.skip_invoicing,
-      inserted_at: document.inserted_at
+      id: cost_invoice.id,
+      cost_invoices: [cost_invoice],
+      transactions: cost_invoice.transactions,
+      amount: Money.new(cost_invoice.currency, cost_invoice.total_amount),
+      amount_numeric: cost_invoice.total_amount,
+      issue_date: cost_invoice.issue_date,
+      sale_date: cost_invoice.sale_date,
+      due_date: cost_invoice.due_date,
+      seller: cost_invoice.seller,
+      seller_display_name: cost_invoice.seller_display_name,
+      file_url: cost_invoice.file_url,
+      skip_invoicing: cost_invoice.skip_invoicing,
+      inserted_at: cost_invoice.inserted_at
     }
   end
 
-  defp from_imported_transaction(transaction) do
+  defp from_transaction(transaction) do
     %__MODULE__{
       id: transaction.id,
-      documents: transaction.document_transactions,
-      imported_transactions: [transaction],
+      cost_invoices: transaction.cost_invoices_transactions,
+      transactions: [transaction],
       amount: Money.new(transaction.transaction_currency, transaction.transaction_amount),
       amount_numeric: transaction.transaction_amount,
       issue_date: transaction.booking_date,
@@ -135,7 +135,7 @@ defmodule Firmowid.InvoiceMatcher do
     }
   end
 
-  def get_potential_transactions_for_document(document, organization_id, opts \\ []) do
+  def get_potential_transactions_for_cost_invoice(cost_invoice, organization_id, opts \\ []) do
     opts =
       Keyword.validate!(opts,
         similarity_threshold: 0.1,
@@ -153,43 +153,43 @@ defmodule Firmowid.InvoiceMatcher do
     days_after = Keyword.fetch!(opts, :days_after)
 
     # date range -> between issue_date and payment_deadline
-    issue_date = document.issue_date |> Date.add(-days_before)
-    payment_deadline = document.due_date |> Date.add(days_after)
+    issue_date = cost_invoice.issue_date |> Date.add(-days_before)
+    payment_deadline = cost_invoice.due_date |> Date.add(days_after)
+
+    rates =
+      case Money.ExchangeRates.historic_rates(cost_invoice.issue_date) do
+        {:ok, rates} ->
+          {:ok, rates}
+
+        # fallback to some hardcoded rates if OpenExchange API is not
+        # available (like Bartek running dev on it and using our quota)
+        _ ->
+          {:ok,
+           %{
+             EUR: Decimal.new("0.9"),
+             PLN: Decimal.new("4.2"),
+             USD: Decimal.new("1.1")
+           }}
+      end
 
     # either an exact match or within ~10% deviation
     {min_amount, max_amount} =
-      if document.currency == "PLN" do
+      if cost_invoice.currency == "PLN" do
         # allow deviation even for PLN if option provided
         if exact_amount do
-          {document.total_amount, document.total_amount}
+          {cost_invoice.total_amount, cost_invoice.total_amount}
         else
-          {Decimal.mult(document.total_amount, Decimal.from_float(1.1)),
-           Decimal.mult(document.total_amount, Decimal.from_float(0.9))}
+          {Decimal.mult(cost_invoice.total_amount, Decimal.from_float(1.1)),
+           Decimal.mult(cost_invoice.total_amount, Decimal.from_float(0.9))}
         end
       else
-        rates =
-          case Money.ExchangeRates.historic_rates(document.issue_date) do
-            {:ok, rates} ->
-              {:ok, rates}
-
-            # fallback to some hardcoded rates if OpenExchange API is not
-            # available (like Bartek running dev on it and using our quota)
-            _ ->
-              {:ok,
-               %{
-                 EUR: Decimal.new("0.9"),
-                 PLN: Decimal.new("4.2"),
-                 USD: Decimal.new("1.1")
-               }}
-          end
-
         # deviation always allowed
         # when doing currency conversion
         {:ok, amount} =
           Money.to_currency(
             Money.new(
-              document.currency,
-              document.total_amount
+              cost_invoice.currency,
+              cost_invoice.total_amount
             ),
             "PLN",
             rates
@@ -202,19 +202,31 @@ defmodule Firmowid.InvoiceMatcher do
       end
 
     unmatched_transactions =
-      Finances.list_unmatched_imported_transactions(organization_id)
+      Finances.list_unmatched_transactions(organization_id)
 
     # transactions with exact amount (or in the range for non-PLN)
     # that are between issue_date and payment_deadline
     candidates =
       unmatched_transactions
       |> Enum.filter(fn i ->
+        {:ok, transaction_amount_in_pln} =
+          Money.to_currency(
+            Money.new(
+              i.transaction_currency,
+              i.transaction_amount
+            ),
+            "PLN",
+            rates
+          )
+
+        transaction_amount =
+          transaction_amount_in_pln
+          |> Money.to_decimal()
+
         Date.compare(i.booking_date, issue_date) != :lt and
           Date.compare(i.booking_date, payment_deadline) != :gt and
-          Decimal.compare(i.transaction_amount, min_amount) != :lt and
-          Decimal.compare(i.transaction_amount, max_amount) != :gt
-
-        # i.transaction_amount >= min_amount and i.transaction_amount <= max_amount
+          Decimal.compare(transaction_amount, min_amount) != :lt and
+          Decimal.compare(transaction_amount, max_amount) != :gt
       end)
 
     # use Jaro-Winkler name similarity to check if seller matches
@@ -222,7 +234,7 @@ defmodule Firmowid.InvoiceMatcher do
       candidates
       |> Enum.map(fn candidate_transaction ->
         similarity =
-          Akin.compare(candidate_transaction.creditor_name, document.seller).jaro_winkler
+          Akin.compare(candidate_transaction.creditor_name, cost_invoice.seller).jaro_winkler
 
         {candidate_transaction, similarity}
       end)
@@ -236,17 +248,17 @@ defmodule Firmowid.InvoiceMatcher do
     candidates
   end
 
-  def match_with_transaction_combo(document, organization_id) do
+  def match_with_transaction_combo(cost_invoice, organization_id) do
     # when there are multiple transactions on the same invoice
     # typically - services / goods that you get across the month
 
     # highly experimental!
 
-    issue_date = document.issue_date |> Date.add(-35)
-    payment_deadline = document.due_date |> Date.add(7)
+    issue_date = cost_invoice.issue_date |> Date.add(-35)
+    payment_deadline = cost_invoice.due_date |> Date.add(7)
 
     all_found =
-      Finances.list_unmatched_imported_transactions(organization_id)
+      Finances.list_unmatched_transactions(organization_id)
       |> Enum.filter(fn i ->
         Date.compare(i.booking_date, issue_date) != :lt and
           Date.compare(i.booking_date, payment_deadline) != :gt
@@ -277,62 +289,62 @@ defmodule Firmowid.InvoiceMatcher do
         are_amounts_equal =
           Decimal.compare(
             grouped_transaction.transaction_amount,
-            document.total_amount
+            cost_invoice.total_amount
           )
 
         are_amounts_equal == :eq and
-          Akin.compare(grouped_transaction.creditor_name, document.seller).jaro_winkler > 0.4
+          Akin.compare(grouped_transaction.creditor_name, cost_invoice.seller).jaro_winkler > 0.4
       end)
 
     all_found
   end
 
-  def match_all_good_candidates_for_unconnected_documents(organization_id) do
+  def match_all_good_candidates_for_unconnected_cost_invoices(organization_id) do
     for similarity_threshold <- [0.9, 0.8, 0] do
-      documents = Documents.list_unmatched_documents(organization_id)
+      cost_invoices = Documents.list_unmatched_cost_invoices()
 
       if similarity_threshold == 0 do
-        documents
-        |> Enum.map(fn document ->
-          {document,
-           get_potential_transactions_for_document(
-             document,
+        cost_invoices
+        |> Enum.map(fn cost_invoice ->
+          {cost_invoice,
+           get_potential_transactions_for_cost_invoice(
+             cost_invoice,
              organization_id,
              similarity_threshold: similarity_threshold,
              max_results: 5
            )}
         end)
-        |> Enum.each(fn {document, candidates} ->
+        |> Enum.each(fn {cost_invoice, candidates} ->
           matches =
-            llm_re_grade_matches(document, candidates)
+            llm_re_grade_matches(cost_invoice, candidates)
             |> Enum.filter(fn {_transaction, grade} -> grade >= 0.8 end)
             |> Enum.map(fn {transaction, _grade} -> transaction end)
 
           if length(matches) == 1 do
             [match] = matches
 
-            Documents.create_documents_imported_transactions_connection(
-              Integer.to_string(document.id),
+            Documents.create_cost_invoices_transactions_connection(
+              Integer.to_string(cost_invoice.id),
               Integer.to_string(match.id),
               organization_id
             )
           end
         end)
       else
-        documents
-        |> Enum.map(fn document ->
-          {document,
-           get_potential_transactions_for_document(
-             document,
+        cost_invoices
+        |> Enum.map(fn cost_invoice ->
+          {cost_invoice,
+           get_potential_transactions_for_cost_invoice(
+             cost_invoice,
              organization_id,
              similarity_threshold: similarity_threshold,
              max_results: 5
            )}
         end)
         |> Enum.each(fn
-          {document, [golden_candidate]} ->
-            Documents.create_documents_imported_transactions_connection(
-              Integer.to_string(document.id),
+          {cost_invoice, [golden_candidate]} ->
+            Documents.create_cost_invoices_transactions_connection(
+              Integer.to_string(cost_invoice.id),
               Integer.to_string(golden_candidate.id),
               organization_id
             )
@@ -343,17 +355,17 @@ defmodule Firmowid.InvoiceMatcher do
       end
     end
 
-    documents = Documents.list_unmatched_documents(organization_id)
+    cost_invoices = Documents.list_unmatched_cost_invoices(organization_id)
 
-    documents
-    |> Enum.each(fn document ->
-      combo_matches = match_with_transaction_combo(document, organization_id)
+    cost_invoices
+    |> Enum.each(fn cost_invoice ->
+      combo_matches = match_with_transaction_combo(cost_invoice, organization_id)
 
       case combo_matches do
         [{_grouped_transaction, transactions}] ->
           Enum.each(transactions, fn transaction ->
-            Documents.create_documents_imported_transactions_connection(
-              Integer.to_string(document.id),
+            Documents.create_cost_invoices_transactions_connection(
+              Integer.to_string(cost_invoice.id),
               Integer.to_string(transaction.id),
               organization_id
             )
@@ -365,7 +377,7 @@ defmodule Firmowid.InvoiceMatcher do
     end)
   end
 
-  def llm_re_grade_matches(document, candidates) do
+  def llm_re_grade_matches(cost_invoice, candidates) do
     call_llm = fn transaction ->
       {:ok, response} =
         OpenAI.chat_completion(
@@ -393,19 +405,19 @@ defmodule Firmowid.InvoiceMatcher do
             %{
               role: "system",
               content:
-                "You are a assistant to a finance person. You help matching between documents and transactions, to complete the paper trail."
+                "You are a assistant to a finance person. You help matching between cost invoices and transactions, to complete the paper trail."
             },
             %{
               role: "user",
               content: "
-              This is the metadata of a document I want to match:
+              This is the metadata of a cost invoice I want to match:
               {
-                invoice_identifier: #{document.invoice_identifier},
-                description: #{document.description},
-                issue_date: #{document.issue_date},
-                total_amount: #{document.total_amount},
-                currency: #{document.currency},
-                seller: #{document.seller},
+                invoice_identifier: #{cost_invoice.invoice_identifier},
+                description: #{cost_invoice.description},
+                issue_date: #{cost_invoice.issue_date},
+                total_amount: #{cost_invoice.total_amount},
+                currency: #{cost_invoice.currency},
+                seller: #{cost_invoice.seller},
               }
 
               Here is a transaction that I selected as possible match:
@@ -418,10 +430,10 @@ defmodule Firmowid.InvoiceMatcher do
                 remittance_information_unstructured: #{transaction.remittance_information_unstructured},
               }
 
-              Considering  metadata of them and the metadata of the document,
+              Considering  metadata of them and the metadata of the cost invoice,
               please give me a score between 0 and 1. Take into consideration
               whether the name of seller matches with creditor name, dates and
-              if the amount matches. Also look at the description of the document.
+              if the amount matches. Also look at the description of the cost invoice.
               Reply only with the score.
               " |> String.trim()
             }
@@ -448,11 +460,11 @@ end
 
 defimpl Phoenix.HTML.Safe, for: Firmowid.InvoiceMatcher do
   def to_iodata(invoice_matcher) do
-    document_ids = invoice_matcher.documents |> Enum.map(& &1.id) |> Enum.join(", ")
+    cost_invoice_ids = invoice_matcher.cost_invoices |> Enum.map(& &1.id) |> Enum.join(", ")
 
-    imported_transaction_ids =
-      invoice_matcher.imported_transactions |> Enum.map(& &1.id) |> Enum.join(", ")
+    transaction_ids =
+      invoice_matcher.transactions |> Enum.map(& &1.id) |> Enum.join(", ")
 
-    "#{document_ids} | #{imported_transaction_ids}"
+    "#{cost_invoice_ids}|#{transaction_ids}"
   end
 end

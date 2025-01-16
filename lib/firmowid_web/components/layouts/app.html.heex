@@ -1,8 +1,11 @@
 <%= if @current_user && !is_nil(@current_user.organization_id) do %>
   <nav class="px-4 sm:px-6 lg:px-8 bg-black text-white flex items-center uppercase 
   justify-between py-6 text-sm sticky top-0 z-50">
-    <.link navigate={~p"/"} class="font-bold text-xl">
-      Firmowid
+    <.link navigate={~p"/"} class="font-bold text-lg">
+      <div class="flex flex-row gap-2 items-center">
+        <img src="/images/invoice_firmowid_logo.png" class="w-auto h-full max-h-[24px]" />
+        <span class="inline-block">Firmowid</span>
+      </div>
     </.link>
     <div class="flex items-center gap-16 max-md:hidden">
       <.link navigate={~p"/"} class="hover:underline flex items-center gap-2">
@@ -18,9 +21,6 @@
     <div>
       <.link navigate={~p"/settings"}>
         <.icon name="hero-user" class="w-5 h-5 mr-1" />
-        <span class="lowercase text-xs max-md:hidden">
-          {@current_user.email}
-        </span>
       </.link>
     </div>
   </nav>
