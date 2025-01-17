@@ -244,7 +244,6 @@ defmodule Firmowid.Accounts do
     |> Repo.preload(:organization, skip_organization_id: true)
   end
 
-  @spec delete_user_session_token(any()) :: :ok
   @doc """
   Deletes the signed token with the given context.
   """

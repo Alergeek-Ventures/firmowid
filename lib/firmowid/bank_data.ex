@@ -12,8 +12,6 @@ defmodule Firmowid.BankData do
     ApiClient.get_available_institutions_for_country(country)
   end
 
-  @spec list_requisitions(any()) ::
-          nil | [%{optional(atom()) => any()}] | %{optional(atom()) => any()}
   def list_requisitions(organization_id) do
     Repo.all(Requisition, organization_id: organization_id)
     |> Repo.preload(:bank_accounts, organization_id: organization_id)
