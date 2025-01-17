@@ -143,15 +143,27 @@ let liveSocket = new LiveSocket("/live", Socket, {
     },
     AirDatepicker: {
       mounted() {
-        this.mountDatepicker();
+        this.picker = this.mountDatepicker();
       },
       updated() {
-        this.mountDatepicker();
+        if (!this.picker) {
+          this.picker = this.mountDatepicker();
+        } else {
+          const initialDate = new Date(
+            this.el.getAttribute("data-initial-date"),
+          );
+          this.picker.selectDate(initialDate, { silent: true });
+        }
+      },
+      destroyed() {
+        if (this.picker) {
+          this.picker.destroy();
+          this.picker = null;
+        }
       },
       mountDatepicker() {
         const initialDate = new Date(this.el.getAttribute("data-initial-date"));
-
-        new AirDatepicker(this.el, {
+        return new AirDatepicker(this.el, {
           selectedDates: [initialDate],
           toggleSelected: false,
           view: "months",
