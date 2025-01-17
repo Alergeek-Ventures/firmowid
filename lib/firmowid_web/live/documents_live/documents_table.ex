@@ -92,7 +92,8 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
                       DateTime.compare(
                         invoice_matcher.inserted_at,
                         DateTime.add(DateTime.utc_now(), -120, :second)
-                      ) == :gt
+                      ) == :gt and invoice_matcher.cost_invoices != [] and
+                        invoice_matcher.transactions == []
                     }
                   />
                 <% else %>
