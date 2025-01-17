@@ -278,7 +278,7 @@
         </div>
       </div>
     <% "bank_accounts" -> %>
-      <div class="mt-6">
+      <div class="mt-6 flex flex-col items-start">
         <div class="flex gap-1">
           <h2 class="font-bold mt-0.5">Konta bankowe</h2>
         </div>
@@ -317,6 +317,12 @@
               </div>
             <% end %>
           </div>
+          <.link
+            navigate={~p"/settings/bank-sync/create"}
+            class={classes([button_styles(%{variant: "outline"}), "mt-6"])}
+          >
+            Podepnij konto
+          </.link>
         <% else %>
           <div class="text-left py-6 text-darkGrey">
             <p>Nie masz jeszcze żadnych kont bankowych.</p>

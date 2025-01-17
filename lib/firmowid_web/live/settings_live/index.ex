@@ -59,22 +59,21 @@ defmodule FirmowidWeb.SettingsLive.Index do
   def handle_event("delete_account", %{"user" => params}, socket) do
     case Accounts.delete_user(socket.assigns.current_user, params["current_password"]) do
       {:ok, _} ->
+        LiveToast.send_toast(:info, "Konto zostało usunięte.")
+
         {:noreply,
          socket
-         |> put_flash(:info, "Konto zostało usunięte.")
          |> redirect(to: ~p"/")}
 
       {:error, :invalid_password} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Nieprawidłowe hasło")}
+        LiveToast.send_toast(:error, "Nieprawidłowe hasło")
+        {:noreply, socket}
 
       {:error, error} ->
+        LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania konta")
         Sentry.capture_exception(error)
 
-        {:noreply,
-         socket
-         |> put_flash(:error, "Wystąpił błąd podczas usuwania konta")}
+        {:noreply, socket}
     end
   end
 
@@ -84,8 +83,6 @@ defmodule FirmowidWeb.SettingsLive.Index do
            organization
          ) do
       {:ok, updated_org} ->
-        dbg(updated_org)
-
         {:noreply,
          socket
          |> assign(
