@@ -1,6 +1,8 @@
 defmodule Firmowid.Documents do
   import Ecto.Query, only: [from: 2, where: 3, order_by: 2]
 
+  require Logger
+
   alias ExAws.S3
   alias MIME
 
@@ -140,6 +142,13 @@ defmodule Firmowid.Documents do
     )
   end
 
+  def get_blob_by_checksum!(blob_checksum) do
+    Blob
+    |> where([b], b.blob_checksum == ^blob_checksum)
+    |> Repo.one()
+    |> Repo.preload(:cost_invoice)
+  end
+
   def delete_cost_invoice(cost_invoice_id) do
     # use SQL cascading
     cost_invoice =
@@ -169,29 +178,33 @@ defmodule Firmowid.Documents do
   end
 
   def upload_cost_invoice(upload_path, content_type, original_filename) do
-    with {:ok, blob} <-
-           Repo.transaction(fn ->
-             {:ok, blob} = create_blob(upload_path, content_type, original_filename)
+    Repo.transaction(fn ->
+      case create_blob(upload_path, content_type, original_filename) do
+        {:ok, blob} ->
+          %{
+            name: "extract_cost_invoice_metadata",
+            blob_id: blob.id,
+            organization_id: blob.organization_id
+          }
+          |> Firmowid.Documents.Worker.new()
+          |> Oban.insert!()
 
-             %{
-               name: "extract_cost_invoice_metadata",
-               blob_id: blob.id,
-               organization_id: blob.organization_id
-             }
-             |> Firmowid.Documents.Worker.new()
-             |> Oban.insert!()
+          broadcast_cost_invoice_list_updated(blob.organization_id)
 
-             broadcast_cost_invoice_list_updated(blob.organization_id)
+          blob
 
-             blob
-           end) do
-      {:ok, blob}
-    else
-      {:error, error} ->
-        Sentry.capture_exception(error)
+        {:error,
+         %Ecto.Changeset{
+           changes: %{blob_checksum: blob_checksum},
+           errors: [blob_checksum: {"has already been taken", _}]
+         }} ->
+          Repo.rollback({:blob_already_exists, blob_checksum})
 
-        {:error, :error}
-    end
+        {:error, reason} ->
+          Logger.error("Failed to upload cost invoice: #{inspect(reason)}")
+          Repo.rollback(:failure)
+      end
+    end)
   end
 
   def get_blob!(id, organization_id) do
@@ -228,40 +241,39 @@ defmodule Firmowid.Documents do
   end
 
   def create_blob(upload_path, content_type, original_filename) do
-    with organization_id <- Repo.get_org_id(),
-         {:ok, blob} <-
-           Repo.transaction(fn ->
-             possible_extensions = MIME.extensions(content_type)
-             extension = Enum.at(possible_extensions, 0, "pdf")
-             upload_path = preprocess_blob(upload_path, extension)
+    organization_id = Repo.get_org_id()
+    possible_extensions = MIME.extensions(content_type)
+    extension = Enum.at(possible_extensions, 0, "pdf")
+    upload_path = preprocess_blob(upload_path, extension)
 
-             blob_id = UUIDv7.autogenerate()
-             blob_path = "#{organization_id}/#{Path.basename("#{blob_id}.#{extension}")}"
+    blob_id = UUIDv7.autogenerate()
 
-             upload_path
-             |> S3.Upload.stream_file()
-             |> S3.upload(
-               Application.get_env(:firmowid, :uploads_bucket),
-               blob_path
-             )
-             |> ExAws.request!()
+    blob_checksum =
+      File.stream!(upload_path, [], 2_048)
+      |> Enum.reduce(:crypto.hash_init(:sha256), &:crypto.hash_update(&2, &1))
+      |> :crypto.hash_final()
+      |> Base.encode16()
+      |> String.downcase()
 
-             %Blob{}
-             |> Blob.changeset(%{
-               id: blob_id,
-               blob_path: blob_path,
-               original_filename: original_filename,
-               organization_id: organization_id
-             })
-             |> Repo.insert!()
-           end) do
-      {:ok, blob}
-    else
-      {:error, error} ->
-        Sentry.capture_exception(error)
+    blob_path = "#{organization_id}/#{Path.basename("#{blob_id}.#{extension}")}"
 
-        {:error, :blob_creation_failed}
-    end
+    upload_path
+    |> S3.Upload.stream_file()
+    |> S3.upload(
+      Application.get_env(:firmowid, :uploads_bucket),
+      blob_path
+    )
+    |> ExAws.request!()
+
+    %Blob{}
+    |> Blob.changeset(%{
+      id: blob_id,
+      blob_path: blob_path,
+      blob_checksum: blob_checksum,
+      original_filename: original_filename,
+      organization_id: organization_id
+    })
+    |> Repo.insert()
   end
 
   def get_blob_url(id, organization_id) do

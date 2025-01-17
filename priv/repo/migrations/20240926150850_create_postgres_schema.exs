@@ -76,6 +76,7 @@ defmodule Firmowid.Repo.Migrations.CreatePostgresSchema do
 
     create table(:blobs) do
       add :blob_path, :string, null: false
+      add :blob_checksum, :string, null: false
       add :original_filename, :string, null: false
 
       add :organization_id,
@@ -86,6 +87,8 @@ defmodule Firmowid.Repo.Migrations.CreatePostgresSchema do
 
       timestamps()
     end
+
+    create unique_index(:blobs, [:blob_checksum, :organization_id])
 
     create table(:cost_invoices) do
       add :blob_id, references(:blobs, on_delete: :delete_all), null: false

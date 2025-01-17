@@ -58,20 +58,61 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     {:ok, socket}
   end
 
-  defp handle_progress(:file, entry, socket) do
-    if Enum.all?(socket.assigns.uploads.file.entries, fn entry -> entry.done? end) do
-      consume_uploaded_entries(socket, :file, fn %{path: path}, entry ->
-        {:ok, _} = Documents.upload_cost_invoice(path, entry.client_type, entry.client_name)
-      end)
+  defp handle_progress(:file, _, socket) do
+    socket =
+      case uploaded_entries(socket, :file) do
+        {[_ | _] = entries, []} ->
+          handle_uploads(entries, socket)
+          socket |> refetch_upload_counts()
 
-      {:noreply, socket}
-    else
-      {:noreply, socket}
-    end
+        _ ->
+          socket
+      end
+
+    {:noreply, socket}
   end
 
-  defp handle_progress(x, y, socket) do
-    {:noreply, socket}
+  defp handle_uploads(entries, socket) do
+    for entry <- entries do
+      consume_uploaded_entry(socket, entry, fn %{path: path} ->
+        case Documents.upload_cost_invoice(path, entry.client_type, entry.client_name) do
+          {:error, {:blob_already_exists, blob_checksum}} ->
+            blob = Documents.get_blob_by_checksum!(blob_checksum)
+            cost_invoice = blob.cost_invoice
+
+            LiveToast.send_toast(
+              :info,
+              "Ta faktura jest już w systemie",
+              title: "#{cost_invoice.issue_date} / #{cost_invoice.seller_display_name}",
+              action: fn assigns ->
+                assigns =
+                  assigns
+                  |> assign(
+                    :issue_date,
+                    cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601()
+                  )
+
+                ~H"""
+                <.link class="text-sm text-bold underline" navigate={~p"/?month=#{@issue_date}"}>
+                  Wyświetl <.icon name="hero-arrow-right-solid" class="h-3 w-3" />
+                </.link>
+                """
+              end
+            )
+
+          {:error, :failure} ->
+            LiveToast.send_toast(
+              :error,
+              "Nie udało się wgrać pliku"
+            )
+
+          _ ->
+            nil
+        end
+
+        {:ok, nil}
+      end)
+    end
   end
 
   @impl true
@@ -180,7 +221,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     socket = refetch_invoice_matchers(socket)
 
     LiveToast.send_toast(
-      :info,
+      :success,
       "#{cost_invoice.issue_date} / #{cost_invoice.seller_display_name}",
       title: "Faktura załadowana",
       action: fn assigns ->
@@ -224,10 +265,6 @@ defmodule FirmowidWeb.DocumentsLive.Index do
         )
       )
       |> refetch_upload_counts()
-
-    dbg(socket.assigns.uploads.file.entries)
-    dbg(socket.assigns.currently_uploading_count)
-    dbg(socket.assigns.processing_blobs_count)
 
     socket
   end

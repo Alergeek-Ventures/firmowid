@@ -117,7 +117,8 @@ defmodule FirmowidWeb do
       # used to hide the disconnected flashes
       if(assigns[:rest][:hidden] == true, do: "hidden", else: "flex"),
       # override styles per severity
-      assigns[:kind] == :info && "bg-blueBg text-blueText",
+      assigns[:kind] == :success && "bg-greenBg text-greenText",
+      assigns[:kind] == :info && "bg-lightGreyBg text-black",
       assigns[:kind] == :error && "!text-redText !bg-redBg"
     ]
   end
