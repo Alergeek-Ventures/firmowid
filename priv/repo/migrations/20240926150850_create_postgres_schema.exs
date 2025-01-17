@@ -22,15 +22,12 @@ defmodule Firmowid.Repo.Migrations.CreatePostgresSchema do
 
     create table(:bank_accounts) do
       add :iban, :string, null: false
-      add :bban, :string
       add :institution_id, :string
       add :institution_name, :string
       add :owner_name, :string
       add :gocardless_id, :string, default: nil
       add :currency, :string
       add :name, :string
-      add :product, :string
-      add :cash_account_type, :string
 
       add :organization_id,
           references(:organizations,

@@ -138,14 +138,11 @@ defmodule Firmowid.BankData do
       Firmowid.Finances.create_bank_account(%{
         iban: account["iban"],
         gocardless_id: account["id"],
-        bban: account["bban"],
         owner_name: account["ownerName"],
         institution_id: account["institution_id"],
         institution_name: account["institution"]["name"],
         currency: account["currency"],
         name: account["name"],
-        product: account["product"],
-        cash_account_type: account["cashAccountType"],
         organization_id: organization_id,
         requisition_id: requisition_id
       })
