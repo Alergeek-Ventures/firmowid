@@ -12,8 +12,8 @@ defmodule FirmowidWeb.UserSettingsLiveTest do
         |> log_in_user(user_fixture())
         |> live(~p"/users/settings")
 
-      assert html =~ "Change Email"
-      assert html =~ "Change Password"
+      assert html =~ "Zmień Email"
+      assert html =~ "Zmień Hasło"
     end
 
     test "redirects if user is not logged in", %{conn: conn} do
@@ -44,7 +44,7 @@ defmodule FirmowidWeb.UserSettingsLiveTest do
         })
         |> render_submit()
 
-      assert result =~ "A link to confirm your email"
+      assert result =~ "Link potwierdzający zmianę adresu"
       assert Accounts.get_user_by_email(user.email)
     end
 
@@ -60,7 +60,7 @@ defmodule FirmowidWeb.UserSettingsLiveTest do
           "user" => %{"email" => "with spaces"}
         })
 
-      assert result =~ "Change Email"
+      assert result =~ "Zmień Email"
       assert result =~ "must have the @ sign and no spaces"
     end
 
@@ -75,7 +75,7 @@ defmodule FirmowidWeb.UserSettingsLiveTest do
         })
         |> render_submit()
 
-      assert result =~ "Change Email"
+      assert result =~ "Zmień Email"
       assert result =~ "did not change"
       assert result =~ "is not valid"
     end
@@ -128,7 +128,7 @@ defmodule FirmowidWeb.UserSettingsLiveTest do
           }
         })
 
-      assert result =~ "Change Password"
+      assert result =~ "Zmień Hasło"
       assert result =~ "should be at least 12 character(s)"
       assert result =~ "does not match password"
     end
@@ -147,7 +147,7 @@ defmodule FirmowidWeb.UserSettingsLiveTest do
         })
         |> render_submit()
 
-      assert result =~ "Change Password"
+      assert result =~ "Zmień Hasło"
       assert result =~ "should be at least 12 character(s)"
       assert result =~ "does not match password"
       assert result =~ "is not valid"
@@ -173,7 +173,7 @@ defmodule FirmowidWeb.UserSettingsLiveTest do
       assert {:live_redirect, %{to: path, flash: flash}} = redirect
       assert path == ~p"/users/settings"
       assert %{"info" => message} = flash
-      assert message == "Email changed successfully."
+      assert message == "Email został zmieniony pomyślnie."
       refute Accounts.get_user_by_email(user.email)
       assert Accounts.get_user_by_email(email)
 
@@ -182,7 +182,7 @@ defmodule FirmowidWeb.UserSettingsLiveTest do
       assert {:live_redirect, %{to: path, flash: flash}} = redirect
       assert path == ~p"/users/settings"
       assert %{"error" => message} = flash
-      assert message == "Email change link is invalid or it has expired."
+      assert message == "Link do zmiany emaila jest nieprawidłowy lub wygasł."
     end
 
     test "does not update email with invalid token", %{conn: conn, user: user} do
@@ -190,7 +190,7 @@ defmodule FirmowidWeb.UserSettingsLiveTest do
       assert {:live_redirect, %{to: path, flash: flash}} = redirect
       assert path == ~p"/users/settings"
       assert %{"error" => message} = flash
-      assert message == "Email change link is invalid or it has expired."
+      assert message == "Link do zmiany emaila jest nieprawidłowy lub wygasł."
       assert Accounts.get_user_by_email(user.email)
     end
 

@@ -28,8 +28,6 @@ defmodule FirmowidWeb.SettingsLive.Index do
     bank_accounts =
       BankData.list_bank_accounts()
 
-    dbg(BankData.ApiClient.get_access_token())
-
     org = Map.put(socket.assigns.current_org, :is_editing, false)
 
     {:ok,

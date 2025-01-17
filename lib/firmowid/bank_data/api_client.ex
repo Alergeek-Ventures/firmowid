@@ -167,10 +167,9 @@ defmodule Firmowid.BankData.ApiClient do
       |> Keyword.merge(Application.get_env(:firmowid, :bank_data_transactions, []))
 
     with %{status: 200, body: accounts_transaction} <- Req.get!(options) do
-      {:ok,
-       accounts_transaction
-       |> Map.get("transactions")
-       |> Map.get("booked")}
+      accounts_transaction
+      |> Map.get("transactions")
+      |> Map.get("booked")
     else
       {:error, error} -> {:error, error}
     end
@@ -200,7 +199,7 @@ defmodule Firmowid.BankData.ApiClient do
     end
   end
 
-  def get_access_token() do
+  defp get_access_token() do
     token = GenServer.call(TokenManager, :get_access_token)
 
     if token == nil do
