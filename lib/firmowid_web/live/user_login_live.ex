@@ -22,7 +22,7 @@ defmodule FirmowidWeb.UserLoginLive do
             </.link>
           </:actions>
           <:actions>
-            <.button phx-disable-with="Logowanie..." class="w-full !bg-black">
+            <.button phx-disable-with="Logowanie..." class="w-full">
               Zaloguj się
             </.button>
           </:actions>

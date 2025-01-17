@@ -283,7 +283,7 @@
           <h2 class="font-bold mt-0.5">Konta bankowe</h2>
         </div>
         <%= if Enum.any?(@bank_accounts) do %>
-          <div class="space-y-4 mt-6">
+          <div class="space-y-2 mt-6">
             <%= for {institution, accounts} <- Enum.group_by(@bank_accounts, & &1.institution_name) do %>
               <h3>{institution}</h3>
               <div class="flex flex-wrap gap-4">

@@ -10,6 +10,7 @@ defmodule Firmowid.Finances.BankAccount do
     field :owner_name, :string
     field :currency, :string
     field :name, :string
+    field :is_default, :boolean, default: false
 
     belongs_to :organization, Firmowid.Accounts.Organization
     belongs_to :requisition, Firmowid.BankData.Requisition
@@ -32,7 +33,8 @@ defmodule Firmowid.Finances.BankAccount do
       :owner_name,
       :gocardless_id,
       :currency,
-      :name
+      :name,
+      :is_default
     ])
     |> validate_required([:iban, :organization_id, :requisition_id])
   end

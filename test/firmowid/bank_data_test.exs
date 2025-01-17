@@ -1,6 +1,9 @@
 defmodule Firmowid.BankDataTest do
+  alias Firmowid.Finances
   use Firmowid.DataCase
   alias Firmowid.BankData
+  import Firmowid.AccountsFixtures
+  alias Firmowid.BankData.Requisition
 
   test "syncing accounts for requisition works" do
     Req.Test.stub(:bank_data_requisition, fn conn ->
@@ -214,5 +217,39 @@ defmodule Firmowid.BankDataTest do
              "identification_codes" => [],
              "max_access_valid_for_days" => "180"
            }
+  end
+
+  test "cant insert two default accounts for one currency " do
+    %{organization_id: organization_id} = user_fixture()
+
+    {:ok, req1} =
+      Repo.insert(%Requisition{
+        status: :accepted,
+        organization_id: organization_id
+      })
+
+    {:ok, req2} =
+      Repo.insert(%Requisition{
+        status: :accepted,
+        organization_id: organization_id
+      })
+
+    Finances.create_bank_account(%{
+      iban: "PL12345678901234567890123456",
+      organization_id: organization_id,
+      currency: "PLN",
+      is_default: true,
+      requisition_id: req1.id
+    })
+
+    assert_raise Ecto.ConstraintError, fn ->
+      Finances.create_bank_account(%{
+        iban: "EN12345678901234567890123456",
+        organization_id: organization_id,
+        currency: "PLN",
+        is_default: true,
+        requisition_id: req2.id
+      })
+    end
   end
 end
