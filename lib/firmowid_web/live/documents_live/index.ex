@@ -173,7 +173,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
 
     LiveToast.send_toast(
       :info,
-      "#{cost_invoice.invoice_identifier} / #{cost_invoice.seller_display_name}",
+      "#{cost_invoice.issue_date} / #{cost_invoice.seller_display_name}",
       title: "Faktura załadowana",
       action: fn assigns ->
         assigns =
