@@ -21,6 +21,7 @@ defmodule Firmowid.Repo.Migrations.CreateUsersAuthTables do
       add :hashed_password, :string, null: false
       add :confirmed_at, :utc_datetime
       add :system_role, :string, default: "user"
+      add :marketing_consent, :boolean, default: false, null: false
 
       add :organization_id,
           references(:organizations,

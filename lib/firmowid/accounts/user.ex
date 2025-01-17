@@ -10,6 +10,7 @@ defmodule Firmowid.Accounts.User do
     field :hashed_password, :string, redact: true
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
+    field :marketing_consent, :boolean, default: false
     belongs_to :organization, Firmowid.Accounts.Organization
 
     timestamps(type: :utc_datetime)

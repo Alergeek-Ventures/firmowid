@@ -282,40 +282,57 @@
         <div class="flex gap-1">
           <h2 class="font-bold mt-0.5">Konta bankowe</h2>
         </div>
-        <div class="space-y-4 mt-6">
-          <%= for {institution, accounts} <- Enum.group_by(@bank_accounts, & &1.institution_name) do %>
-            <h3>{institution}</h3>
-            <div class="flex flex-wrap gap-4">
-              <%= for account <- accounts do %>
-                <div class="flex justify-between border rounded-md p-4 w-96">
-                  <div class="grid grid-cols-[auto,1fr] gap-4">
-                    <div class="mt-1 font-medium text-darkGrey uppercase text-xs pr-4">
-                      Nazwa
+        <%= if Enum.any?(@bank_accounts) do %>
+          <div class="space-y-4 mt-6">
+            <%= for {institution, accounts} <- Enum.group_by(@bank_accounts, & &1.institution_name) do %>
+              <h3>{institution}</h3>
+              <div class="flex flex-wrap gap-4">
+                <%= for account <- accounts do %>
+                  <div class="flex justify-between border rounded-md p-4 w-96">
+                    <div class="grid grid-cols-[auto,1fr] gap-4">
+                      <div class="mt-1 font-medium text-darkGrey uppercase text-xs pr-4">
+                        Nazwa
+                      </div>
+                      <div>
+                        {account.name}
+                      </div>
+                      <div class="mt-1 font-medium text-darkGrey uppercase text-xs pr-4">
+                        Waluta
+                      </div>
+                      <div>
+                        {account.currency}
+                      </div>
+                      <div class="mt-1 font-medium text-darkGrey uppercase text-xs text-left pr-4">
+                        Numer
+                      </div>
+                      <div>
+                        {account.iban}
+                      </div>
                     </div>
                     <div>
-                      {account.name}
-                    </div>
-                    <div class="mt-1 font-medium text-darkGrey uppercase text-xs pr-4">
-                      Waluta
-                    </div>
-                    <div>
-                      {account.currency}
-                    </div>
-                    <div class="mt-1 font-medium text-darkGrey uppercase text-xs text-left pr-4">
-                      Numer
-                    </div>
-                    <div>
-                      {account.iban}
+                      <.icon name="hero-ellipsis-horizontal" />
                     </div>
                   </div>
-                  <div>
-                    <.icon name="hero-ellipsis-horizontal" />
-                  </div>
-                </div>
-              <% end %>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="text-left py-6 text-darkGrey">
+            <p>Nie masz jeszcze żadnych kont bankowych.</p>
+            <p class="text-sm mt-2">
+              Dodaj swoje pierwsze konto bankowe, aby móc wystawiać faktury.
+            </p>
+            <div class="mt-6">
+              <.link
+                navigate={~p"/settings/bank-sync/create"}
+                class={button_styles(%{variant: "outline"})}
+              >
+                Podepnij konto
+              </.link>
             </div>
-          <% end %>
-        </div>
+          </div>
+        <% end %>
       </div>
     <% "address_book" -> %>
       <div class="mt-6">

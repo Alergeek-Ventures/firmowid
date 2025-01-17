@@ -13,7 +13,7 @@ defmodule FirmowidWeb.SettingsLive.EditButton do
       phx-disable-with=""
       class={
         classes([
-          "bg-white flex justify-center p-0 size-8 items-center rounded border-none hover:border-darkGrey disabled:bg-lightGreyBg disabled:cursor-default",
+          "bg-lightGreyBg flex justify-center p-0 size-8 items-center rounded border-none hover:border-darkGrey disabled:bg-lightGreyBg disabled:cursor-default",
           @class
         ])
       }

@@ -32,7 +32,6 @@ defmodule FirmowidWeb.SettingsLive.Index do
 
     {:ok,
      socket
-     |> assign(:body_class, "bg-white")
      |> assign(:tab, "company")
      |> assign(
        :company_form,
