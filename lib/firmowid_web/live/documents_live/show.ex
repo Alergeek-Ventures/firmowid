@@ -276,6 +276,8 @@ defmodule FirmowidWeb.DocumentsLive.Show do
 
   @impl true
   def handle_event("delete", %{"cost-invoice-id" => cost_invoice_id}, socket) do
+    cost_invoice = Documents.get_cost_invoice!(cost_invoice_id)
+
     Documents.delete_cost_invoice(cost_invoice_id)
 
     LiveToast.send_toast(
@@ -285,7 +287,7 @@ defmodule FirmowidWeb.DocumentsLive.Show do
 
     socket =
       socket
-      |> push_navigate(to: ~p"/")
+      |> push_navigate(to: ~p"/?month=#{cost_invoice.issue_date |> Date.to_iso8601()}")
 
     {:noreply, socket}
   end

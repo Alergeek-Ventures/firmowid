@@ -32,10 +32,10 @@ defmodule FirmowidWeb.DocumentsLive.Index do
           params,
           "month",
           Date.utc_today()
-          |> Date.beginning_of_month()
           |> Date.to_iso8601()
         )
         |> Date.from_iso8601!()
+        |> Date.beginning_of_month()
       )
       # filter invoice matchers
       |> assign(
