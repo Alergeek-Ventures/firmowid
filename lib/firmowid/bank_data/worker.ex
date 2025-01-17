@@ -36,8 +36,8 @@ defmodule Firmowid.BankData.Worker do
   defp schedule_bank_account_sync(bank_account_id) do
     # consistent sync times (for idempotency) - today at 11:55PM UTC
     today = Date.utc_today()
-    eleven_pm = ~T[23:55:00]
-    {:ok, scheduled_at} = NaiveDateTime.new(today, eleven_pm)
+    eleven_am = ~T[11:00:00]
+    {:ok, scheduled_at} = NaiveDateTime.new(today, eleven_am)
 
     %{bank_account_id: bank_account_id, name: "bank_account_sync"}
     |> Firmowid.BankData.Worker.new(
