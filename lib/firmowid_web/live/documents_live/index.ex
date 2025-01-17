@@ -58,7 +58,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     {:ok, socket}
   end
 
-  defp handle_progress(:file, _entry, socket) do
+  defp handle_progress(:file, entry, socket) do
     if Enum.all?(socket.assigns.uploads.file.entries, fn entry -> entry.done? end) do
       consume_uploaded_entries(socket, :file, fn %{path: path}, entry ->
         {:ok, _} = Documents.upload_cost_invoice(path, entry.client_type, entry.client_name)
@@ -68,6 +68,10 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     else
       {:noreply, socket}
     end
+  end
+
+  defp handle_progress(x, y, socket) do
+    {:noreply, socket}
   end
 
   @impl true
@@ -92,6 +96,10 @@ defmodule FirmowidWeb.DocumentsLive.Index do
 
   @impl true
   def handle_event("upload", _, socket) do
+    socket =
+      socket
+      |> refetch_upload_counts()
+
     {:noreply, socket}
   end
 
@@ -215,12 +223,25 @@ defmodule FirmowidWeb.DocumentsLive.Index do
           filter
         )
       )
-      |> assign(
-        :processing_blobs_count,
-        Documents.get_processing_blobs_count()
-      )
+      |> refetch_upload_counts()
+
+    dbg(socket.assigns.uploads.file.entries)
+    dbg(socket.assigns.currently_uploading_count)
+    dbg(socket.assigns.processing_blobs_count)
 
     socket
+  end
+
+  defp refetch_upload_counts(socket) do
+    socket
+    |> assign(
+      :processing_blobs_count,
+      Documents.get_processing_blobs_count()
+    )
+    |> assign(
+      :currently_uploading_count,
+      length(Enum.filter(socket.assigns.uploads.file.entries, &(!&1.done?)))
+    )
   end
 
   defp apply_action(socket, :index, _params) do

@@ -287,11 +287,10 @@ defmodule Firmowid.Documents do
 
   def preprocess_blob(path, "pdf"), do: path
 
-  def preprocess_blob(path, "jpg"), do: shrink_image(path)
-  def preprocess_blob(path, "jpeg"), do: shrink_image(path)
-  def preprocess_blob(path, "png"), do: shrink_image(path)
+  # we only allow pdf and image/* in the upload
+  def preprocess_blob(path, image_extension), do: shrink_image(path, image_extension)
 
-  def shrink_image(image_path) do
+  def shrink_image(image_path, image_extension) do
     with {:ok, path} <- Briefly.create(),
          image = Image.open!(image_path) do
       width = Image.width(image)
@@ -316,7 +315,7 @@ defmodule Firmowid.Documents do
       # Convert stream to binary data before writing
       binary_data =
         resized_image
-        |> Image.stream!()
+        |> Image.stream!(suffix: ".#{image_extension}")
         |> Enum.to_list()
         |> IO.iodata_to_binary()
 

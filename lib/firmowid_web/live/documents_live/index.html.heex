@@ -56,13 +56,17 @@
         hover:text-black transition-colors"})
         }
       >
-        <%= if (length(Enum.filter(@uploads.file.entries, & !&1.done?)) +
-      @processing_blobs_count) > 0 do %>
-          <span class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-blueBg
-          text-blueText flex justify-center items-center items animate-bounce">
-            <span>
-              {length(Enum.filter(@uploads.file.entries, &(!&1.done?))) +
-                @processing_blobs_count}
+        <%= if @currently_uploading_count > 0 or @processing_blobs_count > 0 do %>
+          <span class="absolute overflow-hidden flex items-center justify-center -top-3 -right-3 h-7 w-7 bg-black rounded-full">
+            <span class="absolute animate-spin bg-gradient-to-r from-[#727272] to-black block w-full h-full" />
+            <span class="bg-black flex items-center justify-center w-6 h-6 z-10 rounded-full">
+              <%= if @currently_uploading_count > 0 do %>
+                <.icon name="hero-arrow-up-circle-solid" class="text-white leading-none w-6 h-6" />
+              <% else %>
+                <%= if @processing_blobs_count > 0 do %>
+                  <span>{@processing_blobs_count}</span>
+                <% end %>
+              <% end %>
             </span>
           </span>
         <% end %>
@@ -116,7 +120,10 @@
     p-4 py-8 rounded-xl">
     <.icon name="hero-cloud-arrow-up" class="w-16 h-16" />
     <p class="text-xl opacity-100 text-center max-w-[25lvw]">
-      Przeciągnij pliki, aby wgrać je do zakładki Dokumenty
+      Przeciągnij pliki, aby wgrać je do zakładki Dokumenty.
+      <span class="text-sm">
+        (max 50 plików, PDF, JPG oraz PNG)
+      </span>
     </p>
   </div>
 </div>
