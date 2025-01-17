@@ -56,11 +56,21 @@ defmodule Firmowid.BankData do
               })
             )
 
-            {:ok, _} =
+            {:ok, bank_accounts} =
               create_or_update_bank_accounts_for_requisition(
                 requisition_from_db.id,
                 organization_id
               )
+
+            # sync newly created accounts instantly
+            # still want to leverage workers for it (maybe smarter in the
+            # future)
+            bank_accounts
+            |> Enum.each(fn bank_account ->
+              %{bank_account_id: bank_account.id, name: "bank_account_sync"}
+              |> Firmowid.BankData.Worker.new()
+              |> Oban.insert()
+            end)
 
             {:ok, requisition_from_api}
           else
@@ -131,22 +141,26 @@ defmodule Firmowid.BankData do
          requisition_id,
          organization_id
        ) do
-    ApiClient.get_accounts_for_requisition(requisition_id)
-    |> Enum.each(fn account ->
-      Firmowid.Finances.create_bank_account(%{
-        iban: account["iban"],
-        gocardless_id: account["id"],
-        owner_name: account["ownerName"],
-        institution_id: account["institution_id"],
-        institution_name: account["institution"]["name"],
-        currency: account["currency"],
-        name: account["name"],
-        organization_id: organization_id,
-        requisition_id: requisition_id
-      })
-    end)
+    bank_accounts =
+      ApiClient.get_accounts_for_requisition(requisition_id)
+      |> Enum.map(fn account ->
+        bank_account =
+          Firmowid.Finances.create_bank_account(%{
+            iban: account["iban"],
+            gocardless_id: account["id"],
+            owner_name: account["ownerName"],
+            institution_id: account["institution_id"],
+            institution_name: account["institution"]["name"],
+            currency: account["currency"],
+            name: account["name"],
+            organization_id: organization_id,
+            requisition_id: requisition_id
+          })
 
-    {:ok, nil}
+        bank_account
+      end)
+
+    {:ok, bank_accounts}
   end
 
   def delete_requisition(requisition_id, organization_id) do
