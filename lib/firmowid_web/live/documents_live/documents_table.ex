@@ -247,7 +247,7 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
             if @invoice_matcher.cost_invoices != [] do
               "Dokument został pominięty. Transakcje nie będą do niego przypisywane"
             else
-              "Transakcja została pominięta. Dokumenty nie będą do niej przypisywane"
+              "Transakcja została pominięta. Faktury nie będą do niej przypisywane"
             end
         end
       }

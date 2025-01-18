@@ -283,6 +283,6 @@ defmodule FirmowidWeb.DocumentsLive.Index do
 
   defp apply_action(socket, :index, _params) do
     socket
-    |> assign(:page_title, "Dokumenty")
+    |> assign(:page_title, "Fakturowanie")
   end
 end

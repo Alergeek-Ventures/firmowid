@@ -60,8 +60,7 @@
           <span
             id="upload-count-indicator"
             phx-hook="tippy"
-            data-tippy-content="Dokumenty są przetwarzane i za kilka chwil będą
-      dostępne w Firmowidzie"
+            data-tippy-content="Pliki są przetwarzane i za kilka chwil będą dostępne w Firmowidzie"
             class="absolute overflow-hidden flex items-center justify-center -top-3 -right-3 h-7 w-7 bg-black rounded-full"
           >
             <span class="absolute animate-spin bg-gradient-to-r from-[#727272] to-black block w-full h-full" />
@@ -91,10 +90,10 @@
 
 <div class="flex flex-row gap-4 max-md:hidden">
   <%= for {filter, label} <- [
-        {:all, "Wszystkie"},
-        {:unmatched, "Bez dopasowania"},
         {:invoices, "Faktury"},
-        {:transactions, "Transakcje"}
+        {:transactions, "Transakcje"},
+        {:unmatched, "Bez dopasowania"},
+        {:all, "Wszystkie"}
     ] do %>
     <.button
       class={[
@@ -133,10 +132,10 @@
     p-4 py-8 rounded-xl">
     <.icon name="hero-cloud-arrow-up" class="w-16 h-16" />
     <p class="text-xl opacity-100 text-center max-w-[25lvw]">
-      Przeciągnij pliki, aby wgrać je do zakładki Dokumenty.
-      <span class="text-sm">
-        (max 50 plików, PDF, JPG oraz PNG)
-      </span>
+      Przeciągnij faktury, aby załadować je do Firmowida.
+    </p>
+    <p class="text-sm opacity-80 text-center max-w-[25lvw]">
+      (max 50 plików, PDF, JPG oraz PNG)
     </p>
   </div>
 </div>
