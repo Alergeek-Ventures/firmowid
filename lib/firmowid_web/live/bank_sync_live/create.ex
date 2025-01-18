@@ -91,11 +91,6 @@ defmodule FirmowidWeb.BankSyncLive.Create do
 
     socket = assign(socket, :requisition_link, link)
 
-    LiveToast.send_toast(
-      :info,
-      "Utworzono połączenie z bankiem. Potwierdz je, kilkając wyświetlony link."
-    )
-
     {:noreply, socket}
   end
 end
