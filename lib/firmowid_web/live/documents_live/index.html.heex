@@ -8,16 +8,14 @@
   </div>
 </div>
 
-<div class="w-full flex items-start max-md:justify-center justify-between pb-8">
-  <div class="flex flex-col gap-4 flex-grow max-w-xl items-start justify-center max-md:hidden">
-    <input
-      class="w-52 h-10 border border-darkGrey rounded-lg"
-      type="button"
-      id="month"
-      phx-hook="AirDatepicker"
-      data-initial-date={@month}
-    />
-  </div>
+<div class="flex max-md:justify-center justify-between pb-8">
+  <input
+    class="block w-44 border border-darkGrey rounded-lg py-1 px-3 max-md:hidden"
+    type="button"
+    id="month"
+    phx-hook="AirDatepicker"
+    data-initial-date={@month}
+  />
   <div phx-drop-target={@uploads.file.ref} class="flex flex-row gap-4">
     <%= if @invoice_matchers != [] do %>
       <a
@@ -26,22 +24,31 @@
         phx-hook="tippy"
         href={"/file?month=#{@month}"}
         download
-        class="relative flex flex-row gap-4 items-center justify-center w-full
-        border rounded-lg px-3 py-2 max-md:hidden min-h-[40px] hover:bg-greyButtonBg
+        class="relative flex flex-row gap-4 items-center justify-center
+        border rounded-lg px-3 py-2 max-md:hidden hover:bg-greyButtonBg
         transition-colors"
       >
-        <.icon name="hero-cloud-arrow-down" class="w-6 h-6" /> Pobierz
+        <.icon name="hero-cloud-arrow-down" class="w-6 h-6" />
+        <span class="max-lg:hidden">
+          Pobierz
+        </span>
       </a>
     <% end %>
     <.link
       navigate={~p"/sales_invoices"}
-      class="min-w-[200px]
-      relative flex flex-row gap-4 items-center justify-center w-full
-      border rounded-lg px-3 py-2 max-md:hidden min-h-[40px] hover:bg-greyButtonBg
+      id="sales-invoice-link"
+      data-tippy-content="Wystaw fakturę sprzedażową"
+      phx-hook="tippy"
+      class="
+      relative flex flex-row gap-4 items-center justify-center
+      border rounded-lg px-3 py-2 max-md:hidden hover:bg-greyButtonBg
       transition-colors
       "
     >
-      <.icon name="hero-document-duplicate" class="w-5 h-5" /> Wystaw fakturę
+      <.icon name="hero-document-duplicate" class="w-5 h-5" />
+      <span class="max-lg:hidden">
+        Wystaw fakturę
+      </span>
     </.link>
     <form id="upload-form" phx-change="upload" phx-submit="upload">
       <div class="hidden">
@@ -49,12 +56,9 @@
       </div>
       <label
         for={@uploads.file.ref}
-        class={
-          button_styles(%{class: "relative flex flex-row gap-4 items-center justify-center w-full
-        border-2 rounded-lg px-3 py-2 min-w-[210px] border-black
-        max-md:w-[300px] min-h-[40px] max-md:min-h-[60px] hover:bg-greyButtonBg
-        hover:text-black transition-colors"})
-        }
+        class={button_styles(%{class: "relative flex flex-row gap-2 items-center justify-center
+        border-2 rounded-lg px-3 py-2 border-black hover:bg-greyButtonBg
+        hover:text-black transition-colors max-md:h-20 max-md:w-60 max-md:gap-4"})}
       >
         <%= if @currently_uploading_count > 0 or @processing_blobs_count > 0 do %>
           <span
@@ -82,7 +86,7 @@
             </span>
           </span>
         <% end %>
-        <.icon name="hero-plus" class="w-6 h-6" /> Dodaj dokument
+        <.icon name="hero-plus-mini" class="w-5 h-5" /> Dodaj dokument
       </label>
     </form>
   </div>

@@ -276,8 +276,8 @@
                       "flex flex-col justify-center items-start gap-1 pl-2",
                       "w-10 h-10 rounded-md",
                       transaction.llm_eval >= 0.75 && "bg-greenBg",
-                      transaction.llm_eval >= 0.5 and
-                        transaction.llm_eval < 0.75 &&
+                      (transaction.llm_eval >= 0.5 and
+                         transaction.llm_eval < 0.75) &&
                         "bg-orangeBg",
                       transaction.llm_eval < 0.5 && "bg-redBg"
                     ]}
@@ -289,16 +289,16 @@
                     <div class={[
                       "w-[55%] rounded-md bg-white h-1",
                       transaction.llm_eval >= 0.75 && "!bg-greenText",
-                      transaction.llm_eval >= 0.5 and
-                        transaction.llm_eval < 0.75 &&
+                      (transaction.llm_eval >= 0.5 and
+                         transaction.llm_eval < 0.75) &&
                         "!bg-orangeText"
                     ]} />
                     <div class={[
                       "w-[35%] rounded-md bg-white h-1",
                       transaction.llm_eval >= 0.75 &&
                         "!bg-greenText",
-                      transaction.llm_eval >= 0.5 and
-                        transaction.llm_eval < 0.75 &&
+                      (transaction.llm_eval >= 0.5 and
+                         transaction.llm_eval < 0.75) &&
                         "!bg-orangeText",
                       transaction.llm_eval < 0.5 && "!bg-redText"
                     ]} />
