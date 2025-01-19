@@ -7,7 +7,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
   alias Firmowid.BankData
 
   @impl true
-  def mount(params, _session, socket) do
+  def mount(_params, _session, socket) do
     if connected?(socket) do
       Documents.subscribe_cost_invoice_broadcast(socket.assigns.current_user.organization_id)
       Finances.subscribe_transaction_broadcast(socket.assigns.current_user.organization_id)
@@ -25,24 +25,6 @@ defmodule FirmowidWeb.DocumentsLive.Index do
         progress: &handle_progress/3,
         auto_upload: true
       )
-      # UI controls
-      |> assign(
-        :month,
-        Map.get(
-          params,
-          "month",
-          Date.utc_today()
-          |> Date.to_iso8601()
-        )
-        |> Date.from_iso8601!()
-        |> Date.beginning_of_month()
-      )
-      # filter invoice matchers
-      |> assign(
-        :filter,
-        :all
-      )
-      |> refetch_invoice_matchers()
 
     connected_bank_accounts =
       BankData.list_requisitions(organization_id)
@@ -56,6 +38,77 @@ defmodule FirmowidWeb.DocumentsLive.Index do
       )
 
     {:ok, socket}
+  end
+
+  @impl true
+  def handle_params(params, _url, socket) do
+    socket =
+      socket
+      |> apply_action(socket.assigns.live_action, params)
+
+    month =
+      case Map.get(params, "month") do
+        nil -> Date.utc_today() |> Date.beginning_of_month()
+        date_string -> Date.from_iso8601!(date_string)
+      end
+
+    filter =
+      case Map.get(params, "filter") do
+        nil -> :invoices
+        filter_string -> String.to_existing_atom(filter_string)
+      end
+
+    socket =
+      socket
+      # UI controls
+      |> assign(
+        :params,
+        %{
+          month: month,
+          filter: filter
+        }
+      )
+      |> refetch_invoice_matchers()
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("change-month", %{"month" => month}, socket) do
+    month = month |> Date.from_iso8601!()
+
+    socket =
+      socket
+      |> update_param(:month, month)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("change-filter", %{"filter" => filter}, socket) do
+    filter = filter |> String.to_atom()
+
+    socket =
+      socket
+      |> update_param(:filter, filter)
+
+    {:noreply, socket}
+  end
+
+  defp update_param(socket, key, value) do
+    params =
+      socket.assigns.params
+      |> Map.put(key, value)
+
+    params = %{
+      month: params.month |> Date.beginning_of_month() |> Date.to_iso8601(),
+      filter: params.filter |> Atom.to_string()
+    }
+
+    socket =
+      socket
+      |> push_patch(to: ~p"/?month=#{params.month}&filter=#{params.filter}")
+
+    socket
   end
 
   defp handle_progress(:file, _, socket) do
@@ -93,7 +146,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
                   )
 
                 ~H"""
-                <.link class="text-sm text-bold underline" navigate={~p"/?month=#{@issue_date}"}>
+                <.link class="text-sm text-bold underline" navigate={~p"/?month=#{@issue_date}&filter=invoices"}>
                   Wyświetl <.icon name="hero-arrow-right-solid" class="h-3 w-3" />
                 </.link>
                 """
@@ -116,53 +169,10 @@ defmodule FirmowidWeb.DocumentsLive.Index do
   end
 
   @impl true
-  def handle_params(params, _url, socket) do
-    socket =
-      socket
-      |> apply_action(socket.assigns.live_action, params)
-
-    month_from_params = Map.get(params, "month", "1990-09-01") |> Date.from_iso8601!()
-    month_from_socket = socket.assigns.month
-
-    socket =
-      if month_from_params != month_from_socket do
-        socket
-        |> push_patch(to: ~p"/?month=#{month_from_socket |> Date.to_iso8601()}")
-      else
-        socket
-      end
-
-    {:noreply, socket}
-  end
-
-  @impl true
   def handle_event("upload", _, socket) do
     socket =
       socket
       |> refetch_upload_counts()
-
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event("filter-change", %{"filter" => filter}, socket) do
-    socket =
-      socket
-      |> assign(:filter, filter |> String.to_atom())
-      |> refetch_invoice_matchers()
-
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event("change-month", %{"month" => month}, socket) do
-    month = Date.from_iso8601!(month)
-
-    socket =
-      socket
-      |> assign(:month, month)
-      |> push_patch(to: ~p"/?month=#{month |> Date.to_iso8601()}")
-      |> refetch_invoice_matchers()
 
     {:noreply, socket}
   end
@@ -233,7 +243,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
           )
 
         ~H"""
-        <.link class="text-sm text-bold underline" navigate={~p"/?month=#{@issue_date}"}>
+        <.link class="text-sm text-bold underline" navigate={~p"/?month=#{@issue_date}&filter=invoices"}>
           Wyświetl <.icon name="hero-arrow-right-solid" class="h-3 w-3" />
         </.link>
         """
@@ -247,8 +257,8 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
-    month = socket.assigns.month
-    filter = socket.assigns.filter
+    month = socket.assigns.params.month
+    filter = socket.assigns.params.filter
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
 
@@ -263,6 +273,46 @@ defmodule FirmowidWeb.DocumentsLive.Index do
           date_range_to,
           filter
         )
+      )
+
+    # any transactions / invoices present in it
+    is_month_touched =
+      InvoiceMatcher.get_invoice_matchers(
+        organization_id,
+        date_range_from,
+        date_range_to,
+        :all
+      )
+      |> Enum.count() > 0
+
+    # no new transactions can be added
+    has_month_ended =
+      socket.assigns.params.month
+      |> Date.end_of_month()
+      |> Date.compare(Date.utc_today()) == :lt
+
+    pending_invoice_matchers_count =
+      InvoiceMatcher.get_invoice_matchers(
+        organization_id,
+        date_range_from,
+        date_range_to,
+        :unmatched
+      )
+      |> Enum.count()
+
+    socket =
+      socket
+      |> assign(
+        :is_month_touched,
+        is_month_touched
+      )
+      |> assign(
+        :is_month_closed,
+        is_month_touched and has_month_ended and pending_invoice_matchers_count == 0
+      )
+      |> assign(
+        :pending_invoice_matchers_count,
+        pending_invoice_matchers_count
       )
       |> refetch_upload_counts()
 

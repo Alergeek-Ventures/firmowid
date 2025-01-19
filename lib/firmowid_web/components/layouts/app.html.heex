@@ -1,12 +1,13 @@
 <%= if @current_user && !is_nil(@current_user.organization_id) do %>
-  <nav class="px-4 sm:px-6 lg:px-8 bg-black text-white flex items-center 
-  justify-between h-20 py-6 text-sm sticky top-0 z-50">
-    <.link navigate={~p"/"} class="font-bold text-lg">
-      <div class="flex flex-row gap-2 items-center">
-        <img src="/images/invoice_firmowid_logo.png" class="w-auto h-full max-h-[24px]" />
-        <span class="inline-block">Firmowid</span>
-      </div>
+  <nav class={[
+    "px-4 sm:px-6 lg:px-8 bg-black text-white flex",
+    "items-center  justify-between h-20 py-6",
+    "text-sm sticky top-0 z-50"
+  ]}>
+    <.link navigate={~p"/"} class="font-bold text-lg inline-block w-[240px]">
+      Firmowid
     </.link>
+
     <div class="flex uppercase items-center gap-16 max-md:hidden">
       <.link navigate={~p"/"} class="hover:underline flex items-center gap-2">
         <.icon name="hero-clipboard-document-list" class="w-5 h-5" /> Fakturowanie
@@ -16,7 +17,7 @@
       </div>
     </div>
 
-    <div class="relative">
+    <div class="relative w-[240px] text-right">
       <button
         phx-click={
           JS.toggle(
@@ -39,7 +40,7 @@
           hide("#dropdown_content") |> JS.remove_class("invert", to: "#dropdown_button")
         }
         phx-key="Escape"
-        class="bg-black transition p-2 py-3 hover:invert rounded-md"
+        class="bg-black transition p-2 py-3 hover:invert rounded-md w-full"
       >
         <.icon name="hero-user" class="w-5 h-5 mr-1" />
         <span class="lowercase text-sm max-md:hidden">
@@ -49,7 +50,8 @@
       <div
         id="dropdown_content"
         style="display: none"
-        class="absolute flex-col font-semibold p-3 rounded-md gap-2 left-[50%] -translate-x-1/2 w-full top-[70px] bg-black"
+        class="absolute flex-col font-semibold p-3 rounded-md gap-2 left-[50%]
+      -translate-x-1/2 w-full top-[70px] bg-black text-left"
       >
         <.link navigate={~p"/settings"} class="rounded-md p-2 hover:bg-darkGrey/50">
           Mój profil
@@ -91,6 +93,4 @@
 <script src="https://unpkg.com/popper.js@1">
 </script>
 <script src="https://unpkg.com/tippy.js@4">
-</script>
-<script src="https://cdn.jsdelivr.net/npm/air-datepicker@3.5.3/air-datepicker.min.js">
 </script>

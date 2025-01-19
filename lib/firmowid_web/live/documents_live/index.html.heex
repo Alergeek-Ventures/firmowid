@@ -8,28 +8,39 @@
   </div>
 </div>
 
-<div class="flex max-md:justify-center justify-between pb-8">
-  <input
-    class="block w-44 border border-darkGrey rounded-lg py-1 px-3 max-md:hidden"
-    type="button"
-    id="month"
-    phx-hook="AirDatepicker"
-    data-initial-date={@month}
-  />
+<div class={[
+  "flex max-md:justify-center justify-between py-4",
+  "sticky top-[80px] bg-lightGreyBg z-10 h-[74px]"
+]}>
+  <div class="flex max-lg:gap-2 gap-16">
+    <div class="h-full flex gap-4 items-center">
+      <input
+        class="block w-44 h-full bg-greyButtonBg
+        hover:border-darkGrey hover:border-2 transition-colors
+        rounded-lg py-1 px-3 max-md:hidden"
+        type="button"
+        id="month"
+        phx-hook="AirDatepicker"
+        data-initial-date={@params.month}
+      />
+      <.icon name="hero-calendar-days-solid" class="w-6 h-6 text-darkGrey max-md:hidden" />
+    </div>
+  </div>
+
   <div phx-drop-target={@uploads.file.ref} class="flex flex-row gap-4">
     <%= if @invoice_matchers != [] do %>
       <a
         id="download-button"
         data-tippy-content="Pobierz wszystkie faktury wystawione w tym miesiącu"
         phx-hook="tippy"
-        href={"/file?month=#{@month}"}
+        href={"/file?month=#{@params.month}"}
         download
         class="relative flex flex-row gap-4 items-center justify-center
-        border rounded-lg px-3 py-2 max-md:hidden hover:bg-greyButtonBg
-        transition-colors"
+        rounded-lg px-3 py-2 max-md:hidden bg-greyButtonBg
+        border-greyButtonBg hover:border-darkGrey border-2 transition-colors"
       >
         <.icon name="hero-cloud-arrow-down" class="w-6 h-6" />
-        <span class="max-lg:hidden">
+        <span class="max-xl:hidden">
           Pobierz
         </span>
       </a>
@@ -41,12 +52,11 @@
       phx-hook="tippy"
       class="
       relative flex flex-row gap-4 items-center justify-center
-      border rounded-lg px-3 py-2 max-md:hidden hover:bg-greyButtonBg
-      transition-colors
-      "
+      rounded-lg px-3 py-2 max-md:hidden bg-greyButtonBg
+      border-greyButtonBg hover:border-darkGrey border-2 transition-colors"
     >
       <.icon name="hero-document-duplicate" class="w-5 h-5" />
-      <span class="max-lg:hidden">
+      <span class="max-xl:hidden">
         Wystaw fakturę
       </span>
     </.link>
@@ -56,9 +66,17 @@
       </div>
       <label
         for={@uploads.file.ref}
-        class={button_styles(%{class: "relative flex flex-row gap-2 items-center justify-center
-        border-2 rounded-lg px-3 py-2 border-black hover:bg-greyButtonBg
-        hover:text-black transition-colors max-md:h-20 max-md:w-60 max-md:gap-4"})}
+        class={
+          button_styles(%{
+            class: [
+              "relative flex flex-row  items-center justify-between",
+              "border rounded-lg px-3 py-2 border-black hover:bg-greyButtonBg",
+              "hover:text-black transition-colors max-md:h-20 max-md:w-44",
+              "max-md:gap-4 text-md font-normal w-44",
+              @is_month_closed && @params.filter == :unmatched && "!bg-transparent !text-black"
+            ]
+          })
+        }
       >
         <%= if @currently_uploading_count > 0 or @processing_blobs_count > 0 do %>
           <span
@@ -86,39 +104,85 @@
             </span>
           </span>
         <% end %>
-        <.icon name="hero-plus-mini" class="w-5 h-5" /> Dodaj dokument
+        <.icon name="hero-plus-micro" class="w-6 h-6" />
+        <span class="block md:hidden lg:block">
+          Dodaj fakturę
+        </span>
       </label>
     </form>
   </div>
 </div>
 
-<div class="flex flex-row gap-4 max-md:hidden">
+<div class={[
+  !@is_month_touched && "hidden",
+  "flex flex-row gap-4 items-center max-md:hidden",
+  "my-4"
+]}>
   <%= for {filter, label} <- [
         {:invoices, "Faktury"},
         {:transactions, "Transakcje"},
-        {:unmatched, "Bez dopasowania"},
-        {:all, "Wszystkie"}
+        {:all, "Razem"}
     ] do %>
     <.button
       class={[
-        @filter == filter && "!bg-darkGrey !text-white",
-        "text-darkGrey text-center bg-lightGreyBg rounded-lg border-none
-        hover:bg-greyButtonBg py-2 px-3 text-sm font-semibold leading-6
-        active:text-white/80 flex items-center justify-center"
+        @params.filter == filter && "!bg-darkGrey !text-white !rounded-lg",
+        "relative text-darkGrey text-center bg-lightGreyBg",
+        "hover:bg-greyButtonBg py-1 px-3 text-sm font-normal leading-6",
+        "flex items-center justify-center uppercase border-none text-sm"
       ]}
-      phx-click="filter-change"
+      phx-click="change-filter"
       phx-value-filter={filter}
     >
       {label}
     </.button>
   <% end %>
+
+  <.button
+    class={[
+      @is_month_closed && "!text-lightGreyBg",
+      @params.filter == :unmatched && "!bg-darkGrey !text-white",
+      @params.filter == :unmatched && @is_month_closed &&
+        "!text-black !bg-greenBg !border-greenText",
+      "relative text-darkGrey text-center bg-lightGreyBg",
+      "hover:bg-greyButtonBg py-1 px-3 text-sm leading-6 font-normal",
+      "flex items-center justify-center uppercase border-none text-sm"
+    ]}
+    phx-click="change-filter"
+    phx-value-filter={:unmatched}
+    id="unmatched-filter"
+    phx-hook="confetti"
+    data-confetti-enabled={if @is_month_closed, do: "true", else: "false"}
+  >
+    <%= if @pending_invoice_matchers_count != 0 do %>
+      <span class={[
+        "absolute overflow-hidden flex items-center justify-center",
+        "-top-3 -right-4 h-7 px-2 rounded-full",
+        "bg-orangeBg text-orangeText border-lightGreyBg border-2"
+      ]}>
+        {@pending_invoice_matchers_count}
+      </span>
+    <% end %>
+    <%= if @is_month_closed do %>
+      Miesiąc zamknięty
+    <% else %>
+      Nieprzypisane
+    <% end %>
+  </.button>
 </div>
 
 <div class="mt-2 flex flex-col gap-4 max-md:hidden">
-  <FirmowidWeb.DocumentsLive.DocumentsTable.table
-    invoice_matchers={@invoice_matchers}
-    has_connected_bank_account={@has_connected_bank_account}
-  />
+  <%= if @is_month_closed and @params.filter == :unmatched do %>
+    <.live_component
+      id="month-closed-zero-state"
+      module={FirmowidWeb.DocumentsLive.MonthClosedZeroState}
+      month={@params.month}
+    />
+  <% else %>
+    <FirmowidWeb.DocumentsLive.DocumentsTable.table
+      invoice_matchers={@invoice_matchers}
+      has_connected_bank_account={@has_connected_bank_account}
+    />
+  <% end %>
 </div>
 
 <div
@@ -143,3 +207,8 @@
     </p>
   </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/air-datepicker@3.5.3/air-datepicker.min.js">
+</script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js">
+</script>

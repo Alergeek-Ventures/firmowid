@@ -42,13 +42,17 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
             |> Enum.join(" ")
           }
         />
-        <thead>
+        <thead class="sticky top-[154px] bg-lightGreyBg z-20">
           <tr>
             <th
               :for={column <- @columns}
+              id={"header-#{column.key}"}
+              phx-hook="ScrollStyle"
+              data-classes="border-b-4 border-solid border-darkGrey border-opacity-40"
+              data-scroll-offset="90"
               class={
                 [
-                  "font-normal text-left text-darkGrey text-xs uppercase",
+                  "pt-4 font-normal text-left text-darkGrey text-xs uppercase pb-2",
                   column.key == "seller" && "pl-5",
                   column.key == "amount" && "hidden"
                 ]
@@ -57,7 +61,14 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
             >
               {column.label}
             </th>
-            <th></th>
+            <th
+              id="header-amount-standalone"
+              phx-hook="ScrollStyle"
+              class="pt-4"
+              data-classes="border-b-4 border-solid border-darkGrey"
+              data-scroll-offset="90"
+            >
+            </th>
           </tr>
         </thead>
         <tbody>

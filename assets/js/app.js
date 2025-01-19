@@ -31,6 +31,95 @@ let liveSocket = new LiveSocket("/live", Socket, {
   params: { _csrf_token: csrfToken },
   hooks: {
     LiveToast: createLiveToastHook(),
+    confetti: {
+      beforeDestroy() {
+        this.el.removeEventListener("click", this.listener);
+      },
+      mounted() {
+        this.updated();
+      },
+      updated() {
+        if (this.el.getAttribute("data-confetti-enabled") === "true") {
+          this.enableConfetti();
+        } else {
+          this.disableConfetti();
+        }
+      },
+      enableConfetti() {
+        this.el.addEventListener("click", this.listener);
+      },
+      disableConfetti() {
+        this.el.removeEventListener("click", this.listener);
+      },
+      listener() {
+        setTimeout(() => {
+          var count = 200;
+          var defaults = {
+            origin: { y: 0.7 },
+          };
+
+          function fire(particleRatio, opts) {
+            confetti({
+              ...defaults,
+              ...opts,
+              particleCount: Math.floor(count * particleRatio),
+            });
+          }
+
+          fire(0.25, {
+            spread: 26,
+            startVelocity: 55,
+          });
+          fire(0.2, {
+            spread: 60,
+          });
+          fire(0.35, {
+            spread: 100,
+            decay: 0.91,
+            scalar: 0.8,
+          });
+          fire(0.1, {
+            spread: 120,
+            startVelocity: 25,
+            decay: 0.92,
+            scalar: 1.2,
+          });
+          fire(0.1, {
+            spread: 120,
+            startVelocity: 45,
+          });
+        }, 300);
+      },
+    },
+    ScrollStyle: {
+      mounted() {
+        this.offset = parseInt(this.el.dataset.scrollOffset) || 100;
+        this.classes = this.el.dataset.classes?.split(" ") || [];
+
+        // Bind the scroll handler
+        this._onScroll = this._handleScroll.bind(this);
+        window.addEventListener("scroll", this._onScroll);
+
+        // Initial check
+        this._handleScroll();
+      },
+
+      destroyed() {
+        window.removeEventListener("scroll", this._onScroll);
+      },
+
+      _handleScroll() {
+        if (window.scrollY > this.offset) {
+          this.classes.forEach((className) => {
+            this.el.classList.add(className);
+          });
+        } else {
+          this.classes.forEach((className) => {
+            this.el.classList.remove(className);
+          });
+        }
+      },
+    },
     FileUploadDragNDrop: {
       updated() {
         this.attachListeners();

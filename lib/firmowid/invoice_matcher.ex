@@ -66,8 +66,7 @@ defmodule Firmowid.InvoiceMatcher do
       :unmatched ->
         Enum.filter(
           all,
-          &(((&1.cost_invoices == [] and &1.transactions != []) or
-               (&1.cost_invoices != [] and &1.transactions == [])) and
+          &((&1.cost_invoices == [] or &1.transactions == []) and
               &1.skip_invoicing == false)
         )
 
