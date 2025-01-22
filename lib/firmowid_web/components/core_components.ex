@@ -111,7 +111,7 @@ defmodule FirmowidWeb.CoreComponents do
   attr :color, :string,
     doc: "The button color.",
     default: "black",
-    values: ["black", "green", "red"]
+    values: ["black", "green", "red", "orange"]
 
   attr :type, :string,
     default: "submit",
@@ -162,6 +162,10 @@ defmodule FirmowidWeb.CoreComponents do
 
   defp button_styles(:color, %{color: "black"}) do
     "text-white bg-black hover:bg-greyButtonBg hover:text-black disabled:cursor-default disabled:bg-black disabled:text-white"
+  end
+
+  defp button_styles(:color, %{color: "orange"}) do
+    "text-orangeText border-none bg-orangeBg hover:bg-orangeText hover:text-orangeBg disabled:cursor-default disabled:bg-orangeBg disabled:text-orangeText"
   end
 
   defp button_styles(:color, %{variant: "outline"}),
@@ -353,7 +357,7 @@ defmodule FirmowidWeb.CoreComponents do
   def input(assigns) do
     ~H"""
     <div class={@rest[:class]}>
-      <.label for={@id} class={@rest[:class]}>{@label}</.label>
+      <.label :if={@label} for={@id} class={@rest[:class]}>{@label}</.label>
       <input
         type={@type}
         name={@name}
@@ -401,6 +405,39 @@ defmodule FirmowidWeb.CoreComponents do
       <.icon name="hero-exclamation-circle-mini" class="mt-0.5 h-5 w-5 flex-none" />
       {render_slot(@inner_block)}
     </p>
+    """
+  end
+
+  attr :id, :string, required: true
+  slot :inner_block, required: true
+  slot :trigger, required: true, doc: "the slot for the trigger element"
+
+  def dropdown(assigns) do
+    ~H"""
+    <div class="relative">
+      <button
+        phx-click={
+          JS.toggle(
+            to: "#dropdown_menu_#{@id}",
+            in: {"transition-all duration-75", "opacity-0 scale-95", "opacity-100 scale-100"},
+            out:
+              {"transition-all duration-75", "opacity-100 translate-y-0 sm:scale-100",
+               "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"},
+            display: "flex"
+          )
+        }
+        id={"dropdown_button_#{@id}"}
+        phx-click-away={hide("#dropdown_menu_#{@id}")}
+        phx-window-keydown={hide("#dropdown_menu_#{@id}")}
+        phx-key="Escape"
+        class="duration-75 w-full"
+      >
+        {render_slot(@trigger)}
+      </button>
+      <div id={"dropdown_menu_#{@id}"} style="display: none" class="absolute">
+        {render_slot(@inner_block)}
+      </div>
+    </div>
     """
   end
 

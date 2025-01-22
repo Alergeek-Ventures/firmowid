@@ -10,16 +10,15 @@ defmodule FirmowidWeb.SettingsLive.EditButton do
   def edit_button(assigns) do
     ~H"""
     <.button
-      phx-disable-with=""
       class={
         classes([
-          "bg-lightGreyBg flex justify-center p-0 size-8 items-center rounded border-none hover:border-darkGrey disabled:bg-lightGreyBg disabled:cursor-default",
+          "bg-white flex justify-center p-0 size-8 items-center rounded border-none hover:border-darkGrey phx-click-loading:bg-lightGreyBg phx-click-loading:cursor-default phx-click-loading:opacity-60 text-darkGrey active:text-darkGrey/60 active:bg-lightGreyBg",
           @class
         ])
       }
       {@rest}
     >
-      <.edit_icon class="h-4 w-4 text-darkGrey" />
+      <.edit_icon class="h-4 w-4" />
     </.button>
     """
   end

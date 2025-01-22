@@ -26,67 +26,71 @@
 
   <%= case @tab do %>
     <% "company" -> %>
-      <%= if @company_form[:is_basic_info_editing].value do %>
-        <div class="mt-6">
-          <div class="flex gap-1 bg-lightGreyBg p-4">
-            <h2 class="font-bold mt-0.5">Dane firmy</h2>
-            <.simple_form phx-submit="save" for={@company_form}>
-              <.input
-                field={@company_form[:organization_type]}
-                label="Rodzaj działalności"
-                class="font-normal"
-              />
-              <.input field={@company_form[:name]} label="Nazwa organizacji" class="font-normal" />
-              <.input
-                field={@company_form[:identification_number]}
-                label="NIP"
-                class="font-normal"
-              />
-              <.input
-                field={@company_form[:address]}
-                label="Adres przedsiębiorstwa"
-                class="font-normal"
-              />
-              <.input
-                field={@company_form[:phone_number]}
-                label="Numer telefonu"
-                class="font-normal"
-              />
+      <div class={
+        classes([
+          "mt-6 rounded-md p-4  w-fit border border-transparent",
+          @company_form[:is_basic_info_editing].value && "border-greyButtonBg"
+        ])
+      }>
+        <div class="flex gap-1">
+          <h2 class="font-bold mt-0.5">Dane firmy</h2>
+          <.edit_button
+            phx-click={
+              JS.push("save",
+                value: %{
+                  "organization" => %{
+                    "is_basic_info_editing" => !@company_form[:is_basic_info_editing].value
+                  }
+                }
+              )
+            }
+            class={
+              classes([
+                @company_form[:is_basic_info_editing].value == true &&
+                  "text-orangeText hover:text-orangeText/70 active:text-orangeText/90"
+              ])
+            }
+          />
+        </div>
+        <%= if @company_form[:is_basic_info_editing].value do %>
+          <div class="flex flex-col gap-4 mt-6">
+            <.form class="flex flex-col gap-4" phx-submit="save" for={@company_form}>
+              <%= for {field, label} <- [
+                {:organization_type, "Rodzaj działalności"},
+                {:name, "Nazwa organizacji"},
+                {:identification_number, "NIP"},
+                {:address, "Adres przedsiębiorstwa"},
+                {:phone_number, "Numer telefonu"}
+              ] do %>
+                <div class="flex">
+                  <label
+                    for={@company_form[field].id}
+                    class="w-48 mt-2 font-medium text-darkGrey uppercase text-xs text-right pr-4"
+                  >
+                    {label}
+                  </label>
+                  <div class="flex-1 text-sm">
+                    <.input
+                      field={@company_form[field]}
+                      class="font-normal h-8 mt-0 w-[439px]"
+                      input_class="mt-0 h-8 border-greyButtonBg"
+                    />
+                  </div>
+                </div>
+              <% end %>
               <.input type="hidden" field={@company_form[:is_basic_info_editing]} value="false" />
 
-              <:actions>
-                <.button type="submit" phx-disable-with="Zapisywanie...">
-                  Zapisz
-                </.button>
-                <.button
-                  type="button"
-                  phx-click={
-                    JS.push("save",
-                      value: %{
-                        organization: %{
-                          is_basic_info_editing: false
-                        }
-                      }
-                    )
-                  }
-                  phx-disable-with="Anulowanie..."
-                  class="ml-2"
-                >
-                  Anuluj
-                </.button>
-              </:actions>
-            </.simple_form>
-          </div>
-        </div>
-      <% else %>
-        <div class="mt-6">
-          <div class="flex gap-1">
-            <h2 class="font-bold mt-0.5">Dane firmy</h2>
-            <.form for={@company_form} phx-submit="save">
-              <.input type="hidden" field={@company_form[:is_basic_info_editing]} value="true" />
-              <.edit_button />
+              <.button
+                color="orange"
+                class="w-fit ml-auto"
+                type="submit"
+                phx-disable-with="Zapisywanie..."
+              >
+                Zatwierdź
+              </.button>
             </.form>
           </div>
+        <% else %>
           <div class="space-y-4 mt-6">
             <%= for {label, value} <- [
               {"Rodzaj działalności", @current_org.organization_type},
@@ -111,67 +115,75 @@
               </div>
             <% end %>
           </div>
-        </div>
-      <% end %>
+        <% end %>
+      </div>
 
-      <%= if @correspondence_form[:is_correspondence_editing].value do %>
-        <div class="mt-6">
-          <div class="flex gap-1 bg-lightGreyBg p-4">
-            <h2 class="font-bold mt-0.5">Adres korespondencyjny</h2>
-            <.simple_form phx-submit="save" for={@correspondence_form}>
-              <.input
-                field={@correspondence_form[:correspondence_name]}
-                label="Nazwa do korespondencji"
-                class="font-normal"
-              />
-              <.input
-                field={@correspondence_form[:correspondence_address]}
-                label="Adres do korespondencji"
-                class="font-normal"
-              />
+      <div class={
+        classes([
+          "mt-6 rounded-md p-4 w-fit border border-transparent",
+          @correspondence_form[:is_correspondence_editing].value && "border-greyButtonBg"
+        ])
+      }>
+        <div class="flex gap-1">
+          <h2 class="font-bold mt-0.5">Adres korespondencyjny</h2>
+          <.edit_button
+            phx-click={
+              JS.push("save",
+                value: %{
+                  "organization" => %{
+                    "is_correspondence_editing" =>
+                      !@correspondence_form[:is_correspondence_editing].value
+                  }
+                }
+              )
+            }
+            class={
+              classes([
+                @correspondence_form[:is_correspondence_editing].value == true &&
+                  "text-orangeText hover:text-orangeText/70 active:text-orangeText/90"
+              ])
+            }
+          />
+        </div>
+        <%= if @correspondence_form[:is_correspondence_editing].value do %>
+          <div class="flex flex-col gap-4 mt-6">
+            <.form class="flex flex-col gap-4" phx-submit="save" for={@correspondence_form}>
+              <%= for {field, label} <- [
+                {:correspondence_name, "Nazwa organizacji"},
+                {:correspondence_address, "Adres przedsiębiorstwa"}
+              ] do %>
+                <div class="flex">
+                  <label
+                    for={@correspondence_form[field].id}
+                    class="w-48 mt-2 font-medium text-darkGrey uppercase text-xs text-right pr-4"
+                  >
+                    {label}
+                  </label>
+                  <div class="flex-1 text-sm">
+                    <.input
+                      field={@correspondence_form[field]}
+                      class="font-normal h-8 mt-0 w-[439px]"
+                      input_class="mt-0 h-8 border-greyButtonBg"
+                    />
+                  </div>
+                </div>
+              <% end %>
               <.input
                 type="hidden"
                 field={@correspondence_form[:is_correspondence_editing]}
                 value="false"
               />
-
-              <:actions>
-                <.button type="submit" phx-disable-with="Zapisywanie...">
-                  Zapisz
-                </.button>
-                <.button
-                  type="button"
-                  phx-click={
-                    JS.push("save",
-                      value: %{
-                        organization: %{
-                          is_correspondence_editing: false
-                        }
-                      }
-                    )
-                  }
-                  phx-disable-with="Anulowanie..."
-                  class="ml-2"
-                >
-                  Anuluj
-                </.button>
-              </:actions>
-            </.simple_form>
-          </div>
-        </div>
-      <% else %>
-        <div class="mt-6">
-          <div class="flex gap-1">
-            <h2 class="font-bold mt-0.5">Adres korespondencyjny</h2>
-            <.form for={@correspondence_form} phx-submit="save">
-              <.input
-                type="hidden"
-                field={@correspondence_form[:is_correspondence_editing]}
-                value="true"
-              />
-              <.edit_button />
+              <.button
+                color="orange"
+                class="w-fit ml-auto"
+                type="submit"
+                phx-disable-with="Zapisywanie..."
+              >
+                Zatwierdź
+              </.button>
             </.form>
           </div>
+        <% else %>
           <div class="space-y-4 mt-6">
             <%= for {label, value} <- [
               {"Nazwa do korespondencji", @current_org.correspondence_name},
@@ -193,8 +205,8 @@
               </div>
             <% end %>
           </div>
-        </div>
-      <% end %>
+        <% end %>
+      </div>
     <% "account" -> %>
       <div class="mt-6">
         <div class="flex gap-4">
@@ -224,13 +236,19 @@
         <h2 class="font-bold mt-6">Zgoda marketingowa</h2>
         <div class="flex items-center mt-6">
           <label
-            for="marketing"
+            for="consent"
             class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4"
           >
             Zgoda na przesyłanie informacji o charakterze marketingowym
           </label>
           <div>
-            <.input type="checkbox" id="marketing" name="marketing" />
+            <.input
+              phx-click="update_marketing_consent"
+              name="consent"
+              id="consent"
+              value={@current_user.marketing_consent}
+              type="checkbox"
+            />
           </div>
         </div>
         <h2 class="font-bold mt-6">Zamykanie konta</h2>
@@ -310,7 +328,27 @@
                       </div>
                     </div>
                     <div>
-                      <.icon name="hero-ellipsis-horizontal" />
+                      <.dropdown id={account.id}>
+                        <:trigger>
+                          <.icon name="hero-ellipsis-horizontal" />
+                        </:trigger>
+                        <div class="flex -translate-x-[86%] flex-col text-sm text-darkGrey gap-2 p-3 rounded-md bg-lightGreyBg shadow-lg w-44 font-semibold">
+                          <button
+                            phx-click="delete_bank_account"
+                            phx-value-account_id={account.id}
+                            class="transition rounded-md p-2 text-left hover:bg-darkGrey/30 phx-click-loading:opacity-50 phx-click-loading:cursor-wait"
+                          >
+                            Usuń
+                          </button>
+                          <button
+                            phx-click="make_default_account"
+                            phx-value-account_id={account.id}
+                            class="transition rounded-md p-2 text-left hover:bg-darkGrey/30 phx-click-loading:opacity-50 phx-click-loading:cursor-wait"
+                          >
+                            Domyślny dla {account.currency}
+                          </button>
+                        </div>
+                      </.dropdown>
                     </div>
                   </div>
                 <% end %>

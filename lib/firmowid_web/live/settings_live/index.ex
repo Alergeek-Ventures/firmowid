@@ -1,6 +1,8 @@
 defmodule FirmowidWeb.SettingsLive.Index do
   alias Firmowid.Accounts.Organization
   alias Firmowid.BankData
+  alias Firmowid.Finances
+
   use FirmowidWeb, :live_view
   alias Ecto.Changeset
   alias Firmowid.Accounts
@@ -45,7 +47,8 @@ defmodule FirmowidWeb.SettingsLive.Index do
        :delete_account_form,
        to_form(Accounts.change_user_delete_account(socket.assigns.current_user))
      )
-     |> assign(:bank_accounts, bank_accounts)}
+     |> assign(:bank_accounts, bank_accounts)
+     |> assign(:main_class, "bg-white")}
   end
 
   def handle_params(%{"tab" => tab}, _uri, socket) do
@@ -72,6 +75,53 @@ defmodule FirmowidWeb.SettingsLive.Index do
       {:error, error} ->
         LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania konta")
         Sentry.capture_exception(error)
+
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("update_marketing_consent", params, socket) do
+    consent =
+      case params do
+        %{"value" => _} ->
+          true
+
+        _ ->
+          false
+      end
+
+    case Accounts.update_marketing_consent(socket.assigns.current_user, consent) do
+      {:ok, user} ->
+        {:noreply, assign(socket, :current_user, user)}
+
+      {:error, _changeset} ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("delete_bank_account", %{"account_id" => account_id}, socket) do
+    case Finances.delete_bank_account(account_id) do
+      {:ok, _} ->
+        LiveToast.send_toast(:info, "Konto bankowe zostało usunięte.")
+        {:noreply, socket |> assign(:bank_accounts, BankData.list_bank_accounts())}
+
+      {:error, _} ->
+        LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania konta bankowego.")
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("make_default_account", %{"account_id" => account_id}, socket) do
+    case Finances.make_account_default(account_id) do
+      {:ok, _} ->
+        LiveToast.send_toast(:info, "Konto bankowe zostało ustawione jako domyślne.")
+        {:noreply, socket |> assign(:bank_accounts, BankData.list_bank_accounts())}
+
+      {:error, _} ->
+        LiveToast.send_toast(
+          :error,
+          "Wystąpił błąd podczas ustawiania konta bankowego jako domyślne."
+        )
 
         {:noreply, socket}
     end

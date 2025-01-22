@@ -614,4 +614,23 @@ defmodule Firmowid.Accounts do
   def change_user_delete_account(user, attrs \\ %{}) do
     User.delete_account_changeset(user, attrs)
   end
+
+  @doc """
+  Updates the user's marketing consent.
+
+  ## Examples
+
+      iex> update_marketing_consent(user, true)
+      {:ok, %User{}}
+
+
+      iex> update_marketing_consent(user, false)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_marketing_consent(%User{} = user, consent) do
+    user
+    |> Ecto.Changeset.change(marketing_consent: consent)
+    |> Repo.update()
+  end
 end

@@ -52,7 +52,8 @@ defmodule FirmowidWeb do
   def live_view do
     quote do
       use Phoenix.LiveView,
-        layout: {FirmowidWeb.Layouts, :app}
+        layout: {FirmowidWeb.Layouts, :app},
+        container: {:div, class: "min-h-full flex flex-col"}
 
       on_mount Sentry.LiveViewHook
 

@@ -59,6 +59,21 @@ defmodule Firmowid.Finances do
     |> Repo.update()
   end
 
+  def make_account_default(bank_account_id) do
+    bank_account = Repo.get!(BankAccount, bank_account_id)
+
+    Repo.transaction(fn ->
+      Repo.update_all(
+        from(ba in BankAccount,
+          where: ba.currency == ^bank_account.currency
+        ),
+        set: [is_default: false]
+      )
+
+      update_bank_account(bank_account, %{is_default: true})
+    end)
+  end
+
   def delete_bank_account(bank_account_id) do
     # TODO: dangling requisitions should be deleted!
     # not done yet, maybe via a worker?
