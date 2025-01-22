@@ -301,54 +301,63 @@
           <h2 class="font-bold mt-0.5">Konta bankowe</h2>
         </div>
         <%= if Enum.any?(@bank_accounts) do %>
-          <div class="space-y-2 mt-6">
+          <div class="space-y-4 mt-6">
             <%= for {institution, accounts} <- Enum.group_by(@bank_accounts, & &1.institution_name) do %>
               <h3>{institution}</h3>
-              <div class="flex flex-wrap gap-4">
+              <div class="flex flex-wrap items-start gap-4">
                 <%= for account <- accounts do %>
-                  <div class="flex justify-between border rounded-md p-4 w-96">
-                    <div class="grid grid-cols-[auto,1fr] gap-4">
-                      <div class="mt-1 font-medium text-darkGrey uppercase text-xs pr-4">
-                        Nazwa
+                  <div class="border rounded-md pt-4 w-96">
+                    <div class="flex justify-between px-4 pb-4">
+                      <div class="grid grid-cols-[auto,1fr] gap-4">
+                        <div class="mt-1 font-medium text-darkGrey uppercase text-xs pr-4">
+                          Nazwa
+                        </div>
+                        <div>
+                          {account.name}
+                        </div>
+                        <div class="mt-1 font-medium text-darkGrey uppercase text-xs pr-4">
+                          Waluta
+                        </div>
+                        <div>
+                          {account.currency}
+                        </div>
+                        <div class="mt-1 font-medium text-darkGrey uppercase text-xs text-left pr-4">
+                          Numer
+                        </div>
+                        <div>
+                          {account.iban}
+                        </div>
                       </div>
                       <div>
-                        {account.name}
-                      </div>
-                      <div class="mt-1 font-medium text-darkGrey uppercase text-xs pr-4">
-                        Waluta
-                      </div>
-                      <div>
-                        {account.currency}
-                      </div>
-                      <div class="mt-1 font-medium text-darkGrey uppercase text-xs text-left pr-4">
-                        Numer
-                      </div>
-                      <div>
-                        {account.iban}
+                        <.dropdown id={account.id}>
+                          <:trigger>
+                            <.icon name="hero-ellipsis-horizontal" />
+                          </:trigger>
+                          <div class="flex -translate-x-[86%] flex-col text-sm text-darkGrey gap-2 p-3 rounded-md bg-lightGreyBg shadow-lg w-44 font-semibold">
+                            <button
+                              phx-click="delete_bank_account"
+                              phx-value-account_id={account.id}
+                              class="transition rounded-md p-2 text-left hover:bg-darkGrey/30 phx-click-loading:opacity-50 phx-click-loading:cursor-wait"
+                            >
+                              Usuń
+                            </button>
+                            <button
+                              :if={!account.is_default}
+                              phx-click="make_default_account"
+                              phx-value-account_id={account.id}
+                              class="transition rounded-md p-2 text-left hover:bg-darkGrey/30 phx-click-loading:opacity-50 phx-click-loading:cursor-wait"
+                            >
+                              Domyślny dla {account.currency}
+                            </button>
+                          </div>
+                        </.dropdown>
                       </div>
                     </div>
-                    <div>
-                      <.dropdown id={account.id}>
-                        <:trigger>
-                          <.icon name="hero-ellipsis-horizontal" />
-                        </:trigger>
-                        <div class="flex -translate-x-[86%] flex-col text-sm text-darkGrey gap-2 p-3 rounded-md bg-lightGreyBg shadow-lg w-44 font-semibold">
-                          <button
-                            phx-click="delete_bank_account"
-                            phx-value-account_id={account.id}
-                            class="transition rounded-md p-2 text-left hover:bg-darkGrey/30 phx-click-loading:opacity-50 phx-click-loading:cursor-wait"
-                          >
-                            Usuń
-                          </button>
-                          <button
-                            phx-click="make_default_account"
-                            phx-value-account_id={account.id}
-                            class="transition rounded-md p-2 text-left hover:bg-darkGrey/30 phx-click-loading:opacity-50 phx-click-loading:cursor-wait"
-                          >
-                            Domyślny dla {account.currency}
-                          </button>
-                        </div>
-                      </.dropdown>
+                    <div
+                      :if={account.is_default}
+                      class="bg-orangeBg text-orangeText uppercase w-full rounded-b-md text-xs h-8 flex items-center justify-center mt-auto"
+                    >
+                      Domyślny dla {account.currency}
                     </div>
                   </div>
                 <% end %>
@@ -357,9 +366,9 @@
           </div>
           <.link
             navigate={~p"/settings/bank-sync/create"}
-            class={classes([button_styles(%{variant: "outline"}), "mt-6"])}
+            class={classes([button_styles(%{variant: "outline"}), "ml-auto mt-16"])}
           >
-            Podepnij konto
+            Podepnij kolejne konto
           </.link>
         <% else %>
           <div class="text-left py-6 text-darkGrey">

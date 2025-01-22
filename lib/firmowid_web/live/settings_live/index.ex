@@ -114,7 +114,6 @@ defmodule FirmowidWeb.SettingsLive.Index do
   def handle_event("make_default_account", %{"account_id" => account_id}, socket) do
     case Finances.make_account_default(account_id) do
       {:ok, _} ->
-        LiveToast.send_toast(:info, "Konto bankowe zostało ustawione jako domyślne.")
         {:noreply, socket |> assign(:bank_accounts, BankData.list_bank_accounts())}
 
       {:error, _} ->
