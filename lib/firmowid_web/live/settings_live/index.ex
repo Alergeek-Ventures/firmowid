@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.SettingsLive.Index do
+  alias Firmowid.Blobs
   alias Firmowid.Accounts.Organization
   alias Firmowid.BankData
   alias Firmowid.Finances
@@ -48,6 +49,21 @@ defmodule FirmowidWeb.SettingsLive.Index do
        to_form(Accounts.change_user_delete_account(socket.assigns.current_user))
      )
      |> assign(:bank_accounts, bank_accounts)
+     |> assign(:uploaded_files, [])
+     |> allow_upload(:organization_avatar,
+       accept: ~w(.jpg .jpeg .png),
+       max_entries: 1,
+       auto_upload: true,
+       progress: &handle_progress/3
+     )
+     |> allow_upload(:user_avatar,
+       accept: ~w(.jpg .jpeg .png),
+       max_entries: 1,
+       auto_upload: true,
+       progress: &handle_progress/3
+     )
+      |> assign(:current_user, Accounts.get_user_with_avatar(socket.assigns.current_user))
+      |> assign(:current_org, Accounts.get_organization_with_avatar(socket.assigns.current_org))
      |> assign(:main_class, "bg-white")}
   end
 
@@ -56,6 +72,43 @@ defmodule FirmowidWeb.SettingsLive.Index do
   end
 
   def handle_params(_unsigned_params, _uri, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_avatar_upload(:user_avatar, blob_id, socket) do
+    {:ok, updated} = Accounts.update_user_avatar(socket.assigns.current_user, blob_id)
+
+    LiveToast.send_toast(:info, "Zdjęcie zostało zaktualizowane.")
+
+    {:noreply, socket |> assign(:current_user, Accounts.get_user_with_avatar(updated))}
+  end
+
+  def handle_avatar_upload(:organization_avatar, blob_id, socket) do
+    {:ok, updated} = Accounts.update_organization_avatar(socket.assigns.current_org, blob_id)
+
+    LiveToast.send_toast(:info, "Zdjęcie zostało zaktualizowane.")
+
+    {:noreply, socket |> assign(:current_org, Accounts.get_organization_with_avatar(updated))}
+  end
+
+  defp handle_progress(name, entry, socket) when name in [:organization_avatar, :user_avatar] do
+    if entry.done? do
+      case consume_uploaded_entry(socket, entry, fn %{path: path} ->
+             {:ok, Blobs.create_blob(path, entry.client_type, entry.client_name)}
+           end) do
+        {:ok, blob} ->
+          handle_avatar_upload(name, blob.id, socket)
+
+        {:error, _err} ->
+          LiveToast.send_toast(:error, "Wystąpił błąd podczas aktualizacji zdjęcia.")
+          {:noreply, socket}
+      end
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("validate_upload", _params, socket) do
     {:noreply, socket}
   end
 
@@ -80,6 +133,10 @@ defmodule FirmowidWeb.SettingsLive.Index do
     end
   end
 
+  def handle_event("upload", _, socket) do
+    {:noreply, socket}
+  end
+
   def handle_event("update_marketing_consent", params, socket) do
     consent =
       case params do
@@ -90,9 +147,11 @@ defmodule FirmowidWeb.SettingsLive.Index do
           false
       end
 
-    case Accounts.update_marketing_consent(socket.assigns.current_user, consent) do
+    case Accounts.update_user(socket.assigns.current_user, %{
+           marketing_consent: consent
+         }) do
       {:ok, user} ->
-        {:noreply, assign(socket, :current_user, user)}
+        {:noreply, socket |> assign(:current_user, user)}
 
       {:error, _changeset} ->
         {:noreply, socket}

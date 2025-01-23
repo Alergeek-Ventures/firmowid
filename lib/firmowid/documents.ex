@@ -1,13 +1,13 @@
 defmodule Firmowid.Documents do
-  import Ecto.Query, only: [from: 2, where: 3, order_by: 2]
+  import Ecto.Query, only: [where: 3, order_by: 2]
 
   require Logger
 
-  alias ExAws.S3
   alias MIME
 
   alias Firmowid.Repo
-  alias Firmowid.Documents.Blob
+  alias Firmowid.Blobs
+
   alias Firmowid.Documents.CostInvoice
   alias Firmowid.Documents.CostInvoicesTransactions
 
@@ -46,17 +46,13 @@ defmodule Firmowid.Documents do
   end
 
   def get_processing_blobs_count() do
-    # all blobs that exist and don't have cost_invoice metadata
-    # they will be either processed or removed by Oban worker
-
-    query =
-      from b in Blob,
-        left_join: ci in CostInvoice,
-        on: b.id == ci.blob_id,
-        where: is_nil(ci.id),
-        select: b.id
-
-    Repo.aggregate(query, :count, :id)
+    Oban.Job
+    |> where(
+      [j],
+      j.state in ["available", "scheduled", "executing"] and
+        fragment("args->>'name' = ?", "extract_cost_invoice_metadata")
+    )
+    |> Repo.aggregate(:count, skip_organization_id: true, prefix: "oban")
   end
 
   def list_cost_invoices(
@@ -73,7 +69,7 @@ defmodule Firmowid.Documents do
     |> order_by(desc: :issue_date)
     |> Repo.all()
     |> Repo.preload(:transactions)
-    |> Enum.map(&Map.put(&1, :file_url, get_blob_url(&1.blob_id, Repo.get_org_id())))
+    |> Enum.map(&Map.put(&1, :file_url, Blobs.get_blob_url(&1.blob_id, Repo.get_org_id())))
     |> Enum.map(
       &Map.put(
         &1,
@@ -93,7 +89,7 @@ defmodule Firmowid.Documents do
       d.issue_date >= ^from and d.issue_date <= ^to
     )
     |> Repo.all()
-    |> Enum.map(&Map.put(&1, :file_url, get_blob_url(&1.blob_id, Repo.get_org_id())))
+    |> Enum.map(&Map.put(&1, :file_url, Blobs.get_blob_url(&1.blob_id, Repo.get_org_id())))
   end
 
   def list_unmatched_cost_invoices() do
@@ -111,7 +107,7 @@ defmodule Firmowid.Documents do
     |> where([d], is_nil(d.blob_id))
     |> Repo.all(organization_id: organization_id)
     |> Repo.preload(:transactions)
-    |> Enum.map(&Map.put(&1, :file_url, get_blob_url(&1.id, organization_id)))
+    |> Enum.map(&Map.put(&1, :file_url, Blobs.get_blob_url(&1.id, organization_id)))
     |> Enum.map(
       &Map.put(
         &1,
@@ -132,7 +128,7 @@ defmodule Firmowid.Documents do
       |> Repo.preload(:blob)
 
     cost_invoice
-    |> Map.put(:file_url, get_blob_url(cost_invoice.blob_id, Repo.get_org_id()))
+    |> Map.put(:file_url, Blobs.get_blob_url(cost_invoice.blob_id))
     |> Map.put(
       :amount,
       Money.new(
@@ -140,13 +136,6 @@ defmodule Firmowid.Documents do
         cost_invoice.currency
       )
     )
-  end
-
-  def get_blob_by_checksum!(blob_checksum) do
-    Blob
-    |> where([b], b.blob_checksum == ^blob_checksum)
-    |> Repo.one()
-    |> Repo.preload(:cost_invoice)
   end
 
   def delete_cost_invoice(cost_invoice_id) do
@@ -159,7 +148,7 @@ defmodule Firmowid.Documents do
     organization_id = cost_invoice.organization_id
 
     blob_id = cost_invoice.blob_id
-    delete_blob(blob_id, cost_invoice.organization_id)
+    Blobs.delete_blob(blob_id, cost_invoice.organization_id)
 
     broadcast_cost_invoice_list_updated(organization_id)
   end
@@ -179,7 +168,7 @@ defmodule Firmowid.Documents do
 
   def upload_cost_invoice(upload_path, content_type, original_filename) do
     Repo.transaction(fn ->
-      case create_blob(upload_path, content_type, original_filename) do
+      case Blobs.create_blob(upload_path, content_type, original_filename) do
         {:ok, blob} ->
           %{
             name: "extract_cost_invoice_metadata",
@@ -207,27 +196,6 @@ defmodule Firmowid.Documents do
     end)
   end
 
-  def get_blob!(id, organization_id) do
-    Blob
-    |> Repo.get!(id, organization_id: organization_id)
-  end
-
-  def delete_blob(id, organization_id) do
-    blob =
-      Blob
-      |> Repo.get!(id, organization_id: organization_id)
-
-    S3.delete_object(
-      Application.get_env(:firmowid, :uploads_bucket),
-      blob.blob_path,
-      version_id: nil
-    )
-    |> ExAws.request!()
-
-    blob
-    |> Repo.delete!()
-  end
-
   def create_cost_invoice(extracted_metadata) do
     # allow worker to insert the invoice
     organization_id = Map.get(extracted_metadata, "organization_id", Repo.get_org_id())
@@ -238,103 +206,6 @@ defmodule Firmowid.Documents do
       |> Firmowid.Repo.insert!(organization_id: organization_id)
 
     broadcast_cost_invoice_added(cost_invoice)
-  end
-
-  def create_blob(upload_path, content_type, original_filename) do
-    organization_id = Repo.get_org_id()
-    possible_extensions = MIME.extensions(content_type)
-    extension = Enum.at(possible_extensions, 0, "pdf")
-    upload_path = preprocess_blob(upload_path, extension)
-
-    blob_id = UUIDv7.autogenerate()
-
-    blob_checksum =
-      File.stream!(upload_path, [], 2_048)
-      |> Enum.reduce(:crypto.hash_init(:sha256), &:crypto.hash_update(&2, &1))
-      |> :crypto.hash_final()
-      |> Base.encode16()
-      |> String.downcase()
-
-    blob_path = "#{organization_id}/#{Path.basename("#{blob_id}.#{extension}")}"
-
-    upload_path
-    |> S3.Upload.stream_file()
-    |> S3.upload(
-      Application.get_env(:firmowid, :uploads_bucket),
-      blob_path
-    )
-    |> ExAws.request!()
-
-    %Blob{}
-    |> Blob.changeset(%{
-      id: blob_id,
-      blob_path: blob_path,
-      blob_checksum: blob_checksum,
-      original_filename: original_filename,
-      organization_id: organization_id
-    })
-    |> Repo.insert()
-  end
-
-  def get_blob_url(id, organization_id) do
-    blob =
-      if organization_id == :skip_organization_id do
-        Repo.get!(Blob, id, skip_organization_id: true)
-      else
-        Repo.get!(Blob, id, organization_id: organization_id)
-      end
-
-    {:ok, url} =
-      :s3
-      |> ExAws.Config.new([])
-      |> S3.presigned_url(
-        :get,
-        Application.get_env(:firmowid, :uploads_bucket),
-        blob.blob_path,
-        expires_in: 200
-      )
-
-    url
-  end
-
-  def preprocess_blob(path, "pdf"), do: path
-
-  # we only allow pdf and image/* in the upload
-  def preprocess_blob(path, image_extension), do: shrink_image(path, image_extension)
-
-  def shrink_image(image_path, image_extension) do
-    with {:ok, path} <- Briefly.create(),
-         image = Image.open!(image_path) do
-      width = Image.width(image)
-      height = Image.height(image)
-
-      # Calculate scale while preventing division by zero
-      scale =
-        cond do
-          width == 0 or height == 0 -> 1.0
-          width > height -> min(1.0, 1000 / width)
-          true -> min(1.0, 1000 / height)
-        end
-
-      # Only resize if the image is larger than 1000px
-      resized_image =
-        if scale < 1.0 do
-          Image.resize!(image, scale)
-        else
-          image
-        end
-
-      # Convert stream to binary data before writing
-      binary_data =
-        resized_image
-        |> Image.stream!(suffix: ".#{image_extension}")
-        |> Enum.to_list()
-        |> IO.iodata_to_binary()
-
-      File.write!(path, binary_data)
-
-      path
-    end
   end
 
   def create_cost_invoices_transactions_connection(

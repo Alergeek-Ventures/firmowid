@@ -5,6 +5,7 @@ defmodule Firmowid.Accounts do
 
   import Ecto.Query, warn: false
   alias Firmowid.Repo
+  alias Firmowid.Blobs
 
   alias Firmowid.Accounts.{User, UserToken, UserNotifier, Organization}
 
@@ -446,6 +447,31 @@ defmodule Firmowid.Accounts do
     |> Repo.update(skip_organization_id: true)
   end
 
+  def update_organization_avatar(%Organization{} = organization, blob_id) do
+    with {:ok, _new_organization} = result <-
+           update_organization(organization, %{avatar_blob_id: blob_id}) do
+      if organization.avatar_blob_id do
+        Blobs.delete_blob(organization.avatar_blob_id)
+      end
+
+      result
+    else
+      err -> err
+    end
+  end
+
+  def get_organization_with_avatar(%Organization{} = organization) do
+    organization = organization |> Repo.preload(:avatar_blob)
+
+    avatar_url =
+      case organization.avatar_blob do
+        nil -> nil
+        blob -> Blobs.get_blob_url(blob.id)
+      end
+
+    organization |> Map.put(:avatar_url, avatar_url)
+  end
+
   alias Firmowid.Accounts.OrganizationInvites
 
   @doc """
@@ -615,22 +641,32 @@ defmodule Firmowid.Accounts do
     User.delete_account_changeset(user, attrs)
   end
 
-  @doc """
-  Updates the user's marketing consent.
-
-  ## Examples
-
-      iex> update_marketing_consent(user, true)
-      {:ok, %User{}}
-
-
-      iex> update_marketing_consent(user, false)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_marketing_consent(%User{} = user, consent) do
+  def update_user(%User{} = user, attrs) do
     user
-    |> Ecto.Changeset.change(marketing_consent: consent)
+    |> User.update_changeset(attrs)
     |> Repo.update()
+  end
+
+  def update_user_avatar(%User{} = user, blob_id) do
+    with {:ok, _new_user} = result <-
+           update_user(user, %{avatar_blob_id: blob_id}) do
+      if user.avatar_blob_id do
+        Blobs.delete_blob(user.avatar_blob_id)
+      end
+
+      result
+    else
+      err -> err
+    end
+  end
+
+  def get_user_with_avatar(%User{} = user) do
+    avatar_url =
+      case user.avatar_blob_id do
+        nil -> nil
+        blob_id -> Blobs.get_blob_url(blob_id)
+      end
+
+    user |> Map.put(:avatar_url, avatar_url)
   end
 end

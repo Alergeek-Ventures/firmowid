@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.DocumentsLive.Index do
+  alias Firmowid.Blobs
   use FirmowidWeb, :live_view
 
   alias Firmowid.Documents
@@ -130,7 +131,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
       consume_uploaded_entry(socket, entry, fn %{path: path} ->
         case Documents.upload_cost_invoice(path, entry.client_type, entry.client_name) do
           {:error, {:blob_already_exists, blob_checksum}} ->
-            blob = Documents.get_blob_by_checksum!(blob_checksum)
+            blob = Blobs.get_blob_by_checksum!(blob_checksum)
             cost_invoice = blob.cost_invoice
 
             LiveToast.send_toast(

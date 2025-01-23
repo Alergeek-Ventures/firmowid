@@ -2,7 +2,6 @@ defmodule Firmowid.Accounts.User do
   use Firmowid.Schema
   import Ecto.Changeset
 
-  @primary_key {:id, UUIDv7, autogenerate: true}
   schema "users" do
     field :system_role, :string, default: "user"
     field :email, :string
@@ -11,6 +10,8 @@ defmodule Firmowid.Accounts.User do
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
     field :marketing_consent, :boolean, default: false
+
+    belongs_to :avatar_blob, Firmowid.Documents.Blob
     belongs_to :organization, Firmowid.Accounts.Organization
 
     timestamps(type: :utc_datetime)
@@ -174,5 +175,10 @@ defmodule Firmowid.Accounts.User do
     else
       add_error(changeset, :current_password, "is not valid")
     end
+  end
+
+  def update_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:marketing_consent, :system_role, :avatar_blob_id])
   end
 end

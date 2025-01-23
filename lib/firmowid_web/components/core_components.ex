@@ -131,7 +131,7 @@ defmodule FirmowidWeb.CoreComponents do
   end
 
   def button_styles() do
-    button_styles()
+    button_styles(%{})
   end
 
   def button_styles(assigns) do
@@ -438,6 +438,54 @@ defmodule FirmowidWeb.CoreComponents do
         {render_slot(@inner_block)}
       </div>
     </div>
+    """
+  end
+
+  attr :class, :string, default: nil
+  attr :rest, :global
+  slot :inner_block, required: true
+
+  def avatar(assigns) do
+    ~H"""
+    <div class={classes(["relative size-20 overflow-hidden rounded-full", @class])} {@rest}>
+      {render_slot(@inner_block)}
+    </div>
+    """
+  end
+
+  attr :class, :string, default: nil
+  attr :src, :string
+  attr :rest, :global
+
+  def avatar_image(assigns) do
+    ~H"""
+    <img
+      class={classes(["aspect-square h-full w-full", @class])}
+      src={@src}
+      {@rest}
+      style="display:none"
+      onload="this.style.display=''"
+    />
+    """
+  end
+
+  attr :class, :string, default: nil
+  attr :rest, :global
+  slot :inner_block, required: false
+
+  def avatar_fallback(assigns) do
+    ~H"""
+    <span
+      class={
+        classes([
+          "flex h-full w-full items-center justify-center rounded-full bg-lightGreyBg",
+          @class
+        ])
+      }
+      {@rest}
+    >
+      {render_slot(@inner_block)}
+    </span>
     """
   end
 

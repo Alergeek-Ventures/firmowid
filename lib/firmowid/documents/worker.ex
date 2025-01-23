@@ -1,6 +1,8 @@
 defmodule Firmowid.Documents.Worker do
   require Logger
 
+  alias Firmowid.Blobs
+
   use Oban.Worker,
     queue: :documents,
     unique: true,
@@ -27,8 +29,8 @@ defmodule Firmowid.Documents.Worker do
             )
 
             # on failure, clean up dangling blob from DB and S3
-            blob = Documents.get_blob!(blob_id, organization_id)
-            Documents.delete_blob(blob_id, organization_id)
+            blob = Blobs.get_blob!(blob_id, organization_id)
+            Blobs.delete_blob(blob_id, organization_id)
 
             Documents.broadcast_cost_invoice_failed_to_process(
               blob.original_filename,
@@ -46,7 +48,7 @@ defmodule Firmowid.Documents.Worker do
   end
 
   defp extract_cost_invoice_metadata(blob_id, organization_id) do
-    blob_url = Documents.get_blob_url(blob_id, :skip_organization_id)
+    blob_url = Blobs.get_blob_url(blob_id, :skip_organization_id)
 
     {:ok, extracted_metadata} =
       ReductoApiClient.extract(

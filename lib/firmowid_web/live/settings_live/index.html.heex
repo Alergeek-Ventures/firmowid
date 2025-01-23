@@ -1,28 +1,73 @@
 <div class="container mt-16">
-  <h1 class="text-2xl">Cześć!</h1>
-  <p>{@current_user.email}</p>
+  <div class="flex gap-16">
+    <div class="flex-1 self-end">
+      <div class="flex gap-4 items-center">
+        <form class="relative" phx-submit="upload" phx-change="upload">
+          <div class="hidden">
+            <.live_file_input upload={@uploads.user_avatar} />
+          </div>
+          <.avatar class="size-28">
+            <.avatar_image src={@current_user.avatar_url} alt="Avatar" />
+            <.avatar_fallback>
+              {String.slice(@current_user.email, 0, 1) |> String.upcase()}
+            </.avatar_fallback>
+          </.avatar>
+          <.edit_button
+            tag_name="label"
+            for={@uploads.user_avatar.ref}
+            class="absolute right-0 bottom-0 rounded-full"
+          />
+        </form>
+        <div>
+          <h1 class="text-2xl">Cześć!</h1>
+          <p>{@current_user.email}</p>
+        </div>
+      </div>
+      <div class="flex gap-10 font-semibold mt-16">
+        <%= for {tab, label} <- [
+            {"company", "Twoja firma"},
+            {"account", "Twoje konto"},
+            {"bank_accounts", "Konta bankowe"},
+            {"address_book", "Książka adresowa"}
+          ] do %>
+          <.link
+            patch={~p"/settings?tab=#{tab}"}
+            class={
+              classes([
+                @tab == tab && "text-orangeText",
+                "phx-click-loading:opacity-50"
+              ])
+            }
+          >
+            {label}
+          </.link>
+        <% end %>
+      </div>
+      <hr class="border-t border-t-greyButtonBg mt-4" />
+    </div>
 
-  <div class="flex gap-10 font-semibold mt-16">
-    <%= for {tab, label} <- [
-      {"company", "Twoja firma"},
-      {"account", "Twoje konto"},
-      {"bank_accounts", "Konta bankowe"},
-      {"address_book", "Książka adresowa"}
-    ] do %>
-      <.link
-        patch={~p"/settings?tab=#{tab}"}
-        class={
-          classes([
-            @tab == tab && "text-orangeText",
-            "phx-click-loading:opacity-50"
-          ])
-        }
-      >
-        {label}
-      </.link>
-    <% end %>
+    <div class="min-w-fit flex gap-3 flex-col">
+      <div class="flex gap-1 items-center">
+        <p class="font-bold text-base">Logo firmy</p>
+        <form id="upload-form" phx-submit="upload" phx-change="upload">
+          <div class="hidden">
+            <.live_file_input upload={@uploads.user_avatar} />
+          </div>
+          <.edit_button
+            tag_name="label"
+            for={@uploads.organization_avatar.ref}
+            class="cursor-pointer"
+          />
+        </form>
+      </div>
+      <.avatar class="rounded-none size-36">
+        <.avatar_image src={@current_org.avatar_url} alt="Logo firmy" />
+        <.avatar_fallback class="rounded-none">
+          CN
+        </.avatar_fallback>
+      </.avatar>
+    </div>
   </div>
-  <hr class="border-t border-t-greyButtonBg mt-4" />
 
   <%= case @tab do %>
     <% "company" -> %>
