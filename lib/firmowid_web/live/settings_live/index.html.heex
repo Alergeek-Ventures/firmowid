@@ -27,8 +27,7 @@
         <%= for {tab, label} <- [
             {"company", "Twoja firma"},
             {"account", "Twoje konto"},
-            {"bank_accounts", "Konta bankowe"},
-            {"address_book", "Książka adresowa"}
+            {"bank_accounts", "Konta bankowe"}
           ] do %>
           <.link
             patch={~p"/settings?tab=#{tab}"}
@@ -431,11 +430,6 @@
             </div>
           </div>
         <% end %>
-      </div>
-    <% "address_book" -> %>
-      <div class="mt-6">
-        <h2 class="font-bold">Książka adresowa</h2>
-        <p class="mt-4">Ta funkcja nie jest jeszcze dostępna.</p>
       </div>
   <% end %>
 </div>

@@ -56,7 +56,7 @@ defmodule Firmowid.Documents do
     |> Repo.preload(:blob)
   end
 
-  def get_processing_blobs_count() do
+  def get_processing_cost_invoices_count() do
     Oban.Job
     |> where(
       [j],

@@ -323,7 +323,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     socket
     |> assign(
       :processing_blobs_count,
-      Documents.get_processing_blobs_count()
+      Documents.get_processing_cost_invoices_count()
     )
     |> assign(
       :currently_uploading_count,
