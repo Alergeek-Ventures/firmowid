@@ -113,8 +113,10 @@ defmodule Firmowid.BankData do
   end
 
   def list_bank_accounts() do
-    Finances.BankAccount
-    |> Repo.all()
+    Repo.all(
+      from b in Finances.BankAccount,
+        order_by: [b.inserted_at, b.id]
+    )
     |> Repo.preload(:requisition)
   end
 
