@@ -322,11 +322,11 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
           SalesInvoices.update_sales_invoice(socket_sales_invoice, sales_invoice)
       end
       |> case do
-        {:ok, db_sales_invoice} ->
+        {:ok, new_invoice} ->
           socket
-          |> push_patch(to: "/sales_invoices/#{db_sales_invoice.id}")
-          |> assign(sales_invoice_id: db_sales_invoice.id)
-          |> assign(sales_invoice: db_sales_invoice)
+          |> push_patch(to: "/sales_invoices/#{new_invoice.id}")
+          |> assign(sales_invoice_id: new_invoice.id)
+          |> assign(sales_invoice: SalesInvoices.get_sales_invoice(new_invoice.id))
           |> assign_currency()
 
         {:error, changeset} ->

@@ -87,8 +87,9 @@ defmodule FirmowidWeb.SettingsLive.Index do
     {:ok, updated} = Accounts.update_organization_avatar(socket.assigns.current_org, blob_id)
 
     LiveToast.send_toast(:info, "Zdjęcie zostało zaktualizowane.")
+    new_socket = socket |> assign(:current_org, Accounts.get_organization_with_avatar(updated))
 
-    {:noreply, socket |> assign(:current_org, Accounts.get_organization_with_avatar(updated))}
+    {:noreply, new_socket}
   end
 
   defp handle_progress(name, entry, socket) when name in [:organization_avatar, :user_avatar] do

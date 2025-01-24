@@ -71,16 +71,15 @@ defmodule Firmowid.Blobs do
       |> Repo.get!(id, organization_id: organization_id)
 
     S3.delete_object(
-      Application.get_env(:firmowid, :uploads_bucket),
-      blob.blob_path,
-      version_id: nil
+      to_string(Application.get_env(:firmowid, :uploads_bucket)),
+      to_string(blob.blob_path)
     )
     |> ExAws.request!()
 
-    blob
-    |> Repo.delete!()
+    blob |> Repo.delete!()
   end
 
+  @spec get_blob_url(any()) :: <<_::64, _::_*8>>
   def get_blob_url(id) do
     get_blob_url(id, Repo.get_org_id())
   end

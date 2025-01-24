@@ -63,7 +63,7 @@
       <.avatar class="rounded-none size-36">
         <.avatar_image src={@current_org.avatar_url} alt="Logo firmy" />
         <.avatar_fallback class="rounded-none">
-          CN
+          {String.slice(@current_org.name, 0, 1) |> String.upcase()}
         </.avatar_fallback>
       </.avatar>
     </div>

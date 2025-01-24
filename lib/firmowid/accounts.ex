@@ -448,25 +448,25 @@ defmodule Firmowid.Accounts do
   end
 
   def update_organization_avatar(%Organization{} = organization, blob_id) do
-    with {:ok, _new_organization} = result <-
-           update_organization(organization, %{avatar_blob_id: blob_id}) do
-      if organization.avatar_blob_id do
-        Blobs.delete_blob(organization.avatar_blob_id)
-      end
+    {:ok, result} =
+      Repo.transaction(fn ->
+        {:ok, new_org} = update_organization(organization, %{avatar_blob_id: blob_id})
 
-      result
-    else
-      err -> err
-    end
+        if organization.avatar_blob_id do
+          Blobs.delete_blob(organization.avatar_blob_id)
+        end
+
+        {:ok, new_org}
+      end)
+
+    result
   end
 
   def get_organization_with_avatar(%Organization{} = organization) do
-    organization = organization |> Repo.preload(:avatar_blob)
-
     avatar_url =
-      case organization.avatar_blob do
+      case organization.avatar_blob_id do
         nil -> nil
-        blob -> Blobs.get_blob_url(blob.id)
+        id -> Blobs.get_blob_url(id)
       end
 
     organization |> Map.put(:avatar_url, avatar_url)
@@ -648,16 +648,18 @@ defmodule Firmowid.Accounts do
   end
 
   def update_user_avatar(%User{} = user, blob_id) do
-    with {:ok, _new_user} = result <-
-           update_user(user, %{avatar_blob_id: blob_id}) do
-      if user.avatar_blob_id do
-        Blobs.delete_blob(user.avatar_blob_id)
-      end
+    {:ok, result} =
+      Repo.transaction(fn ->
+        {:ok, _new_user} = result = update_user(user, %{avatar_blob_id: blob_id})
 
-      result
-    else
-      err -> err
-    end
+        if user.avatar_blob_id do
+          Blobs.delete_blob(user.avatar_blob_id)
+        end
+
+        result
+      end)
+
+    result
   end
 
   def get_user_with_avatar(%User{} = user) do

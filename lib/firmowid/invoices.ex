@@ -12,6 +12,8 @@ defmodule Firmowid.SalesInvoices do
     end
   end
 
+  def populate_logo_url(nil), do: nil
+
   def list_sales_invoices do
     Repo.all(SalesInvoice)
   end
