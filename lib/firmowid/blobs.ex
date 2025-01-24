@@ -49,13 +49,6 @@ defmodule Firmowid.Blobs do
     |> Repo.insert()
   end
 
-  def get_blob_by_checksum!(blob_checksum) do
-    Blob
-    |> where([b], b.blob_checksum == ^blob_checksum)
-    |> Repo.one()
-    |> Repo.preload(:cost_invoice)
-  end
-
   def get_blob!(id, organization_id) do
     Blob
     |> Repo.get!(id, organization_id: organization_id)

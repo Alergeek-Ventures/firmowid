@@ -1,8 +1,9 @@
 defmodule Firmowid.Documents do
-  import Ecto.Query, only: [where: 3, order_by: 2]
+  import Ecto.Query, warn: false
 
   require Logger
 
+  alias Firmowid.Documents.Blob
   alias MIME
 
   alias Firmowid.Repo
@@ -43,6 +44,16 @@ defmodule Firmowid.Documents do
       "#{@cost_invoice_broadcast_topic}:#{organization_id}",
       {:cost_invoice_failed_to_process, original_filename}
     )
+  end
+
+  def get_cost_invoice_by_checksum!(blob_checksum) do
+    from(c in CostInvoice,
+      join: b in Blob,
+      on: b.id == c.blob_id,
+      where: b.blob_checksum == ^blob_checksum
+    )
+    |> Repo.one()
+    |> Repo.preload(:blob)
   end
 
   def get_processing_blobs_count() do
