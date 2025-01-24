@@ -62,8 +62,8 @@ defmodule FirmowidWeb.SettingsLive.Index do
        auto_upload: true,
        progress: &handle_progress/3
      )
-      |> assign(:current_user, Accounts.get_user_with_avatar(socket.assigns.current_user))
-      |> assign(:current_org, Accounts.get_organization_with_avatar(socket.assigns.current_org))
+     |> assign(:current_user, Accounts.get_user_with_avatar(socket.assigns.current_user))
+     |> assign(:current_org, Accounts.get_organization_with_avatar(socket.assigns.current_org))
      |> assign(:main_class, "bg-white")}
   end
 

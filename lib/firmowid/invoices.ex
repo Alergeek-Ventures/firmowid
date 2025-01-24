@@ -1,8 +1,16 @@
 defmodule Firmowid.SalesInvoices do
   import Ecto.Query, warn: false
+  alias Firmowid.Accounts
   alias Firmowid.Repo
 
   alias Firmowid.SalesInvoices.SalesInvoice
+
+  def populate_logo_url(%SalesInvoice{} = sales_invoice) do
+    with loaded_invoice <- Repo.preload(sales_invoice, :organization, skip_organization_id: true),
+         organization <- Accounts.get_organization_with_avatar(loaded_invoice.organization) do
+      Map.put(loaded_invoice, :logo_url, organization.avatar_url)
+    end
+  end
 
   def list_sales_invoices do
     Repo.all(SalesInvoice)
@@ -11,6 +19,7 @@ defmodule Firmowid.SalesInvoices do
   def get_sales_invoice(id) do
     Repo.get(SalesInvoice, id)
     |> Repo.preload(:sales_invoice_items)
+    |> populate_logo_url()
   end
 
   def get_latest_sales_invoice() do
@@ -19,6 +28,7 @@ defmodule Firmowid.SalesInvoices do
     |> limit(1)
     |> Repo.one()
     |> Repo.preload(:sales_invoice_items)
+    |> populate_logo_url()
   end
 
   def create_sales_invoice(%SalesInvoice{} = invoice, attrs) do

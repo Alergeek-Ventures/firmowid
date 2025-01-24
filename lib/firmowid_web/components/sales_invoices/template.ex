@@ -47,7 +47,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
               Metoda kasowa
             <% end %>
           </div>
-          <img src="/images/av_logo.png" class="w-8 h-8" />
+          <img src={@sales_invoice.logo_url} class="w-8 h-8" />
         </div>
       </div>
     </div>

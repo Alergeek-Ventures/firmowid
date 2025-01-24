@@ -223,16 +223,18 @@ defmodule Firmowid.BankDataTest do
     %{organization_id: organization_id} = user_fixture()
 
     {:ok, req1} =
-      Repo.insert(%Requisition{
+      %Requisition{
         status: :accepted,
         organization_id: organization_id
-      })
+      }
+      |> Repo.insert()
 
     {:ok, req2} =
-      Repo.insert(%Requisition{
+      %Requisition{
         status: :accepted,
         organization_id: organization_id
-      })
+      }
+      |> Repo.insert()
 
     Finances.create_bank_account(%{
       iban: "PL12345678901234567890123456",
