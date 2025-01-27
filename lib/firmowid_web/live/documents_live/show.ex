@@ -2,23 +2,17 @@ defmodule FirmowidWeb.DocumentsLive.Show do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Documents
-  alias Firmowid.InvoiceMatcher
+  alias Firmowid.Invoicing
 
   @impl true
   def mount(params, _session, socket) do
-    user = socket.assigns.current_user
-    organization_id = user.organization_id
-
-    cost_invoice_id = params["id"]
-
-    cost_invoice = Documents.get_cost_invoice!(cost_invoice_id)
+    cost_invoice = Documents.get_cost_invoice!(params["id"])
 
     potential_transactions =
       if cost_invoice.transactions == [] do
         potential_transactions =
-          InvoiceMatcher.get_potential_transactions_for_cost_invoice(
+          Invoicing.get_potential_transactions_for_cost_invoice(
             cost_invoice,
-            organization_id,
             similarity_threshold: 0.0,
             days_before: 15,
             days_after: 10,
@@ -34,7 +28,7 @@ defmodule FirmowidWeb.DocumentsLive.Show do
             })
           end)
 
-        InvoiceMatcher.llm_re_grade_matches(
+        Invoicing.llm_re_grade_matches(
           cost_invoice,
           potential_transactions
         )
@@ -50,7 +44,7 @@ defmodule FirmowidWeb.DocumentsLive.Show do
       if cost_invoice.transactions == [] and
            (potential_transactions == [] or
               not is_llm_certain) do
-        InvoiceMatcher.match_with_transaction_combo(cost_invoice, organization_id)
+        Invoicing.match_with_transaction_combo(cost_invoice)
       else
         []
       end
@@ -160,9 +154,8 @@ defmodule FirmowidWeb.DocumentsLive.Show do
     cost_invoice = Documents.get_cost_invoice!(cost_invoice_id)
 
     potential_transactions =
-      InvoiceMatcher.get_potential_transactions_for_cost_invoice(
+      Invoicing.get_potential_transactions_for_cost_invoice(
         cost_invoice,
-        organization_id,
         similarity_threshold: 0.0,
         days_before: 15,
         days_after: 10,
@@ -179,7 +172,7 @@ defmodule FirmowidWeb.DocumentsLive.Show do
       end)
 
     potential_transactions =
-      InvoiceMatcher.llm_re_grade_matches(
+      Invoicing.llm_re_grade_matches(
         cost_invoice,
         potential_transactions
       )
@@ -217,9 +210,8 @@ defmodule FirmowidWeb.DocumentsLive.Show do
     cost_invoice = Documents.get_cost_invoice!(cost_invoice_id)
 
     potential_transactions =
-      InvoiceMatcher.get_potential_transactions_for_cost_invoice(
+      Invoicing.get_potential_transactions_for_cost_invoice(
         cost_invoice,
-        organization_id,
         similarity_threshold: 0.0,
         days_before: 15,
         days_after: 10,
@@ -236,7 +228,7 @@ defmodule FirmowidWeb.DocumentsLive.Show do
       end)
 
     potential_transactions =
-      InvoiceMatcher.llm_re_grade_matches(
+      Invoicing.llm_re_grade_matches(
         cost_invoice,
         potential_transactions
       )
@@ -245,7 +237,7 @@ defmodule FirmowidWeb.DocumentsLive.Show do
 
     grouped_potential_transactions =
       if cost_invoice.transactions == [] and potential_transactions == [] do
-        InvoiceMatcher.match_with_transaction_combo(cost_invoice, organization_id)
+        Invoicing.match_with_transaction_combo(cost_invoice)
       else
         []
       end

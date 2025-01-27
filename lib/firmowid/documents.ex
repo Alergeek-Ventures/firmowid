@@ -67,30 +67,18 @@ defmodule Firmowid.Documents do
   end
 
   def list_cost_invoices(
-        from \\ Date.utc_today(),
-        to \\ Date.utc_today()
+        from,
+        to
       ) do
-    CostInvoice
-    |> where(
-      [d],
-      (d.issue_date >= ^from and d.issue_date <= ^to) or
-        (d.due_date >= ^from and d.due_date <= ^to) or
-        (d.sale_date >= ^from and d.sale_date <= ^to)
-    )
-    |> order_by(desc: :issue_date)
+    query =
+      from i in CostInvoice,
+        left_join: t in assoc(i, :transactions),
+        where: i.issue_date >= ^from,
+        where: i.issue_date <= ^to,
+        order_by: [desc: i.issue_date]
+
+    query
     |> Repo.all()
-    |> Repo.preload(:transactions)
-    |> Enum.map(&Map.put(&1, :file_url, Blobs.get_blob_url(&1.blob_id, Repo.get_org_id())))
-    |> Enum.map(
-      &Map.put(
-        &1,
-        :amount,
-        Money.new(
-          &1.total_amount,
-          &1.currency
-        )
-      )
-    )
   end
 
   def list_invoices_issued_in_date_range(from, to) do
@@ -110,25 +98,33 @@ defmodule Firmowid.Documents do
       raise "Organization id is not set"
     end
 
-    list_unmatched_cost_invoices(organization_id)
+    list_unmatched_cost_invoices(~D[1970-01-01], ~D[2100-01-01], organization_id)
   end
 
-  def list_unmatched_cost_invoices(organization_id) do
-    CostInvoice
-    |> where([d], is_nil(d.blob_id))
+  def list_unmatched_cost_invoices(from, to) do
+    organization_id = Repo.get_org_id()
+
+    if is_nil(organization_id) do
+      raise "Organization id is not set"
+    end
+
+    list_unmatched_cost_invoices(from, to, organization_id)
+  end
+
+  def list_unmatched_cost_invoices(from, to, organization_id) do
+    query =
+      from i in CostInvoice,
+        left_join: t in assoc(i, :transactions),
+        where: is_nil(t.id),
+        where: i.skip_invoicing == false,
+        where:
+          (i.issue_date >= ^from and i.issue_date <= ^to) or
+            (i.due_date >= ^from and i.due_date <= ^to),
+        order_by: [desc: i.issue_date]
+
+    query
     |> Repo.all(organization_id: organization_id)
     |> Repo.preload(:transactions)
-    |> Enum.map(&Map.put(&1, :file_url, Blobs.get_blob_url(&1.id, organization_id)))
-    |> Enum.map(
-      &Map.put(
-        &1,
-        :amount,
-        Money.new(
-          &1.total_amount,
-          &1.currency
-        )
-      )
-    )
   end
 
   def get_cost_invoice!(cost_invoice_id) do

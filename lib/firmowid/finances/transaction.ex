@@ -28,6 +28,10 @@ defmodule Firmowid.Finances.Transaction do
                  Documents.CostInvoice,
                  join_through: Documents.CostInvoicesTransactions
 
+    many_to_many :sales_invoices_transactions,
+                 Firmowid.SalesInvoices.SalesInvoice,
+                 join_through: "sales_invoices_transactions"
+
     belongs_to :organization, Firmowid.Accounts.Organization
 
     timestamps(type: :utc_datetime)

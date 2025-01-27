@@ -28,7 +28,7 @@
   </div>
 
   <div phx-drop-target={@uploads.file.ref} class="flex flex-row gap-4">
-    <%= if @invoice_matchers != [] do %>
+    <%= if @invoicing_entries != [] do %>
       <a
         id="download-button"
         data-tippy-content="Pobierz wszystkie faktury wystawione w tym miesiącu"
@@ -153,13 +153,13 @@
     phx-hook="confetti"
     data-confetti-enabled={if @is_month_closed, do: "true", else: "false"}
   >
-    <%= if @pending_invoice_matchers_count != 0 do %>
+    <%= if @pending_invoicing_entries_count != 0 do %>
       <span class={[
         "absolute overflow-hidden flex items-center justify-center",
         "-top-3 -right-4 h-7 px-2 rounded-full",
         "bg-orangeBg text-orangeText border-lightGreyBg border-2"
       ]}>
-        {@pending_invoice_matchers_count}
+        {@pending_invoicing_entries_count}
       </span>
     <% end %>
     <%= if @is_month_closed do %>
@@ -179,7 +179,7 @@
     />
   <% else %>
     <FirmowidWeb.DocumentsLive.DocumentsTable.table
-      invoice_matchers={@invoice_matchers}
+      invoicing_entries={@invoicing_entries}
       has_connected_bank_account={@has_connected_bank_account}
     />
   <% end %>

@@ -18,6 +18,35 @@ defmodule Firmowid.SalesInvoices do
     Repo.all(SalesInvoice)
   end
 
+  def list_unmatched_sales_invoices(from, to) do
+    query =
+      from si in SalesInvoice,
+        left_join: sit in assoc(si, :sales_invoices_transactions),
+        where: is_nil(sit.id),
+        where: si.issue_date >= ^from,
+        where: si.due_date <= ^to,
+        order_by: [desc: :issue_date]
+
+    query
+    |> Repo.all()
+    |> Repo.preload(:sales_invoice_items)
+    |> Repo.preload(:buyer)
+  end
+
+  def list_sales_invoices(from, to) do
+    SalesInvoice
+    |> where(
+      [d],
+      (d.issue_date >= ^from and d.issue_date <= ^to) or
+        (d.due_date >= ^from and d.due_date <= ^to) or
+        (d.sale_date >= ^from and d.sale_date <= ^to)
+    )
+    |> order_by(desc: :issue_date)
+    |> Repo.all()
+    |> Repo.preload(:sales_invoice_items)
+    |> Repo.preload(:buyer)
+  end
+
   def get_sales_invoice(id) do
     Repo.get(SalesInvoice, id)
     |> Repo.preload(:sales_invoice_items)

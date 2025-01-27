@@ -1,6 +1,5 @@
 defmodule Firmowid.Blobs do
   require Logger
-  import Ecto.Query, only: [where: 3]
 
   alias ExAws.S3
   alias MIME

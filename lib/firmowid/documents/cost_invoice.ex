@@ -22,11 +22,7 @@ defmodule Firmowid.Documents.CostInvoice do
 
     many_to_many :transactions,
                  Firmowid.Finances.Transaction,
-                 join_through: "cost_invoices_transactions",
-                 join_keys: [
-                   cost_invoice_id: :id,
-                   transaction_id: :id
-                 ]
+                 join_through: "cost_invoices_transactions"
 
     belongs_to :organization, Firmowid.Accounts.Organization
 

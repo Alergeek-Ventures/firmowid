@@ -171,7 +171,7 @@ defmodule Firmowid.BankData.ApiClient do
       |> Map.get("transactions")
       |> Map.get("booked")
     else
-      {:error, error} -> {:error, error}
+      error -> error
     end
   end
 

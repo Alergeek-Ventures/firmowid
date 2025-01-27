@@ -50,7 +50,7 @@ defmodule FirmowidWeb.Router do
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
 
       live "/", DocumentsLive.Index, :index
-      live "/documents/:id", DocumentsLive.Show, :index
+      live "/cost_invoices/:id", DocumentsLive.Show, :index
       get "/file", FileController, :batch
 
       live "/organization_invites", OrganizationInvitesLive.Index, :index

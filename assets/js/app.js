@@ -188,9 +188,8 @@ let liveSocket = new LiveSocket("/live", Socket, {
                 canvas.width = viewport.width;
                 canvas.height = viewport.height;
                 canvas.style.width = `${container.clientWidth}px`;
-                canvas.style.height = `${
-                  container.clientWidth / aspectRatio
-                }px`;
+                canvas.style.height = `${container.clientWidth / aspectRatio
+                  }px`;
                 container.appendChild(canvas);
 
                 // Render the page into the canvas context
@@ -233,6 +232,8 @@ let liveSocket = new LiveSocket("/live", Socket, {
     AirDatepicker: {
       mounted() {
         this.picker = this.mountDatepicker();
+        // if you navigate to a different year - when opening the date picker, show that year, not the current one
+        this.picker.setViewDate(new Date(this.el.getAttribute("data-initial-date")));
       },
       updated() {
         if (!this.picker) {

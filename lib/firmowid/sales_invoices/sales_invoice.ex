@@ -47,6 +47,11 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     field :is_reverse_charge, :boolean, default: false
 
     has_many :sales_invoice_items, Firmowid.SalesInvoices.SalesInvoiceItem, on_replace: :delete
+
+    many_to_many :sales_invoices_transactions,
+                 Firmowid.Finances.Transaction,
+                 join_through: "sales_invoices_transactions"
+
     belongs_to :organization, Firmowid.Accounts.Organization
     belongs_to :buyer, Firmowid.SalesInvoices.Buyer
     belongs_to :seller, Firmowid.SalesInvoices.Seller

@@ -1,10 +1,9 @@
 defmodule FirmowidWeb.DocumentsLive.Index do
-  alias Firmowid.Blobs
   use FirmowidWeb, :live_view
 
   alias Firmowid.Documents
   alias Firmowid.Finances
-  alias Firmowid.InvoiceMatcher
+  alias Firmowid.Invoicing
   alias Firmowid.BankData
 
   @impl true
@@ -69,7 +68,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
           filter: filter
         }
       )
-      |> refetch_invoice_matchers()
+      |> refetch_invoicing_entries()
 
     {:noreply, socket}
   end
@@ -91,6 +90,94 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     socket =
       socket
       |> update_param(:filter, filter)
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("upload", _, socket) do
+    socket =
+      socket
+      |> refetch_upload_counts()
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("toggle-skip-invoicing", %{"id" => id, "type" => type}, socket) do
+    case type do
+      "cost_invoice" ->
+        Documents.toggle_skip_invoicing(
+          :cost_invoice,
+          id
+        )
+
+      "transaction" ->
+        Finances.toggle_skip_invoicing(
+          :transaction,
+          id
+        )
+
+      "sales_invoice" ->
+        dbg("sales")
+    end
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info(:transaction_list_updated, socket) do
+    socket =
+      socket
+      |> refetch_invoicing_entries()
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info(:cost_invoice_list_updated, socket) do
+    socket =
+      socket
+      |> refetch_invoicing_entries()
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:cost_invoice_failed_to_process, original_filename}, socket) do
+    LiveToast.send_toast(:error, original_filename, title: "Nie udało się wgrać pliku")
+
+    socket =
+      socket
+      |> refetch_invoicing_entries()
+
+    {:noreply, socket}
+  end
+
+  def handle_info(
+        {:cost_invoice_added, cost_invoice},
+        socket
+      ) do
+    socket = refetch_invoicing_entries(socket)
+
+    LiveToast.send_toast(
+      :success,
+      "#{cost_invoice.issue_date} / #{cost_invoice.seller_display_name}",
+      title: "Faktura załadowana",
+      action: fn assigns ->
+        assigns =
+          assigns
+          |> assign(
+            :issue_date,
+            cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601()
+          )
+
+        ~H"""
+        <.link class="text-sm text-bold underline" navigate={~p"/?month=#{@issue_date}&filter=invoices"}>
+          Wyświetl <.icon name="hero-arrow-right-solid" class="h-3 w-3" />
+        </.link>
+        """
+      end
+    )
 
     {:noreply, socket}
   end
@@ -168,95 +255,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     end
   end
 
-  @impl true
-  def handle_event("upload", _, socket) do
-    socket =
-      socket
-      |> refetch_upload_counts()
-
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event("toggle-skip-invoicing", %{"invoice-matcher" => invoice_matcher}, socket) do
-    case String.split(invoice_matcher, "|") do
-      [cost_invoice_id, ""] ->
-        Documents.toggle_skip_invoicing(
-          :cost_invoice,
-          cost_invoice_id
-        )
-
-      ["", transaction_id] ->
-        Finances.toggle_skip_invoicing(
-          :transaction,
-          transaction_id
-        )
-    end
-
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_info(:transaction_list_updated, socket) do
-    socket =
-      socket
-      |> refetch_invoice_matchers()
-
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_info(:cost_invoice_list_updated, socket) do
-    socket =
-      socket
-      |> refetch_invoice_matchers()
-
-    {:noreply, socket}
-  end
-
-  def handle_info({:cost_invoice_failed_to_process, original_filename}, socket) do
-    LiveToast.send_toast(:error, original_filename, title: "Nie udało się wgrać pliku")
-
-    socket =
-      socket
-      |> refetch_invoice_matchers()
-
-    {:noreply, socket}
-  end
-
-  def handle_info(
-        {:cost_invoice_added, cost_invoice},
-        socket
-      ) do
-    socket = refetch_invoice_matchers(socket)
-
-    LiveToast.send_toast(
-      :success,
-      "#{cost_invoice.issue_date} / #{cost_invoice.seller_display_name}",
-      title: "Faktura załadowana",
-      action: fn assigns ->
-        assigns =
-          assigns
-          |> assign(
-            :issue_date,
-            cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601()
-          )
-
-        ~H"""
-        <.link class="text-sm text-bold underline" navigate={~p"/?month=#{@issue_date}&filter=invoices"}>
-          Wyświetl <.icon name="hero-arrow-right-solid" class="h-3 w-3" />
-        </.link>
-        """
-      end
-    )
-
-    {:noreply, socket}
-  end
-
-  defp refetch_invoice_matchers(socket) do
-    user = socket.assigns.current_user
-    organization_id = user.organization_id
-
+  defp refetch_invoicing_entries(socket) do
     month = socket.assigns.params.month
     filter = socket.assigns.params.filter
     date_range_from = Date.beginning_of_month(month)
@@ -266,39 +265,39 @@ defmodule FirmowidWeb.DocumentsLive.Index do
       socket
       # actual data
       |> assign(
-        :invoice_matchers,
-        InvoiceMatcher.get_invoice_matchers(
-          organization_id,
+        :invoicing_entries,
+        Invoicing.get_invoicing_entries(
           date_range_from,
           date_range_to,
           filter
         )
       )
 
+    pending_invoicing_entries_count =
+      Invoicing.get_invoicing_entries(
+        date_range_from,
+        date_range_to,
+        :unmatched
+      )
+      |> Enum.count()
+
     # any transactions / invoices present in it
+    # nothing for this month was added yet
+    # leftovers from previous month need also not to be present
     is_month_touched =
-      InvoiceMatcher.get_invoice_matchers(
-        organization_id,
+      Invoicing.get_invoicing_entries(
         date_range_from,
         date_range_to,
         :all
       )
-      |> Enum.count() > 0
+      |> Enum.count() > 0 or
+        pending_invoicing_entries_count > 0
 
     # no new transactions can be added
     has_month_ended =
       socket.assigns.params.month
       |> Date.end_of_month()
       |> Date.compare(Date.utc_today()) == :lt
-
-    pending_invoice_matchers_count =
-      InvoiceMatcher.get_invoice_matchers(
-        organization_id,
-        date_range_from,
-        date_range_to,
-        :unmatched
-      )
-      |> Enum.count()
 
     socket =
       socket
@@ -308,11 +307,11 @@ defmodule FirmowidWeb.DocumentsLive.Index do
       )
       |> assign(
         :is_month_closed,
-        is_month_touched and has_month_ended and pending_invoice_matchers_count == 0
+        is_month_touched and has_month_ended and pending_invoicing_entries_count == 0
       )
       |> assign(
-        :pending_invoice_matchers_count,
-        pending_invoice_matchers_count
+        :pending_invoicing_entries_count,
+        pending_invoicing_entries_count
       )
       |> refetch_upload_counts()
 

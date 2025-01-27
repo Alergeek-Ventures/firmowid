@@ -1,6 +1,6 @@
 defmodule Firmowid.BankData do
   import Ecto.Query, warn: false
-  alias Firmowid.InvoiceMatcher
+  alias Firmowid.Invoicing
   alias Firmowid.Repo
 
   alias Firmowid.Finances
@@ -107,7 +107,7 @@ defmodule Firmowid.BankData do
     upsert_booked_transactions(booked_transactions, bank_account_id, bank_account.organization_id)
 
     # match added transactions
-    InvoiceMatcher.match_all_good_candidates_for_unconnected_cost_invoices(
+    Invoicing.match_all_good_candidates_for_unconnected_cost_invoices(
       bank_account.organization_id
     )
   end

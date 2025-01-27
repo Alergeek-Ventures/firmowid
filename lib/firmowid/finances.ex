@@ -41,8 +41,8 @@ defmodule Firmowid.Finances do
     |> Repo.preload(:requisition)
   end
 
-  def get_bank_account!(id, organization_id),
-    do: Repo.get!(BankAccount, id, organization_id: organization_id)
+  def get_bank_account!(id),
+    do: Repo.get!(BankAccount, id)
 
   def create_bank_account(attrs \\ %{}) do
     %BankAccount{}
@@ -82,7 +82,7 @@ defmodule Firmowid.Finances do
     |> Repo.delete()
   end
 
-  def list_transactions(organization_id, from \\ nil, to \\ nil, opts \\ []) do
+  def list_transactions(from \\ nil, to \\ nil, opts \\ []) do
     if Keyword.get(opts, :only_costs) == true do
       Repo.all(
         if from == nil and to == nil do
@@ -92,8 +92,7 @@ defmodule Firmowid.Finances do
             where:
               t.value_date >= ^from and t.value_date <= ^to and
                 t.transaction_amount < 0.0
-        end,
-        organization_id: organization_id
+        end
       )
     else
       Repo.all(
@@ -102,11 +101,10 @@ defmodule Firmowid.Finances do
         else
           from t in Transaction,
             where: t.value_date >= ^from and t.value_date <= ^to
-        end,
-        organization_id: organization_id
+        end
       )
     end
-    |> Repo.preload(:cost_invoices_transactions, organization_id: organization_id)
+    |> Repo.preload(:cost_invoices_transactions)
     |> Enum.map(fn t ->
       Map.merge(t, %{
         amount:
@@ -118,24 +116,25 @@ defmodule Firmowid.Finances do
     end)
   end
 
-  def list_unmatched_transactions(organization_id) do
-    # all transactions that have skip_invoicing set to false (so we match for
-    # them)
+  def list_unmatched_transactions(from, to) do
+    # all transactions that have skip_invoicing set to false
+    # (so we match for them)
     # and don't have any cost_invoices_transactions (so not matched yet)
     from(t in Transaction,
       left_join: dt in assoc(t, :cost_invoices_transactions),
-      where: t.transaction_amount <= 0.0,
       where: not t.skip_invoicing,
-      where: is_nil(dt.id)
+      where: is_nil(dt.id),
+      where: t.booking_date >= ^from and t.booking_date <= ^to,
+      order_by: [desc: t.booking_date]
     )
-    |> Repo.all(organization_id: organization_id)
+    |> Repo.all()
   end
 
-  def get_transaction!(organization_id, transaction_id) do
+  def get_transaction!(transaction_id) do
     transaction =
-      Repo.get!(Transaction, transaction_id, organization_id: organization_id)
-      |> Repo.preload(:bank_account, organization_id: organization_id)
-      |> Repo.preload(:cost_invoices_transactions, organization_id: organization_id)
+      Repo.get!(Transaction, transaction_id)
+      |> Repo.preload(:bank_account)
+      |> Repo.preload(:cost_invoices_transactions)
 
     Map.merge(transaction, %{
       amount:
@@ -168,9 +167,9 @@ defmodule Firmowid.Finances do
     broadcast_transaction_list_updated(transaction.organization_id)
   end
 
-  def update_transaction(organization_id, transaction_id, attrs) do
+  def update_transaction(transaction_id, attrs) do
     changeset =
-      get_transaction!(organization_id, transaction_id)
+      get_transaction!(transaction_id)
       |> Transaction.changeset(attrs)
 
     Repo.update!(changeset)
