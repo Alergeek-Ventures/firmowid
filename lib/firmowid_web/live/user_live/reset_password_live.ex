@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.UserResetPasswordLive do
+defmodule FirmowidWeb.User.ResetPasswordLive do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Accounts

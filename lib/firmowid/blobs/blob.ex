@@ -1,4 +1,4 @@
-defmodule Firmowid.Documents.Blob do
+defmodule Firmowid.Blobs.Blob do
   use Firmowid.Schema
   import Ecto.Changeset
 
@@ -7,7 +7,7 @@ defmodule Firmowid.Documents.Blob do
     field :blob_checksum, :string
     field :original_filename, :string
 
-    has_one :cost_invoice, Firmowid.Documents.CostInvoice
+    has_one :cost_invoice, Firmowid.CostInvoices.CostInvoice
 
     belongs_to :organization, Firmowid.Accounts.Organization
 

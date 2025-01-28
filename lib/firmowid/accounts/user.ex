@@ -11,7 +11,7 @@ defmodule Firmowid.Accounts.User do
     field :confirmed_at, :utc_datetime
     field :marketing_consent, :boolean, default: false
 
-    belongs_to :avatar_blob, Firmowid.Documents.Blob
+    belongs_to :avatar_blob, Firmowid.Blobs.Blob
     belongs_to :organization, Firmowid.Accounts.Organization
 
     timestamps(type: :utc_datetime)

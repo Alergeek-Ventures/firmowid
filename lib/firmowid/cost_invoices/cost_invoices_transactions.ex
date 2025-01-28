@@ -1,9 +1,9 @@
-defmodule Firmowid.Documents.CostInvoicesTransactions do
+defmodule Firmowid.CostInvoices.CostInvoicesTransactions do
   use Firmowid.Schema
   import Ecto.Changeset
 
   schema "cost_invoices_transactions" do
-    belongs_to :cost_invoice, Firmowid.Documents.CostInvoice
+    belongs_to :cost_invoice, Firmowid.CostInvoices.CostInvoice
     belongs_to :transaction, Firmowid.Finances.Transaction
 
     belongs_to :organization, Firmowid.Accounts.Organization

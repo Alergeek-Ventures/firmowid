@@ -58,7 +58,7 @@ defmodule FirmowidWeb.BankSyncLive.Create do
           {:noreply, redirect(socket, to: ~p"/")}
         else
           _ ->
-            {:noreply, push_patch(socket, to: ~p"/settings/bank-sync/create")}
+            {:noreply, push_patch(socket, to: ~p"/ustawienia/bank/dodaj")}
         end
       end
     else

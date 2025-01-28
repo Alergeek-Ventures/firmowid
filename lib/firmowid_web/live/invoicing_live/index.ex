@@ -1,7 +1,7 @@
-defmodule FirmowidWeb.DocumentsLive.Index do
+defmodule FirmowidWeb.InvoicingLive.Index do
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Documents
+  alias Firmowid.CostInvoices
   alias Firmowid.Finances
   alias Firmowid.Invoicing
   alias Firmowid.BankData
@@ -9,7 +9,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket) do
-      Documents.subscribe_cost_invoice_broadcast(socket.assigns.current_user.organization_id)
+      CostInvoices.subscribe_cost_invoice_broadcast(socket.assigns.current_user.organization_id)
       Finances.subscribe_transaction_broadcast(socket.assigns.current_user.organization_id)
     end
 
@@ -107,7 +107,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
   def handle_event("toggle-skip-invoicing", %{"id" => id, "type" => type}, socket) do
     case type do
       "cost_invoice" ->
-        Documents.toggle_skip_invoicing(
+        CostInvoices.toggle_skip_invoicing(
           :cost_invoice,
           id
         )
@@ -216,9 +216,9 @@ defmodule FirmowidWeb.DocumentsLive.Index do
   defp handle_uploads(entries, socket) do
     for entry <- entries do
       consume_uploaded_entry(socket, entry, fn %{path: path} ->
-        case Documents.upload_cost_invoice(path, entry.client_type, entry.client_name) do
+        case CostInvoices.upload_cost_invoice(path, entry.client_type, entry.client_name) do
           {:error, {:blob_already_exists, blob_checksum}} ->
-            cost_invoice = Documents.get_cost_invoice_by_checksum!(blob_checksum)
+            cost_invoice = CostInvoices.get_cost_invoice_by_checksum!(blob_checksum)
 
             LiveToast.send_toast(
               :info,
@@ -322,7 +322,7 @@ defmodule FirmowidWeb.DocumentsLive.Index do
     socket
     |> assign(
       :processing_blobs_count,
-      Documents.get_processing_cost_invoices_count()
+      CostInvoices.get_processing_cost_invoices_count()
     )
     |> assign(
       :currently_uploading_count,

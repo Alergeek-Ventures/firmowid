@@ -108,7 +108,7 @@ config :firmowid, Oban,
   repo: Firmowid.Repo,
   prefix: "oban",
   engine: Oban.Engines.Basic,
-  queues: [bank_data: 1, documents: 5],
+  queues: [bank_data: 1, cost_invoices: 5],
   plugins: [
     # retry orphaned jobs after 30 minutes
     {Oban.Plugins.Lifeline, rescue_after: :timer.minutes(30)},

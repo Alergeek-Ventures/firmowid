@@ -1,7 +1,7 @@
 defmodule FirmowidWeb.FileController do
   use FirmowidWeb, :controller
 
-  alias Firmowid.Documents
+  alias Firmowid.CostInvoices
 
   def batch(conn, params) do
     month = params["month"] |> Date.from_iso8601!()
@@ -10,7 +10,7 @@ defmodule FirmowidWeb.FileController do
     date_range_to = Date.end_of_month(month)
 
     cost_invoices =
-      Documents.list_invoices_issued_in_date_range(
+      CostInvoices.list_invoices_issued_in_date_range(
         date_range_from,
         date_range_to
       )

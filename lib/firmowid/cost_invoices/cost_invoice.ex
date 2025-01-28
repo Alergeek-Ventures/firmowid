@@ -1,9 +1,9 @@
-defmodule Firmowid.Documents.CostInvoice do
+defmodule Firmowid.CostInvoices.CostInvoice do
   use Firmowid.Schema
   import Ecto.Changeset
 
   schema "cost_invoices" do
-    belongs_to :blob, Firmowid.Documents.Blob
+    belongs_to :blob, Firmowid.Blobs.Blob
 
     field :seller, :string
     field :seller_display_name, :string

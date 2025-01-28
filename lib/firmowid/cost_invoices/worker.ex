@@ -1,16 +1,16 @@
-defmodule Firmowid.Documents.Worker do
+defmodule Firmowid.CostInvoices.Worker do
   require Logger
 
   alias Firmowid.Blobs
 
   use Oban.Worker,
-    queue: :documents,
+    queue: :cost_invoices,
     unique: true,
     max_attempts: 1
 
-  alias Firmowid.Documents
-  alias Firmowid.Documents.ReductoApiClient
-  alias Firmowid.Documents.OpenAIEnrichment
+  alias Firmowid.CostInvoices
+  alias Firmowid.ReductoApiClient
+  alias Firmowid.CostInvoices.OpenAIEnrichment
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: args}) do
@@ -32,7 +32,7 @@ defmodule Firmowid.Documents.Worker do
             blob = Blobs.get_blob!(blob_id, organization_id)
             Blobs.delete_blob(blob_id, organization_id)
 
-            Documents.broadcast_cost_invoice_failed_to_process(
+            CostInvoices.broadcast_cost_invoice_failed_to_process(
               blob.original_filename,
               organization_id
             )
@@ -138,7 +138,7 @@ defmodule Firmowid.Documents.Worker do
       |> Map.put("organization_id", organization_id)
       |> Map.put("blob_id", blob_id)
 
-    Documents.create_cost_invoice(extracted_metadata)
+    CostInvoices.create_cost_invoice(extracted_metadata)
 
     :ok
   end

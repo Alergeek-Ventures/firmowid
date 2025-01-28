@@ -46,22 +46,23 @@ defmodule FirmowidWeb.Router do
 
     live_session :require_authenticated_user_with_organization,
       on_mount: [{FirmowidWeb.UserAuth, :ensure_authenticated_with_organization}] do
-      live "/users/settings", UserSettingsLive, :edit
-      live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
+      live "/", InvoicingLive.Index, :index
+      live "/kosztowe/:id", CostInvoicesLive.Show, :index
+      get "/pobierz-miesiac", FileController, :batch
 
-      live "/", DocumentsLive.Index, :index
-      live "/cost_invoices/:id", DocumentsLive.Show, :index
-      get "/file", FileController, :batch
+      live "/sprzedazowe", SalesInvoicesLive.Index, :index
+      live "/sprzedazowe/:id", SalesInvoicesLive.Index, :index
+      get "/sprzedazowe/:id/pdf", PdfController, :index
+      get "/sprzedazowe/:id/download", PdfController, :pdf
 
-      live "/organization_invites", OrganizationInvitesLive.Index, :index
-      live "/sales_invoices", SalesInvoicesLive.Index, :index
-      live "/sales_invoices/:id", SalesInvoicesLive.Index, :index
-      get "/sales_invoices/:id/pdf", PdfController, :index
-      get "/sales_invoices/:id/download", PdfController, :pdf
-      live "/settings", SettingsLive.Index, :index
+      live "/ustawienia/uzytkownik", User.SettingsLive, :edit
+      live "/ustawienia/uzytkownik/potwierdz-email/:token", User.SettingsLive, :confirm_email
 
-      live "/settings/bank-sync", BankSyncLive.Index, :index
-      live "/settings/bank-sync/create", BankSyncLive.Create, :index
+      live "/ustawienia", SettingsLive.Index, :index
+      live "/ustawienia/bank", BankSyncLive.Index, :index
+      live "/ustawienia/bank/dodaj", BankSyncLive.Create, :index
+
+      live "/zaproszenia", OrganizationInvitesLive.Index, :index
     end
   end
 
@@ -70,10 +71,10 @@ defmodule FirmowidWeb.Router do
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{FirmowidWeb.UserAuth, :redirect_if_user_is_authenticated}] do
-      live "/users/register", UserRegistrationLive, :new
-      live "/users/log_in", UserLoginLive, :new
-      live "/users/reset_password", UserForgotPasswordLive, :new
-      live "/users/reset_password/:token", UserResetPasswordLive, :edit
+      live "/users/register", User.RegistrationLive, :new
+      live "/users/log_in", User.LoginLive, :new
+      live "/users/reset_password", User.ForgotPasswordLive, :new
+      live "/users/reset_password/:token", User.ResetPasswordLive, :edit
     end
 
     post "/users/log_in", UserSessionController, :create
@@ -82,12 +83,12 @@ defmodule FirmowidWeb.Router do
   scope "/", FirmowidWeb do
     pipe_through [:browser]
 
-    delete "/users/log_out", UserSessionController, :delete
+    delete "/wyloguj", UserSessionController, :delete
 
     live_session :current_user,
       on_mount: [{FirmowidWeb.UserAuth, :mount_current_user}] do
-      live "/users/confirm/:token", UserConfirmationLive, :edit
-      live "/users/confirm", UserConfirmationInstructionsLive, :new
+      live "/users/confirm/:token", User.ConfirmationLive, :edit
+      live "/users/confirm", User.ConfirmationInstructionsLive, :new
     end
   end
 end

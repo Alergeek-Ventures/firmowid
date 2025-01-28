@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.UserConfirmationLive do
+defmodule FirmowidWeb.User.ConfirmationLive do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Accounts

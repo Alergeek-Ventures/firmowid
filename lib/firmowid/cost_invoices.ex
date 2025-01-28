@@ -1,16 +1,16 @@
-defmodule Firmowid.Documents do
+defmodule Firmowid.CostInvoices do
   import Ecto.Query, warn: false
 
   require Logger
 
-  alias Firmowid.Documents.Blob
+  alias Firmowid.Blobs.Blob
   alias MIME
 
   alias Firmowid.Repo
   alias Firmowid.Blobs
 
-  alias Firmowid.Documents.CostInvoice
-  alias Firmowid.Documents.CostInvoicesTransactions
+  alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.CostInvoices.CostInvoicesTransactions
 
   @cost_invoice_broadcast_topic "cost_invoice_broadcast_topic"
 
@@ -182,7 +182,7 @@ defmodule Firmowid.Documents do
             blob_id: blob.id,
             organization_id: blob.organization_id
           }
-          |> Firmowid.Documents.Worker.new()
+          |> Firmowid.CostInvoices.Worker.new()
           |> Oban.insert!()
 
           broadcast_cost_invoice_list_updated(blob.organization_id)

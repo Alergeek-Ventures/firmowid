@@ -28,16 +28,55 @@ jobs:
           otp-version: ${{ matrix.otp }}
           build-app: false
 
+      # Cache key based on Erlang/Elixir version and the mix.lock hash
+      - name: Restore PLT cache
+        id: plt_cache
+        uses: actions/cache/restore@v3
+        with:
+          key: |
+            plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-
+          path: |
+            priv/plts
+
+      # Create PLTs if no cache was found
+      - name: Create PLTs
+        if: steps.plt_cache.outputs.cache-hit != 'true'
+        run: mix dialyzer --plt
+
+      # By default, the GitHub Cache action will only save the cache if all steps in the job succeed,
+      # so we separate the cache restore and save steps in case running dialyzer fails.
+      - name: Save PLT cache
+        id: plt_cache_save
+        uses: actions/cache/save@v3
+        if: steps.plt_cache.outputs.cache-hit != 'true'
+        with:
+          key: |
+            plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}
+          path: |
+            priv/plts
+
+      - name: Run dialyzer
+        # Two formats are included for ease of debugging and it is lightly recommended to use both, see https://github.com/jeremyjh/dialyxir/issues/530 for reasoning
+        # --format github is helpful to print the warnings in a way that GitHub understands and can place on the /files page of a PR
+        # --format dialyxir allows the raw GitHub actions logs to be useful because they have the full warning printed
+        run: mix dialyzer --format github --format dialyxir
+
+
       - name: Check for unused deps
         run: mix deps.unlock --check-unused
+
       - name: Check code formatting
         run: mix format --check-formatted
         # Check formatting even if there were unused deps so that
         # we give devs as much feedback as possible & save some time.
         if: always()
+
       - name: Check for compile-time dependencies
         run: mix xref graph --label compile-connected --fail-above 1
         if: always()
+
       - name: Check for security vulnerabilities in Phoenix project
         run: mix sobelow
         if: always()

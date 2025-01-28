@@ -2,19 +2,19 @@ defmodule Firmowid.Invoicing do
   alias Akin
   alias OpenAI
 
-  alias Firmowid.Documents
+  alias Firmowid.CostInvoices
   alias Firmowid.Finances
   alias Firmowid.SalesInvoices
 
   alias Firmowid.SalesInvoices.SalesInvoice
-  alias Firmowid.Documents.CostInvoice
+  alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.Finances.Transaction
 
   def get_invoicing_entries(from, to, filter) do
     case filter do
       :all ->
         Enum.concat([
-          Documents.list_cost_invoices(from, to),
+          CostInvoices.list_cost_invoices(from, to),
           SalesInvoices.list_sales_invoices(from, to),
           Finances.list_transactions(from, to)
         ])
@@ -22,7 +22,7 @@ defmodule Firmowid.Invoicing do
 
       :unmatched ->
         Enum.concat([
-          Documents.list_unmatched_cost_invoices(from, to),
+          CostInvoices.list_unmatched_cost_invoices(from, to),
           SalesInvoices.list_unmatched_sales_invoices(from, to),
           Finances.list_unmatched_transactions(from, to)
         ])
@@ -30,7 +30,7 @@ defmodule Firmowid.Invoicing do
 
       :invoices ->
         Enum.concat(
-          Documents.list_cost_invoices(from, to),
+          CostInvoices.list_cost_invoices(from, to),
           SalesInvoices.list_sales_invoices(from, to)
         )
         |> order_entries_for_display()
@@ -272,7 +272,7 @@ defmodule Firmowid.Invoicing do
 
   def match_all_good_candidates_for_unconnected_cost_invoices(organization_id) do
     for similarity_threshold <- [0.9, 0.8, 0] do
-      cost_invoices = Documents.list_unmatched_cost_invoices()
+      cost_invoices = CostInvoices.list_unmatched_cost_invoices()
 
       if similarity_threshold == 0 do
         cost_invoices
@@ -293,7 +293,7 @@ defmodule Firmowid.Invoicing do
           if length(matches) == 1 do
             [match] = matches
 
-            Documents.create_cost_invoices_transactions_connection(
+            CostInvoices.create_cost_invoices_transactions_connection(
               Integer.to_string(cost_invoice.id),
               Integer.to_string(match.id),
               organization_id
@@ -312,7 +312,7 @@ defmodule Firmowid.Invoicing do
         end)
         |> Enum.each(fn
           {cost_invoice, [golden_candidate]} ->
-            Documents.create_cost_invoices_transactions_connection(
+            CostInvoices.create_cost_invoices_transactions_connection(
               Integer.to_string(cost_invoice.id),
               Integer.to_string(golden_candidate.id),
               organization_id
@@ -324,7 +324,7 @@ defmodule Firmowid.Invoicing do
       end
     end
 
-    cost_invoices = Documents.list_unmatched_cost_invoices()
+    cost_invoices = CostInvoices.list_unmatched_cost_invoices()
 
     cost_invoices
     |> Enum.each(fn cost_invoice ->
@@ -333,7 +333,7 @@ defmodule Firmowid.Invoicing do
       case combo_matches do
         [{_grouped_transaction, transactions}] ->
           Enum.each(transactions, fn transaction ->
-            Documents.create_cost_invoices_transactions_connection(
+            CostInvoices.create_cost_invoices_transactions_connection(
               Integer.to_string(cost_invoice.id),
               Integer.to_string(transaction.id),
               organization_id

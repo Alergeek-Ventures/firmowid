@@ -5,14 +5,14 @@ defmodule Firmowid.InvoicingTest do
   import Firmowid.AccountsFixtures
 
   alias Firmowid.Invoicing
-  alias Firmowid.Documents.Blob
-  alias Firmowid.Documents.CostInvoice
+  alias Firmowid.Blobs.Blob
+  alias Firmowid.CostInvoices.CostInvoice
 
   describe "order_entries_for_display/2" do
     test "sorts properly by name" do
       %User{organization_id: organization_id} = user_fixture()
 
-      {a, b} = prep_documents(%{}, %{}, organization_id)
+      {a, b} = prep_entries(%{}, %{}, organization_id)
 
       sorted_list =
         [a, b]
@@ -25,14 +25,14 @@ defmodule Firmowid.InvoicingTest do
       %User{organization_id: organization_id} = user_fixture()
 
       {a, b} =
-        prep_documents(
+        prep_entries(
           %{issue_date: ~D[2022-02-01]},
           %{issue_date: ~D[2022-01-01]},
           organization_id
         )
 
       {c, d} =
-        prep_documents(
+        prep_entries(
           %{id: 3, issue_date: ~D[2022-04-01]},
           %{id: 4, issue_date: ~D[2022-03-01]},
           organization_id
@@ -49,7 +49,7 @@ defmodule Firmowid.InvoicingTest do
       %User{organization_id: organization_id} = user_fixture()
 
       {a, b} =
-        prep_documents(
+        prep_entries(
           %{total_amount: Decimal.from_float(200.0)},
           %{seller: "a", total_amount: Decimal.from_float(100.0)},
           organization_id
@@ -63,7 +63,7 @@ defmodule Firmowid.InvoicingTest do
     end
   end
 
-  defp prep_documents(override_a, override_b, organization_id) do
+  defp prep_entries(override_a, override_b, organization_id) do
     a_blob =
       %Blob{
         blob_checksum: UUIDv7.generate(),

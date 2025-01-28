@@ -53,17 +53,17 @@
         class="absolute flex-col font-semibold p-3 rounded-md gap-2 left-[50%]
       -translate-x-1/2 w-full top-[70px] bg-black text-left"
       >
-        <.link navigate={~p"/settings"} class="rounded-md p-2 hover:bg-darkGrey/50">
+        <.link navigate={~p"/ustawienia"} class="rounded-md p-2 hover:bg-darkGrey/50">
           Mój profil
         </.link>
         <.link
-          navigate={~p"/settings?tab=bank_accounts"}
+          navigate={~p"/ustawienia?tab=konto_bankowe"}
           class="rounded-md p-2 hover:bg-darkGrey/50"
         >
           Konta bankowe
         </.link>
         <.link
-          href={~p"/users/log_out"}
+          href={~p"/wyloguj"}
           method="delete"
           class="rounded-md p-2 hover:bg-darkGrey/50 flex justify-between"
         >

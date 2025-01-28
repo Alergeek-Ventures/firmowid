@@ -1,4 +1,4 @@
-defmodule Firmowid.Documents.SalesInvoicesTransactions do
+defmodule Firmowid.SalesInvoices.SalesInvoicesTransactions do
   use Firmowid.Schema
   import Ecto.Changeset
 

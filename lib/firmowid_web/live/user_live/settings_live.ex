@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.UserSettingsLive do
+defmodule FirmowidWeb.User.SettingsLive do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Accounts
@@ -83,21 +83,21 @@ defmodule FirmowidWeb.UserSettingsLive do
           put_flash(socket, :error, "Link do zmiany emaila jest nieprawidłowy lub wygasł.")
       end
 
-    {:ok, push_navigate(socket, to: ~p"/users/settings")}
+    {:ok, push_navigate(socket, to: ~p"/ustawienia/uzytkownik")}
   end
 
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
-    email_changeset = Accounts.change_user_email(user)
-    password_changeset = Accounts.change_user_password(user)
+    email_form = Accounts.change_user_email(user) |> to_form()
+    password_form = Accounts.change_user_password(user) |> to_form()
 
     socket =
       socket
       |> assign(:current_password, nil)
       |> assign(:email_form_current_password, nil)
       |> assign(:current_email, user.email)
-      |> assign(:email_form, to_form(email_changeset))
-      |> assign(:password_form, to_form(password_changeset))
+      |> assign(:email_form, email_form)
+      |> assign(:password_form, password_form)
       |> assign(:trigger_submit, false)
 
     {:ok, socket}
@@ -124,7 +124,7 @@ defmodule FirmowidWeb.UserSettingsLive do
         Accounts.deliver_user_update_email_instructions(
           applied_user,
           user.email,
-          &url(~p"/users/settings/confirm_email/#{&1}")
+          &url(~p"/ustawienia/uzytkownik/potwierdz-email/#{&1}")
         )
 
         info = "Link potwierdzający zmianę adresu email został wysłany na nowy adres."

@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.DocumentsLive.MonthClosedZeroState do
+defmodule FirmowidWeb.InvoicingLive.MonthClosedZeroState do
   use FirmowidWeb, :live_component
 
   def render(assigns) do

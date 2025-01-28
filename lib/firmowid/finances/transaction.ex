@@ -2,7 +2,7 @@ defmodule Firmowid.Finances.Transaction do
   use Firmowid.Schema
   import Ecto.Changeset
 
-  alias Firmowid.Documents
+  alias Firmowid.CostInvoices
 
   schema "transactions" do
     # data fetched from Bank API
@@ -25,8 +25,8 @@ defmodule Firmowid.Finances.Transaction do
                Firmowid.Finances.BankAccount
 
     many_to_many :cost_invoices_transactions,
-                 Documents.CostInvoice,
-                 join_through: Documents.CostInvoicesTransactions
+                 CostInvoices.CostInvoice,
+                 join_through: CostInvoices.CostInvoicesTransactions
 
     many_to_many :sales_invoices_transactions,
                  Firmowid.SalesInvoices.SalesInvoice,

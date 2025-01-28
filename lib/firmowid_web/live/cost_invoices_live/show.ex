@@ -1,12 +1,12 @@
-defmodule FirmowidWeb.DocumentsLive.Show do
+defmodule FirmowidWeb.CostInvoicesLive.Show do
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Documents
+  alias Firmowid.CostInvoices
   alias Firmowid.Invoicing
 
   @impl true
   def mount(params, _session, socket) do
-    cost_invoice = Documents.get_cost_invoice!(params["id"])
+    cost_invoice = CostInvoices.get_cost_invoice!(params["id"])
 
     potential_transactions =
       if cost_invoice.transactions == [] do
@@ -88,14 +88,14 @@ defmodule FirmowidWeb.DocumentsLive.Show do
 
     transactions
     |> Enum.map(fn t ->
-      Documents.create_cost_invoices_transactions_connection(
+      CostInvoices.create_cost_invoices_transactions_connection(
         cost_invoice_id,
         t.id,
         organization_id
       )
     end)
 
-    cost_invoice = Documents.get_cost_invoice!(cost_invoice_id)
+    cost_invoice = CostInvoices.get_cost_invoice!(cost_invoice_id)
 
     socket =
       socket
@@ -118,13 +118,13 @@ defmodule FirmowidWeb.DocumentsLive.Show do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
-    Documents.create_cost_invoices_transactions_connection(
+    CostInvoices.create_cost_invoices_transactions_connection(
       cost_invoice_id,
       transaction_id,
       organization_id
     )
 
-    cost_invoice = Documents.get_cost_invoice!(cost_invoice_id)
+    cost_invoice = CostInvoices.get_cost_invoice!(cost_invoice_id)
 
     socket =
       socket
@@ -145,13 +145,13 @@ defmodule FirmowidWeb.DocumentsLive.Show do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
-    Documents.delete_cost_invoices_transactions_connection(
+    CostInvoices.delete_cost_invoices_transactions_connection(
       organization_id,
       cost_invoice_id,
       transaction_id
     )
 
-    cost_invoice = Documents.get_cost_invoice!(cost_invoice_id)
+    cost_invoice = CostInvoices.get_cost_invoice!(cost_invoice_id)
 
     potential_transactions =
       Invoicing.get_potential_transactions_for_cost_invoice(
@@ -196,18 +196,18 @@ defmodule FirmowidWeb.DocumentsLive.Show do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
-    cost_invoice = Documents.get_cost_invoice!(cost_invoice_id)
+    cost_invoice = CostInvoices.get_cost_invoice!(cost_invoice_id)
 
     cost_invoice.transactions
     |> Enum.map(fn t ->
-      Documents.delete_cost_invoices_transactions_connection(
+      CostInvoices.delete_cost_invoices_transactions_connection(
         organization_id,
         cost_invoice_id,
         t.id
       )
     end)
 
-    cost_invoice = Documents.get_cost_invoice!(cost_invoice_id)
+    cost_invoice = CostInvoices.get_cost_invoice!(cost_invoice_id)
 
     potential_transactions =
       Invoicing.get_potential_transactions_for_cost_invoice(
@@ -254,7 +254,7 @@ defmodule FirmowidWeb.DocumentsLive.Show do
   @impl true
   def handle_event("toggle-skip-invoicing", _, socket) do
     cost_invoice =
-      Documents.toggle_skip_invoicing(
+      CostInvoices.toggle_skip_invoicing(
         :cost_invoice,
         socket.assigns.cost_invoice.id
       )
@@ -268,9 +268,9 @@ defmodule FirmowidWeb.DocumentsLive.Show do
 
   @impl true
   def handle_event("delete", %{"cost-invoice-id" => cost_invoice_id}, socket) do
-    cost_invoice = Documents.get_cost_invoice!(cost_invoice_id)
+    cost_invoice = CostInvoices.get_cost_invoice!(cost_invoice_id)
 
-    Documents.delete_cost_invoice(cost_invoice_id)
+    CostInvoices.delete_cost_invoice(cost_invoice_id)
 
     LiveToast.send_toast(
       :info,

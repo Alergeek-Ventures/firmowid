@@ -25,12 +25,12 @@
       </div>
       <div class="flex gap-10 font-semibold mt-16">
         <%= for {tab, label} <- [
-            {"company", "Twoja firma"},
-            {"account", "Twoje konto"},
-            {"bank_accounts", "Konta bankowe"}
+            {"organizacja", "Twoja organizacja"},
+            {"konto", "Twoje konto"},
+            {"konta_bankowe", "Konta bankowe"}
           ] do %>
           <.link
-            patch={~p"/settings?tab=#{tab}"}
+            patch={~p"/ustawienia?tab=#{tab}"}
             class={
               classes([
                 @tab == tab && "text-orangeText",
@@ -255,7 +255,7 @@
       <div class="mt-6">
         <div class="flex gap-4">
           <h2 class="font-bold">Dane dostępowe</h2>
-          <.link class="text-sm mt-0.5 hover:underline" navigate={~p"/users/settings"}>
+          <.link class="text-sm mt-0.5 hover:underline" navigate={~p"/ustawienia/uzytkownik"}>
             Edytuj
           </.link>
         </div>
@@ -409,7 +409,7 @@
             <% end %>
           </div>
           <.link
-            navigate={~p"/settings/bank-sync/create"}
+            navigate={~p"/ustawienia/bank/dodaj"}
             class={classes([button_styles(%{variant: "outline"}), "ml-auto mt-16"])}
           >
             Podepnij kolejne konto
@@ -422,7 +422,7 @@
             </p>
             <div class="mt-6">
               <.link
-                navigate={~p"/settings/bank-sync/create"}
+                navigate={~p"/ustawienia/bank/dodaj"}
                 class={button_styles(%{variant: "outline"})}
               >
                 Podepnij konto

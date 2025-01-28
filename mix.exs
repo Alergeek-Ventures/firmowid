@@ -5,7 +5,7 @@ defmodule Firmowid.MixProject do
     [
       app: :firmowid,
       version: "0.1.0",
-      elixir: "~> 1.14",
+      elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -77,6 +77,7 @@ defmodule Firmowid.MixProject do
       {:image, "~> 0.37"},
       {:briefly, "~> 0.5.0"},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:sentry, "~> 10.8.1"},
       {:recase, "~> 0.8.0"},
       {:oban, "~> 2.17"},

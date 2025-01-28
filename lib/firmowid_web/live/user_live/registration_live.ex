@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.UserRegistrationLive do
+defmodule FirmowidWeb.User.RegistrationLive do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Accounts

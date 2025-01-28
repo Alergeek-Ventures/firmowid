@@ -78,7 +78,7 @@ defmodule FirmowidWeb.OrganizationLive do
             </div>
           </div>
           <div class="mt-8 text-center">
-            <.link class="underline" href={~p"/users/log_out"} method="delete">
+            <.link class="underline" href={~p"/wyloguj"} method="delete">
               Wyloguj
             </.link>
           </div>

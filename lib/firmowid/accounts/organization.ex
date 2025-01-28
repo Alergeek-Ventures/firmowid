@@ -15,7 +15,7 @@ defmodule Firmowid.Accounts.Organization do
     field :is_correspondence_editing, :boolean, virtual: true, default: false
 
     belongs_to :owner, Firmowid.Accounts.User
-    belongs_to :avatar_blob, Firmowid.Documents.Blob
+    belongs_to :avatar_blob, Firmowid.Blobs.Blob
     has_many :users, Firmowid.Accounts.User
 
     timestamps()

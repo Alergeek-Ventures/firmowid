@@ -1,4 +1,4 @@
-defmodule Firmowid.Documents.OpenAIEnrichment do
+defmodule Firmowid.CostInvoices.OpenAIEnrichment do
   def generate_description(document) do
     {:ok, response} =
       OpenAI.chat_completion(

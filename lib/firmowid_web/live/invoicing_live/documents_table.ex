@@ -1,10 +1,10 @@
-defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
+defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
   use FirmowidWeb, :live_view
 
   import FirmowidWeb.CoreComponents
 
   alias Firmowid.Finances.Transaction
-  alias Firmowid.Documents.CostInvoice
+  alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.SalesInvoices.SalesInvoice
 
   attr :invoicing_entries, :list, required: true
@@ -50,7 +50,7 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
           <p class="mb-8">Dzięki temu wszystkie transakcje pojawią się w Firmowidzie
             automatycznie. Co więcej, po wykryciu odpowiedniej faktury transakcja
             połączy się z dokumentem.</p>
-          <.link navigate={~p"/settings/bank-sync/create"} class={button_styles(%{color: "green"})}>
+          <.link navigate={~p"/ustawienia/bank/dodaj"} class={button_styles(%{color: "green"})}>
             Synchronizacja z bankiem
           </.link>
         </div>
@@ -211,7 +211,7 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
         invoice.inserted_at,
         DateTime.add(DateTime.utc_now(), -120, :second)
       ) ==
-        :gt and invoice.transactions != []
+        :gt
 
     amount = Money.new(invoice.currency, invoice.total_amount)
 
@@ -228,7 +228,7 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
 
       <%= if @is_fresh do %>
         <span
-          id={"amount-fresh-#{@id}"}
+          id={"amount-fresh-#{@invoicing_entry.id}"}
           phx-hook="tippy"
           data-tippy-delay="10"
           data-tippy-content="Ten dokument właśnie został dodany!"
@@ -429,7 +429,7 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
       assigns
       |> assign(:party, invoice.seller_display_name)
       |> assign(:description, invoice.description)
-      |> assign(:navigate, ~p"/cost_invoices/#{invoice.id}")
+      |> assign(:navigate, ~p"/kosztowe/#{invoice.id}")
 
     ~H"<.render_cell party={@party} navigate={@navigate} description={@description} column={@column} />"
   end
@@ -442,7 +442,7 @@ defmodule FirmowidWeb.DocumentsLive.DocumentsTable do
         :description,
         invoice.sales_invoice_items |> Enum.map(& &1.name) |> Enum.join(", ")
       )
-      |> assign(:navigate, ~p"/sales_invoices/#{invoice.id}")
+      |> assign(:navigate, ~p"/sprzedazowe/#{invoice.id}")
 
     ~H"<.render_cell party={@party} navigate={@navigate} description={@description} column={@column} />"
   end

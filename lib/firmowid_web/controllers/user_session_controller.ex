@@ -10,7 +10,7 @@ defmodule FirmowidWeb.UserSessionController do
 
   def create(conn, %{"_action" => "password_updated"} = params) do
     conn
-    |> put_session(:user_return_to, ~p"/users/settings")
+    |> put_session(:user_return_to, ~p"/ustawienia/uzytkownik")
     |> create(params, "Password updated successfully!")
   end
 
