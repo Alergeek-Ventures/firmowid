@@ -13,7 +13,7 @@ defmodule FirmowidWeb.InvoicingLive.MonthClosedZeroState do
         To
         <span
           id="month-closed-annotation"
-          phx-hook="tippy"
+          phx-hook="Tippy"
           data-tippy-content="Wciąż możesz dodać faktury opłacone z innego konta lub gotówką."
         >
           najprawdopodobniej*
@@ -29,7 +29,7 @@ defmodule FirmowidWeb.InvoicingLive.MonthClosedZeroState do
         id="download-button-cta"
         data-tippy-content="Pobierz wszystkie faktury wystawione w tym miesiącu"
         data-tippy-delay="3000"
-        phx-hook="tippy"
+        phx-hook="Tippy"
         href={
           "/file?month=#{@month}"
           # "/file?month=#{"2024-10-10"}"

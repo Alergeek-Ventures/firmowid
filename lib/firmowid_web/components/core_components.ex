@@ -137,7 +137,7 @@ defmodule FirmowidWeb.CoreComponents do
   def button_styles(assigns) do
     classes([
       "phx-submit-loading:opacity-75 cursor-pointer rounded-md transition-colors",
-      "duration-200 border py-2 px-3",
+      "duration-200 border py-2 px-3 cursor-pointer",
       "text-sm font-semibold leading-6 disabled:opacity-40 active:text-white/80",
       button_styles(:color, assigns),
       assigns[:class]

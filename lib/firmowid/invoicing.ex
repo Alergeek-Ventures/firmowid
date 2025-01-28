@@ -37,6 +37,7 @@ defmodule Firmowid.Invoicing do
 
       :transactions ->
         Finances.list_transactions(from, to)
+        |> order_entries_for_display()
     end
   end
 

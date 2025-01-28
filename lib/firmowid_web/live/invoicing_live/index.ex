@@ -103,8 +103,27 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     {:noreply, socket}
   end
 
-  @impl true
+  def handle_event("toggle-skip-invoicing", %{"id" => id, "type" => type}, %{assigns: %{params: %{filter: :unmatched}}} = socket) do
+    # mark for removal (animation)
+    socket =
+      socket
+      |> push_event("mark-for-removal", %{id: id})
+
+    # actual removal
+    Process.send_after(self(), {:toggle_skip_invoicing, %{id: id, type: type}}, 500)
+
+    {:noreply, socket}
+  end
+
   def handle_event("toggle-skip-invoicing", %{"id" => id, "type" => type}, socket) do
+    # instantly remove if not in unmatched view (where changing state removes the row)
+    Process.send_after(self(), {:toggle_skip_invoicing, %{id: id, type: type}}, 1)
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:toggle_skip_invoicing, %{id: id, type: type}}, socket) do
     case type do
       "cost_invoice" ->
         CostInvoices.toggle_skip_invoicing(

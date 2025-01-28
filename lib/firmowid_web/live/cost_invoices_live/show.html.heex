@@ -4,7 +4,7 @@
   "grid-rows-[minmax(10px,100px)_minmax(10px,100px)_48px_30px_60px_30px_60px_90px_40px_60px_40px_60px_1fr]",
   "grid-rows-[minmax(10px,100px)_minmax(10px,100px)_48px_30px_60px_30px_60px_90px_40px_60px_40px_60px_1fr]"
 ]}>
-  <div class="row-start-1 row-end-3 col-start-1 col-end-13 h-full w-screen bg-orangeBg -z-10" />
+  <div class="row-start-1 row-end-3 col-start-1 col-end-13 h-full w-screen bg-orangeBg -z-1" />
   <div class={[
     "row-start-1 row-end-2 col-start-1 col-end-20",
     "flex justify-center items-end mb-2"
@@ -17,7 +17,7 @@
     id="seller-name"
     data-tippy-content={@cost_invoice.seller}
     data-tippy-placement="bottom"
-    phx-hook="tippy"
+    phx-hook="Tippy"
     class={[
       "row-start-1 row-end-2 col-start-2 col-end-6 pt-8",
       "self-end justify-self-start",
@@ -263,7 +263,7 @@
                 <:col :let={transaction} label="">
                   <div
                     id="match-llm-eval"
-                    phx-hook="tippy"
+                    phx-hook="Tippy"
                     data-tippy-content={"Wykorzystując AI, rekomendujemy transakcję
                 z Twojego konta, która pasuje do danej faktury kosztowej. Ocena
                 jest #{

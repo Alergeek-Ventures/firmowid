@@ -85,7 +85,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
       |> assign(:column_labels, @column_labels)
 
     ~H"""
-    <table class="table-fixed border-separate border-spacing-y-3">
+    <table id="invoicing-entries" class="table-fixed border-separate border-spacing-y-3" phx-hook="ListItemRemovalAnimation">
       <col
         :for={column <- @columns}
         class={
@@ -150,23 +150,27 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
       )
 
     ~H"""
-    <tr>
+    <tr
+      id={"#{@invoicing_entry.id}-row"}
+    >
       <td
         :for={column <- @columns}
         class={[
-          "bg-white py-2",
+          "transition-all duration-500 bg-white py-2",
           column == "party" && "rounded-l-md pl-5 pr-5 text-ellipsis max-xl:max-w-72",
           column == "sale_date" && "font-light",
           column == "due_date" && "font-light",
           column == "amount" && "rounded-r-md",
           column == "amount" &&
-            Decimal.gt?(@amount, 0) &&
+            Decimal.gte?(@amount, 0) &&
             "text-blueText !bg-blueBg",
           column == "amount" && Decimal.lt?(@amount, 0) &&
             "text-orangeText !bg-orangeBg"
         ]}
       >
-        <.render_cell column={column} invoicing_entry={@invoicing_entry} />
+        <div data-overflow-hider-id={@invoicing_entry.id} class="w-full whitespace-nowrap overflow-hidden overflow-ellipsis">
+          <.render_cell column={column} invoicing_entry={@invoicing_entry} />
+        </div>
       </td>
     </tr>
     """
@@ -229,7 +233,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
       <%= if @is_fresh do %>
         <span
           id={"amount-fresh-#{@invoicing_entry.id}"}
-          phx-hook="tippy"
+          phx-hook="Tippy"
           data-tippy-delay="10"
           data-tippy-content="Ten dokument właśnie został dodany!"
           class="absolute top-[-10px] right-[-4px] flex h-3 w-3"
@@ -251,7 +255,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
     ~H"""
     <div
       id={"#{@invoicing_entry.id}-container"}
-      phx-hook="tippy"
+      phx-hook="Tippy"
       data-tippy-delay="1000"
       data-tippy-content={
         case @invoicing_entry do
@@ -298,7 +302,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
           end
         }
         class={[
-          "transition-all duration-500 cursor-auto",
+          "transition-all duration-500 cursor-pointer",
           "w-20",
           "h-6 uppercase text-xs text-darkGrey bg-lightGreyBg rounded-md"
         ]}
@@ -313,7 +317,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
     ~H"""
     <div
       id={"#{@invoicing_entry.id}-container"}
-      phx-hook="tippy"
+      phx-hook="Tippy"
       data-tippy-delay="1000"
       data-tippy-content={
         case @invoicing_entry do
@@ -368,7 +372,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
           end
         }
         class={[
-          "transition-all duration-500 cursor-auto",
+          "transition-all duration-500 cursor-pointer",
           "w-20",
           "h-6 uppercase text-xs text-darkGrey bg-lightGreyBg rounded-md"
         ]}
@@ -488,7 +492,7 @@ end
 #     |> Enum.map(fn t -> t.id end)
 #     |> Enum.join(",")
 #   }"}
-#   phx-hook="tippy"
+#   phx-hook="Tippy"
 #   data-tippy-delay="1000"
 #   data-tippy-content={
 #     case @status do

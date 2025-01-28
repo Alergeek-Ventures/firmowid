@@ -1,6 +1,7 @@
 defmodule FirmowidWeb.SalesInvoicesLive.Index do
   alias Firmowid.SalesInvoices.SalesInvoice
   alias Firmowid.SalesInvoices
+
   import FirmowidWeb.SalesInvoicesLive.EditButton
   import FirmowidWeb.SalesInvoicesLive.BuyerForm
   import FirmowidWeb.SalesInvoicesLive.SellerForm

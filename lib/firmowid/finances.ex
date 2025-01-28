@@ -100,7 +100,8 @@ defmodule Firmowid.Finances do
           from(t in Transaction)
         else
           from t in Transaction,
-            where: t.value_date >= ^from and t.value_date <= ^to
+            where: t.value_date >= ^from and t.value_date <= ^to,
+            order_by: [desc: t.booking_date]
         end
       )
     end

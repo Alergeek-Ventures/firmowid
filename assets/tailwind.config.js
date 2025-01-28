@@ -30,6 +30,28 @@ module.exports = {
       sans: ["Lexend", "ui-sans-serif", "system-ui", "sans-serif"],
     },
     colors: require("./tailwind.colors.json"),
+    extend: {
+      keyframes: {
+        "fade-and-scale-out": {
+          '0%': {
+            opacity: '1',
+            maxHeight: '200px',
+          },
+          '70%': {
+            opacity: '0',
+            maxHeight: '0px',
+          },
+          '100%': {
+            opacity: '0',
+            maxHeight: '0px',
+            margin: '0px',
+          }
+        },
+      },
+      animation: {
+        "list-item-removal": 'fade-and-scale-out 300ms ease-out forwards'
+      },
+    },
   },
   plugins: [
     require("@tailwindcss/forms"),
