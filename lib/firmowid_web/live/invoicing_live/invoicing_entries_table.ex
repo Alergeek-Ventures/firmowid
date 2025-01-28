@@ -168,7 +168,12 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
             "text-orangeText !bg-orangeBg"
         ]}
       >
-        <div data-overflow-hider-id={@invoicing_entry.id} class="w-full whitespace-nowrap overflow-hidden overflow-ellipsis">
+        <div data-overflow-hider-id={@invoicing_entry.id}
+          class={[
+            # required to display the "dot freshness" indicator that is rendered outside of the cell
+            column != "amount" && "w-full whitespace-nowrap overflow-hidden overflow-ellipsis"
+          ]}
+        >
           <.render_cell column={column} invoicing_entry={@invoicing_entry} />
         </div>
       </td>

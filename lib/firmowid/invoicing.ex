@@ -414,7 +414,10 @@ defmodule Firmowid.Invoicing do
     end
 
     candidates
-    |> Enum.map(fn candidate ->
+    # run calls for each candidate in parallel
+    |> Enum.map(&(Task.async(fn ->
+      candidate = &1
+
       content =
         call_llm.(candidate).choices
         |> List.first()
@@ -424,6 +427,7 @@ defmodule Firmowid.Invoicing do
         |> Map.get("grade")
 
       {candidate, content}
-    end)
+    end)))
+    |> Enum.map(&Task.await/1)
   end
 end
