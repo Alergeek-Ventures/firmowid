@@ -21,8 +21,7 @@ defmodule FirmowidWeb.User.ConfirmationInstructionsLive do
       </.simple_form>
 
       <p class="text-center mt-4">
-        <.link href={~p"/users/register"}>Register</.link>
-        | <.link href={~p"/users/log_in"}>Log in</.link>
+        <.link href={~p"/zarejestruj"}>Register</.link> | <.link href={~p"/zaloguj"}>Log in</.link>
       </p>
     </div>
     """
@@ -36,7 +35,7 @@ defmodule FirmowidWeb.User.ConfirmationInstructionsLive do
     if user = Accounts.get_user_by_email(email) do
       Accounts.deliver_user_confirmation_instructions(
         user,
-        &url(~p"/users/confirm/#{&1}")
+        &url(~p"/potwierdz/#{&1}")
       )
     end
 

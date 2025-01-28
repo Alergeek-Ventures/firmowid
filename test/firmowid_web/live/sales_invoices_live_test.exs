@@ -11,16 +11,16 @@ defmodule FirmowidWeb.SalesInvoicesLiveTest do
       {:ok, _lv, html} =
         conn
         |> log_in_user(user_fixture())
-        |> live(~p"/sales_invoices")
+        |> live(~p"/sprzedazowe")
 
       assert html =~ "Rodzaj faktury"
     end
 
     test "redirects if user is not logged in", %{conn: conn} do
-      assert {:error, redirect} = live(conn, ~p"/sales_invoices")
+      assert {:error, redirect} = live(conn, ~p"/sprzedazowe")
 
       assert {:redirect, %{to: path}} = redirect
-      assert path == ~p"/users/log_in"
+      assert path == ~p"/zaloguj"
     end
   end
 
@@ -32,7 +32,7 @@ defmodule FirmowidWeb.SalesInvoicesLiveTest do
     end
 
     test "makes section confirmed", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/sales_invoices")
+      {:ok, lv, _html} = live(conn, ~p"/sprzedazowe")
       invoice_number = "Numer mojej faktury"
 
       result =
@@ -57,7 +57,7 @@ defmodule FirmowidWeb.SalesInvoicesLiveTest do
     end
 
     test "adds seller but doesnt confirm", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/sales_invoices")
+      {:ok, lv, _html} = live(conn, ~p"/sprzedazowe")
 
       form =
         lv
@@ -89,7 +89,7 @@ defmodule FirmowidWeb.SalesInvoicesLiveTest do
     end
 
     test "adds seller and confirms", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/sales_invoices")
+      {:ok, lv, _html} = live(conn, ~p"/sprzedazowe")
 
       form =
         lv
@@ -128,7 +128,7 @@ defmodule FirmowidWeb.SalesInvoicesLiveTest do
     end
 
     test "adds buyer via nip", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/sales_invoices")
+      {:ok, lv, _html} = live(conn, ~p"/sprzedazowe")
 
       lv |> element("#buyer_expand_button") |> render_click()
 
@@ -163,7 +163,7 @@ defmodule FirmowidWeb.SalesInvoicesLiveTest do
     end
 
     test "adds invoice item and confirm it", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/sales_invoices")
+      {:ok, lv, _html} = live(conn, ~p"/sprzedazowe")
 
       # Add new invoice item
       lv

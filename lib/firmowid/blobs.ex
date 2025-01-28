@@ -10,7 +10,8 @@ defmodule Firmowid.Blobs do
   @doc """
   Creates a new blob record and uploads the associated file to S3 storage.
   """
-  @spec create_blob(String.t(), String.t(), String.t()) :: {:ok, Ecto.Schema.t()} | {:error, any()}
+  @spec create_blob(String.t(), String.t(), String.t()) ::
+          {:ok, Ecto.Schema.t()} | {:error, any()}
   def create_blob(upload_path, content_type, original_filename) do
     organization_id = Repo.get_org_id()
     possible_extensions = MIME.extensions(content_type)
@@ -44,7 +45,7 @@ defmodule Firmowid.Blobs do
       original_filename: original_filename,
       organization_id: organization_id
     })
-      |> Repo.insert()
+    |> Repo.insert()
   end
 
   def get_blob!(id, organization_id) do

@@ -250,7 +250,7 @@ defmodule FirmowidWeb.UserAuthTest do
       conn = conn |> fetch_flash() |> UserAuth.require_authenticated_user_with_organization([])
 
       assert conn.halted
-      assert redirected_to(conn) == ~p"/users/log_in"
+      assert redirected_to(conn) == ~p"/zaloguj"
     end
 
     test "stores the path to redirect to on GET", %{conn: conn} do

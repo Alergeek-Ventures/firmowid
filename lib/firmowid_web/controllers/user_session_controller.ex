@@ -31,7 +31,7 @@ defmodule FirmowidWeb.UserSessionController do
       LiveToast.send_toast(:error, "Niewłaściwy email lub hasło")
 
       conn
-      |> redirect(to: ~p"/users/log_in")
+      |> redirect(to: ~p"/zaloguj")
     end
   end
 
@@ -40,6 +40,6 @@ defmodule FirmowidWeb.UserSessionController do
 
     conn
     |> UserAuth.log_out_user()
-    |> redirect(to: ~p"/users/log_in")
+    |> redirect(to: ~p"/zaloguj")
   end
 end

@@ -186,7 +186,7 @@ defmodule FirmowidWeb.UserAuth do
 
       socket =
         socket
-        |> Phoenix.LiveView.redirect(to: ~p"/users/log_in")
+        |> Phoenix.LiveView.redirect(to: ~p"/zaloguj")
 
       {:halt, socket}
     end
@@ -253,7 +253,7 @@ defmodule FirmowidWeb.UserAuth do
 
       conn
       |> maybe_store_return_to()
-      |> redirect(to: ~p"/users/log_in")
+      |> redirect(to: ~p"/zaloguj")
       |> halt()
     end
   end
@@ -264,7 +264,7 @@ defmodule FirmowidWeb.UserAuth do
     else
       conn
       |> maybe_store_return_to()
-      |> redirect(to: ~p"/users/log_in")
+      |> redirect(to: ~p"/zaloguj")
       |> halt()
     end
   end

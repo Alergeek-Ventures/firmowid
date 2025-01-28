@@ -11,7 +11,7 @@ defmodule FirmowidWeb.User.RegistrationLive do
         Zarejestruj się
         <:subtitle>
           Masz już konto?
-          <.link navigate={~p"/users/log_in"} class="font-semibold text-brand hover:underline">
+          <.link navigate={~p"/zaloguj"} class="font-semibold text-brand hover:underline">
             Zaloguj się
           </.link>
         </:subtitle>
@@ -23,7 +23,7 @@ defmodule FirmowidWeb.User.RegistrationLive do
         phx-submit="save"
         phx-change="validate"
         phx-trigger-action={@trigger_submit}
-        action={~p"/users/log_in?_action=registered"}
+        action={~p"/zaloguj?_action=registered"}
         method="post"
       >
         <.error :if={@check_errors}>
@@ -60,7 +60,7 @@ defmodule FirmowidWeb.User.RegistrationLive do
         {:ok, _} =
           Accounts.deliver_user_confirmation_instructions(
             user,
-            &url(~p"/users/confirm/#{&1}")
+            &url(~p"/potwierdz/#{&1}")
           )
 
         changeset = Accounts.change_user_registration(user)

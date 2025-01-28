@@ -13,12 +13,12 @@ defmodule FirmowidWeb.UserConfirmationInstructionsLiveTest do
 
   describe "Resend confirmation" do
     test "renders the resend confirmation page", %{conn: conn} do
-      {:ok, _lv, html} = live(conn, ~p"/users/confirm")
+      {:ok, _lv, html} = live(conn, ~p"/potwierdz")
       assert html =~ "Resend confirmation instructions"
     end
 
     test "sends a new confirmation token", %{conn: conn, user: user} do
-      {:ok, lv, _html} = live(conn, ~p"/users/confirm")
+      {:ok, lv, _html} = live(conn, ~p"/potwierdz")
 
       {:ok, conn} =
         lv
@@ -39,7 +39,7 @@ defmodule FirmowidWeb.UserConfirmationInstructionsLiveTest do
     test "does not send confirmation token if user is confirmed", %{conn: conn, user: user} do
       Repo.update!(Accounts.User.confirm_changeset(user))
 
-      {:ok, lv, _html} = live(conn, ~p"/users/confirm")
+      {:ok, lv, _html} = live(conn, ~p"/potwierdz")
 
       {:ok, _conn} =
         lv
@@ -51,7 +51,7 @@ defmodule FirmowidWeb.UserConfirmationInstructionsLiveTest do
     end
 
     test "does not send confirmation token if email is invalid", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/users/confirm")
+      {:ok, lv, _html} = live(conn, ~p"/potwierdz")
 
       {:ok, _conn} =
         lv

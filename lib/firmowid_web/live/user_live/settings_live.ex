@@ -37,7 +37,7 @@ defmodule FirmowidWeb.User.SettingsLive do
         <.simple_form
           for={@password_form}
           id="password_form"
-          action={~p"/users/log_in?_action=password_updated"}
+          action={~p"/zaloguj?_action=password_updated"}
           method="post"
           phx-change="validate_password"
           phx-submit="update_password"
@@ -124,7 +124,7 @@ defmodule FirmowidWeb.User.SettingsLive do
         Accounts.deliver_user_update_email_instructions(
           applied_user,
           user.email,
-          &url(~p"/ustawienia/uzytkownik/potwierdz-email/#{&1}")
+          &url(~p"/potwierdz/#{&1}")
         )
 
         info = "Link potwierdzający zmianę adresu email został wysłany na nowy adres."

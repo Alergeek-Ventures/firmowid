@@ -11,13 +11,13 @@ defmodule FirmowidWeb.User.LoginLive do
           Wejdź do Firmowida
         </h1>
 
-        <.simple_form for={@form} id="login_form" action={~p"/users/log_in"} phx-update="ignore">
+        <.simple_form for={@form} id="login_form" action={~p"/zaloguj"} phx-update="ignore">
           <.input field={@form[:email]} type="email" label="Email" required />
           <.input field={@form[:password]} type="password" label="Hasło" required />
 
           <:actions>
             <.input field={@form[:remember_me]} type="checkbox" label="Zapamiętaj mnie" />
-            <.link href={~p"/users/reset_password"} class="text-sm font-semibold">
+            <.link href={~p"/resetuj-haslo"} class="text-sm font-semibold">
               Zapomniałeś hasła?
             </.link>
           </:actions>
@@ -30,7 +30,7 @@ defmodule FirmowidWeb.User.LoginLive do
 
         <p class="mt-4 text-center">
           Nie masz konta?
-          <.link navigate={~p"/users/register"} class="font-semibold text-brand hover:underline">
+          <.link navigate={~p"/zarejestruj"} class="font-semibold text-brand hover:underline">
             Zarejestruj się
           </.link>
         </p>

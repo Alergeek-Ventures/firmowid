@@ -56,7 +56,7 @@ defmodule FirmowidWeb.Router do
       get "/sprzedazowe/:id/download", PdfController, :pdf
 
       live "/ustawienia/uzytkownik", User.SettingsLive, :edit
-      live "/ustawienia/uzytkownik/potwierdz-email/:token", User.SettingsLive, :confirm_email
+      live "/ustawienia/uzytkownik/potwierdz/:token", User.SettingsLive, :index
 
       live "/ustawienia", SettingsLive.Index, :index
       live "/ustawienia/bank", BankSyncLive.Index, :index
@@ -71,13 +71,13 @@ defmodule FirmowidWeb.Router do
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{FirmowidWeb.UserAuth, :redirect_if_user_is_authenticated}] do
-      live "/users/register", User.RegistrationLive, :new
-      live "/users/log_in", User.LoginLive, :new
-      live "/users/reset_password", User.ForgotPasswordLive, :new
-      live "/users/reset_password/:token", User.ResetPasswordLive, :edit
+      live "/zarejestruj", User.RegistrationLive, :new
+      live "/zaloguj", User.LoginLive, :new
+      live "/resetuj-haslo", User.ForgotPasswordLive, :new
+      live "/resetuj-haslo/:token", User.ResetPasswordLive, :edit
     end
 
-    post "/users/log_in", UserSessionController, :create
+    post "/zaloguj", UserSessionController, :create
   end
 
   scope "/", FirmowidWeb do
@@ -87,8 +87,8 @@ defmodule FirmowidWeb.Router do
 
     live_session :current_user,
       on_mount: [{FirmowidWeb.UserAuth, :mount_current_user}] do
-      live "/users/confirm/:token", User.ConfirmationLive, :edit
-      live "/users/confirm", User.ConfirmationInstructionsLive, :new
+      live "/potwierdz/:token", User.ConfirmationLive, :edit
+      live "/potwierdz", User.ConfirmationInstructionsLive, :new
     end
   end
 end

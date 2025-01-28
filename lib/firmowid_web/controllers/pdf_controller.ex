@@ -54,7 +54,7 @@ defmodule FirmowidWeb.PdfController do
 
         {:ok, result} =
           ChromicPDF.print_to_pdf(
-            {:url, "#{url_with_protocol}/sales_invoices/#{id}/pdf"},
+            {:url, "#{url_with_protocol}/kosztowe/#{id}/pdf"},
             set_cookie: %{
               name: "_firmowid_key",
               value: conn.cookies["_firmowid_key"],

@@ -76,7 +76,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
   def assign_sales_invoice(socket, nil) do
     socket
     |> put_flash(:error, "Nie znaleziono faktury")
-    |> push_navigate(to: "/sales_invoices")
+    |> push_navigate(to: ~p"/sprzedazowe")
   end
 
   def assign_sales_invoice(socket, :new_invoice) do
@@ -324,7 +324,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
       |> case do
         {:ok, new_invoice} ->
           socket
-          |> push_patch(to: "/sales_invoices/#{new_invoice.id}")
+          |> push_patch(to: ~p"/sprzedazowe/#{new_invoice.id}")
           |> assign(sales_invoice_id: new_invoice.id)
           |> assign(sales_invoice: SalesInvoices.get_sales_invoice(new_invoice.id))
           |> assign_currency()

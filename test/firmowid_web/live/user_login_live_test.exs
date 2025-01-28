@@ -6,7 +6,7 @@ defmodule FirmowidWeb.UserLoginLiveTest do
 
   describe "Log in page" do
     test "renders log in page", %{conn: conn} do
-      {:ok, _lv, html} = live(conn, ~p"/users/log_in")
+      {:ok, _lv, html} = live(conn, ~p"/zaloguj")
 
       assert html =~ "Zaloguj"
       assert html =~ "Nie masz konta?"
@@ -17,7 +17,7 @@ defmodule FirmowidWeb.UserLoginLiveTest do
       result =
         conn
         |> log_in_user(user_fixture())
-        |> live(~p"/users/log_in")
+        |> live(~p"/zaloguj")
         |> follow_redirect(conn, "/")
 
       assert {:ok, _conn} = result
@@ -29,7 +29,7 @@ defmodule FirmowidWeb.UserLoginLiveTest do
       password = "123456789abcd"
       user = user_fixture(%{password: password})
 
-      {:ok, lv, _html} = live(conn, ~p"/users/log_in")
+      {:ok, lv, _html} = live(conn, ~p"/zaloguj")
 
       form =
         form(lv, "#login_form", user: %{email: user.email, password: password, remember_me: true})
@@ -42,7 +42,7 @@ defmodule FirmowidWeb.UserLoginLiveTest do
     test "redirects to login page with a flash error if there are no valid credentials", %{
       conn: conn
     } do
-      {:ok, lv, _html} = live(conn, ~p"/users/log_in")
+      {:ok, lv, _html} = live(conn, ~p"/zaloguj")
 
       form =
         form(lv, "#login_form",
@@ -51,19 +51,19 @@ defmodule FirmowidWeb.UserLoginLiveTest do
 
       conn = submit_form(form, conn)
 
-      assert redirected_to(conn) == "/users/log_in"
+      assert redirected_to(conn) == "/zaloguj"
     end
   end
 
   describe "login navigation" do
     test "redirects to registration page when the Register button is clicked", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/users/log_in")
+      {:ok, lv, _html} = live(conn, ~p"/zaloguj")
 
       {:ok, _login_live, login_html} =
         lv
         |> element(~s|main a:fl-contains("Zarejestruj się")|)
         |> render_click()
-        |> follow_redirect(conn, ~p"/users/register")
+        |> follow_redirect(conn, ~p"/zarejestruj")
 
       assert login_html =~ "Zaloguj się"
     end
@@ -71,13 +71,13 @@ defmodule FirmowidWeb.UserLoginLiveTest do
     test "redirects to forgot password page when the Forgot Password button is clicked", %{
       conn: conn
     } do
-      {:ok, lv, _html} = live(conn, ~p"/users/log_in")
+      {:ok, lv, _html} = live(conn, ~p"/zaloguj")
 
       {:ok, conn} =
         lv
         |> element(~s|main a:fl-contains("Zapomniałeś hasła?")|)
         |> render_click()
-        |> follow_redirect(conn, ~p"/users/reset_password")
+        |> follow_redirect(conn, ~p"/resetuj-haslo")
 
       assert conn.resp_body =~ "Forgot your password?"
     end
