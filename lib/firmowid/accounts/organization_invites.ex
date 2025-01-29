@@ -12,7 +12,7 @@ defmodule Firmowid.Accounts.OrganizationInvites do
     belongs_to :issued_by, Firmowid.Accounts.User
     belongs_to :consumed_by, Firmowid.Accounts.User
 
-    timestamps(type: :utc_datetime)
+    timestamps()
   end
 
   @doc false

@@ -156,6 +156,10 @@ defmodule FirmowidWeb.CoreComponents do
     "border-redText text-redText bg-transparent hover:text-white hover:bg-redText disabled:cursor-default disabled:bg-transparent"
   end
 
+  defp button_styles(:color, %{variant: "outline", color: "orange"}) do
+    "text-orangeText hover:bg-orangeBg  disabled:cursor-default disabled:text-orangeText"
+  end
+
   defp button_styles(:color, %{color: "green"}) do
     "bg-blueText text-white hover:text-black hover:bg-greyButtonBg disabled:bg-blueText disabled:text-white disabled:cursor-default"
   end
@@ -165,7 +169,7 @@ defmodule FirmowidWeb.CoreComponents do
   end
 
   defp button_styles(:color, %{color: "orange"}) do
-    "text-orangeText border-none bg-orangeBg hover:bg-orangeText hover:text-orangeBg disabled:cursor-default disabled:bg-orangeBg disabled:text-orangeText"
+    "text-white border-none bg-orangeText hover:bg-orangeBg hover:text-orangeText disabled:cursor-default"
   end
 
   defp button_styles(:color, %{variant: "outline"}),
@@ -678,13 +682,11 @@ defmodule FirmowidWeb.CoreComponents do
   attr :navigate, :any, required: true
   slot :inner_block, required: true
 
+
   def back(assigns) do
     ~H"""
     <div class="mt-16">
-      <.link
-        navigate={@navigate}
-        class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
-      >
+      <.link navigate={@navigate} class="text-sm font-semibold leading-6 hover:text-darkGrey">
         <.icon name="hero-arrow-left-solid" class="h-3 w-3" />
         {render_slot(@inner_block)}
       </.link>

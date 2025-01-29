@@ -9,12 +9,17 @@ defmodule Firmowid.Accounts.User do
     field :hashed_password, :string, redact: true
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
+
+    many_to_many :projects,
+                 Firmowid.Timetracker.Project,
+                 join_through: "projects_users"
+
     field :marketing_consent, :boolean, default: false
 
     belongs_to :avatar_blob, Firmowid.Blobs.Blob
     belongs_to :organization, Firmowid.Accounts.Organization
 
-    timestamps(type: :utc_datetime)
+    timestamps()
   end
 
   @doc """

@@ -1,0 +1,85 @@
+<div class="container flex flex-col p-4">
+  <div class="flex justify-end">
+    <.link navigate={~p"/czasosledz/projekty"} class="hover:underline">
+      Projekty
+    </.link>
+  </div>
+  <div class="flex justify-between mt-36">
+    <.form phx-change="validate" phx-submit="save" for={@form} class="w-full max-w-md space-y-4">
+      <.input
+        type="select"
+        class="w-full font-bold bg-orangeBg text-orangeText border-none px-4 py-3 rounded appearance-none cursor-pointer hover:bg-[#f0e0d8] transition-colors focus:outline-none focus:ring-1 focus:ring-orangeText"
+        field={@form[:project_id]}
+        options={
+          @projects
+          |> Enum.map(fn project ->
+            {project.name, project.id}
+          end)
+        }
+      />
+
+      <.input field={@form[:title]} placeholder="Nad czym dzisiaj pracujesz?" />
+      <div :if={@is_form_extended} class="flex gap-2">
+        <.input label="Od" type="time" class="w-full" field={@form[:start_time]} />
+        <.input type="time" label="Do" class="w-full" field={@form[:end_time]} />
+      </div>
+      <div class="flex gap-4">
+        <.button
+          type="button"
+          variant="outline"
+          color="orange"
+          class="w-full"
+          phx-click="toggle_extended_form"
+        >
+          Wprowadź inną datę
+        </.button>
+        <.button color="orange" class="w-full">
+          Zacznij teraz
+        </.button>
+      </div>
+    </.form>
+    <div class="relative w-64 h-64">
+      <!-- Circular background -->
+      <div class="w-full h-full rounded-full bg-gray-100"></div>
+      
+<!-- Progress arc -->
+      <div class="absolute top-0 left-0 w-full h-full">
+        <div class="w-full h-full rounded-full border-[30px] border-orangeText
+                  transform -rotate-45
+                  [clip-path:polygon(0_0,100%_0,100%_100%,0_100%,50%_50%)]">
+        </div>
+      </div>
+      
+<!-- Center content -->
+      <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+        <div class="text-4xl font-bold">75%</div>
+        <div class="text-sm text-gray-600">16h 39min</div>
+        <div class="mt-1 text-sm">w październiku</div>
+      </div>
+    </div>
+  </div>
+  <div class="border-greyButtonBg p-4 border rounded-md mt-12">
+    <%= for {day, sessions} <- @sessions |> Enum.group_by(fn s -> Date.to_string(s.start_time) end) do %>
+      <div class="w-full flex text-darkGrey justify-between items-center">
+        <p class="font-semibold text-sm">{format_day_header(day)}</p>
+        <div class="border border-greyButtonBg p-2 rounded-md font-bold">
+          {format_duration(calculate_total_duration(sessions))}
+        </div>
+      </div>
+      <div class="w-full mx-auto mt-3">
+        <div class="shadow-sm rounded-lg">
+          <div class="[&>*:nth-child(odd)]:bg-greyButtonBg">
+            <%= for session <- sessions do %>
+              <.render_row
+                title={session.title}
+                start_time={format_time(session.start_time)}
+                end_time={format_time(session.end_time)}
+                duration={format_duration(calculate_session_duration(session))}
+              />
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

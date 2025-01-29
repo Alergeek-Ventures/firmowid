@@ -1,0 +1,43 @@
+<div class="min-h-screen bg-lightGreyBg p-4">
+  <.back navigate={~p"/czasosledz"}>Wróć do czasośledzia</.back>
+
+  <div class="mt-4">
+    <%= for user <- @users do %>
+      <div class="mb-4 rounded-lg bg-white shadow-sm">
+        <div class="p-4 border-b border-greyButtonBg/30">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <.avatar class="size-12 ring-2 ring-greyButtonBg/50">
+                <.avatar_image src={user.avatar_url} alt="Avatar" />
+                <.avatar_fallback class="bg-blueBg text-blueText">
+                  {String.slice(user.email, 0, 1) |> String.upcase()}
+                </.avatar_fallback>
+              </.avatar>
+              <p class="text-darkGrey font-medium">{user.email}</p>
+            </div>
+            <div class="flex items-center">
+              <span class="px-3 py-1 rounded-full text-sm bg-greenBg text-greenText">
+                {user.system_role}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="p-4">
+          <div class="flex gap-4">
+            <%= for project <- @projects do %>
+              <form phx-change="toggle_project">
+                <.input
+                  type="checkbox"
+                  label={project.name}
+                  value={Enum.any?(project.users, fn up -> up.id == user.id end)}
+                  name={"project[#{project.id}][#{user.id}]"}
+                  class="checked:bg-blueBg checked:border-blueText"
+                />
+              </form>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

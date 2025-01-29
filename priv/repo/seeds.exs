@@ -1,3 +1,4 @@
+alias Firmowid.Timetracker
 alias Firmowid.Repo
 alias Firmowid.Accounts
 
@@ -11,7 +12,7 @@ alias Firmowid.Accounts
 qry = "UPDATE users SET system_role = 'superuser' WHERE email = 'franek@alergeek.ventures'"
 res = Ecto.Adapters.SQL.query!(Repo, qry, [])
 
-{:ok, _av} =
+{:ok, av} =
   Accounts.create_organization(
     %{
       "name" => "Alergeek Ventures spółka z ograniczoną odpowiedzialnością",
@@ -21,3 +22,7 @@ res = Ecto.Adapters.SQL.query!(Repo, qry, [])
     },
     franek
   )
+
+{:ok, _} = Timetracker.create_project(%{name: "Firmowid", organization_id: av.id})
+
+{:ok, _} = Timetracker.create_project(%{name: "Kvantab", organization_id: av.id})

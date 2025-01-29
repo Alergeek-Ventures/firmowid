@@ -55,6 +55,9 @@ defmodule FirmowidWeb.Router do
       get "/sprzedazowe/:id/pdf", PdfController, :index
       get "/sprzedazowe/:id/download", PdfController, :pdf
 
+      live "/czasosledz", TimetrackerLive.Index, :index
+      live "/czasosledz/projekty", TimetrackerLive.Projects, :projects
+
       live "/ustawienia/uzytkownik", User.SettingsLive, :edit
       live "/ustawienia/uzytkownik/potwierdz/:token", User.SettingsLive, :index
 
