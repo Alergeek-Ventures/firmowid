@@ -96,9 +96,21 @@ defmodule Firmowid.Invoicing do
           false
 
         :eq ->
-          case get_display_name(a) == get_display_name(b) do
-            true -> get_description(a) < get_description(b)
-            false -> get_display_name(a) < get_display_name(b)
+          a_inserted_at = a.inserted_at
+          b_inserted_at = b.inserted_at
+
+          case Date.compare(a_inserted_at, b_inserted_at) do
+            :gt ->
+              true
+
+            :lt ->
+              false
+
+            :eq ->
+              case get_display_name(a) == get_display_name(b) do
+                true -> get_description(a) < get_description(b)
+                false -> get_display_name(a) < get_display_name(b)
+              end
           end
       end
     end
