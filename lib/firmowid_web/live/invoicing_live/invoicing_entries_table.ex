@@ -174,6 +174,8 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
           data-overflow-hider-id={@invoicing_entry.id}
           class={
             [
+              # this column has no defined width, so we limit the worst offenders "manually"
+              column == "party" && "max-w-[50vw]",
               # required to display the "dot freshness" indicator that is rendered outside of the cell
               column != "amount" && "w-full whitespace-nowrap overflow-hidden overflow-ellipsis"
             ]
