@@ -11,6 +11,10 @@ export const ScrollStyle = {
         this._handleScroll();
     },
 
+    updated() {
+        this._handleScroll();
+    },
+
     destroyed() {
         window.removeEventListener("scroll", this._onScroll);
     },
