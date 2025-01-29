@@ -1,10 +1,11 @@
 <div class={[
-  "grid gap-y-2 gap-x-4",
-  "grid-cols-[60px_repeat(11,1fr)_60px]",
-  "grid-rows-[minmax(10px,100px)_minmax(10px,100px)_48px_30px_60px_30px_60px_90px_40px_60px_40px_60px_1fr]",
-  "grid-rows-[minmax(10px,100px)_minmax(10px,100px)_48px_30px_60px_30px_60px_90px_40px_60px_40px_60px_1fr]"
+  "grid gap-y-2 gap-x-4 pb-8",
+  "grid-cols-[60px_repeat(11,minmax(0,1fr))_60px] grid-flow-col",
+  "grid-rows-[minmax(10px,100px)_minmax(10px,100px)_48px_30px_60px_30px_60px_90px_40px_60px_40px_60px_2fr_2fr_2fr]"
 ]}>
-  <div class="row-start-1 row-end-3 col-start-1 col-end-13 h-full w-screen bg-orangeBg -z-1" />
+  <div class="row-start-1 row-end-3 col-start-1 col-end-[14] overflow-hidden">
+    <div class="h-full w-screen bg-orangeBg -z-1" />
+  </div>
   <div class={[
     "row-start-1 row-end-2 col-start-1 col-end-20",
     "flex justify-center items-end mb-2"
@@ -203,7 +204,10 @@
         Cofnij <.icon name="hero-arrow-uturn-left-micro xl:inline-block hidden" class="w-4 h-4" />
       </.button>
     <% [] -> %>
-      <div class="row-start-9 row-end-13 col-start-2 col-end-12">
+      <div class={[
+        "row-start-9 row-end-13 col-start-2 col-end-12",
+        @potential_transactions != [] && "row-end-[14]"
+      ]}>
         <%= if @cost_invoice.skip_invoicing do %>
           <h1>Fakturowanie pominięte dla dokumentu</h1>
         <% else %>
@@ -244,7 +248,7 @@
               <h1 class="text-xl font-bold">
                 Potencjalne transakcje dla dokumentu
               </h1>
-              <.table id="transactions" rows={@potential_transactions}>
+              <.table id="transactions" rows={@potential_transactions} class="mt-4 w-full">
                 <:col :let={transaction} label="Informacje">
                   {transaction.remittance_information_unstructured}
                 </:col>
@@ -262,7 +266,7 @@
                 </:col>
                 <:col :let={transaction} label="">
                   <div
-                    id="match-llm-eval"
+                    id={"match-llm-eval-#{transaction.id}"}
                     phx-hook="Tippy"
                     data-tippy-content={"Wykorzystując AI, rekomendujemy transakcję
                 z Twojego konta, która pasuje do danej faktury kosztowej. Ocena
@@ -273,8 +277,8 @@
                   true -> "niska"
                 end} dla tej transakcji."}
                     class={[
-                      "flex flex-col justify-center items-start gap-1 pl-2",
-                      "w-10 h-10 rounded-md",
+                      "flex flex-col justify-center items-start gap-1 pl-[4px]",
+                      "w-7 h-6 rounded-md",
                       transaction.llm_eval >= 0.75 && "bg-greenBg",
                       (transaction.llm_eval >= 0.5 and
                          transaction.llm_eval < 0.75) &&
@@ -283,18 +287,18 @@
                     ]}
                   >
                     <div class={[
-                      "w-[75%] rounded-md bg-white h-1",
+                      "w-[75%] rounded-md bg-white h-[2px]",
                       transaction.llm_eval >= 0.75 && "!bg-greenText"
                     ]} />
                     <div class={[
-                      "w-[55%] rounded-md bg-white h-1",
+                      "w-[55%] rounded-md bg-white h-[2px]",
                       transaction.llm_eval >= 0.75 && "!bg-greenText",
                       (transaction.llm_eval >= 0.5 and
                          transaction.llm_eval < 0.75) &&
                         "!bg-orangeText"
                     ]} />
                     <div class={[
-                      "w-[35%] rounded-md bg-white h-1",
+                      "w-[35%] rounded-md bg-white h-[2px]",
                       transaction.llm_eval >= 0.75 &&
                         "!bg-greenText",
                       (transaction.llm_eval >= 0.5 and
@@ -312,7 +316,8 @@
                     class={
                       classes([
                         transaction.llm_eval < 0.75 && "!bg-lightGreyBg !text-darkGrey",
-                        transaction.llm_eval >= 0.75 && "!bg-darkGrey !text-white"
+                        transaction.llm_eval >= 0.75 && "!bg-darkGrey !text-white",
+                        "text-xs uppercase py-1 px-2"
                       ])
                     }
                   >

@@ -583,6 +583,7 @@ defmodule FirmowidWeb.CoreComponents do
       </.table>
   """
   attr :id, :string, required: true
+  attr :class, :string, default: nil
   attr :rows, :list, required: true
   attr :row_id, :any, default: nil, doc: "the function for generating the row id"
   attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
@@ -604,7 +605,7 @@ defmodule FirmowidWeb.CoreComponents do
       end
 
     ~H"""
-    <table class="mt-11 sm:w-full">
+    <table class={classes([@class])}>
       <thead class="text-sm text-left leading-6 text-zinc-500">
         <tr>
           <th :for={col <- @col} class="p-0 pr-2 font-normal uppercase
