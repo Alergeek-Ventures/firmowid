@@ -35,7 +35,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
 
     {:ok,
      socket
-     |> assign(:tab, "company")
+     |> assign(:tab, "organizacja")
      |> assign(
        :company_form,
        to_form(form_basic_info_changeset(org))
