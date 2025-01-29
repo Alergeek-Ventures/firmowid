@@ -48,7 +48,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
     has_many :sales_invoice_items, Firmowid.SalesInvoices.SalesInvoiceItem, on_replace: :delete
 
-    many_to_many :sales_invoices_transactions,
+    many_to_many :transactions,
                  Firmowid.Finances.Transaction,
                  join_through: "sales_invoices_transactions"
 

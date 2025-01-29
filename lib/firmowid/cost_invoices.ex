@@ -79,6 +79,7 @@ defmodule Firmowid.CostInvoices do
 
     query
     |> Repo.all()
+    |> Repo.preload(:transactions)
   end
 
   def list_invoices_issued_in_date_range(from, to) do

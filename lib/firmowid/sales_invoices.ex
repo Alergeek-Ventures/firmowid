@@ -21,7 +21,7 @@ defmodule Firmowid.SalesInvoices do
   def list_unmatched_sales_invoices(from, to) do
     query =
       from si in SalesInvoice,
-        left_join: sit in assoc(si, :sales_invoices_transactions),
+        left_join: sit in assoc(si, :transactions),
         where: is_nil(sit.id),
         where: si.issue_date >= ^from,
         where: si.due_date <= ^to,
@@ -45,6 +45,7 @@ defmodule Firmowid.SalesInvoices do
     |> Repo.all()
     |> Repo.preload(:sales_invoice_items)
     |> Repo.preload(:buyer)
+    |> Repo.preload(:transactions)
   end
 
   def get_sales_invoice(id) do

@@ -108,7 +108,7 @@ config :firmowid, Oban,
   repo: Firmowid.Repo,
   prefix: "oban",
   engine: Oban.Engines.Basic,
-  queues: [bank_data: 1, cost_invoices: 5],
+  queues: [bank_data: 1, invoicing: 1, cost_invoices: 5],
   plugins: [
     # retry orphaned jobs after 30 minutes
     {Oban.Plugins.Lifeline, rescue_after: :timer.minutes(30)},
@@ -120,7 +120,8 @@ config :firmowid, Oban,
        # then in it, we create idempotent jobs for each day
        # for each account. it's done like this to work around
        # Fly.io suspending the machines
-       {"0 * * * *", Firmowid.BankData.Worker, args: %{name: "schedule_sync"}}
+       {"0 * * * *", Firmowid.BankData.Worker, args: %{name: "schedule_sync"}},
+       {"* * * * *", Firmowid.Invoicing.Worker, args: %{name: "schedule_matching"}}
      ]}
   ]
 

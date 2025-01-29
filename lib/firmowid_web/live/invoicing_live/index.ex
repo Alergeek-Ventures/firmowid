@@ -103,7 +103,11 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     {:noreply, socket}
   end
 
-  def handle_event("toggle-skip-invoicing", %{"id" => id, "type" => type}, %{assigns: %{params: %{filter: :unmatched}}} = socket) do
+  def handle_event(
+        "toggle-skip-invoicing",
+        %{"id" => id, "type" => type},
+        %{assigns: %{params: %{filter: :unmatched}}} = socket
+      ) do
     # mark for removal (animation)
     socket =
       socket

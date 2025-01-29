@@ -275,6 +275,10 @@ defmodule Firmowid.Invoicing do
     for similarity_threshold <- [0.9, 0.8, 0] do
       cost_invoices = CostInvoices.list_unmatched_cost_invoices()
 
+      dbg(organization_id)
+      dbg(cost_invoices)
+      dbg(similarity_threshold)
+
       if similarity_threshold == 0 do
         cost_invoices
         |> Enum.map(fn cost_invoice ->
@@ -295,8 +299,8 @@ defmodule Firmowid.Invoicing do
             [match] = matches
 
             CostInvoices.create_cost_invoices_transactions_connection(
-              Integer.to_string(cost_invoice.id),
-              Integer.to_string(match.id),
+              cost_invoice.id,
+              match.id,
               organization_id
             )
           end
@@ -314,8 +318,8 @@ defmodule Firmowid.Invoicing do
         |> Enum.each(fn
           {cost_invoice, [golden_candidate]} ->
             CostInvoices.create_cost_invoices_transactions_connection(
-              Integer.to_string(cost_invoice.id),
-              Integer.to_string(golden_candidate.id),
+              cost_invoice.id,
+              golden_candidate.id,
               organization_id
             )
 
@@ -415,19 +419,21 @@ defmodule Firmowid.Invoicing do
 
     candidates
     # run calls for each candidate in parallel
-    |> Enum.map(&(Task.async(fn ->
-      candidate = &1
+    |> Enum.map(
+      &Task.async(fn ->
+        candidate = &1
 
-      content =
-        call_llm.(candidate).choices
-        |> List.first()
-        |> Map.get("message")
-        |> Map.get("content")
-        |> Jason.decode!()
-        |> Map.get("grade")
+        content =
+          call_llm.(candidate).choices
+          |> List.first()
+          |> Map.get("message")
+          |> Map.get("content")
+          |> Jason.decode!()
+          |> Map.get("grade")
 
-      {candidate, content}
-    end)))
+        {candidate, content}
+      end)
+    )
     |> Enum.map(&Task.await/1)
   end
 end

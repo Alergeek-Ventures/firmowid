@@ -85,7 +85,11 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
       |> assign(:column_labels, @column_labels)
 
     ~H"""
-    <table id="invoicing-entries" class="table-fixed border-separate border-spacing-y-3" phx-hook="ListItemRemovalAnimation">
+    <table
+      id="invoicing-entries"
+      class="table-fixed border-separate border-spacing-y-3"
+      phx-hook="ListItemRemovalAnimation"
+    >
       <col
         :for={column <- @columns}
         class={
@@ -150,9 +154,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
       )
 
     ~H"""
-    <tr
-      id={"#{@invoicing_entry.id}-row"}
-    >
+    <tr id={"#{@invoicing_entry.id}-row"}>
       <td
         :for={column <- @columns}
         class={[
@@ -168,11 +170,14 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
             "text-orangeText !bg-orangeBg"
         ]}
       >
-        <div data-overflow-hider-id={@invoicing_entry.id}
-          class={[
-            # required to display the "dot freshness" indicator that is rendered outside of the cell
-            column != "amount" && "w-full whitespace-nowrap overflow-hidden overflow-ellipsis"
-          ]}
+        <div
+          data-overflow-hider-id={@invoicing_entry.id}
+          class={
+            [
+              # required to display the "dot freshness" indicator that is rendered outside of the cell
+              column != "amount" && "w-full whitespace-nowrap overflow-hidden overflow-ellipsis"
+            ]
+          }
         >
           <.render_cell column={column} invoicing_entry={@invoicing_entry} />
         </div>
@@ -318,6 +323,32 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
     """
   end
 
+  defp render_cell(%{column: "status", status: "matched"} = assigns) do
+    ~H"""
+    <div
+      id={"status-#{@invoicing_entry.id}"}
+      phx-hook="tippy"
+      data-tippy-delay="1000"
+      data-tippy-content={
+            "Udało się połączyć transakcje i dokument - to oznacza, " <>
+              "że faktura jest opłacona i przygotowana do zaksięgowania."
+      }
+      class="
+      flex flex-row gap-2 w-32 overflow-hidden"
+    >
+      <div class={[
+        "text-xs h-6",
+        "flex flex-row justify-center items-center py-2 px-2 rounded-md",
+        "transition-all duration-500",
+        "w-full justify-between bg-greenBg text-greenText"
+      ]}>
+        <div class="font-normal uppercase">Komplet</div>
+        <.icon name="hero-check-micro" class="w-5 h-5" />
+      </div>
+    </div>
+    """
+  end
+
   defp render_cell(%{column: "status", status: "unmatched"} = assigns) do
     ~H"""
     <div
@@ -391,9 +422,18 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
   defp render_cell(%{column: "status"} = assigns) do
     value =
       case assigns.invoicing_entry do
-        %SalesInvoice{} -> "unmatched"
-        %{skip_invoicing: true} -> "skipped"
-        %{skip_invoicing: false} -> "unmatched"
+        %{skip_invoicing: true} ->
+          "skipped"
+
+        %CostInvoice{} = invoice ->
+          if invoice.transactions != [] do
+            "matched"
+          else
+            "unmatched"
+          end
+
+        _ ->
+          "unmatched"
       end
 
     assigns = assigns |> assign(:status, value)

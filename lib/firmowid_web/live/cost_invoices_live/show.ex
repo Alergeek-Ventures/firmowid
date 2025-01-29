@@ -285,7 +285,12 @@ defmodule FirmowidWeb.CostInvoicesLive.Show do
   end
 
   defp apply_action(socket, :index, params) do
+    cost_invoice = CostInvoices.get_cost_invoice!(params["id"])
+
     socket
-    |> assign(:page_title, "Podgląd dokumentu #{params["id"]}")
+    |> assign(
+      :page_title,
+      "Podgląd dokumentu #{cost_invoice.invoice_identifier} od #{cost_invoice.seller_display_name}"
+    )
   end
 end

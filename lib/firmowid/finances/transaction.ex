@@ -28,7 +28,7 @@ defmodule Firmowid.Finances.Transaction do
                  CostInvoices.CostInvoice,
                  join_through: CostInvoices.CostInvoicesTransactions
 
-    many_to_many :sales_invoices_transactions,
+    many_to_many :transactions,
                  Firmowid.SalesInvoices.SalesInvoice,
                  join_through: "sales_invoices_transactions"
 

@@ -9,6 +9,11 @@ defmodule Firmowid.Accounts do
 
   alias Firmowid.Accounts.{User, UserToken, UserNotifier, Organization}
 
+  def list_organizations do
+    Organization
+    |> Repo.all(skip_organization_id: true)
+  end
+
   ## Database getters
 
   @doc """
