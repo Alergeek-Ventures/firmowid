@@ -122,7 +122,7 @@ defmodule Firmowid.BankData do
 
   defp upsert_booked_transactions(booked_transactions, bank_account_id, organization_id) do
     booked_transactions
-    |> Enum.each(fn transaction_from_api ->
+    |> Enum.map(fn transaction_from_api ->
       converted_transaction =
         transaction_from_api
         |> Transaction.map_camel_to_snake()
@@ -130,13 +130,11 @@ defmodule Firmowid.BankData do
         |> Transaction.changeset()
         |> Ecto.Changeset.apply_changes()
 
-      converted_transaction =
-        converted_transaction
-        |> Map.merge(%{bank_account_id: bank_account_id, organization_id: organization_id})
-        |> Map.from_struct()
-
-      Finances.create_or_update_transaction(converted_transaction)
+      converted_transaction
+      |> Map.merge(%{bank_account_id: bank_account_id, organization_id: organization_id})
+      |> Map.from_struct()
     end)
+    |> Finances.create_or_update_transactions()
   end
 
   defp create_or_update_bank_accounts_for_requisition(

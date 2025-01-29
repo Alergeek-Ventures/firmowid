@@ -156,16 +156,25 @@ defmodule Firmowid.Finances do
     broadcast_transaction_list_updated(transaction.organization_id)
   end
 
-  def create_or_update_transaction(attrs \\ %{}) do
-    transaction =
-      %Transaction{}
-      |> Transaction.changeset(attrs)
-      |> Repo.insert!(
-        on_conflict: {:replace_all_except, [:id, :skip_invoicing, :inserted_at]},
-        conflict_target: [:internal_transaction_id, :organization_id]
-      )
+  def create_or_update_transactions(transactions) do
+    transactions =
+      transactions
+      |> Enum.map(fn transaction ->
+        Map.merge(transaction, %{
+          id: UUIDv7.autogenerate(),
+          inserted_at: DateTime.utc_now() |> DateTime.truncate(:second),
+          updated_at: DateTime.utc_now() |> DateTime.truncate(:second)
+        })
+      end)
 
-    broadcast_transaction_list_updated(transaction.organization_id)
+    Transaction
+    |> Repo.insert_all(transactions,
+      on_conflict: {:replace_all_except, [:id, :skip_invoicing, :inserted_at]},
+      conflict_target: [:internal_transaction_id, :organization_id]
+    )
+
+    organization_id = transactions |> List.first() |> Map.get(:organization_id)
+    broadcast_transaction_list_updated(organization_id)
   end
 
   def update_transaction(transaction_id, attrs) do
