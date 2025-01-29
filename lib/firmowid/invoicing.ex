@@ -53,36 +53,6 @@ defmodule Firmowid.Invoicing do
     transaction.booking_date
   end
 
-  defp get_display_name(%CostInvoice{} = invoice) do
-    invoice.seller_display_name
-  end
-
-  defp get_display_name(%Transaction{} = transaction) do
-    if transaction.transaction_amount > 0 do
-      transaction.creditor_name
-    else
-      transaction.debtor_name
-    end
-  end
-
-  defp get_display_name(%SalesInvoice{} = invoice) do
-    invoice.buyer_name
-  end
-
-  defp get_description(%SalesInvoice{} = invoice) do
-    invoice.sales_invoice_items
-    |> Enum.map(fn item -> item.name end)
-    |> Enum.join(", ")
-  end
-
-  defp get_description(%CostInvoice{} = invoice) do
-    invoice.description
-  end
-
-  defp get_description(%Transaction{} = transaction) do
-    transaction.remittance_information_unstructured
-  end
-
   def order_entries_for_display(invoicing_entries) do
     order_by_date = fn a, b ->
       a_date = get_date(a)
@@ -96,22 +66,7 @@ defmodule Firmowid.Invoicing do
           false
 
         :eq ->
-          a_inserted_at = a.inserted_at
-          b_inserted_at = b.inserted_at
-
-          case Date.compare(a_inserted_at, b_inserted_at) do
-            :gt ->
-              true
-
-            :lt ->
-              false
-
-            :eq ->
-              case get_display_name(a) == get_display_name(b) do
-                true -> get_description(a) < get_description(b)
-                false -> get_display_name(a) < get_display_name(b)
-              end
-          end
+          a.id < b.id
       end
     end
 
