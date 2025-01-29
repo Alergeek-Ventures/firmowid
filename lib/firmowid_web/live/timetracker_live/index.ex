@@ -4,11 +4,12 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   use FirmowidWeb, :live_view
 
   def mount(_params, _session, socket) do
+    if connected?(socket), do: :timer.send_interval(20000, self(), :tick)
+
     {:ok,
      socket
      |> assign(:projects, Timetracker.list_user_projects(socket.assigns.current_user.id))
-     |> assign(:sessions, Timetracker.list_user_sessions(socket.assigns.current_user.id))
-     |> assign(:current_session, Timetracker.get_current_session(socket.assigns.current_user.id))
+     |> assign_sessions()
      |> assign(
        :form,
        to_form(
@@ -21,11 +22,21 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
      |> assign(:is_form_extended, false)}
   end
 
+  def assign_sessions(socket) do
+    socket
+    |> assign(:sessions, Timetracker.list_user_sessions(socket.assigns.current_user.id))
+    |> assign(:current_session, Timetracker.get_current_session(socket.assigns.current_user.id))
+  end
+
+  def handle_info(:tick, socket) do
+    {:noreply, socket |> assign_sessions()}
+  end
+
   def handle_event("toggle_extended_form", _, socket) do
     {:noreply, socket |> update(:is_form_extended, &(!&1))}
   end
 
-  def handle_event("validate", %{"session" => session} = params, socket) do
+  def handle_event("validate", %{"session" => session}, socket) do
     {:noreply,
      socket
      |> assign(
@@ -41,11 +52,60 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
            |> Map.put("start_time", DateTime.utc_now())
          ) do
       {:ok, _} ->
-        {:noreply, socket |> assign(:form, to_form(Session.changeset(%Session{title: ""})))}
+        {:noreply,
+         socket
+         |> assign(:form, to_form(Session.changeset(%Session{title: ""})))
+         |> assign_sessions()}
 
       {:error, changeset} ->
         dbg(changeset)
         {:noreply, socket |> assign(:form, to_form(changeset))}
+    end
+  end
+
+  def handle_event("pause_session", _, socket) do
+    case Timetracker.end_session(socket.assigns.current_session.id) do
+      {:ok, _session} ->
+        {:noreply,
+         socket
+         |> assign_sessions()}
+
+      {:error, _changeset} ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("delete_session", %{"id" => id}, socket) do
+    case Timetracker.delete_session(id) do
+      {:ok, _session} ->
+        {:noreply,
+         socket
+         |> assign_sessions()}
+
+      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Nie udało się usunąć sesji")}
+    end
+  end
+
+  def handle_event("edit_session", %{"session" => params}, socket) do
+    session_id = params["id"]
+
+    case Timetracker.update_session(session_id, params) do
+      {:ok, _session} ->
+        {:noreply,
+         socket
+         |> assign_sessions()
+         |> push_event("js-exec", %{
+           to: "#edit-session-modal-#{session_id}",
+           attr: "phx-remove"
+         })}
+
+      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Nie udało się zaktualizować sesji")}
     end
   end
 
@@ -73,7 +133,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def format_time(nil) do
-    "teraz"
+    "trwa"
   end
 
   def format_time(datetime) do
@@ -107,42 +167,123 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     end)
   end
 
-  attr :title, :string, required: true
-  attr :start_time, :string, required: true
-  attr :end_time, :string, required: true
-  attr :duration, :string, required: true
+  attr :session, :map, required: true
+  attr :projects, :list, required: true
 
   def render_row(assigns) do
     ~H"""
-    <div class="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
-      <div>{@title}</div>
-      <div class="flex items-center space-x-4">
-        <div>{@start_time} - {@end_time}</div>
-        <div class="font-bold">{@duration}</div>
-        <div class="flex space-x-2">
-          <button>
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-              />
-            </svg>
-          </button>
-          <button>
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
-          </button>
+    <div>
+      <div class="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
+        <div>{@session.title}</div>
+        <div class="flex items-center space-x-4">
+          <div>{format_time(@session.start_time)} - {format_time(@session.end_time)}</div>
+          <div class="font-bold">{format_duration(calculate_session_duration(@session))}</div>
+          <div class="flex space-x-2">
+            <button phx-click={show_modal("edit-session-modal-#{@session.id}")}>
+              <.edit_icon class="text-darkGrey" />
+            </button>
+            <button phx-click={show_modal("delete-session-modal-#{@session.id}")}>
+              <.icon name="hero-trash" class="text-darkGrey" />
+            </button>
+          </div>
         </div>
       </div>
+
+      <.modal
+        id={"edit-session-modal-#{@session.id}"}
+        on_cancel={hide_modal("edit-session-modal-#{@session.id}")}
+      >
+        <.form
+          for={Session.changeset(%Session{id: @session.id, title: @session.title})}
+          phx-submit="edit_session"
+          class="space-y-4"
+        >
+          <input type="hidden" name="session[id]" value={@session.id} />
+          <.input
+            type="select"
+            label="Projekt"
+            name="session[project_id]"
+            value={@session.project_id}
+            options={
+              @projects
+              |> Enum.map(fn project ->
+                {project.name, project.id}
+              end)
+            }
+          />
+          <.input
+            label="Tytuł"
+            value={@session.title}
+            name="session[title]"
+            placeholder="Nad czym pracowałeś?"
+          />
+          <div class="flex gap-2">
+            <div class="w-full">
+              <.input
+                type="datetime-local"
+                label="Czas rozpoczęcia"
+                value={format_datetime(@session.start_time)}
+                name="session[start_time]"
+              />
+            </div>
+            <div class="w-full">
+              <.input
+                type="datetime-local"
+                label="Czas zakończenia"
+                value={format_datetime(@session.end_time)}
+                name="session[end_time]"
+              />
+            </div>
+          </div>
+          <div class="mt-6 flex justify-end gap-3">
+            <.button
+              type="button"
+              variant="outline"
+              color="black"
+              phx-click={hide_modal("edit-session-modal-#{@session.id}")}
+            >
+              Anuluj
+            </.button>
+            <.button color="orange" phx-disable-with="Zapisywanie...">
+              Zapisz
+            </.button>
+          </div>
+        </.form>
+      </.modal>
+
+      <.modal
+        id={"delete-session-modal-#{@session.id}"}
+        on_cancel={hide_modal("delete-session-modal-#{@session.id}")}
+      >
+        <p>Czy na pewno chcesz usunąć sesję "<span class="font-semibold">{@session.title}</span>"?</p>
+        <div class="mt-6 flex justify-end gap-3">
+          <.button
+            variant="outline"
+            color="black"
+            phx-click={hide_modal("delete-session-modal-#{@session.id}")}
+          >
+            Anuluj
+          </.button>
+          <.button
+            color="red"
+            phx-click={JS.push("delete_session", value: %{id: @session.id})}
+            phx-disable-with="Usuwanie..."
+          >
+            Usuń
+          </.button>
+        </div>
+      </.modal>
     </div>
     """
+  end
+
+  # Add this helper function for datetime formatting
+  defp format_datetime(nil), do: nil
+
+  defp format_datetime(datetime) do
+    datetime
+    |> DateTime.shift_zone!("Europe/Warsaw")
+    |> DateTime.to_iso8601()
+    |> String.slice(0, 16)
   end
 end

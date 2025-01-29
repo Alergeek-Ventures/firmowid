@@ -136,8 +136,8 @@ defmodule FirmowidWeb.CoreComponents do
 
   def button_styles(assigns) do
     classes([
-      "phx-submit-loading:opacity-75 cursor-pointer rounded-md transition-colors",
-      "duration-200 border py-2 px-3 cursor-pointer",
+      "phx-submit-loading:opacity-75 phx-click-loading:opacity-75 phx-click-loading:cursor-default cursor-pointer rounded-md transition-colors",
+      "duration-200 border py-2 px-3",
       "text-sm font-semibold leading-6 disabled:opacity-40 active:text-white/80",
       button_styles(:color, assigns),
       assigns[:class]
@@ -169,7 +169,7 @@ defmodule FirmowidWeb.CoreComponents do
   end
 
   defp button_styles(:color, %{color: "orange"}) do
-    "text-white border-none bg-orangeText hover:bg-orangeBg hover:text-orangeText disabled:cursor-default"
+    "text-white border-none bg-orangeText hover:bg-orangeBg hover:text-orangeText disabled:cursor-default disabled:bg-orangeText disabled:text-white phx-click-loading:bg-orangeText phx-click-loading:text-white"
   end
 
   defp button_styles(:color, %{variant: "outline"}),
@@ -681,7 +681,6 @@ defmodule FirmowidWeb.CoreComponents do
   """
   attr :navigate, :any, required: true
   slot :inner_block, required: true
-
 
   def back(assigns) do
     ~H"""

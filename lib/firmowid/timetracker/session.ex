@@ -40,4 +40,23 @@ defmodule Firmowid.Timetracker.Session do
       _ -> changeset
     end
   end
+
+  def put_duration(nil), do: nil
+
+  def put_duration(session) do
+    duration = calculate_session_duration(session)
+    session |> Map.put(:duration, duration)
+  end
+
+  def calculate_session_duration(session) do
+    end_time =
+      case session.end_time do
+        nil -> DateTime.now!("Europe/Warsaw")
+        end_time -> end_time |> DateTime.shift_zone!("Europe/Warsaw")
+      end
+
+    start_time = session.start_time |> DateTime.shift_zone!("Europe/Warsaw")
+
+    DateTime.diff(end_time, start_time, :minute)
+  end
 end
