@@ -26,7 +26,9 @@ Repo.transaction(fn ->
 
   Repo.put_org_id(av.id)
 
-  {:ok, _} = Timetracker.create_project(%{name: "Firmowid"})
+  {:ok, firmowid} = Timetracker.create_project(%{name: "Firmowid"})
 
   {:ok, _} = Timetracker.create_project(%{name: "Kvantab"})
+
+  Timetracker.add_user_to_project(franek.id, firmowid.id)
 end)
