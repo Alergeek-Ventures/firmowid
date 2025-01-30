@@ -25,7 +25,7 @@ defmodule Firmowid.Timetracker.Session do
   end
 
   @spec validate_user_has_access_to_project(Ecto.Changeset.t()) :: Ecto.Changeset.t()
-  def validate_user_has_access_to_project(changeset) do
+  defp validate_user_has_access_to_project(changeset) do
     project_id = get_field(changeset, :project_id)
     user_id = get_field(changeset, :user_id)
 

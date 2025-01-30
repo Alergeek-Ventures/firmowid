@@ -145,7 +145,7 @@ defmodule FirmowidWeb.CoreComponents do
   end
 
   defp button_styles(:color, %{variant: "outline", color: "black"}) do
-    "border-darkGrey text-darkGrey bg-transparent hover:text-white hover:bg-darkGrey disabled:cursor-default disabled:bg-transparent"
+    "border-darkGrey text-darkGrey bg-transparent hover:text-white hover:bg-darkGrey disabled:cursor-default disabled:text-darkGrey disabled:bg-transparent"
   end
 
   defp button_styles(:color, %{variant: "outline", color: "green"}) do

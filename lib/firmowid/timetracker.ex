@@ -33,6 +33,18 @@ defmodule Firmowid.Timetracker do
     |> Repo.insert()
   end
 
+  def update_project(%Project{} = project, attrs) do
+    project
+    |> Project.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def delete_project(%Project{} = project) do
+    Repo.delete(project)
+  end
+
+  def get_project!(id), do: Repo.get!(Project, id)
+
   def add_user_to_project(user_id, project_id) do
     organization_id = Repo.get_org_id()
 

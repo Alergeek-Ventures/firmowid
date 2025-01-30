@@ -1,6 +1,47 @@
 <div class="min-h-screen bg-lightGreyBg p-4">
   <.back navigate={~p"/czasosledz"}>Wróć do czasośledzia</.back>
 
+  <div class="flex justify-between items-center mt-4">
+    <h2 class="text-xl font-semibold text-darkGrey">Projekty</h2>
+    <.button phx-click="new" phx-disable-with="Ładowanie...">
+      Dodaj projekt
+    </.button>
+  </div>
+
+  <div class="mt-4 mb-8">
+    <div class="bg-white rounded-lg shadow-sm">
+      <div class="p-4">
+        <h3 class="text-lg font-medium text-darkGrey mb-4">Lista projektów</h3>
+        <div class="divide-y">
+          <%= for project <- @projects do %>
+            <div class="py-3 flex items-center justify-between">
+              <span class="text-darkGrey">{project.name}</span>
+              <div class="flex gap-2">
+                <.button
+                  variant="outline"
+                  phx-click="edit"
+                  phx-value-id={project.id}
+                  phx-disable-with="Edytowanie..."
+                >
+                  Edytuj
+                </.button>
+                <.button
+                  variant="outline"
+                  phx-click="delete"
+                  phx-value-id={project.id}
+                  phx-disable-with="Usuwanie..."
+                  data-confirm="Czy na pewno chcesz usunąć ten projekt?"
+                >
+                  Usuń
+                </.button>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="mt-4">
     <%= for user <- @users do %>
       <div class="mb-4 rounded-lg bg-white shadow-sm">
@@ -40,4 +81,25 @@
       </div>
     <% end %>
   </div>
+
+  <.modal :if={@show_modal} id="project-modal" show={@show_modal} on_cancel={JS.patch(~p"/czasosledz/projekty")}>
+    <div class="space-y-6">
+      <h2 class="text-lg font-semibold text-darkGrey">
+        <%= if @editing_project, do: "Edytuj projekt", else: "Nowy projekt" %>
+      </h2>
+
+      <.form for={@form} phx-change="validate" phx-submit="save">
+        <.input field={@form[:name]} label="Nazwa projektu" />
+
+        <div class="mt-6 flex justify-end gap-4">
+          <.button type="button" phx-click="close_modal" phx-disable-with="Zamykanie..." variant="outline">
+            Anuluj
+          </.button>
+          <.button type="submit" phx-disable-with="Zapisywanie...">
+            Zapisz
+          </.button>
+        </div>
+      </.form>
+    </div>
+  </.modal>
 </div>

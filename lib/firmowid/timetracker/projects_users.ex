@@ -16,10 +16,10 @@ defmodule Firmowid.Timetracker.ProjectUser do
     project_user
     |> cast(attrs, [
       :project_id,
-      :user_id,
-      :organization_id
+      :user_id
     ])
     |> foreign_key_constraint(:project_id)
     |> foreign_key_constraint(:user_id)
+    |> put_change(:organization_id, Repo.get_org_id())
   end
 end
