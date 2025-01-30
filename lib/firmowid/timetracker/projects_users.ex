@@ -1,5 +1,6 @@
 defmodule Firmowid.Timetracker.ProjectUser do
   use Firmowid.Schema
+  alias Firmowid.Repo
   import Ecto.Changeset
 
   schema "projects_users" do

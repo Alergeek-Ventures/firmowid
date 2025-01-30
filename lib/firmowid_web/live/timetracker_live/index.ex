@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.TimetrackerLive.Index do
+  alias FirmowidWeb.TimetrackerLive.SessionForm
   alias Firmowid.Timetracker.Session
   alias Firmowid.Timetracker
   use FirmowidWeb, :live_view
@@ -13,9 +14,9 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
      |> assign(
        :form,
        to_form(
-         Session.changeset(%Session{}, %{
-           start_time: DateTime.now!("Europe/Warsaw") |> Calendar.strftime("%H:%M"),
-           user_id: socket.assigns.current_user.id
+         SessionForm.changeset(%{
+           date: Date.utc_today(),
+           start_time: Time.utc_now()
          })
        )
      )
@@ -26,6 +27,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     socket
     |> assign(:sessions, Timetracker.list_user_sessions(socket.assigns.current_user.id))
     |> assign(:current_session, Timetracker.get_current_session(socket.assigns.current_user.id))
+    |> assign(:month_stats, calculate_month_stats(socket.assigns.current_user.id))
   end
 
   def handle_info(:tick, socket) do
@@ -36,29 +38,35 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     {:noreply, socket |> update(:is_form_extended, &(!&1))}
   end
 
-  def handle_event("validate", %{"session" => session}, socket) do
+  def handle_event("validate", %{"session_form" => session}, socket) do
     {:noreply,
      socket
      |> assign(
        :form,
-       to_form(Session.changeset(%Session{}, session))
+       to_form(SessionForm.changeset(%SessionForm{}, session))
      )}
   end
 
-  def handle_event("save", %{"session" => session}, socket) do
-    case Timetracker.start_session(
-           session
-           |> Map.put("user_id", socket.assigns.current_user.id)
-           |> Map.put("start_time", DateTime.utc_now())
-         ) do
+  def handle_event("save", %{"session_form" => session}, socket) do
+    {:ok, validated_session} =
+      session |> SessionForm.changeset() |> SessionForm.attributes(socket.assigns.current_user.id)
+
+    case Timetracker.start_session(validated_session) do
       {:ok, _} ->
         {:noreply,
          socket
-         |> assign(:form, to_form(Session.changeset(%Session{title: ""})))
+         |> assign(
+           :form,
+           to_form(
+             SessionForm.changeset(%{
+               date: Date.utc_today(),
+               start_time: Time.utc_now()
+             })
+           )
+         )
          |> assign_sessions()}
 
       {:error, changeset} ->
-        dbg(changeset)
         {:noreply, socket |> assign(:form, to_form(changeset))}
     end
   end
@@ -83,14 +91,18 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
          |> assign_sessions()}
 
       {:error, _changeset} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Nie udało się usunąć sesji")}
+        LiveToast.send_toast(:error, "Nie udało się usunąć sesji")
+        {:noreply, socket}
     end
   end
 
-  def handle_event("edit_session", %{"session" => params}, socket) do
+  def handle_event("edit_session", %{"session_form" => params}, socket) do
     session_id = params["id"]
+
+    params =
+      params
+      |> Map.update("start_datetime", nil, &string_to_datetime/1)
+      |> Map.update("end_datetime", nil, &string_to_datetime/1)
 
     case Timetracker.update_session(session_id, params) do
       {:ok, _session} ->
@@ -103,9 +115,8 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
          })}
 
       {:error, _changeset} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Nie udało się zaktualizować sesji")}
+        LiveToast.send_toast(:error, "Nie udało się zaktualizować sesji")
+        {:noreply, socket}
     end
   end
 
@@ -149,15 +160,15 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def calculate_session_duration(session) do
-    end_time =
-      case session.end_time do
+    end_datetime =
+      case session.end_datetime do
         nil -> DateTime.now!("Europe/Warsaw")
-        end_time -> end_time |> DateTime.shift_zone!("Europe/Warsaw")
+        end_datetime -> end_datetime |> DateTime.shift_zone!("Europe/Warsaw")
       end
 
-    start_time = session.start_time |> DateTime.shift_zone!("Europe/Warsaw")
+    start_datetime = session.start_datetime |> DateTime.shift_zone!("Europe/Warsaw")
 
-    DateTime.diff(end_time, start_time, :minute)
+    DateTime.diff(end_datetime, start_datetime, :minute)
   end
 
   def calculate_total_duration(sessions) do
@@ -176,13 +187,19 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
       <div class="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
         <div>{@session.title}</div>
         <div class="flex items-center space-x-4">
-          <div>{format_time(@session.start_time)} - {format_time(@session.end_time)}</div>
+          <div>{format_time(@session.start_datetime)} - {format_time(@session.end_datetime)}</div>
           <div class="font-bold">{format_duration(calculate_session_duration(@session))}</div>
           <div class="flex space-x-2">
-            <button phx-click={show_modal("edit-session-modal-#{@session.id}")}>
+            <button
+              id={"edit-session-#{@session.id}"}
+              phx-click={show_modal("edit-session-modal-#{@session.id}")}
+            >
               <.edit_icon class="text-darkGrey" />
             </button>
-            <button phx-click={show_modal("delete-session-modal-#{@session.id}")}>
+            <button
+              id={"delete-session-#{@session.id}"}
+              phx-click={show_modal("delete-session-modal-#{@session.id}")}
+            >
               <.icon name="hero-trash" class="text-darkGrey" />
             </button>
           </div>
@@ -194,16 +211,18 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
         on_cancel={hide_modal("edit-session-modal-#{@session.id}")}
       >
         <.form
-          for={Session.changeset(%Session{id: @session.id, title: @session.title})}
+          :let={edit_form}
+          as={:session_form}
+          id={"edit-session-form-#{@session.id}"}
+          for={Session.changeset(@session)}
           phx-submit="edit_session"
           class="space-y-4"
         >
-          <input type="hidden" name="session[id]" value={@session.id} />
+          <input type="hidden" name="session_form[id]" value={@session.id} />
           <.input
             type="select"
             label="Projekt"
-            name="session[project_id]"
-            value={@session.project_id}
+            field={edit_form[:project_id]}
             options={
               @projects
               |> Enum.map(fn project ->
@@ -211,27 +230,22 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
               end)
             }
           />
-          <.input
-            label="Tytuł"
-            value={@session.title}
-            name="session[title]"
-            placeholder="Nad czym pracowałeś?"
-          />
+          <.input label="Tytuł" field={edit_form[:title]} placeholder="Nad czym pracowałeś?" />
           <div class="flex gap-2">
             <div class="w-full">
               <.input
                 type="datetime-local"
                 label="Czas rozpoczęcia"
-                value={format_datetime(@session.start_time)}
-                name="session[start_time]"
+                field={edit_form[:start_datetime]}
+                value={format_datetime(@session.start_datetime)}
               />
             </div>
             <div class="w-full">
               <.input
                 type="datetime-local"
                 label="Czas zakończenia"
-                value={format_datetime(@session.end_time)}
-                name="session[end_time]"
+                field={edit_form[:end_datetime]}
+                value={format_datetime(@session.end_datetime)}
               />
             </div>
           </div>
@@ -265,6 +279,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
             Anuluj
           </.button>
           <.button
+            id={"confirm-delete-session-#{@session.id}"}
             color="red"
             phx-click={JS.push("delete_session", value: %{id: @session.id})}
             phx-disable-with="Usuwanie..."
@@ -277,6 +292,15 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     """
   end
 
+  defp string_to_datetime(nil), do: nil
+
+  defp string_to_datetime(""), do: nil
+
+  defp string_to_datetime(string) do
+    NaiveDateTime.from_iso8601!(string <> ":00")
+    |> DateTime.from_naive!("Europe/Warsaw")
+  end
+
   # Add this helper function for datetime formatting
   defp format_datetime(nil), do: nil
 
@@ -285,5 +309,53 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     |> DateTime.shift_zone!("Europe/Warsaw")
     |> DateTime.to_iso8601()
     |> String.slice(0, 16)
+  end
+
+  # Add these new functions at the end of the module
+
+  def calculate_month_stats(user_id) do
+    now = DateTime.now!("Europe/Warsaw")
+    start_of_month = Date.beginning_of_month(now) |> DateTime.new!(~T[00:00:00], "Europe/Warsaw")
+    end_of_month = Date.end_of_month(now) |> DateTime.new!(~T[23:59:59], "Europe/Warsaw")
+
+    total_minutes =
+      Timetracker.list_user_sessions(user_id)
+      |> Enum.filter(fn session ->
+        session.start_datetime >= start_of_month &&
+          (session.end_datetime || DateTime.now!("Europe/Warsaw")) <= end_of_month
+      end)
+      |> calculate_total_duration()
+
+    hours = div(total_minutes, 60)
+    minutes = rem(total_minutes, 60)
+    percentage = round(total_minutes / (160 * 60) * 100)
+
+    current_month =
+      now
+      |> Calendar.strftime("%B",
+        month_names: fn month ->
+          case month do
+            1 -> "styczniu"
+            2 -> "lutym"
+            3 -> "marcu"
+            4 -> "kwietniu"
+            5 -> "maju"
+            6 -> "czerwcu"
+            7 -> "lipcu"
+            8 -> "sierpniu"
+            9 -> "wrześniu"
+            10 -> "październiku"
+            11 -> "listopadzie"
+            12 -> "grudniu"
+          end
+        end
+      )
+
+    %{
+      hours: hours,
+      minutes: minutes,
+      percentage: percentage,
+      month: current_month
+    }
   end
 end

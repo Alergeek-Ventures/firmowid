@@ -61,6 +61,10 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
      )}
   end
 
+  def handle_event("close", _params, socket) do
+    {:noreply, assign(socket, show_modal: false)}
+  end
+
   def handle_event("validate", %{"project" => params}, socket) do
     changeset =
       case socket.assigns.editing_project do

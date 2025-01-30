@@ -82,17 +82,22 @@
     <% end %>
   </div>
 
-  <.modal :if={@show_modal} id="project-modal" show={@show_modal} on_cancel={JS.patch(~p"/czasosledz/projekty")}>
+  <.modal :if={@show_modal} id="project-modal" show={@show_modal} on_cancel={JS.push("close")}>
     <div class="space-y-6">
       <h2 class="text-lg font-semibold text-darkGrey">
-        <%= if @editing_project, do: "Edytuj projekt", else: "Nowy projekt" %>
+        {if @editing_project, do: "Edytuj projekt", else: "Nowy projekt"}
       </h2>
 
       <.form for={@form} phx-change="validate" phx-submit="save">
         <.input field={@form[:name]} label="Nazwa projektu" />
 
         <div class="mt-6 flex justify-end gap-4">
-          <.button type="button" phx-click="close_modal" phx-disable-with="Zamykanie..." variant="outline">
+          <.button
+            type="button"
+            phx-click="close_modal"
+            phx-disable-with="Zamykanie..."
+            variant="outline"
+          >
             Anuluj
           </.button>
           <.button type="submit" phx-disable-with="Zapisywanie...">

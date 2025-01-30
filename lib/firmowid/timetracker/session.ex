@@ -6,8 +6,8 @@ defmodule Firmowid.Timetracker.Session do
 
   schema "sessions" do
     field :title, :string
-    field :start_time, :utc_datetime, autogenerate: {DateTime, :utc_now}
-    field :end_time, :utc_datetime
+    field :start_datetime, :utc_datetime, autogenerate: {DateTime, :utc_now}
+    field :end_datetime, :utc_datetime
 
     belongs_to :user, Firmowid.Accounts.User
     belongs_to :project, Firmowid.Timetracker.Project
@@ -18,10 +18,17 @@ defmodule Firmowid.Timetracker.Session do
   @doc false
   def changeset(session, attrs \\ %{}) do
     session
-    |> cast(attrs, [:user_id, :title, :start_time, :end_time, :project_id])
-    |> validate_required([:user_id, :title, :start_time, :project_id])
+    |> cast(attrs, [:user_id, :title, :start_datetime, :end_datetime, :project_id])
+    |> validate_required([:user_id, :title, :start_datetime, :project_id])
     |> validate_user_has_access_to_project()
     |> put_change(:organization_id, Repo.get_org_id())
+  end
+
+  def maybe_put_start_datetime(changeset) do
+    case get_change(changeset, :start_datetime) do
+      nil -> put_change(changeset, :start_datetime, DateTime.utc_now())
+      _ -> changeset
+    end
   end
 
   @spec validate_user_has_access_to_project(Ecto.Changeset.t()) :: Ecto.Changeset.t()
@@ -49,14 +56,14 @@ defmodule Firmowid.Timetracker.Session do
   end
 
   def calculate_session_duration(session) do
-    end_time =
-      case session.end_time do
+    end_datetime =
+      case session.end_datetime do
         nil -> DateTime.now!("Europe/Warsaw")
-        end_time -> end_time |> DateTime.shift_zone!("Europe/Warsaw")
+        end_datetime -> end_datetime |> DateTime.shift_zone!("Europe/Warsaw")
       end
 
-    start_time = session.start_time |> DateTime.shift_zone!("Europe/Warsaw")
+    start_datetime = session.start_datetime |> DateTime.shift_zone!("Europe/Warsaw")
 
-    DateTime.diff(end_time, start_time, :minute)
+    DateTime.diff(end_datetime, start_datetime, :minute)
   end
 end

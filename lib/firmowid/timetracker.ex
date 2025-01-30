@@ -72,7 +72,7 @@ defmodule Firmowid.Timetracker do
   def end_session(session_id) do
     session = Repo.get(Session, session_id)
 
-    Session.changeset(session, %{end_time: DateTime.utc_now()})
+    Session.changeset(session, %{end_datetime: DateTime.utc_now()})
     |> Repo.update()
   end
 
@@ -88,10 +88,14 @@ defmodule Firmowid.Timetracker do
     |> Repo.delete()
   end
 
+  def get_session(id), do: Repo.get(Session, id)
+
+  def get_session!(id), do: Repo.get!(Session, id)
+
   def list_user_sessions(user_id) do
     Session
     |> where([s], s.user_id == ^user_id)
-    |> order_by([s], desc: s.start_time)
+    |> order_by([s], desc: s.start_datetime)
     |> Repo.all()
     |> Repo.preload(:project)
     |> Enum.map(&Session.put_duration/1)
@@ -99,8 +103,8 @@ defmodule Firmowid.Timetracker do
 
   def get_current_session(user_id) do
     Session
-    |> where([s], s.user_id == ^user_id and is_nil(s.end_time))
-    |> order_by([s], desc: s.start_time)
+    |> where([s], s.user_id == ^user_id and is_nil(s.end_datetime))
+    |> order_by([s], desc: s.start_datetime)
     |> limit(1)
     |> Repo.one()
     |> Repo.preload(:project)

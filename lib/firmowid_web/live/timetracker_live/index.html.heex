@@ -4,98 +4,138 @@
       Projekty
     </.link>
   </div>
+
   <div class="flex justify-between mt-36">
-    <.form phx-change="validate" phx-submit="save" for={@form} class="w-full max-w-md space-y-4">
-      <.input
-        type="select"
-        disabled={@current_session != nil}
-        class="w-full font-bold bg-orangeBg text-orangeText border-none px-4 py-3 rounded appearance-none cursor-pointer hover:bg-[#f0e0d8] transition-colors focus:outline-none focus:ring-1 focus:ring-orangeText"
-        field={@form[:project_id]}
-        options={
-          @projects
-          |> Enum.map(fn project ->
-            {project.name, project.id}
-          end)
-        }
-      />
-      <%= if @current_session do %>
-        <div class="w-full font-bold bg-greyButtonBg px-4 py-3 rounded">
-          {@current_session.title}
-        </div>
-      <% else %>
+    <%= if Enum.empty?(@projects) do %>
+      <div class="w-full max-w-md text-center py-8 text-darkGrey">
+        <p class="text-lg font-semibold">Nie masz przypisanych projektów</p>
+        <%= if @current_user.system_role == "superuser" do %>
+          <p class="text-sm mt-2">
+            Dodaj swój pierwszy projekt i przypisz się do niego, aby rozpocząć śledzenie czasu
+          </p>
+          <.link
+            navigate={~p"/czasosledz/projekty"}
+            class="mt-4 inline-block text-orangeText hover:underline"
+          >
+            Przejdź do zarządzania projektami
+          </.link>
+        <% else %>
+          <p class="text-sm mt-2">Poproś administratora o przypisanie Cię do projektu</p>
+        <% end %>
+      </div>
+    <% else %>
+      <.form
+        id="session_form"
+        phx-change="validate"
+        phx-submit="save"
+        for={@form}
+        class="w-full max-w-md space-y-4"
+      >
         <.input
-          field={@form[:title]}
-          required={true}
+          type="select"
           disabled={@current_session != nil}
-          placeholder="Nad czym dzisiaj pracujesz?"
+          class="w-full font-bold bg-orangeBg text-orangeText border-none px-4 py-3 rounded appearance-none cursor-pointer hover:bg-[#f0e0d8] transition-colors focus:outline-none focus:ring-1 focus:ring-orangeText"
+          field={@form[:project_id]}
+          options={
+            @projects
+            |> Enum.map(fn project ->
+              {project.name, project.id}
+            end)
+          }
         />
-      <% end %>
+        <%= if @current_session do %>
+          <div class="w-full font-bold bg-greyButtonBg px-4 py-3 rounded">
+            {@current_session.title}
+          </div>
+        <% else %>
+          <.input
+            field={@form[:title]}
+            required={true}
+            disabled={@current_session != nil}
+            placeholder="Nad czym dzisiaj pracujesz?"
+          />
+        <% end %>
 
-      <div :if={@is_form_extended && !@current_session} class="flex gap-2">
-        <.input label="Data" type="date" class="w-full" field={@form[:date]} />
-        <.input label="Od" type="time" class="w-full" field={@form[:start_time]} />
-        <.input type="time" label="Do" class="w-full" field={@form[:end_time]} />
-      </div>
-
-      <div :if={@current_session} class="text-center">
-        <div class="text-2xl font-bold text-orangeText">
-          {format_duration(calculate_session_duration(@current_session))}
+        <div :if={@is_form_extended && !@current_session} class="flex gap-2">
+          <.input label="Data" type="date" class="w-full" field={@form[:date]} />
+          <.input label="Od" type="time" class="w-full" field={@form[:start_time]} />
+          <.input type="time" label="Do" class="w-full" field={@form[:end_time]} />
         </div>
 
-        <.button phx-click="pause_session" color="orange" type="button" class="mt-4 w-full">
-          Zatrzymaj
-        </.button>
-      </div>
+        <div :if={@current_session} class="text-center">
+          <div class="text-2xl font-bold text-orangeText">
+            {format_duration(calculate_session_duration(@current_session))}
+          </div>
 
-      <div :if={!@current_session} class="flex gap-4">
-        <.button
-          type="button"
-          variant="outline"
-          color="orange"
-          class="w-full phx-click-loading:opacity-60 phx-click-loading:cursor-default"
-          phx-click="toggle_extended_form"
-        >
-          {if @is_form_extended, do: "Anuluj", else: " Wprowadź inną datę"}
-        </.button>
-        <.button color="orange" class="w-full">
-          {if @is_form_extended, do: "Zapisz", else: "Zacznij teraz"}
-        </.button>
-      </div>
-    </.form>
+          <.button phx-click="pause_session" color="orange" type="button" class="mt-4 w-full">
+            Zatrzymaj
+          </.button>
+        </div>
+
+        <div :if={!@current_session} class="flex gap-4">
+          <.button
+            type="button"
+            variant="outline"
+            id="toggle_extended_form"
+            color="orange"
+            class="w-full phx-click-loading:opacity-60 phx-click-loading:cursor-default"
+            phx-click="toggle_extended_form"
+          >
+            {if @is_form_extended, do: "Anuluj", else: " Wprowadź inną datę"}
+          </.button>
+          <.button color="orange" class="w-full">
+            {if @is_form_extended, do: "Zapisz", else: "Zacznij teraz"}
+          </.button>
+        </div>
+      </.form>
+    <% end %>
+
     <div class="relative w-64 h-64">
       <div class="w-full h-full rounded-full bg-gray-100"></div>
 
       <div class="absolute top-0 left-0 w-full h-full">
-        <div class="w-full h-full rounded-full border-[30px] border-orangeText
-                  transform -rotate-45
-                  [clip-path:polygon(0_0,100%_0,100%_100%,0_100%,50%_50%)]">
+        <div
+          class="w-full h-full rounded-full"
+          style={"background: conic-gradient(var(--color-orange-text), #{@month_stats.percentage}%, var(--color-grey-button-bg) 0)"}
+        >
+        </div>
+        <%!-- Inner white circle to create donut effect --%>
+        <div class="absolute top-1/2 left-1/2 w-[70%] h-[70%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-lightGreyBg">
         </div>
       </div>
 
       <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-        <div class="text-4xl font-bold">75%</div>
-        <div class="text-sm text-gray-600">16h 39min</div>
-        <div class="mt-1 text-sm">w październiku</div>
+        <div class="text-4xl font-bold">{@month_stats.percentage}%</div>
+        <div class="text-sm text-gray-600">{@month_stats.hours}h {@month_stats.minutes}min</div>
+        <div class="mt-1 text-sm">w {@month_stats.month}</div>
       </div>
     </div>
   </div>
+
   <div class="border-greyButtonBg p-4 border rounded-md mt-12">
-    <%= for {day, sessions} <- @sessions |> Enum.group_by(fn s -> Date.to_string(s.start_time) end) |> Enum.sort_by(fn {day, _sessions} -> day end, :desc) do %>
-      <div class="w-full mt-2 flex text-darkGrey justify-between items-center">
-        <p class="font-semibold text-sm">{format_day_header(day)}</p>
-        <div class="border border-greyButtonBg p-2 rounded-md font-bold">
-          {format_duration(calculate_total_duration(sessions))}
-        </div>
+    <%= if Enum.empty?(@sessions) do %>
+      <div class="text-center py-8 text-darkGrey">
+        <p class="text-lg font-semibold">Brak zarejestrowanych sesji</p>
+        <p class="text-sm mt-2">Rozpocznij swoją pierwszą sesję używając formularza powyżej</p>
       </div>
-      <div class="w-full mx-auto mt-3">
-        <div class="shadow-sm rounded-lg">
-          <div class="[&>*:nth-child(odd)]:bg-greyButtonBg">
-            <%= for session <- sessions do %>
-              <.render_row session={session} projects={@projects} />
-            <% end %>
+    <% else %>
+      <%= for {day, sessions} <- @sessions |> Enum.group_by(fn s -> Date.to_string(s.start_datetime) end) |> Enum.sort_by(fn {day, _sessions} -> day end, :desc) do %>
+        <div class="w-full mt-2 flex text-darkGrey justify-between items-center">
+          <p class="font-semibold text-sm">{format_day_header(day)}</p>
+          <div class="border border-greyButtonBg p-2 rounded-md font-bold">
+            {format_duration(calculate_total_duration(sessions))}
           </div>
         </div>
-      </div>
+        <div class="w-full mx-auto mt-3">
+          <div class="shadow-sm rounded-lg">
+            <div class="[&>*:nth-child(odd)]:bg-greyButtonBg">
+              <%= for session <- sessions do %>
+                <.render_row session={session} projects={@projects} />
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
     <% end %>
   </div>
 </div>

@@ -1,21 +1,37 @@
-@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap");
 
 @import "tailwindcss/base";
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+:root {
+  --color-white: theme(colors.white);
+  --color-black: theme(colors.black);
+  --color-orange-text: theme(colors.orangeText);
+  --color-orange-bg: theme(colors.orangeBg);
+  --color-green-text: theme(colors.greenText);
+  --color-green-bg: theme(colors.greenBg);
+  --color-red-text: theme(colors.redText);
+  --color-red-bg: theme(colors.redBg);
+  --color-blue-text: theme(colors.blueText);
+  --color-blue-bg: theme(colors.blueBg);
+  --color-grey-button-bg: theme(colors.greyButtonBg);
+  --color-dark-grey: theme(colors.darkGrey);
+  --color-light-grey-bg: theme(colors.lightGreyBg);
+}
+
 .air-datepicker {
-    --adp-background-color-selected-other-month-focused: #455E5E;
-    --adp-background-color-selected-other-month: #455E5E;
-    --adp-accent-color: #455E5E;
-    --adp-color-current-date: var(--adp-accent-color);
-    --adp-day-name-color: var(--adp-accent-color);
-    --adp-day-name-color-hover: var(--adp-accent-color);
-    --adp-cell-background-color-selected: var(--adp-accent-color);
-    --adp-cell-background-color-selected-hover: var(--adp-accent-color);
-    --adp-cell-background-color-in-range: rgba(233, 84, 32, 0.1);
-    --adp-cell-background-color-in-range-hover: rgba(233, 84, 32, 0.2);
-    --adp-cell-border-color-in-range: var(--adp-cell-background-color-selected);
-    --adp-btn-color: var(--adp-accent-color);
-    --adp-font-family: "Lexend", sans-serif;
+  --adp-background-color-selected-other-month-focused: #455e5e;
+  --adp-background-color-selected-other-month: #455e5e;
+  --adp-accent-color: #455e5e;
+  --adp-color-current-date: var(--adp-accent-color);
+  --adp-day-name-color: var(--adp-accent-color);
+  --adp-day-name-color-hover: var(--adp-accent-color);
+  --adp-cell-background-color-selected: var(--adp-accent-color);
+  --adp-cell-background-color-selected-hover: var(--adp-accent-color);
+  --adp-cell-background-color-in-range: rgba(233, 84, 32, 0.1);
+  --adp-cell-background-color-in-range-hover: rgba(233, 84, 32, 0.2);
+  --adp-cell-border-color-in-range: var(--adp-cell-background-color-selected);
+  --adp-btn-color: var(--adp-accent-color);
+  --adp-font-family: "Lexend", sans-serif;
 }

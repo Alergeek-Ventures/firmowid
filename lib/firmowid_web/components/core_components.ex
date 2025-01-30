@@ -157,7 +157,7 @@ defmodule FirmowidWeb.CoreComponents do
   end
 
   defp button_styles(:color, %{variant: "outline", color: "orange"}) do
-    "text-orangeText hover:bg-orangeBg  disabled:cursor-default disabled:text-orangeText"
+    "text-orangeText hover:bg-orangeBg disabled:pointer-events-none phx-click-loading:pointer-events-none"
   end
 
   defp button_styles(:color, %{color: "green"}) do

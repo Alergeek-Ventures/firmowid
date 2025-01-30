@@ -10,6 +10,8 @@ defmodule Firmowid.AccountsFixtures do
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
   def valid_user_password, do: "hello world!"
 
+  def unique_identifcation_number, do: System.unique_integer() |> Integer.to_string()
+
   def valid_user_attributes(attrs \\ %{}) do
     Enum.into(attrs, %{
       email: unique_user_email(),
@@ -26,12 +28,16 @@ defmodule Firmowid.AccountsFixtures do
     {:ok, organization} =
       Firmowid.Accounts.create_organization(
         %{
-          "identification_number" => "1234567890",
+          "identification_number" => unique_identifcation_number(),
           "name" => "Test Organization",
           "owner_id" => user.id
         },
         user
       )
+
+    Firmowid.Accounts.update_user(user, Map.take(attrs, [:system_role]))
+
+    Repo.put_org_id(organization.id)
 
     user
     |> User.organization_changeset(%{organization_id: organization.id})

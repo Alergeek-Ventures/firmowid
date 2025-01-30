@@ -36,8 +36,8 @@ defmodule Firmowid.Repo.Migrations.CreateSessionsAndProjects do
     create table(:sessions) do
       add :user_id, references(:users, on_delete: :delete_all), null: false
       add :title, :string, null: false
-      add :start_time, :utc_datetime, null: false
-      add :end_time, :utc_datetime
+      add :start_datetime, :utc_datetime, null: false
+      add :end_datetime, :utc_datetime
       add :project_id, references(:projects, on_delete: :nilify_all)
 
       add :organization_id,
