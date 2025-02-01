@@ -193,6 +193,18 @@ defmodule FirmowidWeb.UserAuth do
     end
   end
 
+  def on_mount(:require_superuser, _params, _session, socket) do
+    if Authorization.authorize(socket.assigns.current_user) do
+      {:cont, socket}
+    else
+      socket =
+        socket
+        |> Phoenix.LiveView.redirect(to: ~p"/czasosledz")
+
+      {:halt, socket}
+    end
+  end
+
   def on_mount(:redirect_if_user_is_authenticated, _params, session, socket) do
     socket = mount_current_user(socket, session)
 
