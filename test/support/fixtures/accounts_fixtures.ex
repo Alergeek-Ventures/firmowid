@@ -19,6 +19,10 @@ defmodule Firmowid.AccountsFixtures do
     })
   end
 
+  def admin_fixture(attrs \\ %{}) do
+    user_fixture(Map.merge(%{system_role: "superuser"}, attrs))
+  end
+
   def user_fixture(attrs \\ %{}) do
     {:ok, user} =
       attrs

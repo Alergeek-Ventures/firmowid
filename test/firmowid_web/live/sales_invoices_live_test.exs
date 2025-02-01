@@ -10,7 +10,7 @@ defmodule FirmowidWeb.SalesInvoicesLiveTest do
     test "renders sales_invoices page", %{conn: conn} do
       {:ok, _lv, html} =
         conn
-        |> log_in_user(user_fixture())
+        |> log_in_user(admin_fixture())
         |> live(~p"/sprzedazowe")
 
       assert html =~ "Rodzaj faktury"
@@ -27,7 +27,7 @@ defmodule FirmowidWeb.SalesInvoicesLiveTest do
   describe "basic info" do
     setup %{conn: conn} do
       password = valid_user_password()
-      user = user_fixture(%{password: password})
+      user = admin_fixture(%{password: password})
       %{conn: log_in_user(conn, user)}
     end
 
@@ -52,7 +52,7 @@ defmodule FirmowidWeb.SalesInvoicesLiveTest do
   describe "seller form" do
     setup %{conn: conn} do
       password = valid_user_password()
-      user = user_fixture(%{password: password})
+      user = admin_fixture(%{password: password})
       %{conn: log_in_user(conn, user)}
     end
 
@@ -123,7 +123,7 @@ defmodule FirmowidWeb.SalesInvoicesLiveTest do
   describe "buyer form" do
     setup %{conn: conn} do
       password = valid_user_password()
-      user = user_fixture(%{password: password})
+      user = admin_fixture(%{password: password})
       %{conn: log_in_user(conn, user)}
     end
 
@@ -158,7 +158,7 @@ defmodule FirmowidWeb.SalesInvoicesLiveTest do
   describe "invoice items" do
     setup %{conn: conn} do
       password = valid_user_password()
-      user = user_fixture(%{password: password})
+      user = admin_fixture(%{password: password})
       %{conn: log_in_user(conn, user)}
     end
 
