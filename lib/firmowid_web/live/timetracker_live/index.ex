@@ -1,11 +1,12 @@
 defmodule FirmowidWeb.TimetrackerLive.Index do
   alias FirmowidWeb.TimetrackerLive.SessionForm
   alias Firmowid.Timetracker.Session
+  alias Firmowid.Authorization
   alias Firmowid.Timetracker
   use FirmowidWeb, :live_view
 
   def mount(_params, _session, socket) do
-    if connected?(socket), do: :timer.send_interval(20000, self(), :tick)
+    if connected?(socket), do: :timer.send_interval(5000, self(), :tick)
 
     {:ok,
      socket

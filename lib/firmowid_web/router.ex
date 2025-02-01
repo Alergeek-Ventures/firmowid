@@ -42,30 +42,43 @@ defmodule FirmowidWeb.Router do
   end
 
   scope "/", FirmowidWeb do
+    pipe_through [:browser, :require_authenticated_user_with_organization, :require_superuser]
+
+    get "/sprzedazowe/:id/pdf", PdfController, :index
+    get "/sprzedazowe/:id/download", PdfController, :pdf
+    get "/pobierz-miesiac", FileController, :batch
+
+    live_session :admin,
+      on_mount: [
+        {FirmowidWeb.UserAuth, :ensure_authenticated_with_organization},
+        {FirmowidWeb.UserAuth, :require_superuser}
+      ] do
+      live "/", InvoicingLive.Index, :index
+      live "/kosztowe/:id", CostInvoicesLive.Show, :index
+
+      live "/sprzedazowe", SalesInvoicesLive.Index, :index
+      live "/sprzedazowe/:id", SalesInvoicesLive.Index, :index
+
+      live "/czasosledz/projekty", TimetrackerLive.Projects, :projects
+
+      live "/ustawienia/bank", BankSyncLive.Index, :index
+      live "/ustawienia/bank/dodaj", BankSyncLive.Create, :index
+
+      live "/zaproszenia", OrganizationInvitesLive.Index, :index
+    end
+  end
+
+  scope "/", FirmowidWeb do
     pipe_through [:browser, :require_authenticated_user_with_organization]
 
     live_session :require_authenticated_user_with_organization,
       on_mount: [{FirmowidWeb.UserAuth, :ensure_authenticated_with_organization}] do
-      live "/", InvoicingLive.Index, :index
-      live "/kosztowe/:id", CostInvoicesLive.Show, :index
-      get "/pobierz-miesiac", FileController, :batch
-
-      live "/sprzedazowe", SalesInvoicesLive.Index, :index
-      live "/sprzedazowe/:id", SalesInvoicesLive.Index, :index
-      get "/sprzedazowe/:id/pdf", PdfController, :index
-      get "/sprzedazowe/:id/download", PdfController, :pdf
-
       live "/czasosledz", TimetrackerLive.Index, :index
-      live "/czasosledz/projekty", TimetrackerLive.Projects, :projects
 
       live "/ustawienia/uzytkownik", User.SettingsLive, :edit
       live "/ustawienia/uzytkownik/potwierdz/:token", User.SettingsLive, :index
 
       live "/ustawienia", SettingsLive.Index, :index
-      live "/ustawienia/bank", BankSyncLive.Index, :index
-      live "/ustawienia/bank/dodaj", BankSyncLive.Create, :index
-
-      live "/zaproszenia", OrganizationInvitesLive.Index, :index
     end
   end
 

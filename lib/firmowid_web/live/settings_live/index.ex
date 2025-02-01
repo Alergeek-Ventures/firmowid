@@ -35,7 +35,14 @@ defmodule FirmowidWeb.SettingsLive.Index do
 
     {:ok,
      socket
-     |> assign(:tab, "organizacja")
+     |> assign(
+       :tab,
+       if Firmowid.Authorization.authorize(socket.assigns.current_user) do
+         "organizacja"
+       else
+         "konto"
+       end
+     )
      |> assign(
        :company_form,
        to_form(form_basic_info_changeset(org))

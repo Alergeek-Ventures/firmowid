@@ -4,6 +4,7 @@ defmodule FirmowidWeb.UserAuth do
   import Plug.Conn
   import Phoenix.Controller
 
+  alias Firmowid.Authorization
   alias Firmowid.Accounts
 
   # Make the remember me cookie valid for 60 days.
@@ -259,12 +260,11 @@ defmodule FirmowidWeb.UserAuth do
   end
 
   def require_superuser(conn, _opts) do
-    if conn.assigns[:current_user].system_role == "superuser" do
+    if Authorization.authorize(conn.assigns.current_user) do
       conn
     else
       conn
-      |> maybe_store_return_to()
-      |> redirect(to: ~p"/zaloguj")
+      |> redirect(to: ~p"/czasosledz")
       |> halt()
     end
   end

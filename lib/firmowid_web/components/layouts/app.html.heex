@@ -9,9 +9,11 @@
     </.link>
 
     <div class="flex uppercase items-center gap-16 max-md:hidden">
-      <.link navigate={~p"/"} class="hover:underline flex items-center gap-2">
-        <.icon name="hero-clipboard-document-list" class="w-5 h-5" /> Fakturowanie
-      </.link>
+      <%= if Firmowid.Authorization.authorize(@current_user) do %>
+        <.link navigate={~p"/"} class="hover:underline flex items-center gap-2">
+          <.icon name="hero-clipboard-document-list" class="w-5 h-5" /> Fakturowanie
+        </.link>
+      <% end %>
       <.link navigate={~p"/czasosledz"} class="hover:underline flex items-center gap-2">
         <.icon name="hero-clock" class="w-5 h-5" /> Czasośledź
       </.link>
@@ -56,12 +58,14 @@
         <.link navigate={~p"/ustawienia"} class="rounded-md p-2 hover:bg-darkGrey/50">
           Mój profil
         </.link>
-        <.link
-          navigate={~p"/ustawienia?tab=konta_bankowe"}
-          class="rounded-md p-2 hover:bg-darkGrey/50"
-        >
-          Konta bankowe
-        </.link>
+        <%= if Firmowid.Authorization.authorize(@current_user) do %>
+          <.link
+            navigate={~p"/ustawienia?tab=konta_bankowe"}
+            class="rounded-md p-2 hover:bg-darkGrey/50"
+          >
+            Konta bankowe
+          </.link>
+        <% end %>
         <.link
           href={~p"/wyloguj"}
           method="delete"
