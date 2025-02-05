@@ -4,8 +4,8 @@ defmodule FirmowidWeb.User.LoginLive do
   def render(assigns) do
     ~H"""
     <div class="w-screen h-screen overflow-clip flex items-center justify-center relative">
-      <img src="/images/figurine.png" class="h-[135vh] opacity-10 absolute -top-20 left-1/2 -z-1" />
-      <div class="max-w-sm">
+      <img src="/images/figurine.png" class="h-[135vh] opacity-10 absolute -top-20 left-1/2" />
+      <div class="max-w-sm z-10">
         <h1 class="text-center text-2xl font-bold">
           Wejdź do Firmowida
         </h1>
