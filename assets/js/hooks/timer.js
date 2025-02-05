@@ -16,8 +16,8 @@ export const Timer = {
   },
 
   beforeUpdate() {
-    updateElement();
-  }
+    this.updateElement();
+  },
 
   formatTime(elapsed) {
     const seconds = Math.floor(elapsed / 1000);

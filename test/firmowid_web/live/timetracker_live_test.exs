@@ -74,7 +74,8 @@ defmodule FirmowidWeb.TimetrackerLiveTest do
             "project_id" => project.id,
             "title" => title,
             "date" => "2021-01-01",
-            "start_time" => "14:00"
+            "start_time" => "14:00",
+            "end_time" => nil
           }
         })
         |> render_submit()
