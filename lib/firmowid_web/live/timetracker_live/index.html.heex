@@ -60,16 +60,35 @@
 
         <div :if={@is_form_extended && !@current_session} class="flex gap-2">
           <.input label="Data" type="date" class="w-full" field={@form[:date]} />
-          <.input label="Od" type="time" class="w-full" field={@form[:start_time]} />
-          <.input type="time" label="Do" class="w-full" field={@form[:end_time]} />
+          <.input
+            step="60"
+            label="Od"
+            type="time"
+            class="w-full"
+            field={@form[:start_time]}
+            value={format_time(@form[:start_time].value)}
+          />
+          <.input
+            step="60"
+            type="time"
+            label="Do"
+            class="w-full"
+            field={@form[:end_time]}
+            value={format_time(@form[:end_time].value)}
+          />
         </div>
 
         <div :if={@current_session} class="text-center">
-          <div class="text-2xl font-bold text-orangeText">
-            {format_duration(calculate_session_duration(@current_session))}
+          <div
+            class="text-2xl font-bold text-orangeText"
+            id="timetracker-timer"
+            data-start_time={@current_session.start_datetime}
+            phx-hook="Timer"
+          >
+            {format_duration(@current_session.duration, :with_seconds)}
           </div>
 
-          <.button phx-click="pause_session" color="orange" type="button" class="mt-4 w-full">
+          <.button phx-click="end_session" color="orange" type="button" class="mt-4 w-full">
             Zatrzymaj
           </.button>
         </div>
@@ -101,14 +120,15 @@
           style={"background: conic-gradient(var(--color-orange-text), #{@month_stats.percentage}%, var(--color-grey-button-bg) 0)"}
         >
         </div>
-        <%!-- Inner white circle to create donut effect --%>
+
         <div class="absolute top-1/2 left-1/2 w-[70%] h-[70%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-lightGreyBg">
         </div>
       </div>
 
       <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-        <div class="text-4xl font-bold">{@month_stats.percentage}%</div>
-        <div class="text-sm text-gray-600">{@month_stats.hours}h {@month_stats.minutes}min</div>
+        <div class="font-bold text-gray-600">
+          {@month_stats.hours}h {@month_stats.minutes}min
+        </div>
         <div class="mt-1 text-sm">w {@month_stats.month}</div>
       </div>
     </div>

@@ -65,6 +65,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
              })
            )
          )
+         |> assign(:is_form_extended, false)
          |> assign_sessions()}
 
       {:error, changeset} ->
@@ -72,7 +73,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     end
   end
 
-  def handle_event("pause_session", _, socket) do
+  def handle_event("end_session", _, socket) do
     case Timetracker.end_session(socket.assigns.current_session.id) do
       {:ok, _session} ->
         {:noreply,
@@ -148,34 +149,38 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     "trwa"
   end
 
-  def format_time(datetime) do
+  def format_time("") do
+    nil
+  end
+
+  def format_time(%DateTime{} = datetime) do
     datetime
     |> DateTime.shift_zone!("Europe/Warsaw")
     |> Calendar.strftime("%H:%M")
   end
 
-  def format_duration(duration) when is_integer(duration) do
-    hours = div(duration, 60)
-    minutes = rem(duration, 60)
-    :io_lib.format("~2..0B:~2..0B", [hours, minutes])
+  def format_time(%Time{} = time) do
+    time |> Calendar.strftime("%H:%M")
   end
 
-  def calculate_session_duration(session) do
-    end_datetime =
-      case session.end_datetime do
-        nil -> DateTime.now!("Europe/Warsaw")
-        end_datetime -> end_datetime |> DateTime.shift_zone!("Europe/Warsaw")
-      end
+  def format_duration(duration, :with_seconds) when is_integer(duration) do
+    hours = div(duration, 60 * 60)
+    minutes = rem(div(duration, 60), 60)
+    seconds = rem(duration, 60)
+    :io_lib.format("~2..0B:~2..0B:~2..0B", [hours, minutes, seconds])
+  end
 
-    start_datetime = session.start_datetime |> DateTime.shift_zone!("Europe/Warsaw")
+  def format_duration(duration) when is_integer(duration) do
+    hours = div(duration, 3600)
+    minutes = rem(div(duration, 60), 60)
 
-    DateTime.diff(end_datetime, start_datetime, :minute)
+    :io_lib.format("~2..0B:~2..0B", [hours, minutes])
   end
 
   def calculate_total_duration(sessions) do
     Enum.reduce(sessions, 0, fn session, acc ->
       acc +
-        calculate_session_duration(session)
+        Session.calculate_session_duration(session)
     end)
   end
 
@@ -189,7 +194,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
         <div>{@session.title}</div>
         <div class="flex items-center space-x-4">
           <div>{format_time(@session.start_datetime)} - {format_time(@session.end_datetime)}</div>
-          <div class="font-bold">{format_duration(calculate_session_duration(@session))}</div>
+          <div class="font-bold">{format_duration(Session.calculate_session_duration(@session))}</div>
           <div class="flex space-x-2">
             <button
               id={"edit-session-#{@session.id}"}
@@ -302,7 +307,6 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     |> DateTime.from_naive!("Europe/Warsaw")
   end
 
-  # Add this helper function for datetime formatting
   defp format_datetime(nil), do: nil
 
   defp format_datetime(datetime) do
@@ -312,14 +316,12 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     |> String.slice(0, 16)
   end
 
-  # Add these new functions at the end of the module
-
   def calculate_month_stats(user_id) do
     now = DateTime.now!("Europe/Warsaw")
     start_of_month = Date.beginning_of_month(now) |> DateTime.new!(~T[00:00:00], "Europe/Warsaw")
     end_of_month = Date.end_of_month(now) |> DateTime.new!(~T[23:59:59], "Europe/Warsaw")
 
-    total_minutes =
+    total_seconds =
       Timetracker.list_user_sessions(user_id)
       |> Enum.filter(fn session ->
         session.start_datetime >= start_of_month &&
@@ -327,9 +329,9 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
       end)
       |> calculate_total_duration()
 
-    hours = div(total_minutes, 60)
-    minutes = rem(total_minutes, 60)
-    percentage = round(total_minutes / (160 * 60) * 100)
+    hours = div(total_seconds, 60 * 60)
+    minutes = rem(div(total_seconds, 60), 60)
+    percentage = round(total_seconds / (160 * 3600) * 100)
 
     current_month =
       now

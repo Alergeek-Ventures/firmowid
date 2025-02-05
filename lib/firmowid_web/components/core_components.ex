@@ -320,7 +320,7 @@ defmodule FirmowidWeb.CoreComponents do
         name={@name}
         class={
           classes([
-            "mt-2 block phx-change-loading:opacity-50 w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm",
+            "mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm",
             @rest[:class]
           ])
         }

@@ -64,6 +64,6 @@ defmodule Firmowid.Timetracker.Session do
 
     start_datetime = session.start_datetime |> DateTime.shift_zone!("Europe/Warsaw")
 
-    DateTime.diff(end_datetime, start_datetime, :minute)
+    DateTime.diff(end_datetime, start_datetime, :second)
   end
 end
