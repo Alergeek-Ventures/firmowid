@@ -77,13 +77,16 @@ defmodule Firmowid.BankData.Transaction do
 
   defp convert_nest_bank_card_transaction(transaction_changeset) do
     try do
-      transaction = transaction_changeset.changes
+      creditor_name = get_field(transaction_changeset, :creditor_name, "")
 
-      if transaction.creditor_name == "Nest Bank S.A." and
-           transaction.remittance_information_unstructured
+      remittance_information_unstructured =
+        get_field(transaction_changeset, :remittance_information_unstructured, "")
+
+      if creditor_name == "Nest Bank S.A." and
+           remittance_information_unstructured
            |> String.contains?("Nr karty") do
         [new_creditor_name | [description | _]] =
-          transaction.remittance_information_unstructured
+          remittance_information_unstructured
           |> String.split("Nr karty")
 
         new_creditor_name =

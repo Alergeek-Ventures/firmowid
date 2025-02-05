@@ -1,4 +1,5 @@
 defmodule Firmowid.BankDataTest do
+  alias Firmowid.BankData.Transaction
   alias Firmowid.Finances
   use Firmowid.DataCase
   alias Firmowid.BankData
@@ -253,5 +254,14 @@ defmodule Firmowid.BankDataTest do
         requisition_id: req2.id
       })
     end
+  end
+
+  test "transaction without creditor name works" do
+    transaction = %{
+      creditor_account: "PL123456789"
+    }
+
+    {:ok, result} =
+      transaction |> Transaction.changeset() |> Ecto.Changeset.apply_action(:insert)
   end
 end
