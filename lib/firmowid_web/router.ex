@@ -16,6 +16,7 @@ defmodule FirmowidWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug :fetch_api_user
   end
 
   scope "/admin" do
@@ -106,5 +107,17 @@ defmodule FirmowidWeb.Router do
       live "/potwierdz/:token", User.ConfirmationLive, :edit
       live "/potwierdz", User.ConfirmationInstructionsLive, :new
     end
+  end
+
+  scope "/api", FirmowidWeb do
+    pipe_through [:api]
+
+    post "/login", UserSessionApiController, :create
+  end
+
+  scope "/api", FirmowidWeb do
+    pipe_through [:api, :require_authenticated_user_with_organization_api]
+
+    post "/cost-invoices", CostInvoicesApiController, :create
   end
 end

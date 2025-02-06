@@ -99,10 +99,10 @@ defmodule Firmowid.Blobs do
     url
   end
 
-  def preprocess_blob(path, "pdf"), do: path
+  def preprocess_blob(path, extension) when extension in ["jpg", "jpeg", "png", "gif"],
+    do: shrink_image(path, extension)
 
-  # we only allow pdf and image/* in the upload
-  def preprocess_blob(path, image_extension), do: shrink_image(path, image_extension)
+  def preprocess_blob(path, _extension), do: path
 
   def shrink_image(image_path, image_extension) do
     with {:ok, path} <- Briefly.create(),

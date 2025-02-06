@@ -5,6 +5,14 @@ defmodule FirmowidWeb.ErrorJSON do
   See config/config.exs.
   """
 
+  def render("error.json", %{error: error}) do
+    %{errors: %{detail: error}}
+  end
+
+  def render("401.json", _assigns) do
+    %{errors: %{detail: "Unauthorized"}}
+  end
+
   # If you want to customize a particular status code,
   # you may add your own clauses, such as:
   #

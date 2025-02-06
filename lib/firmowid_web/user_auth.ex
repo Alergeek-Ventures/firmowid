@@ -4,6 +4,7 @@ defmodule FirmowidWeb.UserAuth do
   import Plug.Conn
   import Phoenix.Controller
 
+  alias FirmowidWeb.FallbackController
   alias Firmowid.Authorization
   alias Firmowid.Accounts
 
@@ -95,6 +96,18 @@ defmodule FirmowidWeb.UserAuth do
     {user_token, conn} = ensure_user_token(conn)
     user = user_token && Accounts.get_user_by_session_token(user_token)
     assign(conn, :current_user, user)
+  end
+
+  def fetch_api_user(conn, _opts) do
+    with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
+         {:ok, decoded_token} <- Base.url_decode64(token),
+         user <-
+           Accounts.get_user_by_session_token(decoded_token) do
+      conn |> assign(:current_user, user)
+    else
+      _ ->
+        conn |> assign(:current_user, nil)
+    end
   end
 
   defp ensure_user_token(conn) do
@@ -267,6 +280,19 @@ defmodule FirmowidWeb.UserAuth do
       conn
       |> maybe_store_return_to()
       |> redirect(to: ~p"/zaloguj")
+      |> halt()
+    end
+  end
+
+  def require_authenticated_user_with_organization_api(conn, _opts) do
+    if not is_nil(conn.assigns[:current_user]) and
+         not is_nil(conn.assigns[:current_user].organization_id) do
+      Firmowid.Repo.put_org_id(conn.assigns[:current_user].organization_id)
+
+      conn |> assign(:current_org, conn.assigns[:current_user].organization)
+    else
+      conn
+      |> FallbackController.call({:error, :unauthorized})
       |> halt()
     end
   end

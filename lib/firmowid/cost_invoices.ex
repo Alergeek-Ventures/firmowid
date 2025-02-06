@@ -174,7 +174,19 @@ defmodule Firmowid.CostInvoices do
     cost_invoice
   end
 
-  def upload_cost_invoice(upload_path, content_type, original_filename) do
+  def upload_cost_invoice(upload_path, "image/" <> _ext = content_type, original_filename) do
+    create_cost_invoice_job(upload_path, content_type, original_filename)
+  end
+
+  def upload_cost_invoice(upload_path, "application/pdf" = content_type, original_filename) do
+    create_cost_invoice_job(upload_path, content_type, original_filename)
+  end
+
+  def upload_cost_invoice(_upload_path, _content_type, _original_filename) do
+    {:error, :unsupported_content_type}
+  end
+
+  defp create_cost_invoice_job(upload_path, content_type, original_filename) do
     Repo.transaction(fn ->
       case Blobs.create_blob(upload_path, content_type, original_filename) do
         {:ok, blob} ->

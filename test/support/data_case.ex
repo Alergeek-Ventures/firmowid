@@ -19,7 +19,7 @@ defmodule Firmowid.DataCase do
   using do
     quote do
       alias Firmowid.Repo
-
+      use Oban.Testing, repo: Firmowid.Repo, prefix: "oban"
       import Ecto
       import Ecto.Changeset
       import Ecto.Query

@@ -61,4 +61,11 @@ defmodule FirmowidWeb.ConnCase do
     |> Phoenix.ConnTest.init_test_session(%{})
     |> Plug.Conn.put_session(:user_token, token)
   end
+
+  def log_in_api_user(conn, user) do
+    token = Firmowid.Accounts.generate_user_session_token(user)
+
+    conn
+    |> Plug.Conn.put_req_header("authorization", "Bearer #{Base.url_encode64(token)}")
+  end
 end

@@ -261,7 +261,7 @@ defmodule Firmowid.BankDataTest do
       creditor_account: "PL123456789"
     }
 
-    {:ok, result} =
+    {:ok, _result} =
       transaction |> Transaction.changeset() |> Ecto.Changeset.apply_action(:insert)
   end
 end
