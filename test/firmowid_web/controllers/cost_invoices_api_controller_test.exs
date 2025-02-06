@@ -9,7 +9,7 @@ defmodule FirmowidWeb.CostInvoicesApiControllerTest do
        conn: put_req_header(conn, "accept", "application/json") |> log_in_api_user(user_fixture())}
     end
 
-    test "uploads document successfully", %{conn: conn} do
+    test "uploads cost invoice successfully", %{conn: conn} do
       upload = %Plug.Upload{
         path: "test/support/fixtures/receipt.png",
         filename: "receipt.png",
@@ -17,21 +17,21 @@ defmodule FirmowidWeb.CostInvoicesApiControllerTest do
       }
 
       Oban.Testing.with_testing_mode(:manual, fn ->
-        conn = post(conn, ~p"/api/cost-invoices", document: upload)
+        conn = post(conn, ~p"/api/cost-invoices", blob: upload)
 
         response = json_response(conn, 200)
-        assert response["message"] == "Document uploaded successfully"
+        assert response["message"] == "Cost invoice uploaded successfully"
         assert response["blob_id"]
       end)
     end
 
-    test "returns error when document parameter is missing", %{conn: conn} do
+    test "returns error when blob parameter is missing", %{conn: conn} do
       conn = post(conn, ~p"/api/cost-invoices", %{})
       response = json_response(conn, 400)
-      assert response["errors"]["detail"] == "Missing document parameter"
+      assert response["errors"]["detail"] == "Missing blob parameter"
     end
 
-    test "returns error when document already exists", %{conn: conn} do
+    test "returns error when cost invoice already exists", %{conn: conn} do
       upload = %Plug.Upload{
         path: "test/support/fixtures/receipt.png",
         filename: "receipt.png",
@@ -39,15 +39,15 @@ defmodule FirmowidWeb.CostInvoicesApiControllerTest do
       }
 
       Oban.Testing.with_testing_mode(:manual, fn ->
-        post(conn, ~p"/api/cost-invoices", document: upload)
+        post(conn, ~p"/api/cost-invoices", blob: upload)
 
-        conn = post(conn, ~p"/api/cost-invoices", document: upload)
+        conn = post(conn, ~p"/api/cost-invoices", blob: upload)
         response = json_response(conn, 409)
-        assert response["errors"]["detail"] == "Document already exists"
+        assert response["errors"]["detail"] == "Cost invoice already exists"
       end)
     end
 
-    test "returns error when document is invalid", %{conn: conn} do
+    test "returns error when blob is invalid", %{conn: conn} do
       upload = %Plug.Upload{
         path: "test/support/fixtures/invalid_file.txt",
         filename: "invalid_file.txt",
@@ -55,7 +55,7 @@ defmodule FirmowidWeb.CostInvoicesApiControllerTest do
       }
 
       Oban.Testing.with_testing_mode(:manual, fn ->
-        conn = post(conn, ~p"/api/cost-invoices", document: upload)
+        conn = post(conn, ~p"/api/cost-invoices", blob: upload)
         response = json_response(conn, 422)
         assert response["errors"]["detail"] == "Unsupported content type"
       end)
@@ -74,7 +74,7 @@ defmodule FirmowidWeb.CostInvoicesApiControllerTest do
         content_type: "image/png"
       }
 
-      conn = post(conn, ~p"/api/cost-invoices", document: upload)
+      conn = post(conn, ~p"/api/cost-invoices", blob: upload)
 
       assert json_response(conn, 401)["errors"]["detail"] == "Unauthorized"
     end

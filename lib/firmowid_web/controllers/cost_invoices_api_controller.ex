@@ -5,16 +5,16 @@ defmodule FirmowidWeb.CostInvoicesApiController do
 
   action_fallback FirmowidWeb.FallbackController
 
-  def create(conn, %{"document" => document_params}) do
+  def create(conn, %{"blob" => blob_params}) do
     with {:ok, blob} <-
            CostInvoices.upload_cost_invoice(
-             document_params.path,
-             document_params.content_type,
-             document_params.filename
+             blob_params.path,
+             blob_params.content_type,
+             blob_params.filename
            ) do
       conn
       |> json(%{
-        message: "Document uploaded successfully",
+        message: "Cost invoice uploaded successfully",
         blob_id: blob.id
       })
     else
@@ -22,7 +22,7 @@ defmodule FirmowidWeb.CostInvoicesApiController do
         conn
         |> put_status(:conflict)
         |> put_view(FirmowidWeb.ErrorJSON)
-        |> render(:error, error: "Document already exists")
+        |> render(:error, error: "Cost invoice already exists")
 
       {:error, :unsupported_content_type} ->
         conn
@@ -34,7 +34,7 @@ defmodule FirmowidWeb.CostInvoicesApiController do
         conn
         |> put_status(:unprocessable_entity)
         |> put_view(FirmowidWeb.ErrorJSON)
-        |> render(:error, error: "Invalid document")
+        |> render(:error, error: "Invalid blob")
     end
   end
 
@@ -42,6 +42,6 @@ defmodule FirmowidWeb.CostInvoicesApiController do
     conn
     |> put_status(:bad_request)
     |> put_view(FirmowidWeb.ErrorJSON)
-    |> render(:error, error: "Missing document parameter")
+    |> render(:error, error: "Missing blob parameter")
   end
 end
