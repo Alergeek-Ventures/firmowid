@@ -4,7 +4,7 @@ defmodule Firmowid.AccountsFixtures do
   entities via the `Firmowid.Accounts` context.
   """
 
-  alias Firmowid.Accounts.User
+  alias Firmowid.Accounts
   alias Firmowid.Repo
 
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
@@ -19,8 +19,9 @@ defmodule Firmowid.AccountsFixtures do
     })
   end
 
+  @spec admin_fixture() :: any()
   def admin_fixture(attrs \\ %{}) do
-    user_fixture(Map.merge(%{system_role: "superuser"}, attrs))
+    user_fixture(Map.merge(%{role: :admin}, attrs))
   end
 
   def user_fixture(attrs \\ %{}) do
@@ -39,13 +40,20 @@ defmodule Firmowid.AccountsFixtures do
         user
       )
 
-    Firmowid.Accounts.update_user(user, Map.take(attrs, [:system_role]))
-
     Repo.put_org_id(organization.id)
 
+    {:ok, user} =
+      Accounts.get_user!(user.id)
+      |> Firmowid.Accounts.update_user(
+        Map.merge(
+          %{
+            role: :employee
+          },
+          Map.take(attrs, [:role, :system_role])
+        )
+      )
+
     user
-    |> User.organization_changeset(%{organization_id: organization.id})
-    |> Repo.update!(skip_organization_id: true)
   end
 
   def extract_user_token(fun) do

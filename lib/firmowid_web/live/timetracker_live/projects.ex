@@ -5,6 +5,8 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
   use FirmowidWeb, :live_view
 
   def mount(_params, _session, socket) do
+    Bodyguard.permit!(Timetracker, :read_projects, socket.assigns.current_user)
+
     {:ok,
      assign(socket,
        users:
@@ -21,6 +23,8 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
         %{"_target" => ["project", project_id, user_id]},
         socket
       ) do
+    Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user)
+
     projects = Timetracker.list_user_projects(user_id)
     has_project = Enum.any?(projects, &(&1.id == project_id))
 
@@ -84,6 +88,7 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
   end
 
   def handle_event("delete", %{"id" => id}, socket) do
+    Bodyguard.permit!(Timetracker, :delete_project, socket.assigns.current_user)
     project = Timetracker.get_project!(id)
     {:ok, _} = Timetracker.delete_project(project)
 
@@ -95,6 +100,8 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
   end
 
   defp handle_create(socket, params) do
+    Bodyguard.permit!(Timetracker, :create_project, socket.assigns.current_user)
+
     case Timetracker.create_project(params) do
       {:ok, _project} ->
         {:noreply,
@@ -108,6 +115,8 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
   end
 
   defp handle_update(socket, project, params) do
+    Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user)
+
     case Timetracker.update_project(project, params) do
       {:ok, _project} ->
         {:noreply,

@@ -1,4 +1,5 @@
 defmodule Firmowid.Invoicing do
+  alias Firmowid.Accounts.User
   alias Akin
   alias OpenAI
 
@@ -9,6 +10,12 @@ defmodule Firmowid.Invoicing do
   alias Firmowid.SalesInvoices.SalesInvoice
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.Finances.Transaction
+
+  @behaviour Bodyguard.Policy
+
+  def authorize(_, %User{role: :admin}, _), do: true
+
+  def authorize(_, _, _), do: false
 
   def get_invoicing_entries(from, to, filter) do
     case filter do

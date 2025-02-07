@@ -43,7 +43,11 @@ defmodule FirmowidWeb.Router do
   end
 
   scope "/", FirmowidWeb do
-    pipe_through [:browser, :require_authenticated_user_with_organization, :require_superuser]
+    pipe_through [
+      :browser,
+      :require_authenticated_user_with_organization,
+      :redirect_employees_to_timetracker
+    ]
 
     get "/sprzedazowe/:id/pdf", PdfController, :index
     get "/sprzedazowe/:id/download", PdfController, :pdf
@@ -51,8 +55,7 @@ defmodule FirmowidWeb.Router do
 
     live_session :admin,
       on_mount: [
-        {FirmowidWeb.UserAuth, :ensure_authenticated_with_organization},
-        {FirmowidWeb.UserAuth, :require_superuser}
+        {FirmowidWeb.UserAuth, :ensure_authenticated_with_organization}
       ] do
       live "/", InvoicingLive.Index, :index
       live "/kosztowe/:id", CostInvoicesLive.Show, :index

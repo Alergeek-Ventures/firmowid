@@ -46,6 +46,7 @@
       </a>
     <% end %>
     <.link
+      :if={Bodyguard.permit?(Firmowid.SalesInvoices, :create_sales_invoice, @current_user)}
       navigate={~p"/sprzedazowe"}
       id="sales-invoice-link"
       data-tippy-content="Wystaw fakturę sprzedażową"
@@ -60,7 +61,12 @@
         Wystaw fakturę
       </span>
     </.link>
-    <form id="upload-form" phx-change="upload" phx-submit="upload">
+    <form
+      :if={Bodyguard.permit?(Firmowid.Invoicing, :upload, @current_user)}
+      id="upload-form"
+      phx-change="upload"
+      phx-submit="upload"
+    >
       <div class="hidden">
         <.live_file_input upload={@uploads.file} />
       </div>
@@ -170,7 +176,10 @@
   </.button>
 </div>
 
-<div class="mt-2 flex flex-col gap-4 max-md:hidden">
+<div
+  :if={Bodyguard.permit?(Firmowid.Invoicing, :read, @current_user)}
+  class="mt-2 flex flex-col gap-4 max-md:hidden"
+>
   <%= if @is_month_closed and @params.filter == :unmatched do %>
     <.live_component
       id="month-closed-zero-state"
@@ -186,10 +195,11 @@
 </div>
 
 <div
+  :if={Bodyguard.permit?(Firmowid.Invoicing, :upload, @current_user)}
   id="file-drop-overlay"
   class="fixed top-[10lvw] left-[5lvw] w-[90lvw] h-[80lvh] bg-[#CEE6E666]
   rounded-lg items-center justify-center z-50 bg-opacity-50 opacity-0
-  transition-opacity flex hidden"
+  transition-opacity hidden"
   phx-hook="FileUploadDragNDrop"
   phx-drop-target={@uploads.file.ref}
 >

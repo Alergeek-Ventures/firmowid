@@ -9,7 +9,7 @@
     </.link>
 
     <div class="flex uppercase items-center gap-16 max-md:hidden">
-      <%= if Firmowid.Authorization.authorize(@current_user) do %>
+      <%= if Bodyguard.permit?(Firmowid.Invoicing, :show, @current_user) do %>
         <.link navigate={~p"/"} class="hover:underline flex items-center gap-2">
           <.icon name="hero-clipboard-document-list" class="w-5 h-5" /> Fakturowanie
         </.link>
@@ -58,7 +58,7 @@
         <.link navigate={~p"/ustawienia"} class="rounded-md p-2 hover:bg-darkGrey/50">
           Mój profil
         </.link>
-        <%= if Firmowid.Authorization.authorize(@current_user) do %>
+        <%= if Bodyguard.permit?(Firmowid.BankData, :read_bank_accounts, @current_user) do %>
           <.link
             navigate={~p"/ustawienia?tab=konta_bankowe"}
             class="rounded-md p-2 hover:bg-darkGrey/50"

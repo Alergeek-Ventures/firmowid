@@ -5,6 +5,12 @@ defmodule Firmowid.SalesInvoices do
 
   alias Firmowid.SalesInvoices.SalesInvoice
 
+  @behaviour Bodyguard.Policy
+
+  def authorize(_, %Accounts.User{role: :admin}, _), do: true
+
+  def authorize(_, _, _), do: false
+
   def populate_logo_url(%SalesInvoice{} = sales_invoice) do
     with loaded_invoice <- Repo.preload(sales_invoice, :organization, skip_organization_id: true),
          organization <- Accounts.get_organization_with_avatar(loaded_invoice.organization) do

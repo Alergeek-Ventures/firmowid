@@ -2,11 +2,17 @@ defmodule Firmowid.BankData do
   import Ecto.Query, warn: false
   alias Firmowid.Invoicing
   alias Firmowid.Repo
+  alias Firmowid.Accounts.User
 
   alias Firmowid.Finances
   alias Firmowid.BankData.Requisition
   alias Firmowid.BankData.ApiClient
   alias Firmowid.BankData.Transaction
+
+  @behaviour Bodyguard.Policy
+
+  def authorize(_, %User{role: :admin}, _), do: true
+  def authorize(_, _, _), do: false
 
   def get_available_institutions_for_country(country) do
     ApiClient.get_available_institutions_for_country(country)

@@ -7,7 +7,12 @@ defmodule Firmowid.Accounts do
   alias Firmowid.Repo
   alias Firmowid.Blobs
 
+  @behaviour Bodyguard.Policy
+
   alias Firmowid.Accounts.{User, UserToken, UserNotifier, Organization}
+
+  def authorize(_, %User{role: :admin}, _), do: true
+  def authorize(_, _, _), do: false
 
   def list_organizations do
     Organization
@@ -399,6 +404,7 @@ defmodule Firmowid.Accounts do
     owner
     |> User.organization_changeset(%{organization_id: organization.id})
     |> Repo.update!()
+    |> update_user(%{role: :admin})
 
     {:ok, organization}
   end

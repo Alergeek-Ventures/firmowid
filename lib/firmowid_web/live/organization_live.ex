@@ -103,9 +103,10 @@ defmodule FirmowidWeb.OrganizationLive do
 
     address = "#{address.street} #{address.number}, #{address.postal_code} #{address.city}"
 
-    organization
-    |> Map.put("address", address)
-    |> Accounts.create_organization(user)
+    {:ok, _organization} =
+      organization
+      |> Map.put("address", address)
+      |> Accounts.create_organization(user)
 
     LiveToast.send_toast(:success, "Pomyślnie utworzono organizację")
 

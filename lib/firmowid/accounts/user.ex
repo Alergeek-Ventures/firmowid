@@ -3,7 +3,8 @@ defmodule Firmowid.Accounts.User do
   import Ecto.Changeset
 
   schema "users" do
-    field :system_role, :string, default: "user"
+    field :system_role, Ecto.Enum, values: [:user, :superuser], default: :user
+    field :role, Ecto.Enum, values: [:employee, :admin], default: :employee
     field :email, :string
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
@@ -135,6 +136,20 @@ defmodule Firmowid.Accounts.User do
     |> cast(attrs, [:organization_id])
   end
 
+  @spec delete_account_changeset(
+          {map(),
+           %{
+             optional(atom()) =>
+               atom()
+               | {:array | :assoc | :embed | :in | :map | :parameterized | :supertype | :try,
+                  any()}
+           }}
+          | %{
+              :__struct__ => atom() | %{:__changeset__ => any(), optional(any()) => any()},
+              optional(atom()) => any()
+            },
+          %{optional(:__struct__) => none(), optional(atom() | binary()) => any()}
+        ) :: Ecto.Changeset.t()
   @doc """
   A user changeset for account deletion that only validates the password.
   """
@@ -184,6 +199,6 @@ defmodule Firmowid.Accounts.User do
 
   def update_changeset(user, attrs) do
     user
-    |> cast(attrs, [:marketing_consent, :system_role, :avatar_blob_id])
+    |> cast(attrs, [:marketing_consent, :system_role, :avatar_blob_id, :role])
   end
 end

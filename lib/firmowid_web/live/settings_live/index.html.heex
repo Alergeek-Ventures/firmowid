@@ -24,17 +24,16 @@
         </div>
       </div>
       <div class="flex gap-10 font-semibold mt-16">
-        <%= for {tab, label} <- (if Firmowid.Authorization.authorize(@current_user) do
+        <%= for {_should_show, {tab, label}} <-
             [
-              {"organizacja", "Twoja organizacja"},
-              {"konto", "Twoje konto"},
-              {"konta_bankowe", "Konta bankowe"}
-            ]
-          else
-            [
-              {"konto", "Twoje konto"}
-            ]
-          end) do %>
+
+              {true, {"konto", "Twoje konto"}},
+              {Bodyguard.permit?(Firmowid.Accounts, :update_organization, @current_user), 
+              {"organizacja", "Twoja organizacja"}},
+              {Bodyguard.permit?(Firmowid.BankData, :read_bank_accounts, @current_user),
+              {"konta_bankowe", "Konta bankowe"}}
+            ] |> Enum.filter(&elem(&1, 0))
+           do %>
           <.link
             patch={~p"/ustawienia?tab=#{tab}"}
             class={
@@ -51,7 +50,7 @@
       <hr class="border-t border-t-greyButtonBg mt-4" />
     </div>
 
-    <%= if Firmowid.Authorization.authorize(@current_user) do %>
+    <%= if Bodyguard.permit?(Firmowid.Accounts, :update_organization, @current_user) do %>
       <div class="min-w-fit flex gap-3 flex-col">
         <div class="flex gap-1 items-center">
           <p class="font-bold text-base">Logo firmy</p>

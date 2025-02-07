@@ -8,6 +8,8 @@ defmodule FirmowidWeb.CostInvoicesLive.Show do
   def mount(params, _session, socket) do
     cost_invoice = CostInvoices.get_cost_invoice!(params["id"])
 
+    Bodyguard.permit!(CostInvoices, :show, socket.assigns.current_user, cost_invoice)
+
     potential_transactions =
       if cost_invoice.transactions == [] do
         potential_transactions =
@@ -86,6 +88,8 @@ defmodule FirmowidWeb.CostInvoicesLive.Show do
     {_group, transactions} =
       Enum.find(grouped_potential_transactions, fn {group, _} -> group.id == group_id end)
 
+    Bodyguard.permit!(CostInvoices, :update, user)
+
     transactions
     |> Enum.map(fn t ->
       CostInvoices.create_cost_invoices_transactions_connection(
@@ -118,6 +122,8 @@ defmodule FirmowidWeb.CostInvoicesLive.Show do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
+    Bodyguard.permit!(CostInvoices, :update, user)
+
     CostInvoices.create_cost_invoices_transactions_connection(
       cost_invoice_id,
       transaction_id,
@@ -144,6 +150,8 @@ defmodule FirmowidWeb.CostInvoicesLive.Show do
       ) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
+
+    Bodyguard.permit!(CostInvoices, :update, user)
 
     CostInvoices.delete_cost_invoices_transactions_connection(
       organization_id,
@@ -195,6 +203,8 @@ defmodule FirmowidWeb.CostInvoicesLive.Show do
       ) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
+
+    Bodyguard.permit!(CostInvoices, :update, user)
 
     cost_invoice = CostInvoices.get_cost_invoice!(cost_invoice_id)
 
@@ -253,6 +263,8 @@ defmodule FirmowidWeb.CostInvoicesLive.Show do
 
   @impl true
   def handle_event("toggle-skip-invoicing", _, socket) do
+    Bodyguard.permit!(CostInvoices, :update, socket.assigns.user)
+
     cost_invoice =
       CostInvoices.toggle_skip_invoicing(
         :cost_invoice,
@@ -268,6 +280,8 @@ defmodule FirmowidWeb.CostInvoicesLive.Show do
 
   @impl true
   def handle_event("delete", %{"cost-invoice-id" => cost_invoice_id}, socket) do
+    Bodyguard.permit!(CostInvoices, :delete, socket.assigns.user)
+
     cost_invoice = CostInvoices.get_cost_invoice!(cost_invoice_id)
 
     CostInvoices.delete_cost_invoice(cost_invoice_id)

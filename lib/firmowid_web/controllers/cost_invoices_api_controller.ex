@@ -6,7 +6,8 @@ defmodule FirmowidWeb.CostInvoicesApiController do
   action_fallback FirmowidWeb.FallbackController
 
   def create(conn, %{"blob" => blob_params}) do
-    with {:ok, blob} <-
+    with :ok <- Bodyguard.permit(CostInvoices, :upload, conn.assigns.current_user),
+         {:ok, blob} <-
            CostInvoices.upload_cost_invoice(
              blob_params.path,
              blob_params.content_type,
@@ -29,6 +30,9 @@ defmodule FirmowidWeb.CostInvoicesApiController do
         |> put_status(:unprocessable_entity)
         |> put_view(FirmowidWeb.ErrorJSON)
         |> render(:error, error: "Unsupported content type")
+
+      {:error, :unauthorized} ->
+        {:error, :unauthorized}
 
       {:error, _} ->
         conn

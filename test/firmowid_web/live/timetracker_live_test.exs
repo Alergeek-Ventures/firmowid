@@ -179,9 +179,11 @@ defmodule FirmowidWeb.TimetrackerLiveTest do
 
   describe "project visibility" do
     test "shows no projects message for normal user", %{conn: conn} do
-      {:ok, _lv, html} =
+      user = user_fixture()
+
+      {:ok, lv, html} =
         conn
-        |> log_in_user(user_fixture())
+        |> log_in_user(user)
         |> live(~p"/czasosledz")
 
       assert html =~ "Nie masz przypisanych projektów"
@@ -189,11 +191,9 @@ defmodule FirmowidWeb.TimetrackerLiveTest do
     end
 
     test "shows project management link for superuser", %{conn: conn} do
-      user = admin_fixture()
-
       {:ok, _lv, html} =
         conn
-        |> log_in_user(user)
+        |> log_in_user(admin_fixture())
         |> live(~p"/czasosledz")
 
       assert html =~ "Przejdź do zarządzania projektami"

@@ -8,23 +8,28 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    if connected?(socket) do
-      CostInvoices.subscribe_cost_invoice_broadcast(socket.assigns.current_user.organization_id)
-      Finances.subscribe_transaction_broadcast(socket.assigns.current_user.organization_id)
-    end
-
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
+    Bodyguard.permit!(Invoicing, :read, user)
+
+    if connected?(socket) do
+      CostInvoices.subscribe_cost_invoice_broadcast(organization_id)
+      Finances.subscribe_transaction_broadcast(organization_id)
+    end
+
     socket =
-      socket
-      # upload form
-      |> allow_upload(:file,
-        max_entries: 50,
-        accept: ["application/pdf", "image/*"],
-        progress: &handle_progress/3,
-        auto_upload: true
-      )
+      if Bodyguard.permit?(Invoicing, :upload, user) do
+        socket
+        |> allow_upload(:file,
+          max_entries: 50,
+          accept: ["application/pdf", "image/*"],
+          progress: &handle_progress/3,
+          auto_upload: true
+        )
+      else
+        socket
+      end
 
     connected_bank_accounts =
       BankData.list_requisitions(organization_id)
@@ -128,6 +133,8 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
   @impl true
   def handle_info({:toggle_skip_invoicing, %{id: id, type: type}}, socket) do
+    Bodyguard.permit!(Invoicing, :update, socket.assigns.current_user)
+
     case type do
       "cost_invoice" ->
         CostInvoices.toggle_skip_invoicing(
@@ -237,6 +244,8 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   end
 
   defp handle_uploads(entries, socket) do
+    Bodyguard.permit!(Invoicing, :upload, socket.assigns.current_user)
+
     for entry <- entries do
       consume_uploaded_entry(socket, entry, fn %{path: path} ->
         case CostInvoices.upload_cost_invoice(path, entry.client_type, entry.client_name) do
@@ -279,6 +288,8 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   end
 
   defp refetch_invoicing_entries(socket) do
+    Bodyguard.permit!(Invoicing, :read, socket.assigns.current_user)
+
     month = socket.assigns.params.month
     filter = socket.assigns.params.filter
     date_range_from = Date.beginning_of_month(month)

@@ -1,6 +1,6 @@
 <div class="container flex flex-col p-4">
   <div class="flex justify-end">
-    <%= if Authorization.authorize(@current_user) do %>
+    <%= if Bodyguard.permit?(Firmowid.Timetracker, :read_projects, @current_user) do %>
       <.link navigate={~p"/czasosledz/projekty"} class="hover:underline">
         Projekty
       </.link>
@@ -11,7 +11,7 @@
     <%= if Enum.empty?(@projects) do %>
       <div class="w-full max-w-md text-center py-8 text-darkGrey">
         <p class="text-lg font-semibold">Nie masz przypisanych projektów</p>
-        <%= if Authorization.authorize(@current_user) do %>
+        <%= if Bodyguard.permit?(Firmowid.Timetracker, :create_project, @current_user) do %>
           <p class="text-sm mt-2">
             Dodaj swój pierwszy projekt i przypisz się do niego, aby rozpocząć śledzenie czasu
           </p>

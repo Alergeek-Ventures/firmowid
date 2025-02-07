@@ -8,6 +8,8 @@ defmodule FirmowidWeb.OrganizationInvitesLive.Index do
     current_user = socket.assigns.current_user
     organization_id = current_user.organization_id
 
+    Bodyguard.permit!(Accounts, :read_organization_invites, current_user)
+
     socket =
       socket
       |> assign(:page_title, "Zaproszenia do twojej organizacji")
@@ -19,6 +21,8 @@ defmodule FirmowidWeb.OrganizationInvitesLive.Index do
   @impl true
   def handle_event("create", _, socket) do
     current_user = socket.assigns.current_user
+    Bodyguard.permit!(Accounts, :create_organization_invite, current_user)
+
     organization_id = current_user.organization_id
 
     with {:ok, _} <-
@@ -33,6 +37,9 @@ defmodule FirmowidWeb.OrganizationInvitesLive.Index do
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     current_user = socket.assigns.current_user
+
+    Bodyguard.permit!(Accounts, :delete_organization_invite, current_user)
+
     organization_id = current_user.organization_id
 
     organization_invites = Accounts.get_organization_invites!(id, organization_id)

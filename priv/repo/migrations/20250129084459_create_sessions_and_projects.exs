@@ -7,8 +7,7 @@ defmodule Firmowid.Repo.Migrations.CreateSessionsAndProjects do
 
       add :organization_id,
           references(:organizations,
-            on_delete: :delete_all,
-            type: :uuid
+            on_delete: :delete_all
           ),
           null: false
 

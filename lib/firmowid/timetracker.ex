@@ -5,11 +5,22 @@ defmodule Firmowid.Timetracker do
 
   import Ecto.Query, warn: false
 
+  @behaviour Bodyguard.Policy
+
   alias Firmowid.Accounts
   alias Firmowid.Timetracker.Project
   alias Firmowid.Timetracker.ProjectUser
   alias Firmowid.Timetracker.Session
   alias Firmowid.Repo
+
+  def authorize(_, %{role: :admin}, _), do: true
+
+  def authorize(:read_user_sessions, %{role: :employee}, _), do: true
+  def authorize(:read_user_projects, %{role: :employee}, _), do: true
+  def authorize(:update_session, %{role: :employee, id: user_id}, %{user_id: user_id}), do: true
+  def authorize(:delete_session, %{role: :employee, id: user_id}, %{user_id: user_id}), do: true
+  def authorize(:create_session, %{role: :employee}, _), do: true
+  def authorize(_, _, _), do: false
 
   def list_user_projects(user_id) do
     Accounts.get_user!(user_id) |> Repo.preload(:projects) |> Map.get(:projects)

@@ -6,7 +6,8 @@ defmodule FirmowidWeb.CostInvoicesApiControllerTest do
   describe "upload with authenticated user" do
     setup %{conn: conn} do
       {:ok,
-       conn: put_req_header(conn, "accept", "application/json") |> log_in_api_user(user_fixture())}
+       conn:
+         put_req_header(conn, "accept", "application/json") |> log_in_api_user(admin_fixture())}
     end
 
     test "uploads cost invoice successfully", %{conn: conn} do
@@ -68,6 +69,20 @@ defmodule FirmowidWeb.CostInvoicesApiControllerTest do
     end
 
     test "returns 401 when attempting to upload", %{conn: conn} do
+      upload = %Plug.Upload{
+        path: "test/support/fixtures/receipt.png",
+        filename: "receipt.png",
+        content_type: "image/png"
+      }
+
+      conn = post(conn, ~p"/api/cost-invoices", blob: upload)
+
+      assert json_response(conn, 401)["errors"]["detail"] == "Unauthorized"
+    end
+
+    test "returns 401 when attempting to upload as employee", %{conn: conn} do
+      conn = conn |> log_in_api_user(user_fixture())
+
       upload = %Plug.Upload{
         path: "test/support/fixtures/receipt.png",
         filename: "receipt.png",

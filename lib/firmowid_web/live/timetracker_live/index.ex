@@ -1,11 +1,13 @@
 defmodule FirmowidWeb.TimetrackerLive.Index do
   alias FirmowidWeb.TimetrackerLive.SessionForm
   alias Firmowid.Timetracker.Session
-  alias Firmowid.Authorization
   alias Firmowid.Timetracker
   use FirmowidWeb, :live_view
 
   def mount(_params, _session, socket) do
+    Bodyguard.permit!(Timetracker, :read_user_sessions, socket.assigns.current_user)
+    Bodyguard.permit!(Timetracker, :read_user_projects, socket.assigns.current_user)
+
     if connected?(socket), do: :timer.send_interval(5000, self(), :tick)
 
     {:ok,
@@ -49,6 +51,8 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def handle_event("save", %{"session_form" => session}, socket) do
+    Bodyguard.permit!(Timetracker, :create_session, socket.assigns.current_user)
+
     {:ok, validated_session} =
       session |> SessionForm.changeset() |> SessionForm.attributes(socket.assigns.current_user.id)
 
@@ -74,6 +78,13 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def handle_event("end_session", _, socket) do
+    Bodyguard.permit!(
+      Timetracker,
+      :update_session,
+      socket.assigns.current_user,
+      Timetracker.get_session!(socket.assigns.current_session.id)
+    )
+
     case Timetracker.end_session(socket.assigns.current_session.id) do
       {:ok, _session} ->
         {:noreply,
@@ -86,6 +97,13 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def handle_event("delete_session", %{"id" => id}, socket) do
+    Bodyguard.permit!(
+      Timetracker,
+      :delete_session,
+      socket.assigns.current_user,
+      Timetracker.get_session!(id)
+    )
+
     case Timetracker.delete_session(id) do
       {:ok, _session} ->
         {:noreply,
@@ -100,6 +118,13 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
 
   def handle_event("edit_session", %{"session_form" => params}, socket) do
     session_id = params["id"]
+
+    Bodyguard.permit!(
+      Timetracker,
+      :update_session,
+      socket.assigns.current_user,
+      Timetracker.get_session!(session_id)
+    )
 
     params =
       params

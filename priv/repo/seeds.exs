@@ -15,9 +15,11 @@ Repo.transaction(fn ->
       password: "kolejka123456"
     })
 
-  # easier :x - allows you to visit /admin/dashboard
-  qry = "UPDATE users SET system_role = 'superuser' WHERE email = 'franek@alergeek.ventures'"
-  res = Ecto.Adapters.SQL.query!(Repo, qry, [])
+  franek
+  |> Accounts.update_user(%{
+    system_role: :superuser,
+    role: :admin
+  })
 
   {:ok, av} =
     Accounts.create_organization(

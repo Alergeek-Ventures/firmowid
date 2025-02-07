@@ -11,6 +11,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
   require Logger
 
   def mount(params, _session, socket) do
+    Bodyguard.permit!(SalesInvoices, :read_sales_invoice, socket.assigns.current_user)
+
     sales_invoice =
       case params["id"] do
         nil ->
@@ -314,12 +316,18 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
     sales_invoice =
       if seller_id != nil, do: Map.put(sales_invoice, "seller_id", seller_id), else: sales_invoice
 
+    user = socket.assigns.current_user
+
     socket =
       case socket.assigns do
         %{sales_invoice_id: nil, sales_invoice: socket_sales_invoice} ->
+          Bodyguard.permit!(SalesInvoices, :create_sales_invoice, user)
+
           SalesInvoices.create_sales_invoice(socket_sales_invoice, sales_invoice)
 
         %{sales_invoice_id: _sales_invoice_id, sales_invoice: socket_sales_invoice} ->
+          Bodyguard.permit!(SalesInvoices, :update_sales_invoice, user)
+
           SalesInvoices.update_sales_invoice(socket_sales_invoice, sales_invoice)
       end
       |> case do
@@ -332,7 +340,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
 
         {:error, changeset} ->
           Logger.error("Failed to save invoice: #{inspect(changeset)}")
-          socket |> put_flash(:error, "Nie udało się zapisać faktury")
+          LiveToast.send_toast(:error, "Nie udało się zapisać faktury")
+          socket
       end
 
     socket =
@@ -347,21 +356,34 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
          "action" => "add_or_update_seller",
          "sales_invoice" => sales_invoice
        }) do
-    case SalesInvoices.create_or_update_seller(socket.assigns.sales_invoice.seller_id, %{
-           nip: sales_invoice["seller_nip"],
-           display_name: sales_invoice["seller_display_name"],
-           name: sales_invoice["seller_name"],
-           surname: sales_invoice["seller_surname"],
-           address: sales_invoice["seller_address"],
-           account_number: sales_invoice["seller_account_number"]
-         }) do
-      {:ok, seller} ->
-        {socket
-         |> assign_sellers(), seller.id}
+    seller_id = socket.assigns.sales_invoice.seller_id
+    user = socket.assigns.current_user
 
-      {:error, changeset} ->
-        Logger.error("Failed to save seller: #{inspect(changeset)}")
-        {socket |> put_flash(:error, "Nie udało się zapisać sprzedawcy"), nil}
+    attrs = %{
+      nip: sales_invoice["seller_nip"],
+      display_name: sales_invoice["seller_display_name"],
+      name: sales_invoice["seller_name"],
+      surname: sales_invoice["seller_surname"],
+      address: sales_invoice["seller_address"],
+      account_number: sales_invoice["seller_account_number"]
+    }
+
+    case seller_id do
+      id when id in [nil, ""] ->
+        Bodyguard.permit!(SalesInvoices, :create_seller, user)
+        SalesInvoices.create_seller(attrs)
+
+      id ->
+        Bodyguard.permit!(SalesInvoices, :update_seller, user)
+        SalesInvoices.update_seller(SalesInvoices.get_seller!(id), attrs)
+    end
+    |> case do
+      {:ok, seller} ->
+        {socket, seller.id}
+
+      {:error, _} ->
+        LiveToast.send_toast(:error, "Nie udało się zapisać sprzedawcy")
+        {socket, nil}
     end
   end
 
@@ -371,29 +393,39 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
          "action" => "add_or_update_buyer",
          "sales_invoice" => sales_invoice
        }) do
-    case SalesInvoices.create_or_update_buyer(
-           socket.assigns.sales_invoice.buyer_id,
-           %{
-             buyer_type: sales_invoice["buyer_type"],
-             nip: sales_invoice["buyer_nip"],
-             pesel: sales_invoice["buyer_pesel"],
-             display_name: sales_invoice["buyer_display_name"],
-             name: sales_invoice["buyer_name"],
-             surname: sales_invoice["buyer_surname"],
-             address: sales_invoice["buyer_address"],
-             country: sales_invoice["buyer_country"],
-             email: sales_invoice["buyer_email"],
-             phone: sales_invoice["buyer_phone"],
-             description: sales_invoice["buyer_description"]
-           }
-         ) do
-      {:ok, buyer} ->
-        {socket
-         |> assign_buyers(), buyer.id}
+    buyer_id = socket.assigns.sales_invoice.buyer_id
+    user = socket.assigns.current_user
 
-      {:error, changeset} ->
-        Logger.error("Failed to save buyer: #{inspect(changeset)}")
-        {socket |> put_flash(:error, "Nie udało się zapisać nabywcy"), nil}
+    attrs = %{
+      buyer_type: sales_invoice["buyer_type"],
+      nip: sales_invoice["buyer_nip"],
+      pesel: sales_invoice["buyer_pesel"],
+      display_name: sales_invoice["buyer_display_name"],
+      name: sales_invoice["buyer_name"],
+      surname: sales_invoice["buyer_surname"],
+      address: sales_invoice["buyer_address"],
+      country: sales_invoice["buyer_country"],
+      email: sales_invoice["buyer_email"],
+      phone: sales_invoice["buyer_phone"],
+      description: sales_invoice["buyer_description"]
+    }
+
+    case buyer_id do
+      id when id in [nil, ""] ->
+        Bodyguard.permit!(SalesInvoices, :create_buyer, user)
+        SalesInvoices.create_buyer(attrs)
+
+      id ->
+        Bodyguard.permit!(SalesInvoices, :update_buyer, user)
+        SalesInvoices.update_buyer(SalesInvoices.get_buyer!(id), attrs)
+    end
+    |> case do
+      {:ok, buyer} ->
+        {socket |> assign_buyers(), buyer.id}
+
+      {:error, _} ->
+        LiveToast.send_toast(:error, "Nie udało się zapisać nabywcy")
+        {socket, nil}
     end
   end
 

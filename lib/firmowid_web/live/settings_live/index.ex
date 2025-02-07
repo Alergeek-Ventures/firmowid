@@ -29,27 +29,40 @@ defmodule FirmowidWeb.SettingsLive.Index do
 
   def mount(_params, _session, socket) do
     bank_accounts =
-      BankData.list_bank_accounts()
+      if Bodyguard.permit?(BankData, :read_bank_accounts, socket.assigns.current_user) do
+        BankData.list_bank_accounts()
+      else
+        []
+      end
 
     org = Map.put(socket.assigns.current_org, :is_editing, false)
+
+    socket =
+      if Bodyguard.permit?(Accounts, :update_organization, socket.assigns.current_user) do
+        socket
+        |> assign(
+          :company_form,
+          to_form(form_basic_info_changeset(org))
+        )
+        |> assign(
+          :correspondence_form,
+          to_form(form_correspondence_changeset(org))
+        )
+        |> allow_upload(:organization_avatar,
+          accept: ~w(.jpg .jpeg .png),
+          max_entries: 1,
+          auto_upload: true,
+          progress: &handle_progress/3
+        )
+      else
+        socket
+      end
 
     {:ok,
      socket
      |> assign(
        :tab,
-       if Firmowid.Authorization.authorize(socket.assigns.current_user) do
-         "organizacja"
-       else
-         "konto"
-       end
-     )
-     |> assign(
-       :company_form,
-       to_form(form_basic_info_changeset(org))
-     )
-     |> assign(
-       :correspondence_form,
-       to_form(form_correspondence_changeset(org))
+       "konto"
      )
      |> assign(
        :delete_account_form,
@@ -57,12 +70,6 @@ defmodule FirmowidWeb.SettingsLive.Index do
      )
      |> assign(:bank_accounts, bank_accounts)
      |> assign(:uploaded_files, [])
-     |> allow_upload(:organization_avatar,
-       accept: ~w(.jpg .jpeg .png),
-       max_entries: 1,
-       auto_upload: true,
-       progress: &handle_progress/3
-     )
      |> allow_upload(:user_avatar,
        accept: ~w(.jpg .jpeg .png),
        max_entries: 1,
@@ -100,6 +107,10 @@ defmodule FirmowidWeb.SettingsLive.Index do
   end
 
   defp handle_progress(name, entry, socket) when name in [:organization_avatar, :user_avatar] do
+    if name == :organization_avatar do
+      Bodyguard.permit!(Organization, :update_organization, socket.assigns.current_org)
+    end
+
     if entry.done? do
       case consume_uploaded_entry(socket, entry, fn %{path: path} ->
              {:ok, Blobs.create_blob(path, entry.client_type, entry.client_name)}
@@ -167,6 +178,8 @@ defmodule FirmowidWeb.SettingsLive.Index do
   end
 
   def handle_event("delete_bank_account", %{"account_id" => account_id}, socket) do
+    Bodyguard.permit!(BankData, :delete_bank_account, socket.assigns.current_user)
+
     case Finances.delete_bank_account(account_id) do
       {:ok, _} ->
         LiveToast.send_toast(:info, "Konto bankowe zostało usunięte.")
@@ -179,6 +192,8 @@ defmodule FirmowidWeb.SettingsLive.Index do
   end
 
   def handle_event("make_default_account", %{"account_id" => account_id}, socket) do
+    Bodyguard.permit!(BankData, :update_bank_account, socket.assigns.current_user)
+
     case Finances.make_account_default(account_id) do
       {:ok, _} ->
         {:noreply, socket |> assign(:bank_accounts, BankData.list_bank_accounts())}
@@ -194,6 +209,8 @@ defmodule FirmowidWeb.SettingsLive.Index do
   end
 
   def handle_event("save", %{"organization" => organization}, socket) do
+    Bodyguard.permit!(Accounts, :update_organization, socket.assigns.current_user)
+
     case Accounts.update_organization(
            socket.assigns.current_org,
            organization

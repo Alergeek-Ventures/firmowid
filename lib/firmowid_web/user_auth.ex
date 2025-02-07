@@ -5,7 +5,6 @@ defmodule FirmowidWeb.UserAuth do
   import Phoenix.Controller
 
   alias FirmowidWeb.FallbackController
-  alias Firmowid.Authorization
   alias Firmowid.Accounts
 
   # Make the remember me cookie valid for 60 days.
@@ -206,18 +205,6 @@ defmodule FirmowidWeb.UserAuth do
     end
   end
 
-  def on_mount(:require_superuser, _params, _session, socket) do
-    if Authorization.authorize(socket.assigns.current_user) do
-      {:cont, socket}
-    else
-      socket =
-        socket
-        |> Phoenix.LiveView.redirect(to: ~p"/czasosledz")
-
-      {:halt, socket}
-    end
-  end
-
   def on_mount(:redirect_if_user_is_authenticated, _params, session, socket) do
     socket = mount_current_user(socket, session)
 
@@ -297,12 +284,22 @@ defmodule FirmowidWeb.UserAuth do
     end
   end
 
+  def redirect_employees_to_timetracker(conn, _opts) do
+    if conn.assigns[:current_user].role == :employee do
+      conn
+      |> redirect(to: ~p"/czasosledz")
+      |> halt()
+    else
+      conn
+    end
+  end
+
   def require_superuser(conn, _opts) do
-    if Authorization.authorize(conn.assigns.current_user) do
+    if conn.assigns.current_user.system_role == :superuser do
       conn
     else
       conn
-      |> redirect(to: ~p"/czasosledz")
+      |> redirect(to: ~p"/")
       |> halt()
     end
   end
