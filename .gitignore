@@ -42,3 +42,7 @@ npm-debug.log
 # Language server files
 .elixir_ls
 .lexical
+
+# LLM assistance
+.aider
+.aider*
