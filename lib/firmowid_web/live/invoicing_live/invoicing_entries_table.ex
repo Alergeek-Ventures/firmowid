@@ -223,11 +223,12 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
 
   defp render_cell(%{column: "amount", invoicing_entry: %CostInvoice{} = invoice} = assigns) do
     is_fresh =
-      DateTime.compare(
-        invoice.inserted_at,
-        DateTime.add(DateTime.utc_now(), -120, :second)
-      ) ==
-        :gt
+      invoice.transactions == [] &&
+        DateTime.compare(
+          invoice.inserted_at,
+          DateTime.add(DateTime.utc_now(), -120, :second)
+        ) ==
+          :gt
 
     amount = Money.new(invoice.currency, invoice.total_amount)
 
