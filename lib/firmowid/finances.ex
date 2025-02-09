@@ -123,7 +123,7 @@ defmodule Firmowid.Finances do
     })
   end
 
-  def toggle_skip_invoicing(:transaction, id) do
+  def toggle_skip_invoicing(id) do
     transaction = Repo.get!(Transaction, id)
 
     transaction

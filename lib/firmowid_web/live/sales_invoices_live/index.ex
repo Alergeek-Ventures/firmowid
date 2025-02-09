@@ -333,7 +333,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
       |> case do
         {:ok, new_invoice} ->
           socket
-          |> push_patch(to: ~p"/sprzedazowe/#{new_invoice.id}")
+          |> push_patch(to: ~p"/sprzedazowe/#{new_invoice.id}/edycja")
           |> assign(sales_invoice_id: new_invoice.id)
           |> assign(sales_invoice: SalesInvoices.get_sales_invoice(new_invoice.id))
           |> assign_currency()

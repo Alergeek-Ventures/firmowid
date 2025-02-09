@@ -58,10 +58,11 @@ defmodule FirmowidWeb.Router do
         {FirmowidWeb.UserAuth, :ensure_authenticated_with_organization}
       ] do
       live "/", InvoicingLive.Index, :index
-      live "/kosztowe/:id", CostInvoicesLive.Show, :index
+      live "/kosztowe/:id", InvoicingLive.Show, :cost_invoice
 
       live "/sprzedazowe", SalesInvoicesLive.Index, :index
-      live "/sprzedazowe/:id", SalesInvoicesLive.Index, :index
+      live "/sprzedazowe/:id", InvoicingLive.Show, :sales_invoice
+      live "/sprzedazowe/:id/edycja", SalesInvoicesLive.Index, :index
 
       live "/czasosledz/projekty", TimetrackerLive.Projects, :projects
 

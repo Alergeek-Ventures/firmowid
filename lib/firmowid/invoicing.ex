@@ -190,8 +190,6 @@ defmodule Firmowid.Invoicing do
       |> Enum.sort_by(fn {_candidate, similarity} -> similarity end, :desc)
       |> Enum.map(fn {candidate, _similarity} -> candidate end)
       |> Enum.take(max_results)
-
-    candidates
   end
 
   def match_with_transaction_combo(cost_invoice) do
@@ -248,10 +246,6 @@ defmodule Firmowid.Invoicing do
   def match_all_good_candidates_for_unconnected_cost_invoices(organization_id) do
     for similarity_threshold <- [0.9, 0.8, 0] do
       cost_invoices = CostInvoices.list_unmatched_cost_invoices()
-
-      dbg(organization_id)
-      dbg(cost_invoices)
-      dbg(similarity_threshold)
 
       if similarity_threshold == 0 do
         cost_invoices

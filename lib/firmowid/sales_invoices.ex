@@ -7,9 +7,26 @@ defmodule Firmowid.SalesInvoices do
 
   @behaviour Bodyguard.Policy
 
+  @sales_invoice_broadcast_topic "sales_invoice_broadcast_topic"
+
   def authorize(_, %Accounts.User{role: :admin}, _), do: true
 
   def authorize(_, _, _), do: false
+
+  def subscribe_sales_invoice_broadcast(organization_id) do
+    Phoenix.PubSub.subscribe(
+      Firmowid.PubSub,
+      "#{@sales_invoice_broadcast_topic}:#{organization_id}"
+    )
+  end
+
+  def broadcast_sales_invoice_list_updated(organization_id) do
+    Phoenix.PubSub.broadcast(
+      Firmowid.PubSub,
+      "#{@sales_invoice_broadcast_topic}:#{organization_id}",
+      :sales_invoice_list_updated
+    )
+  end
 
   def populate_logo_url(%SalesInvoice{} = sales_invoice) do
     with loaded_invoice <- Repo.preload(sales_invoice, :organization, skip_organization_id: true),
@@ -57,7 +74,23 @@ defmodule Firmowid.SalesInvoices do
   def get_sales_invoice(id) do
     Repo.get(SalesInvoice, id)
     |> Repo.preload(:sales_invoice_items)
+    |> Repo.preload(:transactions)
+    |> Repo.preload(:buyer)
+    |> Repo.preload(:seller)
     |> populate_logo_url()
+  end
+
+  def toggle_skip_invoicing(id) do
+    sales_invoice = get_sales_invoice(id)
+
+    sales_invoice =
+      sales_invoice
+      |> SalesInvoice.changeset(%{skip_invoicing: !sales_invoice.skip_invoicing})
+      |> Repo.update!()
+
+    broadcast_sales_invoice_list_updated(sales_invoice.organization_id)
+
+    sales_invoice
   end
 
   def get_latest_sales_invoice() do

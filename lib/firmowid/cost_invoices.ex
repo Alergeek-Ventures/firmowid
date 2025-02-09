@@ -142,7 +142,7 @@ defmodule Firmowid.CostInvoices do
       |> Repo.preload(:blob)
 
     cost_invoice
-    |> Map.put(:file_url, Blobs.get_blob_url(cost_invoice.blob_id))
+    |> Map.put(:blob_url, Blobs.get_blob_url(cost_invoice.blob_id))
     |> Map.put(
       :amount,
       Money.new(
@@ -167,7 +167,7 @@ defmodule Firmowid.CostInvoices do
     broadcast_cost_invoice_list_updated(organization_id)
   end
 
-  def toggle_skip_invoicing(:cost_invoice, id) do
+  def toggle_skip_invoicing(id) do
     cost_invoice = get_cost_invoice!(id)
 
     cost_invoice =
@@ -247,18 +247,13 @@ defmodule Firmowid.CostInvoices do
     |> Repo.insert!()
   end
 
-  def delete_cost_invoices_transactions_connection(
-        organization_id,
-        cost_invoice_id,
-        transaction_id
-      ) do
-    Repo.get_by!(
+  def delete_cost_invoices_transactions_connections(cost_invoice_id) do
+    Repo.delete_all(
       CostInvoicesTransactions,
-      [cost_invoice_id: cost_invoice_id, transaction_id: transaction_id],
-      organization_id: organization_id
+      cost_invoice_id: cost_invoice_id
     )
-    |> Repo.delete!()
 
+    organization_id = Repo.get_org_id()
     broadcast_cost_invoice_list_updated(organization_id)
   end
 end

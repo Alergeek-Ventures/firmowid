@@ -46,6 +46,8 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     field :is_cash_account, :boolean, default: false
     field :is_reverse_charge, :boolean, default: false
 
+    field :skip_invoicing, :boolean, default: false
+
     has_many :sales_invoice_items, Firmowid.SalesInvoices.SalesInvoiceItem, on_replace: :delete
 
     many_to_many :transactions,
@@ -113,7 +115,8 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       :is_buyer_confirmed,
       :are_sales_invoice_items_confirmed,
       :is_cash_account,
-      :is_reverse_charge
+      :is_reverse_charge,
+      :skip_invoicing
     ])
     |> buyer_changeset(attrs)
     |> seller_changeset(attrs)

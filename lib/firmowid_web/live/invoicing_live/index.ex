@@ -2,6 +2,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   use FirmowidWeb, :live_view
 
   alias Firmowid.CostInvoices
+  alias Firmowid.SalesInvoices
   alias Firmowid.Finances
   alias Firmowid.Invoicing
   alias Firmowid.BankData
@@ -16,6 +17,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     if connected?(socket) do
       CostInvoices.subscribe_cost_invoice_broadcast(organization_id)
       Finances.subscribe_transaction_broadcast(organization_id)
+      SalesInvoices.subscribe_sales_invoice_broadcast(organization_id)
     end
 
     socket =
@@ -137,19 +139,13 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
     case type do
       "cost_invoice" ->
-        CostInvoices.toggle_skip_invoicing(
-          :cost_invoice,
-          id
-        )
+        CostInvoices.toggle_skip_invoicing(id)
 
       "transaction" ->
-        Finances.toggle_skip_invoicing(
-          :transaction,
-          id
-        )
+        Finances.toggle_skip_invoicing(id)
 
       "sales_invoice" ->
-        dbg("sales")
+        SalesInvoices.toggle_skip_invoicing(id)
     end
 
     {:noreply, socket}
@@ -166,6 +162,15 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
   @impl true
   def handle_info(:cost_invoice_list_updated, socket) do
+    socket =
+      socket
+      |> refetch_invoicing_entries()
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info(:sales_invoice_list_updated, socket) do
     socket =
       socket
       |> refetch_invoicing_entries()
