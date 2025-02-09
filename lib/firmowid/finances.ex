@@ -1,5 +1,6 @@
 defmodule Firmowid.Finances do
   import Ecto.Query, warn: false
+
   alias Firmowid.Repo
 
   alias Firmowid.Finances.Transaction
@@ -82,39 +83,15 @@ defmodule Firmowid.Finances do
     |> Repo.delete()
   end
 
-  def list_transactions(from \\ nil, to \\ nil, opts \\ []) do
-    if Keyword.get(opts, :only_costs) == true do
-      Repo.all(
-        if from == nil and to == nil do
-          from(t in Transaction, where: t.transaction_amount < 0.0)
-        else
-          from t in Transaction,
-            where:
-              t.value_date >= ^from and t.value_date <= ^to and
-                t.transaction_amount < 0.0
-        end
-      )
-    else
-      Repo.all(
-        if from == nil and to == nil do
-          from(t in Transaction)
-        else
-          from t in Transaction,
-            where: t.value_date >= ^from and t.value_date <= ^to,
-            order_by: [desc: t.booking_date]
-        end
-      )
-    end
+  def list_transactions(from, to) do
+    query =
+      from t in Transaction,
+        where: t.booking_date >= ^from and t.booking_date <= ^to,
+        order_by: [desc: t.booking_date]
+
+    query
+    |> Repo.all()
     |> Repo.preload(:cost_invoices_transactions)
-    |> Enum.map(fn t ->
-      Map.merge(t, %{
-        amount:
-          Money.new(
-            t.transaction_currency,
-            t.transaction_amount
-          )
-      })
-    end)
   end
 
   def list_unmatched_transactions(from, to) do
