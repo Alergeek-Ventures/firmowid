@@ -248,10 +248,10 @@ defmodule Firmowid.CostInvoices do
   end
 
   def delete_cost_invoices_transactions_connections(cost_invoice_id) do
-    Repo.delete_all(
-      CostInvoicesTransactions,
-      cost_invoice_id: cost_invoice_id
-    )
+    query = from(CostInvoicesTransactions) |> where([c], c.cost_invoice_id == ^cost_invoice_id)
+
+    query
+    |> Repo.delete_all()
 
     organization_id = Repo.get_org_id()
     broadcast_cost_invoice_list_updated(organization_id)
