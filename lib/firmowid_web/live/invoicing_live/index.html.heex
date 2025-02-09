@@ -127,7 +127,6 @@
   <%= for {filter, label} <- [
         {:invoices, "Faktury"},
         {:transactions, "Transakcje"},
-        {:all, "Razem"}
     ] do %>
     <.button
       class={[
@@ -188,6 +187,7 @@
     />
   <% else %>
     <FirmowidWeb.InvoicingLive.InvoicingEntriesTable.table
+      mode={@params.filter}
       invoicing_entries={@invoicing_entries}
       has_connected_bank_account={@has_connected_bank_account}
     />

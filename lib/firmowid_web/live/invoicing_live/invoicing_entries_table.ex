@@ -9,9 +9,24 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
 
   attr :invoicing_entries, :list, required: true
   attr :has_connected_bank_account, :boolean, default: false
+  attr :mode, :atom, required: true
 
-  @columns ["party", "sale_date", "due_date", "status", "amount"]
-  @column_labels ["Kontrahent", "Wystawiono", "Termin płatności", "Status", "Kwota"]
+  @default_columns ["party", "issue_or_value_date", "due_or_booking_date", "status", "amount"]
+
+  @invoice_columns ["party", "issue_date", "due_date", "status", "amount"]
+  @transaction_columns ["party", "value_date", "booking_date", "status", "amount"]
+
+  @column_labels [
+    party: "Kontrahent",
+    issue_date: "Wystawiono",
+    value_date: "Wykonano",
+    issue_or_value_date: "Wystawiono / Wykonano",
+    due_date: "Termin płatności",
+    booking_date: "Zaksięgowano",
+    due_or_booking_date: "Termin płatności / Zaksięgowano",
+    status: "Status",
+    amount: "Kwota"
+  ]
 
   def table(%{invoicing_entries: [], has_connected_bank_account: true} = assigns) do
     ~H"""
@@ -81,8 +96,14 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
   def table(assigns) do
     assigns =
       assigns
-      |> assign(:columns, @columns)
-      |> assign(:column_labels, @column_labels)
+      |> assign(
+        :columns,
+        case assigns.mode do
+          :invoices -> @invoice_columns
+          :transactions -> @transaction_columns
+          _ -> @default_columns
+        end
+      )
 
     ~H"""
     <table
@@ -94,8 +115,12 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
         :for={column <- @columns}
         class={
           case column do
-            "sale_date" -> "w-36"
+            "issue_date" -> "w-36"
+            "booking_date" -> "w-36"
+            "issue_or_issue_date" -> "w-36"
             "due_date" -> "w-44"
+            "value_date" -> "w-44"
+            "due_or_booking_date" -> "w-44"
             "status" -> "w-40"
             "amount" -> "w-44"
             _ -> ""
@@ -119,7 +144,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
               |> Enum.join(" ")
             }
           >
-            {@column_labels |> Enum.at(Enum.find_index(@columns, fn c -> c == column end))}
+            <.column_label column={column} />
           </th>
           <th
             id="header-amount-standalone"
@@ -133,17 +158,61 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
       </thead>
       <tbody>
         <%= for invoicing_entry <- @invoicing_entries do %>
-          <.table_row invoicing_entry={invoicing_entry} />
+          <.table_row columns={@columns} invoicing_entry={invoicing_entry} />
         <% end %>
       </tbody>
     </table>
     """
   end
 
+  defp column_label(assigns) do
+    assigns =
+      assigns
+      |> assign(
+        :label,
+        Keyword.get(
+          @column_labels,
+          assigns.column
+          |> String.to_atom()
+        )
+      )
+
+    is_special_column =
+      case assigns.column do
+        "issue_or_value_date" -> true
+        "due_or_booking_date" -> true
+        _ -> false
+      end
+
+    if is_special_column do
+      ~H"""
+      <span
+        id={"header-#{@column}-label"}
+        class="inline-block"
+        phx-hook="Tippy"
+        data-tippy-content={
+          case @column do
+            "issue_or_value_date" ->
+              "W przypadku faktur będzie to data wystawienia, w przypadku transakcji to data wykonania"
+
+            "due_or_booking_date" ->
+              "W przypadku faktur to termin płatności, w przypadku transakcji to data zaksięgowania płatnosci"
+          end
+        }
+      >
+        {@label}
+      </span>
+      """
+    else
+      ~H"""
+      {@label}
+      """
+    end
+  end
+
   defp table_row(assigns) do
     assigns =
       assigns
-      |> assign(:columns, @columns)
       |> assign(
         :amount,
         case assigns.invoicing_entry do
@@ -160,8 +229,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
         class={[
           "transition-all duration-500 bg-white py-2",
           column == "party" && "rounded-l-md pl-5 pr-5 text-ellipsis max-xl:max-w-72",
-          column == "sale_date" && "font-light",
-          column == "due_date" && "font-light",
+          String.ends_with?(column, "date") && "font-light",
           column == "amount" && "rounded-r-md",
           column == "amount" &&
             Decimal.gte?(@amount, 0) &&
@@ -330,7 +398,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
     ~H"""
     <div
       id={"status-#{@invoicing_entry.id}"}
-      phx-hook="tippy"
+      phx-hook="Tippy"
       data-tippy-delay="1000"
       data-tippy-content={
             "Udało się połączyć transakcje i dokument - to oznacza, " <>
@@ -454,11 +522,41 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
     """
   end
 
-  defp render_cell(%{invoicing_entry: %Transaction{} = _, column: "sale_date"} = assigns),
+  defp render_cell(%{invoicing_entry: %Transaction{} = _, column: "issue_date"} = assigns),
     do: render_cell(assigns |> assign(:column, "booking_date"))
 
   defp render_cell(%{invoicing_entry: %Transaction{} = _, column: "due_date"} = assigns),
     do: render_cell(assigns |> assign(:column, "SKIPPED"))
+
+  defp render_cell(
+         %{invoicing_entry: %Transaction{} = _, column: "issue_or_value_date"} = assigns
+       ),
+       do: render_cell(assigns |> assign(:column, "booking_date"))
+
+  defp render_cell(
+         %{invoicing_entry: %Transaction{} = _, column: "due_or_booking_date"} = assigns
+       ),
+       do: render_cell(assigns |> assign(:column, "booking_date"))
+
+  defp render_cell(
+         %{invoicing_entry: %CostInvoice{} = _, column: "due_or_booking_date"} = assigns
+       ),
+       do: render_cell(assigns |> assign(:column, "due_date"))
+
+  defp render_cell(
+         %{invoicing_entry: %SalesInvoice{} = _, column: "due_or_booking_date"} = assigns
+       ),
+       do: render_cell(assigns |> assign(:column, "due_date"))
+
+  defp render_cell(
+         %{invoicing_entry: %CostInvoice{} = _, column: "issue_or_value_date"} = assigns
+       ),
+       do: render_cell(assigns |> assign(:column, "issue_date"))
+
+  defp render_cell(
+         %{invoicing_entry: %SalesInvoice{} = _, column: "issue_or_value_date"} = assigns
+       ),
+       do: render_cell(assigns |> assign(:column, "issue_date"))
 
   defp render_cell(%{invoicing_entry: %Transaction{} = transaction, column: "party"} = assigns) do
     party =
