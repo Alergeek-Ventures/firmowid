@@ -81,7 +81,14 @@ defmodule Firmowid.Invoicing do
     |> Enum.sort_by(& &1, order_by_date)
   end
 
-  def get_potential_transactions_for_cost_invoice(cost_invoice, opts \\ []) do
+  defp get_potential_transactions_for_invoice(
+         issue_date,
+         due_date,
+         currency,
+         total_amount,
+         seller,
+         opts
+       ) do
     opts =
       Keyword.validate!(opts,
         similarity_threshold: 0.1,
@@ -98,12 +105,8 @@ defmodule Firmowid.Invoicing do
     days_before = Keyword.fetch!(opts, :days_before)
     days_after = Keyword.fetch!(opts, :days_after)
 
-    # date range -> between issue_date and payment_deadline
-    issue_date = cost_invoice.issue_date |> Date.add(-days_before)
-    payment_deadline = cost_invoice.due_date |> Date.add(days_after)
-
     rates =
-      case Money.ExchangeRates.historic_rates(cost_invoice.issue_date) do
+      case Money.ExchangeRates.historic_rates(issue_date) do
         {:ok, rates} ->
           {:ok, rates}
 
@@ -120,13 +123,15 @@ defmodule Firmowid.Invoicing do
 
     # either an exact match or within ~10% deviation
     {min_amount, max_amount} =
-      if cost_invoice.currency == "PLN" do
+      if currency == "PLN" do
         # allow deviation even for PLN if option provided
         if exact_amount do
-          {cost_invoice.total_amount, cost_invoice.total_amount}
+          {total_amount, total_amount}
         else
-          {Decimal.mult(cost_invoice.total_amount, Decimal.from_float(1.1)),
-           Decimal.mult(cost_invoice.total_amount, Decimal.from_float(0.9))}
+          {
+            Decimal.mult(total_amount, Decimal.from_float(0.9)),
+            Decimal.mult(total_amount, Decimal.from_float(1.1))
+          }
         end
       else
         # deviation always allowed
@@ -134,8 +139,8 @@ defmodule Firmowid.Invoicing do
         {:ok, amount} =
           Money.to_currency(
             Money.new(
-              cost_invoice.currency,
-              cost_invoice.total_amount
+              currency,
+              total_amount
             ),
             "PLN",
             rates
@@ -143,12 +148,18 @@ defmodule Firmowid.Invoicing do
 
         amount = amount |> Money.to_decimal()
 
-        {Decimal.mult(amount, Decimal.from_float(1.1)),
-         Decimal.mult(amount, Decimal.from_float(0.9))}
+        {
+          Decimal.mult(amount, Decimal.from_float(0.9)),
+          Decimal.mult(amount, Decimal.from_float(1.1))
+        }
       end
 
+    # date range -> between issue_date and payment_deadline
+    issue_date = issue_date |> Date.add(-days_before)
+    payment_deadline = due_date |> Date.add(days_after)
+
     unmatched_transactions =
-      Finances.list_unmatched_transactions(~D[1970-01-01], ~D[2100-01-01])
+      Finances.list_unmatched_transactions(issue_date, payment_deadline)
 
     # transactions with exact amount (or in the range for non-PLN)
     # that are between issue_date and payment_deadline
@@ -169,44 +180,75 @@ defmodule Firmowid.Invoicing do
           transaction_amount_in_pln
           |> Money.to_decimal()
 
-        Date.compare(i.booking_date, issue_date) != :lt and
-          Date.compare(i.booking_date, payment_deadline) != :gt and
-          Decimal.compare(transaction_amount, min_amount) != :lt and
-          Decimal.compare(transaction_amount, max_amount) != :gt
+        decimal_between?(min_amount, max_amount, transaction_amount) |> dbg()
       end)
 
     # use Jaro-Winkler name similarity to check if seller matches
-    candidates =
-      candidates
-      |> Enum.map(fn candidate_transaction ->
-        similarity =
-          Akin.compare(candidate_transaction.creditor_name, cost_invoice.seller).jaro_winkler
+    candidates
+    |> Enum.map(fn candidate_transaction ->
+      similarity =
+        Akin.compare(candidate_transaction.creditor_name, seller).jaro_winkler
 
-        {candidate_transaction, similarity}
-      end)
-      |> Enum.filter(fn {_candidate, similarity} ->
-        similarity >= similarity_threshold
-      end)
-      |> Enum.sort_by(fn {_candidate, similarity} -> similarity end, :desc)
-      |> Enum.map(fn {candidate, _similarity} -> candidate end)
-      |> Enum.take(max_results)
+      {candidate_transaction, similarity}
+    end)
+    |> Enum.filter(fn {_candidate, similarity} ->
+      similarity >= similarity_threshold
+    end)
+    |> Enum.sort_by(fn {_candidate, similarity} -> similarity end, :desc)
+    |> Enum.map(fn {candidate, _similarity} -> candidate end)
+    |> Enum.take(max_results)
   end
 
-  def match_with_transaction_combo(cost_invoice) do
+  def get_potential_transactions_for_sales_invoice(sales_invoice, opts \\ []) do
+    get_potential_transactions_for_invoice(
+      sales_invoice.issue_date,
+      sales_invoice.due_date,
+      sales_invoice.currency,
+      SalesInvoice.get_gross_value(sales_invoice),
+      sales_invoice.seller_display_name,
+      opts
+    )
+  end
+
+  def get_potential_transactions_for_cost_invoice(cost_invoice, opts \\ []) do
+    get_potential_transactions_for_invoice(
+      cost_invoice.issue_date,
+      cost_invoice.due_date,
+      cost_invoice.currency,
+      cost_invoice.total_amount,
+      cost_invoice.seller_display_name,
+      opts
+    )
+  end
+
+  defp decimal_between?(min, max, value) do
+    cond do
+      # when amount is positive (sales)
+      Decimal.compare(value, 0) == :gt ->
+        Decimal.compare(value, min) != :lt and
+          Decimal.compare(value, max) != :gt
+
+      # when amount is negative (costs)
+      true ->
+        Decimal.compare(value, max) != :lt and Decimal.compare(value, min) != :gt
+    end
+  end
+
+  def match_with_transaction_combo(
+        issue_date,
+        due_date,
+        total_amount
+      ) do
     # when there are multiple transactions on the same invoice
     # typically - services / goods that you get across the month
 
     # highly experimental!
 
-    issue_date = cost_invoice.issue_date |> Date.add(-35)
-    payment_deadline = cost_invoice.due_date |> Date.add(7)
+    issue_date = issue_date |> Date.add(-35)
+    due_date = due_date |> Date.add(7)
 
     all_found =
-      Finances.list_unmatched_transactions(~D[1970-01-01], ~D[2100-01-01])
-      |> Enum.filter(fn i ->
-        Date.compare(i.booking_date, issue_date) != :lt and
-          Date.compare(i.booking_date, payment_deadline) != :gt
-      end)
+      Finances.list_unmatched_transactions(issue_date, due_date)
       |> Enum.group_by(&"#{&1.creditor_name} #{&1.booking_date.year}-#{&1.booking_date.month}")
       |> Enum.filter(fn {_, transactions} -> length(transactions) > 1 end)
       |> Enum.map(fn
@@ -227,20 +269,13 @@ defmodule Firmowid.Invoicing do
           {grouped_transaction, transactions}
       end)
 
-    all_found =
-      all_found
-      |> Enum.filter(fn {grouped_transaction, _transactions} ->
-        are_amounts_equal =
-          Decimal.compare(
-            grouped_transaction.transaction_amount,
-            cost_invoice.total_amount
-          )
-
-        are_amounts_equal == :eq and
-          Akin.compare(grouped_transaction.creditor_name, cost_invoice.seller).jaro_winkler > 0.4
-      end)
-
     all_found
+    |> Enum.filter(fn {grouped_transaction, _transactions} ->
+      Decimal.compare(
+        grouped_transaction.transaction_amount,
+        total_amount
+      ) == :eq
+    end)
   end
 
   def match_all_good_candidates_for_unconnected_cost_invoices(organization_id) do
@@ -259,7 +294,15 @@ defmodule Firmowid.Invoicing do
         end)
         |> Enum.each(fn {cost_invoice, candidates} ->
           matches =
-            llm_re_grade_matches(cost_invoice, candidates)
+            llm_re_grade_matches(
+              cost_invoice.invoice_identifier,
+              cost_invoice.description,
+              cost_invoice.issue_date,
+              cost_invoice.total_amount,
+              cost_invoice.currency,
+              cost_invoice.seller,
+              candidates
+            )
             |> Enum.filter(fn {_transaction, grade} -> grade >= 0.8 end)
             |> Enum.map(fn {transaction, _grade} -> transaction end)
 
@@ -301,7 +344,12 @@ defmodule Firmowid.Invoicing do
 
     cost_invoices
     |> Enum.each(fn cost_invoice ->
-      combo_matches = match_with_transaction_combo(cost_invoice)
+      combo_matches =
+        match_with_transaction_combo(
+          cost_invoice.issue_date,
+          cost_invoice.due_date,
+          cost_invoice.total_amount
+        )
 
       case combo_matches do
         [{_grouped_transaction, transactions}] ->
@@ -319,7 +367,15 @@ defmodule Firmowid.Invoicing do
     end)
   end
 
-  def llm_re_grade_matches(cost_invoice, candidates) do
+  def llm_re_grade_matches(
+        invoice_identifier,
+        description,
+        issue_date,
+        total_amount,
+        currency,
+        seller,
+        candidates
+      ) do
     call_llm = fn transaction ->
       {:ok, response} =
         OpenAI.chat_completion(
@@ -354,12 +410,12 @@ defmodule Firmowid.Invoicing do
               content: "
               This is the metadata of a cost invoice I want to match:
               {
-                invoice_identifier: #{cost_invoice.invoice_identifier},
-                description: #{cost_invoice.description},
-                issue_date: #{cost_invoice.issue_date},
-                total_amount: #{cost_invoice.total_amount},
-                currency: #{cost_invoice.currency},
-                seller: #{cost_invoice.seller},
+                invoice_identifier: #{invoice_identifier},
+                description: #{description},
+                issue_date: #{issue_date},
+                total_amount: #{total_amount},
+                currency: #{currency},
+                seller: #{seller},
               }
 
               Here is a transaction that I selected as possible match:

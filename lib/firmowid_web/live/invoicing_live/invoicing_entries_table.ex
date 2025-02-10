@@ -503,6 +503,13 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
             "unmatched"
           end
 
+        %SalesInvoice{} = invoice ->
+          if invoice.transactions != [] do
+            "matched"
+          else
+            "unmatched"
+          end
+
         _ ->
           "unmatched"
       end
@@ -624,97 +631,3 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
     """
   end
 end
-
-# ~H"""
-# <div
-#   id={"status-#{
-#     @invoicing_entry.id
-#   }-#{
-#     @invoicing_entry.cost_invoices
-#     |> Enum.map(fn d -> d.id end)
-#     |> Enum.join(",")
-#   }-#{
-#     @invoicing_entry.transactions
-#     |> Enum.map(fn t -> t.id end)
-#     |> Enum.join(",")
-#   }"}
-#   phx-hook="Tippy"
-#   data-tippy-delay="1000"
-#   data-tippy-content={
-#     case @status do
-#       "Komplet" ->
-#         "Udało się połączyć transakcje i dokument - to oznacza, " <>
-#           "że faktura jest opłacona i przygotowana do zaksięgowania."
-
-#       "Pominięte" ->
-#         if @invoicing_entry.cost_invoices != [] do
-#           "Dokument został pominięty. Transakcje nie będą do niego przypisywane"
-#         else
-#           "Transakcja została pominięta. Faktury nie będą do niej przypisywane"
-#         end
-#     end
-#   }
-#   class="flex flex-row gap-2 w-32 overflow-hidden"
-# >
-#   <div class={[
-#     "text-xs h-6",
-#     "flex flex-row justify-center items-center py-2 px-2 rounded-md",
-#     "transition-all duration-500",
-#     @status != "Pominięte" && "w-10",
-#     @status == "Pominięte" && "w-20 bg-greenBg text-greenText",
-#     @status == "Transakcja" && "bg-redBg text-redText",
-#     @status == "Dokument" && "bg-lightGreyBg text-darkGrey",
-#     @status == "Komplet" && "!w-full justify-between bg-greenBg text-greenText"
-#   ]}>
-#     <%= if @status == "Komplet" do %>
-#       <div class="font-normal uppercase">{@status}</div>
-#     <% end %>
-#     <.icon
-#       name={
-#         case @status do
-#           "Transakcja" ->
-#             "hero-credit-card-mini"
-
-#           "Dokument" ->
-#             "hero-document-text-solid"
-
-#           "Komplet" ->
-#             "hero-check-micro"
-
-#           "Pominięte" ->
-#             if @invoicing_entry.cost_invoices == [] do
-#               "hero-credit-card-mini"
-#             else
-#               "hero-document-text-solid"
-#             end
-#         end
-#       }
-#       class={
-#         classes([
-#           "h-4 w-4",
-#           @status == "Komplet" && "w-5 h-5"
-#         ])
-#       }
-#     />
-#   </div>
-#   <%= if @status != "Komplet" do %>
-#     <button
-#       phx-click="toggle-skip-invoicing"
-#       phx-value-invoice-matcher={@invoicing_entry}
-#       class={[
-#         "transition-all duration-500 cursor-auto",
-#         @status != "Pominięte" && "w-20",
-#         @status == "Pominięte" && "w-10",
-#         "h-6 uppercase text-xs text-darkGrey bg-lightGreyBg rounded-md"
-#       ]}
-#     >
-#       <%= if @status == "Pominięte" do %>
-#         <.icon name="hero-arrow-uturn-left-micro" class="h-4 w-4" />
-#       <% else %>
-#         Pomiń
-#       <% end %>
-#     </button>
-#   <% end %>
-# </div>
-# """
-# end

@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.InvoicingLive.Show do
+  alias Firmowid.Finances
   use FirmowidWeb, :live_view
 
   alias Firmowid.CostInvoices
@@ -20,7 +21,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
       |> assign(:is_cost_invoice, action == :cost_invoice)
       |> assign(:invoice, details.invoice)
       |> assign(:potential_transactions, details.potential_transactions)
-      |> assign(:grouped_potential_transactions, details.grouped_potential_transactions)
+      |> assign(:potential_group, details.potential_group)
       |> assign(:preview_url, details.preview_url)
       |> assign(:preview_type, details.preview_type)
 
@@ -41,7 +42,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
       preview_url={@preview_url}
       preview_type={@preview_type}
       potential_transactions={@potential_transactions}
-      grouped_potential_transactions={@grouped_potential_transactions}
+      potential_group={@potential_group}
     />
     """
   end
@@ -55,10 +56,37 @@ defmodule FirmowidWeb.InvoicingLive.Show do
   defp get_sales_invoice_details(id, current_user) do
     sales_invoice = SalesInvoices.get_sales_invoice(id)
 
+    sales_invoice_description =
+      sales_invoice.sales_invoice_items
+      |> Enum.at(0)
+      |> Map.get(:name)
+
     Bodyguard.permit!(SalesInvoices, :show, current_user, sales_invoice)
 
-    potential_transactions = []
-    grouped_potential_transactions = []
+    potential_transactions_without_grade =
+      Invoicing.get_potential_transactions_for_sales_invoice(sales_invoice,
+        similarity_threshold: 0.0
+      )
+
+    potential_transactions =
+      Invoicing.llm_re_grade_matches(
+        sales_invoice.invoice_number,
+        sales_invoice_description,
+        sales_invoice.issue_date,
+        SalesInvoices.SalesInvoice.get_gross_value(sales_invoice),
+        sales_invoice.currency,
+        sales_invoice.seller_display_name,
+        potential_transactions_without_grade
+      )
+      |> Enum.map(fn {transaction, grade} -> Map.put(transaction, :llm_eval, grade) end)
+      |> Enum.sort_by(& &1.llm_eval, :desc)
+
+    potential_group =
+      Invoicing.match_with_transaction_combo(
+        sales_invoice.issue_date,
+        sales_invoice.due_date,
+        SalesInvoices.SalesInvoice.get_gross_value(sales_invoice)
+      )
 
     preview_url = ""
     preview_type = :html
@@ -71,13 +99,13 @@ defmodule FirmowidWeb.InvoicingLive.Show do
             total_amount: SalesInvoices.SalesInvoice.get_gross_value(sales_invoice),
             invoice_identifier: sales_invoice.invoice_number,
             seller: sales_invoice.seller_display_name,
-            description: nil
+            description: sales_invoice_description
           }
         ),
       preview_url: preview_url,
       preview_type: preview_type,
       potential_transactions: potential_transactions,
-      grouped_potential_transactions: grouped_potential_transactions
+      potential_group: potential_group
     }
   end
 
@@ -86,46 +114,35 @@ defmodule FirmowidWeb.InvoicingLive.Show do
 
     Bodyguard.permit!(CostInvoices, :show, current_user, cost_invoice)
 
+    potential_transactions_without_grade =
+      Invoicing.get_potential_transactions_for_cost_invoice(
+        cost_invoice,
+        similarity_threshold: 0.0,
+        days_before: 15,
+        days_after: 10,
+        exact_amount: false
+      )
+
     potential_transactions =
-      if cost_invoice.transactions == [] do
-        potential_transactions =
-          Invoicing.get_potential_transactions_for_cost_invoice(
-            cost_invoice,
-            similarity_threshold: 0.0,
-            days_before: 15,
-            days_after: 10,
-            exact_amount: false
-          )
-          |> Enum.map(fn t ->
-            Map.merge(t, %{
-              amount:
-                Money.new(
-                  t.transaction_currency,
-                  t.transaction_amount
-                )
-            })
-          end)
+      Invoicing.llm_re_grade_matches(
+        cost_invoice.invoice_identifier,
+        cost_invoice.description,
+        cost_invoice.issue_date,
+        cost_invoice.total_amount,
+        cost_invoice.currency,
+        cost_invoice.seller,
+        potential_transactions_without_grade
+      )
+      |> Enum.map(fn {transaction, grade} -> Map.put(transaction, :llm_eval, grade) end)
+      |> Enum.map(fn transaction -> Map.put(transaction, :llm_eval, 0.5) end)
+      |> Enum.sort_by(& &1.llm_eval, :desc)
 
-        Invoicing.llm_re_grade_matches(
-          cost_invoice,
-          potential_transactions
-        )
-        |> Enum.map(fn {transaction, grade} -> Map.put(transaction, :llm_eval, grade) end)
-        |> Enum.sort_by(& &1.llm_eval, :desc)
-      else
-        []
-      end
-
-    is_llm_certain = Enum.all?(potential_transactions, fn t -> t.llm_eval > 0.9 end)
-
-    grouped_potential_transactions =
-      if cost_invoice.transactions == [] and
-           (potential_transactions == [] or
-              not is_llm_certain) do
-        Invoicing.match_with_transaction_combo(cost_invoice)
-      else
-        []
-      end
+    potential_group =
+      Invoicing.match_with_transaction_combo(
+        cost_invoice.issue_date,
+        cost_invoice.due_date,
+        cost_invoice.total_amount
+      )
 
     %{
       invoice: cost_invoice,
@@ -137,7 +154,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
           :image
         end,
       potential_transactions: potential_transactions,
-      grouped_potential_transactions: grouped_potential_transactions
+      potential_group: potential_group
     }
   end
 
@@ -187,7 +204,46 @@ defmodule FirmowidWeb.InvoicingLive.Show do
           user,
           organization_id
         )
+      else
+        connect_sales_invoice(
+          invoice_id,
+          transaction_id,
+          user,
+          organization_id
+        )
       end
+
+    socket =
+      socket
+      |> assign(:invoice, invoice)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("connect-group", _, socket) do
+    user = socket.assigns.current_user
+    organization_id = user.organization_id
+    invoice_id = socket.assigns.invoice.id
+
+    [invoice | _] =
+      Enum.map(socket.assigns.potential_group, fn transaction ->
+        if socket.assigns.is_cost_invoice do
+          connect_cost_invoice(
+            invoice_id,
+            transaction.id,
+            user,
+            organization_id
+          )
+        else
+          connect_sales_invoice(
+            invoice_id,
+            transaction.id,
+            user,
+            organization_id
+          )
+        end
+      end)
+      |> Enum.reverse()
 
     socket =
       socket
@@ -205,6 +261,12 @@ defmodule FirmowidWeb.InvoicingLive.Show do
         CostInvoices.delete_cost_invoices_transactions_connections(socket.assigns.invoice.id)
 
         CostInvoices.get_cost_invoice!(socket.assigns.invoice.id)
+      else
+        Bodyguard.permit!(SalesInvoices, :update, user)
+        SalesInvoices.delete_sales_invoices_transactions_connections(socket.assigns.invoice.id)
+
+        details = get_sales_invoice_details(socket.assigns.invoice.id, user)
+        details.invoice
       end
 
     socket =
@@ -230,6 +292,19 @@ defmodule FirmowidWeb.InvoicingLive.Show do
     Bodyguard.permit!(CostInvoices, :update, socket.assigns.current_user)
 
     CostInvoices.toggle_skip_invoicing(socket.assigns.invoice.id)
+  end
+
+  defp connect_sales_invoice(invoice_id, transaction_id, user, organization_id) do
+    Bodyguard.permit!(SalesInvoices, :update, user)
+
+    SalesInvoices.create_sales_invoices_transactions_connection(
+      invoice_id,
+      transaction_id,
+      organization_id
+    )
+
+    details = get_sales_invoice_details(invoice_id, user)
+    details.invoice
   end
 
   defp toggle_sales_invoice_invoicing(socket) do

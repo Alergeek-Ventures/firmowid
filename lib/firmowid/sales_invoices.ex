@@ -4,6 +4,7 @@ defmodule Firmowid.SalesInvoices do
   alias Firmowid.Repo
 
   alias Firmowid.SalesInvoices.SalesInvoice
+  alias Firmowid.SalesInvoices.SalesInvoicesTransactions
 
   @behaviour Bodyguard.Policy
 
@@ -79,6 +80,22 @@ defmodule Firmowid.SalesInvoices do
     |> Repo.preload(:buyer)
     |> Repo.preload(:seller)
     |> populate_logo_url()
+  end
+
+  def create_sales_invoices_transactions_connection(invoice_id, transaction_id, organization_id) do
+    SalesInvoicesTransactions.changeset(%{
+      sales_invoice_id: invoice_id,
+      transaction_id: transaction_id,
+      organization_id: organization_id
+    })
+    |> Repo.insert!()
+  end
+
+  def delete_sales_invoices_transactions_connections(invoice_id) do
+    query = from(SalesInvoicesTransactions) |> where([c], c.sales_invoice_id == ^invoice_id)
+
+    query
+    |> Repo.delete_all()
   end
 
   def toggle_skip_invoicing(id) do
