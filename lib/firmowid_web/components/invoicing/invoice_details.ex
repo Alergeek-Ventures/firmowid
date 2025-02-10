@@ -24,7 +24,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         "grid grid-cols-[1fr] xl:grid-cols-[1fr,4fr]",
         "px-8 xl:px-24 py-8 gap-24 xl:gap-10"
       ]}>
-        <aside class="max-w-none xl:max-w-[450px] flex flex-col gap-4 order-last xl:order-none">
+        <aside class="min-w-[320px] max-w-none xl:max-w-[450px] flex flex-col gap-4 order-last xl:order-none">
           <.invoice_details
             is_cost_invoice={@is_cost_invoice}
             invoice_id={@invoice.id}
