@@ -48,6 +48,7 @@ defmodule Firmowid.SalesInvoices do
         where: is_nil(sit.id),
         where: si.issue_date >= ^from,
         where: si.due_date <= ^to,
+        where: si.skip_invoicing == false,
         order_by: [desc: :issue_date]
 
     query
