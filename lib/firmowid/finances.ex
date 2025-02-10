@@ -92,6 +92,7 @@ defmodule Firmowid.Finances do
     query
     |> Repo.all()
     |> Repo.preload(:cost_invoices_transactions)
+    |> Repo.preload(:sales_invoices_transactions)
   end
 
   def list_unmatched_transactions(from, to) do
@@ -100,12 +101,14 @@ defmodule Firmowid.Finances do
     # and don't have any cost_invoices_transactions (so not matched yet)
     from(t in Transaction,
       left_join: dt in assoc(t, :cost_invoices_transactions),
-      where: not t.skip_invoicing,
+      where: t.skip_invoicing == false,
       where: is_nil(dt.id),
       where: t.booking_date >= ^from and t.booking_date <= ^to,
       order_by: [desc: t.booking_date]
     )
     |> Repo.all()
+    |> Repo.preload(:cost_invoices_transactions)
+    |> Repo.preload(:sales_invoices_transactions)
   end
 
   def get_transaction!(transaction_id) do

@@ -78,7 +78,7 @@ defmodule Firmowid.InvoicingTest do
         %CostInvoice{},
         Map.merge(
           %{
-            id: 1,
+            id: "f5006dbd-f7c2-4658-b154-d34dc9fa9fb9",
             invoice_identifier: "a",
             description: "a",
             total_amount: Decimal.from_float(100.0),
@@ -113,7 +113,7 @@ defmodule Firmowid.InvoicingTest do
         %CostInvoice{},
         Map.merge(
           %{
-            id: 2,
+            id: "f5006dbd-f7c2-4658-b154-d34dc9fa9fb9",
             invoice_identifier: "b",
             description: "b",
             total_amount: Decimal.from_float(100.0),

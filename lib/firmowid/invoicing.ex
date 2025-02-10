@@ -180,7 +180,7 @@ defmodule Firmowid.Invoicing do
           transaction_amount_in_pln
           |> Money.to_decimal()
 
-        decimal_between?(min_amount, max_amount, transaction_amount) |> dbg()
+        decimal_between?(min_amount, max_amount, transaction_amount)
       end)
 
     # use Jaro-Winkler name similarity to check if seller matches
@@ -249,32 +249,36 @@ defmodule Firmowid.Invoicing do
 
     all_found =
       Finances.list_unmatched_transactions(issue_date, due_date)
-      |> Enum.group_by(&"#{&1.creditor_name} #{&1.booking_date.year}-#{&1.booking_date.month}")
-      |> Enum.filter(fn {_, transactions} -> length(transactions) > 1 end)
+      |> Enum.group_by(
+        &%{
+          creditor_name: &1.creditor_name,
+          year_month: "#{&1.booking_date.year}-#{&1.booking_date.month}"
+        }
+      )
       |> Enum.map(fn
-        {_label, transactions} ->
-          grouped_transaction =
-            hd(transactions)
-            |> Map.put(
-              :transaction_amount,
-              Enum.map(
-                transactions,
-                &Decimal.to_float(&1.transaction_amount)
-              )
-              |> Enum.sum()
-              |> Decimal.from_float()
-            )
-            |> Map.put(:booking_date, Enum.at(transactions, -1).booking_date)
-
-          {grouped_transaction, transactions}
+        {%{creditor_name: creditor_name, year_month: year_month}, transactions} ->
+          %{
+            id: UUIDv7.generate(),
+            creditor_name: creditor_name,
+            year_month: year_month,
+            total_amount:
+              Enum.reduce(transactions, Decimal.new(0), fn t, acc ->
+                Decimal.add(t.transaction_amount, acc)
+              end),
+            currency: Enum.at(transactions, 0).transaction_currency,
+            transactions: transactions
+          }
       end)
 
     all_found
-    |> Enum.filter(fn {grouped_transaction, _transactions} ->
-      Decimal.compare(
-        grouped_transaction.transaction_amount,
-        total_amount
-      ) == :eq
+    |> Enum.filter(fn %{
+                        total_amount: group_total_amount,
+                        transactions: transactions
+                      } ->
+      is_amount_equal = Decimal.compare(group_total_amount, total_amount) == :eq
+      is_a_group = length(transactions) > 1
+
+      is_amount_equal and is_a_group
     end)
   end
 

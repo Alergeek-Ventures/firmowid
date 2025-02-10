@@ -9,7 +9,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   attr :preview_type, :atom, required: true
 
   attr :potential_transactions, :list, default: []
-  attr :potential_group, :list, default: []
+  attr :potential_groups, :list, default: []
 
   def render(assigns) do
     ~H"""
@@ -53,7 +53,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
             is_cost_invoice={@is_cost_invoice}
             invoice={@invoice}
             potential_transactions={@potential_transactions}
-            potential_group={@potential_group}
+            potential_groups={@potential_groups}
           />
         </main>
       </div>
@@ -220,6 +220,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   attr :is_cost_invoice, :boolean, required: true
   attr :invoice, :map, required: true
   attr :potential_transactions, :list, required: true
+  attr :potential_groups, :list, required: true
 
   defp invoice_action_view(assigns) do
     cond do
@@ -232,7 +233,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         ~H"""
         <.invoice_potential_transactions
           is_cost_invoice={@is_cost_invoice}
-          potential_group={@potential_group}
+          potential_groups={@potential_groups}
           potential_transactions={@potential_transactions}
         />
         """
@@ -344,7 +345,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   end
 
   attr :potential_transactions, :list, required: true
-  attr :potential_group, :list, required: true
+  attr :potential_groups, :list, required: true
   attr :is_cost_invoice, :boolean, required: true
 
   defp invoice_potential_transactions(%{potential_transactions: []} = assigns) do
@@ -373,11 +374,14 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   defp invoice_potential_transactions(assigns) do
     ~H"""
     <div class="flex flex-col gap-16">
-      <.invoice_potential_group is_cost_invoice={@is_cost_invoice} potential_group={@potential_group} />
+      <.invoice_potential_groups
+        is_cost_invoice={@is_cost_invoice}
+        potential_groups={@potential_groups}
+      />
 
       <div class="flex flex-col gap-5">
         <h2 class="text-lg font-semibold">
-          {if @potential_group == [],
+          {if @potential_groups == [],
             do: "Potencjalne transakcje dla dokumentu",
             else: "Inne pasujące transakcje"}
         </h2>
@@ -434,14 +438,24 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
     """
   end
 
-  defp invoice_potential_group(%{potential_group: []} = assigns) do
+  defp invoice_potential_groups(%{potential_groups: []} = assigns) do
     ~H"""
     """
   end
 
-  defp invoice_potential_group(assigns) do
+  defp invoice_potential_groups(assigns) do
     ~H"""
-    <div class="flex flex-col gap-4">
+    <div
+      :for={
+        %{
+          id: id,
+          total_amount: total_amount,
+          currency: currency,
+          transactions: transactions
+        } <- @potential_groups
+      }
+      class="flex flex-col gap-4"
+    >
       <h3 class="text-lg font-semibold">Znaleziono dopasowanie do grupy</h3>
 
       <p class="text-sm text-darkGrey">
@@ -456,16 +470,15 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
           Suma grupy:
           <span class="font-bold text-lg">
             {Money.new(
-              @potential_group |> Enum.at(0) |> Map.get(:transaction_currency),
-              @potential_group
-              |> Enum.map(fn t -> t.transaction_amount end)
-              |> Enum.reduce(0, &Decimal.add(&1, &2))
+              currency,
+              total_amount
             )}
           </span>
         </p>
 
         <button
           phx-click="connect-group"
+          phx-value-group-id={id}
           class={[
             "min-w-[300px] uppercase px-4 py-2 rounded",
             "bg-greenBg text-darkGrey"
@@ -487,7 +500,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
 
       <div class="flex flex-col gap-1">
         <div
-          :for={transaction <- @potential_group}
+          :for={transaction <- transactions}
           id={"group-potential-transaction-#{transaction.id}"}
           class="grid grid-cols-[1fr_150px_200px]"
         >

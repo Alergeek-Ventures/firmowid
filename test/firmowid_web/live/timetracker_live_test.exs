@@ -181,7 +181,7 @@ defmodule FirmowidWeb.TimetrackerLiveTest do
     test "shows no projects message for normal user", %{conn: conn} do
       user = user_fixture()
 
-      {:ok, lv, html} =
+      {:ok, _lv, html} =
         conn
         |> log_in_user(user)
         |> live(~p"/czasosledz")

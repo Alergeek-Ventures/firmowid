@@ -1,5 +1,4 @@
 defmodule FirmowidWeb.InvoicingLive.Show do
-  alias Firmowid.Finances
   use FirmowidWeb, :live_view
 
   alias Firmowid.CostInvoices
@@ -21,7 +20,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
       |> assign(:is_cost_invoice, action == :cost_invoice)
       |> assign(:invoice, details.invoice)
       |> assign(:potential_transactions, details.potential_transactions)
-      |> assign(:potential_group, details.potential_group)
+      |> assign(:potential_groups, details.potential_groups)
       |> assign(:preview_url, details.preview_url)
       |> assign(:preview_type, details.preview_type)
 
@@ -42,7 +41,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
       preview_url={@preview_url}
       preview_type={@preview_type}
       potential_transactions={@potential_transactions}
-      potential_group={@potential_group}
+      potential_groups={@potential_groups}
     />
     """
   end
@@ -81,7 +80,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
       |> Enum.map(fn {transaction, grade} -> Map.put(transaction, :llm_eval, grade) end)
       |> Enum.sort_by(& &1.llm_eval, :desc)
 
-    potential_group =
+    potential_groups =
       Invoicing.match_with_transaction_combo(
         sales_invoice.issue_date,
         sales_invoice.due_date,
@@ -105,7 +104,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
       preview_url: preview_url,
       preview_type: preview_type,
       potential_transactions: potential_transactions,
-      potential_group: potential_group
+      potential_groups: potential_groups
     }
   end
 
@@ -137,7 +136,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
       |> Enum.map(fn transaction -> Map.put(transaction, :llm_eval, 0.5) end)
       |> Enum.sort_by(& &1.llm_eval, :desc)
 
-    potential_group =
+    potential_groups =
       Invoicing.match_with_transaction_combo(
         cost_invoice.issue_date,
         cost_invoice.due_date,
@@ -154,7 +153,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
           :image
         end,
       potential_transactions: potential_transactions,
-      potential_group: potential_group
+      potential_groups: potential_groups
     }
   end
 
@@ -220,13 +219,14 @@ defmodule FirmowidWeb.InvoicingLive.Show do
     {:noreply, socket}
   end
 
-  def handle_event("connect-group", _, socket) do
+  def handle_event("connect-group", %{"group-id" => group_id}, socket) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
     invoice_id = socket.assigns.invoice.id
+    group = socket.assigns.potential_groups |> Enum.find(&(&1.id == group_id))
 
     [invoice | _] =
-      Enum.map(socket.assigns.potential_group, fn transaction ->
+      Enum.map(group.transactions, fn transaction ->
         if socket.assigns.is_cost_invoice do
           connect_cost_invoice(
             invoice_id,
