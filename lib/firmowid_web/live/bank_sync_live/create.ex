@@ -1,5 +1,6 @@
 defmodule FirmowidWeb.BankSyncLive.Create do
   use FirmowidWeb, :live_view
+
   require Logger
 
   alias Firmowid.BankData
@@ -55,7 +56,15 @@ defmodule FirmowidWeb.BankSyncLive.Create do
                  requisition_id,
                  organization_id
                ) do
-          {:noreply, redirect(socket, to: ~p"/")}
+          socket =
+            socket
+            |> put_flash(
+              :info,
+              "Konto zostało poprawnie zintegrowane, synchronizacja trwa"
+            )
+            |> push_navigate(to: ~p"/")
+
+          {:noreply, socket}
         else
           _ ->
             {:noreply, push_patch(socket, to: ~p"/ustawienia/bank/dodaj")}

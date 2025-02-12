@@ -511,8 +511,6 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
           end
 
         %Transaction{} = transaction ->
-          dbg(transaction)
-
           if transaction.cost_invoices_transactions != [] or
                transaction.sales_invoices_transactions != [] do
             "matched"
