@@ -55,6 +55,7 @@ defmodule Firmowid.SalesInvoices do
     query
     |> Repo.all()
     |> Repo.preload(:sales_invoice_items)
+    |> Repo.preload(:transactions)
     |> Repo.preload(:buyer)
   end
 

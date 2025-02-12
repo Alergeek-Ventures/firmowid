@@ -100,9 +100,11 @@ defmodule Firmowid.Finances do
     # (so we match for them)
     # and don't have any cost_invoices_transactions (so not matched yet)
     from(t in Transaction,
-      left_join: dt in assoc(t, :cost_invoices_transactions),
+      left_join: ci in assoc(t, :cost_invoices_transactions),
+      left_join: si in assoc(t, :sales_invoices_transactions),
       where: t.skip_invoicing == false,
-      where: is_nil(dt.id),
+      where: is_nil(ci.id),
+      where: is_nil(si.id),
       where: t.booking_date >= ^from and t.booking_date <= ^to,
       order_by: [desc: t.booking_date]
     )
