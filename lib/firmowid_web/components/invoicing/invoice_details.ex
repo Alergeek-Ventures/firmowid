@@ -183,10 +183,13 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
       <FirmowidWeb.PdfHTML.sales_invoice
         sales_invoice={@sales_invoice}
         currency_rate={
-          @sales_invoice.currency
-          |> Firmowid.Nbp.ApiClient.get_exchange_rate(
-            SalesInvoice.get_currency_conversion_date(@sales_invoice)
-          )
+          if @sales_invoice.currency == "PLN",
+            do: nil,
+            else:
+              @sales_invoice.currency
+              |> Firmowid.Nbp.ApiClient.get_exchange_rate(
+                SalesInvoice.get_currency_conversion_date(@sales_invoice)
+              )
         }
       />
     </div>
