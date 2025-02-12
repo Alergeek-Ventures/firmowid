@@ -92,7 +92,10 @@ defmodule Firmowid.CostInvoices.Worker do
             },
             invoice_identifier: %{
               type: "string",
-              description: "The identifier (typically number) of the invoice"
+              description: "The identifier (typically number) of the invoice.
+              If it's neither an invoice or a receipt, but a contract for sale,
+              then say e.g. 'Sale contract on day YYYY-MM-DD in City' If
+              identifier is not available at all - provide 'N/A'."
             },
             items_list: %{
               type: "array",
