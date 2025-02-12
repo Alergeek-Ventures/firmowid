@@ -1,5 +1,4 @@
-<div class="mt-16 mb-16 flex flex-col justify-center items-center gap-16
-  text-center md:hidden">
+<div class="mt-16 mb-16 flex flex-col justify-center items-center gap-16 text-center md:hidden">
   <.icon name="hero-document-magnifying-glass-solid" class="w-16 h-16" />
   <div class="flex flex-col gap-4">
     <p class="font-bold">Podgląd dokumentów nie jest aktualnie dostępny na urządzeniu mobilnym</p>
@@ -29,21 +28,11 @@
 
   <div phx-drop-target={@uploads.file.ref} class="flex flex-row gap-4">
     <%= if @invoicing_entries != [] do %>
-      <a
-        id="download-button"
-        data-tippy-content="Pobierz wszystkie faktury wystawione w tym miesiącu"
-        phx-hook="Tippy"
-        href={"/file?month=#{@params.month}"}
-        download
-        class="relative flex flex-row gap-4 items-center justify-center
-        rounded-lg px-3 py-2 max-md:hidden bg-greyButtonBg
-        border-greyButtonBg hover:border-darkGrey border transition-colors"
-      >
-        <.icon name="hero-cloud-arrow-down" class="w-6 h-6" />
-        <span class="max-xl:hidden">
-          Pobierz
-        </span>
-      </a>
+      <.live_component
+        id="download-component"
+        module={FirmowidWeb.Components.Invoicing.DownloadModal}
+        month={@params.month}
+      />
     <% end %>
     <.link
       :if={Bodyguard.permit?(Firmowid.SalesInvoices, :create_sales_invoice, @current_user)}
@@ -198,7 +187,7 @@
   :if={Bodyguard.permit?(Firmowid.Invoicing, :upload, @current_user)}
   id="file-drop-overlay"
   class="fixed top-[10lvw] left-[5lvw] w-[90lvw] h-[80lvh] bg-[#CEE6E666]
-  rounded-lg items-center justify-center z-50 bg-opacity-50 opacity-0
+  rounded-lg items-center justify-center z-20 bg-opacity-50 opacity-0
   transition-opacity hidden"
   phx-hook="FileUploadDragNDrop"
   phx-drop-target={@uploads.file.ref}

@@ -127,7 +127,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
           end
         }
       />
-      <thead class="sticky top-[154px] bg-lightGreyBg z-20">
+      <thead class="sticky top-[154px] bg-lightGreyBg z-[1]">
         <tr>
           <th
             :for={column <- @columns}

@@ -5,6 +5,7 @@ defmodule FirmowidWeb.FileController do
 
   def batch(conn, params) do
     month = params["month"] |> Date.from_iso8601!()
+    skip_scans = params["skip_scans"] == "true"
 
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
@@ -17,6 +18,7 @@ defmodule FirmowidWeb.FileController do
 
     stream =
       cost_invoices
+      |> Enum.filter(fn invoice -> !skip_scans || String.contains?(invoice.file_url, ".pdf") end)
       |> Enum.map(fn document ->
         file_extension =
           document.file_url
