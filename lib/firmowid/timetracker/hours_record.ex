@@ -18,8 +18,8 @@ defmodule Firmowid.Timetracker.HoursRecord do
   @doc false
   def changeset(hours_record, attrs) do
     hours_record
-    |> cast(attrs, [:month, :year, :number_of_hours])
-    |> validate_required([:month, :year, :number_of_hours])
+    |> cast(attrs, [:month, :year, :number_of_hours, :blob_id, :user_id])
+    |> validate_required([:month, :year, :number_of_hours, :blob_id, :user_id])
     |> foreign_key_constraint(:user_id)
     |> put_change(:organization_id, Repo.get_org_id())
     |> unique_constraint([:month, :year, :organization_id, :user_id])

@@ -2,11 +2,12 @@ defmodule Firmowid.Timetracker do
   @moduledoc """
   The Czasosledź (timetracker) context.
   """
-
+  require Logger
   import Ecto.Query, warn: false
 
   @behaviour Bodyguard.Policy
 
+  alias Firmowid.Blobs
   alias Firmowid.Accounts
   alias Firmowid.Timetracker.Project
   alias Firmowid.Timetracker.ProjectUser
@@ -202,7 +203,7 @@ defmodule Firmowid.Timetracker do
 
   """
   def list_hours_records do
-    Repo.all(HoursRecord)
+    Repo.all(HoursRecord) |> Repo.preload(:user)
   end
 
   @doc """
@@ -219,7 +220,7 @@ defmodule Firmowid.Timetracker do
       ** (Ecto.NoResultsError)
 
   """
-  def get_hours_record!(id), do: Repo.get!(HoursRecord, id)
+  def get_hours_record!(id), do: Repo.get!(HoursRecord, id) |> Repo.preload(:user)
 
   @doc """
   Creates a hours_record.
@@ -233,10 +234,31 @@ defmodule Firmowid.Timetracker do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_hours_record(attrs \\ %{}) do
-    %HoursRecord{}
-    |> HoursRecord.changeset(attrs)
-    |> Repo.insert()
+  def create_hours_record(attrs, path, filename) do
+    Repo.transaction(fn ->
+      with {:ok, blob} <- Blobs.create_blob(path, "binary/octet-stream", filename),
+           {:ok, hours_record} <-
+             %HoursRecord{}
+             |> HoursRecord.changeset(
+               Map.merge(attrs, %{
+                 blob_id: blob.id
+               })
+             )
+             |> Repo.insert() do
+        hours_record
+      else
+        {:error, reason} ->
+          Logger.error("Failed to upload hours record: #{inspect(reason)}")
+          Repo.rollback(reason)
+      end
+    end)
+  end
+
+  def get_hours_record_by_month(user_id, date) do
+    HoursRecord
+    |> where([hr], hr.user_id == ^user_id)
+    |> where([hr], hr.month == ^date.month and hr.year == ^date.year)
+    |> Repo.one()
   end
 
   @doc """

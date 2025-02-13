@@ -4,7 +4,7 @@ defmodule Firmowid.Accounts.User do
 
   schema "users" do
     field :name, :string
-    field :employment_date, :utc_datetime
+    field :employment_date, :date
     field :role, Ecto.Enum, values: [:employee, :admin], default: :employee
 
     field :system_role, Ecto.Enum, values: [:user, :superuser], default: :user
@@ -13,6 +13,8 @@ defmodule Firmowid.Accounts.User do
     field :hashed_password, :string, redact: true
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
+
+    field :is_personal_info_editing, :boolean, virtual: true, default: false
 
     many_to_many :projects,
                  Firmowid.Timetracker.Project,
@@ -202,6 +204,14 @@ defmodule Firmowid.Accounts.User do
 
   def update_changeset(user, attrs) do
     user
-    |> cast(attrs, [:marketing_consent, :system_role, :avatar_blob_id, :role])
+    |> cast(attrs, [
+      :marketing_consent,
+      :system_role,
+      :name,
+      :employment_date,
+      :avatar_blob_id,
+      :role,
+      :is_personal_info_editing
+    ])
   end
 end

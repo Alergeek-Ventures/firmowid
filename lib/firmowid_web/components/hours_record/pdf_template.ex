@@ -6,46 +6,35 @@ defmodule FirmowidWeb.HoursRecord.PdfTemplate do
   attr :start_date, :any, required: true
   attr :end_date, :any, required: true
   attr :hours, :integer, required: true
-  attr :logo_path, :string, default: "/images/av-logo-colors-nobg.png"
+  attr :avatar_url, :string
 
   def hours_record(assigns) do
     ~H"""
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap"
-      rel="stylesheet"
-    />
-    <div class="w-[calc(595px-2*32px)] h-[calc(842px-2*32px)] relative p-8 box-content mx-auto bg-white font-['PT Sans'] text-[14px]">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/paper-css/0.4.1/paper.css" />
+    <div class="w-[210mm] border print:border-none h-[267mm] relative py-[120px] px-[32px] mx-auto bg-white font-[PT_Sans] text-[16px]">
       <div class="flex justify-between">
-        <%!-- <img src={@logo_path} class="w-[200px] h-[200px]" /> --%>
+        <img src={@avatar_url} class="w-[200px] h-[200px]" />
         <div class="flex flex-col items-end mt-10 mr-9">
-          <span class="text-[12px]">Imię i nazwisko Zleceniobiorcy</span>
+          <span>Imię i nazwisko Zleceniobiorcy</span>
           <span class="mt-1">{@name}</span>
         </div>
       </div>
 
-      <div class="text-center mt-[45px] mb-[35px]">
+      <div class="text-center mt-[60px] mb-[35px]">
         <h1 class="font-bold">Informacja o liczbie godzin wykonania zlecenia</h1>
       </div>
-
-      <div class="mx-8">
-        <p class="mb-[10px]">
-          Informuję, iż na wykonanie zlecenia realizowanego na podstawie umowy
-        </p>
-        <p class="mb-[10px]">
-          zawartej w dniu {format_date(@employment_date)} w okresie od {format_date(@start_date)} do {format_date(
-            @end_date
-          )}
-        </p>
-        <p>
-          <%= if String.ends_with?(String.split(@name, " ") |> List.first(), "a") do %>
-            przeznaczyłam
-          <% else %>
-            przeznaczyłem
-          <% end %>
-          {format_duration(@hours)}
-        </p>
+      <div class="flex justify-center">
+        <div>
+          <p class="mb-2.5">
+            Informuję, iż na wykonanie zlecenia realizowanego na podstawie umowy
+          </p>
+          <p class="mb-2.5">
+            zawartej w dniu {format_date(@employment_date)} w okresie od {format_date(@start_date)} do {format_date(
+              @end_date
+            )}
+          </p>
+          <p>przeznaczyłem {format_duration(@hours)}.</p>
+        </div>
       </div>
 
       <div class="text-right mr-[68px] mt-[160px]">

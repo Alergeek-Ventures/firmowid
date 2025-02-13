@@ -7,12 +7,17 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
   def mount(_params, _session, socket) do
     Bodyguard.permit!(Timetracker, :read_projects, socket.assigns.current_user)
 
+    hours_records =
+      Timetracker.list_hours_records()
+      |> Enum.sort_by(fn record -> {record.year, record.month} end, :desc)
+
     {:ok,
      assign(socket,
        users:
          Timetracker.list_users_with_projects() |> Enum.map(&Accounts.get_user_with_avatar/1),
        projects: Timetracker.list_projects_with_users(),
        show_modal: false,
+       hours_records: hours_records,
        form: to_form(Project.form_changeset()),
        editing_project: nil
      )}

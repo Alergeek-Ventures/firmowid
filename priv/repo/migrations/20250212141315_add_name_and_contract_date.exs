@@ -4,7 +4,7 @@ defmodule Firmowid.Repo.Migrations.AddNameAndContractDate do
   def change do
     alter table(:users) do
       add :name, :string
-      add :employment_date, :utc_datetime
+      add :employment_date, :date
     end
   end
 end

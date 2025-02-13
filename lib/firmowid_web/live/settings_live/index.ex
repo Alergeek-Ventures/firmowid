@@ -27,6 +27,14 @@ defmodule FirmowidWeb.SettingsLive.Index do
     )
   end
 
+  def form_user_changeset(user, attrs \\ %{}) do
+    Changeset.cast(user, attrs, [
+      :name,
+      :employment_date,
+      :is_personal_info_editing
+    ])
+  end
+
   def mount(_params, _session, socket) do
     bank_accounts =
       if Bodyguard.permit?(BankData, :read_bank_accounts, socket.assigns.current_user) do
@@ -35,18 +43,16 @@ defmodule FirmowidWeb.SettingsLive.Index do
         []
       end
 
-    org = Map.put(socket.assigns.current_org, :is_editing, false)
-
     socket =
       if Bodyguard.permit?(Accounts, :update_organization, socket.assigns.current_user) do
         socket
         |> assign(
           :company_form,
-          to_form(form_basic_info_changeset(org))
+          to_form(form_basic_info_changeset(socket.assigns.current_org))
         )
         |> assign(
           :correspondence_form,
-          to_form(form_correspondence_changeset(org))
+          to_form(form_correspondence_changeset(socket.assigns.current_org))
         )
         |> allow_upload(:organization_avatar,
           accept: ~w(.jpg .jpeg .png),
@@ -57,6 +63,13 @@ defmodule FirmowidWeb.SettingsLive.Index do
       else
         socket
       end
+
+    socket =
+      socket
+      |> assign(
+        :user_form,
+        to_form(form_user_changeset(socket.assigns.current_user))
+      )
 
     {:ok,
      socket
@@ -108,7 +121,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
 
   defp handle_progress(name, entry, socket) when name in [:organization_avatar, :user_avatar] do
     if name == :organization_avatar do
-      Bodyguard.permit!(Organization, :update_organization, socket.assigns.current_org)
+      Bodyguard.permit!(Accounts, :update_organization, socket.assigns.current_user)
     end
 
     if entry.done? do
@@ -230,6 +243,23 @@ defmodule FirmowidWeb.SettingsLive.Index do
 
       {:error, changeset} ->
         {:noreply, socket |> assign(:correspondence_form, to_form(changeset))}
+    end
+  end
+
+  def handle_event("save", %{"user" => user_params}, socket) do
+    case Accounts.update_user(socket.assigns.current_user, user_params) do
+      {:ok, updated_user} ->
+        {:noreply,
+         socket
+         |> assign(:current_user, updated_user)
+         |> assign(:user_form, to_form(form_user_changeset(Map.merge(user_params, updated_user))))}
+
+      {:error, changeset} ->
+        dbg(changeset)
+
+        {:noreply,
+         socket
+         |> assign(:user_form, to_form(changeset))}
     end
   end
 end

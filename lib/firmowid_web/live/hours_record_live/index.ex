@@ -8,13 +8,15 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
     selected_date = Date.utc_today()
     active_months = Timetracker.get_months_with_sessions(socket.assigns.current_user.id)
 
+    current_user = socket.assigns.current_user
+    can_use_hours_records = current_user.name && current_user.employment_date
+
     socket =
       socket
       |> assign(:selected_date, selected_date)
       |> assign(:active_months, active_months)
-      |> assign(:is_downloaded, false)
-      |> assign(:uploaded_files, [])
-      |> allow_upload(:file,
+      |> assign(:can_use_hours_records, can_use_hours_records)
+      |> allow_upload(:hours_record,
         max_entries: 1,
         accept: ["application/pdf", "image/*"]
       )
@@ -50,6 +52,32 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
     {:noreply, socket}
   end
 
+  def handle_event("upload", _params, socket) do
+    consume_uploaded_entries(socket, :hours_record, fn %{path: path}, entry ->
+      case Timetracker.create_hours_record(
+             %{
+               user_id: socket.assigns.current_user.id,
+               number_of_hours: socket.assigns.total_duration |> div(3600) |> round(),
+               month: socket.assigns.selected_date.month,
+               year: socket.assigns.selected_date.year
+             },
+             path,
+             entry.client_name
+           ) do
+        {:error, error} ->
+          LiveToast.send_toast(:error, "Wystąpił błąd podczas zapisywania pliku.")
+          {:ok, {:error, error}}
+
+        {:ok, hours_record} ->
+          LiveToast.send_toast(:info, "Plik został zapisany.")
+
+          {:ok, {:ok, hours_record}}
+      end
+    end)
+
+    {:noreply, socket |> refetch_data()}
+  end
+
   @impl true
   def handle_event("change-month", %{"month" => month}, socket) do
     month = month |> Date.from_iso8601!()
@@ -62,10 +90,6 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
     {:noreply, socket}
   end
 
-  def handle_event("download", _unsigned_params, socket) do
-    {:noreply, assign(socket, is_downloaded: true)}
-  end
-
   def refetch_data(socket) do
     selected_date = socket.assigns.selected_date
 
@@ -75,7 +99,14 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
         selected_date
       )
 
+    current_month_hours_record =
+      Timetracker.get_hours_record_by_month(
+        socket.assigns.current_user.id,
+        selected_date
+      )
+
     socket
+    |> assign(:current_hours_record, current_month_hours_record)
     |> assign(:projects, projects)
     |> assign(
       :total_duration,

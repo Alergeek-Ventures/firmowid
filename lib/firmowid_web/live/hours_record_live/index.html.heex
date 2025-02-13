@@ -1,4 +1,30 @@
 <div class="container mx-auto p-6">
+  <div class="flex justify-end gap-4">
+    <%= if Bodyguard.permit?(Firmowid.Timetracker, :read_projects, @current_user) do %>
+      <.link
+        navigate={~p"/czasosledz/projekty"}
+        class={button_styles(%{color: "grey", variant: "outline"})}
+      >
+        Zarządzanie
+      </.link>
+    <% end %>
+
+    <.link
+      navigate={~p"/czasosledz"}
+      class="hover:underline"
+      class={button_styles(%{color: "grey", variant: "outline"})}
+    >
+      Czasośledz
+    </.link>
+
+    <.link
+      navigate={~p"/czasosledz/ewidencja"}
+      class="hover:underline"
+      class={button_styles(%{color: "grey"})}
+    >
+      Ewidencja
+    </.link>
+  </div>
   <div class="flex max-lg:gap-2 gap-16">
     <div class="h-full">
       <label
@@ -58,51 +84,79 @@
       </div>
       <div class="flex flex-col border border-greyButtonBg p-4 rounded-md">
         <div class="space-y-2">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center justify-between gap-2 mb-2">
             <span class="font-bold">Ewidencja godzin</span>
+            <div
+              :if={@current_hours_record}
+              class="bg-greenBg text-greenText text-xs p-1 rounded-md font-semibold uppercase px-2"
+            >
+              Wysłano <.icon name="hero-check-micro" class="w-5 h-5" />
+            </div>
+            <a
+              :if={!@current_hours_record && @can_use_hours_records}
+              href="https://moj.gov.pl/nforms/signer/upload?xFormsAppName=SIGNER"
+              target="_blank"
+              class="hover:underline text-sm"
+            >
+              Podpisz ewidencję
+              <.icon name="hero-arrow-top-right-on-square" class="size-4 mb-1" />
+            </a>
           </div>
         </div>
-        <form
-          :if={@is_downloaded}
-          id="upload-form"
-          phx-change="validate-upload"
-          phx-submit="upload"
-          class="flex flex-col items-end"
-        >
-          <div class="mb-2 w-full">
-            <label
-              class="mt-1 cursor-pointer flex justify-center rounded-md border-2 border-dashed border-orangeText px-6 py-8"
-              phx-drop-target={@uploads.file.ref}
-            >
-              <div class="flex text-sm text-orangeText">
-                <div :if={@uploads.file.entries |> length == 0} class=" font-medium">
-                  Dodaj podpisaną ewidencję godzin
-                  <.live_file_input upload={@uploads.file} class="sr-only" />
-                </div>
-
-                <div :if={@uploads.file.entries |> length > 0}>
-                  <%= for entry <- @uploads.file.entries do %>
-                    <p>{entry.client_name}</p>
-                    <%= for err <- upload_errors(@uploads.file, entry) do %>
-                      <p>{error_to_string(err)}</p>
+        <div :if={!@can_use_hours_records}>
+          <p class="text-sm mt-2">
+            Aby wypełnić ewidencję godzin musisz ustawić imię i nazwisko oraz datę zatrudnienia w
+            <.link navigate={~p"/ustawienia"} class="text-orangeText hover:underline">
+              Ustawieniach
+            </.link>
+          </p>
+        </div>
+        <div :if={!@current_hours_record && @can_use_hours_records}>
+          <form
+            id="upload-form"
+            phx-change="validate-upload"
+            phx-submit="upload"
+            class="flex flex-col items-end"
+          >
+            <div class="mb-2 w-full">
+              <label
+                class="mt-1 cursor-pointer flex justify-center rounded-md border-2 border-dashed border-orangeText px-6 py-8"
+                phx-drop-target={@uploads.hours_record.ref}
+              >
+                <div class="flex text-sm text-orangeText">
+                  <div :if={@uploads.hours_record.entries |> length == 0} class=" font-medium">
+                    Dodaj podpisaną ewidencję godzin
+                  </div>
+                  <.live_file_input upload={@uploads.hours_record} class="sr-only" />
+                  <div :if={@uploads.hours_record.entries |> length > 0}>
+                    <%= for entry <- @uploads.hours_record.entries do %>
+                      <p>{entry.client_name}</p>
+                      <%= for err <- upload_errors(@uploads.hours_record, entry) do %>
+                        <p>{error_to_string(err)}</p>
+                      <% end %>
                     <% end %>
-                  <% end %>
+                  </div>
                 </div>
-              </div>
-            </label>
-          </div>
-          <.button color="orange" class="px-8">
-            Wyślij
-          </.button>
-        </form>
-        <.link
-          phx-click="download"
-          navigate={~p"/czasosledz/ewidencja/#{@selected_date |> Date.to_iso8601()}/pdf"}
-          target="_blank"
-          class={button_styles(%{color: "orange"})}
-        >
-          Pobierz
-        </.link>
+              </label>
+            </div>
+            <div class="flex gap-2">
+              <.link
+                navigate={~p"/czasosledz/ewidencja/#{@selected_date |> Date.to_iso8601()}/pdf"}
+                target="_blank"
+                class={classes([button_styles(%{color: "orange", variant: "outline"}), "px-6"])}
+              >
+                Pobierz
+              </.link>
+              <.button
+                disabled={@uploads.hours_record.entries |> length == 0}
+                color="orange"
+                class="px-8"
+              >
+                Wyślij
+              </.button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </div>

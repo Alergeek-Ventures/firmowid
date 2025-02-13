@@ -77,6 +77,7 @@ defmodule FirmowidWeb.Router do
     pipe_through [:browser, :require_authenticated_user_with_organization]
     get "/czasosledz/ewidencja/:date/pdf", HoursRecordController, :pdf
     get "/czasosledz/ewidencja/:date/pdf-preview", HoursRecordController, :preview
+    get "/czasosledz/ewidencja/:id", HoursRecordController, :download
 
     live_session :require_authenticated_user_with_organization,
       on_mount: [{FirmowidWeb.UserAuth, :ensure_authenticated_with_organization}] do

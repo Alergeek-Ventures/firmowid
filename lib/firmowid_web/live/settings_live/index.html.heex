@@ -19,7 +19,9 @@
           />
         </form>
         <div>
-          <h1 class="text-2xl">Cześć!</h1>
+          <h1 class="text-2xl">
+            Cześć{@current_user.name && " #{@current_user.name}"}!
+          </h1>
           <p>{@current_user.email}</p>
         </div>
       </div>
@@ -263,89 +265,180 @@
       </div>
     <% "konto" -> %>
       <div class="mt-6">
-        <div class="flex gap-4">
-          <h2 class="font-bold">Twoje dane</h2>
-          <.link class="text-sm mt-0.5 hover:underline" navigate={~p"/ustawienia/uzytkownik"}>
-            Edytuj
-          </.link>
-        </div>
-        <div class="space-y-4 mt-6">
-          <div class="flex">
-            <div class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4">
-              Email
+        <div class="ml-4">
+          <div class="flex gap-4">
+            <h2 class="font-bold">Dane dostępowe</h2>
+            <.link class="text-sm mt-0.5 hover:underline" navigate={~p"/ustawienia/uzytkownik"}>
+              Edytuj
+            </.link>
+          </div>
+          <div class="space-y-4 mt-6">
+            <div class="flex">
+              <div class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4">
+                Email
+              </div>
+              <div class="flex-1">
+                {@current_user.email}
+              </div>
             </div>
-            <div class="flex-1">
+            <div class="flex">
+              <div class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4">
+                Hasło
+              </div>
+              <div class="flex-1">
+                **************
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class={
+          classes([
+            "mt-6 rounded-md p-4 w-fit border border-transparent",
+            @user_form[:is_personal_info_editing].value && "border-greyButtonBg"
+          ])
+        }>
+          <div class="flex gap-1">
+            <h2 class="font-bold mt-0.5">Dane osobowe</h2>
+            <.edit_button
+              phx-click={
+                JS.push("save",
+                  value: %{
+                    "user" => %{
+                      "is_personal_info_editing" => !@user_form[:is_personal_info_editing].value
+                    }
+                  }
+                )
+              }
+              class={
+                classes([
+                  @user_form[:is_personal_info_editing].value == true &&
+                    "text-orangeText hover:text-orangeText/70 active:text-orangeText/90"
+                ])
+              }
+            />
+          </div>
+          <%= if @user_form[:is_personal_info_editing].value do %>
+            <div class="flex flex-col gap-4 mt-6">
+              <.form class="flex flex-col gap-4" phx-submit="save" for={@user_form}>
+                <%= for [field, label, type] <- [
+                  [:name, "Imię i nazwisko", "text"],
+                  [:employment_date, "Data zatrudnienia", "date"]
+                ] do %>
+                  <div class="flex">
+                    <label
+                      for={@user_form[field].id}
+                      class="w-48 mt-2 font-medium text-darkGrey uppercase text-xs text-right pr-4"
+                    >
+                      {label}
+                    </label>
+                    <div class="flex-1 text-sm">
+                      <.input
+                        type={type}
+                        field={@user_form[field]}
+                        class="font-normal h-8 mt-0 w-[439px]"
+                        input_class="mt-0 h-8 border-greyButtonBg"
+                      />
+                    </div>
+                  </div>
+                <% end %>
+                <.input type="hidden" field={@user_form[:is_personal_info_editing]} value="false" />
+                <.button
+                  color="orange"
+                  class="w-fit ml-auto"
+                  type="submit"
+                  phx-disable-with="Zapisywanie..."
+                >
+                  Zatwierdź
+                </.button>
+              </.form>
+            </div>
+          <% else %>
+            <div class="space-y-4 mt-6">
+              <%= for {label, value} <- [
+                {"Imię i nazwisko", @current_user.name},
+                {"Data zatrudnienia", @current_user.employment_date}
+              ], value do %>
+                <div class="flex">
+                  <div class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4">
+                    {label}
+                  </div>
+                  <div class="flex-1">
+                    <%= if is_list(value) do %>
+                      <%= for line <- value do %>
+                        <div>{line}</div>
+                      <% end %>
+                    <% else %>
+                      {value}
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+        <div class="ml-4">
+          <h2 class="font-bold mt-6">Zgoda marketingowa</h2>
+          <div class="flex items-center mt-6">
+            <label
+              for="consent"
+              class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4"
+            >
+              Zgoda na przesyłanie informacji o charakterze marketingowym
+            </label>
+            <div>
+              <.input
+                phx-click="update_marketing_consent"
+                name="consent"
+                id="consent"
+                value={@current_user.marketing_consent}
+                type="checkbox"
+              />
+            </div>
+          </div>
+        </div>
+        <div class="ml-4">
+          <h2 class="font-bold mt-6">Zamykanie konta</h2>
+          <div class="flex items-center mt-6">
+            <div class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4">
+              Nazwa konta
+            </div>
+            <div class="flex-1 flex flex-col">
               {@current_user.email}
             </div>
           </div>
-          <div class="flex">
+          <div class="flex mt-4">
             <div class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4">
-              Hasło
             </div>
             <div class="flex-1">
-              **************
+              <.button phx-click={show_modal("confirm_modal")} variant="outline" color="red">
+                Zamknij konto
+              </.button>
+              <.modal id="confirm_modal">
+                <h3>Czy na pewno chcesz zamknąć konto? <b>Nie da się tego cofnąć!</b></h3>
+                <.simple_form
+                  for={@delete_account_form}
+                  phx-submit="delete_account"
+                  id="delete_account_form"
+                >
+                  <.input
+                    field={@delete_account_form[:current_password]}
+                    type="password"
+                    label="Twoje hasło"
+                    required
+                  />
+                  <:actions>
+                    <div class="flex gap-4">
+                      <.button variant="outline" color="red" phx-disable-with="Usuwam...">
+                        Zamknij konto
+                      </.button>
+                      <.button type="button" phx-click={hide_modal("confirm_modal")}>
+                        Anuluj
+                      </.button>
+                    </div>
+                  </:actions>
+                </.simple_form>
+              </.modal>
             </div>
-          </div>
-        </div>
-        <h2 class="font-bold mt-6">Zgoda marketingowa</h2>
-        <div class="flex items-center mt-6">
-          <label
-            for="consent"
-            class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4"
-          >
-            Zgoda na przesyłanie informacji o charakterze marketingowym
-          </label>
-          <div>
-            <.input
-              phx-click="update_marketing_consent"
-              name="consent"
-              id="consent"
-              value={@current_user.marketing_consent}
-              type="checkbox"
-            />
-          </div>
-        </div>
-        <h2 class="font-bold mt-6">Zamykanie konta</h2>
-        <div class="flex items-center mt-6">
-          <div class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4">
-            Nazwa konta
-          </div>
-          <div class="flex-1 flex flex-col">
-            {@current_user.email}
-          </div>
-        </div>
-        <div class="flex mt-4">
-          <div class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4">
-          </div>
-          <div class="flex-1">
-            <.button phx-click={show_modal("confirm_modal")} variant="outline" color="red">
-              Zamknij konto
-            </.button>
-            <.modal id="confirm_modal">
-              <h3>Czy na pewno chcesz zamknąć konto? <b>Nie da się tego cofnąć!</b></h3>
-              <.simple_form
-                for={@delete_account_form}
-                phx-submit="delete_account"
-                id="delete_account_form"
-              >
-                <.input
-                  field={@delete_account_form[:current_password]}
-                  type="password"
-                  label="Twoje hasło"
-                  required
-                />
-                <:actions>
-                  <div class="flex gap-4">
-                    <.button variant="outline" color="red" phx-disable-with="Usuwam...">
-                      Zamknij konto
-                    </.button>
-                    <.button type="button" phx-click={hide_modal("confirm_modal")}>
-                      Anuluj
-                    </.button>
-                  </div>
-                </:actions>
-              </.simple_form>
-            </.modal>
           </div>
         </div>
       </div>

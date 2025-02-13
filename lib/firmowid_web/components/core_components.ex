@@ -136,12 +136,20 @@ defmodule FirmowidWeb.CoreComponents do
 
   def button_styles(assigns) do
     classes([
-      "phx-submit-loading:opacity-75 phx-click-loading:opacity-75 phx-click-loading:cursor-default cursor-pointer rounded-md transition-colors",
+      "phx-submit-loading:opacity-75 phx-click-loading:opacity-75 phx-click-loading:cursor-default cursor-pointer rounded-md transition-all",
       "duration-200 border py-2 px-3",
       "text-sm font-semibold leading-6 disabled:opacity-40 active:text-white/80",
       button_styles(:color, assigns),
       assigns[:class]
     ])
+  end
+
+  defp button_styles(:color, %{color: "grey", variant: "outline"}) do
+    classes([button_styles(:color, %{color: "black", variant: "outline"}), "font-normal"])
+  end
+
+  defp button_styles(:color, %{color: "grey"}) do
+    "text-white border-darkGrey bg-darkGrey disabled:cursor-default disabled:text-white hover:opacity-60 disabled:bg-darkGrey"
   end
 
   defp button_styles(:color, %{variant: "outline", color: "black"}) do
