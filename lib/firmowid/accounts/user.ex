@@ -3,8 +3,11 @@ defmodule Firmowid.Accounts.User do
   import Ecto.Changeset
 
   schema "users" do
-    field :system_role, Ecto.Enum, values: [:user, :superuser], default: :user
+    field :name, :string
+    field :employment_date, :utc_datetime
     field :role, Ecto.Enum, values: [:employee, :admin], default: :employee
+
+    field :system_role, Ecto.Enum, values: [:user, :superuser], default: :user
     field :email, :string
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true

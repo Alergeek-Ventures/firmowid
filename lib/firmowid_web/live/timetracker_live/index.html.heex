@@ -1,10 +1,14 @@
 <div class="container flex flex-col p-4">
-  <div class="flex justify-end">
+  <div class="flex justify-end gap-4">
     <%= if Bodyguard.permit?(Firmowid.Timetracker, :read_projects, @current_user) do %>
       <.link navigate={~p"/czasosledz/projekty"} class="hover:underline">
         Projekty
       </.link>
     <% end %>
+
+    <.link navigate={~p"/czasosledz/ewidencja"} class="hover:underline">
+      Ewidencja
+    </.link>
   </div>
 
   <div class="flex justify-between mt-36">

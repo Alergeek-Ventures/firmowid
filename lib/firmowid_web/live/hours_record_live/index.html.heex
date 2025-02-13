@@ -1,0 +1,109 @@
+<div class="container mx-auto p-6">
+  <div class="flex max-lg:gap-2 gap-16">
+    <div class="h-full">
+      <label
+        for="month"
+        class="flex w-44 justify-between gap-4 items-center h-full bg-greyButtonBg
+        hover:border-darkGrey border border-transparent transition-colors
+        rounded-lg py-1 px-3 max-md:hidden"
+      >
+        <input
+          type="button"
+          id="month"
+          phx-hook="AirDatepicker"
+          data-enabled-months={@active_months |> Enum.map(&Date.to_iso8601/1) |> Enum.join(",")}
+          data-initial-date={@selected_date}
+        />
+
+        <.icon name="hero-calendar-days-solid" class="w-6 h-6 text-darkGrey max-md:hidden" />
+      </label>
+    </div>
+  </div>
+  <div class="grid gap-6 md:grid-cols-6 mt-8">
+    <div class="space-y-2 w-full col-span-4">
+      <%= for project <- @projects do %>
+        <div class="flex items-center bg-white rounded-md p-4 py-6 justify-between">
+          <span>{project.name}</span>
+          <span>{format_duration(project.duration)}</span>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="flex flex-col  col-span-2 gap-4">
+      <div class="space-y-8 border border-greyButtonBg p-4 rounded-md">
+        <div>
+          <h3 class="font-bold mb-8">Podsumowanie:</h3>
+          <div>
+            <p class="mb-3">Przepracowane godziny:</p>
+            <p class="text-xl font-bold">{format_duration(trunc(@total_duration))}</p>
+
+            <p
+              :if={
+                format_duration(trunc(@total_duration)) !=
+                  format_duration(trunc(@total_duration), :extended)
+              }
+              class="text-sm text-darkGrey"
+            >
+              {format_duration(trunc(@total_duration), :extended)}
+            </p>
+          </div>
+        </div>
+        <%= if most_demanding = Enum.max_by(@projects, & &1.duration, fn -> nil end) do %>
+          <div>
+            <p class="mb-3">Najbardziej wymagający projekt:</p>
+            <p class="text-xl font-bold">{format_duration(most_demanding.duration)}</p>
+            <p class="text-sm text-darkGrey">{most_demanding.name}</p>
+          </div>
+        <% end %>
+      </div>
+      <div class="flex flex-col border border-greyButtonBg p-4 rounded-md">
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="font-bold">Ewidencja godzin</span>
+          </div>
+        </div>
+        <form
+          :if={@is_downloaded}
+          id="upload-form"
+          phx-change="validate-upload"
+          phx-submit="upload"
+          class="flex flex-col items-end"
+        >
+          <div class="mb-2 w-full">
+            <label
+              class="mt-1 cursor-pointer flex justify-center rounded-md border-2 border-dashed border-orangeText px-6 py-8"
+              phx-drop-target={@uploads.file.ref}
+            >
+              <div class="flex text-sm text-orangeText">
+                <div :if={@uploads.file.entries |> length == 0} class=" font-medium">
+                  Dodaj podpisaną ewidencję godzin
+                  <.live_file_input upload={@uploads.file} class="sr-only" />
+                </div>
+
+                <div :if={@uploads.file.entries |> length > 0}>
+                  <%= for entry <- @uploads.file.entries do %>
+                    <p>{entry.client_name}</p>
+                    <%= for err <- upload_errors(@uploads.file, entry) do %>
+                      <p>{error_to_string(err)}</p>
+                    <% end %>
+                  <% end %>
+                </div>
+              </div>
+            </label>
+          </div>
+          <.button color="orange" class="px-8">
+            Wyślij
+          </.button>
+        </form>
+        <.link
+          phx-click="download"
+          navigate={~p"/czasosledz/ewidencja/#{@selected_date |> Date.to_iso8601()}/pdf"}
+          target="_blank"
+          class={button_styles(%{color: "orange"})}
+        >
+          Pobierz
+        </.link>
+      </div>
+    </div>
+  </div>
+</div>

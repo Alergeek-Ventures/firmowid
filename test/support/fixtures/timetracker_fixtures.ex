@@ -43,4 +43,20 @@ defmodule Firmowid.TimetrackerFixtures do
   def user_project_fixture(user_id, project_id) do
     {:ok, _project} = Timetracker.add_user_to_project(user_id, project_id)
   end
+
+  @doc """
+  Generate a hours_record.
+  """
+  def hours_record_fixture(attrs \\ %{}) do
+    {:ok, hours_record} =
+      attrs
+      |> Enum.into(%{
+        month: 42,
+        number_of_hours: 42,
+        year: 42
+      })
+      |> Firmowid.Timetracker.create_hours_record()
+
+    hours_record
+  end
 end

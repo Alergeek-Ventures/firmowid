@@ -1,0 +1,33 @@
+<.header>
+  Hours record {@hours_record.id}
+  <:subtitle>This is a hours_record record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/hours_records/#{@hours_record}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit hours_record</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Month">{@hours_record.month}</:item>
+  <:item title="Year">{@hours_record.year}</:item>
+  <:item title="number_of_hours">{@hours_record.number_of_hours}</:item>
+</.list>
+
+<.back navigate={~p"/hours_records"}>Back to hours_records</.back>
+
+<.modal
+  :if={@live_action == :edit}
+  id="hours_record-modal"
+  show
+  on_cancel={JS.patch(~p"/hours_records/#{@hours_record}")}
+>
+  <.live_component
+    module={FirmowidWeb.HoursRecordLive.FormComponent}
+    id={@hours_record.id}
+    title={@page_title}
+    action={@live_action}
+    hours_record={@hours_record}
+    patch={~p"/hours_records/#{@hours_record}"}
+  />
+</.modal>

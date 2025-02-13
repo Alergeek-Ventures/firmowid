@@ -75,10 +75,14 @@ defmodule FirmowidWeb.Router do
 
   scope "/", FirmowidWeb do
     pipe_through [:browser, :require_authenticated_user_with_organization]
+    get "/czasosledz/ewidencja/:date/pdf", HoursRecordController, :pdf
+    get "/czasosledz/ewidencja/:date/pdf-preview", HoursRecordController, :preview
 
     live_session :require_authenticated_user_with_organization,
       on_mount: [{FirmowidWeb.UserAuth, :ensure_authenticated_with_organization}] do
       live "/czasosledz", TimetrackerLive.Index, :index
+
+      live "/czasosledz/ewidencja", HoursRecordLive.Index, :index
 
       live "/ustawienia/uzytkownik", User.SettingsLive, :edit
       live "/ustawienia/uzytkownik/potwierdz/:token", User.SettingsLive, :index
