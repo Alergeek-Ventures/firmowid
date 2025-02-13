@@ -6,6 +6,7 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
 
   def mount(_params, _session, socket) do
     Bodyguard.permit!(Timetracker, :read_projects, socket.assigns.current_user)
+    Bodyguard.permit!(Timetracker, :read_hours_records, socket.assigns.current_user)
 
     hours_records =
       Timetracker.list_hours_records()

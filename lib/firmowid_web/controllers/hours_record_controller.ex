@@ -48,6 +48,8 @@ defmodule FirmowidWeb.HoursRecordController do
   end
 
   def preview(conn, %{"date" => date}) do
+    Bodyguard.permit!(Timetracker, :read_user_hours_records, conn.assigns.current_user)
+
     date = Date.from_iso8601!(date)
     start_date = Date.beginning_of_month(date)
     end_date = Date.end_of_month(date)
@@ -72,6 +74,8 @@ defmodule FirmowidWeb.HoursRecordController do
   end
 
   def download(conn, %{"id" => id}) do
+    Bodyguard.permit!(Timetracker, :read_hours_records, conn.assigns.current_user)
+
     record = Timetracker.get_hours_record!(id)
     url = Blobs.get_blob_url(record.blob_id, conn.assigns.current_org.id)
 

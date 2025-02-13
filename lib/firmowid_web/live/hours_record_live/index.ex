@@ -5,10 +5,12 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    selected_date = Date.utc_today()
-    active_months = Timetracker.get_months_with_sessions(socket.assigns.current_user.id)
-
     current_user = socket.assigns.current_user
+    Bodyguard.permit!(Firmowid.Timetracker, :read_user_hours_records, current_user)
+
+    selected_date = Date.utc_today()
+    active_months = Timetracker.get_months_with_sessions(current_user.id)
+
     can_use_hours_records = current_user.name && current_user.employment_date
 
     socket =
@@ -40,19 +42,13 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
     {:noreply, stream_insert(socket, :hours_records, hours_record)}
   end
 
-  @impl true
-  def handle_event("delete", %{"id" => id}, socket) do
-    hours_record = Timetracker.get_hours_record!(id)
-    {:ok, _} = Timetracker.delete_hours_record(hours_record)
-
-    {:noreply, stream_delete(socket, :hours_records, hours_record)}
-  end
-
   def handle_event("validate-upload", _params, socket) do
     {:noreply, socket}
   end
 
   def handle_event("upload", _params, socket) do
+    Bodyguard.permit!(Timetracker, :create_hours_record, socket.assigns.current_user)
+
     consume_uploaded_entries(socket, :hours_record, fn %{path: path}, entry ->
       case Timetracker.create_hours_record(
              %{
