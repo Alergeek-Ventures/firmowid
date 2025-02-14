@@ -1,4 +1,4 @@
-defmodule Firmowid.Repo.Migrations.AddNameAndContractDate do
+defmodule Firmowid.Repo.Migrations.AddNameAndEmpoymentDate do
   use Ecto.Migration
 
   def change do

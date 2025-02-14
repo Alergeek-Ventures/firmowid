@@ -286,7 +286,7 @@
     <div class="flex justify-end items-center gap-6 mb-8 mt-4">
       <%= if not is_nil(@sales_invoice_id) do %>
         <a
-          href={"/sprzedazowe/#{@sales_invoice_id}/download"}
+          href={"/sprzedazowe/#{@sales_invoice_id}/pobierz"}
           download="fakturka.pdf"
           class="hover:text-darkGrey transition-colors"
         >

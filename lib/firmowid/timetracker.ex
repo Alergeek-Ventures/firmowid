@@ -19,7 +19,7 @@ defmodule Firmowid.Timetracker do
   def authorize(:read_user_sessions, %{role: :employee}, _), do: true
   def authorize(:read_user_projects, %{role: :employee}, _), do: true
   def authorize(:read_user_hours_records, %{role: :employee}, _), do: true
-  def authorize(:create_hours_record, %{role: :employee}, _), do: true
+  def authorize(:create_hours_record, %{grole: :employee}, _), do: true
   def authorize(:update_session, %{role: :employee, id: user_id}, %{user_id: user_id}), do: true
   def authorize(:delete_session, %{role: :employee, id: user_id}, %{user_id: user_id}), do: true
   def authorize(:create_session, %{role: :employee}, _), do: true
@@ -92,17 +92,13 @@ defmodule Firmowid.Timetracker do
     Session
     |> where([s], s.user_id == ^user_id)
     |> select([s], %{
-      date: fragment("date_trunc('month', ?)", s.start_datetime),
-      year: fragment("date_part('year', ?)", s.start_datetime),
-      month: fragment("date_part('month', ?)", s.start_datetime)
+      date: fragment("date_trunc('month', ?)", s.start_datetime)
     })
     |> distinct([s], [
-      fragment("date_part('year', ?)", s.start_datetime),
-      fragment("date_part('month', ?)", s.start_datetime)
+      fragment("date_trunc('month', ?)", s.start_datetime)
     ])
     |> order_by([s],
-      desc: fragment("date_part('year', ?)", s.start_datetime),
-      desc: fragment("date_part('month', ?)", s.start_datetime)
+      desc: fragment("date_trunc('month', ?)", s.start_datetime)
     )
     |> Repo.all()
     |> Enum.map(& &1.date)

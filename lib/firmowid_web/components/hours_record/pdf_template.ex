@@ -10,10 +10,11 @@ defmodule FirmowidWeb.HoursRecord.PdfTemplate do
 
   def hours_record(assigns) do
     ~H"""
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/paper-css/0.4.1/paper.css" />
-    <div class="w-[210mm] border print:border-none h-[267mm] relative py-[120px] px-[32px] mx-auto bg-white font-[PT_Sans] text-[16px]">
+    <div class="w-[210mm] border print:border-none h-[267mm] relative py-[120px] px-[32px] mx-auto bg-white text-[16px]">
       <div class="flex justify-between">
-        <img src={@avatar_url} class="w-[200px] h-[200px]" />
+        <div>
+          <img :if={@avatar_url} src={@avatar_url} class="w-[200px] h-[200px]" />
+        </div>
         <div class="flex flex-col items-end mt-10 mr-9">
           <span>Imię i nazwisko Zleceniobiorcy</span>
           <span class="mt-1">{@name}</span>

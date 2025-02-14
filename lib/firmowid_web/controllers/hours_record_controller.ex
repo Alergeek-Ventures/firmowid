@@ -16,9 +16,11 @@ defmodule FirmowidWeb.HoursRecordController do
     url_with_protocol = FirmowidWeb.Endpoint.url()
     domain = FirmowidWeb.Endpoint.host()
 
+    path = ~p"/czasosledz/ewidencja/#{date}/podglad"
+
     {:ok, result} =
       ChromicPDF.print_to_pdf(
-        {:url, "#{url_with_protocol}/czasosledz/ewidencja/#{date}/pdf-preview"},
+        {:url, "#{url_with_protocol}#{path}"},
         set_cookie: %{
           name: "_firmowid_key",
           value: conn.cookies["_firmowid_key"],

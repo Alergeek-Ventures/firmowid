@@ -93,7 +93,7 @@ export const AirDatepicker = {
       },
       onRenderCell: function ({ date, cellType }) {
         const enabledMonths = this.getEnabledMonths();
-        console.log(enabledMonths);
+
         if (cellType === "month" && enabledMonths) {
           const isDisabled = !enabledMonths.some(
             (m) =>

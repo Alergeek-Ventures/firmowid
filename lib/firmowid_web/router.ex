@@ -50,7 +50,7 @@ defmodule FirmowidWeb.Router do
     ]
 
     get "/sprzedazowe/:id/pdf", PdfController, :index
-    get "/sprzedazowe/:id/download", PdfController, :pdf
+    get "/sprzedazowe/:id/pobierz", PdfController, :pdf
     get "/pobierz-miesiac", FileController, :batch
 
     live_session :admin,
@@ -76,7 +76,7 @@ defmodule FirmowidWeb.Router do
   scope "/", FirmowidWeb do
     pipe_through [:browser, :require_authenticated_user_with_organization]
     get "/czasosledz/ewidencja/:date/pdf", HoursRecordController, :pdf
-    get "/czasosledz/ewidencja/:date/pdf-preview", HoursRecordController, :preview
+    get "/czasosledz/ewidencja/:date/podglad", HoursRecordController, :preview
     get "/czasosledz/ewidencja/:id", HoursRecordController, :download
 
     live_session :require_authenticated_user_with_organization,
