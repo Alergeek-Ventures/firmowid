@@ -65,6 +65,19 @@ defmodule FirmowidWeb.InvoicingLive.Index do
         filter_string -> String.to_existing_atom(filter_string)
       end
 
+    show_modal = Map.get(params, "show_modal") == "true"
+
+    socket =
+      if show_modal do
+        socket
+        |> push_event("js-exec", %{
+          to: "#tutorial-modal",
+          attr: "phx-show"
+        })
+      else
+        socket
+      end
+
     socket =
       socket
       # UI controls
@@ -87,6 +100,18 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     socket =
       socket
       |> update_param(:month, month)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("hide-tutorial-modal", _params, socket) do
+    socket =
+      socket
+      |> push_event("js-exec", %{
+        to: "#tutorial-modal",
+        attr: "phx-remove"
+      })
+      |> update_param(:show_modal, false)
 
     {:noreply, socket}
   end

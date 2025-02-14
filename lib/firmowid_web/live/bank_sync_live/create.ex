@@ -50,19 +50,23 @@ defmodule FirmowidWeb.BankSyncLive.Create do
         current_user = socket.assigns.current_user
         organization_id = current_user.organization_id
 
+        is_first_account = BankData.list_bank_accounts() |> length == 0
+
         # check and confirm requisition passed by query param
         with {:ok, _} <-
                BankData.confirm_requisition(
                  requisition_id,
                  organization_id
                ) do
+          show_modal_param = if is_first_account, do: "&show_modal=true", else: ""
+
           socket =
             socket
             |> put_flash(
               :info,
               "Konto zostało poprawnie zintegrowane, synchronizacja trwa"
             )
-            |> push_navigate(to: ~p"/")
+            |> push_navigate(to: ~p"/?filter=unmatched&#{show_modal_param}")
 
           {:noreply, socket}
         else
