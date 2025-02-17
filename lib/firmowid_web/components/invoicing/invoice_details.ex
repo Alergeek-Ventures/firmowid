@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
 
   attr :invoice, :map, required: true
   attr :is_cost_invoice, :boolean
+  attr :show_vat_for_sales_invoice, :boolean, default: true
 
   attr :preview_url, :string, required: true
   attr :preview_type, :atom, required: true
@@ -45,6 +46,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
               sales_invoice={@invoice}
               preview_url={@preview_url}
               preview_type={@preview_type}
+              show_vat={@show_vat_for_sales_invoice}
             />
           </div>
         </aside>
@@ -173,6 +175,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   attr :sales_invoice, SalesInvoice
   attr :preview_url, :string, required: true
   attr :preview_type, :atom, required: true
+  attr :show_vat, :boolean, default: true
 
   defp invoice_preview(%{preview_type: :html} = assigns),
     do: ~H"""
@@ -191,6 +194,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
                 SalesInvoice.get_currency_conversion_date(@sales_invoice)
               )
         }
+        show_vat={@show_vat}
       />
     </div>
     """

@@ -21,13 +21,14 @@
           <FirmowidWeb.PdfHTML.sales_invoice
             class="max-h-[calc(100vh-9rem-4*theme('spacing.10'))] overflow-y-scroll"
             sales_invoice={@sales_invoice}
+            show_vat={@current_org.is_vat_payer}
             currency_rate={@currency_rate}
           />
         </div>
       </div>
     </div>
   <% end %>
-  <div class="flex gap-8 mt-6">
+  <div :if={@current_org.is_vat_payer} class="flex gap-8 mt-6">
     <p class="text-darkGrey">Rodzaj faktury</p>
     <div class="flex gap-2">
       <%= for {label, value} <- [{"Polska", :poland}, {"Zagraniczna",:foreign}] do %>
@@ -193,10 +194,14 @@
     />
   </div>
   <div class="mt-16">
-    <.sales_invoice_items_form sales_invoice={@sales_invoice} form={@form} />
+    <.sales_invoice_items_form
+      sales_invoice={@sales_invoice}
+      form={@form}
+      show_vat={@current_org.is_vat_payer}
+    />
     <div class="flex justify-between">
       <.form phx-change="submit" for={@form} class="mt-4">
-        <%= if  @sales_invoice.invoice_type == :poland do %>
+        <%= if  @sales_invoice.invoice_type == :poland and @current_org.is_vat_payer do %>
           <.input
             field={@form[:is_cash_account]}
             type="checkbox"

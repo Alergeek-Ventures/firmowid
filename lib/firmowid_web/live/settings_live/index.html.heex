@@ -106,12 +106,13 @@
         <%= if @company_form[:is_basic_info_editing].value do %>
           <div class="flex flex-col gap-4 mt-6">
             <.form class="flex flex-col gap-4" phx-submit="save" for={@company_form}>
-              <%= for {field, label} <- [
-                {:organization_type, "Rodzaj działalności"},
-                {:name, "Nazwa organizacji"},
-                {:identification_number, "NIP"},
-                {:address, "Adres przedsiębiorstwa"},
-                {:phone_number, "Numer telefonu"}
+              <%= for [field, label, type] <- [
+                [:organization_type, "Rodzaj działalności", "text"],
+                [:name, "Nazwa organizacji", "text"],
+                [:identification_number, "NIP", "text"],
+                [:address, "Adres przedsiębiorstwa", "text"],
+                [:phone_number, "Numer telefonu", "text"],
+                [:is_vat_payer, "Czy jest płatnikiem VAT?", "checkbox"]
               ] do %>
                 <div class="flex">
                   <label
@@ -122,6 +123,7 @@
                   </label>
                   <div class="flex-1 text-sm">
                     <.input
+                      type={type}
                       field={@company_form[field]}
                       class="font-normal h-8 mt-0 w-[439px]"
                       input_class="mt-0 h-8 border-greyButtonBg"
@@ -148,7 +150,8 @@
               {"Nazwa organizacji", @current_org.name},
               {"NIP", @current_org.identification_number},
               {"Adres przedsiębiorstwa", @current_org.address},
-              {"Numer telefonu", @current_org.phone_number}
+              {"Numer telefonu", @current_org.phone_number},
+              {"Płatnik VAT", if(@current_org.is_vat_payer, do: "Tak", else: "Nie")}
             ], value do %>
               <div class="flex">
                 <div class="w-64 mt-1 font-medium text-darkGrey uppercase text-xs text-right pr-4">

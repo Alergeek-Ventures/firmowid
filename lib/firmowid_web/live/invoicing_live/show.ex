@@ -40,6 +40,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
       is_cost_invoice={@is_cost_invoice}
       preview_url={@preview_url}
       preview_type={@preview_type}
+      show_vat_for_sales_invoice={@current_org.is_vat_payer}
       potential_transactions={@potential_transactions}
       potential_groups={@potential_groups}
     />

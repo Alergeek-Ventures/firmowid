@@ -10,6 +10,7 @@ defmodule Firmowid.Accounts.Organization do
     field :organization_type, :string
     field :correspondence_name, :string
     field :correspondence_address, :string
+    field :is_vat_payer, :boolean, default: true
 
     field :is_basic_info_editing, :boolean, virtual: true, default: false
     field :is_correspondence_editing, :boolean, virtual: true, default: false
@@ -34,6 +35,7 @@ defmodule Firmowid.Accounts.Organization do
       :organization_type,
       :correspondence_name,
       :correspondence_address,
+      :is_vat_payer,
       :is_basic_info_editing,
       :is_correspondence_editing
     ])
@@ -45,7 +47,7 @@ defmodule Firmowid.Accounts.Organization do
     organization
     |> cast(
       attrs,
-      [:identification_number, :address, :name, :phone_number, :organization_type]
+      [:identification_number, :address, :name, :phone_number, :organization_type, :is_vat_payer]
     )
     |> validate_required([:identification_number, :name])
   end

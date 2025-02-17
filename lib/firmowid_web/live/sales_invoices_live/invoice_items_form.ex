@@ -6,6 +6,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.SalesInvoiceItems do
 
   attr :form, :list, required: true
   attr :sales_invoice, :map, required: true
+  attr :show_vat, :boolean, default: true
 
   def sales_invoice_items_form(assigns) do
     ~H"""
@@ -31,10 +32,10 @@ defmodule FirmowidWeb.SalesInvoicesLive.SalesInvoiceItems do
               <th class="pr-2  pb-1 text-left font-normal">
                 Cena netto
               </th>
-              <th class="pr-2 pb-1 text-left font-normal">
+              <th :if={@show_vat} class="pr-2 pb-1 text-left font-normal">
                 VAT %
               </th>
-              <%= if  @sales_invoice.invoice_type == :poland do %>
+              <%= if  @sales_invoice.invoice_type == :poland && @show_vat do %>
                 <th class="pr-2 pb-1 text-left font-normal">
                   Wartość netto
                 </th>
@@ -42,7 +43,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.SalesInvoiceItems do
                   Wartość brutto
                 </th>
               <% end %>
-              <%= if @sales_invoice.invoice_type == :foreign do %>
+              <%= if @sales_invoice.invoice_type == :foreign || !@show_vat do %>
                 <th class="pr-2 pb-1 text-left font-normal">
                   Wartość
                 </th>
@@ -62,7 +63,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.SalesInvoiceItems do
                 <td>
                   {item.unit_price}
                 </td>
-                <td>
+                <td :if={@show_vat}>
                   <%= if  @sales_invoice.invoice_type == :poland do %>
                     {item.vat_rate}%
                   <% end %>
@@ -70,7 +71,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.SalesInvoiceItems do
                     np.
                   <% end %>
                 </td>
-                <%= if  @sales_invoice.invoice_type == :poland do %>
+                <%= if  @sales_invoice.invoice_type == :poland && @show_vat do %>
                   <td>
                     {Money.new(
                       :PLN,
@@ -91,7 +92,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.SalesInvoiceItems do
                     |> Money.to_string!(currency_symbol: "")}
                   </td>
                 <% end %>
-                <%= if @sales_invoice.invoice_type == :foreign do %>
+                <%= if @sales_invoice.invoice_type == :foreign || !@show_vat do %>
                   <td>
                     {Money.new(
                       @sales_invoice.currency,
@@ -111,8 +112,18 @@ defmodule FirmowidWeb.SalesInvoicesLive.SalesInvoiceItems do
         </div>
       <% else %>
         <div class="bg-greyButtonBg bg-opacity-50 p-4 rounded-md">
-          <div class="grid grid-cols-[repeat(13,_1fr)] gap-4">
-            <div class="col-span-2 text-darkGrey">
+          <div class={
+            classes([
+              "grid gap-4 grid-cols-[repeat(13,_1fr)]",
+              !@show_vat && "grid-cols-[repeat(12,_1fr)]"
+            ])
+          }>
+            <div class={
+              classes([
+                "col-span-2 text-darkGrey",
+                (@sales_invoice.invoice_type == :foreign || !@show_vat) && "col-span-4"
+              ])
+            }>
               Nazwa towaru/usługi
             </div>
             <div class="col-span-1 text-darkGrey">
@@ -122,12 +133,12 @@ defmodule FirmowidWeb.SalesInvoicesLive.SalesInvoiceItems do
               Jednostka
             </div>
             <div class="col-span-2 text-darkGrey">
-              Cena netto
+              Cena {if @show_vat, do: "netto"}
             </div>
-            <div class="col-span-1 text-darkGrey">
+            <div :if={@show_vat} class="col-span-1 text-darkGrey">
               VAT %
             </div>
-            <%= if  @sales_invoice.invoice_type == :poland do %>
+            <%= if  @sales_invoice.invoice_type == :poland && @show_vat do %>
               <div class="col-span-2 text-darkGrey">
                 Wartość netto
               </div>
@@ -135,15 +146,15 @@ defmodule FirmowidWeb.SalesInvoicesLive.SalesInvoiceItems do
                 Wartość brutto
               </div>
             <% end %>
-            <%= if @sales_invoice.invoice_type == :foreign do %>
-              <div class="col-span-4 text-darkGrey">
+            <%= if @sales_invoice.invoice_type == :foreign || !@show_vat do %>
+              <div class="col-span-2 text-darkGrey">
                 Wartość
               </div>
             <% end %>
 
             <.inputs_for :let={item} field={@form[:sales_invoice_items]}>
               <input type="hidden" name="sales_invoice[items_sort][]" value={item.index} />
-              <div class="col-span-2">
+              <div class={classes(["col-span-2 text-darkGrey", !@show_vat && "col-span-4"])}>
                 <.input field={item[:name]} type="text" required />
               </div>
               <div class="col-span-1">
@@ -155,7 +166,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.SalesInvoiceItems do
               <div class="col-span-2">
                 <.input field={item[:unit_price]} type="number" required />
               </div>
-              <div class="col-span-1">
+              <div :if={@show_vat} class="col-span-1">
                 <%= if  @sales_invoice.invoice_type == :poland do %>
                   <.input field={item[:vat_rate]} type="number" required />
                 <% end %>
@@ -163,7 +174,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.SalesInvoiceItems do
                   <.input name={item[:vat_rate].name} type="text" disabled readonly value="np." />
                 <% end %>
               </div>
-              <%= if  @sales_invoice.invoice_type == :poland do %>
+              <%= if  @sales_invoice.invoice_type == :poland && @show_vat do %>
                 <div class="col-span-2">
                   <.input
                     type="text"
@@ -198,8 +209,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.SalesInvoiceItems do
                   />
                 </div>
               <% end %>
-              <%= if @sales_invoice.invoice_type == :foreign do %>
-                <div class="col-span-4">
+              <%= if @sales_invoice.invoice_type == :foreign || !@show_vat do %>
+                <div class="col-span-2">
                   <.input
                     type="text"
                     class="max-w-56"

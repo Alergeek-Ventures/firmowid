@@ -2,6 +2,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
   use FirmowidWeb, :html
 
   attr :sales_invoice, :map, required: true
+  attr :show_vat, :boolean, default: true
 
   defp invoice_header(assigns) do
     ~H"""
@@ -9,8 +10,8 @@ defmodule FirmowidWeb.SalesInvoices.Template do
       <div class="flex flex-col gap-x-2">
         <div class="text-sm uppercase font-bold">
           {case @sales_invoice.invoice_type do
-            :poland -> "Faktura VAT"
-            :foreign -> "Faktura VAT / VAT Invoice:"
+            :poland -> [(@show_vat && "Faktura VAT") || "Faktura"]
+            :foreign -> [(@show_vat && "Faktura VAT / VAT Invoice:") || "Faktura / Invoice:"]
           end}
           {@sales_invoice.invoice_number}
         </div>
@@ -140,6 +141,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
   end
 
   attr :sales_invoice, :map, required: true
+  attr :show_vat, :boolean, default: true
 
   defp items_table(assigns) do
     ~H"""
@@ -152,16 +154,21 @@ defmodule FirmowidWeb.SalesInvoices.Template do
       </h2>
       <table class="w-full mt-1">
         <thead class="text-[8px] text-darkGrey/70">
-          <%= if @sales_invoice.invoice_type == :poland do %>
+          <%= if @sales_invoice.invoice_type == :poland  do %>
             <tr class="py-2">
               <th class="text-left">Lp.</th>
               <th class="text-left">Nazwa</th>
               <th class="text-right">Ilość</th>
               <th class="text-right">J. m.</th>
-              <th class="text-right">Cena netto</th>
-              <th class="text-center w-12 pl-5">Vat</th>
-              <th class="text-right">Wartość netto</th>
-              <th class="text-right">Wartość brutto</th>
+              <%= if @show_vat do %>
+                <th class="text-right">Cena netto</th>
+                <th class="text-center w-12 pl-5">Vat</th>
+                <th class="text-right">Wartość netto</th>
+                <th class="text-right">Wartość brutto</th>
+              <% else %>
+                <th class="text-right">Cena jednostkowa</th>
+                <th class="text-right">Cena sumaryczna</th>
+              <% end %>
             </tr>
           <% end %>
           <%= if @sales_invoice.invoice_type == :foreign do %>
@@ -198,7 +205,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
                     currency_symbol: ""
                   )}
                 </td>
-                <td class="py-1 text-right">{item.vat_rate}%</td>
+                <td :if={@show_vat} class="py-1 text-right">{item.vat_rate}%</td>
                 <td class="py-1 text-right">
                   {Money.new(
                     @sales_invoice.currency,
@@ -206,7 +213,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
                     currency_symbol: ""
                   )}
                 </td>
-                <td class="py-1 text-right">
+                <td :if={@show_vat} class="py-1 text-right">
                   {Money.new(
                     @sales_invoice.currency,
                     item |> Firmowid.SalesInvoices.SalesInvoiceItem.get_gross_value(),
@@ -236,6 +243,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
   end
 
   attr :sales_invoice, :map, required: true
+  attr :show_vat, :boolean, default: true
 
   defp summary(assigns) do
     ~H"""
@@ -249,7 +257,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
 
       <%= if @sales_invoice.invoice_type == :poland do %>
         <div class="flex justify-between items-center">
-          <span>Wartość netto:</span>
+          <span>Wartość{if @show_vat, do: " netto"}:</span>
           <span>
             {Money.new(
               @sales_invoice.currency,
@@ -257,24 +265,26 @@ defmodule FirmowidWeb.SalesInvoices.Template do
             )}
           </span>
         </div>
-        <div class="flex justify-between items-center">
-          <span>Wartość całkowita VAT:</span>
-          <span>
-            {Money.new(
-              @sales_invoice.currency,
-              @sales_invoice |> Firmowid.SalesInvoices.SalesInvoice.get_vat_value()
-            )}
-          </span>
-        </div>
-        <div class="flex justify-between items-center">
-          <span>Razem do zapłaty:</span>
-          <span class="font-bold leading-tight text-sm">
-            {Money.new(
-              @sales_invoice.currency,
-              @sales_invoice |> Firmowid.SalesInvoices.SalesInvoice.get_gross_value()
-            )}
-          </span>
-        </div>
+        <%= if @show_vat do %>
+          <div class="flex justify-between items-center">
+            <span>Wartość całkowita VAT:</span>
+            <span>
+              {Money.new(
+                @sales_invoice.currency,
+                @sales_invoice |> Firmowid.SalesInvoices.SalesInvoice.get_vat_value()
+              )}
+            </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span>Razem do zapłaty:</span>
+            <span class="font-bold leading-tight text-sm">
+              {Money.new(
+                @sales_invoice.currency,
+                @sales_invoice |> Firmowid.SalesInvoices.SalesInvoice.get_gross_value()
+              )}
+            </span>
+          </div>
+        <% end %>
       <% end %>
       <%= if @sales_invoice.invoice_type == :foreign do %>
         <div class="flex justify-between items-center">
@@ -352,16 +362,17 @@ defmodule FirmowidWeb.SalesInvoices.Template do
   end
 
   attr :sales_invoice, :map, required: true
+  attr :show_vat, :boolean, default: true
 
   def sales_invoice(assigns) do
     ~H"""
     <div class="w-[calc(595px-2*32px)] h-[calc(842px-2*32px)] relative p-8 box-content mx-auto bg-white">
-      <.invoice_header sales_invoice={@sales_invoice} />
+      <.invoice_header sales_invoice={@sales_invoice} show_vat={@show_vat} />
       <hr class="border-greyButtonBg my-6" />
       <.seller_buyer_section sales_invoice={@sales_invoice} />
       <hr class="border-greyButtonBg my-6" />
-      <.items_table sales_invoice={@sales_invoice} />
-      <.summary sales_invoice={@sales_invoice} />
+      <.items_table sales_invoice={@sales_invoice} show_vat={@show_vat} />
+      <.summary sales_invoice={@sales_invoice} show_vat={@show_vat} />
       <hr class="border-greyButtonBg my-6" />
       <%= if @sales_invoice.currency != "PLN" do %>
         <div class="mb-6">
