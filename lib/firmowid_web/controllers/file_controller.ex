@@ -1,6 +1,7 @@
 defmodule FirmowidWeb.FileController do
   use FirmowidWeb, :controller
 
+  alias Firmowid.SalesInvoices
   alias Firmowid.CostInvoices
 
   def batch(conn, params) do
@@ -15,9 +16,6 @@ defmodule FirmowidWeb.FileController do
         date_range_from,
         date_range_to
       )
-
-    stream =
-      cost_invoices
       |> Enum.filter(fn invoice -> !skip_scans || String.contains?(invoice.file_url, ".pdf") end)
       |> Enum.map(fn document ->
         file_extension =
@@ -29,24 +27,53 @@ defmodule FirmowidWeb.FileController do
 
         file_name =
           "#{document.issue_date}_#{document.seller_display_name}"
-          # drop all weird chars
-          |> String.downcase()
-          |> String.trim()
-          |> String.replace(" ", "_")
-          |> String.replace(".", "_")
-          |> String.replace("/", "_")
+          |> clean_filename()
 
         [
           source: {:url, document.file_url},
-          path: "#{month.year}-#{month.month}-dokumenty/#{file_name}#{file_extension}"
+          path: "kosztowe/#{file_name}#{file_extension}"
         ]
+        |> dbg()
       end)
+
+    sales_invoices =
+      SalesInvoices.list_invoices_issued_in_date_range(
+        date_range_from,
+        date_range_to
+      )
+      |> Enum.map(fn invoice ->
+        file_name =
+          "#{invoice.invoice_number}_#{invoice.seller_display_name}" |> clean_filename()
+
+        [
+          source:
+            {:dynamic, fn -> FirmowidWeb.PdfController.pdf(conn, %{"id" => invoice.id}) end},
+          # source: {:url, "#{url_with_protocol}/sprzedazowe/#{invoice.id}/download"},
+          path: "sprzedazowe/#{file_name}.pdf"
+        ]
+        |> dbg()
+      end)
+
+    stream =
+      (cost_invoices ++ sales_invoices)
       |> Packmatic.build_stream()
 
-    stream
-    |> Packmatic.Conn.send_chunked(
+    Packmatic.Conn.send_chunked(
+      stream,
       conn,
-      "#{month.year}-#{month.month}-dokumenty.zip"
+      "#{month |> Calendar.strftime("%Y-%m")}-dokumenty.zip"
     )
+  end
+
+  defp clean_filename(filename) do
+    filename
+    # |> AnyAscii.transliterate()
+    # |> IO.iodata_to_binary()
+    # # drop all weird chars
+    # |> String.downcase()
+    # |> String.trim()
+    # |> String.replace(" ", "_")
+    # |> String.replace(".", "_")
+    # |> String.replace("/", "_")
   end
 end

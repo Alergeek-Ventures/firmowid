@@ -74,6 +74,16 @@ defmodule Firmowid.SalesInvoices do
     |> Repo.preload(:transactions)
   end
 
+  def list_invoices_issued_in_date_range(from, to) do
+    SalesInvoice
+    |> where(
+      [d],
+      d.issue_date >= ^from and d.issue_date <= ^to
+    )
+    |> order_by(desc: :issue_date)
+    |> Repo.all()
+  end
+
   def get_sales_invoice(id) do
     Repo.get(SalesInvoice, id)
     |> Repo.preload(:sales_invoice_items)

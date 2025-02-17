@@ -32,7 +32,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
             invoice_identifier={@invoice.invoice_identifier}
             party_full_name={@invoice.seller}
             issue_date={@invoice.issue_date}
-            sale_date={@invoice.issue_date}
+            sale_date={@invoice.sale_date}
             due_date={@invoice.issue_date}
           />
 

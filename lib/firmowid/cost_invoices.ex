@@ -78,9 +78,7 @@ defmodule Firmowid.CostInvoices do
       ) do
     query =
       from i in CostInvoice,
-        where:
-          (i.issue_date >= ^from and i.issue_date <= ^to) or
-            (i.sale_date >= ^from and i.sale_date <= ^to),
+        where: i.issue_date >= ^from and i.issue_date <= ^to,
         order_by: [desc: i.issue_date]
 
     query
