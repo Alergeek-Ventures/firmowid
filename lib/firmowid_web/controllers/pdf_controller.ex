@@ -28,7 +28,8 @@ defmodule FirmowidWeb.PdfController do
       layout: false,
       sales_invoice: sales_invoice,
       currency_rate: currency_rate,
-      class: "mx-auto"
+      class: "mx-auto",
+      show_vat: conn.assigns.current_org.is_vat_payer
     )
   end
 
