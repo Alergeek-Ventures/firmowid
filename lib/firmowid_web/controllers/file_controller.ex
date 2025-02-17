@@ -45,13 +45,21 @@ defmodule FirmowidWeb.FileController do
         file_name =
           "#{invoice.invoice_number}_#{invoice.seller_display_name}" |> clean_filename()
 
+        url_with_protocol = FirmowidWeb.Endpoint.url()
+        download_path = ~p"/sprzedazowe/#{invoice.id}/pobierz"
+
         [
           source:
-            {:dynamic, fn -> FirmowidWeb.PdfController.pdf(conn, %{"id" => invoice.id}) end},
-          # source: {:url, "#{url_with_protocol}/sprzedazowe/#{invoice.id}/download"},
+            {:url,
+             {"#{url_with_protocol}/#{download_path}",
+              [
+                {
+                  "Cookie",
+                  "_firmowid_key=#{conn.cookies["_firmowid_key"]}"
+                }
+              ], []}},
           path: "sprzedazowe/#{file_name}.pdf"
         ]
-        |> dbg()
       end)
 
     stream =
@@ -67,13 +75,13 @@ defmodule FirmowidWeb.FileController do
 
   defp clean_filename(filename) do
     filename
-    # |> AnyAscii.transliterate()
-    # |> IO.iodata_to_binary()
-    # # drop all weird chars
-    # |> String.downcase()
-    # |> String.trim()
-    # |> String.replace(" ", "_")
-    # |> String.replace(".", "_")
-    # |> String.replace("/", "_")
+    |> AnyAscii.transliterate()
+    |> IO.iodata_to_binary()
+    # drop all weird chars
+    |> String.downcase()
+    |> String.trim()
+    |> String.replace(" ", "_")
+    |> String.replace(".", "_")
+    |> String.replace("/", "_")
   end
 end
