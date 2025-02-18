@@ -722,7 +722,7 @@ defmodule FirmowidWeb.CoreComponents do
         data-initial-date={@selected_date}
         {@rest}
       />
-      <.icon name="hero-calendar-days-solid" class="w-6 h-6 text-darkGrey max-md:hidden" />
+      <.icon name="hero-calendar-days-solid" class="w-5 h-5 text-darkGrey max-md:hidden" />
     </label>
     """
   end
