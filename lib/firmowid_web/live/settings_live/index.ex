@@ -255,8 +255,6 @@ defmodule FirmowidWeb.SettingsLive.Index do
          |> assign(:user_form, to_form(form_user_changeset(Map.merge(user_params, updated_user))))}
 
       {:error, changeset} ->
-        dbg(changeset)
-
         {:noreply,
          socket
          |> assign(:user_form, to_form(changeset))}

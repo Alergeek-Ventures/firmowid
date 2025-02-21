@@ -6,6 +6,9 @@ defmodule Firmowid.ReductoApiClient do
 
   @type extract_options :: [extraction_mode: :hybrid | :ocr | :metadata]
 
+  @auth_token {:bearer,
+               "f6db515168d1b7c99dcecfd0517062dcbfd083a6ba1e42d0e3bcc623d832288087949aa99728f0d65ff5da7044e9fecc"}
+
   @doc """
   Extracts metadata from a document using Reducto API. Pass in a file URL
   and JSON schema Map to get this map back with extracted metadata.
@@ -22,12 +25,17 @@ defmodule Firmowid.ReductoApiClient do
       Keyword.get(options, :extraction_mode, :hybrid)
       |> Atom.to_string()
 
+    host =
+      Application.get_env(:ex_aws, :s3)
+      |> Keyword.get(:host)
+
+    file_url =
+      upload_to_reducto(file_url, host)
+
     with {:ok, response} <-
            Req.post(
-             "https://v1.api.reducto.ai/extract",
-             auth:
-               {:bearer,
-                "f6db515168d1b7c99dcecfd0517062dcbfd083a6ba1e42d0e3bcc623d832288087949aa99728f0d65ff5da7044e9fecc"},
+             "https://platform.reducto.ai/extract",
+             auth: @auth_token,
              json: %{
                document_url: file_url,
                options: %{
@@ -53,5 +61,51 @@ defmodule Firmowid.ReductoApiClient do
 
         {:error, err}
     end
+  end
+
+  defp upload_to_reducto(file_url, "localhost") do
+    with {:ok, temp_path} <- Briefly.create(),
+         _ <- download_file(file_url, temp_path),
+         file_url <- upload_file(temp_path) do
+      file_url
+    else
+      _ ->
+        raise "Failed to upload file to Reducto"
+    end
+  end
+
+  defp upload_to_reducto(file_url, _s3_host), do: file_url
+
+  defp download_file(file_url, dest_path) do
+    %{status: 200, body: body} = Req.get!(file_url)
+    File.write(dest_path, body)
+  end
+
+  defp upload_file(file_path) do
+    {:ok, file_contents} = File.read(file_path)
+
+    filename = Path.basename(file_path)
+
+    multipart =
+      Multipart.new()
+      |> Multipart.add_part(
+        Multipart.Part.file_content_field(filename, file_contents, :file, filename: filename)
+      )
+
+    content_type = Multipart.content_type(multipart, "multipart/form-data")
+
+    headers = [
+      {"Content-Type", content_type}
+    ]
+
+    %{status: 200, body: %{"file_id" => file_url}} =
+      Req.post!(
+        "https://platform.reducto.ai/upload",
+        auth: @auth_token,
+        headers: headers,
+        body: Multipart.body_stream(multipart)
+      )
+
+    file_url
   end
 end

@@ -33,7 +33,6 @@ defmodule FirmowidWeb.FileController do
           source: {:url, document.file_url},
           path: "kosztowe/#{file_name}#{file_extension}"
         ]
-        |> dbg()
       end)
 
     sales_invoices =
