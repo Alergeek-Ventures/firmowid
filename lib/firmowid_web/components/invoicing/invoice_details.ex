@@ -183,44 +183,50 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
       "w-full h-full max-h-[80vh] border-black border-2",
       "rounded-lg overflow-hidden"
     ]}>
-      <FirmowidWeb.PdfHTML.sales_invoice
-        sales_invoice={@sales_invoice}
-        currency_rate={
-          if @sales_invoice.currency == "PLN",
-            do: nil,
-            else:
-              @sales_invoice.currency
-              |> Firmowid.Nbp.ApiClient.get_exchange_rate(
-                SalesInvoice.get_currency_conversion_date(@sales_invoice)
-              )
-        }
-        show_vat={@show_vat}
-      />
+      <a href={~p"/sprzedazowe/#{@sales_invoice.id}/pobierz"} target="_blank">
+        <FirmowidWeb.PdfHTML.sales_invoice
+          sales_invoice={@sales_invoice}
+          currency_rate={
+            if @sales_invoice.currency == "PLN",
+              do: nil,
+              else:
+                @sales_invoice.currency
+                |> Firmowid.Nbp.ApiClient.get_exchange_rate(
+                  SalesInvoice.get_currency_conversion_date(@sales_invoice)
+                )
+          }
+          show_vat={@show_vat}
+        />
+      </a>
     </div>
     """
 
   defp invoice_preview(%{preview_type: :pdf} = assigns) do
     ~H"""
-    <div
-      class="w-full h-full max-h-[80vh] border-black border-2 rounded-lg
+    <a href={@preview_url} target="_blank">
+      <div
+        class="w-full h-full max-h-[80vh] border-black border-2 rounded-lg
       overflow-x-hidden overflow-y-scroll bg-white"
-      id="invoice-preview"
-      data-pdf-url={@preview_url}
-      phx-hook="PDFViewer"
-    >
-      <div class="min-w-[200px] min-h-[200px] flex items-center justify-center font-bold">
-        Ładowanie dokumentu...
+        id="invoice-preview"
+        data-pdf-url={@preview_url}
+        phx-hook="PDFViewer"
+      >
+        <div class="min-w-[200px] min-h-[200px] flex items-center justify-center font-bold">
+          Ładowanie dokumentu...
+        </div>
       </div>
-    </div>
+    </a>
     """
   end
 
   defp invoice_preview(%{preview_type: :image} = assigns) do
     ~H"""
-    <div class="w-full h-full max-h-[80vh] border-black border-2 rounded-lg
+    <a href={@preview_url} target="_blank">
+      <div class="w-full h-full max-h-[80vh] border-black border-2 rounded-lg
     overflow-x-hidden overflow-y-scroll bg-black">
-      <img src={@preview_url} class="w-full h-full object-contain" />
-    </div>
+        <img src={@preview_url} class="w-full h-full object-contain" />
+      </div>
+    </a>
     """
   end
 

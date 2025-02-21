@@ -66,7 +66,7 @@ defmodule Firmowid.ReductoApiClient do
   defp upload_to_reducto(file_url, "localhost") do
     with {:ok, temp_path} <- Briefly.create(),
          _ <- download_file(file_url, temp_path),
-         file_url <- upload_file(temp_path) do
+         file_url <- upload_file(file_url, temp_path) do
       file_url
     else
       _ ->
@@ -81,10 +81,10 @@ defmodule Firmowid.ReductoApiClient do
     File.write(dest_path, body)
   end
 
-  defp upload_file(file_path) do
+  defp upload_file(file_url, file_path) do
     {:ok, file_contents} = File.read(file_path)
 
-    filename = Path.basename(file_path)
+    filename = Path.basename(file_path) <> Path.extname(file_url |> String.split("?") |> hd())
 
     multipart =
       Multipart.new()
