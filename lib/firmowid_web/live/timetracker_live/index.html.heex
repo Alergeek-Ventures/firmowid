@@ -11,16 +11,19 @@
 
     <.link
       navigate={~p"/czasosledz/ewidencja"}
-      class="hover:underline"
-      class={button_styles(%{color: "grey"})}
+      class={
+        classes([
+          "hover:underline",
+          button_styles(%{color: "grey"})
+        ])
+      }
     >
       Czasośledz
     </.link>
 
     <.link
       navigate={~p"/czasosledz/ewidencja"}
-      class="hover:underline"
-      class={button_styles(%{color: "grey", variant: "outline"})}
+      class={classes(["hover:underline", button_styles(%{color: "grey", variant: "outline"})])}
     >
       Ewidencja
     </.link>
