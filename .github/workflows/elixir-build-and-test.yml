@@ -32,10 +32,38 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      s3-emulator:
+        image: localstack/localstack:latest
+        env:
+          SERVICES: s3
+          AWS_DEFAULT_REGION: us-east-1
+        ports: ["4566:4566"]
 
     steps:
+      - name: Set up temporary directory
+        run: |
+          TEMP_DIR="$RUNNER_TEMP/localstack-init"
+          mkdir -p "$TEMP_DIR"
+          echo "TEMP_DIR=$TEMP_DIR" >> $GITHUB_ENV
+
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Copy files to temporary directory
+        run: |
+          cp -r ./local/s3-init/* "$RUNNER_TEMP/localstack-init/"
+          
+      - name: Stop and restart LocalStack with volume
+        run: |
+          CONTAINER_ID=$(docker ps --filter "ancestor=localstack/localstack" --format "{{.ID}}")
+          docker stop "$CONTAINER_ID"
+          docker rm "$CONTAINER_ID"
+          docker run -d --name s3-emulator \
+            -p 4566:4566 \
+            -e SERVICES=s3 \
+            -e AWS_DEFAULT_REGION=us-east-1 \
+            -v "$RUNNER_TEMP/localstack-init:/etc/localstack/init/ready.d" \
+            localstack/localstack:latest
 
       - name: Setup Elixir Project
         uses: ./.github/actions/elixir-setup
@@ -45,7 +73,6 @@ jobs:
 
       - name: Run Migrations
         run: mix ecto.migrate
-        if: true
 
       - name: Run Tests
         run: mix test

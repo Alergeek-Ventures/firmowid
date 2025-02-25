@@ -86,7 +86,7 @@ defmodule Firmowid.MixProject do
       {:oban_live_dashboard, "~> 0.2.1"},
       {:ecto_psql_extras, "~> 0.6"},
       {:any_ascii, "~> 0.3.2"},
-      {:multipart, "~> 0.4.0", only: [:dev]}
+      {:multipart, "~> 0.4.0"}
     ]
   end
 

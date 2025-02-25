@@ -82,6 +82,6 @@ config :phoenix_live_view,
 config :swoosh, :api_client, false
 
 config :ex_aws, :s3,
-  scheme: "http://",
   host: "localhost",
+  scheme: "http://",
   port: 4566

@@ -51,4 +51,9 @@ config :firmowid,
     plug: {Req.Test, :bank_data_transactions}
   ]
 
+config :ex_aws, :s3,
+  host: "localhost",
+  scheme: "http://",
+  port: 4566
+
 config :firmowid, Oban, testing: :inline
