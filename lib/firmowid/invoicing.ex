@@ -92,7 +92,8 @@ defmodule Firmowid.Invoicing do
     opts =
       Keyword.validate!(opts,
         similarity_threshold: 0.1,
-        exact_amount: true,
+        amount_lower_bound: 0.9,
+        amount_upper_bound: 1.1,
         max_results: 5,
         days_before: 3,
         days_after: 6
@@ -100,7 +101,9 @@ defmodule Firmowid.Invoicing do
 
     similarity_threshold = Keyword.fetch!(opts, :similarity_threshold)
     max_results = Keyword.fetch!(opts, :max_results)
-    exact_amount = Keyword.fetch!(opts, :exact_amount)
+
+    amount_lower_bound = Keyword.fetch!(opts, :amount_lower_bound)
+    amount_upper_bound = Keyword.fetch!(opts, :amount_upper_bound)
 
     days_before = Keyword.fetch!(opts, :days_before)
     days_after = Keyword.fetch!(opts, :days_after)
@@ -121,38 +124,23 @@ defmodule Firmowid.Invoicing do
            }}
       end
 
-    # either an exact match or within ~10% deviation
+    {:ok, amount} =
+      Money.to_currency(
+        Money.new(
+          currency,
+          total_amount
+        ),
+        "PLN",
+        rates
+      )
+
+    amount = amount |> Money.to_decimal()
+
     {min_amount, max_amount} =
-      if currency == "PLN" do
-        # allow deviation even for PLN if option provided
-        if exact_amount do
-          {total_amount, total_amount}
-        else
-          {
-            Decimal.mult(total_amount, Decimal.from_float(0.9)),
-            Decimal.mult(total_amount, Decimal.from_float(1.1))
-          }
-        end
-      else
-        # deviation always allowed
-        # when doing currency conversion
-        {:ok, amount} =
-          Money.to_currency(
-            Money.new(
-              currency,
-              total_amount
-            ),
-            "PLN",
-            rates
-          )
-
-        amount = amount |> Money.to_decimal()
-
-        {
-          Decimal.mult(amount, Decimal.from_float(0.9)),
-          Decimal.mult(amount, Decimal.from_float(1.1))
-        }
-      end
+      {
+        Decimal.mult(amount, Decimal.from_float(amount_lower_bound)),
+        Decimal.mult(amount, Decimal.from_float(amount_upper_bound))
+      }
 
     # date range -> between issue_date and payment_deadline
     issue_date = issue_date |> Date.add(-days_before)
@@ -270,16 +258,23 @@ defmodule Firmowid.Invoicing do
           }
       end)
 
-    all_found
-    |> Enum.filter(fn %{
-                        total_amount: group_total_amount,
-                        transactions: transactions
-                      } ->
-      is_amount_equal = Decimal.compare(group_total_amount, total_amount) == :eq
-      is_a_group = length(transactions) > 1
+    result =
+      all_found
+      |> Enum.filter(fn %{
+                          total_amount: group_total_amount,
+                          transactions: transactions
+                        } ->
+        is_amount_equal = Decimal.compare(group_total_amount, total_amount) == :eq
+        is_a_group = length(transactions) > 1
 
-      is_amount_equal and is_a_group
-    end)
+        is_amount_equal and is_a_group
+      end)
+
+    # if we have multiple groups this means something went wrong :)
+    case result do
+      [%{transactions: transactions}] -> transactions
+      _ -> nil
+    end
   end
 
   def match_all_good_candidates_for_unconnected_cost_invoices(organization_id) do
@@ -356,7 +351,10 @@ defmodule Firmowid.Invoicing do
         )
 
       case combo_matches do
-        [{_grouped_transaction, transactions}] ->
+        nil ->
+          nil
+
+        transactions ->
           Enum.each(transactions, fn transaction ->
             CostInvoices.create_cost_invoices_transactions_connection(
               Integer.to_string(cost_invoice.id),
@@ -364,9 +362,6 @@ defmodule Firmowid.Invoicing do
               organization_id
             )
           end)
-
-        _ ->
-          nil
       end
     end)
   end

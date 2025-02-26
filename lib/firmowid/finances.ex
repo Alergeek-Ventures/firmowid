@@ -95,6 +95,20 @@ defmodule Firmowid.Finances do
     |> Repo.preload(:sales_invoices_transactions)
   end
 
+  def search_transactions(query) do
+    Transaction
+    # match any field, seller / buyer / information / amount / date / currency
+    |> where(
+      [t],
+      ilike(t.creditor_name, ^"%#{query}%") or
+        ilike(t.debtor_name, ^"%#{query}%") or
+        ilike(t.remittance_information_unstructured, ^"%#{query}%") or
+        ilike(t.transaction_currency, ^"%#{query}%")
+    )
+    |> limit(15)
+    |> Repo.all()
+  end
+
   def list_unmatched_transactions(from, to) do
     # all transactions that have skip_invoicing set to false
     # (so we match for them)

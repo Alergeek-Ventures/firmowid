@@ -10,7 +10,11 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   attr :preview_type, :atom, required: true
 
   attr :potential_transactions, :list, default: []
-  attr :potential_groups, :list, default: []
+
+  attr :is_freeform_matching, :boolean, required: true
+  attr :search_term, :string, required: true
+  attr :search_results, :list, required: true
+  attr :selected_transaction_ids, :list, required: true
 
   def render(assigns) do
     ~H"""
@@ -22,8 +26,8 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         description={@invoice.description}
       />
       <div class={[
-        "grid grid-cols-[1fr] xl:grid-cols-[1fr,4fr]",
-        "px-8 xl:px-24 py-8 gap-24 xl:gap-10"
+        "flex flex-row justify-between",
+        "px-8 xl:px-24 py-8 gap-24"
       ]}>
         <aside class="min-w-[320px] max-w-none xl:max-w-[450px] flex flex-col gap-4 order-last xl:order-none">
           <.invoice_details
@@ -41,7 +45,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
             total_amount={Money.new(@invoice.currency, @invoice.total_amount)}
           />
 
-          <div class="my-8">
+          <div class="my-8 transition-opacity transition-duration-300 hover:opacity-50">
             <.invoice_preview
               sales_invoice={@invoice}
               preview_url={@preview_url}
@@ -50,12 +54,15 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
             />
           </div>
         </aside>
-        <main>
+        <main class="flex-grow">
           <.invoice_action_view
+            is_freeform_matching={@is_freeform_matching}
+            search_term={@search_term}
+            search_results={@search_results}
+            selected_transaction_ids={@selected_transaction_ids}
             is_cost_invoice={@is_cost_invoice}
             invoice={@invoice}
             potential_transactions={@potential_transactions}
-            potential_groups={@potential_groups}
           />
         </main>
       </div>
@@ -147,9 +154,9 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
 
   defp invoice_metadata_piece(assigns) do
     ~H"""
-    <div class="flex flex-row gap-2 items-end">
-      <label class="text-darkGrey" for={@piece_id}>{@label}</label>
-      <p id={@piece_id} class="font-bold">{@value}</p>
+    <div class="flex flex-row gap-2 items-start">
+      <label class="text-darkGrey w-36" for={@piece_id}>{@label}</label>
+      <p id={@piece_id} class="text-right font-bold">{@value}</p>
     </div>
     """
   end
@@ -209,6 +216,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
       overflow-x-hidden overflow-y-scroll bg-white"
         id="invoice-preview"
         data-pdf-url={@preview_url}
+        phx-update="ignore"
         phx-hook="PDFViewer"
       >
         <div class="min-w-[200px] min-h-[200px] flex items-center justify-center font-bold">
@@ -233,7 +241,10 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   attr :is_cost_invoice, :boolean, required: true
   attr :invoice, :map, required: true
   attr :potential_transactions, :list, required: true
-  attr :potential_groups, :list, required: true
+  attr :is_freeform_matching, :boolean, required: true
+  attr :search_term, :string, required: true
+  attr :search_results, :list, required: true
+  attr :selected_transaction_ids, :list, required: true
 
   defp invoice_action_view(assigns) do
     cond do
@@ -246,8 +257,11 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         ~H"""
         <.invoice_potential_transactions
           is_cost_invoice={@is_cost_invoice}
-          potential_groups={@potential_groups}
           potential_transactions={@potential_transactions}
+          is_freeform_matching={@is_freeform_matching}
+          search_term={@search_term}
+          search_results={@search_results}
+          selected_transaction_ids={@selected_transaction_ids}
         />
         """
 
@@ -357,9 +371,109 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
     """
   end
 
-  attr :potential_transactions, :list, required: true
-  attr :potential_groups, :list, required: true
   attr :is_cost_invoice, :boolean, required: true
+  attr :potential_transactions, :list, required: true
+  attr :is_freeform_matching, :boolean, required: true
+  attr :search_term, :string, required: true
+  attr :search_results, :list, required: true
+  attr :selected_transaction_ids, :list, required: true
+
+  defp invoice_potential_transactions(%{is_freeform_matching: true} = assigns) do
+    ~H"""
+    <div class="flex flex-col gap-16">
+      <form class="flex flex-col gap-5" phx-submit="connect-selected-transactions">
+        <div class="flex flex-row justify-between items-center">
+          <h2 class="text-lg font-semibold">
+            Wybierz pasujące transakcje
+          </h2>
+
+          <button type="button" phx-click="toggle-freeform" class="px-2 py-1 text-darkGrey">
+            Pokaż tylko rekomendowane
+          </button>
+        </div>
+
+        <div class="flex flex-row justify-between items-center my-5">
+          <div class="flex flex-row gap-2 items-center">
+            <.icon name="hero-magnifying-glass" class="w-4 h-4" />
+
+            <input
+              id="search"
+              class={[
+                "border-none",
+                "rounded px-2 py-1"
+              ]}
+              phx-change="search"
+              name="search-term"
+              placeholder="szukaj"
+              value={@search_term}
+            />
+          </div>
+
+          <button type="submit" class="uppercase bg-darkGrey text-white rounded px-2 py-1">
+            Zatwierdź
+          </button>
+        </div>
+
+        <label class="grid grid-cols-[1fr_120px_120px_50px]">
+          <%= for label <- ["Informacje", "Data", "Kwota"] do %>
+            <span class={[
+              "text-xs uppercase text-darkGrey text-right",
+              label == "Informacje" && "!text-left"
+            ]}>
+              {label}
+            </span>
+          <% end %>
+        </label>
+
+        <%= if @search_results == [] and @search_term == "" do %>
+          <div>Wyszukaj transakcje wpisując słowa kluczowe w polu powyżej</div>
+        <% end %>
+
+        <%= if @search_results == [] and @search_term != "" do %>
+          <div>Brak rezutatów - zmień wyszukiwaną frazę</div>
+        <% end %>
+
+        <div
+          :for={transaction <- @search_results}
+          id={"potential-transaction-#{transaction.id}"}
+          class="grid grid-cols-[1fr_120px_120px_50px]"
+        >
+          <div class="text-left">
+            <p class="font-semibold">
+              {if @is_cost_invoice do
+                transaction.creditor_name
+              else
+                transaction.debtor_name
+              end}
+            </p>
+            <p class="text-sm text-darkGrey">
+              {transaction.remittance_information_unstructured}
+            </p>
+          </div>
+          <div class="flex items-center justify-end">
+            {transaction.booking_date}
+          </div>
+          <div class="text-right flex items-center justify-end">
+            {Money.new(transaction.transaction_currency, transaction.transaction_amount)}
+          </div>
+          <div class="flex items-center justify-end gap-4">
+            <input
+              type="checkbox"
+              id={"potential-transaction-#{transaction.id}-checkbox"}
+              name={transaction.id}
+              phx-click="transaction-toggled"
+              phx-value-transaction_id={transaction.id}
+              checked={Enum.find(@selected_transaction_ids, &(&1 == transaction.id)) != nil}
+              class="w-7 h-7 border text-darkGrey border-darkGrey/[.5] rounded focus:ring-0"
+            />
+          </div>
+        </div>
+      </form>
+
+      <.skip_invoicing />
+    </div>
+    """
+  end
 
   defp invoice_potential_transactions(%{potential_transactions: []} = assigns) do
     ~H"""
@@ -374,6 +488,19 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         Firmowid nie znalazł żadnych transakcji, które potencjalnie pasowałyby do tej faktury. Może takie dopiero w przyszłości pojawią się na koncie?
       </p>
 
+      <button
+        type="button"
+        phx-click="toggle-freeform"
+        class={[
+          "px-2 py-1 text-darkGrey",
+          "underline font-bold",
+          "max-w-[400px]"
+        ]}
+      >
+        Jeżeli wiesz, że transakcja jest dostępna, włącz tryb ręczny,
+        znajdź ją i zaznacz.
+      </button>
+
       <p class="max-w-[400px] text-darkGrey">
         A może żadna nie pasuje, bo zapłacono gotówką, lub na inne konto?
         W takim razie
@@ -387,19 +514,18 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   defp invoice_potential_transactions(assigns) do
     ~H"""
     <div class="flex flex-col gap-16">
-      <.invoice_potential_groups
-        is_cost_invoice={@is_cost_invoice}
-        potential_groups={@potential_groups}
-      />
-
       <div class="flex flex-col gap-5">
-        <h2 class="text-lg font-semibold">
-          {if @potential_groups == [],
-            do: "Potencjalne transakcje dla dokumentu",
-            else: "Inne pasujące transakcje"}
-        </h2>
+        <div class="flex flex-row justify-between items-center">
+          <h2 class="text-lg font-semibold">
+            Potencjalne transakcje dla dokumentu
+          </h2>
 
-        <div class="grid grid-cols-[1fr_150px_200px_220px]">
+          <button phx-click="toggle-freeform" class="px-2 py-1 text-darkGrey">
+            Dopasuj dowolne transakcje
+          </button>
+        </div>
+
+        <div class="grid grid-cols-[1fr_120px_120px_220px]">
           <%= for label <- ["Informacje", "Data", "Kwota"] do %>
             <span class={[
               "text-xs uppercase text-darkGrey text-right",
@@ -413,7 +539,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         <div
           :for={transaction <- @potential_transactions}
           id={"potential-transaction-#{transaction.id}"}
-          class="grid grid-cols-[1fr_150px_200px_220px]"
+          class="grid grid-cols-[1fr_120px_120px_220px]"
         >
           <div class="text-left">
             <p class="font-semibold">
@@ -447,93 +573,6 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
       </div>
 
       <.skip_invoicing />
-    </div>
-    """
-  end
-
-  defp invoice_potential_groups(%{potential_groups: []} = assigns) do
-    ~H"""
-    """
-  end
-
-  defp invoice_potential_groups(assigns) do
-    ~H"""
-    <div
-      :for={
-        %{
-          id: id,
-          total_amount: total_amount,
-          currency: currency,
-          transactions: transactions
-        } <- @potential_groups
-      }
-      class="flex flex-col gap-4"
-    >
-      <h3 class="text-lg font-semibold">Znaleziono dopasowanie do grupy</h3>
-
-      <p class="text-sm text-darkGrey">
-        Po zsumowaniu wartości transakcji z grupy (o podobnej nazwie
-        kontrahenta), pojawiło się dopasowanie. To częsty przypadek, gdy
-        kontrahent wystawia jedną zbiorczą fakturę po wielu transakcjach, np.: w
-        jednym miesiącu rozliczeniowym.
-      </p>
-
-      <div class="flex flex-row items-center justify-between">
-        <p class="text-right">
-          Suma grupy:
-          <span class="font-bold text-lg">
-            {Money.new(
-              currency,
-              total_amount
-            )}
-          </span>
-        </p>
-
-        <button
-          phx-click="connect-group"
-          phx-value-group-id={id}
-          class={[
-            "min-w-[300px] uppercase px-4 py-2 rounded",
-            "bg-greenBg text-darkGrey"
-          ]}
-        >
-          Zatwierdź grupę <.icon name="hero-rectangle-group-solid" class="w-4 h-4" />
-        </button>
-      </div>
-      <div class="grid grid-cols-[1fr_150px_200px]">
-        <%= for label <- ["Informacje", "Data", "Kwota"] do %>
-          <span class={[
-            "text-xs uppercase text-darkGrey text-right",
-            label == "Informacje" && "!text-left"
-          ]}>
-            {label}
-          </span>
-        <% end %>
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <div
-          :for={transaction <- transactions}
-          id={"group-potential-transaction-#{transaction.id}"}
-          class="grid grid-cols-[1fr_150px_200px]"
-        >
-          <div class="text-left">
-            <p class="font-semibold">
-              {if @is_cost_invoice do
-                transaction.creditor_name
-              else
-                transaction.debtor_name
-              end}
-            </p>
-          </div>
-          <div class="flex items-center justify-end">
-            {transaction.booking_date}
-          </div>
-          <div class="text-right flex items-center justify-end">
-            {Money.new(transaction.transaction_currency, transaction.transaction_amount)}
-          </div>
-        </div>
-      </div>
     </div>
     """
   end

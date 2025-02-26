@@ -1,6 +1,7 @@
 defmodule FirmowidWeb.InvoicingLive.Show do
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Finances
   alias Firmowid.CostInvoices
   alias Firmowid.SalesInvoices
   alias Firmowid.Invoicing
@@ -20,7 +21,28 @@ defmodule FirmowidWeb.InvoicingLive.Show do
       |> assign(:is_cost_invoice, action == :cost_invoice)
       |> assign(:invoice, details.invoice)
       |> assign(:potential_transactions, details.potential_transactions)
-      |> assign(:potential_groups, details.potential_groups)
+      |> assign(:is_freeform_matching, details.recommended_combo != nil)
+      |> assign(:search_term, "")
+      |> assign(
+        :selected_transaction_ids,
+        if details.recommended_combo == nil do
+          []
+        else
+          details.recommended_combo |> Enum.map(& &1.id)
+        end
+      )
+      |> assign(
+        :search_results,
+        if details.potential_transactions == [] do
+          if details.recommended_combo == nil do
+            Finances.search_transactions("")
+          else
+            details.recommended_combo
+          end
+        else
+          details.potential_transactions
+        end
+      )
       |> assign(:preview_url, details.preview_url)
       |> assign(:preview_type, details.preview_type)
 
@@ -42,7 +64,10 @@ defmodule FirmowidWeb.InvoicingLive.Show do
       preview_type={@preview_type}
       show_vat_for_sales_invoice={@current_org.is_vat_payer}
       potential_transactions={@potential_transactions}
-      potential_groups={@potential_groups}
+      is_freeform_matching={@is_freeform_matching}
+      selected_transaction_ids={@selected_transaction_ids}
+      search_term={@search_term}
+      search_results={@search_results}
     />
     """
   end
@@ -81,7 +106,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
       |> Enum.map(fn {transaction, grade} -> Map.put(transaction, :llm_eval, grade) end)
       |> Enum.sort_by(& &1.llm_eval, :desc)
 
-    potential_groups =
+    recommended_combo =
       Invoicing.match_with_transaction_combo(
         sales_invoice.issue_date,
         sales_invoice.due_date,
@@ -105,7 +130,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
       preview_url: preview_url,
       preview_type: preview_type,
       potential_transactions: potential_transactions,
-      potential_groups: potential_groups
+      recommended_combo: recommended_combo
     }
   end
 
@@ -115,12 +140,8 @@ defmodule FirmowidWeb.InvoicingLive.Show do
     Bodyguard.permit!(CostInvoices, :show, current_user, cost_invoice)
 
     potential_transactions_without_grade =
-      Invoicing.get_potential_transactions_for_cost_invoice(
-        cost_invoice,
-        similarity_threshold: 0.0,
-        days_before: 15,
-        days_after: 10,
-        exact_amount: false
+      Invoicing.get_potential_transactions_for_cost_invoice(cost_invoice,
+        similarity_threshold: 0.0
       )
 
     potential_transactions =
@@ -134,10 +155,9 @@ defmodule FirmowidWeb.InvoicingLive.Show do
         potential_transactions_without_grade
       )
       |> Enum.map(fn {transaction, grade} -> Map.put(transaction, :llm_eval, grade) end)
-      |> Enum.map(fn transaction -> Map.put(transaction, :llm_eval, 0.5) end)
       |> Enum.sort_by(& &1.llm_eval, :desc)
 
-    potential_groups =
+    recommended_combo =
       Invoicing.match_with_transaction_combo(
         cost_invoice.issue_date,
         cost_invoice.due_date,
@@ -154,7 +174,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
           :image
         end,
       potential_transactions: potential_transactions,
-      potential_groups: potential_groups
+      recommended_combo: recommended_combo
     }
   end
 
@@ -220,25 +240,25 @@ defmodule FirmowidWeb.InvoicingLive.Show do
     {:noreply, socket}
   end
 
-  def handle_event("connect-group", %{"group-id" => group_id}, socket) do
+  def handle_event("connect-selected-transactions", _, socket) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
     invoice_id = socket.assigns.invoice.id
-    group = socket.assigns.potential_groups |> Enum.find(&(&1.id == group_id))
 
     [invoice | _] =
-      Enum.map(group.transactions, fn transaction ->
+      socket.assigns.selected_transaction_ids
+      |> Enum.map(fn transaction_id ->
         if socket.assigns.is_cost_invoice do
           connect_cost_invoice(
             invoice_id,
-            transaction.id,
+            transaction_id,
             user,
             organization_id
           )
         else
           connect_sales_invoice(
             invoice_id,
-            transaction.id,
+            transaction_id,
             user,
             organization_id
           )
@@ -249,6 +269,36 @@ defmodule FirmowidWeb.InvoicingLive.Show do
     socket =
       socket
       |> assign(:invoice, invoice)
+
+    {:noreply, socket}
+  end
+
+  def handle_event(
+        "transaction-toggled",
+        %{"transaction_id" => transaction_id, "value" => "on"},
+        socket
+      ) do
+    socket =
+      socket
+      |> assign(
+        :selected_transaction_ids,
+        socket.assigns.selected_transaction_ids ++ [transaction_id]
+      )
+
+    {:noreply, socket}
+  end
+
+  def handle_event(
+        "transaction-toggled",
+        %{"transaction_id" => transaction_id},
+        socket
+      ) do
+    socket =
+      socket
+      |> assign(
+        :selected_transaction_ids,
+        Enum.filter(socket.assigns.selected_transaction_ids, fn id -> id != transaction_id end)
+      )
 
     {:noreply, socket}
   end
@@ -273,6 +323,36 @@ defmodule FirmowidWeb.InvoicingLive.Show do
     socket =
       socket
       |> assign(:invoice, invoice)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("search", %{"search-term" => ""}, socket) do
+    socket =
+      socket
+      |> assign(:search_term, "")
+      |> assign(
+        :search_results,
+        socket.assigns.selected_transaction_ids
+        |> Enum.map(fn id -> Finances.get_transaction!(id) end)
+      )
+
+    {:noreply, socket}
+  end
+
+  def handle_event("search", %{"search-term" => search_term}, socket) do
+    socket =
+      socket
+      |> assign(:search_term, search_term)
+      |> assign(:search_results, Finances.search_transactions(search_term))
+
+    {:noreply, socket}
+  end
+
+  def handle_event("toggle-freeform", _, socket) do
+    socket =
+      socket
+      |> assign(:is_freeform_matching, !socket.assigns.is_freeform_matching)
 
     {:noreply, socket}
   end
