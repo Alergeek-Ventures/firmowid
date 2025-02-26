@@ -35,7 +35,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         "flex flex-row justify-between",
         "px-8 xl:px-24 py-8 gap-24"
       ]}>
-        <aside class="min-w-[320px] max-w-none xl:max-w-[450px] flex flex-col gap-4 order-last xl:order-none">
+        <aside class="min-w-[320px] max-w-none xl:max-w-[500px] flex flex-col gap-4 order-last xl:order-none">
           <.invoice_details
             is_cost_invoice={@is_cost_invoice}
             invoice_id={@invoice.id}
@@ -66,7 +66,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
             />
           </div>
         </aside>
-        <main class="flex-grow">
+        <main class="flex-grow pl-8 xl:pl-24 border-l border-darkGrey/[.3]">
           <.invoice_action_view
             is_freeform_matching={@is_freeform_matching}
             search_term={@search_term}
@@ -121,29 +121,36 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
 
   defp invoice_details(assigns) do
     ~H"""
-    <div class="flex flex-row w-full justify-between">
+    <div class="grid grid-cols-[150px_1fr] gap-2">
       <h3 class="text-md uppercase text-darkGrey">Dane faktury</h3>
-      <div class="flex flex-row gap-4">
+      <div class="flex flex-row gap-2">
         <%= if @is_cost_invoice do %>
           <button class="cursor-not-allowed">
-            <.icon name="hero-pencil-square-solid" class="w-4 h-4" />
+            <.icon name="hero-pencil-square-solid" class="w-5 h-5" />
           </button>
         <% else %>
-          <.link navigate={~p"/sprzedazowe/#{@invoice_id}/edycja"}>
-            <.icon name="hero-pencil-square-solid" class="w-4 h-4" />
+          <.link
+            class={[
+              "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
+              "px-2 py-1 flex items-center justify-center rounded"
+            ]}
+            navigate={~p"/sprzedazowe/#{@invoice_id}/edycja"}
+          >
+            <.icon name="hero-pencil-square-solid" class="w-5 h-5" />
           </.link>
         <% end %>
-        <button phx-click="delete">
-          <.icon name="hero-trash-solid" class="w-4 h-4" />
+        <button
+          class={[
+            "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
+            "px-2 py-1 flex items-center justify-center rounded"
+          ]}
+          phx-click="delete"
+        >
+          <.icon name="hero-trash-solid" class="w-5 h-5" />
         </button>
       </div>
     </div>
-    <div class="flex flex-col gap-4 py-8">
-      <.invoice_metadata_piece
-        label="Numer faktury"
-        value={@invoice_identifier}
-        piece_id="invoice-identifier"
-      />
+    <div class="grid grid-cols-[150px_1fr] gap-4 py-8">
       <.invoice_metadata_piece
         label={
           if @is_cost_invoice,
@@ -152,6 +159,11 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         }
         value={@party_full_name}
         piece_id="party"
+      />
+      <.invoice_metadata_piece
+        label="Numer faktury"
+        value={@invoice_identifier}
+        piece_id="invoice-identifier"
       />
       <.invoice_metadata_piece label="Data wystawienia" value={@issue_date} piece_id="issue-date" />
       <.invoice_metadata_piece label="Data sprzedaży" value={@sale_date} piece_id="sale-date" />
@@ -166,10 +178,8 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
 
   defp invoice_metadata_piece(assigns) do
     ~H"""
-    <div class="flex flex-row gap-2 items-start">
-      <label class="text-darkGrey w-36" for={@piece_id}>{@label}</label>
-      <p id={@piece_id} class="text-right font-bold">{@value}</p>
-    </div>
+    <label class="text-darkGrey" for={@piece_id}>{@label}</label>
+    <p id={@piece_id} class="text-left font-bold">{@value}</p>
     """
   end
 
