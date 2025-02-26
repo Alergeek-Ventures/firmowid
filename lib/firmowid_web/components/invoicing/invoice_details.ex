@@ -49,7 +49,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
             }
             issue_date={@invoice.issue_date}
             sale_date={@invoice.sale_date}
-            due_date={@invoice.issue_date}
+            due_date={@invoice.due_date}
           />
 
           <.invoice_amount
