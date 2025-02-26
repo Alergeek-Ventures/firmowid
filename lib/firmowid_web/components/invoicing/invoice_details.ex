@@ -22,7 +22,13 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
       <.invoice_header
         is_cost_invoice={@is_cost_invoice}
         issue_date={@invoice.issue_date}
-        party_display_name={@invoice.seller_display_name}
+        party_display_name={
+          if @is_cost_invoice do
+            @invoice.seller_display_name
+          else
+            @invoice.buyer_display_name
+          end
+        }
         description={@invoice.description}
       />
       <div class={[
@@ -34,7 +40,13 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
             is_cost_invoice={@is_cost_invoice}
             invoice_id={@invoice.id}
             invoice_identifier={@invoice.invoice_identifier}
-            party_full_name={@invoice.seller}
+            party_full_name={
+              if @is_cost_invoice do
+                @invoice.seller
+              else
+                @invoice.buyer_display_name
+              end
+            }
             issue_date={@invoice.issue_date}
             sale_date={@invoice.sale_date}
             due_date={@invoice.issue_date}

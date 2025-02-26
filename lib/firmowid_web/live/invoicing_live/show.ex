@@ -100,7 +100,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
         sales_invoice.issue_date,
         SalesInvoices.SalesInvoice.get_gross_value(sales_invoice),
         sales_invoice.currency,
-        sales_invoice.seller_display_name,
+        SalesInvoices.get_full_buyer_data_as_single_string(sales_invoice),
         potential_transactions_without_grade
       )
       |> Enum.map(fn {transaction, grade} -> Map.put(transaction, :llm_eval, grade) end)

@@ -372,7 +372,7 @@ defmodule Firmowid.Invoicing do
         issue_date,
         total_amount,
         currency,
-        seller,
+        party,
         candidates
       ) do
     call_llm = fn transaction ->
@@ -407,14 +407,14 @@ defmodule Firmowid.Invoicing do
             %{
               role: "user",
               content: "
-              This is the metadata of a cost invoice I want to match:
+              This is the metadata of an invoice I want to match:
               {
                 invoice_identifier: #{invoice_identifier},
                 description: #{description},
                 issue_date: #{issue_date},
                 total_amount: #{total_amount},
                 currency: #{currency},
-                seller: #{seller},
+                party: #{party},
               }
 
               Here is a transaction that I selected as possible match:

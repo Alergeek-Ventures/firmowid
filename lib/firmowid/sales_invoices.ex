@@ -171,6 +171,11 @@ defmodule Firmowid.SalesInvoices do
 
   def get_buyer!(id), do: Repo.get!(Buyer, id)
 
+  def get_full_buyer_data_as_single_string(sales_invoice) do
+    "#{sales_invoice.buyer_nip}#{sales_invoice.buyer_pesel} - #{sales_invoice.buyer_display_name} #{sales_invoice.buyer_surname} #{sales_invoice.buyer_name} #{sales_invoice.buyer_address} #{sales_invoice.buyer_country}"
+    |> String.trim()
+  end
+
   def create_buyer(attrs \\ %{}) do
     %Buyer{}
     |> Buyer.changeset(attrs)
