@@ -585,8 +585,18 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
       assigns
       |> assign(:party, party)
       |> assign(:description, transaction.remittance_information_unstructured)
+      |> assign(
+        :navigate,
+        if transaction.sales_invoices_transactions != [] do
+          ~p"/sprzedazowe/#{List.first(transaction.sales_invoices_transactions).id}"
+        else
+          if transaction.cost_invoices_transactions != [] do
+            ~p"/kosztowe/#{List.first(transaction.cost_invoices_transactions).id}"
+          end
+        end
+      )
 
-    ~H"<.render_cell party={@party} description={@description} column={@column} />"
+    ~H"<.render_cell party={@party} navigate={@navigate} description={@description} column={@column} />"
   end
 
   defp render_cell(%{invoicing_entry: %CostInvoice{} = invoice, column: "party"} = assigns) do
@@ -610,6 +620,12 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
       |> assign(:navigate, ~p"/sprzedazowe/#{invoice.id}")
 
     ~H"<.render_cell party={@party} navigate={@navigate} description={@description} column={@column} />"
+  end
+
+  defp render_cell(%{navigate: nil, party: _, description: _, column: "party"} = assigns) do
+    ~H"""
+    <.render_cell party={@party} description={@description} column={@column} />
+    """
   end
 
   defp render_cell(%{navigate: _, party: _, description: _, column: "party"} = assigns) do

@@ -57,7 +57,8 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
             total_amount={Money.new(@invoice.currency, @invoice.total_amount)}
           />
 
-          <div class="my-8 transition-opacity transition-duration-300 hover:opacity-50">
+          <h3 class="text-md uppercase text-darkGrey mt-8">Podgląd faktury</h3>
+          <div class="mb-8 mt-4 transition-opacity transition-duration-300 hover:opacity-50">
             <.invoice_preview
               sales_invoice={@invoice}
               preview_url={@preview_url}
@@ -66,7 +67,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
             />
           </div>
         </aside>
-        <main class="flex-grow pl-8 xl:pl-24 border-l border-darkGrey/[.3]">
+        <main class="flex-grow pl-8 xl:pl-16 border-l border-darkGrey/[.3]">
           <.invoice_action_view
             is_freeform_matching={@is_freeform_matching}
             search_term={@search_term}
@@ -124,11 +125,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
     <div class="grid grid-cols-[150px_1fr] gap-2">
       <h3 class="text-md uppercase text-darkGrey">Dane faktury</h3>
       <div class="flex flex-row gap-2">
-        <%= if @is_cost_invoice do %>
-          <button class="cursor-not-allowed">
-            <.icon name="hero-pencil-square-solid" class="w-5 h-5" />
-          </button>
-        <% else %>
+        <%= if not @is_cost_invoice do %>
           <.link
             class={[
               "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
@@ -179,7 +176,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   defp invoice_metadata_piece(assigns) do
     ~H"""
     <label class="text-darkGrey" for={@piece_id}>{@label}</label>
-    <p id={@piece_id} class="text-left font-bold">{@value}</p>
+    <p id={@piece_id} class="text-left">{@value}</p>
     """
   end
 
@@ -327,41 +324,71 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
 
   defp single_transaction_match(assigns) do
     ~H"""
-    <div class="flex flex-col gap-4 lg:pl-8">
+    <div class="flex flex-col gap-8">
       <div class="flex flex-row justify-between items-center">
         <p class="uppercase">
-          Dopasowana transakcja
+          Dopasowanie
         </p>
-        <button class="bg-darkGrey text-white rounded px-2 py-1" phx-click="disconnect">
-          Cofnij <.icon name="hero-arrow-uturn-left-micro xl:inline-block hidden" class="w-4 h-4" />
-        </button>
+
+        <div class="flex flex-row gap-2 items-center">
+          <button
+            class={[
+              "h-8 w-full max-w-[180px] text-darkGrey rounded-md p-2",
+              "flex flex-row justify-between items-center gap-2",
+              "hover:border-darkGrey border border-transparent transition-all transition-duration-300"
+            ]}
+            phx-click="disconnect"
+          >
+            <.icon name="hero-arrow-uturn-left-micro xl:inline-block hidden" class="w-4 h-4" />
+          </button>
+
+          <div class={[
+            "h-8 max-w-[180px]",
+            "flex flex-row justify-center items-center p-2 rounded-md gap-2",
+            "w-full justify-between bg-greenBg text-greenText"
+          ]}>
+            <div class="font-normal uppercase">Komplet</div>
+            <.icon name="hero-check-micro" class="w-5 h-5" />
+          </div>
+        </div>
       </div>
-      <p class="text-sm text-darkGrey">
-        Kontrahent
-      </p>
-      <div>
-        <p>
-          {if @is_cost_invoice do
-            @transaction.creditor_name
-          else
+
+      <div class={[
+        "grid grid-flow-col grid-cols-[2fr_1fr_1fr] grid-rows-2 gap-4",
+        "p-4 rounded bg-greenBg/[0.3]"
+      ]}>
+        <%= for {metadata_label, metadata_value} <- [{
+        "Kontrahent", (if @is_cost_invoice do
+        @transaction.creditor_name
+        else
             @transaction.debtor_name
-          end}
-        </p>
+            end)}, {
+        "Informacje", @transaction.remittance_information_unstructured
+        }, {
+        "Zaksięgowano", @transaction.booking_date
+        }, {
+        "Przewalutowano", @transaction.value_date
+        }, {
+        "Kwota", Money.new(@transaction.transaction_amount, @transaction.transaction_currency)
+        }] do %>
+          <div class={[
+            "flex flex-col gap-2",
+            metadata_label == "Kwota" && "items-end row-span-2 justify-center items-center"
+          ]}>
+            <p class={[
+              "text-sm text-darkGrey",
+              metadata_label == "Kwota" && "hidden"
+            ]}>
+              {metadata_label}
+            </p>
+            <p class={[
+              metadata_label == "Kwota" && "text-2xl"
+            ]}>
+              {metadata_value}
+            </p>
+          </div>
+        <% end %>
       </div>
-      <p class="text-sm text-darkGrey">
-        Informacje
-      </p>
-      <p>{@transaction.remittance_information_unstructured}</p>
-      <p class="text-sm text-darkGrey">
-        Zaksięgowano
-      </p>
-      <p>{@transaction.booking_date}</p>
-      <p class="text-sm text-darkGrey">
-        Kwota
-      </p>
-      <p>
-        {Money.new(@transaction.transaction_amount, @transaction.transaction_currency)}
-      </p>
     </div>
     """
   end
