@@ -74,7 +74,9 @@ defmodule Firmowid.Timetracker do
     Repo.delete(project)
   end
 
-  def get_project!(id), do: Repo.get!(Project, id)
+  def get_project!(id), do: Repo.get!(Project, id) |> Repo.preload(:users)
+
+  def get_project_with_users!(id), do: Repo.get!(Project, id) |> Repo.preload(:users)
 
   def get_sessions_duration_in_project(project_id, user_id, month, year) do
     sessions =
@@ -187,6 +189,16 @@ defmodule Firmowid.Timetracker do
     |> Repo.get(session_id)
     |> Session.changeset(attrs)
     |> Repo.update()
+  end
+
+  @doc """
+  Gets all sessions for a specific user in a specific project.
+  """
+  def get_user_project_sessions(user_id, project_id) do
+    Repo.all(
+      from s in Session,
+        where: s.user_id == ^user_id and s.project_id == ^project_id
+    )
   end
 
   alias Firmowid.Timetracker.HoursRecord

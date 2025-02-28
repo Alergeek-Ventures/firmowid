@@ -188,4 +188,43 @@
       </.form>
     </div>
   </.modal>
+
+  <div class="mt-8">
+    <h2 class="text-xl font-semibold text-darkGrey mb-4">Godziny pracowników w projektach</h2>
+
+    <div class="mb-6 flex flex-wrap gap-4 items-end">
+      <form phx-change="select_project" class="w-full md:w-64">
+        <.input
+          type="select"
+          id="project_selector"
+          name="selected_project"
+          value={@selected_project_id}
+          options={Enum.map(@projects, &{&1.name, &1.id})}
+          prompt="Wybierz projekt"
+          label="Projekt"
+          class="w-full"
+        />
+      </form>
+
+      <.date_picker
+        id="selected_date"
+        active_months={@active_months}
+        selected_date={@selected_date}
+        class="h-full"
+      />
+    </div>
+
+    <%= if @selected_project_id do %>
+      <% selected_project = Enum.find(@projects, &(&1.id == @selected_project_id)) %>
+      <.project_details
+        project={selected_project}
+        user_hours={@project_user_hours}
+        total_seconds={@total_project_seconds}
+      />
+    <% else %>
+      <div class="bg-white rounded-lg shadow-sm p-8 text-center text-darkGrey">
+        Wybierz projekt z listy, aby zobaczyć szczegóły czasu pracy.
+      </div>
+    <% end %>
+  </div>
 </div>
