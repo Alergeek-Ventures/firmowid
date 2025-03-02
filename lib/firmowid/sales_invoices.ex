@@ -42,6 +42,10 @@ defmodule Firmowid.SalesInvoices do
     Repo.all(SalesInvoice)
   end
 
+  def list_unmatched_sales_invoices() do
+    list_unmatched_sales_invoices(~D[1970-01-01], ~D[2999-12-31])
+  end
+
   def list_unmatched_sales_invoices(from, to) do
     query =
       from si in SalesInvoice,

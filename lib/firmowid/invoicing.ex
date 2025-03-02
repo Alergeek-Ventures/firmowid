@@ -301,6 +301,12 @@ defmodule Firmowid.Invoicing do
               cost_invoice.currency,
               cost_invoice.seller,
               candidates
+              |> Enum.map(
+                &Map.merge(
+                  &1,
+                  %{party_name: &1.creditor_name}
+                )
+              )
             )
             |> Enum.filter(fn {_transaction, grade} -> grade >= 0.8 end)
             |> Enum.map(fn {transaction, _grade} -> transaction end)
@@ -357,8 +363,108 @@ defmodule Firmowid.Invoicing do
         transactions ->
           Enum.each(transactions, fn transaction ->
             CostInvoices.create_cost_invoices_transactions_connection(
-              Integer.to_string(cost_invoice.id),
-              Integer.to_string(transaction.id),
+              cost_invoice.id,
+              transaction.id,
+              organization_id
+            )
+          end)
+      end
+    end)
+  end
+
+  def match_all_good_candidates_for_unconnected_sales_invoices(organization_id) do
+    for similarity_threshold <- [0.9, 0.8, 0] do
+      sales_invoices = SalesInvoices.list_unmatched_sales_invoices()
+
+      if similarity_threshold == 0 do
+        sales_invoices
+        |> Enum.map(fn sales_invoice ->
+          {sales_invoice,
+           get_potential_transactions_for_sales_invoice(
+             sales_invoice,
+             similarity_threshold: similarity_threshold,
+             max_results: 5
+           )}
+        end)
+        |> Enum.each(fn {sales_invoice, candidates} ->
+          sales_invoice_description =
+            sales_invoice.sales_invoice_items
+            |> Enum.at(0)
+            |> Map.get(:name)
+
+          matches =
+            llm_re_grade_matches(
+              sales_invoice.invoice_number,
+              sales_invoice_description,
+              sales_invoice.issue_date,
+              SalesInvoices.SalesInvoice.get_gross_value(sales_invoice),
+              sales_invoice.currency,
+              SalesInvoices.get_full_buyer_data_as_single_string(sales_invoice),
+              candidates
+              |> Enum.map(
+                &Map.merge(
+                  &1,
+                  %{party_name: &1.debtor_name}
+                )
+              )
+            )
+            |> Enum.filter(fn {_transaction, grade} -> grade >= 0.8 end)
+            |> Enum.map(fn {transaction, _grade} -> transaction end)
+
+          if length(matches) == 1 do
+            [match] = matches
+
+            SalesInvoices.create_sales_invoices_transactions_connection(
+              sales_invoice.id,
+              match.id,
+              organization_id
+            )
+          end
+        end)
+      else
+        sales_invoices
+        |> Enum.map(fn sales_invoice ->
+          {sales_invoice,
+           get_potential_transactions_for_sales_invoice(
+             sales_invoice,
+             similarity_threshold: similarity_threshold,
+             max_results: 5
+           )}
+        end)
+        |> Enum.each(fn
+          {sales_invoice, [golden_candidate]} ->
+            SalesInvoices.create_sales_invoices_transactions_connection(
+              sales_invoice.id,
+              golden_candidate.id,
+              organization_id
+            )
+
+          _ ->
+            nil
+        end)
+      end
+    end
+
+    sales_invoices = SalesInvoices.list_unmatched_sales_invoices()
+
+    sales_invoices
+    |> Enum.each(fn sales_invoice ->
+      combo_matches =
+        match_with_transaction_combo(
+          sales_invoice.issue_date,
+          sales_invoice.due_date,
+          SalesInvoices.SalesInvoice.get_gross_value(sales_invoice)
+        )
+
+      case combo_matches do
+        nil ->
+          nil
+
+        transactions ->
+          Enum.each(transactions, fn transaction ->
+            SalesInvoices.create_sales_invoices_transactions_connection(
+              sales_invoice.id,
+              transaction.id,
               organization_id
             )
           end)
@@ -423,16 +529,18 @@ defmodule Firmowid.Invoicing do
                 value_date: #{transaction.value_date},
                 transaction_currency: #{transaction.transaction_currency},
                 transaction_amount: #{transaction.transaction_amount},
-                creditor_name: #{transaction.creditor_name},
+                party_name: #{transaction.party_name},
                 remittance_information_unstructured: #{transaction.remittance_information_unstructured},
               }
 
               Considering  metadata of them and the metadata of the cost invoice,
               please give me a score between 0 and 1. Take into consideration
-              whether the name of seller matches with creditor name, dates and
-              if the amount matches. Also look at the description of the cost invoice.
+              whether the name of party on the invoice matches the one in the
+              transactions, dates and if the amount matches. Also look at the
+              description of the invoice.
+
               Reply only with the score.
-              " |> String.trim()
+              " |> String.trim() |> dbg()
             }
           ]
         )

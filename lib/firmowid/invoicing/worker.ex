@@ -29,6 +29,7 @@ defmodule Firmowid.Invoicing.Worker do
     try do
       Firmowid.Repo.put_org_id(organization_id)
       Invoicing.match_all_good_candidates_for_unconnected_cost_invoices(organization_id)
+      Invoicing.match_all_good_candidates_for_unconnected_sales_invoices(organization_id)
     rescue
       error ->
         Sentry.capture_exception(error)

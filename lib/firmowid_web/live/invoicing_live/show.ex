@@ -102,6 +102,12 @@ defmodule FirmowidWeb.InvoicingLive.Show do
         sales_invoice.currency,
         SalesInvoices.get_full_buyer_data_as_single_string(sales_invoice),
         potential_transactions_without_grade
+        |> Enum.map(
+          &Map.merge(
+            &1,
+            %{party_name: &1.debtor_name}
+          )
+        )
       )
       |> Enum.map(fn {transaction, grade} -> Map.put(transaction, :llm_eval, grade) end)
       |> Enum.sort_by(& &1.llm_eval, :desc)
@@ -153,6 +159,12 @@ defmodule FirmowidWeb.InvoicingLive.Show do
         cost_invoice.currency,
         cost_invoice.seller,
         potential_transactions_without_grade
+        |> Enum.map(
+          &Map.merge(
+            &1,
+            %{party_name: &1.creditor_name}
+          )
+        )
       )
       |> Enum.map(fn {transaction, grade} -> Map.put(transaction, :llm_eval, grade) end)
       |> Enum.sort_by(& &1.llm_eval, :desc)
