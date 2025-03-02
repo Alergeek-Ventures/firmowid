@@ -32,10 +32,13 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         description={@invoice.description}
       />
       <div class={[
-        "flex flex-row justify-between",
-        "px-8 xl:px-24 py-8 gap-24"
+        "flex flex-col justify-between",
+        "px-8 gap-4 lg:gap-12 lg:flex-row"
       ]}>
-        <aside class="min-w-[320px] max-w-none xl:max-w-[500px] flex flex-col gap-4 order-last xl:order-none">
+        <aside class={[
+          "min-w-[320px] max-w-none lg:max-w-[550px] flex flex-col",
+          "gap-4 order-last lg:order-none py-8"
+        ]}>
           <.invoice_details
             is_cost_invoice={@is_cost_invoice}
             invoice_id={@invoice.id}
@@ -57,7 +60,8 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
             total_amount={Money.new(@invoice.currency, @invoice.total_amount)}
           />
 
-          <h3 class="text-md uppercase text-darkGrey mt-8">Podgląd faktury</h3>
+          <h3 class="self-start text-sm uppercase text-darkGrey mt-8">Podgląd faktury</h3>
+
           <div class="mb-8 mt-4 transition-opacity transition-duration-300 hover:opacity-50">
             <.invoice_preview
               sales_invoice={@invoice}
@@ -67,7 +71,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
             />
           </div>
         </aside>
-        <main class="flex-grow pl-8 xl:pl-16 border-l border-darkGrey/[.3]">
+        <main class="flex-grow py-8 lg:pl-8 border-b lg:border-b-0 lg:border-l border-darkGrey/[.3]">
           <.invoice_action_view
             is_freeform_matching={@is_freeform_matching}
             search_term={@search_term}
@@ -97,7 +101,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
     ]}>
       <div class="flex items-center justify-center w-24">
         <.link navigate={~p"/?month=#{@issue_date |> Date.to_iso8601()}"}>
-          <.icon name="hero-arrow-left-circle-solid" class="w-6 h-6" />
+          <.icon name="hero-arrow-left-circle-solid" class="w-7 h-7" />
         </.link>
       </div>
       <div class="flex flex-col">
@@ -123,8 +127,8 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   defp invoice_details(assigns) do
     ~H"""
     <div class="grid grid-cols-[150px_1fr] gap-2">
-      <h3 class="text-md uppercase text-darkGrey">Dane faktury</h3>
-      <div class="flex flex-row gap-2">
+      <h3 class="self-center text-sm uppercase text-darkGrey">Dane faktury</h3>
+      <div class="flex flex-row justify-end gap-2">
         <%= if not @is_cost_invoice do %>
           <.link
             class={[
@@ -147,7 +151,12 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         </button>
       </div>
     </div>
-    <div class="grid grid-cols-[150px_1fr] gap-4 py-8">
+    <div class="grid grid-cols-[130px_1fr] gap-2 py-4">
+      <.invoice_metadata_piece
+        label="Numer faktury"
+        value={@invoice_identifier}
+        piece_id="invoice-identifier"
+      />
       <.invoice_metadata_piece
         label={
           if @is_cost_invoice,
@@ -156,11 +165,6 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         }
         value={@party_full_name}
         piece_id="party"
-      />
-      <.invoice_metadata_piece
-        label="Numer faktury"
-        value={@invoice_identifier}
-        piece_id="invoice-identifier"
       />
       <.invoice_metadata_piece label="Data wystawienia" value={@issue_date} piece_id="issue-date" />
       <.invoice_metadata_piece label="Data sprzedaży" value={@sale_date} piece_id="sale-date" />
@@ -175,8 +179,26 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
 
   defp invoice_metadata_piece(assigns) do
     ~H"""
-    <label class="text-darkGrey" for={@piece_id}>{@label}</label>
-    <p id={@piece_id} class="text-left">{@value}</p>
+    <div class={[
+      "grid grid-cols-subgrid col-span-2",
+      "rounded odd:bg-greyButtonBg/[0.3] px-1"
+    ]}>
+      <label
+        class={[
+          (@label != "Sprzedawca" and @label != "Kupujący") && "self-center",
+          "text-sm text-darkGrey"
+        ]}
+        for={@piece_id}
+      >
+        {@label}
+      </label>
+      <p
+        id={@piece_id}
+        class={["text-left", (@label == "Sprzedawca" or @label == "Kupujący") && "mb-8"]}
+      >
+        {@value}
+      </p>
+    </div>
     """
   end
 
@@ -187,7 +209,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
       <p
         id="total-amount"
         class={[
-          "text-2xl",
+          "text-xl bg-greyButtonBg/[0.3] px-4 py-2 rounded",
           @is_cost_invoice && "text-orangeText",
           !@is_cost_invoice && "text-blueText"
         ]}
@@ -305,16 +327,58 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
 
   defp invoice_skipped_view(assigns) do
     ~H"""
-    <div class="flex flex-col gap-8 items-center">
-      <.icon name="hero-forward-solid" class="w-10 h-10" />
-      <h3 class="text-lg font-semibold">Szukanie dopasowania pominięte</h3>
-      <p class="max-w-[400px]">
-        Oznacza to, że Firmowid nie będzie już szukać transakcji, która
-        pasowałaby do tej faktury. Możesz to cofnąć w dowolnym momencie.
-      </p>
-      <button class="bg-darkGrey text-white rounded px-4 py-2" phx-click="toggle-invoicing">
-        Cofnij <.icon name="hero-arrow-uturn-left-micro xl:inline-block hidden" class="w-4 h-4" />
-      </button>
+    <div class="flex flex-col gap-8">
+      <div class="flex flex-row justify-between items-center">
+        <p class="uppercase">
+          Transakcja pominięta
+        </p>
+
+        <div class="flex flex-row gap-2 w-32 overflow-hidden">
+          <div class={[
+            "text-xs h-6",
+            "flex flex-row justify-center items-center py-2 px-2 rounded-md",
+            "transition-all duration-500",
+            "w-20 bg-greenBg text-greenText"
+          ]}>
+            <.icon name="hero-document-text-solid" class="h-4 w-4" />
+          </div>
+          <button
+            phx-click="toggle-invoicing"
+            class={[
+              "w-20",
+              "h-6 uppercase text-xs text-darkGrey bg-greyButtonBg rounded-md"
+            ]}
+          >
+            <.icon name="hero-arrow-uturn-left-micro" class="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div class={[
+        "grid grid-flow-col grid-cols-[2fr_1fr_1fr] gap-4",
+        "p-4 rounded bg-greyButtonBg/[0.3]"
+      ]}>
+        <%= for {metadata_label, metadata_value} <- [{
+          "Informacja", "Transakcja została pominięta dla dokumentu"
+        }] do %>
+          <div class={[
+            "flex flex-col gap-2",
+            metadata_label == "Kwota" && "items-end row-span-2 justify-center items-center"
+          ]}>
+            <p class={[
+              "text-sm text-darkGrey",
+              metadata_label == "Kwota" && "hidden"
+            ]}>
+              {metadata_label}
+            </p>
+            <p class={[
+              metadata_label == "Kwota" && "text-2xl"
+            ]}>
+              {metadata_value}
+            </p>
+          </div>
+        <% end %>
+      </div>
     </div>
     """
   end
@@ -326,30 +390,31 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
     ~H"""
     <div class="flex flex-col gap-8">
       <div class="flex flex-row justify-between items-center">
-        <p class="uppercase">
+        <p class="uppercase w-auto">
           Dopasowanie
         </p>
 
         <div class="flex flex-row gap-2 items-center">
+          <div class={[
+            "text-xs h-6 w-24",
+            "shrink-0 flex flex-row justify-center items-center p-2 rounded-md gap-2",
+            "justify-between bg-greenBg text-greenText"
+          ]}>
+            <div class="text-xs uppercase">Komplet</div>
+            <.icon name="hero-check-micro" class="w-4 h-4" />
+          </div>
+
           <button
             class={[
-              "h-8 w-full max-w-[180px] text-darkGrey rounded-md p-2",
-              "flex flex-row justify-between items-center gap-2",
+              "h-6 text-darkGrey rounded-md p-2",
+              "bg-greyButtonBg",
+              "shrink-0 flex flex-row justify-between items-center gap-2",
               "hover:border-darkGrey border border-transparent transition-all transition-duration-300"
             ]}
             phx-click="disconnect"
           >
-            <.icon name="hero-arrow-uturn-left-micro xl:inline-block hidden" class="w-4 h-4" />
+            <.icon name="hero-arrow-uturn-left-micro" class="h-4 w-4" />
           </button>
-
-          <div class={[
-            "h-8 max-w-[180px]",
-            "flex flex-row justify-center items-center p-2 rounded-md gap-2",
-            "w-full justify-between bg-greenBg text-greenText"
-          ]}>
-            <div class="font-normal uppercase">Komplet</div>
-            <.icon name="hero-check-micro" class="w-5 h-5" />
-          </div>
         </div>
       </div>
 
@@ -373,16 +438,15 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         }] do %>
           <div class={[
             "flex flex-col gap-2",
-            metadata_label == "Kwota" && "items-end row-span-2 justify-center items-center"
+            metadata_label == "Kwota" && "items-end row-span-2 justify-end items-end"
           ]}>
             <p class={[
-              "text-sm text-darkGrey",
-              metadata_label == "Kwota" && "hidden"
+              "text-sm text-darkGrey"
             ]}>
               {metadata_label}
             </p>
             <p class={[
-              metadata_label == "Kwota" && "text-2xl"
+              metadata_label == "Kwota" && "text-xl"
             ]}>
               {metadata_value}
             </p>
@@ -436,29 +500,46 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
             Wybierz pasujące transakcje
           </h2>
 
-          <button type="button" phx-click="toggle-freeform" class="px-2 py-1 text-darkGrey">
-            Pokaż tylko rekomendowane
+          <button
+            type="button"
+            phx-click="toggle-freeform"
+            class={[
+              "flex flex-row justify-center items-center gap-2",
+              "px-2 py-1 text-darkGrey"
+            ]}
+          >
+            <.icon name="hero-chevron-left" class="w-4 h-4" /> Wróć do rekomendowanych
           </button>
         </div>
 
         <div class="flex flex-row justify-between items-center my-5">
           <div class="flex flex-row gap-2 items-center">
-            <.icon name="hero-magnifying-glass" class="w-4 h-4" />
-
-            <input
-              id="search"
-              class={[
-                "border-none",
-                "rounded px-2 py-1"
-              ]}
-              phx-change="search"
-              name="search-term"
-              placeholder="szukaj"
-              value={@search_term}
-            />
+            <label class="bg-greyButtonBg px-2 py-1 rounded">
+              <.icon name="hero-magnifying-glass" class="w-4 h-4" />
+              <input
+                id="search"
+                class={[
+                  "bg-transparent",
+                  "border-none",
+                  "rounded px-2 py-1"
+                ]}
+                phx-change="search"
+                name="search-term"
+                value={@search_term}
+              />
+            </label>
           </div>
 
-          <button type="submit" class="uppercase bg-darkGrey text-white rounded px-2 py-1">
+          <button
+            type="submit"
+            disabled={@selected_transaction_ids == []}
+            class={[
+              @selected_transaction_ids != [] && "bg-darkGrey",
+              @selected_transaction_ids == [] && "bg-greyButtonBg",
+              "uppercase text-white rounded px-2 py-1",
+              "transition-all transition-duration-300"
+            ]}
+          >
             Zatwierdź
           </button>
         </div>
@@ -518,8 +599,6 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
           </div>
         </div>
       </form>
-
-      <.skip_invoicing />
     </div>
     """
   end
@@ -527,35 +606,84 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   defp invoice_potential_transactions(%{potential_transactions: []} = assigns) do
     ~H"""
     <div class="flex flex-col gap-6 items-center text-center">
-      <div>
-        <.icon name="hero-face-frown" class="w-10 h-10" />
+      <div class="gap-4 flex flex-col items-center border border-greyButtonBg p-4 rounded-md">
+        <.icon class="block" name="hero-face-frown" class="w-10 h-10" />
+
+        <h3 class="text-lg font-semibold">Brak rekomendacji</h3>
+
+        <p class="max-w-[400px]">
+          Firmowid nie znalazł żadnych transakcji, które potencjalnie pasowałyby
+          do tej faktury.
+        </p>
+      </div>
+    </div>
+    <h3 class="text-lg font-semibold my-10">Co możesz zrobić?</h3>
+    <div class="text-darkGrey flex flex-col gap-8">
+      <div class="flex flex-row justify-between gap-16">
+        <p>
+          Możesz wykonać przelew teraz - kliknij przycisk, aby skopiować
+          potrzebne dane.
+        </p>
+
+        <button
+          type="button"
+          class={[
+            "text-xs h-6 w-32 uppercase",
+            "shrink-0 flex flex-row justify-center items-center py-2 px-2 rounded-md",
+            "transition-all duration-500",
+            "bg-darkGrey text-white"
+          ]}
+        >
+          Skopiuj dane
+        </button>
       </div>
 
-      <h3 class="text-lg font-semibold">Brak transakcji</h3>
+      <div class="flex flex-row justify-between gap-16">
+        <p>Nie widzisz odpowiedniej transakcji? Dokument ma kilka
+          transakcji?</p>
 
-      <p class="max-w-[400px]">
-        Firmowid nie znalazł żadnych transakcji, które potencjalnie pasowałyby do tej faktury. Może takie dopiero w przyszłości pojawią się na koncie?
-      </p>
+        <button
+          type="button"
+          phx-click="toggle-freeform"
+          class={[
+            "text-xs h-6 w-32 uppercase",
+            "shrink-0 flex flex-row justify-center items-center py-2 px-2 rounded-md",
+            "transition-all duration-500",
+            "text-darkGrey bg-greyButtonBg",
+            "max-w-[525px]"
+          ]}
+        >
+          Pokaż wszystkie
+        </button>
+      </div>
 
-      <button
-        type="button"
-        phx-click="toggle-freeform"
-        class={[
-          "px-2 py-1 text-darkGrey",
-          "underline font-bold",
-          "max-w-[400px]"
-        ]}
-      >
-        Jeżeli wiesz, że transakcja jest dostępna, włącz tryb ręczny,
-        znajdź ją i zaznacz.
-      </button>
-
-      <p class="max-w-[400px] text-darkGrey">
-        A może żadna nie pasuje, bo zapłacono gotówką, lub na inne konto?
-        W takim razie
-        <button class="font-bold underline" phx-click="toggle-invoicing">pomiń szukanie</button>
-        i daj znać Firmowidowi, by oznaczył ją jako rozliczoną poza systemem.
-      </p>
+      <div class="flex flex-row justify-between gap-16">
+        <p>
+          A może żadna nie pasuje, bo zapłacono gotówką, lub na inne konto?
+          Pomiń jej szukanie. Firmowid oznaczy ją jako rozliczoną poza systemem.
+        </p>
+        <div class="flex shrink-0 flex-row gap-2 w-32 overflow-hidden">
+          <div class={[
+            "text-xs h-6",
+            "flex flex-row justify-center items-center py-2 px-2 rounded-md",
+            "transition-all duration-500",
+            "w-10",
+            "text-darkGrey bg-greyButtonBg"
+          ]}>
+            <.icon name="hero-document-text-solid" class="h-4 w-4" />
+          </div>
+          <button
+            phx-click="toggle-invoicing"
+            class={[
+              "transition-all duration-500 cursor-pointer",
+              "w-20",
+              "h-6 uppercase text-xs text-darkGrey bg-greyButtonBg rounded-md"
+            ]}
+          >
+            Pomiń
+          </button>
+        </div>
+      </div>
     </div>
     """
   end

@@ -385,7 +385,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
         class={[
           "transition-all duration-500 cursor-pointer",
           "w-20",
-          "h-6 uppercase text-xs text-darkGrey bg-lightGreyBg rounded-md"
+          "h-6 uppercase text-xs text-darkGrey bg-greyButtonBg rounded-md"
         ]}
       >
         <.icon name="hero-arrow-uturn-left-micro" class="h-4 w-4" />
@@ -450,7 +450,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
           "w-10",
           case @invoicing_entry do
             %Transaction{} -> "bg-redBg text-redText"
-            _ -> "bg-lightGreyBg text-darkGrey"
+            _ -> "bg-greyButtonBg text-darkGrey"
           end
         ]}
       >
@@ -481,7 +481,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
         class={[
           "transition-all duration-500 cursor-pointer",
           "w-20",
-          "h-6 uppercase text-xs text-darkGrey bg-lightGreyBg rounded-md"
+          "h-6 uppercase text-xs text-darkGrey bg-greyButtonBg rounded-md"
         ]}
       >
         Pomiń
