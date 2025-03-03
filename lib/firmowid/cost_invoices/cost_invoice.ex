@@ -6,7 +6,9 @@ defmodule Firmowid.CostInvoices.CostInvoice do
     belongs_to :blob, Firmowid.Blobs.Blob
 
     field :seller, :string
+    field :seller_address, :string
     field :seller_display_name, :string
+    field :account_number, :string
 
     field :sale_date, :date
     field :issue_date, :date
@@ -35,7 +37,9 @@ defmodule Firmowid.CostInvoices.CostInvoice do
     |> cast(attrs, [
       :blob_id,
       :seller,
+      :seller_address,
       :seller_display_name,
+      :account_number,
       :sale_date,
       :issue_date,
       :due_date,

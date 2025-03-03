@@ -73,8 +73,12 @@ defmodule Firmowid.CostInvoices.Worker do
             },
             seller: %{
               type: "string",
-              description: "From whom the invoice is, include all of the available
-      info like full name, address, bank account etc."
+              description: "Full name of the seller, including any
+              organizational prefixes or suffixes, like first name."
+            },
+            seller_address: %{
+              type: "string",
+              description: "The address of the seller"
             },
             seller_display_name: %{
               type: "string",
@@ -96,6 +100,11 @@ defmodule Firmowid.CostInvoices.Worker do
               If it's neither an invoice or a receipt, but a contract for sale,
               then say e.g. 'Sale contract on day YYYY-MM-DD in City' If
               identifier is not available at all - provide 'N/A'."
+            },
+            account_number: %{
+              type: "string",
+              description: "If provided, the account number of the seller that
+              a wire transfer should be sent to."
             },
             items_list: %{
               type: "array",

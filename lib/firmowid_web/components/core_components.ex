@@ -70,7 +70,7 @@ defmodule FirmowidWeb.CoreComponents do
               phx-key="escape"
               phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
               class="shadow-darkGrey/10 ring-darkGrey/10 relative hidden
-              rounded-md bg-white p-14 shadow-lg ring-1 transition"
+              rounded-md bg-white p-10 shadow-lg ring-1 transition"
             >
               <div class="absolute top-6 right-5">
                 <button

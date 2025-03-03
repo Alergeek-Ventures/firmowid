@@ -297,6 +297,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
       assigns.invoice.transactions == [] ->
         ~H"""
         <.invoice_potential_transactions
+          invoice={@invoice}
           is_cost_invoice={@is_cost_invoice}
           potential_transactions={@potential_transactions}
           is_freeform_matching={@is_freeform_matching}
@@ -484,6 +485,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
     """
   end
 
+  attr :invoice, :map, required: true
   attr :is_cost_invoice, :boolean, required: true
   attr :potential_transactions, :list, required: true
   attr :is_freeform_matching, :boolean, required: true
@@ -625,17 +627,11 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
           potrzebne dane.
         </p>
 
-        <button
-          type="button"
-          class={[
-            "text-xs h-6 w-32 uppercase",
-            "shrink-0 flex flex-row justify-center items-center py-2 px-2 rounded-md",
-            "transition-all duration-500",
-            "bg-darkGrey text-white"
-          ]}
-        >
-          Skopiuj dane
-        </button>
+        <.live_component
+          id="bank-transfer-modal"
+          module={FirmowidWeb.Components.Invoicing.BankTransferModal}
+          invoice={@invoice}
+        />
       </div>
 
       <div class="flex flex-row justify-between gap-16">
