@@ -8,16 +8,8 @@ defmodule Firmowid.BankData.Worker do
     case job.args do
       %{"name" => "bank_account_sync", "bank_account_id" => bank_account_id} ->
         Logger.info("Syncing bank account #{bank_account_id}")
+        Firmowid.BankData.sync_bank_account(bank_account_id, :skip_organization_id)
 
-        try do
-          Firmowid.BankData.sync_bank_account(bank_account_id, :skip_organization_id)
-        rescue
-          error ->
-            Sentry.capture_exception(error)
-            Logger.error("Failed to sync bank account #{bank_account_id} #{inspect(error)}")
-
-            # TODO: mark account as failing
-        end
 
       # to work around Fly.io suspending the machines, every hour we
       # schedule a sync for all bank accounts

@@ -26,18 +26,10 @@ defmodule Firmowid.Invoicing.Worker do
   end
 
   defp match_invoices(organization_id) do
-    try do
-      Firmowid.Repo.put_org_id(organization_id)
-      Invoicing.match_all_good_candidates_for_unconnected_cost_invoices(organization_id)
-      Invoicing.match_all_good_candidates_for_unconnected_sales_invoices(organization_id)
-    rescue
-      error ->
-        Sentry.capture_exception(error)
+    Firmowid.Repo.put_org_id(organization_id)
 
-        Logger.error(
-          "Failed to match invoices for organization #{organization_id} #{inspect(error)}"
-        )
-    end
+    Invoicing.match_all_good_candidates_for_unconnected_cost_invoices(organization_id)
+    Invoicing.match_all_good_candidates_for_unconnected_sales_invoices(organization_id)
 
     :ok
   end
