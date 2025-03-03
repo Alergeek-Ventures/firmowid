@@ -166,12 +166,19 @@ defmodule Firmowid.BankData.ApiClient do
       ]
       |> Keyword.merge(Application.get_env(:firmowid, :bank_data_transactions, []))
 
-    with %{status: 200, body: accounts_transaction} <- Req.get!(options) do
-      accounts_transaction
-      |> Map.get("transactions")
-      |> Map.get("booked")
+    with %Req.Response{status: 200, body: accounts_transaction} <- Req.get!(options) do
+      booked_transactions =
+        accounts_transaction
+        |> Map.get("transactions")
+        |> Map.get("booked")
+
+      {:ok, booked_transactions}
     else
-      error -> error
+      %Req.Response{status: 429} ->
+        {:error, :rate_limited}
+
+      error ->
+        {:error, error}
     end
   end
 

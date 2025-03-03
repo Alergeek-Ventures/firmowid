@@ -16,6 +16,10 @@ defmodule Firmowid.Repo do
     Process.get(@tenant_key)
   end
 
+  def drop_org_id() do
+    Process.delete(@tenant_key)
+  end
+
   @impl true
   def default_options(_operation) do
     [organization_id: get_org_id()]

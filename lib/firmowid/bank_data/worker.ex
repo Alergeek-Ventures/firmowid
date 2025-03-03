@@ -8,8 +8,16 @@ defmodule Firmowid.BankData.Worker do
     case job.args do
       %{"name" => "bank_account_sync", "bank_account_id" => bank_account_id} ->
         Logger.info("Syncing bank account #{bank_account_id}")
-        Firmowid.BankData.sync_bank_account(bank_account_id, :skip_organization_id)
 
+        Sentry.Context.add_breadcrumb(%{
+          category: "bank_account_sync",
+          data: %{
+            bank_account_id: bank_account_id,
+            job: job
+          }
+        })
+
+        Firmowid.BankData.sync_bank_account(bank_account_id, :skip_organization_id)
 
       # to work around Fly.io suspending the machines, every hour we
       # schedule a sync for all bank accounts

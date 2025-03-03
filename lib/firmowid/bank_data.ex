@@ -1,6 +1,8 @@
 defmodule Firmowid.BankData do
   import Ecto.Query, warn: false
-  alias Firmowid.Invoicing
+
+  require Logger
+
   alias Firmowid.Repo
   alias Firmowid.Accounts.User
 
@@ -96,10 +98,11 @@ defmodule Firmowid.BankData do
       Finances.BankAccount
       |> Repo.get!(bank_account_id, skip_organization_id: true)
 
-    booked_transactions =
-      ApiClient.get_booked_transactions_for_account(bank_account.gocardless_id)
+    Repo.put_org_id(bank_account.organization_id)
 
-    upsert_booked_transactions(booked_transactions, bank_account_id, bank_account.organization_id)
+    sync_bank_account(bank_account_id)
+
+    Repo.drop_org_id()
   end
 
   def sync_bank_account(bank_account_id) do
@@ -107,15 +110,26 @@ defmodule Firmowid.BankData do
       Finances.BankAccount
       |> Repo.get!(bank_account_id)
 
-    booked_transactions =
-      ApiClient.get_booked_transactions_for_account(bank_account.gocardless_id)
+    with {:ok, booked_transactions} <-
+           ApiClient.get_booked_transactions_for_account(bank_account.gocardless_id),
+         {:ok, _} <-
+           upsert_booked_transactions(
+             booked_transactions,
+             bank_account_id,
+             bank_account.organization_id
+           ) do
+      {:ok, nil}
+    else
+      {:error, :rate_limited} ->
+        Logger.error(
+          "Rate limited while fetching transactions for bank account #{bank_account_id}"
+        )
 
-    upsert_booked_transactions(booked_transactions, bank_account_id, bank_account.organization_id)
-
-    # match added transactions
-    Invoicing.match_all_good_candidates_for_unconnected_cost_invoices(
-      bank_account.organization_id
-    )
+      {:error, error} ->
+        Logger.error(
+          "Unexpected error while fetching transactions for bank account #{bank_account_id}: #{inspect(error)}"
+        )
+    end
   end
 
   def list_bank_accounts() do
@@ -141,6 +155,8 @@ defmodule Firmowid.BankData do
       |> Map.from_struct()
     end)
     |> Finances.create_or_update_transactions()
+
+    {:ok, nil}
   end
 
   defp create_or_update_bank_accounts_for_requisition(
