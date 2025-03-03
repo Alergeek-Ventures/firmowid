@@ -482,37 +482,37 @@ defmodule Firmowid.Invoicing do
         candidates
       ) do
     call_llm = fn transaction ->
-      {:ok, response} =
-        OpenAI.chat_completion(
-          model: "gpt-4o-mini",
-          max_completion_tokens: 20,
-          response_format: %{
-            type: "json_schema",
-            json_schema: %{
-              name: "grading_response",
-              strict: true,
-              schema: %{
-                type: "object",
-                properties: %{
-                  grade: %{
-                    type: "number",
-                    additionalProperties: false
-                  }
-                },
-                required: ["grade"],
-                additionalProperties: false
-              }
-            }
-          },
-          messages: [
-            %{
-              role: "system",
-              content:
-                "You are a assistant to a finance person. You help matching between cost invoices and transactions, to complete the paper trail."
-            },
-            %{
-              role: "user",
-              content: "
+      with {:ok, response} <-
+             OpenAI.chat_completion(
+               model: "gpt-4o-mini",
+               max_completion_tokens: 20,
+               response_format: %{
+                 type: "json_schema",
+                 json_schema: %{
+                   name: "grading_response",
+                   strict: true,
+                   schema: %{
+                     type: "object",
+                     properties: %{
+                       grade: %{
+                         type: "number",
+                         additionalProperties: false
+                       }
+                     },
+                     required: ["grade"],
+                     additionalProperties: false
+                   }
+                 }
+               },
+               messages: [
+                 %{
+                   role: "system",
+                   content:
+                     "You are a assistant to a finance person. You help matching between cost invoices and transactions, to complete the paper trail."
+                 },
+                 %{
+                   role: "user",
+                   content: "
               This is the metadata of an invoice I want to match:
               {
                 invoice_identifier: #{invoice_identifier},
@@ -540,12 +540,14 @@ defmodule Firmowid.Invoicing do
               description of the invoice.
 
               Reply only with the score.
-              " |> String.trim() |> dbg()
-            }
-          ]
-        )
-
-      response
+              " |> String.trim()
+                 }
+               ]
+             ) do
+        {:ok, response}
+      else
+        error -> error
+      end
     end
 
     candidates
@@ -554,8 +556,19 @@ defmodule Firmowid.Invoicing do
       &Task.async(fn ->
         candidate = &1
 
+        # that's a very naive one time API call retry
+        response =
+          case call_llm.(candidate) do
+            {:ok, response} ->
+              response
+
+            _ ->
+              {:ok, response} = call_llm.(candidate)
+              response
+          end
+
         content =
-          call_llm.(candidate).choices
+          response.choices
           |> List.first()
           |> Map.get("message")
           |> Map.get("content")
