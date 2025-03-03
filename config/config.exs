@@ -121,7 +121,7 @@ config :firmowid, Oban,
        # for each account. it's done like this to work around
        # Fly.io suspending the machines
        {"0 * * * *", Firmowid.BankData.Worker, args: %{name: "schedule_sync"}},
-       {"* * * * *", Firmowid.Invoicing.Worker, args: %{name: "schedule_matching"}}
+       {"0 * * * *", Firmowid.Invoicing.Worker, args: %{name: "schedule_matching"}}
      ]}
   ]
 
