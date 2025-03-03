@@ -42,7 +42,10 @@ defmodule FirmowidWeb.Components.Invoicing.BankTransferModal do
             {"Odbiorca", @invoice.seller},
             {"Adres", @invoice.seller_address},
             {"Numer konta", @invoice.account_number},
-            {"Tytuł przelewu", "Płatność za fakturę #{@invoice.invoice_identifier}"}
+            {"Tytuł przelewu", "Płatność za fakturę
+                #{@invoice.invoice_identifier}"},
+              {"Kwota", @invoice.total_amount |> Decimal.abs()},
+              {"Waluta", @invoice.currency}
           ] do %>
               <label for={"transfer-#{label}"} class="text-sm uppercase font-semibold self-start">
                 {label}

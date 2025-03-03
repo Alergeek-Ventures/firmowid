@@ -609,7 +609,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
     ~H"""
     <div class="flex flex-col gap-6 items-center text-center">
       <div class="gap-4 flex flex-col items-center border border-greyButtonBg p-4 rounded-md">
-        <.icon class="block" name="hero-face-frown" class="w-10 h-10" />
+        <.icon name="hero-face-frown" class="w-10 h-10 block" />
 
         <h3 class="text-lg font-semibold">Brak rekomendacji</h3>
 
