@@ -388,9 +388,10 @@ defmodule Firmowid.Invoicing do
         end)
         |> Enum.each(fn {sales_invoice, candidates} ->
           sales_invoice_description =
-            sales_invoice.sales_invoice_items
-            |> Enum.at(0)
-            |> Map.get(:name)
+            case sales_invoice.sales_invoice_items == [] do
+              true -> "N/A"
+              false -> sales_invoice.sales_invoice_items |> Enum.at(0) |> Map.get(:name)
+            end
 
           matches =
             llm_re_grade_matches(
