@@ -6,6 +6,7 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
   alias FirmowidWeb.Helpers.TimeFormatter
   use FirmowidWeb, :live_view
 
+  @impl true
   def mount(_params, _session, socket) do
     Bodyguard.permit!(Timetracker, :read_projects, socket.assigns.current_user)
     Bodyguard.permit!(Timetracker, :read_hours_records, socket.assigns.current_user)

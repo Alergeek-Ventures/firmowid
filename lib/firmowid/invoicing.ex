@@ -11,6 +11,8 @@ defmodule Firmowid.Invoicing do
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.Finances.Transaction
 
+  require Logger
+
   @behaviour Bodyguard.Policy
 
   def authorize(_, %User{role: :admin}, _), do: true
@@ -482,38 +484,85 @@ defmodule Firmowid.Invoicing do
         party,
         candidates
       ) do
-    call_llm = fn transaction ->
-      with {:ok, response} <-
-             OpenAI.chat_completion(
-               model: "gpt-4o-mini",
-               max_completion_tokens: 20,
-               response_format: %{
-                 type: "json_schema",
-                 json_schema: %{
-                   name: "grading_response",
-                   strict: true,
-                   schema: %{
-                     type: "object",
-                     properties: %{
-                       grade: %{
-                         type: "number",
-                         additionalProperties: false
-                       }
-                     },
-                     required: ["grade"],
-                     additionalProperties: false
-                   }
-                 }
-               },
-               messages: [
-                 %{
-                   role: "system",
-                   content:
-                     "You are a assistant to a finance person. You help matching between cost invoices and transactions, to complete the paper trail."
-                 },
-                 %{
-                   role: "user",
-                   content: "
+    candidates
+    # run calls for each candidate in parallel
+    |> Enum.map(
+      &Task.async(fn ->
+        {&1,
+         call_llm_for_grade(
+           invoice_identifier,
+           description,
+           issue_date,
+           total_amount,
+           currency,
+           party,
+           &1
+         )}
+      end)
+    )
+    |> Enum.map(&Task.await/1)
+  end
+
+  def call_llm_for_grade(
+        invoice_identifier,
+        description,
+        issue_date,
+        total_amount,
+        currency,
+        party,
+        transaction
+      ) do
+    call_with_retry(&do_call_llm_for_grade/7, [
+      invoice_identifier,
+      description,
+      issue_date,
+      total_amount,
+      currency,
+      party,
+      transaction
+    ])
+  end
+
+  def do_call_llm_for_grade(
+        invoice_identifier,
+        description,
+        issue_date,
+        total_amount,
+        currency,
+        party,
+        transaction
+      ) do
+    {:ok, response} =
+      OpenAI.chat_completion(
+        model: "gpt-4o-mini",
+        max_completion_tokens: 20,
+        response_format: %{
+          type: "json_schema",
+          json_schema: %{
+            name: "grading_response",
+            strict: true,
+            schema: %{
+              type: "object",
+              properties: %{
+                grade: %{
+                  type: "number",
+                  additionalProperties: false
+                }
+              },
+              required: ["grade"],
+              additionalProperties: false
+            }
+          }
+        },
+        messages: [
+          %{
+            role: "system",
+            content:
+              "You are a assistant to a finance person. You help matching between cost invoices and transactions, to complete the paper trail."
+          },
+          %{
+            role: "user",
+            content: "
               This is the metadata of an invoice I want to match:
               {
                 invoice_identifier: #{invoice_identifier},
@@ -542,43 +591,60 @@ defmodule Firmowid.Invoicing do
 
               Reply only with the score.
               " |> String.trim()
-                 }
-               ]
-             ) do
-        {:ok, response}
-      else
-        error -> error
-      end
+          }
+        ]
+      )
+
+    grade =
+      response.choices
+      |> List.first()
+      |> Map.get("message")
+      |> Map.get("content")
+      |> Jason.decode!()
+      |> Map.get("grade")
+
+    {:ok, grade}
+  end
+
+  defp call_with_retry(call_fn, args, opts \\ []) do
+    max_retries = Keyword.get(opts, :max_retries, 10)
+    base_delay = Keyword.get(opts, :base_delay, 500)
+    max_delay = Keyword.get(opts, :max_delay, 5000)
+
+    do_call_with_retry(call_fn, args, max_retries, base_delay, max_delay)
+  end
+
+  defp do_call_with_retry(call_fn, args, retries_left, current_delay, max_delay)
+       when retries_left > 0 do
+    try do
+      apply(call_fn, args)
+    rescue
+      reason ->
+        if retries_left > 1 do
+          # Calculate next delay with exponential backoff and jitter
+          next_delay = calculate_delay(current_delay, max_delay)
+
+          Logger.warning(fn ->
+            "LLM call failed. Retrying in #{next_delay}ms. Reason: #{inspect(reason)}. Retries left: #{retries_left - 1}"
+          end)
+
+          :timer.sleep(next_delay)
+
+          do_call_with_retry(call_fn, args, retries_left - 1, next_delay, max_delay)
+        else
+          # Last attempt
+          apply(call_fn, args)
+        end
     end
+  end
 
-    candidates
-    # run calls for each candidate in parallel
-    |> Enum.map(
-      &Task.async(fn ->
-        candidate = &1
+  defp do_call_with_retry(_call_fn, _args, 0, _current_delay, _max_delay) do
+    {:error, :max_retries_exceeded}
+  end
 
-        # that's a very naive one time API call retry
-        response =
-          case call_llm.(candidate) do
-            {:ok, response} ->
-              response
-
-            _ ->
-              {:ok, response} = call_llm.(candidate)
-              response
-          end
-
-        content =
-          response.choices
-          |> List.first()
-          |> Map.get("message")
-          |> Map.get("content")
-          |> Jason.decode!()
-          |> Map.get("grade")
-
-        {candidate, content}
-      end)
-    )
-    |> Enum.map(&Task.await/1)
+  # Exponential backoff with jitter
+  defp calculate_delay(current_delay, max_delay) do
+    next_delay = min(current_delay * 2, max_delay)
+    next_delay + :rand.uniform(100)
   end
 end
