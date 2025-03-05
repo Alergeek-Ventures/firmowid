@@ -622,16 +622,18 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
     <h3 class="text-lg font-semibold my-10">Co możesz zrobić?</h3>
     <div class="text-darkGrey flex flex-col gap-8">
       <div class="flex flex-row justify-between gap-16">
-        <p>
-          Możesz wykonać przelew teraz - kliknij przycisk, aby skopiować
-          potrzebne dane.
-        </p>
+        <%= if @is_cost_invoice do %>
+          <p>
+            Możesz wykonać przelew teraz - kliknij przycisk, aby skopiować
+            potrzebne dane.
+          </p>
 
-        <.live_component
-          id="bank-transfer-modal"
-          module={FirmowidWeb.Components.Invoicing.BankTransferModal}
-          invoice={@invoice}
-        />
+          <.live_component
+            id="bank-transfer-modal"
+            module={FirmowidWeb.Components.Invoicing.BankTransferModal}
+            invoice={@invoice}
+          />
+        <% end %>
       </div>
 
       <div class="flex flex-row justify-between gap-16">
