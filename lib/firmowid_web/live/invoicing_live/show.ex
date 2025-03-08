@@ -82,9 +82,15 @@ defmodule FirmowidWeb.InvoicingLive.Show do
     sales_invoice = SalesInvoices.get_sales_invoice(id)
 
     sales_invoice_description =
-      sales_invoice.sales_invoice_items
-      |> Enum.at(0)
-      |> Map.get(:name)
+      case length(sales_invoice.sales_invoice_items) do
+        0 ->
+          ""
+
+        _ ->
+          sales_invoice.sales_invoice_items
+          |> Enum.at(0)
+          |> Map.get(:name)
+      end
 
     Bodyguard.permit!(SalesInvoices, :show, current_user, sales_invoice)
 
