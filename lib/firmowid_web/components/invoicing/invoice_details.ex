@@ -777,8 +777,8 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
                     z Twojego konta, która pasuje do danej faktury kosztowej. Ocena
                     jest #{
                     cond do
-                      @llm_eval >= 0.75 -> "wysoka"
-                      @llm_eval >= 0.5 -> "średnia"
+                      @llm_eval >= 0.65 -> "wysoka"
+                      @llm_eval >= 0.3 -> "średnia"
                       true -> "niska"
                     end} dla tej transakcji."}
       class={[

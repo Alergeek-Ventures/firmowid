@@ -584,13 +584,13 @@ defmodule Firmowid.Invoicing do
               }
 
               Considering  metadata of them and the metadata of the cost invoice,
-              please give me a score between 0 and 1. Take into consideration
-              whether the name of party on the invoice matches the one in the
+              please give me a score between 0 and 1 (so if it's 30% chance of matching, it should be 0.3).
+              Take into consideration whether the name of party on the invoice matches the one in the
               transactions, dates and if the amount matches. Also look at the
               description of the invoice.
 
               Reply only with the score.
-              " |> String.trim()
+            " |> String.trim()
           }
         ]
       )
@@ -603,7 +603,7 @@ defmodule Firmowid.Invoicing do
       |> Jason.decode!()
       |> Map.get("grade")
 
-    {:ok, grade}
+    grade
   end
 
   defp call_with_retry(call_fn, args, opts \\ []) do
