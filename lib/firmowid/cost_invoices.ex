@@ -96,6 +96,10 @@ defmodule Firmowid.CostInvoices do
     |> Enum.map(&Map.put(&1, :file_url, Blobs.get_blob_url(&1.blob_id, Repo.get_org_id())))
   end
 
+  @doc """
+  Unmatched means - not assigned to a transaction and not skipped.
+  If date range is provided - due in the given date range.
+  """
   def list_unmatched_cost_invoices() do
     organization_id = Repo.get_org_id()
 
@@ -122,9 +126,7 @@ defmodule Firmowid.CostInvoices do
         left_join: t in assoc(i, :transactions),
         where: is_nil(t.id),
         where: i.skip_invoicing == false,
-        where:
-          (i.issue_date >= ^from and i.issue_date <= ^to) or
-            (i.due_date >= ^from and i.due_date <= ^to),
+        where: i.due_date >= ^from and i.due_date <= ^to,
         order_by: [desc: i.issue_date]
 
     query

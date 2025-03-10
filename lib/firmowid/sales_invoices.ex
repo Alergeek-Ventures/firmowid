@@ -42,6 +42,10 @@ defmodule Firmowid.SalesInvoices do
     Repo.all(SalesInvoice)
   end
 
+  @doc """
+  Unmatched invoices - due in a given date range, but
+  without a match and not skipped.
+  """
   def list_unmatched_sales_invoices() do
     list_unmatched_sales_invoices(~D[1970-01-01], ~D[2999-12-31])
   end
@@ -51,7 +55,7 @@ defmodule Firmowid.SalesInvoices do
       from si in SalesInvoice,
         left_join: sit in assoc(si, :transactions),
         where: is_nil(sit.id),
-        where: si.issue_date >= ^from,
+        where: si.due_date >= ^from,
         where: si.due_date <= ^to,
         where: si.skip_invoicing == false,
         order_by: [desc: :issue_date]
@@ -67,9 +71,7 @@ defmodule Firmowid.SalesInvoices do
     SalesInvoice
     |> where(
       [d],
-      (d.issue_date >= ^from and d.issue_date <= ^to) or
-        (d.due_date >= ^from and d.due_date <= ^to) or
-        (d.sale_date >= ^from and d.sale_date <= ^to)
+      d.issue_date >= ^from and d.issue_date <= ^to
     )
     |> order_by(desc: :issue_date)
     |> Repo.all()
