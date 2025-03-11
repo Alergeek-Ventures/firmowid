@@ -117,7 +117,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
           case column do
             "issue_date" -> "w-36"
             "booking_date" -> "w-36"
-            "issue_or_issue_date" -> "w-36"
+            "issue_or_value_date" -> "w-36"
             "due_date" -> "w-44"
             "value_date" -> "w-44"
             "due_or_booking_date" -> "w-44"
