@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         "px-8 gap-4 lg:gap-12 lg:flex-row"
       ]}>
         <aside class={[
-          "min-w-[320px] max-w-none lg:max-w-[550px] flex flex-col",
+          "min-w-[320px] max-w-none lg:w-[600px] flex flex-col",
           "gap-4 order-last lg:order-none py-8"
         ]}>
           <.invoice_details
