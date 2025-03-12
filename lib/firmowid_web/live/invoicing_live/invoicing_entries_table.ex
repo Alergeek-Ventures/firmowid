@@ -615,7 +615,16 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
       |> assign(:party, invoice.buyer_display_name)
       |> assign(
         :description,
-        invoice.sales_invoice_items |> Enum.map(& &1.name) |> Enum.join(", ")
+        case {
+          invoice.buyer_display_name,
+          invoice.sales_invoice_items
+          |> Enum.map(& &1.name)
+          |> Enum.join(", ")
+        } do
+          {nil, ""} -> "szkic faktury sprzedażowej"
+          {_buyer_display_name, ""} -> ""
+          {_buyer_display_name, description} -> description
+        end
       )
       |> assign(:navigate, ~p"/sprzedazowe/#{invoice.id}")
 
