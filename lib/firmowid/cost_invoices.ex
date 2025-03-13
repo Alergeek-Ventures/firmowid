@@ -93,6 +93,7 @@ defmodule Firmowid.CostInvoices do
       d.issue_date >= ^from and d.issue_date <= ^to
     )
     |> Repo.all()
+    |> Repo.preload(:blob)
     |> Enum.map(&Map.put(&1, :file_url, Blobs.get_blob_url(&1.blob_id, Repo.get_org_id())))
   end
 

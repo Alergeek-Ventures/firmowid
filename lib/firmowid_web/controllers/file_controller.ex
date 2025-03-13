@@ -25,8 +25,9 @@ defmodule FirmowidWeb.FileController do
           |> hd()
           |> Path.extname()
 
+        # append part of SHA256 hash to avoid filename collisions
         file_name =
-          "#{document.issue_date}_#{document.seller_display_name}"
+          "#{document.issue_date}_#{document.seller_display_name}_#{document.blob.blob_checksum |> String.slice(0, 8)}"
           |> clean_filename()
 
         [
@@ -42,7 +43,7 @@ defmodule FirmowidWeb.FileController do
       )
       |> Enum.map(fn invoice ->
         file_name =
-          "#{invoice.invoice_number}_#{invoice.seller_display_name}" |> clean_filename()
+          "#{invoice.invoice_number}_#{invoice.buyer_display_name}" |> clean_filename()
 
         url_with_protocol = FirmowidWeb.Endpoint.url()
         download_path = ~p"/sprzedazowe/#{invoice.id}/pobierz"
