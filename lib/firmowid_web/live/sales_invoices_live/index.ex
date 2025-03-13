@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.SalesInvoicesLive.Index do
+  alias Firmowid.Finances
   alias Firmowid.SalesInvoices.SalesInvoice
   alias Firmowid.SalesInvoices
 
@@ -25,23 +26,25 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
           end
       end
 
-    {:ok,
-     socket
-     |> assign_sales_invoice(sales_invoice)
-     |> assign_buyers()
-     |> assign_sellers()
-     |> assign(nip_form: to_form(%{"nip" => ""}))
-     |> assign_buyer_form_state("closed")
-     |> assign(is_buyer_dirty: false)
-     |> assign(is_seller_dirty: false)}
+    socket =
+      socket
+      |> assign_sales_invoice(sales_invoice)
+      |> assign_bank_accounts()
+      |> assign_buyers()
+      |> assign(nip_form: to_form(%{"nip" => ""}))
+      |> assign_buyer_form_state("closed")
+      |> assign(is_buyer_dirty: false)
+      |> assign(is_seller_dirty: false)
+
+    {:ok, socket}
   end
 
   def assign_buyers(socket) do
     socket |> assign(buyers: SalesInvoices.list_buyers())
   end
 
-  def assign_sellers(socket) do
-    socket |> assign(sellers: SalesInvoices.list_sellers())
+  def assign_bank_accounts(socket) do
+    socket |> assign(bank_accounts: Finances.list_bank_accounts())
   end
 
   def assign_currency(socket) do
@@ -85,30 +88,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
   def assign_sales_invoice(socket, :new_invoice) do
     last_sales_invoice = SalesInvoices.get_latest_sales_invoice() || %{}
 
-    seller =
-      if is_nil(Map.get(last_sales_invoice, :seller_id)) do
-        SalesInvoices.list_sellers() |> Enum.at(0)
-      else
-        SalesInvoices.get_seller!(last_sales_invoice.seller_id)
-      end
-
-    seller_in_invoice =
-      case seller do
-        nil ->
-          %{}
-
-        _ ->
-          %{
-            seller_id: seller.id,
-            seller_nip: seller.nip,
-            seller_display_name: seller.display_name,
-            seller_address: seller.address,
-            seller_name: seller.name,
-            seller_surname: seller.surname,
-            seller_account_number: seller.account_number,
-            is_seller_confirmed: true
-          }
-      end
+    organization = socket.assigns.current_user.organization
 
     sales_invoice =
       struct(
@@ -137,11 +117,18 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
           sales_invoice_items: [],
           buyer_type: :company,
           is_basic_info_confirmed: false,
-          is_seller_confirmed: false,
+          is_seller_confirmed: true,
           is_buyer_confirmed: false,
           are_sales_invoice_items_confirmed: false
         })
-        |> Map.merge(seller_in_invoice)
+        |> Map.merge(%{
+          seller_nip: organization.identification_number,
+          seller_display_name: organization.name,
+          seller_address: organization.address,
+          seller_name: organization.name,
+          seller_surname: nil,
+          seller_account_number: nil
+        })
       )
 
     form =
@@ -181,33 +168,6 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
   def handle_params(_params, _uri, socket) do
     {:noreply, socket}
   end
-
-  def populate_seller(%{"seller_id" => ""} = sales_invoice) do
-    Map.merge(sales_invoice, %{
-      "seller_nip" => "",
-      "seller_display_name" => "",
-      "seller_address" => "",
-      "seller_name" => "",
-      "seller_surname" => "",
-      "seller_account_number" => ""
-    })
-  end
-
-  def populate_seller(%{"seller_id" => seller_id} = sales_invoice) do
-    seller = SalesInvoices.get_seller!(seller_id)
-
-    Map.merge(sales_invoice, %{
-      "seller_nip" => seller.nip,
-      "seller_display_name" => seller.display_name,
-      "seller_address" => seller.address,
-      "seller_name" => seller.name,
-      "seller_surname" => seller.surname,
-      "seller_account_number" => seller.account_number,
-      "is_seller_confirmed" => true
-    })
-  end
-
-  def populate_seller(sales_invoice), do: sales_invoice
 
   def populate_buyer(%{"buyer_id" => ""} = sales_invoice) do
     Map.merge(sales_invoice, %{
@@ -306,15 +266,11 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
 
   def handle_event("submit", %{"sales_invoice" => sales_invoice} = params, socket) do
     {socket, buyer_id} = socket |> maybe_create_or_update_buyer(params)
-    {socket, seller_id} = socket |> maybe_create_or_update_seller(params)
 
-    sales_invoice = sales_invoice |> populate_seller() |> populate_buyer()
+    sales_invoice = sales_invoice |> populate_buyer()
 
     sales_invoice =
       if buyer_id != nil, do: Map.put(sales_invoice, "buyer_id", buyer_id), else: sales_invoice
-
-    sales_invoice =
-      if seller_id != nil, do: Map.put(sales_invoice, "seller_id", seller_id), else: sales_invoice
 
     user = socket.assigns.current_user
 
@@ -351,43 +307,6 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
 
     handle_event("change", %{"sales_invoice" => sales_invoice}, socket)
   end
-
-  defp maybe_create_or_update_seller(socket, %{
-         "action" => "add_or_update_seller",
-         "sales_invoice" => sales_invoice
-       }) do
-    seller_id = socket.assigns.sales_invoice.seller_id
-    user = socket.assigns.current_user
-
-    attrs = %{
-      nip: sales_invoice["seller_nip"],
-      display_name: sales_invoice["seller_display_name"],
-      name: sales_invoice["seller_name"],
-      surname: sales_invoice["seller_surname"],
-      address: sales_invoice["seller_address"],
-      account_number: sales_invoice["seller_account_number"]
-    }
-
-    case seller_id do
-      id when id in [nil, ""] ->
-        Bodyguard.permit!(SalesInvoices, :create_seller, user)
-        SalesInvoices.create_seller(attrs)
-
-      id ->
-        Bodyguard.permit!(SalesInvoices, :update_seller, user)
-        SalesInvoices.update_seller(SalesInvoices.get_seller!(id), attrs)
-    end
-    |> case do
-      {:ok, seller} ->
-        {socket, seller.id}
-
-      {:error, _} ->
-        LiveToast.send_toast(:error, "Nie udało się zapisać sprzedawcy")
-        {socket, nil}
-    end
-  end
-
-  defp maybe_create_or_update_seller(socket, _params), do: {socket, nil}
 
   defp maybe_create_or_update_buyer(socket, %{
          "action" => "add_or_update_buyer",

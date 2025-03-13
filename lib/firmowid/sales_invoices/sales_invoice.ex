@@ -56,7 +56,6 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
     belongs_to :organization, Firmowid.Accounts.Organization
     belongs_to :buyer, Firmowid.SalesInvoices.Buyer
-    belongs_to :seller, Firmowid.SalesInvoices.Seller
 
     timestamps()
   end
@@ -132,7 +131,6 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   def seller_changeset(sales_invoice, attrs \\ %{}) do
     sales_invoice
     |> cast(attrs, [
-      :seller_id,
       :seller_nip,
       :seller_display_name,
       :seller_address,

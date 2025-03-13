@@ -89,7 +89,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.BuyerForm do
           <div>
             <p class="font-semibold text-darkGrey mb-8">
               {case @sales_invoice.buyer_type do
-                :company -> "Firma/ Jednoosobowa Działalność Gospodarcza"
+                :company -> "Firma / Jednoosobowa Działalność Gospodarcza"
                 :individual -> "Osoba prywatna"
               end}
             </p>
@@ -145,7 +145,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.BuyerForm do
             >
               <div class="bg-greyButtonBg/50 px-5 h-[50px] flex items-center rounded-md">
                 <.radio_group class="gap-8" field={@buyer_form[:buyer_type]}>
-                  <:radio value="company">Firma/ Jednoosobowa Działalność Gospodarcza</:radio>
+                  <:radio value="company">Firma / Jednoosobowa Działalność Gospodarcza</:radio>
                   <:radio value="individual">Osoba prywatna</:radio>
                 </.radio_group>
               </div>

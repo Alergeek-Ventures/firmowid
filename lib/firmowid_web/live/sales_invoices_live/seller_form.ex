@@ -6,7 +6,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.SellerForm do
 
   attr :seller_form, :list, required: true
   attr :sales_invoice, :map, required: true
-  attr :sellers, :list, required: false, default: []
+  attr :bank_accounts, :list, required: true
   attr :is_seller_dirty, :boolean, required: false, default: false
 
   def seller_form(assigns) do
@@ -19,7 +19,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.SellerForm do
           type="hidden"
           field={@seller_form[:is_seller_confirmed]}
           value={
-            if !@sales_invoice.seller_id or @sales_invoice.seller_id == "" do
+            if @sales_invoice.seller_account_number != "" do
               "true"
             else
               "false"
@@ -27,11 +27,19 @@ defmodule FirmowidWeb.SalesInvoicesLive.SellerForm do
           }
         />
         <.input
-          field={@seller_form[:seller_id]}
+          field={@seller_form[:seller_account_number]}
           type="select"
           class="bg-greyButtonBg text-darkGrey rounded-md border-none text-sm h-7 py-0 w-auto max-w-80 mb-2"
           prompt="WYBIERZ Z LISTY"
-          options={@sellers |> Enum.map(fn s -> {s.display_name, s.id} end)}
+          options={
+            @bank_accounts
+            |> Enum.map(fn bank_account ->
+              {
+                "[#{bank_account.currency}] #{bank_account.institution_name} #{bank_account.iban} #{if bank_account.is_default and bank_account.currency == @sales_invoice.currency, do: "[domyślne dla waluty]"}",
+                bank_account.iban
+              }
+            end)
+          }
         />
       </.form>
       <%= if @sales_invoice.is_seller_confirmed do %>
@@ -48,7 +56,12 @@ defmodule FirmowidWeb.SalesInvoicesLive.SellerForm do
             <span class="text-darkGrey">Adres </span>
             <span>{@sales_invoice.seller_address}</span>
             <span class="text-darkGrey">Nr konta </span>
-            <span>{@sales_invoice.seller_account_number}</span>
+            <span>
+              {case @sales_invoice.seller_account_number do
+                nil -> "Wybierz z listy powyżej lub wprowadź ręcznie"
+                account_number -> account_number
+              end}
+            </span>
           </div>
           <.edit_button phx-click={
             JS.push("submit", value: %{"sales_invoice" => %{"is_seller_confirmed" => false}})
@@ -103,30 +116,6 @@ defmodule FirmowidWeb.SalesInvoicesLive.SellerForm do
               >
                 Zatwierdź
               </.button>
-              <%= if !@sales_invoice.seller_id or @sales_invoice.seller_id == "" do %>
-                <.button
-                  phx-disable-with="Dodawanie..."
-                  variant="outline"
-                  name="action"
-                  value="add_or_update_seller"
-                  color="green"
-                  class="mt-2"
-                >
-                  Dodaj
-                </.button>
-              <% else %>
-                <.button
-                  phx-disable-with="Aktualizowanie..."
-                  variant="outline"
-                  name="action"
-                  value="add_or_update_seller"
-                  color="green"
-                  class="mt-2"
-                  disabled={not @is_seller_dirty}
-                >
-                  Aktualizuj
-                </.button>
-              <% end %>
             </div>
           </div>
         </.form>

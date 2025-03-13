@@ -64,8 +64,10 @@
     id="basic_info_form"
     class={[
       "flex items-end mt-4 p-4 gap-8 rounded-md",
-      @sales_invoice.is_basic_info_confirmed && "border-greyButtonBg border border-solid",
-      !@sales_invoice.is_basic_info_confirmed && "bg-greyButtonBg bg-opacity-50"
+      @sales_invoice.is_basic_info_confirmed &&
+        "border-greyButtonBg border border-solid",
+      !@sales_invoice.is_basic_info_confirmed &&
+        "bg-greyButtonBg bg-opacity-50"
     ]}
   >
     <%= if @sales_invoice.is_basic_info_confirmed do %>
@@ -182,7 +184,7 @@
       is_seller_dirty={@is_seller_dirty}
       sales_invoice={@sales_invoice}
       seller_form={@form}
-      sellers={@sellers}
+      bank_accounts={@bank_accounts}
     />
     <.buyer_form
       is_buyer_dirty={@is_buyer_dirty}
@@ -201,7 +203,7 @@
     />
     <div class="flex justify-between">
       <.form phx-change="submit" for={@form} class="mt-4">
-        <%= if  @sales_invoice.invoice_type == :poland and @current_org.is_vat_payer do %>
+        <%= if @sales_invoice.invoice_type==:poland and @current_org.is_vat_payer do %>
           <.input
             field={@form[:is_cash_account]}
             type="checkbox"
@@ -209,7 +211,7 @@
             class="font-normal text-darkGrey"
           />
         <% end %>
-        <%= if  @sales_invoice.invoice_type == :foreign do %>
+        <%= if @sales_invoice.invoice_type==:foreign do %>
           <.input
             field={@form[:is_reverse_charge]}
             type="checkbox"
@@ -220,7 +222,7 @@
       </.form>
       <div class="bg-greyButtonBg w-96 rounded-md px-4 py-3 mt-10 bg-opacity-30 ml-auto">
         <div class="flex flex-col justify-end">
-          <%= if  @sales_invoice.invoice_type == :poland do %>
+          <%= if @sales_invoice.invoice_type==:poland do %>
             <div class="flex justify-between items-center mt-2">
               <span class="text-sm text-darkGrey">Suma netto</span>
               <span>
@@ -249,8 +251,8 @@
               </span>
             </div>
           <% end %>
-          <%= if  @sales_invoice.invoice_type == :foreign do %>
-            <%= if @sales_invoice.currency != "PLN" do %>
+          <%= if @sales_invoice.invoice_type==:foreign do %>
+            <%= if @sales_invoice.currency !="PLN" do %>
               <div class="flex gap-2 justify-between items-center">
                 <div class="flex flex-col">
                   <span class="text-sm">Kurs 1 {@sales_invoice.currency}</span>
