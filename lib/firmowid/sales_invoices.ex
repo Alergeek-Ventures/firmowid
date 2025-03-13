@@ -136,6 +136,39 @@ defmodule Firmowid.SalesInvoices do
     |> populate_logo_url()
   end
 
+  def get_next_invoice_number(date \\ Date.utc_today()) do
+    year = date.year
+    month = date.month
+
+    # Get latest invoice from given month
+    latest_invoice =
+      SalesInvoice
+      |> where([i], fragment("date_part('year', ?)", i.issue_date) == ^year)
+      |> where([i], fragment("date_part('month', ?)", i.issue_date) == ^month)
+      |> order_by(desc: :invoice_number)
+      |> limit(1)
+      |> Repo.one()
+
+    case latest_invoice do
+      nil ->
+        # First invoice of the month
+        "01/#{String.pad_leading("#{month}", 2, "0")}/#{year}"
+
+      invoice ->
+        # Extract current number and increment
+        case Regex.run(~r/^(\d+)\/\d+\/\d+$/, invoice.invoice_number) do
+          [_, current_num] ->
+            next_num = String.to_integer(current_num) + 1
+            # Format with leading zeros to 2 digits
+            "#{String.pad_leading("#{next_num}", 2, "0")}/#{String.pad_leading("#{month}", 2, "0")}/#{year}"
+
+          nil ->
+            # Fallback if pattern doesn't match
+            "01/#{String.pad_leading("#{month}", 2, "0")}/#{year}"
+        end
+    end
+  end
+
   def create_sales_invoice(%SalesInvoice{} = invoice, attrs) do
     invoice
     |> SalesInvoice.changeset(attrs)

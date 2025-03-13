@@ -91,45 +91,47 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
     organization = socket.assigns.current_user.organization
 
     sales_invoice =
-      struct(
-        SalesInvoice,
-        %{
-          payment_method: "Przelew",
-          issue_date: Date.utc_today(),
-          sale_date: Date.utc_today(),
-          due_date: Date.utc_today()
-        }
-        |> Map.merge(
-          Map.take(last_sales_invoice, [
-            :payment_method,
-            :issue_date,
-            :sale_date,
-            :due_date,
-            :is_cash_account,
-            :is_reverse_charge
-          ])
-        )
-        |> Map.merge(%{
-          invoice_number: "",
-          invoice_type: :poland,
-          currency: "PLN",
-          organization_id: Firmowid.Repo.get_org_id(),
-          sales_invoice_items: [],
-          buyer_type: :company,
-          is_basic_info_confirmed: false,
-          is_seller_confirmed: true,
-          is_buyer_confirmed: false,
-          are_sales_invoice_items_confirmed: false
-        })
-        |> Map.merge(%{
-          seller_nip: organization.identification_number,
-          seller_display_name: organization.name,
-          seller_address: organization.address,
-          seller_name: organization.name,
-          seller_surname: nil,
-          seller_account_number: nil
-        })
+      %{
+        payment_method: "Przelew",
+        issue_date: Date.utc_today(),
+        sale_date: Date.utc_today(),
+        due_date: Date.utc_today()
+      }
+      |> Map.merge(
+        Map.take(last_sales_invoice, [
+          :payment_method,
+          :issue_date,
+          :sale_date,
+          :due_date,
+          :is_cash_account,
+          :is_reverse_charge
+        ])
       )
+
+    sales_invoice =
+      sales_invoice
+      |> Map.merge(%{
+        invoice_number: SalesInvoices.get_next_invoice_number(sales_invoice.issue_date),
+        invoice_type: :poland,
+        currency: "PLN",
+        organization_id: Firmowid.Repo.get_org_id(),
+        sales_invoice_items: [],
+        buyer_type: :company,
+        is_basic_info_confirmed: false,
+        is_seller_confirmed: true,
+        is_buyer_confirmed: false,
+        are_sales_invoice_items_confirmed: false
+      })
+      |> Map.merge(%{
+        seller_nip: organization.identification_number,
+        seller_display_name: organization.name,
+        seller_address: organization.address,
+        seller_name: organization.name,
+        seller_surname: nil,
+        seller_account_number: nil
+      })
+
+    sales_invoice = struct(SalesInvoice, sales_invoice)
 
     form =
       sales_invoice
