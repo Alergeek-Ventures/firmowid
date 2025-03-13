@@ -44,6 +44,17 @@ defmodule FirmowidWeb.InvoicingLive.Index do
         connected_bank_accounts > 0
       )
 
+    active_months =
+      Invoicing.get_all_months_with_invoicing_entries() ++
+        [Date.utc_today()]
+
+    socket =
+      socket
+      |> assign(
+        :active_months,
+        active_months
+      )
+
     {:ok, socket}
   end
 

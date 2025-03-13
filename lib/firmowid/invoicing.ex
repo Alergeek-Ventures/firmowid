@@ -13,11 +13,70 @@ defmodule Firmowid.Invoicing do
 
   require Logger
 
+  alias Firmowid.Repo
+  import Ecto.Query, warn: false
+
   @behaviour Bodyguard.Policy
 
   def authorize(_, %User{role: :admin}, _), do: true
 
   def authorize(_, _, _), do: false
+
+  @doc """
+  Returns all months with invoicing entries - so all months where Firmowid can function.
+  Useful e.g. for the invoicing live view's date picker.
+  """
+  def get_all_months_with_invoicing_entries() do
+    transactions_query =
+      from(t in Transaction,
+        select: %{
+          date_string:
+            fragment(
+              "date_trunc('month', ?)",
+              t.booking_date
+            ),
+          organization_id: t.organization_id
+        }
+      )
+
+    sales_invoices_query =
+      from(si in Firmowid.SalesInvoices.SalesInvoice,
+        select: %{
+          date_string:
+            fragment(
+              "date_trunc('month', ?)",
+              si.issue_date
+            ),
+          organization_id: si.organization_id
+        }
+      )
+
+    cost_invoices_query =
+      from(ci in Firmowid.CostInvoices.CostInvoice,
+        select: %{
+          date_string:
+            fragment(
+              "date_trunc('month', ?)",
+              ci.issue_date
+            ),
+          organization_id: ci.organization_id
+        }
+      )
+
+    union_query =
+      transactions_query
+      |> union(^sales_invoices_query)
+      |> union(^cost_invoices_query)
+
+    from(u in subquery(union_query),
+      select: %{
+        date: u.date_string
+      },
+      distinct: true
+    )
+    |> Repo.all()
+    |> Enum.map(& &1.date)
+  end
 
   def get_invoicing_entries(from, to, filter) do
     case filter do
