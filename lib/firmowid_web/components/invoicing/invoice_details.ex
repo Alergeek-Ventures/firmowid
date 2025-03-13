@@ -133,6 +133,23 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
       <div class="flex flex-row justify-end gap-2">
         <%= if not @is_cost_invoice do %>
           <.link
+            id="copy-invoice-link"
+            phx-hook="Tippy"
+            data-tippy-content="Skopiuj fakturę"
+            data-tippy-delay="1000"
+            class={[
+              "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
+              "px-2 py-1 flex items-center justify-center rounded"
+            ]}
+            navigate={~p"/sprzedazowe?skopiuj=#{@invoice_id}"}
+          >
+            <.icon name="hero-document-duplicate" class="w-5 h-5" />
+          </.link>
+          <.link
+            id="edit-invoice-link"
+            phx-hook="Tippy"
+            data-tippy-content="Edytuj fakturę"
+            data-tippy-delay="1000"
             class={[
               "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
               "px-2 py-1 flex items-center justify-center rounded"
@@ -143,6 +160,10 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
           </.link>
         <% end %>
         <button
+          id="delete-invoice-button"
+          phx-hook="Tippy"
+          data-tippy-content="Usuń fakturę"
+          data-tippy-delay="1000"
           class={[
             "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
             "px-2 py-1 flex items-center justify-center rounded"

@@ -38,8 +38,29 @@ defmodule Firmowid.SalesInvoices do
 
   def populate_logo_url(nil), do: nil
 
-  def list_sales_invoices do
+  def list_sales_invoices() do
     Repo.all(SalesInvoice)
+  end
+
+  def search_sales_invoices(search_term) do
+    SalesInvoice
+    |> where(
+      [i],
+      ilike(i.invoice_number, ^"%#{search_term}%") or
+        ilike(i.buyer_name, ^"%#{search_term}%") or
+        ilike(i.buyer_display_name, ^"%#{search_term}%") or
+        ilike(i.buyer_surname, ^"%#{search_term}%") or
+        ilike(i.buyer_address, ^"%#{search_term}%") or
+        ilike(i.buyer_nip, ^"%#{search_term}%") or
+        ilike(i.buyer_pesel, ^"%#{search_term}%")
+    )
+    |> join(:left, [i], items in assoc(i, :sales_invoice_items))
+    |> group_by([i], i.id)
+    |> having([i, items], count(items.id) > 0)
+    |> limit(15)
+    |> order_by(desc: :updated_at)
+    |> Repo.all()
+    |> Repo.preload(:sales_invoice_items)
   end
 
   @doc """

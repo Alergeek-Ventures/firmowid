@@ -28,7 +28,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
 
     socket =
       socket
-      |> assign_sales_invoice(sales_invoice)
+      |> assign_sales_invoice(sales_invoice, params)
       |> assign_bank_accounts()
       |> assign_buyers()
       |> assign(nip_form: to_form(%{"nip" => ""}))
@@ -66,7 +66,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
     end
   end
 
-  def assign_sales_invoice(socket, %SalesInvoice{} = sales_invoice) do
+  def assign_sales_invoice(socket, %SalesInvoice{} = sales_invoice, _) do
     form =
       sales_invoice
       |> SalesInvoice.changeset()
@@ -85,12 +85,11 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
     |> push_navigate(to: ~p"/sprzedazowe")
   end
 
-  def assign_sales_invoice(socket, :new_invoice) do
+  def assign_sales_invoice(socket, :new_invoice, params) do
+    organization = socket.assigns.current_user.organization
     last_sales_invoice = SalesInvoices.get_latest_sales_invoice() || %{}
 
-    organization = socket.assigns.current_user.organization
-
-    sales_invoice =
+    base_sales_invoice =
       %{
         payment_method: "Przelew",
         issue_date: Date.utc_today(),
@@ -107,22 +106,15 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
           :is_reverse_charge
         ])
       )
-
-    sales_invoice =
-      sales_invoice
       |> Map.merge(%{
-        invoice_number: SalesInvoices.get_next_invoice_number(sales_invoice.issue_date),
-        invoice_type: :poland,
-        currency: "PLN",
+        invoice_number: SalesInvoices.get_next_invoice_number(Date.utc_today()),
         organization_id: Firmowid.Repo.get_org_id(),
         sales_invoice_items: [],
         buyer_type: :company,
         is_basic_info_confirmed: false,
         is_seller_confirmed: true,
         is_buyer_confirmed: false,
-        are_sales_invoice_items_confirmed: false
-      })
-      |> Map.merge(%{
+        are_sales_invoice_items_confirmed: false,
         seller_nip: organization.identification_number,
         seller_display_name: organization.name,
         seller_address: organization.address,
@@ -131,7 +123,75 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
         seller_account_number: nil
       })
 
-    sales_invoice = struct(SalesInvoice, sales_invoice)
+    sales_invoice =
+      cond do
+        # Copy from existing invoice
+        params["skopiuj"] ->
+          sales_invoice_to_copy = SalesInvoices.get_sales_invoice(params["skopiuj"])
+
+          data_to_copy =
+            sales_invoice_to_copy
+            |> Map.take([
+              :buyer_id,
+              :buyer_nip,
+              :buyer_display_name,
+              :buyer_name,
+              :buyer_surname,
+              :buyer_address,
+              :buyer_country,
+              :buyer_email,
+              :buyer_phone,
+              :buyer_description,
+              :buyer_pesel,
+              :buyer_type,
+              :currency,
+              :is_reverse_charge,
+              :is_cash_account,
+              :invoice_type
+            ])
+
+          sales_invoice_items =
+            sales_invoice_to_copy.sales_invoice_items
+            |> Enum.map(fn item ->
+              %{
+                name: item.name,
+                quantity: item.quantity,
+                unit: item.unit,
+                unit_price: item.unit_price,
+                vat_rate: item.vat_rate
+              }
+            end)
+
+          base_sales_invoice
+          |> Map.merge(%{
+            invoice_type: :poland,
+            currency: "PLN",
+            sales_invoice_items: sales_invoice_items
+          })
+          |> Map.merge(data_to_copy)
+
+        # Foreign invoice type
+        params["typ"] == "zagraniczny" ->
+          base_sales_invoice
+          |> Map.merge(%{
+            invoice_type: :foreign,
+            currency: "EUR",
+            is_reverse_charge: true
+          })
+
+        # Polish invoice type or empty params
+        params["typ"] == "polski" || !params["typ"] ->
+          base_sales_invoice
+          |> Map.merge(%{
+            invoice_type: :poland,
+            currency: "PLN"
+          })
+      end
+
+    sales_invoice =
+      %SalesInvoice{}
+      |> SalesInvoice.changeset(sales_invoice)
+      |> Ecto.Changeset.apply_changes()
 
     form =
       sales_invoice
@@ -141,6 +201,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
     socket
     |> assign(form: form)
     |> assign(sales_invoice: sales_invoice)
+    |> assign_currency()
     |> assign(sales_invoice_id: nil)
   end
 
