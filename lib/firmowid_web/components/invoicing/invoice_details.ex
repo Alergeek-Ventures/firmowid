@@ -389,7 +389,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         }] do %>
           <div class={[
             "flex flex-col gap-2",
-            metadata_label == "Kwota" && "items-end row-span-2 justify-center items-center"
+            metadata_label == "Kwota" && "row-span-2 justify-center items-center"
           ]}>
             <p class={[
               "text-sm text-darkGrey",
@@ -464,7 +464,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         }] do %>
           <div class={[
             "flex flex-col gap-2",
-            metadata_label == "Kwota" && "items-end row-span-2 justify-end items-end"
+            metadata_label == "Kwota" && "row-span-2 justify-end items-end"
           ]}>
             <p class={[
               "text-sm text-darkGrey"
