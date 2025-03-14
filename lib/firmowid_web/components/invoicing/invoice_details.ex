@@ -10,6 +10,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   attr :preview_type, :atom, required: true
 
   attr :potential_transactions, :list, default: []
+  attr :did_suggest_combo, :boolean, required: true
 
   attr :is_freeform_matching, :boolean, required: true
   attr :search_term, :string, required: true
@@ -80,6 +81,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
             is_cost_invoice={@is_cost_invoice}
             invoice={@invoice}
             potential_transactions={@potential_transactions}
+            did_suggest_combo={@did_suggest_combo}
           />
         </main>
       </div>
@@ -286,6 +288,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   attr :search_term, :string, required: true
   attr :search_results, :list, required: true
   attr :selected_transaction_ids, :list, required: true
+  attr :did_suggest_combo, :boolean, required: true
 
   defp invoice_action_view(assigns) do
     cond do
@@ -304,6 +307,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
           search_term={@search_term}
           search_results={@search_results}
           selected_transaction_ids={@selected_transaction_ids}
+          did_suggest_combo={@did_suggest_combo}
         />
         """
 
@@ -513,6 +517,31 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
             <.icon name="hero-chevron-left" class="w-4 h-4" /> Wróć do rekomendowanych
           </button>
         </div>
+
+        <%= if @did_suggest_combo do %>
+          <div class="flex flex-row items-center gap-4 p-4 bg-greenBg/[0.3] rounded max-w-[800px] text-darkGrey">
+            <div class="flex flex-col gap-2 flex-grow">
+              <p class="font-bold">
+                Dobraliśmy zestaw transakcji, które wydają się pasować do tej faktury.
+              </p>
+              <p class="text-sm">
+                Kryterium doboru to zgadzająca się suma, przedział dat oraz nazwa kontrahenta.
+              </p>
+            </div>
+
+            <div>
+              <.icon name="hero-square-3-stack-3d" class="w-8 h-8" />
+            </div>
+
+            <div>
+              <.icon name="hero-arrows-right-left" class="w-8 h-8" />
+            </div>
+
+            <div>
+              <.icon name="hero-document-text" class="w-8 h-8" />
+            </div>
+          </div>
+        <% end %>
 
         <div class="flex flex-row justify-between items-center my-5">
           <div class="flex flex-row gap-2 items-center">

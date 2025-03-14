@@ -23,6 +23,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
       |> assign(:potential_transactions, details.potential_transactions)
       |> assign(:is_freeform_matching, details.recommended_combo != nil)
       |> assign(:search_term, "")
+      |> assign(:did_suggest_combo, details.recommended_combo != nil)
       |> assign(
         :selected_transaction_ids,
         if details.recommended_combo == nil do
@@ -68,6 +69,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
       selected_transaction_ids={@selected_transaction_ids}
       search_term={@search_term}
       search_results={@search_results}
+      did_suggest_combo={@did_suggest_combo}
     />
     """
   end
