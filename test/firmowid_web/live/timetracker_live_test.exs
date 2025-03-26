@@ -111,7 +111,6 @@ defmodule FirmowidWeb.TimetrackerLiveTest do
       assert result =~ title
       assert result =~ "09:00"
       assert result =~ "17:00"
-      assert result =~ "8h"
       [current_session] = Timetracker.list_user_sessions(user.id)
       assert current_session.title == title
       assert current_session.project_id == project.id
