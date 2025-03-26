@@ -216,7 +216,15 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     ~H"""
     <div>
       <div class="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
-        <div>{@session.title}</div>
+        <div class="flex items-center gap-2 justify-center">
+          <div class="text-xs bg-darkGrey text-center text-white px-2 py-0.5 mt-0.5 rounded-full">
+            {case Enum.find(@projects, &(&1.id == @session.project_id)) do
+              nil -> "Brak projektu"
+              project -> project.name
+            end}
+          </div>
+          <div class="ml-2">{@session.title}</div>
+        </div>
         <div class="flex items-center space-x-4">
           <div>{format_time(@session.start_datetime)} - {format_time(@session.end_datetime)}</div>
           <div class="font-bold">{format_duration(Session.calculate_session_duration(@session))}</div>
@@ -352,7 +360,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
         session_end = session.end_datetime || DateTime.now!("Europe/Warsaw")
 
         DateTime.compare(session.start_datetime, start_of_month) in [:eq, :gt] &&
-        DateTime.compare(session_end, end_of_month) in [:eq, :lt]
+          DateTime.compare(session_end, end_of_month) in [:eq, :lt]
       end)
       |> calculate_total_duration()
 
