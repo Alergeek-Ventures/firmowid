@@ -349,8 +349,10 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     total_seconds =
       Timetracker.list_user_sessions(user_id)
       |> Enum.filter(fn session ->
-        session.start_datetime >= start_of_month &&
-          (session.end_datetime || DateTime.now!("Europe/Warsaw")) <= end_of_month
+        session_end = session.end_datetime || DateTime.now!("Europe/Warsaw")
+
+        DateTime.compare(session.start_datetime, start_of_month) in [:eq, :gt] &&
+        DateTime.compare(session_end, end_of_month) in [:eq, :lt]
       end)
       |> calculate_total_duration()
 
