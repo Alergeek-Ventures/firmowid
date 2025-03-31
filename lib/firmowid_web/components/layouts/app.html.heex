@@ -90,6 +90,7 @@
     <LiveToast.toast_group
       flash={@flash}
       connected={assigns[:socket] != nil}
+      toasts_sync={assigns[:toasts_sync]}
       toast_class_fn={&FirmowidWeb.toast_class_fn/1}
     />
     {@inner_content}

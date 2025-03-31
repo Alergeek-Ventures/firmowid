@@ -4,7 +4,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Create do
   alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.SalesInvoice
 
-  def mount(params, _session, socket) do
+  def mount(_params, _session, socket) do
     sales_invoices = SalesInvoices.search_sales_invoices("")
 
     socket =
@@ -33,7 +33,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Create do
         <div class="flex flex-col gap-4 mb-8">
           <h2 class="text-lg font-bold">Znajdź odpowiednią fakturę</h2>
           <div class="flex flex-row gap-4 items-center justify-start mb-4">
-            <.form phx-change="search-term">
+            <.form for={nil} phx-change="search-term">
               <label class="flex flex-row gap-2 items-center justify-start bg-greyButtonBg px-2 py-1 rounded max-w-[400px]">
                 <.icon name="hero-magnifying-glass-solid" class="w-6 h-6" />
                 <input

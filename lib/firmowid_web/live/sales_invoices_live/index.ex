@@ -79,12 +79,6 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
     |> assign_currency()
   end
 
-  def assign_sales_invoice(socket, nil) do
-    socket
-    |> put_flash(:error, "Nie znaleziono faktury")
-    |> push_navigate(to: ~p"/sprzedazowe")
-  end
-
   def assign_sales_invoice(socket, :new_invoice, params) do
     organization = socket.assigns.current_user.organization
     last_sales_invoice = SalesInvoices.get_latest_sales_invoice() || %{}
@@ -203,6 +197,12 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
     |> assign(sales_invoice: sales_invoice)
     |> assign_currency()
     |> assign(sales_invoice_id: nil)
+  end
+
+  def assign_sales_invoice(socket, nil) do
+    socket
+    |> put_flash(:error, "Nie znaleziono faktury")
+    |> push_navigate(to: ~p"/sprzedazowe")
   end
 
   def assign_buyer_form_state(%{assigns: %{sales_invoice: sales_invoice}} = socket, desired_state) do

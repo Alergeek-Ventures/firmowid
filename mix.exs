@@ -74,7 +74,7 @@ defmodule Firmowid.MixProject do
       {:mime, "~> 2.0"},
       {:akin, "~> 0.2.0"},
       {:openai, "~> 0.6.2"},
-      {:live_toast, "~> 0.6.4"},
+      {:live_toast, "~> 0.8.0"},
       {:packmatic, "~> 1.2.0"},
       {:image, "~> 0.37"},
       {:briefly, "~> 0.5.0"},

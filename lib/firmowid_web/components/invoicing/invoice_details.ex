@@ -517,6 +517,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   attr :search_term, :string, required: true
   attr :search_results, :list, required: true
   attr :selected_transaction_ids, :list, required: true
+  attr :did_suggest_combo, :boolean, required: true
 
   defp invoice_potential_transactions(%{is_freeform_matching: true} = assigns) do
     ~H"""
