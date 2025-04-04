@@ -14,6 +14,13 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
     Bodyguard.permit!(Invoicing, :read, user)
 
+    Posthog.capture("invoicing_view", %{
+      distinct_id: user.id,
+      properties: %{
+        organization_id: organization_id
+      }
+    })
+
     if connected?(socket) do
       CostInvoices.subscribe_cost_invoice_broadcast(organization_id)
       Finances.subscribe_transaction_broadcast(organization_id)
@@ -293,6 +300,13 @@ defmodule FirmowidWeb.InvoicingLive.Index do
           {:error, {:blob_already_exists, blob_checksum}} ->
             cost_invoice = CostInvoices.get_cost_invoice_by_checksum!(blob_checksum)
 
+            Posthog.capture("cost_invoice_upload_duplicate", %{
+              distinct_id: socket.assigns.current_user.id,
+              properties: %{
+                organization_id: socket.assigns.current_user.organization_id
+              }
+            })
+
             LiveToast.send_toast(
               :info,
               "Ta faktura jest już w systemie",
@@ -314,12 +328,26 @@ defmodule FirmowidWeb.InvoicingLive.Index do
             )
 
           {:error, :failure} ->
+            Posthog.capture("cost_invoice_upload_failure", %{
+              distinct_id: socket.assigns.current_user.id,
+              properties: %{
+                organization_id: socket.assigns.current_user.organization_id
+              }
+            })
+
             LiveToast.send_toast(
               :error,
               "Nie udało się wgrać pliku"
             )
 
           _ ->
+            Posthog.capture("cost_invoice_upload", %{
+              distinct_id: socket.assigns.current_user.id,
+              properties: %{
+                organization_id: socket.assigns.current_user.organization_id
+              }
+            })
+
             nil
         end
 
