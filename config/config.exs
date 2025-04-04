@@ -7,6 +7,10 @@
 # General application configuration
 import Config
 
+config :posthog,
+  api_url: "https://eu.i.posthog.com",
+  api_key: "REMOVED_POSTHOG_PROJECT_KEY"
+
 config :firmowid,
   ecto_repos: [Firmowid.Repo],
   generators: [timestamp_type: :utc_datetime],
