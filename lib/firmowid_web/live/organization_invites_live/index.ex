@@ -2,6 +2,7 @@ defmodule FirmowidWeb.OrganizationInvitesLive.Index do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Accounts
+  alias Posthog
 
   @impl true
   def mount(_params, _session, socket) do
@@ -25,11 +26,20 @@ defmodule FirmowidWeb.OrganizationInvitesLive.Index do
 
     organization_id = current_user.organization_id
 
-    with {:ok, _} <-
+    with {:ok, invite} <-
            Accounts.create_organization_invites(
              organization_id,
              current_user.id
            ) do
+      Posthog.capture("organization_invite_created", %{
+        distinct_id: current_user.id,
+        properties: %{
+          organization_id: organization_id,
+          invite_id: invite.id,
+          expires_at: invite.expires_at
+        }
+      })
+
       {:noreply, socket}
     end
   end

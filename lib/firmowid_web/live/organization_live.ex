@@ -2,6 +2,7 @@ defmodule FirmowidWeb.OrganizationLive do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Accounts
+  alias Posthog
 
   @impl true
   def render(assigns) do
@@ -103,10 +104,19 @@ defmodule FirmowidWeb.OrganizationLive do
 
     address = "#{address.street} #{address.number}, #{address.postal_code} #{address.city}"
 
-    {:ok, _organization} =
+    {:ok, organization} =
       organization
       |> Map.put("address", address)
       |> Accounts.create_organization(user)
+
+    Posthog.capture("organization_created", %{
+      distinct_id: user.id,
+      properties: %{
+        organization_id: organization.id,
+        organization_name: organization.name,
+        identification_number: organization.identification_number
+      }
+    })
 
     LiveToast.send_toast(:success, "Pomyślnie utworzono organizację")
 
@@ -117,12 +127,20 @@ defmodule FirmowidWeb.OrganizationLive do
   def handle_event("join", %{"code" => invite_code}, socket) do
     user = socket.assigns.current_user
 
-    {:ok, _} =
+    {:ok, organization_id} =
       Accounts.consume_organization_invite(
         invite_code
         |> String.trim(),
         user.id
       )
+
+    Posthog.capture("organization_invite_accepted", %{
+      distinct_id: user.id,
+      properties: %{
+        organization_id: organization_id,
+        invite_code: invite_code
+      }
+    })
 
     {:noreply, redirect(socket, to: "/")}
   end
