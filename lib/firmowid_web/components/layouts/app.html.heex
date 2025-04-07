@@ -64,7 +64,7 @@
       -translate-x-1/2 w-full top-[70px] bg-black text-left"
       >
         <.link navigate={~p"/ustawienia"} class="rounded-md p-2 hover:bg-darkGrey/50">
-          Mój profil
+          Ustawienia
         </.link>
         <%= if Bodyguard.permit?(Firmowid.BankData, :read_bank_accounts, @current_user) do %>
           <.link

@@ -40,6 +40,10 @@ defmodule FirmowidWeb.OrganizationInvitesLive.Index do
         }
       })
 
+      socket =
+        socket
+        |> assign(:organization_invites, Accounts.list_organization_invites(organization_id))
+
       {:noreply, socket}
     end
   end
