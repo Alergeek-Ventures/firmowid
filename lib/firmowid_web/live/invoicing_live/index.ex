@@ -6,13 +6,30 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   alias Firmowid.Finances
   alias Firmowid.Invoicing
   alias Firmowid.BankData
+  alias Firmowid.Accounts
 
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
+    organization = Accounts.get_organization_with_avatar(user.organization)
 
     Bodyguard.permit!(Invoicing, :read, user)
+
+    Posthog.capture("$set", %{
+      distinct_id: user.id,
+      properties: %{
+        "$set" => %{
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          system_role: user.system_role,
+          employment_date: user.employment_date,
+          organization_id: organization_id,
+          organization_name: organization.name
+        }
+      }
+    })
 
     Posthog.capture("invoicing_view", %{
       distinct_id: user.id,

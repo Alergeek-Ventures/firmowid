@@ -2,11 +2,38 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   alias FirmowidWeb.TimetrackerLive.SessionForm
   alias Firmowid.Timetracker.Session
   alias Firmowid.Timetracker
+  alias Firmowid.Accounts
   use FirmowidWeb, :live_view
 
   def mount(_params, _session, socket) do
     Bodyguard.permit!(Timetracker, :read_user_sessions, socket.assigns.current_user)
     Bodyguard.permit!(Timetracker, :read_user_projects, socket.assigns.current_user)
+
+    user = socket.assigns.current_user
+    organization_id = user.organization_id
+    organization = Accounts.get_organization_with_avatar(user.organization)
+
+    Posthog.capture("$set", %{
+      distinct_id: user.id,
+      properties: %{
+        "$set" => %{
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          system_role: user.system_role,
+          employment_date: user.employment_date,
+          organization_id: organization_id,
+          organization_name: organization.name
+        }
+      }
+    })
+
+    Posthog.capture("timetracker_view", %{
+      distinct_id: user.id,
+      properties: %{
+        organization_id: organization_id
+      }
+    })
 
     if connected?(socket), do: :timer.send_interval(5000, self(), :tick)
 
