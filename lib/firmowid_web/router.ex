@@ -23,6 +23,13 @@ defmodule FirmowidWeb.Router do
     pipe_through [:browser, :require_authenticated_user_with_organization, :require_superuser]
 
     live_dashboard "/dashboard",
+      ### TODO:
+      ### Ecto repo stats:
+      # - unused indices, adding how to remove them here (but didn't because they might be used)
+      #   - drop index(:oban_jobs, [:meta], prefix: "oban")
+      #   - drop index(:oban_jobs, [:args], prefix: "oban")
+      # -  Missing foreign key constraints detected:
+      #   - 'transactions'.'transaction_id' - false positive
       metrics: FirmowidWeb.Telemetry,
       additional_pages: [
         oban: Oban.LiveDashboard
