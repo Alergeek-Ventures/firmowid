@@ -24,7 +24,11 @@ defmodule FirmowidWeb.InvoicingLive.Index do
           name: user.name,
           role: user.role,
           system_role: user.system_role,
-          employment_date: user.employment_date,
+          employment_date:
+            case user.employment_date do
+              nil -> nil
+              date -> Date.to_iso8601(date)
+            end,
           organization_id: organization_id,
           organization_name: organization.name
         }
