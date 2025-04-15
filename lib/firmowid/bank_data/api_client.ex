@@ -162,7 +162,9 @@ defmodule Firmowid.BankData.ApiClient do
     options =
       [
         url: "https://bankaccountdata.gocardless.com/api/v2/accounts/#{account_id}/transactions",
-        auth: {:bearer, access_token}
+        auth: {:bearer, access_token},
+        receive_timeout: 120_000,
+        connect_options: [timeout: 120_000]
       ]
       |> Keyword.merge(Application.get_env(:firmowid, :bank_data_transactions, []))
 
