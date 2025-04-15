@@ -593,7 +593,7 @@ defmodule Firmowid.Invoicing do
       ) do
     {:ok, response} =
       OpenAI.chat_completion(
-        model: "gpt-4o-mini",
+        model: "gpt-4.1-mini",
         max_completion_tokens: 20,
         response_format: %{
           type: "json_schema",
