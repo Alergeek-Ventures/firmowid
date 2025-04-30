@@ -124,7 +124,7 @@
             class="w-full phx-click-loading:opacity-60 phx-click-loading:cursor-default"
             phx-click="toggle_extended_form"
           >
-            {if @is_form_extended, do: "Anuluj", else: " Wprowadź inną datę"}
+            {if @is_form_extended, do: "Anuluj", else: "Wprowadź inną datę"}
           </.button>
           <.button color="orange" class="w-full">
             {if @is_form_extended, do: "Zapisz", else: "Zacznij teraz"}
@@ -174,7 +174,12 @@
           <div class="shadow-sm rounded-lg">
             <div class="[&>*:nth-child(odd)]:bg-greyButtonBg">
               <%= for session <- sessions do %>
-                <.render_row session={session} projects={@projects} />
+                <.live_component
+                  module={FirmowidWeb.Components.Session}
+                  id={"tracker-entry-#{session.id}"}
+                  session={session}
+                  projects={@projects}
+                />
               <% end %>
             </div>
           </div>
