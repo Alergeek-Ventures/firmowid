@@ -87,7 +87,7 @@ defmodule Firmowid.MixProject do
       {:ecto_psql_extras, "~> 0.6"},
       {:any_ascii, "~> 0.3.2"},
       {:multipart, "~> 0.4.0"},
-      {:posthog, "~> 0.4.2"},
+      {:posthog, "~> 1.0.2"},
       {:reverse_proxy_plug, "~> 3.0"}
     ]
   end
