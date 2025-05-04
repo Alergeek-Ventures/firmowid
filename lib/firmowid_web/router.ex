@@ -73,6 +73,7 @@ defmodule FirmowidWeb.Router do
       live "/sprzedazowe/:id/edycja", SalesInvoicesLive.Index, :index
 
       live "/czasosledz/projekty", TimetrackerLive.Projects, :projects
+      live "/czasosledz/projekty/:id", TimetrackerLive.Projects, :projects
 
       live "/ustawienia/bank", BankSyncLive.Index, :index
       live "/ustawienia/bank/dodaj", BankSyncLive.Create, :index

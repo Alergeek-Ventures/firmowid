@@ -113,7 +113,9 @@ defmodule FirmowidWeb.CoreComponents do
   attr :color, :string,
     doc: "The button color.",
     default: "black",
-    values: ["black", "green", "red", "orange"]
+    values: ["black", "green", "red", "orange", "light_grey", "light_orange"]
+
+  attr :size, :string, default: "medium", values: ["medium", "small"]
 
   attr :type, :string,
     default: "submit",
@@ -139,11 +141,40 @@ defmodule FirmowidWeb.CoreComponents do
   def button_styles(assigns) do
     classes([
       "phx-submit-loading:opacity-75 phx-click-loading:opacity-75 phx-click-loading:cursor-default cursor-pointer rounded-md transition-all",
-      "duration-200 border py-2 px-3",
-      "text-sm font-semibold leading-6 disabled:opacity-40 active:text-white/80",
+      "duration-200 border py-2 px-3 leading-6",
+      "text-sm font-semibold disabled:opacity-40 active:text-white/80",
       button_styles(:color, assigns),
+      button_styles(:size, assigns),
       assigns[:class]
     ])
+  end
+
+  defp button_styles(:size, %{size: "medium", variant: "solid"}) do
+    "text-base py-2 px-4 font-bold"
+  end
+
+  defp button_styles(:size, %{size: "small", variant: "solid"}) do
+    "text-sm px-2 py-1 font-semibold"
+  end
+
+  defp button_styles(:size, %{size: "medium"}) do
+    "text-base py-2 px-4"
+  end
+
+  defp button_styles(:size, %{size: "small"}) do
+    "text-sm px-2 py-1"
+  end
+
+  defp button_styles(:size, _) do
+    button_styles(:size, %{size: "medium"})
+  end
+
+  defp button_styles(:color, %{color: "light_grey"}) do
+    "bg-greyButtonBg hover:border-darkGrey border border-transparent font-bold text-darkGrey"
+  end
+
+  defp button_styles(:color, %{color: "light_orange"}) do
+    "font-bold bg-orangeBg text-orangeText border-none hover:bg-[#f0e0d8] focus:outline-none focus:ring-1 focus:ring-orangeText"
   end
 
   defp button_styles(:color, %{color: "grey", variant: "outline"}) do
@@ -269,6 +300,15 @@ defmodule FirmowidWeb.CoreComponents do
   attr :multiple, :boolean, default: false, doc: "the multiple flag for select inputs"
 
   attr :input_class, :string, default: nil, doc: "the class to apply to the input tag"
+  attr :container_class, :string, default: nil, doc: "the class to apply to the container div"
+
+  attr :color, :string,
+    default: nil,
+    values: [nil, "black", "green", "red", "orange", "light_grey", "light_orange"]
+
+  attr :size, :string,
+    default: nil,
+    values: [nil, "medium", "small"]
 
   attr :rest, :global,
     include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
@@ -323,7 +363,7 @@ defmodule FirmowidWeb.CoreComponents do
 
   def input(%{type: "select"} = assigns) do
     ~H"""
-    <div>
+    <div class={@container_class}>
       <.label for={@id}>{@label}</.label>
       <select
         id={@id}
@@ -331,7 +371,9 @@ defmodule FirmowidWeb.CoreComponents do
         class={
           classes([
             "mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm",
-            @rest[:class]
+            @rest[:class],
+            @color && button_styles(:color, %{color: @color}),
+            @size && button_styles(:size, %{size: @size})
           ])
         }
         multiple={@multiple}
@@ -710,9 +752,9 @@ defmodule FirmowidWeb.CoreComponents do
 
   def date_picker(assigns) do
     ~H"""
-    <label class={classes(["flex w-44 justify-between gap-4 items-center h-full bg-greyButtonBg
-        hover:border-darkGrey border border-transparent transition-colors
-        rounded-lg py-1 px-3 max-md:hidden", @class])}>
+    <label class={classes(["flex justify-between gap-4 items-center bg-greyButtonBg
+        hover:border-darkGrey border border-transparent transition-colors font-bold px-4 py-[5px]
+        text-darkGrey h-[46px] max-w-[360px] w-full rounded-lg max-md:hidden", @class])}>
       <input
         type="button"
         phx-hook="AirDatepicker"
@@ -722,7 +764,16 @@ defmodule FirmowidWeb.CoreComponents do
         data-initial-date={@selected_date}
         {@rest}
       />
-      <.icon name="hero-calendar-days-solid" class="w-5 h-5 text-darkGrey max-md:hidden" />
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        class="max-md:hidden fill-darkGrey"
+      >
+        <path d="M12 12H17V17H12V12ZM19 3H18V1H16V3H8V1H6V3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 5V7H5V5H19ZM5 19V9H19V19H5Z" />
+      </svg>
     </label>
     """
   end

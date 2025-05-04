@@ -16,23 +16,22 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
     {:ok,
      socket
      |> assign(
-       users: fetch_users_with_avatars(),
-       projects: Timetracker.list_projects_with_users(),
+       projects: Timetracker.list_projects(),
        hours_records: fetch_hours_records(),
        form: to_form(Project.form_changeset()),
-       show_modal: false,
        editing_project: nil,
-       selected_date: current_date,
        active_months: Timetracker.get_months_with_sessions(socket.assigns.current_user.id),
-       selected_month_num: current_date.month,
-       selected_project_id: nil,
-       project_user_hours: []
+       selected_date: current_date,
+       selected_month_num: current_date.month
      )}
   end
 
-  defp fetch_users_with_avatars do
-    Timetracker.list_users_with_projects()
-    |> Enum.map(&Accounts.get_user_with_avatar/1)
+  @impl true
+  def handle_params(params, _, socket) do
+    {:noreply,
+     socket
+     |> assign(:selected_project_id, Map.get(params, "id"))
+     |> load_project_hours()}
   end
 
   defp fetch_hours_records do
@@ -56,20 +55,12 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
       Timetracker.add_user_to_project(user_id, project_id)
     end
 
-    {:noreply,
-     assign(socket,
-       users: Timetracker.list_users_with_projects() |> Enum.map(&Accounts.get_user_with_avatar/1)
-     )
-     |> assign(
-       :projects,
-       Timetracker.list_projects_with_users()
-     )}
+    {:noreply, assign(socket, :projects, Timetracker.list_projects())}
   end
 
   def handle_event("new", _params, socket) do
     {:noreply,
      assign(socket,
-       show_modal: true,
        editing_project: nil,
        form: to_form(Project.form_changeset())
      )}
@@ -81,14 +72,9 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
 
     {:noreply,
      assign(socket,
-       show_modal: true,
        editing_project: project,
        form: to_form(changeset)
      )}
-  end
-
-  def handle_event("close", _params, socket) do
-    {:noreply, assign(socket, show_modal: false)}
   end
 
   def handle_event("validate", %{"project" => params}, socket) do
@@ -114,22 +100,19 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
     project = Timetracker.get_project!(id)
     {:ok, _} = Timetracker.delete_project(project)
 
-    {:noreply, assign(socket, projects: Timetracker.list_projects_with_users())}
+    {:noreply, assign(socket, projects: Timetracker.list_projects())}
   end
 
-  def handle_event("close_modal", _, socket) do
-    {:noreply, assign(socket, show_modal: false)}
+  def handle_event("select_project", %{"_target" => ["reset"]}, socket) do
+    {:noreply, push_patch(socket, to: ~p"/czasosledz/projekty")}
   end
 
-  def handle_event("select_project", %{"selected_project" => project_id}, socket)
-      when project_id == "",
-      do: {:noreply, assign(socket, selected_project_id: nil, project_user_hours: [])}
+  def handle_event("select_project", %{"selected_project" => ""}, socket) do
+    {:noreply, push_patch(socket, to: ~p"/czasosledz/projekty")}
+  end
 
   def handle_event("select_project", %{"selected_project" => project_id}, socket) do
-    {:noreply,
-     socket
-     |> assign(:selected_project_id, project_id)
-     |> load_project_hours()}
+    {:noreply, push_patch(socket, to: ~p"/czasosledz/projekty/#{project_id}")}
   end
 
   @impl true
@@ -148,10 +131,7 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
 
     case Timetracker.create_project(params) do
       {:ok, _project} ->
-        {:noreply,
-         socket
-         |> assign(show_modal: false)
-         |> assign(:projects, Timetracker.list_projects_with_users())}
+        {:noreply, assign(socket, :projects, Timetracker.list_projects())}
 
       {:error, changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -163,17 +143,18 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
 
     case Timetracker.update_project(project, params) do
       {:ok, _project} ->
-        {:noreply,
-         socket
-         |> assign(show_modal: false)
-         |> assign(:projects, Timetracker.list_projects_with_users())}
+        {:noreply, assign(socket, :projects, Timetracker.list_projects())}
 
       {:error, changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
     end
   end
 
-  defp load_project_hours(%{assigns: %{selected_project_id: nil}} = socket), do: socket
+  defp load_project_hours(%{assigns: %{selected_project_id: nil}} = socket) do
+    socket
+    |> assign(:project_user_hours, [])
+    |> assign(:total_project_seconds, 0)
+  end
 
   defp load_project_hours(socket) do
     project_id = socket.assigns.selected_project_id
@@ -194,6 +175,7 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
 
   defp calculate_project_user_hours(project, project_id, month, year) do
     Enum.map(project.users, fn user ->
+      # wtf quering in loop
       total_sessions = Timetracker.get_user_project_sessions(user.id, project_id)
 
       {total_seconds, month_seconds} = calculate_session_durations(total_sessions, month, year)
@@ -211,8 +193,9 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
   defp calculate_session_durations(sessions, target_month, target_year) do
     total_seconds = sum_session_durations(sessions)
 
-    month_sessions = filter_sessions_by_month(sessions, target_month, target_year)
-    month_seconds = sum_session_durations(month_sessions)
+    month_seconds =
+      filter_sessions_by_month(sessions, target_month, target_year)
+      |> sum_session_durations()
 
     {total_seconds, month_seconds}
   end
@@ -236,63 +219,8 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
     |> Enum.sum()
   end
 
+  def format_duration(0), do: "0 h 0 min"
+  def format_duration_with_days(0), do: "0 d 0 h 0 min"
   defdelegate format_duration(seconds), to: TimeFormatter
   defdelegate format_duration_with_days(seconds), to: TimeFormatter
-
-  def project_details(assigns) do
-    ~H"""
-    <div class="grid gap-6 md:grid-cols-6">
-      <div class="space-y-2 w-full col-span-4">
-        <%= for user_hours <- @user_hours do %>
-          <div class="flex items-center bg-white rounded-md p-4 py-6 justify-between">
-            <div class="flex items-center gap-4">
-              <.avatar class="size-10 ring-1 ring-greyButtonBg/50">
-                <.avatar_image src={user_hours.user.avatar_url} alt="Avatar" />
-                <.avatar_fallback class="bg-blueBg text-blueText">
-                  {String.slice(user_hours.user.email || "", 0, 1) |> String.upcase()}
-                </.avatar_fallback>
-              </.avatar>
-              <span class="text-darkGrey">{user_hours.user.name || user_hours.user.email}</span>
-            </div>
-            <span class="font-medium">{trunc(user_hours.month_hours)} h</span>
-          </div>
-        <% end %>
-
-        <%= if Enum.empty?(@user_hours) do %>
-          <div class="py-8 bg-white rounded-md text-center text-darkGrey text-sm">
-            Brak danych o czasie pracy dla tego projektu.
-          </div>
-        <% end %>
-      </div>
-
-      <div class="flex flex-col col-span-2 gap-4">
-        <div class="space-y-2 border border-greyButtonBg p-4 rounded-md bg-white">
-          <h3 class="font-bold text-lg">{@project.name}</h3>
-          <p class="text-sm text-darkGrey">
-            Projekt utworzony: {Calendar.strftime(@project.inserted_at, "%d.%m.%Y r.")}
-          </p>
-        </div>
-
-        <div class="space-y-8 border border-greyButtonBg p-4 rounded-md bg-white">
-          <div>
-            <h3 class="font-bold mb-8">Podsumowanie:</h3>
-            <div>
-              <p class="mb-3">Przepracowane godziny w miesiącu:</p>
-              <p class="text-xl font-bold">{format_duration(@total_seconds)}</p>
-              <p class="text-sm text-darkGrey">{format_duration_with_days(@total_seconds)}</p>
-            </div>
-          </div>
-
-          <%= if most_active = Enum.max_by(@user_hours, & &1.month_hours, fn -> nil end) do %>
-            <div>
-              <p class="mb-3">Najbardziej aktywny użytkownik:</p>
-              <p class="text-xl font-bold">{format_duration(most_active.month_seconds)}</p>
-              <p class="text-sm text-darkGrey">{most_active.user.name || most_active.user.email}</p>
-            </div>
-          <% end %>
-        </div>
-      </div>
-    </div>
-    """
-  end
 end

@@ -13,6 +13,7 @@ defmodule Firmowid.Timetracker do
   alias Firmowid.Timetracker.ProjectUser
   alias Firmowid.Timetracker.Session
   alias Firmowid.Repo
+  alias Firmowid.Accounts.User
 
   def authorize(_, %{role: :admin}, _), do: true
 
@@ -46,6 +47,10 @@ defmodule Firmowid.Timetracker do
     |> Enum.sort_by(& &1.duration, :desc)
   end
 
+  def list_projects() do
+    Repo.all(Project)
+  end
+
   def list_projects_with_users() do
     Project
     |> Repo.all()
@@ -77,6 +82,26 @@ defmodule Firmowid.Timetracker do
   def get_project!(id), do: Repo.get!(Project, id) |> Repo.preload(:users)
 
   def get_project_with_users!(id), do: Repo.get!(Project, id) |> Repo.preload(:users)
+
+  # wip
+  def get_month_summary_by_project(project_id, month, year) do
+    query =
+      from u in User,
+        left_join: s in Session,
+        on: u.id == s.user_id,
+        where:
+          s.project_id == ^project_id and
+            fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^year),
+        group_by: u.id,
+        select: %{
+          user: u,
+          time_worked: sum(s.end_datetime - s.start_datetime) |> selected_as(:time_worked)
+        },
+        order_by: [desc: selected_as(:time_worked)]
+
+    Repo.all(query)
+  end
 
   def get_sessions_duration_in_project(project_id, user_id, month, year) do
     sessions =

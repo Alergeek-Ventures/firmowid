@@ -1,4 +1,4 @@
-<div class="container bg-lightGreyBg p-6">
+<div class="container p-6">
   <div class="flex justify-end gap-4">
     <%= if Bodyguard.permit?(Firmowid.Timetracker, :read_projects, @current_user) do %>
       <.link navigate={~p"/czasosledz/projekty"} class={button_styles(%{color: "grey"})}>
@@ -20,180 +20,10 @@
       Ewidencja
     </.link>
   </div>
-
-  <h2 class="text-xl font-semibold text-darkGrey mt-5">Ewidencje pracowników</h2>
-  <div class="mt-8">
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-greyButtonBg">
-        <thead class="bg-lightGreyBg">
-          <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-darkGrey uppercase tracking-wider">
-              Rok
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-darkGrey uppercase tracking-wider">
-              Miesiąc
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-darkGrey uppercase tracking-wider">
-              Liczba godzin
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-darkGrey uppercase tracking-wider">
-              Użytkownik
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-darkGrey uppercase tracking-wider">
-              Data utworzenia
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-darkGrey uppercase tracking-wider">
-              Akcje
-            </th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-greyButtonBg">
-          <%= for record <- @hours_records do %>
-            <tr class="hover:bg-lightGreyBg transition-colors">
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-darkGrey">
-                {record.year}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-darkGrey">
-                {record.month}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-darkGrey">
-                {record.number_of_hours}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-darkGrey">{record.user.name}</div>
-                <div class="text-xs text-darkGrey opacity-75">{record.user.email}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-darkGrey">
-                {Calendar.strftime(record.inserted_at, "%Y-%m-%d %H:%M")}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm">
-                <a
-                  href={~p"/czasosledz/ewidencja/#{record.id}"}
-                  download={"Ewidencja_#{record.year}_#{record.month}_#{record.user.name}.pdf"}
-                  class="text-orangeText hover:text-orange-700 transition-colors"
-                >
-                  Pobierz
-                </a>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="flex justify-between items-center mt-4">
-    <h2 class="text-xl font-semibold text-darkGrey">Projekty</h2>
-    <.button phx-click="new" phx-disable-with="Ładowanie...">
-      Dodaj projekt
-    </.button>
-  </div>
-
-  <div class="mt-4 mb-8">
-    <div class="bg-white rounded-lg shadow-sm">
-      <div class="p-4">
-        <h3 class="text-lg font-medium text-darkGrey mb-4">Lista projektów</h3>
-        <div class="divide-y">
-          <%= for project <- @projects do %>
-            <div class="py-3 flex items-center justify-between">
-              <span class="text-darkGrey">{project.name}</span>
-              <div class="flex gap-2">
-                <.button
-                  variant="outline"
-                  phx-click="edit"
-                  phx-value-id={project.id}
-                  phx-disable-with="Edytowanie..."
-                >
-                  Edytuj
-                </.button>
-                <.button
-                  variant="outline"
-                  phx-click="delete"
-                  phx-value-id={project.id}
-                  phx-disable-with="Usuwanie..."
-                  data-confirm="Czy na pewno chcesz usunąć ten projekt?"
-                >
-                  Usuń
-                </.button>
-              </div>
-            </div>
-          <% end %>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="mt-4">
-    <%= for user <- @users do %>
-      <div class="mb-4 rounded-lg bg-white shadow-sm">
-        <div class="p-4 border-b border-greyButtonBg/30">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-              <.avatar class="size-12 ring-2 ring-greyButtonBg/50">
-                <.avatar_image src={user.avatar_url} alt="Avatar" />
-                <.avatar_fallback class="bg-blueBg text-blueText">
-                  {String.slice(user.email, 0, 1) |> String.upcase()}
-                </.avatar_fallback>
-              </.avatar>
-              <p class="text-darkGrey font-medium">{user.email}</p>
-            </div>
-            <div class="flex items-center">
-              <span class="px-3 py-1 rounded-full text-sm bg-greenBg text-greenText">
-                {user.role}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div class="p-4">
-          <div class="flex gap-4">
-            <%= for project <- @projects do %>
-              <form phx-change="toggle_project">
-                <.input
-                  type="checkbox"
-                  label={project.name}
-                  value={Enum.any?(project.users, fn up -> up.id == user.id end)}
-                  name={"project[#{project.id}][#{user.id}]"}
-                  class="checked:bg-blueBg checked:border-blueText"
-                />
-              </form>
-            <% end %>
-          </div>
-        </div>
-      </div>
-    <% end %>
-  </div>
-
-  <.modal :if={@show_modal} id="project-modal" show={@show_modal} on_cancel={JS.push("close")}>
-    <div class="space-y-6">
-      <h2 class="text-lg font-semibold text-darkGrey">
-        {if @editing_project, do: "Edytuj projekt", else: "Nowy projekt"}
-      </h2>
-
-      <.form for={@form} phx-change="validate" phx-submit="save">
-        <.input field={@form[:name]} label="Nazwa projektu" />
-
-        <div class="mt-6 flex justify-end gap-4">
-          <.button
-            type="button"
-            phx-click="close_modal"
-            phx-disable-with="Zamykanie..."
-            variant="outline"
-          >
-            Anuluj
-          </.button>
-          <.button type="submit" phx-disable-with="Zapisywanie...">
-            Zapisz
-          </.button>
-        </div>
-      </.form>
-    </div>
-  </.modal>
-
-  <div class="mt-8">
-    <h2 class="text-xl font-semibold text-darkGrey mb-4">Godziny pracowników w projektach</h2>
-
-    <div class="mb-6 flex flex-wrap gap-4 items-end">
-      <form phx-change="select_project" class="w-full md:w-64">
+  
+  <div class="mt-20 grid gap-6 gap-y-8 grid-cols-[minmax(min-content,1fr),_min-content,_minmax(0,80px),_minmax(min-content,360px)]">
+    <div class="grid grid-cols-subgrid col-span-full">
+      <form phx-change="select_project" class="grid col-span-2 grid-cols-subgrid">
         <.input
           type="select"
           id="project_selector"
@@ -201,30 +31,149 @@
           value={@selected_project_id}
           options={Enum.map(@projects, &{&1.name, &1.id})}
           prompt="Wybierz projekt"
-          label="Projekt"
-          class="w-full"
+          class="sm:text-base mt-0 h-full"
+          color={if !@selected_project_id, do: "light_grey", else: "light_orange"}
+          size="medium"
         />
-      </form>
 
+        <.button
+          type="reset"
+          name="reset"
+          color={if @selected_project_id, do: "light_grey", else: "light_orange"}
+          class="text-nowrap"
+        >
+          Wszystkie projekty
+        </.button>
+      </form>
       <.date_picker
         id="selected_date"
         active_months={@active_months}
         selected_date={@selected_date}
-        class="h-full"
+        class="-col-start-1"
       />
     </div>
 
-    <%= if @selected_project_id do %>
-      <% selected_project = Enum.find(@projects, &(&1.id == @selected_project_id)) %>
-      <.project_details
-        project={selected_project}
-        user_hours={@project_user_hours}
-        total_seconds={@total_project_seconds}
-      />
-    <% else %>
-      <div class="bg-white rounded-lg shadow-sm p-8 text-center text-darkGrey">
-        Wybierz projekt z listy, aby zobaczyć szczegóły czasu pracy.
+    <div class="grid col-span-2 row-span-2 grid-rows-subgrid grid-cols-subgrid">
+      <div class="flex col-span-full">
+        <h2 class="font-bold">
+          {if @selected_project_id,
+            do: "Nad tym projektem pracują",
+            else: "Wszyscy współpracownicy"}
+        </h2>
+        <button
+          disabled={@editing_project}
+          class="h-6 w-8 rounded-md hover:bg-greyButtonBg text-darkGrey disabled:text-orangeText inline-flex items-center justify-center ml-1"
+        >
+          <.icon name="hero-pencil-square-micro" />
+        </button>
+        <.button
+          :if={@editing_project}
+          phx-click="edit"
+          color="light_orange"
+          size="small"
+          class="ml-auto"
+        >
+          Zatwierdź
+        </.button>
       </div>
-    <% end %>
+      <div class="space-y-2 grid grid-cols-subgrid col-span-full auto-rows-min">
+        <%= if @selected_project_id do %>
+          <%= for user_hours <- @project_user_hours do %>
+            <div class="flex items-center bg-white rounded-md p-4 justify-between col-span-full">
+              <div class="flex items-center gap-6">
+                <.avatar class="size-8 ring-1 ring-greyButtonBg/50">
+                  <.avatar_image src={user_hours.user.avatar_url} alt="Avatar" />
+                  <.avatar_fallback class="bg-blueBg text-blueText">
+                    {String.slice(user_hours.user.email || "", 0, 1) |> String.upcase()}
+                  </.avatar_fallback>
+                </.avatar>
+                <span class="text-darkGrey">
+                  {user_hours.user.name || user_hours.user.email}
+                </span>
+              </div>
+              <span>{trunc(user_hours.month_hours)} h</span>
+            </div>
+          <% end %>
+
+          <div
+            :if={Enum.empty?(@project_user_hours)}
+            class="py-8 bg-white rounded-md text-center text-darkGrey text-sm col-span-full"
+          >
+            Brak danych o czasie pracy dla tego projektu.
+          </div>
+          <.button :if={@editing_project} class="mt-4" color="light_grey" variant="outline">
+            Dodaj współpracownika
+          </.button>
+        <% else %>
+          <%= for record <- @hours_records do %>
+            <div class="grid grid-cols-subgrid col-span-full">
+              <div class="flex items-center bg-white rounded-md p-4 justify-between">
+                <div class="flex items-center gap-6">
+                  <.avatar class="size-8 ring-1 ring-greyButtonBg/50">
+                    <.avatar_image src={record.user.avatar_url} alt="Avatar" />
+                    <.avatar_fallback class="bg-blueBg text-blueText">
+                      {String.slice(record.user.email || "", 0, 1) |> String.upcase()}
+                    </.avatar_fallback>
+                  </.avatar>
+                  <span class="text-darkGrey">
+                    {record.user.name || record.user.email}
+                  </span>
+                </div>
+                <span>{trunc(record.number_of_hours)} h</span>
+              </div>
+              <div class="bg-white rounded-md p-4 justify-between items-center flex">
+                <div class="text-greenText bg-greenBg px-2 py-[5px] rounded-md flex items-center justify-center gap-1">
+                  <span class="text-[11px] font-semibold">
+                    EWIDENCJA
+                  </span>
+                  <.icon name="hero-check-micro" />
+                </div>
+                <a
+                  href={~p"/czasosledz/ewidencja/#{record.id}"}
+                  download={"Ewidencja_#{record.year}_#{record.month}_#{record.user.name}.pdf"}
+                  class="py-1 px-2 transition hover:bg-greyButtonBg rounded-md inline-flex items-center justify-center"
+                >
+                  <.icon name="hero-arrow-down-tray-micro" class="text-darkGrey" />
+                </a>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <div
+      :if={selected_project = Enum.find(@projects, &(&1.id == @selected_project_id))}
+      class="space-y-4 -col-end-1 row-start-3"
+    >
+      <div class="space-y-2 border border-greyButtonBg p-4 rounded-md bg-white">
+        <h3 class="font-bold text-lg">{selected_project.name}</h3>
+        <p class="text-sm text-darkGrey">
+          Projekt utworzony: {Calendar.strftime(selected_project.inserted_at, "%d.%m.%Y r.")}
+        </p>
+      </div>
+
+      <div class="space-y-8 border border-greyButtonBg p-4 rounded-md bg-white">
+        <h3 class="font-bold">Podsumowanie:</h3>
+
+        <div>
+          <p class="mb-3">Przepracowane godziny w miesiącu:</p>
+          <p class="text-xl font-bold mb-1">{format_duration(@total_project_seconds)}</p>
+          <p class="text-sm text-darkGrey">
+            {format_duration_with_days(@total_project_seconds)}
+          </p>
+        </div>
+
+        <%= if most_active = Enum.max_by(@project_user_hours, & &1.month_hours, fn -> nil end) do %>
+          <div>
+            <p class="mb-3">Najbardziej aktywny użytkownik:</p>
+            <p class="text-xl font-bold mb-1">{format_duration(most_active.month_seconds)}</p>
+            <p class="text-sm text-darkGrey">
+              {most_active.user.name || most_active.user.email}
+            </p>
+          </div>
+        <% end %>
+      </div>
+    </div>
   </div>
 </div>
