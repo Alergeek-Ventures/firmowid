@@ -13,30 +13,24 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     organization_id = user.organization_id
     organization = Accounts.get_organization_with_avatar(user.organization)
 
-    Posthog.capture("$set", %{
-      distinct_id: user.id,
-      properties: %{
-        "$set" => %{
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          system_role: user.system_role,
-          employment_date:
-            case user.employment_date do
-              nil -> nil
-              date -> Date.to_iso8601(date)
-            end,
-          organization_id: organization_id,
-          organization_name: organization.name
-        }
+    Posthog.capture("$set", user.id, %{
+      "$set" => %{
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        system_role: user.system_role,
+        employment_date:
+          case user.employment_date do
+            nil -> nil
+            date -> Date.to_iso8601(date)
+          end,
+        organization_id: organization_id,
+        organization_name: organization.name
       }
     })
 
-    Posthog.capture("timetracker_view", %{
-      distinct_id: user.id,
-      properties: %{
-        organization_id: organization_id
-      }
+    Posthog.capture("timetracker_view", user.id, %{
+      organization_id: organization_id
     })
 
     if connected?(socket), do: :timer.send_interval(5000, self(), :tick)

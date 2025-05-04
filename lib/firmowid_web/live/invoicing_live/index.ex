@@ -16,30 +16,24 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
     Bodyguard.permit!(Invoicing, :read, user)
 
-    Posthog.capture("$set", %{
-      distinct_id: user.id,
-      properties: %{
-        "$set" => %{
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          system_role: user.system_role,
-          employment_date:
-            case user.employment_date do
-              nil -> nil
-              date -> Date.to_iso8601(date)
-            end,
-          organization_id: organization_id,
-          organization_name: organization.name
-        }
+    Posthog.capture("$set", user.id, %{
+      "$set" => %{
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        system_role: user.system_role,
+        employment_date:
+          case user.employment_date do
+            nil -> nil
+            date -> Date.to_iso8601(date)
+          end,
+        organization_id: organization_id,
+        organization_name: organization.name
       }
     })
 
-    Posthog.capture("invoicing_view", %{
-      distinct_id: user.id,
-      properties: %{
-        organization_id: organization_id
-      }
+    Posthog.capture("invoicing_view", user.id, %{
+      organization_id: organization_id
     })
 
     if connected?(socket) do
@@ -321,11 +315,8 @@ defmodule FirmowidWeb.InvoicingLive.Index do
           {:error, {:blob_already_exists, blob_checksum}} ->
             cost_invoice = CostInvoices.get_cost_invoice_by_checksum!(blob_checksum)
 
-            Posthog.capture("cost_invoice_upload_duplicate", %{
-              distinct_id: socket.assigns.current_user.id,
-              properties: %{
-                organization_id: socket.assigns.current_user.organization_id
-              }
+            Posthog.capture("cost_invoice_upload_duplicate", socket.assigns.current_user.id, %{
+              organization_id: socket.assigns.current_user.organization_id
             })
 
             LiveToast.send_toast(
@@ -349,11 +340,8 @@ defmodule FirmowidWeb.InvoicingLive.Index do
             )
 
           {:error, :failure} ->
-            Posthog.capture("cost_invoice_upload_failure", %{
-              distinct_id: socket.assigns.current_user.id,
-              properties: %{
-                organization_id: socket.assigns.current_user.organization_id
-              }
+            Posthog.capture("cost_invoice_upload_failure", socket.assigns.current_user.id, %{
+              organization_id: socket.assigns.current_user.organization_id
             })
 
             LiveToast.send_toast(
@@ -362,11 +350,8 @@ defmodule FirmowidWeb.InvoicingLive.Index do
             )
 
           _ ->
-            Posthog.capture("cost_invoice_upload", %{
-              distinct_id: socket.assigns.current_user.id,
-              properties: %{
-                organization_id: socket.assigns.current_user.organization_id
-              }
+            Posthog.capture("cost_invoice_upload", socket.assigns.current_user.id, %{
+              organization_id: socket.assigns.current_user.organization_id
             })
 
             nil

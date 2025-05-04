@@ -109,13 +109,10 @@ defmodule FirmowidWeb.OrganizationLive do
       |> Map.put("address", address)
       |> Accounts.create_organization(user)
 
-    Posthog.capture("organization_created", %{
-      distinct_id: user.id,
-      properties: %{
-        organization_id: organization.id,
-        organization_name: organization.name,
-        identification_number: organization.identification_number
-      }
+    Posthog.capture("organization_created", user.id, %{
+      organization_id: organization.id,
+      organization_name: organization.name,
+      identification_number: organization.identification_number
     })
 
     LiveToast.send_toast(:success, "Pomyślnie utworzono organizację")
@@ -134,13 +131,12 @@ defmodule FirmowidWeb.OrganizationLive do
         user.id
       )
 
-    Posthog.capture("organization_invite_accepted", %{
-      distinct_id: user.id,
+    Posthog.capture("organization_invite_accepted", user.id,
       properties: %{
         organization_id: organization_id,
         invite_code: invite_code
       }
-    })
+    )
 
     {:noreply, redirect(socket, to: "/")}
   end

@@ -31,13 +31,10 @@ defmodule FirmowidWeb.OrganizationInvitesLive.Index do
              organization_id,
              current_user.id
            ) do
-      Posthog.capture("organization_invite_created", %{
-        distinct_id: current_user.id,
-        properties: %{
-          organization_id: organization_id,
-          invite_id: invite.id,
-          expires_at: invite.expires_at
-        }
+      Posthog.capture("organization_invite_created", current_user.id, %{
+        organization_id: organization_id,
+        invite_id: invite.id,
+        expires_at: invite.expires_at
       })
 
       socket =
