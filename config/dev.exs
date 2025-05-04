@@ -81,6 +81,9 @@ config :phoenix_live_view,
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
 
+# Disable posthog analytics event capture
+config :posthog, enabled_capture: false
+
 config :ex_aws, :s3,
   host: "localhost",
   scheme: "http://",

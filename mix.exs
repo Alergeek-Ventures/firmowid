@@ -19,7 +19,7 @@ defmodule Firmowid.MixProject do
   def application do
     [
       mod: {Firmowid.Application, []},
-      extra_applications: [:logger, :runtime_tools, :os_mon]
+      extra_applications: [:logger, :runtime_tools, :os_mon, :posthog]
     ]
   end
 
