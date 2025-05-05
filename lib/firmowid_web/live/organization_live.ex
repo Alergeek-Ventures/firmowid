@@ -131,12 +131,10 @@ defmodule FirmowidWeb.OrganizationLive do
         user.id
       )
 
-    Posthog.capture("organization_invite_accepted", user.id,
-      properties: %{
-        organization_id: organization_id,
-        invite_code: invite_code
-      }
-    )
+    Posthog.capture("organization_invite_accepted", user.id, %{
+      organization_id: organization_id,
+      invite_code: invite_code
+    })
 
     {:noreply, redirect(socket, to: "/")}
   end
