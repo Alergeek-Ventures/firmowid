@@ -9,7 +9,7 @@
   <.table
     id="organization_invites"
     rows={@organization_invites}
-    class={["max-w-[1024px] w-full mx-auto", "border-separate border-spacing-y-2"]}
+    class="max-w-[1024px] w-full mx-auto border-separate border-spacing-y-2"
   >
     <:col :let={organization_invite} label="Data">
       <%= if is_nil(organization_invite.consumed_at) do %>
