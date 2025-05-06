@@ -142,7 +142,7 @@ defmodule FirmowidWeb.CoreComponents do
     classes([
       "phx-submit-loading:opacity-75 phx-click-loading:opacity-75 phx-click-loading:cursor-default cursor-pointer rounded-md transition-all",
       "duration-200 border py-2 px-3 leading-6",
-      "text-sm font-semibold disabled:opacity-40 active:text-white/80",
+      "text-sm font-semibold disabled:opacity-40 disabled:pointer-events-none active:text-white/80",
       button_styles(:color, assigns),
       button_styles(:size, assigns),
       assigns[:class]
@@ -364,13 +364,13 @@ defmodule FirmowidWeb.CoreComponents do
   def input(%{type: "select"} = assigns) do
     ~H"""
     <div class={@container_class}>
-      <.label for={@id}>{@label}</.label>
+      <.label :if={@label} for={@id} class="mb-2">{@label}</.label>
       <select
         id={@id}
         name={@name}
         class={
           classes([
-            "mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm",
+            "block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm",
             @rest[:class],
             @color && button_styles(:color, %{color: @color}),
             @size && button_styles(:size, %{size: @size})
@@ -413,7 +413,7 @@ defmodule FirmowidWeb.CoreComponents do
   def input(assigns) do
     ~H"""
     <div class={@rest[:class]}>
-      <.label :if={@label} for={@id} class={@rest[:class]}>{@label}</.label>
+      <.label :if={@label} for={@id} class={classes(["mb-2", @rest[:class]])}>{@label}</.label>
       <input
         type={@type}
         name={@name}
@@ -421,7 +421,7 @@ defmodule FirmowidWeb.CoreComponents do
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
         class={
           classes([
-            "mt-2 block w-full rounded-md text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 read-only:cursor-default read-only:bg-gray-100",
+            "block w-full rounded-md text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 read-only:cursor-default read-only:bg-gray-100",
             @errors == [] && "border-zinc-300 focus:border-zinc-400",
             @errors != [] && "border-rose-400 focus:border-rose-400",
             @input_class

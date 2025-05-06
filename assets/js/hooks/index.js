@@ -6,6 +6,7 @@ import { PDFViewer } from "./pdf_viewer";
 import { Tippy } from "./tippy";
 import { AirDatepicker } from "./air_datepicker";
 import { Timer } from "./timer";
+import { FocusOnMount } from "./focus_on_mount";
 
 export const Hooks = {
   ListItemRemovalAnimation,
@@ -16,4 +17,5 @@ export const Hooks = {
   Tippy,
   AirDatepicker,
   Timer,
+  FocusOnMount,
 };

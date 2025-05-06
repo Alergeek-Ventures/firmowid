@@ -115,9 +115,8 @@ defmodule Firmowid.Timetracker do
     Enum.reduce(sessions, 0, fn s, acc -> acc + s.duration end)
   end
 
-  def get_months_with_sessions(user_id) do
+  def query_months_with_sessions() do
     Session
-    |> where([s], s.user_id == ^user_id)
     |> select([s], %{
       date: fragment("date_trunc('month', ?)", s.start_datetime)
     })
@@ -127,6 +126,24 @@ defmodule Firmowid.Timetracker do
     |> order_by([s],
       desc: fragment("date_trunc('month', ?)", s.start_datetime)
     )
+  end
+
+  def get_months_with_sessions do
+    query_months_with_sessions()
+    |> Repo.all()
+    |> Enum.map(& &1.date)
+  end
+
+  def get_months_with_sessions(user_id) do
+    query_months_with_sessions()
+    |> where([s], s.user_id == ^user_id)
+    |> Repo.all()
+    |> Enum.map(& &1.date)
+  end
+
+  def get_months_with_sessions_by_project(project_id) do
+    query_months_with_sessions()
+    |> where([s], s.project_id == ^project_id)
     |> Repo.all()
     |> Enum.map(& &1.date)
   end
@@ -159,6 +176,35 @@ defmodule Firmowid.Timetracker do
     ProjectUser
     |> where([pu], pu.user_id == ^user_id and pu.project_id == ^project_id)
     |> Repo.delete_all()
+  end
+
+  @doc """
+  Sets users to project. If user isn't in `user_ids` list, it will be removed from project.
+  """
+  def set_users_to_project(project, user_ids) do
+    project = Repo.preload(project, :project_users)
+
+    users_to_add =
+      user_ids
+      # removes users that are already in project
+      |> Enum.reject(fn user_id ->
+        Enum.any?(project.project_users, fn pu ->
+          pu.user_id == user_id
+        end)
+      end)
+      |> Enum.map(&%ProjectUser{user_id: &1, project_id: project.id})
+      |> Enum.map(&ProjectUser.changeset/1)
+
+    project_users =
+      project.project_users
+      |> Enum.filter(fn pu -> pu.user_id in user_ids end)
+      |> Enum.map(&Ecto.Changeset.change/1)
+      |> Kernel.++(users_to_add)
+
+    project
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.put_assoc(:project_users, project_users)
+    |> Repo.update()
   end
 
   def start_session(attrs \\ %{}) do

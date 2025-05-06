@@ -8,7 +8,11 @@ defmodule Firmowid.Timetracker.Project do
 
     many_to_many :users,
                  Firmowid.Accounts.User,
-                 join_through: "projects_users"
+                 join_through: Firmowid.Timetracker.ProjectUser
+
+    has_many :project_users,
+             Firmowid.Timetracker.ProjectUser,
+             on_replace: :delete
 
     belongs_to :organization, Firmowid.Accounts.Organization
 
@@ -19,6 +23,7 @@ defmodule Firmowid.Timetracker.Project do
   def changeset(project, attrs) do
     project
     |> cast(attrs, [:name])
+    |> cast_assoc(:project_users)
     |> validate_required([:name])
     |> put_change(:organization_id, Repo.get_org_id())
   end
