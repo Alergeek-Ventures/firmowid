@@ -1,0 +1,34 @@
+<div class="container p-6">
+  <div class="flex justify-end gap-4">
+    <%= if Bodyguard.permit?(Firmowid.Timetracker, :read_projects, @current_user) do %>
+      <.link navigate={~p"/czasosledz/projekty"} class={button_styles(%{color: "grey"})}>
+        Zarządzanie
+      </.link>
+    <% end %>
+
+    <.link
+      navigate={~p"/czasosledz"}
+      class={classes(["hover:underline", button_styles(%{color: "grey", variant: "outline"})])}
+    >
+      Czasośledz
+    </.link>
+
+    <.link
+      navigate={~p"/czasosledz/ewidencja"}
+      class={classes(["hover:underline", button_styles(%{color: "grey", variant: "outline"})])}
+    >
+      Ewidencja
+    </.link>
+  </div>
+  <div class="border border-greyButtonBg rounded-md py-14 px-24 mt-20">
+    <h2 class="font-bold">Nowy projekt</h2>
+    <.form phx-submit="save" for={@form} class="space-y-8 mt-10">
+      <.input field={@form[:name]} label="Nazwa projektu" />
+      <div class="flex justify-end">
+        <.button type="submit" color="light_orange" size="small" class="ml-auto">
+          Zapisz projekt
+        </.button>
+      </div>
+    </.form>
+  </div>
+</div>
