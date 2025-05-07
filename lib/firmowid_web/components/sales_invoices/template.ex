@@ -113,6 +113,16 @@ defmodule FirmowidWeb.SalesInvoices.Template do
             {@sales_invoice.buyer_display_name}
           </span>
 
+          <%= if @sales_invoice.buyer_name && @sales_invoice.buyer_surname do %>
+            <span>
+              {case @sales_invoice.invoice_type do
+                :poland -> "Imię i nazwisko:"
+                :foreign -> "Name and surname:"
+              end}
+            </span>
+            <span>{@sales_invoice.buyer_name} {@sales_invoice.buyer_surname}</span>
+          <% end %>
+
           <span>
             {case @sales_invoice.invoice_type do
               :poland -> "Adres:"
