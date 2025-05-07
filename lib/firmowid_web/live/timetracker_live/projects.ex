@@ -39,7 +39,7 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
      socket
      |> assign(selected_project: nil)
      |> assign(active_months: Timetracker.get_months_with_sessions())
-     |> assign(hours_records: fetch_hours_records())}
+     |> stream(:hours_records, fetch_hours_records(), reset: true)}
   end
 
   defp fetch_hours_records do
@@ -93,22 +93,17 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
     project = socket.assigns.selected_project
     project_users = socket.assigns.project_users |> Enum.map(& &1.id)
 
-    case Timetracker.set_users_to_project(project, project_users) do
-      {:ok, project} ->
-        {:noreply,
-         socket
-         |> load_project_hours()
-         |> assign(
-           is_editing_users: false,
-           selected_project: project,
-           users: nil,
-           project_users: nil
-         )}
+    {:ok, project} = Timetracker.set_users_to_project(project, project_users)
 
-      {:error, _changeset} ->
-        # todo: handle error
-        {:noreply, socket}
-    end
+    {:noreply,
+     socket
+     |> load_project_hours()
+     |> assign(
+       is_editing_users: false,
+       selected_project: project,
+       users: nil,
+       project_users: nil
+     )}
   end
 
   def handle_event("cancel", _, socket) do
@@ -172,14 +167,15 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
         |> Enum.map(&Accounts.get_user_with_avatar/1)
         |> Enum.reject(fn user ->
           Enum.any?(project_users, &(&1.id == user.id))
-        end),
+        end)
+        |> Enum.sort_by(& &1.name),
       project_users: project_users
     )
   end
 
   defp load_project_hours(%{assigns: %{selected_project: nil}} = socket) do
     socket
-    |> assign(:project_user_hours, [])
+    |> stream(:project_user_hours, [])
     |> assign(:total_project_seconds, 0)
   end
 
@@ -188,15 +184,25 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
     current_year = socket.assigns.selected_date.year
 
     project_id = socket.assigns.selected_project.id
-    project = Timetracker.get_project_with_users!(project_id)
+    # project = Timetracker.get_project_with_users!(project_id)
+
+    # project_user_hours =
+    #   calculate_project_user_hours(project, project_id, selected_month, current_year)
+
+    # total_project_seconds = sum_user_month_seconds(project_user_hours)
 
     project_user_hours =
-      calculate_project_user_hours(project, project_id, selected_month, current_year)
+      Timetracker.get_month_summary_by_project(project_id, selected_month, current_year)
+      |> IO.inspect()
+      |> Enum.map(fn {user, time_worked} ->
+        Accounts.get_user_with_avatar(user)
+        |> Map.put(:time_worked, time_worked)
+      end)
 
-    total_project_seconds = sum_user_month_seconds(project_user_hours)
+    total_project_seconds = Enum.sum_by(project_user_hours, & &1.time_worked)
 
     socket
-    |> assign(:project_user_hours, project_user_hours)
+    |> stream(:project_user_hours, project_user_hours, reset: true)
     |> assign(:total_project_seconds, total_project_seconds)
   end
 
@@ -208,11 +214,10 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
       {total_seconds, month_seconds} = calculate_session_durations(total_sessions, month, year)
 
       %{
+        id: user.id,
         user: Accounts.get_user_with_avatar(user),
-        total_hours: total_seconds / 3600,
         month_hours: month_seconds / 3600,
-        total_seconds: total_seconds,
-        month_seconds: month_seconds
+        total_seconds: total_seconds
       }
     end)
   end
@@ -255,27 +260,24 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
 
   def render_project_user_hours(assigns) do
     ~H"""
-    <%= for user_hours <- @project_user_hours do %>
-      <div class="flex items-center bg-white rounded-md p-4 justify-between col-span-full">
+    <%= for {id, user} <- @project_user_hours do %>
+      <div id={id} class="flex items-center bg-white rounded-md p-4 justify-between col-span-full">
         <div class="flex items-center gap-6">
           <.avatar class="size-8 ring-1 ring-greyButtonBg/50">
-            <.avatar_image src={user_hours.user.avatar_url} alt="Avatar" />
+            <.avatar_image src={user.avatar_url} alt="Avatar" />
             <.avatar_fallback class="bg-blueBg text-blueText">
-              {String.slice(user_hours.user.email || "", 0, 1) |> String.upcase()}
+              {String.slice(user.email || "", 0, 1) |> String.upcase()}
             </.avatar_fallback>
           </.avatar>
           <span class="text-darkGrey">
-            {user_hours.user.name || user_hours.user.email}
+            {user.name || user.email}
           </span>
         </div>
-        <span>{trunc(user_hours.month_hours)} h</span>
+        <span>{trunc(user.time_worked / 60 / 60)} h</span>
       </div>
     <% end %>
 
-    <div
-      :if={Enum.empty?(@project_user_hours)}
-      class="py-8 bg-white rounded-md text-center text-darkGrey text-sm col-span-full"
-    >
+    <div class="hidden only:block py-8 bg-white rounded-md text-center text-darkGrey text-sm col-span-full">
       Brak danych o czasie pracy dla tego projektu.
     </div>
     """
@@ -308,6 +310,7 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
         </button>
       </div>
     <% end %>
+
     <form phx-change="add_user" class="relative col-span-full">
       <.icon
         name="hero-plus-mini"

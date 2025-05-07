@@ -13,7 +13,6 @@ defmodule Firmowid.Timetracker do
   alias Firmowid.Timetracker.ProjectUser
   alias Firmowid.Timetracker.Session
   alias Firmowid.Repo
-  alias Firmowid.Accounts.User
 
   def authorize(_, %{role: :admin}, _), do: true
 
@@ -83,22 +82,40 @@ defmodule Firmowid.Timetracker do
 
   def get_project_with_users!(id), do: Repo.get!(Project, id) |> Repo.preload(:users)
 
-  # wip
   def get_month_summary_by_project(project_id, month, year) do
-    query =
-      from u in User,
-        left_join: s in Session,
-        on: u.id == s.user_id,
+    summed_sessions =
+      from s in Session,
         where:
           s.project_id == ^project_id and
-            fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
-            fragment("extract(year from ?) = ?", s.start_datetime, ^year),
-        group_by: u.id,
+            (is_nil(s.start_datetime) or
+               (fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
+                  fragment("extract(year from ?) = ?", s.start_datetime, ^year))),
+        group_by: [s.user_id],
         select: %{
-          user: u,
-          time_worked: sum(s.end_datetime - s.start_datetime) |> selected_as(:time_worked)
-        },
-        order_by: [desc: selected_as(:time_worked)]
+          user_id: s.user_id,
+          time_worked:
+            fragment(
+              "extract(epoch from coalesce(?, now()) - ?)",
+              s.end_datetime,
+              s.start_datetime
+            )
+            |> sum()
+        }
+
+    query =
+      from u in Accounts.User,
+        left_join: pu in ProjectUser,
+        on: u.id == pu.user_id and pu.project_id == ^project_id,
+        left_join: s_summary in subquery(summed_sessions),
+        on: u.id == s_summary.user_id,
+        # Include user if they are currently assigned to the project OR have sessions for this project in the given month/year
+        where: not is_nil(pu.id) or not is_nil(s_summary.user_id),
+        order_by: [desc: u.name, desc: u.email],
+        select: {
+          u,
+          coalesce(s_summary.time_worked, 0)
+          |> type(:integer)
+        }
 
     Repo.all(query)
   end
