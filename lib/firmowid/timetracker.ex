@@ -191,6 +191,7 @@ defmodule Firmowid.Timetracker do
         where:
           fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
             fragment("extract(year from ?) = ?", s.start_datetime, ^year),
+        limit: 1,
         select: %{
           time_worked:
             fragment(
@@ -216,6 +217,7 @@ defmodule Firmowid.Timetracker do
             fragment("extract(year from ?) = ?", s.start_datetime, ^year),
         group_by: p.id,
         order_by: [desc: selected_as(:time_worked)],
+        limit: 1,
         select: %{
           project: p,
           time_worked:
