@@ -36,6 +36,7 @@
           name="selected_project"
           value={@selected_project && @selected_project.id}
           options={Enum.map(@projects, &{&1.name, &1.id})}
+          disabled={@is_editing_users}
           prompt="Wybierz projekt"
           class="sm:text-base mt-0 h-full"
           color={if !@selected_project, do: "light_grey", else: "light_orange"}
@@ -45,6 +46,7 @@
         <.button
           type="reset"
           name="reset"
+          disabled={@is_editing_users}
           color={if @selected_project, do: "light_grey", else: "light_orange"}
           class="text-nowrap"
         >
@@ -55,6 +57,7 @@
         id="selected_date"
         active_months={@active_months}
         selected_date={@selected_date}
+        disabled={@is_editing_users}
         class="-col-start-1"
       />
     </div>
@@ -67,6 +70,7 @@
             else: "Wszyscy współpracownicy"}
         </h2>
         <button
+          :if={@selected_project}
           disabled={@is_editing_users}
           phx-click="edit_users"
           class="h-6 w-8 rounded-md hover:bg-greyButtonBg text-darkGrey disabled:text-orangeText inline-flex items-center justify-center ml-1"
@@ -95,11 +99,14 @@
       </div>
     </div>
 
-    <div :if={@selected_project} class="space-y-4 -col-end-1 row-start-3">
-      <div class="space-y-2 border border-greyButtonBg p-4 rounded-md bg-white">
+    <div class="space-y-4 -col-end-1 row-start-3">
+      <div
+        :if={@selected_project}
+        class="space-y-2 border border-greyButtonBg p-4 rounded-md bg-white"
+      >
         <%= if !@is_editing_name do %>
           <div class="flex justify-between">
-            <h3 class="font-bold text-lg break-all">{@selected_project.name}</h3>
+            <h3 class="font-bold text-lg text-wrap break-all">{@selected_project.name}</h3>
             <button
               phx-click="edit_name"
               class="h-6 w-8 rounded-md hover:bg-greyButtonBg text-darkGrey disabled:text-orangeText inline-flex items-center justify-center ml-1"
@@ -138,21 +145,29 @@
 
         <div>
           <p class="mb-3">Przepracowane godziny w miesiącu:</p>
-          <p class="text-xl font-bold mb-1">{format_duration(@total_project_seconds)}</p>
+          <p class="text-xl font-bold mb-1">{format_duration(@total_time_worked)}</p>
           <p class="text-sm text-darkGrey">
-            {format_duration_with_days(@total_project_seconds)}
+            {format_duration_with_days(@total_time_worked)}
           </p>
         </div>
-<%!-- 
-        <%= if most_active = Enum.max_by(@project_user_hours, & &1.month_hours, fn -> nil end) do %>
-          <div>
-            <p class="mb-3">Najbardziej aktywny użytkownik:</p>
-            <p class="text-xl font-bold mb-1">{format_duration(most_active.month_seconds)}</p>
-            <p class="text-sm text-darkGrey">
-              {most_active.user.name || most_active.user.email}
-            </p>
-          </div>
-        <% end %> --%>
+
+        <div :if={@selected_project && @most_active_user}>
+          <p class="mb-3">Najbardziej aktywny użytkownik:</p>
+          <p class="text-xl font-bold mb-1">{format_duration(@most_active_user.time_worked)}</p>
+          <p class="text-sm text-darkGrey">
+            {@most_active_user.name || @most_active_user.email}
+          </p>
+        </div>
+
+        <div :if={!@selected_project && @most_demanding_project}>
+          <p class="mb-3">Najbardziej wymagający projekt:</p>
+          <p class="text-xl font-bold mb-1">
+            {format_duration(@most_demanding_project.time_worked)}
+          </p>
+          <p class="text-sm text-darkGrey">
+            {@most_demanding_project.project.name}
+          </p>
+        </div>
       </div>
     </div>
   </div>

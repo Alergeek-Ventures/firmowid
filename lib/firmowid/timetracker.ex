@@ -12,6 +12,7 @@ defmodule Firmowid.Timetracker do
   alias Firmowid.Timetracker.Project
   alias Firmowid.Timetracker.ProjectUser
   alias Firmowid.Timetracker.Session
+  alias Firmowid.Timetracker.HoursRecord
   alias Firmowid.Repo
 
   def authorize(_, %{role: :admin}, _), do: true
@@ -32,6 +33,7 @@ defmodule Firmowid.Timetracker do
   def list_user_projects_with_duration(user_id, date) do
     list_user_projects(user_id)
     |> Enum.map(fn project ->
+      # wtf quering in loop
       Map.put(
         project,
         :duration,
@@ -82,15 +84,25 @@ defmodule Firmowid.Timetracker do
 
   def get_project_with_users!(id), do: Repo.get!(Project, id) |> Repo.preload(:users)
 
+  def get_month_hours_records(month, year) do
+    query =
+      from u in Accounts.User,
+        left_join: hr in HoursRecord,
+        on: u.id == hr.user_id and hr.month == ^month and hr.year == ^year,
+        order_by: [desc: u.name, desc: u.email],
+        select: %{user: u, hours_record: hr}
+
+    Repo.all(query)
+  end
+
   def get_month_summary_by_project(project_id, month, year) do
-    summed_sessions =
+    session_summary =
       from s in Session,
         where:
           s.project_id == ^project_id and
-            (is_nil(s.start_datetime) or
-               (fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
-                  fragment("extract(year from ?) = ?", s.start_datetime, ^year))),
-        group_by: [s.user_id],
+            fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^year),
+        group_by: s.user_id,
         select: %{
           user_id: s.user_id,
           time_worked:
@@ -106,15 +118,15 @@ defmodule Firmowid.Timetracker do
       from u in Accounts.User,
         left_join: pu in ProjectUser,
         on: u.id == pu.user_id and pu.project_id == ^project_id,
-        left_join: s_summary in subquery(summed_sessions),
-        on: u.id == s_summary.user_id,
+        left_join: s in subquery(session_summary),
+        on: u.id == s.user_id,
         # Include user if they are currently assigned to the project OR have sessions for this project in the given month/year
-        where: not is_nil(pu.id) or not is_nil(s_summary.user_id),
+        where: not is_nil(pu.id) or not is_nil(s.user_id),
         order_by: [desc: u.name, desc: u.email],
-        select: {
-          u,
-          coalesce(s_summary.time_worked, 0)
-          |> type(:integer)
+        select: %{
+          user: u,
+          time_worked: coalesce(s.time_worked, 0) |> type(:integer),
+          removed_from_project: is_nil(pu.id)
         }
 
     Repo.all(query)
@@ -132,17 +144,13 @@ defmodule Firmowid.Timetracker do
     Enum.reduce(sessions, 0, fn s, acc -> acc + s.duration end)
   end
 
-  def query_months_with_sessions() do
+  defp query_months_with_sessions() do
     Session
     |> select([s], %{
-      date: fragment("date_trunc('month', ?)", s.start_datetime)
+      date: fragment("date_trunc('month', ?)", s.start_datetime) |> selected_as(:date)
     })
-    |> distinct([s], [
-      fragment("date_trunc('month', ?)", s.start_datetime)
-    ])
-    |> order_by([s],
-      desc: fragment("date_trunc('month', ?)", s.start_datetime)
-    )
+    |> distinct([s], selected_as(:date))
+    |> order_by([s], desc: selected_as(:date))
   end
 
   def get_months_with_sessions do
@@ -175,6 +183,53 @@ defmodule Firmowid.Timetracker do
       |> Enum.map(&Session.put_duration/1)
 
     Enum.reduce(sessions, 0, fn s, acc -> acc + s.duration end)
+  end
+
+  def get_total_time_worked(month, year) do
+    query =
+      from s in Session,
+        where:
+          fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^year),
+        select: %{
+          time_worked:
+            fragment(
+              "extract(epoch from coalesce(?, now()) - ?)",
+              s.end_datetime,
+              s.start_datetime
+            )
+            |> sum()
+            |> type(:integer)
+            |> selected_as(:time_worked)
+        }
+
+    Repo.one(query) |> Map.get(:time_worked)
+  end
+
+  def get_most_demanding_project(month, year) do
+    query =
+      from s in Session,
+        join: p in Project,
+        on: s.project_id == p.id,
+        where:
+          fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^year),
+        group_by: p.id,
+        order_by: [desc: selected_as(:time_worked)],
+        select: %{
+          project: p,
+          time_worked:
+            fragment(
+              "extract(epoch from coalesce(?, now()) - ?)",
+              s.end_datetime,
+              s.start_datetime
+            )
+            |> sum()
+            |> type(:integer)
+            |> selected_as(:time_worked)
+        }
+
+    Repo.one(query)
   end
 
   def add_user_to_project(user_id, project_id) do
@@ -288,8 +343,6 @@ defmodule Firmowid.Timetracker do
         where: s.user_id == ^user_id and s.project_id == ^project_id
     )
   end
-
-  alias Firmowid.Timetracker.HoursRecord
 
   @doc """
   Returns the list of hours_records.

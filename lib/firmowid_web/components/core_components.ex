@@ -747,6 +747,7 @@ defmodule FirmowidWeb.CoreComponents do
 
   attr :active_months, :list, default: nil
   attr :selected_date, :string, required: true
+  attr :disabled, :boolean, default: false
   attr :rest, :global
   attr :class, :string, default: nil
 
