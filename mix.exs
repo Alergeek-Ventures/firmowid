@@ -46,7 +46,7 @@ defmodule Firmowid.MixProject do
       {:floki, ">= 0.30.0", only: :test},
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
-      {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
+      {:tailwind, "~> 0.3", runtime: Mix.env() == :dev},
       {:tz, "~> 0.28"},
       {:heroicons,
        github: "tailwindlabs/heroicons",
