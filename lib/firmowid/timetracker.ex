@@ -192,19 +192,20 @@ defmodule Firmowid.Timetracker do
           fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
             fragment("extract(year from ?) = ?", s.start_datetime, ^year),
         limit: 1,
-        select: %{
-          time_worked:
-            fragment(
-              "extract(epoch from coalesce(?, now()) - ?)",
-              s.end_datetime,
-              s.start_datetime
-            )
-            |> sum()
-            |> type(:integer)
-            |> selected_as(:time_worked)
-        }
+        select:
+          fragment(
+            "extract(epoch from coalesce(?, now()) - ?)",
+            s.end_datetime,
+            s.start_datetime
+          )
+          |> sum()
+          |> type(:integer)
+          |> selected_as(:time_worked)
 
-    Repo.one(query) |> Map.get(:time_worked)
+    case Repo.one(query) do
+      nil -> 0
+      time_worked -> time_worked
+    end
   end
 
   def get_most_demanding_project(month, year) do
