@@ -5,6 +5,7 @@ defmodule Firmowid.TimetrackerFixtures do
   """
 
   alias Firmowid.Timetracker
+  alias Firmowid.Repo
 
   def unique_project_name, do: "project_#{System.unique_integer()}"
 
@@ -13,7 +14,8 @@ defmodule Firmowid.TimetrackerFixtures do
       attrs
       |> Enum.into(%{
         name: unique_project_name(),
-        description: "some description"
+        description: "some description",
+        organization_id: attrs[:organization_id] || Repo.get_org_id()
       })
       |> Timetracker.create_project()
 
@@ -33,7 +35,7 @@ defmodule Firmowid.TimetrackerFixtures do
 
     # If end_datetime is provided, end the session
     if attrs[:end_datetime] do
-      {:ok, session} = Timetracker.end_session(session.id)
+      {:ok, session} = Timetracker.end_session(session.id, attrs[:end_datetime])
       session
     else
       session

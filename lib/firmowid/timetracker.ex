@@ -146,9 +146,7 @@ defmodule Firmowid.Timetracker do
 
   defp query_months_with_sessions() do
     Session
-    |> select([s], %{
-      date: fragment("date_trunc('month', ?)", s.start_datetime) |> selected_as(:date)
-    })
+    |> select([s], fragment("date_trunc('month', ?)", s.start_datetime) |> selected_as(:date))
     |> distinct([s], selected_as(:date))
     |> order_by([s], desc: selected_as(:date))
   end
@@ -156,21 +154,18 @@ defmodule Firmowid.Timetracker do
   def get_months_with_sessions do
     query_months_with_sessions()
     |> Repo.all()
-    |> Enum.map(& &1.date)
   end
 
   def get_months_with_sessions(user_id) do
     query_months_with_sessions()
     |> where([s], s.user_id == ^user_id)
     |> Repo.all()
-    |> Enum.map(& &1.date)
   end
 
   def get_months_with_sessions_by_project(project_id) do
     query_months_with_sessions()
     |> where([s], s.project_id == ^project_id)
     |> Repo.all()
-    |> Enum.map(& &1.date)
   end
 
   def get_sessions_duration_in_month(user_id, date) do
@@ -298,7 +293,8 @@ defmodule Firmowid.Timetracker do
   def end_session(session_id, date) do
     Session
     |> Repo.get(session_id)
-    |> Repo.update(end: date)
+    |> Session.changeset(%{end_datetime: date})
+    |> Repo.update()
   end
 
   def delete_session(session_id) do
