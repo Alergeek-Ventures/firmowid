@@ -20,6 +20,7 @@ defmodule Firmowid.Timetracker.Session do
     session
     |> cast(attrs, [:user_id, :title, :start_datetime, :end_datetime, :project_id])
     |> validate_required([:user_id, :title, :start_datetime, :project_id])
+    |> validate_datetime_order()
     |> validate_user_has_access_to_project()
     |> put_change(:organization_id, Repo.get_org_id())
   end
@@ -45,6 +46,18 @@ defmodule Firmowid.Timetracker.Session do
     case Enum.find(user_projects, &(&1.id == project_id)) do
       nil -> add_error(changeset, :project_id, "User does not have access to this project")
       _ -> changeset
+    end
+  end
+
+  @spec validate_user_has_access_to_project(Ecto.Changeset.t()) :: Ecto.Changeset.t()
+  defp validate_datetime_order(changeset) do
+    start_datetime = get_field(changeset, :start_datetime)
+    end_datetime = get_field(changeset, :end_datetime)
+
+    if end_datetime && DateTime.compare(start_datetime, end_datetime) == :gt do
+      add_error(changeset, :start_datetime, "Start datetime must be before end datetime")
+    else
+      changeset
     end
   end
 
