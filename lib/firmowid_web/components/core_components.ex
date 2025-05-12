@@ -154,7 +154,7 @@ defmodule FirmowidWeb.CoreComponents do
   end
 
   defp button_styles(:size, %{size: "small", variant: "solid"}) do
-    "text-sm px-2 py-1 font-semibold"
+    "text-sm px-2 py-2.5 font-semibold"
   end
 
   defp button_styles(:size, %{size: "medium"}) do
@@ -753,9 +753,9 @@ defmodule FirmowidWeb.CoreComponents do
 
   def date_picker(assigns) do
     ~H"""
-    <label class={classes(["flex justify-between gap-4 items-center bg-greyButtonBg
-        hover:border-darkGrey border border-transparent transition-colors font-bold px-4 py-[5px]
-        text-darkGrey h-[46px] max-w-[360px] w-full rounded-lg max-md:hidden", @class])}>
+    <label class={classes(["flex w-44 justify-between gap-4 items-center h-full bg-greyButtonBg
+        hover:border-darkGrey border border-transparent transition-colors
+        rounded-lg py-1 px-3 max-md:hidden", @class])}>
       <input
         type="button"
         phx-hook="AirDatepicker"
