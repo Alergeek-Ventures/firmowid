@@ -248,7 +248,8 @@ defmodule Firmowid.TimetrackerTest do
     end
 
     test "returns empty list when no users in project" do
-      user_fixture() # Creates organization
+      # Creates organization
+      user_fixture()
       project = project_fixture()
       assert Timetracker.get_month_summary_by_project(project.id, 1, 2025) == []
     end
