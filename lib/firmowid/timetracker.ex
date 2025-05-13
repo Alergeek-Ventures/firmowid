@@ -89,7 +89,7 @@ defmodule Firmowid.Timetracker do
       from u in Accounts.User,
         left_join: hr in HoursRecord,
         on: u.id == hr.user_id and hr.month == ^month and hr.year == ^year,
-        order_by: [desc: u.name, desc: u.email],
+        order_by: [u.name, u.email],
         select: %{user: u, hours_record: hr}
 
     Repo.all(query)
@@ -122,7 +122,7 @@ defmodule Firmowid.Timetracker do
         on: u.id == s.user_id,
         # Include user if they are currently assigned to the project OR have sessions for this project in the given month/year
         where: not is_nil(pu.id) or not is_nil(s.user_id),
-        order_by: [desc: u.name, desc: u.email],
+        order_by: [u.name, u.email],
         select: %{
           user: u,
           time_worked: coalesce(s.time_worked, 0) |> type(:integer),

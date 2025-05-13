@@ -118,7 +118,6 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
         {:noreply,
          assign(socket,
            is_editing_name: false,
-           is_editing_users: false,
            projects: Timetracker.list_projects(),
            selected_project: project
          )}
@@ -166,7 +165,7 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
         |> Enum.reject(fn user ->
           Enum.any?(project_users, &(&1.id == user.id))
         end)
-        |> Enum.sort_by(& &1.name),
+        |> Enum.sort_by(&{&1.name, &1.email}),
       project_users: project_users
     )
   end
@@ -215,6 +214,7 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
         |> Map.put(:time_worked, t)
         |> Map.put(:removed_from_project, r)
       end)
+      |> Enum.sort_by(&{&1.removed_from_project, &1.name, &1.email})
 
     total_project_seconds = Enum.sum_by(project_user_hours, & &1.time_worked)
 
@@ -318,12 +318,9 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
       </div>
       <div class="bg-white rounded-md p-4 justify-between items-center flex gap-5">
         <%= if record do %>
-          <div class="text-greenText bg-greenBg pl-2 pr-1 py-[5px] rounded-md flex items-center justify-center gap-1">
-            <span class="text-[11px] font-semibold">
-              EWIDENCJA
-            </span>
-            <.icon name="hero-check-micro" />
-          </div>
+          <span class="text-xs font-semibold text-greenText bg-greenBg pl-2 pr-1 py-[5px] uppercase rounded-md flex items-center justify-center gap-1">
+            EWIDENCJA <.icon name="hero-check-micro" />
+          </span>
           <a
             href={~p"/czasosledz/ewidencja/#{record.id}"}
             download={"Ewidencja_#{record.year}_#{record.month}_#{user.name || user.email}.pdf"}
@@ -332,12 +329,9 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
             <.icon name="hero-arrow-down-tray-micro" class="text-darkGrey" />
           </a>
         <% else %>
-          <div class="text-greenText bg-greyButtonBg px-2 py-[5px] rounded-md flex items-center justify-between gap-1 flex-1">
-            <span class="text-[11px] font-semibold">
-              BRAK
-            </span>
-            <.icon name="hero-x-mark-micro" />
-          </div>
+          <span class="text-xs font-semibold text-darkGrey bg-greyButtonBg pl-2 pr-1 py-[5px] uppercase rounded-md flex items-center justify-center gap-1">
+            BRAK <.icon name="hero-x-mark-micro" />
+          </span>
           <div class="py-1 px-2 invisible">
             <.icon name="hero-arrow-down-tray-micro" class="text-darkGrey" />
           </div>

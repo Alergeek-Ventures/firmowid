@@ -150,15 +150,15 @@ defmodule FirmowidWeb.CoreComponents do
   end
 
   defp button_styles(:size, %{size: "medium", variant: "solid"}) do
-    "text-base py-2 px-4 font-bold"
+    "text-base py-2.5 px-4 font-bold"
   end
 
   defp button_styles(:size, %{size: "small", variant: "solid"}) do
-    "text-sm px-2 py-2.5 font-semibold"
+    "text-sm px-2 py-1 font-semibold"
   end
 
   defp button_styles(:size, %{size: "medium"}) do
-    "text-base py-2 px-4"
+    "text-base py-2.5 px-4"
   end
 
   defp button_styles(:size, %{size: "small"}) do
@@ -755,7 +755,7 @@ defmodule FirmowidWeb.CoreComponents do
     ~H"""
     <label class={classes(["flex w-44 justify-between gap-4 items-center h-full bg-greyButtonBg
         hover:border-darkGrey border border-transparent transition-colors
-        rounded-lg py-1 px-3 max-md:hidden", @class])}>
+        rounded-lg py-1 px-3 max-md:hidden has-[:disabled]:opacity-40", @class])}>
       <input
         type="button"
         phx-hook="AirDatepicker"
@@ -763,6 +763,7 @@ defmodule FirmowidWeb.CoreComponents do
           @active_months && @active_months |> Enum.map(&Date.to_iso8601/1) |> Enum.join(",")
         }
         data-initial-date={@selected_date}
+        disabled={@disabled}
         {@rest}
       />
       <svg
