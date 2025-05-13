@@ -18,10 +18,6 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
       |> assign(:selected_date, selected_date)
       |> assign(:active_months, active_months)
       |> assign(:can_use_hours_records, can_use_hours_records)
-      |> allow_upload(:hours_record,
-        max_entries: 1,
-        accept: ["application/pdf", "image/*"]
-      )
 
     {:ok, socket}
   end
@@ -38,15 +34,18 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
   end
 
   @impl true
-  def handle_info({FirmowidWeb.HoursRecordLive.FormComponent, {:saved, hours_record}}, socket) do
-    {:noreply, stream_insert(socket, :hours_records, hours_record)}
-  end
+  def handle_event("change-month", %{"month" => month}, socket) do
+    month = month |> Date.from_iso8601!()
 
-  def handle_event("validate-upload", _params, socket) do
+    socket =
+      socket
+      |> assign(:selected_date, month)
+      |> push_patch(to: ~p"/czasosledz/ewidencja?month=#{month |> Date.to_iso8601()}")
+
     {:noreply, socket}
   end
 
-  def handle_event("upload", _params, socket) do
+  def handle_event("send", _params, socket) do
     Bodyguard.permit!(Timetracker, :create_hours_record, socket.assigns.current_user)
 
     consume_uploaded_entries(socket, :hours_record, fn %{path: path}, entry ->
@@ -72,18 +71,6 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
     end)
 
     {:noreply, socket |> refetch_data()}
-  end
-
-  @impl true
-  def handle_event("change-month", %{"month" => month}, socket) do
-    month = month |> Date.from_iso8601!()
-
-    socket =
-      socket
-      |> assign(:selected_date, month)
-      |> push_patch(to: ~p"/czasosledz/ewidencja?month=#{month |> Date.to_iso8601()}")
-
-    {:noreply, socket}
   end
 
   def refetch_data(socket) do
