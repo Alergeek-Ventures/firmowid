@@ -318,23 +318,33 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
       </div>
       <div class="bg-white rounded-md p-4 justify-between items-center flex gap-5">
         <%= if record do %>
-          <span class="text-xs font-semibold text-greenText bg-greenBg pl-2 pr-1 py-[5px] uppercase rounded-md flex items-center justify-center gap-1">
+          <span class="text-xs font-semibold text-greenText bg-greenBg pl-2 pr-1 py-[5px] uppercase rounded-md flex items-center justify-between flex-1 gap-1">
             EWIDENCJA <.icon name="hero-check-micro" />
           </span>
           <a
             href={~p"/czasosledz/ewidencja/#{record.id}"}
             download={"Ewidencja_#{record.year}_#{record.month}_#{user.name || user.email}.pdf"}
-            class="py-1 px-2 transition hover:bg-greyButtonBg rounded-md inline-flex items-center justify-center"
+            class="p-1 transition hover:bg-greyButtonBg rounded-md inline-flex items-center justify-center"
           >
-            <.icon name="hero-arrow-down-tray-micro" class="text-darkGrey" />
+            <.icon name="hero-arrow-down-tray-mini" class="text-darkGrey" />
           </a>
         <% else %>
-          <span class="text-xs font-semibold text-darkGrey bg-greyButtonBg pl-2 pr-1 py-[5px] uppercase rounded-md flex items-center justify-center gap-1">
+          <span class="text-xs font-semibold text-darkGrey bg-greyButtonBg px-2 py-[5px] uppercase rounded-md flex items-center justify-between flex-1 gap-1">
             BRAK <.icon name="hero-x-mark-micro" />
           </span>
-          <div class="py-1 px-2 invisible">
-            <.icon name="hero-arrow-down-tray-micro" class="text-darkGrey" />
-          </div>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="stroke-greyButtonBg shrink-0 m-0.5"
+          >
+            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="m14.5 12.5-5 5" /><path d="m9.5 12.5 5 5" />
+          </svg>
         <% end %>
       </div>
     </div>
