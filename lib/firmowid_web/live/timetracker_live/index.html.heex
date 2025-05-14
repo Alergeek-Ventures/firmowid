@@ -5,7 +5,7 @@
     } />
   </div>
 
-  <div class="flex justify-between mt-36">
+  <div class="flex justify-evenly gap-8 mt-24 px-4">
     <%= if Enum.empty?(@projects) do %>
       <div class="w-full max-w-md text-center py-8 text-darkGrey">
         <p class="text-lg font-semibold">Nie masz przypisanych projektów</p>
@@ -29,7 +29,7 @@
         phx-change="validate"
         phx-submit="save"
         for={@form}
-        class="w-full max-w-md space-y-4"
+        class="w-full max-w-md flex flex-col gap-4 mt-10"
       >
         <.input
           type="select"
@@ -76,7 +76,7 @@
           />
         </div>
 
-        <div :if={@current_session} class="text-center">
+        <div :if={@current_session} class="text-center mt-2">
           <div
             class="text-2xl font-bold text-orangeText"
             id="timetracker-timer"
@@ -91,7 +91,7 @@
           </.button>
         </div>
 
-        <div :if={!@current_session} class="flex gap-4">
+        <div :if={!@current_session} class="flex gap-4 mt-2">
           <.button
             type="button"
             variant="outline"
@@ -109,25 +109,25 @@
       </.form>
     <% end %>
 
-    <div class="relative w-64 h-64">
+    <div class="relative max-w-md w-full aspect-square">
       <div class="w-full h-full rounded-full bg-gray-100"></div>
 
-      <div class="absolute top-0 left-0 w-full h-full">
+      <div class="absolute top-0 left-0 w-full h-full aspect-square">
         <div
-          class="w-full h-full rounded-full"
+          class="w-full h-full rounded-full -rotate-90"
           style={"background: conic-gradient(var(--color-orange-text), #{@month_stats.percentage}%, var(--color-grey-button-bg) 0)"}
         >
         </div>
 
-        <div class="absolute top-1/2 left-1/2 w-[70%] h-[70%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-lightGreyBg">
+        <div class="absolute top-1/2 left-1/2 size-4/5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-lightGreyBg">
         </div>
       </div>
 
       <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-        <div class="font-bold text-gray-600">
+        <div class="font-bold text-gray-600 text-lg md:text-2xl">
           {@month_stats.hours}h {@month_stats.minutes}min
         </div>
-        <div class="mt-1 text-sm">w {@month_stats.month}</div>
+        <div class="mt-1 sm:text-sm lg:text-lg">w {@month_stats.month}</div>
       </div>
     </div>
   </div>
