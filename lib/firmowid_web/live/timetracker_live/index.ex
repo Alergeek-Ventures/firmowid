@@ -53,10 +53,36 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def assign_sessions(socket) do
+    grouped_sessions =
+      Timetracker.list_user_sessions(socket.assigns.current_user.id)
+      |> Enum.sort_by(& &1.start_datetime, DateTime)
+      |> Enum.group_by(&Date.to_string(&1.start_datetime))
+      |> Enum.sort_by(fn {day, _sessions} -> day end, :desc)
+      |> Enum.map(fn {day, sessions} ->
+        {day, group_nearby(sessions)}
+      end)
+
     socket
-    |> assign(:sessions, Timetracker.list_user_sessions(socket.assigns.current_user.id))
+    |> assign(:grouped_sessions, grouped_sessions)
     |> assign(:current_session, Timetracker.get_current_session(socket.assigns.current_user.id))
     |> assign(:month_stats, calculate_month_stats(socket.assigns.current_user.id))
+  end
+
+  def group_nearby(enumarable) do
+    Enum.reduce(enumarable, [], fn session, acc ->
+      case acc do
+        [] ->
+          [[session]]
+
+        [[last_session | _] = group | rest] ->
+          if last_session.title === session.title and
+               last_session.project_id === session.project_id do
+            [[session | group] | rest]
+          else
+            [[session] | acc]
+          end
+      end
+    end)
   end
 
   def handle_info(:tick, socket) do

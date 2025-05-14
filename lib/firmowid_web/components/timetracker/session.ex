@@ -7,119 +7,128 @@ defmodule FirmowidWeb.Components.Session do
 
   def render(assigns) do
     ~H"""
-    <div>
-      <div class="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
-        <div class="flex items-center gap-2 justify-center">
-          <div class="text-xs bg-darkGrey text-center text-white px-2 py-0.5 mt-0.5 rounded-full">
-            {case Enum.find(@projects, &(&1.id == @session.project_id)) do
-              nil -> "Brak projektu"
-              project -> project.name
-            end}
-          </div>
-          <div class="ml-2">{@session.title}</div>
-        </div>
-        <div class="flex items-center space-x-4">
-          <div>{format_time(@session.start_datetime)} - {format_time(@session.end_datetime)}</div>
-          <div class="font-bold">{format_duration(Session.calculate_session_duration(@session))}</div>
-          <div class="flex space-x-2">
-            <button
-              id={"edit-session-#{@session.id}"}
-              phx-click={show_modal("edit-session-modal-#{@session.id}")}
-            >
-              <.edit_icon class="text-darkGrey" />
-            </button>
-            <button
-              id={"delete-session-#{@session.id}"}
-              phx-click={show_modal("delete-session-modal-#{@session.id}")}
-            >
-              <.icon name="hero-trash" class="text-darkGrey" />
-            </button>
-          </div>
-        </div>
+    <div class="odd:bg-greyButtonBg flex rounded-[5px] py-1 px-2 gap-12 w-full min-w-0">
+      <div class="flex gap-2 justify-between items-start flex-1 min-w-0">
+        <% session = hd(@session) %>
+        <p class="truncate">{session.title}</p>
+        <p class="text-sm text-darkGrey uppercase">
+          {case Enum.find(@projects, &(&1.id == session.project_id)) do
+            nil -> "Brak projektu"
+            project -> project.name
+          end}
+        </p>
       </div>
 
-      <.modal
-        id={"edit-session-modal-#{@session.id}"}
-        on_cancel={hide_modal("edit-session-modal-#{@session.id}")}
-      >
-        <.form
-          :let={edit_form}
-          as={:session_form}
-          id={"edit-session-form-#{@session.id}"}
-          for={Session.changeset(@session)}
-          phx-submit="edit_session"
-          class="space-y-4"
-        >
-          <input type="hidden" name="session_form[id]" value={@session.id} />
-          <.input
-            type="select"
-            label="Projekt"
-            field={edit_form[:project_id]}
-            options={
-              @projects
-              |> Enum.map(fn project ->
-                {project.name, project.id}
-              end)
-            }
-          />
-          <.input label="Tytuł" field={edit_form[:title]} placeholder="Nad czym pracowałeś?" />
-          <div class="flex gap-2">
-            <div class="w-full">
-              <.input
-                type="datetime-local"
-                label="Czas rozpoczęcia"
-                field={edit_form[:start_datetime]}
-                value={format_datetime(@session.start_datetime)}
-              />
-            </div>
-            <div class="w-full">
-              <.input
-                type="datetime-local"
-                label="Czas zakończenia"
-                field={edit_form[:end_datetime]}
-                value={format_datetime(@session.end_datetime)}
-              />
+      <div class="space-y-2 min-w-max">
+        <div :for={session <- @session} class="flex items-center justify-end hover:bg-gray-50">
+          <div class="flex items-center gap-12">
+            <p class="line-clamp-1 w-[100px] text-right">
+              {format_time(session.start_datetime)} - {format_time(session.end_datetime)}
+            </p>
+            <p class="font-bold w-12 text-right">
+              {format_duration(Session.calculate_session_duration(session))}
+            </p>
+            <div class="flex gap-2">
+              <button
+                id={"edit-session-#{session.id}"}
+                phx-click={show_modal("edit-session-modal-#{session.id}")}
+              >
+                <.edit_icon class="text-darkGrey" />
+              </button>
+              <button
+                id={"delete-session-#{session.id}"}
+                phx-click={show_modal("delete-session-modal-#{session.id}")}
+              >
+                <.icon name="hero-trash" class="text-darkGrey" />
+              </button>
             </div>
           </div>
-          <div class="mt-6 flex justify-end gap-3">
-            <.button
-              type="button"
-              variant="outline"
-              color="black"
-              phx-click={hide_modal("edit-session-modal-#{@session.id}")}
+          <.modal
+            id={"edit-session-modal-#{session.id}"}
+            on_cancel={hide_modal("edit-session-modal-#{session.id}")}
+          >
+            <.form
+              :let={edit_form}
+              as={:session_form}
+              id={"edit-session-form-#{session.id}"}
+              for={Session.changeset(session)}
+              phx-submit="edit_session"
+              class="space-y-4"
             >
-              Anuluj
-            </.button>
-            <.button color="orange" phx-disable-with="Zapisywanie...">
-              Zapisz
-            </.button>
-          </div>
-        </.form>
-      </.modal>
+              <input type="hidden" name="session_form[id]" value={session.id} />
+              <.input
+                type="select"
+                label="Projekt"
+                field={edit_form[:project_id]}
+                options={
+                  @projects
+                  |> Enum.map(fn project ->
+                    {project.name, project.id}
+                  end)
+                }
+              />
+              <.input label="Tytuł" field={edit_form[:title]} placeholder="Nad czym pracowałeś?" />
+              <div class="flex gap-2">
+                <div class="w-full">
+                  <.input
+                    type="datetime-local"
+                    label="Czas rozpoczęcia"
+                    field={edit_form[:start_datetime]}
+                    value={format_datetime(session.start_datetime)}
+                  />
+                </div>
+                <div class="w-full">
+                  <.input
+                    type="datetime-local"
+                    label="Czas zakończenia"
+                    field={edit_form[:end_datetime]}
+                    value={format_datetime(session.end_datetime)}
+                  />
+                </div>
+              </div>
+              <div class="mt-6 flex justify-end gap-3">
+                <.button
+                  type="button"
+                  variant="outline"
+                  color="black"
+                  phx-click={hide_modal("edit-session-modal-#{session.id}")}
+                >
+                  Anuluj
+                </.button>
+                <.button color="orange" phx-disable-with="Zapisywanie...">
+                  Zapisz
+                </.button>
+              </div>
+            </.form>
+          </.modal>
 
-      <.modal
-        id={"delete-session-modal-#{@session.id}"}
-        on_cancel={hide_modal("delete-session-modal-#{@session.id}")}
-      >
-        <p>Czy na pewno chcesz usunąć sesję "<span class="font-semibold">{@session.title}</span>"?</p>
-        <div class="mt-6 flex justify-end gap-3">
-          <.button
-            variant="outline"
-            color="black"
-            phx-click={hide_modal("delete-session-modal-#{@session.id}")}
+          <.modal
+            id={"delete-session-modal-#{session.id}"}
+            on_cancel={hide_modal("delete-session-modal-#{session.id}")}
           >
-            Anuluj
-          </.button>
-          <.button
-            id={"confirm-delete-session-#{@session.id}"}
-            color="red"
-            phx-click={JS.push("delete_session", value: %{id: @session.id})}
-            phx-disable-with="Usuwanie..."
-          >
-            Usuń
-          </.button>
+            <p>
+              Czy na pewno chcesz usunąć sesję "<span class="font-semibold">{session.title}</span>"?
+            </p>
+            <div class="mt-6 flex justify-end gap-3">
+              <.button
+                variant="outline"
+                color="black"
+                phx-click={hide_modal("delete-session-modal-#{session.id}")}
+              >
+                Anuluj
+              </.button>
+              <.button
+                id={"confirm-delete-session-#{session.id}"}
+                color="red"
+                phx-click={JS.push("delete_session", value: %{id: session.id})}
+                phx-disable-with="Usuwanie..."
+              >
+                Usuń
+              </.button>
+            </div>
+          </.modal>
         </div>
-      </.modal>
+      </div>
     </div>
     """
   end

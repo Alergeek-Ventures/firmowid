@@ -5,7 +5,7 @@
     } />
   </div>
 
-  <div class="flex justify-evenly gap-8 mt-24 px-4">
+  <div class="flex justify-evenly items-center gap-8 mt-24 px-4">
     <%= if Enum.empty?(@projects) do %>
       <div class="w-full max-w-md text-center py-8 text-darkGrey">
         <p class="text-lg font-semibold">Nie masz przypisanych projektów</p>
@@ -29,7 +29,7 @@
         phx-change="validate"
         phx-submit="save"
         for={@form}
-        class="w-full max-w-md flex flex-col gap-4 mt-10"
+        class="w-full max-w-md flex flex-col gap-4"
       >
         <.input
           type="select"
@@ -109,7 +109,7 @@
       </.form>
     <% end %>
 
-    <div class="relative max-w-md w-full aspect-square">
+    <div class="relative max-w-sm w-full aspect-square">
       <div class="w-full h-full rounded-full bg-gray-100"></div>
 
       <div class="absolute top-0 left-0 w-full h-full aspect-square">
@@ -132,32 +132,29 @@
     </div>
   </div>
 
-  <div class="border-greyButtonBg p-4 border rounded-md mt-12">
-    <%= if Enum.empty?(@sessions) do %>
+  <div class="border-greyButtonBg p-4 pt-2 border rounded-md mt-12 space-y-12 max-w-6xl w-full mx-auto">
+    <%= if Enum.empty?(@grouped_sessions) do %>
       <div class="text-center py-8 text-darkGrey">
         <p class="text-lg font-semibold">Brak zarejestrowanych sesji</p>
         <p class="text-sm mt-2">Rozpocznij swoją pierwszą sesję używając formularza powyżej</p>
       </div>
     <% else %>
-      <%= for {day, sessions} <- @sessions |> Enum.group_by(fn s -> Date.to_string(s.start_datetime) end) |> Enum.sort_by(fn {day, _sessions} -> day end, :desc) do %>
-        <div class="w-full mt-2 flex text-darkGrey justify-between items-center">
-          <p class="font-semibold text-sm">{format_day_header(day)}</p>
-          <div class="border border-greyButtonBg p-2 rounded-md font-bold">
-            {format_duration(calculate_total_duration(sessions))}
+      <%= for {day, session_group} <- @grouped_sessions do %>
+        <div class="space-y-4">
+          <div class="w-full mt-2 flex text-darkGrey justify-between items-center">
+            <p class="font-semibold text-sm">{format_day_header(day)}</p>
+            <p class="border border-greyButtonBg px-1.5 py-1 rounded-md font-bold">
+              {format_duration(calculate_total_duration(List.flatten(session_group)))}
+            </p>
           </div>
-        </div>
-        <div class="w-full mx-auto mt-3">
-          <div class="shadow-sm rounded-lg">
-            <div class="[&>*:nth-child(odd)]:bg-greyButtonBg">
-              <%= for session <- sessions do %>
-                <.live_component
-                  module={FirmowidWeb.Components.Session}
-                  id={"tracker-entry-#{session.id}"}
-                  session={session}
-                  projects={@projects}
-                />
-              <% end %>
-            </div>
+          <div class="w-full space-y-1">
+            <.live_component
+              :for={sessions <- session_group}
+              module={FirmowidWeb.Components.Session}
+              id={"tracker-entry-#{hd(sessions).id}"}
+              session={sessions}
+              projects={@projects}
+            />
           </div>
         </div>
       <% end %>
