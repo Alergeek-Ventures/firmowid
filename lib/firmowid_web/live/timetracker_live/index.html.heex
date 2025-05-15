@@ -44,9 +44,9 @@
           }
         />
         <%= if @current_session do %>
-          <div class="w-full font-bold bg-greyButtonBg px-4 py-3 rounded">
+          <p class="w-full font-bold bg-greyButtonBg px-4 py-3 rounded">
             {@current_session.title}
-          </div>
+          </p>
         <% else %>
           <.input
             field={@form[:title]}
@@ -77,14 +77,14 @@
         </div>
 
         <div :if={@current_session} class="text-center mt-2">
-          <div
+          <p
             class="text-2xl font-bold text-orangeText"
             id="timetracker-timer"
             data-start_time={@current_session.start_datetime}
             phx-hook="Timer"
           >
             {format_duration(@current_session.duration, :with_seconds)}
-          </div>
+          </p>
 
           <.button phx-click="end_session" color="orange" type="button" class="mt-4 w-full">
             Zatrzymaj
@@ -124,10 +124,10 @@
       </div>
 
       <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-        <div class="font-bold text-gray-600 text-lg md:text-2xl">
+        <p class="font-bold text-lg md:text-2xl">
           {@month_stats.hours}h {@month_stats.minutes}min
-        </div>
-        <div class="mt-1 sm:text-sm lg:text-lg">w {@month_stats.month}</div>
+        </p>
+        <p class="mt-1 sm:text-sm lg:text-lg">w {@month_stats.month}</p>
       </div>
     </div>
   </div>
@@ -139,25 +139,23 @@
         <p class="text-sm mt-2">Rozpocznij swoją pierwszą sesję używając formularza powyżej</p>
       </div>
     <% else %>
-      <%= for {day, session_group} <- @grouped_sessions do %>
-        <div class="space-y-4">
-          <div class="w-full mt-2 flex text-darkGrey justify-between items-center">
-            <p class="font-semibold text-sm">{format_day_header(day)}</p>
-            <p class="border border-greyButtonBg px-1.5 py-1 rounded-md font-bold">
-              {format_duration(calculate_total_duration(List.flatten(session_group)))}
-            </p>
-          </div>
-          <div class="w-full space-y-1">
-            <.live_component
-              :for={sessions <- session_group}
-              module={FirmowidWeb.Components.Session}
-              id={"tracker-entry-#{hd(sessions).id}"}
-              session={sessions}
-              projects={@projects}
-            />
-          </div>
+      <div :for={{day, session_group} <- @grouped_sessions} class="space-y-4">
+        <div class="w-full mt-2 flex text-darkGrey justify-between items-center">
+          <p class="font-semibold text-sm">{format_day_header(day)}</p>
+          <p class="border border-greyButtonBg px-1.5 py-1 rounded-md font-bold">
+            {format_duration(calculate_total_duration(List.flatten(session_group)))}
+          </p>
         </div>
-      <% end %>
+        <div class="space-y-1">
+          <.live_component
+            :for={sessions <- session_group}
+            module={FirmowidWeb.Components.Session}
+            id={"tracker-entry-#{hd(sessions).id}"}
+            sessions={sessions}
+            projects={@projects}
+          />
+        </div>
+      </div>
     <% end %>
   </div>
 </div>

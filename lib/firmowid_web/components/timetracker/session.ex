@@ -2,14 +2,14 @@ defmodule FirmowidWeb.Components.Session do
   alias Firmowid.Timetracker.Session
   use FirmowidWeb, :live_component
 
-  attr :session, :map, required: true
+  attr :sessions, :list, required: true
   attr :projects, :list, required: true
 
   def render(assigns) do
     ~H"""
     <div class="odd:bg-greyButtonBg flex rounded-[5px] py-1 px-2 gap-12 w-full min-w-0">
-      <div class="flex gap-2 justify-between items-start flex-1 min-w-0">
-        <% session = hd(@session) %>
+      <div class="flex gap-2 justify-between items-center flex-1 min-w-0 max-h-max">
+        <% session = hd(@sessions) %>
         <p class="truncate">{session.title}</p>
         <p class="text-sm text-darkGrey uppercase">
           {case Enum.find(@projects, &(&1.id == session.project_id)) do
@@ -20,7 +20,7 @@ defmodule FirmowidWeb.Components.Session do
       </div>
 
       <div class="space-y-2 min-w-max">
-        <div :for={session <- @session} class="flex items-center justify-end hover:bg-gray-50">
+        <div :for={session <- @sessions} class="flex items-center justify-end hover:bg-gray-50">
           <div class="flex items-center gap-12">
             <p class="line-clamp-1 w-[100px] text-right">
               {format_time(session.start_datetime)} - {format_time(session.end_datetime)}

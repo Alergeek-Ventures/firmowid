@@ -53,8 +53,10 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def assign_sessions(socket) do
+    sessions = Timetracker.list_user_sessions(socket.assigns.current_user.id)
+
     grouped_sessions =
-      Timetracker.list_user_sessions(socket.assigns.current_user.id)
+      sessions
       |> Enum.sort_by(& &1.start_datetime, DateTime)
       |> Enum.group_by(&Date.to_string(&1.start_datetime))
       |> Enum.sort_by(fn {day, _sessions} -> day end, :desc)
@@ -65,11 +67,11 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     socket
     |> assign(:grouped_sessions, grouped_sessions)
     |> assign(:current_session, Timetracker.get_current_session(socket.assigns.current_user.id))
-    |> assign(:month_stats, calculate_month_stats(socket.assigns.current_user.id))
+    |> assign(:month_stats, calculate_month_stats(sessions))
   end
 
-  def group_nearby(enumarable) do
-    Enum.reduce(enumarable, [], fn session, acc ->
+  def group_nearby(enumerable) do
+    Enum.reduce(enumerable, [], fn session, acc ->
       case acc do
         [] ->
           [[session]]
@@ -270,13 +272,13 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     |> DateTime.from_naive!("Europe/Warsaw")
   end
 
-  def calculate_month_stats(user_id) do
+  def calculate_month_stats(sessions) do
     now = DateTime.now!("Europe/Warsaw")
     start_of_month = Date.beginning_of_month(now) |> DateTime.new!(~T[00:00:00], "Europe/Warsaw")
     end_of_month = Date.end_of_month(now) |> DateTime.new!(~T[23:59:59], "Europe/Warsaw")
 
     total_seconds =
-      Timetracker.list_user_sessions(user_id)
+      sessions
       |> Enum.filter(fn session ->
         session_end = session.end_datetime || DateTime.now!("Europe/Warsaw")
 
