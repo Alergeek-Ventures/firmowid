@@ -36,42 +36,57 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
 
     if connected?(socket), do: :timer.send_interval(5000, self(), :tick)
 
+    four_weeks_ago =
+      Date.utc_today() |> Date.beginning_of_week() |> Date.shift(week: -3)
+
     {:ok,
      socket
-     |> assign(:projects, Timetracker.list_user_projects(socket.assigns.current_user.id))
+     |> assign(:sessions_after, four_weeks_ago)
      |> assign_sessions()
-     |> assign(
-       :form,
-       to_form(
-         SessionForm.changeset(%{
-           date: Date.utc_today(),
-           start_time: Time.utc_now()
-         })
-       )
-     )
+     |> assign(:projects, Timetracker.list_user_projects(socket.assigns.current_user.id))
+     |> assign(:form, to_form(SessionForm.changeset(%{})))
      |> assign(:is_form_extended, false)}
   end
 
-  def assign_sessions(socket) do
-    sessions = Timetracker.list_user_sessions(socket.assigns.current_user.id)
+  def assign_sessions(%{assigns: %{sessions_after: after_date}} = socket) do
+    sessions =
+      Timetracker.list_user_sessions(socket.assigns.current_user.id, after_date: after_date)
+
+    next_sessions_available =
+      Timetracker.count_user_sessions(socket.assigns.current_user.id) > length(sessions)
+
+    {today_sessions, sessions} =
+      sessions
+      |> Enum.split_with(&(DateTime.to_date(&1.start_datetime) == Date.utc_today()))
+
+    today_sessions = today_sessions |> group_nearby()
 
     grouped_sessions =
       sessions
-      |> Enum.sort_by(& &1.start_datetime, DateTime)
-      |> Enum.group_by(&Date.to_string(&1.start_datetime))
-      |> Enum.sort_by(fn {day, _sessions} -> day end, :desc)
-      |> Enum.map(fn {day, sessions} ->
-        {day, group_nearby(sessions)}
+      |> Enum.group_by(&Date.beginning_of_week(&1.start_datetime))
+      |> Enum.sort_by(fn {week, _sessions} -> week end, {:desc, Date})
+      |> Enum.map(fn {week, sessions} ->
+        {week,
+         sessions
+         |> Enum.group_by(&DateTime.to_date(&1.start_datetime))
+         |> Enum.sort_by(fn {day, _sessions} -> day end, {:desc, Date})
+         |> Enum.map(fn {day, sessions} ->
+           {day, sessions |> group_nearby()}
+         end)}
       end)
 
     socket
+    |> assign(:today_sessions, today_sessions)
     |> assign(:grouped_sessions, grouped_sessions)
+    |> assign(:next_sessions_available, next_sessions_available)
     |> assign(:current_session, Timetracker.get_current_session(socket.assigns.current_user.id))
     |> assign(:month_stats, calculate_month_stats(sessions))
   end
 
-  def group_nearby(enumerable) do
-    Enum.reduce(enumerable, [], fn session, acc ->
+  def group_nearby(sessions) do
+    sessions
+    |> Enum.sort_by(& &1.start_datetime, DateTime)
+    |> Enum.reduce([], fn session, acc ->
       case acc do
         [] ->
           [[session]]
@@ -87,12 +102,34 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     end)
   end
 
+  def expand_sessions(socket, session) do
+    start_date = session.start_datetime |> DateTime.to_date()
+
+    if Date.before?(start_date, socket.assigns.sessions_after) do
+      assign(socket, :sessions_after, start_date)
+    else
+      socket
+    end
+  end
+
   def handle_info(:tick, socket) do
     {:noreply, socket |> assign_sessions()}
   end
 
   def handle_event("toggle_extended_form", _, socket) do
-    {:noreply, socket |> update(:is_form_extended, &(!&1))}
+    {:noreply,
+     socket
+     |> update(:is_form_extended, &(!&1))
+     |> assign(
+       :form,
+       socket.assigns.form.params
+       |> Map.merge(%{
+         "date" => Date.utc_today(),
+         "start_time" => Time.utc_now()
+       })
+       |> SessionForm.changeset()
+       |> to_form()
+     )}
   end
 
   def handle_event("validate", %{"session_form" => session}, socket) do
@@ -100,7 +137,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
      socket
      |> assign(
        :form,
-       to_form(SessionForm.changeset(%SessionForm{}, session))
+       to_form(SessionForm.changeset(session))
      )}
   end
 
@@ -111,19 +148,11 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
       session |> SessionForm.changeset() |> SessionForm.attributes(socket.assigns.current_user.id)
 
     case Timetracker.start_session(validated_session) do
-      {:ok, _} ->
+      {:ok, session} ->
         {:noreply,
          socket
-         |> assign(
-           :form,
-           to_form(
-             SessionForm.changeset(%{
-               date: Date.utc_today(),
-               start_time: Time.utc_now()
-             })
-           )
-         )
          |> assign(:is_form_extended, false)
+         |> expand_sessions(session)
          |> assign_sessions()}
 
       {:error, changeset} ->
@@ -186,9 +215,10 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
       |> Map.update("end_datetime", nil, &string_to_datetime/1)
 
     case Timetracker.update_session(session_id, params) do
-      {:ok, _session} ->
+      {:ok, session} ->
         {:noreply,
          socket
+         |> expand_sessions(session)
          |> assign_sessions()
          |> push_event("js-exec", %{
            to: "#edit-session-modal-#{session_id}",
@@ -201,9 +231,14 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     end
   end
 
-  def format_day_header(day_string) do
-    date = Date.from_iso8601!(day_string)
+  def handle_event("load_more", _, socket) do
+    {:noreply,
+     socket
+     |> assign(:sessions_after, Date.shift(socket.assigns.sessions_after, week: -1))
+     |> assign_sessions()}
+  end
 
+  def format_day_header(%Date{} = date) do
     day_name =
       Calendar.strftime(date, "%A",
         day_of_week_names: fn number ->
@@ -222,6 +257,16 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
 
     day_number = Calendar.strftime(date, "%d.%m")
     "#{day_name} (#{day_number})"
+  end
+
+  def format_week_header(%Date{} = date) do
+    week_start = Date.beginning_of_week(date)
+    week_end = Date.end_of_week(date)
+
+    week_start_str = Calendar.strftime(week_start, "%d")
+    week_end_str = Calendar.strftime(week_end, "%d.%m.%Y")
+
+    "TYDZIEŃ #{week_start_str}-#{week_end_str}"
   end
 
   def format_time(nil) do

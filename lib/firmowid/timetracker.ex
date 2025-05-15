@@ -307,13 +307,29 @@ defmodule Firmowid.Timetracker do
 
   def get_session!(id), do: Repo.get!(Session, id)
 
-  def list_user_sessions(user_id) do
-    Session
-    |> where([s], s.user_id == ^user_id)
-    |> order_by([s], desc: s.start_datetime)
+  def list_user_sessions(user_id, opts \\ []) do
+    query =
+      Session
+      |> where([s], s.user_id == ^user_id)
+      |> order_by([s], desc: s.start_datetime)
+
+    case Keyword.get(opts, :after_date) do
+      nil ->
+        query
+
+      after_date ->
+        where(query, [s], s.start_datetime >= ^DateTime.new!(after_date, ~T[00:00:00]))
+    end
     |> Repo.all()
     |> Repo.preload(:project)
     |> Enum.map(&Session.put_duration/1)
+  end
+
+  def count_user_sessions(user_id) do
+    Session
+    |> where([s], s.user_id == ^user_id)
+    |> select([s], count(s.id))
+    |> Repo.one()
   end
 
   def get_current_session(user_id) do
