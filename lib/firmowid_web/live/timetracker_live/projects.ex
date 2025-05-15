@@ -327,9 +327,10 @@ defmodule FirmowidWeb.TimetrackerLive.Projects do
     >
       <div
         :for={{id, %{user: user, hours_record: record}} <- @hours_records}
+        id={id}
         class="grid grid-cols-subgrid col-span-full"
       >
-        <div id={id} class="flex items-center bg-white rounded-md p-4 justify-between">
+        <div class="flex items-center bg-white rounded-md p-4 justify-between">
           <.render_profile user={user} />
           <span :if={record}>{trunc(record.number_of_hours)} h</span>
         </div>
