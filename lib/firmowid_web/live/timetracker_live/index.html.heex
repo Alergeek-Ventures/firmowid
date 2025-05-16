@@ -5,7 +5,7 @@
     } />
   </div>
 
-  <div class="flex justify-evenly items-center gap-8 mt-24 px-4">
+  <div class="flex justify-between items-center gap-8 mt-24 px-4 max-w-6xl w-full mx-auto">
     <%= if Enum.empty?(@projects) do %>
       <div class="w-full max-w-md text-center py-8 text-darkGrey">
         <p class="text-lg font-semibold">Nie masz przypisanych projektów</p>
@@ -124,7 +124,16 @@
       </div>
 
       <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-        <p class="font-bold text-lg md:text-2xl">
+        <p
+          class="font-bold text-lg md:text-2xl"
+          id="month-timer"
+          phx-hook="Timer"
+          data-start_time={
+            DateTime.utc_now() |> DateTime.add(-@month_stats.total_seconds, :second)
+          }
+          data-format="pretty"
+          data-disabled={@current_session == nil}
+        >
           {@month_stats.hours}h {@month_stats.minutes}min
         </p>
         <p class="mt-1 sm:text-sm lg:text-lg">w {@month_stats.month}</p>
@@ -133,7 +142,7 @@
   </div>
 
   <div
-    :if={Enum.empty?(@grouped_sessions) and not Enum.empty?(@today_sessions)}
+    :if={Enum.empty?(@grouped_sessions) and Enum.empty?(@today_sessions)}
     class="text-center py-8 text-darkGrey"
   >
     <p class="text-lg font-semibold">Brak zarejestrowanych sesji</p>
@@ -144,18 +153,24 @@
     <div :if={not Enum.empty?(@today_sessions)} class="space-y-4 px-4">
       <div class="w-full mt-2 flex text-darkGrey justify-between items-center">
         <p class="text-sm font-semibold">TWOJA DZISIEJSZA SESJA</p>
-        <p class="bg-orangeBg text-orangeText px-2 py-1 rounded-md font-bold text-xl leading-tight">
-          {@today_sessions
-          |> List.flatten()
-          |> calculate_total_duration()
-          |> format_duration()}
+
+        <% today_time = @today_sessions |> List.flatten() |> calculate_total_duration() %>
+        <p
+          class="bg-orangeBg text-orangeText px-2 py-1 rounded-md font-bold text-xl leading-tight"
+          id="today-timer"
+          phx-hook="Timer"
+          data-start_time={DateTime.utc_now() |> DateTime.add(-today_time, :second)}
+          data-format="short"
+          data-disabled={@current_session == nil}
+        >
+          {today_time |> format_duration()}
         </p>
       </div>
       <div class="space-y-1">
         <.live_component
           :for={sessions <- @today_sessions}
           module={FirmowidWeb.Components.Session}
-          id={"tracker-entry-#{hd(sessions).id}"}
+          id={"tracker-entry-#{hd(sessions).title}-#{hd(sessions).project_id}"}
           sessions={sessions}
           projects={@projects}
         />
@@ -192,7 +207,7 @@
             <.live_component
               :for={sessions <- session_group}
               module={FirmowidWeb.Components.Session}
-              id={"tracker-entry-#{hd(sessions).id}"}
+              id={"tracker-entry-#{hd(sessions).title}-#{hd(sessions).project_id}"}
               sessions={sessions}
               projects={@projects}
             />

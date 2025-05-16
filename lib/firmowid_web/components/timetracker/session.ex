@@ -25,7 +25,14 @@ defmodule FirmowidWeb.Components.Session do
             <p class="line-clamp-1 w-[100px] text-right">
               {format_time(session.start_datetime)} - {format_time(session.end_datetime)}
             </p>
-            <p class="font-bold w-12 text-right">
+            <p
+              class="font-bold w-12 text-right"
+              id="session-timer"
+              phx-hook="Timer"
+              data-start_time={session.start_datetime}
+              data-format="short"
+              data-disabled={session.end_datetime != nil}
+            >
               {format_duration(Session.calculate_session_duration(session))}
             </p>
             <div class="flex gap-2">
@@ -133,29 +140,6 @@ defmodule FirmowidWeb.Components.Session do
     """
   end
 
-  def format_day_header(day_string) do
-    date = Date.from_iso8601!(day_string)
-
-    day_name =
-      Calendar.strftime(date, "%A",
-        day_of_week_names: fn number ->
-          case number do
-            1 -> "Poniedziałek"
-            2 -> "Wtorek"
-            3 -> "Środa"
-            4 -> "Czwartek"
-            5 -> "Piątek"
-            6 -> "Sobota"
-            7 -> "Niedziela"
-            _ -> "Unknown"
-          end
-        end
-      )
-
-    day_number = Calendar.strftime(date, "%d.%m")
-    "#{day_name} (#{day_number})"
-  end
-
   def format_time(nil) do
     "trwa"
   end
@@ -186,13 +170,6 @@ defmodule FirmowidWeb.Components.Session do
     minutes = rem(div(duration, 60), 60)
 
     :io_lib.format("~2..0B:~2..0B", [hours, minutes])
-  end
-
-  def calculate_total_duration(sessions) do
-    Enum.reduce(sessions, 0, fn session, acc ->
-      acc +
-        Session.calculate_session_duration(session)
-    end)
   end
 
   defp format_datetime(nil), do: nil

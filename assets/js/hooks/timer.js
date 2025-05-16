@@ -4,6 +4,9 @@
 export const Timer = {
   mounted() {
     this.start_time = new Date(this.el.dataset.start_time);
+    this.format = this.el.dataset.format;
+    this.disabled =
+      this.el.dataset.disabled && this.el.dataset.disabled === "true";
     this.startTimer();
   },
 
@@ -24,6 +27,14 @@ export const Timer = {
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
 
+    if (this.format === "short") {
+      return `${hours.toString().padStart(2, "0")}:${(minutes % 60)
+        .toString()
+        .padStart(2, "0")}`;
+    } else if (this.format === "pretty") {
+      return `${hours}h ${minutes % 60}min`;
+    }
+
     return `${hours.toString().padStart(2, "0")}:${(minutes % 60)
       .toString()
       .padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`;
@@ -35,6 +46,10 @@ export const Timer = {
   },
 
   startTimer() {
+    if (this.disabled) {
+      return;
+    }
+
     clearInterval(this.interval);
     this.updateElement();
     this.interval = setInterval(this.updateElement.bind(this), 1000);

@@ -27,7 +27,14 @@ defmodule Firmowid.Timetracker do
   def authorize(_, _, _), do: false
 
   def list_user_projects(user_id) do
-    Accounts.get_user!(user_id) |> Repo.preload(:projects) |> Map.get(:projects)
+    query =
+      from p in Project,
+        join: pu in ProjectUser,
+        on: p.id == pu.project_id,
+        where: pu.user_id == ^user_id,
+        select: p
+
+    Repo.all(query)
   end
 
   def list_user_projects_with_duration(user_id, date) do
@@ -281,12 +288,21 @@ defmodule Firmowid.Timetracker do
     %Session{}
     |> Session.changeset(attrs)
     |> Repo.insert()
+    |> case do
+      {:ok, session} -> {:ok, Session.put_duration(session)}
+      rest -> rest
+    end
+  end
+
+  def end_session(%Session{} = session) do
+    session
+    |> Session.changeset(%{end_datetime: DateTime.utc_now()})
+    |> Repo.update()
   end
 
   def end_session(session_id) do
-    session = Repo.get(Session, session_id)
-
-    Session.changeset(session, %{end_datetime: DateTime.utc_now()})
+    Repo.get(Session, session_id)
+    |> Session.changeset(%{end_datetime: DateTime.utc_now()})
     |> Repo.update()
   end
 
@@ -295,6 +311,10 @@ defmodule Firmowid.Timetracker do
     |> Repo.get(session_id)
     |> Session.changeset(%{end_datetime: date})
     |> Repo.update()
+  end
+
+  def delete_session(%Session{} = session) do
+    Repo.delete(session)
   end
 
   def delete_session(session_id) do
@@ -321,7 +341,6 @@ defmodule Firmowid.Timetracker do
         where(query, [s], s.start_datetime >= ^DateTime.new!(after_date, ~T[00:00:00]))
     end
     |> Repo.all()
-    |> Repo.preload(:project)
     |> Enum.map(&Session.put_duration/1)
   end
 
@@ -338,7 +357,6 @@ defmodule Firmowid.Timetracker do
     |> order_by([s], desc: s.start_datetime)
     |> limit(1)
     |> Repo.one()
-    |> Repo.preload(:project)
     |> Session.put_duration()
   end
 
