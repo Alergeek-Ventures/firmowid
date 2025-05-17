@@ -3,6 +3,7 @@ defmodule Firmowid.Timetracker.Session do
   import Ecto.Changeset
   alias Firmowid.Timetracker
   alias Firmowid.Repo
+  require Ecto.Query
 
   schema "sessions" do
     field :title, :string
@@ -32,24 +33,26 @@ defmodule Firmowid.Timetracker.Session do
     end
   end
 
+  # this should be called in transaction if we are creating or updating session - race condition
   @spec validate_user_has_access_to_project(Ecto.Changeset.t()) :: Ecto.Changeset.t()
   defp validate_user_has_access_to_project(changeset) do
-    project_id = get_field(changeset, :project_id)
     user_id = get_field(changeset, :user_id)
+    project_id = get_change(changeset, :project_id)
 
-    user_projects =
-      case user_id do
-        nil -> []
-        _ -> Timetracker.list_user_projects(user_id)
+    if project_id == nil do
+      changeset
+    else
+      Ecto.Query.from(pu in Timetracker.ProjectUser,
+        where: pu.user_id == ^user_id and pu.project_id == ^project_id
+      )
+      |> Repo.exists?()
+      |> case do
+        true -> changeset
+        false -> changeset |> add_error(:project_id, "User does not have access to this project")
       end
-
-    case Enum.find(user_projects, &(&1.id == project_id)) do
-      nil -> add_error(changeset, :project_id, "User does not have access to this project")
-      _ -> changeset
     end
   end
 
-  @spec validate_user_has_access_to_project(Ecto.Changeset.t()) :: Ecto.Changeset.t()
   defp validate_datetime_order(changeset) do
     start_datetime = get_field(changeset, :start_datetime)
     end_datetime = get_field(changeset, :end_datetime)
