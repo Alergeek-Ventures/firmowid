@@ -5,13 +5,14 @@ export const Timer = {
   mounted() {
     this.start_time = new Date(this.el.dataset.start_time);
     this.format = this.el.dataset.format;
-    this.disabled =
-      this.el.dataset.disabled && this.el.dataset.disabled === "true";
+    this.disabled = this.el.dataset.disabled === "";
     this.startTimer();
   },
 
   updated() {
     this.start_time = new Date(this.el.dataset.start_time);
+    this.format = this.el.dataset.format;
+    this.disabled = this.el.dataset.disabled === "";
 
     if (this.start_time) {
       this.startTimer();
@@ -46,11 +47,12 @@ export const Timer = {
   },
 
   startTimer() {
+    clearInterval(this.interval);
+
     if (this.disabled) {
       return;
     }
 
-    clearInterval(this.interval);
     this.updateElement();
     this.interval = setInterval(this.updateElement.bind(this), 1000);
   },

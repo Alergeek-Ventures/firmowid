@@ -1,5 +1,6 @@
 defmodule FirmowidWeb.Components.Session do
   alias Firmowid.Timetracker.Session
+  alias FirmowidWeb.Helpers.TimeFormatter
   use FirmowidWeb, :live_component
 
   attr :sessions, :list, required: true
@@ -8,7 +9,7 @@ defmodule FirmowidWeb.Components.Session do
   def render(assigns) do
     ~H"""
     <div class="odd:bg-greyButtonBg flex rounded-[5px] py-1 px-2 gap-12 w-full min-w-0">
-      <div class="flex gap-2 justify-between items-center flex-1 min-w-0 max-h-max">
+      <div class="flex gap-12 justify-between items-center flex-1 min-w-0 max-h-max">
         <% session = hd(@sessions) %>
         <p class="truncate">{session.title}</p>
         <p class="text-sm text-darkGrey uppercase">
@@ -20,35 +21,33 @@ defmodule FirmowidWeb.Components.Session do
       </div>
 
       <div class="space-y-2 min-w-max">
-        <div :for={session <- @sessions} class="flex items-center justify-end hover:bg-gray-50">
-          <div class="flex items-center gap-12">
-            <p class="line-clamp-1 w-[100px] text-right">
-              {format_time(session.start_datetime)} - {format_time(session.end_datetime)}
-            </p>
-            <p
-              class="font-bold w-12 text-right"
-              id="session-timer"
-              phx-hook="Timer"
-              data-start_time={session.start_datetime}
-              data-format="short"
-              data-disabled={session.end_datetime != nil}
+        <div :for={session <- @sessions} class="flex items-center justify-end hover:bg-gray-50 gap-12">
+          <p class="w-[100px] text-right">
+            {format_time(session.start_datetime)} - {format_time(session.end_datetime)}
+          </p>
+          <p
+            class="font-bold w-12 text-right"
+            id={"session-timer-#{session.id}"}
+            phx-hook="Timer"
+            data-start_time={session.start_datetime}
+            data-format="short"
+            data-disabled={session.end_datetime != nil}
+          >
+            {session |> Session.calculate_session_duration() |> TimeFormatter.format_timer()}
+          </p>
+          <div class="flex gap-2">
+            <button
+              id={"edit-session-#{session.id}"}
+              phx-click={show_modal("edit-session-modal-#{session.id}")}
             >
-              {format_duration(Session.calculate_session_duration(session))}
-            </p>
-            <div class="flex gap-2">
-              <button
-                id={"edit-session-#{session.id}"}
-                phx-click={show_modal("edit-session-modal-#{session.id}")}
-              >
-                <.edit_icon class="text-darkGrey" />
-              </button>
-              <button
-                id={"delete-session-#{session.id}"}
-                phx-click={show_modal("delete-session-modal-#{session.id}")}
-              >
-                <.icon name="hero-trash" class="text-darkGrey" />
-              </button>
-            </div>
+              <.edit_icon class="text-darkGrey" />
+            </button>
+            <button
+              id={"delete-session-#{session.id}"}
+              phx-click={show_modal("delete-session-modal-#{session.id}")}
+            >
+              <.icon name="hero-trash" class="text-darkGrey" />
+            </button>
           </div>
           <.modal
             id={"edit-session-modal-#{session.id}"}
@@ -67,12 +66,7 @@ defmodule FirmowidWeb.Components.Session do
                 type="select"
                 label="Projekt"
                 field={edit_form[:project_id]}
-                options={
-                  @projects
-                  |> Enum.map(fn project ->
-                    {project.name, project.id}
-                  end)
-                }
+                options={@projects |> Enum.map(&{&1.name, &1.id})}
               />
               <.input label="Tytuł" field={edit_form[:title]} placeholder="Nad czym pracowałeś?" />
               <div class="flex gap-2">
@@ -140,36 +134,12 @@ defmodule FirmowidWeb.Components.Session do
     """
   end
 
-  def format_time(nil) do
-    "trwa"
-  end
-
-  def format_time("") do
-    nil
-  end
+  def format_time(nil), do: "trwa"
 
   def format_time(%DateTime{} = datetime) do
     datetime
     |> DateTime.shift_zone!("Europe/Warsaw")
     |> Calendar.strftime("%H:%M")
-  end
-
-  def format_time(%Time{} = time) do
-    time |> Calendar.strftime("%H:%M")
-  end
-
-  def format_duration(duration, :with_seconds) when is_integer(duration) do
-    hours = div(duration, 60 * 60)
-    minutes = rem(div(duration, 60), 60)
-    seconds = rem(duration, 60)
-    :io_lib.format("~2..0B:~2..0B:~2..0B", [hours, minutes, seconds])
-  end
-
-  def format_duration(duration) when is_integer(duration) do
-    hours = div(duration, 3600)
-    minutes = rem(div(duration, 60), 60)
-
-    :io_lib.format("~2..0B:~2..0B", [hours, minutes])
   end
 
   defp format_datetime(nil), do: nil

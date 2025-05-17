@@ -3,6 +3,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   alias Firmowid.Timetracker.Session
   alias Firmowid.Timetracker
   alias Firmowid.Accounts
+  alias FirmowidWeb.Helpers.TimeFormatter
   use FirmowidWeb, :live_view
   import FirmowidWeb.Components.Timetracker.SubnavigationButtons
 
@@ -40,7 +41,6 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     {:ok,
      socket
      |> assign(:sessions_after, four_weeks_ago)
-     |> assign(:current_session, Timetracker.get_current_session(socket.assigns.current_user.id))
      |> assign_sessions()
      |> assign(:projects, Timetracker.list_user_projects(socket.assigns.current_user.id))
      |> assign(:form, to_form(SessionForm.changeset(%{})))
@@ -76,26 +76,11 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
          end)}
       end)
 
-    # grouped_sessions =
-    #   rest_sessions
-    #   |> Enum.sort_by(& &1.start_datetime, {:desc, DateTime})
-    #   |> Stream.chunk_by(fn session -> {session.title, session.project_id} end)
-    #   |> Stream.chunk_by(&DateTime.to_date(hd(&1).start_datetime))
-    #   |> Stream.map(fn sessions ->
-    #     {hd(hd(sessions)).start_datetime |> DateTime.to_date(), sessions}
-    #   end)
-    #   |> Stream.chunk_by(fn {day, _sessions} ->
-    #     day |> Date.beginning_of_week()
-    #   end)
-    #   |> Stream.map(fn sessions ->
-    #     {hd(sessions) |> elem(0) |> Date.beginning_of_week(), sessions}
-    #   end)
-    #   |> Enum.to_list()
-
     socket
     |> assign(:today_sessions, today_sessions)
     |> assign(:grouped_sessions, grouped_sessions)
     |> assign(:next_sessions_available, next_sessions_available)
+    |> assign(:current_session, Timetracker.get_current_session(socket.assigns.current_user.id))
     |> assign(:month_stats, calculate_month_stats(sessions))
   end
 
@@ -114,6 +99,8 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def handle_event("toggle_extended_form", _, socket) do
+    now = DateTime.now!("Europe/Warsaw")
+
     {:noreply,
      socket
      |> update(:is_form_extended, &(!&1))
@@ -121,8 +108,8 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
        :form,
        socket.assigns.form.params
        |> Map.merge(%{
-         "date" => Date.utc_today(),
-         "start_time" => Time.utc_now()
+         "date" => DateTime.to_date(now),
+         "start_time" => DateTime.to_time(now)
        })
        |> SessionForm.changeset()
        |> to_form()
@@ -140,17 +127,17 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
       session |> SessionForm.changeset() |> SessionForm.attributes(socket.assigns.current_user.id)
 
     case Timetracker.start_session(validated_session) do
-      {:ok, session} ->
-        current_session =
-          case session.end_datetime do
-            nil -> session
-            _ -> nil
-          end
-
+      {:ok, %{end_time: nil} = session} ->
         {:noreply,
          socket
-         |> assign(:is_form_extended, false)
-         |> assign(:current_session, current_session)
+         |> assign(is_form_extended: false, current_session: session)
+         |> expand_sessions(session)
+         |> assign_sessions()}
+
+      {:ok, session} ->
+        {:noreply,
+         socket
+         |> assign(is_form_extended: false)
          |> expand_sessions(session)
          |> assign_sessions()}
 
@@ -264,13 +251,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     "TYDZIEŃ #{week_start_str}-#{week_end_str}"
   end
 
-  def format_time(nil) do
-    "trwa"
-  end
-
-  def format_time("") do
-    nil
-  end
+  def format_time(""), do: nil
 
   def format_time(%DateTime{} = datetime) do
     datetime
@@ -280,20 +261,6 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
 
   def format_time(%Time{} = time) do
     time |> Calendar.strftime("%H:%M")
-  end
-
-  def format_duration(duration, :with_seconds) when is_integer(duration) do
-    hours = div(duration, 60 * 60)
-    minutes = rem(div(duration, 60), 60)
-    seconds = rem(duration, 60)
-    :io_lib.format("~2..0B:~2..0B:~2..0B", [hours, minutes, seconds])
-  end
-
-  def format_duration(duration) when is_integer(duration) do
-    hours = div(duration, 3600)
-    minutes = rem(div(duration, 60), 60)
-
-    :io_lib.format("~2..0B:~2..0B", [hours, minutes])
   end
 
   def calculate_total_duration(sessions) do
@@ -332,30 +299,25 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     percentage = round(total_seconds / (160 * 3600) * 100)
 
     current_month =
-      now
-      |> Calendar.strftime("%B",
-        month_names: fn month ->
-          case month do
-            1 -> "styczniu"
-            2 -> "lutym"
-            3 -> "marcu"
-            4 -> "kwietniu"
-            5 -> "maju"
-            6 -> "czerwcu"
-            7 -> "lipcu"
-            8 -> "sierpniu"
-            9 -> "wrześniu"
-            10 -> "październiku"
-            11 -> "listopadzie"
-            12 -> "grudniu"
-          end
-        end
-      )
+      case now.month do
+        1 -> "styczniu"
+        2 -> "lutym"
+        3 -> "marcu"
+        4 -> "kwietniu"
+        5 -> "maju"
+        6 -> "czerwcu"
+        7 -> "lipcu"
+        8 -> "sierpniu"
+        9 -> "wrześniu"
+        10 -> "październiku"
+        11 -> "listopadzie"
+        12 -> "grudniu"
+      end
 
     %{
       hours: hours,
       minutes: minutes,
-      total_seconds: total_seconds,
+      elapsed: DateTime.utc_now() |> DateTime.add(-total_seconds),
       percentage: percentage,
       month: current_month
     }

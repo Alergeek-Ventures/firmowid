@@ -36,12 +36,7 @@
           disabled={@current_session != nil}
           class="w-full font-bold bg-orangeBg text-orangeText border-none px-4 py-3 rounded appearance-none cursor-pointer hover:bg-[#f0e0d8] transition-colors focus:outline-none focus:ring-1 focus:ring-orangeText"
           field={@form[:project_id]}
-          options={
-            @projects
-            |> Enum.map(fn project ->
-              {project.name, project.id}
-            end)
-          }
+          options={@projects |> Enum.map(&{&1.name, &1.id})}
         />
         <%= if @current_session do %>
           <p class="w-full font-bold bg-greyButtonBg px-4 py-3 rounded">
@@ -83,7 +78,7 @@
             data-start_time={@current_session.start_datetime}
             phx-hook="Timer"
           >
-            {format_duration(@current_session.duration, :with_seconds)}
+            {TimeFormatter.format_timer(@current_session.duration, :with_seconds)}
           </p>
 
           <.button phx-click="end_session" color="orange" type="button" class="mt-4 w-full">
@@ -128,9 +123,7 @@
           class="font-bold text-lg md:text-2xl"
           id="month-timer"
           phx-hook="Timer"
-          data-start_time={
-            DateTime.utc_now() |> DateTime.add(-@month_stats.total_seconds, :second)
-          }
+          data-start_time={@month_stats.elapsed}
           data-format="pretty"
           data-disabled={@current_session == nil}
         >
@@ -163,25 +156,21 @@
           data-format="short"
           data-disabled={@current_session == nil}
         >
-          {today_time |> format_duration()}
+          {today_time |> TimeFormatter.format_timer()}
         </p>
       </div>
       <div class="space-y-1">
         <.live_component
           :for={sessions <- @today_sessions}
           module={FirmowidWeb.Components.Session}
-          id={"tracker-entry-#{hd(sessions).title}-#{hd(sessions).project_id}"}
+          id={"tracker-entry-#{hd(sessions).id}"}
           sessions={sessions}
           projects={@projects}
         />
       </div>
     </div>
 
-    <div
-      :for={{week, days} <- @grouped_sessions}
-      :if={not Enum.empty?(@grouped_sessions)}
-      class="space-y-6 w-full"
-    >
+    <div :for={{week, days} <- @grouped_sessions} class="space-y-6 w-full">
       <div class="flex justify-between items-center px-4 text-darkGrey">
         <p class="text-sm font-semibold">{format_week_header(week)}</p>
         <p class="bg-greyButtonBg px-1.5 py-1 rounded-md font-bold">
@@ -189,7 +178,7 @@
           |> Enum.map(fn {_, session_group} -> session_group end)
           |> List.flatten()
           |> calculate_total_duration()
-          |> format_duration()}
+          |> TimeFormatter.format_timer()}
         </p>
       </div>
       <div class="border-greyButtonBg p-4 pt-2 border rounded-md my-12 mt-16 w-full space-y-12">
@@ -200,14 +189,14 @@
               {session_group
               |> List.flatten()
               |> calculate_total_duration()
-              |> format_duration()}
+              |> TimeFormatter.format_timer()}
             </p>
           </div>
           <div class="space-y-1">
             <.live_component
               :for={sessions <- session_group}
               module={FirmowidWeb.Components.Session}
-              id={"tracker-entry-#{hd(sessions).title}-#{hd(sessions).project_id}"}
+              id={"tracker-entry-#{hd(sessions).id}"}
               sessions={sessions}
               projects={@projects}
             />
