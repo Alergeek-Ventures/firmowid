@@ -252,6 +252,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def format_time(""), do: nil
+  def format_time(nil), do: nil
 
   def format_time(%DateTime{} = datetime) do
     datetime
