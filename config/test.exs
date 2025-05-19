@@ -17,7 +17,7 @@ config :firmowid, Firmowid.Repo,
 # you can enable the server option below.
 config :firmowid, FirmowidWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
-  secret_key_base: "REMOVED_PHOENIX_SECRET_KEY_BASE",
+  secret_key_base: read_config(:firmowid)[FirmowidWeb.Endpoint][:secret_key_base],
   server: false
 
 # In test we don't send emails

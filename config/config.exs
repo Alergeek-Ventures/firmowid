@@ -7,9 +7,15 @@
 # General application configuration
 import Config
 
+# Import secret API keys for the general configuration.
+import_config "api_keys/config.exs"
+
+# Import secret API keys for the current configuration.
+import_config "api_keys/#{config_env()}.exs"
+
 config :posthog,
   api_url: "https://eu.i.posthog.com",
-  api_key: "REMOVED_POSTHOG_PROJECT_KEY"
+  api_key: read_config(:posthog)[:api_key]
 
 config :firmowid,
   ecto_repos: [Firmowid.Repo],
@@ -63,21 +69,20 @@ config :ex_money,
   open_exchange_rates_app_id: "b1c5dcca1ebd4066ae1b8c7ef0205be6"
 
 config :ex_aws,
-  access_key_id: "REMOVED_TIGRIS_ACCESS_KEY",
-  secret_access_key: "REMOVED_TIGRIS_SECRET_KEY"
+  access_key_id: read_config(:ex_aws)[:access_key_id],
+  secret_access_key: read_config(:ex_aws)[:secret_access_key]
 
 config :ex_aws, :s3,
   scheme: "https://",
   host: "fly.storage.tigris.dev"
 
 config :openai,
-  api_key:
-    "REMOVED_OPENAI_KEY",
-  organization_key: "REMOVED_OPENAI_ORGANIZATION"
+  api_key: read_config(:openai)[:api_key],
+  organization_key: read_config(:openai)[:organization_key]
 
 # Configure esbuild (the version is required)
 config :esbuild,
-  version: "0.25.4",
+  version: "0.17.11",
   firmowid: [
     args:
       ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),

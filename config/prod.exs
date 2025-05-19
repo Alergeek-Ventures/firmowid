@@ -28,8 +28,8 @@ config :sentry,
   ]
 
 config :ex_aws,
-  access_key_id: "REMOVED_TIGRIS_ACCESS_KEY",
-  secret_access_key: "REMOVED_TIGRIS_SECRET_KEY"
+  access_key_id: read_config(:ex_aws)[:access_key_id],
+  secret_access_key: read_config(:ex_aws)[:secret_access_key]
 
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Req

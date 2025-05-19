@@ -21,9 +21,8 @@ if System.get_env("PHX_SERVER") do
 end
 
 config :firmowid,
-  go_limitless_secret_id: "REMOVED_GOCARDLESS_SECRET_ID",
-  go_limitless_secret_key:
-    "REMOVED_GOCARDLESS_SECRET_KEY"
+  go_limitless_secret_id: read_config(:firmowid)[:go_limitless_secret_id],
+  go_limitless_secret_key: read_config(:firmowid)[:go_limitless_secret_key]
 
 if config_env() == :prod do
   config :firmowid, Firmowid.Repo,
