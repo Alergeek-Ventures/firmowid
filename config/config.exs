@@ -20,8 +20,6 @@ config :posthog,
 config :firmowid,
   ecto_repos: [Firmowid.Repo],
   generators: [timestamp_type: :utc_datetime],
-  go_limitless_secret_id: System.get_env("GO_LIMITLESS_SECRET_ID"),
-  go_limitless_secret_key: System.get_env("GO_LIMITLESS_SECRET_KEY"),
   uploads_bucket: "firmowid-uploads"
 
 config :firmowid, Firmowid.Repo,

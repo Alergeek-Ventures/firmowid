@@ -20,9 +20,19 @@ if System.get_env("PHX_SERVER") do
   config :firmowid, FirmowidWeb.Endpoint, server: true
 end
 
-config :firmowid,
-  go_limitless_secret_id: read_config(:firmowid)[:go_limitless_secret_id],
-  go_limitless_secret_key: read_config(:firmowid)[:go_limitless_secret_key]
+# is this necessary? the variables:
+# go_limitless_secret_id and
+# go_limitless_secret_key
+# are set in config/config.exs file anyway, and this here overrides those settings with nil, but I can't use import_config in here:
+# "
+# import_config/1 is not enabled for this configuration file.
+# Some configuration files do not allow importing other files as they are often copied to external systems
+# "
+# with the below config commented, secret_id and secret_key from config/config.exs still hold, and tests pass
+
+# config :firmowid,
+#   go_limitless_secret_id: read_config(:firmowid)[:go_limitless_secret_id],
+#   go_limitless_secret_key: read_config(:firmowid)[:go_limitless_secret_key]
 
 if config_env() == :prod do
   config :firmowid, Firmowid.Repo,
