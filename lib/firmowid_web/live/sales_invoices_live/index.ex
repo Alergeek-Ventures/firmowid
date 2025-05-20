@@ -28,8 +28,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
 
     socket =
       socket
-      |> assign_sales_invoice(sales_invoice, params)
       |> assign_bank_accounts()
+      |> assign_sales_invoice(sales_invoice, params)
       |> assign_buyers()
       |> assign(nip_form: to_form(%{"nip" => ""}))
       |> assign_buyer_form_state("closed")
@@ -182,6 +182,17 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
           })
       end
 
+    default_bank_account =
+      socket.assigns.bank_accounts
+      |> Enum.find_value(&(&1.is_default and &1.currency == sales_invoice.currency))
+
+    sales_invoice =
+      if default_bank_account do
+        Map.put(sales_invoice, :seller_account_number, default_bank_account)
+      else
+        sales_invoice
+      end
+
     sales_invoice =
       %SalesInvoice{}
       |> SalesInvoice.changeset(sales_invoice)
@@ -273,6 +284,17 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
   end
 
   def handle_event("change", %{"sales_invoice" => sales_invoice}, socket) do
+    default_bank_account =
+      socket.assigns.bank_accounts
+      |> Enum.find_value(&(&1.is_default and &1.currency == sales_invoice["currency"]))
+
+    sales_invoice =
+      if default_bank_account do
+        Map.put(sales_invoice, "seller_account_number", default_bank_account)
+      else
+        sales_invoice
+      end
+
     whole_form = Map.merge(socket.assigns.form.params, sales_invoice)
 
     sales_invoice_changeset =
