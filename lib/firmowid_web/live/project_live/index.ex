@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.TimetrackerLive.Projects do
+defmodule FirmowidWeb.Project.Index do
   alias Firmowid.Accounts
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Project

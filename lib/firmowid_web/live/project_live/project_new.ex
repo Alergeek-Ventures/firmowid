@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.TimetrackerLive.ProjectNew do
+defmodule FirmowidWeb.Project.ProjectNew do
   use FirmowidWeb, :live_view
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Project
