@@ -377,6 +377,17 @@ defmodule Firmowid.Timetracker do
     )
   end
 
+  def get_user_project_sessions(user_id, project_id, date) do
+    Repo.all(
+      from s in Session,
+        where:
+          s.user_id == ^user_id and s.project_id == ^project_id and
+            fragment("extract(month from ?) = ?", s.start_datetime, ^date.month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^date.year)
+    )
+    |> Enum.map(&Session.put_duration/1)
+  end
+
   @doc """
   Returns the list of hours_records.
 

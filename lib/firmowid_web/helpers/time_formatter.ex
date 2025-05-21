@@ -21,6 +21,10 @@ defmodule FirmowidWeb.Helpers.TimeFormatter do
   Format seconds into a human-readable string with hours and minutes.
   Example: "241 h 12 min"
   """
+  def format_duration(seconds) when seconds < 60 do
+    "#{seconds} s"
+  end
+
   def format_duration(seconds) do
     hours = div(seconds, 3600)
     minutes = div(rem(seconds, 3600), 60)

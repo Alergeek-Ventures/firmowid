@@ -38,39 +38,43 @@
   <div class="flex gap-20 md:flex-row flex-col mt-8">
     <div class="space-y-2 w-full col-span-4">
       <%= for project <- @projects do %>
-        <div class="flex items-center bg-white rounded-md p-4 py-6 justify-between">
-          <span>{project.name}</span>
-          <span>{format_duration(project.duration)}</span>
+        <div class="flex flex-col divide-y divide-greyButtonBg px-4 rounded-md bg-white">
+          <div class="flex items-center py-5 gap-6">
+            <span class="mr-auto">{project.name}</span>
+            <span>{TimeFormatter.format_duration(project.duration)}</span>
+            <button phx-click="toggle-project" phx-value-id={project.id}>
+              <.icon :if={project.expanded} name="hero-chevron-up-mini" class="text-darkGrey" />
+              <.icon :if={!project.expanded} name="hero-chevron-down-mini" class="text-darkGrey" />
+            </button>
+          </div>
+
+          <div :if={project.expanded} class="space-y-4 py-4 pr-11">
+            <div :for={session <- project.sessions} class="flex justify-between text-sm">
+              <span>{session.title}</span>
+              <span>{TimeFormatter.format_duration(session.duration)}</span>
+            </div>
+          </div>
         </div>
       <% end %>
     </div>
 
     <div class="flex flex-col w-full gap-4 max-w-[360px]">
       <div class="space-y-8 border border-greyButtonBg p-4 rounded-md">
+        <h3 class="font-bold">Podsumowanie:</h3>
         <div>
-          <h3 class="font-bold mb-8">Podsumowanie:</h3>
-          <div>
-            <p class="mb-3">Przepracowane godziny:</p>
-            <p class="text-xl font-bold">{format_duration(trunc(@total_duration))}</p>
-
-            <p
-              :if={
-                format_duration(trunc(@total_duration)) !=
-                  format_duration(trunc(@total_duration), :extended)
-              }
-              class="text-sm text-darkGrey"
-            >
-              {format_duration(trunc(@total_duration), :extended)}
-            </p>
-          </div>
+          <p class="mb-3">Przepracowane godziny:</p>
+          <p class="text-xl font-bold">{TimeFormatter.format_duration(@total_duration)}</p>
+          <p class="text-sm text-darkGrey">
+            {TimeFormatter.format_duration(@total_duration, :with_days)}
+          </p>
         </div>
-        <%= if most_demanding = Enum.max_by(@projects, & &1.duration, fn -> nil end) do %>
-          <div>
-            <p class="mb-3">Najbardziej wymagający projekt:</p>
-            <p class="text-xl font-bold">{format_duration(most_demanding.duration)}</p>
-            <p class="text-sm text-darkGrey">{most_demanding.name}</p>
-          </div>
-        <% end %>
+        <div :if={most_demanding = Enum.max_by(@projects, & &1.duration, fn -> nil end)} }>
+          <p class="mb-3">Najbardziej wymagający projekt:</p>
+          <p class="text-xl font-bold">
+            {TimeFormatter.format_duration(most_demanding.duration)}
+          </p>
+          <p class="text-sm text-darkGrey">{most_demanding.name}</p>
+        </div>
       </div>
       <div
         :if={@total_duration > 3599}

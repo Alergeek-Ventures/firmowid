@@ -2,6 +2,7 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Timetracker
+  alias FirmowidWeb.Helpers.TimeFormatter
 
   @impl true
   def mount(_params, _session, socket) do
@@ -33,16 +34,29 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
     {:noreply, socket |> assign(selected_date: month) |> refetch_data()}
   end
 
-  @impl true
-  def handle_event("change-month", %{"month" => month}, socket) do
-    month = month |> Date.from_iso8601!()
+  def handle_event("toggle-project", %{"id" => project_id}, socket) do
+    projects =
+      socket.assigns.projects
+      |> Enum.map(fn project ->
+        if project.id == project_id do
+          project
+          |> Map.put(:expanded, !project.expanded)
+          |> Map.put_new_lazy(
+            :sessions,
+            fn ->
+              session_summary(
+                socket.assigns.current_user.id,
+                project_id,
+                socket.assigns.selected_date
+              )
+            end
+          )
+        else
+          project
+        end
+      end)
 
-    socket =
-      socket
-      |> assign(:selected_date, month)
-      |> push_patch(to: ~p"/czasosledz/ewidencja?month=#{month |> Date.to_iso8601()}")
-
-    {:noreply, socket}
+    {:noreply, socket |> assign(:projects, projects)}
   end
 
   def handle_event("send", _params, socket) do
@@ -73,6 +87,29 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
     {:noreply, socket |> refetch_data()}
   end
 
+  def handle_event("change-month", %{"month" => month}, socket) do
+    month = month |> Date.from_iso8601!()
+
+    socket =
+      socket
+      |> assign(:selected_date, month)
+      |> push_patch(to: ~p"/czasosledz/ewidencja?month=#{month |> Date.to_iso8601()}")
+
+    {:noreply, socket}
+  end
+
+  def session_summary(user_id, project_id, date) do
+    Timetracker.get_user_project_sessions(user_id, project_id, date)
+    |> Enum.group_by(& &1.title)
+    |> Enum.map(fn {title, sessions} ->
+      %{
+        title: title,
+        duration: Enum.sum_by(sessions, & &1.duration)
+      }
+    end)
+    |> Enum.sort_by(& &1.duration, :desc)
+  end
+
   def refetch_data(socket) do
     selected_date = socket.assigns.selected_date
 
@@ -81,6 +118,7 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
         socket.assigns.current_user.id,
         selected_date
       )
+      |> Enum.map(&Map.put(&1, :expanded, false))
 
     current_month_hours_record =
       Timetracker.get_hours_record_by_month(
@@ -98,32 +136,6 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
         selected_date
       )
     )
-  end
-
-  def format_duration(seconds) do
-    hours = div(seconds, 3600)
-    minutes = div(rem(seconds, 3600), 60)
-
-    [
-      if(hours > 0, do: "#{hours} h"),
-      "#{minutes} min"
-    ]
-    |> Enum.filter(& &1)
-    |> Enum.join(" ")
-  end
-
-  def format_duration(seconds, :extended) do
-    days = div(seconds, 86400)
-    hours = div(rem(seconds, 86400), 3600)
-    minutes = div(rem(seconds, 3600), 60)
-
-    [
-      if(days > 0, do: "#{days} dni"),
-      if(hours > 0, do: "#{hours} h"),
-      "#{minutes} min"
-    ]
-    |> Enum.filter(& &1)
-    |> Enum.join(" ")
   end
 
   def error_to_string(:too_large), do: "Image too large"
