@@ -42,7 +42,12 @@
           <div class="flex items-center py-5 gap-6">
             <span class="mr-auto">{project.name}</span>
             <span>{TimeFormatter.format_duration(project.duration)}</span>
-            <button phx-click="toggle-project" phx-value-id={project.id}>
+            <button
+              phx-click="toggle-project"
+              phx-value-id={project.id}
+              disabled={project.duration == 0}
+              class="disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <.icon :if={project.expanded} name="hero-chevron-up-mini" class="text-darkGrey" />
               <.icon :if={!project.expanded} name="hero-chevron-down-mini" class="text-darkGrey" />
             </button>
