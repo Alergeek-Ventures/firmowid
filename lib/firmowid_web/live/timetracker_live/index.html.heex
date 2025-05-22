@@ -1,32 +1,27 @@
 <div class="container flex flex-col p-6">
   <div class="flex justify-end gap-4">
-    <%= if Bodyguard.permit?(Firmowid.Timetracker, :read_projects, @current_user) do %>
-      <.link
-        navigate={~p"/czasosledz/projekty"}
-        class={button_styles(%{color: "grey", variant: "outline"})}
-      >
-        Zarządzanie
-      </.link>
-    <% end %>
-
-    <.link
-      navigate={~p"/czasosledz/ewidencja"}
-      class={
-        classes([
-          "hover:underline",
-          button_styles(%{color: "grey"})
-        ])
-      }
-    >
-      Czasośledz
-    </.link>
-
-    <.link
-      navigate={~p"/czasosledz/ewidencja"}
-      class={classes(["hover:underline", button_styles(%{color: "grey", variant: "outline"})])}
-    >
-      Ewidencja
-    </.link>
+    <.button_group buttons={[
+        %{
+          text: "Zarządzanie",
+          action: %{ type: :link, on_click: ~p"/czasosledz/projekty" },
+          class: button_styles(%{color: "grey", variant: "outline"}),
+          guard: Bodyguard.permit?(Firmowid.Timetracker, :read_projects, @current_user)
+        },
+        %{
+          text: "Czasośledz",
+          action: %{ type: :link, on_click: ~p"/czasosledz/ewidencja" },
+          class: classes([
+            "hover:underline",
+            button_styles(%{color: "grey"})
+          ])
+        },
+        %{
+          text: "Ewidencja",
+          action: %{ type: :link, on_click: ~p"/czasosledz/ewidencja" },
+          class: classes(["hover:underline", button_styles(%{color: "grey", variant: "outline"})])
+        }
+      ]}
+    />
   </div>
 
   <div class="flex justify-between mt-36">
