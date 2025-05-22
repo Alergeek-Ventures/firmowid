@@ -34,12 +34,14 @@ defmodule FirmowidWeb.Components.ButtonGroup do
   def button_group(assigns) do
     ~H"""
     <%= for button <- @buttons do %>
-      <% %{ :text => text, :icon => icon, :class => class, :action => %{ :type => type, :on_click => on_click }, :guard => guard } = Map.merge(button_defaults(), button) %>
-      <.link
-        :if={guard && type == :link}
-        navigate={on_click}
-        class={class}
-      >
+      <% %{
+        :text => text,
+        :icon => icon,
+        :class => class,
+        :action => %{:type => type, :on_click => on_click},
+        :guard => guard
+      } = Map.merge(button_defaults(), button) %>
+      <.link :if={guard && type == :link} navigate={on_click} class={class}>
         <%= if icon != :nil do %>
           <.icon name={icon} class="w-6 h-6 mr-2.5" />
         <% end %>
@@ -49,5 +51,5 @@ defmodule FirmowidWeb.Components.ButtonGroup do
     """
   end
 
-  defp button_defaults(), do: %{ icon: :nil, class: :nil, guard: :true }
+  defp button_defaults(), do: %{icon: nil, class: nil, guard: true}
 end

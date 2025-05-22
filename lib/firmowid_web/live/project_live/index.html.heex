@@ -1,6 +1,8 @@
 <div class="container p-6">
   <div class="flex justify-end gap-4">
-  <.subnavigation_buttons show_read_projects={Bodyguard.permit?(Firmowid.Timetracker, :read_projects, @current_user)} />
+    <.subnavigation_buttons show_read_projects={
+      Bodyguard.permit?(Firmowid.Timetracker, :read_projects, @current_user)
+    } />
   </div>
 
   <div class="mt-20 grid gap-6 gap-y-8 grid-cols-[minmax(min-content,1fr),_min-content,_minmax(0,80px),_minmax(min-content,360px)]">
