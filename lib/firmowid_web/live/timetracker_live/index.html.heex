@@ -1,27 +1,6 @@
 <div class="container flex flex-col p-6">
   <div class="flex justify-end gap-4">
-    <.button_group buttons={[
-        %{
-          text: "Zarządzanie",
-          action: %{ type: :link, on_click: ~p"/czasosledz/projekty" },
-          class: button_styles(%{color: "grey", variant: "outline"}),
-          guard: Bodyguard.permit?(Firmowid.Timetracker, :read_projects, @current_user)
-        },
-        %{
-          text: "Czasośledz",
-          action: %{ type: :link, on_click: ~p"/czasosledz/ewidencja" },
-          class: classes([
-            "hover:underline",
-            button_styles(%{color: "grey"})
-          ])
-        },
-        %{
-          text: "Ewidencja",
-          action: %{ type: :link, on_click: ~p"/czasosledz/ewidencja" },
-          class: classes(["hover:underline", button_styles(%{color: "grey", variant: "outline"})])
-        }
-      ]}
-    />
+  <.subnavigation_buttons show_read_projects={Bodyguard.permit?(Firmowid.Timetracker, :read_projects, @current_user)} />
   </div>
 
   <div class="flex justify-between mt-36">

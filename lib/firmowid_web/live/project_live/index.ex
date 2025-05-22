@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Project.Index do
   alias FirmowidWeb.Helpers.TimeFormatter
   alias Firmowid.Repo
   use FirmowidWeb, :live_view
+  import FirmowidWeb.Components.Timetracker.SubnavigationButtons
 
   @impl true
   def mount(_params, _session, socket) do

@@ -41,7 +41,7 @@ defmodule FirmowidWeb.Components.ButtonGroup do
         class={class}
       >
         <%= if icon != :nil do %>
-          <.icon name={icon} class="w-5 h-5" />
+          <.icon name={icon} class="w-6 h-6 mr-2.5" />
         <% end %>
         {text}
       </.link>
