@@ -66,14 +66,16 @@
         </.button>
       </div>
 
-      <%= cond do %>
-        <% @selected_project != nil and @is_editing_users -> %>
-          <.render_project_edit project_users={@project_users} users={@users} />
-        <% @selected_project -> %>
-          <.render_project_user_hours project_user_hours={@streams.project_user_hours} />
-        <% true -> %>
-          <.render_hours_records hours_records={@streams.hours_records} />
-      <% end %>
+      <div class="space-y-2 grid grid-cols-subgrid col-span-full auto-rows-min">
+        <%= cond do %>
+          <% @selected_project != nil and @is_editing_users -> %>
+            <.render_project_edit project_users={@project_users} users={@users} />
+          <% @selected_project -> %>
+            <.render_project_user_hours project_user_hours={@project_user_hours} />
+          <% true -> %>
+            <.render_hours_records hours_records={@hours_records} />
+        <% end %>
+      </div>
     </div>
 
     <div class="space-y-4 -col-end-1 row-start-3">

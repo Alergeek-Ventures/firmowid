@@ -187,20 +187,17 @@ defmodule FirmowidWeb.Project.Index do
     socket
     |> assign(
       total_time_worked: Timetracker.get_total_time_worked(date.month, date.year),
-      most_demanding_project: Timetracker.get_most_demanding_project(date.month, date.year)
-    )
-    |> stream(
-      :hours_records,
-      Timetracker.get_month_hours_records(date.month, date.year)
-      |> Enum.map(&Map.put(&1, :id, &1.user.id))
-      |> Enum.map(&Map.put(&1, :user, Accounts.get_user_with_avatar(&1.user))),
-      reset: true
+      most_demanding_project: Timetracker.get_most_demanding_project(date.month, date.year),
+      hours_records:
+        Timetracker.get_month_hours_records(date.month, date.year)
+        |> Enum.map(&Map.put(&1, :id, &1.user.id))
+        |> Enum.map(&Map.put(&1, :user, Accounts.get_user_with_avatar(&1.user)))
     )
   end
 
   defp load_project_hours(%{assigns: %{selected_project: nil}} = socket) do
     socket
-    |> stream(:project_user_hours, [])
+    |> assign(:project_user_hours, [])
     |> assign(:total_time_worked, 0)
   end
 
@@ -224,7 +221,7 @@ defmodule FirmowidWeb.Project.Index do
       |> Enum.max_by(& &1.time_worked, fn -> nil end)
 
     socket
-    |> stream(:project_user_hours, project_user_hours, reset: true)
+    |> assign(:project_user_hours, project_user_hours)
     |> assign(:total_time_worked, total_project_seconds)
     |> assign(:most_active_user, most_active_user)
   end
@@ -248,29 +245,20 @@ defmodule FirmowidWeb.Project.Index do
 
   defp render_project_user_hours(assigns) do
     ~H"""
-    <div
-      class="space-y-2 grid grid-cols-subgrid col-span-full auto-rows-min"
-      phx-update="stream"
-      id="project_user_hours"
-    >
-      <%= for {id, user} <- @project_user_hours do %>
-        <div
-          id={id}
-          class={
-            classes([
-              "flex items-center bg-white rounded-md p-4 justify-between col-span-full",
-              user.removed_from_project && "bg-white/50 border border-greyButtonBg/50"
-            ])
-          }
-        >
-          <.render_profile user={user} />
-          <span>{trunc(user.time_worked / 60 / 60)} h</span>
-        </div>
-      <% end %>
-
-      <div class="hidden only:block py-8 bg-white rounded-md text-center text-darkGrey text-sm col-span-full">
-        Brak danych o czasie pracy dla tego projektu.
+    <%= for user <- @project_user_hours do %>
+      <div class={
+        classes([
+          "flex items-center bg-white rounded-md p-4 justify-between col-span-full",
+          user.removed_from_project && "bg-white/50 border border-greyButtonBg/50"
+        ])
+      }>
+        <.render_profile user={user} />
+        <span>{trunc(user.time_worked / 60 / 60)} h</span>
       </div>
+    <% end %>
+
+    <div class="hidden only:block py-8 bg-white rounded-md text-center text-darkGrey text-sm col-span-full">
+      Brak danych o czasie pracy dla tego projektu.
     </div>
     """
   end
@@ -280,40 +268,34 @@ defmodule FirmowidWeb.Project.Index do
 
   defp render_project_edit(assigns) do
     ~H"""
-    <div
-      class="space-y-2 grid grid-cols-subgrid col-span-full auto-rows-min"
-      phx-update="stream"
-      id="project_user"
-    >
-      <%= for user <- @project_users do %>
-        <div class="flex items-center bg-white rounded-md p-4 justify-between col-span-full">
-          <.render_profile user={user} />
-          <button
-            phx-click="delete_user"
-            phx-value-user_id={user.id}
-            class="h-6 w-8 rounded-md hover:bg-greyButtonBg text-darkGrey disabled:text-orangeText inline-flex items-center justify-center ml-1"
-          >
-            <.icon name="hero-trash-micro" />
-          </button>
-        </div>
-      <% end %>
+    <%= for user <- @project_users do %>
+      <div class="flex items-center bg-white rounded-md p-4 justify-between col-span-full">
+        <.render_profile user={user} />
+        <button
+          phx-click="delete_user"
+          phx-value-user_id={user.id}
+          class="h-6 w-8 rounded-md hover:bg-greyButtonBg text-darkGrey disabled:text-orangeText inline-flex items-center justify-center ml-1"
+        >
+          <.icon name="hero-trash-micro" />
+        </button>
+      </div>
+    <% end %>
 
-      <form phx-change="add_user" class="relative col-span-full">
-        <.icon
-          name="hero-plus-mini"
-          class="text-darkGrey absolute top-1/2 transform -translate-y-1/2 left-2"
-        />
-        <.input
-          type="select"
-          name="user_id"
-          id="user"
-          prompt="Dodaj współpracownika"
-          value={nil}
-          options={Enum.map(@users, &{&1.name || &1.email, &1.id})}
-          class="pl-9"
-        />
-      </form>
-    </div>
+    <form phx-change="add_user" class="relative col-span-full">
+      <.icon
+        name="hero-plus-mini"
+        class="text-darkGrey absolute top-1/2 transform -translate-y-1/2 left-2"
+      />
+      <.input
+        type="select"
+        name="user_id"
+        id="user"
+        prompt="Dodaj współpracownika"
+        value={nil}
+        options={Enum.map(@users, &{&1.name || &1.email, &1.id})}
+        class="pl-9"
+      />
+    </form>
     """
   end
 
@@ -322,50 +304,43 @@ defmodule FirmowidWeb.Project.Index do
   defp render_hours_records(assigns) do
     ~H"""
     <div
-      class="space-y-2 grid grid-cols-subgrid col-span-full auto-rows-min"
-      phx-update="stream"
-      id="hours_records"
+      :for={%{user: user, hours_record: record} <- @hours_records}
+      class="grid grid-cols-subgrid col-span-full"
     >
-      <div
-        :for={{id, %{user: user, hours_record: record}} <- @hours_records}
-        id={id}
-        class="grid grid-cols-subgrid col-span-full"
-      >
-        <div class="flex items-center bg-white rounded-md p-4 justify-between">
-          <.render_profile user={user} />
-          <span :if={record}>{trunc(record.number_of_hours)} h</span>
-        </div>
-        <div class="bg-white rounded-md p-4 justify-between items-center flex gap-5">
-          <%= if record do %>
-            <span class="text-xs font-semibold text-greenText bg-greenBg pl-2 pr-1 py-[5px] uppercase rounded-md flex items-center justify-between flex-1 gap-1">
-              EWIDENCJA <.icon name="hero-check-micro" />
-            </span>
-            <a
-              href={~p"/czasosledz/ewidencja/#{record.id}"}
-              download={"Ewidencja_#{record.year}_#{record.month}_#{user.name || user.email}.pdf"}
-              class="p-1 transition hover:bg-greyButtonBg rounded-md inline-flex items-center justify-center"
-            >
-              <.icon name="hero-arrow-down-tray-mini" class="text-darkGrey" />
-            </a>
-          <% else %>
-            <span class="text-xs font-semibold text-darkGrey bg-greyButtonBg px-2 py-[5px] uppercase rounded-md flex items-center justify-between flex-1 gap-1">
-              BRAK <.icon name="hero-x-mark-micro" />
-            </span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="stroke-greyButtonBg shrink-0 m-0.5"
-            >
-              <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="m14.5 12.5-5 5" /><path d="m9.5 12.5 5 5" />
-            </svg>
-          <% end %>
-        </div>
+      <div class="flex items-center bg-white rounded-md p-4 justify-between">
+        <.render_profile user={user} />
+        <span :if={record}>{trunc(record.number_of_hours)} h</span>
+      </div>
+      <div class="bg-white rounded-md p-4 justify-between items-center flex gap-5">
+        <%= if record do %>
+          <span class="text-xs font-semibold text-greenText bg-greenBg pl-2 pr-1 py-[5px] uppercase rounded-md flex items-center justify-between flex-1 gap-1">
+            EWIDENCJA <.icon name="hero-check-micro" />
+          </span>
+          <a
+            href={~p"/czasosledz/ewidencja/#{record.id}"}
+            download={"Ewidencja_#{record.year}_#{record.month}_#{user.name || user.email}.pdf"}
+            class="p-1 transition hover:bg-greyButtonBg rounded-md inline-flex items-center justify-center"
+          >
+            <.icon name="hero-arrow-down-tray-mini" class="text-darkGrey" />
+          </a>
+        <% else %>
+          <span class="text-xs font-semibold text-darkGrey bg-greyButtonBg px-2 py-[5px] uppercase rounded-md flex items-center justify-between flex-1 gap-1">
+            BRAK <.icon name="hero-x-mark-micro" />
+          </span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="stroke-greyButtonBg shrink-0 m-0.5"
+          >
+            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="m14.5 12.5-5 5" /><path d="m9.5 12.5 5 5" />
+          </svg>
+        <% end %>
       </div>
     </div>
     """
