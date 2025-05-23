@@ -34,6 +34,7 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
     {:noreply, socket |> assign(selected_date: month) |> refetch_data()}
   end
 
+  @impl true
   def handle_event("toggle-project", %{"id" => project_id}, socket) do
     projects =
       socket.assigns.projects
