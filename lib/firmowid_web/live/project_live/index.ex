@@ -158,6 +158,31 @@ defmodule FirmowidWeb.Project.Index do
     {:noreply, push_patch(socket, to: path)}
   end
 
+  def handle_event("toggle-user", %{"id" => user_id}, socket) do
+    user_hours =
+      socket.assigns.project_user_hours
+      |> Enum.map(fn
+        %{id: ^user_id} = user ->
+          user
+          |> Map.put(:expanded, !user.expanded)
+          |> Map.put_new_lazy(
+            :sessions,
+            fn ->
+              Timetracker.get_grouped_user_project_sessions(
+                user_id,
+                socket.assigns.selected_project.id,
+                socket.assigns.selected_date
+              )
+            end
+          )
+
+        user ->
+          user
+      end)
+
+    {:noreply, assign(socket, :project_user_hours, user_hours)}
+  end
+
   defp assign_project_users(socket, project_users) do
     assign(socket,
       users:
@@ -211,6 +236,7 @@ defmodule FirmowidWeb.Project.Index do
         Accounts.get_user_with_avatar(u)
         |> Map.put(:time_worked, t)
         |> Map.put(:removed_from_project, r)
+        |> Map.put(:expanded, false)
       end)
       |> Enum.sort_by(&{&1.removed_from_project, &1.name, &1.email})
 
@@ -246,14 +272,33 @@ defmodule FirmowidWeb.Project.Index do
   defp render_project_user_hours(assigns) do
     ~H"""
     <%= for user <- @project_user_hours do %>
-      <div class={
-        classes([
-          "flex items-center bg-white rounded-md p-4 justify-between col-span-full",
-          user.removed_from_project && "bg-white/50 border border-greyButtonBg/50"
-        ])
-      }>
-        <.render_profile user={user} />
-        <span>{trunc(user.time_worked / 60 / 60)} h</span>
+      <div class="flex flex-col divide-y divide-greyButtonBg px-4 rounded-md bg-white col-span-full">
+        <div class={
+          classes([
+            "flex items-center py-4 gap-6",
+            user.removed_from_project && "bg-white/50 border border-greyButtonBg/50"
+          ])
+        }>
+          <.render_profile user={user} />
+          <span class="ml-auto">{trunc(user.time_worked / 60 / 60)} h</span>
+
+          <button
+            phx-click="toggle-user"
+            phx-value-id={user.id}
+            disabled={user.time_worked == 0}
+            class="disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <.icon :if={user.expanded} name="hero-chevron-up-mini" class="text-darkGrey" />
+            <.icon :if={!user.expanded} name="hero-chevron-down-mini" class="text-darkGrey" />
+          </button>
+        </div>
+
+        <div :if={user.expanded} class="space-y-4 py-4 pr-11">
+          <div :for={session <- user.sessions} class="flex justify-between text-sm">
+            <span>{session.title}</span>
+            <span>{TimeFormatter.format_duration(session.duration)}</span>
+          </div>
+        </div>
       </div>
     <% end %>
 

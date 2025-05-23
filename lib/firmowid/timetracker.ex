@@ -388,6 +388,30 @@ defmodule Firmowid.Timetracker do
     |> Enum.map(&Session.put_duration/1)
   end
 
+  def get_grouped_user_project_sessions(user_id, project_id, date) do
+    Repo.all(
+      from s in Session,
+        where:
+          s.user_id == ^user_id and s.project_id == ^project_id and
+            fragment("extract(month from ?) = ?", s.start_datetime, ^date.month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^date.year),
+        group_by: s.title,
+        order_by: [desc: selected_as(:time_worked)],
+        select: %{
+          title: s.title,
+          duration:
+            fragment(
+              "extract(epoch from coalesce(?, now()) - ?)",
+              s.end_datetime,
+              s.start_datetime
+            )
+            |> sum()
+            |> type(:integer)
+            |> selected_as(:time_worked)
+        }
+    )
+  end
+
   @doc """
   Returns the list of hours_records.
 

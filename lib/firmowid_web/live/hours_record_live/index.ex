@@ -38,23 +38,23 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
   def handle_event("toggle-project", %{"id" => project_id}, socket) do
     projects =
       socket.assigns.projects
-      |> Enum.map(fn project ->
-        if project.id == project_id do
+      |> Enum.map(fn
+        %{id: ^project_id} = project ->
           project
           |> Map.put(:expanded, !project.expanded)
           |> Map.put_new_lazy(
             :sessions,
             fn ->
-              session_summary(
+              Timetracker.get_grouped_user_project_sessions(
                 socket.assigns.current_user.id,
                 project_id,
                 socket.assigns.selected_date
               )
             end
           )
-        else
+
+        project ->
           project
-        end
       end)
 
     {:noreply, socket |> assign(:projects, projects)}
@@ -97,18 +97,6 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
       |> push_patch(to: ~p"/czasosledz/ewidencja?month=#{month |> Date.to_iso8601()}")
 
     {:noreply, socket}
-  end
-
-  def session_summary(user_id, project_id, date) do
-    Timetracker.get_user_project_sessions(user_id, project_id, date)
-    |> Enum.group_by(& &1.title)
-    |> Enum.map(fn {title, sessions} ->
-      %{
-        title: title,
-        duration: Enum.sum_by(sessions, & &1.duration)
-      }
-    end)
-    |> Enum.sort_by(& &1.duration, :desc)
   end
 
   def refetch_data(socket) do
