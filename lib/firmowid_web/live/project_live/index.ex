@@ -242,7 +242,7 @@ defmodule FirmowidWeb.Project.Index do
   end
 
   defdelegate format_duration(seconds), to: TimeFormatter
-  def format_duration_with_days(seconds), to: TimeFormatter.format_duration(seconds, :with_days)
+  def format_duration_with_days(seconds), do: TimeFormatter.format_duration(seconds, :with_days)
 
   attr :project_user_hours, :list, required: true
 
