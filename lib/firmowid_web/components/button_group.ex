@@ -4,29 +4,13 @@ defmodule FirmowidWeb.Components.ButtonGroup do
   @doc """
   Creates a list of buttons
 
-  Takes one required parameter which is a List of Map with keys: text, icon, class, action, guard
-  action is a Map with keys: type (:button / :link), on_click (provide function for :button type, or URL string for :link type)
+  Takes one required parameter which is a List of Map with keys: text, action, button_class, icon, icon_class, guard
+  text is mandatory
+  action is an URL string for :link type
+  button_class is optional, the default is :nil
   icon is optional, if nothing is provided, nothing is rendered
-  class is optional, the default is :nil
+  icon_class is optional, icon is not styled if nothing is provided
   guard is optional, if it is absent, it is treated as :true
-
-  example:
-  [
-    %{
-      text: "Show modal",
-      class: button_styles(%{color: "grey", variant: "outline"}),
-      action: %{ type: :button, on_click: show_modal },
-      guard: Bodyguard.permit?(Firmowid.Timetracker, :read_projects, @current_user)
-    },
-    %{
-      text: "My profile",
-      class: classes([
-        "hover:underline",
-        button_styles(%{color: "grey"})
-      ]),
-      action: %{ type: :link, on_click: ~p"/czasosledz" }
-    }
-  ]
   """
 
   attr :buttons, :list, required: true
@@ -37,12 +21,12 @@ defmodule FirmowidWeb.Components.ButtonGroup do
       <% %{
         :text => text,
         :button_class => button_class,
-        :action => %{:type => type, :on_click => on_click},
+        :action => action,
         :icon => icon,
         :icon_class => icon_class,
         :guard => guard
       } = Map.merge(button_defaults(), button) %>
-      <.link :if={guard && type == :link} navigate={on_click} class={button_class}>
+      <.link :if={guard} navigate={action} class={button_class}>
         <%= if icon != :nil do %>
           <.icon name={icon} class={icon_class} />
         <% end %>

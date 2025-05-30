@@ -14,18 +14,18 @@ defmodule FirmowidWeb.Components.Timetracker.SubnavigationButtons do
     <.button_group buttons={[
       %{
         text: "Ewidencja",
-        action: %{type: :link, on_click: ~p"/czasosledz/ewidencja"},
+        action: ~p"/czasosledz/ewidencja",
         button_class: classes(["hover:underline", button_styles(%{color: "none"})])
       },
       %{
         text: "Zarządzaj projektami",
-        action: %{type: :link, on_click: ~p"/czasosledz/projekty"},
+        action: ~p"/czasosledz/projekty",
         button_class: button_styles(%{color: "light_grey"}),
         guard: @show_read_projects
       },
       %{
         text: "Dodaj projekt",
-        action: %{type: :link, on_click: ~p"/czasosledz/projekty/dodaj"},
+        action: ~p"/czasosledz/projekty/dodaj",
         button_class:
           classes([
             "hover:underline",
@@ -33,7 +33,7 @@ defmodule FirmowidWeb.Components.Timetracker.SubnavigationButtons do
             button_styles(%{color: "black"})
           ]),
         icon: "hero-plus-mini",
-        icon_class: "w-6 h-6 mr-1.5 mask-center"
+        icon_class: "w-6 h-6 mr-1.5"
       }
     ]} />
     """
