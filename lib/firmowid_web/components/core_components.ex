@@ -169,6 +169,10 @@ defmodule FirmowidWeb.CoreComponents do
     button_styles(:size, %{size: "medium"})
   end
 
+  defp button_styles(:color, %{color: "none"}) do
+    "hover:border-darkGrey border border-transparent font-bold text-darkGrey"
+  end
+
   defp button_styles(:color, %{color: "light_grey"}) do
     "bg-greyButtonBg hover:border-darkGrey border border-transparent font-bold text-darkGrey"
   end

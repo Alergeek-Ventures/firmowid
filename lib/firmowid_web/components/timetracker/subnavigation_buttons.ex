@@ -15,24 +15,25 @@ defmodule FirmowidWeb.Components.Timetracker.SubnavigationButtons do
       %{
         text: "Ewidencja",
         action: %{type: :link, on_click: ~p"/czasosledz/ewidencja"},
-        class: classes(["hover:underline", button_styles(%{color: "grey", variant: "outline"})])
+        button_class: classes(["hover:underline", button_styles(%{color: "none"})])
       },
       %{
         text: "Zarządzaj projektami",
         action: %{type: :link, on_click: ~p"/czasosledz/projekty"},
-        class: button_styles(%{color: "light_grey"}),
+        button_class: button_styles(%{color: "light_grey"}),
         guard: @show_read_projects
       },
       %{
         text: "Dodaj projekt",
         action: %{type: :link, on_click: ~p"/czasosledz/projekty/dodaj"},
-        class:
+        button_class:
           classes([
             "hover:underline",
             "flex",
             button_styles(%{color: "black"})
           ]),
-        icon: "hero-plus"
+        icon: "hero-plus-mini",
+        icon_class: "w-6 h-6 mr-1.5 mask-center"
       }
     ]} />
     """
