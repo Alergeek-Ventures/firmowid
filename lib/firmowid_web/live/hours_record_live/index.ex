@@ -60,34 +60,6 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
     {:noreply, socket |> assign(:projects, projects)}
   end
 
-  def handle_event("send", _params, socket) do
-    Bodyguard.permit!(Timetracker, :create_hours_record, socket.assigns.current_user)
-
-    consume_uploaded_entries(socket, :hours_record, fn %{path: path}, entry ->
-      case Timetracker.create_hours_record(
-             %{
-               user_id: socket.assigns.current_user.id,
-               number_of_hours: socket.assigns.total_duration |> div(3600) |> round(),
-               month: socket.assigns.selected_date.month,
-               year: socket.assigns.selected_date.year
-             },
-             path,
-             entry.client_name
-           ) do
-        {:error, error} ->
-          LiveToast.send_toast(:error, "Wystąpił błąd podczas zapisywania pliku.")
-          {:ok, {:error, error}}
-
-        {:ok, hours_record} ->
-          LiveToast.send_toast(:info, "Plik został zapisany.")
-
-          {:ok, {:ok, hours_record}}
-      end
-    end)
-
-    {:noreply, socket |> refetch_data()}
-  end
-
   def handle_event("change-month", %{"month" => month}, socket) do
     month = month |> Date.from_iso8601!()
 
@@ -97,6 +69,11 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
       |> push_patch(to: ~p"/czasosledz/ewidencja?month=#{month |> Date.to_iso8601()}")
 
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info(:upload_complete, socket) do
+    {:noreply, socket |> refetch_data()}
   end
 
   def refetch_data(socket) do

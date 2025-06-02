@@ -1,5 +1,6 @@
 defmodule FirmowidWeb.HoursRecordLive.UploadForm do
   use FirmowidWeb, :live_component
+  alias Firmowid.Timetracker
 
   @impl true
   def mount(socket) do
@@ -88,6 +89,7 @@ defmodule FirmowidWeb.HoursRecordLive.UploadForm do
           <form
             id="upload-form"
             phx-change="upload"
+            phx-submit="send"
             phx-target={@myself}
             class="flex flex-col gap-6 items-end"
           >
@@ -110,12 +112,7 @@ defmodule FirmowidWeb.HoursRecordLive.UploadForm do
                 </div>
               </div>
             </label>
-            <.button
-              phx-click="send"
-              disabled={value == :upload}
-              color="orange"
-              class="max-w-32 w-full"
-            >
+            <.button disabled={value == :upload} color="orange" class="max-w-32 w-full">
               Wyślij
             </.button>
           </form>
@@ -135,6 +132,36 @@ defmodule FirmowidWeb.HoursRecordLive.UploadForm do
 
   def handle_event("upload", _params, socket) do
     {:noreply, socket |> assign(:state, :send)}
+  end
+
+  def handle_event("send", _params, socket) do
+    Bodyguard.permit!(Timetracker, :create_hours_record, socket.assigns.current_user)
+
+    consume_uploaded_entries(socket, :hours_record, fn %{path: path}, entry ->
+      Timetracker.create_hours_record(
+        %{
+          user_id: socket.assigns.current_user.id,
+          number_of_hours: socket.assigns.total_duration |> div(3600) |> round(),
+          month: socket.assigns.selected_date.month,
+          year: socket.assigns.selected_date.year
+        },
+        path,
+        entry.client_name
+      )
+      |> case do
+        {:error, error} ->
+          LiveToast.send_toast(:error, "Wystąpił błąd podczas zapisywania pliku.")
+          {:ok, {:error, error}}
+
+        {:ok, hours_record} ->
+          LiveToast.send_toast(:info, "Plik został zapisany.")
+          {:ok, {:ok, hours_record}}
+      end
+    end)
+
+    send(self(), :upload_complete)
+
+    {:noreply, socket}
   end
 
   defp stage_order(:download), do: 0
