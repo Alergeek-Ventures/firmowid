@@ -30,6 +30,7 @@ defmodule FirmowidWeb.Components.Timetracker.SubnavigationButtons do
           classes([
             "hover:underline",
             "flex",
+            "border-transparent",
             button_styles(%{color: "black"})
           ]),
         icon: "hero-plus-mini",
