@@ -64,29 +64,37 @@ defmodule FirmowidWeb.OrganizationLive do
               </.simple_form>
             </div>
 
-            <div class="max-w-[250px]">
-              <p>
-                Jesteś <span class="font-bold">współpracownikiem</span> i posiadasz kod (zaproszenie)?
-              </p>
-              <.simple_form for={@join_form} id="join_form" phx-submit="join">
-                <.input field={@join_form[:code]} type="text" label="Kod zaproszenia" required />
-                <:actions>
-                  <.button class="w-full" phx-disable-with="Dołączanie...">
-                    Dołącz do organizacji
-                  </.button>
-                </:actions>
-              </.simple_form>
+            <div class="max-w-[250px] flex flex-col justify-between">
+              <div>
+                <p>
+                  Jesteś <span class="font-bold">współpracownikiem</span> i posiadasz kod (zaproszenie)?
+                </p>
+                <.simple_form for={@join_form} id="join_form" phx-submit="join">
+                  <.input field={@join_form[:code]} type="text" label="Kod zaproszenia" required />
+                  <:actions>
+                    <.button class="w-full" phx-disable-with="Dołączanie...">
+                      Dołącz do organizacji
+                    </.button>
+                  </:actions>
+                </.simple_form>
+              </div>
+              <div>
+                <p>Nie to konto?</p>
+                <div class="mt-8 text-center">
+                  <.link href={~p"/wyloguj"} method="delete">
+                    <.button class="w-full">
+                      Wyloguj
+                    </.button>
+                  </.link>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="mt-8 text-center">
-            <.link class="underline" href={~p"/wyloguj"} method="delete">
-              Wyloguj
-            </.link>
-          </div>
+
         </div>
       </div>
     <% else %>
-      <h1>Do tego konta jest juz przypisany organizacja</h1>
+      <h1>Do tego konta jest juz przypisana organizacja</h1>
     <% end %>
     """
   end
