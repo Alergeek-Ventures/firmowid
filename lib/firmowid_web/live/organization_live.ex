@@ -8,8 +8,8 @@ defmodule FirmowidWeb.OrganizationLive do
   def render(assigns) do
     ~H"""
     <%= if @current_user.organization_id == nil do %>
-      <div class="w-screen h-screen overflow-clip flex relative justify-center items-center">
-        <img src="/images/figurine.png" class="h-[135vh] opacity-10 absolute -top-20 left-1/2" />
+      <div class="w-screen min-h-screen flex relative justify-center items-center">
+        <img src="/images/figurine.png" class="h-[135vh] overflow-clip opacity-10 fixed -top-20 left-1/2" />
         <div class="flex-grow max-w-screen-md z-10">
           <h1 class="text-lg font-bold mb-16">Czas na przypisanie organizacji do Twojego konta</h1>
           <div class="flex md:flex-row justify-between">
