@@ -1,51 +1,47 @@
 # Firmowid
-## Baza Danych
-- wejdź do `local` i odpal `docker compose up` lub (`docker compose up -d` jeśli chcesz dalej używać tego terminala)
+
+## Jeśli masz już zainstalowane środowisko:
+### 1. Baza Danych
+- wejdź do folderu `local` i odpal `docker compose up` lub (`docker compose up -d` jeśli chcesz dalej używać tego terminala)
   (`podman compose up` dla odważnych)
 
-## Środowisko dla elixira  
-- wejdź spowrotem do folderu firmowid (`cd ..`)
-- spróbuj zbuildować dockerfile `docker build -t firmowid .` 
-- następnie: `docker run -it --rm firmowid`
-
-## 
-## Jeśli Dockerfile nie działa: Instalacja środowiska lokalnie 
+### 2. W głównym folderze `firmowid`:
+  - zainstaluj zależności `mix setup`
+  - włącz serwer: `mix phx.server`
+  - wejdź na [`localhost:4000`](http://localhost:4000)
 
 
+## Instalacja Środowiska dla elixira:  
+Do zarządzania wersjami elixira używamy [asdf](https://asdf-vm.com/guide/getting-started.html)
+### MacOS, Linux, Windows
+ℹ️ **Note**: W przypadku Windowsa najlepiej będzie użyć **WSL** ponieważ instalacja niektórych paczek może być problematyczna.
 
-### macOS, Ubuntu, Windows
-ℹ️ **Note**: W przypadku windowsa najlepiej będzie użyć **WSL** ponieważ instalacja niektórych paczek może być problematyczna:
+### 1. Zainstaluj [asdf](https://asdf-vm.com/guide/getting-started.html)
+### 2. Zainstaluj [erlang](https://github.com/asdf-vm/asdf-erlang) (OTP) za pomocą asdf
+  
+ **Najpierw** zainstaluj dependencies zgodnie ze swoim OS (instrukcja w [README](https://github.com/asdf-vm/asdf-erlang))
 
- W swoim systemie:
-1. Zainstaluj elixir i erlang
+  Następnie:
+  ```bash
+  asdf plugin add erlang https://github.com/asdf-vm/asdf-erlang.git
+  asdf install erlang 27.2
+  asdf set erlang 27.2
+  export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
+  ```
+
+### 3. Zainstaluj [elixir](https://github.com/asdf-vm/asdf-elixir.git) za pomocą asdf 
 
 ```bash
-curl -fsSO https://elixir-lang.org/install.sh
-sh install.sh elixir@1.18.1 otp@27.2
-installs_dir=$HOME/.elixir-install/installs
-export PATH=$installs_dir/otp/27.2/bin:$PATH
-export PATH=$installs_dir/elixir/1.18.1-otp-27/bin:$PATH
+sudo apt install unzip
+asdf plugin add elixir https://github.com/asdf-vm/asdf-elixir.git
+asdf install elixir 1.18
+asdf set elixir 1.18
+```
+### 4. Zainstaluj paczki systemowe:
+```
+sudo apt-get install -y build-essential git libstdc++6 openssl libncurses5 locales ca-certificates libvips chromium
 ```
 
-2. Zainstaluj paczki do elixira
-```bash
-sudo apt-get update -y && sudo apt-get install -y build-essential git && sudo apt-get clean`
-```
-```bash
-sudo apt-get update -y && \
-  sudo apt-get install -y libstdc++6 openssl libncurses5 locales ca-certificates libvips chromium \
-  && sudo apt-get clean 
-```
-3. W głównym folderze `firmowid`:
-    - zainstaluj zależności `mix setup`
-    - włącz serwer: `mix phx.server`
-    - wejdź na [`localhost:4000`](http://localhost:4000)
-### Inne distro Linuxa
-Zainstaluj elixir i erlang według [instrukcji](https://elixir-lang.org/install.html) pamiętaj aby wersje się zgadzały tzn.
-- elixir - 1.18.1
-- otp - 27.2
-
-Następnie postępuj zgodnie z instrukcjami od **Punktu 2.**
 
 
 
