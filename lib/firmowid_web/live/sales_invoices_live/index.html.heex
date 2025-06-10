@@ -17,9 +17,9 @@
         </p>
       </button>
       <div class="p-10 bg-greyButtonBg rounded-bl-md z-10">
-        <div class="rounded-md overflow-hidden">
+        <div class="rounded-md overflow-hidden max-h-[70vh] overflow-y-auto">
           <FirmowidWeb.PdfHTML.sales_invoice
-            class="max-h-[calc(100vh-9rem-4*theme('spacing.10'))] overflow-y-scroll"
+            class="w-full"
             sales_invoice={@sales_invoice}
             show_vat={@current_org.is_vat_payer}
             currency_rate={@currency_rate}
