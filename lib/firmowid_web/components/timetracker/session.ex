@@ -127,7 +127,10 @@ defmodule FirmowidWeb.Components.Session do
                 <.button
                   id={"confirm-delete-session-#{session.id}"}
                   color="red"
-                  phx-click={JS.push("delete_session", value: %{id: session.id})}
+                  phx-click={
+                    JS.exec("data-cancel", to: "#delete-session-modal-#{session.id}")
+                    |> JS.push("delete_session", value: %{id: session.id})
+                  }
                   phx-disable-with="Usuwanie..."
                 >
                   Usuń
