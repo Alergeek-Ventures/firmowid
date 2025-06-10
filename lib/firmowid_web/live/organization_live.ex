@@ -9,7 +9,10 @@ defmodule FirmowidWeb.OrganizationLive do
     ~H"""
     <%= if @current_user.organization_id == nil do %>
       <div class="w-screen min-h-screen flex relative justify-center items-center">
-        <img src="/images/figurine.png" class="h-[135vh] overflow-clip opacity-10 fixed -top-20 left-1/2" />
+        <img
+          src="/images/figurine.png"
+          class="h-[135vh] overflow-clip opacity-10 fixed -top-20 left-1/2"
+        />
         <div class="flex-grow max-w-screen-md z-10">
           <h1 class="text-lg font-bold mb-16">Czas na przypisanie organizacji do Twojego konta</h1>
           <div class="flex md:flex-row justify-between">
@@ -67,7 +70,8 @@ defmodule FirmowidWeb.OrganizationLive do
             <div class="max-w-[250px] flex flex-col justify-between">
               <div>
                 <p>
-                  Jesteś <span class="font-bold">współpracownikiem</span> i posiadasz kod (zaproszenie)?
+                  Jesteś <span class="font-bold">współpracownikiem</span>
+                  i posiadasz kod (zaproszenie)?
                 </p>
                 <.simple_form for={@join_form} id="join_form" phx-submit="join">
                   <.input field={@join_form[:code]} type="text" label="Kod zaproszenia" required />
@@ -78,19 +82,16 @@ defmodule FirmowidWeb.OrganizationLive do
                   </:actions>
                 </.simple_form>
               </div>
-              <div>
-                <p>Nie to konto?</p>
-                <div class="mt-8 text-center">
-                  <.link href={~p"/wyloguj"} method="delete">
-                    <.button class="w-full">
-                      Wyloguj
-                    </.button>
+              <div class="mt-8 mb-2.5 text-center">
+                <p>
+                  Nie to konto?
+                  <.link class="underline" href={~p"/wyloguj"} method="delete">
+                    Wyloguj
                   </.link>
-                </div>
+                </p>
               </div>
             </div>
           </div>
-
         </div>
       </div>
     <% else %>
