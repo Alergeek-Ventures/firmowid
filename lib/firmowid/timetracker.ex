@@ -13,6 +13,7 @@ defmodule Firmowid.Timetracker do
   alias Firmowid.Timetracker.ProjectUser
   alias Firmowid.Timetracker.Session
   alias Firmowid.Timetracker.HoursRecord
+  alias Firmowid.Timetracker.UserSalary
   alias Firmowid.Repo
 
   def authorize(_, %{role: :admin}, _), do: true
@@ -21,6 +22,8 @@ defmodule Firmowid.Timetracker do
   def authorize(:read_user_projects, %{role: :employee}, _), do: true
   def authorize(:read_user_hours_records, %{role: :employee}, _), do: true
   def authorize(:create_hours_record, %{role: :employee}, _), do: true
+  # TODO: change to admin or employer
+  def authorize(:create_user_salary, %{role: :employee}, _), do: true
   def authorize(:update_session, %{role: :employee, id: user_id}, %{user_id: user_id}), do: true
   def authorize(:delete_session, %{role: :employee, id: user_id}, %{user_id: user_id}), do: true
   def authorize(:create_session, %{role: :employee}, _), do: true
@@ -513,5 +516,25 @@ defmodule Firmowid.Timetracker do
   """
   def change_hours_record(%HoursRecord{} = hours_record, attrs \\ %{}) do
     HoursRecord.changeset(hours_record, attrs)
+  end
+
+  def get_latest_user_salary(user_id) do
+    UserSalary
+    |> where([us], us.user_id == ^user_id)
+    |> order_by([us], desc: us.effective_from)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  def create_user_salary(attrs \\ %{}) do
+    %UserSalary{}
+    |> UserSalary.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def update_user_salary(%UserSalary{} = user_salary, attrs) do
+    user_salary
+    |> UserSalary.changeset(attrs)
+    |> Repo.update()
   end
 end

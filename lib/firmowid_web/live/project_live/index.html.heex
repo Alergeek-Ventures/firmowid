@@ -55,6 +55,14 @@
         >
           <.icon name="hero-pencil-square-micro" />
         </button>
+        <button
+          :if={!@selected_project}
+          disabled={@is_editing_users}
+          phx-click="edit_all_users"
+          class="h-6 w-8 rounded-md hover:bg-greyButtonBg text-darkGrey disabled:text-orangeText inline-flex items-center justify-center ml-1"
+        >
+          <.icon name="hero-pencil-square-micro" />
+        </button>
         <.button
           :if={@is_editing_users}
           phx-click="save_users"
@@ -72,8 +80,14 @@
             <.render_project_edit project_users={@project_users} users={@users} />
           <% @selected_project -> %>
             <.render_project_user_hours project_user_hours={@project_user_hours} />
-          <% true -> %>
+          <% !@selected_project and !@is_editing_users -> %>
             <.render_hours_records hours_records={@hours_records} />
+          <% !@selected_project and @is_editing_users -> %>
+            <.render_employee_edit
+              hours_records={@hours_records}
+              editing_employee_salaries={@editing_employee_salaries}
+              employee_salary_forms={@employee_salary_forms}
+            />
         <% end %>
       </div>
     </div>

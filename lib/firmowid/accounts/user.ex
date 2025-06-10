@@ -20,6 +20,8 @@ defmodule Firmowid.Accounts.User do
                  Firmowid.Timetracker.Project,
                  join_through: "projects_users"
 
+    has_many :user_salaries, Firmowid.Timetracker.UserSalary, on_delete: :delete_all
+
     field :marketing_consent, :boolean, default: false
 
     belongs_to :avatar_blob, Firmowid.Blobs.Blob
