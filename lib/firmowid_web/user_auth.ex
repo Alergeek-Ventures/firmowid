@@ -309,14 +309,9 @@ defmodule FirmowidWeb.UserAuth do
          is_nil(conn.assigns[:current_user].organization_id) do
       conn
     else
-      LiveToast.send_toast(
-        :error,
-        "Musisz się zalogować, żeby wejść na tę stronę."
-      )
-
       conn
       |> maybe_store_return_to()
-      |> redirect(to: ~p"/organization")
+      |> redirect(to: ~p"/zaloguj")
       |> halt()
     end
   end
