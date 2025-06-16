@@ -126,6 +126,9 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     )
     |> cast_based_on_type
     |> put_change(:organization_id, Firmowid.Repo.get_org_id())
+    |> unique_constraint([:invoice_number, :organization_id],
+        name: :sales_invoices_invoice_number_organization_id_index,
+        message: "Invoice number already exists for this organization")
   end
 
   def seller_changeset(sales_invoice, attrs \\ %{}) do
