@@ -121,14 +121,6 @@
       } />
     <% else %>
       <.input
-        field={@form[:invoice_number]}
-        class="font-normal text-darkGrey"
-        input_class="text-black"
-        type="text"
-        label="Numer faktury"
-        required
-      />
-      <.input
         field={@form[:issue_date]}
         class="font-normal text-darkGrey"
         input_class="text-black"
@@ -171,6 +163,14 @@
         field={@form[:due_date]}
         type="date"
         label="Termin zapłaty"
+        required
+      />
+      <.input
+        field={@form[:invoice_number]}
+        class="font-normal text-darkGrey"
+        input_class="text-black"
+        type="text"
+        label="Numer faktury"
         required
       />
       <.input type="hidden" class="hidden" field={@form[:is_basic_info_confirmed]} value="true" />
