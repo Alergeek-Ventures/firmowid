@@ -401,10 +401,21 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
           |> assign(sales_invoice: SalesInvoices.get_sales_invoice(new_invoice.id))
           |> assign_currency()
 
-        {:error, changeset} ->
-          Logger.error("Failed to save invoice: #{inspect(changeset)}")
-          LiveToast.send_toast(:error, "Nie udało się zapisać faktury")
-          socket
+        {:error, %Ecto.Changeset{errors: errors} = changeset} ->
+          # unique error message for invoice number duplication
+          case Keyword.get(errors, :invoice_number) do
+            {message, [constraint: :unique, constraint_name: "sales_invoices_invoice_number_organization_id_index"]} ->
+              Logger.error("Duplicate invoice number: #{inspect(changeset)}")
+              LiveToast.send_toast(:error, "Ten numer faktury już istnieje w organizacji. Wybierz inny numer.")
+              socket
+              |> assign(form: changeset |> to_form())
+
+            _ ->
+              Logger.error("Failed to save invoice: #{inspect(changeset)}")
+              LiveToast.send_toast(:error, "Nie udało się zapisać faktury")
+              socket
+              |> assign(form: changeset |> to_form())
+          end
       end
 
     socket =
