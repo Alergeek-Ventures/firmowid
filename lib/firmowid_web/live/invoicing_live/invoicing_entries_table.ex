@@ -28,6 +28,18 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
     amount: "Kwota"
   ]
 
+  defp get_sales_invoice_buyer_name(%SalesInvoice{buyer_display_name: display_name})
+       when not is_nil(display_name) and display_name != "" do
+    display_name
+  end
+
+  defp get_sales_invoice_buyer_name(%SalesInvoice{buyer_name: name, buyer_surname: surname})
+       when not is_nil(name) and not is_nil(surname) and name != "" and surname != "" do
+    "#{name} #{surname}"
+  end
+
+  defp get_sales_invoice_buyer_name(_), do: ""
+
   def table(%{invoicing_entries: [], has_connected_bank_account: true} = assigns) do
     ~H"""
     <div class="flex flex-col gap-4 justify-center items-center min-h-[300px]">
@@ -610,20 +622,23 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
   end
 
   defp render_cell(%{invoicing_entry: %SalesInvoice{} = invoice, column: "party"} = assigns) do
+    party = get_sales_invoice_buyer_name(invoice)
+
     assigns =
       assigns
-      |> assign(:party, invoice.buyer_display_name)
+      |> assign(:party, party)
       |> assign(
         :description,
         case {
-          invoice.buyer_display_name,
+          party,
           invoice.sales_invoice_items
           |> Enum.map(& &1.name)
           |> Enum.join(", ")
         } do
           {nil, ""} -> "szkic faktury sprzedażowej"
-          {_buyer_display_name, ""} -> ""
-          {_buyer_display_name, description} -> description
+          {"", ""} -> "szkic faktury sprzedażowej"
+          {_party, ""} -> ""
+          {_party, description} -> description
         end
       )
       |> assign(:navigate, ~p"/sprzedazowe/#{invoice.id}")
