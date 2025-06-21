@@ -295,6 +295,26 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
         sales_invoice
       end
 
+    # Update invoice_number if issue_date is present and valid
+    sales_invoice =
+      case sales_invoice["issue_date"] do
+        nil ->
+          sales_invoice
+
+        date_str ->
+          case Date.from_iso8601(date_str) do
+            {:ok, issue_date} ->
+              Map.put(
+                sales_invoice,
+                "invoice_number",
+                SalesInvoices.get_next_invoice_number(issue_date)
+              )
+
+            {:error, _} ->
+              sales_invoice
+          end
+      end
+
     whole_form = Map.merge(socket.assigns.form.params, sales_invoice)
 
     sales_invoice_changeset =
@@ -305,7 +325,9 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
       socket.assigns.sales_invoice
       |> SalesInvoice.seller_changeset(sales_invoice)
 
-    buyer_changeset = socket.assigns.sales_invoice |> SalesInvoice.buyer_changeset(sales_invoice)
+    buyer_changeset =
+      socket.assigns.sales_invoice
+      |> SalesInvoice.buyer_changeset(sales_invoice)
 
     form = sales_invoice_changeset |> to_form()
 
