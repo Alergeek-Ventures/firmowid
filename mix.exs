@@ -80,7 +80,7 @@ defmodule Firmowid.MixProject do
       {:briefly, "~> 0.5.0"},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:sentry, "~> 10.10.0"},
+      {:sentry, "~> 11.0.1"},
       {:recase, "~> 0.8.0"},
       {:oban, "~> 2.17"},
       {:oban_live_dashboard, "~> 0.2.1"},
