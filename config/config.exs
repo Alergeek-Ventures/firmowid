@@ -123,12 +123,8 @@ config :firmowid, Oban,
     {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 30},
     {Oban.Plugins.Cron,
      crontab: [
-       # this triggers job that's lightweight and runs every hour
-       # then in it, we create idempotent jobs for each day
-       # for each account. it's done like this to work around
-       # Fly.io suspending the machines
-       {"0 * * * *", Firmowid.BankData.Worker, args: %{name: "schedule_sync"}},
-       {"0 * * * *", Firmowid.Invoicing.Worker, args: %{name: "schedule_matching"}}
+       {"0 12 */2 * *", Firmowid.BankData.Worker, args: %{name: "schedule_sync"}},
+       {"0 13 * * *", Firmowid.Invoicing.Worker, args: %{name: "schedule_matching"}}
      ]}
   ]
 

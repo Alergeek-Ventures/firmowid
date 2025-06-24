@@ -19,13 +19,8 @@ defmodule Firmowid.BankData.Worker do
 
         Firmowid.BankData.sync_bank_account(bank_account_id, :skip_organization_id)
 
-      # to work around Fly.io suspending the machines, every hour we
-      # schedule a sync for all bank accounts
-      # (when it wakes up it will start scheduling)
       %{"name" => "schedule_sync"} ->
-        bank_accounts = Firmowid.Finances.get_bank_accounts_for_sync()
-
-        bank_accounts
+        Firmowid.Finances.get_bank_accounts_for_sync()
         |> Enum.map(& &1.id)
         |> Enum.each(&schedule_bank_account_sync/1)
     end
@@ -34,29 +29,8 @@ defmodule Firmowid.BankData.Worker do
   end
 
   defp schedule_bank_account_sync(bank_account_id) do
-    # consistent sync times (for idempotency) - today at 11:55PM UTC
-    today = Date.utc_today()
-
-    # run on every Monday and Wednesday
-    closest_valid_day =
-      case Date.day_of_week(today) do
-        1 -> Date.add(today, 1)
-        3 -> Date.add(today, 1)
-        _ -> Date.add(today, 3)
-      end
-
-    eleven_am = ~T[11:00:00]
-
-    {:ok, scheduled_at} = NaiveDateTime.new(closest_valid_day, eleven_am)
-
     %{bank_account_id: bank_account_id, name: "bank_account_sync"}
-    |> Firmowid.BankData.Worker.new(
-      scheduled_at: scheduled_at,
-      # unique by args + timestamp (but scheduled_at instead of inserted_at), so idempotent!
-      unique: [
-        timestamp: :scheduled_at
-      ]
-    )
+    |> Firmowid.BankData.Worker.new()
     |> Oban.insert()
   end
 end

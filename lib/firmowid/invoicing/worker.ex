@@ -10,7 +10,9 @@ defmodule Firmowid.Invoicing.Worker do
   def perform(job) do
     case job.args do
       %{"name" => "schedule_matching"} ->
-        schedule_matching()
+        Accounts.list_organizations()
+        |> Enum.map(& &1.id)
+        |> Enum.each(&schedule_matching_for_organization/1)
 
         :ok
 
@@ -35,24 +37,8 @@ defmodule Firmowid.Invoicing.Worker do
   end
 
   defp schedule_matching_for_organization(organization_id) do
-    today = Date.utc_today()
-    eleven_pm = ~T[23:00:00]
-
-    {:ok, scheduled_at} = NaiveDateTime.new(today, eleven_pm)
-
     %{organization_id: organization_id, name: "match_invoices"}
-    |> Firmowid.Invoicing.Worker.new(
-      scheduled_at: scheduled_at,
-      unique: [
-        timestamp: :scheduled_at
-      ]
-    )
+    |> Firmowid.Invoicing.Worker.new()
     |> Oban.insert()
-  end
-
-  defp schedule_matching() do
-    Accounts.list_organizations()
-    |> Enum.map(& &1.id)
-    |> Enum.each(&schedule_matching_for_organization/1)
   end
 end
