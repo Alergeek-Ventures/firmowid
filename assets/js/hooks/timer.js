@@ -42,7 +42,7 @@ export const Timer = {
   },
 
   updateElement() {
-    const elapsed = new Date() - this.start_time;
+    const elapsed = Math.max(new Date() - this.start_time, 0);
     this.el.textContent = this.formatTime(elapsed);
   },
 
