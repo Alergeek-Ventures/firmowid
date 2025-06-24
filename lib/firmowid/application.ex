@@ -8,6 +8,7 @@ defmodule Firmowid.Application do
   @impl true
   def start(_type, _args) do
     Oban.Telemetry.attach_default_logger()
+    Ecto.DevLogger.install(Firmowid.Repo)
 
     children = [
       FirmowidWeb.Telemetry,

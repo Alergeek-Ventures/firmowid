@@ -88,7 +88,8 @@ defmodule Firmowid.MixProject do
       {:any_ascii, "~> 0.3.2"},
       {:multipart, "~> 0.4.0"},
       {:posthog, "~> 1.0.2"},
-      {:reverse_proxy_plug, "~> 3.0"}
+      {:reverse_proxy_plug, "~> 3.0"},
+      {:ecto_dev_logger, "~> 0.14"}
     ]
   end
 

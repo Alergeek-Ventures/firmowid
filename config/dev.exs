@@ -88,3 +88,5 @@ config :ex_aws, :s3,
   host: "localhost",
   scheme: "http://",
   port: 4566
+
+config :firmowid, Firmowid.Repo, log: false
