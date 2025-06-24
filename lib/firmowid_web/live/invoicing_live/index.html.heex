@@ -11,7 +11,12 @@
   "flex max-md:justify-center justify-between py-4",
   "sticky top-[80px] bg-lightGreyBg z-10 h-[74px]"
 ]}>
-  <.date_picker id="month" active_months={@active_months} selected_date={@params.month} class="w-48 gap-2" />
+  <.date_picker
+    id="month"
+    active_months={@active_months}
+    selected_date={@params.month}
+    class="w-48 gap-2"
+  />
 
   <div phx-drop-target={@uploads.file.ref} class="flex flex-row gap-4">
     <%= if @invoicing_entries != [] do %>

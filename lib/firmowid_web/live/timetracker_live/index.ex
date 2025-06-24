@@ -245,11 +245,13 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     week_start = Date.beginning_of_week(date)
     week_end = Date.end_of_week(date)
 
-    week_start_str = if week_start.month == week_end.month do
-      Calendar.strftime(week_start, "%d")
-    else
-      Calendar.strftime(week_start, "%d.%m")
-    end
+    week_start_str =
+      if week_start.month == week_end.month do
+        Calendar.strftime(week_start, "%d")
+      else
+        Calendar.strftime(week_start, "%d.%m")
+      end
+
     week_end_str = Calendar.strftime(week_end, "%d.%m.%Y")
 
     "TYDZIEŃ #{week_start_str}-#{week_end_str}"
