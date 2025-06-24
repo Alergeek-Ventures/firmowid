@@ -81,7 +81,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     |> assign(:grouped_sessions, grouped_sessions)
     |> assign(:next_sessions_available, next_sessions_available)
     |> assign(:current_session, Timetracker.get_current_session(socket.assigns.current_user.id))
-    |> assign(:month_stats, calculate_month_stats(sessions))
+    |> assign(:month_stats, calculate_month_stats())
   end
 
   def group_nearby(sessions) do
@@ -245,7 +245,11 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     week_start = Date.beginning_of_week(date)
     week_end = Date.end_of_week(date)
 
-    week_start_str = Calendar.strftime(week_start, "%d")
+    week_start_str = if week_start.month == week_end.month do
+      Calendar.strftime(week_start, "%d")
+    else
+      Calendar.strftime(week_start, "%d.%m")
+    end
     week_end_str = Calendar.strftime(week_end, "%d.%m.%Y")
 
     "TYDZIEŃ #{week_start_str}-#{week_end_str}"
@@ -280,20 +284,9 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     |> DateTime.from_naive!("Europe/Warsaw")
   end
 
-  def calculate_month_stats(sessions) do
+  def calculate_month_stats() do
     now = DateTime.now!("Europe/Warsaw")
-    start_of_month = Date.beginning_of_month(now) |> DateTime.new!(~T[00:00:00], "Europe/Warsaw")
-    end_of_month = Date.end_of_month(now) |> DateTime.new!(~T[23:59:59], "Europe/Warsaw")
-
-    total_seconds =
-      sessions
-      |> Enum.filter(fn session ->
-        session_end = session.end_datetime || DateTime.now!("Europe/Warsaw")
-
-        DateTime.compare(session.start_datetime, start_of_month) in [:eq, :gt] &&
-          DateTime.compare(session_end, end_of_month) in [:eq, :lt]
-      end)
-      |> calculate_total_duration()
+    total_seconds = Timetracker.get_total_time_worked(now.month, now.year)
 
     hours = div(total_seconds, 60 * 60)
     minutes = rem(div(total_seconds, 60), 60)
