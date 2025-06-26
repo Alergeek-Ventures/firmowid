@@ -23,7 +23,9 @@ config :sentry,
   integrations: [
     oban: [
       # Capture errors:
-      capture_errors: true
+      capture_errors: true,
+      # Monitor cron jobs:
+      cron: [enabled: true]
     ]
   ]
 
