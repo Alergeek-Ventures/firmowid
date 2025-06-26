@@ -9,22 +9,28 @@ defmodule Firmowid.Invoicing.Worker do
   @impl Oban.Worker
   def perform(job) do
     case job.args do
-      %{"name" => "schedule_matching"} ->
+      %{"name" => "matching"} ->
         Accounts.list_organizations()
         |> Enum.map(& &1.id)
-        |> Enum.each(&schedule_matching_for_organization/1)
+        |> Enum.each(fn organization_id ->
+          Logger.info("Matching invoices for organization #{organization_id}")
 
-        :ok
+          Sentry.Context.add_breadcrumb(%{
+            category: "invoicing_matching",
+            data: %{
+              organization_id: organization_id,
+              job: job
+            }
+          })
 
-      %{"name" => "match_invoices", "organization_id" => organization_id} ->
-        match_invoices(organization_id)
-
-        :ok
+          match_invoices(organization_id)
+        end)
 
       _ ->
         Logger.error("Unknown job args: #{inspect(job.args)}")
-        :ok
     end
+
+    :ok
   end
 
   defp match_invoices(organization_id) do
@@ -32,13 +38,5 @@ defmodule Firmowid.Invoicing.Worker do
 
     Invoicing.match_all_good_candidates_for_unconnected_cost_invoices(organization_id)
     Invoicing.match_all_good_candidates_for_unconnected_sales_invoices(organization_id)
-
-    :ok
-  end
-
-  defp schedule_matching_for_organization(organization_id) do
-    %{organization_id: organization_id, name: "match_invoices"}
-    |> Firmowid.Invoicing.Worker.new()
-    |> Oban.insert()
   end
 end

@@ -123,8 +123,8 @@ config :firmowid, Oban,
     {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 30},
     {Oban.Plugins.Cron,
      crontab: [
-       {"0 12 */2 * *", Firmowid.BankData.Worker, args: %{name: "schedule_sync"}},
-       {"0 13 * * *", Firmowid.Invoicing.Worker, args: %{name: "schedule_matching"}}
+       {"0 12 */2 * *", Firmowid.BankData.Worker, args: %{name: "sync"}},
+       {"0 13 * * *", Firmowid.Invoicing.Worker, args: %{name: "matching"}}
      ]}
   ]
 
