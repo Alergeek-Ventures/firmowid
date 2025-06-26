@@ -139,18 +139,6 @@ defmodule Firmowid.Timetracker do
     Repo.all(query)
   end
 
-  def get_sessions_duration_in_project(project_id, user_id, month, year) do
-    sessions =
-      Session
-      |> where([s], s.project_id == ^project_id and s.user_id == ^user_id)
-      |> where([s], fragment("extract(month from ?) = ?", s.start_datetime, ^month))
-      |> where([s], fragment("extract(year from ?) = ?", s.start_datetime, ^year))
-      |> Repo.all()
-      |> Enum.map(&Session.put_duration/1)
-
-    Enum.reduce(sessions, 0, fn s, acc -> acc + s.duration end)
-  end
-
   defp query_months_with_sessions() do
     Session
     |> select([s], fragment("date_trunc('month', ?)", s.start_datetime) |> selected_as(:date))
@@ -175,39 +163,39 @@ defmodule Firmowid.Timetracker do
     |> Repo.all()
   end
 
-  def get_sessions_duration_in_month(user_id, date) do
-    sessions =
-      Session
-      |> where([s], s.user_id == ^user_id)
-      |> where([s], fragment("extract(month from ?) = ?", s.start_datetime, ^date.month))
-      |> where([s], fragment("extract(year from ?) = ?", s.start_datetime, ^date.year))
-      |> Repo.all()
-      |> Enum.map(&Session.put_duration/1)
+  defp query_total_time_worked(month, year) do
+    from s in Session,
+      where:
+        fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
+          fragment("extract(year from ?) = ?", s.start_datetime, ^year),
+      limit: 1,
+      select:
+        fragment(
+          "extract(epoch from coalesce(?, now()) - ?)",
+          s.end_datetime,
+          s.start_datetime
+        )
+        |> sum()
+        |> coalesce(0)
+        |> type(:integer)
+        |> selected_as(:time_worked)
+  end
 
-    Enum.reduce(sessions, 0, fn s, acc -> acc + s.duration end)
+  def get_sessions_duration_in_project(project_id, user_id, month, year) do
+    query_total_time_worked(month, year)
+    |> where([s], s.project_id == ^project_id and s.user_id == ^user_id)
+    |> Repo.one()
+  end
+
+  def get_sessions_duration_in_month(user_id, date) do
+    query_total_time_worked(date.month, date.year)
+    |> where([s], s.user_id == ^user_id)
+    |> Repo.one()
   end
 
   def get_total_time_worked(month, year) do
-    query =
-      from s in Session,
-        where:
-          fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
-            fragment("extract(year from ?) = ?", s.start_datetime, ^year),
-        limit: 1,
-        select:
-          fragment(
-            "extract(epoch from coalesce(?, now()) - ?)",
-            s.end_datetime,
-            s.start_datetime
-          )
-          |> sum()
-          |> type(:integer)
-          |> selected_as(:time_worked)
-
-    case Repo.one(query) do
-      nil -> 0
-      time_worked -> time_worked
-    end
+    query_total_time_worked(month, year)
+    |> Repo.one()
   end
 
   def get_most_demanding_project(month, year) do
