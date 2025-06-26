@@ -81,7 +81,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     |> assign(:grouped_sessions, grouped_sessions)
     |> assign(:next_sessions_available, next_sessions_available)
     |> assign(:current_session, Timetracker.get_current_session(socket.assigns.current_user.id))
-    |> assign(:month_stats, calculate_month_stats())
+    |> assign(:month_stats, calculate_month_stats(socket.assigns.current_user.id))
   end
 
   def group_nearby(sessions) do
@@ -286,9 +286,9 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     |> DateTime.from_naive!("Europe/Warsaw")
   end
 
-  def calculate_month_stats() do
+  def calculate_month_stats(user_id) do
     now = DateTime.now!("Europe/Warsaw")
-    total_seconds = Timetracker.get_total_time_worked(now.month, now.year)
+    total_seconds = Timetracker.get_sessions_duration_in_month(user_id, now)
 
     hours = div(total_seconds, 60 * 60)
     minutes = rem(div(total_seconds, 60), 60)
