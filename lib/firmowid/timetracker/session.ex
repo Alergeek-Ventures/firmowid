@@ -10,6 +10,8 @@ defmodule Firmowid.Timetracker.Session do
     field :start_datetime, :utc_datetime, autogenerate: {DateTime, :utc_now}
     field :end_datetime, :utc_datetime
 
+    field :lockdown, :boolean, virtual: true
+
     belongs_to :user, Firmowid.Accounts.User
     belongs_to :project, Firmowid.Timetracker.Project
     belongs_to :organization, Firmowid.Accounts.Organization

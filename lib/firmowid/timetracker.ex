@@ -22,10 +22,28 @@ defmodule Firmowid.Timetracker do
   def authorize(:read_user_projects, %{role: :employee}, _), do: true
   def authorize(:read_user_hours_records, %{role: :employee}, _), do: true
   def authorize(:create_hours_record, %{role: :employee}, _), do: true
-  def authorize(:update_session, %{role: :employee, id: user_id}, %{user_id: user_id}), do: true
-  def authorize(:delete_session, %{role: :employee, id: user_id}, %{user_id: user_id}), do: true
-  def authorize(:create_session, %{role: :employee}, _), do: true
+
+  def authorize(:update_session, %{role: :employee, id: user_id}, %{user_id: user_id} = session) do
+    # Ensure that user can end already running session
+    session.end_datetime == nil or
+      not submitted_hours_record?(user_id, session.start_datetime)
+  end
+
+  def authorize(:delete_session, %{role: :employee, id: user_id}, %{user_id: user_id} = session),
+    do: not submitted_hours_record?(user_id, session.start_datetime)
+
+  def authorize(:create_session, %{role: :employee, id: user_id}, session),
+    do: not submitted_hours_record?(user_id, session.start_datetime)
+
   def authorize(_, _, _), do: false
+
+  def submitted_hours_record?(user_id, date) do
+    query =
+      from hr in HoursRecord,
+        where: hr.user_id == ^user_id and hr.month == ^date.month and hr.year == ^date.year
+
+    Repo.exists?(query)
+  end
 
   def list_user_projects(user_id) do
     query =
@@ -317,18 +335,30 @@ defmodule Firmowid.Timetracker do
   def get_session!(id), do: Repo.get!(Session, id)
 
   def list_user_sessions(user_id, opts \\ []) do
-    query =
+    after_date = Keyword.get(opts, :after_date)
+
+    session_query =
       Session
       |> where([s], s.user_id == ^user_id)
       |> order_by([s], desc: s.start_datetime)
 
-    case Keyword.get(opts, :after_date) do
-      nil ->
-        query
+    session_query =
+      case after_date do
+        nil ->
+          session_query
 
-      after_date ->
-        where(query, [s], s.start_datetime >= ^DateTime.new!(after_date, ~T[00:00:00]))
-    end
+        _ ->
+          where(session_query, [s], s.start_datetime >= ^DateTime.new!(after_date, ~T[00:00:00]))
+      end
+
+    from(s in session_query,
+      left_join: hr in HoursRecord,
+      on:
+        hr.user_id == s.user_id and
+          hr.month == fragment("extract(month from ?)", s.start_datetime) and
+          hr.year == fragment("extract(year from ?)", s.start_datetime),
+      select: merge(s, %{lockdown: not is_nil(hr.id)})
+    )
     |> Repo.all()
     |> Enum.map(&Session.put_duration/1)
   end

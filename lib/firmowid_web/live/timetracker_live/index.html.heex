@@ -31,9 +31,11 @@
         for={@form}
         class="w-full max-w-md flex flex-col gap-4"
       >
+        <% submitted = Timetracker.submitted_hours_record?(@current_user.id, Date.utc_today()) %>
+
         <.input
           type="select"
-          disabled={@current_session != nil}
+          disabled={@current_session != nil or submitted}
           class="w-full font-bold bg-orangeBg text-orangeText border-none px-4 py-3 rounded appearance-none cursor-pointer hover:bg-[#f0e0d8] transition-colors focus:outline-none focus:ring-1 focus:ring-orangeText"
           field={@form[:project_id]}
           options={@projects |> Enum.map(&{&1.name, &1.id})}
@@ -46,8 +48,12 @@
           <.input
             field={@form[:title]}
             required={true}
-            disabled={@current_session != nil}
-            placeholder="Nad czym dzisiaj pracujesz?"
+            disabled={@current_session != nil or submitted}
+            placeholder={
+              if not submitted,
+                do: "Nad czym dzisiaj pracujesz?",
+                else: "Nie możesz dodać sesji, po wysłaniu ewidencji godzin"
+            }
           />
         <% end %>
 
@@ -94,10 +100,11 @@
             color="orange"
             class="w-full phx-click-loading:opacity-60 phx-click-loading:cursor-default"
             phx-click="toggle_extended_form"
+            disabled={submitted}
           >
             {if @is_form_extended, do: "Anuluj", else: "Wprowadź inną datę"}
           </.button>
-          <.button color="orange" class="w-full">
+          <.button color="orange" class="w-full" disabled={submitted}>
             {if @is_form_extended, do: "Zapisz", else: "Zacznij teraz"}
           </.button>
         </div>

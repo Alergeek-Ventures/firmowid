@@ -38,7 +38,10 @@ defmodule FirmowidWeb.Components.Session do
           >
             {session |> Session.calculate_session_duration() |> TimeFormatter.format_timer()}
           </p>
-          <div class="pl-2 opacity-0 group-hover:opacity-100 transition absolute left-full">
+          <div
+            :if={not session.lockdown}
+            class="pl-2 opacity-0 group-hover:opacity-100 transition absolute left-full"
+          >
             <div class="flex gap-3 bg-greyButtonBg rounded-md py-1 px-2">
               <button
                 id={"edit-session-#{session.id}"}
@@ -54,7 +57,7 @@ defmodule FirmowidWeb.Components.Session do
               </button>
             </div>
           </div>
-          <div class="absolute">
+          <div :if={not session.lockdown} class="absolute">
             <.modal
               id={"edit-session-modal-#{session.id}"}
               on_cancel={hide_modal("edit-session-modal-#{session.id}")}

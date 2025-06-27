@@ -121,10 +121,15 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def handle_event("save", %{"session_form" => session}, socket) do
-    Bodyguard.permit!(Timetracker, :create_session, socket.assigns.current_user)
-
     {:ok, validated_session} =
       session |> SessionForm.changeset() |> SessionForm.attributes(socket.assigns.current_user.id)
+
+    Bodyguard.permit!(
+      Timetracker,
+      :create_session,
+      socket.assigns.current_user,
+      validated_session
+    )
 
     case Timetracker.start_session(validated_session) do
       {:ok, %{end_time: nil} = session} ->
