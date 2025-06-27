@@ -122,8 +122,10 @@ config :firmowid, Oban,
     # remove jobs after 30 days
     {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 30},
     {Oban.Plugins.Cron,
+     timezone: "Europe/Warsaw",
      crontab: [
-       {"0 12 */2 * *", Firmowid.BankData.Worker, args: %{name: "sync"}},
+       {"0 12 */2 * *", Firmowid.BankData.Worker,
+        args: %{name: "dispatch_sync_jobs_for_all_bank_accounts"}},
        {"0 13 * * *", Firmowid.Invoicing.Worker, args: %{name: "matching"}}
      ]}
   ]

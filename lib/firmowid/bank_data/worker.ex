@@ -19,7 +19,7 @@ defmodule Firmowid.BankData.Worker do
 
         Firmowid.BankData.sync_bank_account(bank_account_id, :skip_organization_id)
 
-      %{"name" => "sync"} ->
+      %{"name" => "dispatch_sync_jobs_for_all_bank_accounts"} ->
         Firmowid.Finances.get_bank_accounts_for_sync()
         |> Enum.map(&%{bank_account_id: &1.id, name: "bank_account_sync"})
         |> Enum.map(&Firmowid.BankData.Worker.new/1)
