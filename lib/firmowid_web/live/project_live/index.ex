@@ -609,7 +609,13 @@ defmodule FirmowidWeb.Project.Index do
           ])
         }>
           <.render_profile user={user} />
-          <span :if={!user.expanded} class="ml-auto">{trunc(user.time_worked / 60 / 60)} h</span>
+          <span class="ml-auto">
+            <%= if user.expanded do %>
+              <span class="invisible">{trunc(user.time_worked / 60 / 60)} h</span>
+            <% else %>
+              {trunc(user.time_worked / 60 / 60)} h
+            <% end %>
+          </span>
 
           <button
             phx-click="toggle-user"
@@ -814,13 +820,18 @@ defmodule FirmowidWeb.Project.Index do
         <div class="flex flex-col bg-white rounded-md">
           <div class="flex items-center p-4 justify-between">
             <.render_profile user={user} />
-            <span :if={record}>{trunc(record.number_of_hours)} h</span>
             <button
               phx-click="toggle-user-summary"
               phx-value-id={user.id}
               class="disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span class="ml-auto">{trunc(user_hours.time_worked / 60 / 60)} h</span>
+              <span class="ml-auto">
+                <%= if expanded do %>
+                  <span class="invisible">{trunc(user_hours.time_worked / 60 / 60)} h</span>
+                <% else %>
+                  {trunc(user_hours.time_worked / 60 / 60)} h
+                <% end %>
+              </span>
               <.icon :if={expanded} name="hero-chevron-up-mini" class="text-darkGrey" />
               <.icon :if={!expanded} name="hero-chevron-down-mini" class="text-darkGrey" />
             </button>
