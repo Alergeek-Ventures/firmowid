@@ -518,16 +518,62 @@ defmodule Firmowid.Timetracker do
 
   def get_latest_user_salary(user_id) do
     UserSalary
-    |> where([us], us.user_id == ^user_id)
-    |> order_by([us], desc: us.effective_from)
-    |> limit(1)
+    |> where([us], us.user_id == ^user_id and is_nil(us.deleted_at))
     |> Repo.one()
   end
 
+  @doc """
+  Gets the complete salary history for a user, sorted from most recent to oldest.
+
+  For salaries on the same day, uses updated_at timestamp for precise ordering.
+  This provides a complete audit trail of all salary changes.
+
+  ## Examples
+
+      iex> get_salary_history(user_id)
+      [
+        %UserSalary{hourly_rate: #Decimal<50.00>, deleted_at: nil, updated_at: ~U[2025-01-16 14:30:00Z]},
+        %UserSalary{hourly_rate: #Decimal<45.00>, deleted_at: ~D[2025-01-16], updated_at: ~U[2025-01-16 14:25:00Z]},
+        %UserSalary{hourly_rate: #Decimal<40.00>, deleted_at: ~D[2025-01-10], updated_at: ~U[2025-01-10 09:15:00Z]}
+      ]
+  """
+  def get_salary_history(user_id) do
+    UserSalary
+    |> where([us], us.user_id == ^user_id)
+    |> order_by([us],
+      asc: fragment("CASE WHEN ? IS NULL THEN 0 ELSE 1 END", us.deleted_at),
+      desc: us.deleted_at,
+      desc: us.updated_at
+    )
+    |> Repo.all()
+  end
+
   def create_user_salary(attrs \\ %{}) do
-    %UserSalary{}
-    |> UserSalary.changeset(attrs)
-    |> Repo.insert()
+    user_id = Map.get(attrs, :user_id) || Map.get(attrs, "user_id")
+
+    Repo.transaction(fn ->
+      # First, mark the current active salary as deleted if it exists
+      case get_latest_user_salary(user_id) do
+        nil ->
+          # no existing salary - proceed with creation
+          :ok
+
+        existing_salary ->
+          # mark existing salary as deleted
+          case update_user_salary(existing_salary, %{deleted_at: Date.utc_today()}) do
+            {:ok, _} -> :ok
+            {:error, changeset} -> Repo.rollback(changeset)
+          end
+      end
+
+      # then create new salary record with deleted_at as NULL
+      case %UserSalary{}
+           |> UserSalary.changeset(attrs)
+           |> Repo.insert() do
+        {:ok, salary} -> salary
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
+    end)
   end
 
   def update_user_salary(%UserSalary{} = user_salary, attrs) do

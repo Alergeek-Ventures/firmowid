@@ -20,6 +20,7 @@ defmodule FirmowidWeb.Components.Timetracker.UserProfileSummary do
   defp format_total_salary(nil, _user_hours), do: "Brak stawki"
   defp format_total_salary(_hourly_rate, nil), do: "0 PLN"
 
+  # it takes into account even seconds and just rounds it to 2 decimal places afterwards
   defp format_total_salary(hourly_rate, user_hours) do
     hours = user_hours.time_worked / 60 / 60
     total_salary = Decimal.mult(hourly_rate, Decimal.from_float(hours))

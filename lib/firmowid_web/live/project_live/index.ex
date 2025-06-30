@@ -405,48 +405,10 @@ defmodule FirmowidWeb.Project.Index do
              editing_employee_salaries: editing_employee_salaries
            )}
 
-        {:error, create_changeset} ->
-          Logger.info(
-            "Create failed, attempting to update existing salary record: #{inspect(create_changeset.errors)}"
-          )
-
-          # error means there already exists salary record for this user that has been created on the same day
-          # try to find and update most recent record for this user and date (today) instead of creating another one
-          case Timetracker.get_latest_user_salary(user_id) do
-            nil ->
-              Logger.error(
-                "No existing salary record found to update, create failed with: #{inspect(create_changeset.errors)}"
-              )
-
-              LiveToast.send_toast(:error, "Zmiana wynagrodzenia pracownika nie powiodła się")
-              {:noreply, socket}
-
-            existing_salary ->
-              Logger.info("Found existing salary record: #{inspect(existing_salary)}")
-
-              case Timetracker.update_user_salary(existing_salary, salary_attrs) do
-                {:ok, updated_salary} ->
-                  Logger.info("Successfully updated user salary: #{inspect(updated_salary)}")
-
-                  editing_employee_salaries =
-                    Map.put(socket.assigns.editing_employee_salaries, user_id, false)
-
-                  socket = assign_hours_records(socket)
-
-                  {:noreply,
-                   assign(socket,
-                     editing_employee_salaries: editing_employee_salaries
-                   )}
-
-                {:error, update_changeset} ->
-                  Logger.error(
-                    "Both create and update failed. Create errors: #{inspect(create_changeset.errors)}, Update errors: #{inspect(update_changeset.errors)}"
-                  )
-
-                  LiveToast.send_toast(:error, "Zmiana wynagrodzenia pracownika nie powiodła się")
-                  {:noreply, socket}
-              end
-          end
+        {:error, changeset} ->
+          Logger.error("Failed to create user salary: #{inspect(changeset.errors)}")
+          LiveToast.send_toast(:error, "Zmiana wynagrodzenia pracownika nie powiodła się")
+          {:noreply, socket}
       end
     else
       Logger.warning(
@@ -533,8 +495,7 @@ defmodule FirmowidWeb.Project.Index do
 
     %{
       user_id: user_id,
-      hourly_rate: hourly_rate,
-      effective_from: Date.utc_today()
+      hourly_rate: hourly_rate
     }
   end
 
