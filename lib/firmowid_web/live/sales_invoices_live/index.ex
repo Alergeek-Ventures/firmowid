@@ -404,7 +404,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
         {:error, %Ecto.Changeset{errors: errors} = changeset} ->
           # unique error message for invoice number duplication
           case Keyword.get(errors, :invoice_number) do
-            {message,
+            {_message,
              [
                constraint: :unique,
                constraint_name: "sales_invoices_invoice_number_organization_id_index"
