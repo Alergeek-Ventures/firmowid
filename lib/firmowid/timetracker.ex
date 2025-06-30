@@ -22,8 +22,6 @@ defmodule Firmowid.Timetracker do
   def authorize(:read_user_projects, %{role: :employee}, _), do: true
   def authorize(:read_user_hours_records, %{role: :employee}, _), do: true
   def authorize(:create_hours_record, %{role: :employee}, _), do: true
-  # TODO: change to admin or employer
-  def authorize(:create_user_salary, %{role: :employee}, _), do: true
   def authorize(:update_session, %{role: :employee, id: user_id}, %{user_id: user_id}), do: true
   def authorize(:delete_session, %{role: :employee, id: user_id}, %{user_id: user_id}), do: true
   def authorize(:create_session, %{role: :employee}, _), do: true
