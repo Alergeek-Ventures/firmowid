@@ -611,9 +611,9 @@ defmodule FirmowidWeb.Project.Index do
           <.render_profile user={user} />
           <span class="ml-auto">
             <%= if user.expanded do %>
-              <span class="invisible">{trunc(user.time_worked / 60 / 60)} h</span>
+              <span class="invisible">{ceil(user.time_worked / 60 / 60)} h</span>
             <% else %>
-              {trunc(user.time_worked / 60 / 60)} h
+              {ceil(user.time_worked / 60 / 60)} h
             <% end %>
           </span>
 
@@ -827,9 +827,9 @@ defmodule FirmowidWeb.Project.Index do
             >
               <span class="ml-auto">
                 <%= if expanded do %>
-                  <span class="invisible">{trunc(user_hours.time_worked / 60 / 60)} h</span>
+                  <span class="invisible">{ceil(user_hours.time_worked / 60 / 60)} h</span>
                 <% else %>
-                  {trunc(user_hours.time_worked / 60 / 60)} h
+                  {ceil(user_hours.time_worked / 60 / 60)} h
                 <% end %>
               </span>
               <.icon :if={expanded} name="hero-chevron-up-mini" class="text-darkGrey" />

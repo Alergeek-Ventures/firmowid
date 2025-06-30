@@ -20,10 +20,11 @@ defmodule FirmowidWeb.Components.Timetracker.UserProfileSummary do
   defp format_total_salary(nil, _user_hours), do: "Brak stawki"
   defp format_total_salary(_hourly_rate, nil), do: "0 PLN"
 
-  # it takes into account even seconds and just rounds it to 2 decimal places afterwards
+  # rounds hours up to full numbers (ceiling) then multiplies by hourly rate
   defp format_total_salary(hourly_rate, user_hours) do
-    hours = user_hours.time_worked / 60 / 60
-    total_salary = Decimal.mult(hourly_rate, Decimal.from_float(hours))
+    hours_float = user_hours.time_worked / 60 / 60
+    hours_rounded_up = ceil(hours_float)
+    total_salary = Decimal.mult(hourly_rate, Decimal.new(hours_rounded_up))
     rounded_salary = Decimal.round(total_salary, 2)
     "#{Decimal.to_string(rounded_salary)} PLN"
   end
@@ -44,7 +45,7 @@ defmodule FirmowidWeb.Components.Timetracker.UserProfileSummary do
           <div class="text-sm font-medium text-darkGrey uppercase mb-1">Łączny czas</div>
           <div class="font-medium text-lg">
             <%= if @user_hours do %>
-              {trunc(@user_hours.time_worked / 60 / 60)} h
+              {ceil(@user_hours.time_worked / 60 / 60)} h
             <% else %>
               0 h
             <% end %>
