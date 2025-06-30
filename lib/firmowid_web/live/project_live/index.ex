@@ -133,6 +133,7 @@ defmodule FirmowidWeb.Project.Index do
        project.project_users
        |> Enum.map(& &1.user)
        |> Enum.map(&Accounts.get_user_with_avatar/1)
+       |> Enum.sort_by(&{&1.name, &1.email})
      )}
   end
 
@@ -144,6 +145,7 @@ defmodule FirmowidWeb.Project.Index do
         salary = Timetracker.get_latest_user_salary(user.id)
         Map.put(user, :current_salary, salary)
       end)
+      |> Enum.sort_by(&{&1.name, &1.email})
 
     {:noreply,
      socket
