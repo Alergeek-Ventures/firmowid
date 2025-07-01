@@ -56,6 +56,35 @@ defmodule Firmowid.AccountsFixtures do
     user
   end
 
+  def user_in_org_fixture(organization_id, attrs \\ %{}) do
+    # register the user without an organization
+    {:ok, user} =
+      attrs
+      |> valid_user_attributes()
+      |> Firmowid.Accounts.register_user()
+
+    Repo.put_org_id(organization_id)
+
+    # update the user to be part of the specified organization
+    {:ok, user} =
+      user
+      |> Ecto.Changeset.change(%{organization_id: organization_id})
+      |> Repo.update()
+
+    {:ok, user} =
+      Accounts.get_user!(user.id)
+      |> Firmowid.Accounts.update_user(
+        Map.merge(
+          %{
+            role: :employee
+          },
+          Map.take(attrs, [:role, :system_role])
+        )
+      )
+
+    user
+  end
+
   def extract_user_token(fun) do
     {:ok, captured_email} = fun.(&"[TOKEN]#{&1}[TOKEN]")
     [_, token | _] = String.split(captured_email.text_body, "[TOKEN]")

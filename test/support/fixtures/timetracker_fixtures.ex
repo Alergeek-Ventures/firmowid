@@ -45,4 +45,16 @@ defmodule Firmowid.TimetrackerFixtures do
   def user_project_fixture(user_id, project_id) do
     {:ok, _project} = Timetracker.add_user_to_project(user_id, project_id)
   end
+
+  def user_salary_fixture(attrs \\ %{}) do
+    {:ok, user_salary} =
+      attrs
+      |> Enum.into(%{
+        hourly_rate: Decimal.new("50.00"),
+        user_id: attrs[:user_id] || raise("user_id is required for user_salary_fixture")
+      })
+      |> Timetracker.create_user_salary()
+
+    user_salary
+  end
 end
