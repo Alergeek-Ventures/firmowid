@@ -810,7 +810,6 @@ defmodule FirmowidWeb.Project.Index do
           >
             <.radio_group
               field={user_form[:salary_type]}
-              id={"radio_group_#{user.id}"}
               class="flex flex-row justify-center [&_label>div]:!border-0 [&_label>div]:!bg-greyButtonBg animate-appear"
             >
               <:radio value="fixed">Stała</:radio>
@@ -829,7 +828,7 @@ defmodule FirmowidWeb.Project.Index do
                     input_class="!bg-transparent !border-0 !py-0 !pl-0 !pr-2 !text-lg !text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none animate-slide-from-center"
                     step="0.01"
                     min="0"
-                    key={"hourly-rate-input-#{user.id}-#{user_form[:salary_type].value}"}
+                    id={"hourly-rate-input-#{user.id}-#{user_form[:salary_type].value}"}
                   />
                 </div>
                 <div
@@ -851,12 +850,12 @@ defmodule FirmowidWeb.Project.Index do
                     input_class="!bg-transparent !border-0 !py-0 !pl-0 !pr-2 !text-lg !text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none animate-slide-from-center"
                     step="0.01"
                     min="0"
-                    key={"fixed-salary-input-#{user.id}-#{user_form[:salary_type].value}"}
+                    id={"fixed-salary-input-#{user.id}-#{user_form[:salary_type].value}"}
                   />
                 </div>
                 <div
                   class="text-lg text-right pr-2 animate-slide-from-center"
-                  key={"fixed-salary-unit-#{user.id}-#{user_form[:salary_type].value}"}
+                  id={"fixed-salary-unit-#{user.id}-#{user_form[:salary_type].value}"}
                 >
                   PLN
                 </div>

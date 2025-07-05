@@ -617,7 +617,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         <% end %>
 
         <div
-          :for={transaction <- @search_results}
+          :for={{transaction, _prediction_score} <- @search_results}
           id={"potential-transaction-#{transaction.id}"}
           class="grid grid-cols-[1fr_120px_120px_50px]"
         >
@@ -763,7 +763,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         </div>
 
         <div
-          :for={transaction <- @potential_transactions}
+          :for={{transaction, prediction_score} <- @potential_transactions}
           id={"potential-transaction-#{transaction.id}"}
           class="grid grid-cols-[1fr_120px_120px_220px]"
         >
@@ -786,7 +786,10 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
             {Money.new(transaction.transaction_currency, transaction.transaction_amount)}
           </div>
           <div class="flex items-center justify-end gap-4">
-            <.llm_grade_indicator transaction_id={transaction.id} llm_eval={transaction.llm_eval} />
+            <.prediction_score_indicator
+              transaction_id={transaction.id}
+              prediction_score={prediction_score}
+            />
             <button
               phx-value-transaction_id={transaction.id}
               phx-click="connect"
@@ -817,50 +820,52 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   end
 
   attr :transaction_id, :string, required: true
-  attr :llm_eval, :float, required: true
+  attr :prediction_score, :float, required: true
 
-  defp llm_grade_indicator(assigns) do
+  defp prediction_score_indicator(assigns) do
+    # look into the matching/training/logisitic-regression.livemd for the
+    # thresholds
     ~H"""
     <div
-      id={"match-llm-eval-#{@transaction_id}"}
+      id={"match-prediction-score-#{@transaction_id}"}
       phx-hook="Tippy"
       data-tippy-content={"Wykorzystując AI, rekomendujemy transakcję
                     z Twojego konta, która pasuje do danej faktury kosztowej. Ocena
                     jest #{
                     cond do
-                      @llm_eval >= 0.65 -> "wysoka"
-                      @llm_eval >= 0.3 -> "średnia"
+                      @prediction_score >= 0.69 -> "wysoka"
+                      @prediction_score >= 0.66 -> "średnia"
                       true -> "niska"
                     end} dla tej transakcji."}
       class={[
         "flex flex-col justify-center items-start gap-1 pl-[4px]",
         "w-7 h-7 rounded-md",
-        @llm_eval >= 0.75 && "bg-greenBg",
-        (@llm_eval >= 0.5 and
-           @llm_eval < 0.75) &&
+        @prediction_score >= 0.69 && "bg-greenBg",
+        (@prediction_score >= 0.66 and
+           @prediction_score < 0.69) &&
           "bg-orangeBg",
-        @llm_eval < 0.5 && "bg-redBg"
+        @prediction_score < 0.66 && "bg-redBg"
       ]}
     >
       <div class={[
         "w-[75%] rounded-md bg-white h-[2px]",
-        @llm_eval >= 0.75 && "!bg-greenText"
+        @prediction_score >= 0.69 && "!bg-greenText"
       ]} />
       <div class={[
         "w-[55%] rounded-md bg-white h-[2px]",
-        @llm_eval >= 0.75 && "!bg-greenText",
-        (@llm_eval >= 0.5 and
-           @llm_eval < 0.75) &&
+        @prediction_score >= 0.69 && "!bg-greenText",
+        (@prediction_score >= 0.66 and
+           @prediction_score < 0.69) &&
           "!bg-orangeText"
       ]} />
       <div class={[
         "w-[35%] rounded-md bg-white h-[2px]",
-        @llm_eval >= 0.75 &&
+        @prediction_score >= 0.69 &&
           "!bg-greenText",
-        (@llm_eval >= 0.5 and
-           @llm_eval < 0.75) &&
+        (@prediction_score >= 0.66 and
+           @prediction_score < 0.69) &&
           "!bg-orangeText",
-        @llm_eval < 0.5 && "!bg-redText"
+        @prediction_score < 0.66 && "!bg-redText"
       ]} />
     </div>
     """

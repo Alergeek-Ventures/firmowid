@@ -5,7 +5,7 @@ defmodule FirmowidWeb.PdfController do
 
   def index(conn, %{"id" => id}) do
     sales_invoice =
-      SalesInvoices.get_sales_invoice(id)
+      SalesInvoices.get_sales_invoice_with_logo_url(id)
 
     conn |> render_sales_invoice(sales_invoice)
   end
@@ -44,7 +44,7 @@ defmodule FirmowidWeb.PdfController do
       """
     }
 
-    case SalesInvoices.get_sales_invoice(id) do
+    case SalesInvoices.get_sales_invoice_with_logo_url(id) do
       nil ->
         conn
         |> send_resp(404, "Not found")

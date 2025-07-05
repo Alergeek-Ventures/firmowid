@@ -111,7 +111,15 @@ defmodule Firmowid.SalesInvoices do
     |> Repo.all()
   end
 
+  @spec get_sales_invoice(UUIDv7.t()) :: %SalesInvoice{}
   def get_sales_invoice(id) do
+    Repo.get(SalesInvoice, id)
+    |> Repo.preload(:sales_invoice_items)
+    |> Repo.preload(:transactions)
+    |> Repo.preload(:buyer)
+  end
+
+  def get_sales_invoice_with_logo_url(id) do
     Repo.get(SalesInvoice, id)
     |> Repo.preload(:sales_invoice_items)
     |> Repo.preload(:transactions)

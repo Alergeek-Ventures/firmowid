@@ -1,0 +1,607 @@
+# Firmowid - invoice matching [ML]
+
+```elixir
+Mix.install(
+  [
+    {:firmowid, path: Path.join(__DIR__, "../../../../.."), env: :dev},
+    {:kino, "~> 0.13.0"},
+    {:scholar, "~> 0.4.0"}
+  ],
+  config_path: :firmowid,
+  lockfile: :firmowid,
+  start_applications: false
+)
+
+# boot only what the notebook really needs
+Application.ensure_all_started(:ecto_sql)
+Application.ensure_all_started(:kino)       # ← this is the missing bit
+
+# now you can attach the repo as a Livebook child
+{:ok, _pid} = Kino.start_child({Firmowid.Repo, []})
+```
+
+## setup
+
+```elixir
+defmodule CostInvoiceMatch do
+  use Ecto.Schema
+
+  @primary_key false
+  embedded_schema do
+    field :transaction_id, :string
+    field :cost_invoice_id, :string
+  end
+end
+```
+
+```elixir
+defmodule SalesInvoiceMatch do
+  use Ecto.Schema
+  
+  @primary_key false
+  embedded_schema do
+    field :transaction_id, :string
+    field :sales_invoice_id, :string
+  end
+end
+```
+
+```elixir
+defmodule Matches do
+  @moduledoc """
+  Provides functions to read, write, add, and delete invoice matches from matches.json.
+  Uses CostInvoiceMatch and SalesInvoiceMatch embedded schemas for validation.
+  Prevents adding duplicates and only allows explicit delete.
+  """
+
+  @json_path Path.join(
+               __DIR__,
+               "matches.json"
+             )
+             |> Path.expand()
+
+  @doc """
+  Reads the current state from matches.json.
+  Returns a map with keys "cost_invoice_matches" and "sales_invoice_matches".
+  """
+  def read_state do
+    raw = @json_path |> File.read!() |> Jason.decode!(keys: :atoms)
+
+    cost_matches =
+      Enum.map(raw.cost_invoice_matches, fn attrs ->
+        changeset = Ecto.Changeset.change(%CostInvoiceMatch{}, attrs)
+
+        if changeset.valid? do
+          Ecto.Changeset.apply_changes(changeset)
+        else
+          raise "Invalid cost_invoice_match: #{inspect(attrs)} errors: #{inspect(changeset.errors)}"
+        end
+      end)
+
+    sales_matches =
+      Enum.map(raw.sales_invoice_matches, fn attrs ->
+        changeset = Ecto.Changeset.change(%SalesInvoiceMatch{}, attrs)
+
+        if changeset.valid? do
+          Ecto.Changeset.apply_changes(changeset)
+        else
+          raise "Invalid sales_invoice_match: #{inspect(attrs)} errors: #{inspect(changeset.errors)}"
+        end
+      end)
+
+    %{cost_invoice_matches: cost_matches, sales_invoice_matches: sales_matches}
+  end
+
+  @doc """
+  Writes the given state map to matches.json.
+  The state should be a map with keys "cost_invoice_matches" and "sales_invoice_matches".
+  """
+  def write_state(state) when is_map(state) do
+    json = Jason.encode!(state, pretty: true)
+    File.write!(@json_path, json)
+  end
+
+  @doc """
+  Adds a cost invoice match. Throws if the match already exists.
+  Accepts a map or %CostInvoiceMatch{}.
+  """
+  def add_cost_invoice_match(%CostInvoiceMatch{} = new_match) do
+    state = read_state()
+    cost_invoice_matches = state.cost_invoice_matches
+
+    if Enum.any?(cost_invoice_matches, &(&1.cost_invoice_id == new_match.cost_invoice_id)) do
+      raise "Cost invoice match already exists"
+    end
+
+    updated = (cost_invoice_matches ++ [new_match]) |> Enum.map(&Map.from_struct(&1))
+
+    write_state(%{state | cost_invoice_matches: updated})
+  end
+
+  @doc """
+  Adds a sales invoice match. Throws if the match already exists.
+  Accepts a map or %SalesInvoiceMatch{}.
+  """
+  def add_sales_invoice_match(%SalesInvoiceMatch{} = match),
+    do: add_sales_invoice_match(Map.from_struct(match))
+
+  def add_sales_invoice_match(%{"transaction_id" => _tid, "sales_invoice_id" => sid} = attrs) do
+    state = read_state()
+    matches = state["sales_invoice_matches"]
+
+    if Enum.any?(matches, &(&1["sales_invoice_id"] == sid)) do
+      raise "Sales invoice match already exists"
+    end
+
+    # Validate
+    changeset = Ecto.Changeset.change(%SalesInvoiceMatch{}, attrs)
+
+    if not changeset.valid?,
+      do: raise("Invalid sales invoice match: #{inspect(changeset.errors)}")
+
+    updated = matches ++ [attrs]
+    write_state(%{state | "sales_invoice_matches" => updated})
+  end
+
+  @doc """
+  Deletes a cost invoice match by transaction_id and cost_invoice_id.
+  """
+  def delete_cost_invoice_match(transaction_id, cost_invoice_id) do
+    state = read_state()
+    matches = state["cost_invoice_matches"]
+
+    updated =
+      Enum.reject(
+        matches,
+        &(&1["transaction_id"] == transaction_id and &1["cost_invoice_id"] == cost_invoice_id)
+      )
+
+    write_state(%{state | "cost_invoice_matches" => updated})
+  end
+
+  @doc """
+  Deletes a sales invoice match by transaction_id and sales_invoice_id.
+  """
+  def delete_sales_invoice_match(transaction_id, sales_invoice_id) do
+    state = read_state()
+    matches = state["sales_invoice_matches"]
+
+    updated =
+      Enum.reject(
+        matches,
+        &(&1["transaction_id"] == transaction_id and &1["sales_invoice_id"] == sales_invoice_id)
+      )
+
+    write_state(%{state | "sales_invoice_matches" => updated})
+  end
+end
+```
+
+```elixir
+Firmowid.Repo.put_org_id("01948dfc-1367-7e4f-90e2-54b685167481")
+```
+
+```elixir
+cost_invoices = Firmowid.CostInvoices.list_cost_invoices(~D[2024-01-01], ~D[2025-08-30])
+transactions = Firmowid.Finances.list_transactions(~D[2024-01-01], ~D[2025-06-30])
+sales_invoices = Firmowid.SalesInvoices.list_sales_invoices()
+
+"""
+cost_invoices: #{length(cost_invoices)}
+sales_invoices: #{length(sales_invoices)}
+transactions: #{length(transactions)}
+"""
+```
+
+## invoice <-> transaction labeling
+
+````elixir
+matches = Matches.read_state()
+
+cost_invoices_to_match =
+  cost_invoices
+  |> Enum.filter(fn cost_invoice ->
+    not Enum.any?(
+      matches.cost_invoice_matches,
+      fn match ->
+        match.cost_invoice_id == cost_invoice.id
+      end
+    )
+  end)
+
+current_index =
+  Kino.Input.number("Current Invoice Index",
+    default: 0,
+    min: 0,
+    max: max(length(cost_invoices_to_match) - 1, 0)
+  )
+
+output_frame = Kino.Frame.new()
+
+display_current_invoice = fn index ->
+  if index >= 0 and index < length(cost_invoices_to_match) do
+    current_invoice = Enum.at(cost_invoices_to_match, index)
+
+    prefiltered_transactions =
+      Firmowid.Invoicing.Matching.Windowing.pre_filter_invoice_transactions(
+        current_invoice,
+        transactions
+      )
+
+    invoice_info = """
+    ## Invoice #{index + 1} of #{length(cost_invoices_to_match)}
+
+    - Date: #{current_invoice.issue_date}
+    - Amount: #{current_invoice.total_amount}
+    - Currency: #{current_invoice.currency}
+    - Seller: #{current_invoice.seller_display_name}
+    - Seller bank account: #{current_invoice.account_number}
+    - Description: #{current_invoice.description || "No description"}
+    """
+
+    if length(prefiltered_transactions) > 0 do
+      # For each transaction, create a markdown block and a button
+      transaction_blocks =
+        prefiltered_transactions
+        |> Enum.with_index(1)
+        |> Enum.map(fn {transaction, idx} ->
+          params = Firmowid.Invoicing.Matching.ParametrizedResult.generate_parametrized_result(current_invoice, transaction)
+          details = """
+          **#{idx}. Transaction**
+          - Date: #{transaction.booking_date}
+          - Amount: #{transaction.transaction_amount}
+          - Currency: #{transaction.transaction_currency}
+          - Creditor: #{transaction.creditor_name}
+          - Bank account: #{transaction.creditor_account}
+          - Description: #{transaction.remittance_information_unstructured || "No description"}
+
+          **Calculated Params:**
+          ```elixir
+          #{inspect(params, pretty: true)}
+          ```
+          """
+
+          match_button = Kino.Control.button("Match transaction ##{idx}")
+
+          # Attach event handler for the button
+          Kino.listen(match_button, fn _event ->
+            try do
+              Matches.add_cost_invoice_match(%CostInvoiceMatch{
+                transaction_id: transaction.id,
+                cost_invoice_id: current_invoice.id,
+              })
+              Kino.Frame.render(output_frame, Kino.Markdown.new("✅ Matched transaction ##{idx}!"))
+            rescue
+              e -> Kino.Frame.render(output_frame, Kino.Markdown.new("❌ Error: #{Exception.message(e)}"))
+            end
+          end)
+
+          [Kino.Markdown.new(details), match_button]
+        end)
+        |> List.flatten()
+
+      Kino.Frame.render(
+        output_frame,
+        Kino.Layout.grid([
+          Kino.Markdown.new(invoice_info)
+          | transaction_blocks
+        ], columns: 1)
+      )
+    else
+      Kino.Frame.render(
+        output_frame,
+        Kino.Markdown.new(invoice_info <> "\n\n### No prefiltered transactions found")
+      )
+    end
+  else
+    Kino.Frame.render(
+      output_frame,
+      Kino.Markdown.new("**Invalid index. Please select a valid invoice.**")
+    )
+  end
+end
+
+# Set up event handlers
+Kino.listen(current_index, fn %{value: index} ->
+  display_current_invoice.(index)
+end)
+
+# Display initial invoice
+display_current_invoice.(0)
+
+Kino.Layout.grid(
+  [current_index, output_frame],
+  columns: 1
+)
+````
+
+## train and evaluate the model
+
+Right now our model is a simple Logisitic Regression classifier. Predicts yes or no on an invoice match.
+
+Works okay for simple invoices (PLN -> PLN, matching names, matching dates).
+
+It is incapable of doing many-to-many match. Something to think about in the future.
+
+```elixir
+matches = Matches.read_state()
+
+all_data =
+  matches.cost_invoice_matches
+  |> Enum.flat_map(fn %{cost_invoice_id: cost_invoice_id, transaction_id: transaction_id} ->
+    cost_invoice = cost_invoices |> Enum.find(&(&1.id == cost_invoice_id))
+
+    Firmowid.Invoicing.Matching.Windowing.pre_filter_invoice_transactions(
+      cost_invoice,
+      transactions
+    )
+    |> Enum.map(fn result ->
+      %{
+        cost_invoice_id: cost_invoice_id,
+        transaction_id: result.id,
+        match: result.id == transaction_id
+      }
+    end)
+  end)
+
+IO.puts("prepared #{length(all_data)} pairs \n")
+IO.puts("good: #{length(all_data |> Enum.filter(& &1.match))}")
+IO.puts("bad: #{length(all_data |> Enum.filter(&(!&1.match)))}")
+```
+
+```elixir
+# Seed RNG once for reproducibility (optional)
+:rand.seed(:exsplus, {101, 102, 103})
+
+# ---------- build feature vectors ------------------------------------------------
+rows =
+  all_data
+  |> Enum.map(fn %{cost_invoice_id: iid, transaction_id: tid, match: match} ->
+    cost_invoice = Enum.find(cost_invoices, &(&1.id == iid))
+    transaction  = Enum.find(transactions, &(&1.id == tid))
+
+    params =
+      Firmowid.Invoicing.Matching.ParametrizedResult.generate_parametrized_result(
+        cost_invoice,
+        transaction
+      )
+
+    # ─── assemble one feature vector ───
+    features = [
+      # Day-lag buckets (already 0/1 from ParametrizedResult)
+      params.days_lag_le_3,
+      params.days_lag_le_7,
+      params.days_lag_le_30,
+      params.days_lag_gt_30,
+
+      # Signed amount ratio, clip to [-5, +5] to tame outliers
+      params.signed_amount_match,
+
+      # Relative amount difference, cap at 5 for safety
+      params.relative_amount_difference,
+
+      # String / account similarities
+      params.transaction_side_similarity,
+      params.bank_account_similarity,
+
+      # Currency match
+      params.is_same_currency,
+
+      # Signals from remittance text
+      params.amount_present_in_remittance_information_unstructured,
+      params.invoice_identifier_present_in_remittance_information_unstructured
+    ]
+
+    {iid, features ++ [if(match, do: 1, else: 0)]}
+  end)
+
+# ---------- group so one invoice never straddles train & test --------------------
+rows_by_invoice = Enum.group_by(rows, &elem(&1, 0), &elem(&1, 1))
+
+# ---------- helper to turn a flat list into tensors ------------------------------
+# 11 feature columns → indices 0‥10
+make_xy = fn vecs ->
+  {x_list, y_list} =
+    vecs
+    |> Enum.map(fn v -> {Enum.slice(v, 0..10), List.last(v)} end)
+    |> Enum.unzip()
+
+  {
+    Nx.tensor(x_list, type: {:f, 32}),
+    Nx.tensor(y_list,  type: {:u, 8})
+  }
+end
+```
+
+```elixir
+# After you assemble `rows` but before CV
+{goods, bads} =
+  rows
+  |> Enum.map(&List.last(elem(&1, 1)))
+  |> Enum.frequencies()
+  |> then(&{Map.get(&1, 1, 0), Map.get(&1, 0, 0)})
+
+IO.puts("👍  goods: #{goods}   👎  bads: #{bads}")
+
+```
+
+There are two ways we use this model:
+
+* automated matching in a background job
+* UI with suggested transactions
+
+For these two we have different criterias - we never want automated matching to provide us with a false positive. In the UI though, we want to suggest likely candidates.
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+# ───────── configurable params ─────────────────────────────
+precision_target = 0.90
+n_folds          = 5
+threshold_grid   = Enum.map(0..1000, & &1 / 1000)   # 0.000 … 1.000 (finer grid)
+# ───────────────────────────────────────────────────────────
+
+calc_stats = fn preds, y_bool ->
+  tp = Nx.logical_and(preds, y_bool) |> Nx.sum() |> Nx.to_number()
+  fp = Nx.logical_and(preds, Nx.logical_not(y_bool)) |> Nx.sum() |> Nx.to_number()
+  fn_ = Nx.logical_and(Nx.logical_not(preds), y_bool) |> Nx.sum() |> Nx.to_number()
+  prec = tp / max(tp + fp, 1)
+  rec  = tp / max(tp + fn_, 1)
+  {prec, rec}
+end
+
+# ───── split invoices once into n_folds groups ─────
+invoice_ids = Map.keys(rows_by_invoice) |> Enum.shuffle()
+fold_size   = Float.ceil(length(invoice_ids) / n_folds) |> trunc()
+fold_groups = Enum.chunk_every(invoice_ids, fold_size)
+
+# ───── run CV ─────
+fold_results =
+  for {test_ids, fold_idx} <- Enum.with_index(fold_groups, 1) do
+    train_ids = fold_groups |> List.delete(test_ids) |> List.flatten()
+
+    train_rows = Enum.flat_map(train_ids, &rows_by_invoice[&1])
+    test_rows  = Enum.flat_map(test_ids,  &rows_by_invoice[&1])
+
+    {train_x, train_y} = make_xy.(train_rows)
+    {test_x,  test_y}  = make_xy.(test_rows)
+    y_bool = Nx.equal(test_y, 1)
+
+    # 1. fit
+    model = Scholar.Linear.LogisticRegression.fit(train_x, train_y, num_classes: 2)
+
+    # 2. P(class = 1)
+    probs =
+      model
+      |> Scholar.Linear.LogisticRegression.predict_probability(test_x)
+      |> then(&Nx.slice(&1, [0, 1], [Nx.axis_size(test_y, 0), 1]))
+      |> Nx.reshape({Nx.axis_size(test_y, 0)})
+
+    # 3. evaluate thresholds
+    thr_stats =
+      for thr <- threshold_grid do
+        preds = Nx.greater_equal(probs, thr)
+        {prec, rec} = calc_stats.(preds, y_bool)
+        {thr, prec, rec}
+      end
+
+    {best_thr, best_prec, best_rec} =
+      case Enum.find(thr_stats, fn {_, p, _} -> p >= precision_target end) do
+        nil -> Enum.max_by(thr_stats, fn {_, p, _} -> p end)
+        hit -> hit
+      end
+
+    # 4. highest score seen on a negative (for “no-FP” cut-off)
+    max_neg =
+      probs
+      |> Nx.to_flat_list()
+      |> Enum.zip(Nx.to_flat_list(y_bool))
+      |> Enum.filter(fn {_p, y} -> y == 0 end)
+      |> Enum.map(&elem(&1, 0))
+      |> Enum.max(fn -> 0.0 end)
+
+    %{
+      fold: fold_idx,
+      threshold: best_thr,
+      precision: best_prec,
+      recall: best_rec,
+      max_neg: max_neg
+    }
+  end
+
+IO.inspect(fold_results, label: "per fold")
+
+# ───── 1️⃣  FP-free threshold for automatching ─────
+safe_thr =
+  fold_results
+  |> Enum.map(& &1.max_neg)
+  |> Enum.max()
+  |> Float.round(4)     # keep a few decimals
+
+IO.puts("\n🛡️  FP-free threshold (autonomous matcher): #{safe_thr}")
+
+# ───── 2️⃣  Relaxed tiers for the UI ─────
+ui_ths = fold_results |> Enum.map(& &1.threshold) |> Enum.sort()
+thr_hi  = Enum.at(ui_ths, ceil(0.9 * n_folds) - 1)   # 90-th pct
+thr_med = Enum.at(ui_ths, div(n_folds, 2))           # median
+
+worst_prec =
+  fold_results
+  |> Enum.map(& &1.precision)
+  |> Enum.min()
+  |> then(&Float.round(&1 * 100, 1))
+
+IO.puts("""
+\nSuggested UI cut-offs
+───────────────
+• HIGH   ≥ #{Float.round(thr_hi, 2)}   (≈ #{worst_prec} % precision)
+• MEDIUM ≥ #{Float.round(thr_med, 2)}
+• LOW    < #{Float.round(thr_med, 2)}
+""")
+
+```
+
+This generates coefficients and bias that we can copy over into the Firmowid codebase.
+
+```elixir
+### 🔄 Train on ALL labelled pairs and emit ready-to-paste constants ###
+
+# 0. Helper: vector list → {X, y} tensors
+make_xy = fn vecs ->
+  n_features = length(List.first(vecs)) - 1
+
+  {x_rows, y_rows} =
+    Enum.map(vecs, fn v -> {Enum.take(v, n_features), List.last(v)} end)
+    |> Enum.unzip()
+
+  {
+    Nx.tensor(x_rows, type: {:f, 32}),
+    Nx.tensor(y_rows, type: {:u, 8})
+  }
+end
+
+# 1. Flatten data from invoices
+all_rows =
+  rows_by_invoice
+  |> Map.values()
+  |> Enum.concat()
+
+IO.inspect(length(all_rows), label: "Total labelled pairs")
+
+# 2. Full training set
+{full_x, full_y} = make_xy.(all_rows)
+
+# 3. Fit logistic regression
+model = Scholar.Linear.LogisticRegression.fit(full_x, full_y, num_classes: 2)
+
+# 4. Extract class 1 (match) coefficients and bias
+n_features = Nx.axis_size(model.coefficients, 0)
+
+coeff_vec =
+  model.coefficients
+  |> Nx.slice([0, 1], [n_features, 1])
+  |> Nx.reshape({n_features})
+
+bias_val =
+  model.bias
+  |> Nx.to_flat_list()
+  |> Enum.at(1)
+
+# 5. Print production-ready literals
+coeff_literal =
+  coeff_vec
+  |> Nx.to_flat_list()
+  |> Enum.map(&Float.round(&1, 6))
+  |> then(&"Nx.tensor(" <> inspect(&1, limit: :infinity) <> ", type: {:f, 32})")
+
+IO.puts("""
+------------------------------------------
+Copy-paste into your module:
+
+  @coefficients #{coeff_literal}
+
+  @bias #{Float.round(bias_val, 6)}
+------------------------------------------
+""")
+
+```

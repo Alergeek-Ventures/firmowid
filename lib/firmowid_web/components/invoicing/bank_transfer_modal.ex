@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Components.Invoicing.BankTransferModal do
         on_cancel={hide_modal("bank-transfer-modal")}
       >
         <div class="flex flex-col gap-20 p-4">
-          <h3 class="text-center text-lg font-black font-semibold">Dane do przelewu</h3>
+          <h3 class="text-center text-lg font-semibold">Dane do przelewu</h3>
           <div class="grid grid-cols-[150px,1fr,32px] gap-4">
             <%= for {label, value} <- [
             {"Odbiorca", @invoice.seller},

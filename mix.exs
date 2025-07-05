@@ -54,6 +54,7 @@ defmodule Firmowid.MixProject do
        sparse: "optimized",
        app: false,
        compile: false,
+       runtime: false,
        depth: 1},
       {:swoosh, "~> 1.6"},
       {:chromic_pdf, "~> 1.17"},
@@ -65,6 +66,7 @@ defmodule Firmowid.MixProject do
       {:bandit, "~> 1.5"},
       {:ex_cldr, "~> 2.37"},
       {:ex_money, "~> 5.0"},
+      {:timex, "~> 3.7"},
       {:faker, "~> 0.18"},
       {:req, "~> 0.5.2"},
       {:ex_aws, "~> 2.5.5"},
@@ -78,8 +80,6 @@ defmodule Firmowid.MixProject do
       {:packmatic, "~> 1.2.0"},
       {:image, "~> 0.37"},
       {:briefly, "~> 0.5.0"},
-      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:sentry, "~> 11.0.1"},
       {:recase, "~> 0.8.0"},
       {:oban, "~> 2.17"},
@@ -89,7 +89,10 @@ defmodule Firmowid.MixProject do
       {:multipart, "~> 0.4.0"},
       {:posthog, "~> 1.1.0"},
       {:reverse_proxy_plug, "~> 3.0"},
-      {:ecto_dev_logger, "~> 0.14"}
+      {:ecto_dev_logger, "~> 0.14"},
+      {:nx, "~> 0.10"},
+      {:sobelow, "~> 0.13", only: [:dev], runtime: Mix.env() == :dev},
+      {:dialyxir, "~> 1.4", only: [:dev], runtime: Mix.env() == :dev}
     ]
   end
 

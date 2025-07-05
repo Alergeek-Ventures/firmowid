@@ -96,29 +96,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
 
     Bodyguard.permit!(SalesInvoices, :show, current_user, sales_invoice)
 
-    potential_transactions_without_grade =
-      Invoicing.get_potential_transactions_for_sales_invoice(sales_invoice,
-        similarity_threshold: 0.0
-      )
-
-    potential_transactions =
-      Invoicing.llm_re_grade_matches(
-        sales_invoice.invoice_number,
-        sales_invoice_description,
-        sales_invoice.issue_date,
-        SalesInvoices.SalesInvoice.get_gross_value(sales_invoice),
-        sales_invoice.currency,
-        SalesInvoices.get_full_buyer_data_as_single_string(sales_invoice),
-        potential_transactions_without_grade
-        |> Enum.map(
-          &Map.merge(
-            &1,
-            %{party_name: &1.debtor_name}
-          )
-        )
-      )
-      |> Enum.map(fn {transaction, grade} -> Map.put(transaction, :llm_eval, grade) end)
-      |> Enum.sort_by(& &1.llm_eval, :desc)
+    potential_transactions = Invoicing.get_potential_transactions_for_invoice(sales_invoice)
 
     recommended_combo =
       Invoicing.match_with_transaction_combo(
@@ -143,7 +121,12 @@ defmodule FirmowidWeb.InvoicingLive.Show do
         ),
       preview_url: preview_url,
       preview_type: preview_type,
-      potential_transactions: potential_transactions,
+      potential_transactions:
+        if recommended_combo == nil do
+          potential_transactions
+        else
+          recommended_combo
+        end,
       recommended_combo: recommended_combo
     }
   end
@@ -153,29 +136,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
 
     Bodyguard.permit!(CostInvoices, :show, current_user, cost_invoice)
 
-    potential_transactions_without_grade =
-      Invoicing.get_potential_transactions_for_cost_invoice(cost_invoice,
-        similarity_threshold: 0.0
-      )
-
-    potential_transactions =
-      Invoicing.llm_re_grade_matches(
-        cost_invoice.invoice_identifier,
-        cost_invoice.description,
-        cost_invoice.issue_date,
-        cost_invoice.total_amount,
-        cost_invoice.currency,
-        cost_invoice.seller,
-        potential_transactions_without_grade
-        |> Enum.map(
-          &Map.merge(
-            &1,
-            %{party_name: &1.creditor_name}
-          )
-        )
-      )
-      |> Enum.map(fn {transaction, grade} -> Map.put(transaction, :llm_eval, grade) end)
-      |> Enum.sort_by(& &1.llm_eval, :desc)
+    potential_transactions = Invoicing.get_potential_transactions_for_invoice(cost_invoice)
 
     recommended_combo =
       Invoicing.match_with_transaction_combo(
@@ -183,6 +144,8 @@ defmodule FirmowidWeb.InvoicingLive.Show do
         cost_invoice.due_date,
         cost_invoice.total_amount
       )
+
+    cost_invoice = CostInvoices.get_cost_invoice_with_blob_url!(id)
 
     %{
       invoice: cost_invoice,
@@ -193,7 +156,12 @@ defmodule FirmowidWeb.InvoicingLive.Show do
         else
           :image
         end,
-      potential_transactions: potential_transactions,
+      potential_transactions:
+        if recommended_combo == nil do
+          potential_transactions
+        else
+          recommended_combo
+        end,
       recommended_combo: recommended_combo
     }
   end
@@ -331,7 +299,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
         Bodyguard.permit!(CostInvoices, :update, user)
         CostInvoices.delete_cost_invoices_transactions_connections(socket.assigns.invoice.id)
 
-        CostInvoices.get_cost_invoice!(socket.assigns.invoice.id)
+        CostInvoices.get_cost_invoice_with_blob_url!(socket.assigns.invoice.id)
       else
         Bodyguard.permit!(SalesInvoices, :update, user)
         SalesInvoices.delete_sales_invoices_transactions_connections(socket.assigns.invoice.id)
@@ -386,7 +354,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
       organization_id
     )
 
-    CostInvoices.get_cost_invoice!(invoice_id)
+    CostInvoices.get_cost_invoice_with_blob_url!(invoice_id)
   end
 
   defp toggle_cost_invoice_invoicing(socket) do
@@ -405,6 +373,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
     )
 
     details = get_sales_invoice_details(invoice_id, user)
+
     details.invoice
   end
 
@@ -414,6 +383,7 @@ defmodule FirmowidWeb.InvoicingLive.Show do
     SalesInvoices.toggle_skip_invoicing(socket.assigns.invoice.id)
 
     details = get_sales_invoice_details(socket.assigns.invoice.id, socket.assigns.current_user)
+
     details.invoice
   end
 end

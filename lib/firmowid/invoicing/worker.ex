@@ -26,6 +26,15 @@ defmodule Firmowid.Invoicing.Worker do
           match_invoices(organization_id)
         end)
 
+      %{
+        "name" => "match_cost_invoice",
+        "cost_invoice_id" => cost_invoice_id,
+        "organization_id" => organization_id
+      } ->
+        Logger.info("Matching cost invoice #{cost_invoice_id}")
+
+        Invoicing.match_cost_invoice(cost_invoice_id, organization_id)
+
       _ ->
         Logger.error("Unknown job args: #{inspect(job.args)}")
     end
@@ -34,9 +43,8 @@ defmodule Firmowid.Invoicing.Worker do
   end
 
   defp match_invoices(organization_id) do
-    Firmowid.Repo.put_org_id(organization_id)
+    Invoicing.match_cost_invoices(organization_id)
 
-    Invoicing.match_all_good_candidates_for_unconnected_cost_invoices(organization_id)
-    Invoicing.match_all_good_candidates_for_unconnected_sales_invoices(organization_id)
+    # TODO: re-enable sales invoices matching when we have a good matching algorithm (dependant on the dataset)
   end
 end

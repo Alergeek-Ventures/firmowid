@@ -136,6 +136,12 @@ defmodule Firmowid.CostInvoices do
   end
 
   def get_cost_invoice!(cost_invoice_id) do
+    CostInvoice
+    |> Repo.get!(cost_invoice_id)
+    |> Repo.preload(:transactions)
+  end
+
+  def get_cost_invoice_with_blob_url!(cost_invoice_id) do
     cost_invoice =
       CostInvoice
       |> Repo.get!(cost_invoice_id)
@@ -233,6 +239,15 @@ defmodule Firmowid.CostInvoices do
       |> Firmowid.Repo.insert!(organization_id: organization_id)
 
     broadcast_cost_invoice_added(cost_invoice)
+
+    # TODO: do this via channels somehow later
+
+    Firmowid.Invoicing.Worker.new(%{
+      name: "match_cost_invoice",
+      cost_invoice_id: cost_invoice.id,
+      organization_id: organization_id
+    })
+    |> Oban.insert!()
   end
 
   def create_cost_invoices_transactions_connection(

@@ -21,7 +21,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
 
         id ->
           case UUIDv7.cast(id) do
-            {:ok, id} -> SalesInvoices.get_sales_invoice(id)
+            {:ok, id} -> SalesInvoices.get_sales_invoice_with_logo_url(id)
             _ -> nil
           end
       end
@@ -121,7 +121,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
       cond do
         # Copy from existing invoice
         params["skopiuj"] ->
-          sales_invoice_to_copy = SalesInvoices.get_sales_invoice(params["skopiuj"])
+          sales_invoice_to_copy = SalesInvoices.get_sales_invoice_with_logo_url(params["skopiuj"])
 
           data_to_copy =
             sales_invoice_to_copy
@@ -398,7 +398,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
           socket
           |> push_patch(to: ~p"/sprzedazowe/#{new_invoice.id}/edycja")
           |> assign(sales_invoice_id: new_invoice.id)
-          |> assign(sales_invoice: SalesInvoices.get_sales_invoice(new_invoice.id))
+          |> assign(sales_invoice: SalesInvoices.get_sales_invoice_with_logo_url(new_invoice.id))
           |> assign_currency()
 
         {:error, %Ecto.Changeset{errors: errors} = changeset} ->

@@ -79,6 +79,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       sales_invoice.are_sales_invoice_items_confirmed
   end
 
+  @spec get_gross_value(%__MODULE__{}) :: Decimal.t()
   def get_gross_value(sales_invoice) do
     Decimal.add(get_net_value(sales_invoice), get_vat_value(sales_invoice))
   end
