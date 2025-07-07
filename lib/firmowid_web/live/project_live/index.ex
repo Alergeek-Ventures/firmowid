@@ -625,12 +625,19 @@ defmodule FirmowidWeb.Project.Index do
               </button>
             </div>
 
-            <div :if={user.expanded} class="space-y-4 py-4 pr-11">
-              <div :for={session <- user.sessions} class="flex justify-between text-sm">
-                <span>{session.title}</span>
-                <span>{TimeFormatter.format_duration(session.duration)}</span>
+                          <div
+                class="overflow-hidden transition-all duration-300 ease-in-out"
+                style={"max-height: #{if user.expanded, do: "1000px", else: "0"}; opacity: #{if user.expanded, do: "1", else: "0"}"}
+              >
+                <div class="space-y-4 py-4 pr-11">
+                  <%= if Map.has_key?(user, :sessions) do %>
+                    <div :for={session <- user.sessions} class="flex justify-between text-sm">
+                      <span>{session.title}</span>
+                      <span>{TimeFormatter.format_duration(session.duration)}</span>
+                    </div>
+                  <% end %>
+                </div>
               </div>
-            </div>
           </div>
         <% end %>
       </div>
@@ -663,10 +670,17 @@ defmodule FirmowidWeb.Project.Index do
                 </button>
               </div>
 
-              <div :if={user.expanded} class="space-y-4 py-4 pr-11">
-                <div :for={session <- user.sessions} class="flex justify-between text-sm">
-                  <span>{session.title}</span>
-                  <span>{TimeFormatter.format_duration(session.duration)}</span>
+              <div
+                class="overflow-hidden transition-all duration-300 ease-in-out"
+                style={"max-height: #{if user.expanded, do: "1000px", else: "0"}; opacity: #{if user.expanded, do: "1", else: "0"}"}
+              >
+                <div class="space-y-4 py-4 pr-11">
+                  <%= if Map.has_key?(user, :sessions) do %>
+                    <div :for={session <- user.sessions} class="flex justify-between text-sm">
+                      <span>{session.title}</span>
+                      <span>{TimeFormatter.format_duration(session.duration)}</span>
+                    </div>
+                  <% end %>
                 </div>
               </div>
             </div>
@@ -732,7 +746,7 @@ defmodule FirmowidWeb.Project.Index do
               <.render_profile user={user} />
             </div>
           </div>
-          
+
     <!-- separator -->
           <div class="h-px bg-greyButtonBg mx-2"></div>
 
@@ -875,7 +889,10 @@ defmodule FirmowidWeb.Project.Index do
             </button>
           </div>
 
-          <div :if={expanded}>
+          <div
+            class="overflow-hidden transition-all duration-300 ease-in-out"
+            style={"max-height: #{if expanded, do: "1000px", else: "0"}; opacity: #{if expanded, do: "1", else: "0"}"}
+          >
             <div class="h-px bg-greyButtonBg mx-2"></div>
             <.live_component
               module={FirmowidWeb.Components.Timetracker.UserProfileSummary}
