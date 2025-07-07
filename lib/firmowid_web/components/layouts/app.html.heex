@@ -97,6 +97,7 @@
   <div class="mx-auto">
     <LiveToast.toast_group
       flash={@flash}
+      kinds={[:info, :error, :success, :notice]}
       connected={assigns[:socket] != nil}
       toasts_sync={assigns[:toasts_sync]}
       toast_class_fn={&FirmowidWeb.toast_class_fn/1}

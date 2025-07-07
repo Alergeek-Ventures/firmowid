@@ -36,13 +36,12 @@ defmodule FirmowidWeb.BankSyncLive.Create do
 
         Logger.info("Failed to connect to bank. Error: #{error} #{details}")
 
-        LiveToast.send_toast(
-          :error,
-          "Połączenie z bankiem nie zostało utworzone. Spróbuj ponownie wkrótce."
-        )
-
         socket =
           socket
+          |> LiveToast.put_toast(
+            :error,
+            "Połączenie z bankiem nie zostało utworzone. Spróbuj ponownie wkrótce."
+          )
           |> push_patch(to: ~p"/")
 
         {:noreply, socket}

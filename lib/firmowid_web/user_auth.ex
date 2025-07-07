@@ -84,7 +84,8 @@ defmodule FirmowidWeb.UserAuth do
     conn
     |> renew_session()
     |> delete_resp_cookie(@remember_me_cookie)
-    |> redirect(to: ~p"/")
+    |> LiveToast.put_toast(:notice, "Wylogowano.")
+    |> redirect(to: ~p"/zaloguj")
   end
 
   @doc """
@@ -169,16 +170,23 @@ defmodule FirmowidWeb.UserAuth do
          is_nil(socket.assigns.current_user.organization_id) do
       {:cont, socket}
     else
-      LiveToast.send_toast(
-        :error,
-        "Ten widok jest dostępny tylko dla użytkowników z przypisaną organizacją"
-      )
+      if is_nil(socket.assigns.current_user.organization_id) do
+        socket =
+          socket
+          |> LiveToast.put_toast(
+            :notice,
+            "Aby przejść dalej, przypisz sobie organizację."
+          )
+          |> Phoenix.LiveView.redirect(to: ~p"/organization")
 
-      socket =
-        socket
-        |> Phoenix.LiveView.redirect(to: ~p"/organization")
+        {:halt, socket}
+      else
+        socket =
+          socket
+          |> Phoenix.LiveView.redirect(to: ~p"/")
 
-      {:halt, socket}
+        {:halt, socket}
+      end
     end
   end
 
@@ -192,13 +200,12 @@ defmodule FirmowidWeb.UserAuth do
       {:cont,
        socket |> Phoenix.Component.assign(:current_org, socket.assigns.current_user.organization)}
     else
-      LiveToast.send_toast(
-        :error,
-        "Musisz się zalogować, żeby wejść na tę stronę."
-      )
-
       socket =
         socket
+        |> LiveToast.put_toast(
+          :notice,
+          "Musisz się zalogować."
+        )
         |> Phoenix.LiveView.redirect(to: ~p"/zaloguj")
 
       {:halt, socket}
@@ -253,19 +260,28 @@ defmodule FirmowidWeb.UserAuth do
   they use the application at all, here would be a good place.
   """
   def require_authenticated_user_with_organization(conn, _opts) do
-    if not is_nil(conn.assigns[:current_user]) and
-         not is_nil(conn.assigns[:current_user].organization_id) do
-      Firmowid.Repo.put_org_id(conn.assigns[:current_user].organization_id)
+    if not is_nil(conn.assigns[:current_user]) do
+      if not is_nil(conn.assigns[:current_user].organization_id) do
+        Firmowid.Repo.put_org_id(conn.assigns[:current_user].organization_id)
 
-      conn |> assign(:current_org, conn.assigns[:current_user].organization)
+        conn |> assign(:current_org, conn.assigns[:current_user].organization)
+      else
+        conn
+        |> maybe_store_return_to()
+        |> LiveToast.put_toast(
+          :notice,
+          "Aby przejść dalej, przypisz sobie organizację."
+        )
+        |> redirect(to: ~p"/organization")
+        |> halt()
+      end
     else
-      LiveToast.send_toast(
-        :error,
-        "Ten widok jest dostępny tylko dla użytkowników z przypisaną organizacją"
-      )
-
       conn
       |> maybe_store_return_to()
+      |> LiveToast.put_toast(
+        :notice,
+        "Musisz się zalogować."
+      )
       |> redirect(to: ~p"/zaloguj")
       |> halt()
     end
@@ -311,7 +327,11 @@ defmodule FirmowidWeb.UserAuth do
     else
       conn
       |> maybe_store_return_to()
-      |> redirect(to: ~p"/zaloguj")
+      |> LiveToast.put_toast(
+        :notice,
+        "Musisz się zalogować, żeby wejść na tę stronę."
+      )
+      |> redirect(to: ~p"/organization")
       |> halt()
     end
   end

@@ -119,6 +119,7 @@ defmodule FirmowidWeb do
       if(assigns[:rest][:hidden] == true, do: "hidden", else: "flex"),
       # override styles per severity
       assigns[:kind] == :success && "bg-greenBg text-greenText",
+      assigns[:kind] == :notice && "bg-blueBg text-blueText",
       assigns[:kind] == :info && "bg-lightGreyBg text-black",
       assigns[:kind] == :error && "!text-redText !bg-redBg"
     ]

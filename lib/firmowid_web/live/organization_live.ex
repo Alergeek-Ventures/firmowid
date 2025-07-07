@@ -124,9 +124,12 @@ defmodule FirmowidWeb.OrganizationLive do
       identification_number: organization.identification_number
     })
 
-    LiveToast.send_toast(:success, "Pomyślnie utworzono organizację")
+    socket =
+      socket
+      |> LiveToast.put_toast(:success, "Pomyślnie utworzono organizację")
+      |> redirect(to: "/")
 
-    {:noreply, redirect(socket, to: "/")}
+    {:noreply, socket}
   end
 
   @impl true
