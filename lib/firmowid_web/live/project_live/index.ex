@@ -706,7 +706,7 @@ defmodule FirmowidWeb.Project.Index do
         <button
           phx-click="delete_user"
           phx-value-user_id={user.id}
-          class="h-6 w-8 rounded-md hover:bg-greyButtonBg text-darkGrey disabled:text-orangeText inline-flex items-center justify-center ml-1"
+          class="h-6 w-8 rounded-md hover:bg-greyButtonBg text-darkGrey disabled:text-orangeText inline-flex items-center justify-center ml-1 hover:transition-all hover:duration-300 hover:ease-in-out"
         >
           <.icon name="hero-trash-micro" />
         </button>
