@@ -39,7 +39,7 @@ defmodule FirmowidWeb.Components.Timetracker.UserProfileSummary do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="p-4">
+    <div class="p-4 animate-appear">
       <div class="grid grid-cols-3 gap-4">
         <div>
           <div class="text-sm font-medium text-darkGrey uppercase mb-1">Łączny czas</div>

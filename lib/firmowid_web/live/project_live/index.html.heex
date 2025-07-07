@@ -41,7 +41,7 @@
     </div>
 
     <div class="grid col-span-2 row-span-2 grid-rows-subgrid grid-cols-subgrid">
-      <div class="flex col-span-full h-8 items-center">
+      <div class="flex col-span-full h-8 items-center animate-appear">
         <h2 class="font-bold">
           {if @selected_project,
             do: "Nad tym projektem pracują",
@@ -102,7 +102,7 @@
             <h3 class="font-bold text-lg text-wrap break-all">{@selected_project.name}</h3>
             <button
               phx-click="edit_name"
-              class="h-6 w-8 rounded-md hover:bg-greyButtonBg hover:transition-all hover:duration-900 hover:ease-in-outtext-darkGrey disabled:text-orangeText inline-flex items-center justify-center ml-1"
+              class="h-6 w-8 rounded-md hover:bg-greyButtonBg hover:transition-all hover:duration-900 hover:ease-in-out text-darkGrey disabled:text-orangeText inline-flex items-center justify-center ml-1"
             >
               <.icon name="hero-pencil-square-micro" />
             </button>

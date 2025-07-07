@@ -603,10 +603,10 @@ defmodule FirmowidWeb.Project.Index do
     <%= if Enum.any?(@project_user_hours, &(!&1.removed_from_project)) do %>
       <div class="flex flex-col gap-2 col-span-full">
         <%= for user <- @project_user_hours, !user.removed_from_project do %>
-          <div class="flex flex-col divide-y divide-greyButtonBg px-4 rounded-md bg-white col-span-full">
+          <div class="flex flex-col divide-y divide-greyButtonBg px-4 rounded-md bg-white col-span-full ">
             <div class="flex items-center py-4 gap-6">
               <.render_profile user={user} />
-              <span class="ml-auto">
+              <span class="ml-auto animate-appear">
                 <%= if user.expanded do %>
                   <span class="invisible">{ceil(user.time_worked / 60 / 60)} h</span>
                 <% else %>
@@ -618,26 +618,26 @@ defmodule FirmowidWeb.Project.Index do
                 phx-click="toggle-user"
                 phx-value-id={user.id}
                 disabled={user.time_worked == 0}
-                class="disabled:opacity-50 disabled:cursor-not-allowed"
+                class="disabled:opacity-50 disabled:cursor-not-allowed animate-appear"
               >
                 <.icon :if={user.expanded} name="hero-chevron-up-mini" class="text-darkGrey" />
                 <.icon :if={!user.expanded} name="hero-chevron-down-mini" class="text-darkGrey" />
               </button>
             </div>
 
-                          <div
-                class="overflow-hidden transition-all duration-300 ease-in-out"
-                style={"max-height: #{if user.expanded, do: "1000px", else: "0"}; opacity: #{if user.expanded, do: "1", else: "0"}"}
-              >
-                <div class="space-y-4 py-4 pr-11">
-                  <%= if Map.has_key?(user, :sessions) do %>
-                    <div :for={session <- user.sessions} class="flex justify-between text-sm">
-                      <span>{session.title}</span>
-                      <span>{TimeFormatter.format_duration(session.duration)}</span>
-                    </div>
-                  <% end %>
-                </div>
+            <div
+              class="overflow-hidden transition-all duration-300 ease-in-out"
+              style={"max-height: #{if user.expanded, do: "1000px", else: "0"}; opacity: #{if user.expanded, do: "1", else: "0"}"}
+            >
+              <div class="space-y-4 py-4 pr-11">
+                <%= if Map.has_key?(user, :sessions) do %>
+                  <div :for={session <- user.sessions} class="flex justify-between text-sm">
+                    <span>{session.title}</span>
+                    <span>{TimeFormatter.format_duration(session.duration)}</span>
+                  </div>
+                <% end %>
               </div>
+            </div>
           </div>
         <% end %>
       </div>
@@ -645,11 +645,11 @@ defmodule FirmowidWeb.Project.Index do
 
     <%= if Enum.any?(@project_user_hours, &(&1.removed_from_project)) do %>
       <div class="flex flex-col gap-8 col-span-full">
-        <h2 class="font-bold mt-8">Nad tym projektem wcześniej pracowali</h2>
+        <h2 class="font-bold mt-8 animate-appear">Nad tym projektem wcześniej pracowali</h2>
         <div class="flex flex-col gap-2 col-span-full">
           <%= for user <- @project_user_hours, user.removed_from_project do %>
-            <div class="flex flex-col divide-y divide-greyButtonBg px-4 rounded-md bg-white col-span-full">
-              <div class="flex items-center py-4 gap-6">
+            <div class="flex flex-col divide-y divide-greyButtonBg px-4 rounded-md bg-white col-span-full ">
+              <div class="flex items-center py-4 gap-6 animate-appear">
                 <.render_profile user={user} />
                 <span class="ml-auto">
                   <%= if user.expanded do %>
@@ -663,7 +663,7 @@ defmodule FirmowidWeb.Project.Index do
                   phx-click="toggle-user"
                   phx-value-id={user.id}
                   disabled={user.time_worked == 0}
-                  class="disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="disabled:opacity-50 disabled:cursor-not-allowed animate-appear"
                 >
                   <.icon :if={user.expanded} name="hero-chevron-up-mini" class="text-darkGrey" />
                   <.icon :if={!user.expanded} name="hero-chevron-down-mini" class="text-darkGrey" />
@@ -689,7 +689,7 @@ defmodule FirmowidWeb.Project.Index do
       </div>
     <% end %>
 
-    <div class="hidden only:block py-8 bg-white rounded-md text-center text-darkGrey text-sm col-span-full">
+    <div class="hidden only:block py-8 bg-white rounded-md text-center text-darkGrey text-sm col-span-full animate-appear">
       Brak danych o czasie pracy dla tego projektu.
     </div>
     """
@@ -706,14 +706,14 @@ defmodule FirmowidWeb.Project.Index do
         <button
           phx-click="delete_user"
           phx-value-user_id={user.id}
-          class="h-6 w-8 rounded-md hover:bg-greyButtonBg text-darkGrey disabled:text-orangeText inline-flex items-center justify-center ml-1 hover:transition-all hover:duration-300 hover:ease-in-out"
+          class="h-6 w-8 rounded-md hover:bg-greyButtonBg text-darkGrey disabled:text-orangeText inline-flex items-center justify-center ml-1 hover:transition-all hover:duration-300 hover:ease-in-out animate-appear"
         >
           <.icon name="hero-trash-micro" />
         </button>
       </div>
     <% end %>
 
-    <form phx-change="add_user" class="relative w-[35%] ">
+    <form phx-change="add_user" class="relative w-[35%] animate-appear">
       <.icon
         name="hero-plus-mini"
         class="text-darkGrey absolute top-1/2 transform -translate-y-1/2 left-2"
@@ -739,14 +739,14 @@ defmodule FirmowidWeb.Project.Index do
     ~H"""
     <%= for record <- @hours_records do %>
       <% user = record.user %>
-      <div class="flex flex-row col-span-full gap-4">
+      <div class="flex flex-row col-span-full gap-4 animate-appear">
         <div class="flex flex-col flex-grow rounded-md bg-white">
           <div class="flex items-center justify-between p-4">
             <div class="flex items-center">
               <.render_profile user={user} />
             </div>
           </div>
-
+          
     <!-- separator -->
           <div class="h-px bg-greyButtonBg mx-2"></div>
 
@@ -759,8 +759,10 @@ defmodule FirmowidWeb.Project.Index do
         </div>
 
         <%= if !Map.get(@editing_employee_salaries, user.id, false) do %>
-          <div class="bg-white rounded-md p-4 w-1/4 ml-4 flex flex-col justify-between">
-                          <div class="text-md font-medium text-darkGrey text-center mb-2 animate-appear">Stawka godzinowa</div>
+          <div class="bg-white rounded-md p-4 w-1/4 ml-4 flex flex-col justify-between animate-appear">
+            <div class="text-md font-medium text-darkGrey text-center mb-2 animate-appear">
+              Stawka godzinowa
+            </div>
             <div class="flex flex-col w-full mt-auto px-2">
               <div class="text-center text-lg py-1 mb-1.5 border border-greyButtonBg rounded-md bg-lightGreyBg">
                 {format_hourly_rate(get_current_hourly_rate(user))}
@@ -806,7 +808,11 @@ defmodule FirmowidWeb.Project.Index do
             phx-value-user_id={user.id}
             class="bg-white rounded-md p-4 w-1/4 flex flex-col justify-between ml-4 !mt-0"
           >
-            <.radio_group field={user_form[:salary_type]} id={"radio_group_#{user.id}"} class="flex flex-row justify-center [&_label>div]:!border-0 [&_label>div]:!bg-greyButtonBg animate-appear">
+            <.radio_group
+              field={user_form[:salary_type]}
+              id={"radio_group_#{user.id}"}
+              class="flex flex-row justify-center [&_label>div]:!border-0 [&_label>div]:!bg-greyButtonBg animate-appear"
+            >
               <:radio value="fixed">Stała</:radio>
               <:radio value="hourly">Godzinowa</:radio>
             </.radio_group>
@@ -826,7 +832,12 @@ defmodule FirmowidWeb.Project.Index do
                     key={"hourly-rate-input-#{user.id}-#{user_form[:salary_type].value}"}
                   />
                 </div>
-                <div class="text-lg text-right pr-2 animate-slide-from-center" key={"hourly-rate-unit-#{user.id}-#{user_form[:salary_type].value}"}>PLN/h</div>
+                <div
+                  class="text-lg text-right pr-2 animate-slide-from-center"
+                  key={"hourly-rate-unit-#{user.id}-#{user_form[:salary_type].value}"}
+                >
+                  PLN/h
+                </div>
               </div>
               <div
                 :if={user_form[:salary_type] && user_form[:salary_type].value == "fixed"}
@@ -843,7 +854,12 @@ defmodule FirmowidWeb.Project.Index do
                     key={"fixed-salary-input-#{user.id}-#{user_form[:salary_type].value}"}
                   />
                 </div>
-                <div class="text-lg text-right pr-2 animate-slide-from-center" key={"fixed-salary-unit-#{user.id}-#{user_form[:salary_type].value}"}>PLN</div>
+                <div
+                  class="text-lg text-right pr-2 animate-slide-from-center"
+                  key={"fixed-salary-unit-#{user.id}-#{user_form[:salary_type].value}"}
+                >
+                  PLN
+                </div>
               </div>
               <div class="flex gap-2">
                 <.button type="submit" color="light_orange" class="flex-1 py-1">
@@ -872,14 +888,14 @@ defmodule FirmowidWeb.Project.Index do
   defp render_hours_records(assigns) do
     ~H"""
     <%= for %{user: user, hours_record: record, expanded: expanded, user_hours: user_hours} <- @hours_records do %>
-      <div class="grid grid-cols-subgrid col-span-full">
+      <div class="grid grid-cols-subgrid col-span-full animate-appear">
         <div class="flex flex-col bg-white rounded-md">
           <div class="flex items-center p-4 justify-between">
             <.render_profile user={user} />
             <button
               phx-click="toggle-user-summary"
               phx-value-id={user.id}
-              class="disabled:opacity-50 disabled:cursor-not-allowed"
+              class="disabled:opacity-50 disabled:cursor-not-allowed animate-appear"
             >
               <span class="ml-auto">
                 <%= if expanded do %>
