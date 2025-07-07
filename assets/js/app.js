@@ -48,6 +48,8 @@ window.addEventListener("phx:js-exec", ({ detail }) => {
   });
 });
 
+
+
 // connect if there are any LiveViews on the page
 liveSocket.connect();
 

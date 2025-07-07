@@ -760,9 +760,9 @@ defmodule FirmowidWeb.Project.Index do
 
         <%= if !Map.get(@editing_employee_salaries, user.id, false) do %>
           <div class="bg-white rounded-md p-4 w-1/4 ml-4 flex flex-col justify-between">
-            <div class="text-md font-medium text-darkGrey text-center mb-2">Stawka godzinowa</div>
+                          <div class="text-md font-medium text-darkGrey text-center mb-2 animate-appear">Stawka godzinowa</div>
             <div class="flex flex-col w-full mt-auto px-2">
-              <div class="text-center text-lg py-1 mb-2 border border-greyButtonBg rounded-md bg-lightGreyBg ">
+              <div class="text-center text-lg py-1 mb-1.5 border border-greyButtonBg rounded-md bg-lightGreyBg">
                 {format_hourly_rate(get_current_hourly_rate(user))}
               </div>
               <.button
@@ -806,7 +806,7 @@ defmodule FirmowidWeb.Project.Index do
             phx-value-user_id={user.id}
             class="bg-white rounded-md p-4 w-1/4 flex flex-col justify-between ml-4 !mt-0"
           >
-            <.radio_group field={user_form[:salary_type]} class="flex flex-row justify-center">
+            <.radio_group field={user_form[:salary_type]} id={"radio_group_#{user.id}"} class="flex flex-row justify-center [&_label>div]:!border-0 [&_label>div]:!bg-greyButtonBg animate-appear">
               <:radio value="fixed">Stała</:radio>
               <:radio value="hourly">Godzinowa</:radio>
             </.radio_group>
@@ -814,32 +814,36 @@ defmodule FirmowidWeb.Project.Index do
               <div
                 :if={user_form[:salary_type] && user_form[:salary_type].value == "hourly"}
                 class="flex flex-row items-center py-1 mb-2 border border-greyButtonBg rounded-md text-darkGrey focus-within:border-blueText"
+                id={"hourly-rate-container-#{user.id}"}
               >
-                <div class="flex flex-row ">
+                <div class="flex flex-row flex-1 overflow-hidden">
                   <.input
                     type="number"
                     field={user_form[:hourly_rate]}
-                    input_class="!bg-transparent !border-0 !py-0 !pl-0 !pr-2 !text-lg !text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    input_class="!bg-transparent !border-0 !py-0 !pl-0 !pr-2 !text-lg !text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none animate-slide-from-center"
                     step="0.01"
                     min="0"
+                    key={"hourly-rate-input-#{user.id}-#{user_form[:salary_type].value}"}
                   />
                 </div>
-                <div class="text-lg text-right pr-2">PLN/h</div>
+                <div class="text-lg text-right pr-2 animate-slide-from-center" key={"hourly-rate-unit-#{user.id}-#{user_form[:salary_type].value}"}>PLN/h</div>
               </div>
               <div
                 :if={user_form[:salary_type] && user_form[:salary_type].value == "fixed"}
                 class="flex flex-row items-center py-1 mb-2 border border-greyButtonBg rounded-md text-darkGrey focus-within:border-blueText"
+                id={"fixed-salary-container-#{user.id}"}
               >
-                <div class="flex flex-row">
+                <div class="flex flex-row flex-1 overflow-hidden">
                   <.input
                     type="number"
                     field={user_form[:fixed_salary]}
-                    input_class="!bg-transparent !border-0 !py-0 !pl-0 !pr-2 !text-lg !text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    input_class="!bg-transparent !border-0 !py-0 !pl-0 !pr-2 !text-lg !text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none animate-slide-from-center"
                     step="0.01"
                     min="0"
+                    key={"fixed-salary-input-#{user.id}-#{user_form[:salary_type].value}"}
                   />
                 </div>
-                <div class="text-lg text-right pr-2">PLN</div>
+                <div class="text-lg text-right pr-2 animate-slide-from-center" key={"fixed-salary-unit-#{user.id}-#{user_form[:salary_type].value}"}>PLN</div>
               </div>
               <div class="flex gap-2">
                 <.button type="submit" color="light_orange" class="flex-1 py-1">

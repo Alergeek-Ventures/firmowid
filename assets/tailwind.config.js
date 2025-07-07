@@ -48,9 +48,29 @@ module.exports = {
             margin: '0px',
           }
         },
+        "slide-from-center": {
+          '0%': {
+            opacity: '0',
+            transform: 'translateX(-30px)',
+          },
+          '100%': {
+            opacity: '1',
+            transform: 'translateX(0)',
+          }
+        },
+        "appear": {
+          '0%': {
+            opacity: '0',
+          },
+          '100%': {
+            opacity: '1',
+          }
+        },
       },
       animation: {
-        "list-item-removal": 'fade-and-scale-out 300ms ease-out forwards'
+        "list-item-removal": 'fade-and-scale-out 300ms ease-out forwards',
+        "slide-from-center": 'slide-from-center 300ms ease-out forwards',
+        "appear": 'appear 700ms ease-out forwards'
       },
     },
   },
