@@ -13,7 +13,7 @@ defmodule Firmowid.BankData.Worker do
           category: "bank_account_sync",
           data: %{
             bank_account_id: bank_account_id,
-            job: job
+            job_id: job.id
           }
         })
 
