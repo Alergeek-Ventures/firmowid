@@ -235,21 +235,26 @@ defmodule Firmowid.Invoicing do
 
     Logger.info("Found #{length(unmatched_transactions)} unmatched transactions")
 
-    [{transaction, prediction_score} | _] =
-      score_and_sort_transactions(cost_invoice, unmatched_transactions)
+    case score_and_sort_transactions(cost_invoice, unmatched_transactions) do
+      [{transaction, prediction_score} | _] ->
+        Logger.info("Prediction score: #{prediction_score}")
 
-    Logger.info("Prediction score: #{prediction_score}")
+        if Matching.RegressionPredictor.confident_match?(prediction_score) do
+          CostInvoices.create_cost_invoices_transactions_connection(
+            cost_invoice.id,
+            transaction.id,
+            organization_id
+          )
 
-    if Matching.RegressionPredictor.confident_match?(prediction_score) do
-      CostInvoices.create_cost_invoices_transactions_connection(
-        cost_invoice.id,
-        transaction.id,
-        organization_id
-      )
+          Logger.info(
+            "Matched cost invoice #{cost_invoice.id} with transaction #{transaction.id}"
+          )
+        else
+          Logger.info("No confident match for cost invoice #{cost_invoice.id}")
+        end
 
-      Logger.info("Matched cost invoice #{cost_invoice.id} with transaction #{transaction.id}")
-    else
-      Logger.info("No confident match for cost invoice #{cost_invoice.id}")
+      [] ->
+        Logger.info("No match found for cost invoice #{cost_invoice.id}")
     end
   end
 

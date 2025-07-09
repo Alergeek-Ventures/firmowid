@@ -110,8 +110,14 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
   defp get_transaction_side_account(%CostInvoice{}, %Transaction{creditor_account: acc}), do: acc
   defp get_transaction_side_account(%SalesInvoice{}, %Transaction{debtor_account: acc}), do: acc
 
-  @spec amount_present_in_remittance_information_unstructured(String.t(), %Decimal{}, String.t()) ::
+  @spec amount_present_in_remittance_information_unstructured(
+          String.t() | nil,
+          %Decimal{},
+          String.t()
+        ) ::
           float()
+  defp amount_present_in_remittance_information_unstructured(nil, _, _), do: 0.0
+
   defp amount_present_in_remittance_information_unstructured(
          remittance_information_unstructured,
          amount,
@@ -128,6 +134,13 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
        ))
     |> boolean_to_float()
   end
+
+  @spec invoice_identifier_present_in_remittance_information_unstructured(
+          String.t() | nil,
+          String.t()
+        ) ::
+          float()
+  defp invoice_identifier_present_in_remittance_information_unstructured(nil, _), do: 0.0
 
   defp invoice_identifier_present_in_remittance_information_unstructured(
          remittance_information_unstructured,
