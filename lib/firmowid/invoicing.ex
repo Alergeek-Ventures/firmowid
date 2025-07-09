@@ -215,6 +215,8 @@ defmodule Firmowid.Invoicing do
   end
 
   def match_cost_invoices(organization_id) do
+    Firmowid.Repo.put_org_id(organization_id)
+
     unmatched_cost_invoices = CostInvoices.list_unmatched_cost_invoices()
 
     unmatched_cost_invoices
