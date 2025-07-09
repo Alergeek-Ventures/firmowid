@@ -108,6 +108,8 @@ defmodule FirmowidWeb.InvoicingLive.Show do
     preview_url = ""
     preview_type = :html
 
+    sales_invoice = SalesInvoices.get_sales_invoice_with_logo_url(id)
+
     %{
       invoice:
         Map.merge(
