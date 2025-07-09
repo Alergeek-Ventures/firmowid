@@ -60,3 +60,5 @@ config :ex_aws, :s3,
   port: 4566
 
 config :firmowid, Oban, testing: :inline
+
+config :firmowid, Firmowid.Currencies, rates_provider: :mock

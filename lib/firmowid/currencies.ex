@@ -29,11 +29,8 @@ defmodule Firmowid.Currencies do
 
   @spec get_rates(Date.t()) :: map()
   defp get_rates(date) do
-    case Mix.env() do
-      :dev ->
-        mock_rates()
-
-      :test ->
+    case Application.get_env(:firmowid, __MODULE__)[:rates_provider] do
+      :mock ->
         mock_rates()
 
       _ ->

@@ -90,3 +90,5 @@ config :ex_aws, :s3,
   port: 4566
 
 config :firmowid, Firmowid.Repo, log: false
+
+config :firmowid, Firmowid.Currencies, rates_provider: :mock
