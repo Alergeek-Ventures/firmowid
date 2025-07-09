@@ -9,7 +9,12 @@ defmodule Firmowid.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+
+      # TEMP: remove this once https://github.com/jeremyjh/dialyxir/issues/561 is resolved
+      dialyzer: [
+        flags: [:no_opaque]
+      ]
     ]
   end
 
