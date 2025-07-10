@@ -97,92 +97,57 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
         </aside>
 
         <main class="flex-grow py-8 lg:pl-8 border-b lg:border-b-0 lg:border-l border-darkGrey/[.3]">
-          <%= case {@invoice.skip_invoicing, @invoice.transactions} do %>
-            <% {true, _} -> %>
+          <%= cond do %>
+            <% @invoice.skip_invoicing -> %>
               <InvoiceDetails.invoice_skipped_view />
-            <% {false, []} -> %>
-              <%= if @potential_transactions == [] do %>
-                <div class="flex flex-col gap-6 items-center text-center">
-                  <div class="gap-4 flex flex-col items-center border border-greyButtonBg p-4 rounded-md">
-                    <.icon name="hero-face-frown" class="w-10 h-10 block" />
-                    <h3 class="text-lg font-semibold">Brak rekomendacji</h3>
-                    <p class="max-w-[400px]">
-                      Firmowid nie znalazł żadnych transakcji, które potencjalnie pasowałyby do tej faktury.
-                    </p>
-                  </div>
-                </div>
-                <h3 class="text-lg font-semibold my-10">Co możesz zrobić?</h3>
-                <div class="text-darkGrey flex flex-col gap-8">
-                  <div class="flex flex-row justify-between gap-16">
-                    <p>
-                      Może żadna nie pasuje, bo zapłacono gotówką, lub na inne konto?
-                      Pomiń jej szukanie. Firmowid oznaczy ją jako rozliczoną poza systemem.
-                    </p>
-                    <div class="flex shrink-0 flex-row gap-2 w-32 overflow-hidden">
-                      <div class="text-xs h-6 flex flex-row justify-center items-center py-2 px-2 rounded-md transition-all duration-500 w-10 text-darkGrey bg-greyButtonBg">
-                        <.icon name="hero-document-text-solid" class="h-4 w-4" />
-                      </div>
-                      <button
-                        phx-click="toggle-invoicing"
-                        class="transition-all duration-500 cursor-pointer w-20 h-6 uppercase text-xs text-darkGrey bg-greyButtonBg rounded-md"
-                      >
-                        Pomiń
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              <% else %>
-                <div class="flex flex-col gap-16">
-                  <div class="flex flex-col gap-5">
-                    <div class="flex flex-row justify-between items-center">
-                      <h2 class="text-lg font-semibold">Potencjalne transakcje dla dokumentu</h2>
-                    </div>
-                    <div class="grid grid-cols-[1fr_120px_120px_220px]">
-                      <span class="text-xs uppercase text-darkGrey text-left">Informacje</span>
-                      <span class="text-xs uppercase text-darkGrey text-right">Data</span>
-                      <span class="text-xs uppercase text-darkGrey text-right">Kwota</span>
-                    </div>
-                    <%= for {tx, score} <- @potential_transactions do %>
-                      <div
-                        id={"potential-transaction-#{tx.id}"}
-                        class="grid grid-cols-[1fr_120px_120px_220px]"
-                      >
-                        <div class="text-left">
-                          <p class="font-semibold">{tx.debtor_name}</p>
-                          <p class="text-sm text-darkGrey">
-                            {tx.remittance_information_unstructured}
-                          </p>
-                        </div>
-                        <div class="flex items-center justify-end">{tx.booking_date}</div>
-                        <div class="text-right flex items-center justify-end">
-                          {Money.new(tx.transaction_currency, tx.transaction_amount)}
-                        </div>
-                        <div class="flex items-center justify-end gap-4">
-                          <InvoiceDetails.prediction_score_indicator
-                            transaction_id={tx.id}
-                            prediction_score={score}
-                          />
-                          <button
-                            phx-click="connect"
-                            phx-value-transaction_id={tx.id}
-                            class="uppercase text-sm bg-darkGrey text-white h-7 px-2 rounded"
-                          >
-                            Zatwierdź
-                          </button>
-                        </div>
-                      </div>
-                    <% end %>
-                  </div>
-                  <InvoiceDetails.skip_invoicing />
-                </div>
-              <% end %>
-            <% {false, [single]} -> %>
-              <InvoiceDetails.single_transaction_match is_cost_invoice={false} transaction={single} />
-            <% {false, multiple} -> %>
+            <% length(@invoice.transactions) == 1 -> %>
+              <InvoiceDetails.single_transaction_match
+                is_cost_invoice={false}
+                transaction={@invoice.transactions |> hd()}
+              />
+            <% length(@invoice.transactions) > 1 -> %>
               <InvoiceDetails.multiple_transactions_match
                 is_cost_invoice={false}
-                transactions={multiple}
+                transactions={@invoice.transactions}
               />
+            <% @potential_transactions == [] -> %>
+              <div class="flex flex-col gap-6 items-center text-center">
+                <div class="gap-4 flex flex-col items-center border border-greyButtonBg p-4 rounded-md">
+                  <.icon name="hero-face-frown" class="w-10 h-10 block" />
+                  <h3 class="text-lg font-semibold">Brak rekomendacji</h3>
+                  <p class="max-w-[400px]">
+                    Firmowid nie znalazł żadnych transakcji, które potencjalnie pasowałyby do tej faktury.
+                  </p>
+                </div>
+              </div>
+              <h3 class="text-lg font-semibold my-10">Co możesz zrobić?</h3>
+              <div class="text-darkGrey flex flex-col gap-8">
+                <div class="flex flex-row justify-between gap-16">
+                  <p>
+                    Może żadna nie pasuje, bo zapłacono gotówką, lub na inne konto?
+                    Pomiń jej szukanie. Firmowid oznaczy ją jako rozliczoną poza systemem.
+                  </p>
+                  <div class="flex shrink-0 flex-row gap-2 w-32 overflow-hidden">
+                    <div class="text-xs h-6 flex flex-row justify-center items-center py-2 px-2 rounded-md transition-all duration-500 w-10 text-darkGrey bg-greyButtonBg">
+                      <.icon name="hero-document-text-solid" class="h-4 w-4" />
+                    </div>
+                    <button
+                      phx-click="toggle-invoicing"
+                      class="transition-all duration-500 cursor-pointer w-20 h-6 uppercase text-xs text-darkGrey bg-greyButtonBg rounded-md"
+                    >
+                      Pomiń
+                    </button>
+                  </div>
+                </div>
+              </div>
+            <% true -> %>
+              <div class="flex flex-col gap-16">
+                <InvoiceDetails.potential_transactions_list
+                  potential_transactions={@potential_transactions}
+                  name_field={:debtor_name}
+                />
+                <InvoiceDetails.skip_invoicing />
+              </div>
           <% end %>
         </main>
       </div>

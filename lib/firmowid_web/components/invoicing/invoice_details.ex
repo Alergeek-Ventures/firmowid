@@ -206,4 +206,48 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
     </div>
     """
   end
+
+  attr :potential_transactions, :list, required: true
+  attr :name_field, :atom, required: true
+
+  def potential_transactions_list(assigns) do
+    ~H"""
+    <div class="flex flex-col gap-16">
+      <div class="flex flex-col gap-5">
+        <div class="flex flex-row justify-between items-center">
+          <h2 class="text-lg font-semibold">Potencjalne transakcje dla dokumentu</h2>
+        </div>
+        <div class="grid grid-cols-[1fr_120px_120px_220px]">
+          <span class="text-xs uppercase text-darkGrey text-left">Informacje</span>
+          <span class="text-xs uppercase text-darkGrey text-right">Data</span>
+          <span class="text-xs uppercase text-darkGrey text-right">Kwota</span>
+        </div>
+        <%= for {tx, score} <- @potential_transactions do %>
+          <div id={"potential-transaction-#{tx.id}"} class="grid grid-cols-[1fr_120px_120px_220px]">
+            <div class="text-left">
+              <p class="font-semibold">{Map.get(tx, @name_field)}</p>
+              <p class="text-sm text-darkGrey">
+                {tx.remittance_information_unstructured}
+              </p>
+            </div>
+            <div class="flex items-center justify-end">{tx.booking_date}</div>
+            <div class="text-right flex items-center justify-end">
+              {Money.new(tx.transaction_currency, tx.transaction_amount)}
+            </div>
+            <div class="flex items-center justify-end gap-4">
+              <.prediction_score_indicator transaction_id={tx.id} prediction_score={score} />
+              <button
+                phx-click="connect"
+                phx-value-transaction_id={tx.id}
+                class="uppercase text-sm bg-darkGrey text-white h-7 px-2 rounded"
+              >
+                Zatwierdź
+              </button>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
 end
