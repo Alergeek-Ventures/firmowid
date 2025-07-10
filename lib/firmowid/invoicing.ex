@@ -123,25 +123,35 @@ defmodule Firmowid.Invoicing do
     transaction.booking_date
   end
 
+  defp matched?(%SalesInvoice{} = invoice),
+    do: length(invoice.transactions) > 0 or Map.get(invoice, :skip_invoicing, false)
+
+  defp matched?(%CostInvoice{} = invoice),
+    do: length(invoice.transactions) > 0 or Map.get(invoice, :skip_invoicing, false)
+
+  defp matched?(%Transaction{} = transaction),
+    do:
+      length(transaction.sales_invoices_transactions ++ transaction.cost_invoices_transactions) >
+        0 or Map.get(transaction, :skip_invoicing, false)
+
+  defp matched?(_), do: false
+
   def order_entries_for_display(invoicing_entries) do
-    order_by_date = fn a, b ->
-      a_date = get_date(a)
-      b_date = get_date(b)
+    invoicing_entries
+    |> Enum.sort(fn a, b ->
+      cond do
+        matched?(a) != matched?(b) ->
+          # unmatched first
+          not matched?(a)
 
-      case Date.compare(a_date, b_date) do
-        :gt ->
-          true
+        get_date(a) != get_date(b) ->
+          # newer first
+          Date.compare(get_date(a), get_date(b)) == :gt
 
-        :lt ->
-          false
-
-        :eq ->
+        true ->
           a.id < b.id
       end
-    end
-
-    invoicing_entries
-    |> Enum.sort_by(& &1, order_by_date)
+    end)
   end
 
   def match_with_transaction_combo(
