@@ -32,7 +32,7 @@ defmodule Firmowid.SalesInvoices do
   def populate_logo_url(%SalesInvoice{} = sales_invoice) do
     with loaded_invoice <- Repo.preload(sales_invoice, :organization, skip_organization_id: true),
          organization <- Accounts.get_organization_with_avatar(loaded_invoice.organization) do
-      Map.put(loaded_invoice, :logo_url, organization.avatar_url)
+      %{loaded_invoice | logo_url: organization.avatar_url}
     end
   end
 

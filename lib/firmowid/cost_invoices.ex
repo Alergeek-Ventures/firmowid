@@ -148,15 +148,7 @@ defmodule Firmowid.CostInvoices do
       |> Repo.preload(:transactions)
       |> Repo.preload(:blob)
 
-    cost_invoice
-    |> Map.put(:blob_url, Blobs.get_blob_url(cost_invoice.blob_id))
-    |> Map.put(
-      :amount,
-      Money.new(
-        cost_invoice.total_amount,
-        cost_invoice.currency
-      )
-    )
+    %{cost_invoice | blob_url: Blobs.get_blob_url(cost_invoice.blob_id)}
   end
 
   def delete_cost_invoice(cost_invoice_id) do

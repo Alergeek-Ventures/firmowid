@@ -1,0 +1,85 @@
+defmodule FirmowidWeb.CostInvoiceLive.Show do
+  use FirmowidWeb, :live_view
+
+  alias Firmowid.CostInvoices
+  alias Firmowid.Invoicing
+
+  @impl true
+  def mount(%{"id" => id}, _session, socket) do
+    current_user = socket.assigns.current_user
+
+    cost_invoice = CostInvoices.get_cost_invoice_with_blob_url!(id)
+    Bodyguard.permit!(CostInvoices, :show, current_user, cost_invoice)
+
+    potential_transactions = Invoicing.get_potential_transactions_for_invoice(cost_invoice)
+
+    preview_type =
+      if String.contains?(cost_invoice.blob.blob_path, ".pdf"), do: :pdf, else: :image
+
+    socket =
+      socket
+      |> assign(:invoice, cost_invoice)
+      |> assign(:potential_transactions, potential_transactions)
+      |> assign(:preview_url, cost_invoice.blob_url)
+      |> assign(:preview_type, preview_type)
+      |> assign(:no_padding, true)
+
+    {:ok, socket}
+  end
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <.live_component
+      id="cost-invoice-show"
+      module={FirmowidWeb.Components.Invoicing.CostInvoiceDetails}
+      invoice={@invoice}
+      preview_url={@preview_url}
+      preview_type={@preview_type}
+      potential_transactions={@potential_transactions}
+    />
+    """
+  end
+
+  # Event handlers -----------------------------------------------------------
+
+  @impl true
+  def handle_event("toggle-invoicing", _params, socket) do
+    Bodyguard.permit!(CostInvoices, :update, socket.assigns.current_user)
+    invoice = CostInvoices.toggle_skip_invoicing(socket.assigns.invoice.id)
+    {:noreply, assign(socket, :invoice, invoice)}
+  end
+
+  @impl true
+  def handle_event("delete", _params, socket) do
+    Bodyguard.permit!(CostInvoices, :delete, socket.assigns.current_user)
+    CostInvoices.delete_cost_invoice(socket.assigns.invoice.id)
+
+    {:noreply,
+     socket
+     |> put_flash(:info, "Faktura została usunięta")
+     |> push_navigate(to: ~p"/?month=#{socket.assigns.invoice.issue_date |> Date.to_iso8601()}")}
+  end
+
+  @impl true
+  def handle_event("connect", %{"transaction_id" => tx_id}, socket) do
+    user = socket.assigns.current_user
+
+    CostInvoices.create_cost_invoices_transactions_connection(
+      socket.assigns.invoice.id,
+      tx_id,
+      user.organization_id
+    )
+
+    invoice = CostInvoices.get_cost_invoice_with_blob_url!(socket.assigns.invoice.id)
+    {:noreply, assign(socket, :invoice, invoice)}
+  end
+
+  @impl true
+  def handle_event("disconnect", _params, socket) do
+    Bodyguard.permit!(CostInvoices, :update, socket.assigns.current_user)
+    CostInvoices.delete_cost_invoices_transactions_connections(socket.assigns.invoice.id)
+    invoice = CostInvoices.get_cost_invoice_with_blob_url!(socket.assigns.invoice.id)
+    {:noreply, assign(socket, :invoice, invoice)}
+  end
+end

@@ -22,6 +22,8 @@ defmodule Firmowid.CostInvoices.CostInvoice do
 
     field :skip_invoicing, :boolean, default: false
 
+    field :blob_url, :string, virtual: true
+
     many_to_many :transactions,
                  Firmowid.Finances.Transaction,
                  join_through: "cost_invoices_transactions"
