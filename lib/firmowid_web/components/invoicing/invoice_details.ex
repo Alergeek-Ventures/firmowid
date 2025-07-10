@@ -75,35 +75,36 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
 
   attr :transaction_id, :string, required: true
   attr :prediction_score, :float, required: true
+  attr :is_highest_green, :boolean, default: false
 
   def prediction_score_indicator(assigns) do
     ~H"""
     <div
       id={"match-prediction-score-#{@transaction_id}"}
       phx-hook="Tippy"
-      data-tippy-content={"Ocena dopasowania – #{Float.round(@prediction_score, 2)}"}
+      data-tippy-content={"Ocena AI: #{Float.round(100 *@prediction_score, 2)}% pewności"}
       class={[
         "flex flex-col justify-center items-start gap-1 pl-[4px]",
         "w-7 h-7 rounded-md",
-        @prediction_score >= 0.69 && "bg-greenBg",
-        (@prediction_score >= 0.66 and @prediction_score < 0.69) && "bg-orangeBg",
-        @prediction_score < 0.66 && "bg-redBg"
+        @is_highest_green && "bg-greenBg",
+        !@is_highest_green && @prediction_score >= 0.66 && "bg-orangeBg",
+        !@is_highest_green && @prediction_score < 0.66 && "bg-redBg"
       ]}
     >
       <div class={[
         "w-[75%] rounded-md bg-white h-[2px]",
-        @prediction_score >= 0.69 && "!bg-greenText"
+        @is_highest_green && "!bg-greenText"
       ]} />
       <div class={[
         "w-[55%] rounded-md bg-white h-[2px]",
-        @prediction_score >= 0.69 && "!bg-greenText",
-        (@prediction_score >= 0.66 and @prediction_score < 0.69) && "!bg-orangeText"
+        @is_highest_green && "!bg-greenText",
+        !@is_highest_green && @prediction_score >= 0.66 && "!bg-orangeText"
       ]} />
       <div class={[
         "w-[35%] rounded-md bg-white h-[2px]",
-        @prediction_score >= 0.69 && "!bg-greenText",
-        (@prediction_score >= 0.66 and @prediction_score < 0.69) && "!bg-orangeText",
-        @prediction_score < 0.66 && "!bg-redText"
+        @is_highest_green && "!bg-greenText",
+        !@is_highest_green && @prediction_score >= 0.66 && "!bg-orangeText",
+        !@is_highest_green && @prediction_score < 0.66 && "!bg-redText"
       ]} />
     </div>
     """
@@ -240,6 +241,24 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   attr :name_field, :atom, required: true
 
   def potential_transactions_list(assigns) do
+    potential_transactions = assigns.potential_transactions
+    green_threshold = 0.69
+    # Find the first index of the highest score >= green_threshold
+    {green_idx, _} =
+      potential_transactions
+      |> Enum.with_index()
+      |> Enum.filter(fn {{_tx, score}, _idx} -> score >= green_threshold end)
+      |> Enum.sort_by(fn {{_tx, score}, _idx} -> -score end)
+      |> Enum.split(1)
+      |> (fn {first, _rest} ->
+            case first do
+              [{{_tx, _score}, idx}] -> {idx, true}
+              _ -> {-1, false}
+            end
+          end).()
+
+    assigns = assign(assigns, :green_idx, green_idx)
+
     ~H"""
     <div class="flex flex-col gap-16">
       <div class="flex flex-col gap-5">
@@ -251,7 +270,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
           <span class="text-xs uppercase text-darkGrey text-right">Data</span>
           <span class="text-xs uppercase text-darkGrey text-right">Kwota</span>
         </div>
-        <%= for {tx, score} <- @potential_transactions do %>
+        <%= for {{tx, score}, idx} <- Enum.with_index(@potential_transactions) do %>
           <div id={"potential-transaction-#{tx.id}"} class="grid grid-cols-[1fr_120px_120px_220px]">
             <div class="text-left">
               <p class="font-semibold">{Map.get(tx, @name_field)}</p>
@@ -264,7 +283,11 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
               {Money.new(tx.transaction_currency, tx.transaction_amount)}
             </div>
             <div class="flex items-center justify-end gap-4">
-              <.prediction_score_indicator transaction_id={tx.id} prediction_score={score} />
+              <.prediction_score_indicator
+                transaction_id={tx.id}
+                prediction_score={score}
+                is_highest_green={@green_idx == idx}
+              />
               <button
                 phx-click="connect"
                 phx-value-transaction_id={tx.id}
