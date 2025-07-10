@@ -22,8 +22,8 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
         description={@invoice.description}
       />
 
-      <div class="flex flex-col justify-between px-8 gap-4 lg:gap-12 lg:flex-row">
-        <aside class="min-w-[320px] lg:w-[600px] flex flex-col gap-4 order-last lg:order-none py-8">
+      <div class="flex flex-col justify-between px-8 gap-4 lg:gap-12 lg:flex-row min-w-0">
+        <aside class="w-full lg:w-[400px] xl:w-[600px] flex-shrink-0 flex-grow-0 flex flex-col gap-4 order-last lg:order-none py-8">
           <div class="grid grid-cols-[130px_1fr] gap-2 py-4">
             <InvoiceDetails.invoice_metadata_piece
               label="Numer faktury"
@@ -104,47 +104,18 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
                   <.icon name="hero-face-frown" class="w-10 h-10 block" />
                   <h3 class="text-lg font-semibold">Brak rekomendacji</h3>
                   <p class="max-w-[400px]">
-                    Firmowid nie znalazł żadnych transakcji, które potencjalnie pasowałyby do tej faktury.
+                    Firmowid nie znalazł żadnych transakcji, które potencjalnie pasowałyby do tej faktury.
                   </p>
                 </div>
               </div>
-              <h3 class="text-lg font-semibold my-10">Co możesz zrobić?</h3>
-              <div class="text-darkGrey flex flex-col gap-8">
-                <div class="flex flex-row justify-between gap-16">
-                  <p>
-                    Możesz wykonać przelew teraz - kliknij przycisk, aby skopiować potrzebne dane.
-                  </p>
-                  <.live_component
-                    id="bank-transfer-modal"
-                    module={FirmowidWeb.Components.Invoicing.BankTransferModal}
-                    invoice={@invoice}
-                  />
-                </div>
-                <div class="flex flex-row justify-between gap-16">
-                  <p>
-                    A może żadna nie pasuje, bo zapłacono gotówką, lub na inne konto?
-                    Pomiń jej szukanie. Firmowid oznaczy ją jako rozliczoną poza systemem.
-                  </p>
-                  <div class="flex shrink-0 flex-row gap-2 w-32 overflow-hidden">
-                    <div class="text-xs h-6 flex flex-row justify-center items-center py-2 px-2 rounded-md transition-all duration-500 w-10 text-darkGrey bg-greyButtonBg">
-                      <.icon name="hero-document-text-solid" class="h-4 w-4" />
-                    </div>
-                    <button
-                      phx-click="toggle-invoicing"
-                      class="transition-all duration-500 cursor-pointer w-20 h-6 uppercase text-xs text-darkGrey bg-greyButtonBg rounded-md"
-                    >
-                      Pomiń
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <InvoiceDetails.skip_invoicing show_bank_transfer_modal={true} invoice={@invoice} />
             <% true -> %>
               <div class="flex flex-col gap-16">
                 <InvoiceDetails.potential_transactions_list
                   potential_transactions={@potential_transactions}
                   name_field={:creditor_name}
                 />
-                <InvoiceDetails.skip_invoicing />
+                <InvoiceDetails.skip_invoicing show_bank_transfer_modal={true} invoice={@invoice} />
               </div>
           <% end %>
         </main>
