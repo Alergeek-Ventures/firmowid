@@ -98,6 +98,7 @@ defmodule Firmowid.InvoicingTest do
         )
       )
       |> Repo.insert!()
+      |> Map.put(:transactions, [])
 
     b_blob =
       %Blob{
@@ -133,6 +134,7 @@ defmodule Firmowid.InvoicingTest do
         )
       )
       |> Repo.insert!()
+      |> Map.put(:transactions, [])
 
     {a, b}
   end
