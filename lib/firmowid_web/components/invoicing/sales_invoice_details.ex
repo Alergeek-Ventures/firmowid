@@ -34,6 +34,47 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
 
       <div class="flex flex-col justify-between px-8 gap-4 lg:gap-12 lg:flex-row min-w-0">
         <aside class="w-full lg:w-[400px] xl:w-[600px] flex-shrink-0 flex-grow-0 flex flex-col gap-4 order-last lg:order-none py-8">
+          <div class="flex flex-row justify-end gap-2">
+            <.link
+              id="copy-invoice-link"
+              phx-hook="Tippy"
+              data-tippy-content="Skopiuj fakturę"
+              data-tippy-delay="100"
+              class={[
+                "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
+                "px-2 py-1 flex items-center justify-center rounded"
+              ]}
+              navigate={~p"/sprzedazowe?skopiuj=#{@invoice.id}"}
+            >
+              <.icon name="hero-document-duplicate" class="w-5 h-5" />
+            </.link>
+            <.link
+              id="edit-invoice-link"
+              phx-hook="Tippy"
+              data-tippy-content="Edytuj fakturę"
+              data-tippy-delay="100"
+              class={[
+                "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
+                "px-2 py-1 flex items-center justify-center rounded"
+              ]}
+              navigate={~p"/sprzedazowe/#{@invoice.id}/edycja"}
+            >
+              <.icon name="hero-pencil-square-solid" class="w-5 h-5" />
+            </.link>
+            <button
+              id="delete-invoice-button"
+              phx-hook="Tippy"
+              data-tippy-content="Usuń fakturę"
+              data-tippy-delay="100"
+              class={[
+                "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
+                "px-2 py-1 flex items-center justify-center rounded"
+              ]}
+              phx-click="delete"
+            >
+              <.icon name="hero-trash-solid" class="w-5 h-5" />
+            </button>
+          </div>
           <div class="grid grid-cols-[130px_1fr] gap-2 py-4">
             <InvoiceDetails.invoice_metadata_piece
               label="Numer faktury"

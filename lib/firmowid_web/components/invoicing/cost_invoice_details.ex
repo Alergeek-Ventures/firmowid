@@ -20,10 +20,26 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
         issue_date={@invoice.issue_date}
         party_display_name={@invoice.seller_display_name}
         description={@invoice.description}
+        show_delete_button={true}
       />
 
       <div class="flex flex-col justify-between px-8 gap-4 lg:gap-12 lg:flex-row min-w-0">
         <aside class="w-full lg:w-[400px] xl:w-[600px] flex-shrink-0 flex-grow-0 flex flex-col gap-4 order-last lg:order-none py-8">
+          <div class="flex flex-row justify-end gap-2">
+            <button
+              id="delete-invoice-button"
+              phx-hook="Tippy"
+              data-tippy-content="Usuń fakturę"
+              data-tippy-delay="100"
+              class={[
+                "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
+                "px-2 py-1 flex items-center justify-center rounded"
+              ]}
+              phx-click="delete"
+            >
+              <.icon name="hero-trash-solid" class="w-5 h-5" />
+            </button>
+          </div>
           <div class="grid grid-cols-[130px_1fr] gap-2 py-4">
             <InvoiceDetails.invoice_metadata_piece
               label="Numer faktury"
