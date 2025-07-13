@@ -7,7 +7,7 @@ defmodule Firmowid.ReductoApiClient do
   @type extract_options :: [extraction_mode: :hybrid | :ocr | :metadata]
 
   @auth_token {:bearer,
-               "f6db515168d1b7c99dcecfd0517062dcbfd083a6ba1e42d0e3bcc623d832288087949aa99728f0d65ff5da7044e9fecc"}
+               "e19507fbd55e1e3b0f7763382e055e31da39cb91b2badf5c2b44ff84eb136d6d0eabe52981a6922d1db2dfc5384ceded"}
 
   @doc """
   Extracts metadata from a document using Reducto API. Pass in a file URL
