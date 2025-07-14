@@ -14,7 +14,7 @@ defmodule FirmowidWeb.TimetrackerLiveTest do
         |> log_in_user(admin_fixture())
         |> live(~p"/czasosledz")
 
-      assert html =~ "Zarządzaj projektami"
+      assert html =~ "Zarządzanie"
     end
 
     test "redirects if user is not logged in", %{conn: conn} do
