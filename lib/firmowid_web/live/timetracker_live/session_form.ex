@@ -45,7 +45,14 @@ defmodule FirmowidWeb.TimetrackerLive.SessionForm do
 
   defp convert_times(%{start_time: start_time, end_time: end_time, date: date} = attributes) do
     start_time = date_to_datetime(date, start_time)
-    end_time = date_to_datetime(date, end_time)
+
+    end_time =
+      # This allows for adding sessions which cross midnight
+      if end_time && Time.before?(end_time, start_time) do
+        date_to_datetime(Date.add(date, 1), end_time)
+      else
+        date_to_datetime(date, end_time)
+      end
 
     Map.put(attributes, :start_datetime, start_time)
     |> Map.put(:end_datetime, end_time)
