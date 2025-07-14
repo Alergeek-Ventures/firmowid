@@ -1,23 +1,7 @@
 <div class="container p-6">
   <div class="flex justify-end gap-4">
-    <%= if Bodyguard.permit?(Firmowid.Timetracker, :read_projects, @current_user) do %>
-      <.link navigate={~p"/czasosledz/projekty"} class={button_styles(%{color: "grey"})}>
-        Zarządzanie
-      </.link>
-    <% end %>
-
-    <.link
-      navigate={~p"/czasosledz"}
-      class={classes(["hover:underline", button_styles(%{color: "grey", variant: "outline"})])}
-    >
-      Czasośledz
-    </.link>
-
-    <.link
-      navigate={~p"/czasosledz/ewidencja"}
-      class={classes(["hover:underline", button_styles(%{color: "grey", variant: "outline"})])}
-    >
-      Ewidencja
+    <.link navigate={~p"/czasosledz/"} class="mr-auto my-auto">
+      <.icon name="hero-arrow-left-circle-solid" />
     </.link>
   </div>
   <div class="border border-greyButtonBg rounded-md py-14 px-24 mt-20">

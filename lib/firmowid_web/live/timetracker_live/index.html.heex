@@ -1,8 +1,28 @@
 <div class="container flex flex-col p-6">
   <div class="flex justify-end gap-4">
-    <.subnavigation_buttons show_read_projects={
-      Bodyguard.permit?(Firmowid.Timetracker, :read_projects, @current_user)
-    } />
+    <.link
+      :if={@current_user.role == :employee}
+      navigate={~p"/czasosledz/ewidencja"}
+      class={button_styles(%{color: "light_grey", variant: "outline"})}
+    >
+      Twoje projekty
+    </.link>
+
+    <.link
+      :if={Bodyguard.permit?(Firmowid.Timetracker, :read_projects, @current_user)}
+      navigate={~p"/czasosledz/projekty"}
+      class={button_styles(%{color: "light_grey", variant: "outline"})}
+    >
+      Zarządzanie
+    </.link>
+
+    <.link
+      :if={Bodyguard.permit?(Firmowid.Timetracker, :create_project, @current_user)}
+      navigate={~p"/czasosledz/projekty/dodaj"}
+      class={classes(["ml-2", button_styles(%{color: "black"})])}
+    >
+      <.icon name="hero-plus-mini" class="size-6 mr-1.5" /> Dodaj projekt
+    </.link>
   </div>
 
   <div class="flex justify-between items-center gap-8 mt-24 px-4 max-w-6xl w-full mx-auto">

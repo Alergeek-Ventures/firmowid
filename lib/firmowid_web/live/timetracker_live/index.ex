@@ -5,7 +5,6 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   alias Firmowid.Accounts
   alias FirmowidWeb.Helpers.TimeFormatter
   use FirmowidWeb, :live_view
-  import FirmowidWeb.Components.Timetracker.SubnavigationButtons
 
   def mount(_params, _session, socket) do
     Bodyguard.permit!(Timetracker, :read_user_sessions, socket.assigns.current_user)

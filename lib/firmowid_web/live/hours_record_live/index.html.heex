@@ -1,30 +1,27 @@
 <div class="container mx-auto p-6">
-  <div class="flex justify-end gap-4">
+  <div class="flex justify-end gap-4 mb-14">
+    <.link navigate={~p"/czasosledz/"} class="mr-auto my-auto">
+      <.icon name="hero-arrow-left-circle-solid" />
+    </.link>
+
+    <.link navigate={~p"/czasosledz/ewidencja"} class={button_styles(%{color: "light_grey"})}>
+      {if @current_user.role == :employee, do: "Twoje projekty", else: "Ewidencja"}
+    </.link>
+
     <.link
       :if={Bodyguard.permit?(Firmowid.Timetracker, :read_projects, @current_user)}
       navigate={~p"/czasosledz/projekty"}
-      class={button_styles(%{color: "grey", variant: "outline"})}
+      class={button_styles(%{color: "none"})}
     >
-      Zarządzanie
+      Zarządzaj projektami
     </.link>
 
     <.link
-      navigate={~p"/czasosledz"}
-      class={[
-        classes([
-          "hover:underline",
-          button_styles(%{color: "grey", variant: "outline"})
-        ])
-      ]}
+      :if={Bodyguard.permit?(Firmowid.Timetracker, :create_project, @current_user)}
+      navigate={~p"/czasosledz/projekty/dodaj"}
+      class={classes(["ml-2", button_styles(%{color: "black"})])}
     >
-      Czasośledz
-    </.link>
-
-    <.link
-      navigate={~p"/czasosledz/ewidencja"}
-      class={classes(["hover:underline", button_styles(%{color: "grey"})])}
-    >
-      Ewidencja
+      <.icon name="hero-plus-mini" class="size-6 mr-1.5" /> Dodaj projekt
     </.link>
   </div>
   <div class="flex max-lg:gap-2 gap-16">

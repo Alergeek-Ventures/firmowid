@@ -5,7 +5,6 @@ defmodule FirmowidWeb.Project.Index do
   alias FirmowidWeb.Helpers.TimeFormatter
   alias Firmowid.Repo
   use FirmowidWeb, :live_view
-  import FirmowidWeb.Components.Timetracker.SubnavigationButtons
 
   defmodule EmployeeSalaryForm do
     use Firmowid.Schema

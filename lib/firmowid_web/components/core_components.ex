@@ -173,10 +173,6 @@ defmodule FirmowidWeb.CoreComponents do
     "hover:border-darkGrey border border-transparent font-bold text-darkGrey"
   end
 
-  defp button_styles(:color, %{color: "light_grey"}) do
-    "bg-greyButtonBg hover:border-darkGrey border border-transparent font-bold text-darkGrey"
-  end
-
   defp button_styles(:color, %{color: "light_orange"}) do
     "font-bold bg-orangeBg text-orangeText border-none hover:bg-[#f0e0d8] focus:outline-none focus:ring-1 focus:ring-orangeText"
   end
@@ -187,6 +183,10 @@ defmodule FirmowidWeb.CoreComponents do
 
   defp button_styles(:color, %{color: "grey"}) do
     "text-white border-darkGrey bg-darkGrey disabled:cursor-default disabled:text-white hover:opacity-60 disabled:bg-darkGrey"
+  end
+
+  defp button_styles(:color, %{variant: "outline", color: "light_grey"}) do
+    "border border-greyButtonBg text-darkGrey hover:bg-greyButtonBg"
   end
 
   defp button_styles(:color, %{variant: "outline", color: "black"}) do
@@ -215,6 +215,10 @@ defmodule FirmowidWeb.CoreComponents do
 
   defp button_styles(:color, %{color: "orange"}) do
     "text-white border-none bg-orangeText hover:bg-orangeBg hover:text-orangeText disabled:cursor-default disabled:bg-orangeText disabled:text-white phx-click-loading:bg-orangeText phx-click-loading:text-white"
+  end
+
+  defp button_styles(:color, %{color: "light_grey"}) do
+    "bg-greyButtonBg hover:border-darkGrey border border-transparent font-bold text-darkGrey"
   end
 
   defp button_styles(:color, %{variant: "outline"}),
