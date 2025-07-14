@@ -145,6 +145,10 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
          |> expand_sessions(session)
          |> assign_sessions()}
 
+      {:error, :overlap} ->
+        LiveToast.send_toast(:error, "Sesja nachodzi na inną sesję.")
+        {:noreply, socket}
+
       {:error, changeset} ->
         {:noreply, socket |> assign(:form, to_form(changeset))}
     end
@@ -211,8 +215,16 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
            attr: "phx-remove"
          })}
 
-      {:error, _changeset} ->
-        LiveToast.send_toast(:error, "Nie udało się zaktualizować sesji")
+      {:error, :overlap} ->
+        LiveToast.send_toast(:error, "Sesja nachodzi na inną sesję.")
+        {:noreply, socket}
+
+      {:error, changeset} ->
+        changeset.errors
+        |> Enum.each(fn {_field, {message, _}} ->
+          LiveToast.send_toast(:error, "#{message}")
+        end)
+
         {:noreply, socket}
     end
   end

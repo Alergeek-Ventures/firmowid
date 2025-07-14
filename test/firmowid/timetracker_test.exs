@@ -77,14 +77,14 @@ defmodule Firmowid.TimetrackerTest do
         %{
           user_id: user1.id,
           project_id: project.id,
-          start_datetime: ~U[2025-04-01 00:00:00Z],
-          end_datetime: ~U[2025-04-01 01:00:00Z]
+          start_datetime: ~U[2025-04-01 01:00:00Z],
+          end_datetime: ~U[2025-04-01 02:00:00Z]
         },
         %{
           user_id: user1.id,
           project_id: project.id,
-          start_datetime: ~U[2025-04-01 00:00:00Z],
-          end_datetime: ~U[2025-04-01 01:00:00Z]
+          start_datetime: ~U[2025-04-01 02:00:00Z],
+          end_datetime: ~U[2025-04-01 03:00:00Z]
         }
       ]
 
@@ -124,8 +124,8 @@ defmodule Firmowid.TimetrackerTest do
       session_fixture(%{
         user_id: user.id,
         project_id: project2.id,
-        start_datetime: ~U[2025-04-01 00:00:00Z],
-        end_datetime: ~U[2025-04-01 01:00:00Z]
+        start_datetime: ~U[2025-04-01 01:00:00Z],
+        end_datetime: ~U[2025-04-01 02:00:00Z]
       })
 
       assert Timetracker.get_total_time_worked(4, 2025) == 120 * 60
@@ -206,15 +206,15 @@ defmodule Firmowid.TimetrackerTest do
     session_fixture(%{
       user_id: user.id,
       project_id: project1.id,
-      start_datetime: ~U[2025-05-01 00:00:00Z],
-      end_datetime: ~U[2025-05-01 02:00:00Z]
+      start_datetime: ~U[2025-05-01 01:00:00Z],
+      end_datetime: ~U[2025-05-01 03:00:00Z]
     })
 
     session_fixture(%{
       user_id: user.id,
       project_id: project2.id,
-      start_datetime: ~U[2025-04-01 00:00:00Z],
-      end_datetime: ~U[2025-04-01 02:00:00Z]
+      start_datetime: ~U[2025-04-01 03:00:00Z],
+      end_datetime: ~U[2025-04-01 05:00:00Z]
     })
 
     %{project: project, time_worked: time_worked} =
@@ -277,5 +277,57 @@ defmodule Firmowid.TimetrackerTest do
       assert user_summary.time_worked == 3600
       assert user_summary.removed_from_project == true
     end
+  end
+
+  test "prevents overlapping sessions for the same user" do
+    user = user_fixture()
+    project = project_fixture()
+    user_project_fixture(user.id, project.id)
+
+    # First session
+    session_fixture(%{
+      user_id: user.id,
+      project_id: project.id,
+      start_datetime: ~U[2025-04-01 00:00:00Z],
+      end_datetime: ~U[2025-04-01 01:00:00Z]
+    })
+
+    # Overlapping session using context (should return {:error, :overlap})
+    result =
+      Timetracker.start_session(%{
+        "user_id" => user.id,
+        "project_id" => project.id,
+        "title" => "Overlap",
+        "start_datetime" => ~U[2025-04-01 00:30:00Z],
+        "end_datetime" => ~U[2025-04-01 01:30:00Z]
+      })
+
+    assert result == {:error, :overlap}
+  end
+
+  test "prevents overlapping ongoing sessions (end_datetime is nil)" do
+    user = user_fixture()
+    project = project_fixture()
+    user_project_fixture(user.id, project.id)
+
+    # Ongoing session
+    session_fixture(%{
+      user_id: user.id,
+      project_id: project.id,
+      start_datetime: ~U[2025-04-01 00:00:00Z],
+      end_datetime: nil
+    })
+
+    # Another ongoing session, overlapping in time, should NOT be allowed (should return {:error, :overlap})
+    result =
+      Timetracker.start_session(%{
+        "user_id" => user.id,
+        "project_id" => project.id,
+        "title" => "Overlap",
+        "start_datetime" => ~U[2025-04-01 00:30:00Z],
+        "end_datetime" => nil
+      })
+
+    assert result == {:error, :overlap}
   end
 end

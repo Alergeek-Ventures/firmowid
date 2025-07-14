@@ -292,12 +292,21 @@ defmodule Firmowid.Timetracker do
   end
 
   def start_session(attrs \\ %{}) do
-    %Session{}
-    |> Session.changeset(attrs)
-    |> Repo.insert()
-    |> case do
-      {:ok, session} -> {:ok, Session.put_duration(session)}
-      rest -> rest
+    try do
+      %Session{}
+      |> Session.changeset(attrs)
+      |> Repo.insert()
+      |> case do
+        {:ok, session} -> {:ok, Session.put_duration(session)}
+        rest -> rest
+      end
+    rescue
+      e in Postgrex.Error ->
+        if e.postgres.message =~ "overlaps" do
+          {:error, :overlap}
+        else
+          reraise e, __STACKTRACE__
+        end
     end
   end
 
@@ -380,10 +389,19 @@ defmodule Firmowid.Timetracker do
   end
 
   def update_session(session_id, attrs) do
-    Session
-    |> Repo.get(session_id)
-    |> Session.changeset(attrs)
-    |> Repo.update()
+    try do
+      Session
+      |> Repo.get(session_id)
+      |> Session.changeset(attrs)
+      |> Repo.update()
+    rescue
+      e in Postgrex.Error ->
+        if e.postgres.message =~ "overlaps" do
+          {:error, :overlap}
+        else
+          reraise e, __STACKTRACE__
+        end
+    end
   end
 
   @doc """

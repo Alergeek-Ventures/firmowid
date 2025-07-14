@@ -98,6 +98,8 @@
           />
         </div>
 
+        <p :for={{error, _} <- Keyword.get_values(@form.errors, :base)}>{error}</p>
+
         <div :if={@current_session} class="text-center mt-2">
           <p
             class="text-2xl font-bold text-orangeText"
