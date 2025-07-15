@@ -20,9 +20,30 @@ defmodule Firmowid.Invoicing do
 
   @behaviour Bodyguard.Policy
 
+  @pubsub_topic "invoicing_broadcast"
+
   def authorize(_, %User{role: :admin}, _), do: true
 
   def authorize(_, _, _), do: false
+
+  def subscribe_invoicing_broadcast(organization_id) do
+    Phoenix.PubSub.subscribe(
+      Firmowid.PubSub,
+      "#{@pubsub_topic}:#{organization_id}"
+    )
+  end
+
+  defp broadcast_cost_invoice_match(organization_id, cost_invoice, transaction) do
+    Phoenix.PubSub.broadcast(
+      Firmowid.PubSub,
+      "#{@pubsub_topic}:#{organization_id}",
+      {:cost_invoice_match,
+       %{
+         cost_invoice_id: cost_invoice.id,
+         transaction_id: transaction.id
+       }}
+    )
+  end
 
   @doc """
   Returns all months with invoicing entries - so all months where Firmowid can function.
@@ -254,6 +275,12 @@ defmodule Firmowid.Invoicing do
             cost_invoice.id,
             transaction.id,
             organization_id
+          )
+
+          broadcast_cost_invoice_match(
+            organization_id,
+            cost_invoice,
+            transaction
           )
 
           Logger.info(

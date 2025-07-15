@@ -40,6 +40,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
       CostInvoices.subscribe_cost_invoice_broadcast(organization_id)
       Finances.subscribe_transaction_broadcast(organization_id)
       SalesInvoices.subscribe_sales_invoice_broadcast(organization_id)
+      Invoicing.subscribe_invoicing_broadcast(organization_id)
     end
 
     socket =
@@ -271,6 +272,14 @@ defmodule FirmowidWeb.InvoicingLive.Index do
         """
       end
     )
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:cost_invoice_match, _}, socket) do
+    socket =
+      socket
+      |> refetch_invoicing_entries()
 
     {:noreply, socket}
   end
