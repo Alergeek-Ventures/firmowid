@@ -36,7 +36,8 @@ config :firmowid, Firmowid.Repo,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   migration_primary_key: [name: :id, type: :binary_id],
-  migration_timestamps: [type: :utc_datetime]
+  migration_timestamps: [type: :utc_datetime],
+  types: Firmowid.PostgrexTypes
 
 # Configures the endpoint
 config :firmowid, FirmowidWeb.Endpoint,

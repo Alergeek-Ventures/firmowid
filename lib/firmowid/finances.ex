@@ -1,4 +1,5 @@
 defmodule Firmowid.Finances do
+  import Paradex, only: [~>: 2]
   import Ecto.Query, warn: false
 
   alias Firmowid.Repo
@@ -95,17 +96,63 @@ defmodule Firmowid.Finances do
     |> Repo.preload(:sales_invoices_transactions)
   end
 
-  def search_transactions(query) do
-    Transaction
-    # match any field, seller / buyer / information / amount / date / currency
-    |> where(
-      [t],
-      ilike(t.creditor_name, ^"%#{query}%") or
-        ilike(t.debtor_name, ^"%#{query}%") or
-        ilike(t.remittance_information_unstructured, ^"%#{query}%") or
-        ilike(t.transaction_currency, ^"%#{query}%")
-    )
-    |> limit(15)
+  def search_transactions(params) do
+    query = Map.get(params, :query)
+    amount_from = Map.get(params, :amount_from)
+    amount_to = Map.get(params, :amount_to)
+    date_from = Map.get(params, :date_from)
+    date_to = Map.get(params, :date_to)
+
+    base_query = Transaction
+
+    base_query =
+      if amount_from do
+        where(base_query, [t], t.transaction_amount >= ^amount_from)
+      else
+        base_query
+      end
+
+    base_query =
+      if amount_to do
+        where(base_query, [t], t.transaction_amount <= ^amount_to)
+      else
+        base_query
+      end
+
+    base_query =
+      if date_from do
+        where(base_query, [t], t.booking_date >= ^date_from or t.value_date >= ^date_from)
+      else
+        base_query
+      end
+
+    base_query =
+      if date_to do
+        where(base_query, [t], t.booking_date <= ^date_to or t.value_date <= ^date_to)
+      else
+        base_query
+      end
+
+    base_query =
+      if query && query != "" do
+        base_query
+        |> where(
+          [
+            t
+          ],
+          t.debtor_name ~> ^query or
+            t.creditor_name ~> ^query or
+            t.remittance_information_unstructured ~> ^query or
+            t.transaction_currency ~> ^query
+        )
+        |> order_by([t], fragment("paradedb.score(?) DESC", t.id))
+      else
+        base_query
+        |> order_by([t], desc: t.booking_date)
+      end
+
+    base_query
+    |> limit(50)
     |> Repo.all()
   end
 
