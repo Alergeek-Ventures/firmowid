@@ -39,8 +39,8 @@ defmodule Firmowid.Invoicing do
       "#{@pubsub_topic}:#{organization_id}",
       {:cost_invoice_match,
        %{
-         cost_invoice_id: cost_invoice.id,
-         transaction_id: transaction.id
+         cost_invoice: cost_invoice,
+         transaction: transaction
        }}
     )
   end

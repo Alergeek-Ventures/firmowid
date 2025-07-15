@@ -276,10 +276,30 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     {:noreply, socket}
   end
 
-  def handle_info({:cost_invoice_match, _}, socket) do
+  def handle_info({:cost_invoice_match, %{cost_invoice: cost_invoice}}, socket) do
     socket =
       socket
       |> refetch_invoicing_entries()
+
+    LiveToast.send_toast(
+      :success,
+      "#{cost_invoice.issue_date} / #{cost_invoice.seller_display_name}",
+      title: "Połączenie faktury z transakcją",
+      action: fn assigns ->
+        assigns =
+          assigns
+          |> assign(
+            :issue_date,
+            cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601()
+          )
+
+        ~H"""
+        <.link class="text-sm text-bold underline" navigate={~p"/?month=#{@issue_date}&filter=invoices"}>
+          Wyświetl <.icon name="hero-arrow-right-solid" class="h-3 w-3" />
+        </.link>
+        """
+      end
+    )
 
     {:noreply, socket}
   end
