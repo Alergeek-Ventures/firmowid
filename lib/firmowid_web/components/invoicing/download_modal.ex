@@ -23,7 +23,8 @@ defmodule FirmowidWeb.Components.Invoicing.DownloadModal do
         phx-hook="Tippy"
         class="relative flex flex-row gap-4 items-center justify-center
             rounded-lg px-3 py-2 max-md:hidden bg-greyButtonBg
-            border-greyButtonBg hover:border-darkGrey border transition-colors"
+            border-greyButtonBg hover:border-darkGrey hover:bg-darkGrey
+            hover:text-white border transition-colors"
       >
         <.icon name="hero-cloud-arrow-down" class="w-6 h-6" />
         <span class="max-xl:hidden">

@@ -8,8 +8,8 @@
 </div>
 
 <div class={[
-  "flex max-md:justify-center justify-between py-4",
-  "sticky top-[80px] bg-lightGreyBg z-10"
+  "flex max-md:justify-center justify-between py-3",
+  "sticky top-[64px] bg-lightGreyBg z-10"
 ]}>
   <.date_picker
     id="month"
@@ -32,10 +32,14 @@
       id="sales-invoice-link"
       data-tippy-content="Wystaw fakturę sprzedażową"
       phx-hook="Tippy"
-      class="
-      relative flex flex-row gap-4 items-center justify-center
-      rounded-lg px-3 py-2 max-md:hidden bg-greyButtonBg
-      border-greyButtonBg hover:border-darkGrey border transition-colors"
+      class={
+        button_styles(%{
+          class: "relative flex flex-row gap-4 items-center justify-center
+                  rounded-lg px-3 py-2 max-md:hidden bg-greyButtonBg border-greyButtonBg
+                  hover:border-blueText hover:bg-blueText hover:text-white
+                  border transition-colors text-black"
+        })
+      }
     >
       <.icon name="hero-document-duplicate" class="w-5 h-5" />
       <span class="max-xl:hidden">
@@ -57,8 +61,9 @@
           button_styles(%{
             class: [
               "relative flex flex-row  items-center justify-between",
-              "border box-border rounded-lg px-3 py-2 border-black hover:bg-greyButtonBg",
-              "hover:text-black transition-colors max-md:h-16 max-md:w-64",
+              "border box-border rounded-lg px-3 py-2 border-black",
+              "hover:border-orangeText hover:bg-orangeText hover:text-white",
+              "transition-colors max-md:h-16 max-md:w-64",
               "max-md:gap-4 text-md font-normal max-lg:w-auto w-44",
               @is_month_closed && @params.filter == :unmatched && "!bg-transparent !text-black"
             ]
@@ -103,7 +108,7 @@
 <div class={[
   !@is_month_touched && "hidden",
   "flex flex-row gap-4 items-center max-md:hidden",
-  "my-4"
+  "mt-4 mb-3"
 ]}>
   <%= for {filter, label} <- [
         {:invoices, "Faktury"},

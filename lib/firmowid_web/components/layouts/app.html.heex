@@ -1,7 +1,7 @@
 <%= if @current_user && !is_nil(@current_user.organization_id) do %>
   <nav class={[
     "px-4 sm:px-6 lg:px-8 bg-black text-white flex",
-    "items-center  justify-between h-20 py-6",
+    "items-center justify-between h-16 py-6",
     "text-sm sticky top-0 z-50"
   ]}>
     <.link navigate={~p"/"} class="font-bold text-lg inline-block w-[240px]">
@@ -10,11 +10,23 @@
 
     <div class="flex uppercase items-center gap-16 max-md:hidden">
       <%= if Bodyguard.permit?(Firmowid.Invoicing, :show, @current_user) do %>
-        <.link navigate={~p"/"} class="hover:underline flex items-center gap-2">
+        <.link
+          navigate={~p"/"}
+          class={[
+            @current_uri.path == "/" && "opacity-90",
+            "flex items-center gap-2 transition-all hover:opacity-100 opacity-50"
+          ]}
+        >
           <.icon name="hero-clipboard-document-list" class="w-5 h-5" /> Fakturowanie
         </.link>
       <% end %>
-      <.link navigate={~p"/czasosledz"} class="hover:underline flex items-center gap-2">
+      <.link
+        navigate={~p"/czasosledz"}
+        class={[
+          @current_uri.path == "/czasosledz" && "opacity-90",
+          "flex items-center gap-2 transition-all hover:opacity-100 opacity-50"
+        ]}
+      >
         <.icon name="hero-clock" class="w-5 h-5" /> Czasośledź
         <span
           id="czasosledz-beta"

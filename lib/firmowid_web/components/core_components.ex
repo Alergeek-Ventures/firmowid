@@ -141,8 +141,8 @@ defmodule FirmowidWeb.CoreComponents do
   def button_styles(assigns) do
     classes([
       "phx-submit-loading:opacity-75 phx-click-loading:opacity-75 phx-click-loading:cursor-default cursor-pointer rounded-md transition-all",
-      "duration-200 border py-2 px-3 leading-6",
-      "text-sm font-semibold disabled:opacity-40 disabled:pointer-events-none active:text-white/80",
+      "duration-200 border py-1 px-2 leading-6 rounded-lg",
+      "text-sm disabled:opacity-40 disabled:pointer-events-none active:text-white/80",
       button_styles(:color, assigns),
       button_styles(:size, assigns),
       assigns[:class]
@@ -150,15 +150,15 @@ defmodule FirmowidWeb.CoreComponents do
   end
 
   defp button_styles(:size, %{size: "medium", variant: "solid"}) do
-    "text-base py-2.5 px-4 font-bold"
+    "text-base py-1 px-2"
   end
 
   defp button_styles(:size, %{size: "small", variant: "solid"}) do
-    "text-sm px-2 py-1 font-semibold"
+    "text-sm px-2 py-1"
   end
 
   defp button_styles(:size, %{size: "medium"}) do
-    "text-base py-2.5 px-4"
+    "text-base py-2 px-3"
   end
 
   defp button_styles(:size, %{size: "small"}) do
@@ -170,11 +170,11 @@ defmodule FirmowidWeb.CoreComponents do
   end
 
   defp button_styles(:color, %{color: "none"}) do
-    "hover:border-darkGrey border border-transparent font-bold text-darkGrey"
+    "hover:border-transparent border border-transparent text-darkGrey"
   end
 
   defp button_styles(:color, %{color: "light_orange"}) do
-    "font-bold bg-orangeBg text-orangeText border-none hover:bg-[#f0e0d8] focus:outline-none focus:ring-1 focus:ring-orangeText"
+    "bg-orangeBg text-orangeText border-none hover:bg-[#f0e0d8] focus:outline-none focus:ring-1 focus:ring-orangeText"
   end
 
   defp button_styles(:color, %{color: "grey", variant: "outline"}) do
@@ -218,7 +218,7 @@ defmodule FirmowidWeb.CoreComponents do
   end
 
   defp button_styles(:color, %{color: "light_grey"}) do
-    "bg-greyButtonBg hover:border-darkGrey border border-transparent font-bold text-darkGrey"
+    "bg-greyButtonBg hover:border-transparent Grey border border-transparent text-darkGrey"
   end
 
   defp button_styles(:color, %{variant: "outline"}),
@@ -451,7 +451,7 @@ defmodule FirmowidWeb.CoreComponents do
 
   def label(assigns) do
     ~H"""
-    <label for={@for} class={classes(["block text-sm font-semibold leading-6
+    <label for={@for} class={classes(["block text-sm leading-6
       text-zinc-800", @class])}>
       {render_slot(@inner_block)}
     </label>
@@ -762,7 +762,8 @@ defmodule FirmowidWeb.CoreComponents do
   def date_picker(assigns) do
     ~H"""
     <label class={classes(["flex w-44 justify-between gap-4 items-center h-full bg-greyButtonBg
-        hover:border-darkGrey border border-transparent transition-colors
+        border border-transparent group
+        hover:bg-darkGrey hover:text-white transition-all transform ease-out duration-200
         rounded-lg py-2 px-3 max-md:hidden has-[:disabled]:opacity-40", @class])}>
       <input
         type="button"
@@ -780,7 +781,7 @@ defmodule FirmowidWeb.CoreComponents do
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        class="max-md:hidden fill-darkGrey size-[1.5em]"
+        class="max-md:hidden fill-darkGrey group-hover:fill-white size-[1.5em]"
       >
         <path d="M12 12H17V17H12V12ZM19 3H18V1H16V3H8V1H6V3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 5V7H5V5H19ZM5 19V9H19V19H5Z" />
       </svg>

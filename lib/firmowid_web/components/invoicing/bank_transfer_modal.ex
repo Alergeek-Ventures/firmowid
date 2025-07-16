@@ -21,7 +21,7 @@ defmodule FirmowidWeb.Components.Invoicing.BankTransferModal do
         phx-click={show_modal("bank-transfer-modal")}
         type="button"
         class={[
-          "text-xs h-6 w-32 uppercase",
+          "text-xs h-8 w-32 uppercase",
           "shrink-0 flex flex-row justify-center items-center py-2 px-2 rounded-md",
           "transition-all duration-500",
           "bg-darkGrey text-white"
@@ -35,7 +35,7 @@ defmodule FirmowidWeb.Components.Invoicing.BankTransferModal do
         class="max-w-[1000px]"
         on_cancel={hide_modal("bank-transfer-modal")}
       >
-        <div class="flex flex-col gap-20 p-4">
+        <div class="flex flex-col gap-12 p-4">
           <h3 class="text-center text-lg font-semibold">Dane do przelewu</h3>
           <div class="grid grid-cols-[150px,1fr,32px] gap-4">
             <%= for {label, value} <- [
@@ -47,10 +47,10 @@ defmodule FirmowidWeb.Components.Invoicing.BankTransferModal do
               {"Kwota", @invoice.total_amount |> Decimal.abs()},
               {"Waluta", @invoice.currency}
           ] do %>
-              <label for={"transfer-#{label}"} class="text-sm uppercase font-semibold self-start">
+              <label for={"transfer-#{label}"} class="text-sm self-start">
                 {label}
               </label>
-              <code id={"transfer-#{label}"} class="text-right">{value}</code>
+              <code id={"transfer-#{label}"} class="text-right text-black">{value}</code>
               <button
                 id={"copy-#{label}"}
                 onclick={"navigator.clipboard.writeText('#{value}')"}
@@ -68,17 +68,22 @@ defmodule FirmowidWeb.Components.Invoicing.BankTransferModal do
               </button>
             <% end %>
           </div>
-          <button
-            class={[
-              "max-w-[300px] self-end bg-greyButtonBg text-darkGrey",
-              "hover:bg-darkGrey hover:text-lightGreyBg",
-              "rounded px-2 py-1 uppercase",
-              "transition-all transition-duration-300"
-            ]}
-            phx-click={hide_modal("bank-transfer-modal")}
-          >
-            Gotowe
-          </button>
+          <div class="flex flex-row gap-6">
+            <h4 class="text-center flex-grow text-orangeText bg-orangeBg rounded px-4 py-2">
+              Zawsze weryfikuj kopiowane dane z fakturą!
+            </h4>
+            <button
+              class={[
+                "max-w-[300px] self-end bg-orangeText text-white",
+                "hover:bg-darkGrey hover:text-lightGreyBg",
+                "rounded px-4 py-2",
+                "transition-all transition-duration-300"
+              ]}
+              phx-click={hide_modal("bank-transfer-modal")}
+            >
+              Gotowe
+            </button>
+          </div>
         </div>
       </.modal>
     </span>

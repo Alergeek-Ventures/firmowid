@@ -205,12 +205,12 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
       <div class="flex flex-row justify-between items-center">
         <p class="uppercase">Transakcja pominięta</p>
         <div class="flex flex-row gap-2 w-32 overflow-hidden">
-          <div class="text-xs h-6 flex flex-row justify-center items-center py-2 px-2 rounded-md transition-all duration-500 w-20 bg-greenBg text-greenText">
+          <div class="text-xs h-8 flex flex-row justify-center items-center py-2 px-2 rounded-md transition-all duration-500 w-20 bg-greenBg text-greenText">
             <.icon name="hero-document-text-solid" class="h-4 w-4" />
           </div>
           <button
             phx-click="toggle-invoicing"
-            class="w-20 h-6 uppercase text-xs text-darkGrey bg-greyButtonBg rounded-md"
+            class="w-20 h-8 uppercase text-xs text-darkGrey bg-greyButtonBg rounded-md"
           >
             <.icon name="hero-arrow-uturn-left-micro" class="h-4 w-4" />
           </button>
@@ -252,12 +252,12 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
             Pomiń jej szukanie. Firmowid oznaczy ją jako rozliczoną poza systemem.
           </p>
           <div class="flex shrink-0 flex-row gap-2 w-32 overflow-hidden">
-            <div class="text-xs h-6 flex flex-row justify-center items-center py-2 px-2 rounded-md transition-all duration-500 w-10 text-darkGrey bg-greyButtonBg">
+            <div class="text-xs h-8 flex flex-row justify-center items-center py-2 px-2 rounded-md transition-all duration-500 w-10 text-darkGrey bg-greyButtonBg">
               <.icon name="hero-document-text-solid" class="h-4 w-4" />
             </div>
             <button
               phx-click="toggle-invoicing"
-              class="transition-all duration-500 cursor-pointer w-20 h-6 uppercase text-xs text-darkGrey bg-greyButtonBg rounded-md"
+              class="transition-all duration-500 cursor-pointer w-20 h-8 uppercase text-xs text-darkGrey bg-greyButtonBg rounded-md"
             >
               Pomiń
             </button>

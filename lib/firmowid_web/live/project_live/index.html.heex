@@ -19,7 +19,7 @@
     <.link
       :if={Bodyguard.permit?(Firmowid.Timetracker, :create_project, @current_user)}
       navigate={~p"/czasosledz/projekty/dodaj"}
-      class={classes(["ml-2", button_styles(%{color: "black"})])}
+      class={classes(["ml-2 !pr-4", button_styles(%{color: "black"})])}
     >
       <.icon name="hero-plus-mini" class="size-6 mr-1.5" /> Dodaj projekt
     </.link>
@@ -56,7 +56,7 @@
         active_months={@active_months}
         selected_date={@selected_date}
         disabled={@is_editing_users}
-        class="-col-start-1 font-bold px-4 py-2.5 text-darkGrey max-w-[360px] h-full w-full"
+        class="-col-start-1 px-4 py-2.5 text-darkGrey max-w-[360px] h-full w-full"
       />
     </div>
 

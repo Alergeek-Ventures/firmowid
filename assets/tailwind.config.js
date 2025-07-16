@@ -18,7 +18,7 @@ module.exports = {
       padding: "2rem",
     },
     fontSize: {
-      xs: "11px",
+      xs: "12px",
       sm: "14px",
       base: "16px",
       lg: "20px",
@@ -28,49 +28,48 @@ module.exports = {
     },
     fontFamily: {
       sans: ["Lexend", "ui-sans-serif", "system-ui", "sans-serif"],
-      
     },
     colors: require("./tailwind.colors.json"),
     extend: {
       keyframes: {
         "fade-and-scale-out": {
-          '0%': {
-            opacity: '1',
-            maxHeight: '200px',
+          "0%": {
+            opacity: "1",
+            maxHeight: "200px",
           },
-          '70%': {
-            opacity: '0',
-            maxHeight: '0px',
+          "70%": {
+            opacity: "0",
+            maxHeight: "0px",
           },
-          '100%': {
-            opacity: '0',
-            maxHeight: '0px',
-            margin: '0px',
-          }
+          "100%": {
+            opacity: "0",
+            maxHeight: "0px",
+            margin: "0px",
+          },
         },
         "slide-from-center": {
-          '0%': {
-            opacity: '0',
-            transform: 'translateX(-30px)',
+          "0%": {
+            opacity: "0",
+            transform: "translateX(-30px)",
           },
-          '100%': {
-            opacity: '1',
-            transform: 'translateX(0)',
-          }
+          "100%": {
+            opacity: "1",
+            transform: "translateX(0)",
+          },
         },
-        "appear": {
-          '0%': {
-            opacity: '0',
+        appear: {
+          "0%": {
+            opacity: "0",
           },
-          '100%': {
-            opacity: '1',
-          }
+          "100%": {
+            opacity: "1",
+          },
         },
       },
       animation: {
-        "list-item-removal": 'fade-and-scale-out 300ms ease-out forwards',
-        "slide-from-center": 'slide-from-center 300ms ease-out forwards',
-        "appear": 'appear 700ms ease-out forwards'
+        "list-item-removal": "fade-and-scale-out 300ms ease-out forwards",
+        "slide-from-center": "slide-from-center 300ms ease-out forwards",
+        appear: "appear 700ms ease-out forwards",
       },
     },
   },
@@ -86,19 +85,19 @@ module.exports = {
       addVariant("phx-click-loading", [
         ".phx-click-loading&",
         ".phx-click-loading &",
-      ])
+      ]),
     ),
     plugin(({ addVariant }) =>
       addVariant("phx-submit-loading", [
         ".phx-submit-loading&",
         ".phx-submit-loading &",
-      ])
+      ]),
     ),
     plugin(({ addVariant }) =>
       addVariant("phx-change-loading", [
         ".phx-change-loading&",
         ".phx-change-loading &",
-      ])
+      ]),
     ),
 
     // Embeds Heroicons (https://heroicons.com) into your app.css bundle
@@ -145,7 +144,7 @@ module.exports = {
             };
           },
         },
-        { values }
+        { values },
       );
     }),
   ],
