@@ -54,4 +54,13 @@ defmodule FirmowidWeb.Helpers.TimeFormatter do
     |> Enum.filter(& &1)
     |> Enum.join(" ")
   end
+
+  def format_date(date) when is_binary(date) do
+    Date.from_iso8601!(date)
+    |> format_date()
+  end
+
+  def format_date(date) do
+    Calendar.strftime(date, "%d.%m.%Y")
+  end
 end

@@ -12,5 +12,12 @@
   "greyButtonBg": "#DDDDDD",
   "darkGrey": "#4E4E4E",
   "lightGreyBg": "#F5F5F5",
-  "transparent": "transparent"
+  "transparent": "transparent",
+  "grey-50": "#FAFAFA",
+  "grey-200": "#DDDDDD",
+  "grey-300": "#CCCCCC",
+  "grey-400": "#B5B5B5",
+  "grey-700": "#4E4E4E",
+  "orange-100": "#F0EAE6",
+  "orange-900": "#4E2005"
 }

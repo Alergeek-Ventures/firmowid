@@ -22,6 +22,7 @@ defmodule FirmowidWeb.CostInvoiceLive.Show do
       |> assign(:potential_transactions, potential_transactions)
       |> assign(:preview_url, cost_invoice.blob_url)
       |> assign(:preview_type, preview_type)
+      |> assign(:current_user, current_user)
       |> assign(:no_padding, true)
 
     {:ok, socket}
@@ -37,6 +38,7 @@ defmodule FirmowidWeb.CostInvoiceLive.Show do
       preview_url={@preview_url}
       preview_type={@preview_type}
       potential_transactions={@potential_transactions}
+      current_user={@current_user}
     />
     """
   end
@@ -81,5 +83,16 @@ defmodule FirmowidWeb.CostInvoiceLive.Show do
     CostInvoices.delete_cost_invoices_transactions_connections(socket.assigns.invoice.id)
     invoice = CostInvoices.get_cost_invoice_with_blob_url!(socket.assigns.invoice.id)
     {:noreply, assign(socket, :invoice, invoice)}
+  end
+
+  @impl true
+  def handle_info(event, socket) do
+    # Forward events to the assistant component
+    send_update(FirmowidWeb.CostInvoiceLive.Assistant,
+      id: "cost-invoice-assistant",
+      event: event
+    )
+
+    {:noreply, socket}
   end
 end

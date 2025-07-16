@@ -201,13 +201,13 @@ matches = Matches.read_state()
 cost_invoices_to_match =
   cost_invoices
   |> Enum.filter(fn cost_invoice ->
-    not Enum.any?(
-      matches.cost_invoice_matches,
-      fn match ->
-        match.cost_invoice_id == cost_invoice.id
-      end
-    )
-  end)
+   not Enum.any?(
+     matches.cost_invoice_matches,
+     fn match ->
+       match.cost_invoice_id == cost_invoice.id
+     end
+   )
+ end)
 
 current_index =
   Kino.Input.number("Current Invoice Index",

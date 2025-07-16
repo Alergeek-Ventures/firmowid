@@ -96,9 +96,11 @@ defmodule Firmowid.MixProject do
       {:reverse_proxy_plug, "~> 3.0"},
       {:ecto_dev_logger, "~> 0.14"},
       {:nx, "~> 0.10"},
+      {:mdex, "~> 0.7"},
       {:paradex, "~> 0.4.0"},
       {:sobelow, "~> 0.13", only: [:dev], runtime: Mix.env() == :dev},
-      {:dialyxir, "~> 1.4", only: [:dev], runtime: Mix.env() == :dev}
+      {:dialyxir, "~> 1.4", only: [:dev], runtime: Mix.env() == :dev},
+      {:live_debugger, "~> 0.3.0", only: [:dev], runtime: Mix.env() == :dev}
     ]
   end
 

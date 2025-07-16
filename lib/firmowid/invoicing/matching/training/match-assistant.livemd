@@ -1,0 +1,100 @@
+# Match Assistant PoC
+
+```elixir
+Mix.install(
+  [
+    {:firmowid, path: Path.join(__DIR__, "../../../../.."), env: :dev},
+    {:kino, "~> 0.13.0"}
+  ],
+  config_path: :firmowid,
+  lockfile: :firmowid,
+  start_applications: false
+)
+
+# Boot minimal prerequisites
+Application.ensure_all_started(:ecto_sql)
+Application.ensure_all_started(:kino)
+Application.ensure_all_started(:hackney)
+
+# Supervise required processes under Livebook
+{:ok, _} = Kino.start_child({Firmowid.Repo, []})
+{:ok, _} = Kino.start_child(Firmowid.Invoicing.Matching.Assistant.SessionConversation)
+```
+
+## Conversation Setup
+
+```elixir
+Firmowid.Repo.put_org_id("01948dfc-1367-7e4f-90e2-54b685167481")
+```
+
+```elixir
+invoice =
+  Firmowid.CostInvoices.list_cost_invoices(
+    ~D[2024-01-01],
+    ~D[2025-02-10]
+  )
+  |> hd()
+
+"#{invoice.seller_display_name} #{invoice.issue_date} #{invoice.total_amount}"
+```
+
+```elixir
+mobile_vikings_invoice_id = "01957157-c00d-7433-bd41-3d8b719610a4"
+mobile_vikings_invoice = Firmowid.CostInvoices.get_cost_invoice!(mobile_vikings_invoice_id)
+
+invoice = mobile_vikings_invoice
+
+"#{invoice.seller_display_name} #{invoice.issue_date} #{invoice.total_amount}"
+```
+
+```elixir
+hotel_invoice_id = "0197e013-19ac-7fd9-af84-6dd0aa4d3c39"
+hotel_invoice = Firmowid.CostInvoices.get_cost_invoice!(hotel_invoice_id)
+
+invoice = hotel_invoice
+"#{invoice.seller_display_name} #{invoice.issue_date} #{invoice.total_amount}"
+```
+
+```elixir
+alias Firmowid.Invoicing.Matching.Assistant
+alias Firmowid.Invoicing.Matching.Assistant.SessionConversation
+
+frame = Kino.Frame.new()
+inputs = [message: Kino.Input.text("Message")]
+form = Kino.Control.form(inputs, submit: "Send", reset_on_submit: [:message])
+
+Kino.render(frame)
+Kino.render(form)
+
+conversation_id = Assistant.start_conversation(invoice)
+
+render_chat = fn ->
+  # Get the full conversation history (list of LlmComposer.Message structs)
+  conversation = SessionConversation.get(conversation_id)
+
+  # Render the conversation as Markdown, showing user/assistant turns
+  markdown =
+    conversation
+    |> Enum.map(fn
+      %{type: :user, content: text} -> "**You**: #{text}"
+      %{type: :assistant, content: text} -> "**AI**: #{text}"
+      %{type: :system, content: text} -> "# System: \n\n #{text}"
+      %{type: :meta, content: text, metadata: metadata} -> "`meta`: #{inspect(metadata)}"
+      %{type: :function_result, content: text} -> "**`fcall result`**: #{text}"
+      %{type: type, content: text} -> "**#{to_string(type)}: #{text}"
+    end)
+    |> Enum.join("\n\n")
+
+  Kino.Frame.render(frame, Kino.Markdown.new(markdown))
+end
+
+render_chat.()
+
+for %{data: %{message: message}} <- Kino.Control.stream(form) do
+  _ = Assistant.send_message(conversation_id, message)
+  render_chat.()
+end
+```
+
+* `mobile_vikings`: to faktura zbiorcza za wszystkie transakcje z poprzedniego miesiąca
+* `hotel`: opłaciliśmy tę fakturę, przez booking

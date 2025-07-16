@@ -7,6 +7,7 @@
     <.live_title suffix=" · Firmowid">
       {assigns[:page_title] || "Firmowid"}
     </.live_title>
+    {Application.get_env(:live_debugger, :live_debugger_tags)}
     <link rel="icon" type="image/png" href={~p"/images/favicon.png"} />
     <link
       rel="stylesheet"

@@ -19,5 +19,11 @@ defmodule Firmowid.CostInvoices.CostInvoicesTransactions do
       :transaction_id,
       :organization_id
     ])
+    |> foreign_key_constraint(:transaction_id,
+      name: "cost_invoices_transactions_transaction_id_fkey"
+    )
+    |> foreign_key_constraint(:cost_invoice_id,
+      name: "cost_invoices_transactions_cost_invoice_id_fkey"
+    )
   end
 end

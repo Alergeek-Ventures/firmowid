@@ -2,6 +2,8 @@ defmodule Firmowid.Finances do
   import Paradex, only: [~>: 2]
   import Ecto.Query, warn: false
 
+  alias Firmowid.CostInvoices.CostInvoicesTransactions
+  alias Firmowid.SalesInvoices.SalesInvoicesTransactions
   alias Firmowid.Repo
 
   alias Firmowid.Finances.Transaction
@@ -96,25 +98,57 @@ defmodule Firmowid.Finances do
     |> Repo.preload(:sales_invoices_transactions)
   end
 
-  def search_transactions(params) do
+  def search_transactions(params \\ %{}) do
     query = Map.get(params, :query)
-    amount_from = Map.get(params, :amount_from)
-    amount_to = Map.get(params, :amount_to)
+    only_unmatched = Map.get(params, :only_unmatched, true)
+    currency = Map.get(params, :currency)
+    amount_gt = Map.get(params, :amount_gt)
+    amount_lt = Map.get(params, :amount_lt)
     date_from = Map.get(params, :date_from)
     date_to = Map.get(params, :date_to)
 
-    base_query = Transaction
+    base_query =
+      from(Transaction, as: :transaction)
+      |> preload([:cost_invoices_transactions, :sales_invoices_transactions])
 
     base_query =
-      if amount_from do
-        where(base_query, [t], t.transaction_amount >= ^amount_from)
+      if only_unmatched do
+        base_query
+        |> where(
+          [t],
+          union(
+            from(ci in CostInvoicesTransactions,
+              where: parent_as(:transaction).id == ci.transaction_id
+            ),
+            ^from(si in SalesInvoicesTransactions,
+              where: parent_as(:transaction).id == si.transaction_id
+            )
+          )
+          |> exists() == false
+        )
+        |> where([t], t.skip_invoicing == false)
       else
         base_query
       end
 
     base_query =
-      if amount_to do
-        where(base_query, [t], t.transaction_amount <= ^amount_to)
+      if currency do
+        base_query
+        |> where([t], t.transaction_currency == ^currency)
+      else
+        base_query
+      end
+
+    base_query =
+      if amount_gt do
+        where(base_query, [t], t.transaction_amount >= ^amount_gt)
+      else
+        base_query
+      end
+
+    base_query =
+      if amount_lt do
+        where(base_query, [t], t.transaction_amount <= ^amount_lt)
       else
         base_query
       end
@@ -137,9 +171,7 @@ defmodule Firmowid.Finances do
       if query && query != "" do
         base_query
         |> where(
-          [
-            t
-          ],
+          [t],
           t.debtor_name ~> ^query or
             t.creditor_name ~> ^query or
             t.remittance_information_unstructured ~> ^query or
@@ -187,6 +219,17 @@ defmodule Firmowid.Finances do
           transaction.transaction_amount
         )
     })
+  end
+
+  def get_transactions!(ids) do
+    Transaction
+    |> where([t], t.id in ^ids)
+    |> Repo.all()
+    |> Enum.map(fn transaction ->
+      Map.merge(transaction, %{
+        amount: Money.new(transaction.transaction_currency, transaction.transaction_amount)
+      })
+    end)
   end
 
   def toggle_skip_invoicing(id) do

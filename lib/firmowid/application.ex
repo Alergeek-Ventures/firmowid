@@ -19,6 +19,7 @@ defmodule Firmowid.Application do
       {Phoenix.PubSub, name: Firmowid.PubSub},
       Firmowid.BankData.TokenManager,
       {Oban, Application.fetch_env!(:firmowid, Oban)},
+      Firmowid.Invoicing.Matching.Assistant.MessagesStorage,
       # Start to serve requests, typically the last entry
       FirmowidWeb.Endpoint
     ]

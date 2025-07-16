@@ -30,13 +30,13 @@ defmodule Firmowid.FinancesSearchTest do
           debtor_name: "Another Company",
           creditor_name: "Jane Smith",
           remittance_information_unstructured: "Payment for services_user",
-          transaction_currency: "EUR",
+          transaction_currency: "USD",
           organization_id: organization_id
         }
         |> Repo.insert!()
 
       # Run the search
-      [found_transaction] = Finances.search_transactions(%{query: "Acme"})
+      [found_transaction] = Finances.search_transactions(%{query: "Acme", currency: "USD"})
 
       assert found_transaction.id == transaction1.id
       assert found_transaction.debtor_name == "Acme Corp"
@@ -70,8 +70,8 @@ defmodule Firmowid.FinancesSearchTest do
           debtor_name: "Org1 Debtor",
           creditor_name: "Org1 Creditor",
           remittance_information_unstructured: "UniqueOrg1",
-          transaction_currency: "USD",
-          organization_id: org1_id
+          organization_id: org1_id,
+          transaction_currency: "PLN"
         }
         |> Repo.insert!()
 
@@ -84,8 +84,8 @@ defmodule Firmowid.FinancesSearchTest do
           debtor_name: "Org2 Debtor",
           creditor_name: "Org2 Creditor",
           remittance_information_unstructured: "UniqueOrg2",
-          transaction_currency: "EUR",
-          organization_id: org2_id
+          organization_id: org2_id,
+          transaction_currency: "PLN"
         }
         |> Repo.insert!()
 
@@ -122,7 +122,8 @@ defmodule Firmowid.FinancesSearchTest do
           transaction_amount: 100,
           booking_date: ~D[2024-01-01],
           value_date: ~D[2024-01-02],
-          organization_id: organization_id
+          organization_id: organization_id,
+          transaction_currency: "PLN"
         }
         |> Repo.insert!()
 
@@ -132,7 +133,8 @@ defmodule Firmowid.FinancesSearchTest do
           transaction_amount: 200,
           booking_date: ~D[2024-02-01],
           value_date: ~D[2024-02-02],
-          organization_id: organization_id
+          organization_id: organization_id,
+          transaction_currency: "PLN"
         }
         |> Repo.insert!()
 
@@ -142,19 +144,20 @@ defmodule Firmowid.FinancesSearchTest do
           transaction_amount: 300,
           booking_date: ~D[2024-03-01],
           value_date: ~D[2024-03-02],
-          organization_id: organization_id
+          organization_id: organization_id,
+          transaction_currency: "PLN"
         }
         |> Repo.insert!()
 
       %{t1: t1, t2: t2, t3: t3}
     end
 
-    test "filters by amount_from and amount_to", %{t1: _t1, t2: t2, t3: _t3} do
-      results = Finances.search_transactions(%{amount_from: 150, amount_to: 250})
+    test "filters by amount_gt and amount_lt", %{t1: _t1, t2: t2, t3: _t3} do
+      results = Finances.search_transactions(%{amount_gt: 150, amount_lt: 250})
       assert Enum.map(results, & &1.id) == [t2.id]
     end
 
-    test "filters by date_from and date_to (booking_date or value_date)", %{
+    test "filters by date_from and date_to", %{
       t1: t1,
       t2: t2,
       t3: t3

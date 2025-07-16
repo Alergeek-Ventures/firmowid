@@ -228,40 +228,48 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
 
   attr :invoice, :map, required: true
   attr :show_bank_transfer_modal, :boolean, default: true
+  attr :hide_ask_assistant, :boolean, default: false
 
   def skip_invoicing(assigns) do
     ~H"""
-    <div>
-      <h3 class="text-md font-semibold my-10">Dodatkowe akcje</h3>
-      <div class="text-darkGrey flex flex-col gap-8">
-        <%= if @show_bank_transfer_modal do %>
-          <div class="flex flex-row justify-between gap-16">
-            <p>
-              Wykonaj przelew teraz - kliknij przycisk, aby skopiować potrzebne dane.
-            </p>
-            <.live_component
-              id="bank-transfer-modal"
-              module={FirmowidWeb.Components.Invoicing.BankTransferModal}
-              invoice={@invoice}
-            />
-          </div>
-        <% end %>
+    <div class="text-darkGrey flex flex-col gap-8">
+      <div :if={not @hide_ask_assistant} class="flex flex-row justify-between gap-16">
+        <p>Poproś Firmowida o pomoc w znalezieniu transakcji.</p>
+        <button
+          phx-click="show_chat"
+          phx-target="#cost-invoice-show"
+          class="cursor-pointer w-32 h-8 uppercase text-xs bg-orangeText rounded-md text-white max-w-full"
+        >
+          Zapytaj
+        </button>
+      </div>
+      <%= if @show_bank_transfer_modal do %>
         <div class="flex flex-row justify-between gap-16">
           <p>
-            A może żadna transakcja nie pasuje, bo zapłacono gotówką, lub na inne konto?
-            Pomiń jej szukanie. Firmowid oznaczy ją jako rozliczoną poza systemem.
+            Wykonaj przelew teraz - kliknij przycisk, aby skopiować potrzebne dane.
           </p>
-          <div class="flex shrink-0 flex-row gap-2 w-32 overflow-hidden">
-            <div class="text-xs h-8 flex flex-row justify-center items-center py-2 px-2 rounded-md transition-all duration-500 w-10 text-darkGrey bg-greyButtonBg">
-              <.icon name="hero-document-text-solid" class="h-4 w-4" />
-            </div>
-            <button
-              phx-click="toggle-invoicing"
-              class="transition-all duration-500 cursor-pointer w-20 h-8 uppercase text-xs text-darkGrey bg-greyButtonBg rounded-md"
-            >
-              Pomiń
-            </button>
+          <.live_component
+            id="bank-transfer-modal"
+            module={FirmowidWeb.Components.Invoicing.BankTransferModal}
+            invoice={@invoice}
+          />
+        </div>
+      <% end %>
+      <div class="flex flex-row justify-between gap-16">
+        <p>
+          A może żadna transakcja nie pasuje, bo zapłacono gotówką, lub na inne konto?
+          Pomiń jej szukanie. Firmowid oznaczy ją jako rozliczoną poza systemem.
+        </p>
+        <div class="flex shrink-0 flex-row gap-2 w-32 overflow-hidden">
+          <div class="text-xs h-8 flex flex-row justify-center items-center py-2 px-2 rounded-md transition-all duration-500 w-10 text-darkGrey bg-greyButtonBg">
+            <.icon name="hero-document-text-solid" class="h-4 w-4" />
           </div>
+          <button
+            phx-click="toggle-invoicing"
+            class="transition-all duration-500 cursor-pointer w-20 h-8 uppercase text-xs text-darkGrey bg-greyButtonBg rounded-md"
+          >
+            Pomiń
+          </button>
         </div>
       </div>
     </div>
