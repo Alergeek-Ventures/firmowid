@@ -182,8 +182,8 @@ Firmowid.Repo.put_org_id("01948dfc-1367-7e4f-90e2-54b685167481")
 ```
 
 ```elixir
-cost_invoices = Firmowid.CostInvoices.list_cost_invoices(~D[2024-01-01], ~D[2025-08-30])
-transactions = Firmowid.Finances.list_transactions(~D[2024-01-01], ~D[2025-06-30])
+cost_invoices = Firmowid.CostInvoices.list_cost_invoices(~D[2024-01-01], ~D[2030-12-30])
+transactions = Firmowid.Finances.list_transactions(~D[2024-01-01], ~D[2030-12-30])
 sales_invoices = Firmowid.SalesInvoices.list_sales_invoices()
 
 """
@@ -328,9 +328,16 @@ matches = Matches.read_state()
 
 all_data =
   matches.cost_invoice_matches
-  |> Enum.flat_map(fn %{cost_invoice_id: cost_invoice_id, transaction_id: transaction_id} ->
+  |> Enum.map(fn %{cost_invoice_id: cost_invoice_id} = a_match ->
     cost_invoice = cost_invoices |> Enum.find(&(&1.id == cost_invoice_id))
 
+    Map.merge(%{cost_invoice: cost_invoice}, a_match)
+  end)
+  |> Enum.flat_map(fn %{
+                        cost_invoice: cost_invoice,
+                        cost_invoice_id: cost_invoice_id,
+                        transaction_id: transaction_id
+                      } ->
     Firmowid.Invoicing.Matching.Windowing.pre_filter_invoice_transactions(
       cost_invoice,
       transactions
@@ -350,9 +357,6 @@ IO.puts("bad: #{length(all_data |> Enum.filter(&(!&1.match)))}")
 ```
 
 ```elixir
-# Seed RNG once for reproducibility (optional)
-:rand.seed(:exsplus, {101, 102, 103})
-
 # ---------- build feature vectors ------------------------------------------------
 rows =
   all_data

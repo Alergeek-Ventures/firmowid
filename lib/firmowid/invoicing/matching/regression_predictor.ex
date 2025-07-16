@@ -17,26 +17,27 @@ defmodule Firmowid.Invoicing.Matching.RegressionPredictor do
 
   # ───── frozen weights for class 1 (“match”) ──────────────
   # (to re-train, use the Livebook notebook from this folder)
+
   @coefficients Nx.tensor(
                   [
-                    0.948327,
-                    0.315742,
-                    0.095753,
-                    0.924194,
-                    -0.365041,
-                    -1.714436,
-                    4.582142,
+                    0.936972,
+                    0.224298,
+                    0.03375,
+                    0.732368,
+                    0.344036,
+                    -2.155922,
+                    4.250373,
                     1.0,
-                    2.055013,
-                    2.386368,
-                    4.270181
+                    1.908638,
+                    2.5067,
+                    4.453878
                   ],
                   type: {:f, 32}
                 )
 
-  @bias -1.715985
+  @bias -2.072613
 
-  @auto_match_threshold 0.9938
+  @auto_match_threshold 0.9964
 
   # ──────────────────────────────────────────────────────────
 

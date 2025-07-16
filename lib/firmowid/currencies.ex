@@ -47,9 +47,24 @@ defmodule Firmowid.Currencies do
 
   defp mock_rates do
     %{
-      EUR: Decimal.new("0.92"),
-      PLN: Decimal.new("4.05"),
-      USD: Decimal.new("1.0")
+      USD: Decimal.new("1.0"),
+      EUR: Decimal.new("0.8554"),
+      GBP: Decimal.new("0.7410"),
+      CAD: Decimal.new("1.3690"),
+      AUD: Decimal.new("1.5216"),
+      JPY: Decimal.new("147.0598"),
+      CHF: Decimal.new("0.7969"),
+      CNY: Decimal.new("7.1686"),
+      SEK: Decimal.new("9.547"),
+      NOK: Decimal.new("10.50"),
+      DKK: Decimal.new("6.39"),
+      CZK: Decimal.new("21.11"),
+      PLN: Decimal.new("3.645"),
+      HUF: Decimal.new("342.4"),
+      INR: Decimal.new("83.50"),
+      BRL: Decimal.new("5.45"),
+      MXN: Decimal.new("18.30"),
+      ZAR: Decimal.new("18.00")
     }
   end
 end

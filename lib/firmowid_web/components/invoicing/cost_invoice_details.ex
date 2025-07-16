@@ -20,7 +20,6 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
         issue_date={@invoice.issue_date}
         party_display_name={@invoice.seller_display_name}
         description={@invoice.description}
-        show_delete_button={true}
       />
 
       <div class="flex flex-col justify-between px-8 gap-4 lg:gap-12 lg:flex-row min-w-0">

@@ -77,7 +77,9 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResultTest do
       assert result.days_lag_gt_30 == 0.0
 
       # Signed amount match should be a positive ratio (2000 PLN / (500 EUR in PLN))
-      eur_to_pln = 4.05 / 0.92
+      # calcultion based on Firmowid.Currencies (lib/firmowid/currencies.ex)
+      # X = EUR / PLN
+      eur_to_pln = 3.645 / 0.8554
       inv_amount_pln = 500 * eur_to_pln
       expected_ratio = 2000 / inv_amount_pln
       assert_in_delta(result.signed_amount_match, expected_ratio, 0.0001)

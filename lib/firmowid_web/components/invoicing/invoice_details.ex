@@ -77,37 +77,68 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   attr :prediction_score, :float, required: true
   attr :is_highest_green, :boolean, default: false
 
-  def prediction_score_indicator(assigns) do
+  def prediction_score_indicator(%{predicition_level: :high} = assigns) do
     ~H"""
     <div
       id={"match-prediction-score-#{@transaction_id}"}
       phx-hook="Tippy"
       data-tippy-content={"Ocena AI: #{Float.round(100 *@prediction_score, 2)}% pewności"}
-      class={[
-        "flex flex-col justify-center items-start gap-1 pl-[4px]",
-        "w-7 h-7 rounded-md",
-        @is_highest_green && "bg-greenBg",
-        !@is_highest_green && @prediction_score >= 0.66 && "bg-orangeBg",
-        !@is_highest_green && @prediction_score < 0.66 && "bg-redBg"
-      ]}
+      class="flex flex-col justify-center items-start gap-1 pl-[4px] w-7 h-7 rounded-md bg-greenBg"
     >
-      <div class={[
-        "w-[75%] rounded-md bg-white h-[2px]",
-        @is_highest_green && "!bg-greenText"
-      ]} />
-      <div class={[
-        "w-[55%] rounded-md bg-white h-[2px]",
-        @is_highest_green && "!bg-greenText",
-        !@is_highest_green && @prediction_score >= 0.66 && "!bg-orangeText"
-      ]} />
-      <div class={[
-        "w-[35%] rounded-md bg-white h-[2px]",
-        @is_highest_green && "!bg-greenText",
-        !@is_highest_green && @prediction_score >= 0.66 && "!bg-orangeText",
-        !@is_highest_green && @prediction_score < 0.66 && "!bg-redText"
-      ]} />
+      <div class="w-[75%] rounded-md h-[2px] bg-greenText" />
+      <div class="w-[55%] rounded-md h-[2px] bg-greenText" />
+      <div class="w-[35%] rounded-md h-[2px] bg-greenText" />
     </div>
     """
+  end
+
+  def prediction_score_indicator(%{predicition_level: :mid} = assigns) do
+    ~H"""
+    <div
+      id={"match-prediction-score-#{@transaction_id}"}
+      phx-hook="Tippy"
+      data-tippy-content={"Ocena AI: #{Float.round(100 *@prediction_score, 2)}% pewności"}
+      class="flex flex-col justify-center items-start gap-1 pl-[4px] w-7 h-7 rounded-md bg-orangeBg"
+    >
+      <div class="w-[75%] rounded-md h-[2px] bg-white" />
+      <div class="w-[55%] rounded-md h-[2px] bg-orangeText" />
+      <div class="w-[35%] rounded-md h-[2px] bg-orangeText" />
+    </div>
+    """
+  end
+
+  def prediction_score_indicator(%{predicition_level: :low} = assigns) do
+    ~H"""
+    <div
+      id={"match-prediction-score-#{@transaction_id}"}
+      phx-hook="Tippy"
+      data-tippy-content={"Ocena AI: #{Float.round(100 *@prediction_score, 2)}% pewności"}
+      class="flex flex-col justify-center items-start gap-1 pl-[4px] w-7 h-7 rounded-md bg-redBg"
+    >
+      <div class="w-[75%] rounded-md h-[2px] bg-white" />
+      <div class="w-[55%] rounded-md h-[2px] bg-white" />
+      <div class="w-[35%] rounded-md h-[2px] bg-redText" />
+    </div>
+    """
+  end
+
+  def prediction_score_indicator(assigns) do
+    # consult
+    # lib/firmowid/invoicing/matching/training/logisitic-regression.livemd
+    # to retrain and recalculate the thresholds
+
+    predicition_level =
+      cond do
+        assigns.prediction_score >= 0.94 and assigns.is_highest_green -> :high
+        assigns.prediction_score >= 0.59 -> :mid
+        true -> :low
+      end
+
+    assigns =
+      assigns
+      |> assign(predicition_level: predicition_level)
+
+    prediction_score_indicator(assigns)
   end
 
   attr :is_cost_invoice, :boolean, required: true
