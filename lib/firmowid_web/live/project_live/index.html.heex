@@ -33,7 +33,11 @@
           id="project_selector"
           name="selected_project"
           value={@selected_project && @selected_project.id}
-          options={Enum.map(@projects, &{&1.name, &1.id})}
+          options={
+            @projects
+            |> Enum.sort_by(&(&1.name |> String.downcase()))
+            |> Enum.map(&{&1.name, &1.id})
+          }
           disabled={@is_editing_users}
           prompt="Wybierz projekt"
           class="sm:text-base mt-0 h-full"
