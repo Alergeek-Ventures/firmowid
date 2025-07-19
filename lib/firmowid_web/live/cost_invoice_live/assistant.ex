@@ -442,7 +442,7 @@ defmodule FirmowidWeb.CostInvoiceLive.Assistant do
           disabled={@loading}
           class="text-grey-400 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <%= if not @loading do %>
+          <%= if @loading do %>
             <.icon name="hero-arrow-path" class="animate-spin" />
           <% else %>
             <.icon name="hero-paper-airplane" />
