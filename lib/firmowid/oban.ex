@@ -1,0 +1,87 @@
+defmodule Firmowid.Oban do
+  @moduledoc """
+  Oban configuration for Firmowid.
+  """
+
+  alias Ecto.Changeset
+
+  use Oban,
+    otp_app: :firmowid,
+    repo: Firmowid.Repo,
+    prefix: "oban",
+    engine: Oban.Engines.Basic,
+    queues: [bank_data: 1, invoicing: 1, cost_invoices: 5],
+    plugins: [
+      # retry orphaned jobs after 30 minutes
+      {Oban.Plugins.Lifeline, rescue_after: :timer.minutes(30)},
+      # remove jobs after 30 days
+      {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 30},
+      {Oban.Plugins.Cron,
+       timezone: "Europe/Warsaw",
+       crontab: [
+         {"0 12 */2 * *", Firmowid.BankData.Worker,
+          args: %{name: "dispatch_sync_jobs_for_all_bank_accounts"}},
+         {"0 13 * * *", Firmowid.Invoicing.Worker, args: %{name: "matching"}}
+       ]}
+    ]
+
+  def insert(changeset, opts) do
+    cond do
+      opts[:skip_organization_id] ->
+        Oban.insert(__MODULE__, changeset, opts)
+
+      organization_id = Firmowid.Repo.get_org_id() ->
+        changeset =
+          changeset
+          |> Changeset.update_change(:meta, fn meta ->
+            Map.put(meta || %{}, :organization_id, organization_id)
+          end)
+
+        Oban.insert(__MODULE__, changeset, opts)
+
+      true ->
+        raise "expected organization_id or skip_organization_id to be set"
+    end
+  end
+
+  def insert!(changeset, opts \\ []) do
+    cond do
+      opts[:skip_organization_id] ->
+        Oban.insert!(__MODULE__, changeset, opts)
+
+      organization_id = Firmowid.Repo.get_org_id() ->
+        changeset =
+          changeset
+          |> Changeset.update_change(:meta, fn meta ->
+            Map.put(meta || %{}, :organization_id, organization_id)
+          end)
+
+        Oban.insert!(__MODULE__, changeset, opts)
+
+      true ->
+        raise "expected organization_id or skip_organization_id to be set"
+    end
+  end
+
+  def insert_all(changesets, opts) do
+    cond do
+      opts[:skip_organization_id] ->
+        Oban.insert_all(__MODULE__, changesets, opts)
+
+      organization_id = Firmowid.Repo.get_org_id() ->
+        changesets_with_org =
+          changesets
+          |> Enum.map(fn changeset ->
+            changeset
+            |> Changeset.update_change(:meta, fn meta ->
+              Map.put(meta || %{}, :organization_id, organization_id)
+            end)
+          end)
+
+        Oban.insert_all(__MODULE__, changesets_with_org, opts)
+
+      true ->
+        raise "expected organization_id or skip_organization_id to be set"
+    end
+  end
+end

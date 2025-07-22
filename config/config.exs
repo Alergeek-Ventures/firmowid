@@ -111,26 +111,6 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-# defined here because moving to firmowid/oban.ex makes dashboard misbehave :(
-config :firmowid, Oban,
-  repo: Firmowid.Repo,
-  prefix: "oban",
-  engine: Oban.Engines.Basic,
-  queues: [bank_data: 1, invoicing: 1, cost_invoices: 5],
-  plugins: [
-    # retry orphaned jobs after 30 minutes
-    {Oban.Plugins.Lifeline, rescue_after: :timer.minutes(30)},
-    # remove jobs after 30 days
-    {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 30},
-    {Oban.Plugins.Cron,
-     timezone: "Europe/Warsaw",
-     crontab: [
-       {"0 12 */2 * *", Firmowid.BankData.Worker,
-        args: %{name: "dispatch_sync_jobs_for_all_bank_accounts"}},
-       {"0 13 * * *", Firmowid.Invoicing.Worker, args: %{name: "matching"}}
-     ]}
-  ]
-
 config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 
 config :firmowid, Firmowid.Currencies, rates_provider: :api

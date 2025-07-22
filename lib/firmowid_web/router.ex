@@ -3,6 +3,7 @@ defmodule FirmowidWeb.Router do
 
   import Phoenix.LiveDashboard.Router
   import FirmowidWeb.UserAuth
+  import Oban.Web.Router
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -30,10 +31,9 @@ defmodule FirmowidWeb.Router do
       #   - drop index(:oban_jobs, [:args], prefix: "oban")
       # -  Missing foreign key constraints detected:
       #   - 'transactions'.'transaction_id' - false positive
-      metrics: FirmowidWeb.Telemetry,
-      additional_pages: [
-        oban: Oban.LiveDashboard
-      ]
+      metrics: FirmowidWeb.Telemetry
+
+    oban_dashboard("/oban", oban_name: Firmowid.Oban)
 
     forward "/mailbox", Plug.Swoosh.MailboxPreview
   end

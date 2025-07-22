@@ -23,7 +23,7 @@ defmodule Firmowid.BankData.Worker do
         Firmowid.Finances.get_bank_accounts_for_sync()
         |> Enum.map(&%{bank_account_id: &1.id, name: "bank_account_sync"})
         |> Enum.map(&Firmowid.BankData.Worker.new/1)
-        |> Oban.insert_all()
+        |> Firmowid.Oban.insert_all(skip_organization_id: true)
     end
 
     :ok

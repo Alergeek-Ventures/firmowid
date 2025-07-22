@@ -88,7 +88,6 @@ defmodule Firmowid.MixProject do
       {:sentry, "~> 11.0.1"},
       {:recase, "~> 0.8.0"},
       {:oban, "~> 2.17"},
-      {:oban_live_dashboard, "~> 0.2.1"},
       {:ecto_psql_extras, "~> 0.6"},
       {:any_ascii, "~> 0.3.2"},
       {:multipart, "~> 0.4.0"},
@@ -100,7 +99,9 @@ defmodule Firmowid.MixProject do
       {:paradex, "~> 0.4.0"},
       {:sobelow, "~> 0.13", only: [:dev], runtime: Mix.env() == :dev},
       {:dialyxir, "~> 1.4", only: [:dev], runtime: Mix.env() == :dev},
-      {:live_debugger, "~> 0.3.0", only: [:dev], runtime: Mix.env() == :dev}
+      {:live_debugger, "~> 0.3.0", only: [:dev], runtime: Mix.env() == :dev},
+      {:oban_web, "~> 2.11"},
+      {:igniter, "~> 0.5", only: [:dev]}
     ]
   end
 

@@ -77,7 +77,7 @@ defmodule Firmowid.BankData do
             |> Enum.each(fn bank_account ->
               %{bank_account_id: bank_account.id, name: "bank_account_sync"}
               |> Firmowid.BankData.Worker.new()
-              |> Oban.insert()
+              |> Firmowid.Oban.insert(skip_organization_id: true)
             end)
 
             {:ok, requisition_from_api}

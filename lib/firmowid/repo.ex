@@ -32,7 +32,12 @@ defmodule Firmowid.Repo do
         {query, opts}
 
       organization_id = opts[:organization_id] ->
-        {Ecto.Query.where(query, organization_id: ^organization_id), opts}
+        if opts[:oban_jobs] do
+          opts = Keyword.put(opts, :prefix, "oban")
+          {Ecto.Query.where(query, [j], j.meta["organization_id"] == ^organization_id), opts}
+        else
+          {Ecto.Query.where(query, organization_id: ^organization_id), opts}
+        end
 
       true ->
         raise "expected organization_id or skip_organization_id to be set"

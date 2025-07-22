@@ -71,9 +71,10 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
   Appends the final assistant message after the function-call loop.
   """
   def send_message_async(conversation_id, user_message, prompt, tools, exec_function, opts \\ []) do
-    Task.start(fn ->
+    org_id = Firmowid.Repo.get_org_id()
+    Task.start_link(fn ->
       # Set org_id for the Task process so all DB calls have correct context
-      if org_id = opts[:organization_id], do: Firmowid.Repo.put_org_id(org_id)
+      Firmowid.Repo.put_org_id(org_id)
 
       Logger.debug(
         "send_message_async: user message: #{inspect({conversation_id, user_message})}"

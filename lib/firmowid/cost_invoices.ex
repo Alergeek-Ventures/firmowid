@@ -69,7 +69,7 @@ defmodule Firmowid.CostInvoices do
       j.state in ["available", "scheduled", "executing"] and
         fragment("args->>'name' = ?", "extract_cost_invoice_metadata")
     )
-    |> Repo.aggregate(:count, skip_organization_id: true, prefix: "oban")
+    |> Repo.aggregate(:count, oban_jobs: true)
   end
 
   def list_cost_invoices(
@@ -201,7 +201,7 @@ defmodule Firmowid.CostInvoices do
             organization_id: blob.organization_id
           }
           |> Firmowid.CostInvoices.Worker.new()
-          |> Oban.insert!()
+          |> Firmowid.Oban.insert!()
 
           broadcast_cost_invoice_list_updated(blob.organization_id)
 
@@ -239,7 +239,7 @@ defmodule Firmowid.CostInvoices do
       cost_invoice_id: cost_invoice.id,
       organization_id: organization_id
     })
-    |> Oban.insert!()
+    |> Firmowid.Oban.insert!()
   end
 
   def create_cost_invoices_transactions_connection(
