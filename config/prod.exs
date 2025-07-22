@@ -43,6 +43,7 @@ config :logger, level: :info
 
 config :ex_aws, :s3,
   scheme: "https://",
-  host: "fly.storage.tigris.dev"
+  host: "fly.storage.tigris.dev",
+  port: 443
 
 config :firmowid, Firmowid.Currencies, rates_provider: :api

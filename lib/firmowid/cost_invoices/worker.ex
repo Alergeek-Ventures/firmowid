@@ -97,9 +97,16 @@ defmodule Firmowid.CostInvoices.Worker do
             invoice_identifier: %{
               type: "string",
               description: "The identifier (typically number) of the invoice.
+
+              Very often based on the date (e.g. 01/05/2023) or a serial number
+              (e.g. 124/Z/2023).
+
+              For receipts it can be any freeform-placed number.
+
               If it's neither an invoice or a receipt, but a contract for sale,
-              then say e.g. 'Sale contract on day YYYY-MM-DD in City' If
-              identifier is not available at all - provide 'N/A'."
+              then say e.g. 'Sale contract on day YYYY-MM-DD in City'.
+
+              If identifier is not available at all - provide 'N/A'."
             },
             account_number: %{
               type: "string",
@@ -130,6 +137,7 @@ defmodule Firmowid.CostInvoices.Worker do
           },
           required: [
             "seller",
+            "invoice_identifier",
             "sale_date",
             "issue_date",
             "due_date",
