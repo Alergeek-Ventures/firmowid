@@ -6,8 +6,7 @@ defmodule Firmowid.ReductoApiClient do
 
   @type extract_options :: [extraction_mode: :hybrid | :ocr | :metadata]
 
-  @auth_token {:bearer,
-               "e19507fbd55e1e3b0f7763382e055e31da39cb91b2badf5c2b44ff84eb136d6d0eabe52981a6922d1db2dfc5384ceded"}
+  def get_auth_token, do: {:bearer, Application.get_env(:firmowid, :reducto_api_key)}
 
   @doc """
   Extracts metadata from a document using Reducto API. Pass in a file URL
@@ -35,7 +34,7 @@ defmodule Firmowid.ReductoApiClient do
     with {:ok, response} <-
            Req.post(
              "https://platform.reducto.ai/extract",
-             auth: @auth_token,
+             auth: get_auth_token(),
              json: %{
                document_url: file_url,
                options: %{
@@ -101,7 +100,7 @@ defmodule Firmowid.ReductoApiClient do
     %{status: 200, body: %{"file_id" => file_url}} =
       Req.post!(
         "https://platform.reducto.ai/upload",
-        auth: @auth_token,
+        auth: get_auth_token(),
         headers: headers,
         body: Multipart.body_stream(multipart)
       )

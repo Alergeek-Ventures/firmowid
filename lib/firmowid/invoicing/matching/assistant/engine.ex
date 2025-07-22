@@ -72,6 +72,7 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
   """
   def send_message_async(conversation_id, user_message, prompt, tools, exec_function, opts \\ []) do
     org_id = Firmowid.Repo.get_org_id()
+
     Task.start_link(fn ->
       # Set org_id for the Task process so all DB calls have correct context
       Firmowid.Repo.put_org_id(org_id)

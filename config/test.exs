@@ -8,16 +8,12 @@ config :argon2_elixir, t_cost: 1, m_cost: 8
 # The MIX_TEST_PARTITION environment variable can be used
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
-config :firmowid, Firmowid.Repo,
-  database: System.get_env("DB_NAME", "firmowid-test"),
-  pool_size: 5,
-  pool: Ecto.Adapters.SQL.Sandbox
+config :firmowid, Firmowid.Repo, pool: Ecto.Adapters.SQL.Sandbox
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :firmowid, FirmowidWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
-  secret_key_base: read_config(:firmowid)[FirmowidWeb.Endpoint][:secret_key_base],
   server: false
 
 # In test we don't send emails
@@ -54,11 +50,4 @@ config :firmowid,
     plug: {Req.Test, :bank_data_transactions}
   ]
 
-config :ex_aws, :s3,
-  host: "localhost",
-  scheme: "http://",
-  port: 4566
-
-config :firmowid, Oban, testing: :inline
-
-config :firmowid, Firmowid.Currencies, rates_provider: :mock
+config :firmowid, Firmowid.Oban, testing: :inline

@@ -69,7 +69,7 @@ Repo.transaction(fn ->
   bank_account =
     Repo.insert!(%Finances.BankAccount{
       id: "5e99d40d-8bcb-4088-b6a1-08950daa5ec2",
-iban: "PL58253000082079847123980045",
+      iban: "PL58253000082079847123980045",
       institution_id: "NEST_BANK_CORPORATE_PL",
       institution_name: "Nest Bank Corporate",
       owner_name: "Hello Kitty Inc.",

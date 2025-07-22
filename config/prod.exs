@@ -29,10 +29,6 @@ config :sentry,
     ]
   ]
 
-config :ex_aws,
-  access_key_id: read_config(:ex_aws)[:access_key_id],
-  secret_access_key: read_config(:ex_aws)[:secret_access_key]
-
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Req
 
@@ -44,3 +40,9 @@ config :logger, level: :info
 
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.
+
+config :ex_aws, :s3,
+  scheme: "https://",
+  host: "fly.storage.tigris.dev"
+
+config :firmowid, Firmowid.Currencies, rates_provider: :api

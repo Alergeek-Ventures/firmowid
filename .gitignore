@@ -47,3 +47,5 @@ npm-debug.log
 # LLM assistance
 .aider
 .aider*
+
+.env

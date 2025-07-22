@@ -14,6 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MIX_ENV: test
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5433/firmowid?sslmode=prefer"
+      SECRET_KEY_BASE: "REMOVED_PHOENIX_SECRET_KEY_BASE"
+
     strategy:
       matrix:
         elixir: ["1.18.4"]

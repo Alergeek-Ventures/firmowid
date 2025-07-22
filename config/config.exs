@@ -7,32 +7,21 @@
 # General application configuration
 import Config
 
-# Import secret API keys for the general configuration.
-import_config "api_keys/config.exs"
-
-# Import secret API keys for the current configuration.
-import_config "api_keys/#{config_env()}.exs"
-
 config :posthog,
   api_url: "https://eu.i.posthog.com",
-  api_key: read_config(:posthog)[:api_key]
+  api_key: "REMOVED_POSTHOG_PROJECT_KEY"
 
 config :firmowid,
   ecto_repos: [Firmowid.Repo],
   generators: [timestamp_type: :utc_datetime],
   uploads_bucket: "firmowid-uploads"
 
+config :ex_aws, :s3,
+  host: "localhost",
+  scheme: "http://",
+  port: 4566
+
 config :firmowid, Firmowid.Repo,
-  url:
-    System.get_env(
-      "DB_URL",
-      "postgresql://postgres:postgres@localhost:5433/firmowid?sslmode=prefer"
-    ),
-  # -- uncomment when accessing Neon-hosted DB --
-  # (forces SSL,doesn't work with docker)
-  # - we could probably force it, but not worth the hassle now -
-  # ssl: [cacerts: :public_key.cacerts_get()],
-  pool_size: 5,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   migration_primary_key: [name: :id, type: :binary_id],
@@ -50,13 +39,7 @@ config :firmowid, FirmowidWeb.Endpoint,
   pubsub_server: Firmowid.PubSub,
   live_view: [signing_salt: "s6RVH6WQ"]
 
-# Configures the mailer
-#
-# By default it uses the "Local" adapter which stores the emails
-# locally. You can see the emails in your browser, at "/dev/mailbox".
-#
-# For production it's recommended to configure a different adapter
-# at the `config/runtime.exs`.
+# local mailer uses /mailbox route
 config :firmowid, Firmowid.Mailer, adapter: Swoosh.Adapters.Local
 
 config :firmowid, Firmowid.Cldr, locales: ["pl"]
@@ -66,18 +49,6 @@ config :ex_money,
   auto_start_exchange_rate_service: true,
   exchange_rates_retrieve_every: :never,
   open_exchange_rates_app_id: "b1c5dcca1ebd4066ae1b8c7ef0205be6"
-
-config :ex_aws,
-  access_key_id: read_config(:ex_aws)[:access_key_id],
-  secret_access_key: read_config(:ex_aws)[:secret_access_key]
-
-config :ex_aws, :s3,
-  scheme: "https://",
-  host: "fly.storage.tigris.dev"
-
-config :openai,
-  api_key: read_config(:openai)[:api_key],
-  organization_key: read_config(:openai)[:organization_key]
 
 # Configure esbuild (the version is required)
 config :esbuild,
@@ -113,7 +84,7 @@ config :phoenix, :json_library, Jason
 
 config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 
-config :firmowid, Firmowid.Currencies, rates_provider: :api
+config :firmowid, Firmowid.Currencies, rates_provider: :mock
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
