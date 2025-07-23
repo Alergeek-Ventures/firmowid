@@ -15,8 +15,8 @@ defmodule Firmowid.Accounts do
   def authorize(:read_organization_invites, %{role: :admin}, _), do: true
   def authorize(:delete_organization_invite, %{role: :admin}, _), do: true
 
-  def authorize(:update_organization, %{role: :admin, organization_id: org_id}, %{
-        organization_id: org_id
+  def authorize(:update_organization, %{role: :admin, organization_id: org_id}, %Organization{
+        id: org_id
       }),
       do: true
 

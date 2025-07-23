@@ -21,6 +21,7 @@ defmodule Firmowid.Invoicing do
 
   def authorize(:read, %{role: :admin}, _), do: true
   def authorize(:show, %{role: :admin}, _), do: true
+  def authorize(:update, %{role: :admin}, _), do: true
   def authorize(:upload, %{role: :admin}, _), do: true
   def authorize(_, _, _), do: false
 
