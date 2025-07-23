@@ -25,18 +25,21 @@ defmodule Firmowid.Oban do
        ]}
     ]
 
+  defp put_org_id(changeset, organization_id) do
+    meta =
+      Changeset.get_change(changeset, :meta, %{})
+      |> Map.put(:organization_id, organization_id)
+
+    Changeset.put_change(changeset, :meta, meta)
+  end
+
   def insert(changeset, opts) do
     cond do
       opts[:skip_organization_id] ->
         Oban.insert(__MODULE__, changeset, opts)
 
       organization_id = Firmowid.Repo.get_org_id() ->
-        changeset =
-          changeset
-          |> Changeset.update_change(:meta, fn meta ->
-            Map.put(meta || %{}, :organization_id, organization_id)
-          end)
-
+        changeset = put_org_id(changeset, organization_id)
         Oban.insert(__MODULE__, changeset, opts)
 
       true ->
@@ -50,12 +53,7 @@ defmodule Firmowid.Oban do
         Oban.insert!(__MODULE__, changeset, opts)
 
       organization_id = Firmowid.Repo.get_org_id() ->
-        changeset =
-          changeset
-          |> Changeset.update_change(:meta, fn meta ->
-            Map.put(meta || %{}, :organization_id, organization_id)
-          end)
-
+        changeset = put_org_id(changeset, organization_id)
         Oban.insert!(__MODULE__, changeset, opts)
 
       true ->
@@ -71,12 +69,7 @@ defmodule Firmowid.Oban do
       organization_id = Firmowid.Repo.get_org_id() ->
         changesets_with_org =
           changesets
-          |> Enum.map(fn changeset ->
-            changeset
-            |> Changeset.update_change(:meta, fn meta ->
-              Map.put(meta || %{}, :organization_id, organization_id)
-            end)
-          end)
+          |> Enum.map(&put_org_id(&1, organization_id))
 
         Oban.insert_all(__MODULE__, changesets_with_org, opts)
 

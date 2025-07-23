@@ -20,6 +20,8 @@ defmodule Firmowid.CostInvoices.Worker do
         "blob_id" => blob_id,
         "organization_id" => organization_id
       } ->
+        Firmowid.Repo.put_org_id(organization_id)
+
         try do
           extract_cost_invoice_metadata(blob_id, organization_id)
         rescue

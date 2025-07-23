@@ -232,14 +232,12 @@ defmodule Firmowid.CostInvoices do
 
     broadcast_cost_invoice_added(cost_invoice)
 
-    # TODO: do this via channels somehow later
-    #
-    # Firmowid.Invoicing.Worker.new(%{
-    #   name: "match_cost_invoice",
-    #   cost_invoice_id: cost_invoice.id,
-    #   organization_id: organization_id
-    # })
-    # |> Firmowid.Oban.insert!()
+    Firmowid.Invoicing.Worker.new(%{
+      name: "match_cost_invoice",
+      cost_invoice_id: cost_invoice.id,
+      organization_id: organization_id
+    })
+    |> Firmowid.Oban.insert!()
   end
 
   def create_cost_invoices_transactions_connection(

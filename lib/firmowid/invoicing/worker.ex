@@ -23,6 +23,7 @@ defmodule Firmowid.Invoicing.Worker do
             }
           })
 
+          Firmowid.Repo.put_org_id(organization_id)
           match_invoices(organization_id)
         end)
 
@@ -32,7 +33,7 @@ defmodule Firmowid.Invoicing.Worker do
         "organization_id" => organization_id
       } ->
         Logger.info("Matching cost invoice #{cost_invoice_id}")
-
+        Firmowid.Repo.put_org_id(organization_id)
         Invoicing.match_cost_invoice(cost_invoice_id, organization_id)
 
       _ ->
