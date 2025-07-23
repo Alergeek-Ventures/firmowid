@@ -36,7 +36,7 @@ config :phoenix_live_view,
   enable_expensive_runtime_checks: true
 
 # stubs for request testing (for now bank_data mostly)
-config :firmowid,
+config :firmowid, :bank_data_api_client,
   bank_data_institutions: [
     plug: {Req.Test, :bank_data_institutions}
   ],

@@ -2,14 +2,14 @@ defmodule Firmowid.BankData.ApiClient do
   alias Firmowid.BankData.TokenManager
 
   def get_available_institutions_for_country(country) do
-    {:ok, access_token} = get_access_token()
+    access_token = get_access_token!()
 
     options =
       [
         url: "https://bankaccountdata.gocardless.com/api/v2/institutions/?country=#{country}",
         auth: {:bearer, access_token}
       ]
-      |> Keyword.merge(Application.get_env(:firmowid, :bank_data_institutions, []))
+      |> Keyword.merge(mock_data(:bank_data_institutions))
 
     with {:ok, response} <- Req.get(options) do
       response |> Map.get(:body)
@@ -19,14 +19,14 @@ defmodule Firmowid.BankData.ApiClient do
   end
 
   def get_requisition(requisition_id) do
-    {:ok, access_token} = get_access_token()
+    access_token = get_access_token!()
 
     options =
       [
         url: "https://bankaccountdata.gocardless.com/api/v2/requisitions/#{requisition_id}",
         auth: {:bearer, access_token}
       ]
-      |> Keyword.merge(Application.get_env(:firmowid, :bank_data_requisition, []))
+      |> Keyword.merge(mock_data(:bank_data_requisition))
 
     with {:ok, response} <- Req.get(options) do
       response |> Map.get(:body)
@@ -36,8 +36,9 @@ defmodule Firmowid.BankData.ApiClient do
   end
 
   def create_requisition(institution_id, max_transaction_days, redirect_url) do
-    with {:ok, access_token} <- get_access_token(),
-         %{body: %{"id" => agreement_id}} <-
+    access_token = get_access_token!()
+
+    with %{body: %{"id" => agreement_id}} <-
            Req.post!(
              "https://bankaccountdata.gocardless.com/api/v2/agreements/enduser/",
              auth: {:bearer, access_token},
@@ -64,7 +65,7 @@ defmodule Firmowid.BankData.ApiClient do
   end
 
   def get_institution(go_cardless_institution_id) do
-    {:ok, access_token} = get_access_token()
+    access_token = get_access_token!()
 
     options =
       [
@@ -72,7 +73,7 @@ defmodule Firmowid.BankData.ApiClient do
           "https://bankaccountdata.gocardless.com/api/v2/institutions/#{go_cardless_institution_id}",
         auth: {:bearer, access_token}
       ]
-      |> Keyword.merge(Application.get_env(:firmowid, :bank_data_institution, []))
+      |> Keyword.merge(mock_data(:bank_data_institution))
 
     with {:ok, response} <- Req.get(options) do
       {:ok, response |> Map.get(:body)}
@@ -82,7 +83,7 @@ defmodule Firmowid.BankData.ApiClient do
   end
 
   def get_account_details(gocardless_account_id) do
-    {:ok, access_token} = get_access_token()
+    access_token = get_access_token!()
 
     options =
       [
@@ -90,7 +91,7 @@ defmodule Firmowid.BankData.ApiClient do
           "https://bankaccountdata.gocardless.com/api/v2/accounts/#{gocardless_account_id}/details",
         auth: {:bearer, access_token}
       ]
-      |> Keyword.merge(Application.get_env(:firmowid, :bank_data_requisition, []))
+      |> Keyword.merge(mock_data(:bank_data_requisition))
 
     with {:ok, response} <- Req.get(options) do
       {:ok, response |> Map.get(:body) |> Map.get("account")}
@@ -100,13 +101,13 @@ defmodule Firmowid.BankData.ApiClient do
   end
 
   def get_account_status(gocardless_account_id) do
-    {:ok, access_token} = get_access_token()
+    access_token = get_access_token!()
 
     options =
       [
         auth: {:bearer, access_token}
       ]
-      |> Keyword.merge(Application.get_env(:firmowid, :bank_data_account, []))
+      |> Keyword.merge(mock_data(:bank_data_account))
 
     with {:ok, account_response} <-
            Req.get(
@@ -123,14 +124,14 @@ defmodule Firmowid.BankData.ApiClient do
   end
 
   def get_accounts_for_requisition(requisition_id) do
-    {:ok, access_token} = get_access_token()
+    access_token = get_access_token!()
 
     options =
       [
         url: "https://bankaccountdata.gocardless.com/api/v2/requisitions/#{requisition_id}",
         auth: {:bearer, access_token}
       ]
-      |> Keyword.merge(Application.get_env(:firmowid, :bank_data_requisition, []))
+      |> Keyword.merge(mock_data(:bank_data_requisition))
 
     with {:ok, response} <- Req.get(options),
          accounts <- Map.get(response.body, "accounts", []) do
@@ -157,7 +158,7 @@ defmodule Firmowid.BankData.ApiClient do
   end
 
   def get_booked_transactions_for_account(account_id) do
-    {:ok, access_token} = get_access_token()
+    access_token = get_access_token!()
 
     options =
       [
@@ -166,7 +167,7 @@ defmodule Firmowid.BankData.ApiClient do
         receive_timeout: 120_000,
         connect_options: [timeout: 120_000]
       ]
-      |> Keyword.merge(Application.get_env(:firmowid, :bank_data_transactions, []))
+      |> Keyword.merge(mock_data(:bank_data_transactions))
 
     with %Req.Response{status: 200, body: accounts_transaction} <- Req.get!(options) do
       booked_transactions =
@@ -185,7 +186,7 @@ defmodule Firmowid.BankData.ApiClient do
   end
 
   def delete_requisition(requisition_id) do
-    {:ok, access_token} = get_access_token()
+    access_token = get_access_token!()
 
     with {:ok, requisition} <-
            Req.get(
@@ -208,13 +209,18 @@ defmodule Firmowid.BankData.ApiClient do
     end
   end
 
-  defp get_access_token() do
-    token = GenServer.call(TokenManager, :get_access_token)
+  defp mock_data(key), do: Application.get_env(:firmowid, :bank_data_api_client, [])[key] || []
 
-    if token == nil do
-      raise "Access token is not set"
+  defp get_access_token!() do
+    cond do
+      _mock_data = Application.get_env(:firmowid, :bank_data_api_client) ->
+        "fake_access_token"
+
+      token = GenServer.call(TokenManager, :get_access_token) ->
+        token
+
+      true ->
+        raise "Access token is not set"
     end
-
-    {:ok, token}
   end
 end
