@@ -5,6 +5,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Create do
   alias Firmowid.SalesInvoices.SalesInvoice
 
   def mount(_params, _session, socket) do
+    Bodyguard.permit!(SalesInvoices, :read_sales_invoice, socket.assigns.current_user)
     sales_invoices = SalesInvoices.search_sales_invoices("")
 
     socket =
@@ -16,6 +17,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.Create do
   end
 
   def handle_event("search-term", %{"search-term" => search_term}, socket) do
+    Bodyguard.permit!(SalesInvoices, :read_sales_invoice, socket.assigns.current_user)
+
     socket =
       socket
       |> assign(:sales_invoices, SalesInvoices.search_sales_invoices(search_term))

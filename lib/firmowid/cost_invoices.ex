@@ -3,12 +3,11 @@ defmodule Firmowid.CostInvoices do
 
   require Logger
 
-  alias Firmowid.Accounts.User
-  alias Firmowid.Blobs.Blob
   alias MIME
 
   alias Firmowid.Repo
   alias Firmowid.Blobs
+  alias Firmowid.Blobs.Blob
 
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.CostInvoices.CostInvoicesTransactions
@@ -17,7 +16,11 @@ defmodule Firmowid.CostInvoices do
 
   @cost_invoice_broadcast_topic "cost_invoice_broadcast_topic"
 
-  def authorize(_, %User{role: :admin}, _), do: true
+  def authorize(action, %{role: :admin, organization_id: org_id}, %{organization_id: org_id})
+      when action in [:show, :update, :delete],
+      do: true
+
+  def authorize(:upload, %{role: :admin}, _), do: true
   def authorize(_, _, _), do: false
 
   ## TODO: standardize pubsub / subscriptions / broadcasts

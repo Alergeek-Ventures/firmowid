@@ -86,8 +86,7 @@ defmodule FirmowidWeb.Project.Index do
     Bodyguard.permit!(Timetracker, :read_hours_records, socket.assigns.current_user)
 
     {:ok,
-     socket
-     |> assign(
+     assign(socket,
        projects: Timetracker.list_projects(),
        is_editing_name: false,
        is_editing_users: false,
@@ -153,7 +152,8 @@ defmodule FirmowidWeb.Project.Index do
   end
 
   def handle_event("delete_user", %{"user_id" => user_id}, socket) do
-    Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user)
+    project = socket.assigns.selected_project
+    Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user, project)
 
     project_users =
       socket.assigns.project_users
@@ -163,7 +163,8 @@ defmodule FirmowidWeb.Project.Index do
   end
 
   def handle_event("add_user", %{"user_id" => user_id}, socket) do
-    Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user)
+    project = socket.assigns.selected_project
+    Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user, project)
 
     project_users =
       socket.assigns.project_users ++
@@ -173,9 +174,10 @@ defmodule FirmowidWeb.Project.Index do
   end
 
   def handle_event("save_users", _, socket) do
-    if socket.assigns.selected_project do
-      Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user)
-      project = socket.assigns.selected_project
+    project = socket.assigns.selected_project
+
+    if project do
+      Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user, project)
       project_users = socket.assigns.project_users |> Enum.map(& &1.id)
 
       {:ok, project} = Timetracker.set_users_to_project(project, project_users)
@@ -211,8 +213,8 @@ defmodule FirmowidWeb.Project.Index do
   end
 
   def handle_event("save", %{"project" => params}, socket) do
-    Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user)
     project = socket.assigns.selected_project
+    Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user, project)
 
     case Timetracker.update_project(project, params) do
       {:ok, project} ->

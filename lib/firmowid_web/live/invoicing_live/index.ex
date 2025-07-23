@@ -83,9 +83,9 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
   @impl true
   def handle_params(params, _url, socket) do
-    socket =
-      socket
-      |> apply_action(socket.assigns.live_action, params)
+    Bodyguard.permit!(Invoicing, :read, socket.assigns.current_user)
+
+    socket = apply_action(socket, socket.assigns.live_action, params)
 
     month =
       case Map.get(params, "month") do
@@ -115,13 +115,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     socket =
       socket
       # UI controls
-      |> assign(
-        :params,
-        %{
-          month: month,
-          filter: filter
-        }
-      )
+      |> assign(:params, %{month: month, filter: filter})
       |> refetch_invoicing_entries()
 
     {:noreply, socket}
@@ -131,11 +125,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   def handle_event("change-month", %{"month" => month}, socket) do
     month = month |> Date.from_iso8601!()
 
-    socket =
-      socket
-      |> update_param(:month, month)
-
-    {:noreply, socket}
+    {:noreply, update_param(socket, :month, month)}
   end
 
   def handle_event("hide-tutorial-modal", _params, socket) do
@@ -153,15 +143,13 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   def handle_event("change-filter", %{"filter" => filter}, socket) do
     filter = filter |> String.to_atom()
 
-    socket =
-      socket
-      |> update_param(:filter, filter)
-
-    {:noreply, socket}
+    {:noreply, update_param(socket, :filter, filter)}
   end
 
   @impl true
   def handle_event("upload", _, socket) do
+    Bodyguard.permit!(Invoicing, :upload, socket.assigns.current_user)
+
     socket =
       socket
       |> refetch_upload_counts()
@@ -175,9 +163,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
         %{assigns: %{params: %{filter: :unmatched}}} = socket
       ) do
     # mark for removal (animation)
-    socket =
-      socket
-      |> push_event("mark-for-removal", %{id: id})
+    socket = push_event(socket, "mark-for-removal", %{id: id})
 
     # actual removal
     Process.send_after(self(), {:toggle_skip_invoicing, %{id: id, type: type}}, 500)

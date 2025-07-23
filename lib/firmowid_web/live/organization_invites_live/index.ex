@@ -57,8 +57,7 @@ defmodule FirmowidWeb.OrganizationInvitesLive.Index do
     {:ok, _} = Accounts.delete_organization_invites(organization_id, organization_invites)
 
     socket =
-      socket
-      |> assign(:organization_invites, Accounts.list_organization_invites(organization_id))
+      assign(socket, :organization_invites, Accounts.list_organization_invites(organization_id))
 
     {:noreply, socket}
   end

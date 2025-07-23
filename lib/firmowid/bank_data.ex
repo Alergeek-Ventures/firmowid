@@ -4,8 +4,6 @@ defmodule Firmowid.BankData do
   require Logger
 
   alias Firmowid.Repo
-  alias Firmowid.Accounts.User
-
   alias Firmowid.Finances
   alias Firmowid.BankData.Requisition
   alias Firmowid.BankData.ApiClient
@@ -13,7 +11,7 @@ defmodule Firmowid.BankData do
 
   @behaviour Bodyguard.Policy
 
-  def authorize(_, %User{role: :admin}, _), do: true
+  def authorize(:create_requisition, %{role: :admin}, _), do: true
   def authorize(_, _, _), do: false
 
   def get_available_institutions_for_country(country) do

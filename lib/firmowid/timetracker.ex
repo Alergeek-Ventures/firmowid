@@ -16,24 +16,37 @@ defmodule Firmowid.Timetracker do
   alias Firmowid.Timetracker.UserSalary
   alias Firmowid.Repo
 
-  def authorize(_, %{role: :admin}, _), do: true
+  def authorize(:read_projects, %{role: :admin}, _), do: true
+  def authorize(:create_project, %{role: :admin}, _), do: true
+  def authorize(:read_hours_records, %{role: :admin}, _), do: true
+  def authorize(:create_user_salary, %{role: :admin}, _), do: true
 
-  def authorize(:read_user_sessions, %{role: :employee}, _), do: true
-  def authorize(:read_user_projects, %{role: :employee}, _), do: true
-  def authorize(:read_user_hours_records, %{role: :employee}, _), do: true
-  def authorize(:create_hours_record, %{role: :employee}, _), do: true
+  def authorize(:update_project, %{role: :admin, organization_id: org_id}, %{
+        organization_id: org_id
+      }),
+      do: true
 
-  def authorize(:update_session, %{role: :employee, id: user_id}, %{user_id: user_id} = session) do
+  def authorize(action, %{role: role}, _)
+      when role in [:employee, :admin] and
+             action in [
+               :create_hours_record,
+               :read_user_hours_records,
+               :read_user_projects,
+               :read_user_sessions
+             ],
+      do: true
+
+  def authorize(:update_session, %{role: role, id: user_id}, %{user_id: user_id} = session)
+      when role in [:employee, :admin] do
     # Ensure that user can end already running session
     session.end_datetime == nil or
       not submitted_hours_record?(user_id, session.start_datetime)
   end
 
-  def authorize(:delete_session, %{role: :employee, id: user_id}, %{user_id: user_id} = session),
-    do: not submitted_hours_record?(user_id, session.start_datetime)
-
-  def authorize(:create_session, %{role: :employee, id: user_id}, session),
-    do: not submitted_hours_record?(user_id, session.start_datetime)
+  def authorize(action, %{role: role, id: user_id}, %{user_id: user_id} = session)
+      when role in [:employee, :admin] and
+             action in [:create_session, :delete_session],
+      do: not submitted_hours_record?(user_id, session.start_datetime)
 
   def authorize(_, _, _), do: false
 

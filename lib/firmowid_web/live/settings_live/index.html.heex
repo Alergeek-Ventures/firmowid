@@ -30,9 +30,9 @@
             [
 
               {true, {"konto", "Twoje konto"}},
-              {Bodyguard.permit?(Firmowid.Accounts, :update_organization, @current_user), 
+              {Bodyguard.permit?(Firmowid.Accounts, :update_organization, @current_user, @current_org), 
               {"organizacja", "Twoja organizacja"}},
-              {Bodyguard.permit?(Firmowid.BankData, :read_bank_accounts, @current_user),
+              {Bodyguard.permit?(Firmowid.Finances, :read_bank_accounts, @current_user),
               {"konta_bankowe", "Konta bankowe"}}
             ] |> Enum.filter(&elem(&1, 0))
            do %>
@@ -52,7 +52,7 @@
       <hr class="border-t border-t-greyButtonBg mt-4" />
     </div>
 
-    <%= if Bodyguard.permit?(Firmowid.Accounts, :update_organization, @current_user) do %>
+    <%= if Bodyguard.permit?(Firmowid.Accounts, :update_organization, @current_user, @current_org) do %>
       <div class="min-w-fit flex gap-3 flex-col">
         <div class="flex gap-1 items-center">
           <p class="font-bold text-base">Logo firmy</p>

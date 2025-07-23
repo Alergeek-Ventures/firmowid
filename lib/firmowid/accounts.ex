@@ -11,7 +11,15 @@ defmodule Firmowid.Accounts do
 
   alias Firmowid.Accounts.{User, UserToken, UserNotifier, Organization}
 
-  def authorize(_, %User{role: :admin}, _), do: true
+  def authorize(:create_organization_invite, %{role: :admin}, _), do: true
+  def authorize(:read_organization_invites, %{role: :admin}, _), do: true
+  def authorize(:delete_organization_invite, %{role: :admin}, _), do: true
+
+  def authorize(:update_organization, %{role: :admin, organization_id: org_id}, %{
+        organization_id: org_id
+      }),
+      do: true
+
   def authorize(_, _, _), do: false
 
   def list_organizations do

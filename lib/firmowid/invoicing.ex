@@ -1,5 +1,4 @@
 defmodule Firmowid.Invoicing do
-  alias Firmowid.Accounts.User
   alias Akin
   alias OpenAI
 
@@ -20,11 +19,12 @@ defmodule Firmowid.Invoicing do
 
   @behaviour Bodyguard.Policy
 
-  @pubsub_topic "invoicing_broadcast"
-
-  def authorize(_, %User{role: :admin}, _), do: true
-
+  def authorize(:read, %{role: :admin}, _), do: true
+  def authorize(:show, %{role: :admin}, _), do: true
+  def authorize(:upload, %{role: :admin}, _), do: true
   def authorize(_, _, _), do: false
+
+  @pubsub_topic "invoicing_broadcast"
 
   def subscribe_invoicing_broadcast(organization_id) do
     Phoenix.PubSub.subscribe(

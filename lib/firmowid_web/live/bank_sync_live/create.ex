@@ -7,12 +7,11 @@ defmodule FirmowidWeb.BankSyncLive.Create do
 
   @impl true
   def mount(_params, _session, socket) do
+    Bodyguard.permit!(BankData, :create_requisition, socket.assigns.current_user)
+
     socket =
       socket
-      |> assign(
-        :available_institutions,
-        BankData.get_available_institutions_for_country("pl")
-      )
+      |> assign(:available_institutions, BankData.get_available_institutions_for_country("pl"))
       |> assign(:requisition_link, nil)
 
     {:ok, socket}
@@ -20,6 +19,7 @@ defmodule FirmowidWeb.BankSyncLive.Create do
 
   @impl true
   def handle_params(params, url, socket) do
+    Bodyguard.permit!(BankData, :create_requisition, socket.assigns.current_user)
     # extract domain for redirecting when submitting an account
     # (makes it work for both localhost and production)
     socket = socket |> assign(:redirect_url, url |> String.split("?") |> List.first())
@@ -89,6 +89,7 @@ defmodule FirmowidWeb.BankSyncLive.Create do
       ) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
+    Bodyguard.permit!(BankData, :create_requisition, user)
 
     # it comes as as string
     transaction_total_days = String.to_integer(transaction_total_days)
@@ -101,8 +102,6 @@ defmodule FirmowidWeb.BankSyncLive.Create do
         socket.assigns.redirect_url
       )
 
-    socket = assign(socket, :requisition_link, link)
-
-    {:noreply, socket}
+    {:noreply, assign(socket, :requisition_link, link)}
   end
 end

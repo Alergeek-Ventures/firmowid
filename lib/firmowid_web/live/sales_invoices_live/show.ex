@@ -44,15 +44,17 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
 
   @impl true
   def handle_event("toggle-invoicing", _params, socket) do
-    Bodyguard.permit!(SalesInvoices, :update, socket.assigns.current_user)
+    Bodyguard.permit!(SalesInvoices, :update, socket.assigns.current_user, socket.assigns.invoice)
+
     SalesInvoices.toggle_skip_invoicing(socket.assigns.invoice.id)
     invoice = refresh_invoice(socket.assigns.invoice.id)
+
     {:noreply, assign(socket, :invoice, invoice)}
   end
 
   @impl true
   def handle_event("delete", _params, socket) do
-    Bodyguard.permit!(SalesInvoices, :delete, socket.assigns.current_user)
+    Bodyguard.permit!(SalesInvoices, :delete, socket.assigns.current_user, socket.assigns.invoice)
     SalesInvoices.delete_sales_invoice(%SalesInvoice{id: socket.assigns.invoice.id})
 
     {:noreply,
@@ -63,6 +65,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
 
   @impl true
   def handle_event("connect", %{"transaction_id" => tx_id}, socket) do
+    Bodyguard.permit!(SalesInvoices, :update, socket.assigns.current_user, socket.assigns.invoice)
     user = socket.assigns.current_user
 
     SalesInvoices.create_sales_invoices_transactions_connection(
@@ -77,7 +80,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
 
   @impl true
   def handle_event("disconnect", _params, socket) do
-    Bodyguard.permit!(SalesInvoices, :update, socket.assigns.current_user)
+    Bodyguard.permit!(SalesInvoices, :update, socket.assigns.current_user, socket.assigns.invoice)
     SalesInvoices.delete_sales_invoices_transactions_connections(socket.assigns.invoice.id)
     invoice = refresh_invoice(socket.assigns.invoice.id)
     {:noreply, assign(socket, :invoice, invoice)}

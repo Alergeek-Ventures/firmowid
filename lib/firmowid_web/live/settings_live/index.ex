@@ -37,14 +37,19 @@ defmodule FirmowidWeb.SettingsLive.Index do
 
   def mount(_params, _session, socket) do
     bank_accounts =
-      if Bodyguard.permit?(BankData, :read_bank_accounts, socket.assigns.current_user) do
+      if Bodyguard.permit?(Finances, :read_bank_accounts, socket.assigns.current_user) do
         BankData.list_bank_accounts()
       else
         []
       end
 
     socket =
-      if Bodyguard.permit?(Accounts, :update_organization, socket.assigns.current_user) do
+      if Bodyguard.permit?(
+           Accounts,
+           :update_organization,
+           socket.assigns.current_user,
+           socket.assigns.current_org
+         ) do
         socket
         |> assign(
           :company_form,
@@ -121,7 +126,12 @@ defmodule FirmowidWeb.SettingsLive.Index do
 
   defp handle_progress(name, entry, socket) when name in [:organization_avatar, :user_avatar] do
     if name == :organization_avatar do
-      Bodyguard.permit!(Accounts, :update_organization, socket.assigns.current_user)
+      Bodyguard.permit!(
+        Accounts,
+        :update_organization,
+        socket.assigns.current_user,
+        socket.assigns.current_org
+      )
     end
 
     if entry.done? do
@@ -191,7 +201,8 @@ defmodule FirmowidWeb.SettingsLive.Index do
   end
 
   def handle_event("delete_bank_account", %{"account_id" => account_id}, socket) do
-    Bodyguard.permit!(BankData, :delete_bank_account, socket.assigns.current_user)
+    bank_account = Finances.get_bank_account!(account_id)
+    Bodyguard.permit!(Finances, :delete_bank_account, socket.assigns.current_user, bank_account)
 
     case Finances.delete_bank_account(account_id) do
       {:ok, _} ->
@@ -205,7 +216,8 @@ defmodule FirmowidWeb.SettingsLive.Index do
   end
 
   def handle_event("make_default_account", %{"account_id" => account_id}, socket) do
-    Bodyguard.permit!(BankData, :update_bank_account, socket.assigns.current_user)
+    bank_account = Finances.get_bank_account!(account_id)
+    Bodyguard.permit!(Finances, :update_bank_account, socket.assigns.current_user, bank_account)
 
     case Finances.make_account_default(account_id) do
       {:ok, _} ->
@@ -222,7 +234,12 @@ defmodule FirmowidWeb.SettingsLive.Index do
   end
 
   def handle_event("save", %{"organization" => organization}, socket) do
-    Bodyguard.permit!(Accounts, :update_organization, socket.assigns.current_user)
+    Bodyguard.permit!(
+      Accounts,
+      :update_organization,
+      socket.assigns.current_user,
+      socket.assigns.current_org
+    )
 
     case Accounts.update_organization(
            socket.assigns.current_org,

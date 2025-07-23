@@ -389,7 +389,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
           SalesInvoices.create_sales_invoice(socket_sales_invoice, sales_invoice)
 
         %{sales_invoice_id: _sales_invoice_id, sales_invoice: socket_sales_invoice} ->
-          Bodyguard.permit!(SalesInvoices, :update_sales_invoice, user)
+          Bodyguard.permit!(SalesInvoices, :update, user, socket_sales_invoice)
 
           SalesInvoices.update_sales_invoice(socket_sales_invoice, sales_invoice)
       end

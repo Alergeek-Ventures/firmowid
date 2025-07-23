@@ -16,6 +16,8 @@ defmodule FirmowidWeb.Project.ProjectNew do
   end
 
   def handle_event("save", %{"project" => params}, socket) do
+    Bodyguard.permit!(Timetracker, :create_project, socket.assigns.current_user)
+
     case Timetracker.create_project(params) do
       {:ok, _project} ->
         {:noreply, redirect(socket, to: ~p"/czasosledz/projekty")}

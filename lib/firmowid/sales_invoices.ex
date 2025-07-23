@@ -8,11 +8,18 @@ defmodule Firmowid.SalesInvoices do
 
   @behaviour Bodyguard.Policy
 
-  @sales_invoice_broadcast_topic "sales_invoice_broadcast_topic"
+  def authorize(:read_sales_invoice, %{role: :admin}, _), do: true
+  def authorize(:create_sales_invoice, %{role: :admin}, _), do: true
+  def authorize(:create_buyer, %{role: :admin}, _), do: true
+  def authorize(:update_buyer, %{role: :admin}, _), do: true
 
-  def authorize(_, %Accounts.User{role: :admin}, _), do: true
+  def authorize(action, %{role: :admin, organization_id: org_id}, %{organization_id: org_id})
+      when action in [:show, :update, :delete],
+      do: true
 
   def authorize(_, _, _), do: false
+
+  @sales_invoice_broadcast_topic "sales_invoice_broadcast_topic"
 
   def subscribe_sales_invoice_broadcast(organization_id) do
     Phoenix.PubSub.subscribe(

@@ -9,6 +9,18 @@ defmodule Firmowid.Finances do
   alias Firmowid.Finances.Transaction
   alias Firmowid.Finances.BankAccount
 
+  @behaviour Bodyguard.Policy
+  def authorize(:create_bank_account, %{role: :admin}, _), do: true
+  def authorize(:read_bank_accounts, %{role: :admin}, _), do: true
+
+  def authorize(action, %{role: :admin, organization_id: org_id}, %{
+        organization_id: org_id
+      })
+      when action in [:read_bank_account, :update_bank_account, :delete_bank_account],
+      do: true
+
+  def authorize(_, _, _), do: false
+
   @doc """
     This shouldn't be used in "userland" - only in "private" workers.
     Please, be careful!

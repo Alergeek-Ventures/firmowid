@@ -123,6 +123,7 @@ defmodule FirmowidWeb.HoursRecordLive.UploadForm do
 
   @impl true
   def handle_event("download", _params, socket) do
+    Bodyguard.permit!(Timetracker, :read_hours_records, socket.assigns.current_user)
     {:noreply, socket |> assign(:state, :sign)}
   end
 

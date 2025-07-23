@@ -47,14 +47,14 @@ defmodule FirmowidWeb.CostInvoiceLive.Show do
 
   @impl true
   def handle_event("toggle-invoicing", _params, socket) do
-    Bodyguard.permit!(CostInvoices, :update, socket.assigns.current_user)
+    Bodyguard.permit!(CostInvoices, :update, socket.assigns.current_user, socket.assigns.invoice)
     invoice = CostInvoices.toggle_skip_invoicing(socket.assigns.invoice.id)
     {:noreply, assign(socket, :invoice, invoice)}
   end
 
   @impl true
   def handle_event("delete", _params, socket) do
-    Bodyguard.permit!(CostInvoices, :delete, socket.assigns.current_user)
+    Bodyguard.permit!(CostInvoices, :delete, socket.assigns.current_user, socket.assigns.invoice)
     CostInvoices.delete_cost_invoice(socket.assigns.invoice.id)
 
     {:noreply,
@@ -66,6 +66,8 @@ defmodule FirmowidWeb.CostInvoiceLive.Show do
   @impl true
   def handle_event("connect", %{"transaction_id" => tx_id}, socket) do
     user = socket.assigns.current_user
+
+    Bodyguard.permit!(CostInvoices, :update, user, socket.assigns.invoice)
 
     CostInvoices.create_cost_invoices_transactions_connection(
       socket.assigns.invoice.id,
@@ -79,7 +81,7 @@ defmodule FirmowidWeb.CostInvoiceLive.Show do
 
   @impl true
   def handle_event("disconnect", _params, socket) do
-    Bodyguard.permit!(CostInvoices, :update, socket.assigns.current_user)
+    Bodyguard.permit!(CostInvoices, :update, socket.assigns.current_user, socket.assigns.invoice)
     CostInvoices.delete_cost_invoices_transactions_connections(socket.assigns.invoice.id)
     invoice = CostInvoices.get_cost_invoice_with_blob_url!(socket.assigns.invoice.id)
     {:noreply, assign(socket, :invoice, invoice)}

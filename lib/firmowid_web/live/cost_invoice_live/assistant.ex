@@ -91,6 +91,7 @@ defmodule FirmowidWeb.CostInvoiceLive.Assistant do
 
   # pseudo mount
   def update(%{invoice: invoice, current_user: current_user}, socket) do
+    Bodyguard.permit!(CostInvoices, :show, current_user, invoice)
     conversation_id = Assistant.start_conversation(invoice)
 
     if connected?(socket) do
@@ -129,6 +130,7 @@ defmodule FirmowidWeb.CostInvoiceLive.Assistant do
   end
 
   def handle_event("accept", _params, socket) do
+    Bodyguard.permit!(CostInvoices, :update, socket.assigns.current_user, socket.assigns.invoice)
     Assistant.accept_linking(socket.assigns.assistant_pid)
 
     # TODO: convert into reinitialization of the cost_invoice liveview

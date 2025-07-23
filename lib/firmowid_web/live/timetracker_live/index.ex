@@ -155,12 +155,8 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def handle_event("end_session", _, socket) do
-    Bodyguard.permit!(
-      Timetracker,
-      :update_session,
-      socket.assigns.current_user,
-      Timetracker.get_session!(socket.assigns.current_session.id)
-    )
+    session = Timetracker.get_session!(socket.assigns.current_session.id)
+    Bodyguard.permit!(Timetracker, :update_session, socket.assigns.current_user, session)
 
     case Timetracker.end_session(socket.assigns.current_session) do
       {:ok, _session} ->
@@ -172,12 +168,8 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def handle_event("delete_session", %{"id" => id}, socket) do
-    Bodyguard.permit!(
-      Timetracker,
-      :delete_session,
-      socket.assigns.current_user,
-      Timetracker.get_session!(id)
-    )
+    session = Timetracker.get_session!(id)
+    Bodyguard.permit!(Timetracker, :delete_session, socket.assigns.current_user, session)
 
     case Timetracker.delete_session(id) do
       {:ok, _session} ->
@@ -190,28 +182,23 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def handle_event("edit_session", %{"session_form" => params}, socket) do
-    session_id = params["id"]
+    session = Timetracker.get_session!(params["id"])
 
-    Bodyguard.permit!(
-      Timetracker,
-      :update_session,
-      socket.assigns.current_user,
-      Timetracker.get_session!(session_id)
-    )
+    Bodyguard.permit!(Timetracker, :update_session, socket.assigns.current_user, session)
 
     params =
       params
       |> Map.update("start_datetime", nil, &string_to_datetime/1)
       |> Map.update("end_datetime", nil, &string_to_datetime/1)
 
-    case Timetracker.update_session(session_id, params) do
+    case Timetracker.update_session(session.id, params) do
       {:ok, session} ->
         {:noreply,
          socket
          |> expand_sessions(session)
          |> assign_sessions()
          |> push_event("js-exec", %{
-           to: "#edit-session-modal-#{session_id}",
+           to: "#edit-session-modal-#{session.id}",
            attr: "phx-remove"
          })}
 
@@ -230,6 +217,12 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def handle_event("load_more", _, socket) do
+    Bodyguard.permit!(
+      Timetracker,
+      :read_user_sessions,
+      socket.assigns.current_user
+    )
+
     {:noreply,
      socket
      |> assign(:sessions_after, Date.shift(socket.assigns.sessions_after, week: -1))
