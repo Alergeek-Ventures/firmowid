@@ -6,7 +6,7 @@ defmodule Firmowid.CostInvoices.Worker do
   use Oban.Worker,
     queue: :cost_invoices,
     unique: true,
-    max_attempts: 1
+    max_attempts: 2
 
   alias Firmowid.CostInvoices
   alias Firmowid.ReductoApiClient

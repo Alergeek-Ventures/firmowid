@@ -58,7 +58,7 @@ defmodule Firmowid.CostInvoices do
       on: b.id == c.blob_id,
       where: b.blob_checksum == ^blob_checksum
     )
-    |> Repo.one()
+    |> Repo.one!()
     |> Repo.preload(:blob)
   end
 
