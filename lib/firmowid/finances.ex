@@ -271,8 +271,13 @@ defmodule Firmowid.Finances do
       conflict_target: [:internal_transaction_id, :organization_id]
     )
 
-    organization_id = transactions |> List.first() |> Map.get(:organization_id)
-    broadcast_transaction_list_updated(organization_id)
+    case transactions |> List.first() do
+      transaction ->
+        organization_id = transaction |> Map.get(:organization_id)
+        broadcast_transaction_list_updated(organization_id)
+      nil ->
+        nil
+    end
   end
 
   def update_transaction(transaction_id, attrs) do
