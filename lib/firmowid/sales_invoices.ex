@@ -172,17 +172,24 @@ defmodule Firmowid.SalesInvoices do
     |> populate_logo_url()
   end
 
-  def get_next_invoice_number(date \\ Date.utc_today()) do
+  def get_next_invoice_number(date, opts \\ []) do
     year = date.year
     month = date.month
 
     # Get latest invoice from given month
-    latest_invoice =
+    query =
       SalesInvoice
       |> where([i], fragment("date_part('year', ?)", i.issue_date) == ^year)
       |> where([i], fragment("date_part('month', ?)", i.issue_date) == ^month)
       |> order_by(desc: :invoice_number)
       |> limit(1)
+
+    latest_invoice =
+      if omit_invoice_id = Keyword.get(opts, :omit_invoice_id, nil) do
+        where(query, [i], i.id != ^omit_invoice_id)
+      else
+        query
+      end
       |> Repo.one()
 
     case latest_invoice do

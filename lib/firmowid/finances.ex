@@ -275,6 +275,7 @@ defmodule Firmowid.Finances do
       transaction ->
         organization_id = transaction |> Map.get(:organization_id)
         broadcast_transaction_list_updated(organization_id)
+
       nil ->
         nil
     end

@@ -133,6 +133,44 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       name: :sales_invoices_invoice_number_organization_id_index,
       message: "Invoice number already exists for this organization"
     )
+    |> prepare_changes(&ensure_sequential_invoice_number/1)
+  end
+
+  defp ensure_sequential_invoice_number(%{changes: %{is_basic_info_confirmed: true}} = changeset) do
+    invoice_id = get_field(changeset, :id)
+    invoice_number = get_field(changeset, :invoice_number)
+    issue_date = get_field(changeset, :issue_date)
+
+    month = String.pad_leading("#{issue_date.month}", 2, "0")
+    year = issue_date.year
+
+    expected_invoice_index =
+      Firmowid.SalesInvoices.get_next_invoice_number(issue_date, omit_invoice_id: invoice_id)
+      |> get_invoice_number_index()
+
+    current_invoice_index =
+      invoice_number
+      |> get_invoice_number_index()
+
+    # this allows for inserting outdated invoices
+    if current_invoice_index > expected_invoice_index do
+      changeset
+      |> Ecto.Changeset.add_error(
+        :invoice_number,
+        "Number faktury powinien być mniejszy. Oczekiwano: #{expected_invoice_index}/#{month}/#{year}"
+      )
+    else
+      changeset
+    end
+  end
+
+  defp ensure_sequential_invoice_number(changeset), do: changeset
+
+  defp get_invoice_number_index(invoice_number) do
+    invoice_number
+    |> String.split("/")
+    |> List.first()
+    |> String.to_integer()
   end
 
   def seller_changeset(sales_invoice, attrs \\ %{}) do

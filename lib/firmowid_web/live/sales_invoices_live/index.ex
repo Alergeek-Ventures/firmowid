@@ -419,6 +419,13 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
               socket
               |> assign(form: changeset |> to_form())
 
+            {message, []} ->
+              Logger.error("Failed to save invoice: #{inspect(changeset)}")
+              LiveToast.send_toast(:error, message)
+
+              socket
+              |> assign(form: changeset |> to_form())
+
             _ ->
               Logger.error("Failed to save invoice: #{inspect(changeset)}")
               LiveToast.send_toast(:error, "Nie udało się zapisać faktury")

@@ -33,7 +33,7 @@ defmodule FirmowidWeb.SalesInvoicesLiveTest do
 
     test "makes section confirmed", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/sprzedazowe")
-      invoice_number = "Numer mojej faktury"
+      invoice_number = "01/07/2025"
 
       result =
         lv
