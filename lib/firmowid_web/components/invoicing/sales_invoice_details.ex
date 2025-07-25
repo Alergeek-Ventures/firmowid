@@ -70,10 +70,37 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                 "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
                 "px-2 py-1 flex items-center justify-center rounded"
               ]}
-              phx-click="delete"
+              phx-click={show_modal("delete-invoice-modal")}
             >
               <.icon name="hero-trash-solid" class="w-5 h-5" />
             </button>
+
+            <div class="abosolute">
+              <.modal id="delete-invoice-modal" on_cancel={hide_modal("delete-invoice-modal")}>
+                <p>
+                  Czy na pewno chcesz usunąć fakturę <span class="font-semibold">{@invoice.invoice_number}</span>?
+                </p>
+                <div class="mt-6 flex justify-end gap-3">
+                  <.button
+                    variant="outline"
+                    color="black"
+                    phx-click={hide_modal("delete-invoice-modal")}
+                  >
+                    Anuluj
+                  </.button>
+                  <.button
+                    color="red"
+                    phx-click={
+                      JS.exec("data-cancel", to: "#delete-invoice-modal")
+                      |> JS.push("delete")
+                    }
+                    phx-disable-with="Usuwanie..."
+                  >
+                    Usuń
+                  </.button>
+                </div>
+              </.modal>
+            </div>
           </div>
           <div class="grid grid-cols-[130px_1fr] gap-2 py-4">
             <InvoiceDetails.invoice_metadata_piece
