@@ -272,12 +272,12 @@ defmodule Firmowid.Finances do
     )
 
     case transactions |> List.first() do
+      nil ->
+        nil
+
       transaction ->
         organization_id = transaction |> Map.get(:organization_id)
         broadcast_transaction_list_updated(organization_id)
-
-      nil ->
-        nil
     end
   end
 
