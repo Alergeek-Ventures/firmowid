@@ -47,9 +47,9 @@ defmodule Firmowid.Invoicing.Matching.Windowing do
   @spec within_time_window?(Date.t(), Date.t(), Date.t()) :: boolean()
   defp within_time_window?(issue_date, due_date, transaction_date) do
     # up to 10 days before it was issued
-    past_cutoff = Timex.shift(issue_date, days: -10)
+    past_cutoff = Timex.shift(issue_date, days: -30)
     # up to 30 days after the payment deadline
-    future_cutoff = Timex.shift(due_date, days: 30)
+    future_cutoff = Timex.shift(due_date, days: 60)
 
     Timex.between?(transaction_date, past_cutoff, future_cutoff, inclusive: true)
   end
@@ -72,8 +72,8 @@ defmodule Firmowid.Invoicing.Matching.Windowing do
         transaction.booking_date
       )
 
-    lower_boundary = Decimal.mult(total_amount, Decimal.new("0.7"))
-    upper_boundary = Decimal.mult(total_amount, Decimal.new("1.5"))
+    lower_boundary = Decimal.mult(total_amount, Decimal.new("0.9"))
+    upper_boundary = Decimal.mult(total_amount, Decimal.new("1.1"))
 
     is_between_amount_window =
       Decimal.gte?(normalized_transaction_amount, lower_boundary) and
