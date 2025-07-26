@@ -1,4 +1,4 @@
-# Firmowid - invoice matching [ML]
+# Invoice matching - logistic regression
 
 ```elixir
 System.put_env([
@@ -61,16 +61,14 @@ end
 ```elixir
 defmodule Matches do
   @moduledoc """
-  Provides functions to read, write, add, and delete invoice matches from matches.json.
-  Uses CostInvoiceMatch and SalesInvoiceMatch embedded schemas for validation.
-  Prevents adding duplicates and only allows explicit delete.
+  Provides functions to read, write, add, and delete invoice matches and skipped invoices from matches.json.
   """
 
   @json_path Path.join(__DIR__, "matches.json") |> Path.expand()
 
   @doc """
   Reads the current state from matches.json.
-  Returns a map with keys :cost_invoice_matches and :sales_invoice_matches.
+  Returns a map with keys :cost_invoice_matches, :sales_invoice_matches, :skipped_cost_invoices, :skipped_sales_invoices.
   """
   def read_state do
     raw = @json_path |> File.read!() |> Jason.decode!(keys: :atoms)
@@ -78,7 +76,6 @@ defmodule Matches do
     cost_matches =
       Enum.map(raw.cost_invoice_matches, fn attrs ->
         changeset = Ecto.Changeset.change(%CostInvoiceMatch{}, attrs)
-
         if changeset.valid? do
           Ecto.Changeset.apply_changes(changeset)
         else
@@ -89,7 +86,6 @@ defmodule Matches do
     sales_matches =
       Enum.map(raw.sales_invoice_matches, fn attrs ->
         changeset = Ecto.Changeset.change(%SalesInvoiceMatch{}, attrs)
-
         if changeset.valid? do
           Ecto.Changeset.apply_changes(changeset)
         else
@@ -97,18 +93,25 @@ defmodule Matches do
         end
       end)
 
-    %{cost_invoice_matches: cost_matches, sales_invoice_matches: sales_matches}
+    %{
+      cost_invoice_matches: cost_matches,
+      sales_invoice_matches: sales_matches,
+      skipped_cost_invoices: Map.get(raw, :skipped_cost_invoices, []),
+      skipped_sales_invoices: Map.get(raw, :skipped_sales_invoices, [])
+    }
   end
 
   @doc """
   Writes the given state map to matches.json.
-  The state should be a map with keys :cost_invoice_matches and :sales_invoice_matches.
+  The state should be a map with keys :cost_invoice_matches, :sales_invoice_matches, :skipped_cost_invoices, :skipped_sales_invoices.
   """
   def write_state(state) when is_map(state) do
     normalized_state =
       state
       |> Map.update!(:cost_invoice_matches, fn list -> Enum.map(list, &Map.from_struct/1) end)
       |> Map.update!(:sales_invoice_matches, fn list -> Enum.map(list, &Map.from_struct/1) end)
+      |> Map.update(:skipped_cost_invoices, [], fn list -> list || [] end)
+      |> Map.update(:skipped_sales_invoices, [], fn list -> list || [] end)
 
     json = Jason.encode!(normalized_state, pretty: true)
     File.write!(@json_path, json)
@@ -182,6 +185,32 @@ defmodule Matches do
 
     write_state(%{state | sales_invoice_matches: updated})
   end
+
+  # Skipped cost invoices
+  def add_skipped_cost_invoice(invoice_id) do
+    state = read_state()
+    updated = Enum.uniq([invoice_id | state.skipped_cost_invoices])
+    write_state(%{state | skipped_cost_invoices: updated})
+  end
+
+  def remove_skipped_cost_invoice(invoice_id) do
+    state = read_state()
+    updated = Enum.reject(state.skipped_cost_invoices, &(&1 == invoice_id))
+    write_state(%{state | skipped_cost_invoices: updated})
+  end
+
+  # Skipped sales invoices
+  def add_skipped_sales_invoice(invoice_id) do
+    state = read_state()
+    updated = Enum.uniq([invoice_id | state.skipped_sales_invoices])
+    write_state(%{state | skipped_sales_invoices: updated})
+  end
+
+  def remove_skipped_sales_invoice(invoice_id) do
+    state = read_state()
+    updated = Enum.reject(state.skipped_sales_invoices, &(&1 == invoice_id))
+    write_state(%{state | skipped_sales_invoices: updated})
+  end
 end
 ```
 
@@ -211,27 +240,30 @@ length(cost_invoices) + length(sales_invoices)
 ````elixir
 matches = Matches.read_state()
 
-sales_invoices_to_match =
-  sales_invoices
-  |> Enum.filter(fn sales_invoice ->
-    not Enum.any?(
-      matches.sales_invoice_matches,
-      fn match -> match.sales_invoice_id == sales_invoice.id end
-    )
+cost_invoices_to_match =
+  cost_invoices
+  |> Enum.filter(fn cost_invoice ->
+    not Enum.any?(matches.cost_invoice_matches, fn match ->
+      match.cost_invoice_id == cost_invoice.id
+    end) and
+      not Enum.member?(matches.skipped_cost_invoices, cost_invoice.id)
   end)
 
 current_index =
-  Kino.Input.number("Current Sales Invoice Index",
-    default: 0,
-    min: 0,
-    max: max(length(sales_invoices_to_match) - 1, 0)
+  Kino.Input.number("Current Invoice Index",
+    default: 1,
+    min: 1,
+    max: max(length(cost_invoices_to_match), 1)
   )
 
 output_frame = Kino.Frame.new()
 
 display_current_invoice = fn index ->
-  if index >= 0 and index < length(sales_invoices_to_match) do
-    current_invoice = Enum.at(sales_invoices_to_match, index)
+  # index is now 1-based from the input, so convert to 0-based for list access
+  zero_index = index - 1
+
+  if zero_index >= 0 and zero_index < length(cost_invoices_to_match) do
+    current_invoice = Enum.at(cost_invoices_to_match, zero_index)
 
     prefiltered_transactions =
       Firmowid.Invoicing.Matching.Windowing.pre_filter_invoice_transactions(
@@ -240,7 +272,156 @@ display_current_invoice = fn index ->
       )
 
     invoice_info = """
-    ## Sales Invoice #{index + 1} of #{length(sales_invoices_to_match)}
+    ## Cost Invoice #{index} of #{length(cost_invoices_to_match)}
+
+    - Invoice identifier: #{current_invoice.invoice_identifier}
+    - Date: #{current_invoice.issue_date}
+    - Amount: #{current_invoice.total_amount}
+    - Currency: #{current_invoice.currency}
+    - Seller: #{current_invoice.seller_display_name}
+    - Seller bank account: #{current_invoice.account_number}
+    - Description: #{current_invoice.description || "No description"}
+    """
+
+    skip_button = Kino.Control.button("Skip this invoice")
+
+    Kino.listen(skip_button, fn _event ->
+      try do
+        Matches.add_skipped_cost_invoice(current_invoice.id)
+        Kino.Frame.render(output_frame, Kino.Markdown.new("⏭️ Skipped this invoice!"))
+      rescue
+        e ->
+          Kino.Frame.render(output_frame, Kino.Markdown.new("❌ Error: #{Exception.message(e)}"))
+      end
+    end)
+
+    if length(prefiltered_transactions) > 0 do
+      transaction_blocks =
+        prefiltered_transactions
+        |> Enum.with_index(1)
+        |> Enum.map(fn {transaction, idx} ->
+          params =
+            Firmowid.Invoicing.Matching.ParametrizedResult.generate_parametrized_result(
+              current_invoice,
+              transaction
+            )
+
+          details = """
+          **#{idx}. Transaction**
+          - Date: #{transaction.booking_date}
+          - Amount: #{transaction.transaction_amount}
+          - Currency: #{transaction.transaction_currency}
+          - Creditor: #{transaction.creditor_name}
+          - Bank account: #{transaction.creditor_account}
+          - Description: #{transaction.remittance_information_unstructured || "No description"}
+
+          **Calculated Params:**
+          ```elixir
+          #{inspect(params, pretty: true)}
+          ```
+          """
+
+          match_button = Kino.Control.button("Match transaction ##{idx}")
+
+          Kino.listen(match_button, fn _event ->
+            try do
+              Matches.add_cost_invoice_match(%CostInvoiceMatch{
+                transaction_id: transaction.id,
+                cost_invoice_id: current_invoice.id
+              })
+
+              Kino.Frame.render(output_frame, Kino.Markdown.new("✅ Matched transaction ##{idx}!"))
+            rescue
+              e ->
+                Kino.Frame.render(
+                  output_frame,
+                  Kino.Markdown.new("❌ Error: #{Exception.message(e)}")
+                )
+            end
+          end)
+
+          [Kino.Markdown.new(details), match_button]
+        end)
+        |> List.flatten()
+
+      Kino.Frame.render(
+        output_frame,
+        Kino.Layout.grid(
+          [
+            Kino.Markdown.new(invoice_info),
+            skip_button
+            | transaction_blocks
+          ],
+          columns: 1
+        )
+      )
+    else
+      Kino.Frame.render(
+        output_frame,
+        Kino.Layout.grid(
+          [
+            Kino.Markdown.new(invoice_info <> "\n\n### No prefiltered transactions found"),
+            skip_button
+          ],
+          columns: 1
+        )
+      )
+    end
+  else
+    Kino.Frame.render(
+      output_frame,
+      Kino.Markdown.new("**Invalid index. Please select a valid invoice.**")
+    )
+  end
+end
+
+Kino.listen(current_index, fn %{value: index} ->
+  display_current_invoice.(index)
+end)
+
+display_current_invoice.(1)
+
+Kino.Layout.grid(
+  [current_index, output_frame],
+  columns: 1
+)
+````
+
+````elixir
+matches = Matches.read_state()
+
+sales_invoices_to_match =
+  sales_invoices
+  |> Enum.filter(fn sales_invoice ->
+    not Enum.any?(
+      matches.sales_invoice_matches,
+      fn match -> match.sales_invoice_id == sales_invoice.id end
+    ) and
+    not Enum.member?(matches.skipped_sales_invoices, sales_invoice.id)
+  end)
+
+current_index =
+  Kino.Input.number("Current Sales Invoice Index",
+    default: 1,
+    min: 1,
+    max: max(length(sales_invoices_to_match), 1)
+  )
+
+output_frame = Kino.Frame.new()
+
+display_current_invoice = fn index ->
+  zero_index = index - 1
+  if zero_index >= 0 and zero_index < length(sales_invoices_to_match) do
+    current_invoice = Enum.at(sales_invoices_to_match, zero_index)
+
+    prefiltered_transactions =
+      Firmowid.Invoicing.Matching.Windowing.pre_filter_invoice_transactions(
+        current_invoice,
+        transactions
+      )
+
+    invoice_info = """
+    ## Sales Invoice #{index} of #{length(sales_invoices_to_match)}
 
     - Date: #{current_invoice.issue_date}
     - Amount: #{Firmowid.SalesInvoices.SalesInvoice.get_gross_value(current_invoice)}
@@ -248,6 +429,17 @@ display_current_invoice = fn index ->
     - Buyer: #{current_invoice.buyer_display_name}
     - Seller bank account: #{current_invoice.seller_account_number}
     """
+
+    skip_button = Kino.Control.button("Skip this invoice")
+
+    Kino.listen(skip_button, fn _event ->
+      try do
+        Matches.add_skipped_sales_invoice(current_invoice.id)
+        Kino.Frame.render(output_frame, Kino.Markdown.new("⏭️ Skipped this invoice!"))
+      rescue
+        e -> Kino.Frame.render(output_frame, Kino.Markdown.new("❌ Error: #{Exception.message(e)}"))
+      end
+    end)
 
     if length(prefiltered_transactions) > 0 do
       transaction_blocks =
@@ -283,7 +475,6 @@ display_current_invoice = fn index ->
                 transaction_id: transaction.id,
                 sales_invoice_id: current_invoice.id
               })
-
               Kino.Frame.render(output_frame, Kino.Markdown.new("✅ Matched transaction ##{idx}!"))
             rescue
               e ->
@@ -300,12 +491,25 @@ display_current_invoice = fn index ->
 
       Kino.Frame.render(
         output_frame,
-        Kino.Layout.grid([Kino.Markdown.new(invoice_info) | transaction_blocks], columns: 1)
+        Kino.Layout.grid(
+          [
+            Kino.Markdown.new(invoice_info),
+            skip_button
+            | transaction_blocks
+          ],
+          columns: 1
+        )
       )
     else
       Kino.Frame.render(
         output_frame,
-        Kino.Markdown.new(invoice_info <> "\n\n### No prefiltered transactions found")
+        Kino.Layout.grid(
+          [
+            Kino.Markdown.new(invoice_info <> "\n\n### No prefiltered transactions found"),
+            skip_button
+          ],
+          columns: 1
+        )
       )
     end
   else
@@ -320,7 +524,7 @@ Kino.listen(current_index, fn %{value: index} ->
   display_current_invoice.(index)
 end)
 
-display_current_invoice.(0)
+display_current_invoice.(1)
 
 Kino.Layout.grid(
   [current_index, output_frame],
@@ -328,128 +532,7 @@ Kino.Layout.grid(
 )
 ````
 
-````elixir
-matches = Matches.read_state()
-
-cost_invoices_to_match =
-  cost_invoices
-  |> Enum.filter(fn cost_invoice ->
-   not Enum.any?(
-     matches.cost_invoice_matches,
-     fn match ->
-       match.cost_invoice_id == cost_invoice.id
-     end
-   )
- end)
-
-current_index =
-  Kino.Input.number("Current Invoice Index",
-    default: 0,
-    min: 0,
-    max: max(length(cost_invoices_to_match) - 1, 0)
-  )
-
-output_frame = Kino.Frame.new()
-
-display_current_invoice = fn index ->
-  if index >= 0 and index < length(cost_invoices_to_match) do
-    current_invoice = Enum.at(cost_invoices_to_match, index)
-
-    prefiltered_transactions =
-      Firmowid.Invoicing.Matching.Windowing.pre_filter_invoice_transactions(
-        current_invoice,
-        transactions
-      )
-
-    invoice_info = """
-    ## Cost Invoice #{index + 1} of #{length(cost_invoices_to_match)}
-
-    - Invoice identifier: #{current_invoice.invoice_identifier}
-    - Date: #{current_invoice.issue_date}
-    - Amount: #{current_invoice.total_amount}
-    - Currency: #{current_invoice.currency}
-    - Seller: #{current_invoice.seller_display_name}
-    - Seller bank account: #{current_invoice.account_number}
-    - Description: #{current_invoice.description || "No description"}
-    """
-
-    if length(prefiltered_transactions) > 0 do
-      # For each transaction, create a markdown block and a button
-      transaction_blocks =
-        prefiltered_transactions
-        |> Enum.with_index(1)
-        |> Enum.map(fn {transaction, idx} ->
-          params = Firmowid.Invoicing.Matching.ParametrizedResult.generate_parametrized_result(current_invoice, transaction)
-          details = """
-          **#{idx}. Transaction**
-          - Date: #{transaction.booking_date}
-          - Amount: #{transaction.transaction_amount}
-          - Currency: #{transaction.transaction_currency}
-          - Creditor: #{transaction.creditor_name}
-          - Bank account: #{transaction.creditor_account}
-          - Description: #{transaction.remittance_information_unstructured || "No description"}
-
-          **Calculated Params:**
-          ```elixir
-          #{inspect(params, pretty: true)}
-          ```
-          """
-
-          match_button = Kino.Control.button("Match transaction ##{idx}")
-
-          # Attach event handler for the button
-          Kino.listen(match_button, fn _event ->
-            try do
-              Matches.add_cost_invoice_match(%CostInvoiceMatch{
-                transaction_id: transaction.id,
-                cost_invoice_id: current_invoice.id,
-              })
-              Kino.Frame.render(output_frame, Kino.Markdown.new("✅ Matched transaction ##{idx}!"))
-            rescue
-              e -> Kino.Frame.render(output_frame, Kino.Markdown.new("❌ Error: #{Exception.message(e)}"))
-            end
-          end)
-
-          [Kino.Markdown.new(details), match_button]
-        end)
-        |> List.flatten()
-
-      Kino.Frame.render(
-        output_frame,
-        Kino.Layout.grid([
-          Kino.Markdown.new(invoice_info)
-          | transaction_blocks
-        ], columns: 1)
-      )
-    else
-      Kino.Frame.render(
-        output_frame,
-        Kino.Markdown.new(invoice_info <> "\n\n### No prefiltered transactions found")
-      )
-    end
-  else
-    Kino.Frame.render(
-      output_frame,
-      Kino.Markdown.new("**Invalid index. Please select a valid invoice.**")
-    )
-  end
-end
-
-# Set up event handlers
-Kino.listen(current_index, fn %{value: index} ->
-  display_current_invoice.(index)
-end)
-
-# Display initial invoice
-display_current_invoice.(0)
-
-Kino.Layout.grid(
-  [current_index, output_frame],
-  columns: 1
-)
-````
-
-## train and evaluate the model
+## evaluate the model
 
 Right now our model is a simple Logisitic Regression classifier. Predicts yes or no on an invoice match.
 
@@ -460,47 +543,79 @@ It is incapable of doing many-to-many match. Something to think about in the fut
 ```elixir
 matches = Matches.read_state()
 
-all_data =
+cost_invoice_data =
   matches.cost_invoice_matches
+  |> Enum.reject(fn %{cost_invoice_id: id} -> Enum.member?(matches.skipped_cost_invoices, id) end)
   |> Enum.map(fn %{cost_invoice_id: cost_invoice_id} = a_match ->
     cost_invoice = cost_invoices |> Enum.find(&(&1.id == cost_invoice_id))
-
-    Map.merge(%{cost_invoice: cost_invoice}, a_match)
+    Map.merge(%{invoice: cost_invoice, invoice_type: :cost}, a_match)
   end)
   |> Enum.flat_map(fn %{
-                        cost_invoice: cost_invoice,
-                        cost_invoice_id: cost_invoice_id,
+                        invoice: invoice,
+                        cost_invoice_id: invoice_id,
                         transaction_id: transaction_id
                       } ->
     Firmowid.Invoicing.Matching.Windowing.pre_filter_invoice_transactions(
-      cost_invoice,
+      invoice,
       transactions
     )
     |> Enum.map(fn result ->
       %{
-        cost_invoice_id: cost_invoice_id,
+        invoice_type: :cost,
+        invoice_id: invoice_id,
         transaction_id: result.id,
         match: result.id == transaction_id
       }
     end)
   end)
 
-IO.puts("prepared #{length(all_data)} pairs \n")
-IO.puts("good: #{length(all_data |> Enum.filter(& &1.match))}")
-IO.puts("bad: #{length(all_data |> Enum.filter(&(!&1.match)))}")
-```
+sales_invoice_data =
+  matches.sales_invoice_matches
+  |> Enum.reject(fn %{sales_invoice_id: id} -> Enum.member?(matches.skipped_sales_invoices, id) end)
+  |> Enum.map(fn %{sales_invoice_id: sales_invoice_id} = a_match ->
+    sales_invoice = sales_invoices |> Enum.find(&(&1.id == sales_invoice_id))
+    Map.merge(%{invoice: sales_invoice, invoice_type: :sales}, a_match)
+  end)
+  |> Enum.flat_map(fn %{
+                        invoice: invoice,
+                        sales_invoice_id: invoice_id,
+                        transaction_id: transaction_id
+                      } ->
+    Firmowid.Invoicing.Matching.Windowing.pre_filter_invoice_transactions(
+      invoice,
+      transactions
+    )
+    |> Enum.map(fn result ->
+      %{
+        invoice_type: :sales,
+        invoice_id: invoice_id,
+        transaction_id: result.id,
+        match: result.id == transaction_id
+      }
+    end)
+  end)
 
-```elixir
+all_data = cost_invoice_data ++ sales_invoice_data
+
+IO.puts("prepared #{length(all_data)} pairs (cost: #{length(cost_invoice_data)}, sales: #{length(sales_invoice_data)})\n")
+IO.puts("good: #{length(all_data |> Enum.filter(& &1.match))} (cost: #{length(cost_invoice_data |> Enum.filter(& &1.match))}, sales: #{length(sales_invoice_data |> Enum.filter(& &1.match))})")
+IO.puts("bad: #{length(all_data |> Enum.filter(&(!&1.match)))} (cost: #{length(cost_invoice_data |> Enum.filter(&(!&1.match)))}, sales: #{length(sales_invoice_data |> Enum.filter(&(!&1.match)))})")
+
 # ---------- build feature vectors ------------------------------------------------
 rows =
   all_data
-  |> Enum.map(fn %{cost_invoice_id: iid, transaction_id: tid, match: match} ->
-    cost_invoice = Enum.find(cost_invoices, &(&1.id == iid))
-    transaction  = Enum.find(transactions, &(&1.id == tid))
+  |> Enum.map(fn %{invoice_type: type, invoice_id: iid, transaction_id: tid, match: match} ->
+    invoice =
+      case type do
+        :cost -> Enum.find(cost_invoices, &(&1.id == iid))
+        :sales -> Enum.find(sales_invoices, &(&1.id == iid))
+      end
+
+    transaction = Enum.find(transactions, &(&1.id == tid))
 
     params =
       Firmowid.Invoicing.Matching.ParametrizedResult.generate_parametrized_result(
-        cost_invoice,
+        invoice,
         transaction
       )
 
@@ -549,17 +664,6 @@ make_xy = fn vecs ->
     Nx.tensor(y_list,  type: {:u, 8})
   }
 end
-```
-
-```elixir
-# After you assemble `rows` but before CV
-{goods, bads} =
-  rows
-  |> Enum.map(&List.last(elem(&1, 1)))
-  |> Enum.frequencies()
-  |> then(&{Map.get(&1, 1, 0), Map.get(&1, 0, 0)})
-
-IO.puts("👍  goods: #{goods}   👎  bads: #{bads}")
 
 ```
 
@@ -568,9 +672,9 @@ There are two ways we use this model:
 - automated matching in a background job
 - UI with suggested transactions
 
-For these two we have different criterias - we never want automated matching to provide us with a false positive. In the UI though, we want to suggest likely candidates.
+For these two we have different criterias - we never want automated matching to provide us with a false positive.
 
-<!-- livebook:{"reevaluate_automatically":true} -->
+In the UI though, we want to suggest likely candidates. For values that are good visual indicators, you can run this code and get some inspiration.
 
 ```elixir
 # ───────── configurable params ─────────────────────────────
@@ -679,11 +783,13 @@ IO.puts("""
 
 ```
 
-This generates coefficients and bias that we can copy over into the Firmowid codebase.
+## train the model
+
+Train on all available data (labelled pairs) and emit ready-to-paste constants.
+
+Use them in `lib/firmowid/invoicing/matching/regression_predictor.ex`.
 
 ```elixir
-### 🔄 Train on ALL labelled pairs and emit ready-to-paste constants ###
-
 # 0. Helper: vector list → {X, y} tensors
 make_xy = fn vecs ->
   n_features = length(List.first(vecs)) - 1
@@ -703,8 +809,6 @@ all_rows =
   rows_by_invoice
   |> Map.values()
   |> Enum.concat()
-
-IO.inspect(length(all_rows), label: "Total labelled pairs")
 
 # 2. Full training set
 {full_x, full_y} = make_xy.(all_rows)
@@ -732,7 +836,7 @@ coeff_literal =
   |> Enum.map(&Float.round(&1, 6))
   |> then(&"Nx.tensor(" <> inspect(&1, limit: :infinity) <> ", type: {:f, 32})")
 
-IO.puts("""
+"""
 ------------------------------------------
 Copy-paste into your module:
 
@@ -740,6 +844,5 @@ Copy-paste into your module:
 
   @bias #{Float.round(bias_val, 6)}
 ------------------------------------------
-""")
-
+"""
 ```

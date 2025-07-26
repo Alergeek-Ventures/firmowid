@@ -515,12 +515,146 @@
     {
       "transaction_id": "01975459-67b3-76d6-8fb6-05dcf6d630f2",
       "cost_invoice_id": "019813f3-8e4f-7089-9c71-b8d7dfeff382"
+    },
+    {
+      "transaction_id": "019817d3-ff56-7640-9654-22cd2c25adbf",
+      "cost_invoice_id": "019812c8-b231-75e1-bb3f-4e2898baa2a9"
     }
   ],
   "sales_invoice_matches": [
     {
       "transaction_id": "0196391b-a027-7656-8389-e7bb35d6b26c",
       "sales_invoice_id": "0194fb30-bd46-7d65-8ac3-cf089597dbef"
+    },
+    {
+      "transaction_id": "0194c651-a819-7d8d-9de7-e26ca884dd32",
+      "sales_invoice_id": "01948dfe-d0f7-7168-be6f-f89790a168a7"
+    },
+    {
+      "transaction_id": "0195b85c-c658-7b25-a430-6804471ebdef",
+      "sales_invoice_id": "01956219-2ad4-774d-9a8b-ffdc9d26311c"
+    },
+    {
+      "transaction_id": "0196391b-a027-7e1c-b381-3d1d5a5f46f0",
+      "sales_invoice_id": "019570b0-bfd6-7ed2-8fbc-d95af971d1e0"
+    },
+    {
+      "transaction_id": "0196391b-a027-78ae-b04a-68aedeaa0b8b",
+      "sales_invoice_id": "01956211-e223-7024-b6d9-1dc01fad5f8c"
+    },
+    {
+      "transaction_id": "0196c94d-5758-732c-bccd-0b35653cd549",
+      "sales_invoice_id": "01961aed-fa56-7628-b5ec-56db996c9655"
+    },
+    {
+      "transaction_id": "0196c94d-5758-7b50-855e-e160239cda29",
+      "sales_invoice_id": "01961aea-e4bd-7cb9-b6cc-baffc8c3b289"
+    },
+    {
+      "transaction_id": "0196c94d-db1a-73ff-9281-13d29aa2cf5a",
+      "sales_invoice_id": "01961aee-8021-754d-b9da-da143f8c6fd9"
+    },
+    {
+      "transaction_id": "01966c9c-902c-7ae6-a9b9-a5f6f5ab5952",
+      "sales_invoice_id": "01961af0-a272-71ff-b422-27f118f86f44"
+    },
+    {
+      "transaction_id": "019720d9-c9cc-7bf0-ab78-5e912698b5a9",
+      "sales_invoice_id": "0196a139-a58c-7a54-9285-01768ac67df7"
+    },
+    {
+      "transaction_id": "0197c07e-8b6f-7e77-8dee-8acc245208bb",
+      "sales_invoice_id": "0197395e-7a85-7052-81ab-6c88eb2f36d6"
+    },
+    {
+      "transaction_id": "0197304c-75ac-705c-a062-7db764cafc85",
+      "sales_invoice_id": "0196a13d-3322-77f1-a88e-7d47a86d1ac7"
+    },
+    {
+      "transaction_id": "019720d9-6a3b-71a8-b2a6-fa8bd3680aed",
+      "sales_invoice_id": "0196a137-6128-7ef0-9fa1-c61743a0a106"
+    },
+    {
+      "transaction_id": "019720d9-c9cc-7de2-a9a3-d8163eaba6ea",
+      "sales_invoice_id": "0196a13f-c7bb-731f-97e2-295288e93ccd"
+    },
+    {
+      "transaction_id": "0197c56e-0f63-77b1-8912-dfc837f8e2e2",
+      "sales_invoice_id": "0197395c-d834-767b-8e3d-e56046a5d772"
+    },
+    {
+      "transaction_id": "01978cff-39d4-733e-b7d6-7fbbd8ccf52b",
+      "sales_invoice_id": "01973960-7753-7678-91e9-39ce998512d2"
+    },
+    {
+      "transaction_id": "01978cff-39d4-7d36-a3ab-3534195474e7",
+      "sales_invoice_id": "01973965-05b2-7332-a458-3ad03683d669"
+    },
+    {
+      "transaction_id": "01984106-ecac-7ce9-a97c-88feba884a51",
+      "sales_invoice_id": "0197c18b-0dc1-72aa-95a0-d57c9a5bf34f"
+    },
+    {
+      "transaction_id": "0197c56e-0f63-7b35-b562-ad9771b12a99",
+      "sales_invoice_id": "0197c11b-79fa-7892-9f26-4d4e796f4eba"
+    },
+    {
+      "transaction_id": "01982c6d-7982-7fb3-be64-5f57117dff62",
+      "sales_invoice_id": "0197c189-6672-7fde-9097-d2a7ccfe2d20"
     }
+  ],
+  "skipped_cost_invoices": [
+    "0197e00c-d884-73dc-928a-195c98448ccb",
+    "0197dff4-e779-7cda-a206-49b6eed36bc2",
+    "0194e9e9-725f-71c3-b6d2-3f2ef77af896",
+    "0194e574-ced1-7d59-b365-0e0310891697",
+    "0194ea0c-901d-7f5c-87a5-6624df0b4280",
+    "0194e9f6-b363-7ecf-aae2-b68fcdb41753",
+    "0194e9ec-5798-75aa-9ff5-1022324f2398",
+    "0195715f-3e82-7ae8-8910-0bd070cc1f7f",
+    "0195715f-4563-7899-b936-fc1377205168",
+    "01956792-4a53-778a-ab01-ca11dfa1e100",
+    "01955c3d-b523-7160-978a-cdaa4addb6a1",
+    "01957157-c00d-7433-bd41-3d8b719610a4",
+    "0196256b-d111-759b-8793-4ddb94bc7ffd",
+    "0195f172-601a-7363-a39e-9ea123547516",
+    "01969ff5-3d2d-7fe8-83e5-d16aae38eafb",
+    "0196256d-ec1d-7c67-857f-0a05d4255d46",
+    "01969fc1-fecf-7aa6-ae0a-da95bb8a4772",
+    "01969ff5-5023-78b5-ad1c-2487393bc3fe",
+    "019744ef-f867-7e90-b955-4aa4340faad6",
+    "019744d0-1384-7983-bae9-33c701709145",
+    "01975ff4-bb36-737f-a0dd-140ef4c10d91",
+    "019744ce-fc47-738f-b240-79125eedf386",
+    "0197dfdc-7737-7e99-b2e6-b8fec9ddc7d0",
+    "0197e451-b118-7812-8029-3fe91bc56e85",
+    "0194e9ec-2784-712c-a2a9-413b4fef0471",
+    "0194e9ea-0100-7752-b14e-f5c50ef89d9e",
+    "0194e9ea-aaec-7fe6-86e3-a275199f5ba9",
+    "0194ef3d-681c-75d7-a281-cd0c4fccba76",
+    "0194e9fd-d3b2-777d-85a7-b993e7c75d7d",
+    "0194e9f6-8fe0-7b80-9763-22f8e05028da",
+    "0197e02e-9507-7fa5-a4dc-c221d8d10756",
+    "0194e9f5-f37c-7701-918a-df79ef4a4f0e"
+  ],
+  "skipped_sales_invoices": [
+    "0196f830-cc4d-739f-904e-8320c27698cc",
+    "0196f833-62ad-7c00-b389-cae8e4a298b6",
+    "0196f82f-29f1-799a-b385-f046ca181d49",
+    "019812b2-3214-7934-be12-91f708fbc1bc",
+    "0196f834-5ea8-791f-a96c-c4eebb1fb82b",
+    "019812b3-89c4-7260-97e4-6c81a5b39676",
+    "019812b8-3b61-7548-b9fb-41cae6455634",
+    "01975831-415b-7d19-b4de-92ac40e47999",
+    "019812b5-50f4-7a7b-bb8b-1f608a6f8f06",
+    "019812b6-7a6c-72f6-997a-d9539f2ff034",
+    "01975849-a7bb-70fd-9d26-db48172f6492",
+    "01975848-ecf2-72ab-a2d2-9b837f08a1c4",
+    "01975847-6b05-7a6e-b9d3-a8f8168e34d8",
+    "01975840-3758-7a40-a310-adb9a4907d91",
+    "0196af19-6613-7496-ba16-9bb37af2d692",
+    "0194fb2c-ca9e-7278-adee-8c00b7841c07",
+    "01956350-447e-7186-8e82-558608d559af",
+    "0194fb25-8f93-78c6-a70c-243f03f2b734"
   ]
 }
