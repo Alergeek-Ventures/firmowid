@@ -669,8 +669,8 @@ end
 
 There are two ways we use this model:
 
-- automated matching in a background job
-- UI with suggested transactions
+* automated matching in a background job
+* UI with suggested transactions
 
 For these two we have different criterias - we never want automated matching to provide us with a false positive.
 
@@ -703,7 +703,14 @@ fold_results =
     train_ids = fold_groups |> List.delete(test_ids) |> List.flatten()
 
     train_rows = Enum.flat_map(train_ids, &rows_by_invoice[&1])
-    test_rows  = Enum.flat_map(test_ids,  &rows_by_invoice[&1])
+    test_rows = Enum.flat_map(test_ids, &rows_by_invoice[&1])
+    # Build a parallel list of the original all_data entries for each test row
+    test_data_entries = Enum.flat_map(test_ids, fn iid ->
+      # For each test row, find the corresponding all_data entry
+      # rows_by_invoice[&1] is a list of feature vectors for this invoice
+      # all_data contains all pairs, so filter by invoice_id
+      Enum.filter(all_data, fn d -> d.invoice_id == iid end)
+    end)
 
     {train_x, train_y} = make_xy.(train_rows)
     {test_x,  test_y}  = make_xy.(test_rows)
@@ -733,14 +740,39 @@ fold_results =
         hit -> hit
       end
 
-    # 4. highest score seen on a negative (for “no-FP” cut-off)
-    max_neg =
+    # 4. highest score seen on a negative (for “no-FP” cut-off) + show the example(s)
+    negatives =
       probs
       |> Nx.to_flat_list()
       |> Enum.zip(Nx.to_flat_list(y_bool))
-      |> Enum.filter(fn {_p, y} -> y == 0 end)
-      |> Enum.map(&elem(&1, 0))
+      |> Enum.with_index()
+      |> Enum.filter(fn {{_p, y}, _idx} -> y == 0 end)
+
+    max_neg =
+      negatives
+      |> Enum.map(fn {{p, _}, _} -> p end)
       |> Enum.max(fn -> 0.0 end)
+
+    max_neg_examples =
+      negatives
+      |> Enum.filter(fn {{p, _}, _} -> p == max_neg end)
+      |> Enum.map(fn {{_p, _}, idx} -> idx end)
+
+    IO.puts("\nHighest-scoring false positive(s) for fold #{fold_idx} (score: #{Float.round(max_neg, 4)}):")
+    # for idx <- max_neg_examples do
+    #   entry = Enum.at(test_data_entries, idx)
+    #   invoice =
+    #     case entry.invoice_type do
+    #       :cost -> Enum.find(cost_invoices, &(&1.id == entry.invoice_id))
+    #       :sales -> Enum.find(sales_invoices, &(&1.id == entry.invoice_id))
+    #     end
+    #   transaction = Enum.find(transactions, &(&1.id == entry.transaction_id))
+    #   IO.puts("\nInvoice:")
+    #   IO.inspect(invoice)
+    #   IO.puts("Transaction:")
+    #   IO.inspect(transaction)
+    #   IO.puts("Match label: #{entry.match}")
+    # end
 
     %{
       fold: fold_idx,
@@ -836,7 +868,7 @@ coeff_literal =
   |> Enum.map(&Float.round(&1, 6))
   |> then(&"Nx.tensor(" <> inspect(&1, limit: :infinity) <> ", type: {:f, 32})")
 
-"""
+IO.puts("""
 ------------------------------------------
 Copy-paste into your module:
 
@@ -844,5 +876,5 @@ Copy-paste into your module:
 
   @bias #{Float.round(bias_val, 6)}
 ------------------------------------------
-"""
+""")
 ```
