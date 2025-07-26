@@ -47,9 +47,11 @@ secret_key_base =
 
 config :firmowid, FirmowidWeb.Endpoint, secret_key_base: secret_key_base
 
-config :firmowid, Firmowid.Repo,
-  url: System.get_env("DATABASE_URL"),
-  pool_size: String.to_integer(System.get_env("POOL_SIZE", "5"))
+if config_env() != :test do
+  config :firmowid, Firmowid.Repo,
+    url: System.get_env("DATABASE_URL"),
+    pool_size: String.to_integer(System.get_env("POOL_SIZE", "5"))
+end
 
 config :ex_aws,
   # empty strings because ex_aws will complain

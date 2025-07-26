@@ -41,7 +41,8 @@ defmodule Firmowid.Invoicing.Matching.WindowingTest do
           booking_date: ~D[2025-03-20]
         },
         %Transaction{
-          transaction_amount: Decimal.new("-105.0"),
+          # changed from -105.0 to -120.0 (outside amount window)
+          transaction_amount: Decimal.new("-120.0"),
           transaction_currency: "PLN",
           booking_date: ~D[2025-02-10]
         },
