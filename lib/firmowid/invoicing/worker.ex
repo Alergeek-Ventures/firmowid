@@ -45,7 +45,6 @@ defmodule Firmowid.Invoicing.Worker do
 
   defp match_invoices(organization_id) do
     Invoicing.match_cost_invoices(organization_id)
-
-    # TODO: re-enable sales invoices matching when we have a good matching algorithm (dependant on the dataset)
+    Invoicing.match_sales_invoices(organization_id)
   end
 end

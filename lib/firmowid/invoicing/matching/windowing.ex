@@ -72,8 +72,8 @@ defmodule Firmowid.Invoicing.Matching.Windowing do
         transaction.booking_date
       )
 
-    lower_boundary = Decimal.mult(total_amount, Decimal.new("0.9"))
-    upper_boundary = Decimal.mult(total_amount, Decimal.new("1.1"))
+    lower_boundary = Decimal.mult(total_amount, Decimal.new("0.7"))
+    upper_boundary = Decimal.mult(total_amount, Decimal.new("1.5"))
 
     is_between_amount_window =
       Decimal.gte?(normalized_transaction_amount, lower_boundary) and

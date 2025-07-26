@@ -320,4 +320,48 @@ defmodule Firmowid.Invoicing do
     end)
     |> Enum.sort_by(fn {_, prediction_score} -> prediction_score end, :desc)
   end
+
+  def match_sales_invoices(organization_id) do
+    Firmowid.Repo.put_org_id(organization_id)
+
+    unmatched_sales_invoices = SalesInvoices.list_unmatched_sales_invoices()
+
+    unmatched_sales_invoices
+    |> Enum.each(&match_sales_invoice(&1.id, organization_id))
+  end
+
+  def match_sales_invoice(sales_invoice_id, organization_id) do
+    Firmowid.Repo.put_org_id(organization_id)
+
+    sales_invoice = SalesInvoices.get_sales_invoice(sales_invoice_id)
+
+    Logger.info("Matching sales invoice #{sales_invoice.id} for organization #{organization_id}")
+
+    unmatched_transactions =
+      Finances.list_unmatched_transactions(~D[2000-01-01], ~D[2100-12-30])
+
+    Logger.info("Found #{length(unmatched_transactions)} unmatched transactions")
+
+    case score_and_sort_transactions(sales_invoice, unmatched_transactions) do
+      [{transaction, prediction_score} | _] ->
+        Logger.info("Prediction score: #{prediction_score}")
+
+        if Matching.RegressionPredictor.confident_match?(prediction_score) do
+          SalesInvoices.create_sales_invoices_transactions_connection(
+            sales_invoice.id,
+            transaction.id,
+            organization_id
+          )
+
+          Logger.info(
+            "Matched sales invoice #{sales_invoice.id} with transaction #{transaction.id}"
+          )
+        else
+          Logger.info("No confident match for sales invoice #{sales_invoice.id}")
+        end
+
+      [] ->
+        Logger.info("No match found for sales invoice #{sales_invoice.id}")
+    end
+  end
 end
