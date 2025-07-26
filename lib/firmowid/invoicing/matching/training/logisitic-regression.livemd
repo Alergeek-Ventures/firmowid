@@ -1,6 +1,17 @@
 # Firmowid - invoice matching [ML]
 
 ```elixir
+System.put_env([
+  {"AWS_ACCESS_KEY_ID", "your_access_key_id"},
+  {"AWS_SECRET_ACCESS_KEY", "your_secret_access_key"},
+  {"GO_LIMITLESS_SECRET_ID", "your_secret_id"},
+  {"GO_LIMITLESS_SECRET_KEY", "your_secret_key"},
+  {"OPENAI_API_KEY", "your_openai_api_key"},
+  {"REDUCTO_API_KEY", "your_reducto_api_key"},
+  {"DATABASE_URL", "postgresql://postgres:postgres@localhost:5433/firmowid?sslmode=prefer"},
+  {"SECRET_KEY_BASE", "REMOVED_PHOENIX_SECRET_KEY_BASE"}
+])
+
 Mix.install(
   [
     {:firmowid, path: Path.join(__DIR__, "../../../../.."), env: :dev},
@@ -14,7 +25,8 @@ Mix.install(
 
 # boot only what the notebook really needs
 Application.ensure_all_started(:ecto_sql)
-Application.ensure_all_started(:kino)       # ← this is the missing bit
+# ← this is the missing bit
+Application.ensure_all_started(:kino)
 
 # now you can attach the repo as a Livebook child
 {:ok, _pid} = Kino.start_child({Firmowid.Repo, []})
@@ -37,7 +49,7 @@ end
 ```elixir
 defmodule SalesInvoiceMatch do
   use Ecto.Schema
-  
+
   @primary_key false
   embedded_schema do
     field :transaction_id, :string
@@ -54,15 +66,11 @@ defmodule Matches do
   Prevents adding duplicates and only allows explicit delete.
   """
 
-  @json_path Path.join(
-               __DIR__,
-               "matches.json"
-             )
-             |> Path.expand()
+  @json_path Path.join(__DIR__, "matches.json") |> Path.expand()
 
   @doc """
   Reads the current state from matches.json.
-  Returns a map with keys "cost_invoice_matches" and "sales_invoice_matches".
+  Returns a map with keys :cost_invoice_matches and :sales_invoice_matches.
   """
   def read_state do
     raw = @json_path |> File.read!() |> Jason.decode!(keys: :atoms)
@@ -94,10 +102,15 @@ defmodule Matches do
 
   @doc """
   Writes the given state map to matches.json.
-  The state should be a map with keys "cost_invoice_matches" and "sales_invoice_matches".
+  The state should be a map with keys :cost_invoice_matches and :sales_invoice_matches.
   """
   def write_state(state) when is_map(state) do
-    json = Jason.encode!(state, pretty: true)
+    normalized_state =
+      state
+      |> Map.update!(:cost_invoice_matches, fn list -> Enum.map(list, &Map.from_struct/1) end)
+      |> Map.update!(:sales_invoice_matches, fn list -> Enum.map(list, &Map.from_struct/1) end)
+
+    json = Jason.encode!(normalized_state, pretty: true)
     File.write!(@json_path, json)
   end
 
@@ -107,14 +120,12 @@ defmodule Matches do
   """
   def add_cost_invoice_match(%CostInvoiceMatch{} = new_match) do
     state = read_state()
-    cost_invoice_matches = state.cost_invoice_matches
 
-    if Enum.any?(cost_invoice_matches, &(&1.cost_invoice_id == new_match.cost_invoice_id)) do
+    if Enum.any?(state.cost_invoice_matches, &(&1.cost_invoice_id == new_match.cost_invoice_id)) do
       raise "Cost invoice match already exists"
     end
 
-    updated = (cost_invoice_matches ++ [new_match]) |> Enum.map(&Map.from_struct(&1))
-
+    updated = state.cost_invoice_matches ++ [new_match]
     write_state(%{state | cost_invoice_matches: updated})
   end
 
@@ -125,22 +136,21 @@ defmodule Matches do
   def add_sales_invoice_match(%SalesInvoiceMatch{} = match),
     do: add_sales_invoice_match(Map.from_struct(match))
 
-  def add_sales_invoice_match(%{"transaction_id" => _tid, "sales_invoice_id" => sid} = attrs) do
+  def add_sales_invoice_match(%{transaction_id: _tid, sales_invoice_id: sid} = attrs) do
     state = read_state()
-    matches = state["sales_invoice_matches"]
 
-    if Enum.any?(matches, &(&1["sales_invoice_id"] == sid)) do
+    if Enum.any?(state.sales_invoice_matches, &(&1.sales_invoice_id == sid)) do
       raise "Sales invoice match already exists"
     end
 
-    # Validate
     changeset = Ecto.Changeset.change(%SalesInvoiceMatch{}, attrs)
 
-    if not changeset.valid?,
-      do: raise("Invalid sales invoice match: #{inspect(changeset.errors)}")
+    if not changeset.valid? do
+      raise "Invalid sales invoice match: #{inspect(changeset.errors)}"
+    end
 
-    updated = matches ++ [attrs]
-    write_state(%{state | "sales_invoice_matches" => updated})
+    updated = state.sales_invoice_matches ++ [Ecto.Changeset.apply_changes(changeset)]
+    write_state(%{state | sales_invoice_matches: updated})
   end
 
   @doc """
@@ -148,15 +158,14 @@ defmodule Matches do
   """
   def delete_cost_invoice_match(transaction_id, cost_invoice_id) do
     state = read_state()
-    matches = state["cost_invoice_matches"]
 
     updated =
       Enum.reject(
-        matches,
-        &(&1["transaction_id"] == transaction_id and &1["cost_invoice_id"] == cost_invoice_id)
+        state.cost_invoice_matches,
+        &(&1.transaction_id == transaction_id and &1.cost_invoice_id == cost_invoice_id)
       )
 
-    write_state(%{state | "cost_invoice_matches" => updated})
+    write_state(%{state | cost_invoice_matches: updated})
   end
 
   @doc """
@@ -164,15 +173,14 @@ defmodule Matches do
   """
   def delete_sales_invoice_match(transaction_id, sales_invoice_id) do
     state = read_state()
-    matches = state["sales_invoice_matches"]
 
     updated =
       Enum.reject(
-        matches,
-        &(&1["transaction_id"] == transaction_id and &1["sales_invoice_id"] == sales_invoice_id)
+        state.sales_invoice_matches,
+        &(&1.transaction_id == transaction_id and &1.sales_invoice_id == sales_invoice_id)
       )
 
-    write_state(%{state | "sales_invoice_matches" => updated})
+    write_state(%{state | sales_invoice_matches: updated})
   end
 end
 ```
@@ -184,16 +192,141 @@ Firmowid.Repo.put_org_id("01948dfc-1367-7e4f-90e2-54b685167481")
 ```elixir
 cost_invoices = Firmowid.CostInvoices.list_cost_invoices(~D[2024-01-01], ~D[2030-12-30])
 transactions = Firmowid.Finances.list_transactions(~D[2024-01-01], ~D[2030-12-30])
-sales_invoices = Firmowid.SalesInvoices.list_sales_invoices()
 
-"""
-cost_invoices: #{length(cost_invoices)}
-sales_invoices: #{length(sales_invoices)}
-transactions: #{length(transactions)}
-"""
+sales_invoices =
+  Firmowid.SalesInvoices.list_sales_invoices()
+  |> Enum.map(fn inv ->
+    Firmowid.Repo.preload(inv, :sales_invoice_items)
+  end)
+
+IO.inspect(length(cost_invoices), label: "cost_invoices")
+IO.inspect(length(sales_invoices), label: "sales_invoices")
+IO.inspect(length(transactions), label: "transactions")
+
+length(cost_invoices) + length(sales_invoices)
 ```
 
 ## invoice <-> transaction labeling
+
+````elixir
+matches = Matches.read_state()
+
+sales_invoices_to_match =
+  sales_invoices
+  |> Enum.filter(fn sales_invoice ->
+    not Enum.any?(
+      matches.sales_invoice_matches,
+      fn match -> match.sales_invoice_id == sales_invoice.id end
+    )
+  end)
+
+current_index =
+  Kino.Input.number("Current Sales Invoice Index",
+    default: 0,
+    min: 0,
+    max: max(length(sales_invoices_to_match) - 1, 0)
+  )
+
+output_frame = Kino.Frame.new()
+
+display_current_invoice = fn index ->
+  if index >= 0 and index < length(sales_invoices_to_match) do
+    current_invoice = Enum.at(sales_invoices_to_match, index)
+
+    prefiltered_transactions =
+      Firmowid.Invoicing.Matching.Windowing.pre_filter_invoice_transactions(
+        current_invoice,
+        transactions
+      )
+
+    invoice_info = """
+    ## Sales Invoice #{index + 1} of #{length(sales_invoices_to_match)}
+
+    - Date: #{current_invoice.issue_date}
+    - Amount: #{Firmowid.SalesInvoices.SalesInvoice.get_gross_value(current_invoice)}
+    - Currency: #{current_invoice.currency}
+    - Buyer: #{current_invoice.buyer_display_name}
+    - Seller bank account: #{current_invoice.seller_account_number}
+    """
+
+    if length(prefiltered_transactions) > 0 do
+      transaction_blocks =
+        prefiltered_transactions
+        |> Enum.with_index(1)
+        |> Enum.map(fn {transaction, idx} ->
+          params =
+            Firmowid.Invoicing.Matching.ParametrizedResult.generate_parametrized_result(
+              current_invoice,
+              transaction
+            )
+
+          details = """
+          **#{idx}. Transaction**
+          - Date: #{transaction.booking_date}
+          - Amount: #{transaction.transaction_amount}
+          - Currency: #{transaction.transaction_currency}
+          - Debtor: #{transaction.debtor_name}
+          - Bank account: #{transaction.debtor_account}
+          - Description: #{transaction.remittance_information_unstructured || "No description"}
+
+          **Calculated Params:**
+          ```elixir
+          #{inspect(params, pretty: true)}
+          ```
+          """
+
+          match_button = Kino.Control.button("Match transaction ##{idx}")
+
+          Kino.listen(match_button, fn _event ->
+            try do
+              Matches.add_sales_invoice_match(%{
+                transaction_id: transaction.id,
+                sales_invoice_id: current_invoice.id
+              })
+
+              Kino.Frame.render(output_frame, Kino.Markdown.new("✅ Matched transaction ##{idx}!"))
+            rescue
+              e ->
+                Kino.Frame.render(
+                  output_frame,
+                  Kino.Markdown.new("❌ Error: #{Exception.message(e)}")
+                )
+            end
+          end)
+
+          [Kino.Markdown.new(details), match_button]
+        end)
+        |> List.flatten()
+
+      Kino.Frame.render(
+        output_frame,
+        Kino.Layout.grid([Kino.Markdown.new(invoice_info) | transaction_blocks], columns: 1)
+      )
+    else
+      Kino.Frame.render(
+        output_frame,
+        Kino.Markdown.new(invoice_info <> "\n\n### No prefiltered transactions found")
+      )
+    end
+  else
+    Kino.Frame.render(
+      output_frame,
+      Kino.Markdown.new("**Invalid index. Please select a valid invoice.**")
+    )
+  end
+end
+
+Kino.listen(current_index, fn %{value: index} ->
+  display_current_invoice.(index)
+end)
+
+display_current_invoice.(0)
+
+Kino.Layout.grid(
+  [current_index, output_frame],
+  columns: 1
+)
+````
 
 ````elixir
 matches = Matches.read_state()
@@ -229,8 +362,9 @@ display_current_invoice = fn index ->
       )
 
     invoice_info = """
-    ## Invoice #{index + 1} of #{length(cost_invoices_to_match)}
+    ## Cost Invoice #{index + 1} of #{length(cost_invoices_to_match)}
 
+    - Invoice identifier: #{current_invoice.invoice_identifier}
     - Date: #{current_invoice.issue_date}
     - Amount: #{current_invoice.total_amount}
     - Currency: #{current_invoice.currency}
@@ -431,8 +565,8 @@ IO.puts("👍  goods: #{goods}   👎  bads: #{bads}")
 
 There are two ways we use this model:
 
-* automated matching in a background job
-* UI with suggested transactions
+- automated matching in a background job
+- UI with suggested transactions
 
 For these two we have different criterias - we never want automated matching to provide us with a false positive. In the UI though, we want to suggest likely candidates.
 

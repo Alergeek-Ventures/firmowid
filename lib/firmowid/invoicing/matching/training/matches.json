@@ -451,8 +451,76 @@
     {
       "transaction_id": "0197304c-d05b-72a0-bb54-e2ed42e4b4fb",
       "cost_invoice_id": "01980818-9968-7e35-9ffa-ddec3cf106b4"
+    },
+    {
+      "transaction_id": "019836ba-45ff-7637-b76b-cac04a71fb0f",
+      "cost_invoice_id": "01982c26-5401-77d4-878f-c7cef7760202"
+    },
+    {
+      "transaction_id": "019817d3-ff56-7ef6-9621-a1bfdc271042",
+      "cost_invoice_id": "01981d87-e5b8-7079-bb30-c13df2676400"
+    },
+    {
+      "transaction_id": "01982c6d-7982-7939-a1d7-1a8f666b4f93",
+      "cost_invoice_id": "0198380b-95ff-7896-83cc-6577d106eef1"
+    },
+    {
+      "transaction_id": "019817d3-ff56-7c3e-81ef-b162afb25c69",
+      "cost_invoice_id": "0198129a-3cb1-7b20-98c2-bf3e3e0c76a5"
+    },
+    {
+      "transaction_id": "01982c6d-7982-7073-b7de-4693d1291c55",
+      "cost_invoice_id": "01980e45-c3fa-7c11-97c7-1263c58a1a85"
+    },
+    {
+      "transaction_id": "019817d3-ff56-79e3-9ebb-626fb45cd991",
+      "cost_invoice_id": "01980868-8da6-7389-a686-7f6b89c16cfa"
+    },
+    {
+      "transaction_id": "019817d3-ff56-799f-9475-d25e77312d6d",
+      "cost_invoice_id": "019822d1-afc5-7520-9adc-d24795d68e2e"
+    },
+    {
+      "transaction_id": "01976926-c27e-76b1-a857-4658b3eeb92b",
+      "cost_invoice_id": "0198058c-db71-7dae-98af-88451ae4d298"
+    },
+    {
+      "transaction_id": "0197e454-7b4b-7fab-89b0-e17198be10cf",
+      "cost_invoice_id": "019813f3-9e00-777f-89c3-1112eb44ed4d"
+    },
+    {
+      "transaction_id": "0197da07-d123-744d-b65a-d9c754678bc6",
+      "cost_invoice_id": "019813f3-9cc0-7ab8-9889-8c53b61b6e7e"
+    },
+    {
+      "transaction_id": "019817d3-ff56-7b22-b134-9e7ebb4cf748",
+      "cost_invoice_id": "0197f066-1258-74c1-8795-0b1b4e040e5c"
+    },
+    {
+      "transaction_id": "0197b10b-c96c-7016-8a14-fd25001b4024",
+      "cost_invoice_id": "019813f3-9bf4-71d1-8a1e-79e96737adc8"
+    },
+    {
+      "transaction_id": "01976926-c27e-7f14-ad4f-4df474105fed",
+      "cost_invoice_id": "0198188e-2fc0-7787-9323-9d29f96fcb60"
+    },
+    {
+      "transaction_id": "01975459-67b3-78eb-a45a-c30d67f7b05e",
+      "cost_invoice_id": "019813f3-c421-76c9-bc66-579446993100"
+    },
+    {
+      "transaction_id": "0197597f-cf9b-7bb1-9385-100da9a2bdb0",
+      "cost_invoice_id": "0198081b-6200-706b-a64f-dd8f86e6a9d7"
+    },
+    {
+      "transaction_id": "01975459-67b3-76d6-8fb6-05dcf6d630f2",
+      "cost_invoice_id": "019813f3-8e4f-7089-9c71-b8d7dfeff382"
     }
   ],
-  "sales_invoice_matches": []
+  "sales_invoice_matches": [
+    {
+      "transaction_id": "0196391b-a027-7656-8389-e7bb35d6b26c",
+      "sales_invoice_id": "0194fb30-bd46-7d65-8ac3-cf089597dbef"
+    }
+  ]
 }
-
