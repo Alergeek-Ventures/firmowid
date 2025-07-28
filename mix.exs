@@ -86,7 +86,7 @@ defmodule Firmowid.MixProject do
       {:image, "~> 0.37"},
       {:briefly, "~> 0.5.0"},
       {:sentry, "~> 11.0.1"},
-      {:recase, "~> 0.8.0"},
+      {:recase, "~> 0.9.0"},
       {:oban, "~> 2.17"},
       {:ecto_psql_extras, "~> 0.6"},
       {:any_ascii, "~> 0.3.2"},
