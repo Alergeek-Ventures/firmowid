@@ -76,6 +76,15 @@ defmodule Firmowid.Invoicing.Matching.Assistant.MessagesStorage do
     end)
   end
 
+  def get_latest(conversation_id) do
+    Agent.get(__MODULE__, fn state ->
+      state
+      |> Map.get(conversation_id, %{messages: []})
+      |> Map.get(:messages, [])
+      |> List.first()
+    end)
+  end
+
   @doc """
   Sets the invoice for the given conversation_id.
   """

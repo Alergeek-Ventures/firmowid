@@ -5,6 +5,7 @@ defmodule Firmowid.LLMOpenAI do
   """
 
   @openai_url "https://api.openai.com/v1/chat/completions"
+  @openai_url_responses "https://api.openai.com/v1/responses"
 
   @doc """
   Synchronous chat completion.
@@ -32,7 +33,7 @@ defmodule Firmowid.LLMOpenAI do
   Returns a Stream of decoded chunks.
   """
   def stream(messages, opts \\ []) do
-    body = build_body(messages, Keyword.put(opts, :stream, true))
+    body = build_body_stream(messages, Keyword.put(opts, :stream, true))
     headers = build_headers()
 
     Stream.resource(
@@ -41,13 +42,13 @@ defmodule Firmowid.LLMOpenAI do
 
         task =
           Task.async(fn ->
-            Req.post!(@openai_url,
+            Req.post!(@openai_url_responses,
               headers: headers,
               json: body,
               receive_timeout: 50_000,
               connect_options: [timeout: 50_000],
-              into: fn chunk, acc ->
-                Agent.update(queue, &:queue.in(chunk, &1))
+              into: fn {:data, data}, acc ->
+                Agent.update(queue, &:queue.in(data, &1))
                 {:cont, acc}
               end
             )
@@ -87,6 +88,42 @@ defmodule Firmowid.LLMOpenAI do
       end
     )
     |> Stream.flat_map(& &1)
+  end
+
+  defp build_body_stream(messages, opts) do
+    tools =
+      case Keyword.get(opts, :tools) do
+        [head | _tail] = list ->
+          case head do
+            %Firmowid.Invoicing.Matching.Assistant.Tool{} ->
+              Enum.map(
+                list,
+                &Firmowid.Invoicing.Matching.Assistant.Tool.to_openai_response/1
+              )
+
+            _ ->
+              list
+          end
+
+        _ ->
+          nil
+      end
+
+    # For GPT-4o, GPT-4-turbo, GPT-3.5-turbo-1106 and newer: use 'tools' and 'tool_choice' only
+    base =
+      %{
+        model: Keyword.get(opts, :model, "gpt-4o"),
+        input: messages
+      }
+      |> maybe_put(:tools, tools)
+      |> maybe_put(:stream, opts[:stream])
+      |> Map.merge(Keyword.get(opts, :extra, %{}))
+
+    if tools && tools != [] && opts[:function_call] do
+      Map.put(base, :tool_choice, opts[:function_call])
+    else
+      base
+    end
   end
 
   defp build_body(messages, opts) do
@@ -148,18 +185,11 @@ defmodule Firmowid.LLMOpenAI do
 
   defp handle_response({:error, reason}), do: {:error, reason}
 
-  defp parse_sse_chunk({:data, chunk}), do: parse_sse_chunk(chunk)
-
   defp parse_sse_chunk(chunk) when is_binary(chunk) do
     chunk
-    |> String.split("\n\n", trim: true)
+    |> String.split("\n", trim: true)
     |> Enum.filter(&String.starts_with?(&1, "data: "))
-    |> Enum.map(fn "data: " <> json ->
-      case json do
-        "[DONE]" -> nil
-        _ -> Jason.decode!(json)
-      end
-    end)
+    |> Enum.map(fn "data: " <> json -> Jason.decode!(json) end)
     |> Enum.reject(&is_nil/1)
   end
 end

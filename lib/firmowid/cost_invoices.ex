@@ -138,6 +138,12 @@ defmodule Firmowid.CostInvoices do
     |> Repo.preload(:transactions)
   end
 
+  def get_cost_invoice(cost_invoice_id) do
+    CostInvoice
+    |> Repo.get(cost_invoice_id)
+    |> Repo.preload(:transactions)
+  end
+
   def get_cost_invoice!(cost_invoice_id) do
     CostInvoice
     |> Repo.get!(cost_invoice_id)

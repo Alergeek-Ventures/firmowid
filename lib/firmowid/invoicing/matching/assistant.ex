@@ -33,17 +33,73 @@ defmodule Firmowid.Invoicing.Matching.Assistant do
       message,
       system_prompt(invoice),
       tools(),
-      &exec_function/2,
       opts
     )
   end
 
-  def accept_linking(pid) do
-    send(pid, {:accept})
+  def send_message_streaming(conversation_id, message, opts \\ []) do
+    invoice = MessagesStorage.get_invoice(conversation_id)
+    opts = Keyword.merge([organization_id: invoice.organization_id], opts)
+
+    Engine.send_message_streaming(
+      conversation_id,
+      message,
+      system_prompt(invoice),
+      tools(),
+      opts
+    )
   end
 
-  def reject_linking(pid) do
-    send(pid, {:reject})
+  def accept_linking(conversation_id) do
+    msg = MessagesStorage.get_latest(conversation_id)
+
+    case msg do
+      %Message{
+        role: :function_call,
+        payload: %{
+          name: "link_cost_invoice_to_transaction",
+          args: %{"transaction_ids" => transaction_ids, "cost_invoice_ids" => cost_invoice_ids}
+        }
+      } ->
+        cost_invoice = Firmowid.CostInvoices.get_cost_invoice!(cost_invoice_ids |> hd())
+        organization_id = cost_invoice.organization_id
+
+        # todo insert_all
+        for cost_invoice_id <- cost_invoice_ids, transaction_id <- transaction_ids do
+          Firmowid.CostInvoices.create_cost_invoices_transactions_connection(
+            cost_invoice_id,
+            transaction_id,
+            organization_id
+          )
+        end
+
+        MessagesStorage.delete(conversation_id)
+
+      _ ->
+        raise "Accepting linking is only allowed when the last message was a function call to link_cost_invoice_to_transaction"
+    end
+  end
+
+  def reject_linking(conversation_id) do
+    msg = MessagesStorage.get_latest(conversation_id)
+
+    case msg do
+      %Message{
+        role: :function_call,
+        payload: %{name: "link_cost_invoice_to_transaction", call_id: call_id}
+      } ->
+        MessagesStorage.append(
+          conversation_id,
+          Message.new(
+            :function_result,
+            "Użytkownik odrzucił połączenie faktury z transakcjami.",
+            %{name: "link_cost_invoice_to_transaction", call_id: call_id}
+          )
+        )
+
+      _ ->
+        raise "Rejecting linking is only allowed when the last message was a function call to link_cost_invoice_to_transaction"
+    end
   end
 
   @doc """
@@ -226,35 +282,34 @@ defmodule Firmowid.Invoicing.Matching.Assistant do
                       "cost_invoice_ids" => cost_invoice_ids,
                       "transaction_ids" => transaction_ids
                     } ->
-          receive do
-            {:accept} ->
-              cost_invoice = Firmowid.CostInvoices.get_cost_invoice!(cost_invoice_ids |> hd())
-              organization_id = cost_invoice.organization_id
+          cost_invoice = Firmowid.CostInvoices.get_cost_invoice(cost_invoice_ids |> hd())
+          transactions = Firmowid.Finances.get_transactions!(transaction_ids)
 
-              for cost_invoice_id <- cost_invoice_ids, transaction_id <- transaction_ids do
-                Firmowid.CostInvoices.create_cost_invoices_transactions_connection(
-                  cost_invoice_id,
-                  transaction_id,
-                  organization_id
-                )
-              end
+          hallucinated_invoice = is_nil(cost_invoice)
 
-              {:stop, "Połączono faktury kosztowe z transakcjami."}
+          hallucinated_transactions =
+            MapSet.new(transaction_ids)
+            |> MapSet.difference(MapSet.new(transactions, & &1.id))
 
-            {:reject} ->
-              {:halt, "Użytkownik odrzucił połączenie faktury z transakcjami."}
+          if hallucinated_invoice or not Enum.empty?(hallucinated_transactions) do
+            error =
+              [
+                "Nie mogę połączyć faktury kosztowej z transakcjami, ponieważ nie mogę znaleźć faktury lub transakcji. Sprawdź, czy podałeś poprawne UUID.",
+                hallucinated_invoice ||
+                  "Nieznaleziono faktury o podanym ID #{hd(cost_invoice_ids)}.",
+                not Enum.empty?(hallucinated_transactions) ||
+                  "Nieznaleziono transakcji o podanych ID: #{Enum.join(hallucinated_transactions, ", ")}."
+              ]
+              |> Enum.filter(&is_binary/1)
+              |> Enum.join(" ")
+
+            {:error, error}
+          else
+            :halt
           end
         end
       }
     ]
-  end
-
-  @doc """
-  Executes a tool/function by name and args. Used by AssistantEngine.
-  """
-  def exec_function(fname, args) do
-    tool = Enum.find(tools(), &(&1.name == fname))
-    if tool, do: tool.handler.(args), else: {:error, :unknown_function}
   end
 
   defp system_prompt(invoice = %CostInvoice{}) do

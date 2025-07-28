@@ -39,4 +39,17 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Tool do
       }
     }
   end
+
+  def to_openai_response(%__MODULE__{
+        name: name,
+        description: description,
+        args_schema: args_schema
+      }) do
+    %{
+      name: name,
+      parameters: args_schema,
+      type: "function",
+      description: description
+    }
+  end
 end

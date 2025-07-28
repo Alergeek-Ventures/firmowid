@@ -70,6 +70,7 @@ module.exports = {
         "list-item-removal": "fade-and-scale-out 300ms ease-out forwards",
         "slide-from-center": "slide-from-center 300ms ease-out forwards",
         appear: "appear 700ms ease-out forwards",
+        "fade-in": "appear 150ms ease-out forwards",
       },
     },
   },
@@ -85,19 +86,19 @@ module.exports = {
       addVariant("phx-click-loading", [
         ".phx-click-loading&",
         ".phx-click-loading &",
-      ]),
+      ])
     ),
     plugin(({ addVariant }) =>
       addVariant("phx-submit-loading", [
         ".phx-submit-loading&",
         ".phx-submit-loading &",
-      ]),
+      ])
     ),
     plugin(({ addVariant }) =>
       addVariant("phx-change-loading", [
         ".phx-change-loading&",
         ".phx-change-loading &",
-      ]),
+      ])
     ),
 
     // Embeds Heroicons (https://heroicons.com) into your app.css bundle
@@ -144,7 +145,7 @@ module.exports = {
             };
           },
         },
-        { values },
+        { values }
       );
     }),
   ],
