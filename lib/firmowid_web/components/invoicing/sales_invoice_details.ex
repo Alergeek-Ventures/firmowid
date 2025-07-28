@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
   attr :preview_type, :atom, required: true
   attr :potential_transactions, :list, default: []
   attr :show_vat_for_sales_invoice, :boolean, default: true
+  attr :current_user, :map, required: true
 
   @impl true
   def render(assigns) do
@@ -24,7 +25,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
       )
 
     ~H"""
-    <div class="flex flex-col">
+    <div id="invoice-show" class="flex flex-col">
       <InvoiceDetails.invoice_header
         is_cost_invoice={false}
         issue_date={@invoice.issue_date}
@@ -164,7 +165,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
           </div>
         </aside>
 
-        <main class="flex-grow py-8 lg:pl-8 border-b lg:border-b-0 lg:border-l border-darkGrey/[.3]">
+        <main class="flex-grow py-8 lg:pl-8 border-b lg:border-b-0 lg:border-l border-darkGrey/[.3] h-[calc(100vh-64px-128px)]">
           <%= cond do %>
             <% @invoice.skip_invoicing -> %>
               <InvoiceDetails.invoice_skipped_view />
@@ -178,16 +179,33 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                 is_cost_invoice={false}
                 transactions={@invoice.transactions}
               />
+            <% @chat -> %>
+              <.live_component
+                module={FirmowidWeb.SalesInvoicesLive.Assistant}
+                id="invoice-assistant"
+                invoice={@invoice}
+                current_user={@current_user}
+              />
             <% @potential_transactions == [] -> %>
-              <div class="flex flex-col gap-6 items-center text-center">
-                <div class="gap-4 flex flex-col items-center border border-greyButtonBg p-4 rounded-md">
+              <div class="flex flex-col gap-6 items-center mb-10">
+                <div class="gap-4 flex flex-col items-center p-4 rounded-md text-center">
                   <.icon name="hero-face-frown" class="w-10 h-10 block" />
                   <h3 class="text-lg font-semibold">Brak rekomendacji</h3>
                   <p class="max-w-[400px]">
                     Firmowid nie znalazł żadnych transakcji, które potencjalnie pasowałyby do tej faktury.
                   </p>
+                  <.button
+                    phx-click="show_chat"
+                    phx-target={@myself}
+                    color="orange"
+                    class="w-full mt-2"
+                  >
+                    Poproś Firmowida o pomoc
+                  </.button>
                 </div>
               </div>
+              <hr class="w-full text-grey-200" />
+              <h3 class="text-md font-semibold my-10">Co jeszcze możesz zrobić?</h3>
               <InvoiceDetails.skip_invoicing show_bank_transfer_modal={false} invoice={@invoice} />
             <% true -> %>
               <div class="flex flex-col gap-16">
@@ -202,5 +220,19 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
       </div>
     </div>
     """
+  end
+
+  @impl true
+  def mount(socket) do
+    {:ok, assign(socket, chat: false)}
+  end
+
+  @impl true
+  def handle_event("show_chat", _params, socket) do
+    {:noreply, assign(socket, chat: true)}
+  end
+
+  def handle_event("close_chat", _params, socket) do
+    {:noreply, assign(socket, chat: false)}
   end
 end

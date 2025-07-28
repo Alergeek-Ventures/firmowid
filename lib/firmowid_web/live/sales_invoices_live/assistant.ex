@@ -1,7 +1,7 @@
-defmodule FirmowidWeb.CostInvoiceLive.Assistant do
+defmodule FirmowidWeb.SalesInvoicesLive.Assistant do
   use FirmowidWeb, :live_component
 
-  alias Firmowid.Invoicing.Matching.CostInvoiceAssistant
+  alias Firmowid.Invoicing.Matching.SalesInvoiceAssistant
   alias Firmowid.Invoicing.Matching.Assistant.MessagesStorage
   alias Firmowid.Finances
   alias Firmowid.Accounts
@@ -15,13 +15,13 @@ defmodule FirmowidWeb.CostInvoiceLive.Assistant do
 
   def update(%{event: %Message{role: role} = msg}, socket)
       when role in [:function_call, :function_result] and
-             msg.payload.name in ["link_cost_invoice_to_transaction", "search_transactions"] do
+             msg.payload.name in ["link_sales_invoice_to_transaction", "search_transactions"] do
     socket =
       case msg do
         %Message{
           role: :function_call,
           payload: %{
-            name: "link_cost_invoice_to_transaction",
+            name: "link_sales_invoice_to_transaction",
             done: true
           }
         } ->
@@ -34,7 +34,7 @@ defmodule FirmowidWeb.CostInvoiceLive.Assistant do
 
         %Message{
           role: :function_call,
-          payload: %{name: "link_cost_invoice_to_transaction", done: false}
+          payload: %{name: "link_sales_invoice_to_transaction", done: false}
         } ->
           socket
 
@@ -53,8 +53,8 @@ defmodule FirmowidWeb.CostInvoiceLive.Assistant do
 
   # pseudo mount
   def update(%{invoice: invoice, current_user: current_user}, socket) do
-    Bodyguard.permit!(Firmowid.CostInvoices, :show, current_user, invoice)
-    conversation_id = CostInvoiceAssistant.start_conversation(invoice)
+    Bodyguard.permit!(Firmowid.SalesInvoices, :read_sales_invoice, current_user, invoice)
+    conversation_id = SalesInvoiceAssistant.start_conversation(invoice)
     messages = MessagesStorage.get(conversation_id)
 
     socket =
@@ -73,7 +73,7 @@ defmodule FirmowidWeb.CostInvoiceLive.Assistant do
 
   @impl true
   def handle_event("send", %{"message" => message}, socket) do
-    CostInvoiceAssistant.send_message_streaming(socket.assigns.conversation_id, message)
+    SalesInvoiceAssistant.send_message_streaming(socket.assigns.conversation_id, message)
 
     socket =
       socket
@@ -84,21 +84,20 @@ defmodule FirmowidWeb.CostInvoiceLive.Assistant do
   end
 
   def handle_event("accept", _params, socket) do
-    invoice = Firmowid.CostInvoices.get_cost_invoice!(socket.assigns.invoice_id)
-    Bodyguard.permit!(Firmowid.CostInvoices, :update, socket.assigns.current_user, invoice)
-
-    CostInvoiceAssistant.accept_linking(socket.assigns.conversation_id)
+    invoice = Firmowid.SalesInvoices.get_sales_invoice!(socket.assigns.invoice_id)
+    Bodyguard.permit!(Firmowid.SalesInvoices, :update, socket.assigns.current_user, invoice)
+    SalesInvoiceAssistant.accept_linking(socket.assigns.conversation_id)
 
     socket =
       socket
       |> LiveToast.put_toast(:success, "Transakcje zostały dopasowane do faktury")
-      |> push_navigate(to: ~p"/kosztowe/#{socket.assigns.invoice_id}")
+      |> push_navigate(to: ~p"/sprzedazowe/#{socket.assigns.invoice_id}")
 
     {:noreply, socket}
   end
 
   def handle_event("reject", _params, socket) do
-    CostInvoiceAssistant.reject_linking(socket.assigns.conversation_id)
+    SalesInvoiceAssistant.reject_linking(socket.assigns.conversation_id)
 
     {:noreply,
      socket
@@ -109,7 +108,7 @@ defmodule FirmowidWeb.CostInvoiceLive.Assistant do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="assistant-chat relative flex flex-col mx-auto w-full h-full">
+    <div class="assistant-chat relative flex flex-col mx-auto w-full h-[calc(100vh-64px-128px)]">
       <button
         id="chat-close-button"
         phx-hook="Tippy"

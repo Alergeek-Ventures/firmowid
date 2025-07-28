@@ -1,10 +1,12 @@
-defmodule Firmowid.Invoicing.Matching.Assistant do
+defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
   @moduledoc """
   Invoice-matching assistant: defines prompt, tools, and function handlers for invoice-to-transaction matching.
   Delegates LLM and function-call plumbing to AssistantEngine.
   """
-  alias Firmowid.Invoicing.Matching.Assistant.{Engine, Tool, MessagesStorage, Message, Input}
+  alias Firmowid.Invoicing.Matching.Assistant.CommonTools
+  alias Firmowid.Invoicing.Matching.Assistant.{Engine, Tool, MessagesStorage, Message}
   alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.Finances.Transaction
 
   @intro_message ~S"""
   Cześć, tu Firmowid!
@@ -89,144 +91,9 @@ defmodule Firmowid.Invoicing.Matching.Assistant do
   """
   def tools do
     [
-      %Tool{
-        name: "search_transactions",
-        description:
-          "Wyszukaj transakcje bankowe za pomocą elastycznych filtrów. To JEDYNY sposób na dostęp do danych o transakcjach. MUSISZ wywołać tę funkcję za każdym razem, gdy chcesz znaleźć lub wylistować transakcje. Zwraca maksymalnie 50 najtrafniejszych wyników.",
-        args_schema: %{
-          type: "object",
-          properties: %{
-            filters: %{
-              type: "object",
-              description:
-                "Pary klucz-wartość do filtrowania transakcji. Dozwolone klucze: query, date_from, date_to, amount_gt, amount_lt, only_unmatched.",
-              properties: %{
-                query: %{
-                  type: "string",
-                  description: "Fraza do wyszukania w nazwach kontrahentów i opisach transakcji."
-                },
-                date_from: %{
-                  type: "string",
-                  format: "date",
-                  description: "Data od (YYYY-MM-DD)"
-                },
-                date_to: %{
-                  type: "string",
-                  format: "date",
-                  description: "Data do (YYYY-MM-DD)"
-                },
-                currency: %{
-                  type: "string",
-                  description:
-                    "Kod waluty (np. 'PLN', 'EUR') - używane do filtrowania transakcji."
-                },
-                amount_gt: %{
-                  type: "string",
-                  description:
-                    "Kwota transakcji większa lub równa (liczba dziesiętna jako string)"
-                },
-                amount_lt: %{
-                  type: "string",
-                  description:
-                    "Kwota transakcji mniejsza lub równa (liczba dziesiętna jako string)"
-                },
-                only_unmatched: %{
-                  type: "boolean",
-                  description:
-                    "Pomiń transakcje, które są już dopasowane. false - wszystkie, true - tylko te, które nie są dopasowane."
-                }
-              },
-              additionalProperties: false
-            }
-          },
-          required: ["filters"]
-        },
-        llm_render: fn result ->
-          result
-          |> Enum.map(&Input.transaction_input(&1, heading_level: 2))
-          |> Enum.join("\n\n")
-        end,
-        handler: fn args ->
-          allowed_keys = [
-            "query",
-            "date_from",
-            "date_to",
-            "amount_gt",
-            "amount_lt",
-            "only_unmatched",
-            "currency"
-          ]
-
-          filtered =
-            args["filters"]
-            |> Enum.filter(fn {k, _v} -> k in allowed_keys end)
-            |> Enum.map(fn {k, v} -> {String.to_atom(k), v} end)
-            |> Map.new()
-
-          Firmowid.Finances.search_transactions(filtered)
-        end
-      },
-      %Tool{
-        name: "normalize_to_pln",
-        description:
-          "Przelicz kwotę w dowolnej walucie na PLN, używając podanej kwoty, kodu waluty i daty (YYYY-MM-DD). ZAWSZE używaj tego narzędzia przed porównywaniem lub wyszukiwaniem po kwocie.",
-        args_schema: %{
-          type: "object",
-          properties: %{
-            amount: %{type: "string", description: "Kwota jako string dziesiętny (np. '123.45')"},
-            currency: %{type: "string", description: "Kod waluty (np. 'EUR', 'USD', 'PLN')"},
-            date: %{type: "string", format: "date", description: "Data kursu waluty (YYYY-MM-DD)"}
-          },
-          required: ["amount", "currency", "date"]
-        },
-        llm_render: fn result -> Decimal.to_string(result) end,
-        handler: fn %{"amount" => amount, "currency" => currency, "date" => date} ->
-          {:ok, parsed_date} = Date.from_iso8601(date)
-          decimal_amount = Decimal.new(amount)
-          Firmowid.Currencies.normalize_amount_to_pln(decimal_amount, currency, parsed_date)
-        end
-      },
-      %Tool{
-        name: "calculate",
-        description:
-          "Wykonaj działanie matematyczne (dodawanie, odejmowanie, mnożenie, dzielenie) na liście liczb. Wszystkie liczby są traktowane jako dziesiętne. Zwraca wynik jako string.",
-        args_schema: %{
-          type: "object",
-          properties: %{
-            numbers: %{
-              type: "array",
-              items: %{
-                type: "string",
-                description: "Liczba jako string dziesiętny (np. '123.45') lub liczba"
-              },
-              description: "Lista liczb do obliczenia"
-            },
-            operation: %{
-              type: "string",
-              enum: ["+", "-", "*", "/"],
-              description: "Działanie do wykonania: +, -, *, /"
-            }
-          },
-          required: ["numbers", "operation"]
-        },
-        llm_render: fn result -> Decimal.to_string(result) end,
-        handler: fn %{"numbers" => numbers, "operation" => operation} ->
-          decimals =
-            Enum.map(numbers, fn
-              n when is_binary(n) -> Decimal.new(n)
-              n when is_number(n) -> Decimal.from_float(n * 1.0)
-              n -> raise "Invalid number: #{inspect(n)}"
-            end)
-
-          case operation do
-            "+" -> Enum.reduce(decimals, &Decimal.add/2)
-            "-" -> Enum.reduce(decimals, &Decimal.sub/2)
-            "*" -> Enum.reduce(decimals, &Decimal.mult/2)
-            "/" -> Enum.reduce(decimals, &Decimal.div/2)
-            _ -> raise "Invalid operation: #{operation}"
-          end
-        end
-      },
+      CommonTools.normalize_to_pln(),
+      CommonTools.calculate(),
+      CommonTools.search_transactions(negative: true),
       %Tool{
         name: "link_cost_invoice_to_transaction",
         description: """
@@ -323,7 +190,8 @@ defmodule Firmowid.Invoicing.Matching.Assistant do
 
     Pamiętaj, że wszelakie nazwy własne często nie są dobre do wyszukiwania. Kontrahenci
     widniejący w bazie transakcji są zazwyczaj nazwami firm, które mogą być rozbieżne z tym
-    co widnieje na fakturze.
+    co widnieje na fakturze. Może zdarzyć się, że nazwa nie jest faktyczną nazwą firmy,
+    lecz nazwą systemu płatności.
 
     ## Narzędzia
 
@@ -346,7 +214,6 @@ defmodule Firmowid.Invoicing.Matching.Assistant do
     To pozwala na połączenie jeden do wielu w obie strony, a także jeden do jeden.
     Nie pytaj użytkownika o potwierdzenie przed użyciem tego narzędzia,
     ponieważ użytkownik będzie potwierdzał połączenie w interfejsie.
-    Jeśli użytkownik odrzuci połączenie, nie komentuj tego, czekaj na dodatkowe informację od niego.
 
     ## Przykładowe rozwiązania zadania
 
@@ -426,7 +293,50 @@ defmodule Firmowid.Invoicing.Matching.Assistant do
 
     # Dopasowujesz do tej faktury:
 
-    #{Input.cost_invoice_input(invoice)}
+    #{cost_invoice_input(invoice)}
+    """
+  end
+
+  defp cost_invoice_input(invoice = %CostInvoice{}, options \\ []) do
+    heading_level = Keyword.get(options, :heading_level, 1)
+
+    """
+    #{"#" |> String.duplicate(heading_level)} Faktura kosztowa #{invoice.invoice_identifier}
+
+    > **Opis:** #{invoice.description}
+
+    - **Skrócona nazwa sprzedawcy:** #{invoice.seller_display_name}
+    - **Pełna nazwa sprzedawcy:** #{invoice.seller}
+    - **Adres sprzedawcy:** #{invoice.seller_address}
+    - **Numer konta sprzedawcy:** #{invoice.account_number}
+    - **Data wystawienia:** #{invoice.issue_date}
+    - **Data płatności:** #{invoice.due_date}
+    - **Kwota:** #{invoice.total_amount}
+    - **Waluta:** #{invoice.currency}
+
+    > UUID: `#{invoice.id}`
+    """
+  end
+
+  def transaction_input(transaction = %Transaction{}, options \\ []) do
+    heading_level = Keyword.get(options, :heading_level, 1)
+
+    """
+    #{"#" |> String.duplicate(heading_level)} Transakcja
+
+    > **Dodatkowe informacje z banku:** #{transaction.remittance_information_unstructured}
+
+    - **Data księgowania:** #{transaction.booking_date}
+    - **Data wartości:** #{transaction.value_date}
+    - **Kwota:** #{transaction.transaction_amount}
+    - **Waluta:** #{transaction.transaction_currency}
+    - **Odbiorca:** #{transaction.debtor_name}
+    - **Numer konta odbiorcy:** #{transaction.debtor_account}
+    - **Nadawca:** #{transaction.creditor_name}
+    - **Numer konta nadawcy:** #{transaction.creditor_account}
+    - **Powiązane faktury kosztowe:** #{Enum.map(transaction.cost_invoices_transactions, & &1.id) |> Enum.join(", ")}
+
+    > UUID: `#{transaction.id}`
     """
   end
 end

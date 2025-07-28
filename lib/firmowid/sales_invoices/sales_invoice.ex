@@ -49,6 +49,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     field :skip_invoicing, :boolean, default: false
 
     field :logo_url, :string, virtual: true
+    field :total_amount, :decimal, virtual: true
 
     has_many :sales_invoice_items, Firmowid.SalesInvoices.SalesInvoiceItem, on_replace: :delete
 

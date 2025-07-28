@@ -31,13 +31,14 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
   def render(assigns) do
     ~H"""
     <.live_component
-      id="sales-invoice-show"
+      id="invoice-show"
       module={FirmowidWeb.Components.Invoicing.SalesInvoiceDetails}
       invoice={@invoice}
       preview_url={@preview_url}
       preview_type={@preview_type}
       show_vat_for_sales_invoice={@current_org.is_vat_payer}
       potential_transactions={@potential_transactions}
+      current_user={@current_user}
     />
     """
   end
@@ -88,5 +89,16 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
 
   defp refresh_invoice(id) do
     SalesInvoices.get_sales_invoice_with_logo_url(id)
+  end
+
+  @impl true
+  def handle_info(event, socket) do
+    # Forward events to the assistant component
+    send_update(FirmowidWeb.SalesInvoicesLive.Assistant,
+      id: "invoice-assistant",
+      event: event
+    )
+
+    {:noreply, socket}
   end
 end

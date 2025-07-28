@@ -237,7 +237,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         <p>Poproś Firmowida o pomoc w znalezieniu transakcji.</p>
         <button
           phx-click="show_chat"
-          phx-target="#cost-invoice-show"
+          phx-target="#invoice-show"
           class="cursor-pointer w-32 h-8 uppercase text-xs bg-orangeText rounded-md text-white max-w-full"
         >
           Zapytaj

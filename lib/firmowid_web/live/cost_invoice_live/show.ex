@@ -32,7 +32,7 @@ defmodule FirmowidWeb.CostInvoiceLive.Show do
   def render(assigns) do
     ~H"""
     <.live_component
-      id="cost-invoice-show"
+      id="invoice-show"
       module={FirmowidWeb.Components.Invoicing.CostInvoiceDetails}
       invoice={@invoice}
       preview_url={@preview_url}
@@ -91,7 +91,7 @@ defmodule FirmowidWeb.CostInvoiceLive.Show do
   def handle_info(event, socket) do
     # Forward events to the assistant component
     send_update(FirmowidWeb.CostInvoiceLive.Assistant,
-      id: "cost-invoice-assistant",
+      id: "invoice-assistant",
       event: event
     )
 

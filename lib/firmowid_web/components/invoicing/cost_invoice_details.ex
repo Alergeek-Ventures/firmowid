@@ -15,7 +15,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
     assigns = assign(assigns, :is_cost_invoice, true)
 
     ~H"""
-    <div id="cost-invoice-show" class="flex flex-col">
+    <div id="invoice-show" class="flex flex-col">
       <InvoiceDetails.invoice_header
         is_cost_invoice={true}
         issue_date={@invoice.issue_date}
@@ -122,7 +122,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
             <% @chat -> %>
               <.live_component
                 module={FirmowidWeb.CostInvoiceLive.Assistant}
-                id="cost-invoice-assistant"
+                id="invoice-assistant"
                 invoice={@invoice}
                 current_user={@current_user}
               />
