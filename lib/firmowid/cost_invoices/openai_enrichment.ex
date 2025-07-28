@@ -3,8 +3,7 @@ defmodule Firmowid.CostInvoices.OpenAIEnrichment do
   alias OpenaiEx.ChatMessage
 
   def generate_description(document) do
-    apikey = System.fetch_env!("OPENAI_API_KEY")
-    openai = OpenaiEx.new(apikey)
+    openai = Application.get_env(:firmowid, :openai_api_key) |> OpenaiEx.new()
 
     request =
       Chat.Completions.new(

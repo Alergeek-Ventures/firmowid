@@ -28,10 +28,8 @@ end
 config :firmowid,
   go_limitless_secret_id: System.get_env("GO_LIMITLESS_SECRET_ID"),
   go_limitless_secret_key: System.get_env("GO_LIMITLESS_SECRET_KEY"),
-  reducto_api_key: System.get_env("REDUCTO_API_KEY")
-
-config :openai,
-  api_key: System.get_env("OPENAI_API_KEY")
+  reducto_api_key: System.get_env("REDUCTO_API_KEY"),
+  openai_api_key: System.get_env("OPENAI_API_KEY")
 
 # The secret key base is used to sign/encrypt cookies and other secrets.
 # A default value is used in config/dev.exs and config/test.exs but you

@@ -15,7 +15,6 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
   """
 
   require Logger
-  alias Firmowid.LLMOpenAI
   alias Firmowid.Invoicing.Matching.Assistant.MessagesStorage
   alias Firmowid.Invoicing.Matching.Assistant.Message
   alias Firmowid.Invoicing.Matching.Assistant.Tool
@@ -24,227 +23,51 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
 
   @max_steps 10
 
-  @doc """
-  Synchronous message send with function-call loop.
-  """
-  def send_message(conversation_id, user_message, prompt, tools, opts \\ []) do
-    MessagesStorage.append(conversation_id, Message.new(:user, user_message))
-    base_messages = [%{role: "system", content: prompt}] ++ to_llm_messages(conversation_id)
-    llm_tools = tools
-    llm_opts = Keyword.merge([tools: llm_tools, function_call: "auto"], opts)
-    do_function_loop(conversation_id, base_messages, llm_tools, llm_opts, 0)
-  end
-
-  defp do_function_loop(_conversation_id, _messages, _tools, _opts, @max_steps),
-    do: {:error, :max_function_steps}
-
-  defp do_function_loop(conversation_id, messages, tools, opts, step) do
-    case LLMOpenAI.chat(messages, opts) do
-      {:ok, %{"choices" => [%{"message" => %{"role" => "assistant", "content" => content}} | _]}} ->
-        msg = Message.new(:assistant, content)
-        MessagesStorage.append(conversation_id, msg)
-        {:ok, msg}
-
-      {:ok,
-       %{
-         "choices" => [
-           %{
-             "message" => %{
-               "role" => "assistant",
-               "function_call" => %{"name" => fname, "arguments" => args_json}
-             }
-           }
-           | _
-         ]
-       }} ->
-        llm_render = execute_tool_call(fname, args_json, tools, conversation_id)
-
-        new_messages =
-          messages ++ [%{role: "function", name: fname, content: llm_render}]
-
-        do_function_loop(conversation_id, new_messages, tools, opts, step + 1)
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  @doc """
-  Asynchronous message send with PubSub loading indicator (no streaming).
-  Appends the final assistant message after the function-call loop.
-  """
-  def send_message_async(conversation_id, user_message, prompt, tools, opts \\ []) do
-    org_id = Firmowid.Repo.get_org_id()
-
-    Task.start_link(fn ->
-      # Set org_id for the Task process so all DB calls have correct context
-      Firmowid.Repo.put_org_id(org_id)
-
-      Logger.debug(
-        "send_message_async: user message: #{inspect({conversation_id, user_message})}"
-      )
-
-      MessagesStorage.broadcast(conversation_id, {:loading, true})
-      MessagesStorage.append(conversation_id, Message.new(:user, user_message))
-      base_messages = [%{role: "system", content: prompt}] ++ to_llm_messages(conversation_id)
-      llm_tools = tools
-      llm_opts = Keyword.merge([tools: llm_tools, tool_choice: "auto"], opts)
-      Logger.debug("function_call_loop: enter: #{inspect(conversation_id)}")
-
-      result =
-        do_function_loop_stream(
-          conversation_id,
-          base_messages,
-          llm_tools,
-          llm_opts,
-          0
-        )
-
-      Logger.debug("function_call_loop: result: #{inspect(result)}")
-
-      case result do
-        {:ok, %Message{role: :assistant, text: text}} when is_binary(text) and text != "" ->
-          msg = Message.new(:assistant, text)
-          MessagesStorage.append(conversation_id, msg)
-          Logger.debug("async: appended final assistant message: #{inspect(msg)}")
-
-        _ ->
-          Logger.debug("no assistant message: #{inspect(result)}")
-          :noop
-      end
-
-      MessagesStorage.broadcast(conversation_id, {:loading, false})
-    end)
-  end
-
-  defp do_function_loop_stream(
-         _conversation_id,
-         _messages,
-         _tools,
-         _opts,
-         @max_steps
-       ),
-       do: {:error, :max_function_steps}
-
-  defp do_function_loop_stream(conversation_id, messages, tools, opts, step) do
-    Logger.debug("do_function_loop_stream: step #{step}, messages: #{inspect(messages)}")
-
-    case LLMOpenAI.chat(messages, opts) do
-      # Modern OpenAI tool_calls format
-      {:ok,
-       %{
-         "choices" => [
-           %{"message" => %{"role" => "assistant", "tool_calls" => tool_calls}}
-           | _
-         ]
-       }}
-      when is_list(tool_calls) and tool_calls != [] ->
-        Logger.debug("LLM response: tool_calls: #{inspect(tool_calls)}")
-        # Build the assistant message with tool_calls for the message history
-        assistant_msg_map = %{
-          role: "assistant",
-          content: "",
-          tool_calls: tool_calls
-        }
-
-        # For each tool_call, execute and build the tool message
-        Enum.reduce_while(tool_calls, [], fn tool_call, acc ->
-          fname = tool_call["function"]["name"]
-          args_json = tool_call["function"]["arguments"]
-
-          case execute_tool_call(fname, args_json, tools, conversation_id) do
-            {:stop, _llm_render} ->
-              {:halt, :stop}
-
-            {:halt, _llm_render} ->
-              {:halt, :halt}
-
-            {:ok, llm_render} ->
-              tool_result =
-                %{
-                  role: "tool",
-                  tool_call_id: tool_call["id"],
-                  name: fname,
-                  content: llm_render
-                }
-
-              {:cont, acc ++ [tool_result]}
-          end
-        end)
-        |> case do
-          :stop ->
-            MessagesStorage.delete(conversation_id)
-            {:ok, nil}
-
-          :halt ->
-            {:ok, nil}
-
-          tool_msgs when is_list(tool_msgs) ->
-            # Append the assistant message with tool_calls, then all tool messages
-            new_messages = messages ++ [assistant_msg_map] ++ tool_msgs
-            Logger.debug("tool_call message sequence: #{inspect(new_messages)}")
-
-            do_function_loop_stream(
-              conversation_id,
-              new_messages,
-              tools,
-              opts,
-              step + 1
-            )
-        end
-
-      # Plain assistant message
-      {:ok, %{"choices" => [%{"message" => %{"role" => "assistant", "content" => content}} | _]}} ->
-        Logger.debug("LLM response: assistant: #{inspect(content)}")
-        msg = Message.new(:assistant, content)
-        {:ok, msg}
-
-      {:error, reason} ->
-        Logger.debug("LLM error: #{inspect(reason)}")
-        {:error, reason}
-    end
-  end
-
   def send_message_streaming(
         conversation_id,
         user_message,
         prompt,
-        tools,
-        opts \\ []
+        tools
       ) do
-    user_message = Message.new(:user, user_message)
-    MessagesStorage.append(conversation_id, user_message)
-    base_messages = [%{role: "system", content: prompt}] ++ to_llm_messages(conversation_id)
-    llm_opts = Keyword.merge([tools: tools, stream: true], opts)
-
     listening_process = self()
     send(listening_process, {:loading, true})
-    send(listening_process, user_message)
 
-    task =
-      Task.start_link(fn ->
-        if org_id = opts[:organization_id], do: Firmowid.Repo.put_org_id(org_id)
+    org_id = Firmowid.Repo.get_org_id()
 
-        do_function_loop_streaming(
-          conversation_id,
-          base_messages,
-          tools,
-          llm_opts,
-          listening_process,
-          0
-        )
+    Task.start_link(fn ->
+      Firmowid.Repo.put_org_id(org_id)
 
-        send(listening_process, {:loading, false})
-      end)
+      user_message = Message.new(:user, user_message)
+      send(listening_process, user_message)
+      MessagesStorage.append(conversation_id, user_message)
 
-    {:ok, task}
+      base_messages = [ChatMessage.system(prompt)] ++ to_llm_messages(conversation_id)
+
+      do_function_loop_streaming(
+        conversation_id,
+        base_messages,
+        tools,
+        listening_process
+      )
+
+      send(listening_process, {:loading, false})
+    end)
+
+    :ok
   end
+
+  defp do_function_loop_streaming(
+         conversation_id,
+         messages,
+         tools,
+         listening_process,
+         step \\ 0
+       )
 
   defp do_function_loop_streaming(
          _conversation_id,
          _messages,
          _tools,
-         _opts,
          _listening_process,
          @max_steps
        ),
@@ -254,28 +77,17 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
          conversation_id,
          messages,
          tools,
-         opts,
          listening_process,
          step
        ) do
-    model_messages =
-      messages
-      |> Enum.map(fn
-        %{role: "system"} = msg -> ChatMessage.system(msg.content)
-        %{role: "user"} = msg -> ChatMessage.user(msg.content)
-        %{role: "assistant"} = msg -> ChatMessage.assistant(msg.content)
-        message -> message
-      end)
-
-    apikey = System.fetch_env!("OPENAI_API_KEY")
-    openai = OpenaiEx.new(apikey)
+    openai = Application.get_env(:firmowid, :openai_api_key) |> OpenaiEx.new()
 
     response =
       Responses.create!(
         openai,
         %{
           model: "gpt-4o",
-          input: model_messages,
+          input: messages,
           tools: Enum.map(tools, &Tool.to_openai_response/1)
         },
         stream: true
@@ -287,6 +99,13 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
       |> Stream.map(& &1.data)
       |> Stream.transform(nil, fn item, acc ->
         case item do
+          %{
+            "type" => "response.output_item.added",
+            "item" => %{"type" => "message"}
+          } ->
+            msg = Message.new(:assistant, "", %{done: false})
+            {[msg], msg}
+
           %{"type" => "response.output_text.delta", "delta" => delta} ->
             msg = Map.update!(acc, :text, &(&1 <> delta))
             {[msg], msg}
@@ -298,13 +117,6 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
               |> Map.update(:payload, %{}, &Map.put(&1, :done, true))
 
             {[msg], nil}
-
-          %{
-            "type" => "response.output_item.added",
-            "item" => %{"type" => "message"}
-          } ->
-            msg = Message.new(:assistant, "", %{done: false})
-            {[msg], msg}
 
           %{
             "type" => "response.output_item.added",
@@ -326,51 +138,17 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
 
           %{
             "type" => "response.output_item.done",
-            "item" => %{
-              "type" => "function_call",
-              "name" => fname,
-              "arguments" => args_json,
-              "call_id" => call_id
-            }
+            "item" => %{"type" => "function_call", "arguments" => args_json}
           } ->
-            args = Jason.decode!(args_json)
-
             call_msg =
-              Map.update(acc, :payload, %{}, fn payload ->
+              Map.update!(acc, :payload, fn payload ->
                 payload
                 |> Map.put(:done, true)
-                |> Map.put(:args, args)
-                |> Map.put(:call_id, call_id)
+                |> Map.put(:args, Jason.decode!(args_json))
               end)
 
-            Logger.debug("function_call: exec: #{inspect(fname)}, args: #{inspect(args)}")
-
-            tool = Enum.find(tools, &(&1.name == fname))
-            tool_result = tool.handler.(args)
-
-            case tool_result do
-              :halt ->
-                call_msg = Map.update!(call_msg, :payload, &Map.put(&1, :halt, true))
-                {[call_msg], nil}
-
-              _ ->
-                llm_render = tool.llm_render.(tool_result)
-
-                Logger.debug(
-                  "function_result: exec: #{inspect(fname)}, result: #{inspect(tool_result)}"
-                )
-
-                result_msg =
-                  Message.new(:function_result, llm_render, %{
-                    name: fname,
-                    args: args,
-                    call_id: call_id,
-                    result: tool_result,
-                    done: true
-                  })
-
-                {[call_msg, result_msg], nil}
-            end
+            msgs = execute_function_call(call_msg, tools)
+            {msgs, nil}
 
           _ ->
             {[], acc}
@@ -381,8 +159,6 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
       |> Stream.each(fn msg -> MessagesStorage.append(conversation_id, msg) end)
 
     msgs = Enum.to_list(stream)
-
-    Logger.debug("do_function_loop_streaming: step #{step}")
 
     cond do
       _replied_with_text = Enum.any?(msgs, &(&1.role == :assistant and &1.text != "")) ->
@@ -398,54 +174,55 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
           conversation_id,
           new_messages,
           tools,
-          opts,
           listening_process,
           step + 1
         )
     end
   end
 
-  defp execute_tool_call(fname, args_json, tools, conversation_id) do
-    args =
-      case Jason.decode(args_json) do
-        {:ok, decoded} -> decoded
-        _ -> %{}
-      end
-
-    call_msg =
-      Message.new(:function_call, "#{fname}(#{inspect(args)})", %{name: fname, args: args})
-
-    MessagesStorage.append(conversation_id, call_msg)
+  defp execute_function_call(
+         %Message{
+           role: :function_call,
+           payload: %{name: fname, args: args, call_id: call_id, done: true}
+         } = call_msg,
+         tools
+       ) do
     Logger.debug("function_call: exec: #{inspect(fname)}, args: #{inspect(args)}")
 
     tool = Enum.find(tools, &(&1.name == fname))
-    result = tool.handler.(args)
-    llm_render = if tool, do: tool.llm_render.(result), else: inspect(result)
+    tool_result = tool.handler.(args)
 
-    result_msg =
-      Message.new(:function_result, llm_render, %{name: fname, args: args, result: result})
+    case tool_result do
+      :halt ->
+        call_msg = call_msg |> Map.update!(:payload, &Map.put(&1, :halt, true))
+        [call_msg]
 
-    MessagesStorage.append(conversation_id, result_msg)
+      _ ->
+        llm_render = tool.llm_render.(tool_result)
 
-    Logger.debug("function_result: appended: #{inspect(fname)}, result: #{inspect(result)}")
+        Logger.debug("function_result: exec: #{inspect(fname)}, result: #{inspect(tool_result)}")
 
-    case result do
-      {:stop, _} -> {:stop, llm_render}
-      {:halt, _} -> {:halt, llm_render}
-      _ -> {:ok, llm_render}
+        result_msg =
+          Message.new(:function_result, llm_render, %{
+            name: fname,
+            args: args,
+            call_id: call_id,
+            result: tool_result,
+            done: true
+          })
+
+        [call_msg, result_msg]
     end
   end
 
   defp to_llm_messages(conversation_id) do
-    Firmowid.Invoicing.Matching.Assistant.MessagesStorage.get(conversation_id)
+    MessagesStorage.get(conversation_id)
     |> Enum.filter(&(&1.role in [:user, :assistant, :function_call, :function_result]))
     |> Enum.map(&to_llm_message/1)
   end
 
-  defp to_llm_message(%Message{role: :user, text: text}), do: %{role: "user", content: text}
-
-  defp to_llm_message(%Message{role: :assistant, text: text}),
-    do: %{role: "assistant", content: text}
+  defp to_llm_message(%Message{role: :user, text: text}), do: ChatMessage.user(text)
+  defp to_llm_message(%Message{role: :assistant, text: text}), do: ChatMessage.assistant(text)
 
   defp to_llm_message(%Message{
          role: :function_call,

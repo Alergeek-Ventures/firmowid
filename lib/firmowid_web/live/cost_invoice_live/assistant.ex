@@ -420,13 +420,7 @@ defmodule FirmowidWeb.CostInvoiceLive.Assistant do
 
   def handle_event("accept", _params, socket) do
     invoice = Firmowid.CostInvoices.get_cost_invoice!(socket.assigns.invoice_id)
-
-    Bodyguard.permit!(
-      Firmowid.CostInvoices,
-      :update,
-      socket.assigns.current_user,
-      invoice
-    )
+    Bodyguard.permit!(Firmowid.CostInvoices, :update, socket.assigns.current_user, invoice)
 
     Assistant.accept_linking(socket.assigns.conversation_id)
 

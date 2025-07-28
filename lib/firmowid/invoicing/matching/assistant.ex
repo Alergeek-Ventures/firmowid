@@ -21,32 +21,14 @@ defmodule Firmowid.Invoicing.Matching.Assistant do
     conversation_id
   end
 
-  @doc """
-  Sends a message asynchronously, streaming LLM output via PubSub.
-  """
-  def send_message_async(conversation_id, message, opts \\ []) do
+  def send_message_streaming(conversation_id, message) do
     invoice = MessagesStorage.get_invoice(conversation_id)
-    opts = Keyword.merge([organization_id: invoice.organization_id], opts)
-
-    Engine.send_message_async(
-      conversation_id,
-      message,
-      system_prompt(invoice),
-      tools(),
-      opts
-    )
-  end
-
-  def send_message_streaming(conversation_id, message, opts \\ []) do
-    invoice = MessagesStorage.get_invoice(conversation_id)
-    opts = Keyword.merge([organization_id: invoice.organization_id], opts)
 
     Engine.send_message_streaming(
       conversation_id,
       message,
       system_prompt(invoice),
-      tools(),
-      opts
+      tools()
     )
   end
 
@@ -298,7 +280,7 @@ defmodule Firmowid.Invoicing.Matching.Assistant do
                 hallucinated_invoice ||
                   "Nieznaleziono faktury o podanym ID #{hd(cost_invoice_ids)}.",
                 not Enum.empty?(hallucinated_transactions) ||
-                  "Nieznaleziono transakcji o podanych ID: #{Enum.join(hallucinated_transactions, ", ")}."
+                  "Nie znaleziono transakcji o podanych ID: #{Enum.join(hallucinated_transactions, ", ")}."
               ]
               |> Enum.filter(&is_binary/1)
               |> Enum.join(" ")
