@@ -23,7 +23,7 @@ jobs:
         uses: getsentry/action-release@v3
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: "alergeek-v"
-          SENTRY_PROJECT: "firmowid-redux"
+          SENTRY_ORG: "alergeek"
+          SENTRY_PROJECT: "firmowid"
         with:
           environment: production
