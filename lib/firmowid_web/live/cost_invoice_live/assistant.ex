@@ -153,7 +153,12 @@ defmodule FirmowidWeb.CostInvoiceLive.Assistant do
         <% end %>
       </div>
 
-      <Components.input loading={@loading} input={@input} myself={@myself} />
+      <Components.input
+        :if={not @waiting_for_decision}
+        loading={@loading}
+        input={@input}
+        myself={@myself}
+      />
 
       <div :if={@waiting_for_decision} class="flex flex-col gap-3 items-center mb-8">
         <p>Połączyć te transakcje z fakturą?</p>

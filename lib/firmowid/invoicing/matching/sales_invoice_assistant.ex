@@ -91,8 +91,6 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
         To pozwala na połączenie jeden do wielu w obie strony, a także jeden do jeden.
         Nie pytaj użytkownika o potwierdzenie przed użyciem tego narzędzia,
         ponieważ użytkownik będzie potwierdzał połączenie w interfejsie.
-
-        Użyj tego narzędzia, gdy masz pewność, że transakcje pasują do faktur.
         """,
         args_schema: %{
           type: "object",
@@ -120,7 +118,13 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
                       "sales_invoice_ids" => sales_invoice_ids,
                       "transaction_ids" => transaction_ids
                     } ->
-          sales_invoice = Firmowid.SalesInvoices.get_sales_invoice(sales_invoice_ids |> hd())
+          sales_invoice_id = List.first(sales_invoice_ids)
+
+          sales_invoice =
+            if sales_invoice_id do
+              Firmowid.SalesInvoices.get_sales_invoice(sales_invoice_id)
+            end
+
           transactions = Firmowid.Finances.get_transactions!(transaction_ids)
 
           hallucinated_invoice = is_nil(sales_invoice)
@@ -134,7 +138,7 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
               [
                 "Nie mogę połączyć faktury sprzedażowej z transakcjami, ponieważ nie mogę znaleźć faktury lub transakcji. Sprawdź, czy podałeś poprawne UUID.",
                 hallucinated_invoice ||
-                  "Nieznaleziono faktury o podanym ID #{hd(sales_invoice_ids)}.",
+                  "Nieznaleziono faktury o podanym ID #{sales_invoice_id}.",
                 not Enum.empty?(hallucinated_transactions) ||
                   "Nie znaleziono transakcji o podanych ID: #{Enum.join(hallucinated_transactions, ", ")}."
               ]
@@ -188,21 +192,23 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
 
     1. `search_transactions`: Za każdym razem, gdy potrzebujesz wyszukać transakcje,
     MUSISZ użyć tego narzędzia. To JEDYNY sposób na dostęp do danych o transakcjach.
+    Jeśli użytkownik wspomni o walucie transakcji, użyj filtru waluty.
 
     2. `normalize_to_pln`: Za każdym razem, gdy musisz porównać lub filtrować kwoty,
     MUSISZ dbać o waluty - często płatności w zagranicznych są wykonywane przez polskie
     sposoby płatności i widnieją jako PLN - ale z sumą po konwersji walut. Dlatego przed
-    przeszukiwaniem bazy transakcji, musisz przeliczyć kwotę na PLN za pomocą tego
-    narzędzia.
+    przeszukiwaniem bazy transakcji, warto przeliczyć kwotę na PLN za pomocą tego
+    narzędzia, jeśli nic nie znajdziesz, to spróbuj ponownie bez tego narzędzia.
 
     3. `calculate`: Za każdym razem, gdy musisz wykonać działanie matematyczne,
     użyj tego narzędzia zamiast polegać na intuicji przy obliczeniach.
 
-    4. `link_sales_invoice_to_transaction`: Pyta użytkownika o potwierdzenie przed połączeniem faktur sprzedażowych z transakcjami.
+    4. `link_sales_invoice_to_transaction`: Łączy faktury sprzedażowe z transakcjami.
     Możesz podać wiele transakcji i wiele faktur, narzędzie połączy każdą z każdą.
     To pozwala na połączenie jeden do wielu w obie strony, a także jeden do jeden.
     Nie pytaj użytkownika o potwierdzenie przed użyciem tego narzędzia,
     ponieważ użytkownik będzie potwierdzał połączenie w interfejsie.
+    Nie informuj użytkownika o tym, że używasz tego narzędzia.
 
     ## Przykładowe rozwiązania zadania
 
@@ -264,7 +270,8 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
     - nigdy nie zaczynaj od szukania po nazwie kontrahenta czy produktu - stosuj bardzo luźne filtry
     i zawężaj dopiero na podstawie rezultatów wyszukiwania oraz podpowiedzi użytkownika
     - gdy szukasz, korzystaj z tego co mówi Ci użytkownik - jeżeli mówi o zeszłym miesiącu,
-    to nie zawężaj parametrów wyszukiwania, np.: podając nazwę kontrahenta
+    to nie zawężaj parametrów wyszukiwania, np.: podając nazwę kontrahenta; jeśli użytkownik mówi
+    o walucie transakcji to nie prze
     - transakcje pominięte są zwykle nieprzydatne, dlatego domyślnie nie będą przeszukiwane - natomiast
     możesz zasugerować użytkownikowi, aby rozszerzyć wyszukiwanie o pominięte transakcje
     - pominięte transakcje to takie, które już mają przyporządkowane faktury bądź nie są dokumentowane
@@ -274,6 +281,7 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
     - nie wypisuj identyfikatorów (UUID) w wiadomościach, użytkownikowi nie są one potrzebne,
     tylko Tobie aby wykorzystać je w narzędziach
     - pierwsze wyszukiwanie transakcji powinno być tylko po datach
+    - zwykle płatności następują po dacie wystawienia faktury i przed terminem płatności,
 
     # Dopasowujesz do tej faktury:
 
@@ -301,6 +309,7 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
     - **Adres kupującego**: #{invoice.buyer_address}
     - **Data wystawienia**: #{invoice.issue_date}
     - **Data sprzedaży**: #{invoice.sale_date}
+    - **Termin płatności**: #{invoice.due_date}
     - **Kwota**: #{invoice.total_amount}
     - **Waluta**: #{invoice.currency}
 

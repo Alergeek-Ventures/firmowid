@@ -6,7 +6,7 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
     %Tool{
       name: "normalize_to_pln",
       description:
-        "Przelicz kwotę w dowolnej walucie na PLN, używając podanej kwoty, kodu waluty i daty (YYYY-MM-DD). ZAWSZE używaj tego narzędzia przed porównywaniem lub wyszukiwaniem po kwocie.",
+        "Przelicz kwotę w dowolnej walucie na PLN, używając podanej kwoty, kodu waluty i daty (YYYY-MM-DD). Używaj tego narzędzia przed porównywaniem lub wyszukiwaniem po kwocie.",
       args_schema: %{
         type: "object",
         properties: %{
@@ -100,7 +100,8 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
               },
               currency: %{
                 type: "string",
-                description: "Kod waluty (np. 'PLN', 'EUR') - używane do filtrowania transakcji."
+                description:
+                  "Kod waluty (np. 'PLN', 'EUR') - używane do filtrowania transakcji. Wymagane jeśli filtrujesz po kwocie transakcji."
               },
               amount_gt: %{
                 type: "string",

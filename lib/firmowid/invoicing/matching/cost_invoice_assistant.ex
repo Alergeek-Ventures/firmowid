@@ -131,7 +131,13 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
                       "cost_invoice_ids" => cost_invoice_ids,
                       "transaction_ids" => transaction_ids
                     } ->
-          cost_invoice = Firmowid.CostInvoices.get_cost_invoice(cost_invoice_ids |> hd())
+          cost_invoice_id = List.first(cost_invoice_ids)
+
+          cost_invoice =
+            if cost_invoice_id do
+              Firmowid.CostInvoices.get_cost_invoice(cost_invoice_id)
+            end
+
           transactions = Firmowid.Finances.get_transactions!(transaction_ids)
 
           hallucinated_invoice = is_nil(cost_invoice)
@@ -145,7 +151,7 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
               [
                 "Nie mogę połączyć faktury kosztowej z transakcjami, ponieważ nie mogę znaleźć faktury lub transakcji. Sprawdź, czy podałeś poprawne UUID.",
                 hallucinated_invoice ||
-                  "Nieznaleziono faktury o podanym ID #{hd(cost_invoice_ids)}.",
+                  "Nieznaleziono faktury o podanym ID #{cost_invoice_id}.",
                 not Enum.empty?(hallucinated_transactions) ||
                   "Nie znaleziono transakcji o podanych ID: #{Enum.join(hallucinated_transactions, ", ")}."
               ]

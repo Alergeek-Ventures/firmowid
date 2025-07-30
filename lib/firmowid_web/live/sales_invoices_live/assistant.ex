@@ -108,7 +108,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Assistant do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="assistant-chat relative flex flex-col mx-auto w-full h-[calc(100vh-64px-128px)]">
+    <div class="assistant-chat relative flex flex-col mx-auto w-full h-full">
       <button
         id="chat-close-button"
         phx-hook="Tippy"
@@ -152,7 +152,12 @@ defmodule FirmowidWeb.SalesInvoicesLive.Assistant do
         <% end %>
       </div>
 
-      <Components.input loading={@loading} input={@input} myself={@myself} />
+      <Components.input
+        :if={not @waiting_for_decision}
+        loading={@loading}
+        input={@input}
+        myself={@myself}
+      />
 
       <div :if={@waiting_for_decision} class="flex flex-col gap-3 items-center mb-8">
         <p>Połączyć te transakcje z fakturą?</p>

@@ -1,7 +1,7 @@
 defmodule FirmowidWeb.Components.Invoicing.Assistant do
   use FirmowidWeb, :html
-
   alias FirmowidWeb.Helpers.TimeFormatter
+  require Logger
 
   attr :loading, :boolean, default: false
   attr :input, :string, default: ""
@@ -149,14 +149,15 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
         %{
           role: :function_call,
           payload: %{
-            name: "link_cost_invoice_to_transaction",
+            name: name,
             args: %{"message" => assistant_message}
           },
           transactions: transactions
         } = message,
         myself,
         _opts
-      ) do
+      )
+      when name in ["link_cost_invoice_to_transaction", "link_sales_invoice_to_transaction"] do
     assigns = %{
       id: message.id,
       message: assistant_message,
@@ -189,65 +190,69 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
     """
   end
 
-  def message(%{role: :function_call, payload: %{name: name, args: args}}, _myself, _opts) do
-    assigns = %{name: name, args: args}
+  def message(
+        %{role: :function_result, payload: %{name: "search_transactions", result: transactions}},
+        _myself,
+        _opts
+      ) do
+    text =
+      case length(transactions) do
+        0 -> "Nie znalazłem żadnych transakcji"
+        1 -> "Znalazłem 1 transakcję"
+        count when count < 5 -> "Znalazłem #{count} transakcje"
+        count -> "Znalazłem #{count} transakcji"
+      end
+
+    assigns = %{text: text}
 
     ~H"""
-    <div class="flex flex-row gap-4 items-center">
-      <div>🛠️ <b>{@name}</b> called</div>
-      <div><pre>{inspect(@args)}</pre></div>
+    <div class="flex flex-row gap-2 items-center ml-[52px] py-2 px-4 flex-wrap -mt-12">
+      <p class="text-sm">{@text}</p>
     </div>
     """
   end
 
-  def message(
-        %{role: :function_result, payload: %{name: name, result: result}},
-        _myself,
-        _opts
-      ) do
-    assigns = %{name: name, result: result}
+  def message(message, _, opts) do
+    Logger.warning("Unknown message type in assistant: #{inspect(message)}")
 
-    case {name, result} do
-      {"search_transactions", list} when is_list(list) ->
-        text =
-          case length(list) do
-            0 -> "Nie znalazłem żadnych transakcji"
-            1 -> "Znalazłem 1 transakcję"
-            count when count < 5 -> "Znalazłem #{count} transakcje"
-            count -> "Znalazłem #{count} transakcji"
-          end
+    if not Keyword.get(opts, :debug, false) do
+      assigns = %{}
 
-        assigns = Map.put(assigns, :text, text)
+      ~H"""
+      """
+    else
+      case message do
+        %{role: :function_call, payload: %{name: name, args: args}} ->
+          assigns = %{name: name, args: args}
 
-        ~H"""
-        <div class="flex flex-row gap-2 items-center ml-[52px] py-2 px-4 flex-wrap -mt-12">
-          <p class="text-sm">{@text}</p>
-        </div>
-        """
+          ~H"""
+          <div class="flex flex-row gap-4 items-center">
+            <div>🛠️ <b>{@name}</b> called</div>
+            <div><pre>{inspect(@args)}</pre></div>
+          </div>
+          """
 
-      _ ->
-        ~H"""
-        <div class="flex flex-row gap-4 items-center">
-          <div>🛠️ <b>{@name}</b> result</div>
-          <div><pre>{inspect(@result)}</pre></div>
-        </div>
-        """
+        %{role: :function_result, payload: %{name: name, result: result}} ->
+          assigns = %{name: name, result: result}
+
+          ~H"""
+          <div class="flex flex-row gap-4 items-center">
+            <div>🛠️ <b>{@name}</b> result</div>
+            <div><pre>{inspect(@result)}</pre></div>
+          </div>
+          """
+
+        %{role: role, text: text, payload: payload} = assigns ->
+          ~H"""
+          <div>[{to_string(@role)}] {render_content(@text)} {inspect(@payload)}</div>
+          """
+
+        %{type: _} = assigns ->
+          ~H"""
+          <div>[{to_string(@type)}] {render_content(@content)} {inspect(@metadata)}</div>
+          """
+      end
     end
-  end
-
-  # fallback for unknown roles
-  def message(%{role: role, text: text, payload: payload}, _myself, _opts) do
-    assigns = %{role: role, text: text, payload: payload}
-
-    ~H"""
-    <div>[{to_string(@role)}] {render_content(@text)} {inspect(@payload)}</div>
-    """
-  end
-
-  def message(%{type: _} = assigns, _myself, _opts) do
-    ~H"""
-    <div>[{to_string(@type)}] {render_content(@content)} {inspect(@metadata)}</div>
-    """
   end
 
   defp render_content(nil), do: "failed to render content"

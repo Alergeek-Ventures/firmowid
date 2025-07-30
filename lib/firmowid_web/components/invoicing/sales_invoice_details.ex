@@ -34,7 +34,12 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
       />
 
       <div class="flex flex-col justify-between px-8 gap-4 lg:gap-12 lg:flex-row min-w-0">
-        <aside class="w-full lg:w-[400px] xl:w-[600px] flex-shrink-0 flex-grow-0 flex flex-col gap-4 order-last lg:order-none py-8">
+        <aside class={[
+          "w-full lg:w-[400px] xl:w-[600px] flex-shrink-0 flex-grow-0",
+          "flex flex-col gap-4 order-last lg:order-none py-8 pr-8",
+          "max-h-[calc(100vh-64px-128px)] overflow-y-auto",
+          "lg:h-[calc(100vh-64px-128px)]"
+        ]}>
           <div class="flex flex-row justify-end gap-2">
             <.link
               id="copy-invoice-link"
