@@ -20,6 +20,17 @@
           <.icon name="hero-clipboard-document-list" class="w-5 h-5" /> Fakturowanie
         </.link>
       <% end %>
+      <%= if Bodyguard.permit?(Firmowid.Analysis, :read, @current_user) do %>
+        <.link
+          navigate={~p"/analiza"}
+          class={[
+            @current_uri.path == "/analiza" && "opacity-90",
+            "flex items-center gap-2 transition-all hover:opacity-100 opacity-50"
+          ]}
+        >
+          <.icon name="hero-scale" class="w-5 h-5" /> Analiza
+        </.link>
+      <% end %>
       <.link
         navigate={~p"/czasosledz"}
         class={[
