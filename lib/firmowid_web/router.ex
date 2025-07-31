@@ -81,6 +81,8 @@ defmodule FirmowidWeb.Router do
       live "/ustawienia/bank/dodaj", BankSyncLive.Create, :index
 
       live "/zaproszenia", OrganizationInvitesLive.Index, :index
+
+      live "/analiza", AnalysisLive.Dashboard, :index
     end
   end
 

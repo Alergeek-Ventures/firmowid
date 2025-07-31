@@ -271,4 +271,27 @@ defmodule Firmowid.CostInvoices do
     organization_id = Repo.get_org_id()
     broadcast_cost_invoice_list_updated(organization_id)
   end
+
+  def list_cost_invoices_by_ids(ids, date_from \\ nil, date_to \\ nil) do
+    query = CostInvoice |> where([ci], ci.id in ^ids)
+
+    query =
+      if date_from do
+        where(query, [ci], ci.issue_date >= ^date_from)
+      else
+        query
+      end
+
+    query =
+      if date_to do
+        where(query, [ci], ci.issue_date <= ^date_to)
+      else
+        query
+      end
+
+    query
+    |> order_by(desc: :issue_date)
+    |> Repo.all()
+    |> Repo.preload(:transactions)
+  end
 end

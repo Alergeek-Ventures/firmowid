@@ -283,4 +283,29 @@ defmodule Firmowid.SalesInvoices do
   def change_buyer(%Buyer{} = buyer, attrs \\ %{}) do
     Buyer.changeset(buyer, attrs)
   end
+
+  def list_sales_invoices_by_ids(ids, date_from \\ nil, date_to \\ nil) do
+    query = SalesInvoice |> where([si], si.id in ^ids)
+
+    query =
+      if date_from do
+        where(query, [si], si.issue_date >= ^date_from)
+      else
+        query
+      end
+
+    query =
+      if date_to do
+        where(query, [si], si.issue_date <= ^date_to)
+      else
+        query
+      end
+
+    query
+    |> order_by(desc: :issue_date)
+    |> Repo.all()
+    |> Repo.preload(:sales_invoice_items)
+    |> Repo.preload(:buyer)
+    |> Repo.preload(:transactions)
+  end
 end

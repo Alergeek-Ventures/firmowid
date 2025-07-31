@@ -15,6 +15,7 @@ defmodule Firmowid.Timetracker.Project do
              on_replace: :delete
 
     belongs_to :organization, Firmowid.Accounts.Organization
+    belongs_to :tag, Firmowid.Analysis.Tag
 
     timestamps()
   end
@@ -22,7 +23,7 @@ defmodule Firmowid.Timetracker.Project do
   @doc false
   def changeset(project, attrs) do
     project
-    |> cast(attrs, [:name])
+    |> cast(attrs, [:name, :tag_id])
     |> cast_assoc(:project_users)
     |> validate_required([:name])
     |> put_change(:organization_id, Repo.get_org_id())

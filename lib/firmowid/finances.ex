@@ -296,4 +296,27 @@ defmodule Firmowid.Finances do
   def change_transaction(%Transaction{} = transaction, attrs \\ %{}) do
     Transaction.changeset(transaction, attrs)
   end
+
+  def list_transactions_by_ids(ids, date_from \\ nil, date_to \\ nil) do
+    query =
+      Transaction
+      |> where([t], t.id in ^ids)
+
+    query =
+      cond do
+        date_from && date_to ->
+          query |> where([t], t.booking_date >= ^date_from and t.booking_date <= ^date_to)
+
+        date_from ->
+          query |> where([t], t.booking_date >= ^date_from)
+
+        date_to ->
+          query |> where([t], t.booking_date <= ^date_to)
+
+        true ->
+          query
+      end
+
+    Repo.all(query)
+  end
 end

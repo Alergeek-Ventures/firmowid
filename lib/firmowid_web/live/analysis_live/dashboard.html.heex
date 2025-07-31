@@ -1,0 +1,100 @@
+<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+  <div class="mb-8">
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">Analiza finansowa</h1>
+        <p class="mt-2 text-gray-600">Przegląd przychodów i kosztów organizacji</p>
+      </div>
+      <div class="flex gap-4 items-center">
+        <form phx-change="change-tag">
+          <.input
+            type="select"
+            id="tag_selector"
+            name="tag_id"
+            value={@params.tag_id}
+            options={
+              @tags
+              |> Enum.map(&{&1.name, &1.id})
+            }
+            class="w-48"
+            color="light_grey"
+            size="medium"
+          />
+        </form>
+        <.date_picker
+          id="month"
+          active_months={@active_months}
+          selected_date={@params.month}
+          class="w-48 gap-2"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-3 mb-8">
+    <div class="bg-blueBg border border-blueBg text-blueText rounded-lg p-6">
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <.icon name="hero-arrow-trending-up" class="h-8 w-8 text-green-600" />
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-green-600">Przychody</p>
+          <p class="text-2xl font-bold text-green-900">
+            {@total_income}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-orangeBg border border-orangeBg text-orangeText rounded-lg p-6">
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <.icon name="hero-arrow-trending-down" class="h-8 w-8 text-red-600" />
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-red-600">Koszty</p>
+          <p class="text-2xl font-bold text-red-900">
+            {@total_expenses}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class={[
+      "border rounded-lg p-6",
+      if(Decimal.positive?(@net_profit_decimal),
+        do: "bg-greenBg border-greenBg text-greenText",
+        else: "bg-redBg border-redBg text-redText"
+      )
+    ]}>
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <.icon
+            name="hero-calculator"
+            class={"h-8 w-8 #{if(Decimal.positive?(@net_profit_decimal), do: "text-blue-600", else: "text-gray-600")}"}
+          />
+        </div>
+        <div class="ml-4">
+          <p class={[
+            "text-sm font-medium",
+            if(Decimal.positive?(@net_profit_decimal),
+              do: "text-blue-600",
+              else: "text-gray-600"
+            )
+          ]}>
+            Zysk netto
+          </p>
+          <p class={[
+            "text-2xl font-bold",
+            if(Decimal.positive?(@net_profit_decimal),
+              do: "text-blue-900",
+              else: "text-gray-900"
+            )
+          ]}>
+            {@net_profit}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
