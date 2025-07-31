@@ -31,7 +31,7 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
     tag_id =
       case Map.get(params, "tag_id") do
         nil -> calosci_tag.id
-        tag_id_string -> String.to_integer(tag_id_string)
+        tag_id_string -> tag_id_string
       end
 
     socket =
@@ -51,8 +51,6 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
 
   @impl true
   def handle_event("change-tag", %{"tag_id" => tag_id}, socket) do
-    tag_id = String.to_integer(tag_id)
-
     {:noreply, update_param(socket, :tag_id, tag_id)}
   end
 
