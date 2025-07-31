@@ -222,9 +222,7 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
       """
     else
       case message do
-        %{role: :function_call, payload: %{name: name, args: args}} ->
-          assigns = %{name: name, args: args}
-
+        %{role: :function_call, payload: %{name: _, args: _} = assigns} ->
           ~H"""
           <div class="flex flex-row gap-4 items-center">
             <div>🛠️ <b>{@name}</b> called</div>
@@ -232,9 +230,7 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
           </div>
           """
 
-        %{role: :function_result, payload: %{name: name, result: result}} ->
-          assigns = %{name: name, result: result}
-
+        %{role: :function_result, payload: %{name: _, result: _} = assigns} ->
           ~H"""
           <div class="flex flex-row gap-4 items-center">
             <div>🛠️ <b>{@name}</b> result</div>
@@ -242,7 +238,7 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
           </div>
           """
 
-        %{role: role, text: text, payload: payload} = assigns ->
+        %{role: _, text: _, payload: _} = assigns ->
           ~H"""
           <div>[{to_string(@role)}] {render_content(@text)} {inspect(@payload)}</div>
           """
