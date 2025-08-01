@@ -29,6 +29,22 @@
       "command": [
         "/var/home/kosciak/projects/alergeek/firmowid/lib/firmowid/invoicing/matching/training/mcp-wrapper.sh"
       ]
+    },
+    "tidewave": {
+      "type": "local",
+      "command": [
+        "podman",
+        "run",
+        "-i",
+        "--privileged",
+        "--network=host",
+        "--rm",
+        "ghcr.io/sparfenyuk/mcp-proxy",
+        "http://localhost:4000/tidewave/mcp"
+      ],
+      "environment": {
+        "CONTAINER_HOST": "unix:///run/user/1000/podman/podman.sock"
+      }
     }
   }
 }
