@@ -37,12 +37,16 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     four_weeks_ago =
       Date.utc_today() |> Date.beginning_of_week() |> Date.shift(week: -3)
 
+
+    last_session = Timetracker.get_most_recent_session(socket.assigns.current_user.id)
+    default_project_id = if last_session, do: last_session.project_id, else: nil
+
     {:ok,
      socket
      |> assign(:sessions_after, four_weeks_ago)
      |> assign_sessions()
      |> assign(:projects, Timetracker.list_user_projects(socket.assigns.current_user.id))
-     |> assign(:form, to_form(SessionForm.changeset(%{})))
+     |> assign(:form, to_form(SessionForm.changeset(%{"project_id" => default_project_id})))
      |> assign(:is_form_extended, false)}
   end
 
