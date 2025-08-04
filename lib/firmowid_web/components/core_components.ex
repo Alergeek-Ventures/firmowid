@@ -524,9 +524,13 @@ defmodule FirmowidWeb.CoreComponents do
   def avatar_image(assigns) do
     ~H"""
     <img
-      class={classes(["aspect-square h-full w-full object-cover ",
-        (!@src || @src === "") && "hidden",
-        @class])}
+      class={
+        classes([
+          "aspect-square h-full w-full object-cover ",
+          (!@src || @src === "") && "hidden",
+          @class
+        ])
+      }
       src={@src}
       {@rest}
     />
