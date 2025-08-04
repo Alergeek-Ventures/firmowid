@@ -13,7 +13,8 @@
         <.link
           navigate={~p"/"}
           class={[
-            @current_uri.path == "/" && "opacity-90",
+            !String.starts_with?(@current_uri.path, "/analiza") &&
+              !String.starts_with?(@current_uri.path, "/czasosledz") && "opacity-90",
             "flex items-center gap-2 transition-all hover:opacity-100 opacity-50"
           ]}
         >
@@ -24,7 +25,7 @@
         <.link
           navigate={~p"/analiza"}
           class={[
-            @current_uri.path == "/analiza" && "opacity-90",
+            String.starts_with?(@current_uri.path, "/analiza") && "opacity-90",
             "flex items-center gap-2 transition-all hover:opacity-100 opacity-50"
           ]}
         >
@@ -34,7 +35,7 @@
       <.link
         navigate={~p"/czasosledz"}
         class={[
-          @current_uri.path == "/czasosledz" && "opacity-90",
+          String.starts_with?(@current_uri.path, "/czasosledz") && "opacity-90",
           "flex items-center gap-2 transition-all hover:opacity-100 opacity-50"
         ]}
       >

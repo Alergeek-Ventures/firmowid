@@ -4,9 +4,11 @@ defmodule FirmowidWeb.Router do
   import Phoenix.LiveDashboard.Router
   import FirmowidWeb.UserAuth
   import Oban.Web.Router
+  import FirmowidWeb.RedirectTrailing
 
   pipeline :browser do
     plug :accepts, ["html"]
+    plug :redirect_trailing_slash
     plug :fetch_session
     plug :fetch_live_flash
     plug :put_root_layout, html: {FirmowidWeb.Layouts, :root}
