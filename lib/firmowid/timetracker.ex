@@ -465,8 +465,7 @@ defmodule Firmowid.Timetracker do
   def get_most_recent_session(user_id) do
     Repo.one(
       from s in Session,
-        where:
-          s.user_id == ^user_id,
+        where: s.user_id == ^user_id,
         order_by: [desc: s.start_datetime],
         limit: 1
     )
