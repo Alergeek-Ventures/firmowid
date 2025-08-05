@@ -142,7 +142,7 @@ defmodule FirmowidWeb.HoursRecordLive.UploadForm do
       Timetracker.create_hours_record(
         %{
           user_id: socket.assigns.current_user.id,
-          number_of_hours: socket.assigns.total_duration |> div(3600) |> round(),
+          number_of_hours: (socket.assigns.total_duration / 3600) |> ceil(),
           month: socket.assigns.selected_date.month,
           year: socket.assigns.selected_date.year
         },

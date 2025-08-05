@@ -57,9 +57,8 @@ defmodule FirmowidWeb.HoursRecordController do
     end_date = Date.end_of_month(date)
 
     total_hours =
-      Timetracker.get_sessions_duration_in_month(conn.assigns.current_user.id, date)
-      |> div(3600)
-      |> round()
+      (Timetracker.get_sessions_duration_in_month(conn.assigns.current_user.id, date) / 3600)
+      |> ceil()
 
     render(conn, :preview,
       layout: false,
