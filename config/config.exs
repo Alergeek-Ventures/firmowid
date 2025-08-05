@@ -48,7 +48,10 @@ config :ex_money,
   default_cldr_backend: Firmowid.Cldr,
   auto_start_exchange_rate_service: true,
   exchange_rates_retrieve_every: :never,
-  open_exchange_rates_app_id: "b1c5dcca1ebd4066ae1b8c7ef0205be6"
+  # open_exchange_rates_app_id: "b1c5dcca1ebd4066ae1b8c7ef0205be6", - AV (to be restored)
+  open_exchange_rates_app_id: "090a91fcd9d74f32a0813ee30863f231",
+  # temporary, to be deleted
+  exchange_rates_cache_module: Firmowid.ExchangeRates.DatabaseCache
 
 # Configure esbuild (the version is required)
 config :esbuild,

@@ -10,7 +10,7 @@ defmodule Firmowid.Oban do
     repo: Firmowid.Repo,
     prefix: "oban",
     engine: Oban.Engines.Basic,
-    queues: [bank_data: 1, invoicing: 1, cost_invoices: 5],
+    queues: [bank_data: 1, invoicing: 1, cost_invoices: 5, default: 1],
     plugins: [
       # retry orphaned jobs after 30 minutes
       {Oban.Plugins.Lifeline, rescue_after: :timer.minutes(30)},
@@ -21,7 +21,8 @@ defmodule Firmowid.Oban do
        crontab: [
          {"0 12 */2 * *", Firmowid.BankData.Worker,
           args: %{name: "dispatch_sync_jobs_for_all_bank_accounts"}},
-         {"0 13 * * *", Firmowid.Invoicing.Worker, args: %{name: "matching"}}
+         {"0 13 * * *", Firmowid.Invoicing.Worker, args: %{name: "matching"}},
+         {"0 14 * * *", Firmowid.ExchangeRates.CleanupWorker, args: %{}}
        ]}
     ]
 
