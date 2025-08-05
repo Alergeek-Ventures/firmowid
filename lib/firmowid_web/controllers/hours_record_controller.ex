@@ -6,6 +6,8 @@ defmodule FirmowidWeb.HoursRecordController do
   alias Firmowid.Blobs
   @dialyzer {:no_return, pdf: 2}
 
+  # sobelow_skip ["Traversal.SendFile"]
+  # This is safe because pdf_path is not user-controlled
   def pdf(conn, %{"date" => date}) do
     evaluate = %{
       expression: """
@@ -26,13 +28,13 @@ defmodule FirmowidWeb.HoursRecordController do
           value: conn.cookies["_firmowid_key"],
           domain: domain
         },
-        output: fn path ->
+        output: fn pdf_path ->
           conn
           |> put_resp_header(
             "content-disposition",
             "attachment; filename=Ewidencja #{date}.pdf"
           )
-          |> send_file(200, path)
+          |> send_file(200, pdf_path)
         end,
         page_size: "A4",
         evaluate: evaluate,
@@ -74,6 +76,8 @@ defmodule FirmowidWeb.HoursRecordController do
     )
   end
 
+  # sobelow_skip ["XSS.SendResp"]
+  # This is safe because this gets downloaded not executed by browser
   def download(conn, %{"id" => id}) do
     Bodyguard.permit!(Timetracker, :read_hours_records, conn.assigns.current_user)
 

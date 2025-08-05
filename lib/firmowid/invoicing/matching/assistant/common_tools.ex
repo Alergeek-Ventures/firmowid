@@ -143,7 +143,7 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
         filtered =
           args["filters"]
           |> Enum.filter(fn {k, _v} -> k in allowed_keys end)
-          |> Enum.map(fn {k, v} -> {String.to_atom(k), v} end)
+          |> Enum.map(fn {k, v} -> {String.to_existing_atom(k), v} end)
           |> Map.new()
 
         filtered =

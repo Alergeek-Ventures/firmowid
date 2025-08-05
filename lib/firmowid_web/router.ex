@@ -13,7 +13,11 @@ defmodule FirmowidWeb.Router do
     plug :fetch_live_flash
     plug :put_root_layout, html: {FirmowidWeb.Layouts, :root}
     plug :protect_from_forgery
-    plug :put_secure_browser_headers
+
+    plug :put_secure_browser_headers, %{
+      "content-security-policy" => "'unsafe-inline' https: wss: upgrade-insecure-requests"
+    }
+
     plug :fetch_current_user
   end
 

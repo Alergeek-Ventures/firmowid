@@ -142,7 +142,8 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   end
 
   def handle_event("change-filter", %{"filter" => filter}, socket) do
-    filter = filter |> String.to_atom()
+    # Use existing atoms to avoid atom exhaustion
+    filter = String.to_existing_atom(filter)
 
     {:noreply, update_param(socket, :filter, filter)}
   end

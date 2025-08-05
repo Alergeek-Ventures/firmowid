@@ -1,0 +1,11 @@
+[
+  verbose: false,
+  private: false,
+  skip: true,
+  router: "",
+  exit: "true",
+  format: "txt",
+  out: "",
+  threshold: "low",
+  ignore_files: []
+]

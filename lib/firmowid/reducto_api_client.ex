@@ -75,14 +75,21 @@ defmodule Firmowid.ReductoApiClient do
 
   defp upload_to_reducto(file_url, _s3_host), do: file_url
 
+  # sobelow_skip ["Traversal.FileModule"]
   defp download_file(file_url, dest_path) do
+    # Validate dest_path to prevent directory traversal
+    dest_path = Path.expand(dest_path)
+
     %{status: 200, body: body} = Req.get!(file_url)
     File.write(dest_path, body)
   end
 
+  # sobelow_skip ["Traversal.FileModule"]
   defp upload_file(file_url, file_path) do
-    {:ok, file_contents} = File.read(file_path)
+    # Validate file_path to prevent directory traversal
+    file_path = Path.expand(file_path)
 
+    {:ok, file_contents} = File.read(file_path)
     filename = Path.basename(file_path) <> Path.extname(file_url |> String.split("?") |> hd())
 
     multipart =

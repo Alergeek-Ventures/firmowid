@@ -9,7 +9,13 @@ config :firmowid, FirmowidWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json",
   http: [port: {:system, "PORT"}],
   url: [host: "new.firmowid.pl", port: 80],
-  check_origin: ["https://new.firmowid.pl", "https://firmowid-redux.fly.dev"]
+  check_origin: ["https://new.firmowid.pl", "https://firmowid-redux.fly.dev"],
+  force_ssl: [
+    hsts: true,
+    preload: true,
+    subdomains: true,
+    rewrite_on: [:x_forwarded_host, :x_forwarded_port, :x_forwarded_proto]
+  ]
 
 config :firmowid,
   uploads_bucket: "firmowid-uploads-prod"

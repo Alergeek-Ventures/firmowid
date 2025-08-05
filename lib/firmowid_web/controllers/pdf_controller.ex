@@ -37,6 +37,8 @@ defmodule FirmowidWeb.PdfController do
     conn |> send_resp(404, "Not found")
   end
 
+  # sobelow_skip ["Traversal.SendFile"]
+  # This is safe because path is not user-controlled
   def pdf(conn, %{"id" => id}) do
     evaluate = %{
       expression: """

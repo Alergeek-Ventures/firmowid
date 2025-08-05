@@ -253,6 +253,8 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
 
   defp render_content(nil), do: "failed to render content"
 
+  # sobelow_skip ["XSS.Raw"]
+  # This is safe because MDEx outputs typography tags, not script tags
   defp render_content(content) do
     content |> MDEx.to_html!() |> raw()
   end

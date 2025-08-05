@@ -185,7 +185,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
         Keyword.get(
           @column_labels,
           assigns.column
-          |> String.to_atom()
+          |> String.to_existing_atom()
         )
       )
 
@@ -668,7 +668,8 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
 
   # plain render (fallback)
   defp render_cell(%{invoicing_entry: invoicing_entry, column: column} = assigns) do
-    value = get_in(invoicing_entry, [Access.key!(String.to_atom(column))])
+    # Use existing atoms to avoid atom exhaustion
+    value = get_in(invoicing_entry, [Access.key!(String.to_existing_atom(column))])
 
     assigns =
       assigns
