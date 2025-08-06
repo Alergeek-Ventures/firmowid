@@ -50,6 +50,20 @@ defmodule Firmowid.Timetracker do
     Repo.exists?(query)
   end
 
+  def submitted_hours_records_multiple_dates?(user_id, dates) do
+    existing =
+      Repo.all(
+        from(hr in HoursRecord,
+          where: hr.user_id == ^user_id,
+          select: {hr.month, hr.year}
+        )
+      )
+
+    Enum.map(dates, fn date ->
+      Enum.member?(existing, {date.month, date.year})
+    end)
+  end
+
   def list_user_projects(user_id) do
     query =
       from p in Project,
@@ -371,6 +385,38 @@ defmodule Firmowid.Timetracker do
     )
     |> Repo.all()
     |> Enum.map(&Session.put_duration/1)
+  end
+
+  def list_user_sessions_paginated(user_id, opts \\ []) do
+    after_date = Keyword.get(opts, :after_date)
+    limit = Keyword.get(opts, :limit, 20)
+
+    session_query =
+      Session
+      |> where([s], s.user_id == ^user_id)
+      |> order_by([s], desc: s.start_datetime)
+      |> limit(^limit + 1)
+
+    session_query =
+      case after_date do
+        nil ->
+          session_query
+
+        _ ->
+          where(session_query, [s], s.start_datetime <= ^DateTime.new!(after_date, ~T[23:59:59]))
+      end
+
+    sessions =
+      session_query
+      |> Repo.all()
+      |> Enum.map(&Session.put_duration/1)
+
+    next_date =
+      if length(sessions) > limit do
+        DateTime.to_date(List.last(sessions).start_datetime)
+      end
+
+    {Enum.take(sessions, limit), next_date}
   end
 
   def count_user_sessions(user_id) do

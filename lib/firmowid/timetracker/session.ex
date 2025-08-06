@@ -74,4 +74,26 @@ defmodule Firmowid.Timetracker.Session do
 
     DateTime.diff(end_datetime, session.start_datetime, :second)
   end
+
+  def put_lockdown(nil), do: nil
+
+  def put_lockdown(session) do
+    is_lockdown = Timetracker.submitted_hours_record?(session.user_id, session.start_datetime)
+    Map.put(session, :lockdown, is_lockdown)
+  end
+
+  def put_lockdowns(nil), do: nil
+  def put_lockdowns([]), do: []
+
+  def put_lockdowns(sessions) when is_list(sessions) do
+    user_id = Enum.at(sessions, 0).user_id
+    dates = Enum.map(sessions, & &1.start_datetime)
+
+    user_id
+    |> Timetracker.submitted_hours_records_multiple_dates?(dates)
+    |> Enum.zip(sessions)
+    |> Enum.map(fn {is_lockdown, session} ->
+      Map.put(session, :lockdown, is_lockdown)
+    end)
+  end
 end
