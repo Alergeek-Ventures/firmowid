@@ -92,8 +92,8 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
 
     date_filter =
       [
-        if(filters["date_from"], do: "od #{TimeFormatter.format_date(filters["date_from"])}"),
-        if(filters["date_to"], do: "do #{TimeFormatter.format_date(filters["date_to"])}")
+        if(filters["date_from"], do: "od #{filters["date_from"]}"),
+        if(filters["date_to"], do: "do #{filters["date_to"]}")
       ]
       |> Enum.reject(&is_nil/1)
       |> case do
@@ -104,7 +104,10 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
     amount_filter =
       [filters["amount_gt"], filters["amount_lt"]]
       |> Enum.reject(&is_nil/1)
-      |> Enum.join(" - ")
+      |> case do
+        [] -> nil
+        list -> Enum.join(list, " - ")
+      end
 
     assigns = %{filters: filters, date_filter: date_filter, amount_filter: amount_filter}
 
@@ -118,7 +121,7 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
         data: <span class="font-semibold">{@date_filter}</span>
       </div>
       <div
-        :if={@amount_filter != ""}
+        :if={@amount_filter}
         class="py-1 px-3 bg-orange-100 text-orange-900 rounded whitespace-nowrap animate-fade-in"
       >
         kwota: <span class="font-semibold">{@amount_filter}</span>
@@ -191,16 +194,25 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
   end
 
   def message(
-        %{role: :function_result, payload: %{name: "search_transactions", result: transactions}},
+        %{role: :function_result, payload: %{name: "search_transactions", result: result}},
         _myself,
         _opts
       ) do
     text =
-      case length(transactions) do
-        0 -> "Nie znalazłem żadnych transakcji"
-        1 -> "Znalazłem 1 transakcję"
-        count when count < 5 -> "Znalazłem #{count} transakcje"
-        count -> "Znalazłem #{count} transakcji"
+      case result do
+        transactions when is_list(transactions) ->
+          text =
+            case length(transactions) do
+              0 -> "Nie znalazłem żadnych transakcji"
+              1 -> "Znalazłem 1 transakcję"
+              count when count < 5 -> "Znalazłem #{count} transakcje"
+              count -> "Znalazłem #{count} transakcji"
+            end
+
+          text
+
+        _ ->
+          "Nie znalazłem żadnych transakcji"
       end
 
     assigns = %{text: text}

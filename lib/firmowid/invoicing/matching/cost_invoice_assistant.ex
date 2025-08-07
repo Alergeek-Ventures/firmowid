@@ -151,7 +151,7 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
               [
                 "Nie mogę połączyć faktury kosztowej z transakcjami, ponieważ nie mogę znaleźć faktury lub transakcji. Sprawdź, czy podałeś poprawne UUID.",
                 hallucinated_invoice ||
-                  "Nieznaleziono faktury o podanym ID #{cost_invoice_id}.",
+                  "Nie znaleziono faktury o podanym ID #{cost_invoice_id}.",
                 not Enum.empty?(hallucinated_transactions) ||
                   "Nie znaleziono transakcji o podanych ID: #{Enum.join(hallucinated_transactions, ", ")}."
               ]

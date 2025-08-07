@@ -160,7 +160,7 @@ defmodule Firmowid.Finances do
       end
 
     base_query =
-      if currency do
+      if not is_nil(currency) do
         base_query
         |> where([t], t.transaction_currency == ^currency)
       else
@@ -168,35 +168,35 @@ defmodule Firmowid.Finances do
       end
 
     base_query =
-      if amount_gt do
+      if not is_nil(amount_gt) do
         where(base_query, [t], t.transaction_amount >= ^amount_gt)
       else
         base_query
       end
 
     base_query =
-      if amount_lt do
+      if not is_nil(amount_lt) do
         where(base_query, [t], t.transaction_amount <= ^amount_lt)
       else
         base_query
       end
 
     base_query =
-      if date_from do
+      if not is_nil(date_from) do
         where(base_query, [t], t.booking_date >= ^date_from or t.value_date >= ^date_from)
       else
         base_query
       end
 
     base_query =
-      if date_to do
+      if not is_nil(date_to) do
         where(base_query, [t], t.booking_date <= ^date_to or t.value_date <= ^date_to)
       else
         base_query
       end
 
     base_query =
-      if query && query != "" do
+      if not is_nil(query) do
         base_query
         |> where(
           [t],

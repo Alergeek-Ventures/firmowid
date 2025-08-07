@@ -1,5 +1,6 @@
 defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
   alias Firmowid.Invoicing.Matching.Assistant.Tool
+  alias Firmowid.Invoicing.Matching.Assistant.FilterValidation
   alias Firmowid.Invoicing.Matching.CostInvoiceAssistant
 
   def normalize_to_pln do
@@ -10,17 +11,38 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
       args_schema: %{
         type: "object",
         properties: %{
-          amount: %{type: "string", description: "Kwota jako string dziesiętny (np. '123.45')"},
+          amount: %{type: "number", description: "Kwota do przeliczenia"},
           currency: %{type: "string", description: "Kod waluty (np. 'EUR', 'USD', 'PLN')"},
           date: %{type: "string", format: "date", description: "Data kursu waluty (YYYY-MM-DD)"}
         },
         required: ["amount", "currency", "date"]
       },
-      llm_render: fn result -> Decimal.to_string(result) end,
-      handler: fn %{"amount" => amount, "currency" => currency, "date" => date} ->
-        {:ok, parsed_date} = Date.from_iso8601(date)
-        decimal_amount = Decimal.new(amount)
-        Firmowid.Currencies.normalize_amount_to_pln(decimal_amount, currency, parsed_date)
+      llm_render: fn
+        {:error, error} -> "Błąd: #{error}"
+        result -> Decimal.to_string(result)
+      end,
+      handler: fn args ->
+        allowed_keys = ["amount", "currency", "date"]
+
+        filtered =
+          args
+          |> Enum.filter(fn {k, _v} -> k in allowed_keys end)
+          |> Enum.filter(fn
+            {_k, ""} -> false
+            {_k, nil} -> false
+            {_k, []} -> false
+            {_k, _v} -> true
+          end)
+          |> Enum.map(fn {k, v} -> {String.to_existing_atom(k), v} end)
+          |> Map.new()
+
+        case FilterValidation.validate_normalize_to_pln(filtered) do
+          {:ok, %{amount: amount, currency: currency, date: date}} ->
+            Firmowid.Currencies.normalize_amount_to_pln(amount, currency, date)
+
+          {:error, error} ->
+            {:error, error}
+        end
       end
     }
   end
@@ -29,17 +51,17 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
     %Tool{
       name: "calculate",
       description:
-        "Wykonaj działanie matematyczne (dodawanie, odejmowanie, mnożenie, dzielenie) na liście liczb. Wszystkie liczby są traktowane jako dziesiętne. Zwraca wynik jako string.",
+        "Wykonaj działanie matematyczne (dodawanie, odejmowanie, mnożenie, dzielenie) na liście liczb. Wszystkie liczby są traktowane jako dziesiętne. Zwraca wynik jako liczbę dziesiętną.",
       args_schema: %{
         type: "object",
         properties: %{
           numbers: %{
             type: "array",
             items: %{
-              type: "string",
-              description: "Liczba jako string dziesiętny (np. '123.45') lub liczba"
+              type: "number",
+              description: "Liczba"
             },
-            description: "Lista liczb do obliczenia"
+            description: "Niepusta lista liczb do obliczenia"
           },
           operation: %{
             type: "string",
@@ -49,21 +71,47 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
         },
         required: ["numbers", "operation"]
       },
-      llm_render: fn result -> Decimal.to_string(result) end,
-      handler: fn %{"numbers" => numbers, "operation" => operation} ->
-        decimals =
-          Enum.map(numbers, fn
-            n when is_binary(n) -> Decimal.new(n)
-            n when is_number(n) -> Decimal.from_float(n * 1.0)
-            n -> raise "Invalid number: #{inspect(n)}"
-          end)
+      llm_render: fn
+        {:error, error} -> "Błąd: #{error}"
+        result -> Decimal.to_string(result)
+      end,
+      handler: fn args ->
+        allowed_keys = ["numbers", "operation"]
 
-        case operation do
-          "+" -> Enum.reduce(decimals, &Decimal.add/2)
-          "-" -> Enum.reduce(decimals, &Decimal.sub/2)
-          "*" -> Enum.reduce(decimals, &Decimal.mult/2)
-          "/" -> Enum.reduce(decimals, &Decimal.div/2)
-          _ -> raise "Invalid operation: #{operation}"
+        filtered =
+          args
+          |> Enum.filter(fn {k, _v} -> k in allowed_keys end)
+          |> Enum.filter(fn
+            {_k, ""} -> false
+            {_k, nil} -> false
+            {_k, []} -> false
+            {_k, _v} -> true
+          end)
+          |> Enum.map(fn {k, v} -> {String.to_existing_atom(k), v} end)
+          |> Map.new()
+
+        case FilterValidation.validate_calculate(filtered) do
+          {:ok, %{numbers: numbers, operation: operation}} ->
+            case operation do
+              "+" ->
+                Enum.reduce(numbers, &Decimal.add/2)
+
+              "-" ->
+                Enum.reduce(numbers, &Decimal.sub/2)
+
+              "*" ->
+                Enum.reduce(numbers, &Decimal.mult/2)
+
+              "/" ->
+                try do
+                  Enum.reduce(numbers, &Decimal.div/2)
+                rescue
+                  Decimal.Error -> {:error, "Dzielenie przez zero"}
+                end
+            end
+
+          {:error, error} ->
+            {:error, error}
         end
       end
     }
@@ -86,37 +134,40 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
             properties: %{
               query: %{
                 type: "string",
-                description: "Fraza do wyszukania w nazwach kontrahentów i opisach transakcji."
+                description:
+                  "Fraza do wyszukania w nazwach kontrahentów i opisach transakcji. Jeśli nie chcesz filtrować po tekście, zostaw puste."
               },
               date_from: %{
-                type: "string",
+                type: ["string", "null"],
                 format: "date",
-                description: "Data od (YYYY-MM-DD)"
+                description:
+                  "Data od (YYYY-MM-DD). Jeśli nie chcesz filtrować po dacie, zostaw puste."
               },
               date_to: %{
-                type: "string",
+                type: ["string", "null"],
                 format: "date",
-                description: "Data do (YYYY-MM-DD)"
+                description:
+                  "Data do (YYYY-MM-DD). Jeśli nie chcesz filtrować po dacie, zostaw puste."
               },
               currency: %{
                 type: "string",
                 description:
-                  "Kod waluty (np. 'PLN', 'EUR') - używane do filtrowania transakcji. Wymagane jeśli filtrujesz po kwocie transakcji."
+                  "Kod waluty (np. 'PLN', 'EUR') - używane do filtrowania transakcji. Wymagane jeśli filtrujesz po kwocie transakcji. Jeśli nie chcesz filtrować po walucie ani kwocie, zostaw puste."
               },
               amount_gt: %{
-                type: "string",
+                type: ["number", "null"],
                 description:
-                  "Dodatnia kwota transakcji większa lub równa (liczba dziesiętna jako string)"
+                  "Dodatnia kwota od której kwoty transakcji są większe lub równe. Jeśli nie chcesz filtrować po kwocie, zostaw puste."
               },
               amount_lt: %{
-                type: "string",
+                type: ["number", "null"],
                 description:
-                  "Dodatnia kwota transakcji mniejsza lub równa (liczba dziesiętna jako string)"
+                  "Dodatnia kwota od której kwoty transakcji są mniejsze lub równe. Jeśli nie chcesz filtrować po kwocie, zostaw puste."
               },
               only_unmatched: %{
                 type: "boolean",
                 description:
-                  "Pomiń transakcje, które są już dopasowane. false - wszystkie, true - tylko te, które nie są dopasowane."
+                  "Pomiń transakcje, które są już dopasowane. false - wszystkie, true - tylko te, które nie są dopasowane. Domyślnie true."
               }
             },
             additionalProperties: false
@@ -124,10 +175,17 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
         },
         required: ["filters"]
       },
-      llm_render: fn result ->
-        result
-        |> Enum.map(&CostInvoiceAssistant.transaction_input(&1, heading_level: 2))
-        |> Enum.join("\n\n")
+      llm_render: fn
+        {:error, error} ->
+          "Błąd: #{error}"
+
+        :halt ->
+          :halt
+
+        result ->
+          result
+          |> Enum.map(&CostInvoiceAssistant.transaction_input(&1, heading_level: 2))
+          |> Enum.join("\n\n")
       end,
       handler: fn args ->
         allowed_keys = [
@@ -140,30 +198,54 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
           "currency"
         ]
 
-        filtered =
-          args["filters"]
-          |> Enum.filter(fn {k, _v} -> k in allowed_keys end)
-          |> Enum.map(fn {k, v} -> {String.to_existing_atom(k), v} end)
-          |> Map.new()
-
-        filtered =
-          if negative do
-            filtered =
-              filtered
-              |> Map.replace_lazy(:amount_lt, fn amount_lt -> "-#{amount_lt}" end)
-              |> Map.replace_lazy(:amount_gt, fn amount_gt -> "-#{amount_gt}" end)
-
-            amount_lt = Map.get(filtered, :amount_lt, nil)
-            amount_gt = Map.get(filtered, :amount_gt, nil)
-
-            filtered
-            |> Map.put(:amount_lt, amount_gt)
-            |> Map.put(:amount_gt, amount_lt)
-          else
-            filtered
+        filters =
+          case Map.get(args, "filters") do
+            filters when is_map(filters) -> filters
+            _ -> :halt
           end
 
-        Firmowid.Finances.search_transactions(filtered)
+        case filters do
+          filters when is_map(filters) ->
+            filtered =
+              filters
+              |> Enum.filter(fn {k, _v} -> k in allowed_keys end)
+              |> Enum.filter(fn
+                {_k, ""} -> false
+                {_k, nil} -> false
+                {_k, []} -> false
+                {_k, _v} -> true
+              end)
+              |> Enum.map(fn {k, v} -> {String.to_existing_atom(k), v} end)
+              |> Map.new()
+
+            case FilterValidation.validate_search_filters(filtered) do
+              {:ok, validated_filtered} ->
+                final_filtered =
+                  if negative do
+                    validated_filtered =
+                      validated_filtered
+                      |> Map.replace_lazy(:amount_lt, fn amount_lt -> "-#{amount_lt}" end)
+                      |> Map.replace_lazy(:amount_gt, fn amount_gt -> "-#{amount_gt}" end)
+
+                    amount_lt = Map.get(validated_filtered, :amount_lt, nil)
+                    amount_gt = Map.get(validated_filtered, :amount_gt, nil)
+
+                    validated_filtered
+                    |> Map.put(:amount_lt, amount_gt)
+                    |> Map.put(:amount_gt, amount_lt)
+                  else
+                    validated_filtered
+                  end
+
+                Firmowid.Finances.search_transactions(final_filtered)
+
+              {:error, error} ->
+                {:error, error}
+            end
+
+          _ ->
+            :halt
+        end
       end
     }
   end
