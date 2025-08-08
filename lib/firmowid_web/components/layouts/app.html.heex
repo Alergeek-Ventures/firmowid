@@ -4,7 +4,7 @@
     "items-center justify-between h-16 py-6",
     "text-sm sticky top-0 z-50"
   ]}>
-    <.link navigate={~p"/"} class="font-bold text-lg inline-block w-[240px]">
+    <.link navigate={~p"/"} class="font-bold text-lg inline-block flex-1">
       Firmowid
     </.link>
 
@@ -51,60 +51,64 @@
       </.link>
     </div>
 
-    <div class="relative max-md:hidden w-[240px] text-right">
-      <button
-        phx-click={
-          JS.toggle(
-            to: "#dropdown_content",
-            in:
-              {"transition-all transform ease-in", "opacity-0 scale-95", "opacity-100 scale-100"},
-            out:
-              {"transition-all transform ease-in duration-200",
-               "opacity-100 translate-y-0 sm:scale-100",
-               "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"},
-            display: "flex"
-          )
-          |> JS.toggle_class("invert", to: "#dropdown_button")
-        }
-        id="dropdown_button"
-        phx-click-away={
-          hide("#dropdown_content") |> JS.remove_class("invert", to: "#dropdown_button")
-        }
-        phx-window-keydown={
-          hide("#dropdown_content") |> JS.remove_class("invert", to: "#dropdown_button")
-        }
-        phx-key="Escape"
-        class="bg-black transition p-2 py-3 hover:invert rounded-md w-full"
-      >
-        <.icon name="hero-user" class="w-5 h-5 mr-1" />
-        <span class="lowercase text-sm max-md:hidden">
-          {@current_user.email}
-        </span>
-      </button>
-      <div
-        id="dropdown_content"
-        style="display: none"
-        class="absolute flex-col font-semibold p-3 rounded-md gap-2 left-[50%]
-      -translate-x-1/2 w-full top-[70px] bg-black text-left"
-      >
-        <.link navigate={~p"/ustawienia"} class="rounded-md p-2 hover:bg-darkGrey/50">
-          Ustawienia
-        </.link>
-        <%= if Bodyguard.permit?(Firmowid.Finances, :read_bank_accounts, @current_user) do %>
-          <.link
-            navigate={~p"/ustawienia?tab=konta_bankowe"}
-            class="rounded-md p-2 hover:bg-darkGrey/50"
-          >
-            Konta bankowe
-          </.link>
-        <% end %>
-        <.link
-          href={~p"/wyloguj"}
-          method="delete"
-          class="rounded-md p-2 hover:bg-darkGrey/50 flex justify-between"
+    <div class="relative max-md:hidden flex-1 text-right flex justify-end">
+      <div class="relative">
+        <button
+          phx-click={
+            JS.toggle(
+              to: "#dropdown_content",
+              in:
+                {"transition-all transform ease-in", "opacity-0 scale-95",
+                 "opacity-100 scale-100"},
+              out:
+                {"transition-all transform ease-in duration-200",
+                 "opacity-100 translate-y-0 sm:scale-100",
+                 "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"},
+              display: "flex"
+            )
+            |> JS.toggle_class("invert", to: "#dropdown_button")
+          }
+          id="dropdown_button"
+          phx-click-away={
+            hide("#dropdown_content") |> JS.remove_class("invert", to: "#dropdown_button")
+          }
+          phx-window-keydown={
+            hide("#dropdown_content") |> JS.remove_class("invert", to: "#dropdown_button")
+          }
+          phx-key="Escape"
+          class="bg-black transition p-2 py-3 hover:invert rounded-md w-full flex justify-end"
+          title={@current_user.email}
         >
-          Wyloguj się <.icon name="hero-arrow-right-start-on-rectangle" />
-        </.link>
+          <.icon name="hero-user" class="w-5 h-5 mr-1" />
+          <span class="lowercase text-sm max-lg:hidden">
+            {@current_user.email}
+          </span>
+        </button>
+        <div
+          id="dropdown_content"
+          style="display: none"
+          class="absolute flex-col font-semibold p-3 rounded-md gap-2 right-0
+        w-full top-[70px] bg-black text-left max-lg:w-auto"
+        >
+          <.link navigate={~p"/ustawienia"} class="rounded-md p-2 hover:bg-darkGrey/50">
+            Ustawienia
+          </.link>
+          <%= if Bodyguard.permit?(Firmowid.Finances, :read_bank_accounts, @current_user) do %>
+            <.link
+              navigate={~p"/ustawienia?tab=konta_bankowe"}
+              class="rounded-md p-2 hover:bg-darkGrey/50"
+            >
+              Konta bankowe
+            </.link>
+          <% end %>
+          <.link
+            href={~p"/wyloguj"}
+            method="delete"
+            class="rounded-md p-2 hover:bg-darkGrey/50 flex justify-between"
+          >
+            Wyloguj się <.icon name="hero-arrow-right-start-on-rectangle" />
+          </.link>
+        </div>
       </div>
     </div>
   </nav>
