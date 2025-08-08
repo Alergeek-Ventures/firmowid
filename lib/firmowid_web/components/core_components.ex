@@ -511,7 +511,7 @@ defmodule FirmowidWeb.CoreComponents do
 
   def avatar(assigns) do
     ~H"""
-    <div class={classes(["relative size-20 overflow-hidden rounded-full", @class])} {@rest}>
+    <div class={classes(["relative overflow-hidden rounded-full", @class])} {@rest}>
       {render_slot(@inner_block)}
     </div>
     """
