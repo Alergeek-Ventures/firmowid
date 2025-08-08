@@ -23,6 +23,45 @@ defmodule Firmowid.BankData do
     |> Repo.preload(:bank_accounts, organization_id: organization_id)
   end
 
+  @doc """
+  Fetch requisition by id, returning {:ok, requisition} or {:error, :not_found}.
+  Allows passing Repo options in opts.
+  """
+  def fetch_requisition(requisition_id, opts \\ []) do
+    case Repo.get(Requisition, requisition_id, opts) do
+      nil -> {:error, :not_found}
+      %Requisition{} = req -> {:ok, req}
+    end
+  end
+
+  @doc """
+  Mark requisition as accepted.
+  """
+  def accept_requisition(%Requisition{} = requisition) do
+    requisition
+    |> Requisition.changeset(%{status: :accepted})
+    |> Repo.update()
+  end
+
+  @doc """
+  Mark requisition as rejected.
+  """
+  def reject_requisition(%Requisition{} = requisition) do
+    requisition
+    |> Requisition.changeset(%{status: :rejected})
+    |> Repo.update()
+  end
+
+  @doc """
+  Get requisition status from API as {:ok, status} | {:error, reason}.
+  """
+  def get_requisition_status(requisition_id) do
+    case ApiClient.get_requisition(requisition_id) do
+      %{"status" => status} -> {:ok, status}
+      other -> {:error, {:unexpected_response, other}}
+    end
+  end
+
   def create_requisition(institution_id, max_transaction_days, organization_id, redirect_url) do
     with requisition <-
            ApiClient.create_requisition(
@@ -40,49 +79,14 @@ defmodule Firmowid.BankData do
     end
   end
 
-  def confirm_requisition(requisition_id, organization_id) do
-    requisition_from_db =
-      Repo.get!(
-        Requisition,
-        requisition_id,
-        organization_id: organization_id
-      )
-
-    case requisition_from_db do
-      nil ->
-        {:error, :not_found}
-
-      _ ->
-        with requisition_from_api <-
-               ApiClient.get_requisition(requisition_id) do
-          if requisition_from_api["status"] == "LN" do
-            Repo.update!(
-              Requisition.changeset(requisition_from_db, %{
-                status: :accepted
-              })
-            )
-
-            {:ok, bank_accounts} =
-              create_or_update_bank_accounts_for_requisition(
-                requisition_from_db.id,
-                organization_id
-              )
-
-            # sync newly created accounts instantly
-            # still want to leverage workers for it (maybe smarter in the
-            # future)
-            bank_accounts
-            |> Enum.each(fn bank_account ->
-              %{bank_account_id: bank_account.id, name: "bank_account_sync"}
-              |> Firmowid.BankData.Worker.new()
-              |> Firmowid.Oban.insert(skip_organization_id: true)
-            end)
-
-            {:ok, requisition_from_api}
-          else
-            {:error, requisition_from_api}
-          end
-        end
+  @doc """
+    Fetch a bank account by id, returning {:ok, bank_account} or {:error, :not_found}.
+    You can pass Repo options (e.g., skip_organization_id: true) via opts.
+  """
+  def fetch_bank_account(bank_account_id, opts \\ []) do
+    case Repo.get(Finances.BankAccount, bank_account_id, opts) do
+      nil -> {:error, :not_found}
+      %Finances.BankAccount{} = bank_account -> {:ok, bank_account}
     end
   end
 
@@ -92,23 +96,19 @@ defmodule Firmowid.BankData do
     error. But be careful of doing that in "userland"!
   """
   def sync_bank_account(bank_account_id, :skip_organization_id) do
-    bank_account =
-      Finances.BankAccount
-      |> Repo.get!(bank_account_id, skip_organization_id: true)
-
-    Repo.put_org_id(bank_account.organization_id)
-
-    sync_bank_account(bank_account_id)
-
-    Repo.drop_org_id()
+    with {:ok, bank_account} <- fetch_bank_account(bank_account_id, skip_organization_id: true) do
+      Repo.put_org_id(bank_account.organization_id)
+      result = sync_bank_account(bank_account_id)
+      Repo.drop_org_id()
+      result
+    else
+      error -> error
+    end
   end
 
   def sync_bank_account(bank_account_id) do
-    bank_account =
-      Finances.BankAccount
-      |> Repo.get!(bank_account_id)
-
-    with {:ok, booked_transactions} <-
+    with {:ok, bank_account} <- fetch_bank_account(bank_account_id),
+         {:ok, booked_transactions} <-
            ApiClient.get_booked_transactions_for_account(bank_account.gocardless_id),
          {:ok, _} <-
            upsert_booked_transactions(
@@ -116,17 +116,9 @@ defmodule Firmowid.BankData do
              bank_account_id,
              bank_account.organization_id
            ) do
-      {:ok, nil}
+      :ok
     else
-      {:error, :rate_limited} ->
-        Logger.error(
-          "Rate limited while fetching transactions for bank account #{bank_account_id}"
-        )
-
-      {:error, error} ->
-        Logger.error(
-          "Unexpected error while fetching transactions for bank account #{bank_account_id}: #{inspect(error)}"
-        )
+      error -> error
     end
   end
 
@@ -157,10 +149,10 @@ defmodule Firmowid.BankData do
     {:ok, nil}
   end
 
-  defp create_or_update_bank_accounts_for_requisition(
-         requisition_id,
-         organization_id
-       ) do
+  def create_or_update_bank_accounts_for_requisition(
+        requisition_id,
+        organization_id
+      ) do
     bank_accounts =
       ApiClient.get_accounts_for_requisition(requisition_id)
       |> Enum.map(fn account ->
