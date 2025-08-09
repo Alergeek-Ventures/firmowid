@@ -91,6 +91,86 @@ This is a web application written using the Phoenix web framework.
    - Implement rate limiting and throttling for API calls
    - Ensure the external operation happens only if the transaction commits
 
+4. **Structured Logging and Clean Test Output** - **Always** use Logger for application logging and be strategic about log capture in tests to maintain clean output while preserving debugging information.
+   
+   **Implementation principles:**
+   - Require Logger at the module level for any module that needs logging
+   - Use appropriate log levels (`:debug`, `:info`, `:warning`, `:error`)
+   - In tests, **only capture expected logs** - let unexpected logs appear for debugging
+   
+   **Logging patterns:**
+   ```elixir
+   # In application code
+   defmodule MyApp.Worker do
+     require Logger
+     
+     def perform(args) do
+       Logger.info("Starting job with args: #{inspect(args)}")
+       
+       case process(args) do
+         {:ok, result} ->
+           Logger.debug("Job completed successfully: #{inspect(result)}")
+           {:ok, result}
+           
+         {:error, reason} ->
+           Logger.error("Job failed: #{inspect(reason)}")
+           {:error, reason}
+       end
+     end
+   end
+   ```
+   
+   **Test patterns:**
+   ```elixir
+   # AVOID: Blindly capturing all logs
+   test "worker processes job" do
+     import ExUnit.CaptureLog
+     
+     capture_log(fn ->
+       # This hides ALL logs, including unexpected errors
+       result = Worker.perform(%{id: 1})
+       assert {:ok, _} = result
+     end)
+   end
+   
+   # PREFER: Capture only expected logs, let unexpected ones surface
+   test "worker processes job successfully" do
+     import ExUnit.CaptureLog
+     
+     # Capture and verify expected info logs
+     log = capture_log([level: :info], fn ->
+       assert {:ok, _} = Worker.perform(%{id: 1})
+     end)
+     
+     assert log =~ "Starting job"
+     # Unexpected errors/warnings will still appear in test output
+   end
+   
+   # GOOD: Be specific about what you're capturing
+   test "worker handles known error gracefully" do
+     import ExUnit.CaptureLog
+     
+     # Only capture the expected error log
+     log = capture_log([level: :error], fn ->
+       assert {:error, :invalid} = Worker.perform(%{})
+     end)
+     
+     assert log =~ "Job failed: :invalid"
+   end
+   ```
+   
+   **Testing strategy:**
+   - Capture logs you **expect** and want to verify or suppress
+   - Let **unexpected** logs (errors, warnings) appear in test output for debugging
+   - Use log level filtering in `capture_log` to be selective
+   - Consider what logs would help diagnose test failures
+   
+   **Log level guidelines:**
+   - `:debug` - Detailed information for debugging (e.g., intermediate values, state changes)
+   - `:info` - General informational messages (e.g., job started, request received)
+   - `:warning` - Warning conditions that don't prevent operation (e.g., deprecated usage, retries)
+   - `:error` - Error conditions and failures (e.g., exceptions, failed operations)
+
 ## Build/Test Commands
 
 - `mix test` - Run all tests
