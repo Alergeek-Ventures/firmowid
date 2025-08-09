@@ -232,14 +232,22 @@ defmodule Firmowid.BankData.WorkerTest do
 
       assert {:snooze, 86_400} =
                Worker.perform(%Oban.Job{
-                 args: %{"name" => "bank_account_sync", "bank_account_id" => ba.id}
+                 args: %{
+                   "name" => "bank_account_sync",
+                   "bank_account_id" => ba.id,
+                   "organization_id" => org_id
+                 }
                })
     end
 
     test "not_found cancels" do
       assert {:cancel, :not_found} =
                Worker.perform(%Oban.Job{
-                 args: %{"name" => "bank_account_sync", "bank_account_id" => UUIDv7.generate()}
+                 args: %{
+                   "name" => "bank_account_sync",
+                   "bank_account_id" => UUIDv7.generate(),
+                   "organization_id" => UUIDv7.generate()
+                 }
                })
     end
 
@@ -283,7 +291,11 @@ defmodule Firmowid.BankData.WorkerTest do
 
       assert :ok =
                Worker.perform(%Oban.Job{
-                 args: %{"name" => "bank_account_sync", "bank_account_id" => ba.id}
+                 args: %{
+                   "name" => "bank_account_sync",
+                   "bank_account_id" => ba.id,
+                   "organization_id" => org_id
+                 }
                })
     end
   end

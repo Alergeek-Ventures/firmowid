@@ -9,10 +9,53 @@ defmodule Firmowid.BankData do
   alias Firmowid.BankData.ApiClient
   alias Firmowid.BankData.Transaction
 
+  @requisition_broadcast_topic "requisition_status"
+
   @behaviour Bodyguard.Policy
 
   def authorize(:create_requisition, %{role: :admin}, _), do: true
   def authorize(_, _, _), do: false
+
+  @doc """
+  Subscribe to requisition status updates for the given organization.
+  """
+  def subscribe_requisition_updates(organization_id) do
+    Phoenix.PubSub.subscribe(
+      Firmowid.PubSub,
+      "#{@requisition_broadcast_topic}:#{organization_id}"
+    )
+  end
+
+  @doc """
+  Broadcast requisition status update to subscribers.
+  """
+  def broadcast_requisition_status(organization_id, requisition_id, status) do
+    Phoenix.PubSub.broadcast(
+      Firmowid.PubSub,
+      "#{@requisition_broadcast_topic}:#{organization_id}",
+      {:requisition_status_update,
+       %{
+         requisition_id: requisition_id,
+         status: status
+       }}
+    )
+  end
+
+  @doc """
+  Broadcast requisition status update to subscribers.
+  """
+  def broadcast_requisition_status(organization_id, requisition_id, status, message) do
+    Phoenix.PubSub.broadcast(
+      Firmowid.PubSub,
+      "#{@requisition_broadcast_topic}:#{organization_id}",
+      {:requisition_status_update,
+       %{
+         requisition_id: requisition_id,
+         status: status,
+         message: message
+       }}
+    )
+  end
 
   def list_requisitions(organization_id) do
     Repo.all(Requisition, organization_id: organization_id)
@@ -111,16 +154,9 @@ defmodule Firmowid.BankData do
 
   But be careful of doing that in "userland"!
   """
-  def sync_bank_account(bank_account_id, :skip_organization_id) do
-    with {:ok, bank_account} <- get_bank_account(bank_account_id, skip_organization_id: true) do
-      Repo.put_org_id(bank_account.organization_id)
-      result = sync_bank_account(bank_account_id)
-      Repo.drop_org_id()
-      result
-    else
-      error -> error
-    end
-  end
+
+  # Deprecated: the variant with :skip_organization_id is removed to enforce org scoping.
+  # Callers should set the process org with Repo.put_org_id/1 and invoke sync_bank_account/1.
 
   def sync_bank_account(bank_account_id) do
     with {:ok, bank_account} <- get_bank_account(bank_account_id),
@@ -217,12 +253,15 @@ defmodule Firmowid.BankData do
             })
           end)
 
-        result = Firmowid.Oban.insert_all(jobs, skip_organization_id: true)
+        Repo.put_org_id(organization_id)
 
-        case result do
-          {:ok, _} -> {:ok, :enqueued}
-          {:error, reason} -> {:error, reason}
+        try do
+          _ = Firmowid.Oban.insert_all(jobs, [])
+        after
+          Repo.drop_org_id()
         end
+
+        {:ok, :enqueued}
       end)
 
     case Repo.transact(multi, organization_id: organization_id) do
@@ -265,12 +304,15 @@ defmodule Firmowid.BankData do
             })
           end)
 
-        result = Firmowid.Oban.insert_all(jobs, skip_organization_id: true)
+        Repo.put_org_id(organization_id)
 
-        case result do
-          {:ok, _} -> {:ok, :enqueued}
-          {:error, reason} -> {:error, reason}
+        try do
+          _ = Firmowid.Oban.insert_all(jobs, [])
+        after
+          Repo.drop_org_id()
         end
+
+        {:ok, :enqueued}
       end)
 
     case Repo.transact(multi, organization_id: organization_id) do
@@ -307,12 +349,15 @@ defmodule Firmowid.BankData do
             })
           end)
 
-        result = Firmowid.Oban.insert_all(jobs, skip_organization_id: true)
+        Repo.put_org_id(organization_id)
 
-        case result do
-          {:ok, _} -> {:ok, :enqueued}
-          {:error, reason} -> {:error, reason}
+        try do
+          _ = Firmowid.Oban.insert_all(jobs, [])
+        after
+          Repo.drop_org_id()
         end
+
+        {:ok, :enqueued}
       end)
 
     case Repo.transact(multi, organization_id: organization_id) do

@@ -41,6 +41,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
       Finances.subscribe_transaction_broadcast(organization_id)
       SalesInvoices.subscribe_sales_invoice_broadcast(organization_id)
       Invoicing.subscribe_invoicing_broadcast(organization_id)
+      BankData.subscribe_requisition_updates(organization_id)
     end
 
     socket =
@@ -286,6 +287,22 @@ defmodule FirmowidWeb.InvoicingLive.Index do
         """
       end
     )
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:requisition_status_update, %{status: status}}, socket) do
+    {toast_type, message} =
+      case status do
+        :linked -> {:success, "Konto bankowe zostało pomyślnie połączone!"}
+        :processing -> {:info, "Łączenie z bankiem w toku..."}
+        :rejected -> {:error, "Połączenie z bankiem zostało odrzucone. Spróbuj ponownie."}
+        :expired -> {:error, "Link do połączenia wygasł. Utwórz nowe połączenie."}
+        :timeout -> {:error, "Przekroczono limit czasu połączenia. Spróbuj ponownie."}
+        :error -> {:error, "Wystąpił błąd podczas łączenia konta bankowego. Spróbuj ponownie."}
+      end
+
+    LiveToast.send_toast(toast_type, message)
 
     {:noreply, socket}
   end

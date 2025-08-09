@@ -182,10 +182,6 @@ defmodule Firmowid.BankData.ApiClient do
         connect_options: [timeout: 120_000]
       ]
       |> Keyword.merge(mock_data(:bank_data_transactions))
-      # disable Req retry in tests to avoid noisy logs when stubs return 429
-      |> Keyword.merge(
-        if Application.get_env(:firmowid, :bank_data_api_client), do: [retry: false], else: []
-      )
 
     with %Req.Response{status: 200, body: accounts_transaction} <- Req.get!(options) do
       booked_transactions =

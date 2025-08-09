@@ -152,7 +152,13 @@ defmodule Firmowid.BankDataTest do
       |> Firmowid.Finances.BankAccount.changeset()
       |> Repo.insert(organization_id: organization.id)
 
-    BankData.sync_bank_account(bank_account.id, :skip_organization_id)
+    Repo.put_org_id(organization.id)
+
+    try do
+      BankData.sync_bank_account(bank_account.id)
+    after
+      Repo.drop_org_id()
+    end
 
     transactions =
       Firmowid.Finances.Transaction
@@ -263,5 +269,27 @@ defmodule Firmowid.BankDataTest do
 
     {:ok, _result} =
       transaction |> Transaction.changeset() |> Ecto.Changeset.apply_action(:insert)
+  end
+
+  test "PubSub requisition status broadcast works" do
+    organization_id = Ecto.UUID.generate()
+    requisition_id = Ecto.UUID.generate()
+
+    # Subscribe to requisition updates
+    BankData.subscribe_requisition_updates(organization_id)
+
+    # Broadcast a status update
+    BankData.broadcast_requisition_status(
+      organization_id,
+      requisition_id,
+      :linked
+    )
+
+    # Assert we receive the message
+    assert_receive {:requisition_status_update,
+                    %{
+                      requisition_id: ^requisition_id,
+                      status: :linked
+                    }}
   end
 end

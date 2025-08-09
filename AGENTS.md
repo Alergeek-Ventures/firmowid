@@ -253,6 +253,61 @@ This is a web application written using the Phoenix web framework.
    end
    ```
 
+7. **Strategic Testing - Avoid Overtesting** - **Always** focus testing efforts on high-value code and never write tests without explicit user request.
+   
+   **Core principle:**
+   - Testing should provide value, not just coverage
+   - Focus on business logic that transforms complex inputs into specific outputs
+   - **Never** write tests proactively - always ask the user if tests are needed
+   
+   **High-value testing targets:**
+   - **Business logic** - Complex calculations, data transformations, validation rules
+   - **Critical paths** - Payment processing, authentication, authorization
+   - **Edge cases** - Boundary conditions, error handling in complex flows
+   - **Unit tests** - Functions with high complexity but small, predictable outputs
+   
+   **Low-value testing targets (avoid unless specifically requested):**
+   - Simple getters/setters or pass-through functions
+   - Direct Ecto schema CRUD operations without business logic
+   - Phoenix controllers that only call context functions
+   - View helpers that only format data
+   
+   **Testing patterns:**
+   ```elixir
+   # HIGH VALUE: Complex business logic
+   test "calculates invoice tax with multiple rates and exemptions" do
+     items = [
+       %{price: 100, tax_rate: 0.23, exempt: false},
+       %{price: 50, tax_rate: 0.08, exempt: true}
+     ]
+     assert Invoice.calculate_total_tax(items) == Decimal.new("23.00")
+   end
+   
+   # LOW VALUE: Simple CRUD (avoid unless requested)
+   test "creates a user" do
+     assert {:ok, user} = Accounts.create_user(%{name: "John"})
+     assert user.name == "John"  # Just testing Ecto, not your logic
+   end
+   ```
+   
+   **External API testing:**
+   - Mock external services to test your handling logic
+   - Use tools like `Req.Test.stub/2` for HTTP mocking
+   - Focus on testing your error handling and data transformation, not the API itself
+   
+   ```elixir
+   # GOOD: Test your handling of API responses
+   test "handles payment provider errors gracefully" do
+     Req.Test.stub(:payment_api, fn conn ->
+       Plug.Conn.send_resp(conn, 503, "Service Unavailable")
+     end)
+     
+     assert {:error, :payment_unavailable} = Payments.process_payment(order)
+   end
+   ```
+   
+   **Remember:** Always ask "What could break?" and "What would I want to know if it breaks?" before writing a test. If the answer is "Ecto/Phoenix internals," skip the test.
+
 ## Build/Test Commands
 
 - `mix test` - Run all tests

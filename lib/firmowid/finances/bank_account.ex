@@ -2,6 +2,8 @@ defmodule Firmowid.Finances.BankAccount do
   use Firmowid.Schema
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{}
+
   schema "bank_accounts" do
     field :iban, :string
     field :gocardless_id, :string

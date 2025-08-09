@@ -11,45 +11,70 @@ defmodule Firmowid.BankData.Worker do
 
   @impl Oban.Worker
   def perform(
-        %Oban.Job{args: %{"name" => "bank_account_sync", "bank_account_id" => bank_account_id}} =
-          job
+        %Oban.Job{
+          args: %{
+            "name" => "bank_account_sync",
+            "bank_account_id" => bank_account_id,
+            "organization_id" => organization_id
+          }
+        } = job
       ) do
     Logger.info("Syncing bank account #{bank_account_id}")
 
     Sentry.Context.add_breadcrumb(%{
       category: "bank_account_sync",
-      data: %{bank_account_id: bank_account_id, job_id: job.id}
+      data: %{bank_account_id: bank_account_id, organization_id: organization_id, job_id: job.id}
     })
 
-    case BankData.sync_bank_account(bank_account_id, :skip_organization_id) do
-      :ok ->
-        :ok
+    Repo.put_org_id(organization_id)
 
-      {:error, :not_found} ->
-        Logger.warning("Bank account #{bank_account_id} not found; cancelling sync job")
-        {:cancel, :not_found}
+    try do
+      case BankData.sync_bank_account(bank_account_id) do
+        :ok ->
+          :ok
 
-      {:error, :rate_limited} ->
-        Logger.warning(
-          "Rate limited while fetching transactions for bank account #{bank_account_id}"
-        )
+        {:error, :not_found} ->
+          Logger.warning("Bank account #{bank_account_id} not found; cancelling sync job")
+          {:cancel, :not_found}
 
-        {:snooze, 86_400}
+        {:error, :rate_limited} ->
+          Logger.warning(
+            "Rate limited while fetching transactions for bank account #{bank_account_id}"
+          )
 
-      {:error, reason} ->
-        Logger.error(
-          "Unexpected error while fetching transactions for bank account #{bank_account_id}: #{inspect(reason)}"
-        )
+          {:snooze, 86_400}
 
-        {:error, reason}
+        {:error, reason} ->
+          Logger.error(
+            "Unexpected error while fetching transactions for bank account #{bank_account_id}: #{inspect(reason)}"
+          )
+
+          {:error, reason}
+      end
+    after
+      Repo.drop_org_id()
     end
   end
 
   def perform(%Oban.Job{args: %{"name" => "dispatch_sync_jobs_for_all_bank_accounts"}}) do
     Firmowid.Finances.get_bank_accounts_for_sync()
-    |> Enum.map(&%{bank_account_id: &1.id, name: "bank_account_sync"})
-    |> Enum.map(&__MODULE__.new/1)
-    |> Firmowid.Oban.insert_all(skip_organization_id: true)
+    |> Enum.group_by(& &1.organization_id)
+    |> Enum.each(fn {organization_id, accounts} ->
+      changesets =
+        accounts
+        |> Enum.map(
+          &%{bank_account_id: &1.id, organization_id: organization_id, name: "bank_account_sync"}
+        )
+        |> Enum.map(&__MODULE__.new/1)
+
+      Repo.put_org_id(organization_id)
+
+      try do
+        _ = Firmowid.Oban.insert_all(changesets, [])
+      after
+        Repo.drop_org_id()
+      end
+    end)
 
     :ok
   end
@@ -103,10 +128,6 @@ defmodule Firmowid.BankData.Worker do
       {:ok, _} ->
         :ok
 
-      {:error, :rate_limited} ->
-        Logger.warning("Rate limited while deleting remote requisition #{requisition_id}")
-        {:snooze, 86_400}
-
       {:error, reason} ->
         Logger.error("Failed to delete remote requisition #{requisition_id}: #{inspect(reason)}")
         {:error, reason}
@@ -137,15 +158,39 @@ defmodule Firmowid.BankData.Worker do
              organization_id
            ) do
       bank_accounts
-      |> Enum.map(&%{bank_account_id: &1.id, name: "bank_account_sync"})
-      |> Enum.map(&__MODULE__.new/1)
-      |> Firmowid.Oban.insert_all(skip_organization_id: true)
+      |> Enum.map(
+        &%{bank_account_id: &1.id, organization_id: organization_id, name: "bank_account_sync"}
+      )
+      |> Enum.group_by(& &1.organization_id)
+      |> Enum.each(fn {org_id, jobs} ->
+        changesets = Enum.map(jobs, &__MODULE__.new/1)
+
+        Repo.put_org_id(org_id)
+
+        try do
+          _ = Firmowid.Oban.insert_all(changesets, [])
+        after
+          Repo.drop_org_id()
+        end
+      end)
+
+      BankData.broadcast_requisition_status(
+        organization_id,
+        requisition_db.id,
+        :linked
+      )
 
       :ok
     else
       {:error, reason} ->
         Logger.error(
           "Failed to accept requisition or create/update bank accounts for #{requisition_db.id}: #{inspect(reason)}"
+        )
+
+        BankData.broadcast_requisition_status(
+          organization_id,
+          requisition_db.id,
+          :error
         )
 
         {:error, reason}
@@ -158,14 +203,29 @@ defmodule Firmowid.BankData.Worker do
   defp handle_requisition_status(
          status,
          %Requisition{} = requisition_db,
-         _organization_id,
+         organization_id,
          attempt
        )
        when status in @processing_statuses do
     Logger.info("Requisition #{requisition_db.id} still processing with status: #{status}")
 
+    # Broadcast processing status on first attempt
+    if attempt == 1 do
+      BankData.broadcast_requisition_status(
+        organization_id,
+        requisition_db.id,
+        :processing
+      )
+    end
+
     if attempt > @requisition_timeout_attempts do
       Logger.error("Requisition #{requisition_db.id} timed out after #{attempt} attempts")
+
+      BankData.broadcast_requisition_status(
+        organization_id,
+        requisition_db.id,
+        :timeout
+      )
 
       case BankData.reject_requisition(requisition_db) do
         {:ok, _} -> {:cancel, :timeout}
@@ -179,10 +239,16 @@ defmodule Firmowid.BankData.Worker do
   defp handle_requisition_status(
          "RJ",
          %Requisition{} = requisition_db,
-         _organization_id,
+         organization_id,
          _attempt
        ) do
     Logger.info("Requisition #{requisition_db.id} was rejected")
+
+    BankData.broadcast_requisition_status(
+      organization_id,
+      requisition_db.id,
+      :rejected
+    )
 
     case BankData.reject_requisition(requisition_db) do
       {:ok, _} -> {:cancel, :rejected}
@@ -193,10 +259,17 @@ defmodule Firmowid.BankData.Worker do
   defp handle_requisition_status(
          "EX",
          %Requisition{} = requisition_db,
-         _organization_id,
+         organization_id,
          _attempt
        ) do
     Logger.info("Requisition #{requisition_db.id} has expired")
+
+    BankData.broadcast_requisition_status(
+      organization_id,
+      requisition_db.id,
+      :expired
+    )
+
     {:cancel, :expired}
   end
 

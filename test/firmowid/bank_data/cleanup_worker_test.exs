@@ -82,7 +82,9 @@ defmodule Firmowid.BankData.CleanupWorkerTest do
     assert Repo.get(Requisition, req.id, organization_id: org_id)
 
     # bank account still exists
-    assert Repo.one(from b in BankAccount, where: b.requisition_id == ^req.id, select: count()) ==
-             1
+    assert Repo.one(
+             from(b in BankAccount, where: b.requisition_id == ^req.id, select: count()),
+             organization_id: org_id
+           ) == 1
   end
 end

@@ -63,6 +63,7 @@ defmodule Firmowid.Oban do
     end
   end
 
+  @spec insert_all(list(), Keyword.t()) :: {:ok, list()} | {:error, term()}
   def insert_all(changesets, opts) do
     result =
       cond do
