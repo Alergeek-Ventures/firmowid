@@ -27,37 +27,35 @@ defmodule FirmowidWeb.BankSyncLive.Create do
     requisition_id = params["ref"]
 
     if not is_nil(requisition_id) do
+      current_user = socket.assigns.current_user
+      organization_id = current_user.organization_id
+
+      # Always schedule asynchronous requisition resolution in the background
+      %{
+        name: "check_requisition_status",
+        requisition_id: requisition_id,
+        organization_id: organization_id
+      }
+      |> Firmowid.BankData.Worker.new()
+      |> Firmowid.Oban.insert!()
+
       error = params["error"]
 
       if not is_nil(error) do
         details = params["details"]
 
         Sentry.capture_message("Failed to connect to bank. Error: #{error} #{details}")
-
         Logger.info("Failed to connect to bank. Error: #{error} #{details}")
 
-        socket =
-          socket
-          |> LiveToast.put_toast(
-            :error,
-            "Połączenie z bankiem nie zostało utworzone. Spróbuj ponownie wkrótce."
-          )
-          |> push_patch(to: ~p"/")
-
-        {:noreply, socket}
+        {:noreply,
+         socket
+         |> LiveToast.put_toast(
+           :error,
+           "Będziemy kontynuować próby połączenia w Twoim imieniu.",
+           title: "Połączenie z bankiem nie zostało utworzone w tym momencie."
+         )
+         |> push_patch(to: ~p"/")}
       else
-        current_user = socket.assigns.current_user
-        organization_id = current_user.organization_id
-
-        # schedule asynchronous requisition resolution in the background and redirect
-        %{
-          name: "check_requisition_status",
-          requisition_id: requisition_id,
-          organization_id: organization_id
-        }
-        |> Firmowid.BankData.Worker.new()
-        |> Firmowid.Oban.insert!()
-
         {:noreply, push_navigate(socket, to: ~p"/")}
       end
     else
