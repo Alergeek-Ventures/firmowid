@@ -19,7 +19,7 @@ services:
     ports:
       - '4566:4566'
     volumes:
-      - ./s3-init:/etc/localstack/init/ready.d
+      - ./s3-init/create-s3-bucket.sh:/etc/localstack/init/ready.d/create-s3-bucket.sh:Z
       - localstack_data:/var/lib/localstack
 
 volumes:

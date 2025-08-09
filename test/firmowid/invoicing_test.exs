@@ -33,8 +33,8 @@ defmodule Firmowid.InvoicingTest do
 
       {c, d} =
         prep_entries(
-          %{id: 3, issue_date: ~D[2022-04-01]},
-          %{id: 4, issue_date: ~D[2022-03-01]},
+          %{id: "01000000-0000-0000-0000-000000000003", issue_date: ~D[2022-04-01]},
+          %{id: "01000000-0000-0000-0000-000000000004", issue_date: ~D[2022-03-01]},
           organization_id
         )
 
@@ -74,31 +74,24 @@ defmodule Firmowid.InvoicingTest do
       |> Repo.insert!()
 
     a =
-      CostInvoice.changeset(
-        %CostInvoice{},
-        Map.merge(
-          %{
-            id: "f5006dbd-f7c2-4658-b154-d34dc9fa9fb9",
-            invoice_identifier: "a",
-            description: "a",
-            total_amount: Decimal.from_float(100.0),
-            currency: "PLN",
-            seller: "a",
-            seller_display_name: "a",
-            issue_date: ~D[2022-01-01],
-            due_date: ~D[2022-01-31],
-            sale_date: ~D[2022-01-01],
-            file_url: "/doc.pdf",
-            skip_invoicing: false,
-            inserted_at: ~D[2022-01-01],
-            organization_id: organization_id,
-            blob_id: a_blob.id
-          },
-          override_a
-        )
-      )
+      %CostInvoice{
+        id: "01000000-0000-0000-0000-000000000001",
+        invoice_identifier: "a",
+        description: "a",
+        total_amount: Decimal.from_float(100.0),
+        currency: "PLN",
+        seller: "a",
+        seller_display_name: "a",
+        issue_date: ~D[2022-01-01],
+        due_date: ~D[2022-01-31],
+        sale_date: ~D[2022-01-01],
+        skip_invoicing: false,
+        organization_id: organization_id,
+        blob_id: a_blob.id,
+        transactions: []
+      }
+      |> Map.merge(override_a)
       |> Repo.insert!()
-      |> Map.put(:transactions, [])
 
     b_blob =
       %Blob{
@@ -110,31 +103,24 @@ defmodule Firmowid.InvoicingTest do
       |> Repo.insert!()
 
     b =
-      CostInvoice.changeset(
-        %CostInvoice{},
-        Map.merge(
-          %{
-            id: "f5006dbd-f7c2-4658-b154-d34dc9fa9fb9",
-            invoice_identifier: "b",
-            description: "b",
-            total_amount: Decimal.from_float(100.0),
-            currency: "PLN",
-            seller: "b",
-            seller_display_name: "b",
-            issue_date: ~D[2022-01-01],
-            due_date: ~D[2022-01-31],
-            sale_date: ~D[2022-01-01],
-            file_url: "/doc.pdf",
-            skip_invoicing: false,
-            inserted_at: ~D[2022-01-01],
-            organization_id: organization_id,
-            blob_id: b_blob.id
-          },
-          override_b
-        )
-      )
+      %CostInvoice{
+        id: "01000000-0000-0000-0000-000000000002",
+        invoice_identifier: "b",
+        description: "b",
+        total_amount: Decimal.from_float(100.0),
+        currency: "PLN",
+        seller: "b",
+        seller_display_name: "b",
+        issue_date: ~D[2022-01-01],
+        due_date: ~D[2022-01-31],
+        sale_date: ~D[2022-01-01],
+        skip_invoicing: false,
+        organization_id: organization_id,
+        blob_id: b_blob.id,
+        transactions: []
+      }
+      |> Map.merge(override_b)
       |> Repo.insert!()
-      |> Map.put(:transactions, [])
 
     {a, b}
   end

@@ -6,7 +6,40 @@ This is a web application written using the Phoenix web framework.
 
 **CRITICAL: These are the highest priority rules for this project. When implementing code, these rules take precedence over all other guidelines.**
 
-1. **Ecto Query Composition** - **Always** construct database queries using Ecto schemas with composable query functions. Use the pipe operator (`|>`) to chain query operations for readability and maintainability.
+1. **Organization-Based Access Control** - **Always** ensure `organization_id` is present in all database operations for proper multi-tenant data isolation and security.
+
+   **Core principle:**
+   - Every database query must be scoped to the current organization
+   - The repository automatically adds `organization_id` filtering to queries (see `lib/firmowid/repo.ex`)
+   - Never bypass organization scoping unless absolutely necessary
+
+   **Valid exceptions for bypassing (using `oban_jobs: true` or similar flags):**
+   - Oban job queries (jobs table lacks `organization_id` field - it's stored in JSON `args`/`meta`)
+   - System-level operations that truly span all organizations
+   - Migration or maintenance scripts with explicit justification
+
+   **Implementation patterns:**
+
+   ```elixir
+   # ALWAYS: Include organization_id in queries
+   Repo.all(User, organization_id: org_id)
+   Repo.get(Post, post_id, organization_id: org_id)
+   
+   # ONLY when necessary: Bypass for Oban jobs
+   Firmowid.Repo.put_org_id(org_id)
+   jobs = Repo.all(Oban.Job, oban_jobs: true)
+   
+   # NEVER: Skip organization scoping without justification
+   Repo.all(User)  # WRONG: Violates data isolation
+   ```
+
+   **Why this matters:**
+   - Ensures data isolation between tenants
+   - Prevents unauthorized data access
+   - Maintains security boundaries in multi-tenant architecture
+   - Critical for compliance and data privacy
+
+2. **Ecto Query Composition** - **Always** construct database queries using Ecto schemas with composable query functions. Use the pipe operator (`|>`) to chain query operations for readability and maintainability.
 
    **Preferred approach:**
 
@@ -20,7 +53,7 @@ This is a web application written using the Phoenix web framework.
 
    **Avoid:** Raw SQL queries or non-composable query construction.
 
-2. **Code Simplification Through Reduced Branching** - **Always** strive to eliminate unnecessary conditional logic by analyzing the program flow deeply. Question every branching statement and seek ways to unify code paths.
+3. **Code Simplification Through Reduced Branching** - **Always** strive to eliminate unnecessary conditional logic by analyzing the program flow deeply. Question every branching statement and seek ways to unify code paths.
 
    **Key principles:**
    - Eliminate defensive fallbacks like `x || []` when the empty case can be handled uniformly
@@ -45,7 +78,7 @@ This is a web application written using the Phoenix web framework.
 
    **Analysis approach:** Before implementing any conditional logic, trace through the entire execution path to identify opportunities for simplification. Consider whether the branching is truly necessary or if a more elegant, unified solution exists.
 
-3. **Transactional Data Integrity** - **Always** perform related database operations within transactions to maintain data consistency and prevent race conditions.
+4. **Transactional Data Integrity** - **Always** perform related database operations within transactions to maintain data consistency and prevent race conditions.
 
    **Key principles:**
    - Use `Ecto.Multi` for composing multiple database operations that must succeed or fail together
@@ -91,14 +124,15 @@ This is a web application written using the Phoenix web framework.
    - Implement rate limiting and throttling for API calls
    - Ensure the external operation happens only if the transaction commits
 
-4. **Structured Logging and Clean Test Output** - **Always** use Logger for application logging and be strategic about log capture in tests to maintain clean output while preserving debugging information.
-   
+5. **Structured Logging and Clean Test Output** - **Always** use Logger for application logging and be strategic about log capture in tests to maintain clean output while preserving debugging information.
+
    **Implementation principles:**
    - Require Logger at the module level for any module that needs logging
    - Use appropriate log levels (`:debug`, `:info`, `:warning`, `:error`)
    - In tests, **only capture expected logs** - let unexpected logs appear for debugging
-   
+
    **Logging patterns:**
+
    ```elixir
    # In application code
    defmodule MyApp.Worker do
@@ -119,8 +153,9 @@ This is a web application written using the Phoenix web framework.
      end
    end
    ```
-   
+
    **Test patterns:**
+
    ```elixir
    # AVOID: Blindly capturing all logs
    test "worker processes job" do
@@ -158,18 +193,65 @@ This is a web application written using the Phoenix web framework.
      assert log =~ "Job failed: :invalid"
    end
    ```
-   
+
    **Testing strategy:**
    - Capture logs you **expect** and want to verify or suppress
    - Let **unexpected** logs (errors, warnings) appear in test output for debugging
    - Use log level filtering in `capture_log` to be selective
    - Consider what logs would help diagnose test failures
-   
+
    **Log level guidelines:**
    - `:debug` - Detailed information for debugging (e.g., intermediate values, state changes)
    - `:info` - General informational messages (e.g., job started, request received)
    - `:warning` - Warning conditions that don't prevent operation (e.g., deprecated usage, retries)
    - `:error` - Error conditions and failures (e.g., exceptions, failed operations)
+
+6. **Oban Testing with Organization-Scoped Repositories** - **Always** be aware of the interaction between Oban testing helpers and custom repository query preparation when working with multi-tenant applications.
+
+   ### The Problem with assert_enqueued
+
+   The `assert_enqueued` helper fails when used with custom repositories that have automatic query filtering. In this codebase, `lib/firmowid/repo.ex:39` automatically adds organization-based filtering to all queries:
+
+   ```elixir
+   # This tries to add: WHERE organization_id = ?
+   {Ecto.Query.where(query, organization_id: ^organization_id), opts}
+   ```
+
+   But `Oban.Job` schema doesn't have an `organization_id` field - that data is stored in the JSON `args` or `meta` fields. So when `assert_enqueued` tries to query the jobs table, it fails with:
+
+   ```
+   field `organization_id` in `where` does not exist in schema Oban.Job
+   ```
+
+   ### Why :manual Mode Works
+
+   Using `Oban.Testing.with_testing_mode(:manual)` prevents the job from executing immediately, allowing us to:
+   1. Query the job directly using the original manual approach with `oban_jobs: true` option
+   2. Bypass the repo's automatic filtering by using `Firmowid.Repo.put_org_id()` and `oban_jobs: true`
+   3. Verify the job exists in the database before it gets processed and removed
+
+   ### Testing Approach
+
+   ```elixir
+   # AVOID: Using assert_enqueued with org-scoped repos
+   test "enqueues job" do
+     MyWorker.new(%{org_id: org_id}) |> Oban.insert()
+     assert_enqueued worker: MyWorker  # FAILS: organization_id field doesn't exist
+   end
+   
+   # PREFER: Manual mode with direct query
+   test "enqueues job" do
+     Oban.Testing.with_testing_mode(:manual, fn ->
+       MyWorker.new(%{org_id: org_id}) |> Oban.insert()
+       
+       # Query with oban_jobs flag to bypass org filtering
+       Firmowid.Repo.put_org_id(org_id)
+       jobs = Repo.all(Oban.Job, oban_jobs: true)
+       assert length(jobs) == 1
+       assert hd(jobs).worker == "MyWorker"
+     end)
+   end
+   ```
 
 ## Build/Test Commands
 

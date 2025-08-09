@@ -19,25 +19,28 @@ defmodule FirmowidWeb.BankSyncCreateLiveTest do
     test "enqueues check_requisition_status job", %{conn: conn, user: user} do
       requisition_id = Ecto.UUID.generate()
 
-      {:ok, _lv, _html} = live(conn, "/ustawienia/bank/dodaj?ref=#{requisition_id}")
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        {:error, {:live_redirect, %{to: "/", flash: %{}}}} =
+          live(conn, "/ustawienia/bank/dodaj?ref=#{requisition_id}")
 
-      # assert job was inserted into oban with proper args
-      Firmowid.Repo.put_org_id(user.organization_id)
+        # assert job was inserted into oban with proper args
+        Firmowid.Repo.put_org_id(user.organization_id)
 
-      try do
-        job =
-          from(j in Oban.Job,
-            where:
-              fragment("(args->>'name') = ?", "check_requisition_status") and
-                fragment("(args->>'requisition_id') = ?", ^requisition_id),
-            select: j
-          )
-          |> Firmowid.Repo.one(oban_jobs: true)
+        try do
+          job =
+            from(j in Oban.Job,
+              where:
+                fragment("(args->>'name') = ?", "check_requisition_status") and
+                  fragment("(args->>'requisition_id') = ?", ^requisition_id),
+              select: j
+            )
+            |> Firmowid.Repo.one(oban_jobs: true)
 
-        assert job
-      after
-        Firmowid.Repo.drop_org_id()
-      end
+          assert job
+        after
+          Firmowid.Repo.drop_org_id()
+        end
+      end)
     end
   end
 end
