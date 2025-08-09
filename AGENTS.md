@@ -2,6 +2,95 @@
 
 This is a web application written using the Phoenix web framework.
 
+## PROJECT RULES
+
+**CRITICAL: These are the highest priority rules for this project. When implementing code, these rules take precedence over all other guidelines.**
+
+1. **Ecto Query Composition** - **Always** construct database queries using Ecto schemas with composable query functions. Use the pipe operator (`|>`) to chain query operations for readability and maintainability.
+
+   **Preferred approach:**
+
+   ```elixir
+   User
+   |> where([u], u.active == true)
+   |> where([u], u.age >= 18)
+   |> order_by([u], desc: u.created_at)
+   |> Repo.all()
+   ```
+
+   **Avoid:** Raw SQL queries or non-composable query construction.
+
+2. **Code Simplification Through Reduced Branching** - **Always** strive to eliminate unnecessary conditional logic by analyzing the program flow deeply. Question every branching statement and seek ways to unify code paths.
+
+   **Key principles:**
+   - Eliminate defensive fallbacks like `x || []` when the empty case can be handled uniformly
+   - Replace conditional operations on collections with unconditional transformations
+   - When you see `if list != [] do process(list) end`, consider if `Enum.map/2` or similar operations would work for both empty and non-empty cases
+
+   **Example transformations:**
+
+   ```elixir
+   # AVOID: Unnecessary branching
+   items = get_items() || []
+   if items != [] do
+     Enum.map(items, &process/1)
+   else
+     []
+   end
+   
+   # PREFER: Unified approach
+   get_items()
+   |> Enum.map(&process/1)  # look up the code and make sure nils are not passed from get_items
+   ```
+
+   **Analysis approach:** Before implementing any conditional logic, trace through the entire execution path to identify opportunities for simplification. Consider whether the branching is truly necessary or if a more elegant, unified solution exists.
+
+3. **Transactional Data Integrity** - **Always** perform related database operations within transactions to maintain data consistency and prevent race conditions.
+
+   **Key principles:**
+   - Use `Ecto.Multi` for composing multiple database operations that must succeed or fail together
+   - Never perform separate query-then-modify operations outside a transaction (introduces race conditions)
+   - For operations involving external services (APIs, file systems), use Oban to schedule jobs within the transaction
+
+   **Example patterns:**
+
+   ```elixir
+   # AVOID: Race condition between query and delete
+   user = Repo.get!(User, id)
+   if user.active do
+     Repo.delete(user)
+     Repo.insert(%Log{action: "deleted_user"})
+   end
+   
+   # PREFER: Atomic transaction with Ecto.Multi
+   Multi.new()
+   |> Multi.run(:user, fn repo, _changes ->
+     case repo.get(User, id) do
+       %User{active: true} = user -> {:ok, user}
+       _ -> {:error, :user_not_active}
+     end
+   end)
+   |> Multi.delete(:delete_user, fn %{user: user} -> user end)
+   |> Multi.insert(:log, %Log{action: "deleted_user"})
+   |> Repo.transaction()
+   
+   # WITH EXTERNAL API: Use Oban for reliable async processing
+   Multi.new()
+   |> Multi.insert(:order, order_changeset)
+   |> Oban.insert(:email_job, MyApp.EmailWorker.new(%{order_id: order.id}))
+   |> Multi.run(:payment, fn _repo, %{order: order} ->
+     # Schedule payment processing via Oban instead of direct API call
+     {:ok, Oban.insert(MyApp.PaymentWorker.new(%{order_id: order.id}))}
+   end)
+   |> Repo.transaction()
+   ```
+
+   **External operations:** When transactions involve external services, use Oban to:
+   - Schedule the external operation as a job within the transaction
+   - Leverage Oban's built-in retry mechanisms and exponential backoff
+   - Implement rate limiting and throttling for API calls
+   - Ensure the external operation happens only if the transaction commits
+
 ## Build/Test Commands
 
 - `mix test` - Run all tests

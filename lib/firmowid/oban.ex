@@ -22,7 +22,8 @@ defmodule Firmowid.Oban do
          {"0 12 */2 * *", Firmowid.BankData.Worker,
           args: %{name: "dispatch_sync_jobs_for_all_bank_accounts"}},
          {"0 13 * * *", Firmowid.Invoicing.Worker, args: %{name: "matching"}},
-         {"0 14 * * *", Firmowid.ExchangeRates.CleanupWorker, args: %{}}
+         {"0 14 * * *", Firmowid.ExchangeRates.CleanupWorker, args: %{}},
+         {"0 * * * *", Firmowid.BankData.CleanupWorker, args: %{}}
        ]}
     ]
 
@@ -63,19 +64,26 @@ defmodule Firmowid.Oban do
   end
 
   def insert_all(changesets, opts) do
-    cond do
-      opts[:skip_organization_id] ->
-        Oban.insert_all(__MODULE__, changesets, opts)
+    result =
+      cond do
+        opts[:skip_organization_id] ->
+          Oban.insert_all(__MODULE__, changesets, opts)
 
-      organization_id = Firmowid.Repo.get_org_id() ->
-        changesets_with_org =
-          changesets
-          |> Enum.map(&put_org_id(&1, organization_id))
+        organization_id = Firmowid.Repo.get_org_id() ->
+          changesets_with_org =
+            changesets
+            |> Enum.map(&put_org_id(&1, organization_id))
 
-        Oban.insert_all(__MODULE__, changesets_with_org, opts)
+          Oban.insert_all(__MODULE__, changesets_with_org, opts)
 
-      true ->
-        raise "expected organization_id or skip_organization_id to be set"
+        true ->
+          raise "expected organization_id or skip_organization_id to be set"
+      end
+
+    # workaround for Oban returning a list of results in testing mode
+    case result do
+      result when is_list(result) -> {:ok, result}
+      result -> result
     end
   end
 end

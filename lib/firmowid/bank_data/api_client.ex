@@ -38,27 +38,41 @@ defmodule Firmowid.BankData.ApiClient do
   def create_requisition(institution_id, max_transaction_days, redirect_url) do
     access_token = get_access_token!()
 
+    agreement_opts =
+      [
+        url: "https://bankaccountdata.gocardless.com/api/v2/agreements/enduser/",
+        auth: {:bearer, access_token}
+      ]
+      |> Keyword.merge(mock_data(:bank_data_requisition))
+
+    requisition_opts =
+      [
+        url: "https://bankaccountdata.gocardless.com/api/v2/requisitions/",
+        auth: {:bearer, access_token}
+      ]
+      |> Keyword.merge(mock_data(:bank_data_requisition))
+
     with %{body: %{"id" => agreement_id}} <-
            Req.post!(
-             "https://bankaccountdata.gocardless.com/api/v2/agreements/enduser/",
-             auth: {:bearer, access_token},
-             json: %{
-               institution_id: institution_id,
-               max_historical_days: min(max_transaction_days, 90),
-               access_valid_for_days: 90,
-               access_scope: ["balances", "details", "transactions"]
-             }
+             Keyword.merge(agreement_opts,
+               json: %{
+                 institution_id: institution_id,
+                 max_historical_days: min(max_transaction_days, 90),
+                 access_valid_for_days: 90,
+                 access_scope: ["balances", "details", "transactions"]
+               }
+             )
            ),
          %{body: requisition_body, status: 201} <-
            Req.post!(
-             "https://bankaccountdata.gocardless.com/api/v2/requisitions/",
-             auth: {:bearer, access_token},
-             json: %{
-               redirect: redirect_url,
-               institution_id: institution_id,
-               agreement: agreement_id,
-               user_language: "PL"
-             }
+             Keyword.merge(requisition_opts,
+               json: %{
+                 redirect: redirect_url,
+                 institution_id: institution_id,
+                 agreement: agreement_id,
+                 user_language: "PL"
+               }
+             )
            ) do
       requisition_body
     end
@@ -168,6 +182,10 @@ defmodule Firmowid.BankData.ApiClient do
         connect_options: [timeout: 120_000]
       ]
       |> Keyword.merge(mock_data(:bank_data_transactions))
+      # disable Req retry in tests to avoid noisy logs when stubs return 429
+      |> Keyword.merge(
+        if Application.get_env(:firmowid, :bank_data_api_client), do: [retry: false], else: []
+      )
 
     with %Req.Response{status: 200, body: accounts_transaction} <- Req.get!(options) do
       booked_transactions =
@@ -188,20 +206,35 @@ defmodule Firmowid.BankData.ApiClient do
   def delete_requisition(requisition_id) do
     access_token = get_access_token!()
 
+    options =
+      [
+        auth: {:bearer, access_token}
+      ]
+      |> Keyword.merge(mock_data(:bank_data_requisition))
+
     with {:ok, requisition} <-
            Req.get(
-             "https://bankaccountdata.gocardless.com/api/v2/requisitions/#{requisition_id}",
-             auth: {:bearer, access_token}
+             options
+             |> Keyword.put(
+               :url,
+               "https://bankaccountdata.gocardless.com/api/v2/requisitions/#{requisition_id}"
+             )
            ),
          {:ok, _} <-
            Req.delete(
-             "https://bankaccountdata.gocardless.com/api/v2/requisitions/#{requisition_id}",
-             auth: {:bearer, access_token}
+             options
+             |> Keyword.put(
+               :url,
+               "https://bankaccountdata.gocardless.com/api/v2/requisitions/#{requisition_id}"
+             )
            ),
          {:ok, _} <-
            Req.delete(
-             "https://bankaccountdata.gocardless.com/api/v2/agreements/#{requisition.body["agreement"]}",
-             auth: {:bearer, access_token}
+             options
+             |> Keyword.put(
+               :url,
+               "https://bankaccountdata.gocardless.com/api/v2/agreements/#{requisition.body["agreement"]}"
+             )
            ) do
       {:ok, requisition}
     else

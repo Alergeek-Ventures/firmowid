@@ -74,7 +74,7 @@ defmodule Firmowid.BankData.Worker do
     Repo.put_org_id(organization_id)
 
     try do
-      with {:ok, %Requisition{} = requisition_db} <- BankData.fetch_requisition(requisition_id),
+      with {:ok, %Requisition{} = requisition_db} <- BankData.get_requisition(requisition_id),
            {:ok, status} <- BankData.get_requisition_status(requisition_id) do
         handle_requisition_status(status, requisition_db, organization_id, attempt)
       else
@@ -91,6 +91,25 @@ defmodule Firmowid.BankData.Worker do
       end
     after
       Repo.drop_org_id()
+    end
+  end
+
+  def perform(%Oban.Job{
+        args: %{"name" => "delete_remote_requisition", "requisition_id" => requisition_id}
+      }) do
+    Logger.info("Deleting remote requisition #{requisition_id}")
+
+    case Firmowid.BankData.ApiClient.delete_requisition(requisition_id) do
+      {:ok, _} ->
+        :ok
+
+      {:error, :rate_limited} ->
+        Logger.warning("Rate limited while deleting remote requisition #{requisition_id}")
+        {:snooze, 86_400}
+
+      {:error, reason} ->
+        Logger.error("Failed to delete remote requisition #{requisition_id}: #{inspect(reason)}")
+        {:error, reason}
     end
   end
 
