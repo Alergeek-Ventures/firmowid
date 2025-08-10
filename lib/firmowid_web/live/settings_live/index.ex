@@ -87,6 +87,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
        to_form(Accounts.change_user_delete_account(socket.assigns.current_user))
      )
      |> assign(:bank_accounts, bank_accounts)
+     |> assign(:bank_account_statuses, derive_statuses(bank_accounts))
      |> assign(:uploaded_files, [])
      |> allow_upload(:user_avatar,
        accept: ~w(.jpg .jpeg .png),
@@ -97,6 +98,35 @@ defmodule FirmowidWeb.SettingsLive.Index do
      |> assign(:current_user, Accounts.get_user_with_avatar(socket.assigns.current_user))
      |> assign(:current_org, Accounts.get_organization_with_avatar(socket.assigns.current_org))
      |> assign(:main_class, "bg-white")}
+  end
+
+  def handle_params(%{"ref" => requisition_id} = params, _url, socket) do
+    Bodyguard.permit!(BankData, :create_requisition, socket.assigns.current_user)
+    organization_id = socket.assigns.current_user.organization_id
+
+    %{
+      name: "check_requisition_status",
+      requisition_id: requisition_id,
+      organization_id: organization_id
+    }
+    |> Firmowid.BankData.Worker.new()
+    |> Firmowid.Oban.insert!()
+
+    if params["error"] do
+      details = params["details"]
+      Sentry.capture_message("Failed to connect to bank. Error: #{params["error"]} #{details}")
+
+      {:noreply,
+       socket
+       |> LiveToast.put_toast(
+         :error,
+         "Będziemy kontynuować próby połączenia w Twoim imieniu.",
+         title: "Połączenie z bankiem nie zostało utworzone w tym momencie."
+       )
+       |> push_patch(to: ~p"/ustawienia?tab=konta_bankowe")}
+    else
+      {:noreply, push_patch(socket, to: ~p"/ustawienia?tab=konta_bankowe")}
+    end
   end
 
   def handle_params(%{"tab" => tab}, _uri, socket) do
@@ -207,7 +237,11 @@ defmodule FirmowidWeb.SettingsLive.Index do
     case Finances.delete_bank_account(account_id) do
       {:ok, _} ->
         LiveToast.send_toast(:info, "Konto bankowe zostało usunięte.")
-        {:noreply, socket |> assign(:bank_accounts, BankData.list_bank_accounts())}
+
+        {:noreply,
+         socket
+         |> assign(:bank_accounts, BankData.list_bank_accounts())
+         |> assign(:bank_account_statuses, derive_statuses(BankData.list_bank_accounts()))}
 
       {:error, _} ->
         LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania konta bankowego.")
@@ -221,7 +255,10 @@ defmodule FirmowidWeb.SettingsLive.Index do
 
     case Finances.make_account_default(account_id) do
       {:ok, _} ->
-        {:noreply, socket |> assign(:bank_accounts, BankData.list_bank_accounts())}
+        {:noreply,
+         socket
+         |> assign(:bank_accounts, BankData.list_bank_accounts())
+         |> assign(:bank_account_statuses, derive_statuses(BankData.list_bank_accounts()))}
 
       {:error, _} ->
         LiveToast.send_toast(
@@ -276,5 +313,83 @@ defmodule FirmowidWeb.SettingsLive.Index do
          socket
          |> assign(:user_form, to_form(changeset))}
     end
+  end
+
+  def handle_event("rename_bank_account", %{"account_id" => account_id, "name" => name}, socket) do
+    bank_account = Finances.get_bank_account!(account_id)
+    Bodyguard.permit!(Finances, :update_bank_account, socket.assigns.current_user, bank_account)
+
+    case Finances.rename_bank_account(account_id, name) do
+      {:ok, _} ->
+        LiveToast.send_toast(:info, "Nazwa konta została zmieniona.")
+        accounts = BankData.list_bank_accounts()
+
+        {:noreply,
+         socket
+         |> assign(:bank_accounts, accounts)
+         |> assign(:bank_account_statuses, derive_statuses(accounts))}
+
+      {:error, _} ->
+        LiveToast.send_toast(:error, "Wystąpił błąd podczas zmiany nazwy konta.")
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("reconnect_bank_account", %{"account_id" => account_id}, socket) do
+    bank_account = Finances.get_bank_account!(account_id)
+    Bodyguard.permit!(BankData, :create_requisition, socket.assigns.current_user)
+
+    # If the account doesn't have an institution associated (legacy/imported),
+    # redirect the user to the standard bank connection flow.
+    if is_nil(bank_account.institution_id) do
+      {:noreply, push_navigate(socket, to: ~p"/ustawienia/bank/dodaj")}
+    else
+      organization_id = socket.assigns.current_user.organization_id
+      redirect_url = FirmowidWeb.Endpoint.url() <> "/ustawienia?tab=konta_bankowe"
+
+      # Determine the correct transaction horizon for this institution (as in /dodaj)
+      transaction_days =
+        case Firmowid.BankData.ApiClient.get_institution(bank_account.institution_id) do
+          {:ok, %{"transaction_total_days" => days}} when is_integer(days) -> days
+          _ -> 90
+        end
+
+      case BankData.create_requisition(
+             bank_account.institution_id,
+             transaction_days,
+             organization_id,
+             redirect_url
+           ) do
+        {:ok, link} ->
+          {:noreply, Phoenix.LiveView.redirect(socket, external: link)}
+
+        {:error, _} ->
+          LiveToast.send_toast(:error, "Nie udało się rozpocząć ponownego połączenia.")
+          {:noreply, socket}
+      end
+    end
+  end
+
+  defp derive_statuses(bank_accounts) do
+    bank_accounts
+    |> Enum.map(fn account ->
+      status =
+        cond do
+          account.requisition && account.requisition.status == :pending ->
+            :processing
+
+          account.requisition && account.requisition.status == :rejected ->
+            :disconnected
+
+          BankData.bank_account_broken?(account.id) ->
+            :broken
+
+          true ->
+            :connected
+        end
+
+      {account.id, status}
+    end)
+    |> Map.new()
   end
 end

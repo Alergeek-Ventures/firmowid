@@ -75,6 +75,11 @@ defmodule Firmowid.Finances do
     |> Repo.update()
   end
 
+  def rename_bank_account(bank_account_id, new_name) do
+    bank_account = Repo.get!(BankAccount, bank_account_id)
+    update_bank_account(bank_account, %{name: new_name})
+  end
+
   def make_account_default(bank_account_id) do
     bank_account = Repo.get!(BankAccount, bank_account_id)
 

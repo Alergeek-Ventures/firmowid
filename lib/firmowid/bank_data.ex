@@ -182,6 +182,26 @@ defmodule Firmowid.BankData do
     |> Repo.preload(:requisition)
   end
 
+  @doc """
+  Determine if a bank account should be considered 'broken'.
+  Broken means the last 3 sync job attempts for the account have all failed
+  (states: discarded, cancelled).
+  """
+  def bank_account_broken?(bank_account_id) do
+    Oban.Job
+    |> where(
+      [j],
+      fragment("args->>'name' = ?", "bank_account_sync") and
+        fragment("args->>'bank_account_id' = ?", ^to_string(bank_account_id))
+    )
+    |> order_by([j], desc: fragment("COALESCE(?, ?)", j.attempted_at, j.inserted_at))
+    |> limit(3)
+    |> Repo.all(oban_jobs: true)
+    |> then(fn jobs ->
+      length(jobs) == 3 and Enum.all?(jobs, &(&1.state in ["discarded", "cancelled"]))
+    end)
+  end
+
   defp upsert_booked_transactions(booked_transactions, bank_account_id, organization_id) do
     booked_transactions
     |> Enum.map(fn transaction_from_api ->

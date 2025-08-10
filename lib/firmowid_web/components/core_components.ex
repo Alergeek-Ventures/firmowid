@@ -494,11 +494,15 @@ defmodule FirmowidWeb.CoreComponents do
         phx-click-away={hide("#dropdown_menu_#{@id}")}
         phx-window-keydown={hide("#dropdown_menu_#{@id}")}
         phx-key="Escape"
-        class="duration-75 w-full"
+        class="duration-75 inline-flex"
       >
         {render_slot(@trigger)}
       </button>
-      <div id={"dropdown_menu_#{@id}"} style="display: none" class="absolute">
+      <div
+        id={"dropdown_menu_#{@id}"}
+        style="display: none"
+        class="absolute right-0 top-1 z-20 max-w-[calc(100vw-2rem)]"
+      >
         {render_slot(@inner_block)}
       </div>
     </div>

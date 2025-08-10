@@ -254,25 +254,26 @@ This is a web application written using the Phoenix web framework.
    ```
 
 7. **Strategic Testing - Avoid Overtesting** - **Always** focus testing efforts on high-value code and never write tests without explicit user request.
-   
+
    **Core principle:**
    - Testing should provide value, not just coverage
    - Focus on business logic that transforms complex inputs into specific outputs
    - **Never** write tests proactively - always ask the user if tests are needed
-   
+
    **High-value testing targets:**
    - **Business logic** - Complex calculations, data transformations, validation rules
    - **Critical paths** - Payment processing, authentication, authorization
    - **Edge cases** - Boundary conditions, error handling in complex flows
    - **Unit tests** - Functions with high complexity but small, predictable outputs
-   
+
    **Low-value testing targets (avoid unless specifically requested):**
    - Simple getters/setters or pass-through functions
    - Direct Ecto schema CRUD operations without business logic
    - Phoenix controllers that only call context functions
    - View helpers that only format data
-   
+
    **Testing patterns:**
+
    ```elixir
    # HIGH VALUE: Complex business logic
    test "calculates invoice tax with multiple rates and exemptions" do
@@ -289,12 +290,12 @@ This is a web application written using the Phoenix web framework.
      assert user.name == "John"  # Just testing Ecto, not your logic
    end
    ```
-   
+
    **External API testing:**
    - Mock external services to test your handling logic
    - Use tools like `Req.Test.stub/2` for HTTP mocking
    - Focus on testing your error handling and data transformation, not the API itself
-   
+
    ```elixir
    # GOOD: Test your handling of API responses
    test "handles payment provider errors gracefully" do
@@ -305,8 +306,93 @@ This is a web application written using the Phoenix web framework.
      assert {:error, :payment_unavailable} = Payments.process_payment(order)
    end
    ```
-   
+
    **Remember:** Always ask "What could break?" and "What would I want to know if it breaks?" before writing a test. If the answer is "Ecto/Phoenix internals," skip the test.
+
+8. **External Boundaries as Behaviours (Mocks-as-Nouns)**
+
+- Core principles:
+  - Define behaviours (nouns) for all external boundaries (HTTP APIs, storage), and depend on those behaviours in app code
+  - Provide concrete implementations per runtime (production vs test) via application env
+  - In unit tests, use Mox to set expectations on behaviour contracts; reserve Req.Test or HTTP stubbing for optional integration tests only
+  - This complements Rule 4 (Transactional integrity) and Rule 7 (Strategic testing) by isolating effects and testing only your logic
+
+- Boundaries we will extract/standardize:
+  - BankData.Client behaviour with implementations:
+    - GoCardlessClient (production)
+    - ClientMock via Mox (tests)
+  - Blobs.Storage behaviour with implementations:
+    - S3Storage (production)
+    - LocalTestStorage (tests)
+
+- Configuration (application env):
+  - :bank_data_client -> production: GoCardlessClient; test: ClientMock (Mox)
+  - :blobs_storage -> production: S3Storage; test: LocalTestStorage
+
+- Implementation pattern:
+
+```elixir
+# behaviour (boundary)
+defmodule Firmowid.BankData.Client do
+  @callback requisition_status(binary()) :: {:ok, map()} | {:error, term()}
+  @callback list_accounts(binary()) :: {:ok, [map()]} | {:error, term()}
+  # ...other required callbacks
+end
+
+# production implementation
+defmodule Firmowid.BankData.GoCardlessClient do
+  @behaviour Firmowid.BankData.Client
+
+  @impl true
+  def requisition_status(id) do
+    # perform HTTP via Req and transform to domain map
+  end
+
+  @impl true
+  def list_accounts(requisition_id) do
+    # ...
+  end
+end
+
+# usage from app code (context/worker)
+defmodule Firmowid.BankData.SomeService do
+  @client Application.compile_env!(:firmowid, :bank_data_client)
+  # or fetch at runtime if hot-swapping is required
+
+  def check_status(req_id) do
+    @client.requisition_status(req_id)
+  end
+end
+```
+
+- Testing with Mox:
+
+```elixir
+# test_helper.exs
+Mox.defmock(Firmowid.BankData.ClientMock, for: Firmowid.BankData.Client)
+Application.put_env(:firmowid, :bank_data_client, Firmowid.BankData.ClientMock)
+
+# a test
+test "processes status" do
+  Firmowid.BankData.ClientMock
+  |> Mox.expect(:requisition_status, fn _id -> {:ok, %{status: "LN"}} end)
+
+  assert {:ok, _} = SomeService.check_status("req_123")
+end
+```
+
+- Alignment with existing rules:
+  - Rule 1 (Org-based access): behaviours should receive organization_id as explicit args where appropriate; never bypass scoping in callers
+  - Rule 4 (Transactional integrity): schedule boundary work (e.g., API calls) via Oban when part of a transaction
+  - Rule 5 (Structured logging): production implementations should log at appropriate levels; keep logs out of the behaviour interface
+  - Rule 6 (Oban testing): when validating jobs enqueued by behaviour-driven code, use :manual mode and oban_jobs: true
+  - Rule 7 (Strategic testing): unit tests mock behaviours; only add HTTP integration tests when they provide clear value
+
+- Do / Don’t:
+  - Do depend on behaviours from contexts/workers; don’t call HTTP libraries (Req/ExAws) directly in business code
+  - Do configure implementations via env; don’t conditionally branch on Mix.env? within functions
+  - Do use Mox for deterministic unit tests; don’t overuse Req.Test stubs in unit tests (keep them for integration)
+  - Do keep behaviour contracts stable and small; don’t leak transport shapes into your domain (transform at the boundary)
 
 ## Build/Test Commands
 
