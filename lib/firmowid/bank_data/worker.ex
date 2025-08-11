@@ -140,13 +140,13 @@ defmodule Firmowid.BankData.Worker do
   end
 
   # attempt starts at 1 and increments each execution
-  defp calculate_backoff(0), do: 3
-  defp calculate_backoff(1), do: 7
-  defp calculate_backoff(2), do: 10
-  defp calculate_backoff(3), do: 20
-  defp calculate_backoff(4), do: 30
-  defp calculate_backoff(5), do: 45
-  defp calculate_backoff(_), do: 60
+  defp calculate_backoff(0), do: 30
+  defp calculate_backoff(1), do: 70
+  defp calculate_backoff(2), do: 100
+  defp calculate_backoff(3), do: 200
+  defp calculate_backoff(4), do: 300
+  defp calculate_backoff(5), do: 450
+  defp calculate_backoff(_), do: 600
 
   defp handle_requisition_status("LN", %Requisition{} = requisition_db, organization_id, _attempt) do
     Logger.info("Requisition #{requisition_db.id} is now linked")
