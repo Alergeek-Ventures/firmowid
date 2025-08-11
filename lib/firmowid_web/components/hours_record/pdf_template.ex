@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.HoursRecord.PdfTemplate do
+  @moduledoc false
   use FirmowidWeb, :html
 
   attr :name, :string, required: true

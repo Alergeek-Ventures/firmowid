@@ -1,9 +1,10 @@
 defmodule FirmowidWeb.ProjectLiveTest do
   use FirmowidWeb.ConnCase, async: true
 
-  import Phoenix.LiveViewTest
   import Firmowid.AccountsFixtures
   import Firmowid.TimetrackerFixtures
+  import Phoenix.LiveViewTest
+
   alias Firmowid.Repo
   alias Firmowid.Timetracker
 
@@ -229,7 +230,7 @@ defmodule FirmowidWeb.ProjectLiveTest do
       project: project
     } do
       # create a session for user3 in this project to simulate hours worked
-      start_time = DateTime.utc_now() |> DateTime.add(-1, :hour)
+      start_time = DateTime.add(DateTime.utc_now(), -1, :hour)
       end_time = DateTime.utc_now()
 
       _session =
@@ -334,9 +335,7 @@ defmodule FirmowidWeb.ProjectLiveTest do
       |> render_click()
 
       lv
-      |> element(
-        "button[phx-click='cancel_edit_employee_salary'][phx-value-user_id='#{user1.id}']"
-      )
+      |> element("button[phx-click='cancel_edit_employee_salary'][phx-value-user_id='#{user1.id}']")
       |> render_click()
 
       refute has_element?(lv, "input[name='employee_salary_form_#{user1.id}[hourly_rate]']")
@@ -463,15 +462,15 @@ defmodule FirmowidWeb.ProjectLiveTest do
         user_id: user.id,
         project_id: project.id,
         title: "Session 1",
-        start_datetime: DateTime.utc_now() |> DateTime.add(-7200, :second),
-        end_datetime: DateTime.utc_now() |> DateTime.add(-3600, :second)
+        start_datetime: DateTime.add(DateTime.utc_now(), -7200, :second),
+        end_datetime: DateTime.add(DateTime.utc_now(), -3600, :second)
       })
 
       session_fixture(%{
         user_id: user.id,
         project_id: project.id,
         title: "Session 2",
-        start_datetime: DateTime.utc_now() |> DateTime.add(-3600, :second),
+        start_datetime: DateTime.add(DateTime.utc_now(), -3600, :second),
         end_datetime: DateTime.utc_now()
       })
 

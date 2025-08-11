@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.User.SettingsLive do
+  @moduledoc false
   use FirmowidWeb, :live_view
 
   alias Firmowid.Accounts
@@ -88,8 +89,8 @@ defmodule FirmowidWeb.User.SettingsLive do
 
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
-    email_form = Accounts.change_user_email(user) |> to_form()
-    password_form = Accounts.change_user_password(user) |> to_form()
+    email_form = user |> Accounts.change_user_email() |> to_form()
+    password_form = user |> Accounts.change_user_password() |> to_form()
 
     socket =
       socket

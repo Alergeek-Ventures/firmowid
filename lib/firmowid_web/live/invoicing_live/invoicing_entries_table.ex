@@ -1,10 +1,11 @@
 defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
+  @moduledoc false
   use FirmowidWeb, :live_view
 
   import FirmowidWeb.CoreComponents
 
-  alias Firmowid.Finances.Transaction
   alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.Finances.Transaction
   alias Firmowid.SalesInvoices.SalesInvoice
 
   attr :invoicing_entries, :list, required: true
@@ -107,8 +108,8 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
 
   def table(assigns) do
     assigns =
-      assigns
-      |> assign(
+      assign(
+        assigns,
         :columns,
         case assigns.mode do
           :invoices -> @invoice_columns
@@ -178,16 +179,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
   end
 
   defp column_label(assigns) do
-    assigns =
-      assigns
-      |> assign(
-        :label,
-        Keyword.get(
-          @column_labels,
-          assigns.column
-          |> String.to_existing_atom()
-        )
-      )
+    assigns = assign(assigns, :label, Keyword.get(@column_labels, String.to_existing_atom(assigns.column)))
 
     is_special_column =
       case assigns.column do
@@ -224,8 +216,8 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
 
   defp table_row(assigns) do
     assigns =
-      assigns
-      |> assign(
+      assign(
+        assigns,
         :amount,
         case assigns.invoicing_entry do
           %Transaction{} -> assigns.invoicing_entry.transaction_amount
@@ -272,9 +264,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
   defp render_cell(%{column: "amount", invoicing_entry: %Transaction{} = transaction} = assigns) do
     amount = Money.new(transaction.transaction_currency, transaction.transaction_amount)
 
-    assigns =
-      assigns
-      |> assign(:amount, amount)
+    assigns = assign(assigns, :amount, amount)
 
     ~H"""
     <div class={[
@@ -288,9 +278,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
   defp render_cell(%{column: "amount", invoicing_entry: %SalesInvoice{} = invoice} = assigns) do
     amount = Money.new(invoice.currency, SalesInvoice.get_gross_value(invoice))
 
-    assigns =
-      assigns
-      |> assign(:amount, amount)
+    assigns = assign(assigns, :amount, amount)
 
     ~H"""
     <div class={[
@@ -304,11 +292,10 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
   defp render_cell(%{column: "amount", invoicing_entry: %CostInvoice{} = invoice} = assigns) do
     is_fresh =
       invoice.transactions == [] &&
-        DateTime.compare(
+        DateTime.after?(
           invoice.inserted_at,
           DateTime.add(DateTime.utc_now(), -120, :second)
-        ) ==
-          :gt
+        )
 
     amount = Money.new(invoice.currency, invoice.total_amount)
 
@@ -509,17 +496,17 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
           "skipped"
 
         %CostInvoice{} = invoice ->
-          if invoice.transactions != [] do
-            "matched"
-          else
+          if invoice.transactions == [] do
             "unmatched"
+          else
+            "matched"
           end
 
         %SalesInvoice{} = invoice ->
-          if invoice.transactions != [] do
-            "matched"
-          else
+          if invoice.transactions == [] do
             "unmatched"
+          else
+            "matched"
           end
 
         %Transaction{} = transaction ->
@@ -534,7 +521,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
           "unmatched"
       end
 
-    assigns = assigns |> assign(:status, value)
+    assigns = assign(assigns, :status, value)
 
     ~H"<.render_cell column={@column} status={@status} invoicing_entry={@invoicing_entry} />"
   end
@@ -549,41 +536,29 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
     """
   end
 
-  defp render_cell(%{invoicing_entry: %Transaction{} = _, column: "issue_date"} = assigns),
-    do: render_cell(assigns |> assign(:column, "booking_date"))
+  defp render_cell(%{invoicing_entry: %Transaction{}, column: "issue_date"} = assigns),
+    do: assigns |> assign(:column, "booking_date") |> render_cell()
 
-  defp render_cell(%{invoicing_entry: %Transaction{} = _, column: "due_date"} = assigns),
-    do: render_cell(assigns |> assign(:column, "SKIPPED"))
+  defp render_cell(%{invoicing_entry: %Transaction{}, column: "due_date"} = assigns),
+    do: assigns |> assign(:column, "SKIPPED") |> render_cell()
 
-  defp render_cell(
-         %{invoicing_entry: %Transaction{} = _, column: "issue_or_value_date"} = assigns
-       ),
-       do: render_cell(assigns |> assign(:column, "booking_date"))
+  defp render_cell(%{invoicing_entry: %Transaction{}, column: "issue_or_value_date"} = assigns),
+    do: assigns |> assign(:column, "booking_date") |> render_cell()
 
-  defp render_cell(
-         %{invoicing_entry: %Transaction{} = _, column: "due_or_booking_date"} = assigns
-       ),
-       do: render_cell(assigns |> assign(:column, "booking_date"))
+  defp render_cell(%{invoicing_entry: %Transaction{}, column: "due_or_booking_date"} = assigns),
+    do: assigns |> assign(:column, "booking_date") |> render_cell()
 
-  defp render_cell(
-         %{invoicing_entry: %CostInvoice{} = _, column: "due_or_booking_date"} = assigns
-       ),
-       do: render_cell(assigns |> assign(:column, "due_date"))
+  defp render_cell(%{invoicing_entry: %CostInvoice{}, column: "due_or_booking_date"} = assigns),
+    do: assigns |> assign(:column, "due_date") |> render_cell()
 
-  defp render_cell(
-         %{invoicing_entry: %SalesInvoice{} = _, column: "due_or_booking_date"} = assigns
-       ),
-       do: render_cell(assigns |> assign(:column, "due_date"))
+  defp render_cell(%{invoicing_entry: %SalesInvoice{}, column: "due_or_booking_date"} = assigns),
+    do: assigns |> assign(:column, "due_date") |> render_cell()
 
-  defp render_cell(
-         %{invoicing_entry: %CostInvoice{} = _, column: "issue_or_value_date"} = assigns
-       ),
-       do: render_cell(assigns |> assign(:column, "issue_date"))
+  defp render_cell(%{invoicing_entry: %CostInvoice{}, column: "issue_or_value_date"} = assigns),
+    do: assigns |> assign(:column, "issue_date") |> render_cell()
 
-  defp render_cell(
-         %{invoicing_entry: %SalesInvoice{} = _, column: "issue_or_value_date"} = assigns
-       ),
-       do: render_cell(assigns |> assign(:column, "issue_date"))
+  defp render_cell(%{invoicing_entry: %SalesInvoice{}, column: "issue_or_value_date"} = assigns),
+    do: assigns |> assign(:column, "issue_date") |> render_cell()
 
   defp render_cell(%{invoicing_entry: %Transaction{} = transaction, column: "party"} = assigns) do
     party =
@@ -599,12 +574,12 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
       |> assign(:description, transaction.remittance_information_unstructured)
       |> assign(
         :navigate,
-        if transaction.sales_invoices_transactions != [] do
-          ~p"/sprzedazowe/#{List.first(transaction.sales_invoices_transactions).id}"
-        else
+        if transaction.sales_invoices_transactions == [] do
           if transaction.cost_invoices_transactions != [] do
             ~p"/kosztowe/#{List.first(transaction.cost_invoices_transactions).id}"
           end
+        else
+          ~p"/sprzedazowe/#{List.first(transaction.sales_invoices_transactions).id}"
         end
       )
 
@@ -631,9 +606,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
         :description,
         case {
           party,
-          invoice.sales_invoice_items
-          |> Enum.map(& &1.name)
-          |> Enum.join(", ")
+          Enum.map_join(invoice.sales_invoice_items, ", ", & &1.name)
         } do
           {nil, ""} -> "szkic faktury sprzedażowej"
           {"", ""} -> "szkic faktury sprzedażowej"
@@ -671,9 +644,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
     # Use existing atoms to avoid atom exhaustion
     value = get_in(invoicing_entry, [Access.key!(String.to_existing_atom(column))])
 
-    assigns =
-      assigns
-      |> assign(:value, value)
+    assigns = assign(assigns, :value, value)
 
     ~H"""
     {@value}

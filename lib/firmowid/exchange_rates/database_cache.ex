@@ -1,9 +1,11 @@
 defmodule Firmowid.ExchangeRates.DatabaseCache do
+  @moduledoc false
   @behaviour Money.ExchangeRates.Cache
 
-  alias Firmowid.Repo
-  alias Firmowid.ExchangeRates.CacheEntry
   import Ecto.Query
+
+  alias Firmowid.ExchangeRates.CacheEntry
+  alias Firmowid.Repo
 
   @impl true
   def init do
@@ -60,8 +62,7 @@ defmodule Firmowid.ExchangeRates.DatabaseCache do
       from c in CacheEntry,
         where: c.cache_date == ^cache_date
 
-    query
-    |> Repo.one(skip_organization_id: true)
+    Repo.one(query, skip_organization_id: true)
   end
 
   defp upsert_cache_entry(attrs) do

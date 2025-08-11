@@ -1,5 +1,7 @@
 defmodule Firmowid.SalesInvoices.SalesInvoiceItem do
+  @moduledoc false
   use Firmowid.Schema
+
   import Ecto.Changeset
 
   schema "sales_invoice_items" do

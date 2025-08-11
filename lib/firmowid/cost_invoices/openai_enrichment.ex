@@ -1,9 +1,10 @@
 defmodule Firmowid.CostInvoices.OpenAIEnrichment do
+  @moduledoc false
   alias OpenaiEx.Chat
   alias OpenaiEx.ChatMessage
 
   def generate_description(document) do
-    openai = Application.get_env(:firmowid, :openai_api_key) |> OpenaiEx.new()
+    openai = :firmowid |> Application.get_env(:openai_api_key) |> OpenaiEx.new()
 
     request =
       Chat.Completions.new(
@@ -15,7 +16,7 @@ defmodule Firmowid.CostInvoices.OpenAIEnrichment do
               "i transakcjami w przedsiębiorstwie. Pomagasz w opisywaniu " <>
               "katalogowaniu i dopasowaniu ich do siebie."
           ),
-          ChatMessage.user("
+          "
               Oto metadane faktury sprzedażowej, którą chcą skatalogować:
               {
                 sprzedawca: #{document["seller"]},
@@ -34,7 +35,7 @@ defmodule Firmowid.CostInvoices.OpenAIEnrichment do
               - Komunikator, opłata za jedno miejsce na planie pro start
               - Abonament na hosting email, plan Zoho Marketplace Mail Lite
               Postaraj się zamknąć w 5-10 słowach.
-              " |> String.trim())
+              " |> String.trim() |> ChatMessage.user()
         ]
       )
 

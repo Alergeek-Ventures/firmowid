@@ -1,8 +1,8 @@
 defmodule FirmowidWeb.UserForgotPasswordLiveTest do
   use FirmowidWeb.ConnCase, async: true
 
-  import Phoenix.LiveViewTest
   import Firmowid.AccountsFixtures
+  import Phoenix.LiveViewTest
 
   alias Firmowid.Accounts
   alias Firmowid.Repo

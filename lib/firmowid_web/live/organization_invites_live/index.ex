@@ -1,8 +1,8 @@
 defmodule FirmowidWeb.OrganizationInvitesLive.Index do
+  @moduledoc false
   use FirmowidWeb, :live_view
 
   alias Firmowid.Accounts
-  alias Posthog
 
   @impl true
   def mount(_params, _session, socket) do
@@ -37,9 +37,7 @@ defmodule FirmowidWeb.OrganizationInvitesLive.Index do
         expires_at: invite.expires_at
       })
 
-      socket =
-        socket
-        |> assign(:organization_invites, Accounts.list_organization_invites(organization_id))
+      socket = assign(socket, :organization_invites, Accounts.list_organization_invites(organization_id))
 
       {:noreply, socket}
     end

@@ -1,9 +1,10 @@
 defmodule FirmowidWeb.UserSettingsLiveTest do
   use FirmowidWeb.ConnCase, async: true
 
-  alias Firmowid.Accounts
-  import Phoenix.LiveViewTest
   import Firmowid.AccountsFixtures
+  import Phoenix.LiveViewTest
+
+  alias Firmowid.Accounts
 
   describe "Settings page" do
     test "renders settings page", %{conn: conn} do

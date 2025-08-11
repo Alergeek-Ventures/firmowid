@@ -1,5 +1,7 @@
 defmodule Firmowid.Invoicing.Matching.Assistant.FilterValidation do
+  @moduledoc false
   import Ecto.Changeset
+
   alias Money.Currency
 
   @type validation_result :: {:ok, map()} | {:error, String.t()}
@@ -26,9 +28,10 @@ defmodule Firmowid.Invoicing.Matching.Assistant.FilterValidation do
       |> validate_currency_field()
       |> validate_currency_required_for_amounts()
 
-    case changeset.valid? do
-      true -> {:ok, changeset.changes}
-      false -> {:error, format_errors(changeset)}
+    if changeset.valid? do
+      {:ok, changeset.changes}
+    else
+      {:error, format_errors(changeset)}
     end
   end
 
@@ -46,9 +49,10 @@ defmodule Firmowid.Invoicing.Matching.Assistant.FilterValidation do
       |> validate_required([:amount, :currency, :date])
       |> validate_currency_field()
 
-    case changeset.valid? do
-      true -> {:ok, changeset.changes}
-      false -> {:error, format_errors(changeset)}
+    if changeset.valid? do
+      {:ok, changeset.changes}
+    else
+      {:error, format_errors(changeset)}
     end
   end
 
@@ -64,9 +68,10 @@ defmodule Firmowid.Invoicing.Matching.Assistant.FilterValidation do
       |> cast(params, [:numbers, :operation])
       |> validate_required([:numbers, :operation])
 
-    case changeset.valid? do
-      true -> {:ok, changeset.changes}
-      false -> {:error, format_errors(changeset)}
+    if changeset.valid? do
+      {:ok, changeset.changes}
+    else
+      {:error, format_errors(changeset)}
     end
   end
 
@@ -76,7 +81,7 @@ defmodule Firmowid.Invoicing.Matching.Assistant.FilterValidation do
 
     with date_from when not is_nil(date_from) <- date_from,
          date_to when not is_nil(date_to) <- date_to do
-      if Date.compare(date_from, date_to) == :gt do
+      if Date.after?(date_from, date_to) do
         add_error(changeset, :date_from, "date_from musi być wcześniejsza lub równa date_to")
       else
         changeset
@@ -104,19 +109,22 @@ defmodule Firmowid.Invoicing.Matching.Assistant.FilterValidation do
 
   defp validate_currency_field(changeset) do
     validate_change(changeset, :currency, fn _field, value ->
-      with value when not is_nil(value) <- value do
-        try do
-          atom_code = String.to_existing_atom(value)
+      case value do
+        value when not is_nil(value) ->
+          try do
+            atom_code = String.to_existing_atom(value)
 
-          case atom_code in Currency.known_current_currencies() do
-            true -> []
-            false -> [{:currency, "Nieprawidłowy kod waluty"}]
+            if atom_code in Currency.known_current_currencies() do
+              []
+            else
+              [{:currency, "Nieprawidłowy kod waluty"}]
+            end
+          rescue
+            ArgumentError -> [{:currency, "Nieprawidłowy kod waluty"}]
           end
-        rescue
-          ArgumentError -> [{:currency, "Nieprawidłowy kod waluty"}]
-        end
-      else
-        _ -> []
+
+        _ ->
+          []
       end
     end)
   end
@@ -139,11 +147,9 @@ defmodule Firmowid.Invoicing.Matching.Assistant.FilterValidation do
   end
 
   defp format_errors(changeset) do
-    changeset.errors
-    |> Enum.map(fn
+    Enum.map_join(changeset.errors, ", ", fn
       {field, {message, _opts}} -> "#{field}: #{message}"
       {_field, message} when is_binary(message) -> message
     end)
-    |> Enum.join(", ")
   end
 end

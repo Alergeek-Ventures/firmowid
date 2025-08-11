@@ -12,11 +12,11 @@ defmodule Firmowid.Repo do
     Process.put(@tenant_key, organization_id)
   end
 
-  def get_org_id() do
+  def get_org_id do
     Process.get(@tenant_key)
   end
 
-  def drop_org_id() do
+  def drop_org_id do
     Process.delete(@tenant_key)
   end
 

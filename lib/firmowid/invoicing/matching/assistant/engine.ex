@@ -14,21 +14,17 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
   No domain logic; only plumbing.
   """
 
-  require Logger
-  alias Firmowid.Invoicing.Matching.Assistant.MessagesStorage
   alias Firmowid.Invoicing.Matching.Assistant.Message
+  alias Firmowid.Invoicing.Matching.Assistant.MessagesStorage
   alias Firmowid.Invoicing.Matching.Assistant.Tool
-  alias OpenaiEx.Responses
   alias OpenaiEx.ChatMessage
+  alias OpenaiEx.Responses
+
+  require Logger
 
   @max_steps 10
 
-  def send_message_streaming(
-        conversation_id,
-        user_message,
-        prompt,
-        tools
-      ) do
+  def send_message_streaming(conversation_id, user_message, prompt, tools) do
     listening_process = self()
     send(listening_process, {:loading, true})
 
@@ -56,31 +52,13 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
     :ok
   end
 
-  defp do_function_loop_streaming(
-         conversation_id,
-         messages,
-         tools,
-         listening_process,
-         step \\ 0
-       )
+  defp do_function_loop_streaming(conversation_id, messages, tools, listening_process, step \\ 0)
 
-  defp do_function_loop_streaming(
-         _conversation_id,
-         _messages,
-         _tools,
-         _listening_process,
-         @max_steps
-       ),
-       do: {:error, :max_function_steps}
+  defp do_function_loop_streaming(_conversation_id, _messages, _tools, _listening_process, @max_steps),
+    do: {:error, :max_function_steps}
 
-  defp do_function_loop_streaming(
-         conversation_id,
-         messages,
-         tools,
-         listening_process,
-         step
-       ) do
-    openai = Application.get_env(:firmowid, :openai_api_key) |> OpenaiEx.new()
+  defp do_function_loop_streaming(conversation_id, messages, tools, listening_process, step) do
+    openai = :firmowid |> Application.get_env(:openai_api_key) |> OpenaiEx.new()
 
     response =
       Responses.create!(
@@ -181,10 +159,7 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
   end
 
   defp execute_function_call(
-         %Message{
-           role: :function_call,
-           payload: %{name: fname, args: args, call_id: call_id, done: true}
-         } = call_msg,
+         %Message{role: :function_call, payload: %{name: fname, args: args, call_id: call_id, done: true}} = call_msg,
          tools
        ) do
     Logger.debug("function_call: exec: #{inspect(fname)}, args: #{inspect(args)}")
@@ -196,7 +171,7 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
 
       case tool_result do
         :halt ->
-          call_msg = call_msg |> Map.update!(:payload, &Map.put(&1, :halt, true))
+          call_msg = Map.update!(call_msg, :payload, &Map.put(&1, :halt, true))
           [call_msg]
 
         _ ->
@@ -230,7 +205,8 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
   end
 
   defp to_llm_messages(conversation_id) do
-    MessagesStorage.get(conversation_id)
+    conversation_id
+    |> MessagesStorage.get()
     |> Enum.filter(&(&1.role in [:user, :assistant, :function_call, :function_result]))
     |> Enum.map(&to_llm_message/1)
   end
@@ -238,27 +214,11 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
   defp to_llm_message(%Message{role: :user, text: text}), do: ChatMessage.user(text)
   defp to_llm_message(%Message{role: :assistant, text: text}), do: ChatMessage.assistant(text)
 
-  defp to_llm_message(%Message{
-         role: :function_call,
-         payload: %{name: name, args: args, call_id: call_id}
-       }),
-       do: %{
-         type: "function_call",
-         name: name,
-         arguments: Jason.encode!(args),
-         call_id: call_id
-       }
+  defp to_llm_message(%Message{role: :function_call, payload: %{name: name, args: args, call_id: call_id}}),
+    do: %{type: "function_call", name: name, arguments: Jason.encode!(args), call_id: call_id}
 
-  defp to_llm_message(%Message{
-         role: :function_result,
-         payload: %{call_id: call_id},
-         text: text
-       }),
-       do: %{
-         type: "function_call_output",
-         call_id: call_id,
-         output: text
-       }
+  defp to_llm_message(%Message{role: :function_result, payload: %{call_id: call_id}, text: text}),
+    do: %{type: "function_call_output", call_id: call_id, output: text}
 
   defp to_llm_message(item), do: raise("Unsupported message type: #{inspect(item)}")
 end

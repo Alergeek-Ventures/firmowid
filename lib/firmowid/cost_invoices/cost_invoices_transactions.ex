@@ -1,5 +1,7 @@
 defmodule Firmowid.CostInvoices.CostInvoicesTransactions do
+  @moduledoc false
   use Firmowid.Schema
+
   import Ecto.Changeset
 
   schema "cost_invoices_transactions" do

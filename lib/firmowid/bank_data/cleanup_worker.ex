@@ -8,12 +8,13 @@ defmodule Firmowid.BankData.CleanupWorker do
 
   use Oban.Worker, queue: :bank_data
 
-  require Logger
   import Ecto.Query
 
+  alias Firmowid.Accounts.Organization
   alias Firmowid.BankData
   alias Firmowid.Repo
-  alias Firmowid.Accounts.Organization
+
+  require Logger
 
   @stale_pending_seconds 60 * 60
   @expired_days 90
@@ -39,9 +40,7 @@ defmodule Firmowid.BankData.CleanupWorker do
     Logger.info("Processed #{stale_total} stale pending requisitions older than 1h (across orgs)")
     Logger.info("Deleted #{orphaned_total} orphaned requisitions older than 1h (across orgs)")
 
-    Logger.info(
-      "Deleted remote for #{expired_total} expired requisitions (90+ days) with accounts (across orgs)"
-    )
+    Logger.info("Deleted remote for #{expired_total} expired requisitions (90+ days) with accounts (across orgs)")
 
     :ok
   end

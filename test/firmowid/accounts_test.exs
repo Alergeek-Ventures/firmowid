@@ -1,10 +1,11 @@
 defmodule Firmowid.AccountsTest do
   use Firmowid.DataCase
 
-  alias Firmowid.Accounts
-
   import Firmowid.AccountsFixtures
-  alias Firmowid.Accounts.{User, UserToken}
+
+  alias Firmowid.Accounts
+  alias Firmowid.Accounts.User
+  alias Firmowid.Accounts.UserToken
 
   describe "get_user_by_email/1" do
     test "does not return the user if the email does not exist" do
@@ -368,9 +369,7 @@ defmodule Firmowid.AccountsTest do
 
     test "does not return user for expired token", %{token: token} do
       {1, nil} =
-        Repo.update_all(UserToken, [set: [inserted_at: ~N[2020-01-01 00:00:00]]],
-          skip_organization_id: true
-        )
+        Repo.update_all(UserToken, [set: [inserted_at: ~N[2020-01-01 00:00:00]]], skip_organization_id: true)
 
       refute Accounts.get_user_by_session_token(token)
     end
@@ -445,9 +444,7 @@ defmodule Firmowid.AccountsTest do
 
     test "does not confirm email if token expired", %{user: user, token: token} do
       {1, nil} =
-        Repo.update_all(UserToken, [set: [inserted_at: ~N[2020-01-01 00:00:00]]],
-          skip_organization_id: true
-        )
+        Repo.update_all(UserToken, [set: [inserted_at: ~N[2020-01-01 00:00:00]]], skip_organization_id: true)
 
       assert Accounts.confirm_user(token) == :error
       refute Repo.get!(User, user.id, skip_organization_id: true).confirmed_at
@@ -511,9 +508,7 @@ defmodule Firmowid.AccountsTest do
 
     test "does not return the user if token expired", %{user: user, token: token} do
       {1, nil} =
-        Repo.update_all(UserToken, [set: [inserted_at: ~N[2020-01-01 00:00:00]]],
-          skip_organization_id: true
-        )
+        Repo.update_all(UserToken, [set: [inserted_at: ~N[2020-01-01 00:00:00]]], skip_organization_id: true)
 
       refute Accounts.get_user_by_reset_password_token(token)
       assert Repo.get_by(UserToken, [user_id: user.id], skip_organization_id: true)

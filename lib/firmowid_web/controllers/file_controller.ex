@@ -1,21 +1,19 @@
 defmodule FirmowidWeb.FileController do
   use FirmowidWeb, :controller
 
-  alias Firmowid.SalesInvoices
   alias Firmowid.CostInvoices
+  alias Firmowid.SalesInvoices
 
   def batch(conn, params) do
-    month = params["month"] |> Date.from_iso8601!()
+    month = Date.from_iso8601!(params["month"])
     skip_scans = params["skip_scans"] == "true"
 
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
 
     cost_invoices =
-      CostInvoices.list_invoices_issued_in_date_range(
-        date_range_from,
-        date_range_to
-      )
+      date_range_from
+      |> CostInvoices.list_invoices_issued_in_date_range(date_range_to)
       |> Enum.filter(fn invoice -> !skip_scans || String.contains?(invoice.file_url, ".pdf") end)
       |> Enum.map(fn document ->
         file_extension =
@@ -27,8 +25,9 @@ defmodule FirmowidWeb.FileController do
 
         # append part of SHA256 hash to avoid filename collisions
         file_name =
-          "#{document.issue_date}_#{document.seller_display_name}_#{document.blob.blob_checksum |> String.slice(0, 8)}"
-          |> clean_filename()
+          clean_filename(
+            "#{document.issue_date}_#{document.seller_display_name}_#{String.slice(document.blob.blob_checksum, 0, 8)}"
+          )
 
         [
           source: {:url, document.file_url},
@@ -37,13 +36,10 @@ defmodule FirmowidWeb.FileController do
       end)
 
     sales_invoices =
-      SalesInvoices.list_invoices_issued_in_date_range(
-        date_range_from,
-        date_range_to
-      )
+      date_range_from
+      |> SalesInvoices.list_invoices_issued_in_date_range(date_range_to)
       |> Enum.map(fn invoice ->
-        file_name =
-          "#{invoice.invoice_number}_#{invoice.buyer_display_name}" |> clean_filename()
+        file_name = clean_filename("#{invoice.invoice_number}_#{invoice.buyer_display_name}")
 
         url_with_protocol = FirmowidWeb.Endpoint.url()
         download_path = ~p"/sprzedazowe/#{invoice.id}/pobierz"
@@ -62,14 +58,12 @@ defmodule FirmowidWeb.FileController do
         ]
       end)
 
-    stream =
-      (cost_invoices ++ sales_invoices)
-      |> Packmatic.build_stream()
+    stream = Packmatic.build_stream(cost_invoices ++ sales_invoices)
 
     Packmatic.Conn.send_chunked(
       stream,
       conn,
-      "#{month |> Calendar.strftime("%Y-%m")}-dokumenty.zip"
+      "#{Calendar.strftime(month, "%Y-%m")}-dokumenty.zip"
     )
   end
 

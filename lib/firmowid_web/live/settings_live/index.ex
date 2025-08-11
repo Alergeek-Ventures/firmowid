@@ -1,13 +1,15 @@
 defmodule FirmowidWeb.SettingsLive.Index do
-  alias Firmowid.Blobs
-  alias Firmowid.Accounts.Organization
-  alias Firmowid.BankData
-  alias Firmowid.Finances
-
+  @moduledoc false
   use FirmowidWeb, :live_view
+
+  import FirmowidWeb.SettingsLive.EditButton
+
   alias Ecto.Changeset
   alias Firmowid.Accounts
-  import FirmowidWeb.SettingsLive.EditButton
+  alias Firmowid.Accounts.Organization
+  alias Firmowid.BankData
+  alias Firmowid.Blobs
+  alias Firmowid.Finances
 
   def form_basic_info_changeset(organization, attrs \\ %{}) do
     organization
@@ -69,12 +71,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
         socket
       end
 
-    socket =
-      socket
-      |> assign(
-        :user_form,
-        to_form(form_user_changeset(socket.assigns.current_user))
-      )
+    socket = assign(socket, :user_form, to_form(form_user_changeset(socket.assigns.current_user)))
 
     {:ok,
      socket
@@ -113,14 +110,14 @@ defmodule FirmowidWeb.SettingsLive.Index do
 
     LiveToast.send_toast(:info, "Zdjęcie zostało zaktualizowane.")
 
-    {:noreply, socket |> assign(:current_user, Accounts.get_user_with_avatar(updated))}
+    {:noreply, assign(socket, :current_user, Accounts.get_user_with_avatar(updated))}
   end
 
   def handle_avatar_upload(:organization_avatar, blob_id, socket) do
     {:ok, updated} = Accounts.update_organization_avatar(socket.assigns.current_org, blob_id)
 
     LiveToast.send_toast(:info, "Zdjęcie zostało zaktualizowane.")
-    new_socket = socket |> assign(:current_org, Accounts.get_organization_with_avatar(updated))
+    new_socket = assign(socket, :current_org, Accounts.get_organization_with_avatar(updated))
 
     {:noreply, new_socket}
   end
@@ -160,9 +157,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
       {:ok, _} ->
         LiveToast.send_toast(:info, "Konto zostało usunięte.")
 
-        {:noreply,
-         socket
-         |> redirect(to: ~p"/")}
+        {:noreply, redirect(socket, to: ~p"/")}
 
       {:error, :invalid_password} ->
         LiveToast.send_toast(:error, "Nieprawidłowe hasło")
@@ -194,7 +189,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
            marketing_consent: consent
          }) do
       {:ok, user} ->
-        {:noreply, socket |> assign(:current_user, user)}
+        {:noreply, assign(socket, :current_user, user)}
 
       {:error, _changeset} ->
         {:noreply, socket}
@@ -267,7 +262,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
          |> assign(:current_org, updated_org)}
 
       {:error, changeset} ->
-        {:noreply, socket |> assign(:correspondence_form, to_form(changeset))}
+        {:noreply, assign(socket, :correspondence_form, to_form(changeset))}
     end
   end
 
@@ -280,9 +275,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
          |> assign(:user_form, to_form(form_user_changeset(Map.merge(user_params, updated_user))))}
 
       {:error, changeset} ->
-        {:noreply,
-         socket
-         |> assign(:user_form, to_form(changeset))}
+        {:noreply, assign(socket, :user_form, to_form(changeset))}
     end
   end
 
@@ -342,7 +335,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
   end
 
   def handle_event("create_manual_bank_account", params, socket) do
-    Bodyguard.permit!(Firmowid.Finances, :create_bank_account, socket.assigns.current_user)
+    Bodyguard.permit!(Finances, :create_bank_account, socket.assigns.current_user)
 
     org_id = socket.assigns.current_user.organization_id
 
@@ -371,8 +364,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
   end
 
   defp derive_statuses(bank_accounts) do
-    bank_accounts
-    |> Enum.map(fn account ->
+    Map.new(bank_accounts, fn account ->
       status =
         cond do
           # Manual accounts (no backend link) or accounts with no successful sync yet
@@ -397,6 +389,5 @@ defmodule FirmowidWeb.SettingsLive.Index do
 
       {account.id, status}
     end)
-    |> Map.new()
   end
 end

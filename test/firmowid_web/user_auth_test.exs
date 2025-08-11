@@ -1,13 +1,13 @@
 defmodule FirmowidWeb.UserAuthTest do
   use FirmowidWeb.ConnCase, async: true
 
-  alias Phoenix.LiveView
+  import Firmowid.AccountsFixtures
+
   alias Firmowid.Accounts
   alias Firmowid.Accounts.User
-  alias FirmowidWeb.UserAuth
   alias Firmowid.Repo
-
-  import Firmowid.AccountsFixtures
+  alias FirmowidWeb.UserAuth
+  alias Phoenix.LiveView
 
   @remember_me_cookie "_firmowid_web_user_remember_me"
 
@@ -145,7 +145,7 @@ defmodule FirmowidWeb.UserAuthTest do
     end
 
     test "assigns nil to current_user assign if there isn't a user_token", %{conn: conn} do
-      session = conn |> get_session()
+      session = get_session(conn)
 
       {:cont, updated_socket} =
         UserAuth.on_mount(:mount_current_user, %{}, session, %LiveView.Socket{})
@@ -175,7 +175,8 @@ defmodule FirmowidWeb.UserAuthTest do
       user_token = Accounts.generate_user_session_token(user)
       Accounts.delete_organization(user.organization_id)
 
-      User.organization_changeset(user, %{organization_id: nil})
+      user
+      |> User.organization_changeset(%{organization_id: nil})
       |> Repo.update!(skip_organization_id: true)
 
       session = conn |> put_session(:user_token, user_token) |> get_session()
@@ -188,12 +189,12 @@ defmodule FirmowidWeb.UserAuthTest do
       {:halt, updated_socket} =
         UserAuth.on_mount(:ensure_authenticated_with_organization, %{}, session, socket)
 
-      refute updated_socket.assigns.current_user == nil
+      assert updated_socket.assigns.current_user
       assert updated_socket.assigns.current_user.organization_id == nil
     end
 
     test "redirects to login page if there isn't a user_token", %{conn: conn} do
-      session = conn |> get_session()
+      session = get_session(conn)
 
       socket = %LiveView.Socket{
         endpoint: FirmowidWeb.Endpoint,
@@ -222,7 +223,7 @@ defmodule FirmowidWeb.UserAuthTest do
     end
 
     test "doesn't redirect if there is no authenticated user", %{conn: conn} do
-      session = conn |> get_session()
+      session = get_session(conn)
 
       assert {:cont, _updated_socket} =
                UserAuth.on_mount(

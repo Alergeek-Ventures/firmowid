@@ -1,17 +1,19 @@
 defmodule Firmowid.BankData do
+  @moduledoc false
+  @behaviour Bodyguard.Policy
+
   import Ecto.Query, warn: false
+
+  alias Firmowid.BankData.ApiClient
+  alias Firmowid.BankData.Requisition
+  alias Firmowid.BankData.Transaction
+  alias Firmowid.BankData.Worker
+  alias Firmowid.Finances
+  alias Firmowid.Repo
 
   require Logger
 
-  alias Firmowid.Repo
-  alias Firmowid.Finances
-  alias Firmowid.BankData.Requisition
-  alias Firmowid.BankData.ApiClient
-  alias Firmowid.BankData.Transaction
-
   @requisition_broadcast_topic "requisition_status"
-
-  @behaviour Bodyguard.Policy
 
   def authorize(:create_requisition, %{role: :admin}, _), do: true
   def authorize(_, _, _), do: false
@@ -58,7 +60,8 @@ defmodule Firmowid.BankData do
   end
 
   def list_requisitions(organization_id) do
-    Repo.all(Requisition, organization_id: organization_id)
+    Requisition
+    |> Repo.all(organization_id: organization_id)
     |> Repo.preload(:bank_accounts, organization_id: organization_id)
   end
 
@@ -119,13 +122,14 @@ defmodule Firmowid.BankData do
   @spec create_requisition(binary(), integer(), binary(), binary()) ::
           {:ok, binary()} | {:error, {:unexpected_response, map()}}
   def create_requisition(institution_id, max_transaction_days, organization_id, redirect_url) do
-    with requisition <-
-           ApiClient.create_requisition(
-             institution_id,
-             max_transaction_days,
-             redirect_url
-           ),
-         {:ok, _} <-
+    requisition =
+      ApiClient.create_requisition(
+        institution_id,
+        max_transaction_days,
+        redirect_url
+      )
+
+    with {:ok, _} <-
            Repo.insert(%Requisition{
              id: requisition["id"],
              status: :pending,
@@ -169,16 +173,14 @@ defmodule Firmowid.BankData do
              bank_account.organization_id
            ) do
       :ok
-    else
-      error -> error
     end
   end
 
-  def list_bank_accounts() do
-    Repo.all(
-      from b in Finances.BankAccount,
-        order_by: [b.inserted_at, b.id]
+  def list_bank_accounts do
+    from(b in Finances.BankAccount,
+      order_by: [b.inserted_at, b.id]
     )
+    |> Repo.all()
     |> Repo.preload(:requisition)
   end
 
@@ -237,15 +239,13 @@ defmodule Firmowid.BankData do
     {:ok, nil}
   end
 
-  def create_or_update_bank_accounts_for_requisition(
-        requisition_id,
-        organization_id
-      ) do
+  def create_or_update_bank_accounts_for_requisition(requisition_id, organization_id) do
     bank_accounts =
-      ApiClient.get_accounts_for_requisition(requisition_id)
+      requisition_id
+      |> ApiClient.get_accounts_for_requisition()
       |> Enum.map(fn account ->
         bank_account =
-          Firmowid.Finances.create_bank_account(%{
+          Finances.create_bank_account(%{
             iban: account["iban"],
             gocardless_id: account["id"],
             owner_name: account["ownerName"],
@@ -276,14 +276,11 @@ defmodule Firmowid.BankData do
 
     multi =
       Ecto.Multi.new()
-      |> Ecto.Multi.update_all(:reject, query, [set: [status: :rejected]],
-        organization_id: organization_id
-      )
+      |> Ecto.Multi.update_all(:reject, query, [set: [status: :rejected]], organization_id: organization_id)
       |> Ecto.Multi.run(:enqueue_remote_deletes, fn _repo, %{reject: {_, ids}} ->
         jobs =
-          ids
-          |> Enum.map(fn id ->
-            Firmowid.BankData.Worker.new(%{
+          Enum.map(ids, fn id ->
+            Worker.new(%{
               name: "delete_remote_requisition",
               requisition_id: id
             })
@@ -332,9 +329,8 @@ defmodule Firmowid.BankData do
       |> Ecto.Multi.delete_all(:delete_orphaned, query, organization_id: organization_id)
       |> Ecto.Multi.run(:enqueue_remote_deletes, fn _repo, %{delete_orphaned: {_, ids}} ->
         jobs =
-          ids
-          |> Enum.map(fn id ->
-            Firmowid.BankData.Worker.new(%{
+          Enum.map(ids, fn id ->
+            Worker.new(%{
               name: "delete_remote_requisition",
               requisition_id: id
             })
@@ -377,9 +373,8 @@ defmodule Firmowid.BankData do
       |> Ecto.Multi.all(:ids, ids_query, organization_id: organization_id)
       |> Ecto.Multi.run(:enqueue_remote_deletes, fn _repo, %{ids: ids} ->
         jobs =
-          ids
-          |> Enum.map(fn id ->
-            Firmowid.BankData.Worker.new(%{
+          Enum.map(ids, fn id ->
+            Worker.new(%{
               name: "delete_remote_requisition",
               requisition_id: id
             })

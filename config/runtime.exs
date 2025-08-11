@@ -25,12 +25,6 @@ end
 # import_config/1 is not enabled for this configuration file.
 # Some configuration files do not allow importing other files as they are often copied to external systems
 
-config :firmowid,
-  go_limitless_secret_id: System.get_env("GO_LIMITLESS_SECRET_ID"),
-  go_limitless_secret_key: System.get_env("GO_LIMITLESS_SECRET_KEY"),
-  reducto_api_key: System.get_env("REDUCTO_API_KEY"),
-  openai_api_key: System.get_env("OPENAI_API_KEY")
-
 # The secret key base is used to sign/encrypt cookies and other secrets.
 # A default value is used in config/dev.exs and config/test.exs but you
 # want to use a different value for prod and you most likely don't want
@@ -45,6 +39,12 @@ secret_key_base =
 
 config :firmowid, FirmowidWeb.Endpoint, secret_key_base: secret_key_base
 
+config :firmowid,
+  go_limitless_secret_id: System.get_env("GO_LIMITLESS_SECRET_ID"),
+  go_limitless_secret_key: System.get_env("GO_LIMITLESS_SECRET_KEY"),
+  reducto_api_key: System.get_env("REDUCTO_API_KEY"),
+  openai_api_key: System.get_env("OPENAI_API_KEY")
+
 if config_env() != :test do
   config :firmowid, Firmowid.Repo,
     url: System.get_env("DATABASE_URL"),
@@ -57,6 +57,12 @@ config :ex_aws,
   secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY", "")
 
 if config_env() == :prod do
+  # configures Swoosh SMTP client
+  # SendGrid is only used in production and requires an API key
+  config :firmowid, Firmowid.Mailer,
+    adapter: Swoosh.Adapters.Sendgrid,
+    api_key: System.get_env("SENDGRID_API_KEY")
+
   config :firmowid, Firmowid.Repo,
     ssl: [
       verify: :verify_peer,
@@ -75,10 +81,4 @@ if config_env() == :prod do
       ip: {0, 0, 0, 0, 0, 0, 0, 0},
       port: String.to_integer(System.get_env("PORT", "4000"))
     ]
-
-  # configures Swoosh SMTP client
-  # SendGrid is only used in production and requires an API key
-  config :firmowid, Firmowid.Mailer,
-    adapter: Swoosh.Adapters.Sendgrid,
-    api_key: System.get_env("SENDGRID_API_KEY")
 end

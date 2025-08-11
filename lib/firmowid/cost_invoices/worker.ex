@@ -1,16 +1,16 @@
 defmodule Firmowid.CostInvoices.Worker do
-  require Logger
-
-  alias Firmowid.Blobs
-
+  @moduledoc false
   use Oban.Worker,
     queue: :cost_invoices,
     unique: true,
     max_attempts: 2
 
+  alias Firmowid.Blobs
   alias Firmowid.CostInvoices
-  alias Firmowid.ReductoApiClient
   alias Firmowid.CostInvoices.OpenAIEnrichment
+  alias Firmowid.ReductoApiClient
+
+  require Logger
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: args}) do
@@ -26,9 +26,7 @@ defmodule Firmowid.CostInvoices.Worker do
           extract_cost_invoice_metadata(blob_id, organization_id)
         rescue
           error ->
-            Logger.error(
-              "Failed to extract cost invoice metadata for blob #{blob_id}: #{inspect(error)}"
-            )
+            Logger.error("Failed to extract cost invoice metadata for blob #{blob_id}: #{inspect(error)}")
 
             # on failure, clean up dangling blob from DB and S3
             blob = Blobs.get_blob!(blob_id, organization_id)
@@ -93,8 +91,7 @@ defmodule Firmowid.CostInvoices.Worker do
             },
             currency: %{
               type: "string",
-              description:
-                "The currency of the total amount of the invoice, as three letter ISO 4217 code"
+              description: "The currency of the total amount of the invoice, as three letter ISO 4217 code"
             },
             invoice_identifier: %{
               type: "string",

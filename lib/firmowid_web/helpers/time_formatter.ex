@@ -42,8 +42,8 @@ defmodule FirmowidWeb.Helpers.TimeFormatter do
   Example: "2 dni 8 h 32 min"
   """
   def format_duration(seconds, :with_days) do
-    days = div(seconds, 86400)
-    hours = div(rem(seconds, 86400), 3600)
+    days = div(seconds, 86_400)
+    hours = div(rem(seconds, 86_400), 3600)
     minutes = div(rem(seconds, 3600), 60)
 
     [
@@ -56,7 +56,8 @@ defmodule FirmowidWeb.Helpers.TimeFormatter do
   end
 
   def format_date(date) when is_binary(date) do
-    Date.from_iso8601!(date)
+    date
+    |> Date.from_iso8601!()
     |> format_date()
   end
 

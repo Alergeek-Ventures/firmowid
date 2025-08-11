@@ -1,8 +1,12 @@
 defmodule Firmowid.Finances.Transaction do
+  @moduledoc false
   use Firmowid.Schema
+
   import Ecto.Changeset
 
   alias Firmowid.CostInvoices
+
+  @type t :: %__MODULE__{}
 
   schema "transactions" do
     # data fetched from Bank API

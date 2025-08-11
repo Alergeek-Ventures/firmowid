@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.CostInvoiceLive.Show do
+  @moduledoc false
   use FirmowidWeb, :live_view
 
   alias Firmowid.CostInvoices
@@ -60,7 +61,7 @@ defmodule FirmowidWeb.CostInvoiceLive.Show do
     {:noreply,
      socket
      |> put_flash(:info, "Faktura została usunięta")
-     |> push_navigate(to: ~p"/?month=#{socket.assigns.invoice.issue_date |> Date.to_iso8601()}")}
+     |> push_navigate(to: ~p"/?month=#{Date.to_iso8601(socket.assigns.invoice.issue_date)}")}
   end
 
   @impl true

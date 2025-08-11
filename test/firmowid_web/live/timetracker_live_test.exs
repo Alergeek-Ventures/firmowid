@@ -1,11 +1,11 @@
 defmodule FirmowidWeb.TimetrackerLiveTest do
   use FirmowidWeb.ConnCase, async: true
 
-  alias Firmowid.Timetracker
-
-  import Phoenix.LiveViewTest
   import Firmowid.AccountsFixtures
   import Firmowid.TimetrackerFixtures
+  import Phoenix.LiveViewTest
+
+  alias Firmowid.Timetracker
 
   describe "Timetracker page works" do
     test "renders timetracker page", %{conn: conn} do
@@ -114,7 +114,7 @@ defmodule FirmowidWeb.TimetrackerLiveTest do
       [current_session] = Timetracker.list_user_sessions(user.id)
       assert current_session.title == title
       assert current_session.project_id == project.id
-      refute is_nil(current_session.end_datetime)
+      assert current_session.end_datetime
     end
 
     test "pauses active session", %{conn: conn, user: user, project: project} do
@@ -135,7 +135,7 @@ defmodule FirmowidWeb.TimetrackerLiveTest do
 
       assert result =~ "Test Session"
       ended_session = Timetracker.get_session!(session.id)
-      refute is_nil(ended_session.end_datetime)
+      assert ended_session.end_datetime
     end
 
     test "deletes session", %{conn: conn, user: user, project: project} do

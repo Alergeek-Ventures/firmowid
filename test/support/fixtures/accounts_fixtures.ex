@@ -10,7 +10,7 @@ defmodule Firmowid.AccountsFixtures do
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
   def valid_user_password, do: "hello world!"
 
-  def unique_identifcation_number, do: System.unique_integer() |> Integer.to_string()
+  def unique_identifcation_number, do: Integer.to_string(System.unique_integer())
 
   def valid_user_attributes(attrs \\ %{}) do
     Enum.into(attrs, %{
@@ -28,10 +28,10 @@ defmodule Firmowid.AccountsFixtures do
     {:ok, user} =
       attrs
       |> valid_user_attributes()
-      |> Firmowid.Accounts.register_user()
+      |> Accounts.register_user()
 
     {:ok, organization} =
-      Firmowid.Accounts.create_organization(
+      Accounts.create_organization(
         %{
           "identification_number" => unique_identifcation_number(),
           "name" => "Test Organization",
@@ -43,8 +43,9 @@ defmodule Firmowid.AccountsFixtures do
     Repo.put_org_id(organization.id)
 
     {:ok, user} =
-      Accounts.get_user!(user.id)
-      |> Firmowid.Accounts.update_user(
+      user.id
+      |> Accounts.get_user!()
+      |> Accounts.update_user(
         Map.merge(
           %{
             role: :employee
@@ -61,7 +62,7 @@ defmodule Firmowid.AccountsFixtures do
     {:ok, user} =
       attrs
       |> valid_user_attributes()
-      |> Firmowid.Accounts.register_user()
+      |> Accounts.register_user()
 
     Repo.put_org_id(organization_id)
 
@@ -72,8 +73,9 @@ defmodule Firmowid.AccountsFixtures do
       |> Repo.update()
 
     {:ok, user} =
-      Accounts.get_user!(user.id)
-      |> Firmowid.Accounts.update_user(
+      user.id
+      |> Accounts.get_user!()
+      |> Accounts.update_user(
         Map.merge(
           %{
             role: :employee

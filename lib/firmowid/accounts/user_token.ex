@@ -1,6 +1,9 @@
 defmodule Firmowid.Accounts.UserToken do
+  @moduledoc false
   use Firmowid.Schema
+
   import Ecto.Query
+
   alias Firmowid.Accounts.UserToken
 
   @hash_algorithm :sha256

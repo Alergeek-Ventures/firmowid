@@ -1,10 +1,12 @@
 defmodule FirmowidWeb.Router do
   use FirmowidWeb, :router
 
-  import Phoenix.LiveDashboard.Router
+  import FirmowidWeb.RedirectTrailing
   import FirmowidWeb.UserAuth
   import Oban.Web.Router
-  import FirmowidWeb.RedirectTrailing
+  import Phoenix.LiveDashboard.Router
+
+  alias FirmowidWeb.Live.Hooks.CurrentPath
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -87,7 +89,7 @@ defmodule FirmowidWeb.Router do
     live_session :admin,
       on_mount: [
         {FirmowidWeb.UserAuth, :ensure_authenticated_with_organization},
-        {FirmowidWeb.Live.Hooks.CurrentPath, :save_request_uri}
+        {CurrentPath, :save_request_uri}
       ] do
       live "/", InvoicingLive.Index, :index
       live "/kosztowe/:id", CostInvoiceLive.Show, :show
@@ -119,7 +121,7 @@ defmodule FirmowidWeb.Router do
     live_session :require_authenticated_user_with_organization,
       on_mount: [
         {FirmowidWeb.UserAuth, :ensure_authenticated_with_organization},
-        {FirmowidWeb.Live.Hooks.CurrentPath, :save_request_uri}
+        {CurrentPath, :save_request_uri}
       ] do
       live "/czasosledz", TimetrackerLive.Index, :index
 
@@ -138,7 +140,7 @@ defmodule FirmowidWeb.Router do
     live_session :redirect_if_user_is_authenticated,
       on_mount: [
         {FirmowidWeb.UserAuth, :redirect_if_user_is_authenticated},
-        {FirmowidWeb.Live.Hooks.CurrentPath, :save_request_uri}
+        {CurrentPath, :save_request_uri}
       ] do
       live "/zarejestruj", User.RegistrationLive, :new
       live "/zaloguj", User.LoginLive, :new
@@ -157,7 +159,7 @@ defmodule FirmowidWeb.Router do
     live_session :current_user,
       on_mount: [
         {FirmowidWeb.UserAuth, :mount_current_user},
-        {FirmowidWeb.Live.Hooks.CurrentPath, :save_request_uri}
+        {CurrentPath, :save_request_uri}
       ] do
       live "/potwierdz/:token", User.ConfirmationLive, :edit
       live "/potwierdz", User.ConfirmationInstructionsLive, :new

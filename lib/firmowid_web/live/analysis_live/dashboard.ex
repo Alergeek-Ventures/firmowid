@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.AnalysisLive.Dashboard do
+  @moduledoc false
   use FirmowidWeb, :live_view
 
   alias Firmowid.Analysis
@@ -10,9 +11,7 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
       Invoicing.get_all_months_with_invoicing_entries() ++
         [Date.utc_today()]
 
-    socket =
-      socket
-      |> assign(:active_months, active_months)
+    socket = assign(socket, :active_months, active_months)
 
     {:ok, assign(socket, page_title: "Analiza finansowa")}
   end
@@ -21,7 +20,7 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
   def handle_params(params, _uri, socket) do
     month =
       case Map.get(params, "month") do
-        nil -> Date.utc_today() |> Date.beginning_of_month()
+        nil -> Date.beginning_of_month(Date.utc_today())
         date_string -> Date.from_iso8601!(date_string)
       end
 
@@ -44,7 +43,7 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
 
   @impl true
   def handle_event("change-month", %{"month" => month}, socket) do
-    month = month |> Date.from_iso8601!()
+    month = Date.from_iso8601!(month)
 
     {:noreply, update_param(socket, :month, month)}
   end
@@ -55,18 +54,14 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
   end
 
   defp update_param(socket, key, value) do
-    params =
-      socket.assigns.params
-      |> Map.put(key, value)
+    params = Map.put(socket.assigns.params, key, value)
 
     url_params = %{
       month: params.month |> Date.beginning_of_month() |> Date.to_iso8601(),
       tag_id: params.tag_id
     }
 
-    socket =
-      socket
-      |> push_patch(to: ~p"/analiza?month=#{url_params.month}&tag_id=#{url_params.tag_id}")
+    socket = push_patch(socket, to: ~p"/analiza?month=#{url_params.month}&tag_id=#{url_params.tag_id}")
 
     socket
   end

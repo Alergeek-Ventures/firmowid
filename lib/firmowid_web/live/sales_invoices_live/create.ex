@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.SalesInvoicesLive.Create do
+  @moduledoc false
   use FirmowidWeb, :live_view
 
   alias Firmowid.SalesInvoices

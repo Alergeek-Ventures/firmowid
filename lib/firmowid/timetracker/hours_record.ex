@@ -1,7 +1,10 @@
 defmodule Firmowid.Timetracker.HoursRecord do
-  alias Firmowid.Repo
+  @moduledoc false
   use Firmowid.Schema
+
   import Ecto.Changeset
+
+  alias Firmowid.Repo
 
   schema "hours_records" do
     field :month, :integer

@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.SalesInvoices.Template do
+  @moduledoc false
   use FirmowidWeb, :html
 
   attr :sales_invoice, :map, required: true

@@ -9,7 +9,7 @@ defmodule FirmowidWeb.UserSessionApiController do
     with {:ok, user} <- get_user(email, password) do
       token = Accounts.generate_user_session_token(user)
 
-      conn |> json(%{token: Base.url_encode64(token)})
+      json(conn, %{token: Base.url_encode64(token)})
     end
   end
 

@@ -1,15 +1,15 @@
 defmodule Firmowid.BankData.WorkerTest do
   use Firmowid.DataCase
 
-  @moduletag capture_log: true
-
-  import Firmowid.AccountsFixtures
   import Ecto.Query
+  import Firmowid.AccountsFixtures
 
-  alias Firmowid.BankData.Worker
   alias Firmowid.BankData.Requisition
+  alias Firmowid.BankData.Worker
   alias Firmowid.Finances
   alias Firmowid.Repo
+
+  @moduletag capture_log: true
 
   setup do
     :ok
@@ -69,17 +69,15 @@ defmodule Firmowid.BankData.WorkerTest do
       Req.Test.stub(:bank_data_account, fn conn ->
         path = conn.request_path
 
-        cond do
-          String.contains?(path || "", "/accounts/acc-1") ->
-            Req.Test.json(conn, %{
-              id: "acc-1",
-              iban: "PL00",
-              institution_id: "N26",
-              owner_name: "Owner"
-            })
-
-          true ->
-            Req.Test.json(conn, %{})
+        if String.contains?(path || "", "/accounts/acc-1") do
+          Req.Test.json(conn, %{
+            id: "acc-1",
+            iban: "PL00",
+            institution_id: "N26",
+            owner_name: "Owner"
+          })
+        else
+          Req.Test.json(conn, %{})
         end
       end)
 
@@ -119,11 +117,10 @@ defmodule Firmowid.BankData.WorkerTest do
 
         # sync jobs enqueued in oban (manual mode records rows)
         count =
-          from(j in Oban.Job,
-            where: fragment("(args->>'name') = ?", "bank_account_sync"),
-            select: count()
+          Repo.one(from(j in Oban.Job, where: fragment("(args->>'name') = ?", "bank_account_sync"), select: count()),
+            prefix: "oban",
+            skip_organization_id: true
           )
-          |> Repo.one(prefix: "oban", skip_organization_id: true)
 
         assert count >= 1
       end)

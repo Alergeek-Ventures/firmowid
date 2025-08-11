@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.HoursRecordLive.Index do
+  @moduledoc false
   use FirmowidWeb, :live_view
 
   alias Firmowid.Timetracker
@@ -7,7 +8,7 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     current_user = socket.assigns.current_user
-    Bodyguard.permit!(Firmowid.Timetracker, :read_user_hours_records, current_user)
+    Bodyguard.permit!(Timetracker, :read_user_hours_records, current_user)
 
     selected_date = Date.utc_today()
     active_months = Timetracker.get_months_with_sessions(current_user.id)
@@ -27,7 +28,7 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
   def handle_params(params, _url, socket) do
     month =
       case Map.get(params, "month") do
-        nil -> Date.utc_today() |> Date.beginning_of_month()
+        nil -> Date.beginning_of_month(Date.utc_today())
         date_string -> Date.from_iso8601!(date_string)
       end
 
@@ -37,8 +38,7 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
   @impl true
   def handle_event("toggle-project", %{"id" => project_id}, socket) do
     projects =
-      socket.assigns.projects
-      |> Enum.map(fn
+      Enum.map(socket.assigns.projects, fn
         %{id: ^project_id} = project ->
           project
           |> Map.put(:expanded, !project.expanded)
@@ -57,33 +57,31 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
           project
       end)
 
-    {:noreply, socket |> assign(:projects, projects)}
+    {:noreply, assign(socket, :projects, projects)}
   end
 
   def handle_event("change-month", %{"month" => month}, socket) do
-    month = month |> Date.from_iso8601!()
+    month = Date.from_iso8601!(month)
 
     socket =
       socket
       |> assign(:selected_date, month)
-      |> push_patch(to: ~p"/czasosledz/ewidencja?month=#{month |> Date.to_iso8601()}")
+      |> push_patch(to: ~p"/czasosledz/ewidencja?month=#{Date.to_iso8601(month)}")
 
     {:noreply, socket}
   end
 
   @impl true
   def handle_info(:upload_complete, socket) do
-    {:noreply, socket |> refetch_data()}
+    {:noreply, refetch_data(socket)}
   end
 
   def refetch_data(socket) do
     selected_date = socket.assigns.selected_date
 
     projects =
-      Timetracker.list_user_projects_with_duration(
-        socket.assigns.current_user.id,
-        selected_date
-      )
+      socket.assigns.current_user.id
+      |> Timetracker.list_user_projects_with_duration(selected_date)
       |> Enum.map(&Map.put(&1, :expanded, false))
 
     current_month_hours_record =

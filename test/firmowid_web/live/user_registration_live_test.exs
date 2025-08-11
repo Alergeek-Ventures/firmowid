@@ -1,8 +1,8 @@
 defmodule FirmowidWeb.UserRegistrationLiveTest do
   use FirmowidWeb.ConnCase, async: true
 
-  import Phoenix.LiveViewTest
   import Firmowid.AccountsFixtures
+  import Phoenix.LiveViewTest
 
   describe "Registration page" do
     test "renders registration page", %{conn: conn} do

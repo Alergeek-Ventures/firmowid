@@ -23,10 +23,11 @@ defmodule FirmowidWeb do
     quote do
       use Phoenix.Router, helpers: false
 
-      # Import common connection and controller functions to use in pipelines
-      import Plug.Conn
       import Phoenix.Controller
       import Phoenix.LiveView.Router
+
+      # Import common connection and controller functions to use in pipelines
+      import Plug.Conn
     end
   end
 
@@ -42,8 +43,9 @@ defmodule FirmowidWeb do
         formats: [:html, :json],
         layouts: [html: FirmowidWeb.Layouts]
 
-      import Plug.Conn
       use Gettext, backend: FirmowidWeb.Gettext
+
+      import Plug.Conn
 
       unquote(verified_routes())
     end
@@ -84,12 +86,13 @@ defmodule FirmowidWeb do
 
   defp html_helpers do
     quote do
+      use Gettext, backend: FirmowidWeb.Gettext
+
+      import FirmowidWeb.CoreComponents
+      import FirmowidWeb.Icons
       # HTML escaping functionality
       import Phoenix.HTML
       # Core UI components and translation
-      import FirmowidWeb.CoreComponents
-      import FirmowidWeb.Icons
-      use Gettext, backend: FirmowidWeb.Gettext
       import Tails
 
       # Shortcut for generating JS commands

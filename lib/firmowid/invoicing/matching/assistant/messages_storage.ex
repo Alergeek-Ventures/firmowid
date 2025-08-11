@@ -1,8 +1,4 @@
 defmodule Firmowid.Invoicing.Matching.Assistant.MessagesStorage do
-  use Agent
-
-  alias Firmowid.Invoicing.Matching.Assistant.Message
-
   @moduledoc """
   In-memory storage for assistant conversations, keyed by conversation_id.
   Stores lists of Message structs per conversation, and conversation metadata (e.g., invoice).
@@ -10,6 +6,10 @@ defmodule Firmowid.Invoicing.Matching.Assistant.MessagesStorage do
   Now supports PubSub for real-time updates and streaming tokens.
   Only stores and returns Elixir structs (no LLM-specific formats).
   """
+
+  use Agent
+
+  alias Firmowid.Invoicing.Matching.Assistant.Message
 
   @pubsub Firmowid.PubSub
   @pubsub_prefix "assistant:conversation"

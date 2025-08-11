@@ -1,8 +1,8 @@
 defmodule FirmowidWeb.InvoicingLiveTest do
   use FirmowidWeb.ConnCase
 
-  import Phoenix.LiveViewTest
   import Firmowid.AccountsFixtures
+  import Phoenix.LiveViewTest
 
   describe "requisition status updates" do
     setup do
@@ -11,7 +11,7 @@ defmodule FirmowidWeb.InvoicingLiveTest do
     end
 
     test "handles requisition status updates without errors", %{conn: conn, user: user} do
-      {:ok, view, _html} = live(conn |> log_in_user(user), ~p"/")
+      {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/")
 
       # Test that all status updates are handled without crashing
       statuses = [:linked, :processing, :rejected, :expired, :timeout, :error]

@@ -1,5 +1,7 @@
 defmodule Firmowid.SalesInvoices.Buyer do
+  @moduledoc false
   use Firmowid.Schema
+
   import Ecto.Changeset
 
   schema "buyers" do
@@ -51,9 +53,7 @@ defmodule Firmowid.SalesInvoices.Buyer do
     |> put_change(:organization_id, Firmowid.Repo.get_org_id())
   end
 
-  def get_name(%{buyer_type: :individual, name: name, surname: surname}),
-    do: "#{name} #{surname}"
+  def get_name(%{buyer_type: :individual, name: name, surname: surname}), do: "#{name} #{surname}"
 
-  def get_name(%{buyer_type: :company, display_name: display_name}),
-    do: display_name
+  def get_name(%{buyer_type: :company, display_name: display_name}), do: display_name
 end

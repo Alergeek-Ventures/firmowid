@@ -1,13 +1,12 @@
 defmodule FirmowidWeb.Components.Invoicing.BankTransferModal do
+  @moduledoc false
   use FirmowidWeb, :live_component
 
   attr :invoice, :map, required: true
 
   @impl true
   def mount(socket) do
-    socket =
-      socket
-      |> assign(skip_scans: true)
+    socket = assign(socket, skip_scans: true)
 
     {:ok, socket}
   end

@@ -3,9 +3,10 @@ defmodule Firmowid.FinancesTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Firmowid.BankData.Requisition
   alias Firmowid.Finances
-  alias Firmowid.Finances.Transaction
   alias Firmowid.Finances.BankAccount
+  alias Firmowid.Finances.Transaction
 
   setup do
     user = user_fixture()
@@ -13,12 +14,12 @@ defmodule Firmowid.FinancesTest do
 
     # Insert a dummy requisition
     {:ok, requisition} =
-      %Firmowid.BankData.Requisition{
+      %Requisition{
         id: Ecto.UUID.generate(),
         status: :accepted,
         organization_id: organization_id
       }
-      |> Firmowid.BankData.Requisition.changeset(%{})
+      |> Requisition.changeset(%{})
       |> Firmowid.Repo.insert()
 
     {:ok, bank_account} =

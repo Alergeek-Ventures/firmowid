@@ -1,4 +1,5 @@
 defmodule Firmowid.Cldr do
+  @moduledoc false
   use Cldr,
     otp_app: :firmowid,
     default_locale: :pl,

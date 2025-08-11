@@ -7,22 +7,22 @@ defmodule Firmowid.Invoicing.Matching.Windowing do
   in the matching process.
   """
 
-  alias Firmowid.Currencies
   alias Firmowid.CostInvoices.CostInvoice
-  alias Firmowid.SalesInvoices.SalesInvoice
+  alias Firmowid.Currencies
   alias Firmowid.Finances.Transaction
+  alias Firmowid.SalesInvoices.SalesInvoice
 
   @doc """
   Pre-filter the transactions list to only include ones
   that are sligthly within a time window and
   amount window. These windows are very generous.
   """
-  @spec pre_filter_invoice_transactions(%CostInvoice{} | %SalesInvoice{}, [%Transaction{}]) :: [
-          %Transaction{}
-        ]
+  @spec pre_filter_invoice_transactions(CostInvoice.t() | SalesInvoice.t(), [Transaction.t()]) ::
+          [
+            Transaction.t()
+          ]
   def pre_filter_invoice_transactions(%CostInvoice{} = cost_invoice, transactions) do
-    transactions
-    |> Enum.filter(fn transaction ->
+    Enum.filter(transactions, fn transaction ->
       within_time_window?(
         cost_invoice.issue_date,
         cost_invoice.due_date,
@@ -33,8 +33,7 @@ defmodule Firmowid.Invoicing.Matching.Windowing do
   end
 
   def pre_filter_invoice_transactions(%SalesInvoice{} = sales_invoice, transactions) do
-    transactions
-    |> Enum.filter(fn transaction ->
+    Enum.filter(transactions, fn transaction ->
       within_time_window?(
         sales_invoice.issue_date,
         sales_invoice.due_date,
@@ -54,20 +53,22 @@ defmodule Firmowid.Invoicing.Matching.Windowing do
     Timex.between?(transaction_date, past_cutoff, future_cutoff, inclusive: true)
   end
 
-  @spec within_amount_window(%CostInvoice{} | %SalesInvoice{}, %Transaction{}) :: boolean()
-  defp within_amount_window(cost_invoice = %CostInvoice{}, transaction = %Transaction{}) do
+  @spec within_amount_window(CostInvoice.t() | SalesInvoice.t(), Transaction.t()) :: boolean()
+  defp within_amount_window(%CostInvoice{} = cost_invoice, %Transaction{} = transaction) do
     is_transaction_a_cost = Decimal.lt?(transaction.transaction_amount, 0)
 
     total_amount =
-      Currencies.normalize_amount_to_pln(
-        cost_invoice.total_amount |> Decimal.abs(),
+      cost_invoice.total_amount
+      |> Decimal.abs()
+      |> Currencies.normalize_amount_to_pln(
         cost_invoice.currency,
         cost_invoice.issue_date
       )
 
     normalized_transaction_amount =
-      Currencies.normalize_amount_to_pln(
-        transaction.transaction_amount |> Decimal.abs(),
+      transaction.transaction_amount
+      |> Decimal.abs()
+      |> Currencies.normalize_amount_to_pln(
         transaction.transaction_currency,
         transaction.booking_date
       )
@@ -82,19 +83,22 @@ defmodule Firmowid.Invoicing.Matching.Windowing do
     is_transaction_a_cost and is_between_amount_window
   end
 
-  defp within_amount_window(sales_invoice = %SalesInvoice{}, transaction = %Transaction{}) do
+  defp within_amount_window(%SalesInvoice{} = sales_invoice, %Transaction{} = transaction) do
     is_transaction_a_sale = Decimal.gt?(transaction.transaction_amount, 0)
 
     total_amount =
-      Currencies.normalize_amount_to_pln(
-        SalesInvoice.get_gross_value(sales_invoice) |> Decimal.abs(),
+      sales_invoice
+      |> SalesInvoice.get_gross_value()
+      |> Decimal.abs()
+      |> Currencies.normalize_amount_to_pln(
         sales_invoice.currency,
         sales_invoice.issue_date
       )
 
     normalized_transaction_amount =
-      Currencies.normalize_amount_to_pln(
-        transaction.transaction_amount |> Decimal.abs(),
+      transaction.transaction_amount
+      |> Decimal.abs()
+      |> Currencies.normalize_amount_to_pln(
         transaction.transaction_currency,
         transaction.booking_date
       )

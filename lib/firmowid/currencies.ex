@@ -3,9 +3,6 @@ defmodule Firmowid.Currencies do
   This module is responsible for normalizing amounts between different currencies.
   """
 
-  alias Money
-  alias Decimal
-
   @doc """
   Given an amount in a given currency and date (for historic rates),
   return the amount in PLN.
@@ -15,16 +12,14 @@ defmodule Firmowid.Currencies do
     rates = get_rates(date)
 
     {:ok, amount} =
-      Money.new(
-        currency,
-        amount
-      )
+      currency
+      |> Money.new(amount)
       |> Money.to_currency(
         "PLN",
         rates
       )
 
-    amount |> Money.to_decimal()
+    Money.to_decimal(amount)
   end
 
   @spec get_rates(Date.t()) :: map()

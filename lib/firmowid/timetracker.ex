@@ -2,38 +2,31 @@ defmodule Firmowid.Timetracker do
   @moduledoc """
   The Czasosledź (timetracker) context.
   """
-  require Logger
-  import Ecto.Query, warn: false
-
   @behaviour Bodyguard.Policy
 
-  alias Firmowid.Blobs
+  import Ecto.Query, warn: false
+
   alias Firmowid.Accounts
+  alias Firmowid.Blobs
+  alias Firmowid.Repo
+  alias Firmowid.Timetracker.HoursRecord
   alias Firmowid.Timetracker.Project
   alias Firmowid.Timetracker.ProjectUser
   alias Firmowid.Timetracker.Session
-  alias Firmowid.Timetracker.HoursRecord
   alias Firmowid.Timetracker.UserSalary
-  alias Firmowid.Repo
+
+  require Logger
 
   def authorize(:read_projects, %{role: :admin}, _), do: true
   def authorize(:create_project, %{role: :admin}, _), do: true
   def authorize(:read_hours_records, %{role: :admin}, _), do: true
   def authorize(:create_user_salary, %{role: :admin}, _), do: true
 
-  def authorize(:update_project, %{role: :admin, organization_id: org_id}, %{
-        organization_id: org_id
-      }),
-      do: true
+  def authorize(:update_project, %{role: :admin, organization_id: org_id}, %{organization_id: org_id}), do: true
 
   def authorize(action, %{role: role}, _)
       when role in [:employee, :admin] and
-             action in [
-               :create_hours_record,
-               :read_user_hours_records,
-               :read_user_projects,
-               :read_user_sessions
-             ],
+             action in [:create_hours_record, :read_user_hours_records, :read_user_projects, :read_user_sessions],
       do: true
 
   def authorize(:update_session, %{role: role, id: user_id}, %{user_id: user_id} = session)
@@ -44,8 +37,7 @@ defmodule Firmowid.Timetracker do
   end
 
   def authorize(action, %{role: role, id: user_id}, %{user_id: user_id} = session)
-      when role in [:employee, :admin] and
-             action in [:create_session, :delete_session],
+      when role in [:employee, :admin] and action in [:create_session, :delete_session],
       do: not submitted_hours_record?(user_id, session.start_datetime)
 
   def authorize(_, _, _), do: false
@@ -70,7 +62,8 @@ defmodule Firmowid.Timetracker do
   end
 
   def list_user_projects_with_duration(user_id, date) do
-    list_user_projects(user_id)
+    user_id
+    |> list_user_projects()
     |> Enum.map(fn project ->
       # wtf quering in loop
       Map.put(
@@ -87,17 +80,17 @@ defmodule Firmowid.Timetracker do
     |> Enum.sort_by(& &1.duration, :desc)
   end
 
-  def list_projects() do
+  def list_projects do
     Repo.all(Project)
   end
 
-  def list_projects_with_users() do
+  def list_projects_with_users do
     Project
     |> Repo.all()
     |> Repo.preload(:users)
   end
 
-  def list_users_with_projects() do
+  def list_users_with_projects do
     Accounts.User
     |> Repo.all()
     |> Repo.preload(:projects)
@@ -119,9 +112,9 @@ defmodule Firmowid.Timetracker do
     Repo.delete(project)
   end
 
-  def get_project!(id), do: Repo.get!(Project, id) |> Repo.preload(:users)
+  def get_project!(id), do: Project |> Repo.get!(id) |> Repo.preload(:users)
 
-  def get_project_with_users!(id), do: Repo.get!(Project, id) |> Repo.preload(:users)
+  def get_project_with_users!(id), do: Project |> Repo.get!(id) |> Repo.preload(:users)
 
   def get_month_hours_records(month, year) do
     query =
@@ -145,8 +138,8 @@ defmodule Firmowid.Timetracker do
         select: %{
           user_id: s.user_id,
           time_worked:
-            fragment(
-              "extract(epoch from coalesce(?, now()) - ?)",
+            "extract(epoch from coalesce(?, now()) - ?)"
+            |> fragment(
               s.end_datetime,
               s.start_datetime
             )
@@ -164,23 +157,22 @@ defmodule Firmowid.Timetracker do
         order_by: [u.name, u.email],
         select: %{
           user: u,
-          time_worked: coalesce(s.time_worked, 0) |> type(:integer),
+          time_worked: s.time_worked |> coalesce(0) |> type(:integer),
           removed_from_project: is_nil(pu.id)
         }
 
     Repo.all(query)
   end
 
-  defp query_months_with_sessions() do
+  defp query_months_with_sessions do
     Session
-    |> select([s], fragment("date_trunc('month', ?)", s.start_datetime) |> selected_as(:date))
+    |> select([s], "date_trunc('month', ?)" |> fragment(s.start_datetime) |> selected_as(:date))
     |> distinct([s], selected_as(:date))
     |> order_by([s], desc: selected_as(:date))
   end
 
   def get_months_with_sessions do
-    query_months_with_sessions()
-    |> Repo.all()
+    Repo.all(query_months_with_sessions())
   end
 
   def get_months_with_sessions(user_id) do
@@ -202,8 +194,8 @@ defmodule Firmowid.Timetracker do
           fragment("extract(year from ?) = ?", s.start_datetime, ^year),
       limit: 1,
       select:
-        fragment(
-          "extract(epoch from coalesce(?, now()) - ?)",
+        "extract(epoch from coalesce(?, now()) - ?)"
+        |> fragment(
           s.end_datetime,
           s.start_datetime
         )
@@ -214,19 +206,22 @@ defmodule Firmowid.Timetracker do
   end
 
   def get_sessions_duration_in_project(project_id, user_id, month, year) do
-    query_total_time_worked(month, year)
+    month
+    |> query_total_time_worked(year)
     |> where([s], s.project_id == ^project_id and s.user_id == ^user_id)
     |> Repo.one()
   end
 
   def get_sessions_duration_in_month(user_id, date) do
-    query_total_time_worked(date.month, date.year)
+    date.month
+    |> query_total_time_worked(date.year)
     |> where([s], s.user_id == ^user_id)
     |> Repo.one()
   end
 
   def get_total_time_worked(month, year) do
-    query_total_time_worked(month, year)
+    month
+    |> query_total_time_worked(year)
     |> Repo.one()
   end
 
@@ -244,8 +239,8 @@ defmodule Firmowid.Timetracker do
         select: %{
           project: p,
           time_worked:
-            fragment(
-              "extract(epoch from coalesce(?, now()) - ?)",
+            "extract(epoch from coalesce(?, now()) - ?)"
+            |> fragment(
               s.end_datetime,
               s.start_datetime
             )
@@ -305,22 +300,20 @@ defmodule Firmowid.Timetracker do
   end
 
   def start_session(attrs \\ %{}) do
-    try do
-      %Session{}
-      |> Session.changeset(attrs)
-      |> Repo.insert()
-      |> case do
-        {:ok, session} -> {:ok, Session.put_duration(session)}
-        rest -> rest
-      end
-    rescue
-      e in Postgrex.Error ->
-        if e.postgres.message =~ "overlaps" do
-          {:error, :overlap}
-        else
-          reraise e, __STACKTRACE__
-        end
+    %Session{}
+    |> Session.changeset(attrs)
+    |> Repo.insert()
+    |> case do
+      {:ok, session} -> {:ok, Session.put_duration(session)}
+      rest -> rest
     end
+  rescue
+    e in Postgrex.Error ->
+      if e.postgres.message =~ "overlaps" do
+        {:error, :overlap}
+      else
+        reraise e, __STACKTRACE__
+      end
   end
 
   def end_session(%Session{} = session) do
@@ -330,7 +323,8 @@ defmodule Firmowid.Timetracker do
   end
 
   def end_session(session_id) do
-    Repo.get(Session, session_id)
+    Session
+    |> Repo.get(session_id)
     |> Session.changeset(%{end_datetime: DateTime.utc_now()})
     |> Repo.update()
   end
@@ -402,19 +396,17 @@ defmodule Firmowid.Timetracker do
   end
 
   def update_session(session_id, attrs) do
-    try do
-      Session
-      |> Repo.get(session_id)
-      |> Session.changeset(attrs)
-      |> Repo.update()
-    rescue
-      e in Postgrex.Error ->
-        if e.postgres.message =~ "overlaps" do
-          {:error, :overlap}
-        else
-          reraise e, __STACKTRACE__
-        end
-    end
+    Session
+    |> Repo.get(session_id)
+    |> Session.changeset(attrs)
+    |> Repo.update()
+  rescue
+    e in Postgrex.Error ->
+      if e.postgres.message =~ "overlaps" do
+        {:error, :overlap}
+      else
+        reraise e, __STACKTRACE__
+      end
   end
 
   @doc """
@@ -428,13 +420,13 @@ defmodule Firmowid.Timetracker do
   end
 
   def get_user_project_sessions(user_id, project_id, date) do
-    Repo.all(
-      from s in Session,
-        where:
-          s.user_id == ^user_id and s.project_id == ^project_id and
-            fragment("extract(month from ?) = ?", s.start_datetime, ^date.month) and
-            fragment("extract(year from ?) = ?", s.start_datetime, ^date.year)
+    from(s in Session,
+      where:
+        s.user_id == ^user_id and s.project_id == ^project_id and
+          fragment("extract(month from ?) = ?", s.start_datetime, ^date.month) and
+          fragment("extract(year from ?) = ?", s.start_datetime, ^date.year)
     )
+    |> Repo.all()
     |> Enum.map(&Session.put_duration/1)
   end
 
@@ -450,8 +442,8 @@ defmodule Firmowid.Timetracker do
         select: %{
           title: s.title,
           duration:
-            fragment(
-              "extract(epoch from coalesce(?, now()) - ?)",
+            "extract(epoch from coalesce(?, now()) - ?)"
+            |> fragment(
               s.end_datetime,
               s.start_datetime
             )
@@ -481,7 +473,7 @@ defmodule Firmowid.Timetracker do
 
   """
   def list_hours_records do
-    Repo.all(HoursRecord) |> Repo.preload(:user)
+    HoursRecord |> Repo.all() |> Repo.preload(:user)
   end
 
   @doc """
@@ -498,7 +490,7 @@ defmodule Firmowid.Timetracker do
       ** (Ecto.NoResultsError)
 
   """
-  def get_hours_record!(id), do: Repo.get!(HoursRecord, id) |> Repo.preload(:user)
+  def get_hours_record!(id), do: HoursRecord |> Repo.get!(id) |> Repo.preload(:user)
 
   @doc """
   Creates a hours_record.
@@ -517,11 +509,7 @@ defmodule Firmowid.Timetracker do
       with {:ok, blob} <- Blobs.create_blob(path, "binary/octet-stream", filename),
            {:ok, hours_record} <-
              %HoursRecord{}
-             |> HoursRecord.changeset(
-               Map.merge(attrs, %{
-                 blob_id: blob.id
-               })
-             )
+             |> HoursRecord.changeset(Map.put(attrs, :blob_id, blob.id))
              |> Repo.insert() do
         hours_record
       else

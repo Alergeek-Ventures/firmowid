@@ -1,8 +1,9 @@
 defmodule FirmowidWeb.SalesInvoicesLive.SalesInvoiceItems do
+  @moduledoc false
   use FirmowidWeb, :html
 
-  import FirmowidWeb.SalesInvoicesLive.EditButton
   import FirmowidWeb.Icons
+  import FirmowidWeb.SalesInvoicesLive.EditButton
 
   attr :form, :list, required: true
   attr :sales_invoice, :map, required: true

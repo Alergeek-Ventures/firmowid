@@ -1,10 +1,14 @@
 defmodule Firmowid.BankDataTest do
+  use Firmowid.DataCase
+
+  import Firmowid.AccountsFixtures
+
+  alias Firmowid.Accounts.Organization
+  alias Firmowid.BankData
+  alias Firmowid.BankData.Requisition
   alias Firmowid.BankData.Transaction
   alias Firmowid.Finances
-  use Firmowid.DataCase
-  alias Firmowid.BankData
-  import Firmowid.AccountsFixtures
-  alias Firmowid.BankData.Requisition
+  alias Firmowid.Finances.BankAccount
 
   test "syncing accounts for requisition works" do
     Req.Test.stub(:bank_data_requisition, fn conn ->
@@ -101,8 +105,7 @@ defmodule Firmowid.BankDataTest do
                 "creditor_name" => "Nest Bank S.A.",
                 "debtor_name" => "ALERGEEK VENTURES SPÓŁKA Z OG",
                 "internal_transaction_id" => "1c5705ede00e47e55021d6be8c34a791",
-                "remittance_information_unstructured" =>
-                  "NOTION LABS, INC. NOTION.SO, Nr karty ...9285 840,00USD 4,3224",
+                "remittance_information_unstructured" => "NOTION LABS, INC. NOTION.SO, Nr karty ...9285 840,00USD 4,3224",
                 "remittance_information_unstructured_array" => [
                   "NOTION LABS, INC. NOTION.SO, Nr karty ...9285 840,00USD 4,3224"
                 ],
@@ -124,32 +127,32 @@ defmodule Firmowid.BankDataTest do
       })
 
     {:ok, organization} =
-      %Firmowid.Accounts.Organization{
+      %Organization{
         id: "3fa85f64-5717-4562-b3fc-2c963f66afa7",
         identification_number: "123456789",
         name: "Firmowid",
         owner_id: owner.id
       }
-      |> Firmowid.Accounts.Organization.changeset()
+      |> Organization.changeset()
       |> Repo.insert()
 
     {:ok, requisition} =
-      %Firmowid.BankData.Requisition{
+      %Requisition{
         id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         status: :accepted,
         organization_id: organization.id
       }
-      |> Firmowid.BankData.Requisition.changeset()
+      |> Requisition.changeset()
       |> Repo.insert(organization_id: organization.id)
 
     {:ok, bank_account} =
-      %Firmowid.Finances.BankAccount{
+      %BankAccount{
         iban: "PL12345678901234567890123456",
         organization_id: organization.id,
         requisition_id: requisition.id,
         gocardless_id: "3fa85f64-5717-4562-b3fc-2c963f66afa5"
       }
-      |> Firmowid.Finances.BankAccount.changeset()
+      |> BankAccount.changeset()
       |> Repo.insert(organization_id: organization.id)
 
     Repo.put_org_id(organization.id)
@@ -160,22 +163,19 @@ defmodule Firmowid.BankDataTest do
       Repo.drop_org_id()
     end
 
-    transactions =
-      Firmowid.Finances.Transaction
-      |> Repo.all(organization_id: organization.id)
+    transactions = Repo.all(Firmowid.Finances.Transaction, organization_id: organization.id)
 
-    n26 = transactions |> Enum.find(&(&1.creditor_name == "N26 Bank"))
+    n26 = Enum.find(transactions, &(&1.creditor_name == "N26 Bank"))
 
     assert is_nil(n26) == false
     assert n26.transaction_amount == Decimal.new("-32.00")
 
-    nest_bank = transactions |> Enum.find(&(&1.creditor_name == "Alergeek Ventures"))
+    nest_bank = Enum.find(transactions, &(&1.creditor_name == "Alergeek Ventures"))
 
     assert is_nil(nest_bank) == false
     assert nest_bank.transaction_amount == Decimal.new("-12.45")
 
-    notion_labs =
-      transactions |> Enum.find(&(&1.creditor_name == "NOTION LABS, INC. NOTION.SO"))
+    notion_labs = Enum.find(transactions, &(&1.creditor_name == "NOTION LABS, INC. NOTION.SO"))
 
     assert is_nil(notion_labs) == false
     assert notion_labs.transaction_amount == Decimal.new("-3630.82")
@@ -229,19 +229,9 @@ defmodule Firmowid.BankDataTest do
   test "cant insert two default accounts for one currency " do
     %{organization_id: organization_id} = user_fixture()
 
-    {:ok, req1} =
-      %Requisition{
-        status: :accepted,
-        organization_id: organization_id
-      }
-      |> Repo.insert()
+    {:ok, req1} = Repo.insert(%Requisition{status: :accepted, organization_id: organization_id})
 
-    {:ok, req2} =
-      %Requisition{
-        status: :accepted,
-        organization_id: organization_id
-      }
-      |> Repo.insert()
+    {:ok, req2} = Repo.insert(%Requisition{status: :accepted, organization_id: organization_id})
 
     Finances.create_bank_account(%{
       iban: "PL12345678901234567890123456",

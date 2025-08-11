@@ -1,5 +1,7 @@
 defmodule Firmowid.BankData.Requisition do
+  @moduledoc false
   use Firmowid.Schema
+
   import Ecto.Changeset
 
   schema "requisitions" do

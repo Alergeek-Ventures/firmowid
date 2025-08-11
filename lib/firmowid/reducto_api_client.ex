@@ -21,40 +21,42 @@ defmodule Firmowid.ReductoApiClient do
   @spec extract(String.t(), map(), extract_options) :: {:ok, map()} | {:error, String.t()}
   def extract(file_url, json_schema, options \\ []) do
     extraction_mode =
-      Keyword.get(options, :extraction_mode, :hybrid)
+      options
+      |> Keyword.get(:extraction_mode, :hybrid)
       |> Atom.to_string()
 
     host =
-      Application.get_env(:ex_aws, :s3)
+      :ex_aws
+      |> Application.get_env(:s3)
       |> Keyword.get(:host)
 
     file_url =
       upload_to_reducto(file_url, host)
 
-    with {:ok, response} <-
-           Req.post(
-             "https://platform.reducto.ai/extract",
-             auth: get_auth_token(),
-             json: %{
-               document_url: file_url,
-               options: %{
-                 extraction_mode: extraction_mode,
-                 disable_chunking: true
-               },
-               async: %{
-                 enabled: false
-               },
-               schema: json_schema
+    case Req.post(
+           "https://platform.reducto.ai/extract",
+           auth: get_auth_token(),
+           json: %{
+             document_url: file_url,
+             options: %{
+               extraction_mode: extraction_mode,
+               disable_chunking: true
              },
-             receive_timeout: 120_000,
-             connect_options: [timeout: 120_000]
-           ) do
-      # Body is a list of dictionaries.
-      # If disable_chunking is True (default), then it will be a list of length one.
-      extracted_metadata = response |> Map.get(:body) |> Map.get("result") |> hd()
+             async: %{
+               enabled: false
+             },
+             schema: json_schema
+           },
+           receive_timeout: 120_000,
+           connect_options: [timeout: 120_000]
+         ) do
+      {:ok, response} ->
+        # Body is a list of dictionaries.
+        # If disable_chunking is True (default), then it will be a list of length one.
+        extracted_metadata = response |> Map.get(:body) |> Map.get("result") |> hd()
 
-      {:ok, extracted_metadata}
-    else
+        {:ok, extracted_metadata}
+
       {:error, err} ->
         Sentry.capture_exception(err)
 
@@ -63,11 +65,12 @@ defmodule Firmowid.ReductoApiClient do
   end
 
   defp upload_to_reducto(file_url, "localhost") do
-    with {:ok, temp_path} <- Briefly.create(),
-         _ <- download_file(file_url, temp_path),
-         file_url <- upload_file(file_url, temp_path) do
-      file_url
-    else
+    case Briefly.create() do
+      {:ok, temp_path} ->
+        download_file(file_url, temp_path)
+        file_url = upload_file(file_url, temp_path)
+        file_url
+
       _ ->
         raise "Failed to upload file to Reducto"
     end
@@ -90,11 +93,11 @@ defmodule Firmowid.ReductoApiClient do
     file_path = Path.expand(file_path)
 
     {:ok, file_contents} = File.read(file_path)
-    filename = Path.basename(file_path) <> Path.extname(file_url |> String.split("?") |> hd())
+    filename = Path.basename(file_path) <> (file_url |> String.split("?") |> hd() |> Path.extname())
 
     multipart =
-      Multipart.new()
-      |> Multipart.add_part(
+      Multipart.add_part(
+        Multipart.new(),
         Multipart.Part.file_content_field(filename, file_contents, :file, filename: filename)
       )
 

@@ -1,5 +1,7 @@
 defmodule FirmowidWeb.HoursRecordLive.UploadForm do
+  @moduledoc false
   use FirmowidWeb, :live_component
+
   alias Firmowid.Timetracker
 
   @impl true
@@ -124,28 +126,28 @@ defmodule FirmowidWeb.HoursRecordLive.UploadForm do
   @impl true
   def handle_event("download", _params, socket) do
     Bodyguard.permit!(Timetracker, :read_user_hours_records, socket.assigns.current_user)
-    {:noreply, socket |> assign(:state, :sign)}
+    {:noreply, assign(socket, :state, :sign)}
   end
 
   def handle_event("sign", _params, socket) do
-    {:noreply, socket |> assign(:state, :upload)}
+    {:noreply, assign(socket, :state, :upload)}
   end
 
   def handle_event("upload", _params, socket) do
-    {:noreply, socket |> assign(:state, :send)}
+    {:noreply, assign(socket, :state, :send)}
   end
 
   def handle_event("send", _params, socket) do
     Bodyguard.permit!(Timetracker, :create_hours_record, socket.assigns.current_user)
 
     consume_uploaded_entries(socket, :hours_record, fn %{path: path}, entry ->
-      Timetracker.create_hours_record(
-        %{
-          user_id: socket.assigns.current_user.id,
-          number_of_hours: (socket.assigns.total_duration / 3600) |> ceil(),
-          month: socket.assigns.selected_date.month,
-          year: socket.assigns.selected_date.year
-        },
+      %{
+        user_id: socket.assigns.current_user.id,
+        number_of_hours: ceil(socket.assigns.total_duration / 3600),
+        month: socket.assigns.selected_date.month,
+        year: socket.assigns.selected_date.year
+      }
+      |> Timetracker.create_hours_record(
         path,
         entry.client_name
       )

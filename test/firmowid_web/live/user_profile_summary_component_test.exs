@@ -1,9 +1,9 @@
 defmodule FirmowidWeb.Components.Timetracker.UserProfileSummaryTest do
   use FirmowidWeb.ConnCase, async: true
 
-  import Phoenix.LiveViewTest
   import Firmowid.AccountsFixtures
   import Firmowid.TimetrackerFixtures
+  import Phoenix.LiveViewTest
 
   alias FirmowidWeb.Components.Timetracker.UserProfileSummary
 
@@ -124,7 +124,7 @@ defmodule FirmowidWeb.Components.Timetracker.UserProfileSummaryTest do
     test "handles decimal salary rates correctly", %{user: user} do
       user_salary = user_salary_fixture(%{user_id: user.id, hourly_rate: Decimal.new("33.33")})
       user_with_salary = Map.put(user, :current_salary, user_salary)
-      user_hours = %{time_worked: 10800}
+      user_hours = %{time_worked: 10_800}
 
       html =
         render_component(UserProfileSummary, %{

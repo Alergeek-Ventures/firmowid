@@ -3,8 +3,6 @@ defmodule Firmowid.Oban do
   Oban configuration for Firmowid.
   """
 
-  alias Ecto.Changeset
-
   use Oban,
     otp_app: :firmowid,
     repo: Firmowid.Repo,
@@ -12,24 +10,28 @@ defmodule Firmowid.Oban do
     engine: Oban.Engines.Basic,
     queues: [bank_data: 1, invoicing: 1, cost_invoices: 5, default: 1],
     plugins: [
-      # retry orphaned jobs after 30 minutes
-      {Oban.Plugins.Lifeline, rescue_after: :timer.minutes(30)},
-      # remove jobs after 30 days
+      {Oban.Plugins.Lifeline, rescue_after: to_timeout(minute: 30)},
       {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 30},
-      {Oban.Plugins.Cron,
-       timezone: "Europe/Warsaw",
-       crontab: [
-         {"0 12 */2 * *", Firmowid.BankData.Worker,
-          args: %{name: "dispatch_sync_jobs_for_all_bank_accounts"}},
-         {"0 13 * * *", Firmowid.BankData.CleanupWorker, args: %{}},
-         {"0 13 * * *", Firmowid.Invoicing.Worker, args: %{name: "matching"}},
-         {"0 14 * * *", Firmowid.ExchangeRates.CleanupWorker, args: %{}}
-       ]}
+      # retry orphaned jobs after 30 minutes
+      {
+        Oban.Plugins.Cron,
+        # remove jobs after 30 days
+        timezone: "Europe/Warsaw",
+        crontab: [
+          {"0 12 */2 * *", Firmowid.BankData.Worker, args: %{name: "dispatch_sync_jobs_for_all_bank_accounts"}},
+          {"0 13 * * *", Firmowid.BankData.CleanupWorker, args: %{}},
+          {"0 13 * * *", Firmowid.Invoicing.Worker, args: %{name: "matching"}},
+          {"0 14 * * *", Firmowid.ExchangeRates.CleanupWorker, args: %{}}
+        ]
+      }
     ]
+
+  alias Ecto.Changeset
 
   defp put_org_id(changeset, organization_id) do
     meta =
-      Changeset.get_change(changeset, :meta, %{})
+      changeset
+      |> Changeset.get_change(:meta, %{})
       |> Map.put(:organization_id, organization_id)
 
     Changeset.put_change(changeset, :meta, meta)
@@ -71,9 +73,7 @@ defmodule Firmowid.Oban do
           Oban.insert_all(__MODULE__, changesets, opts)
 
         organization_id = Firmowid.Repo.get_org_id() ->
-          changesets_with_org =
-            changesets
-            |> Enum.map(&put_org_id(&1, organization_id))
+          changesets_with_org = Enum.map(changesets, &put_org_id(&1, organization_id))
 
           Oban.insert_all(__MODULE__, changesets_with_org, opts)
 

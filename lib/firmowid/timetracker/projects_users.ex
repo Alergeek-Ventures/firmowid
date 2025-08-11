@@ -1,7 +1,10 @@
 defmodule Firmowid.Timetracker.ProjectUser do
+  @moduledoc false
   use Firmowid.Schema
-  alias Firmowid.Repo
+
   import Ecto.Changeset
+
+  alias Firmowid.Repo
 
   schema "projects_users" do
     belongs_to :project, Firmowid.Timetracker.Project

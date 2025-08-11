@@ -1,12 +1,12 @@
 defmodule Firmowid.InvoicingTest do
-  alias Firmowid.Accounts.User
   use Firmowid.DataCase
 
   import Firmowid.AccountsFixtures
 
-  alias Firmowid.Invoicing
+  alias Firmowid.Accounts.User
   alias Firmowid.Blobs.Blob
   alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.Invoicing
 
   describe "order_entries_for_display/2" do
     test "sorts properly by name" do
@@ -14,9 +14,7 @@ defmodule Firmowid.InvoicingTest do
 
       {a, b} = prep_entries(%{}, %{}, organization_id)
 
-      sorted_list =
-        [a, b]
-        |> Invoicing.order_entries_for_display()
+      sorted_list = Invoicing.order_entries_for_display([a, b])
 
       assert sorted_list == [a, b]
     end
@@ -38,9 +36,7 @@ defmodule Firmowid.InvoicingTest do
           organization_id
         )
 
-      sorted_list =
-        [b, c, a, d]
-        |> Invoicing.order_entries_for_display()
+      sorted_list = Invoicing.order_entries_for_display([b, c, a, d])
 
       assert sorted_list == [c, d, a, b]
     end
@@ -55,9 +51,7 @@ defmodule Firmowid.InvoicingTest do
           organization_id
         )
 
-      sorted_list =
-        [a, b]
-        |> Invoicing.order_entries_for_display()
+      sorted_list = Invoicing.order_entries_for_display([a, b])
 
       assert sorted_list == [a, b]
     end
@@ -65,13 +59,12 @@ defmodule Firmowid.InvoicingTest do
 
   defp prep_entries(override_a, override_b, organization_id) do
     a_blob =
-      %Blob{
+      Repo.insert!(%Blob{
         blob_checksum: UUIDv7.generate(),
         blob_path: "a.pdf",
         original_filename: "a.pdf",
         organization_id: organization_id
-      }
-      |> Repo.insert!()
+      })
 
     a =
       %CostInvoice{
@@ -94,13 +87,12 @@ defmodule Firmowid.InvoicingTest do
       |> Repo.insert!()
 
     b_blob =
-      %Blob{
+      Repo.insert!(%Blob{
         blob_checksum: UUIDv7.generate(),
         blob_path: "b.pdf",
         original_filename: "b.pdf",
         organization_id: organization_id
-      }
-      |> Repo.insert!()
+      })
 
     b =
       %CostInvoice{

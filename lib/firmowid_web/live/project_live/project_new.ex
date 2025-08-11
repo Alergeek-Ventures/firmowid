@@ -1,5 +1,7 @@
 defmodule FirmowidWeb.Project.ProjectNew do
+  @moduledoc false
   use FirmowidWeb, :live_view
+
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Project
 
@@ -12,7 +14,7 @@ defmodule FirmowidWeb.Project.ProjectNew do
 
   @impl true
   def handle_event("validate", %{"project" => params}, socket) do
-    {:noreply, assign(socket, form: Project.form_changeset(params) |> to_form(action: :validate))}
+    {:noreply, assign(socket, form: params |> Project.form_changeset() |> to_form(action: :validate))}
   end
 
   def handle_event("save", %{"project" => params}, socket) do

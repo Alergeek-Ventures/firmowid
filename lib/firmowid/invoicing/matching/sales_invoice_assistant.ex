@@ -1,6 +1,10 @@
 defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
+  @moduledoc false
   alias Firmowid.Invoicing.Matching.Assistant.CommonTools
-  alias Firmowid.Invoicing.Matching.Assistant.{Engine, Tool, MessagesStorage, Message}
+  alias Firmowid.Invoicing.Matching.Assistant.Engine
+  alias Firmowid.Invoicing.Matching.Assistant.Message
+  alias Firmowid.Invoicing.Matching.Assistant.MessagesStorage
+  alias Firmowid.Invoicing.Matching.Assistant.Tool
   alias Firmowid.SalesInvoices.SalesInvoice
 
   @intro_message ~S"""
@@ -37,7 +41,7 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
           args: %{"transaction_ids" => transaction_ids, "sales_invoice_ids" => sales_invoice_ids}
         }
       } ->
-        sales_invoice = Firmowid.SalesInvoices.get_sales_invoice(sales_invoice_ids |> hd())
+        sales_invoice = sales_invoice_ids |> hd() |> Firmowid.SalesInvoices.get_sales_invoice()
         organization_id = sales_invoice.organization_id
 
         # todo insert_all
@@ -130,7 +134,8 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
           hallucinated_invoice = is_nil(sales_invoice)
 
           hallucinated_transactions =
-            MapSet.new(transaction_ids)
+            transaction_ids
+            |> MapSet.new()
             |> MapSet.difference(MapSet.new(transactions, & &1.id))
 
           if hallucinated_invoice or not Enum.empty?(hallucinated_transactions) do
@@ -299,7 +304,7 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
       end
 
     """
-    #{"#" |> String.duplicate(heading_level)} Faktura sprzedażowa #{invoice.invoice_number}
+    #{String.duplicate("#", heading_level)} Faktura sprzedażowa #{invoice.invoice_number}
 
     > **Opis:**
 

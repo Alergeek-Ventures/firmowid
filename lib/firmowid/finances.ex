@@ -1,21 +1,20 @@
 defmodule Firmowid.Finances do
-  import Paradex, only: [~>: 2]
+  @moduledoc false
+  @behaviour Bodyguard.Policy
+
   import Ecto.Query, warn: false
+  import Paradex, only: [~>: 2]
 
   alias Firmowid.CostInvoices.CostInvoicesTransactions
-  alias Firmowid.SalesInvoices.SalesInvoicesTransactions
-  alias Firmowid.Repo
-
-  alias Firmowid.Finances.Transaction
   alias Firmowid.Finances.BankAccount
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.Repo
+  alias Firmowid.SalesInvoices.SalesInvoicesTransactions
 
-  @behaviour Bodyguard.Policy
   def authorize(:create_bank_account, %{role: :admin}, _), do: true
   def authorize(:read_bank_accounts, %{role: :admin}, _), do: true
 
-  def authorize(action, %{role: :admin, organization_id: org_id}, %{
-        organization_id: org_id
-      })
+  def authorize(action, %{role: :admin, organization_id: org_id}, %{organization_id: org_id})
       when action in [:read_bank_account, :update_bank_account, :delete_bank_account],
       do: true
 
@@ -25,13 +24,12 @@ defmodule Firmowid.Finances do
     This shouldn't be used in "userland" - only in "private" workers.
     Please, be careful!
   """
-  def get_bank_accounts_for_sync() do
+  def get_bank_accounts_for_sync do
     query =
       from ba in BankAccount,
         where: not is_nil(ba.gocardless_id)
 
-    query
-    |> Repo.all(skip_organization_id: true)
+    Repo.all(query, skip_organization_id: true)
   end
 
   @transaction_broadcast_topic "transaction_broadcast_topic"
@@ -51,14 +49,13 @@ defmodule Firmowid.Finances do
     )
   end
 
-  def list_bank_accounts() do
+  def list_bank_accounts do
     BankAccount
     |> Repo.all()
     |> Repo.preload(:requisition)
   end
 
-  def get_bank_account!(id),
-    do: Repo.get!(BankAccount, id)
+  def get_bank_account!(id), do: Repo.get!(BankAccount, id)
 
   def create_bank_account(attrs \\ %{}) do
     %BankAccount{}
@@ -110,7 +107,8 @@ defmodule Firmowid.Finances do
     # TODO: dangling requisitions should be deleted!
     # not done yet, maybe via a worker?
 
-    Repo.get!(BankAccount, bank_account_id)
+    BankAccount
+    |> Repo.get!(bank_account_id)
     |> Repo.delete()
   end
 
@@ -135,19 +133,17 @@ defmodule Firmowid.Finances do
     date_from = Map.get(params, :date_from)
     date_to = Map.get(params, :date_to)
 
-    base_query =
-      from(Transaction, as: :transaction)
-      |> preload([:cost_invoices_transactions, :sales_invoices_transactions])
+    base_query = preload(from(Transaction, as: :transaction), [:cost_invoices_transactions, :sales_invoices_transactions])
 
     base_query =
       if only_unmatched do
         base_query
         |> where(
           [t],
-          union(
-            from(ci in CostInvoicesTransactions,
-              where: parent_as(:transaction).id == ci.transaction_id
-            ),
+          from(ci in CostInvoicesTransactions,
+            where: parent_as(:transaction).id == ci.transaction_id
+          )
+          |> union(
             ^from(si in SalesInvoicesTransactions,
               where: parent_as(:transaction).id == si.transaction_id
             )
@@ -160,43 +156,44 @@ defmodule Firmowid.Finances do
       end
 
     base_query =
-      if not is_nil(currency) do
+      if is_nil(currency) do
         base_query
-        |> where([t], t.transaction_currency == ^currency)
       else
-        base_query
+        where(base_query, [t], t.transaction_currency == ^currency)
       end
 
     base_query =
-      if not is_nil(amount_gt) do
+      if is_nil(amount_gt) do
+        base_query
+      else
         where(base_query, [t], t.transaction_amount >= ^amount_gt)
-      else
-        base_query
       end
 
     base_query =
-      if not is_nil(amount_lt) do
+      if is_nil(amount_lt) do
+        base_query
+      else
         where(base_query, [t], t.transaction_amount <= ^amount_lt)
-      else
-        base_query
       end
 
     base_query =
-      if not is_nil(date_from) do
+      if is_nil(date_from) do
+        base_query
+      else
         where(base_query, [t], t.booking_date >= ^date_from or t.value_date >= ^date_from)
-      else
-        base_query
       end
 
     base_query =
-      if not is_nil(date_to) do
+      if is_nil(date_to) do
+        base_query
+      else
         where(base_query, [t], t.booking_date <= ^date_to or t.value_date <= ^date_to)
-      else
-        base_query
       end
 
     base_query =
-      if not is_nil(query) do
+      if is_nil(query) do
+        order_by(base_query, [t], desc: t.booking_date)
+      else
         base_query
         |> where(
           [t],
@@ -206,9 +203,6 @@ defmodule Firmowid.Finances do
             t.transaction_currency ~> ^query
         )
         |> order_by([t], fragment("paradedb.score(?) DESC", t.id))
-      else
-        base_query
-        |> order_by([t], desc: t.booking_date)
       end
 
     base_query
@@ -236,17 +230,19 @@ defmodule Firmowid.Finances do
 
   def get_transaction!(transaction_id) do
     transaction =
-      Repo.get!(Transaction, transaction_id)
+      Transaction
+      |> Repo.get!(transaction_id)
       |> Repo.preload(:bank_account)
       |> Repo.preload(:cost_invoices_transactions)
 
-    Map.merge(transaction, %{
-      amount:
-        Money.new(
-          transaction.transaction_currency,
-          transaction.transaction_amount
-        )
-    })
+    Map.put(
+      transaction,
+      :amount,
+      Money.new(
+        transaction.transaction_currency,
+        transaction.transaction_amount
+      )
+    )
   end
 
   def get_transactions!(ids) do
@@ -254,9 +250,7 @@ defmodule Firmowid.Finances do
     |> where([t], t.id in ^ids)
     |> Repo.all()
     |> Enum.map(fn transaction ->
-      Map.merge(transaction, %{
-        amount: Money.new(transaction.transaction_currency, transaction.transaction_amount)
-      })
+      Map.put(transaction, :amount, Money.new(transaction.transaction_currency, transaction.transaction_amount))
     end)
   end
 
@@ -272,34 +266,33 @@ defmodule Firmowid.Finances do
 
   def create_or_update_transactions(transactions) do
     transactions =
-      transactions
-      |> Enum.map(fn transaction ->
+      Enum.map(transactions, fn transaction ->
         Map.merge(transaction, %{
           id: UUIDv7.autogenerate(),
-          inserted_at: DateTime.utc_now() |> DateTime.truncate(:second),
-          updated_at: DateTime.utc_now() |> DateTime.truncate(:second)
+          inserted_at: DateTime.truncate(DateTime.utc_now(), :second),
+          updated_at: DateTime.truncate(DateTime.utc_now(), :second)
         })
       end)
 
-    Transaction
-    |> Repo.insert_all(transactions,
+    Repo.insert_all(Transaction, transactions,
       on_conflict: {:replace_all_except, [:id, :skip_invoicing, :inserted_at]},
       conflict_target: [:internal_transaction_id, :organization_id]
     )
 
-    case transactions |> List.first() do
+    case List.first(transactions) do
       nil ->
         nil
 
       transaction ->
-        organization_id = transaction |> Map.get(:organization_id)
+        organization_id = Map.get(transaction, :organization_id)
         broadcast_transaction_list_updated(organization_id)
     end
   end
 
   def update_transaction(transaction_id, attrs) do
     changeset =
-      get_transaction!(transaction_id)
+      transaction_id
+      |> get_transaction!()
       |> Transaction.changeset(attrs)
 
     Repo.update!(changeset)
@@ -314,20 +307,18 @@ defmodule Firmowid.Finances do
   end
 
   def list_transactions_by_ids(ids, date_from \\ nil, date_to \\ nil) do
-    query =
-      Transaction
-      |> where([t], t.id in ^ids)
+    query = where(Transaction, [t], t.id in ^ids)
 
     query =
       cond do
         date_from && date_to ->
-          query |> where([t], t.booking_date >= ^date_from and t.booking_date <= ^date_to)
+          where(query, [t], t.booking_date >= ^date_from and t.booking_date <= ^date_to)
 
         date_from ->
-          query |> where([t], t.booking_date >= ^date_from)
+          where(query, [t], t.booking_date >= ^date_from)
 
         date_to ->
-          query |> where([t], t.booking_date <= ^date_to)
+          where(query, [t], t.booking_date <= ^date_to)
 
         true ->
           query

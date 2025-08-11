@@ -2,9 +2,11 @@ defmodule Firmowid.SalesInvoices.NipResponse do
   @moduledoc """
   Embedded schema representing the complete response from the VAT registry
   """
-  alias Firmowid.SalesInvoices.NipResponsePerson
   use Ecto.Schema
+
   import Ecto.Changeset
+
+  alias Firmowid.SalesInvoices.NipResponsePerson
 
   @primary_key false
   embedded_schema do

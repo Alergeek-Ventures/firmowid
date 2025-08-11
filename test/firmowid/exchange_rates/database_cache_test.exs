@@ -1,9 +1,9 @@
 defmodule Firmowid.ExchangeRates.DatabaseCacheTest do
   use Firmowid.DataCase
 
-  alias Firmowid.ExchangeRates.DatabaseCache
   alias Firmowid.ExchangeRates.CacheEntry
   alias Firmowid.ExchangeRates.CleanupWorker
+  alias Firmowid.ExchangeRates.DatabaseCache
 
   setup_all do
     # Configure to use API rates provider instead of mock

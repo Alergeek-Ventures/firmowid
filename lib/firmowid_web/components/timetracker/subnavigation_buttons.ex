@@ -1,5 +1,7 @@
 defmodule FirmowidWeb.Components.Timetracker.SubnavigationButtons do
+  @moduledoc false
   use FirmowidWeb, :html
+
   import FirmowidWeb.Components.ButtonGroup
 
   # should this attribute be passed from parent like now? i dont know what is more phoenix-like

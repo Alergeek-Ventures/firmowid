@@ -3,10 +3,11 @@ defmodule Firmowid.SalesInvoices.NipApiClient do
   Client for the Polish VAT Registry API using Req HTTP client and Ecto embedded schemas.
   """
 
+  use Ecto.Schema
+
   alias Firmowid.SalesInvoices.NipResponse
 
   require Logger
-  use Ecto.Schema
 
   @type organization :: %{
           name: String.t(),
@@ -24,8 +25,8 @@ defmodule Firmowid.SalesInvoices.NipApiClient do
           | {:error, :invalid_nip}
           | {:error, String.t()}
   def fetch_org_data_by_nip(nip) when is_binary(nip) do
-    date = Date.utc_today() |> Date.to_string()
-    url = "https://wl-api.mf.gov.pl/api/search/nip/#{nip |> String.trim()}?date=#{date}"
+    date = Date.to_string(Date.utc_today())
+    url = "https://wl-api.mf.gov.pl/api/search/nip/#{String.trim(nip)}?date=#{date}"
 
     case Req.get(
            url: url,

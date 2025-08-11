@@ -1,5 +1,7 @@
 defmodule Firmowid.SalesInvoices.SalesInvoicesTransactions do
+  @moduledoc false
   use Firmowid.Schema
+
   import Ecto.Changeset
 
   schema "sales_invoices_transactions" do
@@ -13,11 +15,6 @@ defmodule Firmowid.SalesInvoices.SalesInvoicesTransactions do
 
   @doc false
   def changeset(attrs) do
-    %__MODULE__{}
-    |> cast(attrs, [
-      :sales_invoice_id,
-      :transaction_id,
-      :organization_id
-    ])
+    cast(%__MODULE__{}, attrs, [:sales_invoice_id, :transaction_id, :organization_id])
   end
 end

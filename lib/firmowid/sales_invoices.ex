@@ -1,12 +1,14 @@
 defmodule Firmowid.SalesInvoices do
+  @moduledoc false
+  @behaviour Bodyguard.Policy
+
   import Ecto.Query, warn: false
+
   alias Firmowid.Accounts
   alias Firmowid.Repo
-
+  alias Firmowid.SalesInvoices.Buyer
   alias Firmowid.SalesInvoices.SalesInvoice
   alias Firmowid.SalesInvoices.SalesInvoicesTransactions
-
-  @behaviour Bodyguard.Policy
 
   def authorize(:read_sales_invoice, %{role: :admin}, _), do: true
   def authorize(:create_sales_invoice, %{role: :admin}, _), do: true
@@ -37,15 +39,14 @@ defmodule Firmowid.SalesInvoices do
   end
 
   def populate_logo_url(%SalesInvoice{} = sales_invoice) do
-    with loaded_invoice <- Repo.preload(sales_invoice, :organization, skip_organization_id: true),
-         organization <- Accounts.get_organization_with_avatar(loaded_invoice.organization) do
-      %{loaded_invoice | logo_url: organization.avatar_url}
-    end
+    loaded_invoice = Repo.preload(sales_invoice, :organization, skip_organization_id: true)
+    organization = Accounts.get_organization_with_avatar(loaded_invoice.organization)
+    %{loaded_invoice | logo_url: organization.avatar_url}
   end
 
   def populate_logo_url(nil), do: nil
 
-  def list_sales_invoices() do
+  def list_sales_invoices do
     Repo.all(SalesInvoice)
   end
 
@@ -74,7 +75,7 @@ defmodule Firmowid.SalesInvoices do
   Unmatched invoices - due in a given date range, but
   without a match and not skipped.
   """
-  def list_unmatched_sales_invoices() do
+  def list_unmatched_sales_invoices do
     list_unmatched_sales_invoices(~D[1970-01-01], ~D[2999-12-31])
   end
 
@@ -118,23 +119,26 @@ defmodule Firmowid.SalesInvoices do
     |> Repo.all()
   end
 
-  @spec get_sales_invoice(UUIDv7.t()) :: %SalesInvoice{} | nil
+  @spec get_sales_invoice(UUIDv7.t()) :: SalesInvoice.t() | nil
   def get_sales_invoice(id) do
-    Repo.get(SalesInvoice, id)
+    SalesInvoice
+    |> Repo.get(id)
     |> Repo.preload(:sales_invoice_items)
     |> Repo.preload(:transactions)
     |> Repo.preload(:buyer)
   end
 
   def get_sales_invoice!(id) do
-    Repo.get!(SalesInvoice, id)
+    SalesInvoice
+    |> Repo.get!(id)
     |> Repo.preload(:sales_invoice_items)
     |> Repo.preload(:transactions)
     |> Repo.preload(:buyer)
   end
 
   def get_sales_invoice_with_logo_url(id) do
-    Repo.get(SalesInvoice, id)
+    SalesInvoice
+    |> Repo.get(id)
     |> Repo.preload(:sales_invoice_items)
     |> Repo.preload(:transactions)
     |> Repo.preload(:buyer)
@@ -142,19 +146,19 @@ defmodule Firmowid.SalesInvoices do
   end
 
   def create_sales_invoices_transactions_connection(invoice_id, transaction_id, organization_id) do
-    SalesInvoicesTransactions.changeset(%{
+    %{
       sales_invoice_id: invoice_id,
       transaction_id: transaction_id,
       organization_id: organization_id
-    })
+    }
+    |> SalesInvoicesTransactions.changeset()
     |> Repo.insert!()
   end
 
   def delete_sales_invoices_transactions_connections(invoice_id) do
-    query = from(SalesInvoicesTransactions) |> where([c], c.sales_invoice_id == ^invoice_id)
+    query = where(from(SalesInvoicesTransactions), [c], c.sales_invoice_id == ^invoice_id)
 
-    query
-    |> Repo.delete_all()
+    Repo.delete_all(query)
   end
 
   def toggle_skip_invoicing(id) do
@@ -170,7 +174,7 @@ defmodule Firmowid.SalesInvoices do
     sales_invoice
   end
 
-  def get_latest_sales_invoice() do
+  def get_latest_sales_invoice do
     SalesInvoice
     |> order_by(desc: :updated_at)
     |> limit(1)
@@ -191,13 +195,14 @@ defmodule Firmowid.SalesInvoices do
       |> order_by(desc: :invoice_number)
       |> limit(1)
 
-    latest_invoice =
+    if_result =
       if omit_invoice_id = Keyword.get(opts, :omit_invoice_id, nil) do
         where(query, [i], i.id != ^omit_invoice_id)
       else
         query
       end
-      |> Repo.one()
+
+    latest_invoice = Repo.one(if_result)
 
     case latest_invoice do
       nil ->
@@ -239,8 +244,6 @@ defmodule Firmowid.SalesInvoices do
     SalesInvoice.changeset(invoice, attrs)
   end
 
-  alias Firmowid.SalesInvoices.Buyer
-
   def create_or_update_buyer("", attr) do
     create_buyer(attr)
   end
@@ -250,18 +253,19 @@ defmodule Firmowid.SalesInvoices do
   end
 
   def create_or_update_buyer(id, attr) do
-    get_buyer!(id) |> update_buyer(attr)
+    id |> get_buyer!() |> update_buyer(attr)
   end
 
-  def list_buyers() do
+  def list_buyers do
     Repo.all(Buyer)
   end
 
   def get_buyer!(id), do: Repo.get!(Buyer, id)
 
   def get_full_buyer_data_as_single_string(sales_invoice) do
-    "#{sales_invoice.buyer_nip}#{sales_invoice.buyer_pesel} - #{sales_invoice.buyer_display_name} #{sales_invoice.buyer_surname} #{sales_invoice.buyer_name} #{sales_invoice.buyer_address} #{sales_invoice.buyer_country}"
-    |> String.trim()
+    String.trim(
+      "#{sales_invoice.buyer_nip}#{sales_invoice.buyer_pesel} - #{sales_invoice.buyer_display_name} #{sales_invoice.buyer_surname} #{sales_invoice.buyer_name} #{sales_invoice.buyer_address} #{sales_invoice.buyer_country}"
+    )
   end
 
   def create_buyer(attrs \\ %{}) do
@@ -285,7 +289,7 @@ defmodule Firmowid.SalesInvoices do
   end
 
   def list_sales_invoices_by_ids(ids, date_from \\ nil, date_to \\ nil) do
-    query = SalesInvoice |> where([si], si.id in ^ids)
+    query = where(SalesInvoice, [si], si.id in ^ids)
 
     query =
       if date_from do

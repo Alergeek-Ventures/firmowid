@@ -1,6 +1,9 @@
 defmodule FirmowidWeb.Components.Invoicing.Assistant do
+  @moduledoc false
   use FirmowidWeb, :html
+
   alias FirmowidWeb.Helpers.TimeFormatter
+
   require Logger
 
   attr :loading, :boolean, default: false
@@ -72,16 +75,10 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
     """
   end
 
-  def message(
-        %{
-          role: :function_call,
-          payload: %{name: "search_transactions", args: args}
-        },
-        _myself,
-        _opts
-      ) do
+  def message(%{role: :function_call, payload: %{name: "search_transactions", args: args}}, _myself, _opts) do
     filters =
-      Map.get(args, "filters", %{})
+      args
+      |> Map.get("filters", %{})
       |> Map.put_new("date_from", nil)
       |> Map.put_new("date_to", nil)
       |> Map.put_new("amount_gt", nil)
@@ -151,10 +148,7 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
   def message(
         %{
           role: :function_call,
-          payload: %{
-            name: name,
-            args: %{"message" => assistant_message}
-          },
+          payload: %{name: name, args: %{"message" => assistant_message}},
           transactions: transactions
         } = message,
         myself,
@@ -193,11 +187,7 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
     """
   end
 
-  def message(
-        %{role: :function_result, payload: %{name: "search_transactions", result: result}},
-        _myself,
-        _opts
-      ) do
+  def message(%{role: :function_result, payload: %{name: "search_transactions", result: result}}, _myself, _opts) do
     text =
       case result do
         transactions when is_list(transactions) ->
@@ -227,12 +217,7 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
   def message(message, _, opts) do
     Logger.warning("Unknown message type in assistant: #{inspect(message)}")
 
-    if not Keyword.get(opts, :debug, false) do
-      assigns = %{}
-
-      ~H"""
-      """
-    else
+    if Keyword.get(opts, :debug, false) do
       case message do
         %{role: :function_call, payload: %{name: _, args: _} = assigns} ->
           ~H"""
@@ -260,6 +245,11 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
           <div>[{to_string(@type)}] {render_content(@content)} {inspect(@metadata)}</div>
           """
       end
+    else
+      assigns = %{}
+
+      ~H"""
+      """
     end
   end
 

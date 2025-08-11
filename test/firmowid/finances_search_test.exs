@@ -16,24 +16,22 @@ defmodule Firmowid.FinancesSearchTest do
       # setup minimal and avoid the many required fields. Only the columns that matter for the
       # search and multi-tenancy are provided.
       transaction1 =
-        %Transaction{
+        Repo.insert!(%Transaction{
           debtor_name: "Acme Corp",
           creditor_name: "John Doe",
           remittance_information_unstructured: "Invoice #123",
           transaction_currency: "USD",
           organization_id: organization_id
-        }
-        |> Repo.insert!()
+        })
 
       _transaction2 =
-        %Transaction{
+        Repo.insert!(%Transaction{
           debtor_name: "Another Company",
           creditor_name: "Jane Smith",
           remittance_information_unstructured: "Payment for services_user",
           transaction_currency: "USD",
           organization_id: organization_id
-        }
-        |> Repo.insert!()
+        })
 
       # Run the search
       [found_transaction] = Finances.search_transactions(%{query: "Acme", currency: "USD"})
@@ -47,14 +45,13 @@ defmodule Firmowid.FinancesSearchTest do
       organization_id = Repo.get_org_id()
 
       _ =
-        %Transaction{
+        Repo.insert!(%Transaction{
           debtor_name: "Some Company",
           creditor_name: "Someone",
           remittance_information_unstructured: "Some payment",
           transaction_currency: "USD",
           organization_id: organization_id
-        }
-        |> Repo.insert!()
+        })
 
       results = Finances.search_transactions(%{query: "NonExistent"})
       assert results == []
@@ -66,28 +63,26 @@ defmodule Firmowid.FinancesSearchTest do
       org1_id = user1.organization_id
 
       tx1 =
-        %Transaction{
+        Repo.insert!(%Transaction{
           debtor_name: "Org1 Debtor",
           creditor_name: "Org1 Creditor",
           remittance_information_unstructured: "UniqueOrg1",
           organization_id: org1_id,
           transaction_currency: "PLN"
-        }
-        |> Repo.insert!()
+        })
 
       # Create user and transaction in org2
       user2 = user_fixture()
       org2_id = user2.organization_id
 
       tx2 =
-        %Transaction{
+        Repo.insert!(%Transaction{
           debtor_name: "Org2 Debtor",
           creditor_name: "Org2 Creditor",
           remittance_information_unstructured: "UniqueOrg2",
           organization_id: org2_id,
           transaction_currency: "PLN"
-        }
-        |> Repo.insert!()
+        })
 
       # Set org context to org1, search for org2's transaction
       Repo.put_org_id(org1_id)
@@ -117,37 +112,34 @@ defmodule Firmowid.FinancesSearchTest do
       organization_id = Repo.get_org_id()
 
       t1 =
-        %Transaction{
+        Repo.insert!(%Transaction{
           debtor_name: "Alpha",
           transaction_amount: 100,
           booking_date: ~D[2024-01-01],
           value_date: ~D[2024-01-02],
           organization_id: organization_id,
           transaction_currency: "PLN"
-        }
-        |> Repo.insert!()
+        })
 
       t2 =
-        %Transaction{
+        Repo.insert!(%Transaction{
           debtor_name: "Beta",
           transaction_amount: 200,
           booking_date: ~D[2024-02-01],
           value_date: ~D[2024-02-02],
           organization_id: organization_id,
           transaction_currency: "PLN"
-        }
-        |> Repo.insert!()
+        })
 
       t3 =
-        %Transaction{
+        Repo.insert!(%Transaction{
           debtor_name: "Gamma",
           transaction_amount: 300,
           booking_date: ~D[2024-03-01],
           value_date: ~D[2024-03-02],
           organization_id: organization_id,
           transaction_currency: "PLN"
-        }
-        |> Repo.insert!()
+        })
 
       %{t1: t1, t2: t2, t3: t3}
     end

@@ -1,9 +1,10 @@
 defmodule FirmowidWeb.BankSyncLive.Create do
+  @moduledoc false
   use FirmowidWeb, :live_view
 
-  require Logger
-
   alias Firmowid.BankData
+
+  require Logger
 
   @impl true
   def mount(_params, _session, socket) do
@@ -22,15 +23,18 @@ defmodule FirmowidWeb.BankSyncLive.Create do
     Bodyguard.permit!(BankData, :create_requisition, socket.assigns.current_user)
     # extract domain for redirecting when submitting an account
     # (makes it work for both localhost and production)
-    socket = socket |> assign(:redirect_url, url |> String.split("?") |> List.first())
+    socket = assign(socket, :redirect_url, url |> String.split("?") |> List.first())
 
     requisition_id = params["ref"]
 
-    if not is_nil(requisition_id) do
+    if is_nil(requisition_id) do
+      {:noreply, socket}
+
+      # Always schedule asynchronous requisition resolution in the background
+    else
       current_user = socket.assigns.current_user
       organization_id = current_user.organization_id
 
-      # Always schedule asynchronous requisition resolution in the background
       %{
         name: "check_requisition_status",
         requisition_id: requisition_id,
@@ -41,7 +45,9 @@ defmodule FirmowidWeb.BankSyncLive.Create do
 
       error = params["error"]
 
-      if not is_nil(error) do
+      if is_nil(error) do
+        {:noreply, push_navigate(socket, to: ~p"/")}
+      else
         details = params["details"]
 
         Sentry.capture_message("Failed to connect to bank. Error: #{error} #{details}")
@@ -55,21 +61,14 @@ defmodule FirmowidWeb.BankSyncLive.Create do
            title: "Połączenie z bankiem nie zostało utworzone w tym momencie."
          )
          |> push_patch(to: ~p"/")}
-      else
-        {:noreply, push_navigate(socket, to: ~p"/")}
       end
-    else
-      {:noreply, socket}
     end
   end
 
   @impl true
   def handle_event(
         "institution_selected",
-        %{
-          "institution-id" => institution_id,
-          "institution-transaction-total-days" => transaction_total_days
-        },
+        %{"institution-id" => institution_id, "institution-transaction-total-days" => transaction_total_days},
         socket
       ) do
     user = socket.assigns.current_user

@@ -1,11 +1,12 @@
 defmodule FirmowidWeb.UserAuth do
+  @moduledoc false
   use FirmowidWeb, :verified_routes
 
-  import Plug.Conn
   import Phoenix.Controller
+  import Plug.Conn
 
-  alias FirmowidWeb.FallbackController
   alias Firmowid.Accounts
+  alias FirmowidWeb.FallbackController
 
   # Make the remember me cookie valid for 60 days.
   # If you want bump or reduce this value, also change
@@ -100,13 +101,14 @@ defmodule FirmowidWeb.UserAuth do
 
   def fetch_api_user(conn, _opts) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
-         {:ok, decoded_token} <- Base.url_decode64(token),
-         user <-
-           Accounts.get_user_by_session_token(decoded_token) do
-      conn |> assign(:current_user, user)
+         {:ok, decoded_token} <- Base.url_decode64(token) do
+      user =
+        Accounts.get_user_by_session_token(decoded_token)
+
+      assign(conn, :current_user, user)
     else
       _ ->
-        conn |> assign(:current_user, nil)
+        assign(conn, :current_user, nil)
     end
   end
 
@@ -181,9 +183,7 @@ defmodule FirmowidWeb.UserAuth do
 
         {:halt, socket}
       else
-        socket =
-          socket
-          |> Phoenix.LiveView.redirect(to: ~p"/")
+        socket = Phoenix.LiveView.redirect(socket, to: ~p"/")
 
         {:halt, socket}
       end
@@ -197,8 +197,7 @@ defmodule FirmowidWeb.UserAuth do
          not is_nil(socket.assigns.current_user.organization_id) do
       Firmowid.Repo.put_org_id(socket.assigns.current_user.organization_id)
 
-      {:cont,
-       socket |> Phoenix.Component.assign(:current_org, socket.assigns.current_user.organization)}
+      {:cont, Phoenix.Component.assign(socket, :current_org, socket.assigns.current_user.organization)}
     else
       socket =
         socket
@@ -260,22 +259,7 @@ defmodule FirmowidWeb.UserAuth do
   they use the application at all, here would be a good place.
   """
   def require_authenticated_user_with_organization(conn, _opts) do
-    if not is_nil(conn.assigns[:current_user]) do
-      if not is_nil(conn.assigns[:current_user].organization_id) do
-        Firmowid.Repo.put_org_id(conn.assigns[:current_user].organization_id)
-
-        conn |> assign(:current_org, conn.assigns[:current_user].organization)
-      else
-        conn
-        |> maybe_store_return_to()
-        |> LiveToast.put_toast(
-          :notice,
-          "Aby przejść dalej, przypisz sobie organizację."
-        )
-        |> redirect(to: ~p"/organization")
-        |> halt()
-      end
-    else
+    if is_nil(conn.assigns[:current_user]) do
       conn
       |> maybe_store_return_to()
       |> LiveToast.put_toast(
@@ -284,6 +268,21 @@ defmodule FirmowidWeb.UserAuth do
       )
       |> redirect(to: ~p"/zaloguj")
       |> halt()
+    else
+      if is_nil(conn.assigns[:current_user].organization_id) do
+        conn
+        |> maybe_store_return_to()
+        |> LiveToast.put_toast(
+          :notice,
+          "Aby przejść dalej, przypisz sobie organizację."
+        )
+        |> redirect(to: ~p"/organization")
+        |> halt()
+      else
+        Firmowid.Repo.put_org_id(conn.assigns[:current_user].organization_id)
+
+        assign(conn, :current_org, conn.assigns[:current_user].organization)
+      end
     end
   end
 
@@ -292,7 +291,7 @@ defmodule FirmowidWeb.UserAuth do
          not is_nil(conn.assigns[:current_user].organization_id) do
       Firmowid.Repo.put_org_id(conn.assigns[:current_user].organization_id)
 
-      conn |> assign(:current_org, conn.assigns[:current_user].organization)
+      assign(conn, :current_org, conn.assigns[:current_user].organization)
     else
       conn
       |> FallbackController.call({:error, :unauthorized})

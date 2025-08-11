@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.TimetrackerLive.SessionForm do
+  @moduledoc false
   use Firmowid.Schema
 
   import Ecto.Changeset
@@ -19,13 +20,13 @@ defmodule FirmowidWeb.TimetrackerLive.SessionForm do
     session
     |> cast(attrs, [:title, :date, :start_time, :end_time, :project_id])
     |> validate_required([:title, :project_id])
-    |> maybe_put(:date, DateTime.now!("Europe/Warsaw") |> DateTime.to_date())
-    |> maybe_put(:start_time, DateTime.now!("Europe/Warsaw") |> DateTime.to_time())
+    |> maybe_put(:date, "Europe/Warsaw" |> DateTime.now!() |> DateTime.to_date())
+    |> maybe_put(:start_time, "Europe/Warsaw" |> DateTime.now!() |> DateTime.to_time())
     |> validate_end_time_after_start_time()
   end
 
   def attributes(changeset, user_id) do
-    form = changeset |> apply_action(:create)
+    form = apply_action(changeset, :create)
 
     case form do
       {:ok, form} ->
@@ -54,7 +55,8 @@ defmodule FirmowidWeb.TimetrackerLive.SessionForm do
         date_to_datetime(date, end_time)
       end
 
-    Map.put(attributes, :start_datetime, start_time)
+    attributes
+    |> Map.put(:start_datetime, start_time)
     |> Map.put(:end_datetime, end_time)
     |> Map.drop([:start_time, :end_time, :date])
   end
@@ -64,7 +66,8 @@ defmodule FirmowidWeb.TimetrackerLive.SessionForm do
   defp date_to_datetime(nil, _), do: nil
 
   defp date_to_datetime(date, time) do
-    NaiveDateTime.new!(date, time)
+    date
+    |> NaiveDateTime.new!(time)
     |> DateTime.from_naive!("Europe/Warsaw")
   end
 

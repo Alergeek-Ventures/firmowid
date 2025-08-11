@@ -1,7 +1,9 @@
-alias Firmowid.Timetracker
-alias Firmowid.Repo
 alias Firmowid.Accounts
-alias Firmowid.{Blobs, CostInvoices, Finances}
+alias Firmowid.Blobs
+alias Firmowid.CostInvoices
+alias Firmowid.Finances
+alias Firmowid.Repo
+alias Firmowid.Timetracker
 
 Repo.transaction(fn ->
   {:ok, franek} =
@@ -16,11 +18,7 @@ Repo.transaction(fn ->
       password: "kolejka123456"
     })
 
-  franek
-  |> Accounts.update_user(%{
-    system_role: :superuser,
-    role: :admin
-  })
+  Accounts.update_user(franek, %{system_role: :superuser, role: :admin})
 
   {:ok, av} =
     Accounts.create_organization(
@@ -81,24 +79,23 @@ Repo.transaction(fn ->
     })
 
   # Insert transactions
-  for {id, transaction_id, internal_transaction_id, amount, booking_date, value_date, remittance,
-       inserted_at, updated_at} <- [
-        {"1f106c75-fb3b-45ba-a876-78c9eab8dd46", "AT#558247778",
-         "a7ba3c4f5cb22887c1b24d91090854a1", -25.00, ~D[2025-02-09], ~D[2025-02-06],
-         "Nr karty  ...9285 25,00PLN", ~N[2025-02-10 11:01:08], ~N[2025-04-29 11:01:37]},
-        {"3254345b-d0e0-4ab3-a1b0-94c1114e6487", "AT#558247777",
-         "2b1fd5fb1fe7007e1d097ab7797243ea", -16.00, ~D[2025-02-09], ~D[2025-02-06],
-         "Nr karty  ...9285 16,00PLN", ~N[2025-02-10 11:01:08], ~N[2025-04-29 11:01:37]},
-        {"00f8897f-604b-4a01-a050-d40fa38dee9f", "AT#558562705",
-         "4401bbdb885cbd5d77ac9e7b55419226", -50.00, ~D[2025-02-10], ~D[2025-02-07],
-         "Nr karty  ...9285 50,00PLN", ~N[2025-02-14 11:00:39], ~N[2025-04-29 11:01:37]},
-        {"2456e77a-879b-434e-a1a6-481f8afc95ba", "AT#559040150",
-         "1cd5cc42967f946b1f6c1b052bca0cbd", -10.00, ~D[2025-02-12], ~D[2025-02-09],
-         "Nr karty  ...9285 10,00PLN", ~N[2025-02-14 11:00:39], ~N[2025-05-12 11:00:33]},
-        {"bddc309c-85b2-41cb-b550-53343797c8b3", "AT#561164105",
-         "58b45609e06837602f718c5787d26529", -25.00, ~D[2025-02-22], ~D[2025-02-19],
-         "Nr karty  ...9285 25,00PLN", ~N[2025-02-24 11:00:52], ~N[2025-05-20 11:00:37]}
-      ] do
+  for {id, transaction_id, internal_transaction_id, amount, booking_date, value_date, remittance, inserted_at, updated_at} <-
+        [
+          {"1f106c75-fb3b-45ba-a876-78c9eab8dd46", "AT#558247778", "a7ba3c4f5cb22887c1b24d91090854a1", -25.00,
+           ~D[2025-02-09], ~D[2025-02-06], "Nr karty  ...9285 25,00PLN", ~N[2025-02-10 11:01:08],
+           ~N[2025-04-29 11:01:37]},
+          {"3254345b-d0e0-4ab3-a1b0-94c1114e6487", "AT#558247777", "2b1fd5fb1fe7007e1d097ab7797243ea", -16.00,
+           ~D[2025-02-09], ~D[2025-02-06], "Nr karty  ...9285 16,00PLN", ~N[2025-02-10 11:01:08],
+           ~N[2025-04-29 11:01:37]},
+          {"00f8897f-604b-4a01-a050-d40fa38dee9f", "AT#558562705", "4401bbdb885cbd5d77ac9e7b55419226", -50.00,
+           ~D[2025-02-10], ~D[2025-02-07], "Nr karty  ...9285 50,00PLN", ~N[2025-02-14 11:00:39],
+           ~N[2025-04-29 11:01:37]},
+          {"2456e77a-879b-434e-a1a6-481f8afc95ba", "AT#559040150", "1cd5cc42967f946b1f6c1b052bca0cbd", -10.00,
+           ~D[2025-02-12], ~D[2025-02-09], "Nr karty  ...9285 10,00PLN", ~N[2025-02-14 11:00:39],
+           ~N[2025-05-12 11:00:33]},
+          {"bddc309c-85b2-41cb-b550-53343797c8b3", "AT#561164105", "58b45609e06837602f718c5787d26529", -25.00,
+           ~D[2025-02-22], ~D[2025-02-19], "Nr karty  ...9285 25,00PLN", ~N[2025-02-24 11:00:52], ~N[2025-05-20 11:00:37]}
+        ] do
     Repo.insert!(%Finances.Transaction{
       id: id,
       transaction_id: transaction_id,
@@ -144,8 +141,7 @@ Repo.transaction(fn ->
       internal_transaction_id: "txn_001",
       debtor_name: "Acme Corporation",
       creditor_name: "Hello Kitty Inc.",
-      remittance_information_unstructured:
-        "Invoice #INV-2024-001 for software development services",
+      remittance_information_unstructured: "Invoice #INV-2024-001 for software development services",
       transaction_currency: "USD",
       transaction_amount: 5000.00,
       booking_date: ~D[2024-01-15],
@@ -167,7 +163,7 @@ Repo.transaction(fn ->
       creditor_name: "Hello Kitty Inc.",
       remittance_information_unstructured: "Consulting fee for Q1 2024 project",
       transaction_currency: "PLN",
-      transaction_amount: 15000.00,
+      transaction_amount: 15_000.00,
       booking_date: Date.utc_today(),
       organization_id: av.id
     },

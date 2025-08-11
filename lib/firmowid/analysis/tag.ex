@@ -1,5 +1,7 @@
 defmodule Firmowid.Analysis.Tag do
+  @moduledoc false
   use Firmowid.Schema
+
   import Ecto.Changeset
 
   schema "tags" do

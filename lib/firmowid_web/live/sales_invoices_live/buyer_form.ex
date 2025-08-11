@@ -1,7 +1,10 @@
 defmodule FirmowidWeb.SalesInvoicesLive.BuyerForm do
-  require Logger
-  import FirmowidWeb.SalesInvoicesLive.EditButton
+  @moduledoc false
   use FirmowidWeb, :html
+
+  import FirmowidWeb.SalesInvoicesLive.EditButton
+
+  require Logger
 
   attr :buyer_form, :list, required: true
 
@@ -335,7 +338,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.BuyerForm do
     """
   end
 
-  defp handle_open() do
+  defp handle_open do
     {"aria-expanded", "true", "false"}
     |> JS.toggle_attribute(to: "buyer-form-trigger")
     |> JS.toggle_attribute({"data-expanded", ""}, to: "#buyer-form-panel")

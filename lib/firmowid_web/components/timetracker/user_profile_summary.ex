@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.Components.Timetracker.UserProfileSummary do
+  @moduledoc false
   use FirmowidWeb, :live_component
 
   @impl true

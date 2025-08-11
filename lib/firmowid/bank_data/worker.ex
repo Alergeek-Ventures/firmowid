@@ -1,13 +1,14 @@
 defmodule Firmowid.BankData.Worker do
+  @moduledoc false
   use Oban.Worker,
     queue: :bank_data,
     max_attempts: 15
 
-  require Logger
-
   alias Firmowid.BankData
   alias Firmowid.BankData.Requisition
   alias Firmowid.Repo
+
+  require Logger
 
   @impl Oban.Worker
   def perform(
@@ -38,9 +39,7 @@ defmodule Firmowid.BankData.Worker do
           {:cancel, :not_found}
 
         {:error, :rate_limited} ->
-          Logger.warning(
-            "Rate limited while fetching transactions for bank account #{bank_account_id}"
-          )
+          Logger.warning("Rate limited while fetching transactions for bank account #{bank_account_id}")
 
           {:snooze, 86_400}
 
@@ -62,9 +61,7 @@ defmodule Firmowid.BankData.Worker do
     |> Enum.each(fn {organization_id, accounts} ->
       changesets =
         accounts
-        |> Enum.map(
-          &%{bank_account_id: &1.id, organization_id: organization_id, name: "bank_account_sync"}
-        )
+        |> Enum.map(&%{bank_account_id: &1.id, organization_id: organization_id, name: "bank_account_sync"})
         |> Enum.map(&__MODULE__.new/1)
 
       Repo.put_org_id(organization_id)
@@ -104,9 +101,7 @@ defmodule Firmowid.BankData.Worker do
         handle_requisition_status(status, requisition_db, organization_id, attempt)
       else
         {:error, :not_found} ->
-          Logger.error(
-            "Requisition #{requisition_id} not found for organization #{organization_id}"
-          )
+          Logger.error("Requisition #{requisition_id} not found for organization #{organization_id}")
 
           {:cancel, :not_found}
 
@@ -119,9 +114,7 @@ defmodule Firmowid.BankData.Worker do
     end
   end
 
-  def perform(%Oban.Job{
-        args: %{"name" => "delete_remote_requisition", "requisition_id" => requisition_id}
-      }) do
+  def perform(%Oban.Job{args: %{"name" => "delete_remote_requisition", "requisition_id" => requisition_id}}) do
     Logger.info("Deleting remote requisition #{requisition_id}")
 
     case Firmowid.BankData.ApiClient.delete_requisition(requisition_id) do
@@ -158,9 +151,7 @@ defmodule Firmowid.BankData.Worker do
              organization_id
            ) do
       bank_accounts
-      |> Enum.map(
-        &%{bank_account_id: &1.id, organization_id: organization_id, name: "bank_account_sync"}
-      )
+      |> Enum.map(&%{bank_account_id: &1.id, organization_id: organization_id, name: "bank_account_sync"})
       |> Enum.group_by(& &1.organization_id)
       |> Enum.each(fn {org_id, jobs} ->
         changesets = Enum.map(jobs, &__MODULE__.new/1)
@@ -200,12 +191,7 @@ defmodule Firmowid.BankData.Worker do
   @processing_statuses ~w(CR GC UA SA GA)
   @requisition_timeout_attempts 20
 
-  defp handle_requisition_status(
-         status,
-         %Requisition{} = requisition_db,
-         organization_id,
-         attempt
-       )
+  defp handle_requisition_status(status, %Requisition{} = requisition_db, organization_id, attempt)
        when status in @processing_statuses do
     Logger.info("Requisition #{requisition_db.id} still processing with status: #{status}")
 
@@ -236,12 +222,7 @@ defmodule Firmowid.BankData.Worker do
     end
   end
 
-  defp handle_requisition_status(
-         "RJ",
-         %Requisition{} = requisition_db,
-         organization_id,
-         _attempt
-       ) do
+  defp handle_requisition_status("RJ", %Requisition{} = requisition_db, organization_id, _attempt) do
     Logger.info("Requisition #{requisition_db.id} was rejected")
 
     BankData.broadcast_requisition_status(
@@ -256,12 +237,7 @@ defmodule Firmowid.BankData.Worker do
     end
   end
 
-  defp handle_requisition_status(
-         "EX",
-         %Requisition{} = requisition_db,
-         organization_id,
-         _attempt
-       ) do
+  defp handle_requisition_status("EX", %Requisition{} = requisition_db, organization_id, _attempt) do
     Logger.info("Requisition #{requisition_db.id} has expired")
 
     BankData.broadcast_requisition_status(
@@ -273,12 +249,7 @@ defmodule Firmowid.BankData.Worker do
     {:cancel, :expired}
   end
 
-  defp handle_requisition_status(
-         unknown_status,
-         %Requisition{} = requisition_db,
-         _organization_id,
-         _attempt
-       ) do
+  defp handle_requisition_status(unknown_status, %Requisition{} = requisition_db, _organization_id, _attempt) do
     Logger.error("Unknown requisition status: #{unknown_status} for #{requisition_db.id}")
     {:error, {:unknown_status, unknown_status}}
   end

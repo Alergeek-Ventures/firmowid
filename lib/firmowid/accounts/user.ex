@@ -1,5 +1,7 @@
 defmodule Firmowid.Accounts.User do
+  @moduledoc false
   use Firmowid.Schema
+
   import Ecto.Changeset
 
   schema "users" do
@@ -139,8 +141,7 @@ defmodule Firmowid.Accounts.User do
   end
 
   def organization_changeset(user, attrs) do
-    user
-    |> cast(attrs, [:organization_id])
+    cast(user, attrs, [:organization_id])
   end
 
   @spec delete_account_changeset(
@@ -148,8 +149,7 @@ defmodule Firmowid.Accounts.User do
            %{
              optional(atom()) =>
                atom()
-               | {:array | :assoc | :embed | :in | :map | :parameterized | :supertype | :try,
-                  any()}
+               | {:array | :assoc | :embed | :in | :map | :parameterized | :supertype | :try, any()}
            }}
           | %{
               :__struct__ => atom() | %{:__changeset__ => any(), optional(any()) => any()},
@@ -171,7 +171,7 @@ defmodule Firmowid.Accounts.User do
   Confirms the account by setting `confirmed_at`.
   """
   def confirm_changeset(user) do
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    now = DateTime.truncate(DateTime.utc_now(), :second)
     change(user, confirmed_at: now)
   end
 
@@ -205,8 +205,7 @@ defmodule Firmowid.Accounts.User do
   end
 
   def update_changeset(user, attrs) do
-    user
-    |> cast(attrs, [
+    cast(user, attrs, [
       :marketing_consent,
       :system_role,
       :name,

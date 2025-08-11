@@ -1,11 +1,11 @@
 defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
-  use FirmowidWeb, :html
-
   @moduledoc """
   Stateless function components used by both Cost and Sales invoice detail
   views. Extracted from the original (now deprecated) InvoiceDetails module
   to avoid duplication.
   """
+
+  use FirmowidWeb, :html
 
   attr :is_cost_invoice, :boolean
   attr :issue_date, Date, required: true
@@ -134,9 +134,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         true -> :low
       end
 
-    assigns =
-      assigns
-      |> assign(predicition_level: predicition_level)
+    assigns = assign(assigns, predicition_level: predicition_level)
 
     prediction_score_indicator(assigns)
   end
@@ -191,8 +189,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
       Map.merge(head, %{
         creditor_name: "#{transaction_count} transakcji od #{head.creditor_name}",
         debtor_name: "#{transaction_count} transakcji od #{head.debtor_name}",
-        transaction_amount:
-          Enum.reduce(tail, head.transaction_amount, &Decimal.add(&1.transaction_amount, &2))
+        transaction_amount: Enum.reduce(tail, head.transaction_amount, &Decimal.add(&1.transaction_amount, &2))
       })
 
     assigns = assign(assigns, :transaction, merged_tx)
@@ -289,12 +286,12 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
       |> Enum.filter(fn {{_tx, score}, _idx} -> score >= green_threshold end)
       |> Enum.sort_by(fn {{_tx, score}, _idx} -> -score end)
       |> Enum.split(1)
-      |> (fn {first, _rest} ->
-            case first do
-              [{{_tx, _score}, idx}] -> {idx, true}
-              _ -> {-1, false}
-            end
-          end).()
+      |> then(fn {first, _rest} ->
+        case first do
+          [{{_tx, _score}, idx}] -> {idx, true}
+          _ -> {-1, false}
+        end
+      end)
 
     assigns = assign(assigns, :green_idx, green_idx)
 

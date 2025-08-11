@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.InvoicingLive.MonthClosedZeroState do
+  @moduledoc false
   use FirmowidWeb, :live_component
 
   def render(assigns) do

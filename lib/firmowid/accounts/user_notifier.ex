@@ -1,4 +1,5 @@
 defmodule Firmowid.Accounts.UserNotifier do
+  @moduledoc false
   import Swoosh.Email
 
   alias Firmowid.Mailer

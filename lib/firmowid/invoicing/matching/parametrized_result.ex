@@ -1,4 +1,13 @@
 defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
+  @moduledoc """
+  For each transaction that might be relevant to the invoice we are matching
+  for - we calculate set of parameters, that will be used to rank the transactions.
+  """
+
+  alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.SalesInvoices.SalesInvoice
+
   @enforce_keys [
     :days_lag_le_3,
     :days_lag_le_7,
@@ -35,27 +44,18 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
     :invoice_identifier_present_in_remittance_information_unstructured
   ]
 
-  @moduledoc """
-  For each transaction that might be relevant to the invoice we are matching
-  for - we calculate set of parameters, that will be used to rank the transactions.
-  """
-
-  alias Akin
-  alias Decimal
-
-  alias Firmowid.CostInvoices.CostInvoice
-  alias Firmowid.Finances.Transaction
-  alias Firmowid.SalesInvoices.SalesInvoice
-
   @doc """
   Calculate a set of parameters for a given invoice and transaction pair.
   It is later used to rank the transactions (logistic regression).
   """
-  @spec generate_parametrized_result(%CostInvoice{} | %SalesInvoice{}, %Transaction{}) ::
+  @spec generate_parametrized_result(CostInvoice.t() | SalesInvoice.t(), Transaction.t()) ::
           %__MODULE__{}
   def generate_parametrized_result(invoice, transaction) do
     days_diff =
-      calculate_difference_in_days(get_invoice_date(invoice), transaction.booking_date) |> abs()
+      invoice
+      |> get_invoice_date()
+      |> calculate_difference_in_days(transaction.booking_date)
+      |> abs()
 
     {le_3, le_7, le_30, gt_30} = days_lag_buckets(days_diff)
 
@@ -112,27 +112,20 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
 
   @spec amount_present_in_remittance_information_unstructured(
           String.t() | nil,
-          %Decimal{},
+          Decimal.t(),
           String.t()
         ) ::
           float()
   defp amount_present_in_remittance_information_unstructured(nil, _, _), do: 0.0
 
-  defp amount_present_in_remittance_information_unstructured(
-         remittance_information_unstructured,
-         amount,
-         currency
-       ) do
-    (String.contains?(remittance_information_unstructured, currency) and
-       String.contains?(
-         remittance_information_unstructured,
-         amount
-         |> Decimal.abs()
-         |> Decimal.to_float()
-         |> trunc()
-         |> to_string()
-       ))
-    |> boolean_to_float()
+  defp amount_present_in_remittance_information_unstructured(remittance_information_unstructured, amount, currency) do
+    boolean_to_float(
+      String.contains?(remittance_information_unstructured, currency) and
+        String.contains?(
+          remittance_information_unstructured,
+          amount |> Decimal.abs() |> Decimal.to_float() |> trunc() |> to_string()
+        )
+    )
   end
 
   @spec invoice_identifier_present_in_remittance_information_unstructured(
@@ -146,10 +139,8 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
          remittance_information_unstructured,
          invoice_identifier
        ) do
-    String.contains?(
-      remittance_information_unstructured,
-      invoice_identifier |> normalize_invoice_identifier()
-    )
+    remittance_information_unstructured
+    |> String.contains?(normalize_invoice_identifier(invoice_identifier))
     |> boolean_to_float()
   end
 
@@ -166,7 +157,7 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
     Date.diff(booking_date, due_date)
   end
 
-  @spec calculate_relative_amount_difference(%CostInvoice{} | %SalesInvoice{}, %Transaction{}) ::
+  @spec calculate_relative_amount_difference(CostInvoice.t() | SalesInvoice.t(), Transaction.t()) ::
           float()
   defp calculate_relative_amount_difference(invoice, transaction) do
     # 1. Bring both amounts to PLN
@@ -188,7 +179,7 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
     abs_inv = Decimal.abs(inv_pln)
     abs_tx = Decimal.abs(tx_pln)
 
-    abs_diff = Decimal.sub(abs_tx, abs_inv) |> Decimal.abs()
+    abs_diff = abs_tx |> Decimal.sub(abs_inv) |> Decimal.abs()
 
     # 3. Guard tiny invoices using absolute value
     denom =
@@ -197,21 +188,22 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
         else: abs_inv
 
     rel =
-      Decimal.div(abs_diff, denom)
+      abs_diff
+      |> Decimal.div(denom)
       |> Decimal.to_float()
 
     # 4. Clip outliers just before feeding to the model
-    Nx.clip(rel, 0.0, 5.0) |> Nx.to_number()
+    rel |> Nx.clip(0.0, 5.0) |> Nx.to_number()
   end
 
-  defp get_invoice_amount(%Firmowid.CostInvoices.CostInvoice{} = ci), do: ci.total_amount
+  defp get_invoice_amount(%CostInvoice{} = ci), do: ci.total_amount
 
-  defp get_invoice_amount(%Firmowid.SalesInvoices.SalesInvoice{} = si),
-    do: Firmowid.SalesInvoices.SalesInvoice.get_gross_value(si)
+  defp get_invoice_amount(%SalesInvoice{} = si), do: SalesInvoice.get_gross_value(si)
 
   @spec calculate_transaction_side_similarity(String.t(), String.t()) :: float()
   defp calculate_transaction_side_similarity(transaction_side_name, seller_display_name) do
-    Akin.compare(transaction_side_name, seller_display_name, algorithms: ["jaro_winkler"])
+    transaction_side_name
+    |> Akin.compare(seller_display_name, algorithms: ["jaro_winkler"])
     |> Map.get(:jaro_winkler, 0.0)
   end
 
@@ -226,7 +218,8 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
     creditor_account = normalize_iban(creditor_account)
     account_number = normalize_iban(account_number)
 
-    Akin.compare(creditor_account, account_number, algorithms: ["overlap"])
+    creditor_account
+    |> Akin.compare(account_number, algorithms: ["overlap"])
     |> Map.get(:overlap, 0.0)
   end
 
@@ -239,11 +232,9 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
     |> String.replace(~r/[^A-Z0-9]/, "")
   end
 
-  @spec calculate_signed_amount_match(%CostInvoice{} | %SalesInvoice{}, %Transaction{}) :: float()
-  defp calculate_signed_amount_match(
-         %Firmowid.CostInvoices.CostInvoice{} = cost_invoice,
-         %Firmowid.Finances.Transaction{} = transaction
-       ) do
+  @spec calculate_signed_amount_match(CostInvoice.t() | SalesInvoice.t(), Transaction.t()) ::
+          float()
+  defp calculate_signed_amount_match(%CostInvoice{} = cost_invoice, %Transaction{} = transaction) do
     inv_amount_pln =
       Firmowid.Currencies.normalize_amount_to_pln(
         get_invoice_amount(cost_invoice),
@@ -262,17 +253,15 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
       if Decimal.lt?(Decimal.abs(inv_amount_pln), Decimal.new("0.01")) do
         0.0
       else
-        Decimal.div(tx_amount_pln, inv_amount_pln)
+        tx_amount_pln
+        |> Decimal.div(inv_amount_pln)
         |> Decimal.to_float()
       end
 
-    Nx.clip(ratio, -5.0, 5.0) |> Nx.to_number()
+    ratio |> Nx.clip(-5.0, 5.0) |> Nx.to_number()
   end
 
-  defp calculate_signed_amount_match(
-         %Firmowid.SalesInvoices.SalesInvoice{} = sales_invoice,
-         %Firmowid.Finances.Transaction{} = transaction
-       ) do
+  defp calculate_signed_amount_match(%SalesInvoice{} = sales_invoice, %Transaction{} = transaction) do
     inv_amount_pln =
       Firmowid.Currencies.normalize_amount_to_pln(
         get_invoice_amount(sales_invoice),
@@ -291,11 +280,12 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
       if Decimal.lt?(Decimal.abs(inv_amount_pln), Decimal.new("0.01")) do
         0.0
       else
-        Decimal.div(tx_amount_pln, inv_amount_pln)
+        tx_amount_pln
+        |> Decimal.div(inv_amount_pln)
         |> Decimal.to_float()
       end
 
-    Nx.clip(ratio, -5.0, 5.0) |> Nx.to_number()
+    ratio |> Nx.clip(-5.0, 5.0) |> Nx.to_number()
   end
 
   # Returns {le_3, le_7, le_30, gt_30} as booleans

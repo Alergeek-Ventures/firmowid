@@ -1,13 +1,17 @@
 defmodule FirmowidWeb.Project.Index do
+  @moduledoc false
+  use FirmowidWeb, :live_view
+
   alias Firmowid.Accounts
+  alias Firmowid.Repo
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Project
   alias FirmowidWeb.Helpers.TimeFormatter
-  alias Firmowid.Repo
-  use FirmowidWeb, :live_view
 
   defmodule EmployeeSalaryForm do
+    @moduledoc false
     use Firmowid.Schema
+
     import Ecto.Changeset
 
     embedded_schema do
@@ -115,7 +119,7 @@ defmodule FirmowidWeb.Project.Index do
   end
 
   def handle_event("edit_name", _, %{assigns: %{selected_project: project}} = socket) do
-    changeset = project |> Project.form_changeset()
+    changeset = Project.form_changeset(project)
 
     {:noreply, assign(socket, form: to_form(changeset), is_editing_name: true)}
   end
@@ -155,9 +159,7 @@ defmodule FirmowidWeb.Project.Index do
     project = socket.assigns.selected_project
     Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user, project)
 
-    project_users =
-      socket.assigns.project_users
-      |> Enum.reject(&(&1.id == user_id))
+    project_users = Enum.reject(socket.assigns.project_users, &(&1.id == user_id))
 
     {:noreply, assign_project_users(socket, project_users)}
   end
@@ -178,7 +180,7 @@ defmodule FirmowidWeb.Project.Index do
 
     if project do
       Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user, project)
-      project_users = socket.assigns.project_users |> Enum.map(& &1.id)
+      project_users = Enum.map(socket.assigns.project_users, & &1.id)
 
       {:ok, project} = Timetracker.set_users_to_project(project, project_users)
 
@@ -205,9 +207,7 @@ defmodule FirmowidWeb.Project.Index do
   end
 
   def handle_event("validate", %{"project" => params}, socket) do
-    changeset =
-      socket.assigns.selected_project
-      |> Project.form_changeset(params)
+    changeset = Project.form_changeset(socket.assigns.selected_project, params)
 
     {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
   end
@@ -262,8 +262,7 @@ defmodule FirmowidWeb.Project.Index do
 
   def handle_event("toggle-user", %{"id" => user_id}, socket) do
     user_hours =
-      socket.assigns.project_user_hours
-      |> Enum.map(fn
+      Enum.map(socket.assigns.project_user_hours, fn
         %{id: ^user_id} = user ->
           user
           |> Map.put(:expanded, !user.expanded)
@@ -344,11 +343,11 @@ defmodule FirmowidWeb.Project.Index do
   end
 
   def handle_event("validate_employee_salary", event_params, socket) do
+    require Logger
+
     user_id = Map.get(event_params, "user_id")
     form_key = "employee_salary_form_#{user_id}"
     params = Map.get(event_params, form_key)
-
-    require Logger
 
     if user_id && params do
       current_form = Map.get(socket.assigns.employee_salary_forms, user_id)
@@ -366,7 +365,7 @@ defmodule FirmowidWeb.Project.Index do
 
       merged_params =
         if params["salary_type"] == "fixed" do
-          Map.merge(current_values, params) |> Map.delete("hourly_rate")
+          current_values |> Map.merge(params) |> Map.delete("hourly_rate")
         else
           Map.merge(current_values, params)
         end
@@ -383,12 +382,12 @@ defmodule FirmowidWeb.Project.Index do
   end
 
   def handle_event("save_employee_salary", event_params, socket) do
+    require Logger
+
     Bodyguard.permit!(Timetracker, :create_user_salary, socket.assigns.current_user)
     user_id = Map.get(event_params, "user_id")
     form_key = "employee_salary_form_#{user_id}"
     params = Map.get(event_params, form_key)
-
-    require Logger
 
     if user_id && params do
       salary_attrs = prepare_user_salary_attrs(params, user_id)
@@ -414,9 +413,7 @@ defmodule FirmowidWeb.Project.Index do
           {:noreply, socket}
       end
     else
-      Logger.warning(
-        "Missing user_id or params - user_id: #{inspect(user_id)}, params: #{inspect(params)}"
-      )
+      Logger.warning("Missing user_id or params - user_id: #{inspect(user_id)}, params: #{inspect(params)}")
 
       {:noreply, socket}
     end
@@ -424,8 +421,7 @@ defmodule FirmowidWeb.Project.Index do
 
   def handle_event("toggle-user-summary", %{"id" => user_id}, socket) do
     hours_records =
-      socket.assigns.hours_records
-      |> Enum.map(fn
+      Enum.map(socket.assigns.hours_records, fn
         %{id: ^user_id} = record ->
           Map.put(record, :expanded, !record.expanded)
 
@@ -528,12 +524,12 @@ defmodule FirmowidWeb.Project.Index do
   defp assign_hours_records(socket) do
     date = socket.assigns.selected_date
 
-    socket
-    |> assign(
+    assign(socket,
       total_time_worked: Timetracker.get_total_time_worked(date.month, date.year),
       most_demanding_project: Timetracker.get_most_demanding_project(date.month, date.year),
       hours_records:
-        Timetracker.get_month_hours_records(date.month, date.year)
+        date.month
+        |> Timetracker.get_month_hours_records(date.year)
         |> Enum.map(&Map.put(&1, :id, &1.user.id))
         |> Enum.map(&Map.put(&1, :user, Accounts.get_user_with_avatar(&1.user)))
         |> Enum.map(&Map.put(&1, :expanded, false))
@@ -543,9 +539,7 @@ defmodule FirmowidWeb.Project.Index do
           current_salary = Timetracker.get_latest_user_salary(record.user.id)
           user_with_salary = Map.put(record.user, :current_salary, current_salary)
 
-          record
-          |> Map.put(:user_hours, user_hours)
-          |> Map.put(:user, user_with_salary)
+          record |> Map.put(:user_hours, user_hours) |> Map.put(:user, user_with_salary)
         end)
     )
   end
@@ -561,9 +555,11 @@ defmodule FirmowidWeb.Project.Index do
     project_id = socket.assigns.selected_project.id
 
     project_user_hours =
-      Timetracker.get_month_summary_by_project(project_id, date.month, date.year)
+      project_id
+      |> Timetracker.get_month_summary_by_project(date.month, date.year)
       |> Enum.map(fn %{user: u, time_worked: t, removed_from_project: r} ->
-        Accounts.get_user_with_avatar(u)
+        u
+        |> Accounts.get_user_with_avatar()
         |> Map.put(:time_worked, t)
         |> Map.put(:removed_from_project, r)
         |> Map.put(:expanded, false)
@@ -573,8 +569,7 @@ defmodule FirmowidWeb.Project.Index do
     total_project_seconds = Enum.sum_by(project_user_hours, & &1.time_worked)
 
     most_active_user =
-      project_user_hours
-      |> Enum.max_by(& &1.time_worked, fn -> nil end)
+      Enum.max_by(project_user_hours, & &1.time_worked, fn -> nil end)
 
     socket
     |> assign(:project_user_hours, project_user_hours)

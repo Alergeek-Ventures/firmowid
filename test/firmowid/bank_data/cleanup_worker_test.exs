@@ -1,12 +1,14 @@
 defmodule Firmowid.BankData.CleanupWorkerTest do
   use Firmowid.DataCase
-  @moduletag capture_log: true
 
   import Firmowid.AccountsFixtures
+
   alias Firmowid.BankData.CleanupWorker
   alias Firmowid.BankData.Requisition
   alias Firmowid.Finances.BankAccount
   alias Firmowid.Repo
+
+  @moduletag capture_log: true
 
   setup do
     # Stub GoCardless requisition GET/DELETE and agreement DELETE endpoints
@@ -41,7 +43,7 @@ defmodule Firmowid.BankData.CleanupWorkerTest do
       |> Repo.insert(organization_id: org_id)
 
     # backdate inserted_at by 2 hours
-    two_hours_ago = DateTime.utc_now() |> DateTime.add(-7200, :second)
+    two_hours_ago = DateTime.add(DateTime.utc_now(), -7200, :second)
 
     Repo.update_all(
       from(r in Requisition, where: r.id == ^req.id),
@@ -68,7 +70,7 @@ defmodule Firmowid.BankData.CleanupWorkerTest do
     |> Repo.insert!(organization_id: org_id)
 
     # backdate inserted_at by 100 days
-    long_ago = DateTime.utc_now() |> DateTime.add(-100, :day)
+    long_ago = DateTime.add(DateTime.utc_now(), -100, :day)
 
     Repo.update_all(
       from(r in Requisition, where: r.id == ^req.id),

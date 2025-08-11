@@ -1,12 +1,13 @@
 defmodule FirmowidWeb.InvoicingLive.Index do
+  @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Accounts
+  alias Firmowid.BankData
   alias Firmowid.CostInvoices
-  alias Firmowid.SalesInvoices
   alias Firmowid.Finances
   alias Firmowid.Invoicing
-  alias Firmowid.BankData
-  alias Firmowid.Accounts
+  alias Firmowid.SalesInvoices
 
   @impl true
   def mount(_params, _session, socket) do
@@ -46,8 +47,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
     socket =
       if Bodyguard.permit?(Invoicing, :upload, user) do
-        socket
-        |> allow_upload(:file,
+        allow_upload(socket, :file,
           max_entries: 50,
           accept: ["application/pdf", "image/*"],
           progress: &handle_progress/3,
@@ -58,26 +58,17 @@ defmodule FirmowidWeb.InvoicingLive.Index do
       end
 
     connected_bank_accounts =
-      BankData.list_requisitions(organization_id)
+      organization_id
+      |> BankData.list_requisitions()
       |> Enum.count(&(&1.status == :accepted))
 
-    socket =
-      socket
-      |> assign(
-        :has_connected_bank_account,
-        connected_bank_accounts > 0
-      )
+    socket = assign(socket, :has_connected_bank_account, connected_bank_accounts > 0)
 
     active_months =
       Invoicing.get_all_months_with_invoicing_entries() ++
         [Date.utc_today()]
 
-    socket =
-      socket
-      |> assign(
-        :active_months,
-        active_months
-      )
+    socket = assign(socket, :active_months, active_months)
 
     {:ok, socket}
   end
@@ -90,7 +81,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
     month =
       case Map.get(params, "month") do
-        nil -> Date.utc_today() |> Date.beginning_of_month()
+        nil -> Date.beginning_of_month(Date.utc_today())
         date_string -> Date.from_iso8601!(date_string)
       end
 
@@ -104,11 +95,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
     socket =
       if show_modal do
-        socket
-        |> push_event("js-exec", %{
-          to: "#tutorial-modal",
-          attr: "phx-show"
-        })
+        push_event(socket, "js-exec", %{to: "#tutorial-modal", attr: "phx-show"})
       else
         socket
       end
@@ -124,7 +111,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
   @impl true
   def handle_event("change-month", %{"month" => month}, socket) do
-    month = month |> Date.from_iso8601!()
+    month = Date.from_iso8601!(month)
 
     {:noreply, update_param(socket, :month, month)}
   end
@@ -152,9 +139,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   def handle_event("upload", _, socket) do
     Bodyguard.permit!(Invoicing, :upload, socket.assigns.current_user)
 
-    socket =
-      socket
-      |> refetch_upload_counts()
+    socket = refetch_upload_counts(socket)
 
     {:noreply, socket}
   end
@@ -200,27 +185,21 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
   @impl true
   def handle_info(:transaction_list_updated, socket) do
-    socket =
-      socket
-      |> refetch_invoicing_entries()
+    socket = refetch_invoicing_entries(socket)
 
     {:noreply, socket}
   end
 
   @impl true
   def handle_info(:cost_invoice_list_updated, socket) do
-    socket =
-      socket
-      |> refetch_invoicing_entries()
+    socket = refetch_invoicing_entries(socket)
 
     {:noreply, socket}
   end
 
   @impl true
   def handle_info(:sales_invoice_list_updated, socket) do
-    socket =
-      socket
-      |> refetch_invoicing_entries()
+    socket = refetch_invoicing_entries(socket)
 
     {:noreply, socket}
   end
@@ -228,17 +207,12 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   def handle_info({:cost_invoice_failed_to_process, original_filename}, socket) do
     LiveToast.send_toast(:error, original_filename, title: "Nie udało się wgrać pliku")
 
-    socket =
-      socket
-      |> refetch_invoicing_entries()
+    socket = refetch_invoicing_entries(socket)
 
     {:noreply, socket}
   end
 
-  def handle_info(
-        {:cost_invoice_added, cost_invoice},
-        socket
-      ) do
+  def handle_info({:cost_invoice_added, cost_invoice}, socket) do
     socket = refetch_invoicing_entries(socket)
 
     LiveToast.send_toast(
@@ -246,12 +220,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
       "#{cost_invoice.issue_date} / #{cost_invoice.seller_display_name}",
       title: "Faktura załadowana",
       action: fn assigns ->
-        assigns =
-          assigns
-          |> assign(
-            :issue_date,
-            cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601()
-          )
+        assigns = assign(assigns, :issue_date, cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601())
 
         ~H"""
         <.link class="text-sm text-bold underline" navigate={~p"/?month=#{@issue_date}&filter=invoices"}>
@@ -265,21 +234,14 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   end
 
   def handle_info({:cost_invoice_match, %{cost_invoice: cost_invoice}}, socket) do
-    socket =
-      socket
-      |> refetch_invoicing_entries()
+    socket = refetch_invoicing_entries(socket)
 
     LiveToast.send_toast(
       :success,
       "#{cost_invoice.issue_date} / #{cost_invoice.seller_display_name}",
       title: "Połączenie faktury z transakcją",
       action: fn assigns ->
-        assigns =
-          assigns
-          |> assign(
-            :issue_date,
-            cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601()
-          )
+        assigns = assign(assigns, :issue_date, cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601())
 
         ~H"""
         <.link class="text-sm text-bold underline" navigate={~p"/?month=#{@issue_date}&filter=invoices"}>
@@ -309,18 +271,14 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   end
 
   defp update_param(socket, key, value) do
-    params =
-      socket.assigns.params
-      |> Map.put(key, value)
+    params = Map.put(socket.assigns.params, key, value)
 
     params = %{
       month: params.month |> Date.beginning_of_month() |> Date.to_iso8601(),
-      filter: params.filter |> Atom.to_string()
+      filter: Atom.to_string(params.filter)
     }
 
-    socket =
-      socket
-      |> push_patch(to: ~p"/?month=#{params.month}&filter=#{params.filter}")
+    socket = push_patch(socket, to: ~p"/?month=#{params.month}&filter=#{params.filter}")
 
     socket
   end
@@ -330,7 +288,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
       case uploaded_entries(socket, :file) do
         {[_ | _] = entries, []} ->
           handle_uploads(entries, socket)
-          socket |> refetch_upload_counts()
+          refetch_upload_counts(socket)
 
         _ ->
           socket
@@ -358,11 +316,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
               title: "#{cost_invoice.issue_date} / #{cost_invoice.seller_display_name}",
               action: fn assigns ->
                 assigns =
-                  assigns
-                  |> assign(
-                    :issue_date,
-                    cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601()
-                  )
+                  assign(assigns, :issue_date, cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601())
 
                 ~H"""
                 <.link class="text-sm text-bold underline" navigate={~p"/?month=#{@issue_date}&filter=invoices"}>
@@ -403,21 +357,12 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
 
-    socket =
-      socket
-      # actual data
-      |> assign(
-        :invoicing_entries,
-        Invoicing.get_invoicing_entries(
-          date_range_from,
-          date_range_to,
-          filter
-        )
-      )
+    socket = assign(socket, :invoicing_entries, Invoicing.get_invoicing_entries(date_range_from, date_range_to, filter))
 
+    # actual data
     pending_invoicing_entries_count =
-      Invoicing.get_invoicing_entries(
-        date_range_from,
+      date_range_from
+      |> Invoicing.get_invoicing_entries(
         date_range_to,
         :unmatched
       )
@@ -427,8 +372,8 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     # nothing for this month was added yet
     # leftovers from previous month need also not to be present
     is_month_touched =
-      Invoicing.get_invoicing_entries(
-        date_range_from,
+      date_range_from
+      |> Invoicing.get_invoicing_entries(
         date_range_to,
         :all
       )
@@ -473,7 +418,6 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   end
 
   defp apply_action(socket, :index, _params) do
-    socket
-    |> assign(:page_title, "Fakturowanie")
+    assign(socket, :page_title, "Fakturowanie")
   end
 end

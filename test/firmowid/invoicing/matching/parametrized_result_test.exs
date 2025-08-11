@@ -1,11 +1,9 @@
 defmodule Firmowid.Invoicing.Matching.ParametrizedResultTest do
   use ExUnit.Case, async: true
 
-  alias Decimal
-
-  alias Firmowid.Invoicing.Matching.ParametrizedResult
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing.Matching.ParametrizedResult
 
   describe "generate_parametrized_result/2" do
     test "generates parametrized result with all similarity metrics" do
@@ -393,7 +391,7 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResultTest do
         ]
       }
 
-      transaction = %Firmowid.Finances.Transaction{
+      transaction = %Transaction{
         debtor_name: "Acme Corp",
         debtor_account: "PL61109010140000071219812874",
         booking_date: ~D[2025-01-02],
@@ -403,7 +401,7 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResultTest do
       }
 
       result =
-        Firmowid.Invoicing.Matching.ParametrizedResult.generate_parametrized_result(
+        ParametrizedResult.generate_parametrized_result(
           sales_invoice,
           transaction
         )

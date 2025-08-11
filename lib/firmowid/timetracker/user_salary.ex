@@ -1,7 +1,10 @@
 defmodule Firmowid.Timetracker.UserSalary do
-  alias Firmowid.Repo
+  @moduledoc false
   use Firmowid.Schema
+
   import Ecto.Changeset
+
+  alias Firmowid.Repo
 
   schema "user_salaries" do
     field :hourly_rate, :decimal

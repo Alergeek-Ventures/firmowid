@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.SettingsLive.EditButton do
+  @moduledoc false
   use FirmowidWeb, :html
 
   attr :class, :string, default: nil
@@ -8,8 +9,7 @@ defmodule FirmowidWeb.SettingsLive.EditButton do
     doc: "the tag to render the button as"
 
   attr :rest, :global,
-    include:
-      ~w(autocomplete name rel action enctype method novalidate target multipart type for form),
+    include: ~w(autocomplete name rel action enctype method novalidate target multipart type for form),
     doc: "the arbitrary HTML attributes to apply to the form tag"
 
   def edit_button(assigns) do

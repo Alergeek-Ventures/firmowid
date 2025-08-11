@@ -1,4 +1,5 @@
 defmodule Firmowid.BankData.Transaction do
+  @moduledoc false
   use Firmowid.Schema
 
   import Ecto.Changeset
@@ -26,8 +27,8 @@ defmodule Firmowid.BankData.Transaction do
 
   def flatten_api_response(api_object_snake_cased) do
     api_object_snake_cased =
-      api_object_snake_cased
-      |> Map.put(
+      Map.put(
+        api_object_snake_cased,
         "transaction_currency",
         api_object_snake_cased |> Map.get("transaction_amount") |> Map.get("currency")
       )
@@ -36,18 +37,18 @@ defmodule Firmowid.BankData.Transaction do
       Map.replace(
         api_object_snake_cased,
         "creditor_account",
-        extract_iban_or_bban(api_object_snake_cased |> Map.get("creditor_account"))
+        api_object_snake_cased |> Map.get("creditor_account") |> extract_iban_or_bban()
       )
 
     api_object_snake_cased =
       Map.replace(
         api_object_snake_cased,
         "debtor_account",
-        extract_iban_or_bban(api_object_snake_cased |> Map.get("debtor_account"))
+        api_object_snake_cased |> Map.get("debtor_account") |> extract_iban_or_bban()
       )
 
-    api_object_snake_cased
-    |> Map.replace(
+    Map.replace(
+      api_object_snake_cased,
       "transaction_amount",
       api_object_snake_cased |> Map.get("transaction_amount") |> Map.get("amount")
     )
@@ -76,43 +77,38 @@ defmodule Firmowid.BankData.Transaction do
   end
 
   defp convert_nest_bank_card_transaction(transaction_changeset) do
-    try do
-      creditor_name = get_field(transaction_changeset, :creditor_name, "")
+    creditor_name = get_field(transaction_changeset, :creditor_name, "")
 
-      remittance_information_unstructured =
-        get_field(transaction_changeset, :remittance_information_unstructured, "")
+    remittance_information_unstructured =
+      get_field(transaction_changeset, :remittance_information_unstructured, "")
 
-      if creditor_name == "Nest Bank S.A." and
-           remittance_information_unstructured
-           |> String.contains?("Nr karty") do
-        [new_creditor_name | [description | _]] =
-          remittance_information_unstructured
-          |> String.split("Nr karty")
+    if creditor_name == "Nest Bank S.A." and
+         String.contains?(remittance_information_unstructured, "Nr karty") do
+      [new_creditor_name | [description | _]] = String.split(remittance_information_unstructured, "Nr karty")
 
-        new_creditor_name =
-          new_creditor_name
-          |> String.trim()
-          |> String.replace_trailing(",", "")
+      new_creditor_name =
+        new_creditor_name
+        |> String.trim()
+        |> String.replace_trailing(",", "")
 
-        description = ("Nr karty " <> description) |> String.trim()
+      description = String.trim("Nr karty " <> description)
 
-        transaction_changeset
-        |> put_change(
-          :creditor_name,
-          new_creditor_name
-        )
-        |> put_change(
-          :remittance_information_unstructured,
-          description
-        )
-      else
-        transaction_changeset
-      end
-    rescue
-      error ->
-        Sentry.capture_exception(error, stacktrace: __STACKTRACE__)
-
-        transaction_changeset
+      transaction_changeset
+      |> put_change(
+        :creditor_name,
+        new_creditor_name
+      )
+      |> put_change(
+        :remittance_information_unstructured,
+        description
+      )
+    else
+      transaction_changeset
     end
+  rescue
+    error ->
+      Sentry.capture_exception(error, stacktrace: __STACKTRACE__)
+
+      transaction_changeset
   end
 end

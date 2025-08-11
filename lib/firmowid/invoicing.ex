@@ -1,23 +1,19 @@
 defmodule Firmowid.Invoicing do
-  alias Akin
-  alias OpenAI
+  @moduledoc false
+  @behaviour Bodyguard.Policy
 
-  alias Firmowid.CostInvoices
-  alias Firmowid.Finances
-  alias Firmowid.SalesInvoices
-
-  alias Firmowid.SalesInvoices.SalesInvoice
-  alias Firmowid.CostInvoices.CostInvoice
-  alias Firmowid.Finances.Transaction
-
-  alias Firmowid.Invoicing.Matching
-
-  require Logger
-
-  alias Firmowid.Repo
   import Ecto.Query, warn: false
 
-  @behaviour Bodyguard.Policy
+  alias Firmowid.CostInvoices
+  alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.Finances
+  alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing.Matching
+  alias Firmowid.Repo
+  alias Firmowid.SalesInvoices
+  alias Firmowid.SalesInvoices.SalesInvoice
+
+  require Logger
 
   def authorize(:read, %{role: :admin}, _), do: true
   def authorize(:show, %{role: :admin}, _), do: true
@@ -50,7 +46,7 @@ defmodule Firmowid.Invoicing do
   Returns all months with invoicing entries - so all months where Firmowid can function.
   Useful e.g. for the invoicing live view's date picker.
   """
-  def get_all_months_with_invoicing_entries() do
+  def get_all_months_with_invoicing_entries do
     transactions_query =
       from(t in Transaction,
         select: %{
@@ -64,7 +60,7 @@ defmodule Firmowid.Invoicing do
       )
 
     sales_invoices_query =
-      from(si in Firmowid.SalesInvoices.SalesInvoice,
+      from(si in SalesInvoice,
         select: %{
           date_string:
             fragment(
@@ -76,7 +72,7 @@ defmodule Firmowid.Invoicing do
       )
 
     cost_invoices_query =
-      from(ci in Firmowid.CostInvoices.CostInvoice,
+      from(ci in CostInvoice,
         select: %{
           date_string:
             fragment(
@@ -105,30 +101,32 @@ defmodule Firmowid.Invoicing do
   def get_invoicing_entries(from, to, filter) do
     case filter do
       :all ->
-        Enum.concat([
+        [
           CostInvoices.list_cost_invoices(from, to),
           SalesInvoices.list_sales_invoices(from, to),
           Finances.list_transactions(from, to)
-        ])
+        ]
+        |> Enum.concat()
         |> order_entries_for_display()
 
       :unmatched ->
-        Enum.concat([
+        [
           CostInvoices.list_unmatched_cost_invoices(from, to),
           SalesInvoices.list_unmatched_sales_invoices(from, to),
           Finances.list_unmatched_transactions(from, to)
-        ])
+        ]
+        |> Enum.concat()
         |> order_entries_for_display()
 
       :invoices ->
-        Enum.concat(
-          CostInvoices.list_cost_invoices(from, to),
-          SalesInvoices.list_sales_invoices(from, to)
-        )
+        from
+        |> CostInvoices.list_cost_invoices(to)
+        |> Enum.concat(SalesInvoices.list_sales_invoices(from, to))
         |> order_entries_for_display()
 
       :transactions ->
-        Finances.list_transactions(from, to)
+        from
+        |> Finances.list_transactions(to)
         |> order_entries_for_display()
     end
   end
@@ -153,14 +151,13 @@ defmodule Firmowid.Invoicing do
 
   defp matched?(%Transaction{} = transaction),
     do:
-      length(transaction.sales_invoices_transactions ++ transaction.cost_invoices_transactions) >
-        0 or Map.get(transaction, :skip_invoicing, false)
+      length(transaction.sales_invoices_transactions ++ transaction.cost_invoices_transactions) > 0 or
+        Map.get(transaction, :skip_invoicing, false)
 
   defp matched?(_), do: false
 
   def order_entries_for_display(invoicing_entries) do
-    invoicing_entries
-    |> Enum.sort(fn a, b ->
+    Enum.sort(invoicing_entries, fn a, b ->
       cond do
         matched?(a) != matched?(b) ->
           # unmatched first
@@ -168,7 +165,7 @@ defmodule Firmowid.Invoicing do
 
         get_date(a) != get_date(b) ->
           # newer first
-          Date.compare(get_date(a), get_date(b)) == :gt
+          Date.after?(get_date(a), get_date(b))
 
         true ->
           a.id < b.id
@@ -176,21 +173,18 @@ defmodule Firmowid.Invoicing do
     end)
   end
 
-  def match_with_transaction_combo(
-        issue_date,
-        due_date,
-        total_amount
-      ) do
+  def match_with_transaction_combo(issue_date, due_date, total_amount) do
     # when there are multiple transactions on the same invoice
     # typically - services / goods that you get across the month
 
     # highly experimental!
 
-    issue_date = issue_date |> Date.add(-35)
-    due_date = due_date |> Date.add(7)
+    issue_date = Date.add(issue_date, -35)
+    due_date = Date.add(due_date, 7)
 
     all_found =
-      Finances.list_unmatched_transactions(issue_date, due_date)
+      issue_date
+      |> Finances.list_unmatched_transactions(due_date)
       |> Enum.group_by(
         &%{
           creditor_name: &1.creditor_name,
@@ -213,11 +207,10 @@ defmodule Firmowid.Invoicing do
       end)
 
     result =
-      all_found
-      |> Enum.filter(fn %{
-                          total_amount: group_total_amount,
-                          transactions: transactions
-                        } ->
+      Enum.filter(all_found, fn %{
+                                  total_amount: group_total_amount,
+                                  transactions: transactions
+                                } ->
         is_amount_equal = Decimal.compare(group_total_amount, total_amount) == :eq
         is_a_group = length(transactions) > 1
 
@@ -231,7 +224,7 @@ defmodule Firmowid.Invoicing do
     end
   end
 
-  @spec get_potential_transactions_for_invoice(%SalesInvoice{} | %CostInvoice{}) :: [map()]
+  @spec get_potential_transactions_for_invoice(SalesInvoice.t() | CostInvoice.t()) :: [map()]
   def get_potential_transactions_for_invoice(invoice) do
     unmatched_transactions =
       Finances.list_unmatched_transactions(~D[2000-01-01], ~D[2100-12-30])
@@ -239,24 +232,21 @@ defmodule Firmowid.Invoicing do
     attached_transactions = Map.get(invoice, :transactions, [])
 
     # Combine and deduplicate by transaction id
-    all_transactions =
-      (unmatched_transactions ++ attached_transactions)
-      |> Enum.uniq_by(& &1.id)
+    all_transactions = Enum.uniq_by(unmatched_transactions ++ attached_transactions, & &1.id)
 
     score_and_sort_transactions(invoice, all_transactions)
   end
 
   def match_cost_invoices(organization_id) do
-    Firmowid.Repo.put_org_id(organization_id)
+    Repo.put_org_id(organization_id)
 
     unmatched_cost_invoices = CostInvoices.list_unmatched_cost_invoices()
 
-    unmatched_cost_invoices
-    |> Enum.each(&match_cost_invoice(&1.id, organization_id))
+    Enum.each(unmatched_cost_invoices, &match_cost_invoice(&1.id, organization_id))
   end
 
   def match_cost_invoice(cost_invoice_id, organization_id) do
-    Firmowid.Repo.put_org_id(organization_id)
+    Repo.put_org_id(organization_id)
 
     cost_invoice = CostInvoices.get_cost_invoice!(cost_invoice_id)
 
@@ -284,9 +274,7 @@ defmodule Firmowid.Invoicing do
             transaction
           )
 
-          Logger.info(
-            "Matched cost invoice #{cost_invoice.id} with transaction #{transaction.id}"
-          )
+          Logger.info("Matched cost invoice #{cost_invoice.id} with transaction #{transaction.id}")
         else
           Logger.info("No confident match for cost invoice #{cost_invoice.id}")
         end
@@ -297,7 +285,8 @@ defmodule Firmowid.Invoicing do
   end
 
   defp score_and_sort_transactions(invoice, transactions) do
-    Matching.Windowing.pre_filter_invoice_transactions(invoice, transactions)
+    invoice
+    |> Matching.Windowing.pre_filter_invoice_transactions(transactions)
     |> Enum.map(fn transaction ->
       features = Matching.ParametrizedResult.generate_parametrized_result(invoice, transaction)
 
@@ -322,16 +311,15 @@ defmodule Firmowid.Invoicing do
   end
 
   def match_sales_invoices(organization_id) do
-    Firmowid.Repo.put_org_id(organization_id)
+    Repo.put_org_id(organization_id)
 
     unmatched_sales_invoices = SalesInvoices.list_unmatched_sales_invoices()
 
-    unmatched_sales_invoices
-    |> Enum.each(&match_sales_invoice(&1.id, organization_id))
+    Enum.each(unmatched_sales_invoices, &match_sales_invoice(&1.id, organization_id))
   end
 
   def match_sales_invoice(sales_invoice_id, organization_id) do
-    Firmowid.Repo.put_org_id(organization_id)
+    Repo.put_org_id(organization_id)
 
     sales_invoice = SalesInvoices.get_sales_invoice(sales_invoice_id)
 
@@ -353,9 +341,7 @@ defmodule Firmowid.Invoicing do
             organization_id
           )
 
-          Logger.info(
-            "Matched sales invoice #{sales_invoice.id} with transaction #{transaction.id}"
-          )
+          Logger.info("Matched sales invoice #{sales_invoice.id} with transaction #{transaction.id}")
         else
           Logger.info("No confident match for sales invoice #{sales_invoice.id}")
         end

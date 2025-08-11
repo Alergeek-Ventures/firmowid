@@ -79,3 +79,7 @@ jobs:
       - name: Check for security vulnerabilities in Phoenix project
         run: mix sobelow --config
         if: always()
+
+      - name: Check Credo
+        run: mix credo --ignore refactor,design
+        if: always()

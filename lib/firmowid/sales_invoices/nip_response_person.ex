@@ -3,6 +3,7 @@ defmodule Firmowid.SalesInvoices.NipResponsePerson do
   Embedded schema representing a person entity (representative, clerk, or partner)
   """
   use Ecto.Schema
+
   import Ecto.Changeset
 
   @primary_key false
@@ -15,7 +16,6 @@ defmodule Firmowid.SalesInvoices.NipResponsePerson do
   end
 
   def changeset(person, attrs) do
-    person
-    |> cast(attrs, [:company_name, :first_name, :last_name, :pesel, :nip])
+    cast(person, attrs, [:company_name, :first_name, :last_name, :pesel, :nip])
   end
 end

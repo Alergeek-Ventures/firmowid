@@ -1,13 +1,12 @@
 defmodule FirmowidWeb.Components.Invoicing.DownloadModal do
+  @moduledoc false
   use FirmowidWeb, :live_component
 
   attr :month, :string, required: true
 
   @impl true
   def mount(socket) do
-    socket =
-      socket
-      |> assign(skip_scans: true)
+    socket = assign(socket, skip_scans: true)
 
     {:ok, socket}
   end
@@ -71,9 +70,7 @@ defmodule FirmowidWeb.Components.Invoicing.DownloadModal do
 
   @impl true
   def handle_event("set-skip-scans", _, socket) do
-    socket =
-      socket
-      |> assign(skip_scans: !socket.assigns.skip_scans)
+    socket = assign(socket, skip_scans: !socket.assigns.skip_scans)
 
     {:noreply, socket}
   end

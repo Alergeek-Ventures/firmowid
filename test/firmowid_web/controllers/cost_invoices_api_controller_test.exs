@@ -1,13 +1,12 @@
 defmodule FirmowidWeb.CostInvoicesApiControllerTest do
   use FirmowidWeb.ConnCase
   use Oban.Testing, repo: Firmowid.Repo
+
   import Firmowid.AccountsFixtures
 
   describe "upload with authenticated user" do
     setup %{conn: conn} do
-      {:ok,
-       conn:
-         put_req_header(conn, "accept", "application/json") |> log_in_api_user(admin_fixture())}
+      {:ok, conn: conn |> put_req_header("accept", "application/json") |> log_in_api_user(admin_fixture())}
     end
 
     test "uploads cost invoice successfully", %{conn: conn} do
@@ -81,7 +80,7 @@ defmodule FirmowidWeb.CostInvoicesApiControllerTest do
     end
 
     test "returns 401 when attempting to upload as employee", %{conn: conn} do
-      conn = conn |> log_in_api_user(user_fixture())
+      conn = log_in_api_user(conn, user_fixture())
 
       upload = %Plug.Upload{
         path: "test/support/fixtures/receipt.png",

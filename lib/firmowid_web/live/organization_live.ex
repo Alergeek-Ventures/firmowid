@@ -1,8 +1,8 @@
 defmodule FirmowidWeb.OrganizationLive do
+  @moduledoc false
   use FirmowidWeb, :live_view
 
   alias Firmowid.Accounts
-  alias Posthog
 
   @impl true
   def render(assigns) do
@@ -137,11 +137,9 @@ defmodule FirmowidWeb.OrganizationLive do
     user = socket.assigns.current_user
 
     {:ok, organization_id} =
-      Accounts.consume_organization_invite(
-        invite_code
-        |> String.trim(),
-        user.id
-      )
+      invite_code
+      |> String.trim()
+      |> Accounts.consume_organization_invite(user.id)
 
     Posthog.capture("organization_invite_accepted", user.id, %{
       organization_id: organization_id,
@@ -156,11 +154,9 @@ defmodule FirmowidWeb.OrganizationLive do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
-    socket = socket |> assign(:no_padding, true)
+    socket = assign(socket, :no_padding, true)
 
-    if not is_nil(organization_id) do
-      {:ok, redirect(socket, to: "/")}
-    else
+    if is_nil(organization_id) do
       socket =
         socket
         |> assign(
@@ -183,6 +179,8 @@ defmodule FirmowidWeb.OrganizationLive do
         |> assign(:page_title, "Wybierz lub utwórz organizację")
 
       {:ok, socket}
+    else
+      {:ok, redirect(socket, to: "/")}
     end
   end
 end

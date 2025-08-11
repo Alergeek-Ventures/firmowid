@@ -1,8 +1,8 @@
 defmodule FirmowidWeb.UserLoginLiveTest do
   use FirmowidWeb.ConnCase, async: true
 
-  import Phoenix.LiveViewTest
   import Firmowid.AccountsFixtures
+  import Phoenix.LiveViewTest
 
   describe "Log in page" do
     test "renders log in page", %{conn: conn} do
@@ -45,9 +45,7 @@ defmodule FirmowidWeb.UserLoginLiveTest do
       {:ok, lv, _html} = live(conn, ~p"/zaloguj")
 
       form =
-        form(lv, "#login_form",
-          user: %{email: "test@email.com", password: "123456", remember_me: true}
-        )
+        form(lv, "#login_form", user: %{email: "test@email.com", password: "123456", remember_me: true})
 
       conn = submit_form(form, conn)
 

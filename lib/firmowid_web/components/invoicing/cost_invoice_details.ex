@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
+  @moduledoc false
   use FirmowidWeb, :live_component
 
   alias Firmowid.CostInvoices.CostInvoice

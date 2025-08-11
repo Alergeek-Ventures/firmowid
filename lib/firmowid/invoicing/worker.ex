@@ -1,4 +1,5 @@
 defmodule Firmowid.Invoicing.Worker do
+  @moduledoc false
   use Oban.Worker, queue: :invoicing
 
   alias Firmowid.Accounts

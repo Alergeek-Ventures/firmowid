@@ -1,5 +1,7 @@
 defmodule Firmowid.Finances.BankAccount do
+  @moduledoc false
   use Firmowid.Schema
+
   import Ecto.Changeset
 
   @type t :: %__MODULE__{}

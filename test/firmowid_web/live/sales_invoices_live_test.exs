@@ -1,10 +1,10 @@
 defmodule FirmowidWeb.SalesInvoicesLiveTest do
   use FirmowidWeb.ConnCase, async: true
 
-  alias Firmowid.SalesInvoices
-
-  import Phoenix.LiveViewTest
   import Firmowid.AccountsFixtures
+  import Phoenix.LiveViewTest
+
+  alias Firmowid.SalesInvoices
 
   describe "Invoice page works" do
     test "renders sales_invoices page", %{conn: conn} do
@@ -71,9 +71,9 @@ defmodule FirmowidWeb.SalesInvoicesLiveTest do
         lv
         |> form("#buyer_form")
         |> put_submitter("button[name=action]")
-        |> render_submit
+        |> render_submit()
 
-      buyer = SalesInvoices.list_buyers() |> hd
+      buyer = hd(SalesInvoices.list_buyers())
 
       assert result =~ "ALERGEEK VENTURES"
       assert result =~ "Zatwierdź"
@@ -114,13 +114,13 @@ defmodule FirmowidWeb.SalesInvoicesLiveTest do
             }
           }
         )
-        |> render_submit
+        |> render_submit()
 
       assert result =~ "Koszty utrzymania"
       # Make sure that form is confirmed and locked
-      refute lv |> element("#sales_invoice_items_form") |> render =~ "Zatwierdź"
+      refute lv |> element("#sales_invoice_items_form") |> render() =~ "Zatwierdź"
 
-      sales_invoice_item = SalesInvoices.get_latest_sales_invoice().sales_invoice_items |> hd
+      sales_invoice_item = hd(SalesInvoices.get_latest_sales_invoice().sales_invoice_items)
 
       assert sales_invoice_item.name == "Koszty utrzymania"
       assert sales_invoice_item.unit_price == Decimal.new("100")

@@ -1,18 +1,16 @@
 defmodule Firmowid.CostInvoices do
+  @moduledoc false
+  @behaviour Bodyguard.Policy
+
   import Ecto.Query, warn: false
 
-  require Logger
-
-  alias MIME
-
-  alias Firmowid.Repo
   alias Firmowid.Blobs
   alias Firmowid.Blobs.Blob
-
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.CostInvoices.CostInvoicesTransactions
+  alias Firmowid.Repo
 
-  @behaviour Bodyguard.Policy
+  require Logger
 
   @cost_invoice_broadcast_topic "cost_invoice_broadcast_topic"
 
@@ -65,7 +63,7 @@ defmodule Firmowid.CostInvoices do
     |> Repo.preload(:blob)
   end
 
-  def get_processing_cost_invoices_count() do
+  def get_processing_cost_invoices_count do
     Oban.Job
     |> where(
       [j],
@@ -75,10 +73,7 @@ defmodule Firmowid.CostInvoices do
     |> Repo.aggregate(:count, oban_jobs: true)
   end
 
-  def list_cost_invoices(
-        from,
-        to
-      ) do
+  def list_cost_invoices(from, to) do
     query =
       from i in CostInvoice,
         where: i.issue_date >= ^from and i.issue_date <= ^to,
@@ -104,7 +99,7 @@ defmodule Firmowid.CostInvoices do
   Unmatched means - not assigned to a transaction and not skipped.
   If date range is provided - due in the given date range.
   """
-  def list_unmatched_cost_invoices() do
+  def list_unmatched_cost_invoices do
     organization_id = Repo.get_org_id()
 
     if is_nil(organization_id) do
@@ -237,43 +232,39 @@ defmodule Firmowid.CostInvoices do
     cost_invoice =
       %CostInvoice{}
       |> CostInvoice.changeset(extracted_metadata)
-      |> Firmowid.Repo.insert!(organization_id: organization_id)
+      |> Repo.insert!(organization_id: organization_id)
 
     broadcast_cost_invoice_added(cost_invoice)
 
-    Firmowid.Invoicing.Worker.new(%{
+    %{
       name: "match_cost_invoice",
       cost_invoice_id: cost_invoice.id,
       organization_id: organization_id
-    })
+    }
+    |> Firmowid.Invoicing.Worker.new()
     |> Firmowid.Oban.insert!()
   end
 
-  def create_cost_invoices_transactions_connection(
-        cost_invoice_id,
-        transaction_id,
-        organization_id
-      ) do
-    CostInvoicesTransactions.changeset(%{
+  def create_cost_invoices_transactions_connection(cost_invoice_id, transaction_id, organization_id) do
+    %{
       cost_invoice_id: cost_invoice_id,
       transaction_id: transaction_id,
       organization_id: organization_id
-    })
+    }
+    |> CostInvoicesTransactions.changeset()
     |> Repo.insert!()
   end
 
   def delete_cost_invoices_transactions_connections(cost_invoice_id) do
-    query = from(CostInvoicesTransactions) |> where([c], c.cost_invoice_id == ^cost_invoice_id)
+    query = where(from(CostInvoicesTransactions), [c], c.cost_invoice_id == ^cost_invoice_id)
 
-    query
-    |> Repo.delete_all()
-
+    Repo.delete_all(query)
     organization_id = Repo.get_org_id()
     broadcast_cost_invoice_list_updated(organization_id)
   end
 
   def list_cost_invoices_by_ids(ids, date_from \\ nil, date_to \\ nil) do
-    query = CostInvoice |> where([ci], ci.id in ^ids)
+    query = where(CostInvoice, [ci], ci.id in ^ids)
 
     query =
       if date_from do

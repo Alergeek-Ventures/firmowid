@@ -297,7 +297,7 @@
         </a>
       <% end %>
 
-      <%= if !Firmowid.SalesInvoices.SalesInvoice.is_confirmed(@sales_invoice) do %>
+      <%= if !Firmowid.SalesInvoices.SalesInvoice.confirmed?(@sales_invoice) do %>
         <.button disabled color="green">
           Zapisz fakturę
         </.button>

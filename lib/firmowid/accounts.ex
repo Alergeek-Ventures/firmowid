@@ -3,28 +3,28 @@ defmodule Firmowid.Accounts do
   The Accounts context.
   """
 
-  import Ecto.Query, warn: false
-  alias Firmowid.Repo
-  alias Firmowid.Blobs
-
   @behaviour Bodyguard.Policy
 
-  alias Firmowid.Accounts.{User, UserToken, UserNotifier, Organization}
+  import Ecto.Query, warn: false
+
+  alias Firmowid.Accounts.Organization
+  alias Firmowid.Accounts.OrganizationInvites
+  alias Firmowid.Accounts.User
+  alias Firmowid.Accounts.UserNotifier
+  alias Firmowid.Accounts.UserToken
+  alias Firmowid.Blobs
+  alias Firmowid.Repo
 
   def authorize(:create_organization_invite, %{role: :admin}, _), do: true
   def authorize(:read_organization_invites, %{role: :admin}, _), do: true
   def authorize(:delete_organization_invite, %{role: :admin}, _), do: true
 
-  def authorize(:update_organization, %{role: :admin, organization_id: org_id}, %Organization{
-        id: org_id
-      }),
-      do: true
+  def authorize(:update_organization, %{role: :admin, organization_id: org_id}, %Organization{id: org_id}), do: true
 
   def authorize(_, _, _), do: false
 
   def list_organizations do
-    Organization
-    |> Repo.all(skip_organization_id: true)
+    Repo.all(Organization, skip_organization_id: true)
   end
 
   ## Database getters
@@ -57,8 +57,7 @@ defmodule Firmowid.Accounts do
       nil
 
   """
-  def get_user_by_email_and_password(email, password)
-      when is_binary(email) and is_binary(password) do
+  def get_user_by_email_and_password(email, password) when is_binary(email) and is_binary(password) do
     user = Repo.get_by(User, [email: email], skip_organization_id: true)
     if User.valid_password?(user, password), do: user
   end
@@ -259,7 +258,8 @@ defmodule Firmowid.Accounts do
   def get_user_by_session_token(token) do
     {:ok, query} = UserToken.verify_session_token_query(token)
 
-    Repo.one(query, skip_organization_id: true)
+    query
+    |> Repo.one(skip_organization_id: true)
     |> Repo.preload(:organization, skip_organization_id: true)
   end
 
@@ -488,10 +488,8 @@ defmodule Firmowid.Accounts do
         id -> Blobs.get_blob_url(id)
       end
 
-    organization |> Map.put(:avatar_url, avatar_url)
+    Map.put(organization, :avatar_url, avatar_url)
   end
-
-  alias Firmowid.Accounts.OrganizationInvites
 
   @doc """
   Returns the list of organization_invites.
@@ -503,7 +501,8 @@ defmodule Firmowid.Accounts do
 
   """
   def list_organization_invites(organization_id) do
-    Repo.all(OrganizationInvites, organization_id: organization_id)
+    OrganizationInvites
+    |> Repo.all(organization_id: organization_id)
     |> Repo.preload(:issued_by, organization_id: organization_id)
     |> Repo.preload(:consumed_by, organization_id: organization_id)
   end
@@ -538,14 +537,14 @@ defmodule Firmowid.Accounts do
 
   """
   def create_organization_invites(organization_id, issued_by_id) do
-    random_code = :crypto.strong_rand_bytes(20) |> Base.url_encode64()
+    random_code = 20 |> :crypto.strong_rand_bytes() |> Base.url_encode64()
 
     %OrganizationInvites{}
     |> OrganizationInvites.changeset(%{
       issued_by_id: issued_by_id,
       organization_id: organization_id,
       invite_code: random_code,
-      expires_at: DateTime.utc_now() |> DateTime.add(7, :day)
+      expires_at: DateTime.add(DateTime.utc_now(), 7, :day)
     })
     |> Repo.insert(organization_id: organization_id)
   end
@@ -562,11 +561,7 @@ defmodule Firmowid.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_organization_invites(
-        organization_id,
-        %OrganizationInvites{} = organization_invites,
-        attrs
-      ) do
+  def update_organization_invites(organization_id, %OrganizationInvites{} = organization_invites, attrs) do
     organization_invites
     |> OrganizationInvites.changeset(attrs)
     |> Repo.update(organization_id: organization_id)
@@ -589,7 +584,8 @@ defmodule Firmowid.Accounts do
         organization_id = organization_invite.organization_id
         user = Repo.get_by(User, [id: user_id], skip_organization_id: true)
 
-        User.organization_changeset(user, %{
+        user
+        |> User.organization_changeset(%{
           organization_id: organization_id
         })
         |> Repo.update!(skip_organization_id: true)
@@ -688,6 +684,6 @@ defmodule Firmowid.Accounts do
         blob_id -> Blobs.get_blob_url(blob_id)
       end
 
-    user |> Map.put(:avatar_url, avatar_url)
+    Map.put(user, :avatar_url, avatar_url)
   end
 end

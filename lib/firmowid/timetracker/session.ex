@@ -1,8 +1,12 @@
 defmodule Firmowid.Timetracker.Session do
+  @moduledoc false
   use Firmowid.Schema
+
   import Ecto.Changeset
-  alias Firmowid.Timetracker
+
   alias Firmowid.Repo
+  alias Firmowid.Timetracker
+
   require Ecto.Query
 
   schema "sessions" do
@@ -50,7 +54,7 @@ defmodule Firmowid.Timetracker.Session do
       |> Repo.exists?()
       |> case do
         true -> changeset
-        false -> changeset |> add_error(:project_id, "User does not have access to this project")
+        false -> add_error(changeset, :project_id, "User does not have access to this project")
       end
     end
   end
@@ -59,7 +63,7 @@ defmodule Firmowid.Timetracker.Session do
     start_datetime = get_field(changeset, :start_datetime)
     end_datetime = get_field(changeset, :end_datetime)
 
-    if end_datetime && DateTime.compare(start_datetime, end_datetime) == :gt do
+    if end_datetime && DateTime.after?(start_datetime, end_datetime) do
       add_error(changeset, :start_datetime, "Start datetime must be before end datetime")
     else
       changeset
@@ -70,17 +74,17 @@ defmodule Firmowid.Timetracker.Session do
 
   def put_duration(session) do
     duration = calculate_session_duration(session)
-    session |> Map.put(:duration, duration)
+    Map.put(session, :duration, duration)
   end
 
   def calculate_session_duration(session) do
     end_datetime =
       case session.end_datetime do
         nil -> DateTime.now!("Europe/Warsaw")
-        end_datetime -> end_datetime |> DateTime.shift_zone!("Europe/Warsaw")
+        end_datetime -> DateTime.shift_zone!(end_datetime, "Europe/Warsaw")
       end
 
-    start_datetime = session.start_datetime |> DateTime.shift_zone!("Europe/Warsaw")
+    start_datetime = DateTime.shift_zone!(session.start_datetime, "Europe/Warsaw")
 
     DateTime.diff(end_datetime, start_datetime, :second)
   end

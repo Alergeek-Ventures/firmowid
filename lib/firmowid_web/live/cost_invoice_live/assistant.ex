@@ -1,11 +1,12 @@
 defmodule FirmowidWeb.CostInvoiceLive.Assistant do
+  @moduledoc false
   use FirmowidWeb, :live_component
 
-  alias Firmowid.Invoicing.Matching.CostInvoiceAssistant
-  alias Firmowid.Invoicing.Matching.Assistant.MessagesStorage
-  alias Firmowid.Finances
   alias Firmowid.Accounts
+  alias Firmowid.Finances
   alias Firmowid.Invoicing.Matching.Assistant.Message
+  alias Firmowid.Invoicing.Matching.Assistant.MessagesStorage
+  alias Firmowid.Invoicing.Matching.CostInvoiceAssistant
   alias FirmowidWeb.Components.Invoicing.Assistant, as: Components
 
   @impl true
@@ -66,7 +67,7 @@ defmodule FirmowidWeb.CostInvoiceLive.Assistant do
       |> stream(:messages, messages)
       |> assign(:waiting_for_decision, false)
       |> assign(:zero_state, true)
-      |> assign(:current_user, current_user |> Accounts.get_user_with_avatar())
+      |> assign(:current_user, Accounts.get_user_with_avatar(current_user))
 
     {:ok, socket}
   end

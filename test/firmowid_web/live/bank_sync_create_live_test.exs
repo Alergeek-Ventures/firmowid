@@ -1,8 +1,8 @@
 defmodule FirmowidWeb.BankSyncCreateLiveTest do
   use FirmowidWeb.ConnCase
 
-  import Phoenix.LiveViewTest
   import Ecto.Query
+  import Phoenix.LiveViewTest
 
   describe "handle_params with ref enqueues job and redirects" do
     setup %{conn: conn} do
@@ -28,13 +28,15 @@ defmodule FirmowidWeb.BankSyncCreateLiveTest do
 
         try do
           job =
-            from(j in Oban.Job,
-              where:
-                fragment("(args->>'name') = ?", "check_requisition_status") and
-                  fragment("(args->>'requisition_id') = ?", ^requisition_id),
-              select: j
+            Firmowid.Repo.one(
+              from(j in Oban.Job,
+                where:
+                  fragment("(args->>'name') = ?", "check_requisition_status") and
+                    fragment("(args->>'requisition_id') = ?", ^requisition_id),
+                select: j
+              ),
+              oban_jobs: true
             )
-            |> Firmowid.Repo.one(oban_jobs: true)
 
           assert job
         after

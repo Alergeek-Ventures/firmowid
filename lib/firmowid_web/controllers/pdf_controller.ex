@@ -1,13 +1,14 @@
 defmodule FirmowidWeb.PdfController do
+  use FirmowidWeb, :controller
+
   alias Firmowid.Nbp
   alias Firmowid.SalesInvoices
-  use FirmowidWeb, :controller
 
   def index(conn, %{"id" => id}) do
     sales_invoice =
       SalesInvoices.get_sales_invoice_with_logo_url(id)
 
-    conn |> render_sales_invoice(sales_invoice)
+    render_sales_invoice(conn, sales_invoice)
   end
 
   defp render_sales_invoice(conn, %SalesInvoices.SalesInvoice{} = sales_invoice) do
@@ -23,8 +24,7 @@ defmodule FirmowidWeb.PdfController do
           )
       end
 
-    conn
-    |> render(:sales_invoice,
+    render(conn, :sales_invoice,
       layout: false,
       sales_invoice: sales_invoice,
       currency_rate: currency_rate,
@@ -34,7 +34,7 @@ defmodule FirmowidWeb.PdfController do
   end
 
   defp render_sales_invoice(conn, nil) do
-    conn |> send_resp(404, "Not found")
+    send_resp(conn, 404, "Not found")
   end
 
   # sobelow_skip ["Traversal.SendFile"]
@@ -48,8 +48,7 @@ defmodule FirmowidWeb.PdfController do
 
     case SalesInvoices.get_sales_invoice_with_logo_url(id) do
       nil ->
-        conn
-        |> send_resp(404, "Not found")
+        send_resp(conn, 404, "Not found")
 
       sales_invoice ->
         url_with_protocol = FirmowidWeb.Endpoint.url()

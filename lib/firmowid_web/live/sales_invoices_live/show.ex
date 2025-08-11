@@ -1,9 +1,10 @@
 defmodule FirmowidWeb.SalesInvoicesLive.Show do
+  @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Invoicing
   alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.SalesInvoice
-  alias Firmowid.Invoicing
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -61,7 +62,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
     {:noreply,
      socket
      |> put_flash(:info, "Faktura została usunięta")
-     |> push_navigate(to: ~p"/?month=#{socket.assigns.invoice.issue_date |> Date.to_iso8601()}")}
+     |> push_navigate(to: ~p"/?month=#{Date.to_iso8601(socket.assigns.invoice.issue_date)}")}
   end
 
   @impl true

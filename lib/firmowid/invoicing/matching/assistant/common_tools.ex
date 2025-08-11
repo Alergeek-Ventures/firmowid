@@ -1,6 +1,7 @@
 defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
-  alias Firmowid.Invoicing.Matching.Assistant.Tool
+  @moduledoc false
   alias Firmowid.Invoicing.Matching.Assistant.FilterValidation
+  alias Firmowid.Invoicing.Matching.Assistant.Tool
   alias Firmowid.Invoicing.Matching.CostInvoiceAssistant
 
   def normalize_to_pln do
@@ -33,8 +34,7 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
             {_k, []} -> false
             {_k, _v} -> true
           end)
-          |> Enum.map(fn {k, v} -> {String.to_existing_atom(k), v} end)
-          |> Map.new()
+          |> Map.new(fn {k, v} -> {String.to_existing_atom(k), v} end)
 
         case FilterValidation.validate_normalize_to_pln(filtered) do
           {:ok, %{amount: amount, currency: currency, date: date}} ->
@@ -87,8 +87,7 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
             {_k, []} -> false
             {_k, _v} -> true
           end)
-          |> Enum.map(fn {k, v} -> {String.to_existing_atom(k), v} end)
-          |> Map.new()
+          |> Map.new(fn {k, v} -> {String.to_existing_atom(k), v} end)
 
         case FilterValidation.validate_calculate(filtered) do
           {:ok, %{numbers: numbers, operation: operation}} ->
@@ -140,14 +139,12 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
               date_from: %{
                 type: ["string", "null"],
                 format: "date",
-                description:
-                  "Data od (YYYY-MM-DD). Jeśli nie chcesz filtrować po dacie, zostaw puste."
+                description: "Data od (YYYY-MM-DD). Jeśli nie chcesz filtrować po dacie, zostaw puste."
               },
               date_to: %{
                 type: ["string", "null"],
                 format: "date",
-                description:
-                  "Data do (YYYY-MM-DD). Jeśli nie chcesz filtrować po dacie, zostaw puste."
+                description: "Data do (YYYY-MM-DD). Jeśli nie chcesz filtrować po dacie, zostaw puste."
               },
               currency: %{
                 type: "string",
@@ -183,9 +180,7 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
           :halt
 
         result ->
-          result
-          |> Enum.map(&CostInvoiceAssistant.transaction_input(&1, heading_level: 2))
-          |> Enum.join("\n\n")
+          Enum.map_join(result, "\n\n", &CostInvoiceAssistant.transaction_input(&1, heading_level: 2))
       end,
       handler: fn args ->
         allowed_keys = [
@@ -215,8 +210,7 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
                 {_k, []} -> false
                 {_k, _v} -> true
               end)
-              |> Enum.map(fn {k, v} -> {String.to_existing_atom(k), v} end)
-              |> Map.new()
+              |> Map.new(fn {k, v} -> {String.to_existing_atom(k), v} end)
 
             case FilterValidation.validate_search_filters(filtered) do
               {:ok, validated_filtered} ->

@@ -1,4 +1,5 @@
 defmodule Firmowid.ExchangeRates.CacheEntry do
+  @moduledoc false
   use Firmowid.Schema
 
   import Ecto.Changeset

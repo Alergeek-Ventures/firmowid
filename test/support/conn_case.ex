@@ -19,15 +19,15 @@ defmodule FirmowidWeb.ConnCase do
 
   using do
     quote do
+      use FirmowidWeb, :verified_routes
+
+      import FirmowidWeb.ConnCase
+      import Phoenix.ConnTest
+      import Plug.Conn
       # The default endpoint for testing
       @endpoint FirmowidWeb.Endpoint
 
-      use FirmowidWeb, :verified_routes
-
       # Import conveniences for testing with connections
-      import Plug.Conn
-      import Phoenix.ConnTest
-      import FirmowidWeb.ConnCase
     end
   end
 
@@ -65,7 +65,6 @@ defmodule FirmowidWeb.ConnCase do
   def log_in_api_user(conn, user) do
     token = Firmowid.Accounts.generate_user_session_token(user)
 
-    conn
-    |> Plug.Conn.put_req_header("authorization", "Bearer #{Base.url_encode64(token)}")
+    Plug.Conn.put_req_header(conn, "authorization", "Bearer #{Base.url_encode64(token)}")
   end
 end

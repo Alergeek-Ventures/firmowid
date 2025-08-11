@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.RedirectTrailing do
+  @moduledoc false
   use FirmowidWeb, :controller
 
   def redirect_trailing_slash(conn, _opts) do

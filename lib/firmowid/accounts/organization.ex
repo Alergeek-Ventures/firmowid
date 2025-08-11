@@ -1,6 +1,10 @@
 defmodule Firmowid.Accounts.Organization do
+  @moduledoc false
   use Firmowid.Schema
+
   import Ecto.Changeset
+
+  alias Firmowid.Accounts.User
 
   schema "organizations" do
     field :identification_number, :string
@@ -15,9 +19,9 @@ defmodule Firmowid.Accounts.Organization do
     field :is_basic_info_editing, :boolean, virtual: true, default: false
     field :is_correspondence_editing, :boolean, virtual: true, default: false
 
-    belongs_to :owner, Firmowid.Accounts.User
+    belongs_to :owner, User
     belongs_to :avatar_blob, Firmowid.Blobs.Blob
-    has_many :users, Firmowid.Accounts.User
+    has_many :users, User
 
     timestamps()
   end
@@ -53,7 +57,6 @@ defmodule Firmowid.Accounts.Organization do
   end
 
   def correspondence_changeset(organization, attrs \\ %{}) do
-    organization
-    |> cast(attrs, [:correspondence_name, :correspondence_address])
+    cast(organization, attrs, [:correspondence_name, :correspondence_address])
   end
 end

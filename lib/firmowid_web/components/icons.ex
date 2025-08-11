@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.Icons do
+  @moduledoc false
   use Phoenix.Component
 
   attr :class, :string, default: nil

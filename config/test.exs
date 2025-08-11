@@ -3,6 +3,10 @@ import Config
 # Only in tests, remove the complexity from the password hashing algorithm
 config :argon2_elixir, t_cost: 1, m_cost: 8
 
+# In test we don't send emails
+config :firmowid, Firmowid.Mailer, adapter: Swoosh.Adapters.Test
+config :firmowid, Firmowid.Oban, testing: :inline
+
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used
@@ -22,25 +26,6 @@ config :firmowid, FirmowidWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   server: false
 
-# In test we don't send emails
-config :firmowid, Firmowid.Mailer, adapter: Swoosh.Adapters.Test
-
-# Disable swoosh api client as it is only required for production adapters
-config :swoosh, :api_client, false
-
-# Disable posthog analytics event capture
-config :posthog, enabled_capture: false
-
-# Print only warnings and errors during test
-config :logger, level: :warning
-
-# Initialize plugs at runtime for faster test compilation
-config :phoenix, :plug_init_mode, :runtime
-
-# Enable helpful, but potentially expensive runtime checks
-config :phoenix_live_view,
-  enable_expensive_runtime_checks: true
-
 # stubs for request testing (for now bank_data mostly)
 config :firmowid, :bank_data_api_client,
   bank_data_institutions: [
@@ -56,4 +41,18 @@ config :firmowid, :bank_data_api_client,
     plug: {Req.Test, :bank_data_transactions}
   ]
 
-config :firmowid, Firmowid.Oban, testing: :inline
+# Print only warnings and errors during test
+config :logger, level: :warning
+
+# Initialize plugs at runtime for faster test compilation
+config :phoenix, :plug_init_mode, :runtime
+
+# Enable helpful, but potentially expensive runtime checks
+config :phoenix_live_view,
+  enable_expensive_runtime_checks: true
+
+# Disable posthog analytics event capture
+config :posthog, enabled_capture: false
+
+# Disable swoosh api client as it is only required for production adapters
+config :swoosh, :api_client, false

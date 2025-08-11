@@ -4,8 +4,8 @@ defmodule Firmowid.TimetrackerFixtures do
   entities via the `Firmowid.Timetracker` context.
   """
 
-  alias Firmowid.Timetracker
   alias Firmowid.Repo
+  alias Firmowid.Timetracker
 
   def unique_project_name, do: "project_#{System.unique_integer()}"
 

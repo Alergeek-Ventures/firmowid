@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.SalesInvoicesLive.EditButton do
+  @moduledoc false
   use FirmowidWeb, :html
 
   attr :rest, :global,

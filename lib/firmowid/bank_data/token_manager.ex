@@ -1,4 +1,5 @@
 defmodule Firmowid.BankData.TokenManager do
+  @moduledoc false
   use GenServer
 
   # seconds before expiry to refresh the token
@@ -42,7 +43,7 @@ defmodule Firmowid.BankData.TokenManager do
     {:noreply, state}
   end
 
-  defp fetch_new_access_token() do
+  defp fetch_new_access_token do
     access_token_response =
       Req.post!(
         "https://bankaccountdata.gocardless.com/api/v2/token/new/",

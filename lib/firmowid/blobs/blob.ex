@@ -1,5 +1,7 @@
 defmodule Firmowid.Blobs.Blob do
+  @moduledoc false
   use Firmowid.Schema
+
   import Ecto.Changeset
 
   schema "blobs" do

@@ -16,14 +16,18 @@ defmodule Firmowid.DataCase do
 
   use ExUnit.CaseTemplate
 
+  alias Ecto.Adapters.SQL.Sandbox
+
   using do
     quote do
-      alias Firmowid.Repo
       use Oban.Testing, repo: Firmowid.Repo, prefix: "oban"
+
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
       import Firmowid.DataCase
+
+      alias Firmowid.Repo
     end
   end
 
@@ -36,8 +40,8 @@ defmodule Firmowid.DataCase do
   Sets up the sandbox based on the test tags.
   """
   def setup_sandbox(tags) do
-    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Firmowid.Repo, shared: not tags[:async])
-    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
+    pid = Sandbox.start_owner!(Firmowid.Repo, shared: not tags[:async])
+    on_exit(fn -> Sandbox.stop_owner(pid) end)
   end
 
   @doc """

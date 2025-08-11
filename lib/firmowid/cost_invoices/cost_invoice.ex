@@ -1,6 +1,10 @@
 defmodule Firmowid.CostInvoices.CostInvoice do
+  @moduledoc false
   use Firmowid.Schema
+
   import Ecto.Changeset
+
+  @type t :: %__MODULE__{}
 
   schema "cost_invoices" do
     belongs_to :blob, Firmowid.Blobs.Blob

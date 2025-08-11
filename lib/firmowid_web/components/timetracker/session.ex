@@ -1,7 +1,9 @@
 defmodule FirmowidWeb.Components.Session do
+  @moduledoc false
+  use FirmowidWeb, :live_component
+
   alias Firmowid.Timetracker.Session
   alias FirmowidWeb.Helpers.TimeFormatter
-  use FirmowidWeb, :live_component
 
   attr :sessions, :list, required: true
   attr :projects, :list, required: true

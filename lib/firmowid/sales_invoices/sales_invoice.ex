@@ -1,6 +1,12 @@
 defmodule Firmowid.SalesInvoices.SalesInvoice do
+  @moduledoc false
   use Firmowid.Schema
+
   import Ecto.Changeset
+
+  alias Firmowid.SalesInvoices.SalesInvoiceItem
+
+  @type t :: %__MODULE__{}
 
   schema "sales_invoices" do
     field :invoice_type, Ecto.Enum, values: [:poland, :foreign], default: :poland
@@ -51,7 +57,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     field :logo_url, :string, virtual: true
     field :total_amount, :decimal, virtual: true
 
-    has_many :sales_invoice_items, Firmowid.SalesInvoices.SalesInvoiceItem, on_replace: :delete
+    has_many :sales_invoice_items, SalesInvoiceItem, on_replace: :delete
 
     many_to_many :transactions,
                  Firmowid.Finances.Transaction,
@@ -65,17 +71,17 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
   def get_net_value(sales_invoice) do
     Enum.reduce(sales_invoice.sales_invoice_items, Decimal.new(0), fn item, acc ->
-      Decimal.add(acc, Firmowid.SalesInvoices.SalesInvoiceItem.get_net_value(item))
+      Decimal.add(acc, SalesInvoiceItem.get_net_value(item))
     end)
   end
 
   def get_vat_value(sales_invoice) do
     Enum.reduce(sales_invoice.sales_invoice_items, Decimal.new(0), fn item, acc ->
-      Decimal.add(acc, Firmowid.SalesInvoices.SalesInvoiceItem.get_vat_value(item))
+      Decimal.add(acc, SalesInvoiceItem.get_vat_value(item))
     end)
   end
 
-  def is_confirmed(sales_invoice) do
+  def confirmed?(sales_invoice) do
     sales_invoice.is_basic_info_confirmed &&
       sales_invoice.is_seller_confirmed &&
       sales_invoice.is_buyer_confirmed &&
@@ -124,11 +130,11 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     |> buyer_changeset(attrs)
     |> seller_changeset(attrs)
     |> cast_assoc(:sales_invoice_items,
-      with: &Firmowid.SalesInvoices.SalesInvoiceItem.changeset/2,
+      with: &SalesInvoiceItem.changeset/2,
       sort_param: :items_sort,
       drop_param: :items_drop
     )
-    |> cast_based_on_type
+    |> cast_based_on_type()
     |> put_change(:organization_id, Firmowid.Repo.get_org_id())
     |> unique_constraint([:invoice_number, :organization_id],
       name: :sales_invoices_invoice_number_organization_id_index,
@@ -146,17 +152,16 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     year = issue_date.year
 
     expected_invoice_index =
-      Firmowid.SalesInvoices.get_next_invoice_number(issue_date, omit_invoice_id: invoice_id)
+      issue_date
+      |> Firmowid.SalesInvoices.get_next_invoice_number(omit_invoice_id: invoice_id)
       |> get_invoice_number_index()
 
-    current_invoice_index =
-      invoice_number
-      |> get_invoice_number_index()
+    current_invoice_index = get_invoice_number_index(invoice_number)
 
     # this allows for inserting outdated invoices
     if current_invoice_index > expected_invoice_index do
-      changeset
-      |> Ecto.Changeset.add_error(
+      Ecto.Changeset.add_error(
+        changeset,
         :invoice_number,
         "Number faktury powinien być mniejszy. Oczekiwano: #{expected_invoice_index}/#{month}/#{year}"
       )
@@ -175,8 +180,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   end
 
   def seller_changeset(sales_invoice, attrs \\ %{}) do
-    sales_invoice
-    |> cast(attrs, [
+    cast(sales_invoice, attrs, [
       :seller_nip,
       :seller_display_name,
       :seller_address,
@@ -205,7 +209,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       :buyer_phone,
       :buyer_description
     ])
-    |> cast_buyer_based_on_type
+    |> cast_buyer_based_on_type()
   end
 
   def cast_buyer_based_on_type(buyer) do
@@ -216,8 +220,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
         |> put_change(:buyer_display_name, "")
 
       :company ->
-        buyer
-        |> put_change(:buyer_pesel, nil)
+        put_change(buyer, :buyer_pesel, nil)
 
       nil ->
         buyer

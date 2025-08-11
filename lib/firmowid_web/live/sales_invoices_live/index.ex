@@ -1,14 +1,16 @@
 defmodule FirmowidWeb.SalesInvoicesLive.Index do
-  alias Firmowid.Finances
-  alias Firmowid.SalesInvoices.SalesInvoice
-  alias Firmowid.SalesInvoices
-
-  import FirmowidWeb.SalesInvoicesLive.EditButton
-  import FirmowidWeb.SalesInvoicesLive.BuyerForm
-  import FirmowidWeb.SalesInvoicesLive.SellerForm
-  import FirmowidWeb.SalesInvoicesLive.SalesInvoiceItems
-
+  @moduledoc false
   use FirmowidWeb, :live_view
+
+  import FirmowidWeb.SalesInvoicesLive.BuyerForm
+  import FirmowidWeb.SalesInvoicesLive.EditButton
+  import FirmowidWeb.SalesInvoicesLive.SalesInvoiceItems
+  import FirmowidWeb.SalesInvoicesLive.SellerForm
+
+  alias Firmowid.Finances
+  alias Firmowid.SalesInvoices
+  alias Firmowid.SalesInvoices.SalesInvoice
+
   require Logger
 
   def mount(params, _session, socket) do
@@ -40,11 +42,11 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
   end
 
   def assign_buyers(socket) do
-    socket |> assign(buyers: SalesInvoices.list_buyers())
+    assign(socket, buyers: SalesInvoices.list_buyers())
   end
 
   def assign_bank_accounts(socket) do
-    socket |> assign(bank_accounts: Finances.list_bank_accounts())
+    assign(socket, bank_accounts: Finances.list_bank_accounts())
   end
 
   def assign_currency(socket) do
@@ -52,16 +54,12 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
 
     case sales_invoice.currency do
       "PLN" ->
-        socket |> assign(currency_rate: nil)
+        assign(socket, currency_rate: nil)
 
       currency ->
-        socket
-        |> assign(
+        assign(socket,
           currency_rate:
-            currency
-            |> Firmowid.Nbp.ApiClient.get_exchange_rate(
-              SalesInvoice.get_currency_conversion_date(sales_invoice)
-            )
+            Firmowid.Nbp.ApiClient.get_exchange_rate(currency, SalesInvoice.get_currency_conversion_date(sales_invoice))
         )
     end
   end
@@ -70,7 +68,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
     form =
       sales_invoice
       |> SalesInvoice.changeset()
-      |> to_form
+      |> to_form()
 
     socket
     |> assign(form: form)
@@ -124,8 +122,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
           sales_invoice_to_copy = SalesInvoices.get_sales_invoice_with_logo_url(params["skopiuj"])
 
           data_to_copy =
-            sales_invoice_to_copy
-            |> Map.take([
+            Map.take(sales_invoice_to_copy, [
               :buyer_id,
               :buyer_nip,
               :buyer_display_name,
@@ -145,8 +142,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
             ])
 
           sales_invoice_items =
-            sales_invoice_to_copy.sales_invoice_items
-            |> Enum.map(fn item ->
+            Enum.map(sales_invoice_to_copy.sales_invoice_items, fn item ->
               %{
                 name: item.name,
                 quantity: item.quantity,
@@ -166,25 +162,15 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
 
         # Foreign invoice type
         params["typ"] == "zagraniczny" ->
-          base_sales_invoice
-          |> Map.merge(%{
-            invoice_type: :foreign,
-            currency: "EUR",
-            is_reverse_charge: true
-          })
+          Map.merge(base_sales_invoice, %{invoice_type: :foreign, currency: "EUR", is_reverse_charge: true})
 
         # Polish invoice type or empty params
         params["typ"] == "polski" || !params["typ"] ->
-          base_sales_invoice
-          |> Map.merge(%{
-            invoice_type: :poland,
-            currency: "PLN"
-          })
+          Map.merge(base_sales_invoice, %{invoice_type: :poland, currency: "PLN"})
       end
 
     default_bank_account =
-      socket.assigns.bank_accounts
-      |> Enum.find_value(&(&1.is_default and &1.currency == sales_invoice.currency))
+      Enum.find_value(socket.assigns.bank_accounts, &(&1.is_default and &1.currency == sales_invoice.currency))
 
     sales_invoice =
       if default_bank_account do
@@ -201,7 +187,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
     form =
       sales_invoice
       |> SalesInvoice.changeset()
-      |> to_form
+      |> to_form()
 
     socket
     |> assign(form: form)
@@ -232,11 +218,11 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
         _ -> "expanded"
       end
 
-    socket |> assign(buyer_form_state: state)
+    assign(socket, buyer_form_state: state)
   end
 
   def assign_buyer_form_state(socket, desired_state) do
-    socket |> assign(buyer_form_state: desired_state)
+    assign(socket, buyer_form_state: desired_state)
   end
 
   def handle_params(_params, _uri, socket) do
@@ -280,13 +266,12 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
   def populate_buyer(sales_invoice), do: sales_invoice
 
   def handle_event("update_buyer_state", %{"buyer_form_state" => state}, socket) do
-    {:noreply, socket |> assign_buyer_form_state(state)}
+    {:noreply, assign_buyer_form_state(socket, state)}
   end
 
   def handle_event("change", %{"sales_invoice" => sales_invoice}, socket) do
     default_bank_account =
-      socket.assigns.bank_accounts
-      |> Enum.find_value(&(&1.is_default and &1.currency == sales_invoice["currency"]))
+      Enum.find_value(socket.assigns.bank_accounts, &(&1.is_default and &1.currency == sales_invoice["currency"]))
 
     sales_invoice =
       if default_bank_account do
@@ -317,19 +302,13 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
 
     whole_form = Map.merge(socket.assigns.form.params, sales_invoice)
 
-    sales_invoice_changeset =
-      socket.assigns.sales_invoice
-      |> SalesInvoice.changeset(whole_form)
+    sales_invoice_changeset = SalesInvoice.changeset(socket.assigns.sales_invoice, whole_form)
 
-    seller_changeset =
-      socket.assigns.sales_invoice
-      |> SalesInvoice.seller_changeset(sales_invoice)
+    seller_changeset = SalesInvoice.seller_changeset(socket.assigns.sales_invoice, sales_invoice)
 
-    buyer_changeset =
-      socket.assigns.sales_invoice
-      |> SalesInvoice.buyer_changeset(sales_invoice)
+    buyer_changeset = SalesInvoice.buyer_changeset(socket.assigns.sales_invoice, sales_invoice)
 
-    form = sales_invoice_changeset |> to_form()
+    form = to_form(sales_invoice_changeset)
 
     socket =
       socket
@@ -351,37 +330,31 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
             "buyer_nip" => buyer_info.nip
           }
 
-        socket = socket |> assign_buyer_form_state("expanded")
+        socket = assign_buyer_form_state(socket, "expanded")
         handle_event("change", %{"sales_invoice" => buyer}, socket)
 
       {:error, :not_found} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Nie udało się znaleźć takiej firmy")}
+        {:noreply, put_flash(socket, :error, "Nie udało się znaleźć takiej firmy")}
 
       {:error, :invalid_nip} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Niepoprawny NIP")}
+        {:noreply, put_flash(socket, :error, "Niepoprawny NIP")}
 
       {:error, _} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Niespodziewany błąd. Spróbuj ponownie później")}
+        {:noreply, put_flash(socket, :error, "Niespodziewany błąd. Spróbuj ponownie później")}
     end
   end
 
   def handle_event("submit", %{"sales_invoice" => sales_invoice} = params, socket) do
-    {socket, buyer_id} = socket |> maybe_create_or_update_buyer(params)
+    {socket, buyer_id} = maybe_create_or_update_buyer(socket, params)
 
-    sales_invoice = sales_invoice |> populate_buyer()
+    sales_invoice = populate_buyer(sales_invoice)
 
     sales_invoice =
-      if buyer_id != nil, do: Map.put(sales_invoice, "buyer_id", buyer_id), else: sales_invoice
+      if buyer_id == nil, do: sales_invoice, else: Map.put(sales_invoice, "buyer_id", buyer_id)
 
     user = socket.assigns.current_user
 
-    socket =
+    case_result =
       case socket.assigns do
         %{sales_invoice_id: nil, sales_invoice: socket_sales_invoice} ->
           Bodyguard.permit!(SalesInvoices, :create_sales_invoice, user)
@@ -393,7 +366,9 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
 
           SalesInvoices.update_sales_invoice(socket_sales_invoice, sales_invoice)
       end
-      |> case do
+
+    socket =
+      case case_result do
         {:ok, new_invoice} ->
           socket
           |> push_patch(to: ~p"/sprzedazowe/#{new_invoice.id}/edycja")
@@ -402,51 +377,38 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
           |> assign_currency()
 
         {:error, %Ecto.Changeset{errors: errors} = changeset} ->
-          # unique error message for invoice number duplication
           case Keyword.get(errors, :invoice_number) do
-            {_message,
-             [
-               constraint: :unique,
-               constraint_name: "sales_invoices_invoice_number_organization_id_index"
-             ]} ->
+            {_message, [constraint: :unique, constraint_name: "sales_invoices_invoice_number_organization_id_index"]} ->
               Logger.error("Duplicate invoice number: #{inspect(changeset)}")
 
-              LiveToast.send_toast(
-                :error,
-                "Ten numer faktury już istnieje w organizacji. Wybierz inny numer."
-              )
+              LiveToast.send_toast(:error, "Ten numer faktury już istnieje w organizacji. Wybierz inny numer.")
 
-              socket
-              |> assign(form: changeset |> to_form())
+              assign(socket, form: to_form(changeset))
 
             {message, []} ->
               Logger.error("Failed to save invoice: #{inspect(changeset)}")
               LiveToast.send_toast(:error, message)
 
-              socket
-              |> assign(form: changeset |> to_form())
+              assign(socket, form: to_form(changeset))
 
             _ ->
               Logger.error("Failed to save invoice: #{inspect(changeset)}")
               LiveToast.send_toast(:error, "Nie udało się zapisać faktury")
 
-              socket
-              |> assign(form: changeset |> to_form())
+              assign(socket, form: to_form(changeset))
           end
       end
 
+    # unique error message for invoice number duplication
     socket =
       if Map.get(sales_invoice, "is_buyer_confirmed"),
-        do: socket |> assign_buyer_form_state("expanded"),
+        do: assign_buyer_form_state(socket, "expanded"),
         else: socket
 
     handle_event("change", %{"sales_invoice" => sales_invoice}, socket)
   end
 
-  defp maybe_create_or_update_buyer(socket, %{
-         "action" => "add_or_update_buyer",
-         "sales_invoice" => sales_invoice
-       }) do
+  defp maybe_create_or_update_buyer(socket, %{"action" => "add_or_update_buyer", "sales_invoice" => sales_invoice}) do
     buyer_id = socket.assigns.sales_invoice.buyer_id
     user = socket.assigns.current_user
 
@@ -464,18 +426,20 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
       description: sales_invoice["buyer_description"]
     }
 
-    case buyer_id do
-      id when id in [nil, ""] ->
-        Bodyguard.permit!(SalesInvoices, :create_buyer, user)
-        SalesInvoices.create_buyer(attrs)
+    case_result =
+      case buyer_id do
+        id when id in [nil, ""] ->
+          Bodyguard.permit!(SalesInvoices, :create_buyer, user)
+          SalesInvoices.create_buyer(attrs)
 
-      id ->
-        Bodyguard.permit!(SalesInvoices, :update_buyer, user)
-        SalesInvoices.update_buyer(SalesInvoices.get_buyer!(id), attrs)
-    end
-    |> case do
+        id ->
+          Bodyguard.permit!(SalesInvoices, :update_buyer, user)
+          SalesInvoices.update_buyer(SalesInvoices.get_buyer!(id), attrs)
+      end
+
+    case case_result do
       {:ok, buyer} ->
-        {socket |> assign_buyers(), buyer.id}
+        {assign_buyers(socket), buyer.id}
 
       {:error, _} ->
         LiveToast.send_toast(:error, "Nie udało się zapisać nabywcy")

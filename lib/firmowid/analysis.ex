@@ -1,10 +1,12 @@
 defmodule Firmowid.Analysis do
-  import Ecto.Query, warn: false
-  alias Firmowid.Repo
-
-  alias Firmowid.Analysis.{Tag, TaggedItem}
-
+  @moduledoc false
   @behaviour Bodyguard.Policy
+
+  import Ecto.Query, warn: false
+
+  alias Firmowid.Analysis.Tag
+  alias Firmowid.Analysis.TaggedItem
+  alias Firmowid.Repo
 
   def authorize(:read, %{role: :admin}, _), do: true
   def authorize(:create, %{role: :admin}, _), do: true
@@ -154,8 +156,7 @@ defmodule Firmowid.Analysis do
   # Private calculation functions that sum up entities using their schema functions
 
   defp calculate_sales_invoices_total(sales_invoices) do
-    sales_invoices
-    |> Enum.reduce(Decimal.new(0), fn invoice, acc ->
+    Enum.reduce(sales_invoices, Decimal.new(0), fn invoice, acc ->
       # Use the existing get_gross_value function from SalesInvoice schema
       invoice_total = Firmowid.SalesInvoices.SalesInvoice.get_gross_value(invoice)
       Decimal.add(acc, invoice_total)
@@ -163,8 +164,7 @@ defmodule Firmowid.Analysis do
   end
 
   defp calculate_cost_invoices_total(cost_invoices) do
-    cost_invoices
-    |> Enum.reduce(Decimal.new(0), fn invoice, acc ->
+    Enum.reduce(cost_invoices, Decimal.new(0), fn invoice, acc ->
       Decimal.add(acc, invoice.total_amount)
     end)
   end

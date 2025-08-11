@@ -13,11 +13,7 @@ defmodule FirmowidWeb.CostInvoicesApiController do
              blob_params.content_type,
              blob_params.filename
            ) do
-      conn
-      |> json(%{
-        message: "Cost invoice uploaded successfully",
-        blob_id: blob.id
-      })
+      json(conn, %{message: "Cost invoice uploaded successfully", blob_id: blob.id})
     else
       {:error, {:blob_already_exists, _checksum}} ->
         conn

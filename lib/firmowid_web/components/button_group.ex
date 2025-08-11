@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.Components.ButtonGroup do
+  @moduledoc false
   use FirmowidWeb, :html
 
   @doc """
@@ -36,5 +37,5 @@ defmodule FirmowidWeb.Components.ButtonGroup do
     """
   end
 
-  defp button_defaults(), do: %{button_class: nil, icon: nil, icon_class: nil, guard: true}
+  defp button_defaults, do: %{button_class: nil, icon: nil, icon_class: nil, guard: true}
 end

@@ -1,6 +1,10 @@
 defmodule Firmowid.Accounts.OrganizationInvites do
+  @moduledoc false
   use Firmowid.Schema
+
   import Ecto.Changeset
+
+  alias Firmowid.Accounts.User
 
   schema "organization_invites" do
     field :expires_at, :utc_datetime
@@ -9,8 +13,8 @@ defmodule Firmowid.Accounts.OrganizationInvites do
     field :invite_code, :string
 
     belongs_to :organization, Firmowid.Accounts.Organization
-    belongs_to :issued_by, Firmowid.Accounts.User
-    belongs_to :consumed_by, Firmowid.Accounts.User
+    belongs_to :issued_by, User
+    belongs_to :consumed_by, User
 
     timestamps()
   end

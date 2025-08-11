@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.User.LoginLive do
+  @moduledoc false
   use FirmowidWeb, :live_view
 
   def render(assigns) do

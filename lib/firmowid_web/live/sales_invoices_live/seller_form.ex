@@ -1,8 +1,10 @@
 defmodule FirmowidWeb.SalesInvoicesLive.SellerForm do
-  require Logger
+  @moduledoc false
+  use FirmowidWeb, :html
+
   import FirmowidWeb.SalesInvoicesLive.EditButton
 
-  use FirmowidWeb, :html
+  require Logger
 
   attr :seller_form, :list, required: true
   attr :sales_invoice, :map, required: true

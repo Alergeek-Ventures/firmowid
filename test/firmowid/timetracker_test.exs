@@ -1,7 +1,9 @@
 defmodule Firmowid.TimetrackerTest do
   use Firmowid.DataCase
+
   import Firmowid.AccountsFixtures
   import Firmowid.TimetrackerFixtures
+
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Session
 
@@ -20,9 +22,7 @@ defmodule Firmowid.TimetrackerTest do
 
     {:ok, _} = Timetracker.add_user_to_project(user.id, project.id)
 
-    user =
-      user
-      |> Repo.preload(:projects)
+    user = Repo.preload(user, :projects)
 
     [users_project] = user.projects
 
@@ -95,9 +95,7 @@ defmodule Firmowid.TimetrackerTest do
           acc + session.duration
         end)
 
-      sessions
-      |> Enum.each(&session_fixture(&1))
-
+      Enum.each(sessions, &session_fixture(&1))
       assert Timetracker.get_total_time_worked(4, 2025) == duration
     end
 

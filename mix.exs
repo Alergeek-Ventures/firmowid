@@ -104,7 +104,9 @@ defmodule Firmowid.MixProject do
       {:igniter, "~> 0.5", only: [:dev]},
       {:dotenv, "~> 3.1"},
       {:tidewave, "~> 0.2", only: :dev},
-      {:content_security_policy, "~> 1.0"}
+      {:content_security_policy, "~> 1.0"},
+      {:styler, "~> 1.5", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]
   end
 

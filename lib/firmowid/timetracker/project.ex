@@ -1,17 +1,21 @@
 defmodule Firmowid.Timetracker.Project do
-  alias Firmowid.Repo
+  @moduledoc false
   use Firmowid.Schema
+
   import Ecto.Changeset
+
+  alias Firmowid.Repo
+  alias Firmowid.Timetracker.ProjectUser
 
   schema "projects" do
     field :name, :string
 
     many_to_many :users,
                  Firmowid.Accounts.User,
-                 join_through: Firmowid.Timetracker.ProjectUser
+                 join_through: ProjectUser
 
     has_many :project_users,
-             Firmowid.Timetracker.ProjectUser,
+             ProjectUser,
              on_replace: :delete
 
     belongs_to :organization, Firmowid.Accounts.Organization

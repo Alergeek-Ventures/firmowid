@@ -3,10 +3,13 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
   Invoice-matching assistant: defines prompt, tools, and function handlers for invoice-to-transaction matching.
   Delegates LLM and function-call plumbing to AssistantEngine.
   """
-  alias Firmowid.Invoicing.Matching.Assistant.CommonTools
-  alias Firmowid.Invoicing.Matching.Assistant.{Engine, Tool, MessagesStorage, Message}
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.Finances.Transaction
+  alias Firmowid.Invoicing.Matching.Assistant.CommonTools
+  alias Firmowid.Invoicing.Matching.Assistant.Engine
+  alias Firmowid.Invoicing.Matching.Assistant.Message
+  alias Firmowid.Invoicing.Matching.Assistant.MessagesStorage
+  alias Firmowid.Invoicing.Matching.Assistant.Tool
 
   @intro_message ~S"""
   Cześć, tu Firmowid!
@@ -45,7 +48,7 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
           args: %{"transaction_ids" => transaction_ids, "cost_invoice_ids" => cost_invoice_ids}
         }
       } ->
-        cost_invoice = Firmowid.CostInvoices.get_cost_invoice!(cost_invoice_ids |> hd())
+        cost_invoice = cost_invoice_ids |> hd() |> Firmowid.CostInvoices.get_cost_invoice!()
         organization_id = cost_invoice.organization_id
 
         # todo insert_all
@@ -143,7 +146,8 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
           hallucinated_invoice = is_nil(cost_invoice)
 
           hallucinated_transactions =
-            MapSet.new(transaction_ids)
+            transaction_ids
+            |> MapSet.new()
             |> MapSet.difference(MapSet.new(transactions, & &1.id))
 
           if hallucinated_invoice or not Enum.empty?(hallucinated_transactions) do
@@ -167,7 +171,7 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
     ]
   end
 
-  defp system_prompt(invoice = %CostInvoice{}) do
+  defp system_prompt(%CostInvoice{} = invoice) do
     """
     # Wprowadzenie
 
@@ -303,11 +307,11 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
     """
   end
 
-  defp cost_invoice_input(invoice = %CostInvoice{}, options \\ []) do
+  defp cost_invoice_input(%CostInvoice{} = invoice, options \\ []) do
     heading_level = Keyword.get(options, :heading_level, 1)
 
     """
-    #{"#" |> String.duplicate(heading_level)} Faktura kosztowa #{invoice.invoice_identifier}
+    #{String.duplicate("#", heading_level)} Faktura kosztowa #{invoice.invoice_identifier}
 
     > **Opis:** #{invoice.description}
 
@@ -324,11 +328,11 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
     """
   end
 
-  def transaction_input(transaction = %Transaction{}, options \\ []) do
+  def transaction_input(%Transaction{} = transaction, options \\ []) do
     heading_level = Keyword.get(options, :heading_level, 1)
 
     """
-    #{"#" |> String.duplicate(heading_level)} Transakcja
+    #{String.duplicate("#", heading_level)} Transakcja
 
     > **Dodatkowe informacje z banku:** #{transaction.remittance_information_unstructured}
 
@@ -340,7 +344,7 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
     - **Numer konta odbiorcy:** #{transaction.debtor_account}
     - **Nadawca:** #{transaction.creditor_name}
     - **Numer konta nadawcy:** #{transaction.creditor_account}
-    - **Powiązane faktury kosztowe:** #{Enum.map(transaction.cost_invoices_transactions, & &1.id) |> Enum.join(", ")}
+    - **Powiązane faktury kosztowe:** #{Enum.map_join(transaction.cost_invoices_transactions, ", ", & &1.id)}
 
     > UUID: `#{transaction.id}`
     """

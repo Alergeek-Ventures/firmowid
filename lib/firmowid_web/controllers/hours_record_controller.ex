@@ -2,8 +2,9 @@ defmodule FirmowidWeb.HoursRecordController do
   use FirmowidWeb, :controller
 
   alias Firmowid.Accounts
-  alias Firmowid.Timetracker
   alias Firmowid.Blobs
+  alias Firmowid.Timetracker
+
   @dialyzer {:no_return, pdf: 2}
 
   # sobelow_skip ["Traversal.SendFile"]
@@ -58,9 +59,7 @@ defmodule FirmowidWeb.HoursRecordController do
     start_date = Date.beginning_of_month(date)
     end_date = Date.end_of_month(date)
 
-    total_hours =
-      (Timetracker.get_sessions_duration_in_month(conn.assigns.current_user.id, date) / 3600)
-      |> ceil()
+    total_hours = ceil(Timetracker.get_sessions_duration_in_month(conn.assigns.current_user.id, date) / 3600)
 
     render(conn, :preview,
       layout: false,

@@ -2,6 +2,7 @@ defmodule FirmowidWeb.Project.Index.EmployeeSalaryFormTest do
   use FirmowidWeb.ConnCase, async: true
 
   import Ecto.Changeset, only: [get_field: 2]
+
   alias FirmowidWeb.Project.Index.EmployeeSalaryForm
 
   describe "EmployeeSalaryForm changeset" do

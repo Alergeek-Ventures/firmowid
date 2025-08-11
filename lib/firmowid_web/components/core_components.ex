@@ -15,10 +15,12 @@ defmodule FirmowidWeb.CoreComponents do
   Icons are provided by [heroicons](https://heroicons.com). See `icon/1` for usage.
   """
   use Phoenix.Component
-
-  alias Phoenix.LiveView.JS
   use Gettext, backend: FirmowidWeb.Gettext
+
   import Tails
+
+  alias Phoenix.HTML.FormField
+  alias Phoenix.LiveView.JS
 
   @doc """
   Renders a modal.
@@ -134,7 +136,7 @@ defmodule FirmowidWeb.CoreComponents do
     """
   end
 
-  def button_styles() do
+  def button_styles do
     button_styles(%{})
   end
 
@@ -221,8 +223,7 @@ defmodule FirmowidWeb.CoreComponents do
     "bg-greyButtonBg hover:border-transparent Grey border border-transparent text-darkGrey"
   end
 
-  defp button_styles(:color, %{variant: "outline"}),
-    do: button_styles(:color, %{color: "black", variant: "outline"})
+  defp button_styles(:color, %{variant: "outline"}), do: button_styles(:color, %{color: "black", variant: "outline"})
 
   defp button_styles(:color, _), do: button_styles(:color, %{color: "black"})
 
@@ -298,8 +299,7 @@ defmodule FirmowidWeb.CoreComponents do
     values: ~w(checkbox color date datetime-local email file month number password
                range search select tel text textarea time url week hidden radio)
 
-  attr :field, Phoenix.HTML.FormField,
-    doc: "a form field struct retrieved from the form, for example: @form[:email]"
+  attr :field, FormField, doc: "a form field struct retrieved from the form, for example: @form[:email]"
 
   attr :errors, :list, default: []
   attr :checked, :boolean, doc: "the checked flag for checkbox inputs"
@@ -318,11 +318,10 @@ defmodule FirmowidWeb.CoreComponents do
     default: nil,
     values: [nil, "medium", "small"]
 
-  attr :rest, :global,
-    include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
+  attr :rest, :global, include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
                 multiple pattern placeholder readonly required rows size step)
 
-  def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
+  def input(%{field: %FormField{} = field} = assigns) do
     errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
 
     assigns
@@ -572,7 +571,7 @@ defmodule FirmowidWeb.CoreComponents do
         <:radio value="20">20%</:radio>
       </.radio_group>
   """
-  attr :field, Phoenix.HTML.FormField, required: true
+  attr :field, FormField, required: true
   attr :class, :string, default: nil
 
   slot :radio, required: true do
@@ -831,8 +830,7 @@ defmodule FirmowidWeb.CoreComponents do
       to: selector,
       time: 300,
       transition:
-        {"transition-all transform ease-out duration-300",
-         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95",
+        {"transition-all transform ease-out duration-300", "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95",
          "opacity-100 translate-y-0 sm:scale-100"}
     )
   end
@@ -842,8 +840,7 @@ defmodule FirmowidWeb.CoreComponents do
       to: selector,
       time: 200,
       transition:
-        {"transition-all transform ease-in duration-200",
-         "opacity-100 translate-y-0 sm:scale-100",
+        {"transition-all transform ease-in duration-200", "opacity-100 translate-y-0 sm:scale-100",
          "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
     )
   end
