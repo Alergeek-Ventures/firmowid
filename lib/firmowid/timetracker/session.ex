@@ -13,6 +13,7 @@ defmodule Firmowid.Timetracker.Session do
     field :title, :string
     field :start_datetime, :utc_datetime, autogenerate: {DateTime, :utc_now}
     field :end_datetime, :utc_datetime
+    field :is_remote, :boolean, default: false
 
     field :lockdown, :boolean, virtual: true
 
@@ -25,8 +26,8 @@ defmodule Firmowid.Timetracker.Session do
   @doc false
   def changeset(session, attrs \\ %{}) do
     session
-    |> cast(attrs, [:user_id, :title, :start_datetime, :end_datetime, :project_id])
-    |> validate_required([:user_id, :title, :start_datetime, :project_id])
+    |> cast(attrs, [:user_id, :title, :start_datetime, :end_datetime, :project_id, :is_remote])
+    |> validate_required([:user_id, :title, :start_datetime, :project_id, :is_remote])
     |> validate_datetime_order()
     |> prepare_changes(&ensure_user_has_access_to_project/1)
     |> put_change(:organization_id, Repo.get_org_id())
