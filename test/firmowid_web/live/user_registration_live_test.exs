@@ -75,7 +75,7 @@ defmodule FirmowidWeb.UserRegistrationLiveTest do
 
       {:ok, _login_live, login_html} =
         lv
-        |> element(~s|main a:fl-contains("Zaloguj się")|)
+        |> element("main a", "Zaloguj się")
         |> render_click()
         |> follow_redirect(conn, ~p"/zaloguj")
 

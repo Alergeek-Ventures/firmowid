@@ -59,7 +59,7 @@ defmodule FirmowidWeb.UserLoginLiveTest do
 
       {:ok, _login_live, login_html} =
         lv
-        |> element(~s|main a:fl-contains("Zarejestruj się")|)
+        |> element("main a", "Zarejestruj się")
         |> render_click()
         |> follow_redirect(conn, ~p"/zarejestruj")
 
@@ -73,7 +73,7 @@ defmodule FirmowidWeb.UserLoginLiveTest do
 
       {:ok, conn} =
         lv
-        |> element(~s|main a:fl-contains("Zapomniałeś hasła?")|)
+        |> element("main a", "Zapomniałeś hasła?")
         |> render_click()
         |> follow_redirect(conn, ~p"/resetuj-haslo")
 

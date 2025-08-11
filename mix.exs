@@ -10,6 +10,7 @@ defmodule Firmowid.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      compilers: [:phoenix_live_view] ++ Mix.compilers(),
 
       # TEMP: remove this once https://github.com/jeremyjh/dialyxir/issues/561 is resolved
       dialyzer: [
@@ -47,8 +48,7 @@ defmodule Firmowid.MixProject do
       {:uuidv7, "~> 1.0"},
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:phoenix_live_view, "~> 1.0.0", override: true},
-      {:floki, ">= 0.30.0", only: :test},
+      {:phoenix_live_view, "~> 1.1.3", override: true},
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.3", runtime: Mix.env() == :dev},
@@ -104,6 +104,7 @@ defmodule Firmowid.MixProject do
       {:igniter, "~> 0.5", only: [:dev]},
       {:dotenv, "~> 3.1"},
       {:tidewave, "~> 0.2", only: :dev},
+      {:lazy_html, ">= 0.1.0", only: :test},
       {:content_security_policy, "~> 1.0"},
       {:styler, "~> 1.5", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
