@@ -7,5 +7,6 @@
   format: "txt",
   out: "",
   threshold: "low",
-  ignore_files: []
+  ignore_files: [],
+  ignore: ["Config.CSP"],
 ]

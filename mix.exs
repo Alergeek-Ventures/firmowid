@@ -103,7 +103,8 @@ defmodule Firmowid.MixProject do
       {:oban_web, "~> 2.11"},
       {:igniter, "~> 0.5", only: [:dev]},
       {:dotenv, "~> 3.1"},
-      {:tidewave, "~> 0.2", only: :dev}
+      {:tidewave, "~> 0.2", only: :dev},
+      {:content_security_policy, "~> 1.0"}
     ]
   end
 
