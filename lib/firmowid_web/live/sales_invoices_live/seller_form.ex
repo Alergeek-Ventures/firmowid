@@ -34,10 +34,20 @@ defmodule FirmowidWeb.SalesInvoicesLive.SellerForm do
           options={
             @bank_accounts
             |> Enum.map(fn bank_account ->
-              {
-                "[#{bank_account.currency}] #{bank_account.institution_name} #{bank_account.iban} #{if bank_account.is_default and bank_account.currency == @sales_invoice.currency, do: "[domyślne dla waluty]"}",
-                bank_account.iban
-              }
+              display_institution =
+                cond do
+                  bank_account.name && bank_account.name != "" -> bank_account.name
+                  bank_account.institution_name == "Manual" -> "wprowadzone ręcznie"
+                  true -> bank_account.institution_name
+                end
+
+              label =
+                "[#{bank_account.currency}] #{display_institution} #{bank_account.iban} " <>
+                  if bank_account.is_default and bank_account.currency == @sales_invoice.currency,
+                    do: "[domyślne dla waluty]",
+                    else: ""
+
+              {label, bank_account.iban}
             end)
           }
         />

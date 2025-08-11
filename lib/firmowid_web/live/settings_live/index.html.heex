@@ -455,7 +455,8 @@
         <%= if Enum.any?(@bank_accounts) do %>
           <div class="space-y-4 mt-6">
             <%= for {institution, accounts} <- Enum.group_by(@bank_accounts, & &1.institution_name) do %>
-              <h3>{institution}</h3>
+              <h3>{if(institution == "Manual", do: "wprowadzone ręcznie", else: institution)}</h3>
+
               <div class="flex flex-wrap items-start gap-4">
                 <%= for account <- accounts do %>
                   <div class={[
@@ -620,12 +621,49 @@
               </div>
             <% end %>
           </div>
-          <.link
-            navigate={~p"/ustawienia/bank/dodaj"}
-            class={classes([button_styles(%{variant: "outline"}), "ml-auto mt-16"])}
+          <div class="ml-auto mt-16 flex gap-2">
+            <.link
+              navigate={~p"/ustawienia/bank/dodaj"}
+              class={button_styles(%{variant: "outline"})}
+            >
+              Podepnij kolejne konto
+            </.link>
+            <.button variant="outline" phx-click={show_modal("manual_bank_account_modal")}>
+              Dodaj konto ręcznie
+            </.button>
+          </div>
+          <.modal
+            id="manual_bank_account_modal"
+            on_cancel={hide_modal("manual_bank_account_modal")}
           >
-            Podepnij kolejne konto
-          </.link>
+            <div class="flex flex-col gap-4">
+              <h3 class="text-lg font-semibold">Dodaj konto bankowe ręcznie</h3>
+              <p class="text-sm text-darkGrey">
+                Ta funkcja pozwala dodać konto bez integracji z bankiem. Synchronizacja transakcji będzie wyłączona.
+              </p>
+              <.form
+                for={%{}}
+                phx-submit="create_manual_bank_account"
+                id="manual_bank_account_form"
+              >
+                <.input name="name" label="Nazwa konta" value="" />
+                <.input name="iban" label="IBAN" value="" />
+                <.input name="currency" label="Waluta" value="" />
+                <div class="mt-4 flex gap-4">
+                  <.button
+                    type="submit"
+                    phx-click={hide_modal("manual_bank_account_modal")}
+                    phx-disable-with="Dodawanie..."
+                  >
+                    Zapisz
+                  </.button>
+                  <.button type="button" phx-click={hide_modal("manual_bank_account_modal")}>
+                    Anuluj
+                  </.button>
+                </div>
+              </.form>
+            </div>
+          </.modal>
         <% else %>
           <div class="text-left py-6 text-darkGrey">
             <p>Nie masz jeszcze żadnych kont bankowych.</p>

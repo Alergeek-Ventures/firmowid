@@ -38,6 +38,6 @@ defmodule Firmowid.Finances.BankAccount do
       :name,
       :is_default
     ])
-    |> validate_required([:iban, :organization_id, :requisition_id])
+    |> validate_required([:iban, :organization_id])
   end
 end

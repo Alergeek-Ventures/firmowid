@@ -370,6 +370,35 @@ defmodule FirmowidWeb.SettingsLive.Index do
     end
   end
 
+  def handle_event("create_manual_bank_account", params, socket) do
+    Bodyguard.permit!(Firmowid.Finances, :create_bank_account, socket.assigns.current_user)
+
+    org_id = socket.assigns.current_user.organization_id
+
+    attrs = %{
+      iban: params["iban"],
+      name: params["name"],
+      currency: params["currency"],
+      organization_id: org_id,
+      institution_name: "Manual"
+    }
+
+    case Finances.create_manual_bank_account(attrs) do
+      %Finances.BankAccount{} ->
+        LiveToast.send_toast(:info, "Konto zostało dodane.")
+        accounts = BankData.list_bank_accounts()
+
+        {:noreply,
+         socket
+         |> assign(:bank_accounts, accounts)
+         |> assign(:bank_account_statuses, derive_statuses(accounts))}
+
+      _ ->
+        LiveToast.send_toast(:error, "Nie udało się dodać konta.")
+        {:noreply, socket}
+    end
+  end
+
   defp derive_statuses(bank_accounts) do
     bank_accounts
     |> Enum.map(fn account ->

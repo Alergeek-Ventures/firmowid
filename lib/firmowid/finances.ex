@@ -69,6 +69,17 @@ defmodule Firmowid.Finances do
     )
   end
 
+  def create_manual_bank_account(attrs \\ %{}) do
+    attrs =
+      attrs
+      |> Map.put_new(:institution_name, "Manual")
+      |> Map.put(:gocardless_id, nil)
+      |> Map.put(:institution_id, nil)
+      |> Map.put(:requisition_id, nil)
+
+    create_bank_account(attrs)
+  end
+
   def update_bank_account(%BankAccount{} = bank_account, attrs) do
     bank_account
     |> BankAccount.changeset(attrs)
