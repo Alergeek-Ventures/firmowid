@@ -453,7 +453,7 @@
           <h2 class="font-bold mt-0.5">Konta bankowe</h2>
         </div>
         <%= if Enum.any?(@bank_accounts) do %>
-          <div class="space-y-4 mt-6">
+          <div class="space-y-4 mt-10">
             <%= for {institution, accounts} <- Enum.group_by(@bank_accounts, & &1.institution_name) do %>
               <h3>{if(institution == "Manual", do: "wprowadzone ręcznie", else: institution)}</h3>
 
@@ -462,7 +462,7 @@
                   <div class={[
                     "border border-greyButtonBg rounded-md p-4",
                     "relative grid grid-cols-[85px_1fr] gap-2",
-                    "align-center justify-center"
+                    "align-center justify-center w-[450px]"
                   ]}>
                     <%= for {label, value} <- [
                           {"Nazwa", account.name},
@@ -478,21 +478,24 @@
                       <%= if label == "Numer" do %>
                         <div class="flex items-center gap-2">
                           <span class="break-all">{value}</span>
-                          <.icon
+                          <span
                             :if={@bank_account_statuses[account.id] == :connected}
-                            name="hero-check-circle-solid"
-                            class="w-4 h-4 text-greenText"
-                          />
-                          <.icon
+                            class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-greenText"
+                          >
+                            <.icon name="hero-check-circle-solid" class="w-5 h-5 text-greenBg" />
+                          </span>
+                          <span
                             :if={@bank_account_statuses[account.id] in [:broken, :disconnected]}
-                            name="hero-x-mark-solid"
-                            class="w-4 h-4 text-redText"
-                          />
-                          <.icon
+                            class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-redBg"
+                          >
+                            <.icon name="hero-x-mark-solid" class="w-5 h-5 text-redText" />
+                          </span>
+                          <span
                             :if={@bank_account_statuses[account.id] == :processing}
-                            name="hero-arrow-path"
-                            class="w-4 h-4 text-blueText animate-spin"
-                          />
+                            class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blueBg"
+                          >
+                            <.icon name="hero-ellipsis-horizontal" class="w-5 h-5 text-blueText" />
+                          </span>
                         </div>
                       <% else %>
                         <div class={[
@@ -552,6 +555,7 @@
                             Zmień nazwę
                           </button>
                           <button
+                            :if={!is_nil(account.institution_id)}
                             phx-click="reconnect_bank_account"
                             phx-value-account_id={account.id}
                             class={[
@@ -563,6 +567,7 @@
                           >
                             Połącz ponownie
                           </button>
+
                           <button
                             phx-click="delete_bank_account"
                             phx-value-account_id={account.id}

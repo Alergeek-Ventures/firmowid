@@ -202,6 +202,22 @@ defmodule Firmowid.BankData do
     end)
   end
 
+  @doc """
+  Determine if a bank account has at least one successful sync job (state: completed).
+  """
+  def bank_account_has_success?(bank_account_id) do
+    Oban.Job
+    |> where(
+      [j],
+      fragment("args->>'name' = ?", "bank_account_sync") and
+        fragment("args->>'bank_account_id' = ?", ^to_string(bank_account_id)) and
+        j.state == ^"completed"
+    )
+    |> limit(1)
+    |> Repo.all(oban_jobs: true)
+    |> then(&(length(&1) > 0))
+  end
+
   defp upsert_booked_transactions(booked_transactions, bank_account_id, organization_id) do
     booked_transactions
     |> Enum.map(fn transaction_from_api ->

@@ -100,35 +100,6 @@ defmodule FirmowidWeb.SettingsLive.Index do
      |> assign(:main_class, "bg-white")}
   end
 
-  def handle_params(%{"ref" => requisition_id} = params, _url, socket) do
-    Bodyguard.permit!(BankData, :create_requisition, socket.assigns.current_user)
-    organization_id = socket.assigns.current_user.organization_id
-
-    %{
-      name: "check_requisition_status",
-      requisition_id: requisition_id,
-      organization_id: organization_id
-    }
-    |> Firmowid.BankData.Worker.new()
-    |> Firmowid.Oban.insert!()
-
-    if params["error"] do
-      details = params["details"]
-      Sentry.capture_message("Failed to connect to bank. Error: #{params["error"]} #{details}")
-
-      {:noreply,
-       socket
-       |> LiveToast.put_toast(
-         :error,
-         "Będziemy kontynuować próby połączenia w Twoim imieniu.",
-         title: "Połączenie z bankiem nie zostało utworzone w tym momencie."
-       )
-       |> push_patch(to: ~p"/ustawienia?tab=konta_bankowe")}
-    else
-      {:noreply, push_patch(socket, to: ~p"/ustawienia?tab=konta_bankowe")}
-    end
-  end
-
   def handle_params(%{"tab" => tab}, _uri, socket) do
     {:noreply, assign(socket, tab: tab)}
   end
@@ -345,7 +316,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
       {:noreply, push_navigate(socket, to: ~p"/ustawienia/bank/dodaj")}
     else
       organization_id = socket.assigns.current_user.organization_id
-      redirect_url = FirmowidWeb.Endpoint.url() <> "/ustawienia?tab=konta_bankowe"
+      redirect_url = FirmowidWeb.Endpoint.url() <> "/ustawienia/bank/dodaj"
 
       # Determine the correct transaction horizon for this institution (as in /dodaj)
       transaction_days =
@@ -404,7 +375,11 @@ defmodule FirmowidWeb.SettingsLive.Index do
     |> Enum.map(fn account ->
       status =
         cond do
-          account.requisition && account.requisition.status == :pending ->
+          # Manual accounts (no backend link) or accounts with no successful sync yet
+          is_nil(account.gocardless_id) ->
+            :processing
+
+          not BankData.bank_account_has_success?(account.id) ->
             :processing
 
           account.requisition && account.requisition.status == :rejected ->
@@ -412,6 +387,9 @@ defmodule FirmowidWeb.SettingsLive.Index do
 
           BankData.bank_account_broken?(account.id) ->
             :broken
+
+          account.requisition && account.requisition.status == :pending ->
+            :processing
 
           true ->
             :connected
