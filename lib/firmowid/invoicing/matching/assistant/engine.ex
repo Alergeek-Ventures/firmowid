@@ -190,28 +190,42 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
     Logger.debug("function_call: exec: #{inspect(fname)}, args: #{inspect(args)}")
 
     tool = Enum.find(tools, &(&1.name == fname))
-    tool_result = tool.handler.(args)
 
-    case tool_result do
-      :halt ->
-        call_msg = call_msg |> Map.update!(:payload, &Map.put(&1, :halt, true))
-        [call_msg]
+    try do
+      tool_result = tool.handler.(args)
 
-      _ ->
-        llm_render = tool.llm_render.(tool_result)
+      case tool_result do
+        :halt ->
+          call_msg = call_msg |> Map.update!(:payload, &Map.put(&1, :halt, true))
+          [call_msg]
 
-        Logger.debug("function_result: exec: #{inspect(fname)}, result: #{inspect(tool_result)}")
+        _ ->
+          llm_render = tool.llm_render.(tool_result)
 
-        result_msg =
-          Message.new(:function_result, llm_render, %{
+          result_msg =
+            Message.new(:function_result, llm_render, %{
+              name: fname,
+              args: args,
+              call_id: call_id,
+              result: tool_result,
+              done: true
+            })
+
+          [call_msg, result_msg]
+      end
+    rescue
+      error ->
+        error_msg =
+          Message.new(:function_result, "Error: #{inspect(error)}", %{
             name: fname,
             args: args,
             call_id: call_id,
-            result: tool_result,
+            result: nil,
             done: true
           })
 
-        [call_msg, result_msg]
+        Logger.error("#{inspect(error)}")
+        [call_msg, error_msg]
     end
   end
 
