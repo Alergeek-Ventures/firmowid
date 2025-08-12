@@ -10,10 +10,10 @@
           <.input
             type="select"
             id="tag_selector"
-            name="tag_id"
-            value={@params.tag_id}
+            name="tag_definition_id"
+            value={@params.tag_definition_id}
             options={
-              @tags
+              @tag_definitions
               |> Enum.map(&{&1.name, &1.id})
             }
             class="w-48"

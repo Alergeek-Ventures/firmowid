@@ -24,11 +24,11 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
         date_string -> Date.from_iso8601!(date_string)
       end
 
-    tag_id = Map.get(params, "tag_id", :all)
+    tag_definition_id = Map.get(params, "tag_definition_id", :all)
 
     socket =
       socket
-      |> assign(:params, %{month: month, tag_id: tag_id})
+      |> assign(:params, %{month: month, tag_definition_id: tag_definition_id})
       |> load_data()
 
     {:noreply, socket}
@@ -40,30 +40,31 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
   end
 
   @impl true
-  def handle_event("change-tag", %{"tag_id" => tag_id}, socket) do
-    {:noreply, update_param(socket, :tag_id, tag_id)}
+  def handle_event("change-tag", %{"tag_definition_id" => tag_definition_id}, socket) do
+    {:noreply, update_param(socket, :tag_definition_id, tag_definition_id)}
   end
 
   defp update_param(socket, key, value) do
-    params = socket.assigns.params |> Map.put(key, value) |> dbg()
+    params = Map.put(socket.assigns.params, key, value)
 
     url_params = %{
       month: params.month,
-      tag_id: params.tag_id
+      tag_definition_id: params.tag_definition_id
     }
 
-    socket = push_patch(socket, to: ~p"/analiza?month=#{url_params.month}&tag_id=#{url_params.tag_id}")
+    socket =
+      push_patch(socket, to: ~p"/analiza?month=#{url_params.month}&tag_definition_id=#{url_params.tag_definition_id}")
 
     socket
   end
 
   defp load_data(socket) do
     month = socket.assigns.params.month
-    tag_id = socket.assigns.params.tag_id
+    tag_definition_id = socket.assigns.params.tag_definition_id
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
 
-    totals = Analysis.get_organization_totals(date_range_from, date_range_to, tag_id)
+    totals = Analysis.get_organization_totals(date_range_from, date_range_to, tag_definition_id)
 
     socket
     |> assign(:total_income, totals.total_income)
@@ -72,6 +73,6 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
     |> assign(:transactions, totals.transactions)
     |> assign(:sales_invoices, totals.sales_invoices)
     |> assign(:cost_invoices, totals.cost_invoices)
-    |> assign(:tags, Analysis.list_tags())
+    |> assign(:tag_definitions, Analysis.list_tag_definitions())
   end
 end

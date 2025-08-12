@@ -1,11 +1,11 @@
-defmodule Firmowid.Analysis.TaggedItem do
+defmodule Firmowid.Analysis.EntityTag do
   @moduledoc false
   use Firmowid.Schema
 
   import Ecto.Changeset
 
-  schema "tagged_items" do
-    belongs_to :tag, Firmowid.Analysis.Tag
+  schema "entity_tags" do
+    belongs_to :tag_definition, Firmowid.Analysis.TagDefinition
 
     field :entity_type, Ecto.Enum,
       values: [
@@ -25,8 +25,8 @@ defmodule Firmowid.Analysis.TaggedItem do
 
   def changeset(tagged_item, attrs) do
     tagged_item
-    |> cast(attrs, [:tag_id, :entity_type, :entity_id])
-    |> validate_required([:tag_id, :entity_type, :entity_id])
+    |> cast(attrs, [:tag_definition_id, :entity_type, :entity_id])
+    |> validate_required([:tag_definition_id, :entity_type, :entity_id])
     |> validate_inclusion(:entity_type, [
       :transaction,
       :sales_invoice,
@@ -35,6 +35,6 @@ defmodule Firmowid.Analysis.TaggedItem do
       :sales_invoices_transactions
     ])
     |> put_change(:organization_id, Firmowid.Repo.get_org_id())
-    |> unique_constraint([:entity_type, :entity_id, :tag_id])
+    |> unique_constraint([:entity_type, :entity_id, :tag_definition_id])
   end
 end

@@ -107,6 +107,8 @@ defmodule Firmowid.Repo.Migrations.AddTagsToCostInvoicesTransactionsAndConstrain
     """
 
     # Create triggers
+    execute "DROP TRIGGER IF EXISTS tag_consistency_trigger ON tagged_items"
+
     execute """
     CREATE TRIGGER tag_consistency_trigger
       BEFORE INSERT ON tagged_items
@@ -114,12 +116,16 @@ defmodule Firmowid.Repo.Migrations.AddTagsToCostInvoicesTransactionsAndConstrain
       EXECUTE FUNCTION check_tag_consistency();
     """
 
+    execute "DROP TRIGGER IF EXISTS cost_linking_consistency_trigger ON cost_invoices_transactions"
+
     execute """
     CREATE TRIGGER cost_linking_consistency_trigger
       BEFORE INSERT ON cost_invoices_transactions
       FOR EACH ROW
       EXECUTE FUNCTION check_cost_linking_consistency();
     """
+
+    execute "DROP TRIGGER IF EXISTS sales_linking_consistency_trigger ON sales_invoices_transactions"
 
     execute """
     CREATE TRIGGER sales_linking_consistency_trigger

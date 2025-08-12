@@ -4,8 +4,8 @@ defmodule Firmowid.Analysis do
 
   import Ecto.Query, warn: false
 
-  alias Firmowid.Analysis.Tag
-  alias Firmowid.Analysis.TaggedItem
+  alias Firmowid.Analysis.EntityTag
+  alias Firmowid.Analysis.TagDefinition
   alias Firmowid.CostInvoices
   alias Firmowid.Currencies
   alias Firmowid.Finances
@@ -20,71 +20,71 @@ defmodule Firmowid.Analysis do
 
   # CRUD - tags and tagged items
 
-  def list_tags do
-    Tag
+  def list_tag_definitions do
+    TagDefinition
     |> order_by([t], t.name)
     |> Repo.all()
   end
 
-  def get_tag!(id), do: Repo.get!(Tag, id)
+  def get_tag_definition!(id), do: Repo.get!(TagDefinition, id)
 
-  def create_tag(attrs \\ %{}) do
-    %Tag{}
-    |> Tag.changeset(attrs)
+  def create_tag_definition(attrs \\ %{}) do
+    %TagDefinition{}
+    |> TagDefinition.changeset(attrs)
     |> Repo.insert()
   end
 
-  def update_tag(%Tag{} = tag, attrs) do
+  def update_tag_definition(%TagDefinition{} = tag, attrs) do
     tag
-    |> Tag.changeset(attrs)
+    |> TagDefinition.changeset(attrs)
     |> Repo.update()
   end
 
-  def delete_tag(%Tag{} = tag) do
+  def delete_tag_definition(%TagDefinition{} = tag) do
     Repo.delete(tag)
   end
 
-  def change_tag(%Tag{} = tag, attrs \\ %{}) do
-    Tag.changeset(tag, attrs)
+  def change_tag_definition(%TagDefinition{} = tag, attrs \\ %{}) do
+    TagDefinition.changeset(tag, attrs)
   end
 
   # Tagging
 
   def tag_entity(entity_type, entity_id, tag_id) do
-    %TaggedItem{}
-    |> TaggedItem.changeset(%{
+    %EntityTag{}
+    |> EntityTag.changeset(%{
       entity_type: entity_type,
       entity_id: entity_id,
-      tag_id: tag_id
+      tag_definition_id: tag_id
     })
     |> Repo.insert()
   end
 
   def untag_entity(entity_type, entity_id, tag_id) do
-    case Repo.get_by(TaggedItem, entity_type: entity_type, entity_id: entity_id, tag_id: tag_id) do
+    case Repo.get_by(EntityTag, entity_type: entity_type, entity_id: entity_id, tag_definition_id: tag_id) do
       nil -> {:error, :not_found}
       tagged_item -> Repo.delete(tagged_item)
     end
   end
 
   def get_entity_tags(entity_type, entity_id) do
-    TaggedItem
+    EntityTag
     |> where([ti], ti.entity_type == ^entity_type and ti.entity_id == ^entity_id)
-    |> preload(:tag)
+    |> preload(:tag_definition)
     |> Repo.all()
-    |> Enum.map(& &1.tag)
+    |> Enum.map(& &1.tag_definition)
   end
 
   def list_tagged_entities(tag_id) do
-    TaggedItem
-    |> where([ti], ti.tag_id == ^tag_id)
-    |> preload(:tag)
+    EntityTag
+    |> where([ti], ti.tag_definition_id == ^tag_id)
+    |> preload(:tag_definition)
     |> Repo.all()
   end
 
   def get_entity_ids_by_tag(tag_id, entity_type) do
-    TaggedItem
-    |> where([ti], ti.tag_id == ^tag_id and ti.entity_type == ^entity_type)
+    EntityTag
+    |> where([ti], ti.tag_definition_id == ^tag_id and ti.entity_type == ^entity_type)
     |> select([ti], ti.entity_id)
     |> Repo.all()
   end

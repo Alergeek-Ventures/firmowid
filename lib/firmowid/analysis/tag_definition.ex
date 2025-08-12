@@ -1,10 +1,10 @@
-defmodule Firmowid.Analysis.Tag do
+defmodule Firmowid.Analysis.TagDefinition do
   @moduledoc false
   use Firmowid.Schema
 
   import Ecto.Changeset
 
-  schema "tags" do
+  schema "tag_definitions" do
     field :name, :string
     field :color, :string, default: "#6B7280"
 
