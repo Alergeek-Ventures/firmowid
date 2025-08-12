@@ -30,7 +30,10 @@ let csrfToken = document
 
 let liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
-  params: { _csrf_token: csrfToken },
+  params: {
+    _csrf_token: csrfToken,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  },
   hooks: {
     LiveToast: createLiveToastHook(),
     ...Hooks

@@ -42,8 +42,15 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     last_session = Timetracker.get_most_recent_session(socket.assigns.current_user.id)
     default_project_id = if last_session, do: last_session.project_id
 
+    timezone =
+      if connected?(socket) do
+        get_connect_params(socket)["timezone"]
+      end ||
+        "Europe/Warsaw"
+
     {:ok,
      socket
+     |> assign(:timezone, timezone)
      |> assign(:sessions_after, four_weeks_ago)
      |> assign_sessions()
      |> assign(:projects, Timetracker.list_user_projects(socket.assigns.current_user.id))
@@ -52,15 +59,27 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def assign_sessions(%{assigns: %{sessions_after: after_date}} = socket) do
+    timezone = socket.assigns.timezone
+
     sessions =
-      Timetracker.list_user_sessions(socket.assigns.current_user.id, after_date: after_date)
+      socket.assigns.current_user.id
+      |> Timetracker.list_user_sessions(after_date: after_date)
+      |> Enum.map(fn session ->
+        session
+        |> Map.update!(:start_datetime, &DateTime.shift_zone!(&1, timezone))
+        |> Map.update!(:end_datetime, fn
+          nil -> nil
+          end_datetime -> DateTime.shift_zone!(end_datetime, timezone)
+        end)
+      end)
 
     next_sessions_available =
       Timetracker.count_user_sessions(socket.assigns.current_user.id) > length(sessions)
 
     {today_sessions, rest_sessions} =
       Enum.split_with(sessions, fn session ->
-        DateTime.to_date(session.start_datetime) == Date.utc_today()
+        DateTime.to_date(session.start_datetime) ==
+          timezone |> DateTime.now!() |> DateTime.to_date()
       end)
 
     today_sessions = group_nearby(today_sessions)
@@ -85,7 +104,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     |> assign(:grouped_sessions, grouped_sessions)
     |> assign(:next_sessions_available, next_sessions_available)
     |> assign(:current_session, Timetracker.get_current_session(socket.assigns.current_user.id))
-    |> assign(:month_stats, calculate_month_stats(socket.assigns.current_user.id))
+    |> assign_month_stats()
   end
 
   def group_nearby(sessions) do
@@ -103,7 +122,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def handle_event("toggle_extended_form", _, socket) do
-    now = DateTime.now!("Europe/Warsaw")
+    now = DateTime.now!(socket.assigns.timezone)
 
     {:noreply,
      socket
@@ -193,8 +212,8 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
 
     params =
       params
-      |> Map.update("start_datetime", nil, &string_to_datetime/1)
-      |> Map.update("end_datetime", nil, &string_to_datetime/1)
+      |> Map.update("start_datetime", nil, &string_to_datetime(&1, socket.assigns.timezone))
+      |> Map.update("end_datetime", nil, &string_to_datetime(&1, socket.assigns.timezone))
 
     case Timetracker.update_session(session.id, params) do
       {:ok, session} ->
@@ -273,12 +292,6 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   def format_time(""), do: nil
   def format_time(nil), do: nil
 
-  def format_time(%DateTime{} = datetime) do
-    datetime
-    |> DateTime.shift_zone!("Europe/Warsaw")
-    |> Calendar.strftime("%H:%M")
-  end
-
   def format_time(%Time{} = time) do
     Calendar.strftime(time, "%H:%M")
   end
@@ -290,19 +303,20 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     end)
   end
 
-  defp string_to_datetime(nil), do: nil
+  defp string_to_datetime("", _timezone), do: nil
+  defp string_to_datetime(nil, _timezone), do: nil
 
-  defp string_to_datetime(""), do: nil
-
-  defp string_to_datetime(string) do
+  defp string_to_datetime(string, timezone) do
     (string <> ":00")
     |> NaiveDateTime.from_iso8601!()
-    |> DateTime.from_naive!("Europe/Warsaw")
+    |> DateTime.from_naive!(timezone)
   end
 
-  def calculate_month_stats(user_id) do
-    now = DateTime.now!("Europe/Warsaw")
-    total_seconds = Timetracker.get_sessions_duration_in_month(user_id, now)
+  def assign_month_stats(socket) do
+    now = DateTime.now!(socket.assigns.timezone)
+
+    total_seconds =
+      Timetracker.get_sessions_duration_in_month(socket.assigns.current_user.id, now)
 
     hours = div(total_seconds, 60 * 60)
     minutes = rem(div(total_seconds, 60), 60)
@@ -324,12 +338,12 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
         12 -> "grudniu"
       end
 
-    %{
+    assign(socket, :month_stats, %{
       hours: hours,
       minutes: minutes,
-      elapsed: DateTime.add(DateTime.utc_now(), -total_seconds),
+      elapsed: DateTime.add(now, -total_seconds),
       percentage: percentage,
       month: current_month
-    }
+    })
   end
 end
