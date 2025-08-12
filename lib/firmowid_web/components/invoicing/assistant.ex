@@ -173,7 +173,7 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
         >
           <div class="grid grid-cols-[min-content,1fr] gap-x-3">
             <span class="text-sm text-grey-700">Nadawca</span>
-            <span class="text-black truncate">{transaction.creditor_name}</span>
+            <span class="text-black truncate">{transaction.debtor_name}</span>
             <span class="text-sm text-grey-700">Zaksięgowano</span>
             <span class="text-black">{TimeFormatter.format_date(transaction.booking_date)}</span>
           </div>

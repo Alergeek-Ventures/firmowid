@@ -104,7 +104,7 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
               description:
                 "Wiadomości która wyświetli się użytkownikowi. Zawrzyj w niej informacje o sumie transakcji i ich ilości. np: Znalazłem 2 pasujące transakcje - ich suma wynosi 80,00 PLN."
             },
-            cost_invoice_ids: %{
+            sales_invoice_ids: %{
               type: "array",
               items: %{type: "string"},
               description: "Lista UUID faktur sprzedażowych"
