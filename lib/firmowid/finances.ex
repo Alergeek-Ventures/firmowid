@@ -133,7 +133,11 @@ defmodule Firmowid.Finances do
     date_from = Map.get(params, :date_from)
     date_to = Map.get(params, :date_to)
 
-    base_query = preload(from(Transaction, as: :transaction), [:cost_invoices_transactions, :sales_invoices_transactions])
+    base_query =
+      preload(from(Transaction, as: :transaction), [
+        :cost_invoices_transactions,
+        :sales_invoices_transactions
+      ])
 
     base_query =
       if only_unmatched do
@@ -228,29 +232,16 @@ defmodule Firmowid.Finances do
     |> Repo.preload(:sales_invoices_transactions)
   end
 
-  def get_transaction!(transaction_id) do
-    transaction =
-      Transaction
-      |> Repo.get!(transaction_id)
-      |> Repo.preload(:bank_account)
-      |> Repo.preload(:cost_invoices_transactions)
-
-    Map.put(
-      transaction,
-      :amount,
-      Money.new(
-        transaction.transaction_currency,
-        transaction.transaction_amount
-      )
-    )
-  end
-
   def get_transactions!(ids) do
     Transaction
     |> where([t], t.id in ^ids)
     |> Repo.all()
     |> Enum.map(fn transaction ->
-      Map.put(transaction, :amount, Money.new(transaction.transaction_currency, transaction.transaction_amount))
+      Map.put(
+        transaction,
+        :amount,
+        Money.new(transaction.transaction_currency, transaction.transaction_amount)
+      )
     end)
   end
 
@@ -287,23 +278,6 @@ defmodule Firmowid.Finances do
         organization_id = Map.get(transaction, :organization_id)
         broadcast_transaction_list_updated(organization_id)
     end
-  end
-
-  def update_transaction(transaction_id, attrs) do
-    changeset =
-      transaction_id
-      |> get_transaction!()
-      |> Transaction.changeset(attrs)
-
-    Repo.update!(changeset)
-  end
-
-  def delete_transaction(%Transaction{} = transaction) do
-    Repo.delete(transaction)
-  end
-
-  def change_transaction(%Transaction{} = transaction, attrs \\ %{}) do
-    Transaction.changeset(transaction, attrs)
   end
 
   def list_transactions_with_skipped_invoicing(date_from, date_to) do

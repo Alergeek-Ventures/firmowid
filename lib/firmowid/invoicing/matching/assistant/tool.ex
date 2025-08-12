@@ -25,21 +25,6 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Tool do
           metadata: map() | nil
         }
 
-  @doc """
-  Converts a Tool struct to the OpenAI tool wire format (for use in the tools list).
-  """
-  @spec to_openai(t()) :: map()
-  def to_openai(%__MODULE__{name: name, description: description, args_schema: args_schema}) do
-    %{
-      type: "function",
-      function: %{
-        name: name,
-        description: description,
-        parameters: args_schema
-      }
-    }
-  end
-
   def to_openai_response(%__MODULE__{name: name, description: description, args_schema: args_schema}) do
     %{
       name: name,

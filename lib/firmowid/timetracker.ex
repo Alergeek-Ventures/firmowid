@@ -108,13 +108,7 @@ defmodule Firmowid.Timetracker do
     |> Repo.update()
   end
 
-  def delete_project(%Project{} = project) do
-    Repo.delete(project)
-  end
-
   def get_project!(id), do: Project |> Repo.get!(id) |> Repo.preload(:users)
-
-  def get_project_with_users!(id), do: Project |> Repo.get!(id) |> Repo.preload(:users)
 
   def get_month_hours_records(month, year) do
     query =
@@ -409,27 +403,6 @@ defmodule Firmowid.Timetracker do
       end
   end
 
-  @doc """
-  Gets all sessions for a specific user in a specific project.
-  """
-  def get_user_project_sessions(user_id, project_id) do
-    Repo.all(
-      from s in Session,
-        where: s.user_id == ^user_id and s.project_id == ^project_id
-    )
-  end
-
-  def get_user_project_sessions(user_id, project_id, date) do
-    from(s in Session,
-      where:
-        s.user_id == ^user_id and s.project_id == ^project_id and
-          fragment("extract(month from ?) = ?", s.start_datetime, ^date.month) and
-          fragment("extract(year from ?) = ?", s.start_datetime, ^date.year)
-    )
-    |> Repo.all()
-    |> Enum.map(&Session.put_duration/1)
-  end
-
   def get_grouped_user_project_sessions(user_id, project_id, date) do
     Repo.all(
       from s in Session,
@@ -461,19 +434,6 @@ defmodule Firmowid.Timetracker do
         order_by: [desc: s.start_datetime],
         limit: 1
     )
-  end
-
-  @doc """
-  Returns the list of hours_records.
-
-  ## Examples
-
-      iex> list_hours_records()
-      [%HoursRecord{}, ...]
-
-  """
-  def list_hours_records do
-    HoursRecord |> Repo.all() |> Repo.preload(:user)
   end
 
   @doc """
@@ -525,53 +485,6 @@ defmodule Firmowid.Timetracker do
     |> where([hr], hr.user_id == ^user_id)
     |> where([hr], hr.month == ^date.month and hr.year == ^date.year)
     |> Repo.one()
-  end
-
-  @doc """
-  Updates a hours_record.
-
-  ## Examples
-
-      iex> update_hours_record(hours_record, %{field: new_value})
-      {:ok, %HoursRecord{}}
-
-      iex> update_hours_record(hours_record, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_hours_record(%HoursRecord{} = hours_record, attrs) do
-    hours_record
-    |> HoursRecord.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a hours_record.
-
-  ## Examples
-
-      iex> delete_hours_record(hours_record)
-      {:ok, %HoursRecord{}}
-
-      iex> delete_hours_record(hours_record)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_hours_record(%HoursRecord{} = hours_record) do
-    Repo.delete(hours_record)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking hours_record changes.
-
-  ## Examples
-
-      iex> change_hours_record(hours_record)
-      %Ecto.Changeset{data: %HoursRecord{}}
-
-  """
-  def change_hours_record(%HoursRecord{} = hours_record, attrs \\ %{}) do
-    HoursRecord.changeset(hours_record, attrs)
   end
 
   def get_latest_user_salary(user_id) do

@@ -64,11 +64,4 @@ defmodule FirmowidWeb.Helpers.TimeFormatter do
   def format_date(date) do
     Calendar.strftime(date, "%d.%m.%Y")
   end
-
-  def safe_format_date(date_string) do
-    case Date.from_iso8601(date_string) do
-      {:ok, _} -> "#{format_date(date_string)}"
-      {:error, _} -> ""
-    end
-  end
 end

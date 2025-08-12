@@ -59,7 +59,10 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
       currency ->
         assign(socket,
           currency_rate:
-            Firmowid.Nbp.ApiClient.get_exchange_rate(currency, SalesInvoice.get_currency_conversion_date(sales_invoice))
+            Firmowid.Nbp.ApiClient.get_exchange_rate(
+              currency,
+              SalesInvoice.get_currency_conversion_date(sales_invoice)
+            )
         )
     end
   end
@@ -162,7 +165,11 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
 
         # Foreign invoice type
         params["typ"] == "zagraniczny" ->
-          Map.merge(base_sales_invoice, %{invoice_type: :foreign, currency: "EUR", is_reverse_charge: true})
+          Map.merge(base_sales_invoice, %{
+            invoice_type: :foreign,
+            currency: "EUR",
+            is_reverse_charge: true
+          })
 
         # Polish invoice type or empty params
         params["typ"] == "polski" || !params["typ"] ->
@@ -170,7 +177,10 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
       end
 
     default_bank_account =
-      Enum.find_value(socket.assigns.bank_accounts, &(&1.is_default and &1.currency == sales_invoice.currency))
+      Enum.find_value(
+        socket.assigns.bank_accounts,
+        &(&1.is_default and &1.currency == sales_invoice.currency)
+      )
 
     sales_invoice =
       if default_bank_account do
@@ -194,12 +204,6 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
     |> assign(sales_invoice: sales_invoice)
     |> assign_currency()
     |> assign(sales_invoice_id: nil)
-  end
-
-  def assign_sales_invoice(socket, nil) do
-    socket
-    |> put_flash(:error, "Nie znaleziono faktury")
-    |> push_navigate(to: ~p"/sprzedazowe")
   end
 
   def assign_buyer_form_state(%{assigns: %{sales_invoice: sales_invoice}} = socket, desired_state) do
@@ -271,7 +275,10 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
 
   def handle_event("change", %{"sales_invoice" => sales_invoice}, socket) do
     default_bank_account =
-      Enum.find_value(socket.assigns.bank_accounts, &(&1.is_default and &1.currency == sales_invoice["currency"]))
+      Enum.find_value(
+        socket.assigns.bank_accounts,
+        &(&1.is_default and &1.currency == sales_invoice["currency"])
+      )
 
     sales_invoice =
       if default_bank_account do
@@ -378,10 +385,17 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
 
         {:error, %Ecto.Changeset{errors: errors} = changeset} ->
           case Keyword.get(errors, :invoice_number) do
-            {_message, [constraint: :unique, constraint_name: "sales_invoices_invoice_number_organization_id_index"]} ->
+            {_message,
+             [
+               constraint: :unique,
+               constraint_name: "sales_invoices_invoice_number_organization_id_index"
+             ]} ->
               Logger.error("Duplicate invoice number: #{inspect(changeset)}")
 
-              LiveToast.send_toast(:error, "Ten numer faktury już istnieje w organizacji. Wybierz inny numer.")
+              LiveToast.send_toast(
+                :error,
+                "Ten numer faktury już istnieje w organizacji. Wybierz inny numer."
+              )
 
               assign(socket, form: to_form(changeset))
 

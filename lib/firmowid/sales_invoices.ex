@@ -46,10 +46,6 @@ defmodule Firmowid.SalesInvoices do
 
   def populate_logo_url(nil), do: nil
 
-  def list_sales_invoices do
-    Repo.all(SalesInvoice)
-  end
-
   def search_sales_invoices(search_term) do
     SalesInvoice
     |> where(
@@ -240,10 +236,6 @@ defmodule Firmowid.SalesInvoices do
     Repo.delete(invoice)
   end
 
-  def change_sales_invoice(%SalesInvoice{} = invoice, attrs \\ %{}) do
-    SalesInvoice.changeset(invoice, attrs)
-  end
-
   def create_or_update_buyer("", attr) do
     create_buyer(attr)
   end
@@ -262,12 +254,6 @@ defmodule Firmowid.SalesInvoices do
 
   def get_buyer!(id), do: Repo.get!(Buyer, id)
 
-  def get_full_buyer_data_as_single_string(sales_invoice) do
-    String.trim(
-      "#{sales_invoice.buyer_nip}#{sales_invoice.buyer_pesel} - #{sales_invoice.buyer_display_name} #{sales_invoice.buyer_surname} #{sales_invoice.buyer_name} #{sales_invoice.buyer_address} #{sales_invoice.buyer_country}"
-    )
-  end
-
   def create_buyer(attrs \\ %{}) do
     %Buyer{}
     |> Buyer.changeset(attrs)
@@ -278,14 +264,6 @@ defmodule Firmowid.SalesInvoices do
     buyer
     |> Buyer.changeset(attrs)
     |> Repo.update()
-  end
-
-  def delete_buyer(%Buyer{} = buyer) do
-    Repo.delete(buyer)
-  end
-
-  def change_buyer(%Buyer{} = buyer, attrs \\ %{}) do
-    Buyer.changeset(buyer, attrs)
   end
 
   def list_sales_invoices_by_ids(ids, date_from \\ nil, date_to \\ nil) do

@@ -321,7 +321,4 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
     > UUID: `#{invoice.id}`
     """
   end
-
-  defdelegate transaction_input(transaction, opts \\ []),
-    to: Firmowid.Invoicing.Matching.CostInvoiceAssistant
 end

@@ -173,57 +173,6 @@ defmodule Firmowid.Invoicing do
     end)
   end
 
-  def match_with_transaction_combo(issue_date, due_date, total_amount) do
-    # when there are multiple transactions on the same invoice
-    # typically - services / goods that you get across the month
-
-    # highly experimental!
-
-    issue_date = Date.add(issue_date, -35)
-    due_date = Date.add(due_date, 7)
-
-    all_found =
-      issue_date
-      |> Finances.list_unmatched_transactions(due_date)
-      |> Enum.group_by(
-        &%{
-          creditor_name: &1.creditor_name,
-          year_month: "#{&1.booking_date.year}-#{&1.booking_date.month}"
-        }
-      )
-      |> Enum.map(fn
-        {%{creditor_name: creditor_name, year_month: year_month}, transactions} ->
-          %{
-            id: UUIDv7.generate(),
-            creditor_name: creditor_name,
-            year_month: year_month,
-            total_amount:
-              Enum.reduce(transactions, Decimal.new(0), fn t, acc ->
-                Decimal.add(t.transaction_amount, acc)
-              end),
-            currency: Enum.at(transactions, 0).transaction_currency,
-            transactions: transactions
-          }
-      end)
-
-    result =
-      Enum.filter(all_found, fn %{
-                                  total_amount: group_total_amount,
-                                  transactions: transactions
-                                } ->
-        is_amount_equal = Decimal.compare(group_total_amount, total_amount) == :eq
-        is_a_group = length(transactions) > 1
-
-        is_amount_equal and is_a_group
-      end)
-
-    # if we have multiple groups this means something went wrong :)
-    case result do
-      [%{transactions: transactions}] -> transactions
-      _ -> nil
-    end
-  end
-
   @spec get_potential_transactions_for_invoice(SalesInvoice.t() | CostInvoice.t()) :: [map()]
   def get_potential_transactions_for_invoice(invoice) do
     unmatched_transactions =

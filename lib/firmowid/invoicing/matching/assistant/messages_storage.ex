@@ -58,13 +58,6 @@ defmodule Firmowid.Invoicing.Matching.Assistant.MessagesStorage do
   end
 
   @doc """
-  Broadcasts a streamed token (partial content) for a conversation.
-  """
-  def broadcast_token(conversation_id, token) do
-    broadcast(conversation_id, {:stream_token, token})
-  end
-
-  @doc """
   Returns the list of Message structs for the given conversation_id, oldest first.
   """
   def get(conversation_id) do

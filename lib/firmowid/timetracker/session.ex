@@ -32,13 +32,6 @@ defmodule Firmowid.Timetracker.Session do
     |> put_change(:organization_id, Repo.get_org_id())
   end
 
-  def maybe_put_start_datetime(changeset) do
-    case get_change(changeset, :start_datetime) do
-      nil -> put_change(changeset, :start_datetime, DateTime.utc_now())
-      _ -> changeset
-    end
-  end
-
   # this should be called in transaction if we are creating or updating session - race condition
   @spec validate_user_has_access_to_project(Ecto.Changeset.t()) :: Ecto.Changeset.t()
   defp validate_user_has_access_to_project(changeset) do
