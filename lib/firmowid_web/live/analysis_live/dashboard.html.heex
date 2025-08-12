@@ -40,7 +40,7 @@
         <div class="ml-4">
           <p class="text-sm font-medium text-green-600">Przychody</p>
           <p class="text-2xl font-bold text-green-900">
-            {@total_income}
+            {Money.new(:PLN, @total_income)}
           </p>
         </div>
       </div>
@@ -54,7 +54,7 @@
         <div class="ml-4">
           <p class="text-sm font-medium text-red-600">Koszty</p>
           <p class="text-2xl font-bold text-red-900">
-            {@total_expenses}
+            {Money.new(:PLN, @total_expenses)}
           </p>
         </div>
       </div>
@@ -62,7 +62,7 @@
 
     <div class={[
       "border rounded-lg p-6",
-      if(Decimal.positive?(@net_profit_decimal),
+      if(Decimal.positive?(@net_profit),
         do: "bg-greenBg border-greenBg text-greenText",
         else: "bg-redBg border-redBg text-redText"
       )
@@ -71,13 +71,13 @@
         <div class="flex-shrink-0">
           <.icon
             name="hero-calculator"
-            class={"h-8 w-8 #{if(Decimal.positive?(@net_profit_decimal), do: "text-blue-600", else: "text-gray-600")}"}
+            class={"h-8 w-8 #{if(Decimal.positive?(@net_profit), do: "text-blue-600", else: "text-gray-600")}"}
           />
         </div>
         <div class="ml-4">
           <p class={[
             "text-sm font-medium",
-            if(Decimal.positive?(@net_profit_decimal),
+            if(Decimal.positive?(@net_profit),
               do: "text-blue-600",
               else: "text-gray-600"
             )
@@ -86,15 +86,19 @@
           </p>
           <p class={[
             "text-2xl font-bold",
-            if(Decimal.positive?(@net_profit_decimal),
+            if(Decimal.positive?(@net_profit),
               do: "text-blue-900",
               else: "text-gray-900"
             )
           ]}>
-            {@net_profit}
+            {Money.new(:PLN, @net_profit)}
           </p>
         </div>
       </div>
     </div>
+  </div>
+
+  <div id="chart" class="mx-auto px-4 text-center">
+    donut chart goes here
   </div>
 </div>

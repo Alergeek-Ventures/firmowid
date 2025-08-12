@@ -24,14 +24,7 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
         date_string -> Date.from_iso8601!(date_string)
       end
 
-    # Get the default "całość" tag (show all data)
-    calosci_tag = Analysis.get_calosci_tag()
-
-    tag_id =
-      case Map.get(params, "tag_id") do
-        nil -> calosci_tag.id
-        tag_id_string -> tag_id_string
-      end
+    tag_id = Map.get(params, "tag_id", :all)
 
     socket =
       socket
@@ -43,8 +36,6 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
 
   @impl true
   def handle_event("change-month", %{"month" => month}, socket) do
-    month = Date.from_iso8601!(month)
-
     {:noreply, update_param(socket, :month, month)}
   end
 
@@ -54,10 +45,10 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
   end
 
   defp update_param(socket, key, value) do
-    params = Map.put(socket.assigns.params, key, value)
+    params = socket.assigns.params |> Map.put(key, value) |> dbg()
 
     url_params = %{
-      month: params.month |> Date.beginning_of_month() |> Date.to_iso8601(),
+      month: params.month,
       tag_id: params.tag_id
     }
 
@@ -67,29 +58,20 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
   end
 
   defp load_data(socket) do
-    # Ensure "całość" tag exists
-    Analysis.ensure_calosci_tag()
-
     month = socket.assigns.params.month
     tag_id = socket.assigns.params.tag_id
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
 
-    # Get organization totals for the selected month and tag
     totals = Analysis.get_organization_totals(date_range_from, date_range_to, tag_id)
 
     socket
-    |> assign(:total_income, format_money(totals.total_income))
-    |> assign(:total_expenses, format_money(totals.total_expenses))
-    |> assign(:net_profit, format_money(totals.net_profit))
-    |> assign(:net_profit_decimal, totals.net_profit)
+    |> assign(:total_income, totals.total_income)
+    |> assign(:total_expenses, totals.total_expenses)
+    |> assign(:net_profit, totals.net_profit)
+    |> assign(:transactions, totals.transactions)
+    |> assign(:sales_invoices, totals.sales_invoices)
+    |> assign(:cost_invoices, totals.cost_invoices)
     |> assign(:tags, Analysis.list_tags())
-  end
-
-  defp format_money(amount) do
-    case Money.to_string(Money.new("PLN", amount)) do
-      {:ok, formatted} -> formatted
-      _ -> "0,00 zł"
-    end
   end
 end

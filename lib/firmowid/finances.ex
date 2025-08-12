@@ -306,24 +306,10 @@ defmodule Firmowid.Finances do
     Transaction.changeset(transaction, attrs)
   end
 
-  def list_transactions_by_ids(ids, date_from \\ nil, date_to \\ nil) do
-    query = where(Transaction, [t], t.id in ^ids)
-
-    query =
-      cond do
-        date_from && date_to ->
-          where(query, [t], t.booking_date >= ^date_from and t.booking_date <= ^date_to)
-
-        date_from ->
-          where(query, [t], t.booking_date >= ^date_from)
-
-        date_to ->
-          where(query, [t], t.booking_date <= ^date_to)
-
-        true ->
-          query
-      end
-
-    Repo.all(query)
+  def list_transactions_with_skipped_invoicing(date_from, date_to) do
+    Transaction
+    |> where([t], t.booking_date >= ^date_from and t.booking_date <= ^date_to)
+    |> where([t], t.skip_invoicing == true)
+    |> Repo.all()
   end
 end

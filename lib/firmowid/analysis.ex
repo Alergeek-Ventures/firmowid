@@ -6,7 +6,11 @@ defmodule Firmowid.Analysis do
 
   alias Firmowid.Analysis.Tag
   alias Firmowid.Analysis.TaggedItem
+  alias Firmowid.CostInvoices
+  alias Firmowid.Currencies
+  alias Firmowid.Finances
   alias Firmowid.Repo
+  alias Firmowid.SalesInvoices
 
   def authorize(:read, %{role: :admin}, _), do: true
   def authorize(:create, %{role: :admin}, _), do: true
@@ -14,7 +18,7 @@ defmodule Firmowid.Analysis do
   def authorize(:delete, %{role: :admin}, _), do: true
   def authorize(_, _, _), do: false
 
-  # Tags
+  # CRUD - tags and tagged items
 
   def list_tags do
     Tag
@@ -99,131 +103,53 @@ defmodule Firmowid.Analysis do
 
   # Organization totals calculation
 
-  def get_organization_totals(date_from \\ nil, date_to \\ nil, tag_id \\ nil) do
-    # Check if this is the special "całość" tag (show all data)
-    calosci_tag = get_calosci_tag()
+  def get_organization_totals(date_from, date_to, tag_id) do
+    # get all invoices and transactions for the specified date range
+    sales_invoices = SalesInvoices.list_sales_invoices(date_from, date_to)
+    cost_invoices = CostInvoices.list_cost_invoices(date_from, date_to)
+    transactions = Finances.list_transactions_with_skipped_invoicing(date_from, date_to)
 
-    {sales_total, cost_total, transaction_income, transaction_expenses} =
-      if tag_id && tag_id != calosci_tag.id do
-        # Get entity IDs for the specified tag
-        sales_invoice_ids = get_sales_invoice_ids_by_tag(tag_id)
-        cost_invoice_ids = get_cost_invoice_ids_by_tag(tag_id)
-        transaction_ids = get_transaction_ids_by_tag(tag_id)
+    %{income: income, expenses: expenses} =
+      Enum.reduce(
+        sales_invoices ++ cost_invoices ++ transactions,
+        %{income: Decimal.new(0), expenses: Decimal.new(0)},
+        fn entity, acc ->
+          {amount, currency} = get_amount_and_currency(entity)
+          normalized_amount = Currencies.normalize_amount_to_pln(amount, currency, Date.utc_today())
 
-        # Get entities and calculate totals in Analysis context
-        sales_invoices =
-          Firmowid.SalesInvoices.list_sales_invoices_by_ids(sales_invoice_ids, date_from, date_to)
-
-        cost_invoices =
-          Firmowid.CostInvoices.list_cost_invoices_by_ids(cost_invoice_ids, date_from, date_to)
-
-        transactions =
-          Firmowid.Finances.list_transactions_by_ids(transaction_ids, date_from, date_to)
-
-        # Calculate totals using existing schema functions and Analysis context summing
-        sales_total = calculate_sales_invoices_total(sales_invoices)
-        cost_total = calculate_cost_invoices_total(cost_invoices)
-        transaction_income = calculate_transaction_income_total(transactions)
-        transaction_expenses = calculate_transaction_expenses_total(transactions)
-
-        {sales_total, cost_total, transaction_income, transaction_expenses}
-      else
-        # Get all data without tag filtering (for "całość" tag or no tag specified)
-        sales_invoices = Firmowid.SalesInvoices.list_sales_invoices(date_from, date_to)
-        cost_invoices = Firmowid.CostInvoices.list_cost_invoices(date_from, date_to)
-        transactions = Firmowid.Finances.list_transactions(date_from, date_to)
-
-        # Calculate totals using existing schema functions and Analysis context summing
-        sales_total = calculate_sales_invoices_total(sales_invoices)
-        cost_total = calculate_cost_invoices_total(cost_invoices)
-        transaction_income = calculate_transaction_income_total(transactions)
-        transaction_expenses = calculate_transaction_expenses_total(transactions)
-
-        {sales_total, cost_total, transaction_income, transaction_expenses}
-      end
-
-    total_income = Decimal.add(sales_total, transaction_income)
-    total_expenses = Decimal.add(cost_total, transaction_expenses)
-    net_profit = Decimal.sub(total_income, total_expenses)
+          if Decimal.negative?(normalized_amount) do
+            Map.update!(acc, :expenses, &Decimal.add(&1, normalized_amount))
+          else
+            Map.update!(acc, :income, &Decimal.add(&1, normalized_amount))
+          end
+        end
+      )
 
     %{
-      total_income: total_income,
-      total_expenses: total_expenses,
-      net_profit: net_profit
+      total_income: income,
+      total_expenses: expenses,
+      net_profit: Decimal.add(income, expenses),
+      transactions: transactions,
+      sales_invoices: sales_invoices,
+      cost_invoices: cost_invoices
     }
   end
 
-  # Private calculation functions that sum up entities using their schema functions
+  defp get_amount_and_currency(%SalesInvoices.SalesInvoice{} = entity) do
+    value =
+      entity
+      |> SalesInvoices.SalesInvoice.get_gross_value()
+      |> Decimal.abs()
 
-  defp calculate_sales_invoices_total(sales_invoices) do
-    Enum.reduce(sales_invoices, Decimal.new(0), fn invoice, acc ->
-      # Use the existing get_gross_value function from SalesInvoice schema
-      invoice_total = Firmowid.SalesInvoices.SalesInvoice.get_gross_value(invoice)
-      Decimal.add(acc, invoice_total)
-    end)
+    {value, entity.currency}
   end
 
-  defp calculate_cost_invoices_total(cost_invoices) do
-    Enum.reduce(cost_invoices, Decimal.new(0), fn invoice, acc ->
-      Decimal.add(acc, invoice.total_amount)
-    end)
+  defp get_amount_and_currency(%CostInvoices.CostInvoice{} = entity) do
+    value = entity.total_amount |> Decimal.abs() |> Decimal.mult(Decimal.new("-1"))
+    {value, entity.currency}
   end
 
-  defp calculate_transaction_income_total(transactions) do
-    transactions
-    |> Enum.filter(&Decimal.positive?(&1.transaction_amount))
-    |> Enum.reduce(Decimal.new(0), fn transaction, acc ->
-      Decimal.add(acc, transaction.transaction_amount)
-    end)
-  end
-
-  defp calculate_transaction_expenses_total(transactions) do
-    transactions
-    |> Enum.filter(&Decimal.negative?(&1.transaction_amount))
-    |> Enum.reduce(Decimal.new(0), fn transaction, acc ->
-      Decimal.add(acc, Decimal.abs(transaction.transaction_amount))
-    end)
-  end
-
-  def get_firma_tag do
-    case Repo.get_by(Tag, name: "firma") do
-      nil ->
-        {:ok, tag} = create_tag(%{name: "firma", color: "#3B82F6"})
-        tag
-
-      tag ->
-        tag
-    end
-  end
-
-  def get_calosci_tag do
-    case Repo.get_by(Tag, name: "całość") do
-      nil ->
-        {:ok, tag} = create_tag(%{name: "całość", color: "#10B981"})
-        tag
-
-      tag ->
-        tag
-    end
-  end
-
-  def ensure_firma_tag do
-    case Repo.get_by(Tag, name: "firma") do
-      nil ->
-        create_tag(%{name: "firma", color: "#3B82F6"})
-
-      tag ->
-        {:ok, tag}
-    end
-  end
-
-  def ensure_calosci_tag do
-    case Repo.get_by(Tag, name: "całość") do
-      nil ->
-        create_tag(%{name: "całość", color: "#10B981"})
-
-      tag ->
-        {:ok, tag}
-    end
+  defp get_amount_and_currency(%Finances.Transaction{} = entity) do
+    {entity.transaction_amount, entity.transaction_currency}
   end
 end
