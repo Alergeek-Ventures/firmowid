@@ -159,7 +159,8 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
       id: message.id,
       message: assistant_message,
       transactions: transactions,
-      myself: myself
+      myself: myself,
+      displayed_party: if(name == "link_cost_invoice_to_transaction", do: "Odbiorca", else: "Nadawca")
     }
 
     ~H"""
@@ -172,8 +173,16 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
           class="py-1 px-3 flex flex-row gap-4 justify-between items-start bg-grey-50 rounded"
         >
           <div class="grid grid-cols-[min-content,1fr] gap-x-3">
-            <span class="text-sm text-grey-700">Nadawca</span>
-            <span class="text-black truncate">{transaction.debtor_name}</span>
+            <span class="text-sm text-grey-700">
+              {@displayed_party}
+            </span>
+            <span class="text-black truncate">
+              {case @displayed_party do
+                "Nadawca" -> transaction.debtor_name
+                "Odbiorca" -> transaction.creditor_name
+                _ -> ""
+              end}
+            </span>
             <span class="text-sm text-grey-700">Zaksięgowano</span>
             <span class="text-black">{TimeFormatter.format_date(transaction.booking_date)}</span>
           </div>
