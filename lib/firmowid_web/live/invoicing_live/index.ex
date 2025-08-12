@@ -66,7 +66,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
     active_months =
       Invoicing.get_all_months_with_invoicing_entries() ++
-        [Date.utc_today()]
+        [Date.beginning_of_month(Date.utc_today())]
 
     socket = assign(socket, :active_months, active_months)
 

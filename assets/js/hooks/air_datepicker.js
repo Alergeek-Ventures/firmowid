@@ -1,17 +1,16 @@
 export const AirDatepicker = {
   mounted() {
     this.picker = this.mountDatepicker();
-    this.picker.setViewDate(
-      new Date(this.el.getAttribute("data-initial-date"))
-    );
+    this.enabledMonths = this.getEnabledMonths();
+    this.picker.setViewDate(this.el.dataset.initialDate);
   },
 
   updated() {
     if (!this.picker) {
       this.picker = this.mountDatepicker();
     } else {
-      const initialDate = new Date(this.el.getAttribute("data-initial-date"));
-      this.picker.selectDate(initialDate, { silent: true });
+      this.enabledMonths = this.getEnabledMonths();
+      this.picker.selectDate(this.el.dataset.initialDate, { silent: true });
     }
   },
 
@@ -26,14 +25,15 @@ export const AirDatepicker = {
    * @returns {Array<Date>}
    */
   getEnabledMonths() {
-    return this.el.dataset.enabledMonths?.split(",").map((m) => new Date(m));
+    return this.el.dataset.enabledMonths?.split(",").map((m) => {
+      const date = new Date(m);
+      return new Date(date.getUTCFullYear(), date.getUTCMonth());
+    });
   },
 
   mountDatepicker() {
-    const initialDate = new Date(this.el.dataset.initialDate);
-
     return new window.AirDatepicker(this.el, {
-      selectedDates: [initialDate],
+      selectedDates: [this.el.dataset.initialDate],
       toggleSelected: false,
       view: "months",
       minView: "months",
@@ -85,20 +85,16 @@ export const AirDatepicker = {
       },
       dateFormat: "MMMM yyyy",
       onSelect: ({ date }) => {
-        const newDate = new Date(date);
-        newDate.setTime(newDate.getTime() + 12 * 60 * 60 * 1000);
-        this.pushEvent("change-month", {
-          month: newDate.toISOString().split("T")[0],
-        });
+        // 'sv' is the Swedish locale - Sweden date formatting uses ISO 8601
+        const newDate = date.toLocaleDateString("sv");
+        this.pushEvent("change-month", { month: newDate });
       },
       onRenderCell: function ({ date, cellType }) {
-        const enabledMonths = this.getEnabledMonths();
-
-        if (cellType === "month" && enabledMonths) {
-          const isDisabled = !enabledMonths.some(
+        if (cellType === "month" && this.enabledMonths) {
+          const isDisabled = !this.enabledMonths.some(
             (m) =>
-              m.getMonth() === date.getMonth() &&
-              m.getFullYear() === date.getFullYear()
+              m.getUTCMonth() === date.getUTCMonth() &&
+              m.getUTCFullYear() === date.getUTCFullYear()
           );
 
           return isDisabled

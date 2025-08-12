@@ -95,7 +95,7 @@ defmodule Firmowid.Invoicing do
       distinct: true
     )
     |> Repo.all()
-    |> Enum.map(& &1.date)
+    |> Enum.map(&DateTime.to_date(&1.date))
   end
 
   def get_invoicing_entries(from, to, filter) do
