@@ -21,13 +21,15 @@ defmodule Firmowid.Timetracker.Project do
     belongs_to :organization, Firmowid.Accounts.Organization
     belongs_to :tag_definition, Firmowid.Analysis.TagDefinition
 
+    field :archived_at, :date
+
     timestamps()
   end
 
   @doc false
   def changeset(project, attrs) do
     project
-    |> cast(attrs, [:name, :tag_definition_id])
+    |> cast(attrs, [:name, :tag_definition_id, :archived_at])
     |> cast_assoc(:project_users)
     |> validate_required([:name])
     |> put_change(:organization_id, Repo.get_org_id())

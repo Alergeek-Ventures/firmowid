@@ -26,7 +26,7 @@ defmodule FirmowidWeb.ProjectLiveTest do
       {:ok, _lv, html} = live(conn, ~p"/czasosledz/projekty")
 
       assert html =~ "Wszyscy współpracownicy"
-      assert html =~ "Wybierz projekt"
+      assert html =~ "Wszystkie projekty"
     end
 
     test "shows project selector with available projects", %{
@@ -189,8 +189,8 @@ defmodule FirmowidWeb.ProjectLiveTest do
       |> render_click()
 
       lv
-      |> form("form[phx-change='add_user']", %{user_id: user4.id})
-      |> render_change()
+      |> form("form[phx-submit='add_user']", %{user_id: user4.id})
+      |> render_submit()
 
       updated_html =
         lv
@@ -259,8 +259,8 @@ defmodule FirmowidWeb.ProjectLiveTest do
       |> element("button[phx-click='save_users']")
       |> render_click()
 
-      # Verify user is still visible in the UI in the "Nad tym projektem wcześniej pracowali" section
-      assert has_element?(lv, "h2", "Nad tym projektem wcześniej pracowali")
+      # Verify user is still visible in the UI in the "Usunięci z projektu" section
+      assert has_element?(lv, "h2", "Usunięci z projektu")
       assert has_element?(lv, "span", user3.email)
     end
   end

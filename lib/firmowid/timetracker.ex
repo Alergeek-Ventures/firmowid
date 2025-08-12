@@ -21,6 +21,7 @@ defmodule Firmowid.Timetracker do
   def authorize(:create_project, %{role: :admin}, _), do: true
   def authorize(:read_hours_records, %{role: :admin}, _), do: true
   def authorize(:create_user_salary, %{role: :admin}, _), do: true
+  def authorize(:delete_project, %{role: :admin}, _), do: true
 
   def authorize(:update_project, %{role: :admin, organization_id: org_id}, %{organization_id: org_id}), do: true
 
@@ -98,6 +99,18 @@ defmodule Firmowid.Timetracker do
     Repo.all(Project)
   end
 
+  def list_active_projects do
+    Project
+    |> where([p], is_nil(p.archived_at))
+    |> Repo.all()
+  end
+
+  def list_archived_projects do
+    Project
+    |> where([p], not is_nil(p.archived_at))
+    |> Repo.all()
+  end
+
   def list_projects_with_users do
     Project
     |> Repo.all()
@@ -119,6 +132,22 @@ defmodule Firmowid.Timetracker do
   def update_project(%Project{} = project, attrs) do
     project
     |> Project.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def delete_project(%Project{} = project) do
+    Repo.delete(project)
+  end
+
+  def archive_project(%Project{} = project) do
+    project
+    |> Ecto.Changeset.change(archived_at: Date.utc_today())
+    |> Repo.update()
+  end
+
+  def unarchive_project(%Project{} = project) do
+    project
+    |> Ecto.Changeset.change(archived_at: nil)
     |> Repo.update()
   end
 
@@ -160,16 +189,67 @@ defmodule Firmowid.Timetracker do
         on: u.id == pu.user_id and pu.project_id == ^project_id,
         left_join: s in subquery(session_summary),
         on: u.id == s.user_id,
+        left_join: hr in HoursRecord,
+        on:
+          u.id == hr.user_id and
+            hr.month == ^month and
+            hr.year == ^year,
         # Include user if they are currently assigned to the project OR have sessions for this project in the given month/year
         where: not is_nil(pu.id) or not is_nil(s.user_id),
         order_by: [u.name, u.email],
         select: %{
           user: u,
           time_worked: s.time_worked |> coalesce(0) |> type(:integer),
-          removed_from_project: is_nil(pu.id)
+          removed_from_project: is_nil(pu.id),
+          hours_record: hr
         }
 
     Repo.all(query)
+  end
+
+  def get_project_users_with_removed(project_id) do
+    session_users_query =
+      from s in Session,
+        where: s.project_id == ^project_id and s.user_id == parent_as(:user).id,
+        select: 1
+
+    query =
+      from u in Accounts.User,
+        as: :user,
+        left_join: pu in ProjectUser,
+        on: u.id == pu.user_id and pu.project_id == ^project_id,
+        where: exists(session_users_query) or not is_nil(pu.id),
+        order_by: [u.name, u.email],
+        select: merge(u, %{removed_from_project: is_nil(pu.id)})
+
+    Repo.all(query)
+  end
+
+  def get_project_users_with_sessions(project_id) do
+    users = get_project_users_with_removed(project_id)
+    user_ids = Enum.map(users, & &1.id)
+
+    sessions_grouped =
+      from(s in Session,
+        where: s.project_id == ^project_id and s.user_id in ^user_ids
+      )
+      |> Repo.all()
+      |> Enum.map(&Session.put_duration/1)
+      |> Enum.group_by(& &1.user_id)
+
+    Enum.map(users, fn user ->
+      time_worked =
+        sessions_grouped
+        |> Map.get(user.id, [])
+        |> Enum.reduce(0, fn s, acc -> acc + (s.duration || 0) end)
+
+      %{
+        user: user,
+        removed_from_project: user.removed_from_project,
+        time_worked: time_worked,
+        sessions: Map.get(sessions_grouped, user.id, [])
+      }
+    end)
   end
 
   defp query_months_with_sessions do
@@ -471,6 +551,13 @@ defmodule Firmowid.Timetracker do
       else
         reraise e, __STACKTRACE__
       end
+  end
+
+  def get_user_project_sessions(user_id, project_id) do
+    Repo.all(
+      from s in Session,
+        where: s.user_id == ^user_id and s.project_id == ^project_id
+    )
   end
 
   def get_grouped_user_project_sessions(user_id, project_id, date) do

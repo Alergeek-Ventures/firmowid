@@ -765,6 +765,7 @@ defmodule FirmowidWeb.CoreComponents do
   attr :disabled, :boolean, default: false
   attr :rest, :global
   attr :class, :string, default: nil
+  attr :value, :string, default: nil
 
   def date_picker(assigns) do
     ~H"""
@@ -775,6 +776,7 @@ defmodule FirmowidWeb.CoreComponents do
       <input
         type="button"
         phx-hook="AirDatepicker"
+        value={@value}
         data-enabled-months={
           @active_months && @active_months |> Enum.map(&Date.to_iso8601/1) |> Enum.join(",")
         }

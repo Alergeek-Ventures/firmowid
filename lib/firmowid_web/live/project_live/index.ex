@@ -3,7 +3,6 @@ defmodule FirmowidWeb.Project.Index do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Accounts
-  alias Firmowid.Repo
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Project
   alias FirmowidWeb.Helpers.TimeFormatter
@@ -90,8 +89,9 @@ defmodule FirmowidWeb.Project.Index do
     Bodyguard.permit!(Timetracker, :read_hours_records, socket.assigns.current_user)
 
     {:ok,
-     assign(socket,
-       projects: Timetracker.list_projects(),
+     socket
+     |> assign_projects()
+     |> assign(
        is_editing_name: false,
        is_editing_users: false,
        editing_employee_salaries: %{},
@@ -101,20 +101,28 @@ defmodule FirmowidWeb.Project.Index do
 
   @impl true
   def handle_params(%{"id" => project_id} = params, _, socket) do
+    show_only_details = Map.get(params, "details") == "1"
+
     {:noreply,
      socket
      |> assign(:selected_project, Enum.find(socket.assigns.projects, &(&1.id == project_id)))
      |> assign(:active_months, Timetracker.get_months_with_sessions_by_project(project_id))
+     |> assign(:show_only_details, show_only_details)
      |> assign_selected_date(params)
+     |> assign_projects()
      |> load_project_hours()}
   end
 
   def handle_params(params, _, socket) do
+    show_only_details = Map.get(params, "details") == "1"
+
     {:noreply,
      socket
      |> assign(selected_project: nil)
      |> assign(active_months: Timetracker.get_months_with_sessions())
+     |> assign(show_only_details: show_only_details)
      |> assign_selected_date(params)
+     |> assign_projects()
      |> assign_hours_records()}
   end
 
@@ -124,19 +132,69 @@ defmodule FirmowidWeb.Project.Index do
     {:noreply, assign(socket, form: to_form(changeset), is_editing_name: true)}
   end
 
+  def handle_event("archive_project", _, %{assigns: %{selected_project: project}} = socket) do
+    Timetracker.archive_project(project)
+
+    {:noreply,
+     socket
+     |> assign(selected_project: nil)
+     |> assign_projects()
+     |> assign_hours_records()}
+  end
+
+  def handle_event("unarchive_project", %{"project_id" => project_id}, socket) do
+    project = Timetracker.get_project!(project_id)
+    Timetracker.unarchive_project(project)
+
+    {:noreply,
+     socket
+     |> assign(selected_project: nil)
+     |> assign(show_only_details: false)
+     |> assign_projects()
+     |> assign_hours_records()}
+  end
+
+  def handle_event("unarchive_project", _, %{assigns: %{selected_project: project}} = socket) do
+    Timetracker.unarchive_project(project)
+
+    {:noreply,
+     socket
+     |> assign(selected_project: nil)
+     |> assign(show_only_details: false)
+     |> assign_projects()
+     |> assign_hours_records()}
+  end
+
+  def handle_event("delete_project", _, %{assigns: %{selected_project: project}} = socket) do
+    Bodyguard.permit!(Timetracker, :delete_project, socket.assigns.current_user, project)
+
+    Timetracker.delete_project(project)
+
+    {:noreply,
+     socket
+     |> assign(selected_project: nil)
+     |> assign(show_only_details: false)
+     |> assign_projects()
+     |> assign_hours_records()}
+  end
+
   def handle_event("edit_users", _, %{assigns: %{selected_project: project}} = socket) do
-    project = Repo.preload(project, project_users: :user)
+    project_users =
+      project.id
+      |> Timetracker.get_project_users_with_removed()
+      |> Enum.map(fn user ->
+        %{
+          user: Accounts.get_user_with_avatar(user),
+          removed_from_project: user.removed_from_project
+        }
+      end)
+      |> Enum.sort_by(&{&1.removed_from_project, &1.user.name, &1.user.email})
 
     {:noreply,
      socket
      |> assign(is_editing_users: true)
      |> assign(selected_project: project)
-     |> assign_project_users(
-       project.project_users
-       |> Enum.map(& &1.user)
-       |> Enum.map(&Accounts.get_user_with_avatar/1)
-       |> Enum.sort_by(&{&1.name, &1.email})
-     )}
+     |> assign_project_users(project_users)}
   end
 
   def handle_event("edit_all_users", _, socket) do
@@ -159,7 +217,11 @@ defmodule FirmowidWeb.Project.Index do
     project = socket.assigns.selected_project
     Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user, project)
 
-    project_users = Enum.reject(socket.assigns.project_users, &(&1.id == user_id))
+    project_users =
+      Enum.map(socket.assigns.project_users, fn
+        %{user: %{id: ^user_id}} = entry -> %{entry | removed_from_project: true}
+        entry -> entry
+      end)
 
     {:noreply, assign_project_users(socket, project_users)}
   end
@@ -168,9 +230,23 @@ defmodule FirmowidWeb.Project.Index do
     project = socket.assigns.selected_project
     Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user, project)
 
+    user = Enum.find(socket.assigns.users, &(&1.id == user_id))
+
     project_users =
-      socket.assigns.project_users ++
-        [Enum.find(socket.assigns.users, &(&1.id == user_id))]
+      socket.assigns.project_users ++ [%{user: user, removed_from_project: false}]
+
+    {:noreply, assign_project_users(socket, project_users)}
+  end
+
+  def handle_event("restore_user", %{"user_id" => user_id}, socket) do
+    project = socket.assigns.selected_project
+    Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user, project)
+
+    project_users =
+      Enum.map(socket.assigns.project_users, fn
+        %{user: %{id: ^user_id}} = entry -> %{entry | removed_from_project: false}
+        entry -> entry
+      end)
 
     {:noreply, assign_project_users(socket, project_users)}
   end
@@ -180,7 +256,11 @@ defmodule FirmowidWeb.Project.Index do
 
     if project do
       Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user, project)
-      project_users = Enum.map(socket.assigns.project_users, & &1.id)
+
+      project_users =
+        socket.assigns.project_users
+        |> Enum.reject(& &1.removed_from_project)
+        |> Enum.map(& &1.user.id)
 
       {:ok, project} = Timetracker.set_users_to_project(project, project_users)
 
@@ -219,9 +299,10 @@ defmodule FirmowidWeb.Project.Index do
     case Timetracker.update_project(project, params) do
       {:ok, project} ->
         {:noreply,
-         assign(socket,
+         socket
+         |> assign_projects()
+         |> assign(
            is_editing_name: false,
-           projects: Timetracker.list_projects(),
            selected_project: project
          )}
 
@@ -231,18 +312,75 @@ defmodule FirmowidWeb.Project.Index do
   end
 
   def handle_event("select_project", %{"_target" => ["reset"]}, socket) do
-    params = %{"month" => Date.to_iso8601(socket.assigns.selected_date)}
-    {:noreply, push_patch(socket, to: ~p"/czasosledz/projekty?#{params}")}
+    params =
+      if socket.assigns.show_only_details do
+        %{"month" => Date.to_iso8601(socket.assigns.selected_date), "details" => "1"}
+      else
+        %{"details" => "1"}
+      end
+
+    path =
+      if socket.assigns.live_action == :archive do
+        ~p"/czasosledz/archiwum?#{params}"
+      else
+        ~p"/czasosledz/projekty?#{params}"
+      end
+
+    {:noreply, push_patch(socket, to: path)}
   end
 
   def handle_event("select_project", %{"selected_project" => ""}, socket) do
-    params = %{"month" => Date.to_iso8601(socket.assigns.selected_date)}
-    {:noreply, push_patch(socket, to: ~p"/czasosledz/projekty?#{params}")}
+    params =
+      if socket.assigns.show_only_details do
+        %{"month" => Date.to_iso8601(socket.assigns.selected_date)}
+      else
+        %{}
+      end
+
+    path =
+      if socket.assigns.live_action == :archive do
+        ~p"/czasosledz/archiwum?#{params}"
+      else
+        ~p"/czasosledz/projekty?#{params}"
+      end
+
+    {:noreply, push_patch(socket, to: path)}
+  end
+
+  def handle_event("select_project", %{"selected_project" => project_id, "details" => "1"}, socket) do
+    params =
+      if socket.assigns.show_only_details do
+        %{"month" => Date.to_iso8601(socket.assigns.selected_date), "details" => "1"}
+      else
+        %{"details" => "1"}
+      end
+
+    path =
+      if socket.assigns.live_action == :archive do
+        ~p"/czasosledz/archiwum/#{project_id}?#{params}"
+      else
+        ~p"/czasosledz/projekty/#{project_id}?#{params}"
+      end
+
+    {:noreply, push_patch(socket, to: path)}
   end
 
   def handle_event("select_project", %{"selected_project" => project_id}, socket) do
-    params = %{"month" => Date.to_iso8601(socket.assigns.selected_date)}
-    {:noreply, push_patch(socket, to: ~p"/czasosledz/projekty/#{project_id}?#{params}")}
+    params =
+      if socket.assigns.show_only_details do
+        %{"month" => Date.to_iso8601(socket.assigns.selected_date)}
+      else
+        %{}
+      end
+
+    path =
+      if socket.assigns.live_action == :archive do
+        ~p"/czasosledz/archiwum/#{project_id}?#{params}"
+      else
+        ~p"/czasosledz/projekty/#{project_id}?#{params}"
+      end
+
+    {:noreply, push_patch(socket, to: path)}
   end
 
   @impl true
@@ -251,10 +389,18 @@ defmodule FirmowidWeb.Project.Index do
     project = socket.assigns.selected_project
 
     path =
-      if project do
-        ~p"/czasosledz/projekty/#{project.id}?#{params}"
+      if socket.assigns.live_action == :archive do
+        if project do
+          ~p"/czasosledz/archiwum/#{project.id}?#{params}"
+        else
+          ~p"/czasosledz/archiwum?#{params}"
+        end
       else
-        ~p"/czasosledz/projekty?#{params}"
+        if project do
+          ~p"/czasosledz/projekty/#{project.id}?#{params}"
+        else
+          ~p"/czasosledz/projekty?#{params}"
+        end
       end
 
     {:noreply, push_patch(socket, to: path)}
@@ -498,13 +644,26 @@ defmodule FirmowidWeb.Project.Index do
     }
   end
 
+  defp assign_projects(socket) do
+    projects =
+      case socket.assigns.live_action do
+        :archive ->
+          Timetracker.list_archived_projects()
+
+        _ ->
+          Timetracker.list_active_projects()
+      end
+
+    assign(socket, projects: projects)
+  end
+
   defp assign_project_users(socket, project_users) do
     assign(socket,
       users:
         Timetracker.list_users_with_projects()
         |> Enum.map(&Accounts.get_user_with_avatar/1)
         |> Enum.reject(fn user ->
-          Enum.any?(project_users, &(&1.id == user.id))
+          Enum.any?(project_users, fn %{user: proj_user} -> proj_user.id == user.id end)
         end)
         |> Enum.sort_by(&{&1.name, &1.email}),
       project_users: project_users
@@ -512,13 +671,24 @@ defmodule FirmowidWeb.Project.Index do
   end
 
   defp assign_selected_date(socket, params) do
-    date =
-      case Map.get(params, "month") do
-        nil -> Date.utc_today()
-        month -> Date.from_iso8601!(month)
-      end
+    if socket.assigns.live_action == :archive do
+      assign(socket, selected_date: nil)
+    else
+      date =
+        case Map.get(params, "month") do
+          nil -> Date.utc_today()
+          month -> Date.from_iso8601!(month)
+        end
 
-    assign(socket, selected_date: date)
+      assign(socket, selected_date: date)
+    end
+  end
+
+  defp assign_hours_records(%{assigns: %{selected_date: nil}} = socket) do
+    socket
+    |> assign(total_time_worked: 0)
+    |> assign(most_demanding_project: nil)
+    |> assign(hours_records: [])
   end
 
   defp assign_hours_records(socket) do
@@ -550,6 +720,33 @@ defmodule FirmowidWeb.Project.Index do
     |> assign(:total_time_worked, 0)
   end
 
+  defp load_project_hours(%{assigns: %{selected_date: nil}} = socket) do
+    project_id = socket.assigns.selected_project.id
+
+    project_user_hours =
+      project_id
+      |> Timetracker.get_project_users_with_sessions()
+      |> Enum.map(fn %{user: u, time_worked: t, removed_from_project: r, sessions: s} ->
+        u
+        |> Accounts.get_user_with_avatar()
+        |> Map.put(:time_worked, t)
+        |> Map.put(:removed_from_project, r)
+        |> Map.put(:expanded, false)
+        |> Map.put(:sessions, s)
+      end)
+      |> Enum.sort_by(&{&1.removed_from_project, &1.name, &1.email})
+
+    total_project_seconds = Enum.sum_by(project_user_hours, & &1.time_worked)
+
+    most_active_user =
+      Enum.max_by(project_user_hours, & &1.time_worked, fn -> nil end)
+
+    socket
+    |> assign(:project_user_hours, project_user_hours)
+    |> assign(:total_time_worked, total_project_seconds)
+    |> assign(:most_active_user, most_active_user)
+  end
+
   defp load_project_hours(socket) do
     date = socket.assigns.selected_date
     project_id = socket.assigns.selected_project.id
@@ -557,12 +754,13 @@ defmodule FirmowidWeb.Project.Index do
     project_user_hours =
       project_id
       |> Timetracker.get_month_summary_by_project(date.month, date.year)
-      |> Enum.map(fn %{user: u, time_worked: t, removed_from_project: r} ->
+      |> Enum.map(fn %{user: u, time_worked: t, removed_from_project: r, hours_record: hr} ->
         u
         |> Accounts.get_user_with_avatar()
         |> Map.put(:time_worked, t)
         |> Map.put(:removed_from_project, r)
         |> Map.put(:expanded, false)
+        |> Map.put(:hours_record, hr)
       end)
       |> Enum.sort_by(&{&1.removed_from_project, &1.name, &1.email})
 
@@ -691,39 +889,257 @@ defmodule FirmowidWeb.Project.Index do
     """
   end
 
+  attr :project_user_hours, :list, required: true
+
+  defp render_project_user_hours_archive(assigns) do
+    ~H"""
+    <div class="flex flex-col gap-2 col-span-full">
+      <%= for user <- @project_user_hours do %>
+        <div class="flex flex-col divide-y divide-greyButtonBg px-4 rounded-md bg-white col-span-full ">
+          <div class="flex items-center py-4 gap-6">
+            <.render_profile user={user} />
+            <span class="ml-auto animate-appear">
+              <%= if user.expanded do %>
+                <span class="invisible">{ceil(user.time_worked / 60 / 60)} h</span>
+              <% else %>
+                {ceil(user.time_worked / 60 / 60)} h
+              <% end %>
+            </span>
+
+            <button
+              phx-click="toggle-user"
+              phx-value-id={user.id}
+              disabled={user.time_worked == 0}
+              class="disabled:opacity-50 disabled:cursor-not-allowed animate-appear"
+            >
+              <.icon :if={user.expanded} name="hero-chevron-up-mini" class="text-darkGrey" />
+              <.icon :if={!user.expanded} name="hero-chevron-down-mini" class="text-darkGrey" />
+            </button>
+          </div>
+
+          <div
+            class="overflow-hidden transition-all duration-300 ease-in-out"
+            style={"max-height: #{if user.expanded, do: "1000px", else: "0"}; opacity: #{if user.expanded, do: "1", else: "0"}"}
+          >
+            <div class="space-y-4 py-4 pr-11">
+              <%= if Map.has_key?(user, :sessions) do %>
+                <div :for={session <- user.sessions} class="flex justify-between text-sm">
+                  <span>{session.title}</span>
+                  <span>{TimeFormatter.format_duration(session.duration)}</span>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="hidden only:block py-8 bg-white rounded-md text-center text-darkGrey text-sm col-span-full animate-appear">
+      Brak danych o czasie pracy dla tego projektu.
+    </div>
+    """
+  end
+
+  attr :project_user_hours, :list, required: true
+
+  defp render_project_user_hours_records(assigns) do
+    ~H"""
+    <%= if Enum.any?(@project_user_hours, &(!&1.removed_from_project)) do %>
+      <%= for user <- @project_user_hours, !user.removed_from_project do %>
+        <div class="grid grid-cols-subgrid col-span-full animate-appear">
+          <div class="flex flex-col px-4 rounded-md bg-white">
+            <div class="flex items-center py-4 gap-6">
+              <.render_profile user={user} />
+              <span class="ml-auto animate-appear">
+                <%= if user.expanded do %>
+                  <span class="invisible">{ceil(user.time_worked / 60 / 60)} h</span>
+                <% else %>
+                  {ceil(user.time_worked / 60 / 60)} h
+                <% end %>
+              </span>
+
+              <button
+                phx-click="toggle-user"
+                phx-value-id={user.id}
+                disabled={user.time_worked == 0}
+                class="disabled:opacity-50 disabled:cursor-not-allowed animate-appear"
+              >
+                <.icon :if={user.expanded} name="hero-chevron-up-mini" class="text-darkGrey" />
+                <.icon :if={!user.expanded} name="hero-chevron-down-mini" class="text-darkGrey" />
+              </button>
+            </div>
+
+            <div
+              class="overflow-hidden transition-all duration-300 ease-in-out"
+              style={"max-height: #{if user.expanded, do: "1000px", else: "0"}; opacity: #{if user.expanded, do: "1", else: "0"}"}
+            >
+              <div class="space-y-4 py-4 pr-11">
+                <%= if Map.has_key?(user, :sessions) do %>
+                  <div :for={session <- user.sessions} class="flex justify-between text-sm">
+                    <span>{session.title}</span>
+                    <span>{TimeFormatter.format_duration(session.duration)}</span>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-md p-4 justify-between items-center flex gap-5 self-start">
+            <%= if user.hours_record do %>
+              <span class="text-xs font-semibold text-greenText bg-greenBg pl-2 pr-1 py-[5px] uppercase rounded-md flex items-center justify-between flex-1 gap-1">
+                EWIDENCJA <.icon name="hero-check-micro" />
+              </span>
+              <a
+                href={~p"/czasosledz/ewidencja/#{user.hours_record.id}"}
+                download={"Ewidencja_#{user.hours_record.year}_#{user.hours_record.month}_#{user.name || user.email}.pdf"}
+                class="p-1 transition hover:bg-greyButtonBg rounded-md inline-flex items-center justify-center"
+              >
+                <.icon name="hero-arrow-down-tray-mini" class="text-darkGrey" />
+              </a>
+            <% else %>
+              <span class="text-xs font-semibold text-darkGrey bg-greyButtonBg px-2 py-[5px] uppercase rounded-md flex items-center justify-between flex-1 gap-1">
+                BRAK <.icon name="hero-x-mark-micro" />
+              </span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="stroke-greyButtonBg shrink-0 m-0.5"
+              >
+                <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="m14.5 12.5-5 5" /><path d="m9.5 12.5 5 5" />
+              </svg>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+
+    <%= if Enum.any?(@project_user_hours, &(&1.removed_from_project)) do %>
+      <div class="grid grid-cols-subgrid col-span-full animate-appear gap-4">
+        <h2 class="mt-6 animate-appear">
+          Usunięci z projektu
+        </h2>
+        <div class="grid grid-cols-subgrid col-span-full animate-appear">
+          <%= for user <- @project_user_hours, user.removed_from_project do %>
+            <div class="grid grid-cols-subgrid col-span-full animate-appear gap-4">
+              <div class="flex flex-col divide-y divide-greyButtonBg px-4 rounded-md bg-white">
+                <div class="flex items-center py-4 gap-6 animate-appear">
+                  <.render_profile user={user} />
+                  <span class="ml-auto">
+                    <%= if user.expanded do %>
+                      <span class="invisible">{ceil(user.time_worked / 60 / 60)} h</span>
+                    <% else %>
+                      {ceil(user.time_worked / 60 / 60)} h
+                    <% end %>
+                  </span>
+
+                  <button
+                    phx-click="toggle-user"
+                    phx-value-id={user.id}
+                    disabled={user.time_worked == 0}
+                    class="disabled:opacity-50 disabled:cursor-not-allowed animate-appear"
+                  >
+                    <.icon :if={user.expanded} name="hero-chevron-up-mini" class="text-darkGrey" />
+                    <.icon :if={!user.expanded} name="hero-chevron-down-mini" class="text-darkGrey" />
+                  </button>
+                </div>
+
+                <div
+                  class="overflow-hidden transition-all duration-300 ease-in-out"
+                  style={"max-height: #{if user.expanded, do: "1000px", else: "0"}; opacity: #{if user.expanded, do: "1", else: "0"}"}
+                >
+                  <div class="space-y-4 py-4 pr-11">
+                    <%= if Map.has_key?(user, :sessions) do %>
+                      <div :for={session <- user.sessions} class="flex justify-between text-sm">
+                        <span>{session.title}</span>
+                        <span>{TimeFormatter.format_duration(session.duration)}</span>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-white rounded-md p-4 justify-between items-center flex gap-5 self-start">
+                <%= if user.hours_record do %>
+                  <span class="text-xs font-semibold text-greenText bg-greenBg pl-2 pr-1 py-[5px] uppercase rounded-md flex items-center justify-between flex-1 gap-1">
+                    EWIDENCJA <.icon name="hero-check-micro" />
+                  </span>
+                  <a
+                    href={~p"/czasosledz/ewidencja/#{user.hours_record.id}"}
+                    download={"Ewidencja_#{user.hours_record.year}_#{user.hours_record.month}_#{user.name || user.email}.pdf"}
+                    class="p-1 transition hover:bg-greyButtonBg rounded-md inline-flex items-center justify-center"
+                  >
+                    <.icon name="hero-arrow-down-tray-mini" class="text-darkGrey" />
+                  </a>
+                <% else %>
+                  <span class="text-xs font-semibold text-darkGrey bg-greyButtonBg px-2 py-[5px] uppercase rounded-md flex items-center justify-between flex-1 gap-1">
+                    BRAK <.icon name="hero-x-mark-micro" />
+                  </span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="stroke-greyButtonBg shrink-0 m-0.5"
+                  >
+                    <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="m14.5 12.5-5 5" /><path d="m9.5 12.5 5 5" />
+                  </svg>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="hidden only:block py-8 bg-white rounded-md text-center text-darkGrey text-sm col-span-full animate-appear">
+      Brak danych o czasie pracy dla tego projektu.
+    </div>
+    """
+  end
+
   attr :project_users, :list, required: true
   attr :users, :list, required: true
 
   defp render_project_edit(assigns) do
     ~H"""
-    <%= for user <- @project_users do %>
-      <div class="flex items-center bg-white rounded-md p-4 justify-between col-span-full">
-        <.render_profile user={user} />
-        <button
-          phx-click="delete_user"
-          phx-value-user_id={user.id}
-          class="h-6 w-8 rounded-md hover:bg-greyButtonBg text-darkGrey disabled:text-orangeText inline-flex items-center justify-center ml-1 hover:transition-all hover:duration-300 hover:ease-in-out animate-appear"
-        >
-          <.icon name="hero-trash-micro" />
-        </button>
-      </div>
+    <%= if Enum.any?(@project_users, &(!&1.removed_from_project)) do %>
+      <%= for %{user: user, removed_from_project: removed_from_project} <- @project_users, !removed_from_project do %>
+        <div class="flex items-center bg-white rounded-md p-4 justify-between col-span-full">
+          <.render_profile user={user} />
+          <button
+            phx-click="delete_user"
+            phx-value-user_id={user.id}
+            class="h-6 w-6 rounded-md hover:bg-greyButtonBg text-darkGrey disabled:text-orangeText inline-flex items-center justify-center ml-1 hover:transition-all hover:duration-300 hover:ease-in-out animate-appear"
+          >
+            <.icon name="hero-trash-micro" />
+          </button>
+        </div>
+      <% end %>
     <% end %>
 
-    <form phx-change="add_user" class="relative w-[35%] animate-appear">
-      <.icon
-        name="hero-plus-mini"
-        class="text-darkGrey absolute top-1/2 transform -translate-y-1/2 left-2"
-      />
-      <.input
-        type="select"
-        name="user_id"
-        id="user"
-        prompt="Dodaj współpracownika"
-        value={nil}
-        options={Enum.map(@users, &{&1.name || &1.email, &1.id})}
-        class="pl-9"
-      />
-    </form>
+    <%= if Enum.any?(@project_users, &(&1.removed_from_project)) do %>
+      <h2 class="mt-6 animate-appear">Usunięci z projektu</h2>
+      <%= for %{user: user, removed_from_project: removed_from_project} <- @project_users, removed_from_project do %>
+        <div class="flex items-center bg-white rounded-md p-4 justify-between col-span-full">
+          <.render_profile user={user} />
+          <button
+            phx-click="restore_user"
+            phx-value-user_id={user.id}
+            class="h-6 w-20 rounded-md hover:bg-greyButtonBg text-darkGrey disabled:text-orangeText inline-flex items-center justify-center ml-1 hover:transition-all hover:duration-300 hover:ease-in-out animate-appear"
+          >
+            Przywróć
+          </button>
+        </div>
+      <% end %>
+    <% end %>
     """
   end
 
@@ -969,6 +1385,106 @@ defmodule FirmowidWeb.Project.Index do
         {@user.name || @user.email}
       </span>
     </div>
+    """
+  end
+
+  attr :projects, :list, required: true
+
+  defp render_projects_archived(assigns) do
+    ~H"""
+    <div class="col-span-full">
+      <%= if Enum.empty?(@projects) do %>
+        <div class="text-center text-darkGrey text-sm animate-appear">
+          Brak archiwalnych projektów.
+        </div>
+      <% else %>
+        <div class="grid grid-cols-[5fr_7fr_1fr_auto] gap-2">
+          <div class="col-span-full px-2 grid grid-cols-subgrid gap-4 text-xs text-darkGrey">
+            <div>NAZWA PROJEKTU</div>
+            <div></div>
+            <div>ARCHIWIZACJA</div>
+            <div></div>
+          </div>
+
+          <%= for %{name: name, archived_at: archived_at, id: id} <- @projects do %>
+            <div class="col-span-full bg-white rounded-md animate-appear px-4 py-2 grid grid-cols-subgrid gap-4 items-center">
+              <div class="text-black text-md">{name}</div>
+              <div />
+              <div class="text-black text-md">
+                {Calendar.strftime(archived_at, "%d.%m.%Y")}
+              </div>
+              <div class="flex items-center gap-2">
+                <button
+                  phx-click="unarchive_project"
+                  phx-value-project_id={id}
+                  class="size-8 bg-greyButtonBg hover:bg-grey-400 rounded-sm transition-colors flex items-center justify-center"
+                  title="Przywróć projekt"
+                >
+                  <.render_unarchive_icon />
+                </button>
+                <button
+                  phx-click="select_project"
+                  phx-value-selected_project={id}
+                  phx-value-details="1"
+                  class="p-2 rounded-md transition-colors flex items-center"
+                  title="Więcej opcji"
+                >
+                  <.icon name="hero-chevron-right" class="text-black size-4" />
+                </button>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+    """
+  end
+
+  defp render_unarchive_icon(assigns) do
+    ~H"""
+    <svg
+      width="20"
+      height="21"
+      viewBox="0 0 20 21"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M17.5013 3H2.5013C2.04106 3 1.66797 3.3731 1.66797 3.83333V6.33333C1.66797 6.79357 2.04106 7.16667 2.5013 7.16667H17.5013C17.9615 7.16667 18.3346 6.79357 18.3346 6.33333V3.83333C18.3346 3.3731 17.9615 3 17.5013 3Z"
+        stroke="#4E4E4E"
+        stroke-width="1.66667"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M3.33203 7.1665V16.3332C3.33203 16.7752 3.50763 17.1991 3.82019 17.5117C4.13275 17.8242 4.55667 17.9998 4.9987 17.9998H6.66536"
+        stroke="#4E4E4E"
+        stroke-width="1.66667"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M16.6654 7.1665V16.3332C16.6654 16.7752 16.4898 17.1991 16.1772 17.5117C15.8646 17.8242 15.4407 17.9998 14.9987 17.9998H13.332"
+        stroke="#4E4E4E"
+        stroke-width="1.66667"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M7.5 13L10 10.5L12.5 13"
+        stroke="#4E4E4E"
+        stroke-width="1.66667"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M10 10.5V18"
+        stroke="#4E4E4E"
+        stroke-width="1.66667"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
     """
   end
 end
