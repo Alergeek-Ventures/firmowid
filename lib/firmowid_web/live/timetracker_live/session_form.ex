@@ -22,7 +22,6 @@ defmodule FirmowidWeb.TimetrackerLive.SessionForm do
     |> validate_required([:title, :project_id])
     |> maybe_put(:date, "Europe/Warsaw" |> DateTime.now!() |> DateTime.to_date())
     |> maybe_put(:start_time, "Europe/Warsaw" |> DateTime.now!() |> DateTime.to_time())
-    |> validate_end_time_after_start_time()
   end
 
   def attributes(changeset, user_id) do
@@ -62,31 +61,6 @@ defmodule FirmowidWeb.TimetrackerLive.SessionForm do
   end
 
   defp date_to_datetime(_, nil), do: nil
-
   defp date_to_datetime(nil, _), do: nil
-
-  defp date_to_datetime(date, time) do
-    date
-    |> NaiveDateTime.new!(time)
-    |> DateTime.from_naive!("Europe/Warsaw")
-  end
-
-  defp validate_end_time_after_start_time(changeset) do
-    start_time = get_change(changeset, :start_time)
-    end_time = get_change(changeset, :end_time)
-
-    case {start_time, end_time} do
-      {nil, _} ->
-        changeset
-
-      {_, nil} ->
-        changeset
-
-      {start_time, end_time} when start_time > end_time ->
-        add_error(changeset, :end_time, "End time must be after start time")
-
-      _ ->
-        changeset
-    end
-  end
+  defp date_to_datetime(date, time), do: DateTime.new!(date, time, "Europe/Warsaw")
 end
