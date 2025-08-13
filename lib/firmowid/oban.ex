@@ -21,7 +21,7 @@ defmodule Firmowid.Oban do
           {"0 12 */2 * *", Firmowid.BankData.Worker, args: %{name: "dispatch_sync_jobs_for_all_bank_accounts"}},
           {"0 13 * * *", Firmowid.BankData.CleanupWorker, args: %{}},
           {"0 13 * * *", Firmowid.Invoicing.Worker, args: %{name: "matching"}},
-          {"0 14 * * *", Firmowid.ExchangeRates.CleanupWorker, args: %{}}
+          {"0 14 * * *", Firmowid.Currencies.CleanupWorker, args: %{}}
         ]
       }
     ]

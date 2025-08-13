@@ -32,7 +32,7 @@ config :ex_money,
   open_exchange_rates_app_id: "b1c5dcca1ebd4066ae1b8c7ef0205be6",
   # open_exchange_rates_app_id: "090a91fcd9d74f32a0813ee30863f231", # test org
   # (for e.g. dev if you need it)
-  exchange_rates_cache_module: Firmowid.ExchangeRates.DatabaseCache
+  exchange_rates_cache_module: Firmowid.Currencies.DatabaseCache
 
 config :firmowid, Firmowid.Cldr, locales: ["pl"]
 config :firmowid, Firmowid.Currencies, rates_provider: :mock

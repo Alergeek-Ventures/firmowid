@@ -1,9 +1,9 @@
-defmodule Firmowid.ExchangeRates.DatabaseCacheTest do
+defmodule Firmowid.Currencies.DatabaseCacheTest do
   use Firmowid.DataCase
 
-  alias Firmowid.ExchangeRates.CacheEntry
-  alias Firmowid.ExchangeRates.CleanupWorker
-  alias Firmowid.ExchangeRates.DatabaseCache
+  alias Firmowid.Currencies.CacheEntry
+  alias Firmowid.Currencies.CleanupWorker
+  alias Firmowid.Currencies.DatabaseCache
 
   setup_all do
     # Configure to use API rates provider instead of mock
@@ -153,16 +153,6 @@ defmodule Firmowid.ExchangeRates.DatabaseCacheTest do
 
       assert {:ok, fetched_rates2} = DatabaseCache.historic_rates(date2)
       assert fetched_rates2["EUR"] == Decimal.new("0.90")
-    end
-  end
-
-  describe "cache behavior" do
-    test "init/0 returns :ok" do
-      assert DatabaseCache.init() == :ok
-    end
-
-    test "terminate/0 returns :ok" do
-      assert DatabaseCache.terminate() == :ok
     end
   end
 

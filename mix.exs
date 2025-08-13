@@ -107,7 +107,8 @@ defmodule Firmowid.MixProject do
       {:lazy_html, ">= 0.1.0", only: :test},
       {:content_security_policy, "~> 1.0"},
       {:styler, "~> 1.5", only: [:dev, :test], runtime: false},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:cachex, "~> 4.0"}
     ]
   end
 

@@ -1,4 +1,4 @@
-defmodule Firmowid.ExchangeRates.CacheEntry do
+defmodule Firmowid.Currencies.CacheEntry do
   @moduledoc false
   use Firmowid.Schema
 

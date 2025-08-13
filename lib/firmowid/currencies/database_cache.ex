@@ -1,10 +1,10 @@
-defmodule Firmowid.ExchangeRates.DatabaseCache do
+defmodule Firmowid.Currencies.DatabaseCache do
   @moduledoc false
   @behaviour Money.ExchangeRates.Cache
 
   import Ecto.Query
 
-  alias Firmowid.ExchangeRates.CacheEntry
+  alias Firmowid.Currencies.CacheEntry
   alias Firmowid.Repo
 
   @impl true
@@ -57,7 +57,7 @@ defmodule Firmowid.ExchangeRates.DatabaseCache do
     :ok
   end
 
-  defp get_cache_entry(cache_date) do
+  def get_cache_entry(cache_date) do
     query =
       from c in CacheEntry,
         where: c.cache_date == ^cache_date
@@ -75,7 +75,7 @@ defmodule Firmowid.ExchangeRates.DatabaseCache do
     )
   end
 
-  defp convert_rates_to_decimal(rates) do
+  def convert_rates_to_decimal(rates) do
     Map.new(rates, fn {currency, value} ->
       {currency, to_decimal(value)}
     end)

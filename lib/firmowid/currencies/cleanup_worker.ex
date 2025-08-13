@@ -1,10 +1,10 @@
-defmodule Firmowid.ExchangeRates.CleanupWorker do
+defmodule Firmowid.Currencies.CleanupWorker do
   @moduledoc false
   use Oban.Worker, queue: :default
 
   import Ecto.Query
 
-  alias Firmowid.ExchangeRates.CacheEntry
+  alias Firmowid.Currencies.CacheEntry
   alias Firmowid.Repo
 
   @impl Oban.Worker

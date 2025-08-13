@@ -3,6 +3,14 @@ defmodule Firmowid.Currencies do
   This module is responsible for normalizing amounts between different currencies.
   """
 
+  use Agent
+
+  alias Firmowid.Currencies.DatabaseCache
+
+  def start_link(_opts), do: Agent.start_link(fn -> false end, name: __MODULE__)
+  defp rate_limited?, do: Agent.get(__MODULE__, & &1)
+  defp set_rate_limiting(value), do: Agent.update(__MODULE__, fn _ -> value end)
+
   @doc """
   Given an amount in a given currency and date (for historic rates),
   return the amount in PLN.
@@ -11,33 +19,51 @@ defmodule Firmowid.Currencies do
   def normalize_amount_to_pln(amount, currency, date) do
     rates = get_rates(date)
 
-    {:ok, amount} =
-      currency
-      |> Money.new(amount)
-      |> Money.to_currency(
-        "PLN",
-        rates
-      )
-
-    Money.to_decimal(amount)
+    currency
+    |> Money.new(amount)
+    |> Money.to_currency!("PLN", rates)
+    |> Money.to_decimal()
   end
 
   @spec get_rates(Date.t()) :: map()
   defp get_rates(date) do
-    case Application.get_env(:firmowid, __MODULE__)[:rates_provider] do
-      :mock ->
-        mock_rates()
+    get_rates(date, Application.get_env(:firmowid, __MODULE__)[:rates_provider])
+  end
 
-      _ ->
-        case get_rates_from_api(date) do
-          {:ok, rates} -> rates
-          _ -> mock_rates()
-        end
+  defp get_rates(_date, :mock), do: mock_rates()
+
+  defp get_rates(date, :api) do
+    case Cachex.fetch!(:currencies, date, &get_rates(&1, :database)) do
+      :mock -> mock_rates()
+      rates -> rates
     end
   end
 
-  defp get_rates_from_api(date) do
-    Money.ExchangeRates.historic_rates(date)
+  defp get_rates(date, :database) do
+    case DatabaseCache.get_cache_entry(date) do
+      nil -> get_rates(date, :oxr)
+      entry -> DatabaseCache.convert_rates_to_decimal(entry.rates)
+    end
+  end
+
+  defp get_rates(date, :oxr) do
+    # returning :mock instead of `mock_rates` to reduce cache size
+    if rate_limited?() do
+      :mock
+    else
+      # credo:disable-for-next-line
+      case Money.ExchangeRates.historic_rates(date) do
+        {:ok, rates} ->
+          rates
+
+        {:error, {_, "429"}} ->
+          set_rate_limiting(true)
+          :mock
+
+        _ ->
+          :mock
+      end
+    end
   end
 
   defp mock_rates do
