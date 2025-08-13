@@ -104,9 +104,6 @@ defmodule Firmowid.Finances do
   end
 
   def delete_bank_account(bank_account_id) do
-    # TODO: dangling requisitions should be deleted!
-    # not done yet, maybe via a worker?
-
     BankAccount
     |> Repo.get!(bank_account_id)
     |> Repo.delete()

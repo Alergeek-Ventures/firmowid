@@ -44,14 +44,11 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
         sales_invoice = sales_invoice_ids |> hd() |> Firmowid.SalesInvoices.get_sales_invoice()
         organization_id = sales_invoice.organization_id
 
-        # todo insert_all
-        for sales_invoice_id <- sales_invoice_ids, transaction_id <- transaction_ids do
-          Firmowid.SalesInvoices.create_sales_invoices_transactions_connection(
-            sales_invoice_id,
-            transaction_id,
-            organization_id
-          )
-        end
+        Firmowid.SalesInvoices.create_sales_invoices_transactions_connection(
+          sales_invoice_ids,
+          transaction_ids,
+          organization_id
+        )
 
         MessagesStorage.delete(conversation_id)
 

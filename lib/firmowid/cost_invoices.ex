@@ -4,6 +4,7 @@ defmodule Firmowid.CostInvoices do
 
   import Ecto.Query, warn: false
 
+  alias Ecto.Multi
   alias Firmowid.Blobs
   alias Firmowid.Blobs.Blob
   alias Firmowid.CostInvoices.CostInvoice
@@ -21,7 +22,6 @@ defmodule Firmowid.CostInvoices do
   def authorize(:upload, %{role: :admin}, _), do: true
   def authorize(_, _, _), do: false
 
-  ## TODO: standardize pubsub / subscriptions / broadcasts
   def subscribe_cost_invoice_broadcast(organization_id) do
     Phoenix.PubSub.subscribe(
       Firmowid.PubSub,
@@ -245,14 +245,35 @@ defmodule Firmowid.CostInvoices do
     |> Firmowid.Oban.insert!()
   end
 
-  def create_cost_invoices_transactions_connection(cost_invoice_id, transaction_id, organization_id) do
-    %{
-      cost_invoice_id: cost_invoice_id,
-      transaction_id: transaction_id,
-      organization_id: organization_id
-    }
-    |> CostInvoicesTransactions.changeset()
-    |> Repo.insert!()
+  def create_cost_invoices_transactions_connection(invoice_ids, transaction_ids, organization_id) do
+    invoice_ids =
+      if is_list(invoice_ids) do
+        invoice_ids
+      else
+        [invoice_ids]
+      end
+
+    transaction_ids =
+      if is_list(transaction_ids) do
+        transaction_ids
+      else
+        [transaction_ids]
+      end
+
+    changesets =
+      for invoice_id <- invoice_ids, transaction_id <- transaction_ids do
+        CostInvoicesTransactions.changeset(%{
+          cost_invoice_id: invoice_id,
+          transaction_id: transaction_id,
+          organization_id: organization_id
+        })
+      end
+
+    changesets
+    |> Enum.reduce(Multi.new(), fn %{changes: data} = changeset, acc ->
+      Multi.insert(acc, {data.cost_invoice_id, data.transaction_id}, changeset)
+    end)
+    |> Repo.transaction()
   end
 
   def delete_cost_invoices_transactions_connections(cost_invoice_id) do

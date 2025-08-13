@@ -4,6 +4,7 @@ defmodule Firmowid.SalesInvoices do
 
   import Ecto.Query, warn: false
 
+  alias Ecto.Multi
   alias Firmowid.Accounts
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices.Buyer
@@ -141,14 +142,35 @@ defmodule Firmowid.SalesInvoices do
     |> populate_logo_url()
   end
 
-  def create_sales_invoices_transactions_connection(invoice_id, transaction_id, organization_id) do
-    %{
-      sales_invoice_id: invoice_id,
-      transaction_id: transaction_id,
-      organization_id: organization_id
-    }
-    |> SalesInvoicesTransactions.changeset()
-    |> Repo.insert!()
+  def create_sales_invoices_transactions_connection(invoice_ids, transaction_ids, organization_id) do
+    invoice_ids =
+      if is_list(invoice_ids) do
+        invoice_ids
+      else
+        [invoice_ids]
+      end
+
+    transaction_ids =
+      if is_list(transaction_ids) do
+        transaction_ids
+      else
+        [transaction_ids]
+      end
+
+    changesets =
+      for invoice_id <- invoice_ids, transaction_id <- transaction_ids do
+        SalesInvoicesTransactions.changeset(%{
+          sales_invoice_id: invoice_id,
+          transaction_id: transaction_id,
+          organization_id: organization_id
+        })
+      end
+
+    changesets
+    |> Enum.reduce(Multi.new(), fn %{changes: data} = changeset, acc ->
+      Multi.insert(acc, {data.sales_invoice_id, data.transaction_id}, changeset)
+    end)
+    |> Repo.transaction()
   end
 
   def delete_sales_invoices_transactions_connections(invoice_id) do

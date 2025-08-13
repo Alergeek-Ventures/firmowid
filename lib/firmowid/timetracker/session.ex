@@ -28,13 +28,11 @@ defmodule Firmowid.Timetracker.Session do
     |> cast(attrs, [:user_id, :title, :start_datetime, :end_datetime, :project_id])
     |> validate_required([:user_id, :title, :start_datetime, :project_id])
     |> validate_datetime_order()
-    |> validate_user_has_access_to_project()
+    |> prepare_changes(&ensure_user_has_access_to_project/1)
     |> put_change(:organization_id, Repo.get_org_id())
   end
 
-  # this should be called in transaction if we are creating or updating session - race condition
-  @spec validate_user_has_access_to_project(Ecto.Changeset.t()) :: Ecto.Changeset.t()
-  defp validate_user_has_access_to_project(changeset) do
+  defp ensure_user_has_access_to_project(changeset) do
     user_id = get_field(changeset, :user_id)
     project_id = get_change(changeset, :project_id)
 
@@ -71,14 +69,8 @@ defmodule Firmowid.Timetracker.Session do
   end
 
   def calculate_session_duration(session) do
-    end_datetime =
-      case session.end_datetime do
-        nil -> DateTime.now!("Europe/Warsaw")
-        end_datetime -> DateTime.shift_zone!(end_datetime, "Europe/Warsaw")
-      end
+    end_datetime = session.end_datetime || DateTime.utc_now()
 
-    start_datetime = DateTime.shift_zone!(session.start_datetime, "Europe/Warsaw")
-
-    DateTime.diff(end_datetime, start_datetime, :second)
+    DateTime.diff(end_datetime, session.start_datetime, :second)
   end
 end

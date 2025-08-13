@@ -51,14 +51,11 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
         cost_invoice = cost_invoice_ids |> hd() |> Firmowid.CostInvoices.get_cost_invoice!()
         organization_id = cost_invoice.organization_id
 
-        # todo insert_all
-        for cost_invoice_id <- cost_invoice_ids, transaction_id <- transaction_ids do
-          Firmowid.CostInvoices.create_cost_invoices_transactions_connection(
-            cost_invoice_id,
-            transaction_id,
-            organization_id
-          )
-        end
+        Firmowid.CostInvoices.create_cost_invoices_transactions_connection(
+          cost_invoice_ids,
+          transaction_ids,
+          organization_id
+        )
 
         MessagesStorage.delete(conversation_id)
 
