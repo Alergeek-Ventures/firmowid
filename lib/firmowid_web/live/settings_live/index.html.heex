@@ -569,8 +569,7 @@
                           </button>
 
                           <button
-                            phx-click="delete_bank_account"
-                            phx-value-account_id={account.id}
+                            phx-click={show_modal("confirm_delete_bank_account_#{account.id}")}
                             class={[
                               "transition px-4 py-2 text-left",
                               "hover:text-white",
@@ -621,6 +620,32 @@
                         </.button>
                       </div>
                     </.form>
+                  </.modal>
+                  <.modal id={"confirm_delete_bank_account_#{account.id}"}>
+                    <h3 class="text-lg font-bold mb-4">Potwierdź usunięcie</h3>
+                    <p class="mb-6">
+                      Czy na pewno chcesz usunąć to konto bankowe?
+                      Spowoduje to również usunięcie wszystkich powiązanych transakcji.
+                    </p>
+                    <div class="flex gap-4">
+                      <.button
+                        phx-click="delete_bank_account"
+                        phx-value-account_id={account.id}
+                        variant="outline"
+                        color="red"
+                        phx-disable-with="Usuwam..."
+                        class="phx-click-loading:opacity-50 phx-click-loading:cursor-wait"
+                      >
+                        Usuń
+                      </.button>
+                      <.button
+                        type="button"
+                        phx-click={hide_modal("confirm_delete_bank_account_#{account.id}")}
+                        class="phx-click-loading:opacity-50 phx-click-loading:cursor-wait"
+                      >
+                        Anuluj
+                      </.button>
+                    </div>
                   </.modal>
                 <% end %>
               </div>

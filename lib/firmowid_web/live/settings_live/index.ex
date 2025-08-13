@@ -203,11 +203,12 @@ defmodule FirmowidWeb.SettingsLive.Index do
     case Finances.delete_bank_account(account_id) do
       {:ok, _} ->
         LiveToast.send_toast(:info, "Konto bankowe zostało usunięte.")
+        bank_accounts = BankData.list_bank_accounts()
 
         {:noreply,
          socket
-         |> assign(:bank_accounts, BankData.list_bank_accounts())
-         |> assign(:bank_account_statuses, derive_statuses(BankData.list_bank_accounts()))}
+         |> assign(:bank_accounts, bank_accounts)
+         |> assign(:bank_account_statuses, derive_statuses(bank_accounts))}
 
       {:error, _} ->
         LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania konta bankowego.")
