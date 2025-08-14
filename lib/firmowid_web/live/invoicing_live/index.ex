@@ -72,6 +72,16 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
     socket = assign(socket, :active_months, active_months)
 
+    invoicing_search_enabled =
+      Posthog.feature_flag_enabled?("invoicing_search", user.id)
+
+    socket =
+      socket
+      |> assign(:show_search, false)
+      |> assign(:search_query, "")
+      |> assign(:search_results, [])
+      |> assign(:invoicing_search_enabled, invoicing_search_enabled)
+
     {:ok, socket}
   end
 
@@ -167,6 +177,47 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     {:noreply, socket}
   end
 
+  def handle_event("open-search", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:show_search, true)
+     |> assign(:search_query, "")
+     |> assign(:search_results, [])}
+  end
+
+  def handle_event("close-search", _params, socket) do
+    {:noreply, assign(socket, :show_search, false)}
+  end
+
+  def handle_event("update-search", %{"q" => q}, socket) do
+    Bodyguard.permit!(Invoicing, :read, socket.assigns.current_user)
+    q = String.trim(q)
+
+    results =
+      Invoicing.search_invoices(%{
+        query: q,
+        include_sales: true,
+        include_cost: true
+      })
+
+    {:noreply,
+     socket
+     |> assign(:search_results, results)
+     |> assign(:search_query, q)}
+  end
+
+  def handle_event("goto-invoice", %{"id" => id, "type" => type}, socket) do
+    Bodyguard.permit!(Invoicing, :read, socket.assigns.current_user)
+
+    path =
+      case type do
+        "cost" -> ~p"/kosztowe/#{id}"
+        "sales" -> ~p"/sprzedazowe/#{id}"
+      end
+
+    {:noreply, push_navigate(socket, to: path)}
+  end
+
   @impl true
   def handle_info({:toggle_skip_invoicing, %{id: id, type: type}}, socket) do
     Bodyguard.permit!(Invoicing, :update, socket.assigns.current_user)
@@ -222,7 +273,12 @@ defmodule FirmowidWeb.InvoicingLive.Index do
       "#{cost_invoice.issue_date} / #{cost_invoice.seller_display_name}",
       title: "Faktura załadowana",
       action: fn assigns ->
-        assigns = assign(assigns, :issue_date, cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601())
+        assigns =
+          assign(
+            assigns,
+            :issue_date,
+            cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601()
+          )
 
         ~H"""
         <.link class="text-sm text-bold underline" navigate={~p"/?month=#{@issue_date}&filter=invoices"}>
@@ -243,7 +299,12 @@ defmodule FirmowidWeb.InvoicingLive.Index do
       "#{cost_invoice.issue_date} / #{cost_invoice.seller_display_name}",
       title: "Połączenie faktury z transakcją",
       action: fn assigns ->
-        assigns = assign(assigns, :issue_date, cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601())
+        assigns =
+          assign(
+            assigns,
+            :issue_date,
+            cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601()
+          )
 
         ~H"""
         <.link class="text-sm text-bold underline" navigate={~p"/?month=#{@issue_date}&filter=invoices"}>
@@ -318,7 +379,11 @@ defmodule FirmowidWeb.InvoicingLive.Index do
               title: "#{cost_invoice.issue_date} / #{cost_invoice.seller_display_name}",
               action: fn assigns ->
                 assigns =
-                  assign(assigns, :issue_date, cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601())
+                  assign(
+                    assigns,
+                    :issue_date,
+                    cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601()
+                  )
 
                 ~H"""
                 <.link class="text-sm text-bold underline" navigate={~p"/?month=#{@issue_date}&filter=invoices"}>
@@ -359,7 +424,12 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
 
-    socket = assign(socket, :invoicing_entries, Invoicing.get_invoicing_entries(date_range_from, date_range_to, filter))
+    socket =
+      assign(
+        socket,
+        :invoicing_entries,
+        Invoicing.get_invoicing_entries(date_range_from, date_range_to, filter)
+      )
 
     # actual data
     pending_invoicing_entries_count =

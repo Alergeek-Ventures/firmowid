@@ -3,6 +3,7 @@ defmodule Firmowid.Invoicing do
   @behaviour Bodyguard.Policy
 
   import Ecto.Query, warn: false
+  import Paradex, only: [~>: 2]
 
   alias Firmowid.CostInvoices
   alias Firmowid.CostInvoices.CostInvoice
@@ -40,6 +41,362 @@ defmodule Firmowid.Invoicing do
          transaction: transaction
        }}
     )
+  end
+
+  @doc """
+  Searches for invoices based on the provided parameters.
+  It can search both sales and cost invoices, depending on the parameters.
+  If query is provided, ranks by relevance, if not, by most recent.
+  - `params` is a map that can include:
+    - `include_sales`: `boolean` - default `true`
+    - `include_cost`: `boolean` - default `true`
+    - `query`: `String` - searched against:
+      - in cost invoices:
+        - seller name, seller display name, description, invoice identifier (fuzzy match)
+      - in sales invoices:
+        - buyer display name, buyer name, buyer surname, invoice number, item names (fuzzy match)
+        - buyer email, buyer description (strict match of one "word", words are separated by spaces or punctuation etc.)
+        - buyer NIP (strict match)
+    - `currency`: `String` - filter by currency
+    - `only_unmatched`: `boolean` - if true, only unmatched invoices are included
+    - `amount_gt`: `Decimal` - filter by minimum amount
+    - `amount_lt`: `Decimal` - filter by maximum amount
+    - `date_from`: `Date` - filter by issue date from this date
+    - `date_to`: `Date` - filter by issue date to this date
+
+    - Sales invoice only filters:
+      - `buyer_type`: `atom` - filter by buyer type (`:individual` or `:company`)
+      - `is_cash`: `boolean` - if true, only cash account invoices are included
+      - `is_reverse_charge`: `boolean` - if true, only reverse charge invoices are included
+  """
+  def search_invoices(params \\ %{}) do
+    include_sales = Map.get(params, :include_sales, true)
+    include_cost = Map.get(params, :include_cost, true)
+    query = Map.get(params, :query)
+
+    include_cost =
+      if not is_nil(Map.get(params, :buyer_type)) or not is_nil(Map.get(params, :is_cash)) or
+           not is_nil(Map.get(params, :is_reverse_charge)) do
+        false
+      else
+        include_cost
+      end
+
+    # From prebuilt queries, select just the id, type, date and bm25 score (to hydrate later)
+    # This is needed because if we got whole structs, union_all on different schemas doesn't work
+    # And we need to subquery to order by score
+    cost_query =
+      if include_cost do
+        base = build_cost_invoice_query(params)
+
+        if query in [nil, ""] do
+          select(base, [ci], %{
+            id: ci.id,
+            type: "cost",
+            date: ci.issue_date,
+            score: 0.0,
+            organization_id: ci.organization_id
+          })
+        else
+          select(base, [ci], %{
+            id: ci.id,
+            type: "cost",
+            date: ci.issue_date,
+            score: fragment("paradedb.score(?)", ci.id),
+            organization_id: ci.organization_id
+          })
+        end
+      end
+
+    sales_query =
+      if include_sales do
+        base = build_sales_invoice_query(params)
+
+        if query in [nil, ""] do
+          select(base, [si], %{
+            id: si.id,
+            type: "sales",
+            date: si.issue_date,
+            score: 0.0,
+            organization_id: si.organization_id
+          })
+        else
+          select(base, [si], %{
+            id: si.id,
+            type: "sales",
+            date: si.issue_date,
+            score: fragment("paradedb.score(?)", si.id),
+            organization_id: si.organization_id
+          })
+        end
+      end
+
+    queries = Enum.filter([cost_query, sales_query], fn q -> not is_nil(q) end)
+
+    unified_query =
+      case queries do
+        [single] ->
+          single
+
+        [first, second] ->
+          union_all(first, ^second)
+
+        [] ->
+          from(cost_invoice in CostInvoice,
+            where: false,
+            select: %{id: nil, type: nil, date: nil, score: nil, organization_id: nil}
+          )
+      end
+
+    # For performance, reduced into two maps, hydrated all of one type at once, and reassembled list
+    base =
+      unified_query
+      |> subquery()
+      |> order_by(
+        ^if query in [nil, ""] do
+          [desc: :date]
+        else
+          [desc: :score]
+        end
+      )
+      |> limit(50)
+
+    # Paradedb @@@ (~> in Ecto) operator needs this, otherwise "Postgres expressions not solved" error
+    results = Repo.all(base, prepare: :unnamed)
+
+    hydrate_search_results(results)
+  end
+
+  defp build_cost_invoice_query(params) do
+    query = Map.get(params, :query)
+    only_unmatched = Map.get(params, :only_unmatched, false)
+    currency = Map.get(params, :currency)
+    amount_gt = Map.get(params, :amount_gt)
+    amount_lt = Map.get(params, :amount_lt)
+    date_from = Map.get(params, :date_from)
+    date_to = Map.get(params, :date_to)
+
+    base_query = from(cost_invoice in CostInvoice, as: :cost_invoice)
+
+    base_query =
+      if only_unmatched do
+        base_query
+        |> join(:left, [cost_invoice], t in assoc(cost_invoice, :transactions))
+        |> where([cost_invoice, t], is_nil(t.id))
+        |> where([cost_invoice], cost_invoice.skip_invoicing == false)
+      else
+        base_query
+      end
+
+    base_query =
+      if currency,
+        do: where(base_query, [cost_invoice], cost_invoice.currency == ^currency),
+        else: base_query
+
+    base_query =
+      if amount_gt,
+        do: where(base_query, [cost_invoice], cost_invoice.total_amount >= ^amount_gt),
+        else: base_query
+
+    base_query =
+      if amount_lt,
+        do: where(base_query, [cost_invoice], cost_invoice.total_amount <= ^amount_lt),
+        else: base_query
+
+    base_query =
+      if date_from,
+        do: where(base_query, [cost_invoice], cost_invoice.issue_date >= ^date_from),
+        else: base_query
+
+    base_query =
+      if date_to,
+        do: where(base_query, [cost_invoice], cost_invoice.issue_date <= ^date_to),
+        else: base_query
+
+    if query in [nil, ""] do
+      base_query
+    else
+      search_dynamic =
+        Enum.reduce(
+          [
+            dynamic([cost_invoice], cost_invoice.seller ~> ^query),
+            dynamic([cost_invoice], cost_invoice.seller_display_name ~> ^query),
+            dynamic([cost_invoice], cost_invoice.description ~> ^query),
+            dynamic([cost_invoice], cost_invoice.invoice_identifier ~> ^query)
+          ],
+          fn expr, acc -> dynamic([cost_invoice], ^acc or ^expr) end
+        )
+
+      where(base_query, ^search_dynamic)
+    end
+  end
+
+  defp build_sales_invoice_query(params) do
+    query = Map.get(params, :query)
+    only_unmatched = Map.get(params, :only_unmatched)
+    currency = Map.get(params, :currency)
+    amount_gt = Map.get(params, :amount_gt)
+    amount_lt = Map.get(params, :amount_lt)
+    date_from = Map.get(params, :date_from)
+    date_to = Map.get(params, :date_to)
+    buyer_type = Map.get(params, :buyer_type)
+    is_cash_account = Map.get(params, :is_cash)
+    is_reverse_charge = Map.get(params, :is_reverse_charge)
+
+    base_query = from(SalesInvoice, as: :sales_invoice)
+
+    needs_items_join = not is_nil(amount_gt) or not is_nil(amount_lt)
+
+    base_query =
+      if needs_items_join do
+        base_query
+        |> join(
+          :left,
+          [sales_invoice],
+          sales_invoice_item in assoc(sales_invoice, :sales_invoice_items)
+        )
+        |> group_by([sales_invoice], sales_invoice.id)
+      else
+        base_query
+      end
+
+    # equivalent to get_gross
+    base_query =
+      if amount_gt do
+        having(
+          base_query,
+          [sales_invoice, sales_invoice_item],
+          sum(
+            sales_invoice_item.quantity * sales_invoice_item.unit_price *
+              (1 + sales_invoice_item.vat_rate / 100)
+          ) >= ^amount_gt
+        )
+      else
+        base_query
+      end
+
+    base_query =
+      if amount_lt do
+        having(
+          base_query,
+          [sales_invoice, sales_invoice_item],
+          sum(
+            sales_invoice_item.quantity * sales_invoice_item.unit_price *
+              (1 + sales_invoice_item.vat_rate / 100)
+          ) <= ^amount_lt
+        )
+      else
+        base_query
+      end
+
+    base_query =
+      if only_unmatched do
+        base_query
+        |> where(
+          [sales_invoice],
+          fragment(
+            "NOT EXISTS (SELECT 1 FROM sales_invoices_transactions WHERE sales_invoice_id = ?)",
+            sales_invoice.id
+          )
+        )
+        |> where([sales_invoice], sales_invoice.skip_invoicing == false)
+      else
+        base_query
+      end
+
+    base_query =
+      if currency,
+        do: where(base_query, [sales_invoice], sales_invoice.currency == ^currency),
+        else: base_query
+
+    base_query =
+      if date_from,
+        do: where(base_query, [sales_invoice], sales_invoice.issue_date >= ^date_from),
+        else: base_query
+
+    base_query =
+      if date_to,
+        do: where(base_query, [sales_invoice], sales_invoice.issue_date <= ^date_to),
+        else: base_query
+
+    base_query =
+      if buyer_type,
+        do: where(base_query, [sales_invoice], sales_invoice.buyer_type == ^buyer_type),
+        else: base_query
+
+    base_query =
+      if is_cash_account,
+        do: where(base_query, [sales_invoice], sales_invoice.is_cash_account == true),
+        else: base_query
+
+    base_query =
+      if is_reverse_charge,
+        do: where(base_query, [sales_invoice], sales_invoice.is_reverse_charge == true),
+        else: base_query
+
+    if query in [nil, ""] do
+      base_query
+    else
+      search_dynamic =
+        Enum.reduce(
+          [
+            dynamic([sales_invoice], sales_invoice.buyer_display_name ~> ^query),
+            dynamic([sales_invoice], sales_invoice.buyer_name ~> ^query),
+            dynamic([sales_invoice], sales_invoice.buyer_surname ~> ^query),
+            dynamic([sales_invoice], sales_invoice.invoice_number ~> ^query),
+            dynamic([sales_invoice], sales_invoice.buyer_email ~> ^query),
+            dynamic([sales_invoice], sales_invoice.buyer_description ~> ^query),
+            dynamic([sales_invoice], sales_invoice.buyer_nip ~> ^query),
+            dynamic([sales_invoice], sales_invoice.item_names ~> ^query)
+          ],
+          fn expr, acc -> dynamic([sales_invoice], ^acc or ^expr) end
+        )
+
+      where(base_query, ^search_dynamic)
+    end
+  end
+
+  defp hydrate_search_results(results) do
+    grouped_by_type = Enum.group_by(results, fn i -> i.type end)
+
+    cost_invoice_ids =
+      Enum.map(grouped_by_type["cost"] || [], fn i -> i.id end)
+
+    sales_invoice_ids =
+      Enum.map(grouped_by_type["sales"] || [], fn i -> i.id end)
+
+    hydrated_cost_invoices =
+      if Enum.any?(cost_invoice_ids) do
+        from(cost_invoice in CostInvoice,
+          where: cost_invoice.id in ^cost_invoice_ids,
+          preload: [:transactions]
+        )
+        |> Repo.all()
+        |> Map.new(fn i -> {i.id, i} end)
+      else
+        %{}
+      end
+
+    hydrated_sales_invoices =
+      if Enum.any?(sales_invoice_ids) do
+        from(sales_invoice in SalesInvoice,
+          where: sales_invoice.id in ^sales_invoice_ids,
+          preload: [:transactions, :sales_invoice_items]
+        )
+        |> Repo.all()
+        |> Map.new(fn i -> {i.id, i} end)
+      else
+        %{}
+      end
+
+    results
+    |> Enum.map(fn raw ->
+      case raw.type do
+        "cost" -> Map.get(hydrated_cost_invoices, raw.id)
+        "sales" -> Map.get(hydrated_sales_invoices, raw.id)
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
   end
 
   @doc """

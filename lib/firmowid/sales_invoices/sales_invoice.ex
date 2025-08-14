@@ -57,6 +57,8 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     field :logo_url, :string, virtual: true
     field :total_amount, :decimal, virtual: true
 
+    field :item_names, :string
+
     has_many :sales_invoice_items, SalesInvoiceItem, on_replace: :delete
 
     many_to_many :transactions,
