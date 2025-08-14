@@ -63,6 +63,7 @@ defmodule Firmowid.Currencies.DatabaseCacheTest do
       assert Repo.aggregate(CacheEntry, :count, skip_organization_id: true) == 1
 
       # Use Money.ExchangeRates to fetch rates - should hit cache
+      # credo:disable-for-next-line
       {:ok, rates} = Money.ExchangeRates.historic_rates(date)
 
       # Verify we got the cached rates
@@ -87,6 +88,7 @@ defmodule Firmowid.Currencies.DatabaseCacheTest do
       DatabaseCache.store_historic_rates(seeded_rates, date)
 
       # Get rates for the date
+      # credo:disable-for-next-line
       {:ok, rates} = Money.ExchangeRates.historic_rates(date)
 
       # Create money in EUR and convert to USD using cached rates
