@@ -130,7 +130,7 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
         waluta: <span class="font-semibold">{@filters["currency"]}</span>
       </div>
       <div
-        :if={@filters["query"]}
+        :if={@filters["query"] in ["", nil]}
         class="py-1 px-3 bg-orange-100 text-orange-900 rounded whitespace-nowrap animate-fade-in"
       >
         fraza: <span class="font-semibold">{@filters["query"]}</span>
