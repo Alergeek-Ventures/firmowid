@@ -20,16 +20,16 @@ defmodule FirmowidWeb.TimetrackerLive.SessionForm do
     session
     |> cast(attrs, [:title, :date, :start_time, :end_time, :project_id])
     |> validate_required([:title, :project_id])
-    |> maybe_put(:date, "Europe/Warsaw" |> DateTime.now!() |> DateTime.to_date())
-    |> maybe_put(:start_time, "Europe/Warsaw" |> DateTime.now!() |> DateTime.to_time())
   end
 
-  def attributes(changeset, user_id) do
-    form = apply_action(changeset, :create)
-
-    case form do
+  def attributes(changeset, user_id, timezone) do
+    changeset
+    |> maybe_put(:date, timezone |> DateTime.now!() |> DateTime.to_date())
+    |> maybe_put(:start_time, timezone |> DateTime.now!() |> DateTime.to_time())
+    |> apply_action(:create)
+    |> case do
       {:ok, form} ->
-        {:ok, form |> Map.from_struct() |> convert_times() |> Map.put(:user_id, user_id)}
+        {:ok, form |> Map.from_struct() |> convert_times(timezone) |> Map.put(:user_id, user_id)}
 
       other ->
         other
@@ -43,15 +43,15 @@ defmodule FirmowidWeb.TimetrackerLive.SessionForm do
     end
   end
 
-  defp convert_times(%{start_time: start_time, end_time: end_time, date: date} = attributes) do
-    start_time = date_to_datetime(date, start_time)
+  defp convert_times(%{start_time: start_time, end_time: end_time, date: date} = attributes, timezone) do
+    start_time = date_to_datetime(date, start_time, timezone)
 
     # This allows for adding sessions which cross midnight
     end_time =
       if end_time && Time.before?(end_time, start_time) do
-        date_to_datetime(Date.add(date, 1), end_time)
+        date_to_datetime(Date.add(date, 1), end_time, timezone)
       else
-        date_to_datetime(date, end_time)
+        date_to_datetime(date, end_time, timezone)
       end
 
     attributes
@@ -60,7 +60,7 @@ defmodule FirmowidWeb.TimetrackerLive.SessionForm do
     |> Map.drop([:start_time, :end_time, :date])
   end
 
-  defp date_to_datetime(_, nil), do: nil
-  defp date_to_datetime(nil, _), do: nil
-  defp date_to_datetime(date, time), do: DateTime.new!(date, time, "Europe/Warsaw")
+  defp date_to_datetime(_, nil, _), do: nil
+  defp date_to_datetime(nil, _, _), do: nil
+  defp date_to_datetime(date, time, timezone), do: DateTime.new!(date, time, timezone)
 end

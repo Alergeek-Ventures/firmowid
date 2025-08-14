@@ -42,15 +42,8 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     last_session = Timetracker.get_most_recent_session(socket.assigns.current_user.id)
     default_project_id = if last_session, do: last_session.project_id
 
-    timezone =
-      if connected?(socket) do
-        get_connect_params(socket)["timezone"]
-      end ||
-        "Europe/Warsaw"
-
     {:ok,
      socket
-     |> assign(:timezone, timezone)
      |> assign(:sessions_after, four_weeks_ago)
      |> assign_sessions()
      |> assign(:projects, Timetracker.list_user_projects(socket.assigns.current_user.id))
@@ -145,7 +138,9 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
 
   def handle_event("save", %{"session_form" => session}, socket) do
     {:ok, validated_session} =
-      session |> SessionForm.changeset() |> SessionForm.attributes(socket.assigns.current_user.id)
+      session
+      |> SessionForm.changeset()
+      |> SessionForm.attributes(socket.assigns.current_user.id, socket.assigns.timezone)
 
     Bodyguard.permit!(
       Timetracker,

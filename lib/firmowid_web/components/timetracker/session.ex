@@ -172,16 +172,13 @@ defmodule FirmowidWeb.Components.Session do
   def format_time(nil), do: "trwa"
 
   def format_time(%DateTime{} = datetime) do
-    datetime
-    |> DateTime.shift_zone!("Europe/Warsaw")
-    |> Calendar.strftime("%H:%M")
+    Calendar.strftime(datetime, "%H:%M")
   end
 
   defp format_datetime(nil), do: nil
 
   defp format_datetime(datetime) do
     datetime
-    |> DateTime.shift_zone!("Europe/Warsaw")
     |> DateTime.to_iso8601()
     |> String.slice(0, 16)
   end
