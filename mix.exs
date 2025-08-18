@@ -11,6 +11,7 @@ defmodule Firmowid.MixProject do
       aliases: aliases(),
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
+      listeners: [Phoenix.CodeReloader],
 
       # TEMP: remove this once https://github.com/jeremyjh/dialyxir/issues/561 is resolved
       dialyzer: [
