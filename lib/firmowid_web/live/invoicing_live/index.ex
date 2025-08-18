@@ -23,6 +23,8 @@ defmodule FirmowidWeb.InvoicingLive.Index do
         name: user.name,
         role: user.role,
         system_role: user.system_role,
+        # We have to stringify datetime before sending because of posthog's weird decision
+        # https://github.com/PostHog/posthog-elixir/blob/44b47bf7a54667879b0eeea79b92b309f62fb73c/lib/posthog/event.ex#L156
         employment_date:
           case user.employment_date do
             nil -> nil
