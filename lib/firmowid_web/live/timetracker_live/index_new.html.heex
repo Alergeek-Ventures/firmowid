@@ -1,0 +1,250 @@
+<div class="max-w-6xl mx-auto">
+  <%!-- todo: css background image --%>
+  <img
+    src="/images/figurine_timeracker.png"
+    class="h-[135vh] pointer-events-none fixed top-[20%] left-0 -z-0 hidden lg:block"
+  />
+
+  <div class="flex items-center justify-between gap-4 mt-8">
+    <div class="flex gap-2 shrink-0">
+      <.icon name="hero-calendar" />
+      <p class="line-clamp-1">{format_current_day_header(Date.utc_today())}</p>
+    </div>
+
+    <.link
+      navigate={~p"/czasosledz/ewidencja"}
+      class={[
+        button_styles(%{color: "light_grey", variant: "outline"}),
+        "max-w-44 w-full text-center"
+      ]}
+    >
+      Ewidencja
+    </.link>
+  </div>
+
+  <div class="w-full mt-9 flex gap-10 lg:gap-20 justify-between flex-col md:flex-row">
+    <div class="max-w-md w-full mx-auto md:mx-0">
+      <%= if Enum.empty?(@projects) do %>
+        <div class="w-full text-center py-8 text-darkGrey">
+          <p class="text-lg font-semibold">Nie masz przypisanych projektów</p>
+          <%= if Bodyguard.permit?(Firmowid.Timetracker, :create_project, @current_user) do %>
+            <p class="text-sm mt-2">
+              Dodaj swój pierwszy projekt i przypisz się do niego, aby rozpocząć śledzenie czasu
+            </p>
+            <.link
+              navigate={~p"/czasosledz/projekty"}
+              class="mt-4 inline-block text-orangeText hover:underline"
+            >
+              Przejdź do zarządzania projektami
+            </.link>
+          <% else %>
+            <p class="text-sm mt-2">Poproś administratora o przypisanie Cię do projektu</p>
+          <% end %>
+        </div>
+      <% else %>
+        <.form
+          id="session_form"
+          phx-change="validate"
+          phx-submit="save"
+          for={@form}
+          class="w-full flex flex-col gap-4 sticky top-48"
+        >
+          <% is_hours_record_submitted =
+            Timetracker.submitted_hours_record?(@current_user.id, Date.utc_today()) %>
+
+          <%= if @current_session do %>
+            <p class="bg-greyButtonBg px-4 py-2 rounded h-[44px] flex items-center">
+              {@current_session.title}
+            </p>
+          <% else %>
+            <.input
+              field={@form[:title]}
+              required={true}
+              disabled={@current_session != nil or is_hours_record_submitted}
+              placeholder={
+                if not is_hours_record_submitted,
+                  do: "Nad czym dzisiaj pracujesz?",
+                  else: "Nie możesz dodać sesji, po wysłaniu ewidencji godzin"
+              }
+              input_class="h-[44px] border-none bg-greyButtonBg text-black"
+              phx-hook="FocusOnMount"
+              autofocus
+            />
+          <% end %>
+
+          <.input
+            type="select"
+            disabled={@current_session != nil or is_hours_record_submitted}
+            class="bg-orangeBg text-orangeText border-none px-4 py-2 appearance-none cursor-pointer hover:bg-[#f0e0d8] transition-colors focus:outline-none focus:ring-1 focus:ring-orangeText h-[44px]"
+            field={@form[:project_id]}
+            options={@projects |> Enum.map(&{&1.name, &1.id})}
+          />
+
+          <div class="flex justify-between mt-2">
+            <.switch
+              field={@form[:is_remote]}
+              label="pracuję z domu"
+              disabled={@current_session != nil or is_hours_record_submitted}
+            />
+
+            <.button
+              type="button"
+              id="toggle_extended_form"
+              class="size-8 rounded p-1 flex items-center phx-click-loading:opacity-60 phx-click-loading:cursor-default data-[active]:bg-darkGrey data-[active]:text-white"
+              color="light_grey"
+              phx-click="toggle_extended_form"
+              data-active={@is_form_extended}
+              disabled={is_hours_record_submitted}
+            >
+              <.icon name="hero-pencil" class="size-6 border-[6px]" />
+            </.button>
+          </div>
+
+          <p :for={{error, _} <- Keyword.get_values(@form.errors, :base)}>{error}</p>
+
+          <div class="flex flex-col gap-5 mt-2 items-center justify-between relative h-32">
+            <%= cond do %>
+              <% @current_session -> %>
+                <p
+                  class="text-orangeText text-2xl text-center font-semibold tracking-normal"
+                  id="timetracker-timer"
+                  data-start_time={@current_session.start_datetime}
+                  phx-hook="Timer"
+                >
+                  {TimeFormatter.format_timer(@current_session.duration, :with_seconds)}
+                </p>
+              <% @is_form_extended -> %>
+                <div class="flex gap-6 w-full">
+                  <.input
+                    type="date"
+                    class="flex-1 flex"
+                    input_class="border-none bg-grey-200"
+                    field={@form[:date]}
+                  />
+                  <.input
+                    step="60"
+                    label="od"
+                    type="time"
+                    class="flex-1 flex items-baseline gap-2 justify-center"
+                    input_class="border-none bg-grey-200"
+                    field={@form[:start_time]}
+                    value={format_time(@form[:start_time].value)}
+                  />
+                  <.input
+                    step="60"
+                    type="time"
+                    label="do"
+                    class="flex-1 flex items-baseline gap-2 justify-center"
+                    input_class="border-none bg-grey-200"
+                    field={@form[:end_time]}
+                    value={format_time(@form[:end_time].value)}
+                  />
+                </div>
+              <% true -> %>
+                <div>
+                  <p class="text-orangeText text-center">w {@month_stats.month}</p>
+                  <p class="text-orangeText text-2xl text-center font-semibold leading-tight">
+                    {@month_stats.hours} godz. {@month_stats.minutes} min
+                  </p>
+                </div>
+            <% end %>
+
+            <%= if @current_session do %>
+              <.button
+                phx-click="end_session"
+                type="button"
+                color="orange"
+                class="absolute bottom-0 max-w-32 w-full h-[44px]"
+              >
+                Stop
+              </.button>
+            <% else %>
+              <.button
+                color="orange"
+                class="absolute bottom-0 max-w-32 w-full h-[44px]"
+                disabled={is_hours_record_submitted}
+              >
+                {if @is_form_extended, do: "Zapisz sesję", else: "Start"}
+              </.button>
+            <% end %>
+          </div>
+        </.form>
+      <% end %>
+    </div>
+
+    <div class="w-full min-w-0 space-y-16 mb-16">
+      <div
+        :if={Enum.empty?(@grouped_sessions) and Enum.empty?(@today_sessions)}
+        class="text-center py-8 text-darkGrey"
+      >
+        <p class="text-lg font-semibold">Brak zarejestrowanych sesji</p>
+        <p class="text-sm mt-2">Rozpocznij swoją pierwszą sesję używając formularza powyżej</p>
+      </div>
+
+      <div :if={not Enum.empty?(@today_sessions)} class="space-y-4">
+        <div class="flex justify-between items-center">
+          <p class="text-sm font-semibold text-orangeText">TWOJE DZISIEJSZE SESJE</p>
+
+          <% today_time = @today_sessions |> List.flatten() |> calculate_total_duration() %>
+          <p
+            class="bg-orangeBg text-orangeText px-2 py-1 rounded-md font-bold text-xl leading-tight"
+            id="today-timer"
+            phx-hook="Timer"
+            data-start_time={DateTime.utc_now() |> DateTime.add(-today_time, :second)}
+            data-format="short"
+            data-disabled={@current_session == nil}
+          >
+            {today_time |> TimeFormatter.format_timer()}
+          </p>
+        </div>
+        <div class="divide-y divide-grey-200">
+          <FirmowidWeb.Components.Session.render_new
+            :for={sessions <- @today_sessions}
+            :key={hd(sessions).id}
+            sessions={sessions}
+            projects={@projects}
+          />
+        </div>
+      </div>
+
+      <div class="space-y-14">
+        <div :for={{week, days} <- @grouped_sessions} :key={week}>
+          <div class="flex justify-between items-center sticky top-16 pt-2 bg-lightGreyBg z-10">
+            <p class="text-sm font-semibold text-black">{format_week_header(week)}</p>
+            <p class="bg-greyButtonBg px-1.5 py-1 rounded-md font-bold text-darkGrey">
+              {days
+              |> Enum.map(fn {_, session_group} -> session_group end)
+              |> List.flatten()
+              |> calculate_total_duration()
+              |> TimeFormatter.format_timer()}
+            </p>
+          </div>
+          <div class="space-y-7">
+            <div :for={{day, session_group} <- days} :key={day} class="space-y-1">
+              <p class="text-sm font-semibold w-full text-darkGrey sticky top-[6.5rem] py-1 bg-lightGreyBg">
+                {format_day_header(day)}
+              </p>
+              <div class="divide-y divide-grey-200">
+                <FirmowidWeb.Components.Session.render_new
+                  :for={sessions <- session_group}
+                  :key={hd(sessions).id}
+                  sessions={sessions}
+                  projects={@projects}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <.button
+        :if={@next_sessions_after}
+        phx-click="load_more"
+        color="grey"
+        class="mx-auto block"
+      >
+        Pokaż więcej
+      </.button>
+    </div>
+  </div>
+</div>

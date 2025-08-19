@@ -6,7 +6,10 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Session
   alias FirmowidWeb.Helpers.TimeFormatter
+  alias FirmowidWeb.TimetrackerLive.GroupedSessionForm
   alias FirmowidWeb.TimetrackerLive.SessionForm
+
+  embed_templates "index_*"
 
   def mount(_params, _session, socket) do
     Bodyguard.permit!(Timetracker, :read_user_sessions, socket.assigns.current_user)
@@ -38,96 +41,38 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
       organization_id: organization_id
     })
 
+    new_timetracker_enabled =
+      Posthog.feature_flag_enabled?("new-timetracker", user.id, person_properties: %{email: user.email})
+
     last_session = Timetracker.get_most_recent_session(socket.assigns.current_user.id)
     default_project_id = if last_session, do: last_session.project_id
 
     {:ok,
      socket
-     |> assign(:sessions_after, Date.utc_today())
+     |> assign(:new_timetracker_enabled, new_timetracker_enabled)
      |> assign_sessions()
      |> assign(:projects, Timetracker.list_user_projects(socket.assigns.current_user.id))
      |> assign(:form, to_form(SessionForm.changeset(%{"project_id" => default_project_id})))
      |> assign(:is_form_extended, false)}
   end
 
-  def assign_sessions(%{assigns: %{sessions_after: after_date}} = socket, opts \\ []) do
-    timezone = socket.assigns.timezone
-
-    limit = Keyword.get(opts, :limit, 5)
-
-    {new_sessions, next_date} =
-      Timetracker.list_user_sessions_paginated(socket.assigns.current_user.id,
-        after_date: after_date,
-        limit: limit
-      )
-
-    new_sessions =
-      new_sessions
-      |> Enum.map(fn session ->
-        session
-        |> Map.update!(:start_datetime, &DateTime.shift_zone!(&1, timezone))
-        |> Map.update!(:end_datetime, fn
-          nil -> nil
-          end_datetime -> DateTime.shift_zone!(end_datetime, timezone)
-        end)
-      end)
-      |> Session.put_lockdowns()
-
-    next_sessions_available = not is_nil(next_date)
-
-    existing_sessions = Map.get(socket.assigns, :sessions, [])
-
-    sessions =
-      new_sessions ++
-        Enum.reject(existing_sessions, fn session ->
-          Enum.find(new_sessions, &(&1.id == session.id))
-        end)
-
-    {today_sessions, rest_sessions} =
-      Enum.split_with(sessions, fn session ->
-        DateTime.to_date(session.start_datetime) ==
-          timezone |> DateTime.now!() |> DateTime.to_date()
-      end)
-
-    today_sessions = group_nearby(today_sessions)
-
-    grouped_sessions =
-      rest_sessions
-      |> Enum.sort_by(& &1.start_datetime, {:desc, DateTime})
-      |> Enum.group_by(&Date.beginning_of_week(&1.start_datetime))
-      |> Enum.sort_by(fn {week, _sessions} -> week end, {:desc, Date})
-      |> Enum.map(fn {week, sessions} ->
-        {week,
-         sessions
-         |> Enum.group_by(&DateTime.to_date(&1.start_datetime))
-         |> Enum.sort_by(fn {day, _sessions} -> day end, {:desc, Date})
-         |> Enum.map(fn {day, sessions} ->
-           {day, group_nearby(sessions)}
-         end)}
-      end)
+  def assign_sessions(%{assigns: assigns} = socket) when not is_map_key(assigns, :sessions_after) do
+    last_four_weeks =
+      socket.assigns.current_user.id
+      |> Timetracker.weeks_with_user_sessions(timezone: socket.assigns.timezone, limit: 4)
+      |> List.last(Date.utc_today())
 
     socket
-    |> assign(:sessions, sessions)
-    |> assign(:next_date, next_date)
-    |> assign(:today_sessions, today_sessions)
-    |> assign(:grouped_sessions, grouped_sessions)
-    |> assign(:next_sessions_available, next_sessions_available)
-    |> assign(:current_session, Timetracker.get_current_session(socket.assigns.current_user.id))
-    |> assign_month_stats()
+    |> assign(:sessions_after, last_four_weeks)
+    |> assign_sessions()
   end
 
-  def reload_sessions(socket) do
+  def assign_sessions(%{assigns: %{sessions_after: %Date{} = after_date}} = socket) do
     timezone = socket.assigns.timezone
-    current_count = max(length(Map.get(socket.assigns, :sessions, [])), 5)
-
-    {sessions, next_date} =
-      Timetracker.list_user_sessions_paginated(socket.assigns.current_user.id,
-        after_date: Date.utc_today(),
-        limit: current_count
-      )
 
     sessions =
-      sessions
+      socket.assigns.current_user.id
+      |> Timetracker.list_user_sessions(after_date: after_date)
       |> Enum.map(fn session ->
         session
         |> Map.update!(:start_datetime, &DateTime.shift_zone!(&1, timezone))
@@ -136,9 +81,15 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
           end_datetime -> DateTime.shift_zone!(end_datetime, timezone)
         end)
       end)
-      |> Session.put_lockdowns()
 
-    next_sessions_available = not is_nil(next_date)
+    next_sessions_after =
+      socket.assigns.current_user.id
+      |> Timetracker.weeks_with_user_sessions(
+        timezone: timezone,
+        limit: 1,
+        after_date: after_date
+      )
+      |> List.first()
 
     {today_sessions, rest_sessions} =
       Enum.split_with(sessions, fn session ->
@@ -164,11 +115,9 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
       end)
 
     socket
-    |> assign(:sessions, sessions)
-    |> assign(:next_date, next_date)
+    |> assign(:next_sessions_after, next_sessions_after)
     |> assign(:today_sessions, today_sessions)
     |> assign(:grouped_sessions, grouped_sessions)
-    |> assign(:next_sessions_available, next_sessions_available)
     |> assign(:current_session, Timetracker.get_current_session(socket.assigns.current_user.id))
     |> assign_month_stats()
   end
@@ -228,14 +177,14 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
          socket
          |> assign(is_form_extended: false, current_session: session)
          |> expand_sessions(session)
-         |> reload_sessions()}
+         |> assign_sessions()}
 
       {:ok, session} ->
         {:noreply,
          socket
          |> assign(is_form_extended: false)
          |> expand_sessions(session)
-         |> reload_sessions()}
+         |> assign_sessions()}
 
       {:error, :overlap} ->
         LiveToast.send_toast(:error, "Sesja nachodzi na inną sesję.")
@@ -255,7 +204,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
         {:noreply,
          socket
          |> assign(:current_session, nil)
-         |> reload_sessions()}
+         |> assign_sessions()}
 
       {:error, _changeset} ->
         {:noreply, socket}
@@ -268,7 +217,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
 
     case Timetracker.delete_session(id) do
       {:ok, _session} ->
-        {:noreply, reload_sessions(socket)}
+        {:noreply, assign_sessions(socket)}
 
       {:error, _changeset} ->
         LiveToast.send_toast(:error, "Nie udało się usunąć sesji")
@@ -286,11 +235,11 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
       |> Map.update("start_datetime", nil, &string_to_datetime(&1, socket.assigns.timezone))
       |> Map.update("end_datetime", nil, &string_to_datetime(&1, socket.assigns.timezone))
 
-    case Timetracker.update_session(session.id, params) do
+    case Timetracker.update_session(session, params) do
       {:ok, session} ->
         {:noreply,
          socket
-         |> reload_sessions()
+         |> assign_sessions()
          |> push_event("js-exec", %{
            to: "#edit-session-modal-#{session.id}",
            attr: "phx-remove"
@@ -309,6 +258,41 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     end
   end
 
+  def handle_event("edit_sessions", %{"sessions_form" => %{"ids" => ids} = form}, socket) do
+    form =
+      form
+      |> GroupedSessionForm.changeset()
+      |> Ecto.Changeset.apply_changes()
+
+    ids
+    |> Timetracker.list_sessions_by_ids()
+    |> Enum.map(fn session ->
+      Bodyguard.permit!(Timetracker, :update_session, socket.assigns.current_user, session)
+
+      Session.changeset(session)
+    end)
+    |> GroupedSessionForm.from_changesets(
+      form,
+      socket.assigns.timezone
+    )
+    |> Timetracker.update_sessions()
+    |> case do
+      {:ok, _sessions} ->
+        {:noreply, assign_sessions(socket)}
+
+      {:error, :overlap} ->
+        LiveToast.send_toast(:error, "Sesja nachodzi na inną sesję.")
+        {:noreply, socket}
+
+      {:error, session_id, changeset, _changes_so_far} ->
+        Enum.each(changeset.errors, fn {_field, {message, _}} ->
+          LiveToast.send_toast(:error, "#{message} (sesja ID: #{session_id})")
+        end)
+
+        {:noreply, socket}
+    end
+  end
+
   def handle_event("load_more", _, socket) do
     Bodyguard.permit!(
       Timetracker,
@@ -318,7 +302,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
 
     {:noreply,
      socket
-     |> assign(:sessions_after, socket.assigns.next_date)
+     |> assign(:sessions_after, socket.assigns.next_sessions_after)
      |> assign_sessions()}
   end
 
@@ -343,6 +327,37 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     "#{day_name} (#{day_number})"
   end
 
+  def format_current_day_header(%Date{} = date) do
+    day_name =
+      case Date.day_of_week(date) do
+        1 -> "Poniedziałek"
+        2 -> "Wtorek"
+        3 -> "Środa"
+        4 -> "Czwartek"
+        5 -> "Piątek"
+        6 -> "Sobota"
+        7 -> "Niedziela"
+      end
+
+    month_name =
+      case date.month do
+        1 -> "stycznia"
+        2 -> "lutego"
+        3 -> "marca"
+        4 -> "kwietnia"
+        5 -> "maja"
+        6 -> "czerwca"
+        7 -> "lipca"
+        8 -> "sierpnia"
+        9 -> "września"
+        10 -> "października"
+        11 -> "listopada"
+        12 -> "grudnia"
+      end
+
+    "#{day_name}, #{date.day}. #{month_name}"
+  end
+
   def format_week_header(%Date{} = date) do
     week_start = Date.beginning_of_week(date)
     week_end = Date.end_of_week(date)
@@ -361,10 +376,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
 
   def format_time(""), do: nil
   def format_time(nil), do: nil
-
-  def format_time(%Time{} = time) do
-    Calendar.strftime(time, "%H:%M")
-  end
+  def format_time(%Time{} = time), do: Calendar.strftime(time, "%H:%M")
 
   def calculate_total_duration(sessions) do
     Enum.reduce(sessions, 0, fn session, acc ->
@@ -416,4 +428,8 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
       month: current_month
     })
   end
+
+  def render(%{new_timetracker_enabled: true} = assigns), do: index_new(assigns)
+
+  def render(assigns), do: index_old(assigns)
 end

@@ -9,6 +9,7 @@ defmodule FirmowidWeb.TimetrackerLive.SessionForm do
     field :date, :date
     field :start_time, :time
     field :end_time, :time
+    field :is_remote, :boolean, default: false
     field :project_id, :binary_id
   end
 
@@ -18,7 +19,7 @@ defmodule FirmowidWeb.TimetrackerLive.SessionForm do
 
   def changeset(session, attrs) do
     session
-    |> cast(attrs, [:title, :date, :start_time, :end_time, :project_id])
+    |> cast(attrs, [:title, :date, :start_time, :end_time, :is_remote, :project_id])
     |> validate_required([:title, :project_id])
   end
 
@@ -43,24 +44,31 @@ defmodule FirmowidWeb.TimetrackerLive.SessionForm do
     end
   end
 
-  defp convert_times(%{start_time: start_time, end_time: end_time, date: date} = attributes, timezone) do
-    start_time = date_to_datetime(date, start_time, timezone)
+  defp convert_times(attributes, timezone) do
+    {start_datetime, end_datetime} = times_to_datetimes(attributes, timezone)
+
+    attributes
+    |> Map.put(:start_datetime, start_datetime)
+    |> Map.put(:end_datetime, end_datetime)
+    |> Map.drop([:start_time, :end_time, :date])
+  end
+
+  def times_to_datetimes(%{start_time: start_time, end_time: end_time, date: date}, timezone) do
+    start_datetime = date_to_datetime(date, start_time, timezone)
 
     # This allows for adding sessions which cross midnight
-    end_time =
+    end_datetime =
       if end_time && Time.before?(end_time, start_time) do
         date_to_datetime(Date.add(date, 1), end_time, timezone)
       else
         date_to_datetime(date, end_time, timezone)
       end
 
-    attributes
-    |> Map.put(:start_datetime, start_time)
-    |> Map.put(:end_datetime, end_time)
-    |> Map.drop([:start_time, :end_time, :date])
+    {start_datetime, end_datetime}
   end
 
   defp date_to_datetime(_, nil, _), do: nil
-  defp date_to_datetime(nil, _, _), do: nil
-  defp date_to_datetime(date, time, timezone), do: DateTime.new!(date, time, timezone)
+
+  defp date_to_datetime(date, time, timezone),
+    do: date |> DateTime.new!(time, timezone) |> DateTime.shift_zone!("Etc/UTC")
 end

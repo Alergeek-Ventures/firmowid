@@ -6,6 +6,7 @@ defmodule Firmowid.Timetracker do
 
   import Ecto.Query, warn: false
 
+  alias Ecto.Multi
   alias Firmowid.Accounts
   alias Firmowid.Blobs
   alias Firmowid.Repo
@@ -438,6 +439,40 @@ defmodule Firmowid.Timetracker do
 
   def get_session!(id), do: Repo.get!(Session, id)
 
+  def weeks_with_user_sessions(user_id, opts \\ []) do
+    after_date = Keyword.get(opts, :after_date)
+    limit = Keyword.get(opts, :limit)
+    timezone = Keyword.get(opts, :timezone, "Etc/UTC")
+
+    query =
+      Session
+      |> where([s], s.user_id == ^user_id)
+      |> select([s], fragment("date_trunc('week', ?)", s.start_datetime))
+      |> distinct([s], true)
+      |> order_by([s], desc: fragment("date_trunc('week', ?)", s.start_datetime))
+
+    query =
+      case after_date do
+        nil -> query
+        _ -> where(query, [s], s.start_datetime < ^DateTime.new!(after_date, ~T[00:00:00]))
+      end
+
+    query =
+      case limit do
+        nil -> query
+        _ -> limit(query, ^limit)
+      end
+
+    query
+    |> Repo.all()
+    |> Enum.map(fn date ->
+      date
+      |> DateTime.from_naive!("Etc/UTC")
+      |> DateTime.shift_zone!(timezone)
+      |> DateTime.to_date()
+    end)
+  end
+
   def list_user_sessions(user_id, opts \\ []) do
     after_date = Keyword.get(opts, :after_date)
 
@@ -467,69 +502,6 @@ defmodule Firmowid.Timetracker do
     |> Enum.map(&Session.put_duration/1)
   end
 
-  def list_user_sessions_paginated(user_id, opts \\ []) do
-    after_date = Keyword.get(opts, :after_date)
-    limit = Keyword.get(opts, :limit, 20)
-
-    session_query =
-      Session
-      |> where([s], s.user_id == ^user_id)
-      |> order_by([s], desc: s.start_datetime)
-
-    session_query =
-      case after_date do
-        nil ->
-          session_query
-
-        _ ->
-          where(session_query, [s], s.start_datetime <= ^DateTime.new!(after_date, ~T[23:59:59]))
-      end
-
-    sessions =
-      session_query
-      |> limit(^limit)
-      |> Repo.all()
-      |> Enum.map(&Session.put_duration/1)
-
-    if sessions == [] do
-      {[], nil}
-    else
-      last_date = DateTime.to_date(List.last(sessions).start_datetime)
-
-      sessions_on_last_date =
-        Session
-        |> where([s], s.user_id == ^user_id)
-        |> where([s], fragment("date(?)", s.start_datetime) == ^last_date)
-        |> order_by([s], desc: s.start_datetime)
-        |> Repo.all()
-        |> Enum.map(&Session.put_duration/1)
-
-      all_sessions =
-        (sessions ++ sessions_on_last_date)
-        |> Enum.uniq_by(& &1.id)
-        |> Enum.sort_by(& &1.start_datetime, {:desc, DateTime})
-
-      next_session =
-        session_query
-        |> where([s], fragment("date(?)", s.start_datetime) < ^last_date)
-        |> order_by([s], desc: s.start_datetime)
-        |> limit(1)
-        |> Repo.one()
-
-      next_date =
-        if next_session, do: DateTime.to_date(next_session.start_datetime)
-
-      {all_sessions, next_date}
-    end
-  end
-
-  def count_user_sessions(user_id) do
-    Session
-    |> where([s], s.user_id == ^user_id)
-    |> select([s], count(s.id))
-    |> Repo.one()
-  end
-
   def get_current_session(user_id) do
     Session
     |> where([s], s.user_id == ^user_id and is_nil(s.end_datetime))
@@ -539,11 +511,32 @@ defmodule Firmowid.Timetracker do
     |> Session.put_duration()
   end
 
-  def update_session(session_id, attrs) do
+  def list_sessions_by_ids(ids) do
     Session
-    |> Repo.get(session_id)
+    |> where([s], s.id in ^ids)
+    |> Repo.all()
+    |> Enum.map(&Session.put_duration/1)
+  end
+
+  def update_session(session, attrs) do
+    session
     |> Session.changeset(attrs)
     |> Repo.update()
+  rescue
+    e in Postgrex.Error ->
+      if e.postgres.message =~ "overlaps" do
+        {:error, :overlap}
+      else
+        reraise e, __STACKTRACE__
+      end
+  end
+
+  def update_sessions(changesets) do
+    changesets
+    |> Enum.reduce(Multi.new(), fn changeset, multi ->
+      Multi.update(multi, changeset.data.id, changeset)
+    end)
+    |> Repo.transact()
   rescue
     e in Postgrex.Error ->
       if e.postgres.message =~ "overlaps" do

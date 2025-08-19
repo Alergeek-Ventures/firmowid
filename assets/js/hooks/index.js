@@ -8,6 +8,7 @@ import { AirDatepicker } from "./air_datepicker";
 import { Timer } from "./timer";
 import { FocusOnMount } from "./focus_on_mount";
 import ScrollToBottom from "./scroll_to_bottom";
+import Popover from "./popover";
 
 export const Hooks = {
   ListItemRemovalAnimation,
@@ -20,4 +21,5 @@ export const Hooks = {
   Timer,
   FocusOnMount,
   ScrollToBottom,
+  Popover,
 };

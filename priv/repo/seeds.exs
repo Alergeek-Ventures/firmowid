@@ -37,11 +37,15 @@ Repo.transaction(fn ->
   Accounts.consume_organization_invite(invite.invite_code, bartek.id)
 
   {:ok, firmowid} = Timetracker.create_project(%{name: "Firmowid"})
-
-  {:ok, _} = Timetracker.create_project(%{name: "Kvantab"})
+  {:ok, kvantab} = Timetracker.create_project(%{name: "Kvantab"})
+  {:ok, apnea} = Timetracker.create_project(%{name: "Apnea Clinic"})
+  {:ok, startapp} = Timetracker.create_project(%{name: "Startapp"})
 
   Timetracker.add_user_to_project(franek.id, firmowid.id)
   Timetracker.add_user_to_project(bartek.id, firmowid.id)
+  Timetracker.add_user_to_project(bartek.id, kvantab.id)
+  Timetracker.add_user_to_project(bartek.id, apnea.id)
+  Timetracker.add_user_to_project(bartek.id, startapp.id)
 
   # --- Insert Mobile Vikings cost invoice and related data for Hello Kitty Inc. ---
 

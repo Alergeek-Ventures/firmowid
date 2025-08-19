@@ -332,6 +332,17 @@ defmodule FirmowidWeb.CoreComponents do
     |> input()
   end
 
+  def input(%{type: "hidden"} = assigns) do
+    ~H"""
+    <input
+      type="hidden"
+      name={@name}
+      id={@id}
+      value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+    />
+    """
+  end
+
   def input(%{type: "checkbox"} = assigns) do
     assigns =
       assign_new(assigns, :checked, fn ->
@@ -377,7 +388,7 @@ defmodule FirmowidWeb.CoreComponents do
         name={@name}
         class={
           classes([
-            "block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm",
+            "block w-full rounded border border-gray-300 bg-white focus:border-zinc-400 focus:ring-0 sm:text-sm",
             @rest[:class],
             @color && button_styles(:color, %{color: @color}),
             @size && button_styles(:size, %{size: @size})
@@ -403,7 +414,7 @@ defmodule FirmowidWeb.CoreComponents do
         name={@name}
         class={
           classes([
-            "mt-2 block w-full rounded-md text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 min-h-[6rem]",
+            "mt-2 block w-full rounded text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 min-h-[6rem]",
             @errors == [] && "border-zinc-300 focus:border-zinc-400",
             @errors != [] && "border-rose-400 focus:border-rose-400",
             @rest[:class]
@@ -428,7 +439,7 @@ defmodule FirmowidWeb.CoreComponents do
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
         class={
           classes([
-            "block w-full rounded-md text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 read-only:cursor-default read-only:bg-gray-100",
+            "block w-full rounded text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 read-only:cursor-default read-only:bg-gray-100",
             @errors == [] && "border-zinc-300 focus:border-zinc-400",
             @errors != [] && "border-rose-400 focus:border-rose-400",
             @input_class
@@ -825,6 +836,90 @@ defmodule FirmowidWeb.CoreComponents do
     """
   end
 
+  attr :id, :string, required: true
+  attr :reference_id, :string, required: true
+  attr :class, :string, default: nil
+
+  attr :placement, :string,
+    default: "bottom",
+    values: [
+      "top",
+      "top-start",
+      "top-end",
+      "right",
+      "right-start",
+      "right-end",
+      "bottom",
+      "bottom-start",
+      "bottom-end",
+      "left",
+      "left-start",
+      "left-end"
+    ]
+
+  slot :inner_block, required: true
+
+  def popover(assigns) do
+    ~H"""
+    <.focus_wrap id={"#{@id}-focus-wrap"}>
+      <div
+        class={classes(["absolute w-max top-0 left-0 z-50 pointer-events-auto hidden", @class])}
+        role="dialog"
+        phx-hook="Popover"
+        phx-remove={hide_popover(@id)}
+        phx-click-away={hide_popover(@id)}
+        phx-window-keydown={hide_popover(@id)}
+        phx-key="escape"
+        id={@id}
+        data-reference={@reference_id}
+        data-placement={@placement}
+      >
+        {render_slot(@inner_block)}
+      </div>
+    </.focus_wrap>
+    """
+  end
+
+  @doc """
+  Renders a toggle switch
+  """
+
+  attr :field, FormField, required: true
+  attr :label, :string, default: nil
+  attr :class, :string, default: nil
+  attr :disabled, :boolean, default: false
+  attr :rest, :global
+
+  def switch(assigns) do
+    ~H"""
+    <label class={classes(["inline-flex items-center cursor-pointer", @class])}>
+      <input
+        type="hidden"
+        name={@field.name}
+        value="false"
+        disabled={@disabled}
+      />
+      <input
+        type="checkbox"
+        name={@field.name}
+        id={@field.id}
+        checked={Phoenix.HTML.Form.normalize_value("checkbox", @field.value)}
+        class="sr-only peer"
+        {@rest}
+        value="true"
+      />
+      <div class="p-1 relative w-10 h-6 bg-grey-200 rounded-full peer after:w-[15px] after:h-[15px] after:my-auto after:bg-darkGrey
+                  peer-checked:after:bg-orangeText
+                  peer-checked:after:translate-x-full peer-checked:bg-orangeBg
+                  after:content-[''] after:absolute
+                  after:rounded-full after:h-5 after:w-5
+                  after:transition-all">
+      </div>
+      <span :if={@label} class="ms-3 text-sm font-medium text-darkGrey">{@label}</span>
+    </label>
+    """
+  end
+
   ## JS Commands
 
   def show(js \\ %JS{}, selector) do
@@ -869,6 +964,22 @@ defmodule FirmowidWeb.CoreComponents do
     |> hide("##{id}-container")
     |> JS.hide(to: "##{id}", transition: {"block", "block", "hidden"})
     |> JS.remove_class("overflow-hidden", to: "body")
+    |> JS.pop_focus()
+  end
+
+  def show_popover(js \\ %JS{}, id) do
+    js
+    # |> show("##{id}")
+    |> JS.show(to: "##{id}")
+    |> JS.dispatch("showPopover", to: "##{id}")
+    |> JS.focus_first(to: "##{id}")
+  end
+
+  def hide_popover(js \\ %JS{}, id) do
+    js
+    # |> hide("##{id}")
+    |> JS.hide(to: "##{id}")
+    |> JS.dispatch("hidePopover", to: "##{id}")
     |> JS.pop_focus()
   end
 
