@@ -395,7 +395,6 @@ defmodule Firmowid.Timetracker do
       Session
       |> where([s], s.user_id == ^user_id)
       |> order_by([s], desc: s.start_datetime)
-      |> limit(^limit + 1)
 
     session_query =
       case after_date do
@@ -408,15 +407,40 @@ defmodule Firmowid.Timetracker do
 
     sessions =
       session_query
+      |> limit(^limit)
       |> Repo.all()
       |> Enum.map(&Session.put_duration/1)
 
-    next_date =
-      if length(sessions) > limit do
-        DateTime.to_date(List.last(sessions).start_datetime)
-      end
+    if sessions == [] do
+      {[], nil}
+    else
+      last_date = DateTime.to_date(List.last(sessions).start_datetime)
 
-    {Enum.take(sessions, limit), next_date}
+      sessions_on_last_date =
+        Session
+        |> where([s], s.user_id == ^user_id)
+        |> where([s], fragment("date(?)", s.start_datetime) == ^last_date)
+        |> order_by([s], desc: s.start_datetime)
+        |> Repo.all()
+        |> Enum.map(&Session.put_duration/1)
+
+      all_sessions =
+        (sessions ++ sessions_on_last_date)
+        |> Enum.uniq_by(& &1.id)
+        |> Enum.sort_by(& &1.start_datetime, {:desc, DateTime})
+
+      next_session =
+        session_query
+        |> where([s], fragment("date(?)", s.start_datetime) < ^last_date)
+        |> order_by([s], desc: s.start_datetime)
+        |> limit(1)
+        |> Repo.one()
+
+      next_date =
+        if next_session, do: DateTime.to_date(next_session.start_datetime)
+
+      {all_sessions, next_date}
+    end
   end
 
   def count_user_sessions(user_id) do
