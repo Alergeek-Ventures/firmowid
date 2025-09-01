@@ -204,6 +204,7 @@ defmodule Firmowid.SalesInvoices do
   def get_next_invoice_number(date, opts \\ []) do
     year = date.year
     month = date.month
+    omit_invoice_id = Keyword.get(opts, :omit_invoice_id, nil)
 
     # Get latest invoice from given month
     query =
@@ -213,32 +214,59 @@ defmodule Firmowid.SalesInvoices do
       |> order_by(desc: :invoice_number)
       |> limit(1)
 
-    if_result =
-      if omit_invoice_id = Keyword.get(opts, :omit_invoice_id, nil) do
+    query =
+      if omit_invoice_id do
         where(query, [i], i.id != ^omit_invoice_id)
       else
         query
       end
 
-    latest_invoice = Repo.one(if_result)
+    latest_invoice = Repo.one(query)
 
-    case latest_invoice do
-      nil ->
-        # First invoice of the month
-        "01/#{String.pad_leading("#{month}", 2, "0")}/#{year}"
+    # Determine the starting number based on latest invoice in the month
+    starting_num =
+      case latest_invoice do
+        nil ->
+          # First invoice of the month
+          1
 
-      invoice ->
-        # Extract current number and increment
-        case Regex.run(~r/^(\d+)\/\d+\/\d+$/, invoice.invoice_number) do
-          [_, current_num] ->
-            next_num = String.to_integer(current_num) + 1
-            # Format with leading zeros to 2 digits
-            "#{String.pad_leading("#{next_num}", 2, "0")}/#{String.pad_leading("#{month}", 2, "0")}/#{year}"
+        invoice ->
+          # Extract current number and increment
+          case Regex.run(~r/^(\d+)\/\d+\/\d+$/, invoice.invoice_number) do
+            [_, current_num] ->
+              String.to_integer(current_num) + 1
 
-          nil ->
-            # Fallback if pattern doesn't match
-            "01/#{String.pad_leading("#{month}", 2, "0")}/#{year}"
-        end
+            nil ->
+              # Fallback if pattern doesn't match
+              1
+          end
+      end
+
+    # Keep checking until we find a free number
+    find_free_invoice_number(starting_num, month, year, omit_invoice_id)
+  end
+
+  defp find_free_invoice_number(num, month, year, omit_invoice_id) do
+    # Format the invoice number
+    invoice_number =
+      "#{String.pad_leading("#{num}", 2, "0")}/#{String.pad_leading("#{month}", 2, "0")}/#{year}"
+
+    # Check if this number already exists in the database
+    query = where(SalesInvoice, [i], i.invoice_number == ^invoice_number)
+
+    query =
+      if omit_invoice_id do
+        where(query, [i], i.id != ^omit_invoice_id)
+      else
+        query
+      end
+
+    if Repo.exists?(query) do
+      # Number is taken, try the next one
+      find_free_invoice_number(num + 1, month, year, omit_invoice_id)
+    else
+      # Number is free, return it
+      invoice_number
     end
   end
 
