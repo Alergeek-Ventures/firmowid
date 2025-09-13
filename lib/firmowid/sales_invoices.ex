@@ -7,14 +7,11 @@ defmodule Firmowid.SalesInvoices do
   alias Ecto.Multi
   alias Firmowid.Accounts
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices.Buyer
   alias Firmowid.SalesInvoices.SalesInvoice
   alias Firmowid.SalesInvoices.SalesInvoicesTransactions
 
   def authorize(:read_sales_invoice, %{role: :admin}, _), do: true
   def authorize(:create_sales_invoice, %{role: :admin}, _), do: true
-  def authorize(:create_buyer, %{role: :admin}, _), do: true
-  def authorize(:update_buyer, %{role: :admin}, _), do: true
 
   def authorize(action, %{role: :admin, organization_id: org_id}, %{organization_id: org_id})
       when action in [:show, :update, :delete],
@@ -90,7 +87,6 @@ defmodule Firmowid.SalesInvoices do
     |> Repo.all()
     |> Repo.preload(:sales_invoice_items)
     |> Repo.preload(:transactions)
-    |> Repo.preload(:buyer)
   end
 
   def list_sales_invoices(from, to) do
@@ -102,7 +98,6 @@ defmodule Firmowid.SalesInvoices do
     |> order_by(desc: :issue_date)
     |> Repo.all()
     |> Repo.preload(:sales_invoice_items)
-    |> Repo.preload(:buyer)
     |> Repo.preload(:transactions)
   end
 
@@ -122,7 +117,6 @@ defmodule Firmowid.SalesInvoices do
     |> Repo.get(id)
     |> Repo.preload(:sales_invoice_items)
     |> Repo.preload(:transactions)
-    |> Repo.preload(:buyer)
   end
 
   def get_sales_invoice!(id) do
@@ -130,7 +124,6 @@ defmodule Firmowid.SalesInvoices do
     |> Repo.get!(id)
     |> Repo.preload(:sales_invoice_items)
     |> Repo.preload(:transactions)
-    |> Repo.preload(:buyer)
   end
 
   def get_sales_invoice_with_logo_url(id) do
@@ -138,7 +131,6 @@ defmodule Firmowid.SalesInvoices do
     |> Repo.get(id)
     |> Repo.preload(:sales_invoice_items)
     |> Repo.preload(:transactions)
-    |> Repo.preload(:buyer)
     |> populate_logo_url()
   end
 
@@ -286,36 +278,6 @@ defmodule Firmowid.SalesInvoices do
     Repo.delete(invoice)
   end
 
-  def create_or_update_buyer("", attr) do
-    create_buyer(attr)
-  end
-
-  def create_or_update_buyer(nil, attr) do
-    create_or_update_buyer("", attr)
-  end
-
-  def create_or_update_buyer(id, attr) do
-    id |> get_buyer!() |> update_buyer(attr)
-  end
-
-  def list_buyers do
-    Repo.all(Buyer)
-  end
-
-  def get_buyer!(id), do: Repo.get!(Buyer, id)
-
-  def create_buyer(attrs \\ %{}) do
-    %Buyer{}
-    |> Buyer.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  def update_buyer(%Buyer{} = buyer, attrs) do
-    buyer
-    |> Buyer.changeset(attrs)
-    |> Repo.update()
-  end
-
   def list_sales_invoices_by_ids(ids, date_from \\ nil, date_to \\ nil) do
     query = where(SalesInvoice, [si], si.id in ^ids)
 
@@ -337,7 +299,6 @@ defmodule Firmowid.SalesInvoices do
     |> order_by(desc: :issue_date)
     |> Repo.all()
     |> Repo.preload(:sales_invoice_items)
-    |> Repo.preload(:buyer)
     |> Repo.preload(:transactions)
   end
 end

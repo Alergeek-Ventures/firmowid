@@ -30,23 +30,14 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
 
     socket =
       socket
-      |> assign_bank_accounts()
+      |> assign(bank_accounts: Finances.list_bank_accounts())
       |> assign_sales_invoice(sales_invoice, params)
-      |> assign_buyers()
       |> assign(nip_form: to_form(%{"nip" => ""}))
-      |> assign_buyer_form_state("closed")
+      |> assign_buyer_form_state("nip")
       |> assign(is_buyer_dirty: false)
       |> assign(is_seller_dirty: false)
 
     {:ok, socket}
-  end
-
-  def assign_buyers(socket) do
-    assign(socket, buyers: SalesInvoices.list_buyers())
-  end
-
-  def assign_bank_accounts(socket) do
-    assign(socket, bank_accounts: Finances.list_bank_accounts())
   end
 
   def assign_currency(socket) do
@@ -126,7 +117,6 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
 
           data_to_copy =
             Map.take(sales_invoice_to_copy, [
-              :buyer_id,
               :buyer_nip,
               :buyer_display_name,
               :buyer_name,
@@ -138,7 +128,11 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
               :buyer_description,
               :buyer_pesel,
               :buyer_type,
+              :buyer_is_different_mail_address,
+              :buyer_mail_address,
+              :buyer_mail_country,
               :currency,
+              :payment_method,
               :is_reverse_charge,
               :is_cash_account,
               :invoice_type
@@ -209,17 +203,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
   def assign_buyer_form_state(%{assigns: %{sales_invoice: sales_invoice}} = socket, desired_state) do
     state =
       case {sales_invoice.invoice_type, desired_state} do
-        {:foreign, "nip"} ->
-          "expanded"
-
-        _ ->
-          desired_state
-      end
-
-    state =
-      case sales_invoice.buyer_id do
-        nil -> state
-        _ -> "expanded"
+        {:foreign, "nip"} -> "expanded"
+        _ -> desired_state
       end
 
     assign(socket, buyer_form_state: state)
@@ -228,46 +213,6 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
   def assign_buyer_form_state(socket, desired_state) do
     assign(socket, buyer_form_state: desired_state)
   end
-
-  def handle_params(_params, _uri, socket) do
-    {:noreply, socket}
-  end
-
-  def populate_buyer(%{"buyer_id" => ""} = sales_invoice) do
-    Map.merge(sales_invoice, %{
-      "buyer_nip" => "",
-      "buyer_type" => :company,
-      "buyer_display_name" => "",
-      "buyer_name" => "",
-      "buyer_surname" => "",
-      "buyer_address" => "",
-      "buyer_country" => "",
-      "buyer_email" => "",
-      "buyer_phone" => "",
-      "buyer_description" => ""
-    })
-  end
-
-  def populate_buyer(%{"buyer_id" => buyer_id} = sales_invoice) do
-    buyer = SalesInvoices.get_buyer!(buyer_id)
-
-    Map.merge(sales_invoice, %{
-      "buyer_nip" => buyer.nip,
-      "buyer_type" => buyer.buyer_type,
-      "buyer_pesel" => buyer.pesel,
-      "buyer_display_name" => buyer.display_name,
-      "buyer_name" => buyer.name,
-      "buyer_surname" => buyer.surname,
-      "buyer_address" => buyer.address,
-      "buyer_country" => buyer.country,
-      "buyer_email" => buyer.email,
-      "buyer_phone" => buyer.phone,
-      "buyer_description" => buyer.description,
-      "is_buyer_confirmed" => true
-    })
-  end
-
-  def populate_buyer(sales_invoice), do: sales_invoice
 
   def handle_event("update_buyer_state", %{"buyer_form_state" => state}, socket) do
     {:noreply, assign_buyer_form_state(socket, state)}
@@ -352,13 +297,6 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
   end
 
   def handle_event("submit", %{"sales_invoice" => sales_invoice} = params, socket) do
-    {socket, buyer_id} = maybe_create_or_update_buyer(socket, params)
-
-    sales_invoice = populate_buyer(sales_invoice)
-
-    sales_invoice =
-      if buyer_id == nil, do: sales_invoice, else: Map.put(sales_invoice, "buyer_id", buyer_id)
-
     user = socket.assigns.current_user
 
     case_result =
@@ -430,45 +368,4 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
       {:noreply, push_navigate(socket, to: ~p"/sprzedazowe/#{socket.assigns.sales_invoice.id}")}
     end
   end
-
-  defp maybe_create_or_update_buyer(socket, %{"action" => "add_or_update_buyer", "sales_invoice" => sales_invoice}) do
-    buyer_id = socket.assigns.sales_invoice.buyer_id
-    user = socket.assigns.current_user
-
-    attrs = %{
-      buyer_type: sales_invoice["buyer_type"],
-      nip: sales_invoice["buyer_nip"],
-      pesel: sales_invoice["buyer_pesel"],
-      display_name: sales_invoice["buyer_display_name"],
-      name: sales_invoice["buyer_name"],
-      surname: sales_invoice["buyer_surname"],
-      address: sales_invoice["buyer_address"],
-      country: sales_invoice["buyer_country"],
-      email: sales_invoice["buyer_email"],
-      phone: sales_invoice["buyer_phone"],
-      description: sales_invoice["buyer_description"]
-    }
-
-    case_result =
-      case buyer_id do
-        id when id in [nil, ""] ->
-          Bodyguard.permit!(SalesInvoices, :create_buyer, user)
-          SalesInvoices.create_buyer(attrs)
-
-        id ->
-          Bodyguard.permit!(SalesInvoices, :update_buyer, user)
-          SalesInvoices.update_buyer(SalesInvoices.get_buyer!(id), attrs)
-      end
-
-    case case_result do
-      {:ok, buyer} ->
-        {assign_buyers(socket), buyer.id}
-
-      {:error, _} ->
-        LiveToast.send_toast(:error, "Nie udało się zapisać nabywcy")
-        {socket, nil}
-    end
-  end
-
-  defp maybe_create_or_update_buyer(socket, _params), do: {socket, nil}
 end

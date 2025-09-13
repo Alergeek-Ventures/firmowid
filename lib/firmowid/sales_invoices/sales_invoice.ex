@@ -66,7 +66,6 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
                  join_through: "sales_invoices_transactions"
 
     belongs_to :organization, Firmowid.Accounts.Organization
-    belongs_to :buyer, Firmowid.SalesInvoices.Buyer
 
     timestamps()
   end
@@ -195,7 +194,6 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   def buyer_changeset(sales_invoice, attrs \\ %{}) do
     sales_invoice
     |> cast(attrs, [
-      :buyer_id,
       :buyer_type,
       :buyer_nip,
       :buyer_display_name,

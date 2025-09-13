@@ -21,7 +21,6 @@ defmodule FirmowidWeb.SalesInvoicesLive.BuyerForm do
   attr :buyer_form, :list, required: true
   attr :nip_form, :list, required: true
   attr :sales_invoice, :map, required: true
-  attr :buyers, :list, required: false, default: []
   attr :is_buyer_dirty, :boolean, required: false, default: false
   attr :buyer_form_state, :atom, required: false
 
@@ -29,64 +28,6 @@ defmodule FirmowidWeb.SalesInvoicesLive.BuyerForm do
     ~H"""
     <div class="w-full max-w-screen-lg">
       <p class="text-darkGrey mb-2">Nabywca</p>
-      <%= if @sales_invoice.is_buyer_confirmed do %>
-        <div class="flex gap-2 mt-4 mb-2">
-          <div
-            :if={@sales_invoice.buyer_id}
-            class="text-blueText border text-sm flex justify-center items-center font-medium px-2 h-7 border-blueText rounded-md"
-          >
-            WYBRANY Z BAZY
-          </div>
-          <div
-            :if={!@sales_invoice.buyer_id}
-            class="text-blueText border text-sm flex justify-center items-center font-medium px-2 h-7 border-blueText rounded-md"
-          >
-            WPROWADZONY RĘCZNIE
-          </div>
-        </div>
-      <% else %>
-        <div class="flex gap-2">
-          <.form phx-change="submit" for={@buyer_form}>
-            <.input
-              type="hidden"
-              field={@buyer_form[:is_buyer_confirmed]}
-              value={
-                if !@sales_invoice.buyer_id or @sales_invoice.buyer_id == "" do
-                  "true"
-                else
-                  "false"
-                end
-              }
-            />
-            <.input
-              field={@buyer_form[:buyer_id]}
-              type="select"
-              class="bg-greyButtonBg text-darkGrey rounded-md border-none text-sm h-7 py-0 w-auto max-w-80 mb-2"
-              prompt="WYBIERZ Z LISTY"
-              options={
-                @buyers
-                |> Enum.map(fn buyer -> {Firmowid.SalesInvoices.Buyer.get_name(buyer), buyer.id} end)
-              }
-            />
-          </.form>
-          <button
-            phx-click={
-              JS.push("submit", value: %{"sales_invoice" => %{"buyer_id" => ""}})
-              |> JS.push("update_buyer_state", value: %{"buyer_form_state" => :nip})
-            }
-            id="buyer_expand_button"
-            class={[
-              "uppercase border flex items-center gap-1 border-greyButtonBg text-darkGrey text-sm rounded-md h-7 px-2 mt-2 disabled:opacity-50 disabled:cursor-default",
-              (@buyer_form_state == "nip" or @buyer_form_state == "expanded") &&
-                (@sales_invoice.buyer_id == "" or !@sales_invoice.buyer_id) &&
-                "bg-darkGrey text-white"
-            ]}
-            phx-disable-with=""
-          >
-            Wprowadź <.icon name="hero-plus" class="w-4 h-4" />
-          </button>
-        </div>
-      <% end %>
       <%= if @sales_invoice.is_buyer_confirmed do %>
         <div class="flex justify-between items-start text-sm border border-greyButtonBg rounded-md p-5">
           <div>
@@ -276,36 +217,10 @@ defmodule FirmowidWeb.SalesInvoicesLive.BuyerForm do
                     >
                       Zatwierdź
                     </.button>
-                    <%= if !@sales_invoice.buyer_id or @sales_invoice.buyer_id == "" do %>
-                      <.button
-                        phx-disable-with="Dodawanie..."
-                        name="action"
-                        value="add_or_update_buyer"
-                        variant="outline"
-                        color="green"
-                        class="mt-2"
-                      >
-                        Dodaj
-                      </.button>
-                    <% else %>
-                      <.button
-                        phx-disable-with="Aktualizowanie..."
-                        name="action"
-                        value="add_or_update_buyer"
-                        variant="outline"
-                        color="green"
-                        class="mt-2"
-                        disabled={not @is_buyer_dirty}
-                      >
-                        Zaktualizuj
-                      </.button>
-                    <% end %>
                   </div>
                 </div>
               </div>
             </.form>
-          <% "closed" -> %>
-            <hr class="border-t border-t-greyButtonBg" />
           <% "nip" -> %>
             <div class="bg-greyButtonBg/50 flex flex-col p-4 rounded">
               <div class="flex flex-col items-center gap-2">

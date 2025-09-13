@@ -59,28 +59,25 @@ defmodule FirmowidWeb.SalesInvoicesLiveTest do
     test "adds buyer via nip", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/sprzedazowe")
 
-      lv |> element("#buyer_expand_button") |> render_click()
-
       lv
-      |> form("#buyer_nip_form",
-        nip: "6793209719"
-      )
+      |> form("#buyer_nip_form", nip: "6793209719")
       |> render_submit()
 
       result =
         lv
         |> form("#buyer_form")
-        |> put_submitter("button[name=action]")
         |> render_submit()
-
-      buyer = hd(SalesInvoices.list_buyers())
 
       assert result =~ "ALERGEEK VENTURES"
       assert result =~ "Zatwierdź"
-      assert buyer.display_name == "ALERGEEK VENTURES SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ"
 
-      assert SalesInvoices.get_latest_sales_invoice().is_buyer_confirmed == false
-      assert SalesInvoices.get_latest_sales_invoice().buyer_id == buyer.id
+      sales_invoice = SalesInvoices.get_latest_sales_invoice()
+
+      assert sales_invoice.is_buyer_confirmed == false
+      assert sales_invoice.buyer_nip == "6793209719"
+
+      assert sales_invoice.buyer_display_name ==
+               "ALERGEEK VENTURES SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ"
     end
   end
 
