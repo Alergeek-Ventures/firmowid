@@ -297,18 +297,13 @@
         </a>
       <% end %>
 
-      <%= if !Firmowid.SalesInvoices.SalesInvoice.confirmed?(@sales_invoice) do %>
-        <.button disabled color="green">
-          Zapisz fakturę
-        </.button>
-      <% else %>
-        <.link
-          navigate={~p"/sprzedazowe/#{@sales_invoice_id}"}
-          class={button_styles(%{color: "green"})}
-        >
-          Zapisz fakturę
-        </.link>
-      <% end %>
+      <.button
+        disabled={not Firmowid.SalesInvoices.SalesInvoice.confirmed?(@sales_invoice)}
+        phx-click="save"
+        color="green"
+      >
+        Zapisz fakturę
+      </.button>
     </div>
   </div>
 </div>

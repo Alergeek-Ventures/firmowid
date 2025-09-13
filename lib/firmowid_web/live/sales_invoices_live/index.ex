@@ -422,6 +422,15 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
     handle_event("change", %{"sales_invoice" => sales_invoice}, socket)
   end
 
+  def handle_event("save", _params, socket) do
+    if socket.assigns.sales_invoice.seller_account_number in [nil, ""] do
+      LiveToast.send_toast(:error, "Wypełnij numer konta bankowego")
+      {:noreply, socket}
+    else
+      {:noreply, push_navigate(socket, to: ~p"/sprzedazowe/#{socket.assigns.sales_invoice.id}")}
+    end
+  end
+
   defp maybe_create_or_update_buyer(socket, %{"action" => "add_or_update_buyer", "sales_invoice" => sales_invoice}) do
     buyer_id = socket.assigns.sales_invoice.buyer_id
     user = socket.assigns.current_user
