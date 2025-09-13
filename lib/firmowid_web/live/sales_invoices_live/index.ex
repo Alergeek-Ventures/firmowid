@@ -40,22 +40,26 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
     {:ok, socket}
   end
 
+  def handle_params(_params, _uri, socket) do
+    {:noreply, socket}
+  end
+
   def assign_currency(socket) do
     sales_invoice = socket.assigns.sales_invoice
 
-    case sales_invoice.currency do
-      "PLN" ->
-        assign(socket, currency_rate: nil)
+    currency_rate =
+      case sales_invoice.currency do
+        "PLN" ->
+          nil
 
-      currency ->
-        assign(socket,
-          currency_rate:
-            Firmowid.Nbp.ApiClient.get_exchange_rate(
-              currency,
-              SalesInvoice.get_currency_conversion_date(sales_invoice)
-            )
-        )
-    end
+        currency ->
+          Firmowid.Nbp.ApiClient.get_exchange_rate(
+            currency,
+            SalesInvoice.get_currency_conversion_date(sales_invoice)
+          )
+      end
+
+    assign(socket, currency_rate: currency_rate)
   end
 
   def assign_sales_invoice(socket, %SalesInvoice{} = sales_invoice, _) do
@@ -188,26 +192,11 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
       |> SalesInvoice.changeset(sales_invoice)
       |> Ecto.Changeset.apply_changes()
 
-    form =
-      sales_invoice
-      |> SalesInvoice.changeset()
-      |> to_form()
-
-    socket
-    |> assign(form: form)
-    |> assign(sales_invoice: sales_invoice)
-    |> assign_currency()
-    |> assign(sales_invoice_id: nil)
+    assign_sales_invoice(socket, sales_invoice, params)
   end
 
-  def assign_buyer_form_state(%{assigns: %{sales_invoice: sales_invoice}} = socket, desired_state) do
-    state =
-      case {sales_invoice.invoice_type, desired_state} do
-        {:foreign, "nip"} -> "expanded"
-        _ -> desired_state
-      end
-
-    assign(socket, buyer_form_state: state)
+  def assign_buyer_form_state(%{assigns: %{sales_invoice: %{invoice_type: :foreign}}} = socket, _) do
+    assign(socket, buyer_form_state: "expanded")
   end
 
   def assign_buyer_form_state(socket, desired_state) do
@@ -296,7 +285,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
     end
   end
 
-  def handle_event("submit", %{"sales_invoice" => sales_invoice} = params, socket) do
+  def handle_event("submit", %{"sales_invoice" => sales_invoice}, socket) do
     user = socket.assigns.current_user
 
     case_result =
