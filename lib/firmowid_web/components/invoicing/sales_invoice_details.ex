@@ -117,7 +117,13 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
             />
             <InvoiceDetails.invoice_metadata_piece
               label="Kupujący"
-              value={@invoice.buyer_display_name}
+              value={
+                if @invoice.buyer_type == :individual do
+                  "#{@invoice.buyer_name} #{@invoice.buyer_surname}"
+                else
+                  @invoice.buyer_display_name
+                end
+              }
               piece_id="buyer"
             />
             <InvoiceDetails.invoice_metadata_piece
