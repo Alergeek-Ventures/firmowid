@@ -100,6 +100,12 @@ defmodule FirmowidWeb.Router do
       live "/czasosledz/archiwum", Project.Index, :archive
       live "/czasosledz/archiwum/:id", Project.Index, :archive
 
+      live "/zarzadzanie/pracownicy", ManagementLive.Employees
+      # TODO: /:id page
+      live "/zarzadzanie/pracownik/:id", ManagementLive.Employees
+      live "/zarzadzanie/projekty", ManagementLive.Projects
+      live "/zarzadzanie/kontrahenci", ManagementLive.Clients
+
       live "/ustawienia/bank", BankSyncLive.Index, :index
       live "/ustawienia/bank/dodaj", BankSyncLive.Create, :index
 

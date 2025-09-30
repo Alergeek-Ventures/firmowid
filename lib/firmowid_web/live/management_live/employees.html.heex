@@ -1,0 +1,156 @@
+<div class="flex flex-col gap-4 text-black/70">
+  <div class="flex items-center justify-between">
+    <form class="flex gap-2" phx-submit="search">
+      <.date_picker
+        id="month"
+        selected_date={@filter_date}
+        class="w-48 gap-2"
+      />
+      <div class={[
+        @search_expanded && "focus-within:ring-2",
+        "flex items-center justify-center bg-greyButtonBg rounded-md min-w-10 transition-shadow"
+      ]}>
+        <input
+          type="text"
+          name="q"
+          value={@search}
+          placeholder="Szukaj pracownika"
+          phx-change="search"
+          phx-debounce="300"
+          class={[
+            "transition-[width,opacity,padding] duration-300 ease-in-out bg-transparent border-transparent",
+            "focus:border-none focus:ring-0 focus:outline-none",
+            @search_expanded && "w-64 opacity-100 px-2 py-1",
+            !@search_expanded && "w-0 opacity-0 px-0"
+          ]}
+        />
+        <button
+          type="button"
+          phx-click="toggle_search"
+          class="p-2 rounded-full"
+          id="search-button"
+        >
+          <.icon name="hero-magnifying-glass" class="w-5 h-5" />
+        </button>
+      </div>
+    </form>
+
+    <div class="flex flex-col gap-10">
+      <.button
+        class={classes(["ml-2", button_styles(%{color: "black"})])}
+        phx-click="create_employee"
+      >
+        <.icon name="hero-plus-mini" class="size-6 mr-1.5" /> Dodaj pracownika
+      </.button>
+
+      <div class="flex items-center gap-2">
+        <span class="text-sm">Widok wypłat</span>
+
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            phx-click="toggle_wages_view"
+            class="sr-only peer"
+            checked={@wages_view?}
+          />
+          <div class="w-11 h-6 bg-greyButtonBg peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-redBg rounded-full peer peer-checked:bg-redBg transition-colors">
+          </div>
+          <div class="absolute left-1 top-1 w-4 h-4 bg-darkGrey rounded-full shadow-md transform transition-transform peer-checked:bg-redText peer-checked:translate-x-5">
+          </div>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex gap-2 text-sm font-semibold">
+    <%= for {archived, label} <- [
+        {false, "Wszyscy"},
+        {true, "Zarchiwizowani"},
+    ] do %>
+      <.button
+        class={[
+          @archived? == archived && "!bg-darkGrey !text-white !rounded-lg",
+          "relative text-darkGrey text-center bg-lightGreyBg",
+          "hover:bg-greyButtonBg py-1 px-3 text-sm font-normal leading-6",
+          "flex items-center justify-center uppercase border-none text-sm"
+        ]}
+        phx-click="change_archived_filter"
+        phx-value-archived={if archived, do: "true", else: "false"}
+      >
+        {label}
+      </.button>
+    <% end %>
+  </div>
+
+  <div class="flex gap-2 md:gap-6 lg:gap-10">
+    <div class="w-full">
+      <%!-- TODO?: replace this with a html table --%>
+      <div class={[
+        @wages_view? && "grid-cols-[2fr_1fr_1fr_1fr_1fr]",
+        "grid grid-cols-[2fr_1fr_1fr] items-center gap-4 text-xs uppercase text-black/50 px-4 py-2 font-semibold"
+      ]}>
+        <div>Pracownik</div>
+        <div>Przepracowane godziny</div>
+        <%= if @wages_view? do %>
+          <div>Stawka</div>
+          <div>Wynagrodzenie</div>
+        <% end %>
+      </div>
+
+      <%= for emp <- @employees do %>
+        <.link
+          navigate={~p"/zarzadzanie/pracownik/#{emp.id}"}
+          class={[
+            @wages_view? && "grid-cols-[2fr_1fr_1fr_1fr_1fr]",
+            "grid grid-cols-[2fr_1fr_1fr] items-center gap-4 bg-white rounded-md px-4 py-3 my-2 h-14 group"
+          ]}
+        >
+          <div class="flex items-center gap-3">
+            <.icon name="hero-user" class="h-8 w-8" />
+            <span class="text-black">{emp.name || emp.email}</span>
+          </div>
+
+          <div class="text-sm text-black">
+            {emp.hours} h
+          </div>
+
+          <%= if @wages_view? do %>
+            <div class="text-sm text-black">
+              {emp.salary || 0} zł/godz.
+            </div>
+            <div class="text-sm font-semibold text-black">
+              {emp.hours * (emp.salary || 0)} PLN
+            </div>
+          <% end %>
+          <.icon
+            name="hero-chevron-right"
+            class="h-5 w-5 ml-auto group-hover:text-black transition-colors"
+          />
+        </.link>
+      <% end %>
+    </div>
+    <div class="mt-auto">
+      <%= for emp <- @employees do %>
+        <div class="flex items-center gap-3 bg-white rounded-md p-3 my-2 h-14">
+          <span
+            title="Ewidencja"
+            class="icon-btn uppercase text-sm bg-greyButtonBg w-32 flex items-center justify-between py-1 px-2 rounded-md"
+          >
+            Brak <.icon name="hero-x-mark" class="h-5" />
+          </span>
+          <button title="Pobierz" disabled>
+            <.icon name="hero-document text-black/20 cursor-not-allowed" />
+          </button>
+          <button
+            title="Zwrot"
+            onclick={"navigator.clipboard.writeText('#{emp.id}')"}
+            phx-click="employee_bank_number_copied"
+            class="hover:text-black transition-colors"
+          >
+            <.icon name="hero-credit-card" />
+          </button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

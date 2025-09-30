@@ -1,116 +1,209 @@
 <%= if @current_user && !is_nil(@current_user.organization_id) do %>
-  <nav class={[
-    "px-4 sm:px-6 lg:px-8 bg-black text-white flex",
-    "items-center justify-between h-16 py-6",
-    "text-sm sticky top-0 z-50"
-  ]}>
-    <.link navigate={~p"/"} class="font-bold text-lg inline-block flex-1">
-      Firmowid
-    </.link>
-
-    <div class="flex uppercase items-center gap-16 max-md:hidden">
-      <%= if Bodyguard.permit?(Firmowid.Invoicing, :show, @current_user) do %>
-        <.link
-          navigate={~p"/"}
-          class={[
-            !String.starts_with?(@current_uri.path, "/analiza") &&
-              !String.starts_with?(@current_uri.path, "/czasosledz") && "opacity-90",
-            "flex items-center gap-2 transition-all hover:opacity-100 opacity-50"
-          ]}
-        >
-          <.icon name="hero-clipboard-document-list" class="w-5 h-5" /> Fakturowanie
-        </.link>
-      <% end %>
-      <%= if Bodyguard.permit?(Firmowid.Analysis, :read, @current_user) do %>
-        <.link
-          navigate={~p"/analiza"}
-          class={[
-            String.starts_with?(@current_uri.path, "/analiza") && "opacity-90",
-            "flex items-center gap-2 transition-all hover:opacity-100 opacity-50"
-          ]}
-        >
-          <.icon name="hero-scale" class="w-5 h-5" /> Analiza
-        </.link>
-      <% end %>
+  <nav class="sticky top-0 z-50 px-4 sm:px-6 lg:px-8 bg-black">
+    <%= if String.starts_with?(@current_uri.path, "/zarzadzanie") do %>
+    <% end %>
+    <div
+      class={[
+        " text-white flex",
+        "items-center justify-between h-16 py-6",
+        "text-sm transition-all overflow-hidden"
+      ]}
+      id="navbar-main"
+      phx-hook="ScrollStyle"
+      data-classes={
+        String.starts_with?(@current_uri.path, "/zarzadzanie") &&
+          "!h-0 !py-0"
+      }
+      data-scroll-offset="40"
+    >
       <.link
-        navigate={~p"/czasosledz"}
-        class={[
-          String.starts_with?(@current_uri.path, "/czasosledz") && "opacity-90",
-          "flex items-center gap-2 transition-all hover:opacity-100 opacity-50"
-        ]}
+        navigate={~p"/"}
+        class="font-bold text-lg inline-block flex-1"
       >
-        <.icon name="hero-clock" class="w-5 h-5" /> Czasośledź
-        <span
-          id="czasosledz-beta"
-          class="text-xs bg-white/20 rounded px-1.5 py-0.5 ml-1"
-          phx-hook="Tippy"
-          data-tippy-content="Prace nad tą funkcjonalnością jeszcze trwają! Twój feedback pozwoli nam sprawić, że będzie jeszcze lepsza."
-        >
-          BETA
-        </span>
+        Firmowid
       </.link>
-    </div>
-
-    <div class="relative max-md:hidden flex-1 text-right flex justify-end">
-      <div class="relative">
-        <button
-          phx-click={
-            JS.toggle(
-              to: "#dropdown_content",
-              in:
-                {"transition-all transform ease-in", "opacity-0 scale-95",
-                 "opacity-100 scale-100"},
-              out:
-                {"transition-all transform ease-in duration-200",
-                 "opacity-100 translate-y-0 sm:scale-100",
-                 "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"},
-              display: "flex"
-            )
-            |> JS.toggle_class("invert", to: "#dropdown_button")
-          }
-          id="dropdown_button"
-          phx-click-away={
-            hide("#dropdown_content") |> JS.remove_class("invert", to: "#dropdown_button")
-          }
-          phx-window-keydown={
-            hide("#dropdown_content") |> JS.remove_class("invert", to: "#dropdown_button")
-          }
-          phx-key="Escape"
-          class="bg-black transition p-2 py-3 hover:invert rounded-md w-full flex justify-end"
-          title={@current_user.email}
-        >
-          <.icon name="hero-user" class="w-5 h-5 mr-1" />
-          <span class="lowercase text-sm max-lg:hidden">
-            {@current_user.email}
-          </span>
-        </button>
-        <div
-          id="dropdown_content"
-          style="display: none"
-          class="absolute flex-col font-semibold p-3 rounded-md gap-2 right-0
-        w-full top-[70px] bg-black text-left max-lg:w-auto"
-        >
-          <.link navigate={~p"/ustawienia"} class="rounded-md p-2 hover:bg-darkGrey/50">
-            Ustawienia
-          </.link>
-          <%= if Bodyguard.permit?(Firmowid.Finances, :read_bank_accounts, @current_user) do %>
-            <.link
-              navigate={~p"/ustawienia?tab=konta_bankowe"}
-              class="rounded-md p-2 hover:bg-darkGrey/50"
-            >
-              Konta bankowe
-            </.link>
-          <% end %>
+      <div class={[
+        String.starts_with?(@current_uri.path, "/zarzadzanie") &&
+          "border-b pb-3 mt-3 border-white/50",
+        "flex uppercase items-center gap-16 max-md:hidden"
+      ]}>
+        <%= if Bodyguard.permit?(Firmowid.Invoicing, :show, @current_user) do %>
           <.link
-            href={~p"/wyloguj"}
-            method="delete"
-            class="rounded-md p-2 hover:bg-darkGrey/50 flex justify-between"
+            navigate={~p"/"}
+            class={[
+              !String.starts_with?(@current_uri.path, "/analiza") &&
+                !String.starts_with?(@current_uri.path, "/czasosledz") &&
+                !String.starts_with?(@current_uri.path, "/zarzadzanie") && "opacity-90",
+              "flex items-center gap-2 transition-all hover:opacity-100 opacity-50"
+            ]}
           >
-            Wyloguj się <.icon name="hero-arrow-right-start-on-rectangle" />
+            <.icon name="hero-clipboard-document-list" class="w-5 h-5" /> Fakturowanie
           </.link>
+        <% end %>
+        <%= if Bodyguard.permit?(Firmowid.Analysis, :read, @current_user) do %>
+          <.link
+            navigate={~p"/analiza"}
+            class={[
+              String.starts_with?(@current_uri.path, "/analiza") && "opacity-90",
+              "flex items-center gap-2 transition-all hover:opacity-100 opacity-50"
+            ]}
+          >
+            <.icon name="hero-scale" class="w-5 h-5" /> Analiza
+          </.link>
+        <% end %>
+        <.link
+          navigate={~p"/czasosledz"}
+          class={[
+            String.starts_with?(@current_uri.path, "/czasosledz") && "opacity-90",
+            "flex items-center gap-2 transition-all hover:opacity-100 opacity-50"
+          ]}
+        >
+          <.icon name="hero-clock" class="w-5 h-5" /> Czasośledź
+          <span
+            id="czasosledz-beta"
+            class="text-xs bg-white/20 rounded px-1.5 py-0.5 ml-1"
+            phx-hook="Tippy"
+            data-tippy-content="Prace nad tą funkcjonalnością jeszcze trwają! Twój feedback pozwoli nam sprawić, że będzie jeszcze lepsza."
+          >
+            BETA
+          </span>
+        </.link>
+        <%= if Bodyguard.permit?(Firmowid.Analysis, :read, @current_user) do %>
+          <.link
+            navigate={~p"/zarzadzanie/pracownicy"}
+            class={[
+              String.starts_with?(@current_uri.path, "/zarzadzanie") && "opacity-90",
+              "flex items-center gap-2 transition-all hover:opacity-100 opacity-50"
+            ]}
+          >
+            <.icon
+              name="hero-presentation-chart-line"
+              class="w-5 h-5"
+            /> Zarządzanie
+          </.link>
+        <% end %>
+      </div>
+
+      <div class="relative max-md:hidden flex-1 text-right flex justify-end">
+        <div class="relative">
+          <button
+            phx-click={
+              JS.toggle(
+                to: "#dropdown_content",
+                in:
+                  {"transition-all transform ease-in", "opacity-0 scale-95",
+                   "opacity-100 scale-100"},
+                out:
+                  {"transition-all transform ease-in duration-200",
+                   "opacity-100 translate-y-0 sm:scale-100",
+                   "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"},
+                display: "flex"
+              )
+              |> JS.toggle_class("invert", to: "#dropdown_button")
+            }
+            id="dropdown_button"
+            phx-click-away={
+              hide("#dropdown_content") |> JS.remove_class("invert", to: "#dropdown_button")
+            }
+            phx-window-keydown={
+              hide("#dropdown_content") |> JS.remove_class("invert", to: "#dropdown_button")
+            }
+            phx-key="Escape"
+            class="bg-black transition p-2 py-3 hover:invert rounded-md w-full flex justify-end"
+            title={@current_user.email}
+          >
+            <.icon name="hero-user" class="w-5 h-5 mr-1" />
+            <span class="lowercase text-sm max-lg:hidden">
+              {@current_user.email}
+            </span>
+          </button>
+          <div
+            id="dropdown_content"
+            style="display: none"
+            class="absolute flex-col font-semibold p-3 rounded-md gap-2 right-0
+        w-full top-[70px] bg-black text-left max-lg:w-auto"
+          >
+            <.link navigate={~p"/ustawienia"} class="rounded-md p-2 hover:bg-darkGrey/50">
+              Ustawienia
+            </.link>
+            <%= if Bodyguard.permit?(Firmowid.Finances, :read_bank_accounts, @current_user) do %>
+              <.link
+                navigate={~p"/ustawienia?tab=konta_bankowe"}
+                class="rounded-md p-2 hover:bg-darkGrey/50"
+              >
+                Konta bankowe
+              </.link>
+            <% end %>
+            <.link
+              href={~p"/wyloguj"}
+              method="delete"
+              class="rounded-md p-2 hover:bg-darkGrey/50 flex justify-between"
+            >
+              Wyloguj się <.icon name="hero-arrow-right-start-on-rectangle" />
+            </.link>
+          </div>
         </div>
       </div>
     </div>
+    <%= if String.starts_with?(@current_uri.path, "/zarzadzanie") do %>
+      <div class="flex gap-4 justify-between items-center py-3 w-full text-white/50 font-semibold">
+        <.link
+          navigate={~p"/"}
+          class="font-bold text-lg inline-block text-white opacity-0 transition-opacity"
+          id="firmowid-logo-management"
+          phx-hook="ScrollStyle"
+          data-classes="opacity-100"
+          data-scroll-offset="40"
+        >
+          Firmowid
+        </.link>
+        <div class="uppercase flex gap-3">
+          <.link
+            href="/zarzadzanie/pracownicy"
+            class={[
+              "hover:text-white transition-colors",
+              (String.starts_with?(@current_uri.path, "/zarzadzanie/pracownik") ||
+                 String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy")) &&
+                "text-white/90"
+            ]}
+          >
+            Pracownicy
+          </.link>
+          <.link
+            href="/zarzadzanie/projekty"
+            class={[
+              "hover:text-white transition-colors",
+              String.starts_with?(@current_uri.path, "/zarzadzanie/projekty") && "text-white/90"
+            ]}
+          >
+            Projekty
+          </.link>
+          <.link
+            href="/zarzadzanie/kontrahenci"
+            class={[
+              "hover:text-white transition-colors",
+              String.starts_with?(@current_uri.path, "/zarzadzanie/kontrahenci") &&
+                "text-white/90"
+            ]}
+          >
+            Kontrahenci
+          </.link>
+        </div>
+        <button
+          class="text-white cursor-pointer opacity-0"
+          id="navbar-burger-button"
+          onclick="window.scrollTo({ top: 0, behavior: 'smooth' })"
+          phx-hook="ScrollStyle"
+          data-classes="opacity-100"
+          data-scroll-offset="40"
+        >
+          <.icon
+            name="hero-bars-3"
+            class="w-6 h-6"
+          />
+        </button>
+      </div>
+    <% end %>
   </nav>
 <% end %>
 
