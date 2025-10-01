@@ -110,8 +110,7 @@ defmodule FirmowidWeb.Router do
       live "/czasosledz/archiwum/:id", Project.Index, :archive
 
       live "/zarzadzanie/pracownicy", ManagementLive.Employees
-      # TODO: /:id page
-      live "/zarzadzanie/pracownicy/:id", ManagementLive.Employees
+      live "/zarzadzanie/pracownicy/:id", ManagementLive.Employee
       live "/zarzadzanie/projekty", ManagementLive.Projects
       live "/zarzadzanie/kontrahenci", ManagementLive.Clients
 
