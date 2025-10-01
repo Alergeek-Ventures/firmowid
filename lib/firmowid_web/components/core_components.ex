@@ -318,6 +318,8 @@ defmodule FirmowidWeb.CoreComponents do
     default: nil,
     values: [nil, "medium", "small"]
 
+  attr :input_size, :integer, default: nil
+
   attr :rest, :global, include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
                 multiple pattern placeholder readonly required rows size step)
 
@@ -436,6 +438,7 @@ defmodule FirmowidWeb.CoreComponents do
         type={@type}
         name={@name}
         id={@id}
+        size={@input_size}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
         class={
           classes([

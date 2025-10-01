@@ -83,31 +83,58 @@
   </div>
 
   <div class="flex gap-2 md:gap-6 lg:gap-10">
-    <div class="w-full">
+    <form class="w-full" phx-submit="save_wages">
       <%!-- TODO?: replace this with a html table --%>
       <div class={[
         @wages_view? && "grid-cols-[2fr_1fr_1fr_1fr_1fr]",
-        "grid grid-cols-[2fr_1fr_1fr] items-center gap-4 text-xs uppercase text-black/50 px-4 py-2 font-semibold"
+        "grid grid-cols-[2fr_1fr_1fr] items-center gap-4 text-xs uppercase text-darkGrey px-4 py-2 font-medium"
       ]}>
-        <div>Pracownik</div>
+        <div class="my-1">Pracownik</div>
         <div>Przepracowane godziny</div>
         <%= if @wages_view? do %>
-          <div>Stawka</div>
+          <div class="flex gap-2">
+            <button
+              id="wage-editor-toggle"
+              class={[
+                "flex gap-2 items-center bg-greyButtonBg rounded px-3 py-1 uppercase font-semibold"
+              ]}
+              phx-click="toggle_wage_editor"
+              phx-hook="ConfirmLeave"
+              data-unsaved={@wage_editor?}
+              type="button"
+            >
+              <%= if @wage_editor? do %>
+                <.icon name="hero-arrow-uturn-left" class="size-4 semibold" />
+              <% else %>
+                Stawka <.icon name="hero-pencil-square-solid size-4" />
+              <% end %>
+            </button>
+            <%= if @wage_editor? do %>
+              <button
+                class="bg-redBg text-redText rounded uppercase px-3 py-1 font-semibold"
+                type="submit"
+              >
+                Zapisz
+              </button>
+            <% end %>
+          </div>
           <div>Wynagrodzenie</div>
         <% end %>
       </div>
 
       <%= for emp <- @employees do %>
-        <.link
-          navigate={~p"/zarzadzanie/pracownik/#{emp.id}"}
-          class={[
-            @wages_view? && "grid-cols-[2fr_1fr_1fr_1fr_1fr]",
-            "grid grid-cols-[2fr_1fr_1fr] items-center gap-4 bg-white rounded-md px-4 py-3 my-2 h-14 group"
-          ]}
-        >
-          <div class="flex items-center gap-3">
+        <div class={[
+          @wages_view? && "grid-cols-[2fr_1fr_1fr_1fr_1fr]",
+          "grid grid-cols-[2fr_1fr_1fr] items-center gap-4 bg-white rounded-md px-4 py-3 my-2 h-16 "
+        ]}>
+          <div class="flex items-center gap-3 group peer">
             <.icon name="hero-user" class="h-8 w-8" />
-            <span class="text-black">{emp.name || emp.email}</span>
+            <.link
+              navigate={~p"/zarzadzanie/pracownik/#{emp.id}"}
+              class="text-black border-b border-transparent group-hover:border-black transition-colors"
+            >
+              {emp.name || emp.email}
+            </.link>
           </div>
 
           <div class="text-sm text-black">
@@ -115,23 +142,40 @@
           </div>
 
           <%= if @wages_view? do %>
-            <div class="text-sm text-black">
-              {emp.salary || 0} zł/godz.
-            </div>
+            <.input
+              type="number"
+              class="flex flex-row-reverse gap-2 min-w-max items-center text-sm text-black justify-end m-0"
+              label="zł/godz."
+              input_size={3}
+              input_class={
+                [
+                  !@wage_editor? && "border-transparent px-0",
+                  @wage_editor? && "border-greyButtonBg text-darkGrey",
+                  "!w-min py-1 !text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                ]
+                |> Enum.join(" ")
+              }
+              step="0.01"
+              min="0"
+              name={"employee[#{emp.id}][wage]"}
+              value={emp.hourly_rate || 0}
+              readonly={!@wage_editor?}
+              disabled={!@wage_editor?}
+            />
             <div class="text-sm font-semibold text-black">
-              {emp.hours * (emp.salary || 0)} PLN
+              {Decimal.to_float(emp.hourly_rate || Decimal.new(0)) * emp.hours} PLN
             </div>
           <% end %>
           <.icon
             name="hero-chevron-right"
-            class="h-5 w-5 ml-auto group-hover:text-black transition-colors"
+            class="h-5 w-5 ml-auto peer-hover:text-black transition-colors"
           />
-        </.link>
+        </div>
       <% end %>
-    </div>
+    </form>
     <div class="mt-auto">
       <%= for emp <- @employees do %>
-        <div class="flex items-center gap-3 bg-white rounded-md p-3 my-2 h-14">
+        <div class="flex items-center gap-3 bg-white rounded-md p-3 my-2 h-16">
           <span
             title="Ewidencja"
             class="icon-btn uppercase text-sm bg-greyButtonBg w-32 flex items-center justify-between py-1 px-2 rounded-md"

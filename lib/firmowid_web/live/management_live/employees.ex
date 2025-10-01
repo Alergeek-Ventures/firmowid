@@ -2,13 +2,12 @@ defmodule FirmowidWeb.ManagementLive.Employees do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Accounts.User
+  alias Firmowid.Repo
   alias Firmowid.Timetracker
 
   defp list_employees(filter_date, archived? \\ false, search \\ "") do
     import Ecto.Query, only: [from: 2]
-
-    alias Firmowid.Accounts.User
-    alias Firmowid.Repo
 
     query =
       from u in User,
@@ -31,7 +30,7 @@ defmodule FirmowidWeb.ManagementLive.Employees do
 
       user
       |> Map.put(:hours, hours)
-      |> Map.put(:salary, salary)
+      |> Map.put(:hourly_rate, salary && salary.hourly_rate)
     end)
   end
 
@@ -44,6 +43,7 @@ defmodule FirmowidWeb.ManagementLive.Employees do
       |> assign(:filter_date, Date.utc_today())
       |> assign(:archived?, false)
       |> assign(:wages_view?, false)
+      |> assign(:wage_editor?, false)
       |> assign(:search_expanded, false)
 
     {:ok, socket}
@@ -61,6 +61,54 @@ defmodule FirmowidWeb.ManagementLive.Employees do
 
   def handle_event("toggle_wages_view", _params, socket) do
     {:noreply, update(socket, :wages_view?, &(!&1))}
+  end
+
+  def handle_event("toggle_wage_editor", _params, socket) do
+    new_value? = !socket.assigns.wage_editor?
+
+    {:noreply,
+     socket
+     |> assign(:wage_editor?, new_value?)
+     |> push_event("unsaved-changed", %{value: new_value?})}
+  end
+
+  def handle_event("save_wages", %{"employee" => employees_params}, socket) do
+    alias Firmowid.Timetracker.UserSalary
+
+    if !socket.assigns.wage_editor? do
+      {:noreply, socket}
+    end
+
+    fn ->
+      Enum.each(socket.assigns.employees, fn emp ->
+        new_hourly_wage = Decimal.new(employees_params[emp.id]["wage"])
+
+        if Decimal.compare(new_hourly_wage, Decimal.new(0)) == :gt do
+          IO.puts("Updating wage for employee #{emp.email} to #{new_hourly_wage}")
+
+          case Timetracker.create_user_salary(%{user_id: emp.id, hourly_rate: new_hourly_wage}) do
+            {:ok, %UserSalary{}} -> :ok
+            {:error, changeset} -> Repo.rollback(changeset)
+          end
+        end
+      end)
+    end
+    |> Repo.transaction()
+    |> case do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> assign(:wage_editor?, false)
+         |> push_event("unsaved-changed", %{value: false})
+         |> put_flash(:info, "Stawki godzinowe zaktualizowane pomyślnie")
+         |> assign(
+           :employees,
+           list_employees(socket.assigns.filter_date, socket.assigns.archived?, socket.assigns.search)
+         )}
+
+      {:error, changeset} ->
+        {:noreply, put_flash(socket, :error, "Nie udało się zaktualizować stawek: #{inspect(changeset.errors)}")}
+    end
   end
 
   def handle_event("search", %{"q" => query}, socket) do
