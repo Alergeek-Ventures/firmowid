@@ -10,6 +10,7 @@ import { FocusOnMount } from "./focus_on_mount";
 import ScrollToBottom from "./scroll_to_bottom";
 import Popover from "./popover";
 import { ConfirmLeave } from "./confirm_leave";
+import { CollapsibleNavbar } from "./collapsible_navbar";
 
 export const Hooks = {
   ListItemRemovalAnimation,
@@ -23,5 +24,6 @@ export const Hooks = {
   FocusOnMount,
   ScrollToBottom,
   Popover,
+  CollapsibleNavbar,
   ConfirmLeave,
 };

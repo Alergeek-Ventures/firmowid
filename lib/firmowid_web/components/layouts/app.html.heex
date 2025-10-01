@@ -1,7 +1,5 @@
 <%= if @current_user && !is_nil(@current_user.organization_id) do %>
   <nav class="sticky top-0 z-50 px-4 sm:px-6 lg:px-8 bg-black">
-    <%= if String.starts_with?(@current_uri.path, "/zarzadzanie") do %>
-    <% end %>
     <div
       class={[
         " text-white flex",
@@ -9,12 +7,11 @@
         "text-sm transition-all overflow-hidden"
       ]}
       id="navbar-main"
-      phx-hook="ScrollStyle"
+      phx-hook="CollapsibleNavbar"
       data-classes={
         String.starts_with?(@current_uri.path, "/zarzadzanie") &&
           "!h-0 !py-0"
       }
-      data-scroll-offset="40"
     >
       <.link
         navigate={~p"/"}
@@ -146,18 +143,17 @@
       </div>
     </div>
     <%= if String.starts_with?(@current_uri.path, "/zarzadzanie") do %>
-      <div class="flex gap-4 justify-between items-center py-3 w-full text-white/50 font-semibold">
+      <div class="grid grid-cols-3 gap-4 items-center py-3 w-full text-white/50 font-semibold">
         <.link
           navigate={~p"/"}
-          class="font-bold text-lg inline-block text-white opacity-0 transition-opacity"
+          class="font-bold text-lg inline-block text-white opacity-0 transition-opacity mr-auto"
           id="firmowid-logo-management"
-          phx-hook="ScrollStyle"
+          phx-hook="CollapsibleNavbar"
           data-classes="opacity-100"
-          data-scroll-offset="40"
         >
           Firmowid
         </.link>
-        <div class="uppercase flex gap-3">
+        <div class="uppercase flex justify-center gap-14">
           <.link
             href="/zarzadzanie/pracownicy"
             class={[
@@ -190,17 +186,19 @@
           </.link>
         </div>
         <button
-          class="text-white cursor-pointer opacity-0"
+          class="text-white cursor-pointer opacity-0 ml-auto relative flex size-6"
           id="navbar-burger-button"
           onclick="window.scrollTo({ top: 0, behavior: 'smooth' })"
-          phx-hook="ScrollStyle"
+          phx-hook="CollapsibleNavbar"
           data-classes="opacity-100"
-          data-scroll-offset="40"
+          data-is-override-button="true"
         >
-          <.icon
-            name="hero-bars-3"
-            class="w-6 h-6"
-          />
+          <span class="burger-icon">
+            <.icon name="hero-bars-3" />
+          </span>
+          <span class="x-icon absolute inset-0 hidden">
+            <.icon name="hero-x-mark" />
+          </span>
         </button>
       </div>
     <% end %>
