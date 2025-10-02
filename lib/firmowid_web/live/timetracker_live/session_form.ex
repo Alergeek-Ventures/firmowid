@@ -4,6 +4,8 @@ defmodule FirmowidWeb.TimetrackerLive.SessionForm do
 
   import Ecto.Changeset
 
+  alias Firmowid.Timetracker.Session
+
   embedded_schema do
     field :title, :string
     field :date, :date
@@ -23,6 +25,21 @@ defmodule FirmowidWeb.TimetrackerLive.SessionForm do
     |> validate_required([:title, :project_id])
   end
 
+  def from_session(%Session{} = session, timezone) do
+    start_datetime = DateTime.shift_zone!(session.start_datetime, timezone)
+    end_datetime = session.end_datetime && DateTime.shift_zone!(session.end_datetime, timezone)
+
+    %__MODULE__{
+      id: session.id,
+      title: session.title,
+      date: DateTime.to_date(start_datetime),
+      start_time: DateTime.to_time(start_datetime),
+      end_time: end_datetime && DateTime.to_time(end_datetime),
+      is_remote: session.is_remote,
+      project_id: session.project_id
+    }
+  end
+
   def attributes(changeset, user_id, timezone) do
     changeset
     |> maybe_put(:date, timezone |> DateTime.now!() |> DateTime.to_date())
@@ -38,7 +55,7 @@ defmodule FirmowidWeb.TimetrackerLive.SessionForm do
   end
 
   defp maybe_put(changeset, field, default) do
-    case get_change(changeset, field) do
+    case get_field(changeset, field) do
       nil -> put_change(changeset, field, default)
       _ -> changeset
     end

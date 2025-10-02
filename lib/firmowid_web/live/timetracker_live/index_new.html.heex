@@ -44,7 +44,7 @@
       <% else %>
         <.form
           id="session_form"
-          phx-change="validate"
+          phx-change={if @current_session, do: "validate_and_update", else: "validate"}
           phx-submit="save"
           for={@form}
           class="w-full flex flex-col gap-4 sticky top-[12.375rem]"
@@ -52,29 +52,23 @@
           <% is_hours_record_submitted =
             Timetracker.submitted_hours_record?(@current_user.id, Date.utc_today()) %>
 
-          <%= if @current_session do %>
-            <p class="bg-greyButtonBg px-4 py-2 rounded h-[44px] flex items-center">
-              {@current_session.title}
-            </p>
-          <% else %>
-            <.input
-              field={@form[:title]}
-              required={true}
-              disabled={@current_session != nil or is_hours_record_submitted}
-              placeholder={
-                if not is_hours_record_submitted,
-                  do: "Nad czym dzisiaj pracujesz?",
-                  else: "Nie możesz dodać sesji, po wysłaniu ewidencji godzin"
-              }
-              input_class="h-[44px] border-none bg-greyButtonBg text-black"
-              phx-hook="FocusOnMount"
-              autofocus
-            />
-          <% end %>
+          <.input
+            field={@form[:title]}
+            required={true}
+            placeholder={
+              if not is_hours_record_submitted,
+                do: "Nad czym dzisiaj pracujesz?",
+                else: "Nie możesz dodać sesji, po wysłaniu ewidencji godzin"
+            }
+            input_class="h-[44px] border-none bg-greyButtonBg text-black"
+            phx-hook="FocusOnMount"
+            phx-debounce="300"
+            autofocus
+          />
 
           <.input
             type="select"
-            disabled={@current_session != nil or is_hours_record_submitted}
+            disabled={is_hours_record_submitted}
             class="bg-orangeBg text-orangeText border-none px-4 py-2 appearance-none cursor-pointer hover:bg-[#f0e0d8] transition-colors focus:outline-none focus:ring-1 focus:ring-orangeText h-[44px]"
             field={@form[:project_id]}
             options={@projects |> Enum.map(&{&1.name, &1.id})}
@@ -84,7 +78,7 @@
             <.switch
               field={@form[:is_remote]}
               label="pracuję z domu"
-              disabled={@current_session != nil or is_hours_record_submitted}
+              disabled={is_hours_record_submitted}
             />
 
             <.button
@@ -104,15 +98,6 @@
 
           <div class="flex flex-col gap-5 mt-2 items-center justify-between relative h-32">
             <%= cond do %>
-              <% @current_session -> %>
-                <p
-                  class="text-orangeText text-2xl text-center font-semibold tracking-normal"
-                  id="timetracker-timer"
-                  data-start_time={@current_session.start_datetime}
-                  phx-hook="Timer"
-                >
-                  {TimeFormatter.format_timer(@current_session.duration, :with_seconds)}
-                </p>
               <% @is_form_extended -> %>
                 <div class="flex gap-6 w-full">
                   <.input
@@ -140,6 +125,15 @@
                     value={format_time(@form[:end_time].value)}
                   />
                 </div>
+              <% @current_session -> %>
+                <p
+                  class="text-orangeText text-2xl text-center font-semibold tracking-normal"
+                  id="timetracker-timer"
+                  data-start_time={@current_session.start_datetime}
+                  phx-hook="Timer"
+                >
+                  {TimeFormatter.format_timer(@current_session.duration, :with_seconds)}
+                </p>
               <% true -> %>
                 <div>
                   <p class="text-orangeText text-center">w {@month_stats.month}</p>
