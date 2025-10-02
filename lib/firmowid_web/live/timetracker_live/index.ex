@@ -119,11 +119,19 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     |> assign(:today_sessions, today_sessions)
     |> assign(:grouped_sessions, grouped_sessions)
     |> assign(:current_session, Timetracker.get_current_session(socket.assigns.current_user.id))
+    |> assign_page_title()
     |> assign_month_stats()
   end
 
   def group_nearby(sessions) do
     Enum.chunk_by(sessions, fn session -> {session.title, session.project_id} end)
+  end
+
+  def assign_page_title(socket) do
+    case socket.assigns.current_session do
+      nil -> assign(socket, :page_title, "Czasośledź")
+      session -> assign(socket, :page_title, session.title)
+    end
   end
 
   def expand_sessions(socket, session) do
@@ -201,10 +209,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
 
     case Timetracker.end_session(socket.assigns.current_session) do
       {:ok, _session} ->
-        {:noreply,
-         socket
-         |> assign(:current_session, nil)
-         |> assign_sessions()}
+        {:noreply, assign_sessions(socket)}
 
       {:error, _changeset} ->
         {:noreply, socket}
