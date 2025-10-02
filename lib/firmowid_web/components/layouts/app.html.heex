@@ -158,8 +158,7 @@
             href="/zarzadzanie/pracownicy"
             class={[
               "hover:text-white transition-colors",
-              (String.starts_with?(@current_uri.path, "/zarzadzanie/pracownik") ||
-                 String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy")) &&
+              String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy") &&
                 "text-white/90"
             ]}
           >

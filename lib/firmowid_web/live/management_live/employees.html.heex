@@ -10,28 +10,29 @@
         @search_expanded && "focus-within:ring-2",
         "flex items-center justify-center bg-greyButtonBg rounded-md min-w-10 transition-shadow"
       ]}>
-        <input
+        <.input
           type="text"
           name="q"
           value={@search}
           placeholder="Szukaj pracownika"
           phx-change="search"
           phx-debounce="300"
+          input_class="py-0 px-1 bg-transparent border-none"
           class={[
-            "transition-[width,opacity,padding] duration-300 ease-in-out bg-transparent border-transparent",
+            "transition-[width,opacity,padding] duration-300 ease-in-out border-transparent",
             "focus:border-none focus:ring-0 focus:outline-none",
             @search_expanded && "w-64 opacity-100 px-2 py-1",
             !@search_expanded && "w-0 opacity-0 px-0"
           ]}
         />
-        <button
+        <.button
           type="button"
           phx-click="toggle_search"
-          class="p-2 rounded-full"
+          class="p-2 rounded-full bg-transparent text-darkGrey border-none"
           id="search-button"
         >
           <.icon name="hero-magnifying-glass" class="w-5 h-5" />
-        </button>
+        </.button>
       </div>
     </form>
 
@@ -51,7 +52,7 @@
             type="checkbox"
             phx-click="toggle_wages_view"
             class="sr-only peer"
-            checked={@wages_view?}
+            checked={@view != :standard}
           />
           <div class="w-11 h-6 bg-greyButtonBg peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-redBg rounded-full peer peer-checked:bg-redBg transition-colors">
           </div>
@@ -69,7 +70,7 @@
     ] do %>
       <.button
         class={[
-          @archived? == archived && "!bg-darkGrey !text-white !rounded-lg",
+          @archived == archived && "!bg-darkGrey !text-white !rounded-lg",
           "relative text-darkGrey text-center bg-lightGreyBg",
           "hover:bg-greyButtonBg py-1 px-3 text-sm font-normal leading-6",
           "flex items-center justify-center uppercase border-none text-sm"
@@ -86,12 +87,13 @@
     <form class="w-full" phx-submit="save_wages">
       <%!-- TODO?: replace this with a html table --%>
       <div class={[
-        @wages_view? && "grid-cols-[2fr_1fr_1fr_1fr_1fr]",
-        "grid grid-cols-[2fr_1fr_1fr] items-center gap-4 text-xs uppercase text-darkGrey px-4 py-2 font-medium"
+        @view == :standard && "grid-cols-[2fr_1fr_1fr]",
+        @view != :standard && "grid-cols-[2fr_1fr_1fr_1fr_1fr]",
+        "grid items-center gap-4 text-xs uppercase text-darkGrey px-4 py-2 font-medium"
       ]}>
         <div class="my-1">Pracownik</div>
         <div>Przepracowane godziny</div>
-        <%= if @wages_view? do %>
+        <%= if @view != :standard do %>
           <div class="flex gap-2">
             <button
               id="wage-editor-toggle"
@@ -100,16 +102,16 @@
               ]}
               phx-click="toggle_wage_editor"
               phx-hook="ConfirmLeave"
-              data-unsaved={@wage_editor?}
+              data-unsaved={@view == :wage_editor}
               type="button"
             >
-              <%= if @wage_editor? do %>
+              <%= if @view == :wage_editor do %>
                 <.icon name="hero-arrow-uturn-left" class="size-4 semibold" />
               <% else %>
                 Stawka <.icon name="hero-pencil-square-solid size-4" />
               <% end %>
             </button>
-            <%= if @wage_editor? do %>
+            <%= if @view == :wage_editor do %>
               <button
                 class="bg-redBg text-redText rounded uppercase px-3 py-1 font-semibold"
                 type="submit"
@@ -122,26 +124,27 @@
         <% end %>
       </div>
 
-      <%= for emp <- @employees do %>
+      <%= for employee <- @employees do %>
         <div class={[
-          @wages_view? && "grid-cols-[2fr_1fr_1fr_1fr_1fr]",
-          "grid grid-cols-[2fr_1fr_1fr] items-center gap-4 bg-white rounded-md px-4 py-3 my-2 h-16 "
+          @view == :standard && "grid-cols-[2fr_1fr_1fr]",
+          @view != :standard && "grid-cols-[2fr_1fr_1fr_1fr_1fr]",
+          "grid items-center gap-4 bg-white rounded-md px-4 py-3 my-2 h-16 "
         ]}>
           <div class="flex items-center gap-3 group peer">
-            <.icon name="hero-user" class="h-8 w-8" />
+            <.avatar><.icon name="hero-user" class="h-8 w-8" /></.avatar>
             <.link
-              navigate={~p"/zarzadzanie/pracownik/#{emp.id}"}
+              navigate={~p"/zarzadzanie/pracownicy/#{employee.id}"}
               class="text-black border-b border-transparent group-hover:border-black transition-colors"
             >
-              {emp.name || emp.email}
+              {employee.name || employee.email}
             </.link>
           </div>
 
           <div class="text-sm text-black">
-            {emp.hours} h
+            {employee.hours} h
           </div>
 
-          <%= if @wages_view? do %>
+          <%= if @view != :standard do %>
             <.input
               type="number"
               class="flex flex-row-reverse gap-2 min-w-max items-center text-sm text-black justify-end m-0"
@@ -149,21 +152,20 @@
               input_size={3}
               input_class={
                 [
-                  !@wage_editor? && "border-transparent px-0",
-                  @wage_editor? && "border-greyButtonBg text-darkGrey",
+                  @view == :wages && "border-transparent px-0",
+                  @view == :wage_editor && "border-greyButtonBg text-darkGrey",
                   "!w-min py-1 !text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 ]
                 |> Enum.join(" ")
               }
               step="0.01"
               min="0"
-              name={"employee[#{emp.id}][wage]"}
-              value={emp.hourly_rate || 0}
-              readonly={!@wage_editor?}
-              disabled={!@wage_editor?}
+              name={"employee[#{employee.id}][wage]"}
+              value={employee.hourly_rate || 0}
+              disabled={@view == :wages}
             />
             <div class="text-sm font-semibold text-black">
-              {Decimal.to_float(emp.hourly_rate || Decimal.new(0)) * emp.hours} PLN
+              {Decimal.to_float(employee.hourly_rate || Decimal.new(0)) * employee.hours} PLN
             </div>
           <% end %>
           <.icon
@@ -174,7 +176,7 @@
       <% end %>
     </form>
     <div class="mt-auto">
-      <%= for emp <- @employees do %>
+      <%= for employee <- @employees do %>
         <div class="flex items-center gap-3 bg-white rounded-md p-3 my-2 h-16">
           <span
             title="Ewidencja"
@@ -187,7 +189,7 @@
           </button>
           <button
             title="Zwrot"
-            onclick={"navigator.clipboard.writeText('#{emp.id}')"}
+            onclick={"navigator.clipboard.writeText('#{employee.id}')"}
             phx-click="employee_bank_number_copied"
             class="hover:text-black transition-colors"
           >
