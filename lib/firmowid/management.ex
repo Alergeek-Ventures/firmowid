@@ -1,34 +1,54 @@
 defmodule Firmowid.Management do
   @moduledoc false
 
-  import Ecto.Query, only: [from: 2]
+  use Firmowid.Schema
 
-  alias Firmowid.Accounts.User
+  import Ecto.Query, warn: false
+
+  alias Firmowid.Accounts
   alias Firmowid.Repo
-  alias Firmowid.Timetracker
+  alias Firmowid.Timetracker.Session
+  alias Firmowid.Timetracker.UserSalary
 
   defp filter_search(query, ""), do: query
 
   defp filter_search(query, search) do
-    from u in query,
-      where: ilike(u.name, ^"%#{search}%") or ilike(u.email, ^"%#{search}%")
+    where(query, [user], ilike(user.name, ^"%#{search}%") or ilike(user.email, ^"%#{search}%"))
   end
 
   def list_employees(filter_date, archived \\ false, search \\ "") do
-    from(u in User,
+    time_worked_query =
+      from(s in Session,
+        where:
+          fragment("extract(month from ?) = ?", s.start_datetime, ^filter_date.month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^filter_date.year),
+        group_by: s.user_id,
+        select: %{
+          user_id: s.user_id,
+          time_worked:
+            "extract(epoch from coalesce(?, now()) - ?)"
+            |> fragment(s.end_datetime, s.start_datetime)
+            |> sum()
+            |> coalesce(0)
+            |> type(:integer)
+        }
+      )
+
+    from(u in Accounts.User,
       # TODO: add database support for archived users
       where: ^archived == false,
-      order_by: u.name
+      left_join: us in UserSalary,
+      on: us.user_id == u.id,
+      where: is_nil(us.deleted_at),
+      left_lateral_join: s in subquery(time_worked_query),
+      on: s.user_id == u.id,
+      select: %{
+        user: u,
+        hourly_rate: us.hourly_rate,
+        hours: coalesce(s.time_worked, 0)
+      }
     )
     |> filter_search(search)
     |> Repo.all()
-    |> Enum.map(fn user ->
-      hours = Timetracker.get_sessions_duration_in_month(user.id, filter_date)
-      salary = Timetracker.get_latest_user_salary(user.id)
-
-      user
-      |> Map.put(:hours, hours)
-      |> Map.put(:hourly_rate, salary && salary.hourly_rate)
-    end)
   end
 end
