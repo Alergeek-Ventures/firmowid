@@ -2,6 +2,7 @@ defmodule FirmowidWeb.ManagementLive.Employees do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Helpers.TimeConverter
   alias Firmowid.Management
 
   @impl true

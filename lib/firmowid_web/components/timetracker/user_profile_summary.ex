@@ -2,6 +2,8 @@ defmodule FirmowidWeb.Components.Timetracker.UserProfileSummary do
   @moduledoc false
   use FirmowidWeb, :live_component
 
+  alias Firmowid.Helpers.TimeConverter
+
   @impl true
   def mount(socket) do
     {:ok, socket}
@@ -23,8 +25,7 @@ defmodule FirmowidWeb.Components.Timetracker.UserProfileSummary do
 
   # rounds hours up to full numbers (ceiling) then multiplies by hourly rate
   defp format_total_salary(hourly_rate, user_hours) do
-    hours_float = user_hours.time_worked / 60 / 60
-    hours_rounded_up = ceil(hours_float)
+    hours_rounded_up = TimeConverter.time_worked_to_hours(user_hours.time_worked)
     total_salary = Decimal.mult(hourly_rate, Decimal.new(hours_rounded_up))
     rounded_salary = Decimal.round(total_salary, 2)
     "#{Decimal.to_string(rounded_salary)} PLN"
@@ -46,7 +47,7 @@ defmodule FirmowidWeb.Components.Timetracker.UserProfileSummary do
           <div class="text-sm font-medium text-darkGrey uppercase mb-1">Łączny czas</div>
           <div class="font-medium text-lg">
             <%= if @user_hours do %>
-              {ceil(@user_hours.time_worked / 60 / 60)} h
+              {TimeConverter.time_worked_to_hours(@user_hours.time_worked)} h
             <% else %>
               0 h
             <% end %>

@@ -3,6 +3,7 @@ defmodule FirmowidWeb.Project.Index do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Accounts
+  alias Firmowid.Helpers.TimeConverter
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Project
   alias FirmowidWeb.Helpers.TimeFormatter
@@ -802,9 +803,11 @@ defmodule FirmowidWeb.Project.Index do
               <.render_profile user={user} />
               <span class="ml-auto animate-appear">
                 <%= if user.expanded do %>
-                  <span class="invisible">{ceil(user.time_worked / 60 / 60)} h</span>
+                  <span class="invisible">
+                    {TimeConverter.time_worked_to_hours(user.time_worked)} h
+                  </span>
                 <% else %>
-                  {ceil(user.time_worked / 60 / 60)} h
+                  {TimeConverter.time_worked_to_hours(user.time_worked)} h
                 <% end %>
               </span>
 
@@ -847,9 +850,11 @@ defmodule FirmowidWeb.Project.Index do
                 <.render_profile user={user} />
                 <span class="ml-auto">
                   <%= if user.expanded do %>
-                    <span class="invisible">{ceil(user.time_worked / 60 / 60)} h</span>
+                    <span class="invisible">
+                      {TimeConverter.time_worked_to_hours(user.time_worked)} h
+                    </span>
                   <% else %>
-                    {ceil(user.time_worked / 60 / 60)} h
+                    {TimeConverter.time_worked_to_hours(user.time_worked)} h
                   <% end %>
                 </span>
 
@@ -900,9 +905,11 @@ defmodule FirmowidWeb.Project.Index do
             <.render_profile user={user} />
             <span class="ml-auto animate-appear">
               <%= if user.expanded do %>
-                <span class="invisible">{ceil(user.time_worked / 60 / 60)} h</span>
+                <span class="invisible">
+                  {TimeConverter.time_worked_to_hours(user.time_worked)} h
+                </span>
               <% else %>
-                {ceil(user.time_worked / 60 / 60)} h
+                {TimeConverter.time_worked_to_hours(user.time_worked)} h
               <% end %>
             </span>
 
@@ -952,9 +959,11 @@ defmodule FirmowidWeb.Project.Index do
               <.render_profile user={user} />
               <span class="ml-auto animate-appear">
                 <%= if user.expanded do %>
-                  <span class="invisible">{ceil(user.time_worked / 60 / 60)} h</span>
+                  <span class="invisible">
+                    {TimeConverter.time_worked_to_hours(user.time_worked)} h
+                  </span>
                 <% else %>
-                  {ceil(user.time_worked / 60 / 60)} h
+                  {TimeConverter.time_worked_to_hours(user.time_worked)} h
                 <% end %>
               </span>
 
@@ -1031,9 +1040,11 @@ defmodule FirmowidWeb.Project.Index do
                   <.render_profile user={user} />
                   <span class="ml-auto">
                     <%= if user.expanded do %>
-                      <span class="invisible">{ceil(user.time_worked / 60 / 60)} h</span>
+                      <span class="invisible">
+                        {TimeConverter.time_worked_to_hours(user.time_worked)} h
+                      </span>
                     <% else %>
-                      {ceil(user.time_worked / 60 / 60)} h
+                      {TimeConverter.time_worked_to_hours(user.time_worked)} h
                     <% end %>
                   </span>
 
@@ -1310,9 +1321,11 @@ defmodule FirmowidWeb.Project.Index do
             >
               <span class="ml-auto">
                 <%= if expanded do %>
-                  <span class="invisible">{ceil(user_hours.time_worked / 60 / 60)} h</span>
+                  <span class="invisible">
+                    {TimeConverter.time_worked_to_hours(user_hours.time_worked)} h
+                  </span>
                 <% else %>
-                  {ceil(user_hours.time_worked / 60 / 60)} h
+                  {TimeConverter.time_worked_to_hours(user_hours.time_worked)} h
                 <% end %>
               </span>
               <.icon :if={expanded} name="hero-chevron-up-mini" class="text-darkGrey" />

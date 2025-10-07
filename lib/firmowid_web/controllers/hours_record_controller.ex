@@ -3,6 +3,7 @@ defmodule FirmowidWeb.HoursRecordController do
 
   alias Firmowid.Accounts
   alias Firmowid.Blobs
+  alias Firmowid.Helpers.TimeConverter
   alias Firmowid.Timetracker
 
   @dialyzer {:no_return, pdf: 2}
@@ -59,7 +60,10 @@ defmodule FirmowidWeb.HoursRecordController do
     start_date = Date.beginning_of_month(date)
     end_date = Date.end_of_month(date)
 
-    total_hours = ceil(Timetracker.get_sessions_duration_in_month(conn.assigns.current_user.id, date) / 3600)
+    total_hours =
+      conn.assigns.current_user.id
+      |> Timetracker.get_sessions_duration_in_month(date)
+      |> TimeConverter.time_worked_to_hours()
 
     render(conn, :preview,
       layout: false,
