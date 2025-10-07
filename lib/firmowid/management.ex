@@ -32,7 +32,7 @@ defmodule Firmowid.Management do
         select: %{
           user_id: s.user_id,
           time_worked:
-            "extract(epoch from coalesce(?, now()) - ?)"
+            "ceil(extract(epoch from coalesce(?, now()) - ?)/3600)"
             |> fragment(s.end_datetime, s.start_datetime)
             |> sum()
             |> coalesce(0)
