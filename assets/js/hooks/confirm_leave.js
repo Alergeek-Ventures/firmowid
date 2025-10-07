@@ -9,14 +9,19 @@ export const ConfirmLeave = {
       }
     };
 
-    window.addEventListener("beforeunload", this.beforeUnloadHandler);
-
-    window.addEventListener("phx:unsaved-changed", (e) => {
+    this.unsavedChangedHandler = (e) => {
       this.unsaved = e.detail.value;
-    });
+    };
+
+    window.addEventListener("beforeunload", this.beforeUnloadHandler);
+    window.addEventListener("phx:unsaved-changed", this.unsavedChangedHandler);
   },
 
   destroyed() {
     window.removeEventListener("beforeunload", this.beforeUnloadHandler);
+    window.removeEventListener(
+      "phx:unsaved-changed",
+      this.unsavedChangedHandler,
+    );
   },
 };

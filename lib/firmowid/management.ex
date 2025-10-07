@@ -1,6 +1,8 @@
 defmodule Firmowid.Management do
   @moduledoc false
 
+  @behaviour Bodyguard.Policy
+
   use Firmowid.Schema
 
   import Ecto.Query, warn: false
@@ -10,6 +12,10 @@ defmodule Firmowid.Management do
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Session
   alias Firmowid.Timetracker.UserSalary
+
+  def authorize(:change_user_wages, %{role: :admin}, _), do: true
+  def authorize(:create_employee, %{role: :admin}, _), do: true
+  def authorize(_, _, _), do: false
 
   defp filter_search(query, ""), do: query
 

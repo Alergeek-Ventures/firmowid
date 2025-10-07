@@ -56,6 +56,8 @@ defmodule FirmowidWeb.ManagementLive.Employees do
   end
 
   def handle_event("save_wages", %{"employee" => employees_params}, %{assigns: %{view: :wage_editor}} = socket) do
+    Bodyguard.permit!(Management, :change_user_wages, socket.assigns.current_user)
+
     case Management.update_user_salaries(socket.assigns.employees, employees_params) do
       {:ok, _} ->
         {:noreply,
@@ -93,6 +95,7 @@ defmodule FirmowidWeb.ManagementLive.Employees do
   end
 
   def handle_event("create_employee", _params, socket) do
+    Bodyguard.permit!(Management, :create_employee, socket.assigns.current_user)
     # TODO: implement creating employee
     {:noreply, socket}
   end
