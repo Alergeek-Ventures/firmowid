@@ -3,8 +3,6 @@ defmodule Firmowid.Management do
 
   @behaviour Bodyguard.Policy
 
-  use Firmowid.Schema
-
   import Ecto.Query, warn: false
 
   alias Firmowid.Accounts
@@ -15,6 +13,7 @@ defmodule Firmowid.Management do
 
   def authorize(:change_user_wages, %{role: :admin}, _), do: true
   def authorize(:create_employee, %{role: :admin}, _), do: true
+  def authorize(:read_employees, %{role: :admin}, _), do: true
   def authorize(_, _, _), do: false
 
   defp filter_search(query, ""), do: query

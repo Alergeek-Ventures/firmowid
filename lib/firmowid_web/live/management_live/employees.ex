@@ -6,6 +6,8 @@ defmodule FirmowidWeb.ManagementLive.Employees do
 
   @impl true
   def mount(_params, _session, socket) do
+    Bodyguard.permit!(Management, :read_employees, socket.assigns.current_user)
+
     socket =
       socket
       |> assign(:filter_date, Date.utc_today())
