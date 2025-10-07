@@ -2,15 +2,12 @@ defmodule FirmowidWeb.ManagementLive.Employee do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Accounts
+  alias Firmowid.Timetracker
+
   @impl true
   def mount(%{"id" => id}, _session, socket) do
-    import Ecto.Query, only: [from: 2]
-
-    alias Firmowid.Accounts.User
-    alias Firmowid.Repo
-    alias Firmowid.Timetracker
-
-    employee = Repo.one(from u in User, where: u.id == ^id)
+    employee = Accounts.get_user!(id)
     projects = Timetracker.list_user_projects(id)
 
     socket =
