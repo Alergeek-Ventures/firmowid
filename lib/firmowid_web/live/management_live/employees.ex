@@ -64,7 +64,6 @@ defmodule FirmowidWeb.ManagementLive.Employees do
          socket
          |> assign(:view, :wages)
          |> push_event("unsaved-changed", %{value: false})
-         |> put_flash(:info, "Stawki godzinowe zaktualizowane pomyślnie")
          |> assign_employees()}
 
       {:error, changeset} ->

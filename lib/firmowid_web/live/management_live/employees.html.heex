@@ -133,7 +133,7 @@
               type="number"
               class="flex flex-row-reverse gap-2 min-w-max items-center text-sm text-black justify-end m-0"
               label="zł/godz."
-              input_size={3}
+              input_size={4}
               input_class={
                 [
                   @view == :wages && "border-transparent px-0",
@@ -149,15 +149,21 @@
               disabled={@view == :wages}
             />
             <div class="text-sm font-semibold text-black">
-              {Decimal.to_float(employee.hourly_rate || Decimal.new(0)) * employee.hours} PLN
+              {:erlang.float_to_binary(
+                Decimal.to_float(employee.hourly_rate || Decimal.new(0)) * employee.hours,
+                decimals: 2
+              )} PLN
             </div>
           <% end %>
           <.icon
             name="hero-chevron-right"
-            class={[
-              @view == :standard && "col-span-3",
-              "h-5 w-5 ml-auto peer-hover:text-black transition-colors"
-            ]}
+            class={
+              [
+                @view == :standard && "col-span-3",
+                "h-5 w-5 ml-auto peer-hover:text-black transition-colors"
+              ]
+              |> Enum.join(" ")
+            }
           />
         </div>
         <div class="flex items-center gap-3 bg-white rounded-md p-3 my-2 h-16">
@@ -167,11 +173,12 @@
           >
             Brak <.icon name="hero-x-mark" class="h-5" />
           </span>
-          <button title="Pobierz" disabled>
+          <button title="Pobierz" disabled type="button">
             <.icon name="hero-document text-black/20 cursor-not-allowed" />
           </button>
           <button
             title="Zwrot"
+            type="button"
             onclick={"navigator.clipboard.writeText('#{employee.user.id}')"}
             phx-click="employee_bank_number_copied"
             class="hover:text-black transition-colors"
