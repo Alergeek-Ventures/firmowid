@@ -49,6 +49,7 @@ export const CollapsibleNavbar = {
   },
 
   _handleScroll() {
+    let shouldAdd;
     if (this.isOverrideButton) {
       shouldAdd = window.isNavbarForcedOpen || window.scrollY > this.offset;
 

@@ -44,22 +44,11 @@
         <.icon name="hero-plus-mini" class="size-6 mr-1.5" /> Dodaj pracownika
       </.button>
 
-      <div class="flex items-center gap-2">
-        <span class="text-sm">Widok wypłat</span>
-
-        <label class="relative inline-flex items-center cursor-pointer">
-          <input
-            type="checkbox"
-            phx-click="toggle_wages_view"
-            class="sr-only peer"
-            checked={@view != :standard}
-          />
-          <div class="w-11 h-6 bg-greyButtonBg peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-redBg rounded-full peer peer-checked:bg-redBg transition-colors">
-          </div>
-          <div class="absolute left-1 top-1 w-4 h-4 bg-darkGrey rounded-full shadow-md transform transition-transform peer-checked:bg-redText peer-checked:translate-x-5">
-          </div>
-        </label>
-      </div>
+      <.switch
+        label="Widok wypłat"
+        field={@form[:viewing_wages]}
+        phx-click="toggle_wages_view"
+      />
     </div>
   </div>
 
@@ -108,7 +97,7 @@
               <%= if @view == :wage_editor do %>
                 <.icon name="hero-arrow-uturn-left" class="size-4 semibold" />
               <% else %>
-                Stawka <.icon name="hero-pencil-square-solid size-4" />
+                Stawka <.icon name="hero-pencil-square-solid" class="size-4" />
               <% end %>
             </button>
             <%= if @view == :wage_editor do %>

@@ -3,9 +3,6 @@ defmodule FirmowidWeb.ManagementLive.Employees do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Management
-  alias Firmowid.Repo
-  alias Firmowid.Timetracker
-  alias Firmowid.Timetracker.UserSalary
 
   @impl true
   def mount(_params, _session, socket) do
@@ -17,6 +14,7 @@ defmodule FirmowidWeb.ManagementLive.Employees do
       |> assign(:view, :standard)
       |> assign(:search_expanded, false)
       |> assign_employees()
+      |> assign_form()
 
     {:ok, socket}
   end
@@ -29,6 +27,10 @@ defmodule FirmowidWeb.ManagementLive.Employees do
     )
   end
 
+  defp assign_form(socket) do
+    assign(socket, :form, to_form(%{"wages_view" => socket.assigns.view != :standard}))
+  end
+
   @impl true
   def handle_event("change_archived_filter", %{"archived" => archived}, socket) do
     {:noreply,
@@ -38,7 +40,10 @@ defmodule FirmowidWeb.ManagementLive.Employees do
   end
 
   def handle_event("toggle_wages_view", _params, socket) do
-    {:noreply, update(socket, :view, &if(&1 == :wages, do: :standard, else: :wages))}
+    {:noreply,
+     socket
+     |> update(:view, &if(&1 == :wages, do: :standard, else: :wages))
+     |> assign_form()}
   end
 
   def handle_event("toggle_wage_editor", _params, socket) do
@@ -50,35 +55,18 @@ defmodule FirmowidWeb.ManagementLive.Employees do
      |> push_event("unsaved-changed", %{value: editing_wages})}
   end
 
-  def handle_event("save_wages", %{"employee" => employees_params}, socket) do
-    if socket.assigns.view == :wage_editor do
-      fn ->
-        Enum.each(socket.assigns.employees, fn emp ->
-          new_hourly_wage = Decimal.new(employees_params[emp.id]["wage"])
+  def handle_event("save_wages", %{"employee" => employees_params}, %{assigns: %{view: :wage_editor}} = socket) do
+    case Management.update_user_salaries(socket.assigns.employees, employees_params) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> assign(:view, :wages)
+         |> push_event("unsaved-changed", %{value: false})
+         |> put_flash(:info, "Stawki godzinowe zaktualizowane pomyślnie")
+         |> assign_employees()}
 
-          if Decimal.compare(new_hourly_wage, Decimal.new(0)) == :gt do
-            case Timetracker.create_user_salary(%{user_id: emp.id, hourly_rate: new_hourly_wage}) do
-              {:ok, %UserSalary{}} -> :ok
-              {:error, changeset} -> Repo.rollback(changeset)
-            end
-          end
-        end)
-      end
-      |> Repo.transaction()
-      |> case do
-        {:ok, _} ->
-          {:noreply,
-           socket
-           |> assign(:view, :wages)
-           |> push_event("unsaved-changed", %{value: false})
-           |> put_flash(:info, "Stawki godzinowe zaktualizowane pomyślnie")
-           |> assign_employees()}
-
-        {:error, changeset} ->
-          {:noreply, put_flash(socket, :error, "Nie udało się zaktualizować stawek: #{inspect(changeset.errors)}")}
-      end
-    else
-      {:noreply, socket}
+      {:error, changeset} ->
+        {:noreply, put_flash(socket, :error, "Nie udało się zaktualizować stawek: #{inspect(changeset.errors)}")}
     end
   end
 

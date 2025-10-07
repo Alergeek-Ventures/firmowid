@@ -7,6 +7,7 @@ defmodule Firmowid.Management do
 
   alias Firmowid.Accounts
   alias Firmowid.Repo
+  alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Session
   alias Firmowid.Timetracker.UserSalary
 
@@ -50,5 +51,20 @@ defmodule Firmowid.Management do
     )
     |> filter_search(search)
     |> Repo.all()
+  end
+
+  def update_user_salaries(employees, employees_params) do
+    Repo.transaction(fn ->
+      Enum.each(employees, fn employee ->
+        new_hourly_wage = Decimal.new(employees_params[employee.user.id]["wage"])
+
+        if Decimal.compare(new_hourly_wage, Decimal.new(0)) == :gt do
+          case Timetracker.create_user_salary(%{user_id: employee.user.id, hourly_rate: new_hourly_wage}) do
+            {:ok, %UserSalary{}} -> :ok
+            {:error, changeset} -> Repo.rollback(changeset)
+          end
+        end
+      end)
+    end)
   end
 end

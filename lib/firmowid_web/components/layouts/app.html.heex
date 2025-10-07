@@ -2,7 +2,7 @@
   <nav class="sticky top-0 z-50 px-4 sm:px-6 lg:px-8 bg-black">
     <div
       class={[
-        " text-white flex",
+        "text-white flex",
         "items-center justify-between h-16 py-6",
         "text-sm transition-all overflow-hidden"
       ]}
@@ -132,7 +132,7 @@
               </.link>
             <% end %>
             <.link
-              href={~p"/wyloguj"}
+              navigate={~p"/wyloguj"}
               method="delete"
               class="rounded-md p-2 hover:bg-darkGrey/50 flex justify-between"
             >
@@ -155,7 +155,7 @@
         </.link>
         <div class="uppercase flex justify-center gap-14">
           <.link
-            href="/zarzadzanie/pracownicy"
+            navigate="/zarzadzanie/pracownicy"
             class={[
               "hover:text-white transition-colors",
               String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy") &&
@@ -165,7 +165,7 @@
             Pracownicy
           </.link>
           <.link
-            href="/zarzadzanie/projekty"
+            navigate="/zarzadzanie/projekty"
             class={[
               "hover:text-white transition-colors",
               String.starts_with?(@current_uri.path, "/zarzadzanie/projekty") && "text-white/90"
@@ -174,7 +174,7 @@
             Projekty
           </.link>
           <.link
-            href="/zarzadzanie/kontrahenci"
+            navigate="/zarzadzanie/kontrahenci"
             class={[
               "hover:text-white transition-colors",
               String.starts_with?(@current_uri.path, "/zarzadzanie/kontrahenci") &&
