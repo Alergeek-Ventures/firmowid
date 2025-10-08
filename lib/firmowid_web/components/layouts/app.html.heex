@@ -4,13 +4,13 @@
       class={[
         "text-white flex",
         "items-center justify-between h-16 py-6",
-        "text-sm transition-all overflow-hidden"
+        "text-sm transition-all"
       ]}
       id="navbar-main"
       phx-hook="CollapsibleNavbar"
       data-classes={
         String.starts_with?(@current_uri.path, "/zarzadzanie") &&
-          "!h-0 !py-0"
+          "!h-0 !py-0 overflow-hidden"
       }
     >
       <.link
@@ -118,7 +118,7 @@
             id="dropdown_content"
             style="display: none"
             class="absolute flex-col font-semibold p-3 rounded-md gap-2 right-0
-        w-full top-[70px] bg-black text-left max-lg:w-auto"
+        w-full top-[70px] bg-black text-left max-lg:w-auto z-50"
           >
             <.link navigate={~p"/ustawienia"} class="rounded-md p-2 hover:bg-darkGrey/50">
               Ustawienia
