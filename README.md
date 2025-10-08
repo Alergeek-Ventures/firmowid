@@ -24,8 +24,7 @@ Do zarządzania wersjami elixira używamy [asdf](https://asdf-vm.com/guide/getti
   Następnie:
   ```bash
   asdf plugin add erlang https://github.com/asdf-vm/asdf-erlang.git
-  asdf install erlang 27.2
-  asdf set erlang 27.2
+  asdf install erlang
   export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
   ```
 
@@ -34,8 +33,7 @@ Do zarządzania wersjami elixira używamy [asdf](https://asdf-vm.com/guide/getti
 ```bash
 sudo apt install unzip
 asdf plugin add elixir https://github.com/asdf-vm/asdf-elixir.git
-asdf install elixir 1.18
-asdf set elixir 1.18
+asdf install elixir
 ```
 ### 4. Zainstaluj paczki systemowe:
 ```
