@@ -63,7 +63,7 @@ defmodule FirmowidWeb.HoursRecordController do
     total_hours =
       conn.assigns.current_user.id
       |> Timetracker.get_sessions_duration_in_month(date)
-      |> TimeConverter.time_worked_to_hours()
+      |> TimeConverter.time_worked_in_seconds_to_hours()
 
     render(conn, :preview,
       layout: false,

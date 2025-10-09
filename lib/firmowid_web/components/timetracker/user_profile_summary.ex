@@ -25,7 +25,7 @@ defmodule FirmowidWeb.Components.Timetracker.UserProfileSummary do
 
   # rounds hours up to full numbers (ceiling) then multiplies by hourly rate
   defp format_total_salary(hourly_rate, user_hours) do
-    hours_rounded_up = TimeConverter.time_worked_to_hours(user_hours.time_worked)
+    hours_rounded_up = TimeConverter.time_worked_in_seconds_to_hours(user_hours.time_worked)
     total_salary = Decimal.mult(hourly_rate, Decimal.new(hours_rounded_up))
     rounded_salary = Decimal.round(total_salary, 2)
     "#{Decimal.to_string(rounded_salary)} PLN"
@@ -47,7 +47,7 @@ defmodule FirmowidWeb.Components.Timetracker.UserProfileSummary do
           <div class="text-sm font-medium text-darkGrey uppercase mb-1">Łączny czas</div>
           <div class="font-medium text-lg">
             <%= if @user_hours do %>
-              {TimeConverter.time_worked_to_hours(@user_hours.time_worked)} h
+              {TimeConverter.time_worked_in_seconds_to_hours(@user_hours.time_worked)} h
             <% else %>
               0 h
             <% end %>

@@ -125,7 +125,7 @@
           </div>
 
           <div class="text-sm text-black">
-            {TimeConverter.time_worked_to_hours(employee.time_worked)} h
+            {TimeConverter.time_worked_in_seconds_to_hours(employee.time_worked)} h
           </div>
 
           <%= if @view != :standard do %>
@@ -151,7 +151,7 @@
             <div class="text-sm font-semibold text-black">
               {:erlang.float_to_binary(
                 Decimal.to_float(employee.hourly_rate || Decimal.new(0)) *
-                  TimeConverter.time_worked_to_hours(employee.time_worked),
+                  TimeConverter.time_worked_in_seconds_to_hours(employee.time_worked),
                 decimals: 2
               )} PLN
             </div>
