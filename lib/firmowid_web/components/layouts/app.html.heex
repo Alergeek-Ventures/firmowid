@@ -3,7 +3,7 @@
     <div
       class={[
         "text-white flex",
-        "items-center justify-between h-16 py-6",
+        "items-center justify-between h-[76px] py-6",
         "text-sm transition-all"
       ]}
       id="navbar-main"
@@ -15,14 +15,14 @@
     >
       <.link
         navigate={~p"/"}
-        class="font-bold text-lg inline-block flex-1"
+        class="font-extrabold text-xl inline-block flex-1 mt-0.5 tracking-wide text-offwhite"
       >
         Firmowid
       </.link>
       <div class={[
         String.starts_with?(@current_uri.path, "/zarzadzanie") &&
-          "border-b pb-3 mt-3 border-white/50",
-        "flex uppercase items-center gap-16 max-md:hidden"
+          "border-b pb-[18px] mt-[3px] self-start",
+        "flex uppercase items-center gap-10 max-md:hidden font-bold border-darkGrey"
       ]}>
         <%= if Bodyguard.permit?(Firmowid.Invoicing, :show, @current_user) do %>
           <.link
@@ -143,17 +143,17 @@
       </div>
     </div>
     <%= if String.starts_with?(@current_uri.path, "/zarzadzanie") do %>
-      <div class="grid grid-cols-3 gap-4 items-center py-3 w-full text-white/50 font-semibold">
+      <div class="grid grid-cols-3 gap-4 items-center py-2.5 w-full text-white/50 font-semibold">
         <.link
           navigate={~p"/"}
-          class="font-bold text-lg inline-block text-white opacity-0 transition-opacity mr-auto"
+          class="font-extrabold inline-block text-offwhite opacity-0 transition-opacity mr-auto tracking-wide mt-0.5"
           id="firmowid-logo-management"
           phx-hook="CollapsibleNavbar"
           data-classes="opacity-100"
         >
           Firmowid
         </.link>
-        <div class="uppercase flex justify-center gap-14">
+        <div class="uppercase flex justify-center gap-14 text-sm">
           <.link
             navigate="/zarzadzanie/pracownicy"
             class={[
@@ -185,7 +185,7 @@
           </.link>
         </div>
         <button
-          class="text-white cursor-pointer opacity-0 ml-auto relative flex size-6"
+          class="text-white cursor-pointer opacity-0 ml-auto relative flex size-6 transition-opacity"
           id="navbar-burger-button"
           onclick="window.scrollTo({ top: 0, behavior: 'smooth' })"
           phx-hook="CollapsibleNavbar"

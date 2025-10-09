@@ -93,12 +93,19 @@ defmodule FirmowidWeb.ManagementLive.Employees do
   end
 
   def handle_event("employee_bank_number_copied", _params, socket) do
-    {:noreply, put_flash(socket, :info, "Numer konta bankowego skopiowany do schowka")}
+    socket = put_flash(socket, :info, "Numer konta bankowego skopiowany do schowka")
+    Process.send_after(self(), :fade_flash, 3_000)
+    {:noreply, socket}
   end
 
   def handle_event("create_employee", _params, socket) do
     Bodyguard.permit!(Management, :create_employee, socket.assigns.current_user)
     # TODO: implement creating employee
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info(:fade_flash, socket) do
+    {:noreply, clear_flash(socket)}
   end
 end
