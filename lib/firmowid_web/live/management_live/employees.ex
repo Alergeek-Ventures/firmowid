@@ -4,6 +4,7 @@ defmodule FirmowidWeb.ManagementLive.Employees do
 
   alias Firmowid.Helpers.TimeConverter
   alias Firmowid.Management
+  alias Firmowid.Timetracker
 
   @impl true
   def mount(_params, _session, socket) do
@@ -16,8 +17,10 @@ defmodule FirmowidWeb.ManagementLive.Employees do
       |> assign(:archived, false)
       |> assign(:view, :standard)
       |> assign(:search_expanded, false)
+      |> assign(:active_months, Timetracker.get_months_with_sessions())
       |> assign_employees()
       |> assign_form()
+      |> assign_title()
 
     {:ok, socket}
   end
@@ -34,6 +37,16 @@ defmodule FirmowidWeb.ManagementLive.Employees do
     assign(socket, :form, to_form(%{"wages_view" => socket.assigns.view != :standard}))
   end
 
+  defp assign_title(socket) do
+    title =
+      case socket.assigns.view do
+        :wage_editor -> "✏️ Edycja stawek"
+        _ -> "Zarządzanie pracownikami"
+      end
+
+    assign(socket, :page_title, title)
+  end
+
   @impl true
   def handle_event("change_archived_filter", %{"archived" => archived}, socket) do
     {:noreply,
@@ -46,6 +59,7 @@ defmodule FirmowidWeb.ManagementLive.Employees do
     {:noreply,
      socket
      |> update(:view, &if(&1 == :wages, do: :standard, else: :wages))
+     |> assign_title()
      |> assign_form()}
   end
 
@@ -55,6 +69,7 @@ defmodule FirmowidWeb.ManagementLive.Employees do
     {:noreply,
      socket
      |> assign(:view, if(editing_wages, do: :wage_editor, else: :wages))
+     |> assign_title()
      |> push_event("unsaved-changed", %{value: editing_wages})}
   end
 
@@ -66,6 +81,7 @@ defmodule FirmowidWeb.ManagementLive.Employees do
         {:noreply,
          socket
          |> assign(:view, :wages)
+         |> assign_title()
          |> push_event("unsaved-changed", %{value: false})
          |> assign_employees()}
 

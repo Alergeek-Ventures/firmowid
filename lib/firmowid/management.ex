@@ -11,9 +11,15 @@ defmodule Firmowid.Management do
   alias Firmowid.Timetracker.Session
   alias Firmowid.Timetracker.UserSalary
 
+  # employees
+  def authorize(:read_employees, %{role: :admin}, _), do: true
   def authorize(:change_user_wages, %{role: :admin}, _), do: true
   def authorize(:create_employee, %{role: :admin}, _), do: true
-  def authorize(:read_employees, %{role: :admin}, _), do: true
+  # projects
+  def authorize(:read_projects, %{role: :admin}, _), do: true
+  # clients
+  def authorize(:read_clients, %{role: :admin}, _), do: true
+  # ...
   def authorize(_, _, _), do: false
 
   defp filter_search(query, ""), do: query

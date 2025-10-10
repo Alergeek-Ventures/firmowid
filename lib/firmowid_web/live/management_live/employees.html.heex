@@ -4,6 +4,7 @@
       <.date_picker
         id="month"
         selected_date={@filter_date}
+        active_months={@active_months}
         class="w-60 rounded-[5px] gap-2 py-[7px] px-4 font-medium"
       />
       <div class={[
@@ -126,112 +127,119 @@
         <div>Wynagrodzenie</div>
       <% end %>
     </div>
-    <%= for employee <- @employees do %>
-      <div class={[
-        @view == :standard && "col-span-3",
-        @view != :standard && "col-span-5",
-        "group grid grid-cols-subgrid items-center gap-4 bg-white rounded-[5px] px-4 py-3 h-16"
-      ]}>
-        <div class="flex items-center gap-3 peer">
-          <.avatar><.icon name="hero-user" class="h-8 w-8" /></.avatar>
+    <%= if length(@employees) == 0 do %>
+      <div class="col-span-full text-center text-darkGrey py-10">
+        Brak wyników. Spróbuj zmienić kryteria wyszukiwania.
+      </div>
+    <% else %>
+      <%= for employee <- @employees do %>
+        <div class={[
+          @view == :standard && "col-span-3",
+          @view != :standard && "col-span-5",
+          "group grid grid-cols-subgrid items-center gap-4 bg-white rounded-[5px] px-4 py-3 h-16"
+        ]}>
+          <div class="flex items-center gap-3 peer">
+            <.avatar><.icon name="hero-user" class="h-8 w-8" /></.avatar>
+            <.link
+              navigate={~p"/zarzadzanie/pracownicy/#{employee.user.id}"}
+              class="text-black border-b border-transparent group-hover:border-black transition-colors"
+            >
+              {employee.user.name || employee.user.email}
+            </.link>
+          </div>
+
+          <div class={[
+            @view == :standard && "ml-auto",
+            "text-black"
+          ]}>
+            {TimeConverter.time_worked_in_seconds_to_hours(employee.time_worked)} {if @view ==
+                                                                                        :standard,
+                                                                                      do: "h",
+                                                                                      else:
+                                                                                        "godz."}
+          </div>
+
+          <%= if @view != :standard do %>
+            <.input
+              type="number"
+              class="flex flex-row-reverse gap-1 min-w-max items-center text-base text-black justify-end m-0"
+              label="zł/godz."
+              input_size={2}
+              input_class={
+                [
+                  @view == :wages && "border-transparent px-0",
+                  @view == :wage_editor && "border-greyButtonBg text-darkGrey",
+                  "!w-min py-1 !text-right !text-base [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                ]
+                |> Enum.join(" ")
+              }
+              step="0.01"
+              min="0"
+              name={"employee[#{employee.user.id}][wage]"}
+              value={Decimal.round(employee.hourly_rate || 0)}
+              disabled={@view == :wages}
+            />
+            <div class="font-semibold text-black text-right">
+              {:PLN
+              |> Money.new(
+                Decimal.mult(
+                  employee.hourly_rate || 0,
+                  Decimal.new(TimeConverter.time_worked_in_seconds_to_hours(employee.time_worked))
+                )
+              )
+              |> Money.to_string!(fractional_digits: 0, currency_symbol: "PLN")}
+            </div>
+          <% end %>
           <.link
             navigate={~p"/zarzadzanie/pracownicy/#{employee.user.id}"}
-            class="text-black border-b border-transparent group-hover:border-black transition-colors"
+            class="self-stretch pl-1 flex items-center"
           >
-            {employee.user.name || employee.user.email}
+            <svg
+              width="14"
+              height="16"
+              viewBox="0 0 14 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4 mb-0.5"
+            >
+              <path
+                d="M4.68652 11.9394L10.1201 7.99998L7.40347 6.03046L4.68681 4.06093"
+                stroke="#4E4E4E"
+                stroke-width="1.65682"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
           </.link>
         </div>
-
-        <div class={[
-          @view == :standard && "ml-auto",
-          "text-black"
-        ]}>
-          {TimeConverter.time_worked_in_seconds_to_hours(employee.time_worked)} {if @view ==
-                                                                                      :standard,
-                                                                                    do: "h",
-                                                                                    else: "godz."}
-        </div>
-
-        <%= if @view != :standard do %>
-          <.input
-            type="number"
-            class="flex flex-row-reverse gap-1 min-w-max items-center text-base text-black justify-end m-0"
-            label="zł/godz."
-            input_size={2}
-            input_class={
-              [
-                @view == :wages && "border-transparent px-0",
-                @view == :wage_editor && "border-greyButtonBg text-darkGrey",
-                "!w-min py-1 !text-right !text-base [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              ]
-              |> Enum.join(" ")
-            }
-            step="0.01"
-            min="0"
-            name={"employee[#{employee.user.id}][wage]"}
-            value={Decimal.round(employee.hourly_rate || 0)}
-            disabled={@view == :wages}
-          />
-          <div class="font-semibold text-black text-right">
-            {:PLN
-            |> Money.new(
-              Decimal.mult(
-                employee.hourly_rate || 0,
-                Decimal.new(TimeConverter.time_worked_in_seconds_to_hours(employee.time_worked))
-              )
-            )
-            |> Money.to_string!(fractional_digits: 0, currency_symbol: "PLN")}
-          </div>
-        <% end %>
-        <.link
-          navigate={~p"/zarzadzanie/pracownicy/#{employee.user.id}"}
-          class="self-stretch pl-1 flex items-center"
-        >
+        <div class="flex items-center gap-6 bg-white rounded-[5px] pl-4 pr-5 h-16">
+          <span class="text-[11px] font-semibold text-darkGrey bg-greyButtonBg pl-2 pr-1 py-[4px] uppercase rounded-[5px] flex items-center justify-between flex-1 gap-1">
+            Brak <.icon name="hero-x-mark-micro" />
+          </span>
           <svg
-            width="14"
-            height="16"
-            viewBox="0 0 14 16"
-            fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            class="h-4 w-4 mb-0.5"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="stroke-greyButtonBg shrink-0 mr-[5px] mb-[1px]"
           >
-            <path
-              d="M4.68652 11.9394L10.1201 7.99998L7.40347 6.03046L4.68681 4.06093"
-              stroke="#4E4E4E"
-              stroke-width="1.65682"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
+            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="m14.5 12.5-5 5" /><path d="m9.5 12.5 5 5" />
           </svg>
-        </.link>
-      </div>
-      <div class="flex items-center gap-6 bg-white rounded-[5px] pl-4 pr-5 h-16">
-        <span class="text-[11px] font-semibold text-darkGrey bg-greyButtonBg pl-2 pr-1 py-[4px] uppercase rounded-[5px] flex items-center justify-between flex-1 gap-1">
-          Brak <.icon name="hero-x-mark-micro" />
-        </span>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke-width="1.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="stroke-greyButtonBg shrink-0 mr-[5px] mb-[1px]"
-        >
-          <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="m14.5 12.5-5 5" /><path d="m9.5 12.5 5 5" />
-        </svg>
-        <button
-          title="Numer konta"
-          type="button"
-          onclick={"navigator.clipboard.writeText('#{employee.user.id}')"}
-          phx-click="employee_bank_number_copied"
-          class="hover:text-black transition-colors mb-0.5"
-        >
-          <.icon name="hero-credit-card" />
-        </button>
-      </div>
+          <button
+            title="Numer konta"
+            type="button"
+            onclick={"navigator.clipboard.writeText('#{employee.user.id}')"}
+            phx-click="employee_bank_number_copied"
+            class="hover:text-black transition-colors mb-0.5"
+          >
+            <.icon name="hero-credit-card" />
+          </button>
+        </div>
+      <% end %>
     <% end %>
   </form>
 </div>
