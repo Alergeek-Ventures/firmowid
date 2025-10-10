@@ -4,7 +4,7 @@
       <.date_picker
         id="month"
         selected_date={@filter_date}
-        class="w-60 rounded-[5px] gap-2"
+        class="w-60 rounded-[5px] gap-2 py-[7px] px-4 font-medium"
       />
       <div class={[
         @search_expanded && "focus-within:ring-2",
@@ -28,7 +28,7 @@
         <.button
           type="button"
           phx-click="toggle_search"
-          class="p-2 rounded-full bg-transparent text-darkGrey border-none"
+          class="p-2 bg-transparent text-darkGrey border-none flex"
           id="search-button"
         >
           <.icon name="hero-magnifying-glass" class="w-5 h-5" />
@@ -74,7 +74,7 @@
   <form
     phx-submit="save_wages"
     class={[
-      @view == :standard && "grid-cols-[8fr_1.5fr_24px_240px]",
+      @view == :standard && "grid-cols-[8fr_auto_24px_240px]",
       @view != :standard && "grid-cols-[5fr_2fr_1.5fr_1fr_24px_240px]",
       "grid w-full gap-x-10 gap-y-2 mt-3"
     ]}
@@ -130,9 +130,9 @@
       <div class={[
         @view == :standard && "col-span-3",
         @view != :standard && "col-span-5",
-        "grid grid-cols-subgrid items-center gap-4 bg-white rounded-[5px] px-4 py-3 h-16"
+        "group grid grid-cols-subgrid items-center gap-4 bg-white rounded-[5px] px-4 py-3 h-16"
       ]}>
-        <div class="flex items-center gap-3 group peer">
+        <div class="flex items-center gap-3 peer">
           <.avatar><.icon name="hero-user" class="h-8 w-8" /></.avatar>
           <.link
             navigate={~p"/zarzadzanie/pracownicy/#{employee.user.id}"}
@@ -169,36 +169,41 @@
             step="0.01"
             min="0"
             name={"employee[#{employee.user.id}][wage]"}
-            value={Decimal.round(employee.hourly_rate)}
+            value={Decimal.round(employee.hourly_rate || 0)}
             disabled={@view == :wages}
           />
           <div class="font-semibold text-black text-right">
             {:PLN
             |> Money.new(
               Decimal.mult(
-                employee.hourly_rate,
+                employee.hourly_rate || 0,
                 Decimal.new(TimeConverter.time_worked_in_seconds_to_hours(employee.time_worked))
               )
             )
             |> Money.to_string!(fractional_digits: 0, currency_symbol: "PLN")}
           </div>
         <% end %>
-        <svg
-          width="14"
-          height="16"
-          viewBox="0 0 14 16"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-4 w-4 ml-auto mb-0.5"
+        <.link
+          navigate={~p"/zarzadzanie/pracownicy/#{employee.user.id}"}
+          class="self-stretch pl-1 flex items-center"
         >
-          <path
-            d="M4.68652 11.9394L10.1201 7.99998L7.40347 6.03046L4.68681 4.06093"
-            stroke="#4E4E4E"
-            stroke-width="1.65682"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
+          <svg
+            width="14"
+            height="16"
+            viewBox="0 0 14 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4 mb-0.5"
+          >
+            <path
+              d="M4.68652 11.9394L10.1201 7.99998L7.40347 6.03046L4.68681 4.06093"
+              stroke="#4E4E4E"
+              stroke-width="1.65682"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </.link>
       </div>
       <div class="flex items-center gap-6 bg-white rounded-[5px] pl-4 pr-5 h-16">
         <span class="text-[11px] font-semibold text-darkGrey bg-greyButtonBg pl-2 pr-1 py-[4px] uppercase rounded-[5px] flex items-center justify-between flex-1 gap-1">
