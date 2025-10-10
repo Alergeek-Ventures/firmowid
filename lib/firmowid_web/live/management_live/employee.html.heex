@@ -19,7 +19,7 @@
             <.icon name="hero-user" class="size-20 mb-2 text-darkGrey" />
           </.avatar>
           <div>
-            <div class="text-lg font-bold">{@employee.name || "Jan Beznazwiskowy"}</div>
+            <div class="text-lg font-bold">{get_employee_display_name(@employee)}</div>
             <div class="text-darkGrey text-sm flex gap-2 items-center">
               <img src="/images/slack.png" alt="slack logo" width={24} height={24} />
               <.link
@@ -70,12 +70,13 @@
           <.user_card_info label="Projekty" class="pt-3.5">
             <div class="flex flex-wrap gap-2 mt-2.5 text-sm">
               <%= for project <- @employee.projects do %>
-                <div
+                <%!-- TODO: deeplink to specific project --%>
+                <.link
                   navigate={~p"/zarzadzanie/projekty"}
                   class="bg-blueBg text-blueText rounded-full px-4 py-[3px] font-semibold"
                 >
                   {project.name}
-                </div>
+                </.link>
               <% end %>
             </div>
           </.user_card_info>

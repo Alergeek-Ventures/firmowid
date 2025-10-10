@@ -17,9 +17,10 @@ defmodule FirmowidWeb.ManagementLive.Employee do
       socket
       |> assign(:employee_id, id)
       |> assign(:projects_filter_date, Date.utc_today())
-      |> assign(:active_months, active_months)
       |> assign_employee()
+      |> assign(:active_months, active_months)
       |> assign(:tab, "projekty")
+      |> assign_title()
       # TODO: obtain these from the database
       |> assign(:phone, "+48 123 456 789")
       |> assign(:slack_url, "https://alergeekventures.slack.com")
@@ -29,9 +30,17 @@ defmodule FirmowidWeb.ManagementLive.Employee do
     {:ok, socket}
   end
 
+  defp get_employee_display_name(employee) do
+    employee.name || employee.email
+  end
+
   defp assign_employee(socket) do
     employee = Employee.list_employee_details(socket.assigns.employee_id, socket.assigns.projects_filter_date)
     assign(socket, :employee, employee)
+  end
+
+  defp assign_title(socket) do
+    assign(socket, :page_title, get_employee_display_name(socket.assigns.employee))
   end
 
   @impl true
@@ -159,11 +168,17 @@ defmodule FirmowidWeb.ManagementLive.Employee do
             "text-darkGrey"
           ]}
         >
-          <%= for session <- @project.sessions do %>
-            <div>{session.title}</div>
-            <div>
-              {TimeConverter.time_worked_in_seconds_to_hours(session.time_worked)} h
+          <%= if length(@project.sessions) == 0 do %>
+            <div class="text-sm text-darkGrey">
+              Brak sesji w tym miesiącu
             </div>
+          <% else %>
+            <%= for session <- @project.sessions do %>
+              <div>{session.title}</div>
+              <div>
+                {TimeConverter.time_worked_in_seconds_to_hours(session.time_worked)} h
+              </div>
+            <% end %>
           <% end %>
         </div>
       </div>
@@ -198,8 +213,12 @@ defmodule FirmowidWeb.ManagementLive.Employee do
           />
         </div>
         <div class="mt-1 divide-y divide-lightGreyBg">
-          <%= for project <- @employee.projects do %>
-            <.project_accordion project={project} />
+          <%= if length(@employee.projects) == 0 do %>
+            <div class="text-sm text-darkGrey mt-4">Brak projektów</div>
+          <% else %>
+            <%= for project <- @employee.projects do %>
+              <.project_accordion project={project} />
+            <% end %>
           <% end %>
         </div>
       </.card>
