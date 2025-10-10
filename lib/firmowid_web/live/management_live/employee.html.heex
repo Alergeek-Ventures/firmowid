@@ -7,7 +7,7 @@
     </div>
   </div>
 <% else %>
-  <div class="flex gap-10">
+  <div class="flex gap-10 pr-12">
     <div class="space-y-8 mt-1.5">
       <.link navigate={~p"/zarzadzanie/pracownicy"} class="flex gap-5 items-center">
         <.icon name="hero-arrow-left-circle-solid" class="size-8 -ml-1" />
@@ -69,7 +69,7 @@
           </.user_card_info>
           <.user_card_info label="Projekty" class="pt-3.5">
             <div class="flex flex-wrap gap-2 mt-2.5 text-sm">
-              <%= for project <- @projects do %>
+              <%= for project <- @employee.projects do %>
                 <div
                   navigate={~p"/zarzadzanie/projekty"}
                   class="bg-blueBg text-blueText rounded-full px-4 py-[3px] font-semibold"
@@ -88,18 +88,19 @@
         </div>
       </.card>
     </div>
-    <div class="mt-[26px]">
+    <div class="mt-[26px] w-full">
       <div class="flex gap-10 px-9 relative">
-        <%= for {_should_show, {tab, label}} <-
+        <%= for {atom, {tab, label}} <-
             [
 
-              {true, {"projekty", "Projekty i ewidencja"}},
-              {true, {"profil", "Profil pracownika"}},
-              {true, {"dokumenty", "Dokumenty"}},
-              {true, {"urlopy", "Urlopy"}}
-            ] |> Enum.filter(&elem(&1, 0))
+              {:read_employee_projects, {"projekty", "Projekty i ewidencja"}},
+              {:read_employee_profile, {"profil", "Profil pracownika"}},
+              {:read_employee_documents, {"dokumenty", "Dokumenty"}},
+              {:read_employee_leaves, {"urlopy", "Urlopy"}}
+            ]
            do %>
           <.link
+            :if={Bodyguard.permit?(Employee, atom, @current_user)}
             patch={~p"/zarzadzanie/pracownicy/#{@employee.id}?tab=#{tab}"}
             class={
               classes([
@@ -114,10 +115,15 @@
           </.link>
         <% end %>
       </div>
-      <div class="-mt-2.5 relative">
+      <div class="-mt-2.5 relative space-y-10">
         <%= case @tab do %>
           <% "projekty" -> %>
-            <.employee_projects_tab employee={@employee} projects={@projects} />
+            <.employee_projects_tab
+              employee={@employee}
+              bank_account_number={@bank_account_number}
+              projects_filter_date={@projects_filter_date}
+              active_months={@active_months}
+            />
           <% "profil" -> %>
             <.employee_profile_tab employee={@employee} />
           <% "dokumenty" -> %>

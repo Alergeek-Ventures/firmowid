@@ -29,6 +29,8 @@ defmodule Firmowid.Accounts.User do
 
     has_many :user_salaries, Firmowid.Timetracker.UserSalary, on_delete: :delete_all
 
+    has_many :sessions, Firmowid.Timetracker.Session, on_delete: :delete_all
+
     field :marketing_consent, :boolean, default: false
 
     belongs_to :avatar_blob, Firmowid.Blobs.Blob
