@@ -5,7 +5,7 @@
     class="h-[135vh] pointer-events-none fixed top-[20%] left-0 -z-0 hidden lg:block"
   />
 
-  <div class="flex items-center justify-between gap-4 mt-8">
+  <div class="flex items-center justify-between gap-4 -mt-4 pt-12 pb-9 sticky top-16 z-10 bg-lightGreyBg">
     <div class="flex gap-2 shrink-0">
       <.icon name="hero-calendar" />
       <p class="line-clamp-1">{format_current_day_header(Date.utc_today())}</p>
@@ -22,7 +22,7 @@
     </.link>
   </div>
 
-  <div class="w-full mt-9 flex gap-10 lg:gap-20 justify-between flex-col md:flex-row">
+  <div class="w-full flex gap-10 lg:gap-20 justify-between flex-col md:flex-row">
     <div class="max-w-md w-full mx-auto md:mx-0">
       <%= if Enum.empty?(@projects) do %>
         <div class="w-full text-center py-8 text-darkGrey">
@@ -47,7 +47,7 @@
           phx-change="validate"
           phx-submit="save"
           for={@form}
-          class="w-full flex flex-col gap-4 sticky top-48"
+          class="w-full flex flex-col gap-4 sticky top-[12.375rem]"
         >
           <% is_hours_record_submitted =
             Timetracker.submitted_hours_record?(@current_user.id, Date.utc_today()) %>
@@ -209,7 +209,7 @@
 
       <div class="space-y-14">
         <div :for={{week, days} <- @grouped_sessions} :key={week}>
-          <div class="flex justify-between items-center sticky top-16 pt-2 bg-lightGreyBg z-10">
+          <div class="flex justify-between items-center sticky top-[11.875rem] -ml-1 pl-1 bg-lightGreyBg z-10">
             <p class="text-sm font-semibold text-black">{format_week_header(week)}</p>
             <p class="bg-greyButtonBg px-1.5 py-1 rounded-md font-bold text-darkGrey">
               {days
@@ -221,7 +221,7 @@
           </div>
           <div class="space-y-7">
             <div :for={{day, session_group} <- days} :key={day} class="space-y-1">
-              <p class="text-sm font-semibold w-full text-darkGrey sticky top-[6.5rem] py-1 bg-lightGreyBg">
+              <p class="text-sm font-semibold flex text-darkGrey sticky top-[13.875rem] -ml-1 pl-1 py-1 bg-lightGreyBg z-10">
                 {format_day_header(day)}
               </p>
               <div class="divide-y divide-grey-200">
