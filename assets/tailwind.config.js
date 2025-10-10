@@ -33,6 +33,7 @@ module.exports = {
     extend: {
       spacing: {
         navbar: "var(--navbar-height)",
+        "navbar-management": "var(--navbar-height-management)",
       },
       keyframes: {
         "fade-and-scale-out": {

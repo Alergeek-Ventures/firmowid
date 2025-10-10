@@ -1,5 +1,13 @@
 <%= if @current_user && !is_nil(@current_user.organization_id) do %>
-  <nav class="sticky top-0 z-50 px-4 sm:px-6 lg:px-8 bg-black">
+  <%!-- simulates the navbar height, so the content does not jump when the navbar collapses --%>
+  <div class={
+    String.starts_with?(@current_uri.path, "/zarzadzanie") &&
+      "h-navbar-management bg-lightGreyBg"
+  } />
+  <nav class={[
+    if(String.starts_with?(@current_uri.path, "/zarzadzanie"), do: "fixed", else: "sticky"),
+    "top-0 left-0 right-0 z-50 px-4 sm:px-6 lg:px-8 bg-black"
+  ]}>
     <div
       class={[
         "text-white flex",

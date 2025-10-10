@@ -47,7 +47,13 @@ defmodule Firmowid.Employee do
       |> Repo.preload(sessions: sessions_query)
 
     result
-    |> Map.put(:hourly_rate, List.first(result.user_salaries).hourly_rate || 0)
+    |> Map.put(
+      :hourly_rate,
+      case result.user_salaries do
+        [] -> 0
+        list -> list |> hd() |> Map.get(:hourly_rate, 0)
+      end
+    )
     |> Map.put(:time_worked, Enum.sum(Enum.map(result.sessions, & &1.time_worked)))
     |> Map.put(
       :projects,

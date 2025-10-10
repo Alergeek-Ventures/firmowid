@@ -186,8 +186,8 @@ defmodule FirmowidWeb.ManagementLive.Employee do
         </.user_card_info>
       </div>
     </.card>
-    <div class="flex gap-4">
-      <.card class="grow">
+    <div class="flex gap-4 items-start">
+      <.card class="grow min-h-[12.5rem]">
         <div class="flex justify-between items-center">
           <.editable_header title="Projekty pracownika" />
           <.date_picker
@@ -204,7 +204,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
         </div>
       </.card>
       <div class="min-w-[251px] space-y-4">
-        <.card class="!gap-y-[18px]">
+        <.card class="!gap-y-[18px] h-[12.5rem]">
           <div>Podsumowanie miesiąca</div>
           <div class="space-y-3">
             <.user_card_info label="Przepracowano">

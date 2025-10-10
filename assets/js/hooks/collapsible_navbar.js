@@ -50,8 +50,9 @@ export const CollapsibleNavbar = {
 
   _handleScroll() {
     let shouldAdd;
+    const scrolledPastOffset = window.scrollY > this.offset;
     if (this.isOverrideButton) {
-      shouldAdd = window.isNavbarForcedOpen || window.scrollY > this.offset;
+      shouldAdd = window.isNavbarForcedOpen || scrolledPastOffset;
 
       // toggle icon visibility
       const burger = this.el.querySelector(".burger-icon");
@@ -67,7 +68,7 @@ export const CollapsibleNavbar = {
         }
       }
     } else {
-      shouldAdd = window.scrollY > this.offset && !window.isNavbarForcedOpen;
+      shouldAdd = scrolledPastOffset && !window.isNavbarForcedOpen;
     }
 
     this.classes.forEach((className) => {

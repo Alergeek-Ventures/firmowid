@@ -17,7 +17,7 @@ export const Accordion = {
           content.style.maxHeight = "0px";
         } else {
           // Close others
-          this.el
+          document
             .querySelectorAll("[data-accordion-item].open")
             .forEach((openItem) => {
               openItem.classList.remove("open");
