@@ -64,4 +64,8 @@ defmodule FirmowidWeb.Helpers.TimeFormatter do
   def format_date(date) do
     Calendar.strftime(date, "%d.%m.%Y")
   end
+
+  def format_date(date, format) do
+    Cldr.Date.to_string!(date, Firmowid.Cldr, format: format, locale: "pl")
+  end
 end

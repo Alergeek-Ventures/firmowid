@@ -73,6 +73,7 @@ defmodule Firmowid.MixProject do
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
       {:ex_cldr, "~> 2.37"},
+      {:ex_cldr_dates_times, "~> 2.5"},
       {:ex_money, "~> 5.0"},
       {:timex, "~> 3.7"},
       {:faker, "~> 0.18"},

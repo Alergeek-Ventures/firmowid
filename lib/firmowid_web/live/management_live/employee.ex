@@ -4,6 +4,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
 
   alias Firmowid.Accounts
   alias Firmowid.Timetracker
+  alias FirmowidWeb.Helpers.TimeFormatter
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -16,6 +17,11 @@ defmodule FirmowidWeb.ManagementLive.Employee do
       |> assign(:employee, employee)
       |> assign(:projects, projects)
       |> assign(:tab, "projekty")
+      # TODO: obtain these from the database
+      |> assign(:phone, "+48 123 456 789")
+      |> assign(:slack_url, "https://alergeekventures.slack.com")
+      |> assign(:bank_account_number, "12 3456 7890 1234 5678 9012 3456")
+      |> assign(:birthday, ~D[2000-07-21])
 
     {:ok, socket}
   end
@@ -44,11 +50,12 @@ defmodule FirmowidWeb.ManagementLive.Employee do
   end
 
   attr :label, :string, required: true
+  attr :class, :string, default: ""
   slot :inner_block
 
   def user_card_info(assigns) do
     ~H"""
-    <div class="space-y-1">
+    <div class={[@class, "space-y-1"]}>
       <div class="text-darkGrey text-sm">{@label}</div>
       <div class="flex gap-2 items-center">{render_slot(@inner_block)}</div>
     </div>
@@ -60,7 +67,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
 
   defp card(assigns) do
     ~H"""
-    <div class={["text-black bg-white p-6 rounded-md shadow space-y-6", @class]}>
+    <div class={[@class, "text-black bg-white p-6 rounded-md shadow flex flex-col gap-y-[22px]"]}>
       {render_slot(@inner_block)}
     </div>
     """

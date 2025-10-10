@@ -8,59 +8,88 @@
   </div>
 <% else %>
   <div class="flex gap-10">
-    <div class="space-y-8 mt-4">
-      <.link navigate={~p"/zarzadzanie/pracownicy"} class="flex gap-4 items-center ">
-        <.icon name="hero-arrow-left-circle-solid" />
+    <div class="space-y-8 mt-1.5">
+      <.link navigate={~p"/zarzadzanie/pracownicy"} class="flex gap-5 items-center">
+        <.icon name="hero-arrow-left-circle-solid" class="size-8 -ml-1" />
         <span class="text-darkGrey">Pracownicy</span>
       </.link>
-      <.card class="ml-10">
-        <div class="flex gap-2">
-          <.icon name="hero-user" class="size-16 mb-2 text-darkGrey" />
+      <.card class="ml-12 min-w-[380px] min-h-[689px]">
+        <div class="flex gap-3">
+          <.avatar>
+            <.icon name="hero-user" class="size-20 mb-2 text-darkGrey" />
+          </.avatar>
           <div>
             <div class="text-lg font-bold">{@employee.name || "Jan Beznazwiskowy"}</div>
             <div class="text-darkGrey text-sm flex gap-2 items-center">
-              <img src="/images/slack.png" alt="slack logo" width={24} height={24} />napisz na Slacku
+              <img src="/images/slack.png" alt="slack logo" width={24} height={24} />
+              <.link
+                href={@slack_url}
+                class="border-b border-transparent hover:border-darkGrey transition-colors"
+              >
+                napisz na Slacku
+              </.link>
             </div>
           </div>
         </div>
-        <.user_card_info label="Numer telefonu">+48 123 456 789</.user_card_info>
-        <.user_card_info label="Adres e-mail">{@employee.email}</.user_card_info>
-        <.user_card_info label="Numer konta bankowego">
-          <span>12 3456 7890 1234 5678 9012 3456</span>
+        <div class="space-y-4">
+          <.user_card_info label="Numer telefonu">{@phone}</.user_card_info>
+          <.user_card_info label="Adres e-mail">{@employee.email}</.user_card_info>
+          <.user_card_info label="Numer konta bankowego">
+            <span>{@bank_account_number}</span>
 
-          <button
-            id="copy-bank-account-number"
-            onclick="navigator.clipboard.writeText('12 3456 7890 1234 5678 9012 3456')"
-            type="button"
-            class={[
-              "h-6 w-6 text-darkGrey rounded-md",
-              "bg-greyButtonBg self-center justify-self-end",
-              "shrink-0 flex flex-row justify-center items-center",
-              "hover:border-darkGrey border border-transparent",
-              "active:bg-darkGrey active:text-lightGreyBg",
-              "transition-all transition-duration-300"
-            ]}
-          >
-            <.icon name="hero-clipboard-document-solid" class="w-4 h-4" />
-          </button>
-        </.user_card_info>
-
-        <.user_card_info label="Projekty">
-          <div class="flex flex-wrap gap-2 mt-2 text-sm">
-            <%= for project <- @projects do %>
-              <div
-                navigate={~p"/zarzadzanie/projekty"}
-                class="bg-blueBg text-blueText rounded-full px-4 py-1 font-semibold"
+            <button
+              id="copy-bank-account-number"
+              onclick={"navigator.clipboard.writeText('#{@bank_account_number}')"}
+              type="button"
+              class={[
+                "h-6 w-7 text-darkGrey rounded-[3px]",
+                "bg-greyButtonBg self-center justify-self-end",
+                "shrink-0 flex flex-row justify-center items-center",
+                "hover:border-darkGrey border border-transparent",
+                "active:bg-darkGrey active:text-lightGreyBg",
+                "transition-all transition-duration-300"
+              ]}
+            >
+              <svg
+                width="20"
+                height="21"
+                viewBox="0 0 20 21"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                {project.name}
-              </div>
-            <% end %>
-          </div>
-        </.user_card_info>
+                <path
+                  d="M13.125 14.875V17.6875C13.125 18.205 12.705 18.625 12.1875 18.625H4.0625C3.81386 18.625 3.5754 18.5262 3.39959 18.3504C3.22377 18.1746 3.125 17.9361 3.125 17.6875V7.0625C3.125 6.545 3.545 6.125 4.0625 6.125H5.625C6.04381 6.12472 6.46192 6.15928 6.875 6.22834M13.125 14.875H15.9375C16.455 14.875 16.875 14.455 16.875 13.9375V9.875C16.875 6.15834 14.1725 3.07417 10.625 2.47834C10.2119 2.40928 9.79381 2.37472 9.375 2.375H7.8125C7.295 2.375 6.875 2.795 6.875 3.3125V6.22834M13.125 14.875H7.8125C7.56386 14.875 7.3254 14.7762 7.14959 14.6004C6.97377 14.4246 6.875 14.1861 6.875 13.9375V6.22834M16.875 11.75V10.1875C16.875 9.44158 16.5787 8.72621 16.0512 8.19876C15.5238 7.67132 14.8084 7.375 14.0625 7.375H12.8125C12.5639 7.375 12.3254 7.27623 12.1496 7.10041C11.9738 6.9246 11.875 6.68614 11.875 6.4375V5.1875C11.875 4.81816 11.8023 4.45243 11.6609 4.1112C11.5196 3.76998 11.3124 3.45993 11.0512 3.19876C10.7901 2.9376 10.48 2.73043 10.1388 2.58909C9.79757 2.44775 9.43184 2.375 9.0625 2.375H8.125"
+                  stroke="#4E4E4E"
+                  stroke-width="1.25"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+          </.user_card_info>
+          <.user_card_info label="Projekty" class="pt-3.5">
+            <div class="flex flex-wrap gap-2 mt-2.5 text-sm">
+              <%= for project <- @projects do %>
+                <div
+                  navigate={~p"/zarzadzanie/projekty"}
+                  class="bg-blueBg text-blueText rounded-full px-4 py-[3px] font-semibold"
+                >
+                  {project.name}
+                </div>
+              <% end %>
+            </div>
+          </.user_card_info>
+        </div>
+        <div class="mt-auto ml-auto text-darkGrey flex gap-2 items-center">
+          <span class="text-sm">
+            {TimeFormatter.format_date(@birthday, "d MMMM")}
+          </span>
+          <.icon name="hero-cake" class="size-5 mb-1" />
+        </div>
       </.card>
     </div>
-    <div class="mt-8">
-      <div class="flex gap-10 px-10">
+    <div class="mt-[26px]">
+      <div class="flex gap-10 px-9 relative">
         <%= for {_should_show, {tab, label}} <-
             [
 
@@ -74,10 +103,10 @@
             patch={~p"/zarzadzanie/pracownicy/#{@employee.id}?tab=#{tab}"}
             class={
               classes([
-                "phx-click-loading:opacity-50 py-2 px-4 rounded-t-md font-medium text-darkGrey",
-                "hover:text-black",
+                "phx-click-loading:opacity-50 py-2.5 pb-5 px-3 rounded-md font-medium text-darkGrey transition-all",
+                "shadow shadow-transparent hover:text-black hover:shadow-black/10 hover:bg-white",
                 @tab == tab &&
-                  "bg-white text-black shadow-[0_-2px_4px_rgba(0,0,0,0.1),_2px_0_4px_rgba(0,0,0,0.05),_-2px_0_4px_rgba(0,0,0,0.05)]"
+                  "text-black shadow-black/10 bg-grey-50"
               ])
             }
           >
@@ -85,18 +114,20 @@
           </.link>
         <% end %>
       </div>
-      <%= case @tab do %>
-        <% "projekty" -> %>
-          <.employee_projects_tab employee={@employee} projects={@projects} />
-        <% "profil" -> %>
-          <.employee_profile_tab employee={@employee} />
-        <% "dokumenty" -> %>
-          <.employee_documents_tab employee={@employee} />
-        <% "urlopy" -> %>
-          <.employee_leaves_tab employee={@employee} />
-        <% _ -> %>
-          unknown tab
-      <% end %>
+      <div class="-mt-2.5 relative">
+        <%= case @tab do %>
+          <% "projekty" -> %>
+            <.employee_projects_tab employee={@employee} projects={@projects} />
+          <% "profil" -> %>
+            <.employee_profile_tab employee={@employee} />
+          <% "dokumenty" -> %>
+            <.employee_documents_tab employee={@employee} />
+          <% "urlopy" -> %>
+            <.employee_leaves_tab employee={@employee} />
+          <% _ -> %>
+            unknown tab
+        <% end %>
+      </div>
     </div>
   </div>
 <% end %>

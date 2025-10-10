@@ -7,5 +7,5 @@ defmodule Firmowid.Cldr do
     json_library: Jason,
     data_dir: "./priv/cldr",
     precompile_number_formats: ["¤¤#,##0.##"],
-    providers: [Cldr.Number, Money]
+    providers: [Cldr.Number, Money, Cldr.DateTime, Cldr.Calendar]
 end
