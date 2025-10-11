@@ -23,7 +23,7 @@
             <div class="text-darkGrey text-sm flex gap-2 items-center">
               <img src="/images/slack.png" alt="slack logo" width={24} height={24} />
               <.link
-                href={@slack_url}
+                href={"#{@slack_url}/team/#{@slack_username}"}
                 class="border-b border-transparent hover:border-darkGrey transition-colors"
               >
                 napisz na Slacku
@@ -126,11 +126,17 @@
               active_months={@active_months}
             />
           <% "profil" -> %>
-            <.employee_profile_tab employee={@employee} />
+            <.employee_profile_tab
+              employee={@employee}
+              phone={@phone}
+              slack_url={@slack_url}
+              slack_username={@slack_username}
+              employment_details={@employment_details}
+            />
           <% "dokumenty" -> %>
             <.employee_documents_tab employee={@employee} />
           <% "urlopy" -> %>
-            <.employee_leaves_tab employee={@employee} />
+            <.employee_leaves_tab employee={@employee} leaves_filter_year={@leaves_filter_year} />
           <% _ -> %>
             unknown tab
         <% end %>

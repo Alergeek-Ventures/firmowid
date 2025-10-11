@@ -17,15 +17,23 @@ defmodule FirmowidWeb.ManagementLive.Employee do
       socket
       |> assign(:employee_id, id)
       |> assign(:projects_filter_date, Date.utc_today())
+      |> assign(:leaves_filter_year, Date.utc_today())
       |> assign_employee()
       |> assign(:active_months, active_months)
       |> assign(:tab, "projekty")
       |> assign_title()
       # TODO: obtain these from the database
       |> assign(:phone, "+48 123 456 789")
-      |> assign(:slack_url, "https://alergeekventures.slack.com")
+      |> assign(:slack_url, "https://alergeekventures.slack.com/")
+      |> assign(:slack_username, "JanBeznazwiskowy")
       |> assign(:bank_account_number, "1234 5678 9012 3456 7890 1234")
       |> assign(:birthday, ~D[2000-07-21])
+      |> assign(:employment_details, %{
+        employment_type: "Umowa zlecenie",
+        position: "Software Developer",
+        student_status_until: ~D[2026-06-30],
+        contract_signed_on: ~D[2022-01-15]
+      })
 
     {:ok, socket}
   end
@@ -206,7 +214,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
         <div class="flex justify-between items-center">
           <.editable_header title="Projekty pracownika" />
           <.date_picker
-            id="month"
+            id="projects_filter_month"
             selected_date={@projects_filter_date}
             active_months={@active_months}
             class="rounded-[5px] w-fit text-darkGrey py-1"
@@ -274,19 +282,141 @@ defmodule FirmowidWeb.ManagementLive.Employee do
 
   def employee_profile_tab(assigns) do
     ~H"""
-    <.card>profile tab</.card>
+    <div class="grid grid-cols-2 gap-10">
+      <.card class="col-span-2">
+        <.editable_header title="Dane korespondencyjne" />
+        <div class="grid grid-cols-2">
+          <div class="space-y-4">
+            <.user_card_info label="Numer telefonu">
+              <.link href={"tel:#{@phone}"} class="hover:underline">
+                {@phone}
+              </.link>
+            </.user_card_info>
+            <.user_card_info label="Adres e-mail">
+              <.link href={"mailto:#{@employee.email}"} class="hover:underline">
+                {@employee.email}
+              </.link>
+            </.user_card_info>
+            <.user_card_info label="Slack">
+              <.link href={"#{@slack_url}/team/#{@slack_username}"} class="hover:underline">
+                @{@slack_username}
+              </.link>
+            </.user_card_info>
+          </div>
+          <div class="space-y-4">
+            <.user_card_info label="Adres korespondencyjny">
+              <%!-- TODO: real addresses --%>
+              <address class="not-italic">
+                <div>ul. Przykładowa 1/2</div>
+                <div>00-001 Warszawa</div>
+              </address>
+            </.user_card_info>
+            <.user_card_info label="Adres zamieszkania">
+              <address class="not-italic">
+                <div>ul. Przemysłowa 3/4</div>
+                <div>00-001 Warszawa</div>
+              </address>
+            </.user_card_info>
+          </div>
+        </div>
+      </.card>
+      <.card>
+        <.editable_header title="Informacje o zatrudnieniu" />
+        <.user_card_info label="Rodzaj umowy">
+          {@employment_details.employment_type}
+        </.user_card_info>
+        <.user_card_info label="Stanowisko">
+          {@employment_details.position}
+        </.user_card_info>
+        <.user_card_info label="Status studenta">
+          <%= if is_nil(is_nil(@employment_details.student_status_until)) do %>
+            brak
+          <% else %>
+            <span class="text-greenText font-bold mr-1">aktywny</span>
+            <span class="text-grey-500 text-sm">
+              (do {TimeFormatter.format_date(@employment_details.student_status_until)})
+            </span>
+          <% end %>
+        </.user_card_info>
+        <.user_card_info label="Data podpisania umowy">
+          <div class="w-full flex justify-between items-center">
+            <div>{TimeFormatter.format_date(@employment_details.contract_signed_on)} r.</div>
+            <%!-- TODO: download employee contract --%>
+            <.button
+              color="light_grey"
+              class="uppercase text-xs font-semibold py-0 px-2 rounded-[3px]"
+            >
+              Umowa <.icon name="hero-document" class="size-5 ml-1" />
+            </.button>
+          </div>
+        </.user_card_info>
+      </.card>
+      <%!-- TODO: calendar --%>
+      <.card>(kalendarz pracy)</.card>
+    </div>
+    """
+  end
+
+  attr :label, :string, required: true
+  attr :icon, :string, required: true
+  attr :class, :string, default: ""
+
+  defp document_filter_option(assigns) do
+    ~H"""
+    <button class={classes(["bg-lightGreyBg rounded-full py-0.5 px-4 text-darkGrey", @class])}>
+      <span class="text-sm">{@label}</span>
+      <.icon name={@icon} class="size-5" />
+    </button>
     """
   end
 
   def employee_documents_tab(assigns) do
     ~H"""
-    <.card>documents tab</.card>
+    <.card class="grid grid-cols-[1fr_auto]">
+      <div>Przesłane dokumenty</div>
+      <%!-- TODO: add functionality --%>
+      <.button
+        class="ml-2 text-black/80 flex items-center py-[6px] pr-4 pl-2.5 font-medium rounded-[5px]"
+        color="light_grey"
+      >
+        <.icon name="hero-plus-mini" class="size-6 mr-1" /> Dodaj dokument
+      </.button>
+      <div class="flex gap-2">
+        <%= for {label, icon} <- [
+          {"ewidencja", "hero-clock"},
+          {"umowa", "hero-document"},
+          {"zwrot", "hero-banknotes"},
+          {"informacje", "hero-information-circle"}
+          ] do %>
+          <.document_filter_option label={label} icon={icon} />
+        <% end %>
+      </div>
+      <.document_filter_option
+        label="Sortuj"
+        icon="hero-funnel"
+        class="bg-transparent p-0 ml-auto"
+      />
+    </.card>
     """
   end
 
   def employee_leaves_tab(assigns) do
     ~H"""
-    <.card>leaves tab</.card>
+    <div class="space-y-10">
+      <.card>
+        <div>Wnioski do zatwierdzenia</div>
+      </.card>
+      <.card>
+        <div class="flex justify-between">
+          <div>Pozostałe wnioski</div>
+          <.date_picker
+            id="leaves_filter_year"
+            selected_date={@leaves_filter_year}
+            class="rounded-[5px] w-fit text-darkGrey py-1"
+          />
+        </div>
+      </.card>
+    </div>
     """
   end
 end
