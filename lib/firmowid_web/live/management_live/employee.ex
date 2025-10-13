@@ -329,7 +329,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
           {@employment_details.position}
         </.user_card_info>
         <.user_card_info label="Status studenta">
-          <%= if is_nil(is_nil(@employment_details.student_status_until)) do %>
+          <%= if is_nil(@employment_details.student_status_until) do %>
             brak
           <% else %>
             <span class="text-greenText font-bold mr-1">aktywny</span>
