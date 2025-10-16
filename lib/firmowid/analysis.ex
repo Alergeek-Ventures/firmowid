@@ -103,7 +103,7 @@ defmodule Firmowid.Analysis do
 
   # Organization totals calculation
 
-  def get_organization_totals(date_from, date_to, tag_id) do
+  def get_organization_totals(date_from, date_to, _tag_id) do
     # get all invoices and transactions for the specified date range
     sales_invoices = SalesInvoices.list_sales_invoices(date_from, date_to)
     cost_invoices = CostInvoices.list_cost_invoices(date_from, date_to)
