@@ -4,7 +4,7 @@
 #
 
 app = 'firmowid-redux'
-primary_region = 'waw'
+primary_region = 'arn'
 kill_signal = 'SIGTERM'
 
 [build]
