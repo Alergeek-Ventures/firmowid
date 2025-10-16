@@ -22,7 +22,7 @@
       <div class={[
         String.starts_with?(@current_uri.path, "/zarzadzanie") &&
           "border-b pb-[18px] mt-[3px] self-start",
-        "flex uppercase items-center gap-10 max-md:hidden font-bold border-darkGrey"
+        "flex uppercase items-center gap-10 max-md:hidden border-darkGrey"
       ]}>
         <%= if Bodyguard.permit?(Firmowid.Invoicing, :show, @current_user) do %>
           <.link

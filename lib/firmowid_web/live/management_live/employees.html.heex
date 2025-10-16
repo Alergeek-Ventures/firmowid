@@ -76,11 +76,11 @@
     phx-submit="save_wages"
     class={[
       @view == :standard && "grid-cols-[8fr_auto_24px_240px]",
-      @view != :standard && "grid-cols-[5fr_2fr_1.5fr_1fr_24px_240px]",
+      @view != :standard && "grid-cols-[5fr_minmax(max-content,2fr)_1.5fr_1fr_24px_240px]",
       "grid w-full gap-x-10 gap-y-2 mt-3"
     ]}
   >
-    <div class="grid grid-cols-subgrid col-span-full items-center gap-4 text-[11px] uppercase text-grey-600 px-2 font-semibold mb-1.5">
+    <div class="grid grid-cols-subgrid col-span-full items-center gap-x-4 text-[11px] uppercase text-grey-600 px-2 font-semibold mb-1.5">
       <div class="my-1">Pracownik</div>
       <div>Przepracowane godziny</div>
       <%= if @view != :standard do %>
@@ -98,19 +98,7 @@
             type="button"
           >
             <%= if @view == :wage_editor do %>
-              <%!-- left arrow --%>
-              <svg
-                width="12"
-                height="10"
-                viewBox="0 0 12 10"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M3.75 0C3.94884 2.74445e-05 4.13965 0.0747232 4.28027 0.207031C4.42072 0.339381 4.5 0.518989 4.5 0.706055C4.49991 0.893113 4.4208 1.07278 4.28027 1.20508L2.56055 2.82324H6.75C8.14226 2.82326 9.47738 3.34402 10.4619 4.27051C11.4465 5.19716 12 6.45417 12 7.76465V9.17676C11.9999 9.36381 11.9208 9.54351 11.7803 9.67578C11.6396 9.80804 11.4488 9.88183 11.25 9.88184C11.0512 9.88184 10.8604 9.80804 10.7197 9.67578C10.5792 9.54351 10.5001 9.36381 10.5 9.17676V7.76465C10.5 6.82859 10.1046 5.93045 9.40137 5.26855C8.69814 4.60685 7.74441 4.23537 6.75 4.23535H2.56055L4.28027 5.85352C4.35191 5.91863 4.40894 5.99689 4.44824 6.08301C4.48751 6.16909 4.50792 6.26179 4.50879 6.35547C4.50963 6.44915 4.49082 6.5422 4.45312 6.62891C4.41541 6.71559 4.35944 6.79412 4.28906 6.86035C4.21866 6.92659 4.13511 6.97917 4.04297 7.01465C3.95092 7.05008 3.85237 7.06815 3.75293 7.06738C3.65334 7.06657 3.55439 7.04676 3.46289 7.00977C3.37149 6.97277 3.28885 6.91892 3.21973 6.85156L0.219727 4.02832C0.0791304 3.89596 1.00753e-05 3.71646 0 3.5293C0 3.34212 0.0791214 3.16265 0.219727 3.03027L3.21973 0.207031C3.36037 0.0746987 3.55112 0 3.75 0Z"
-                  fill="#4E4E4E"
-                />
-              </svg>
+              <.arrow_left_icon />
             <% else %>
               Stawka <.icon name="hero-pencil-square-solid" class="size-4" />
             <% end %>
@@ -194,41 +182,14 @@
             navigate={~p"/zarzadzanie/pracownicy/#{employee.user.id}"}
             class="self-stretch pl-1 flex items-center"
           >
-            <svg
-              width="14"
-              height="16"
-              viewBox="0 0 14 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4 mb-0.5"
-            >
-              <path
-                d="M4.68652 11.9394L10.1201 7.99998L7.40347 6.03046L4.68681 4.06093"
-                stroke="#4E4E4E"
-                stroke-width="1.65682"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
+            <.chevron_right_icon class="h-4 w-4 mb-0.5" />
           </.link>
         </div>
         <div class="flex items-center gap-6 bg-white rounded-[5px] pl-4 pr-5 h-16">
           <span class="text-[11px] font-semibold text-darkGrey bg-greyButtonBg pl-2 pr-1 py-[4px] uppercase rounded-[5px] flex items-center justify-between flex-1 gap-1">
             Brak <.icon name="hero-x-mark-micro" />
           </span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="stroke-greyButtonBg shrink-0 mr-[5px] mb-[1px]"
-          >
-            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="m14.5 12.5-5 5" /><path d="m9.5 12.5 5 5" />
-          </svg>
+          <.document_x_icon class="stroke-greyButtonBg shrink-0 mr-[5px] mb-[1px]" />
           <button
             title="Numer konta"
             type="button"
