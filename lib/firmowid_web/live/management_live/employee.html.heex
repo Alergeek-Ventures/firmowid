@@ -16,6 +16,7 @@
       <.card class="ml-12 min-w-[380px] min-h-[689px]">
         <div class="flex gap-3">
           <.avatar>
+            <%!-- TODO: add user avatar --%>
             <.icon name="hero-user" class="size-20 mb-2 text-darkGrey" />
           </.avatar>
           <div>
@@ -36,7 +37,7 @@
           <.user_card_info label="Adres e-mail">{@employee.email}</.user_card_info>
           <.user_card_info label="Numer konta bankowego">
             <span>{@bank_account_number}</span>
-
+            <%!-- TODO: ensure "copy bank account number" works --%>
             <button
               id="copy-bank-account-number"
               onclick={"navigator.clipboard.writeText('#{@bank_account_number}')"}
@@ -90,6 +91,7 @@
       </.card>
     </div>
     <div class="mt-[26px] w-full">
+      <%!-- TODO: add tab switching animation (see figma prototype) --%>
       <div class="flex gap-10 px-9 relative">
         <%= for {atom, {tab, label}} <-
             [
@@ -132,6 +134,7 @@
               slack_url={@slack_url}
               slack_username={@slack_username}
               employment_details={@employment_details}
+              employee_addresses={@employee_addresses}
             />
           <% "dokumenty" -> %>
             <.employee_documents_tab employee={@employee} />

@@ -24,7 +24,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
       |> assign_title()
       # TODO: obtain these from the database
       |> assign(:phone, "+48 123 456 789")
-      |> assign(:slack_url, "https://alergeekventures.slack.com/")
+      |> assign(:slack_url, "https://alergeekventures.slack.com")
       |> assign(:slack_username, "JanBeznazwiskowy")
       |> assign(:bank_account_number, "1234 5678 9012 3456 7890 1234")
       |> assign(:birthday, ~D[2000-07-21])
@@ -33,6 +33,18 @@ defmodule FirmowidWeb.ManagementLive.Employee do
         position: "Software Developer",
         student_status_until: ~D[2026-06-30],
         contract_signed_on: ~D[2022-01-15]
+      })
+      |> assign(:employee_addresses, %{
+        correspondence: %{
+          street: "ul. Przykładowa 1/2",
+          city: "Warszawa",
+          code: "00-001"
+        },
+        residence: %{
+          street: "ul. Przemysłowa 3/4",
+          city: "Wrocław",
+          code: "51-000"
+        }
       })
 
     {:ok, socket}
@@ -109,7 +121,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
   attr :title, :string, required: true
 
   defp editable_header(assigns) do
-    # TODO: allow editing the content
+    # TODO: make the edit button functional
     ~H"""
     <div class="flex gap-3">
       <span>{@title}</span>
@@ -194,9 +206,21 @@ defmodule FirmowidWeb.ManagementLive.Employee do
     """
   end
 
+  attr :address, :map, required: true
+
+  def employee_address(assigns) do
+    ~H"""
+    <address class="not-italic">
+      <div>{@address.street}</div>
+      <div>{@address.code} {@address.city}</div>
+    </address>
+    """
+  end
+
   def employee_projects_tab(assigns) do
     ~H"""
     <.card>
+      <%!-- TODO: allow editing the user wage --%>
       <.editable_header title="Dane do przelewu" />
       <div class="flex justify-between">
         <.user_card_info label="Stawka">
@@ -212,6 +236,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
     <div class="flex gap-4 items-start">
       <.card class="grow min-h-[12.5rem]">
         <div class="flex justify-between items-center">
+          <%!-- TODO: allow editing the user's projects --%>
           <.editable_header title="Projekty pracownika" />
           <.date_picker
             id="projects_filter_month"
@@ -305,17 +330,10 @@ defmodule FirmowidWeb.ManagementLive.Employee do
           </div>
           <div class="space-y-4">
             <.user_card_info label="Adres korespondencyjny">
-              <%!-- TODO: real addresses --%>
-              <address class="not-italic">
-                <div>ul. Przykładowa 1/2</div>
-                <div>00-001 Warszawa</div>
-              </address>
+              <.employee_address address={@employee_addresses.correspondence} />
             </.user_card_info>
             <.user_card_info label="Adres zamieszkania">
-              <address class="not-italic">
-                <div>ul. Przemysłowa 3/4</div>
-                <div>00-001 Warszawa</div>
-              </address>
+              <.employee_address address={@employee_addresses.residence} />
             </.user_card_info>
           </div>
         </div>
@@ -351,8 +369,8 @@ defmodule FirmowidWeb.ManagementLive.Employee do
           </div>
         </.user_card_info>
       </.card>
-      <%!-- TODO: calendar --%>
-      <.card>(kalendarz pracy)</.card>
+      <%!-- TODO: add calendar --%>
+      <.card>Tutaj powstanie kalendarz pracy</.card>
     </div>
     """
   end
@@ -374,13 +392,14 @@ defmodule FirmowidWeb.ManagementLive.Employee do
     ~H"""
     <.card class="grid grid-cols-[1fr_auto]">
       <div>Przesłane dokumenty</div>
-      <%!-- TODO: add functionality --%>
+      <%!-- TODO: allow adding new document --%>
       <.button
         class="ml-2 text-black/80 flex items-center py-[6px] pr-4 pl-2.5 font-medium rounded-[5px]"
         color="light_grey"
       >
         <.icon name="hero-plus-mini" class="size-6 mr-1" /> Dodaj dokument
       </.button>
+      <%!-- TODO: allow filtering documents --%>
       <div class="flex gap-2">
         <%= for {label, icon} <- [
           {"ewidencja", "hero-clock"},
@@ -391,16 +410,19 @@ defmodule FirmowidWeb.ManagementLive.Employee do
           <.document_filter_option label={label} icon={icon} />
         <% end %>
       </div>
+      <%!-- TODO: allow sorting documents --%>
       <.document_filter_option
         label="Sortuj"
         icon="hero-funnel"
         class="bg-transparent p-0 ml-auto"
       />
     </.card>
+    <%!-- TODO: display documents --%>
     """
   end
 
   def employee_leaves_tab(assigns) do
+    # TODO: add leaves functionality & modal
     ~H"""
     <div class="space-y-10">
       <.card>
@@ -409,6 +431,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
       <.card>
         <div class="flex justify-between">
           <div>Pozostałe wnioski</div>
+          <%!-- TODO: filter leaves by year; make the picker only select year instead of month & year --%>
           <.date_picker
             id="leaves_filter_year"
             selected_date={@leaves_filter_year}
