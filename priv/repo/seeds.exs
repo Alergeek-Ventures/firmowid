@@ -148,7 +148,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Invoice #INV-2024-001 for software development services",
       transaction_currency: "USD",
       transaction_amount: 5000.00,
-      booking_date: ~D[2024-01-15],
+      booking_date: Date.utc_today(),
       organization_id: av.id
     },
     %{
@@ -158,7 +158,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Monthly subscription payment for SaaS platform",
       transaction_currency: "EUR",
       transaction_amount: 299.99,
-      booking_date: ~D[2024-01-20],
+      booking_date: Date.utc_today(),
       organization_id: av.id
     },
     %{
@@ -188,6 +188,206 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Digital marketing campaign Q1 2024",
       transaction_currency: "EUR",
       transaction_amount: 1200.00,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_006",
+      debtor_name: "Zeta Consulting Group",
+      creditor_name: "Hello Kitty Inc.",
+      remittance_information_unstructured: "Payment for design sprint facilitation",
+      transaction_currency: "USD",
+      transaction_amount: 3500.00,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_007",
+      debtor_name: "Hello Kitty Inc.",
+      creditor_name: "Omega Legal Services",
+      remittance_information_unstructured: "Legal retainer fee for 2024 Q1",
+      transaction_currency: "EUR",
+      transaction_amount: 2000.00,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_008",
+      debtor_name: "Theta Electronics",
+      creditor_name: "Hello Kitty Inc.",
+      remittance_information_unstructured: "Hardware procurement invoice INV-2024-045",
+      transaction_currency: "USD",
+      transaction_amount: 8900.00,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_009",
+      debtor_name: "Hello Kitty Inc.",
+      creditor_name: "Lambda Insurance Co.",
+      remittance_information_unstructured: "Annual corporate insurance premium",
+      transaction_currency: "USD",
+      transaction_amount: 4200.00,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_010",
+      debtor_name: "Sigma Logistics",
+      creditor_name: "Hello Kitty Inc.",
+      remittance_information_unstructured: "Logistics and shipping fees for February",
+      transaction_currency: "GBP",
+      transaction_amount: 1800.50,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_011",
+      debtor_name: "Hello Kitty Inc.",
+      creditor_name: "Alpha Data Analytics",
+      remittance_information_unstructured: "Data analytics consulting project payment",
+      transaction_currency: "USD",
+      transaction_amount: 6400.00,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_012",
+      debtor_name: "Omicron Retailers Ltd.",
+      creditor_name: "Hello Kitty Inc.",
+      remittance_information_unstructured: "Invoice INV-2024-078 for retail software integration",
+      transaction_currency: "CAD",
+      transaction_amount: 7200.00,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_013",
+      debtor_name: "Hello Kitty Inc.",
+      creditor_name: "NuPrint Office Supplies",
+      remittance_information_unstructured: "Office supplies order #5678",
+      transaction_currency: "USD",
+      transaction_amount: 480.75,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_014",
+      debtor_name: "Psi Media Agency",
+      creditor_name: "Hello Kitty Inc.",
+      remittance_information_unstructured: "Advertising campaign for March 2024",
+      transaction_currency: "EUR",
+      transaction_amount: 2600.00,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_015",
+      debtor_name: "Hello Kitty Inc.",
+      creditor_name: "Rho Coworking Spaces",
+      remittance_information_unstructured: "Coworking space rental fee - April 2024",
+      transaction_currency: "USD",
+      transaction_amount: 950.00,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_016",
+      debtor_name: "Delta Hosting Services",
+      creditor_name: "Hello Kitty Inc.",
+      remittance_information_unstructured: "Refund for overpayment in January",
+      transaction_currency: "USD",
+      transaction_amount: -50.00,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_017",
+      debtor_name: "Kappa Manufacturing",
+      creditor_name: "Hello Kitty Inc.",
+      remittance_information_unstructured: "Invoice INV-2024-112 for industrial automation software",
+      transaction_currency: "JPY",
+      transaction_amount: 650_000.00,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_018",
+      debtor_name: "Hello Kitty Inc.",
+      creditor_name: "Tau Energy Solutions",
+      remittance_information_unstructured: "Electricity bill for March 2024",
+      transaction_currency: "USD",
+      transaction_amount: 320.45,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_019",
+      debtor_name: "Upsilon Finance Ltd.",
+      creditor_name: "Hello Kitty Inc.",
+      remittance_information_unstructured: "Financial audit service for FY2023",
+      transaction_currency: "GBP",
+      transaction_amount: 5100.00,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_020",
+      debtor_name: "Hello Kitty Inc.",
+      creditor_name: "Zeta Consulting Group",
+      remittance_information_unstructured: "Payment for strategic partnership workshop",
+      transaction_currency: "EUR",
+      transaction_amount: 2750.00,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_021",
+      debtor_name: "Lambda Insurance Co.",
+      creditor_name: "Hello Kitty Inc.",
+      remittance_information_unstructured: "Claim payout for policy #POL-2024-005",
+      transaction_currency: "USD",
+      transaction_amount: 1500.00,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_022",
+      debtor_name: "Hello Kitty Inc.",
+      creditor_name: "Epsilon Marketing",
+      remittance_information_unstructured: "Marketing retainer fee for April 2024",
+      transaction_currency: "EUR",
+      transaction_amount: 1200.00,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_023",
+      debtor_name: "Beta Solutions LLC",
+      creditor_name: "Hello Kitty Inc.",
+      remittance_information_unstructured: "Payment for Q2 SaaS subscription",
+      transaction_currency: "EUR",
+      transaction_amount: 299.99,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_024",
+      debtor_name: "Hello Kitty Inc.",
+      creditor_name: "Sigma Logistics",
+      remittance_information_unstructured: "April 2024 freight and transport services",
+      transaction_currency: "GBP",
+      transaction_amount: 1900.00,
+      booking_date: Date.utc_today(),
+      organization_id: av.id
+    },
+    %{
+      internal_transaction_id: "txn_025",
+      debtor_name: "Theta Electronics",
+      creditor_name: "Hello Kitty Inc.",
+      remittance_information_unstructured: "Final installment for hardware integration project",
+      transaction_currency: "USD",
+      transaction_amount: 4500.00,
       booking_date: Date.utc_today(),
       organization_id: av.id
     }
