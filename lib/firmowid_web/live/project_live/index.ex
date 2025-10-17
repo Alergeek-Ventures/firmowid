@@ -420,7 +420,7 @@ defmodule FirmowidWeb.Project.Index do
           user
           |> Map.put(:expanded, !user.expanded)
           |> Map.put_new_lazy(
-            :sessions,
+            :sessions_with_duration,
             fn ->
               Timetracker.get_grouped_user_project_sessions(
                 user_id,
@@ -739,7 +739,7 @@ defmodule FirmowidWeb.Project.Index do
         |> Map.put(:time_worked, t)
         |> Map.put(:removed_from_project, r)
         |> Map.put(:expanded, false)
-        |> Map.put(:sessions, s)
+        |> Map.put(:sessions_with_duration, s)
       end)
       |> Enum.sort_by(&{&1.removed_from_project, &1.name, &1.email})
 
@@ -833,8 +833,11 @@ defmodule FirmowidWeb.Project.Index do
               style={"max-height: #{if user.expanded, do: "1000px", else: "0"}; opacity: #{if user.expanded, do: "1", else: "0"}"}
             >
               <div class="space-y-4 py-4 pr-11">
-                <%= if Map.has_key?(user, :sessions) do %>
-                  <div :for={session <- user.sessions} class="flex justify-between text-sm">
+                <%= if Map.has_key?(user, :sessions_with_duration) do %>
+                  <div
+                    :for={session <- user.sessions_with_duration}
+                    class="flex justify-between text-sm"
+                  >
                     <span>{session.title}</span>
                     <span>{TimeFormatter.format_duration(session.duration)}</span>
                   </div>
@@ -880,8 +883,11 @@ defmodule FirmowidWeb.Project.Index do
                 style={"max-height: #{if user.expanded, do: "1000px", else: "0"}; opacity: #{if user.expanded, do: "1", else: "0"}"}
               >
                 <div class="space-y-4 py-4 pr-11">
-                  <%= if Map.has_key?(user, :sessions) do %>
-                    <div :for={session <- user.sessions} class="flex justify-between text-sm">
+                  <%= if Map.has_key?(user, :sessions_with_duration) do %>
+                    <div
+                      :for={session <- user.sessions_with_duration}
+                      class="flex justify-between text-sm"
+                    >
                       <span>{session.title}</span>
                       <span>{TimeFormatter.format_duration(session.duration)}</span>
                     </div>
@@ -935,8 +941,11 @@ defmodule FirmowidWeb.Project.Index do
             style={"max-height: #{if user.expanded, do: "1000px", else: "0"}; opacity: #{if user.expanded, do: "1", else: "0"}"}
           >
             <div class="space-y-4 py-4 pr-11">
-              <%= if Map.has_key?(user, :sessions) do %>
-                <div :for={session <- user.sessions} class="flex justify-between text-sm">
+              <%= if Map.has_key?(user, :sessions_with_duration) do %>
+                <div
+                  :for={session <- user.sessions_with_duration}
+                  class="flex justify-between text-sm"
+                >
                   <span>{session.title}</span>
                   <span>{TimeFormatter.format_duration(session.duration)}</span>
                 </div>
@@ -989,8 +998,11 @@ defmodule FirmowidWeb.Project.Index do
               style={"max-height: #{if user.expanded, do: "1000px", else: "0"}; opacity: #{if user.expanded, do: "1", else: "0"}"}
             >
               <div class="space-y-4 py-4 pr-11">
-                <%= if Map.has_key?(user, :sessions) do %>
-                  <div :for={session <- user.sessions} class="flex justify-between text-sm">
+                <%= if Map.has_key?(user, :sessions_with_duration) do %>
+                  <div
+                    :for={session <- user.sessions_with_duration}
+                    class="flex justify-between text-sm"
+                  >
                     <span>{session.title}</span>
                     <span>{TimeFormatter.format_duration(session.duration)}</span>
                   </div>
@@ -1070,8 +1082,11 @@ defmodule FirmowidWeb.Project.Index do
                   style={"max-height: #{if user.expanded, do: "1000px", else: "0"}; opacity: #{if user.expanded, do: "1", else: "0"}"}
                 >
                   <div class="space-y-4 py-4 pr-11">
-                    <%= if Map.has_key?(user, :sessions) do %>
-                      <div :for={session <- user.sessions} class="flex justify-between text-sm">
+                    <%= if Map.has_key?(user, :sessions_with_duration) do %>
+                      <div
+                        :for={session <- user.sessions_with_duration}
+                        class="flex justify-between text-sm"
+                      >
                         <span>{session.title}</span>
                         <span>{TimeFormatter.format_duration(session.duration)}</span>
                       </div>
