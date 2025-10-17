@@ -103,7 +103,7 @@
             ]
            do %>
           <.link
-            :if={Bodyguard.permit?(Employee, atom, @current_user)}
+            :if={Bodyguard.permit?(Management, atom, @current_user)}
             patch={~p"/zarzadzanie/pracownicy/#{@employee.id}?tab=#{tab}"}
             class={
               classes([

@@ -2,14 +2,14 @@ defmodule FirmowidWeb.ManagementLive.Employee do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Employee
   alias Firmowid.Helpers.TimeConverter
+  alias Firmowid.Management
   alias Firmowid.Timetracker
   alias FirmowidWeb.Helpers.TimeFormatter
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
-    Bodyguard.permit!(Employee, :read_employee, socket.assigns.current_user)
+    Bodyguard.permit!(Management, :read_employee, socket.assigns.current_user)
 
     active_months = Timetracker.get_months_with_sessions(id)
 
@@ -55,7 +55,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
   end
 
   defp assign_employee(socket) do
-    employee = Employee.list_employee_details(socket.assigns.employee_id, socket.assigns.projects_filter_date)
+    employee = Management.list_employee_details(socket.assigns.employee_id, socket.assigns.projects_filter_date)
     assign(socket, :employee, employee)
   end
 
@@ -150,7 +150,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
           <span class="text-start">{@project.name}</span>
           <span>
             {@project.sessions
-            |> Enum.map(& &1.time_worked)
+            |> Enum.map(& &1.duration)
             |> Enum.sum()
             |> TimeConverter.time_worked_in_seconds_to_hours()} h
           </span>
@@ -196,7 +196,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
             <%= for session <- @project.sessions do %>
               <div>{session.title}</div>
               <div>
-                {TimeConverter.time_worked_in_seconds_to_hours(session.time_worked)} h
+                {TimeConverter.time_worked_in_seconds_to_hours(session.duration)} h
               </div>
             <% end %>
           <% end %>

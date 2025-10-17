@@ -15,10 +15,20 @@ defmodule Firmowid.Management do
   def authorize(:read_employees, %{role: :admin}, _), do: true
   def authorize(:change_user_wages, %{role: :admin}, _), do: true
   def authorize(:create_employee, %{role: :admin}, _), do: true
+
+  def authorize(:read_employee, %{role: :admin}, _), do: true
+  def authorize(:read_employee_projects, %{role: :admin}, _), do: true
+  def authorize(:edit_employee_projects, %{role: :admin}, _), do: true
+  def authorize(:read_employee_profile, %{role: :admin}, _), do: true
+  def authorize(:read_employee_documents, %{role: :admin}, _), do: true
+  def authorize(:read_employee_leaves, %{role: :admin}, _), do: true
+
   # projects
   def authorize(:read_projects, %{role: :admin}, _), do: true
+
   # clients
   def authorize(:read_clients, %{role: :admin}, _), do: true
+
   # ...
   def authorize(_, _, _), do: false
 
@@ -75,5 +85,47 @@ defmodule Firmowid.Management do
         end
       end)
     end)
+  end
+
+  def list_employee_details(user_id, filter_date) do
+    salary_query = from(us in UserSalary, where: is_nil(us.deleted_at), limit: 1)
+
+    sessions_query =
+      from s in Session,
+        where:
+          fragment("extract(month from ?) = ?", s.start_datetime, ^filter_date.month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^filter_date.year) and
+            s.user_id == ^user_id,
+        select: %{
+          title: s.title,
+          project_id: s.project_id,
+          duration:
+            "extract(epoch from coalesce(?, now()) - ?)"
+            |> fragment(s.end_datetime, s.start_datetime)
+            |> coalesce(0)
+            |> type(:integer)
+        }
+
+    result =
+      Accounts.User
+      |> Repo.get!(user_id)
+      |> Repo.preload([:projects, sessions: sessions_query, user_salaries: salary_query])
+
+    result
+    |> Map.put(
+      :hourly_rate,
+      case result.user_salaries do
+        [] -> 0
+        list -> list |> hd() |> Map.get(:hourly_rate, 0)
+      end
+    )
+    |> Map.put(:time_worked, Enum.sum(Enum.map(result.sessions, & &1.duration)))
+    |> Map.put(
+      :projects,
+      Enum.map(result.projects, fn project ->
+        sessions = Enum.filter(result.sessions, &(&1.project_id == project.id))
+        Map.put(project, :sessions, sessions)
+      end)
+    )
   end
 end
