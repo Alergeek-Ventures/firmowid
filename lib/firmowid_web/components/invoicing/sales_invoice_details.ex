@@ -38,8 +38,8 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
         <aside class={[
           "w-full lg:w-[400px] xl:w-[600px] flex-shrink-0 flex-grow-0",
           "flex flex-col gap-4 order-last lg:order-none py-8 pr-8",
-          "max-h-[calc(100vh-64px-128px)] overflow-y-auto",
-          "lg:h-[calc(100vh-64px-128px)]"
+          "max-h-[calc(100vh-var(--navbar-height)-128px)] overflow-y-auto",
+          "lg:h-[calc(100vh-var(--navbar-height)-128px)]"
         ]}>
           <div class="flex flex-row justify-end gap-2">
             <.link
@@ -177,7 +177,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
           </div>
         </aside>
 
-        <main class="flex-grow py-8 lg:pl-8 border-b lg:border-b-0 lg:border-l border-darkGrey/[.3] h-[calc(100vh-64px-128px)]">
+        <main class="flex-grow py-8 lg:pl-8 border-b lg:border-b-0 lg:border-l border-darkGrey/[.3] h-[calc(100vh-var(--navbar-height)-128px)]">
           <%= cond do %>
             <% @invoice.skip_invoicing -> %>
               <InvoiceDetails.invoice_skipped_view />

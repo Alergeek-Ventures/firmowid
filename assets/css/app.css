@@ -18,6 +18,7 @@
   --color-grey-button-bg: theme(colors.greyButtonBg);
   --color-dark-grey: theme(colors.darkGrey);
   --color-light-grey-bg: theme(colors.lightGreyBg);
+  --navbar-height: 76px;
 }
 
 .air-datepicker {
