@@ -18,26 +18,6 @@ defmodule FirmowidWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
 
-    plug ContentSecurityPolicy.Plug.Setup,
-      default_policy: %ContentSecurityPolicy.Policy{
-        default_src: ["'self'", "https://i.alergeek.workers.dev"],
-        font_src: ["'self'", "fonts.gstatic.com"],
-        style_src: [
-          "'self'",
-          "'unsafe-inline'",
-          "https://fonts.googleapis.com",
-          "https://cdn.jsdelivr.net"
-        ],
-        img_src: ["'self'", "https:", "data:"],
-        script_src: [
-          "'self'",
-          "https://i.alergeek.workers.dev",
-          if(Mix.env() == :dev, do: "http://127.0.0.1:4007")
-        ]
-      }
-
-    plug ContentSecurityPolicy.Plug.AddNonce, directives: [:script_src]
-
     plug :fetch_current_user
   end
 
@@ -50,10 +30,9 @@ defmodule FirmowidWeb.Router do
     pipe_through [:browser, :require_authenticated_user_with_organization, :require_superuser]
 
     live_dashboard "/dashboard",
-      metrics: FirmowidWeb.Telemetry,
-      csp_nonce_assign_key: :csp_nonce
+      metrics: FirmowidWeb.Telemetry
 
-    oban_dashboard("/oban", oban_name: Firmowid.Oban, csp_nonce_assign_key: :csp_nonce)
+    oban_dashboard("/oban", oban_name: Firmowid.Oban)
 
     forward "/mailbox", Plug.Swoosh.MailboxPreview
   end
