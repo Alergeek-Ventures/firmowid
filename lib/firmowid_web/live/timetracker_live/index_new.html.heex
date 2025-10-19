@@ -5,7 +5,7 @@
     class="h-[135vh] pointer-events-none fixed top-[20%] left-0 -z-0 hidden lg:block"
   />
 
-  <div class="flex items-center justify-between gap-4 -mt-4 pt-12 pb-9 sticky top-16 z-10 bg-lightGreyBg">
+  <div class="flex items-center justify-between gap-4 -mt-4 pt-12 pb-9 sticky top-16 z-30 bg-lightGreyBg">
     <div class="flex gap-2 shrink-0">
       <.icon name="hero-calendar" />
       <p class="line-clamp-1">{format_current_day_header(Date.utc_today())}</p>
@@ -178,7 +178,7 @@
         class="text-center py-8 text-darkGrey"
       >
         <p class="text-lg font-semibold">Brak zarejestrowanych sesji</p>
-        <p class="text-sm mt-2">Rozpocznij swoją pierwszą sesję używając formularza powyżej</p>
+        <p class="text-sm mt-2">Rozpocznij swoją pierwszą sesję używając formularza po lewej</p>
       </div>
 
       <div :if={not Enum.empty?(@today_sessions)} class="space-y-4">
@@ -209,7 +209,7 @@
 
       <div class="space-y-14">
         <div :for={{week, days} <- @grouped_sessions} :key={week}>
-          <div class="flex justify-between items-center sticky top-[11.875rem] -ml-1 pl-1 bg-lightGreyBg z-10">
+          <div class="flex justify-between items-center sticky top-[11.875rem] -ml-1 pl-1 bg-lightGreyBg z-20">
             <p class="text-sm font-semibold text-black">{format_week_header(week)}</p>
             <p class="bg-greyButtonBg px-1.5 py-1 rounded-md font-bold text-darkGrey">
               {days
