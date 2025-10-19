@@ -16,8 +16,7 @@ defmodule Firmowid.CostInvoices do
   @cost_invoice_broadcast_topic "cost_invoice_broadcast_topic"
 
   def authorize(action, %{role: :admin, organization_id: org_id}, %{organization_id: org_id})
-      when action in [:show, :update, :delete],
-      do: true
+      when action in [:show, :update, :delete], do: true
 
   def authorize(:upload, %{role: :admin}, _), do: true
   def authorize(_, _, _), do: false

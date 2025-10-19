@@ -15,8 +15,7 @@ defmodule Firmowid.Finances do
   def authorize(:read_bank_accounts, %{role: :admin}, _), do: true
 
   def authorize(action, %{role: :admin, organization_id: org_id}, %{organization_id: org_id})
-      when action in [:read_bank_account, :update_bank_account, :delete_bank_account],
-      do: true
+      when action in [:read_bank_account, :update_bank_account, :delete_bank_account], do: true
 
   def authorize(_, _, _), do: false
 
