@@ -105,14 +105,16 @@ defmodule FirmowidWeb.InvoicingLive.Index do
         filter_string -> String.to_existing_atom(filter_string)
       end
 
+    # Default group_by_party to true for groupable filters, false otherwise
+    groupable_filter = filter in [:transactions, :all, :unmatched]
+
     group_by_party =
       case Map.get(params, "group_by_party") do
-        "true" -> true
+        "true" -> groupable_filter
+        "false" -> false
+        nil -> groupable_filter
         _ -> false
       end
-
-    # Only allow grouping on filters that show transactions
-    group_by_party = group_by_party && filter in [:transactions, :all, :unmatched]
 
     show_modal = Map.get(params, "show_modal") == "true"
 
