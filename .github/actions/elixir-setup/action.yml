@@ -7,6 +7,30 @@ inputs:
   otp-version:
     required: true
     description: OTP version to set up
+  cache-key:
+    required: false
+    default: "v1"
+    description: Cache key prefix for dependency and build caches
+  build-app:
+    required: false
+    default: "true"
+    description: Whether to compile the application
+  build-deps:
+    required: false
+    default: "true"
+    description: Whether to compile dependencies
+  build-flags:
+    required: false
+    default: "--warnings-as-errors"
+    description: Flags to pass to mix compile
+  install-rebar:
+    required: false
+    default: "false"
+    description: Whether to install rebar
+  install-hex:
+    required: false
+    default: "false"
+    description: Whether to install hex
 
 outputs:
   otp-version:
