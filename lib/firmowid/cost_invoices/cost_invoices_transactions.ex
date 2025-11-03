@@ -10,7 +10,7 @@ defmodule Firmowid.CostInvoices.CostInvoicesTransactions do
 
     belongs_to :organization, Firmowid.Accounts.Organization
 
-    timestamps(type: :utc_datetime)
+    timestamps()
   end
 
   @doc false

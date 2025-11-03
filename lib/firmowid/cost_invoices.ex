@@ -9,6 +9,7 @@ defmodule Firmowid.CostInvoices do
   alias Firmowid.Blobs.Blob
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.CostInvoices.CostInvoicesTransactions
+  alias Firmowid.CostInvoices.InboundEmail
   alias Firmowid.Repo
 
   require Logger
@@ -182,27 +183,38 @@ defmodule Firmowid.CostInvoices do
     cost_invoice
   end
 
-  def upload_cost_invoice(upload_path, "image/" <> _ext = content_type, original_filename) do
-    create_cost_invoice_job(upload_path, content_type, original_filename)
+  def upload_cost_invoice(upload_path, content_type, original_filename, inbound_email_id \\ nil)
+
+  def upload_cost_invoice(upload_path, "image/" <> _ext = content_type, original_filename, inbound_email_id) do
+    create_cost_invoice_job(upload_path, content_type, original_filename, inbound_email_id)
   end
 
-  def upload_cost_invoice(upload_path, "application/pdf" = content_type, original_filename) do
-    create_cost_invoice_job(upload_path, content_type, original_filename)
+  def upload_cost_invoice(upload_path, "application/pdf" = content_type, original_filename, inbound_email_id) do
+    create_cost_invoice_job(upload_path, content_type, original_filename, inbound_email_id)
   end
 
-  def upload_cost_invoice(_upload_path, _content_type, _original_filename) do
+  def upload_cost_invoice(_upload_path, _content_type, _original_filename, _inbound_email_id) do
     {:error, :unsupported_content_type}
   end
 
-  defp create_cost_invoice_job(upload_path, content_type, original_filename) do
+  defp create_cost_invoice_job(upload_path, content_type, original_filename, inbound_email_id) do
     Repo.transaction(fn ->
       case Blobs.create_blob(upload_path, content_type, original_filename) do
         {:ok, blob} ->
-          %{
+          worker_args = %{
             name: "extract_cost_invoice_metadata",
             blob_id: blob.id,
             organization_id: blob.organization_id
           }
+
+          worker_args =
+            if inbound_email_id do
+              Map.put(worker_args, :inbound_email_id, inbound_email_id)
+            else
+              worker_args
+            end
+
+          worker_args
           |> Firmowid.CostInvoices.Worker.new()
           |> Firmowid.Oban.insert!()
 
@@ -304,5 +316,20 @@ defmodule Firmowid.CostInvoices do
     |> order_by(desc: :issue_date)
     |> Repo.all()
     |> Repo.preload(:transactions)
+  end
+
+  ## Inbound Email functions
+
+  def get_inbound_email!(id) do
+    Repo.get!(InboundEmail, id)
+  end
+
+  def mark_inbound_email_processed(inbound_email, failure_reason \\ nil) do
+    inbound_email
+    |> InboundEmail.changeset(%{
+      processed_at: DateTime.utc_now(),
+      failure_reason: failure_reason
+    })
+    |> Repo.update!()
   end
 end

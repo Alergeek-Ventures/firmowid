@@ -22,7 +22,7 @@ defmodule Firmowid.Finances.BankAccount do
     has_many :transactions,
              Firmowid.Finances.Transaction
 
-    timestamps(type: :utc_datetime)
+    timestamps()
   end
 
   @doc false

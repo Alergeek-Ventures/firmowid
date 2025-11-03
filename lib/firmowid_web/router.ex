@@ -26,6 +26,11 @@ defmodule FirmowidWeb.Router do
     plug :fetch_api_user
   end
 
+  pipeline :webhook do
+    plug :accepts, ["json"]
+    plug FirmowidWeb.WebhookAuth
+  end
+
   scope "/admin" do
     pipe_through [:browser, :require_authenticated_user_with_organization, :require_superuser]
 
@@ -35,6 +40,14 @@ defmodule FirmowidWeb.Router do
     oban_dashboard("/oban", oban_name: Firmowid.Oban)
 
     forward "/mailbox", Plug.Swoosh.MailboxPreview
+  end
+
+  ## Webhook routes
+
+  scope "/", FirmowidWeb do
+    pipe_through :webhook
+
+    post "/kosztowe/skrzynka", ResendInboundController, :handle_webhook
   end
 
   ## Authentication routes

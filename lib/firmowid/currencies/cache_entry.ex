@@ -10,7 +10,7 @@ defmodule Firmowid.Currencies.CacheEntry do
     field :retrieved_at, :utc_datetime
     field :expires_at, :utc_datetime
 
-    timestamps(type: :utc_datetime)
+    timestamps()
   end
 
   def changeset(cache_entry, attrs) do

@@ -27,6 +27,27 @@ defmodule Firmowid.Accounts do
     Repo.all(Organization, skip_organization_id: true)
   end
 
+  @doc """
+  Gets a single organization by ID.
+
+  Returns `{:ok, %Organization{}}` if found, `{:error, :not_found}` otherwise.
+
+  ## Examples
+
+      iex> get_organization("123e4567-e89b-12d3-a456-426614174000")
+      {:ok, %Organization{}}
+
+      iex> get_organization("invalid-uuid")
+      {:error, :not_found}
+
+  """
+  def get_organization(id) do
+    case Repo.get(Organization, id, skip_organization_id: true) do
+      nil -> {:error, :not_found}
+      org -> {:ok, org}
+    end
+  end
+
   ## Database getters
 
   @doc """
@@ -406,7 +427,11 @@ defmodule Firmowid.Accounts do
   def create_organization(attrs \\ %{}, owner) do
     organization =
       %Organization{}
-      |> Organization.changeset(Map.put(attrs, "owner_id", owner.id))
+      |> Organization.changeset(
+        attrs
+        |> Map.put("owner_id", owner.id)
+        |> Map.put("allowed_sender_emails", [owner.email])
+      )
       |> Repo.insert!(skip_organization_id: true)
 
     owner
@@ -489,6 +514,49 @@ defmodule Firmowid.Accounts do
       end
 
     Map.put(organization, :avatar_url, avatar_url)
+  end
+
+  @doc """
+  Adds an email to the organization's allowed sender list if not already present.
+
+  ## Examples
+
+      iex> add_email_to_org_allowlist(org_id, "user@example.com")
+      {:ok, %Organization{}}
+
+  """
+  def add_email_to_org_allowlist(org_id, email) when is_binary(email) do
+    org = Repo.get!(Organization, org_id, skip_organization_id: true)
+
+    updated_emails =
+      if email in org.allowed_sender_emails do
+        org.allowed_sender_emails
+      else
+        org.allowed_sender_emails ++ [email]
+      end
+
+    org
+    |> Ecto.Changeset.change(allowed_sender_emails: updated_emails)
+    |> Repo.update(skip_organization_id: true)
+  end
+
+  @doc """
+  Removes an email from the organization's allowed sender list.
+
+  ## Examples
+
+      iex> remove_email_from_org_allowlist(org_id, "user@example.com")
+      {:ok, %Organization{}}
+
+  """
+  def remove_email_from_org_allowlist(org_id, email) when is_binary(email) do
+    org = Repo.get!(Organization, org_id, skip_organization_id: true)
+
+    updated_emails = Enum.reject(org.allowed_sender_emails, &(&1 == email))
+
+    org
+    |> Ecto.Changeset.change(allowed_sender_emails: updated_emails)
+    |> Repo.update(skip_organization_id: true)
   end
 
   @doc """

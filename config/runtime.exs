@@ -43,7 +43,9 @@ config :firmowid,
   go_limitless_secret_id: System.get_env("GO_LIMITLESS_SECRET_ID"),
   go_limitless_secret_key: System.get_env("GO_LIMITLESS_SECRET_KEY"),
   reducto_api_key: System.get_env("REDUCTO_API_KEY"),
-  openai_api_key: System.get_env("OPENAI_API_KEY")
+  openai_api_key: System.get_env("OPENAI_API_KEY"),
+  resend_api_key: System.get_env("RESEND_API_KEY"),
+  resend_webhook_secret: System.get_env("RESEND_WEBHOOK_SECRET")
 
 if config_env() != :test do
   config :firmowid, Firmowid.Repo,

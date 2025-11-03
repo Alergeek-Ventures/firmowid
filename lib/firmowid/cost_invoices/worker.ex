@@ -21,9 +21,10 @@ defmodule Firmowid.CostInvoices.Worker do
         "organization_id" => organization_id
       } ->
         Firmowid.Repo.put_org_id(organization_id)
+        inbound_email_id = Map.get(args, "inbound_email_id")
 
         try do
-          extract_cost_invoice_metadata(blob_id, organization_id)
+          extract_cost_invoice_metadata(blob_id, organization_id, inbound_email_id)
         rescue
           error ->
             Logger.error("Failed to extract cost invoice metadata for blob #{blob_id}: #{inspect(error)}")
@@ -47,7 +48,7 @@ defmodule Firmowid.CostInvoices.Worker do
     end
   end
 
-  defp extract_cost_invoice_metadata(blob_id, organization_id) do
+  defp extract_cost_invoice_metadata(blob_id, organization_id, inbound_email_id) do
     blob_url = Blobs.get_blob_url(blob_id, :skip_organization_id)
 
     {:ok, extracted_metadata} =
@@ -156,6 +157,13 @@ defmodule Firmowid.CostInvoices.Worker do
       |> Map.put("total_amount", -extracted_metadata["total_amount"])
       |> Map.put("organization_id", organization_id)
       |> Map.put("blob_id", blob_id)
+
+    extracted_metadata =
+      if inbound_email_id do
+        Map.put(extracted_metadata, "inbound_email_id", inbound_email_id)
+      else
+        extracted_metadata
+      end
 
     CostInvoices.create_cost_invoice(extracted_metadata)
 

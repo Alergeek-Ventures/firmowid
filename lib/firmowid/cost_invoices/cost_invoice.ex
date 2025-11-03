@@ -8,6 +8,7 @@ defmodule Firmowid.CostInvoices.CostInvoice do
 
   schema "cost_invoices" do
     belongs_to :blob, Firmowid.Blobs.Blob
+    belongs_to :inbound_email, Firmowid.CostInvoices.InboundEmail
 
     field :seller, :string
     field :seller_address, :string
@@ -34,7 +35,7 @@ defmodule Firmowid.CostInvoices.CostInvoice do
 
     belongs_to :organization, Firmowid.Accounts.Organization
 
-    timestamps(type: :utc_datetime)
+    timestamps()
   end
 
   @doc false
@@ -42,6 +43,7 @@ defmodule Firmowid.CostInvoices.CostInvoice do
     document
     |> cast(attrs, [
       :blob_id,
+      :inbound_email_id,
       :seller,
       :seller_address,
       :seller_display_name,
@@ -69,5 +71,6 @@ defmodule Firmowid.CostInvoices.CostInvoice do
       :skip_invoicing,
       :organization_id
     ])
+    |> foreign_key_constraint(:inbound_email_id)
   end
 end
