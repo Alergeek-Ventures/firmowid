@@ -425,14 +425,8 @@ defmodule Firmowid.Accounts do
 
   """
   def create_organization(attrs \\ %{}, owner) do
-    organization =
-      %Organization{}
-      |> Organization.changeset(
-        attrs
-        |> Map.put("owner_id", owner.id)
-        |> Map.put("allowed_sender_emails", [owner.email])
-      )
-      |> Repo.insert!(skip_organization_id: true)
+    # Generate unique nickname with retry logic
+    organization = create_organization_with_nickname(attrs, owner, 10)
 
     owner
     |> User.organization_changeset(%{organization_id: organization.id})
@@ -440,6 +434,29 @@ defmodule Firmowid.Accounts do
     |> update_user(%{role: :admin})
 
     {:ok, organization}
+  end
+
+  defp create_organization_with_nickname(_attrs, _owner, 0) do
+    raise "Failed to create organization with unique nickname after 10 attempts"
+  end
+
+  defp create_organization_with_nickname(attrs, owner, attempts_left) do
+    nickname = HumanIDs.generate()
+
+    try do
+      %Organization{}
+      |> Organization.changeset(
+        attrs
+        |> Map.put("owner_id", owner.id)
+        |> Map.put("allowed_sender_emails", [owner.email])
+        |> Map.put("inbound_email_nickname", nickname)
+      )
+      |> Repo.insert!(skip_organization_id: true)
+    rescue
+      Ecto.ConstraintError ->
+        # Nickname collision, retry with new nickname
+        create_organization_with_nickname(attrs, owner, attempts_left - 1)
+    end
   end
 
   @doc """
@@ -753,5 +770,60 @@ defmodule Firmowid.Accounts do
       end
 
     Map.put(user, :avatar_url, avatar_url)
+  end
+
+  @doc """
+  Generates a unique inbound email nickname for an organization.
+
+  Retries up to 10 times if there's a collision.
+
+  ## Examples
+
+      iex> generate_unique_nickname(org_id)
+      "cool-tiger-42"
+
+  """
+  def generate_unique_nickname(org_id) do
+    generate_unique_nickname(org_id, 10)
+  end
+
+  defp generate_unique_nickname(_org_id, 0) do
+    raise "Failed to generate unique inbound email nickname after 10 attempts"
+  end
+
+  defp generate_unique_nickname(org_id, attempts_left) do
+    nickname = HumanIDs.generate()
+
+    # Check if nickname already exists
+    exists? =
+      Organization
+      |> where([o], o.inbound_email_nickname == ^nickname)
+      |> Repo.exists?(organization_id: org_id)
+
+    if exists? do
+      generate_unique_nickname(org_id, attempts_left - 1)
+    else
+      nickname
+    end
+  end
+
+  @doc """
+  Regenerates the inbound email nickname for an organization.
+
+  Returns `{:ok, %Organization{}}` on success, `{:error, %Ecto.Changeset{}}` on failure.
+
+  ## Examples
+
+      iex> regenerate_organization_nickname(org_id)
+      {:ok, %Organization{inbound_email_nickname: "new-nickname-42"}}
+
+  """
+  def regenerate_organization_nickname(org_id) do
+    org = Repo.get!(Organization, org_id, skip_organization_id: true)
+    new_nickname = generate_unique_nickname(org_id)
+
+    org
+    |> Organization.changeset(%{inbound_email_nickname: new_nickname})
+    |> Repo.update(skip_organization_id: true)
   end
 end

@@ -35,7 +35,7 @@ defmodule FirmowidWeb.ResendInboundController do
     json(conn, %{status: "ok", message: "unknown type"})
   end
 
-  # Extract org_id from recipient email (format: {org_uuid}@firmowid.pl)
+  # Extract org_id from recipient email (format: {nickname}@firmowid.pl)
   defp extract_org_id_from_recipients(to_addresses) when is_list(to_addresses) do
     to_addresses
     |> Enum.find_value(&parse_recipient_email/1)
@@ -48,11 +48,16 @@ defmodule FirmowidWeb.ResendInboundController do
   defp extract_org_id_from_recipients(_), do: {:error, :no_valid_recipient}
 
   defp parse_recipient_email(email) do
-    with [uuid_string, "firmowid.pl"] <- String.split(email, "@"),
-         {:ok, uuid} <- Ecto.UUID.cast(uuid_string) do
-      {:ok, uuid}
-    else
-      _ -> nil
+    case String.split(email, "@") do
+      [nickname, "firmowid.pl"] ->
+        # Look up organization by nickname
+        case Repo.get_by(Firmowid.Accounts.Organization, [inbound_email_nickname: nickname], skip_organization_id: true) do
+          nil -> nil
+          org -> {:ok, org.id}
+        end
+
+      _ ->
+        nil
     end
   end
 

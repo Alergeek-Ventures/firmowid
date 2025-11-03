@@ -364,6 +364,28 @@ defmodule FirmowidWeb.SettingsLive.Index do
     end
   end
 
+  def handle_event("regenerate_inbound_nickname", _params, socket) do
+    Bodyguard.permit!(
+      Accounts,
+      :update_organization,
+      socket.assigns.current_user,
+      socket.assigns.current_org
+    )
+
+    org_id = socket.assigns.current_user.organization_id
+
+    case Accounts.regenerate_organization_nickname(org_id) do
+      {:ok, updated_org} ->
+        LiveToast.send_toast(:info, "Nowy adres e-mail został wygenerowany.")
+
+        {:noreply, assign(socket, :current_org, updated_org)}
+
+      {:error, _} ->
+        LiveToast.send_toast(:error, "Wystąpił błąd podczas generowania nowego adresu.")
+        {:noreply, socket}
+    end
+  end
+
   defp derive_statuses(bank_accounts) do
     Map.new(bank_accounts, fn account ->
       status =

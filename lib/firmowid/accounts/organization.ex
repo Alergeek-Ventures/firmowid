@@ -16,6 +16,7 @@ defmodule Firmowid.Accounts.Organization do
     field :correspondence_address, :string
     field :is_vat_payer, :boolean, default: true
     field :allowed_sender_emails, {:array, :string}, default: []
+    field :inbound_email_nickname, :string
 
     field :is_basic_info_editing, :boolean, virtual: true, default: false
     field :is_correspondence_editing, :boolean, virtual: true, default: false
@@ -43,9 +44,11 @@ defmodule Firmowid.Accounts.Organization do
       :is_vat_payer,
       :is_basic_info_editing,
       :is_correspondence_editing,
-      :allowed_sender_emails
+      :allowed_sender_emails,
+      :inbound_email_nickname
     ])
-    |> validate_required([:identification_number, :name, :owner_id])
+    |> validate_required([:identification_number, :name, :owner_id, :inbound_email_nickname])
+    |> unique_constraint(:inbound_email_nickname)
     |> assoc_constraint(:owner)
   end
 

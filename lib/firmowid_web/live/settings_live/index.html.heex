@@ -262,11 +262,46 @@
             <% end %>
           </div>
         <% end %>
-        <div class="mt-6">
-          <.link navigate={~p"/zaproszenia"} class={button_styles(%{variant: "outline"})}>
-            Dodaj współpracowników do organizacji
-          </.link>
+      </div>
+
+      <div class="mt-6 rounded-md p-4 w-fit border border-transparent">
+        <h2 class="font-bold mt-0.5">Adres e-mail do faktur kosztowych</h2>
+        <div class="space-y-4 mt-6">
+          <div class="flex">
+            <div class="w-64 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4">
+              Adres e-mail
+            </div>
+            <div class="flex-1 flex items-center gap-4">
+              <code class="bg-gray-100 px-3 py-1 rounded text-sm">
+                {@current_org.inbound_email_nickname}@firmowid.pl
+              </code>
+              <.button
+                color="orange"
+                variant="outline"
+                phx-click="regenerate_inbound_nickname"
+                phx-disable-with="Generowanie..."
+                class="text-xs py-1 px-3"
+              >
+                Wygeneruj nowy
+              </.button>
+            </div>
+          </div>
+          <div class="flex">
+            <div class="w-64 flex items-start justify-end font-medium text-darkGrey uppercase text-xs pr-4 mt-1">
+              Opis
+            </div>
+            <div class="flex-1 text-sm text-gray-600 max-w-lg">
+              Wysyłaj faktury kosztowe na ten adres, a zostaną automatycznie zaimportowane do systemu.
+              Tylko adresy z dozwolonej listy będą akceptowane.
+            </div>
+          </div>
         </div>
+      </div>
+
+      <div class="mt-6 ml-4">
+        <.link navigate={~p"/zaproszenia"} class={button_styles(%{variant: "outline"})}>
+          Dodaj współpracowników do organizacji
+        </.link>
       </div>
     <% "konto" -> %>
       <div class="mt-6">

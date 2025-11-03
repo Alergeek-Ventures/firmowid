@@ -110,7 +110,8 @@ defmodule Firmowid.MixProject do
       {:styler, "~> 1.5", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:cachex, "~> 4.0"},
-      {:resend, "~> 0.4.4"}
+      {:resend, "~> 0.4.4"},
+      {:humanids, "~> 0.1.1"}
     ]
   end
 
