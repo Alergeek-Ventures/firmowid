@@ -79,6 +79,7 @@ defmodule FirmowidWeb.Router do
         Timezone
       ] do
       live "/", InvoicingLive.Index, :index
+      live "/kosztowe/skrzynka", CostInvoiceLive.InboxLive, :index
       live "/kosztowe/:id", CostInvoiceLive.Show, :show
 
       live "/sprzedazowe", SalesInvoicesLive.Index, :index

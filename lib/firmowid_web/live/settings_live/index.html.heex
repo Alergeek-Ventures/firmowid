@@ -298,6 +298,57 @@
         </div>
       </div>
 
+      <div class="mt-6 rounded-md p-4 w-fit border border-transparent">
+        <h2 class="font-bold mt-0.5">Dozwolone adresy e-mail</h2>
+        <div class="space-y-4 mt-6">
+          <div class="flex">
+            <div class="w-64 flex items-start justify-end font-medium text-darkGrey uppercase text-xs pr-4 mt-1">
+              Lista dozwolonych
+            </div>
+            <div class="flex-1">
+              <%= if @current_org.allowed_sender_emails == [] do %>
+                <p class="text-sm text-gray-500 italic">Brak dozwolonych adresów e-mail</p>
+              <% else %>
+                <div class="space-y-2">
+                  <%= for email <- @current_org.allowed_sender_emails do %>
+                    <div class="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded">
+                      <code class="text-sm flex-1">{email}</code>
+                      <button
+                        type="button"
+                        phx-click="remove_allowed_email"
+                        phx-value-email={email}
+                        class="text-red-600 hover:text-red-800"
+                      >
+                        <.icon name="hero-x-mark" class="w-5 h-5" />
+                      </button>
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+          <div class="flex">
+            <div class="w-64 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4">
+              Dodaj nowy adres
+            </div>
+            <div class="flex-1">
+              <form phx-submit="add_allowed_email" class="flex gap-2">
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  placeholder="email@example.com"
+                  class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm"
+                />
+                <.button type="submit" color="orange" variant="outline" class="text-xs py-1 px-3">
+                  Dodaj
+                </.button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="mt-6 ml-4">
         <.link navigate={~p"/zaproszenia"} class={button_styles(%{variant: "outline"})}>
           Dodaj współpracowników do organizacji

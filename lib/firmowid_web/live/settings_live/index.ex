@@ -386,6 +386,48 @@ defmodule FirmowidWeb.SettingsLive.Index do
     end
   end
 
+  def handle_event("add_allowed_email", %{"email" => email}, socket) do
+    Bodyguard.permit!(
+      Accounts,
+      :update_organization,
+      socket.assigns.current_user,
+      socket.assigns.current_org
+    )
+
+    org_id = socket.assigns.current_user.organization_id
+
+    case Accounts.add_email_to_org_allowlist(org_id, String.trim(email)) do
+      {:ok, updated_org} ->
+        LiveToast.send_toast(:info, "Adres e-mail został dodany do listy dozwolonych.")
+        {:noreply, assign(socket, :current_org, updated_org)}
+
+      {:error, _} ->
+        LiveToast.send_toast(:error, "Wystąpił błąd podczas dodawania adresu e-mail.")
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("remove_allowed_email", %{"email" => email}, socket) do
+    Bodyguard.permit!(
+      Accounts,
+      :update_organization,
+      socket.assigns.current_user,
+      socket.assigns.current_org
+    )
+
+    org_id = socket.assigns.current_user.organization_id
+
+    case Accounts.remove_email_from_org_allowlist(org_id, email) do
+      {:ok, updated_org} ->
+        LiveToast.send_toast(:info, "Adres e-mail został usunięty z listy dozwolonych.")
+        {:noreply, assign(socket, :current_org, updated_org)}
+
+      {:error, _} ->
+        LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania adresu e-mail.")
+        {:noreply, socket}
+    end
+  end
+
   defp derive_statuses(bank_accounts) do
     Map.new(bank_accounts, fn account ->
       status =

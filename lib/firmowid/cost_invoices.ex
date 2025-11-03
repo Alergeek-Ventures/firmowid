@@ -320,6 +320,13 @@ defmodule Firmowid.CostInvoices do
 
   ## Inbound Email functions
 
+  def list_inbound_emails do
+    InboundEmail
+    |> order_by([e], desc: e.received_at)
+    |> Repo.all()
+    |> Repo.preload(:cost_invoices)
+  end
+
   def get_inbound_email!(id) do
     Repo.get!(InboundEmail, id)
   end
