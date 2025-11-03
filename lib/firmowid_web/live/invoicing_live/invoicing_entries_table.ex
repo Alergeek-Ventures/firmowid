@@ -7,6 +7,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.Finances.Transaction
   alias Firmowid.SalesInvoices.SalesInvoice
+  alias FirmowidWeb.InvoicingLive.TransactionGroup
 
   attr :invoicing_entries, :list, required: true
   attr :has_connected_bank_account, :boolean, default: false
@@ -119,6 +120,17 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
       )
 
     ~H"""
+    <style>
+      /* needed for groups' chevrons (rotates on expand/collapse) */
+      [id^="chevron-"] {
+        transform-origin: center center;
+        will-change: transform;
+      }
+      [id^="chevron-"].rotate-90 {
+        transform: rotate(90deg);
+      }
+    </style>
+
     <table
       id="invoicing-entries"
       class="table-fixed border-separate border-spacing-y-3"
@@ -170,8 +182,13 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
         </tr>
       </thead>
       <tbody>
-        <%= for invoicing_entry <- @invoicing_entries do %>
-          <.table_row columns={@columns} invoicing_entry={invoicing_entry} />
+        <%= for entry <- @invoicing_entries do %>
+          <%= case entry do %>
+            <% %TransactionGroup{} = group -> %>
+              <.group_row group={group} columns={@columns} />
+            <% invoicing_entry -> %>
+              <.table_row columns={@columns} invoicing_entry={invoicing_entry} />
+          <% end %>
         <% end %>
       </tbody>
     </table>
@@ -650,4 +667,160 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
     {@value}
     """
   end
+
+  attr :group, TransactionGroup, required: true
+  attr :columns, :list, required: true
+
+  defp group_row(assigns) do
+    ~H"""
+    <!-- Group header row - styled like a regular transaction -->
+    <tr
+      id={"#{@group.id}-row"}
+      class="cursor-pointer"
+      phx-click={
+        JS.toggle_class("rotate-90", to: "#chevron-#{@group.id}")
+        |> JS.toggle(
+          to: "[data-group-transactions='#{@group.id}']",
+          in: {"ease-out duration-300", "opacity-0", "opacity-100"},
+          out: {"ease-in duration-200", "opacity-100", "opacity-0"}
+        )
+      }
+    >
+      <td
+        :for={column <- @columns}
+        class={[
+          "transition-all duration-500 bg-white py-2",
+          column == "party" && "rounded-l-md pl-5 pr-5 text-ellipsis max-xl:max-w-72",
+          String.ends_with?(column, "date") && "font-light",
+          column == "amount" && "rounded-r-md",
+          column == "amount" && "text-orangeText !bg-orangeBg"
+        ]}
+      >
+        <div
+          data-overflow-hider-id={@group.id}
+          class={[
+            column == "party" && "max-w-[50vw]",
+            column != "amount" && "w-full whitespace-nowrap overflow-hidden overflow-ellipsis"
+          ]}
+        >
+          <%= if column == "party" do %>
+            <span>{@group.party}</span>
+            <span
+              id={"chevron-#{@group.id}"}
+              class="inline-flex items-center justify-center w-4 h-4 mx-1 transition-transform"
+            >
+              <.icon name="hero-chevron-right" class="w-3 h-3" />
+            </span>
+            <span class="text-darkGrey opacity-50 text-sm">
+              {pluralize_transaction_count(@group.count)}
+            </span>
+          <% else %>
+            <.render_group_cell column={column} group={@group} columns={@columns} />
+          <% end %>
+        </div>
+      </td>
+    </tr>
+    <!-- Group transaction rows (hidden by default) -->
+    <%= for transaction <- @group.transactions do %>
+      <tr data-group-transactions={@group.id} class="hidden">
+        <td
+          :for={column <- @columns}
+          class={[
+            "transition-all duration-500 bg-white py-2",
+            column == "party" && "rounded-l-md pl-5 pr-5 text-ellipsis max-xl:max-w-72",
+            String.ends_with?(column, "date") && "font-light",
+            column == "amount" && "rounded-r-md",
+            column == "amount" &&
+              Decimal.gte?(transaction.transaction_amount, 0) &&
+              "text-blueText !bg-blueBg",
+            column == "amount" &&
+              Decimal.lt?(transaction.transaction_amount, 0) &&
+              "text-orangeText !bg-orangeBg"
+          ]}
+        >
+          <div
+            data-overflow-hider-id={transaction.id}
+            class={[
+              column == "party" && "max-w-[50vw]",
+              column != "amount" && "w-full whitespace-nowrap overflow-hidden overflow-ellipsis"
+            ]}
+          >
+            <%= if column == "party" do %>
+              <div class="flex items-center gap-2">
+                <.icon name="hero-arrow-turn-down-right" class="w-3 h-3 text-darkGrey opacity-50" />
+                <.render_cell column={column} invoicing_entry={transaction} />
+              </div>
+            <% else %>
+              <.render_cell column={column} invoicing_entry={transaction} />
+            <% end %>
+          </div>
+        </td>
+      </tr>
+    <% end %>
+    """
+  end
+
+  defp render_group_cell(%{column: "amount"} = assigns) do
+    ~H"""
+    <div class="text-right pr-5 py-2 relative">
+      {Money.new(@group.currency, @group.total)}
+    </div>
+    """
+  end
+
+  defp render_group_cell(%{column: column, group: _group} = assigns)
+       when column in ["issue_or_value_date", "value_date", "due_or_booking_date", "booking_date"] do
+    ~H"""
+    {Date.to_iso8601(@group.date)}
+    """
+  end
+
+  defp render_group_cell(%{column: column, group: _group} = assigns) when column in ["issue_date", "due_date"] do
+    ~H"""
+    """
+  end
+
+  defp render_group_cell(%{column: "status"} = assigns) do
+    # Check if we're in unmatched filter by checking columns
+    assigns = assign(assigns, :is_unmatched, "status" in assigns.columns)
+
+    ~H"""
+    <%= if @is_unmatched do %>
+      <div class="flex flex-row gap-2 w-32 overflow-hidden">
+        <div class={[
+          "text-xs h-6",
+          "flex flex-row justify-center items-center py-2 px-2 rounded-md",
+          "transition-all duration-500",
+          "w-10 bg-redBg text-redText"
+        ]}>
+          <.icon name="hero-credit-card-mini" class="h-4 w-4" />
+        </div>
+        <button
+          id={"#{@group.id}-button"}
+          phx-click={
+            JS.push("toggle-skip-invoicing-group",
+              value: %{group_id: @group.id, transaction_ids: Enum.map(@group.transactions, & &1.id)}
+            )
+          }
+          class={[
+            "transition-all duration-500 cursor-pointer",
+            "w-20",
+            "h-6 uppercase text-xs text-darkGrey bg-greyButtonBg rounded-md"
+          ]}
+        >
+          Pomiń
+        </button>
+      </div>
+    <% end %>
+    """
+  end
+
+  defp render_group_cell(assigns) do
+    ~H"""
+    """
+  end
+
+  defp pluralize_transaction_count(1), do: "1 transakcja"
+  defp pluralize_transaction_count(n) when n in 2..4, do: "#{n} transakcje"
+  defp pluralize_transaction_count(n), do: "#{n} transakcji"
 end

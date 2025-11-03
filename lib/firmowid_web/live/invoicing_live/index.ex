@@ -6,8 +6,10 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   alias Firmowid.BankData
   alias Firmowid.CostInvoices
   alias Firmowid.Finances
+  alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing
   alias Firmowid.SalesInvoices
+  alias FirmowidWeb.InvoicingLive.TransactionGroup
 
   @impl true
   def mount(_params, _session, socket) do
@@ -103,6 +105,15 @@ defmodule FirmowidWeb.InvoicingLive.Index do
         filter_string -> String.to_existing_atom(filter_string)
       end
 
+    group_by_party =
+      case Map.get(params, "group_by_party") do
+        "true" -> true
+        _ -> false
+      end
+
+    # Only allow grouping on filters that show transactions
+    group_by_party = group_by_party && filter in [:transactions, :all, :unmatched]
+
     show_modal = Map.get(params, "show_modal") == "true"
 
     socket =
@@ -115,7 +126,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     socket =
       socket
       # UI controls
-      |> assign(:params, %{month: month, filter: filter})
+      |> assign(:params, %{month: month, filter: filter, group_by_party: group_by_party})
       |> refetch_invoicing_entries()
 
     {:noreply, socket}
@@ -147,6 +158,11 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     {:noreply, update_param(socket, :filter, filter)}
   end
 
+  def handle_event("toggle-grouping", _params, socket) do
+    current = socket.assigns.params.group_by_party
+    {:noreply, update_param(socket, :group_by_party, !current)}
+  end
+
   @impl true
   def handle_event("upload", _, socket) do
     Bodyguard.permit!(Invoicing, :upload, socket.assigns.current_user)
@@ -173,6 +189,37 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   def handle_event("toggle-skip-invoicing", %{"id" => id, "type" => type}, socket) do
     # instantly remove if not in unmatched view (where changing state removes the row)
     Process.send_after(self(), {:toggle_skip_invoicing, %{id: id, type: type}}, 1)
+
+    {:noreply, socket}
+  end
+
+  def handle_event(
+        "toggle-skip-invoicing-group",
+        %{"group_id" => group_id, "transaction_ids" => transaction_ids},
+        %{assigns: %{params: %{filter: :unmatched}}} = socket
+      ) do
+    # mark group for removal (animation)
+    socket = push_event(socket, "mark-for-removal", %{id: group_id})
+
+    # mark all child transactions for removal
+    socket =
+      Enum.reduce(transaction_ids, socket, fn id, acc ->
+        push_event(acc, "mark-for-removal", %{id: id})
+      end)
+
+    # actual removal - toggle all transactions
+    Enum.each(transaction_ids, fn id ->
+      Process.send_after(self(), {:toggle_skip_invoicing, %{id: id, type: "transaction"}}, 500)
+    end)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("toggle-skip-invoicing-group", %{"transaction_ids" => transaction_ids}, socket) do
+    # instantly remove if not in unmatched view
+    Enum.each(transaction_ids, fn id ->
+      Process.send_after(self(), {:toggle_skip_invoicing, %{id: id, type: "transaction"}}, 1)
+    end)
 
     {:noreply, socket}
   end
@@ -336,12 +383,16 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   defp update_param(socket, key, value) do
     params = Map.put(socket.assigns.params, key, value)
 
-    params = %{
+    url_params = %{
       month: params.month |> Date.beginning_of_month() |> Date.to_iso8601(),
-      filter: Atom.to_string(params.filter)
+      filter: Atom.to_string(params.filter),
+      group_by_party: to_string(params.group_by_party)
     }
 
-    socket = push_patch(socket, to: ~p"/?month=#{params.month}&filter=#{params.filter}")
+    socket =
+      push_patch(socket,
+        to: ~p"/?month=#{url_params.month}&filter=#{url_params.filter}&group_by_party=#{url_params.group_by_party}"
+      )
 
     socket
   end
@@ -424,12 +475,19 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
 
-    socket =
-      assign(
-        socket,
-        :invoicing_entries,
-        Invoicing.get_invoicing_entries(date_range_from, date_range_to, filter)
-      )
+    entries = Invoicing.get_invoicing_entries(date_range_from, date_range_to, filter)
+
+    # For :unmatched filter with grouping enabled, we need context about all transactions
+    # to avoid grouping when some transactions are skipped/matched
+    entries =
+      if socket.assigns.params.group_by_party && filter == :unmatched do
+        all_transactions = Finances.list_transactions(date_range_from, date_range_to)
+        group_cost_transactions_by_party(entries, true, all_transactions)
+      else
+        group_cost_transactions_by_party(entries, socket.assigns.params.group_by_party, [])
+      end
+
+    socket = assign(socket, :invoicing_entries, entries)
 
     # actual data
     pending_invoicing_entries_count =
@@ -491,5 +549,96 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
   defp apply_action(socket, :index, _params) do
     assign(socket, :page_title, "Fakturowanie")
+  end
+
+  defp group_cost_transactions_by_party(entries, true, context_transactions) do
+    # Separate cost transactions from other entries
+    {cost_transactions, other_entries} =
+      Enum.split_with(entries, fn
+        %Transaction{transaction_amount: amount} -> Decimal.lt?(amount, 0)
+        _ -> false
+      end)
+
+    # Group ALL cost transactions by party name (exact match)
+    all_cost_by_party = Enum.group_by(cost_transactions, & &1.creditor_name)
+
+    # Build a set of parties that have non-groupable transactions in the full context
+    parties_with_mixed_state =
+      if context_transactions == [] do
+        MapSet.new()
+      else
+        context_transactions
+        |> Enum.filter(fn
+          %Transaction{transaction_amount: amount} = t ->
+            Decimal.lt?(amount, 0) && !is_groupable_cost_transaction?(t)
+
+          _ ->
+            false
+        end)
+        |> MapSet.new(& &1.creditor_name)
+      end
+
+    {groups, ungrouped_transactions} =
+      Enum.split_with(all_cost_by_party, fn {party, txns} ->
+        # Must have at least 2 transactions
+        # AND all transactions in entries must be groupable
+        # AND party must not have mixed state in the full context
+        length(txns) >= 2 &&
+          Enum.all?(txns, &is_groupable_cost_transaction?/1) &&
+          !MapSet.member?(parties_with_mixed_state, party)
+      end)
+
+    group_structs =
+      Enum.map(groups, fn {party, txns} ->
+        build_transaction_group(party, txns)
+      end)
+
+    ungrouped_flat =
+      Enum.flat_map(ungrouped_transactions, fn {_party, txns} -> txns end)
+
+    [group_structs, ungrouped_flat, other_entries]
+    |> Enum.concat()
+    |> Invoicing.order_entries_for_display()
+  end
+
+  # Pattern match: grouping disabled
+  defp group_cost_transactions_by_party(entries, false, _context) do
+    entries
+  end
+
+  defp is_groupable_cost_transaction?(%Transaction{} = transaction) do
+    is_cost = Decimal.lt?(transaction.transaction_amount, 0)
+    not_skipped = transaction.skip_invoicing == false
+
+    not_matched =
+      transaction.cost_invoices_transactions == [] &&
+        transaction.sales_invoices_transactions == []
+
+    is_cost && not_skipped && not_matched
+  end
+
+  defp is_groupable_cost_transaction?(_), do: false
+
+  defp build_transaction_group(party, transactions) do
+    total =
+      Enum.reduce(transactions, Decimal.new(0), fn t, acc ->
+        Decimal.add(acc, t.transaction_amount)
+      end)
+
+    # Use LATEST date for sorting
+    latest_transaction = Enum.max_by(transactions, & &1.booking_date, Date)
+
+    # Generate stable ID from party name
+    id = "group-#{:erlang.phash2(party)}"
+
+    %TransactionGroup{
+      id: id,
+      party: party,
+      total: total,
+      count: length(transactions),
+      currency: latest_transaction.transaction_currency,
+      date: latest_transaction.booking_date,
+      transactions: transactions
+    }
   end
 end

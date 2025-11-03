@@ -13,6 +13,7 @@ defmodule Firmowid.Invoicing do
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.SalesInvoice
+  alias FirmowidWeb.InvoicingLive.TransactionGroup
 
   require Logger
 
@@ -500,6 +501,8 @@ defmodule Firmowid.Invoicing do
     transaction.booking_date
   end
 
+  defp get_date(%TransactionGroup{date: date}), do: date
+
   defp matched?(%SalesInvoice{} = invoice),
     do: length(invoice.transactions) > 0 or Map.get(invoice, :skip_invoicing, false)
 
@@ -510,6 +513,11 @@ defmodule Firmowid.Invoicing do
     do:
       length(transaction.sales_invoices_transactions ++ transaction.cost_invoices_transactions) > 0 or
         Map.get(transaction, :skip_invoicing, false)
+
+  defp matched?(%TransactionGroup{}) do
+    # Groups only contain unmatched transactions by design
+    false
+  end
 
   defp matched?(_), do: false
 

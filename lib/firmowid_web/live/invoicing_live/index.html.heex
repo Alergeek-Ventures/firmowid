@@ -128,6 +128,7 @@
   search_results={@search_results}
   invoicing_search_enabled={@invoicing_search_enabled}
 />
+
 <div class={[
   !@is_month_touched && "hidden",
   "flex flex-row gap-4 items-center max-md:hidden",
@@ -182,6 +183,14 @@
       Nieprzypisane
     <% end %>
   </.button>
+
+  <.switch
+    :if={@params.filter in [:transactions, :all, :unmatched]}
+    class="ml-auto"
+    label="Grupuj według kontrahenta"
+    field={to_form(%{"group_by_party" => @params.group_by_party})[:group_by_party]}
+    phx-click="toggle-grouping"
+  />
 </div>
 
 <div
