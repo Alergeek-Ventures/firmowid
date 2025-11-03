@@ -572,7 +572,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
         context_transactions
         |> Enum.filter(fn
           %Transaction{transaction_amount: amount} = t ->
-            Decimal.lt?(amount, 0) && !is_groupable_cost_transaction?(t)
+            Decimal.lt?(amount, 0) && !groupable_cost_transaction?(t)
 
           _ ->
             false
@@ -586,7 +586,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
         # AND all transactions in entries must be groupable
         # AND party must not have mixed state in the full context
         length(txns) >= 2 &&
-          Enum.all?(txns, &is_groupable_cost_transaction?/1) &&
+          Enum.all?(txns, &groupable_cost_transaction?/1) &&
           !MapSet.member?(parties_with_mixed_state, party)
       end)
 
@@ -608,7 +608,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     entries
   end
 
-  defp is_groupable_cost_transaction?(%Transaction{} = transaction) do
+  defp groupable_cost_transaction?(%Transaction{} = transaction) do
     is_cost = Decimal.lt?(transaction.transaction_amount, 0)
     not_skipped = transaction.skip_invoicing == false
 
@@ -619,7 +619,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     is_cost && not_skipped && not_matched
   end
 
-  defp is_groupable_cost_transaction?(_), do: false
+  defp groupable_cost_transaction?(_), do: false
 
   defp build_transaction_group(party, transactions) do
     total =
