@@ -34,6 +34,7 @@ config :ex_money,
   # (for e.g. dev if you need it)
   exchange_rates_cache_module: Firmowid.Currencies.DatabaseCache
 
+config :firmowid, ChromicPDF, on_demand: true
 config :firmowid, Firmowid.Cldr, locales: ["pl"]
 config :firmowid, Firmowid.Currencies, rates_provider: :mock
 
