@@ -794,11 +794,11 @@ defmodule Firmowid.Accounts do
   defp generate_unique_nickname(org_id, attempts_left) do
     nickname = HumanIDs.generate()
 
-    # Check if nickname already exists
+    # Check if nickname already exists across all organizations
     exists? =
       Organization
       |> where([o], o.inbound_email_nickname == ^nickname)
-      |> Repo.exists?(organization_id: org_id)
+      |> Repo.exists?(skip_organization_id: true)
 
     if exists? do
       generate_unique_nickname(org_id, attempts_left - 1)

@@ -260,7 +260,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
            :company_form,
            to_form(Organization.basic_info_changeset(Map.merge(organization, updated_org)))
          )
-         |> assign(:current_org, updated_org)}
+         |> assign(:current_org, Accounts.get_organization_with_avatar(updated_org))}
 
       {:error, changeset} ->
         {:noreply, assign(socket, :correspondence_form, to_form(changeset))}
@@ -378,7 +378,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
       {:ok, updated_org} ->
         LiveToast.send_toast(:info, "Nowy adres e-mail został wygenerowany.")
 
-        {:noreply, assign(socket, :current_org, updated_org)}
+        {:noreply, assign(socket, :current_org, Accounts.get_organization_with_avatar(updated_org))}
 
       {:error, _} ->
         LiveToast.send_toast(:error, "Wystąpił błąd podczas generowania nowego adresu.")
@@ -399,7 +399,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
     case Accounts.add_email_to_org_allowlist(org_id, String.trim(email)) do
       {:ok, updated_org} ->
         LiveToast.send_toast(:info, "Adres e-mail został dodany do listy dozwolonych.")
-        {:noreply, assign(socket, :current_org, updated_org)}
+        {:noreply, assign(socket, :current_org, Accounts.get_organization_with_avatar(updated_org))}
 
       {:error, _} ->
         LiveToast.send_toast(:error, "Wystąpił błąd podczas dodawania adresu e-mail.")
@@ -420,7 +420,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
     case Accounts.remove_email_from_org_allowlist(org_id, email) do
       {:ok, updated_org} ->
         LiveToast.send_toast(:info, "Adres e-mail został usunięty z listy dozwolonych.")
-        {:noreply, assign(socket, :current_org, updated_org)}
+        {:noreply, assign(socket, :current_org, Accounts.get_organization_with_avatar(updated_org))}
 
       {:error, _} ->
         LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania adresu e-mail.")
