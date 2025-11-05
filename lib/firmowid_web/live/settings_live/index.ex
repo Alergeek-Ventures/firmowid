@@ -12,28 +12,17 @@ defmodule FirmowidWeb.SettingsLive.Index do
   alias Firmowid.Finances
 
   def form_basic_info_changeset(organization, attrs \\ %{}) do
-    organization
-    |> Organization.basic_info_changeset(attrs)
-    |> Changeset.cast(
-      attrs,
-      [:is_basic_info_editing]
-    )
+    Organization.basic_info_changeset(organization, attrs)
   end
 
   def form_correspondence_changeset(organization, attrs \\ %{}) do
-    organization
-    |> Organization.correspondence_changeset(attrs)
-    |> Changeset.cast(
-      attrs,
-      [:is_correspondence_editing]
-    )
+    Organization.correspondence_changeset(organization, attrs)
   end
 
   def form_user_changeset(user, attrs \\ %{}) do
     Changeset.cast(user, attrs, [
       :name,
-      :employment_date,
-      :is_personal_info_editing
+      :employment_date
     ])
   end
 
@@ -71,18 +60,28 @@ defmodule FirmowidWeb.SettingsLive.Index do
         socket
       end
 
-    socket = assign(socket, :user_form, to_form(form_user_changeset(socket.assigns.current_user)))
+    user = socket.assigns.current_user
+    socket = assign(socket, :user_form, to_form(form_user_changeset(user)))
+
+    # Security section forms
+    email_form = user |> Accounts.change_user_email() |> to_form()
+    password_form = user |> Accounts.change_user_password() |> to_form()
 
     {:ok,
      socket
-     |> assign(
-       :tab,
-       "konto"
-     )
+     |> assign(:editing_basic_info, false)
+     |> assign(:editing_correspondence, false)
+     |> assign(:editing_personal_info, false)
      |> assign(
        :delete_account_form,
-       to_form(Accounts.change_user_delete_account(socket.assigns.current_user))
+       to_form(Accounts.change_user_delete_account(user))
      )
+     |> assign(:current_password, nil)
+     |> assign(:email_form_current_password, nil)
+     |> assign(:current_email, user.email)
+     |> assign(:email_form, email_form)
+     |> assign(:password_form, password_form)
+     |> assign(:trigger_submit, false)
      |> assign(:bank_accounts, bank_accounts)
      |> assign(:bank_account_statuses, derive_statuses(bank_accounts))
      |> assign(:uploaded_files, [])
@@ -92,16 +91,25 @@ defmodule FirmowidWeb.SettingsLive.Index do
        auto_upload: true,
        progress: &handle_progress/3
      )
-     |> assign(:current_user, Accounts.get_user_with_avatar(socket.assigns.current_user))
+     |> assign(:current_user, Accounts.get_user_with_avatar(user))
      |> assign(:current_org, Accounts.get_organization_with_avatar(socket.assigns.current_org))
      |> assign(:main_class, "bg-white")}
   end
 
-  def handle_params(%{"tab" => tab}, _uri, socket) do
-    {:noreply, assign(socket, tab: tab)}
+  def handle_params(%{"token" => token}, _uri, %{assigns: %{live_action: :confirm_email}} = socket) do
+    socket =
+      case Accounts.update_user_email(socket.assigns.current_user, token) do
+        :ok ->
+          put_flash(socket, :info, "Email został zmieniony pomyślnie.")
+
+        :error ->
+          put_flash(socket, :error, "Link do zmiany emaila jest nieprawidłowy lub wygasł.")
+      end
+
+    {:noreply, push_navigate(socket, to: ~p"/ustawienia/bezpieczenstwo")}
   end
 
-  def handle_params(_unsigned_params, _uri, socket) do
+  def handle_params(_params, _uri, socket) do
     {:noreply, socket}
   end
 
@@ -252,18 +260,29 @@ defmodule FirmowidWeb.SettingsLive.Index do
       {:ok, updated_org} ->
         {:noreply,
          socket
+         |> assign(:editing_basic_info, false)
+         |> assign(:editing_correspondence, false)
          |> assign(
            :correspondence_form,
-           to_form(Organization.correspondence_changeset(Map.merge(organization, updated_org)))
+           to_form(form_correspondence_changeset(updated_org))
          )
          |> assign(
            :company_form,
-           to_form(Organization.basic_info_changeset(Map.merge(organization, updated_org)))
+           to_form(form_basic_info_changeset(updated_org))
          )
          |> assign(:current_org, Accounts.get_organization_with_avatar(updated_org))}
 
       {:error, changeset} ->
-        {:noreply, assign(socket, :correspondence_form, to_form(changeset))}
+        # Determine which form had the error based on changeset fields
+        socket =
+          if Changeset.get_field(changeset, :correspondence_name) ||
+               Changeset.get_field(changeset, :correspondence_address) do
+            assign(socket, :correspondence_form, to_form(changeset))
+          else
+            assign(socket, :company_form, to_form(changeset))
+          end
+
+        {:noreply, socket}
     end
   end
 
@@ -272,8 +291,9 @@ defmodule FirmowidWeb.SettingsLive.Index do
       {:ok, updated_user} ->
         {:noreply,
          socket
+         |> assign(:editing_personal_info, false)
          |> assign(:current_user, updated_user)
-         |> assign(:user_form, to_form(form_user_changeset(Map.merge(user_params, updated_user))))}
+         |> assign(:user_form, to_form(form_user_changeset(updated_user)))}
 
       {:error, changeset} ->
         {:noreply, assign(socket, :user_form, to_form(changeset))}
@@ -425,6 +445,80 @@ defmodule FirmowidWeb.SettingsLive.Index do
       {:error, _} ->
         LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania adresu e-mail.")
         {:noreply, socket}
+    end
+  end
+
+  def handle_event("toggle_editing_basic_info", _params, socket) do
+    {:noreply, assign(socket, :editing_basic_info, !socket.assigns.editing_basic_info)}
+  end
+
+  def handle_event("toggle_editing_correspondence", _params, socket) do
+    {:noreply, assign(socket, :editing_correspondence, !socket.assigns.editing_correspondence)}
+  end
+
+  def handle_event("toggle_editing_personal_info", _params, socket) do
+    {:noreply, assign(socket, :editing_personal_info, !socket.assigns.editing_personal_info)}
+  end
+
+  def handle_event("validate_email", params, socket) do
+    %{"current_password" => password, "user" => user_params} = params
+
+    email_form =
+      socket.assigns.current_user
+      |> Accounts.change_user_email(user_params)
+      |> Map.put(:action, :validate)
+      |> to_form()
+
+    {:noreply, assign(socket, email_form: email_form, email_form_current_password: password)}
+  end
+
+  def handle_event("update_email", params, socket) do
+    %{"current_password" => password, "user" => user_params} = params
+    user = socket.assigns.current_user
+
+    case Accounts.apply_user_email(user, password, user_params) do
+      {:ok, applied_user} ->
+        Accounts.deliver_user_update_email_instructions(
+          applied_user,
+          user.email,
+          &url(~p"/ustawienia/bezpieczenstwo/potwierdz/#{&1}")
+        )
+
+        info = "Link potwierdzający zmianę adresu email został wysłany na nowy adres."
+        {:noreply, socket |> put_flash(:info, info) |> assign(email_form_current_password: nil)}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, :email_form, to_form(Map.put(changeset, :action, :insert)))}
+    end
+  end
+
+  def handle_event("validate_password", params, socket) do
+    %{"current_password" => password, "user" => user_params} = params
+
+    password_form =
+      socket.assigns.current_user
+      |> Accounts.change_user_password(user_params)
+      |> Map.put(:action, :validate)
+      |> to_form()
+
+    {:noreply, assign(socket, password_form: password_form, current_password: password)}
+  end
+
+  def handle_event("update_password", params, socket) do
+    %{"current_password" => password, "user" => user_params} = params
+    user = socket.assigns.current_user
+
+    case Accounts.update_user_password(user, password, user_params) do
+      {:ok, user} ->
+        password_form =
+          user
+          |> Accounts.change_user_password(user_params)
+          |> to_form()
+
+        {:noreply, assign(socket, trigger_submit: true, password_form: password_form)}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, password_form: to_form(changeset))}
     end
   end
 

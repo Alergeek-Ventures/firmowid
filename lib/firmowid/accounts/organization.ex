@@ -18,9 +18,6 @@ defmodule Firmowid.Accounts.Organization do
     field :allowed_sender_emails, {:array, :string}, default: []
     field :inbound_email_nickname, :string
 
-    field :is_basic_info_editing, :boolean, virtual: true, default: false
-    field :is_correspondence_editing, :boolean, virtual: true, default: false
-
     belongs_to :owner, User
     belongs_to :avatar_blob, Firmowid.Blobs.Blob
     has_many :users, User
@@ -42,8 +39,6 @@ defmodule Firmowid.Accounts.Organization do
       :correspondence_name,
       :correspondence_address,
       :is_vat_payer,
-      :is_basic_info_editing,
-      :is_correspondence_editing,
       :allowed_sender_emails,
       :inbound_email_nickname
     ])

@@ -205,7 +205,7 @@ defmodule Firmowid.Accounts do
 
   ## Examples
 
-      iex> deliver_user_update_email_instructions(user, current_email, &url(~p"/ustawienia/uzytkownik/potwierdz/#{&1}"))
+      iex> deliver_user_update_email_instructions(user, current_email, &url(~p"/ustawienia/bezpieczenstwo/potwierdz/#{&1}"))
       {:ok, %{to: ..., body: ...}}
 
   """

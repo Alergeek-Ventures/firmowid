@@ -26,26 +26,52 @@
         </div>
       </div>
       <div class="flex gap-10 font-semibold mt-16">
-        <%= for {_should_show, {tab, label}} <-
-            [
-
-              {true, {"konto", "Twoje konto"}},
-              {Bodyguard.permit?(Firmowid.Accounts, :update_organization, @current_user, @current_org), 
-              {"organizacja", "Twoja organizacja"}},
-              {Bodyguard.permit?(Firmowid.Finances, :read_bank_accounts, @current_user),
-              {"konta_bankowe", "Konta bankowe"}}
-            ] |> Enum.filter(&elem(&1, 0))
-           do %>
+        <.link
+          patch={~p"/ustawienia/konto"}
+          class={
+            classes([
+              @live_action == :account && "text-orangeText",
+              "phx-click-loading:opacity-50"
+            ])
+          }
+        >
+          Twoje konto
+        </.link>
+        <.link
+          patch={~p"/ustawienia/bezpieczenstwo"}
+          class={
+            classes([
+              @live_action == :security && "text-orangeText",
+              "phx-click-loading:opacity-50"
+            ])
+          }
+        >
+          Bezpieczeństwo
+        </.link>
+        <%= if Bodyguard.permit?(Firmowid.Accounts, :update_organization, @current_user, @current_org) do %>
           <.link
-            patch={~p"/ustawienia?tab=#{tab}"}
+            patch={~p"/ustawienia/organizacja"}
             class={
               classes([
-                @tab == tab && "text-orangeText",
+                @live_action == :organization && "text-orangeText",
                 "phx-click-loading:opacity-50"
               ])
             }
           >
-            {label}
+            Twoja organizacja
+          </.link>
+        <% end %>
+        <%= if Bodyguard.permit?(Firmowid.Finances, :read_bank_accounts, @current_user) do %>
+          <.link
+            patch={~p"/ustawienia/konta-bankowe"}
+            class={
+              classes([
+                @live_action == :bank_accounts && "text-orangeText",
+                "phx-click-loading:opacity-50"
+              ])
+            }
+          >
+            Konta bankowe
           </.link>
         <% end %>
       </div>
@@ -77,35 +103,27 @@
     <% end %>
   </div>
 
-  <%= case @tab do %>
-    <% "organizacja" -> %>
+  <%= case @live_action do %>
+    <% :organization -> %>
       <div class={
         classes([
           "mt-6 rounded-md p-4  w-fit border border-transparent",
-          @company_form[:is_basic_info_editing].value && "border-greyButtonBg"
+          @editing_basic_info && "border-greyButtonBg"
         ])
       }>
         <div class="flex gap-1">
           <h2 class="font-bold mt-0.5">Dane firmy</h2>
           <.edit_button
-            phx-click={
-              JS.push("save",
-                value: %{
-                  "organization" => %{
-                    "is_basic_info_editing" => !@company_form[:is_basic_info_editing].value
-                  }
-                }
-              )
-            }
+            phx-click="toggle_editing_basic_info"
             class={
               classes([
-                @company_form[:is_basic_info_editing].value == true &&
+                @editing_basic_info &&
                   "text-orangeText hover:text-orangeText/70 active:text-orangeText/90"
               ])
             }
           />
         </div>
-        <%= if @company_form[:is_basic_info_editing].value do %>
+        <%= if @editing_basic_info do %>
           <div class="flex flex-col gap-4 mt-6">
             <.form class="flex flex-col gap-4" phx-submit="save" for={@company_form}>
               <%= for [field, label, type] <- [
@@ -133,7 +151,6 @@
                   </div>
                 </div>
               <% end %>
-              <.input type="hidden" field={@company_form[:is_basic_info_editing]} value="false" />
 
               <.button
                 color="orange"
@@ -177,31 +194,22 @@
       <div class={
         classes([
           "mt-6 rounded-md p-4 w-fit border border-transparent",
-          @correspondence_form[:is_correspondence_editing].value && "border-greyButtonBg"
+          @editing_correspondence && "border-greyButtonBg"
         ])
       }>
         <div class="flex gap-1">
           <h2 class="font-bold mt-0.5">Adres korespondencyjny</h2>
           <.edit_button
-            phx-click={
-              JS.push("save",
-                value: %{
-                  "organization" => %{
-                    "is_correspondence_editing" =>
-                      !@correspondence_form[:is_correspondence_editing].value
-                  }
-                }
-              )
-            }
+            phx-click="toggle_editing_correspondence"
             class={
               classes([
-                @correspondence_form[:is_correspondence_editing].value == true &&
+                @editing_correspondence &&
                   "text-orangeText hover:text-orangeText/70 active:text-orangeText/90"
               ])
             }
           />
         </div>
-        <%= if @correspondence_form[:is_correspondence_editing].value do %>
+        <%= if @editing_correspondence do %>
           <div class="flex flex-col gap-4 mt-6">
             <.form class="flex flex-col gap-4" phx-submit="save" for={@correspondence_form}>
               <%= for {field, label} <- [
@@ -224,11 +232,7 @@
                   </div>
                 </div>
               <% end %>
-              <.input
-                type="hidden"
-                field={@correspondence_form[:is_correspondence_editing]}
-                value="false"
-              />
+
               <.button
                 color="orange"
                 class="w-fit ml-auto"
@@ -354,12 +358,12 @@
           Dodaj współpracowników do organizacji
         </.link>
       </div>
-    <% "konto" -> %>
+    <% :account -> %>
       <div class="mt-6">
         <div class="ml-4">
           <div class="flex gap-4">
             <h2 class="font-bold">Dane dostępowe</h2>
-            <.link class="text-sm mt-0.5 hover:underline" navigate={~p"/ustawienia/uzytkownik"}>
+            <.link class="text-sm mt-0.5 hover:underline" patch={~p"/ustawienia/bezpieczenstwo"}>
               Edytuj
             </.link>
           </div>
@@ -385,30 +389,22 @@
         <div class={
           classes([
             "mt-6 rounded-md p-4 w-fit border border-transparent",
-            @user_form[:is_personal_info_editing].value && "border-greyButtonBg"
+            @editing_personal_info && "border-greyButtonBg"
           ])
         }>
           <div class="flex gap-1">
             <h2 class="font-bold mt-0.5">Dane osobowe</h2>
             <.edit_button
-              phx-click={
-                JS.push("save",
-                  value: %{
-                    "user" => %{
-                      "is_personal_info_editing" => !@user_form[:is_personal_info_editing].value
-                    }
-                  }
-                )
-              }
+              phx-click="toggle_editing_personal_info"
               class={
                 classes([
-                  @user_form[:is_personal_info_editing].value == true &&
+                  @editing_personal_info &&
                     "text-orangeText hover:text-orangeText/70 active:text-orangeText/90"
                 ])
               }
             />
           </div>
-          <%= if @user_form[:is_personal_info_editing].value do %>
+          <%= if @editing_personal_info do %>
             <div class="flex flex-col gap-4 mt-6">
               <.form class="flex flex-col gap-4" phx-submit="save" for={@user_form}>
                 <%= for [field, label, type] <- [
@@ -432,7 +428,7 @@
                     </div>
                   </div>
                 <% end %>
-                <.input type="hidden" field={@user_form[:is_personal_info_editing]} value="false" />
+
                 <.button
                   color="orange"
                   class="w-fit ml-auto"
@@ -533,7 +529,75 @@
           </div>
         </div>
       </div>
-    <% "konta_bankowe" -> %>
+    <% :security -> %>
+      <div class="mt-6 space-y-12 divide-y">
+        <div>
+          <h2 class="font-bold mb-6">Zmiana adresu e-mail</h2>
+          <.simple_form
+            for={@email_form}
+            id="email_form"
+            phx-submit="update_email"
+            phx-change="validate_email"
+          >
+            <.input field={@email_form[:email]} type="email" label="Email" required />
+            <.input
+              field={@email_form[:current_password]}
+              name="current_password"
+              id="current_password_for_email"
+              type="password"
+              label="Aktualne hasło"
+              value={@email_form_current_password}
+              required
+            />
+            <:actions>
+              <.button phx-disable-with="Zmieniam...">Zmień Email</.button>
+            </:actions>
+          </.simple_form>
+        </div>
+        <div class="pt-12">
+          <h2 class="font-bold mb-6">Zmiana hasła</h2>
+          <.simple_form
+            for={@password_form}
+            id="password_form"
+            action={~p"/zaloguj?_action=password_updated"}
+            method="post"
+            phx-change="validate_password"
+            phx-submit="update_password"
+            phx-trigger-action={@trigger_submit}
+          >
+            <input
+              name={@password_form[:email].name}
+              type="hidden"
+              id="hidden_user_email"
+              value={@current_email}
+            />
+            <.input
+              field={@password_form[:password]}
+              type="password"
+              label="Nowe hasło"
+              required
+            />
+            <.input
+              field={@password_form[:password_confirmation]}
+              type="password"
+              label="Potwierdź nowe hasło"
+            />
+            <.input
+              field={@password_form[:current_password]}
+              name="current_password"
+              type="password"
+              label="Aktualne hasło"
+              id="current_password_for_password"
+              value={@current_password}
+              required
+            />
+            <:actions>
+              <.button phx-disable-with="Zmieniam...">Zmień Hasło</.button>
+            </:actions>
+          </.simple_form>
+        </div>
+      </div>
+    <% :bank_accounts -> %>
       <div class="mt-6 flex flex-col items-start">
         <div class="flex gap-1">
           <h2 class="font-bold mt-0.5">Konta bankowe</h2>

@@ -84,7 +84,7 @@ defmodule FirmowidWeb.User.SettingsLive do
           put_flash(socket, :error, "Link do zmiany emaila jest nieprawidłowy lub wygasł.")
       end
 
-    {:ok, push_navigate(socket, to: ~p"/ustawienia/uzytkownik")}
+    {:ok, push_navigate(socket, to: ~p"/ustawienia/bezpieczenstwo")}
   end
 
   def mount(_params, _session, socket) do

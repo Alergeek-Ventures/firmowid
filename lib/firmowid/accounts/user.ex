@@ -16,7 +16,6 @@ defmodule Firmowid.Accounts.User do
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
 
-    field :is_personal_info_editing, :boolean, virtual: true, default: false
     field :removed_from_project, :boolean, virtual: true, default: false
 
     many_to_many :projects,
@@ -212,8 +211,7 @@ defmodule Firmowid.Accounts.User do
       :name,
       :employment_date,
       :avatar_blob_id,
-      :role,
-      :is_personal_info_editing
+      :role
     ])
   end
 end

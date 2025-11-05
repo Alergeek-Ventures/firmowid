@@ -124,10 +124,13 @@ defmodule FirmowidWeb.Router do
 
       live "/czasosledz/ewidencja", HoursRecordLive.Index, :index
 
-      live "/ustawienia/uzytkownik", User.SettingsLive, :edit
-      live "/ustawienia/uzytkownik/potwierdz/:token", User.SettingsLive, :index
+      live "/ustawienia", SettingsLive.Index, :account
+      live "/ustawienia/konto", SettingsLive.Index, :account
+      live "/ustawienia/bezpieczenstwo", SettingsLive.Index, :security
+      live "/ustawienia/organizacja", SettingsLive.Index, :organization
+      live "/ustawienia/konta-bankowe", SettingsLive.Index, :bank_accounts
 
-      live "/ustawienia", SettingsLive.Index, :index
+      live "/ustawienia/bezpieczenstwo/potwierdz/:token", SettingsLive.Index, :confirm_email
     end
   end
 

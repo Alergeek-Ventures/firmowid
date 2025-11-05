@@ -11,14 +11,14 @@ defmodule FirmowidWeb.UserSettingsLiveTest do
       {:ok, _lv, html} =
         conn
         |> log_in_user(user_fixture())
-        |> live(~p"/ustawienia/uzytkownik")
+        |> live(~p"/ustawienia/bezpieczenstwo")
 
       assert html =~ "Zmień Email"
       assert html =~ "Zmień Hasło"
     end
 
     test "redirects if user is not logged in", %{conn: conn} do
-      assert {:error, redirect} = live(conn, ~p"/ustawienia/uzytkownik")
+      assert {:error, redirect} = live(conn, ~p"/ustawienia/bezpieczenstwo")
 
       assert {:redirect, %{to: path}} = redirect
       assert path == ~p"/zaloguj"
@@ -35,7 +35,7 @@ defmodule FirmowidWeb.UserSettingsLiveTest do
     test "updates the user email", %{conn: conn, password: password, user: user} do
       new_email = unique_user_email()
 
-      {:ok, lv, _html} = live(conn, ~p"/ustawienia/uzytkownik")
+      {:ok, lv, _html} = live(conn, ~p"/ustawienia/bezpieczenstwo")
 
       result =
         lv
@@ -50,7 +50,7 @@ defmodule FirmowidWeb.UserSettingsLiveTest do
     end
 
     test "renders errors with invalid data (phx-change)", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/ustawienia/uzytkownik")
+      {:ok, lv, _html} = live(conn, ~p"/ustawienia/bezpieczenstwo")
 
       result =
         lv
@@ -66,7 +66,7 @@ defmodule FirmowidWeb.UserSettingsLiveTest do
     end
 
     test "renders errors with invalid data (phx-submit)", %{conn: conn, user: user} do
-      {:ok, lv, _html} = live(conn, ~p"/ustawienia/uzytkownik")
+      {:ok, lv, _html} = live(conn, ~p"/ustawienia/bezpieczenstwo")
 
       result =
         lv
@@ -92,7 +92,7 @@ defmodule FirmowidWeb.UserSettingsLiveTest do
     test "updates the user password", %{conn: conn, user: user, password: password} do
       new_password = valid_user_password()
 
-      {:ok, lv, _html} = live(conn, ~p"/ustawienia/uzytkownik")
+      {:ok, lv, _html} = live(conn, ~p"/ustawienia/bezpieczenstwo")
 
       form =
         form(lv, "#password_form", %{
@@ -108,7 +108,7 @@ defmodule FirmowidWeb.UserSettingsLiveTest do
 
       new_password_conn = follow_trigger_action(form, conn)
 
-      assert redirected_to(new_password_conn) == ~p"/ustawienia/uzytkownik"
+      assert redirected_to(new_password_conn) == ~p"/ustawienia/bezpieczenstwo"
 
       assert get_session(new_password_conn, :user_token) != get_session(conn, :user_token)
 
@@ -116,7 +116,7 @@ defmodule FirmowidWeb.UserSettingsLiveTest do
     end
 
     test "renders errors with invalid data (phx-change)", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/ustawienia/uzytkownik")
+      {:ok, lv, _html} = live(conn, ~p"/ustawienia/bezpieczenstwo")
 
       result =
         lv
@@ -135,7 +135,7 @@ defmodule FirmowidWeb.UserSettingsLiveTest do
     end
 
     test "renders errors with invalid data (phx-submit)", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/ustawienia/uzytkownik")
+      {:ok, lv, _html} = live(conn, ~p"/ustawienia/bezpieczenstwo")
 
       result =
         lv
@@ -169,27 +169,27 @@ defmodule FirmowidWeb.UserSettingsLiveTest do
     end
 
     test "updates the user email once", %{conn: conn, user: user, token: token, email: email} do
-      {:error, redirect} = live(conn, ~p"/ustawienia/uzytkownik/potwierdz/#{token}")
+      {:error, redirect} = live(conn, ~p"/ustawienia/bezpieczenstwo/potwierdz/#{token}")
 
       assert {:live_redirect, %{to: path, flash: flash}} = redirect
-      assert path == ~p"/ustawienia/uzytkownik"
+      assert path == ~p"/ustawienia/bezpieczenstwo"
       assert %{"info" => message} = flash
       assert message == "Email został zmieniony pomyślnie."
       refute Accounts.get_user_by_email(user.email)
       assert Accounts.get_user_by_email(email)
 
       # use confirm token again
-      {:error, redirect} = live(conn, ~p"/ustawienia/uzytkownik/potwierdz/#{token}")
+      {:error, redirect} = live(conn, ~p"/ustawienia/bezpieczenstwo/potwierdz/#{token}")
       assert {:live_redirect, %{to: path, flash: flash}} = redirect
-      assert path == ~p"/ustawienia/uzytkownik"
+      assert path == ~p"/ustawienia/bezpieczenstwo"
       assert %{"error" => message} = flash
       assert message == "Link do zmiany emaila jest nieprawidłowy lub wygasł."
     end
 
     test "does not update email with invalid token", %{conn: conn, user: user} do
-      {:error, redirect} = live(conn, ~p"/ustawienia/uzytkownik/potwierdz/oops")
+      {:error, redirect} = live(conn, ~p"/ustawienia/bezpieczenstwo/potwierdz/oops")
       assert {:live_redirect, %{to: path, flash: flash}} = redirect
-      assert path == ~p"/ustawienia/uzytkownik"
+      assert path == ~p"/ustawienia/bezpieczenstwo"
       assert %{"error" => message} = flash
       assert message == "Link do zmiany emaila jest nieprawidłowy lub wygasł."
       assert Accounts.get_user_by_email(user.email)
@@ -197,7 +197,7 @@ defmodule FirmowidWeb.UserSettingsLiveTest do
 
     test "redirects if user is not logged in", %{token: token} do
       conn = build_conn()
-      {:error, redirect} = live(conn, ~p"/ustawienia/uzytkownik/potwierdz/#{token}")
+      {:error, redirect} = live(conn, ~p"/ustawienia/bezpieczenstwo/potwierdz/#{token}")
       assert {:redirect, %{to: path}} = redirect
       assert path == ~p"/zaloguj"
     end
