@@ -32,7 +32,8 @@ defmodule FirmowidWeb.OrganizationInvitesLive.Index do
         current_user.id
       )
 
-    Posthog.capture("organization_invite_created", current_user.id, %{
+    PostHog.capture("organization_invite_created", %{
+      distinct_id: current_user.id,
       organization_id: organization_id,
       invite_id: invite.id,
       # We have to stringify datetime before sending because of posthog's weird decision

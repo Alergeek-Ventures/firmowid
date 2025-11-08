@@ -52,7 +52,7 @@ config :phoenix_live_view,
   enable_expensive_runtime_checks: true
 
 # Disable posthog analytics event capture
-config :posthog, enabled_capture: false
+config :posthog, test_mode: true
 
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false

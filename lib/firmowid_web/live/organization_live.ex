@@ -118,7 +118,8 @@ defmodule FirmowidWeb.OrganizationLive do
       |> Map.put("address", address)
       |> Accounts.create_organization(user)
 
-    Posthog.capture("organization_created", user.id, %{
+    PostHog.capture("organization_created", %{
+      distinct_id: user.id,
       organization_id: organization.id,
       organization_name: organization.name,
       identification_number: organization.identification_number
@@ -141,7 +142,8 @@ defmodule FirmowidWeb.OrganizationLive do
       |> String.trim()
       |> Accounts.consume_organization_invite(user.id)
 
-    Posthog.capture("organization_invite_accepted", user.id, %{
+    PostHog.capture("organization_invite_accepted", %{
+      distinct_id: user.id,
       organization_id: organization_id,
       invite_code: invite_code
     })

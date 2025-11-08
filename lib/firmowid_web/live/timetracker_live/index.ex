@@ -19,8 +19,9 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     organization_id = user.organization_id
     organization = Accounts.get_organization_with_avatar(user.organization)
 
-    Posthog.capture("$set", user.id, %{
-      "$set" => %{
+    PostHog.capture("$set", %{
+      distinct_id: user.id,
+      "$set": %{
         email: user.email,
         name: user.name,
         role: user.role,
@@ -37,12 +38,16 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
       }
     })
 
-    Posthog.capture("timetracker_view", user.id, %{
+    PostHog.capture("timetracker_view", %{
+      distinct_id: user.id,
       organization_id: organization_id
     })
 
     new_timetracker_enabled =
-      Posthog.feature_flag_enabled?("new-timetracker", user.id, person_properties: %{email: user.email})
+      case PostHog.FeatureFlags.check("new-timetracker", user.id) do
+        {:ok, enabled} -> enabled
+        _ -> false
+      end
 
     last_session = Timetracker.get_most_recent_session(socket.assigns.current_user.id)
     default_project_id = if last_session, do: last_session.project_id

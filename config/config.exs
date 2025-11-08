@@ -73,7 +73,7 @@ config :logger, :console,
 config :phoenix, :json_library, Jason
 
 config :posthog,
-  api_url: "https://eu.i.posthog.com",
+  api_host: "https://eu.i.posthog.com",
   api_key: "REMOVED_POSTHOG_PROJECT_KEY"
 
 config :tails, colors_file: Path.join(__DIR__, "../assets/tailwind.colors.json")

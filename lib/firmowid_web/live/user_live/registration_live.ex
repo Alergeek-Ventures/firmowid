@@ -64,7 +64,8 @@ defmodule FirmowidWeb.User.RegistrationLive do
             &url(~p"/potwierdz/#{&1}")
           )
 
-        Posthog.capture("user_registered", user.id, %{
+        PostHog.capture("user_registered", %{
+          distinct_id: user.id,
           email: user.email
         })
 

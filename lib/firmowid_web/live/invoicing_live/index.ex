@@ -19,8 +19,9 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
     Bodyguard.permit!(Invoicing, :read, user)
 
-    Posthog.capture("$set", user.id, %{
-      "$set" => %{
+    PostHog.capture("$set", %{
+      distinct_id: user.id,
+      "$set": %{
         email: user.email,
         name: user.name,
         role: user.role,
@@ -37,7 +38,8 @@ defmodule FirmowidWeb.InvoicingLive.Index do
       }
     })
 
-    Posthog.capture("invoicing_view", user.id, %{
+    PostHog.capture("invoicing_view", %{
+      distinct_id: user.id,
       organization_id: organization_id
     })
 
@@ -75,7 +77,10 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     socket = assign(socket, :active_months, active_months)
 
     invoicing_search_enabled =
-      Posthog.feature_flag_enabled?("invoicing_search", user.id)
+      case PostHog.FeatureFlags.check("invoicing_search", user.id) do
+        {:ok, enabled} -> enabled
+        _ -> false
+      end
 
     socket =
       socket
@@ -422,7 +427,8 @@ defmodule FirmowidWeb.InvoicingLive.Index do
           {:error, {:blob_already_exists, blob_checksum}} ->
             cost_invoice = CostInvoices.get_cost_invoice_by_checksum!(blob_checksum)
 
-            Posthog.capture("cost_invoice_upload_duplicate", socket.assigns.current_user.id, %{
+            PostHog.capture("cost_invoice_upload_duplicate", %{
+              distinct_id: socket.assigns.current_user.id,
               organization_id: socket.assigns.current_user.organization_id
             })
 
@@ -447,7 +453,8 @@ defmodule FirmowidWeb.InvoicingLive.Index do
             )
 
           {:error, :failure} ->
-            Posthog.capture("cost_invoice_upload_failure", socket.assigns.current_user.id, %{
+            PostHog.capture("cost_invoice_upload_failure", %{
+              distinct_id: socket.assigns.current_user.id,
               organization_id: socket.assigns.current_user.organization_id
             })
 
@@ -457,7 +464,8 @@ defmodule FirmowidWeb.InvoicingLive.Index do
             )
 
           _ ->
-            Posthog.capture("cost_invoice_upload", socket.assigns.current_user.id, %{
+            PostHog.capture("cost_invoice_upload", %{
+              distinct_id: socket.assigns.current_user.id,
               organization_id: socket.assigns.current_user.organization_id
             })
 
