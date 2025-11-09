@@ -19,19 +19,10 @@ config :esbuild,
     env: %{"NODE_PATH" => [Path.expand("../deps", __DIR__), Mix.Project.build_path()]}
   ]
 
-config :ex_aws, :s3,
-  host: "localhost",
-  scheme: "http://",
-  port: 4566
-
 config :ex_money,
   default_cldr_backend: Firmowid.Cldr,
   auto_start_exchange_rate_service: true,
   exchange_rates_retrieve_every: :never,
-  # AV org
-  open_exchange_rates_app_id: "b1c5dcca1ebd4066ae1b8c7ef0205be6",
-  # open_exchange_rates_app_id: "090a91fcd9d74f32a0813ee30863f231", # test org
-  # (for e.g. dev if you need it)
   exchange_rates_cache_module: Firmowid.Currencies.DatabaseCache
 
 config :firmowid, ChromicPDF, on_demand: true
@@ -71,10 +62,6 @@ config :logger, :console,
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
-
-config :posthog,
-  api_host: "https://eu.i.posthog.com",
-  api_key: "REMOVED_POSTHOG_PROJECT_KEY"
 
 config :tails, colors_file: Path.join(__DIR__, "../assets/tailwind.colors.json")
 

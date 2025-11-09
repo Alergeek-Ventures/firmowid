@@ -1,11 +1,17 @@
 # Firmowid
 
+> **Note for English speakers:** This product is designed for the Polish market, so the README is in Polish. For environment variable configuration, see `env.template` file which contains documentation in English.
+
 ## Jeśli masz już zainstalowane środowisko:
 ### 1. Baza Danych
 - wejdź do folderu `local` i odpal `docker compose up` lub (`docker compose up -d` jeśli chcesz dalej używać tego terminala)
   (`podman compose up` dla odważnych)
 
-### 2. W głównym folderze `firmowid`:
+### 2. Konfiguracja zmiennych środowiskowych
+  - skopiuj `env.template` do `.env` (domyślne wartości działają od razu w środowisku deweloperskim)
+  - szczegóły w pliku `env.template`
+
+### 3. W głównym folderze `firmowid`:
   - zainstaluj zależności `mix setup`
   - włącz serwer: `mix phx.server`
   - wejdź na [`localhost:4000`](http://localhost:4000)
@@ -39,6 +45,65 @@ asdf install elixir
 ```
 sudo apt-get install -y build-essential git libstdc++6 openssl libncurses5 locales ca-certificates libvips chromium
 ```
+
+## Zmienne środowiskowe
+
+Aplikacja używa zmiennych środowiskowych do konfiguracji. Skopiuj `env.template` do `.env` - domyślne wartości działają od razu z lokalnym docker-compose.
+
+### Wymagane
+
+- `DATABASE_URL` - string połączenia do PostgreSQL
+- `SECRET_KEY_BASE` - klucz tajny Phoenix (wygeneruj przez `mix phx.gen.secret`)
+
+### S3 Object Storage
+
+Domyślnie skonfigurowane dla localstack w środowisku deweloperskim.
+
+- `S3_HOST` - host endpointu S3 (domyślnie: `localhost`)
+- `S3_SCHEME` - schemat URL (domyślnie: `http://`)
+- `S3_PORT` - port S3 (domyślnie: `4566`)
+- `AWS_ACCESS_KEY_ID` - klucz dostępu AWS
+- `AWS_SECRET_ACCESS_KEY` - tajny klucz AWS
+
+**Produkcja:** Skonfiguruj te zmienne aby wskazywały na twoje S3-kompatybilne storage (AWS S3, Tigris, MinIO, itp.)
+
+### Opcjonalne serwisy
+
+Wszystkie zewnętrzne serwisy są opcjonalne. Aplikacja będzie działać bez nich, choć niektóre funkcje będą wyłączone.
+
+#### Analityka i monitoring
+
+- `POSTHOG_API_KEY` - klucz API PostHog analytics (zostaw puste aby wyłączyć)
+- `POSTHOG_API_URL` - URL endpointu API PostHog
+- `SENTRY_DSN` - DSN Sentry do śledzenia błędów (zostaw puste aby wyłączyć)
+
+#### Kursy walut
+
+- `OPEN_EXCHANGE_RATES_APP_ID` - klucz API Open Exchange Rates (używa mock danych jeśli nie ustawione)
+
+#### Integracja bankowa
+
+- `GO_LIMITLESS_SECRET_ID` - GoCardless API secret ID
+- `GO_LIMITLESS_SECRET_KEY` - GoCardless API secret key
+
+#### Usługi AI
+
+- `OPENAI_API_KEY` - klucz API OpenAI do wzbogacania faktur
+- `REDUCTO_API_KEY` - klucz API Reducto do OCR dokumentów
+
+#### Email
+
+- `RESEND_API_KEY` - klucz API Resend do emaili transakcyjnych
+- `RESEND_WEBHOOK_SECRET` - sekret do weryfikacji webhooków Resend
+
+**Development:** Email używa lokalnego adaptera domyślnie, nie wymaga klucza API.
+
+### Zmienne tylko dla produkcji
+
+- `PHX_HOST` - domena aplikacji (wymagane w produkcji)
+- `PHX_SERVER` - ustaw na `true` aby uruchomić serwer
+- `PORT` - port HTTP (domyślnie: 4000)
+- `POOL_SIZE` - rozmiar puli połączeń do bazy danych (domyślnie: 5)
 
 
 

@@ -53,10 +53,32 @@ if config_env() != :test do
     pool_size: String.to_integer(System.get_env("POOL_SIZE", "5"))
 end
 
+config :ex_aws, :s3,
+  host: System.get_env("S3_HOST", "localhost"),
+  scheme: System.get_env("S3_SCHEME", "http://"),
+  port: String.to_integer(System.get_env("S3_PORT", "4566"))
+
+# S3 configuration (defaults suitable for local development with localstack)
 config :ex_aws,
   # empty strings because ex_aws will complain
   access_key_id: System.get_env("AWS_ACCESS_KEY_ID", ""),
   secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY", "")
+
+# Open Exchange Rates API for currency conversion (optional)
+config :ex_money,
+  open_exchange_rates_app_id: System.get_env("OPEN_EXCHANGE_RATES_APP_ID")
+
+# PostHog analytics (optional)
+# Only configure when API host is present to avoid overriding test config
+if System.get_env("POSTHOG_API_URL") do
+  config :posthog,
+    api_key: System.get_env("POSTHOG_API_KEY"),
+    api_host: System.get_env("POSTHOG_API_URL")
+end
+
+# Sentry error tracking (optional)
+config :sentry,
+  dsn: System.get_env("SENTRY_DSN")
 
 if config_env() == :prod do
   # configures Swoosh SMTP client

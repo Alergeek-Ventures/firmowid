@@ -1,10 +1,5 @@
 import Config
 
-config :ex_aws, :s3,
-  scheme: "https://",
-  host: "fly.storage.tigris.dev",
-  port: 443
-
 config :firmowid, Firmowid.Currencies, rates_provider: :api
 
 # Note we also include the path to a cache manifest
@@ -30,8 +25,8 @@ config :firmowid,
 # Do not print debug messages in production
 config :logger, level: :info
 
+# Sentry configuration (DSN loaded from runtime.exs)
 config :sentry,
-  dsn: "REMOVED_RETIRED_SENTRY_DSN",
   environment_name: Mix.env(),
   enable_source_code_context: true,
   root_source_code_paths: [File.cwd!()],
