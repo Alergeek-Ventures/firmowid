@@ -31,7 +31,9 @@ defmodule Firmowid.Invoicing.Matching.RegressionPredictor do
                     1.691756,
                     2.535432,
                     7.129755
-                  ], type: {:f, 32})
+                  ],
+                  type: {:f, 32}
+                )
 
   @bias -4.639821
 

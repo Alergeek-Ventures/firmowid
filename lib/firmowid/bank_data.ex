@@ -186,22 +186,32 @@ defmodule Firmowid.BankData do
 
   @doc """
   Determine if a bank account should be considered 'broken'.
-  Broken means the last 3 sync job attempts for the account have all failed
-  (states: discarded, cancelled).
+  An account is broken if its most recent sync job was discarded after exhausting all retry attempts,
+  or if it was cancelled with a permanent failure reason (expired_eua, forbidden).
   """
   def bank_account_broken?(bank_account_id) do
-    Oban.Job
-    |> where(
-      [j],
-      fragment("args->>'name' = ?", "bank_account_sync") and
-        fragment("args->>'bank_account_id' = ?", ^to_string(bank_account_id))
-    )
-    |> order_by([j], desc: fragment("COALESCE(?, ?)", j.attempted_at, j.inserted_at))
-    |> limit(3)
-    |> Repo.all(oban_jobs: true)
-    |> then(fn jobs ->
-      length(jobs) == 3 and Enum.all?(jobs, &(&1.state in ["discarded", "cancelled"]))
-    end)
+    query =
+      from j in Oban.Job,
+        where:
+          fragment("args->>'name' = ?", "bank_account_sync") and
+            fragment("args->>'bank_account_id' = ?", ^to_string(bank_account_id)),
+        order_by: [desc: fragment("COALESCE(?, ?)", j.attempted_at, j.inserted_at)],
+        limit: 1
+
+    case Repo.one(query, oban_jobs: true) do
+      # Job discarded after exhausting all attempts
+      %{state: "discarded", attempt: attempt, max_attempts: max_attempts}
+      when attempt >= max_attempts ->
+        true
+
+      # Job cancelled with permanent failure (expired_eua, forbidden, etc)
+      %{state: "cancelled"} ->
+        true
+
+      # Any other state (completed, available, executing, etc) or no jobs found
+      _ ->
+        false
+    end
   end
 
   @doc """

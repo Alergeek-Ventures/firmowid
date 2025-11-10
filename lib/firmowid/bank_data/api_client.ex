@@ -186,6 +186,26 @@ defmodule Firmowid.BankData.ApiClient do
       %Req.Response{status: 429} ->
         {:error, :rate_limited}
 
+      %Req.Response{status: 401, body: %{"summary" => summary}} when is_binary(summary) ->
+        if String.contains?(summary, "End User Agreement (EUA)") and
+             String.contains?(summary, "has expired") do
+          {:error, :expired_eua}
+        else
+          {:error, :unauthorized}
+        end
+
+      %Req.Response{status: 401} ->
+        {:error, :unauthorized}
+
+      %Req.Response{status: 403} ->
+        {:error, :forbidden}
+
+      %Req.Response{status: 404} ->
+        {:error, :not_found}
+
+      %Req.Response{status: status} when status >= 500 and status < 600 ->
+        {:error, :server_error}
+
       error ->
         {:error, error}
     end

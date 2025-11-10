@@ -38,10 +38,29 @@ defmodule Firmowid.BankData.Worker do
           Logger.warning("Bank account #{bank_account_id} not found; cancelling sync job")
           {:cancel, :not_found}
 
+        {:error, :expired_eua} ->
+          Logger.warning("Bank account #{bank_account_id} End User Agreement has expired; user must reconnect account")
+
+          {:cancel, :expired_eua}
+
+        {:error, :unauthorized} ->
+          Logger.warning("Bank account #{bank_account_id} authorization failed; may need token refresh or reconnection")
+
+          {:error, :unauthorized}
+
+        {:error, :forbidden} ->
+          Logger.warning("Bank account #{bank_account_id} access forbidden; cancelling sync job")
+          {:cancel, :forbidden}
+
         {:error, :rate_limited} ->
           Logger.warning("Rate limited while fetching transactions for bank account #{bank_account_id}")
 
           {:snooze, 86_400}
+
+        {:error, :server_error} ->
+          Logger.warning("Server error while fetching transactions for bank account #{bank_account_id}; will retry")
+
+          {:error, :server_error}
 
         {:error, reason} ->
           Logger.error(
