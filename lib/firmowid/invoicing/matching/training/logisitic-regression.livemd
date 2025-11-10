@@ -223,7 +223,7 @@ cost_invoices = Firmowid.CostInvoices.list_cost_invoices(~D[2024-01-01], ~D[2030
 transactions = Firmowid.Finances.list_transactions(~D[2024-01-01], ~D[2030-12-30])
 
 sales_invoices =
-  Firmowid.SalesInvoices.list_sales_invoices()
+  Firmowid.SalesInvoices.list_sales_invoices(~D[2024-01-01], ~D[2030-12-30])
   |> Enum.map(fn inv ->
     Firmowid.Repo.preload(inv, :sales_invoice_items)
   end)
@@ -550,6 +550,7 @@ cost_invoice_data =
     cost_invoice = cost_invoices |> Enum.find(&(&1.id == cost_invoice_id))
     Map.merge(%{invoice: cost_invoice, invoice_type: :cost}, a_match)
   end)
+  |> Enum.reject(fn %{invoice: invoice} -> is_nil(invoice) end)
   |> Enum.flat_map(fn %{
                         invoice: invoice,
                         cost_invoice_id: invoice_id,
@@ -571,7 +572,9 @@ cost_invoice_data =
 
 sales_invoice_data =
   matches.sales_invoice_matches
-  |> Enum.reject(fn %{sales_invoice_id: id} -> Enum.member?(matches.skipped_sales_invoices, id) end)
+  |> Enum.reject(fn %{sales_invoice_id: id} ->
+    Enum.member?(matches.skipped_sales_invoices, id)
+  end)
   |> Enum.map(fn %{sales_invoice_id: sales_invoice_id} = a_match ->
     sales_invoice = sales_invoices |> Enum.find(&(&1.id == sales_invoice_id))
     Map.merge(%{invoice: sales_invoice, invoice_type: :sales}, a_match)
@@ -597,9 +600,17 @@ sales_invoice_data =
 
 all_data = cost_invoice_data ++ sales_invoice_data
 
-IO.puts("prepared #{length(all_data)} pairs (cost: #{length(cost_invoice_data)}, sales: #{length(sales_invoice_data)})\n")
-IO.puts("good: #{length(all_data |> Enum.filter(& &1.match))} (cost: #{length(cost_invoice_data |> Enum.filter(& &1.match))}, sales: #{length(sales_invoice_data |> Enum.filter(& &1.match))})")
-IO.puts("bad: #{length(all_data |> Enum.filter(&(!&1.match)))} (cost: #{length(cost_invoice_data |> Enum.filter(&(!&1.match)))}, sales: #{length(sales_invoice_data |> Enum.filter(&(!&1.match)))})")
+IO.puts(
+  "prepared #{length(all_data)} pairs (cost: #{length(cost_invoice_data)}, sales: #{length(sales_invoice_data)})\n"
+)
+
+IO.puts(
+  "good: #{length(all_data |> Enum.filter(& &1.match))} (cost: #{length(cost_invoice_data |> Enum.filter(& &1.match))}, sales: #{length(sales_invoice_data |> Enum.filter(& &1.match))})"
+)
+
+IO.puts(
+  "bad: #{length(all_data |> Enum.filter(&(!&1.match)))} (cost: #{length(cost_invoice_data |> Enum.filter(&(!&1.match)))}, sales: #{length(sales_invoice_data |> Enum.filter(&(!&1.match)))})"
+)
 
 # ---------- build feature vectors ------------------------------------------------
 rows =
@@ -661,10 +672,9 @@ make_xy = fn vecs ->
 
   {
     Nx.tensor(x_list, type: {:f, 32}),
-    Nx.tensor(y_list,  type: {:u, 8})
+    Nx.tensor(y_list, type: {:u, 8})
   }
 end
-
 ```
 
 There are two ways we use this model:

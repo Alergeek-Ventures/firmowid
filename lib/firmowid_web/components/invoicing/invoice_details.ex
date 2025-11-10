@@ -129,8 +129,8 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
 
     predicition_level =
       cond do
-        assigns.prediction_score >= 0.9 and assigns.is_highest_green -> :high
-        assigns.prediction_score >= 0.53 -> :mid
+        assigns.prediction_score >= 0.92 and assigns.is_highest_green -> :high
+        assigns.prediction_score >= 0.87 -> :mid
         true -> :low
       end
 
