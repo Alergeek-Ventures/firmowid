@@ -7,17 +7,18 @@ defmodule FirmowidWeb.User.ConfirmationLive do
   def render(%{live_action: :edit} = assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
-      <.header class="text-center">Confirm Account</.header>
+      <.header class="text-center">Potwierdź konto</.header>
 
       <.simple_form for={@form} id="confirmation_form" phx-submit="confirm_account">
         <input type="hidden" name={@form[:token].name} value={@form[:token].value} />
         <:actions>
-          <.button phx-disable-with="Confirming..." class="w-full">Confirm my account</.button>
+          <.button phx-disable-with="Potwierdzanie..." class="w-full">Potwierdź moje konto</.button>
         </:actions>
       </.simple_form>
 
       <p class="text-center mt-4">
-        <.link href={~p"/zarejestruj"}>Register</.link> | <.link href={~p"/zaloguj"}>Log in</.link>
+        <.link href={~p"/zarejestruj"}>Zarejestruj się</.link>
+        | <.link href={~p"/zaloguj"}>Zaloguj się</.link>
       </p>
     </div>
     """
@@ -35,7 +36,7 @@ defmodule FirmowidWeb.User.ConfirmationLive do
       {:ok, _} ->
         {:noreply,
          socket
-         |> put_flash(:info, "User confirmed successfully.")
+         |> put_flash(:info, "Użytkownik został potwierdzony pomyślnie.")
          |> redirect(to: ~p"/")}
 
       :error ->
@@ -50,7 +51,7 @@ defmodule FirmowidWeb.User.ConfirmationLive do
           %{} ->
             {:noreply,
              socket
-             |> put_flash(:error, "User confirmation link is invalid or it has expired.")
+             |> put_flash(:error, "Link potwierdzający użytkownika jest nieprawidłowy lub wygasł.")
              |> redirect(to: ~p"/")}
         end
     end

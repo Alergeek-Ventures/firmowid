@@ -8,20 +8,21 @@ defmodule FirmowidWeb.User.ForgotPasswordLive do
     ~H"""
     <div class="mx-auto max-w-sm">
       <.header class="text-center">
-        Forgot your password?
-        <:subtitle>We'll send a password reset link to your inbox</:subtitle>
+        Nie pamiętasz hasła?
+        <:subtitle>Wyślemy Ci link do resetowania hasła na Twoją skrzynkę</:subtitle>
       </.header>
 
       <.simple_form for={@form} id="reset_password_form" phx-submit="send_email">
         <.input field={@form[:email]} type="email" placeholder="Email" required />
         <:actions>
-          <.button phx-disable-with="Sending..." class="w-full">
-            Send password reset instructions
+          <.button phx-disable-with="Wysyłanie..." class="w-full">
+            Wyślij instrukcje resetowania hasła
           </.button>
         </:actions>
       </.simple_form>
       <p class="text-center text-sm mt-4">
-        <.link href={~p"/zarejestruj"}>Register</.link> | <.link href={~p"/zaloguj"}>Log in</.link>
+        <.link href={~p"/zarejestruj"}>Zarejestruj się</.link>
+        | <.link href={~p"/zaloguj"}>Zaloguj się</.link>
       </p>
     </div>
     """
@@ -40,7 +41,7 @@ defmodule FirmowidWeb.User.ForgotPasswordLive do
     end
 
     info =
-      "If your email is in our system, you will receive instructions to reset your password shortly."
+      "Jeśli Twój email jest w naszym systemie, wkrótce otrzymasz instrukcje resetowania hasła."
 
     {:noreply,
      socket

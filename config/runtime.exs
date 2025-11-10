@@ -45,7 +45,9 @@ config :firmowid,
   reducto_api_key: System.get_env("REDUCTO_API_KEY"),
   openai_api_key: System.get_env("OPENAI_API_KEY"),
   resend_api_key: System.get_env("RESEND_API_KEY"),
-  resend_webhook_secret: System.get_env("RESEND_WEBHOOK_SECRET")
+  resend_webhook_secret: System.get_env("RESEND_WEBHOOK_SECRET"),
+  google_client_id: System.get_env("GOOGLE_CLIENT_ID"),
+  google_client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
 
 if config_env() != :test do
   config :firmowid, Firmowid.Repo,

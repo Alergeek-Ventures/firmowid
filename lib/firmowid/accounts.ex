@@ -120,6 +120,99 @@ defmodule Firmowid.Accounts do
   end
 
   @doc """
+  Registers a user via OAuth (e.g., Google Sign-In).
+
+  ## Examples
+
+      iex> register_oauth_user(%{email: "foo@example.com", provider: "google", provider_id: "123"})
+      {:ok, %User{}}
+
+      iex> register_oauth_user(%{email: "bad"})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def register_oauth_user(attrs) do
+    %User{}
+    |> User.oauth_registration_changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Gets a user by provider and provider_id.
+
+  ## Examples
+
+      iex> get_user_by_provider("google", "123456")
+      %User{}
+
+      iex> get_user_by_provider("google", "unknown")
+      nil
+
+  """
+  def get_user_by_provider(provider, provider_id) when is_binary(provider) and is_binary(provider_id) do
+    Repo.get_by(User, [provider: provider, provider_id: provider_id], skip_organization_id: true)
+  end
+
+  @doc """
+  Gets or creates a user via OAuth.
+
+  If a user with the given provider and provider_id exists, returns that user.
+  If a user has linked their Google account (google_provider_id), returns that user.
+  If a user with the same email exists (registered via password), returns an error to trigger linking flow.
+  Otherwise, creates a new OAuth user.
+
+  ## Examples
+
+      iex> get_or_create_oauth_user(%{email: "new@example.com", provider: "google", provider_id: "123"})
+      {:ok, %User{}}
+
+      iex> get_or_create_oauth_user(%{email: "existing@example.com", provider: "google", provider_id: "456"})
+      {:error, :email_already_exists}
+
+  """
+  def get_or_create_oauth_user(attrs) do
+    provider = Map.get(attrs, "provider") || Map.get(attrs, :provider)
+    provider_id = Map.get(attrs, "provider_id") || Map.get(attrs, :provider_id)
+    email = Map.get(attrs, "email") || Map.get(attrs, :email)
+
+    # First check if user exists with this provider and provider_id (original OAuth signup)
+    case get_user_by_provider(provider, provider_id) do
+      %User{} = user ->
+        {:ok, user}
+
+      nil ->
+        # For Google, also check if they've linked their account via google_provider_id
+        case provider do
+          "google" ->
+            case get_user_by_google_id(provider_id) do
+              %User{} = user -> {:ok, user}
+              nil -> check_email_and_create(attrs, provider, email)
+            end
+
+          _ ->
+            check_email_and_create(attrs, provider, email)
+        end
+    end
+  end
+
+  defp check_email_and_create(attrs, provider, email) do
+    # Check if email already exists with a different provider
+    case get_user_by_email(email) do
+      nil ->
+        register_oauth_user(attrs)
+
+      %User{provider: ^provider} ->
+        # Same provider, different provider_id - this shouldn't happen
+        {:error, :provider_mismatch}
+
+      %User{} ->
+        # Email exists with different provider (e.g., password)
+        # This triggers the account linking flow
+        {:error, :email_already_exists}
+    end
+  end
+
+  @doc """
   Returns an `%Ecto.Changeset{}` for tracking user changes.
 
   ## Examples
@@ -130,6 +223,139 @@ defmodule Firmowid.Accounts do
   """
   def change_user_registration(%User{} = user, attrs \\ %{}) do
     User.registration_changeset(user, attrs, hash_password: false, validate_email: false)
+  end
+
+  ## Account Linking
+
+  @doc """
+  Gets a user by their Google provider ID.
+
+  ## Examples
+
+      iex> get_user_by_google_id("123456")
+      %User{}
+
+      iex> get_user_by_google_id("unknown")
+      nil
+
+  """
+  def get_user_by_google_id(google_provider_id) when is_binary(google_provider_id) do
+    Repo.get_by(User, [google_provider_id: google_provider_id], skip_organization_id: true)
+  end
+
+  @doc """
+  Generates a token for linking a Google account and stores the Google provider ID.
+
+  The token is valid for 24 hours and the Google provider ID is stored in the database.
+
+  ## Examples
+
+      iex> generate_link_google_account_token(user, google_profile)
+      "encoded_token"
+
+  """
+  def generate_link_google_account_token(user, google_profile) do
+    {encoded_token, user_token} =
+      UserToken.build_email_token_with_google_id(user, "link_google_account", google_profile.sub)
+
+    Repo.insert!(user_token, skip_organization_id: true)
+
+    encoded_token
+  end
+
+  @doc """
+  Gets a user by their link Google account token.
+
+  ## Examples
+
+      iex> get_user_by_link_google_token("valid_token")
+      {:ok, %User{}}
+
+      iex> get_user_by_link_google_token("invalid")
+      :error
+
+  """
+  def get_user_by_link_google_token(token) do
+    with {:ok, query} <- UserToken.verify_email_token_query(token, "link_google_account"),
+         %User{} = user <- Repo.one(query, skip_organization_id: true) do
+      {:ok, user}
+    else
+      _ -> :error
+    end
+  end
+
+  @doc """
+  Links a Google account to a user via token confirmation.
+
+  If the token is valid and not expired, the user's google_provider_id is updated
+  and the user is returned. The token is deleted from the database.
+
+  ## Examples
+
+      iex> link_google_account_with_token(user, token)
+      {:ok, %User{}}
+
+      iex> link_google_account_with_token(user, "invalid")
+      {:error, :invalid_token}
+
+  """
+  def link_google_account_with_token(user, token) do
+    with {:ok, query} <- UserToken.verify_email_token_with_data_query(token, "link_google_account"),
+         {user_token, %User{} = verified_user} <- Repo.one(query, skip_organization_id: true),
+         true <- user.id == verified_user.id,
+         google_provider_id when not is_nil(google_provider_id) <- user_token.google_provider_id do
+      # Link the Google account
+      result =
+        Ecto.Multi.new()
+        |> Ecto.Multi.update(
+          :user,
+          User.link_google_changeset(verified_user, google_provider_id),
+          skip_organization_id: true
+        )
+        |> Ecto.Multi.delete_all(
+          :tokens,
+          UserToken.by_user_and_contexts_query(verified_user, ["link_google_account"]),
+          skip_organization_id: true
+        )
+        |> Repo.transaction()
+
+      case result do
+        {:ok, %{user: user}} ->
+          {:ok, user}
+
+        {:error, :user, %Ecto.Changeset{} = changeset, _} ->
+          # Check if the error is due to google_provider_id unique constraint violation
+          if has_unique_constraint_error?(changeset, :google_provider_id) do
+            {:error, :google_account_already_linked}
+          else
+            {:error, changeset}
+          end
+      end
+    else
+      _ -> {:error, :invalid_token}
+    end
+  end
+
+  # Checks if a changeset has a unique constraint error for the given field
+  defp has_unique_constraint_error?(%Ecto.Changeset{errors: errors}, field) do
+    Enum.any?(errors, fn
+      {^field, {_message, opts}} -> Keyword.get(opts, :constraint) == :unique
+      _ -> false
+    end)
+  end
+
+  @doc """
+  Delivers account linking instructions to the user's email.
+
+  ## Examples
+
+      deliver_link_google_account_instructions(user, google_profile, fn token -> url(~p"/auth/google/link/\#{token}") end)
+      # => {:ok, %{to: ..., body: ...}}
+
+  """
+  def deliver_link_google_account_instructions(user, google_profile, link_url_fun) when is_function(link_url_fun, 1) do
+    token = generate_link_google_account_token(user, google_profile)
+    UserNotifier.deliver_link_google_account_instructions(user, link_url_fun.(token))
   end
 
   ## Settings

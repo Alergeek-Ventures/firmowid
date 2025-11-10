@@ -22,17 +22,17 @@ defmodule Firmowid.Accounts.UserNotifier do
   Deliver instructions to confirm account.
   """
   def deliver_confirmation_instructions(user, url) do
-    deliver(user.email, "Confirmation instructions", """
+    deliver(user.email, "Instrukcje potwierdzenia konta", """
 
     ==============================
 
-    Hi #{user.email},
+    Cześć #{user.email},
 
-    You can confirm your account by visiting the URL below:
+    Możesz potwierdzić swoje konto odwiedzając poniższy adres:
 
     #{url}
 
-    If you didn't create an account with us, please ignore this.
+    Jeśli nie zakładałeś konta u nas, zignoruj tę wiadomość.
 
     ==============================
     """)
@@ -42,17 +42,17 @@ defmodule Firmowid.Accounts.UserNotifier do
   Deliver instructions to reset a user password.
   """
   def deliver_reset_password_instructions(user, url) do
-    deliver(user.email, "Reset password instructions", """
+    deliver(user.email, "Instrukcje resetowania hasła", """
 
     ==============================
 
-    Hi #{user.email},
+    Cześć #{user.email},
 
-    You can reset your password by visiting the URL below:
+    Możesz zresetować swoje hasło odwiedzając poniższy adres:
 
     #{url}
 
-    If you didn't request this change, please ignore this.
+    Jeśli nie prosiłeś o tę zmianę, zignoruj tę wiadomość.
 
     ==============================
     """)
@@ -62,17 +62,43 @@ defmodule Firmowid.Accounts.UserNotifier do
   Deliver instructions to update a user email.
   """
   def deliver_update_email_instructions(user, url) do
-    deliver(user.email, "Update email instructions", """
+    deliver(user.email, "Instrukcje zmiany adresu email", """
 
     ==============================
 
-    Hi #{user.email},
+    Cześć #{user.email},
 
-    You can change your email by visiting the URL below:
+    Możesz zmienić swój adres email odwiedzając poniższy adres:
 
     #{url}
 
-    If you didn't request this change, please ignore this.
+    Jeśli nie prosiłeś o tę zmianę, zignoruj tę wiadomość.
+
+    ==============================
+    """)
+  end
+
+  @doc """
+  Deliver instructions to link a Google account.
+  """
+  def deliver_link_google_account_instructions(user, url) do
+    deliver(user.email, "Połącz swoje konto Google z Firmowid", """
+
+    ==============================
+
+    Cześć #{user.email},
+
+    Ktoś próbował zalogować się na Twoje konto Firmowid przy użyciu Google.
+
+    Jeśli to byłeś Ty, kliknij poniższy link, aby połączyć swoje konto Google
+    i włączyć logowanie przez Google:
+
+    #{url}
+
+    Ten link wygaśnie za 24 godziny.
+
+    Jeśli nie próbowałeś zalogować się przez Google, zignoruj tę wiadomość
+    i rozważ zmianę hasła, jeśli martwisz się o bezpieczeństwo konta.
 
     ==============================
     """)

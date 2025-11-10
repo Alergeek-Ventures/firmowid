@@ -41,6 +41,7 @@ defmodule Firmowid.MixProject do
   defp deps do
     [
       {:argon2_elixir, "~> 4.1"},
+      {:elixir_auth_google, "~> 1.6"},
       {:phoenix, "~> 1.8.0"},
       {:phoenix_ecto, "~> 4.5"},
       {:bodyguard, "~> 2.4"},

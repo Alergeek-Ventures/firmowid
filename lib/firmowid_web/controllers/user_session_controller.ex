@@ -5,26 +5,30 @@ defmodule FirmowidWeb.UserSessionController do
   alias FirmowidWeb.UserAuth
 
   def create(conn, %{"_action" => "registered"} = params) do
-    create(conn, params, "Account created successfully!")
+    create(conn, params, "Konto zostało utworzone pomyślnie!")
   end
 
   def create(conn, %{"_action" => "password_updated"} = params) do
     conn
     |> put_session(:user_return_to, ~p"/ustawienia/bezpieczenstwo")
-    |> create(params, "Password updated successfully!")
+    |> create(params, "Hasło zostało zaktualizowane pomyślnie!")
   end
 
   def create(conn, params) do
-    create(conn, params, "Zalogowano.")
+    create(conn, params, nil)
   end
 
   defp create(conn, %{"user" => user_params}, info) do
     %{"email" => email, "password" => password} = user_params
 
     if user = Accounts.get_user_by_email_and_password(email, password) do
-      conn
-      |> UserAuth.log_in_user(user, user_params)
-      |> LiveToast.put_toast(:info, info)
+      conn = UserAuth.log_in_user(conn, user, user_params)
+
+      if info do
+        LiveToast.put_toast(conn, :info, info)
+      else
+        conn
+      end
     else
       # In order to prevent user enumeration attacks, don't disclose whether the email is registered.
 

@@ -14,7 +14,7 @@ defmodule FirmowidWeb.UserConfirmationInstructionsLiveTest do
   describe "Resend confirmation" do
     test "renders the resend confirmation page", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/potwierdz")
-      assert html =~ "Resend confirmation instructions"
+      assert html =~ "Nie otrzymałeś instrukcji potwierdzenia?"
     end
 
     test "sends a new confirmation token", %{conn: conn, user: user} do
@@ -27,7 +27,7 @@ defmodule FirmowidWeb.UserConfirmationInstructionsLiveTest do
         |> follow_redirect(conn, ~p"/")
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
-               "If your email is in our system"
+               "Jeśli Twój email jest w naszym systemie"
 
       assert Repo.get_by!(
                Accounts.UserToken,

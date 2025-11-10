@@ -32,7 +32,11 @@ defmodule FirmowidWeb.Router do
   end
 
   scope "/admin" do
-    pipe_through [:browser, :require_authenticated_user_with_organization, :require_superuser]
+    if Mix.env() == :dev do
+      pipe_through [:browser]
+    else
+      pipe_through [:browser, :require_authenticated_user_with_organization, :require_superuser]
+    end
 
     live_dashboard "/dashboard",
       metrics: FirmowidWeb.Telemetry
@@ -150,6 +154,14 @@ defmodule FirmowidWeb.Router do
     end
 
     post "/zaloguj", UserSessionController, :create
+  end
+
+  scope "/auth", FirmowidWeb do
+    pipe_through [:browser]
+
+    get "/google", GoogleAuthController, :request
+    get "/google/callback", GoogleAuthController, :callback
+    get "/google/link/:token", GoogleAuthController, :link
   end
 
   scope "/", FirmowidWeb do

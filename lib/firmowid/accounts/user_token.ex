@@ -15,11 +15,13 @@ defmodule Firmowid.Accounts.UserToken do
   @confirm_validity_in_days 7
   @change_email_validity_in_days 7
   @session_validity_in_days 60
+  @link_google_account_validity_in_days 1
 
   schema "users_tokens" do
     field :token, :binary
     field :context, :string
     field :sent_to, :string
+    field :google_provider_id, :string
     belongs_to :user, Firmowid.Accounts.User
 
     timestamps(updated_at: false)
@@ -84,7 +86,16 @@ defmodule Firmowid.Accounts.UserToken do
     build_hashed_token(user, context, user.email)
   end
 
-  defp build_hashed_token(user, context, sent_to) do
+  @doc """
+  Builds a token with Google provider ID for account linking.
+
+  Similar to build_email_token/2 but also stores the Google provider ID.
+  """
+  def build_email_token_with_google_id(user, context, google_provider_id) do
+    build_hashed_token(user, context, user.email, google_provider_id)
+  end
+
+  defp build_hashed_token(user, context, sent_to, google_provider_id \\ nil) do
     token = :crypto.strong_rand_bytes(@rand_size)
     hashed_token = :crypto.hash(@hash_algorithm, token)
 
@@ -93,6 +104,7 @@ defmodule Firmowid.Accounts.UserToken do
        token: hashed_token,
        context: context,
        sent_to: sent_to,
+       google_provider_id: google_provider_id,
        user_id: user.id
      }}
   end
@@ -129,8 +141,34 @@ defmodule Firmowid.Accounts.UserToken do
     end
   end
 
+  @doc """
+  Similar to verify_email_token_query/2 but returns both the token and user.
+
+  This is useful when you need access to token data (like google_provider_id)
+  in addition to the user.
+  """
+  def verify_email_token_with_data_query(token, context) do
+    case Base.url_decode64(token, padding: false) do
+      {:ok, decoded_token} ->
+        hashed_token = :crypto.hash(@hash_algorithm, decoded_token)
+        days = days_for_context(context)
+
+        query =
+          from token in by_token_and_context_query(hashed_token, context),
+            join: user in assoc(token, :user),
+            where: token.inserted_at > ago(^days, "day") and token.sent_to == user.email,
+            select: {token, user}
+
+        {:ok, query}
+
+      :error ->
+        :error
+    end
+  end
+
   defp days_for_context("confirm"), do: @confirm_validity_in_days
   defp days_for_context("reset_password"), do: @reset_password_validity_in_days
+  defp days_for_context("link_google_account"), do: @link_google_account_validity_in_days
 
   @doc """
   Checks if the token is valid and returns its underlying lookup query.

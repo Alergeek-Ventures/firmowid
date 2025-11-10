@@ -21,14 +21,14 @@ defmodule FirmowidWeb.UserResetPasswordLiveTest do
     test "renders reset password with valid token", %{conn: conn, token: token} do
       {:ok, _lv, html} = live(conn, ~p"/resetuj-haslo/#{token}")
 
-      assert html =~ "Reset Password"
+      assert html =~ "Resetuj hasło"
     end
 
     test "does not render reset password with invalid token", %{conn: conn} do
       {:error, {:redirect, to}} = live(conn, ~p"/resetuj-haslo/invalid")
 
       assert to == %{
-               flash: %{"error" => "Reset password link is invalid or it has expired."},
+               flash: %{"error" => "Link do resetowania hasła jest nieprawidłowy lub wygasł."},
                to: ~p"/"
              }
     end
@@ -62,7 +62,7 @@ defmodule FirmowidWeb.UserResetPasswordLiveTest do
         |> follow_redirect(conn, ~p"/zaloguj")
 
       refute get_session(conn, :user_token)
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Password reset successfully"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Hasło zostało zresetowane pomyślnie"
       assert Accounts.get_user_by_email_and_password(user.email, "new valid password")
     end
 
@@ -79,7 +79,7 @@ defmodule FirmowidWeb.UserResetPasswordLiveTest do
         )
         |> render_submit()
 
-      assert result =~ "Reset Password"
+      assert result =~ "Resetuj hasło"
       assert result =~ "should be at least 12 character(s)"
       assert result =~ "does not match password"
     end
@@ -91,7 +91,7 @@ defmodule FirmowidWeb.UserResetPasswordLiveTest do
 
       {:ok, conn} =
         lv
-        |> element("main a", "Log in")
+        |> element("main a", "Zaloguj się")
         |> render_click()
         |> follow_redirect(conn, ~p"/zaloguj")
 
@@ -106,7 +106,7 @@ defmodule FirmowidWeb.UserResetPasswordLiveTest do
 
       {:ok, conn} =
         lv
-        |> element("main a", "Register")
+        |> element("main a", "Zarejestruj się")
         |> render_click()
         |> follow_redirect(conn, ~p"/zarejestruj")
 

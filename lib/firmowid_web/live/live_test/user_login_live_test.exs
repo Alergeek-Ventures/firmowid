@@ -77,7 +77,7 @@ defmodule FirmowidWeb.UserLoginLiveTest do
         |> render_click()
         |> follow_redirect(conn, ~p"/resetuj-haslo")
 
-      assert conn.resp_body =~ "Forgot your password?"
+      assert conn.resp_body =~ "Nie pamiętasz hasła?"
     end
   end
 end

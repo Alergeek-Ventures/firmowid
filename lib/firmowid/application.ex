@@ -17,7 +17,7 @@ defmodule Firmowid.Application do
       {Ecto.Migrator, repos: Application.fetch_env!(:firmowid, :ecto_repos)},
       {DNSCluster, query: Application.get_env(:firmowid, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Firmowid.PubSub},
-      {Cachex, [:currencies]},
+      {Cachex, name: :currencies},
       Firmowid.BankData.TokenManager,
       Firmowid.Oban,
       Firmowid.Invoicing.Matching.Assistant.MessagesStorage,

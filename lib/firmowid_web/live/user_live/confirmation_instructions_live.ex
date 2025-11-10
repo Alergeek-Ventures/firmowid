@@ -8,21 +8,22 @@ defmodule FirmowidWeb.User.ConfirmationInstructionsLive do
     ~H"""
     <div class="mx-auto max-w-sm">
       <.header class="text-center">
-        No confirmation instructions received?
-        <:subtitle>We'll send a new confirmation link to your inbox</:subtitle>
+        Nie otrzymałeś instrukcji potwierdzenia?
+        <:subtitle>Wyślemy nowy link potwierdzający na Twoją skrzynkę</:subtitle>
       </.header>
 
       <.simple_form for={@form} id="resend_confirmation_form" phx-submit="send_instructions">
         <.input field={@form[:email]} type="email" placeholder="Email" required />
         <:actions>
-          <.button phx-disable-with="Sending..." class="w-full">
-            Resend confirmation instructions
+          <.button phx-disable-with="Wysyłanie..." class="w-full">
+            Wyślij ponownie instrukcje potwierdzenia
           </.button>
         </:actions>
       </.simple_form>
 
       <p class="text-center mt-4">
-        <.link href={~p"/zarejestruj"}>Register</.link> | <.link href={~p"/zaloguj"}>Log in</.link>
+        <.link href={~p"/zarejestruj"}>Zarejestruj się</.link>
+        | <.link href={~p"/zaloguj"}>Zaloguj się</.link>
       </p>
     </div>
     """
@@ -41,7 +42,7 @@ defmodule FirmowidWeb.User.ConfirmationInstructionsLive do
     end
 
     info =
-      "If your email is in our system and it has not been confirmed yet, you will receive an email with instructions shortly."
+      "Jeśli Twój email jest w naszym systemie i nie został jeszcze potwierdzony, wkrótce otrzymasz wiadomość z instrukcjami."
 
     {:noreply,
      socket

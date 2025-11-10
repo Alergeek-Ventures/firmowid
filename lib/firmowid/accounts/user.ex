@@ -16,6 +16,11 @@ defmodule Firmowid.Accounts.User do
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
 
+    # OAuth fields
+    field :provider, :string, default: "password"
+    field :provider_id, :string
+    field :google_provider_id, :string
+
     field :removed_from_project, :boolean, virtual: true, default: false
 
     many_to_many :projects,
@@ -60,6 +65,25 @@ defmodule Firmowid.Accounts.User do
     |> cast(attrs, [:email, :password])
     |> validate_email(opts)
     |> validate_password(opts)
+  end
+
+  @doc """
+  A user changeset for OAuth registration (e.g., Google Sign-In).
+
+  OAuth users don't have passwords, so we skip password validation.
+  The account is automatically confirmed since the OAuth provider
+  has verified the email.
+  """
+  def oauth_registration_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:email, :name, :provider, :provider_id])
+    |> validate_required([:email, :provider, :provider_id])
+    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
+    |> validate_length(:email, max: 160)
+    |> unsafe_validate_unique(:email, Firmowid.Repo, repo_opts: [skip_organization_id: true])
+    |> unique_constraint(:email)
+    |> unique_constraint([:provider, :provider_id])
+    |> put_change(:confirmed_at, DateTime.truncate(DateTime.utc_now(), :second))
   end
 
   defp validate_email(changeset, opts) do
@@ -213,5 +237,15 @@ defmodule Firmowid.Accounts.User do
       :avatar_blob_id,
       :role
     ])
+  end
+
+  @doc """
+  A changeset for linking a Google account to an existing user.
+  """
+  def link_google_changeset(user, google_provider_id) do
+    user
+    |> change(%{google_provider_id: google_provider_id})
+    |> validate_required([:google_provider_id])
+    |> unique_constraint(:google_provider_id)
   end
 end
