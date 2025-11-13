@@ -1,0 +1,88 @@
+name: Version Sync Check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - "*"
+
+jobs:
+  version-sync:
+    name: Validate Dockerfile versions match .tool-versions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract versions from .tool-versions
+        id: tool_versions
+        run: |
+          ELIXIR_FULL=$(grep "^elixir " .tool-versions | awk '{print $2}')
+          ERLANG=$(grep "^erlang " .tool-versions | awk '{print $2}')
+          ELIXIR=$(echo "$ELIXIR_FULL" | sed 's/-otp-.*//')
+          
+          echo "elixir=$ELIXIR" >> $GITHUB_OUTPUT
+          echo "erlang=$ERLANG" >> $GITHUB_OUTPUT
+          
+          echo "From .tool-versions:"
+          echo "  Elixir: $ELIXIR"
+          echo "  Erlang: $ERLANG"
+
+      - name: Extract versions from Dockerfile
+        id: dockerfile_versions
+        run: |
+          BUILDER_IMAGE=$(grep '^ARG BUILDER_IMAGE=' Dockerfile | sed 's/.*hexpm\/elixir:\([^"]*\)".*/\1/')
+          
+          DOCKERFILE_ELIXIR=$(echo "$BUILDER_IMAGE" | sed 's/-erlang.*//')
+          DOCKERFILE_ERLANG=$(echo "$BUILDER_IMAGE" | sed 's/.*erlang-\([0-9.]*\)-.*/\1/')
+          
+          echo "dockerfile_elixir=$DOCKERFILE_ELIXIR" >> $GITHUB_OUTPUT
+          echo "dockerfile_erlang=$DOCKERFILE_ERLANG" >> $GITHUB_OUTPUT
+          
+          echo "From Dockerfile:"
+          echo "  Elixir: $DOCKERFILE_ELIXIR"
+          echo "  Erlang: $DOCKERFILE_ERLANG"
+
+      - name: Compare versions
+        run: |
+          TOOL_ELIXIR="${{ steps.tool_versions.outputs.elixir }}"
+          TOOL_ERLANG="${{ steps.tool_versions.outputs.erlang }}"
+          DOCKERFILE_ELIXIR="${{ steps.dockerfile_versions.outputs.dockerfile_elixir }}"
+          DOCKERFILE_ERLANG="${{ steps.dockerfile_versions.outputs.dockerfile_erlang }}"
+          
+          echo "Comparing versions..."
+          echo ""
+          
+          MISMATCH=0
+          
+          if [ "$TOOL_ELIXIR" != "$DOCKERFILE_ELIXIR" ]; then
+            echo "❌ Elixir version mismatch!"
+            echo "   .tool-versions: $TOOL_ELIXIR"
+            echo "   Dockerfile:     $DOCKERFILE_ELIXIR"
+            MISMATCH=1
+          else
+            echo "✅ Elixir version matches: $TOOL_ELIXIR"
+          fi
+          
+          if [ "$TOOL_ERLANG" != "$DOCKERFILE_ERLANG" ]; then
+            echo "❌ Erlang version mismatch!"
+            echo "   .tool-versions: $TOOL_ERLANG"
+            echo "   Dockerfile:     $DOCKERFILE_ERLANG"
+            MISMATCH=1
+          else
+            echo "✅ Erlang version matches: $TOOL_ERLANG"
+          fi
+          
+          if [ $MISMATCH -eq 1 ]; then
+            echo ""
+            echo "Please update Dockerfile to match .tool-versions:"
+            echo "1. Query Docker Hub for matching image:"
+            echo "   curl -s \"https://hub.docker.com/v2/repositories/hexpm/elixir/tags?page_size=100&name=${TOOL_ELIXIR}-erlang-${TOOL_ERLANG}\" | jq -r '.results[].name | select(contains(\"debian\") and contains(\"slim\"))' | sort -V -r | head -5"
+            echo "2. Update BUILDER_IMAGE and RUNNER_IMAGE in Dockerfile"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ All versions match!"

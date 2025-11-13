@@ -1,6 +1,9 @@
 import Config
 
-Dotenv.load!()
+# Only load dotenv in dev/test
+if config_env() in [:dev, :test] do
+  Dotenv.load!()
+end
 
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
@@ -78,22 +81,57 @@ if System.get_env("POSTHOG_API_URL") do
     api_host: System.get_env("POSTHOG_API_URL")
 end
 
+# ChromicPDF configuration for external Chrome container
+# Set CHROME_ADDRESS to point to Chrome DevTools Protocol endpoint
+# Format: "hostname:port" (e.g., "localhost:9222" or "chrome:9222")
+if config_env() != :test do
+  chrome_address = System.get_env("CHROME_ADDRESS")
+
+  if chrome_address do
+    [host, port] = String.split(chrome_address, ":")
+
+    config :firmowid, ChromicPDF, chrome_address: {host, String.to_integer(port)}
+  end
+end
+
 # Sentry error tracking (optional)
 config :sentry,
   dsn: System.get_env("SENTRY_DSN")
 
 if config_env() == :prod do
+  # SSL configuration for database connection
+  # Configure via DATABASE_SSL_CA_CERT environment variable
+  # Example: /etc/ssl/certs/ca-certificate.crt
+  database_ssl_config =
+    case System.get_env("DATABASE_SSL_CA_CERT") do
+      nil ->
+        # No SSL or rely on DATABASE_URL sslmode parameter
+        false
+
+      "" ->
+        # Empty string means no SSL config
+        false
+
+      cert_path ->
+        [
+          verify: :verify_peer,
+          cacertfile: cert_path,
+          server_name_indication: :disable,
+          customize_hostname_check: [
+            match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+          ]
+        ]
+    end
+
   # configures Swoosh SMTP client
   # SendGrid is only used in production and requires an API key
   config :firmowid, Firmowid.Mailer,
     adapter: Resend.Swoosh.Adapter,
     api_key: System.get_env("RESEND_API_KEY")
 
-  config :firmowid, Firmowid.Repo,
-    ssl: [
-      verify: :verify_peer,
-      cacertfile: :certifi.cacertfile()
-    ]
+  if database_ssl_config do
+    config :firmowid, Firmowid.Repo, ssl: database_ssl_config
+  end
 
   # PHX_HOST depends on the machine you deploy to, so you need to set it in runtime
   # also only production uses https

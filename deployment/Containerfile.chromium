@@ -1,0 +1,32 @@
+# Containerfile for Chrome service
+# This image wraps zenika/alpine-chrome with the proper command for ChromicPDF
+# Use this when your deployment platform (e.g., Coolify) doesn't allow setting custom commands
+#
+# Based on ChromicPDF documentation example:
+# https://hexdocs.pm/chromic_pdf/ChromicPDF.html#module-remote-chrome
+#
+# Build: docker build -f deployment/Containerfile.chromium -t firmowid-chrome:latest .
+# Run:   docker run -p 9222:9222 firmowid-chrome:latest
+
+FROM zenika/alpine-chrome:124
+
+# Install nginx for reverse proxy (rewrites Host header to bypass Chrome's origin restrictions)
+USER root
+RUN apk add --no-cache nginx
+USER chrome
+
+# Copy our custom entrypoint script with the required flags
+# Use --chmod to set executable permissions during COPY (avoids permission issues)
+COPY --chmod=755 deployment/entrypoint.chromium.sh /usr/local/bin/entrypoint.chromium.sh
+
+# Override the base image's ENTRYPOINT to use our script directly
+ENTRYPOINT ["/usr/local/bin/entrypoint.chromium.sh"]
+CMD []
+
+# Expose the DevTools Protocol port
+EXPOSE 9222
+
+# Health check to ensure Chrome is responding on the debugging port
+# Increased start-period to give Chrome time to initialize
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=60s \
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:9222/json/version || exit 1

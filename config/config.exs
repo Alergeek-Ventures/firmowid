@@ -25,7 +25,10 @@ config :ex_money,
   exchange_rates_retrieve_every: :never,
   exchange_rates_cache_module: Firmowid.Currencies.DatabaseCache
 
-config :firmowid, ChromicPDF, on_demand: true
+config :firmowid, ChromicPDF,
+  discard_stderr: false,
+  no_sandbox: true
+
 config :firmowid, Firmowid.Cldr, locales: ["pl"]
 config :firmowid, Firmowid.Currencies, rates_provider: :mock
 
