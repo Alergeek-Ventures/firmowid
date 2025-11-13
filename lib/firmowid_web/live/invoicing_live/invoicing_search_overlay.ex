@@ -5,7 +5,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoiceSearchOverlay do
   def render(assigns) do
     ~H"""
     <div id="invoice-search-overlay">
-      <%= if @show_search and @invoicing_search_enabled do %>
+      <%= if @show_search do %>
         <div
           class="fixed inset-0 z-50 flex items-start justify-center"
           phx-window-keydown="close-search"

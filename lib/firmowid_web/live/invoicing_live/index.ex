@@ -76,18 +76,11 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
     socket = assign(socket, :active_months, active_months)
 
-    invoicing_search_enabled =
-      case PostHog.FeatureFlags.check("invoicing_search", user.id) do
-        {:ok, enabled} -> enabled
-        _ -> false
-      end
-
     socket =
       socket
       |> assign(:show_search, false)
       |> assign(:search_query, "")
       |> assign(:search_results, [])
-      |> assign(:invoicing_search_enabled, invoicing_search_enabled)
 
     {:ok, socket}
   end

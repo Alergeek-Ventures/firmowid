@@ -19,19 +19,17 @@
       class="w-48 gap-2"
     />
 
-    <%= if @invoicing_search_enabled do %>
-      <button
-        id="open-search"
-        phx-click="open-search"
-        phx-hook="Tippy"
-        data-tippy-content="Szukaj faktur"
-        class="flex items-center justify-center w-10 h-10 rounded-lg
-                border border-transparent bg-greyButtonBg hover:bg-blueText hover:text-white
-                transition-colors text-darkGrey"
-      >
-        <.icon name="hero-magnifying-glass" class="w-5 h-5" />
-      </button>
-    <% end %>
+    <button
+      id="open-search"
+      phx-click="open-search"
+      phx-hook="Tippy"
+      data-tippy-content="Szukaj faktur"
+      class="flex items-center justify-center w-10 h-10 rounded-lg
+              border border-transparent bg-greyButtonBg hover:bg-blueText hover:text-white
+              transition-colors text-darkGrey"
+    >
+      <.icon name="hero-magnifying-glass" class="w-5 h-5" />
+    </button>
   </div>
 
   <div phx-drop-target={@uploads.file.ref} class="flex flex-row gap-4">
@@ -126,7 +124,6 @@
   show_search={@show_search}
   search_query={@search_query}
   search_results={@search_results}
-  invoicing_search_enabled={@invoicing_search_enabled}
 />
 
 <div class={[
