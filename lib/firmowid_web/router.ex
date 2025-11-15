@@ -31,6 +31,16 @@ defmodule FirmowidWeb.Router do
     plug FirmowidWeb.WebhookAuth
   end
 
+  pipeline :health do
+    plug :accepts, ["json"]
+  end
+
+  scope "/", FirmowidWeb do
+    pipe_through :health
+
+    get "/health", HealthController, :check
+  end
+
   scope "/admin" do
     if Mix.env() == :dev do
       pipe_through [:browser]

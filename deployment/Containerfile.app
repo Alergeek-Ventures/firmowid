@@ -78,8 +78,7 @@ RUN apk add --no-cache \
   ncurses-libs \
   ca-certificates \
   vips \
-  curl \
-  wget
+  curl
 
 # Set the locale (Alpine handles locales differently than Debian)
 ENV LANG=en_US.UTF-8
@@ -95,5 +94,10 @@ ENV MIX_ENV="prod"
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/firmowid ./
 
 USER nobody
+
+# Health check to ensure the application is responding
+# Uses the /health endpoint which checks database, Oban, and connection pool
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=60s \
+  CMD curl --fail --silent --show-error http://127.0.0.1:4000/health || exit 1
 
 CMD ["/app/bin/server"]

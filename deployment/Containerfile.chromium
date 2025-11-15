@@ -12,7 +12,19 @@ FROM zenika/alpine-chrome:124
 
 # Install nginx for reverse proxy (rewrites Host header to bypass Chrome's origin restrictions)
 USER root
-RUN apk add --no-cache nginx
+RUN apk add --no-cache nginx fontconfig curl
+
+# Create directories for nginx with chrome user ownership
+RUN mkdir -p /var/lib/nginx/logs /var/lib/nginx/tmp && \
+    chown -R chrome:chrome /var/lib/nginx /var/log/nginx /tmp
+
+# Download and install Lexend font
+RUN mkdir -p /usr/share/fonts/truetype/lexend && \
+    cd /tmp && \
+    wget -q https://github.com/google/fonts/raw/main/ofl/lexend/Lexend%5Bwght%5D.ttf -O Lexend.ttf && \
+    mv Lexend.ttf /usr/share/fonts/truetype/lexend/ && \
+    fc-cache -f -v
+
 USER chrome
 
 # Copy our custom entrypoint script with the required flags
@@ -29,4 +41,4 @@ EXPOSE 9222
 # Health check to ensure Chrome is responding on the debugging port
 # Increased start-period to give Chrome time to initialize
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=60s \
-  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:9222/json/version || exit 1
+  CMD curl --fail --silent --show-error http://127.0.0.1:9222/json/version || exit 1
