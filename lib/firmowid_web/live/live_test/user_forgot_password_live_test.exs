@@ -21,7 +21,7 @@ defmodule FirmowidWeb.UserForgotPasswordLiveTest do
         conn
         |> log_in_user(user_fixture())
         |> live(~p"/resetuj-haslo")
-        |> follow_redirect(conn, ~p"/")
+        |> follow_redirect(conn, ~p"/czasosledz")
 
       assert {:ok, _conn} = result
     end

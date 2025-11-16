@@ -17,7 +17,7 @@ defmodule FirmowidWeb.UserRegistrationLiveTest do
         conn
         |> log_in_user(user_fixture())
         |> live(~p"/zarejestruj")
-        |> follow_redirect(conn, "/")
+        |> follow_redirect(conn, "/czasosledz")
 
       assert {:ok, _conn} = result
     end
@@ -45,12 +45,7 @@ defmodule FirmowidWeb.UserRegistrationLiveTest do
       render_submit(form)
       conn = follow_trigger_action(form, conn)
 
-      assert redirected_to(conn) == ~p"/"
-
-      # Now do a logged in request and assert on the menu
-      conn = get(conn, "/")
-      response = html_response(conn, 302)
-      assert response =~ "redirected"
+      assert redirected_to(conn) == ~p"/czasosledz"
     end
 
     test "renders errors for duplicated email", %{conn: conn} do

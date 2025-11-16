@@ -26,7 +26,7 @@ defmodule FirmowidWeb.UserAuthTest do
       conn = UserAuth.log_in_user(conn, user)
       assert token = get_session(conn, :user_token)
       assert get_session(conn, :live_socket_id) == "users_sessions:#{Base.url_encode64(token)}"
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/czasosledz"
       assert Accounts.get_user_by_session_token(token)
     end
 
@@ -65,7 +65,7 @@ defmodule FirmowidWeb.UserAuthTest do
       refute get_session(conn, :user_token)
       refute conn.cookies[@remember_me_cookie]
       assert %{max_age: 0} = conn.resp_cookies[@remember_me_cookie]
-      assert redirected_to(conn) == ~p"/zaloguj"
+      assert redirected_to(conn) == ~p"/"
       refute Accounts.get_user_by_session_token(user_token)
     end
 
@@ -85,7 +85,7 @@ defmodule FirmowidWeb.UserAuthTest do
       conn = conn |> fetch_cookies() |> fetch_flash() |> UserAuth.log_out_user()
       refute get_session(conn, :user_token)
       assert %{max_age: 0} = conn.resp_cookies[@remember_me_cookie]
-      assert redirected_to(conn) == ~p"/zaloguj"
+      assert redirected_to(conn) == ~p"/"
     end
   end
 
@@ -239,7 +239,7 @@ defmodule FirmowidWeb.UserAuthTest do
     test "redirects if user is authenticated", %{conn: conn, user: user} do
       conn = conn |> assign(:current_user, user) |> UserAuth.redirect_if_user_is_authenticated([])
       assert conn.halted
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/czasosledz"
     end
 
     test "does not redirect if user is not authenticated", %{conn: conn} do

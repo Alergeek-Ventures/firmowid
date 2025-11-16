@@ -26,7 +26,7 @@
       ]}>
         <%= if Bodyguard.permit?(Firmowid.Invoicing, :show, @current_user) do %>
           <.link
-            navigate={~p"/"}
+            navigate={~p"/fakturowanie"}
             class={[
               !String.starts_with?(@current_uri.path, "/analiza") &&
                 !String.starts_with?(@current_uri.path, "/czasosledz") &&

@@ -52,11 +52,13 @@ defmodule FirmowidWeb.ProjectLiveTest do
       assert result =~ "Nad tym projektem pracują"
     end
 
-    test "redirects if user lacks permissions", %{conn: conn} do
+    test "raises error if user lacks permissions", %{conn: conn} do
       user = user_fixture()
       conn = log_in_user(conn, user)
-      {:error, {:redirect, %{to: redirected_path}}} = live(conn, ~p"/czasosledz/projekty")
-      assert redirected_path == ~p"/czasosledz"
+
+      assert_raise Bodyguard.NotAuthorizedError, fn ->
+        live(conn, ~p"/czasosledz/projekty")
+      end
     end
   end
 

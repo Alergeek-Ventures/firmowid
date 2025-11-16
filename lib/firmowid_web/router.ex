@@ -78,8 +78,7 @@ defmodule FirmowidWeb.Router do
   scope "/", FirmowidWeb do
     pipe_through [
       :browser,
-      :require_authenticated_user_with_organization,
-      :redirect_employees_to_timetracker
+      :require_authenticated_user_with_organization
     ]
 
     get "/sprzedazowe/:id/pdf", PdfController, :index
@@ -92,7 +91,7 @@ defmodule FirmowidWeb.Router do
         {CurrentPath, :save_request_uri},
         Timezone
       ] do
-      live "/", InvoicingLive.Index, :index
+      live "/fakturowanie", InvoicingLive.Index, :index
       live "/kosztowe/skrzynka", CostInvoiceLive.InboxLive, :index
       live "/kosztowe/:id", CostInvoiceLive.Show, :show
 
@@ -185,6 +184,7 @@ defmodule FirmowidWeb.Router do
         {CurrentPath, :save_request_uri},
         Timezone
       ] do
+      live "/", LandingLive
       live "/potwierdz/:token", User.ConfirmationLive, :edit
       live "/potwierdz", User.ConfirmationInstructionsLive, :new
     end

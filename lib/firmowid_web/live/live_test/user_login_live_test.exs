@@ -18,7 +18,7 @@ defmodule FirmowidWeb.UserLoginLiveTest do
         conn
         |> log_in_user(user_fixture())
         |> live(~p"/zaloguj")
-        |> follow_redirect(conn, "/")
+        |> follow_redirect(conn, "/czasosledz")
 
       assert {:ok, _conn} = result
     end
@@ -36,7 +36,7 @@ defmodule FirmowidWeb.UserLoginLiveTest do
 
       conn = submit_form(form, conn)
 
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/czasosledz"
     end
 
     test "redirects to login page with a flash error if there are no valid credentials", %{

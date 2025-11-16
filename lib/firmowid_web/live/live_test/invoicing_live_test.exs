@@ -11,7 +11,7 @@ defmodule FirmowidWeb.InvoicingLiveTest do
     end
 
     test "handles requisition status updates without errors", %{conn: conn, user: user} do
-      {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/")
+      {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
 
       # Test that all status updates are handled without crashing
       statuses = [:linked, :processing, :rejected, :expired, :timeout, :error]

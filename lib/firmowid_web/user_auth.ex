@@ -86,7 +86,7 @@ defmodule FirmowidWeb.UserAuth do
     |> renew_session()
     |> delete_resp_cookie(@remember_me_cookie)
     |> LiveToast.put_toast(:notice, "Wylogowano.")
-    |> redirect(to: ~p"/zaloguj")
+    |> redirect(to: ~p"/")
   end
 
   @doc """
@@ -299,16 +299,6 @@ defmodule FirmowidWeb.UserAuth do
     end
   end
 
-  def redirect_employees_to_timetracker(conn, _opts) do
-    if conn.assigns[:current_user].role == :employee do
-      conn
-      |> redirect(to: ~p"/czasosledz")
-      |> halt()
-    else
-      conn
-    end
-  end
-
   def require_superuser(conn, _opts) do
     if conn.assigns.current_user.system_role == :superuser do
       conn
@@ -347,5 +337,5 @@ defmodule FirmowidWeb.UserAuth do
 
   defp maybe_store_return_to(conn), do: conn
 
-  defp signed_in_path(_conn), do: ~p"/"
+  defp signed_in_path(_conn), do: ~p"/czasosledz"
 end
