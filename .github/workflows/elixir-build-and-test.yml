@@ -41,6 +41,14 @@ jobs:
       MIX_ENV: test
       DATABASE_URL: "postgresql://postgres:postgres@localhost:5433/firmowid_test?sslmode=prefer"
       SECRET_KEY_BASE: "REMOVED_PHOENIX_SECRET_KEY_BASE"
+      # S3 / LocalStack configuration
+      S3_HOST: localhost
+      S3_SCHEME: "http://"
+      S3_PORT: "4566"
+      S3_BUCKET: firmowid-uploads
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
 
     services:
       db:
@@ -59,7 +67,6 @@ jobs:
         image: localstack/localstack:latest
         env:
           SERVICES: s3
-          AWS_DEFAULT_REGION: us-east-1
         ports: ["4566:4566"]
 
     steps:
@@ -84,7 +91,6 @@ jobs:
           docker run -d --name s3-emulator \
             -p 4566:4566 \
             -e SERVICES=s3 \
-            -e AWS_DEFAULT_REGION=us-east-1 \
             -v "$RUNNER_TEMP/localstack-init:/etc/localstack/init/ready.d" \
             localstack/localstack:latest
 

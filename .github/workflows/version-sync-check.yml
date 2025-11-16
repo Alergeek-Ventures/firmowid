@@ -30,10 +30,10 @@ jobs:
           echo "  Elixir: $ELIXIR"
           echo "  Erlang: $ERLANG"
 
-      - name: Extract versions from Dockerfile
+      - name: Extract versions from Containerfile
         id: dockerfile_versions
         run: |
-          BUILDER_IMAGE=$(grep '^ARG BUILDER_IMAGE=' Dockerfile | sed 's/.*hexpm\/elixir:\([^"]*\)".*/\1/')
+          BUILDER_IMAGE=$(grep '^ARG BUILDER_IMAGE=' deployment/Containerfile.app | sed 's/.*hexpm\/elixir:\([^"]*\)".*/\1/')
           
           DOCKERFILE_ELIXIR=$(echo "$BUILDER_IMAGE" | sed 's/-erlang.*//')
           DOCKERFILE_ERLANG=$(echo "$BUILDER_IMAGE" | sed 's/.*erlang-\([0-9.]*\)-.*/\1/')
@@ -41,7 +41,7 @@ jobs:
           echo "dockerfile_elixir=$DOCKERFILE_ELIXIR" >> $GITHUB_OUTPUT
           echo "dockerfile_erlang=$DOCKERFILE_ERLANG" >> $GITHUB_OUTPUT
           
-          echo "From Dockerfile:"
+          echo "From Containerfile.app:"
           echo "  Elixir: $DOCKERFILE_ELIXIR"
           echo "  Erlang: $DOCKERFILE_ERLANG"
 
@@ -77,10 +77,10 @@ jobs:
           
           if [ $MISMATCH -eq 1 ]; then
             echo ""
-            echo "Please update Dockerfile to match .tool-versions:"
+            echo "Please update deployment/Containerfile.app to match .tool-versions:"
             echo "1. Query Docker Hub for matching image:"
-            echo "   curl -s \"https://hub.docker.com/v2/repositories/hexpm/elixir/tags?page_size=100&name=${TOOL_ELIXIR}-erlang-${TOOL_ERLANG}\" | jq -r '.results[].name | select(contains(\"debian\") and contains(\"slim\"))' | sort -V -r | head -5"
-            echo "2. Update BUILDER_IMAGE and RUNNER_IMAGE in Dockerfile"
+            echo "   curl -s \"https://hub.docker.com/v2/repositories/hexpm/elixir/tags?page_size=100&name=${TOOL_ELIXIR}-erlang-${TOOL_ERLANG}\" | jq -r '.results[].name | select(contains(\"alpine\"))' | sort -V -r | head -5"
+            echo "2. Update BUILDER_IMAGE in deployment/Containerfile.app"
             exit 1
           fi
           
