@@ -75,6 +75,9 @@ config :ex_money,
 
 # PostHog analytics (optional)
 # Only configure when API host is present to avoid overriding test config
+config :firmowid,
+  uploads_bucket: System.get_env("S3_BUCKET", "firmowid-uploads")
+
 if System.get_env("POSTHOG_API_URL") do
   config :posthog,
     api_key: System.get_env("POSTHOG_API_KEY"),

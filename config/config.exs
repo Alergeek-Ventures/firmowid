@@ -55,8 +55,7 @@ config :firmowid, FirmowidWeb.Endpoint,
 
 config :firmowid,
   ecto_repos: [Firmowid.Repo],
-  generators: [timestamp_type: :utc_datetime],
-  uploads_bucket: "firmowid-uploads"
+  generators: [timestamp_type: :utc_datetime]
 
 # Configures Elixir's Logger
 config :logger, :console,

@@ -20,9 +20,6 @@ config :firmowid, FirmowidWeb.Endpoint,
     exclude: ["localhost", "127.0.0.1"]
   ]
 
-config :firmowid,
-  uploads_bucket: "firmowid-uploads-prod"
-
 # Do not print debug messages in production
 config :logger, level: :info
 
