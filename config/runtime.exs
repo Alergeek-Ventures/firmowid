@@ -84,9 +84,9 @@ if System.get_env("POSTHOG_API_URL") do
     api_host: System.get_env("POSTHOG_API_URL")
 end
 
-# ChromicPDF configuration for external Chrome container
-# Set CHROME_ADDRESS to point to Chrome DevTools Protocol endpoint
-# Format: "hostname:port" (e.g., "localhost:9222" or "chrome:9222")
+# ChromicPDF configuration for external Chromium container
+# Set CHROME_ADDRESS to point to Chromium DevTools Protocol endpoint
+# Format: "hostname:port" (e.g., "localhost:9222" or "chromium:9222")
 if config_env() != :test do
   chrome_address = System.get_env("CHROME_ADDRESS")
 

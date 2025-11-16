@@ -22,6 +22,20 @@ services:
       - ./s3-init/create-s3-bucket.sh:/etc/localstack/init/ready.d/create-s3-bucket.sh:Z
       - localstack_data:/var/lib/localstack
 
+  chromium:
+    build:
+      context: ..
+      dockerfile: deployment/Containerfile.chromium
+    container_name: firmowid-chromium
+    ports:
+      - '9222:9222'
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://127.0.0.1:9222/json/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
 volumes:
   postgres_data:
   localstack_data:

@@ -4,6 +4,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
 
   attr :sales_invoice, :map, required: true
   attr :show_vat, :boolean, default: true
+  attr :logo_data_uri, :string, default: nil
 
   defp invoice_header(assigns) do
     ~H"""
@@ -49,7 +50,11 @@ defmodule FirmowidWeb.SalesInvoices.Template do
               Metoda kasowa
             <% end %>
           </div>
-          <img :if={@sales_invoice.logo_url} src={@sales_invoice.logo_url} class="w-8 h-8" />
+          <%= if @logo_data_uri do %>
+            <img src={@logo_data_uri} class="w-8 h-8" />
+          <% else %>
+            <img :if={@sales_invoice.logo_url} src={@sales_invoice.logo_url} class="w-8 h-8" />
+          <% end %>
         </div>
       </div>
     </div>
@@ -356,11 +361,17 @@ defmodule FirmowidWeb.SalesInvoices.Template do
     """
   end
 
+  attr :footer_logo_data_uri, :string, default: nil
+
   defp footer(assigns) do
     ~H"""
     <div class="absolute flex items-end inset-x-0 justify-center text-[8px] bottom-4 w-full">
       <div class="flex flex-col items-center">
-        <img src="/images/invoice_firmowid_logo.png" class="w-10 h-10 mb-2" />
+        <%= if @footer_logo_data_uri do %>
+          <img src={@footer_logo_data_uri} class="w-10 h-10 mb-2" />
+        <% else %>
+          <img src="/images/invoice_firmowid_logo.png" class="w-10 h-10 mb-2" />
+        <% end %>
         <p>
           Faktura wygenerowana za pomocą
           <a class="font-black" href="https://firmowid.pl" target="_blank" rel="noreferrer noopener">
@@ -374,11 +385,17 @@ defmodule FirmowidWeb.SalesInvoices.Template do
 
   attr :sales_invoice, :map, required: true
   attr :show_vat, :boolean, default: true
+  attr :logo_data_uri, :string, default: nil
+  attr :footer_logo_data_uri, :string, default: nil
 
   def sales_invoice(assigns) do
     ~H"""
     <div class="w-[calc(595px-2*32px)] h-[calc(842px-2*32px)] relative p-8 box-content mx-auto bg-white">
-      <.invoice_header sales_invoice={@sales_invoice} show_vat={@show_vat} />
+      <.invoice_header
+        sales_invoice={@sales_invoice}
+        show_vat={@show_vat}
+        logo_data_uri={@logo_data_uri}
+      />
       <hr class="border-greyButtonBg my-6" />
       <.seller_buyer_section sales_invoice={@sales_invoice} />
       <hr class="border-greyButtonBg my-6" />
@@ -409,7 +426,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
       <!-- Payment Details -->
       <.payment_details sales_invoice={@sales_invoice} />
       <!-- Footer -->
-      <.footer />
+      <.footer footer_logo_data_uri={@footer_logo_data_uri} />
     </div>
     """
   end

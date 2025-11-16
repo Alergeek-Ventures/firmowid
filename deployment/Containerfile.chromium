@@ -1,16 +1,16 @@
-# Containerfile for Chrome service
+# Containerfile for Chromium service
 # This image wraps zenika/alpine-chrome with the proper command for ChromicPDF
 # Use this when your deployment platform (e.g., Coolify) doesn't allow setting custom commands
 #
 # Based on ChromicPDF documentation example:
 # https://hexdocs.pm/chromic_pdf/ChromicPDF.html#module-remote-chrome
 #
-# Build: docker build -f deployment/Containerfile.chromium -t firmowid-chrome:latest .
-# Run:   docker run -p 9222:9222 firmowid-chrome:latest
+# Build: docker build -f deployment/Containerfile.chromium -t firmowid-chromium:latest .
+# Run:   docker run -p 9222:9222 firmowid-chromium:latest
 
 FROM zenika/alpine-chrome:124
 
-# Install nginx for reverse proxy (rewrites Host header to bypass Chrome's origin restrictions)
+# Install nginx for reverse proxy and fontconfig for custom fonts
 USER root
 RUN apk add --no-cache nginx fontconfig curl
 

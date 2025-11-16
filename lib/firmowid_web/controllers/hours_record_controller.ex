@@ -5,31 +5,53 @@ defmodule FirmowidWeb.HoursRecordController do
   alias Firmowid.Blobs
   alias Firmowid.Helpers.TimeConverter
   alias Firmowid.Timetracker
+  alias FirmowidWeb.PdfHelpers
 
   @dialyzer {:no_return, pdf: 2}
 
   # sobelow_skip ["Traversal.SendFile"]
   # This is safe because pdf_path is not user-controlled
   def pdf(conn, %{"date" => date}) do
+    # Get avatar URL and convert to data URI
+    avatar_url =
+      conn.assigns.current_org
+      |> Accounts.get_organization_with_avatar()
+      |> Map.get(:avatar_url)
+
+    avatar_data_uri = PdfHelpers.url_to_data_uri(avatar_url)
+
+    date_parsed = Date.from_iso8601!(date)
+    start_date = Date.beginning_of_month(date_parsed)
+    end_date = Date.end_of_month(date_parsed)
+
+    total_hours =
+      conn.assigns.current_user.id
+      |> Timetracker.get_sessions_duration_in_month(date_parsed)
+      |> TimeConverter.time_worked_in_seconds_to_hours()
+
+    # Render HTML to string
+    html_content =
+      PdfHelpers.render_pdf_html(
+        FirmowidWeb.HoursRecord.PdfTemplate,
+        :hours_record,
+        layout: false,
+        name: conn.assigns.current_user.name,
+        employment_date: conn.assigns.current_user.employment_date,
+        start_date: start_date,
+        end_date: end_date,
+        hours: total_hours,
+        avatar_data_uri: avatar_data_uri
+      )
+
     evaluate = %{
       expression: """
       document.querySelector('body').classList.add('bg-white');
       """
     }
 
-    url_with_protocol = FirmowidWeb.Endpoint.url()
-    domain = FirmowidWeb.Endpoint.host()
-
-    path = ~p"/czasosledz/ewidencja/#{date}/podglad"
-
     {:ok, result} =
       ChromicPDF.print_to_pdf(
-        {:url, "#{url_with_protocol}#{path}"},
-        set_cookie: %{
-          name: "_firmowid_key",
-          value: conn.cookies["_firmowid_key"],
-          domain: domain
-        },
+        {:html, html_content},
         output: fn pdf_path ->
           conn
           |> put_resp_header(
@@ -75,7 +97,8 @@ defmodule FirmowidWeb.HoursRecordController do
       avatar_url:
         conn.assigns.current_org
         |> Accounts.get_organization_with_avatar()
-        |> Map.get(:avatar_url)
+        |> Map.get(:avatar_url),
+      avatar_data_uri: nil
     )
   end
 

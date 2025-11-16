@@ -7,14 +7,19 @@ defmodule FirmowidWeb.HoursRecord.PdfTemplate do
   attr :start_date, :any, required: true
   attr :end_date, :any, required: true
   attr :hours, :integer, required: true
-  attr :avatar_url, :string
+  attr :avatar_url, :string, default: nil
+  attr :avatar_data_uri, :string, default: nil
 
   def hours_record(assigns) do
     ~H"""
     <div class="w-[210mm] border print:border-none h-[267mm] relative py-[120px] px-[32px] mx-auto bg-white text-[16px]">
       <div class="flex justify-between">
         <div>
-          <img :if={@avatar_url} src={@avatar_url} class="w-[200px] h-[200px]" />
+          <%= if @avatar_data_uri do %>
+            <img src={@avatar_data_uri} class="w-[200px] h-[200px]" />
+          <% else %>
+            <img :if={@avatar_url} src={@avatar_url} class="w-[200px] h-[200px]" />
+          <% end %>
         </div>
         <div class="flex flex-col items-end mt-10 mr-9">
           <span>Imię i nazwisko Zleceniobiorcy</span>

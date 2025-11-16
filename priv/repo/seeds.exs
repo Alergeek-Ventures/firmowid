@@ -6,6 +6,7 @@ alias Firmowid.Blobs
 alias Firmowid.CostInvoices
 alias Firmowid.Finances
 alias Firmowid.Repo
+alias Firmowid.SalesInvoices
 alias Firmowid.Timetracker
 
 Repo.transaction(fn ->
@@ -485,4 +486,66 @@ Repo.transaction(fn ->
   ]
 
   Finances.create_or_update_transactions(transactions)
+
+  # Insert sample sales invoice for PDF generation testing
+  existing_invoice =
+    Repo.one(
+      from(si in SalesInvoices.SalesInvoice,
+        where: si.invoice_number == "FV/2025/11/001" and si.organization_id == ^av.id,
+        limit: 1
+      )
+    )
+
+  if is_nil(existing_invoice) do
+    {:ok, sales_invoice} =
+      SalesInvoices.create_sales_invoice(
+        %SalesInvoices.SalesInvoice{organization_id: av.id},
+        %{
+          "id" => "019d0001-0000-7000-8000-000000000001",
+          "invoice_number" => "FV/2025/11/001",
+          "invoice_type" => "poland",
+          "issue_date" => ~D[2025-11-15],
+          "sale_date" => ~D[2025-11-15],
+          "due_date" => ~D[2025-11-29],
+          "currency" => "PLN",
+          "seller_display_name" => "Hello Kitty Inc.",
+          "seller_address" => "Lipowa 3D, 30-702, Kraków",
+          "seller_nip" => "1234567891",
+          "seller_account_number" => "PL58253000082079847123980045",
+          "buyer_display_name" => "Acme Corporation Sp. z o.o.",
+          "buyer_address" => "ul. Testowa 42, 00-001 Warszawa",
+          "buyer_nip" => "9876543210",
+          "buyer_name" => "Jan",
+          "buyer_surname" => "Kowalski",
+          "payment_method" => "przelew",
+          "is_reverse_charge" => false,
+          "is_cash_account" => false,
+          "sales_invoice_items" => [
+            %{
+              "name" => "Usługi programistyczne - aplikacja webowa",
+              "quantity" => 40,
+              "unit" => "godz.",
+              "unit_price" => 250.00,
+              "vat_rate" => 23
+            },
+            %{
+              "name" => "Konsultacje techniczne",
+              "quantity" => 8,
+              "unit" => "godz.",
+              "unit_price" => 300.00,
+              "vat_rate" => 23
+            },
+            %{
+              "name" => "Hosting i utrzymanie serwera",
+              "quantity" => 1,
+              "unit" => "m-c",
+              "unit_price" => 500.00,
+              "vat_rate" => 23
+            }
+          ]
+        }
+      )
+
+    IO.puts("✓ Created sample sales invoice: #{sales_invoice.invoice_number}")
+  end
 end)

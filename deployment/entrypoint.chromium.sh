@@ -1,7 +1,7 @@
 #!/bin/sh
 # Entrypoint script for Chromium service used by ChromicPDF
 # Runs Chromium on internal port 9223 with nginx reverse proxy on 9222
-# nginx rewrites Host header to bypass Chrome's origin restrictions
+# nginx rewrites Host header to bypass Chromium's origin restrictions
 # See: https://hexdocs.pm/chromic_pdf/ChromicPDF.html#module-remote-chrome
 
 # Generate nginx config
@@ -25,8 +25,8 @@ http {
     server {
         listen 9222;
         
-        # Rewrite Chrome's internal WebSocket URLs to use the external port
-        # This ensures clients connect through nginx instead of directly to Chrome
+        # Rewrite Chromium's internal WebSocket URLs to use the external port
+        # This ensures clients connect through nginx instead of directly to Chromium
         sub_filter '127.0.0.1:9223' '$http_host';
         sub_filter_once off;
         sub_filter_types application/json;
@@ -56,11 +56,11 @@ chromium-browser \
 
 CHROME_PID=$!
 
-# Wait for Chrome to start
-echo "Waiting for Chrome to start on 127.0.0.1:9223..."
+# Wait for Chromium to start
+echo "Waiting for Chromium to start on 127.0.0.1:9223..."
 for i in $(seq 1 30); do
   if wget -q -O - http://127.0.0.1:9223/json/version >/dev/null 2>&1; then
-    echo "Chrome is ready!"
+    echo "Chromium is ready!"
     break
   fi
   sleep 1
@@ -82,5 +82,5 @@ cleanup() {
 
 trap cleanup TERM INT
 
-# Wait for Chrome process
+# Wait for Chromium process
 wait $CHROME_PID
