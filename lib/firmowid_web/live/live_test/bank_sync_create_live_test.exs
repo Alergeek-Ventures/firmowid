@@ -20,7 +20,7 @@ defmodule FirmowidWeb.BankSyncCreateLiveTest do
       requisition_id = Ecto.UUID.generate()
 
       Oban.Testing.with_testing_mode(:manual, fn ->
-        {:error, {:live_redirect, %{to: "/", flash: %{}}}} =
+        {:error, {:live_redirect, %{to: "/fakturowanie", flash: %{}}}} =
           live(conn, "/ustawienia/bank/dodaj?ref=#{requisition_id}")
 
         # assert job was inserted into oban with proper args

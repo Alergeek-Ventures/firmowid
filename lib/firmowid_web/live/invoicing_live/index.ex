@@ -328,7 +328,10 @@ defmodule FirmowidWeb.InvoicingLive.Index do
           )
 
         ~H"""
-        <.link class="text-sm text-bold underline" navigate={~p"/?month=#{@issue_date}&filter=invoices"}>
+        <.link
+          class="text-sm text-bold underline"
+          navigate={~p"/fakturowanie?month=#{@issue_date}&filter=invoices"}
+        >
           Wyświetl <.icon name="hero-arrow-right-solid" class="h-3 w-3" />
         </.link>
         """
@@ -354,7 +357,10 @@ defmodule FirmowidWeb.InvoicingLive.Index do
           )
 
         ~H"""
-        <.link class="text-sm text-bold underline" navigate={~p"/?month=#{@issue_date}&filter=invoices"}>
+        <.link
+          class="text-sm text-bold underline"
+          navigate={~p"/fakturowanie?month=#{@issue_date}&filter=invoices"}
+        >
           Wyświetl <.icon name="hero-arrow-right-solid" class="h-3 w-3" />
         </.link>
         """
@@ -391,7 +397,8 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
     socket =
       push_patch(socket,
-        to: ~p"/?month=#{url_params.month}&filter=#{url_params.filter}&group_by_party=#{url_params.group_by_party}"
+        to:
+          ~p"/fakturowanie?month=#{url_params.month}&filter=#{url_params.filter}&group_by_party=#{url_params.group_by_party}"
       )
 
     socket
@@ -438,7 +445,10 @@ defmodule FirmowidWeb.InvoicingLive.Index do
                   )
 
                 ~H"""
-                <.link class="text-sm text-bold underline" navigate={~p"/?month=#{@issue_date}&filter=invoices"}>
+                <.link
+                  class="text-sm text-bold underline"
+                  navigate={~p"/fakturowanie?month=#{@issue_date}&filter=invoices"}
+                >
                   Wyświetl <.icon name="hero-arrow-right-solid" class="h-3 w-3" />
                 </.link>
                 """

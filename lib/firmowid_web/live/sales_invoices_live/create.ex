@@ -152,7 +152,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Create do
         </button>
       </div>
 
-      <.link navigate={~p"/"} class="mt-16 text-darkGrey flex flex-row gap-2 items-center">
+      <.link navigate={~p"/fakturowanie"} class="mt-16 text-darkGrey flex flex-row gap-2 items-center">
         <span>
           Wróć do listy faktur
         </span>

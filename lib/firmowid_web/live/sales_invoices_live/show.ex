@@ -62,7 +62,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
     {:noreply,
      socket
      |> put_flash(:info, "Faktura została usunięta")
-     |> push_navigate(to: ~p"/?month=#{Date.to_iso8601(socket.assigns.invoice.issue_date)}")}
+     |> push_navigate(to: ~p"/fakturowanie?month=#{Date.to_iso8601(socket.assigns.invoice.issue_date)}")}
   end
 
   @impl true

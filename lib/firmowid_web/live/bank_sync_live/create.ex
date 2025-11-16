@@ -46,7 +46,7 @@ defmodule FirmowidWeb.BankSyncLive.Create do
       error = params["error"]
 
       if is_nil(error) do
-        {:noreply, push_navigate(socket, to: ~p"/")}
+        {:noreply, push_navigate(socket, to: ~p"/fakturowanie")}
       else
         details = params["details"]
 
@@ -60,7 +60,7 @@ defmodule FirmowidWeb.BankSyncLive.Create do
            "Będziemy kontynuować próby połączenia w Twoim imieniu.",
            title: "Połączenie z bankiem nie zostało utworzone w tym momencie."
          )
-         |> push_patch(to: ~p"/")}
+         |> push_patch(to: ~p"/fakturowanie")}
       end
     end
   end
