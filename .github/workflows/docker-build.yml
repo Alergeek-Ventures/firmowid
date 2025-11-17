@@ -8,10 +8,19 @@ on:
     branches:
       - "*"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   docker-build:
     name: Verify Docker image builds successfully
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    container:
+      image: ghcr.io/alergeek-ventures/infrastructure/cicd-image:5b1d7150888c47322a6b5cda04796dfd1dbfb34c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.github_token }}
 
     steps:
       - name: Checkout code

@@ -3,6 +3,14 @@ import Config
 # Only in tests, remove the complexity from the password hashing algorithm
 config :argon2_elixir, t_cost: 1, m_cost: 8
 
+config :ex_aws, :s3,
+  scheme: System.get_env("S3_SCHEME", "http://"),
+  host: System.get_env("S3_HOST", "localhost"),
+  port: String.to_integer(System.get_env("S3_PORT", "4566")),
+  bucket: System.get_env("S3_BUCKET", "firmowid-uploads")
+
+config :firmowid, ChromicPDF, on_demand: true
+
 # In test we don't send emails
 config :firmowid, Firmowid.Mailer, adapter: Swoosh.Adapters.Test
 config :firmowid, Firmowid.Oban, testing: :inline
@@ -12,12 +20,14 @@ config :firmowid, Firmowid.Oban, testing: :inline
 # The MIX_TEST_PARTITION environment variable can be used
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
+#
+# CI uses DATABASE_URL, local dev can use individual params or set DATABASE_URL
 config :firmowid, Firmowid.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
+  username: System.get_env("POSTGRES_USER", "postgres"),
+  password: System.get_env("POSTGRES_PASSWORD", "postgres"),
+  hostname: System.get_env("POSTGRES_HOST", "localhost"),
   database: "firmowid_test#{System.get_env("MIX_TEST_PARTITION")}",
-  port: 5433,
+  port: String.to_integer(System.get_env("POSTGRES_PORT", "5433")),
   pool: Ecto.Adapters.SQL.Sandbox
 
 # We don't run a server during test. If one is required,

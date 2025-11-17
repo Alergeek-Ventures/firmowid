@@ -8,7 +8,12 @@ permissions:
 
 jobs:
   clear-cache:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    container:
+      image: ghcr.io/alergeek-ventures/infrastructure/cicd-image:f6d0013d860d06603390db840c615faa03b36b84
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.github_token }}
     steps:
       - name: Clear cache
         uses: actions/github-script@v6

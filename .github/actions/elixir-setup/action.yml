@@ -83,7 +83,7 @@ runs:
     # I force a full recompile only on builds that we retry.
     - name: Clean to rule out incremental build as a source of flakiness
       if: github.run_attempt != '1'
-      run: | 
+      run: |
         mix deps.clean --all
         mix clean
       shell: sh
@@ -112,8 +112,19 @@ runs:
       run: mix loadpaths
       shell: sh
       if: inputs.build-deps == 'true'
+      env:
+        MIX_OS_DEPS_COMPILE_PARTITION_COUNT: 4
 
     - name: Compile Application
       run: mix compile ${{ inputs.build-flags }}
       shell: sh
       if: inputs.build-app == 'true'
+      env:
+        ERL_COMPILER_OPTIONS: "+JPn"
+
+    - name: Compile Application
+      run: mix compile ${{ inputs.build-flags }}
+      shell: sh
+      if: inputs.build-app == 'true'
+      env:
+        ERL_COMPILER_OPTIONS: "+JPn"
