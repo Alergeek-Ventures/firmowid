@@ -61,6 +61,49 @@ defmodule FirmowidWeb.GoogleAuthController do
       provider_id: profile.sub
     }
 
+    # Check if user is already logged in (coming from settings page)
+    current_user = conn.assigns[:current_user]
+
+    cond do
+      # User is logged in and wants to link their account
+      current_user != nil && current_user.email == profile.email ->
+        handle_link_for_logged_in_user(conn, current_user, profile)
+
+      # User is logged in but trying to link different Google account
+      current_user != nil ->
+        conn
+        |> put_flash(:error, "Ten adres e-mail Google nie pasuje do Twojego konta.")
+        |> redirect(to: ~p"/ustawienia/bezpieczenstwo")
+
+      # User is not logged in - normal OAuth flow
+      true ->
+        handle_oauth_login(conn, user_params, profile)
+    end
+  end
+
+  defp handle_link_for_logged_in_user(conn, user, profile) do
+    case user
+         |> Accounts.User.link_google_changeset(profile.sub)
+         |> Firmowid.Repo.update() do
+      {:ok, _updated_user} ->
+        conn
+        |> put_flash(:info, "Twoje konto Google zostało pomyślnie połączone!")
+        |> redirect(to: ~p"/ustawienia/bezpieczenstwo")
+
+      {:error, changeset} ->
+        if has_unique_constraint_error?(changeset, :google_provider_id) do
+          conn
+          |> put_flash(:error, "To konto Google jest już połączone z innym użytkownikiem.")
+          |> redirect(to: ~p"/ustawienia/bezpieczenstwo")
+        else
+          conn
+          |> put_flash(:error, "Wystąpił błąd podczas łączenia konta. Spróbuj ponownie.")
+          |> redirect(to: ~p"/ustawienia/bezpieczenstwo")
+        end
+    end
+  end
+
+  defp handle_oauth_login(conn, user_params, profile) do
     case Accounts.get_or_create_oauth_user(user_params) do
       {:ok, user} ->
         UserAuth.log_in_user(conn, user)
@@ -109,6 +152,14 @@ defmodule FirmowidWeb.GoogleAuthController do
         |> put_flash(:error, "Nie udało się utworzyć konta: #{inspect(errors)}")
         |> redirect(to: ~p"/zaloguj")
     end
+  end
+
+  # Checks if a changeset has a unique constraint error for the given field
+  defp has_unique_constraint_error?(%Ecto.Changeset{errors: errors}, field) do
+    Enum.any?(errors, fn
+      {^field, {_message, opts}} -> Keyword.get(opts, :constraint) == :unique
+      _ -> false
+    end)
   end
 
   @doc """

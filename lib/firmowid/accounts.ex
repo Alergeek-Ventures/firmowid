@@ -358,6 +358,26 @@ defmodule Firmowid.Accounts do
     UserNotifier.deliver_link_google_account_instructions(user, link_url_fun.(token))
   end
 
+  @doc """
+  Unlinks a Google account from a user.
+
+  ## Examples
+
+      iex> unlink_google_account(user)
+      {:ok, %User{}}
+
+      iex> unlink_google_account(user_without_google)
+      {:error, :not_linked}
+
+  """
+  def unlink_google_account(%User{google_provider_id: nil}), do: {:error, :not_linked}
+
+  def unlink_google_account(%User{} = user) do
+    user
+    |> Ecto.Changeset.change(%{google_provider_id: nil})
+    |> Repo.update()
+  end
+
   ## Settings
 
   @doc """

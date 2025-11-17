@@ -532,6 +532,56 @@
     <% :security -> %>
       <div class="mt-6 space-y-12 divide-y">
         <div>
+          <h2 class="font-bold mb-6">Logowanie przez Google</h2>
+          <div class="space-y-4">
+            <div class="flex items-center gap-4">
+              <div class="flex-1">
+                <%= if @current_user.google_provider_id do %>
+                  <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-greenText">
+                      <.icon name="hero-check-circle-solid" class="w-5 h-5 text-greenBg" />
+                    </span>
+                    <span class="text-sm font-medium">Konto Google jest połączone</span>
+                  </div>
+                  <p class="text-sm text-darkGrey mt-2">
+                    Możesz logować się do swojego konta używając Google.
+                  </p>
+                <% else %>
+                  <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-redBg">
+                      <.icon name="hero-x-mark-solid" class="w-5 h-5 text-redText" />
+                    </span>
+                    <span class="text-sm font-medium">Konto Google nie jest połączone</span>
+                  </div>
+                  <p class="text-sm text-darkGrey mt-2">
+                    Połącz swoje konto Google, aby móc logować się za pomocą Google.
+                  </p>
+                <% end %>
+              </div>
+              <div>
+                <%= if @current_user.google_provider_id do %>
+                  <.button
+                    variant="outline"
+                    color="red"
+                    phx-click="unlink_google_account"
+                    phx-disable-with="Odłączam..."
+                  >
+                    Odłącz Google
+                  </.button>
+                <% else %>
+                  <.button
+                    variant="outline"
+                    phx-click="link_google_account"
+                    phx-disable-with="Przekierowywanie..."
+                  >
+                    Połącz z Google
+                  </.button>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="pt-12">
           <h2 class="font-bold mb-6">Zmiana adresu e-mail</h2>
           <.simple_form
             for={@email_form}

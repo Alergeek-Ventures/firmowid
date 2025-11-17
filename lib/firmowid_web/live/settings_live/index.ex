@@ -522,6 +522,26 @@ defmodule FirmowidWeb.SettingsLive.Index do
     end
   end
 
+  def handle_event("link_google_account", _params, socket) do
+    {:noreply, redirect(socket, external: ~p"/auth/google")}
+  end
+
+  def handle_event("unlink_google_account", _params, socket) do
+    case Accounts.unlink_google_account(socket.assigns.current_user) do
+      {:ok, updated_user} ->
+        LiveToast.send_toast(:info, "Konto Google zostało odłączone.")
+        {:noreply, assign(socket, :current_user, updated_user)}
+
+      {:error, :not_linked} ->
+        LiveToast.send_toast(:error, "Konto Google nie jest połączone.")
+        {:noreply, socket}
+
+      {:error, _} ->
+        LiveToast.send_toast(:error, "Wystąpił błąd podczas odłączania konta Google.")
+        {:noreply, socket}
+    end
+  end
+
   defp derive_statuses(bank_accounts) do
     Map.new(bank_accounts, fn account ->
       status =
