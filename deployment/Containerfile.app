@@ -97,7 +97,7 @@ USER nobody
 
 # Health check to ensure the application is responding
 # Uses the /health endpoint which checks database, Oban, and connection pool
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=60s \
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=9s \
   CMD curl --fail --silent --show-error http://127.0.0.1:4000/health || exit 1
 
 CMD ["/app/bin/server"]
