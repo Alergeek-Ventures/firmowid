@@ -1,50 +1,17 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
-    "context7": {
-      "type": "local",
-      "command": ["npx", "-y", "@upstash/context7-mcp"]
-    },
-    "postgres": {
-      "type": "local",
-      "command": [
-        "podman",
-        "run",
-        "-i",
-        "--privileged",
-        "--network=host",
-        "--rm",
-        "-e",
-        "DATABASE_URI",
-        "crystaldba/postgres-mcp",
-        "--access-mode=restricted"
-      ],
-      "environment": {
-        "DATABASE_URI": "postgresql://postgres:postgres@127.0.0.1:5433/firmowid",
-        "CONTAINER_HOST": "unix:///run/user/1000/podman/podman.sock"
-      }
-    },
     "livebook": {
       "type": "local",
+      "enabled": false,
       "command": [
         "/var/home/kosciak/projects/alergeek/firmowid/lib/firmowid/invoicing/matching/training/mcp-wrapper.sh"
       ]
     },
     "tidewave": {
-      "type": "local",
-      "command": [
-        "podman",
-        "run",
-        "-i",
-        "--privileged",
-        "--network=host",
-        "--rm",
-        "ghcr.io/sparfenyuk/mcp-proxy",
-        "http://localhost:4000/tidewave/mcp"
-      ],
-      "environment": {
-        "CONTAINER_HOST": "unix:///run/user/1000/podman/podman.sock"
-      }
+      "type": "remote",
+      "url": "http://localhost:4000/tidewave/mcp",
+      "enabled": true
     }
   }
 }
