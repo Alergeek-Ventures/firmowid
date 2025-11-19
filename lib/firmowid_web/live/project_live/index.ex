@@ -134,6 +134,8 @@ defmodule FirmowidWeb.Project.Index do
   end
 
   def handle_event("archive_project", _, %{assigns: %{selected_project: project}} = socket) do
+    Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user, project)
+
     Timetracker.archive_project(project)
 
     {:noreply,
@@ -145,6 +147,8 @@ defmodule FirmowidWeb.Project.Index do
 
   def handle_event("unarchive_project", %{"project_id" => project_id}, socket) do
     project = Timetracker.get_project!(project_id)
+    Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user, project)
+
     Timetracker.unarchive_project(project)
 
     {:noreply,
@@ -156,6 +160,8 @@ defmodule FirmowidWeb.Project.Index do
   end
 
   def handle_event("unarchive_project", _, %{assigns: %{selected_project: project}} = socket) do
+    Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user, project)
+
     Timetracker.unarchive_project(project)
 
     {:noreply,

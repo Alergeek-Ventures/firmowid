@@ -6,6 +6,8 @@ defmodule FirmowidWeb.CostInvoiceLive.InboxLive do
 
   @impl true
   def mount(_params, _session, socket) do
+    Bodyguard.permit!(CostInvoices, :read_inbox, socket.assigns.current_user)
+
     emails = CostInvoices.list_inbound_emails()
 
     socket =

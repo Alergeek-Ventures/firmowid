@@ -20,6 +20,7 @@ defmodule Firmowid.CostInvoices do
       when action in [:show, :update, :delete], do: true
 
   def authorize(:upload, %{role: :admin}, _), do: true
+  def authorize(:read_inbox, %{role: :admin}, _), do: true
   def authorize(_, _, _), do: false
 
   def subscribe_cost_invoice_broadcast(organization_id) do

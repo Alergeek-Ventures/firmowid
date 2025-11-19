@@ -99,6 +99,9 @@ defmodule FirmowidWeb.CostInvoiceLive.Assistant do
   end
 
   def handle_event("reject", _params, socket) do
+    invoice = Firmowid.CostInvoices.get_cost_invoice!(socket.assigns.invoice_id)
+    Bodyguard.permit!(Firmowid.CostInvoices, :update, socket.assigns.current_user, invoice)
+
     CostInvoiceAssistant.reject_linking(socket.assigns.conversation_id)
 
     {:noreply,

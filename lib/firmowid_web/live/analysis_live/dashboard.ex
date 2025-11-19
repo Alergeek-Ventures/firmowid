@@ -7,6 +7,8 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
 
   @impl true
   def mount(_params, _session, socket) do
+    Bodyguard.permit!(Analysis, :read, socket.assigns.current_user)
+
     active_months =
       Invoicing.get_all_months_with_invoicing_entries() ++
         [Date.utc_today()]
