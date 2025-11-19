@@ -1,5 +1,11 @@
 import Config
 
+# ErrorTracker configuration
+config :error_tracker,
+  repo: Firmowid.Repo,
+  otp_app: :firmowid,
+  enabled: true
+
 config :firmowid, Firmowid.Currencies, rates_provider: :api
 
 # Note we also include the path to a cache manifest
@@ -22,20 +28,6 @@ config :firmowid, FirmowidWeb.Endpoint,
 
 # Do not print debug messages in production
 config :logger, level: :info
-
-# Sentry configuration (DSN loaded from runtime.exs)
-config :sentry,
-  environment_name: Mix.env(),
-  enable_source_code_context: true,
-  root_source_code_paths: [File.cwd!()],
-  integrations: [
-    oban: [
-      # Capture errors:
-      capture_errors: true,
-      # Monitor cron jobs:
-      cron: [enabled: true]
-    ]
-  ]
 
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Req

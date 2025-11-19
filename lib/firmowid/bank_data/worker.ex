@@ -22,10 +22,16 @@ defmodule Firmowid.BankData.Worker do
       ) do
     Logger.info("Syncing bank account #{bank_account_id}")
 
-    Sentry.Context.add_breadcrumb(%{
-      category: "bank_account_sync",
-      data: %{bank_account_id: bank_account_id, organization_id: organization_id, job_id: job.id}
+    ErrorTracker.set_context(%{
+      bank_account_id: bank_account_id,
+      organization_id: organization_id,
+      job_id: job.id,
+      job_name: "bank_account_sync"
     })
+
+    ErrorTracker.add_breadcrumb(
+      "bank_account_sync started: bank_account_id=#{bank_account_id}, organization_id=#{organization_id}, job_id=#{job.id}"
+    )
 
     Repo.put_org_id(organization_id)
 
@@ -107,10 +113,16 @@ defmodule Firmowid.BankData.Worker do
       ) do
     Logger.info("Checking requisition status for #{requisition_id}, attempt #{attempt}")
 
-    Sentry.Context.add_breadcrumb(%{
-      category: "check_requisition_status",
-      data: %{requisition_id: requisition_id, organization_id: organization_id, job_id: job.id}
+    ErrorTracker.set_context(%{
+      requisition_id: requisition_id,
+      organization_id: organization_id,
+      job_id: job.id,
+      job_name: "check_requisition_status"
     })
+
+    ErrorTracker.add_breadcrumb(
+      "check_requisition_status started: requisition_id=#{requisition_id}, organization_id=#{organization_id}, attempt=#{attempt}, job_id=#{job.id}"
+    )
 
     Repo.put_org_id(organization_id)
 

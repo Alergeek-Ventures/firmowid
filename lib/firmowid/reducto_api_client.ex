@@ -58,7 +58,9 @@ defmodule Firmowid.ReductoApiClient do
         {:ok, extracted_metadata}
 
       {:error, err} ->
-        Sentry.capture_exception(err)
+        require Logger
+
+        Logger.error("Reducto API error: #{inspect(err)}")
 
         {:error, err}
     end

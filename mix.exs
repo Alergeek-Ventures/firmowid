@@ -87,7 +87,7 @@ defmodule Firmowid.MixProject do
       {:packmatic, "~> 1.2.0"},
       {:image, "~> 0.37"},
       {:briefly, "~> 0.5.0"},
-      {:sentry, "~> 11.0.1"},
+      {:error_tracker, "~> 0.7"},
       {:recase, "~> 0.9.0"},
       {:oban, "~> 2.17"},
       {:ecto_psql_extras, "~> 0.6"},

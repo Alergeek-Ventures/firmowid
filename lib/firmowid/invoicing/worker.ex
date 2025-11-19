@@ -23,13 +23,15 @@ defmodule Firmowid.Invoicing.Worker do
         Enum.each(organization_ids, fn organization_id ->
           Logger.info("Matching invoices for organization #{organization_id}")
 
-          Sentry.Context.add_breadcrumb(%{
-            category: "invoicing_matching",
-            data: %{
-              organization_id: organization_id,
-              job: job
-            }
+          ErrorTracker.set_context(%{
+            organization_id: organization_id,
+            job_id: job.id,
+            job_name: "invoicing_matching"
           })
+
+          ErrorTracker.add_breadcrumb(
+            "Matching invoices for organization: organization_id=#{organization_id}, job_id=#{job.id}"
+          )
 
           Repo.put_org_id(organization_id)
           match_invoices(organization_id)

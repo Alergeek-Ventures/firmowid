@@ -38,7 +38,7 @@ defmodule Firmowid.CostInvoices.Worker do
               organization_id
             )
 
-            Sentry.capture_exception(error)
+            ErrorTracker.report(error, __STACKTRACE__)
 
             :ok
         end

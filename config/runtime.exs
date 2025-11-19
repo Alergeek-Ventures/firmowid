@@ -97,9 +97,7 @@ if config_env() != :test do
   end
 end
 
-# Sentry error tracking (optional)
-config :sentry,
-  dsn: System.get_env("SENTRY_DSN")
+# ErrorTracker is configured in prod.exs and doesn't require external DSN
 
 if config_env() == :prod do
   # SSL configuration for database connection

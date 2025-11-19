@@ -75,7 +75,8 @@ Wszystkie zewnętrzne serwisy są opcjonalne. Aplikacja będzie działać bez ni
 
 - `POSTHOG_API_KEY` - klucz API PostHog analytics (zostaw puste aby wyłączyć)
 - `POSTHOG_API_URL` - URL endpointu API PostHog
-- `SENTRY_DSN` - DSN Sentry do śledzenia błędów (zostaw puste aby wyłączyć)
+
+Śledzenie błędów jest obsługiwane wewnętrznie przez ErrorTracker (nie wymaga zewnętrznej konfiguracji)
 
 #### Kursy walut
 

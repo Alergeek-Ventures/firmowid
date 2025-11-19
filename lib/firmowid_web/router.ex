@@ -1,6 +1,7 @@
 defmodule FirmowidWeb.Router do
   use FirmowidWeb, :router
 
+  import ErrorTracker.Web.Router
   import FirmowidWeb.RedirectTrailing
   import FirmowidWeb.UserAuth
   import Oban.Web.Router
@@ -52,6 +53,8 @@ defmodule FirmowidWeb.Router do
       metrics: FirmowidWeb.Telemetry
 
     oban_dashboard("/oban", oban_name: Firmowid.Oban)
+
+    error_tracker_dashboard("/errors")
 
     forward "/mailbox", Plug.Swoosh.MailboxPreview
   end

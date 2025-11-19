@@ -173,7 +173,11 @@ defmodule FirmowidWeb.SettingsLive.Index do
 
       {:error, error} ->
         LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania konta")
-        Sentry.capture_exception(error)
+
+        # Create a RuntimeError with the error details for tracking
+        exception = RuntimeError.exception("Failed to delete user account: #{inspect(error)}")
+        {:current_stacktrace, stacktrace} = Process.info(self(), :current_stacktrace)
+        ErrorTracker.report(exception, stacktrace)
 
         {:noreply, socket}
     end

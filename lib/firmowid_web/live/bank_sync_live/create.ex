@@ -50,8 +50,7 @@ defmodule FirmowidWeb.BankSyncLive.Create do
       else
         details = params["details"]
 
-        Sentry.capture_message("Failed to connect to bank. Error: #{error} #{details}")
-        Logger.info("Failed to connect to bank. Error: #{error} #{details}")
+        Logger.warning("Failed to connect to bank. Error: #{error} #{details}")
 
         {:noreply,
          socket

@@ -31,6 +31,10 @@ defmodule Firmowid.Repo do
       opts[:skip_organization_id] || opts[:schema_migration] || opts[:prefix] == "oban" ->
         {query, opts}
 
+      # ErrorTracker queries PostgreSQL system tables during migrations
+      pg_system_table_query?(query) ->
+        {query, opts}
+
       organization_id = opts[:organization_id] ->
         if opts[:oban_jobs] do
           opts = Keyword.put(opts, :prefix, "oban")
@@ -43,4 +47,17 @@ defmodule Firmowid.Repo do
         raise "expected organization_id or skip_organization_id to be set"
     end
   end
+
+  # Check if query is against PostgreSQL system tables (used by ErrorTracker migrations)
+  defp pg_system_table_query?(%Ecto.Query{} = query) do
+    case query.from do
+      %{source: {source, _}} when is_binary(source) ->
+        String.starts_with?(source, "pg_") or String.starts_with?(source, "error_tracker_")
+
+      _ ->
+        false
+    end
+  end
+
+  defp pg_system_table_query?(_), do: false
 end

@@ -9,6 +9,11 @@ import Config
 
 config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 
+# ErrorTracker configuration
+config :error_tracker,
+  repo: Firmowid.Repo,
+  otp_app: :firmowid
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.17.11",

@@ -107,7 +107,7 @@ defmodule Firmowid.BankData.Transaction do
     end
   rescue
     error ->
-      Sentry.capture_exception(error, stacktrace: __STACKTRACE__)
+      ErrorTracker.report(error, __STACKTRACE__)
 
       transaction_changeset
   end
