@@ -193,7 +193,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
           false
       end
 
-    case Accounts.update_user(socket.assigns.current_user, %{
+    case Accounts.update_user_profile(socket.assigns.current_user, %{
            marketing_consent: consent
          }) do
       {:ok, user} ->
@@ -287,7 +287,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
   end
 
   def handle_event("save", %{"user" => user_params}, socket) do
-    case Accounts.update_user(socket.assigns.current_user, user_params) do
+    case Accounts.update_user_profile(socket.assigns.current_user, user_params) do
       {:ok, updated_user} ->
         {:noreply,
          socket

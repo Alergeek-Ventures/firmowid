@@ -2,8 +2,11 @@ defmodule Firmowid.Invoicing.Worker do
   @moduledoc false
   use Oban.Worker, queue: :invoicing
 
-  alias Firmowid.Accounts
+  import Ecto.Query, warn: false
+
+  alias Firmowid.Accounts.Organization
   alias Firmowid.Invoicing
+  alias Firmowid.Repo
 
   require Logger
 
@@ -11,9 +14,13 @@ defmodule Firmowid.Invoicing.Worker do
   def perform(job) do
     case job.args do
       %{"name" => "matching"} ->
-        Accounts.list_organizations()
-        |> Enum.map(& &1.id)
-        |> Enum.each(fn organization_id ->
+        # Direct query for all organization IDs - this is infrastructure code
+        organization_ids =
+          Organization
+          |> select([o], o.id)
+          |> Repo.all(skip_organization_id: true)
+
+        Enum.each(organization_ids, fn organization_id ->
           Logger.info("Matching invoices for organization #{organization_id}")
 
           Sentry.Context.add_breadcrumb(%{
@@ -24,7 +31,7 @@ defmodule Firmowid.Invoicing.Worker do
             }
           })
 
-          Firmowid.Repo.put_org_id(organization_id)
+          Repo.put_org_id(organization_id)
           match_invoices(organization_id)
         end)
 
@@ -34,7 +41,7 @@ defmodule Firmowid.Invoicing.Worker do
         "organization_id" => organization_id
       } ->
         Logger.info("Matching cost invoice #{cost_invoice_id}")
-        Firmowid.Repo.put_org_id(organization_id)
+        Repo.put_org_id(organization_id)
         Invoicing.match_cost_invoice(cost_invoice_id, organization_id)
 
       _ ->

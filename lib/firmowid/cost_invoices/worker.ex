@@ -30,8 +30,8 @@ defmodule Firmowid.CostInvoices.Worker do
             Logger.error("Failed to extract cost invoice metadata for blob #{blob_id}: #{inspect(error)}")
 
             # on failure, clean up dangling blob from DB and S3
-            blob = Blobs.get_blob!(blob_id, organization_id)
-            Blobs.delete_blob(blob_id, organization_id)
+            blob = Blobs.get_blob!(blob_id)
+            Blobs.delete_blob(blob_id)
 
             CostInvoices.broadcast_cost_invoice_failed_to_process(
               blob.original_filename,
@@ -49,7 +49,8 @@ defmodule Firmowid.CostInvoices.Worker do
   end
 
   defp extract_cost_invoice_metadata(blob_id, organization_id, inbound_email_id) do
-    blob_url = Blobs.get_blob_url(blob_id, :skip_organization_id)
+    # Organization context already set in perform/1, so get_blob_url uses it automatically
+    blob_url = Blobs.get_blob_url(blob_id)
 
     {:ok, extracted_metadata} =
       ReductoApiClient.extract(

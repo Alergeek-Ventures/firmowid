@@ -1,6 +1,7 @@
 import Ecto.Query
 
 alias Firmowid.Accounts
+alias Firmowid.Accounts.Organization
 alias Firmowid.BankData.Requisition
 alias Firmowid.Blobs
 alias Firmowid.CostInvoices
@@ -33,7 +34,7 @@ Repo.transaction(fn ->
   # Check if organization already exists first
   av =
     case Repo.one(
-           from(o in Firmowid.Accounts.Organization,
+           from(o in Organization,
              where: o.identification_number == "PL1234567891",
              limit: 1
            ),
@@ -548,4 +549,168 @@ Repo.transaction(fn ->
 
     IO.puts("✓ Created sample sales invoice: #{sales_invoice.invoice_number}")
   end
+
+  # ============================================================================
+  # SECURITY TESTING: Create second organization with separate data
+  # ============================================================================
+
+  IO.puts("\n🔒 Creating second organization for security testing...")
+
+  # Create second user
+  evil_user =
+    case Accounts.register_user(%{
+           email: "evil@competitor.com",
+           password: "kolejka123456"
+         }) do
+      {:ok, user} -> user
+      {:error, _} -> Accounts.get_user_by_email("evil@competitor.com")
+    end
+
+  Accounts.update_user(evil_user, %{system_role: :user, role: :admin})
+
+  # Create second organization
+  evil_org =
+    case Repo.one(
+           from(o in Organization,
+             where: o.identification_number == "PL9999999999",
+             limit: 1
+           ),
+           skip_organization_id: true
+         ) do
+      nil ->
+        {:ok, org} =
+          Accounts.create_organization(
+            %{
+              "name" => "Evil Competitor Corp",
+              "identification_number" => "PL9999999999",
+              "address" => "Dark Street 666, 00-666, Warszawa",
+              "owner_id" => evil_user.id
+            },
+            evil_user
+          )
+
+        org
+
+      org ->
+        org
+    end
+
+  Repo.put_org_id(evil_org.id)
+
+  IO.puts("✓ Created organization: #{evil_org.name}")
+  IO.puts("  Organization ID: #{evil_org.id}")
+  IO.puts("✓ Created user: evil@competitor.com / kolejka123456")
+
+  # Create a project for evil org
+  evil_project = get_or_create_project.("Evil Project")
+  Timetracker.add_user_to_project(evil_user.id, evil_project.id)
+
+  # Create blob for evil org's cost invoice
+  evil_blob =
+    case Repo.get(Blobs.Blob, "aaaaaaaa-1111-4b80-9d53-a71d0efc4cad") do
+      nil ->
+        Repo.insert!(%Blobs.Blob{
+          id: "aaaaaaaa-1111-4b80-9d53-a71d0efc4cad",
+          blob_path: "aaaaaaaa-1111-4b80-9d53-a71d0efc4cad/evil-invoice.pdf",
+          blob_checksum: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          original_filename: "evil-secret-invoice.pdf",
+          organization_id: evil_org.id
+        })
+
+      existing ->
+        existing
+    end
+
+  IO.puts("✓ Created blob: #{evil_blob.original_filename}")
+
+  # Create cost invoice for evil org
+  if is_nil(Repo.get(CostInvoices.CostInvoice, "aaaaaaaa-2222-7433-bd41-3d8b719610a4")) do
+    Repo.insert!(%CostInvoices.CostInvoice{
+      id: "aaaaaaaa-2222-7433-bd41-3d8b719610a4",
+      blob_id: evil_blob.id,
+      seller: "Super Secret Supplier Inc.",
+      seller_display_name: "Secret Supplier",
+      sale_date: ~D[2025-11-18],
+      issue_date: ~D[2025-11-19],
+      due_date: ~D[2025-12-19],
+      total_amount: -99_999.99,
+      currency: "PLN",
+      invoice_identifier: "SECRET/2025/11/666",
+      description: "Top secret confidential services - DO NOT SHARE",
+      skip_invoicing: false,
+      organization_id: evil_org.id,
+      seller_address: "Confidential Address 1, Secret Location"
+    })
+
+    IO.puts("✓ Created cost invoice: SECRET/2025/11/666")
+  end
+
+  # Create sales invoice for evil org
+  existing_evil_invoice =
+    Repo.one(
+      from(si in SalesInvoices.SalesInvoice,
+        where: si.invoice_number == "EVIL/2025/11/001" and si.organization_id == ^evil_org.id,
+        limit: 1
+      )
+    )
+
+  if is_nil(existing_evil_invoice) do
+    {:ok, evil_sales_invoice} =
+      SalesInvoices.create_sales_invoice(
+        %SalesInvoices.SalesInvoice{organization_id: evil_org.id},
+        %{
+          "id" => "aaaaaaaa-3333-7000-8000-000000000001",
+          "invoice_number" => "EVIL/2025/11/001",
+          "invoice_type" => "poland",
+          "issue_date" => ~D[2025-11-20],
+          "sale_date" => ~D[2025-11-20],
+          "due_date" => ~D[2025-12-04],
+          "currency" => "PLN",
+          "seller_display_name" => "Evil Competitor Corp",
+          "seller_address" => "Dark Street 666, 00-666, Warszawa",
+          "seller_nip" => "9999999999",
+          "seller_account_number" => "PL99999999999999999999999999",
+          "buyer_display_name" => "Confidential Client Sp. z o.o.",
+          "buyer_address" => "ul. Tajna 13, 00-666 Warszawa",
+          "buyer_nip" => "6666666666",
+          "buyer_name" => "Secret",
+          "buyer_surname" => "Client",
+          "payment_method" => "przelew",
+          "is_reverse_charge" => false,
+          "is_cash_account" => false,
+          "sales_invoice_items" => [
+            %{
+              "name" => "Highly confidential consulting services",
+              "quantity" => 100,
+              "unit" => "godz.",
+              "unit_price" => 1000.00,
+              "vat_rate" => 23
+            },
+            %{
+              "name" => "Secret proprietary software license",
+              "quantity" => 1,
+              "unit" => "szt.",
+              "unit_price" => 50_000.00,
+              "vat_rate" => 23
+            }
+          ]
+        }
+      )
+
+    IO.puts("✓ Created sales invoice: #{evil_sales_invoice.invoice_number}")
+    IO.puts("  Invoice ID: #{evil_sales_invoice.id}")
+  end
+
+  IO.puts("\n✅ Security testing data created successfully!")
+  IO.puts("\n📋 Test Accounts:")
+  IO.puts("  Organization 1: Hello Kitty Inc.")
+  IO.puts("    - Admin: piotr@firmowid.pl / kolejka123456")
+  IO.puts("    - Employee: hyzio@firmowid.pl / kolejka123456")
+  IO.puts("  Organization 2: Evil Competitor Corp")
+  IO.puts("    - Admin: evil@competitor.com / kolejka123456")
+  IO.puts("\n🔍 For testing cross-org access:")
+  IO.puts("  Hello Kitty Sales Invoice ID: 019a9c27-e89d-7470-8948-ebea64eccd85")
+  IO.puts("  Evil Competitor Sales Invoice ID: aaaaaaaa-3333-7000-8000-000000000001")
+  IO.puts("  Evil Competitor Cost Invoice ID: aaaaaaaa-2222-7433-bd41-3d8b719610a4")
+  IO.puts("  Evil Competitor Blob ID: aaaaaaaa-1111-4b80-9d53-a71d0efc4cad")
 end)

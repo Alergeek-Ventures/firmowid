@@ -93,7 +93,7 @@ defmodule Firmowid.CostInvoices do
     )
     |> Repo.all()
     |> Repo.preload(:blob)
-    |> Enum.map(&Map.put(&1, :file_url, Blobs.get_blob_url(&1.blob_id, Repo.get_org_id())))
+    |> Enum.map(&Map.put(&1, :file_url, Blobs.get_blob_url(&1.blob_id)))
   end
 
   @doc """
@@ -166,7 +166,7 @@ defmodule Firmowid.CostInvoices do
     organization_id = cost_invoice.organization_id
 
     blob_id = cost_invoice.blob_id
-    Blobs.delete_blob(blob_id, cost_invoice.organization_id)
+    Blobs.delete_blob(blob_id)
 
     broadcast_cost_invoice_list_updated(organization_id)
   end

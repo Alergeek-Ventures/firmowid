@@ -9,6 +9,11 @@ defmodule FirmowidWeb.PdfController do
     sales_invoice =
       SalesInvoices.get_sales_invoice_with_logo_url(id)
 
+    # Authorization check - prevent cross-organization access
+    with %SalesInvoices.SalesInvoice{} <- sales_invoice do
+      Bodyguard.permit!(SalesInvoices, :show, conn.assigns.current_user, sales_invoice)
+    end
+
     render_sales_invoice(conn, sales_invoice)
   end
 
@@ -48,6 +53,9 @@ defmodule FirmowidWeb.PdfController do
         send_resp(conn, 404, "Not found")
 
       sales_invoice ->
+        # Authorization check - prevent cross-organization access
+        Bodyguard.permit!(SalesInvoices, :show, conn.assigns.current_user, sales_invoice)
+
         # Convert logo URL to data URI for embedding
         logo_data_uri = PdfHelpers.url_to_data_uri(sales_invoice.logo_url)
 

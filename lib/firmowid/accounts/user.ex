@@ -240,6 +240,30 @@ defmodule Firmowid.Accounts.User do
   end
 
   @doc """
+  A user changeset for updating safe profile fields.
+
+  Only allows updates to fields that users should be able to modify themselves.
+  Does NOT allow role or system_role changes.
+  """
+  def profile_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:name, :employment_date, :marketing_consent, :avatar_blob_id])
+    |> validate_required([:name])
+  end
+
+  @doc """
+  A user changeset for updating roles.
+
+  Only allows role updates. Must be called by admin users.
+  """
+  def role_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:role])
+    |> validate_required([:role])
+    |> validate_inclusion(:role, [:employee, :admin])
+  end
+
+  @doc """
   A changeset for linking a Google account to an existing user.
   """
   def link_google_changeset(user, google_provider_id) do

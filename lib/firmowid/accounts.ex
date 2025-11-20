@@ -23,10 +23,6 @@ defmodule Firmowid.Accounts do
 
   def authorize(_, _, _), do: false
 
-  def list_organizations do
-    Repo.all(Organization, skip_organization_id: true)
-  end
-
   @doc """
   Gets a single organization by ID.
 
@@ -987,16 +983,75 @@ defmodule Firmowid.Accounts do
     User.delete_account_changeset(user, attrs)
   end
 
+  @doc """
+  Updates a user with ANY attributes including sensitive fields like role and system_role.
+
+  WARNING: This function is deprecated and should not be used directly.
+  Use `update_user_profile/2` for profile updates or `update_user_role/3` for role changes.
+
+  This function is kept for internal use only (e.g., during organization creation).
+  """
   def update_user(%User{} = user, attrs) do
     user
     |> User.update_changeset(attrs)
     |> Repo.update()
   end
 
+  @doc """
+  Updates a user's profile with safe fields only.
+
+  Only allows updating: name, employment_date, marketing_consent, avatar_blob_id.
+  Does NOT allow role or system_role changes.
+
+  ## Examples
+
+      iex> update_user_profile(user, %{name: "New Name"})
+      {:ok, %User{}}
+      
+      iex> update_user_profile(user, %{role: :admin})  # role is ignored
+      {:ok, %User{}}  # role unchanged
+  """
+  def update_user_profile(%User{} = user, attrs) do
+    user
+    |> User.profile_changeset(attrs)
+    |> Repo.update(skip_organization_id: true)
+  end
+
+  @doc """
+  Updates a user's role. Requires an admin user to perform the update.
+
+  Prevents self-demotion to ensure at least one admin remains.
+
+  ## Examples
+
+      iex> update_user_role(employee, :admin, admin_user)
+      {:ok, %User{role: :admin}}
+      
+      iex> update_user_role(admin, :employee, admin)  # self-demotion
+      {:error, :cannot_demote_self}
+      
+      iex> update_user_role(employee, :admin, employee)  # non-admin caller
+      {:error, :unauthorized}
+  """
+  def update_user_role(%User{} = user, role, %User{role: :admin} = admin_user) do
+    # Prevent self-demotion
+    if user.id == admin_user.id and role != :admin do
+      {:error, :cannot_demote_self}
+    else
+      user
+      |> User.role_changeset(%{role: role})
+      |> Repo.update(skip_organization_id: true)
+    end
+  end
+
+  def update_user_role(_user, _role, _non_admin_user) do
+    {:error, :unauthorized}
+  end
+
   def update_user_avatar(%User{} = user, blob_id) do
     {:ok, result} =
       Repo.transaction(fn ->
-        {:ok, _new_user} = result = update_user(user, %{avatar_blob_id: blob_id})
+        {:ok, _new_user} = result = update_user_profile(user, %{avatar_blob_id: blob_id})
 
         if user.avatar_blob_id do
           Blobs.delete_blob(user.avatar_blob_id)

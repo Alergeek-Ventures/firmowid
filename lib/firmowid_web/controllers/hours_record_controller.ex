@@ -108,7 +108,7 @@ defmodule FirmowidWeb.HoursRecordController do
     Bodyguard.permit!(Timetracker, :read_hours_records, conn.assigns.current_user)
 
     record = Timetracker.get_hours_record!(id)
-    url = Blobs.get_blob_url(record.blob_id, conn.assigns.current_org.id)
+    url = Blobs.get_blob_url(record.blob_id)
 
     {:ok, file} = Req.get(url)
 

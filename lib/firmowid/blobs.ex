@@ -53,16 +53,20 @@ defmodule Firmowid.Blobs do
     |> Repo.insert()
   end
 
-  def get_blob!(id, organization_id) do
-    Repo.get!(Blob, id, organization_id: organization_id)
+  @doc """
+  Gets a blob by ID, scoped to the current organization context.
+  Relies on `Repo.get_org_id()` for automatic organization scoping.
+  """
+  def get_blob!(id) do
+    Repo.get!(Blob, id)
   end
 
+  @doc """
+  Deletes a blob and its associated S3 object, scoped to the current organization context.
+  Relies on `Repo.get_org_id()` for automatic organization scoping.
+  """
   def delete_blob(id) do
-    delete_blob(id, Repo.get_org_id())
-  end
-
-  def delete_blob(id, organization_id) do
-    blob = Repo.get!(Blob, id, organization_id: organization_id)
+    blob = Repo.get!(Blob, id)
 
     Repo.transaction(fn ->
       Repo.delete!(blob)
@@ -75,18 +79,15 @@ defmodule Firmowid.Blobs do
     end)
   end
 
+  @doc """
+  Gets a presigned URL for a blob, scoped to the current organization context.
+  Relies on `Repo.get_org_id()` for automatic organization scoping.
+
+  Returns a presigned S3 URL that expires in 200 seconds.
+  """
   @spec get_blob_url(any()) :: <<_::64, _::_*8>>
   def get_blob_url(id) do
-    get_blob_url(id, Repo.get_org_id())
-  end
-
-  def get_blob_url(id, organization_id) do
-    blob =
-      if organization_id == :skip_organization_id do
-        Repo.get!(Blob, id, skip_organization_id: true)
-      else
-        Repo.get!(Blob, id, organization_id: organization_id)
-      end
+    blob = Repo.get!(Blob, id)
 
     {:ok, url} =
       :s3
