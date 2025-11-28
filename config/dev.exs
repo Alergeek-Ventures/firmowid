@@ -34,6 +34,9 @@ config :firmowid, FirmowidWeb.Endpoint,
     ]
   ]
 
+# KSeF development configuration
+config :firmowid, :ksef, base_url: "https://ksef-test.mf.gov.pl/api/v2"
+
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
 

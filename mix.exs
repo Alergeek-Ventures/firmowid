@@ -27,7 +27,7 @@ defmodule Firmowid.MixProject do
   def application do
     [
       mod: {Firmowid.Application, []},
-      extra_applications: [:logger, :runtime_tools, :os_mon]
+      extra_applications: [:logger, :runtime_tools, :os_mon, :crypto]
     ]
   end
 
@@ -40,6 +40,8 @@ defmodule Firmowid.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:cloak_ecto, "~> 1.2.0"},
+      {:x509, "~> 0.9"},
       {:argon2_elixir, "~> 4.1"},
       {:elixir_auth_google, "~> 1.6"},
       {:phoenix, "~> 1.8.0"},
