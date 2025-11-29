@@ -68,7 +68,7 @@ defmodule Firmowid.MixProject do
       {:chromic_pdf, "~> 1.17"},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
-      {:gettext, "~> 0.20"},
+      {:gettext, "~> 1.0", override: true},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
@@ -93,7 +93,7 @@ defmodule Firmowid.MixProject do
       {:ecto_psql_extras, "~> 0.6"},
       {:any_ascii, "~> 0.3.2"},
       {:multipart, "~> 0.4.0"},
-      {:posthog, "~> 2.0.0"},
+      {:posthog, "~> 2.1.0"},
       {:reverse_proxy_plug, "~> 3.0"},
       {:ecto_dev_logger, "~> 0.14"},
       {:nx, "~> 0.10"},
@@ -113,7 +113,7 @@ defmodule Firmowid.MixProject do
       {:cachex, "~> 4.0"},
       {:resend, "~> 0.4.4"},
       {:humanids, "~> 0.1.1"},
-      {:websockex, "~> 0.4.3"}
+      {:websockex, "~> 0.5"}
     ]
   end
 
