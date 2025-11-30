@@ -40,6 +40,11 @@ secret_key_base =
     You can generate one by calling: mix phx.gen.secret
     """
 
+config :firmowid, Firmowid.Vault,
+  ciphers: [
+    default: {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: "SECRET_KEY_BASE" |> System.get_env() |> Base.decode64!()}
+  ]
+
 config :firmowid, FirmowidWeb.Endpoint, secret_key_base: secret_key_base
 
 config :firmowid,

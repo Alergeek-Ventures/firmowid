@@ -153,19 +153,29 @@ defmodule Firmowid.Ksef.ApiClient do
 
   def get_auth_status(reference_number, auth_token) do
     request()
+    |> retry_request()
     |> Req.get(
       url: "/auth/#{reference_number}",
       auth: {:bearer, auth_token},
       retry: fn
-        # status code 100 means "in progress"
-        _req, %Req.Response{body: %{"status" => %{"code" => 100}}} -> true
-        _, _ -> false
+        _req, res ->
+          # status code 100 means "in progress"
+          match?(%Req.Response{status: 200, body: %{"status" => %{"code" => 100}}}, res)
       end
     )
     |> case do
       {:ok, %{body: %{"status" => %{"code" => 200}}}} -> :success
-      {:ok, %{body: %{"status" => status}}} -> {:error, status}
+      {:ok, %{body: body}} -> {:error, body}
       rest -> rest
     end
+  end
+
+  # Moves retry step to the end of the response steps in order
+  # to have access to decoded response body in the retry function.
+  defp retry_request(request) do
+    Req.Request.append_response_steps(
+      %{request | response_steps: Enum.reject(request.response_steps, &match?({:retry, _}, &1))},
+      retry: &Req.Steps.retry/1
+    )
   end
 end

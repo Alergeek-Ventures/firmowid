@@ -20,6 +20,7 @@ defmodule Firmowid.Application do
       Supervisor.child_spec({Cachex, name: :currencies}, id: :currencies_cache),
       Supervisor.child_spec({Cachex, name: :ksef}, id: :ksef_cache),
       Firmowid.BankData.TokenManager,
+      Firmowid.Vault,
       Firmowid.Oban,
       Firmowid.Invoicing.Matching.Assistant.MessagesStorage,
       Firmowid.Currencies,
