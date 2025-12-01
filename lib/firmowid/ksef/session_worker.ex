@@ -13,8 +13,7 @@ defmodule Firmowid.Ksef.SessionWorker do
 
   use Oban.Worker,
     queue: :ksef_sessions,
-    max_attempts: 3,
-    unique: [period: :infinity, keys: [:organization_id]]
+    max_attempts: 3
 
   import Ecto.Query
 
@@ -31,25 +30,19 @@ defmodule Firmowid.Ksef.SessionWorker do
     Repo.put_org_id(organization_id)
 
     case action do
-      "authenticate" -> authenticate(organization_id)
-      "renew" -> renew_session(organization_id, args)
-      _ -> {:error, {:unknown_action, action}}
+      "authenticate" -> authenticate()
+      "renew" -> renew_session(args)
     end
   end
 
-  defp authenticate(organization_id) do
-    Logger.info("Starting KSeF authentication for organization #{organization_id}")
+  defp authenticate do
+    Logger.info("Starting KSeF authentication for organization #{Repo.get_org_id()}")
 
-    with {:ok, credential} <- get_credential(),
-         {:ok, %{access_token: access_token, refresh_token: refresh_token}} <-
-           perform_authentication(credential),
-         {:ok, _job} <- schedule_renewal(organization_id, access_token, refresh_token) do
-      Logger.info("Successfully authenticated with KSeF")
-      :ok
-    else
-      {:error, :credential_not_found} ->
-        Logger.warning("No active KSeF credential found")
-        {:error, :credential_not_found}
+    Ksef.get_credential()
+    |> perform_authentication()
+    |> case do
+      {:ok, tokens} ->
+        schedule_renewal(tokens.access_token, tokens.refresh_token)
 
         date_from = DateTime.shift(DateTime.utc_now(), day: -30 * 2)
         Ksef.fetch_cost_invoices(date_from)
@@ -60,22 +53,16 @@ defmodule Firmowid.Ksef.SessionWorker do
     end
   end
 
-  defp renew_session(organization_id, %{"access_token" => _access_token, "refresh_token" => refresh_token}) do
-    Logger.info("Renewing KSeF session for organization #{organization_id}")
+  defp renew_session(%{"refresh_token" => refresh_token}) do
+    Logger.info("Renewing KSeF session for organization #{Repo.get_org_id()}")
 
-    with {:ok, _credential} <- get_credential(),
-         {:ok, access_token} <- ApiClient.refresh_session(refresh_token),
-         {:ok, _job} <- schedule_renewal(organization_id, access_token, refresh_token) do
-      Logger.info("Successfully renewed KSeF session")
-      :ok
-    else
+    case ApiClient.refresh_session(refresh_token) do
+      {:ok, access_token} ->
+        schedule_renewal(access_token, refresh_token)
+
       {:error, :refresh_token_expired} ->
         Logger.info("Refresh token expired, re-authenticating")
-        authenticate(organization_id)
-
-      {:error, :credential_not_found} ->
-        Logger.warning("No active credential found during renewal")
-        {:error, :credential_not_found}
+        authenticate()
 
       {:error, reason} = error ->
         Logger.error("Session renewal failed: #{inspect(reason)}")
@@ -83,73 +70,47 @@ defmodule Firmowid.Ksef.SessionWorker do
     end
   end
 
-  defp get_credential do
-    case Ksef.get_credential() do
-      nil -> {:error, :credential_not_found}
-      credential -> {:ok, credential}
-    end
-  end
-
   defp perform_authentication(%Credential{organization_id: org_id, auth_type: :token, credentials: token}) do
-    organization = Repo.get!(Accounts.Organization, org_id)
-    context_nip = organization.identification_number
+    {:ok, organization} = Accounts.get_organization(org_id)
+    "PL" <> context_nip = organization.identification_number
 
     ApiClient.auth(context_nip, token)
   end
 
-  defp perform_authentication(%Credential{auth_type: :certificate}) do
-    # Certificate authentication not yet implemented
-    {:error, :certificate_auth_not_implemented}
-  end
-
-  defp schedule_renewal(organization_id, access_token, refresh_token) do
-    expires_at = ApiClient.token_expire_time(access_token)
-    scheduled_at = DateTime.shift(expires_at, minutes: -5)
+  defp schedule_renewal(access_token, refresh_token) do
+    scheduled_at =
+      access_token |> ApiClient.token_expire_time() |> DateTime.shift(minute: -5)
 
     %{
       "action" => "renew",
-      "organization_id" => organization_id,
+      "organization_id" => Repo.get_org_id(),
       "access_token" => access_token,
       "refresh_token" => refresh_token
     }
-    |> new(schedule_at: scheduled_at)
+    |> new(scheduled_at: scheduled_at)
     |> Firmowid.Oban.insert()
   end
 
-  @doc """
-  Ensures an active session exists for the organization.
+  def get_active_session_token! do
+    organization_id = Repo.get_org_id()
 
-  If a session renewal job is already scheduled, returns :ok.
-  Otherwise, schedules an authentication job.
-  """
-  def ensure_session(organization_id) do
-    case get_scheduled_session_job(organization_id) do
-      nil ->
-        %{
-          "organization_id" => organization_id,
-          "action" => "authenticate"
-        }
-        |> new()
-        |> Firmowid.Oban.insert()
+    # Query most recent scheduled session job with access token
+    job =
+      Repo.one(
+        from(j in Oban.Job,
+          where: j.worker == "Firmowid.Ksef.SessionWorker",
+          where: j.state in ["scheduled", "available"],
+          where: fragment("?->>'organization_id' = ?", j.args, ^organization_id),
+          where: fragment("?->>'action' = 'renew'", j.args),
+          order_by: [desc: j.scheduled_at],
+          limit: 1
+        ),
+        oban_jobs: true
+      )
 
-      _job ->
-        {:ok, :already_scheduled}
+    case job do
+      %{args: %{"access_token" => token}} -> token
+      _ -> raise "No active KSeF session found for organization #{organization_id}"
     end
-  end
-
-  # Get scheduled or executing session job for organization
-  defp get_scheduled_session_job(organization_id) do
-    Repo.put_org_id(organization_id)
-
-    Repo.one(
-      from(j in Oban.Job,
-        where: j.worker == "Firmowid.Ksef.SessionWorker",
-        where: j.state in ["available", "scheduled", "executing"],
-        where: fragment("?->>'organization_id' = ?", j.args, ^organization_id),
-        order_by: [desc: j.scheduled_at],
-        limit: 1
-      ),
-      oban_jobs: true
-    )
   end
 end

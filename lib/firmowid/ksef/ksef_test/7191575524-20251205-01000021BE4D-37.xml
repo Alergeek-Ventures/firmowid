@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Faktura
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns="http://crd.gov.pl/wzor/2025/06/25/13775/">
+	<Naglowek>
+		<KodFormularza kodSystemowy="FA (3)" wersjaSchemy="1-0E">FA</KodFormularza>
+		<WariantFormularza>3</WariantFormularza>
+		<DataWytworzeniaFa>2025-12-05T11:19:19.3667445Z</DataWytworzeniaFa>
+		<SystemInfo>Aplikacja Podatnika KSeF</SystemInfo>
+	</Naglowek>
+	<Podmiot1>
+		<DaneIdentyfikacyjne>
+			<NIP>7191575524</NIP>
+			<Nazwa>grzegorz brzęczyszczykiewicz</Nazwa>
+		</DaneIdentyfikacyjne>
+		<Adres>
+			<KodKraju>PL</KodKraju>
+			<AdresL1>Chrząszczyżeboszyce powiat łękołody</AdresL1>
+		</Adres>
+	</Podmiot1>
+	<Podmiot2>
+		<DaneIdentyfikacyjne>
+			<NIP>1234563218</NIP>
+			<Nazwa>ada adamowicz</Nazwa>
+		</DaneIdentyfikacyjne>
+		<Adres>
+			<KodKraju>PL</KodKraju>
+			<AdresL1>rozdroże 123</AdresL1>
+		</Adres>
+		<NrKlienta>132456654</NrKlienta>
+		<JST>2</JST>
+		<GV>2</GV>
+	</Podmiot2>
+	<Fa>
+		<KodWaluty>PLN</KodWaluty>
+		<P_1>2025-12-05</P_1>
+		<P_1M>szczuczyn</P_1M>
+		<P_2>1/2025</P_2>
+		<P_13_2>500</P_13_2>
+		<P_14_2>40</P_14_2>
+		<P_15>540</P_15>
+		<Adnotacje>
+			<P_16>2</P_16>
+			<P_17>2</P_17>
+			<P_18>2</P_18>
+			<P_18A>2</P_18A>
+			<Zwolnienie>
+				<P_19N>1</P_19N>
+			</Zwolnienie>
+			<NoweSrodkiTransportu>
+				<P_22N>1</P_22N>
+			</NoweSrodkiTransportu>
+			<P_23>2</P_23>
+			<PMarzy>
+				<P_PMarzyN>1</P_PMarzyN>
+			</PMarzy>
+		</Adnotacje>
+		<RodzajFaktury>VAT</RodzajFaktury>
+		<FaWiersz>
+			<NrWierszaFa>1</NrWierszaFa>
+			<P_7>Cielęta pl0012345678</P_7>
+			<P_8A>sztuka</P_8A>
+			<P_8B>1</P_8B>
+			<P_9A>500</P_9A>
+			<P_11>500</P_11>
+			<P_12>8</P_12>
+		</FaWiersz>
+		<Platnosc>
+			<Zaplacono>1</Zaplacono>
+			<DataZaplaty>2025-12-04</DataZaplaty>
+			<FormaPlatnosci>6</FormaPlatnosci>
+			<RachunekBankowy>
+				<NrRB>123456789123456</NrRB>
+			</RachunekBankowy>
+		</Platnosc>
+	</Fa>
+</Faktura>

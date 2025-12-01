@@ -79,8 +79,13 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
             total_amount={Money.new(@invoice.currency, @invoice.total_amount)}
           />
 
-          <h3 class="self-start text-sm uppercase text-darkGrey mt-8">Podgląd faktury</h3>
-          <div class="mb-8 mt-4 transition-opacity transition-duration-300 hover:opacity-50">
+          <h3 :if={@preview_type != :none} class="self-start text-sm uppercase text-darkGrey mt-8">
+            Podgląd faktury
+          </h3>
+          <div
+            :if={@preview_type != :none}
+            class="mb-8 mt-4 transition-opacity transition-duration-300 hover:opacity-50"
+          >
             <%= case @preview_type do %>
               <% :pdf -> %>
                 <a href={@preview_url} target="_blank">
@@ -163,6 +168,10 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
                 <InvoiceDetails.skip_invoicing show_bank_transfer_modal={true} invoice={@invoice} />
               </div>
           <% end %>
+
+          <pre :if={@invoice.ksef_number != nil}>
+            <%= inspect(@invoice, pretty: true, limit: :infinity) %>
+          </pre>
         </main>
       </div>
     </div>

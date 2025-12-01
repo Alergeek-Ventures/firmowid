@@ -62,7 +62,8 @@ jobs:
       POSTGRES_PORT: "5432"
       
       SECRET_KEY_BASE: "REMOVED_PHOENIX_SECRET_KEY_BASE"
-      
+      CLOAK_VAULT_KEY: "REMOVED_CLOAK_VAULT_KEY"
+
       # S3 / LocalStack configuration (matches config/test.exs)
       S3_HOST: localstack
       S3_SCHEME: "http://"

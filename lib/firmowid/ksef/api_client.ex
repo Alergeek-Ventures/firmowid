@@ -1,6 +1,8 @@
 defmodule Firmowid.Ksef.ApiClient do
   @moduledoc false
 
+  alias Firmowid.Ksef.Encryption
+
   require Logger
 
   defp request do
@@ -11,7 +13,7 @@ defmodule Firmowid.Ksef.ApiClient do
     )
   end
 
-  def parse_timestamp(iso8601) do
+  def parse_datetime!(iso8601) do
     case DateTime.from_iso8601(iso8601) do
       {:ok, dt, _} -> dt
       {:error, _} -> raise "Invalid ISO8601 datetime: #{iso8601}"
@@ -35,29 +37,38 @@ defmodule Firmowid.Ksef.ApiClient do
     |> DateTime.before?(DateTime.utc_now())
   end
 
-  defp ksef_public_key do
-    Cachex.fetch!(:ksef, :public_key, fn _key ->
-      case fetch_and_parse_public_key() do
+  def ksef_public_key do
+    fetch_public_key_by_usage("KsefTokenEncryption")
+  end
+
+  def symmetric_key_public_key do
+    fetch_public_key_by_usage("SymmetricKeyEncryption")
+  end
+
+  defp fetch_public_key_by_usage(usage) do
+    cache_key = {:public_key, usage}
+
+    Cachex.fetch!(:ksef, cache_key, fn _key ->
+      case fetch_and_parse_public_key(usage) do
         {:ok, cert, valid_to} ->
           expire = DateTime.diff(valid_to, DateTime.utc_now(), :millisecond)
-
           {:commit, cert, expire: expire}
 
         {:error, reason} ->
-          raise "Failed to fetch KSeF public key: #{inspect(reason)}"
+          raise "Failed to fetch KSeF public key (#{usage}): #{inspect(reason)}"
       end
     end)
   end
 
-  defp fetch_and_parse_public_key do
+  defp fetch_and_parse_public_key(target_usage) do
     case Req.get(request(), url: "/security/public-key-certificates") do
       {:ok, %{body: certificates}} ->
-        result =
+        certificate =
           Enum.find_value(certificates, fn
-            %{"usage" => ["KsefTokenEncryption"]} = certificate ->
+            %{"usage" => [^target_usage]} = certificate ->
               now = DateTime.utc_now()
-              valid_from = parse_timestamp(certificate["validFrom"])
-              valid_to = parse_timestamp(certificate["validTo"])
+              valid_from = parse_datetime!(certificate["validFrom"])
+              valid_to = parse_datetime!(certificate["validTo"])
 
               if DateTime.after?(now, valid_from) and DateTime.before?(now, valid_to) do
                 {certificate["certificate"], valid_to}
@@ -67,17 +78,15 @@ defmodule Firmowid.Ksef.ApiClient do
               nil
           end)
 
-        case result do
+        case certificate do
           nil ->
             {:error, :no_valid_certificate_found}
 
           {certificate, valid_to} ->
-            certificate =
-              certificate
-              |> Base.decode64!()
-              |> X509.Certificate.from_der!(:Certificate)
-
-            {:ok, certificate, valid_to}
+            certificate
+            |> Base.decode64!()
+            |> X509.Certificate.from_der!(:Certificate)
+            |> then(&{:ok, &1, valid_to})
         end
 
       {:error, reason} ->
@@ -85,18 +94,11 @@ defmodule Firmowid.Ksef.ApiClient do
     end
   end
 
-  defp prepare_encrypted_token(ksef_token, timestamp)
-       when is_binary(ksef_token) and is_binary(timestamp) do
-    pub_key = ksef_public_key()
-    timestamp = timestamp |> parse_timestamp() |> DateTime.to_unix(:millisecond)
+  defp prepare_encrypted_token(ksef_token, timestamp) when is_binary(ksef_token) and is_binary(timestamp) do
+    timestamp = timestamp |> parse_datetime!() |> DateTime.to_unix(:millisecond)
 
     "#{ksef_token}|#{timestamp}"
-    |> :public_key.encrypt_public(
-      X509.Certificate.public_key(pub_key),
-      rsa_padding: :rsa_pkcs1_oaep_padding,
-      rsa_mgf1_md: :sha256,
-      rsa_oaep_md: :sha256
-    )
+    |> Encryption.encrypt_with_rsa_public_key()
     |> Base.encode64()
   end
 
@@ -117,16 +119,20 @@ defmodule Firmowid.Ksef.ApiClient do
         }
       ).body
 
-    :success = get_auth_status(reference_number, auth_token["token"])
+    case get_auth_status(reference_number, auth_token["token"]) do
+      :success ->
+        body =
+          Req.post!(request(), url: "/auth/token/redeem", auth: {:bearer, auth_token["token"]}).body
 
-    body =
-      Req.post!(request(), url: "/auth/token/redeem", auth: {:bearer, auth_token["token"]}).body
+        {:ok,
+         %{
+           access_token: body["accessToken"]["token"],
+           refresh_token: body["refreshToken"]["token"]
+         }}
 
-    {:ok,
-     %{
-       access_token: body["accessToken"]["token"],
-       refresh_token: body["refreshToken"]["token"]
-     }}
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc """
@@ -158,15 +164,66 @@ defmodule Firmowid.Ksef.ApiClient do
       url: "/auth/#{reference_number}",
       auth: {:bearer, auth_token},
       retry: fn
-        _req, res ->
-          # status code 100 means "in progress"
-          match?(%Req.Response{status: 200, body: %{"status" => %{"code" => 100}}}, res)
+        # status code 100 means "in progress"
+        _req, res -> match?(%Req.Response{status: 200, body: %{"status" => %{"code" => 100}}}, res)
       end
     )
     |> case do
       {:ok, %{body: %{"status" => %{"code" => 200}}}} -> :success
       {:ok, %{body: body}} -> {:error, body}
       rest -> rest
+    end
+  end
+
+  @doc """
+  Initiate an invoice export with encryption.
+  """
+  def initiate_invoice_export(access_token, filters, encryption_info) do
+    request_body = %{
+      "filters" => filters,
+      "encryption" => encryption_info
+    }
+
+    case Req.post(request(),
+           url: "/invoices/exports",
+           auth: {:bearer, access_token},
+           json: request_body
+         ) do
+      {:ok, %{status: 201, body: %{"referenceNumber" => reference_number}}} ->
+        {:ok, reference_number}
+
+      {:ok, %{status: status}} ->
+        {:error, {:unexpected_status, status}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Check status of an export operation.
+  """
+  def get_export_status(access_token, reference_number) do
+    request()
+    |> Req.get(
+      url: "/invoices/exports/#{reference_number}",
+      auth: {:bearer, access_token}
+    )
+    |> case do
+      {:ok, %{status: 200, body: %{"status" => %{"code" => status_code}} = body}} ->
+        case status_code do
+          100 -> :pending
+          200 -> {:ok, body["package"]}
+          210 -> {:error, :expired}
+          500 -> {:error, :retry}
+          _ -> {:error, body["status"]}
+        end
+
+      {:ok, %{status: status}} ->
+        {:error, {:unexpected_status, status}}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

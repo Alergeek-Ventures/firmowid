@@ -8,7 +8,7 @@ defmodule Firmowid.CostInvoices.OpenAIEnrichment do
 
     request =
       Chat.Completions.new(
-        model: "gpt-4o-mini",
+        model: "gpt-5-nano",
         max_completion_tokens: 80,
         messages: [
           ChatMessage.system(

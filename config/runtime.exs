@@ -42,7 +42,7 @@ secret_key_base =
 
 config :firmowid, Firmowid.Vault,
   ciphers: [
-    default: {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: "SECRET_KEY_BASE" |> System.get_env() |> Base.decode64!()}
+    default: {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: "CLOAK_VAULT_KEY" |> System.get_env() |> Base.decode64!()}
   ]
 
 config :firmowid, FirmowidWeb.Endpoint, secret_key_base: secret_key_base

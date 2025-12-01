@@ -8,7 +8,15 @@ defmodule Firmowid.Oban do
     repo: Firmowid.Repo,
     prefix: "oban",
     engine: Oban.Engines.Basic,
-    queues: [bank_data: 1, invoicing: 1, cost_invoices: 5, inbound_emails: 3, ksef_sessions: 1, default: 1],
+    queues: [
+      bank_data: 1,
+      invoicing: 1,
+      cost_invoices: 5,
+      inbound_emails: 3,
+      ksef_sessions: 1,
+      ksef_fetch: 2,
+      default: 1
+    ],
     plugins: [
       {Oban.Plugins.Lifeline, rescue_after: to_timeout(minute: 30)},
       {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 30},
@@ -21,7 +29,8 @@ defmodule Firmowid.Oban do
           {"0 12 */2 * *", Firmowid.BankData.Worker, args: %{name: "dispatch_sync_jobs_for_all_bank_accounts"}},
           {"0 13 * * *", Firmowid.BankData.CleanupWorker, args: %{}},
           {"0 13 * * *", Firmowid.Invoicing.Worker, args: %{name: "matching"}},
-          {"0 14 * * *", Firmowid.Currencies.CleanupWorker, args: %{}}
+          {"0 14 * * *", Firmowid.Currencies.CleanupWorker, args: %{}},
+          {"0 */2 * * *", Firmowid.Ksef.FetchDispatcher, args: %{}}
         ]
       }
     ]

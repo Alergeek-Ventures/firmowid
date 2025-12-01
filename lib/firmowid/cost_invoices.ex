@@ -146,12 +146,26 @@ defmodule Firmowid.CostInvoices do
     |> Repo.preload(:transactions)
   end
 
+  def get_cost_invoice_with_blob_url(cost_invoice_id) do
+    cost_invoice =
+      CostInvoice
+      |> Repo.get!(cost_invoice_id)
+      |> Repo.preload([:transactions, :blob, :original_invoice, :correction_invoices])
+
+    blob_url =
+      case cost_invoice.blob do
+        nil -> nil
+        _ -> Blobs.get_blob_url(cost_invoice.blob_id)
+      end
+
+    %{cost_invoice | blob_url: blob_url}
+  end
+
   def get_cost_invoice_with_blob_url!(cost_invoice_id) do
     cost_invoice =
       CostInvoice
       |> Repo.get!(cost_invoice_id)
-      |> Repo.preload(:transactions)
-      |> Repo.preload(:blob)
+      |> Repo.preload([:transactions, :blob, :original_invoice, :correction_invoices])
 
     %{cost_invoice | blob_url: Blobs.get_blob_url(cost_invoice.blob_id)}
   end

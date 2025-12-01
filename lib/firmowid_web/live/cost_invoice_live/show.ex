@@ -9,13 +9,17 @@ defmodule FirmowidWeb.CostInvoiceLive.Show do
   def mount(%{"id" => id}, _session, socket) do
     current_user = socket.assigns.current_user
 
-    cost_invoice = CostInvoices.get_cost_invoice_with_blob_url!(id)
+    cost_invoice = CostInvoices.get_cost_invoice_with_blob_url(id)
     Bodyguard.permit!(CostInvoices, :show, current_user, cost_invoice)
 
     potential_transactions = Invoicing.get_potential_transactions_for_invoice(cost_invoice)
 
     preview_type =
-      if String.contains?(cost_invoice.blob.blob_path, ".pdf"), do: :pdf, else: :image
+      cond do
+        is_nil(cost_invoice.blob) -> :none
+        String.contains?(cost_invoice.blob.blob_path, ".pdf") -> :pdf
+        true -> :image
+      end
 
     socket =
       socket

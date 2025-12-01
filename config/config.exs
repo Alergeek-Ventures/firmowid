@@ -58,9 +58,6 @@ config :firmowid, FirmowidWeb.Endpoint,
   pubsub_server: Firmowid.PubSub,
   live_view: [signing_salt: "s6RVH6WQ"]
 
-# KSeF configuration
-config :firmowid, :ksef, base_url: "https://ksef-test.mf.gov.pl/api"
-
 # Packmatic URL source - increase connect timeout for batch downloads
 config :firmowid, Packmatic.Source.URL, timeout: 30_000
 
