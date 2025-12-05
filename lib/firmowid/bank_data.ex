@@ -227,7 +227,7 @@ defmodule Firmowid.BankData do
     )
     |> limit(1)
     |> Repo.all(oban_jobs: true)
-    |> then(&(length(&1) > 0))
+    |> Enum.any?()
   end
 
   defp upsert_booked_transactions(booked_transactions, bank_account_id, organization_id) do

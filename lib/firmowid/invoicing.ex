@@ -504,14 +504,13 @@ defmodule Firmowid.Invoicing do
   defp get_date(%TransactionGroup{date: date}), do: date
 
   defp matched?(%SalesInvoice{} = invoice),
-    do: length(invoice.transactions) > 0 or Map.get(invoice, :skip_invoicing, false)
+    do: Enum.any?(invoice.transactions) or Map.get(invoice, :skip_invoicing, false)
 
-  defp matched?(%CostInvoice{} = invoice),
-    do: length(invoice.transactions) > 0 or Map.get(invoice, :skip_invoicing, false)
+  defp matched?(%CostInvoice{} = invoice), do: Enum.any?(invoice.transactions) or Map.get(invoice, :skip_invoicing, false)
 
   defp matched?(%Transaction{} = transaction),
     do:
-      length(transaction.sales_invoices_transactions ++ transaction.cost_invoices_transactions) > 0 or
+      Enum.any?(transaction.sales_invoices_transactions ++ transaction.cost_invoices_transactions) or
         Map.get(transaction, :skip_invoicing, false)
 
   defp matched?(%TransactionGroup{}) do
