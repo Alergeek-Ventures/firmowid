@@ -141,14 +141,18 @@ defmodule FirmowidWeb.ManagementLive.Employee do
     """
   end
 
+  attr :project, :map, required: true
+
   defp project_accordion(assigns) do
     ~H"""
-    <div id={"project-accordion-#{@project.id}"} phx-hook="Accordion">
-      <div data-accordion-item class="group overflow-hidden grid grid-cols-[1fr_auto_40px]">
+    <div class="overflow-hidden">
+      <div class="grid grid-cols-[1fr_auto_40px]">
         <button
-          data-accordion-trigger
+          phx-click={handle_toggle_accordion(@project.id)}
           type="button"
-          class="grid grid-cols-subgrid col-span-3 pt-4"
+          class="accordion-trigger grid grid-cols-subgrid col-span-3 pt-4 [&_.accordion-trigger-icon]:aria-expanded:rotate-180"
+          id={"project-accordion-trigger-#{@project.id}"}
+          aria-controls={"project-accordion-panel-#{@project.id}"}
         >
           <span class="text-start">{@project.name}</span>
           <span>
@@ -159,32 +163,38 @@ defmodule FirmowidWeb.ManagementLive.Employee do
           </span>
           <.icon
             name="hero-chevron-down"
-            class="size-4 ml-auto my-auto transition-transform group-[.open]:rotate-180"
+            class="accordion-trigger-icon size-4 ml-auto my-auto transition-transform duration-300 ease-in-out"
           />
         </button>
         <div
-          data-accordion-content
-          class={[
-            "grid grid-cols-subgrid col-span-2 mt-1.5 mb-2.5 space-y-3 items-end",
-            "text-darkGrey"
-          ]}
+          class="accordion-panel grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all duration-300 ease-in-out col-span-2 mt-1.5 mb-2.5"
+          id={"project-accordion-panel-#{@project.id}"}
+          role="region"
         >
-          <%= if length(@project.sessions) == 0 do %>
-            <div class="text-sm text-darkGrey">
-              Brak sesji w tym miesiącu
-            </div>
-          <% else %>
-            <%= for session <- @project.sessions do %>
-              <div>{session.title}</div>
-              <div>
-                {TimeConverter.time_worked_in_seconds_to_hours(session.duration)} h
+          <div class="grid grid-cols-subgrid col-span-2 space-y-3 items-end text-darkGrey overflow-hidden">
+            <%= if length(@project.sessions) == 0 do %>
+              <div class="text-sm text-darkGrey">
+                Brak sesji w tym miesiącu
               </div>
+            <% else %>
+              <%= for session <- @project.sessions do %>
+                <div>{session.title}</div>
+                <div>
+                  {TimeConverter.time_worked_in_seconds_to_hours(session.duration)} h
+                </div>
+              <% end %>
             <% end %>
-          <% end %>
+          </div>
         </div>
       </div>
     </div>
     """
+  end
+
+  defp handle_toggle_accordion(project_id) do
+    {"aria-expanded", "true", "false"}
+    |> JS.toggle_attribute(to: "#project-accordion-trigger-#{project_id}")
+    |> JS.toggle_attribute({"data-expanded", ""}, to: "#project-accordion-panel-#{project_id}")
   end
 
   attr :address, :map, required: true
@@ -197,6 +207,11 @@ defmodule FirmowidWeb.ManagementLive.Employee do
     </address>
     """
   end
+
+  attr :employee, :map, required: true
+  attr :bank_account_number, :string, required: true
+  attr :projects_filter_date, :any, required: true
+  attr :active_months, :list, required: true
 
   def employee_projects_tab(assigns) do
     ~H"""

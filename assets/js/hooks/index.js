@@ -11,7 +11,6 @@ import ScrollToBottom from "./scroll_to_bottom";
 import Popover from "./popover";
 import { ConfirmLeave } from "./confirm_leave";
 import { CollapsibleNavbar } from "./collapsible_navbar";
-import { Accordion } from "./accordion";
 
 export const Hooks = {
   ListItemRemovalAnimation,
@@ -27,5 +26,4 @@ export const Hooks = {
   Popover,
   CollapsibleNavbar,
   ConfirmLeave,
-  Accordion,
 };
