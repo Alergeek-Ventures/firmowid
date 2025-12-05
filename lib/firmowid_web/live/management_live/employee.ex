@@ -112,9 +112,12 @@ defmodule FirmowidWeb.ManagementLive.Employee do
 
   defp card(assigns) do
     ~H"""
-    <div class={[@class, "text-black bg-white p-6 rounded-md shadow flex flex-col gap-y-[22px]"]}>
+    <section class={[
+      @class,
+      "bg-white text-black p-6 rounded-md shadow flex flex-col gap-y-[22px]"
+    ]}>
       {render_slot(@inner_block)}
-    </div>
+    </section>
     """
   end
 
@@ -124,7 +127,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
     # TODO: make the edit button functional
     ~H"""
     <div class="flex gap-3">
-      <span>{@title}</span>
+      <h3 class="font-medium">{@title}</h3>
       <button
         type="button"
         class="focus:outline-none"
@@ -154,32 +157,10 @@ defmodule FirmowidWeb.ManagementLive.Employee do
             |> Enum.sum()
             |> TimeConverter.time_worked_in_seconds_to_hours()} h
           </span>
-          <svg
-            width="16"
-            height="15"
-            viewBox="0 0 16 15"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            class={[
-              "ml-auto text-darkGrey my-auto transition-transform",
-              "group-[.open]:rotate-180"
-            ]}
-          >
-            <g clip-path="url(#clip0_4698_33604)">
-              <path
-                d="M4.05957 4.81152L7.99904 10.2451L9.96857 7.52847L11.9381 4.81181"
-                stroke="#4E4E4E"
-                stroke-width="1.65682"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </g>
-            <defs>
-              <clipPath id="clip0_4698_33604">
-                <rect width="16" height="13.2545" fill="white" transform="translate(0 0.873047)" />
-              </clipPath>
-            </defs>
-          </svg>
+          <.icon
+            name="hero-chevron-down"
+            class="size-4 ml-auto my-auto transition-transform group-[.open]:rotate-180"
+          />
         </button>
         <div
           data-accordion-content
@@ -233,7 +214,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
         </.user_card_info>
       </div>
     </.card>
-    <div class="flex gap-4 items-start">
+    <div class="flex gap-10 items-start">
       <.card class="grow min-h-[12.5rem]">
         <div class="flex justify-between items-center">
           <%!-- TODO: allow editing the user's projects --%>
@@ -255,52 +236,70 @@ defmodule FirmowidWeb.ManagementLive.Employee do
           <% end %>
         </div>
       </.card>
-      <div class="min-w-[251px] space-y-4">
-        <.card class="!gap-y-[18px] h-[12.5rem]">
-          <div>Podsumowanie miesiąca</div>
-          <div class="space-y-3">
-            <.user_card_info label="Przepracowano">
-              <span class="text-greenText">
-                {TimeConverter.time_worked_in_seconds_to_hours(@employee.time_worked)} godz.
-              </span>
-            </.user_card_info>
-            <.user_card_info label="Wynagrodzenie">
-              <span class="text-greenText">
-                {:PLN
-                |> Money.new(
-                  Decimal.mult(
-                    @employee.hourly_rate,
-                    Decimal.new(TimeConverter.time_worked_in_seconds_to_hours(@employee.time_worked))
-                  )
+      <.card class="!bg-transparent border border-greyButtonBg shadow-none">
+        <h3>Podsumowanie miesiąca</h3>
+        <div class="flex flex-col gap-4">
+          <.user_card_info label="Przepracowano">
+            <span class="text-greenText text-xl font-medium">
+              {TimeConverter.time_worked_in_seconds_to_hours(@employee.time_worked)} godz.
+            </span>
+          </.user_card_info>
+          <.user_card_info label="Wynagrodzenie">
+            <span class="text-greenText text-md font-medium">
+              {:PLN
+              |> Money.new(
+                Decimal.mult(
+                  @employee.hourly_rate,
+                  Decimal.new(TimeConverter.time_worked_in_seconds_to_hours(@employee.time_worked))
                 )
-                |> Money.to_string!(fractional_digits: 0, currency_symbol: "PLN")}
-              </span>
-            </.user_card_info>
-          </div>
-        </.card>
-        <.card>
-          <div>Ewidencja</div>
-          <%!-- TODO: ewidencja --%>
-          <div class="flex items-center gap-4 bg-white rounded-[5px]">
-            <span class="text-[11px] font-semibold text-darkGrey bg-greyButtonBg pl-2 pr-1 py-[4px] uppercase rounded-[5px] flex items-center justify-between flex-1 gap-1">
+              )
+              |> Money.to_string!(fractional_digits: 0, currency_symbol: "PLN")}
+            </span>
+          </.user_card_info>
+          <.user_card_info label="Ewidencja">
+            <%!-- TODO: ewidencja --%>
+            <span class="text-[11px] font-semibold text-darkGrey bg-greyButtonBg pl-2 pr-1 py-[4px] uppercase rounded-[5px] flex items-center justify-between flex-1">
               Brak <.icon name="hero-x-mark-micro" />
             </span>
             <svg
-              xmlns="http://www.w3.org/2000/svg"
               width="24"
               height="24"
               viewBox="0 0 24 24"
               fill="none"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="stroke-greyButtonBg shrink-0 mr-[5px] mb-[1px]"
+              xmlns="http://www.w3.org/2000/svg"
             >
-              <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="m14.5 12.5-5 5" /><path d="m9.5 12.5 5 5" />
+              <path
+                d="M15 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V7L15 2Z"
+                stroke="#DDDDDD"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M14 2V6C14 6.53043 14.2107 7.03914 14.5858 7.41421C14.9609 7.78929 15.4696 8 16 8H20"
+                stroke="#DDDDDD"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M14.5 12.5L9.5 17.5"
+                stroke="#DDDDDD"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M9.5 12.5L14.5 17.5"
+                stroke="#DDDDDD"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
-          </div>
-        </.card>
-      </div>
+          </.user_card_info>
+        </div>
+      </.card>
     </div>
     """
   end
@@ -310,7 +309,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
     <div class="grid grid-cols-2 gap-10">
       <.card class="col-span-2">
         <.editable_header title="Dane korespondencyjne" />
-        <div class="grid grid-cols-2">
+        <div class="grid grid-cols-2 gap-24">
           <div class="space-y-4">
             <.user_card_info label="Numer telefonu">
               <.link href={"tel:#{@phone}"} class="hover:underline">

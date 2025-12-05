@@ -1,9 +1,8 @@
 <%= if @current_user && !is_nil(@current_user.organization_id) do %>
   <%!-- simulates the navbar height, so the content does not jump when the navbar collapses --%>
-  <div class={[
-    String.starts_with?(@current_uri.path, "/zarzadzanie") &&
-      "h-navbar-management bg-lightGreyBg"
-  ]} />
+  <%= if String.starts_with?(@current_uri.path, "/zarzadzanie") do %>
+    <div class="h-navbar-management bg-lightGreyBg w-full" />
+  <% end %>
   <nav class={[
     if(String.starts_with?(@current_uri.path, "/zarzadzanie"), do: "fixed", else: "sticky"),
     "top-0 left-0 right-0 z-50 px-4 sm:px-6 lg:px-8 bg-black"
@@ -154,7 +153,7 @@
       <div class="grid grid-cols-3 gap-4 items-center py-2.5 w-full text-white/50 font-semibold">
         <.link
           navigate={~p"/"}
-          class="font-extrabold inline-block text-offwhite opacity-0 transition-opacity mr-auto tracking-wide mt-0.5"
+          class="font-bold inline-block text-offwhite opacity-0 transition-opacity mr-auto tracking-wide mt-0.5"
           id="firmowid-logo-management"
           phx-hook="CollapsibleNavbar"
           data-classes="opacity-100"
@@ -195,7 +194,6 @@
         <button
           class="text-white cursor-pointer opacity-0 ml-auto relative flex size-6 transition-opacity"
           id="navbar-burger-button"
-          onclick="window.scrollTo({ top: 0, behavior: 'smooth' })"
           phx-hook="CollapsibleNavbar"
           data-classes="opacity-100"
           data-is-override-button="true"
