@@ -23,36 +23,50 @@
             <h2 class="text-lg font-bold">{get_employee_display_name(@employee)}</h2>
             <div class="text-darkGrey text-sm flex gap-2 items-center">
               <img src="/images/slack.png" alt="slack logo" width={24} height={24} />
-              <.link
-                href={"#{@slack_url}/team/#{@slack_username}"}
-                class="border-b border-transparent hover:border-darkGrey transition-colors"
-              >
-                napisz na Slacku
-              </.link>
+              <%= if @employee.slack_id do %>
+                <.link
+                  href={"#{get_employee_slack_url(@employee)}/team/#{@employee.slack_id}"}
+                  class="border-b border-transparent hover:border-darkGrey transition-colors"
+                >
+                  napisz na Slacku
+                </.link>
+              <% else %>
+                <span class="text-darkGrey">Brak danych</span>
+              <% end %>
             </div>
           </div>
         </div>
         <div class="space-y-4">
-          <.user_card_info label="Numer telefonu">{@phone}</.user_card_info>
+          <.user_card_info label="Numer telefonu">
+            <%= if @employee.phone do %>
+              {@employee.phone}
+            <% else %>
+              <span class="text-darkGrey">Brak danych</span>
+            <% end %>
+          </.user_card_info>
           <.user_card_info label="Adres e-mail">{@employee.email}</.user_card_info>
           <.user_card_info label="Numer konta bankowego">
-            <span>{@bank_account_number}</span>
-            <%!-- TODO: ensure "copy bank account number" works --%>
-            <button
-              id="copy-bank-account-number"
-              onclick={"navigator.clipboard.writeText('#{@bank_account_number}')"}
-              type="button"
-              class={[
-                "h-6 w-7 text-darkGrey rounded-[3px]",
-                "bg-greyButtonBg self-center justify-self-end",
-                "shrink-0 flex flex-row justify-center items-center",
-                "hover:border-darkGrey border border-transparent",
-                "active:bg-darkGrey active:text-lightGreyBg",
-                "transition-all transition-duration-300"
-              ]}
-            >
-              <.icon name="hero-document-duplicate" class="size-5" />
-            </button>
+            <%= if @employee.bank_account_number do %>
+              <span>{@employee.bank_account_number}</span>
+              <%!-- TODO: ensure "copy bank account number" works --%>
+              <button
+                id="copy-bank-account-number"
+                onclick={"navigator.clipboard.writeText('#{@employee.bank_account_number}')"}
+                type="button"
+                class={[
+                  "h-6 w-7 text-darkGrey rounded-[3px]",
+                  "bg-greyButtonBg self-center justify-self-end",
+                  "shrink-0 flex flex-row justify-center items-center",
+                  "hover:border-darkGrey border border-transparent",
+                  "active:bg-darkGrey active:text-lightGreyBg",
+                  "transition-all transition-duration-300"
+                ]}
+              >
+                <.icon name="hero-document-duplicate" class="size-5" />
+              </button>
+            <% else %>
+              <span class="text-darkGrey">Brak danych</span>
+            <% end %>
           </.user_card_info>
           <.user_card_info label="Projekty" class="pt-3.5">
             <div class="flex flex-wrap gap-2 mt-2.5 text-sm">
@@ -69,10 +83,14 @@
           </.user_card_info>
         </div>
         <div class="mt-auto ml-auto text-darkGrey flex gap-2 items-center">
-          <span class="text-sm">
-            {TimeFormatter.format_date(@birthday, "d MMMM")}
-          </span>
-          <.icon name="hero-cake" class="size-5 mb-1" />
+          <%= if @employee.birthday do %>
+            <span class="text-sm">
+              {TimeFormatter.format_date(@employee.birthday, "d MMMM")}
+            </span>
+            <.icon name="hero-cake" class="size-5 mb-1" />
+          <% else %>
+            <span class="text-sm text-darkGrey">Brak daty urodzenia</span>
+          <% end %>
         </div>
       </.card>
     </div>
@@ -108,19 +126,11 @@
           <% :projects -> %>
             <.employee_projects_tab
               employee={@employee}
-              bank_account_number={@bank_account_number}
               projects_filter_date={@projects_filter_date}
               active_months={@active_months}
             />
           <% :profile -> %>
-            <.employee_profile_tab
-              employee={@employee}
-              phone={@phone}
-              slack_url={@slack_url}
-              slack_username={@slack_username}
-              employment_details={@employment_details}
-              employee_addresses={@employee_addresses}
-            />
+            <.employee_profile_tab employee={@employee} />
           <% :documents -> %>
             <.employee_documents_tab employee={@employee} />
           <% :leaves -> %>

@@ -33,6 +33,24 @@ defmodule Firmowid.Accounts.User do
 
     field :marketing_consent, :boolean, default: false
 
+    field :phone, :string
+    field :slack_url, :string
+    field :slack_id, :string
+    field :bank_account_number, :string
+    field :birthday, :date
+
+    field :position, :string
+    field :student_status_until, :date
+
+    field :correspondence_street, :string
+    field :correspondence_city, :string
+    field :correspondence_code, :string
+    field :residence_street, :string
+    field :residence_city, :string
+    field :residence_code, :string
+
+    field :employment_contract_type, Ecto.Enum, values: [:umowa_o_prace, :umowa_zlecenie, :umowa_o_dzielo, :b2b]
+
     belongs_to :avatar_blob, Firmowid.Blobs.Blob
     belongs_to :organization, Firmowid.Accounts.Organization
 
@@ -237,7 +255,21 @@ defmodule Firmowid.Accounts.User do
       :name,
       :employment_date,
       :avatar_blob_id,
-      :role
+      :role,
+      :phone,
+      :slack_url,
+      :slack_id,
+      :bank_account_number,
+      :birthday,
+      :employment_contract_type,
+      :position,
+      :student_status_until,
+      :correspondence_street,
+      :correspondence_city,
+      :correspondence_code,
+      :residence_street,
+      :residence_city,
+      :residence_code
     ])
   end
 
@@ -249,7 +281,25 @@ defmodule Firmowid.Accounts.User do
   """
   def profile_changeset(user, attrs) do
     user
-    |> cast(attrs, [:name, :employment_date, :marketing_consent, :avatar_blob_id])
+    |> cast(attrs, [
+      :name,
+      :employment_date,
+      :marketing_consent,
+      :avatar_blob_id,
+      :phone,
+      :slack_url,
+      :slack_id,
+      :bank_account_number,
+      :birthday,
+      :employment_contract_type,
+      :student_status_until,
+      :correspondence_street,
+      :correspondence_city,
+      :correspondence_code,
+      :residence_street,
+      :residence_city,
+      :residence_code
+    ])
     |> validate_required([:name])
   end
 

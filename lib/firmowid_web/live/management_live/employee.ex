@@ -2,6 +2,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Accounts.ContractType
   alias Firmowid.Helpers.TimeConverter
   alias Firmowid.Management
   alias Firmowid.Timetracker
@@ -21,36 +22,16 @@ defmodule FirmowidWeb.ManagementLive.Employee do
       |> assign_employee()
       |> assign(:active_months, active_months)
       |> assign_title()
-      # TODO: obtain these from the database
-      |> assign(:phone, "+48 123 456 789")
-      |> assign(:slack_url, "https://alergeekventures.slack.com")
-      |> assign(:slack_username, "JanBeznazwiskowy")
-      |> assign(:bank_account_number, "1234 5678 9012 3456 7890 1234")
-      |> assign(:birthday, ~D[2000-07-21])
-      |> assign(:employment_details, %{
-        employment_type: "Umowa zlecenie",
-        position: "Software Developer",
-        student_status_until: ~D[2026-06-30],
-        contract_signed_on: ~D[2022-01-15]
-      })
-      |> assign(:employee_addresses, %{
-        correspondence: %{
-          street: "ul. Przykładowa 1/2",
-          city: "Warszawa",
-          code: "00-001"
-        },
-        residence: %{
-          street: "ul. Przemysłowa 3/4",
-          city: "Wrocław",
-          code: "51-000"
-        }
-      })
 
     {:ok, socket}
   end
 
   defp get_employee_display_name(employee) do
     employee.name || employee.email
+  end
+
+  defp get_employee_slack_url(employee) do
+    employee.slack_url || "https://alergeekventures.slack.com"
   end
 
   defp assign_employee(socket) do
@@ -192,19 +173,20 @@ defmodule FirmowidWeb.ManagementLive.Employee do
     |> JS.toggle_attribute({"data-expanded", ""}, to: "#project-accordion-panel-#{project_id}")
   end
 
-  attr :address, :map, required: true
+  attr :street, :string, required: true
+  attr :city, :string, required: true
+  attr :code, :string, required: true
 
   defp employee_address(assigns) do
     ~H"""
     <address class="not-italic">
-      <div>{@address.street}</div>
-      <div>{@address.code} {@address.city}</div>
+      <div>{@street}</div>
+      <div>{@code} {@city}</div>
     </address>
     """
   end
 
   attr :employee, :map, required: true
-  attr :bank_account_number, :string, required: true
   attr :projects_filter_date, :any, required: true
   attr :active_months, :list, required: true
 
@@ -220,12 +202,12 @@ defmodule FirmowidWeb.ManagementLive.Employee do
           |> Money.to_string!(fractional_digits: 0)}/godz.
         </.user_card_info>
         <.user_card_info label="Numer konta bankowego" class="mr-32">
-          {@bank_account_number}
+          {@employee.bank_account_number || "Brak danych"}
         </.user_card_info>
       </div>
     </.card>
     <div class="flex gap-10 items-start">
-      <.card class="grow min-h-[12.5rem]">
+      <.card class="grow">
         <div class="flex justify-between items-center">
           <%!-- TODO: allow editing the user's projects --%>
           <.editable_header title="Projekty pracownika" />
@@ -314,6 +296,8 @@ defmodule FirmowidWeb.ManagementLive.Employee do
     """
   end
 
+  attr :employee, :map, required: true
+
   defp employee_profile_tab(assigns) do
     ~H"""
     <div class="grid grid-cols-2 gap-10">
@@ -322,9 +306,13 @@ defmodule FirmowidWeb.ManagementLive.Employee do
         <div class="grid grid-cols-2 gap-24">
           <div class="space-y-4">
             <.user_card_info label="Numer telefonu">
-              <.link href={"tel:#{@phone}"} class="hover:underline">
-                {@phone}
-              </.link>
+              <%= if @employee.phone do %>
+                <.link href={"tel:#{@employee.phone}"} class="hover:underline">
+                  {@employee.phone}
+                </.link>
+              <% else %>
+                <span class="text-darkGrey">Brak danych</span>
+              <% end %>
             </.user_card_info>
             <.user_card_info label="Adres e-mail">
               <.link href={"mailto:#{@employee.email}"} class="hover:underline">
@@ -332,17 +320,40 @@ defmodule FirmowidWeb.ManagementLive.Employee do
               </.link>
             </.user_card_info>
             <.user_card_info label="Slack">
-              <.link href={"#{@slack_url}/team/#{@slack_username}"} class="hover:underline">
-                @{@slack_username}
-              </.link>
+              <%= if @employee.slack_id do %>
+                <.link
+                  href={"#{get_employee_slack_url(@employee)}/team/#{@employee.slack_id}"}
+                  class="hover:underline"
+                >
+                  @{@employee.slack_id}
+                </.link>
+              <% else %>
+                <span class="text-darkGrey">Brak danych</span>
+              <% end %>
             </.user_card_info>
           </div>
           <div class="space-y-4">
             <.user_card_info label="Adres korespondencyjny">
-              <.employee_address address={@employee_addresses.correspondence} />
+              <%= if @employee.correspondence_street && @employee.correspondence_city && @employee.correspondence_code do %>
+                <.employee_address
+                  street={@employee.correspondence_street}
+                  city={@employee.correspondence_city}
+                  code={@employee.correspondence_code}
+                />
+              <% else %>
+                <span class="text-darkGrey">Brak danych</span>
+              <% end %>
             </.user_card_info>
             <.user_card_info label="Adres zamieszkania">
-              <.employee_address address={@employee_addresses.residence} />
+              <%= if @employee.residence_street && @employee.residence_city && @employee.residence_code do %>
+                <.employee_address
+                  street={@employee.residence_street}
+                  city={@employee.residence_city}
+                  code={@employee.residence_code}
+                />
+              <% else %>
+                <span class="text-darkGrey">Brak danych</span>
+              <% end %>
             </.user_card_info>
           </div>
         </div>
@@ -350,32 +361,36 @@ defmodule FirmowidWeb.ManagementLive.Employee do
       <.card>
         <.editable_header title="Informacje o zatrudnieniu" />
         <.user_card_info label="Rodzaj umowy">
-          {@employment_details.employment_type}
+          {ContractType.title(@employee.employment_contract_type) || "Brak danych"}
         </.user_card_info>
         <.user_card_info label="Stanowisko">
-          {@employment_details.position}
+          {@employee.position || "Brak danych"}
         </.user_card_info>
         <.user_card_info label="Status studenta">
-          <%= if is_nil(@employment_details.student_status_until) do %>
+          <%= if is_nil(@employee.student_status_until) do %>
             brak
           <% else %>
             <span class="text-greenText font-bold mr-1">aktywny</span>
             <span class="text-grey-500 text-sm">
-              (do {TimeFormatter.format_date(@employment_details.student_status_until)})
+              (do {TimeFormatter.format_date(@employee.student_status_until)})
             </span>
           <% end %>
         </.user_card_info>
         <.user_card_info label="Data podpisania umowy">
-          <div class="w-full flex justify-between items-center">
-            <div>{TimeFormatter.format_date(@employment_details.contract_signed_on)} r.</div>
-            <%!-- TODO: download employee contract --%>
-            <.button
-              color="light_grey"
-              class="uppercase text-xs font-semibold py-0 px-2 rounded-[3px]"
-            >
-              Umowa <.icon name="hero-document" class="size-5 ml-1" />
-            </.button>
-          </div>
+          <%= if @employee.employment_date do %>
+            <div class="w-full flex justify-between items-center">
+              <div>{TimeFormatter.format_date(@employee.employment_date)} r.</div>
+              <%!-- TODO: download employee contract --%>
+              <.button
+                color="light_grey"
+                class="uppercase text-xs font-semibold py-0 px-2 rounded-[3px]"
+              >
+                Umowa <.icon name="hero-document" class="size-5 ml-1" />
+              </.button>
+            </div>
+          <% else %>
+            <span class="text-darkGrey">Brak danych</span>
+          <% end %>
         </.user_card_info>
       </.card>
       <%!-- TODO: add calendar --%>

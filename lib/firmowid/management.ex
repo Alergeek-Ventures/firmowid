@@ -111,7 +111,8 @@ defmodule Firmowid.Management do
                 |> type(:integer)
             }
 
-        result = Repo.preload(user, [:projects, sessions: sessions_query, user_salaries: salary_query])
+        result =
+          Repo.preload(user, [:projects, sessions: sessions_query, user_salaries: salary_query])
 
         result
         |> Map.put(

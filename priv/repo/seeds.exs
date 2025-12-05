@@ -29,7 +29,42 @@ Repo.transaction(fn ->
       {:error, _} -> Accounts.get_user_by_email("hyzio@firmowid.pl")
     end
 
-  Accounts.update_user(franek, %{system_role: :superuser, role: :admin})
+  Accounts.update_user(franek, %{
+    system_role: :superuser,
+    role: :admin,
+    name: "Piotr Kowalski",
+    employment_date: ~D[2023-01-15],
+    phone: "+48 123 456 789",
+    slack_id: "U123456789",
+    bank_account_number: "12 3456 7890 1234 5678 9012 3456",
+    birthday: ~D[1990-05-15],
+    position: "Senior Elixir Developer",
+    employment_contract_type: :umowa_o_prace,
+    student_status_until: nil,
+    correspondence_street: "ul. Krakowska 123/45",
+    correspondence_city: "Kraków",
+    correspondence_code: "30-702",
+    residence_street: "ul. Warszawska 67/89",
+    residence_city: "Kraków",
+    residence_code: "30-001"
+  })
+
+  Accounts.update_user(bartek, %{
+    name: "Bartosz Nowak",
+    employment_date: ~D[2023-03-20],
+    phone: "+48 987 654 321",
+    slack_id: "U987654321",
+    birthday: ~D[1995-08-22],
+    position: "Frontend Developer",
+    employment_contract_type: :umowa_zlecenie,
+    student_status_until: ~D[2025-06-30],
+    correspondence_street: "ul. Gdańska 456/12",
+    correspondence_city: "Warszawa",
+    correspondence_code: "00-001",
+    residence_street: "ul. Poznańska 34/56",
+    residence_city: "Warszawa",
+    residence_code: "00-002"
+  })
 
   # Check if organization already exists first
   av =
