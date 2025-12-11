@@ -75,7 +75,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
      |> assign_employee()}
   end
 
-  def return_to_employees_list(assigns) do
+  defp return_to_employees_list(assigns) do
     ~H"""
     <.link
       navigate={~p"/zarzadzanie/pracownicy"}
@@ -167,7 +167,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
           role="region"
         >
           <div class="grid grid-cols-subgrid col-span-2 space-y-3 items-end text-darkGrey overflow-hidden">
-            <%= if length(@project.sessions) == 0 do %>
+            <%= if Enum.empty?(@project.sessions) do %>
               <div class="text-sm text-darkGrey">
                 Brak sesji w tym miesiącu
               </div>
@@ -194,7 +194,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
 
   attr :address, :map, required: true
 
-  def employee_address(assigns) do
+  defp employee_address(assigns) do
     ~H"""
     <address class="not-italic">
       <div>{@address.street}</div>
@@ -208,7 +208,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
   attr :projects_filter_date, :any, required: true
   attr :active_months, :list, required: true
 
-  def employee_projects_tab(assigns) do
+  defp employee_projects_tab(assigns) do
     ~H"""
     <.card>
       <%!-- TODO: allow editing the user wage --%>
@@ -237,7 +237,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
           />
         </div>
         <div class="mt-1 divide-y divide-lightGreyBg">
-          <%= if length(@employee.projects) == 0 do %>
+          <%= if Enum.empty?(@employee.projects) do %>
             <div class="text-sm text-darkGrey mt-4">Brak projektów</div>
           <% else %>
             <%= for project <- @employee.projects do %>
@@ -314,7 +314,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
     """
   end
 
-  def employee_profile_tab(assigns) do
+  defp employee_profile_tab(assigns) do
     ~H"""
     <div class="grid grid-cols-2 gap-10">
       <.card class="col-span-2">
@@ -397,7 +397,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
     """
   end
 
-  def employee_documents_tab(assigns) do
+  defp employee_documents_tab(assigns) do
     ~H"""
     <.card class="grid grid-cols-[1fr_auto]">
       <div>Przesłane dokumenty</div>
@@ -430,7 +430,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
     """
   end
 
-  def employee_leaves_tab(assigns) do
+  defp employee_leaves_tab(assigns) do
     # TODO: add leaves functionality & modal
     ~H"""
     <div class="space-y-10">
