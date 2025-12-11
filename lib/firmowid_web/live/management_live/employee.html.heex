@@ -79,23 +79,22 @@
     <div class="mt-[26px] w-full">
       <%!-- TODO: add tab switching animation (see figma prototype) --%>
       <div class="flex gap-10 px-9 relative">
-        <%= for {atom, {tab, label}} <-
+        <%= for {permission, {path, label, action}} <-
             [
-
-              {:read_employee_projects, {"projekty", "Projekty i ewidencja"}},
-              {:read_employee_profile, {"profil", "Profil pracownika"}},
-              {:read_employee_documents, {"dokumenty", "Dokumenty"}},
-              {:read_employee_leaves, {"urlopy", "Urlopy"}}
+              {:read_employee_projects, {~p"/zarzadzanie/pracownicy/#{@employee.id}", "Projekty i ewidencja", :projects}},
+              {:read_employee_profile, {~p"/zarzadzanie/pracownicy/#{@employee.id}/profil", "Profil pracownika", :profile}},
+              {:read_employee_documents, {~p"/zarzadzanie/pracownicy/#{@employee.id}/dokumenty", "Dokumenty", :documents}},
+              {:read_employee_leaves, {~p"/zarzadzanie/pracownicy/#{@employee.id}/urlopy", "Urlopy", :leaves}}
             ]
            do %>
           <.link
-            :if={Bodyguard.permit?(Management, atom, @current_user)}
-            patch={~p"/zarzadzanie/pracownicy/#{@employee.id}?tab=#{tab}"}
+            :if={Bodyguard.permit?(Management, permission, @current_user)}
+            navigate={path}
             class={
               classes([
                 "phx-click-loading:opacity-50 py-2.5 pb-5 px-3 rounded-md font-medium text-darkGrey transition-all",
                 "shadow shadow-transparent hover:text-black hover:shadow-black/10 hover:bg-white",
-                @tab == tab &&
+                @live_action == action &&
                   "text-black shadow-black/10 bg-grey-50"
               ])
             }
@@ -105,15 +104,15 @@
         <% end %>
       </div>
       <div class="-mt-2.5 relative space-y-10">
-        <%= case @tab do %>
-          <% "projekty" -> %>
+        <%= case @live_action do %>
+          <% :projects -> %>
             <.employee_projects_tab
               employee={@employee}
               bank_account_number={@bank_account_number}
               projects_filter_date={@projects_filter_date}
               active_months={@active_months}
             />
-          <% "profil" -> %>
+          <% :profile -> %>
             <.employee_profile_tab
               employee={@employee}
               phone={@phone}
@@ -122,12 +121,10 @@
               employment_details={@employment_details}
               employee_addresses={@employee_addresses}
             />
-          <% "dokumenty" -> %>
+          <% :documents -> %>
             <.employee_documents_tab employee={@employee} />
-          <% "urlopy" -> %>
+          <% :leaves -> %>
             <.employee_leaves_tab employee={@employee} leaves_filter_year={@leaves_filter_year} />
-          <% _ -> %>
-            unknown tab
         <% end %>
       </div>
     </div>

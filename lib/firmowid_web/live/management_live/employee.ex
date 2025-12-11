@@ -20,7 +20,6 @@ defmodule FirmowidWeb.ManagementLive.Employee do
       |> assign(:leaves_filter_year, Date.utc_today())
       |> assign_employee()
       |> assign(:active_months, active_months)
-      |> assign(:tab, "projekty")
       |> assign_title()
       # TODO: obtain these from the database
       |> assign(:phone, "+48 123 456 789")
@@ -64,11 +63,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
   end
 
   @impl true
-  def handle_params(%{"tab" => tab}, _uri, socket) do
-    {:noreply, assign(socket, tab: tab)}
-  end
-
-  def handle_params(_unsigned_params, _uri, socket) do
+  def handle_params(_params, _uri, socket) do
     {:noreply, socket}
   end
 
