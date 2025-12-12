@@ -48,9 +48,14 @@ defmodule Firmowid.Ksef.SessionWorker do
         Ksef.fetch_cost_invoices(date_from)
 
       {:error, reason} = error ->
+        Ksef.unauthenticate()
         Logger.error("Authentication failed: #{inspect(reason)}")
         error
     end
+  rescue
+    e ->
+      Ksef.unauthenticate()
+      {:error, e}
   end
 
   defp renew_session(%{"refresh_token" => refresh_token}) do

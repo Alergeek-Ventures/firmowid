@@ -353,6 +353,105 @@
         </div>
       </div>
 
+      <div class="mt-6 rounded-md p-4 w-fit border border-transparent">
+        <h2 class="font-bold mt-0.5">Integracja z KSeF</h2>
+        <div class="space-y-4 mt-6">
+          <%= if @ksef_credential do %>
+            <div class="flex">
+              <div class="w-64 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4">
+                Status
+              </div>
+              <div class="flex-1 flex items-center gap-2">
+                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-greenText">
+                  <.icon name="hero-check-circle-solid" class="w-5 h-5 text-greenBg" />
+                </span>
+                <span class="text-sm font-medium">Połączono z KSeF</span>
+              </div>
+            </div>
+            <div class="flex">
+              <div class="w-64 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4">
+                Typ autoryzacji
+              </div>
+              <div class="flex-1">
+                <%= case @ksef_credential.auth_type do %>
+                  <% :token -> %>
+                    Token
+                  <% :certificate -> %>
+                    Certyfikat
+                <% end %>
+              </div>
+            </div>
+            <div class="flex">
+              <div class="w-64"></div>
+              <div class="flex-1">
+                <.button
+                  phx-click={show_modal("confirm_disconnect_ksef")}
+                  variant="outline"
+                  color="red"
+                >
+                  Rozłącz
+                </.button>
+              </div>
+            </div>
+          <% else %>
+            <form phx-submit="save_ksef_token" id="ksef-token-form">
+              <div class="flex">
+                <div class="w-64 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4">
+                  Token autoryzacyjny
+                </div>
+                <div class="flex-1">
+                  <input
+                    type="password"
+                    name="ksef_token"
+                    required
+                    placeholder="Wprowadź token KSeF"
+                    class="w-[439px] rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm"
+                  />
+                </div>
+              </div>
+              <div class="flex mt-4">
+                <div class="w-64 flex items-start justify-end font-medium text-darkGrey uppercase text-xs pr-4 mt-1">
+                  Opis
+                </div>
+                <div class="flex-1 text-sm text-gray-600 max-w-lg">
+                  Token autoryzacyjny KSeF umożliwia automatyczne pobieranie faktur kosztowych
+                  z Krajowego Systemu e-Faktur. Token możesz wygenerować w panelu KSeF.
+                </div>
+              </div>
+              <div class="flex mt-4">
+                <div class="w-64"></div>
+                <div class="flex-1">
+                  <.button type="submit" color="orange" phx-disable-with="Łączenie...">
+                    Połącz z KSeF
+                  </.button>
+                </div>
+              </div>
+            </form>
+          <% end %>
+        </div>
+      </div>
+
+      <.modal id="confirm_disconnect_ksef">
+        <h3 class="text-lg font-bold mb-4">Potwierdź rozłączenie</h3>
+        <p class="mb-6">
+          Czy na pewno chcesz rozłączyć integrację z KSeF?
+          Spowoduje to zatrzymanie automatycznego pobierania faktur.
+        </p>
+        <div class="flex gap-4">
+          <.button
+            phx-click="disconnect_ksef"
+            variant="outline"
+            color="red"
+            phx-disable-with="Rozłączanie..."
+          >
+            Rozłącz
+          </.button>
+          <.button type="button" phx-click={hide_modal("confirm_disconnect_ksef")}>
+            Anuluj
+          </.button>
+        </div>
+      </.modal>
+
       <div class="mt-6 ml-4">
         <.link navigate={~p"/zaproszenia"} class={button_styles(%{variant: "outline"})}>
           Dodaj współpracowników do organizacji
