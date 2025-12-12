@@ -58,6 +58,9 @@ config :firmowid, FirmowidWeb.Endpoint,
   pubsub_server: Firmowid.PubSub,
   live_view: [signing_salt: "s6RVH6WQ"]
 
+# Packmatic URL source - increase connect timeout for batch downloads
+config :firmowid, Packmatic.Source.URL, timeout: 30_000
+
 config :firmowid,
   ecto_repos: [Firmowid.Repo],
   generators: [timestamp_type: :utc_datetime]

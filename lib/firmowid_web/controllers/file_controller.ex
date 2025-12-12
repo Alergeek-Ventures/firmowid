@@ -4,6 +4,8 @@ defmodule FirmowidWeb.FileController do
   alias Firmowid.CostInvoices
   alias Firmowid.SalesInvoices
 
+  require Logger
+
   def batch(conn, params) do
     month = Date.from_iso8601!(params["month"])
     skip_scans = params["skip_scans"] == "true"
@@ -58,7 +60,13 @@ defmodule FirmowidWeb.FileController do
         ]
       end)
 
-    stream = Packmatic.build_stream(cost_invoices ++ sales_invoices)
+    entries = cost_invoices ++ sales_invoices
+
+    Logger.info(
+      "Batch download starting: #{length(cost_invoices)} cost invoices, #{length(sales_invoices)} sales invoices"
+    )
+
+    stream = Packmatic.build_stream(entries, on_event: &log_packmatic_event/1)
 
     Packmatic.Conn.send_chunked(
       stream,
@@ -66,6 +74,28 @@ defmodule FirmowidWeb.FileController do
       "#{Calendar.strftime(month, "%Y-%m")}-dokumenty.zip"
     )
   end
+
+  defp log_packmatic_event(%Packmatic.Event.EntryStarted{entry: entry}) do
+    Logger.info("Packmatic: starting #{entry.path}")
+    :ok
+  end
+
+  defp log_packmatic_event(%Packmatic.Event.EntryCompleted{entry: entry}) do
+    Logger.info("Packmatic: completed #{entry.path}")
+    :ok
+  end
+
+  defp log_packmatic_event(%Packmatic.Event.EntryFailed{entry: entry, reason: reason}) do
+    Logger.error("Packmatic: FAILED #{entry.path} - reason: #{inspect(reason)}")
+    :ok
+  end
+
+  defp log_packmatic_event(%Packmatic.Event.StreamEnded{reason: reason, stream_bytes_emitted: bytes}) do
+    Logger.info("Packmatic: stream ended - reason: #{inspect(reason)}, bytes: #{bytes}")
+    :ok
+  end
+
+  defp log_packmatic_event(_event), do: :ok
 
   defp clean_filename(filename) do
     filename
