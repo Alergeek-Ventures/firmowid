@@ -10,6 +10,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
   alias Firmowid.BankData
   alias Firmowid.Blobs
   alias Firmowid.Finances
+  alias Firmowid.Ksef
 
   def form_basic_info_changeset(organization, attrs \\ %{}) do
     Organization.basic_info_changeset(organization, attrs)
@@ -50,6 +51,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
           :correspondence_form,
           to_form(form_correspondence_changeset(socket.assigns.current_org))
         )
+        |> assign(:ksef_credential, Ksef.get_credential())
         |> allow_upload(:organization_avatar,
           accept: ~w(.jpg .jpeg .png),
           max_entries: 1,
@@ -448,6 +450,52 @@ defmodule FirmowidWeb.SettingsLive.Index do
 
       {:error, _} ->
         LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania adresu e-mail.")
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("save_ksef_token", %{"ksef_token" => ksef_token}, socket) do
+    Bodyguard.permit!(
+      Accounts,
+      :update_organization,
+      socket.assigns.current_user,
+      socket.assigns.current_org
+    )
+
+    case Ksef.authenticate_with_ksef_token(ksef_token) do
+      {:ok, credential} ->
+        LiveToast.send_toast(:info, "Połączono z KSeF.")
+        {:noreply, assign(socket, :ksef_credential, credential)}
+
+      {:error, :invalid_token_format} ->
+        LiveToast.send_toast(:error, "Nieprawidłowy format tokenu KSeF.")
+        {:noreply, socket}
+
+      {:error, :nip_mismatch} ->
+        LiveToast.send_toast(:error, "NIP w tokenie nie zgadza się z NIP organizacji.")
+        {:noreply, socket}
+
+      {:error, :already_connected} ->
+        LiveToast.send_toast(:error, "Organizacja jest już połączona z KSeF.")
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("disconnect_ksef", _params, socket) do
+    Bodyguard.permit!(
+      Accounts,
+      :update_organization,
+      socket.assigns.current_user,
+      socket.assigns.current_org
+    )
+
+    case Ksef.unauthenticate() do
+      {:ok, _} ->
+        LiveToast.send_toast(:info, "Rozłączono z KSeF.")
+        {:noreply, assign(socket, :ksef_credential, nil)}
+
+      {:error, _} ->
+        LiveToast.send_toast(:error, "Wystąpił błąd podczas rozłączania z KSeF.")
         {:noreply, socket}
     end
   end
