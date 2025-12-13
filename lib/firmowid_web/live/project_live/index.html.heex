@@ -275,6 +275,38 @@
               </p>
             </div>
           </div>
+
+          <.link
+            :if={@selected_project}
+            class={
+              classes([
+                button_styles(%{color: "grey"}),
+                "mt-4 flex justify-center w-full"
+              ])
+            }
+            download
+            href={
+              ~p"/czasosledz/projekty/#{@selected_project.id}/csv?month=#{@selected_date.month}&year=#{@selected_date.year}"
+            }
+          >
+            Eksportuj raport zadań (.csv)
+          </.link>
+
+          <.link
+            :if={!@selected_project}
+            class={
+              classes([
+                button_styles(%{color: "grey"}),
+                "mt-4 flex justify-center w-full"
+              ])
+            }
+            download
+            href={
+              ~p"/czasosledz/projekty/csv?month=#{@selected_date.month}&year=#{@selected_date.year}"
+            }
+          >
+            Eksportuj raport wypłat (.csv)
+          </.link>
         </div>
       <% :archive -> %>
         <div class="grid col-span-4 row-span-2 grid-rows-subgrid grid-cols-subgrid">

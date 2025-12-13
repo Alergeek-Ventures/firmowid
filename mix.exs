@@ -114,7 +114,8 @@ defmodule Firmowid.MixProject do
       {:cachex, "~> 4.0"},
       {:resend, "~> 0.4.4"},
       {:humanids, "~> 0.1.1"},
-      {:websockex, "~> 0.5"}
+      {:websockex, "~> 0.5"},
+      {:csv, "~> 3.2"}
     ]
   end
 

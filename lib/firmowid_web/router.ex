@@ -87,6 +87,8 @@ defmodule FirmowidWeb.Router do
     get "/sprzedazowe/:id/pdf", PdfController, :index
     get "/sprzedazowe/:id/pobierz", PdfController, :pdf
     get "/pobierz-miesiac", FileController, :batch
+    get "/czasosledz/projekty/csv", CsvController, :salaries
+    get "/czasosledz/projekty/:id/csv", CsvController, :project
 
     live_session :admin,
       on_mount: [

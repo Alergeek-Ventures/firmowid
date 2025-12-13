@@ -152,6 +152,8 @@ defmodule Firmowid.Timetracker do
     |> Repo.update()
   end
 
+  def get_project(id), do: Repo.get(Project, id)
+
   def get_project!(id), do: Project |> Repo.get!(id) |> Repo.preload(:users)
 
   def get_month_hours_records(month, year) do
@@ -339,6 +341,78 @@ defmodule Firmowid.Timetracker do
         }
 
     Repo.one(query)
+  end
+
+  def get_salaries_csv(month, year) do
+    as_of_date =
+      year
+      |> Date.new!(month, 1)
+      |> Date.end_of_month()
+
+    as_of_end_dt = DateTime.new!(as_of_date, ~T[23:59:59], "Etc/UTC")
+
+    latest_salary_as_of_query =
+      UserSalary
+      |> where([us], us.updated_at <= ^as_of_end_dt)
+      |> where([us], is_nil(us.deleted_at) or us.deleted_at > ^as_of_date)
+      |> order_by([us], asc: us.user_id, desc: us.updated_at)
+      |> distinct([us], us.user_id)
+      |> select([us], %{user_id: us.user_id, hourly_rate: us.hourly_rate})
+
+    from(u in Accounts.User,
+      left_join: us in subquery(latest_salary_as_of_query),
+      on: us.user_id == u.id,
+      left_join: hr in HoursRecord,
+      on: hr.user_id == u.id and hr.month == ^month and hr.year == ^year,
+      order_by: u.name,
+      select: %{
+        name: u.name,
+        hourly_rate: us.hourly_rate,
+        number_of_hours: hr.number_of_hours,
+        salary:
+          "? * ?"
+          |> fragment(us.hourly_rate, hr.number_of_hours)
+          |> coalesce(0)
+          |> type(:decimal)
+          |> selected_as(:salary)
+      }
+    )
+    |> Repo.all()
+    |> CSV.encode(
+      headers: [
+        name: "Name",
+        hourly_rate: "Hourly Rate",
+        number_of_hours: "Number of Hours",
+        salary: "Salary"
+      ]
+    )
+    |> Enum.join()
+  end
+
+  def get_project_tasks_csv(project_id, month, year) do
+    from(s in Session,
+      where:
+        s.project_id == ^project_id and
+          fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
+          fragment("extract(year from ?) = ?", s.start_datetime, ^year),
+      group_by: s.title,
+      order_by: [desc: selected_as(:time_worked)],
+      select: %{
+        title: s.title,
+        duration:
+          "extract(epoch from coalesce(?, now()) - ?)"
+          |> fragment(
+            s.end_datetime,
+            s.start_datetime
+          )
+          |> type(:integer)
+          |> sum()
+          |> selected_as(:time_worked)
+      }
+    )
+    |> Repo.all()
+    |> CSV.encode(headers: [title: "Task", duration: "Duration (seconds)"])
+    |> Enum.join()
   end
 
   def add_user_to_project(user_id, project_id) do
