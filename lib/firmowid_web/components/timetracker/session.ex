@@ -77,8 +77,8 @@ defmodule FirmowidWeb.Components.Session do
         </option>
       </select>
 
-      <%!-- todo: check if phx-hook="Timer" works --%>
       <% popover_id = "edit-sessions-popover-#{parent_session.id}" %>
+      <% total_duration = @sessions |> Index.calculate_total_duration() %>
       <button
         class="font-bold w-14 shrink-0 text-center hover:bg-grey-200 transition py-1 rounded-md ml-4 lg:ml-8"
         id={"session-timer-#{parent_session.id}"}
@@ -86,14 +86,11 @@ defmodule FirmowidWeb.Components.Session do
         popovertarget={popover_id}
         phx-click={show_popover(popover_id)}
         phx-hook="Timer"
-        data-start_time={parent_session.start_datetime}
+        data-start_time={DateTime.shift(DateTime.utc_now(), second: -1 * total_duration)}
         data-format="short"
         data-disabled={parent_session.end_datetime != nil}
       >
-        {@sessions
-        |> List.flatten()
-        |> Index.calculate_total_duration()
-        |> TimeFormatter.format_timer()}
+        {TimeFormatter.format_timer(total_duration)}
       </button>
 
       <.popover
