@@ -61,7 +61,8 @@ defmodule Firmowid.Finances do
     |> BankAccount.changeset(attrs)
     |> Repo.insert!(
       on_conflict: {:replace_all_except, [:id, :name, :is_default, :inserted_at]},
-      conflict_target: [:iban, :organization_id]
+      conflict_target: [:iban, :organization_id],
+      returning: true
     )
   end
 
