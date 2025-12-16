@@ -60,6 +60,7 @@ config :firmowid, FirmowidWeb.Endpoint,
 
 # Packmatic URL source - increase connect timeout for batch downloads
 config :firmowid, Packmatic.Source.URL, timeout: 30_000
+config :firmowid, :ksef, base_url: "https://ksef-test.mf.gov.pl/api"
 
 config :firmowid,
   ecto_repos: [Firmowid.Repo],
