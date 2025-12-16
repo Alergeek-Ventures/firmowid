@@ -11,7 +11,7 @@ defmodule FirmowidWeb.CsvController do
     csv_content = Timetracker.get_salaries_csv(month, year)
 
     send_download(conn, {:binary, csv_content},
-      filename: "salaries_#{month}_#{year}.csv",
+      filename: "wyplaty_#{month}_#{year}.csv",
       content_type: "text/csv",
       disposition: :attachment
     )
@@ -27,8 +27,10 @@ defmodule FirmowidWeb.CsvController do
     if project do
       csv_content = Timetracker.get_project_tasks_csv(project_id, month, year)
 
+      project_name = FirmowidWeb.FileController.clean_filename(project.name)
+
       send_download(conn, {:binary, csv_content},
-        filename: "#{project.name}_#{month}_#{year}.csv",
+        filename: "#{project_name}_#{month}_#{year}.csv",
         content_type: "text/csv",
         disposition: :attachment
       )

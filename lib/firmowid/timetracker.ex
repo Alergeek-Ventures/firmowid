@@ -15,6 +15,7 @@ defmodule Firmowid.Timetracker do
   alias Firmowid.Timetracker.ProjectUser
   alias Firmowid.Timetracker.Session
   alias Firmowid.Timetracker.UserSalary
+  alias Timex.Duration
 
   require Logger
 
@@ -362,7 +363,7 @@ defmodule Firmowid.Timetracker do
     from(u in Accounts.User,
       left_join: us in subquery(latest_salary_as_of_query),
       on: us.user_id == u.id,
-      left_join: hr in HoursRecord,
+      join: hr in HoursRecord,
       on: hr.user_id == u.id and hr.month == ^month and hr.year == ^year,
       order_by: u.name,
       select: %{
@@ -380,10 +381,10 @@ defmodule Firmowid.Timetracker do
     |> Repo.all()
     |> CSV.encode(
       headers: [
-        name: "Name",
-        hourly_rate: "Hourly Rate",
-        number_of_hours: "Number of Hours",
-        salary: "Salary"
+        name: "Imie i Nazwisko",
+        hourly_rate: "Stawka godzinowa",
+        number_of_hours: "Liczba godzin",
+        salary: "Wynagrodzenie"
       ]
     )
     |> Enum.join()
@@ -405,13 +406,22 @@ defmodule Firmowid.Timetracker do
             s.end_datetime,
             s.start_datetime
           )
-          |> type(:integer)
           |> sum()
+          |> type(:integer)
           |> selected_as(:time_worked)
       }
     )
     |> Repo.all()
-    |> CSV.encode(headers: [title: "Task", duration: "Duration (seconds)"])
+    |> Enum.map(fn task ->
+      duration =
+        task.duration
+        |> Duration.from_seconds()
+        |> Duration.to_hours()
+        |> ceil()
+
+      %{task | duration: duration}
+    end)
+    |> CSV.encode(headers: [title: "Zadanie", duration: "Czas trwania (godziny)"])
     |> Enum.join()
   end
 

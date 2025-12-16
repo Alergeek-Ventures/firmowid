@@ -97,7 +97,7 @@ defmodule FirmowidWeb.FileController do
 
   defp log_packmatic_event(_event), do: :ok
 
-  defp clean_filename(filename) do
+  def clean_filename(filename) do
     filename
     |> AnyAscii.transliterate()
     |> IO.iodata_to_binary()
