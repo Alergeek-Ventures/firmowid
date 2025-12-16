@@ -150,14 +150,13 @@
           <%= if @view != :standard do %>
             <.input
               type="number"
-              class="flex flex-row-reverse gap-1 min-w-max items-center text-base text-black justify-end m-0"
+              class="flex flex-row-reverse gap-1 items-center text-base text-black justify-end m-0"
               label="zł/godz."
-              input_size={2}
               input_class={
                 [
                   @view == :wages && "border-transparent px-0",
                   @view == :wage_editor && "border-greyButtonBg text-darkGrey",
-                  "!w-min py-1 !text-right !text-base [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  "w-12 py-1 px-2 text-right text-base [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 ]
                 |> Enum.join(" ")
               }
@@ -165,7 +164,7 @@
               min="0"
               name={"employee[#{employee.user.id}][wage]"}
               value={Decimal.round(employee.hourly_rate || 0)}
-              disabled={@view == :wages}
+              readonly={@view == :wages}
             />
             <div class="font-semibold text-black text-right">
               {:PLN
