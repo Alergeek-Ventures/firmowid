@@ -66,6 +66,16 @@ config :firmowid,
   ecto_repos: [Firmowid.Repo],
   generators: [timestamp_type: :utc_datetime]
 
+config :fun_with_flags, :cache_bust_notifications,
+  enabled: true,
+  adapter: FunWithFlags.Notifications.PhoenixPubSub,
+  client: Firmowid.PubSub
+
+# FunWithFlags configuration
+config :fun_with_flags, :persistence,
+  adapter: FunWithFlags.Store.Persistent.Ecto,
+  repo: Firmowid.Repo
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
@@ -73,6 +83,11 @@ config :logger, :console,
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+
+# Phoenix Analytics configuration
+config :phoenix_analytics,
+  repo: Firmowid.Repo,
+  app_domain: "firmowid.pl"
 
 config :tails, colors_file: Path.join(__DIR__, "../assets/tailwind.colors.json")
 

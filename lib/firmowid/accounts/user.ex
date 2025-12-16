@@ -325,3 +325,7 @@ defmodule Firmowid.Accounts.User do
     |> unique_constraint(:google_provider_id)
   end
 end
+
+defimpl FunWithFlags.Actor, for: Firmowid.Accounts.User do
+  def id(%{email: email}), do: "user:#{email}"
+end

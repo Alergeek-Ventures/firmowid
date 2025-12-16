@@ -26,6 +26,8 @@ defmodule FirmowidWeb.Endpoint do
     gzip: false,
     only: FirmowidWeb.static_paths()
 
+  plug PhoenixAnalytics.Plugs.RequestTracker
+
   if Code.ensure_loaded?(Tidewave) do
     plug Tidewave
   end

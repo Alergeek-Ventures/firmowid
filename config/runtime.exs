@@ -78,16 +78,8 @@ config :ex_aws,
 config :ex_money,
   open_exchange_rates_app_id: System.get_env("OPEN_EXCHANGE_RATES_APP_ID")
 
-# PostHog analytics (optional)
-# Only configure when API host is present to avoid overriding test config
 config :firmowid,
   uploads_bucket: System.get_env("S3_BUCKET", "firmowid-uploads")
-
-if System.get_env("POSTHOG_API_URL") do
-  config :posthog,
-    api_key: System.get_env("POSTHOG_API_KEY"),
-    api_host: System.get_env("POSTHOG_API_URL")
-end
 
 # ChromicPDF configuration for external Chromium container
 # Set CHROME_ADDRESS to point to Chromium DevTools Protocol endpoint

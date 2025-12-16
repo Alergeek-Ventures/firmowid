@@ -26,20 +26,11 @@ defmodule FirmowidWeb.OrganizationInvitesLive.Index do
 
     organization_id = current_user.organization_id
 
-    {:ok, invite} =
+    {:ok, _invite} =
       Accounts.create_organization_invites(
         organization_id,
         current_user.id
       )
-
-    PostHog.capture("organization_invite_created", %{
-      distinct_id: current_user.id,
-      organization_id: organization_id,
-      invite_id: invite.id,
-      # We have to stringify datetime before sending because of posthog's weird decision
-      # https://github.com/PostHog/posthog-elixir/blob/44b47bf7a54667879b0eeea79b92b309f62fb73c/lib/posthog/event.ex#L156
-      expires_at: DateTime.to_iso8601(invite.expires_at)
-    })
 
     socket =
       assign(socket, :organization_invites, Accounts.list_organization_invites(organization_id))

@@ -1,5 +1,6 @@
 defmodule FirmowidWeb.Router do
   use FirmowidWeb, :router
+  use PhoenixAnalytics.Web, :router
 
   import ErrorTracker.Web.Router
   import FirmowidWeb.RedirectTrailing
@@ -55,6 +56,10 @@ defmodule FirmowidWeb.Router do
     oban_dashboard("/oban", oban_name: Firmowid.Oban)
 
     error_tracker_dashboard("/errors")
+
+    phoenix_analytics_dashboard("/analytics")
+
+    forward "/flags", FunWithFlags.UI.Router, namespace: "admin/flags"
 
     forward "/mailbox", Plug.Swoosh.MailboxPreview
   end

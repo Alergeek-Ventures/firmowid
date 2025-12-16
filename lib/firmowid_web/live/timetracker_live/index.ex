@@ -2,7 +2,6 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Accounts
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Session
   alias FirmowidWeb.Helpers.TimeFormatter
@@ -16,38 +15,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     Bodyguard.permit!(Timetracker, :read_user_projects, socket.assigns.current_user)
 
     user = socket.assigns.current_user
-    organization_id = user.organization_id
-    organization = Accounts.get_organization_with_avatar(user.organization)
-
-    PostHog.capture("$set", %{
-      distinct_id: user.id,
-      "$set": %{
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        system_role: user.system_role,
-        # We have to stringify datetime before sending because of posthog's weird decision
-        # https://github.com/PostHog/posthog-elixir/blob/44b47bf7a54667879b0eeea79b92b309f62fb73c/lib/posthog/event.ex#L156
-        employment_date:
-          case user.employment_date do
-            nil -> nil
-            date -> Date.to_iso8601(date)
-          end,
-        organization_id: organization_id,
-        organization_name: organization.name
-      }
-    })
-
-    PostHog.capture("timetracker_view", %{
-      distinct_id: user.id,
-      organization_id: organization_id
-    })
-
-    new_timetracker_enabled =
-      case PostHog.FeatureFlags.check("new-timetracker", user.id) do
-        {:ok, enabled} -> enabled
-        _ -> false
-      end
+    new_timetracker_enabled = FunWithFlags.enabled?(:new_timetracker, for: user)
 
     last_session = Timetracker.get_most_recent_session(socket.assigns.current_user.id)
     default_project_id = if last_session, do: last_session.project_id

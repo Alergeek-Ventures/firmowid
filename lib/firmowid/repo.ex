@@ -28,7 +28,8 @@ defmodule Firmowid.Repo do
   @impl true
   def prepare_query(_operation, query, opts) do
     cond do
-      opts[:skip_organization_id] || opts[:schema_migration] || opts[:prefix] == "oban" ->
+      opts[:skip_organization_id] || opts[:schema_migration] || opts[:prefix] == "oban" ||
+          opts[:fun_with_flags] ->
         {query, opts}
 
       # ErrorTracker queries PostgreSQL system tables during migrations

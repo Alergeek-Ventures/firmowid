@@ -98,11 +98,6 @@ defmodule FirmowidWeb.User.RegistrationLive do
             &url(~p"/potwierdz/#{&1}")
           )
 
-        PostHog.capture("user_registered", %{
-          distinct_id: user.id,
-          email: user.email
-        })
-
         changeset = Accounts.change_user_registration(user)
         {:noreply, socket |> assign(trigger_submit: true) |> assign_form(changeset)}
 

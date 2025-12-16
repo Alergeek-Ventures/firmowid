@@ -113,17 +113,10 @@ defmodule FirmowidWeb.OrganizationLive do
 
     address = "#{address.street} #{address.number}, #{address.postal_code} #{address.city}"
 
-    {:ok, organization} =
+    {:ok, _organization} =
       organization
       |> Map.put("address", address)
       |> Accounts.create_organization(user)
-
-    PostHog.capture("organization_created", %{
-      distinct_id: user.id,
-      organization_id: organization.id,
-      organization_name: organization.name,
-      identification_number: organization.identification_number
-    })
 
     socket =
       socket
@@ -137,16 +130,10 @@ defmodule FirmowidWeb.OrganizationLive do
   def handle_event("join", %{"code" => invite_code}, socket) do
     user = socket.assigns.current_user
 
-    {:ok, organization_id} =
+    {:ok, _organization_id} =
       invite_code
       |> String.trim()
       |> Accounts.consume_organization_invite(user.id)
-
-    PostHog.capture("organization_invite_accepted", %{
-      distinct_id: user.id,
-      organization_id: organization_id,
-      invite_code: invite_code
-    })
 
     {:noreply, redirect(socket, to: "/")}
   end

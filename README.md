@@ -73,10 +73,8 @@ Wszystkie zewnętrzne serwisy są opcjonalne. Aplikacja będzie działać bez ni
 
 #### Analityka i monitoring
 
-- `POSTHOG_API_KEY` - klucz API PostHog analytics (zostaw puste aby wyłączyć)
-- `POSTHOG_API_URL` - URL endpointu API PostHog
-
-Śledzenie błędów jest obsługiwane wewnętrznie przez ErrorTracker (nie wymaga zewnętrznej konfiguracji)
+Śledzenie błędów jest obsługiwane wewnętrznie przez ErrorTracker (nie wymaga zewnętrznej konfiguracji).
+Analityka i flagi funkcjonalności są obsługiwane przez phoenix_analytics i fun_with_flags (wbudowane, bez zewnętrznej konfiguracji).
 
 #### Kursy walut
 

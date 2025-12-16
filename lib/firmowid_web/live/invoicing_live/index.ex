@@ -2,7 +2,6 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Accounts
   alias Firmowid.BankData
   alias Firmowid.CostInvoices
   alias Firmowid.Finances
@@ -15,33 +14,8 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
-    organization = Accounts.get_organization_with_avatar(user.organization)
 
     Bodyguard.permit!(Invoicing, :read, user)
-
-    PostHog.capture("$set", %{
-      distinct_id: user.id,
-      "$set": %{
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        system_role: user.system_role,
-        # We have to stringify datetime before sending because of posthog's weird decision
-        # https://github.com/PostHog/posthog-elixir/blob/44b47bf7a54667879b0eeea79b92b309f62fb73c/lib/posthog/event.ex#L156
-        employment_date:
-          case user.employment_date do
-            nil -> nil
-            date -> Date.to_iso8601(date)
-          end,
-        organization_id: organization_id,
-        organization_name: organization.name
-      }
-    })
-
-    PostHog.capture("invoicing_view", %{
-      distinct_id: user.id,
-      organization_id: organization_id
-    })
 
     if connected?(socket) do
       CostInvoices.subscribe_cost_invoice_broadcast(organization_id)
@@ -427,11 +401,6 @@ defmodule FirmowidWeb.InvoicingLive.Index do
           {:error, {:blob_already_exists, blob_checksum}} ->
             cost_invoice = CostInvoices.get_cost_invoice_by_checksum!(blob_checksum)
 
-            PostHog.capture("cost_invoice_upload_duplicate", %{
-              distinct_id: socket.assigns.current_user.id,
-              organization_id: socket.assigns.current_user.organization_id
-            })
-
             LiveToast.send_toast(
               :info,
               "Ta faktura jest już w systemie",
@@ -456,22 +425,12 @@ defmodule FirmowidWeb.InvoicingLive.Index do
             )
 
           {:error, :failure} ->
-            PostHog.capture("cost_invoice_upload_failure", %{
-              distinct_id: socket.assigns.current_user.id,
-              organization_id: socket.assigns.current_user.organization_id
-            })
-
             LiveToast.send_toast(
               :error,
               "Nie udało się wgrać pliku"
             )
 
           _ ->
-            PostHog.capture("cost_invoice_upload", %{
-              distinct_id: socket.assigns.current_user.id,
-              organization_id: socket.assigns.current_user.organization_id
-            })
-
             nil
         end
 
