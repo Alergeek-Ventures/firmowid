@@ -51,7 +51,7 @@ config :firmowid, :bank_data_api_client,
     plug: {Req.Test, :bank_data_transactions}
   ]
 
-config :firmowid, :ksef, base_url: "https://ksef-test.mf.gov.pl/api"
+config :firmowid, :ksef, base_url: "https://api-test.ksef.mf.gov.pl/v2/"
 
 # Print only warnings and errors during test
 config :logger, level: :warning

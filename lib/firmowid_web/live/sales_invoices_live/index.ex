@@ -362,4 +362,28 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
       {:noreply, push_navigate(socket, to: ~p"/sprzedazowe/#{socket.assigns.sales_invoice.id}")}
     end
   end
+
+  def handle_event("send_to_ksef", _params, socket) do
+    case Firmowid.Ksef.submit_sales_invoice(socket.assigns.sales_invoice.id) do
+      {:ok, _job} ->
+        LiveToast.send_toast(:info, "Faktura została wysłana do KSeF")
+        {:noreply, socket}
+
+      {:error, :not_authenticated} ->
+        LiveToast.send_toast(:error, "Nie jesteś połączony z KSeF")
+        {:noreply, socket}
+
+      {:error, :invoice_not_confirmed} ->
+        LiveToast.send_toast(:error, "Faktura musi być w pełni potwierdzona")
+        {:noreply, socket}
+
+      {:error, :invoice_already_locked} ->
+        LiveToast.send_toast(:error, "Faktura została już wysłana")
+        {:noreply, socket}
+
+      {:error, reason} ->
+        LiveToast.send_toast(:error, "Nie udało się wysłać faktury: #{inspect(reason)}")
+        {:noreply, socket}
+    end
+  end
 end

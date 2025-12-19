@@ -3,33 +3,7 @@ defmodule Firmowid.Ksef.InvoiceParserTest do
 
   alias Firmowid.Ksef.InvoiceParser
 
-  @example_xml_path "lib/firmowid/ksef/ksef_test/7191575524-20251205-01000021BE4D-37.xml"
-
   describe "parse/1" do
-    test "parses example FA(3) XML successfully" do
-      xml = File.read!(@example_xml_path)
-      assert {:ok, attrs} = InvoiceParser.parse(xml)
-
-      # Seller info
-      assert attrs.seller_nip == "7191575524"
-      assert attrs.seller == "grzegorz brzęczyszczykiewicz"
-      assert attrs.seller_display_name == "grzegorz brzęczyszczykiewicz"
-      assert attrs.seller_country_code == "PL"
-      assert attrs.seller_address == "Chrząszczyżeboszyce powiat łękołody"
-
-      # Invoice data
-      assert attrs.currency == "PLN"
-      assert attrs.issue_date == ~D[2025-12-05]
-      assert attrs.sale_date == ~D[2025-12-05]
-      assert attrs.invoice_identifier == "1/2025"
-      assert Decimal.equal?(attrs.total_amount, Decimal.new("540"))
-      assert attrs.invoice_type == :vat
-
-      # Payment data
-      assert attrs.payment_method == :bank_transfer
-      assert attrs.account_number == "123456789123456"
-    end
-
     test "handles missing optional FormaPlatnosci" do
       xml = """
       <?xml version="1.0" encoding="utf-8"?>

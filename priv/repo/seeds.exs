@@ -607,7 +607,7 @@ Repo.transaction(fn ->
   evil_org =
     case Repo.one(
            from(o in Organization,
-             where: o.identification_number == "PL9999999999",
+             where: o.identification_number == "9999999999",
              limit: 1
            ),
            skip_organization_id: true
@@ -617,7 +617,7 @@ Repo.transaction(fn ->
           Accounts.create_organization(
             %{
               "name" => "Evil Competitor Corp",
-              "identification_number" => "PL9999999999",
+              "identification_number" => "9999999999",
               "address" => "Dark Street 666, 00-666, Warszawa",
               "owner_id" => evil_user.id
             },

@@ -6,6 +6,7 @@ defmodule Firmowid.Ksef do
   alias Firmowid.Ksef.Credential
   alias Firmowid.Ksef.FetchWorker
   alias Firmowid.Ksef.SessionWorker
+  alias Firmowid.Ksef.SubmissionWorker
   alias Firmowid.Repo
 
   @doc """
@@ -99,5 +100,67 @@ defmodule Firmowid.Ksef do
     }
     |> FetchWorker.new()
     |> Firmowid.Oban.insert()
+  end
+
+  @doc """
+  Submits a sales invoice to KSeF.
+
+  The invoice must be fully confirmed and not already locked.
+  This function enqueues a submission job that will:
+  1. Open an online session with KSeF
+  2. Generate FA(3) XML from the invoice
+  3. Encrypt and submit the invoice
+  4. Close the session
+  5. Poll for the KSeF number
+
+  Returns `{:ok, job}` on success, or `{:error, reason}` if the submission cannot be started.
+
+  Possible errors:
+  - `:not_authenticated` - Organization is not connected to KSeF
+  - `:invoice_not_found` - Invoice with given ID doesn't exist
+  - `:invoice_not_confirmed` - Invoice is not fully confirmed
+  - `:invoice_already_locked` - Invoice has already been submitted or manually locked
+  """
+  def submit_sales_invoice(sales_invoice_id) do
+    with :ok <- validate_ksef_authenticated(),
+         {:ok, invoice} <- validate_invoice_for_submission(sales_invoice_id) do
+      %{
+        "action" => "submit",
+        "organization_id" => Repo.get_org_id(),
+        "sales_invoice_id" => invoice.id
+      }
+      |> SubmissionWorker.new()
+      |> Firmowid.Oban.insert()
+    end
+  end
+
+  defp validate_ksef_authenticated do
+    case get_credential() do
+      nil -> {:error, :not_authenticated}
+      _credential -> :ok
+    end
+  end
+
+  defp validate_invoice_for_submission(sales_invoice_id) do
+    alias Firmowid.SalesInvoices.SalesInvoice
+
+    invoice =
+      SalesInvoice
+      |> where([i], i.id == ^sales_invoice_id)
+      |> Repo.one()
+
+    cond do
+      is_nil(invoice) ->
+        {:error, :invoice_not_found}
+
+      SalesInvoice.locked?(invoice) ->
+        {:error, :invoice_already_locked}
+
+      not SalesInvoice.confirmed?(invoice) ->
+        {:error, :invoice_not_confirmed}
+
+      true ->
+        {:ok, invoice}
+    end
   end
 end

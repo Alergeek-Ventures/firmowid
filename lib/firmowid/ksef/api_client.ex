@@ -3,14 +3,18 @@ defmodule Firmowid.Ksef.ApiClient do
 
   alias Firmowid.Ksef.Encryption
 
-  require Logger
-
   defp request do
     Req.new(
       base_url: Application.fetch_env!(:firmowid, :ksef)[:base_url],
       user_agent: "Firmowid",
-      compressed: true
+      compressed: true,
+      retry: :transient,
+      max_retries: 3
     )
+  end
+
+  defp request(access_token) when is_binary(access_token) do
+    Req.Request.merge_options(request(), auth: {:bearer, access_token})
   end
 
   def parse_datetime!(iso8601) do
@@ -122,7 +126,7 @@ defmodule Firmowid.Ksef.ApiClient do
     case get_auth_status(reference_number, auth_token["token"]) do
       :success ->
         body =
-          Req.post!(request(), url: "/auth/token/redeem", auth: {:bearer, auth_token["token"]}).body
+          Req.post!(request(auth_token["token"]), url: "/auth/token/redeem").body
 
         {:ok,
          %{
@@ -143,7 +147,7 @@ defmodule Firmowid.Ksef.ApiClient do
     if token_expired?(refresh_token) do
       {:error, :refresh_token_expired}
     else
-      case Req.post(request(), url: "/auth/token/refresh", auth: {:bearer, refresh_token}) do
+      case Req.post(request(refresh_token), url: "/auth/token/refresh") do
         {:ok, %{status: 200, body: %{"accessToken" => %{"token" => access_token}}}} ->
           {:ok, access_token}
 
@@ -158,11 +162,11 @@ defmodule Firmowid.Ksef.ApiClient do
   end
 
   def get_auth_status(reference_number, auth_token) do
-    request()
+    auth_token
+    |> request()
     |> retry_request()
     |> Req.get(
       url: "/auth/#{reference_number}",
-      auth: {:bearer, auth_token},
       retry: fn
         # status code 100 means "in progress"
         _req, res -> match?(%Req.Response{status: 200, body: %{"status" => %{"code" => 100}}}, res)
@@ -184,9 +188,8 @@ defmodule Firmowid.Ksef.ApiClient do
       "encryption" => encryption_info
     }
 
-    case Req.post(request(),
+    case Req.post(request(access_token),
            url: "/invoices/exports",
-           auth: {:bearer, access_token},
            json: request_body
          ) do
       {:ok, %{status: 201, body: %{"referenceNumber" => reference_number}}} ->
@@ -204,11 +207,9 @@ defmodule Firmowid.Ksef.ApiClient do
   Check status of an export operation.
   """
   def get_export_status(access_token, reference_number) do
-    request()
-    |> Req.get(
-      url: "/invoices/exports/#{reference_number}",
-      auth: {:bearer, access_token}
-    )
+    access_token
+    |> request()
+    |> Req.get(url: "/invoices/exports/#{reference_number}")
     |> case do
       {:ok, %{status: 200, body: %{"status" => %{"code" => status_code}} = body}} ->
         case status_code do
@@ -221,6 +222,160 @@ defmodule Firmowid.Ksef.ApiClient do
 
       {:ok, %{status: status}} ->
         {:error, {:unexpected_status, status}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  # ============================================================================
+  # Online Session and Invoice Submission (KSeF API v2.0)
+  # ============================================================================
+
+  @doc """
+  Opens an online session for submitting invoices.
+
+  Returns `{:ok, %{session_reference: string, encryption_key: binary, encryption_iv: binary}}`
+  on success, or `{:error, reason}` on failure.
+
+  The session uses FA(3) schema version 1-0E for invoice submission.
+  """
+  def open_online_session(access_token) do
+    encryption_data = Encryption.generate_encryption_data()
+
+    request_body = %{
+      "formCode" => %{
+        "systemCode" => "FA (3)",
+        "schemaVersion" => "1-0E",
+        "value" => "FA"
+      },
+      "encryption" => %{
+        "encryptedSymmetricKey" => encryption_data.key |> Encryption.encrypt_symmetric_key() |> Base.encode64(),
+        "initializationVector" => Base.encode64(encryption_data.iv)
+      }
+    }
+
+    case Req.post(request(access_token),
+           url: "/sessions/online",
+           json: request_body
+         ) do
+      {:ok, %{status: 201, body: %{"referenceNumber" => reference_number}}} ->
+        {:ok,
+         %{
+           session_reference: reference_number,
+           encryption_key: encryption_data.key,
+           encryption_iv: encryption_data.iv
+         }}
+
+      {:ok, %{status: status, body: body}} ->
+        {:error, {:unexpected_status, status, body}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Sends an invoice within an active online session.
+
+  The `invoice_xml` should be the raw XML string of the invoice in FA(3) format.
+  The function will encrypt the invoice and send it to KSeF.
+
+  Returns `{:ok, invoice_reference}` on success.
+  """
+  def send_invoice(
+        access_token,
+        %{session_reference: session_reference, encryption_key: encryption_key, encryption_iv: encryption_iv},
+        invoice_xml
+      ) do
+    invoice_hash = :sha256 |> :crypto.hash(invoice_xml) |> Base.encode64()
+    invoice_size = byte_size(invoice_xml)
+
+    encrypted_invoice = Encryption.encrypt_aes256_cbc(invoice_xml, encryption_key, encryption_iv)
+    encrypted_invoice_hash = :sha256 |> :crypto.hash(encrypted_invoice) |> Base.encode64()
+    encrypted_invoice_size = byte_size(encrypted_invoice)
+    encrypted_invoice_content = Base.encode64(encrypted_invoice)
+
+    request_body = %{
+      "invoiceHash" => invoice_hash,
+      "invoiceSize" => invoice_size,
+      "encryptedInvoiceHash" => encrypted_invoice_hash,
+      "encryptedInvoiceSize" => encrypted_invoice_size,
+      "encryptedInvoiceContent" => encrypted_invoice_content,
+      "offlineMode" => false
+    }
+
+    case Req.post(request(access_token),
+           url: "/sessions/online/#{session_reference}/invoices",
+           json: request_body
+         ) do
+      {:ok, %{status: 202, body: %{"referenceNumber" => invoice_reference}}} ->
+        {:ok, invoice_reference}
+
+      {:ok, %{status: status, body: body}} ->
+        {:error, {:unexpected_status, status, body}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Gets the status of a submitted invoice within a session.
+
+  Returns:
+  - `{:ok, %{ksef_number: string, status: map}}` when invoice is fully processed
+  - `:pending` when invoice is still being processed
+  - `{:error, reason}` on failure
+  """
+  def get_invoice_status(access_token, session_reference, invoice_reference) do
+    case Req.get(request(access_token),
+           url: "/sessions/#{session_reference}/invoices/#{invoice_reference}"
+         ) do
+      {:ok, %{status: 200, body: %{"status" => %{"code" => 200}} = body}} ->
+        {:ok,
+         %{
+           ksef_number: body["ksefNumber"],
+           acquisition_date: body["acquisitionDate"]
+         }}
+
+      {:ok, %{status: 200, body: %{"status" => %{"code" => code}}}} when code in [100, 150] ->
+        # 100 = accepted for processing, 150 = processing in progress
+        :pending
+
+      {:ok, %{status: 200, body: %{"status" => %{"code" => 440} = status}}} ->
+        original_ksef_number = status["extensions"]["originalKsefNumber"]
+        original_session_reference = status["extensions"]["originalSessionReferenceNumber"]
+
+        {:error, {:invoice_duplicate, original_ksef_number, original_session_reference}}
+
+      {:ok, %{status: 200, body: %{"status" => %{"code" => 550}}}} ->
+        # 550 means cancelled by server and should be retried
+        :retry
+
+      {:ok, %{status: 200, body: %{"status" => %{"code" => code} = status}}} ->
+        {:error, {:invoice_processing_failed, code, status}}
+
+      {:ok, %{status: status, body: body}} ->
+        {:error, {:unexpected_status, status, body}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Closes an online session.
+
+  Should be called after all invoices have been submitted within the session.
+  """
+  def close_online_session(access_token, session_reference) do
+    case Req.post(request(access_token), url: "/sessions/online/#{session_reference}/close") do
+      {:ok, %{status: 204}} ->
+        :ok
+
+      {:ok, %{status: status, body: body}} ->
+        {:error, {:unexpected_status, status, body}}
 
       {:error, reason} ->
         {:error, reason}

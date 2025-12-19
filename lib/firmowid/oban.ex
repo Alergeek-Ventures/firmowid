@@ -13,7 +13,8 @@ defmodule Firmowid.Oban do
       invoicing: 1,
       cost_invoices: 5,
       inbound_emails: 3,
-      ksef_sessions: 1,
+      ksef_submissions: 2,
+      ksef_sessions: 5,
       ksef_fetch: 2,
       default: 1
     ],

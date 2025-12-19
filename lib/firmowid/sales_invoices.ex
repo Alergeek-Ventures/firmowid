@@ -267,6 +267,23 @@ defmodule Firmowid.SalesInvoices do
     |> Repo.insert()
   end
 
+  @doc """
+  Creates a correction invoice (KOR) for an existing invoice.
+
+  The original invoice must be:
+  - Submitted to KSeF (has ksef_number)
+  - Locked (has locked_at)
+
+  Seller and buyer data are automatically copied from the original invoice.
+  """
+  def create_correction_invoice(%SalesInvoice{} = original_invoice, attrs \\ %{}) do
+    original_invoice = Repo.preload(original_invoice, :sales_invoice_items)
+
+    %SalesInvoice{}
+    |> SalesInvoice.correction_invoice_changeset(original_invoice, attrs)
+    |> Repo.insert()
+  end
+
   def update_sales_invoice(%SalesInvoice{} = invoice, attrs) do
     invoice
     |> SalesInvoice.changeset(attrs)

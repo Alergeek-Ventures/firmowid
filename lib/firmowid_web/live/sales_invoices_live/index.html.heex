@@ -297,11 +297,22 @@
       <% end %>
 
       <.button
+        :if={not is_nil(@sales_invoice_id)}
+        disabled={
+          not Firmowid.SalesInvoices.SalesInvoice.confirmed?(@sales_invoice) or
+            Firmowid.SalesInvoices.SalesInvoice.locked?(@sales_invoice)
+        }
+        phx-click="send_to_ksef"
+      >
+        Wyślij fakturę do KSeF
+      </.button>
+
+      <.button
         disabled={not Firmowid.SalesInvoices.SalesInvoice.confirmed?(@sales_invoice)}
         phx-click="save"
         color="green"
       >
-        Zapisz fakturę
+        Zapisz szkic faktury
       </.button>
     </div>
   </div>

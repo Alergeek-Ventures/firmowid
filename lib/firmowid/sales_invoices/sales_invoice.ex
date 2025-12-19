@@ -59,6 +59,24 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
     field :item_names, :string
 
+    # KSeF submission tracking
+    field :ksef_number, :string
+    field :ksef_session_reference_number, :string
+    field :locked_at, :utc_datetime
+
+    # KSeF FA(3) fields
+    field :ksef_invoice_kind, Ecto.Enum, values: [:vat, :kor], default: :vat
+
+    # EU buyer identification (KodUE + NrVatUE)
+    field :buyer_eu_country_code, :string
+    field :buyer_eu_vat_number, :string
+
+    # Other ID for non-EU/non-NIP buyers (NrID + KodKraju)
+    field :buyer_other_id, :string
+    field :buyer_other_id_country, :string
+
+    belongs_to :corrected_invoice, __MODULE__
+
     has_many :sales_invoice_items, SalesInvoiceItem, on_replace: :delete
 
     many_to_many :transactions,
@@ -112,6 +130,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
   def changeset(sales_invoice, attrs \\ %{}) do
     sales_invoice
+    |> check_if_locked()
     |> cast(attrs, [
       :invoice_type,
       :invoice_number,
@@ -126,7 +145,8 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       :are_sales_invoice_items_confirmed,
       :is_cash_account,
       :is_reverse_charge,
-      :skip_invoicing
+      :skip_invoicing,
+      :ksef_invoice_kind
     ])
     |> buyer_changeset(attrs)
     |> seller_changeset(attrs)
@@ -207,8 +227,15 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       :buyer_mail_country,
       :buyer_email,
       :buyer_phone,
-      :buyer_description
+      :buyer_description,
+      :buyer_eu_country_code,
+      :buyer_eu_vat_number,
+      :buyer_other_id,
+      :buyer_other_id_country
     ])
+    # todo: :buyer_country iso country code
+    # |> validate_length(:buyer_country, is: 2)
+    # |> validate_format(:buyer_country, ~r/^[A-Z]{2}$/)
     |> cast_buyer_based_on_type()
   end
 
@@ -243,5 +270,82 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       nil ->
         sales_invoice
     end
+  end
+
+  @doc """
+  Changeset for updating only KSeF-specific fields.
+  This bypasses the lock check since it's used to update KSeF tracking data.
+  """
+  def ksef_update_changeset(sales_invoice, attrs) do
+    cast(sales_invoice, attrs, [:ksef_number, :ksef_session_reference_number, :locked_at])
+  end
+
+  def locked?(%__MODULE__{locked_at: nil}), do: false
+  def locked?(%__MODULE__{locked_at: _}), do: true
+
+  defp check_if_locked(%__MODULE__{locked_at: nil} = sales_invoice) do
+    change(sales_invoice)
+  end
+
+  defp check_if_locked(%__MODULE__{locked_at: _locked_at} = sales_invoice) do
+    sales_invoice
+    |> change()
+    |> add_error(:base, "Invoice is locked and cannot be modified")
+  end
+
+  @doc """
+  Changeset for creating a correction invoice (KOR) based on an original invoice.
+
+  The original invoice must be:
+  - Submitted to KSeF (has ksef_number)
+  - Locked (has locked_at)
+
+  Seller and buyer data are automatically copied from the original invoice.
+  """
+  def correction_invoice_changeset(sales_invoice, corrected_invoice, attrs) do
+    sales_invoice
+    |> changeset(attrs)
+    |> put_change(:ksef_invoice_kind, :kor)
+    |> put_change(:corrected_invoice_id, corrected_invoice.id)
+    |> validate_corrected_invoice(corrected_invoice)
+    |> copy_from_corrected_invoice(corrected_invoice)
+  end
+
+  defp validate_corrected_invoice(changeset, corrected_invoice) do
+    cond do
+      is_nil(corrected_invoice) ->
+        add_error(changeset, :corrected_invoice_id, "is required for correction invoices")
+
+      is_nil(corrected_invoice.ksef_number) ->
+        add_error(changeset, :corrected_invoice_id, "original invoice must be submitted to KSeF first")
+
+      is_nil(corrected_invoice.locked_at) ->
+        add_error(changeset, :corrected_invoice_id, "original invoice must be locked")
+
+      true ->
+        changeset
+    end
+  end
+
+  defp copy_from_corrected_invoice(changeset, corrected_invoice) do
+    changeset
+    |> put_change(:seller_nip, corrected_invoice.seller_nip)
+    |> put_change(:seller_display_name, corrected_invoice.seller_display_name)
+    |> put_change(:seller_address, corrected_invoice.seller_address)
+    |> put_change(:seller_name, corrected_invoice.seller_name)
+    |> put_change(:seller_surname, corrected_invoice.seller_surname)
+    |> put_change(:seller_account_number, corrected_invoice.seller_account_number)
+    |> put_change(:buyer_type, corrected_invoice.buyer_type)
+    |> put_change(:buyer_nip, corrected_invoice.buyer_nip)
+    |> put_change(:buyer_display_name, corrected_invoice.buyer_display_name)
+    |> put_change(:buyer_name, corrected_invoice.buyer_name)
+    |> put_change(:buyer_surname, corrected_invoice.buyer_surname)
+    |> put_change(:buyer_address, corrected_invoice.buyer_address)
+    |> put_change(:buyer_country, corrected_invoice.buyer_country)
+    |> put_change(:buyer_eu_country_code, corrected_invoice.buyer_eu_country_code)
+    |> put_change(:buyer_eu_vat_number, corrected_invoice.buyer_eu_vat_number)
+    |> put_change(:buyer_other_id, corrected_invoice.buyer_other_id)
+    |> put_change(:buyer_other_id_country, corrected_invoice.buyer_other_id_country)
+    |> put_change(:currency, corrected_invoice.currency)
   end
 end

@@ -39,7 +39,8 @@ defmodule Firmowid.SalesInvoices.SalesInvoiceItem do
       :vat_rate
     ])
     |> cast_assoc(:sales_invoice)
-    |> validate_number(:quantity, greater_than_or_equal_to: 0)
+    # Note: quantity is not validated >= 0 because correction invoices (KOR)
+    # require negative quantities to represent reversed items
     |> validate_number(:unit_price, greater_than_or_equal_to: 0)
     |> validate_number(:vat_rate, greater_than_or_equal_to: 0)
     |> put_change(:organization_id, Firmowid.Repo.get_org_id())

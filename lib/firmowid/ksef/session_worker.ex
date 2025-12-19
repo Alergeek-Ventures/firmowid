@@ -44,7 +44,7 @@ defmodule Firmowid.Ksef.SessionWorker do
       {:ok, tokens} ->
         schedule_renewal(tokens.access_token, tokens.refresh_token)
 
-        date_from = DateTime.shift(DateTime.utc_now(), day: -30 * 2)
+        date_from = DateTime.shift(DateTime.utc_now(), day: -30)
         Ksef.fetch_cost_invoices(date_from)
 
       {:error, reason} = error ->

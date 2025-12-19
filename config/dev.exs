@@ -64,7 +64,7 @@ config :firmowid, FirmowidWeb.Endpoint,
 config :firmowid, FirmowidWeb.Endpoint,
   secret_key_base: "REMOVED_PHOENIX_SECRET_KEY_BASE"
 
-config :firmowid, :ksef, base_url: "https://ksef-test.mf.gov.pl/api/v2"
+config :firmowid, :ksef, base_url: "https://api-test.ksef.mf.gov.pl/v2/"
 
 config :firmowid,
   uploads_bucket: "firmowid-uploads"

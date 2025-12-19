@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<% alias Firmowid.Ksef.InvoiceRenderer, as: T %>
+<% alias Firmowid.SalesInvoices.SalesInvoice %>
+<% alias Firmowid.SalesInvoices.SalesInvoiceItem %>
+<Faktura xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://crd.gov.pl/wzor/2025/06/25/13775/">
+	<Naglowek>
+		<KodFormularza kodSystemowy="FA (3)" wersjaSchemy="1-0E">FA</KodFormularza>
+		<WariantFormularza>3</WariantFormularza>
+		<DataWytworzeniaFa><%= DateTime.utc_now() |> DateTime.to_iso8601() %></DataWytworzeniaFa>
+		<SystemInfo>Firmowid</SystemInfo>
+	</Naglowek>
+	<Podmiot1>
+		<DaneIdentyfikacyjne>
+			<NIP><%= @invoice.seller_nip %></NIP>
+			<Nazwa><%= T.seller_name(@invoice) %></Nazwa>
+		</DaneIdentyfikacyjne>
+		<Adres>
+			<KodKraju>PL</KodKraju>
+			<AdresL1><%= @invoice.seller_address %></AdresL1>
+		</Adres>
+	</Podmiot1>
+	<Podmiot2>
+		<DaneIdentyfikacyjne>
+			<%= case T.buyer_id_type(@invoice) do %>
+				<% :nip -> %>
+					<NIP><%= @invoice.buyer_nip %></NIP>
+				<% :eu_vat -> %>
+					<KodUE><%= @invoice.buyer_eu_country_code %></KodUE>
+					<NrVatUE><%= @invoice.buyer_eu_vat_number %></NrVatUE>
+				<% :other_id -> %>
+					<%= if @invoice.buyer_other_id_country do %>
+						<KodKraju><%= @invoice.buyer_other_id_country %></KodKraju>
+					<% end %>
+					<NrID><%= @invoice.buyer_other_id %></NrID>
+				<% :no_id -> %>
+					<BrakID>1</BrakID>
+			<% end %>
+			<%= if name = T.buyer_name(@invoice) do %>
+				<Nazwa><%= name %></Nazwa>
+			<% end %>
+		</DaneIdentyfikacyjne>
+		<%= if @invoice.buyer_address do %>
+			<Adres>
+				<KodKraju><%= @invoice.buyer_country %></KodKraju>
+				<AdresL1><%= @invoice.buyer_address %></AdresL1>
+			</Adres>
+		<% end %>
+
+		<%!-- Jednostka Samorządu Terytorialnego i Grupa Vat --%>
+		<JST>2</JST>
+		<GV>2</GV>
+	</Podmiot2>
+	<Fa>
+		<KodWaluty><%= @invoice.currency %></KodWaluty>
+		<P_1><%= @invoice.issue_date %></P_1>
+		<P_2><%= @invoice.invoice_number %></P_2>
+		<%= if @invoice.sale_date do %>
+			<P_6><%= @invoice.sale_date %></P_6>
+		<% end %>
+
+		<%= for summary <- @vat_summary do %>
+			<%!-- VAT Summary: P_13_X = net amount, P_14_X = VAT amount --%>
+			<%= cond do %>
+				<%!-- 23% / 22% rate --%>
+				<% Decimal.eq?(summary.rate, 23) -> %>
+					<P_13_1><%= T.format_decimal(summary.net) %></P_13_1>
+					<P_14_1><%= T.format_decimal(summary.vat) %></P_14_1>
+				<%!-- 8% / 7% rate --%>
+				<% Decimal.eq?(summary.rate, 8) -> %>
+					<P_13_2><%= T.format_decimal(summary.net) %></P_13_2>
+					<P_14_2><%= T.format_decimal(summary.vat) %></P_14_2>
+				<%!-- 5% rate --%>
+				<% Decimal.eq?(summary.rate, 5) -> %>
+					<P_13_3><%= T.format_decimal(summary.net) %></P_13_3>
+					<P_14_3><%= T.format_decimal(summary.vat) %></P_14_3>
+
+				<%!-- 0% domestic (0 KR) --%>
+				<% summary.type == :domestic -> %>
+					<P_13_6_1><%= T.format_decimal(summary.net) %></P_13_6_1>
+				<%!-- Reverse charge (oo) --%>
+				<% summary.type == :reverse_charge -> %>
+					<P_13_10><%= T.format_decimal(summary.net) %></P_13_10>
+
+				<% true -> %>
+					<%!-- raise "Unsupported VAT rate #{inspect(summary.rate)} with type #{inspect(summary.type)}" --%>
+			<% end %>
+		<% end %>
+
+		<P_15><%= T.format_decimal(SalesInvoice.get_gross_value(@invoice)) %></P_15>
+		<Adnotacje>
+			<P_16><%= if @invoice.is_cash_account, do: 1, else: 2 %></P_16>
+			<%!-- P_17 to samofakturowanie --%>
+			<P_17>2</P_17>
+			<P_18><%= if @invoice.is_reverse_charge, do: 1, else: 2 %></P_18>
+			<P_18A>2</P_18A>
+			<Zwolnienie>
+				<%!-- Zwolnienia requires deeper analysis --%>
+				<P_19N>1</P_19N>
+			</Zwolnienie>
+			<NoweSrodkiTransportu>
+				<P_22N>1</P_22N>
+			</NoweSrodkiTransportu>
+			<P_23>2</P_23>
+			<PMarzy>
+				<P_PMarzyN>1</P_PMarzyN>
+			</PMarzy>
+		</Adnotacje>
+		<RodzajFaktury>
+			<%= case @invoice.ksef_invoice_kind do %>
+				<% :vat -> %> VAT
+				<% :kor -> %> KOR
+			<% end %>
+		</RodzajFaktury>
+		<%= if @invoice.ksef_invoice_kind == :kor do %>
+			<%!-- PrzyczynaKorekty is optional but recommended for correction invoices.
+			     Requires 'correction_reason' field on SalesInvoice schema. --%>
+			<%= if @invoice[:correction_reason] do %>
+				<PrzyczynaKorekty><%= @invoice.correction_reason %></PrzyczynaKorekty>
+			<% end %>
+			<%!-- TypKorekty values: 1 = effective at original date, 2 = effective at correction date, 3 = other.
+			     Requires 'correction_type' field on SalesInvoice schema. Defaults to 2. --%>
+			<%= if @invoice[:correction_type] do %>
+				<TypKorekty><%= @invoice.correction_type %></TypKorekty>
+			<% end %>
+			<DaneFaKorygowanej>
+				<DataWystFaKorygowanej><%= @invoice.corrected_invoice.issue_date %></DataWystFaKorygowanej>
+				<NrFaKorygowanej><%= @invoice.corrected_invoice.invoice_number %></NrFaKorygowanej>
+				<%= if @invoice.corrected_invoice.ksef_number do %>
+					<NrKSeF>1</NrKSeF>
+					<NrKSeFFaKorygowanej><%= @invoice.corrected_invoice.ksef_number %></NrKSeFFaKorygowanej>
+				<% else %>
+					<NrKSeFN>1</NrKSeFN>
+				<% end %>
+			</DaneFaKorygowanej>
+		<% end %>
+		<%= for {item, index} <- Enum.with_index(@invoice.sales_invoice_items, 1) do %>
+			<FaWiersz>
+				<NrWierszaFa><%= index %></NrWierszaFa>
+				<UU_ID><%= item.id %></UU_ID>
+				<P_7><%= item.name %></P_7>
+				<P_8A><%= item.unit %></P_8A>
+				<P_8B><%= T.format_quantity(item.quantity) %></P_8B>
+				<P_9A><%= T.format_decimal(item.unit_price) %></P_9A>
+				<P_11><%= T.format_decimal(SalesInvoiceItem.get_net_value(item)) %></P_11>
+				<P_12><%= T.format_vat_rate(item.vat_rate) %></P_12>
+			</FaWiersz>
+		<% end %>
+		<Platnosc>
+		<%= if @invoice.due_date do %>
+				<TerminPlatnosci>
+					<Termin><%= @invoice.due_date %></Termin>
+				</TerminPlatnosci>
+			<% end %>
+				<FormaPlatnosci><%= T.payment_method_code(@invoice.payment_method) %></FormaPlatnosci>
+				<%= if @invoice.seller_account_number do %>
+					<RachunekBankowy>
+						<NrRB><%= @invoice.seller_account_number %></NrRB>
+					</RachunekBankowy>
+				<% end %>
+			</Platnosc>
+	</Fa>
+</Faktura>
