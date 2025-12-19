@@ -28,12 +28,7 @@ defmodule Firmowid.Repo do
   @impl true
   def prepare_query(_operation, query, opts) do
     cond do
-      opts[:skip_organization_id] || opts[:schema_migration] || opts[:prefix] == "oban" ||
-          opts[:fun_with_flags] ->
-        {query, opts}
-
-      # ErrorTracker queries PostgreSQL system tables during migrations
-      pg_system_table_query?(query) ->
+      skip_organization_scoping?(query, opts) ->
         {query, opts}
 
       organization_id = opts[:organization_id] ->
@@ -49,16 +44,31 @@ defmodule Firmowid.Repo do
     end
   end
 
-  # Check if query is against PostgreSQL system tables (used by ErrorTracker migrations)
-  defp pg_system_table_query?(%Ecto.Query{} = query) do
-    case query.from do
-      %{source: {source, _}} when is_binary(source) ->
-        String.starts_with?(source, "pg_") or String.starts_with?(source, "error_tracker_")
+  # Organization scoping is skipped for:
+  # - Explicit opt-out via `skip_organization_id: true`
 
-      _ ->
-        false
-    end
+  # - Schema migrations (Ecto internal)
+  # - Oban queries (uses "oban" prefix)
+  # - FunWithFlags queries (passes `fun_with_flags: true`)
+
+  # - Unscoped tables (see @unscoped_tables and @unscoped_table_prefixes)
+
+  defp skip_organization_scoping?(query, opts) do
+    opts[:skip_organization_id] ||
+      opts[:schema_migration] ||
+      opts[:prefix] == "oban" ||
+      opts[:fun_with_flags] ||
+      unscoped_table?(query)
   end
 
-  defp pg_system_table_query?(_), do: false
+  # Tables that don't have organization_id and should bypass scoping
+  @unscoped_table_prefixes ~w(pg_ error_tracker_)
+  @unscoped_tables ~w(requests)
+
+  defp unscoped_table?(%Ecto.Query{from: %{source: {table, _}}}) when is_binary(table) do
+    table in @unscoped_tables ||
+      Enum.any?(@unscoped_table_prefixes, &String.starts_with?(table, &1))
+  end
+
+  defp unscoped_table?(_), do: false
 end
