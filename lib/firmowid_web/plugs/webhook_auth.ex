@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.WebhookAuth do
+defmodule FirmowidWeb.Plugs.WebhookAuth do
   @moduledoc """
   Plug for verifying Svix webhook signatures.
 

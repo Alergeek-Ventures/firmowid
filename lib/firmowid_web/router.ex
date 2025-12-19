@@ -3,7 +3,7 @@ defmodule FirmowidWeb.Router do
   use PhoenixAnalytics.Web, :router
 
   import ErrorTracker.Web.Router
-  import FirmowidWeb.RedirectTrailing
+  import FirmowidWeb.Plugs.RedirectTrailing
   import FirmowidWeb.UserAuth
   import Oban.Web.Router
   import Phoenix.LiveDashboard.Router
@@ -30,7 +30,7 @@ defmodule FirmowidWeb.Router do
 
   pipeline :webhook do
     plug :accepts, ["json"]
-    plug FirmowidWeb.WebhookAuth
+    plug FirmowidWeb.Plugs.WebhookAuth
   end
 
   pipeline :health do
