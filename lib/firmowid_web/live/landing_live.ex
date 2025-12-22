@@ -1,5 +1,7 @@
 defmodule FirmowidWeb.LandingLive do
-  @moduledoc false
+  @moduledoc """
+  Landing page for Firmowid marketing site.
+  """
   use FirmowidWeb, :live_view
 
   def mount(_params, _session, socket) do
@@ -7,7 +9,7 @@ defmodule FirmowidWeb.LandingLive do
     if socket.assigns[:current_user] && socket.assigns.current_user.organization_id do
       {:ok, push_navigate(socket, to: ~p"/czasosledz")}
     else
-      {:ok, socket}
+      {:ok, socket, layout: false}
     end
   end
 end

@@ -1,14 +1,134 @@
-<main class="h-screen w-full flex flex-col items-center justify-center gap-4">
-  <img src={~p"/images/figurine.png"} alt="Firmowid" class="h-64 w-auto" />
+<div class="min-h-screen flex flex-col bg-white">
+  <%!-- Navbar --%>
+  <.landing_navbar />
 
-  <h1 class="text-xl font-bold text-gray-900">
-    Firmowid
-  </h1>
+  <%!-- Hero Section --%>
+  <.hero_section />
 
-  <.link
-    navigate={~p"/zaloguj"}
-    class="mt-2 text-sm text-blue-600 underline hover:text-blue-800"
-  >
-    Zaloguj się
-  </.link>
-</main>
+  <%!-- KSeF Integration Section --%>
+  <.feature_section id="ksef">
+    <:tags>
+      <.tag label="fakturowanie" />
+      <.tag label="KSeF" />
+      <.tag label="nowość" variant={:accent} />
+    </:tags>
+    <:title>Integracja z KSeF</:title>
+    <:description>
+      Każda zmiana w przepisach i strukturze faktur
+      generuje stres - pojawia się obawa, że Twój
+      system nie nadąży i faktury zostaną odrzucone. <br /><br />
+      Spokojnie, z Firmowidem KSeF nie jest niczym
+      strasznym.
+    </:description>
+    <:solution_title>Rozwiązanie Firmowida</:solution_title>
+    <:solutions>
+      <.solution_item>Gwarancja poprawności faktur.</.solution_item>
+      <.solution_item>Automatyczna aktualizacja obsługi KSeF.</.solution_item>
+      <.solution_item>Dostosowywanie się do zmian.</.solution_item>
+    </:solutions>
+    <:image>
+      <.mockup label="KSeF interface" class="max-w-sm" />
+    </:image>
+  </.feature_section>
+
+  <%!-- Invoice Matching Section --%>
+  <.feature_section>
+    <:tags>
+      <.tag label="fakturowanie" />
+      <.tag label="rachunki bankowe" />
+    </:tags>
+    <:title>Przyporządkowywanie faktur do transakcji</:title>
+    <:description>
+      Zbliża się zamknięcie miesiąca, a Ty
+      zastanawiasz się czy na pewno nie przegapiłeś
+      żadnej faktury? Płatności są rozproszone po
+      kilku kontach, trudno znaleźć powiązania, a
+      ręczne dopasowywanie powoduje błędy? <br /><br />
+      Spokojnie, Firmowid pomoże Ci w porządkach.
+    </:description>
+    <:solution_title>Rozwiązanie Firmowida</:solution_title>
+    <:solutions>
+      <.solution_item>Elastyczne wgrywanie (plik, e-mail lub skan)</.solution_item>
+      <.solution_item>Integracja z kontami firmowymi - także zagranicznymi.</.solution_item>
+      <.solution_item>Automatyczne łączenie faktur z transakcjami.</.solution_item>
+    </:solutions>
+    <:image>
+      <.mockup label="Invoice matching" class="max-w-sm" />
+    </:image>
+  </.feature_section>
+
+  <%!-- Highlight Banner --%>
+  <.highlight_banner>
+    Firmowid automatycznie dopasuje pasujące transakcje do
+    faktur - <strong class="font-bold">porządek w księgowości</strong>, to jego drugie imię.
+    <:cta>
+      <a
+        href="#"
+        class="inline-flex items-center gap-2 text-sm text-darkGrey hover:text-black transition-colors"
+      >
+        Zobacz filmik <.icon name="hero-arrow-down-mini" class="w-3 h-3" />
+      </a>
+    </:cta>
+  </.highlight_banner>
+
+  <%!-- Video Placeholder --%>
+  <.video_placeholder />
+
+  <%!-- Czasośledź Section --%>
+  <.timetracker_section id="czasosledz">
+    <:tags>
+      <.tag label="Ewidencja" />
+      <.tag label="Czas pracy" />
+    </:tags>
+    <:title>Czasośledź</:title>
+    <:description>
+      Twoi pracownicy liczą swój czas pracy godzinowo, a Ty w sumie dalej nie
+      wiesz, ile naprawdę kosztuje praca zespołu i jak efektywnie
+      wykorzystywany jest ten czas? <br /><br /> Spokojnie, Firmowid ma wszystko pod kontrolą.
+    </:description>
+    <:left_title>Monitorowanie czasu pracowników</:left_title>
+    <:left_description>
+      Firmowid rejestruje czas pracy, przypisuje go do
+      projektów i pokazuje realne koszty oraz obciążenie
+      pracowników.
+    </:left_description>
+    <:left_content>
+      <.mockup label="Time sessions" aspect="aspect-[3/4]" />
+    </:left_content>
+    <:right_title>Ewidencja</:right_title>
+    <:right_description>
+      Dzięki Firmowidowi nie musisz już głowić się, czy dany pracownik
+      wysłał Ci ewidencję - wszystko masz jak na dłoni.
+    </:right_description>
+    <:right_content>
+      <.mockup label="Employee hours" aspect="aspect-[3/4]" />
+    </:right_content>
+  </.timetracker_section>
+
+  <%!-- Budget Analysis Section --%>
+  <.feature_section id="analiza" class="bg-grey-50">
+    <:tags>
+      <.tag label="Budżet" />
+      <.tag label="Analiza" />
+    </:tags>
+    <:title>Analiza budżetowa</:title>
+    <:description>
+      Budżet szybko się dezaktualizuje, odchylenia wychodzą
+      z opóźnieniem, dane są rozproszone, a już Cię męczy excel?
+    </:description>
+    <:solution_title>Rozwiązanie Firmowida</:solution_title>
+    <:solutions>
+      <.solution_item>Monitorowanie budżetu w czasie rzeczywistym</.solution_item>
+      <.solution_item>Wykrywanie odchyleń</.solution_item>
+      <.solution_item>Przewidywanie budżetu</.solution_item>
+    </:solutions>
+    <:image>
+      <.mockup label="Budget dashboard" class="max-w-sm" />
+    </:image>
+  </.feature_section>
+
+  <%!-- Footer --%>
+  <div class="mt-auto">
+    <.landing_footer />
+  </div>
+</div>

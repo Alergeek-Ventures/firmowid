@@ -4,6 +4,10 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+html {
+  scroll-behavior: smooth;
+}
+
 :root {
   --color-white: theme(colors.white);
   --color-black: theme(colors.black);

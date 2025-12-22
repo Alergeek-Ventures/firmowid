@@ -18,9 +18,11 @@ module.exports = {
       padding: "2rem",
     },
     fontSize: {
+      "caps-sm": "11px",
       xs: "12px",
       sm: "14px",
       base: "16px",
+      h5: "18px",
       lg: "20px",
       xl: "23px",
       "2xl": "27px",

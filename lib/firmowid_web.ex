@@ -86,6 +86,7 @@ defmodule FirmowidWeb do
     quote do
       use Gettext, backend: FirmowidWeb.Gettext
 
+      import FirmowidWeb.Components.Landing
       import FirmowidWeb.CoreComponents
       import FirmowidWeb.Icons
       # HTML escaping functionality
