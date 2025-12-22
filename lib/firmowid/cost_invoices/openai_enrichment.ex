@@ -9,7 +9,7 @@ defmodule Firmowid.CostInvoices.OpenAIEnrichment do
     request =
       Chat.Completions.new(
         model: "gpt-5-nano",
-        max_completion_tokens: 80,
+        max_completion_tokens: 1000,
         messages: [
           ChatMessage.system(
             "Jesteś asystentem dla osób zajmujących się dokumentami " <>
