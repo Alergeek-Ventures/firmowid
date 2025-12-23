@@ -39,6 +39,7 @@ defmodule Firmowid.BankData.TokenManager do
   @impl true
   def handle_info(:refresh_token, _state) do
     state = fetch_new_access_token()
+    schedule_token_refresh(state.refresh_expires)
 
     {:noreply, state}
   end
