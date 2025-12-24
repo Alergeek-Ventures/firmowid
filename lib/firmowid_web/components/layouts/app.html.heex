@@ -132,7 +132,7 @@
             </.link>
             <%= if Bodyguard.permit?(Firmowid.Finances, :read_bank_accounts, @current_user) do %>
               <.link
-                navigate={~p"/ustawienia?tab=konta_bankowe"}
+                navigate={~p"/ustawienia/konta-bankowe"}
                 class="rounded-md p-2 hover:bg-darkGrey/50"
               >
                 Konta bankowe
