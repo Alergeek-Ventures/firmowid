@@ -4,6 +4,8 @@ defmodule Firmowid.ReductoApiClient do
   (for RAG, unused at the moment).
   """
 
+  require Logger
+
   @type extract_options :: [extraction_mode: :hybrid | :ocr | :metadata]
 
   def get_auth_token, do: {:bearer, Application.get_env(:firmowid, :reducto_api_key)}
@@ -53,13 +55,22 @@ defmodule Firmowid.ReductoApiClient do
       {:ok, response} ->
         # Body is a list of dictionaries.
         # If disable_chunking is True (default), then it will be a list of length one.
-        extracted_metadata = response |> Map.get(:body) |> Map.get("result") |> hd()
+        body = Map.get(response, :body)
 
-        {:ok, extracted_metadata}
+        case Map.get(body, "result") do
+          [extracted_metadata | _] ->
+            {:ok, extracted_metadata}
+
+          [] ->
+            Logger.error("Reducto API returned empty result. Response body: #{inspect(body)}")
+            {:error, "Reducto API returned empty result"}
+
+          nil ->
+            Logger.error("Reducto API response missing 'result' field. Response body: #{inspect(body)}")
+            {:error, "Reducto API response missing 'result' field"}
+        end
 
       {:error, err} ->
-        require Logger
-
         Logger.error("Reducto API error: #{inspect(err)}")
 
         {:error, err}
