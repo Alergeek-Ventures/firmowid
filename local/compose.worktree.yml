@@ -1,0 +1,56 @@
+# Worktree-specific Docker Compose configuration
+# Used by `mix dev.start` and `mix dev.stop`
+#
+# Environment variables (set via .env.local):
+#   COMPOSE_PROJECT_NAME - e.g., firmowid-feature-auth
+#   DB_PORT              - Postgres port (mapped to container 5432)
+#   S3_PORT              - Localstack port (mapped to container 4566)
+#   CHROME_PORT          - Chromium port (mapped to container 9222)
+
+services:
+  postgres:
+    image: paradedb/paradedb:0.18.11
+    container_name: ${COMPOSE_PROJECT_NAME}-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: firmowid
+    ports:
+      - '${DB_PORT}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  localstack:
+    image: localstack/localstack:latest
+    container_name: ${COMPOSE_PROJECT_NAME}-s3
+    environment:
+      - SERVICES=s3
+      - AWS_DEFAULT_REGION=us-east-1
+    ports:
+      - '${S3_PORT}:4566'
+    volumes:
+      - ./s3-init/create-s3-bucket.sh:/etc/localstack/init/ready.d/create-s3-bucket.sh:Z
+      - localstack_data:/var/lib/localstack
+
+  chromium:
+    build:
+      context: ..
+      dockerfile: deployment/Containerfile.chromium
+    container_name: ${COMPOSE_PROJECT_NAME}-chromium
+    ports:
+      - '${CHROME_PORT}:9222'
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://127.0.0.1:9222/json/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  postgres_data:
+  localstack_data:

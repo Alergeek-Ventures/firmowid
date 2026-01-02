@@ -104,6 +104,48 @@ Analityka i flagi funkcjonalności są obsługiwane przez phoenix_analytics i fu
 - `PORT` - port HTTP (domyślnie: 4000)
 - `POOL_SIZE` - rozmiar puli połączeń do bazy danych (domyślnie: 5)
 
+## Worktree Development (dla równoległych agentów AI)
+
+Projekt wspiera izolowane środowiska deweloperskie per branch poprzez git worktrees + worktrunk.
+
+### Wymagania
+
+1. **Worktrunk** - [zainstaluj z crates.io](https://crates.io/crates/worktrunk) lub `cargo install worktrunk`
+2. **Caddy** - reverse proxy z admin API
+
+### Konfiguracja Caddy
+
+Caddy musi być uruchomiony z admin API dostępnym pod `localhost/caddy`. Szczegóły konfiguracji zależą od twojego setupu systemowego.
+
+### Użycie
+
+```bash
+# Stwórz nowy worktree (automatycznie uruchamia izolowane serwisy)
+wt switch --create feature-auth
+
+# Pracuj w worktree
+# Phoenix: http://feature-auth.firmowid.localhost
+# Tidewave MCP: http://localhost:{PORT}/tidewave/mcp
+
+# Usuń worktree (automatycznie zatrzymuje serwisy)
+wt remove feature-auth
+```
+
+### Jak to działa
+
+1. `wt switch --create` wywołuje hooki z `.config/wt.toml`:
+   - `mix dev.env` - generuje `.env.local` z deterministycznymi portami (hash z nazwy brancha)
+   - `mix setup` - instaluje zależności, migruje bazę
+   - `mix dev.start` - uruchamia Docker Compose + rejestruje route w Caddy
+
+2. Każdy worktree dostaje izolowane:
+   - Postgres container z osobnym portem
+   - Localstack (S3) container z osobnym portem  
+   - Chromium container z osobnym portem
+   - Caddy route: `{branch}.firmowid.localhost` → `localhost:{port}`
+
+3. `wt remove` wywołuje `mix dev.stop` - zatrzymuje kontenery i usuwa route z Caddy
+
 
 
 

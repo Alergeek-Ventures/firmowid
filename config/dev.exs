@@ -1,24 +1,38 @@
 import Config
 
-# Configure your database
+config :ex_aws, :s3,
+  host: "localhost",
+  scheme: "http://",
+  port: 4566
+
+config :ex_aws,
+  access_key_id: "test",
+  secret_access_key: "test"
+
+config :firmowid, ChromicPDF, chrome_address: {"localhost", 9222}
+
 config :firmowid, Firmowid.Repo,
+  url: "postgresql://postgres:postgres@localhost:5433/firmowid",
+  # =============================================================================
+  # Database (port 5433 matches local/compose.yml)
+  # =============================================================================
+  pool_size: 5,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   log: false
 
-# For development, we disable any cache and enable
-# debugging and code reloading.
-#
-# The watchers configuration can be used to run external
-# watchers to your application. For example, we can use it
-# to bundle .js and .css sources.
+# Vault key for Cloak encryption (32 bytes, base64 encoded)
+config :firmowid, Firmowid.Vault,
+  ciphers: [
+    default: {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: Base.decode64!("REMOVED_DEV_VAULT_KEY")}
+  ]
+
+# =============================================================================
+# S3/Localstack (port 4566 matches local/compose.yml)
+# =============================================================================
+
 config :firmowid, FirmowidWeb.Endpoint,
-  # Binding to loopback ipv4 address prevents access from other machines.
-  # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [
-    # ip: {0, 0, 0, 0},
-    port: 4000
-  ],
+  http: [port: 4000],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
@@ -32,9 +46,28 @@ config :firmowid, FirmowidWeb.Endpoint,
       ~r"priv/gettext/.*(po)$",
       ~r"lib/firmowid_web/(controllers|live|components)/.*(ex|heex)$"
     ]
+
+    # =============================================================================
+    # ChromicPDF (port 9222 matches local/compose.yml)
+    # =============================================================================
+    # =============================================================================
+    # Dev Defaults (match local/compose.yml, overridable via .env.local for worktrees)
+    # =============================================================================
   ]
 
+# =============================================================================
+
+# Secret key base for signing cookies (safe for dev only)
+# Endpoint
+# =============================================================================
+
+config :firmowid, FirmowidWeb.Endpoint,
+  secret_key_base: "REMOVED_PHOENIX_SECRET_KEY_BASE"
+
 config :firmowid, :ksef, base_url: "https://ksef-test.mf.gov.pl/api/v2"
+
+config :firmowid,
+  uploads_bucket: "firmowid-uploads"
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
@@ -46,10 +79,13 @@ config :phoenix, :plug_init_mode, :runtime
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
 
+# =============================================================================
+# Other Dev Settings
 config :phoenix_live_view,
   # Include HEEx debug annotations as HTML comments in rendered markup
-  debug_heex_annotations: true,
+  # =============================================================================
   # Enable helpful, but potentially expensive runtime checks
+  debug_heex_annotations: true,
   enable_expensive_runtime_checks: true
 
 # Disable swoosh api client as it is only required for production adapters.

@@ -1,8 +1,9 @@
 import Config
 
 # Only load dotenv in dev/test
+# Load both .env and .env.local (worktree-specific overrides)
 if config_env() in [:dev, :test] do
-  Dotenv.load!()
+  Dotenv.load!([".env", ".env.local"])
 end
 
 # config/runtime.exs is executed for all environments, including
@@ -33,16 +34,33 @@ end
 # want to use a different value for prod and you most likely don't want
 # to check this value into version control, so we use an environment
 # variable instead.
+#
+# Dev/test default: safe to use for local development only
+dev_secret_key_base = "REMOVED_PHOENIX_SECRET_KEY_BASE"
+# Dev/test default vault key (32 bytes, base64 encoded)
+dev_vault_key = "REMOVED_DEV_VAULT_KEY"
+
 secret_key_base =
-  System.get_env("SECRET_KEY_BASE") ||
-    raise """
-    environment variable SECRET_KEY_BASE is missing.
-    You can generate one by calling: mix phx.gen.secret
-    """
+  if config_env() == :prod do
+    System.get_env("SECRET_KEY_BASE") ||
+      raise """
+      environment variable SECRET_KEY_BASE is missing.
+      You can generate one by calling: mix phx.gen.secret
+      """
+  else
+    System.get_env("SECRET_KEY_BASE", dev_secret_key_base)
+  end
+
+vault_key =
+  if config_env() == :prod do
+    "CLOAK_VAULT_KEY" |> System.get_env() |> Base.decode64!()
+  else
+    "CLOAK_VAULT_KEY" |> System.get_env(dev_vault_key) |> Base.decode64!()
+  end
 
 config :firmowid, Firmowid.Vault,
   ciphers: [
-    default: {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: "CLOAK_VAULT_KEY" |> System.get_env() |> Base.decode64!()}
+    default: {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: vault_key}
   ]
 
 config :firmowid, FirmowidWeb.Endpoint, secret_key_base: secret_key_base
@@ -58,40 +76,44 @@ config :firmowid,
   google_client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
 
 if config_env() != :test do
-  config :firmowid, Firmowid.Repo,
-    url: System.get_env("DATABASE_URL"),
-    pool_size: String.to_integer(System.get_env("POOL_SIZE", "5"))
+  # Only override DB config if DB_PORT is set (worktree) or DATABASE_URL is set (prod)
+  # Otherwise use dev.exs defaults
+  cond do
+    System.get_env("DATABASE_URL") ->
+      config :firmowid, Firmowid.Repo,
+        url: System.get_env("DATABASE_URL"),
+        pool_size: String.to_integer(System.get_env("POOL_SIZE", "5"))
+
+    System.get_env("DB_PORT") ->
+      config :firmowid, Firmowid.Repo,
+        url: "postgresql://postgres:postgres@localhost:#{System.get_env("DB_PORT")}/firmowid",
+        pool_size: 5
+
+    true ->
+      :ok
+  end
 end
 
-config :ex_aws, :s3,
-  host: System.get_env("S3_HOST", "localhost"),
-  scheme: System.get_env("S3_SCHEME", "http://"),
-  port: String.to_integer(System.get_env("S3_PORT", "4566"))
-
-# S3 configuration (defaults suitable for local development with localstack)
-config :ex_aws,
-  # empty strings because ex_aws will complain
-  access_key_id: System.get_env("AWS_ACCESS_KEY_ID", ""),
-  secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY", "")
+# S3 - only override if S3_PORT is set (worktree) or prod env vars
+if System.get_env("S3_PORT") do
+  config :ex_aws, :s3,
+    host: "localhost",
+    scheme: "http://",
+    port: String.to_integer(System.get_env("S3_PORT"))
+end
 
 # Open Exchange Rates API for currency conversion (optional)
 config :ex_money,
   open_exchange_rates_app_id: System.get_env("OPEN_EXCHANGE_RATES_APP_ID")
 
-config :firmowid,
-  uploads_bucket: System.get_env("S3_BUCKET", "firmowid-uploads")
+# ChromicPDF - only override if CHROME_PORT is set (worktree)
+if config_env() != :test and System.get_env("CHROME_PORT") do
+  config :firmowid, ChromicPDF, chrome_address: {"localhost", String.to_integer(System.get_env("CHROME_PORT"))}
+end
 
-# ChromicPDF configuration for external Chromium container
-# Set CHROME_ADDRESS to point to Chromium DevTools Protocol endpoint
-# Format: "hostname:port" (e.g., "localhost:9222" or "chromium:9222")
-if config_env() != :test do
-  chrome_address = System.get_env("CHROME_ADDRESS")
-
-  if chrome_address do
-    [host, port] = String.split(chrome_address, ":")
-
-    config :firmowid, ChromicPDF, chrome_address: {host, String.to_integer(port)}
-  end
+# Phoenix HTTP port - only override if PORT is set (worktree)
+if config_env() == :dev and System.get_env("PORT") do
+  config :firmowid, FirmowidWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT"))]
 end
 
 # ErrorTracker is configured in prod.exs and doesn't require external DSN

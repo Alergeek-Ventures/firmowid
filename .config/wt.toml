@@ -1,0 +1,12 @@
+# Worktrunk Project Configuration
+# Enables isolated dev environments per worktree with deterministic ports
+
+[post-create]
+deps = "mix deps.get"
+up = "mix dev.up --branch {{ branch | sanitize }} --port {{ branch | hash_port }} --db-port {{ ('db-' ~ branch) | hash_port }} --s3-port {{ ('s3-' ~ branch) | hash_port }} --chrome-port {{ ('chrome-' ~ branch) | hash_port }}"
+
+[pre-remove]
+down = "mix dev.down"
+
+[list]
+url = "https://{{ branch | sanitize }}.firmowid.localhost"
