@@ -80,13 +80,13 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
     last_sales_invoice = SalesInvoices.get_latest_sales_invoice() || %{}
 
     base_sales_invoice =
-      %{
-        payment_method: "Przelew",
-        issue_date: Date.utc_today(),
-        sale_date: Date.utc_today(),
-        due_date: Date.utc_today()
-      }
-      |> Map.merge(
+      Map.merge(
+        %{
+          payment_method: "Przelew",
+          issue_date: Date.utc_today(),
+          sale_date: Date.utc_today(),
+          due_date: Date.utc_today()
+        },
         Map.take(last_sales_invoice, [
           :payment_method,
           :issue_date,
@@ -96,8 +96,13 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
           :is_reverse_charge
         ])
       )
-      |> Map.merge(%{
-        invoice_number: SalesInvoices.get_next_invoice_number(Date.utc_today()),
+
+    # Calculate invoice number based on the actual issue_date (which may come from the last invoice)
+    issue_date = base_sales_invoice[:issue_date]
+
+    base_sales_invoice =
+      Map.merge(base_sales_invoice, %{
+        invoice_number: SalesInvoices.get_next_invoice_number(issue_date),
         organization_id: Firmowid.Repo.get_org_id(),
         sales_invoice_items: [],
         buyer_type: :company,
