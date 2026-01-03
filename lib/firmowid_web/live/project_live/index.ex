@@ -320,11 +320,9 @@ defmodule FirmowidWeb.Project.Index do
 
   def handle_event("select_project", %{"_target" => ["reset"]}, socket) do
     params =
-      if socket.assigns.show_only_details do
-        %{"month" => Date.to_iso8601(socket.assigns.selected_date), "details" => "1"}
-      else
-        %{"details" => "1"}
-      end
+      %{}
+      |> maybe_add_month(socket.assigns.selected_date)
+      |> maybe_add_details(socket.assigns.show_only_details)
 
     path =
       if socket.assigns.live_action == :archive do
@@ -337,12 +335,7 @@ defmodule FirmowidWeb.Project.Index do
   end
 
   def handle_event("select_project", %{"selected_project" => ""}, socket) do
-    params =
-      if socket.assigns.show_only_details do
-        %{"month" => Date.to_iso8601(socket.assigns.selected_date)}
-      else
-        %{}
-      end
+    params = maybe_add_month(%{}, socket.assigns.selected_date)
 
     path =
       if socket.assigns.live_action == :archive do
@@ -355,12 +348,7 @@ defmodule FirmowidWeb.Project.Index do
   end
 
   def handle_event("select_project", %{"selected_project" => project_id, "details" => "1"}, socket) do
-    params =
-      if socket.assigns.show_only_details do
-        %{"month" => Date.to_iso8601(socket.assigns.selected_date), "details" => "1"}
-      else
-        %{"details" => "1"}
-      end
+    params = maybe_add_month(%{"details" => "1"}, socket.assigns.selected_date)
 
     path =
       if socket.assigns.live_action == :archive do
@@ -373,12 +361,7 @@ defmodule FirmowidWeb.Project.Index do
   end
 
   def handle_event("select_project", %{"selected_project" => project_id}, socket) do
-    params =
-      if socket.assigns.show_only_details do
-        %{"month" => Date.to_iso8601(socket.assigns.selected_date)}
-      else
-        %{}
-      end
+    params = maybe_add_month(%{}, socket.assigns.selected_date)
 
     path =
       if socket.assigns.live_action == :archive do
@@ -690,6 +673,12 @@ defmodule FirmowidWeb.Project.Index do
       assign(socket, selected_date: date)
     end
   end
+
+  defp maybe_add_month(params, nil), do: params
+  defp maybe_add_month(params, date), do: Map.put(params, "month", Date.to_iso8601(date))
+
+  defp maybe_add_details(params, true), do: Map.put(params, "details", "1")
+  defp maybe_add_details(params, _), do: params
 
   defp assign_hours_records(%{assigns: %{selected_date: nil}} = socket) do
     socket
