@@ -51,3 +51,4 @@ npm-debug.log
 .env
 .env.local
 tmp/
+priv/static/images/.DS_Store

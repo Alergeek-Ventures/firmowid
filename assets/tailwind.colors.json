@@ -3,6 +3,7 @@
   "black": "#000000",
   "orangeText": "#8B3F13",
   "orangeBg": "#E6D7CE",
+  "orange-700": "#8B3F13",
   "greenText": "#475E45",
   "greenBg": "#D0E6CE",
   "redText": "#A22A2A",
@@ -15,12 +16,16 @@
   "transparent": "transparent",
   "offwhite": "#F0F0F0",
   "grey-50": "#FAFAFA",
+  "grey-100": "#F5F5F5",
   "grey-200": "#DDDDDD",
   "grey-300": "#CCCCCC",
   "grey-400": "#B5B5B5",
   "grey-500": "#949494",
   "grey-600": "#707070",
   "grey-700": "#4E4E4E",
+  "grey-800": "#303030",
+  "grey-900": "#1A1A1A",
   "orange-100": "#F0EAE6",
-  "orange-900": "#4E2005"
+  "orange-900": "#4E2005",
+  "turquoise-700": "#455E5E"
 }

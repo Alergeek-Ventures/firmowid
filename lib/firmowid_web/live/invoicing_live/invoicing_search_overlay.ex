@@ -12,7 +12,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoiceSearchOverlay do
           phx-key="escape"
         >
           <!-- Backdrop -->
-          <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" phx-click="close-search" />
+          <div class="absolute inset-0 bg-black/50 backdrop-blur-[8px]" phx-click="close-search" />
           <!-- Panel -->
           <div
             id="invoice-search-panel"

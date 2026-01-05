@@ -11,6 +11,8 @@ import ScrollToBottom from "./scroll_to_bottom";
 import Popover from "./popover";
 import { ConfirmLeave } from "./confirm_leave";
 import { CollapsibleNavbar } from "./collapsible_navbar";
+import { SolutionItemImageSwitcher } from "./solution_item_image_switcher";
+import { NavbarScroll } from "./navbar_scroll";
 
 export const Hooks = {
   ListItemRemovalAnimation,
@@ -26,4 +28,6 @@ export const Hooks = {
   Popover,
   CollapsibleNavbar,
   ConfirmLeave,
+  SolutionItemImageSwitcher,
+  NavbarScroll,
 };

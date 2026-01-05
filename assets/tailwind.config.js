@@ -30,6 +30,7 @@ module.exports = {
     },
     fontFamily: {
       sans: ["Lexend", "ui-sans-serif", "system-ui", "sans-serif"],
+      logo: ["Josefin Sans", "ui-sans-serif", "system-ui", "sans-serif"],
     },
     colors: require("./tailwind.colors.json"),
     extend: {

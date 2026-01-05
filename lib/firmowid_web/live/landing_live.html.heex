@@ -1,12 +1,14 @@
-<div class="min-h-screen flex flex-col bg-white">
+<div class="min-h-screen flex flex-col bg-grey-100">
   <%!-- Navbar --%>
   <.landing_navbar />
+
+  <.alergeek_attribution />
 
   <%!-- Hero Section --%>
   <.hero_section />
 
   <%!-- KSeF Integration Section --%>
-  <.feature_section id="ksef">
+  <.feature_section id="ksef" class="scroll-mt-[120px]">
     <:tags>
       <.tag label="fakturowanie" />
       <.tag label="KSeF" />
@@ -16,18 +18,56 @@
     <:description>
       Każda zmiana w przepisach i strukturze faktur
       generuje stres - pojawia się obawa, że Twój
-      system nie nadąży i faktury zostaną odrzucone. <br /><br />
+      system nie nadąży i faktury zostaną odrzucone. <br class="mb-4" />
       Spokojnie, z Firmowidem KSeF nie jest niczym
       strasznym.
     </:description>
     <:solution_title>Rozwiązanie Firmowida</:solution_title>
+    <:solution_subtitle>Z Firmowidem KSeF nie jest niczym strasznym.</:solution_subtitle>
     <:solutions>
-      <.solution_item>Gwarancja poprawności faktur.</.solution_item>
-      <.solution_item>Automatyczna aktualizacja obsługi KSeF.</.solution_item>
-      <.solution_item>Dostosowywanie się do zmian.</.solution_item>
+      <.solution_item image_container_id="ksef-images" index={0}>
+        Gwarancja poprawności faktur.
+      </.solution_item>
+      <.solution_item image_container_id="ksef-images" index={1}>
+        Automatyczna aktualizacja obsługi KSeF.
+      </.solution_item>
+      <.solution_item image_container_id="ksef-images" index={2}>
+        Dostosowywanie się do zmian.
+      </.solution_item>
     </:solutions>
     <:image>
-      <.mockup label="KSeF interface" class="max-w-sm" />
+      <div
+        id="ksef-images"
+        class="relative flex justify-center md:justify-end w-full h-full px-auto items-center"
+      >
+        <img
+          id="ksef-example-1"
+          src={~p"/images/ksef.png"}
+          alt=""
+          class="pointer-events-none h-full rounded-[8px] border-[2px] border-grey-100 transition-opacity duration-[400ms] opacity-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full object-scale-down"
+        />
+
+        <img
+          id="ksef-example-2"
+          src={~p"/images/ksef.png"}
+          alt=""
+          class="pointer-events-none h-full rounded-[8px] border-[2px] border-grey-100 transition-opacity duration-[400ms] opacity-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full object-scale-down"
+        />
+
+        <img
+          id="ksef-example-3"
+          src={~p"/images/ksef.png"}
+          alt=""
+          class="pointer-events-none h-full rounded-[8px] border-[2px] border-grey-100 transition-opacity duration-[400ms] opacity-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full object-scale-down"
+        />
+
+        <img
+          id="default-photo"
+          src={~p"/images/ksef.png"}
+          alt=""
+          class="pointer-events-none h-full rounded-[8px] border-[2px] border-grey-100 transition-opacity duration-[400ms] opacity-100 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full object-scale-down"
+        />
+      </div>
     </:image>
   </.feature_section>
 
@@ -43,49 +83,132 @@
       zastanawiasz się czy na pewno nie przegapiłeś
       żadnej faktury? Płatności są rozproszone po
       kilku kontach, trudno znaleźć powiązania, a
-      ręczne dopasowywanie powoduje błędy? <br /><br />
+      ręczne dopasowywanie powoduje błędy? <br class="mb-4" />
       Spokojnie, Firmowid pomoże Ci w porządkach.
     </:description>
     <:solution_title>Rozwiązanie Firmowida</:solution_title>
+    <:solution_subtitle>Z Firmowidem zamykanie miesiąca będzie przyjemne.</:solution_subtitle>
     <:solutions>
-      <.solution_item>Elastyczne wgrywanie (plik, e-mail lub skan)</.solution_item>
-      <.solution_item>Integracja z kontami firmowymi - także zagranicznymi.</.solution_item>
-      <.solution_item>Automatyczne łączenie faktur z transakcjami.</.solution_item>
+      <.solution_item image_container_id="invoicing-images" index={0}>
+        Elastyczne wgrywanie (<strong class="font-bold">plik</strong>,
+        <strong class="font-bold">e-mail</strong>
+        lub <strong class="font-bold">skan</strong>)
+      </.solution_item>
+      <span class="relative">
+        <.solution_item
+          image_container_id="invoicing-images"
+          index={1}
+        >
+          Integracja z kontami firmowymi - także zagranicznymi.
+        </.solution_item>
+        <img
+          id="functionality-arrow"
+          src={~p"/images/functionality_arrow.svg"}
+          alt=""
+          class="pointer-events-none absolute top-[-42px] left-[118%] scale-[1.4] hidden lg:block"
+        />
+      </span>
+      <.solution_item image_container_id="invoicing-images" index={2}>
+        Automatyczne łączenie faktur z transakcjami.
+      </.solution_item>
     </:solutions>
     <:image>
-      <.mockup label="Invoice matching" class="max-w-sm" />
+      <div
+        id="invoicing-images"
+        class="relative flex justify-center md:justify-end w-full h-full items-center"
+      >
+        <%!-- Arrow with text --%>
+        <img
+          id="invoicing-example-1"
+          src={~p"/images/invoice_upload.png"}
+          alt=""
+          class="pointer-events-none transition-opacity opacity-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full max-w-[90%] object-scale-down duration-[400ms]"
+        />
+
+        <img
+          id="invoicing-example-2"
+          src={~p"/images/invoice_matching.png"}
+          alt=""
+          class="pointer-events-none max-w-[668px] transition-opacity opacity-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full object-scale-down duration-[400ms]"
+        />
+
+        <img
+          id="invoicing-example-3"
+          src={~p"/images/bank_linking.png"}
+          alt=""
+          class="pointer-events-none max-w-[678px] transition-opacity opacity-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full object-scale-down duration-[400ms]"
+        />
+
+        <img
+          id="default-photo"
+          src={~p"/images/figurine.png"}
+          alt=""
+          class="pointer-events-none aspect-[782/508] h-[91%] self-center object-scale-down lg:flex hidden opacity-[0.03] transition-opacity duration-[400ms]"
+        />
+      </div>
+
+      <%!-- <img
+        src={~p"/images/invoice_linking_frame.svg"}
+        alt=""
+        class="pointer-events-none h-full aspect-[782/508] w-[200%] object-left object-cover lg:flex hidden"
+      /> --%>
     </:image>
   </.feature_section>
 
   <%!-- Highlight Banner --%>
   <.highlight_banner>
-    Firmowid automatycznie dopasuje pasujące transakcje do
-    faktur - <strong class="font-bold">porządek w księgowości</strong>, to jego drugie imię.
+    <strong class="font-bold">Firmowid</strong>
+    automatycznie dopasuje pasujące transakcje do faktur&nbsp;&#8209;&nbsp;<strong class="font-bold">porządek w księgowości</strong>, to jego drugie imię.
     <:cta>
       <a
-        href="#"
-        class="inline-flex items-center gap-2 text-sm text-darkGrey hover:text-black transition-colors"
+        href="#video"
+        class="inline-flex flex-col items-center px-8 pt-4 mb-2 text-base font-medium text-darkGrey hover:text-black transition-colors duration-500"
       >
-        Zobacz filmik <.icon name="hero-arrow-down-mini" class="w-3 h-3" />
+        Zobacz filmik
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M7 6L12 11L17 6"
+            stroke="#A5582B"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M7 13L12 18L17 13"
+            stroke="#8B3F13"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
       </a>
     </:cta>
   </.highlight_banner>
 
   <%!-- Video Placeholder --%>
-  <.video_placeholder />
+  <.video_placeholder id="video" class="scroll-mt-[120px]" />
 
   <%!-- Czasośledź Section --%>
   <.timetracker_section id="czasosledz">
     <:tags>
-      <.tag label="Ewidencja" />
-      <.tag label="Czas pracy" />
+      <.tag label="ewidencja" />
+      <.tag label="czas pracy" />
     </:tags>
     <:title>Czasośledź</:title>
-    <:description>
+    <:description_one>
       Twoi pracownicy liczą swój czas pracy godzinowo, a Ty w sumie dalej nie
       wiesz, ile naprawdę kosztuje praca zespołu i jak efektywnie
-      wykorzystywany jest ten czas? <br /><br /> Spokojnie, Firmowid ma wszystko pod kontrolą.
-    </:description>
+      wykorzystywany jest ten czas?
+    </:description_one>
+    <:description_two>
+      Spokojnie, Firmowid ma wszystko pod kontrolą.
+    </:description_two>
     <:left_title>Monitorowanie czasu pracowników</:left_title>
     <:left_description>
       Firmowid rejestruje czas pracy, przypisuje go do
@@ -93,7 +216,11 @@
       pracowników.
     </:left_description>
     <:left_content>
-      <.mockup label="Time sessions" aspect="aspect-[3/4]" />
+      <img
+        src={~p"/images/timetracking.svg"}
+        alt=""
+        class="pointer-events-none h-full"
+      />
     </:left_content>
     <:right_title>Ewidencja</:right_title>
     <:right_description>
@@ -101,34 +228,33 @@
       wysłał Ci ewidencję - wszystko masz jak na dłoni.
     </:right_description>
     <:right_content>
-      <.mockup label="Employee hours" aspect="aspect-[3/4]" />
+      <img
+        src={~p"/images/employee_records.svg"}
+        alt=""
+        class="pointer-events-none h-full"
+      />
     </:right_content>
   </.timetracker_section>
 
+  <.budget_analysis />
+
   <%!-- Budget Analysis Section --%>
-  <.feature_section id="analiza" class="bg-grey-50">
-    <:tags>
-      <.tag label="Budżet" />
-      <.tag label="Analiza" />
-    </:tags>
-    <:title>Analiza budżetowa</:title>
-    <:description>
-      Budżet szybko się dezaktualizuje, odchylenia wychodzą
-      z opóźnieniem, dane są rozproszone, a już Cię męczy excel?
-    </:description>
+  <.feature_section id="analiza" class="mb-[88px]">
     <:solution_title>Rozwiązanie Firmowida</:solution_title>
+    <:solution_subtitle>Z Firmowidem budżetowanie robi się samo.</:solution_subtitle>
     <:solutions>
       <.solution_item>Monitorowanie budżetu w czasie rzeczywistym</.solution_item>
       <.solution_item>Wykrywanie odchyleń</.solution_item>
       <.solution_item>Przewidywanie budżetu</.solution_item>
     </:solutions>
     <:image>
-      <.mockup label="Budget dashboard" class="max-w-sm" />
+      <.mockup
+        label="Budget dashboard"
+        class="flex aspect-[798/375] max-h-[374px] w-full"
+      />
     </:image>
   </.feature_section>
 
-  <%!-- Footer --%>
-  <div class="mt-auto">
-    <.landing_footer />
-  </div>
+  <%!-- CTA & Footer combined --%>
+  <.cta_footer />
 </div>
