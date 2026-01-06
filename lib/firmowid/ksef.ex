@@ -37,7 +37,7 @@ defmodule Firmowid.Ksef do
         })
         |> Repo.insert()
 
-      %{"organization_id" => org_id, "action" => "authenticate"}
+      %{"organization_id" => org_id}
       |> SessionWorker.new()
       |> Firmowid.Oban.insert!()
 

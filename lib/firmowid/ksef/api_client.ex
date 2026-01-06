@@ -65,36 +65,32 @@ defmodule Firmowid.Ksef.ApiClient do
   end
 
   defp fetch_and_parse_public_key(target_usage) do
-    case Req.get(request(), url: "/security/public-key-certificates") do
-      {:ok, %{body: certificates}} ->
-        certificate =
-          Enum.find_value(certificates, fn
-            %{"usage" => [^target_usage]} = certificate ->
-              now = DateTime.utc_now()
-              valid_from = parse_datetime!(certificate["validFrom"])
-              valid_to = parse_datetime!(certificate["validTo"])
+    with {:ok, %{body: certificates}} <- Req.get(request(), url: "/security/public-key-certificates") do
+      certificate =
+        Enum.find_value(certificates, fn
+          %{"usage" => [^target_usage]} = certificate ->
+            now = DateTime.utc_now()
+            valid_from = parse_datetime!(certificate["validFrom"])
+            valid_to = parse_datetime!(certificate["validTo"])
 
-              if DateTime.after?(now, valid_from) and DateTime.before?(now, valid_to) do
-                {certificate["certificate"], valid_to}
-              end
+            if DateTime.after?(now, valid_from) and DateTime.before?(now, valid_to) do
+              {certificate["certificate"], valid_to}
+            end
 
-            _ ->
-              nil
-          end)
+          _ ->
+            nil
+        end)
 
-        case certificate do
-          nil ->
-            {:error, :no_valid_certificate_found}
+      case certificate do
+        nil ->
+          {:error, :no_valid_certificate_found}
 
-          {certificate, valid_to} ->
-            certificate
-            |> Base.decode64!()
-            |> X509.Certificate.from_der!(:Certificate)
-            |> then(&{:ok, &1, valid_to})
-        end
-
-      {:error, reason} ->
-        {:error, reason}
+        {certificate, valid_to} ->
+          certificate
+          |> Base.decode64!()
+          |> X509.Certificate.from_der!(:Certificate)
+          |> then(&{:ok, &1, valid_to})
+      end
     end
   end
 
@@ -107,35 +103,28 @@ defmodule Firmowid.Ksef.ApiClient do
   end
 
   def auth(context_nip, ksef_token) do
-    %{"challenge" => challenge, "timestamp" => timestamp} =
-      Req.post!(request(), url: "/auth/challenge").body
-
-    %{"referenceNumber" => reference_number, "authenticationToken" => auth_token} =
-      Req.post!(request(),
-        url: "/auth/ksef-token",
-        json: %{
-          "challenge" => challenge,
-          "encryptedToken" => prepare_encrypted_token(ksef_token, timestamp),
-          "contextIdentifier" => %{
-            "type" => "Nip",
-            "value" => context_nip
-          }
-        }
-      ).body
-
-    case get_auth_status(reference_number, auth_token["token"]) do
-      :success ->
-        body =
-          Req.post!(request(auth_token["token"]), url: "/auth/token/redeem").body
-
-        {:ok,
-         %{
-           access_token: body["accessToken"]["token"],
-           refresh_token: body["refreshToken"]["token"]
-         }}
-
-      {:error, reason} ->
-        {:error, reason}
+    with {:ok, %{body: %{"challenge" => challenge, "timestamp" => timestamp}}} <-
+           Req.post(request(), url: "/auth/challenge"),
+         {:ok, %{body: %{"referenceNumber" => reference_number, "authenticationToken" => auth_token}}} <-
+           Req.post(request(),
+             url: "/auth/ksef-token",
+             json: %{
+               "challenge" => challenge,
+               "encryptedToken" => prepare_encrypted_token(ksef_token, timestamp),
+               "contextIdentifier" => %{
+                 "type" => "Nip",
+                 "value" => context_nip
+               }
+             }
+           ),
+         :success <- get_auth_status(reference_number, auth_token["token"]),
+         {:ok, %{body: body}} <-
+           Req.post(request(auth_token["token"]), url: "/auth/token/redeem") do
+      {:ok,
+       %{
+         access_token: body["accessToken"]["token"],
+         refresh_token: body["refreshToken"]["token"]
+       }}
     end
   end
 
@@ -143,8 +132,8 @@ defmodule Firmowid.Ksef.ApiClient do
   Refresh an access token using the provided refresh token.
   DOES NOT return a new refresh token.
   """
-  def refresh_session(refresh_token) when is_binary(refresh_token) do
-    if token_expired?(refresh_token) do
+  def refresh_session(refresh_token) do
+    if is_nil(refresh_token) or token_expired?(refresh_token) do
       {:error, :refresh_token_expired}
     else
       case Req.post(request(refresh_token), url: "/auth/token/refresh") do
@@ -154,9 +143,8 @@ defmodule Firmowid.Ksef.ApiClient do
         {:ok, %{status: 401}} ->
           {:error, :refresh_token_expired}
 
-        {:error, reason} ->
-          Logger.error("Error refreshing KSeF session: #{inspect(reason)}")
-          {:error, reason}
+        {:error, _reason} = result ->
+          result
       end
     end
   end

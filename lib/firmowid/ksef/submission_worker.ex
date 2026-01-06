@@ -36,7 +36,7 @@ defmodule Firmowid.Ksef.SubmissionWorker do
 
     with {:ok, invoice} <- load_invoice(sales_invoice_id),
          invoice_xml = InvoiceRenderer.render_fa3(invoice),
-         access_token = SessionWorker.get_active_session_token!(),
+         access_token = SessionWorker.get_access_token!(),
          {:ok, session_data} <- ApiClient.open_online_session(access_token),
          {:ok, invoice_reference} <- ApiClient.send_invoice(access_token, session_data, invoice_xml),
          :ok <- ApiClient.close_online_session(access_token, session_data.session_reference) do
@@ -130,7 +130,7 @@ defmodule Firmowid.Ksef.SubmissionWorker do
     Logger.info("Verifying KSeF submission for sales invoice #{sales_invoice_id}")
 
     sales_invoice = SalesInvoices.get_sales_invoice!(sales_invoice_id)
-    access_token = SessionWorker.get_active_session_token!()
+    access_token = SessionWorker.get_access_token!()
 
     case ApiClient.get_invoice_status(access_token, session_reference, invoice_reference) do
       {:ok, %{ksef_number: ksef_number}} ->

@@ -13,7 +13,8 @@ defmodule Firmowid.Ksef.SessionWorker do
 
   use Oban.Worker,
     queue: :ksef_sessions,
-    max_attempts: 3
+    max_attempts: 3,
+    unique: true
 
   import Ecto.Query
 
@@ -26,96 +27,127 @@ defmodule Firmowid.Ksef.SessionWorker do
   require Logger
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"organization_id" => organization_id, "action" => action} = args}) do
+  def perform(%Oban.Job{args: %{"organization_id" => organization_id}} = job) do
     Repo.put_org_id(organization_id)
 
-    case action do
-      "authenticate" -> authenticate()
-      "renew" -> renew_session(args)
-    end
-  end
+    Logger.info("Starting KSeF authentication for organization #{organization_id}")
 
-  defp authenticate do
-    Logger.info("Starting KSeF authentication for organization #{Repo.get_org_id()}")
+    case Ksef.get_credential() do
+      nil ->
+        Logger.error("No KSeF credentials found for organization #{organization_id}")
+        {:cancel, :no_credentials}
 
-    Ksef.get_credential()
-    |> perform_authentication()
-    |> case do
-      {:ok, tokens} ->
-        schedule_renewal(tokens.access_token, tokens.refresh_token)
+      credential ->
+        case perform_authentication(credential) do
+          {:ok, %{access_token: access_token, refresh_token: refresh_token}} ->
+            date_from = DateTime.shift(DateTime.utc_now(), day: -30)
+            Ksef.fetch_cost_invoices(date_from)
 
-        date_from = DateTime.shift(DateTime.utc_now(), day: -30)
-        Ksef.fetch_cost_invoices(date_from)
+            schedule_reauthentication!(refresh_token)
+            Cachex.put(:ksef, {:access_token, organization_id}, access_token, expire: access_token_ttl(access_token))
 
-      {:error, reason} = error ->
-        Ksef.unauthenticate()
-        Logger.error("Authentication failed: #{inspect(reason)}")
-        error
+          {:error, _reason} = error ->
+            if final_attempt?(job) do
+              Ksef.unauthenticate()
+            end
+
+            error
+        end
     end
   rescue
     e ->
-      Ksef.unauthenticate()
-      {:error, e}
-  end
+      if final_attempt?(job) do
+        Ksef.unauthenticate()
+      end
 
-  defp renew_session(%{"refresh_token" => refresh_token}) do
-    Logger.info("Renewing KSeF session for organization #{Repo.get_org_id()}")
-
-    case ApiClient.refresh_session(refresh_token) do
-      {:ok, access_token} ->
-        schedule_renewal(access_token, refresh_token)
-
-      {:error, :refresh_token_expired} ->
-        Logger.info("Refresh token expired, re-authenticating")
-        authenticate()
-
-      {:error, reason} = error ->
-        Logger.error("Session renewal failed: #{inspect(reason)}")
-        error
-    end
+      reraise e, __STACKTRACE__
   end
 
   defp perform_authentication(%Credential{organization_id: org_id, auth_type: :token, credentials: token}) do
     {:ok, organization} = Accounts.get_organization(org_id)
-    "PL" <> context_nip = organization.identification_number
 
+    context_nip = organization.identification_number
     ApiClient.auth(context_nip, token)
   end
 
-  defp schedule_renewal(access_token, refresh_token) do
-    scheduled_at =
-      access_token |> ApiClient.token_expire_time() |> DateTime.shift(minute: -5)
+  defp schedule_reauthentication!(refresh_token) do
+    schedule_at =
+      refresh_token
+      |> ApiClient.token_expire_time()
+      |> DateTime.shift(minute: -15)
+
+    refresh_token = refresh_token |> Firmowid.Vault.encrypt!() |> Base.encode64()
 
     %{
-      "action" => "renew",
       "organization_id" => Repo.get_org_id(),
-      "access_token" => access_token,
       "refresh_token" => refresh_token
     }
-    |> new(scheduled_at: scheduled_at)
-    |> Firmowid.Oban.insert()
+    |> new(scheduled_at: schedule_at)
+    |> Firmowid.Oban.insert!()
   end
 
-  def get_active_session_token! do
+  defp get_refresh_token do
     organization_id = Repo.get_org_id()
 
-    # Query most recent scheduled session job with access token
-    job =
+    refresh_token =
       Repo.one(
         from(j in Oban.Job,
-          where: j.worker == "Firmowid.Ksef.SessionWorker",
-          where: j.state in ["scheduled", "available"],
-          where: fragment("?->>'organization_id' = ?", j.args, ^organization_id),
-          where: fragment("?->>'action' = 'renew'", j.args),
+          where:
+            j.worker == "Firmowid.Ksef.SessionWorker" and j.state in ["scheduled", "available"] and
+              fragment("?->>'organization_id' = ?::text", j.args, ^organization_id) and
+              not is_nil(fragment("?->>'refresh_token'", j.args)),
           order_by: [desc: j.scheduled_at],
-          limit: 1
+          limit: 1,
+          select: fragment("?->>'refresh_token'", j.args)
         ),
         oban_jobs: true
       )
 
-    case job do
-      %{args: %{"access_token" => token}} -> token
-      _ -> raise "No active KSeF session found for organization #{organization_id}"
+    case refresh_token do
+      nil ->
+        nil
+
+      refresh_token ->
+        refresh_token
+        |> Base.decode64!()
+        |> Firmowid.Vault.decrypt!()
     end
+  end
+
+  def get_access_token! do
+    organization_id = Repo.get_org_id()
+
+    Cachex.fetch!(:ksef, {:access_token, organization_id}, fn _key ->
+      Repo.put_org_id(organization_id)
+      refresh_token = get_refresh_token()
+
+      case ApiClient.refresh_session(refresh_token) do
+        {:ok, access_token} ->
+          {:commit, access_token, expire: access_token_ttl(access_token)}
+
+        {:error, :refresh_token_expired} ->
+          Logger.info("Refresh token expired, re-authenticating")
+
+          %{"organization_id" => organization_id}
+          |> new()
+          |> Firmowid.Oban.insert!()
+
+          raise "Refresh token expired"
+
+        {:error, reason} ->
+          Logger.error("Session renewal failed: #{inspect(reason)}")
+          raise reason
+      end
+    end)
+  end
+
+  defp access_token_ttl(access_token) do
+    access_token
+    |> ApiClient.token_expire_time()
+    |> DateTime.diff(DateTime.utc_now(), :millisecond)
+  end
+
+  defp final_attempt?(%Oban.Job{attempt: attempt, max_attempts: max_attempts}) do
+    attempt >= max_attempts
   end
 end

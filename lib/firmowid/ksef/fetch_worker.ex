@@ -45,7 +45,7 @@ defmodule Firmowid.Ksef.FetchWorker do
   end
 
   def poll_export(%{"reference_number" => reference_number} = args) do
-    session = SessionWorker.get_active_session_token!()
+    session = SessionWorker.get_access_token!()
 
     case ApiClient.get_export_status(session, reference_number) do
       {:ok, package} ->
@@ -82,7 +82,7 @@ defmodule Firmowid.Ksef.FetchWorker do
       "initializationVector" => Base.encode64(encryption_data.iv)
     }
 
-    session = SessionWorker.get_active_session_token!()
+    session = SessionWorker.get_access_token!()
     ApiClient.initiate_invoice_export(session, filters, encryption_data)
   end
 
