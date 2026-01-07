@@ -1,9 +1,10 @@
 import Config
 
-# Only load dotenv in dev/test
+# Only load dotenv in dev/test when .env files exist (skip in CI)
 # Load both .env and .env.local (worktree-specific overrides)
-if config_env() in [:dev, :test] do
-  Dotenv.load!([".env", ".env.local"])
+if config_env() in [:dev, :test] and File.exists?(".env") do
+  files = if File.exists?(".env.local"), do: [".env", ".env.local"], else: [".env"]
+  Dotenv.load!(files)
 end
 
 # config/runtime.exs is executed for all environments, including
@@ -94,21 +95,45 @@ if config_env() != :test do
   end
 end
 
-# S3 - only override if S3_PORT is set (worktree) or prod env vars
+# S3 configuration
+# S3_PORT: local dev/worktree (uses localhost)
+# S3_HOST/S3_SCHEME/S3_PORT: prod with custom S3-compatible endpoint
+# For real AWS S3, just set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
 if System.get_env("S3_PORT") do
   config :ex_aws, :s3,
-    host: "localhost",
-    scheme: "http://",
+    host: System.get_env("S3_HOST", "localhost"),
+    scheme: System.get_env("S3_SCHEME", "http://"),
     port: String.to_integer(System.get_env("S3_PORT"))
 end
+
+# AWS credentials (required for S3 in prod)
+config :ex_aws,
+  access_key_id: System.get_env("AWS_ACCESS_KEY_ID", ""),
+  secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY", "")
 
 # Open Exchange Rates API for currency conversion (optional)
 config :ex_money,
   open_exchange_rates_app_id: System.get_env("OPEN_EXCHANGE_RATES_APP_ID")
 
-# ChromicPDF - only override if CHROME_PORT is set (worktree)
-if config_env() != :test and System.get_env("CHROME_PORT") do
-  config :firmowid, ChromicPDF, chrome_address: {"localhost", String.to_integer(System.get_env("CHROME_PORT"))}
+# S3 bucket for uploads
+# ChromicPDF - configure remote Chrome connection
+# CHROME_ADDRESS: "host:port" format for prod (e.g., "chromium:9222")
+# CHROME_PORT: port only, uses localhost (for local dev/worktree)
+config :firmowid,
+  uploads_bucket: System.get_env("S3_BUCKET", "firmowid-uploads")
+
+if config_env() != :test do
+  cond do
+    chrome_address = System.get_env("CHROME_ADDRESS") ->
+      [host, port] = String.split(chrome_address, ":")
+      config :firmowid, ChromicPDF, chrome_address: {host, String.to_integer(port)}
+
+    chrome_port = System.get_env("CHROME_PORT") ->
+      config :firmowid, ChromicPDF, chrome_address: {"localhost", String.to_integer(chrome_port)}
+
+    true ->
+      :ok
+  end
 end
 
 # Phoenix HTTP port - only override if PORT is set (worktree)
