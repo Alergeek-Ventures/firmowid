@@ -74,7 +74,7 @@ defmodule FirmowidWeb.SalesInvoicesLiveTest do
       sales_invoice = SalesInvoices.get_latest_sales_invoice()
 
       assert sales_invoice.is_buyer_confirmed == false
-      assert sales_invoice.buyer_nip == "6793209719"
+      assert sales_invoice.buyer_id == "6793209719"
 
       assert sales_invoice.buyer_display_name ==
                "ALERGEEK VENTURES SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ"

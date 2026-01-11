@@ -52,7 +52,7 @@ defmodule Firmowid.SalesInvoices do
         ilike(i.buyer_display_name, ^"%#{search_term}%") or
         ilike(i.buyer_surname, ^"%#{search_term}%") or
         ilike(i.buyer_address, ^"%#{search_term}%") or
-        ilike(i.buyer_nip, ^"%#{search_term}%") or
+        ilike(i.buyer_id, ^"%#{search_term}%") or
         ilike(i.buyer_pesel, ^"%#{search_term}%")
     )
     |> join(:left, [i], items in assoc(i, :sales_invoice_items))

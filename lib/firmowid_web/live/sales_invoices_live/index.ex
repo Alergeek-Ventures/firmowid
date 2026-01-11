@@ -126,7 +126,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
 
           data_to_copy =
             Map.take(sales_invoice_to_copy, [
-              :buyer_nip,
+              :buyer_id,
               :buyer_display_name,
               :buyer_name,
               :buyer_surname,
@@ -273,7 +273,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
             "buyer_display_name" => buyer_info.name,
             "buyer_address" => buyer_info.address,
             "buyer_country" => "PL",
-            "buyer_nip" => buyer_info.nip
+            "buyer_id" => buyer_info.nip
           }
 
         socket = assign_buyer_form_state(socket, "expanded")

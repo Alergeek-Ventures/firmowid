@@ -216,15 +216,4 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
   end
 
   def buyer_name(_), do: nil
-
-  def buyer_has_nip?(%{buyer_type: :company, buyer_nip: nip}) when is_binary(nip) and nip != "", do: true
-  def buyer_has_nip?(_), do: false
-
-  def buyer_id_type(%{buyer_type: :company, buyer_nip: nip}) when is_binary(nip) and nip != "", do: :nip
-
-  def buyer_id_type(%{buyer_eu_country_code: code, buyer_eu_vat_number: vat})
-      when is_binary(code) and code != "" and is_binary(vat) and vat != "", do: :eu_vat
-
-  def buyer_id_type(%{buyer_other_id: id}) when is_binary(id) and id != "", do: :other_id
-  def buyer_id_type(_), do: :no_id
 end

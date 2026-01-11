@@ -149,7 +149,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
               :foreign -> "VAT-ID:"
             end}
           </span>
-          <span class="text-[10px]">{@sales_invoice.buyer_nip}</span>
+          <span class="text-[10px]">{@sales_invoice.buyer_id}</span>
         </div>
       </div>
     </div>

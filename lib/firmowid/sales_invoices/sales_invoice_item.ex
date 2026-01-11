@@ -6,6 +6,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoiceItem do
 
   schema "sales_invoice_items" do
     field :name, :string, default: ""
+    # max 6 decimal places
     field :quantity, :decimal, default: 1
     field :unit, :string, default: "szt."
     field :unit_price, :decimal, default: 0
@@ -42,6 +43,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoiceItem do
     # Note: quantity is not validated >= 0 because correction invoices (KOR)
     # require negative quantities to represent reversed items
     |> validate_number(:unit_price, greater_than_or_equal_to: 0)
+    # VAT rate shouldnt be more like enum?
     |> validate_number(:vat_rate, greater_than_or_equal_to: 0)
     |> put_change(:organization_id, Firmowid.Repo.get_org_id())
   end

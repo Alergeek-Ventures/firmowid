@@ -156,6 +156,8 @@ defmodule Firmowid.Ksef.SubmissionWorker do
         # |> new()
         # |> Firmowid.Oban.insert()
 
+        unlock_invoice(sales_invoice)
+
       {:error, {:invoice_duplicate, original_ksef_number, original_session_reference}} ->
         Logger.warning("Invoice #{sales_invoice_id} is a duplicate of KSeF number #{original_ksef_number}")
 

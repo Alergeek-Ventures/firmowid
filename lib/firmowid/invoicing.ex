@@ -347,7 +347,7 @@ defmodule Firmowid.Invoicing do
             dynamic([sales_invoice], sales_invoice.invoice_number ~> ^query),
             dynamic([sales_invoice], sales_invoice.buyer_email ~> ^query),
             dynamic([sales_invoice], sales_invoice.buyer_description ~> ^query),
-            dynamic([sales_invoice], sales_invoice.buyer_nip ~> ^query),
+            dynamic([sales_invoice], sales_invoice.buyer_id ~> ^query),
             dynamic([sales_invoice], sales_invoice.item_names ~> ^query)
           ],
           fn expr, acc -> dynamic([sales_invoice], ^acc or ^expr) end

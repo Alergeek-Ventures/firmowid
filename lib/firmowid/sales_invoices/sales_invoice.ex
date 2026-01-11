@@ -30,7 +30,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
     field :buyer_type, Ecto.Enum, values: [:individual, :company], default: :company
 
-    field :buyer_nip, :string
+    field :buyer_id, :string
     field :buyer_display_name, :string
     field :buyer_name, :string
     field :buyer_surname, :string
@@ -67,14 +67,6 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
     # KSeF FA(3) fields
     field :ksef_invoice_kind, Ecto.Enum, values: [:vat, :kor], default: :vat
-
-    # EU buyer identification (KodUE + NrVatUE)
-    field :buyer_eu_country_code, :string
-    field :buyer_eu_vat_number, :string
-
-    # Other ID for non-EU/non-NIP buyers (NrID + KodKraju)
-    field :buyer_other_id, :string
-    field :buyer_other_id_country, :string
 
     belongs_to :corrected_invoice, __MODULE__
 
@@ -127,6 +119,23 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
   defp pick_date(_issue_date, sale_date, _comp) do
     sale_date
+  end
+
+  @spec buyer_id_type(map() | Ecto.Changeset.t()) :: :nip | :eu_vat | :other_id | :no_id
+  def buyer_id_type(%{buyer_pesel: buyer_pesel, buyer_country: buyer_country}) do
+    cond do
+      not is_nil(buyer_pesel) and buyer_pesel != "" -> :no_id
+      buyer_country == "PL" -> :nip
+      CountryCodes.eu_country?(buyer_country) -> :eu_vat
+      true -> :other_id
+    end
+  end
+
+  def buyer_id_type(%Ecto.Changeset{} = changeset) do
+    buyer_pesel = get_field(changeset, :buyer_pesel)
+    buyer_country = get_field(changeset, :buyer_country)
+
+    buyer_id_type(%{buyer_pesel: buyer_pesel, buyer_country: buyer_country})
   end
 
   def changeset(sales_invoice, attrs \\ %{}) do
@@ -216,7 +225,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     sales_invoice
     |> cast(attrs, [
       :buyer_type,
-      :buyer_nip,
+      :buyer_id,
       :buyer_display_name,
       :buyer_name,
       :buyer_surname,
@@ -228,15 +237,12 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       :buyer_mail_country,
       :buyer_email,
       :buyer_phone,
-      :buyer_description,
-      :buyer_eu_country_code,
-      :buyer_eu_vat_number,
-      :buyer_other_id,
-      :buyer_other_id_country
+      :buyer_description
     ])
     |> validate_length(:buyer_country, is: 2)
     |> validate_format(:buyer_country, ~r/^[A-Z]{2}$/)
     |> validate_country_code(:buyer_country)
+    |> validate_buyer_id()
     |> cast_buyer_based_on_type()
   end
 
@@ -256,7 +262,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     case get_change(buyer, :buyer_type) do
       :individual ->
         buyer
-        |> put_change(:buyer_nip, "")
+        |> put_change(:buyer_id, "")
         |> put_change(:buyer_display_name, "")
 
       :company ->
@@ -264,6 +270,20 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
       nil ->
         buyer
+    end
+  end
+
+  defp validate_buyer_id(changeset) do
+    buyer_confirmed? = get_field(changeset, :is_buyer_confirmed) == true
+
+    changeset = if buyer_confirmed?, do: validate_required(changeset, [:buyer_id]), else: changeset
+
+    case buyer_id_type(changeset) do
+      :nip ->
+        validate_format(changeset, :buyer_id, ~r/^(\d{10})?$/, message: "musi być 10-cyfrowym numerem NIP")
+
+      _ ->
+        validate_length(changeset, :buyer_id, max: 50, message: "musi mieć maksymalnie 50 znaków")
     end
   end
 
@@ -349,16 +369,12 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     |> put_change(:seller_surname, corrected_invoice.seller_surname)
     |> put_change(:seller_account_number, corrected_invoice.seller_account_number)
     |> put_change(:buyer_type, corrected_invoice.buyer_type)
-    |> put_change(:buyer_nip, corrected_invoice.buyer_nip)
+    |> put_change(:buyer_id, corrected_invoice.buyer_id)
     |> put_change(:buyer_display_name, corrected_invoice.buyer_display_name)
     |> put_change(:buyer_name, corrected_invoice.buyer_name)
     |> put_change(:buyer_surname, corrected_invoice.buyer_surname)
     |> put_change(:buyer_address, corrected_invoice.buyer_address)
     |> put_change(:buyer_country, corrected_invoice.buyer_country)
-    |> put_change(:buyer_eu_country_code, corrected_invoice.buyer_eu_country_code)
-    |> put_change(:buyer_eu_vat_number, corrected_invoice.buyer_eu_vat_number)
-    |> put_change(:buyer_other_id, corrected_invoice.buyer_other_id)
-    |> put_change(:buyer_other_id_country, corrected_invoice.buyer_other_id_country)
     |> put_change(:currency, corrected_invoice.currency)
   end
 

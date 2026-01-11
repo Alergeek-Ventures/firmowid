@@ -43,7 +43,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.BuyerForm do
               <div class="grid grid-cols-[max-content,1fr] gap-x-4 gap-y-2">
                 <%= if @sales_invoice.buyer_type == :company do %>
                   <span class="text-darkGrey">NIP</span>
-                  <span>{@sales_invoice.buyer_nip}</span>
+                  <span>{@sales_invoice.buyer_id}</span>
                   <span class="text-darkGrey">Nazwa firmy</span>
                   <span>{@sales_invoice.buyer_display_name}</span>
                 <% end %>
@@ -100,7 +100,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.BuyerForm do
                   <div class="w-full">
                     <.input
                       :if={to_string(@buyer_form[:buyer_type].value) == "company"}
-                      field={@buyer_form[:buyer_nip]}
+                      field={@buyer_form[:buyer_id]}
                       type="text"
                       input_class="mt-0 mb-5"
                       placeholder="Nip klienta"

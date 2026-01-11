@@ -21,17 +21,17 @@
 	</Podmiot1>
 	<Podmiot2>
 		<DaneIdentyfikacyjne>
-			<%= case T.buyer_id_type(@invoice) do %>
+			<%= case SalesInvoice.buyer_id_type(@invoice) do %>
 				<% :nip -> %>
-					<NIP><%= @invoice.buyer_nip %></NIP>
+					<NIP><%= @invoice.buyer_id %></NIP>
 				<% :eu_vat -> %>
-					<KodUE><%= @invoice.buyer_eu_country_code %></KodUE>
-					<NrVatUE><%= @invoice.buyer_eu_vat_number %></NrVatUE>
+					<KodUE><%= @invoice.buyer_country %></KodUE>
+					<NrVatUE><%= @invoice.buyer_id %></NrVatUE>
 				<% :other_id -> %>
-					<%= if @invoice.buyer_other_id_country do %>
-						<KodKraju><%= @invoice.buyer_other_id_country %></KodKraju>
+					<%= if @invoice.buyer_country do %>
+						<KodKraju><%= @invoice.buyer_country %></KodKraju>
 					<% end %>
-					<NrID><%= @invoice.buyer_other_id %></NrID>
+					<NrID><%= @invoice.buyer_id %></NrID>
 				<% :no_id -> %>
 					<BrakID>1</BrakID>
 			<% end %>
@@ -146,17 +146,17 @@
 			</FaWiersz>
 		<% end %>
 		<Platnosc>
-		<%= if @invoice.due_date do %>
+			<%= if @invoice.due_date do %>
 				<TerminPlatnosci>
 					<Termin><%= @invoice.due_date %></Termin>
 				</TerminPlatnosci>
 			<% end %>
-				<FormaPlatnosci><%= T.payment_method_code(@invoice.payment_method) %></FormaPlatnosci>
-				<%= if @invoice.seller_account_number do %>
-					<RachunekBankowy>
-						<NrRB><%= @invoice.seller_account_number %></NrRB>
-					</RachunekBankowy>
-				<% end %>
-			</Platnosc>
+			<FormaPlatnosci><%= T.payment_method_code(@invoice.payment_method) %></FormaPlatnosci>
+			<%= if @invoice.seller_account_number do %>
+				<RachunekBankowy>
+					<NrRB><%= @invoice.seller_account_number %></NrRB>
+				</RachunekBankowy>
+			<% end %>
+		</Platnosc>
 	</Fa>
 </Faktura>

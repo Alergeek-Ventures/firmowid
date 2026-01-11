@@ -18,17 +18,10 @@ defmodule Firmowid.Repo.Migrations.AddKsefSalesInvoices do
       add :corrected_invoice_id,
           references(:sales_invoices, type: :binary_id, on_delete: :restrict)
 
-      # EU buyer identification
-      # KodUE (e.g., "DE", "FR")
-      add :buyer_eu_country_code, :string
-      # NrVatUE
-      add :buyer_eu_vat_number, :string
-
-      # Other ID for non-EU/non-NIP buyers
-      # NrID
-      add :buyer_other_id, :string
-      # KodKraju for NrID
-      add :buyer_other_id_country, :string
+      # NOTE: We use a unified buyer ID approach instead of separate fields:
+      # - buyer_nip is renamed to buyer_id in migration 20260112202742
+      # - buyer_id_type is derived at runtime from buyer_country and buyer_pesel
+      # - buyer_country is used directly for KodUE/KodKraju in KSeF XML
     end
 
     # ============================================================================
@@ -64,10 +57,11 @@ defmodule Firmowid.Repo.Migrations.AddKsefSalesInvoices do
     create index(:sales_invoices, [:corrected_invoice_id])
 
     # ============================================================================
-    # CONSTRAINTS - Added last as requested
+    # CONSTRAINTS
     # ============================================================================
 
     # Database trigger to prevent modification of locked sales invoices
+    # NOTE: Uses buyer_nip here; migration 20260112202742 updates this to buyer_id
     execute """
     CREATE OR REPLACE FUNCTION prevent_locked_sales_invoice_modification()
     RETURNS TRIGGER AS $$
@@ -94,9 +88,7 @@ defmodule Firmowid.Repo.Migrations.AddKsefSalesInvoices do
           OLD.buyer_email, OLD.buyer_phone, OLD.buyer_description, OLD.is_buyer_confirmed,
           OLD.are_sales_invoice_items_confirmed, OLD.is_cash_account, OLD.is_reverse_charge,
           OLD.skip_invoicing, OLD.item_names, OLD.ksef_invoice_kind,
-          OLD.buyer_eu_country_code, OLD.buyer_eu_vat_number, OLD.buyer_other_id,
-          OLD.buyer_other_id_country, OLD.corrected_invoice_id, OLD.organization_id,
-          OLD.inserted_at
+          OLD.corrected_invoice_id, OLD.organization_id, OLD.inserted_at
         ) IS DISTINCT FROM ROW(
           NEW.id, NEW.invoice_type, NEW.invoice_number, NEW.sale_date, NEW.issue_date,
           NEW.due_date, NEW.payment_method, NEW.currency, NEW.is_basic_info_confirmed,
@@ -108,9 +100,7 @@ defmodule Firmowid.Repo.Migrations.AddKsefSalesInvoices do
           NEW.buyer_email, NEW.buyer_phone, NEW.buyer_description, NEW.is_buyer_confirmed,
           NEW.are_sales_invoice_items_confirmed, NEW.is_cash_account, NEW.is_reverse_charge,
           NEW.skip_invoicing, NEW.item_names, NEW.ksef_invoice_kind,
-          NEW.buyer_eu_country_code, NEW.buyer_eu_vat_number, NEW.buyer_other_id,
-          NEW.buyer_other_id_country, NEW.corrected_invoice_id, NEW.organization_id,
-          NEW.inserted_at
+          NEW.corrected_invoice_id, NEW.organization_id, NEW.inserted_at
         ) THEN
           RAISE EXCEPTION 'Cannot modify a locked sales invoice. Only ksef_number, ksef_session_reference_number, and locked_at may be updated.';
         END IF;
@@ -139,14 +129,9 @@ defmodule Firmowid.Repo.Migrations.AddKsefSalesInvoices do
     drop index(:sales_invoices, [:ksef_number], name: :sales_invoices_ksef_number_idx)
 
     # Reverse data migrations - not possible, so we skip them
-    # (Original migrations had `def down do :ok end` for data migrations)
 
     # Drop columns from sales_invoices
     alter table(:sales_invoices) do
-      remove :buyer_other_id_country
-      remove :buyer_other_id
-      remove :buyer_eu_vat_number
-      remove :buyer_eu_country_code
       remove :corrected_invoice_id
       remove :ksef_invoice_kind
       remove :locked_at
