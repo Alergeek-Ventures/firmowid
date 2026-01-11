@@ -10,7 +10,13 @@ defmodule Firmowid.AccountsFixtures do
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
   def valid_user_password, do: "hello world!"
 
-  def unique_identifcation_number, do: Integer.to_string(System.unique_integer())
+  defp unique_nip do
+    [:positive]
+    |> System.unique_integer()
+    |> Integer.to_string()
+    |> String.pad_leading(10, "0")
+    |> String.slice(-10..-1)
+  end
 
   def valid_user_attributes(attrs \\ %{}) do
     Enum.into(attrs, %{
@@ -33,7 +39,7 @@ defmodule Firmowid.AccountsFixtures do
     {:ok, organization} =
       Accounts.create_organization(
         %{
-          "identification_number" => unique_identifcation_number(),
+          "nip" => unique_nip(),
           "name" => "Test Organization",
           "owner_id" => user.id
         },

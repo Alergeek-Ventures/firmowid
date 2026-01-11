@@ -70,7 +70,7 @@ Repo.transaction(fn ->
   av =
     case Repo.one(
            from(o in Organization,
-             where: o.identification_number == "PL1234567891",
+             where: o.nip == "PL1234567891",
              limit: 1
            ),
            skip_organization_id: true
@@ -81,7 +81,7 @@ Repo.transaction(fn ->
           Accounts.create_organization(
             %{
               "name" => "Hello Kitty Inc. spółka z ograniczoną odpowiedzialnością",
-              "identification_number" => "PL1234567891",
+              "nip" => "1234567891",
               "address" => "Lipowa 3D, 30-702, Kraków",
               "owner_id" => franek.id
             },
@@ -607,7 +607,7 @@ Repo.transaction(fn ->
   evil_org =
     case Repo.one(
            from(o in Organization,
-             where: o.identification_number == "9999999999",
+             where: o.nip == "9999999999",
              limit: 1
            ),
            skip_organization_id: true
@@ -617,7 +617,7 @@ Repo.transaction(fn ->
           Accounts.create_organization(
             %{
               "name" => "Evil Competitor Corp",
-              "identification_number" => "9999999999",
+              "nip" => "9999999999",
               "address" => "Dark Street 666, 00-666, Warszawa",
               "owner_id" => evil_user.id
             },

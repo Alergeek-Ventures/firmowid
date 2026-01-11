@@ -7,7 +7,7 @@ defmodule Firmowid.Accounts.Organization do
   alias Firmowid.Accounts.User
 
   schema "organizations" do
-    field :identification_number, :string
+    field :nip, :string
     field :address, :string
     field :name, :string
     field :phone_number, :string
@@ -29,7 +29,7 @@ defmodule Firmowid.Accounts.Organization do
   def changeset(organization, attrs \\ %{}) do
     organization
     |> cast(attrs, [
-      :identification_number,
+      :nip,
       :address,
       :name,
       :owner_id,
@@ -42,7 +42,8 @@ defmodule Firmowid.Accounts.Organization do
       :allowed_sender_emails,
       :inbound_email_nickname
     ])
-    |> validate_required([:identification_number, :name, :owner_id, :inbound_email_nickname])
+    |> validate_required([:nip, :name, :owner_id, :inbound_email_nickname])
+    |> validate_format(:nip, ~r/^[0-9]{10}$/)
     |> unique_constraint(:inbound_email_nickname)
     |> assoc_constraint(:owner)
   end
@@ -51,12 +52,14 @@ defmodule Firmowid.Accounts.Organization do
     organization
     |> cast(
       attrs,
-      [:identification_number, :address, :name, :phone_number, :organization_type, :is_vat_payer]
+      [:nip, :address, :name, :phone_number, :organization_type, :is_vat_payer]
     )
-    |> validate_required([:identification_number, :name])
+    |> validate_required([:nip, :name])
   end
 
   def correspondence_changeset(organization, attrs \\ %{}) do
     cast(organization, attrs, [:correspondence_name, :correspondence_address])
   end
+
+  def vat_eu(%{nip: nip}), do: "PL" <> nip
 end

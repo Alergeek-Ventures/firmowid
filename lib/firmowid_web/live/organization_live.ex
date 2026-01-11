@@ -23,7 +23,7 @@ defmodule FirmowidWeb.OrganizationLive do
               </p>
               <.simple_form for={@organization_form} id="organization_form" phx-submit="create">
                 <.input
-                  field={@organization_form[:identification_number]}
+                  field={@organization_form[:nip]}
                   type="text"
                   placeholder="Identyfikator (NIP)"
                   required
@@ -152,7 +152,7 @@ defmodule FirmowidWeb.OrganizationLive do
           :organization_form,
           to_form(%{
             "name" => "",
-            "identification_number" => "",
+            "nip" => "",
             "street" => "",
             "number" => "",
             "postal_code" => "",

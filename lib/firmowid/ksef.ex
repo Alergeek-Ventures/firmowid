@@ -26,7 +26,7 @@ defmodule Firmowid.Ksef do
     {:ok, organization} = Accounts.get_organization(org_id)
 
     with {:ok, token_nip} <- extract_nip_from_token(ksef_token),
-         :ok <- validate_nip_match(token_nip, organization.identification_number),
+         :ok <- validate_nip_match(token_nip, organization.nip),
          :ok <- validate_no_existing_credential() do
       {:ok, credential} =
         %Credential{}

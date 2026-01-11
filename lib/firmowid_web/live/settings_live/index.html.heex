@@ -129,7 +129,7 @@
               <%= for [field, label, type] <- [
                 [:organization_type, "Rodzaj działalności", "text"],
                 [:name, "Nazwa organizacji", "text"],
-                [:identification_number, "NIP", "text"],
+                [:nip, "NIP", "text"],
                 [:address, "Adres przedsiębiorstwa", "text"],
                 [:phone_number, "Numer telefonu", "text"],
                 [:is_vat_payer, "Czy jest płatnikiem VAT?", "checkbox"]
@@ -167,7 +167,7 @@
             <%= for {label, value} <- [
               {"Rodzaj działalności", @current_org.organization_type},
               {"Nazwa organizacji", @current_org.name},
-              {"NIP", @current_org.identification_number},
+              {"NIP", @current_org.nip},
               {"Adres przedsiębiorstwa", @current_org.address},
               {"Numer telefonu", @current_org.phone_number},
               {"Płatnik VAT", if(@current_org.is_vat_payer, do: "Tak", else: "Nie")}

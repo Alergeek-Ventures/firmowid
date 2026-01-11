@@ -110,7 +110,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
         is_seller_confirmed: true,
         is_buyer_confirmed: false,
         are_sales_invoice_items_confirmed: false,
-        seller_nip: organization.identification_number,
+        seller_nip: organization.nip,
         seller_display_name: organization.name,
         seller_address: organization.address,
         seller_name: organization.name,

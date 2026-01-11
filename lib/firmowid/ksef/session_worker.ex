@@ -66,8 +66,7 @@ defmodule Firmowid.Ksef.SessionWorker do
   defp perform_authentication(%Credential{organization_id: org_id, auth_type: :token, credentials: token}) do
     {:ok, organization} = Accounts.get_organization(org_id)
 
-    context_nip = organization.identification_number
-    ApiClient.auth(context_nip, token)
+    ApiClient.auth(organization.nip, token)
   end
 
   defp schedule_reauthentication!(refresh_token) do
