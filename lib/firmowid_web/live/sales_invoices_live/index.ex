@@ -272,7 +272,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
           %{
             "buyer_display_name" => buyer_info.name,
             "buyer_address" => buyer_info.address,
-            "buyer_country" => "Polska",
+            "buyer_country" => "PL",
             "buyer_nip" => buyer_info.nip
           }
 

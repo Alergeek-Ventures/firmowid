@@ -4,6 +4,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
   import Ecto.Changeset
 
+  alias Firmowid.SalesInvoices.CountryCodes
   alias Firmowid.SalesInvoices.SalesInvoiceItem
 
   @type t :: %__MODULE__{}
@@ -233,10 +234,22 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       :buyer_other_id,
       :buyer_other_id_country
     ])
-    # todo: :buyer_country iso country code
-    # |> validate_length(:buyer_country, is: 2)
-    # |> validate_format(:buyer_country, ~r/^[A-Z]{2}$/)
+    |> validate_length(:buyer_country, is: 2)
+    |> validate_format(:buyer_country, ~r/^[A-Z]{2}$/)
+    |> validate_country_code(:buyer_country)
     |> cast_buyer_based_on_type()
+  end
+
+  defp validate_country_code(changeset, field) do
+    changeset
+    |> update_change(field, &CountryCodes.normalize/1)
+    |> validate_change(field, fn ^field, value ->
+      if CountryCodes.valid_country?(value) do
+        []
+      else
+        [{field, "musi być prawidłowym kodem ISO kraju"}]
+      end
+    end)
   end
 
   def cast_buyer_based_on_type(buyer) do
@@ -348,4 +361,24 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     |> put_change(:buyer_other_id_country, corrected_invoice.buyer_other_id_country)
     |> put_change(:currency, corrected_invoice.currency)
   end
+
+  @doc """
+  Returns true if the buyer is from an EU country.
+  """
+  @spec buyer_from_eu?(t()) :: boolean()
+  def buyer_from_eu?(%__MODULE__{buyer_country: country}) when is_binary(country) do
+    CountryCodes.eu_country?(country)
+  end
+
+  def buyer_from_eu?(_), do: false
+
+  @doc """
+  Returns the buyer's region (:eu, :non_eu, or :invalid).
+  """
+  @spec buyer_region(t()) :: :eu | :non_eu | :invalid
+  def buyer_region(%__MODULE__{buyer_country: country}) when is_binary(country) do
+    CountryCodes.region(country)
+  end
+
+  def buyer_region(_), do: :invalid
 end

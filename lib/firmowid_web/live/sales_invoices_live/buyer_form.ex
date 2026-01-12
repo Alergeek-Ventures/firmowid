@@ -4,6 +4,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.BuyerForm do
 
   import FirmowidWeb.SalesInvoicesLive.EditButton
 
+  alias Firmowid.SalesInvoices.CountryCodes
+
   require Logger
 
   attr :buyer_form, :list, required: true
@@ -148,7 +150,12 @@ defmodule FirmowidWeb.SalesInvoicesLive.BuyerForm do
                       required
                     />
 
-                    <.input field={@buyer_form[:buyer_country]} type="text" placeholder="Kraj" />
+                    <.input
+                      field={@buyer_form[:buyer_country]}
+                      type="select"
+                      options={CountryCodes.country_options()}
+                      prompt="Wybierz kraj"
+                    />
                   </div>
                 </div>
                 <div
