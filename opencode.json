@@ -10,7 +10,7 @@
     },
     "tidewave": {
       "type": "remote",
-      "url": "http://localhost:{env:PORT}/tidewave/mcp",
+      "url": "http://localhost:15086/tidewave/mcp",
       "enabled": true
     }
   }

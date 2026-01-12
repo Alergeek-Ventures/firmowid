@@ -54,6 +54,14 @@ defmodule Firmowid.CostInvoices do
     )
   end
 
+  def broadcast_invalid_document_uploaded(original_filename, organization_id) do
+    Phoenix.PubSub.broadcast(
+      Firmowid.PubSub,
+      "#{@cost_invoice_broadcast_topic}:#{organization_id}",
+      {:invalid_document_uploaded, original_filename}
+    )
+  end
+
   def get_cost_invoice_by_checksum!(blob_checksum) do
     from(c in CostInvoice,
       join: b in Blob,

@@ -1,18 +1,26 @@
 defmodule Firmowid.ReductoApiClient do
   @moduledoc """
-  Reducto is a document metadata extraction API and parsing / chunking service
-  (for RAG, unused at the moment).
+  Reducto is a document metadata extraction API and parsing / chunking service.
+  Uses Reducto API V3 - see https://docs.reducto.ai/extract/overview
   """
 
   require Logger
 
-  @type extract_options :: [extraction_mode: :hybrid | :ocr | :metadata]
+  @type extract_options :: [
+          extraction_mode: :hybrid | :ocr | :metadata,
+          system_prompt: String.t() | nil
+        ]
 
   def get_auth_token, do: {:bearer, Application.get_env(:firmowid, :reducto_api_key)}
 
   @doc """
-  Extracts metadata from a document using Reducto API. Pass in a file URL
+  Extracts metadata from a document using Reducto API V3. Pass in a file URL
   and JSON schema Map to get this map back with extracted metadata.
+
+  ## Options
+
+    * `:extraction_mode` - `:hybrid` (default), `:ocr`, or `:metadata`
+    * `:system_prompt` - Optional context for the LLM about the document type
 
   Be mindful that the API is in synchronous mode, meaning that a very big
   files might fail (120s timeout). It's possible to use async mode, but it
@@ -27,39 +35,52 @@ defmodule Firmowid.ReductoApiClient do
       |> Keyword.get(:extraction_mode, :hybrid)
       |> Atom.to_string()
 
+    system_prompt = Keyword.get(options, :system_prompt)
+
     host =
       :ex_aws
       |> Application.get_env(:s3)
       |> Keyword.get(:host)
 
-    file_url =
-      upload_to_reducto(file_url, host)
+    file_url = upload_to_reducto(file_url, host)
+
+    instructions = maybe_add_system_prompt(%{schema: json_schema}, system_prompt)
+
+    request_body = %{
+      input: file_url,
+      parsing: %{
+        settings: %{
+          extraction_mode: extraction_mode
+        },
+        retrieval: %{
+          chunking: %{chunk_mode: "disabled"}
+        }
+      },
+      instructions: instructions,
+      settings: %{
+        citations: %{
+          enabled: true,
+          numerical_confidence: true
+        }
+      }
+    }
 
     case Req.post(
            "https://platform.reducto.ai/extract",
            auth: get_auth_token(),
-           json: %{
-             document_url: file_url,
-             options: %{
-               extraction_mode: extraction_mode,
-               disable_chunking: true
-             },
-             async: %{
-               enabled: false
-             },
-             schema: json_schema
-           },
+           json: request_body,
            receive_timeout: 120_000,
            connect_options: [timeout: 120_000]
          ) do
       {:ok, response} ->
-        # Body is a list of dictionaries.
-        # If disable_chunking is True (default), then it will be a list of length one.
         body = Map.get(response, :body)
 
         case Map.get(body, "result") do
+          result when is_map(result) ->
+            {:ok, unwrap_citations(result)}
+
           [extracted_metadata | _] ->
-            {:ok, extracted_metadata}
+            {:ok, unwrap_citations(extracted_metadata)}
 
           [] ->
             Logger.error("Reducto API returned empty result. Response body: #{inspect(body)}")
@@ -67,6 +88,7 @@ defmodule Firmowid.ReductoApiClient do
 
           nil ->
             Logger.error("Reducto API response missing 'result' field. Response body: #{inspect(body)}")
+
             {:error, "Reducto API response missing 'result' field"}
         end
 
@@ -76,6 +98,29 @@ defmodule Firmowid.ReductoApiClient do
         {:error, err}
     end
   end
+
+  defp maybe_add_system_prompt(instructions, nil), do: instructions
+  defp maybe_add_system_prompt(instructions, prompt), do: Map.put(instructions, :system_prompt, prompt)
+
+  # When citations are enabled, values are wrapped in %{"value" => ..., "citations" => [...]}
+  # This function unwraps them to return just the values for backward compatibility
+  defp unwrap_citations(result) when is_map(result) do
+    Map.new(result, fn {key, value} -> {key, unwrap_citation_value(value)} end)
+  end
+
+  defp unwrap_citation_value(%{"value" => value, "citations" => _citations}) do
+    unwrap_citation_value(value)
+  end
+
+  defp unwrap_citation_value(value) when is_list(value) do
+    Enum.map(value, &unwrap_citation_value/1)
+  end
+
+  defp unwrap_citation_value(value) when is_map(value) do
+    Map.new(value, fn {k, v} -> {k, unwrap_citation_value(v)} end)
+  end
+
+  defp unwrap_citation_value(value), do: value
 
   defp upload_to_reducto(file_url, "localhost") do
     case Briefly.create() do

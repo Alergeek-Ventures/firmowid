@@ -286,6 +286,16 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     {:noreply, socket}
   end
 
+  def handle_info({:invalid_document_uploaded, original_filename}, socket) do
+    LiveToast.send_toast(
+      :error,
+      "Plik #{original_filename} nie zawiera wymaganych danych. Upewnij się, że wgrywasz fakturę, paragon lub rachunek.",
+      title: "Nieprawidłowy dokument"
+    )
+
+    {:noreply, socket}
+  end
+
   def handle_info({:cost_invoice_added, cost_invoice}, socket) do
     socket = refetch_invoicing_entries(socket)
 
