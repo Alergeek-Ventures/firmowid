@@ -30,28 +30,39 @@ defmodule FirmowidWeb.Components.Landing do
         class="max-w-7xl mx-auto flex items-center justify-between backdrop-blur-[8px] rounded-lg bg-opacity-10 bg-black px-6 py-2 transition-all duration-500"
       >
         <%!-- Logo --%>
-        <.link
-          navigate={~p"/"}
+        <span
           id="navbar-logo"
-          class="font-extrabold text-[28px] text-black transition-colors duration-500"
+          class="pointer-events-none select-none font-extrabold text-[28px] text-black transition-colors duration-500"
         >
           Firmowid
-        </.link>
+        </span>
 
         <%!-- Right nav links - hidden on mobile --%>
-        <div class="hidden md:flex items-center gap-4 text-sm">
+        <div class="hidden md:flex items-center gap-4 text-[16px] font-medium text-black">
           <a
-            href="#ksef"
-            class="navbar-link px-5 py-[15px] font-medium text-black hover:text-grey-700 transition-colors duration-500 rounded-[5px]"
+            href="https://alergeek.ventures/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="navbar-link px-5 py-[15px] hover:text-orange-700 transition-colors duration-500 rounded-[5px]"
           >
-            O Firmowidzie
-          </a>
-          <span class="navbar-link px-5 py-[15px] font-medium text-black hover:text-grey-700 transition-colors duration-500 rounded-[5px]">
             O nas
-          </span>
-          <span class="navbar-link px-5 py-[15px] font-medium text-black hover:text-grey-700 transition-colors duration-500 rounded-[5px]">
-            Blog
-          </span>
+          </a>
+          <a
+            href="#cta-footer"
+            class="group relative px-4 py-2 navbar-link hover:text-orange-700 transition-colors duration-500 rounded-[5px] z-20"
+          >
+            <span class="relative z-10">Wypróbuj</span>
+            <img
+              src={~p"/images/button_landing_navbar.svg"}
+              alt="Decorative frame"
+              class="absolute pointer-events-none inset-0 h-full w-full"
+            />
+            <img
+              src={~p"/images/button_landing_navbar_filled.svg"}
+              alt="Decorative frame"
+              class="absolute pointer-events-none inset-0 h-full w-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+            />
+          </a>
         </div>
       </div>
     </nav>
@@ -65,12 +76,19 @@ defmodule FirmowidWeb.Components.Landing do
 
   def alergeek_attribution(assigns) do
     ~H"""
-    <div class="absolute w-full px-6 lg:px-10 flex flex-col top-[100px] items-center">
+    <div class={["absolute w-full px-6 lg:px-10 flex flex-col top-[100px] items-center", @class]}>
       <div class="max-w-7xl w-full pl-6">
         <%!-- Spacer to account for fixed navbar height --%>
         <span class="hidden md:flex items-baseline gap-1.5">
           <span class="text-black font-light">Opracowane i wdrożone przez</span>
-          <span class="text-black font-bold font-logo">Alergeek Ventures</span>
+          <a
+            href="https://alergeek.ventures/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-black hover:text-grey-700 font-bold font-logo"
+          >
+            Alergeek Ventures
+          </a>
         </span>
       </div>
     </div>
@@ -359,7 +377,7 @@ defmodule FirmowidWeb.Components.Landing do
     assigns = assign(assigns, :container_class, @container_class)
 
     ~H"""
-    <section id={@id} class={["py-16 md:py-4", @class]}>
+    <section id={@id} class={["pt-16 md:pt-4", @class]}>
       <div class={@container_class}>
         <%!-- Header with title, description and tags --%>
         <div class="flex flex-col gap-6">
@@ -482,7 +500,7 @@ defmodule FirmowidWeb.Components.Landing do
 
   def budget_analysis(assigns) do
     ~H"""
-    <section class="w-full mx-auto px-16 lg:px-4  max-w-7xl">
+    <section class={["w-full mx-auto px-16 lg:px-4 max-w-7xl", @class]}>
       <div class="flex items-start justify-between pl-4 pr-0 py-0">
         <h2 class="text-[32px] font-semibold text-black">
           Analiza budżetowa
@@ -570,7 +588,10 @@ defmodule FirmowidWeb.Components.Landing do
     assigns = assign(assigns, :container_class, @container_class)
 
     ~H"""
-    <section id="cta-footer" class={["bg-black text-white py-20 relative overflow-clip", @class]}>
+    <section
+      id="cta-footer"
+      class={["bg-black text-white py-20 relative overflow-clip mt-[104px]", @class]}
+    >
       <div class="max-w-7xl mx-auto px-6 lg:px-10">
         <%!-- Main heading --%>
         <h2 class="text-center text-[56px] font-bold leading-[1.5] max-w-[1090px] mx-auto mb-[104px]">
@@ -633,7 +654,12 @@ defmodule FirmowidWeb.Components.Landing do
           <%!-- Right: CTA button with decorative elements --%>
           <div class="flex w-full h-full justify-center items-center mt-12">
             <span class="pl-40 pr-6 pt-14 pb-7 shrink-0">
-              <button class="relative text-white px-8 py-4 rounded text-[20px] font-medium transition-colors duration-500 group">
+              <a
+                href="https://cal.com/franek-madej/firmowid"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="relative inline-flex items-center justify-center text-white px-8 py-4 rounded text-[20px] font-medium transition-colors duration-500 group"
+              >
                 <img
                   src={~p"/images/button.svg"}
                   alt=""
@@ -659,7 +685,7 @@ defmodule FirmowidWeb.Components.Landing do
                   alt="A pair of decorative arrows"
                   class="pointer-events-none absolute right-[-25.616px] bottom-full translate-y-[-3px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                 />
-              </button>
+              </a>
             </span>
           </div>
         </div>
@@ -679,22 +705,37 @@ defmodule FirmowidWeb.Components.Landing do
             </p>
             <div class="flex-inline items-center gap-1 text-sm">
               <span class="font-light">Opracowana i wdrożona przez</span>
-              <span class="font-logo font-bold">Alergeek Ventures</span>
+              <a
+                href="https://alergeek.ventures/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="font-logo font-bold text-white hover:text-grey-300"
+              >
+                Alergeek Ventures
+              </a>
             </div>
           </div>
 
           <%!-- Footer columns --%>
           <div class="flex gap-32">
-            <%!-- <div class="space-y-3 font-bold text-base">
-              <p>O Firmowidzie</p>
-              <p>O nas</p>
-              <p>Kontakt</p>
-              <p>Blog</p>
-            </div> --%>
-            <div class="space-y-3 font-bold text-base">
-              <p>O Firmowidzie</p>
-              <p>O nas</p>
-              <p>Kontakt</p>
+            <div class="flex flex-col gap-3 font-bold text-base text-white">
+              <a href="#ksef" class="hidden hover:text-grey-300">O Firmowidzie</a>
+              <a
+                href="https://alergeek.ventures/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="hover:text-grey-300"
+              >
+                O nas
+              </a>
+              <a
+                href="https://cal.com/franek-madej/firmowid"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="hover:text-grey-300"
+              >
+                Kontakt
+              </a>
             </div>
           </div>
         </div>
@@ -718,7 +759,7 @@ defmodule FirmowidWeb.Components.Landing do
       height="24"
       viewBox="0 0 35 24"
       fill="none"
-      class="transition-all duration-500"
+      class={["transition-all duration-500", @class]}
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
@@ -764,7 +805,7 @@ defmodule FirmowidWeb.Components.Landing do
       />
       <path
         d="M12 5L19 12L12 19"
-        class="transition-all duration-500 group-hover:stroke-[#8B3F13] group-hover:translate-x-[10px]"
+        class="transition-all duration-500 group-hover:stroke-[#8B3F13] group-hover:translate-x-2.5"
         stroke="#B5B5B5"
         stroke-width="2"
         stroke-linecap="round"

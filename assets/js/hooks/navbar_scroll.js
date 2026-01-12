@@ -50,8 +50,8 @@ export const NavbarScroll = {
       navbarContainer.classList.add("bg-white");
       navbarContainer.classList.remove("bg-black");
       navbarLinks.forEach(link => {
-        link.classList.add("text-white", "hover:text-grey-600");
-        link.classList.remove("text-black", "hover:text-grey-700");
+        link.classList.add("text-white");
+        link.classList.remove("text-black");
       });
       navbarLogo.classList.add("text-white");
       navbarLogo.classList.remove("text-black");
@@ -60,8 +60,8 @@ export const NavbarScroll = {
       navbarContainer.classList.remove("bg-white");
       navbarContainer.classList.add("bg-black");
       navbarLinks.forEach(link => {
-        link.classList.remove("text-white", "hover:text-grey-600");
-        link.classList.add("text-black", "hover:text-grey-700");
+        link.classList.remove("text-white");
+        link.classList.add("text-black");
       });
       navbarLogo.classList.remove("text-white");
       navbarLogo.classList.add("text-black");

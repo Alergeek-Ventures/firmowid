@@ -36,6 +36,8 @@
       </.solution_item>
     </:solutions>
     <:image>
+      <%!-- [&_img]:transition-opacity [&_img]:transition-[400ms] --%>
+      <%!-- deleted until we have different images for each item --%>
       <div
         id="ksef-images"
         class="relative flex justify-center md:justify-end w-full h-full px-auto items-center"
@@ -44,28 +46,28 @@
           id="ksef-example-1"
           src={~p"/images/ksef.png"}
           alt=""
-          class="pointer-events-none h-full rounded-[8px] border-[2px] border-grey-100 transition-opacity duration-[400ms] opacity-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full object-scale-down"
+          class="pointer-events-none h-full rounded-[8px] border-[2px] border-grey-100 opacity-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full object-scale-down"
         />
 
         <img
           id="ksef-example-2"
           src={~p"/images/ksef.png"}
           alt=""
-          class="pointer-events-none h-full rounded-[8px] border-[2px] border-grey-100 transition-opacity duration-[400ms] opacity-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full object-scale-down"
+          class="pointer-events-none h-full rounded-[8px] border-[2px] border-grey-100 opacity-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full object-scale-down"
         />
 
         <img
           id="ksef-example-3"
           src={~p"/images/ksef.png"}
           alt=""
-          class="pointer-events-none h-full rounded-[8px] border-[2px] border-grey-100 transition-opacity duration-[400ms] opacity-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full object-scale-down"
+          class="pointer-events-none h-full rounded-[8px] border-[2px] border-grey-100 opacity-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full object-scale-down"
         />
 
         <img
           id="default-photo"
           src={~p"/images/ksef.png"}
           alt=""
-          class="pointer-events-none h-full rounded-[8px] border-[2px] border-grey-100 transition-opacity duration-[400ms] opacity-100 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full object-scale-down"
+          class="pointer-events-none rounded-[8px] border-[2px] border-grey-100 opacity-100 relative w-full h-auto object-scale-down"
         />
       </div>
     </:image>
@@ -115,35 +117,35 @@
     <:image>
       <div
         id="invoicing-images"
-        class="relative flex justify-center md:justify-end w-full h-full items-center"
+        class="relative flex justify-center md:justify-end w-full h-full items-center [&_img]:pointer-events-none [&_img]:transition-opacity [&_img]:absolute [&_img]:left-1/2 [&_img]:top-1/2 [&_img]:-translate-x-1/2 [&_img]:-translate-y-1/2 [&_img]:w-auto [&_img]:max-h-full [&_img]:object-scale-down [&_img]:duration-[400ms]"
       >
         <%!-- Arrow with text --%>
         <img
           id="invoicing-example-1"
           src={~p"/images/invoice_upload.png"}
           alt=""
-          class="pointer-events-none transition-opacity opacity-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full max-w-[90%] object-scale-down duration-[400ms]"
+          class="opacity-0 max-w-[90%]"
         />
 
         <img
           id="invoicing-example-2"
           src={~p"/images/invoice_matching.png"}
           alt=""
-          class="pointer-events-none max-w-[668px] transition-opacity opacity-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full object-scale-down duration-[400ms]"
+          class="opacity-0 max-w-[668px]"
         />
 
         <img
           id="invoicing-example-3"
           src={~p"/images/bank_linking.png"}
           alt=""
-          class="pointer-events-none max-w-[678px] transition-opacity opacity-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full object-scale-down duration-[400ms]"
+          class="opacity-0 max-w-[678px]"
         />
 
         <img
           id="default-photo"
           src={~p"/images/figurine.png"}
           alt=""
-          class="pointer-events-none aspect-[782/508] h-[91%] self-center object-scale-down lg:flex hidden opacity-[0.03] transition-opacity duration-[400ms]"
+          class="aspect-[782/508] h-[91%] self-center lg:flex hidden opacity-[0.03]"
         />
       </div>
 
@@ -156,7 +158,7 @@
   </.feature_section>
 
   <%!-- Highlight Banner --%>
-  <.highlight_banner>
+  <.highlight_banner class="hidden">
     <strong class="font-bold">Firmowid</strong>
     automatycznie dopasuje pasujące transakcje do faktur&nbsp;&#8209;&nbsp;<strong class="font-bold">porządek w księgowości</strong>, to jego drugie imię.
     <:cta>
@@ -192,7 +194,7 @@
   </.highlight_banner>
 
   <%!-- Video Placeholder --%>
-  <.video_placeholder id="video" class="scroll-mt-[120px]" />
+  <.video_placeholder id="video" class="hidden scroll-mt-[120px]" />
 
   <%!-- Czasośledź Section --%>
   <.timetracker_section id="czasosledz">
@@ -236,10 +238,10 @@
     </:right_content>
   </.timetracker_section>
 
-  <.budget_analysis />
+  <.budget_analysis class="hidden" />
 
   <%!-- Budget Analysis Section --%>
-  <.feature_section id="analiza" class="mb-[88px]">
+  <.feature_section id="analiza" class="hidden">
     <:solution_title>Rozwiązanie Firmowida</:solution_title>
     <:solution_subtitle>Z Firmowidem budżetowanie robi się samo.</:solution_subtitle>
     <:solutions>
