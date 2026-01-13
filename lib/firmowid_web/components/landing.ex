@@ -106,16 +106,13 @@ defmodule FirmowidWeb.Components.Landing do
 
     ~H"""
     <section class={["min-h-screen flex flex-col", @class]}>
-      <div class="w-full flex-1 px-6 lg:px-10 flex flex-col">
+      <div class="w-full flex-1 px-6 lg:px-10 flex flex-col h-[100vh]">
         <div class="max-w-7xl mx-auto w-full flex-1 flex flex-col md:pl-6 gap-0">
           <%!-- Scrollable container for main hero content --%>
           <div class="flex-1 overflow-y-auto flex items-center justify-center">
-            <div
-              class="grid md:grid-cols-2 gap-8 md:gap-[22px] w-full"
-              style="grid-auto-columns: 1fr;"
-            >
+            <div class="grid md:grid-cols-2 gap-8 md:gap-[22px] w-full items-center">
               <%!-- Left column: copy and CTAs, vertically centered --%>
-              <div class="flex flex-col pt-32 justify-center gap-[25px] min-w-[408px]">
+              <div class="flex flex-col pt-32 gap-[25px] min-w-[408px]">
                 <div class="flex flex-col gap-[30px]">
                   <h1 class="text-[54px] font-bold text-black leading-normal tracking-tight uppercase">
                     prowadź firmę <br />z lżejszą głową
@@ -144,7 +141,7 @@ defmodule FirmowidWeb.Components.Landing do
                   </.link>
                   <.link
                     navigate={~p"/zarejestruj"}
-                    class="text-nowrap px-8 py-4 rounded text-base font-medium text-white bg-black hover:bg-orange-700 disabled:cursor-default disabled:bg-grey-800 disabled:text-grey-400 transition-colors duration-500"
+                    class="text-nowrap px-8 py-4 rounded text-base font-medium text-white bg-black hover:bg-orange-700 disabled:cursor-default disabled:bg-grey-800 disabled:text-grey-400 transition-colors duration-[400ms]"
                   >
                     Wypróbuj Firmowida
                   </.link>
@@ -152,21 +149,21 @@ defmodule FirmowidWeb.Components.Landing do
               </div>
 
               <%!-- Right column: image only --%>
-              <div class="flex items-center justify-center flex-1 overflow-hidden">
+              <div class="flex max-h-[90vh] items-center justify-center self-stretch overflow-hidden">
                 <img
                   src={~p"/images/figurine.png"}
                   alt="Firmowid"
-                  class="w-full h-auto max-w-[590px] object-cover object-bottom"
+                  class="w-full h-full max-w-[590px] max-h-full object-contain object-bottom"
                 />
               </div>
             </div>
           </div>
 
           <%!-- Sticky button at bottom of scroll context --%>
-          <div class="sticky bottom-0 flex items-center justify-center bg-grey-100">
+          <div class="bottom-0 flex items-center justify-center">
             <a
               href="#ksef"
-              class="inline-flex flex-col items-center px-8 pt-4 mb-2 text-base font-medium text-darkGrey hover:text-black transition-colors duration-500"
+              class="inline-flex flex-col items-center px-8 pt-4 mb-2 text-base font-medium text-darkGrey hover:text-black transition-colors duration-500 bg-grey-100 rounded-md"
             >
               Dowiedz się więcej
               <svg
@@ -299,6 +296,7 @@ defmodule FirmowidWeb.Components.Landing do
   Renders a solution item with checkmark in a white background pill.
   When image_container_id and index are provided, adds hover interactivity to show corresponding images.
   """
+  attr :class, :string, default: nil
   attr :image_container_id, :string, default: nil
   attr :index, :integer, default: nil
 
@@ -312,7 +310,10 @@ defmodule FirmowidWeb.Components.Landing do
           @image_container_id <> "_item_" <> Integer.to_string(@index)
         end
       }
-      class="flex items-center space-x-[-2.33px] bg-white rounded-lg py-3 px-4 hover:bg-grey-100 group cursor-pointer"
+      class={[
+        "flex items-center space-x-[-2.33px] bg-white rounded-lg py-3 px-4 hover:bg-grey-100 group cursor-pointer",
+        @class
+      ]}
       phx-hook={
         if @image_container_id do
           "SolutionItemImageSwitcher"
@@ -377,7 +378,7 @@ defmodule FirmowidWeb.Components.Landing do
     assigns = assign(assigns, :container_class, @container_class)
 
     ~H"""
-    <section id={@id} class={["pt-16 md:pt-4", @class]}>
+    <section id={@id} class={["pt-16 md:pt-4 mt-[72px]", @class]}>
       <div class={@container_class}>
         <%!-- Header with title, description and tags --%>
         <div class="flex flex-col gap-6">
@@ -404,7 +405,7 @@ defmodule FirmowidWeb.Components.Landing do
           <%!-- Two column cards --%>
           <div class="flex gap-5 items-stretch w-full">
             <%!-- Left card: Monitorowanie czasu pracowników --%>
-            <div class="bg-white flex flex-col flex-1 gap-6 items-center justify-center p-8 rounded-2xl group hover:shadow-[0_4px_12px_0_rgba(0,0,0,0.15)]">
+            <div class="bg-white flex flex-col flex-1 gap-6 items-center justify-center p-8 rounded-2xl group hover:shadow-[0_4px_12px_0_rgba(0,0,0,0.15)] transition-all duration-500">
               <div class="flex flex-col gap-4 items-start w-full">
                 <div class="flex gap-3 items-center w-full">
                   <div class="w-6 h-6 shrink-0 overflow-hidden">
@@ -424,7 +425,7 @@ defmodule FirmowidWeb.Components.Landing do
             </div>
 
             <%!-- Right card: Ewidencja --%>
-            <div class="relative bg-white flex flex-col flex-1 gap-14 items-center p-8 rounded-2xl group hover:shadow-[0_4px_12px_0_rgba(0,0,0,0.15)]">
+            <div class="relative bg-white flex flex-col flex-1 gap-14 items-center p-8 rounded-2xl group hover:shadow-[0_4px_12px_0_rgba(0,0,0,0.15)] transition-all duration-500">
               <img
                 src={~p"/images/clock.png"}
                 alt="Decorative clock"

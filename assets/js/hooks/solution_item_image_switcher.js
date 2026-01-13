@@ -20,11 +20,15 @@ export const SolutionItemImageSwitcher = {
     // Setup event listeners
     this.handleMouseEnter = this._handleMouseEnter.bind(this);
     this.el.addEventListener('mouseenter', this.handleMouseEnter);
+
+    this.handleMouseLeave = this._handleMouseLeave.bind(this);
+    this.el.addEventListener('mouseleave', this.handleMouseLeave);
   },
 
   destroyed() {
     if (this.el) {
       this.el.removeEventListener('mouseenter', this.handleMouseEnter);
+      this.el.removeEventListener('mouseleave', this.handleMouseLeave);
     }
   },
 
@@ -43,11 +47,28 @@ export const SolutionItemImageSwitcher = {
 
     // Hide arrow when showing non-default image
     if (this.arrow) {
-      this.arrow.classList.add('hidden');
-      this.arrow.classList.add('lg:hidden');
+      this.arrow.classList.remove('opacity-100');
+      this.arrow.classList.add('opacity-0');
     }
-    if(this.defaultImage && this.index !== 3) {
-      this.defaultImage.classList.add('lg:opacity-0');
+    if(this.defaultImage) {
+      this.defaultImage.classList.add('md:opacity-0');
     }
   },
+
+  _handleMouseLeave() {
+    // Hide all images
+    this.images.forEach((img) => {
+      img.classList.remove('opacity-100');
+      img.classList.add('opacity-0');
+    });
+
+    // Show arrow and default image when reverting
+    if (this.arrow) {
+      this.arrow.classList.add('opacity-100');
+      this.arrow.classList.remove('opacity-0');
+    }
+    if(this.defaultImage) {
+      this.defaultImage.classList.remove('md:opacity-0');
+    }
+  }
 };

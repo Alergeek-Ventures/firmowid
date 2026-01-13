@@ -25,13 +25,13 @@
     <:solution_title>Rozwiązanie Firmowida</:solution_title>
     <:solution_subtitle>Z Firmowidem KSeF nie jest niczym strasznym.</:solution_subtitle>
     <:solutions>
-      <.solution_item image_container_id="ksef-images" index={0}>
+      <.solution_item image_container_id="ksef-images" index={0} class="pointer-events-none">
         Gwarancja poprawności faktur.
       </.solution_item>
-      <.solution_item image_container_id="ksef-images" index={1}>
+      <.solution_item image_container_id="ksef-images" index={1} class="pointer-events-none">
         Automatyczna aktualizacja obsługi KSeF.
       </.solution_item>
-      <.solution_item image_container_id="ksef-images" index={2}>
+      <.solution_item image_container_id="ksef-images" index={2} class="pointer-events-none">
         Dostosowywanie się do zmian.
       </.solution_item>
     </:solutions>
@@ -107,7 +107,7 @@
           id="functionality-arrow"
           src={~p"/images/functionality_arrow.svg"}
           alt=""
-          class="pointer-events-none absolute top-[-42px] left-[118%] scale-[1.4] hidden lg:block"
+          class="pointer-events-none absolute md:rotate-[20deg] lg:rotate-0 md:top-12 lg:top-[-42px] lg:left-[118%] md:left-[32%] md:scale-[55%] lg:scale-[1.4] hidden md:block opacity-100 transition-opacity duration-200 delay-[50ms]"
         />
       </span>
       <.solution_item image_container_id="invoicing-images" index={2}>
@@ -117,9 +117,8 @@
     <:image>
       <div
         id="invoicing-images"
-        class="relative flex justify-center md:justify-end w-full h-full items-center [&_img]:pointer-events-none [&_img]:transition-opacity [&_img]:absolute [&_img]:left-1/2 [&_img]:top-1/2 [&_img]:-translate-x-1/2 [&_img]:-translate-y-1/2 [&_img]:w-auto [&_img]:max-h-full [&_img]:object-scale-down [&_img]:duration-[400ms]"
+        class="relative flex justify-center md:justify-end w-full h-full items-center [&_img:not(#default-photo)]:pointer-events-none [&_img:not(#default-photo)]:transition-opacity [&_img:not(#default-photo)]:absolute [&_img:not(#default-photo)]:left-1/2 [&_img:not(#default-photo)]:top-1/2 [&_img:not(#default-photo)]:-translate-x-1/2 [&_img:not(#default-photo)]:-translate-y-1/2 [&_img]:w-auto [&_img]:max-h-full [&_img]:object-scale-down [&_img]:duration-[400ms]"
       >
-        <%!-- Arrow with text --%>
         <img
           id="invoicing-example-1"
           src={~p"/images/invoice_upload.png"}
@@ -145,15 +144,9 @@
           id="default-photo"
           src={~p"/images/figurine.png"}
           alt=""
-          class="aspect-[782/508] h-[91%] self-center lg:flex hidden opacity-[0.03]"
+          class="aspect-[782/508] h-[91%] self-center hidden md:block opacity-[0.03]"
         />
       </div>
-
-      <%!-- <img
-        src={~p"/images/invoice_linking_frame.svg"}
-        alt=""
-        class="pointer-events-none h-full aspect-[782/508] w-[200%] object-left object-cover lg:flex hidden"
-      /> --%>
     </:image>
   </.feature_section>
 
