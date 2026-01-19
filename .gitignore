@@ -57,3 +57,6 @@ priv/static/.DS_Store
 
 # Cached KSeF XSD schemas (downloaded from gov.pl)
 /priv/ksef_schemas/*.xsd
+
+# dialyxir cache
+/priv/plts/*.plt

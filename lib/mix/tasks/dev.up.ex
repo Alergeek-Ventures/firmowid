@@ -158,16 +158,12 @@ defmodule Mix.Tasks.Dev.Up do
 
       _path ->
         # Use env command to set variables on the host side
-        System.cmd("distrobox-host-exec", ["env" | env_prefix] ++ ["podman" | args],
-          stderr_to_stdout: true
-        )
+        System.cmd("distrobox-host-exec", ["env" | env_prefix] ++ ["podman" | args], stderr_to_stdout: true)
     end
   end
 
   defp wait_for_postgres(port, attempts \\ 30) do
-    case System.cmd("pg_isready", ["-h", "localhost", "-p", to_string(port)],
-           stderr_to_stdout: true
-         ) do
+    case System.cmd("pg_isready", ["-h", "localhost", "-p", to_string(port)], stderr_to_stdout: true) do
       {_, 0} ->
         Mix.shell().info("Postgres is ready")
 
@@ -235,9 +231,7 @@ defmodule Mix.Tasks.Dev.Up do
 
     case Req.post("http://localhost:11190/api/routes", json: route_config) do
       {:ok, %{status: status}} when status in 200..299 ->
-        Mix.shell().info(
-          "Caddy route registered: https://#{branch}.firmowid.localhost -> localhost:#{port}"
-        )
+        Mix.shell().info("Caddy route registered: https://#{branch}.firmowid.localhost -> localhost:#{port}")
 
       {:ok, %{status: status, body: body}} ->
         Mix.shell().error("Warning: Failed to register Caddy route (status #{status})")

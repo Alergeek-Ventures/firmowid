@@ -89,6 +89,7 @@ defmodule Firmowid.Ksef.InvoiceParserTest do
       end
     end
 
+    @tag capture_log: true
     test "returns error for invalid XML" do
       assert {:error, _} = InvoiceParser.parse("not xml at all")
     end

@@ -16,8 +16,16 @@ defmodule Firmowid.MixProject do
 
       # TEMP: remove this once https://github.com/jeremyjh/dialyxir/issues/561 is resolved
       dialyzer: [
-        flags: [:no_opaque]
+        flags: [:no_opaque],
+        plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
+        plt_add_apps: [:mix, :ex_unit]
       ]
+    ]
+  end
+
+  def cli do
+    [
+      preferred_envs: [check: :test]
     ]
   end
 
@@ -104,8 +112,8 @@ defmodule Firmowid.MixProject do
       {:nx, "~> 0.10"},
       {:mdex, "~> 0.7"},
       {:paradex, "~> 0.4.0"},
-      {:sobelow, "~> 0.13", only: [:dev], runtime: Mix.env() == :dev},
-      {:dialyxir, "~> 1.4", only: [:dev], runtime: Mix.env() == :dev},
+      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:openai_ex, "~> 0.9.13"},
       {:live_debugger, "~> 0.4", only: [:dev], runtime: Mix.env() == :dev},
       {:oban_web, "~> 2.11"},
