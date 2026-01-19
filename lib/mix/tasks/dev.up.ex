@@ -4,18 +4,20 @@ defmodule Mix.Tasks.Dev.Up do
   @moduledoc """
   Sets up a complete worktree development environment.
 
-  1. Copies .env from main worktree
+  1. Verifies .env exists (copied by `wt step copy-ignored`)
   2. Generates .env.local with port configuration
   3. Starts Podman Compose services (Postgres, Localstack, Chromium)
   4. Runs mix setup (ecto.create, ecto.migrate, assets)
   5. Registers Caddy route for `{branch}.firmowid.localhost`
+  6. Starts Phoenix server in background
 
   ## Usage
 
-      mix dev.up --branch BRANCH --port PORT --db-port DB_PORT --s3-port S3_PORT --chrome-port CHROME_PORT
+      mix dev.up --branch BRANCH --port PORT --db-port DB_PORT --s3-port S3_PORT --chrome-port CHROME_PORT --debugger-port DEBUGGER_PORT
 
   ## Prerequisites
 
+  - .env file must exist (automatically copied by worktrunk via .worktreeinclude)
   - Caddy must be running with admin API on localhost/caddy
   - Podman must be available
   """
@@ -27,7 +29,8 @@ defmodule Mix.Tasks.Dev.Up do
     port: :integer,
     db_port: :integer,
     s3_port: :integer,
-    chrome_port: :integer
+    chrome_port: :integer,
+    debugger_port: :integer
   ]
 
   @impl Mix.Task
@@ -39,15 +42,16 @@ defmodule Mix.Tasks.Dev.Up do
     db_port = Keyword.fetch!(opts, :db_port)
     s3_port = Keyword.fetch!(opts, :s3_port)
     chrome_port = Keyword.fetch!(opts, :chrome_port)
+    debugger_port = Keyword.fetch!(opts, :debugger_port)
 
     # Start applications needed for HTTP requests
     Application.ensure_all_started(:req)
 
-    # Step 1: Copy .env from main worktree
-    copy_env_from_main_worktree()
+    # Step 1: Verify .env exists (should be copied by `wt step copy-ignored`)
+    verify_env_exists()
 
     # Step 2: Generate .env.local
-    generate_env_local(branch, port, db_port, s3_port, chrome_port)
+    generate_env_local(branch, port, db_port, s3_port, chrome_port, debugger_port)
 
     # Step 3: Start Podman Compose services
     start_services(branch, port, db_port, s3_port, chrome_port)
@@ -68,29 +72,26 @@ defmodule Mix.Tasks.Dev.Up do
     Mix.shell().info("  Postgres:  localhost:#{db_port}")
     Mix.shell().info("  S3:        localhost:#{s3_port}")
     Mix.shell().info("  Chromium:  localhost:#{chrome_port}")
+    Mix.shell().info("  Debugger:  localhost:#{debugger_port}")
     Mix.shell().info("")
     Mix.shell().info("Logs: tail -f tmp/phoenix.log")
     Mix.shell().info("Stop: mix dev.down")
   end
 
-  defp copy_env_from_main_worktree do
-    Mix.shell().info("Copying .env from main worktree...")
+  defp verify_env_exists do
+    if File.exists?(".env") do
+      Mix.shell().info(".env found (copied by worktrunk)")
+    else
+      Mix.raise("""
+      .env file not found!
 
-    # Get the main worktree path (git's main working directory)
-    {git_dir, 0} = System.cmd("git", ["rev-parse", "--git-common-dir"], stderr_to_stdout: true)
-    main_worktree = git_dir |> String.trim() |> Path.dirname()
-    source = Path.join(main_worktree, ".env")
-
-    case File.cp(source, ".env") do
-      :ok ->
-        Mix.shell().info("Copied .env from #{main_worktree}")
-
-      {:error, reason} ->
-        Mix.raise("Failed to copy .env from #{source}: #{inspect(reason)}")
+      This file should be copied automatically by `wt step copy-ignored` during worktree creation.
+      If you're setting up manually, copy .env from the main worktree first.
+      """)
     end
   end
 
-  defp generate_env_local(branch, port, db_port, s3_port, chrome_port) do
+  defp generate_env_local(branch, port, db_port, s3_port, chrome_port, debugger_port) do
     Mix.shell().info("Generating .env.local...")
 
     content = """
@@ -98,6 +99,7 @@ defmodule Mix.Tasks.Dev.Up do
     DB_PORT=#{db_port}
     S3_PORT=#{s3_port}
     CHROME_PORT=#{chrome_port}
+    DEBUGGER_PORT=#{debugger_port}
     BRANCH=#{branch}
     DATABASE_URL=postgresql://postgres:postgres@localhost:#{db_port}/firmowid
 
@@ -125,7 +127,8 @@ defmodule Mix.Tasks.Dev.Up do
       {"CHROME_PORT", to_string(chrome_port)}
     ]
 
-    compose_result = podman(["compose", "-f", "local/compose.worktree.yml", "up", "-d"], compose_env)
+    compose_result =
+      podman(["compose", "-f", "local/compose.worktree.yml", "up", "-d"], compose_env)
 
     case compose_result do
       {output, 0} ->
@@ -155,12 +158,16 @@ defmodule Mix.Tasks.Dev.Up do
 
       _path ->
         # Use env command to set variables on the host side
-        System.cmd("distrobox-host-exec", ["env" | env_prefix] ++ ["podman" | args], stderr_to_stdout: true)
+        System.cmd("distrobox-host-exec", ["env" | env_prefix] ++ ["podman" | args],
+          stderr_to_stdout: true
+        )
     end
   end
 
   defp wait_for_postgres(port, attempts \\ 30) do
-    case System.cmd("pg_isready", ["-h", "localhost", "-p", to_string(port)], stderr_to_stdout: true) do
+    case System.cmd("pg_isready", ["-h", "localhost", "-p", to_string(port)],
+           stderr_to_stdout: true
+         ) do
       {_, 0} ->
         Mix.shell().info("Postgres is ready")
 
@@ -220,30 +227,24 @@ defmodule Mix.Tasks.Dev.Up do
   defp register_caddy_route(branch, port) do
     Mix.shell().info("Registering Caddy route for #{branch}.firmowid.localhost...")
 
-    caddy_config = %{
-      "@id" => branch,
-      "match" => [%{"host" => ["#{branch}.firmowid.localhost"]}],
-      "handle" => [
-        %{
-          "handler" => "reverse_proxy",
-          "upstreams" => [%{"dial" => "localhost:#{port}"}]
-        }
-      ]
+    route_config = %{
+      "id" => branch,
+      "hostname" => "#{branch}.firmowid.localhost",
+      "upstream" => "127.0.0.1:#{port}"
     }
 
-    case Req.post("https://localhost/caddy/config/apps/http/servers/srv0/routes",
-           json: caddy_config,
-           connect_options: [transport_opts: [verify: :verify_none]]
-         ) do
+    case Req.post("http://localhost:11190/api/routes", json: route_config) do
       {:ok, %{status: status}} when status in 200..299 ->
-        Mix.shell().info("Caddy route registered: https://#{branch}.firmowid.localhost -> localhost:#{port}")
+        Mix.shell().info(
+          "Caddy route registered: https://#{branch}.firmowid.localhost -> localhost:#{port}"
+        )
 
       {:ok, %{status: status, body: body}} ->
         Mix.shell().error("Warning: Failed to register Caddy route (status #{status})")
         Mix.shell().error(inspect(body))
 
       {:error, reason} ->
-        Mix.shell().error("Warning: Failed to register Caddy route (is Caddy running?)")
+        Mix.shell().error("Warning: Failed to register Caddy route (is development-caddy running?)")
         Mix.shell().error(inspect(reason))
     end
   end

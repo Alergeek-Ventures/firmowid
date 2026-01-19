@@ -70,9 +70,7 @@ defmodule Mix.Tasks.Dev.Down do
   defp unregister_caddy_route(branch) do
     Mix.shell().info("Unregistering Caddy route...")
 
-    case Req.delete("https://localhost/caddy/id/#{branch}",
-           connect_options: [transport_opts: [verify: :verify_none]]
-         ) do
+    case Req.delete("http://localhost:11190/api/routes/#{branch}") do
       {:ok, %{status: status}} when status in 200..299 ->
         Mix.shell().info("Caddy route unregistered")
 
@@ -80,7 +78,7 @@ defmodule Mix.Tasks.Dev.Down do
         Mix.shell().info("Warning: Caddy route not found")
 
       {:error, _} ->
-        Mix.shell().info("Warning: Caddy not running")
+        Mix.shell().info("Warning: development-caddy not running")
     end
   end
 

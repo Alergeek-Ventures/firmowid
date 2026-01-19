@@ -2,8 +2,10 @@
 # Enables isolated dev environments per worktree with deterministic ports
 
 [post-create]
+# Copy deps, _build, .env from main worktree (uses COW/reflink when available)
+copy_ignored = "wt step copy-ignored"
 deps = "mix deps.get"
-up = "mix dev.up --branch {{ branch | sanitize }} --port {{ branch | hash_port }} --db-port {{ ('db-' ~ branch) | hash_port }} --s3-port {{ ('s3-' ~ branch) | hash_port }} --chrome-port {{ ('chrome-' ~ branch) | hash_port }}"
+up = "mix dev.up --branch {{ branch | sanitize }} --port {{ branch | hash_port }} --db-port {{ ('db-' ~ branch) | hash_port }} --s3-port {{ ('s3-' ~ branch) | hash_port }} --chrome-port {{ ('chrome-' ~ branch) | hash_port }} --debugger-port {{ ('debugger-' ~ branch) | hash_port }}"
 
 [pre-remove]
 down = "mix dev.down"

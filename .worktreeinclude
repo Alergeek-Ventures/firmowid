@@ -1,0 +1,9 @@
+# Files to copy from main worktree when creating new worktrees
+# Used by `wt step copy-ignored` - uses COW (reflink) copying when available
+
+# Build caches - saves minutes of compilation
+deps/
+_build/
+
+# Environment configuration
+.env

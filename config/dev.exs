@@ -27,10 +27,6 @@ config :firmowid, Firmowid.Vault,
     default: {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: Base.decode64!("REMOVED_DEV_VAULT_KEY")}
   ]
 
-# =============================================================================
-# S3/Localstack (port 4566 matches local/compose.yml)
-# =============================================================================
-
 config :firmowid, FirmowidWeb.Endpoint,
   http: [port: 4000],
   check_origin: false,
@@ -48,18 +44,17 @@ config :firmowid, FirmowidWeb.Endpoint,
     ]
 
     # =============================================================================
+
+    # =============================================================================
+    # S3/Localstack (port 4566 matches local/compose.yml)
     # ChromicPDF (port 9222 matches local/compose.yml)
+    # =============================================================================
+
     # =============================================================================
     # =============================================================================
     # Dev Defaults (match local/compose.yml, overridable via .env.local for worktrees)
     # =============================================================================
   ]
-
-# =============================================================================
-
-# Secret key base for signing cookies (safe for dev only)
-# Endpoint
-# =============================================================================
 
 config :firmowid, FirmowidWeb.Endpoint,
   secret_key_base: "REMOVED_PHOENIX_SECRET_KEY_BASE"
@@ -69,14 +64,26 @@ config :firmowid, :ksef, base_url: "https://api-test.ksef.mf.gov.pl/v2/"
 config :firmowid,
   uploads_bucket: "firmowid-uploads"
 
+# LiveDebugger default port (overridable via DEBUGGER_PORT in .env.local for worktrees)
+config :live_debugger,
+  ip: {127, 0, 0, 1},
+  port: 4007
+
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
 
 # Initialize plugs at runtime for faster development compilation
+# =============================================================================
+
 config :phoenix, :plug_init_mode, :runtime
 
+# Secret key base for signing cookies (safe for dev only)
+
 # Set a higher stacktrace during development. Avoid configuring such
+# Endpoint
 # in production as building large stacktraces may be expensive.
+# =============================================================================
+
 config :phoenix, :stacktrace_depth, 20
 
 # =============================================================================

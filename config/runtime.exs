@@ -76,23 +76,24 @@ config :firmowid,
   google_client_id: System.get_env("GOOGLE_CLIENT_ID"),
   google_client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
 
-if config_env() != :test do
-  # Only override DB config if DB_PORT is set (worktree) or DATABASE_URL is set (prod)
-  # Otherwise use dev.exs defaults
-  cond do
-    System.get_env("DATABASE_URL") ->
-      config :firmowid, Firmowid.Repo,
-        url: System.get_env("DATABASE_URL"),
-        pool_size: String.to_integer(System.get_env("POOL_SIZE", "5"))
+# use DATABASE_URL if set
+if System.get_env("DATABASE_URL") do
+  repo_config = [
+    url: System.get_env("DATABASE_URL"),
+    pool_size: String.to_integer(System.get_env("POOL_SIZE", "5"))
+  ]
 
-    System.get_env("DB_PORT") ->
-      config :firmowid, Firmowid.Repo,
-        url: "postgresql://postgres:postgres@localhost:#{System.get_env("DB_PORT")}/firmowid",
-        pool_size: 5
+  # For test env, override database name (DATABASE_URL points to dev db)
+  repo_config =
+    if config_env() == :test do
+      Keyword.put(repo_config, :database, "firmowid_test#{System.get_env("MIX_TEST_PARTITION")}")
+    else
+      repo_config
+    end
 
-    true ->
-      :ok
-  end
+  config :firmowid, Firmowid.Repo, repo_config
+else
+  :ok
 end
 
 # S3 configuration
@@ -122,23 +123,26 @@ config :ex_money,
 config :firmowid,
   uploads_bucket: System.get_env("S3_BUCKET", "firmowid-uploads")
 
-if config_env() != :test do
-  cond do
-    chrome_address = System.get_env("CHROME_ADDRESS") ->
-      [host, port] = String.split(chrome_address, ":")
-      config :firmowid, ChromicPDF, chrome_address: {host, String.to_integer(port)}
+cond do
+  chrome_address = System.get_env("CHROME_ADDRESS") ->
+    [host, port] = String.split(chrome_address, ":")
+    config :firmowid, ChromicPDF, chrome_address: {host, String.to_integer(port)}
 
-    chrome_port = System.get_env("CHROME_PORT") ->
-      config :firmowid, ChromicPDF, chrome_address: {"localhost", String.to_integer(chrome_port)}
+  chrome_port = System.get_env("CHROME_PORT") ->
+    config :firmowid, ChromicPDF, chrome_address: {"localhost", String.to_integer(chrome_port)}
 
-    true ->
-      :ok
-  end
+  true ->
+    :ok
 end
 
 # Phoenix HTTP port - only override if PORT is set (worktree)
 if config_env() == :dev and System.get_env("PORT") do
   config :firmowid, FirmowidWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT"))]
+end
+
+# LiveDebugger port - only override if DEBUGGER_PORT is set (worktree)
+if config_env() == :dev and System.get_env("DEBUGGER_PORT") do
+  config :live_debugger, port: String.to_integer(System.get_env("DEBUGGER_PORT"))
 end
 
 # ErrorTracker is configured in prod.exs and doesn't require external DSN

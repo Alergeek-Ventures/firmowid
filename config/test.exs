@@ -27,7 +27,7 @@ config :firmowid, Firmowid.Repo,
   password: System.get_env("POSTGRES_PASSWORD", "postgres"),
   hostname: System.get_env("POSTGRES_HOST", "localhost"),
   database: "firmowid_test#{System.get_env("MIX_TEST_PARTITION")}",
-  port: String.to_integer(System.get_env("POSTGRES_PORT", "5433")),
+  port: String.to_integer(System.get_env("DB_PORT", "5433")),
   pool: Ecto.Adapters.SQL.Sandbox
 
 # We don't run a server during test. If one is required,
