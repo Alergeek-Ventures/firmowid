@@ -175,7 +175,7 @@ defmodule Firmowid.SalesInvoices do
 
     sales_invoice =
       sales_invoice
-      |> SalesInvoice.changeset(%{skip_invoicing: !sales_invoice.skip_invoicing})
+      |> SalesInvoice.skip_invoicing_changeset(%{skip_invoicing: !sales_invoice.skip_invoicing})
       |> Repo.update!()
 
     broadcast_sales_invoice_list_updated(sales_invoice.organization_id)

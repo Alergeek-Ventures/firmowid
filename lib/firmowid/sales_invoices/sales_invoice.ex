@@ -313,6 +313,16 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     cast(sales_invoice, attrs, [:ksef_number, :ksef_session_reference_number, :locked_at])
   end
 
+  @doc """
+  Changeset for toggling skip_invoicing flag.
+  This bypasses the full validation since we only update the skip flag.
+  """
+  def skip_invoicing_changeset(sales_invoice, attrs) do
+    sales_invoice
+    |> check_if_locked()
+    |> cast(attrs, [:skip_invoicing])
+  end
+
   def locked?(%__MODULE__{locked_at: nil}), do: false
   def locked?(%__MODULE__{locked_at: _}), do: true
 
