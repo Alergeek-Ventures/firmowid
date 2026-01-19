@@ -108,6 +108,10 @@ defmodule Mix.Tasks.Dev.Up do
 
     File.write!(".env.local", content)
     Mix.shell().info("Generated .env.local for branch '#{branch}'")
+
+    # Generate .opencode.port for opencode MCP config
+    File.write!(".opencode.port", to_string(port))
+    Mix.shell().info("Generated .opencode.port for opencode MCP")
   end
 
   defp start_services(branch, port, db_port, s3_port, chrome_port) do
