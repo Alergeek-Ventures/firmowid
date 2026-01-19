@@ -103,7 +103,7 @@ defmodule Firmowid.Invoicing do
             id: ci.id,
             type: "cost",
             date: ci.issue_date,
-            score: fragment("paradedb.score(?)", ci.id),
+            score: fragment("pdb.score(?)", ci.id),
             organization_id: ci.organization_id
           })
         end
@@ -126,7 +126,7 @@ defmodule Firmowid.Invoicing do
             id: si.id,
             type: "sales",
             date: si.issue_date,
-            score: fragment("paradedb.score(?)", si.id),
+            score: fragment("pdb.score(?)", si.id),
             organization_id: si.organization_id
           })
         end

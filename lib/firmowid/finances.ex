@@ -203,7 +203,7 @@ defmodule Firmowid.Finances do
             t.remittance_information_unstructured ~> ^query or
             t.transaction_currency ~> ^query
         )
-        |> order_by([t], fragment("paradedb.score(?) DESC", t.id))
+        |> order_by([t], fragment("pdb.score(?) DESC", t.id))
       end
 
     base_query

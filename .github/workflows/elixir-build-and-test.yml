@@ -75,7 +75,7 @@ jobs:
 
     services:
       db:
-        image: paradedb/paradedb:0.18.11
+        image: paradedb/paradedb:latest
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres

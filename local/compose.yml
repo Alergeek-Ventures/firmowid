@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: paradedb/paradedb:0.18.11
+    image: paradedb/paradedb:latest
     container_name: redux-postgres
     environment:
       POSTGRES_USER: postgres
