@@ -4,6 +4,8 @@
 [post-create]
 # Copy deps, _build, .env from main worktree (uses COW/reflink when available)
 copy_ignored = "wt step copy-ignored"
+# Fix execute permissions on binaries (lost during COW copy on some filesystems)
+fix_permissions = "chmod +x _build/*-linux-* 2>/dev/null || true"
 deps = "mix deps.get"
 up = "mix dev.up --branch {{ branch | sanitize }} --port {{ branch | hash_port }} --db-port {{ ('db-' ~ branch) | hash_port }} --s3-port {{ ('s3-' ~ branch) | hash_port }} --chrome-port {{ ('chrome-' ~ branch) | hash_port }} --debugger-port {{ ('debugger-' ~ branch) | hash_port }}"
 
