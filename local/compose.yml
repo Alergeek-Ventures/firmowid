@@ -6,9 +6,9 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - '5433:5432'
+      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
 
   localstack:
     image: localstack/localstack:latest
@@ -17,7 +17,7 @@ services:
       - SERVICES=s3
       - AWS_DEFAULT_REGION=us-east-1
     ports:
-      - '4566:4566'
+      - "4566:4566"
     volumes:
       - ./s3-init/create-s3-bucket.sh:/etc/localstack/init/ready.d/create-s3-bucket.sh:Z
       - localstack_data:/var/lib/localstack
@@ -28,9 +28,17 @@ services:
       dockerfile: deployment/Containerfile.chromium
     container_name: firmowid-chromium
     ports:
-      - '9222:9222'
+      - "9222:9222"
     healthcheck:
-      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://127.0.0.1:9222/json/version"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "--fail",
+          "--silent",
+          "--show-error",
+          "http://127.0.0.1:9222/json/version",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
