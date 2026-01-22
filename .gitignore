@@ -59,4 +59,4 @@ priv/static/.DS_Store
 /priv/ksef_schemas/*.xsd
 
 # dialyxir cache
-/priv/plts/*.plt
+/priv/plts/*
