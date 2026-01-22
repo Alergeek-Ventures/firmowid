@@ -54,13 +54,13 @@ jobs:
     needs: extract-versions
     env:
       MIX_ENV: test
-      
+
       # Database configuration (matches config/test.exs)
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_HOST: db
       DB_PORT: "5432"
-      
+
       SECRET_KEY_BASE: "REMOVED_PHOENIX_SECRET_KEY_BASE"
       CLOAK_VAULT_KEY: "REMOVED_CLOAK_VAULT_KEY"
 
@@ -75,7 +75,7 @@ jobs:
 
     services:
       db:
-        image: paradedb/paradedb:latest
+        image: paradedb/paradedb:0.19.11
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres

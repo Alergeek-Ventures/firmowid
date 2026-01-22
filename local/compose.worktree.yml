@@ -9,7 +9,7 @@
 
 services:
   postgres:
-    image: paradedb/paradedb:latest
+    image: paradedb/paradedb:0.19.11
     container_name: ${COMPOSE_PROJECT_NAME}-postgres
     environment:
       POSTGRES_USER: postgres
