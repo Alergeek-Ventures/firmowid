@@ -38,7 +38,19 @@ module.exports = {
         navbar: "var(--navbar-height)",
         "navbar-management": "var(--navbar-height-management)",
       },
-      keyframes: {
+      keyframes: ({ theme }) => ({
+        "error-pulse": {
+          "0%, 100%": {
+            backgroundColor: theme("colors.redText"),
+            color: theme("colors.white"),
+          },
+          "30%": {
+            backgroundColor: theme("colors.white"),
+          },
+          "50%": {
+            color: theme("colors.redText"),
+          },
+        },
         "fade-and-scale-out": {
           "0%": {
             opacity: "1",
@@ -72,12 +84,13 @@ module.exports = {
             opacity: "1",
           },
         },
-      },
+      }),
       animation: {
         "list-item-removal": "fade-and-scale-out 300ms ease-out forwards",
         "slide-from-center": "slide-from-center 300ms ease-out forwards",
         appear: "appear 700ms ease-out forwards",
         "fade-in": "appear 150ms ease-out forwards",
+        "error-pulse": "error-pulse 2s ease-in-out infinite",
       },
     },
   },

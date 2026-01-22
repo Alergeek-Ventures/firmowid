@@ -70,7 +70,7 @@ Repo.transaction(fn ->
   av =
     case Repo.one(
            from(o in Organization,
-             where: o.nip == "PL1234567891",
+             where: o.nip == "1234567891",
              limit: 1
            ),
            skip_organization_id: true
@@ -584,6 +584,247 @@ Repo.transaction(fn ->
 
     IO.puts("✓ Created sample sales invoice: #{sales_invoice.invoice_number}")
   end
+
+  # ============================================================================
+  # KSeF STATUS TESTING: Create invoices with different KSeF submission states
+  # ============================================================================
+
+  IO.puts("\n📤 Creating KSeF status test invoices...")
+
+  # 1. KSeF SUCCESS - Invoice with ksef_number set (fully submitted)
+  # Invoice number format: {index}/{month}/{year} e.g. "01/01/2025"
+  ksef_success_invoice =
+    Repo.one(
+      from(si in SalesInvoices.SalesInvoice,
+        where: si.invoice_number == "01/01/2025" and si.organization_id == ^av.id,
+        limit: 1
+      )
+    )
+
+  if is_nil(ksef_success_invoice) do
+    {:ok, invoice} =
+      SalesInvoices.create_sales_invoice(
+        %SalesInvoices.SalesInvoice{organization_id: av.id},
+        %{
+          "invoice_number" => "01/01/2025",
+          "invoice_type" => "poland",
+          "issue_date" => ~D[2025-01-10],
+          "sale_date" => ~D[2025-01-10],
+          "due_date" => ~D[2025-01-24],
+          "currency" => "PLN",
+          "seller_display_name" => "Hello Kitty Inc.",
+          "seller_address" => "Lipowa 3D, 30-702, Kraków",
+          "seller_nip" => "1234567891",
+          "seller_account_number" => "PL58253000082079847123980045",
+          "buyer_display_name" => "KSeF Test Client Sp. z o.o.",
+          "buyer_address" => "ul. Sukcesu 1, 00-001 Warszawa",
+          "buyer_country" => "PL",
+          "buyer_id" => "1111111111",
+          "buyer_name" => "Anna",
+          "buyer_surname" => "Nowak",
+          "payment_method" => "przelew",
+          "is_reverse_charge" => false,
+          "is_cash_account" => false,
+          "is_basic_info_confirmed" => true,
+          "is_seller_confirmed" => true,
+          "is_buyer_confirmed" => true,
+          "are_sales_invoice_items_confirmed" => true,
+          "sales_invoice_items" => [
+            %{
+              "name" => "Usługi konsultingowe",
+              "quantity" => 10,
+              "unit" => "godz.",
+              "unit_price" => 200.00,
+              "vat_rate" => 23
+            }
+          ]
+        }
+      )
+
+    # Update with KSeF success data (bypass changeset validation for locked invoice)
+    invoice
+    |> Ecto.Changeset.change(%{
+      ksef_number: "1111111111-20250110-ABC123DEF456-00",
+      ksef_session_reference_number: "20250110-SE-ABC123DEF456-00",
+      locked_at: ~U[2025-01-10 12:00:00Z]
+    })
+    |> Repo.update!()
+
+    IO.puts("✓ Created KSeF SUCCESS invoice: 01/01/2025 (ksef_number set)")
+  end
+
+  # 2. KSeF SENDING - Invoice with session reference but no ksef_number yet
+  ksef_sending_invoice =
+    Repo.one(
+      from(si in SalesInvoices.SalesInvoice,
+        where: si.invoice_number == "02/01/2025" and si.organization_id == ^av.id,
+        limit: 1
+      )
+    )
+
+  if is_nil(ksef_sending_invoice) do
+    {:ok, invoice} =
+      SalesInvoices.create_sales_invoice(
+        %SalesInvoices.SalesInvoice{organization_id: av.id},
+        %{
+          "invoice_number" => "02/01/2025",
+          "invoice_type" => "poland",
+          "issue_date" => ~D[2025-01-15],
+          "sale_date" => ~D[2025-01-15],
+          "due_date" => ~D[2025-01-29],
+          "currency" => "PLN",
+          "seller_display_name" => "Hello Kitty Inc.",
+          "seller_address" => "Lipowa 3D, 30-702, Kraków",
+          "seller_nip" => "1234567891",
+          "seller_account_number" => "PL58253000082079847123980045",
+          "buyer_display_name" => "Wysyłka Test Sp. z o.o.",
+          "buyer_address" => "ul. Kolejki 2, 00-002 Warszawa",
+          "buyer_country" => "PL",
+          "buyer_id" => "2222222222",
+          "buyer_name" => "Piotr",
+          "buyer_surname" => "Wysyłka",
+          "payment_method" => "przelew",
+          "is_reverse_charge" => false,
+          "is_cash_account" => false,
+          "is_basic_info_confirmed" => true,
+          "is_seller_confirmed" => true,
+          "is_buyer_confirmed" => true,
+          "are_sales_invoice_items_confirmed" => true,
+          "sales_invoice_items" => [
+            %{
+              "name" => "Usługi w trakcie wysyłki do KSeF",
+              "quantity" => 5,
+              "unit" => "godz.",
+              "unit_price" => 150.00,
+              "vat_rate" => 23
+            }
+          ]
+        }
+      )
+
+    # Update with KSeF sending data (locked, has session reference, but no ksef_number yet)
+    invoice
+    |> Ecto.Changeset.change(%{
+      ksef_number: nil,
+      ksef_session_reference_number: "20250115-SE-SENDING123-00",
+      locked_at: ~U[2025-01-15 10:00:00Z]
+    })
+    |> Repo.update!()
+
+    # Insert Oban job in 'executing' state to simulate sending
+    # Use the ACTUAL invoice ID (not a hardcoded one)
+    # Note: meta.organization_id is set to match Firmowid.Oban.insert() behavior
+    Repo.query!(
+      """
+      INSERT INTO oban.oban_jobs (state, queue, worker, args, attempt, max_attempts, inserted_at, scheduled_at, priority, tags, meta)
+      VALUES ('executing', 'ksef_submissions', 'Firmowid.Ksef.SubmissionWorker',
+              $1::jsonb, 1, 3, NOW(), NOW(), 0, ARRAY[]::text[], $2::jsonb)
+      ON CONFLICT DO NOTHING
+      """,
+      [
+        %{
+          "action" => "verify",
+          "organization_id" => av.id,
+          "sales_invoice_id" => invoice.id,
+          "session_reference" => "20250115-SE-SENDING123-00",
+          "invoice_reference" => "INV-REF-SENDING-001"
+        },
+        %{"organization_id" => av.id}
+      ]
+    )
+
+    IO.puts("✓ Created KSeF SENDING invoice: 02/01/2025 (in progress)")
+  end
+
+  # 3. KSeF FAILED - Invoice with session reference but submission failed
+  ksef_failed_invoice =
+    Repo.one(
+      from(si in SalesInvoices.SalesInvoice,
+        where: si.invoice_number == "03/01/2025" and si.organization_id == ^av.id,
+        limit: 1
+      )
+    )
+
+  if is_nil(ksef_failed_invoice) do
+    {:ok, invoice} =
+      SalesInvoices.create_sales_invoice(
+        %SalesInvoices.SalesInvoice{organization_id: av.id},
+        %{
+          "invoice_number" => "03/01/2025",
+          "invoice_type" => "poland",
+          "issue_date" => ~D[2025-01-20],
+          "sale_date" => ~D[2025-01-20],
+          "due_date" => ~D[2025-02-03],
+          "currency" => "PLN",
+          "seller_display_name" => "Hello Kitty Inc.",
+          "seller_address" => "Lipowa 3D, 30-702, Kraków",
+          "seller_nip" => "1234567891",
+          "seller_account_number" => "PL58253000082079847123980045",
+          "buyer_display_name" => "Błąd Test Sp. z o.o.",
+          "buyer_address" => "ul. Awarii 3, 00-003 Warszawa",
+          "buyer_country" => "PL",
+          "buyer_id" => "3333333333",
+          "buyer_name" => "Marek",
+          "buyer_surname" => "Błędny",
+          "payment_method" => "przelew",
+          "is_reverse_charge" => false,
+          "is_cash_account" => false,
+          "is_basic_info_confirmed" => true,
+          "is_seller_confirmed" => true,
+          "is_buyer_confirmed" => true,
+          "are_sales_invoice_items_confirmed" => true,
+          "sales_invoice_items" => [
+            %{
+              "name" => "Usługi - błąd wysyłki KSeF",
+              "quantity" => 3,
+              "unit" => "godz.",
+              "unit_price" => 100.00,
+              "vat_rate" => 23
+            }
+          ]
+        }
+      )
+
+    # Update with KSeF failed data (locked, has session reference, but no ksef_number)
+    invoice
+    |> Ecto.Changeset.change(%{
+      ksef_number: nil,
+      ksef_session_reference_number: "20250120-SE-FAILED456-00",
+      locked_at: ~U[2025-01-20 14:00:00Z]
+    })
+    |> Repo.update!()
+
+    # Insert Oban job in 'discarded' state to simulate failed submission
+    # Use the ACTUAL invoice ID (not a hardcoded one)
+    # Note: meta.organization_id is set to match Firmowid.Oban.insert() behavior
+    Repo.query!(
+      """
+      INSERT INTO oban.oban_jobs (state, queue, worker, args, attempt, max_attempts, inserted_at, scheduled_at, discarded_at, priority, tags, meta, errors)
+      VALUES ('discarded', 'ksef_submissions', 'Firmowid.Ksef.SubmissionWorker',
+              $1::jsonb, 3, 3, NOW() - INTERVAL '1 hour', NOW() - INTERVAL '1 hour', NOW(), 0, ARRAY[]::text[], $2::jsonb,
+              ARRAY[
+                '{"at": "2025-01-20T14:05:00Z", "attempt": 1, "error": "KSeF API error: connection timeout"}',
+                '{"at": "2025-01-20T14:10:00Z", "attempt": 2, "error": "KSeF API error: connection timeout"}',
+                '{"at": "2025-01-20T14:15:00Z", "attempt": 3, "error": "KSeF API error: connection timeout"}'
+              ]::jsonb[])
+      ON CONFLICT DO NOTHING
+      """,
+      [
+        %{
+          "action" => "verify",
+          "organization_id" => av.id,
+          "sales_invoice_id" => invoice.id,
+          "session_reference" => "20250120-SE-FAILED456-00",
+          "invoice_reference" => "INV-REF-FAILED-001"
+        },
+        %{"organization_id" => av.id}
+      ]
+    )
+
+    IO.puts("✓ Created KSeF FAILED invoice: 03/01/2025 (submission failed)")
+  end
+
+  IO.puts("✅ KSeF status test data created!")
 
   # ============================================================================
   # SECURITY TESTING: Create second organization with separate data

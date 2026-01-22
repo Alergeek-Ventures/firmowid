@@ -163,4 +163,22 @@ defmodule Firmowid.Ksef do
         {:ok, invoice}
     end
   end
+
+  @doc """
+  Checks if the KSeF submission job for a sales invoice has failed (discarded state).
+
+  Returns `true` if the submission job exists and is in "discarded" state,
+  `false` otherwise.
+  """
+  @spec submission_failed?(pos_integer()) :: boolean()
+  def submission_failed?(sales_invoice_id) do
+    Oban.Job
+    |> where(
+      [j],
+      j.worker == "Firmowid.Ksef.SubmissionWorker" and
+        j.state == "discarded" and
+        fragment("?->>'sales_invoice_id' = ?", j.args, ^to_string(sales_invoice_id))
+    )
+    |> Repo.exists?(oban_jobs: true)
+  end
 end

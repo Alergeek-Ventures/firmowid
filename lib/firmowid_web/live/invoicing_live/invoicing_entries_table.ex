@@ -6,6 +6,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
 
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.Finances.Transaction
+  alias Firmowid.Ksef
   alias Firmowid.SalesInvoices.SalesInvoice
   alias FirmowidWeb.InvoicingLive.TransactionGroup
 
@@ -410,6 +411,48 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
     """
   end
 
+  defp render_cell(%{column: "status", status: "ksef_sending"} = assigns) do
+    ~H"""
+    <div
+      id={"status-#{@invoicing_entry.id}"}
+      phx-hook="Tippy"
+      data-tippy-delay="1000"
+      data-tippy-content="Faktura jest wysyłana do KSeF. Proszę czekać na potwierdzenie."
+      class="flex flex-row gap-2 w-32 overflow-hidden"
+    >
+      <div class={[
+        "text-xs h-6",
+        "flex flex-row justify-center items-center py-2 px-2 rounded-md",
+        "w-full justify-between text-darkGrey"
+      ]}>
+        <div class="font-normal uppercase">Wysyłanie...</div>
+        <.icon name="hero-arrow-path" class="w-4 h-4 animate-spin" />
+      </div>
+    </div>
+    """
+  end
+
+  defp render_cell(%{column: "status", status: "ksef_failed"} = assigns) do
+    ~H"""
+    <div
+      id={"status-#{@invoicing_entry.id}"}
+      phx-hook="Tippy"
+      data-tippy-delay="1000"
+      data-tippy-content="Wysyłanie faktury do KSeF nie powiodło się. Sprawdź szczegóły faktury."
+      class="flex flex-row gap-2 w-32 overflow-hidden"
+    >
+      <div class={[
+        "text-xs h-6",
+        "flex flex-row justify-center items-center py-2 px-2 rounded-md",
+        "w-full justify-between animate-error-pulse"
+      ]}>
+        <div class="font-normal uppercase">Błąd wysyłania</div>
+        <.icon name="hero-exclamation-triangle-mini" class="w-4 h-4" />
+      </div>
+    </div>
+    """
+  end
+
   defp render_cell(%{column: "status", status: "matched"} = assigns) do
     ~H"""
     <div
@@ -520,10 +563,21 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
           end
 
         %SalesInvoice{} = invoice ->
-          if invoice.transactions == [] do
-            "unmatched"
-          else
-            "matched"
+          cond do
+            # KSeF success: has ksef_number - use standard matched/unmatched logic
+            not is_nil(invoice.ksef_number) ->
+              if invoice.transactions == [], do: "unmatched", else: "matched"
+
+            # KSeF sending/failed: has session reference but no ksef_number
+            not is_nil(invoice.ksef_session_reference_number) ->
+              if Ksef.submission_failed?(invoice.id), do: "ksef_failed", else: "ksef_sending"
+
+            # Standard matched/unmatched
+            invoice.transactions == [] ->
+              "unmatched"
+
+            true ->
+              "matched"
           end
 
         %Transaction{} = transaction ->
