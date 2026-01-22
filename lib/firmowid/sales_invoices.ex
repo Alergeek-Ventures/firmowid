@@ -128,8 +128,7 @@ defmodule Firmowid.SalesInvoices do
   def get_sales_invoice_with_logo_url(id) do
     SalesInvoice
     |> Repo.get(id)
-    |> Repo.preload(:sales_invoice_items)
-    |> Repo.preload(:transactions)
+    |> Repo.preload([:sales_invoice_items, :transactions, :corrections])
     |> populate_logo_url()
   end
 

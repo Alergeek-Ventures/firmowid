@@ -69,6 +69,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     field :ksef_invoice_kind, Ecto.Enum, values: [:vat, :kor], default: :vat
 
     belongs_to :corrected_invoice, __MODULE__
+    has_many :corrections, __MODULE__, foreign_key: :corrected_invoice_id
 
     has_many :sales_invoice_items, SalesInvoiceItem, on_replace: :delete
 

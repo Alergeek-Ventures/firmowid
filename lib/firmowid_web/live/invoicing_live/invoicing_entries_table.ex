@@ -438,7 +438,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
       id={"status-#{@invoicing_entry.id}"}
       phx-hook="Tippy"
       data-tippy-delay="1000"
-      data-tippy-content="Wysyłanie faktury do KSeF nie powiodło się. Sprawdź szczegóły faktury."
+      data-tippy-content="Wysyłanie faktury do KSeF nie powiodło się. Nasz zespół został poinformowany i działa nad naprawą problemu."
       class="flex flex-row gap-2 w-32 overflow-hidden"
     >
       <div class={[

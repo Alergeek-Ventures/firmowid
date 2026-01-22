@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
 
   alias Firmowid.SalesInvoices.SalesInvoice
   alias FirmowidWeb.Components.Invoicing.InvoiceDetails, as: InvoiceDetails
+  alias FirmowidWeb.Components.Invoicing.KsefTimeline
 
   attr :invoice, SalesInvoice, required: true
   attr :preview_url, :string, required: true
@@ -36,122 +37,142 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
 
       <div class="flex flex-col justify-between px-8 gap-4 lg:gap-12 lg:flex-row min-w-0">
         <aside class={[
-          "w-full lg:w-[400px] xl:w-[600px] flex-shrink-0 flex-grow-0",
+          "w-full lg:w-[400px] xl:w-[600px] shrink-0 grow-0",
           "flex flex-col gap-4 order-last lg:order-none py-8 pr-8",
           "max-h-[calc(100vh-var(--navbar-height)-128px)] overflow-y-auto",
           "lg:h-[calc(100vh-var(--navbar-height)-128px)]"
         ]}>
-          <div class="flex flex-row justify-end gap-2">
-            <.link
-              id="copy-invoice-link"
-              phx-hook="Tippy"
-              data-tippy-content="Skopiuj fakturę"
-              data-tippy-delay="100"
-              class={[
-                "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
-                "px-2 py-1 flex items-center justify-center rounded"
-              ]}
-              navigate={~p"/sprzedazowe?skopiuj=#{@invoice.id}"}
-            >
-              <.icon name="hero-document-duplicate" class="w-5 h-5" />
-            </.link>
-            <.link
-              id="edit-invoice-link"
-              phx-hook="Tippy"
-              data-tippy-content="Edytuj fakturę"
-              data-tippy-delay="100"
-              class={[
-                "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
-                "px-2 py-1 flex items-center justify-center rounded"
-              ]}
-              navigate={~p"/sprzedazowe/#{@invoice.id}/edycja"}
-            >
-              <.icon name="hero-pencil-square-solid" class="w-5 h-5" />
-            </.link>
-            <button
-              id="delete-invoice-button"
-              phx-hook="Tippy"
-              data-tippy-content="Usuń fakturę"
-              data-tippy-delay="100"
-              class={[
-                "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
-                "px-2 py-1 flex items-center justify-center rounded"
-              ]}
-              phx-click={show_modal("delete-invoice-modal")}
-            >
-              <.icon name="hero-trash-solid" class="w-5 h-5" />
-            </button>
+          <%= if @show_ksef_timeline do %>
+            <KsefTimeline.ksef_timeline invoice={@invoice} invoice_type={:sales} />
+          <% else %>
+            <div class="flex flex-row justify-end gap-2">
+              <.link
+                id="copy-invoice-link"
+                phx-hook="Tippy"
+                data-tippy-content="Skopiuj fakturę"
+                data-tippy-delay="100"
+                class={[
+                  "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
+                  "px-2 py-1 flex items-center justify-center rounded"
+                ]}
+                navigate={~p"/sprzedazowe?skopiuj=#{@invoice.id}"}
+              >
+                <.icon name="hero-document-duplicate" class="w-5 h-5" />
+              </.link>
+              <.link
+                id="edit-invoice-link"
+                phx-hook="Tippy"
+                data-tippy-content="Edytuj fakturę"
+                data-tippy-delay="100"
+                class={[
+                  "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
+                  "px-2 py-1 flex items-center justify-center rounded"
+                ]}
+                navigate={~p"/sprzedazowe/#{@invoice.id}/edycja"}
+              >
+                <.icon name="hero-pencil-square-solid" class="w-5 h-5" />
+              </.link>
+              <button
+                id="delete-invoice-button"
+                phx-hook="Tippy"
+                data-tippy-content="Usuń fakturę"
+                data-tippy-delay="100"
+                class={[
+                  "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
+                  "px-2 py-1 flex items-center justify-center rounded"
+                ]}
+                phx-click={show_modal("delete-invoice-modal")}
+              >
+                <.icon name="hero-trash-solid" class="w-5 h-5" />
+              </button>
+              <button
+                :if={@invoice.ksef_number != nil}
+                id="ksef-timeline-button"
+                phx-hook="Tippy"
+                data-tippy-content="Historia KSeF"
+                data-tippy-delay="100"
+                class={[
+                  "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
+                  "px-2 py-1 flex items-center justify-center rounded"
+                ]}
+                phx-click="show_ksef_timeline"
+                phx-target={@myself}
+              >
+                <.icon name="hero-clock" class="w-5 h-5" />
+              </button>
 
-            <div class="abosolute">
-              <.modal id="delete-invoice-modal" on_cancel={hide_modal("delete-invoice-modal")}>
-                <p>
-                  Czy na pewno chcesz usunąć fakturę <span class="font-semibold">{@invoice.invoice_number}</span>?
-                </p>
-                <div class="mt-6 flex justify-end gap-3">
-                  <.button
-                    variant="outline"
-                    color="black"
-                    phx-click={hide_modal("delete-invoice-modal")}
-                  >
-                    Anuluj
-                  </.button>
-                  <.button
-                    color="red"
-                    phx-click={
-                      JS.exec("data-cancel", to: "#delete-invoice-modal")
-                      |> JS.push("delete")
-                    }
-                    phx-disable-with="Usuwanie..."
-                  >
-                    Usuń
-                  </.button>
-                </div>
-              </.modal>
+              <div class="abosolute">
+                <.modal id="delete-invoice-modal" on_cancel={hide_modal("delete-invoice-modal")}>
+                  <p>
+                    Czy na pewno chcesz usunąć fakturę <span class="font-semibold">{@invoice.invoice_number}</span>?
+                  </p>
+                  <div class="mt-6 flex justify-end gap-3">
+                    <.button
+                      variant="outline"
+                      color="black"
+                      phx-click={hide_modal("delete-invoice-modal")}
+                    >
+                      Anuluj
+                    </.button>
+                    <.button
+                      color="red"
+                      phx-click={
+                        JS.exec("data-cancel", to: "#delete-invoice-modal")
+                        |> JS.push("delete")
+                      }
+                      phx-disable-with="Usuwanie..."
+                    >
+                      Usuń
+                    </.button>
+                  </div>
+                </.modal>
+              </div>
             </div>
-          </div>
-          <div class="grid grid-cols-[130px_1fr] gap-2 py-4">
-            <InvoiceDetails.invoice_metadata_piece
-              label="Numer faktury"
-              value={@invoice.invoice_number}
-              piece_id="inv-id"
-            />
-            <InvoiceDetails.invoice_metadata_piece
-              label="Kupujący"
-              value={
-                if @invoice.buyer_type == :individual do
-                  "#{@invoice.buyer_name} #{@invoice.buyer_surname}"
-                else
-                  @invoice.buyer_display_name
-                end
-              }
-              piece_id="buyer"
-            />
-            <InvoiceDetails.invoice_metadata_piece
-              label="Data wystawienia"
-              value={@invoice.issue_date}
-              piece_id="issue-date"
-            />
-            <InvoiceDetails.invoice_metadata_piece
-              label="Data sprzedaży"
-              value={@invoice.sale_date}
-              piece_id="sale-date"
-            />
-            <InvoiceDetails.invoice_metadata_piece
-              label="Termin płatności"
-              value={@invoice.due_date}
-              piece_id="due-date"
-            />
-          </div>
 
-          <InvoiceDetails.invoice_amount
-            is_cost_invoice={false}
-            total_amount={
-              Money.new(
-                @invoice.currency,
-                Firmowid.SalesInvoices.SalesInvoice.get_gross_value(@invoice)
-              )
-            }
-          />
+            <div class="grid grid-cols-[130px_1fr] gap-2 py-4">
+              <InvoiceDetails.invoice_metadata_piece
+                label="Numer faktury"
+                value={@invoice.invoice_number}
+                piece_id="inv-id"
+              />
+              <InvoiceDetails.invoice_metadata_piece
+                label="Kupujący"
+                value={
+                  if @invoice.buyer_type == :individual do
+                    "#{@invoice.buyer_name} #{@invoice.buyer_surname}"
+                  else
+                    @invoice.buyer_display_name
+                  end
+                }
+                piece_id="buyer"
+              />
+              <InvoiceDetails.invoice_metadata_piece
+                label="Data wystawienia"
+                value={@invoice.issue_date}
+                piece_id="issue-date"
+              />
+              <InvoiceDetails.invoice_metadata_piece
+                label="Data sprzedaży"
+                value={@invoice.sale_date}
+                piece_id="sale-date"
+              />
+              <InvoiceDetails.invoice_metadata_piece
+                label="Termin płatności"
+                value={@invoice.due_date}
+                piece_id="due-date"
+              />
+            </div>
+
+            <InvoiceDetails.invoice_amount
+              is_cost_invoice={false}
+              total_amount={
+                Money.new(
+                  @invoice.currency,
+                  Firmowid.SalesInvoices.SalesInvoice.get_gross_value(@invoice)
+                )
+              }
+            />
+          <% end %>
 
           <h3 class="self-start text-sm uppercase text-darkGrey mt-8">Podgląd faktury</h3>
           <div class="mb-8 mt-4 transition-opacity transition-duration-300 hover:opacity-50">
@@ -177,7 +198,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
           </div>
         </aside>
 
-        <main class="flex-grow py-8 lg:pl-8 border-b lg:border-b-0 lg:border-l border-darkGrey/[.3] h-[calc(100vh-var(--navbar-height)-128px)]">
+        <main class="grow py-8 lg:pl-8 border-b lg:border-b-0 lg:border-l border-darkGrey/[.3] h-[calc(100vh-var(--navbar-height)-128px)]">
           <%= cond do %>
             <% @invoice.skip_invoicing -> %>
               <InvoiceDetails.invoice_skipped_view />
@@ -236,7 +257,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
 
   @impl true
   def mount(socket) do
-    {:ok, assign(socket, chat: false)}
+    {:ok, assign(socket, chat: false, show_ksef_timeline: false)}
   end
 
   @impl true
@@ -246,5 +267,13 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
 
   def handle_event("close_chat", _params, socket) do
     {:noreply, assign(socket, chat: false)}
+  end
+
+  def handle_event("show_ksef_timeline", _params, socket) do
+    {:noreply, assign(socket, show_ksef_timeline: true)}
+  end
+
+  def handle_event("hide_ksef_timeline", _params, socket) do
+    {:noreply, assign(socket, show_ksef_timeline: false)}
   end
 end

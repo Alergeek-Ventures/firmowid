@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
 
   alias Firmowid.CostInvoices.CostInvoice
   alias FirmowidWeb.Components.Invoicing.InvoiceDetails, as: InvoiceDetails
+  alias FirmowidWeb.Components.Invoicing.KsefTimeline
 
   attr :invoice, CostInvoice, required: true
   attr :preview_url, :string, required: true
@@ -26,58 +27,78 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
 
       <div class="flex flex-col justify-between px-8 lg:flex-row min-w-0">
         <aside class={[
-          "w-full lg:w-[400px] xl:w-[600px] flex-shrink-0 flex-grow-0",
+          "w-full lg:w-[400px] xl:w-[600px] shrink-0 grow-0",
           "flex flex-col gap-4 order-last lg:order-none py-8 pr-8",
           "max-h-[calc(100vh-var(--navbar-height)-128px)] overflow-y-auto",
           "lg:h-[calc(100vh-var(--navbar-height)-128px)]"
         ]}>
-          <div class="flex flex-row justify-end gap-2">
-            <button
-              id="delete-invoice-button"
-              phx-hook="Tippy"
-              data-tippy-content="Usuń fakturę"
-              data-tippy-delay="100"
-              class={[
-                "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
-                "px-2 py-1 flex items-center justify-center rounded"
-              ]}
-              phx-click="delete"
-            >
-              <.icon name="hero-trash-solid" class="w-5 h-5" />
-            </button>
-          </div>
-          <div class="grid grid-cols-[130px_1fr] gap-2 py-4">
-            <InvoiceDetails.invoice_metadata_piece
-              label="Numer faktury"
-              value={@invoice.invoice_identifier}
-              piece_id="invoice-identifier"
-            />
-            <InvoiceDetails.invoice_metadata_piece
-              label="Sprzedawca"
-              value={@invoice.seller}
-              piece_id="seller"
-            />
-            <InvoiceDetails.invoice_metadata_piece
-              label="Data wystawienia"
-              value={@invoice.issue_date}
-              piece_id="issue-date"
-            />
-            <InvoiceDetails.invoice_metadata_piece
-              label="Data sprzedaży"
-              value={@invoice.sale_date}
-              piece_id="sale-date"
-            />
-            <InvoiceDetails.invoice_metadata_piece
-              label="Termin płatności"
-              value={@invoice.due_date}
-              piece_id="due-date"
-            />
-          </div>
+          <%= if @show_ksef_timeline do %>
+            <KsefTimeline.ksef_timeline invoice={@invoice} invoice_type={:cost} />
+          <% else %>
+            <div class="flex flex-row justify-end gap-2">
+              <button
+                id="delete-invoice-button"
+                phx-hook="Tippy"
+                data-tippy-content="Usuń fakturę"
+                data-tippy-delay="100"
+                class={[
+                  "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
+                  "px-2 py-1 flex items-center justify-center rounded"
+                ]}
+                phx-click="delete"
+              >
+                <.icon name="hero-trash-solid" class="w-5 h-5" />
+              </button>
+              <button
+                :if={@invoice.ksef_number != nil}
+                id="ksef-timeline-button"
+                phx-hook="Tippy"
+                data-tippy-content="Historia KSeF"
+                data-tippy-delay="100"
+                class={[
+                  "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
+                  "px-2 py-1 flex items-center justify-center rounded"
+                ]}
+                phx-click="show_ksef_timeline"
+                phx-target={@myself}
+              >
+                <.icon name="hero-clock" class="w-5 h-5" />
+              </button>
+            </div>
 
-          <InvoiceDetails.invoice_amount
-            is_cost_invoice={true}
-            total_amount={Money.new(@invoice.currency, @invoice.total_amount)}
-          />
+            <div class="grid grid-cols-[130px_1fr] gap-2 py-4">
+              <InvoiceDetails.invoice_metadata_piece
+                label="Numer faktury"
+                value={@invoice.invoice_identifier}
+                piece_id="invoice-identifier"
+              />
+              <InvoiceDetails.invoice_metadata_piece
+                label="Sprzedawca"
+                value={@invoice.seller}
+                piece_id="seller"
+              />
+              <InvoiceDetails.invoice_metadata_piece
+                label="Data wystawienia"
+                value={@invoice.issue_date}
+                piece_id="issue-date"
+              />
+              <InvoiceDetails.invoice_metadata_piece
+                label="Data sprzedaży"
+                value={@invoice.sale_date}
+                piece_id="sale-date"
+              />
+              <InvoiceDetails.invoice_metadata_piece
+                label="Termin płatności"
+                value={@invoice.due_date}
+                piece_id="due-date"
+              />
+            </div>
+
+            <InvoiceDetails.invoice_amount
+              is_cost_invoice={true}
+              total_amount={Money.new(@invoice.currency, @invoice.total_amount)}
+            />
+          <% end %>
 
           <h3 :if={@preview_type != :none} class="self-start text-sm uppercase text-darkGrey mt-8">
             Podgląd faktury
@@ -111,7 +132,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
           </div>
         </aside>
 
-        <main class="flex-grow py-8 lg:pl-8 border-b lg:border-b-0 lg:border-l border-darkGrey/[.3] h-[calc(100vh-var(--navbar-height)-128px)]">
+        <main class="grow py-8 lg:pl-8 border-b lg:border-b-0 lg:border-l border-darkGrey/[.3] h-[calc(100vh-var(--navbar-height)-128px)]">
           <%= cond do %>
             <% @invoice.skip_invoicing -> %>
               <InvoiceDetails.invoice_skipped_view />
@@ -168,10 +189,6 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
                 <InvoiceDetails.skip_invoicing show_bank_transfer_modal={true} invoice={@invoice} />
               </div>
           <% end %>
-
-          <pre :if={@invoice.ksef_number != nil}>
-            <%= inspect(@invoice, pretty: true, limit: :infinity) %>
-          </pre>
         </main>
       </div>
     </div>
@@ -180,7 +197,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
 
   @impl true
   def mount(socket) do
-    {:ok, assign(socket, chat: false)}
+    {:ok, assign(socket, chat: false, show_ksef_timeline: false)}
   end
 
   @impl true
@@ -190,5 +207,13 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
 
   def handle_event("close_chat", _params, socket) do
     {:noreply, assign(socket, chat: false)}
+  end
+
+  def handle_event("show_ksef_timeline", _params, socket) do
+    {:noreply, assign(socket, show_ksef_timeline: true)}
+  end
+
+  def handle_event("hide_ksef_timeline", _params, socket) do
+    {:noreply, assign(socket, show_ksef_timeline: false)}
   end
 end
