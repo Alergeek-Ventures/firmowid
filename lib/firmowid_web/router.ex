@@ -37,6 +37,10 @@ defmodule FirmowidWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :analytics_guard do
+    plug FirmowidWeb.Plugs.AnalyticsDashboardGuard
+  end
+
   scope "/", FirmowidWeb do
     pipe_through :health
 
@@ -45,9 +49,9 @@ defmodule FirmowidWeb.Router do
 
   scope "/admin" do
     if Mix.env() == :dev do
-      pipe_through [:browser]
+      pipe_through [:browser, :analytics_guard]
     else
-      pipe_through [:browser, :require_authenticated_user_with_organization, :require_superuser]
+      pipe_through [:browser, :require_authenticated_user_with_organization, :require_superuser, :analytics_guard]
     end
 
     live_dashboard "/dashboard",

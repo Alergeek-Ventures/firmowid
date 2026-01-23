@@ -135,6 +135,40 @@ cond do
     :ok
 end
 
+# Analytics configuration
+# Env vars:
+#   PHOENIX_ANALYTICS_ENABLED - enable PhoenixAnalytics (local DB + dashboard), defaults to "true"
+#   POSTHOG_ENABLED - enable PostHog analytics, defaults to "false"
+#   POSTHOG_API_KEY - PostHog project API key (required if PostHog enabled)
+#   POSTHOG_API_HOST - PostHog API host, defaults to "https://eu.i.posthog.com"
+phoenix_analytics_enabled = System.get_env("PHOENIX_ANALYTICS_ENABLED", "true") == "true"
+posthog_enabled = System.get_env("POSTHOG_ENABLED", "false") == "true"
+
+config :firmowid, :analytics,
+  phoenix_analytics_enabled: phoenix_analytics_enabled,
+  posthog_enabled: posthog_enabled
+
+if phoenix_analytics_enabled do
+  # PHX_HOST in prod, fallback to "localhost" in dev/test
+  app_domain = System.get_env("PHX_HOST", "localhost")
+
+  config :phoenix_analytics,
+    repo: Firmowid.Repo,
+    app_domain: app_domain
+end
+
+if posthog_enabled do
+  posthog_api_key =
+    System.get_env("POSTHOG_API_KEY") ||
+      raise "POSTHOG_API_KEY is required when POSTHOG_ENABLED=true"
+
+  posthog_api_host = System.get_env("POSTHOG_API_HOST", "https://eu.i.posthog.com")
+
+  config :posthog,
+    api_key: posthog_api_key,
+    api_host: posthog_api_host
+end
+
 # Phoenix HTTP port - only override if PORT is set (worktree)
 if config_env() == :dev and System.get_env("PORT") do
   config :firmowid, FirmowidWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT"))]

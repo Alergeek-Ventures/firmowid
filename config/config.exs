@@ -4,17 +4,14 @@
 # This configuration file is loaded before any dependency and
 # is restricted to this project.
 
-# General application configuration
 import Config
 
 config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 
-# ErrorTracker configuration
 config :error_tracker,
   repo: Firmowid.Repo,
   otp_app: :firmowid
 
-# Configure esbuild (the version is required)
 config :esbuild,
   version: "0.17.11",
   firmowid: [
@@ -47,7 +44,6 @@ config :firmowid, Firmowid.Repo,
   migration_timestamps: [type: :utc_datetime],
   types: Firmowid.PostgrexTypes
 
-# Configures the endpoint
 config :firmowid, FirmowidWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
@@ -71,27 +67,21 @@ config :fun_with_flags, :cache_bust_notifications,
   adapter: FunWithFlags.Notifications.PhoenixPubSub,
   client: Firmowid.PubSub
 
-# FunWithFlags configuration
 config :fun_with_flags, :persistence,
   adapter: FunWithFlags.Store.Persistent.Ecto,
   repo: Firmowid.Repo
 
-# Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id, :module, :org_id, :sender, :resend_email_id]
 
-# Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-# Phoenix Analytics configuration
-config :phoenix_analytics,
-  repo: Firmowid.Repo,
-  app_domain: "firmowid.pl"
+# Disable PostHog auto-start - we control it via application.ex based on POSTHOG_ENABLED env var
+config :posthog, enable: false
 
 config :tails, colors_file: Path.join(__DIR__, "../assets/tailwind.colors.json")
 
-# Configure tailwind (the version is required)
 config :tailwind,
   version: "3.4.17",
   firmowid: [

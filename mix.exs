@@ -105,6 +105,7 @@ defmodule Firmowid.MixProject do
       {:any_ascii, "~> 0.3.2"},
       {:multipart, "~> 0.4.0"},
       {:phoenix_analytics, "~> 0.4"},
+      {:posthog, "~> 2.0"},
       {:fun_with_flags, "~> 1.13"},
       {:fun_with_flags_ui, "~> 1.0"},
       {:reverse_proxy_plug, "~> 3.0"},

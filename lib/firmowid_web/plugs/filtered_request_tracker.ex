@@ -1,10 +1,9 @@
 defmodule FirmowidWeb.Plugs.FilteredRequestTracker do
   @moduledoc """
-  A wrapper around PhoenixAnalytics.Plugs.RequestTracker that filters out
-  requests to certain paths from being tracked.
+  Analytics tracking plug that filters out requests to certain paths.
 
-  This plug delegates to the original RequestTracker for all requests except
-  those matching the ignored path patterns.
+  Delegates to `Firmowid.Analytics.track_request/1` which dispatches to
+  enabled backends (PhoenixAnalytics, PostHog).
 
   ## Configuration
 
@@ -23,7 +22,7 @@ defmodule FirmowidWeb.Plugs.FilteredRequestTracker do
 
   @behaviour Plug
 
-  alias PhoenixAnalytics.Plugs.RequestTracker
+  alias Firmowid.Analytics
 
   @default_ignore_paths ["/admin", "/health"]
 
@@ -38,10 +37,7 @@ defmodule FirmowidWeb.Plugs.FilteredRequestTracker do
     if ignored_path?(conn.request_path, ignore_paths) do
       conn
     else
-      RequestTracker.call(
-        conn,
-        RequestTracker.init([])
-      )
+      Analytics.track_request(conn)
     end
   end
 

@@ -11,11 +11,9 @@ config :ex_aws,
 
 config :firmowid, ChromicPDF, chrome_address: {"localhost", 9222}
 
+# Database (port 5433 matches local/compose.yml)
 config :firmowid, Firmowid.Repo,
   url: "postgresql://postgres:postgres@localhost:5433/firmowid",
-  # =============================================================================
-  # Database (port 5433 matches local/compose.yml)
-  # =============================================================================
   pool_size: 5,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
@@ -42,18 +40,6 @@ config :firmowid, FirmowidWeb.Endpoint,
       ~r"priv/gettext/.*(po)$",
       ~r"lib/firmowid_web/(controllers|live|components)/.*(ex|heex)$"
     ]
-
-    # =============================================================================
-
-    # =============================================================================
-    # S3/Localstack (port 4566 matches local/compose.yml)
-    # ChromicPDF (port 9222 matches local/compose.yml)
-    # =============================================================================
-
-    # =============================================================================
-    # =============================================================================
-    # Dev Defaults (match local/compose.yml, overridable via .env.local for worktrees)
-    # =============================================================================
   ]
 
 config :firmowid, FirmowidWeb.Endpoint,
@@ -72,28 +58,14 @@ config :live_debugger,
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
 
-# Initialize plugs at runtime for faster development compilation
-# =============================================================================
-
 config :phoenix, :plug_init_mode, :runtime
-
-# Secret key base for signing cookies (safe for dev only)
-
-# Set a higher stacktrace during development. Avoid configuring such
-# Endpoint
-# in production as building large stacktraces may be expensive.
-# =============================================================================
-
 config :phoenix, :stacktrace_depth, 20
 
-# =============================================================================
-# Other Dev Settings
+# Include HEEx debug annotations as HTML comments in rendered markup
+# Enable helpful, but potentially expensive runtime checks
 config :phoenix_live_view,
-  # Include HEEx debug annotations as HTML comments in rendered markup
-  # =============================================================================
-  # Enable helpful, but potentially expensive runtime checks
   debug_heex_annotations: true,
   enable_expensive_runtime_checks: true
 
-# Disable swoosh api client as it is only required for production adapters.
+# Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
