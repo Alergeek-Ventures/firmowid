@@ -6,9 +6,12 @@ defmodule Firmowid.SalesInvoices do
 
   alias Ecto.Multi
   alias Firmowid.Accounts
+  alias Firmowid.Billing
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices.SalesInvoice
   alias Firmowid.SalesInvoices.SalesInvoicesTransactions
+
+  require Logger
 
   def authorize(:read_sales_invoice, %{role: :admin}, _), do: true
   def authorize(:create_sales_invoice, %{role: :admin}, _), do: true
@@ -260,10 +263,29 @@ defmodule Firmowid.SalesInvoices do
     end
   end
 
+  @doc """
+  Creates a new sales invoice.
+
+  Note: The billing counter increment happens outside the insert transaction.
+  This is intentional - billing limits are soft limits (informational only),
+  so we prioritize successful invoice creation over counter accuracy.
+  If the increment fails, a warning is logged but the invoice is still created.
+  Counter drift is acceptable for soft limit tracking.
+  """
   def create_sales_invoice(%SalesInvoice{} = invoice, attrs) do
-    invoice
-    |> SalesInvoice.changeset(attrs)
-    |> Repo.insert()
+    result =
+      invoice
+      |> SalesInvoice.changeset(attrs)
+      |> Repo.insert()
+
+    with {:ok, created_invoice} <- result do
+      case Billing.increment(created_invoice.organization_id, :sales_invoices) do
+        {:ok, _} -> :ok
+        {:error, reason} -> Logger.warning("Failed to increment sales_invoices limit: #{inspect(reason)}")
+      end
+    end
+
+    result
   end
 
   @doc """
@@ -289,9 +311,32 @@ defmodule Firmowid.SalesInvoices do
     |> Repo.update()
   end
 
+  @doc """
+  Deletes a sales invoice.
+
+  Note: The billing counter decrement happens outside the delete transaction.
+  This is intentional - billing limits are soft limits (informational only),
+  so we prioritize successful invoice deletion over counter accuracy.
+  If the decrement fails, a warning is logged but the invoice is still deleted.
+  Counter drift is acceptable for soft limit tracking.
+  """
   def delete_sales_invoice(%SalesInvoice{} = invoice) do
-    Repo.delete(invoice)
+    result = Repo.delete(invoice)
+
+    with {:ok, deleted_invoice} <- result do
+      if !correction_invoice?(deleted_invoice) do
+        case Billing.decrement(deleted_invoice.organization_id, :sales_invoices) do
+          {:ok, _} -> :ok
+          {:error, reason} -> Logger.warning("Failed to decrement sales_invoices limit: #{inspect(reason)}")
+        end
+      end
+    end
+
+    result
   end
+
+  defp correction_invoice?(%SalesInvoice{ksef_invoice_kind: :kor}), do: true
+  defp correction_invoice?(_), do: false
 
   def list_sales_invoices_by_ids(ids, date_from \\ nil, date_to \\ nil) do
     query = where(SalesInvoice, [si], si.id in ^ids)

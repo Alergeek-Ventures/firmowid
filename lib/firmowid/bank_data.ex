@@ -8,6 +8,7 @@ defmodule Firmowid.BankData do
   alias Firmowid.BankData.Requisition
   alias Firmowid.BankData.Transaction
   alias Firmowid.BankData.Worker
+  alias Firmowid.Billing
   alias Firmowid.Finances
   alias Firmowid.Repo
 
@@ -78,20 +79,56 @@ defmodule Firmowid.BankData do
 
   @doc """
   Mark requisition as accepted.
+
+  Note: The billing counter increment happens outside the update transaction.
+  This is intentional - billing limits are soft limits (informational only),
+  so we prioritize successful requisition acceptance over counter accuracy.
+  If the increment fails, a warning is logged but the requisition is still accepted.
+  Counter drift is acceptable for soft limit tracking.
   """
   def accept_requisition(%Requisition{} = requisition) do
-    requisition
-    |> Requisition.changeset(%{status: :accepted})
-    |> Repo.update()
+    result =
+      requisition
+      |> Requisition.changeset(%{status: :accepted})
+      |> Repo.update()
+
+    with {:ok, accepted_requisition} <- result do
+      case Billing.increment(accepted_requisition.organization_id, :bank_connections) do
+        {:ok, _} -> :ok
+        {:error, reason} -> Logger.warning("Failed to increment bank_connections limit: #{inspect(reason)}")
+      end
+    end
+
+    result
   end
 
   @doc """
   Mark requisition as rejected.
+
+  Note: The billing counter decrement happens outside the update transaction.
+  This is intentional - billing limits are soft limits (informational only),
+  so we prioritize successful requisition rejection over counter accuracy.
+  If the decrement fails, a warning is logged but the requisition is still rejected.
+  Counter drift is acceptable for soft limit tracking.
   """
   def reject_requisition(%Requisition{} = requisition) do
-    requisition
-    |> Requisition.changeset(%{status: :rejected})
-    |> Repo.update()
+    was_accepted = requisition.status == :accepted
+
+    result =
+      requisition
+      |> Requisition.changeset(%{status: :rejected})
+      |> Repo.update()
+
+    with {:ok, rejected_requisition} <- result do
+      if was_accepted do
+        case Billing.decrement(rejected_requisition.organization_id, :bank_connections) do
+          {:ok, _} -> :ok
+          {:error, reason} -> Logger.warning("Failed to decrement bank_connections limit: #{inspect(reason)}")
+        end
+      end
+    end
+
+    result
   end
 
   @doc """

@@ -3,6 +3,7 @@ defmodule FirmowidWeb.BankSyncLive.Create do
   use FirmowidWeb, :live_view
 
   alias Firmowid.BankData
+  alias Firmowid.Billing
 
   require Logger
 
@@ -10,10 +11,14 @@ defmodule FirmowidWeb.BankSyncLive.Create do
   def mount(_params, _session, socket) do
     Bodyguard.permit!(BankData, :create_requisition, socket.assigns.current_user)
 
+    # Check billing limits for bank connections
+    bank_connections_limit_check = Billing.check(socket.assigns.current_org.id, :bank_connections)
+
     socket =
       socket
       |> assign(:available_institutions, BankData.get_available_institutions_for_country("pl"))
       |> assign(:requisition_link, nil)
+      |> assign(:bank_connections_limit_check, bank_connections_limit_check)
 
     {:ok, socket}
   end

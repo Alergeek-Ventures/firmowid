@@ -3,6 +3,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   use FirmowidWeb, :live_view
 
   alias Firmowid.BankData
+  alias Firmowid.Billing
   alias Firmowid.CostInvoices
   alias Firmowid.Finances
   alias Firmowid.Finances.Transaction
@@ -50,11 +51,15 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
     socket = assign(socket, :active_months, active_months)
 
+    # Check billing limits for cost invoices
+    cost_invoices_limit_check = Billing.check(organization_id, :cost_invoices)
+
     socket =
       socket
       |> assign(:show_search, false)
       |> assign(:search_query, "")
       |> assign(:search_results, [])
+      |> assign(:cost_invoices_limit_check, cost_invoices_limit_check)
 
     {:ok, socket}
   end

@@ -8,6 +8,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
   alias Firmowid.Accounts
   alias Firmowid.Accounts.Organization
   alias Firmowid.BankData
+  alias Firmowid.Billing
   alias Firmowid.Blobs
   alias Firmowid.Finances
   alias Firmowid.Ksef
@@ -95,7 +96,9 @@ defmodule FirmowidWeb.SettingsLive.Index do
      )
      |> assign(:current_user, Accounts.get_user_with_avatar(user))
      |> assign(:current_org, Accounts.get_organization_with_avatar(socket.assigns.current_org))
-     |> assign(:main_class, "bg-white")}
+     |> assign(:main_class, "bg-white")
+     |> assign(:usage_summary, Billing.get_usage_summary(socket.assigns.current_org.id))
+     |> assign(:days_until_reset, days_until_monthly_reset())}
   end
 
   def handle_params(%{"token" => token}, _uri, %{assigns: %{live_action: :confirm_email}} = socket) do
@@ -620,5 +623,11 @@ defmodule FirmowidWeb.SettingsLive.Index do
 
       {account.id, status}
     end)
+  end
+
+  defp days_until_monthly_reset do
+    today = Date.utc_today()
+    next_month = today |> Date.end_of_month() |> Date.add(1)
+    Date.diff(next_month, today)
   end
 end

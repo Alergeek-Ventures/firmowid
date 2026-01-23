@@ -77,56 +77,34 @@
       </div>
       <hr class="border-t border-t-greyButtonBg mt-4" />
     </div>
-
-    <%= if Bodyguard.permit?(Firmowid.Accounts, :update_organization, @current_user, @current_org) do %>
-      <div class="min-w-fit flex gap-3 flex-col">
-        <div class="flex gap-1 items-center">
-          <p class="font-bold text-base">Logo firmy</p>
-          <form id="upload-form" phx-submit="upload" phx-change="upload">
-            <div class="hidden">
-              <.live_file_input upload={@uploads.organization_avatar} />
-            </div>
-            <.edit_button
-              tag_name="label"
-              for={@uploads.organization_avatar.ref}
-              class="cursor-pointer"
-            />
-          </form>
-        </div>
-        <.avatar class="rounded-none size-36">
-          <.avatar_image src={@current_org.avatar_url} alt="Logo firmy" />
-          <.avatar_fallback class="rounded-none">
-            {String.slice(@current_org.name, 0, 1) |> String.upcase()}
-          </.avatar_fallback>
-        </.avatar>
-      </div>
-    <% end %>
   </div>
 
   <%= case @live_action do %>
     <% :organization -> %>
-      <div class={
-        classes([
-          "mt-6 rounded-md p-4  w-fit border border-transparent",
-          @editing_basic_info && "border-greyButtonBg"
-        ])
-      }>
-        <div class="flex gap-1">
-          <h2 class="font-bold mt-0.5">Dane firmy</h2>
-          <.edit_button
-            phx-click="toggle_editing_basic_info"
-            class={
-              classes([
-                @editing_basic_info &&
-                  "text-orangeText hover:text-orangeText/70 active:text-orangeText/90"
-              ])
-            }
-          />
-        </div>
-        <%= if @editing_basic_info do %>
-          <div class="flex flex-col gap-4 mt-6">
-            <.form class="flex flex-col gap-4" phx-submit="save" for={@company_form}>
-              <%= for [field, label, type] <- [
+      <div class="flex flex-col lg:flex-row justify-between gap-4">
+        <div class="flex flex-col gap-4">
+          <div class={
+            classes([
+              "mt-6 rounded-md p-4  w-fit border border-transparent",
+              @editing_basic_info && "border-greyButtonBg"
+            ])
+          }>
+            <div class="flex gap-1">
+              <h2 class="font-bold mt-0.5">Dane firmy</h2>
+              <.edit_button
+                phx-click="toggle_editing_basic_info"
+                class={
+                  classes([
+                    @editing_basic_info &&
+                      "text-orangeText hover:text-orangeText/70 active:text-orangeText/90"
+                  ])
+                }
+              />
+            </div>
+            <%= if @editing_basic_info do %>
+              <div class="flex flex-col gap-4 mt-6">
+                <.form class="flex flex-col gap-4" phx-submit="save" for={@company_form}>
+                  <%= for [field, label, type] <- [
                 [:organization_type, "Rodzaj działalności", "text"],
                 [:name, "Nazwa organizacji", "text"],
                 [:nip, "NIP", "text"],
@@ -134,37 +112,37 @@
                 [:phone_number, "Numer telefonu", "text"],
                 [:is_vat_payer, "Czy jest płatnikiem VAT?", "checkbox"]
               ] do %>
-                <div class="flex">
-                  <label
-                    for={@company_form[field].id}
-                    class="w-48 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4"
-                  >
-                    {label}
-                  </label>
-                  <div class="flex-1 text-sm">
-                    <.input
-                      type={type}
-                      field={@company_form[field]}
-                      class="font-normal h-8 mt-0 w-[439px]"
-                      input_class="mt-0 h-8 border-greyButtonBg"
-                    />
-                  </div>
-                </div>
-              <% end %>
+                    <div class="flex">
+                      <label
+                        for={@company_form[field].id}
+                        class="w-48 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4"
+                      >
+                        {label}
+                      </label>
+                      <div class="flex-1 text-sm">
+                        <.input
+                          type={type}
+                          field={@company_form[field]}
+                          class="font-normal h-8 mt-0 w-[439px]"
+                          input_class="mt-0 h-8 border-greyButtonBg"
+                        />
+                      </div>
+                    </div>
+                  <% end %>
 
-              <.button
-                color="orange"
-                class="w-fit ml-auto"
-                type="submit"
-                phx-disable-with="Zapisywanie..."
-              >
-                Zatwierdź
-              </.button>
-            </.form>
-          </div>
-        <% else %>
-          <div class="space-y-4 mt-6">
-            <%= for {label, value} <- [
+                  <.button
+                    color="orange"
+                    class="w-fit ml-auto"
+                    type="submit"
+                    phx-disable-with="Zapisywanie..."
+                  >
+                    Zatwierdź
+                  </.button>
+                </.form>
+              </div>
+            <% else %>
+              <div class="space-y-4 mt-6">
+                <%= for {label, value} <- [
               {"Rodzaj działalności", @current_org.organization_type},
               {"Nazwa organizacji", @current_org.name},
               {"NIP", @current_org.nip},
@@ -172,290 +150,346 @@
               {"Numer telefonu", @current_org.phone_number},
               {"Płatnik VAT", if(@current_org.is_vat_payer, do: "Tak", else: "Nie")}
             ], value do %>
-              <div class="flex">
-                <div class="w-64 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4">
-                  {label}
-                </div>
-                <div class="flex-1">
-                  <%= if is_list(value) do %>
-                    <%= for line <- value do %>
-                      <div>{line}</div>
-                    <% end %>
-                  <% else %>
-                    {value}
-                  <% end %>
-                </div>
+                  <div class="flex">
+                    <div class="w-64 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4">
+                      {label}
+                    </div>
+                    <div class="flex-1">
+                      <%= if is_list(value) do %>
+                        <%= for line <- value do %>
+                          <div>{line}</div>
+                        <% end %>
+                      <% else %>
+                        {value}
+                      <% end %>
+                    </div>
+                  </div>
+                <% end %>
               </div>
             <% end %>
           </div>
-        <% end %>
-      </div>
 
-      <div class={
-        classes([
-          "mt-6 rounded-md p-4 w-fit border border-transparent",
-          @editing_correspondence && "border-greyButtonBg"
-        ])
-      }>
-        <div class="flex gap-1">
-          <h2 class="font-bold mt-0.5">Adres korespondencyjny</h2>
-          <.edit_button
-            phx-click="toggle_editing_correspondence"
-            class={
-              classes([
-                @editing_correspondence &&
-                  "text-orangeText hover:text-orangeText/70 active:text-orangeText/90"
-              ])
-            }
-          />
-        </div>
-        <%= if @editing_correspondence do %>
-          <div class="flex flex-col gap-4 mt-6">
-            <.form class="flex flex-col gap-4" phx-submit="save" for={@correspondence_form}>
-              <%= for {field, label} <- [
+          <div class={
+            classes([
+              "mt-6 rounded-md p-4 w-fit border border-transparent",
+              @editing_correspondence && "border-greyButtonBg"
+            ])
+          }>
+            <div class="flex gap-1">
+              <h2 class="font-bold mt-0.5">Adres korespondencyjny</h2>
+              <.edit_button
+                phx-click="toggle_editing_correspondence"
+                class={
+                  classes([
+                    @editing_correspondence &&
+                      "text-orangeText hover:text-orangeText/70 active:text-orangeText/90"
+                  ])
+                }
+              />
+            </div>
+            <%= if @editing_correspondence do %>
+              <div class="flex flex-col gap-4 mt-6">
+                <.form class="flex flex-col gap-4" phx-submit="save" for={@correspondence_form}>
+                  <%= for {field, label} <- [
                 {:correspondence_name, "Nazwa organizacji"},
                 {:correspondence_address, "Adres przedsiębiorstwa"}
               ] do %>
-                <div class="flex">
-                  <label
-                    for={@correspondence_form[field].id}
-                    class="w-48 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4"
-                  >
-                    {label}
-                  </label>
-                  <div class="flex-1 text-sm">
-                    <.input
-                      field={@correspondence_form[field]}
-                      class="font-normal h-8 mt-0 w-[439px]"
-                      input_class="mt-0 h-8 border-greyButtonBg"
-                    />
-                  </div>
-                </div>
-              <% end %>
+                    <div class="flex">
+                      <label
+                        for={@correspondence_form[field].id}
+                        class="w-48 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4"
+                      >
+                        {label}
+                      </label>
+                      <div class="flex-1 text-sm">
+                        <.input
+                          field={@correspondence_form[field]}
+                          class="font-normal h-8 mt-0 w-[439px]"
+                          input_class="mt-0 h-8 border-greyButtonBg"
+                        />
+                      </div>
+                    </div>
+                  <% end %>
 
-              <.button
-                color="orange"
-                class="w-fit ml-auto"
-                type="submit"
-                phx-disable-with="Zapisywanie..."
-              >
-                Zatwierdź
-              </.button>
-            </.form>
-          </div>
-        <% else %>
-          <div class="space-y-4 mt-6">
-            <%= for {label, value} <- [
+                  <.button
+                    color="orange"
+                    class="w-fit ml-auto"
+                    type="submit"
+                    phx-disable-with="Zapisywanie..."
+                  >
+                    Zatwierdź
+                  </.button>
+                </.form>
+              </div>
+            <% else %>
+              <div class="space-y-4 mt-6">
+                <%= for {label, value} <- [
               {"Nazwa do korespondencji", @current_org.correspondence_name},
               {"Adres do korespondencji", @current_org.correspondence_address}
             ], value do %>
-              <div class="flex">
-                <div class="w-64 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4">
-                  {label}
-                </div>
-                <div class="flex-1">
-                  <%= if is_list(value) do %>
-                    <%= for line <- value do %>
-                      <div>{line}</div>
-                    <% end %>
-                  <% else %>
-                    {value}
-                  <% end %>
-                </div>
+                  <div class="flex">
+                    <div class="w-64 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4">
+                      {label}
+                    </div>
+                    <div class="flex-1">
+                      <%= if is_list(value) do %>
+                        <%= for line <- value do %>
+                          <div>{line}</div>
+                        <% end %>
+                      <% else %>
+                        {value}
+                      <% end %>
+                    </div>
+                  </div>
+                <% end %>
               </div>
             <% end %>
           </div>
-        <% end %>
-      </div>
 
-      <div class="mt-6 rounded-md p-4 w-fit border border-transparent">
-        <h2 class="font-bold mt-0.5">Adres e-mail do faktur kosztowych</h2>
-        <div class="space-y-4 mt-6">
-          <div class="flex">
-            <div class="w-64 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4">
-              Adres e-mail
-            </div>
-            <div class="flex-1 flex items-center gap-4">
-              <code class="bg-gray-100 px-3 py-1 rounded text-sm">
-                {@current_org.inbound_email_nickname}@firmowid.pl
-              </code>
-              <.button
-                color="orange"
-                variant="outline"
-                phx-click="regenerate_inbound_nickname"
-                phx-disable-with="Generowanie..."
-                class="text-xs py-1 px-3"
-              >
-                Wygeneruj nowy
-              </.button>
-            </div>
-          </div>
-          <div class="flex">
-            <div class="w-64 flex items-start justify-end font-medium text-darkGrey uppercase text-xs pr-4 mt-1">
-              Opis
-            </div>
-            <div class="flex-1 text-sm text-gray-600 max-w-lg">
-              Wysyłaj faktury kosztowe na ten adres, a zostaną automatycznie zaimportowane do systemu.
-              Tylko adresy z dozwolonej listy będą akceptowane.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="mt-6 rounded-md p-4 w-fit border border-transparent">
-        <h2 class="font-bold mt-0.5">Dozwolone adresy e-mail</h2>
-        <div class="space-y-4 mt-6">
-          <div class="flex">
-            <div class="w-64 flex items-start justify-end font-medium text-darkGrey uppercase text-xs pr-4 mt-1">
-              Lista dozwolonych
-            </div>
-            <div class="flex-1">
-              <%= if @current_org.allowed_sender_emails == [] do %>
-                <p class="text-sm text-gray-500 italic">Brak dozwolonych adresów e-mail</p>
-              <% else %>
-                <div class="space-y-2">
-                  <%= for email <- @current_org.allowed_sender_emails do %>
-                    <div class="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded">
-                      <code class="text-sm flex-1">{email}</code>
-                      <button
-                        type="button"
-                        phx-click="remove_allowed_email"
-                        phx-value-email={email}
-                        class="text-red-600 hover:text-red-800"
-                      >
-                        <.icon name="hero-x-mark" class="w-5 h-5" />
-                      </button>
-                    </div>
-                  <% end %>
-                </div>
-              <% end %>
-            </div>
-          </div>
-          <div class="flex">
-            <div class="w-64 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4">
-              Dodaj nowy adres
-            </div>
-            <div class="flex-1">
-              <form phx-submit="add_allowed_email" class="flex gap-2">
-                <input
-                  type="email"
-                  name="email"
-                  required
-                  placeholder="email@example.com"
-                  class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm"
-                />
-                <.button type="submit" color="orange" variant="outline" class="text-xs py-1 px-3">
-                  Dodaj
-                </.button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="mt-6 rounded-md p-4 w-fit border border-transparent">
-        <h2 class="font-bold mt-0.5">Integracja z KSeF</h2>
-        <div class="space-y-4 mt-6">
-          <%= if @ksef_credential do %>
-            <div class="flex">
-              <div class="w-64 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4">
-                Status
-              </div>
-              <div class="flex-1 flex items-center gap-2">
-                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-greenText">
-                  <.icon name="hero-check-circle-solid" class="w-5 h-5 text-greenBg" />
-                </span>
-                <span class="text-sm font-medium">Połączono z KSeF</span>
-              </div>
-            </div>
-            <div class="flex">
-              <div class="w-64 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4">
-                Typ autoryzacji
-              </div>
-              <div class="flex-1">
-                <%= case @ksef_credential.auth_type do %>
-                  <% :token -> %>
-                    Token
-                  <% :certificate -> %>
-                    Certyfikat
-                <% end %>
-              </div>
-            </div>
-            <div class="flex">
-              <div class="w-64"></div>
-              <div class="flex-1">
-                <.button
-                  phx-click={show_modal("confirm_disconnect_ksef")}
-                  variant="outline"
-                  color="red"
-                >
-                  Rozłącz
-                </.button>
-              </div>
-            </div>
-          <% else %>
-            <form phx-submit="save_ksef_token" id="ksef-token-form">
+          <div class="mt-6 rounded-md p-4 w-fit border border-transparent">
+            <h2 class="font-bold mt-0.5">Adres e-mail do faktur kosztowych</h2>
+            <div class="space-y-4 mt-6">
               <div class="flex">
                 <div class="w-64 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4">
-                  Token autoryzacyjny
+                  Adres e-mail
                 </div>
-                <div class="flex-1">
-                  <input
-                    type="password"
-                    name="ksef_token"
-                    required
-                    placeholder="Wprowadź token KSeF"
-                    class="w-[439px] rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm"
-                  />
+                <div class="flex-1 flex items-center gap-4">
+                  <code class="bg-gray-100 px-3 py-1 rounded text-sm">
+                    {@current_org.inbound_email_nickname}@firmowid.pl
+                  </code>
+                  <.button
+                    color="orange"
+                    variant="outline"
+                    phx-click="regenerate_inbound_nickname"
+                    phx-disable-with="Generowanie..."
+                    class="text-xs py-1 px-3"
+                  >
+                    Wygeneruj nowy
+                  </.button>
                 </div>
               </div>
-              <div class="flex mt-4">
+              <div class="flex">
                 <div class="w-64 flex items-start justify-end font-medium text-darkGrey uppercase text-xs pr-4 mt-1">
                   Opis
                 </div>
                 <div class="flex-1 text-sm text-gray-600 max-w-lg">
-                  Token autoryzacyjny KSeF umożliwia automatyczne pobieranie faktur kosztowych
-                  z Krajowego Systemu e-Faktur. Token możesz wygenerować w panelu KSeF.
+                  Wysyłaj faktury kosztowe na ten adres, a zostaną automatycznie zaimportowane do systemu.
+                  Tylko adresy z dozwolonej listy będą akceptowane.
                 </div>
               </div>
-              <div class="flex mt-4">
-                <div class="w-64"></div>
+            </div>
+          </div>
+
+          <div class="mt-6 rounded-md p-4 w-fit border border-transparent">
+            <h2 class="font-bold mt-0.5">Dozwolone adresy e-mail</h2>
+            <div class="space-y-4 mt-6">
+              <div class="flex">
+                <div class="w-64 flex items-start justify-end font-medium text-darkGrey uppercase text-xs pr-4 mt-1">
+                  Lista dozwolonych
+                </div>
                 <div class="flex-1">
-                  <.button type="submit" color="orange" phx-disable-with="Łączenie...">
-                    Połącz z KSeF
-                  </.button>
+                  <%= if @current_org.allowed_sender_emails == [] do %>
+                    <p class="text-sm text-gray-500 italic">Brak dozwolonych adresów e-mail</p>
+                  <% else %>
+                    <div class="space-y-2">
+                      <%= for email <- @current_org.allowed_sender_emails do %>
+                        <div class="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded">
+                          <code class="text-sm flex-1">{email}</code>
+                          <button
+                            type="button"
+                            phx-click="remove_allowed_email"
+                            phx-value-email={email}
+                            class="text-red-600 hover:text-red-800"
+                          >
+                            <.icon name="hero-x-mark" class="w-5 h-5" />
+                          </button>
+                        </div>
+                      <% end %>
+                    </div>
+                  <% end %>
                 </div>
               </div>
+              <div class="flex">
+                <div class="w-64 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4">
+                  Dodaj nowy adres
+                </div>
+                <div class="flex-1">
+                  <form phx-submit="add_allowed_email" class="flex gap-2">
+                    <input
+                      type="email"
+                      name="email"
+                      required
+                      placeholder="email@example.com"
+                      class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm"
+                    />
+                    <.button
+                      type="submit"
+                      color="orange"
+                      variant="outline"
+                      class="text-xs py-1 px-3"
+                    >
+                      Dodaj
+                    </.button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6 rounded-md p-4 w-fit border border-transparent">
+            <h2 class="font-bold mt-0.5">Integracja z KSeF</h2>
+            <div class="space-y-4 mt-6">
+              <%= if @ksef_credential do %>
+                <div class="flex">
+                  <div class="w-64 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4">
+                    Status
+                  </div>
+                  <div class="flex-1 flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-greenText">
+                      <.icon name="hero-check-circle-solid" class="w-5 h-5 text-greenBg" />
+                    </span>
+                    <span class="text-sm font-medium">Połączono z KSeF</span>
+                  </div>
+                </div>
+                <div class="flex">
+                  <div class="w-64 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4">
+                    Typ autoryzacji
+                  </div>
+                  <div class="flex-1">
+                    <%= case @ksef_credential.auth_type do %>
+                      <% :token -> %>
+                        Token
+                      <% :certificate -> %>
+                        Certyfikat
+                    <% end %>
+                  </div>
+                </div>
+                <div class="flex">
+                  <div class="w-64"></div>
+                  <div class="flex-1">
+                    <.button
+                      phx-click={show_modal("confirm_disconnect_ksef")}
+                      variant="outline"
+                      color="red"
+                    >
+                      Rozłącz
+                    </.button>
+                  </div>
+                </div>
+              <% else %>
+                <form phx-submit="save_ksef_token" id="ksef-token-form">
+                  <div class="flex">
+                    <div class="w-64 flex items-center justify-end font-medium text-darkGrey uppercase text-xs pr-4">
+                      Token autoryzacyjny
+                    </div>
+                    <div class="flex-1">
+                      <input
+                        type="password"
+                        name="ksef_token"
+                        required
+                        placeholder="Wprowadź token KSeF"
+                        class="w-[439px] rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div class="flex mt-4">
+                    <div class="w-64 flex items-start justify-end font-medium text-darkGrey uppercase text-xs pr-4 mt-1">
+                      Opis
+                    </div>
+                    <div class="flex-1 text-sm text-gray-600 max-w-lg">
+                      Token autoryzacyjny KSeF umożliwia automatyczne pobieranie faktur kosztowych
+                      z Krajowego Systemu e-Faktur. Token możesz wygenerować w panelu KSeF.
+                    </div>
+                  </div>
+                  <div class="flex mt-4">
+                    <div class="w-64"></div>
+                    <div class="flex-1">
+                      <.button type="submit" color="orange" phx-disable-with="Łączenie...">
+                        Połącz z KSeF
+                      </.button>
+                    </div>
+                  </div>
+                </form>
+              <% end %>
+            </div>
+          </div>
+
+          <.modal id="confirm_disconnect_ksef">
+            <h3 class="text-lg font-bold mb-4">Potwierdź rozłączenie</h3>
+            <p class="mb-6">
+              Czy na pewno chcesz rozłączyć integrację z KSeF?
+              Spowoduje to zatrzymanie automatycznego pobierania faktur.
+            </p>
+            <div class="flex gap-4">
+              <.button
+                phx-click="disconnect_ksef"
+                variant="outline"
+                color="red"
+                phx-disable-with="Rozłączanie..."
+              >
+                Rozłącz
+              </.button>
+              <.button type="button" phx-click={hide_modal("confirm_disconnect_ksef")}>
+                Anuluj
+              </.button>
+            </div>
+          </.modal>
+
+          <div class="mt-6 ml-4">
+            <.link navigate={~p"/zaproszenia"} class={button_styles(%{variant: "outline"})}>
+              Dodaj współpracowników do organizacji
+            </.link>
+          </div>
+        </div>
+        <div class="flex gap-3 flex-col py-8">
+          <div class="flex gap-1 items-center">
+            <p class="font-bold text-base">Logo firmy</p>
+            <form id="upload-form" phx-submit="upload" phx-change="upload">
+              <div class="hidden">
+                <.live_file_input upload={@uploads.organization_avatar} />
+              </div>
+              <.edit_button
+                tag_name="label"
+                for={@uploads.organization_avatar.ref}
+                class="cursor-pointer"
+              />
             </form>
-          <% end %>
-        </div>
-      </div>
+          </div>
 
-      <.modal id="confirm_disconnect_ksef">
-        <h3 class="text-lg font-bold mb-4">Potwierdź rozłączenie</h3>
-        <p class="mb-6">
-          Czy na pewno chcesz rozłączyć integrację z KSeF?
-          Spowoduje to zatrzymanie automatycznego pobierania faktur.
-        </p>
-        <div class="flex gap-4">
-          <.button
-            phx-click="disconnect_ksef"
-            variant="outline"
-            color="red"
-            phx-disable-with="Rozłączanie..."
-          >
-            Rozłącz
-          </.button>
-          <.button type="button" phx-click={hide_modal("confirm_disconnect_ksef")}>
-            Anuluj
-          </.button>
-        </div>
-      </.modal>
+          <.avatar class="rounded-none size-36">
+            <.avatar_image src={@current_org.avatar_url} alt="Logo firmy" />
+            <.avatar_fallback class="rounded-none">
+              {String.slice(@current_org.name, 0, 1) |> String.upcase()}
+            </.avatar_fallback>
+          </.avatar>
 
-      <div class="mt-6 ml-4">
-        <.link navigate={~p"/zaproszenia"} class={button_styles(%{variant: "outline"})}>
-          Dodaj współpracowników do organizacji
-        </.link>
+          <div id="limity" class="mt-8 w-full">
+            <p class="font-bold text-sm mb-4">Limity organizacji</p>
+            <div class="space-y-4">
+              <.usage_limit_bar
+                label="Faktury kosztowe"
+                used={@usage_summary.cost_invoices.used}
+                limit={@usage_summary.cost_invoices.limit}
+                over_limit={@usage_summary.cost_invoices.over_limit}
+                reset_text={"Odnowienie za #{@days_until_reset} dni"}
+              />
+              <.usage_limit_bar
+                label="Faktury sprzedażowe"
+                used={@usage_summary.sales_invoices.used}
+                limit={@usage_summary.sales_invoices.limit}
+                over_limit={@usage_summary.sales_invoices.over_limit}
+                reset_text={"Odnowienie za #{@days_until_reset} dni"}
+              />
+              <.usage_limit_bar
+                label="Połączenia bankowe"
+                used={@usage_summary.bank_connections.used}
+                limit={@usage_summary.bank_connections.limit}
+                over_limit={@usage_summary.bank_connections.over_limit}
+                reset_text="(limit stały)"
+              />
+            </div>
+          </div>
+        </div>
       </div>
     <% :account -> %>
       <div class="mt-6">

@@ -7,6 +7,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
   import FirmowidWeb.SalesInvoicesLive.SalesInvoiceItems
   import FirmowidWeb.SalesInvoicesLive.SellerForm
 
+  alias Firmowid.Billing
   alias Firmowid.Finances
   alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.SalesInvoice
@@ -28,6 +29,9 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
           end
       end
 
+    # Check billing limits for sales invoices
+    sales_invoices_limit_check = Billing.check(socket.assigns.current_org.id, :sales_invoices)
+
     socket =
       socket
       |> assign(bank_accounts: Finances.list_bank_accounts())
@@ -36,6 +40,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
       |> assign_buyer_form_state("nip")
       |> assign(is_buyer_dirty: false)
       |> assign(is_seller_dirty: false)
+      |> assign(sales_invoices_limit_check: sales_invoices_limit_check)
 
     {:ok, socket}
   end

@@ -5,6 +5,7 @@ defmodule Firmowid.CostInvoices do
   import Ecto.Query, warn: false
 
   alias Ecto.Multi
+  alias Firmowid.Billing
   alias Firmowid.Blobs
   alias Firmowid.Blobs.Blob
   alias Firmowid.CostInvoices.CostInvoice
@@ -13,6 +14,8 @@ defmodule Firmowid.CostInvoices do
   alias Firmowid.Repo
 
   require Logger
+
+  @correction_invoice_types [:kor, :kor_zal, :kor_roz]
 
   @cost_invoice_broadcast_topic "cost_invoice_broadcast_topic"
 
@@ -178,6 +181,15 @@ defmodule Firmowid.CostInvoices do
     %{cost_invoice | blob_url: Blobs.get_blob_url(cost_invoice.blob_id)}
   end
 
+  @doc """
+  Deletes a cost invoice by ID.
+
+  Note: The billing counter decrement happens outside the delete transaction.
+  This is intentional - billing limits are soft limits (informational only),
+  so we prioritize successful invoice deletion over counter accuracy.
+  If the decrement fails, a warning is logged but the invoice is still deleted.
+  Counter drift is acceptable for soft limit tracking.
+  """
   def delete_cost_invoice(cost_invoice_id) do
     # use SQL cascading
     cost_invoice =
@@ -186,6 +198,13 @@ defmodule Firmowid.CostInvoices do
       |> Repo.preload(:blob)
 
     organization_id = cost_invoice.organization_id
+
+    if !correction_invoice?(cost_invoice) do
+      case Billing.decrement(organization_id, :cost_invoices) do
+        {:ok, _} -> :ok
+        {:error, reason} -> Logger.warning("Failed to decrement cost_invoices limit: #{inspect(reason)}")
+      end
+    end
 
     blob_id = cost_invoice.blob_id
     Blobs.delete_blob(blob_id)
@@ -259,6 +278,15 @@ defmodule Firmowid.CostInvoices do
     end)
   end
 
+  @doc """
+  Creates a cost invoice from extracted metadata.
+
+  Note: The billing counter increment happens outside the insert transaction.
+  This is intentional - billing limits are soft limits (informational only),
+  so we prioritize successful invoice creation over counter accuracy.
+  If the increment fails, a warning is logged but the invoice is still created.
+  Counter drift is acceptable for soft limit tracking.
+  """
   def create_cost_invoice(extracted_metadata) do
     # allow worker to insert the invoice
     organization_id = Map.get(extracted_metadata, "organization_id", Repo.get_org_id())
@@ -267,6 +295,13 @@ defmodule Firmowid.CostInvoices do
       %CostInvoice{}
       |> CostInvoice.changeset(extracted_metadata)
       |> Repo.insert!(organization_id: organization_id)
+
+    if !correction_invoice?(cost_invoice) do
+      case Billing.increment(organization_id, :cost_invoices) do
+        {:ok, _} -> :ok
+        {:error, reason} -> Logger.warning("Failed to increment cost_invoices limit: #{inspect(reason)}")
+      end
+    end
 
     broadcast_cost_invoice_added(cost_invoice)
 
@@ -361,5 +396,11 @@ defmodule Firmowid.CostInvoices do
       failure_reason: failure_reason
     })
     |> Repo.update!()
+  end
+
+  # Private functions
+
+  defp correction_invoice?(%CostInvoice{invoice_type: invoice_type}) do
+    invoice_type in @correction_invoice_types
   end
 end

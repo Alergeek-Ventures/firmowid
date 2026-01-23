@@ -12,6 +12,7 @@ defmodule Firmowid.Accounts do
   alias Firmowid.Accounts.User
   alias Firmowid.Accounts.UserNotifier
   alias Firmowid.Accounts.UserToken
+  alias Firmowid.Billing
   alias Firmowid.Blobs
   alias Firmowid.Repo
 
@@ -667,8 +668,9 @@ defmodule Firmowid.Accounts do
 
   """
   def create_organization(attrs \\ %{}, owner) do
-    # Generate unique nickname with retry logic
     organization = create_organization_with_nickname(attrs, owner, 10)
+
+    Billing.create_limits(organization.id)
 
     owner
     |> User.organization_changeset(%{organization_id: organization.id})

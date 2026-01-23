@@ -1,4 +1,5 @@
 <div class="mx-8">
+  <.limit_warning check_result={@sales_invoices_limit_check} type={:sales_invoices} />
   <%= if @sales_invoice_id do %>
     <div
       id="invoice-preview"
