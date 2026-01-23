@@ -6,6 +6,8 @@ defmodule Firmowid.Invoicing do
   import Paradex, only: [~>: 2]
 
   alias Firmowid.CostInvoices
+  # SQL fragment that converts KSeF VAT rate string codes to numeric decimals.
+  # Must match VatRate.to_numeric/1 behavior for consistency.
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.Finances
   alias Firmowid.Finances.Transaction
@@ -17,6 +19,18 @@ defmodule Firmowid.Invoicing do
 
   require Logger
 
+  @vat_rate_to_decimal_sql """
+  CASE ?
+    WHEN '23' THEN 0.23
+    WHEN '22' THEN 0.22
+    WHEN '8' THEN 0.08
+    WHEN '7' THEN 0.07
+    WHEN '5' THEN 0.05
+    WHEN '4' THEN 0.04
+    WHEN '3' THEN 0.03
+    ELSE 0
+  END
+  """
   def authorize(:read, %{role: :admin}, _), do: true
   def authorize(:show, %{role: :admin}, _), do: true
   def authorize(:update, %{role: :admin}, _), do: true
@@ -262,6 +276,8 @@ defmodule Firmowid.Invoicing do
       end
 
     # equivalent to get_gross
+    # Note: vat_rate is now a string (KSeF code), so we use a CASE expression
+    # to convert it to numeric for gross calculation
     base_query =
       if amount_gt do
         having(
@@ -269,7 +285,7 @@ defmodule Firmowid.Invoicing do
           [sales_invoice, sales_invoice_item],
           sum(
             sales_invoice_item.quantity * sales_invoice_item.unit_price *
-              (1 + sales_invoice_item.vat_rate / 100)
+              (1 + fragment(@vat_rate_to_decimal_sql, sales_invoice_item.vat_rate))
           ) >= ^amount_gt
         )
       else
@@ -283,7 +299,7 @@ defmodule Firmowid.Invoicing do
           [sales_invoice, sales_invoice_item],
           sum(
             sales_invoice_item.quantity * sales_invoice_item.unit_price *
-              (1 + sales_invoice_item.vat_rate / 100)
+              (1 + fragment(@vat_rate_to_decimal_sql, sales_invoice_item.vat_rate))
           ) <= ^amount_lt
         )
       else

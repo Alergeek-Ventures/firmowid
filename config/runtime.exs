@@ -78,18 +78,24 @@ config :firmowid,
 
 # use DATABASE_URL if set
 if System.get_env("DATABASE_URL") do
+  database_url = System.get_env("DATABASE_URL")
+
+  # For test env, replace the database name in the URL
+  # (setting a separate `database:` key doesn't override the URL)
+  database_url =
+    if config_env() == :test do
+      test_db = "firmowid_test#{System.get_env("MIX_TEST_PARTITION")}"
+
+      # Replace database name in URL: postgresql://user:pass@host:port/dbname -> postgresql://user:pass@host:port/test_dbname
+      String.replace(database_url, ~r{/[^/]+$}, "/#{test_db}")
+    else
+      database_url
+    end
+
   repo_config = [
-    url: System.get_env("DATABASE_URL"),
+    url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE", "5"))
   ]
-
-  # For test env, override database name (DATABASE_URL points to dev db)
-  repo_config =
-    if config_env() == :test do
-      Keyword.put(repo_config, :database, "firmowid_test#{System.get_env("MIX_TEST_PARTITION")}")
-    else
-      repo_config
-    end
 
   config :firmowid, Firmowid.Repo, repo_config
 else

@@ -2,9 +2,13 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
   @moduledoc false
   use FirmowidWeb, :live_component
 
+  alias Firmowid.Ksef
+  alias Firmowid.Ksef.SubmissionInfo
   alias Firmowid.SalesInvoices.SalesInvoice
   alias FirmowidWeb.Components.Invoicing.InvoiceDetails, as: InvoiceDetails
   alias FirmowidWeb.Components.Invoicing.KsefTimeline
+
+  require Logger
 
   attr :invoice, SalesInvoice, required: true
   attr :preview_url, :string, required: true
@@ -12,6 +16,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
   attr :potential_transactions, :list, default: []
   attr :show_vat_for_sales_invoice, :boolean, default: true
   attr :current_user, :map, required: true
+  attr :return_to, :string, default: nil
 
   @impl true
   def render(assigns) do
@@ -19,37 +24,51 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
       assigns
       |> assign(:is_cost_invoice, false)
       |> assign(
+        :party_display_name,
+        if assigns.invoice.buyer_type == :individual do
+          "#{assigns.invoice.buyer_name} #{assigns.invoice.buyer_surname}"
+        else
+          assigns.invoice.buyer_display_name
+        end
+      )
+      |> assign(
         :description,
         case assigns.invoice.sales_invoice_items do
           [first | _] -> Map.get(first, :name, "")
           _ -> ""
         end
       )
+      |> assign(:show_timeline_button, show_timeline_button?(assigns.submission_info))
 
     ~H"""
     <div id="invoice-show" class="flex flex-col">
       <InvoiceDetails.invoice_header
         is_cost_invoice={false}
         issue_date={@invoice.issue_date}
-        party_display_name={@invoice.buyer_display_name}
+        party_display_name={@party_display_name}
         description={@description}
+        return_to={@return_to}
       />
 
       <div class="flex flex-col justify-between px-8 gap-4 lg:gap-12 lg:flex-row min-w-0">
         <aside class={[
-          "w-full lg:w-[400px] xl:w-[600px] shrink-0 grow-0",
+          "w-full lg:max-w-[400px] xl:max-w-[650px] shrink-0 grow-1",
           "flex flex-col gap-4 order-last lg:order-none py-8 pr-8",
           "max-h-[calc(100vh-var(--navbar-height)-128px)] overflow-y-auto",
           "lg:h-[calc(100vh-var(--navbar-height)-128px)]"
         ]}>
           <%= if @show_ksef_timeline do %>
-            <KsefTimeline.ksef_timeline invoice={@invoice} invoice_type={:sales} />
+            <KsefTimeline.ksef_timeline
+              invoice={@invoice}
+              invoice_type={:sales}
+              submission_info={@submission_info}
+            />
           <% else %>
             <div class="flex flex-row justify-end gap-2">
               <.link
                 id="copy-invoice-link"
                 phx-hook="Tippy"
-                data-tippy-content="Skopiuj fakturę"
+                data-tippy-content="Skopiuj fakture"
                 data-tippy-delay="100"
                 class={[
                   "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
@@ -59,23 +78,25 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
               >
                 <.icon name="hero-document-duplicate" class="w-5 h-5" />
               </.link>
-              <.link
+              <%!-- TODO: Re-enable edit functionality with the new Creator --%>
+              <button
                 id="edit-invoice-link"
+                disabled
                 phx-hook="Tippy"
-                data-tippy-content="Edytuj fakturę"
+                data-tippy-content="Edycja tymczasowo niedostepna"
                 data-tippy-delay="100"
                 class={[
-                  "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
+                  "text-gray-300 cursor-not-allowed",
                   "px-2 py-1 flex items-center justify-center rounded"
                 ]}
-                navigate={~p"/sprzedazowe/#{@invoice.id}/edycja"}
               >
                 <.icon name="hero-pencil-square-solid" class="w-5 h-5" />
-              </.link>
+              </button>
               <button
+                :if={SalesInvoice.deletable?(@invoice)}
                 id="delete-invoice-button"
                 phx-hook="Tippy"
-                data-tippy-content="Usuń fakturę"
+                data-tippy-content="Usun fakture"
                 data-tippy-delay="100"
                 class={[
                   "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
@@ -86,14 +107,15 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                 <.icon name="hero-trash-solid" class="w-5 h-5" />
               </button>
               <button
-                :if={@invoice.ksef_number != nil}
+                :if={@show_timeline_button}
                 id="ksef-timeline-button"
                 phx-hook="Tippy"
                 data-tippy-content="Historia KSeF"
                 data-tippy-delay="100"
                 class={[
                   "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
-                  "px-2 py-1 flex items-center justify-center rounded"
+                  "px-2 py-1 flex items-center justify-center rounded",
+                  @submission_info.status == :failed && "text-red-500"
                 ]}
                 phx-click="show_ksef_timeline"
                 phx-target={@myself}
@@ -101,10 +123,10 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                 <.icon name="hero-clock" class="w-5 h-5" />
               </button>
 
-              <div class="abosolute">
+              <div :if={SalesInvoice.deletable?(@invoice)} class="absolute">
                 <.modal id="delete-invoice-modal" on_cancel={hide_modal("delete-invoice-modal")}>
                   <p>
-                    Czy na pewno chcesz usunąć fakturę <span class="font-semibold">{@invoice.invoice_number}</span>?
+                    Czy na pewno chcesz usunac fakture <span class="font-semibold">{@invoice.invoice_number}</span>?
                   </p>
                   <div class="mt-6 flex justify-end gap-3">
                     <.button
@@ -122,21 +144,27 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                       }
                       phx-disable-with="Usuwanie..."
                     >
-                      Usuń
+                      Usun
                     </.button>
                   </div>
                 </.modal>
               </div>
             </div>
 
-            <div class="grid grid-cols-[130px_1fr] gap-2 py-4">
+            <div class="grid grid-cols-[145px_1fr] gap-2 py-4">
               <InvoiceDetails.invoice_metadata_piece
                 label="Numer faktury"
                 value={@invoice.invoice_number}
                 piece_id="inv-id"
               />
               <InvoiceDetails.invoice_metadata_piece
-                label="Kupujący"
+                :if={@invoice.ksef_number != nil}
+                label="Identyfikator KSeF"
+                value={@invoice.ksef_number}
+                piece_id="ksef-id"
+              />
+              <InvoiceDetails.invoice_metadata_piece
+                label="Kupujacy"
                 value={
                   if @invoice.buyer_type == :individual do
                     "#{@invoice.buyer_name} #{@invoice.buyer_surname}"
@@ -152,12 +180,12 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                 piece_id="issue-date"
               />
               <InvoiceDetails.invoice_metadata_piece
-                label="Data sprzedaży"
+                label="Data sprzedazy"
                 value={@invoice.sale_date}
                 piece_id="sale-date"
               />
               <InvoiceDetails.invoice_metadata_piece
-                label="Termin płatności"
+                label="Termin platnosci"
                 value={@invoice.due_date}
                 piece_id="due-date"
               />
@@ -174,22 +202,14 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
             />
           <% end %>
 
-          <h3 class="self-start text-sm uppercase text-darkGrey mt-8">Podgląd faktury</h3>
+          <h3 class="self-start text-sm uppercase text-darkGrey mt-8">Podglad faktury</h3>
           <div class="mb-8 mt-4 transition-opacity transition-duration-300 hover:opacity-50">
             <%= if @preview_type == :html do %>
               <div class="w-full h-full max-h-[80vh] border-black border-2 rounded-lg overflow-hidden">
                 <a href={~p"/sprzedazowe/#{@invoice.id}/pobierz"} target="_blank">
                   <FirmowidWeb.PdfHTML.sales_invoice
                     sales_invoice={@invoice}
-                    currency_rate={
-                      if @invoice.currency == "PLN",
-                        do: nil,
-                        else:
-                          Firmowid.Nbp.ApiClient.get_exchange_rate(
-                            @invoice.currency,
-                            Firmowid.SalesInvoices.SalesInvoice.get_currency_conversion_date(@invoice)
-                          )
-                    }
+                    currency_rate={Firmowid.SalesInvoices.get_currency_rate(@invoice)}
                     show_vat={@show_vat_for_sales_invoice}
                   />
                 </a>
@@ -225,7 +245,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                   <.icon name="hero-face-frown" class="w-10 h-10 block" />
                   <h3 class="text-lg font-semibold">Brak rekomendacji</h3>
                   <p class="max-w-[400px]">
-                    Firmowid nie znalazł żadnych transakcji, które potencjalnie pasowałyby do tej faktury.
+                    Firmowid nie znalazl zadnych transakcji, ktore potencjalnie pasowałyby do tej faktury.
                   </p>
                   <.button
                     phx-click="show_chat"
@@ -233,12 +253,12 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                     color="orange"
                     class="w-full mt-2"
                   >
-                    Poproś Firmowida o pomoc
+                    Popros Firmowida o pomoc
                   </.button>
                 </div>
               </div>
               <hr class="w-full text-grey-200" />
-              <h3 class="text-md font-semibold my-10">Co jeszcze możesz zrobić?</h3>
+              <h3 class="text-md font-semibold my-10">Co jeszcze mozesz zrobic?</h3>
               <InvoiceDetails.skip_invoicing show_bank_transfer_modal={false} invoice={@invoice} />
             <% true -> %>
               <div class="flex flex-col gap-16">
@@ -261,6 +281,24 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
   end
 
   @impl true
+  def update(assigns, socket) do
+    # Fetch submission info when invoice is assigned
+    submission_info =
+      if assigns[:invoice] do
+        Ksef.get_submission_info(assigns.invoice)
+      else
+        %SubmissionInfo{status: :not_submitted}
+      end
+
+    socket =
+      socket
+      |> assign(assigns)
+      |> assign(:submission_info, submission_info)
+
+    {:ok, socket}
+  end
+
+  @impl true
   def handle_event("show_chat", _params, socket) do
     {:noreply, assign(socket, chat: true)}
   end
@@ -276,4 +314,31 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
   def handle_event("hide_ksef_timeline", _params, socket) do
     {:noreply, assign(socket, show_ksef_timeline: false)}
   end
+
+  def handle_event("retry_ksef", _params, socket) do
+    invoice = socket.assigns.invoice
+
+    case Ksef.submit_sales_invoice(invoice.id) do
+      {:ok, _job} ->
+        # Subscribe to updates and refresh submission info
+        Ksef.subscribe_ksef_status(socket.assigns.current_user.organization_id)
+        submission_info = %SubmissionInfo{status: :submitting}
+
+        socket =
+          socket
+          |> assign(:submission_info, submission_info)
+          |> put_flash(:info, "Ponowna wysylka do KSeF rozpoczeta")
+
+        {:noreply, socket}
+
+      {:error, reason} ->
+        Logger.error("Failed to retry KSeF submission: #{inspect(reason)}")
+
+        {:noreply, put_flash(socket, :error, "Nie udalo sie ponowic wysylki do KSeF")}
+    end
+  end
+
+  # Show timeline button if invoice was ever submitted to KSeF (has session reference or ksef_number)
+  defp show_timeline_button?(%SubmissionInfo{status: :not_submitted}), do: false
+  defp show_timeline_button?(%SubmissionInfo{}), do: true
 end

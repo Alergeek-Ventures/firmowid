@@ -66,26 +66,49 @@ defmodule Firmowid.Currencies do
     end
   end
 
+  # Mock rates for the Money library (rates as "units of currency per 1 PLN")
+  # The Money library expects rates in the format: how many units of currency X equal 1 unit of base currency
+  # With PLN as base (1.0), a rate like EUR: 0.238 means 0.238 EUR = 1 PLN (or 1 EUR = 4.20 PLN)
+  # These are fallback values when API/database rates are unavailable
+  # Source values are NBP Table A mid-rates (PLN per 1 unit of foreign currency), inverted for Money compatibility
   defp mock_rates do
+    # NBP rates (PLN per 1 foreign currency unit) - for reference:
+    # EUR: 4.2009, USD: 3.5045, GBP: 4.832, CHF: 4.5684, etc.
+    # Inverted below for Money library compatibility:
     %{
-      USD: Decimal.new("1.0"),
-      EUR: Decimal.new("0.8554"),
-      GBP: Decimal.new("0.7410"),
-      CAD: Decimal.new("1.3690"),
-      AUD: Decimal.new("1.5216"),
-      JPY: Decimal.new("147.0598"),
-      CHF: Decimal.new("0.7969"),
-      CNY: Decimal.new("7.1686"),
-      SEK: Decimal.new("9.547"),
-      NOK: Decimal.new("10.50"),
-      DKK: Decimal.new("6.39"),
-      CZK: Decimal.new("21.11"),
-      PLN: Decimal.new("3.645"),
-      HUF: Decimal.new("342.4"),
-      INR: Decimal.new("83.50"),
-      BRL: Decimal.new("5.45"),
-      MXN: Decimal.new("18.30"),
-      ZAR: Decimal.new("18.00")
+      PLN: Decimal.new("1.0"),
+      AUD: Decimal.new("0.4074838231"),
+      BRL: Decimal.new("1.4797277300"),
+      CAD: Decimal.new("0.3870419607"),
+      CHF: Decimal.new("0.2188916424"),
+      CLP: Decimal.new("245.2783418"),
+      CNY: Decimal.new("1.9821605550"),
+      CZK: Decimal.new("5.7770651646"),
+      DKK: Decimal.new("1.7774226627"),
+      EUR: Decimal.new("0.2380442286"),
+      GBP: Decimal.new("0.2069536424"),
+      HKD: Decimal.new("2.2262118491"),
+      HUF: Decimal.new("90.497737557"),
+      IDR: Decimal.new("4766.4442326"),
+      ILS: Decimal.new("0.8827776544"),
+      INR: Decimal.new("26.193098644"),
+      ISK: Decimal.new("34.564697150"),
+      JPY: Decimal.new("43.578024072"),
+      KRW: Decimal.new("407.83027407"),
+      MXN: Decimal.new("4.8995590397"),
+      MYR: Decimal.new("1.1183180496"),
+      NOK: Decimal.new("2.7449905024"),
+      NZD: Decimal.new("0.4730839675"),
+      PHP: Decimal.new("16.750418760"),
+      RON: Decimal.new("1.2131553436"),
+      SEK: Decimal.new("2.5144580839"),
+      SGD: Decimal.new("0.3597381467"),
+      THB: Decimal.new("8.8652482270"),
+      TRY: Decimal.new("12.391573050"),
+      UAH: Decimal.new("12.210012210"),
+      USD: Decimal.new("0.2853276150"),
+      XDR: Decimal.new("0.2024701356"),
+      ZAR: Decimal.new("4.5392646391")
     }
   end
 end

@@ -11,6 +11,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   attr :issue_date, Date, required: true
   attr :party_display_name, :string, required: true
   attr :description, :string
+  attr :return_to, :string, default: nil
 
   def invoice_header(assigns) do
     ~H"""
@@ -20,7 +21,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
       !@is_cost_invoice && "bg-blueBg"
     ]}>
       <div class="flex items-center justify-center w-24">
-        <.link navigate={~p"/fakturowanie?month=#{@issue_date |> Date.to_iso8601()}"}>
+        <.link navigate={@return_to || ~p"/fakturowanie?month=#{@issue_date |> Date.to_iso8601()}"}>
           <.icon name="hero-arrow-left-circle-solid" class="w-7 h-7" />
         </.link>
       </div>

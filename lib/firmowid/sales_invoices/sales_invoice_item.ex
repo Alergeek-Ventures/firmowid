@@ -4,13 +4,20 @@ defmodule Firmowid.SalesInvoices.SalesInvoiceItem do
 
   import Ecto.Changeset
 
+  alias Firmowid.Ksef.VatRate
+
   schema "sales_invoice_items" do
+    field :index, :integer
     field :name, :string, default: ""
     # max 6 decimal places
-    field :quantity, :decimal, default: 1
+    field :quantity, :decimal
     field :unit, :string, default: "szt."
-    field :unit_price, :decimal, default: 0
-    field :vat_rate, :decimal, default: 0
+    field :unit_price, :decimal
+    # KSeF TStawkaPodatku code: "23", "8", "5", "zw", "oo", "np I", "np II", etc.
+    field :vat_rate, :string
+
+    field :net_value, :decimal, virtual: true
+    field :gross_value, :decimal, virtual: true
 
     belongs_to :sales_invoice, Firmowid.SalesInvoices.SalesInvoice
     belongs_to :organization, Firmowid.Accounts.Organization
@@ -19,17 +26,59 @@ defmodule Firmowid.SalesInvoices.SalesInvoiceItem do
   end
 
   def get_net_value(sales_invoice_item) do
-    Decimal.mult(sales_invoice_item.unit_price, sales_invoice_item.quantity)
+    if sales_invoice_item.unit_price && sales_invoice_item.quantity do
+      Decimal.mult(sales_invoice_item.unit_price, sales_invoice_item.quantity)
+    else
+      Decimal.new(0)
+    end
   end
 
   def get_vat_value(sales_invoice_item) do
-    Decimal.mult(get_net_value(sales_invoice_item), Decimal.div(sales_invoice_item.vat_rate, 100))
+    if sales_invoice_item.unit_price && sales_invoice_item.quantity do
+      numeric_rate = VatRate.to_numeric(sales_invoice_item.vat_rate)
+      Decimal.mult(get_net_value(sales_invoice_item), Decimal.div(numeric_rate, 100))
+    else
+      Decimal.new(0)
+    end
   end
 
   def get_gross_value(sales_invoice_item) do
     Decimal.add(get_net_value(sales_invoice_item), get_vat_value(sales_invoice_item))
   end
 
+  def new_changeset(sales_invoice_item, attrs \\ %{}, index \\ nil) do
+    sales_invoice_item
+    |> cast(attrs, [
+      :name,
+      :quantity,
+      :unit,
+      :unit_price,
+      :vat_rate
+    ])
+    |> cast_assoc(:sales_invoice)
+    |> validate_required([:name, :quantity, :unit, :unit_price, :vat_rate])
+    |> validate_inclusion(:vat_rate, VatRate.valid_rates())
+    |> put_change(:organization_id, Firmowid.Repo.get_org_id())
+    |> put_change(:index, index)
+    |> then(fn changeset ->
+      if changeset.valid? do
+        item = apply_changes(changeset)
+
+        changeset
+        |> put_change(:net_value, get_net_value(item))
+        |> put_change(:gross_value, get_gross_value(item))
+      else
+        changeset
+        |> put_change(:net_value, Decimal.new(0))
+        |> put_change(:gross_value, Decimal.new(0))
+      end
+    end)
+  end
+
+  @doc """
+  Changeset for updating invoice items, including correction invoices (KOR).
+  Unlike `new_changeset/3`, this allows negative quantities for corrections.
+  """
   def changeset(sales_invoice_item, attrs \\ %{}) do
     sales_invoice_item
     |> cast(attrs, [
@@ -43,8 +92,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoiceItem do
     # Note: quantity is not validated >= 0 because correction invoices (KOR)
     # require negative quantities to represent reversed items
     |> validate_number(:unit_price, greater_than_or_equal_to: 0)
-    # VAT rate shouldnt be more like enum?
-    |> validate_number(:vat_rate, greater_than_or_equal_to: 0)
+    |> validate_inclusion(:vat_rate, VatRate.valid_rates())
     |> put_change(:organization_id, Firmowid.Repo.get_org_id())
   end
 end

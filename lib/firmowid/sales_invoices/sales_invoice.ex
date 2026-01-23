@@ -4,6 +4,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
   import Ecto.Changeset
 
+  alias Firmowid.SalesInvoices.Counterparty
   alias Firmowid.SalesInvoices.CountryCodes
   alias Firmowid.SalesInvoices.SalesInvoiceItem
 
@@ -16,7 +17,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     field :sale_date, :date
     field :issue_date, :date
     field :due_date, :date
-    field :payment_method, :string
+    field :payment_method, Ecto.Enum, values: ~w[cash card voucher check credit transfer mobile]a, default: :transfer
     field :currency, :string
     field :is_basic_info_confirmed, :boolean, default: false
 
@@ -57,6 +58,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
     field :logo_url, :string, virtual: true
     field :total_amount, :decimal, virtual: true
+    field :due_date_days, :integer, virtual: true
 
     field :item_names, :string
 
@@ -71,27 +73,47 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     belongs_to :corrected_invoice, __MODULE__
     has_many :corrections, __MODULE__, foreign_key: :corrected_invoice_id
 
-    has_many :sales_invoice_items, SalesInvoiceItem, on_replace: :delete
+    has_many :sales_invoice_items, SalesInvoiceItem,
+      preload_order: [asc: :index],
+      on_replace: :delete
 
     many_to_many :transactions,
                  Firmowid.Finances.Transaction,
                  join_through: "sales_invoices_transactions"
 
+    belongs_to :counterparty, Counterparty
     belongs_to :organization, Firmowid.Accounts.Organization
 
     timestamps()
   end
 
-  def get_net_value(sales_invoice) do
-    Enum.reduce(sales_invoice.sales_invoice_items, Decimal.new(0), fn item, acc ->
-      Decimal.add(acc, SalesInvoiceItem.get_net_value(item))
-    end)
+  def get_net_value(%{sales_invoice_items: items, currency: currency}) do
+    currency
+    |> Money.new(
+      Enum.reduce(items, Decimal.new(0), fn item, acc ->
+        Decimal.add(acc, SalesInvoiceItem.get_net_value(item))
+      end)
+    )
+    |> Money.round()
+    |> Money.to_decimal()
   end
 
-  def get_vat_value(sales_invoice) do
-    Enum.reduce(sales_invoice.sales_invoice_items, Decimal.new(0), fn item, acc ->
-      Decimal.add(acc, SalesInvoiceItem.get_vat_value(item))
-    end)
+  def get_vat_value(%{sales_invoice_items: items, currency: currency}) do
+    currency
+    |> Money.new(
+      Enum.reduce(items, Decimal.new(0), fn item, acc ->
+        Decimal.add(acc, SalesInvoiceItem.get_vat_value(item))
+      end)
+    )
+    |> Money.round()
+    |> Money.to_decimal()
+  end
+
+  def get_gross_value(sales_invoice) do
+    sales_invoice.currency
+    |> Money.new(Decimal.add(get_net_value(sales_invoice), get_vat_value(sales_invoice)))
+    |> Money.round()
+    |> Money.to_decimal()
   end
 
   def confirmed?(sales_invoice) do
@@ -99,11 +121,6 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       sales_invoice.is_seller_confirmed &&
       sales_invoice.is_buyer_confirmed &&
       sales_invoice.are_sales_invoice_items_confirmed
-  end
-
-  @spec get_gross_value(%__MODULE__{}) :: Decimal.t()
-  def get_gross_value(sales_invoice) do
-    Decimal.add(get_net_value(sales_invoice), get_vat_value(sales_invoice))
   end
 
   def get_currency_conversion_date(sales_invoice) do
@@ -123,20 +140,32 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   end
 
   @spec buyer_id_type(map() | Ecto.Changeset.t()) :: :nip | :eu_vat | :other_id | :no_id
-  def buyer_id_type(%{buyer_pesel: buyer_pesel, buyer_country: buyer_country}) do
+  def buyer_id_type(%{buyer_type: buyer_type, buyer_pesel: buyer_pesel, buyer_country: buyer_country}) do
     cond do
+      # Individual with PESEL - no tax ID required
       not is_nil(buyer_pesel) and buyer_pesel != "" -> :no_id
+      # Polish individual without PESEL - still no tax ID required (KSeF allows anonymous B2C)
+      buyer_type == :individual and buyer_country == "PL" -> :no_id
+      # Polish company - requires NIP
       buyer_country == "PL" -> :nip
+      # EU company/individual - requires VAT-EU
       CountryCodes.eu_country?(buyer_country) -> :eu_vat
+      # Non-EU - requires some form of ID
       true -> :other_id
     end
   end
 
+  # Fallback for maps without buyer_type (backwards compatibility)
+  def buyer_id_type(%{buyer_pesel: buyer_pesel, buyer_country: buyer_country}) do
+    buyer_id_type(%{buyer_type: nil, buyer_pesel: buyer_pesel, buyer_country: buyer_country})
+  end
+
   def buyer_id_type(%Ecto.Changeset{} = changeset) do
+    buyer_type = get_field(changeset, :buyer_type)
     buyer_pesel = get_field(changeset, :buyer_pesel)
     buyer_country = get_field(changeset, :buyer_country)
 
-    buyer_id_type(%{buyer_pesel: buyer_pesel, buyer_country: buyer_country})
+    buyer_id_type(%{buyer_type: buyer_type, buyer_pesel: buyer_pesel, buyer_country: buyer_country})
   end
 
   def changeset(sales_invoice, attrs \\ %{}) do
@@ -157,7 +186,8 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       :is_cash_account,
       :is_reverse_charge,
       :skip_invoicing,
-      :ksef_invoice_kind
+      :ksef_invoice_kind,
+      :counterparty_id
     ])
     |> buyer_changeset(attrs)
     |> seller_changeset(attrs)
@@ -172,43 +202,66 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       name: :sales_invoices_invoice_number_organization_id_index,
       message: "Invoice number already exists for this organization"
     )
-    |> prepare_changes(&ensure_sequential_invoice_number/1)
   end
 
-  defp ensure_sequential_invoice_number(%{changes: %{is_basic_info_confirmed: true}} = changeset) do
-    invoice_id = get_field(changeset, :id)
-    invoice_number = get_field(changeset, :invoice_number)
-    issue_date = get_field(changeset, :issue_date)
+  def step1_changeset(sales_invoice, attrs \\ %{}) do
+    sales_invoice
+    |> cast(attrs, [
+      :counterparty_id,
+      :buyer_id,
+      :buyer_type,
+      :buyer_display_name,
+      :buyer_name,
+      :buyer_surname,
+      :buyer_pesel,
+      :buyer_address,
+      :buyer_country,
+      :buyer_email,
+      :buyer_phone,
+      :buyer_description,
+      # buyer infered fields:
+      :invoice_type,
+      :is_reverse_charge,
+      :currency,
+      :seller_account_number
+    ])
+    |> validate_required([:buyer_country, :buyer_address])
+    |> validate_country_code(:buyer_country)
+    |> validate_buyer_id()
+    |> validate_buyer_id_required_for_ksef()
+    |> maybe_generate_individual_display_name()
+    |> cast_based_on_type()
+  end
 
-    month = String.pad_leading("#{issue_date.month}", 2, "0")
-    year = issue_date.year
+  def step2_changeset(sales_invoice, attrs \\ %{}) do
+    sales_invoice
+    |> cast(attrs, [:currency, :is_reverse_charge])
+    |> cast_assoc(:sales_invoice_items,
+      with: &SalesInvoiceItem.new_changeset/3,
+      required: true,
+      sort_param: :items_sort,
+      drop_param: :items_drop
+    )
+    |> validate_required([:currency])
+    |> validate_format(:currency, ~r/^[A-Z]{3}$/)
+  end
 
-    expected_invoice_index =
-      issue_date
-      |> Firmowid.SalesInvoices.get_next_invoice_number(omit_invoice_id: invoice_id)
-      |> get_invoice_number_index()
+  def step3_changeset(sales_invoice, attrs \\ %{}) do
+    sales_invoice
+    |> cast(attrs, [:sale_date, :due_date, :due_date_days, :payment_method, :seller_account_number])
+    |> calculate_due_date()
+    |> validate_required([:sale_date, :due_date, :payment_method, :seller_account_number])
+  end
 
-    current_invoice_index = get_invoice_number_index(invoice_number)
+  defp calculate_due_date(changeset) do
+    sale_date = get_field(changeset, :sale_date)
+    due_date_days = get_field(changeset, :due_date_days)
 
-    # this allows for inserting outdated invoices
-    if current_invoice_index > expected_invoice_index do
-      Ecto.Changeset.add_error(
-        changeset,
-        :invoice_number,
-        "Number faktury powinien być mniejszy. Oczekiwano: #{expected_invoice_index}/#{month}/#{year}"
-      )
+    if sale_date && due_date_days do
+      put_change(changeset, :due_date, Date.add(sale_date, due_date_days))
     else
       changeset
     end
-  end
-
-  defp ensure_sequential_invoice_number(changeset), do: changeset
-
-  defp get_invoice_number_index(invoice_number) do
-    invoice_number
-    |> String.split("/")
-    |> List.first()
-    |> String.to_integer()
   end
 
   def seller_changeset(sales_invoice, attrs \\ %{}) do
@@ -240,8 +293,6 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       :buyer_phone,
       :buyer_description
     ])
-    |> validate_length(:buyer_country, is: 2)
-    |> validate_format(:buyer_country, ~r/^[A-Z]{2}$/)
     |> validate_country_code(:buyer_country)
     |> validate_buyer_id()
     |> cast_buyer_based_on_type()
@@ -262,9 +313,9 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   def cast_buyer_based_on_type(buyer) do
     case get_change(buyer, :buyer_type) do
       :individual ->
-        buyer
-        |> put_change(:buyer_id, "")
-        |> put_change(:buyer_display_name, "")
+        # Clear company-specific fields for individuals
+        # buyer_display_name is generated from name+surname in maybe_generate_individual_display_name/1
+        put_change(buyer, :buyer_id, "")
 
       :company ->
         put_change(buyer, :buyer_pesel, nil)
@@ -274,10 +325,42 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     end
   end
 
+  # For individuals, auto-generate buyer_display_name from buyer_name + buyer_surname
+  # if display_name is empty/nil
+  defp maybe_generate_individual_display_name(changeset) do
+    buyer_type = get_field(changeset, :buyer_type)
+    buyer_display_name = get_field(changeset, :buyer_display_name)
+
+    if buyer_type == :individual and (is_nil(buyer_display_name) or buyer_display_name == "") do
+      buyer_name = get_field(changeset, :buyer_name) || ""
+      buyer_surname = get_field(changeset, :buyer_surname) || ""
+
+      generated_name =
+        [buyer_name, buyer_surname]
+        |> Enum.map(&String.trim/1)
+        |> Enum.reject(&(&1 == ""))
+        |> Enum.join(" ")
+
+      if generated_name == "" do
+        changeset
+      else
+        put_change(changeset, :buyer_display_name, generated_name)
+      end
+    else
+      changeset
+    end
+  end
+
   defp validate_buyer_id(changeset) do
     buyer_confirmed? = get_field(changeset, :is_buyer_confirmed) == true
 
-    changeset = if buyer_confirmed?, do: validate_required(changeset, [:buyer_id]), else: changeset
+    # For individuals with PESEL, buyer_id is not required (they use buyer_pesel instead)
+    changeset =
+      if buyer_confirmed? and buyer_id_type(changeset) != :no_id do
+        validate_required(changeset, [:buyer_id])
+      else
+        changeset
+      end
 
     case buyer_id_type(changeset) do
       :nip ->
@@ -285,6 +368,21 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
       _ ->
         validate_length(changeset, :buyer_id, max: 50, message: "musi mieć maksymalnie 50 znaków")
+    end
+  end
+
+  # Validates that buyer_id is present when required for KSeF submission.
+  # This is used in step1_changeset to catch missing IDs early in the Creator flow.
+  # Individuals with PESEL (:no_id) don't need a tax ID.
+  defp validate_buyer_id_required_for_ksef(changeset) do
+    case buyer_id_type(changeset) do
+      :no_id ->
+        # Individual with PESEL - no tax ID required
+        changeset
+
+      _other ->
+        # Companies and foreign buyers need an ID for KSeF
+        validate_required(changeset, [:buyer_id])
     end
   end
 
@@ -315,6 +413,77 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   end
 
   @doc """
+  Validates that all fields required for KSeF submission are present and valid.
+
+  This is a read-only validation changeset - it doesn't modify the invoice,
+  only checks if it meets KSeF requirements. Use this before submitting to KSeF
+  to catch validation errors early (before they reach the KSeF API).
+
+  Required fields for KSeF FA(3):
+  - Seller: nip, display_name or (name + surname), address
+  - Buyer: country (always required for Adres block), address
+  - Buyer identification: depends on buyer_id_type
+  - Invoice: invoice_number, issue_date, currency, payment_method
+
+  Returns a changeset with errors if validation fails.
+  """
+  @spec ksef_submission_changeset(t()) :: Ecto.Changeset.t()
+  def ksef_submission_changeset(%__MODULE__{} = sales_invoice) do
+    sales_invoice
+    |> change()
+    |> validate_required([
+      # Seller fields
+      :seller_nip,
+      :seller_address,
+      # Buyer fields - country is ALWAYS required when buyer_address is present
+      :buyer_country,
+      :buyer_address,
+      # Invoice fields
+      :invoice_number,
+      :issue_date,
+      :currency,
+      :payment_method
+    ])
+    |> validate_seller_name()
+    |> validate_buyer_identification()
+    |> validate_country_code(:buyer_country)
+  end
+
+  defp validate_seller_name(changeset) do
+    seller_display_name = get_field(changeset, :seller_display_name)
+    seller_name = get_field(changeset, :seller_name)
+    seller_surname = get_field(changeset, :seller_surname)
+
+    has_display_name = is_binary(seller_display_name) and seller_display_name != ""
+    has_full_name = is_binary(seller_name) and is_binary(seller_surname)
+
+    if has_display_name or has_full_name do
+      changeset
+    else
+      add_error(changeset, :seller_display_name, "lub imię i nazwisko sprzedawcy jest wymagane")
+    end
+  end
+
+  defp validate_buyer_identification(changeset) do
+    case buyer_id_type(changeset) do
+      :no_id ->
+        # Individual with PESEL - no tax ID required
+        changeset
+
+      :nip ->
+        changeset
+        |> validate_required([:buyer_id], message: "NIP nabywcy jest wymagany dla polskich firm")
+        |> validate_format(:buyer_id, ~r/^\d{10}$/, message: "musi być 10-cyfrowym numerem NIP")
+
+      :eu_vat ->
+        validate_required(changeset, [:buyer_id], message: "numer VAT-EU nabywcy jest wymagany")
+
+      :other_id ->
+        validate_required(changeset, [:buyer_id], message: "identyfikator nabywcy jest wymagany")
+    end
+  end
+
+  @doc """
   Changeset for toggling skip_invoicing flag.
   This bypasses the full validation since we only update the skip flag.
   """
@@ -326,6 +495,18 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
   def locked?(%__MODULE__{locked_at: nil}), do: false
   def locked?(%__MODULE__{locked_at: _}), do: true
+
+  @doc """
+  Returns true if the invoice can be deleted.
+
+  An invoice cannot be deleted if:
+  - It has been submitted to KSeF (has ksef_number), or
+  - It is currently locked for KSeF submission (has locked_at)
+
+  KSeF-submitted invoices can only be "cancelled" by issuing a correction invoice.
+  """
+  def deletable?(%__MODULE__{ksef_number: nil, locked_at: nil}), do: true
+  def deletable?(%__MODULE__{}), do: false
 
   defp check_if_locked(%__MODULE__{locked_at: nil} = sales_invoice) do
     change(sales_invoice)

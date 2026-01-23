@@ -96,6 +96,11 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
   defp get_invoice_date(%SalesInvoice{issue_date: issue_date}), do: issue_date
 
   defp get_invoice_display_name(%CostInvoice{seller_display_name: name}), do: name
+
+  defp get_invoice_display_name(%SalesInvoice{buyer_type: :individual, buyer_name: name, buyer_surname: surname}) do
+    "#{name} #{surname}"
+  end
+
   defp get_invoice_display_name(%SalesInvoice{buyer_display_name: name}), do: name
 
   defp get_invoice_account_number(%CostInvoice{account_number: acc}), do: acc

@@ -1,5 +1,29 @@
 defmodule Firmowid.Nbp.ApiClient do
-  @moduledoc false
+  @moduledoc """
+  Client for the National Bank of Poland (NBP) API.
+
+  Provides exchange rates for currencies supported by NBP Table A.
+  """
+
+  @supported_currencies ~w(AUD BRL CAD CHF CLP CNY CZK DKK EUR GBP HKD HUF IDR ILS INR ISK JPY KRW MXN MYR NOK NZD PHP RON SEK SGD THB TRY UAH USD XDR ZAR)
+
+  @doc """
+  Returns the list of currency codes supported by NBP Table A.
+
+  These are the only currencies for which exchange rates can be fetched.
+  PLN is not included as it's the base currency.
+  """
+  def supported_currencies, do: @supported_currencies
+
+  @doc """
+  Checks if a currency code is supported by NBP.
+  """
+  def supported_currency?(currency) when is_binary(currency) do
+    currency in @supported_currencies
+  end
+
+  def supported_currency?(_), do: false
+
   def get_exchange_rate(currency, date) do
     today = Date.utc_today()
 

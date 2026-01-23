@@ -3,11 +3,14 @@ defmodule Firmowid.SalesInvoices do
   @behaviour Bodyguard.Policy
 
   import Ecto.Query, warn: false
+  import Paradex, only: [~>: 2]
 
   alias Ecto.Multi
   alias Firmowid.Accounts
   alias Firmowid.Billing
+  alias Firmowid.Nbp
   alias Firmowid.Repo
+  alias Firmowid.SalesInvoices.Counterparty
   alias Firmowid.SalesInvoices.SalesInvoice
   alias Firmowid.SalesInvoices.SalesInvoicesTransactions
 
@@ -45,6 +48,54 @@ defmodule Firmowid.SalesInvoices do
   end
 
   def populate_logo_url(nil), do: nil
+
+  @doc """
+  Returns the currency exchange rate for a sales invoice.
+
+  For PLN invoices, returns nil (no conversion needed).
+  For other currencies, fetches the NBP exchange rate for the currency conversion date.
+  """
+  @spec get_currency_rate(SalesInvoice.t()) :: map() | nil
+  def get_currency_rate(%SalesInvoice{currency: "PLN"}), do: nil
+
+  def get_currency_rate(%SalesInvoice{} = sales_invoice) do
+    Nbp.ApiClient.get_exchange_rate(
+      sales_invoice.currency,
+      SalesInvoice.get_currency_conversion_date(sales_invoice)
+    )
+  end
+
+  @doc """
+  Returns the display name for the buyer on an invoice.
+
+  If `buyer_display_name` is present (non-empty), returns it.
+  Otherwise derives it from:
+  - For individuals: "name surname"
+  - For companies: "name"
+  """
+  @spec buyer_display_name(SalesInvoice.t()) :: String.t() | nil
+  def buyer_display_name(%SalesInvoice{buyer_display_name: name}) when is_binary(name) and name != "" do
+    name
+  end
+
+  def buyer_display_name(%SalesInvoice{buyer_type: :individual, buyer_name: name, buyer_surname: surname})
+      when is_binary(name) and is_binary(surname) do
+    "#{name} #{surname}"
+  end
+
+  def buyer_display_name(%SalesInvoice{buyer_type: :individual, buyer_name: name}) when is_binary(name) do
+    name
+  end
+
+  def buyer_display_name(%SalesInvoice{buyer_type: :company, buyer_name: name}) when is_binary(name) do
+    name
+  end
+
+  def buyer_display_name(%SalesInvoice{buyer_name: name}) when is_binary(name) do
+    name
+  end
+
+  def buyer_display_name(_), do: nil
 
   def search_sales_invoices(search_term) do
     SalesInvoice
@@ -85,10 +136,7 @@ defmodule Firmowid.SalesInvoices do
         where: si.skip_invoicing == false,
         order_by: [desc: :issue_date]
 
-    query
-    |> Repo.all()
-    |> Repo.preload(:sales_invoice_items)
-    |> Repo.preload(:transactions)
+    list_sales_invoices(query)
   end
 
   def list_sales_invoices(from, to) do
@@ -98,9 +146,13 @@ defmodule Firmowid.SalesInvoices do
       d.issue_date >= ^from and d.issue_date <= ^to
     )
     |> order_by(desc: :issue_date)
+    |> list_sales_invoices()
+  end
+
+  def list_sales_invoices(base_query \\ SalesInvoice) do
+    base_query
+    |> preload([:sales_invoice_items, :transactions])
     |> Repo.all()
-    |> Repo.preload(:sales_invoice_items)
-    |> Repo.preload(:transactions)
   end
 
   def list_invoices_issued_in_date_range(from, to) do
@@ -117,15 +169,13 @@ defmodule Firmowid.SalesInvoices do
   def get_sales_invoice(id) do
     SalesInvoice
     |> Repo.get(id)
-    |> Repo.preload(:sales_invoice_items)
-    |> Repo.preload(:transactions)
+    |> Repo.preload([:sales_invoice_items, :transactions])
   end
 
   def get_sales_invoice!(id) do
     SalesInvoice
     |> Repo.get!(id)
-    |> Repo.preload(:sales_invoice_items)
-    |> Repo.preload(:transactions)
+    |> Repo.preload([:sales_invoice_items, :transactions])
   end
 
   def get_sales_invoice_with_logo_url(id) do
@@ -194,18 +244,124 @@ defmodule Firmowid.SalesInvoices do
     |> populate_logo_url()
   end
 
+  # Invoice Number Series Support
+  # Format: NN/MM/YYYY (default) or NN/MM/YYYY/SERIES (with postfix)
+
+  @invoice_number_regex ~r/^(\d+)\/(\d+)\/(\d+)(?:\/(.+))?$/
+
+  @doc """
+  Parses an invoice number string into its components.
+
+  Returns `{:ok, %{num: integer, month: integer, year: integer, series: string | nil}}`
+  for valid formats, or `:error` for invalid formats.
+
+  ## Examples
+
+      iex> parse_invoice_number("01/01/2026")
+      {:ok, %{num: 1, month: 1, year: 2026, series: nil}}
+
+      iex> parse_invoice_number("12/01/2026/A")
+      {:ok, %{num: 12, month: 1, year: 2026, series: "A"}}
+
+      iex> parse_invoice_number("EVIL/2025/11/001")
+      :error
+  """
+  @spec parse_invoice_number(String.t()) ::
+          {:ok, %{num: integer(), month: integer(), year: integer(), series: String.t() | nil}} | :error
+  def parse_invoice_number(invoice_number) when is_binary(invoice_number) do
+    case Regex.run(@invoice_number_regex, invoice_number) do
+      [_, num, month, year] ->
+        {:ok, %{num: String.to_integer(num), month: String.to_integer(month), year: String.to_integer(year), series: nil}}
+
+      [_, num, month, year, series] ->
+        {:ok,
+         %{num: String.to_integer(num), month: String.to_integer(month), year: String.to_integer(year), series: series}}
+
+      nil ->
+        :error
+    end
+  end
+
+  def parse_invoice_number(_), do: :error
+
+  @doc """
+  Formats invoice number components into a string.
+
+  ## Examples
+
+      iex> format_invoice_number(1, 1, 2026, nil)
+      "01/01/2026"
+
+      iex> format_invoice_number(12, 1, 2026, "A")
+      "12/01/2026/A"
+  """
+  @spec format_invoice_number(integer(), integer(), integer(), String.t() | nil) :: String.t()
+  def format_invoice_number(num, month, year, nil) do
+    "#{String.pad_leading("#{num}", 2, "0")}/#{String.pad_leading("#{month}", 2, "0")}/#{year}"
+  end
+
+  def format_invoice_number(num, month, year, series) do
+    "#{String.pad_leading("#{num}", 2, "0")}/#{String.pad_leading("#{month}", 2, "0")}/#{year}/#{series}"
+  end
+
+  @doc """
+  Returns a list of distinct invoice number series used by the organization.
+
+  Only includes series from invoice numbers matching the valid format (NN/MM/YYYY or NN/MM/YYYY/SERIES).
+  Legacy formats like "EVIL/2025/11/001" are ignored.
+
+  Returns `nil` as the first element representing the default (no postfix) series,
+  followed by any named series in alphabetical order.
+  """
+  @spec list_invoice_series() :: [String.t() | nil]
+  def list_invoice_series do
+    SalesInvoice
+    |> where([i], not is_nil(i.invoice_number))
+    |> select([i], i.invoice_number)
+    |> Repo.all()
+    |> Enum.map(&parse_invoice_number/1)
+    |> Enum.filter(&match?({:ok, _}, &1))
+    |> Enum.map(fn {:ok, %{series: s}} -> s end)
+    |> Enum.uniq()
+    |> Enum.sort_by(fn
+      nil -> ""
+      s -> s
+    end)
+  end
+
+  @doc """
+  Returns the next available invoice number for the given date and series.
+
+  ## Options
+
+    * `:series` - The invoice series (postfix). `nil` for default series. Default: `nil`
+    * `:omit_invoice_id` - Invoice ID to exclude from checks (for editing). Default: `nil`
+
+  ## Examples
+
+      iex> get_next_invoice_number(~D[2026-01-15])
+      "04/01/2026"
+
+      iex> get_next_invoice_number(~D[2026-01-15], series: "A")
+      "12/01/2026/A"
+  """
+  @spec get_next_invoice_number(Date.t(), keyword()) :: String.t()
   def get_next_invoice_number(date, opts \\ []) do
     year = date.year
     month = date.month
+    series = Keyword.get(opts, :series, nil)
     omit_invoice_id = Keyword.get(opts, :omit_invoice_id, nil)
 
-    # Get latest invoice from given month
+    # Build pattern to match invoice numbers for this series
+    # For nil series: "NN/MM/YYYY" (no trailing slash or postfix)
+    # For named series: "NN/MM/YYYY/SERIES"
+    series_pattern = build_series_pattern(month, year, series)
+
+    # Get all invoice numbers matching this series pattern
     query =
       SalesInvoice
-      |> where([i], fragment("date_part('year', ?)", i.issue_date) == ^year)
-      |> where([i], fragment("date_part('month', ?)", i.issue_date) == ^month)
-      |> order_by(desc: :invoice_number)
-      |> limit(1)
+      |> where([i], not is_nil(i.invoice_number))
+      |> where([i], fragment("? ~ ?", i.invoice_number, ^series_pattern))
 
     query =
       if omit_invoice_id do
@@ -214,35 +370,43 @@ defmodule Firmowid.SalesInvoices do
         query
       end
 
-    latest_invoice = Repo.one(query)
+    # Find the highest number in this series
+    existing_numbers =
+      query
+      |> select([i], i.invoice_number)
+      |> Repo.all()
+      |> Enum.map(&parse_invoice_number/1)
+      |> Enum.filter(&match?({:ok, _}, &1))
+      |> Enum.map(fn {:ok, %{num: num}} -> num end)
 
-    # Determine the starting number based on latest invoice in the month
     starting_num =
-      case latest_invoice do
-        nil ->
-          # First invoice of the month
-          1
-
-        invoice ->
-          # Extract current number and increment
-          case Regex.run(~r/^(\d+)\/\d+\/\d+$/, invoice.invoice_number) do
-            [_, current_num] ->
-              String.to_integer(current_num) + 1
-
-            nil ->
-              # Fallback if pattern doesn't match
-              1
-          end
+      case Enum.max(existing_numbers, fn -> 0 end) do
+        0 -> 1
+        max_num -> max_num + 1
       end
 
     # Keep checking until we find a free number
-    find_free_invoice_number(starting_num, month, year, omit_invoice_id)
+    find_free_invoice_number(starting_num, month, year, series, omit_invoice_id)
   end
 
-  defp find_free_invoice_number(num, month, year, omit_invoice_id) do
-    # Format the invoice number
-    invoice_number =
-      "#{String.pad_leading("#{num}", 2, "0")}/#{String.pad_leading("#{month}", 2, "0")}/#{year}"
+  # Build regex pattern for matching invoice numbers of a specific series
+  defp build_series_pattern(month, year, nil) do
+    # Match "NN/MM/YYYY" exactly (no trailing content)
+    month_str = String.pad_leading("#{month}", 2, "0")
+    "^\\d+/#{month_str}/#{year}$"
+  end
+
+  defp build_series_pattern(month, year, series) do
+    # Match "NN/MM/YYYY/SERIES" exactly
+    month_str = String.pad_leading("#{month}", 2, "0")
+    # Escape special regex characters in series
+    escaped_series = Regex.escape(series)
+    "^\\d+/#{month_str}/#{year}/#{escaped_series}$"
+  end
+
+  defp find_free_invoice_number(num, month, year, series, omit_invoice_id) do
+    # Format the invoice number using the helper
+    invoice_number = format_invoice_number(num, month, year, series)
 
     # Check if this number already exists in the database
     query = where(SalesInvoice, [i], i.invoice_number == ^invoice_number)
@@ -256,11 +420,129 @@ defmodule Firmowid.SalesInvoices do
 
     if Repo.exists?(query) do
       # Number is taken, try the next one
-      find_free_invoice_number(num + 1, month, year, omit_invoice_id)
+      find_free_invoice_number(num + 1, month, year, series, omit_invoice_id)
     else
       # Number is free, return it
       invoice_number
     end
+  end
+
+  @doc """
+  Returns a map of series to their next available invoice number.
+
+  Always includes `nil` (default series) and `"A"` series, plus any existing series from the database.
+
+  ## Examples
+
+      iex> get_next_numbers_for_series(~D[2026-01-15])
+      %{nil => "04/01/2026", "A" => "01/01/2026/A", "FIZ" => "03/01/2026/FIZ"}
+  """
+  @spec get_next_numbers_for_series(Date.t(), keyword()) :: %{(String.t() | nil) => String.t()}
+  def get_next_numbers_for_series(date, opts \\ []) do
+    existing_series = list_invoice_series()
+
+    # Always include nil (default) and "A"
+    all_series = Enum.uniq([nil, "A"] ++ existing_series)
+
+    Map.new(all_series, fn series ->
+      {series, get_next_invoice_number(date, Keyword.put(opts, :series, series))}
+    end)
+  end
+
+  @typedoc """
+  Invoice number validation warning.
+
+  - `{:invalid_format, suggestions}` - Number doesn't match expected format
+  - `{:duplicate, suggestions}` - Number already exists in database
+  - `{:gap, expected}` - Number creates a gap in the sequence
+  """
+  @type invoice_warning ::
+          {:invalid_format, [String.t()]}
+          | {:duplicate, [String.t()]}
+          | {:gap, String.t()}
+
+  @doc """
+  Validates an invoice number and returns a list of warnings.
+
+  Checks for:
+  - Invalid format (doesn't match NN/MM/YYYY or NN/MM/YYYY/SERIES)
+  - Duplicate (number already exists)
+  - Gap in sequence (number is higher than expected for the series)
+
+  Each warning includes suggested corrections.
+
+  ## Examples
+
+      iex> validate_invoice_number("04/01/2026", ~D[2026-01-15])
+      []
+
+      iex> validate_invoice_number("INVALID", ~D[2026-01-15])
+      [{:invalid_format, ["04/01/2026", "01/01/2026/A"]}]
+
+      iex> validate_invoice_number("10/01/2026", ~D[2026-01-15])
+      [{:gap, "04/01/2026"}]
+  """
+  @spec validate_invoice_number(String.t(), Date.t(), keyword()) :: [invoice_warning()]
+  def validate_invoice_number(invoice_number, issue_date, opts \\ []) do
+    all_suggestions =
+      issue_date
+      |> get_next_numbers_for_series(opts)
+      |> Map.values()
+      |> Enum.sort_by(fn num -> if String.contains?(num, "/A"), do: 1, else: 0 end)
+
+    parsed = parse_invoice_number(invoice_number)
+
+    warnings = []
+
+    # Check format
+    warnings =
+      if parsed == :error do
+        [{:invalid_format, all_suggestions} | warnings]
+      else
+        warnings
+      end
+
+    # Check duplicate
+    warnings =
+      if invoice_number_exists?(invoice_number, opts) do
+        [{:duplicate, all_suggestions} | warnings]
+      else
+        warnings
+      end
+
+    # Check gap (only if format is valid)
+    warnings =
+      case parsed do
+        {:ok, %{num: current_num, series: series}} ->
+          expected = get_next_invoice_number(issue_date, Keyword.put(opts, :series, series))
+
+          case parse_invoice_number(expected) do
+            {:ok, %{num: expected_num}} when current_num > expected_num ->
+              [{:gap, expected} | warnings]
+
+            _ ->
+              warnings
+          end
+
+        :error ->
+          warnings
+      end
+
+    Enum.reverse(warnings)
+  end
+
+  defp invoice_number_exists?(invoice_number, opts) do
+    omit_invoice_id = Keyword.get(opts, :omit_invoice_id)
+    query = where(SalesInvoice, [i], i.invoice_number == ^invoice_number)
+
+    query =
+      if omit_invoice_id do
+        where(query, [i], i.id != ^omit_invoice_id)
+      else
+        query
+      end
+
+    Repo.exists?(query)
   end
 
   @doc """
@@ -314,6 +596,10 @@ defmodule Firmowid.SalesInvoices do
   @doc """
   Deletes a sales invoice.
 
+  Returns `{:error, :ksef_submitted}` if the invoice has been submitted to KSeF
+  or is currently locked for submission. KSeF-submitted invoices cannot be deleted
+  and must be cancelled via correction invoice instead.
+
   Note: The billing counter decrement happens outside the delete transaction.
   This is intentional - billing limits are soft limits (informational only),
   so we prioritize successful invoice deletion over counter accuracy.
@@ -321,18 +607,22 @@ defmodule Firmowid.SalesInvoices do
   Counter drift is acceptable for soft limit tracking.
   """
   def delete_sales_invoice(%SalesInvoice{} = invoice) do
-    result = Repo.delete(invoice)
+    if SalesInvoice.deletable?(invoice) do
+      result = Repo.delete(invoice)
 
-    with {:ok, deleted_invoice} <- result do
-      if !correction_invoice?(deleted_invoice) do
-        case Billing.decrement(deleted_invoice.organization_id, :sales_invoices) do
-          {:ok, _} -> :ok
-          {:error, reason} -> Logger.warning("Failed to decrement sales_invoices limit: #{inspect(reason)}")
+      with {:ok, deleted_invoice} <- result do
+        if !correction_invoice?(deleted_invoice) do
+          case Billing.decrement(deleted_invoice.organization_id, :sales_invoices) do
+            {:ok, _} -> :ok
+            {:error, reason} -> Logger.warning("Failed to decrement sales_invoices limit: #{inspect(reason)}")
+          end
         end
       end
-    end
 
-    result
+      result
+    else
+      {:error, :ksef_submitted}
+    end
   end
 
   defp correction_invoice?(%SalesInvoice{ksef_invoice_kind: :kor}), do: true
@@ -360,5 +650,116 @@ defmodule Firmowid.SalesInvoices do
     |> Repo.all()
     |> Repo.preload(:sales_invoice_items)
     |> Repo.preload(:transactions)
+  end
+
+  def list_recent_invoices do
+    SalesInvoice
+    |> order_by([s], s.inserted_at)
+    |> limit(5)
+    |> list_sales_invoices()
+  end
+
+  def list_counterparties do
+    Counterparty
+    |> order_by([c], asc: fragment("COALESCE(?, ?)", c.display_name, c.surname))
+    |> Repo.all()
+  end
+
+  @spec get_counterparty(UUIDv7.t()) :: Counterparty.t() | nil
+  def get_counterparty(id) do
+    Repo.get(Counterparty, id)
+  end
+
+  @spec get_counterparty!(UUIDv7.t()) :: Counterparty.t()
+  def get_counterparty!(id) do
+    Repo.get!(Counterparty, id)
+  end
+
+  @spec create_counterparty(map()) :: {:ok, Counterparty.t()} | {:error, Ecto.Changeset.t()}
+  def create_counterparty(attrs) do
+    %Counterparty{}
+    |> Counterparty.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @spec update_counterparty(Counterparty.t(), map()) ::
+          {:ok, Counterparty.t()} | {:error, Ecto.Changeset.t()}
+  def update_counterparty(%Counterparty{} = counterparty, attrs) do
+    counterparty
+    |> Counterparty.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @spec delete_counterparty(Counterparty.t()) :: {:ok, Counterparty.t()} | {:error, Ecto.Changeset.t()}
+  def delete_counterparty(%Counterparty{} = counterparty) do
+    Repo.delete(counterparty)
+  end
+
+  def change_counterparty(%Counterparty{} = counterparty, attrs \\ %{}) do
+    Counterparty.changeset(counterparty, attrs)
+  end
+
+  @spec search_counterparties(String.t(), keyword()) :: [Counterparty.t()]
+  def search_counterparties(search_term, opts \\ []) do
+    type = Keyword.get(opts, :type)
+    sort_by = Keyword.get(opts, :sort_by, :name)
+    sort_order = Keyword.get(opts, :sort_order, :asc)
+
+    {search_mode, base_query} = apply_counterparty_search(Counterparty, search_term)
+
+    base_query
+    |> apply_counterparty_type_filter(type)
+    |> apply_counterparty_sorting(search_mode, sort_by, sort_order)
+    |> limit(25)
+    |> Repo.all(prepare: :unnamed)
+  end
+
+  defp apply_counterparty_search(query, nil), do: {:no_search, query}
+  defp apply_counterparty_search(query, ""), do: {:no_search, query}
+
+  defp apply_counterparty_search(query, search_term) do
+    search_query =
+      where(
+        query,
+        [c],
+        c.display_name ~> ^search_term or
+          c.name ~> ^search_term or
+          c.surname ~> ^search_term or
+          c.tax_id ~> ^search_term or
+          c.email ~> ^search_term
+      )
+
+    {:search, search_query}
+  end
+
+  defp apply_counterparty_type_filter(query, nil), do: query
+
+  defp apply_counterparty_type_filter(query, type) when type in [:individual, :company] do
+    where(query, [c], c.type == ^type)
+  end
+
+  defp apply_counterparty_type_filter(query, _), do: query
+
+  # When searching, order by BM25 score first
+  defp apply_counterparty_sorting(query, :search, _sort_by, _order) do
+    order_by(query, [c], fragment("paradedb.score(?) DESC", c.id))
+  end
+
+  # When not searching, use the existing sorting logic
+  defp apply_counterparty_sorting(query, :no_search, :name, order) do
+    order_by(query, [c], [{^order, fragment("COALESCE(?, ?)", c.name, c.display_name)}])
+  end
+
+  defp apply_counterparty_sorting(query, :no_search, :display_name, order) do
+    order_by(query, [c], [{^order, fragment("COALESCE(?, ?)", c.display_name, c.name)}])
+  end
+
+  defp apply_counterparty_sorting(query, :no_search, :created_at, order) do
+    order_by(query, [c], [{^order, c.inserted_at}])
+  end
+
+  defp apply_counterparty_sorting(query, :no_search, _, order) do
+    # Default to name sorting
+    apply_counterparty_sorting(query, :no_search, :name, order)
   end
 end

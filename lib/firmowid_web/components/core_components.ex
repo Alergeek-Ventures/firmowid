@@ -115,7 +115,7 @@ defmodule FirmowidWeb.CoreComponents do
   attr :color, :string,
     doc: "The button color.",
     default: "black",
-    values: ["black", "green", "red", "orange", "grey", "light_grey", "light_orange"]
+    values: ["black", "green", "red", "orange", "grey", "light_grey", "light_orange", "special", "none", "turquoise"]
 
   attr :size, :string, default: "medium", values: ["medium", "small"]
 
@@ -124,7 +124,8 @@ defmodule FirmowidWeb.CoreComponents do
     doc: "The button type.",
     values: ["submit", "button", "reset"]
 
-  attr :variant, :string, default: "solid", values: ["outline", "solid"]
+  attr :variant, :string, default: "solid", values: ["outline", "solid", "ghost"]
+  attr :new, :boolean, default: false
 
   slot :inner_block, required: true
 
@@ -140,6 +141,18 @@ defmodule FirmowidWeb.CoreComponents do
     button_styles(%{})
   end
 
+  def button_styles(%{new: true} = assigns) do
+    classes([
+      "phx-submit-loading:opacity-75 phx-click-loading:opacity-75 phx-click-loading:cursor-default",
+      "transition duration-100 ease-out",
+      "inline-flex flex-row items-center justify-center",
+      "cursor-pointer disabled:pointer-events-none border border-transparent whitespace-nowrap",
+      button_styles(:color_new, assigns),
+      button_styles(:size_new, assigns),
+      assigns[:class]
+    ])
+  end
+
   def button_styles(assigns) do
     classes([
       "phx-submit-loading:opacity-75 phx-click-loading:opacity-75 phx-click-loading:cursor-default cursor-pointer rounded-md transition-all",
@@ -149,6 +162,14 @@ defmodule FirmowidWeb.CoreComponents do
       button_styles(:size, assigns),
       assigns[:class]
     ])
+  end
+
+  defp button_styles(:size_new, %{size: "medium"}) do
+    "text-base/tight font-medium h-11 rounded-lg py-2 px-3 gap-2.5 [&>svg]:size-6"
+  end
+
+  defp button_styles(:size_new, %{size: "small"}) do
+    "text-sm/tight font-medium rounded-md py-1.5 px-2 gap-1.5 [&>svg]:size-4 has-[svg:only-child]:py-[0.4375rem]"
   end
 
   defp button_styles(:size, %{size: "medium", variant: "solid"}) do
@@ -169,6 +190,30 @@ defmodule FirmowidWeb.CoreComponents do
 
   defp button_styles(:size, _) do
     button_styles(:size, %{size: "medium"})
+  end
+
+  defp button_styles(:color_new, %{color: "special"}) do
+    "text-white bg-black hover:bg-orange-700 active:bg-orange-800 disabled:bg-grey-400 disabled:text-grey-400"
+  end
+
+  defp button_styles(:color_new, %{color: "orange"}) do
+    "text-white bg-orange-700 hover:bg-orange-800 active:bg-orange-900 disabled:bg-orange-400"
+  end
+
+  defp button_styles(:color_new, %{color: "turquoise"}) do
+    "text-white bg-turquoise-700 hover:bg-turquoise-800 active:bg-turquoise-900 disabled:bg-turquoise-400"
+  end
+
+  defp button_styles(:color_new, %{color: "light_grey"}) do
+    "text-grey-900 bg-grey-200 hover:bg-grey-300 active:bg-grey-400 disabled:bg-grey-100 disabled:text-grey-600"
+  end
+
+  defp button_styles(:color_new, %{variant: "outline"}) do
+    "text-grey-900 border-grey-200 hover:bg-grey-200 active:bg-grey-300 disabled:text-grey-600 box-border"
+  end
+
+  defp button_styles(:color_new, %{variant: "ghost"}) do
+    "text-grey-900 hover:bg-grey-200 active:bg-grey-700 active:text-white disabled:text-grey-600"
   end
 
   defp button_styles(:color, %{color: "none"}) do
@@ -320,6 +365,8 @@ defmodule FirmowidWeb.CoreComponents do
 
   attr :input_size, :integer, default: nil
 
+  attr :new, :boolean, default: false, doc: "new redesigned input"
+
   attr :rest, :global, include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
                 multiple pattern placeholder readonly required rows size step)
 
@@ -341,6 +388,7 @@ defmodule FirmowidWeb.CoreComponents do
       name={@name}
       id={@id}
       value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+      {@rest}
     />
     """
   end
@@ -376,6 +424,33 @@ defmodule FirmowidWeb.CoreComponents do
         />
         <span class="ml-1 text-darkGrey text-sm">{@label}</span>
       </label>
+      <.error :for={msg <- @errors}>{msg}</.error>
+    </div>
+    """
+  end
+
+  def input(%{type: "select", new: true} = assigns) do
+    ~H"""
+    <div class={@container_class}>
+      <.label :if={@label} for={@id} class="mb-2">{@label}</.label>
+      <div class="relative w-fit">
+        <select
+          id={@id}
+          name={@name}
+          class={
+            classes([
+              "py-1.5 px-3 pr-10 border rounded-lg border-grey-200 bg-grey-50 text-grey-900 text-base/tight w-full bg-none peer",
+              @rest[:class]
+            ])
+          }
+          multiple={@multiple}
+          {@rest}
+        >
+          <option :if={@prompt} value="">{@prompt}</option>
+          {Phoenix.HTML.Form.options_for_select(@options, @value)}
+        </select>
+        <Lucideicons.chevron_down class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none size-4 text-grey-700 peer-disabled:text-grey-300" />
+      </div>
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
@@ -430,6 +505,32 @@ defmodule FirmowidWeb.CoreComponents do
   end
 
   # All other inputs text, datetime-local, url, password, etc. are handled here...
+  def input(%{new: true} = assigns) do
+    ~H"""
+    <div class={@rest[:class]}>
+      <.label :if={@label} for={@id} class={classes(["mb-2", @rest[:class]])}>{@label}</.label>
+      <input
+        type={@type}
+        name={@name}
+        id={@id}
+        size={@input_size}
+        value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+        aria-invalid={to_string(not Enum.empty?(@errors))}
+        class={
+          classes([
+            "py-1.5 px-3 border rounded-lg bg-white text-grey-900 placeholder:text-grey-500 leading-tight w-full border-grey-200 focus:border-grey-400 [&[aria-invalid=\"true\"]]:border-rose-400",
+            @type == "number" &&
+              "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+            @input_class
+          ])
+        }
+        {@rest}
+      />
+      <.error :for={msg <- @errors}>{msg}</.error>
+    </div>
+    """
+  end
+
   def input(assigns) do
     ~H"""
     <div class={@rest[:class]}>
@@ -891,11 +992,14 @@ defmodule FirmowidWeb.CoreComponents do
   attr :label, :string, default: nil
   attr :class, :string, default: nil
   attr :disabled, :boolean, default: false
+  attr :color, :string, values: ["orange", "turquoise"], default: "orange"
   attr :rest, :global
+
+  slot :label_slot
 
   def switch(assigns) do
     ~H"""
-    <label class={classes(["inline-flex items-center cursor-pointer", @class])}>
+    <label class={classes(["inline-flex items-center gap-2 cursor-pointer", @class])}>
       <input
         type="hidden"
         name={@field.name}
@@ -907,18 +1011,26 @@ defmodule FirmowidWeb.CoreComponents do
         name={@field.name}
         id={@field.id}
         checked={Phoenix.HTML.Form.normalize_value("checkbox", @field.value)}
-        class="sr-only peer"
-        {@rest}
         value="true"
+        class="sr-only peer"
+        disabled={@disabled}
+        {@rest}
       />
-      <div class="p-1 relative w-10 h-6 bg-grey-200 rounded-full peer after:w-[15px] after:h-[15px] after:my-auto after:bg-darkGrey
-                  peer-checked:after:bg-orangeText
-                  peer-checked:after:translate-x-full peer-checked:bg-orangeBg
-                  after:content-[''] after:absolute
-                  after:rounded-full after:h-5 after:w-5
-                  after:transition-all">
+      <div class={[
+        "p-[3px] relative w-[49px] h-[26px] bg-grey-200 rounded-full disabled:opacity-50
+                  transition-colors after:transition-transform
+                  duration-200 ease-out after:duration-200 after:ease-out
+                  peer-checked:after:translate-x-[23px]
+                  after:content-[''] after:absolute after:rounded-full after:size-5 after:bg-white",
+        @color == "orange" && "peer-checked:bg-orange-700",
+        @color == "turquoise" && "peer-checked:bg-turquoise-700"
+      ]}>
       </div>
-      <span :if={@label} class="ms-3 text-sm font-medium text-darkGrey">{@label}</span>
+      <span :if={@label} class="text-grey-900">{@label}</span>
+      <%!-- hack: label_slot is a list of slots --%>
+      <span :if={Enum.any?(@label_slot)} class="text-grey-900 flex flex-row">
+        {render_slot(@label_slot)}
+      </span>
     </label>
     """
   end

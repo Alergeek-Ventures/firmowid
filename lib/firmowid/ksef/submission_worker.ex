@@ -12,6 +12,7 @@ defmodule Firmowid.Ksef.SubmissionWorker do
     queue: :ksef_submissions,
     max_attempts: 3
 
+  alias Firmowid.Ksef
   alias Firmowid.Ksef.ApiClient
   alias Firmowid.Ksef.InvoiceRenderer
   alias Firmowid.Ksef.SessionWorker
@@ -97,11 +98,12 @@ defmodule Firmowid.Ksef.SubmissionWorker do
     |> Repo.update!()
   end
 
+  # Unlocks invoice for editing/resubmission while preserving ksef_session_reference_number.
+  # The session reference is kept as it represents the last used session - successful or failed.
   defp unlock_invoice(invoice) do
     invoice
     |> SalesInvoice.ksef_update_changeset(%{
       ksef_number: nil,
-      ksef_session_reference_number: nil,
       locked_at: nil
     })
     |> Repo.update!()
@@ -139,6 +141,7 @@ defmodule Firmowid.Ksef.SubmissionWorker do
         |> Repo.update!()
 
         Logger.info("Invoice #{sales_invoice_id} received KSeF number: #{ksef_number}")
+        Ksef.broadcast_ksef_status(Repo.get_org_id(), sales_invoice_id, :submitted)
 
       :pending ->
         Logger.debug("Invoice #{sales_invoice_id} still pending, will retry")
@@ -169,18 +172,21 @@ defmodule Firmowid.Ksef.SubmissionWorker do
         })
         |> Repo.update!()
 
+        Ksef.broadcast_ksef_status(Repo.get_org_id(), sales_invoice_id, :submitted)
         :ok
 
       {:error, {:invoice_processing_failed, code, status} = error} ->
         Logger.error("Invoice #{sales_invoice_id} processing failed: code=#{code}, status=#{inspect(status)}")
 
         unlock_invoice(sales_invoice)
+        Ksef.broadcast_ksef_status(Repo.get_org_id(), sales_invoice_id, :failed)
         {:cancel, error}
 
       {:error, {:unexpected_status, status, body} = error} ->
         Logger.error("Unexpected status while verifying invoice #{sales_invoice_id}: #{status} - #{inspect(body)}")
 
         unlock_invoice(sales_invoice)
+        Ksef.broadcast_ksef_status(Repo.get_org_id(), sales_invoice_id, :failed)
         {:cancel, error}
 
       {:error, reason} = error ->
@@ -188,6 +194,7 @@ defmodule Firmowid.Ksef.SubmissionWorker do
 
         if final_attempt?(job) do
           unlock_invoice(sales_invoice)
+          Ksef.broadcast_ksef_status(Repo.get_org_id(), sales_invoice_id, :failed)
         end
 
         error
@@ -198,6 +205,8 @@ defmodule Firmowid.Ksef.SubmissionWorker do
         sales_invoice_id
         |> SalesInvoices.get_sales_invoice!()
         |> unlock_invoice()
+
+        Ksef.broadcast_ksef_status(Repo.get_org_id(), sales_invoice_id, :failed)
       end
 
       reraise e, __STACKTRACE__

@@ -23,6 +23,7 @@ import { LiveSocket } from "phoenix_live_view";
 import topbar from "../vendor/topbar";
 import { createLiveToastHook } from "live_toast";
 import { Hooks } from "./hooks";
+import { hooks as colocatedHooks } from "phoenix-colocated/firmowid";
 
 let csrfToken = document
   .querySelector("meta[name='csrf-token']")
@@ -36,8 +37,9 @@ let liveSocket = new LiveSocket("/live", Socket, {
   },
   hooks: {
     LiveToast: createLiveToastHook(),
-    ...Hooks
-  }
+    ...Hooks,
+    ...colocatedHooks,
+  },
 });
 
 // Show progress bar on live navigation and form submits

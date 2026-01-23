@@ -109,15 +109,17 @@ defmodule FirmowidWeb.SalesInvoices.Template do
           end}
         </h2>
         <div class="grid grid-cols-[auto,_1fr] gap-1">
-          <span>
-            {case @sales_invoice.invoice_type do
-              :poland -> "Nazwa:"
-              :foreign -> "Nazwa / Name:"
-            end}
-          </span>
-          <span class="font-bold ">
-            {@sales_invoice.buyer_display_name}
-          </span>
+          <%= if @sales_invoice.buyer_type != :individual do %>
+            <span>
+              {case @sales_invoice.invoice_type do
+                :poland -> "Nazwa:"
+                :foreign -> "Nazwa / Name:"
+              end}
+            </span>
+            <span class="font-bold ">
+              {@sales_invoice.buyer_display_name}
+            </span>
+          <% end %>
 
           <%= if @sales_invoice.buyer_name && @sales_invoice.buyer_surname do %>
             <span>
@@ -129,27 +131,28 @@ defmodule FirmowidWeb.SalesInvoices.Template do
             <span>{@sales_invoice.buyer_name} {@sales_invoice.buyer_surname}</span>
           <% end %>
 
-          <span>
-            {case @sales_invoice.invoice_type do
-              :poland -> "Adres:"
-              :foreign -> "Adres / Address:"
-            end}
-          </span>
-          {}
-          <span>
-            {case @sales_invoice.buyer_address do
-              nil -> ""
-              address -> address
-            end}
-          </span>
+          <%= if @sales_invoice.buyer_address && @sales_invoice.buyer_address != "" do %>
+            <span>
+              {case @sales_invoice.invoice_type do
+                :poland -> "Adres:"
+                :foreign -> "Adres / Address:"
+              end}
+            </span>
+            <span>{@sales_invoice.buyer_address}</span>
+          <% end %>
 
-          <span>
-            {case @sales_invoice.invoice_type do
-              :poland -> "NIP:"
-              :foreign -> "VAT-ID:"
-            end}
-          </span>
-          <span class="text-[10px]">{@sales_invoice.buyer_id}</span>
+          <%= if @sales_invoice.buyer_type == :individual and @sales_invoice.invoice_type == :poland do %>
+            <span>PESEL:</span>
+            <span class="text-[10px]">{@sales_invoice.buyer_pesel}</span>
+          <% else %>
+            <span>
+              {case @sales_invoice.invoice_type do
+                :poland -> "NIP:"
+                :foreign -> "VAT-ID:"
+              end}
+            </span>
+            <span class="text-[10px]">{@sales_invoice.buyer_id}</span>
+          <% end %>
         </div>
       </div>
     </div>
@@ -221,7 +224,9 @@ defmodule FirmowidWeb.SalesInvoices.Template do
                     currency_symbol: ""
                   )}
                 </td>
-                <td :if={@show_vat} class="py-1 text-right">{item.vat_rate}%</td>
+                <td :if={@show_vat} class="py-1 text-right">
+                  {Firmowid.Ksef.VatRate.label(item.vat_rate)}
+                </td>
                 <td class="py-1 text-right">
                   {Money.new(
                     @sales_invoice.currency,
@@ -336,12 +341,28 @@ defmodule FirmowidWeb.SalesInvoices.Template do
     <div class="flex flex-col w-fit text-[10px] gap-1 leading-[14px]">
       <%= if @sales_invoice.invoice_type == :poland do %>
         <div>
-          Metoda płatności: {@sales_invoice.payment_method} | nr konta: {@sales_invoice.seller_account_number}
+          Metoda płatności: {case @sales_invoice.payment_method do
+            :cash -> "Gotówka"
+            :card -> "Karta"
+            :voucher -> "Bon"
+            :check -> "Czek"
+            :credit -> "Kredyt"
+            :transfer -> "Przelew"
+            :mobile -> "Mobilna"
+          end} | nr konta: {@sales_invoice.seller_account_number}
         </div>
       <% end %>
       <%= if @sales_invoice.invoice_type == :foreign do %>
         <div>
-          Metoda płatności / Payment method: {@sales_invoice.payment_method}
+          Metoda płatności / Payment method: {case @sales_invoice.payment_method do
+            :cash -> "Cash"
+            :card -> "Card"
+            :voucher -> "Voucher"
+            :check -> "Check"
+            :credit -> "Credit"
+            :transfer -> "Transfer"
+            :mobile -> "Mobile"
+          end}
         </div>
         <div>
           Nr konta / Bank account number: {@sales_invoice.seller_account_number}

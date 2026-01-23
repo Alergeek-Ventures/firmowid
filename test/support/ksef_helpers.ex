@@ -69,7 +69,7 @@ defmodule Firmowid.KsefTestHelpers do
   end
 
   def build_domestic_invoice(opts \\ []) do
-    vat_rate = Keyword.get(opts, :vat_rate, 23)
+    vat_rate = Keyword.get(opts, :vat_rate, "23")
     item_count = Keyword.get(opts, :items, 1)
 
     attrs = %{
@@ -78,7 +78,7 @@ defmodule Firmowid.KsefTestHelpers do
       sale_date: Keyword.get(opts, :sale_date, ~D[2026-01-15]),
       due_date: ~D[2026-01-30],
       currency: "PLN",
-      payment_method: "transfer",
+      payment_method: :transfer,
       seller_nip: "1234567890",
       seller_display_name: "Test Seller Sp. z o.o.",
       seller_address: "ul. Testowa 1, 00-001 Warszawa",
@@ -104,7 +104,7 @@ defmodule Firmowid.KsefTestHelpers do
       sale_date: ~D[2026-01-15],
       due_date: ~D[2026-01-30],
       currency: "PLN",
-      payment_method: "transfer",
+      payment_method: :transfer,
       seller_nip: "1234567890",
       seller_display_name: "Test Seller Sp. z o.o.",
       seller_address: "ul. Testowa 1, 00-001 Warszawa",
@@ -122,21 +122,21 @@ defmodule Firmowid.KsefTestHelpers do
           quantity: Decimal.new("1"),
           unit: "szt.",
           unit_price: Decimal.new("100.00"),
-          vat_rate: Decimal.new("23")
+          vat_rate: "23"
         },
         %{
           name: "Service at 8%",
           quantity: Decimal.new("1"),
           unit: "szt.",
           unit_price: Decimal.new("100.00"),
-          vat_rate: Decimal.new("8")
+          vat_rate: "8"
         },
         %{
           name: "Service at 5%",
           quantity: Decimal.new("1"),
           unit: "szt.",
           unit_price: Decimal.new("100.00"),
-          vat_rate: Decimal.new("5")
+          vat_rate: "5"
         }
       ]
     }
@@ -153,7 +153,7 @@ defmodule Firmowid.KsefTestHelpers do
       sale_date: ~D[2026-01-15],
       due_date: ~D[2026-01-30],
       currency: Keyword.get(opts, :currency, "EUR"),
-      payment_method: "transfer",
+      payment_method: :transfer,
       seller_nip: "1234567890",
       seller_display_name: "Test Seller Sp. z o.o.",
       seller_address: "ul. Testowa 1, 00-001 Warszawa",
@@ -171,7 +171,7 @@ defmodule Firmowid.KsefTestHelpers do
           quantity: Decimal.new("40"),
           unit: "h",
           unit_price: Decimal.new("100.00"),
-          vat_rate: Decimal.new("0")
+          vat_rate: "oo"
         }
       ]
     }
@@ -187,7 +187,7 @@ defmodule Firmowid.KsefTestHelpers do
       sale_date: ~D[2026-01-15],
       due_date: ~D[2026-01-30],
       currency: "PLN",
-      payment_method: "transfer",
+      payment_method: :transfer,
       seller_nip: "1234567890",
       seller_display_name: "Test Seller Sp. z o.o.",
       seller_address: "ul. Testowa 1, 00-001 Warszawa",
@@ -205,7 +205,7 @@ defmodule Firmowid.KsefTestHelpers do
           quantity: Decimal.new("10"),
           unit: "h",
           unit_price: Decimal.new("150.00"),
-          vat_rate: Decimal.new("23")
+          vat_rate: "23"
         }
       ]
     }
@@ -222,7 +222,7 @@ defmodule Firmowid.KsefTestHelpers do
       sale_date: ~D[2026-01-15],
       due_date: ~D[2026-01-30],
       currency: "USD",
-      payment_method: "transfer",
+      payment_method: :transfer,
       seller_nip: "1234567890",
       seller_display_name: "Test Seller Sp. z o.o.",
       seller_address: "ul. Testowa 1, 00-001 Warszawa",
@@ -240,7 +240,7 @@ defmodule Firmowid.KsefTestHelpers do
           quantity: Decimal.new("1"),
           unit: "szt.",
           unit_price: Decimal.new("5000.00"),
-          vat_rate: Decimal.new("0")
+          vat_rate: "oo"
         }
       ]
     }
@@ -256,7 +256,7 @@ defmodule Firmowid.KsefTestHelpers do
       sale_date: ~D[2026-01-15],
       due_date: ~D[2026-01-30],
       currency: "PLN",
-      payment_method: "transfer",
+      payment_method: :transfer,
       seller_nip: "1234567890",
       seller_display_name: "Test Seller Sp. z o.o.",
       seller_address: "ul. Testowa 1, 00-001 Warszawa",
@@ -276,7 +276,7 @@ defmodule Firmowid.KsefTestHelpers do
           quantity: Decimal.new("1"),
           unit: "szt.",
           unit_price: Decimal.new("200.00"),
-          vat_rate: Decimal.new("23")
+          vat_rate: "23"
         }
       ]
     }
@@ -317,7 +317,7 @@ defmodule Firmowid.KsefTestHelpers do
             quantity: Decimal.new("-1"),
             unit: "szt.",
             unit_price: Decimal.new("100.00"),
-            vat_rate: Decimal.new("23")
+            vat_rate: "23"
           }
         ])
     }
@@ -352,7 +352,7 @@ defmodule Firmowid.KsefTestHelpers do
         quantity: quantity,
         unit: "szt.",
         unit_price: Decimal.new("100.00"),
-        vat_rate: Decimal.new(vat_rate)
+        vat_rate: vat_rate
       }
     end
   end

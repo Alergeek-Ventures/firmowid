@@ -27,7 +27,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
 
       <div class="flex flex-col justify-between px-8 lg:flex-row min-w-0">
         <aside class={[
-          "w-full lg:w-[400px] xl:w-[600px] shrink-0 grow-0",
+          "w-full lg:max-w-[400px] xl:max-w-[650px] shrink-0 grow-1",
           "flex flex-col gap-4 order-last lg:order-none py-8 pr-8",
           "max-h-[calc(100vh-var(--navbar-height)-128px)] overflow-y-auto",
           "lg:h-[calc(100vh-var(--navbar-height)-128px)]"

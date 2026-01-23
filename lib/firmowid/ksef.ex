@@ -6,8 +6,41 @@ defmodule Firmowid.Ksef do
   alias Firmowid.Ksef.Credential
   alias Firmowid.Ksef.FetchWorker
   alias Firmowid.Ksef.SessionWorker
+  alias Firmowid.Ksef.SubmissionInfo
   alias Firmowid.Ksef.SubmissionWorker
   alias Firmowid.Repo
+  alias Firmowid.SalesInvoices.SalesInvoice
+
+  @ksef_broadcast_topic "ksef_status"
+
+  # PubSub for KSeF status updates
+
+  @doc """
+  Subscribes to KSeF status updates for an organization.
+
+  Messages received will be in the format:
+  `{:ksef_invoice_status, %{invoice_id: id, status: :submitted | :failed}}`
+  """
+  @spec subscribe_ksef_status(pos_integer()) :: :ok | {:error, term()}
+  def subscribe_ksef_status(organization_id) do
+    Phoenix.PubSub.subscribe(Firmowid.PubSub, "#{@ksef_broadcast_topic}:#{organization_id}")
+  end
+
+  @doc """
+  Broadcasts a KSeF status change for an invoice.
+
+  Status can be `:submitted` (successfully received KSeF number) or `:failed` (submission failed).
+  """
+  @spec broadcast_ksef_status(pos_integer(), pos_integer(), :submitted | :failed) :: :ok | {:error, term()}
+  def broadcast_ksef_status(organization_id, invoice_id, status) do
+    Phoenix.PubSub.broadcast(
+      Firmowid.PubSub,
+      "#{@ksef_broadcast_topic}:#{organization_id}",
+      {:ksef_invoice_status, %{invoice_id: invoice_id, status: status}}
+    )
+  end
+
+  # Authentication
 
   @doc """
   Authenticates the current organization with KSeF using the provided token.
@@ -120,6 +153,7 @@ defmodule Firmowid.Ksef do
   - `:invoice_not_found` - Invoice with given ID doesn't exist
   - `:invoice_not_confirmed` - Invoice is not fully confirmed
   - `:invoice_already_locked` - Invoice has already been submitted or manually locked
+  - `{:invalid_for_ksef, errors}` - Invoice is missing required fields for KSeF submission
   """
   def submit_sales_invoice(sales_invoice_id) do
     with :ok <- validate_ksef_authenticated(),
@@ -142,8 +176,6 @@ defmodule Firmowid.Ksef do
   end
 
   defp validate_invoice_for_submission(sales_invoice_id) do
-    alias Firmowid.SalesInvoices.SalesInvoice
-
     invoice =
       SalesInvoice
       |> where([i], i.id == ^sales_invoice_id)
@@ -160,25 +192,238 @@ defmodule Firmowid.Ksef do
         {:error, :invoice_not_confirmed}
 
       true ->
-        {:ok, invoice}
+        validate_ksef_fields(invoice)
     end
   end
 
-  @doc """
-  Checks if the KSeF submission job for a sales invoice has failed (discarded state).
+  defp validate_ksef_fields(invoice) do
+    changeset = SalesInvoice.ksef_submission_changeset(invoice)
 
-  Returns `true` if the submission job exists and is in "discarded" state,
-  `false` otherwise.
+    if changeset.valid? do
+      {:ok, invoice}
+    else
+      {:error, {:invalid_for_ksef, changeset.errors}}
+    end
+  end
+
+  # Submission Info
+
+  @doc """
+  Returns comprehensive KSeF submission information for a sales invoice.
+
+  This function encapsulates all logic for determining submission status,
+  timestamps, and error details. Use this instead of checking individual
+  fields or querying Oban directly.
+
+  ## Statuses
+
+  - `:not_submitted` - Invoice has never been submitted to KSeF
+  - `:submitting` - Submission is in progress (job pending/executing)
+  - `:submitted` - Successfully confirmed by KSeF (has ksef_number)
+  - `:failed` - Submission was attempted but failed
+
+  ## Examples
+
+      iex> get_submission_info(%SalesInvoice{ksef_number: "1234567890"})
+      %SubmissionInfo{status: :submitted, ksef_number: "1234567890", ...}
+
+      iex> get_submission_info(%SalesInvoice{ksef_session_reference_number: nil, ksef_number: nil})
+      %SubmissionInfo{status: :not_submitted}
   """
-  @spec submission_failed?(pos_integer()) :: boolean()
-  def submission_failed?(sales_invoice_id) do
+  @spec get_submission_info(SalesInvoice.t()) :: SubmissionInfo.t()
+  def get_submission_info(%SalesInvoice{ksef_number: ksef_number} = invoice) when not is_nil(ksef_number) do
+    # Successfully submitted - has KSeF number
+    job = get_latest_submission_job(invoice.id)
+
+    %SubmissionInfo{
+      status: :submitted,
+      ksef_number: ksef_number,
+      session_reference: invoice.ksef_session_reference_number,
+      submitted_at: get_job_timestamp(job, :inserted_at),
+      confirmed_at: get_job_timestamp(job, :completed_at) || invoice.locked_at
+    }
+  end
+
+  def get_submission_info(%SalesInvoice{ksef_session_reference_number: ref} = invoice) when not is_nil(ref) do
+    # Has session reference - check job status for submitting vs failed
+    job = get_latest_submission_job(invoice.id)
+
+    case job_status(job) do
+      :failed ->
+        %SubmissionInfo{
+          status: :failed,
+          session_reference: ref,
+          submitted_at: get_job_timestamp(job, :inserted_at),
+          failed_at: get_job_failed_at(job),
+          error: format_job_error(job)
+        }
+
+      :pending ->
+        %SubmissionInfo{
+          status: :submitting,
+          session_reference: ref,
+          submitted_at: get_job_timestamp(job, :inserted_at)
+        }
+
+      :completed ->
+        # Job completed but no ksef_number - unusual state, treat as failed
+        %SubmissionInfo{
+          status: :failed,
+          session_reference: ref,
+          submitted_at: get_job_timestamp(job, :inserted_at),
+          failed_at: get_job_timestamp(job, :completed_at),
+          error: "Wysyłka zakończona bez potwierdzenia z KSeF"
+        }
+
+      nil ->
+        # No job found but has session reference - treat as failed
+        %SubmissionInfo{
+          status: :failed,
+          session_reference: ref,
+          error: "Brak informacji o wysyłce"
+        }
+    end
+  end
+
+  def get_submission_info(%SalesInvoice{} = invoice) do
+    # No session reference - check if there's a pending job
+    job = get_latest_submission_job(invoice.id)
+
+    case job_status(job) do
+      :pending ->
+        %SubmissionInfo{
+          status: :submitting,
+          submitted_at: get_job_timestamp(job, :inserted_at)
+        }
+
+      :failed ->
+        %SubmissionInfo{
+          status: :failed,
+          submitted_at: get_job_timestamp(job, :inserted_at),
+          failed_at: get_job_failed_at(job),
+          error: format_job_error(job)
+        }
+
+      _ ->
+        %SubmissionInfo{status: :not_submitted}
+    end
+  end
+
+  defp get_latest_submission_job(sales_invoice_id) do
     Oban.Job
     |> where(
       [j],
       j.worker == "Firmowid.Ksef.SubmissionWorker" and
-        j.state == "discarded" and
         fragment("?->>'sales_invoice_id' = ?", j.args, ^to_string(sales_invoice_id))
     )
-    |> Repo.exists?(oban_jobs: true)
+    |> order_by([j], desc: j.inserted_at)
+    |> limit(1)
+    |> Repo.one(oban_jobs: true)
+  end
+
+  defp job_status(nil), do: nil
+
+  defp job_status(%Oban.Job{state: state}) when state in ["discarded", "cancelled"], do: :failed
+
+  defp job_status(%Oban.Job{state: state}) when state in ["available", "scheduled", "executing", "retryable"],
+    do: :pending
+
+  defp job_status(%Oban.Job{state: "completed"}), do: :completed
+  defp job_status(%Oban.Job{}), do: nil
+
+  defp get_job_timestamp(nil, _field), do: nil
+
+  defp get_job_timestamp(%Oban.Job{} = job, field) do
+    case Map.get(job, field) do
+      %NaiveDateTime{} = dt -> DateTime.from_naive!(dt, "Etc/UTC")
+      %DateTime{} = dt -> dt
+      nil -> nil
+    end
+  end
+
+  defp get_job_failed_at(nil), do: nil
+
+  defp get_job_failed_at(%Oban.Job{errors: errors}) when is_list(errors) and errors != [] do
+    # Get the timestamp from the last error
+    case List.last(errors) do
+      %{"at" => at_string} ->
+        case DateTime.from_iso8601(at_string) do
+          {:ok, dt, _offset} -> dt
+          _ -> nil
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  defp get_job_failed_at(%Oban.Job{}), do: nil
+
+  defp format_job_error(nil), do: nil
+  defp format_job_error(%Oban.Job{errors: []}), do: nil
+  defp format_job_error(%Oban.Job{errors: nil}), do: nil
+
+  defp format_job_error(%Oban.Job{errors: errors}) when is_list(errors) do
+    # Get the last error (most recent attempt)
+    case List.last(errors) do
+      %{"error" => error_string} -> parse_error_string(error_string)
+      _ -> "Wystąpił nieoczekiwany błąd podczas wysyłania do KSeF"
+    end
+  end
+
+  defp parse_error_string(error_string) when is_binary(error_string) do
+    cond do
+      String.contains?(error_string, "invoice_processing_failed") ->
+        extract_ksef_validation_error(error_string)
+
+      String.contains?(error_string, "invoice_not_found") ->
+        "Faktura nie została znaleziona"
+
+      String.contains?(error_string, "invoice_not_confirmed") ->
+        "Faktura nie jest w pełni potwierdzona"
+
+      String.contains?(error_string, "invoice_already_locked") ->
+        "Faktura została już wysłana do KSeF"
+
+      String.contains?(error_string, "not_authenticated") ->
+        "Brak połączenia z KSeF"
+
+      String.contains?(error_string, "invoice_duplicate") ->
+        "Faktura została już wcześniej wysłana do KSeF"
+
+      true ->
+        "Wystąpił nieoczekiwany błąd podczas wysyłania do KSeF"
+    end
+  end
+
+  defp extract_ksef_validation_error(error_string) do
+    # Try to extract details from error like:
+    # {:invoice_processing_failed, 450, %{"details" => ["error message"]}}
+    case Regex.run(~r/"details"\s*=>\s*\[(.*?)\]/, error_string) do
+      [_, details_content] ->
+        # Extract quoted strings from the details array
+        details =
+          ~r/"([^"]+)"/
+          |> Regex.scan(details_content)
+          |> Enum.map(fn [_, detail] -> detail end)
+          |> Enum.reject(&(&1 == "details"))
+
+        if details == [] do
+          extract_ksef_description(error_string)
+        else
+          "Błąd walidacji KSeF: #{Enum.join(details, "; ")}"
+        end
+
+      nil ->
+        extract_ksef_description(error_string)
+    end
+  end
+
+  defp extract_ksef_description(error_string) do
+    # Try to extract description field
+    case Regex.run(~r/"description"\s*=>\s*"([^"]+)"/, error_string) do
+      [_, description] -> "Błąd KSeF: #{description}"
+      nil -> "Błąd walidacji dokumentu przez KSeF"
+    end
   end
 end

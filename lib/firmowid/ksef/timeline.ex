@@ -1,18 +1,19 @@
 defmodule Firmowid.Ksef.Timeline do
   @moduledoc """
-  Derives KSeF timeline events from existing invoice data.
+  Derives KSeF timeline events from existing invoice data and submission info.
 
   KSeF is immutable - once an invoice is submitted, it cannot be modified.
   Corrections are separate documents that reference the original.
-  This module reconstructs the timeline from existing fields without
-  requiring additional event storage.
+  This module reconstructs the timeline from existing fields and submission
+  status without requiring additional event storage.
   """
 
   alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.Ksef.SubmissionInfo
   alias Firmowid.SalesInvoices.SalesInvoice
 
   @type event :: %{
-          occurred_at: DateTime.t() | NaiveDateTime.t(),
+          occurred_at: DateTime.t() | NaiveDateTime.t() | nil,
           event: atom(),
           metadata: map()
         }
@@ -22,18 +23,21 @@ defmodule Firmowid.Ksef.Timeline do
 
   Events (in chronological order):
   - `:created` - Invoice was created in the system
-  - `:confirmed` - Invoice was sent and confirmed by KSeF
+  - `:submitted` - Invoice was sent to KSeF (submission attempted)
+  - `:confirmed` - Invoice was confirmed by KSeF (received ksef_number)
+  - `:failed` - Submission failed with an error
   - `:correction_issued` - A correction invoice was issued (one per correction)
 
   The invoice must have `:corrections` preloaded for correction events to appear.
+  The `submission_info` parameter provides KSeF submission status and timestamps.
   """
-  @spec for_sales_invoice(SalesInvoice.t()) :: [event()]
-  def for_sales_invoice(%SalesInvoice{} = invoice) do
+  @spec for_sales_invoice(SalesInvoice.t(), SubmissionInfo.t()) :: [event()]
+  def for_sales_invoice(%SalesInvoice{} = invoice, %SubmissionInfo{} = submission_info) do
     []
     |> maybe_add_created_event(invoice)
-    |> maybe_add_confirmed_event(invoice)
+    |> maybe_add_submission_events(submission_info)
     |> maybe_add_correction_events(invoice, :sales)
-    |> Enum.sort_by(& &1.occurred_at, NaiveDateTime)
+    |> Enum.sort_by(&event_sort_key/1, DateTime)
   end
 
   @doc """
@@ -50,7 +54,7 @@ defmodule Firmowid.Ksef.Timeline do
     []
     |> maybe_add_downloaded_event(invoice)
     |> maybe_add_correction_events(invoice, :cost)
-    |> Enum.sort_by(& &1.occurred_at, NaiveDateTime)
+    |> Enum.sort_by(&event_sort_key/1, DateTime)
   end
 
   # Sales invoice events
@@ -58,7 +62,7 @@ defmodule Firmowid.Ksef.Timeline do
   defp maybe_add_created_event(events, %SalesInvoice{inserted_at: inserted_at, invoice_number: number}) do
     [
       %{
-        occurred_at: inserted_at,
+        occurred_at: to_datetime(inserted_at),
         event: :created,
         metadata: %{invoice_number: number}
       }
@@ -66,14 +70,64 @@ defmodule Firmowid.Ksef.Timeline do
     ]
   end
 
-  defp maybe_add_confirmed_event(events, %SalesInvoice{ksef_number: nil}), do: events
+  defp maybe_add_submission_events(events, %SubmissionInfo{status: :not_submitted}), do: events
 
-  defp maybe_add_confirmed_event(events, %SalesInvoice{locked_at: locked_at, ksef_number: ksef_number}) do
+  defp maybe_add_submission_events(events, %SubmissionInfo{status: :submitting} = info) do
+    # Submission in progress - show submitted event
     [
       %{
-        occurred_at: locked_at,
+        occurred_at: info.submitted_at,
+        event: :submitted,
+        metadata: %{session_reference: info.session_reference}
+      }
+      | events
+    ]
+  end
+
+  defp maybe_add_submission_events(events, %SubmissionInfo{status: :submitted} = info) do
+    # Successfully confirmed - show both submitted and confirmed
+    events
+    |> add_submitted_event(info)
+    |> add_confirmed_event(info)
+  end
+
+  defp maybe_add_submission_events(events, %SubmissionInfo{status: :failed} = info) do
+    # Failed - show submitted and failed events
+    events
+    |> add_submitted_event(info)
+    |> add_failed_event(info)
+  end
+
+  defp add_submitted_event(events, %SubmissionInfo{submitted_at: nil}), do: events
+
+  defp add_submitted_event(events, %SubmissionInfo{} = info) do
+    [
+      %{
+        occurred_at: info.submitted_at,
+        event: :submitted,
+        metadata: %{session_reference: info.session_reference}
+      }
+      | events
+    ]
+  end
+
+  defp add_confirmed_event(events, %SubmissionInfo{} = info) do
+    [
+      %{
+        occurred_at: info.confirmed_at || info.submitted_at,
         event: :confirmed,
-        metadata: %{ksef_number: ksef_number}
+        metadata: %{ksef_number: info.ksef_number}
+      }
+      | events
+    ]
+  end
+
+  defp add_failed_event(events, %SubmissionInfo{} = info) do
+    [
+      %{
+        occurred_at: info.failed_at || info.submitted_at,
+        event: :failed,
+        metadata: %{error: info.error}
       }
       | events
     ]
@@ -86,7 +140,7 @@ defmodule Firmowid.Ksef.Timeline do
   defp maybe_add_downloaded_event(events, %CostInvoice{ksef_downloaded_at: downloaded_at, ksef_number: ksef_number}) do
     [
       %{
-        occurred_at: downloaded_at,
+        occurred_at: to_datetime(downloaded_at),
         event: :downloaded,
         metadata: %{ksef_number: ksef_number}
       }
@@ -103,7 +157,7 @@ defmodule Firmowid.Ksef.Timeline do
       correction_events =
         Enum.map(corrections, fn correction ->
           %{
-            occurred_at: correction.inserted_at,
+            occurred_at: to_datetime(correction.inserted_at),
             event: :correction_issued,
             metadata: build_correction_metadata(correction, type)
           }
@@ -135,4 +189,13 @@ defmodule Firmowid.Ksef.Timeline do
 
   defp loaded?(%Ecto.Association.NotLoaded{}), do: false
   defp loaded?(_), do: true
+
+  # Convert NaiveDateTime to DateTime for consistent sorting
+  defp to_datetime(nil), do: nil
+  defp to_datetime(%DateTime{} = dt), do: dt
+  defp to_datetime(%NaiveDateTime{} = dt), do: DateTime.from_naive!(dt, "Etc/UTC")
+
+  # Sort key that handles nil occurred_at (puts them at the end)
+  defp event_sort_key(%{occurred_at: nil}), do: DateTime.from_unix!(0)
+  defp event_sort_key(%{occurred_at: dt}), do: dt
 end

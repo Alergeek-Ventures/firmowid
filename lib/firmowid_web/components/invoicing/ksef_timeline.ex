@@ -3,29 +3,40 @@ defmodule FirmowidWeb.Components.Invoicing.KsefTimeline do
   Function component for displaying KSeF timeline events.
 
   Renders a chronological list of KSeF-related events for an invoice,
-  derived from existing invoice data without requiring separate event storage.
+  derived from existing invoice data and submission info.
   """
 
   use FirmowidWeb, :html
 
+  alias Firmowid.Ksef.SubmissionInfo
   alias Firmowid.Ksef.Timeline
 
   attr :invoice, :map, required: true
   attr :invoice_type, :atom, required: true, values: [:sales, :cost]
+  attr :submission_info, SubmissionInfo, default: nil
 
   @doc """
   Renders the KSeF timeline for an invoice.
 
   The timeline shows all KSeF-related events in chronological order.
-  For sales invoices: creation, KSeF confirmation, corrections issued.
+  For sales invoices: creation, submission, confirmation/failure, corrections issued.
   For cost invoices: KSeF download, corrections issued.
+
+  When `submission_info` is provided for sales invoices, it includes submission
+  status events (submitted, confirmed, failed).
   """
   def ksef_timeline(assigns) do
-    events =
+    case_result =
       case assigns.invoice_type do
-        :sales -> Timeline.for_sales_invoice(assigns.invoice)
-        :cost -> Timeline.for_cost_invoice(assigns.invoice)
+        :sales ->
+          submission_info = assigns.submission_info || %SubmissionInfo{status: :not_submitted}
+          Timeline.for_sales_invoice(assigns.invoice, submission_info)
+
+        :cost ->
+          Timeline.for_cost_invoice(assigns.invoice)
       end
+
+    events = Enum.reverse(case_result)
 
     assigns = assign(assigns, :events, events)
 
@@ -42,22 +53,37 @@ defmodule FirmowidWeb.Components.Invoicing.KsefTimeline do
         </button>
       </div>
 
-      <ol :if={@events != []} class="flex flex-col gap-4 py-4">
-        <li :for={{event, idx} <- Enum.with_index(@events, 1)} class="flex flex-row gap-4">
-          <span class="text-darkGrey w-6 text-right shrink-0">{idx}.</span>
-          <div class="flex flex-col gap-1">
-            <div class="flex flex-row gap-2 items-baseline">
+      <div :if={@events != []} class="relative py-4">
+        <div class="absolute left-[5px] top-[calc(1rem+5px)] bottom-[calc(1rem+5px)] w-0.5 bg-grey-200">
+        </div>
+
+        <div class="flex flex-col gap-6">
+          <div :for={event <- @events} class="relative flex flex-row gap-4 items-start">
+            <div class={[
+              "relative z-10 w-3 h-3 rounded-full shrink-0 mt-1",
+              event_dot_color(event.event)
+            ]}>
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <div class="flex flex-row gap-2 items-baseline">
+                <span class={[
+                  "text-sm uppercase font-bold",
+                  event.event == :failed && "text-redText"
+                ]}>
+                  {event_label(event.event)}
+                </span>
+                <span class="text-sm text-darkGrey">
+                  {format_datetime(event.occurred_at)}
+                </span>
+              </div>
               <span class="text-sm text-darkGrey">
-                {format_datetime(event.occurred_at)}
-              </span>
-              <span class="font-medium">
-                {event_label(event.event)}
+                <.event_details event={event} invoice_type={@invoice_type} />
               </span>
             </div>
-            <.event_details event={event} invoice_type={@invoice_type} />
           </div>
-        </li>
-      </ol>
+        </div>
+      </div>
 
       <p :if={@events == []} class="text-darkGrey py-4">
         Brak historii KSeF dla tego dokumentu.
@@ -72,24 +98,43 @@ defmodule FirmowidWeb.Components.Invoicing.KsefTimeline do
   defp event_details(%{event: %{event: :created}} = assigns) do
     ~H"""
     <span class="text-sm text-darkGrey">
-      {@event.metadata.invoice_number}
+      nadano numer fakturze: {@event.metadata.invoice_number}
     </span>
+    """
+  end
+
+  defp event_details(%{event: %{event: :submitted}} = assigns) do
+    ~H"""
+    <%= if @event.metadata.session_reference do %>
+      nadano numer KSeF: {@event.metadata.session_reference}
+    <% end %>
     """
   end
 
   defp event_details(%{event: %{event: :confirmed}} = assigns) do
     ~H"""
-    <span class="text-sm text-darkGrey">
-      {@event.metadata.ksef_number}
+    {@event.metadata.ksef_number}
+    """
+  end
+
+  defp event_details(%{event: %{event: :failed}} = assigns) do
+    ~H"""
+    <span>
+      Zespół odpowiedzialny za integrację z KSeF został
+      powiadomiony.
+    </span>
+    <span>
+      Wysyłanie dokumentu zostanie automatycznie ponowione
+      w ciągu 24 godzin.
     </span>
     """
   end
 
   defp event_details(%{event: %{event: :downloaded}} = assigns) do
     ~H"""
-    <span class="text-sm text-darkGrey">
+    <%= if @event.metadata.ksef_number do %>
       {@event.metadata.ksef_number}
-    </span>
+    <% end %>
     """
   end
 
@@ -99,7 +144,7 @@ defmodule FirmowidWeb.Components.Invoicing.KsefTimeline do
       navigate={invoice_path(@event.metadata.invoice_id, :sales)}
       class="text-sm text-blueText hover:underline"
     >
-      {@event.metadata.invoice_number}
+      wystawiono koretkę nr {@event.metadata.invoice_number}
     </.link>
     """
   end
@@ -121,9 +166,17 @@ defmodule FirmowidWeb.Components.Invoicing.KsefTimeline do
   end
 
   defp event_label(:created), do: "Utworzenie dokumentu"
-  defp event_label(:confirmed), do: "Wysłano i potwierdzono przez KSeF"
+  defp event_label(:submitted), do: "Wysłano do KSeF"
+  defp event_label(:confirmed), do: "Potwierdzono przez KSeF"
+  defp event_label(:failed), do: "Błąd wysyłki"
   defp event_label(:downloaded), do: "Pobrano z KSeF"
   defp event_label(:correction_issued), do: "Wystawienie faktury korygującej"
+
+  defp event_dot_color(:confirmed), do: "bg-greenText"
+  defp event_dot_color(:failed), do: "bg-redText"
+  defp event_dot_color(:submitted), do: "bg-blueText"
+  defp event_dot_color(:downloaded), do: "bg-greenText"
+  defp event_dot_color(_), do: "bg-grey-200"
 
   defp format_datetime(nil), do: ""
 

@@ -42,3 +42,38 @@ html {
   --adp-btn-color: var(--adp-accent-color);
   --adp-font-family: "Lexend", sans-serif;
 }
+
+/* Paper Plane Animation */
+.paper-plane-container {
+  transform-style: preserve-3d;
+}
+
+.paper-plane-container * {
+  transform-style: preserve-3d;
+}
+
+.paper-plane-wrapper {
+  transform-style: preserve-3d;
+}
+
+.paper-plane-segment {
+  transform-style: preserve-3d;
+  /* backface-visibility: hidden; - Removed to allow seeing the back of the paper during folds */
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .paper-plane-container,
+  .paper-plane-segment {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@keyframes paper-plane-wobble {
+  0% { transform: rotateZ(0deg) rotateY(0deg); }
+  25% { transform: rotateZ(3deg) rotateY(2deg); }
+  50% { transform: rotateZ(0deg) rotateY(0deg); }
+  75% { transform: rotateZ(-3deg) rotateY(-2deg); }
+  100% { transform: rotateZ(0deg) rotateY(0deg); }
+}

@@ -563,21 +563,11 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
           end
 
         %SalesInvoice{} = invoice ->
-          cond do
-            # KSeF success: has ksef_number - use standard matched/unmatched logic
-            not is_nil(invoice.ksef_number) ->
-              if invoice.transactions == [], do: "unmatched", else: "matched"
-
-            # KSeF sending/failed: has session reference but no ksef_number
-            not is_nil(invoice.ksef_session_reference_number) ->
-              if Ksef.submission_failed?(invoice.id), do: "ksef_failed", else: "ksef_sending"
-
-            # Standard matched/unmatched
-            invoice.transactions == [] ->
-              "unmatched"
-
-            true ->
-              "matched"
+          case Ksef.get_submission_info(invoice).status do
+            :submitting -> "ksef_sending"
+            :failed -> "ksef_failed"
+            # :submitted or :not_submitted - use standard matched/unmatched logic
+            _ -> if invoice.transactions == [], do: "unmatched", else: "matched"
           end
 
         %Transaction{} = transaction ->

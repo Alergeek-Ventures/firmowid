@@ -1,5 +1,6 @@
 defmodule Firmowid.Ksef.InvoiceRenderer do
   @moduledoc false
+  alias Firmowid.Ksef.VatRate
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices.SalesInvoice
   alias Firmowid.SalesInvoices.SalesInvoiceItem
@@ -88,51 +89,10 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
   @doc """
   Formats VAT rate for P_12 field in KSeF invoice.
 
-  Supported rates:
-  - Numeric rates: 23, 22, 8, 7, 5, 4, 3, 0
-  - Special: "oo" (reverse charge)
-
-  Zero rate (0) always renders as "0 KR" (domestic).
-  Reverse charge invoices use "oo" - see format_vat_rate/2.
+  Since vat_rate is now stored as a KSeF-compliant string code
+  (e.g., "23", "8", "0 KR", "oo", "np I"), this is a simple passthrough.
   """
-  def format_vat_rate(%Decimal{} = value) do
-    if Decimal.eq?(value, 0) do
-      "0 KR"
-    else
-      value
-      |> Decimal.round(0)
-      |> Decimal.to_integer()
-      |> to_string()
-    end
-  end
-
-  def format_vat_rate(0), do: "0 KR"
-
-  def format_vat_rate(value) when is_number(value) do
-    to_string(round(value))
-  end
-
-  def format_vat_rate("oo"), do: "oo"
-
-  @doc """
-  Formats VAT rate with explicit type.
-
-  Implemented:
-  - :reverse_charge => "oo"
-  - :domestic => "0 KR" (for 0% rate)
-  - :standard => numeric rate
-
-  Not implemented (will raise):
-  - :wdt, :export, :exempt, :not_subject_i, :not_subject_ii
-  """
-  def format_vat_rate(_rate, :reverse_charge), do: "oo"
-  def format_vat_rate(rate, :domestic), do: format_vat_rate(rate)
-  def format_vat_rate(rate, :standard), do: format_vat_rate(rate)
-  def format_vat_rate(rate, nil), do: format_vat_rate(rate)
-
-  def format_vat_rate(_rate, type) when type in [:wdt, :export, :exempt, :not_subject_i, :not_subject_ii] do
-    raise "VAT rate type #{inspect(type)} is not implemented. Only :standard, :domestic, and :reverse_charge are supported."
-  end
+  def format_vat_rate(rate) when is_binary(rate), do: rate
 
   # NOTE: P_14_XW (VAT in PLN for foreign currency invoices) is NOT implemented.
   # This field is only required when:
@@ -148,28 +108,10 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
   # If a future use case requires P_14_XW (e.g., B2C to EU consumer with Polish VAT),
   # add `vat_pln` to the summary map using `Firmowid.Currencies.normalize_amount_to_pln/3`
   # with the rate date from `SalesInvoice.get_currency_conversion_date/1`.
-  defp calculate_vat_summary(%SalesInvoice{sales_invoice_items: items, is_reverse_charge: is_reverse_charge}) do
+  defp calculate_vat_summary(%SalesInvoice{sales_invoice_items: items}) do
     items
     |> Enum.group_by(fn item ->
-      rate = item.vat_rate
-
-      type =
-        cond do
-          is_reverse_charge ->
-            if Decimal.eq?(rate, 0) do
-              :reverse_charge
-            else
-              raise "Invalid VAT rate #{Decimal.to_string(rate)} for reverse charge invoice"
-            end
-
-          Decimal.eq?(rate, 0) ->
-            :domestic
-
-          true ->
-            :standard
-        end
-
-      {rate, type}
+      {item.vat_rate, VatRate.summary_type(item.vat_rate)}
     end)
     |> Enum.map(fn {{rate, type}, group_items} ->
       net = Enum.reduce(group_items, Decimal.new(0), &Decimal.add(&2, SalesInvoiceItem.get_net_value(&1)))
@@ -182,14 +124,17 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
         vat: vat
       }
     end)
-    |> Enum.sort_by(& &1.rate, {:desc, Decimal})
+    |> Enum.sort_by(&VatRate.to_numeric(&1.rate), {:desc, Decimal})
   end
 
-  def payment_method_code(nil), do: "6"
-  def payment_method_code("cash"), do: "1"
-  def payment_method_code("card"), do: "2"
-  def payment_method_code("transfer"), do: "6"
-  def payment_method_code("przelew"), do: "6"
+  def payment_method_code(:cash), do: "1"
+  def payment_method_code(:card), do: "2"
+  def payment_method_code(:voucher), do: "3"
+  def payment_method_code(:check), do: "4"
+  def payment_method_code(:credit), do: "5"
+  def payment_method_code(:transfer), do: "6"
+  def payment_method_code(:mobile), do: "7"
+  # Fallback for nil or unexpected values - default to transfer
   def payment_method_code(_), do: "6"
 
   def seller_name(%{seller_display_name: name}) when is_binary(name) and name != "", do: name

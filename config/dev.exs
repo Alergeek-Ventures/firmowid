@@ -20,9 +20,13 @@ config :firmowid, Firmowid.Repo,
   log: false
 
 # Vault key for Cloak encryption (32 bytes, base64 encoded)
+# This is a cryptographically random dev key that matches runtime.exs dev_vault_key.
+# Previous key was a human-readable string ("this is a 32 byte key!!") which
+# could cause issues when migrating encrypted data between environments.
 config :firmowid, Firmowid.Vault,
   ciphers: [
-    default: {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: Base.decode64!("REMOVED_DEV_VAULT_KEY")}
+    default:
+      {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: Base.decode64!("REMOVED_DEV_VAULT_KEY")}
   ]
 
 config :firmowid, FirmowidWeb.Endpoint,

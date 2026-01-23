@@ -9,6 +9,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   alias Firmowid.Finances
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing
+  alias Firmowid.Ksef
   alias Firmowid.SalesInvoices
   alias FirmowidWeb.InvoicingLive.TransactionGroup
 
@@ -25,6 +26,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
       SalesInvoices.subscribe_sales_invoice_broadcast(organization_id)
       Invoicing.subscribe_invoicing_broadcast(organization_id)
       BankData.subscribe_requisition_updates(organization_id)
+      Ksef.subscribe_ksef_status(organization_id)
     end
 
     socket =
@@ -295,6 +297,13 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
   @impl true
   def handle_info(:sales_invoice_list_updated, socket) do
+    socket = refetch_invoicing_entries(socket)
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:ksef_invoice_status, _payload}, socket) do
     socket = refetch_invoicing_entries(socket)
 
     {:noreply, socket}

@@ -1,0 +1,453 @@
+<div class="max-w-7xl w-full mx-auto flex-1 flex flex-col my-4">
+  <div class="px-9 space-y-10 flex flex-col flex-1">
+    <div class="flex flex-row justify-between items-start">
+      <.render_header step={@step_number} title="Wybierz kontrahenta" />
+
+      <div>
+        <.button
+          size="small"
+          color="light_grey"
+          new={true}
+          phx-click={show_modal("counterparty-modal")}
+        >
+          Wprowadź ręcznie
+        </.button>
+
+        <.button
+          :if={false}
+          size="small"
+          color="light_grey"
+          new={true}
+        >
+          <Lucideicons.plus /> Dodaj nowego
+        </.button>
+      </div>
+    </div>
+
+    <div class="flex flex-col-reverse md:flex-row items-center md:items-start gap-5 flex-1">
+      <div
+        :if={@counterparties_zero_state?}
+        class="border border-grey-200 rounded-lg flex flex-col items-center
+        justify-center gap-6 p-10 self-stretch w-full"
+      >
+        <p class="text-sm/snug text-grey-700 text-center text-balance">
+          Nie wprowadziłeś jeszcze żadnego kontrahenta.
+          Wprowadź go, klikając poniżej, aby wystawić fakturę.
+        </p>
+        <.button
+          type="button"
+          color="turquoise"
+        >
+          Dodaj kontrahenta
+        </.button>
+      </div>
+
+      <div
+        :if={not @counterparties_zero_state?}
+        class="grid grid-cols-[1fr,max-content,max-content,max-content] gap-y-2 gap-x-6 flex-1"
+      >
+        <.form
+          for={@params}
+          phx-change={JS.push("search_counterparties", loading: "#counterparties")}
+          phx-submit={JS.push("search_counterparties", loading: "#counterparties")}
+          class="col-span-full flex flex-row items-center gap-4 mb-2"
+        >
+          <div class="relative flex-1 w-full max-w-lg">
+            <Lucideicons.search class="absolute text-grey-900 w-4 h-4 inset-y-0 my-auto left-3 top-0.5" />
+
+            <.input
+              field={@params[:search]}
+              placeholder="Wyszukaj kontrahenta"
+              input_class="pl-9 bg-grey-100 border min-w-[250px]"
+              phx-debounce
+              new={true}
+            />
+          </div>
+
+          <div class="space-x-2">
+            <.input type="hidden" field={@params[:filter]} />
+            <% filter_id = "#" <> @params[:filter].id %>
+
+            <.button
+              type="button"
+              phx-click={
+                JS.toggle_attribute({"value", "company", ""}, to: filter_id)
+                |> JS.dispatch("change", to: filter_id)
+              }
+              size="small"
+              variant="ghost"
+              new={true}
+              class={[@params[:filter].value == "company" && "bg-grey-200"]}
+            >
+              <Lucideicons.building_2 />
+            </.button>
+
+            <.button
+              type="button"
+              phx-click={
+                JS.toggle_attribute({"value", "individual", ""}, to: filter_id)
+                |> JS.dispatch("change", to: filter_id)
+              }
+              size="small"
+              variant="ghost"
+              new={true}
+              class={[@params[:filter].value == "individual" && "bg-grey-200"]}
+            >
+              <Lucideicons.user />
+            </.button>
+          </div>
+
+          <div class="grow" />
+
+          <.input type="hidden" field={@params[:sort_order]} />
+          <% sort_id = "#" <> @params[:sort_order].id %>
+
+          <.button
+            type="button"
+            phx-click={
+              JS.toggle_attribute({"value", "desc", "asc"}, to: sort_id)
+              |> JS.dispatch("change", to: sort_id)
+            }
+            size="small"
+            variant="ghost"
+            new={true}
+          >
+            <%= if @params[:sort_order].value == "desc" do %>
+              <Lucideicons.arrow_down_a_z />
+            <% else %>
+              <Lucideicons.arrow_up_a_z />
+            <% end %>
+          </.button>
+        </.form>
+
+        <div
+          id="counterparties_header"
+          data-empty={@counterparties_empty?}
+          class="col-span-full grid grid-cols-subgrid items-center px-4 py-1 text-grey-700 text-sm/snug data-[empty]:hidden"
+        >
+          <p>Kontrahent</p>
+          <p>Identyfikator</p>
+          <p>Kraj</p>
+        </div>
+
+        <div
+          id="counterparties"
+          phx-update="stream"
+          class="col-span-full grid grid-cols-subgrid gap-y-2 peer transition-opacity phx-change-loading:opacity-50"
+        >
+          <div
+            id="counterparties_empty"
+            class="flex-col gap-4 justify-center items-center hidden only:flex col-span-full p-8"
+          >
+            <p class="text-center text-grey-500">
+              Nie znaleziono kontrahentów.
+            </p>
+            <.button
+              variant="outline"
+              class="border-transparent"
+              phx-click="clear_counterparty_filters"
+            >
+              Wyczyść filtry
+            </.button>
+          </div>
+
+          <button
+            :for={{dom_id, counterparty} <- @streams.counterparties}
+            id={dom_id}
+            phx-click="select_counterparty"
+            phx-value-counterparty_id={counterparty.id}
+            class="col-span-full grid grid-cols-subgrid items-center bg-white rounded-md px-4 py-3 text-sm group hover:ring-2 ring-turquoise-300 -ring-offset-1 transition duration-200 ease-out phx-click-loading:opacity-70"
+          >
+            <p class="text-black flex flex-row items-center gap-2">
+              <span class="inline-flex items-center gap-2">
+                <%= case counterparty.type do %>
+                  <% :company -> %>
+                    <Lucideicons.building_2 class="size-4 text-grey-500" />
+                    <span class="truncate">{counterparty.display_name || counterparty.name}</span>
+                  <% :individual -> %>
+                    <%!-- todo: replace icon --%>
+                    <Lucideicons.user class="size-4 text-grey-500" />
+                    <span class="truncate">
+                      <%= if counterparty.display_name && counterparty.display_name != "" do %>
+                        {counterparty.display_name}
+                      <% else %>
+                        {counterparty.name} {counterparty.surname}
+                      <% end %>
+                    </span>
+                <% end %>
+              </span>
+            </p>
+
+            <p class="text-grey-500 text-left">
+              {counterparty.pesel || counterparty.tax_id}
+            </p>
+
+            <p class="text-grey-500 text-left">
+              {SalesInvoices.CountryCodes.country_name(counterparty.country)}
+            </p>
+
+            <Lucideicons.chevron_right class="text-grey-500 transition duration-200 ease-out group-hover:text-grey-900" />
+          </button>
+        </div>
+      </div>
+
+      <div
+        :if={@last_counterparties != [] and @last_invoices != []}
+        class="max-w-md w-full"
+        style="filter: drop-shadow(0px 1px 3px rgba(0, 0, 0, 0.1));"
+      >
+        <div id="tabs" class="flex flex-row justify-around px-2 font-medium leading-tight">
+          <.link
+            :for={
+              {tab, label} <-
+                cond do
+                  @last_counterparties == [] and @last_invoices == [] ->
+                    []
+
+                  @last_counterparties == [] ->
+                    [last_invoices: "Ostatnie faktury"]
+
+                  true ->
+                    [
+                      last_counterparties: "Ostatnio wybierani",
+                      last_invoices: "Ostatnie faktury"
+                    ]
+                end
+            }
+            id={"tab_#{tab}"}
+            patch={
+              ~p"/sprzedazowe?#{Map.merge(%{draft: @draft_id, step: @step_number}, encode_query_params(Map.put(@query_params, :tab, tab)))}"
+            }
+            class={[
+              "rounded-t-lg transition-colors px-4 py-3 text-grey-700",
+              tab == @tab && "bg-grey-50 text-grey-900 pointer-events-none"
+            ]}
+          >
+            {label}
+          </.link>
+        </div>
+
+        <div
+          :if={@last_counterparties != [] or @last_invoices != []}
+          id="tab_content"
+          class="rounded-lg bg-grey-50 p-6 space-y-2 leading-snug"
+        >
+          <%= case @tab do %>
+            <% :last_counterparties -> %>
+              <div
+                :for={counterparty <- @last_counterparties}
+                class="border border-grey-200 rounded-md px-4 py-3.5 flex flex-row justify-between transition-opacity phx-click-loading:opacity-50"
+              >
+                <div class="grid grid-cols-[repeat(2,max-content)] gap-y-2 gap-x-5 text-sm">
+                  <p class="text-grey-700">Nazwa</p>
+                  <p class="text-black">{counterparty.name}</p>
+
+                  <%= if counterparty.type == :individual do %>
+                    <p class="text-grey-700">PESEL</p>
+                    <p class="text-grey-500">{counterparty.pesel}</p>
+                  <% else %>
+                    <p class="text-grey-700">ID</p>
+                    <p class="text-grey-500">{counterparty.tax_id}</p>
+                  <% end %>
+
+                  <p class="text-grey-700">Kraj</p>
+                  <p class="text-grey-500">
+                    {SalesInvoices.CountryCodes.country_name(counterparty.country)}
+                  </p>
+                </div>
+
+                <div class="flex flex-col justify-between items-end text-right">
+                  <%= case counterparty.type do %>
+                    <% :company -> %>
+                      <Lucideicons.building_2 class="size-4 text-grey-500" />
+                    <% :individual -> %>
+                      <Lucideicons.user class="size-4 text-grey-500" />
+                  <% end %>
+
+                  <div class="flex flex-row gap-2.5">
+                    <.button
+                      phx-click="select_counterparty"
+                      phx-value-counterparty_id={counterparty.id}
+                      size="small"
+                      color="light_grey"
+                    >
+                      Wybierz
+                    </.button>
+                  </div>
+                </div>
+              </div>
+            <% :last_invoices -> %>
+              <div
+                :for={invoice <- @last_invoices}
+                class="border border-grey-200 rounded-md px-4 py-3.5 flex flex-row justify-between transition-opacity phx-click-loading:opacity-50"
+              >
+                <div class="grid grid-cols-[repeat(2,max-content)] gap-y-2 gap-x-5 text-sm">
+                  <p class="text-grey-700">Kontrahent</p>
+                  <p class="text-black">{invoice.buyer_name}</p>
+
+                  <p class="text-grey-700">Numer</p>
+                  <p class="text-grey-500">{invoice.invoice_number}</p>
+
+                  <p class="text-grey-700">Kwota</p>
+                  <p class="text-grey-500">
+                    {Money.new(
+                      invoice.currency,
+                      SalesInvoices.SalesInvoice.get_gross_value(invoice)
+                    )
+                    |> Money.to_string!()}
+                  </p>
+                </div>
+
+                <div class="flex flex-col justify-between items-end text-right">
+                  <p class="text-sm text-grey-500">{invoice.issue_date}</p>
+
+                  <div class="flex flex-row gap-2.5">
+                    <.link
+                      class={button_styles(%{size: "small", variant: "outline"})}
+                      navigate={"/sprzedazowe/#{invoice.id}?return_to=/sprzedazowe?tab=last_invoices"}
+                    >
+                      <Lucideicons.eye />
+                    </.link>
+
+                    <.button
+                      phx-click="select_base_invoice"
+                      phx-value-invoice_id={invoice.id}
+                      size="small"
+                      color="light_grey"
+                      new={true}
+                    >
+                      Skopiuj
+                    </.button>
+                  </div>
+                </div>
+              </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<.modal id="counterparty-modal">
+  <h2 class="text-xl font-semibold text-grey-900 mb-6">Wprowadź dane kontrahenta</h2>
+
+  <.form
+    for={@counterparty_form}
+    id="counterparty-form"
+    phx-change="validate_counterparty"
+    phx-submit="submit_counterparty"
+    class="space-y-6"
+  >
+    <div class="bg-grey-50 px-5 py-3 rounded-lg">
+      <.radio_group field={@counterparty_form[:buyer_type]} class="gap-8">
+        <:radio value="company">Firma / Jednoosobowa Działalność Gospodarcza</:radio>
+        <:radio value="individual">Osoba prywatna</:radio>
+      </.radio_group>
+    </div>
+
+    <div class="grid grid-cols-2 gap-6">
+      <div class="space-y-4">
+        <p class="text-sm font-medium text-grey-700">Dane podstawowe</p>
+
+        <.input
+          :if={to_string(@counterparty_form[:buyer_type].value) == "company"}
+          field={@counterparty_form[:buyer_id]}
+          type="text"
+          placeholder="NIP klienta"
+          new={true}
+        />
+
+        <.input
+          :if={to_string(@counterparty_form[:buyer_type].value) == "company"}
+          field={@counterparty_form[:buyer_display_name]}
+          type="text"
+          placeholder="Nazwa firmy"
+          new={true}
+        />
+
+        <div class="grid grid-cols-2 gap-2">
+          <.input
+            field={@counterparty_form[:buyer_name]}
+            type="text"
+            placeholder="Imię"
+            new={true}
+          />
+          <.input
+            field={@counterparty_form[:buyer_surname]}
+            type="text"
+            placeholder="Nazwisko"
+            new={true}
+          />
+        </div>
+
+        <.input
+          :if={to_string(@counterparty_form[:buyer_type].value) == "individual"}
+          field={@counterparty_form[:buyer_pesel]}
+          type="text"
+          placeholder="PESEL (opcjonalnie)"
+          new={true}
+        />
+      </div>
+
+      <div class="space-y-4">
+        <p class="text-sm font-medium text-grey-700">Dane adresowe</p>
+
+        <.input
+          field={@counterparty_form[:buyer_address]}
+          type="textarea"
+          placeholder="Adres"
+          input_class="resize-none min-h-[6rem]"
+        />
+
+        <.input
+          field={@counterparty_form[:buyer_country]}
+          type="select"
+          options={SalesInvoices.CountryCodes.country_options()}
+          prompt="Wybierz kraj"
+          new={true}
+        />
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <p class="text-sm font-medium text-grey-700">Dodatkowe informacje</p>
+
+      <div class="grid grid-cols-2 gap-4">
+        <.input
+          field={@counterparty_form[:buyer_email]}
+          type="email"
+          placeholder="E-mail"
+          new={true}
+        />
+        <.input
+          field={@counterparty_form[:buyer_phone]}
+          type="tel"
+          placeholder="Telefon"
+          new={true}
+        />
+      </div>
+
+      <.input
+        field={@counterparty_form[:buyer_description]}
+        type="textarea"
+        placeholder="Opis"
+        input_class="resize-none"
+      />
+    </div>
+
+    <div class="flex justify-end gap-3 pt-4">
+      <.button
+        type="button"
+        variant="outline"
+        new={true}
+        phx-click={hide_modal("counterparty-modal")}
+      >
+        Anuluj
+      </.button>
+
+      <.button type="submit" color="turquoise" new={true} phx-disable-with="Zapisywanie...">
+        Kontynuuj
+      </.button>
+    </div>
+  </.form>
+</.modal>

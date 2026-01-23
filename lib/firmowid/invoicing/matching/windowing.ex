@@ -22,25 +22,33 @@ defmodule Firmowid.Invoicing.Matching.Windowing do
             Transaction.t()
           ]
   def pre_filter_invoice_transactions(%CostInvoice{} = cost_invoice, transactions) do
-    Enum.filter(transactions, fn transaction ->
-      within_time_window?(
-        cost_invoice.issue_date,
-        cost_invoice.due_date,
-        transaction.booking_date
-      ) and
-        within_amount_window(cost_invoice, transaction)
-    end)
+    if is_nil(cost_invoice.issue_date) or is_nil(cost_invoice.due_date) do
+      []
+    else
+      Enum.filter(transactions, fn transaction ->
+        within_time_window?(
+          cost_invoice.issue_date,
+          cost_invoice.due_date,
+          transaction.booking_date
+        ) and
+          within_amount_window(cost_invoice, transaction)
+      end)
+    end
   end
 
   def pre_filter_invoice_transactions(%SalesInvoice{} = sales_invoice, transactions) do
-    Enum.filter(transactions, fn transaction ->
-      within_time_window?(
-        sales_invoice.issue_date,
-        sales_invoice.due_date,
-        transaction.booking_date
-      ) and
-        within_amount_window(sales_invoice, transaction)
-    end)
+    if is_nil(sales_invoice.issue_date) or is_nil(sales_invoice.due_date) do
+      []
+    else
+      Enum.filter(transactions, fn transaction ->
+        within_time_window?(
+          sales_invoice.issue_date,
+          sales_invoice.due_date,
+          transaction.booking_date
+        ) and
+          within_amount_window(sales_invoice, transaction)
+      end)
+    end
   end
 
   @spec within_time_window?(Date.t(), Date.t(), Date.t()) :: boolean()

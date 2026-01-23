@@ -25,7 +25,7 @@ defmodule Firmowid.InvoicesSearchTest do
           sale_date: ~D[2024-01-01],
           issue_date: ~D[2024-01-01],
           due_date: ~D[2024-01-31],
-          payment_method: "Bank Transfer",
+          payment_method: :transfer,
           currency: "USD",
           buyer_type: :company,
           organization_id: organization_id
@@ -63,7 +63,7 @@ defmodule Firmowid.InvoicesSearchTest do
           sale_date: ~D[2024-02-01],
           issue_date: ~D[2024-02-01],
           due_date: ~D[2024-02-28],
-          payment_method: "Bank Transfer",
+          payment_method: :transfer,
           currency: "USD",
           buyer_type: :company,
           organization_id: organization_id
@@ -120,7 +120,7 @@ defmodule Firmowid.InvoicesSearchTest do
           sale_date: ~D[2024-03-01],
           issue_date: ~D[2024-03-01],
           due_date: ~D[2024-03-31],
-          payment_method: "Bank Transfer",
+          payment_method: :transfer,
           currency: "USD",
           buyer_type: :company,
           organization_id: organization_id
@@ -167,7 +167,7 @@ defmodule Firmowid.InvoicesSearchTest do
           sale_date: ~D[2024-01-01],
           issue_date: ~D[2024-01-01],
           due_date: ~D[2024-01-31],
-          payment_method: "Bank Transfer",
+          payment_method: :transfer,
           currency: "PLN",
           buyer_type: :company,
           organization_id: org1_id
@@ -209,7 +209,7 @@ defmodule Firmowid.InvoicesSearchTest do
           sale_date: ~D[2024-02-01],
           issue_date: ~D[2024-02-01],
           due_date: ~D[2024-02-28],
-          payment_method: "Bank Transfer",
+          payment_method: :transfer,
           currency: "PLN",
           buyer_type: :company,
           organization_id: org2_id
@@ -277,7 +277,7 @@ defmodule Firmowid.InvoicesSearchTest do
           sale_date: ~D[2024-04-01],
           issue_date: ~D[2024-04-01],
           due_date: ~D[2024-04-30],
-          payment_method: "Bank Transfer",
+          payment_method: :transfer,
           currency: "USD",
           buyer_type: :company,
           skip_invoicing: false,
@@ -292,7 +292,7 @@ defmodule Firmowid.InvoicesSearchTest do
           sale_date: ~D[2024-04-01],
           issue_date: ~D[2024-04-01],
           due_date: ~D[2024-04-30],
-          payment_method: "Bank Transfer",
+          payment_method: :transfer,
           currency: "USD",
           buyer_type: :company,
           skip_invoicing: true,
@@ -332,7 +332,7 @@ defmodule Firmowid.InvoicesSearchTest do
           sale_date: ~D[2024-04-10],
           issue_date: ~D[2024-04-10],
           due_date: ~D[2024-05-10],
-          payment_method: "Bank Transfer",
+          payment_method: :transfer,
           currency: "USD",
           buyer_type: :company,
           organization_id: organization_id
@@ -429,7 +429,7 @@ defmodule Firmowid.InvoicesSearchTest do
           sale_date: ~D[2024-05-01],
           issue_date: ~D[2024-05-01],
           due_date: ~D[2024-05-31],
-          payment_method: "Bank Transfer",
+          payment_method: :transfer,
           currency: "USD",
           buyer_type: :company,
           organization_id: organization_id
@@ -443,7 +443,7 @@ defmodule Firmowid.InvoicesSearchTest do
           sale_date: ~D[2024-05-05],
           issue_date: ~D[2024-05-05],
           due_date: ~D[2024-06-05],
-          payment_method: "Cash",
+          payment_method: :cash,
           currency: "USD",
           buyer_type: :individual,
           organization_id: organization_id
@@ -501,7 +501,7 @@ defmodule Firmowid.InvoicesSearchTest do
           issue_date: ~D[2024-01-01],
           sale_date: ~D[2024-01-02],
           due_date: ~D[2024-01-31],
-          payment_method: "Bank Transfer",
+          payment_method: :transfer,
           currency: "PLN",
           buyer_type: :company,
           organization_id: organization_id
@@ -516,7 +516,7 @@ defmodule Firmowid.InvoicesSearchTest do
           issue_date: ~D[2024-02-01],
           sale_date: ~D[2024-02-02],
           due_date: ~D[2024-02-28],
-          payment_method: "Bank Transfer",
+          payment_method: :transfer,
           currency: "PLN",
           buyer_type: :company,
           organization_id: organization_id
@@ -531,7 +531,7 @@ defmodule Firmowid.InvoicesSearchTest do
           issue_date: ~D[2024-03-01],
           sale_date: ~D[2024-03-02],
           due_date: ~D[2024-03-31],
-          payment_method: "Bank Transfer",
+          payment_method: :transfer,
           currency: "PLN",
           buyer_type: :company,
           organization_id: organization_id
@@ -543,7 +543,7 @@ defmodule Firmowid.InvoicesSearchTest do
         quantity: 1,
         unit: "pcs",
         unit_price: Decimal.new("100.00"),
-        vat_rate: Decimal.new("23"),
+        vat_rate: "23",
         organization_id: organization_id
       })
 
@@ -553,7 +553,7 @@ defmodule Firmowid.InvoicesSearchTest do
         quantity: 1,
         unit: "pcs",
         unit_price: Decimal.new("100.00"),
-        vat_rate: Decimal.new("23"),
+        vat_rate: "23",
         organization_id: organization_id
       })
 
@@ -563,7 +563,7 @@ defmodule Firmowid.InvoicesSearchTest do
         quantity: 1,
         unit: "pcs",
         unit_price: Decimal.new("100.00"),
-        vat_rate: Decimal.new("23"),
+        vat_rate: "23",
         organization_id: organization_id
       })
 
@@ -573,7 +573,7 @@ defmodule Firmowid.InvoicesSearchTest do
         quantity: 1,
         unit: "pcs",
         unit_price: Decimal.new("100.00"),
-        vat_rate: Decimal.new("23"),
+        vat_rate: "23",
         organization_id: organization_id
       })
 
@@ -583,7 +583,7 @@ defmodule Firmowid.InvoicesSearchTest do
         quantity: 1,
         unit: "pcs",
         unit_price: Decimal.new("200.00"),
-        vat_rate: Decimal.new("23"),
+        vat_rate: "23",
         organization_id: organization_id
       })
 
@@ -638,7 +638,7 @@ defmodule Firmowid.InvoicesSearchTest do
           sale_date: ~D[2024-06-01],
           issue_date: ~D[2024-06-01],
           due_date: ~D[2024-06-30],
-          payment_method: "Bank Transfer",
+          payment_method: :transfer,
           currency: "USD",
           buyer_type: :company,
           organization_id: organization_id
@@ -711,7 +711,7 @@ defmodule Firmowid.InvoicesSearchTest do
           sale_date: ~D[2024-07-01],
           issue_date: ~D[2024-07-01],
           due_date: ~D[2024-07-31],
-          payment_method: "Bank Transfer",
+          payment_method: :transfer,
           currency: "USD",
           buyer_type: :company,
           organization_id: organization_id,
@@ -724,7 +724,7 @@ defmodule Firmowid.InvoicesSearchTest do
         quantity: 1,
         unit: "hour",
         unit_price: Decimal.new("500.00"),
-        vat_rate: Decimal.new("0.23"),
+        vat_rate: "23",
         organization_id: organization_id
       })
 
@@ -734,7 +734,7 @@ defmodule Firmowid.InvoicesSearchTest do
         quantity: 1,
         unit: "license",
         unit_price: Decimal.new("1000.00"),
-        vat_rate: Decimal.new("0.23"),
+        vat_rate: "23",
         organization_id: organization_id
       })
 
@@ -764,7 +764,7 @@ defmodule Firmowid.InvoicesSearchTest do
           sale_date: ~D[2024-08-10],
           issue_date: ~D[2024-08-10],
           due_date: ~D[2024-08-31],
-          payment_method: "Bank Transfer",
+          payment_method: :transfer,
           currency: "EUR",
           buyer_type: :company,
           organization_id: organization_id,
@@ -777,7 +777,7 @@ defmodule Firmowid.InvoicesSearchTest do
         quantity: 1,
         unit: "hour",
         unit_price: Decimal.new("100.00"),
-        vat_rate: Decimal.new("50"),
+        vat_rate: "23",
         organization_id: organization_id
       })
 
@@ -818,7 +818,7 @@ defmodule Firmowid.InvoicesSearchTest do
           sale_date: ~D[2024-08-10],
           issue_date: ~D[2024-08-10],
           due_date: ~D[2024-08-31],
-          payment_method: "Bank Transfer",
+          payment_method: :transfer,
           # Different currency
           currency: "USD",
           buyer_type: :company,
@@ -860,7 +860,7 @@ defmodule Firmowid.InvoicesSearchTest do
           sale_date: ~D[2024-08-20],
           issue_date: ~D[2024-08-20],
           due_date: ~D[2024-09-20],
-          payment_method: "Bank Transfer",
+          payment_method: :transfer,
           currency: "EUR",
           buyer_type: :company,
           organization_id: organization_id

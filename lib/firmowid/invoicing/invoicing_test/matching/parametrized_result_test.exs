@@ -75,10 +75,12 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResultTest do
       assert result.days_lag_gt_30 == 0.0
 
       # Signed amount match should be a positive ratio (2000 PLN / (500 EUR in PLN))
-      # calcultion based on Firmowid.Currencies (lib/firmowid/currencies.ex)
-      # X = EUR / PLN
-      eur_to_pln = 3.645 / 0.8554
-      inv_amount_pln = 500 * eur_to_pln
+      # Mock rates use Money-compatible format: EUR rate = 0.2380442286 (units of EUR per 1 PLN)
+      # So 1 EUR = 1/0.2380442286 = 4.2009 PLN
+      # 500 EUR = 500 / 0.2380442286 = 2100.45 PLN
+      # expected_ratio = 2000 / 2100.45 = 0.9522
+      eur_rate = 0.2380442286
+      inv_amount_pln = 500 / eur_rate
       expected_ratio = 2000 / inv_amount_pln
       assert_in_delta(result.signed_amount_match, expected_ratio, 0.0001)
 
@@ -386,7 +388,7 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResultTest do
             name: "Service",
             quantity: Decimal.new("2"),
             unit_price: Decimal.new("100.00"),
-            vat_rate: Decimal.new("23")
+            vat_rate: "23"
           }
         ]
       }

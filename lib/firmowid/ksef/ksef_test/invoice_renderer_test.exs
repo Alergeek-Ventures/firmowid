@@ -31,21 +31,21 @@ defmodule Firmowid.Ksef.InvoiceRendererTest do
 
   describe "render_fa3/1 - domestic VAT invoices" do
     test "23% VAT invoice passes XSD validation", %{model: model} do
-      invoice = build_domestic_invoice(vat_rate: 23)
+      invoice = build_domestic_invoice(vat_rate: "23")
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert :ok = validate_xml(xml, model)
     end
 
     test "8% VAT invoice passes XSD validation", %{model: model} do
-      invoice = build_domestic_invoice(vat_rate: 8)
+      invoice = build_domestic_invoice(vat_rate: "8")
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert :ok = validate_xml(xml, model)
     end
 
     test "5% VAT invoice passes XSD validation", %{model: model} do
-      invoice = build_domestic_invoice(vat_rate: 5)
+      invoice = build_domestic_invoice(vat_rate: "5")
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert :ok = validate_xml(xml, model)
@@ -59,7 +59,7 @@ defmodule Firmowid.Ksef.InvoiceRendererTest do
     end
 
     test "0% domestic rate (0 KR) passes XSD validation", %{model: model} do
-      invoice = build_domestic_invoice(vat_rate: 0)
+      invoice = build_domestic_invoice(vat_rate: "0 KR")
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert :ok = validate_xml(xml, model)

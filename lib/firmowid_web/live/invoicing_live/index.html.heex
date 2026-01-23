@@ -44,7 +44,7 @@
     <% end %>
     <.link
       :if={Bodyguard.permit?(Firmowid.SalesInvoices, :create_sales_invoice, @current_user)}
-      navigate={~p"/sprzedazowe/kreator"}
+      navigate={~p"/sprzedazowe"}
       id="sales-invoice-link"
       data-tippy-content="Wystaw fakturę sprzedażową"
       phx-hook="Tippy"

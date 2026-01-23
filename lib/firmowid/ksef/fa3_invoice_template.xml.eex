@@ -39,7 +39,7 @@
 				<Nazwa><%= name %></Nazwa>
 			<% end %>
 		</DaneIdentyfikacyjne>
-		<%= if @invoice.buyer_address do %>
+		<%= if @invoice.buyer_address && @invoice.buyer_country do %>
 			<Adres>
 				<KodKraju><%= @invoice.buyer_country %></KodKraju>
 				<AdresL1><%= @invoice.buyer_address %></AdresL1>
@@ -60,29 +60,54 @@
 
 		<%= for summary <- @vat_summary do %>
 			<%!-- VAT Summary: P_13_X = net amount, P_14_X = VAT amount --%>
+			<%!-- summary.rate is a string (KSeF code), summary.type is derived from VatRate.summary_type/1 --%>
 			<%= cond do %>
-				<%!-- 23% / 22% rate --%>
-				<% Decimal.eq?(summary.rate, 23) -> %>
+				<%!-- Standard rate: 23% / 22% --%>
+				<% summary.rate in ["23", "22"] -> %>
 					<P_13_1><%= T.format_decimal(summary.net) %></P_13_1>
 					<P_14_1><%= T.format_decimal(summary.vat) %></P_14_1>
-				<%!-- 8% / 7% rate --%>
-				<% Decimal.eq?(summary.rate, 8) -> %>
+				<%!-- Reduced rate 1: 8% / 7% --%>
+				<% summary.rate in ["8", "7"] -> %>
 					<P_13_2><%= T.format_decimal(summary.net) %></P_13_2>
 					<P_14_2><%= T.format_decimal(summary.vat) %></P_14_2>
-				<%!-- 5% rate --%>
-				<% Decimal.eq?(summary.rate, 5) -> %>
+				<%!-- Reduced rate 2: 5% --%>
+				<% summary.rate == "5" -> %>
 					<P_13_3><%= T.format_decimal(summary.net) %></P_13_3>
 					<P_14_3><%= T.format_decimal(summary.vat) %></P_14_3>
+				<%!-- Taxi flat rate: 4% --%>
+				<% summary.rate == "4" -> %>
+					<P_13_4><%= T.format_decimal(summary.net) %></P_13_4>
+					<P_14_4><%= T.format_decimal(summary.vat) %></P_14_4>
+				<%!-- Special procedure (dział XII rozdział 6a): 3% --%>
+				<% summary.rate == "3" -> %>
+					<P_13_5><%= T.format_decimal(summary.net) %></P_13_5>
+					<P_14_5><%= T.format_decimal(summary.vat) %></P_14_5>
 
-				<%!-- 0% domestic (0 KR) --%>
-				<% summary.type == :domestic -> %>
+				<%!-- 0% domestic (0 KR) - excludes WDT and export --%>
+				<% summary.type == :zero_domestic -> %>
 					<P_13_6_1><%= T.format_decimal(summary.net) %></P_13_6_1>
+				<%!-- 0% EU goods delivery (0 WDT) --%>
+				<% summary.type == :zero_wdt -> %>
+					<P_13_6_2><%= T.format_decimal(summary.net) %></P_13_6_2>
+				<%!-- 0% export (0 EX) --%>
+				<% summary.type == :zero_export -> %>
+					<P_13_6_3><%= T.format_decimal(summary.net) %></P_13_6_3>
+
+				<%!-- Exempt from VAT (zw) --%>
+				<% summary.type == :exempt -> %>
+					<P_13_7><%= T.format_decimal(summary.net) %></P_13_7>
+				<%!-- Delivery/services outside Poland (np I) --%>
+				<% summary.type == :not_subject_i -> %>
+					<P_13_8><%= T.format_decimal(summary.net) %></P_13_8>
+				<%!-- EU B2B services art. 100 ust. 1 pkt 4 (np II) --%>
+				<% summary.type == :not_subject_ii -> %>
+					<P_13_9><%= T.format_decimal(summary.net) %></P_13_9>
 				<%!-- Reverse charge (oo) --%>
 				<% summary.type == :reverse_charge -> %>
 					<P_13_10><%= T.format_decimal(summary.net) %></P_13_10>
 
 				<% true -> %>
-					<%!-- raise "Unsupported VAT rate #{inspect(summary.rate)} with type #{inspect(summary.type)}" --%>
+					<% raise "Unexpected VAT rate in KSeF template: #{inspect(summary.rate)} (type: #{inspect(summary.type)})" %>
 			<% end %>
 		<% end %>
 

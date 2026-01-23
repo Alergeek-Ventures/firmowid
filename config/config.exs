@@ -21,6 +21,10 @@ config :esbuild,
     env: %{"NODE_PATH" => [Path.expand("../deps", __DIR__), Mix.Project.build_path()]}
   ]
 
+config :ex_cldr,
+  default_backend: Firmowid.Cldr,
+  default_locale: "pl"
+
 config :ex_money,
   default_cldr_backend: Firmowid.Cldr,
   auto_start_exchange_rate_service: true,

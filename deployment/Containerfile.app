@@ -55,11 +55,11 @@ COPY priv priv
 
 COPY lib lib
 
-# compile assets
-RUN mix assets.deploy
-
-# Compile the release with parallel compilation enabled
+# Compile the app first (generates phoenix-colocated hooks needed by esbuild)
 RUN mix compile
+
+# compile assets (must come after mix compile for phoenix-colocated hooks)
+RUN mix assets.deploy
 
 # Changes to config/runtime.exs don't require recompiling the code
 COPY config/runtime.exs config/

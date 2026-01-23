@@ -99,7 +99,7 @@ defmodule Firmowid.Invoicing.Matching.WindowingTest do
           %SalesInvoiceItem{
             quantity: 1,
             unit_price: Decimal.new("10.0"),
-            vat_rate: Decimal.new("23.0")
+            vat_rate: "23"
           }
         ]
       }

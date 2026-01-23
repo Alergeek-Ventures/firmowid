@@ -20,7 +20,8 @@ defmodule Firmowid.Oban do
     ],
     plugins: [
       {Oban.Plugins.Lifeline, rescue_after: to_timeout(minute: 30)},
-      {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 30},
+      # Custom pruner that preserves KSeF submission jobs for error state display
+      {Firmowid.Oban.KsefAwarePruner, max_age: 60 * 60 * 24 * 30},
       # retry orphaned jobs after 30 minutes
       {
         Oban.Plugins.Cron,

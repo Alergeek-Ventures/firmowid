@@ -109,10 +109,9 @@ defmodule FirmowidWeb.Router do
       live "/kosztowe/skrzynka", CostInvoiceLive.InboxLive, :index
       live "/kosztowe/:id", CostInvoiceLive.Show, :show
 
-      live "/sprzedazowe", SalesInvoicesLive.Index, :index
-      live "/sprzedazowe/kreator", SalesInvoicesLive.Create, :index
+      live "/sprzedazowe", SalesInvoicesLive.Creator
+      live "/sprzedazowe/:id/podsumowanie", SalesInvoicesLive.Summary, :summary
       live "/sprzedazowe/:id", SalesInvoicesLive.Show, :show
-      live "/sprzedazowe/:id/edycja", SalesInvoicesLive.Index, :index
 
       live "/czasosledz/projekty", Project.Index, :projects
       live "/czasosledz/projekty/dodaj", Project.ProjectNew, :new

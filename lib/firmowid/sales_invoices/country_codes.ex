@@ -2,7 +2,11 @@ defmodule Firmowid.SalesInvoices.CountryCodes do
   @moduledoc """
   Provides country code validation and EU country identification
   based on KSeF XSD schemas (KodyKrajow_v10-0E.xsd and schemat.xsd).
+
+  Uses ex_cldr_territories for localized country names in Polish.
   """
+
+  alias Firmowid.Cldr.Territory
 
   # All valid ISO country codes from KodyKrajow_v10-0E.xsd
   # Note: Greece uses EL (not GR) in official KSeF, but we accept both and normalize
@@ -26,6 +30,17 @@ defmodule Firmowid.SalesInvoices.CountryCodes do
     AT BE BG CY CZ DK EE FI FR DE EL HR HU IE IT LV LT LU MT NL PL PT RO SK SI
     ES SE XI
   )
+
+  # Mapping from KSeF special codes to CLDR territory codes or Polish names
+  # EL -> GR (Greece uses EL in KSeF but GR in ISO/CLDR)
+  # XI -> Northern Ireland (special post-Brexit status)
+  # XC, XL -> KSeF-specific codes without CLDR equivalents
+  @special_code_names %{
+    "EL" => "Grecja",
+    "XI" => "Irlandia Północna",
+    "XC" => "Ceuta",
+    "XL" => "Melilla"
+  }
 
   @spec all_countries() :: [String.t()]
   def all_countries, do: @valid_country_codes
@@ -64,18 +79,52 @@ defmodule Firmowid.SalesInvoices.CountryCodes do
 
   def region(_), do: :invalid
 
+  @doc """
+  Returns a list of country options for select inputs.
+
+  Each option is a tuple of `{display_name, code}` where:
+  - `display_name` is the Polish name of the country
+  - `code` is the KSeF-compatible ISO code
+
+  EU countries are listed first (sorted alphabetically by name),
+  followed by non-EU countries (also sorted alphabetically by name).
+  """
   @spec country_options() :: [{String.t(), String.t()}]
   def country_options do
-    eu_sorted = Enum.sort(@eu_country_codes)
+    eu_options =
+      @eu_country_codes
+      |> Enum.map(&{country_name(&1), &1})
+      |> Enum.sort_by(fn {name, _code} -> name end)
 
-    non_eu_sorted =
+    non_eu_options =
       @valid_country_codes
       |> Enum.reject(&(&1 in @eu_country_codes))
-      |> Enum.sort()
-
-    eu_options = Enum.map(eu_sorted, &{&1, &1})
-    non_eu_options = Enum.map(non_eu_sorted, &{&1, &1})
+      |> Enum.map(&{country_name(&1), &1})
+      |> Enum.sort_by(fn {name, _code} -> name end)
 
     eu_options ++ non_eu_options
+  end
+
+  @doc """
+  Returns the Polish name for a country code.
+
+  Uses CLDR territories for standard ISO codes, with fallbacks for
+  KSeF-specific codes (EL for Greece, XI for Northern Ireland, etc.).
+  """
+  @spec country_name(String.t()) :: String.t()
+  def country_name(code) when is_binary(code) do
+    case Map.fetch(@special_code_names, code) do
+      {:ok, name} ->
+        name
+
+      :error ->
+        # Safe to use String.to_atom since we only call this for validated country codes
+        territory_code = String.to_atom(code)
+
+        case Territory.from_territory_code(territory_code) do
+          {:ok, name} -> name
+          {:error, _} -> code
+        end
+    end
   end
 end

@@ -84,6 +84,7 @@ defmodule Firmowid.MixProject do
       {:bandit, "~> 1.5"},
       {:ex_cldr, "~> 2.37"},
       {:ex_cldr_dates_times, "~> 2.5"},
+      {:ex_cldr_territories, "~> 2.11"},
       {:ex_money, "~> 5.0"},
       {:timex, "~> 3.7"},
       {:faker, "~> 0.18"},
@@ -121,7 +122,7 @@ defmodule Firmowid.MixProject do
       {:igniter, "~> 0.5", only: [:dev]},
       {:dotenv, "~> 3.1", only: [:dev, :test]},
       {:tidewave, "~> 0.2", only: :dev},
-      {:lazy_html, ">= 0.1.0", only: :test},
+      {:lazy_html, ">= 0.1.0"},
       {:erlsom, "~> 1.5", only: :test},
       {:styler, "~> 1.5", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
@@ -129,7 +130,8 @@ defmodule Firmowid.MixProject do
       {:resend, "~> 0.4.4"},
       {:humanids, "~> 0.1.1"},
       {:websockex, "~> 0.5"},
-      {:csv, "~> 3.2"}
+      {:csv, "~> 3.2"},
+      {:lucide_icons, "~> 2.0"}
     ]
   end
 
