@@ -2,6 +2,7 @@ defmodule FirmowidWeb.BankSyncLive.Create do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Analytics
   alias Firmowid.BankData
   alias Firmowid.Billing
 
@@ -89,6 +90,10 @@ defmodule FirmowidWeb.BankSyncLive.Create do
         organization_id,
         socket.assigns.redirect_url
       )
+
+    Analytics.track_event("bank_institution_select", user, %{
+      institution_id: institution_id
+    })
 
     {:noreply, assign(socket, :requisition_link, link)}
   end

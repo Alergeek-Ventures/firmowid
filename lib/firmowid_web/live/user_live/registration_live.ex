@@ -4,6 +4,7 @@ defmodule FirmowidWeb.User.RegistrationLive do
 
   alias Firmowid.Accounts
   alias Firmowid.Accounts.User
+  alias Firmowid.Analytics
 
   def render(assigns) do
     ~H"""
@@ -92,6 +93,9 @@ defmodule FirmowidWeb.User.RegistrationLive do
   def handle_event("save", %{"user" => user_params}, socket) do
     case Accounts.register_user(user_params) do
       {:ok, user} ->
+        Analytics.identify(user)
+        Analytics.track_event("user_sign_up", user, %{auth_provider: "password"})
+
         {:ok, _} =
           Accounts.deliver_user_confirmation_instructions(
             user,

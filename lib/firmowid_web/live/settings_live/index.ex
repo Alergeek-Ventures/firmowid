@@ -7,6 +7,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
   alias Ecto.Changeset
   alias Firmowid.Accounts
   alias Firmowid.Accounts.Organization
+  alias Firmowid.Analytics
   alias Firmowid.BankData
   alias Firmowid.Billing
   alias Firmowid.Blobs
@@ -467,6 +468,8 @@ defmodule FirmowidWeb.SettingsLive.Index do
 
     case Ksef.authenticate_with_ksef_token(ksef_token) do
       {:ok, credential} ->
+        Analytics.track_event("ksef_connect", socket.assigns.current_user, %{})
+
         LiveToast.send_toast(:info, "Połączono z KSeF.")
         {:noreply, assign(socket, :ksef_credential, credential)}
 
@@ -494,6 +497,8 @@ defmodule FirmowidWeb.SettingsLive.Index do
 
     case Ksef.unauthenticate() do
       {:ok, _} ->
+        Analytics.track_event("ksef_disconnect", socket.assigns.current_user, %{})
+
         LiveToast.send_toast(:info, "Rozłączono z KSeF.")
         {:noreply, assign(socket, :ksef_credential, nil)}
 

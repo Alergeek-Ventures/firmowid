@@ -2,6 +2,7 @@ defmodule FirmowidWeb.GoogleAuthController do
   use FirmowidWeb, :controller
 
   alias Firmowid.Accounts
+  alias Firmowid.Analytics
   alias FirmowidWeb.UserAuth
 
   @doc """
@@ -106,6 +107,9 @@ defmodule FirmowidWeb.GoogleAuthController do
   defp handle_oauth_login(conn, user_params, profile) do
     case Accounts.get_or_create_oauth_user(user_params) do
       {:ok, user} ->
+        Analytics.identify(user)
+        Analytics.track_event("user_log_in", user, %{auth_provider: "google"})
+
         UserAuth.log_in_user(conn, user)
 
       {:error, :email_already_exists} ->
@@ -131,6 +135,9 @@ defmodule FirmowidWeb.GoogleAuthController do
             # Retry the whole OAuth flow since user no longer exists
             case Accounts.get_or_create_oauth_user(user_params) do
               {:ok, user} ->
+                Analytics.identify(user)
+                Analytics.track_event("user_log_in", user, %{auth_provider: "google"})
+
                 UserAuth.log_in_user(conn, user)
 
               _error ->
@@ -176,6 +183,9 @@ defmodule FirmowidWeb.GoogleAuthController do
       {:ok, user} ->
         case Accounts.link_google_account_with_token(user, token) do
           {:ok, updated_user} ->
+            Analytics.identify(updated_user)
+            Analytics.track_event("user_log_in", updated_user, %{auth_provider: "google"})
+
             conn
             |> put_flash(:info, "Twoje konto Google zostało pomyślnie połączone! Możesz teraz logować się przez Google.")
             |> UserAuth.log_in_user(updated_user)

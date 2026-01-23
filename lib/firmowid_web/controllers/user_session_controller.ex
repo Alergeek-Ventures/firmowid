@@ -2,6 +2,7 @@ defmodule FirmowidWeb.UserSessionController do
   use FirmowidWeb, :controller
 
   alias Firmowid.Accounts
+  alias Firmowid.Analytics
   alias FirmowidWeb.UserAuth
 
   def create(conn, %{"_action" => "registered"} = params) do
@@ -22,6 +23,9 @@ defmodule FirmowidWeb.UserSessionController do
     %{"email" => email, "password" => password} = user_params
 
     if user = Accounts.get_user_by_email_and_password(email, password) do
+      Analytics.identify(user)
+      Analytics.track_event("user_log_in", user, %{auth_provider: "password"})
+
       conn = UserAuth.log_in_user(conn, user, user_params)
 
       if info do

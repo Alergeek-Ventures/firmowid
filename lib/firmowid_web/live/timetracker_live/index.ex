@@ -2,6 +2,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Analytics
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Session
   alias FirmowidWeb.Helpers.TimeFormatter
@@ -221,9 +222,19 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
 
     socket = assign(socket, is_form_extended: false)
 
-    validated_session
-    |> Timetracker.start_session()
-    |> handle_session_save_result(socket)
+    result = Timetracker.start_session(validated_session)
+
+    case result do
+      {:ok, started_session} ->
+        Analytics.track_event("session_start", socket.assigns.current_user, %{
+          project_id: started_session.project_id
+        })
+
+      _ ->
+        :ok
+    end
+
+    handle_session_save_result(result, socket)
   end
 
   def handle_event("end_session", _, socket) do
@@ -231,7 +242,14 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     Bodyguard.permit!(Timetracker, :update_session, socket.assigns.current_user, session)
 
     case Timetracker.end_session(socket.assigns.current_session) do
-      {:ok, _session} ->
+      {:ok, ended_session} ->
+        duration_minutes = div(Session.calculate_session_duration(ended_session), 60)
+
+        Analytics.track_event("session_end", socket.assigns.current_user, %{
+          session_duration_minutes: duration_minutes,
+          project_id: ended_session.project_id
+        })
+
         {:noreply,
          socket
          |> assign(is_form_extended: false)

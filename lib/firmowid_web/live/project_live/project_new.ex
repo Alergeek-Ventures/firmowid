@@ -2,6 +2,7 @@ defmodule FirmowidWeb.Project.ProjectNew do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Analytics
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Project
 
@@ -22,6 +23,8 @@ defmodule FirmowidWeb.Project.ProjectNew do
 
     case Timetracker.create_project(params) do
       {:ok, _project} ->
+        Analytics.track_event("project_create", socket.assigns.current_user, %{})
+
         {:noreply, redirect(socket, to: ~p"/czasosledz/projekty")}
 
       {:error, changeset} ->

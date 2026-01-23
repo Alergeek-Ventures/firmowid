@@ -7,6 +7,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
   import FirmowidWeb.SalesInvoicesLive.SalesInvoiceItems
   import FirmowidWeb.SalesInvoicesLive.SellerForm
 
+  alias Firmowid.Analytics
   alias Firmowid.Billing
   alias Firmowid.Finances
   alias Firmowid.SalesInvoices
@@ -314,6 +315,15 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
     socket =
       case case_result do
         {:ok, new_invoice} ->
+          # Track only new invoice creations, not updates
+          if is_nil(socket.assigns.sales_invoice_id) do
+            Analytics.track_event("sales_invoice_create", user, %{
+              invoice_type: to_string(new_invoice.invoice_type),
+              invoice_currency: new_invoice.currency,
+              invoice_gross_amount: SalesInvoice.get_gross_value(new_invoice)
+            })
+          end
+
           socket
           |> push_patch(to: ~p"/sprzedazowe/#{new_invoice.id}/edycja")
           |> assign(sales_invoice_id: new_invoice.id)
@@ -371,6 +381,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.Index do
   def handle_event("send_to_ksef", _params, socket) do
     case Firmowid.Ksef.submit_sales_invoice(socket.assigns.sales_invoice.id) do
       {:ok, _job} ->
+        Analytics.track_event("sales_invoice_ksef_send", socket.assigns.current_user, %{})
+
         LiveToast.send_toast(:info, "Faktura została wysłana do KSeF")
         {:noreply, socket}
 

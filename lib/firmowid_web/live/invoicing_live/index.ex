@@ -2,6 +2,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Analytics
   alias Firmowid.BankData
   alias Firmowid.Billing
   alias Firmowid.CostInvoices
@@ -134,12 +135,22 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     # Use existing atoms to avoid atom exhaustion
     filter = String.to_existing_atom(filter)
 
+    Analytics.track_event("invoicing_filter_change", socket.assigns.current_user, %{
+      filter_value: filter
+    })
+
     {:noreply, update_param(socket, :filter, filter)}
   end
 
   def handle_event("toggle-grouping", _params, socket) do
     current = socket.assigns.params.group_by_party
-    {:noreply, update_param(socket, :group_by_party, !current)}
+    new_value = !current
+
+    Analytics.track_event("invoicing_grouping_toggle", socket.assigns.current_user, %{
+      is_grouped: new_value
+    })
+
+    {:noreply, update_param(socket, :group_by_party, new_value)}
   end
 
   @impl true
@@ -204,6 +215,8 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   end
 
   def handle_event("open-search", _params, socket) do
+    Analytics.track_event("invoicing_search_open", socket.assigns.current_user, %{})
+
     {:noreply,
      socket
      |> assign(:show_search, true)
@@ -234,6 +247,10 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
   def handle_event("goto-invoice", %{"id" => id, "type" => type}, socket) do
     Bodyguard.permit!(Invoicing, :read, socket.assigns.current_user)
+
+    Analytics.track_event("invoicing_search_select", socket.assigns.current_user, %{
+      invoice_type: type
+    })
 
     path =
       case type do
@@ -409,9 +426,14 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
   defp handle_uploads(entries, socket) do
     Bodyguard.permit!(Invoicing, :upload, socket.assigns.current_user)
+    user = socket.assigns.current_user
 
     for entry <- entries do
       consume_uploaded_entry(socket, entry, fn %{path: path} ->
+        Analytics.track_event("cost_invoice_upload", user, %{
+          file_type: entry.client_type
+        })
+
         case CostInvoices.upload_cost_invoice(path, entry.client_type, entry.client_name) do
           {:error, {:blob_already_exists, blob_checksum}} ->
             cost_invoice = CostInvoices.get_cost_invoice_by_checksum!(blob_checksum)

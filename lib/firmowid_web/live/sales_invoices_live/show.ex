@@ -2,6 +2,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Analytics
   alias Firmowid.Invoicing
   alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.SalesInvoice
@@ -59,6 +60,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
     Bodyguard.permit!(SalesInvoices, :delete, socket.assigns.current_user, socket.assigns.invoice)
     SalesInvoices.delete_sales_invoice(%SalesInvoice{id: socket.assigns.invoice.id})
 
+    Analytics.track_event("sales_invoice_delete", socket.assigns.current_user, %{})
+
     {:noreply,
      socket
      |> put_flash(:info, "Faktura została usunięta")
@@ -76,6 +79,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
       user.organization_id
     )
 
+    Analytics.track_event("sales_invoice_match", user, %{transaction_count: 1})
+
     invoice = refresh_invoice(socket.assigns.invoice.id)
     {:noreply, assign(socket, :invoice, invoice)}
   end
@@ -84,6 +89,9 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
   def handle_event("disconnect", _params, socket) do
     Bodyguard.permit!(SalesInvoices, :update, socket.assigns.current_user, socket.assigns.invoice)
     SalesInvoices.delete_sales_invoices_transactions_connections(socket.assigns.invoice.id)
+
+    Analytics.track_event("sales_invoice_unmatch", socket.assigns.current_user, %{})
+
     invoice = refresh_invoice(socket.assigns.invoice.id)
     {:noreply, assign(socket, :invoice, invoice)}
   end

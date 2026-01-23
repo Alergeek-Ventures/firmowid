@@ -3,6 +3,7 @@ defmodule FirmowidWeb.OrganizationInvitesLive.Index do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Accounts
+  alias Firmowid.Analytics
 
   @impl true
   def mount(_params, _session, socket) do
@@ -26,11 +27,16 @@ defmodule FirmowidWeb.OrganizationInvitesLive.Index do
 
     organization_id = current_user.organization_id
 
-    {:ok, _invite} =
+    {:ok, invite} =
       Accounts.create_organization_invites(
         organization_id,
         current_user.id
       )
+
+    Analytics.track_event("organization_invite_created", current_user, %{
+      organization_id: organization_id,
+      invite_id: invite.id
+    })
 
     socket =
       assign(socket, :organization_invites, Accounts.list_organization_invites(organization_id))

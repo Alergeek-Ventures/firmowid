@@ -3,6 +3,7 @@ defmodule FirmowidWeb.OrganizationLive do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Accounts
+  alias Firmowid.Analytics
 
   @impl true
   def render(assigns) do
@@ -113,10 +114,12 @@ defmodule FirmowidWeb.OrganizationLive do
 
     address = "#{address.street} #{address.number}, #{address.postal_code} #{address.city}"
 
-    {:ok, _organization} =
+    {:ok, created_org} =
       organization
       |> Map.put("address", address)
       |> Accounts.create_organization(user)
+
+    Analytics.track_event("organization_created", user, %{organization_id: created_org.id})
 
     socket =
       socket
@@ -130,10 +133,12 @@ defmodule FirmowidWeb.OrganizationLive do
   def handle_event("join", %{"code" => invite_code}, socket) do
     user = socket.assigns.current_user
 
-    {:ok, _organization_id} =
+    {:ok, organization_id} =
       invite_code
       |> String.trim()
       |> Accounts.consume_organization_invite(user.id)
+
+    Analytics.track_event("organization_invite_accepted", user, %{organization_id: organization_id})
 
     {:noreply, redirect(socket, to: "/")}
   end
