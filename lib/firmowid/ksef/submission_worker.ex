@@ -57,9 +57,9 @@ defmodule Firmowid.Ksef.SubmissionWorker do
         Logger.error("Sales invoice #{sales_invoice_id} not found")
         {:cancel, :invoice_not_found}
 
-      {:error, :invoice_not_confirmed} ->
-        Logger.error("Sales invoice #{sales_invoice_id} is not fully confirmed")
-        {:cancel, :invoice_not_confirmed}
+      {:error, :invoice_is_draft} ->
+        Logger.error("Sales invoice #{sales_invoice_id} is a draft (no invoice number)")
+        {:cancel, :invoice_is_draft}
 
       {:error, :invoice_already_locked} ->
         Logger.error("Sales invoice #{sales_invoice_id} is already locked")
@@ -81,8 +81,8 @@ defmodule Firmowid.Ksef.SubmissionWorker do
       SalesInvoice.locked?(invoice) ->
         {:error, :invoice_already_locked}
 
-      not SalesInvoice.confirmed?(invoice) ->
-        {:error, :invoice_not_confirmed}
+      SalesInvoice.draft?(invoice) ->
+        {:error, :invoice_is_draft}
 
       true ->
         {:ok, invoice}

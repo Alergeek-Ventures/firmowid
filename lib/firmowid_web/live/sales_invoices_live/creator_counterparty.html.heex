@@ -208,7 +208,7 @@
             }
             id={"tab_#{tab}"}
             patch={
-              ~p"/sprzedazowe?#{Map.merge(%{draft: @draft_id, step: @step_number}, encode_query_params(Map.put(@query_params, :tab, tab)))}"
+              ~p"/sprzedazowe?#{Map.merge(%{creator_draft: @creator_draft_id, step: @step_number}, encode_query_params(Map.put(@query_params, :tab, tab)))}"
             }
             class={[
               "rounded-t-lg transition-colors px-4 py-3 text-grey-700",

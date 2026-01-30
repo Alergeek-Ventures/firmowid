@@ -9,7 +9,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.Counterparty
-  alias Firmowid.SalesInvoices.DraftStore
+  alias Firmowid.SalesInvoices.CreatorDraftStore
   alias Firmowid.SalesInvoices.SalesInvoice
   alias Firmowid.SalesInvoices.SalesInvoiceItem
 
@@ -60,23 +60,23 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
     org_id = Repo.get_org_id()
 
     case params do
-      %{"draft" => draft_id} ->
-        handle_existing_draft(socket, org_id, draft_id, params)
+      %{"creator_draft" => creator_draft_id} ->
+        handle_existing_creator_draft(socket, org_id, creator_draft_id, params)
 
       %{"skopiuj" => invoice_id} ->
-        create_draft_from_copy(socket, org_id, invoice_id)
+        create_creator_draft_from_copy(socket, org_id, invoice_id)
 
-      _no_draft ->
+      _no_creator_draft ->
         create_and_redirect(socket, org_id)
     end
   end
 
   defp create_and_redirect(socket, org_id) do
-    {:ok, draft_id, _draft} = DraftStore.create(org_id)
-    {:noreply, push_patch(socket, to: draft_url(draft_id, :counterparty), replace: true)}
+    {:ok, creator_draft_id, _creator_draft} = CreatorDraftStore.create(org_id)
+    {:noreply, push_patch(socket, to: creator_draft_url(creator_draft_id, :counterparty), replace: true)}
   end
 
-  defp create_draft_from_copy(socket, org_id, invoice_id) do
+  defp create_creator_draft_from_copy(socket, org_id, invoice_id) do
     case SalesInvoices.get_sales_invoice(invoice_id) do
       nil ->
         {:noreply,
@@ -87,58 +87,58 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
       base_invoice ->
         Bodyguard.permit!(SalesInvoices, :show, socket.assigns.current_user, base_invoice)
 
-        {:ok, draft_id, _draft} = DraftStore.create(org_id)
+        {:ok, creator_draft_id, _creator_draft} = CreatorDraftStore.create(org_id)
         invoice = build_copied_invoice(base_invoice, socket.assigns.bank_accounts)
 
-        # Serialize invoice to draft format and persist
-        socket = assign(socket, invoice: invoice, draft_id: draft_id, org_id: org_id)
-        draft_data = serialize_to_draft(socket)
+        # Serialize invoice to creator draft format and persist
+        socket = assign(socket, invoice: invoice, creator_draft_id: creator_draft_id, org_id: org_id)
+        creator_draft_data = serialize_to_creator_draft(socket)
 
-        DraftStore.put(org_id, draft_id, %{step: :items, data: draft_data})
+        CreatorDraftStore.put(org_id, creator_draft_id, %{step: :items, data: creator_draft_data})
 
-        {:noreply, push_patch(socket, to: draft_url(draft_id, :items), replace: true)}
+        {:noreply, push_patch(socket, to: creator_draft_url(creator_draft_id, :items), replace: true)}
     end
   end
 
-  defp handle_existing_draft(socket, org_id, draft_id, params) do
-    # If we already have this draft loaded and step hasn't changed,
+  defp handle_existing_creator_draft(socket, org_id, creator_draft_id, params) do
+    # If we already have this creator draft loaded and step hasn't changed,
     # just update step-specific params (tab, search) without refetching
-    current_draft_id = socket.assigns[:draft_id]
+    current_creator_draft_id = socket.assigns[:creator_draft_id]
     current_step = socket.assigns[:step]
     requested_step = parse_step_param(params["step"])
 
-    if current_draft_id == draft_id and current_step == requested_step do
+    if current_creator_draft_id == creator_draft_id and current_step == requested_step do
       {:noreply, maybe_setup_step(socket, requested_step, params)}
     else
-      fetch_and_restore_draft(socket, org_id, draft_id, params)
+      fetch_and_restore_creator_draft(socket, org_id, creator_draft_id, params)
     end
   end
 
-  defp fetch_and_restore_draft(socket, org_id, draft_id, params) do
-    case DraftStore.get(org_id, draft_id) do
-      {:ok, draft} ->
-        restore_draft(socket, org_id, draft_id, draft, params)
+  defp fetch_and_restore_creator_draft(socket, org_id, creator_draft_id, params) do
+    case CreatorDraftStore.get(org_id, creator_draft_id) do
+      {:ok, creator_draft} ->
+        restore_creator_draft(socket, org_id, creator_draft_id, creator_draft, params)
 
       {:error, :not_found} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Szkic nie został znaleziony, rozpoczynamy od nowa")
+         |> put_flash(:info, "Szkic kreatora nie został znaleziony, rozpoczynamy od nowa")
          |> push_patch(to: ~p"/sprzedazowe", replace: true)}
     end
   end
 
-  defp restore_draft(socket, org_id, draft_id, draft, params) do
+  defp restore_creator_draft(socket, org_id, creator_draft_id, creator_draft, params) do
     requested_step = parse_step_param(params["step"])
-    max_allowed_step = calculate_max_step(draft.data)
+    max_allowed_step = calculate_max_step(creator_draft.data)
 
     # Clamp requested step to what's allowed based on data
     step = clamp_step(requested_step, max_allowed_step)
 
-    case restore_from_draft(socket, draft.data, step) do
+    case restore_from_creator_draft(socket, creator_draft.data, step) do
       {:ok, socket} ->
         socket =
           socket
-          |> assign(:draft_id, draft_id)
+          |> assign(:creator_draft_id, creator_draft_id)
           |> assign(:org_id, org_id)
           |> assign(:step, step)
           |> assign(:step_number, step_to_number(step))
@@ -149,18 +149,18 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
           if step == requested_step do
             socket
           else
-            push_patch(socket, to: draft_url(draft_id, step), replace: true)
+            push_patch(socket, to: creator_draft_url(creator_draft_id, step), replace: true)
           end
 
         {:noreply, socket}
 
       {:error, reason} ->
-        Logger.warning("Failed to restore draft #{draft_id}: #{inspect(reason)}")
-        DraftStore.delete(org_id, draft_id)
+        Logger.warning("Failed to restore creator draft #{creator_draft_id}: #{inspect(reason)}")
+        CreatorDraftStore.delete(org_id, creator_draft_id)
 
         {:noreply,
          socket
-         |> put_flash(:info, "Poprzedni szkic byl nieprawidlowy, rozpoczynamy od nowa")
+         |> put_flash(:info, "Poprzedni szkic kreatora byl nieprawidlowy, rozpoczynamy od nowa")
          |> push_patch(to: ~p"/sprzedazowe", replace: true)}
     end
   end
@@ -328,9 +328,9 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
   defp default_tab([]), do: :last_invoices
   defp default_tab(_counterparties), do: :last_counterparties
 
-  # Draft serialization/restoration
+  # Creator draft serialization/restoration
 
-  defp serialize_to_draft(socket) do
+  defp serialize_to_creator_draft(socket) do
     invoice = socket.assigns.invoice
     items = invoice.sales_invoice_items || []
 
@@ -375,7 +375,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
     }
   end
 
-  defp restore_from_draft(socket, data, _step) do
+  defp restore_from_creator_draft(socket, data, _step) do
     invoice = build_invoice_from_data(data)
     {:ok, assign(socket, :invoice, invoice)}
   rescue
@@ -473,27 +473,27 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
 
   defp persist_and_navigate(socket, step, invoice) do
     socket = assign(socket, :invoice, invoice)
-    draft_data = serialize_to_draft(socket)
+    creator_draft_data = serialize_to_creator_draft(socket)
 
-    DraftStore.put(socket.assigns.org_id, socket.assigns.draft_id, %{
+    CreatorDraftStore.put(socket.assigns.org_id, socket.assigns.creator_draft_id, %{
       step: step,
-      data: draft_data
+      data: creator_draft_data
     })
 
-    push_patch(socket, to: draft_url(socket.assigns.draft_id, step))
+    push_patch(socket, to: creator_draft_url(socket.assigns.creator_draft_id, step))
   end
 
-  defp persist_draft(socket) do
-    draft_data = serialize_to_draft(socket)
+  defp persist_creator_draft(socket) do
+    creator_draft_data = serialize_to_creator_draft(socket)
 
-    DraftStore.put(socket.assigns.org_id, socket.assigns.draft_id, %{
+    CreatorDraftStore.put(socket.assigns.org_id, socket.assigns.creator_draft_id, %{
       step: socket.assigns.step,
-      data: draft_data
+      data: creator_draft_data
     })
   end
 
-  defp draft_url(draft_id, step) when is_atom(step) do
-    ~p"/sprzedazowe?draft=#{draft_id}&step=#{step_to_number(step)}"
+  defp creator_draft_url(creator_draft_id, step) when is_atom(step) do
+    ~p"/sprzedazowe?creator_draft=#{creator_draft_id}&step=#{step_to_number(step)}"
   end
 
   # Query params management (for step 0 tabs/search)
@@ -514,7 +514,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
 
     params =
       Map.merge(
-        %{draft: socket.assigns.draft_id, step: step_to_number(:counterparty)},
+        %{creator_draft: socket.assigns.creator_draft_id, step: step_to_number(:counterparty)},
         encode_query_params(query_params)
       )
 
@@ -663,7 +663,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
   def handle_event("select_bank_account", %{"account_id" => account_id}, socket) do
     bank_account = Enum.find(socket.assigns.bank_accounts, &(&1.id == account_id))
 
-    # Update invoice with selected bank account's IBAN (for draft persistence)
+    # Update invoice with selected bank account's IBAN (for creator draft persistence)
     invoice = %{socket.assigns.invoice | seller_account_number: bank_account.iban}
 
     # Preserve current form values and update the seller_account_number
@@ -681,8 +681,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
       |> assign(:selected_bank_account, bank_account)
       |> assign(:payment_form, form)
 
-    # Persist to draft immediately so selection survives page refresh
-    persist_draft(socket)
+    # Persist to creator draft immediately so selection survives page refresh
+    persist_creator_draft(socket)
 
     {:noreply, socket}
   end
@@ -748,7 +748,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
     # (otherwise Ecto tries to match by primary key and fails on id: nil)
     invoice = %{socket.assigns.invoice | sales_invoice_items: []}
 
-    # Insert invoice without invoice_number (draft status)
+    # Insert invoice without invoice_number (this creates a draft/szkic)
     # Set issue_date to today and populate seller data from organization
     result =
       invoice
@@ -764,8 +764,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
 
     case result do
       {:ok, invoice} ->
-        # Delete wizard draft
-        DraftStore.delete(socket.assigns.org_id, socket.assigns.draft_id)
+        # Delete creator draft (wizard state)
+        CreatorDraftStore.delete(socket.assigns.org_id, socket.assigns.creator_draft_id)
 
         {:noreply,
          socket
@@ -773,7 +773,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
          |> redirect(to: ~p"/sprzedazowe/#{invoice.id}")}
 
       {:error, changeset} ->
-        Logger.error("Failed to save invoice draft: #{inspect(changeset.errors)}")
+        Logger.error("Failed to save invoice as draft: #{inspect(changeset.errors)}")
 
         {:noreply, put_flash(socket, :error, "Nie udało się zapisać faktury")}
     end
@@ -782,8 +782,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
   def handle_event("confirm_invoice", _params, socket) do
     case create_confirmed_invoice(socket) do
       {:ok, invoice} ->
-        # Delete wizard draft
-        DraftStore.delete(socket.assigns.org_id, socket.assigns.draft_id)
+        # Delete creator draft (wizard state)
+        CreatorDraftStore.delete(socket.assigns.org_id, socket.assigns.creator_draft_id)
 
         # Navigate to summary page
         {:noreply, push_navigate(socket, to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
@@ -799,8 +799,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
   def handle_event("send_to_ksef", _params, socket) do
     case create_confirmed_invoice(socket) do
       {:ok, invoice} ->
-        # Delete wizard draft
-        DraftStore.delete(socket.assigns.org_id, socket.assigns.draft_id)
+        # Delete creator draft (wizard state)
+        CreatorDraftStore.delete(socket.assigns.org_id, socket.assigns.creator_draft_id)
 
         # Submit to KSeF (job will run async, Summary page will track status)
         case Ksef.submit_sales_invoice(invoice.id) do
@@ -934,10 +934,6 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
         seller_address: organization.address,
         seller_nip: organization.nip,
         is_cash_account: invoice.payment_method == :cash,
-        is_basic_info_confirmed: true,
-        is_seller_confirmed: true,
-        is_buyer_confirmed: true,
-        are_sales_invoice_items_confirmed: true,
         sales_invoice_items: items_attrs
       })
       |> Repo.insert()

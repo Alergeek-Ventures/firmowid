@@ -1,6 +1,6 @@
 <div class="max-w-6xl w-full mx-auto flex-1 flex flex-col my-4 relative">
   <.link
-    patch={~p"/sprzedazowe?draft=#{@draft_id}&step=#{@step_number - 1}"}
+    patch={~p"/sprzedazowe?creator_draft=#{@creator_draft_id}&step=#{@step_number - 1}"}
     class="flex items-center gap-2 text-sm absolute -left-[calc(68px+1.5rem)] -top-[2.5px]"
   >
     <Lucideicons.circle_chevron_left /> Wróć

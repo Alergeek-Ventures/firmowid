@@ -228,8 +228,8 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
 
   defp table_row(assigns) do
     assigns =
-      assign(
-        assigns,
+      assigns
+      |> assign(
         :amount,
         case assigns.invoicing_entry do
           %Transaction{} -> assigns.invoicing_entry.transaction_amount
@@ -237,22 +237,37 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
           %SalesInvoice{} -> SalesInvoice.get_gross_value(assigns.invoicing_entry)
         end
       )
+      |> assign(
+        :is_draft,
+        case assigns.invoicing_entry do
+          %SalesInvoice{} = invoice -> SalesInvoice.draft?(invoice)
+          _ -> false
+        end
+      )
 
     ~H"""
     <tr id={"#{@invoicing_entry.id}-row"}>
       <td
         :for={column <- @columns}
-        class={[
-          "transition-all duration-500 bg-white py-2",
-          column == "party" && "rounded-l-md pl-5 pr-5 text-ellipsis max-xl:max-w-72",
-          String.ends_with?(column, "date") && "font-light",
-          column == "amount" && "rounded-r-md",
-          column == "amount" &&
-            Decimal.gte?(@amount, 0) &&
-            "text-blueText !bg-blueBg",
-          column == "amount" && Decimal.lt?(@amount, 0) &&
-            "text-orangeText !bg-orangeBg"
-        ]}
+        class={
+          [
+            "transition-all duration-500 bg-white py-2",
+            column == "party" && "rounded-l-md pl-5 pr-5 text-ellipsis max-xl:max-w-72",
+            String.ends_with?(column, "date") && "font-light",
+            column == "amount" && "rounded-r-md",
+            column == "amount" &&
+              Decimal.gte?(@amount, 0) &&
+              "text-blueText !bg-blueBg",
+            column == "amount" && Decimal.lt?(@amount, 0) &&
+              "text-orangeText !bg-orangeBg",
+            # Draft invoices get a dotted border
+            @is_draft && column == "party" && "border-l-2 border-y-2 border-dashed border-darkGrey/50",
+            @is_draft && column == "amount" &&
+              "border-r-2 border-y-2 border-dashed border-darkGrey/50",
+            @is_draft && column not in ["party", "amount"] &&
+              "border-y-2 border-dashed border-darkGrey/50"
+          ]
+        }
       >
         <div
           data-overflow-hider-id={@invoicing_entry.id}

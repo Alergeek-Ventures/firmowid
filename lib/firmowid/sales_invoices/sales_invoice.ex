@@ -19,7 +19,6 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     field :due_date, :date
     field :payment_method, Ecto.Enum, values: ~w[cash card voucher check credit transfer mobile]a, default: :transfer
     field :currency, :string
-    field :is_basic_info_confirmed, :boolean, default: false
 
     field :seller_nip, :string
     field :seller_display_name, :string
@@ -27,7 +26,6 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     field :seller_name, :string
     field :seller_surname, :string
     field :seller_account_number, :string
-    field :is_seller_confirmed, :boolean, default: false
 
     field :buyer_type, Ecto.Enum, values: [:individual, :company], default: :company
 
@@ -51,9 +49,6 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     field :buyer_email, :string
     field :buyer_phone, :string
     field :buyer_description, :string
-    field :is_buyer_confirmed, :boolean, default: false
-
-    field :are_sales_invoice_items_confirmed, :boolean, default: false
 
     field :is_cash_account, :boolean, default: false
     field :is_reverse_charge, :boolean, default: false
@@ -120,12 +115,25 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     |> Money.to_decimal()
   end
 
-  def confirmed?(sales_invoice) do
-    sales_invoice.is_basic_info_confirmed &&
-      sales_invoice.is_seller_confirmed &&
-      sales_invoice.is_buyer_confirmed &&
-      sales_invoice.are_sales_invoice_items_confirmed
-  end
+  @doc """
+  Returns true if the invoice is a draft (has no invoice number assigned).
+
+  Drafts are invoices saved mid-wizard before confirmation.
+  They can be edited freely and don't appear in invoice numbering.
+  """
+  @spec draft?(t()) :: boolean()
+  def draft?(%__MODULE__{invoice_number: nil}), do: true
+  def draft?(%__MODULE__{invoice_number: _}), do: false
+
+  @doc """
+  Returns true if the invoice is confirmed (has an invoice number assigned).
+
+  Confirmed invoices have completed the wizard flow and received a number.
+  They can still be edited until locked/submitted to KSeF.
+  """
+  @spec confirmed?(t()) :: boolean()
+  def confirmed?(%__MODULE__{invoice_number: nil}), do: false
+  def confirmed?(%__MODULE__{invoice_number: _}), do: true
 
   def get_currency_conversion_date(sales_invoice) do
     pick_date(
@@ -183,10 +191,6 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       :due_date,
       :payment_method,
       :currency,
-      :is_basic_info_confirmed,
-      :is_seller_confirmed,
-      :is_buyer_confirmed,
-      :are_sales_invoice_items_confirmed,
       :is_cash_account,
       :is_reverse_charge,
       :skip_invoicing,
@@ -355,16 +359,8 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   end
 
   defp validate_buyer_id(changeset) do
-    buyer_confirmed? = get_field(changeset, :is_buyer_confirmed) == true
-
-    # For individuals with PESEL, buyer_id is not required (they use buyer_pesel instead)
-    changeset =
-      if buyer_confirmed? and buyer_id_type(changeset) != :no_id do
-        validate_required(changeset, [:buyer_id])
-      else
-        changeset
-      end
-
+    # Validate format based on buyer type, but don't require buyer_id here.
+    # Required validation happens in validate_buyer_id_required_for_ksef/1 for KSeF submission.
     case buyer_id_type(changeset) do
       :nip ->
         validate_format(changeset, :buyer_id, ~r/^(\d{10})?$/, message: "musi być 10-cyfrowym numerem NIP")
@@ -395,12 +391,9 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
         sales_invoice
         |> put_change(:currency, "PLN")
         |> put_change(:is_reverse_charge, false)
-        |> put_change(:is_basic_info_confirmed, false)
 
       :foreign ->
-        sales_invoice
-        |> put_change(:is_cash_account, false)
-        |> put_change(:is_basic_info_confirmed, false)
+        put_change(sales_invoice, :is_cash_account, false)
 
       nil ->
         sales_invoice

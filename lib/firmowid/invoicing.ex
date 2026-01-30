@@ -537,9 +537,18 @@ defmodule Firmowid.Invoicing do
 
   defp matched?(_), do: false
 
+  # Checks if invoice is a draft (no invoice number assigned)
+  # Only applicable to SalesInvoice - other types are never drafts
+  defp draft?(%SalesInvoice{} = invoice), do: SalesInvoice.draft?(invoice)
+  defp draft?(_), do: false
+
   def order_entries_for_display(invoicing_entries) do
     Enum.sort(invoicing_entries, fn a, b ->
       cond do
+        # Draft invoices first (only affects SalesInvoice)
+        draft?(a) != draft?(b) ->
+          draft?(a)
+
         matched?(a) != matched?(b) ->
           # unmatched first
           not matched?(a)

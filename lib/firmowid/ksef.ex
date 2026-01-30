@@ -151,7 +151,7 @@ defmodule Firmowid.Ksef do
   Possible errors:
   - `:not_authenticated` - Organization is not connected to KSeF
   - `:invoice_not_found` - Invoice with given ID doesn't exist
-  - `:invoice_not_confirmed` - Invoice is not fully confirmed
+  - `:invoice_is_draft` - Invoice is a draft (has no invoice number)
   - `:invoice_already_locked` - Invoice has already been submitted or manually locked
   - `{:invalid_for_ksef, errors}` - Invoice is missing required fields for KSeF submission
   """
@@ -188,8 +188,8 @@ defmodule Firmowid.Ksef do
       SalesInvoice.locked?(invoice) ->
         {:error, :invoice_already_locked}
 
-      not SalesInvoice.confirmed?(invoice) ->
-        {:error, :invoice_not_confirmed}
+      SalesInvoice.draft?(invoice) ->
+        {:error, :invoice_is_draft}
 
       true ->
         validate_ksef_fields(invoice)
@@ -379,8 +379,8 @@ defmodule Firmowid.Ksef do
       String.contains?(error_string, "invoice_not_found") ->
         "Faktura nie została znaleziona"
 
-      String.contains?(error_string, "invoice_not_confirmed") ->
-        "Faktura nie jest w pełni potwierdzona"
+      String.contains?(error_string, "invoice_is_draft") ->
+        "Faktura jest szkicem - najpierw ją zatwierdź"
 
       String.contains?(error_string, "invoice_already_locked") ->
         "Faktura została już wysłana do KSeF"
