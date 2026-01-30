@@ -18,10 +18,14 @@ defmodule Firmowid.SalesInvoices.Counterparty do
   schema "counterparties" do
     field :type, Ecto.Enum, values: [:individual, :company], default: :company
     field :tax_id, :string
-    field :display_name, :string
-    field :name, :string
+    # For companies: legal business name. For individuals: NULL
+    field :full_name, :string
+    # For individuals: first name. For companies: NULL
+    field :given_name, :string
     field :surname, :string
     field :pesel, :string
+    # Optional short/friendly display name for both types
+    field :display_name, :string
 
     field :address, :string
     field :country, :string
@@ -48,10 +52,11 @@ defmodule Firmowid.SalesInvoices.Counterparty do
     |> cast(attrs, [
       :type,
       :tax_id,
-      :display_name,
-      :name,
+      :full_name,
+      :given_name,
       :surname,
       :pesel,
+      :display_name,
       :address,
       :country,
       :is_different_mail_address,
@@ -65,6 +70,7 @@ defmodule Firmowid.SalesInvoices.Counterparty do
     |> validate_country_code(:country)
     |> validate_country_code(:mail_country)
     |> validate_tax_id()
+    |> validate_name_fields()
     |> cast_based_on_type()
     |> put_change(:organization_id, Firmowid.Repo.get_org_id())
   end
@@ -111,14 +117,37 @@ defmodule Firmowid.SalesInvoices.Counterparty do
   defp cast_based_on_type(changeset) do
     case get_change(changeset, :type) do
       :individual ->
+        # Clear company-specific fields for individuals
         changeset
         |> put_change(:tax_id, "")
-        |> put_change(:display_name, "")
+        |> put_change(:full_name, nil)
 
       :company ->
-        put_change(changeset, :pesel, nil)
+        # Clear individual-specific fields for companies
+        changeset
+        |> put_change(:pesel, nil)
+        |> put_change(:given_name, nil)
+        |> put_change(:surname, nil)
 
       nil ->
+        changeset
+    end
+  end
+
+  # Validates that the correct name fields are present based on type
+  defp validate_name_fields(changeset) do
+    type = get_field(changeset, :type)
+
+    case type do
+      :company ->
+        validate_required(changeset, [:full_name], message: "nazwa firmy jest wymagana")
+
+      :individual ->
+        changeset
+        |> validate_required([:given_name], message: "imię jest wymagane")
+        |> validate_required([:surname], message: "nazwisko jest wymagane")
+
+      _ ->
         changeset
     end
   end
@@ -144,15 +173,22 @@ defmodule Firmowid.SalesInvoices.Counterparty do
   def region(_), do: :invalid
 
   @doc """
-  Returns the full name for display purposes.
-  For companies, returns the display_name.
-  For individuals, returns "name surname".
+  Returns the name for display purposes.
+
+  Priority:
+  1. display_name (if set) - user's preferred short name
+  2. For companies: full_name (legal name)
+  3. For individuals: "given_name surname"
   """
   @spec display_label(t()) :: String.t()
-  def display_label(%__MODULE__{type: :company, display_name: name}) when is_binary(name), do: name
+  def display_label(%__MODULE__{display_name: display_name}) when is_binary(display_name) and display_name != "" do
+    display_name
+  end
 
-  def display_label(%__MODULE__{type: :individual, name: name, surname: surname}) do
-    [name, surname]
+  def display_label(%__MODULE__{type: :company, full_name: name}) when is_binary(name), do: name
+
+  def display_label(%__MODULE__{type: :individual, given_name: given_name, surname: surname}) do
+    [given_name, surname]
     |> Enum.reject(&is_nil/1)
     |> Enum.join(" ")
   end

@@ -147,16 +147,20 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
 
   @doc """
   Returns the buyer name for KSeF invoice.
-  For companies: uses buyer_display_name or buyer_name
-  For individuals: uses buyer_name + buyer_surname
+
+  Priority:
+  1. buyer_display_name (if set) - user's preferred short name
+  2. For companies: buyer_full_name (legal name)
+  3. For individuals: buyer_given_name + buyer_surname
+
   Returns nil if no name is available (optional in simplified invoices per art. 106e ust. 5 pkt 3).
   """
   def buyer_name(%{buyer_display_name: name}) when is_binary(name) and name != "", do: name
-  def buyer_name(%{buyer_type: :company, buyer_name: name}) when is_binary(name) and name != "", do: name
+  def buyer_name(%{buyer_type: :company, buyer_full_name: name}) when is_binary(name) and name != "", do: name
 
-  def buyer_name(%{buyer_type: :individual, buyer_name: name, buyer_surname: surname})
-      when is_binary(name) and is_binary(surname) do
-    full_name = String.trim("#{name} #{surname}")
+  def buyer_name(%{buyer_type: :individual, buyer_given_name: given_name, buyer_surname: surname})
+      when is_binary(given_name) and is_binary(surname) do
+    full_name = String.trim("#{given_name} #{surname}")
     if full_name == "", do: nil, else: full_name
   end
 

@@ -31,17 +31,11 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
     amount: "Kwota"
   ]
 
-  defp get_sales_invoice_buyer_name(%SalesInvoice{buyer_display_name: display_name})
-       when not is_nil(display_name) and display_name != "" do
-    display_name
+  # Using map pattern match to avoid Dialyzer false positive about
+  # LiveView internal assign fields (:__given__, etc.)
+  defp get_sales_invoice_buyer_name(%{__struct__: SalesInvoice} = invoice) do
+    Firmowid.SalesInvoices.buyer_display_name(invoice) || ""
   end
-
-  defp get_sales_invoice_buyer_name(%SalesInvoice{buyer_name: name, buyer_surname: surname})
-       when not is_nil(name) and not is_nil(surname) and name != "" and surname != "" do
-    "#{name} #{surname}"
-  end
-
-  defp get_sales_invoice_buyer_name(_), do: ""
 
   def table(%{invoicing_entries: [], has_connected_bank_account: true} = assigns) do
     ~H"""

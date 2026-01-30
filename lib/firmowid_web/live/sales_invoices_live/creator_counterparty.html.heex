@@ -163,18 +163,10 @@
                 <%= case counterparty.type do %>
                   <% :company -> %>
                     <Lucideicons.building_2 class="size-4 text-grey-500" />
-                    <span class="truncate">{counterparty.display_name || counterparty.name}</span>
                   <% :individual -> %>
-                    <%!-- todo: replace icon --%>
                     <Lucideicons.user class="size-4 text-grey-500" />
-                    <span class="truncate">
-                      <%= if counterparty.display_name && counterparty.display_name != "" do %>
-                        {counterparty.display_name}
-                      <% else %>
-                        {counterparty.name} {counterparty.surname}
-                      <% end %>
-                    </span>
                 <% end %>
+                <span class="truncate">{Counterparty.display_label(counterparty)}</span>
               </span>
             </p>
 
@@ -236,11 +228,11 @@
             <% :last_counterparties -> %>
               <div
                 :for={counterparty <- @last_counterparties}
-                class="border border-grey-200 rounded-md px-4 py-3.5 flex flex-row justify-between transition-opacity phx-click-loading:opacity-50"
+                class="border border-grey-200 rounded-md px-4 py-3.5 flex flex-row justify-between gap-4 transition-opacity phx-click-loading:opacity-50"
               >
-                <div class="grid grid-cols-[repeat(2,max-content)] gap-y-2 gap-x-5 text-sm">
+                <div class="grid grid-cols-[max-content_minmax(0,1fr)] gap-y-2 gap-x-5 text-sm min-w-0">
                   <p class="text-grey-700">Nazwa</p>
-                  <p class="text-black">{counterparty.name}</p>
+                  <p class="text-black truncate">{Counterparty.display_label(counterparty)}</p>
 
                   <%= if counterparty.type == :individual do %>
                     <p class="text-grey-700">PESEL</p>
@@ -279,11 +271,11 @@
             <% :last_invoices -> %>
               <div
                 :for={invoice <- @last_invoices}
-                class="border border-grey-200 rounded-md px-4 py-3.5 flex flex-row justify-between transition-opacity phx-click-loading:opacity-50"
+                class="border border-grey-200 rounded-md px-4 py-3.5 flex flex-row justify-between gap-4 transition-opacity phx-click-loading:opacity-50"
               >
-                <div class="grid grid-cols-[repeat(2,max-content)] gap-y-2 gap-x-5 text-sm">
+                <div class="grid grid-cols-[max-content_minmax(0,1fr)] gap-y-2 gap-x-5 text-sm min-w-0">
                   <p class="text-grey-700">Kontrahent</p>
-                  <p class="text-black">{invoice.buyer_name}</p>
+                  <p class="text-black truncate">{SalesInvoices.buyer_display_name(invoice)}</p>
 
                   <p class="text-grey-700">Numer</p>
                   <p class="text-grey-500">{invoice.invoice_number}</p>
@@ -359,15 +351,18 @@
 
         <.input
           :if={to_string(@counterparty_form[:buyer_type].value) == "company"}
-          field={@counterparty_form[:buyer_display_name]}
+          field={@counterparty_form[:buyer_full_name]}
           type="text"
           placeholder="Nazwa firmy"
           new={true}
         />
 
-        <div class="grid grid-cols-2 gap-2">
+        <div
+          :if={to_string(@counterparty_form[:buyer_type].value) == "individual"}
+          class="grid grid-cols-2 gap-2"
+        >
           <.input
-            field={@counterparty_form[:buyer_name]}
+            field={@counterparty_form[:buyer_given_name]}
             type="text"
             placeholder="Imię"
             new={true}

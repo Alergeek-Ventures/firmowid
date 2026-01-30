@@ -357,8 +357,9 @@ defmodule Firmowid.Invoicing do
       search_dynamic =
         Enum.reduce(
           [
-            dynamic([sales_invoice], sales_invoice.buyer_display_name ~> ^query),
-            dynamic([sales_invoice], sales_invoice.buyer_name ~> ^query),
+            # BM25 search fields - must match columns in the index
+            dynamic([sales_invoice], sales_invoice.buyer_full_name ~> ^query),
+            dynamic([sales_invoice], sales_invoice.buyer_given_name ~> ^query),
             dynamic([sales_invoice], sales_invoice.buyer_surname ~> ^query),
             dynamic([sales_invoice], sales_invoice.invoice_number ~> ^query),
             dynamic([sales_invoice], sales_invoice.buyer_email ~> ^query),

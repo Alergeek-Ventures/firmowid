@@ -97,11 +97,9 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
 
   defp get_invoice_display_name(%CostInvoice{seller_display_name: name}), do: name
 
-  defp get_invoice_display_name(%SalesInvoice{buyer_type: :individual, buyer_name: name, buyer_surname: surname}) do
-    "#{name} #{surname}"
+  defp get_invoice_display_name(%SalesInvoice{} = invoice) do
+    Firmowid.SalesInvoices.buyer_display_name(invoice)
   end
-
-  defp get_invoice_display_name(%SalesInvoice{buyer_display_name: name}), do: name
 
   defp get_invoice_account_number(%CostInvoice{account_number: acc}), do: acc
   defp get_invoice_account_number(%SalesInvoice{seller_account_number: acc}), do: acc

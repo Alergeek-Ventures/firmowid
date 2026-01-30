@@ -32,10 +32,14 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     field :buyer_type, Ecto.Enum, values: [:individual, :company], default: :company
 
     field :buyer_id, :string
-    field :buyer_display_name, :string
-    field :buyer_name, :string
+    # For companies: legal business name. For individuals: NULL
+    field :buyer_full_name, :string
+    # For individuals: first name. For companies: NULL
+    field :buyer_given_name, :string
     field :buyer_surname, :string
     field :buyer_pesel, :string
+    # Optional short/friendly display name for both types
+    field :buyer_display_name, :string
 
     field :buyer_address, :string
     field :buyer_country, :string
@@ -210,8 +214,8 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       :counterparty_id,
       :buyer_id,
       :buyer_type,
-      :buyer_display_name,
-      :buyer_name,
+      :buyer_full_name,
+      :buyer_given_name,
       :buyer_surname,
       :buyer_pesel,
       :buyer_address,
@@ -219,6 +223,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       :buyer_email,
       :buyer_phone,
       :buyer_description,
+      :buyer_display_name,
       # buyer infered fields:
       :invoice_type,
       :is_reverse_charge,
@@ -229,7 +234,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     |> validate_country_code(:buyer_country)
     |> validate_buyer_id()
     |> validate_buyer_id_required_for_ksef()
-    |> maybe_generate_individual_display_name()
+    |> validate_buyer_name_fields()
     |> cast_based_on_type()
   end
 
@@ -280,8 +285,8 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     |> cast(attrs, [
       :buyer_type,
       :buyer_id,
-      :buyer_display_name,
-      :buyer_name,
+      :buyer_full_name,
+      :buyer_given_name,
       :buyer_surname,
       :buyer_pesel,
       :buyer_address,
@@ -291,7 +296,8 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       :buyer_mail_country,
       :buyer_email,
       :buyer_phone,
-      :buyer_description
+      :buyer_description,
+      :buyer_display_name
     ])
     |> validate_country_code(:buyer_country)
     |> validate_buyer_id()
@@ -314,40 +320,37 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     case get_change(buyer, :buyer_type) do
       :individual ->
         # Clear company-specific fields for individuals
-        # buyer_display_name is generated from name+surname in maybe_generate_individual_display_name/1
-        put_change(buyer, :buyer_id, "")
+        buyer
+        |> put_change(:buyer_id, "")
+        |> put_change(:buyer_full_name, nil)
 
       :company ->
-        put_change(buyer, :buyer_pesel, nil)
+        # Clear individual-specific fields for companies
+        buyer
+        |> put_change(:buyer_pesel, nil)
+        |> put_change(:buyer_given_name, nil)
+        |> put_change(:buyer_surname, nil)
 
       nil ->
         buyer
     end
   end
 
-  # For individuals, auto-generate buyer_display_name from buyer_name + buyer_surname
-  # if display_name is empty/nil
-  defp maybe_generate_individual_display_name(changeset) do
+  # Validates that the correct name fields are present based on buyer_type
+  defp validate_buyer_name_fields(changeset) do
     buyer_type = get_field(changeset, :buyer_type)
-    buyer_display_name = get_field(changeset, :buyer_display_name)
 
-    if buyer_type == :individual and (is_nil(buyer_display_name) or buyer_display_name == "") do
-      buyer_name = get_field(changeset, :buyer_name) || ""
-      buyer_surname = get_field(changeset, :buyer_surname) || ""
+    case buyer_type do
+      :company ->
+        validate_required(changeset, [:buyer_full_name], message: "nazwa firmy jest wymagana")
 
-      generated_name =
-        [buyer_name, buyer_surname]
-        |> Enum.map(&String.trim/1)
-        |> Enum.reject(&(&1 == ""))
-        |> Enum.join(" ")
-
-      if generated_name == "" do
+      :individual ->
         changeset
-      else
-        put_change(changeset, :buyer_display_name, generated_name)
-      end
-    else
-      changeset
+        |> validate_required([:buyer_given_name], message: "imię jest wymagane")
+        |> validate_required([:buyer_surname], message: "nazwisko jest wymagane")
+
+      _ ->
+        changeset
     end
   end
 
@@ -562,9 +565,10 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     |> put_change(:seller_account_number, corrected_invoice.seller_account_number)
     |> put_change(:buyer_type, corrected_invoice.buyer_type)
     |> put_change(:buyer_id, corrected_invoice.buyer_id)
-    |> put_change(:buyer_display_name, corrected_invoice.buyer_display_name)
-    |> put_change(:buyer_name, corrected_invoice.buyer_name)
+    |> put_change(:buyer_full_name, corrected_invoice.buyer_full_name)
+    |> put_change(:buyer_given_name, corrected_invoice.buyer_given_name)
     |> put_change(:buyer_surname, corrected_invoice.buyer_surname)
+    |> put_change(:buyer_display_name, corrected_invoice.buyer_display_name)
     |> put_change(:buyer_address, corrected_invoice.buyer_address)
     |> put_change(:buyer_country, corrected_invoice.buyer_country)
     |> put_change(:currency, corrected_invoice.currency)

@@ -25,11 +25,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
       |> assign(:is_cost_invoice, false)
       |> assign(
         :party_display_name,
-        if assigns.invoice.buyer_type == :individual do
-          "#{assigns.invoice.buyer_name} #{assigns.invoice.buyer_surname}"
-        else
-          assigns.invoice.buyer_display_name
-        end
+        Firmowid.SalesInvoices.buyer_display_name(assigns.invoice)
       )
       |> assign(
         :description,
@@ -165,13 +161,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
               />
               <InvoiceDetails.invoice_metadata_piece
                 label="Kupujacy"
-                value={
-                  if @invoice.buyer_type == :individual do
-                    "#{@invoice.buyer_name} #{@invoice.buyer_surname}"
-                  else
-                    @invoice.buyer_display_name
-                  end
-                }
+                value={Firmowid.SalesInvoices.buyer_display_name(@invoice)}
                 piece_id="buyer"
               />
               <InvoiceDetails.invoice_metadata_piece

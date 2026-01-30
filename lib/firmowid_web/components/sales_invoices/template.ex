@@ -109,7 +109,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
           end}
         </h2>
         <div class="grid grid-cols-[auto,_1fr] gap-1">
-          <%= if @sales_invoice.buyer_type != :individual do %>
+          <%= if @sales_invoice.buyer_type == :company do %>
             <span>
               {case @sales_invoice.invoice_type do
                 :poland -> "Nazwa:"
@@ -117,18 +117,18 @@ defmodule FirmowidWeb.SalesInvoices.Template do
               end}
             </span>
             <span class="font-bold ">
-              {@sales_invoice.buyer_display_name}
+              {@sales_invoice.buyer_full_name}
             </span>
           <% end %>
 
-          <%= if @sales_invoice.buyer_name && @sales_invoice.buyer_surname do %>
+          <%= if @sales_invoice.buyer_type == :individual do %>
             <span>
               {case @sales_invoice.invoice_type do
                 :poland -> "Imię i nazwisko:"
                 :foreign -> "Imię i nazwisko / Name and surname:"
               end}
             </span>
-            <span>{@sales_invoice.buyer_name} {@sales_invoice.buyer_surname}</span>
+            <span>{@sales_invoice.buyer_given_name} {@sales_invoice.buyer_surname}</span>
           <% end %>
 
           <%= if @sales_invoice.buyer_address && @sales_invoice.buyer_address != "" do %>

@@ -98,18 +98,9 @@ defmodule FirmowidWeb.InvoicingLive.InvoiceSearchOverlay do
                                   %Firmowid.CostInvoices.CostInvoice{seller: n} ->
                                     n
 
-                                  %Firmowid.SalesInvoices.SalesInvoice{
-                                    buyer_display_name: bd,
-                                    buyer_name: bn,
-                                    buyer_surname: bs
-                                  } ->
-                                    cond do
-                                      bd not in [nil, ""] -> bd
-                                      bn not in [nil, ""] && bs not in [nil, ""] -> "#{bn} #{bs}"
-                                      bn not in [nil, ""] -> bn
-                                      bs not in [nil, ""] -> bs
-                                      true -> "szkic faktury sprzedażowej"
-                                    end
+                                  %Firmowid.SalesInvoices.SalesInvoice{} = si ->
+                                    Firmowid.SalesInvoices.buyer_display_name(si) ||
+                                      "szkic faktury sprzedażowej"
                                 end || "—"}
                               </span>
                             </div>

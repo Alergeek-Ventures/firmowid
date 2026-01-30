@@ -66,33 +66,33 @@ defmodule Firmowid.SalesInvoices do
   end
 
   @doc """
-  Returns the display name for the buyer on an invoice.
+  Returns the name for display purposes on an invoice.
 
-  If `buyer_display_name` is present (non-empty), returns it.
-  Otherwise derives it from:
-  - For individuals: "name surname"
-  - For companies: "name"
+  Priority:
+  1. buyer_display_name (if set) - user's preferred short name
+  2. For companies: buyer_full_name (legal name)
+  3. For individuals: "buyer_given_name buyer_surname"
+
+  Uses map pattern matching to be compatible with LiveView assigns
+  which may add internal fields like :__given__.
   """
-  @spec buyer_display_name(SalesInvoice.t()) :: String.t() | nil
-  def buyer_display_name(%SalesInvoice{buyer_display_name: name}) when is_binary(name) and name != "" do
+  @spec buyer_display_name(SalesInvoice.t() | map()) :: String.t() | nil
+  def buyer_display_name(%{__struct__: SalesInvoice, buyer_display_name: name}) when is_binary(name) and name != "" do
     name
   end
 
-  def buyer_display_name(%SalesInvoice{buyer_type: :individual, buyer_name: name, buyer_surname: surname})
-      when is_binary(name) and is_binary(surname) do
-    "#{name} #{surname}"
-  end
-
-  def buyer_display_name(%SalesInvoice{buyer_type: :individual, buyer_name: name}) when is_binary(name) do
+  def buyer_display_name(%{__struct__: SalesInvoice, buyer_type: :company, buyer_full_name: name}) when is_binary(name) do
     name
   end
 
-  def buyer_display_name(%SalesInvoice{buyer_type: :company, buyer_name: name}) when is_binary(name) do
-    name
-  end
-
-  def buyer_display_name(%SalesInvoice{buyer_name: name}) when is_binary(name) do
-    name
+  def buyer_display_name(%{
+        __struct__: SalesInvoice,
+        buyer_type: :individual,
+        buyer_given_name: given_name,
+        buyer_surname: surname
+      })
+      when is_binary(given_name) and is_binary(surname) do
+    "#{given_name} #{surname}"
   end
 
   def buyer_display_name(_), do: nil
@@ -102,7 +102,8 @@ defmodule Firmowid.SalesInvoices do
     |> where(
       [i],
       ilike(i.invoice_number, ^"%#{search_term}%") or
-        ilike(i.buyer_name, ^"%#{search_term}%") or
+        ilike(i.buyer_full_name, ^"%#{search_term}%") or
+        ilike(i.buyer_given_name, ^"%#{search_term}%") or
         ilike(i.buyer_display_name, ^"%#{search_term}%") or
         ilike(i.buyer_surname, ^"%#{search_term}%") or
         ilike(i.buyer_address, ^"%#{search_term}%") or
@@ -723,7 +724,8 @@ defmodule Firmowid.SalesInvoices do
         query,
         [c],
         c.display_name ~> ^search_term or
-          c.name ~> ^search_term or
+          c.full_name ~> ^search_term or
+          c.given_name ~> ^search_term or
           c.surname ~> ^search_term or
           c.tax_id ~> ^search_term or
           c.email ~> ^search_term
@@ -746,12 +748,14 @@ defmodule Firmowid.SalesInvoices do
   end
 
   # When not searching, use the existing sorting logic
+  # For individuals: given_name is set, full_name is NULL
+  # For companies: full_name is set, given_name is NULL
   defp apply_counterparty_sorting(query, :no_search, :name, order) do
-    order_by(query, [c], [{^order, fragment("COALESCE(?, ?)", c.name, c.display_name)}])
+    order_by(query, [c], [{^order, fragment("COALESCE(?, ?)", c.given_name, c.full_name)}])
   end
 
   defp apply_counterparty_sorting(query, :no_search, :display_name, order) do
-    order_by(query, [c], [{^order, fragment("COALESCE(?, ?)", c.display_name, c.name)}])
+    order_by(query, [c], [{^order, fragment("COALESCE(?, ?)", c.full_name, c.given_name)}])
   end
 
   defp apply_counterparty_sorting(query, :no_search, :created_at, order) do

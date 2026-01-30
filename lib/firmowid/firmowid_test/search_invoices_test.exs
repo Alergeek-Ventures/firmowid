@@ -20,7 +20,7 @@ defmodule Firmowid.InvoicesSearchTest do
       sales_invoice1 =
         Repo.insert!(%SalesInvoice{
           invoice_number: "SI-ACME-123",
-          buyer_display_name: "Acme Corp",
+          buyer_full_name: "Acme Corp",
           seller_display_name: "Our Company",
           sale_date: ~D[2024-01-01],
           issue_date: ~D[2024-01-01],
@@ -58,7 +58,7 @@ defmodule Firmowid.InvoicesSearchTest do
       _sales_invoice2 =
         Repo.insert!(%SalesInvoice{
           invoice_number: "SI-OTHER-789",
-          buyer_display_name: "Another Company",
+          buyer_full_name: "Another Company",
           seller_display_name: "Our Company",
           sale_date: ~D[2024-02-01],
           issue_date: ~D[2024-02-01],
@@ -102,7 +102,7 @@ defmodule Firmowid.InvoicesSearchTest do
       found_cost_invoice = Enum.find(results, &(&1.__struct__ == CostInvoice))
 
       assert found_sales_invoice.id == sales_invoice1.id
-      assert found_sales_invoice.buyer_display_name == "Acme Corp"
+      assert found_sales_invoice.buyer_full_name == "Acme Corp"
 
       assert found_cost_invoice.id == cost_invoice1.id
       assert found_cost_invoice.seller == "Acme Solutions"
@@ -115,7 +115,7 @@ defmodule Firmowid.InvoicesSearchTest do
       _ =
         Repo.insert!(%SalesInvoice{
           invoice_number: "SI-SOME-111",
-          buyer_display_name: "Some Company",
+          buyer_full_name: "Some Company",
           seller_display_name: "Our Company",
           sale_date: ~D[2024-03-01],
           issue_date: ~D[2024-03-01],
@@ -162,7 +162,7 @@ defmodule Firmowid.InvoicesSearchTest do
       si1 =
         Repo.insert!(%SalesInvoice{
           invoice_number: "SI-ORG1-UNIQUE",
-          buyer_display_name: "Org1 Buyer",
+          buyer_full_name: "Org1 Buyer",
           seller_display_name: "Org1 Seller",
           sale_date: ~D[2024-01-01],
           issue_date: ~D[2024-01-01],
@@ -204,7 +204,7 @@ defmodule Firmowid.InvoicesSearchTest do
       si2 =
         Repo.insert!(%SalesInvoice{
           invoice_number: "SI-ORG2-UNIQUE",
-          buyer_display_name: "Org2 Buyer",
+          buyer_full_name: "Org2 Buyer",
           seller_display_name: "Org2 Seller",
           sale_date: ~D[2024-02-01],
           issue_date: ~D[2024-02-01],
@@ -272,7 +272,7 @@ defmodule Firmowid.InvoicesSearchTest do
       unmatched_sales_invoice =
         Repo.insert!(%SalesInvoice{
           invoice_number: "SI-UNMATCHED-1",
-          buyer_display_name: "Unmatched Sales",
+          buyer_full_name: "Unmatched Sales",
           seller_display_name: "Our Company",
           sale_date: ~D[2024-04-01],
           issue_date: ~D[2024-04-01],
@@ -287,7 +287,7 @@ defmodule Firmowid.InvoicesSearchTest do
       unmatched_sales_invoice_skipped =
         Repo.insert!(%SalesInvoice{
           invoice_number: "SI-UNMATCHED-2",
-          buyer_display_name: "Unmatched Sales",
+          buyer_full_name: "Unmatched Sales",
           seller_display_name: "Our Company",
           sale_date: ~D[2024-04-01],
           issue_date: ~D[2024-04-01],
@@ -327,7 +327,7 @@ defmodule Firmowid.InvoicesSearchTest do
       matched_sales_invoice =
         Repo.insert!(%SalesInvoice{
           invoice_number: "SI-MATCHED-1",
-          buyer_display_name: "Matched Sales",
+          buyer_full_name: "Matched Sales",
           seller_display_name: "Our Company",
           sale_date: ~D[2024-04-10],
           issue_date: ~D[2024-04-10],
@@ -424,7 +424,7 @@ defmodule Firmowid.InvoicesSearchTest do
       sales_invoice_company =
         Repo.insert!(%SalesInvoice{
           invoice_number: "SI-COMPANY-1",
-          buyer_display_name: "Company Buyer Inc.",
+          buyer_full_name: "Company Buyer Inc.",
           seller_display_name: "Our Company",
           sale_date: ~D[2024-05-01],
           issue_date: ~D[2024-05-01],
@@ -438,7 +438,8 @@ defmodule Firmowid.InvoicesSearchTest do
       sales_invoice_individual =
         Repo.insert!(%SalesInvoice{
           invoice_number: "SI-INDIVIDUAL-1",
-          buyer_display_name: "John Doe",
+          buyer_given_name: "John",
+          buyer_surname: "Doe",
           seller_display_name: "Our Company",
           sale_date: ~D[2024-05-05],
           issue_date: ~D[2024-05-05],
@@ -495,7 +496,7 @@ defmodule Firmowid.InvoicesSearchTest do
       si1 =
         Repo.insert!(%SalesInvoice{
           invoice_number: "SI-ALPHA-1",
-          buyer_display_name: "Alpha Corp",
+          buyer_full_name: "Alpha Corp",
           seller_display_name: "Our Company",
           # total_amount: Decimal.new("123.00"),
           issue_date: ~D[2024-01-01],
@@ -510,7 +511,7 @@ defmodule Firmowid.InvoicesSearchTest do
       si2 =
         Repo.insert!(%SalesInvoice{
           invoice_number: "SI-BETA-2",
-          buyer_display_name: "Beta Corp",
+          buyer_full_name: "Beta Corp",
           seller_display_name: "Our Company",
           # total_amount: Decimal.new("246.00"),
           issue_date: ~D[2024-02-01],
@@ -525,7 +526,7 @@ defmodule Firmowid.InvoicesSearchTest do
       si3 =
         Repo.insert!(%SalesInvoice{
           invoice_number: "SI-GAMMA-3",
-          buyer_display_name: "Gamma Corp",
+          buyer_full_name: "Gamma Corp",
           seller_display_name: "Our Company",
           # total_amount: Decimal.new("369.00"),
           issue_date: ~D[2024-03-01],
@@ -633,7 +634,7 @@ defmodule Firmowid.InvoicesSearchTest do
       sales_invoice =
         Repo.insert!(%SalesInvoice{
           invoice_number: "SI-FILTER-SALES",
-          buyer_display_name: "Sales Filter Co",
+          buyer_full_name: "Sales Filter Co",
           seller_display_name: "Our Company",
           sale_date: ~D[2024-06-01],
           issue_date: ~D[2024-06-01],
@@ -706,7 +707,7 @@ defmodule Firmowid.InvoicesSearchTest do
       sales_invoice_with_items =
         Repo.insert!(%SalesInvoice{
           invoice_number: "SI-ITEM-SEARCH",
-          buyer_display_name: "Item Search Buyer",
+          buyer_full_name: "Item Search Buyer",
           seller_display_name: "Our Company",
           sale_date: ~D[2024-07-01],
           issue_date: ~D[2024-07-01],
@@ -759,7 +760,7 @@ defmodule Firmowid.InvoicesSearchTest do
       sales_invoice_combined_match =
         Repo.insert!(%SalesInvoice{
           invoice_number: "SI-COMBINED-MATCH",
-          buyer_display_name: "Combined Search Buyer",
+          buyer_full_name: "Combined Search Buyer",
           seller_display_name: "Our Company",
           sale_date: ~D[2024-08-10],
           issue_date: ~D[2024-08-10],
@@ -813,7 +814,7 @@ defmodule Firmowid.InvoicesSearchTest do
       _sales_invoice_diff_currency =
         Repo.insert!(%SalesInvoice{
           invoice_number: "SI-DIFF-CURRENCY",
-          buyer_display_name: "Combined Search Buyer USD",
+          buyer_full_name: "Combined Search Buyer USD",
           seller_display_name: "Our Company",
           sale_date: ~D[2024-08-10],
           issue_date: ~D[2024-08-10],
@@ -855,7 +856,7 @@ defmodule Firmowid.InvoicesSearchTest do
       sales_invoice_matched =
         Repo.insert!(%SalesInvoice{
           invoice_number: "SI-ALREADY-MATCHED",
-          buyer_display_name: "Combined Search Buyer Matched",
+          buyer_full_name: "Combined Search Buyer Matched",
           seller_display_name: "Our Company",
           sale_date: ~D[2024-08-20],
           issue_date: ~D[2024-08-20],

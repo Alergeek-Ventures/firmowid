@@ -306,8 +306,7 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
     > **Opis:**
 
     - **Rodzaj faktury**: #{invoice_type}
-    - **Skrócona nazwa kupującego**: #{invoice.seller_display_name}
-    - **Pełna nazwa kupującego**: #{invoice.buyer_name}
+    - **Nazwa kupującego**: #{Firmowid.SalesInvoices.buyer_display_name(invoice)}
     - **Adres kupującego**: #{invoice.buyer_address}
     - **Data wystawienia**: #{invoice.issue_date}
     - **Data sprzedaży**: #{invoice.sale_date}
