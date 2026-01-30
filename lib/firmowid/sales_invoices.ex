@@ -654,7 +654,7 @@ defmodule Firmowid.SalesInvoices do
 
   def list_recent_invoices do
     SalesInvoice
-    |> order_by([s], s.inserted_at)
+    |> order_by([s], desc: s.issue_date)
     |> limit(5)
     |> list_sales_invoices()
   end

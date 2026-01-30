@@ -192,7 +192,7 @@
       </div>
 
       <div
-        :if={@last_counterparties != [] and @last_invoices != []}
+        :if={@last_counterparties != [] or @last_invoices != []}
         class="max-w-md w-full"
         style="filter: drop-shadow(0px 1px 3px rgba(0, 0, 0, 0.1));"
       >
