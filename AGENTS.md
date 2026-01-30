@@ -11,6 +11,16 @@ When running, assume that the whole application - with all required services -
 is properly running. We use `wt` (`worktrunk`) to maintain each worktree, with
 ports specific to that worktree.
 
+**Accessing the dev server:**
+- Main branch: `localhost:4000` (default)
+- Other worktrees: check `.opencode.port` for the port number
+- Caddy proxy: `https://{branch}.firmowid.localhost`
+
+**Local setup:**
+- `mix dev.up` - starts services, reads config from `.env.local` (or uses defaults)
+- `mix dev.down` - stops services
+- Worktrunk generates `.env.local` with hashed ports for feature branches
+
 Tidewave MCP should be available, allowing you to inspect the running system.
 If not - flag that instantly. It's the best way to debug so if it's missing
 it's a huge issue.
