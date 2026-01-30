@@ -157,7 +157,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
             data-scroll-offset="90"
             class={
               [
-                "pt-4 font-normal text-left text-darkGrey text-xs uppercase pb-2",
+                "pt-4 font-normal text-left text-darkGrey text-xs uppercase pb-2 h-[60px] align-bottom",
                 column == "party" && "pl-5",
                 column == "amount" && "hidden"
               ]
@@ -731,7 +731,8 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
           column == "party" && "rounded-l-md pl-5 pr-5 text-ellipsis max-xl:max-w-72",
           String.ends_with?(column, "date") && "font-light",
           column == "amount" && "rounded-r-md",
-          column == "amount" && "text-orangeText !bg-orangeBg"
+          column == "amount" && Decimal.gte?(@group.total, 0) && "text-blueText !bg-blueBg",
+          column == "amount" && Decimal.lt?(@group.total, 0) && "text-orangeText !bg-orangeBg"
         ]}
       >
         <div

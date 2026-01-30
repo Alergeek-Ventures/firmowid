@@ -570,51 +570,87 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   end
 
   defp group_cost_transactions_by_party(entries, true, context_transactions) do
-    # Separate cost transactions from other entries
-    {cost_transactions, other_entries} =
+    # Separate transactions from other entries (invoices)
+    {transactions, other_entries} =
       Enum.split_with(entries, fn
-        %Transaction{transaction_amount: amount} -> Decimal.lt?(amount, 0)
+        %Transaction{} -> true
         _ -> false
       end)
 
-    # Group ALL cost transactions by party name (exact match)
-    all_cost_by_party = Enum.group_by(cost_transactions, & &1.creditor_name)
-
-    # Build a set of parties that have non-groupable transactions in the full context
-    parties_with_mixed_state =
-      if context_transactions == [] do
-        MapSet.new()
-      else
-        context_transactions
-        |> Enum.filter(fn
-          %Transaction{transaction_amount: amount} = t ->
-            Decimal.lt?(amount, 0) && !groupable_cost_transaction?(t)
-
-          _ ->
-            false
-        end)
-        |> MapSet.new(& &1.creditor_name)
-      end
-
-    {groups, ungrouped_transactions} =
-      Enum.split_with(all_cost_by_party, fn {party, txns} ->
-        # Must have at least 2 transactions
-        # AND all transactions in entries must be groupable
-        # AND party must not have mixed state in the full context
-        length(txns) >= 2 &&
-          Enum.all?(txns, &groupable_cost_transaction?/1) &&
-          !MapSet.member?(parties_with_mixed_state, party)
+    # Split into cost (negative) and income (positive) transactions
+    {cost_transactions, income_transactions} =
+      Enum.split_with(transactions, fn %Transaction{transaction_amount: amount} ->
+        Decimal.lt?(amount, 0)
       end)
 
-    group_structs =
-      Enum.map(groups, fn {party, txns} ->
+    # Group cost transactions by creditor_name
+    cost_by_party = Enum.group_by(cost_transactions, & &1.creditor_name)
+
+    # Group income transactions by debtor_name
+    income_by_party = Enum.group_by(income_transactions, & &1.debtor_name)
+
+    # Build sets of parties that have non-groupable transactions in the full context
+    {cost_parties_with_mixed_state, income_parties_with_mixed_state} =
+      if context_transactions == [] do
+        {MapSet.new(), MapSet.new()}
+      else
+        cost_mixed =
+          context_transactions
+          |> Enum.filter(fn
+            %Transaction{transaction_amount: amount} = t ->
+              Decimal.lt?(amount, 0) && !groupable_transaction?(t)
+
+            _ ->
+              false
+          end)
+          |> MapSet.new(& &1.creditor_name)
+
+        income_mixed =
+          context_transactions
+          |> Enum.filter(fn
+            %Transaction{transaction_amount: amount} = t ->
+              Decimal.gte?(amount, 0) && !groupable_transaction?(t)
+
+            _ ->
+              false
+          end)
+          |> MapSet.new(& &1.debtor_name)
+
+        {cost_mixed, income_mixed}
+      end
+
+    # Process cost transaction groups
+    {cost_groups, ungrouped_cost} =
+      Enum.split_with(cost_by_party, fn {party, txns} ->
+        length(txns) >= 2 &&
+          Enum.all?(txns, &groupable_transaction?/1) &&
+          !MapSet.member?(cost_parties_with_mixed_state, party)
+      end)
+
+    # Process income transaction groups
+    {income_groups, ungrouped_income} =
+      Enum.split_with(income_by_party, fn {party, txns} ->
+        length(txns) >= 2 &&
+          Enum.all?(txns, &groupable_transaction?/1) &&
+          !MapSet.member?(income_parties_with_mixed_state, party)
+      end)
+
+    # Build group structs
+    cost_group_structs =
+      Enum.map(cost_groups, fn {party, txns} ->
         build_transaction_group(party, txns)
       end)
 
-    ungrouped_flat =
-      Enum.flat_map(ungrouped_transactions, fn {_party, txns} -> txns end)
+    income_group_structs =
+      Enum.map(income_groups, fn {party, txns} ->
+        build_transaction_group(party, txns)
+      end)
 
-    [group_structs, ungrouped_flat, other_entries]
+    # Flatten ungrouped transactions
+    ungrouped_cost_flat = Enum.flat_map(ungrouped_cost, fn {_party, txns} -> txns end)
+    ungrouped_income_flat = Enum.flat_map(ungrouped_income, fn {_party, txns} -> txns end)
+
+    [cost_group_structs, income_group_structs, ungrouped_cost_flat, ungrouped_income_flat, other_entries]
     |> Enum.concat()
     |> Invoicing.order_entries_for_display()
   end
@@ -624,18 +660,17 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     entries
   end
 
-  defp groupable_cost_transaction?(%Transaction{} = transaction) do
-    is_cost = Decimal.lt?(transaction.transaction_amount, 0)
+  defp groupable_transaction?(%Transaction{} = transaction) do
     not_skipped = transaction.skip_invoicing == false
 
     not_matched =
       transaction.cost_invoices_transactions == [] &&
         transaction.sales_invoices_transactions == []
 
-    is_cost && not_skipped && not_matched
+    not_skipped && not_matched
   end
 
-  defp groupable_cost_transaction?(_), do: false
+  defp groupable_transaction?(_), do: false
 
   defp build_transaction_group(party, transactions) do
     total =
