@@ -42,7 +42,7 @@ EOF
 """
 
 # Generate .opencode.port for AI tools
-opencode = "{% if branch == 'main' %}echo '4000'{% else %}echo '{{ branch | hash_port }}'{% endif %} > .opencode.port"
+opencode = "{% if branch == 'main' %}echo '4000'{% else %}echo '{{ branch | hash_port }}'{% endif %} > .server.port"
 
 # Start services (reads from .env.local)
 up = "mix dev.up"

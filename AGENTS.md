@@ -8,26 +8,30 @@ and other tasks related to company management, like payroll or client's billing.
 ## Development server
 
 When running, assume that the whole application - with all required services -
-is properly running. We use `wt` (`worktrunk`) to maintain each worktree, with
-ports specific to that worktree.
+is properly running. We use `wt` (`worktrunk`) to maintain each worktree.
+Parallel worktrees are running on the same host, so we use different ports.
+They are stored in `.env.local` and `.server.port` files and are used by
+development scripts.
 
 **Accessing the dev server:**
-- Main branch: `localhost:4000` (default)
-- Other worktrees: check `.opencode.port` for the port number
-- Caddy proxy: `https://{branch}.firmowid.localhost`
+
+- Check `.server.port` for the port number - for example: `http://localhost:16423`
+- Use `piotr@firmowid.pl` / `kolejka123456` as credentials (look at
+  `seeds.exs` if in doubt)
 
 **Local setup:**
+
 - `mix dev.up` - starts services, reads config from `.env.local` (or uses defaults)
 - `mix dev.down` - stops services
 - Worktrunk generates `.env.local` with hashed ports for feature branches
 
 Tidewave MCP should be available, allowing you to inspect the running system.
 If not - flag that instantly. It's the best way to debug so if it's missing
-it's a huge issue.
+**it's a huge issue.**
 
 Do not start own servers or restart. Ask the user to do that if something is
-malfunctioning. You can by mistake kill other worktrees running on this
-machine.
+malfunctioning. You can by mistake kill other worktrees / your MCPs / your
+process running on this machine.
 
 ## Use git
 

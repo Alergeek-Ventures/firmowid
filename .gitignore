@@ -50,7 +50,7 @@ npm-debug.log
 
 .env
 .env.local
-.opencode.port
+.server.port
 tmp/
 priv/static/images/.DS_Store
 priv/static/.DS_Store
