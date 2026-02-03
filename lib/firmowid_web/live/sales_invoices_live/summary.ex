@@ -5,17 +5,13 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
   This page shows the invoice details and KSeF submission status, allowing users to:
   - View the created invoice
   - Monitor KSeF submission progress
-  - Retry failed KSeF submissions
   - Navigate to edit the invoice or create a new one
   """
   use FirmowidWeb, :live_view
 
   alias Firmowid.Ksef
-  alias Firmowid.Ksef.SubmissionInfo
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
-
-  require Logger
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -113,15 +109,18 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
           <p :if={@submission_info.error} class="text-sm max-w-lg">
             {@submission_info.error}
           </p>
-          <button
-            phx-click="retry_ksef"
+          <p class="text-sm text-grey-600 mt-2">
+            Edytuj fakturę, aby ponowić wysyłkę.
+          </p>
+          <.link
+            navigate={~p"/sprzedazowe/#{@invoice.id}"}
             class={[
               "flex items-center gap-2 px-4 py-2 rounded-md mt-4",
               "bg-turquoise text-white hover:bg-turquoise/90 transition-colors"
             ]}
           >
-            <.icon name="hero-arrow-path" class="w-4 h-4" /> Ponów wysyłkę
-          </button>
+            <Lucideicons.pencil class="w-4 h-4" /> Przejdź do faktury
+          </.link>
         </div>
       <% end %>
 
@@ -155,24 +154,6 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
       </div>
     </div>
     """
-  end
-
-  @impl true
-  def handle_event("retry_ksef", _params, socket) do
-    invoice = socket.assigns.invoice
-
-    case Ksef.submit_sales_invoice(invoice.id) do
-      {:ok, _job} ->
-        # Subscribe to updates and set status to submitting
-        Ksef.subscribe_ksef_status(socket.assigns.current_user.organization_id)
-
-        {:noreply, assign(socket, :submission_info, %SubmissionInfo{status: :submitting})}
-
-      {:error, reason} ->
-        Logger.error("Failed to retry KSeF submission: #{inspect(reason)}")
-
-        {:noreply, put_flash(socket, :error, "Nie udało się ponowić wysyłki do KSeF")}
-    end
   end
 
   @impl true

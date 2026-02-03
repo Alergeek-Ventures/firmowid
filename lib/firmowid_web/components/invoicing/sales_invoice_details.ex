@@ -17,6 +17,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
   attr :show_vat_for_sales_invoice, :boolean, default: true
   attr :current_user, :map, required: true
   attr :return_to, :string, default: nil
+  attr :ksef_connected?, :boolean, default: false
 
   @impl true
   def render(assigns) do
@@ -61,6 +62,43 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
             />
           <% else %>
             <div class="flex flex-row justify-end gap-2">
+              <button
+                :if={
+                  @ksef_connected? and SalesInvoice.confirmed?(@invoice) and
+                    @submission_info.status in [:not_submitted, :submitting]
+                }
+                id="send-to-ksef-button"
+                disabled={@submission_info.status == :submitting}
+                phx-hook="Tippy"
+                data-tippy-content={
+                  if @submission_info.status == :submitting,
+                    do: "Wysyłanie...",
+                    else: "Wyślij do KSeF"
+                }
+                data-tippy-delay="100"
+                class={[
+                  "transition-all transition-duration-300",
+                  "px-2 py-1 flex items-center justify-center rounded",
+                  @submission_info.status == :submitting && "bg-turquoise-500 text-white cursor-wait",
+                  @submission_info.status != :submitting &&
+                    "bg-turquoise-600 text-white hover:bg-turquoise-800"
+                ]}
+                phx-click="send_to_ksef"
+                phx-target={@myself}
+              >
+                <.icon
+                  name={
+                    if @submission_info.status == :submitting,
+                      do: "hero-arrow-path",
+                      else: "hero-paper-airplane"
+                  }
+                  class={
+                    if @submission_info.status == :submitting,
+                      do: "w-5 h-5 animate-spin",
+                      else: "w-5 h-5"
+                  }
+                />
+              </button>
               <.link
                 id="copy-invoice-link"
                 phx-hook="Tippy"
@@ -109,14 +147,26 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                 data-tippy-content="Historia KSeF"
                 data-tippy-delay="100"
                 class={[
+                  "relative",
                   "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
                   "px-2 py-1 flex items-center justify-center rounded",
-                  @submission_info.status == :failed && "text-red-500"
+                  @submission_info.status == :failed &&
+                    "hover:ring-redText text-redText hover:text-redBg hover:bg-redText"
                 ]}
                 phx-click="show_ksef_timeline"
                 phx-target={@myself}
               >
                 <.icon name="hero-clock" class="w-5 h-5" />
+                <span
+                  :if={@submission_info.status == :failed}
+                  class={[
+                    "absolute -top-2.5 -right-2.5 bg-redText text-redBg text-xs w-5 h-5",
+                    "rounded-full flex items-center justify-center font-bold
+                    border-redBg border-2 p-1"
+                  ]}
+                >
+                  !
+                </span>
               </button>
 
               <div :if={SalesInvoice.deletable?(@invoice)} class="absolute">
@@ -305,28 +355,31 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
     {:noreply, assign(socket, show_ksef_timeline: false)}
   end
 
-  def handle_event("retry_ksef", _params, socket) do
+  def handle_event("send_to_ksef", _params, socket) do
     invoice = socket.assigns.invoice
 
     case Ksef.submit_sales_invoice(invoice.id) do
       {:ok, _job} ->
-        # Subscribe to updates and refresh submission info
         Ksef.subscribe_ksef_status(socket.assigns.current_user.organization_id)
-        submission_info = %SubmissionInfo{status: :submitting}
 
-        socket =
-          socket
-          |> assign(:submission_info, submission_info)
-          |> put_flash(:info, "Ponowna wysylka do KSeF rozpoczeta")
-
-        {:noreply, socket}
+        {:noreply,
+         socket
+         |> assign(:submission_info, %SubmissionInfo{status: :submitting})
+         |> put_flash(:info, "Wysyłka do KSeF rozpoczęta")}
 
       {:error, reason} ->
-        Logger.error("Failed to retry KSeF submission: #{inspect(reason)}")
-
-        {:noreply, put_flash(socket, :error, "Nie udalo sie ponowic wysylki do KSeF")}
+        Logger.error("Failed to submit to KSeF: #{inspect(reason)}")
+        {:noreply, put_flash(socket, :error, ksef_error_message(reason))}
     end
   end
+
+  defp ksef_error_message(:not_authenticated), do: "Organizacja nie jest połączona z KSeF"
+  defp ksef_error_message(:invoice_is_draft), do: "Nie można wysłać szkicu faktury"
+  defp ksef_error_message(:invoice_already_locked), do: "Faktura została już wysłana do KSeF"
+
+  defp ksef_error_message({:invalid_for_ksef, _}), do: "Faktura zawiera błędy uniemożliwiające wysyłkę do KSeF"
+
+  defp ksef_error_message(_), do: "Nie udało się wysłać faktury do KSeF"
 
   # Show timeline button if invoice was ever submitted to KSeF (has session reference or ksef_number)
   defp show_timeline_button?(%SubmissionInfo{status: :not_submitted}), do: false

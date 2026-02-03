@@ -4,6 +4,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
 
   alias Firmowid.Analytics
   alias Firmowid.Invoicing
+  alias Firmowid.Ksef
   alias Firmowid.SalesInvoices
 
   @impl true
@@ -17,6 +18,9 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
 
     sales_invoice = SalesInvoices.get_sales_invoice_with_logo_url(id)
 
+    # Subscribe to KSeF status updates for live feedback
+    Ksef.subscribe_ksef_status(current_user.organization_id)
+
     socket =
       socket
       |> assign(:invoice, sales_invoice)
@@ -25,6 +29,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
       |> assign(:preview_type, :html)
       |> assign(:no_padding, true)
       |> assign(:return_to, params["return_to"])
+      |> assign(:ksef_connected?, Ksef.get_credential() != nil)
 
     {:ok, socket}
   end
@@ -42,6 +47,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
       potential_transactions={@potential_transactions}
       current_user={@current_user}
       return_to={@return_to}
+      ksef_connected?={@ksef_connected?}
     />
     """
   end
@@ -107,6 +113,28 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
   end
 
   @impl true
+  def handle_info({:ksef_invoice_status, %{invoice_id: invoice_id, status: status}}, socket) do
+    # Handle KSeF submission status updates
+    if socket.assigns.invoice.id == invoice_id do
+      invoice = refresh_invoice(invoice_id)
+
+      # Update component with new invoice data
+      send_update(FirmowidWeb.Components.Invoicing.SalesInvoiceDetails,
+        id: "invoice-show",
+        invoice: invoice
+      )
+
+      socket =
+        socket
+        |> assign(:invoice, invoice)
+        |> ksef_status_flash(status)
+
+      {:noreply, socket}
+    else
+      {:noreply, socket}
+    end
+  end
+
   def handle_info(event, socket) do
     # Forward events to the assistant component
     send_update(FirmowidWeb.SalesInvoicesLive.Assistant,
@@ -116,4 +144,10 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
 
     {:noreply, socket}
   end
+
+  defp ksef_status_flash(socket, :submitted), do: put_flash(socket, :info, "Faktura została wysłana do KSeF")
+
+  defp ksef_status_flash(socket, :failed), do: put_flash(socket, :error, "Wysyłka do KSeF nie powiodła się")
+
+  defp ksef_status_flash(socket, _status), do: socket
 end
