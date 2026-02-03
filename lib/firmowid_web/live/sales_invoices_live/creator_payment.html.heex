@@ -173,17 +173,19 @@
           <Lucideicons.landmark class="size-10 text-grey-600 shrink-0 mr-4" />
 
           <div class="flex flex-col gap-2 text-sm">
+            <span :if={account.name} class="block text-grey-500">Nazwa</span>
             <span class="block text-grey-500">Bank</span>
             <span class="block text-grey-500">Numer</span>
           </div>
 
           <div class="flex flex-col gap-2 text-sm">
+            <span :if={account.name} class="block text-grey-700 truncate">{account.name}</span>
             <span class="block text-grey-700 truncate">{account.institution_name}</span>
             <span class="block text-grey-700">{account.iban}</span>
           </div>
 
           <p
-            :if={account.is_default}
+            :if={account.is_default and account.currency == @invoice.currency}
             class="py-1 px-3 rounded-full text-sm/snug text-green-700
         bg-green-200 whitespace-nowrap mx-4"
           >
