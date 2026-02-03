@@ -542,6 +542,10 @@ defmodule Firmowid.Invoicing do
   defp draft?(%SalesInvoice{} = invoice), do: SalesInvoice.draft?(invoice)
   defp draft?(_), do: false
 
+  # Extracts invoice number for sorting - only SalesInvoice has invoice numbers
+  defp get_invoice_number(%SalesInvoice{invoice_number: num}), do: num
+  defp get_invoice_number(_), do: nil
+
   def order_entries_for_display(invoicing_entries) do
     Enum.sort(invoicing_entries, fn a, b ->
       cond do
@@ -556,6 +560,10 @@ defmodule Firmowid.Invoicing do
         get_date(a) != get_date(b) ->
           # newer first
           Date.after?(get_date(a), get_date(b))
+
+        # Invoice number descending (only affects SalesInvoice)
+        (inv_a = get_invoice_number(a)) != (inv_b = get_invoice_number(b)) ->
+          inv_a >= inv_b
 
         true ->
           a.id < b.id
