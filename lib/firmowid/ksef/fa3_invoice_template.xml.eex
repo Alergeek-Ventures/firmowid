@@ -32,6 +32,16 @@
 						<KodKraju><%= @invoice.buyer_country %></KodKraju>
 					<% end %>
 					<NrID><%= @invoice.buyer_id %></NrID>
+				<% :optional_id -> %>
+					<%!-- US: tax ID is optional - use NrID if provided, BrakID otherwise --%>
+					<%= if @invoice.buyer_id && @invoice.buyer_id != "" do %>
+						<%= if @invoice.buyer_country do %>
+							<KodKraju><%= @invoice.buyer_country %></KodKraju>
+						<% end %>
+						<NrID><%= @invoice.buyer_id %></NrID>
+					<% else %>
+						<BrakID>1</BrakID>
+					<% end %>
 				<% :no_id -> %>
 					<BrakID>1</BrakID>
 			<% end %>

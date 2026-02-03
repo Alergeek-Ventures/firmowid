@@ -151,20 +151,9 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     sale_date
   end
 
-  @spec buyer_id_type(map() | Ecto.Changeset.t()) :: :nip | :eu_vat | :other_id | :no_id
+  @spec buyer_id_type(map() | Ecto.Changeset.t()) :: :nip | :eu_vat | :other_id | :optional_id | :no_id
   def buyer_id_type(%{buyer_type: buyer_type, buyer_pesel: buyer_pesel, buyer_country: buyer_country}) do
-    cond do
-      # Individual with PESEL - no tax ID required
-      not is_nil(buyer_pesel) and buyer_pesel != "" -> :no_id
-      # Polish individual without PESEL - still no tax ID required (KSeF allows anonymous B2C)
-      buyer_type == :individual and buyer_country == "PL" -> :no_id
-      # Polish company - requires NIP
-      buyer_country == "PL" -> :nip
-      # EU company/individual - requires VAT-EU
-      CountryCodes.eu_country?(buyer_country) -> :eu_vat
-      # Non-EU - requires some form of ID
-      true -> :other_id
-    end
+    CountryCodes.tax_id_type(buyer_country, buyer_pesel, buyer_type)
   end
 
   # Fallback for maps without buyer_type (backwards compatibility)
@@ -365,6 +354,10 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       :nip ->
         validate_format(changeset, :buyer_id, ~r/^(\d{10})?$/, message: "musi być 10-cyfrowym numerem NIP")
 
+      :optional_id ->
+        # US: tax ID is optional, validate length only if provided
+        validate_length(changeset, :buyer_id, max: 50, message: "musi mieć maksymalnie 50 znaków")
+
       _ ->
         validate_length(changeset, :buyer_id, max: 50, message: "musi mieć maksymalnie 50 znaków")
     end
@@ -373,10 +366,15 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   # Validates that buyer_id is present when required for KSeF submission.
   # This is used in step1_changeset to catch missing IDs early in the Creator flow.
   # Individuals with PESEL (:no_id) don't need a tax ID.
+  # US buyers (:optional_id) have optional tax ID (KSeF supports BrakID for them).
   defp validate_buyer_id_required_for_ksef(changeset) do
     case buyer_id_type(changeset) do
       :no_id ->
         # Individual with PESEL - no tax ID required
+        changeset
+
+      :optional_id ->
+        # US: tax ID is optional - KSeF supports BrakID for non-EU buyers
         changeset
 
       _other ->
@@ -464,6 +462,10 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     case buyer_id_type(changeset) do
       :no_id ->
         # Individual with PESEL - no tax ID required
+        changeset
+
+      :optional_id ->
+        # US: tax ID is optional - KSeF supports BrakID for non-EU buyers
         changeset
 
       :nip ->

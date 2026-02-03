@@ -1100,6 +1100,10 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
                 VAT-EU <span class="text-grey-700">{@invoice.buyer_id}</span>
               <% :other_id -> %>
                 ID <span class="text-grey-700">{@invoice.buyer_id}</span>
+              <% :optional_id -> %>
+                <%= if @invoice.buyer_id && @invoice.buyer_id != "" do %>
+                  ID <span class="text-grey-700">{@invoice.buyer_id}</span>
+                <% end %>
               <% :no_id -> %>
                 PESEL <span class="text-grey-700">{@invoice.buyer_pesel}</span>
             <% end %>

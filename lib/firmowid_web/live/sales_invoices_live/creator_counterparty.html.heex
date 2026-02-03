@@ -341,11 +341,33 @@
       <div class="space-y-4">
         <p class="text-sm font-medium text-grey-700">Dane podstawowe</p>
 
+        <% # Dynamic label/placeholder based on country
+        buyer_country = to_string(@counterparty_form[:buyer_country].value)
+
+        {id_placeholder, id_required?} =
+          case buyer_country do
+            "PL" ->
+              {"NIP klienta", true}
+
+            "US" ->
+              {"Tax ID (opcjonalnie)", false}
+
+            country when country != "" ->
+              if SalesInvoices.CountryCodes.eu_country?(country) do
+                {"VAT-EU", true}
+              else
+                {"Identyfikator podatkowy", true}
+              end
+
+            _ ->
+              {"NIP klienta", true}
+          end %>
         <.input
           :if={to_string(@counterparty_form[:buyer_type].value) == "company"}
           field={@counterparty_form[:buyer_id]}
           type="text"
-          placeholder="NIP klienta"
+          placeholder={id_placeholder}
+          required={id_required?}
           new={true}
         />
 

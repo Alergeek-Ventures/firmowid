@@ -80,6 +80,47 @@ defmodule Firmowid.SalesInvoices.CountryCodes do
   def region(_), do: :invalid
 
   @doc """
+  Determines the tax ID type based on country and entity characteristics.
+
+  This is the single source of truth for determining what kind of tax identifier
+  is expected for a given country/entity combination. Used by both `Counterparty`
+  and `SalesInvoice` modules.
+
+  ## Parameters
+
+    * `country` - ISO country code (e.g., "PL", "US", "DE")
+    * `pesel` - PESEL number for Polish individuals (optional)
+    * `entity_type` - `:individual` or `:company` (optional, defaults to nil)
+
+  ## Returns
+
+    * `:no_id` - No tax ID required (individuals with PESEL, or Polish individuals)
+    * `:nip` - Polish NIP required (10-digit tax ID)
+    * `:eu_vat` - EU VAT number required
+    * `:optional_id` - Tax ID is optional (e.g., US companies)
+    * `:other_id` - Some form of tax ID required (other non-EU countries)
+
+  """
+  @spec tax_id_type(String.t() | nil, String.t() | nil, atom() | nil) ::
+          :nip | :eu_vat | :other_id | :optional_id | :no_id
+  def tax_id_type(country, pesel, entity_type \\ nil) do
+    cond do
+      # Individual with PESEL - no tax ID required
+      not is_nil(pesel) and pesel != "" -> :no_id
+      # Polish individual without PESEL - still no tax ID required (KSeF allows anonymous B2C)
+      entity_type == :individual and country == "PL" -> :no_id
+      # Polish company - requires NIP
+      country == "PL" -> :nip
+      # EU company/individual - requires VAT-EU
+      eu_country?(country) -> :eu_vat
+      # US - tax ID is optional (no universal business identifier exists)
+      country == "US" -> :optional_id
+      # Other non-EU - requires some form of ID
+      true -> :other_id
+    end
+  end
+
+  @doc """
   Returns a list of country options for select inputs.
 
   Each option is a tuple of `{display_name, code}` where:

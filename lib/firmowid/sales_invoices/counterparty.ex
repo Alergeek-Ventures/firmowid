@@ -87,14 +87,9 @@ defmodule Firmowid.SalesInvoices.Counterparty do
     end)
   end
 
-  @spec tax_id_type(map() | Ecto.Changeset.t()) :: :nip | :eu_vat | :other_id | :no_id
+  @spec tax_id_type(map() | Ecto.Changeset.t()) :: :nip | :eu_vat | :other_id | :optional_id | :no_id
   def tax_id_type(%{pesel: pesel, country: country}) do
-    cond do
-      not is_nil(pesel) and pesel != "" -> :no_id
-      country == "PL" -> :nip
-      CountryCodes.eu_country?(country) -> :eu_vat
-      true -> :other_id
-    end
+    CountryCodes.tax_id_type(country, pesel)
   end
 
   def tax_id_type(%Ecto.Changeset{} = changeset) do
@@ -108,6 +103,10 @@ defmodule Firmowid.SalesInvoices.Counterparty do
     case tax_id_type(changeset) do
       :nip ->
         validate_format(changeset, :tax_id, ~r/^(\d{10})?$/, message: "musi być 10-cyfrowym numerem NIP")
+
+      :optional_id ->
+        # US: tax ID is optional, validate length only if provided
+        validate_length(changeset, :tax_id, max: 50, message: "musi mieć maksymalnie 50 znaków")
 
       _ ->
         validate_length(changeset, :tax_id, max: 50, message: "musi mieć maksymalnie 50 znaków")
