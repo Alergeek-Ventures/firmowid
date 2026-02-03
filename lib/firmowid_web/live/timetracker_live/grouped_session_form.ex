@@ -43,7 +43,9 @@ defmodule FirmowidWeb.TimetrackerLive.GroupedSessionForm do
       title: parent_session.title,
       project_id: parent_session.project_id,
       start_end_times:
-        Enum.map(sessions, fn session ->
+        sessions
+        |> Enum.sort_by(& &1.start_datetime)
+        |> Enum.map(fn session ->
           %{
             id: session.id,
             date: DateTime.to_date(session.start_datetime),
