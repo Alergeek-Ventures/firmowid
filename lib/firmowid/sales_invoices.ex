@@ -653,11 +653,23 @@ defmodule Firmowid.SalesInvoices do
     |> Repo.preload(:transactions)
   end
 
+  @doc """
+  Lists recent invoices from the previous two full months.
+
+  For example, if today is 2026-02-03, this returns all confirmed invoices
+  with `issue_date` in January 2026 or December 2025.
+
+  Results are sorted by `issue_date` descending, then `invoice_number` descending.
+  """
   def list_recent_invoices do
+    today = Date.utc_today()
+    range_end = %{today | day: 1}
+    range_start = Date.shift(range_end, month: -2)
+
     SalesInvoice
     |> where([s], not is_nil(s.invoice_number))
-    |> order_by([s], desc: s.issue_date)
-    |> limit(5)
+    |> where([s], s.issue_date >= ^range_start and s.issue_date < ^range_end)
+    |> order_by([s], desc: s.issue_date, desc: s.invoice_number)
     |> list_sales_invoices()
   end
 
