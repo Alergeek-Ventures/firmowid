@@ -6,6 +6,8 @@ defmodule Firmowid.Timetracker.UserSalary do
 
   alias Firmowid.Repo
 
+  @type t :: %__MODULE__{}
+
   schema "user_salaries" do
     field :hourly_rate, :decimal
     field :deleted_at, :date

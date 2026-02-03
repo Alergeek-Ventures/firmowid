@@ -12,6 +12,7 @@ defmodule Firmowid.SalesInvoices.Counterparty do
 
   alias Firmowid.SalesInvoices.CountryCodes
   alias Firmowid.SalesInvoices.SalesInvoice
+  alias Firmowid.Timetracker.Project
 
   @type t :: %__MODULE__{}
 
@@ -40,6 +41,7 @@ defmodule Firmowid.SalesInvoices.Counterparty do
 
     belongs_to :organization, Firmowid.Accounts.Organization
     has_many :sales_invoices, SalesInvoice
+    has_many :projects, Project
 
     timestamps()
   end

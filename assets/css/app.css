@@ -68,6 +68,17 @@
   --color-green-800: #2D432B;
   --color-green-900: #142113;
 
+  /* Red scale */
+  --color-red-100: #FBF4F4;
+  --color-red-200: #E6CECE;
+  --color-red-300: #E5BDBD;
+  --color-red-400: #D69F9F;
+  --color-red-500: #C96E6E;
+  --color-red-600: #BB4A4A;
+  --color-red-700: #A22A2A;
+  --color-red-800: #891515;
+  --color-red-900: #610404;
+
   /* Orange scale */
   --color-orange-100: #F0EAE6;
   --color-orange-200: #E6D7CE;

@@ -635,13 +635,15 @@ defmodule FirmowidWeb.Project.Index do
   end
 
   defp assign_projects(socket) do
+    date = socket.assigns[:selected_date] || Date.utc_today()
+
     projects =
       case socket.assigns.live_action do
         :archive ->
-          Timetracker.list_archived_projects()
+          Timetracker.list_archived_projects(date)
 
         _ ->
-          Timetracker.list_active_projects()
+          Timetracker.list_active_projects(date)
       end
 
     assign(socket, projects: projects)

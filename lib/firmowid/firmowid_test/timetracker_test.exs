@@ -6,6 +6,7 @@ defmodule Firmowid.TimetrackerTest do
 
   alias Firmowid.Timetracker
   alias Firmowid.Timetracker.Session
+  alias Firmowid.Timetracker.UserSalary
 
   test "lists projects with users" do
     user = user_fixture()
@@ -35,6 +36,207 @@ defmodule Firmowid.TimetrackerTest do
 
     assert project_updated.name == "test project"
     assert length(project_updated.users) == 1
+  end
+
+  describe "all-time project totals" do
+    defp insert_salary!(user_id, organization_id, hourly_rate, updated_at, deleted_at) do
+      Repo.insert!(%UserSalary{
+        user_id: user_id,
+        organization_id: organization_id,
+        hourly_rate: Decimal.new(hourly_rate),
+        deleted_at: deleted_at,
+        inserted_at: updated_at,
+        updated_at: updated_at
+      })
+    end
+
+    test "get_project_total_time_worked_all_time/1 sums durations across all months" do
+      user = user_fixture()
+      org_id = user.organization_id
+
+      project = project_fixture(%{organization_id: org_id})
+      user_project_fixture(user.id, project.id)
+
+      session_fixture(%{
+        user_id: user.id,
+        project_id: project.id,
+        start_datetime: ~U[2025-01-10 10:00:00Z],
+        end_datetime: ~U[2025-01-10 11:00:00Z]
+      })
+
+      session_fixture(%{
+        user_id: user.id,
+        project_id: project.id,
+        start_datetime: ~U[2025-02-05 10:00:00Z],
+        end_datetime: ~U[2025-02-05 12:00:00Z]
+      })
+
+      assert Timetracker.get_project_total_time_worked_all_time(project.id) == 3 * 60 * 60
+    end
+
+    test "get_project_total_cost_all_time/1 sums month-by-month cost using month-end hourly rate (salary changes)" do
+      user = user_fixture()
+      org_id = user.organization_id
+
+      project = project_fixture(%{organization_id: org_id})
+      user_project_fixture(user.id, project.id)
+
+      insert_salary!(user.id, org_id, "50.00", ~U[2025-01-01 00:00:00Z], ~D[2025-02-15])
+      insert_salary!(user.id, org_id, "100.00", ~U[2025-02-16 00:00:00Z], nil)
+
+      # January: 1.5h -> ceil to 2h, rate 50
+      session_fixture(%{
+        user_id: user.id,
+        project_id: project.id,
+        start_datetime: ~U[2025-01-20 10:00:00Z],
+        end_datetime: ~U[2025-01-20 11:30:00Z]
+      })
+
+      # February: 1h, rate 100
+      session_fixture(%{
+        user_id: user.id,
+        project_id: project.id,
+        start_datetime: ~U[2025-02-20 10:00:00Z],
+        end_datetime: ~U[2025-02-20 11:00:00Z]
+      })
+
+      assert Decimal.equal?(Timetracker.get_project_total_cost_all_time(project.id), Decimal.new("200"))
+    end
+
+    test "get_project_users_with_cost_all_time/1 aggregates per-user time and monthly-rounded cost (salary changes + missing salary)" do
+      user1 = user_fixture()
+      org_id = user1.organization_id
+      user2 = user_in_org_fixture(org_id)
+
+      project = project_fixture(%{organization_id: org_id})
+      user_project_fixture(user1.id, project.id)
+      user_project_fixture(user2.id, project.id)
+
+      insert_salary!(user1.id, org_id, "50.00", ~U[2025-01-01 00:00:00Z], ~D[2025-02-15])
+      insert_salary!(user1.id, org_id, "100.00", ~U[2025-02-16 00:00:00Z], nil)
+
+      session_fixture(%{
+        user_id: user1.id,
+        project_id: project.id,
+        start_datetime: ~U[2025-01-20 10:00:00Z],
+        end_datetime: ~U[2025-01-20 11:30:00Z]
+      })
+
+      session_fixture(%{
+        user_id: user1.id,
+        project_id: project.id,
+        start_datetime: ~U[2025-02-20 10:00:00Z],
+        end_datetime: ~U[2025-02-20 11:00:00Z]
+      })
+
+      session_fixture(%{
+        user_id: user2.id,
+        project_id: project.id,
+        start_datetime: ~U[2025-01-10 10:00:00Z],
+        end_datetime: ~U[2025-01-10 12:00:00Z]
+      })
+
+      users =
+        project.id
+        |> Timetracker.get_project_users_with_cost_all_time()
+        |> Map.new(fn u -> {u.id, u} end)
+
+      assert users[user1.id].time_worked == 5400 + 3600
+      assert Decimal.equal?(users[user1.id].cost, Decimal.new("200"))
+      assert users[user1.id].hourly_rate == nil
+      assert users[user1.id].expanded == false
+
+      assert users[user2.id].time_worked == 7200
+      assert users[user2.id].cost == nil
+      assert users[user2.id].expanded == false
+    end
+
+    test "all-time totals handle multiple employees with salary changes" do
+      user1 = user_fixture()
+      org_id = user1.organization_id
+      user2 = user_in_org_fixture(org_id)
+
+      project = project_fixture(%{organization_id: org_id})
+      user_project_fixture(user1.id, project.id)
+      user_project_fixture(user2.id, project.id)
+
+      insert_salary!(user1.id, org_id, "50.00", ~U[2025-01-01 00:00:00Z], ~D[2025-02-15])
+      insert_salary!(user1.id, org_id, "100.00", ~U[2025-02-16 00:00:00Z], nil)
+
+      insert_salary!(user2.id, org_id, "80.00", ~U[2025-01-01 00:00:00Z], ~D[2025-02-15])
+      insert_salary!(user2.id, org_id, "40.00", ~U[2025-02-16 00:00:00Z], nil)
+
+      # January month-end rates (2025-01-31):
+      # - user1: 50 PLN/h
+      # - user2: 80 PLN/h
+      #
+      # February month-end rates (2025-02-28):
+      # - user1: 100 PLN/h
+      # - user2: 40 PLN/h
+
+      # Session durations and their monthly cost contribution.
+      # Note: cost rounds per-user time in a month up to full hours.
+
+      # January
+      u1_jan_seconds = 30 * 60
+      # user1: 0.5h -> ceil(0.5)=1h @ 50 => 50
+      u2_jan_seconds = 72 * 60
+      # user2: 1.2h -> ceil(1.2)=2h @ 80 => 160
+
+      session_fixture(%{
+        user_id: user1.id,
+        project_id: project.id,
+        start_datetime: ~U[2025-01-10 10:00:00Z],
+        end_datetime: ~U[2025-01-10 10:30:00Z]
+      })
+
+      session_fixture(%{
+        user_id: user2.id,
+        project_id: project.id,
+        start_datetime: ~U[2025-01-10 11:00:00Z],
+        end_datetime: ~U[2025-01-10 12:12:00Z]
+      })
+
+      # February
+      u1_feb_seconds = (2 * 60 + 6) * 60
+      # user1: 2.1h -> ceil(2.1)=3h @ 100 => 300
+      u2_feb_seconds = 6 * 60
+      # user2: 0.1h -> ceil(0.1)=1h @ 40 => 40
+
+      session_fixture(%{
+        user_id: user1.id,
+        project_id: project.id,
+        start_datetime: ~U[2025-02-10 10:00:00Z],
+        end_datetime: ~U[2025-02-10 12:06:00Z]
+      })
+
+      session_fixture(%{
+        user_id: user2.id,
+        project_id: project.id,
+        start_datetime: ~U[2025-02-10 13:00:00Z],
+        end_datetime: ~U[2025-02-10 13:06:00Z]
+      })
+
+      total_seconds = u1_jan_seconds + u2_jan_seconds + u1_feb_seconds + u2_feb_seconds
+      assert Timetracker.get_project_total_time_worked_all_time(project.id) == total_seconds
+
+      expected_total_cost = Decimal.new("550")
+      # January: 50 + 160 = 210
+      # February: 300 + 40 = 340
+      # Total: 550
+      assert Decimal.equal?(Timetracker.get_project_total_cost_all_time(project.id), expected_total_cost)
+
+      users =
+        project.id
+        |> Timetracker.get_project_users_with_cost_all_time()
+        |> Map.new(fn u -> {u.id, u} end)
+
+      assert users[user1.id].time_worked == u1_jan_seconds + u1_feb_seconds
+      assert Decimal.equal?(users[user1.id].cost, Decimal.new("350"))
+
+      assert users[user2.id].time_worked == u2_jan_seconds + u2_feb_seconds
+      assert Decimal.equal?(users[user2.id].cost, Decimal.new("200"))
+    end
   end
 
   test "get_total_time_worked" do

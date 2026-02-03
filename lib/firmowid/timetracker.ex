@@ -5,10 +5,12 @@ defmodule Firmowid.Timetracker do
   @behaviour Bodyguard.Policy
 
   import Ecto.Query, warn: false
+  import Paradex, only: [~>: 2]
 
   alias Ecto.Multi
   alias Firmowid.Accounts
   alias Firmowid.Blobs
+  alias Firmowid.Helpers.TimeConverter
   alias Firmowid.Repo
   alias Firmowid.Timetracker.HoursRecord
   alias Firmowid.Timetracker.Project
@@ -98,19 +100,149 @@ defmodule Firmowid.Timetracker do
   end
 
   def list_projects do
-    Repo.all(Project)
-  end
-
-  def list_active_projects do
     Project
-    |> where([p], is_nil(p.archived_at))
+    |> preload(:counterparty)
     |> Repo.all()
   end
 
-  def list_archived_projects do
-    Project
-    |> where([p], not is_nil(p.archived_at))
+  def list_active_projects(%Date{} = date), do: list_active_projects(date, "")
+  def list_active_projects(%Date{} = date, nil), do: list_active_projects(date, "")
+
+  def list_active_projects(%Date{} = date, "") do
+    session_duration_query =
+      from s in Session,
+        where:
+          fragment("extract(month from ?) = ?", s.start_datetime, ^date.month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^date.year),
+        group_by: s.project_id,
+        select: %{
+          project_id: s.project_id,
+          duration:
+            "extract(epoch from coalesce(?, now()) - ?)"
+            |> fragment(s.end_datetime, s.start_datetime)
+            |> sum()
+            |> coalesce(0)
+            |> type(:integer)
+        }
+
+    query =
+      from p in Project,
+        where: is_nil(p.archived_at),
+        left_join: sd in subquery(session_duration_query),
+        on: p.id == sd.project_id,
+        select: %{p | hours: sd.duration |> coalesce(0) |> type(:integer)},
+        order_by: p.name
+
+    query
     |> Repo.all()
+    |> Enum.map(fn project ->
+      hours = (project.hours / 3600) |> Float.ceil() |> trunc()
+      %{project | hours: hours}
+    end)
+  end
+
+  def list_active_projects(%Date{} = date, search) when is_binary(search) do
+    session_duration_query =
+      from s in Session,
+        where:
+          fragment("extract(month from ?) = ?", s.start_datetime, ^date.month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^date.year),
+        group_by: s.project_id,
+        select: %{
+          project_id: s.project_id,
+          duration:
+            "extract(epoch from coalesce(?, now()) - ?)"
+            |> fragment(s.end_datetime, s.start_datetime)
+            |> sum()
+            |> coalesce(0)
+            |> type(:integer)
+        }
+
+    query =
+      from p in Project,
+        where: is_nil(p.archived_at),
+        left_join: sd in subquery(session_duration_query),
+        on: p.id == sd.project_id,
+        where: p.name ~> ^search,
+        select: %{p | hours: sd.duration |> coalesce(0) |> type(:integer)},
+        order_by: fragment("paradedb.score(?) DESC", p.id)
+
+    query
+    |> Repo.all(prepare: :unnamed)
+    |> Enum.map(fn project ->
+      hours = (project.hours / 3600) |> Float.ceil() |> trunc()
+      %{project | hours: hours}
+    end)
+  end
+
+  def list_archived_projects(%Date{} = date), do: list_archived_projects(date, "")
+  def list_archived_projects(%Date{} = date, nil), do: list_archived_projects(date, "")
+
+  def list_archived_projects(%Date{} = date, "") do
+    session_duration_query =
+      from s in Session,
+        where:
+          fragment("extract(month from ?) = ?", s.start_datetime, ^date.month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^date.year),
+        group_by: s.project_id,
+        select: %{
+          project_id: s.project_id,
+          duration:
+            "extract(epoch from coalesce(?, now()) - ?)"
+            |> fragment(s.end_datetime, s.start_datetime)
+            |> sum()
+            |> coalesce(0)
+            |> type(:integer)
+        }
+
+    query =
+      from p in Project,
+        where: not is_nil(p.archived_at),
+        left_join: sd in subquery(session_duration_query),
+        on: p.id == sd.project_id,
+        select: %{p | hours: sd.duration |> coalesce(0) |> type(:integer)},
+        order_by: p.name
+
+    query
+    |> Repo.all()
+    |> Enum.map(fn project ->
+      hours = (project.hours / 3600) |> Float.ceil() |> trunc()
+      %{project | hours: hours}
+    end)
+  end
+
+  def list_archived_projects(%Date{} = date, search) when is_binary(search) do
+    session_duration_query =
+      from s in Session,
+        where:
+          fragment("extract(month from ?) = ?", s.start_datetime, ^date.month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^date.year),
+        group_by: s.project_id,
+        select: %{
+          project_id: s.project_id,
+          duration:
+            "extract(epoch from coalesce(?, now()) - ?)"
+            |> fragment(s.end_datetime, s.start_datetime)
+            |> sum()
+            |> coalesce(0)
+            |> type(:integer)
+        }
+
+    query =
+      from p in Project,
+        where: not is_nil(p.archived_at),
+        left_join: sd in subquery(session_duration_query),
+        on: p.id == sd.project_id,
+        where: p.name ~> ^search,
+        select: %{p | hours: sd.duration |> coalesce(0) |> type(:integer)},
+        order_by: fragment("paradedb.score(?) DESC", p.id)
+
+    query
+    |> Repo.all(prepare: :unnamed)
+    |> Enum.map(fn project ->
+      hours = (project.hours / 3600) |> Float.ceil() |> trunc()
+      %{project | hours: hours}
+    end)
   end
 
   def list_projects_with_users do
@@ -153,9 +285,9 @@ defmodule Firmowid.Timetracker do
     |> Repo.update()
   end
 
-  def get_project(id), do: Repo.get(Project, id)
+  def get_project(id), do: Project |> Repo.get(id) |> Repo.preload([:users, :counterparty])
 
-  def get_project!(id), do: Project |> Repo.get!(id) |> Repo.preload(:users)
+  def get_project!(id), do: Project |> Repo.get!(id) |> Repo.preload([:users, :counterparty])
 
   def get_month_hours_records(month, year) do
     query =
@@ -210,6 +342,215 @@ defmodule Firmowid.Timetracker do
 
     Repo.all(query)
   end
+
+  @doc """
+  Returns per-user time and cost (based on hourly rate active at month end)
+  for a project's selected month.
+  """
+  @spec get_project_month_users_with_cost(String.t(), Date.t()) :: list(map())
+  def get_project_month_users_with_cost(project_id, %Date{} = date) do
+    as_of_date = Date.end_of_month(date)
+
+    project_id
+    |> get_month_summary_by_project(date.month, date.year)
+    |> Enum.map(fn %{user: u, time_worked: t, removed_from_project: r, hours_record: hr} ->
+      salary = get_user_salary_as_of(u.id, as_of_date)
+      hourly_rate = salary && salary.hourly_rate
+      hours = TimeConverter.time_worked_in_seconds_to_hours(t)
+      cost = hourly_rate && Decimal.mult(hourly_rate, Decimal.new(hours))
+
+      u
+      |> Accounts.get_user_with_avatar()
+      |> Map.put(:time_worked, t)
+      |> Map.put(:removed_from_project, r)
+      |> Map.put(:expanded, false)
+      |> Map.put(:hours_record, hr)
+      |> Map.put(:salary, salary)
+      |> Map.put(:hourly_rate, hourly_rate)
+      |> Map.put(:cost, cost)
+    end)
+    |> Enum.sort_by(&{&1.removed_from_project, &1.name, &1.email})
+  end
+
+  @doc """
+  Returns total worked seconds for a project in a given month.
+  """
+  @spec get_project_total_time_worked(String.t(), Date.t()) :: non_neg_integer()
+  def get_project_total_time_worked(project_id, %Date{} = date) do
+    query =
+      from s in Session,
+        where:
+          s.project_id == ^project_id and
+            fragment("extract(month from ?) = ?", s.start_datetime, ^date.month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^date.year),
+        limit: 1,
+        select:
+          "extract(epoch from coalesce(?, now()) - ?)"
+          |> fragment(
+            s.end_datetime,
+            s.start_datetime
+          )
+          |> sum()
+          |> coalesce(0)
+          |> type(:integer)
+
+    Repo.one(query)
+  end
+
+  @doc """
+  Returns total worked seconds for a project across all time.
+  """
+  @spec get_project_total_time_worked_all_time(String.t()) :: non_neg_integer()
+  def get_project_total_time_worked_all_time(project_id) do
+    query =
+      from s in Session,
+        where: s.project_id == ^project_id,
+        limit: 1,
+        select:
+          "extract(epoch from coalesce(?, now()) - ?)"
+          |> fragment(
+            s.end_datetime,
+            s.start_datetime
+          )
+          |> sum()
+          |> coalesce(0)
+          |> type(:integer)
+
+    Repo.one(query)
+  end
+
+  @doc """
+  Returns total cost of work for a project in a given month.
+
+  Uses hourly rates active at month end and rounds worked time per-user up to full hours.
+  Returns nil when no active hourly rates exist for the month.
+  """
+  @spec get_project_total_cost(String.t(), Date.t()) :: Decimal.t() | nil
+  def get_project_total_cost(project_id, %Date{} = date) do
+    organization_id = Repo.get_org_id()
+
+    as_of_date = Date.end_of_month(date)
+    as_of_end_dt = DateTime.new!(as_of_date, ~T[23:59:59], "Etc/UTC")
+
+    latest_salary_as_of_query =
+      UserSalary
+      |> where([us], us.updated_at <= ^as_of_end_dt)
+      |> where([us], us.organization_id == ^organization_id)
+      |> where([us], is_nil(us.deleted_at) or us.deleted_at > ^as_of_date)
+      |> order_by([us], asc: us.user_id, desc: us.updated_at)
+      |> distinct([us], us.user_id)
+      |> select([us], %{user_id: us.user_id, hourly_rate: us.hourly_rate})
+
+    session_summary =
+      from s in Session,
+        where:
+          s.project_id == ^project_id and
+            s.organization_id == ^organization_id and
+            fragment("extract(month from ?) = ?", s.start_datetime, ^date.month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^date.year),
+        group_by: s.user_id,
+        select: %{
+          user_id: s.user_id,
+          time_worked:
+            "extract(epoch from coalesce(?, now()) - ?)"
+            |> fragment(s.end_datetime, s.start_datetime)
+            |> sum()
+            |> coalesce(0)
+            |> type(:integer)
+        }
+
+    query =
+      from ss in subquery(session_summary),
+        join: us in subquery(latest_salary_as_of_query),
+        on: us.user_id == ss.user_id,
+        select:
+          "? * ceil(? / 3600.0)"
+          |> fragment(us.hourly_rate, ss.time_worked)
+          |> sum()
+          |> type(:decimal)
+
+    # Repo enforces tenant scoping by injecting `where: organization_id == ^...`.
+    # For queries selecting from a subquery, that injected where cannot be applied.
+    # We scope the underlying tables explicitly and opt out of repo-level scoping here.
+    Repo.one(query, skip_organization_id: true)
+  end
+
+  @doc """
+  Returns total cost of work for a project across all time.
+
+  The total is calculated month-by-month using hourly rates active at each
+  month end and rounds worked time per-user up to full hours.
+
+  Returns nil when no active hourly rates exist for any month.
+  """
+  @spec get_project_total_cost_all_time(String.t()) :: Decimal.t() | nil
+  def get_project_total_cost_all_time(project_id) do
+    project_id
+    |> get_months_with_sessions_by_project()
+    |> Enum.map(&month_value_to_date/1)
+    |> Enum.reduce(nil, fn month_date, acc ->
+      month_cost = get_project_total_cost(project_id, month_date)
+
+      case {acc, month_cost} do
+        {nil, nil} -> nil
+        {nil, month_cost} -> month_cost
+        {acc, nil} -> acc
+        {acc, month_cost} -> Decimal.add(acc, month_cost)
+      end
+    end)
+  end
+
+  @doc """
+  Returns per-user time and cost across all time for a project.
+
+  Cost is calculated month-by-month using hourly rates active at each month end
+  and rounds worked time per-user up to full hours (same semantics as the
+  monthly totals).
+  """
+  @spec get_project_users_with_cost_all_time(String.t()) :: list(map())
+  def get_project_users_with_cost_all_time(project_id) do
+    project_id
+    |> get_months_with_sessions_by_project()
+    |> Enum.map(&month_value_to_date/1)
+    |> Enum.reduce(%{}, fn month_date, acc ->
+      project_id
+      |> get_project_month_users_with_cost(month_date)
+      |> Enum.reduce(acc, fn user, users_acc ->
+        Map.update(users_acc, user.id, all_time_user_from_month(user), fn existing ->
+          merge_all_time_user(existing, user)
+        end)
+      end)
+    end)
+    |> Map.values()
+    |> Enum.sort_by(&{&1.removed_from_project, &1.name, &1.email})
+  end
+
+  defp all_time_user_from_month(user) do
+    user
+    |> Map.put(:expanded, false)
+    |> Map.put(:hourly_rate, nil)
+    |> Map.put(:salary, nil)
+    |> Map.put(:hours_record, nil)
+  end
+
+  defp merge_all_time_user(existing, month_user) do
+    cost =
+      case {existing.cost, month_user.cost} do
+        {nil, nil} -> nil
+        {nil, month_cost} -> month_cost
+        {existing_cost, nil} -> existing_cost
+        {existing_cost, month_cost} -> Decimal.add(existing_cost, month_cost)
+      end
+
+    existing
+    |> Map.put(:time_worked, existing.time_worked + month_user.time_worked)
+    |> Map.put(:cost, cost)
+    |> Map.put(:expanded, false)
+  end
+
+  defp month_value_to_date(%Date{} = date), do: Date.beginning_of_month(date)
+  defp month_value_to_date(%NaiveDateTime{} = dt), do: dt |> NaiveDateTime.to_date() |> Date.beginning_of_month()
+  defp month_value_to_date(%DateTime{} = dt), do: dt |> DateTime.to_date() |> Date.beginning_of_month()
 
   def get_project_users_with_removed(project_id) do
     session_users_query =
@@ -724,6 +1065,25 @@ defmodule Firmowid.Timetracker do
   def get_latest_user_salary(user_id) do
     UserSalary
     |> where([us], us.user_id == ^user_id and is_nil(us.deleted_at))
+    |> Repo.one()
+  end
+
+  @doc """
+  Returns the user salary that was active on the given date.
+
+  The lookup uses the salary update timestamp to find the latest change
+  on or before the date and ensures the salary was not deleted yet.
+  """
+  @spec get_user_salary_as_of(String.t() | integer(), Date.t()) :: UserSalary.t() | nil
+  def get_user_salary_as_of(user_id, date) do
+    as_of_end_dt = DateTime.new!(date, ~T[23:59:59], "Etc/UTC")
+
+    UserSalary
+    |> where([us], us.user_id == ^user_id)
+    |> where([us], us.updated_at <= ^as_of_end_dt)
+    |> where([us], is_nil(us.deleted_at) or us.deleted_at > ^date)
+    |> order_by([us], desc: us.updated_at)
+    |> limit(1)
     |> Repo.one()
   end
 

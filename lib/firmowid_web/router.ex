@@ -125,7 +125,11 @@ defmodule FirmowidWeb.Router do
       live "/zarzadzanie/pracownicy/:id/profil", ManagementLive.Employee, :profile
       live "/zarzadzanie/pracownicy/:id/dokumenty", ManagementLive.Employee, :documents
       live "/zarzadzanie/pracownicy/:id/urlopy", ManagementLive.Employee, :leaves
-      live "/zarzadzanie/projekty", ManagementLive.Projects
+      live "/zarzadzanie/projekty", ManagementLive.Projects, :index
+      live "/zarzadzanie/projekty/archiwum", ManagementLive.Projects, :archive
+      live "/zarzadzanie/projekty/dodaj", ManagementLive.ProjectForm, :new
+      live "/zarzadzanie/projekty/:id", ManagementLive.Project, :show
+      live "/zarzadzanie/projekty/:id/edycja", ManagementLive.ProjectForm, :edit
       live "/zarzadzanie/kontrahenci", ManagementLive.Clients
 
       live "/ustawienia/bank", BankSyncLive.Index, :index

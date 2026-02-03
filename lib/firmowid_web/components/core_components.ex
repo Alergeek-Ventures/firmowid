@@ -165,11 +165,11 @@ defmodule FirmowidWeb.CoreComponents do
   end
 
   defp button_styles(:size_new, %{size: "medium"}) do
-    "text-base/tight font-medium h-11 rounded-lg py-2 px-3 gap-2.5 [&>svg]:size-6"
+    "text-base/tight font-medium h-11 rounded-lg py-2 px-2.75 gap-2.5 [&>svg]:size-6"
   end
 
   defp button_styles(:size_new, %{size: "small"}) do
-    "text-sm/tight font-medium rounded-md py-1.5 px-2 gap-1.5 [&>svg]:size-4 has-[svg:only-child]:py-[0.4375rem]"
+    "text-sm/tight font-medium rounded-md py-1.5 px-2 gap-1.5 [&>svg]:size-4"
   end
 
   defp button_styles(:size, %{size: "medium", variant: "solid"}) do
@@ -202,6 +202,10 @@ defmodule FirmowidWeb.CoreComponents do
 
   defp button_styles(:color_new, %{color: "turquoise"}) do
     "text-white bg-turquoise-700 hover:bg-turquoise-800 active:bg-turquoise-900 disabled:bg-turquoise-400"
+  end
+
+  defp button_styles(:color_new, %{color: "grey"}) do
+    "text-white bg-grey-700 hover:bg-grey-800 active:bg-grey-900 disabled:bg-grey-600 disabled:text-grey-300"
   end
 
   defp button_styles(:color_new, %{color: "light_grey"}) do
@@ -905,10 +909,14 @@ defmodule FirmowidWeb.CoreComponents do
 
   def date_picker(assigns) do
     ~H"""
-    <label class={classes(["flex w-44 justify-between gap-4 items-center h-full bg-greyButtonBg
-        border border-transparent group
-        hover:bg-darkGrey hover:text-white transition-all transform ease-out duration-200
-        rounded-lg py-2 px-3 max-md:hidden has-[:disabled]:opacity-40", @class])}>
+    <label class={
+      classes([
+        button_styles(%{color: "light_grey", size: "medium", new: true}),
+        "w-44 justify-start group max-md:hidden has-disabled:bg-grey-100 has-disabled:text-grey-600",
+        @class
+      ])
+    }>
+      <Lucideicons.calendar_1 />
       <input
         type="button"
         phx-hook="AirDatepicker"
@@ -920,16 +928,6 @@ defmodule FirmowidWeb.CoreComponents do
         disabled={@disabled}
         {@rest}
       />
-      <svg
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        class="max-md:hidden fill-darkGrey group-hover:fill-white size-[1.5em]"
-      >
-        <path d="M12 12H17V17H12V12ZM19 3H18V1H16V3H8V1H6V3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 5V7H5V5H19ZM5 19V9H19V19H5Z" />
-      </svg>
     </label>
     """
   end

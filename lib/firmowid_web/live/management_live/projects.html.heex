@@ -1,5 +1,200 @@
-<div class="h-[100vh] flex flex-col justify-between">
-  <div>projects page</div>
-  <div>does the navbar collapse on scroll?</div>
-  <div>bottom text</div>
+<div :if={not @zero_state?} class="flex flex-col max-w-7xl w-full mx-auto flex-1">
+  <div class="flex flex-row justify-between mb-8">
+    <form class="flex gap-4">
+      <.date_picker
+        id="project_date_picker"
+        selected_date={@selected_date}
+        active_months={@active_months}
+      />
+
+      <div
+        id="search-container"
+        data-expanded={to_string(@params["q"] != nil and @params["q"] != "")}
+        class="flex items-center justify-center bg-greyButtonBg rounded-lg min-w-10 transition-shadow data-[expanded=true]:focus-within:ring-2 group"
+      >
+        <.input
+          name="q"
+          value={@params["q"] || ""}
+          placeholder="Szukaj projektu"
+          phx-change={JS.push("search", loading: "#projects-list")}
+          phx-debounce="300"
+          input_class="py-0 px-1 bg-transparent border-none"
+          class="transition-[width,opacity,padding] duration-200 ease-in-out border-transparent focus:border-none focus:ring-0 focus:outline-hidden w-0 opacity-0 px-0 group-data-[expanded=true]:w-64 group-data-[expanded=true]:opacity-100 group-data-[expanded=true]:px-2 group-data-[expanded=true]:py-1"
+        />
+        <.button
+          type="button"
+          phx-click={
+            JS.toggle_attribute({"data-expanded", "true", "false"}, to: "#search-container")
+            |> JS.focus(to: "#search-container input")
+          }
+          color="light_grey"
+          new={true}
+        >
+          <Lucideicons.search />
+        </.button>
+      </div>
+    </form>
+
+    <.link
+      navigate={~p"/zarzadzanie/projekty/dodaj"}
+      class={button_styles(%{color: "light_grey", size: "medium", new: true})}
+    >
+      <Lucideicons.plus /> Dodaj projekt
+    </.link>
+  </div>
+  <div class="flex flex-row gap-4 mb-5">
+    <.link
+      :for={
+        {path, live_action, label} <- [
+          {~p"/zarzadzanie/projekty?#{@params}", :index, "Aktywne"},
+          {~p"/zarzadzanie/projekty/archiwum?#{@params}", :archive, "Zarchiwizowane"}
+        ]
+      }
+      patch={path}
+      class={
+        classes([
+          button_styles(%{variant: "ghost", size: "small", new: true}),
+          if(@live_action == live_action, do: "bg-grey-700 text-white hover:text-grey-900")
+        ])
+      }
+    >
+      {label}
+    </.link>
+  </div>
+
+  <%= cond do %>
+    <% Enum.empty?(@projects) -> %>
+      <div class="flex-1 flex flex-col gap-4 p-6 items-center justify-center border border-grey-200 rounded-lg">
+        <%= if @params["q"] do %>
+          <Lucideicons.file_x class="size-26 text-grey-300" />
+          <p class="text-sm/snug text-grey-700">
+            Nie znaleźliśmy szukanego przez Ciebie projektu.
+          </p>
+        <% else %>
+          <Lucideicons.presentation class="size-26 text-grey-300" />
+          <p class="text-sm/snug text-grey-700">
+            {case @live_action do
+              :index -> "Nie masz aktywnych projektów do wyświetlenia."
+              :archive -> "Nie masz zarchiwizowanych projektów do wyświetlenia."
+            end}
+          </p>
+        <% end %>
+      </div>
+    <% @live_action == :index -> %>
+      <div
+        id="projects-list"
+        class="grid grid-cols-[4fr_8.125rem_1fr_min-content] gap-x-6 gap-y-2 phx-change-loading:opacity-50"
+      >
+        <div class="grid grid-cols-subgrid col-span-full px-4 py-3 text-sm/snug">
+          <p>Projekt</p>
+          <p class="text-right">
+            <!--Rentowność-->
+          </p>
+          <p class="text-right">Godziny</p>
+        </div>
+
+        <div class="col-span-full grid grid-cols-subgrid gap-y-2">
+          <div
+            :for={project <- @projects}
+            :key={project.id}
+            class="grid grid-cols-subgrid col-span-full items-center bg-white p-4 rounded-sm"
+          >
+            <div class="space-y-1 truncate">
+              <p class="text-base/snug">{project.name}</p>
+              <p class="text-sm/snug text-grey-500">
+                {case Counterparty.display_label(project.counterparty) do
+                  "" -> @current_org.name
+                  label -> label
+                end}
+              </p>
+            </div>
+            <p class="text-right">
+              <!--Rentowność-->
+            </p>
+            <p class="text-right">{project.hours} h</p>
+            <.link
+              navigate={~p"/zarzadzanie/projekty/#{project.id}"}
+              class="text-grey-500 hover:text-grey-700"
+            >
+              <Lucideicons.chevron_right class="size-4" />
+            </.link>
+          </div>
+        </div>
+      </div>
+    <% @live_action == :archive -> %>
+      <div
+        id="projects-list"
+        class="grid grid-cols-[4fr_8.125rem_1fr_min-content_min-content] gap-x-10 gap-y-2 phx-change-loading:opacity-50"
+      >
+        <div class="grid grid-cols-subgrid col-span-full px-4 py-3 text-sm/snug -order-1">
+          <p>Projekt</p>
+          <p class="text-right">
+            <!--Rentowność-->
+          </p>
+          <p class="text-right">Suma godzin</p>
+          <p class="text-right text-nowrap">Data archiwizacji</p>
+        </div>
+
+        <div class="col-span-full grid grid-cols-subgrid gap-y-2">
+          <div
+            :for={project <- @projects}
+            :key={project.id}
+            class="grid grid-cols-subgrid col-span-full items-center bg-white p-4 rounded-sm"
+          >
+            <div class="space-y-1 truncate">
+              <p class="text-base/snug">{project.name}</p>
+              <p class="text-sm/snug text-grey-500">
+                {case Counterparty.display_label(project.counterparty) do
+                  "" -> @current_org.name
+                  label -> label
+                end}
+              </p>
+            </div>
+            <p class="text-right">
+              <!--Rentowność-->
+            </p>
+            <p class="text-right">{project.hours} h</p>
+            <p class="text-right text-black">
+              {project.archived_at |> Timex.to_datetime() |> Timex.format!("{D}.{0M}.{YYYY}")}
+            </p>
+            <div class="flex flex-row items-center gap-3">
+              <.button
+                type="button"
+                color="light_grey"
+                size="small"
+                new={true}
+                phx-click="unarchive_project"
+                phx-value-id={project.id}
+              >
+                Przywróć
+              </.button>
+              <.link
+                navigate={~p"/zarzadzanie/projekty/#{project.id}"}
+                class="text-grey-500 hover:text-grey-700"
+              >
+                <Lucideicons.chevron_right class="size-4" />
+              </.link>
+            </div>
+          </div>
+        </div>
+      </div>
+  <% end %>
+</div>
+
+<div
+  :if={@zero_state?}
+  class="flex flex-col max-w-7xl size-full flex-1 mx-auto items-center justify-center border border-grey-200 rounded-lg p-8"
+>
+  <Lucideicons.presentation class="text-grey-300 size-26" size={48} />
+
+  <p class="text-sm text-grey-700 leading-snug text-center text-balance mt-4">
+    Nie masz aktywnych projektów do wyświetlenia. Dodaj nowy klikając poniżej.
+  </p>
+
+  <.link
+    navigate={~p"/zarzadzanie/projekty/dodaj"}
+    class={button_styles(%{color: "light_grey", size: "medium", new: true, class: "mt-6"})}
+  >
+    <Lucideicons.plus /> Dodaj projekt
+  </.link>
 </div>

@@ -1,0 +1,242 @@
+<div class="max-w-7xl w-full mx-auto space-y-8">
+  <div class="flex flex-row items-start justify-between">
+    <div class="space-y-1">
+      <p class="text-sm text-grey-500 leading-snug">
+        {case Counterparty.display_label(@project.counterparty) do
+          "" -> @current_org.name
+          label -> label
+        end}
+      </p>
+      <p class="text-2xl leading-tight font-medium flex flex-row items-center gap-4">
+        {@project.name}
+        <span
+          :if={@project.archived_at}
+          class="rounded-full bg-grey-200 text-sm text-grey-700 leading-snug font-normal py-1 px-4 inline-flex items-center gap-2"
+        >
+          <Lucideicons.archive class="size-4" /> zarchiwizowany
+        </span>
+      </p>
+    </div>
+
+    <div :if={!@project.archived_at} class="flex flex-row gap-4">
+      <.button variant="outline" new={true} phx-click="archive_project">
+        Archiwizuj
+      </.button>
+      <.link
+        navigate={~p"/zarzadzanie/projekty/#{@project.id}/edycja"}
+        class={button_styles(%{variant: "outline", new: true, size: "medium"})}
+      >
+        <Lucideicons.square_pen /> Edytuj
+      </.link>
+
+      <.date_picker
+        id="project_date_picker"
+        selected_date={@selected_date}
+        active_months={@active_months}
+        class="ml-2"
+      />
+    </div>
+  </div>
+
+  <div
+    :if={@project.archived_at}
+    class="rounded-lg bg-grey-200 text-grey-700 p-4 flex flex-row gap-4 items-center shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]"
+  >
+    <Lucideicons.info class="size-4" />
+
+    <p class="text-sm leading-snug text-balance">
+      Projekt został zarchiwizowany {Firmowid.Cldr.Date.to_string!(@project.archived_at,
+        format: :long
+      )}. Dane są dostępne tylko do odczytu. Aby edytować projekt lub rejestrować czas, przywróć go do aktywnych.
+    </p>
+
+    <.button color="grey" size="small" new={true} phx-click="unarchive_project">
+      Przywróć projekt
+    </.button>
+  </div>
+
+  <div class="flex flex-col gap-12">
+    <div class="grid grid-cols-4 gap-4">
+      <div class="bg-white rounded-sm p-4">
+        <p class="text-grey-500 leading-snug mb-6">Przepracowane godziny</p>
+        <p class="text-lg text-black leading-tight font-bold mb-1">
+          {format_hours(@total_time_worked)}
+        </p>
+
+        <%= cond do %>
+          <% @project.archived_at -> %>
+            <p class="text-sm text-grey-500 leading-snug">
+              Stan końcowy
+            </p>
+          <% @cost_delta -> %>
+            <p class={[
+              "text-sm leading-snug",
+              case @hours_delta.direction do
+                :increase -> "text-green-600"
+                :decrease -> "text-red-700"
+                :same -> "text-grey-500"
+              end
+            ]}>
+              {comparison_text(@hours_delta, @previous_month_label)}
+            </p>
+          <% true -> %>
+        <% end %>
+      </div>
+
+      <div class="bg-white rounded-sm p-4">
+        <p class="text-grey-500 leading-snug mb-6">Koszty pracowników</p>
+        <p class="text-lg text-black leading-tight font-bold mb-1">
+          <%= if @total_cost do %>
+            {:PLN
+            |> Money.new(@total_cost)
+            |> Money.to_string!(fractional_digits: 0)}
+          <% else %>
+            —
+          <% end %>
+        </p>
+
+        <%= cond do %>
+          <% @project.archived_at -> %>
+            <p class="text-sm text-grey-500 leading-snug">
+              Stan końcowy
+            </p>
+          <% @cost_delta -> %>
+            <p class={[
+              "text-sm leading-snug",
+              case @cost_delta.direction do
+                :increase -> "text-red-700"
+                :decrease -> "text-green-600"
+                :same -> "text-grey-500"
+              end
+            ]}>
+              {comparison_text(@cost_delta, @previous_month_label)}
+            </p>
+          <% true -> %>
+        <% end %>
+      </div>
+    </div>
+    <div :if={not Enum.empty?(@project.users)} class="bg-white rounded-sm p-4 space-y-4">
+      <div class="flex flex-row items-center justify-between">
+        <p class="text-lg leading-tight">
+          Pracownicy
+        </p>
+
+        <.link
+          :if={!@project.archived_at}
+          class={button_styles(%{variant: "ghost", size: "small", new: true})}
+          download
+          href={
+            ~p"/czasosledz/projekty/#{@project.id}/csv?month=#{@selected_date.month}&year=#{@selected_date.year}"
+          }
+        >
+          <Lucideicons.cloud_download /> Pobierz raport
+        </.link>
+      </div>
+
+      <div class="grid grid-cols-[1fr_repeat(3,minmax(min-content,6rem))_min-content] gap-x-4 gap-y-2 items-center">
+        <div class="col-span-full grid grid-cols-subgrid text-sm text-grey-500 py-1 px-2">
+          <p>Imię i nazwisko</p>
+          <p class="text-right">Stawka</p>
+
+          <p class="text-right">Godziny</p>
+          <p class="text-right">Koszt</p>
+          <div></div>
+        </div>
+
+        <div class="col-span-full grid grid-cols-subgrid divide-y-2 divide-grey-100 gap-y-0">
+          <div
+            :for={user <- @users}
+            class="col-span-full grid grid-cols-subgrid items-center py-3 pl-2 pr-4 first:border-t-2 last:border-b-2 border-grey-100"
+          >
+            <div class="flex flex-row items-center gap-4">
+              <.avatar class="size-8 ring-1 ring-greyButtonBg/50">
+                <.avatar_image src={user.avatar_url} alt="Avatar" />
+                <.avatar_fallback class="bg-blueBg text-blueText">
+                  {String.slice(user.name || user.email || "", 0, 1) |> String.upcase()}
+                </.avatar_fallback>
+              </.avatar>
+              <p class="leading-snug">
+                {user.name || user.email}
+              </p>
+            </div>
+
+            <p class="text-right text-grey-500">
+              <%= if user.hourly_rate do %>
+                {:PLN
+                |> Money.new(user.hourly_rate)
+                |> Money.to_string!(fractional_digits: 0)}/godz.
+              <% else %>
+                —
+              <% end %>
+            </p>
+
+            <p class="text-right text-grey-900">
+              {format_hours(user.time_worked)}
+            </p>
+
+            <p class="text-right text-grey-900">
+              <%= if user.cost do %>
+                {:PLN
+                |> Money.new(user.cost)
+                |> Money.to_string!(fractional_digits: 0)}
+              <% else %>
+                —
+              <% end %>
+            </p>
+            <button
+              :if={!@project.archived_at}
+              phx-click="toggle-user"
+              phx-value-id={user.id}
+              disabled={user.time_worked == 0}
+              class="disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <%= if user.expanded do %>
+                <Lucideicons.chevron_up class="text-grey-900 size-4" />
+              <% else %>
+                <Lucideicons.chevron_down class="text-grey-900 size-4" />
+              <% end %>
+            </button>
+
+            <div
+              :if={user.expanded}
+              class="col-span-full grid grid-cols-subgrid gap-y-4 pt-4 pb-3"
+            >
+              <div
+                :for={session <- user.sessions_with_duration}
+                class="col-span-full grid grid-cols-subgrid text-grey-700 leading-snug pl-12"
+              >
+                <p>{session.title}</p>
+                <p class="text-right  col-start-3">
+                  {TimeFormatter.format_duration(session.duration)}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-span-full grid grid-cols-subgrid leading-snug p-2 items-center">
+          <p class="text-sm text-grey-500">
+            Suma
+          </p>
+
+          <div />
+
+          <p class="text-right font-bold">
+            {format_hours(@total_time_worked)}
+          </p>
+          <p class="text-right font-bold">
+            <%= if @total_cost do %>
+              {:PLN
+              |> Money.new(@total_cost)
+              |> Money.to_string!(fractional_digits: 0)}
+            <% else %>
+              —
+            <% end %>
+          </p>
+
+          <div />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
