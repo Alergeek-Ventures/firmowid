@@ -22,7 +22,7 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
     do_render(assigns)
   end
 
-  EEx.function_from_file(:defp, :do_render, "lib/firmowid/ksef/fa3_invoice_template.xml.eex", [:assigns])
+  EEx.function_from_file(:defp, :do_render, "lib/firmowid/ksef/fa3_invoice_template.xml.eex", [:assigns], trim: true)
 
   defp xml_escape(%SalesInvoice{} = invoice) do
     invoice
