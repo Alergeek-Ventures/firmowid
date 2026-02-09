@@ -156,11 +156,12 @@ defmodule Firmowid.SalesInvoices do
     |> Repo.all()
   end
 
-  def list_invoices_issued_in_date_range(from, to) do
+  def list_invoices_in_date_range(from, to) do
     SalesInvoice
     |> where(
       [d],
-      d.issue_date >= ^from and d.issue_date <= ^to
+      (d.issue_date >= ^from and d.issue_date <= ^to) or
+        (d.sale_date >= ^from and d.sale_date <= ^to)
     )
     |> order_by(desc: :issue_date)
     |> Repo.all()

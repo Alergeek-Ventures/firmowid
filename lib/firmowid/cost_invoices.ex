@@ -96,11 +96,12 @@ defmodule Firmowid.CostInvoices do
     |> Repo.preload(:transactions)
   end
 
-  def list_invoices_issued_in_date_range(from, to) do
+  def list_invoices_in_date_range(from, to) do
     CostInvoice
     |> where(
       [d],
-      d.issue_date >= ^from and d.issue_date <= ^to
+      (d.issue_date >= ^from and d.issue_date <= ^to) or
+        (d.sale_date >= ^from and d.sale_date <= ^to)
     )
     |> Repo.all()
     |> Repo.preload(:blob)

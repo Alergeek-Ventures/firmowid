@@ -18,7 +18,7 @@ defmodule FirmowidWeb.Components.Invoicing.DownloadModal do
       <button
         id="download-button"
         phx-click={show_modal("download-modal")}
-        data-tippy-content="Pobierz wszystkie faktury wystawione w tym miesiącu"
+        data-tippy-content="Pobierz wszystkie faktury wystawione lub z datą sprzedaży w tym miesiącu"
         phx-hook="Tippy"
         class="relative flex flex-row gap-4 items-center justify-center
             rounded-lg px-3 py-2 max-md:hidden bg-greyButtonBg
@@ -40,8 +40,9 @@ defmodule FirmowidWeb.Components.Invoicing.DownloadModal do
               <.icon name="hero-document-solid" class="w-4 h-4" />
               {@month |> Calendar.strftime("%Y-%m")}-dokumenty.zip
             </span>
-            znajdą się wszystkie dokumenty, których <span class="font-bold">data wystawienia</span>
-            to aktualny miesiąc.
+            znajdą się wszystkie dokumenty, których
+            <span class="font-bold">data wystawienia lub sprzedaży</span>
+            przypada na aktualny miesiąc.
           </p>
           <label class="flex flex-row gap-2 items-center">
             <.input

@@ -15,7 +15,7 @@ defmodule FirmowidWeb.FileController do
 
     cost_invoices =
       date_range_from
-      |> CostInvoices.list_invoices_issued_in_date_range(date_range_to)
+      |> CostInvoices.list_invoices_in_date_range(date_range_to)
       |> Enum.filter(fn invoice -> !skip_scans || String.contains?(invoice.file_url, ".pdf") end)
       |> Enum.map(fn document ->
         file_extension =
@@ -39,7 +39,7 @@ defmodule FirmowidWeb.FileController do
 
     sales_invoices =
       date_range_from
-      |> SalesInvoices.list_invoices_issued_in_date_range(date_range_to)
+      |> SalesInvoices.list_invoices_in_date_range(date_range_to)
       |> Enum.map(fn invoice ->
         file_name = clean_filename("#{invoice.invoice_number}_#{SalesInvoices.buyer_display_name(invoice)}")
 
