@@ -885,7 +885,10 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
   defp items_to_list(items) when is_map(items), do: Map.to_list(items)
   defp items_to_list(items) when is_list(items), do: Enum.with_index(items, fn item, idx -> {to_string(idx), item} end)
 
-  defp get_invoice_error_message(changeset) do
+  @doc """
+  Converts changeset errors to user-friendly error messages for invoice operations.
+  """
+  def get_invoice_error_message(changeset) do
     cond do
       # Organization validation errors (missing NIP, name, or address)
       Keyword.has_key?(changeset.errors, :nip) ->
@@ -940,9 +943,11 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
     end
   end
 
-  # Validates that organization has all required data for KSeF invoice submission.
-  # Returns :ok if valid, {:error, changeset} with validation errors otherwise.
-  defp validate_organization_for_invoicing(organization) do
+  @doc """
+  Validates that organization has all required data for KSeF invoice submission.
+  Returns :ok if valid, {:error, changeset} with validation errors otherwise.
+  """
+  def validate_organization_for_invoicing(organization) do
     errors =
       []
       |> maybe_add_error(is_nil(organization.nip) or organization.nip == "", :nip, "NIP firmy jest wymagany")
@@ -973,60 +978,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
   defp maybe_add_error(errors, false, _field, _message), do: errors
 
   def assign_items_form(socket, changeset) do
-    sales_invoice_items = Ecto.Changeset.get_assoc(changeset, :sales_invoice_items, :struct)
-
-    single_sales_invoice_item =
-      case sales_invoice_items do
-        [_single_item] -> true
-        _ -> false
-      end
-
-    changeset =
-      case sales_invoice_items do
-        [] ->
-          Ecto.Changeset.put_assoc(changeset, :sales_invoice_items, [%SalesInvoiceItem{}])
-
-        _ ->
-          changeset
-      end
-
-    # Compute VAT rate options based on buyer context
-    invoice = socket.assigns.invoice
-    is_reverse_charge = Ecto.Changeset.get_field(changeset, :is_reverse_charge) || false
-    {vat_options, vat_disabled?} = compute_vat_options(invoice, is_reverse_charge)
-
-    socket
-    |> assign(:items_form, to_form(changeset, action: :validate))
-    |> assign(:summary, invoice_summary(changeset))
-    |> assign(:single_item?, single_sales_invoice_item)
-    |> assign(:vat_options, vat_options)
-    |> assign(:vat_disabled?, vat_disabled?)
-  end
-
-  defp compute_vat_options(invoice, is_reverse_charge) do
-    if is_reverse_charge do
-      {VatRate.select_options_short(["oo"]), true}
-    else
-      buyer_id_type = SalesInvoice.buyer_id_type(invoice)
-
-      case VatRate.available_rates(invoice.buyer_country, buyer_id_type) do
-        {:select, rates, _default} -> {VatRate.select_options_short(rates), false}
-        {:fixed, rate} -> {VatRate.select_options_short([rate]), true}
-      end
-    end
-  end
-
-  def invoice_summary(%Ecto.Changeset{} = changeset) do
-    items = Ecto.Changeset.get_assoc(changeset, :sales_invoice_items, :struct)
-    currency = Ecto.Changeset.get_field(changeset, :currency)
-
-    invoice = %{sales_invoice_items: items, currency: currency}
-
-    %{
-      net_value: Money.new(currency, SalesInvoice.get_net_value(invoice)),
-      vat_value: Money.new(currency, SalesInvoice.get_vat_value(invoice)),
-      gross_value: Money.new(currency, SalesInvoice.get_gross_value(invoice))
-    }
+    assign(socket, :items_form, to_form(changeset, action: :validate))
   end
 
   def to_boolean(bool) when is_boolean(bool), do: bool
@@ -1037,20 +989,6 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
   def warning_suggestions({:invalid_format, suggestions}), do: suggestions
   def warning_suggestions({:duplicate, suggestions}), do: suggestions
   def warning_suggestions({:gap, expected}), do: [expected]
-
-  defp currency_options do
-    # Use only currencies supported by NBP (plus PLN as base currency)
-    nbp_currencies = Firmowid.Nbp.ApiClient.supported_currencies()
-    all_supported = ["PLN" | nbp_currencies]
-
-    popular = ["PLN", "EUR", "USD"]
-    rest = all_supported -- popular
-
-    [
-      {"Popularne", popular},
-      {"Wszystkie", Enum.sort(rest)}
-    ]
-  end
 
   # Find the selected bank account: first try matching IBAN, then default for currency
   defp find_selected_bank_account(bank_accounts, iban, currency) do
@@ -1077,7 +1015,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
   defp invoice_type_for_country(_), do: :foreign
 
   attr :invoice, SalesInvoice, default: nil
-  attr :step, :integer, required: true
+  attr :step, :any, required: true
   attr :title, :string, required: true
 
   def render_header(assigns) do
@@ -1087,7 +1025,17 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
     ~H"""
     <div class="flex flex-col gap-4">
       <div class="flex flex-row gap-4 text-sm/snug text-grey-500">
-        <h2>Kreator faktur | <span class="text-grey-700">Krok {@step}.</span></h2>
+        <h2>
+          Kreator faktur |
+          <span class="text-grey-700">
+            <%= case @step do %>
+              <% _step when is_integer(@step) -> %>
+                Krok {@step}.
+              <% _step when is_binary(@step) -> %>
+                {@step}
+            <% end %>
+          </span>
+        </h2>
         <%= if @buyer_name do %>
           <p class="ml-auto">
             Kontrahent <span class="text-grey-700">{@buyer_name}</span>

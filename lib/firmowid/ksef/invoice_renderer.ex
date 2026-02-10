@@ -2,6 +2,7 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
   @moduledoc false
   alias Firmowid.Ksef.VatRate
   alias Firmowid.Repo
+  alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.SalesInvoice
   alias Firmowid.SalesInvoices.SalesInvoiceItem
 
@@ -11,13 +12,33 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
   Renders the FA(3) XML template with the given sales invoice.
   """
   def render_fa3(%SalesInvoice{} = invoice) do
-    invoice =
+    {invoice, reference_invoice} =
       case invoice do
-        %{ksef_invoice_kind: :kor} -> Repo.preload(invoice, [:corrected_invoice, :sales_invoice_items])
-        invoice -> Repo.preload(invoice, :sales_invoice_items)
+        %{ksef_invoice_kind: :kor} ->
+          invoice =
+            invoice
+            |> Repo.preload([:sales_invoice_items, corrected_invoice: :sales_invoice_items])
+            |> validate_correction_buyer_tax_id!()
+            # for now we raise because edit view does not allow for changing seller data
+            # change in seller data should be intentional and not automatic like in creator
+            |> validate_correction_seller_data!()
+
+          reference_invoice = SalesInvoices.get_reference_invoice_for_correction(invoice)
+
+          {invoice, reference_invoice}
+
+        invoice ->
+          Repo.preload(invoice, :sales_invoice_items)
+          {invoice, nil}
       end
 
-    assigns = [invoice: xml_escape(invoice), vat_summary: calculate_vat_summary(invoice)]
+    escaped_reference = if reference_invoice, do: xml_escape(reference_invoice)
+
+    assigns = [
+      invoice: xml_escape(invoice),
+      reference_invoice: escaped_reference,
+      vat_summary: calculate_vat_summary(invoice, reference_invoice)
+    ]
 
     do_render(assigns)
   end
@@ -108,7 +129,39 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
   # If a future use case requires P_14_XW (e.g., B2C to EU consumer with Polish VAT),
   # add `vat_pln` to the summary map using `Firmowid.Currencies.normalize_amount_to_pln/3`
   # with the rate date from `SalesInvoice.get_currency_conversion_date/1`.
-  defp calculate_vat_summary(%SalesInvoice{sales_invoice_items: items}) do
+
+  # For correction invoices (KOR) with before/after method, calculate delta (after - before)
+  # Uses the reference invoice (previous correction or original) as the "before" state.
+  defp calculate_vat_summary(%SalesInvoice{ksef_invoice_kind: :kor, sales_invoice_items: after_items}, %SalesInvoice{
+         sales_invoice_items: before_items
+       }) do
+    before_summary = items_to_summary_map(before_items)
+    after_summary = items_to_summary_map(after_items)
+
+    # Merge all rate keys from both before and after
+    all_keys = MapSet.union(MapSet.new(Map.keys(before_summary)), MapSet.new(Map.keys(after_summary)))
+
+    all_keys
+    |> Enum.map(fn {rate, type} = key ->
+      before = Map.get(before_summary, key, %{net: Decimal.new(0), vat: Decimal.new(0)})
+      after_vals = Map.get(after_summary, key, %{net: Decimal.new(0), vat: Decimal.new(0)})
+
+      %{
+        rate: rate,
+        type: type,
+        net: Decimal.sub(after_vals.net, before.net),
+        vat: Decimal.sub(after_vals.vat, before.vat)
+      }
+    end)
+    |> Enum.reject(fn summary ->
+      # Skip rates where both net and vat are zero (no change)
+      Decimal.eq?(summary.net, 0) and Decimal.eq?(summary.vat, 0)
+    end)
+    |> Enum.sort_by(&VatRate.to_numeric(&1.rate), {:desc, Decimal})
+  end
+
+  # Regular invoice VAT summary
+  defp calculate_vat_summary(%SalesInvoice{sales_invoice_items: items}, _reference_invoice) do
     items
     |> Enum.group_by(fn item ->
       {item.vat_rate, VatRate.summary_type(item.vat_rate)}
@@ -125,6 +178,29 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
       }
     end)
     |> Enum.sort_by(&VatRate.to_numeric(&1.rate), {:desc, Decimal})
+  end
+
+  # Helper to build a summary map keyed by {rate, type}
+  defp items_to_summary_map(items) do
+    items
+    |> Enum.group_by(fn item ->
+      {item.vat_rate, VatRate.summary_type(item.vat_rate)}
+    end)
+    |> Map.new(fn {{rate, type} = key, group_items} ->
+      net = Enum.reduce(group_items, Decimal.new(0), &Decimal.add(&2, SalesInvoiceItem.get_net_value(&1)))
+      vat = Enum.reduce(group_items, Decimal.new(0), &Decimal.add(&2, SalesInvoiceItem.get_vat_value(&1)))
+      {key, %{rate: rate, type: type, net: net, vat: vat}}
+    end)
+  end
+
+  @doc """
+  Calculates the gross value delta for correction invoices (KOR).
+  Returns after_gross - before_gross, using the reference invoice as the "before" state.
+  """
+  def gross_value_delta(invoice, reference_invoice) do
+    after_gross = SalesInvoice.get_gross_value(invoice)
+    before_gross = SalesInvoice.get_gross_value(reference_invoice)
+    Decimal.sub(after_gross, before_gross)
   end
 
   def payment_method_code(:cash), do: "1"
@@ -165,4 +241,90 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
   end
 
   def buyer_name(_), do: nil
+
+  @doc """
+  Validates that buyer tax ID hasn't changed in correction invoice.
+  Raises if buyer_id differs between correction and corrected invoice.
+
+  Per KSeF FA(3) schema: buyer NIP changes require zeroing out the invoice,
+  not a simple correction.
+  """
+  def validate_correction_buyer_tax_id!(%{ksef_invoice_kind: :kor, corrected_invoice: corrected} = invoice) do
+    if invoice.buyer_id != corrected.buyer_id or
+         SalesInvoice.buyer_id_type(invoice) != SalesInvoice.buyer_id_type(corrected) do
+      raise "Buyer tax ID cannot change in correction invoice. " <>
+              "Original: #{inspect(corrected.buyer_id)}, New: #{inspect(invoice.buyer_id)}"
+    end
+
+    invoice
+  end
+
+  def validate_correction_buyer_tax_id!(invoice), do: invoice
+
+  def validate_correction_seller_data!(%{ksef_invoice_kind: :kor, corrected_invoice: corrected} = invoice) do
+    seller_data_changed? =
+      invoice.seller_nip != corrected.seller_nip or
+        invoice.seller_display_name != corrected.seller_display_name or
+        invoice.seller_name != corrected.seller_name or
+        invoice.seller_surname != corrected.seller_surname or
+        invoice.seller_address != corrected.seller_address
+
+    if seller_data_changed? do
+      raise "Seller data cannot change in correction invoice. " <>
+              "Original: #{corrected |> Map.take([:seller_display_name, :seller_name, :seller_surname, :seller_address]) |> inspect()}, " <>
+              "New: #{invoice |> Map.take([:seller_display_name, :seller_name, :seller_surname, :seller_address]) |> inspect()}"
+    end
+
+    invoice
+  end
+
+  def validate_correction_seller_data!(invoice), do: invoice
+
+  @doc """
+  Checks if buyer data changed between the current invoice and the reference invoice.
+  For correction invoices, the reference is the previous correction (or original if first correction).
+  """
+  def buyer_data_changed?(invoice, reference_invoice) do
+    invoice.buyer_type != reference_invoice.buyer_type or
+      invoice.buyer_full_name != reference_invoice.buyer_full_name or
+      invoice.buyer_given_name != reference_invoice.buyer_given_name or
+      invoice.buyer_surname != reference_invoice.buyer_surname or
+      invoice.buyer_display_name != reference_invoice.buyer_display_name or
+      invoice.buyer_address != reference_invoice.buyer_address or
+      invoice.buyer_country != reference_invoice.buyer_country
+  end
+
+  def buyer_data_changed?(_), do: false
+
+  @doc """
+  Checks if invoice items changed between current and reference invoice.
+  Returns true if item count differs or any item field differs.
+
+  Compares: name, quantity, unit, unit_price, vat_rate
+  Ignores: id (always differs between invoices), timestamps
+  """
+  def invoice_items_changed?(%{sales_invoice_items: current_items}, %{sales_invoice_items: reference_items}) do
+    # If counts differ, items definitely changed
+    if length(current_items) == length(reference_items) do
+      # Sort both by index and compare each item
+      current_sorted = Enum.sort_by(current_items, & &1.index)
+      reference_sorted = Enum.sort_by(reference_items, & &1.index)
+
+      current_sorted
+      |> Enum.zip(reference_sorted)
+      |> Enum.any?(fn {current, reference} -> item_changed?(current, reference) end)
+    else
+      true
+    end
+  end
+
+  def invoice_items_changed?(_, _), do: false
+
+  defp item_changed?(current, reference) do
+    current.name != reference.name or
+      not Decimal.eq?(current.quantity, reference.quantity) or
+      current.unit != reference.unit or
+      not Decimal.eq?(current.unit_price, reference.unit_price) or
+      current.vat_rate != reference.vat_rate
+  end
 end

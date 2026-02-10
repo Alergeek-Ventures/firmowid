@@ -121,7 +121,11 @@
 			<% end %>
 		<% end %>
 
-		<P_15><%= T.format_decimal(SalesInvoice.get_gross_value(@invoice)) %></P_15>
+		<%= if @invoice.ksef_invoice_kind == :kor do %>
+			<P_15><%= T.format_decimal(T.gross_value_delta(@invoice, @reference_invoice)) %></P_15>
+		<% else %>
+			<P_15><%= T.format_decimal(SalesInvoice.get_gross_value(@invoice)) %></P_15>
+		<% end %>
 		<Adnotacje>
 			<P_16><%= if @invoice.is_cash_account, do: 1, else: 2 %></P_16>
 			<%!-- P_17 to samofakturowanie --%>
@@ -147,16 +151,6 @@
 			<% end %>
 		</RodzajFaktury>
 		<%= if @invoice.ksef_invoice_kind == :kor do %>
-			<%!-- PrzyczynaKorekty is optional but recommended for correction invoices.
-			     Requires 'correction_reason' field on SalesInvoice schema. --%>
-			<%= if @invoice[:correction_reason] do %>
-				<PrzyczynaKorekty><%= @invoice.correction_reason %></PrzyczynaKorekty>
-			<% end %>
-			<%!-- TypKorekty values: 1 = effective at original date, 2 = effective at correction date, 3 = other.
-			     Requires 'correction_type' field on SalesInvoice schema. Defaults to 2. --%>
-			<%= if @invoice[:correction_type] do %>
-				<TypKorekty><%= @invoice.correction_type %></TypKorekty>
-			<% end %>
 			<DaneFaKorygowanej>
 				<DataWystFaKorygowanej><%= @invoice.corrected_invoice.issue_date %></DataWystFaKorygowanej>
 				<NrFaKorygowanej><%= @invoice.corrected_invoice.invoice_number %></NrFaKorygowanej>
@@ -167,18 +161,87 @@
 					<NrKSeFN>1</NrKSeFN>
 				<% end %>
 			</DaneFaKorygowanej>
+			<%= if T.buyer_data_changed?(@invoice, @reference_invoice) do %>
+				<Podmiot2K>
+					<DaneIdentyfikacyjne>
+						<%= case SalesInvoice.buyer_id_type(@reference_invoice) do %>
+							<% :nip -> %>
+								<NIP><%= @reference_invoice.buyer_id %></NIP>
+							<% :eu_vat -> %>
+								<KodUE><%= @reference_invoice.buyer_country %></KodUE>
+								<NrVatUE><%= @reference_invoice.buyer_id %></NrVatUE>
+							<% :other_id -> %>
+								<%= if @reference_invoice.buyer_country do %>
+									<KodKraju><%= @reference_invoice.buyer_country %></KodKraju>
+								<% end %>
+								<NrID><%= @reference_invoice.buyer_id %></NrID>
+							<% :optional_id -> %>
+								<%= if @reference_invoice.buyer_id && @reference_invoice.buyer_id != "" do %>
+									<%= if @reference_invoice.buyer_country do %>
+										<KodKraju><%= @reference_invoice.buyer_country %></KodKraju>
+									<% end %>
+									<NrID><%= @reference_invoice.buyer_id %></NrID>
+								<% else %>
+									<BrakID>1</BrakID>
+								<% end %>
+							<% :no_id -> %>
+								<BrakID>1</BrakID>
+						<% end %>
+						<%= if name = T.buyer_name(@reference_invoice) do %>
+							<Nazwa><%= name %></Nazwa>
+						<% end %>
+					</DaneIdentyfikacyjne>
+					<%= if @reference_invoice.buyer_address && @reference_invoice.buyer_country do %>
+						<Adres>
+							<KodKraju><%= @reference_invoice.buyer_country %></KodKraju>
+							<AdresL1><%= @reference_invoice.buyer_address %></AdresL1>
+						</Adres>
+					<% end %>
+				</Podmiot2K>
+			<% end %>
 		<% end %>
-		<%= for {item, index} <- Enum.with_index(@invoice.sales_invoice_items, 1) do %>
-			<FaWiersz>
-				<NrWierszaFa><%= index %></NrWierszaFa>
-				<UU_ID><%= item.id %></UU_ID>
-				<P_7><%= item.name %></P_7>
-				<P_8A><%= item.unit %></P_8A>
-				<P_8B><%= T.format_quantity(item.quantity) %></P_8B>
-				<P_9A><%= T.format_decimal(item.unit_price) %></P_9A>
-				<P_11><%= T.format_decimal(SalesInvoiceItem.get_net_value(item)) %></P_11>
-				<P_12><%= T.format_vat_rate(item.vat_rate) %></P_12>
-			</FaWiersz>
+		<%= if @invoice.ksef_invoice_kind == :kor do %>
+			<%= if T.invoice_items_changed?(@invoice, @reference_invoice) do %>
+				<%= for item <- @reference_invoice.sales_invoice_items do %>
+					<FaWiersz>
+						<NrWierszaFa><%= item.index + 1 %></NrWierszaFa>
+						<UU_ID><%= item.id %></UU_ID>
+						<P_7><%= item.name %></P_7>
+						<P_8A><%= item.unit %></P_8A>
+						<P_8B><%= T.format_quantity(item.quantity) %></P_8B>
+						<P_9A><%= T.format_decimal(item.unit_price) %></P_9A>
+						<P_11><%= T.format_decimal(SalesInvoiceItem.get_net_value(item)) %></P_11>
+						<P_12><%= T.format_vat_rate(item.vat_rate) %></P_12>
+						<StanPrzed>1</StanPrzed>
+					</FaWiersz>
+				<% end %>
+				<%= for item <- @invoice.sales_invoice_items do %>
+					<FaWiersz>
+						<NrWierszaFa><%= item.index + 1 %></NrWierszaFa>
+						<UU_ID><%= item.id %></UU_ID>
+						<P_7><%= item.name %></P_7>
+						<P_8A><%= item.unit %></P_8A>
+						<P_8B><%= T.format_quantity(item.quantity) %></P_8B>
+						<P_9A><%= T.format_decimal(item.unit_price) %></P_9A>
+						<P_11><%= T.format_decimal(SalesInvoiceItem.get_net_value(item)) %></P_11>
+						<P_12><%= T.format_vat_rate(item.vat_rate) %></P_12>
+					</FaWiersz>
+				<% end %>
+			<% end %>
+		<% else %>
+			<%!-- Regular VAT invoice - standard line items --%>
+			<%= for item <- @invoice.sales_invoice_items do %>
+				<FaWiersz>
+					<NrWierszaFa><%= item.index + 1 %></NrWierszaFa>
+					<UU_ID><%= item.id %></UU_ID>
+					<P_7><%= item.name %></P_7>
+					<P_8A><%= item.unit %></P_8A>
+					<P_8B><%= T.format_quantity(item.quantity) %></P_8B>
+					<P_9A><%= T.format_decimal(item.unit_price) %></P_9A>
+					<P_11><%= T.format_decimal(SalesInvoiceItem.get_net_value(item)) %></P_11>
+					<P_12><%= T.format_vat_rate(item.vat_rate) %></P_12>
+				</FaWiersz>
+			<% end %>
 		<% end %>
 		<Platnosc>
 			<%= if @invoice.due_date do %>

@@ -20,7 +20,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
     invoice =
       id
       |> SalesInvoices.get_sales_invoice!()
-      |> Repo.preload(:sales_invoice_items)
+      |> Repo.preload([:sales_invoice_items, corrected_invoice: :sales_invoice_items])
 
     Bodyguard.permit!(SalesInvoices, :show, current_user, invoice)
 
@@ -36,6 +36,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
     socket =
       socket
       |> assign(:invoice, invoice)
+      |> assign(:reference_invoice, get_reference_invoice(invoice))
       |> assign(:submission_info, submission_info)
       |> assign(:currency_rate, currency_rate)
 
@@ -147,6 +148,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
                 sales_invoice={@invoice}
                 currency_rate={@currency_rate}
                 show_vat={@current_org.is_vat_payer}
+                reference_invoice={@reference_invoice}
               />
             </div>
           </div>
@@ -164,7 +166,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
       invoice =
         invoice_id
         |> SalesInvoices.get_sales_invoice!()
-        |> Repo.preload(:sales_invoice_items)
+        |> Repo.preload([:sales_invoice_items, corrected_invoice: :sales_invoice_items])
 
       # Convert PubSub status to SubmissionInfo status
       submission_info = Ksef.get_submission_info(invoice)
@@ -173,6 +175,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
         socket
         |> assign(:submission_info, submission_info)
         |> assign(:invoice, invoice)
+        |> assign(:reference_invoice, get_reference_invoice(invoice))
 
       # Trigger paper plane animation when submitted successfully
       socket =
@@ -187,4 +190,10 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
       {:noreply, socket}
     end
   end
+
+  defp get_reference_invoice(%SalesInvoices.SalesInvoice{ksef_invoice_kind: :kor} = invoice) do
+    SalesInvoices.get_reference_invoice_for_correction(invoice)
+  end
+
+  defp get_reference_invoice(_invoice), do: nil
 end

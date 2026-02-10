@@ -46,7 +46,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoiceItem do
     Decimal.add(get_net_value(sales_invoice_item), get_vat_value(sales_invoice_item))
   end
 
-  def new_changeset(sales_invoice_item, attrs \\ %{}, index \\ nil) do
+  def changeset(sales_invoice_item, attrs \\ %{}, index \\ nil) do
     sales_invoice_item
     |> cast(attrs, [
       :name,
@@ -73,26 +73,5 @@ defmodule Firmowid.SalesInvoices.SalesInvoiceItem do
         |> put_change(:gross_value, Decimal.new(0))
       end
     end)
-  end
-
-  @doc """
-  Changeset for updating invoice items, including correction invoices (KOR).
-  Unlike `new_changeset/3`, this allows negative quantities for corrections.
-  """
-  def changeset(sales_invoice_item, attrs \\ %{}) do
-    sales_invoice_item
-    |> cast(attrs, [
-      :name,
-      :quantity,
-      :unit,
-      :unit_price,
-      :vat_rate
-    ])
-    |> cast_assoc(:sales_invoice)
-    # Note: quantity is not validated >= 0 because correction invoices (KOR)
-    # require negative quantities to represent reversed items
-    |> validate_number(:unit_price, greater_than_or_equal_to: 0)
-    |> validate_inclusion(:vat_rate, VatRate.valid_rates())
-    |> put_change(:organization_id, Firmowid.Repo.get_org_id())
   end
 end

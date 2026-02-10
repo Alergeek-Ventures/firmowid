@@ -18,6 +18,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
   attr :current_user, :map, required: true
   attr :return_to, :string, default: nil
   attr :ksef_connected?, :boolean, default: false
+  attr :reference_invoice, :map, default: nil
 
   @impl true
   def render(assigns) do
@@ -112,20 +113,17 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
               >
                 <.icon name="hero-document-duplicate" class="w-5 h-5" />
               </.link>
-              <%!-- TODO: Re-enable edit functionality with the new Creator --%>
-              <button
+              <.link
+                :if={SalesInvoice.editable?(@invoice)}
                 id="edit-invoice-link"
-                disabled
-                phx-hook="Tippy"
-                data-tippy-content="Edycja tymczasowo niedostepna"
-                data-tippy-delay="100"
                 class={[
-                  "text-gray-300 cursor-not-allowed",
+                  "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
                   "px-2 py-1 flex items-center justify-center rounded"
                 ]}
+                navigate={~p"/sprzedazowe/#{@invoice.id}/edytuj"}
               >
                 <.icon name="hero-pencil-square-solid" class="w-5 h-5" />
-              </button>
+              </.link>
               <button
                 :if={SalesInvoice.deletable?(@invoice)}
                 id="delete-invoice-button"
@@ -251,6 +249,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                     sales_invoice={@invoice}
                     currency_rate={Firmowid.SalesInvoices.get_currency_rate(@invoice)}
                     show_vat={@show_vat_for_sales_invoice}
+                    reference_invoice={@reference_invoice}
                   />
                 </a>
               </div>

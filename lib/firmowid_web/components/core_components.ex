@@ -433,7 +433,7 @@ defmodule FirmowidWeb.CoreComponents do
     ~H"""
     <div class={@container_class}>
       <.label :if={@label} for={@id} class="mb-2">{@label}</.label>
-      <div class="relative w-fit">
+      <div class="relative">
         <select
           id={@id}
           name={@name}

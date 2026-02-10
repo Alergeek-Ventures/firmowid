@@ -7,6 +7,7 @@ defmodule FirmowidWeb.PdfHTML do
   attr :show_vat, :boolean, default: true
   attr :logo_data_uri, :string, default: nil
   attr :footer_logo_data_uri, :string, default: nil
+  attr :reference_invoice, :map, default: nil
 
   def sales_invoice(assigns) do
     FirmowidWeb.SalesInvoices.Template.sales_invoice(assigns)

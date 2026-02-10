@@ -111,6 +111,7 @@ defmodule FirmowidWeb.Router do
 
       live "/sprzedazowe", SalesInvoicesLive.Creator
       live "/sprzedazowe/:id/podsumowanie", SalesInvoicesLive.Summary, :summary
+      live "/sprzedazowe/:id/edytuj", SalesInvoicesLive.Edit, :edit
       live "/sprzedazowe/:id", SalesInvoicesLive.Show, :show
 
       live "/czasosledz/projekty", Project.Index, :projects

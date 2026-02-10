@@ -541,6 +541,7 @@ defmodule Firmowid.InvoicesSearchTest do
       Repo.insert!(%SalesInvoiceItem{
         sales_invoice_id: si1.id,
         name: "Item 1",
+        index: 0,
         quantity: 1,
         unit: "pcs",
         unit_price: Decimal.new("100.00"),
@@ -551,6 +552,7 @@ defmodule Firmowid.InvoicesSearchTest do
       Repo.insert!(%SalesInvoiceItem{
         sales_invoice_id: si2.id,
         name: "Item 2",
+        index: 0,
         quantity: 1,
         unit: "pcs",
         unit_price: Decimal.new("100.00"),
@@ -561,6 +563,7 @@ defmodule Firmowid.InvoicesSearchTest do
       Repo.insert!(%SalesInvoiceItem{
         sales_invoice_id: si2.id,
         name: "Item 3",
+        index: 1,
         quantity: 1,
         unit: "pcs",
         unit_price: Decimal.new("100.00"),
@@ -571,6 +574,7 @@ defmodule Firmowid.InvoicesSearchTest do
       Repo.insert!(%SalesInvoiceItem{
         sales_invoice_id: si3.id,
         name: "Item 4",
+        index: 0,
         quantity: 1,
         unit: "pcs",
         unit_price: Decimal.new("100.00"),
@@ -581,6 +585,7 @@ defmodule Firmowid.InvoicesSearchTest do
       Repo.insert!(%SalesInvoiceItem{
         sales_invoice_id: si3.id,
         name: "Item 5",
+        index: 1,
         quantity: 1,
         unit: "pcs",
         unit_price: Decimal.new("200.00"),
@@ -722,6 +727,7 @@ defmodule Firmowid.InvoicesSearchTest do
       Repo.insert!(%SalesInvoiceItem{
         sales_invoice_id: sales_invoice_with_items.id,
         name: "Consulting Services for Project X",
+        index: 0,
         quantity: 1,
         unit: "hour",
         unit_price: Decimal.new("500.00"),
@@ -732,6 +738,7 @@ defmodule Firmowid.InvoicesSearchTest do
       Repo.insert!(%SalesInvoiceItem{
         sales_invoice_id: sales_invoice_with_items.id,
         name: "Software License Fee",
+        index: 1,
         quantity: 1,
         unit: "license",
         unit_price: Decimal.new("1000.00"),
@@ -775,6 +782,7 @@ defmodule Firmowid.InvoicesSearchTest do
       Repo.insert!(%SalesInvoiceItem{
         sales_invoice_id: sales_invoice_combined_match.id,
         name: "Combined Search Item 1",
+        index: 0,
         quantity: 1,
         unit: "hour",
         unit_price: Decimal.new("100.00"),

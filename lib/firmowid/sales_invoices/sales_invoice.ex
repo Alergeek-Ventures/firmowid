@@ -29,6 +29,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
     field :buyer_type, Ecto.Enum, values: [:individual, :company], default: :company
 
+    # todo: rename to buyer_tax_id
     field :buyer_id, :string
     # For companies: legal business name. For individuals: NULL
     field :buyer_full_name, :string
@@ -70,7 +71,10 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     field :ksef_invoice_kind, Ecto.Enum, values: [:vat, :kor], default: :vat
 
     belongs_to :corrected_invoice, __MODULE__
-    has_many :corrections, __MODULE__, foreign_key: :corrected_invoice_id
+
+    has_many :corrections, __MODULE__,
+      foreign_key: :corrected_invoice_id,
+      preload_order: [asc_nulls_last: :locked_at]
 
     has_many :sales_invoice_items, SalesInvoiceItem,
       preload_order: [asc: :index],
@@ -151,6 +155,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     sale_date
   end
 
+  # rename to buyer_tax_id_type
   @spec buyer_id_type(map() | Ecto.Changeset.t()) :: :nip | :eu_vat | :other_id | :optional_id | :no_id
   def buyer_id_type(%{buyer_type: buyer_type, buyer_pesel: buyer_pesel, buyer_country: buyer_country}) do
     CountryCodes.tax_id_type(buyer_country, buyer_pesel, buyer_type)
@@ -189,7 +194,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     |> buyer_changeset(attrs)
     |> seller_changeset(attrs)
     |> cast_assoc(:sales_invoice_items,
-      with: &SalesInvoiceItem.changeset/2,
+      with: &SalesInvoiceItem.changeset/3,
       sort_param: :items_sort,
       drop_param: :items_drop
     )
@@ -235,7 +240,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     sales_invoice
     |> cast(attrs, [:currency, :is_reverse_charge])
     |> cast_assoc(:sales_invoice_items,
-      with: &SalesInvoiceItem.new_changeset/3,
+      with: &SalesInvoiceItem.changeset/3,
       required: true,
       sort_param: :items_sort,
       drop_param: :items_drop
@@ -443,6 +448,55 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     |> validate_country_code(:buyer_country)
   end
 
+  def prepare_correction_invoice_changeset(original_invoice, reference_invoice) do
+    base_attrs =
+      reference_invoice
+      |> Map.take([
+        :seller_nip,
+        :seller_display_name,
+        :seller_address,
+        :seller_name,
+        :seller_surname,
+        :seller_account_number,
+        :counterparty_id,
+        :buyer_type,
+        :buyer_id,
+        :buyer_full_name,
+        :buyer_given_name,
+        :buyer_surname,
+        :buyer_display_name,
+        :buyer_address,
+        :buyer_country,
+        :buyer_is_different_mail_address,
+        :buyer_mail_address,
+        :buyer_mail_country,
+        :buyer_email,
+        :buyer_phone,
+        :buyer_description,
+        :buyer_pesel,
+        :invoice_type,
+        :sale_date,
+        :due_date,
+        :payment_method,
+        :currency,
+        :is_reverse_charge,
+        :is_cash_account
+      ])
+      |> Map.put(:organization_id, original_invoice.organization_id)
+      |> Map.put(:ksef_invoice_kind, :kor)
+      |> Map.put(:corrected_invoice_id, original_invoice.id)
+
+    items =
+      Enum.map(
+        reference_invoice.sales_invoice_items,
+        &Map.take(&1, [:index, :name, :quantity, :unit, :unit_price, :vat_rate])
+      )
+
+    %__MODULE__{}
+    |> change(base_attrs)
+    |> put_assoc(:sales_invoice_items, items)
+  end
+
   defp validate_seller_name(changeset) do
     seller_display_name = get_field(changeset, :seller_display_name)
     seller_name = get_field(changeset, :seller_name)
@@ -506,6 +560,35 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   def deletable?(%__MODULE__{ksef_number: nil, locked_at: nil}), do: true
   def deletable?(%__MODULE__{}), do: false
 
+  @doc """
+  Returns true if the invoice can be edited (navigated to the edit page).
+
+  An invoice is NOT editable if:
+  - It is a VAT invoice that already has correction invoices (corrections must
+    be made from the latest correction instead).
+  - It is a KOR invoice that is not the latest correction of its parent
+    (only the latest snapshot can be edited).
+
+  Draft invoices and confirmed-but-not-locked invoices are always editable.
+
+  Requires the `corrections` association to be preloaded for VAT invoices.
+  For KOR invoices, requires `corrected_invoice` with its `corrections` preloaded.
+  """
+  @spec editable?(t()) :: boolean()
+  def editable?(%__MODULE__{ksef_invoice_kind: :kor} = invoice) do
+    latest_correction = List.last(invoice.corrected_invoice.corrections)
+
+    latest_correction != nil and latest_correction.id == invoice.id
+  end
+
+  def editable?(%__MODULE__{ksef_invoice_kind: :vat, corrections: corrections}) do
+    Enum.empty?(corrections)
+  end
+
+  def editable?(%__MODULE__{invoice_number: nil}), do: true
+  def editable?(%__MODULE__{locked_at: nil}), do: true
+  def editable?(%__MODULE__{}), do: false
+
   defp check_if_locked(%__MODULE__{locked_at: nil} = sales_invoice) do
     change(sales_invoice)
   end
@@ -516,57 +599,11 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     |> add_error(:base, "Invoice is locked and cannot be modified")
   end
 
-  @doc """
-  Changeset for creating a correction invoice (KOR) based on an original invoice.
-
-  The original invoice must be:
-  - Submitted to KSeF (has ksef_number)
-  - Locked (has locked_at)
-
-  Seller and buyer data are automatically copied from the original invoice.
-  """
-  def correction_invoice_changeset(sales_invoice, corrected_invoice, attrs) do
-    sales_invoice
-    |> changeset(attrs)
-    |> put_change(:ksef_invoice_kind, :kor)
-    |> put_change(:corrected_invoice_id, corrected_invoice.id)
-    |> validate_corrected_invoice(corrected_invoice)
-    |> copy_from_corrected_invoice(corrected_invoice)
-  end
-
-  defp validate_corrected_invoice(changeset, corrected_invoice) do
-    cond do
-      is_nil(corrected_invoice) ->
-        add_error(changeset, :corrected_invoice_id, "is required for correction invoices")
-
-      is_nil(corrected_invoice.ksef_number) ->
-        add_error(changeset, :corrected_invoice_id, "original invoice must be submitted to KSeF first")
-
-      is_nil(corrected_invoice.locked_at) ->
-        add_error(changeset, :corrected_invoice_id, "original invoice must be locked")
-
-      true ->
-        changeset
+  defp check_if_locked(%Ecto.Changeset{data: %__MODULE__{}} = changeset) do
+    case get_field(changeset, :locked_at) do
+      nil -> changeset
+      _locked_at -> add_error(changeset, :base, "Invoice is locked and cannot be modified")
     end
-  end
-
-  defp copy_from_corrected_invoice(changeset, corrected_invoice) do
-    changeset
-    |> put_change(:seller_nip, corrected_invoice.seller_nip)
-    |> put_change(:seller_display_name, corrected_invoice.seller_display_name)
-    |> put_change(:seller_address, corrected_invoice.seller_address)
-    |> put_change(:seller_name, corrected_invoice.seller_name)
-    |> put_change(:seller_surname, corrected_invoice.seller_surname)
-    |> put_change(:seller_account_number, corrected_invoice.seller_account_number)
-    |> put_change(:buyer_type, corrected_invoice.buyer_type)
-    |> put_change(:buyer_id, corrected_invoice.buyer_id)
-    |> put_change(:buyer_full_name, corrected_invoice.buyer_full_name)
-    |> put_change(:buyer_given_name, corrected_invoice.buyer_given_name)
-    |> put_change(:buyer_surname, corrected_invoice.buyer_surname)
-    |> put_change(:buyer_display_name, corrected_invoice.buyer_display_name)
-    |> put_change(:buyer_address, corrected_invoice.buyer_address)
-    |> put_change(:buyer_country, corrected_invoice.buyer_country)
-    |> put_change(:currency, corrected_invoice.currency)
   end
 
   @doc """

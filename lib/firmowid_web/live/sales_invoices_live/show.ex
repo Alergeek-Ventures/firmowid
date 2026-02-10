@@ -5,6 +5,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
   alias Firmowid.Analytics
   alias Firmowid.Invoicing
   alias Firmowid.Ksef
+  alias Firmowid.Repo
   alias Firmowid.SalesInvoices
 
   @impl true
@@ -16,7 +17,10 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
 
     potential_transactions = Invoicing.get_potential_transactions_for_invoice(sales_invoice)
 
-    sales_invoice = SalesInvoices.get_sales_invoice_with_logo_url(id)
+    sales_invoice =
+      id
+      |> SalesInvoices.get_sales_invoice_with_logo_url()
+      |> Repo.preload([:corrected_invoice])
 
     # Subscribe to KSeF status updates for live feedback
     Ksef.subscribe_ksef_status(current_user.organization_id)
@@ -24,6 +28,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
     socket =
       socket
       |> assign(:invoice, sales_invoice)
+      |> assign(:reference_invoice, get_reference_invoice(sales_invoice))
       |> assign(:potential_transactions, potential_transactions)
       |> assign(:preview_url, "")
       |> assign(:preview_type, :html)
@@ -41,6 +46,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
       id="invoice-show"
       module={FirmowidWeb.Components.Invoicing.SalesInvoiceDetails}
       invoice={@invoice}
+      reference_invoice={@reference_invoice}
       preview_url={@preview_url}
       preview_type={@preview_type}
       show_vat_for_sales_invoice={@current_org.is_vat_payer}
@@ -59,7 +65,10 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
     SalesInvoices.toggle_skip_invoicing(socket.assigns.invoice.id)
     invoice = refresh_invoice(socket.assigns.invoice.id)
 
-    {:noreply, assign(socket, :invoice, invoice)}
+    {:noreply,
+     socket
+     |> assign(:invoice, invoice)
+     |> assign(:reference_invoice, get_reference_invoice(invoice))}
   end
 
   @impl true
@@ -109,7 +118,9 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
   end
 
   defp refresh_invoice(id) do
-    SalesInvoices.get_sales_invoice_with_logo_url(id)
+    id
+    |> SalesInvoices.get_sales_invoice_with_logo_url()
+    |> Repo.preload([:corrected_invoice])
   end
 
   @impl true
@@ -121,12 +132,14 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
       # Update component with new invoice data
       send_update(FirmowidWeb.Components.Invoicing.SalesInvoiceDetails,
         id: "invoice-show",
-        invoice: invoice
+        invoice: invoice,
+        reference_invoice: get_reference_invoice(invoice)
       )
 
       socket =
         socket
         |> assign(:invoice, invoice)
+        |> assign(:reference_invoice, get_reference_invoice(invoice))
         |> ksef_status_flash(status)
 
       {:noreply, socket}
@@ -150,4 +163,10 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
   defp ksef_status_flash(socket, :failed), do: put_flash(socket, :error, "Wysyłka do KSeF nie powiodła się")
 
   defp ksef_status_flash(socket, _status), do: socket
+
+  defp get_reference_invoice(%SalesInvoices.SalesInvoice{ksef_invoice_kind: :kor} = invoice) do
+    SalesInvoices.get_reference_invoice_for_correction(invoice)
+  end
+
+  defp get_reference_invoice(_invoice), do: nil
 end

@@ -1,6 +1,7 @@
 defmodule FirmowidWeb.PdfController do
   use FirmowidWeb, :controller
 
+  alias Firmowid.Repo
   alias Firmowid.SalesInvoices
   alias FirmowidWeb.PdfHelpers
 
@@ -17,10 +18,13 @@ defmodule FirmowidWeb.PdfController do
   end
 
   defp render_sales_invoice(conn, %SalesInvoices.SalesInvoice{} = sales_invoice) do
+    sales_invoice = Repo.preload(sales_invoice, [:corrected_invoice])
+
     render(conn, :sales_invoice,
       layout: false,
       sales_invoice: sales_invoice,
       currency_rate: SalesInvoices.get_currency_rate(sales_invoice),
+      reference_invoice: get_reference_invoice(sales_invoice),
       class: "mx-auto",
       show_vat: conn.assigns.current_org.is_vat_payer,
       logo_data_uri: nil,
@@ -43,6 +47,8 @@ defmodule FirmowidWeb.PdfController do
         # Authorization check - prevent cross-organization access
         Bodyguard.permit!(SalesInvoices, :show, conn.assigns.current_user, sales_invoice)
 
+        sales_invoice = Repo.preload(sales_invoice, [:corrected_invoice])
+
         # Convert logo URL to data URI for embedding
         logo_data_uri = PdfHelpers.url_to_data_uri(sales_invoice.logo_url)
 
@@ -58,6 +64,7 @@ defmodule FirmowidWeb.PdfController do
             layout: false,
             sales_invoice: sales_invoice,
             currency_rate: SalesInvoices.get_currency_rate(sales_invoice),
+            reference_invoice: get_reference_invoice(sales_invoice),
             show_vat: conn.assigns.current_org.is_vat_payer,
             logo_data_uri: logo_data_uri,
             footer_logo_data_uri: footer_logo_data_uri,
@@ -97,4 +104,10 @@ defmodule FirmowidWeb.PdfController do
         result
     end
   end
+
+  defp get_reference_invoice(%SalesInvoices.SalesInvoice{ksef_invoice_kind: :kor} = invoice) do
+    SalesInvoices.get_reference_invoice_for_correction(invoice)
+  end
+
+  defp get_reference_invoice(_invoice), do: nil
 end

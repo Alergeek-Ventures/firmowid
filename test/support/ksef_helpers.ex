@@ -288,7 +288,8 @@ defmodule Firmowid.KsefTestHelpers do
     ksef_number =
       if Keyword.get(opts, :with_ksef_number, false) do
         # KSeF number format: NIP-DATE-HEXHEX-HEXHEX-HEX
-        "1234567890-20260115-A1B2C3-D4E5F6-78"
+        hex = 8 |> :crypto.strong_rand_bytes() |> Base.encode16(case: :upper)
+        "1234567890-20260115-#{String.slice(hex, 0, 6)}-#{String.slice(hex, 6, 6)}-#{String.slice(hex, 12, 2)}"
       end
 
     {:ok, updated} =
