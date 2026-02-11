@@ -5,7 +5,7 @@
     phx-submit="send_to_ksef"
     phx-hook="ConfirmLeave"
     id="invoice-form"
-    class="grid grid-cols-[min-content,1fr,repeat(7,min-content)] gap-x-2"
+    class="grid grid-cols-[min-content_1fr_repeat(7,min-content)] gap-x-2"
   >
     <.input type="hidden" field={@form[:invoice_number]} />
     <.input type="hidden" field={@form[:issue_date]} />
@@ -30,7 +30,7 @@
       <hr class="text-grey-200 col-start-2 col-end-9" />
 
       <div class="col-start-2 col-end-9 flex flex-row gap-14 items-start">
-        <div class="grid grid-cols-[min-content,1fr] gap-x-5 gap-y-4 items-start w-full">
+        <div class="grid grid-cols-[min-content_1fr] gap-x-5 gap-y-4 items-start w-full">
           <label class="text-grey-700 whitespace-nowrap" for={@form[:counterparty_id].id}>
             Kontrahent
           </label>

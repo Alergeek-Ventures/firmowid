@@ -127,7 +127,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Assistant do
         <.icon name="hero-x-mark-mini" />
       </button>
       <div
-        class="flex flex-col flex-grow gap-12 py-4 pr-4 overflow-y-auto"
+        class="flex flex-col grow gap-12 py-4 pr-4 overflow-y-auto"
         id="messages"
         phx-update="stream"
         phx-hook="ScrollToBottom"

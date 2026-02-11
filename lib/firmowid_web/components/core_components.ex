@@ -221,7 +221,7 @@ defmodule FirmowidWeb.CoreComponents do
   end
 
   defp button_styles(:color, %{color: "light_orange"}) do
-    "bg-orangeBg text-orangeText border-none hover:bg-[#f0e0d8] focus:outline-none focus:ring-1 focus:ring-orangeText"
+    "bg-orangeBg text-orangeText border-none hover:bg-[#f0e0d8] focus:outline-hidden focus:ring-1 focus:ring-orangeText"
   end
 
   defp button_styles(:color, %{color: "grey", variant: "outline"}) do

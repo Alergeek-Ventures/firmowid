@@ -27,7 +27,7 @@ defmodule FirmowidWeb.Components.Landing do
     >
       <div
         id="navbar-container"
-        class="max-w-7xl mx-auto flex items-center justify-between backdrop-blur-[8px] rounded-lg bg-opacity-10 bg-black px-6 py-2 transition-all duration-500"
+        class="max-w-7xl mx-auto flex items-center justify-between backdrop-blur-[8px] rounded-lg bg-black/10 px-6 py-2 transition-all duration-500"
       >
         <%!-- Logo --%>
         <span
@@ -254,7 +254,7 @@ defmodule FirmowidWeb.Components.Landing do
           </div>
 
           <%!-- Main content grid --%>
-          <div class="grid lg:grid-cols-[1fr,2fr] gap-10 md:gap-6 items-start">
+          <div class="grid lg:grid-cols-[1fr_2fr] gap-10 md:gap-6 items-start">
             <%!-- Left column: description and solutions --%>
             <div class="flex flex-col gap-10 min-w-[378px]">
               <%!-- Description text --%>
@@ -600,7 +600,7 @@ defmodule FirmowidWeb.Components.Landing do
         </h2>
 
         <%!-- Two column layout --%>
-        <div class="grid grid-rows-[auto,auto] md:grid-cols-[auto,auto] shrink items-center gap-1 xl:gap-18 max-w-[1248px] mx-auto">
+        <div class="grid grid-rows-[auto_auto] md:grid-cols-[auto_auto] shrink items-center gap-1 xl:gap-18 max-w-[1248px] mx-auto">
           <%!-- Left: Benefits list --%>
           <div class="flex-1 space-y-2 relative">
             <%!-- Subheading --%>

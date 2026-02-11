@@ -64,7 +64,7 @@ defmodule Firmowid.MixProject do
       {:phoenix_live_view, "~> 1.1.7", override: true},
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
-      {:tailwind, "~> 0.3", runtime: Mix.env() == :dev},
+      {:tailwind, "~> 0.4", runtime: Mix.env() == :dev},
       {:tz, "~> 0.28"},
       {:heroicons,
        github: "tailwindlabs/heroicons",

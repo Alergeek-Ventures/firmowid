@@ -153,7 +153,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
             :for={column <- @columns}
             id={"header-#{column}"}
             phx-hook="ScrollStyle"
-            data-classes="border-b-4 border-solid border-darkGrey border-opacity-40"
+            data-classes="border-b-4 border-solid border-darkGrey/40"
             data-scroll-offset="90"
             class={
               [
@@ -276,7 +276,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
               # this column has no defined width, so we limit the worst offenders "manually"
               column == "party" && "max-w-[50vw]",
               # required to display the "dot freshness" indicator that is rendered outside of the cell
-              column != "amount" && "w-full whitespace-nowrap overflow-hidden overflow-ellipsis"
+              column != "amount" && "w-full whitespace-nowrap overflow-hidden text-ellipsis"
             ]
           }
         >
@@ -754,7 +754,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
           data-overflow-hider-id={@group.id}
           class={[
             column == "party" && "max-w-[50vw]",
-            column != "amount" && "w-full whitespace-nowrap overflow-hidden overflow-ellipsis"
+            column != "amount" && "w-full whitespace-nowrap overflow-hidden text-ellipsis"
           ]}
         >
           <%= if column == "party" do %>
@@ -796,7 +796,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
             data-overflow-hider-id={transaction.id}
             class={[
               column == "party" && "max-w-[50vw]",
-              column != "amount" && "w-full whitespace-nowrap overflow-hidden overflow-ellipsis"
+              column != "amount" && "w-full whitespace-nowrap overflow-hidden text-ellipsis"
             ]}
           >
             <%= if column == "party" do %>

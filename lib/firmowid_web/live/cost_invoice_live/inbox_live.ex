@@ -62,12 +62,12 @@ defmodule FirmowidWeb.CostInvoiceLive.InboxLive do
               {Calendar.strftime(email.received_at, "%Y-%m-%d %H:%M")}
             </td>
             <td class="transition-all duration-500 bg-white py-4 text-sm">
-              <div class="w-full whitespace-nowrap overflow-hidden overflow-ellipsis">
+              <div class="w-full whitespace-nowrap overflow-hidden text-ellipsis">
                 {email.sender_email}
               </div>
             </td>
             <td class="transition-all duration-500 bg-white py-4 text-sm">
-              <div class="w-full whitespace-nowrap overflow-hidden overflow-ellipsis">
+              <div class="w-full whitespace-nowrap overflow-hidden text-ellipsis">
                 {email.subject || "(bez tematu)"}
               </div>
             </td>
@@ -141,7 +141,7 @@ defmodule FirmowidWeb.CostInvoiceLive.InboxLive do
           </button>
           <div
             id={"invoice-list-#{@email.id}"}
-            class="hidden absolute z-10 mt-2 w-56 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5"
+            class="hidden absolute z-10 mt-2 w-56 rounded-md bg-white shadow-lg ring-1 ring-black/5"
           >
             <div class="py-1">
               <.link

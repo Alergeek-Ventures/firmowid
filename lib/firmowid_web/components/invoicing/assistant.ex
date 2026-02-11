@@ -25,7 +25,7 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
         disabled={@loading}
         class={[
           "placeholder:text-grey-400 text-black w-full p-0 border-none focus:ring-0",
-          "focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+          "focus:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed"
         ]}
       />
       <button
@@ -172,7 +172,7 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
           :for={transaction <- @transactions}
           class="py-1 px-3 flex flex-row gap-4 justify-between items-start bg-grey-50 rounded"
         >
-          <div class="grid grid-cols-[min-content,1fr] gap-x-3">
+          <div class="grid grid-cols-[min-content_1fr] gap-x-3">
             <span class="text-sm text-grey-700">
               {@displayed_party}
             </span>

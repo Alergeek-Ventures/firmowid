@@ -106,7 +106,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
       <h3 class="font-medium">{@title}</h3>
       <button
         type="button"
-        class="focus:outline-none"
+        class="focus:outline-hidden"
       >
         <.icon
           name="hero-pencil-solid"

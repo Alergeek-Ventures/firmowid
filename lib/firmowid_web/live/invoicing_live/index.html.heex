@@ -215,7 +215,7 @@
   :if={Bodyguard.permit?(Firmowid.Invoicing, :upload, @current_user)}
   id="file-drop-overlay"
   class="fixed top-[10lvw] left-[5lvw] w-[90lvw] h-[80lvh] bg-[#CEE6E666]
-  rounded-lg items-center justify-center z-20 bg-opacity-50 opacity-0
+  rounded-lg items-center justify-center z-20 opacity-0
   transition-opacity hidden"
   phx-hook="FileUploadDragNDrop"
   phx-drop-target={@uploads.file.ref}

@@ -131,7 +131,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
 
       <div class="h-8 invisible" />
 
-      <div class="grid grid-cols-[1fr,650px,1fr] gap-8 justify-center items-start">
+      <div class="grid grid-cols-[1fr_650px_1fr] gap-8 justify-center items-start">
         <% list_width = 224 %>
         <% template_width = 595 %>
         <% template_height = 842 %>

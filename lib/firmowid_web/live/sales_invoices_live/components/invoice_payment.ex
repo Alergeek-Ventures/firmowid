@@ -9,7 +9,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Components.InvoicePayment do
 
   def invoice_payment(assigns) do
     ~H"""
-    <div class="grid grid-cols-[min-content,1fr] gap-x-5 gap-y-4 items-center">
+    <div class="grid grid-cols-[min-content_1fr] gap-x-5 gap-y-4 items-center">
       <label class="text-grey-700 whitespace-nowrap" for={@payment_form[:sale_date].id}>
         Data sprzedaży
       </label>
@@ -54,7 +54,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Components.InvoicePayment do
 
       <div class={[
         "col-start-2 border border-grey-200 p-4 rounded-lg w-min min-w-[400px]",
-        "grid grid-cols-[min-content,1fr] gap-4 gap-y-2 items-center",
+        "grid grid-cols-[min-content_1fr] gap-4 gap-y-2 items-center",
         "transition-opacity duration-200",
         if(Ecto.Changeset.get_field(@payment_form.source, :payment_method) == :transfer,
           do: "opacity-100",
@@ -151,7 +151,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Components.InvoicePayment do
           <div class="space-y-3">
             <%= for account <- @bank_accounts do %>
               <div class={[
-                "grid grid-cols-[min-content,min-content,1fr,min-content,min-content] items-center gap-2 p-4 border rounded-lg transition-colors",
+                "grid grid-cols-[min-content_min-content_1fr_min-content_min-content] items-center gap-2 p-4 border rounded-lg transition-colors",
                 if(@selected_bank_account && @selected_bank_account.id == account.id,
                   do: "border-grey-400 bg-grey-50",
                   else: "border-grey-200 hover:border-grey-300"

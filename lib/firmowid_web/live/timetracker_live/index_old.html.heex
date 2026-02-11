@@ -57,7 +57,7 @@
         <.input
           type="select"
           disabled={@current_session != nil or is_hours_record_submitted}
-          class="w-full font-bold bg-orangeBg text-orangeText border-none px-4 py-3 rounded appearance-none cursor-pointer hover:bg-[#f0e0d8] transition-colors focus:outline-none focus:ring-1 focus:ring-orangeText"
+          class="w-full font-bold bg-orangeBg text-orangeText border-none px-4 py-3 rounded appearance-none cursor-pointer hover:bg-[#f0e0d8] transition-colors focus:outline-hidden focus:ring-1 focus:ring-orangeText"
           field={@form[:project_id]}
           options={@projects |> Enum.map(&{&1.name, &1.id})}
         />

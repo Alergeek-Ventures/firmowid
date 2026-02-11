@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Components.Invoicing.BankTransferModal do
       >
         <div class="flex flex-col gap-12 p-4">
           <h3 class="text-center text-lg font-semibold">Dane do przelewu</h3>
-          <div class="grid grid-cols-[150px,1fr,32px] gap-4">
+          <div class="grid grid-cols-[150px_1fr_32px] gap-4">
             <%= for {label, value} <- [
             {"Odbiorca", @invoice.seller},
             {"Adres", @invoice.seller_address},
@@ -68,7 +68,7 @@ defmodule FirmowidWeb.Components.Invoicing.BankTransferModal do
             <% end %>
           </div>
           <div class="flex flex-row gap-6">
-            <h4 class="text-center flex-grow text-orangeText bg-orangeBg rounded px-4 py-2">
+            <h4 class="text-center grow text-orangeText bg-orangeBg rounded px-4 py-2">
               Zawsze weryfikuj kopiowane dane z fakturą!
             </h4>
             <button

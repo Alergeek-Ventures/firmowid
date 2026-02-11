@@ -1,32 +1,215 @@
 @import url("https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@700&display=swap");
 
-@import "tailwindcss/base";
-@import "tailwindcss/components";
-@import "tailwindcss/utilities";
+@import "tailwindcss";
 
+/* ── Source paths for template scanning ─────────────────────────────── */
+@source "../../lib/firmowid_web.ex";
+@source "../../lib/firmowid_web";
+@source "../../deps/live_toast/lib";
+
+/* ── Plugins ────────────────────────────────────────────────────────── */
+@plugin "@tailwindcss/forms";
+@plugin "@tailwindcss/typography";
+@plugin "../heroicons-plugin.js";
+
+/* ── Custom variants for Phoenix LiveView loading states ────────────── */
+@custom-variant phx-click-loading (&:is(.phx-click-loading *, .phx-click-loading&));
+@custom-variant phx-submit-loading (&:is(.phx-submit-loading *, .phx-submit-loading&));
+@custom-variant phx-change-loading (&:is(.phx-change-loading *, .phx-change-loading&));
+
+/* ── Theme: design tokens ───────────────────────────────────────────── */
+/*
+  In v3 the config used a full `colors` / `fontSize` / `fontFamily` override
+  (not extend), so we clear the Tailwind defaults with `--color-*: initial`
+  etc., then define our own tokens.
+*/
+@theme {
+  /* Clear Tailwind default color palette */
+  --color-*: initial;
+
+  /* Semantic colours */
+  --color-white: #FFFFFF;
+  --color-black: #000000;
+  --color-orangeText: #8B3F13;
+  --color-orangeBg: #E6D7CE;
+  --color-greenText: #475E45;
+  --color-greenBg: #D0E6CE;
+  --color-redText: #A22A2A;
+  --color-redBg: #E6CECE;
+  --color-blueText: #354E4E;
+  --color-blueBg: #CEE6E6;
+  --color-greyButtonBg: #DDDDDD;
+  --color-darkGrey: #4E4E4E;
+  --color-lightGreyBg: #F5F5F5;
+  --color-transparent: transparent;
+  --color-offwhite: #F0F0F0;
+
+  /* Grey scale */
+  --color-grey-50: #FAFAFA;
+  --color-grey-100: #F5F5F5;
+  --color-grey-200: #DDDDDD;
+  --color-grey-300: #CCCCCC;
+  --color-grey-400: #B5B5B5;
+  --color-grey-500: #949494;
+  --color-grey-600: #707070;
+  --color-grey-700: #4E4E4E;
+  --color-grey-800: #303030;
+  --color-grey-900: #1A1A1A;
+
+  /* Green scale */
+  --color-green-100: #ECF5EB;
+  --color-green-200: #D0E6CE;
+  --color-green-300: #B9DDB5;
+  --color-green-400: #9ECD9B;
+  --color-green-500: #89BD85;
+  --color-green-600: #699166;
+  --color-green-700: #475E45;
+  --color-green-800: #2D432B;
+  --color-green-900: #142113;
+
+  /* Orange scale */
+  --color-orange-100: #F0EAE6;
+  --color-orange-200: #E6D7CE;
+  --color-orange-300: #E9C3AC;
+  --color-orange-400: #DEA785;
+  --color-orange-500: #D28F67;
+  --color-orange-600: #9C5D39;
+  --color-orange-700: #8B3F13;
+  --color-orange-800: #662905;
+  --color-orange-900: #4E2005;
+
+  /* Oranger scale */
+  --color-oranger-100: #F0EAE6;
+  --color-oranger-200: #E6D7CE;
+  --color-oranger-300: #E9C3AC;
+  --color-oranger-400: #EAAA84;
+  --color-oranger-500: #E28B58;
+  --color-oranger-600: #A5582B;
+  --color-oranger-700: #8B3F13;
+  --color-oranger-800: #77330C;
+  --color-oranger-900: #4E2005;
+
+  /* Turquoise scale */
+  --color-turquoise-100: #EDF5F5;
+  --color-turquoise-200: #CEE6E6;
+  --color-turquoise-300: #AEDEDE;
+  --color-turquoise-400: #8BC9C9;
+  --color-turquoise-500: #6AAAAA;
+  --color-turquoise-600: #578383;
+  --color-turquoise-700: #455E5E;
+  --color-turquoise-800: #2F4343;
+  --color-turquoise-900: #1D3232;
+
+  /* Clear default font sizes & families */
+  --text-*: initial;
+  --font-*: initial;
+
+  /* Font sizes */
+  --text-caps-sm: 11px;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-h5: 18px;
+  --text-lg: 20px;
+  --text-xl: 23px;
+  --text-2xl: 27px;
+  --text-3xl: 40px;
+
+  /* Font families */
+  --font-sans: "Lexend", ui-sans-serif, system-ui, sans-serif;
+  --font-logo: "Josefin Sans", ui-sans-serif, system-ui, sans-serif;
+
+  /* Extended spacing */
+  --spacing-navbar: var(--navbar-height);
+  --spacing-navbar-management: var(--navbar-height-management);
+
+  /* Keyframes */
+  @keyframes error-pulse {
+    0%, 100% {
+      background-color: var(--color-redText);
+      color: var(--color-white);
+    }
+    30% {
+      background-color: var(--color-white);
+    }
+    50% {
+      color: var(--color-redText);
+    }
+  }
+
+  @keyframes fade-and-scale-out {
+    0% {
+      opacity: 1;
+      max-height: 200px;
+    }
+    70% {
+      opacity: 0;
+      max-height: 0px;
+    }
+    100% {
+      opacity: 0;
+      max-height: 0px;
+      margin: 0px;
+    }
+  }
+
+  @keyframes slide-from-center {
+    0% {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes appear {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  /* Animations */
+  --animate-list-item-removal: fade-and-scale-out 300ms ease-out forwards;
+  --animate-slide-from-center: slide-from-center 300ms ease-out forwards;
+  --animate-appear: appear 700ms ease-out forwards;
+  --animate-fade-in: appear 150ms ease-out forwards;
+  --animate-error-pulse: error-pulse 2s ease-in-out infinite;
+}
+
+/* ── Container utility (replaces v3 container config) ───────────────── */
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+}
+
+/* ── Custom properties ──────────────────────────────────────────────── */
 html {
   scroll-behavior: smooth;
 }
 
 :root {
-  --color-white: theme(colors.white);
-  --color-black: theme(colors.black);
-  --color-orange-text: theme(colors.orangeText);
-  --color-orange-bg: theme(colors.orangeBg);
-  --color-green-text: theme(colors.greenText);
-  --color-green-bg: theme(colors.greenBg);
-  --color-red-text: theme(colors.redText);
-  --color-red-bg: theme(colors.redBg);
-  --color-blue-text: theme(colors.blueText);
-  --color-blue-bg: theme(colors.blueBg);
-  --color-grey-button-bg: theme(colors.greyButtonBg);
-  --color-dark-grey: theme(colors.darkGrey);
-  --color-light-grey-bg: theme(colors.lightGreyBg);
+  --color-orange-text: var(--color-orangeText);
+  --color-orange-bg: var(--color-orangeBg);
+  --color-green-text: var(--color-greenText);
+  --color-green-bg: var(--color-greenBg);
+  --color-red-text: var(--color-redText);
+  --color-red-bg: var(--color-redBg);
+  --color-blue-text: var(--color-blueText);
+  --color-blue-bg: var(--color-blueBg);
+  --color-grey-button-bg: var(--color-greyButtonBg);
+  --color-dark-grey: var(--color-darkGrey);
+  --color-light-grey-bg: var(--color-lightGreyBg);
   --navbar-height: 64px;
   --navbar-height-management: 122px;
 }
 
+/* ── Air Datepicker ─────────────────────────────────────────────────── */
 .air-datepicker {
   --adp-background-color-selected-other-month-focused: #455e5e;
   --adp-background-color-selected-other-month: #455e5e;
@@ -43,7 +226,7 @@ html {
   --adp-font-family: "Lexend", sans-serif;
 }
 
-/* Paper Plane Animation */
+/* ── Paper Plane Animation ──────────────────────────────────────────── */
 .paper-plane-container {
   transform-style: preserve-3d;
 }
@@ -58,7 +241,6 @@ html {
 
 .paper-plane-segment {
   transform-style: preserve-3d;
-  /* backface-visibility: hidden; - Removed to allow seeing the back of the paper during folds */
 }
 
 /* Reduced motion preference */

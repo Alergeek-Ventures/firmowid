@@ -29,7 +29,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoiceSearchOverlay do
                   value={@search_query}
                   placeholder="Szukaj faktur kosztowych lub sprzedażowych..."
                   autofocus
-                  class="w-full outline-none bg-transparent text-sm placeholder:text-darkGrey/50"
+                  class="w-full outline-hidden bg-transparent text-sm placeholder:text-darkGrey/50"
                   phx-debounce="200"
                 />
               </form>

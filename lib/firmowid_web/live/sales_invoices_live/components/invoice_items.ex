@@ -279,7 +279,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Components.InvoiceItems do
     </.button>
 
     <div class={[
-      "col-start-1 col-end-9 ml-auto grid grid-cols-[1fr,repeat(2,min-content)] gap-y-2 gap-x-2 min-w-min w-72 mt-3 whitespace-nowrap items-center leading-snug",
+      "col-start-1 col-end-9 ml-auto grid grid-cols-[1fr_repeat(2,min-content)] gap-y-2 gap-x-2 min-w-min w-72 mt-3 whitespace-nowrap items-center leading-snug",
       if(Money.zero?(@summary.net_value), do: "text-grey-500", else: "text-black")
     ]}>
       <%= if to_boolean(@items_form[:is_reverse_charge].value) do %>

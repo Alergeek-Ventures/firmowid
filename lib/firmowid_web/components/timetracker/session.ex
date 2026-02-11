@@ -50,7 +50,7 @@ defmodule FirmowidWeb.Components.Session do
             JS.remove_attribute("readonly", to: "##{sessions_form[:title].id}")
             |> JS.focus(to: "##{sessions_form[:title].id}")
           }
-          class="opacity-0 group-hover:opacity-100 transition focus:outline-none"
+          class="opacity-0 group-hover:opacity-100 transition focus:outline-hidden"
         >
           <.icon
             name="hero-pencil-solid"

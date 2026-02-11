@@ -26,11 +26,11 @@
         phx-hook="Tippy"
         data-tippy-content="Kliknij aby dodać konto bankowe przygotowane przez nas, które zawiera kilkanaście transakcji i pozwala przetestować system."
       >
-        <button class="flex flex-col gap-4 p-4 bg-white
+        <button class="flex flex-col gap-4 p-4 bg-white hover:bg-white/10
           rounded-xl items-center justify-center
-          text-center hover:bg-opacity-10 hover:border-opacity-100
+          text-center hover:border-black
           transition-all w-full h-full
-          border-black border-opacity-20 border-2">
+          border-black/20 border-2">
           <div class="w-full h-full text-center">
             <.icon name="hero-archive-box-x-mark-solid" class="w-20 h-20" />
           </div>
@@ -46,11 +46,11 @@
           phx-value-institution-id={instiution["id"]}
           phx-value-institution-transaction-total-days={instiution["transaction_total_days"]}
         >
-          <button class="flex flex-col gap-4 p-4 bg-white
+          <button class="flex flex-col gap-4 p-4 bg-white hover:bg-white/10
           rounded-xl items-center justify-center
-          text-center hover:bg-opacity-10 hover:border-opacity-100
+          text-center hover:border-black
           transition-all w-full h-full
-          border-black border-opacity-20 border-2">
+          border-black/20 border-2">
             <img src={instiution["logo"]} class="w-auto h-20" />
             <p>
               {instiution["name"]}

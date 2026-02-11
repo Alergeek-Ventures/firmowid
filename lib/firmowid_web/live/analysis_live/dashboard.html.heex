@@ -34,7 +34,7 @@
   <div class="grid grid-cols-1 gap-6 sm:grid-cols-3 mb-8">
     <div class="bg-blueBg border border-blueBg text-blueText rounded-lg p-6">
       <div class="flex items-center">
-        <div class="flex-shrink-0">
+        <div class="shrink-0">
           <.icon name="hero-arrow-trending-up" class="h-8 w-8 text-green-600" />
         </div>
         <div class="ml-4">
@@ -48,7 +48,7 @@
 
     <div class="bg-orangeBg border border-orangeBg text-orangeText rounded-lg p-6">
       <div class="flex items-center">
-        <div class="flex-shrink-0">
+        <div class="shrink-0">
           <.icon name="hero-arrow-trending-down" class="h-8 w-8 text-red-600" />
         </div>
         <div class="ml-4">
@@ -68,7 +68,7 @@
       )
     ]}>
       <div class="flex items-center">
-        <div class="flex-shrink-0">
+        <div class="shrink-0">
           <.icon
             name="hero-calculator"
             class={"h-8 w-8 #{if(Decimal.positive?(@net_profit), do: "text-blue-600", else: "text-gray-600")}"}

@@ -87,16 +87,12 @@ config :posthog, enable: false
 config :tails, colors_file: Path.join(__DIR__, "../assets/tailwind.colors.json")
 
 config :tailwind,
-  version: "3.4.17",
+  version: "4.1.12",
   firmowid: [
     args: ~w(
-      --config=tailwind.config.js
       --input=css/app.css
       --output=../priv/static/assets/app.css
     ),
-
-    # Import environment specific config. This must remain at the bottom
-    # of this file so it overrides the configuration defined above.
     cd: Path.expand("../assets", __DIR__)
   ]
 

@@ -14,7 +14,7 @@ defmodule FirmowidWeb.OrganizationLive do
           src="/images/figurine.png"
           class="h-[135vh] overflow-clip opacity-10 fixed -top-20 left-1/2"
         />
-        <div class="flex-grow max-w-screen-md z-10">
+        <div class="grow max-w-screen-md z-10">
           <h1 class="text-lg font-bold mb-16">Czas na przypisanie organizacji do Twojego konta</h1>
           <div class="flex md:flex-row justify-between">
             <div class="flex flex-col justify-between gap-4 max-w-[400px]">

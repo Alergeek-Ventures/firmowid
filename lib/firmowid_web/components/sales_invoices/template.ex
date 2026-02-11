@@ -105,7 +105,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
             :foreign -> "SPRZEDAWCA / SELLER"
           end}
         </h2>
-        <div class="grid grid-cols-[auto,_1fr] gap-1">
+        <div class="grid grid-cols-[auto_1fr] gap-1">
           <span>
             {case @sales_invoice.invoice_type do
               :poland -> "Nazwa:"
@@ -146,7 +146,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
             :foreign -> "NABYWCA / BUYER"
           end}
         </h2>
-        <div class="grid grid-cols-[auto,_1fr] gap-1">
+        <div class="grid grid-cols-[auto_1fr] gap-1">
           <%= if @sales_invoice.buyer_type == :company do %>
             <span>
               {case @sales_invoice.invoice_type do
@@ -203,7 +203,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
   defp items_table(assigns) do
     ~H"""
     <div>
-      <h2 class="text-[8px] text-darkGrey text-opacity-70 font-bold">
+      <h2 class="text-[8px] text-darkGrey/70 font-bold">
         {case @sales_invoice.invoice_type do
           :poland -> "TOWARY LUB USŁUGI"
           :foreign -> "TOWARY LUB USŁUGI / GOODS OR SERVICES"
@@ -309,7 +309,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
   defp correction_items_section(assigns) do
     ~H"""
     <div class="mb-4">
-      <h2 class="text-[8px] text-darkGrey text-opacity-70 font-bold uppercase">
+      <h2 class="text-[8px] text-darkGrey/70 font-bold uppercase">
         {@title}
       </h2>
       <table class="w-full mt-1">
@@ -615,7 +615,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
 
   defp payment_details(assigns) do
     ~H"""
-    <h2 class="text-[8px] text-darkGrey text-opacity-70 font-bold mb-2 uppercase">
+    <h2 class="text-[8px] text-darkGrey/70 font-bold mb-2 uppercase">
       {case @sales_invoice.invoice_type do
         :poland -> "Płatność"
         :foreign -> "Płatność / payment"
@@ -732,7 +732,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
       <hr class="border-greyButtonBg my-6" />
       <%= if @sales_invoice.currency != "PLN" do %>
         <div class="mb-6">
-          <h2 class="text-[8px] text-darkGrey text-opacity-70 font-bold mb-2 uppercase">
+          <h2 class="text-[8px] text-darkGrey/70 font-bold mb-2 uppercase">
             {case @sales_invoice.invoice_type do
               :poland -> "Przewalutowanie"
               :foreign -> "Przewalutowanie / Currency conversion"

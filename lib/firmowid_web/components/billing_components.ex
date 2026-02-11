@@ -34,7 +34,7 @@ defmodule FirmowidWeb.BillingComponents do
       <% {:warning, :over_limit, %{used: used, limit: limit}} -> %>
         <div class="bg-orangeBg border border-orangeText/20 rounded-lg p-4 mb-4">
           <div class="flex items-start gap-3">
-            <div class="flex-shrink-0">
+            <div class="shrink-0">
               <svg
                 class="h-5 w-5 text-orangeText"
                 viewBox="0 0 20 20"

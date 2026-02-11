@@ -1173,7 +1173,7 @@ defmodule FirmowidWeb.Project.Index do
     <%= for record <- @hours_records do %>
       <% user = record.user %>
       <div class="flex flex-row col-span-full gap-4 animate-appear">
-        <div class="flex flex-col flex-grow rounded-md bg-white">
+        <div class="flex flex-col grow rounded-md bg-white">
           <div class="flex items-center justify-between p-4">
             <div class="flex items-center">
               <.render_profile user={user} />
