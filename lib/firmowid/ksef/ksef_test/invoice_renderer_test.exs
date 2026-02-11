@@ -11,6 +11,9 @@ defmodule Firmowid.Ksef.InvoiceRendererTest do
   import Firmowid.KsefTestHelpers
 
   alias Firmowid.Ksef.InvoiceRenderer
+  alias Firmowid.Repo
+  alias Firmowid.SalesInvoices
+  alias Firmowid.SalesInvoices.SalesInvoice
 
   @moduletag :ksef_xsd
 
@@ -21,7 +24,8 @@ defmodule Firmowid.Ksef.InvoiceRendererTest do
   end
 
   setup do
-    Firmowid.AccountsFixtures.user_fixture()
+    user = Firmowid.AccountsFixtures.user_fixture()
+    Repo.put_org_id(user.organization_id)
     :ok
   end
 
@@ -252,5 +256,225 @@ defmodule Firmowid.Ksef.InvoiceRendererTest do
       assert length(Regex.scan(~r/<FaWiersz>/, xml)) == 10
       assert :ok = validate_xml(xml, model)
     end
+  end
+
+  # ---------------------------------------------------------------------------
+  # FA(3) Example Fixtures (Filtered)
+  # ---------------------------------------------------------------------------
+
+  describe "render_fa3/1 - FA(3) example fixtures" do
+    test "example 2 correction invoice matches fixture (normalized)", %{model: model} do
+      original = build_example_2_original()
+      original = update_ksef_submission(original, "9999999999-20230908-8BEF280C8D35-4D")
+
+      correction = build_example_2_correction(original)
+      xml = InvoiceRenderer.render_fa3(correction)
+
+      assert :ok = validate_xml(xml, model)
+
+      expected = load_example_fixture("FA_3_Przykład_2.xml")
+
+      assert normalize_fa3(xml) == normalize_fa3(expected)
+    end
+
+    test "example 5 correction invoice matches fixture (normalized)", %{model: model} do
+      original = build_example_5_original()
+      original = update_ksef_submission(original, "9999999999-20230908-8BEF280C8D35-4D")
+
+      correction = build_example_5_correction(original)
+      xml = InvoiceRenderer.render_fa3(correction)
+
+      assert :ok = validate_xml(xml, model)
+
+      expected = load_example_fixture("FA_3_Przykład_5.xml")
+
+      assert normalize_fa3(xml) == normalize_fa3(expected)
+    end
+  end
+
+  defp build_example_2_original do
+    attrs = %{
+      invoice_number: "FV2026/02/150",
+      issue_date: ~D[2026-02-15],
+      sale_date: ~D[2026-01-27],
+      due_date: nil,
+      currency: "PLN",
+      payment_method: :transfer,
+      seller_nip: "9999999999",
+      seller_display_name: "ABC AGD sp. z o. o.",
+      seller_address: "ul. Kwiatowa 1 m. 2",
+      seller_account_number: nil,
+      buyer_type: :company,
+      buyer_id: "1111111111",
+      buyer_full_name: "F.H.U. Jan Kowalski",
+      buyer_address: "ul. Polna 1",
+      buyer_country: "PL",
+      is_reverse_charge: false,
+      ksef_invoice_kind: :vat,
+      sales_invoice_items: [
+        %{
+          name: "lodówka Zimnotech mk1",
+          quantity: Decimal.new("1"),
+          unit: "szt.",
+          unit_price: Decimal.new("1626.01"),
+          vat_rate: "23"
+        }
+      ]
+    }
+
+    {:ok, invoice} = SalesInvoices.create_sales_invoice(%SalesInvoice{}, attrs)
+    Repo.preload(invoice, :sales_invoice_items)
+  end
+
+  defp build_example_2_correction(original) do
+    Repo.put_org_id(original.organization_id)
+
+    attrs = %{
+      invoice_number: "FK2026/03/200",
+      issue_date: ~D[2026-03-15],
+      sale_date: ~D[2026-01-27],
+      due_date: nil,
+      sales_invoice_items: [
+        %{
+          name: "lodówka Zimnotech mk1",
+          quantity: Decimal.new("1"),
+          unit: "szt.",
+          unit_price: Decimal.new("1463.41"),
+          vat_rate: "23"
+        }
+      ]
+    }
+
+    {:ok, correction} = SalesInvoices.create_correction_invoice(original, attrs)
+    Repo.preload(correction, [:sales_invoice_items, :corrected_invoice])
+  end
+
+  defp build_example_5_original do
+    attrs = %{
+      invoice_number: "FV2026/02/150",
+      issue_date: ~D[2026-02-15],
+      sale_date: nil,
+      due_date: nil,
+      currency: "PLN",
+      payment_method: :transfer,
+      seller_nip: "9999999999",
+      seller_display_name: "ABC AGD sp. z o. o.",
+      seller_address: "ul. Kwiatowa 1 m. 2",
+      seller_account_number: nil,
+      buyer_type: :company,
+      buyer_id: "1111111111",
+      buyer_full_name: "CDE sp. j.",
+      buyer_address: "ul. Sadowa 1 lok. 3",
+      buyer_country: "PL",
+      is_reverse_charge: false,
+      ksef_invoice_kind: :vat,
+      sales_invoice_items: [
+        %{
+          name: "Usluga programistyczna",
+          quantity: Decimal.new("1"),
+          unit: "szt.",
+          unit_price: Decimal.new("100.00"),
+          vat_rate: "23"
+        }
+      ]
+    }
+
+    {:ok, invoice} = SalesInvoices.create_sales_invoice(%SalesInvoice{}, attrs)
+    Repo.preload(invoice, :sales_invoice_items)
+  end
+
+  defp update_ksef_submission(invoice, ksef_number) do
+    {:ok, updated} =
+      invoice
+      |> SalesInvoice.ksef_update_changeset(%{locked_at: DateTime.utc_now(), ksef_number: ksef_number})
+      |> Repo.update()
+
+    updated
+  end
+
+  defp build_example_5_correction(original) do
+    attrs = %{
+      invoice_number: "FK2026/04/23",
+      issue_date: ~D[2026-04-01],
+      sale_date: nil,
+      due_date: nil,
+      buyer_full_name: "CeDeE s.c.",
+      sales_invoice_items: [
+        %{
+          name: "Usluga programistyczna",
+          quantity: Decimal.new("1"),
+          unit: "szt.",
+          unit_price: Decimal.new("100.00"),
+          vat_rate: "23"
+        }
+      ]
+    }
+
+    {:ok, correction} = SalesInvoices.create_correction_invoice(original, attrs)
+    Repo.preload(correction, [:sales_invoice_items, :corrected_invoice])
+  end
+
+  defp load_example_fixture(name) do
+    ["test", "support", "fixtures", "ksef", "fa3_examples", name]
+    |> Path.join()
+    |> File.read!()
+  end
+
+  defp normalize_fa3(xml) do
+    xml
+    |> strip_ignored_elements()
+    |> strip_prefixed_namespaces()
+    |> strip_root_namespace_attrs()
+    |> String.replace(["\r", "\n", "\t"], "")
+    |> strip_tag_padding()
+    |> strip_trailing_zero_decimals()
+  end
+
+  defp strip_ignored_elements(xml) do
+    ignored_tags = [
+      "DataWytworzeniaFa",
+      "SystemInfo",
+      "DaneKontaktowe",
+      "AdresL2",
+      "NrKlienta",
+      "IDNabywcy",
+      "UU_ID",
+      "P_1M",
+      "PrzyczynaKorekty",
+      "TypKorekty",
+      "Platnosc",
+      "Stopka"
+    ]
+
+    Enum.reduce(ignored_tags, xml, fn tag, acc ->
+      Regex.replace(~r/<#{tag}\b[^>]*>.*?<\/#{tag}>/s, acc, "")
+    end)
+  end
+
+  defp strip_prefixed_namespaces(xml) do
+    Regex.replace(~r/\s+xmlns:[a-zA-Z0-9]+="[^"]+"/, xml, "")
+  end
+
+  defp strip_root_namespace_attrs(xml) do
+    Regex.replace(~r/<Faktura\b[^>]*>/, xml, "<Faktura>")
+  end
+
+  defp strip_tag_padding(xml) do
+    xml
+    |> then(&Regex.replace(~r/>\s+([^<])/, &1, ">\\1"))
+    |> then(&Regex.replace(~r/([^>])\s+</, &1, "\\1<"))
+    |> then(&Regex.replace(~r/>\s+</, &1, "><"))
+    |> String.trim()
+  end
+
+  defp strip_trailing_zero_decimals(xml) do
+    Regex.replace(~r/>(-?\d+\.\d+)</, xml, fn _full, number ->
+      trimmed =
+        number
+        |> String.trim_trailing("0")
+        |> String.trim_trailing(".")
+
+      ">#{trimmed}<"
+    end)
   end
 end
