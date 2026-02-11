@@ -563,7 +563,7 @@ Repo.transaction(fn ->
   existing_invoice =
     Repo.one(
       from(si in SalesInvoices.SalesInvoice,
-        where: si.invoice_number == "FV/2025/11/001" and si.organization_id == ^hello_kitty.id,
+        where: si.invoice_number == "01/11/2025" and si.organization_id == ^hello_kitty.id,
         limit: 1
       )
     )
@@ -573,7 +573,7 @@ Repo.transaction(fn ->
       %SalesInvoices.SalesInvoice{organization_id: hello_kitty.id},
       %{
         "id" => "019d0001-0000-7000-8000-000000000001",
-        "invoice_number" => "FV/2025/11/001",
+        "invoice_number" => "01/11/2025",
         "invoice_type" => "poland",
         "issue_date" => ~D[2025-11-15],
         "sale_date" => ~D[2025-11-15],
