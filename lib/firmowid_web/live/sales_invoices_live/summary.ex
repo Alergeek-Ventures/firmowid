@@ -12,6 +12,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
   alias Firmowid.Ksef
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
+  alias Firmowid.SalesInvoices.SalesInvoice
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -33,10 +34,13 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
 
     currency_rate = SalesInvoices.get_currency_rate(invoice)
 
+    {previous_invoices, reference_invoice} = get_previous_invoices(invoice)
+
     socket =
       socket
       |> assign(:invoice, invoice)
-      |> assign(:reference_invoice, get_reference_invoice(invoice))
+      |> assign(:reference_invoice, reference_invoice)
+      |> assign(:previous_invoices, previous_invoices)
       |> assign(:submission_info, submission_info)
       |> assign(:currency_rate, currency_rate)
 
@@ -127,7 +131,42 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
 
       <div class="h-8 invisible" />
 
-      <div class="flex justify-center">
+      <div class="grid grid-cols-[1fr,650px,1fr] gap-8 justify-center items-start">
+        <% list_width = 224 %>
+        <% template_width = 595 %>
+        <% template_height = 842 %>
+        <% scale = list_width / template_width %>
+
+        <div
+          id="previous-invoice-list"
+          phx-hook=".PreviousInvoiceScaler"
+          class="space-y-6"
+          style={"width: #{list_width}px;"}
+        >
+          <div
+            :for={{prev, ref} <- @previous_invoices}
+            class="space-y-2"
+          >
+            <p class="text-sm/tight text-grey-700 pl-1">
+              {prev.invoice_number}
+            </p>
+            <div
+              class="border border-grey-200 rounded-lg bg-white shadow-sm overflow-hidden"
+              style={"width: #{template_width * scale}px; height: #{template_height * scale}px;"}
+              data-container
+            >
+              <div class="origin-top-left" style={"transform: scale(#{scale})"}>
+                <FirmowidWeb.PdfHTML.sales_invoice
+                  sales_invoice={prev}
+                  currency_rate={@currency_rate}
+                  show_vat={@current_org.is_vat_payer}
+                  reference_invoice={ref}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="relative">
           <%!-- Success state - behind invoice (z-0) --%>
           <div class="absolute inset-0 flex items-center justify-center z-0">
@@ -171,11 +210,14 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
       # Convert PubSub status to SubmissionInfo status
       submission_info = Ksef.get_submission_info(invoice)
 
+      {previous_invoices, reference_invoice} = get_previous_invoices(invoice)
+
       socket =
         socket
         |> assign(:submission_info, submission_info)
         |> assign(:invoice, invoice)
-        |> assign(:reference_invoice, get_reference_invoice(invoice))
+        |> assign(:reference_invoice, reference_invoice)
+        |> assign(:previous_invoices, previous_invoices)
 
       # Trigger paper plane animation when submitted successfully
       socket =
@@ -191,9 +233,26 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
     end
   end
 
-  defp get_reference_invoice(%SalesInvoices.SalesInvoice{ksef_invoice_kind: :kor} = invoice) do
-    SalesInvoices.get_reference_invoice_for_correction(invoice)
+  defp get_previous_invoices(%SalesInvoice{ksef_invoice_kind: :kor} = invoice) do
+    original_invoice = Repo.preload(invoice.corrected_invoice, corrections: :sales_invoice_items)
+
+    previous_invoices =
+      original_invoice.corrections
+      |> Enum.filter(&DateTime.before?(&1.locked_at, invoice.locked_at))
+      |> Enum.map(&%{&1 | corrected_invoice: original_invoice})
+      |> List.insert_at(0, original_invoice)
+
+    refererence_invoices = [nil | previous_invoices]
+
+    reference_for_current_invoice = List.last(previous_invoices)
+
+    previous_invoices_with_refs =
+      [previous_invoices, refererence_invoices]
+      |> Enum.zip()
+      |> Enum.reverse()
+
+    {previous_invoices_with_refs, reference_for_current_invoice}
   end
 
-  defp get_reference_invoice(_invoice), do: nil
+  defp get_previous_invoices(_invoice), do: []
 end
