@@ -25,12 +25,12 @@ defmodule FirmowidWeb.Components.Session do
     >
       <input :for={s <- @sessions} type="hidden" name="sessions_form[ids][]" value={s.id} />
 
-      <div class="flex flex-row items-center group min-w-0 flex-1 gap-1">
+      <div class="flex flex-row items-center group min-w-0 flex-1 gap-1 mr-4">
         <input
           id={sessions_form[:title].id}
           name={sessions_form[:title].name}
           value={sessions_form[:title].value}
-          class="border-none p-1 -ml-1 rounded read-only:bg-transparent hover:bg-grey-200 bg-grey-200 transition focus:ring-0 truncate min-w-0 max-w-60"
+          class="border-none p-1 -ml-1 rounded read-only:bg-transparent hover:bg-grey-200 bg-grey-200 transition focus:ring-0 truncate min-w-0 max-w-full"
           style="field-sizing: content;"
           phx-click={JS.remove_attribute("readonly")}
           phx-blur={JS.set_attribute({"readonly", true})}
