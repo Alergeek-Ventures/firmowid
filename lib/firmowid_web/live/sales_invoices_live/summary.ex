@@ -254,5 +254,5 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
     {previous_invoices_with_refs, reference_for_current_invoice}
   end
 
-  defp get_previous_invoices(_invoice), do: []
+  defp get_previous_invoices(_invoice), do: {[], nil}
 end
