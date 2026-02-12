@@ -5,7 +5,11 @@
 # Copy deps, _build, .env from main worktree (uses COW/reflink when available)
 copy_ignored = "wt step copy-ignored"
 # Fix execute permissions on binaries (lost during COW copy on some filesystems)
-remove_build = "rm -rf _build"
+remove_build = """
+if [[ "$OSTYPE" != "darwin"* ]]; then
+  rm -rf _build
+fi
+"""
 deps = "mix deps.get"
 
 # Generate .env.local with ports - main gets defaults, other branches get hashed ports
