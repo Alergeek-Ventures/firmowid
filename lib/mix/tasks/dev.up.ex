@@ -177,13 +177,16 @@ defmodule Mix.Tasks.Dev.Up do
   defp podman(args, env) do
     env_prefix = Enum.map(env, fn {k, v} -> "#{k}=#{v}" end)
 
-    case System.find_executable("distrobox-host-exec") do
-      nil ->
-        System.cmd("podman", args, env: env, stderr_to_stdout: true)
-
-      _path ->
+    cond do
+      System.find_executable("distrobox-host-exec") ->
         # Use env command to set variables on the host side
         System.cmd("distrobox-host-exec", ["env" | env_prefix] ++ ["podman" | args], stderr_to_stdout: true)
+
+      System.find_executable("podman") ->
+        System.cmd("podman", args, env: env, stderr_to_stdout: true)
+
+      System.find_executable("docker") ->
+        System.cmd("docker", args, env: env, stderr_to_stdout: true)
     end
   end
 
