@@ -71,7 +71,7 @@ defmodule Mix.Tasks.Dev.Up do
 
     Mix.shell().info("")
     Mix.shell().info("Environment ready:")
-    Mix.shell().info("  Phoenix:   https://#{branch}.firmowid.localhost (or localhost:#{port})")
+    Mix.shell().info("  Phoenix:   http://#{sanitize_branch(branch)}.firmowid.localhost:8080 (or localhost:#{port})")
     Mix.shell().info("  Tidewave:  https://localhost:#{port}/tidewave/mcp")
     Mix.shell().info("  Postgres:  localhost:#{db_port}")
     Mix.shell().info("  S3:        localhost:#{s3_port}")
@@ -249,25 +249,120 @@ defmodule Mix.Tasks.Dev.Up do
   end
 
   defp register_caddy_route(branch, port) do
-    Mix.shell().info("Registering Caddy route for #{branch}.firmowid.localhost...")
+    branch = sanitize_branch(branch)
+    hostname = dev_hostname(branch)
 
-    route_config = %{
-      "id" => branch,
-      "hostname" => "#{branch}.firmowid.localhost",
-      "upstream" => "127.0.0.1:#{port}"
+    Mix.shell().info("Registering Caddy route for #{hostname}...")
+
+    if System.user_home!() =~ "kosciak" do
+      route_config = %{
+        "id" => branch,
+        "hostname" => hostname,
+        "upstream" => "127.0.0.1:#{port}"
+      }
+
+      case Req.post("http://localhost:11190/api/routes", json: route_config) do
+        {:ok, %{status: status}} when status in 200..299 ->
+          Mix.shell().info("Caddy route registered: https://#{branch}.firmowid.localhost -> localhost:#{port}")
+
+        {:ok, %{status: status, body: body}} ->
+          Mix.shell().error("Warning: Failed to register Caddy route (status #{status})")
+          Mix.shell().error(inspect(body))
+
+        {:error, reason} ->
+          Mix.shell().error("Warning: Failed to register Caddy route (is development-caddy running?)")
+          Mix.shell().error(inspect(reason))
+      end
+    else
+      admin_base_url = System.get_env("CADDY_ADMIN_URL") || "http://localhost:2019"
+
+      case ensure_wt_server_exists(admin_base_url, branch, port) do
+        :ok ->
+          Mix.shell().info("Caddy route registered: http://#{hostname}:8080 -> localhost:#{port}")
+
+        {:error, reason} ->
+          Mix.shell().error("Warning: Failed to register Caddy route")
+          Mix.shell().error(reason)
+      end
+    end
+  end
+
+  defp sanitize_branch(branch) do
+    branch
+    |> String.downcase()
+    |> String.replace(~r/[^a-z0-9-]/, "-")
+    |> String.replace(~r/-+/, "-")
+    |> String.trim("-")
+    |> case do
+      "" -> "main"
+      sanitized -> sanitized
+    end
+  end
+
+  defp dev_hostname(branch) do
+    "#{branch}.firmowid.localhost"
+  end
+
+  defp ensure_wt_server_exists(admin_base_url, branch, port) do
+    hostname = dev_hostname(branch)
+
+    wt_server_config = %{
+      "listen" => [":8080"],
+      "automatic_https" => %{"disable" => true},
+      "routes" => []
     }
 
-    case Req.post("http://localhost:11190/api/routes", json: route_config) do
+    case Req.get(admin_base_url <> "/config/apps/http/servers/wt",
+           connect_options: [timeout: 200],
+           receive_timeout: 300
+         ) do
+      {:ok, %{status: 200, body: nil}} ->
+        case Req.put(admin_base_url <> "/config/apps/http/servers/wt",
+               json: wt_server_config,
+               connect_options: [timeout: 200],
+               receive_timeout: 1_000
+             ) do
+          {:ok, %{status: status}} when status in 200..299 ->
+            :ok
+
+          {:ok, %{status: status, body: body}} ->
+            {:error, "Failed to create Caddy wt server (status #{status}): #{inspect(body)}"}
+
+          {:error, reason} ->
+            {:error, "Failed to create Caddy wt server: #{inspect(reason)}"}
+        end
+
       {:ok, %{status: status}} when status in 200..299 ->
-        Mix.shell().info("Caddy route registered: https://#{branch}.firmowid.localhost -> localhost:#{port}")
+        :ok
 
       {:ok, %{status: status, body: body}} ->
-        Mix.shell().error("Warning: Failed to register Caddy route (status #{status})")
-        Mix.shell().error(inspect(body))
+        {:error, "Failed to read Caddy wt server (status #{status}): #{inspect(body)}"}
 
       {:error, reason} ->
-        Mix.shell().error("Warning: Failed to register Caddy route (is development-caddy running?)")
-        Mix.shell().error(inspect(reason))
+        {:error, "Failed to read Caddy wt server: #{inspect(reason)}"}
+    end
+
+    _ = Req.delete("#{admin_base_url}/id/wt:firmowid:#{branch}")
+
+    route_config = %{
+      "@id" => "wt:firmowid:#{branch}",
+      "match" => [%{"host" => [hostname]}],
+      "handle" => [%{"handler" => "reverse_proxy", "upstreams" => [%{"dial" => "127.0.0.1:#{port}"}]}]
+    }
+
+    case Req.put("#{admin_base_url}/config/apps/http/servers/wt/routes/0",
+           json: route_config,
+           connect_options: [timeout: 200],
+           receive_timeout: 1_000
+         ) do
+      {:ok, %{status: status}} when status in 200..299 ->
+        :ok
+
+      {:ok, %{status: status, body: body}} ->
+        {:error, "Failed to register Caddy route (status #{status}): #{inspect(body)}"}
+
+      {:error, reason} ->
+        {:error, "Failed to register Caddy route: #{inspect(reason)}"}
     end
   end
 end

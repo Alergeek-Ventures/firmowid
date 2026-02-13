@@ -130,12 +130,12 @@ config :firmowid,
   uploads_bucket: System.get_env("S3_BUCKET", "firmowid-uploads")
 
 cond do
+  chrome_port = System.get_env("CHROME_PORT") ->
+    config :firmowid, ChromicPDF, chrome_address: {"localhost", String.to_integer(chrome_port)}
+
   chrome_address = System.get_env("CHROME_ADDRESS") ->
     [host, port] = String.split(chrome_address, ":")
     config :firmowid, ChromicPDF, chrome_address: {host, String.to_integer(port)}
-
-  chrome_port = System.get_env("CHROME_PORT") ->
-    config :firmowid, ChromicPDF, chrome_address: {"localhost", String.to_integer(chrome_port)}
 
   true ->
     :ok

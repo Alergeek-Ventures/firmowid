@@ -134,9 +134,9 @@ wt remove feature-auth
 ### Jak to działa
 
 1. `wt switch --create` wywołuje hooki z `.config/wt.toml`:
-   - `mix dev.env` - generuje `.env.local` z deterministycznymi portami (hash z nazwy brancha)
-   - `mix setup` - instaluje zależności, migruje bazę
-   - `mix dev.start` - uruchamia Docker Compose + rejestruje route w Caddy
+   - generuje `.env.local` z deterministycznymi portami (hash z nazwy brancha)
+   - `mix deps.get` / `mix setup` - instaluje zależności, migruje bazę
+   - `mix dev.up` - uruchamia Compose + rejestruje route w Caddy
 
 2. Każdy worktree dostaje izolowane:
    - Postgres container z osobnym portem
@@ -144,8 +144,7 @@ wt remove feature-auth
    - Chromium container z osobnym portem
    - Caddy route: `{branch}.firmowid.localhost` → `localhost:{port}`
 
-3. `wt remove` wywołuje `mix dev.stop` - zatrzymuje kontenery i usuwa route z Caddy
-
+3. `wt remove` wywołuje `mix dev.down` - zatrzymuje kontenery i usuwa route z Caddy
 
 
 

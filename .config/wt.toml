@@ -55,4 +55,10 @@ up = "mix dev.up"
 down = "mix dev.down"
 
 [list]
-url = "https://{{ branch | sanitize }}.firmowid.localhost"
+url = """
+if [[ "$HOME" == "kosciak"* ]]; then
+  echo https://{{ branch | sanitize }}.firmowid.localhost
+else
+  echo "http://{{ branch | sanitize }}.firmowid.localhost:8080"
+fi
+"""

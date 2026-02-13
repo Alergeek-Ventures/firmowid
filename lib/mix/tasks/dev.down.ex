@@ -81,17 +81,45 @@ defmodule Mix.Tasks.Dev.Down do
   end
 
   defp unregister_caddy_route(branch) do
+    branch = sanitize_branch(branch)
     Mix.shell().info("Unregistering Caddy route...")
 
-    case Req.delete("http://localhost:11190/api/routes/#{branch}") do
-      {:ok, %{status: status}} when status in 200..299 ->
-        Mix.shell().info("Caddy route unregistered")
+    if System.user_home!() =~ "kosciak" do
+      case Req.delete("http://localhost:11190/api/routes/#{branch}") do
+        {:ok, %{status: status}} when status in 200..299 ->
+          Mix.shell().info("Caddy route unregistered")
 
-      {:ok, _} ->
-        Mix.shell().info("Warning: Caddy route not found")
+        {:ok, _} ->
+          Mix.shell().info("Warning: Caddy route not found")
 
-      {:error, _} ->
-        Mix.shell().info("Warning: development-caddy not running")
+        {:error, _} ->
+          Mix.shell().info("Warning: development-caddy not running")
+      end
+    else
+      admin_base_url = System.get_env("CADDY_ADMIN_URL") || "http://localhost:2019"
+
+      case Req.delete("#{admin_base_url}/id/wt:firmowid:#{branch}") do
+        {:ok, %{status: status}} when status in 200..299 ->
+          Mix.shell().info("Caddy route unregistered")
+
+        {:ok, _} ->
+          Mix.shell().info("Warning: Caddy route not found")
+
+        {:error, _} ->
+          Mix.shell().info("Warning: Caddy not running")
+      end
+    end
+  end
+
+  defp sanitize_branch(branch) do
+    branch
+    |> String.downcase()
+    |> String.replace(~r/[^a-z0-9-]/, "-")
+    |> String.replace(~r/-+/, "-")
+    |> String.trim("-")
+    |> case do
+      "" -> "main"
+      sanitized -> sanitized
     end
   end
 
