@@ -19,14 +19,20 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     new_timetracker_enabled = FunWithFlags.enabled?(:new_timetracker, for: user)
 
     last_session = Timetracker.get_most_recent_session(socket.assigns.current_user.id)
-    default_project_id = if last_session, do: last_session.project_id
+    active_projects = Timetracker.list_user_active_projects(socket.assigns.current_user.id)
+
+    default_project_id =
+      if last_session && Enum.any?(active_projects, &(&1.id == last_session.project_id)) do
+        last_session.project_id
+      end
 
     {:ok,
      socket
      |> assign(:new_timetracker_enabled, new_timetracker_enabled)
      |> assign(:form, to_form(SessionForm.changeset(%{"project_id" => default_project_id})))
+     |> assign(:active_projects, active_projects)
+     |> assign(:projects_by_id, Map.new(active_projects, &{&1.id, &1}))
      |> assign_sessions()
-     |> assign(:projects, Timetracker.list_user_projects(socket.assigns.current_user.id))
      |> assign(:is_form_extended, false)}
   end
 
@@ -90,11 +96,27 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
 
     current_session = Timetracker.get_current_session(socket.assigns.current_user.id)
 
+    project_ids_in_sessions =
+      sessions
+      |> Enum.map(& &1.project_id)
+      |> then(fn ids ->
+        if current_session do
+          [current_session.project_id | ids]
+        else
+          ids
+        end
+      end)
+      |> Enum.uniq()
+
+    projects_by_id = project_ids_in_sessions |> Timetracker.list_projects_by_ids() |> Map.new(&{&1.id, &1})
+    projects_by_id = Map.merge(socket.assigns.projects_by_id, projects_by_id)
+
     socket
     |> assign(:next_sessions_after, next_sessions_after)
     |> assign(:today_sessions, today_sessions)
     |> assign(:grouped_sessions, grouped_sessions)
     |> assign(:current_session, current_session)
+    |> assign(:projects_by_id, projects_by_id)
     |> update(:form, fn form ->
       case current_session do
         nil ->

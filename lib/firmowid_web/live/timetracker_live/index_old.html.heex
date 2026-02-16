@@ -26,7 +26,7 @@
   </div>
 
   <div class="flex justify-between items-center gap-8 mt-24 px-4 max-w-6xl w-full mx-auto">
-    <%= if Enum.empty?(@projects) do %>
+    <%= if Enum.empty?(@active_projects) do %>
       <div class="w-full max-w-md text-center py-8 text-darkGrey">
         <p class="text-lg font-semibold">Nie masz przypisanych projektów</p>
         <%= if Bodyguard.permit?(Firmowid.Timetracker, :create_project, @current_user) do %>
@@ -59,7 +59,7 @@
           disabled={@current_session != nil or is_hours_record_submitted}
           class="w-full font-bold bg-orangeBg text-orangeText border-none px-4 py-3 rounded appearance-none cursor-pointer hover:bg-[#f0e0d8] transition-colors focus:outline-hidden focus:ring-1 focus:ring-orangeText"
           field={@form[:project_id]}
-          options={@projects |> Enum.map(&{&1.name, &1.id})}
+          options={@active_projects |> Enum.map(&{&1.name, &1.id})}
         />
         <%= if @current_session do %>
           <p class="w-full font-bold bg-greyButtonBg px-4 py-3 rounded">
@@ -195,7 +195,8 @@
           module={FirmowidWeb.Components.Session}
           id={"tracker-entry-#{hd(sessions).id}"}
           sessions={sessions}
-          projects={@projects}
+          active_projects={@active_projects}
+          projects_by_id={@projects_by_id}
         />
       </div>
     </div>
@@ -228,7 +229,8 @@
               module={FirmowidWeb.Components.Session}
               id={"tracker-entry-#{hd(sessions).id}"}
               sessions={sessions}
-              projects={@projects}
+              active_projects={@active_projects}
+              projects_by_id={@projects_by_id}
             />
           </div>
         </div>

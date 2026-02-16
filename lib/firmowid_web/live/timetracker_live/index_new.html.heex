@@ -24,7 +24,7 @@
 
   <div class="w-full flex gap-10 lg:gap-20 justify-between flex-col md:flex-row">
     <div class="max-w-md w-full mx-auto md:mx-0">
-      <%= if Enum.empty?(@projects) do %>
+      <%= if Enum.empty?(@active_projects) do %>
         <div class="w-full text-center py-8 text-darkGrey">
           <p class="text-lg font-semibold">Nie masz przypisanych projektów</p>
           <%= if Bodyguard.permit?(Firmowid.Timetracker, :create_project, @current_user) do %>
@@ -71,7 +71,7 @@
             disabled={is_hours_record_submitted}
             class="bg-orangeBg text-orangeText border-none px-4 py-2 appearance-none cursor-pointer hover:bg-[#f0e0d8] transition-colors focus:outline-hidden focus:ring-1 focus:ring-orangeText h-[44px]"
             field={@form[:project_id]}
-            options={@projects |> Enum.map(&{&1.name, &1.id})}
+            options={@active_projects |> Enum.map(&{&1.name, &1.id})}
           />
 
           <div class="flex justify-between mt-2">
@@ -196,7 +196,8 @@
             :for={sessions <- @today_sessions}
             :key={hd(sessions).id}
             sessions={sessions}
-            projects={@projects}
+            active_projects={@active_projects}
+            projects_by_id={@projects_by_id}
           />
         </div>
       </div>
@@ -223,7 +224,8 @@
                   :for={sessions <- session_group}
                   :key={hd(sessions).id}
                   sessions={sessions}
-                  projects={@projects}
+                  active_projects={@active_projects}
+                  projects_by_id={@projects_by_id}
                 />
               </div>
             </div>

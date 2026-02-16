@@ -8,13 +8,16 @@ defmodule FirmowidWeb.Components.Session do
   alias FirmowidWeb.TimetrackerLive.Index
 
   attr :sessions, :list, required: true
-  attr :projects, :list, required: true
+  attr :active_projects, :list, required: true
+  attr :projects_by_id, :map, required: true
   attr :new_timetracker_enabled, :boolean
 
   def render_new(assigns) do
     ~H"""
     <% parent_session = hd(@sessions) %>
     <% form_id = "edit-session-form-#{parent_session.id}" %>
+    <% selected_project = Map.get(@projects_by_id, parent_session.project_id) %>
+    <% selected_project_archived = selected_project && selected_project.archived_at != nil %>
     <.form
       :let={sessions_form}
       as={:sessions_form}
@@ -71,7 +74,15 @@ defmodule FirmowidWeb.Components.Session do
         style="field-sizing: content;"
       >
         <option
-          :for={project <- @projects}
+          :if={selected_project_archived}
+          value={selected_project.id}
+          selected
+          disabled
+        >
+          {selected_project.name}
+        </option>
+        <option
+          :for={project <- @active_projects}
           value={project.id}
           selected={project.id == parent_session.project_id}
         >
@@ -169,7 +180,7 @@ defmodule FirmowidWeb.Components.Session do
         <% session = hd(@sessions) %>
         <p class="truncate">{session.title}</p>
         <p class="text-sm text-darkGrey uppercase">
-          {case Enum.find(@projects, &(&1.id == session.project_id)) do
+          {case Map.get(@projects_by_id, session.project_id) do
             nil -> "Brak projektu"
             project -> project.name
           end}
@@ -226,12 +237,20 @@ defmodule FirmowidWeb.Components.Session do
                 phx-submit="edit_session"
                 class="space-y-4"
               >
+                <% selected_project = Map.get(@projects_by_id, session.project_id) %>
+                <% selected_project_archived = selected_project && selected_project.archived_at != nil %>
                 <input type="hidden" name="session_form[id]" value={session.id} />
                 <.input
                   type="select"
                   label="Projekt"
                   field={edit_form[:project_id]}
-                  options={@projects |> Enum.map(&{&1.name, &1.id})}
+                  options={
+                    if(selected_project_archived,
+                      do: [{selected_project.name, selected_project.id}],
+                      else: []
+                    ) ++
+                      (@active_projects |> Enum.map(&{&1.name, &1.id}))
+                  }
                 />
                 <.input label="Tytuł" field={edit_form[:title]} placeholder="Nad czym pracowałeś?" />
                 <div class="flex gap-2">

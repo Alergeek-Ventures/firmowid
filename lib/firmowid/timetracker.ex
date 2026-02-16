@@ -80,6 +80,31 @@ defmodule Firmowid.Timetracker do
     Repo.all(query)
   end
 
+  def list_user_active_projects(user_id) do
+    query =
+      from p in Project,
+        join: pu in ProjectUser,
+        on: p.id == pu.project_id,
+        where: pu.user_id == ^user_id,
+        where: is_nil(p.archived_at),
+        order_by: p.name,
+        select: p
+
+    Repo.all(query)
+  end
+
+  def list_projects_by_ids(ids) when is_list(ids) do
+    ids = ids |> Enum.uniq() |> Enum.reject(&is_nil/1)
+
+    if ids == [] do
+      []
+    else
+      Project
+      |> where([p], p.id in ^ids)
+      |> Repo.all()
+    end
+  end
+
   def list_user_projects_with_duration(user_id, date) do
     user_id
     |> list_user_projects()

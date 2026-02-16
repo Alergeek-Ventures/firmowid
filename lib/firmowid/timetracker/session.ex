@@ -41,7 +41,9 @@ defmodule Firmowid.Timetracker.Session do
       changeset
     else
       Ecto.Query.from(pu in Timetracker.ProjectUser,
-        where: pu.user_id == ^user_id and pu.project_id == ^project_id
+        where: pu.user_id == ^user_id and pu.project_id == ^project_id,
+        join: p in Timetracker.Project,
+        on: p.id == pu.project_id and is_nil(p.archived_at)
       )
       |> Repo.exists?()
       |> case do
