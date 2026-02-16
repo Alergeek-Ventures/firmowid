@@ -245,6 +245,70 @@ defmodule Firmowid.Timetracker do
     end)
   end
 
+  def list_archived_projects_total, do: list_archived_projects_total("")
+  def list_archived_projects_total(nil), do: list_archived_projects_total("")
+
+  def list_archived_projects_total("") do
+    session_duration_query =
+      from s in Session,
+        group_by: s.project_id,
+        select: %{
+          project_id: s.project_id,
+          duration:
+            "extract(epoch from coalesce(?, now()) - ?)"
+            |> fragment(s.end_datetime, s.start_datetime)
+            |> sum()
+            |> coalesce(0)
+            |> type(:integer)
+        }
+
+    query =
+      from p in Project,
+        where: not is_nil(p.archived_at),
+        left_join: sd in subquery(session_duration_query),
+        on: p.id == sd.project_id,
+        select: %{p | hours: sd.duration |> coalesce(0) |> type(:integer)},
+        order_by: p.name
+
+    query
+    |> Repo.all()
+    |> Enum.map(fn project ->
+      hours = (project.hours / 3600) |> Float.ceil() |> trunc()
+      %{project | hours: hours}
+    end)
+  end
+
+  def list_archived_projects_total(search) when is_binary(search) do
+    session_duration_query =
+      from s in Session,
+        group_by: s.project_id,
+        select: %{
+          project_id: s.project_id,
+          duration:
+            "extract(epoch from coalesce(?, now()) - ?)"
+            |> fragment(s.end_datetime, s.start_datetime)
+            |> sum()
+            |> coalesce(0)
+            |> type(:integer)
+        }
+
+    query =
+      from p in Project,
+        where: not is_nil(p.archived_at),
+        left_join: sd in subquery(session_duration_query),
+        on: p.id == sd.project_id,
+        where: p.name ~> ^search,
+        select: %{p | hours: sd.duration |> coalesce(0) |> type(:integer)},
+        order_by: fragment("paradedb.score(?) DESC", p.id)
+
+    query
+    |> Repo.all(prepare: :unnamed)
+    |> Enum.map(fn project ->
+      hours = (project.hours / 3600) |> Float.ceil() |> trunc()
+      %{project | hours: hours}
+    end)
+  end
+
   def list_projects_with_users do
     Project
     |> Repo.all()

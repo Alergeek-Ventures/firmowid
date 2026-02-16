@@ -64,7 +64,7 @@ defmodule FirmowidWeb.ManagementLive.Projects do
     projects =
       case socket.assigns.live_action do
         :index -> Timetracker.list_active_projects(socket.assigns.selected_date, search)
-        :archive -> Timetracker.list_archived_projects(socket.assigns.selected_date, search)
+        :archive -> Timetracker.list_archived_projects_total(search)
       end
 
     assign(socket, :projects, projects)
