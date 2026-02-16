@@ -160,6 +160,19 @@ defmodule Firmowid.Ksef.InvoiceRendererTest do
 
       assert :ok = validate_xml(xml, model)
     end
+
+    test "cancellation correction (zeroed items) passes XSD validation", %{model: model} do
+      original = simulate_ksef_submission(build_domestic_invoice(), with_ksef_number: true)
+
+      {:ok, cancellation} = SalesInvoices.cancel_sales_invoice(original)
+      xml = InvoiceRenderer.render_fa3(cancellation)
+
+      assert :ok = validate_xml(xml, model)
+
+      # should include before+after rows for changed items
+      assert length(Regex.scan(~r/<FaWiersz>/, xml)) >= 2
+      assert xml =~ "<P_8B>0</P_8B>"
+    end
   end
 
   # ---------------------------------------------------------------------------

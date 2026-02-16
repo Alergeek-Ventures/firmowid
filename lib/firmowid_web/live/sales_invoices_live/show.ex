@@ -20,7 +20,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
     sales_invoice =
       id
       |> SalesInvoices.get_sales_invoice_with_logo_url()
-      |> Repo.preload([:corrected_invoice])
+      |> Repo.preload([:corrections, corrected_invoice: :corrections])
 
     # Subscribe to KSeF status updates for live feedback
     Ksef.subscribe_ksef_status(current_user.organization_id)
@@ -86,6 +86,22 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
 
       {:error, :ksef_submitted} ->
         {:noreply, put_flash(socket, :error, "Nie można usunąć faktury wysłanej do KSeF. Wystaw fakturę korygującą.")}
+    end
+  end
+
+  @impl true
+  def handle_event("cancel", _params, socket) do
+    Bodyguard.permit!(SalesInvoices, :cancel, socket.assigns.current_user, socket.assigns.invoice)
+
+    case SalesInvoices.cancel_sales_invoice(socket.assigns.invoice) do
+      {:ok, correction} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Wystawiono korektę anulującą")
+         |> push_navigate(to: ~p"/sprzedazowe/#{correction.id}/podsumowanie")}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Nie udało się anulować faktury")}
     end
   end
 

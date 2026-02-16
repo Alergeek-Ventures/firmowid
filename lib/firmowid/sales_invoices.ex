@@ -20,7 +20,7 @@ defmodule Firmowid.SalesInvoices do
   def authorize(:create_sales_invoice, %{role: :admin}, _), do: true
 
   def authorize(action, %{role: :admin, organization_id: org_id}, %{organization_id: org_id})
-      when action in [:show, :update, :delete], do: true
+      when action in [:show, :update, :delete, :cancel], do: true
 
   def authorize(_, _, _), do: false
 
@@ -585,17 +585,70 @@ defmodule Firmowid.SalesInvoices do
       when not is_nil(original_invoice.ksef_number) and not is_nil(original_invoice.locked_at) do
     original_invoice = Repo.preload(original_invoice, [:sales_invoice_items, corrections: :sales_invoice_items])
 
-    latest_correction =
-      original_invoice.corrections
-      |> Enum.reject(&is_nil(&1.locked_at))
-      |> Enum.max_by(& &1.locked_at, DateTime, fn -> nil end)
-
-    reference_invoice = latest_correction || original_invoice
+    reference_invoice = get_latest_invoice_snapshot(original_invoice)
 
     original_invoice
     |> SalesInvoice.prepare_correction_invoice_changeset(reference_invoice)
     |> SalesInvoice.changeset(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Cancels a KSeF-submitted VAT invoice by creating a correction invoice (KOR)
+  that zeros out all line items.
+
+  Cancellation is only allowed from the latest invoice snapshot in a correction
+  chain (same rule as editing). The corrected (original) invoice must be a locked,
+  KSeF-submitted VAT invoice.
+  """
+  @spec cancel_sales_invoice(SalesInvoice.t()) :: {:ok, SalesInvoice.t()} | {:error, Ecto.Changeset.t()}
+  def cancel_sales_invoice(%SalesInvoice{} = invoice) do
+    invoice =
+      Repo.preload(invoice, [
+        :sales_invoice_items,
+        :corrections,
+        corrected_invoice: [:sales_invoice_items, corrections: :sales_invoice_items]
+      ])
+
+    original_invoice = if invoice.ksef_invoice_kind == :kor, do: invoice.corrected_invoice, else: invoice
+
+    if SalesInvoice.locked?(original_invoice) do
+      latest_snapshot = get_latest_invoice_snapshot(original_invoice)
+
+      issue_date = Date.utc_today()
+      invoice_number = get_next_invoice_number(issue_date, series: "FK")
+
+      zeroed_items_attrs =
+        Enum.map(invoice.sales_invoice_items, fn item ->
+          item
+          |> Map.take([:index, :name, :unit, :unit_price, :vat_rate])
+          |> Map.put(:quantity, Decimal.new(0))
+        end)
+
+      attrs = %{
+        invoice_number: invoice_number,
+        issue_date: issue_date,
+        sale_date: invoice.sale_date,
+        due_date: invoice.due_date,
+        sales_invoice_items: zeroed_items_attrs
+      }
+
+      original_invoice
+      |> SalesInvoice.prepare_correction_invoice_changeset(latest_snapshot)
+      |> SalesInvoice.changeset(attrs)
+      |> Repo.insert()
+    else
+      {:error, :not_locked}
+    end
+  end
+
+  defp get_latest_invoice_snapshot(%SalesInvoice{ksef_invoice_kind: :vat} = original_invoice) do
+    latest_correction =
+      original_invoice.corrections
+      |> Enum.reject(&is_nil(&1.locked_at))
+      |> Enum.max_by(& &1.locked_at, DateTime, fn -> nil end)
+
+    latest_correction || original_invoice
   end
 
   def get_reference_invoice_for_correction(%SalesInvoice{ksef_invoice_kind: :kor} = correction_invoice) do

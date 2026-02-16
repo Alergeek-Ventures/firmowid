@@ -10,6 +10,14 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
 
   require Logger
 
+  def cancelable?(%SalesInvoice{} = invoice) do
+    if Decimal.eq?(SalesInvoice.get_gross_value(invoice), 0) do
+      false
+    else
+      SalesInvoice.editable?(invoice)
+    end
+  end
+
   attr :invoice, SalesInvoice, required: true
   attr :preview_url, :string, required: true
   attr :preview_type, :atom, required: true
@@ -124,6 +132,21 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
               >
                 <.icon name="hero-pencil-square-solid" class="w-5 h-5" />
               </.link>
+
+              <button
+                :if={cancelable?(@invoice)}
+                id="cancel-invoice-button"
+                phx-hook="Tippy"
+                data-tippy-content="Anuluj fakturę (korekta)"
+                data-tippy-delay="100"
+                class={[
+                  "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
+                  "px-2 py-1 flex items-center justify-center rounded"
+                ]}
+                phx-click={show_modal("cancel-invoice-modal")}
+              >
+                <.icon name="hero-no-symbol" class="w-5 h-5" />
+              </button>
               <button
                 :if={SalesInvoice.deletable?(@invoice)}
                 id="delete-invoice-button"
@@ -189,6 +212,34 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                       phx-disable-with="Usuwanie..."
                     >
                       Usun
+                    </.button>
+                  </div>
+                </.modal>
+              </div>
+
+              <div :if={cancelable?(@invoice)} class="absolute">
+                <.modal id="cancel-invoice-modal" on_cancel={hide_modal("cancel-invoice-modal")}>
+                  <p>
+                    Czy na pewno chcesz anulować fakturę <span class="font-semibold">{@invoice.invoice_number}</span>?
+                    Wystawimy fakturę korygującą zerującą pozycje.
+                  </p>
+                  <div class="mt-6 flex justify-end gap-3">
+                    <.button
+                      variant="outline"
+                      color="black"
+                      phx-click={hide_modal("cancel-invoice-modal")}
+                    >
+                      Anuluj
+                    </.button>
+                    <.button
+                      color="orange"
+                      phx-click={
+                        JS.exec("data-cancel", to: "#cancel-invoice-modal")
+                        |> JS.push("cancel")
+                      }
+                      phx-disable-with="Anulowanie..."
+                    >
+                      Anuluj fakturę
                     </.button>
                   </div>
                 </.modal>

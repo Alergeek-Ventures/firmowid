@@ -74,7 +74,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
     has_many :corrections, __MODULE__,
       foreign_key: :corrected_invoice_id,
-      preload_order: [asc_nulls_last: :locked_at]
+      preload_order: [asc_nulls_last: :locked_at, asc: :inserted_at]
 
     has_many :sales_invoice_items, SalesInvoiceItem,
       preload_order: [asc: :index],

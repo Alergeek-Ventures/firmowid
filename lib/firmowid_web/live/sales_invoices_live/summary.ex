@@ -14,6 +14,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
   alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.SalesInvoice
 
+  require Logger
+
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     current_user = socket.assigns.current_user
@@ -43,6 +45,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
       |> assign(:previous_invoices, previous_invoices)
       |> assign(:submission_info, submission_info)
       |> assign(:currency_rate, currency_rate)
+      |> assign(:ksef_connected?, Ksef.get_credential() != nil)
 
     {:ok, socket}
   end
@@ -77,19 +80,31 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
       <% end %>
 
       <div class="flex items-center justify-between">
-        <div class="flex items-center gap-6">
+        <div class="flex items-center gap-4">
           <.link
             navigate={~p"/sprzedazowe/#{@invoice.id}"}
-            class="flex items-center gap-2 text-gray-600"
+            class={button_styles(%{size: "small", color: "light_grey", new: true})}
           >
-            <Lucideicons.pencil class="size-4" /> Edytuj
+            <Lucideicons.pencil /> Edytuj
           </.link>
           <.link
             href={~p"/sprzedazowe/#{@invoice.id}/pobierz"}
-            class="flex items-center gap-2 text-gray-600"
+            class={button_styles(%{size: "small", color: "light_grey", new: true})}
           >
-            <Lucideicons.download class="size-4" /> Pobierz
+            <Lucideicons.download /> Pobierz
           </.link>
+          <.button
+            :if={
+              @ksef_connected? and SalesInvoice.confirmed?(@invoice) and
+                @submission_info.status == :not_submitted
+            }
+            color="light_grey"
+            size="small"
+            new={true}
+            phx-click="send_to_ksef"
+          >
+            <Lucideicons.send /> Wyślij do KSeF
+          </.button>
         </div>
 
         <div class="flex items-center gap-4">
@@ -198,6 +213,25 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
   end
 
   @impl true
+  def handle_event("send_to_ksef", _params, socket) do
+    invoice = socket.assigns.invoice
+
+    case Ksef.submit_sales_invoice(invoice.id) do
+      {:ok, _job} ->
+        Ksef.subscribe_ksef_status(socket.assigns.current_user.organization_id)
+
+        {:noreply,
+         socket
+         |> assign(:submission_info, %{socket.assigns.submission_info | status: :submitting})
+         |> put_flash(:info, "Wysyłka do KSeF rozpoczęta")}
+
+      {:error, reason} ->
+        Logger.error("Failed to submit invoice to KSeF from summary: #{inspect(reason)}")
+        {:noreply, put_flash(socket, :error, "Nie udało się wysłać faktury do KSeF")}
+    end
+  end
+
+  @impl true
   def handle_info({:ksef_invoice_status, %{invoice_id: invoice_id, status: status}}, socket) do
     # Only handle if this is the invoice we're viewing
     if socket.assigns.invoice.id == invoice_id do
@@ -236,9 +270,11 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
   defp get_previous_invoices(%SalesInvoice{ksef_invoice_kind: :kor} = invoice) do
     original_invoice = Repo.preload(invoice.corrected_invoice, corrections: :sales_invoice_items)
 
+    locked_corrections = Enum.reject(original_invoice.corrections, &is_nil(&1.locked_at))
+
     previous_invoices =
-      original_invoice.corrections
-      |> Enum.filter(&DateTime.before?(&1.locked_at, invoice.locked_at))
+      locked_corrections
+      |> Enum.filter(&DateTime.before?(&1.locked_at, invoice.locked_at || DateTime.utc_now()))
       |> Enum.map(&%{&1 | corrected_invoice: original_invoice})
       |> List.insert_at(0, original_invoice)
 
