@@ -2,23 +2,20 @@
   <%!-- todo: css background image --%>
   <img
     src="/images/figurine_timeracker.png"
-    class="h-[135vh] pointer-events-none fixed top-[20%] left-0 -z-0 hidden lg:block"
+    class="h-[135vh] pointer-events-none fixed top-[20%] left-0 z-0 hidden lg:block"
   />
 
   <div class="flex items-center justify-between gap-4 -mt-4 pt-12 pb-9 sticky top-16 z-30 bg-lightGreyBg">
     <div class="flex gap-2 shrink-0">
-      <.icon name="hero-calendar" />
-      <p class="line-clamp-1">{format_current_day_header(Date.utc_today())}</p>
+      <Lucideicons.calendar_1 />
+      <p class="line-clamp-1 text-grey-900">{format_current_day_header(Date.utc_today())}</p>
     </div>
 
     <.link
       navigate={~p"/czasosledz/ewidencja"}
-      class={[
-        button_styles(%{color: "light_grey", variant: "outline"}),
-        "max-w-44 w-full text-center"
-      ]}
+      class={button_styles(%{variant: "outline", size: "medium", new: true})}
     >
-      Ewidencja
+      <Lucideicons.clipboard_list /> Ewidencja
     </.link>
   </div>
 
@@ -47,125 +44,163 @@
           phx-change={if @current_session, do: "validate_and_update", else: "validate"}
           phx-submit="save"
           for={@form}
-          class="w-full flex flex-col gap-4 sticky top-[12.375rem]"
+          class="w-full flex flex-col sticky top-[12.1rem]"
         >
-          <% is_hours_record_submitted =
-            Timetracker.submitted_hours_record?(@current_user.id, Date.utc_today()) %>
+          <div class="flex flex-col gap-4">
+            <% is_hours_record_submitted =
+              Timetracker.submitted_hours_record?(@current_user.id, Date.utc_today()) %>
 
-          <.input
-            field={@form[:title]}
-            required={true}
-            placeholder={
-              if not is_hours_record_submitted,
-                do: "Nad czym dzisiaj pracujesz?",
-                else: "Nie możesz dodać sesji, po wysłaniu ewidencji godzin"
-            }
-            input_class="h-[44px] border-none bg-greyButtonBg text-black"
-            phx-hook="FocusOnMount"
-            phx-debounce="300"
-            autofocus
-          />
-
-          <.input
-            type="select"
-            disabled={is_hours_record_submitted}
-            class="bg-orangeBg text-orangeText border-none px-4 py-2 appearance-none cursor-pointer hover:bg-[#f0e0d8] transition-colors focus:outline-hidden focus:ring-1 focus:ring-orangeText h-[44px]"
-            field={@form[:project_id]}
-            options={@active_projects |> Enum.map(&{&1.name, &1.id})}
-          />
-
-          <div class="flex justify-between mt-2">
-            <.switch
-              field={@form[:is_remote]}
-              label="pracuję z domu"
-              disabled={is_hours_record_submitted}
+            <.input
+              field={@form[:title]}
+              required={true}
+              placeholder={
+                if not is_hours_record_submitted,
+                  do: "Nad czym dzisiaj pracujesz?",
+                  else: "Nie możesz dodać sesji, po wysłaniu ewidencji godzin"
+              }
+              input_class="h-11 border-none hover:!bg-grey-300 focus:!outline-[2px] focus:!outline-offset-0 focus:!outline-grey-300 bg-greyButtonBg text-black"
+              phx-hook="FocusOnMount"
+              phx-debounce="300"
+              autofocus
             />
 
-            <.button
-              type="button"
-              id="toggle_extended_form"
-              class="size-8 rounded p-1 flex items-center phx-click-loading:opacity-60 phx-click-loading:cursor-default data-[active]:bg-darkGrey data-[active]:text-white"
-              color="light_grey"
-              phx-click="toggle_extended_form"
-              data-active={@is_form_extended}
+            <.input
+              type="select"
               disabled={is_hours_record_submitted}
-            >
-              <.icon name="hero-pencil" class="size-6 border-[6px]" />
-            </.button>
-          </div>
+              class="bg-orangeBg text-orangeText border-none px-4 py-2 appearance-none cursor-pointer hover:bg-[#f0e0d8] transition-colors focus:outline-hidden focus:ring-1 focus:ring-orangeText h-11"
+              field={@form[:project_id]}
+              options={@active_projects |> Enum.map(&{&1.name, &1.id})}
+            />
 
-          <p :for={{error, _} <- Keyword.get_values(@form.errors, :base)}>{error}</p>
+            <div class="flex justify-between mt-2">
+              <.switch
+                field={@form[:is_remote]}
+                label="pracuję z domu"
+                class="font-normal gap-3!"
+                disabled={is_hours_record_submitted}
+              />
 
-          <div class="flex flex-col gap-5 mt-2 items-center justify-between relative h-32">
-            <%= cond do %>
-              <% @is_form_extended -> %>
-                <div class="flex gap-6 w-full">
-                  <.input
-                    type="date"
-                    class="flex-1 flex"
-                    input_class="border-none bg-grey-200"
-                    field={@form[:date]}
-                  />
-                  <.input
-                    step="60"
-                    label="od"
-                    type="time"
-                    class="flex-1 flex items-baseline gap-2 justify-center"
-                    input_class="border-none bg-grey-200"
-                    field={@form[:start_time]}
-                    value={format_time(@form[:start_time].value)}
-                  />
-                  <.input
-                    step="60"
-                    type="time"
-                    label="do"
-                    class="flex-1 flex items-baseline gap-2 justify-center"
-                    input_class="border-none bg-grey-200"
-                    field={@form[:end_time]}
-                    value={format_time(@form[:end_time].value)}
-                  />
-                </div>
-              <% @current_session -> %>
-                <p
-                  class="text-orangeText text-2xl text-center font-semibold tracking-normal"
-                  id="timetracker-timer"
-                  data-start_time={@current_session.start_datetime}
-                  phx-hook="Timer"
-                >
-                  {TimeFormatter.format_timer(@current_session.duration, :with_seconds)}
-                </p>
-              <% true -> %>
-                <div>
-                  <p class="text-orangeText text-center">w {@month_stats.month}</p>
-                  <p class="text-orangeText text-2xl text-center font-semibold leading-tight">
-                    {@month_stats.hours} godz. {@month_stats.minutes} min
-                  </p>
-                </div>
-            <% end %>
-
-            <%= if @current_session do %>
               <.button
-                phx-click="end_session"
                 type="button"
-                color="orange"
-                class="absolute bottom-0 max-w-32 w-full h-[44px]"
-              >
-                Stop
-              </.button>
-            <% else %>
-              <.button
-                color="orange"
-                class="absolute bottom-0 max-w-32 w-full h-[44px]"
+                new={true}
+                id="toggle_extended_form"
+                color="light_grey"
+                class="h-8 w-8 p-0 rounded-lg"
+                phx-click="toggle_extended_form"
+                data-active={@is_form_extended}
                 disabled={is_hours_record_submitted}
               >
-                {if @is_form_extended, do: "Zapisz sesję", else: "Start"}
+                <Lucideicons.square_pen />
               </.button>
+            </div>
+
+            <p :for={{error, _} <- Keyword.get_values(@form.errors, :base)}>{error}</p>
+          </div>
+          <div class="flex flex-col items-center">
+            <%= cond do %>
+              <% @is_form_extended -> %>
+                <div class="flex flex-col justify-center pt-8 items-center gap-12 w-full ">
+                  <div class="flex gap-6 w-full h-8">
+                    <.input
+                      type="date"
+                      class="flex-1 min-w-0"
+                      input_class="w-full h-8 border-none bg-grey-200"
+                      field={@form[:date]}
+                    />
+
+                    <.input
+                      step="60"
+                      label="od"
+                      type="time"
+                      class="flex-1 min-w-0 flex items-baseline gap-4 justify-center"
+                      input_class="w-full h-8 border-none bg-grey-200"
+                      field={@form[:start_time]}
+                      value={format_time(@form[:start_time].value)}
+                    />
+
+                    <.input
+                      step="60"
+                      type="time"
+                      label="do"
+                      class="flex-1 min-w-0 flex items-baseline gap-4 justify-center"
+                      input_class="w-full h-8 border-none bg-grey-200"
+                      field={@form[:end_time]}
+                      value={format_time(@form[:end_time].value)}
+                    />
+                  </div>
+
+                  <.button
+                    :if={!@current_session}
+                    new={true}
+                    variant="solid"
+                    color="orange"
+                    size="medium"
+                    class=" w-31.5"
+                    disabled={is_hours_record_submitted}
+                  >
+                    Start
+                  </.button>
+                  <.button
+                    :if={@current_session}
+                    new={true}
+                    phx-click="end_session"
+                    type="button"
+                    variant="solid"
+                    color="orange"
+                    size="medium"
+                    class=" w-31.5"
+                    disabled={is_hours_record_submitted}
+                  >
+                    Stop
+                  </.button>
+                </div>
+              <% @current_session -> %>
+                <div class="flex flex-col items-center gap-5 mt-14.5 w-full min-w-0">
+                  <p
+                    class="text-orangeText leading-tight text-2xl text-center font-semibold tracking-normal"
+                    id="timetracker-timer"
+                    data-start_time={@current_session.start_datetime}
+                    phx-hook="Timer"
+                  >
+                    {TimeFormatter.format_timer(@current_session.duration, :with_seconds)}
+                  </p>
+
+                  <.button
+                    phx-click="end_session"
+                    type="button"
+                    variant="solid"
+                    color="orange"
+                    size="medium"
+                    new={true}
+                    class=" w-31.5"
+                  >
+                    Stop
+                  </.button>
+                </div>
+              <% true -> %>
+                <div class="flex flex-col items-center gap-5 mt-8 w-full">
+                  <div class="h-[60px]">
+                    <p class="text-orangeText text-2xl text-center font-semibold leading-tight">
+                      {@month_stats.hours} godz. {@month_stats.minutes} min
+                    </p>
+                    <p class="text-orangeText text-center">w {@month_stats.month}</p>
+                  </div>
+                  <.button
+                    new={true}
+                    variant="solid"
+                    color="orange"
+                    size="medium"
+                    class=" w-31.5"
+                    disabled={is_hours_record_submitted}
+                  >
+                    Start
+                  </.button>
+                </div>
             <% end %>
           </div>
         </.form>
       <% end %>
     </div>
-
     <div class="w-full min-w-0 space-y-16 mb-16">
       <div
         :if={Enum.empty?(@grouped_sessions) and Enum.empty?(@today_sessions)}
@@ -175,10 +210,9 @@
         <p class="text-sm mt-2">Rozpocznij swoją pierwszą sesję używając formularza po lewej</p>
       </div>
 
-      <div :if={not Enum.empty?(@today_sessions)} class="space-y-4">
-        <div class="flex justify-between items-center">
-          <p class="text-sm font-semibold text-orangeText">TWOJE DZISIEJSZE SESJE</p>
-
+      <div :if={not Enum.empty?(@today_sessions)}>
+        <div class="flex justify-between items-center pb-3">
+          <p class=" font-semibold text-orangeText">Twoje dzisiejsze sesje</p>
           <% today_time = @today_sessions |> List.flatten() |> calculate_total_duration() %>
           <p
             class="bg-orangeBg text-orangeText px-2 py-1 rounded-md font-bold text-xl leading-tight"
@@ -202,21 +236,20 @@
         </div>
       </div>
 
-      <div class="space-y-14">
-        <div :for={{week, days} <- @grouped_sessions} :key={week}>
-          <div class="flex justify-between items-center sticky top-[11.875rem] -ml-1 pl-1 bg-lightGreyBg z-20">
-            <p class="text-sm font-semibold text-black">{format_week_header(week)}</p>
-            <p class="bg-greyButtonBg px-1.5 py-1 rounded-md font-bold text-darkGrey">
-              {days
-              |> Enum.map(fn {_, session_group} -> session_group end)
-              |> List.flatten()
-              |> calculate_total_duration()
-              |> TimeFormatter.format_timer()}
-            </p>
-          </div>
-          <div class="space-y-7">
-            <div :for={{day, session_group} <- days} :key={day} class="space-y-1">
-              <p class="text-sm font-semibold flex text-darkGrey sticky top-[13.875rem] -ml-1 pl-1 py-1 bg-lightGreyBg z-10">
+      <div class="flex flex-col space-y-14">
+        <div
+          :for={{week, days} <- @grouped_sessions}
+          :key={week}
+          class={if Enum.empty?(@today_sessions), do: "order-first", else: ""}
+        >
+          <div :if={Enum.empty?(@today_sessions)} />
+          <div class="space-y-8">
+            <div
+              :for={{day, session_group} <- days}
+              :key={day}
+              class=" flex flex-col gap-2"
+            >
+              <p class="text-sm font-semibold flex text-darkGrey sticky top-[190px] bg-lightGreyBg">
                 {format_day_header(day)}
               </p>
               <div class="divide-y divide-grey-200">

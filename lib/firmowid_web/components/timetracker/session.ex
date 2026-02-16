@@ -16,8 +16,6 @@ defmodule FirmowidWeb.Components.Session do
     ~H"""
     <% parent_session = hd(@sessions) %>
     <% form_id = "edit-session-form-#{parent_session.id}" %>
-    <% selected_project = Map.get(@projects_by_id, parent_session.project_id) %>
-    <% selected_project_archived = selected_project && selected_project.archived_at != nil %>
     <.form
       :let={sessions_form}
       as={:sessions_form}
@@ -25,9 +23,15 @@ defmodule FirmowidWeb.Components.Session do
       for={GroupedSessionForm.from_sessions(@sessions)}
       phx-submit="validate_and_update_list_onsubmit"
       phx-change="validate_and_update_list_onchange"
-      class="flex flex-row items-center py-1 min-w-0 w-full"
+      class="flex flex-row items-center pl-1 min-w-0 w-full py-1"
     >
       <input :for={s <- @sessions} type="hidden" name="sessions_form[ids][]" value={s.id} />
+      <input
+        type="hidden"
+        id={sessions_form[:project_id].id}
+        name={sessions_form[:project_id].name}
+        value={sessions_form[:project_id].value}
+      />
 
       <div class="flex flex-row items-center group min-w-0 flex-1 gap-1 mr-4">
         <input
@@ -57,38 +61,47 @@ defmodule FirmowidWeb.Components.Session do
           }
           class="opacity-0 group-hover:opacity-100 transition focus:outline-hidden"
         >
-          <.icon
-            name="hero-pencil-solid"
-            class="size-5 text-grey-700"
-          />
         </button>
       </div>
 
-      <select
-        id={sessions_form[:project_id].id}
-        name={sessions_form[:project_id].name}
-        value={sessions_form[:project_id].value}
-        phx-change={JS.dispatch("submit", to: "##{form_id}")}
+      <% select_id = "session-project-select-#{parent_session.id}" %>
+      <button
+        id={"project-select-#{parent_session.id}"}
+        type="button"
+        selecttarget={select_id}
+        phx-click={show_popover(select_id)}
         disabled={parent_session.lockdown}
         class="text-sm text-darkGrey uppercase bg-transparent hover:bg-grey-200 transition py-1 px-2 rounded border-none focus:ring-0 disabled:pointer-events-none !bg-none cursor-pointer ml-auto min-w-0"
-        style="field-sizing: content;"
       >
-        <option
-          :if={selected_project_archived}
-          value={selected_project.id}
-          selected
-          disabled
-        >
-          {selected_project.name}
-        </option>
-        <option
-          :for={project <- @active_projects}
-          value={project.id}
-          selected={project.id == parent_session.project_id}
-        >
-          {project.name}
-        </option>
-      </select>
+        {case Enum.find(@active_projects, &(&1.id == parent_session.project_id)) do
+          nil -> "Select"
+          project -> project.name
+        end}
+      </button>
+
+      <.popover
+        placement="bottom-end"
+        id={select_id}
+        reference_id={"project-select-#{parent_session.id}"}
+        class="bg-grey-50 border border-grey-200 w-[230px] rounded-lg  "
+      >
+        <ul class="overflow-auto p-1 flex flex-col gap-1">
+          <li
+            :for={project <- @active_projects}
+            class="px-2 py-1.5 rounded text-sm cursor-pointer transition hover:bg-orange-100 hover:text-orange-800 "
+            phx-click={
+              JS.set_attribute(
+                {"value", project.id},
+                to: "##{sessions_form[:project_id].id}"
+              )
+              |> JS.dispatch("submit", to: "##{form_id}")
+              |> hide_popover(select_id)
+            }
+          >
+            {project.name}
+          </li>
+        </ul>
+      </.popover>
 
       <% popover_id = "edit-sessions-popover-#{parent_session.id}" %>
       <% total_duration = @sessions |> Index.calculate_total_duration() %>
@@ -148,7 +161,7 @@ defmodule FirmowidWeb.Components.Session do
                 phx-click="delete_session"
                 phx-value-id={session[:id].value}
               >
-                <.render_trash_icon class="text-darkGrey" />
+                <Lucideicons.trash_2 class="hover:text-darkGrey text-grey-500 transition-all" />
               </button>
             </.inputs_for>
           </div>
