@@ -72,7 +72,6 @@ defmodule FirmowidWeb.TimetrackerLive.SessionForm do
 
   def times_to_datetimes(%{start_time: start_time, end_time: end_time, date: date}, timezone) do
     start_datetime = date_to_datetime(date, start_time, timezone)
-
     # This allows for adding sessions which cross midnight
     end_datetime =
       if end_time && Time.before?(end_time, start_time) do

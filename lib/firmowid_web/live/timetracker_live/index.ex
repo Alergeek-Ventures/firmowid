@@ -156,6 +156,69 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     end
   end
 
+  def validate_and_update(params, socket) do
+    current_sessions_ids =
+      socket.assigns.today_sessions
+      |> Enum.at(0)
+      |> Enum.map(& &1.id)
+
+    if length(current_sessions_ids) > 1 do
+      edit_sessions(current_sessions_ids, params, socket)
+    else
+      edit_session(params, socket)
+    end
+  end
+
+  def edit_session(params, socket) do
+    current_session = socket.assigns.current_session
+
+    current_session
+    |> SessionForm.from_session(socket.assigns.timezone)
+    |> SessionForm.changeset(params)
+    |> SessionForm.attributes(socket.assigns.current_user.id, socket.assigns.timezone)
+    |> case do
+      {:ok, attributes} ->
+        Bodyguard.permit!(
+          Timetracker,
+          :update_session,
+          socket.assigns.current_user,
+          current_session
+        )
+
+        current_session
+        |> Timetracker.update_session(attributes)
+        |> handle_session_save_result(socket)
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, form: to_form(changeset))}
+    end
+  end
+
+  def edit_sessions(ids, form, socket) do
+    title = Map.get(form, "title")
+
+    ids
+    |> Timetracker.list_sessions_by_ids()
+    |> Enum.map(fn session ->
+      Bodyguard.permit!(Timetracker, :update_session, socket.assigns.current_user, session)
+      Session.changeset(session, %{title: title})
+    end)
+    |> Timetracker.update_sessions()
+    |> case do
+      {:ok, _sessions} ->
+        {:noreply, assign_sessions(socket)}
+
+      {:error, :overlap} ->
+        LiveToast.send_toast(:error, "Sesja nachodzi na inną sesję.")
+        {:noreply, socket}
+
+      {:error, session_id, changeset, _changes_so_far} ->
+        Enum.each(changeset.errors, fn {_field, {message, _}} ->
+          LiveToast.send_toast(:error, "#{message} (sesja ID: #{session_id})")
+        end)
+    end
+  end
+
   def handle_event("toggle_extended_form", _, %{assigns: %{current_session: nil}} = socket) do
     now = DateTime.now!(socket.assigns.timezone)
 
@@ -182,29 +245,18 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     {:noreply, assign(socket, form: to_form(SessionForm.changeset(session)))}
   end
 
-  def handle_event("validate_and_update", %{"session_form" => params}, socket) do
-    current_session = socket.assigns.current_session
+  def handle_event("validate_and_update_list", params, socket) do
+    case params do
+      %{"sessions_form" => %{"ids" => ids} = form} ->
+        edit_sessions(ids, form, socket)
 
-    current_session
-    |> SessionForm.from_session(socket.assigns.timezone)
-    |> SessionForm.changeset(params)
-    |> SessionForm.attributes(socket.assigns.current_user.id, socket.assigns.timezone)
-    |> case do
-      {:ok, attributes} ->
-        Bodyguard.permit!(
-          Timetracker,
-          :update_session,
-          socket.assigns.current_user,
-          current_session
-        )
-
-        current_session
-        |> Timetracker.update_session(attributes)
-        |> handle_session_save_result(socket)
-
-      {:error, changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+      %{"sessions_form" => form_params} ->
+        validate_and_update(form_params, socket)
     end
+  end
+
+  def handle_event("validate_and_update", %{"session_form" => form_params}, socket) do
+    validate_and_update(form_params, socket)
   end
 
   def handle_event("save", %{"session_form" => session}, socket) do

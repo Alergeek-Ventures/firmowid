@@ -20,7 +20,8 @@ defmodule FirmowidWeb.Components.Session do
       as={:sessions_form}
       id={form_id}
       for={GroupedSessionForm.from_sessions(@sessions)}
-      phx-submit="edit_sessions"
+      phx-submit="validate_and_update_list"
+      phx-change="validate_and_update_list"
       class="flex flex-row items-center py-1 min-w-0 w-full"
     >
       <input :for={s <- @sessions} type="hidden" name="sessions_form[ids][]" value={s.id} />
@@ -37,6 +38,7 @@ defmodule FirmowidWeb.Components.Session do
           phx-click-away={JS.set_attribute({"readonly", true})}
           phx-keydown={JS.set_attribute({"readonly", true})}
           phx-key="enter"
+          phx-debounce="300"
           readonly
         />
 
