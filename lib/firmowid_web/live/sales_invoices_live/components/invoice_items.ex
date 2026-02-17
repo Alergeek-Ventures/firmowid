@@ -185,14 +185,23 @@ defmodule FirmowidWeb.SalesInvoicesLive.Components.InvoiceItems do
             input_class="text-center"
             new={true}
           />
+
           <.input
-            field={item[:vat_rate]}
+            id={item[:vat_rate].id}
+            name={item[:vat_rate].name}
+            value={
+              if to_boolean(@items_form[:is_reverse_charge].value) do
+                "oo"
+              else
+                item[:vat_rate].value
+              end
+            }
             type="select"
             options={@vat_options}
             phx-debounce
             class="w-24"
             new={true}
-            disabled={@vat_disabled?}
+            readonly={@vat_disabled?}
           />
           <.input
             field={item[:unit]}
