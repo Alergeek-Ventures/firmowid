@@ -13,7 +13,7 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
   def input(assigns) do
     ~H"""
     <form
-      class="flex flex-row gap-2 border border-grey-300 h-12 py-2 px-4 mx-16 mb-8 rounded-md bg-white"
+      class="flex flex-row gap-2 border border-grey-200 h-10 py-1 px-4 mx-16 mb-8 rounded-lg bg-white"
       phx-submit="send"
       phx-target={@myself}
     >
@@ -24,19 +24,19 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
         placeholder={if @loading, do: "Firmowid myśli...", else: "Napisz swoją wiadomość"}
         disabled={@loading}
         class={[
-          "placeholder:text-grey-400 text-black w-full p-0 border-none focus:ring-0",
+          "placeholder:text-grey-200 text-black w-full p-0 border-none focus:ring-0",
           "focus:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed"
         ]}
       />
       <button
         type="submit"
         disabled={@loading}
-        class="text-grey-400 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="text-grey-200 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <%= if @loading do %>
           <.icon name="hero-arrow-path" class="animate-spin" />
         <% else %>
-          <.icon name="hero-paper-airplane" />
+          <Lucideicons.send class="size-6" />
         <% end %>
       </button>
     </form>

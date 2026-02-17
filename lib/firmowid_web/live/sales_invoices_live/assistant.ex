@@ -112,22 +112,21 @@ defmodule FirmowidWeb.SalesInvoicesLive.Assistant do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="assistant-chat relative flex flex-col mx-auto w-full h-full">
-      <button
+    <div class="assistant-chat relative flex flex-col w-full h-full pt-8 px-14.5">
+      <.button
         id="chat-close-button"
         phx-hook="Tippy"
         data-tippy-content="Zamknij czat"
         phx-click="close_chat"
         phx-target="#invoice-show"
-        class={[
-          "text-sm text-grey-700 self-end flex items-center gap-2 hover:text-grey-400 transition-colors mb-4",
-          "absolute top-0 right-0 bg-lightGreyBg hover:border-grey-400 border border-transparent rounded p-2 z-10"
-        ]}
+        variant="ghost"
+        new={true}
+        class="mb-4 absolute top-0 right-0 z-10 p-0 h-auto"
       >
-        <.icon name="hero-x-mark-mini" />
-      </button>
+        <.icon name="hero-x-mark-mini" class="size-6" />
+      </.button>
       <div
-        class="flex flex-col grow gap-12 py-4 pr-4 overflow-y-auto"
+        class="flex flex-col grow gap-12 pr-4 overflow-y-auto"
         id="messages"
         phx-update="stream"
         phx-hook="ScrollToBottom"
@@ -136,7 +135,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Assistant do
           {Components.message(msg, @myself, current_user: @current_user)}
         </div>
         <%= if @zero_state do %>
-          <div class="flex flex-row flex-wrap gap-3 items-center justify-center py-4">
+          <div class="flex flex-row flex-wrap gap-4 items-center justify-center py-4">
             <%= for possible_message <- [
             "Ta faktura pokrywa wszystkie transakcje z poprzedniego miesiąca",
             "Transakcja za tę fakturę ma inną nazwę kontrahenta",
@@ -145,7 +144,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Assistant do
               <.button
                 phx-click="send"
                 color="orange"
-                class="text-sm text-orangeText bg-orangeBg font-bold hover:text-orangeBg hover:bg-orangeText"
+                class="text-sm leading-tight text-orange-700 bg-orange-200 font-medium hover:text-orange-200 hover:bg-orange-700 rounded py-1 px-[9px] h-auto"
                 phx-target={@myself}
                 phx-value-message={possible_message}
               >
