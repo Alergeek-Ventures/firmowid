@@ -156,7 +156,15 @@ defmodule FirmowidWeb.SalesInvoicesLive.Edit do
 
     case invoice do
       {:ok, invoice} ->
-        send_invoice_to_ksef(socket, invoice)
+        if Ksef.get_credential() == nil do
+          {:noreply,
+           socket
+           |> push_event("unsaved-changed", %{value: false})
+           |> put_flash(:info, "Faktura została wystawiona, ale nie można jej wysłać do KSeF — brak połączenia z KSeF")
+           |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
+        else
+          send_invoice_to_ksef(socket, invoice)
+        end
 
       {:error, changeset} ->
         Logger.error("Failed to create invoice: #{inspect(changeset)}")

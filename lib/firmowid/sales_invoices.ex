@@ -581,8 +581,7 @@ defmodule Firmowid.SalesInvoices do
 
   Seller and buyer data are automatically copied from the original invoice.
   """
-  def create_correction_invoice(%SalesInvoice{ksef_invoice_kind: :vat} = original_invoice, attrs)
-      when not is_nil(original_invoice.ksef_number) and not is_nil(original_invoice.locked_at) do
+  def create_correction_invoice(%SalesInvoice{ksef_invoice_kind: :vat} = original_invoice, attrs) do
     original_invoice = Repo.preload(original_invoice, [:sales_invoice_items, corrections: :sales_invoice_items])
 
     reference_invoice = get_latest_invoice_snapshot(original_invoice)
