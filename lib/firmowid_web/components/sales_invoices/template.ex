@@ -24,12 +24,32 @@ defmodule FirmowidWeb.SalesInvoices.Template do
                   [(@show_vat && "Faktura VAT / VAT Invoice:") || "Faktura / Invoice:"]
 
                 :kor ->
-                  ["Faktura korygująca / Correction Invoice:"]
+                  ["Faktura korygująca / Correction Invoice"]
               end
           end}
           {@sales_invoice.invoice_number}
         </div>
-        <div class="mt-2">
+
+        <%= if @sales_invoice.ksef_invoice_kind == :kor do %>
+          <div class="mt-1">
+            <span>
+              {case @sales_invoice.invoice_type do
+                :poland -> "Do faktury nr "
+                :foreign -> "Do faktury nr / For invoice no. "
+              end}
+            </span>
+            <span class="font-bold">{@sales_invoice.corrected_invoice.invoice_number}</span>
+            <span>
+              {case @sales_invoice.invoice_type do
+                :poland -> "z dnia"
+                :foreign -> "z dnia / dated"
+              end}
+              {@sales_invoice.corrected_invoice.issue_date |> Calendar.strftime("%d.%m.%Y")}
+            </span>
+          </div>
+        <% end %>
+
+        <div class="mt-4">
           <span>
             {case @sales_invoice.invoice_type do
               :poland -> "Data wystawienia:"
@@ -51,26 +71,6 @@ defmodule FirmowidWeb.SalesInvoices.Template do
             {@sales_invoice.sale_date |> Calendar.strftime("%d.%m.%Y")}
           </span>
         </div>
-        <%= if @sales_invoice.ksef_invoice_kind == :kor do %>
-          <div class="mt-1">
-            <span>
-              {case @sales_invoice.invoice_type do
-                :poland -> "Faktura korygowana:"
-                :foreign -> "Faktura korygowana / Corrected invoice:"
-              end}
-            </span>
-            <span class="font-bold">{@sales_invoice.corrected_invoice.invoice_number}</span>
-            <span class="text-darkGrey/70">
-              {case @sales_invoice.invoice_type do
-                :poland -> "z dnia"
-                :foreign -> "z dnia / dated"
-              end}
-            </span>
-            <span class="font-bold">
-              {@sales_invoice.corrected_invoice.issue_date |> Calendar.strftime("%d.%m.%Y")}
-            </span>
-          </div>
-        <% end %>
       </div>
       <div>
         <div class="flex gap-4 items-center">
@@ -97,7 +97,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
 
   defp seller_buyer_section(assigns) do
     ~H"""
-    <div class="grid grid-cols-2 gap-7 text-[10px] leading-[14px]">
+    <div class="grid grid-cols-2 gap-5 text-[10px] leading-[14px]">
       <div>
         <h2 class=" text-darkGrey/70 text-[8px] font-bold mb-2">
           {case @sales_invoice.invoice_type do
@@ -308,14 +308,14 @@ defmodule FirmowidWeb.SalesInvoices.Template do
 
   defp correction_items_section(assigns) do
     ~H"""
-    <div class="mb-4">
-      <h2 class="text-[8px] text-darkGrey/70 font-bold uppercase">
+    <div>
+      <h3 class="text-[8px] text-darkGrey/70 font-bold uppercase">
         {@title}
-      </h2>
+      </h3>
       <table class="w-full mt-1">
-        <thead class="text-[8px] text-darkGrey/70">
+        <thead class="text-[8px]/[11px] text-darkGrey/70">
           <%= if @sales_invoice.invoice_type == :poland do %>
-            <tr class="py-2">
+            <tr class="*:pb-1">
               <th class="text-left">Lp.</th>
               <th class="text-left">Nazwa</th>
               <th class="text-right">Ilość</th>
@@ -332,7 +332,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
             </tr>
           <% end %>
           <%= if @sales_invoice.invoice_type == :foreign do %>
-            <tr class="pt-2">
+            <tr class="*:pb-0.5">
               <th class="text-left">Lp.</th>
               <th class="text-left">Nazwa</th>
               <th class="text-right">Ilość</th>
@@ -340,7 +340,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
               <th class="text-right">Cena jednostkowa</th>
               <th class="text-right">Cena sumaryczna</th>
             </tr>
-            <tr class="pb-2">
+            <tr class="*:pb-1">
               <th class="text-left">No</th>
               <th class="text-left">Name</th>
               <th class="text-right">Count</th>
@@ -350,9 +350,9 @@ defmodule FirmowidWeb.SalesInvoices.Template do
             </tr>
           <% end %>
         </thead>
-        <tbody class="text-[10px]">
+        <tbody class="text-[10px]/[14px]">
           <%= for {item, index} <- Enum.with_index(@items, 1) do %>
-            <tr class="align-top">
+            <tr class="*:py-1 last:*:pb-0 align-top">
               <td class="py-1">{index}.</td>
               <td class="py-1 max-w-40">{item.name}</td>
               <td class="py-1 text-right">{item.quantity}</td>
@@ -427,7 +427,13 @@ defmodule FirmowidWeb.SalesInvoices.Template do
       |> assign(:after_title, after_title)
 
     ~H"""
-    <div>
+    <div class="space-y-2.5 mb-4">
+      <h2 class="text-[8px] text-darkGrey/70 font-bold mb-4">
+        {case @sales_invoice.invoice_type do
+          :poland -> "TOWARY LUB USŁUGI"
+          :foreign -> "TOWARY LUB USŁUGI / GOODS OR SERVICES"
+        end}
+      </h2>
       <.correction_items_section
         sales_invoice={@sales_invoice}
         show_vat={@show_vat}
@@ -546,69 +552,107 @@ defmodule FirmowidWeb.SalesInvoices.Template do
       |> assign(:delta_gross, delta_gross)
 
     ~H"""
-    <div class="bg-greyButtonBg/30 text-[10px] rounded-md px-4 py-2 mt-6 ml-auto">
-      <h2 class="text-[8px] text-darkGrey/70 font-bold uppercase mb-2">
-        {case @sales_invoice.invoice_type do
-          :poland -> "Podsumowanie korekty"
-          :foreign -> "Podsumowanie korekty / Correction summary"
-        end}
-      </h2>
-
+    <div class="bg-greyButtonBg/30 text-[10px]/[14px] rounded-md px-4 py-2">
       <table class="w-full">
-        <thead class="text-[8px] text-darkGrey/70">
+        <thead class="text-[8px] text-grey-600">
           <%= if @sales_invoice.invoice_type == :poland do %>
-            <tr>
-              <th class="text-left"></th>
-              <th class="text-right px-2">Przed</th>
-              <th class="text-right px-2">Po</th>
-              <th class="text-right">Różnica</th>
+            <tr class="*:pb-2.5">
+              <th class="text-left uppercase">Podsumowanie</th>
+              <th class="text-right px-2">Przed korektą</th>
+              <th class="text-right px-2">Po korekcie</th>
+              <th class="text-right pl-2">Różnica</th>
             </tr>
           <% else %>
             <tr>
-              <th class="text-left"></th>
-              <th class="text-right px-2">Przed / Before</th>
-              <th class="text-right px-2">Po / After</th>
-              <th class="text-right">Różnica / Diff</th>
+              <th class="text-left uppercase">Podsumowanie</th>
+              <th class="text-right px-2">Przed korektą</th>
+              <th class="text-right px-2">Po korekcie</th>
+              <th class="text-right pl-2">Różnica</th>
+            </tr>
+            <tr class="*:pb-2.5">
+              <th class="text-left uppercase">Summary</th>
+              <th class="text-right px-2">Before correction</th>
+              <th class="text-right px-2">After correction</th>
+              <th class="text-right pl-2">Difference</th>
             </tr>
           <% end %>
         </thead>
         <tbody>
-          <tr>
-            <td class="py-1">
-              {if @sales_invoice.invoice_type == :poland,
-                do: "Wartość#{if @show_vat, do: " netto"}:",
-                else: "Wartość netto / Net value:"}
-            </td>
-            <td class="py-1 text-right px-2">{Money.new(@currency, @before_net)}</td>
-            <td class="py-1 text-right px-2">{Money.new(@currency, @after_net)}</td>
-            <td class="py-1 text-right font-medium">{Money.new(@currency, @delta_net)}</td>
-          </tr>
-          <%= if @show_vat do %>
+          <%= if @sales_invoice.invoice_type == :poland do %>
             <tr>
-              <td class="py-1">
-                {if @sales_invoice.invoice_type == :poland,
-                  do: "Całkowita wartość VAT:",
-                  else: "Wartość całkowita VAT / Total VAT:"}
+              <td class="py-0.5 text-[8px]">
+                Wartość{if @show_vat, do: " netto"}:
               </td>
-              <td class="py-1 text-right px-2">{Money.new(@currency, @before_vat)}</td>
-              <td class="py-1 text-right px-2">{Money.new(@currency, @after_vat)}</td>
-              <td class="py-1 text-right font-medium">{Money.new(@currency, @delta_vat)}</td>
+              <td class="py-0.5 text-right px-2 line-through text-grey-600">
+                {Money.new(@currency, @before_net)}
+              </td>
+              <td class="py-0.5 text-right px-2">{Money.new(@currency, @after_net)}</td>
+              <td class="py-0.5 text-right pl-2 font-medium">
+                {signed_money(@currency, @delta_net)}
+              </td>
             </tr>
-            <tr class="font-bold">
-              <td class="py-1">
-                {if @sales_invoice.invoice_type == :poland,
-                  do: "Brutto:",
-                  else: "Brutto / Gross:"}
+            <%= if @show_vat do %>
+              <tr>
+                <td class="py-0.5 text-[8px]">
+                  Całkowita wartość VAT:
+                </td>
+
+                <td class="py-0.5 text-right px-2 line-through text-grey-600">
+                  {Money.new(@currency, @before_vat)}
+                </td>
+                <td class="py-0.5 text-right px-2">{Money.new(@currency, @after_vat)}</td>
+                <td class="py-0.5 text-right pl-2 font-medium">
+                  {signed_money(@currency, @delta_vat)}
+                </td>
+              </tr>
+
+              <tr class="font-bold text-[14px]/[20px]">
+                <td class="pt-0.5 font-normal text-[8px]">
+                  Razem do zapłaty:
+                </td>
+                <td class="pt-0.5 text-right px-2 line-through text-grey-600">
+                  {Money.new(@currency, @before_gross)}
+                </td>
+                <td class="pt-0.5 text-right px-2">{Money.new(@currency, @after_gross)}</td>
+                <td class="pt-0.5 text-right pl-2">{signed_money(@currency, @delta_gross)}</td>
+              </tr>
+            <% end %>
+          <% end %>
+          <%= if @sales_invoice.invoice_type == :foreign do %>
+            <tr>
+              <td class="py-0.5 text-[8px]">
+                Wartość całkowita VAT / Total VAT:
               </td>
-              <td class="py-1 text-right px-2">{Money.new(@currency, @before_gross)}</td>
-              <td class="py-1 text-right px-2">{Money.new(@currency, @after_gross)}</td>
-              <td class="py-1 text-right">{Money.new(@currency, @delta_gross)}</td>
+              <td class="py-0.5 text-right pl-2" colspan="3">
+                nie dotyczy / not applicable
+              </td>
+            </tr>
+
+            <tr class="font-bold text-[14px]/[20px]">
+              <td class="pt-0.5 font-normal text-[8px]">
+                Razem do zapłaty / Total:
+              </td>
+              <td class="pt-0.5 text-right px-2 line-through text-grey-600">
+                {Money.new(@currency, @before_net)}
+              </td>
+              <td class="pt-0.5 text-right px-2">{Money.new(@currency, @after_net)}</td>
+              <td class="pt-0.5 text-right pl-2">{signed_money(@currency, @delta_net)}</td>
             </tr>
           <% end %>
         </tbody>
       </table>
     </div>
     """
+  end
+
+  defp signed_money(currency, value) do
+    money = Money.new(currency, value)
+
+    if Decimal.positive?(value) do
+      "+#{money}"
+    else
+      to_string(money)
+    end
   end
 
   attr :sales_invoice, :map, required: true
@@ -621,7 +665,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
         :foreign -> "Płatność / payment"
       end}
     </h2>
-    <div class="flex flex-col w-fit text-[10px] gap-1 leading-[14px]">
+    <div class="flex flex-col w-fit text-[10px]/[14px] gap-1">
       <%= if @sales_invoice.invoice_type == :poland do %>
         <div>
           Metoda płatności: {case @sales_invoice.payment_method do
@@ -669,7 +713,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
 
   defp footer(assigns) do
     ~H"""
-    <div class="absolute flex items-end bottom-4 right-0 justify-center text-[8px] max-w-[128px]">
+    <div class="absolute flex items-end bottom-8 inset-x-0 mx-auto justify-center text-[8px]">
       <div class="flex flex-col items-center">
         <%= if @footer_logo_data_uri do %>
           <img src={@footer_logo_data_uri} class="w-10 h-10 mb-2" />
@@ -706,14 +750,13 @@ defmodule FirmowidWeb.SalesInvoices.Template do
         show_vat={@show_vat}
         logo_data_uri={@logo_data_uri}
       />
-      <hr class="border-greyButtonBg my-3" />
+      <hr class="border-greyButtonBg my-6" />
       <.seller_buyer_section sales_invoice={@sales_invoice} />
-      <hr class="border-greyButtonBg my-3" />
+      <hr class="border-greyButtonBg my-6" />
       <%= if @sales_invoice.ksef_invoice_kind == :kor do %>
-        <%= if Firmowid.Ksef.InvoiceRenderer.invoice_items_changed?(
-          @sales_invoice,
-          @reference_invoice
-        ) do %>
+        <% items_changed? =
+          correction_items_table_changed?(@sales_invoice, @reference_invoice, @show_vat) %>
+        <%= if items_changed? do %>
           <.correction_items_table
             sales_invoice={@sales_invoice}
             show_vat={@show_vat}
@@ -729,7 +772,8 @@ defmodule FirmowidWeb.SalesInvoices.Template do
         <.items_table sales_invoice={@sales_invoice} show_vat={@show_vat} />
         <.summary sales_invoice={@sales_invoice} show_vat={@show_vat} />
       <% end %>
-      <hr class="border-greyButtonBg my-3" />
+
+      <hr class="border-greyButtonBg my-6" />
       <%= if @sales_invoice.currency != "PLN" do %>
         <div class="mb-3">
           <h2 class="text-[8px] text-darkGrey/70 font-bold mb-2 uppercase">
@@ -755,5 +799,27 @@ defmodule FirmowidWeb.SalesInvoices.Template do
       <.footer footer_logo_data_uri={@footer_logo_data_uri} />
     </div>
     """
+  end
+
+  defp correction_items_table_changed?(
+         %{sales_invoice_items: current_items, invoice_type: invoice_type},
+         %{sales_invoice_items: reference_items},
+         show_vat
+       ) do
+    if length(current_items) == length(reference_items) do
+      compare_vat_rate? = invoice_type == :poland and show_vat
+
+      current_items
+      |> Enum.zip(reference_items)
+      |> Enum.any?(fn {current_item, reference_item} ->
+        current_item.name != reference_item.name or
+          not Decimal.eq?(current_item.quantity, reference_item.quantity) or
+          current_item.unit != reference_item.unit or
+          not Decimal.eq?(current_item.unit_price, reference_item.unit_price) or
+          (compare_vat_rate? and current_item.vat_rate != reference_item.vat_rate)
+      end)
+    else
+      true
+    end
   end
 end

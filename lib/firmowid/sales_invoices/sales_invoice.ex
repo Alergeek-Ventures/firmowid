@@ -4,6 +4,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
   import Ecto.Changeset
 
+  alias Firmowid.Ksef.VatRate
   alias Firmowid.SalesInvoices.Counterparty
   alias Firmowid.SalesInvoices.CountryCodes
   alias Firmowid.SalesInvoices.SalesInvoiceItem
@@ -198,6 +199,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       sort_param: :items_sort,
       drop_param: :items_drop
     )
+    |> normalize_reverse_charge_item_vat_rate()
     |> cast_based_on_type()
     |> put_change(:organization_id, Firmowid.Repo.get_org_id())
     |> unique_constraint([:invoice_number, :organization_id],
@@ -245,9 +247,123 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       sort_param: :items_sort,
       drop_param: :items_drop
     )
+    |> normalize_reverse_charge_item_vat_rate()
     |> validate_required([:currency])
     |> validate_format(:currency, ~r/^[A-Z]{3}$/)
   end
+
+  defp normalize_reverse_charge_item_vat_rate(changeset) do
+    is_reverse_charge = get_field(changeset, :is_reverse_charge)
+    target_rate = if is_reverse_charge, do: "oo", else: fallback_vat_rate_for_non_reverse_charge(changeset)
+
+    case fetch_change(changeset, :sales_invoice_items) do
+      {:ok, changed_items} ->
+        {normalized_items, _changed?} =
+          normalize_item_changesets(changed_items, is_reverse_charge, target_rate)
+
+        changeset = %{changeset | changes: Map.put(changeset.changes, :sales_invoice_items, normalized_items)}
+
+        %{
+          changeset
+          | params: update_items_in_params(changeset.params, &normalize_item_params(&1, is_reverse_charge, target_rate))
+        }
+
+      :error ->
+        item_changesets = get_assoc(changeset, :sales_invoice_items, :changeset)
+
+        {normalized_items, changed?} =
+          normalize_item_changesets(item_changesets, is_reverse_charge, target_rate)
+
+        changeset =
+          if changed? do
+            %{changeset | changes: Map.put(changeset.changes, :sales_invoice_items, normalized_items)}
+          else
+            changeset
+          end
+
+        %{
+          changeset
+          | params: update_items_in_params(changeset.params, &normalize_item_params(&1, is_reverse_charge, target_rate))
+        }
+    end
+  end
+
+  defp fallback_vat_rate_for_non_reverse_charge(changeset) do
+    buyer_country = get_field(changeset, :buyer_country)
+    buyer_id_type = buyer_id_type(changeset)
+
+    case VatRate.available_rates(buyer_country, buyer_id_type) do
+      {:fixed, rate} -> rate
+      {:select, _rates, default_rate} -> default_rate
+    end
+  end
+
+  defp normalize_item_changesets(item_changesets, is_reverse_charge, target_rate) do
+    Enum.map_reduce(item_changesets, false, fn item_changeset, changed? ->
+      {normalized_item, item_changed?} =
+        normalize_item_changeset(item_changeset, is_reverse_charge, target_rate)
+
+      {normalized_item, changed? or item_changed?}
+    end)
+  end
+
+  defp normalize_item_changeset(item_changeset, is_reverse_charge, target_rate) do
+    current_rate = get_field(item_changeset, :vat_rate)
+    normalized_rate = normalize_rate(current_rate, is_reverse_charge, target_rate)
+
+    if normalized_rate == current_rate do
+      {item_changeset, false}
+    else
+      updated =
+        item_changeset
+        |> put_change(:vat_rate, normalized_rate)
+        |> case do
+          %Ecto.Changeset{action: nil} = changeset -> %{changeset | action: :update}
+          changeset -> changeset
+        end
+
+      {updated, true}
+    end
+  end
+
+  defp update_items_in_params(nil, _normalizer), do: nil
+
+  defp update_items_in_params(%{"sales_invoice_items" => _} = params, normalizer) do
+    Map.update!(params, "sales_invoice_items", &normalize_items_container(&1, normalizer))
+  end
+
+  defp update_items_in_params(params, _normalizer), do: params
+
+  defp normalize_items_container(items, normalizer) when is_map(items) do
+    Map.new(items, fn {key, item_params} -> {key, normalizer.(item_params)} end)
+  end
+
+  defp normalize_items_container(items, normalizer) when is_list(items) do
+    Enum.map(items, normalizer)
+  end
+
+  defp normalize_items_container(items, _normalizer), do: items
+
+  defp normalize_item_params(item_params, is_reverse_charge, target_rate) when is_map(item_params) do
+    cond do
+      Map.has_key?(item_params, "vat_rate") ->
+        current_rate = Map.get(item_params, "vat_rate")
+        Map.put(item_params, "vat_rate", normalize_rate(current_rate, is_reverse_charge, target_rate))
+
+      Map.has_key?(item_params, :vat_rate) ->
+        current_rate = Map.get(item_params, :vat_rate)
+        Map.put(item_params, :vat_rate, normalize_rate(current_rate, is_reverse_charge, target_rate))
+
+      true ->
+        item_params
+    end
+  end
+
+  defp normalize_item_params(item_params, _is_reverse_charge, _target_rate), do: item_params
+
+  defp normalize_rate(_current_rate, true, target_rate), do: target_rate
+  defp normalize_rate("oo", false, target_rate), do: target_rate
+  defp normalize_rate(current_rate, false, _target_rate), do: current_rate
 
   def step3_changeset(sales_invoice, attrs \\ %{}) do
     sales_invoice
