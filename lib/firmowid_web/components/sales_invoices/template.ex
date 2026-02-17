@@ -669,14 +669,14 @@ defmodule FirmowidWeb.SalesInvoices.Template do
 
   defp footer(assigns) do
     ~H"""
-    <div class="absolute flex items-end inset-x-0 justify-center text-[8px] bottom-4 w-full">
+    <div class="absolute flex items-end bottom-4 right-0 justify-center text-[8px] max-w-[128px]">
       <div class="flex flex-col items-center">
         <%= if @footer_logo_data_uri do %>
           <img src={@footer_logo_data_uri} class="w-10 h-10 mb-2" />
         <% else %>
           <img src="/images/invoice_firmowid_logo.png" class="w-10 h-10 mb-2" />
         <% end %>
-        <p>
+        <p class="text-center">
           Faktura wygenerowana za pomocą
           <a class="font-black" href="https://firmowid.pl" target="_blank" rel="noreferrer noopener">
             Firmowid.pl
@@ -706,9 +706,9 @@ defmodule FirmowidWeb.SalesInvoices.Template do
         show_vat={@show_vat}
         logo_data_uri={@logo_data_uri}
       />
-      <hr class="border-greyButtonBg my-6" />
+      <hr class="border-greyButtonBg my-3" />
       <.seller_buyer_section sales_invoice={@sales_invoice} />
-      <hr class="border-greyButtonBg my-6" />
+      <hr class="border-greyButtonBg my-3" />
       <%= if @sales_invoice.ksef_invoice_kind == :kor do %>
         <%= if Firmowid.Ksef.InvoiceRenderer.invoice_items_changed?(
           @sales_invoice,
@@ -729,9 +729,9 @@ defmodule FirmowidWeb.SalesInvoices.Template do
         <.items_table sales_invoice={@sales_invoice} show_vat={@show_vat} />
         <.summary sales_invoice={@sales_invoice} show_vat={@show_vat} />
       <% end %>
-      <hr class="border-greyButtonBg my-6" />
+      <hr class="border-greyButtonBg my-3" />
       <%= if @sales_invoice.currency != "PLN" do %>
-        <div class="mb-6">
+        <div class="mb-3">
           <h2 class="text-[8px] text-darkGrey/70 font-bold mb-2 uppercase">
             {case @sales_invoice.invoice_type do
               :poland -> "Przewalutowanie"
