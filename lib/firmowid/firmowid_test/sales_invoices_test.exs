@@ -3,6 +3,7 @@ defmodule Firmowid.SalesInvoicesTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Firmowid.Repo
   alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.SalesInvoice
   alias Firmowid.SalesInvoices.SalesInvoiceItem
@@ -52,8 +53,8 @@ defmodule Firmowid.SalesInvoicesTest do
         |> SalesInvoice.changeset(
           Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{vat_rate: "23"})])
         )
-        |> Firmowid.Repo.insert!()
-        |> Firmowid.Repo.preload(:sales_invoice_items)
+        |> Repo.insert!()
+        |> Repo.preload(:sales_invoice_items)
 
       changeset = SalesInvoice.changeset(invoice, %{is_reverse_charge: true})
       assert {:ok, preview_invoice} = Ecto.Changeset.apply_action(changeset, :update)
@@ -96,14 +97,39 @@ defmodule Firmowid.SalesInvoicesTest do
             sales_invoice_items: [base_item_attrs(%{vat_rate: "oo"})]
           })
         )
-        |> Firmowid.Repo.insert!()
-        |> Firmowid.Repo.preload(:sales_invoice_items)
+        |> Repo.insert!()
+        |> Repo.preload(:sales_invoice_items)
 
       changeset = SalesInvoice.changeset(invoice, %{is_reverse_charge: false})
       assert {:ok, preview_invoice} = Ecto.Changeset.apply_action(changeset, :update)
 
       # DE company maps to EU VAT context, so fallback is fixed "np II"
       assert Enum.all?(preview_invoice.sales_invoice_items, &(&1.vat_rate == "np II"))
+    end
+  end
+
+  describe "toggle_skip_invoicing/1" do
+    test "allows toggling skip_invoicing on locked invoices" do
+      _user = user_fixture()
+      invoice = locked_sales_invoice_fixture()
+
+      assert invoice.skip_invoicing == false
+
+      updated_invoice = SalesInvoices.toggle_skip_invoicing(invoice.id)
+
+      assert updated_invoice.skip_invoicing == true
+      assert Repo.get!(SalesInvoice, invoice.id).skip_invoicing == true
+    end
+
+    test "still blocks modifying other fields on locked invoices" do
+      _user = user_fixture()
+      invoice = locked_sales_invoice_fixture()
+
+      assert_raise Postgrex.Error, ~r/Cannot modify a locked sales invoice/, fn ->
+        invoice
+        |> change(issue_date: ~D[2026-02-02])
+        |> Repo.update!()
+      end
     end
   end
 
@@ -136,6 +162,27 @@ defmodule Firmowid.SalesInvoicesTest do
       unit: "szt.",
       unit_price: Decimal.new("100.00"),
       vat_rate: "23"
+    })
+  end
+
+  defp locked_sales_invoice_fixture do
+    Repo.insert!(%SalesInvoice{
+      invoice_number: "FV/01/2026",
+      sale_date: ~D[2026-01-01],
+      issue_date: ~D[2026-01-01],
+      due_date: ~D[2026-01-15],
+      payment_method: :transfer,
+      currency: "PLN",
+      buyer_type: :company,
+      buyer_id: "1234567890",
+      buyer_full_name: "Test Buyer",
+      buyer_address: "ul. Testowa 1",
+      buyer_country: "PL",
+      seller_display_name: "Test Seller",
+      seller_nip: "1234567890",
+      seller_address: "ul. Sprzedawcy 2",
+      organization_id: Repo.get_org_id(),
+      locked_at: DateTime.utc_now(:second)
     })
   end
 end

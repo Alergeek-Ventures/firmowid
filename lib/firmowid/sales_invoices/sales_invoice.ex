@@ -666,12 +666,10 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
   @doc """
   Changeset for toggling skip_invoicing flag.
-  This bypasses the full validation since we only update the skip flag.
+  This bypasses full validation and lock checks since we only update the skip flag.
   """
   def skip_invoicing_changeset(sales_invoice, attrs) do
-    sales_invoice
-    |> check_if_locked()
-    |> cast(attrs, [:skip_invoicing])
+    cast(sales_invoice, attrs, [:skip_invoicing])
   end
 
   def locked?(%__MODULE__{locked_at: nil}), do: false
