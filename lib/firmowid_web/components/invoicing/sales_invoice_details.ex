@@ -59,13 +59,8 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
         return_to={@return_to}
       />
 
-      <div class="flex flex-col justify-between px-8 gap-4 lg:gap-12 lg:flex-row min-w-0">
-        <aside class={[
-          "w-full lg:max-w-[400px] xl:max-w-[650px] shrink-0 grow",
-          "flex flex-col gap-4 order-last lg:order-0 py-8 pr-8",
-          "max-h-[calc(100vh-var(--navbar-height)-128px)] overflow-y-auto",
-          "lg:h-[calc(100vh-var(--navbar-height)-128px)]"
-        ]}>
+      <div class="flex flex-col lg:flex-row min-w-0 bg-white">
+        <InvoiceDetails.aside>
           <%= if @show_timeline do %>
             <InvoiceTimeline.invoice_timeline
               invoice={@invoice}
@@ -73,8 +68,79 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
               submission_info={@submission_info}
             />
           <% else %>
-            <div class="flex flex-row justify-end gap-2">
-              <button
+            <div class="flex flex-row justify-between gap-4">
+              <div class="flex flex-row gap-3 xl:gap-4">
+                <.link
+                  class={button_styles(%{color: "light_grey", size: "small", new: true})}
+                  navigate={~p"/sprzedazowe?skopiuj=#{@invoice.id}"}
+                >
+                  <Lucideicons.copy /><span class="hidden xl:inline">Kopiuj</span>
+                </.link>
+
+                <.link
+                  :if={SalesInvoice.editable?(@invoice)}
+                  id="edit-invoice-link"
+                  phx-hook="Tippy"
+                  data-tippy-content="Wystaw fakturę korygującą"
+                  data-tippy-delay="100"
+                  class={button_styles(%{color: "light_grey", size: "small", new: true})}
+                  navigate={~p"/sprzedazowe/#{@invoice.id}/edytuj"}
+                >
+                  <.icon name="hero-pencil-square" class="size-4" />
+                  <span class="hidden xl:inline">
+                    Edytuj
+                  </span>
+                </.link>
+
+                <.button
+                  :if={cancelable?(@invoice) and not SalesInvoice.deletable?(@invoice)}
+                  phx-click={show_modal("delete-invoice-modal")}
+                  color="light_grey"
+                  size="small"
+                  new={true}
+                >
+                  <.icon name="hero-trash-solid" class="size-4" />
+                  <span class="hidden xl:inline">
+                    Usuń
+                  </span>
+                </.button>
+
+                <.link
+                  class={button_styles(%{color: "light_grey", size: "small", new: true})}
+                  href={~p"/sprzedazowe/#{@invoice.id}/pobierz"}
+                  download
+                >
+                  <Lucideicons.download /><span class="hidden xl:inline">Pobierz</span>
+                </.link>
+              </div>
+
+              <.button
+                :if={@show_timeline_button}
+                class={[
+                  "ml-auto",
+                  @submission_info.status == :failed &&
+                    "hover:ring-redText text-redText hover:text-redBg hover:bg-redText"
+                ]}
+                color="light_grey"
+                size="small"
+                new={true}
+                phx-click="show_timeline"
+                phx-target={@myself}
+              >
+                Historia faktury
+                <span
+                  :if={@submission_info.status == :failed}
+                  class={[
+                    "absolute -top-2.5 -right-2.5 bg-redText text-redBg text-xs w-5 h-5",
+                    "rounded-full flex items-center justify-center font-bold
+                    border-redBg border-2 p-1"
+                  ]}
+                >
+                  !
+                </span>
+              </.button>
+
+              <.button
                 :if={
                   @ksef_connected? and SalesInvoice.confirmed?(@invoice) and
                     @submission_info.status in [:not_submitted, :submitting]
@@ -88,100 +154,20 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                     else: "Wyślij do KSeF"
                 }
                 data-tippy-delay="100"
-                class={[
-                  "transition-all transition-duration-300",
-                  "px-2 py-1 flex items-center justify-center rounded",
-                  @submission_info.status == :submitting && "bg-turquoise-500 text-white cursor-wait",
-                  @submission_info.status != :submitting &&
-                    "bg-turquoise-600 text-white hover:bg-turquoise-800"
-                ]}
+                color="turquoise"
+                size="small"
+                new={true}
+                class={@submission_info.status == :submitting && "cursor-wait"}
                 phx-click="send_to_ksef"
                 phx-target={@myself}
               >
-                <.icon
-                  name={
-                    if @submission_info.status == :submitting,
-                      do: "hero-arrow-path",
-                      else: "hero-paper-airplane"
-                  }
-                  class={
-                    if @submission_info.status == :submitting,
-                      do: "w-5 h-5 animate-spin",
-                      else: "w-5 h-5"
-                  }
-                />
-              </button>
-              <.link
-                :if={SalesInvoice.editable?(@invoice)}
-                id="edit-invoice-link"
-                phx-hook="Tippy"
-                data-tippy-content="Wystaw fakturę korygującą"
-                data-tippy-delay="100"
-                class={[
-                  "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
-                  "px-2 py-1 flex items-center justify-center rounded"
-                ]}
-                navigate={~p"/sprzedazowe/#{@invoice.id}/edytuj"}
-              >
-                <.icon name="hero-pencil-square-solid" class="w-5 h-5" />
-              </.link>
-
-              <button
-                :if={cancelable?(@invoice) and not SalesInvoice.deletable?(@invoice)}
-                id="cancel-invoice-button"
-                phx-hook="Tippy"
-                data-tippy-content="Anuluj fakturę (korekta)"
-                data-tippy-delay="100"
-                class={[
-                  "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
-                  "px-2 py-1 flex items-center justify-center rounded"
-                ]}
-                phx-click={show_modal("cancel-invoice-modal")}
-              >
-                <.icon name="hero-no-symbol" class="w-5 h-5" />
-              </button>
-              <button
-                :if={SalesInvoice.deletable?(@invoice)}
-                id="delete-invoice-button"
-                phx-hook="Tippy"
-                data-tippy-content="Usuń fakturę"
-                data-tippy-delay="100"
-                class={[
-                  "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
-                  "px-2 py-1 flex items-center justify-center rounded"
-                ]}
-                phx-click={show_modal("delete-invoice-modal")}
-              >
-                <.icon name="hero-trash-solid" class="w-5 h-5" />
-              </button>
-              <button
-                :if={@show_timeline_button}
-                id="timeline-button"
-                phx-hook="Tippy"
-                data-tippy-content="Historia dokumentu"
-                data-tippy-delay="100"
-                class={[
-                  "relative",
-                  "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
-                  "px-2 py-1 flex items-center justify-center rounded",
-                  @submission_info.status == :failed &&
-                    "hover:ring-redText text-redText hover:text-redBg hover:bg-redText"
-                ]}
-                phx-click="show_timeline"
-                phx-target={@myself}
-              >
-                <.icon name="hero-clock" class="w-5 h-5" />
-                <span
-                  :if={@submission_info.status == :failed}
-                  class={[
-                    "absolute -top-2.5 -right-2.5 bg-redText text-redBg text-xs w-5 h-5",
-                    "rounded-full flex items-center justify-center font-bold
-                    border-redBg border-2 p-1"
-                  ]}
-                >
-                  !
-                </span>
-              </button>
+                Wyślij
+                <%= if @submission_info.status == :submitting do %>
+                  <.icon name="hero-arrow-path" class="size-5 animate-spin" />
+                <% else %>
+                  <Lucideicons.send class="size-5" />
+                <% end %>
+              </.button>
 
               <div :if={SalesInvoice.deletable?(@invoice)} class="absolute">
                 <.modal id="delete-invoice-modal" on_cancel={hide_modal("delete-invoice-modal")}>
@@ -245,57 +231,86 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                 data-tippy-content="Skopiuj link do faktury"
                 data-tippy-delay="100"
               >
-                <button
+                <.button
                   id="share-invoice-button"
                   phx-hook="CopyToClipboard"
-                  class={[
-                    "transition-all transition-duration-300",
-                    "px-2 py-1 flex items-center justify-center rounded",
-                    if(@invoice.share_token,
-                      do: "bg-turquoise-600 text-white hover:bg-turquoise-800",
-                      else: "hover:text-white hover:bg-darkGrey text-darkGrey"
-                    )
-                  ]}
+                  color={if @invoice.share_token, do: "turquoise", else: "light_grey"}
+                  size="small"
+                  new={true}
                   phx-click="create_share_link"
                 >
-                  <.icon name="hero-share" class="w-5 h-5" />
-                </button>
+                  <Lucideicons.share_2 />
+                </.button>
               </span>
             </div>
 
-            <div class="py-4">
-              <InvoiceDetails.sales_invoice_metadata invoice={@invoice} />
-            </div>
+            <InvoiceDetails.invoice_metadata>
+              <InvoiceDetails.invoice_metadata_piece
+                label="Numer faktury"
+                value={@invoice.invoice_number}
+                piece_id="inv-id"
+              />
+              <InvoiceDetails.invoice_metadata_piece
+                :if={@invoice.ksef_number != nil}
+                label="Identyfikator KSeF"
+                value={@invoice.ksef_number}
+                piece_id="ksef-id"
+              />
+              <InvoiceDetails.invoice_metadata_piece
+                label="Kupujacy"
+                value={Firmowid.SalesInvoices.buyer_display_name(@invoice)}
+                piece_id="buyer"
+              />
+              <InvoiceDetails.invoice_metadata_piece
+                label="Data wystawienia"
+                value={@invoice.issue_date}
+                piece_id="issue-date"
+              />
+              <InvoiceDetails.invoice_metadata_piece
+                label="Data sprzedazy"
+                value={@invoice.sale_date}
+                piece_id="sale-date"
+              />
+              <InvoiceDetails.invoice_metadata_piece
+                label="Termin platnosci"
+                value={@invoice.due_date}
+                piece_id="due-date"
+              />
+            </InvoiceDetails.invoice_metadata>
+
+            <InvoiceDetails.invoice_amount
+              is_cost_invoice={false}
+              total_amount={
+                Money.new(
+                  @invoice.currency,
+                  Firmowid.SalesInvoices.SalesInvoice.get_gross_value(@invoice)
+                )
+              }
+            />
           <% end %>
 
-          <h3 class="self-start text-sm uppercase text-darkGrey mt-8">Podgląd faktury</h3>
-          <div class="mb-8 mt-4 transition-opacity transition-duration-300 hover:opacity-50">
-            <%= if @preview_type == :html do %>
-              <div class="w-full h-full max-h-[80vh] border-black border-2 rounded-lg overflow-hidden">
-                <a href={~p"/sprzedazowe/#{@invoice.id}/pobierz"} target="_blank">
+          <%= if @preview_type == :html do %>
+            <InvoiceDetails.invoice_preview>
+              <a href={~p"/sprzedazowe/#{@invoice.id}/pobierz"} target="_blank">
+                <InvoiceDetails.scalable_invoice_preview>
                   <FirmowidWeb.PdfHTML.sales_invoice
                     sales_invoice={@invoice}
                     currency_rate={Firmowid.SalesInvoices.get_currency_rate(@invoice)}
                     show_vat={@show_vat_for_sales_invoice}
                     reference_invoice={@reference_invoice}
                   />
-                </a>
-              </div>
-            <% end %>
-          </div>
-        </aside>
+                </InvoiceDetails.scalable_invoice_preview>
+              </a>
+            </InvoiceDetails.invoice_preview>
+          <% end %>
+        </InvoiceDetails.aside>
 
-        <main class="grow py-8 lg:pl-8 border-b lg:border-b-0 lg:border-l border-darkGrey/[.3] h-[calc(100vh-var(--navbar-height)-128px)]">
+        <InvoiceDetails.main>
           <%= cond do %>
             <% @invoice.skip_invoicing -> %>
-              <InvoiceDetails.invoice_skipped_view />
-            <% length(@invoice.transactions) == 1 -> %>
-              <InvoiceDetails.single_transaction_match
-                is_cost_invoice={false}
-                transaction={@invoice.transactions |> hd()}
-              />
-            <% length(@invoice.transactions) > 1 -> %>
-              <InvoiceDetails.multiple_transactions_match
+              <InvoiceDetails.invoice_skipped_view is_cost_invoice={false} />
+            <% not Enum.empty?(@invoice.transactions) -> %>
+              <InvoiceDetails.transaction_match
                 is_cost_invoice={false}
                 transactions={@invoice.transactions}
               />
@@ -306,37 +321,14 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                 invoice={@invoice}
                 current_user={@current_user}
               />
-            <% @potential_transactions == [] -> %>
-              <div class="flex flex-col gap-6 items-center mb-10">
-                <div class="gap-4 flex flex-col items-center p-4 rounded-md text-center">
-                  <.icon name="hero-face-frown" class="w-10 h-10 block" />
-                  <h3 class="text-lg font-semibold">Brak rekomendacji</h3>
-                  <p class="max-w-[400px]">
-                    Firmowid nie znalazl zadnych transakcji, ktore potencjalnie pasowałyby do tej faktury.
-                  </p>
-                  <.button
-                    phx-click="show_chat"
-                    phx-target={@myself}
-                    color="orange"
-                    class="w-full mt-2"
-                  >
-                    Popros Firmowida o pomoc
-                  </.button>
-                </div>
-              </div>
-              <hr class="w-full text-grey-200" />
-              <h3 class="text-md font-semibold my-10">Co jeszcze mozesz zrobic?</h3>
-              <InvoiceDetails.skip_invoicing show_bank_transfer_modal={false} invoice={@invoice} />
             <% true -> %>
-              <div class="flex flex-col gap-16">
-                <InvoiceDetails.potential_transactions_list
-                  potential_transactions={@potential_transactions}
-                  name_field={:debtor_name}
-                />
-                <InvoiceDetails.skip_invoicing show_bank_transfer_modal={false} invoice={@invoice} />
-              </div>
+              <InvoiceDetails.potential_transactions
+                potential_transactions={@potential_transactions}
+                is_cost_invoice={@is_cost_invoice}
+                invoice={@invoice}
+              />
           <% end %>
-        </main>
+        </InvoiceDetails.main>
       </div>
     </div>
     """

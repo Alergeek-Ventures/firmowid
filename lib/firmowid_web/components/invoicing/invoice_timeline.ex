@@ -30,19 +30,21 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceTimeline do
     assigns = assign(assigns, :events, events)
 
     ~H"""
-    <div class="flex flex-col gap-4">
-      <div class="flex flex-row justify-between items-center">
-        <h3 class="text-sm uppercase text-darkGrey">Historia dokumentu</h3>
-        <button
+    <div class="flex flex-col gap-6">
+      <div class="flex flex-row justify-between items-start">
+        <h3 class="text-sm/snug text-grey-700">Historia dokumentu</h3>
+        <.button
           phx-click="hide_timeline"
           phx-target="#invoice-show"
-          class="text-sm text-darkGrey hover:text-black transition-all flex items-center gap-1"
+          color="light_grey"
+          size="small"
+          new={true}
         >
-          <.icon name="hero-chevron-left-mini" class="w-4 h-4" /> Wróć do podglądu
-        </button>
+          <.icon name="hero-chevron-left-mini" class="size-4" /> Wróć do podglądu
+        </.button>
       </div>
 
-      <div :if={@events != []} class="relative py-4">
+      <div :if={@events != []} class="relative">
         <div class="absolute left-[5px] top-[calc(1rem+5px)] bottom-[calc(1rem+5px)] w-0.5 bg-grey-200">
         </div>
 

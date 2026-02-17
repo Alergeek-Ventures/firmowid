@@ -21,20 +21,55 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   def invoice_header(assigns) do
     ~H"""
     <header class={[
-      "flex flex-row py-8",
-      @is_cost_invoice && "bg-orangeBg",
-      !@is_cost_invoice && "bg-blueBg"
+      "flex flex-row px-4 py-7 lg:px-8 items-center gap-4 lg:gap-8",
+      @is_cost_invoice && "bg-orange-200",
+      !@is_cost_invoice && "bg-turquoise-200"
     ]}>
-      <div class="flex items-center justify-center w-24">
-        <.link navigate={@return_to || ~p"/fakturowanie?month=#{@issue_date |> Date.to_iso8601()}"}>
-          <.icon name="hero-arrow-left-circle-solid" class="w-7 h-7" />
-        </.link>
-      </div>
-      <div class="flex flex-col">
-        <h1 class="text-2xl">{@party_display_name}</h1>
+      <.link navigate={@return_to || ~p"/fakturowanie?month=#{@issue_date |> Date.to_iso8601()}"}>
+        <.icon name="hero-arrow-left-circle-solid" class="w-7 h-7" />
+      </.link>
+      <div class="flex flex-col gap-2">
+        <h1 class="text-lg lg:text-2xl leading-tight font-medium">{@party_display_name}</h1>
         <h2 class="text-darkGrey">{@description}</h2>
       </div>
     </header>
+    """
+  end
+
+  slot :inner_block, required: false
+
+  def aside(assigns) do
+    ~H"""
+    <aside class={[
+      "w-full lg:max-w-lg xl:max-w-[659px] shrink-0 grow",
+      "flex flex-col order-last lg:order-0 p-8",
+      "lg:overflow-y-auto lg:h-[calc(100vh-var(--navbar-height)-128px)]"
+    ]}>
+      {render_slot(@inner_block)}
+    </aside>
+    """
+  end
+
+  slot :inner_block, required: false
+
+  def main(assigns) do
+    ~H"""
+    <main class="px-8 pb-8 mt-8 border-b-2 lg:border-b-0 lg:border-l-2 border-grey-100 w-full">
+      {render_slot(@inner_block)}
+    </main>
+    """
+  end
+
+  slot :inner_block, required: false
+
+  def invoice_preview(assigns) do
+    ~H"""
+    <div class="mt-8 flex flex-col gap-4 w-full max-w-[595px] mx-auto">
+      <h3 class="self-start text-sm leading/snug text-grey-700 ml-1">Podgląd faktury</h3>
+      <div class="border-grey-200 border-2 rounded overflow-hidden transition-opacity transition-duration-300 hover:opacity-50 w-full">
+        {render_slot(@inner_block)}
+      </div>
+    </div>
     """
   end
 
@@ -44,20 +79,30 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
 
   def invoice_amount(assigns) do
     ~H"""
-    <div class="flex flex-col gap-2 items-end justify-end">
-      <label class="text-darkGrey" for="total-amount">
+    <div class="flex flex-row gap-2 items-start justify-between pl-1">
+      <label class="text-grey-700 text-sm/snug" for="total-amount">
         {if @lang == :en, do: "Total to pay", else: "Razem do zapłaty"}
       </label>
       <p
         id="total-amount"
         class={[
-          "text-xl bg-greyButtonBg/[0.3] px-4 py-2 rounded",
-          @is_cost_invoice && "text-orangeText",
-          !@is_cost_invoice && "text-blueText"
+          "text-lg/tight bg-[#DEDEDE4C] px-4 py-2 rounded",
+          @is_cost_invoice && "text-orange-700",
+          !@is_cost_invoice && "text-turquoise-700"
         ]}
       >
         {@total_amount}
       </p>
+    </div>
+    """
+  end
+
+  slot :inner_block, required: false
+
+  def invoice_metadata(assigns) do
+    ~H"""
+    <div class="grid grid-cols-[min-content_1fr] items-center gap-y-1 gap-x-2 py-6">
+      {render_slot(@inner_block)}
     </div>
     """
   end
@@ -142,14 +187,20 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
 
   def invoice_metadata_piece(assigns) do
     ~H"""
-    <div class={["grid grid-cols-subgrid col-span-2", "rounded odd:bg-greyButtonBg/[0.3] px-1"]}>
+    <div class="grid grid-cols-subgrid col-span-2 rounded odd:bg-greyButtonBg/[0.3] py-0.5 px-1">
       <label
         for={@piece_id}
-        class={[!@multiline && "self-center", "text-sm text-darkGrey"]}
+        class={[
+          "text-sm/snug text-darkGrey text-nowrap",
+          !@multiline && "self-center"
+        ]}
       >
         {@label}
       </label>
-      <p id={@piece_id} class={["text-left", @multiline && "mb-8"]}>
+      <p
+        id={@piece_id}
+        class={["leading-snug", @multiline && "mb-8"]}
+      >
         {@value}
       </p>
     </div>
@@ -166,11 +217,11 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
       id={"match-prediction-score-#{@transaction_id}"}
       phx-hook="Tippy"
       data-tippy-content={"Ocena AI: #{Float.round(100 *@prediction_score, 2)}% pewności"}
-      class="flex flex-col justify-center items-start gap-1 pl-[4px] w-7 h-7 rounded-md bg-greenBg"
+      class="flex flex-col justify-between p-2 size-8 shrink-0 rounded-md bg-green-200"
     >
-      <div class="w-[75%] rounded-md h-[2px] bg-greenText" />
-      <div class="w-[55%] rounded-md h-[2px] bg-greenText" />
-      <div class="w-[35%] rounded-md h-[2px] bg-greenText" />
+      <div class="w-full rounded-md h-0.5 bg-green-700" />
+      <div class="w-[70%] rounded-md h-0.5 bg-green-700" />
+      <div class="w-[40%] rounded-md h-0.5 bg-green-700" />
     </div>
     """
   end
@@ -181,11 +232,11 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
       id={"match-prediction-score-#{@transaction_id}"}
       phx-hook="Tippy"
       data-tippy-content={"Ocena AI: #{Float.round(100 *@prediction_score, 2)}% pewności"}
-      class="flex flex-col justify-center items-start gap-1 pl-[4px] w-7 h-7 rounded-md bg-orangeBg"
+      class="flex flex-col justify-between p-2 size-8 shrink-0 rounded-md bg-orange-200"
     >
-      <div class="w-[75%] rounded-md h-[2px] bg-white" />
-      <div class="w-[55%] rounded-md h-[2px] bg-orangeText" />
-      <div class="w-[35%] rounded-md h-[2px] bg-orangeText" />
+      <div class="w-full rounded-md h-0.5 bg-white" />
+      <div class="w-[70%] rounded-md h-0.5 bg-orange-700" />
+      <div class="w-[40%] rounded-md h-0.5 bg-orange-700" />
     </div>
     """
   end
@@ -196,11 +247,11 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
       id={"match-prediction-score-#{@transaction_id}"}
       phx-hook="Tippy"
       data-tippy-content={"Ocena AI: #{Float.round(100 *@prediction_score, 2)}% pewności"}
-      class="flex flex-col justify-center items-start gap-1 pl-[4px] w-7 h-7 rounded-md bg-redBg"
+      class="flex flex-col justify-between p-2 size-8 shrink-0 rounded-md bg-red-200"
     >
-      <div class="w-[75%] rounded-md h-[2px] bg-white" />
-      <div class="w-[55%] rounded-md h-[2px] bg-white" />
-      <div class="w-[35%] rounded-md h-[2px] bg-redText" />
+      <div class="w-full rounded-md h-0.5 bg-white" />
+      <div class="w-[70%] rounded-md h-0.5 bg-white" />
+      <div class="w-[40%] rounded-md h-0.5 bg-red-700" />
     </div>
     """
   end
@@ -223,83 +274,117 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   end
 
   attr :is_cost_invoice, :boolean, required: true
-  attr :transaction, :map, required: true
+  attr :transactions, :list, required: true
 
-  def single_transaction_match(assigns) do
+  def transaction_match(assigns) do
+    transactions = assigns.transactions
+    single_transaction? = length(assigns.transactions) == 1
+
+    assigns = assign(assigns, :single_transaction?, single_transaction?)
+
+    assigns =
+      if single_transaction? do
+        assigns
+      else
+        assigns
+        |> assign(:total, Enum.reduce(transactions, Decimal.new(0), &Decimal.add(&1.transaction_amount, &2)))
+        |> assign(:currency, hd(transactions).transaction_currency)
+      end
+
     ~H"""
-    <div class="flex flex-col gap-8">
+    <div class="flex flex-col gap-4">
       <div class="flex flex-row justify-between items-center">
-        <p class="uppercase w-auto">Dopasowanie</p>
-        <div class="flex flex-row gap-2 items-center">
-          <div class="text-xs h-6 w-24 shrink-0 flex flex-row items-center p-2 rounded-md gap-2 justify-between bg-greenBg text-greenText">
-            <div class="text-xs uppercase">Komplet</div>
-            <.icon name="hero-check-micro" class="w-4 h-4" />
+        <p class="text-lg/tight font-medium">Dopasowanie</p>
+
+        <div class="flex flex-row gap-2">
+          <div class="self-stretch px-[14.5px] flex flex-row items-center rounded-md bg-green-200">
+            <p class="text-sm/tight font-medium text-green-700">Komplet</p>
           </div>
-          <button
-            class="h-6 text-darkGrey rounded-md p-2 bg-greyButtonBg shrink-0 flex flex-row justify-between items-center gap-2 hover:border-darkGrey border border-transparent transition-all transition-duration-300"
+          <.button
+            color="light_grey"
+            size="small"
+            new={true}
             phx-click="disconnect"
           >
             <.icon name="hero-arrow-uturn-left-micro" class="h-4 w-4" />
-          </button>
+          </.button>
         </div>
       </div>
-      <div class="grid grid-flow-col grid-cols-[2fr_1fr_1fr] grid-rows-2 gap-4 p-4 rounded bg-greenBg/[0.3]">
+
+      <div
+        :for={transaction <- @transactions}
+        class="grid grid-flow-col grid-cols-[2fr_1fr_1fr] grid-rows-2 gap-x-4 gap-y-6 p-4 rounded-md bg-[#D0E6CE66]"
+      >
         <%= for {label, val} <- [
-            {"Kontrahent", if(@is_cost_invoice, do: @transaction.creditor_name, else: @transaction.debtor_name)},
-            {"Informacje", @transaction.remittance_information_unstructured},
-            {"Zaksięgowano", @transaction.booking_date},
-            {"Przewalutowano", @transaction.value_date},
-            {"Kwota", Money.new(@transaction.transaction_amount, @transaction.transaction_currency)}
+            {"Kontrahent", if(@is_cost_invoice, do: transaction.creditor_name, else: transaction.debtor_name)},
+            {"Wierzyciel", if(not @is_cost_invoice, do: transaction.creditor_name, else: transaction.debtor_name)},
+            {"Zaksięgowano", transaction.booking_date},
+            transaction.value_date && {"Przewalutowano", transaction.value_date},
           ] do %>
-          <div class={["flex flex-col gap-2", label == "Kwota" && "row-span-2 justify-end items-end"]}>
-            <p class="text-sm text-darkGrey">{label}</p>
-            <p class={[label == "Kwota" && "text-xl"]}>{val}</p>
+          <div class="space-y-1">
+            <p class="text-sm/snug text-grey-700">{label}</p>
+            <p class="leading-snug">{val}</p>
           </div>
         <% end %>
+
+        <div class="flex items-end justify-end text-right row-span-2">
+          <p class={["leading-snug text-green-700", @single_transaction? && "text-lg"]}>
+            {Money.new(transaction.transaction_amount, transaction.transaction_currency)}
+          </p>
+        </div>
+      </div>
+
+      <div
+        :if={not @single_transaction?}
+        class="flex flex-row justify-between items-center p-4 rounded-md bg-[#D0E6CE66]"
+      >
+        <p class="text-sm text-grey-700">Suma</p>
+
+        <p class="text-lg/tight text-green-700">
+          {if @is_cost_invoice, do: "-", else: ""}{Money.new(@total, @currency)}
+        </p>
       </div>
     </div>
     """
   end
 
   attr :is_cost_invoice, :boolean, required: true
-  attr :transactions, :list, required: true
-
-  def multiple_transactions_match(assigns) do
-    [head | tail] = assigns.transactions
-    transaction_count = length(tail) + 1
-
-    merged_tx =
-      Map.merge(head, %{
-        creditor_name: "#{transaction_count} transakcji od #{head.creditor_name}",
-        debtor_name: "#{transaction_count} transakcji od #{head.debtor_name}",
-        transaction_amount: Enum.reduce(tail, head.transaction_amount, &Decimal.add(&1.transaction_amount, &2))
-      })
-
-    assigns = assign(assigns, :transaction, merged_tx)
-    single_transaction_match(assigns)
-  end
 
   def invoice_skipped_view(assigns) do
     ~H"""
-    <div class="flex flex-col gap-8">
+    <div class="space-y-4">
       <div class="flex flex-row justify-between items-center">
-        <p class="uppercase">Transakcja pominięta</p>
-        <div class="flex flex-row gap-2 w-32 overflow-hidden">
-          <div class="text-xs h-8 flex flex-row justify-center items-center py-2 px-2 rounded-md transition-all duration-500 w-20 bg-greenBg text-greenText">
-            <.icon name="hero-document-text-solid" class="h-4 w-4" />
+        <p class="text-lg/tight font-medium">Transakcja pominięta</p>
+        <div class="flex flex-row gap-2 w-32">
+          <div class="flex-1 h-8 flex justify-center items-center p-2 rounded-md bg-green-200 text-green-700">
+            <.icon name="hero-document-text-micro" class="size-4" />
           </div>
-          <button
+          <.button
             phx-click="toggle-invoicing"
-            class="w-20 h-8 uppercase text-xs text-darkGrey bg-greyButtonBg rounded-md"
+            color="light_grey"
+            size="small"
+            new={true}
+            class="flex-1"
           >
-            <.icon name="hero-arrow-uturn-left-micro" class="h-4 w-4" />
-          </button>
+            <.icon name="hero-arrow-uturn-left-micro" class="size-4" />
+          </.button>
         </div>
       </div>
-      <div class="grid grid-flow-col grid-cols-[2fr_1fr_1fr] gap-4 p-4 rounded bg-greyButtonBg/[0.3]">
-        <div class="flex flex-col gap-2">
-          <p class="text-sm text-darkGrey">Informacja</p>
-          <p>Transakcja została pominięta dla dokumentu</p>
+      <div class="flex flex-col gap-6 p-6 rounded bg-grey-100">
+        <p class="text-base/snug">Transakcja została pominięta dla dokumentu</p>
+        <div :if={false} class="space-y-2">
+          <label class="text-sm/snug text-grey-700" for="temp">Powód pominięcia</label>
+
+          <div class="flex flex-row gap-2 items-center">
+            <.input id="temp" name="test" value="" class="flex-1" new={true} />
+            <.button
+              color={if(@is_cost_invoice, do: "orange", else: "turquoise")}
+              size="small"
+              new={true}
+            >
+              Zatwierdź
+            </.button>
+          </div>
         </div>
       </div>
     </div>
@@ -308,24 +393,14 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
 
   attr :invoice, :map, required: true
   attr :show_bank_transfer_modal, :boolean, default: true
-  attr :hide_ask_assistant, :boolean, default: false
+  attr :show_assistant, :boolean, default: false
 
   def skip_invoicing(assigns) do
     ~H"""
-    <div class="text-darkGrey flex flex-col gap-8">
-      <div :if={not @hide_ask_assistant} class="flex flex-row justify-between gap-16">
-        <p>Poproś Firmowida o pomoc w znalezieniu transakcji.</p>
-        <button
-          phx-click="show_chat"
-          phx-target="#invoice-show"
-          class="cursor-pointer w-32 h-8 uppercase text-xs bg-orangeText rounded-md text-white max-w-full"
-        >
-          Zapytaj
-        </button>
-      </div>
+    <div class="gap-y-6 gap-x-6 lg:gap-x-10 grid grid-cols-[1fr_8rem]">
       <%= if @show_bank_transfer_modal do %>
-        <div class="flex flex-row justify-between gap-16">
-          <p>
+        <div class="grid grid-cols-subgrid col-span-full">
+          <p class="text-sm/snug text-grey-700 text-balance">
             Wykonaj przelew teraz - kliknij przycisk, aby skopiować potrzebne dane.
           </p>
           <.live_component
@@ -335,22 +410,92 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
           />
         </div>
       <% end %>
-      <div class="flex flex-row justify-between gap-16">
-        <p>
+      <div :if={@show_assistant} class="grid grid-cols-subgrid col-span-full">
+        <p class="text-sm/snug text-grey-700 text-balance self-center">
+          Poproś Firmowida o pomoc w znalezieniu transakcji.
+        </p>
+
+        <.button
+          phx-click="show_chat"
+          phx-target="#invoice-show"
+          class="w-full"
+          color="turquoise"
+          size="small"
+          new={true}
+        >
+          Zapytaj
+        </.button>
+      </div>
+
+      <div class="grid grid-cols-subgrid col-span-full">
+        <p class="text-sm/snug text-grey-700 text-balance">
           A może żadna transakcja nie pasuje, bo zapłacono gotówką, lub na inne konto?
           Pomiń jej szukanie. Firmowid oznaczy ją jako rozliczoną poza systemem.
         </p>
-        <div class="flex shrink-0 flex-row gap-2 w-32 overflow-hidden">
-          <div class="text-xs h-8 flex flex-row justify-center items-center py-2 px-2 rounded-md transition-all duration-500 w-10 text-darkGrey bg-greyButtonBg">
-            <.icon name="hero-document-text-solid" class="h-4 w-4" />
+        <div class="w-full flex flex-row gap-2 items-start">
+          <div class="flex justify-center items-center p-2 rounded-md text-grey-700 bg-grey-200">
+            <.icon name="hero-document-text-solid" class="size-4" />
           </div>
-          <button
+          <.button
             phx-click="toggle-invoicing"
-            class="transition-all duration-500 cursor-pointer w-20 h-8 uppercase text-xs text-darkGrey bg-greyButtonBg rounded-md"
+            class="w-full"
+            color="light_grey"
+            size="small"
+            new={true}
           >
             Pomiń
-          </button>
+          </.button>
         </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :invoice, :map, required: true
+  attr :is_cost_invoice, :boolean, required: true
+  attr :potential_transactions, :list, required: true
+
+  def potential_transactions(assigns) do
+    assigns = assign(assigns, :not_found, Enum.empty?(assigns.potential_transactions))
+
+    ~H"""
+    <div class="flex flex-col gap-18">
+      <%= if @not_found do %>
+        <div class="gap-4 flex flex-col items-center pt-8 pb-6 px-4">
+          <Lucideicons.file_question_mark class="size-12" />
+
+          <div class="space-y-2 text-center">
+            <h3 class="text-lg/tight font-medium">Brak rekomendacji</h3>
+            <p class="max-w-96 text-balance">
+              Firmowid nie znalazl zadnych transakcji, ktore potencjalnie pasowałyby do tej faktury.
+            </p>
+          </div>
+
+          <.button
+            phx-click="show_chat"
+            phx-target="#invoice-show"
+            class="mt-2"
+            color={if(@is_cost_invoice, do: "orange", else: "turquoise")}
+            size="small"
+            new={true}
+          >
+            Poproś Firmowida o pomoc
+          </.button>
+        </div>
+      <% else %>
+        <.potential_transactions_list
+          potential_transactions={@potential_transactions}
+          name_field={if(@is_cost_invoice, do: :creditor_name, else: :debtor_name)}
+        />
+      <% end %>
+
+      <div class="space-y-6">
+        <h3 :if={@not_found} class="leading-tight font-medium">Co jeszcze mozesz zrobic?</h3>
+        <.skip_invoicing
+          show_assistant={not @not_found}
+          show_bank_transfer_modal={@is_cost_invoice}
+          invoice={@invoice}
+        />
       </div>
     </div>
     """
@@ -379,46 +524,90 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
     assigns = assign(assigns, :green_idx, green_idx)
 
     ~H"""
-    <div class="flex flex-col gap-16">
-      <div class="flex flex-col gap-5">
-        <div class="flex flex-row justify-between items-center">
-          <h2 class="text-lg font-semibold">Potencjalne transakcje dla dokumentu</h2>
-        </div>
-        <div class="grid grid-cols-[1fr_120px_120px_220px]">
-          <span class="text-xs uppercase text-darkGrey text-left">Informacje</span>
-          <span class="text-xs uppercase text-darkGrey text-right">Data</span>
-          <span class="text-xs uppercase text-darkGrey text-right">Kwota</span>
-        </div>
-        <%= for {{tx, score}, idx} <- Enum.with_index(@potential_transactions) do %>
-          <div id={"potential-transaction-#{tx.id}"} class="grid grid-cols-[1fr_120px_120px_220px]">
-            <div class="text-left">
-              <p class="font-semibold">{Map.get(tx, @name_field)}</p>
-              <p class="text-sm text-darkGrey">
-                {tx.remittance_information_unstructured}
-              </p>
-            </div>
-            <div class="flex items-center justify-end">{tx.booking_date}</div>
-            <div class="text-right flex items-center justify-end">
-              {Money.new(tx.transaction_currency, tx.transaction_amount)}
-            </div>
-            <div class="flex items-center justify-end gap-4">
-              <.prediction_score_indicator
-                transaction_id={tx.id}
-                prediction_score={score}
-                is_highest_green={@green_idx == idx}
-              />
-              <button
-                phx-click="connect"
-                phx-value-transaction_id={tx.id}
-                class="uppercase text-sm bg-darkGrey text-white h-7 px-2 rounded"
-              >
-                Zatwierdź
-              </button>
-            </div>
+    <div class="flex flex-col gap-16 @container">
+      <div class="flex flex-col gap-4">
+        <h2 class="text-lg/tight font-medium">Potencjalne transakcje dla dokumentu</h2>
+
+        <div class="grid grid-cols-[1fr_repeat(3,min-content)] @3xl:grid-cols-[1fr_120px_120px_min-content] gap-y-4 gap-x-6 @2xl:gap-x-8">
+          <div class="grid grid-cols-subgrid col-span-full text-sm/snug text-grey-700">
+            <span>Informacje</span>
+            <span class="text-right">Data</span>
+            <span class="text-right">Kwota</span>
           </div>
-        <% end %>
+
+          <%= for {{tx, score}, idx} <- Enum.with_index(@potential_transactions) do %>
+            <div
+              id={"potential-transaction-#{tx.id}"}
+              class="grid grid-cols-subgrid col-span-full items-center"
+            >
+              <div class="space-y-1">
+                <p class="font-semibold text-truncate line-clamp-1">{Map.get(tx, @name_field)}</p>
+                <p class="text-sm/snug text-grey-600 text-truncate line-clamp-2">
+                  {tx.remittance_information_unstructured}
+                </p>
+              </div>
+              <div class="text-right text-nowrap">{tx.booking_date}</div>
+              <div class="text-right text-nowrap">
+                {Money.new(tx.transaction_currency, tx.transaction_amount)}
+              </div>
+              <div class="flex items-center gap-2">
+                <.prediction_score_indicator
+                  transaction_id={tx.id}
+                  prediction_score={score}
+                  is_highest_green={@green_idx == idx}
+                />
+
+                <.button
+                  phx-click="connect"
+                  phx-value-transaction_id={tx.id}
+                  color={if(@green_idx == idx, do: "grey", else: "light_grey")}
+                  size="small"
+                  new={true}
+                >
+                  Zatwierdź
+                </.button>
+              </div>
+            </div>
+          <% end %>
+        </div>
       </div>
     </div>
+    """
+  end
+
+  attr :class, :string, default: nil
+  slot :inner_block, required: true
+
+  def scalable_invoice_preview(assigns) do
+    ~H"""
+    <div
+      class={classes(["origin-top-left w-full max-w-[595px]", @class])}
+      id="preview"
+      phx-hook=".Scaler"
+    >
+      {render_slot(@inner_block)}
+    </div>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".Scaler">
+      export default {
+        mounted() {
+          console.log(this.el.contentRect)
+
+          const templateWidth = 595;
+          const templateHeight = 842;
+
+          const resizeObserver = new ResizeObserver(entries => {
+            for (let entry of entries) {
+              const scale = entry.contentRect.width / templateWidth
+
+              this.el.style.transform = `scale(${scale})`
+              this.el.style.height = `${templateHeight * scale}px`
+            }
+          })
+
+          resizeObserver.observe(this.el)
+        }
+      }
+    </script>
     """
   end
 end

@@ -82,7 +82,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
           <.link
-            navigate={~p"/sprzedazowe/#{@invoice.id}"}
+            navigate={~p"/sprzedazowe/#{@invoice.id}/edytuj"}
             class={button_styles(%{size: "small", color: "light_grey", new: true})}
           >
             <Lucideicons.pencil /> Edytuj
@@ -152,12 +152,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
         <% template_height = 842 %>
         <% scale = list_width / template_width %>
 
-        <div
-          id="previous-invoice-list"
-          phx-hook=".PreviousInvoiceScaler"
-          class="space-y-6"
-          style={"width: #{list_width}px;"}
-        >
+        <div class="space-y-6" style={"width: #{list_width}px;"}>
           <div
             :for={{prev, ref} <- @previous_invoices}
             class="space-y-2"
@@ -168,7 +163,6 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
             <div
               class="border border-grey-200 rounded-lg bg-white shadow-sm overflow-hidden"
               style={"width: #{template_width * scale}px; height: #{template_height * scale}px;"}
-              data-container
             >
               <div class="origin-top-left" style={"transform: scale(#{scale})"}>
                 <FirmowidWeb.PdfHTML.sales_invoice

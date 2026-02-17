@@ -25,49 +25,47 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
         description={@invoice.description}
       />
 
-      <div class="flex flex-col justify-between px-8 lg:flex-row min-w-0">
-        <aside class={[
-          "w-full lg:max-w-[400px] xl:max-w-[650px] shrink-0 grow-1",
-          "flex flex-col gap-4 order-last lg:order-none py-8 pr-8",
-          "max-h-[calc(100vh-var(--navbar-height)-128px)] overflow-y-auto",
-          "lg:h-[calc(100vh-var(--navbar-height)-128px)]"
-        ]}>
+      <div class="flex flex-col lg:flex-row min-w-0 bg-white">
+        <InvoiceDetails.aside>
           <%= if @show_timeline do %>
             <InvoiceTimeline.invoice_timeline invoice={@invoice} invoice_type={:cost} />
           <% else %>
-            <div class="flex flex-row justify-end gap-2">
-              <button
+            <div class="flex flex-row gap-4">
+              <.button
                 :if={CostInvoice.deletable?(@invoice)}
-                id="delete-invoice-button"
-                phx-hook="Tippy"
-                data-tippy-content="Usuń fakturę"
-                data-tippy-delay="100"
-                class={[
-                  "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
-                  "px-2 py-1 flex items-center justify-center rounded"
-                ]}
                 phx-click="delete"
+                color="light_grey"
+                size="small"
+                new={true}
               >
-                <.icon name="hero-trash-solid" class="w-5 h-5" />
-              </button>
-              <button
+                <.icon name="hero-trash-solid" class="size-4" />
+                <span class="hidden xl:inline">
+                  Usuń
+                </span>
+              </.button>
+
+              <.link
+                class={button_styles(%{color: "light_grey", size: "small", new: true})}
+                href={@preview_url}
+                download
+              >
+                <Lucideicons.download /><span class="hidden xl:inline">Pobierz</span>
+              </.link>
+
+              <.button
                 :if={@invoice.ksef_number != nil}
-                id="timeline-button"
-                phx-hook="Tippy"
-                data-tippy-content="Historia faktury"
-                data-tippy-delay="100"
-                class={[
-                  "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
-                  "px-2 py-1 flex items-center justify-center rounded"
-                ]}
+                class="ml-auto"
+                color="light_grey"
+                size="small"
+                new={true}
                 phx-click="show_timeline"
                 phx-target={@myself}
               >
-                <.icon name="hero-clock" class="w-5 h-5" />
-              </button>
+                Historia faktury
+              </.button>
             </div>
 
-            <div class="grid grid-cols-[130px_1fr] gap-2 py-4">
+            <InvoiceDetails.invoice_metadata>
               <InvoiceDetails.invoice_metadata_piece
                 label="Numer faktury"
                 value={@invoice.invoice_identifier}
@@ -100,7 +98,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
                 value={@invoice.due_date}
                 piece_id="due-date"
               />
-            </div>
+            </InvoiceDetails.invoice_metadata>
 
             <InvoiceDetails.invoice_amount
               is_cost_invoice={true}
@@ -108,13 +106,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
             />
           <% end %>
 
-          <h3 :if={@preview_type != :none} class="self-start text-sm uppercase text-darkGrey mt-8">
-            Podgląd faktury
-          </h3>
-          <div
-            :if={@preview_type != :none}
-            class="mb-8 mt-4 transition-opacity transition-duration-300 hover:opacity-50"
-          >
+          <InvoiceDetails.invoice_preview :if={@preview_type != :none}>
             <%= case @preview_type do %>
               <% :pdf -> %>
                 <a href={@preview_url} target="_blank">
@@ -123,7 +115,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
                     data-pdf-url={@preview_url}
                     phx-update="ignore"
                     phx-hook="PDFViewer"
-                    class="w-full h-full max-h-[80vh] border-black border-2 rounded-lg overflow-x-hidden overflow-y-hidden bg-white"
+                    class="w-full h-full max-w-md max-h-[80vh] overflow-x-hidden overflow-y-hidden bg-white"
                   >
                     <div class="min-w-[200px] min-h-[200px] flex items-center justify-center font-bold">
                       Ładowanie dokumentu...
@@ -132,26 +124,21 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
                 </a>
               <% :image -> %>
                 <a href={@preview_url} target="_blank">
-                  <div class="w-full h-full max-h-[80vh] border-black border-2 rounded-lg overflow-x-hidden overflow-y-scroll bg-black">
+                  <div class="w-full h-full max-h-[80vh] overflow-x-hidden bg-black">
                     <img src={@preview_url} class="w-full h-full object-contain" />
                   </div>
                 </a>
             <% end %>
-          </div>
-        </aside>
+          </InvoiceDetails.invoice_preview>
+        </InvoiceDetails.aside>
 
-        <main class="grow py-8 lg:pl-8 border-b lg:border-b-0 lg:border-l border-darkGrey/[.3] h-[calc(100vh-var(--navbar-height)-128px)]">
+        <InvoiceDetails.main>
           <%= cond do %>
             <% @invoice.skip_invoicing -> %>
-              <InvoiceDetails.invoice_skipped_view />
-            <% length(@invoice.transactions) == 1 -> %>
-              <InvoiceDetails.single_transaction_match
-                is_cost_invoice={true}
-                transaction={hd(@invoice.transactions)}
-              />
-            <% length(@invoice.transactions) > 1 -> %>
-              <InvoiceDetails.multiple_transactions_match
-                is_cost_invoice={true}
+              <InvoiceDetails.invoice_skipped_view is_cost_invoice={@is_cost_invoice} />
+            <% not Enum.empty?(@invoice.transactions) -> %>
+              <InvoiceDetails.transaction_match
+                is_cost_invoice={@is_cost_invoice}
                 transactions={@invoice.transactions}
               />
             <% @chat -> %>
@@ -161,43 +148,14 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
                 invoice={@invoice}
                 current_user={@current_user}
               />
-            <% @potential_transactions == [] -> %>
-              <div class="flex flex-col gap-6 items-center mb-10">
-                <div class="gap-4 flex flex-col items-center p-4 rounded-md text-center">
-                  <.icon name="hero-face-frown" class="w-10 h-10 block" />
-                  <h3 class="text-lg font-semibold">Brak rekomendacji</h3>
-                  <p class="max-w-[400px]">
-                    Firmowid nie znalazł żadnych transakcji, które potencjalnie pasowałyby do tej faktury.
-                  </p>
-                  <.button
-                    phx-click="show_chat"
-                    phx-target={@myself}
-                    color="orange"
-                    class="w-full mt-2"
-                  >
-                    Poproś Firmowida o pomoc
-                  </.button>
-                </div>
-              </div>
-              <hr class="w-full text-grey-200" />
-              <h3 class="text-md font-semibold my-10">Co jeszcze możesz zrobić?</h3>
-              <InvoiceDetails.skip_invoicing
-                show_bank_transfer_modal={true}
-                hide_ask_assistant={true}
+            <% true -> %>
+              <InvoiceDetails.potential_transactions
+                potential_transactions={@potential_transactions}
+                is_cost_invoice={@is_cost_invoice}
                 invoice={@invoice}
               />
-            <% true -> %>
-              <div class="flex flex-col gap-16">
-                <InvoiceDetails.potential_transactions_list
-                  potential_transactions={@potential_transactions}
-                  name_field={:creditor_name}
-                />
-                <hr class="w-full text-grey-200" />
-                <h3 class="text-md font-semibold mt-4">Żadna z transakcji nie pasuje?</h3>
-                <InvoiceDetails.skip_invoicing show_bank_transfer_modal={true} invoice={@invoice} />
-              </div>
           <% end %>
-        </main>
+        </InvoiceDetails.main>
       </div>
     </div>
     """

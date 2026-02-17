@@ -15,73 +15,65 @@ defmodule FirmowidWeb.Components.Invoicing.BankTransferModal do
   def render(assigns) do
     ~H"""
     <span>
-      <button
+      <.button
         id="show-transfer-details-button"
         phx-click={show_modal("bank-transfer-modal")}
         type="button"
-        class={[
-          "text-xs h-8 w-32 uppercase",
-          "shrink-0 flex flex-row justify-center items-center py-2 px-2 rounded-md",
-          "transition-all duration-500",
-          "bg-darkGrey text-white"
-        ]}
+        class="w-full"
+        color="grey"
+        size="small"
+        new={true}
       >
         Skopiuj dane
-      </button>
+      </.button>
 
       <.modal
         id="bank-transfer-modal"
         class="max-w-[1000px]"
         on_cancel={hide_modal("bank-transfer-modal")}
       >
-        <div class="flex flex-col gap-12 p-4">
+        <div class="flex flex-col gap-12">
           <h3 class="text-center text-lg font-semibold">Dane do przelewu</h3>
-          <div class="grid grid-cols-[150px_1fr_32px] gap-4">
+          <div class="grid grid-cols-[min-content_1fr_min-content] items-center gap-4">
             <%= for {label, value} <- [
             {"Odbiorca", @invoice.seller},
             {"Adres", @invoice.seller_address},
             {"Numer konta", @invoice.account_number},
             {"Tytuł przelewu", "Płatność za fakturę
                 #{@invoice.invoice_identifier}"},
-              {"Kwota", @invoice.total_amount |> Decimal.abs()},
-              {"Waluta", @invoice.currency}
+            {"Kwota", @invoice.total_amount |> Decimal.abs()},
+            {"Waluta", @invoice.currency}
           ] do %>
-              <label for={"transfer-#{label}"} class="text-sm self-start">
+              <label for={"transfer-#{label}"} class="text-sm self-start text-nowrap">
                 {label}
               </label>
               <code id={"transfer-#{label}"} class="text-right text-black">{value}</code>
-              <button
+              <.button
                 id={"copy-#{label}"}
                 onclick={"navigator.clipboard.writeText('#{value}')"}
                 type="button"
-                class={[
-                  "h-6 w-6 text-darkGrey rounded-md",
-                  "bg-greyButtonBg self-center justify-self-end",
-                  "shrink-0 flex flex-row justify-center items-center",
-                  "hover:border-darkGrey border border-transparent",
-                  "active:bg-darkGrey active:text-lightGreyBg",
-                  "transition-all transition-duration-300"
-                ]}
+                class="size-6"
+                color="light_grey"
+                size="small"
+                new={true}
               >
-                <.icon name="hero-clipboard-document-solid" class="w-4 h-4" />
-              </button>
+                <.icon name="hero-clipboard-document-solid" class="size-4 shrink-0" />
+              </.button>
             <% end %>
           </div>
           <div class="flex flex-row gap-6">
-            <h4 class="text-center grow text-orangeText bg-orangeBg rounded px-4 py-2">
-              Zawsze weryfikuj kopiowane dane z fakturą!
-            </h4>
-            <button
-              class={[
-                "max-w-[300px] self-end bg-orangeText text-white",
-                "hover:bg-darkGrey hover:text-lightGreyBg",
-                "rounded px-4 py-2",
-                "transition-all transition-duration-300"
-              ]}
+            <div class="flex items-center justify-center grow bg-orange-200 px-4 py-2 rounded-lg">
+              <h4 class="text-orange-700">
+                Zawsze weryfikuj kopiowane dane z fakturą!
+              </h4>
+            </div>
+            <.button
+              color="orange"
+              new={true}
               phx-click={hide_modal("bank-transfer-modal")}
             >
               Gotowe
-            </button>
+            </.button>
           </div>
         </div>
       </.modal>
