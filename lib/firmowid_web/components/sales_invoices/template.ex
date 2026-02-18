@@ -47,6 +47,18 @@ defmodule FirmowidWeb.SalesInvoices.Template do
               {@sales_invoice.corrected_invoice.issue_date |> Calendar.strftime("%d.%m.%Y")}
             </span>
           </div>
+
+          <%= if @sales_invoice.correction_reason && @sales_invoice.correction_reason != "" do %>
+            <div class="mt-1">
+              <span>
+                {case @sales_invoice.invoice_type do
+                  :poland -> "Przyczyna korekty:"
+                  :foreign -> "Przyczyna korekty / Correction reason:"
+                end}
+              </span>
+              <span class="font-bold">{@sales_invoice.correction_reason}</span>
+            </div>
+          <% end %>
         <% end %>
 
         <div class="mt-4">

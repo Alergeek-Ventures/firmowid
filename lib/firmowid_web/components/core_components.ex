@@ -482,6 +482,27 @@ defmodule FirmowidWeb.CoreComponents do
     """
   end
 
+  def input(%{type: "textarea", new: true} = assigns) do
+    ~H"""
+    <div class={@rest[:class]}>
+      <.label :if={@label} for={@id} class="mb-2">{@label}</.label>
+      <textarea
+        id={@id}
+        name={@name}
+        class={
+          classes([
+            "py-1.5 px-3 border rounded-lg bg-white text-grey-900 placeholder:text-grey-500 leading-tight w-full min-h-[3rem] resize-none",
+            "border-grey-200 focus:border-grey-400 [&[aria-invalid=\"true\"]]:border-rose-400"
+          ])
+        }
+        aria-invalid={to_string(not Enum.empty?(@errors))}
+        {@rest}
+      ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
+      <.error :for={msg <- @errors}>{msg}</.error>
+    </div>
+    """
+  end
+
   def input(%{type: "textarea"} = assigns) do
     ~H"""
     <div>

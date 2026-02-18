@@ -151,6 +151,9 @@
 			<% end %>
 		</RodzajFaktury>
 		<%= if @invoice.ksef_invoice_kind == :kor do %>
+			<%= if @invoice.correction_reason && @invoice.correction_reason != "" do %>
+			<PrzyczynaKorekty><%= @invoice.correction_reason %></PrzyczynaKorekty>
+			<% end %>
 			<DaneFaKorygowanej>
 				<DataWystFaKorygowanej><%= @invoice.corrected_invoice.issue_date %></DataWystFaKorygowanej>
 				<NrFaKorygowanej><%= @invoice.corrected_invoice.invoice_number %></NrFaKorygowanej>

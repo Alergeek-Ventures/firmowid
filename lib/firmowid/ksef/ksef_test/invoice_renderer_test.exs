@@ -347,6 +347,7 @@ defmodule Firmowid.Ksef.InvoiceRendererTest do
       issue_date: ~D[2026-03-15],
       sale_date: ~D[2026-01-27],
       due_date: nil,
+      correction_reason: "obniżka ceny o 200 zł z uwagi na uszkodzenia estetyczne",
       sales_invoice_items: [
         %{
           name: "lodówka Zimnotech mk1",
@@ -411,6 +412,7 @@ defmodule Firmowid.Ksef.InvoiceRendererTest do
       issue_date: ~D[2026-04-01],
       sale_date: nil,
       due_date: nil,
+      correction_reason: "błędna nazwa nabywcy",
       buyer_full_name: "CeDeE s.c.",
       sales_invoice_items: [
         %{
@@ -453,7 +455,6 @@ defmodule Firmowid.Ksef.InvoiceRendererTest do
       "IDNabywcy",
       "UU_ID",
       "P_1M",
-      "PrzyczynaKorekty",
       "TypKorekty",
       "Platnosc",
       "Stopka"

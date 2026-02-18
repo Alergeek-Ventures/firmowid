@@ -70,6 +70,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
     # KSeF FA(3) fields
     field :ksef_invoice_kind, Ecto.Enum, values: [:vat, :kor], default: :vat
+    field :correction_reason, :string
 
     belongs_to :corrected_invoice, __MODULE__
 
@@ -190,8 +191,10 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       :is_reverse_charge,
       :skip_invoicing,
       :ksef_invoice_kind,
+      :correction_reason,
       :counterparty_id
     ])
+    |> validate_length(:correction_reason, max: 256)
     |> buyer_changeset(attrs)
     |> seller_changeset(attrs)
     |> cast_assoc(:sales_invoice_items,
@@ -601,6 +604,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       |> Map.put(:organization_id, original_invoice.organization_id)
       |> Map.put(:ksef_invoice_kind, :kor)
       |> Map.put(:corrected_invoice_id, original_invoice.id)
+      |> maybe_put_due_date_days(reference_invoice)
 
     items =
       Enum.map(
@@ -612,6 +616,13 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     |> change(base_attrs)
     |> put_assoc(:sales_invoice_items, items)
   end
+
+  defp maybe_put_due_date_days(attrs, %{sale_date: sale_date, due_date: due_date})
+       when not is_nil(sale_date) and not is_nil(due_date) do
+    Map.put(attrs, :due_date_days, Date.diff(due_date, sale_date))
+  end
+
+  defp maybe_put_due_date_days(attrs, _reference), do: attrs
 
   defp validate_seller_name(changeset) do
     seller_display_name = get_field(changeset, :seller_display_name)

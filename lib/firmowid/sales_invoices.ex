@@ -624,11 +624,18 @@ defmodule Firmowid.SalesInvoices do
           |> Map.put(:quantity, Decimal.new(0))
         end)
 
+      correction_reason =
+        case invoice.invoice_type do
+          :foreign -> "Anulowanie faktury / Invoice cancellation"
+          _poland -> "Anulowanie faktury"
+        end
+
       attrs = %{
         invoice_number: invoice_number,
         issue_date: issue_date,
         sale_date: invoice.sale_date,
         due_date: invoice.due_date,
+        correction_reason: correction_reason,
         sales_invoice_items: zeroed_items_attrs
       }
 

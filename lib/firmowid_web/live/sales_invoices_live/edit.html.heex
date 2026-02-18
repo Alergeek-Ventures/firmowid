@@ -102,6 +102,20 @@
 
       <hr class="text-grey-200 col-start-2 col-end-9" />
 
+      <div :if={not SalesInvoice.draft?(@invoice)} class="col-start-2 col-end-9">
+        <.input
+          field={@form[:correction_reason]}
+          type="textarea"
+          new={true}
+          label="Przyczyna korekty"
+          placeholder="np. korekta ceny, zmiana danych nabywcy..."
+          maxlength="256"
+        />
+        <p class="text-xs text-grey-400 mt-1">
+          Wymagana prawnie (Art. 106j ust. 2 pkt 3 ustawy o VAT). Maksymalnie 256 znaków.
+        </p>
+      </div>
+
       <div class="col-span-full flex flex-col xl:flex-row gap-14 justify-center items-center">
         <%= if SalesInvoice.draft?(@invoice) do %>
           <div class={[

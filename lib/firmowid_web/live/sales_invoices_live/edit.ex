@@ -12,6 +12,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Edit do
   alias Firmowid.Ksef
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
+  alias Firmowid.SalesInvoices.CorrectionReason
   alias Firmowid.SalesInvoices.SalesInvoice
   alias FirmowidWeb.SalesInvoicesLive.Creator
 
@@ -58,6 +59,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.Edit do
           |> assign(:invoice, invoice)
           |> assign(:organization, organization)
           |> assign(:reference_invoice, get_reference_invoice(invoice))
+          |> assign(:correction_reason_touched, false)
+          |> assign(:last_auto_reason, "")
           |> assign_form_with_preview(invoice_changeset)
           |> assign(:bank_accounts, bank_accounts)
           |> assign(
@@ -80,6 +83,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.Edit do
 
   @impl true
   def handle_event("validate", %{"sales_invoice" => params}, socket) do
+    socket = detect_correction_reason_touched(params, socket)
+
     changeset =
       socket.assigns.invoice
       |> changeset(params)
@@ -258,15 +263,71 @@ defmodule FirmowidWeb.SalesInvoicesLive.Edit do
         |> assign(:preview_invoice, preview_invoice)
         |> assign(:currency_rate, SalesInvoices.get_currency_rate(preview_invoice))
         |> assign(:stale_preview_invoice?, false)
+        |> maybe_auto_fill_correction_reason()
 
       {:error, _reason} ->
         assign(socket, :stale_preview_invoice?, true)
     end
   end
 
+  defp detect_correction_reason_touched(params, socket) do
+    if SalesInvoice.draft?(socket.assigns.invoice) do
+      socket
+    else
+      user_reason = Map.get(params, "correction_reason", "")
+      last_auto = socket.assigns.last_auto_reason
+
+      if user_reason != last_auto and user_reason != "" do
+        assign(socket, :correction_reason_touched, true)
+      else
+        socket
+      end
+    end
+  end
+
+  defp maybe_auto_fill_correction_reason(socket) do
+    if SalesInvoice.draft?(socket.assigns.invoice) or socket.assigns.correction_reason_touched do
+      sync_user_reason_to_preview(socket)
+    else
+      auto_fill_correction_reason(socket)
+    end
+  end
+
+  defp sync_user_reason_to_preview(socket) do
+    preview = socket.assigns[:preview_invoice]
+    form_reason = Ecto.Changeset.get_field(socket.assigns.form.source, :correction_reason)
+
+    if preview && form_reason do
+      assign(socket, :preview_invoice, Map.put(preview, :correction_reason, form_reason))
+    else
+      socket
+    end
+  end
+
+  defp auto_fill_correction_reason(socket) do
+    reference = socket.assigns[:reference_invoice] || socket.assigns.invoice
+    preview = socket.assigns[:preview_invoice]
+
+    auto_reason =
+      if preview do
+        CorrectionReason.generate(preview, reference)
+      else
+        ""
+      end
+
+    form = socket.assigns.form
+    updated_params = Map.put(form.params || %{}, "correction_reason", auto_reason)
+    updated_source = Ecto.Changeset.put_change(form.source, :correction_reason, auto_reason)
+
+    socket
+    |> assign(:last_auto_reason, auto_reason)
+    |> assign(:preview_invoice, Map.put(preview, :correction_reason, auto_reason))
+    |> assign(:form, to_form(%{updated_source | params: updated_params}))
+  end
+
   defp changeset(sales_invoice, params \\ %{}) do
     sales_invoice
-    |> Ecto.Changeset.cast(params, [:issue_date, :invoice_number, :ksef_invoice_kind])
+    |> Ecto.Changeset.cast(params, [:issue_date, :invoice_number, :ksef_invoice_kind, :correction_reason])
     |> SalesInvoice.step1_changeset(params)
     |> SalesInvoice.step2_changeset(params)
     |> SalesInvoice.step3_changeset(params)
