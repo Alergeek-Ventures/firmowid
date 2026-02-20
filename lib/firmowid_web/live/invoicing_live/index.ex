@@ -85,14 +85,12 @@ defmodule FirmowidWeb.InvoicingLive.Index do
         filter_string -> String.to_existing_atom(filter_string)
       end
 
-    # Default group_by_party to true for groupable filters, false otherwise
-    groupable_filter = filter in [:transactions, :all, :unmatched]
-
+    # Grouping is sticky across filter changes; defaults to true on first load
     group_by_party =
       case Map.get(params, "group_by_party") do
-        "true" -> groupable_filter
+        "true" -> true
         "false" -> false
-        nil -> groupable_filter
+        nil -> true
         _ -> false
       end
 
@@ -508,17 +506,28 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     socket = assign(socket, :invoicing_entries, entries)
 
     # actual data
+    pending_entries =
+      Invoicing.get_invoicing_entries(date_range_from, date_range_to, :unmatched)
+
+    raw_pending_count = Enum.count(pending_entries)
+
+    # Badge count follows the grouping toggle: when grouping is on,
+    # grouped transactions count as one item each
     pending_invoicing_entries_count =
-      date_range_from
-      |> Invoicing.get_invoicing_entries(
-        date_range_to,
-        :unmatched
-      )
-      |> Enum.count()
+      if socket.assigns.params.group_by_party do
+        all_transactions = Finances.list_transactions(date_range_from, date_range_to)
+
+        pending_entries
+        |> group_cost_transactions_by_party(true, all_transactions)
+        |> Enum.count()
+      else
+        raw_pending_count
+      end
 
     # any transactions / invoices present in it
     # nothing for this month was added yet
     # leftovers from previous month need also not to be present
+    # Note: use raw count here — semantic check regardless of grouping
     is_month_touched =
       date_range_from
       |> Invoicing.get_invoicing_entries(
@@ -526,7 +535,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
         :all
       )
       |> Enum.count() > 0 or
-        pending_invoicing_entries_count > 0
+        raw_pending_count > 0
 
     # no new transactions can be added
     has_month_ended =
@@ -542,7 +551,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
       )
       |> assign(
         :is_month_closed,
-        is_month_touched and has_month_ended and pending_invoicing_entries_count == 0
+        is_month_touched and has_month_ended and raw_pending_count == 0
       )
       |> assign(
         :pending_invoicing_entries_count,
