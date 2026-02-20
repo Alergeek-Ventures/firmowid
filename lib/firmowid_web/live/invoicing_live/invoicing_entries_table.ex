@@ -477,7 +477,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
     >
       <div class={[
         "text-xs h-6",
-        "flex flex-row justify-center items-center py-2 px-2 rounded-md",
+        "flex flex-row items-center py-2 px-2 rounded-md",
         "transition-all duration-500",
         "w-full justify-between bg-greenBg text-greenText"
       ]}>
