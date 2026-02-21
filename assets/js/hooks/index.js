@@ -15,6 +15,7 @@ import { CopyToClipboard } from "./copy_to_clipboard";
 import { SolutionItemImageSwitcher } from "./solution_item_image_switcher";
 import { NavbarScroll } from "./navbar_scroll";
 import { PaperPlane } from "./paper_plane";
+import { FloatingUIError } from "./floating_error";
 
 export const Hooks = {
   ListItemRemovalAnimation,
@@ -34,4 +35,5 @@ export const Hooks = {
   SolutionItemImageSwitcher,
   NavbarScroll,
   PaperPlane,
+  FloatingUIError
 };

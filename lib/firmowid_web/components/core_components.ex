@@ -371,8 +371,12 @@ defmodule FirmowidWeb.CoreComponents do
 
   attr :new, :boolean, default: false, doc: "new redesigned input"
 
+  attr :is_tooltip, :boolean, default: false
+
   attr :rest, :global, include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
                 multiple pattern placeholder readonly required rows size step)
+
+  attr :reference, :string, default: nil
 
   def input(%{field: %FormField{} = field} = assigns) do
     errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
@@ -455,7 +459,7 @@ defmodule FirmowidWeb.CoreComponents do
         </select>
         <Lucideicons.chevron_down class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none size-4 text-grey-700 peer-disabled:text-grey-300" />
       </div>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <.error :for={msg <- @errors} is_tooltip={@is_tooltip} target={@id}>{msg}</.error>
     </div>
     """
   end
@@ -531,6 +535,17 @@ defmodule FirmowidWeb.CoreComponents do
 
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(%{new: true} = assigns) do
+    raw_error =
+      assigns.errors
+      |> Enum.at(0)
+      |> case do
+        "can't be blank" -> "To pole nie może zostać puste."
+        nil -> "Błąd systemu"
+        other -> other
+      end
+
+    assigns = assign(assigns, :raw_error, raw_error)
+
     ~H"""
     <div class={@rest[:class]}>
       <.label :if={@label} for={@id} class={classes(["mb-2", @rest[:class]])}>{@label}</.label>
@@ -551,7 +566,9 @@ defmodule FirmowidWeb.CoreComponents do
         }
         {@rest}
       />
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <.error :for={msg <- @errors} is_tooltip={@is_tooltip} target={@id} reference={@reference}>
+        {@raw_error}
+      </.error>
     </div>
     """
   end
@@ -600,7 +617,50 @@ defmodule FirmowidWeb.CoreComponents do
   @doc """
   Generates a generic error message.
   """
+  attr :target, :string, default: nil
+  attr :reference, :string, default: nil
+  attr :is_tooltip, :boolean, default: false
   slot :inner_block, required: true
+
+  def error(%{is_tooltip: true} = assigns) do
+    ~H"""
+    <div
+      :if={@target}
+      id={"error_msg_#{@target}"}
+      phx-hook="FloatingUIError"
+      data-for={@target}
+      data-reference={@reference}
+      class="
+        absolute top-0 left-0
+        bg-[#A22A2A]
+        text-[#FBF4F4]
+        text-sm font-normal
+        px-3 py-1.5
+        rounded
+        shadow-[0_2px_8px_rgba(0,0,0,0.15)]
+        w-40 h-[75px]
+      "
+    >
+      <div class="flex items-center gap-2">
+        <.icon name="hero-information-circle" class="mt-0.5 h-5 w-5 flex-none" />
+        {render_slot(@inner_block)}
+      </div>
+
+      <div
+        id={"arr_#{@target}"}
+        class="
+      absolute
+      w-2.5 h-2.5
+      bg-[#A22A2A]
+      rotate-45
+      left-1/2 -translate-x-1/2
+      -bottom-[5px]
+    "
+      >
+      </div>
+    </div>
+    """
+  end
 
   def error(assigns) do
     ~H"""

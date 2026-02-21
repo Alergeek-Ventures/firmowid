@@ -147,11 +147,11 @@ defmodule FirmowidWeb.SalesInvoicesLive.Components.InvoiceItems do
     </div>
 
     <div class="col-start-2 col-end-9 grid grid-cols-subgrid text-sm/snug text-grey-700 mb-1 py-1 pl-2">
-      <p>Towar/usługa</p>
-      <p>Ilość</p>
+      <p id="name">Towar/usługa</p>
+      <p id="quantity">Ilość</p>
       <p>VAT</p>
       <p>Jednostka</p>
-      <p>Cena netto</p>
+      <p id="price">Cena netto</p>
 
       <%= if to_boolean(@items_form[:is_reverse_charge].value) do %>
         <p class="text-end col-span-2">Wartość</p>
@@ -173,6 +173,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.Components.InvoiceItems do
             phx-debounce
             class="w-full"
             new={true}
+            is_tooltip={true}
+            reference="name"
           />
           <.input
             field={item[:quantity]}
@@ -184,6 +186,9 @@ defmodule FirmowidWeb.SalesInvoicesLive.Components.InvoiceItems do
             class="w-16"
             input_class="text-center"
             new={true}
+            is_tooltip={true}
+            reference="quantity"
+            onkeydown="return event.key !== '-'"
           />
 
           <.input
@@ -215,6 +220,9 @@ defmodule FirmowidWeb.SalesInvoicesLive.Components.InvoiceItems do
               class="w-24"
               input_class="text-center"
               new={true}
+              is_tooltip={true}
+              reference="price"
+              onkeydown="return event.key !== '-'"
             />
             <p class="text-sm text-grey-500">{@items_form[:currency].value}</p>
           </div>
