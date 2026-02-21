@@ -20,8 +20,8 @@ defmodule FirmowidWeb.Components.Session do
       as={:sessions_form}
       id={form_id}
       for={GroupedSessionForm.from_sessions(@sessions)}
-      phx-submit="validate_and_update_list"
-      phx-change="validate_and_update_list"
+      phx-submit="validate_and_update_list_onsubmit"
+      phx-change="validate_and_update_list_onchange"
       class="flex flex-row items-center py-1 min-w-0 w-full"
     >
       <input :for={s <- @sessions} type="hidden" name="sessions_form[ids][]" value={s.id} />

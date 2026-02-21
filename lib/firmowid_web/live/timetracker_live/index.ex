@@ -163,9 +163,27 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
       |> Enum.map(& &1.id)
 
     if length(current_sessions_ids) > 1 do
-      edit_sessions(current_sessions_ids, params, socket)
+      edit_sessions_realtime(current_sessions_ids, params, socket)
     else
       edit_session(params, socket)
+    end
+  end
+
+  defp timetracker_update_sessions(changesets, socket) do
+    case Timetracker.update_sessions(changesets) do
+      {:ok, _sessions} ->
+        {:noreply, assign_sessions(socket)}
+
+      {:error, :overlap} ->
+        LiveToast.send_toast(:error, "Sesja nachodzi na inną sesję.")
+        {:noreply, socket}
+
+      {:error, session_id, changeset, _changes_so_far} ->
+        Enum.each(changeset.errors, fn {_field, {message, _}} ->
+          LiveToast.send_toast(:error, "#{message} (sesja ID: #{session_id})")
+        end)
+
+        {:noreply, socket}
     end
   end
 
@@ -194,29 +212,31 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     end
   end
 
-  def edit_sessions(ids, form, socket) do
-    title = Map.get(form, "title")
-
+  defp ids_to_session_changeset(ids, socket, attrs \\ %{}) do
     ids
     |> Timetracker.list_sessions_by_ids()
     |> Enum.map(fn session ->
       Bodyguard.permit!(Timetracker, :update_session, socket.assigns.current_user, session)
-      Session.changeset(session, %{title: title})
+      Session.changeset(session, attrs)
     end)
-    |> Timetracker.update_sessions()
-    |> case do
-      {:ok, _sessions} ->
-        {:noreply, assign_sessions(socket)}
+  end
 
-      {:error, :overlap} ->
-        LiveToast.send_toast(:error, "Sesja nachodzi na inną sesję.")
-        {:noreply, socket}
+  def edit_sessions(ids, form, socket) do
+    form =
+      form
+      |> GroupedSessionForm.changeset()
+      |> Ecto.Changeset.apply_changes()
 
-      {:error, session_id, changeset, _changes_so_far} ->
-        Enum.each(changeset.errors, fn {_field, {message, _}} ->
-          LiveToast.send_toast(:error, "#{message} (sesja ID: #{session_id})")
-        end)
-    end
+    ids
+    |> ids_to_session_changeset(socket)
+    |> GroupedSessionForm.from_changesets(form, socket.assigns.timezone)
+    |> timetracker_update_sessions(socket)
+  end
+
+  def edit_sessions_realtime(ids, %{"title" => title, "project_id" => project_id}, socket) do
+    ids
+    |> ids_to_session_changeset(socket, %{title: title, project_id: project_id})
+    |> timetracker_update_sessions(socket)
   end
 
   def handle_event("toggle_extended_form", _, %{assigns: %{current_session: nil}} = socket) do
@@ -245,14 +265,12 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     {:noreply, assign(socket, form: to_form(SessionForm.changeset(session)))}
   end
 
-  def handle_event("validate_and_update_list", params, socket) do
-    case params do
-      %{"sessions_form" => %{"ids" => ids} = form} ->
-        edit_sessions(ids, form, socket)
+  def handle_event("validate_and_update_list_onsubmit", %{"sessions_form" => %{"ids" => ids} = form}, socket) do
+    edit_sessions(ids, form, socket)
+  end
 
-      %{"sessions_form" => form_params} ->
-        validate_and_update(form_params, socket)
-    end
+  def handle_event("validate_and_update_list_onchange", %{"sessions_form" => %{"ids" => ids} = form}, socket) do
+    edit_sessions_realtime(ids, form, socket)
   end
 
   def handle_event("validate_and_update", %{"session_form" => form_params}, socket) do
@@ -376,22 +394,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
       form,
       socket.assigns.timezone
     )
-    |> Timetracker.update_sessions()
-    |> case do
-      {:ok, _sessions} ->
-        {:noreply, assign_sessions(socket)}
-
-      {:error, :overlap} ->
-        LiveToast.send_toast(:error, "Sesja nachodzi na inną sesję.")
-        {:noreply, socket}
-
-      {:error, session_id, changeset, _changes_so_far} ->
-        Enum.each(changeset.errors, fn {_field, {message, _}} ->
-          LiveToast.send_toast(:error, "#{message} (sesja ID: #{session_id})")
-        end)
-
-        {:noreply, socket}
-    end
+    |> timetracker_update_sessions(socket)
   end
 
   def handle_event("load_more", _, socket) do
