@@ -3,9 +3,9 @@
   <%= if String.starts_with?(@current_uri.path, "/zarzadzanie") do %>
     <div class="h-navbar-management bg-lightGreyBg w-full" />
   <% end %>
-  <nav class={[
+  <.navbar class={[
     if(String.starts_with?(@current_uri.path, "/zarzadzanie"), do: "fixed", else: "sticky"),
-    "top-0 left-0 right-0 z-50 px-4 sm:px-6 lg:px-8 bg-black"
+    "top-0 left-0 right-0 z-50"
   ]}>
     <div
       class={[
@@ -20,12 +20,7 @@
           "!h-0 !py-0 overflow-hidden"
       }
     >
-      <.link
-        navigate={~p"/"}
-        class="font-extrabold text-xl inline-block flex-1 mt-0.5 tracking-wide text-offwhite"
-      >
-        Firmowid
-      </.link>
+      <.navbar_logo navigate={~p"/"} class="flex-1 mt-0.5" />
       <div class={[
         String.starts_with?(@current_uri.path, "/zarzadzanie") &&
           "border-b py-[18px]",
@@ -151,15 +146,13 @@
     </div>
     <%= if String.starts_with?(@current_uri.path, "/zarzadzanie") do %>
       <div class="grid grid-cols-3 gap-4 items-center py-2.5 w-full text-white/50 font-semibold">
-        <.link
+        <.navbar_logo
           navigate={~p"/"}
-          class="font-bold inline-block text-offwhite opacity-0 transition-opacity mr-auto tracking-wide mt-0.5"
+          class="opacity-0 transition-opacity mr-auto mt-0.5"
           id="firmowid-logo-management"
           phx-hook="CollapsibleNavbar"
           data-classes="opacity-100"
-        >
-          Firmowid
-        </.link>
+        />
         <div class="uppercase flex justify-center gap-14 text-sm">
           <.link
             navigate="/zarzadzanie/pracownicy"
@@ -207,7 +200,7 @@
         </button>
       </div>
     <% end %>
-  </nav>
+  </.navbar>
 <% end %>
 
 <main class={

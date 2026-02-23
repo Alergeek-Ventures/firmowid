@@ -722,6 +722,7 @@ defmodule FirmowidWeb.SalesInvoices.Template do
   end
 
   attr :footer_logo_data_uri, :string, default: nil
+  attr :invoice_type, :atom, required: true
 
   defp footer(assigns) do
     ~H"""
@@ -733,7 +734,10 @@ defmodule FirmowidWeb.SalesInvoices.Template do
           <img src="/images/invoice_firmowid_logo.png" class="w-10 h-10 mb-2" />
         <% end %>
         <p class="text-center">
-          Faktura wygenerowana za pomocą
+          {case @invoice_type do
+            :poland -> "Faktura wygenerowana za pomocą"
+            :foreign -> "Invoice generated with"
+          end}
           <a class="font-black" href="https://firmowid.pl" target="_blank" rel="noreferrer noopener">
             Firmowid.pl
           </a>
@@ -808,7 +812,10 @@ defmodule FirmowidWeb.SalesInvoices.Template do
         </div>
       <% end %>
       <.payment_details sales_invoice={@sales_invoice} />
-      <.footer footer_logo_data_uri={@footer_logo_data_uri} />
+      <.footer
+        footer_logo_data_uri={@footer_logo_data_uri}
+        invoice_type={@sales_invoice.invoice_type}
+      />
     </div>
     """
   end

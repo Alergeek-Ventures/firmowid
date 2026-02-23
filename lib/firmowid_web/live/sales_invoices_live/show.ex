@@ -28,7 +28,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
     socket =
       socket
       |> assign(:invoice, sales_invoice)
-      |> assign(:reference_invoice, get_reference_invoice(sales_invoice))
+      |> assign(:reference_invoice, SalesInvoices.get_reference_invoice(sales_invoice))
       |> assign(:potential_transactions, potential_transactions)
       |> assign(:preview_url, "")
       |> assign(:preview_type, :html)
@@ -68,7 +68,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
     {:noreply,
      socket
      |> assign(:invoice, invoice)
-     |> assign(:reference_invoice, get_reference_invoice(invoice))}
+     |> assign(:reference_invoice, SalesInvoices.get_reference_invoice(invoice))}
   end
 
   @impl true
@@ -133,6 +133,30 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
     {:noreply, assign(socket, :invoice, invoice)}
   end
 
+  @impl true
+  def handle_event("create_share_link", _params, socket) do
+    invoice = socket.assigns.invoice
+    Bodyguard.permit!(SalesInvoices, :update, socket.assigns.current_user, invoice)
+
+    case SalesInvoices.create_or_get_share_token(invoice) do
+      {:ok, updated_invoice} ->
+        url = share_url(updated_invoice.share_token)
+
+        {:noreply,
+         socket
+         |> assign(:invoice, updated_invoice)
+         |> push_event("copy-to-clipboard", %{text: url})
+         |> put_flash(:info, "Link skopiowany do schowka")}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Nie udało się utworzyć linku")}
+    end
+  end
+
+  defp share_url(token) when is_binary(token) do
+    FirmowidWeb.Endpoint.url() <> "/faktura/" <> token
+  end
+
   defp refresh_invoice(id) do
     id
     |> SalesInvoices.get_sales_invoice_with_logo_url()
@@ -149,13 +173,13 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
       send_update(FirmowidWeb.Components.Invoicing.SalesInvoiceDetails,
         id: "invoice-show",
         invoice: invoice,
-        reference_invoice: get_reference_invoice(invoice)
+        reference_invoice: SalesInvoices.get_reference_invoice(invoice)
       )
 
       socket =
         socket
         |> assign(:invoice, invoice)
-        |> assign(:reference_invoice, get_reference_invoice(invoice))
+        |> assign(:reference_invoice, SalesInvoices.get_reference_invoice(invoice))
         |> ksef_status_flash(status)
 
       {:noreply, socket}
@@ -179,10 +203,4 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
   defp ksef_status_flash(socket, :failed), do: put_flash(socket, :error, "Wysyłka do KSeF nie powiodła się")
 
   defp ksef_status_flash(socket, _status), do: socket
-
-  defp get_reference_invoice(%SalesInvoices.SalesInvoice{ksef_invoice_kind: :kor} = invoice) do
-    SalesInvoices.get_reference_invoice_for_correction(invoice)
-  end
-
-  defp get_reference_invoice(_invoice), do: nil
 end

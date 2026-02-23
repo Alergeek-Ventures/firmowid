@@ -1,31 +1,20 @@
-defmodule FirmowidWeb.Components.Invoicing.KsefTimeline do
+defmodule FirmowidWeb.Components.Invoicing.InvoiceTimeline do
   @moduledoc """
-  Function component for displaying KSeF timeline events.
-
-  Renders a chronological list of KSeF-related events for an invoice,
-  derived from existing invoice data and submission info.
+  Renders a vertical timeline of events for an invoice (creation, KSeF
+  submission, corrections, etc.). Used by both sales and cost invoice
+  detail views.
   """
 
   use FirmowidWeb, :html
 
+  alias Firmowid.Invoicing.Timeline
   alias Firmowid.Ksef.SubmissionInfo
-  alias Firmowid.Ksef.Timeline
 
   attr :invoice, :map, required: true
   attr :invoice_type, :atom, required: true, values: [:sales, :cost]
   attr :submission_info, SubmissionInfo, default: nil
 
-  @doc """
-  Renders the KSeF timeline for an invoice.
-
-  The timeline shows all KSeF-related events in chronological order.
-  For sales invoices: creation, submission, confirmation/failure, corrections issued.
-  For cost invoices: KSeF download, corrections issued.
-
-  When `submission_info` is provided for sales invoices, it includes submission
-  status events (submitted, confirmed, failed).
-  """
-  def ksef_timeline(assigns) do
+  def invoice_timeline(assigns) do
     case_result =
       case assigns.invoice_type do
         :sales ->
@@ -45,7 +34,7 @@ defmodule FirmowidWeb.Components.Invoicing.KsefTimeline do
       <div class="flex flex-row justify-between items-center">
         <h3 class="text-sm uppercase text-darkGrey">Historia dokumentu</h3>
         <button
-          phx-click="hide_ksef_timeline"
+          phx-click="hide_timeline"
           phx-target="#invoice-show"
           class="text-sm text-darkGrey hover:text-black transition-all flex items-center gap-1"
         >
@@ -86,7 +75,7 @@ defmodule FirmowidWeb.Components.Invoicing.KsefTimeline do
       </div>
 
       <p :if={@events == []} class="text-darkGrey py-4">
-        Brak historii KSeF dla tego dokumentu.
+        Brak historii dla tego dokumentu.
       </p>
     </div>
     """
@@ -144,7 +133,7 @@ defmodule FirmowidWeb.Components.Invoicing.KsefTimeline do
       navigate={invoice_path(@event.metadata.invoice_id, :sales)}
       class="text-sm text-blueText hover:underline"
     >
-      wystawiono koretkę nr {@event.metadata.invoice_number}
+      wystawiono korektę nr {@event.metadata.invoice_number}
     </.link>
     """
   end
@@ -171,6 +160,7 @@ defmodule FirmowidWeb.Components.Invoicing.KsefTimeline do
   defp event_label(:failed), do: "Błąd wysyłki"
   defp event_label(:downloaded), do: "Pobrano z KSeF"
   defp event_label(:correction_issued), do: "Wystawienie faktury korygującej"
+  defp event_label(_), do: "Zdarzenie"
 
   defp event_dot_color(:confirmed), do: "bg-greenText"
   defp event_dot_color(:failed), do: "bg-redText"

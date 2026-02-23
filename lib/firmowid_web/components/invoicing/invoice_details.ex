@@ -1,11 +1,16 @@
 defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   @moduledoc """
-  Stateless function components used by both Cost and Sales invoice detail
-  views. Extracted from the original (now deprecated) InvoiceDetails module
-  to avoid duplication.
+  Stateless function components for invoice detail views.
+
+  Contains shared components (headers, transaction matches, skip invoicing)
+  used by both Cost and Sales invoice details, as well as sales-specific
+  components like `sales_invoice_metadata/1`.
   """
 
   use FirmowidWeb, :html
+
+  alias Firmowid.SalesInvoices
+  alias Firmowid.SalesInvoices.SalesInvoice
 
   attr :is_cost_invoice, :boolean
   attr :issue_date, Date, required: true
@@ -35,11 +40,14 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
 
   attr :is_cost_invoice, :boolean
   attr :total_amount, :any, required: true
+  attr :lang, :atom, default: :pl
 
   def invoice_amount(assigns) do
     ~H"""
     <div class="flex flex-col gap-2 items-end justify-end">
-      <label class="text-darkGrey" for="total-amount">Razem do zapłaty</label>
+      <label class="text-darkGrey" for="total-amount">
+        {if @lang == :en, do: "Total to pay", else: "Razem do zapłaty"}
+      </label>
       <p
         id="total-amount"
         class={[
@@ -54,20 +62,94 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
     """
   end
 
+  attr :invoice, SalesInvoice, required: true
+  attr :lang, :atom, default: :pl
+
+  def sales_invoice_metadata(assigns) do
+    labels =
+      if assigns.lang == :en do
+        %{
+          invoice_number: "Invoice number",
+          ksef_id: "KSeF ID",
+          buyer: "Buyer",
+          issue_date: "Issue date",
+          sale_date: "Sale date",
+          due_date: "Payment deadline"
+        }
+      else
+        %{
+          invoice_number: "Numer faktury",
+          ksef_id: "Identyfikator KSeF",
+          buyer: "Kupujący",
+          issue_date: "Data wystawienia",
+          sale_date: "Data sprzedaży",
+          due_date: "Termin płatności"
+        }
+      end
+
+    assigns = assign(assigns, :labels, labels)
+
+    ~H"""
+    <div class="flex flex-col gap-4">
+      <div class="grid grid-cols-[145px_1fr] gap-2">
+        <.invoice_metadata_piece
+          label={@labels.invoice_number}
+          value={@invoice.invoice_number}
+          piece_id="inv-id"
+        />
+        <.invoice_metadata_piece
+          :if={@invoice.ksef_number != nil}
+          label={@labels.ksef_id}
+          value={@invoice.ksef_number}
+          piece_id="ksef-id"
+        />
+        <.invoice_metadata_piece
+          label={@labels.buyer}
+          value={SalesInvoices.buyer_display_name(@invoice)}
+          piece_id="buyer"
+          multiline
+        />
+        <.invoice_metadata_piece
+          label={@labels.issue_date}
+          value={@invoice.issue_date}
+          piece_id="issue-date"
+        />
+        <.invoice_metadata_piece
+          label={@labels.sale_date}
+          value={@invoice.sale_date}
+          piece_id="sale-date"
+        />
+        <.invoice_metadata_piece
+          label={@labels.due_date}
+          value={@invoice.due_date}
+          piece_id="due-date"
+        />
+      </div>
+
+      <.invoice_amount
+        is_cost_invoice={false}
+        lang={@lang}
+        total_amount={Money.new(@invoice.currency, SalesInvoice.get_gross_value(@invoice))}
+      />
+    </div>
+    """
+  end
+
   attr :label, :string, required: true
   attr :value, :any, required: true
-  attr :piece_id, :string, required: true
+  attr :piece_id, :string, default: nil
+  attr :multiline, :boolean, default: false
 
   def invoice_metadata_piece(assigns) do
     ~H"""
     <div class={["grid grid-cols-subgrid col-span-2", "rounded odd:bg-greyButtonBg/[0.3] px-1"]}>
       <label
         for={@piece_id}
-        class={[@label not in ["Sprzedawca", "Kupujący"] && "self-center", "text-sm text-darkGrey"]}
+        class={[!@multiline && "self-center", "text-sm text-darkGrey"]}
       >
         {@label}
       </label>
-      <p id={@piece_id} class={["text-left", @label in ["Sprzedawca", "Kupujący"] && "mb-8"]}>
+      <p id={@piece_id} class={["text-left", @multiline && "mb-8"]}>
         {@value}
       </p>
     </div>

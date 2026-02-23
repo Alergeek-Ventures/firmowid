@@ -6,7 +6,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
   alias Firmowid.Ksef.SubmissionInfo
   alias Firmowid.SalesInvoices.SalesInvoice
   alias FirmowidWeb.Components.Invoicing.InvoiceDetails, as: InvoiceDetails
-  alias FirmowidWeb.Components.Invoicing.KsefTimeline
+  alias FirmowidWeb.Components.Invoicing.InvoiceTimeline
 
   require Logger
 
@@ -44,7 +44,10 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
           _ -> ""
         end
       )
-      |> assign(:show_timeline_button, show_timeline_button?(assigns.submission_info))
+      |> assign(
+        :show_timeline_button,
+        show_timeline_button?(assigns.submission_info)
+      )
 
     ~H"""
     <div id="invoice-show" class="flex flex-col">
@@ -58,13 +61,13 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
 
       <div class="flex flex-col justify-between px-8 gap-4 lg:gap-12 lg:flex-row min-w-0">
         <aside class={[
-          "w-full lg:max-w-[400px] xl:max-w-[650px] shrink-0 grow-1",
-          "flex flex-col gap-4 order-last lg:order-none py-8 pr-8",
+          "w-full lg:max-w-[400px] xl:max-w-[650px] shrink-0 grow",
+          "flex flex-col gap-4 order-last lg:order-0 py-8 pr-8",
           "max-h-[calc(100vh-var(--navbar-height)-128px)] overflow-y-auto",
           "lg:h-[calc(100vh-var(--navbar-height)-128px)]"
         ]}>
-          <%= if @show_ksef_timeline do %>
-            <KsefTimeline.ksef_timeline
+          <%= if @show_timeline do %>
+            <InvoiceTimeline.invoice_timeline
               invoice={@invoice}
               invoice_type={:sales}
               submission_info={@submission_info}
@@ -109,21 +112,11 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                 />
               </button>
               <.link
-                id="copy-invoice-link"
-                phx-hook="Tippy"
-                data-tippy-content="Skopiuj fakture"
-                data-tippy-delay="100"
-                class={[
-                  "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
-                  "px-2 py-1 flex items-center justify-center rounded"
-                ]}
-                navigate={~p"/sprzedazowe?skopiuj=#{@invoice.id}"}
-              >
-                <.icon name="hero-document-duplicate" class="w-5 h-5" />
-              </.link>
-              <.link
                 :if={SalesInvoice.editable?(@invoice)}
                 id="edit-invoice-link"
+                phx-hook="Tippy"
+                data-tippy-content="Wystaw fakturę korygującą"
+                data-tippy-delay="100"
                 class={[
                   "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
                   "px-2 py-1 flex items-center justify-center rounded"
@@ -134,7 +127,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
               </.link>
 
               <button
-                :if={cancelable?(@invoice)}
+                :if={cancelable?(@invoice) and not SalesInvoice.deletable?(@invoice)}
                 id="cancel-invoice-button"
                 phx-hook="Tippy"
                 data-tippy-content="Anuluj fakturę (korekta)"
@@ -151,7 +144,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                 :if={SalesInvoice.deletable?(@invoice)}
                 id="delete-invoice-button"
                 phx-hook="Tippy"
-                data-tippy-content="Usun fakture"
+                data-tippy-content="Usuń fakturę"
                 data-tippy-delay="100"
                 class={[
                   "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
@@ -163,9 +156,9 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
               </button>
               <button
                 :if={@show_timeline_button}
-                id="ksef-timeline-button"
+                id="timeline-button"
                 phx-hook="Tippy"
-                data-tippy-content="Historia KSeF"
+                data-tippy-content="Historia dokumentu"
                 data-tippy-delay="100"
                 class={[
                   "relative",
@@ -174,7 +167,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                   @submission_info.status == :failed &&
                     "hover:ring-redText text-redText hover:text-redBg hover:bg-redText"
                 ]}
-                phx-click="show_ksef_timeline"
+                phx-click="show_timeline"
                 phx-target={@myself}
               >
                 <.icon name="hero-clock" class="w-5 h-5" />
@@ -193,7 +186,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
               <div :if={SalesInvoice.deletable?(@invoice)} class="absolute">
                 <.modal id="delete-invoice-modal" on_cancel={hide_modal("delete-invoice-modal")}>
                   <p>
-                    Czy na pewno chcesz usunac fakture <span class="font-semibold">{@invoice.invoice_number}</span>?
+                    Czy na pewno chcesz usunąć fakturę <span class="font-semibold">{@invoice.invoice_number}</span>?
                   </p>
                   <div class="mt-6 flex justify-end gap-3">
                     <.button
@@ -229,7 +222,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                       color="black"
                       phx-click={hide_modal("cancel-invoice-modal")}
                     >
-                      Anuluj
+                      Wróć
                     </.button>
                     <.button
                       color="orange"
@@ -244,54 +237,38 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                   </div>
                 </.modal>
               </div>
+
+              <span
+                :if={SalesInvoice.confirmed?(@invoice)}
+                id="share-invoice-button-container"
+                phx-hook="Tippy"
+                data-tippy-content="Skopiuj link do faktury"
+                data-tippy-delay="100"
+              >
+                <button
+                  id="share-invoice-button"
+                  phx-hook="CopyToClipboard"
+                  class={[
+                    "transition-all transition-duration-300",
+                    "px-2 py-1 flex items-center justify-center rounded",
+                    if(@invoice.share_token,
+                      do: "bg-turquoise-600 text-white hover:bg-turquoise-800",
+                      else: "hover:text-white hover:bg-darkGrey text-darkGrey"
+                    )
+                  ]}
+                  phx-click="create_share_link"
+                >
+                  <.icon name="hero-share" class="w-5 h-5" />
+                </button>
+              </span>
             </div>
 
-            <div class="grid grid-cols-[145px_1fr] gap-2 py-4">
-              <InvoiceDetails.invoice_metadata_piece
-                label="Numer faktury"
-                value={@invoice.invoice_number}
-                piece_id="inv-id"
-              />
-              <InvoiceDetails.invoice_metadata_piece
-                :if={@invoice.ksef_number != nil}
-                label="Identyfikator KSeF"
-                value={@invoice.ksef_number}
-                piece_id="ksef-id"
-              />
-              <InvoiceDetails.invoice_metadata_piece
-                label="Kupujacy"
-                value={Firmowid.SalesInvoices.buyer_display_name(@invoice)}
-                piece_id="buyer"
-              />
-              <InvoiceDetails.invoice_metadata_piece
-                label="Data wystawienia"
-                value={@invoice.issue_date}
-                piece_id="issue-date"
-              />
-              <InvoiceDetails.invoice_metadata_piece
-                label="Data sprzedazy"
-                value={@invoice.sale_date}
-                piece_id="sale-date"
-              />
-              <InvoiceDetails.invoice_metadata_piece
-                label="Termin platnosci"
-                value={@invoice.due_date}
-                piece_id="due-date"
-              />
+            <div class="py-4">
+              <InvoiceDetails.sales_invoice_metadata invoice={@invoice} />
             </div>
-
-            <InvoiceDetails.invoice_amount
-              is_cost_invoice={false}
-              total_amount={
-                Money.new(
-                  @invoice.currency,
-                  Firmowid.SalesInvoices.SalesInvoice.get_gross_value(@invoice)
-                )
-              }
-            />
           <% end %>
 
-          <h3 class="self-start text-sm uppercase text-darkGrey mt-8">Podglad faktury</h3>
+          <h3 class="self-start text-sm uppercase text-darkGrey mt-8">Podgląd faktury</h3>
           <div class="mb-8 mt-4 transition-opacity transition-duration-300 hover:opacity-50">
             <%= if @preview_type == :html do %>
               <div class="w-full h-full max-h-[80vh] border-black border-2 rounded-lg overflow-hidden">
@@ -367,7 +344,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
 
   @impl true
   def mount(socket) do
-    {:ok, assign(socket, chat: false, show_ksef_timeline: false)}
+    {:ok, assign(socket, chat: false, show_timeline: false)}
   end
 
   @impl true
@@ -397,12 +374,12 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
     {:noreply, assign(socket, chat: false)}
   end
 
-  def handle_event("show_ksef_timeline", _params, socket) do
-    {:noreply, assign(socket, show_ksef_timeline: true)}
+  def handle_event("show_timeline", _params, socket) do
+    {:noreply, assign(socket, show_timeline: true)}
   end
 
-  def handle_event("hide_ksef_timeline", _params, socket) do
-    {:noreply, assign(socket, show_ksef_timeline: false)}
+  def handle_event("hide_timeline", _params, socket) do
+    {:noreply, assign(socket, show_timeline: false)}
   end
 
   def handle_event("send_to_ksef", _params, socket) do
@@ -431,7 +408,6 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
 
   defp ksef_error_message(_), do: "Nie udało się wysłać faktury do KSeF"
 
-  # Show timeline button if invoice was ever submitted to KSeF (has session reference or ksef_number)
   defp show_timeline_button?(%SubmissionInfo{status: :not_submitted}), do: false
-  defp show_timeline_button?(%SubmissionInfo{}), do: true
+  defp show_timeline_button?(_submission_info), do: true
 end

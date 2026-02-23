@@ -58,7 +58,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Edit do
           socket
           |> assign(:invoice, invoice)
           |> assign(:organization, organization)
-          |> assign(:reference_invoice, get_reference_invoice(invoice))
+          |> assign(:reference_invoice, SalesInvoices.get_reference_invoice(invoice))
           |> assign(:correction_reason_touched, false)
           |> assign(:last_auto_reason, "")
           |> assign_form_with_preview(invoice_changeset)
@@ -340,10 +340,4 @@ defmodule FirmowidWeb.SalesInvoicesLive.Edit do
   defp not_editable_message(%SalesInvoice{ksef_invoice_kind: :kor}) do
     "Nie można edytować tej korekty — istnieje nowsza korekta."
   end
-
-  defp get_reference_invoice(%SalesInvoice{ksef_invoice_kind: :kor} = invoice) do
-    SalesInvoices.get_reference_invoice_for_correction(invoice)
-  end
-
-  defp get_reference_invoice(_invoice), do: nil
 end

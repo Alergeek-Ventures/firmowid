@@ -4,7 +4,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
 
   alias Firmowid.CostInvoices.CostInvoice
   alias FirmowidWeb.Components.Invoicing.InvoiceDetails, as: InvoiceDetails
-  alias FirmowidWeb.Components.Invoicing.KsefTimeline
+  alias FirmowidWeb.Components.Invoicing.InvoiceTimeline
 
   attr :invoice, CostInvoice, required: true
   attr :preview_url, :string, required: true
@@ -32,8 +32,8 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
           "max-h-[calc(100vh-var(--navbar-height)-128px)] overflow-y-auto",
           "lg:h-[calc(100vh-var(--navbar-height)-128px)]"
         ]}>
-          <%= if @show_ksef_timeline do %>
-            <KsefTimeline.ksef_timeline invoice={@invoice} invoice_type={:cost} />
+          <%= if @show_timeline do %>
+            <InvoiceTimeline.invoice_timeline invoice={@invoice} invoice_type={:cost} />
           <% else %>
             <div class="flex flex-row justify-end gap-2">
               <button
@@ -51,15 +51,15 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
               </button>
               <button
                 :if={@invoice.ksef_number != nil}
-                id="ksef-timeline-button"
+                id="timeline-button"
                 phx-hook="Tippy"
-                data-tippy-content="Historia KSeF"
+                data-tippy-content="Historia faktury"
                 data-tippy-delay="100"
                 class={[
                   "hover:text-white hover:bg-darkGrey text-darkGrey transition-all transition-duration-300",
                   "px-2 py-1 flex items-center justify-center rounded"
                 ]}
-                phx-click="show_ksef_timeline"
+                phx-click="show_timeline"
                 phx-target={@myself}
               >
                 <.icon name="hero-clock" class="w-5 h-5" />
@@ -76,6 +76,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
                 label="Sprzedawca"
                 value={@invoice.seller}
                 piece_id="seller"
+                multiline
               />
               <InvoiceDetails.invoice_metadata_piece
                 label="Data wystawienia"
@@ -197,7 +198,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
 
   @impl true
   def mount(socket) do
-    {:ok, assign(socket, chat: false, show_ksef_timeline: false)}
+    {:ok, assign(socket, chat: false, show_timeline: false)}
   end
 
   @impl true
@@ -209,11 +210,11 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
     {:noreply, assign(socket, chat: false)}
   end
 
-  def handle_event("show_ksef_timeline", _params, socket) do
-    {:noreply, assign(socket, show_ksef_timeline: true)}
+  def handle_event("show_timeline", _params, socket) do
+    {:noreply, assign(socket, show_timeline: true)}
   end
 
-  def handle_event("hide_ksef_timeline", _params, socket) do
-    {:noreply, assign(socket, show_ksef_timeline: false)}
+  def handle_event("hide_timeline", _params, socket) do
+    {:noreply, assign(socket, show_timeline: false)}
   end
 end

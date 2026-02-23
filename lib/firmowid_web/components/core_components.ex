@@ -1146,4 +1146,56 @@ defmodule FirmowidWeb.CoreComponents do
   def translate_errors(errors, field) when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
   end
+
+  @doc "Top-level navbar container. Pair with `navbar_logo/1`."
+  attr :class, :any, default: nil
+  attr :rest, :global
+
+  slot :inner_block
+
+  def navbar(assigns) do
+    ~H"""
+    <nav class={["px-4 sm:px-6 lg:px-8 bg-black text-white", @class]} {@rest}>
+      {render_slot(@inner_block)}
+    </nav>
+    """
+  end
+
+  @doc """
+  Firmowid logo. Renders as `<.link>` when `navigate` is set, `<span>` otherwise.
+
+  Uses conditional rendering (configuration) rather than composition because
+  there are only two branches and they share the same styling. This is an
+  intentional deviation from the "composition over configuration" guideline.
+  """
+  attr :navigate, :string, default: nil
+  attr :class, :string, default: nil
+  attr :rest, :global
+
+  def navbar_logo(assigns) do
+    ~H"""
+    <%= if @navigate do %>
+      <.link
+        navigate={@navigate}
+        class={[
+          "font-extrabold text-xl inline-block tracking-wide text-offwhite",
+          @class
+        ]}
+        {@rest}
+      >
+        Firmowid
+      </.link>
+    <% else %>
+      <span
+        class={[
+          "font-extrabold text-xl inline-block tracking-wide text-offwhite",
+          @class
+        ]}
+        {@rest}
+      >
+        Firmowid
+      </span>
+    <% end %>
+    """
+  end
 end

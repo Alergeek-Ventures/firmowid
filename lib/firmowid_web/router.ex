@@ -181,6 +181,13 @@ defmodule FirmowidWeb.Router do
     post "/zaloguj", UserSessionController, :create
   end
 
+  scope "/faktura", FirmowidWeb do
+    pipe_through [:browser]
+
+    get "/:token", SharedInvoiceController, :show
+    get "/:token/pdf", SharedInvoiceController, :pdf
+  end
+
   scope "/auth", FirmowidWeb do
     pipe_through [:browser]
 

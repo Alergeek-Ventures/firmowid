@@ -63,6 +63,8 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
     field :item_names, :string
 
+    field :share_token, :string
+
     # KSeF submission tracking
     field :ksef_number, :string
     field :ksef_session_reference_number, :string

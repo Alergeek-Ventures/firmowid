@@ -691,6 +691,13 @@ defmodule Firmowid.SalesInvoices do
     raise "Reference invoice is only applicable for KOR invoices"
   end
 
+  @spec get_reference_invoice(SalesInvoice.t()) :: SalesInvoice.t() | nil
+  def get_reference_invoice(%SalesInvoice{ksef_invoice_kind: :kor} = invoice) do
+    get_reference_invoice_for_correction(invoice)
+  end
+
+  def get_reference_invoice(%SalesInvoice{}), do: nil
+
   def update_sales_invoice(%SalesInvoice{} = invoice, attrs) do
     invoice
     |> SalesInvoice.changeset(attrs)
@@ -881,5 +888,44 @@ defmodule Firmowid.SalesInvoices do
   defp apply_counterparty_sorting(query, :no_search, _, order) do
     # Default to name sorting
     apply_counterparty_sorting(query, :no_search, :name, order)
+  end
+
+  @token_bytes 32
+  @spec create_or_get_share_token(SalesInvoice.t()) ::
+          {:ok, SalesInvoice.t()} | {:error, Ecto.Changeset.t()}
+  def create_or_get_share_token(%SalesInvoice{share_token: token} = invoice) when is_binary(token) and token != "" do
+    {:ok, invoice}
+  end
+
+  def create_or_get_share_token(%SalesInvoice{} = invoice) do
+    token = generate_share_token()
+
+    invoice
+    |> Ecto.Changeset.change(share_token: token)
+    |> Repo.update()
+  end
+
+  @spec get_invoice_by_share_token(String.t()) :: {:ok, SalesInvoice.t()} | {:error, :not_found}
+  def get_invoice_by_share_token(token) when is_binary(token) do
+    case Repo.get_by(SalesInvoice, [share_token: token], skip_organization_id: true) do
+      nil ->
+        {:error, :not_found}
+
+      invoice ->
+        invoice =
+          Repo.preload(
+            invoice,
+            [:organization, :sales_invoice_items, :transactions, :corrections, corrected_invoice: :corrections],
+            skip_organization_id: true
+          )
+
+        {:ok, invoice}
+    end
+  end
+
+  defp generate_share_token do
+    @token_bytes
+    |> :crypto.strong_rand_bytes()
+    |> Base.url_encode64(padding: false)
   end
 end
