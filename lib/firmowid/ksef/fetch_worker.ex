@@ -90,10 +90,14 @@ defmodule Firmowid.Ksef.FetchWorker do
     encryption_key = Base.decode64!(args["encryption_key"])
     encryption_iv = Base.decode64!(args["encryption_iv"])
 
+    Logger.info(
+      "Processing downloaded KSeF package with reference number #{package["referenceNumber"]}. Parts: #{inspect(package["parts"], limit: :infinity)}"
+    )
+
     files =
       package["parts"]
       |> download_and_decrypt_parts!(encryption_key, encryption_iv)
-      |> cocatenate_parts()
+      |> concatenate_parts()
       |> unzip_package!()
 
     metadata =
@@ -115,6 +119,16 @@ defmodule Firmowid.Ksef.FetchWorker do
 
   defp download_and_decrypt_parts!(parts, key, iv) do
     parts
+    |> Enum.map(fn part ->
+      expiration_date = parse_datetime!(part["expirationDate"])
+
+      if DateTime.before?(expiration_date, DateTime.utc_now()) do
+        raise "Package part #{part["ordinalNumber"]} has expired on #{expiration_date}"
+      end
+
+      part
+    end)
+    |> Enum.sort_by(& &1["ordinalNumber"])
     |> Task.async_stream(
       fn part ->
         part
@@ -131,9 +145,9 @@ defmodule Firmowid.Ksef.FetchWorker do
     |> Enum.to_list()
   end
 
-  defp cocatenate_parts(parts), do: IO.iodata_to_binary(parts)
+  defp concatenate_parts(parts), do: IO.iodata_to_binary(parts)
 
-  defp unzip_package!(zip_binary) do
+  defp unzip_package!(zip_binary) when is_binary(zip_binary) do
     case :zip.unzip(zip_binary, [:memory]) do
       {:ok, files} -> Enum.map(files, fn {filename, content} -> {to_string(filename), content} end)
       {:error, reason} -> raise "Failed to unzip KSeF package: #{inspect(reason)}"
