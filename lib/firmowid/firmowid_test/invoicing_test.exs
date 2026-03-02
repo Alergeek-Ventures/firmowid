@@ -46,8 +46,8 @@ defmodule Firmowid.InvoicingTest do
 
       {a, b} =
         prep_entries(
-          %{total_amount: Decimal.from_float(200.0)},
-          %{seller: "a", total_amount: Decimal.from_float(100.0)},
+          %{total_amount: Decimal.from_float(-200.0)},
+          %{seller: "a", total_amount: Decimal.from_float(-100.0)},
           organization_id
         )
 
@@ -71,7 +71,7 @@ defmodule Firmowid.InvoicingTest do
         id: "01000000-0000-0000-0000-000000000001",
         invoice_identifier: "a",
         description: "a",
-        total_amount: Decimal.from_float(100.0),
+        total_amount: Decimal.from_float(-100.0),
         currency: "PLN",
         seller: "a",
         seller_display_name: "a",
@@ -99,7 +99,7 @@ defmodule Firmowid.InvoicingTest do
         id: "01000000-0000-0000-0000-000000000002",
         invoice_identifier: "b",
         description: "b",
-        total_amount: Decimal.from_float(100.0),
+        total_amount: Decimal.from_float(-100.0),
         currency: "PLN",
         seller: "b",
         seller_display_name: "b",

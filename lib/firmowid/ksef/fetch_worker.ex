@@ -215,6 +215,7 @@ defmodule Firmowid.Ksef.FetchWorker do
         Logger.info("Creating cost invoice #{ksef_number} from #{ksef_number}.xml")
 
         attrs
+        |> Map.update!(:total_amount, &Decimal.negate(&1))
         |> Map.put(:ksef_number, ksef_number)
         |> Map.put(:ksef_permanent_storage_date, parse_datetime!(ksef_metadata["permanentStorageDate"]))
         |> Map.put(:ksef_downloaded_at, DateTime.utc_now())

@@ -108,8 +108,26 @@ defmodule Firmowid.CostInvoices.CostInvoice do
       :skip_invoicing,
       :organization_id
     ])
+    |> validate_non_correction_total_amount_sign()
+    |> check_constraint(:total_amount, name: :cost_invoices_non_correction_total_amount_non_positive)
     |> foreign_key_constraint(:inbound_email_id)
     |> unique_constraint(:ksef_number, name: :cost_invoices_ksef_number_idx)
+  end
+
+  defp validate_non_correction_total_amount_sign(changeset) do
+    invoice_type = get_field(changeset, :invoice_type)
+    total_amount = get_field(changeset, :total_amount)
+
+    cond do
+      invoice_type in [:kor, :kor_zal, :kor_roz] ->
+        changeset
+
+      is_nil(total_amount) or Decimal.gt?(total_amount, 0) ->
+        add_error(changeset, :total_amount, "must be less than or equal to 0 for non-correction invoices")
+
+      true ->
+        changeset
+    end
   end
 
   @doc """

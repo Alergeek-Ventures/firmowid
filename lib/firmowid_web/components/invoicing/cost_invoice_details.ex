@@ -74,6 +74,12 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
                 piece_id="invoice-identifier"
               />
               <InvoiceDetails.invoice_metadata_piece
+                :if={@invoice.ksef_number != nil}
+                label="Identyfikator KSeF"
+                value={@invoice.ksef_number}
+                piece_id="ksef-id"
+              />
+              <InvoiceDetails.invoice_metadata_piece
                 label="Sprzedawca"
                 value={@invoice.seller}
                 piece_id="seller"
