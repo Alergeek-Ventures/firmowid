@@ -37,6 +37,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
           <% else %>
             <div class="flex flex-row justify-end gap-2">
               <button
+                :if={CostInvoice.deletable?(@invoice)}
                 id="delete-invoice-button"
                 phx-hook="Tippy"
                 data-tippy-content="Usuń fakturę"

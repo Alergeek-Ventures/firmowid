@@ -198,6 +198,10 @@ defmodule Firmowid.CostInvoices do
       |> Repo.get!(cost_invoice_id)
       |> Repo.preload(:blob)
 
+    if CostInvoice.ksef_imported?(cost_invoice) do
+      raise "Cost invoice #{cost_invoice_id} is imported from KSeF and cannot be deleted"
+    end
+
     organization_id = cost_invoice.organization_id
 
     if !correction_invoice?(cost_invoice) do

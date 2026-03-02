@@ -111,4 +111,17 @@ defmodule Firmowid.CostInvoices.CostInvoice do
     |> foreign_key_constraint(:inbound_email_id)
     |> unique_constraint(:ksef_number, name: :cost_invoices_ksef_number_idx)
   end
+
+  @doc """
+  Returns true when invoice data was imported from KSeF FA(3) XML.
+  """
+  @spec ksef_imported?(t()) :: boolean()
+  def ksef_imported?(%__MODULE__{ksef_downloaded_at: nil, ksef_permanent_storage_date: nil, ksef_number: nil}), do: false
+  def ksef_imported?(%__MODULE__{}), do: true
+
+  @doc """
+  Returns true if the invoice can be deleted.
+  """
+  @spec deletable?(t()) :: boolean()
+  def deletable?(%__MODULE__{} = invoice), do: not ksef_imported?(invoice)
 end
