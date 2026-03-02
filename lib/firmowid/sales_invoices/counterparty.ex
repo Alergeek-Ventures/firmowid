@@ -104,15 +104,30 @@ defmodule Firmowid.SalesInvoices.Counterparty do
   defp validate_tax_id(changeset) do
     case tax_id_type(changeset) do
       :nip ->
-        validate_format(changeset, :tax_id, ~r/^(\d{10})?$/, message: "musi być 10-cyfrowym numerem NIP")
+        validate_nip(changeset, :tax_id)
+
+      :eu_vat ->
+        validate_eu_vat(changeset, :tax_id)
 
       :optional_id ->
         # US: tax ID is optional, validate length only if provided
-        validate_length(changeset, :tax_id, max: 50, message: "musi mieć maksymalnie 50 znaków")
+        validate_optional_id(changeset, :tax_id)
 
       _ ->
-        validate_length(changeset, :tax_id, max: 50, message: "musi mieć maksymalnie 50 znaków")
+        validate_optional_id(changeset, :tax_id)
     end
+  end
+
+  def validate_nip(changeset, field) do
+    validate_format(changeset, field, ~r/^[1-9]((\d[1-9])|([1-9]\d))\d{7}$/, message: "musi być numerem NIP")
+  end
+
+  def validate_eu_vat(changeset, field) do
+    validate_format(changeset, field, ~r/^(\d|[A-Z]|\+|\*){1,12}$/, message: "musi być numerem VAT-EU")
+  end
+
+  def validate_optional_id(changeset, field) do
+    validate_length(changeset, field, max: 50, message: "musi mieć maksymalnie 50 znaków")
   end
 
   defp cast_based_on_type(changeset) do

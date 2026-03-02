@@ -3,6 +3,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   use Firmowid.Schema
 
   import Ecto.Changeset
+  import Firmowid.SalesInvoices.Counterparty, only: [validate_nip: 2, validate_eu_vat: 2, validate_optional_id: 2]
 
   alias Firmowid.Ksef.VatRate
   alias Firmowid.SalesInvoices.Counterparty
@@ -375,6 +376,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     |> cast(attrs, [:sale_date, :due_date, :due_date_days, :payment_method, :seller_account_number])
     |> calculate_due_date()
     |> validate_required([:sale_date, :due_date, :payment_method, :seller_account_number])
+    |> validate_length(:seller_account_number, min: 10, max: 34)
   end
 
   defp calculate_due_date(changeset) do
@@ -478,14 +480,17 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     # Required validation happens in validate_buyer_id_required_for_ksef/1 for KSeF submission.
     case buyer_id_type(changeset) do
       :nip ->
-        validate_format(changeset, :buyer_id, ~r/^(\d{10})?$/, message: "musi być 10-cyfrowym numerem NIP")
+        validate_nip(changeset, :buyer_id)
+
+      :eu_vat ->
+        validate_eu_vat(changeset, :buyer_id)
 
       :optional_id ->
         # US: tax ID is optional, validate length only if provided
-        validate_length(changeset, :buyer_id, max: 50, message: "musi mieć maksymalnie 50 znaków")
+        validate_optional_id(changeset, :buyer_id)
 
       _ ->
-        validate_length(changeset, :buyer_id, max: 50, message: "musi mieć maksymalnie 50 znaków")
+        validate_optional_id(changeset, :buyer_id)
     end
   end
 
@@ -642,26 +647,27 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   end
 
   defp validate_buyer_identification(changeset) do
-    case buyer_id_type(changeset) do
-      :no_id ->
-        # Individual with PESEL - no tax ID required
-        changeset
+    changeset =
+      case buyer_id_type(changeset) do
+        :no_id ->
+          # Individual with PESEL - no tax ID required
+          changeset
 
-      :optional_id ->
-        # US: tax ID is optional - KSeF supports BrakID for non-EU buyers
-        changeset
+        :optional_id ->
+          # US: tax ID is optional - KSeF supports BrakID for non-EU buyers
+          changeset
 
-      :nip ->
-        changeset
-        |> validate_required([:buyer_id], message: "NIP nabywcy jest wymagany dla polskich firm")
-        |> validate_format(:buyer_id, ~r/^\d{10}$/, message: "musi być 10-cyfrowym numerem NIP")
+        :nip ->
+          validate_required(changeset, [:buyer_id], message: "NIP nabywcy jest wymagany dla polskich firm")
 
-      :eu_vat ->
-        validate_required(changeset, [:buyer_id], message: "numer VAT-EU nabywcy jest wymagany")
+        :eu_vat ->
+          validate_required(changeset, [:buyer_id], message: "numer VAT-EU nabywcy jest wymagany")
 
-      :other_id ->
-        validate_required(changeset, [:buyer_id], message: "identyfikator nabywcy jest wymagany")
-    end
+        :other_id ->
+          validate_required(changeset, [:buyer_id], message: "identyfikator nabywcy jest wymagany")
+      end
+
+    validate_buyer_id(changeset)
   end
 
   @doc """
