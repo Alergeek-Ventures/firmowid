@@ -86,13 +86,11 @@ defmodule Firmowid.Ksef.FetchWorker do
     ApiClient.initiate_invoice_export(session, filters, encryption_data)
   end
 
+  defp process_downloaded_package(%{"parts" => []}, _args), do: {:ok, 0}
+
   defp process_downloaded_package(package, args) do
     encryption_key = Base.decode64!(args["encryption_key"])
     encryption_iv = Base.decode64!(args["encryption_iv"])
-
-    Logger.info(
-      "Processing downloaded KSeF package with reference number #{package["referenceNumber"]}. Parts: #{inspect(package["parts"], limit: :infinity)}"
-    )
 
     files =
       package["parts"]
