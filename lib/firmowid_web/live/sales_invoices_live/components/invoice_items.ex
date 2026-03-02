@@ -50,6 +50,18 @@ defmodule FirmowidWeb.SalesInvoicesLive.Components.InvoiceItems do
     }
   end
 
+  defp get_first_error_for_field(changeset, field_name) do
+    changeset
+    |> Ecto.Changeset.get_assoc(:sales_invoice_items)
+    |> Enum.flat_map(& &1.errors)
+    |> Keyword.get_values(field_name)
+    |> List.first()
+    |> case do
+      nil -> nil
+      {_, _} -> "To pole nie może zostać puste."
+    end
+  end
+
   attr :invoice, SalesInvoice, required: true
   attr :invoice_changeset, Ecto.Changeset, required: true
 
@@ -75,13 +87,22 @@ defmodule FirmowidWeb.SalesInvoicesLive.Components.InvoiceItems do
     is_reverse_charge = Ecto.Changeset.get_field(changeset, :is_reverse_charge) || false
     {vat_options, vat_disabled?} = compute_vat_options(invoice, is_reverse_charge)
 
+    items_form = to_form(changeset, action: :validate)
+
+    name_error = get_first_error_for_field(changeset, :name)
+    quantity_error = get_first_error_for_field(changeset, :quantity)
+    unit_price_error = get_first_error_for_field(changeset, :unit_price)
+
     assigns = %{
       invoice: invoice,
-      items_form: to_form(changeset, action: :validate),
+      items_form: items_form,
       summary: invoice_summary(changeset),
       single_item?: single_sales_invoice_item,
       vat_options: vat_options,
-      vat_disabled?: vat_disabled?
+      vat_disabled?: vat_disabled?,
+      name_error: name_error,
+      quantity_error: quantity_error,
+      unit_price_error: unit_price_error
     }
 
     ~H"""
@@ -145,13 +166,27 @@ defmodule FirmowidWeb.SalesInvoicesLive.Components.InvoiceItems do
         </.button>
       </div>
     </div>
-
     <div class="col-start-2 col-end-9 grid grid-cols-subgrid text-sm/snug text-grey-700 mb-1 py-1 pl-2">
-      <p id="name">Towar/usługa</p>
-      <p id="quantity">Ilość</p>
+      <.error :if={@name_error} is_tooltip={true} target="name">
+        {@name_error}
+      </.error>
+      <.error :if={@quantity_error} is_tooltip={true} target="quantity">
+        {@quantity_error}
+      </.error>
+      <.error :if={@unit_price_error} is_tooltip={true} target="price">
+        {@unit_price_error}
+      </.error>
+      <p id="name">
+        Towar/usługa
+      </p>
+      <p id="quantity">
+        Ilość
+      </p>
       <p>VAT</p>
       <p>Jednostka</p>
-      <p id="price">Cena netto</p>
+      <p id="price">
+        Cena netto
+      </p>
 
       <%= if to_boolean(@items_form[:is_reverse_charge].value) do %>
         <p class="text-end col-span-2">Wartość</p>
@@ -165,16 +200,15 @@ defmodule FirmowidWeb.SalesInvoicesLive.Components.InvoiceItems do
       <.inputs_for :let={item} field={@items_form[:sales_invoice_items]}>
         <div class="col-span-full grid grid-cols-subgrid items-center">
           <input type="hidden" name="sales_invoice[items_sort][]" value={item.index} />
-
           <Lucideicons.grip_vertical class="text-grey-700 mr-1" drag-handle />
           <.input
             field={item[:name]}
             placeholder="Wprowadź nazwę"
             phx-debounce
             class="w-full"
+            input_class={item[:name].errors != [] && "border-redText"}
             new={true}
             is_tooltip={true}
-            reference="name"
           />
           <.input
             field={item[:quantity]}
@@ -184,13 +218,10 @@ defmodule FirmowidWeb.SalesInvoicesLive.Components.InvoiceItems do
             step=".000001"
             min="0"
             class="w-16"
-            input_class="text-center"
+            input_class={"text-center #{if item[:quantity].errors != [], do: "border-redText", else: ""}"}
             new={true}
             is_tooltip={true}
-            reference="quantity"
-            onkeydown="return event.key !== '-'"
           />
-
           <.input
             field={item[:vat_rate]}
             type="select"
@@ -218,11 +249,9 @@ defmodule FirmowidWeb.SalesInvoicesLive.Components.InvoiceItems do
               min="0"
               placeholder="0,00"
               class="w-24"
-              input_class="text-center"
+              input_class={"text-center #{if item[:unit_price].errors != [], do: "border-redText", else: ""}"}
               new={true}
               is_tooltip={true}
-              reference="price"
-              onkeydown="return event.key !== '-'"
             />
             <p class="text-sm text-grey-500">{@items_form[:currency].value}</p>
           </div>

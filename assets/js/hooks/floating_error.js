@@ -9,34 +9,17 @@ export const FloatingUIError = {
     this.initFloating();
   },
 
-  destroyed() {
-    this.destroyFloating();
-  },
-
   initFloating() {
     this.floatingEl = this.el;
     this.targetId = this.el.dataset.for;
-    this.erroredInput = document.getElementById(this.targetId);
-    this.arrowEl = document.getElementById(`arr_${this.targetId}`);
+    this.targetElement = document.getElementById(this.targetId);
+    this.arrowEl = document.getElementById(`arrow_${this.targetId}`);
 
-    if (!this.erroredInput || !this.arrowEl) return;
-
-    Object.assign(this.erroredInput.style, {
-      border: "solid 2px #A22A2A",
-    });
-
-    const getReferenceEl = () => {
-      if (this.el.dataset.reference) {
-        return document.getElementById(this.el.dataset.reference);
-      }
-      return this.erroredInput;
-    };
+    if (!this.targetElement || !this.arrowEl) return;
 
     const update = () => {
-      const referenceEl = getReferenceEl();
-      if (!referenceEl) return;
 
-      computePosition(referenceEl, this.floatingEl, {
+      computePosition(this.targetElement, this.floatingEl, {
         placement: "top",
         middleware: [
           offset(8),
@@ -60,17 +43,6 @@ export const FloatingUIError = {
       });
     };
 
-    const referenceEl = getReferenceEl();
-    if (!referenceEl) return;
-
     update();
-  },
-
-  destroyFloating() {
-    if (this.erroredInput) {
-      Object.assign(this.erroredInput.style, {
-        border: "",
-      });
-    }
   },
 };
