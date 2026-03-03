@@ -4,11 +4,15 @@ defmodule Firmowid.Repo.Migrations.EnforceNonPositiveTotalAmountForNonCorrection
   @constraint_name :cost_invoices_non_correction_total_amount_non_positive
 
   def up do
+    execute "ALTER TABLE cost_invoices DISABLE TRIGGER ksef_cost_invoice_trigger;"
+
     execute("""
     UPDATE cost_invoices
     SET total_amount = -total_amount
     WHERE ksef_number IS NOT NULL
     """)
+
+    execute "ALTER TABLE cost_invoices ENABLE TRIGGER ksef_cost_invoice_trigger;"
 
     create constraint(:cost_invoices, @constraint_name,
              check:
