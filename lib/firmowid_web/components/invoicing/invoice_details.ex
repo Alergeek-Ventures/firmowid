@@ -575,38 +575,48 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
     """
   end
 
+  attr :id, :string, default: "invoice-preview-scaler"
   attr :class, :string, default: nil
   slot :inner_block, required: true
 
   def scalable_invoice_preview(assigns) do
     ~H"""
     <div
-      class={classes(["origin-top-left w-full max-w-[595px]", @class])}
-      id="preview"
-      phx-hook=".Scaler"
+      id={@id}
+      class={classes(["origin-top-left w-full", @class])}
+      phx-hook=".AutoHeightScaler"
     >
-      {render_slot(@inner_block)}
+      <div class="origin-top-left" data-scaler-inner>
+        {render_slot(@inner_block)}
+      </div>
     </div>
-    <script :type={Phoenix.LiveView.ColocatedHook} name=".Scaler">
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".AutoHeightScaler">
       export default {
         mounted() {
-          console.log(this.el.contentRect)
+          this.inner = this.el.querySelector("[data-scaler-inner]");
 
-          const templateWidth = 595;
-          const templateHeight = 842;
+          this.recompute = () => {
+            const containerWidth = this.el.getBoundingClientRect().width;
+            const contentWidth = this.inner.scrollWidth;
 
-          const resizeObserver = new ResizeObserver(entries => {
-            for (let entry of entries) {
-              const scale = entry.contentRect.width / templateWidth
+            const scale = containerWidth / contentWidth;
 
-              this.el.style.transform = `scale(${scale})`
-              this.el.style.height = `${templateHeight * scale}px`
-            }
-          })
+            this.inner.style.transform = `scale(${scale})`;
+            this.el.style.height = `${this.inner.scrollHeight * scale}px`;
+          };
 
-          resizeObserver.observe(this.el)
+          this.containerObserver = new ResizeObserver(this.recompute);
+          this.contentObserver = new ResizeObserver(this.recompute);
+          this.containerObserver.observe(this.el);
+          this.contentObserver.observe(this.inner);
+
+          this.recompute();
+        },
+        destroyed() {
+          this.containerObserver?.disconnect();
+          this.contentObserver?.disconnect();
         }
-      }
+      };
     </script>
     """
   end

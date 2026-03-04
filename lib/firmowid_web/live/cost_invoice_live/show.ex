@@ -18,7 +18,8 @@ defmodule FirmowidWeb.CostInvoiceLive.Show do
     preview_type =
       cond do
         is_nil(cost_invoice.blob) -> :none
-        String.contains?(cost_invoice.blob.blob_path, ".pdf") -> :pdf
+        String.ends_with?(cost_invoice.blob.blob_path, ".pdf") -> :pdf
+        String.ends_with?(cost_invoice.blob.blob_path, ".xml") -> :xml
         true -> :image
       end
 

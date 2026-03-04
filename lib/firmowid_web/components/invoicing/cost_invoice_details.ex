@@ -122,6 +122,60 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
                     </div>
                   </div>
                 </a>
+              <% :xml -> %>
+                <InvoiceDetails.scalable_invoice_preview>
+                  <div
+                    id="invoice-preview"
+                    data-fa3-url={@preview_url}
+                    phx-update="ignore"
+                    phx-hook=".FA3Viewer"
+                    class="h-full w-[800px]"
+                  >
+                    <div class="mx-auto min-h-[200px] flex items-center justify-center font-bold">
+                      Ładowanie dokumentu...
+                    </div>
+                  </div>
+                </InvoiceDetails.scalable_invoice_preview>
+
+                <script :type={Phoenix.LiveView.ColocatedHook} name=".FA3Viewer">
+                  export default {
+                    async mounted() {
+                      const templateUrl = "/templates/kseffaktura_fa(3).xsl";
+                      const fa3Url = this.el.getAttribute("data-fa3-url");
+
+                      const [template, fa3Content] = await Promise.all([
+                        fetch(templateUrl).then((response) => response.text()),
+                        fetch(fa3Url).then((response) => response.text()),
+                      ]);
+
+                      const parser = new DOMParser();
+                      const templateDoc = parser.parseFromString(template, "application/xml");
+                      const fa3Doc = parser.parseFromString(fa3Content, "application/xml");
+
+                      const htmlDocument = this.transformDocument(templateDoc, fa3Doc);
+
+                      const iFrame = document.createElement("iframe");
+                      iFrame.srcdoc = htmlDocument;
+                      iFrame.className = "w-full h-full";
+                      iFrame.addEventListener("load", () => {
+                        iFrame.contentDocument.body.style.margin = "0";
+                        iFrame.contentDocument.body.style.padding = "32px";
+
+                        this.el.style.height = `${iFrame.contentDocument.body.scrollHeight + 32}px`;
+                      });
+
+                      this.el.replaceChildren(iFrame);
+                    },
+
+                    transformDocument(template, content) {
+                      const processor = new XSLTProcessor();
+                      processor.importStylesheet(template);
+                      const resultDoc = processor.transformToDocument(content);
+
+                      return new XMLSerializer().serializeToString(resultDoc);
+                    },
+                  };
+                </script>
               <% :image -> %>
                 <a href={@preview_url} target="_blank">
                   <div class="w-full h-full max-h-[80vh] overflow-x-hidden bg-black">
