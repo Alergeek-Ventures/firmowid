@@ -7,6 +7,7 @@ defmodule Firmowid.Ksef.FetchWorker do
   import Ecto.Query
   import Firmowid.Ksef.ApiClient, only: [parse_datetime!: 1]
 
+  alias Firmowid.Blobs
   alias Firmowid.CostInvoices
   alias Firmowid.CostInvoices.OpenAIEnrichment
   alias Firmowid.Ksef.ApiClient
@@ -210,25 +211,70 @@ defmodule Firmowid.Ksef.FetchWorker do
   end
 
   defp create_cost_invoice_from_xml(ksef_number, xml_content, ksef_metadata) do
-    case InvoiceParser.parse(xml_content) do
-      {:ok, attrs} ->
-        Logger.info("Creating cost invoice #{ksef_number} from #{ksef_number}.xml")
+    with {:ok, attrs} <- InvoiceParser.parse(xml_content),
+         attrs = enrich_cost_invoice_with_metadata(attrs, ksef_number, ksef_metadata),
+         {:ok, path} <- write_to_temp_file(xml_content, "#{ksef_number}.xml") do
+      case Blobs.create_blob(path, "application/xml", "#{ksef_number}.xml") do
+        {:ok, blob} ->
+          Logger.info("Creating cost invoice #{ksef_number} from #{ksef_number}.xml")
 
-        attrs
-        |> Map.update!(:total_amount, &Decimal.negate(&1))
-        |> Map.put(:ksef_number, ksef_number)
-        |> Map.put(:ksef_permanent_storage_date, parse_datetime!(ksef_metadata["permanentStorageDate"]))
-        |> Map.put(:ksef_downloaded_at, DateTime.utc_now())
-        |> Map.put(:organization_id, Repo.get_org_id())
-        |> Map.put(
-          :description,
-          OpenAIEnrichment.generate_description(%{"seller" => attrs.seller, "items_list" => attrs.items_list})
-        )
-        |> CostInvoices.create_cost_invoice()
+          try do
+            attrs
+            |> Map.put(:blob_id, blob.id)
+            |> CostInvoices.create_cost_invoice()
+          rescue
+            error ->
+              Logger.error("Failed to create cost invoice from XML #{ksef_number}.xml: #{inspect(error)}")
 
+              # on failure, clean up dangling blob from DB and S3
+              Blobs.delete_blob(blob.id)
+
+              CostInvoices.broadcast_cost_invoice_failed_to_process(
+                "#{ksef_number}.xml",
+                Repo.get_org_id()
+              )
+
+              ErrorTracker.report(error, __STACKTRACE__)
+          end
+
+        {:error,
+         %Ecto.Changeset{
+           changes: %{blob_checksum: _blob_checksum},
+           errors: [blob_checksum: {"has already been taken", _}]
+         }} ->
+          Logger.error("Cost invoice with identical blob already exists for #{ksef_number}.xml, skipping creation")
+
+        {:error, reason} ->
+          Logger.error("Failed to upload cost invoice: #{inspect(reason)}")
+      end
+    else
       {:error, reason} ->
-        Logger.error("Failed to parse invoice XML #{ksef_number}.xml: #{inspect(reason)}")
+        Logger.error("Failed to create cost invoice from XML #{ksef_number}.xml: #{inspect(reason)}")
         :error
+    end
+  end
+
+  defp enrich_cost_invoice_with_metadata(attrs, ksef_number, ksef_metadata) do
+    attrs
+    |> Map.update!(:total_amount, &Decimal.negate(&1))
+    |> Map.put(:ksef_number, ksef_number)
+    |> Map.put(:ksef_permanent_storage_date, parse_datetime!(ksef_metadata["permanentStorageDate"]))
+    |> Map.put(:ksef_downloaded_at, DateTime.utc_now())
+    |> Map.put(:organization_id, Repo.get_org_id())
+    |> Map.put(
+      :description,
+      OpenAIEnrichment.generate_description(%{"seller" => attrs.seller, "items_list" => attrs.items_list})
+    )
+  end
+
+  defp write_to_temp_file(binary, original_filename) do
+    extension = Path.extname(original_filename)
+
+    with {:ok, path} <- Briefly.create(extname: extension),
+         :ok <- File.write(path, binary) do
+      {:ok, path}
+    else
+      {:error, reason} -> {:error, {:file_write_failed, reason}}
     end
   end
 
