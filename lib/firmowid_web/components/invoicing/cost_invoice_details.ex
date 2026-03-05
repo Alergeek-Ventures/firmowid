@@ -45,6 +45,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
               </.button>
 
               <.link
+                :if={@preview_type not in [:none, :xml]}
                 class={button_styles(%{color: "light_grey", size: "small", new: true})}
                 href={@preview_url}
                 download
