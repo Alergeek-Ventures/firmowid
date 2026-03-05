@@ -13,8 +13,7 @@ defmodule Firmowid.Ksef.SessionWorker do
 
   use Oban.Worker,
     queue: :ksef_sessions,
-    max_attempts: 3,
-    unique: true
+    max_attempts: 3
 
   import Ecto.Query
 
