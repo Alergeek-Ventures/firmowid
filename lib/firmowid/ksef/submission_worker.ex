@@ -42,7 +42,7 @@ defmodule Firmowid.Ksef.SubmissionWorker do
          {:ok, invoice_reference} <- ApiClient.send_invoice(access_token, session_data, invoice_xml),
          :ok <- ApiClient.close_online_session(access_token, session_data.session_reference) do
       Repo.transaction(fn ->
-        lock_invoice(invoice, session_data.session_reference)
+        lock_invoice(invoice, session_data.session_reference, invoice_xml)
 
         schedule_verification(
           sales_invoice_id,
@@ -89,11 +89,12 @@ defmodule Firmowid.Ksef.SubmissionWorker do
     end
   end
 
-  defp lock_invoice(invoice, session_reference) do
+  defp lock_invoice(invoice, session_reference, invoice_xml) do
     invoice
     |> SalesInvoice.ksef_update_changeset(%{
       locked_at: DateTime.utc_now(:second),
-      ksef_session_reference_number: session_reference
+      ksef_session_reference_number: session_reference,
+      ksef_invoice_checksum: Ksef.compute_fa3_checksum(invoice_xml)
     })
     |> Repo.update!()
   end

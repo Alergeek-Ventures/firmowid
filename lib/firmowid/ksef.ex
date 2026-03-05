@@ -3,6 +3,7 @@ defmodule Firmowid.Ksef do
   import Ecto.Query, warn: false
 
   alias Firmowid.Accounts
+  alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.Ksef.ApiClient
   alias Firmowid.Ksef.Credential
   alias Firmowid.Ksef.FetchWorker
@@ -217,6 +218,56 @@ defmodule Firmowid.Ksef do
     else
       {:error, {:invalid_for_ksef, changeset.errors}}
     end
+  end
+
+  def invoice_url!(%SalesInvoice{seller_nip: seller_nip, issue_date: issue_date, ksef_number: ksef_number} = invoice)
+      when not is_nil(ksef_number) do
+    checksum = invoice.ksef_invoice_checksum || backfill_ksef_checksum!(invoice)
+    invoice_url(seller_nip, issue_date, checksum)
+  end
+
+  def invoice_url!(%CostInvoice{seller_nip: seller_nip, issue_date: issue_date} = invoice) do
+    if CostInvoice.ksef_imported?(invoice) do
+      invoice = Repo.preload(invoice, :blob)
+      checksum = invoice.blob.blob_checksum |> Base.decode16!(case: :lower) |> Base.url_encode64(padding: false)
+
+      invoice_url(seller_nip, issue_date, checksum)
+    else
+      raise ArgumentError, "Cannot generate KSeF URL for non-KSeF-imported cost invoice"
+    end
+  end
+
+  defp invoice_url(seller_nip, issue_date, checksum) do
+    base_url = Application.get_env(:firmowid, :ksef)[:qr_code_base_url]
+    issue_date = Calendar.strftime(issue_date, "%d-%m-%Y")
+    path = "/invoice/#{seller_nip}/#{issue_date}/#{checksum}"
+
+    base_url
+    |> URI.new!()
+    |> URI.append_path(path)
+    |> to_string()
+  end
+
+  defp backfill_ksef_checksum!(%SalesInvoice{ksef_number: ksef_number} = invoice) do
+    invoice_xml =
+      case get_invoice_xml_by_ksef_number(ksef_number) do
+        {:ok, xml} -> xml
+        {:error, reason} -> raise "Failed to fetch KSeF invoice XML for checksum backfill: #{inspect(reason)}"
+      end
+
+    checksum = compute_fa3_checksum(invoice_xml)
+
+    invoice
+    |> SalesInvoice.ksef_update_changeset(%{ksef_invoice_checksum: checksum})
+    |> Repo.update!()
+
+    checksum
+  end
+
+  def compute_fa3_checksum(xml_content) when is_binary(xml_content) do
+    :sha256
+    |> :crypto.hash(xml_content)
+    |> Base.url_encode64(padding: false)
   end
 
   # Submission Info

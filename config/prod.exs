@@ -26,7 +26,9 @@ config :firmowid, FirmowidWeb.Endpoint,
     exclude: ["localhost", "127.0.0.1"]
   ]
 
-config :firmowid, :ksef, base_url: "https://api.ksef.mf.gov.pl/v2/"
+config :firmowid, :ksef,
+  base_url: "https://api.ksef.mf.gov.pl/v2/",
+  qr_code_base_url: "https://qr.ksef.mf.gov.pl"
 
 # Do not print debug messages in production
 config :logger, level: :info

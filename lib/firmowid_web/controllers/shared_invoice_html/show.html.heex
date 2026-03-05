@@ -57,6 +57,15 @@
             <.icon name="hero-arrow-down-tray" class="w-4 h-4" />
             {if @lang == :en, do: "Download PDF", else: "Pobierz PDF"}
           </a>
+          <a
+            :if={not is_nil(@invoice.ksef_number)}
+            href={Firmowid.Ksef.invoice_url!(@invoice)}
+            target="_blank"
+            class="flex items-center justify-center gap-2 w-full px-4 py-3 text-sm font-medium text-white bg-black rounded-lg hover:bg-orangeText transition-colors"
+          >
+            <.icon name="hero-arrow-trending-up" class="w-4 h-4" />
+            {if @lang == :en, do: "View in KSeF", else: "Zobacz w KSeF"}
+          </a>
         </div>
       </div>
     </div>

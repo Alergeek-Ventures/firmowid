@@ -69,6 +69,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     # KSeF submission tracking
     field :ksef_number, :string
     field :ksef_session_reference_number, :string
+    field :ksef_invoice_checksum, :string
     field :locked_at, :utc_datetime
 
     # KSeF FA(3) fields
@@ -534,7 +535,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   This bypasses the lock check since it's used to update KSeF tracking data.
   """
   def ksef_update_changeset(sales_invoice, attrs) do
-    cast(sales_invoice, attrs, [:ksef_number, :ksef_session_reference_number, :locked_at])
+    cast(sales_invoice, attrs, [:ksef_number, :ksef_session_reference_number, :ksef_invoice_checksum, :locked_at])
   end
 
   @doc """

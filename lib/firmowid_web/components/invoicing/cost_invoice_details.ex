@@ -3,6 +3,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
   use FirmowidWeb, :live_component
 
   alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.Ksef
   alias FirmowidWeb.Components.Invoicing.InvoiceDetails, as: InvoiceDetails
   alias FirmowidWeb.Components.Invoicing.InvoiceTimeline
 
@@ -51,6 +52,15 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
                 download
               >
                 <Lucideicons.download /><span class="hidden xl:inline">Pobierz</span>
+              </.link>
+
+              <.link
+                :if={@preview_type == :xml}
+                class={button_styles(%{color: "light_grey", size: "small", new: true})}
+                href={Ksef.invoice_url!(@invoice)}
+                target="_blank"
+              >
+                <Lucideicons.database /><span class="hidden xl:inline">Otwórz w KSeF</span>
               </.link>
 
               <.button
@@ -116,7 +126,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
                     data-pdf-url={@preview_url}
                     phx-update="ignore"
                     phx-hook="PDFViewer"
-                    class="w-full h-full max-w-md max-h-[80vh] overflow-x-hidden overflow-y-hidden bg-white"
+                    class="w-full h-fit max-h-[80vh] overflow-x-hidden overflow-y-hidden bg-white"
                   >
                     <div class="min-w-[200px] min-h-[200px] flex items-center justify-center font-bold">
                       Ładowanie dokumentu...
@@ -159,6 +169,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
                       iFrame.srcdoc = htmlDocument;
                       iFrame.className = "w-full h-full";
                       iFrame.addEventListener("load", () => {
+                        iFrame.contentDocument.body.style.userSelect = "none";
                         iFrame.contentDocument.body.style.margin = "0";
                         iFrame.contentDocument.body.style.padding = "32px";
 
