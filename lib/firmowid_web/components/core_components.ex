@@ -619,8 +619,9 @@ defmodule FirmowidWeb.CoreComponents do
         text-sm font-normal
         px-3 py-1.5
         rounded
+        flex justify-center items-center
         shadow-[0_2px_8px_rgba(0,0,0,0.15)]
-        w-40 h-[75px]
+        w-40 h-18
       "
     >
       <div class="flex items-center gap-2">

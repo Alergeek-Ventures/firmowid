@@ -3,6 +3,8 @@ const { computePosition, flip, arrow, offset } = window.FloatingUIDOM;
 export const FloatingUIError = {
   mounted() {
     this.initFloating();
+    this.resizeHandler = () => this.update();
+    window.addEventListener("resize", this.resizeHandler);
   },
 
   updated() {
@@ -17,32 +19,31 @@ export const FloatingUIError = {
 
     if (!this.targetElement || !this.arrowEl) return;
 
-    const update = () => {
+    this.update();
+  },
 
-      computePosition(this.targetElement, this.floatingEl, {
-        placement: "top",
-        middleware: [
-          offset(8),
-          flip(),
-          arrow({ element: this.arrowEl }),
-        ],
-      }).then(({ x, y, middlewareData }) => {
-        Object.assign(this.floatingEl.style, {
-          left: `${x}px`,
-          top: `${y}px`,
-        });
-
-        if (middlewareData.arrow) {
-          const { x: arrowX, y: arrowY } = middlewareData.arrow;
-
-          Object.assign(this.arrowEl.style, {
-            left: arrowX != null ? `${arrowX}px` : "",
-            top: arrowY != null ? `${arrowY}px` : "",
-          });
-        }
+  update() {
+    computePosition(this.targetElement, this.floatingEl, {
+      placement: "top",
+      middleware: [
+        offset(8),
+        flip(),
+        arrow({ element: this.arrowEl }),
+      ],
+    }).then(({ x, y, middlewareData }) => {
+      Object.assign(this.floatingEl.style, {
+        left: `${x}px`,
+        top: `${y}px`,
       });
-    };
 
-    update();
+      if (middlewareData.arrow) {
+        const { x: arrowX, y: arrowY } = middlewareData.arrow;
+
+        Object.assign(this.arrowEl.style, {
+          left: arrowX != null ? `${arrowX}px` : "",
+          top: arrowY != null ? `${arrowY}px` : "",
+        });
+      }
+    });
   },
 };
