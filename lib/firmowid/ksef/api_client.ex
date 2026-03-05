@@ -216,6 +216,31 @@ defmodule Firmowid.Ksef.ApiClient do
     end
   end
 
+  @doc """
+  Fetches FA XML invoice by KSeF number.
+  Rate limit 64 req/h
+  """
+  def get_invoice_xml(access_token, ksef_number) when is_binary(ksef_number) do
+    encoded_number = URI.encode(ksef_number)
+
+    case Req.get(request(access_token), url: "/invoices/ksef/#{encoded_number}", decode_body: false) do
+      {:ok, %{status: 200, body: body}} ->
+        {:ok, body}
+
+      {:ok, %{status: 401}} ->
+        {:error, :unauthorized}
+
+      {:ok, %{status: 403}} ->
+        {:error, :forbidden}
+
+      {:ok, %{status: status}} ->
+        {:error, {:unexpected_status, status}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   # ============================================================================
   # Online Session and Invoice Submission (KSeF API v2.0)
   # ============================================================================

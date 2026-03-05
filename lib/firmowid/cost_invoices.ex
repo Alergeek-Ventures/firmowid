@@ -11,6 +11,7 @@ defmodule Firmowid.CostInvoices do
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.CostInvoices.CostInvoicesTransactions
   alias Firmowid.CostInvoices.InboundEmail
+  alias Firmowid.Ksef
   alias Firmowid.Repo
 
   require Logger
@@ -408,4 +409,30 @@ defmodule Firmowid.CostInvoices do
   defp correction_invoice?(%CostInvoice{invoice_type: invoice_type}) do
     invoice_type in @correction_invoice_types
   end
+
+  def hydrate_invoice_with_fa3_blob(%CostInvoice{ksef_number: ksef_number, blob_id: blob_id} = invoice)
+      when not is_nil(ksef_number) and is_nil(blob_id) do
+    with {:ok, xml} <- Ksef.get_invoice_xml_by_ksef_number(ksef_number),
+         {:ok, path} <- Briefly.create(extname: ".xml"),
+         :ok <- File.write(path, xml),
+         {:ok, blob} <- Blobs.create_blob(path, "application/xml", "#{ksef_number}.xml") do
+      try do
+        invoice
+        |> CostInvoice.changeset(%{blob_id: blob.id})
+        |> Repo.update!()
+        |> Repo.preload(:blob, force: true)
+        |> Map.put(:blob_url, Blobs.get_blob_url(blob.id))
+      rescue
+        error ->
+          Blobs.delete_blob(blob.id)
+          reraise error, __STACKTRACE__
+      end
+    else
+      {:error, reason} ->
+        Logger.error("Failed to fetch KSeF XML for cost invoice #{invoice.id}: #{inspect(reason)}")
+        invoice
+    end
+  end
+
+  def hydrate_invoice_with_fa3_blob(%CostInvoice{} = invoice), do: invoice
 end

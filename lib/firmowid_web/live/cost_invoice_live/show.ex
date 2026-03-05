@@ -13,6 +13,8 @@ defmodule FirmowidWeb.CostInvoiceLive.Show do
     cost_invoice = CostInvoices.get_cost_invoice_with_blob_url(id)
     Bodyguard.permit!(CostInvoices, :show, current_user, cost_invoice)
 
+    cost_invoice = CostInvoices.hydrate_invoice_with_fa3_blob(cost_invoice)
+
     potential_transactions = Invoicing.get_potential_transactions_for_invoice(cost_invoice)
 
     preview_type =

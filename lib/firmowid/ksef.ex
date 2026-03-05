@@ -3,6 +3,7 @@ defmodule Firmowid.Ksef do
   import Ecto.Query, warn: false
 
   alias Firmowid.Accounts
+  alias Firmowid.Ksef.ApiClient
   alias Firmowid.Ksef.Credential
   alias Firmowid.Ksef.FetchWorker
   alias Firmowid.Ksef.SessionWorker
@@ -133,6 +134,18 @@ defmodule Firmowid.Ksef do
     }
     |> FetchWorker.new()
     |> Firmowid.Oban.insert()
+  end
+
+  @doc """
+  Fetches FA XML invoice by KSeF number.
+  Rate limit 64 req/h
+  """
+  @spec get_invoice_xml_by_ksef_number(String.t()) :: {:ok, binary()} | {:error, term()}
+  def get_invoice_xml_by_ksef_number(ksef_number) when is_binary(ksef_number) do
+    with :ok <- validate_ksef_authenticated() do
+      access_token = SessionWorker.get_access_token!()
+      ApiClient.get_invoice_xml(access_token, ksef_number)
+    end
   end
 
   @doc """
