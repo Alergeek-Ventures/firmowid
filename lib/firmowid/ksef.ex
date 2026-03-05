@@ -114,17 +114,21 @@ defmodule Firmowid.Ksef do
   end
 
   def unauthenticate do
-    credential = get_credential()
+    SessionWorker.invalidate_access_token()
 
-    Firmowid.Oban.cancel_all_jobs(
-      from(j in Oban.Job,
-        where: j.worker in ["Firmowid.Ksef.SessionWorker", "Firmowid.Ksef.FetchWorker"],
-        where: fragment("?->>'organization_id' = ?", j.args, ^Repo.get_org_id()),
-        where: j.state in ["available", "scheduled", "executing"]
+    Repo.transact(fn ->
+      credential = get_credential()
+
+      Firmowid.Oban.cancel_all_jobs(
+        from(j in Oban.Job,
+          where: j.worker in ["Firmowid.Ksef.SessionWorker", "Firmowid.Ksef.FetchWorker"],
+          where: fragment("?->>'organization_id' = ?", j.args, ^Repo.get_org_id()),
+          where: j.state in ["available", "scheduled", "executing"]
+        )
       )
-    )
 
-    Repo.delete(credential)
+      Repo.delete(credential)
+    end)
   end
 
   def fetch_cost_invoices(date_from) do

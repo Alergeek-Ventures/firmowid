@@ -139,6 +139,11 @@ defmodule Firmowid.Ksef.SessionWorker do
     end)
   end
 
+  def invalidate_access_token do
+    organization_id = Repo.get_org_id()
+    Cachex.del(:ksef, {:access_token, organization_id})
+  end
+
   defp access_token_ttl(access_token) do
     access_token
     |> ApiClient.token_expire_time()
