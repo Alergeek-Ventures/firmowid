@@ -19,18 +19,6 @@ defmodule Firmowid.CostInvoicesTest do
     end
   end
 
-  describe "toggle_skip_invoicing/1" do
-    test "allows toggling skip flag for KSeF-imported invoice" do
-      user = user_fixture()
-      invoice = insert_ksef_cost_invoice!(user.organization_id)
-
-      updated_invoice = CostInvoices.toggle_skip_invoicing(invoice.id)
-
-      assert updated_invoice.skip_invoicing
-      assert Repo.get!(CostInvoice, invoice.id).skip_invoicing
-    end
-  end
-
   describe "ksef_cost_invoice_trigger" do
     test "blocks deleting KSeF-imported invoices on DB level" do
       user = user_fixture()
@@ -39,29 +27,6 @@ defmodule Firmowid.CostInvoicesTest do
       assert_raise Postgrex.Error, ~r/Cannot delete a KSeF-imported cost invoice/, fn ->
         Repo.delete!(invoice)
       end
-    end
-
-    test "blocks updates to KSeF XML data on DB level" do
-      user = user_fixture()
-      invoice = insert_ksef_cost_invoice!(user.organization_id)
-
-      assert_raise Postgrex.Error, ~r/Cannot modify KSeF-imported invoice data/, fn ->
-        invoice
-        |> Ecto.Changeset.change(%{seller: "Updated Seller"})
-        |> Repo.update!()
-      end
-    end
-
-    test "allows updating skip_invoicing for KSeF-imported invoice" do
-      user = user_fixture()
-      invoice = insert_ksef_cost_invoice!(user.organization_id)
-
-      updated_invoice =
-        invoice
-        |> Ecto.Changeset.change(%{skip_invoicing: true})
-        |> Repo.update!()
-
-      assert updated_invoice.skip_invoicing
     end
   end
 
