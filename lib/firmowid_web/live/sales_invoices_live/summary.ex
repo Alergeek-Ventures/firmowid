@@ -96,7 +96,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
           <.button
             :if={
               @ksef_connected? and SalesInvoice.confirmed?(@invoice) and
-                @submission_info.status == :not_submitted
+                @submission_info.status in [:not_submitted, :failed]
             }
             color="light_grey"
             size="small"

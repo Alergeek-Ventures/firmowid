@@ -14,7 +14,11 @@
     <div class="col-start-2 col-end-9">
       <FirmowidWeb.SalesInvoicesLive.Creator.render_header
         invoice={@invoice}
-        step="Faktura korygująca"
+        step={
+          if SalesInvoice.ksef_submitted?(@invoice),
+            do: "Faktura korygująca",
+            else: "Edycja faktury"
+        }
         title={"Edycja faktury #{@invoice.invoice_number}"}
       />
     </div>
@@ -102,7 +106,7 @@
 
       <hr class="text-grey-200 col-start-2 col-end-9" />
 
-      <div :if={not SalesInvoice.draft?(@invoice)} class="col-start-2 col-end-9">
+      <div :if={SalesInvoice.ksef_submitted?(@invoice)} class="col-start-2 col-end-9">
         <.input
           field={@form[:correction_reason]}
           type="textarea"
@@ -117,18 +121,7 @@
       </div>
 
       <div class="col-span-full flex flex-col xl:flex-row gap-14 justify-center items-center">
-        <%= if SalesInvoice.draft?(@invoice) do %>
-          <div class={[
-            "border border-grey-200 rounded-lg bg-white shadow-sm overflow-hidden max-w-[650px]",
-            @stale_preview_invoice? && "opacity-50"
-          ]}>
-            <FirmowidWeb.PdfHTML.sales_invoice
-              sales_invoice={@preview_invoice}
-              currency_rate={@currency_rate}
-              show_vat={@current_org.is_vat_payer}
-            />
-          </div>
-        <% else %>
+        <%= if SalesInvoice.ksef_submitted?(@invoice) do %>
           <div class="space-y-4">
             <p class="text-black text-lg/6 font-medium">
               Faktura {@invoice.invoice_number}
@@ -161,6 +154,17 @@
               />
             </div>
           </div>
+        <% else %>
+          <div class={[
+            "border border-grey-200 rounded-lg bg-white shadow-sm overflow-hidden max-w-[650px]",
+            @stale_preview_invoice? && "opacity-50"
+          ]}>
+            <FirmowidWeb.PdfHTML.sales_invoice
+              sales_invoice={@preview_invoice}
+              currency_rate={@currency_rate}
+              show_vat={@current_org.is_vat_payer}
+            />
+          </div>
         <% end %>
       </div>
     </div>
@@ -172,11 +176,11 @@
         new={true}
         phx-click="cancel_edit"
       >
-        {if SalesInvoice.draft?(@invoice), do: "Anuluj", else: "Anuluj korektę"}
+        {if SalesInvoice.ksef_submitted?(@invoice), do: "Anuluj korektę", else: "Anuluj"}
       </.button>
 
       <.button
-        :if={SalesInvoice.draft?(@invoice)}
+        :if={not SalesInvoice.ksef_submitted?(@invoice)}
         type="button"
         color="light_grey"
         new={true}
@@ -191,9 +195,9 @@
         color="turquoise"
         new={true}
       >
-        {if SalesInvoice.draft?(@invoice),
-          do: "Zapisz i wyślij do KSeF",
-          else: "Wystaw fakturę korygującą"}
+        {if SalesInvoice.ksef_submitted?(@invoice),
+          do: "Wystaw fakturę korygującą",
+          else: "Zapisz i wyślij do KSeF"}
       </.button>
     </div>
     <.modal id="buyer-edit-modal">

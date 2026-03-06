@@ -39,9 +39,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Edit do
         invoice = Repo.preload(invoice, [:corrected_invoice])
 
         invoice_changeset =
-          if SalesInvoice.draft?(invoice) do
-            changeset(invoice)
-          else
+          if SalesInvoice.ksef_submitted?(invoice) do
             original_invoice = if invoice.ksef_invoice_kind == :kor, do: invoice.corrected_invoice, else: invoice
             reference_invoice = invoice
 
@@ -52,6 +50,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.Edit do
               invoice_number: SalesInvoices.get_next_invoice_number(Date.utc_today(), series: "FK")
             })
             |> changeset()
+          else
+            changeset(invoice)
           end
 
         socket =
@@ -150,13 +150,18 @@ defmodule FirmowidWeb.SalesInvoicesLive.Edit do
     original_invoice = socket.assigns.invoice
 
     invoice =
-      if SalesInvoice.draft?(original_invoice) do
-        create_confirmed_invoice(organization, original_invoice, params)
-      else
-        original_invoice =
-          if original_invoice.ksef_invoice_kind == :kor, do: original_invoice.corrected_invoice, else: original_invoice
+      cond do
+        SalesInvoice.draft?(original_invoice) ->
+          create_confirmed_invoice(organization, original_invoice, params)
 
-        create_correction_invoice(organization, original_invoice, params)
+        not SalesInvoice.ksef_submitted?(original_invoice) ->
+          update_confirmed_invoice(organization, original_invoice, params)
+
+        true ->
+          original_invoice =
+            if original_invoice.ksef_invoice_kind == :kor, do: original_invoice.corrected_invoice, else: original_invoice
+
+          create_correction_invoice(organization, original_invoice, params)
       end
 
     case invoice do
@@ -225,6 +230,24 @@ defmodule FirmowidWeb.SalesInvoicesLive.Edit do
     end
   end
 
+  def update_confirmed_invoice(organization, invoice, invoice_params) do
+    case Creator.validate_organization_for_invoicing(organization) do
+      :ok ->
+        attrs =
+          Map.merge(invoice_params, %{
+            "seller_display_name" => organization.name,
+            "seller_address" => organization.address,
+            "seller_nip" => organization.nip,
+            "is_cash_account" => invoice_params["payment_method"] == "cash"
+          })
+
+        SalesInvoices.update_sales_invoice(invoice, attrs)
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
   def create_correction_invoice(organization, original_invoice, correction_invoice_params) do
     case Creator.validate_organization_for_invoicing(organization) do
       :ok ->
@@ -271,9 +294,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Edit do
   end
 
   defp detect_correction_reason_touched(params, socket) do
-    if SalesInvoice.draft?(socket.assigns.invoice) do
-      socket
-    else
+    if SalesInvoice.ksef_submitted?(socket.assigns.invoice) do
       user_reason = Map.get(params, "correction_reason", "")
       last_auto = socket.assigns.last_auto_reason
 
@@ -282,11 +303,13 @@ defmodule FirmowidWeb.SalesInvoicesLive.Edit do
       else
         socket
       end
+    else
+      socket
     end
   end
 
   defp maybe_auto_fill_correction_reason(socket) do
-    if SalesInvoice.draft?(socket.assigns.invoice) or socket.assigns.correction_reason_touched do
+    if not SalesInvoice.ksef_submitted?(socket.assigns.invoice) or socket.assigns.correction_reason_touched do
       sync_user_reason_to_preview(socket)
     else
       auto_fill_correction_reason(socket)

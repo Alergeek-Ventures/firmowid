@@ -81,7 +81,11 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                   :if={SalesInvoice.editable?(@invoice)}
                   id="edit-invoice-link"
                   phx-hook="Tippy"
-                  data-tippy-content="Wystaw fakturę korygującą"
+                  data-tippy-content={
+                    if SalesInvoice.ksef_submitted?(@invoice),
+                      do: "Wystaw fakturę korygującą",
+                      else: "Edytuj fakturę"
+                  }
                   data-tippy-delay="100"
                   class={button_styles(%{color: "light_grey", size: "small", new: true})}
                   navigate={~p"/sprzedazowe/#{@invoice.id}/edytuj"}
@@ -93,7 +97,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                 </.link>
 
                 <.button
-                  :if={cancelable?(@invoice) and not SalesInvoice.deletable?(@invoice)}
+                  :if={SalesInvoice.deletable?(@invoice)}
                   phx-click={show_modal("delete-invoice-modal")}
                   color="light_grey"
                   size="small"
@@ -102,6 +106,19 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                   <.icon name="hero-trash-solid" class="size-4" />
                   <span class="hidden xl:inline">
                     Usuń
+                  </span>
+                </.button>
+
+                <.button
+                  :if={cancelable?(@invoice) and not SalesInvoice.deletable?(@invoice)}
+                  phx-click={show_modal("cancel-invoice-modal")}
+                  color="light_grey"
+                  size="small"
+                  new={true}
+                >
+                  <.icon name="hero-trash-solid" class="size-4" />
+                  <span class="hidden xl:inline">
+                    Anuluj
                   </span>
                 </.button>
 

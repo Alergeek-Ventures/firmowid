@@ -694,6 +694,17 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   def deletable?(%__MODULE__{}), do: false
 
   @doc """
+  Returns true if the invoice has been successfully submitted to KSeF.
+
+  A KSeF-submitted invoice is immutable and can only be "corrected" by issuing
+  a correction invoice (faktura korygująca). Invoices that failed KSeF submission
+  are not considered submitted — they can be edited directly and re-submitted.
+  """
+  @spec ksef_submitted?(t()) :: boolean()
+  def ksef_submitted?(%__MODULE__{ksef_number: nil}), do: false
+  def ksef_submitted?(%__MODULE__{}), do: true
+
+  @doc """
   Returns true if the invoice can be edited (navigated to the edit page).
 
   An invoice is NOT editable if:
