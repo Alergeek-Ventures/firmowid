@@ -754,6 +754,34 @@ defmodule FirmowidWeb.SalesInvoices.Template do
   end
 
   attr :sales_invoice, :map, required: true
+
+  defp qrcode(assigns) do
+    {:ok, qrcode} =
+      assigns.sales_invoice
+      |> Firmowid.Ksef.invoice_url!()
+      |> QRCode.create()
+      |> QRCode.render(:svg)
+      |> QRCode.to_base64()
+
+    assigns = assign(assigns, :qrcode, qrcode)
+
+    ~H"""
+    <div class="flex flex-col items-center justify-center w-24 absolute right-8 bottom-8">
+      <p class="text-[8px] text-center font-medium">
+        <%= case @sales_invoice.invoice_type do %>
+          <% :poland -> %>
+            Sprawdź w KSeF
+          <% :foreign -> %>
+            Sprawdź w KSeF/<br />View in KSeF
+        <% end %>
+      </p>
+      <img src={"data:image/svg+xml; base64, #{@qrcode}"} alt="KSeF QR code" width="96" height="96" />
+      <p class="text-[8px] text-center">{@sales_invoice.ksef_number}</p>
+    </div>
+    """
+  end
+
+  attr :sales_invoice, :map, required: true
   attr :show_vat, :boolean, default: true
   attr :logo_data_uri, :string, default: nil
   attr :footer_logo_data_uri, :string, default: nil
@@ -821,6 +849,10 @@ defmodule FirmowidWeb.SalesInvoices.Template do
       <.footer
         footer_logo_data_uri={@footer_logo_data_uri}
         invoice_type={@sales_invoice.invoice_type}
+      />
+      <.qrcode
+        :if={Firmowid.SalesInvoices.SalesInvoice.ksef_submitted?(@sales_invoice)}
+        sales_invoice={@sales_invoice}
       />
     </div>
     """

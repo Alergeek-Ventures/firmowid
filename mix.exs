@@ -131,7 +131,8 @@ defmodule Firmowid.MixProject do
       {:humanids, "~> 0.1.1"},
       {:websockex, "~> 0.5"},
       {:csv, "~> 3.2"},
-      {:lucide_icons, "~> 2.0"}
+      {:lucide_icons, "~> 2.0"},
+      {:qr_code, "~> 3.2.0"}
     ]
   end
 
