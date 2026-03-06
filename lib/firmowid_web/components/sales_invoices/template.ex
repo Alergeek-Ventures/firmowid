@@ -201,7 +201,13 @@ defmodule FirmowidWeb.SalesInvoices.Template do
                 :foreign -> "VAT-ID:"
               end}
             </span>
-            <span class="text-[10px]">{@sales_invoice.buyer_id}</span>
+            <span class="text-[10px]">
+              <%= if @sales_invoice.invoice_type == :foreign and @sales_invoice.buyer_country do %>
+                {@sales_invoice.buyer_country}{@sales_invoice.buyer_id}
+              <% else %>
+                {@sales_invoice.buyer_id}
+              <% end %>
+            </span>
           <% end %>
         </div>
       </div>
