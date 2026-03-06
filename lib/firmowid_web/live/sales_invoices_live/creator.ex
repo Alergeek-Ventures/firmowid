@@ -51,6 +51,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
       |> assign(:last_counterparties, SalesInvoices.list_counterparties())
       |> assign(:last_invoices, SalesInvoices.list_recent_invoices())
       |> assign(:ksef_connected?, Ksef.get_credential() != nil)
+      |> assign(:open_counterparty_modal, false)
 
     {:ok, socket}
   end
@@ -88,16 +89,43 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
         Bodyguard.permit!(SalesInvoices, :show, socket.assigns.current_user, base_invoice)
 
         {:ok, creator_draft_id, _creator_draft} = CreatorDraftStore.create(org_id)
-        invoice = build_copied_invoice(base_invoice, socket.assigns.bank_accounts)
 
-        # Serialize invoice to creator draft format and persist
-        socket = assign(socket, invoice: invoice, creator_draft_id: creator_draft_id, org_id: org_id)
-        creator_draft_data = serialize_to_creator_draft(socket)
+        case build_copied_invoice(base_invoice, socket.assigns.bank_accounts) do
+          {:ok, invoice} ->
+            socket = assign(socket, invoice: invoice, creator_draft_id: creator_draft_id, org_id: org_id)
+            creator_draft_data = serialize_to_creator_draft(socket)
+            CreatorDraftStore.put(org_id, creator_draft_id, %{step: :items, data: creator_draft_data})
 
-        CreatorDraftStore.put(org_id, creator_draft_id, %{step: :items, data: creator_draft_data})
+            {:noreply, push_patch(socket, to: creator_draft_url(creator_draft_id, :items), replace: true)}
 
-        {:noreply, push_patch(socket, to: creator_draft_url(creator_draft_id, :items), replace: true)}
+          {:partial, invoice, changeset} ->
+            socket = assign(socket, invoice: invoice, creator_draft_id: creator_draft_id, org_id: org_id)
+            creator_draft_data = serialize_to_creator_draft(socket)
+            CreatorDraftStore.put(org_id, creator_draft_id, %{step: :counterparty, data: creator_draft_data})
+
+            {:noreply, setup_partial_copy(socket, changeset, creator_draft_id)}
+        end
     end
+  end
+
+  defp setup_partial_copy(socket, changeset, creator_draft_id) do
+    # Store the failed changeset in the CreatorDraftStore so it survives the push_patch redirect.
+    # We can't rely on socket assigns because push_patch re-enters handle_params
+    # with the socket state from before the first handle_params call.
+    org_id = socket.assigns.org_id
+
+    CreatorDraftStore.put(org_id, creator_draft_id, %{
+      step: :counterparty,
+      data: serialize_to_creator_draft(socket),
+      partial_copy_changeset: changeset
+    })
+
+    socket
+    |> LiveToast.put_toast(
+      :error,
+      "Skopiowano pozycje z faktury, ale dane kontrahenta wymagają poprawy — uzupełnij formularz."
+    )
+    |> push_patch(to: creator_draft_url(creator_draft_id, :counterparty), replace: true)
   end
 
   defp handle_existing_creator_draft(socket, org_id, creator_draft_id, params) do
@@ -136,6 +164,22 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
 
     case restore_from_creator_draft(socket, creator_draft.data, step) do
       {:ok, socket} ->
+        # If this draft was created from a partial copy (invalid counterparty data),
+        # pre-fill the counterparty form and auto-open the modal for the user to fix.
+        socket =
+          case Map.get(creator_draft, :partial_copy_changeset) do
+            %Ecto.Changeset{} = changeset ->
+              # Consume the changeset — remove it from the store so it doesn't re-trigger
+              CreatorDraftStore.put(org_id, creator_draft_id, Map.delete(creator_draft, :partial_copy_changeset))
+
+              socket
+              |> assign(:counterparty_form, to_form(changeset, action: :validate))
+              |> assign(:open_counterparty_modal, true)
+
+            _ ->
+              socket
+          end
+
         socket =
           socket
           |> assign(:creator_draft_id, creator_draft_id)
@@ -220,10 +264,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
     |> assign(:query_params, query_params)
     |> assign(:tab, tab)
     |> update_counterparty_stream(search, no_search?, filter, sort_order)
-    |> assign(
-      :counterparty_form,
-      %SalesInvoice{} |> SalesInvoice.step1_changeset(%{buyer_type: :company}) |> to_form()
-    )
+    |> maybe_init_counterparty_form()
   end
 
   defp maybe_setup_step(socket, :items, _params) do
@@ -295,6 +336,20 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
 
   defp maybe_setup_step(socket, _step, _params) do
     socket
+  end
+
+  # When copying an invoice with invalid counterparty data, the form is pre-filled
+  # with the copied data and the modal is set to auto-open. Don't overwrite it.
+  defp maybe_init_counterparty_form(%{assigns: %{open_counterparty_modal: true}} = socket) do
+    socket
+  end
+
+  defp maybe_init_counterparty_form(socket) do
+    assign(
+      socket,
+      :counterparty_form,
+      %SalesInvoice{} |> SalesInvoice.step1_changeset(%{buyer_type: :company}) |> to_form()
+    )
   end
 
   defp calculate_due_date_days(invoice) do
@@ -453,20 +508,25 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
         counterparty_data
       end
 
-    # Build invoice with counterparty data
-    invoice =
-      %SalesInvoice{}
-      |> SalesInvoice.step1_changeset(counterparty_data)
-      |> Ecto.Changeset.apply_action!(:insert)
-
     # Copy items from base invoice
     copied_items =
-      Enum.map(
-        base_invoice.sales_invoice_items,
-        &Map.take(&1, [:index, :name, :quantity, :unit, :unit_price, :vat_rate])
-      )
+      base_invoice.sales_invoice_items
+      |> Enum.map(&Map.take(&1, [:index, :name, :quantity, :unit, :unit_price, :vat_rate]))
+      |> Enum.map(&struct(SalesInvoiceItem, &1))
 
-    %{invoice | sales_invoice_items: Enum.map(copied_items, &struct(SalesInvoiceItem, &1))}
+    # Validate counterparty data — old invoices may have data that no longer passes validation
+    changeset = SalesInvoice.step1_changeset(%SalesInvoice{}, counterparty_data)
+
+    case Ecto.Changeset.apply_action(changeset, :insert) do
+      {:ok, invoice} ->
+        {:ok, %{invoice | sales_invoice_items: copied_items}}
+
+      {:error, changeset} ->
+        # Counterparty data is invalid — return items-only invoice and the failed changeset
+        # so the caller can land the user on the counterparty step with the modal pre-filled
+        invoice = %SalesInvoice{sales_invoice_items: copied_items}
+        {:partial, invoice, changeset}
+    end
   end
 
   # Navigation helpers
@@ -599,9 +659,15 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
     base_invoice = SalesInvoices.get_sales_invoice!(invoice_id)
     Bodyguard.permit!(SalesInvoices, :show, socket.assigns.current_user, base_invoice)
 
-    invoice = build_copied_invoice(base_invoice, socket.assigns.bank_accounts)
+    case build_copied_invoice(base_invoice, socket.assigns.bank_accounts) do
+      {:ok, invoice} ->
+        {:noreply, persist_and_navigate(socket, :items, invoice)}
 
-    {:noreply, persist_and_navigate(socket, :items, invoice)}
+      {:partial, invoice, changeset} ->
+        socket = assign(socket, :invoice, invoice)
+        persist_creator_draft(socket)
+        {:noreply, setup_partial_copy(socket, changeset, socket.assigns.creator_draft_id)}
+    end
   end
 
   def handle_event("change_tab", %{"tab" => tab}, socket) do
