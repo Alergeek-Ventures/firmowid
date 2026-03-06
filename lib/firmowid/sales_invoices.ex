@@ -682,14 +682,14 @@ defmodule Firmowid.SalesInvoices do
       invoice_number = get_next_invoice_number(issue_date, series: "FK")
 
       zeroed_items_attrs =
-        Enum.map(invoice.sales_invoice_items, fn item ->
+        Enum.map(latest_snapshot.sales_invoice_items, fn item ->
           item
           |> Map.take([:index, :name, :unit, :unit_price, :vat_rate])
           |> Map.put(:quantity, Decimal.new(0))
         end)
 
       correction_reason =
-        case invoice.invoice_type do
+        case latest_snapshot.invoice_type do
           :foreign -> "Anulowanie faktury / Invoice cancellation"
           _poland -> "Anulowanie faktury"
         end
@@ -697,8 +697,8 @@ defmodule Firmowid.SalesInvoices do
       attrs = %{
         invoice_number: invoice_number,
         issue_date: issue_date,
-        sale_date: invoice.sale_date,
-        due_date: invoice.due_date,
+        sale_date: latest_snapshot.sale_date,
+        due_date: latest_snapshot.due_date,
         correction_reason: correction_reason,
         sales_invoice_items: zeroed_items_attrs
       }
@@ -708,11 +708,11 @@ defmodule Firmowid.SalesInvoices do
       |> SalesInvoice.changeset(attrs)
       |> Repo.insert()
     else
-      {:error, :not_locked}
+      {:error, :not_ksef_submitted}
     end
   end
 
-  defp get_latest_invoice_snapshot(%SalesInvoice{ksef_invoice_kind: :vat} = original_invoice) do
+  def get_latest_invoice_snapshot(%SalesInvoice{ksef_invoice_kind: :vat} = original_invoice) do
     latest_correction =
       original_invoice.corrections
       |> Enum.reject(&is_nil(&1.locked_at))

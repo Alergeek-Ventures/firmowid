@@ -15,28 +15,36 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
     sales_invoice = SalesInvoices.get_sales_invoice(id)
     Bodyguard.permit!(SalesInvoices, :show, current_user, sales_invoice)
 
-    potential_transactions = Invoicing.get_potential_transactions_for_invoice(sales_invoice)
+    if sales_invoice.ksef_invoice_kind == :kor do
+      # ensure `return_to` is preserved when redirecting to the corrected invoice
+      params = Map.delete(params, "id")
+      redirect_path = ~p"/sprzedazowe/#{sales_invoice.corrected_invoice_id}?#{params}"
 
-    sales_invoice =
-      id
-      |> SalesInvoices.get_sales_invoice_with_logo_url()
-      |> Repo.preload([:corrections, corrected_invoice: :corrections])
+      {:ok, redirect(socket, to: redirect_path)}
+    else
+      potential_transactions = Invoicing.get_potential_transactions_for_invoice(sales_invoice)
 
-    # Subscribe to KSeF status updates for live feedback
-    Ksef.subscribe_ksef_status(current_user.organization_id)
+      sales_invoice =
+        id
+        |> SalesInvoices.get_sales_invoice_with_logo_url()
+        |> Repo.preload(corrections: :sales_invoice_items)
 
-    socket =
-      socket
-      |> assign(:invoice, sales_invoice)
-      |> assign(:reference_invoice, SalesInvoices.get_reference_invoice(sales_invoice))
-      |> assign(:potential_transactions, potential_transactions)
-      |> assign(:preview_url, "")
-      |> assign(:preview_type, :html)
-      |> assign(:no_padding, true)
-      |> assign(:return_to, params["return_to"])
-      |> assign(:ksef_connected?, Ksef.get_credential() != nil)
+      # Subscribe to KSeF status updates for live feedback
+      Ksef.subscribe_ksef_status(current_user.organization_id)
 
-    {:ok, socket}
+      socket =
+        socket
+        |> assign(:invoice, sales_invoice)
+        |> assign(:reference_invoice, SalesInvoices.get_reference_invoice(sales_invoice))
+        |> assign(:potential_transactions, potential_transactions)
+        |> assign(:preview_url, "")
+        |> assign(:preview_type, :html)
+        |> assign(:no_padding, true)
+        |> assign(:return_to, params["return_to"])
+        |> assign(:ksef_connected?, Ksef.get_credential() != nil)
+
+      {:ok, socket}
+    end
   end
 
   @impl true

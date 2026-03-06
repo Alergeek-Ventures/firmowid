@@ -4,18 +4,20 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
 
   alias Firmowid.Ksef
   alias Firmowid.Ksef.SubmissionInfo
+  alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.SalesInvoice
   alias FirmowidWeb.Components.Invoicing.InvoiceDetails, as: InvoiceDetails
   alias FirmowidWeb.Components.Invoicing.InvoiceTimeline
 
   require Logger
 
-  def cancelable?(%SalesInvoice{} = invoice) do
-    if Decimal.eq?(SalesInvoice.get_gross_value(invoice), 0) do
-      false
-    else
-      SalesInvoice.editable?(invoice)
-    end
+  defp get_invoices_for_preview(%SalesInvoice{ksef_invoice_kind: :vat} = invoice) do
+    corrections = Enum.map(invoice.corrections, &%{&1 | corrected_invoice: invoice})
+
+    invoices = [invoice | corrections]
+    reference_invoices = [nil | invoices]
+
+    [invoices, reference_invoices] |> Enum.zip() |> Enum.reverse()
   end
 
   attr :invoice, SalesInvoice, required: true
@@ -30,24 +32,28 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
 
   @impl true
   def render(assigns) do
+    invoice_to_copy = SalesInvoices.get_latest_invoice_snapshot(assigns.invoice)
+    invoices_for_preview = get_invoices_for_preview(assigns.invoice)
+    cancelled? = latest_invoice_snapshot |> SalesInvoice.get_gross_value() |> Decimal.eq?(0)
+
     assigns =
       assigns
       |> assign(:is_cost_invoice, false)
       |> assign(
         :party_display_name,
-        Firmowid.SalesInvoices.buyer_display_name(assigns.invoice)
+        SalesInvoices.buyer_display_name(latest_invoice_snapshot)
       )
       |> assign(
         :description,
-        case assigns.invoice.sales_invoice_items do
+        case latest_invoice_snapshot.sales_invoice_items do
           [first | _] -> Map.get(first, :name, "")
           _ -> ""
         end
       )
-      |> assign(
-        :show_timeline_button,
-        show_timeline_button?(assigns.submission_info)
-      )
+      |> assign(:show_timeline_button, show_timeline_button?(assigns.submission_info))
+      |> assign(:latest_invoice_snapshot, latest_invoice_snapshot)
+      |> assign(:invoices_for_preview, invoices_for_preview)
+      |> assign(:cancelled?, cancelled?)
 
     ~H"""
     <div id="invoice-show" class="flex flex-col">
@@ -72,13 +78,12 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
               <div class="flex flex-row gap-3 xl:gap-4">
                 <.link
                   class={button_styles(%{color: "light_grey", size: "small", new: true})}
-                  navigate={~p"/sprzedazowe?skopiuj=#{@invoice.id}"}
+                  navigate={~p"/sprzedazowe?skopiuj=#{@latest_invoice_snapshot.id}"}
                 >
                   <Lucideicons.copy /><span class="hidden xl:inline">Kopiuj</span>
                 </.link>
 
                 <.link
-                  :if={SalesInvoice.editable?(@invoice)}
                   id="edit-invoice-link"
                   phx-hook="Tippy"
                   data-tippy-content={
@@ -88,7 +93,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                   }
                   data-tippy-delay="100"
                   class={button_styles(%{color: "light_grey", size: "small", new: true})}
-                  navigate={~p"/sprzedazowe/#{@invoice.id}/edytuj"}
+                  navigate={~p"/sprzedazowe/#{@latest_invoice_snapshot.id}/edytuj"}
                 >
                   <.icon name="hero-pencil-square" class="size-4" />
                   <span class="hidden xl:inline">
@@ -110,7 +115,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                 </.button>
 
                 <.button
-                  :if={cancelable?(@invoice) and not SalesInvoice.deletable?(@invoice)}
+                  :if={SalesInvoice.ksef_submitted?(@invoice) and not @cancelled?}
                   phx-click={show_modal("cancel-invoice-modal")}
                   color="light_grey"
                   size="small"
@@ -122,6 +127,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                   </span>
                 </.button>
 
+                <%!-- should download button download invoice with corrections? --%>
                 <.link
                   class={button_styles(%{color: "light_grey", size: "small", new: true})}
                   href={~p"/sprzedazowe/#{@invoice.id}/pobierz"}
@@ -213,7 +219,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                 </.modal>
               </div>
 
-              <div :if={cancelable?(@invoice)} class="absolute">
+              <div class="absolute">
                 <.modal id="cancel-invoice-modal" on_cancel={hide_modal("cancel-invoice-modal")}>
                   <p>
                     Czy na pewno chcesz anulować fakturę <span class="font-semibold">{@invoice.invoice_number}</span>?
@@ -274,8 +280,8 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                 piece_id="ksef-id"
               />
               <InvoiceDetails.invoice_metadata_piece
-                label="Kupujacy"
-                value={Firmowid.SalesInvoices.buyer_display_name(@invoice)}
+                label="Kupujący"
+                value={Firmowid.SalesInvoices.buyer_display_name(@latest_invoice_snapshot)}
                 piece_id="buyer"
               />
               <InvoiceDetails.invoice_metadata_piece
@@ -284,13 +290,13 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                 piece_id="issue-date"
               />
               <InvoiceDetails.invoice_metadata_piece
-                label="Data sprzedazy"
-                value={@invoice.sale_date}
+                label="Data sprzedaży"
+                value={@latest_invoice_snapshot.sale_date}
                 piece_id="sale-date"
               />
               <InvoiceDetails.invoice_metadata_piece
-                label="Termin platnosci"
-                value={@invoice.due_date}
+                label="Termin płatności"
+                value={@latest_invoice_snapshot.due_date}
                 piece_id="due-date"
               />
             </InvoiceDetails.invoice_metadata>
@@ -299,26 +305,69 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
               is_cost_invoice={false}
               total_amount={
                 Money.new(
-                  @invoice.currency,
-                  Firmowid.SalesInvoices.SalesInvoice.get_gross_value(@invoice)
+                  @latest_invoice_snapshot.currency,
+                  Firmowid.SalesInvoices.SalesInvoice.get_gross_value(@latest_invoice_snapshot)
                 )
               }
             />
           <% end %>
 
-          <%= if @preview_type == :html do %>
-            <InvoiceDetails.invoice_preview>
-              <a href={~p"/sprzedazowe/#{@invoice.id}/pobierz"} target="_blank">
-                <InvoiceDetails.scalable_invoice_preview>
-                  <FirmowidWeb.PdfHTML.sales_invoice
-                    sales_invoice={@invoice}
-                    currency_rate={Firmowid.SalesInvoices.get_currency_rate(@invoice)}
-                    show_vat={@show_vat_for_sales_invoice}
-                    reference_invoice={@reference_invoice}
-                  />
-                </InvoiceDetails.scalable_invoice_preview>
-              </a>
-            </InvoiceDetails.invoice_preview>
+          <%= case @invoices_for_preview do %>
+            <% [{invoice, nil}] -> %>
+              <InvoiceDetails.invoice_preview>
+                <.link href={~p"/sprzedazowe/#{@invoice.id}/pobierz"} download>
+                  <InvoiceDetails.invoice_preview_border>
+                    <InvoiceDetails.scalable_invoice_preview>
+                      <FirmowidWeb.PdfHTML.sales_invoice
+                        sales_invoice={invoice}
+                        currency_rate={Firmowid.SalesInvoices.get_currency_rate(invoice)}
+                        show_vat={@show_vat_for_sales_invoice}
+                        reference_invoice={%{}}
+                      />
+                    </InvoiceDetails.scalable_invoice_preview>
+                  </InvoiceDetails.invoice_preview_border>
+                </.link>
+              </InvoiceDetails.invoice_preview>
+            <% [latest_invoice | previous_invoices] -> %>
+              <InvoiceDetails.invoice_preview>
+                <div class="flex flex-col-reverse xl:flex-row gap-4 w-full">
+                  <div class="flex flex-col gap-4 w-full min-w-0 shrink-2">
+                    <InvoiceDetails.invoice_subpreview
+                      :for={{invoice, refrence_invoice} <- previous_invoices}
+                      label={invoice.invoice_number}
+                    >
+                      <InvoiceDetails.scalable_invoice_preview
+                        id={"preview-#{invoice.id}"}
+                        class="max-w-full min-w-0"
+                      >
+                        <FirmowidWeb.PdfHTML.sales_invoice
+                          sales_invoice={invoice}
+                          currency_rate={Firmowid.SalesInvoices.get_currency_rate(invoice)}
+                          show_vat={@show_vat_for_sales_invoice}
+                          reference_invoice={refrence_invoice}
+                        />
+                      </InvoiceDetails.scalable_invoice_preview>
+                    </InvoiceDetails.invoice_subpreview>
+                  </div>
+
+                  <% {latest_invoice, latest_invoice_reference} = latest_invoice %>
+                  <InvoiceDetails.invoice_subpreview label={latest_invoice.invoice_number}>
+                    <.link href={~p"/sprzedazowe/#{latest_invoice.id}/pobierz"} download>
+                      <InvoiceDetails.scalable_invoice_preview
+                        id={"preview-#{latest_invoice.id}"}
+                        class="w-full max-w-full min-w-0"
+                      >
+                        <FirmowidWeb.PdfHTML.sales_invoice
+                          sales_invoice={latest_invoice}
+                          currency_rate={Firmowid.SalesInvoices.get_currency_rate(latest_invoice)}
+                          show_vat={@show_vat_for_sales_invoice}
+                          reference_invoice={latest_invoice_reference}
+                        />
+                      </InvoiceDetails.scalable_invoice_preview>
+                    </.link>
+                  </InvoiceDetails.invoice_subpreview>
+                </div>
+              </InvoiceDetails.invoice_preview>
           <% end %>
         </InvoiceDetails.aside>
 

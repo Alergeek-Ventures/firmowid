@@ -118,85 +118,87 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
           <% end %>
 
           <InvoiceDetails.invoice_preview :if={@preview_type != :none}>
-            <%= case @preview_type do %>
-              <% :pdf -> %>
-                <a href={@preview_url} target="_blank">
-                  <div
-                    id="invoice-preview"
-                    data-pdf-url={@preview_url}
-                    phx-update="ignore"
-                    phx-hook="PDFViewer"
-                    class="w-full h-fit max-h-[80vh] overflow-x-hidden overflow-y-hidden bg-white"
-                  >
-                    <div class="min-w-[200px] min-h-[200px] flex items-center justify-center font-bold">
-                      Ładowanie dokumentu...
+            <InvoiceDetails.invoice_preview_border>
+              <%= case @preview_type do %>
+                <% :pdf -> %>
+                  <a href={@preview_url} target="_blank">
+                    <div
+                      id="invoice-preview"
+                      data-pdf-url={@preview_url}
+                      phx-update="ignore"
+                      phx-hook="PDFViewer"
+                      class="w-full h-fit max-h-[80vh] overflow-x-hidden overflow-y-hidden bg-white"
+                    >
+                      <div class="w-full p-8 flex items-center justify-center font-bold">
+                        Ładowanie dokumentu...
+                      </div>
                     </div>
-                  </div>
-                </a>
-              <% :xml -> %>
-                <InvoiceDetails.scalable_invoice_preview>
-                  <div
-                    id="invoice-preview"
-                    data-fa3-url={@preview_url}
-                    phx-update="ignore"
-                    phx-hook=".FA3Viewer"
-                    class="h-full w-full"
-                  >
-                    <div class="mx-auto min-h-[200px] flex items-center justify-center font-bold">
-                      Ładowanie dokumentu...
+                  </a>
+                <% :xml -> %>
+                  <InvoiceDetails.scalable_invoice_preview>
+                    <div
+                      id="invoice-preview"
+                      data-fa3-url={@preview_url}
+                      phx-update="ignore"
+                      phx-hook=".FA3Viewer"
+                      class="h-full w-full"
+                    >
+                      <div class="w-full p-8 flex items-center justify-center font-bold">
+                        Ładowanie dokumentu...
+                      </div>
                     </div>
-                  </div>
-                </InvoiceDetails.scalable_invoice_preview>
+                  </InvoiceDetails.scalable_invoice_preview>
 
-                <script :type={Phoenix.LiveView.ColocatedHook} name=".FA3Viewer">
-                  export default {
-                    async mounted() {
-                      const templateUrl = "/templates/kseffaktura_fa(3).xsl";
-                      const fa3Url = this.el.getAttribute("data-fa3-url");
+                  <script :type={Phoenix.LiveView.ColocatedHook} name=".FA3Viewer">
+                    export default {
+                      async mounted() {
+                        const templateUrl = "/templates/kseffaktura_fa(3).xsl";
+                        const fa3Url = this.el.getAttribute("data-fa3-url");
 
-                      const [template, fa3Content] = await Promise.all([
-                        fetch(templateUrl).then((response) => response.text()),
-                        fetch(fa3Url).then((response) => response.text()),
-                      ]);
+                        const [template, fa3Content] = await Promise.all([
+                          fetch(templateUrl).then((response) => response.text()),
+                          fetch(fa3Url).then((response) => response.text()),
+                        ]);
 
-                      const fa3Html = this.transformDocument(template, fa3Content);
+                        const fa3Html = this.transformDocument(template, fa3Content);
 
-                      const iFrame = document.createElement("iframe");
-                      iFrame.className = "w-[800px] h-full";
-                      iFrame.addEventListener("load", () => {
-                        const frameDoc = iFrame.contentDocument;
+                        const iFrame = document.createElement("iframe");
+                        iFrame.className = "w-[800px] h-full";
+                        iFrame.addEventListener("load", () => {
+                          const frameDoc = iFrame.contentDocument;
 
-                        const imported = frameDoc.adoptNode(fa3Html.documentElement);
-                        frameDoc.documentElement.replaceWith(imported);
+                          const imported = frameDoc.adoptNode(fa3Html.documentElement);
+                          frameDoc.documentElement.replaceWith(imported);
 
-                        frameDoc.body.style.userSelect = "none";
-                        frameDoc.body.style.margin = "0";
-                        frameDoc.body.style.padding = "32px";
+                          frameDoc.body.style.userSelect = "none";
+                          frameDoc.body.style.margin = "0";
+                          frameDoc.body.style.padding = "32px";
 
-                        this.el.style.height = `${frameDoc.body.scrollHeight + 32}px`;
-                      });
+                          this.el.style.height = `${frameDoc.body.scrollHeight + 32}px`;
+                        });
 
-                      this.el.replaceChildren(iFrame);
-                    },
+                        this.el.replaceChildren(iFrame);
+                      },
 
-                    transformDocument(template, content) {
-                      const parser = new DOMParser();
-                      template = parser.parseFromString(template, "application/xml");
-                      content = parser.parseFromString(content, "application/xml");
+                      transformDocument(template, content) {
+                        const parser = new DOMParser();
+                        template = parser.parseFromString(template, "application/xml");
+                        content = parser.parseFromString(content, "application/xml");
 
-                      const processor = new XSLTProcessor();
-                      processor.importStylesheet(template);
-                      return processor.transformToDocument(content);
-                    },
-                  };
-                </script>
-              <% :image -> %>
-                <a href={@preview_url} target="_blank">
-                  <div class="w-full h-full max-h-[80vh] overflow-x-hidden bg-black">
-                    <img src={@preview_url} class="w-full h-full object-contain" />
-                  </div>
-                </a>
-            <% end %>
+                        const processor = new XSLTProcessor();
+                        processor.importStylesheet(template);
+                        return processor.transformToDocument(content);
+                      },
+                    };
+                  </script>
+                <% :image -> %>
+                  <a href={@preview_url} target="_blank">
+                    <div class="w-full h-full max-h-[80vh] overflow-x-hidden bg-black">
+                      <img src={@preview_url} class="w-full h-full object-contain" />
+                    </div>
+                  </a>
+              <% end %>
+            </InvoiceDetails.invoice_preview_border>
           </InvoiceDetails.invoice_preview>
         </InvoiceDetails.aside>
 
