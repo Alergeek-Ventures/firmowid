@@ -140,7 +140,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
                     data-fa3-url={@preview_url}
                     phx-update="ignore"
                     phx-hook=".FA3Viewer"
-                    class="h-full w-[800px]"
+                    class="h-full w-full"
                   >
                     <div class="mx-auto min-h-[200px] flex items-center justify-center font-bold">
                       Ładowanie dokumentu...
@@ -159,32 +159,34 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
                         fetch(fa3Url).then((response) => response.text()),
                       ]);
 
-                      const parser = new DOMParser();
-                      const templateDoc = parser.parseFromString(template, "application/xml");
-                      const fa3Doc = parser.parseFromString(fa3Content, "application/xml");
-
-                      const htmlDocument = this.transformDocument(templateDoc, fa3Doc);
+                      const fa3Html = this.transformDocument(template, fa3Content);
 
                       const iFrame = document.createElement("iframe");
-                      iFrame.srcdoc = htmlDocument;
-                      iFrame.className = "w-full h-full";
+                      iFrame.className = "w-[800px] h-full";
                       iFrame.addEventListener("load", () => {
-                        iFrame.contentDocument.body.style.userSelect = "none";
-                        iFrame.contentDocument.body.style.margin = "0";
-                        iFrame.contentDocument.body.style.padding = "32px";
+                        const frameDoc = iFrame.contentDocument;
 
-                        this.el.style.height = `${iFrame.contentDocument.body.scrollHeight + 32}px`;
+                        const imported = frameDoc.adoptNode(fa3Html.documentElement);
+                        frameDoc.documentElement.replaceWith(imported);
+
+                        frameDoc.body.style.userSelect = "none";
+                        frameDoc.body.style.margin = "0";
+                        frameDoc.body.style.padding = "32px";
+
+                        this.el.style.height = `${frameDoc.body.scrollHeight + 32}px`;
                       });
 
                       this.el.replaceChildren(iFrame);
                     },
 
                     transformDocument(template, content) {
+                      const parser = new DOMParser();
+                      template = parser.parseFromString(template, "application/xml");
+                      content = parser.parseFromString(content, "application/xml");
+
                       const processor = new XSLTProcessor();
                       processor.importStylesheet(template);
-                      const resultDoc = processor.transformToDocument(content);
-
-                      return new XMLSerializer().serializeToString(resultDoc);
+                      return processor.transformToDocument(content);
                     },
                   };
                 </script>
