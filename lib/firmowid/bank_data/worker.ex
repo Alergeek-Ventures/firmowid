@@ -2,7 +2,7 @@ defmodule Firmowid.BankData.Worker do
   @moduledoc false
   use Oban.Worker,
     queue: :bank_data,
-    max_attempts: 15
+    max_attempts: 5
 
   alias Firmowid.BankData
   alias Firmowid.BankData.Requisition
@@ -165,12 +165,12 @@ defmodule Firmowid.BankData.Worker do
 
   # attempt starts at 1 and increments each execution
   defp calculate_backoff(0), do: 30
-  defp calculate_backoff(1), do: 70
-  defp calculate_backoff(2), do: 100
-  defp calculate_backoff(3), do: 200
-  defp calculate_backoff(4), do: 300
-  defp calculate_backoff(5), do: 450
-  defp calculate_backoff(_), do: 600
+  defp calculate_backoff(1), do: 200
+  defp calculate_backoff(2), do: 500
+  defp calculate_backoff(3), do: 900
+  defp calculate_backoff(4), do: 1500
+  defp calculate_backoff(5), do: 2500
+  defp calculate_backoff(_), do: 3000
 
   defp handle_requisition_status("LN", %Requisition{} = requisition_db, organization_id, _attempt) do
     Logger.info("Requisition #{requisition_db.id} is now linked")
