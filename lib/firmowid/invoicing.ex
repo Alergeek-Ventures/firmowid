@@ -260,6 +260,8 @@ defmodule Firmowid.Invoicing do
 
     base_query = from(SalesInvoice, as: :sales_invoice)
 
+    base_query = where(base_query, [sales_invoice], sales_invoice.ksef_invoice_kind == :vat)
+
     needs_items_join = not is_nil(amount_gt) or not is_nil(amount_lt)
 
     base_query =
@@ -397,11 +399,8 @@ defmodule Firmowid.Invoicing do
 
     hydrated_sales_invoices =
       if Enum.any?(sales_invoice_ids) do
-        from(sales_invoice in SalesInvoice,
-          where: sales_invoice.id in ^sales_invoice_ids,
-          preload: [:transactions, :sales_invoice_items]
-        )
-        |> Repo.all()
+        sales_invoice_ids
+        |> SalesInvoices.list_sales_invoices_by_ids()
         |> Map.new(fn i -> {i.id, i} end)
       else
         %{}

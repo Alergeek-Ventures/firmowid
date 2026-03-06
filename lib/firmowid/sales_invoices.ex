@@ -131,6 +131,7 @@ defmodule Firmowid.SalesInvoices do
     query =
       from si in SalesInvoice,
         left_join: sit in assoc(si, :transactions),
+        where: si.ksef_invoice_kind == :vat,
         where: is_nil(sit.id),
         where: si.due_date >= ^from,
         where: si.due_date <= ^to,
@@ -163,9 +164,60 @@ defmodule Firmowid.SalesInvoices do
   end
 
   def list_sales_invoices(base_query \\ SalesInvoice) do
-    base_query
-    |> preload([:sales_invoice_items, :transactions])
-    |> Repo.all()
+    latest_corrections_query =
+      from(c in SalesInvoice,
+        where: c.ksef_invoice_kind == :kor,
+        distinct: [asc: c.corrected_invoice_id],
+        order_by: [asc: c.corrected_invoice_id, desc: c.locked_at, desc: c.inserted_at],
+        preload: [:sales_invoice_items]
+      )
+
+    sales_invoices =
+      base_query
+      |> where([si], si.ksef_invoice_kind == :vat)
+      |> preload([:sales_invoice_items, :transactions, corrections: ^latest_corrections_query])
+      |> Repo.all()
+
+    snapshot_fields = [
+      :invoice_type,
+      :sale_date,
+      :due_date,
+      :payment_method,
+      :currency,
+      :seller_nip,
+      :seller_display_name,
+      :seller_address,
+      :seller_name,
+      :seller_surname,
+      :seller_account_number,
+      :buyer_type,
+      :buyer_id,
+      :buyer_full_name,
+      :buyer_given_name,
+      :buyer_surname,
+      :buyer_pesel,
+      :buyer_display_name,
+      :buyer_address,
+      :buyer_country,
+      :buyer_is_different_mail_address,
+      :buyer_mail_address,
+      :buyer_mail_country,
+      :buyer_email,
+      :buyer_phone,
+      :buyer_description,
+      :is_cash_account,
+      :is_reverse_charge,
+      :sales_invoice_items
+    ]
+
+    Enum.map(sales_invoices, fn
+      %{corrections: []} = invoice ->
+        invoice
+
+      # we handle only one correction case, because we preload only latest correction
+      %{corrections: [correction]} = invoice ->
+        Map.merge(invoice, Map.take(correction, snapshot_fields))
+    end)
   end
 
   def list_invoices_in_date_range(from, to) do
@@ -752,7 +804,10 @@ defmodule Firmowid.SalesInvoices do
   defp correction_invoice?(_), do: false
 
   def list_sales_invoices_by_ids(ids, date_from \\ nil, date_to \\ nil) do
-    query = where(SalesInvoice, [si], si.id in ^ids)
+    query =
+      SalesInvoice
+      |> where([si], si.id in ^ids)
+      |> where([si], si.ksef_invoice_kind == :vat)
 
     query =
       if date_from do
@@ -770,9 +825,7 @@ defmodule Firmowid.SalesInvoices do
 
     query
     |> order_by(desc: :issue_date)
-    |> Repo.all()
-    |> Repo.preload(:sales_invoice_items)
-    |> Repo.preload(:transactions)
+    |> list_sales_invoices()
   end
 
   @doc """
