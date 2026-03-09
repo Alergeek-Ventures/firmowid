@@ -87,7 +87,10 @@ defmodule Firmowid.Ksef.FetchWorker do
     ApiClient.initiate_invoice_export(session, filters, encryption_data)
   end
 
-  defp process_downloaded_package(%{"parts" => []}, _args), do: {:ok, 0}
+  defp process_downloaded_package(%{"parts" => []}, _args) do
+    Logger.info("KSeF export completed with no invoices to download")
+    {:ok, 0}
+  end
 
   defp process_downloaded_package(package, args) do
     encryption_key = Base.decode64!(args["encryption_key"])
@@ -186,6 +189,8 @@ defmodule Firmowid.Ksef.FetchWorker do
 
     ksef_numbers = Map.keys(metadata_by_ksef_number)
 
+    Logger.info("KSeF invoice numbers from export: #{inspect(ksef_numbers)}")
+
     existing_invoices =
       CostInvoices.CostInvoice
       |> where([c], c.ksef_number in ^ksef_numbers)
@@ -193,10 +198,22 @@ defmodule Firmowid.Ksef.FetchWorker do
       |> Repo.all()
       |> MapSet.new()
 
-    invoice_files
-    |> Enum.map(fn {filename, xml} -> {String.replace_suffix(filename, ".xml", ""), xml} end)
-    |> Enum.reject(fn {ksef_number, _xml_content} -> MapSet.member?(existing_invoices, ksef_number) end)
-    |> Enum.each(fn {ksef_number, xml_content} ->
+    invoice_entries =
+      Enum.map(invoice_files, fn {filename, xml} ->
+        {String.replace_suffix(filename, ".xml", ""), xml}
+      end)
+
+    {downloaded_invoices, rejected_invoices} =
+      Enum.split_with(invoice_entries, fn {ksef_number, _xml_content} ->
+        not MapSet.member?(existing_invoices, ksef_number)
+      end)
+
+    Logger.info(
+      "KSeF invoice download results: downloaded=#{inspect(Enum.map(downloaded_invoices, &elem(&1, 0)))} " <>
+        "rejected=#{inspect(Enum.map(rejected_invoices, &elem(&1, 0)))}"
+    )
+
+    Enum.each(downloaded_invoices, fn {ksef_number, xml_content} ->
       metadata = Map.fetch!(metadata_by_ksef_number, ksef_number)
 
       create_cost_invoice_from_xml(ksef_number, xml_content, metadata)
