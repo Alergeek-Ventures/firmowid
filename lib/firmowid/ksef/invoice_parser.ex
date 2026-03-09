@@ -27,7 +27,7 @@ defmodule Firmowid.Ksef.InvoiceParser do
     due_date = doc |> xpath(~x"//Fa/Platnosc/TerminPlatnosci/Termin/text()"os) |> parse_date() || issue_date
 
     attrs =
-      reject_nil_and_empty_values(%{
+      %{
         # Seller info (Podmiot1)
         seller_nip: xpath(doc, ~x"//Podmiot1/DaneIdentyfikacyjne/NIP/text()"os),
         seller: xpath(doc, ~x"//Podmiot1/DaneIdentyfikacyjne/Nazwa/text()"os),
@@ -42,25 +42,22 @@ defmodule Firmowid.Ksef.InvoiceParser do
         issue_date: issue_date,
         sale_date: sale_date,
         invoice_identifier: xpath(doc, ~x"//Fa/P_2/text()"os),
-        total_amount: doc |> xpath(~x"//Fa/P_15/text()"os) |> parse_decimal(),
-        invoice_type: doc |> xpath(~x"//Fa/RodzajFaktury/text()"os) |> parse_invoice_type(),
+        total_amount: xpath(doc, ~x"//Fa/P_15/text()"os),
+        invoice_type: xpath(doc, ~x"//Fa/RodzajFaktury/text()"os),
 
         # For correction invoices (KOR, KOR_ZAL, KOR_ROZ), extract the original invoice's KSeF number
         original_invoice_number: xpath(doc, ~x"//Fa/DaneFaKorygowanej/NrKSeFFaKorygowanej/text()"os),
 
         # Payment data (Platnosc)
         due_date: due_date,
-        payment_method: doc |> xpath(~x"//Fa/Platnosc/FormaPlatnosci/text()"os) |> parse_forma_platnosci(),
-        account_number: xpath(doc, ~x"//Fa/Platnosc/RachunekBankowy/NrRB/text()"os),
-        items_list:
-          xpath(
-            doc,
-            ~x"//Fa/FaWiersz"l,
-            name: ~x"./P_7/text()"os,
-            quantity: ~x"./P_8B/text()"of,
-            price: ~x"./P_9A/text()"of
-          )
-      })
+        payment_method: xpath(doc, ~x"//Fa/Platnosc/FormaPlatnosci/text()"os),
+        account_number: xpath(doc, ~x"//Fa/Platnosc/RachunekBankowy/NrRB/text()"os)
+      }
+      |> trim_values()
+      |> Map.update!(:total_amount, &parse_decimal/1)
+      |> Map.update!(:invoice_type, &parse_invoice_type/1)
+      |> Map.update!(:payment_method, &parse_forma_platnosci/1)
+      |> reject_nil_and_empty_values()
 
     {:ok, attrs}
   rescue
@@ -73,7 +70,10 @@ defmodule Firmowid.Ksef.InvoiceParser do
   defp parse_date(""), do: nil
 
   defp parse_date(date_string) do
-    case Date.from_iso8601(date_string) do
+    date_string
+    |> String.trim()
+    |> Date.from_iso8601()
+    |> case do
       {:ok, date} -> date
       {:error, _} -> nil
     end
@@ -110,6 +110,14 @@ defmodule Firmowid.Ksef.InvoiceParser do
       "7" -> :mobile
       _ -> nil
     end
+  end
+
+  defp trim_values(%{} = map) do
+    Map.new(map, fn
+      {k, v} when is_binary(v) -> {k, String.trim(v)}
+      {k, v} when is_list(v) -> {k, Enum.map(v, &trim_values/1)}
+      {k, v} -> {k, v}
+    end)
   end
 
   defp reject_nil_and_empty_values(%{} = map) do
