@@ -21,132 +21,103 @@ defmodule Firmowid.Ksef.InvoiceParser do
   """
   @spec parse(binary()) :: {:ok, map()} | {:error, term()}
   def parse(xml) when is_binary(xml) do
-    doc =
-      SweetXml.parse(xml,
-        namespace_conformant: true
-        # todo: add xsd validation
-        # validation: :schema,
-        # schemaLocation: [tns: "http://crd.gov.pl/wzor/2025/06/25/13775/"]
-      )
-
-    issue_date = doc |> xpath(tns_xpath(~x"//tns:Fa/tns:P_1/text()"s)) |> parse_date()
-    # P_6 is sale date - if not present, use issue_date
-    sale_date = doc |> xpath(tns_xpath(~x"//tns:Fa/tns:P_6/text()"os)) |> parse_date() || issue_date
-
-    due_date =
-      doc
-      |> xpath(tns_xpath(~x"//tns:Fa/tns:Platnosc/tns:TerminPlatnosci/tns:Termin/text()"os))
-      |> parse_date() ||
-        issue_date
-
     attrs =
-      %{
-        # Seller info (Podmiot1)
-        seller_nip: xpath(doc, tns_xpath(~x"//tns:Podmiot1/tns:DaneIdentyfikacyjne/tns:NIP/text()"os)),
-        seller: xpath(doc, tns_xpath(~x"//tns:Podmiot1/tns:DaneIdentyfikacyjne/tns:Nazwa/text()"os)),
-        seller_display_name: xpath(doc, tns_xpath(~x"//tns:Podmiot1/tns:DaneIdentyfikacyjne/tns:Nazwa/text()"os)),
-        seller_country_code: xpath(doc, tns_xpath(~x"//tns:Podmiot1/tns:Adres/tns:KodKraju/text()"os)),
-        seller_address: xpath(doc, tns_xpath(~x"//tns:Podmiot1/tns:Adres/tns:AdresL1/text()"os)),
-        seller_email: xpath(doc, tns_xpath(~x"//tns:Podmiot1/tns:DaneKontaktowe/tns:Email/text()"os)),
-        seller_phone: xpath(doc, tns_xpath(~x"//tns:Podmiot1/tns:DaneKontaktowe/tns:Telefon/text()"os)),
-
-        # Invoice data (Fa)
-        currency: xpath(doc, tns_xpath(~x"//tns:Fa/tns:KodWaluty/text()"s)),
-        issue_date: issue_date,
-        sale_date: sale_date,
-        invoice_identifier: xpath(doc, tns_xpath(~x"//tns:Fa/tns:P_2/text()"s)),
-        total_amount: xpath(doc, tns_xpath(~x"//tns:Fa/tns:P_15/text()"s)),
-        invoice_type: xpath(doc, tns_xpath(~x"//tns:Fa/tns:RodzajFaktury/text()"s)),
-
-        # For correction invoices (KOR, KOR_ZAL, KOR_ROZ), extract the original invoice's KSeF number
-        original_invoice_number:
-          xpath(doc, tns_xpath(~x"//tns:Fa/tns:DaneFaKorygowanej/tns:NrKSeFFaKorygowanej/text()"os)),
-
-        # Payment data (Platnosc)
-        due_date: due_date,
-        payment_method: xpath(doc, tns_xpath(~x"//tns:Fa/tns:Platnosc/tns:FormaPlatnosci/text()"os)),
-        account_number: xpath(doc, tns_xpath(~x"//tns:Fa/tns:Platnosc/tns:RachunekBankowy/tns:NrRB/text()"os)),
-        items_list:
-          xpath(
-            doc,
-            tns_xpath(~x"//tns:Fa/tns:FaWiersz"l),
-            name: tns_xpath(~x"./tns:P_7/text()"os),
-            quantity: tns_xpath(~x"./tns:P_8B/text()"of),
-            price: tns_xpath(~x"./tns:P_9A/text()"of)
-          )
-      }
-      |> trim_values()
+      xml
+      |> SweetXml.parse(namespace_conformant: true)
+      |> xmap(
+        seller_nip: tns_xpath(~x"/Faktura/Podmiot1/DaneIdentyfikacyjne/NIP/text()"os),
+        seller: tns_xpath(~x"/Faktura/Podmiot1/DaneIdentyfikacyjne/Nazwa/text()"os),
+        seller_display_name: tns_xpath(~x"/Faktura/Podmiot1/DaneIdentyfikacyjne/Nazwa/text()"os),
+        seller_country_code: tns_xpath(~x"/Faktura/Podmiot1/Adres/KodKraju/text()"os),
+        seller_address: tns_xpath(~x"/Faktura/Podmiot1/Adres/AdresL1/text()"os),
+        seller_email: tns_xpath(~x"/Faktura/Podmiot1/DaneKontaktowe/Email/text()"os),
+        seller_phone: tns_xpath(~x"/Faktura/Podmiot1/DaneKontaktowe/Telefon/text()"os),
+        currency: tns_xpath(~x"/Faktura/Fa/KodWaluty/text()"s),
+        issue_date: tns_xpath(~x"/Faktura/Fa/P_1/text()"s),
+        sale_date: tns_xpath(~x"/Faktura/Fa/P_6/text()"os),
+        invoice_identifier: tns_xpath(~x"/Faktura/Fa/P_2/text()"s),
+        total_amount: tns_xpath(~x"/Faktura/Fa/P_15/text()"s),
+        invoice_type: tns_xpath(~x"/Faktura/Fa/RodzajFaktury/text()"s),
+        original_invoice_number: tns_xpath(~x"/Faktura/Fa/DaneFaKorygowanej/NrKSeFFaKorygowanej/text()"os),
+        due_date: tns_xpath(~x"/Faktura/Fa/Platnosc/TerminPlatnosci/Termin/text()"os),
+        payment_method: tns_xpath(~x"/Faktura/Fa/Platnosc/FormaPlatnosci/text()"os),
+        account_number: tns_xpath(~x"/Faktura/Fa/Platnosc/RachunekBankowy/NrRB/text()"os),
+        items_list: [
+          tns_xpath(~x"/Faktura/Fa/FaWiersz"l),
+          name: tns_xpath(~x"./P_7/text()"os),
+          quantity: tns_xpath(~x"./P_8B/text()"of),
+          price: tns_xpath(~x"./P_9A/text()"of)
+        ]
+      )
+      |> trim_fields()
+      |> Map.update!(:issue_date, &parse_date/1)
+      |> Map.update!(:sale_date, &parse_date/1)
+      |> Map.update!(:due_date, &parse_date/1)
       |> Map.update!(:total_amount, &parse_decimal/1)
       |> Map.update!(:invoice_type, &parse_invoice_type/1)
-      |> Map.update!(:payment_method, &parse_forma_platnosci/1)
-      |> reject_nil_and_empty_values()
+      |> Map.update!(:payment_method, &parse_payment_method/1)
+
+    attrs =
+      attrs
+      |> Map.update!(:sale_date, fn
+        nil -> attrs.issue_date
+        date -> date
+      end)
+      |> Map.update!(:due_date, fn
+        nil -> attrs.issue_date
+        date -> date
+      end)
 
     {:ok, attrs}
   rescue
-    e -> {:error, e}
+    e -> {:error, Exception.format(:error, e, __STACKTRACE__)}
   catch
     :exit, reason -> {:error, {:exit, reason}}
   end
 
+  defp tns_xpath(xpath), do: add_namespace(xpath, "", @fa3_namespace)
+
   defp parse_date(nil), do: nil
-  defp parse_date(""), do: nil
+  defp parse_date(date), do: Date.from_iso8601!(date)
 
-  defp parse_date(date_string) do
-    date_string
-    |> String.trim()
-    |> Date.from_iso8601()
-    |> case do
-      {:ok, date} -> date
-      {:error, _} -> nil
-    end
-  end
+  defp parse_decimal(nil), do: nil
+  defp parse_decimal(amount), do: Decimal.new(amount)
 
-  defp parse_decimal(amount_string) do
-    case Decimal.parse(amount_string) do
-      {decimal, ""} -> decimal
-      _ -> raise "Invalid decimal format: #{amount_string}"
-    end
-  end
+  defp parse_invoice_type("VAT"), do: :vat
+  defp parse_invoice_type("KOR"), do: :kor
+  defp parse_invoice_type("ZAL"), do: :zal
+  defp parse_invoice_type("ROZ"), do: :roz
+  defp parse_invoice_type("UPR"), do: :upr
+  defp parse_invoice_type("KOR_ZAL"), do: :kor_zal
+  defp parse_invoice_type("KOR_ROZ"), do: :kor_roz
+  defp parse_invoice_type(_), do: raise("Unknown invoice type")
 
-  defp parse_invoice_type(type_string) do
-    case type_string do
-      "VAT" -> :vat
-      "KOR" -> :kor
-      "ZAL" -> :zal
-      "ROZ" -> :roz
-      "UPR" -> :upr
-      "KOR_ZAL" -> :kor_zal
-      "KOR_ROZ" -> :kor_roz
-      _ -> raise "Unknown invoice type: #{type_string}"
-    end
-  end
+  defp parse_payment_method(nil), do: nil
+  defp parse_payment_method("1"), do: :cash
+  defp parse_payment_method("2"), do: :card
+  defp parse_payment_method("3"), do: :voucher
+  defp parse_payment_method("4"), do: :check
+  defp parse_payment_method("5"), do: :loan
+  defp parse_payment_method("6"), do: :bank_transfer
+  defp parse_payment_method("7"), do: :mobile
+  defp parse_payment_method(_), do: raise("Unknown payment method")
 
-  defp parse_forma_platnosci(code) do
-    case code do
-      "1" -> :cash
-      "2" -> :card
-      "3" -> :voucher
-      "4" -> :check
-      "5" -> :loan
-      "6" -> :bank_transfer
-      "7" -> :mobile
-      _ -> nil
-    end
-  end
-
-  defp tns_xpath(xpath) do
-    add_namespace(xpath, "tns", @fa3_namespace)
-  end
-
-  defp trim_values(%{} = map) do
+  defp trim_fields(map) do
     Map.new(map, fn
-      {k, v} when is_binary(v) -> {k, String.trim(v)}
-      {k, v} when is_list(v) -> {k, Enum.map(v, &trim_values/1)}
-      {k, v} -> {k, v}
-    end)
-  end
+      {k, ""} ->
+        {k, nil}
 
-  defp reject_nil_and_empty_values(%{} = map) do
-    Map.reject(map, fn {_k, v} -> is_nil(v) or v == "" end)
+      {k, v} when is_binary(v) ->
+        case String.trim(v) do
+          "" -> {k, nil}
+          trimmed -> {k, trimmed}
+        end
+
+      {k, v} when is_list(v) ->
+        {k, Enum.map(v, &trim_fields/1)}
+
+      {k, v} ->
+        {k, v}
+    end)
   end
 end
