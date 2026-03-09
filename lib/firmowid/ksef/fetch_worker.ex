@@ -110,13 +110,13 @@ defmodule Firmowid.Ksef.FetchWorker do
 
     invoices = Enum.filter(files, fn {name, _} -> String.ends_with?(name, ".xml") end)
 
-    create_cost_invoices_from_package(metadata, invoices)
+    result = create_cost_invoices_from_package(metadata, invoices)
 
     if package["isTruncated"] do
       schedule_next_fetch(package["lastPermanentStorageDate"])
     end
 
-    {:ok, length(invoices)}
+    result
   end
 
   defp download_and_decrypt_parts!(parts, key, iv) do
@@ -213,10 +213,21 @@ defmodule Firmowid.Ksef.FetchWorker do
         "rejected=#{inspect(Enum.map(rejected_invoices, &elem(&1, 0)))}"
     )
 
-    Enum.each(downloaded_invoices, fn {ksef_number, xml_content} ->
+    downloaded_invoices
+    |> Enum.map(fn {ksef_number, xml_content} ->
       metadata = Map.fetch!(metadata_by_ksef_number, ksef_number)
 
       create_cost_invoice_from_xml(ksef_number, xml_content, metadata)
+    end)
+    |> accumulate_errors()
+  end
+
+  defp accumulate_errors(results) do
+    Enum.reduce(results, :ok, fn
+      :ok, acc -> acc
+      {:ok, _}, acc -> acc
+      {:error, error}, :ok -> {:error, [error]}
+      {:error, error}, {:error, errors} -> {:error, [error | errors]}
     end)
   end
 
@@ -236,14 +247,15 @@ defmodule Firmowid.Ksef.FetchWorker do
           Logger.info("Creating cost invoice #{ksef_number} from #{ksef_number}.xml")
 
           try do
+            # CostInvoice.create_cost_invoice/1 doesn't return result tuple. It raises on failure
             attrs
             |> Map.put(:blob_id, blob.id)
             |> CostInvoices.create_cost_invoice()
-          rescue
-            error ->
-              Logger.error("Failed to create cost invoice from XML #{ksef_number}.xml: #{inspect(error)}")
 
-              # on failure, clean up dangling blob from DB and S3
+            :ok
+          rescue
+            # on failure, clean up dangling blob from DB and S3
+            error ->
               Blobs.delete_blob(blob.id)
 
               CostInvoices.broadcast_cost_invoice_failed_to_process(
@@ -252,6 +264,8 @@ defmodule Firmowid.Ksef.FetchWorker do
               )
 
               ErrorTracker.report(error, __STACKTRACE__)
+
+              {:error, "Failed to create cost invoice from XML #{ksef_number}.xml: #{inspect(error)}"}
           end
 
         {:error,
@@ -259,15 +273,15 @@ defmodule Firmowid.Ksef.FetchWorker do
            changes: %{blob_checksum: _blob_checksum},
            errors: [blob_checksum: {"has already been taken", _}]
          }} ->
-          Logger.error("Cost invoice with identical blob already exists for #{ksef_number}.xml, skipping creation")
+          Logger.error("Duplicate blob detected for #{ksef_number}.xml, skipping invoice creation")
+          :ok
 
         {:error, reason} ->
-          Logger.error("Failed to upload cost invoice: #{inspect(reason)}")
+          {:error, "Failed to upload cost invoice from XML #{ksef_number}.xml: #{inspect(reason)}"}
       end
     else
       {:error, reason} ->
-        Logger.error("Failed to create cost invoice from XML #{ksef_number}.xml: #{inspect(reason)}")
-        :error
+        {:error, "Failed to create cost invoice from XML #{ksef_number}.xml: #{inspect(reason)}"}
     end
   end
 
