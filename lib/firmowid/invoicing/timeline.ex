@@ -6,6 +6,7 @@ defmodule Firmowid.Invoicing.Timeline do
   """
 
   alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.Ksef
   alias Firmowid.Ksef.SubmissionInfo
   alias Firmowid.SalesInvoices.SalesInvoice
 
@@ -131,7 +132,34 @@ defmodule Firmowid.Invoicing.Timeline do
           }
         end)
 
-      correction_events ++ events
+      org_id = Firmowid.Repo.get_org_id()
+
+      submission_events =
+        corrections
+        |> Task.async_stream(
+          fn correction ->
+            Firmowid.Repo.put_org_id(org_id)
+            Ksef.get_submission_info(correction)
+          end,
+          ordered: false
+        )
+        |> Enum.flat_map(fn
+          {:ok, submission_info} -> maybe_add_submission_events([], submission_info)
+          {:exit, reason} -> raise "Failed to fetch submission info for correction: #{inspect(reason)}"
+        end)
+        |> Enum.map(fn event ->
+          event_type =
+            case event.event do
+              :submitted -> :correction_submitted
+              :confirmed -> :correction_confirmed
+              :failed -> :correction_failed
+              _ -> raise "Unexpected event type: #{event.event}"
+            end
+
+          %{event | event: event_type}
+        end)
+
+      correction_events ++ submission_events ++ events
     else
       events
     end

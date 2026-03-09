@@ -44,41 +44,53 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceTimeline do
         </.button>
       </div>
 
-      <div :if={@events != []} class="relative">
-        <div class="absolute left-[5px] top-[calc(1rem+5px)] bottom-[calc(1rem+5px)] w-0.5 bg-grey-200">
-        </div>
+      <%= if Enum.empty?(@events) do %>
+        <p class="text-grey-700 py-4">
+          Brak historii dla tego dokumentu.
+        </p>
+      <% else %>
+        <div class="relative">
+          <div class="absolute left-[5px] top-4 bottom-7 w-0.5 bg-grey-200"></div>
 
-        <div class="flex flex-col gap-6">
-          <div :for={event <- @events} class="relative flex flex-row gap-4 items-start">
-            <div class={[
-              "relative z-10 w-3 h-3 rounded-full shrink-0 mt-1",
-              event_dot_color(event.event)
-            ]}>
-            </div>
-
-            <div class="flex flex-col gap-1">
-              <div class="flex flex-row gap-2 items-baseline">
-                <span class={[
-                  "text-sm uppercase font-bold",
-                  event.event == :failed && "text-redText"
-                ]}>
-                  {event_label(event.event)}
-                </span>
-                <span class="text-sm text-darkGrey">
-                  {format_datetime(event.occurred_at)}
-                </span>
-              </div>
-              <span class="text-sm text-darkGrey">
-                <.event_details event={event} invoice_type={@invoice_type} />
-              </span>
-            </div>
+          <div class="flex flex-col gap-6">
+            <.event :for={event <- @events} event={event} invoice_type={@invoice_type} />
           </div>
         </div>
+      <% end %>
+    </div>
+    """
+  end
+
+  attr :event, :map, required: true
+
+  slot :label, required: true
+  slot :content, required: false
+
+  defp timeline_item(assigns) do
+    ~H"""
+    <div class="relative flex flex-row gap-4 items-start">
+      <div class={[
+        "relative z-10 w-3 h-3 rounded-full shrink-0 mt-1",
+        event_dot_color(@event.event)
+      ]}>
       </div>
 
-      <p :if={@events == []} class="text-darkGrey py-4">
-        Brak historii dla tego dokumentu.
-      </p>
+      <div class="flex flex-col gap-1">
+        <div class="flex flex-row gap-2 items-baseline">
+          <span class={[
+            "text-sm/snug uppercase font-bold",
+            @event.event in [:failed, :correction_failed] && "text-redText"
+          ]}>
+            {render_slot(@label)}
+          </span>
+          <span class="text-sm/snug text-grey-700">
+            {format_datetime(@event.occurred_at)}
+          </span>
+        </div>
+        <span class="text-sm/snug text-grey-700">
+          {render_slot(@content)}
+        </span>
+      </div>
     </div>
     """
   end
@@ -86,88 +98,148 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceTimeline do
   attr :event, :map, required: true
   attr :invoice_type, :atom, required: true
 
-  defp event_details(%{event: %{event: :created}} = assigns) do
+  defp event(%{event: %{event: :created}} = assigns) do
     ~H"""
-    <span class="text-sm text-darkGrey">
-      nadano numer fakturze: {@event.metadata.invoice_number}
-    </span>
+    <.timeline_item event={@event}>
+      <:label>
+        Utworzenie dokumentu
+      </:label>
+      <:content>
+        numer dokumentu:
+        <span class="font-bold text-turquoise-700">{@event.metadata.invoice_number}</span>
+      </:content>
+    </.timeline_item>
     """
   end
 
-  defp event_details(%{event: %{event: :submitted}} = assigns) do
+  defp event(%{event: %{event: :submitted}} = assigns) do
     ~H"""
-    <%= if @event.metadata.session_reference do %>
-      nadano numer KSeF: {@event.metadata.session_reference}
-    <% end %>
+    <.timeline_item event={@event}>
+      <:label>
+        Wysłano do KSeF
+      </:label>
+    </.timeline_item>
     """
   end
 
-  defp event_details(%{event: %{event: :confirmed}} = assigns) do
+  defp event(%{event: %{event: :confirmed}} = assigns) do
     ~H"""
-    {@event.metadata.ksef_number}
+    <.timeline_item event={@event}>
+      <:label>
+        Potwierdzono przez KSeF
+      </:label>
+      <:content>
+        nadano numer KSeF:
+        <span class="font-bold text-turquoise-700">{@event.metadata.ksef_number}</span>
+      </:content>
+    </.timeline_item>
     """
   end
 
-  defp event_details(%{event: %{event: :failed}} = assigns) do
+  defp event(%{event: %{event: :failed}} = assigns) do
     ~H"""
-    <span>
-      Zespół odpowiedzialny za integrację z KSeF został
-      powiadomiony.
-    </span>
-    <span>
-      Wysyłanie dokumentu zostanie automatycznie ponowione
-      w ciągu 24 godzin.
-    </span>
+    <.timeline_item event={@event}>
+      <:label>
+        Błąd wysyłki
+      </:label>
+      <:content>
+        Zespół odpowiedzialny za integrację z KSeF został powiadomiony.
+        Wysyłanie dokumentu zostanie automatycznie ponowione w ciągu 24 godzin.
+      </:content>
+    </.timeline_item>
     """
   end
 
-  defp event_details(%{event: %{event: :downloaded}} = assigns) do
+  defp event(%{event: %{event: :downloaded}} = assigns) do
     ~H"""
-    <%= if @event.metadata.ksef_number do %>
-      {@event.metadata.ksef_number}
-    <% end %>
+    <.timeline_item event={@event}>
+      <:label>
+        Pobrano z KSeF
+      </:label>
+      <:content>
+        {@event.metadata.ksef_number}
+      </:content>
+    </.timeline_item>
     """
   end
 
-  defp event_details(%{event: %{event: :correction_issued}, invoice_type: :sales} = assigns) do
+  defp event(%{event: %{event: :correction_issued}, invoice_type: :sales} = assigns) do
     ~H"""
-    <.link
-      navigate={invoice_path(@event.metadata.invoice_id, :sales)}
-      class="text-sm text-blueText hover:underline"
-    >
-      wystawiono korektę nr {@event.metadata.invoice_number}
-    </.link>
+    <.timeline_item event={@event}>
+      <:label>
+        Utworzenie faktury korygującej
+      </:label>
+      <:content>
+        numer dokumentu:
+        <span class="font-bold text-turquoise-700">{@event.metadata.invoice_number}</span>
+      </:content>
+    </.timeline_item>
     """
   end
 
-  defp event_details(%{event: %{event: :correction_issued}, invoice_type: :cost} = assigns) do
+  defp event(%{event: %{event: :correction_issued}, invoice_type: :cost} = assigns) do
     ~H"""
-    <.link
-      navigate={invoice_path(@event.metadata.invoice_id, :cost)}
-      class="text-sm text-blueText hover:underline"
-    >
-      {@event.metadata.invoice_identifier}
-    </.link>
+    <.timeline_item event={@event}>
+      <:label>
+        Wystawienie faktury korygującej
+      </:label>
+      <:content>
+        {@event.metadata.invoice_identifier}
+      </:content>
+    </.timeline_item>
     """
   end
 
-  defp event_details(assigns) do
+  defp event(%{event: %{event: :correction_submitted}} = assigns) do
     ~H"""
+    <.timeline_item event={@event}>
+      <:label>
+        Wysłano korektę do KSeF
+      </:label>
+    </.timeline_item>
     """
   end
 
-  defp event_label(:created), do: "Utworzenie dokumentu"
-  defp event_label(:submitted), do: "Wysłano do KSeF"
-  defp event_label(:confirmed), do: "Potwierdzono przez KSeF"
-  defp event_label(:failed), do: "Błąd wysyłki"
-  defp event_label(:downloaded), do: "Pobrano z KSeF"
-  defp event_label(:correction_issued), do: "Wystawienie faktury korygującej"
-  defp event_label(_), do: "Zdarzenie"
+  defp event(%{event: %{event: :correction_confirmed}} = assigns) do
+    ~H"""
+    <.timeline_item event={@event}>
+      <:label>
+        Korekta potwierdzona przez KSeF
+      </:label>
+      <:content>
+        nadano numer KSeF:
+        <span class="font-bold text-turquoise-700">{@event.metadata.ksef_number}</span>
+      </:content>
+    </.timeline_item>
+    """
+  end
+
+  defp event(%{event: %{event: :correction_failed}} = assigns) do
+    ~H"""
+    <.timeline_item event={@event}>
+      <:label>
+        Błąd wysyłki korekty
+      </:label>
+      <:content>
+        Zespół odpowiedzialny za integrację z KSeF został powiadomiony.
+        Wysyłanie dokumentu zostanie automatycznie ponowione w ciągu 24 godzin.
+      </:content>
+    </.timeline_item>
+    """
+  end
+
+  defp event(assigns) do
+    ~H"""
+    """
+  end
 
   defp event_dot_color(:confirmed), do: "bg-greenText"
   defp event_dot_color(:failed), do: "bg-redText"
   defp event_dot_color(:submitted), do: "bg-blueText"
   defp event_dot_color(:downloaded), do: "bg-greenText"
+  defp event_dot_color(:correction_confirmed), do: "bg-greenText"
+  defp event_dot_color(:correction_failed), do: "bg-redText"
+  defp event_dot_color(:correction_submitted), do: "bg-blueText"
   defp event_dot_color(_), do: "bg-grey-200"
 
   defp format_datetime(nil), do: ""
@@ -179,7 +251,4 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceTimeline do
   defp format_datetime(%NaiveDateTime{} = dt) do
     Calendar.strftime(dt, "%d.%m.%Y")
   end
-
-  defp invoice_path(invoice_id, :sales), do: ~p"/sprzedazowe/#{invoice_id}"
-  defp invoice_path(invoice_id, :cost), do: ~p"/kosztowe/#{invoice_id}"
 end
