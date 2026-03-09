@@ -5,6 +5,8 @@ defmodule Firmowid.Ksef.InvoiceParser do
 
   import SweetXml
 
+  @fa3_namespace "http://crd.gov.pl/wzor/2025/06/25/13775/"
+
   @doc """
   Parses FA(3) XML binary and returns a map of invoice attributes.
 
@@ -19,39 +21,59 @@ defmodule Firmowid.Ksef.InvoiceParser do
   """
   @spec parse(binary()) :: {:ok, map()} | {:error, term()}
   def parse(xml) when is_binary(xml) do
-    doc = SweetXml.parse(xml)
+    doc =
+      SweetXml.parse(xml,
+        namespace_conformant: true
+        # todo: add xsd validation
+        # validation: :schema,
+        # schemaLocation: [tns: "http://crd.gov.pl/wzor/2025/06/25/13775/"]
+      )
 
-    issue_date = doc |> xpath(~x"//Fa/P_1/text()"os) |> parse_date()
+    issue_date = doc |> xpath(tns_xpath(~x"//tns:Fa/tns:P_1/text()"s)) |> parse_date()
     # P_6 is sale date - if not present, use issue_date
-    sale_date = doc |> xpath(~x"//Fa/P_6/text()"os) |> parse_date() || issue_date
-    due_date = doc |> xpath(~x"//Fa/Platnosc/TerminPlatnosci/Termin/text()"os) |> parse_date() || issue_date
+    sale_date = doc |> xpath(tns_xpath(~x"//tns:Fa/tns:P_6/text()"os)) |> parse_date() || issue_date
+
+    due_date =
+      doc
+      |> xpath(tns_xpath(~x"//tns:Fa/tns:Platnosc/tns:TerminPlatnosci/tns:Termin/text()"os))
+      |> parse_date() ||
+        issue_date
 
     attrs =
       %{
         # Seller info (Podmiot1)
-        seller_nip: xpath(doc, ~x"//Podmiot1/DaneIdentyfikacyjne/NIP/text()"os),
-        seller: xpath(doc, ~x"//Podmiot1/DaneIdentyfikacyjne/Nazwa/text()"os),
-        seller_display_name: xpath(doc, ~x"//Podmiot1/DaneIdentyfikacyjne/Nazwa/text()"os),
-        seller_country_code: xpath(doc, ~x"//Podmiot1/Adres/KodKraju/text()"os),
-        seller_address: xpath(doc, ~x"//Podmiot1/Adres/AdresL1/text()"os),
-        seller_email: xpath(doc, ~x"//Podmiot1/DaneKontaktowe/Email/text()"os),
-        seller_phone: xpath(doc, ~x"//Podmiot1/DaneKontaktowe/Telefon/text()"os),
+        seller_nip: xpath(doc, tns_xpath(~x"//tns:Podmiot1/tns:DaneIdentyfikacyjne/tns:NIP/text()"os)),
+        seller: xpath(doc, tns_xpath(~x"//tns:Podmiot1/tns:DaneIdentyfikacyjne/tns:Nazwa/text()"os)),
+        seller_display_name: xpath(doc, tns_xpath(~x"//tns:Podmiot1/tns:DaneIdentyfikacyjne/tns:Nazwa/text()"os)),
+        seller_country_code: xpath(doc, tns_xpath(~x"//tns:Podmiot1/tns:Adres/tns:KodKraju/text()"os)),
+        seller_address: xpath(doc, tns_xpath(~x"//tns:Podmiot1/tns:Adres/tns:AdresL1/text()"os)),
+        seller_email: xpath(doc, tns_xpath(~x"//tns:Podmiot1/tns:DaneKontaktowe/tns:Email/text()"os)),
+        seller_phone: xpath(doc, tns_xpath(~x"//tns:Podmiot1/tns:DaneKontaktowe/tns:Telefon/text()"os)),
 
         # Invoice data (Fa)
-        currency: xpath(doc, ~x"//Fa/KodWaluty/text()"os),
+        currency: xpath(doc, tns_xpath(~x"//tns:Fa/tns:KodWaluty/text()"s)),
         issue_date: issue_date,
         sale_date: sale_date,
-        invoice_identifier: xpath(doc, ~x"//Fa/P_2/text()"os),
-        total_amount: xpath(doc, ~x"//Fa/P_15/text()"os),
-        invoice_type: xpath(doc, ~x"//Fa/RodzajFaktury/text()"os),
+        invoice_identifier: xpath(doc, tns_xpath(~x"//tns:Fa/tns:P_2/text()"s)),
+        total_amount: xpath(doc, tns_xpath(~x"//tns:Fa/tns:P_15/text()"s)),
+        invoice_type: xpath(doc, tns_xpath(~x"//tns:Fa/tns:RodzajFaktury/text()"s)),
 
         # For correction invoices (KOR, KOR_ZAL, KOR_ROZ), extract the original invoice's KSeF number
-        original_invoice_number: xpath(doc, ~x"//Fa/DaneFaKorygowanej/NrKSeFFaKorygowanej/text()"os),
+        original_invoice_number:
+          xpath(doc, tns_xpath(~x"//tns:Fa/tns:DaneFaKorygowanej/tns:NrKSeFFaKorygowanej/text()"os)),
 
         # Payment data (Platnosc)
         due_date: due_date,
-        payment_method: xpath(doc, ~x"//Fa/Platnosc/FormaPlatnosci/text()"os),
-        account_number: xpath(doc, ~x"//Fa/Platnosc/RachunekBankowy/NrRB/text()"os)
+        payment_method: xpath(doc, tns_xpath(~x"//tns:Fa/tns:Platnosc/tns:FormaPlatnosci/text()"os)),
+        account_number: xpath(doc, tns_xpath(~x"//tns:Fa/tns:Platnosc/tns:RachunekBankowy/tns:NrRB/text()"os)),
+        items_list:
+          xpath(
+            doc,
+            tns_xpath(~x"//tns:Fa/tns:FaWiersz"l),
+            name: tns_xpath(~x"./tns:P_7/text()"os),
+            quantity: tns_xpath(~x"./tns:P_8B/text()"of),
+            price: tns_xpath(~x"./tns:P_9A/text()"of)
+          )
       }
       |> trim_values()
       |> Map.update!(:total_amount, &parse_decimal/1)
@@ -110,6 +132,10 @@ defmodule Firmowid.Ksef.InvoiceParser do
       "7" -> :mobile
       _ -> nil
     end
+  end
+
+  defp tns_xpath(xpath) do
+    add_namespace(xpath, "tns", @fa3_namespace)
   end
 
   defp trim_values(%{} = map) do
