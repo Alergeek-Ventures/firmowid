@@ -443,7 +443,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       :individual ->
         # Clear company-specific fields for individuals
         buyer
-        |> put_change(:buyer_id, "")
+        |> put_change(:buyer_id, nil)
         |> put_change(:buyer_full_name, nil)
 
       :company ->
