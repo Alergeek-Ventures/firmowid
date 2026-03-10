@@ -136,10 +136,10 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
         class={
           case column do
             "issue_date" -> "w-36"
-            "booking_date" -> "w-36"
+            "booking_date" -> "w-44"
             "issue_or_value_date" -> "w-36"
             "due_date" -> "w-44"
-            "value_date" -> "w-44"
+            "value_date" -> "w-36"
             "due_or_booking_date" -> "w-44"
             "status" -> "w-40"
             "amount" -> "w-44"
@@ -158,21 +158,12 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
             class={
               [
                 "pt-2 font-normal text-left text-darkGrey text-xs uppercase pb-2 h-[60px] align-bottom",
-                column == "party" && "pl-5",
-                column == "amount" && "hidden"
+                column == "party" && "pl-5"
               ]
               |> Enum.join(" ")
             }
           >
             <.column_label column={column} />
-          </th>
-          <th
-            id="header-amount-standalone"
-            phx-hook="ScrollStyle"
-            class="pt-4"
-            data-classes="border-b-4 border-solid border-darkGrey"
-            data-scroll-offset="90"
-          >
           </th>
         </tr>
       </thead>
