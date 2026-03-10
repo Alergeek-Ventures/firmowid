@@ -97,6 +97,23 @@ defmodule Firmowid.CostInvoices do
     |> Repo.preload(:transactions)
   end
 
+  @doc """
+  Lists cost invoices whose sale falls within the given date range.
+
+  `sale_date` is NOT NULL at the DB level for cost invoices.
+  """
+  @spec list_cost_invoices_by_sale_date(Date.t(), Date.t()) :: [CostInvoice.t()]
+  def list_cost_invoices_by_sale_date(from, to) do
+    query =
+      from i in CostInvoice,
+        where: i.sale_date >= ^from and i.sale_date <= ^to,
+        order_by: [desc: i.sale_date]
+
+    query
+    |> Repo.all()
+    |> Repo.preload(:transactions)
+  end
+
   def list_invoices_in_date_range(from, to) do
     CostInvoice
     |> where(

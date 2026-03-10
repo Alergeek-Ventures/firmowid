@@ -283,4 +283,29 @@ defmodule Firmowid.Finances do
     |> where([t], t.skip_invoicing == true)
     |> Repo.all()
   end
+
+  @doc """
+  Lists transactions that are marked as skip_invoicing and are NOT matched
+  to any invoice (neither sales nor cost). This prevents double-counting
+  in the analysis: if a transaction is matched to an invoice, only the
+  invoice amount is counted.
+  """
+  @spec list_skipped_unmatched_transactions(Date.t(), Date.t()) :: [Transaction.t()]
+  def list_skipped_unmatched_transactions(date_from, date_to) do
+    sales_match_query =
+      from sit in SalesInvoicesTransactions,
+        where: sit.transaction_id == parent_as(:transaction).id
+
+    cost_match_query =
+      from cit in CostInvoicesTransactions,
+        where: cit.transaction_id == parent_as(:transaction).id
+
+    Transaction
+    |> from(as: :transaction)
+    |> where([t], t.booking_date >= ^date_from and t.booking_date <= ^date_to)
+    |> where([t], t.skip_invoicing == true)
+    |> where([t], not exists(subquery(sales_match_query)))
+    |> where([t], not exists(subquery(cost_match_query)))
+    |> Repo.all()
+  end
 end

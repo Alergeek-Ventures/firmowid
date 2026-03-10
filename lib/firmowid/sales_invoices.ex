@@ -150,6 +150,18 @@ defmodule Firmowid.SalesInvoices do
     |> list_sales_invoices()
   end
 
+  @doc """
+  Lists sales invoices whose sale falls within the given date range.
+  Used by the analysis dashboard so invoices appear in the month they were sold.
+  """
+  @spec list_sales_invoices_by_sale_date(Date.t(), Date.t()) :: [SalesInvoice.t()]
+  def list_sales_invoices_by_sale_date(from, to) do
+    SalesInvoice
+    |> where([d], d.sale_date >= ^from and d.sale_date <= ^to)
+    |> order_by(desc: :sale_date)
+    |> list_sales_invoices()
+  end
+
   def list_sales_invoices(base_query \\ SalesInvoice) do
     base_query
     |> preload([:sales_invoice_items, :transactions])

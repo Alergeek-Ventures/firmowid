@@ -3,17 +3,19 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Analysis
-  alias Firmowid.Invoicing
 
   @impl true
   def mount(_params, _session, socket) do
     Bodyguard.permit!(Analysis, :read, socket.assigns.current_user)
 
     active_months =
-      Invoicing.get_all_months_with_invoicing_entries() ++
+      Analysis.get_months_with_entries() ++
         [Date.utc_today()]
 
-    socket = assign(socket, :active_months, active_months)
+    socket =
+      socket
+      |> assign(:active_months, active_months)
+      |> assign(:expanded_section, :income)
 
     {:ok, assign(socket, page_title: "Analiza finansowa")}
   end
@@ -26,11 +28,10 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
         date_string -> Date.from_iso8601!(date_string)
       end
 
-    tag_definition_id = Map.get(params, "tag_definition_id", :all)
-
     socket =
       socket
-      |> assign(:params, %{month: month, tag_definition_id: tag_definition_id})
+      |> assign(:params, %{month: month})
+      |> assign(:expanded_section, :income)
       |> load_data()
 
     {:noreply, socket}
@@ -38,35 +39,41 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
 
   @impl true
   def handle_event("change-month", %{"month" => month}, socket) do
-    {:noreply, update_param(socket, :month, month)}
+    {:noreply, push_patch(socket, to: ~p"/analiza?month=#{month}")}
   end
 
   @impl true
-  def handle_event("change-tag", %{"tag_definition_id" => tag_definition_id}, socket) do
-    {:noreply, update_param(socket, :tag_definition_id, tag_definition_id)}
+  def handle_event("toggle-section", %{"section" => section}, socket) do
+    section = String.to_existing_atom(section)
+    current = socket.assigns.expanded_section
+
+    expanded =
+      case section do
+        ^current -> nil
+        other -> other
+      end
+
+    {:noreply, assign(socket, :expanded_section, expanded)}
   end
 
-  defp update_param(socket, key, value) do
-    params = Map.put(socket.assigns.params, key, value)
-
-    url_params = %{
-      month: params.month,
-      tag_definition_id: params.tag_definition_id
-    }
-
-    socket =
-      push_patch(socket, to: ~p"/analiza?month=#{url_params.month}&tag_definition_id=#{url_params.tag_definition_id}")
-
-    socket
+  defp entries_for_section(%{expanded_section: :income} = assigns) do
+    assigns.sales_invoices ++
+      Enum.filter(assigns.transactions, &Decimal.positive?(&1.transaction_amount))
   end
+
+  defp entries_for_section(%{expanded_section: :expenses} = assigns) do
+    assigns.cost_invoices ++
+      Enum.filter(assigns.transactions, &Decimal.negative?(&1.transaction_amount))
+  end
+
+  defp entries_for_section(_assigns), do: []
 
   defp load_data(socket) do
     month = socket.assigns.params.month
-    tag_definition_id = socket.assigns.params.tag_definition_id
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
 
-    totals = Analysis.get_organization_totals(date_range_from, date_range_to, tag_definition_id)
+    totals = Analysis.get_organization_totals(date_range_from, date_range_to, nil)
 
     socket
     |> assign(:total_income, totals.total_income)
@@ -75,6 +82,5 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
     |> assign(:transactions, totals.transactions)
     |> assign(:sales_invoices, totals.sales_invoices)
     |> assign(:cost_invoices, totals.cost_invoices)
-    |> assign(:tag_definitions, Analysis.list_tag_definitions())
   end
 end

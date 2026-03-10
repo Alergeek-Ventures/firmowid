@@ -7,10 +7,15 @@ defmodule Firmowid.Analysis do
   alias Firmowid.Analysis.EntityTag
   alias Firmowid.Analysis.TagDefinition
   alias Firmowid.CostInvoices
+  alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.CostInvoices.CostInvoicesTransactions
   alias Firmowid.Currencies
   alias Firmowid.Finances
+  alias Firmowid.Finances.Transaction
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
+  alias Firmowid.SalesInvoices.SalesInvoice
+  alias Firmowid.SalesInvoices.SalesInvoicesTransactions
 
   def authorize(:read, %{role: :admin}, _), do: true
   def authorize(:create, %{role: :admin}, _), do: true
@@ -104,10 +109,12 @@ defmodule Firmowid.Analysis do
   # Organization totals calculation
 
   def get_organization_totals(date_from, date_to, _tag_id) do
-    # get all invoices and transactions for the specified date range
-    sales_invoices = SalesInvoices.list_sales_invoices(date_from, date_to)
-    cost_invoices = CostInvoices.list_cost_invoices(date_from, date_to)
-    transactions = Finances.list_transactions_with_skipped_invoicing(date_from, date_to)
+    # Invoices are assigned to the month of sale (not issue).
+    # Only truly standalone transactions (skipped AND not matched) are included
+    # to prevent double-counting with their matched invoices.
+    sales_invoices = SalesInvoices.list_sales_invoices_by_sale_date(date_from, date_to)
+    cost_invoices = CostInvoices.list_cost_invoices_by_sale_date(date_from, date_to)
+    transactions = Finances.list_skipped_unmatched_transactions(date_from, date_to)
 
     %{income: income, expenses: expenses} =
       Enum.reduce(
@@ -135,21 +142,72 @@ defmodule Firmowid.Analysis do
     }
   end
 
-  defp get_amount_and_currency(%SalesInvoices.SalesInvoice{} = entity) do
+  @doc """
+  Returns a list of dates (first day of each month) that have analysis-relevant
+  entries. Uses `sale_date` for invoices and `booking_date` for standalone
+  (skipped, unmatched) transactions — consistent with `get_organization_totals/3`.
+  """
+  @spec get_months_with_entries() :: [Date.t()]
+  def get_months_with_entries do
+    sales_match_query =
+      from(sit in SalesInvoicesTransactions,
+        where: sit.transaction_id == parent_as(:transaction).id
+      )
+
+    cost_match_query =
+      from(cit in CostInvoicesTransactions,
+        where: cit.transaction_id == parent_as(:transaction).id
+      )
+
+    # Each branch must select organization_id so the Repo's automatic
+    # organization scoping can filter on the outer subquery.
+    transactions_query =
+      from(t in Transaction,
+        as: :transaction,
+        where: t.skip_invoicing == true,
+        where: not exists(subquery(sales_match_query)),
+        where: not exists(subquery(cost_match_query)),
+        select: %{month: t.booking_date, organization_id: t.organization_id}
+      )
+
+    sales_invoices_query =
+      from(si in SalesInvoice,
+        select: %{month: si.sale_date, organization_id: si.organization_id}
+      )
+
+    cost_invoices_query =
+      from(ci in CostInvoice,
+        select: %{month: ci.sale_date, organization_id: ci.organization_id}
+      )
+
+    union_query =
+      transactions_query
+      |> union(^sales_invoices_query)
+      |> union(^cost_invoices_query)
+
+    from(u in subquery(union_query),
+      select: u.month,
+      distinct: true
+    )
+    |> Repo.all()
+    |> Enum.map(&Date.beginning_of_month/1)
+  end
+
+  defp get_amount_and_currency(%SalesInvoice{} = entity) do
     value =
       entity
-      |> SalesInvoices.SalesInvoice.get_gross_value()
+      |> SalesInvoice.get_gross_value()
       |> Decimal.abs()
 
     {value, entity.currency}
   end
 
-  defp get_amount_and_currency(%CostInvoices.CostInvoice{} = entity) do
+  defp get_amount_and_currency(%CostInvoice{} = entity) do
     value = entity.total_amount |> Decimal.abs() |> Decimal.mult(Decimal.new("-1"))
     {value, entity.currency}
   end
 
-  defp get_amount_and_currency(%Finances.Transaction{} = entity) do
+  defp get_amount_and_currency(%Transaction{} = entity) do
     {entity.transaction_amount, entity.transaction_currency}
   end
 end

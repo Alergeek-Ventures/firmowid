@@ -5,22 +5,7 @@
         <h1 class="text-3xl font-bold text-gray-900">Analiza finansowa</h1>
         <p class="mt-2 text-gray-600">Przegląd przychodów i kosztów organizacji</p>
       </div>
-      <div class="flex gap-4 items-center">
-        <form phx-change="change-tag">
-          <.input
-            type="select"
-            id="tag_selector"
-            name="tag_definition_id"
-            value={@params.tag_definition_id}
-            options={
-              @tag_definitions
-              |> Enum.map(&{&1.name, &1.id})
-            }
-            class="w-48"
-            color="light_grey"
-            size="medium"
-          />
-        </form>
+      <div>
         <.date_picker
           id="month"
           active_months={@active_months}
@@ -32,36 +17,58 @@
   </div>
 
   <div class="grid grid-cols-1 gap-6 sm:grid-cols-3 mb-8">
-    <div class="bg-blueBg border border-blueBg text-blueText rounded-lg p-6">
+    <button
+      phx-click="toggle-section"
+      phx-value-section="income"
+      class={[
+        "rounded-lg p-6 text-left cursor-pointer transition-all duration-200",
+        "bg-blueBg border-2 text-blueText",
+        if(@expanded_section == :income,
+          do: "border-blueText ring-2 ring-blueText/20",
+          else: "border-blueBg hover:border-blueText/50"
+        )
+      ]}
+    >
       <div class="flex items-center">
         <div class="shrink-0">
-          <.icon name="hero-arrow-trending-up" class="h-8 w-8 text-green-600" />
+          <.icon name="hero-arrow-trending-up" class="h-8 w-8 text-blueText" />
         </div>
         <div class="ml-4">
-          <p class="text-sm font-medium text-green-600">Przychody</p>
-          <p class="text-2xl font-bold text-green-900">
+          <p class="text-sm font-medium text-blueText">Przychody</p>
+          <p class="text-2xl font-bold text-blueText">
             {Money.new(:PLN, @total_income)}
           </p>
         </div>
       </div>
-    </div>
+    </button>
 
-    <div class="bg-orangeBg border border-orangeBg text-orangeText rounded-lg p-6">
+    <button
+      phx-click="toggle-section"
+      phx-value-section="expenses"
+      class={[
+        "rounded-lg p-6 text-left cursor-pointer transition-all duration-200",
+        "bg-orangeBg border-2 text-orangeText",
+        if(@expanded_section == :expenses,
+          do: "border-orangeText ring-2 ring-orangeText/20",
+          else: "border-orangeBg hover:border-orangeText/50"
+        )
+      ]}
+    >
       <div class="flex items-center">
         <div class="shrink-0">
-          <.icon name="hero-arrow-trending-down" class="h-8 w-8 text-red-600" />
+          <.icon name="hero-arrow-trending-down" class="h-8 w-8 text-orangeText" />
         </div>
         <div class="ml-4">
-          <p class="text-sm font-medium text-red-600">Koszty</p>
-          <p class="text-2xl font-bold text-red-900">
+          <p class="text-sm font-medium text-orangeText">Koszty</p>
+          <p class="text-2xl font-bold text-orangeText">
             {Money.new(:PLN, @total_expenses)}
           </p>
         </div>
       </div>
-    </div>
+    </button>
 
     <div class={[
-      "border rounded-lg p-6",
+      "border-2 rounded-lg p-6",
       if(Decimal.positive?(@net_profit),
         do: "bg-greenBg border-greenBg text-greenText",
         else: "bg-redBg border-redBg text-redText"
@@ -71,25 +78,19 @@
         <div class="shrink-0">
           <.icon
             name="hero-calculator"
-            class={"h-8 w-8 #{if(Decimal.positive?(@net_profit), do: "text-blue-600", else: "text-gray-600")}"}
+            class={"h-8 w-8 #{if(Decimal.positive?(@net_profit), do: "text-greenText", else: "text-redText")}"}
           />
         </div>
         <div class="ml-4">
           <p class={[
             "text-sm font-medium",
-            if(Decimal.positive?(@net_profit),
-              do: "text-blue-600",
-              else: "text-gray-600"
-            )
+            if(Decimal.positive?(@net_profit), do: "text-greenText", else: "text-redText")
           ]}>
             Zysk netto
           </p>
           <p class={[
             "text-2xl font-bold",
-            if(Decimal.positive?(@net_profit),
-              do: "text-blue-900",
-              else: "text-gray-900"
-            )
+            if(Decimal.positive?(@net_profit), do: "text-greenText", else: "text-redText")
           ]}>
             {Money.new(:PLN, @net_profit)}
           </p>
@@ -98,7 +99,7 @@
     </div>
   </div>
 
-  <div id="chart" class="mx-auto px-4 text-center">
-    donut chart goes here
+  <div :if={@expanded_section} class="mb-8">
+    <FirmowidWeb.AnalysisLive.EntriesTable.table entries={entries_for_section(assigns)} />
   </div>
 </div>
