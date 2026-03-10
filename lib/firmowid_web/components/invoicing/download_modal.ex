@@ -6,13 +6,21 @@ defmodule FirmowidWeb.Components.Invoicing.DownloadModal do
 
   @impl true
   def mount(socket) do
-    socket = assign(socket, skip_scans: true)
+    socket =
+      assign(socket,
+        include_digital: true,
+        include_ksef: false,
+        include_photos: false,
+        include_sales: false
+      )
 
     {:ok, socket}
   end
 
   @impl true
   def render(assigns) do
+    assigns = assign(assigns, :any_selected, any_selected?(assigns))
+
     ~H"""
     <div>
       <button
@@ -25,7 +33,7 @@ defmodule FirmowidWeb.Components.Invoicing.DownloadModal do
             border-greyButtonBg hover:border-darkGrey hover:bg-darkGrey
             hover:text-white border transition-colors"
       >
-        <.icon name="hero-cloud-arrow-down" class="w-6 h-6" />
+        <span aria-hidden="true"><.icon name="hero-cloud-arrow-down" class="size-6" /></span>
         <span class="max-xl:hidden">
           Pobierz
         </span>
@@ -33,33 +41,55 @@ defmodule FirmowidWeb.Components.Invoicing.DownloadModal do
 
       <.modal id="download-modal" on_cancel={hide_modal("download-modal")}>
         <div class="flex flex-col gap-8 p-4">
-          <h3 class="text-lg font-semibold">Pobierz faktury</h3>
-          <p>
+          <h3 class="text-lg font-semibold text-balance">Pobierz faktury</h3>
+          <p class="text-pretty">
             W pliku
             <span class="inline-flex items-center gap-1 bg-lightGreyBg border border-black rounded px-2 py-1">
-              <.icon name="hero-document-solid" class="w-4 h-4" />
+              <span aria-hidden="true"><.icon name="hero-document-solid" class="size-4" /></span>
               {@month |> Calendar.strftime("%Y-%m")}-dokumenty.zip
             </span>
             znajdą się wszystkie dokumenty, których
             <span class="font-bold">data wystawienia lub sprzedaży</span>
             przypada na aktualny miesiąc.
           </p>
-          <label class="flex flex-row gap-2 items-center">
-            <.input
-              name="skip-scans"
-              phx-click="set-skip-scans"
-              phx-target={@myself}
-              value={@skip_scans}
-              type="checkbox"
-            /> Pobierz tylko cyfrowe dokumenty (pomiń zdjęcia i skany)
-          </label>
+          <div class="flex flex-col gap-3">
+            <.filter_checkbox
+              name="include_digital"
+              label="Dokumenty cyfrowe (PDF)"
+              checked={@include_digital}
+              myself={@myself}
+            />
+            <.filter_checkbox
+              name="include_ksef"
+              label="Dokumenty z KSeF (XML)"
+              checked={@include_ksef}
+              myself={@myself}
+            />
+            <.filter_checkbox
+              name="include_photos"
+              label="Zdjęcia i skany dokumentów"
+              checked={@include_photos}
+              myself={@myself}
+            />
+            <.filter_checkbox
+              name="include_sales"
+              label="Faktury sprzedażowe"
+              checked={@include_sales}
+              myself={@myself}
+            />
+          </div>
           <a
-            href={"/pobierz-miesiac?month=#{@month}&skip_scans=#{@skip_scans}"}
+            href={download_href(@month, assigns)}
             download
             class={[
-              "bg-black text-white text-center",
-              "py-2 rounded-md"
+              "text-center py-2 rounded-md transition-colors",
+              if(@any_selected,
+                do: "bg-black text-white hover:bg-gray-800 cursor-pointer",
+                else: "bg-gray-300 text-gray-500 pointer-events-none"
+              )
             ]}
+            aria-disabled={if(!@any_selected, do: "true")}
+            tabindex={if(!@any_selected, do: "-1")}
           >
             Pobierz dokumenty
           </a>
@@ -69,10 +99,52 @@ defmodule FirmowidWeb.Components.Invoicing.DownloadModal do
     """
   end
 
-  @impl true
-  def handle_event("set-skip-scans", _, socket) do
-    socket = assign(socket, skip_scans: !socket.assigns.skip_scans)
+  attr :name, :string, required: true
+  attr :label, :string, required: true
+  attr :checked, :boolean, required: true
+  attr :myself, :any, required: true
 
+  defp filter_checkbox(assigns) do
+    ~H"""
+    <.input
+      name={@name}
+      label={@label}
+      phx-click="toggle-filter"
+      phx-value-filter={@name}
+      phx-target={@myself}
+      value={@checked}
+      type="checkbox"
+    />
+    """
+  end
+
+  @filter_keys ~w(include_digital include_ksef include_photos include_sales)
+
+  @impl true
+  def handle_event("toggle-filter", %{"filter" => filter}, socket) when filter in @filter_keys do
+    key = String.to_existing_atom(filter)
+    {:noreply, assign(socket, [{key, !socket.assigns[key]}])}
+  end
+
+  def handle_event("toggle-filter", _params, socket) do
     {:noreply, socket}
+  end
+
+  defp any_selected?(assigns) do
+    assigns.include_digital || assigns.include_ksef || assigns.include_photos ||
+      assigns.include_sales
+  end
+
+  defp download_href(month, assigns) do
+    params =
+      URI.encode_query(
+        month: month,
+        include_digital: assigns.include_digital,
+        include_ksef: assigns.include_ksef,
+        include_photos: assigns.include_photos,
+        include_sales: assigns.include_sales
+      )
+
+    "/pobierz-miesiac?#{params}"
   end
 end

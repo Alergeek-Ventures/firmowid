@@ -8,7 +8,11 @@ defmodule FirmowidWeb.FileController do
 
   def batch(conn, params) do
     month = Date.from_iso8601!(params["month"])
-    skip_scans = params["skip_scans"] == "true"
+
+    include_digital = params["include_digital"] == "true"
+    include_ksef = params["include_ksef"] == "true"
+    include_photos = params["include_photos"] == "true"
+    include_sales = params["include_sales"] == "true"
 
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
@@ -16,7 +20,7 @@ defmodule FirmowidWeb.FileController do
     cost_invoices =
       date_range_from
       |> CostInvoices.list_invoices_in_date_range(date_range_to)
-      |> Enum.filter(fn invoice -> !skip_scans || String.contains?(invoice.file_url, ".pdf") end)
+      |> Enum.filter(&include_cost_invoice?(&1, include_digital, include_ksef, include_photos))
       |> Enum.map(fn document ->
         file_extension =
           document.file_url
@@ -38,27 +42,31 @@ defmodule FirmowidWeb.FileController do
       end)
 
     sales_invoices =
-      date_range_from
-      |> SalesInvoices.list_invoices_in_date_range(date_range_to)
-      |> Enum.map(fn invoice ->
-        file_name = clean_filename("#{invoice.invoice_number}_#{SalesInvoices.buyer_display_name(invoice)}")
+      if include_sales do
+        date_range_from
+        |> SalesInvoices.list_invoices_in_date_range(date_range_to)
+        |> Enum.map(fn invoice ->
+          file_name = clean_filename("#{invoice.invoice_number}_#{SalesInvoices.buyer_display_name(invoice)}")
 
-        url_with_protocol = FirmowidWeb.Endpoint.url()
-        download_path = ~p"/sprzedazowe/#{invoice.id}/pobierz"
+          url_with_protocol = FirmowidWeb.Endpoint.url()
+          download_path = ~p"/sprzedazowe/#{invoice.id}/pobierz"
 
-        [
-          source:
-            {:url,
-             {"#{url_with_protocol}/#{download_path}",
-              [
-                {
-                  "Cookie",
-                  "_firmowid_key=#{conn.cookies["_firmowid_key"]}"
-                }
-              ], []}},
-          path: "sprzedazowe/#{file_name}.pdf"
-        ]
-      end)
+          [
+            source:
+              {:url,
+               {"#{url_with_protocol}/#{download_path}",
+                [
+                  {
+                    "Cookie",
+                    "_firmowid_key=#{conn.cookies["_firmowid_key"]}"
+                  }
+                ], []}},
+            path: "sprzedazowe/#{file_name}.pdf"
+          ]
+        end)
+      else
+        []
+      end
 
     entries = cost_invoices ++ sales_invoices
 
@@ -96,6 +104,21 @@ defmodule FirmowidWeb.FileController do
   end
 
   defp log_packmatic_event(_event), do: :ok
+
+  defp include_cost_invoice?(invoice, include_digital, include_ksef, include_photos) do
+    extension =
+      invoice.file_url
+      |> String.split("?")
+      |> hd()
+      |> Path.extname()
+      |> String.downcase()
+
+    case extension do
+      ".pdf" -> include_digital
+      ".xml" -> include_ksef
+      _image -> include_photos
+    end
+  end
 
   def clean_filename(filename) do
     filename
