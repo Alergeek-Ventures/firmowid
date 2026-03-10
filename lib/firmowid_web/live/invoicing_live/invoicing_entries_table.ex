@@ -128,7 +128,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
 
     <table
       id="invoicing-entries"
-      class="table-fixed border-separate border-spacing-y-3"
+      class="table-fixed border-separate border-spacing-y-3 -mt-8"
       phx-hook="ListItemRemovalAnimation"
     >
       <col
@@ -157,7 +157,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
             data-scroll-offset="90"
             class={
               [
-                "pt-4 font-normal text-left text-darkGrey text-xs uppercase pb-2 h-[60px] align-bottom",
+                "pt-2 font-normal text-left text-darkGrey text-xs uppercase pb-2 h-[60px] align-bottom",
                 column == "party" && "pl-5",
                 column == "amount" && "hidden"
               ]
