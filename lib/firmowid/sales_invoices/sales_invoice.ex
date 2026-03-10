@@ -61,6 +61,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     field :logo_url, :string, virtual: true
     field :total_amount, :decimal, virtual: true
     field :due_date_days, :integer, virtual: true
+    field :reference_invoice, :map, virtual: true
 
     field :item_names, :string
 
@@ -678,9 +679,6 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   def skip_invoicing_changeset(sales_invoice, attrs) do
     cast(sales_invoice, attrs, [:skip_invoicing])
   end
-
-  def locked?(%__MODULE__{locked_at: nil}), do: false
-  def locked?(%__MODULE__{locked_at: _}), do: true
 
   @doc """
   Returns true if the invoice can be deleted.

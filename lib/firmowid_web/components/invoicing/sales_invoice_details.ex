@@ -12,12 +12,9 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
   require Logger
 
   defp get_invoices_for_preview(%SalesInvoice{ksef_invoice_kind: :vat} = invoice) do
-    corrections = Enum.map(invoice.corrections, &%{&1 | corrected_invoice: invoice})
+    invoice = SalesInvoices.populate_reference_invoices(invoice)
 
-    invoices = [invoice | corrections]
-    reference_invoices = [nil | invoices]
-
-    [invoices, reference_invoices] |> Enum.zip() |> Enum.reverse()
+    Enum.reverse([invoice | invoice.corrections])
   end
 
   attr :invoice, SalesInvoice, required: true
@@ -28,11 +25,10 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
   attr :current_user, :map, required: true
   attr :return_to, :string, default: nil
   attr :ksef_connected?, :boolean, default: false
-  attr :reference_invoice, :map, default: nil
 
   @impl true
   def render(assigns) do
-    invoice_to_copy = SalesInvoices.get_latest_invoice_snapshot(assigns.invoice)
+    latest_invoice_snapshot = SalesInvoices.get_latest_invoice_snapshot(assigns.invoice)
     invoices_for_preview = get_invoices_for_preview(assigns.invoice)
     cancelled? = latest_invoice_snapshot |> SalesInvoice.get_gross_value() |> Decimal.eq?(0)
 
@@ -313,16 +309,16 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
           <% end %>
 
           <%= case @invoices_for_preview do %>
-            <% [{invoice, nil}] -> %>
+            <% [invoice] -> %>
               <InvoiceDetails.invoice_preview>
-                <.link href={~p"/sprzedazowe/#{@invoice.id}/pobierz"} download>
+                <.link href={~p"/sprzedazowe/#{invoice.id}/pobierz"} download>
                   <InvoiceDetails.invoice_preview_border>
                     <InvoiceDetails.scalable_invoice_preview>
                       <FirmowidWeb.PdfHTML.sales_invoice
                         sales_invoice={invoice}
                         currency_rate={Firmowid.SalesInvoices.get_currency_rate(invoice)}
                         show_vat={@show_vat_for_sales_invoice}
-                        reference_invoice={%{}}
+                        reference_invoice={invoice.reference_invoice}
                       />
                     </InvoiceDetails.scalable_invoice_preview>
                   </InvoiceDetails.invoice_preview_border>
@@ -333,7 +329,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                 <div class="flex flex-col-reverse xl:flex-row gap-4 w-full">
                   <div class="flex flex-col gap-4 w-full min-w-0 shrink-2">
                     <InvoiceDetails.invoice_subpreview
-                      :for={{invoice, refrence_invoice} <- previous_invoices}
+                      :for={invoice <- previous_invoices}
                       label={invoice.invoice_number}
                     >
                       <InvoiceDetails.scalable_invoice_preview
@@ -344,13 +340,12 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                           sales_invoice={invoice}
                           currency_rate={Firmowid.SalesInvoices.get_currency_rate(invoice)}
                           show_vat={@show_vat_for_sales_invoice}
-                          reference_invoice={refrence_invoice}
+                          reference_invoice={invoice.reference_invoice}
                         />
                       </InvoiceDetails.scalable_invoice_preview>
                     </InvoiceDetails.invoice_subpreview>
                   </div>
 
-                  <% {latest_invoice, latest_invoice_reference} = latest_invoice %>
                   <InvoiceDetails.invoice_subpreview label={latest_invoice.invoice_number}>
                     <.link href={~p"/sprzedazowe/#{latest_invoice.id}/pobierz"} download>
                       <InvoiceDetails.scalable_invoice_preview
@@ -361,7 +356,7 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
                           sales_invoice={latest_invoice}
                           currency_rate={Firmowid.SalesInvoices.get_currency_rate(latest_invoice)}
                           show_vat={@show_vat_for_sales_invoice}
-                          reference_invoice={latest_invoice_reference}
+                          reference_invoice={latest_invoice.reference_invoice}
                         />
                       </InvoiceDetails.scalable_invoice_preview>
                     </.link>

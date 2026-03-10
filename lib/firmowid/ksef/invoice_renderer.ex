@@ -12,32 +12,25 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
   Renders the FA(3) XML template with the given sales invoice.
   """
   def render_fa3(%SalesInvoice{} = invoice) do
-    {invoice, reference_invoice} =
+    invoice =
       case invoice do
         %{ksef_invoice_kind: :kor} ->
-          invoice =
-            invoice
-            |> Repo.preload([:sales_invoice_items, corrected_invoice: :sales_invoice_items])
-            |> validate_correction_buyer_tax_id!()
-            # for now we raise because edit view does not allow for changing seller data
-            # change in seller data should be intentional and not automatic like in creator
-            |> validate_correction_seller_data!()
-
-          reference_invoice = SalesInvoices.get_reference_invoice_for_correction(invoice)
-
-          {invoice, reference_invoice}
+          invoice
+          |> Repo.preload([:sales_invoice_items, corrected_invoice: :sales_invoice_items])
+          |> SalesInvoices.populate_reference_invoices()
+          |> validate_correction_buyer_tax_id!()
+          # for now we raise because edit view does not allow for changing seller data
+          # change in seller data should be intentional and not automatic like in creator
+          |> validate_correction_seller_data!()
 
         invoice ->
           Repo.preload(invoice, :sales_invoice_items)
-          {invoice, nil}
       end
-
-    escaped_reference = if reference_invoice, do: xml_escape(reference_invoice)
 
     assigns = [
       invoice: xml_escape(invoice),
-      reference_invoice: escaped_reference,
-      vat_summary: calculate_vat_summary(invoice, reference_invoice)
+      reference_invoice: if(invoice.reference_invoice, do: xml_escape(invoice.reference_invoice)),
+      vat_summary: calculate_vat_summary(invoice, invoice.reference_invoice)
     ]
 
     do_render(assigns)

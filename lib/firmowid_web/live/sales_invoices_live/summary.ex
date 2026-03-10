@@ -36,12 +36,11 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
 
     currency_rate = SalesInvoices.get_currency_rate(invoice)
 
-    {previous_invoices, reference_invoice} = get_previous_invoices(invoice)
+    {previous_invoices, invoice} = get_previous_invoices(invoice)
 
     socket =
       socket
       |> assign(:invoice, invoice)
-      |> assign(:reference_invoice, reference_invoice)
       |> assign(:previous_invoices, previous_invoices)
       |> assign(:submission_info, submission_info)
       |> assign(:currency_rate, currency_rate)
@@ -154,11 +153,11 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
 
         <div class="space-y-6" style={"width: #{list_width}px;"}>
           <div
-            :for={{prev, ref} <- @previous_invoices}
+            :for={previous_invoice <- @previous_invoices}
             class="space-y-2"
           >
             <p class="text-sm/tight text-grey-700 pl-1">
-              {prev.invoice_number}
+              {previous_invoice.invoice_number}
             </p>
             <div
               class="border border-grey-200 rounded-lg bg-white shadow-sm overflow-hidden"
@@ -166,10 +165,10 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
             >
               <div class="origin-top-left" style={"transform: scale(#{scale})"}>
                 <FirmowidWeb.PdfHTML.sales_invoice
-                  sales_invoice={prev}
+                  sales_invoice={previous_invoice}
                   currency_rate={@currency_rate}
                   show_vat={@current_org.is_vat_payer}
-                  reference_invoice={ref}
+                  reference_invoice={previous_invoice.reference_invoice}
                 />
               </div>
             </div>
@@ -196,7 +195,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
                 sales_invoice={@invoice}
                 currency_rate={@currency_rate}
                 show_vat={@current_org.is_vat_payer}
-                reference_invoice={@reference_invoice}
+                reference_invoice={@invoice.reference_invoice}
               />
             </div>
           </div>
@@ -238,13 +237,12 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
       # Convert PubSub status to SubmissionInfo status
       submission_info = Ksef.get_submission_info(invoice)
 
-      {previous_invoices, reference_invoice} = get_previous_invoices(invoice)
+      {previous_invoices, invoice} = get_previous_invoices(invoice)
 
       socket =
         socket
         |> assign(:submission_info, submission_info)
         |> assign(:invoice, invoice)
-        |> assign(:reference_invoice, reference_invoice)
         |> assign(:previous_invoices, previous_invoices)
 
       # Trigger paper plane animation when submitted successfully
@@ -262,27 +260,30 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
   end
 
   defp get_previous_invoices(%SalesInvoice{ksef_invoice_kind: :kor} = invoice) do
-    original_invoice = Repo.preload(invoice.corrected_invoice, corrections: :sales_invoice_items)
-
-    locked_corrections = Enum.reject(original_invoice.corrections, &is_nil(&1.locked_at))
+    original_invoice = SalesInvoices.populate_reference_invoices(invoice.corrected_invoice)
 
     previous_invoices =
-      locked_corrections
-      |> Enum.filter(&DateTime.before?(&1.locked_at, invoice.locked_at || DateTime.utc_now()))
-      |> Enum.map(&%{&1 | corrected_invoice: original_invoice})
+      original_invoice.corrections
+      |> Enum.filter(&DateTime.before?(&1.locked_at || &1.inserted_at, invoice.locked_at || invoice.inserted_at))
       |> List.insert_at(0, original_invoice)
-
-    refererence_invoices = [nil | previous_invoices]
-
-    reference_for_current_invoice = List.last(previous_invoices)
-
-    previous_invoices_with_refs =
-      [previous_invoices, refererence_invoices]
-      |> Enum.zip()
       |> Enum.reverse()
 
-    {previous_invoices_with_refs, reference_for_current_invoice}
+    invoice =
+      case Enum.find(original_invoice.corrections, &(&1.id == invoice.id)) do
+        nil ->
+          raise "Correction invoice not found"
+
+        # preserve preloaded fields
+        found_invoice ->
+          %{
+            invoice
+            | reference_invoice: found_invoice.reference_invoice,
+              corrected_invoice: found_invoice.corrected_invoice
+          }
+      end
+
+    {previous_invoices, invoice}
   end
 
-  defp get_previous_invoices(_invoice), do: {[], nil}
+  defp get_previous_invoices(%SalesInvoice{ksef_invoice_kind: :vat} = invoice), do: {[], invoice}
 end

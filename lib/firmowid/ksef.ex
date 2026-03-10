@@ -203,7 +203,7 @@ defmodule Firmowid.Ksef do
       is_nil(invoice) ->
         {:error, :invoice_not_found}
 
-      SalesInvoice.locked?(invoice) ->
+      SalesInvoice.ksef_submitted?(invoice) ->
         {:error, :invoice_already_locked}
 
       SalesInvoice.draft?(invoice) ->

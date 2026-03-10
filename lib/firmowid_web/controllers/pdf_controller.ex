@@ -21,13 +21,13 @@ defmodule FirmowidWeb.PdfController do
   end
 
   defp render_sales_invoice(conn, %SalesInvoices.SalesInvoice{} = sales_invoice) do
-    sales_invoice = Repo.preload(sales_invoice, [:corrected_invoice])
+    sales_invoice = sales_invoice |> Repo.preload([:corrected_invoice]) |> SalesInvoices.populate_reference_invoices()
 
     render(conn, :sales_invoice,
       layout: false,
       sales_invoice: sales_invoice,
       currency_rate: SalesInvoices.get_currency_rate(sales_invoice),
-      reference_invoice: SalesInvoices.get_reference_invoice(sales_invoice),
+      reference_invoice: sales_invoice.reference_invoice,
       class: "mx-auto",
       show_vat: conn.assigns.current_org.is_vat_payer,
       logo_data_uri: nil,

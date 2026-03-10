@@ -235,19 +235,34 @@ defmodule Firmowid.SalesInvoices do
   def get_sales_invoice(id) do
     SalesInvoice
     |> Repo.get(id)
-    |> Repo.preload([:sales_invoice_items, :transactions, :corrections, corrected_invoice: :corrections])
+    |> Repo.preload([
+      :sales_invoice_items,
+      :transactions,
+      corrections: :sales_invoice_items,
+      corrected_invoice: :corrections
+    ])
   end
 
   def get_sales_invoice!(id) do
     SalesInvoice
     |> Repo.get!(id)
-    |> Repo.preload([:sales_invoice_items, :transactions, :corrections, corrected_invoice: :corrections])
+    |> Repo.preload([
+      :sales_invoice_items,
+      :transactions,
+      corrections: :sales_invoice_items,
+      corrected_invoice: :corrections
+    ])
   end
 
   def get_sales_invoice_with_logo_url(id) do
     SalesInvoice
     |> Repo.get(id)
-    |> Repo.preload([:sales_invoice_items, :transactions, :corrections, corrected_invoice: :corrections])
+    |> Repo.preload([
+      :sales_invoice_items,
+      :transactions,
+      corrections: :sales_invoice_items,
+      corrected_invoice: :corrections
+    ])
     |> populate_logo_url()
   end
 
@@ -645,10 +660,12 @@ defmodule Firmowid.SalesInvoices do
 
   Seller and buyer data are automatically copied from the original invoice.
   """
-  def create_correction_invoice(%SalesInvoice{ksef_invoice_kind: :vat} = original_invoice, attrs) do
-    original_invoice = Repo.preload(original_invoice, [:sales_invoice_items, corrections: :sales_invoice_items])
-
-    reference_invoice = get_latest_invoice_snapshot(original_invoice)
+  def create_correction_invoice(
+        %SalesInvoice{ksef_invoice_kind: :vat} = original_invoice,
+        attrs,
+        reference_invoice \\ nil
+      ) do
+    reference_invoice = reference_invoice || get_latest_invoice_snapshot(original_invoice)
 
     original_invoice
     |> SalesInvoice.prepare_correction_invoice_changeset(reference_invoice)
@@ -665,17 +682,8 @@ defmodule Firmowid.SalesInvoices do
   KSeF-submitted VAT invoice.
   """
   @spec cancel_sales_invoice(SalesInvoice.t()) :: {:ok, SalesInvoice.t()} | {:error, Ecto.Changeset.t()}
-  def cancel_sales_invoice(%SalesInvoice{} = invoice) do
-    invoice =
-      Repo.preload(invoice, [
-        :sales_invoice_items,
-        :corrections,
-        corrected_invoice: [:sales_invoice_items, corrections: :sales_invoice_items]
-      ])
-
-    original_invoice = if invoice.ksef_invoice_kind == :kor, do: invoice.corrected_invoice, else: invoice
-
-    if SalesInvoice.locked?(original_invoice) do
+  def cancel_sales_invoice(%SalesInvoice{ksef_invoice_kind: :vat} = original_invoice) do
+    if SalesInvoice.ksef_submitted?(original_invoice) do
       latest_snapshot = get_latest_invoice_snapshot(original_invoice)
 
       issue_date = Date.utc_today()
@@ -703,64 +711,60 @@ defmodule Firmowid.SalesInvoices do
         sales_invoice_items: zeroed_items_attrs
       }
 
-      original_invoice
-      |> SalesInvoice.prepare_correction_invoice_changeset(latest_snapshot)
-      |> SalesInvoice.changeset(attrs)
-      |> Repo.insert()
+      create_correction_invoice(original_invoice, attrs, latest_snapshot)
     else
       {:error, :not_ksef_submitted}
     end
   end
 
   def get_latest_invoice_snapshot(%SalesInvoice{ksef_invoice_kind: :vat} = original_invoice) do
-    latest_correction =
-      original_invoice.corrections
-      |> Enum.reject(&is_nil(&1.locked_at))
-      |> Enum.max_by(& &1.locked_at, DateTime, fn -> nil end)
+    original_invoice = Repo.preload(original_invoice, :corrections)
 
-    latest_correction || original_invoice
+    original_invoice.corrections
+    |> Enum.max_by(
+      fn correction -> correction.locked_at || correction.inserted_at end,
+      DateTime,
+      fn -> original_invoice end
+    )
+    |> Repo.preload(:sales_invoice_items)
   end
 
-  def get_reference_invoice_for_correction(%SalesInvoice{ksef_invoice_kind: :kor} = correction_invoice) do
-    correction_invoice =
-      Repo.preload(correction_invoice, corrected_invoice: :corrections)
+  # commented out becase ci doesn't pass
+  # @deprecated "Use populate_reference_invoices/1 instead"
+  def get_reference_invoice(%SalesInvoice{ksef_invoice_kind: :kor} = invoice),
+    do: populate_reference_invoices(invoice).reference_invoice
 
-    original_invoice = correction_invoice.corrected_invoice
+  def get_reference_invoice(%SalesInvoice{ksef_invoice_kind: :vat}), do: nil
 
-    # Only consider locked (submitted) corrections as potential references.
-    # Unlocked corrections haven't been submitted yet and can't be referenced.
-    locked_corrections =
-      Enum.reject(original_invoice.corrections, &is_nil(&1.locked_at))
+  def populate_reference_invoices(%SalesInvoice{ksef_invoice_kind: :vat} = invoice) do
+    invoice = Repo.preload(invoice, corrections: :sales_invoice_items)
+
+    corrections = Enum.sort_by(invoice.corrections, &(&1.locked_at || &1.inserted_at), DateTime)
+    references = [invoice | corrections]
+
+    corrections =
+      [corrections, references]
+      |> Enum.zip()
+      |> Enum.map(fn {correction, reference} ->
+        %{correction | reference_invoice: reference, corrected_invoice: invoice}
+      end)
+
+    %{invoice | corrections: corrections}
+  end
+
+  def populate_reference_invoices(%SalesInvoice{ksef_invoice_kind: :kor} = invoice) do
+    invoice = Repo.preload(invoice, corrected_invoice: :corrections)
+    original_invoice = populate_reference_invoices(invoice.corrected_invoice)
 
     reference_invoice =
-      cond do
-        Enum.empty?(locked_corrections) ->
-          original_invoice
+      original_invoice.corrections
+      |> Enum.reject(&(&1.id == invoice.id))
+      |> Enum.reject(&DateTime.after?(&1.locked_at || &1.inserted_at, invoice.locked_at || invoice.inserted_at))
+      |> Enum.max_by(&(&1.locked_at || &1.inserted_at), DateTime, fn -> original_invoice end)
+      |> Repo.preload(:sales_invoice_items)
 
-        is_nil(correction_invoice.locked_at) ->
-          # Current correction is not locked yet — reference is the latest locked correction
-          Enum.max_by(locked_corrections, & &1.locked_at, DateTime)
-
-        true ->
-          # Current correction is locked — reference is the latest correction locked before it
-          locked_corrections
-          |> Enum.filter(&DateTime.before?(&1.locked_at, correction_invoice.locked_at))
-          |> Enum.max_by(& &1.locked_at, DateTime, fn -> original_invoice end)
-      end
-
-    Repo.preload(reference_invoice, :sales_invoice_items)
+    %{invoice | reference_invoice: reference_invoice, corrected_invoice: original_invoice}
   end
-
-  def get_reference_invoice_for_correction(%SalesInvoice{ksef_invoice_kind: :vat}) do
-    raise "Reference invoice is only applicable for KOR invoices"
-  end
-
-  @spec get_reference_invoice(SalesInvoice.t()) :: SalesInvoice.t() | nil
-  def get_reference_invoice(%SalesInvoice{ksef_invoice_kind: :kor} = invoice) do
-    get_reference_invoice_for_correction(invoice)
-  end
-
-  def get_reference_invoice(%SalesInvoice{}), do: nil
 
   def update_sales_invoice(%SalesInvoice{} = invoice, attrs) do
     invoice

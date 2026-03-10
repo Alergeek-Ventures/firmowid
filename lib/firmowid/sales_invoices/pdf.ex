@@ -19,7 +19,7 @@ defmodule Firmowid.SalesInvoices.Pdf do
 
     footer_logo_data_uri = PdfHelpers.file_to_data_uri(footer_logo_path)
 
-    reference_invoice = SalesInvoices.get_reference_invoice(invoice)
+    invoice = SalesInvoices.populate_reference_invoices(invoice)
 
     html_content =
       PdfHelpers.render_pdf_html(
@@ -28,7 +28,7 @@ defmodule Firmowid.SalesInvoices.Pdf do
         layout: false,
         sales_invoice: invoice,
         currency_rate: SalesInvoices.get_currency_rate(invoice),
-        reference_invoice: reference_invoice,
+        reference_invoice: invoice.reference_invoice,
         show_vat: show_vat,
         logo_data_uri: logo_data_uri,
         footer_logo_data_uri: footer_logo_data_uri,
