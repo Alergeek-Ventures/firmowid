@@ -29,7 +29,6 @@ defmodule FirmowidWeb.SharedInvoiceController do
           invoice: invoice,
           lang: lang,
           currency_rate: SalesInvoices.get_currency_rate(invoice),
-          reference_invoice: SalesInvoices.get_reference_invoice(invoice),
           show_vat: org.is_vat_payer
         )
 
@@ -68,7 +67,7 @@ defmodule FirmowidWeb.SharedInvoiceController do
   defp prepare_invoice_with_org_context(invoice) do
     org = invoice.organization
     Repo.put_org_id(invoice.organization_id)
-    invoice = SalesInvoices.populate_logo_url(invoice)
+    invoice = invoice |> SalesInvoices.populate_logo_url() |> SalesInvoices.populate_reference_invoices()
     {invoice, org}
   end
 

@@ -966,7 +966,7 @@ defmodule Firmowid.SalesInvoices do
     {:ok, invoice}
   end
 
-  def create_or_get_share_token(%SalesInvoice{} = invoice) do
+  def create_or_get_share_token(%SalesInvoice{ksef_invoice_kind: :vat} = invoice) do
     token = generate_share_token()
 
     invoice
@@ -976,19 +976,34 @@ defmodule Firmowid.SalesInvoices do
 
   @spec get_invoice_by_share_token(String.t()) :: {:ok, SalesInvoice.t()} | {:error, :not_found}
   def get_invoice_by_share_token(token) when is_binary(token) do
-    case Repo.get_by(SalesInvoice, [share_token: token], skip_organization_id: true) do
-      nil ->
-        {:error, :not_found}
+    invoice =
+      case String.split(token, ".", parts: 2) do
+        [share_token] ->
+          Repo.get_by(SalesInvoice, [share_token: share_token], skip_organization_id: true)
 
-      invoice ->
-        invoice =
-          Repo.preload(
-            invoice,
-            [:organization, :sales_invoice_items, :transactions, :corrections, corrected_invoice: :corrections],
-            skip_organization_id: true
-          )
+        [share_token, correction_id] ->
+          SalesInvoice
+          |> where([i], i.id == ^correction_id and i.ksef_invoice_kind == :kor)
+          |> join(:inner, [i], o in SalesInvoice, on: o.share_token == ^share_token)
+          |> Repo.one(skip_organization_id: true)
+      end
 
-        {:ok, invoice}
+    invoice =
+      Repo.preload(
+        invoice,
+        [
+          :organization,
+          :sales_invoice_items,
+          :transactions,
+          corrections: :sales_invoice_items,
+          corrected_invoice: :corrections
+        ],
+        skip_organization_id: true
+      )
+
+    case invoice do
+      nil -> {:error, :not_found}
+      invoice -> {:ok, invoice}
     end
   end
 
