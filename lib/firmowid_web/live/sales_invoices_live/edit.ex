@@ -129,37 +129,41 @@ defmodule FirmowidWeb.SalesInvoicesLive.Edit do
   end
 
   def handle_event("save_as_draft", _params, socket) do
-    # Use the current form params that have been validated through phx-change
-    form_params = socket.assigns.form.params || %{}
+    if SalesInvoice.ksef_submitted?(socket.assigns.invoice) do
+      {:noreply, put_flash(socket, :error, "Nie można zapisać korekty jako wersji roboczej")}
+    else
+      # Use the current form params that have been validated through phx-change
+      form_params = socket.assigns.form.params || %{}
 
-    case SalesInvoices.update_sales_invoice(socket.assigns.invoice, form_params) do
-      {:ok, invoice} ->
-        {:noreply,
-         socket
-         |> push_event("unsaved-changed", %{value: false})
-         |> put_flash(:info, "Wersja robocza faktury została zapisana")
-         |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}")}
+      case SalesInvoices.update_sales_invoice(socket.assigns.invoice, form_params) do
+        {:ok, invoice} ->
+          {:noreply,
+           socket
+           |> push_event("unsaved-changed", %{value: false})
+           |> put_flash(:info, "Wersja robocza faktury została zapisana")
+           |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}")}
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, :form, to_form(changeset))}
+        {:error, changeset} ->
+          {:noreply, assign(socket, :form, to_form(changeset))}
+      end
     end
   end
 
   def handle_event("send_to_ksef", %{"sales_invoice" => params}, socket) do
     organization = socket.assigns.organization
-    original_invoice = socket.assigns.invoice
+    invoice = socket.assigns.invoice
 
     invoice =
       cond do
-        SalesInvoice.draft?(original_invoice) ->
-          create_confirmed_invoice(organization, original_invoice, params)
+        SalesInvoice.draft?(invoice) ->
+          create_confirmed_invoice(organization, invoice, params)
 
-        not SalesInvoice.ksef_submitted?(original_invoice) ->
-          update_confirmed_invoice(organization, original_invoice, params)
+        not SalesInvoice.ksef_submitted?(invoice) ->
+          update_confirmed_invoice(organization, invoice, params)
 
         true ->
           original_invoice =
-            if original_invoice.ksef_invoice_kind == :kor, do: original_invoice.corrected_invoice, else: original_invoice
+            if invoice.ksef_invoice_kind == :kor, do: invoice.corrected_invoice, else: invoice
 
           create_correction_invoice(organization, original_invoice, params)
       end

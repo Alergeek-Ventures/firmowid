@@ -139,7 +139,7 @@
 
           <div class="space-y-4">
             <p class="text-black text-lg/6 font-medium">
-              Faktura korygująca FK {@invoice.invoice_number}
+              Faktura korygująca {@preview_invoice.invoice_number}
             </p>
 
             <div class={[
@@ -176,11 +176,11 @@
         new={true}
         phx-click="cancel_edit"
       >
-        {if SalesInvoice.ksef_submitted?(@invoice), do: "Anuluj korektę", else: "Anuluj"}
+        Anuluj
       </.button>
 
       <.button
-        :if={not SalesInvoice.ksef_submitted?(@invoice)}
+        :if={not SalesInvoice.ksef_submitted?(@invoice) and @invoice.ksef_invoice_kind == :vat}
         type="button"
         color="light_grey"
         new={true}
