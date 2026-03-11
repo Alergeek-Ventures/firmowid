@@ -63,6 +63,9 @@ defmodule Mix.Tasks.Dev.Up do
     # Step 4: Run mix setup
     run_setup()
 
+    # Step 4.5: Sync usage rules (AGENTS.md dependency rules)
+    sync_usage_rules()
+
     # Step 5: Register Caddy route
     register_caddy_route(branch, port)
 
@@ -214,6 +217,19 @@ defmodule Mix.Tasks.Dev.Up do
 
       {_, code} ->
         Mix.raise("mix setup failed with exit code #{code}")
+    end
+  end
+
+  defp sync_usage_rules do
+    Mix.shell().info("Syncing usage rules into AGENTS.md...")
+
+    case System.cmd("mix", ["usage_rules.sync", "--yes"], stderr_to_stdout: true) do
+      {_, 0} ->
+        Mix.shell().info("Usage rules synced")
+
+      {output, _code} ->
+        Mix.shell().error("Warning: usage_rules.sync failed (non-critical)")
+        Mix.shell().error(output)
     end
   end
 

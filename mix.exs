@@ -19,7 +19,8 @@ defmodule Firmowid.MixProject do
         flags: [:no_opaque],
         plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
         plt_add_apps: [:mix, :ex_unit]
-      ]
+      ],
+      usage_rules: usage_rules()
     ]
   end
 
@@ -132,7 +133,8 @@ defmodule Firmowid.MixProject do
       {:websockex, "~> 0.5"},
       {:csv, "~> 3.2"},
       {:lucide_icons, "~> 2.0"},
-      {:qr_code, "~> 3.2.0"}
+      {:qr_code, "~> 3.2.0"},
+      {:usage_rules, "~> 1.1", only: [:dev]}
     ]
   end
 
@@ -142,9 +144,22 @@ defmodule Firmowid.MixProject do
   #     $ mix setup
   #
   # See the documentation for `Mix` for more info on aliases.
+  defp usage_rules do
+    [
+      file: "AGENTS.md",
+      usage_rules: [
+        {"phoenix:ecto", link: :markdown},
+        {"phoenix:html", link: :markdown},
+        {"phoenix:liveview", link: :markdown},
+        {"phoenix:phoenix", link: :markdown},
+        {:usage_rules, sub_rules: [:elixir, :otp], main: false, link: :markdown}
+      ]
+    ]
+  end
+
   defp aliases do
     [
-      setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
+      setup: ["deps.get", "ecto.setup", "usage_rules.sync --yes", "assets.setup", "assets.build"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],

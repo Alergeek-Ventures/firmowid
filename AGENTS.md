@@ -123,3 +123,30 @@ reproducible - note it down in README and PROGRESS.
 E.g. installing `osgrep` - not via `npm install -g` but rather create a new
 folder, gitignore it, install via local `npm install`. Write down the documentation
 in README (benchmarking section).
+
+<!-- usage-rules-start -->
+<!-- phoenix:ecto-start -->
+## phoenix:ecto usage
+[phoenix:ecto usage rules](deps/phoenix/usage-rules/ecto.md)
+<!-- phoenix:ecto-end -->
+<!-- phoenix:html-start -->
+## phoenix:html usage
+[phoenix:html usage rules](deps/phoenix/usage-rules/html.md)
+<!-- phoenix:html-end -->
+<!-- phoenix:liveview-start -->
+## phoenix:liveview usage
+[phoenix:liveview usage rules](deps/phoenix/usage-rules/liveview.md)
+<!-- phoenix:liveview-end -->
+<!-- phoenix:phoenix-start -->
+## phoenix:phoenix usage
+[phoenix:phoenix usage rules](deps/phoenix/usage-rules/phoenix.md)
+<!-- phoenix:phoenix-end -->
+<!-- usage_rules:elixir-start -->
+## usage_rules:elixir usage
+[usage_rules:elixir usage rules](deps/usage_rules/usage-rules/elixir.md)
+<!-- usage_rules:elixir-end -->
+<!-- usage_rules:otp-start -->
+## usage_rules:otp usage
+[usage_rules:otp usage rules](deps/usage_rules/usage-rules/otp.md)
+<!-- usage_rules:otp-end -->
+<!-- usage-rules-end -->
