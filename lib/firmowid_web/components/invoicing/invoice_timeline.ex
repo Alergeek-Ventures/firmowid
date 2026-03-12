@@ -15,7 +15,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceTimeline do
   attr :submission_info, SubmissionInfo, default: nil
 
   def invoice_timeline(assigns) do
-    case_result =
+    events =
       case assigns.invoice_type do
         :sales ->
           submission_info = assigns.submission_info || %SubmissionInfo{status: :not_submitted}
@@ -25,9 +25,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceTimeline do
           Timeline.for_cost_invoice(assigns.invoice)
       end
 
-    events = Enum.reverse(case_result)
-
-    assigns = assign(assigns, :events, events)
+    assigns = assign(assigns, :events, Enum.reverse(events))
 
     ~H"""
     <div class="flex flex-col gap-6">
@@ -157,7 +155,22 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceTimeline do
         Pobrano z KSeF
       </:label>
       <:content>
-        {@event.metadata.ksef_number}
+        nadano numer KSeF:
+        <span class="font-bold text-turquoise-700">{@event.metadata.ksef_number}</span>
+      </:content>
+    </.timeline_item>
+    """
+  end
+
+  defp event(%{event: %{event: :correction_downloaded}} = assigns) do
+    ~H"""
+    <.timeline_item event={@event}>
+      <:label>
+        Pobrano fakturę korygującą {@event.metadata.invoice_identifier} z KSeF
+      </:label>
+      <:content>
+        nadano numer KSeF:
+        <span class="font-bold text-turquoise-700">{@event.metadata.ksef_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -237,18 +250,13 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceTimeline do
   defp event_dot_color(:failed), do: "bg-redText"
   defp event_dot_color(:submitted), do: "bg-blueText"
   defp event_dot_color(:downloaded), do: "bg-greenText"
+  defp event_dot_color(:correction_downloaded), do: "bg-greenText"
   defp event_dot_color(:correction_confirmed), do: "bg-greenText"
   defp event_dot_color(:correction_failed), do: "bg-redText"
   defp event_dot_color(:correction_submitted), do: "bg-blueText"
   defp event_dot_color(_), do: "bg-grey-200"
 
   defp format_datetime(nil), do: ""
-
-  defp format_datetime(%DateTime{} = dt) do
-    Calendar.strftime(dt, "%d.%m.%Y")
-  end
-
-  defp format_datetime(%NaiveDateTime{} = dt) do
-    Calendar.strftime(dt, "%d.%m.%Y")
-  end
+  defp format_datetime(%DateTime{} = dt), do: Calendar.strftime(dt, "%d.%m.%Y")
+  defp format_datetime(%NaiveDateTime{} = dt), do: Calendar.strftime(dt, "%d.%m.%Y")
 end
