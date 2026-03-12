@@ -7,17 +7,27 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
   alias FirmowidWeb.Components.Invoicing.InvoiceDetails, as: InvoiceDetails
   alias FirmowidWeb.Components.Invoicing.InvoiceTimeline
 
+  @impl true
+  def mount(socket) do
+    {:ok, assign(socket, chat: false, show_timeline: false, is_cost_invoice: true)}
+  end
+
+  @impl true
+  def update(assigns, socket) do
+    socket =
+      socket
+      |> assign(assigns)
+      |> assign(:invoices_for_preview, Enum.reverse([assigns.invoice | assigns.invoice.correction_invoices]))
+
+    {:ok, socket}
+  end
+
   attr :invoice, CostInvoice, required: true
   attr :potential_transactions, :list, default: []
   attr :current_user, :map, required: true
 
   @impl true
   def render(assigns) do
-    assigns =
-      assigns
-      |> assign(:is_cost_invoice, true)
-      |> assign(:invoices_for_preview, Enum.reverse([assigns.invoice | assigns.invoice.correction_invoices]))
-
     ~H"""
     <div id="invoice-show" class="flex flex-col">
       <InvoiceDetails.invoice_header
@@ -274,11 +284,6 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
         </div>
         """
     end
-  end
-
-  @impl true
-  def mount(socket) do
-    {:ok, assign(socket, chat: false, show_timeline: false)}
   end
 
   @impl true

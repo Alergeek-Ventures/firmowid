@@ -11,10 +11,45 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
 
   require Logger
 
-  defp get_invoices_for_preview(%SalesInvoice{ksef_invoice_kind: :vat} = invoice) do
-    invoice = SalesInvoices.populate_reference_invoices(invoice)
+  @impl true
+  def mount(socket) do
+    {:ok, assign(socket, chat: false, show_timeline: false, is_cost_invoice: false)}
+  end
 
-    Enum.reverse([invoice | invoice.corrections])
+  @impl true
+  def update(assigns, socket) do
+    # Fetch submission info when invoice is assigned
+    submission_info =
+      if assigns[:invoice] do
+        Ksef.get_submission_info(assigns.invoice)
+      else
+        %SubmissionInfo{status: :not_submitted}
+      end
+
+    invoice = SalesInvoices.populate_reference_invoices(assigns.invoice)
+    latest_invoice_snapshot = SalesInvoices.get_latest_invoice_snapshot(assigns.invoice)
+    cancelled? = latest_invoice_snapshot |> SalesInvoice.get_gross_value() |> Decimal.eq?(0)
+
+    description =
+      latest_invoice_snapshot.sales_invoice_items
+      |> List.first(%{})
+      |> Map.get(:name, "")
+
+    socket =
+      socket
+      |> assign(assigns)
+      |> assign(
+        invoice: invoice,
+        submission_info: submission_info,
+        party_display_name: SalesInvoices.buyer_display_name(latest_invoice_snapshot),
+        description: description,
+        latest_invoice_snapshot: latest_invoice_snapshot,
+        invoices_for_preview: Enum.reverse([invoice | invoice.corrections]),
+        cancelled?: cancelled?,
+        show_timeline_button: show_timeline_button?(submission_info)
+      )
+
+    {:ok, socket}
   end
 
   attr :invoice, SalesInvoice, required: true
@@ -28,29 +63,6 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
 
   @impl true
   def render(assigns) do
-    latest_invoice_snapshot = SalesInvoices.get_latest_invoice_snapshot(assigns.invoice)
-    invoices_for_preview = get_invoices_for_preview(assigns.invoice)
-    cancelled? = latest_invoice_snapshot |> SalesInvoice.get_gross_value() |> Decimal.eq?(0)
-
-    assigns =
-      assigns
-      |> assign(:is_cost_invoice, false)
-      |> assign(
-        :party_display_name,
-        SalesInvoices.buyer_display_name(latest_invoice_snapshot)
-      )
-      |> assign(
-        :description,
-        case latest_invoice_snapshot.sales_invoice_items do
-          [first | _] -> Map.get(first, :name, "")
-          _ -> ""
-        end
-      )
-      |> assign(:show_timeline_button, show_timeline_button?(assigns.submission_info))
-      |> assign(:latest_invoice_snapshot, latest_invoice_snapshot)
-      |> assign(:invoices_for_preview, invoices_for_preview)
-      |> assign(:cancelled?, cancelled?)
-
     ~H"""
     <div id="invoice-show" class="flex flex-col">
       <InvoiceDetails.invoice_header
@@ -357,29 +369,6 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
       </div>
     </div>
     """
-  end
-
-  @impl true
-  def mount(socket) do
-    {:ok, assign(socket, chat: false, show_timeline: false)}
-  end
-
-  @impl true
-  def update(assigns, socket) do
-    # Fetch submission info when invoice is assigned
-    submission_info =
-      if assigns[:invoice] do
-        Ksef.get_submission_info(assigns.invoice)
-      else
-        %SubmissionInfo{status: :not_submitted}
-      end
-
-    socket =
-      socket
-      |> assign(assigns)
-      |> assign(:submission_info, submission_info)
-
-    {:ok, socket}
   end
 
   @impl true
