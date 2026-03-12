@@ -58,6 +58,10 @@ defmodule Firmowid.CostInvoices.CostInvoice do
       references: :ksef_number,
       define_field: false
 
+    has_many :entity_tags, Firmowid.Analysis.EntityTag,
+      foreign_key: :entity_id,
+      where: [entity_type: :cost_invoice]
+
     belongs_to :organization, Firmowid.Accounts.Organization
 
     timestamps()

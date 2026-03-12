@@ -346,20 +346,69 @@ defmodule Firmowid.Timetracker do
     |> Repo.preload(:projects)
   end
 
+  @doc """
+  Creates a project together with its analysis tag definition.
+
+  A `TagDefinition` is automatically created via `Analysis.create_project_tag/1`
+  with a rotating color, then linked to the project via `tag_definition_id`.
+  """
   def create_project(attrs \\ %{}) do
-    %Project{}
-    |> Project.changeset(attrs)
-    |> Repo.insert()
+    alias Firmowid.Analysis
+
+    name = attrs["name"] || attrs[:name] || ""
+
+    Multi.new()
+    |> Multi.run(:tag_definition, fn _repo, _changes ->
+      Analysis.create_project_tag(name)
+    end)
+    |> Multi.insert(:project, fn %{tag_definition: tag_def} ->
+      attrs = Map.new(attrs, fn {k, v} -> {to_string(k), v} end)
+      Project.changeset(%Project{}, Map.put(attrs, "tag_definition_id", tag_def.id))
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{project: project}} -> {:ok, project}
+      {:error, :project, changeset, _changes} -> {:error, changeset}
+      {:error, :tag_definition, changeset, _changes} -> {:error, changeset}
+    end
   end
 
+  @doc """
+  Updates a project and atomically syncs the associated tag definition name.
+  """
   def update_project(%Project{} = project, attrs) do
-    project
-    |> Project.changeset(attrs)
-    |> Repo.update()
+    alias Firmowid.Analysis
+
+    Multi.new()
+    |> Multi.update(:project, Project.changeset(project, attrs))
+    |> Multi.run(:sync_tag_name, fn _repo, %{project: updated} ->
+      Analysis.sync_project_tag_name(updated.tag_definition_id, updated.name)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{project: project}} -> {:ok, project}
+      {:error, :project, changeset, _changes} -> {:error, changeset}
+      {:error, :sync_tag_name, reason, _changes} -> {:error, reason}
+    end
   end
 
+  @doc """
+  Deletes a project and atomically cleans up its orphaned tag definition.
+  """
   def delete_project(%Project{} = project) do
-    Repo.delete(project)
+    alias Firmowid.Analysis
+
+    Multi.new()
+    |> Multi.delete(:project, project)
+    |> Multi.run(:cleanup_tag, fn _repo, _changes ->
+      Analysis.delete_tag_definition_by_id(project.tag_definition_id)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{project: project}} -> {:ok, project}
+      {:error, :project, changeset, _changes} -> {:error, changeset}
+      {:error, :cleanup_tag, reason, _changes} -> {:error, reason}
+    end
   end
 
   def archive_project(%Project{} = project) do

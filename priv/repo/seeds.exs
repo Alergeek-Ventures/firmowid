@@ -2,6 +2,7 @@ import Ecto.Query
 
 alias Firmowid.Accounts
 alias Firmowid.Accounts.Organization
+alias Firmowid.Analysis
 alias Firmowid.BankData.Requisition
 alias Firmowid.Blobs
 alias Firmowid.CostInvoices
@@ -10,8 +11,30 @@ alias Firmowid.Repo
 alias Firmowid.SalesInvoices
 alias Firmowid.Timetracker
 
+# ---------------------------------------------------------------------------
+# Date helpers — all seed dates are relative to today so the dashboard
+# always shows data in the current month and the two preceding months.
+# ---------------------------------------------------------------------------
+today = Date.utc_today()
+
+# Returns a date in the current month clamped to the last day if needed.
+date_this_month = fn day ->
+  Date.new!(today.year, today.month, min(day, Date.days_in_month(today)))
+end
+
+months_ago = fn months ->
+  Date.shift(today, month: -months)
+end
+
+# Returns a date N months ago, on the given day (clamped).
+date_months_ago = fn months, day ->
+  ref = months_ago.(months)
+  Date.new!(ref.year, ref.month, min(day, Date.days_in_month(ref)))
+end
+
 Repo.transaction(fn ->
   alias Firmowid.SalesInvoices.Counterparty
+  alias Firmowid.Timetracker.ProjectUser
 
   piotr =
     case Accounts.register_user(%{
@@ -184,18 +207,18 @@ Repo.transaction(fn ->
   })
 
   get_or_create_project = fn name ->
-    case Timetracker.create_project(%{name: name}) do
-      {:ok, project} ->
+    case Repo.one(
+           from(p in Firmowid.Timetracker.Project,
+             where: p.name == ^name and p.organization_id == ^hello_kitty.id,
+             limit: 1
+           )
+         ) do
+      nil ->
+        {:ok, project} = Timetracker.create_project(%{name: name})
         project
 
-      {:error, _} ->
-        import Ecto.Query
-
-        Repo.one!(
-          from p in Firmowid.Timetracker.Project,
-            where: p.name == ^name and p.organization_id == ^hello_kitty.id,
-            limit: 1
-        )
+      project ->
+        project
     end
   end
 
@@ -203,10 +226,21 @@ Repo.transaction(fn ->
   hepa = get_or_create_project.("Hepa")
   startapp = get_or_create_project.("Startapp")
 
-  Timetracker.add_user_to_project(piotr.id, firmowid.id)
-  Timetracker.add_user_to_project(hyzio.id, firmowid.id)
-  Timetracker.add_user_to_project(hyzio.id, hepa.id)
-  Timetracker.add_user_to_project(hyzio.id, startapp.id)
+  for {user_id, project_id} <- [
+        {piotr.id, firmowid.id},
+        {hyzio.id, firmowid.id},
+        {hyzio.id, hepa.id},
+        {hyzio.id, startapp.id}
+      ] do
+    if !Repo.one(
+         from(pu in ProjectUser,
+           where: pu.user_id == ^user_id and pu.project_id == ^project_id,
+           limit: 1
+         )
+       ) do
+      Timetracker.add_user_to_project(user_id, project_id)
+    end
+  end
 
   blob =
     case Repo.get(Blobs.Blob, "4ff0d0b1-3298-4b80-9d53-a71d0efc4cad") do
@@ -246,24 +280,28 @@ Repo.transaction(fn ->
         requisition_id: mock_requisition.id
       })
 
-  for {id, transaction_id, internal_transaction_id, amount, booking_date, value_date, remittance, inserted_at, updated_at} <-
+  # ---------------------------------------------------------------------------
+  # Current month — Mobile Vikings card transactions + cost invoice
+  # These are *unmatched* transactions showing the raw bank feed state.
+  # The cost invoice is also unmatched (no linked transactions).
+  # ---------------------------------------------------------------------------
+
+  for {id, transaction_id, internal_transaction_id, amount, day_offset, value_day_offset, remittance} <-
         [
-          {"1f106c75-fb3b-45ba-a876-78c9eab8dd46", "AT#558247778", "a7ba3c4f5cb22887c1b24d91090854a1", -25.00,
-           ~D[2025-02-09], ~D[2025-02-06], "Nr karty  ...9285 25,00PLN", ~N[2025-02-10 11:01:08],
-           ~N[2025-04-29 11:01:37]},
-          {"3254345b-d0e0-4ab3-a1b0-94c1114e6487", "AT#558247777", "2b1fd5fb1fe7007e1d097ab7797243ea", -16.00,
-           ~D[2025-02-09], ~D[2025-02-06], "Nr karty  ...9285 16,00PLN", ~N[2025-02-10 11:01:08],
-           ~N[2025-04-29 11:01:37]},
-          {"00f8897f-604b-4a01-a050-d40fa38dee9f", "AT#558562705", "4401bbdb885cbd5d77ac9e7b55419226", -50.00,
-           ~D[2025-02-10], ~D[2025-02-07], "Nr karty  ...9285 50,00PLN", ~N[2025-02-14 11:00:39],
-           ~N[2025-04-29 11:01:37]},
-          {"2456e77a-879b-434e-a1a6-481f8afc95ba", "AT#559040150", "1cd5cc42967f946b1f6c1b052bca0cbd", -10.00,
-           ~D[2025-02-12], ~D[2025-02-09], "Nr karty  ...9285 10,00PLN", ~N[2025-02-14 11:00:39],
-           ~N[2025-05-12 11:00:33]},
-          {"bddc309c-85b2-41cb-b550-53343797c8b3", "AT#561164105", "58b45609e06837602f718c5787d26529", -25.00,
-           ~D[2025-02-22], ~D[2025-02-19], "Nr karty  ...9285 25,00PLN", ~N[2025-02-24 11:00:52], ~N[2025-05-20 11:00:37]}
+          {"1f106c75-fb3b-45ba-a876-78c9eab8dd46", "AT#558247778", "a7ba3c4f5cb22887c1b24d91090854a1", -25.00, 9, 6,
+           "Nr karty  ...9285 25,00PLN"},
+          {"3254345b-d0e0-4ab3-a1b0-94c1114e6487", "AT#558247777", "2b1fd5fb1fe7007e1d097ab7797243ea", -16.00, 9, 6,
+           "Nr karty  ...9285 16,00PLN"},
+          {"00f8897f-604b-4a01-a050-d40fa38dee9f", "AT#558562705", "4401bbdb885cbd5d77ac9e7b55419226", -50.00, 10, 7,
+           "Nr karty  ...9285 50,00PLN"},
+          {"2456e77a-879b-434e-a1a6-481f8afc95ba", "AT#559040150", "1cd5cc42967f946b1f6c1b052bca0cbd", -10.00, 12, 9,
+           "Nr karty  ...9285 10,00PLN"},
+          {"bddc309c-85b2-41cb-b550-53343797c8b3", "AT#561164105", "58b45609e06837602f718c5787d26529", -25.00, 5, 3,
+           "Nr karty  ...9285 25,00PLN"}
         ] do
     if is_nil(Repo.get(Finances.Transaction, id)) do
+      now = DateTime.truncate(DateTime.utc_now(), :second)
+
       Repo.insert!(%Finances.Transaction{
         id: id,
         transaction_id: transaction_id,
@@ -274,14 +312,14 @@ Repo.transaction(fn ->
         debtor_account: "N/A",
         transaction_amount: amount,
         transaction_currency: "PLN",
-        booking_date: booking_date,
-        value_date: value_date,
+        booking_date: date_this_month.(day_offset),
+        value_date: date_this_month.(value_day_offset),
         remittance_information_unstructured: remittance,
         skip_invoicing: false,
         bank_account_id: bank_account.id,
         organization_id: hello_kitty.id,
-        inserted_at: DateTime.from_naive!(inserted_at, "Etc/UTC"),
-        updated_at: DateTime.from_naive!(updated_at, "Etc/UTC")
+        inserted_at: now,
+        updated_at: now
       })
     end
   end
@@ -292,12 +330,12 @@ Repo.transaction(fn ->
       blob_id: blob.id,
       seller: "VikingCo Poland Sp. Z 0.0.",
       seller_display_name: "Mobile Vikings",
-      sale_date: ~D[2025-02-28],
-      issue_date: ~D[2025-03-05],
-      due_date: ~D[2025-03-05],
+      sale_date: date_this_month.(1),
+      issue_date: date_this_month.(5),
+      due_date: date_this_month.(5),
       total_amount: -126.00,
       currency: "PLN",
-      invoice_identifier: "2025-03-0040951-Z",
+      invoice_identifier: "#{today.year}-#{String.pad_leading("#{today.month}", 2, "0")}-0040951-Z",
       description: "Usługi telekomunikacyjne: doładowania na różnych kwotach i pojemności.",
       skip_invoicing: false,
       organization_id: hello_kitty.id,
@@ -305,6 +343,7 @@ Repo.transaction(fn ->
     })
   end
 
+  # Current-month unmatched bank transactions (no bank_account — simulating API feed)
   transactions = [
     %{
       internal_transaction_id: "txn_001",
@@ -313,7 +352,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Invoice #INV-2024-001 for software development services",
       transaction_currency: "USD",
       transaction_amount: 5000.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(1),
       organization_id: hello_kitty.id
     },
     %{
@@ -323,7 +362,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Monthly subscription payment for SaaS platform",
       transaction_currency: "EUR",
       transaction_amount: 299.99,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(2),
       organization_id: hello_kitty.id
     },
     %{
@@ -333,7 +372,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Consulting fee for Q1 2024 project",
       transaction_currency: "PLN",
       transaction_amount: 15_000.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(3),
       organization_id: hello_kitty.id
     },
     %{
@@ -343,7 +382,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Cloud hosting payment for January 2024",
       transaction_currency: "USD",
       transaction_amount: 250.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(3),
       organization_id: hello_kitty.id
     },
     %{
@@ -353,7 +392,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Digital marketing campaign Q1 2024",
       transaction_currency: "EUR",
       transaction_amount: 1200.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(4),
       organization_id: hello_kitty.id
     },
     %{
@@ -363,7 +402,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Payment for design sprint facilitation",
       transaction_currency: "USD",
       transaction_amount: 3500.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(4),
       organization_id: hello_kitty.id
     },
     %{
@@ -373,7 +412,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Legal retainer fee for 2024 Q1",
       transaction_currency: "EUR",
       transaction_amount: 2000.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(5),
       organization_id: hello_kitty.id
     },
     %{
@@ -383,7 +422,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Hardware procurement invoice INV-2024-045",
       transaction_currency: "USD",
       transaction_amount: 8900.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(5),
       organization_id: hello_kitty.id
     },
     %{
@@ -393,7 +432,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Annual corporate insurance premium",
       transaction_currency: "USD",
       transaction_amount: 4200.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(6),
       organization_id: hello_kitty.id
     },
     %{
@@ -403,7 +442,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Logistics and shipping fees for February",
       transaction_currency: "GBP",
       transaction_amount: 1800.50,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(6),
       organization_id: hello_kitty.id
     },
     %{
@@ -413,7 +452,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Data analytics consulting project payment",
       transaction_currency: "USD",
       transaction_amount: 6400.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(7),
       organization_id: hello_kitty.id
     },
     %{
@@ -423,7 +462,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Invoice INV-2024-078 for retail software integration",
       transaction_currency: "CAD",
       transaction_amount: 7200.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(7),
       organization_id: hello_kitty.id
     },
     %{
@@ -433,7 +472,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Office supplies order #5678",
       transaction_currency: "USD",
       transaction_amount: 480.75,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(8),
       organization_id: hello_kitty.id
     },
     %{
@@ -443,7 +482,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Advertising campaign for March 2024",
       transaction_currency: "EUR",
       transaction_amount: 2600.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(8),
       organization_id: hello_kitty.id
     },
     %{
@@ -453,7 +492,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Coworking space rental fee - April 2024",
       transaction_currency: "USD",
       transaction_amount: 950.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(9),
       organization_id: hello_kitty.id
     },
     %{
@@ -463,7 +502,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Refund for overpayment in January",
       transaction_currency: "USD",
       transaction_amount: -50.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(9),
       organization_id: hello_kitty.id
     },
     %{
@@ -473,7 +512,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Invoice INV-2024-112 for industrial automation software",
       transaction_currency: "JPY",
       transaction_amount: 650_000.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(10),
       organization_id: hello_kitty.id
     },
     %{
@@ -483,7 +522,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Electricity bill for March 2024",
       transaction_currency: "USD",
       transaction_amount: 320.45,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(10),
       organization_id: hello_kitty.id
     },
     %{
@@ -493,7 +532,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Financial audit service for FY2023",
       transaction_currency: "GBP",
       transaction_amount: 5100.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(11),
       organization_id: hello_kitty.id
     },
     %{
@@ -503,7 +542,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Payment for strategic partnership workshop",
       transaction_currency: "EUR",
       transaction_amount: 2750.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(11),
       organization_id: hello_kitty.id
     },
     %{
@@ -513,7 +552,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Claim payout for policy #POL-2024-005",
       transaction_currency: "USD",
       transaction_amount: 1500.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(12),
       organization_id: hello_kitty.id
     },
     %{
@@ -523,7 +562,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Marketing retainer fee for April 2024",
       transaction_currency: "EUR",
       transaction_amount: 1200.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(12),
       organization_id: hello_kitty.id
     },
     %{
@@ -533,7 +572,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Payment for Q2 SaaS subscription",
       transaction_currency: "EUR",
       transaction_amount: 299.99,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(1),
       organization_id: hello_kitty.id
     },
     %{
@@ -543,7 +582,7 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "April 2024 freight and transport services",
       transaction_currency: "GBP",
       transaction_amount: 1900.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(2),
       organization_id: hello_kitty.id
     },
     %{
@@ -553,17 +592,26 @@ Repo.transaction(fn ->
       remittance_information_unstructured: "Final installment for hardware integration project",
       transaction_currency: "USD",
       transaction_amount: 4500.00,
-      booking_date: Date.utc_today(),
+      booking_date: date_this_month.(3),
       organization_id: hello_kitty.id
     }
   ]
 
   Finances.create_or_update_transactions(transactions)
 
+  # ---------------------------------------------------------------------------
+  # Current month — Sales invoices (KSeF test scenarios)
+  # These showcase KSeF submission states; they are NOT matched to transactions
+  # so they won't appear on the analysis dashboard (by design — they're
+  # invoicing-workflow items, not yet confirmed by a bank transaction).
+  # ---------------------------------------------------------------------------
+
+  inv_number_prefix = "#{String.pad_leading("#{today.month}", 2, "0")}/#{today.year}"
+
   existing_invoice =
     Repo.one(
       from(si in SalesInvoices.SalesInvoice,
-        where: si.invoice_number == "01/11/2025" and si.organization_id == ^hello_kitty.id,
+        where: si.invoice_number == ^"01/#{inv_number_prefix}" and si.organization_id == ^hello_kitty.id,
         limit: 1
       )
     )
@@ -572,12 +620,11 @@ Repo.transaction(fn ->
     SalesInvoices.create_sales_invoice(
       %SalesInvoices.SalesInvoice{organization_id: hello_kitty.id},
       %{
-        "id" => "019d0001-0000-7000-8000-000000000001",
-        "invoice_number" => "01/11/2025",
+        "invoice_number" => "01/#{inv_number_prefix}",
         "invoice_type" => "poland",
-        "issue_date" => ~D[2025-11-15],
-        "sale_date" => ~D[2025-11-15],
-        "due_date" => ~D[2025-11-29],
+        "issue_date" => date_this_month.(15),
+        "sale_date" => date_this_month.(15),
+        "due_date" => date_this_month.(28),
         "currency" => "PLN",
         "seller_display_name" => "Hello Kitty Inc.",
         "seller_address" => "Lipowa 3D, 30-702, Kraków",
@@ -622,7 +669,7 @@ Repo.transaction(fn ->
   ksef_success_invoice =
     Repo.one(
       from(si in SalesInvoices.SalesInvoice,
-        where: si.invoice_number == "01/01/2025" and si.organization_id == ^hello_kitty.id,
+        where: si.invoice_number == ^"02/#{inv_number_prefix}" and si.organization_id == ^hello_kitty.id,
         limit: 1
       )
     )
@@ -632,11 +679,11 @@ Repo.transaction(fn ->
       SalesInvoices.create_sales_invoice(
         %SalesInvoices.SalesInvoice{organization_id: hello_kitty.id},
         %{
-          "invoice_number" => "01/01/2025",
+          "invoice_number" => "02/#{inv_number_prefix}",
           "invoice_type" => "poland",
-          "issue_date" => ~D[2025-01-10],
-          "sale_date" => ~D[2025-01-10],
-          "due_date" => ~D[2025-01-24],
+          "issue_date" => date_this_month.(10),
+          "sale_date" => date_this_month.(10),
+          "due_date" => date_this_month.(24),
           "currency" => "PLN",
           "seller_display_name" => "Hello Kitty Inc.",
           "seller_address" => "Lipowa 3D, 30-702, Kraków",
@@ -667,7 +714,7 @@ Repo.transaction(fn ->
     |> Ecto.Changeset.change(%{
       ksef_number: "1111111111-20250110-ABC123DEF456-00",
       ksef_session_reference_number: "20250110-SE-ABC123DEF456-00",
-      locked_at: ~U[2025-01-10 12:00:00Z]
+      locked_at: DateTime.truncate(DateTime.utc_now(), :second)
     })
     |> Repo.update!()
   end
@@ -675,7 +722,7 @@ Repo.transaction(fn ->
   ksef_sending_invoice =
     Repo.one(
       from(si in SalesInvoices.SalesInvoice,
-        where: si.invoice_number == "02/01/2025" and si.organization_id == ^hello_kitty.id,
+        where: si.invoice_number == ^"03/#{inv_number_prefix}" and si.organization_id == ^hello_kitty.id,
         limit: 1
       )
     )
@@ -685,11 +732,11 @@ Repo.transaction(fn ->
       SalesInvoices.create_sales_invoice(
         %SalesInvoices.SalesInvoice{organization_id: hello_kitty.id},
         %{
-          "invoice_number" => "02/01/2025",
+          "invoice_number" => "03/#{inv_number_prefix}",
           "invoice_type" => "poland",
-          "issue_date" => ~D[2025-01-15],
-          "sale_date" => ~D[2025-01-15],
-          "due_date" => ~D[2025-01-29],
+          "issue_date" => date_this_month.(5),
+          "sale_date" => date_this_month.(5),
+          "due_date" => date_this_month.(19),
           "currency" => "PLN",
           "seller_display_name" => "Hello Kitty Inc.",
           "seller_address" => "Lipowa 3D, 30-702, Kraków",
@@ -720,7 +767,7 @@ Repo.transaction(fn ->
     |> Ecto.Changeset.change(%{
       ksef_number: nil,
       ksef_session_reference_number: "20250115-SE-SENDING123-00",
-      locked_at: ~U[2025-01-15 10:00:00Z]
+      locked_at: DateTime.truncate(DateTime.utc_now(), :second)
     })
     |> Repo.update!()
 
@@ -747,7 +794,7 @@ Repo.transaction(fn ->
   ksef_failed_invoice =
     Repo.one(
       from(si in SalesInvoices.SalesInvoice,
-        where: si.invoice_number == "03/01/2025" and si.organization_id == ^hello_kitty.id,
+        where: si.invoice_number == ^"04/#{inv_number_prefix}" and si.organization_id == ^hello_kitty.id,
         limit: 1
       )
     )
@@ -757,11 +804,11 @@ Repo.transaction(fn ->
       SalesInvoices.create_sales_invoice(
         %SalesInvoices.SalesInvoice{organization_id: hello_kitty.id},
         %{
-          "invoice_number" => "03/01/2025",
+          "invoice_number" => "04/#{inv_number_prefix}",
           "invoice_type" => "poland",
-          "issue_date" => ~D[2025-01-20],
-          "sale_date" => ~D[2025-01-20],
-          "due_date" => ~D[2025-02-03],
+          "issue_date" => date_this_month.(3),
+          "sale_date" => date_this_month.(3),
+          "due_date" => date_this_month.(17),
           "currency" => "PLN",
           "seller_display_name" => "Hello Kitty Inc.",
           "seller_address" => "Lipowa 3D, 30-702, Kraków",
@@ -792,7 +839,7 @@ Repo.transaction(fn ->
     |> Ecto.Changeset.change(%{
       ksef_number: nil,
       ksef_session_reference_number: "20250120-SE-FAILED456-00",
-      locked_at: ~U[2025-01-20 14:00:00Z]
+      locked_at: DateTime.truncate(DateTime.utc_now(), :second)
     })
     |> Repo.update!()
 
@@ -820,6 +867,547 @@ Repo.transaction(fn ->
       ]
     )
   end
+
+  # =========================================================================
+  # Analysis dashboard showcase — M-1 (1 month ago)
+  #
+  # All invoices here are matched to transactions and tagged, demonstrating
+  # the full analysis workflow a developer will see on /analiza.
+  #
+  #   Sales invoice  → Acme dev services  12,300 PLN  → tagged :company
+  #   Sales invoice  → Deutsche Tech       4,000 EUR  → untagged
+  #   Cost invoice   → Cloud hosting      -1,200 PLN  → tagged project:Firmowid
+  #   Cost invoice   → Office supplies      -450 PLN  → untagged
+  # =========================================================================
+
+  m1_sale_date = date_months_ago.(1, 15)
+  m1_issue_date = date_months_ago.(1, 16)
+  m1_due_date = date_months_ago.(1, 28)
+  m1_booking = date_months_ago.(1, 20)
+  now = DateTime.truncate(DateTime.utc_now(), :second)
+
+  # — M-1 transactions (matched to invoices below) —
+
+  m1_txns =
+    for {itid, creditor, debtor, amount, currency} <- [
+          {"m1_sale_acme", "Hello Kitty Inc.", "Acme Corporation", 12_300.00, "PLN"},
+          {"m1_sale_deutsche", "Hello Kitty Inc.", "Deutsche Tech GmbH", 4_000.00, "EUR"},
+          {"m1_cost_cloud", "OVH Cloud Sp. z o.o.", "Hello Kitty Inc.", -1_200.00, "PLN"},
+          {"m1_cost_office", "Biuro Plus Sp. z o.o.", "Hello Kitty Inc.", -450.00, "PLN"}
+        ] do
+      txn_map = %{
+        internal_transaction_id: itid,
+        creditor_name: creditor,
+        creditor_account: "N/A",
+        debtor_name: debtor,
+        debtor_account: "N/A",
+        transaction_amount: amount,
+        transaction_currency: currency,
+        booking_date: m1_booking,
+        bank_account_id: bank_account.id,
+        organization_id: hello_kitty.id,
+        skip_invoicing: false
+      }
+
+      existing =
+        Repo.one(
+          from(t in Finances.Transaction,
+            where:
+              t.internal_transaction_id == ^itid and
+                t.organization_id == ^hello_kitty.id,
+            limit: 1
+          )
+        )
+
+      case existing do
+        nil ->
+          Repo.insert!(%Finances.Transaction{
+            id: Ecto.UUID.generate(),
+            internal_transaction_id: txn_map.internal_transaction_id,
+            creditor_name: txn_map.creditor_name,
+            creditor_account: txn_map.creditor_account,
+            debtor_name: txn_map.debtor_name,
+            debtor_account: txn_map.debtor_account,
+            transaction_amount: txn_map.transaction_amount,
+            transaction_currency: txn_map.transaction_currency,
+            booking_date: txn_map.booking_date,
+            bank_account_id: txn_map.bank_account_id,
+            organization_id: txn_map.organization_id,
+            skip_invoicing: txn_map.skip_invoicing,
+            inserted_at: now,
+            updated_at: now
+          })
+
+        txn ->
+          txn
+      end
+    end
+
+  m1_txn_map = Map.new(m1_txns, &{&1.internal_transaction_id, &1})
+
+  # — M-1 sales invoices —
+
+  m1_prefix =
+    (
+      d = months_ago.(1)
+      "#{String.pad_leading("#{d.month}", 2, "0")}/#{d.year}"
+    )
+
+  m1_sale_1 =
+    case Repo.one(
+           from(si in SalesInvoices.SalesInvoice,
+             where: si.invoice_number == ^"01/#{m1_prefix}" and si.organization_id == ^hello_kitty.id,
+             limit: 1
+           )
+         ) do
+      nil ->
+        {:ok, inv} =
+          SalesInvoices.create_sales_invoice(
+            %SalesInvoices.SalesInvoice{organization_id: hello_kitty.id},
+            %{
+              "invoice_number" => "01/#{m1_prefix}",
+              "invoice_type" => "poland",
+              "issue_date" => m1_issue_date,
+              "sale_date" => m1_sale_date,
+              "due_date" => m1_due_date,
+              "currency" => "PLN",
+              "seller_display_name" => "Hello Kitty Inc.",
+              "seller_address" => "Lipowa 3D, 30-702, Kraków",
+              "seller_nip" => "6161525811",
+              "seller_account_number" => "PL58253000082079847123980045",
+              "buyer_display_name" => "Acme Corporation Sp. z o.o.",
+              "buyer_full_name" => "Acme Corporation Sp. z o.o.",
+              "buyer_address" => "ul. Testowa 42, 00-001 Warszawa",
+              "buyer_country" => "PL",
+              "buyer_id" => "5272830422",
+              "buyer_type" => "company",
+              "payment_method" => "transfer",
+              "is_reverse_charge" => false,
+              "is_cash_account" => false,
+              "sales_invoice_items" => [
+                %{
+                  "name" => "Usługi programistyczne",
+                  "quantity" => 80,
+                  "unit" => "godz.",
+                  "unit_price" => 150.00,
+                  "vat_rate" => "23"
+                }
+              ]
+            }
+          )
+
+        inv
+
+      inv ->
+        inv
+    end
+
+  m1_sale_2 =
+    case Repo.one(
+           from(si in SalesInvoices.SalesInvoice,
+             where: si.invoice_number == ^"02/#{m1_prefix}" and si.organization_id == ^hello_kitty.id,
+             limit: 1
+           )
+         ) do
+      nil ->
+        {:ok, inv} =
+          SalesInvoices.create_sales_invoice(
+            %SalesInvoices.SalesInvoice{organization_id: hello_kitty.id},
+            %{
+              "invoice_number" => "02/#{m1_prefix}",
+              "invoice_type" => "foreign",
+              "issue_date" => m1_issue_date,
+              "sale_date" => m1_sale_date,
+              "due_date" => m1_due_date,
+              "currency" => "EUR",
+              "seller_display_name" => "Hello Kitty Inc.",
+              "seller_address" => "Lipowa 3D, 30-702, Kraków",
+              "seller_nip" => "6161525811",
+              "seller_account_number" => "PL58253000082079847123980045",
+              "buyer_display_name" => "Deutsche Tech GmbH",
+              "buyer_full_name" => "Deutsche Tech GmbH",
+              "buyer_address" => "Hauptstraße 123, 10115 Berlin",
+              "buyer_country" => "DE",
+              "buyer_id" => "DE123456789",
+              "buyer_type" => "company",
+              "payment_method" => "transfer",
+              "is_reverse_charge" => true,
+              "is_cash_account" => false,
+              "sales_invoice_items" => [
+                %{
+                  "name" => "IT Consulting Services",
+                  "quantity" => 20,
+                  "unit" => "godz.",
+                  "unit_price" => 200.00,
+                  "vat_rate" => "np I"
+                }
+              ]
+            }
+          )
+
+        inv
+
+      inv ->
+        inv
+    end
+
+  # — M-1 cost invoices —
+
+  m1_cost_1 =
+    case Repo.one(
+           from(ci in CostInvoices.CostInvoice,
+             where: ci.invoice_identifier == ^"OVH/#{m1_prefix}" and ci.organization_id == ^hello_kitty.id,
+             limit: 1
+           )
+         ) do
+      nil ->
+        Repo.insert!(%CostInvoices.CostInvoice{
+          seller: "OVH Cloud Sp. z o.o.",
+          seller_display_name: "OVH Cloud",
+          seller_address: "ul. Swobodna 1, 50-088 Wrocław",
+          sale_date: m1_sale_date,
+          issue_date: m1_issue_date,
+          due_date: m1_due_date,
+          total_amount: -1_200.00,
+          currency: "PLN",
+          invoice_identifier: "OVH/#{m1_prefix}",
+          description: "Hosting serwerów dedykowanych — środowisko produkcyjne",
+          skip_invoicing: false,
+          organization_id: hello_kitty.id
+        })
+
+      ci ->
+        ci
+    end
+
+  m1_cost_2 =
+    case Repo.one(
+           from(ci in CostInvoices.CostInvoice,
+             where: ci.invoice_identifier == ^"BP/#{m1_prefix}" and ci.organization_id == ^hello_kitty.id,
+             limit: 1
+           )
+         ) do
+      nil ->
+        Repo.insert!(%CostInvoices.CostInvoice{
+          seller: "Biuro Plus Sp. z o.o.",
+          seller_display_name: "Biuro Plus",
+          seller_address: "ul. Biurowa 10, 31-200 Kraków",
+          sale_date: m1_sale_date,
+          issue_date: m1_issue_date,
+          due_date: m1_due_date,
+          total_amount: -450.00,
+          currency: "PLN",
+          invoice_identifier: "BP/#{m1_prefix}",
+          description: "Artykuły biurowe: papier, tonery, materiały eksploatacyjne",
+          skip_invoicing: false,
+          organization_id: hello_kitty.id
+        })
+
+      ci ->
+        ci
+    end
+
+  # — M-1 matching (invoice ↔ transaction) —
+
+  CostInvoices.create_cost_invoices_transactions_connection(
+    m1_cost_1.id,
+    m1_txn_map["m1_cost_cloud"].id,
+    hello_kitty.id
+  )
+
+  CostInvoices.create_cost_invoices_transactions_connection(
+    m1_cost_2.id,
+    m1_txn_map["m1_cost_office"].id,
+    hello_kitty.id
+  )
+
+  SalesInvoices.create_sales_invoices_transactions_connection(
+    m1_sale_1.id,
+    m1_txn_map["m1_sale_acme"].id,
+    hello_kitty.id
+  )
+
+  SalesInvoices.create_sales_invoices_transactions_connection(
+    m1_sale_2.id,
+    m1_txn_map["m1_sale_deutsche"].id,
+    hello_kitty.id
+  )
+
+  # — M-1 tagging —
+  # Sales invoice for Acme → :company (firma overhead)
+  Analysis.set_entity_category(:sales_invoice, m1_sale_1.id, :company)
+  # Cost invoice for OVH Cloud → project:Firmowid
+  firmowid_preloaded = Repo.preload(firmowid, :tag_definition)
+  Analysis.set_entity_project_tags(:cost_invoice, m1_cost_1.id, [firmowid_preloaded.tag_definition_id])
+  # m1_sale_2 and m1_cost_2 intentionally left untagged
+
+  # =========================================================================
+  # Analysis dashboard showcase — M-2 (2 months ago)
+  #
+  #   Sales invoice  → Acme Q retainer    20,000 PLN  → tagged project:Hepa
+  #   Sales invoice  → SV Inc integration  8,500 USD  → tagged projects:Firmowid+Startapp
+  #   Cost invoice   → Legal services     -3,000 PLN  → tagged :internal (excluded from totals!)
+  #   Cost invoice   → Software licenses  -2,400 EUR  → tagged project:Startapp
+  # =========================================================================
+
+  m2_sale_date = date_months_ago.(2, 10)
+  m2_issue_date = date_months_ago.(2, 11)
+  m2_due_date = date_months_ago.(2, 25)
+  m2_booking = date_months_ago.(2, 15)
+
+  # — M-2 transactions —
+
+  m2_txns =
+    for {itid, creditor, debtor, amount, currency} <- [
+          {"m2_sale_acme_q", "Hello Kitty Inc.", "Acme Corporation", 20_000.00, "PLN"},
+          {"m2_sale_sv_int", "Hello Kitty Inc.", "Silicon Valley Inc.", 8_500.00, "USD"},
+          {"m2_cost_legal", "Kancelaria Prawna Lex Sp. z o.o.", "Hello Kitty Inc.", -3_000.00, "PLN"},
+          {"m2_cost_licenses", "JetBrains s.r.o.", "Hello Kitty Inc.", -2_400.00, "EUR"}
+        ] do
+      existing =
+        Repo.one(
+          from(t in Finances.Transaction,
+            where:
+              t.internal_transaction_id == ^itid and
+                t.organization_id == ^hello_kitty.id,
+            limit: 1
+          )
+        )
+
+      case existing do
+        nil ->
+          Repo.insert!(%Finances.Transaction{
+            id: Ecto.UUID.generate(),
+            internal_transaction_id: itid,
+            creditor_name: creditor,
+            creditor_account: "N/A",
+            debtor_name: debtor,
+            debtor_account: "N/A",
+            transaction_amount: amount,
+            transaction_currency: currency,
+            booking_date: m2_booking,
+            bank_account_id: bank_account.id,
+            organization_id: hello_kitty.id,
+            skip_invoicing: false,
+            inserted_at: now,
+            updated_at: now
+          })
+
+        txn ->
+          txn
+      end
+    end
+
+  m2_txn_map = Map.new(m2_txns, &{&1.internal_transaction_id, &1})
+
+  # — M-2 sales invoices —
+
+  m2_prefix =
+    (
+      d = months_ago.(2)
+      "#{String.pad_leading("#{d.month}", 2, "0")}/#{d.year}"
+    )
+
+  m2_sale_1 =
+    case Repo.one(
+           from(si in SalesInvoices.SalesInvoice,
+             where: si.invoice_number == ^"01/#{m2_prefix}" and si.organization_id == ^hello_kitty.id,
+             limit: 1
+           )
+         ) do
+      nil ->
+        {:ok, inv} =
+          SalesInvoices.create_sales_invoice(
+            %SalesInvoices.SalesInvoice{organization_id: hello_kitty.id},
+            %{
+              "invoice_number" => "01/#{m2_prefix}",
+              "invoice_type" => "poland",
+              "issue_date" => m2_issue_date,
+              "sale_date" => m2_sale_date,
+              "due_date" => m2_due_date,
+              "currency" => "PLN",
+              "seller_display_name" => "Hello Kitty Inc.",
+              "seller_address" => "Lipowa 3D, 30-702, Kraków",
+              "seller_nip" => "6161525811",
+              "seller_account_number" => "PL58253000082079847123980045",
+              "buyer_display_name" => "Acme Corporation Sp. z o.o.",
+              "buyer_full_name" => "Acme Corporation Sp. z o.o.",
+              "buyer_address" => "ul. Testowa 42, 00-001 Warszawa",
+              "buyer_country" => "PL",
+              "buyer_id" => "5272830422",
+              "buyer_type" => "company",
+              "payment_method" => "transfer",
+              "is_reverse_charge" => false,
+              "is_cash_account" => false,
+              "sales_invoice_items" => [
+                %{
+                  "name" => "Kwartalny retainer — usługi programistyczne",
+                  "quantity" => 1,
+                  "unit" => "szt.",
+                  "unit_price" => 20_000.00,
+                  "vat_rate" => "23"
+                }
+              ]
+            }
+          )
+
+        inv
+
+      inv ->
+        inv
+    end
+
+  m2_sale_2 =
+    case Repo.one(
+           from(si in SalesInvoices.SalesInvoice,
+             where: si.invoice_number == ^"02/#{m2_prefix}" and si.organization_id == ^hello_kitty.id,
+             limit: 1
+           )
+         ) do
+      nil ->
+        {:ok, inv} =
+          SalesInvoices.create_sales_invoice(
+            %SalesInvoices.SalesInvoice{organization_id: hello_kitty.id},
+            %{
+              "invoice_number" => "02/#{m2_prefix}",
+              "invoice_type" => "foreign",
+              "issue_date" => m2_issue_date,
+              "sale_date" => m2_sale_date,
+              "due_date" => m2_due_date,
+              "currency" => "USD",
+              "seller_display_name" => "Hello Kitty Inc.",
+              "seller_address" => "Lipowa 3D, 30-702, Kraków",
+              "seller_nip" => "6161525811",
+              "seller_account_number" => "PL58253000082079847123980045",
+              "buyer_display_name" => "Silicon Valley Inc.",
+              "buyer_full_name" => "Silicon Valley Inc.",
+              "buyer_address" => "1 Infinite Loop, Cupertino, CA 95014",
+              "buyer_country" => "US",
+              "buyer_id" => "US-EIN-12-3456789",
+              "buyer_type" => "company",
+              "payment_method" => "transfer",
+              "is_reverse_charge" => false,
+              "is_cash_account" => false,
+              "sales_invoice_items" => [
+                %{
+                  "name" => "Platform integration & API development",
+                  "quantity" => 50,
+                  "unit" => "godz.",
+                  "unit_price" => 170.00,
+                  "vat_rate" => "np II"
+                }
+              ]
+            }
+          )
+
+        inv
+
+      inv ->
+        inv
+    end
+
+  # — M-2 cost invoices —
+
+  m2_cost_1 =
+    case Repo.one(
+           from(ci in CostInvoices.CostInvoice,
+             where: ci.invoice_identifier == ^"LEX/#{m2_prefix}" and ci.organization_id == ^hello_kitty.id,
+             limit: 1
+           )
+         ) do
+      nil ->
+        Repo.insert!(%CostInvoices.CostInvoice{
+          seller: "Kancelaria Prawna Lex Sp. z o.o.",
+          seller_display_name: "Kancelaria Lex",
+          seller_address: "ul. Sądowa 7, 00-950 Warszawa",
+          sale_date: m2_sale_date,
+          issue_date: m2_issue_date,
+          due_date: m2_due_date,
+          total_amount: -3_000.00,
+          currency: "PLN",
+          invoice_identifier: "LEX/#{m2_prefix}",
+          description: "Obsługa prawna — przelew między kontami spółki (transakcja wewnętrzna)",
+          skip_invoicing: false,
+          organization_id: hello_kitty.id
+        })
+
+      ci ->
+        ci
+    end
+
+  m2_cost_2 =
+    case Repo.one(
+           from(ci in CostInvoices.CostInvoice,
+             where: ci.invoice_identifier == ^"JB/#{m2_prefix}" and ci.organization_id == ^hello_kitty.id,
+             limit: 1
+           )
+         ) do
+      nil ->
+        Repo.insert!(%CostInvoices.CostInvoice{
+          seller: "JetBrains s.r.o.",
+          seller_display_name: "JetBrains",
+          seller_address: "Na Hřebenech II 1718/10, Prague",
+          sale_date: m2_sale_date,
+          issue_date: m2_issue_date,
+          due_date: m2_due_date,
+          total_amount: -2_400.00,
+          currency: "EUR",
+          invoice_identifier: "JB/#{m2_prefix}",
+          description: "Roczna licencja All Products Pack — 6 stanowisk",
+          skip_invoicing: false,
+          organization_id: hello_kitty.id
+        })
+
+      ci ->
+        ci
+    end
+
+  # — M-2 matching —
+
+  CostInvoices.create_cost_invoices_transactions_connection(
+    m2_cost_1.id,
+    m2_txn_map["m2_cost_legal"].id,
+    hello_kitty.id
+  )
+
+  CostInvoices.create_cost_invoices_transactions_connection(
+    m2_cost_2.id,
+    m2_txn_map["m2_cost_licenses"].id,
+    hello_kitty.id
+  )
+
+  SalesInvoices.create_sales_invoices_transactions_connection(
+    m2_sale_1.id,
+    m2_txn_map["m2_sale_acme_q"].id,
+    hello_kitty.id
+  )
+
+  SalesInvoices.create_sales_invoices_transactions_connection(
+    m2_sale_2.id,
+    m2_txn_map["m2_sale_sv_int"].id,
+    hello_kitty.id
+  )
+
+  # — M-2 tagging —
+  hepa_preloaded = Repo.preload(hepa, :tag_definition)
+  startapp_preloaded = Repo.preload(startapp, :tag_definition)
+
+  # Sales invoice for Acme retainer → project:Hepa
+  Analysis.set_entity_project_tags(:sales_invoice, m2_sale_1.id, [hepa_preloaded.tag_definition_id])
+  # Sales invoice for SV Inc → projects:Firmowid + Startapp (multi-tag)
+  Analysis.set_entity_project_tags(:sales_invoice, m2_sale_2.id, [
+    firmowid_preloaded.tag_definition_id,
+    startapp_preloaded.tag_definition_id
+  ])
+
+  # Cost invoice for Legal → :internal (excluded from totals — dev can verify it disappears)
+  Analysis.set_entity_category(:cost_invoice, m2_cost_1.id, :internal)
+  # Cost invoice for JetBrains → project:Startapp
+  Analysis.set_entity_project_tags(:cost_invoice, m2_cost_2.id, [startapp_preloaded.tag_definition_id])
+
+  # =========================================================================
+  # Evil org — separate tenant for authorization testing
+  # =========================================================================
 
   evil_user =
     case Accounts.register_user(%{
@@ -884,12 +1472,12 @@ Repo.transaction(fn ->
       blob_id: evil_blob.id,
       seller: "Super Secret Supplier Inc.",
       seller_display_name: "Secret Supplier",
-      sale_date: ~D[2025-11-18],
-      issue_date: ~D[2025-11-19],
-      due_date: ~D[2025-12-19],
+      sale_date: date_this_month.(18),
+      issue_date: date_this_month.(19),
+      due_date: date_this_month.(28),
       total_amount: -99_999.99,
       currency: "PLN",
-      invoice_identifier: "SECRET/2025/11/666",
+      invoice_identifier: "SECRET/#{today.year}/#{today.month}/666",
       description: "Top secret confidential services - DO NOT SHARE",
       skip_invoicing: false,
       organization_id: evil_org.id,
@@ -897,10 +1485,12 @@ Repo.transaction(fn ->
     })
   end
 
+  evil_inv_prefix = "#{String.pad_leading("#{today.month}", 2, "0")}/#{today.year}"
+
   existing_evil_invoice =
     Repo.one(
       from(si in SalesInvoices.SalesInvoice,
-        where: si.invoice_number == "EVIL/2025/11/001" and si.organization_id == ^evil_org.id,
+        where: si.invoice_number == ^"EVIL/#{evil_inv_prefix}/001" and si.organization_id == ^evil_org.id,
         limit: 1
       )
     )
@@ -909,12 +1499,11 @@ Repo.transaction(fn ->
     SalesInvoices.create_sales_invoice(
       %SalesInvoices.SalesInvoice{organization_id: evil_org.id},
       %{
-        "id" => "aaaaaaaa-3333-7000-8000-000000000001",
-        "invoice_number" => "EVIL/2025/11/001",
+        "invoice_number" => "EVIL/#{evil_inv_prefix}/001",
         "invoice_type" => "poland",
-        "issue_date" => ~D[2025-11-20],
-        "sale_date" => ~D[2025-11-20],
-        "due_date" => ~D[2025-12-04],
+        "issue_date" => date_this_month.(5),
+        "sale_date" => date_this_month.(5),
+        "due_date" => date_this_month.(19),
         "currency" => "PLN",
         "seller_display_name" => "Evil Competitor Corp",
         "seller_address" => "Dark Street 666, 00-666, Warszawa",
@@ -950,18 +1539,17 @@ Repo.transaction(fn ->
   end
 
   IO.puts("""
-  KSeF Test Environment
-  =====================
-  To test invoice submission to KSeF, generate an authorization token:
+  Seeds loaded successfully!
+  =========================
 
-  URL: https://ap-test.ksef.mf.gov.pl/web/tokens/generate-token
-  NIP: 6161525811 (Hello Kitty Inc.)
+  Analysis dashboard (/analiza) showcase:
+    Current month  — unmatched transactions & invoices (raw bank feed + KSeF states)
+    1 month ago    — matched invoices: :company tag, project:Firmowid tag, untagged
+    2 months ago   — matched invoices: :internal tag (excluded), project:Hepa,
+                     multi-project (Firmowid+Startapp), project:Startapp
 
-  This is the TEST environment (ap-test.ksef.mf.gov.pl).
-  App in development and local environments is already set up to use it.
-
-
-  Production uses: ksef.mf.gov.pl - you can connect to it if you modify
-  configuration in config/config.exs.
+  KSeF Test Environment:
+    URL: https://ap-test.ksef.mf.gov.pl/web/tokens/generate-token
+    NIP: 6161525811 (Hello Kitty Inc.)
   """)
 end)
