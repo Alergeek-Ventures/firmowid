@@ -60,20 +60,42 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
     """
   end
 
-  slot :inner_block, required: false
+  slot :subpreview do
+    attr :invoice_number_label, :string, required: true
+  end
 
   def invoice_preview(assigns) do
     ~H"""
     <div class="mt-8 flex flex-col gap-4 w-full max-w-max mx-auto">
       <h3 class="self-start text-sm leading/snug text-grey-700 ml-1">Podgląd faktury</h3>
-      {render_slot(@inner_block)}
+      <%= case @subpreview do %>
+        <% [main] -> %>
+          <.invoice_preview_border>
+            {render_slot(main)}
+          </.invoice_preview_border>
+        <% [main | subpreviews] -> %>
+          <div class="flex flex-col-reverse xl:flex-row gap-4 w-full">
+            <div class="flex flex-col gap-4 w-full min-w-0 shrink-2">
+              <.invoice_subpreview
+                :for={subpreview <- subpreviews}
+                label={subpreview.invoice_number_label}
+              >
+                {render_slot(subpreview)}
+              </.invoice_subpreview>
+            </div>
+
+            <.invoice_subpreview label={main.invoice_number_label}>
+              {render_slot(main)}
+            </.invoice_subpreview>
+          </div>
+      <% end %>
     </div>
     """
   end
 
   slot :inner_block, required: false
 
-  def invoice_preview_border(assigns) do
+  defp invoice_preview_border(assigns) do
     ~H"""
     <div class="border-grey-200 border-2 rounded overflow-hidden transition-opacity transition-duration-300 hover:opacity-50 w-full">
       {render_slot(@inner_block)}
@@ -84,7 +106,7 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
   attr :label, :string, required: true
   slot :inner_block, required: false
 
-  def invoice_subpreview(assigns) do
+  defp invoice_subpreview(assigns) do
     ~H"""
     <div class="flex flex-col gap-2 w-full min-w-0">
       <p class="text-sm/tight text-grey-700 font-medium ml-1">

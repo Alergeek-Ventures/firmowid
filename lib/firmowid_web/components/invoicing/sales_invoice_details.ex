@@ -308,62 +308,26 @@ defmodule FirmowidWeb.Components.Invoicing.SalesInvoiceDetails do
             />
           <% end %>
 
-          <%= case @invoices_for_preview do %>
-            <% [invoice] -> %>
-              <InvoiceDetails.invoice_preview>
-                <.link href={~p"/sprzedazowe/#{invoice.id}/pobierz"} download>
-                  <InvoiceDetails.invoice_preview_border>
-                    <InvoiceDetails.scalable_invoice_preview>
-                      <FirmowidWeb.PdfHTML.sales_invoice
-                        sales_invoice={invoice}
-                        currency_rate={Firmowid.SalesInvoices.get_currency_rate(invoice)}
-                        show_vat={@show_vat_for_sales_invoice}
-                        reference_invoice={invoice.reference_invoice}
-                      />
-                    </InvoiceDetails.scalable_invoice_preview>
-                  </InvoiceDetails.invoice_preview_border>
-                </.link>
-              </InvoiceDetails.invoice_preview>
-            <% [latest_invoice | previous_invoices] -> %>
-              <InvoiceDetails.invoice_preview>
-                <div class="flex flex-col-reverse xl:flex-row gap-4 w-full">
-                  <div class="flex flex-col gap-4 w-full min-w-0 shrink-2">
-                    <InvoiceDetails.invoice_subpreview
-                      :for={invoice <- previous_invoices}
-                      label={invoice.invoice_number}
-                    >
-                      <InvoiceDetails.scalable_invoice_preview
-                        id={"preview-#{invoice.id}"}
-                        class="max-w-full min-w-0"
-                      >
-                        <FirmowidWeb.PdfHTML.sales_invoice
-                          sales_invoice={invoice}
-                          currency_rate={Firmowid.SalesInvoices.get_currency_rate(invoice)}
-                          show_vat={@show_vat_for_sales_invoice}
-                          reference_invoice={invoice.reference_invoice}
-                        />
-                      </InvoiceDetails.scalable_invoice_preview>
-                    </InvoiceDetails.invoice_subpreview>
-                  </div>
-
-                  <InvoiceDetails.invoice_subpreview label={latest_invoice.invoice_number}>
-                    <.link href={~p"/sprzedazowe/#{latest_invoice.id}/pobierz"} download>
-                      <InvoiceDetails.scalable_invoice_preview
-                        id={"preview-#{latest_invoice.id}"}
-                        class="w-full max-w-full min-w-0"
-                      >
-                        <FirmowidWeb.PdfHTML.sales_invoice
-                          sales_invoice={latest_invoice}
-                          currency_rate={Firmowid.SalesInvoices.get_currency_rate(latest_invoice)}
-                          show_vat={@show_vat_for_sales_invoice}
-                          reference_invoice={latest_invoice.reference_invoice}
-                        />
-                      </InvoiceDetails.scalable_invoice_preview>
-                    </.link>
-                  </InvoiceDetails.invoice_subpreview>
-                </div>
-              </InvoiceDetails.invoice_preview>
-          <% end %>
+          <InvoiceDetails.invoice_preview>
+            <:subpreview
+              :for={invoice <- @invoices_for_preview}
+              invoice_number_label={invoice.invoice_number}
+            >
+              <.link href={~p"/sprzedazowe/#{invoice.id}/pobierz"} download>
+                <InvoiceDetails.scalable_invoice_preview
+                  id={"preview-#{invoice.id}"}
+                  class="max-w-full min-w-0"
+                >
+                  <FirmowidWeb.PdfHTML.sales_invoice
+                    sales_invoice={invoice}
+                    currency_rate={Firmowid.SalesInvoices.get_currency_rate(invoice)}
+                    show_vat={@show_vat_for_sales_invoice}
+                    reference_invoice={invoice.reference_invoice}
+                  />
+                </InvoiceDetails.scalable_invoice_preview>
+              </.link>
+            </:subpreview>
+          </InvoiceDetails.invoice_preview>
         </InvoiceDetails.aside>
 
         <InvoiceDetails.main>

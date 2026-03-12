@@ -13,28 +13,21 @@ defmodule FirmowidWeb.CostInvoiceLive.Show do
     cost_invoice = CostInvoices.get_cost_invoice_with_blob_url(id)
     Bodyguard.permit!(CostInvoices, :show, current_user, cost_invoice)
 
-    cost_invoice = CostInvoices.hydrate_invoice_with_fa3_blob(cost_invoice)
+    if is_nil(cost_invoice.original_invoice) do
+      cost_invoice = CostInvoices.hydrate_invoice_with_fa3_blob(cost_invoice)
+      potential_transactions = Invoicing.get_potential_transactions_for_invoice(cost_invoice)
 
-    potential_transactions = Invoicing.get_potential_transactions_for_invoice(cost_invoice)
+      socket =
+        socket
+        |> assign(:invoice, cost_invoice)
+        |> assign(:potential_transactions, potential_transactions)
+        |> assign(:current_user, current_user)
+        |> assign(:no_padding, true)
 
-    preview_type =
-      cond do
-        is_nil(cost_invoice.blob) -> :none
-        String.ends_with?(cost_invoice.blob.blob_path, ".pdf") -> :pdf
-        String.ends_with?(cost_invoice.blob.blob_path, ".xml") -> :xml
-        true -> :image
-      end
-
-    socket =
-      socket
-      |> assign(:invoice, cost_invoice)
-      |> assign(:potential_transactions, potential_transactions)
-      |> assign(:preview_url, cost_invoice.blob_url)
-      |> assign(:preview_type, preview_type)
-      |> assign(:current_user, current_user)
-      |> assign(:no_padding, true)
-
-    {:ok, socket}
+      {:ok, socket}
+    else
+      {:ok, redirect(socket, to: ~p"/kosztowe/#{cost_invoice.original_invoice.id}")}
+    end
   end
 
   @impl true
@@ -44,8 +37,6 @@ defmodule FirmowidWeb.CostInvoiceLive.Show do
       id="invoice-show"
       module={FirmowidWeb.Components.Invoicing.CostInvoiceDetails}
       invoice={@invoice}
-      preview_url={@preview_url}
-      preview_type={@preview_type}
       potential_transactions={@potential_transactions}
       current_user={@current_user}
     />

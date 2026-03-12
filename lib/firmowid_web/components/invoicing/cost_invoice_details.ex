@@ -8,14 +8,15 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
   alias FirmowidWeb.Components.Invoicing.InvoiceTimeline
 
   attr :invoice, CostInvoice, required: true
-  attr :preview_url, :string, required: true
-  attr :preview_type, :atom, required: true
   attr :potential_transactions, :list, default: []
   attr :current_user, :map, required: true
 
   @impl true
   def render(assigns) do
-    assigns = assign(assigns, :is_cost_invoice, true)
+    assigns =
+      assigns
+      |> assign(:is_cost_invoice, true)
+      |> assign(:invoices_for_preview, Enum.reverse([assigns.invoice | assigns.invoice.correction_invoices]))
 
     ~H"""
     <div id="invoice-show" class="flex flex-col">
@@ -46,16 +47,16 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
               </.button>
 
               <.link
-                :if={@preview_type not in [:none, :xml]}
+                :if={@invoice.ksef_number == nil}
                 class={button_styles(%{color: "light_grey", size: "small", new: true})}
-                href={@preview_url}
+                href={@invoice.blob_url}
                 download
               >
                 <Lucideicons.download /><span class="hidden xl:inline">Pobierz</span>
               </.link>
 
               <.link
-                :if={@preview_type == :xml}
+                :if={@invoice.ksef_number != nil}
                 class={button_styles(%{color: "light_grey", size: "small", new: true})}
                 href={Ksef.invoice_url!(@invoice)}
                 target="_blank"
@@ -88,6 +89,14 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
                 value={@invoice.ksef_number}
                 piece_id="ksef-id"
               />
+
+              <InvoiceDetails.invoice_metadata_piece
+                :if={@invoice.original_invoice_ksef_number != nil}
+                label="Identyfikator KSeF faktury korygowanej"
+                value={@invoice.original_invoice_ksef_number}
+                piece_id="original-invoice-ksef-id"
+              />
+
               <InvoiceDetails.invoice_metadata_piece
                 label="Sprzedawca"
                 value={@invoice.seller}
@@ -117,88 +126,13 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
             />
           <% end %>
 
-          <InvoiceDetails.invoice_preview :if={@preview_type != :none}>
-            <InvoiceDetails.invoice_preview_border>
-              <%= case @preview_type do %>
-                <% :pdf -> %>
-                  <a href={@preview_url} target="_blank">
-                    <div
-                      id="invoice-preview"
-                      data-pdf-url={@preview_url}
-                      phx-update="ignore"
-                      phx-hook="PDFViewer"
-                      class="w-full h-fit max-h-[80vh] overflow-x-hidden overflow-y-hidden bg-white"
-                    >
-                      <div class="w-full p-8 flex items-center justify-center font-bold">
-                        Ładowanie dokumentu...
-                      </div>
-                    </div>
-                  </a>
-                <% :xml -> %>
-                  <InvoiceDetails.scalable_invoice_preview>
-                    <div
-                      id="invoice-preview"
-                      data-fa3-url={@preview_url}
-                      phx-update="ignore"
-                      phx-hook=".FA3Viewer"
-                      class="h-full w-full"
-                    >
-                      <div class="w-full p-8 flex items-center justify-center font-bold">
-                        Ładowanie dokumentu...
-                      </div>
-                    </div>
-                  </InvoiceDetails.scalable_invoice_preview>
-
-                  <script :type={Phoenix.LiveView.ColocatedHook} name=".FA3Viewer">
-                    export default {
-                      async mounted() {
-                        const templateUrl = "/templates/kseffaktura_fa(3).xsl";
-                        const fa3Url = this.el.getAttribute("data-fa3-url");
-
-                        const [template, fa3Content] = await Promise.all([
-                          fetch(templateUrl).then((response) => response.text()),
-                          fetch(fa3Url).then((response) => response.text()),
-                        ]);
-
-                        const fa3Html = this.transformDocument(template, fa3Content);
-
-                        const iFrame = document.createElement("iframe");
-                        iFrame.className = "w-[800px] h-full";
-                        iFrame.addEventListener("load", () => {
-                          const frameDoc = iFrame.contentDocument;
-
-                          const imported = frameDoc.adoptNode(fa3Html.documentElement);
-                          frameDoc.documentElement.replaceWith(imported);
-
-                          frameDoc.body.style.userSelect = "none";
-                          frameDoc.body.style.margin = "0";
-                          frameDoc.body.style.padding = "32px";
-
-                          this.el.style.height = `${frameDoc.body.scrollHeight + 32}px`;
-                        });
-
-                        this.el.replaceChildren(iFrame);
-                      },
-
-                      transformDocument(template, content) {
-                        const parser = new DOMParser();
-                        template = parser.parseFromString(template, "application/xml");
-                        content = parser.parseFromString(content, "application/xml");
-
-                        const processor = new XSLTProcessor();
-                        processor.importStylesheet(template);
-                        return processor.transformToDocument(content);
-                      },
-                    };
-                  </script>
-                <% :image -> %>
-                  <a href={@preview_url} target="_blank">
-                    <div class="w-full h-full max-h-[80vh] overflow-x-hidden bg-black">
-                      <img src={@preview_url} class="w-full h-full object-contain" />
-                    </div>
-                  </a>
-              <% end %>
-            </InvoiceDetails.invoice_preview_border>
+          <InvoiceDetails.invoice_preview>
+            <:subpreview
+              :for={invoice <- @invoices_for_preview}
+              invoice_number_label={invoice.invoice_identifier}
+            >
+              <.preview invoice={invoice} />
+            </:subpreview>
           </InvoiceDetails.invoice_preview>
         </InvoiceDetails.aside>
 
@@ -229,6 +163,117 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
       </div>
     </div>
     """
+  end
+
+  attr :invoice, CostInvoice, required: true
+
+  defp preview(assigns) do
+    invoice = assigns.invoice
+
+    preview_type =
+      cond do
+        is_nil(invoice.blob) -> :none
+        String.ends_with?(invoice.blob.blob_path, ".pdf") -> :pdf
+        String.ends_with?(invoice.blob.blob_path, ".xml") -> :xml
+        true -> :image
+      end
+
+    assigns = %{preview_url: invoice.blob_url}
+
+    case preview_type do
+      :pdf ->
+        ~H"""
+        <a href={@preview_url} target="_blank">
+          <div
+            id="invoice-preview"
+            data-pdf-url={@preview_url}
+            phx-update="ignore"
+            phx-hook="PDFViewer"
+            class="w-full h-fit max-h-[80vh] overflow-x-hidden overflow-y-hidden bg-white"
+          >
+            <div class="w-full p-8 flex items-center justify-center font-bold">
+              Ładowanie dokumentu...
+            </div>
+          </div>
+        </a>
+        """
+
+      :xml ->
+        ~H"""
+        <InvoiceDetails.scalable_invoice_preview>
+          <div
+            id="invoice-preview"
+            data-fa3-url={@preview_url}
+            phx-update="ignore"
+            phx-hook=".FA3Viewer"
+            class="h-full w-full"
+          >
+            <div class="w-full p-8 flex items-center justify-center font-bold">
+              Ładowanie dokumentu...
+            </div>
+          </div>
+        </InvoiceDetails.scalable_invoice_preview>
+
+        <script :type={Phoenix.LiveView.ColocatedHook} name=".FA3Viewer">
+          export default {
+            async mounted() {
+              const templateUrl = "/templates/kseffaktura_fa(3).xsl";
+              const fa3Url = this.el.getAttribute("data-fa3-url");
+
+              const [template, fa3Content] = await Promise.all([
+                fetch(templateUrl).then((response) => response.text()),
+                fetch(fa3Url).then((response) => response.text()),
+              ]);
+
+              const fa3Html = this.transformDocument(template, fa3Content);
+
+              const iFrame = document.createElement("iframe");
+              iFrame.className = "w-[800px] h-full";
+              iFrame.addEventListener("load", () => {
+                const frameDoc = iFrame.contentDocument;
+
+                const imported = frameDoc.adoptNode(fa3Html.documentElement);
+                frameDoc.documentElement.replaceWith(imported);
+
+                frameDoc.body.style.userSelect = "none";
+                frameDoc.body.style.margin = "0";
+                frameDoc.body.style.padding = "32px";
+
+                this.el.style.height = `${frameDoc.body.scrollHeight + 32}px`;
+              });
+
+              this.el.replaceChildren(iFrame);
+            },
+
+            transformDocument(template, content) {
+              const parser = new DOMParser();
+              template = parser.parseFromString(template, "application/xml");
+              content = parser.parseFromString(content, "application/xml");
+
+              const processor = new XSLTProcessor();
+              processor.importStylesheet(template);
+              return processor.transformToDocument(content);
+            },
+          };
+        </script>
+        """
+
+      :image ->
+        ~H"""
+        <a href={@preview_url} target="_blank">
+          <div class="w-full h-full max-h-[80vh] overflow-x-hidden bg-black">
+            <img src={@preview_url} class="w-full h-full object-contain" />
+          </div>
+        </a>
+        """
+
+      :none ->
+        ~H"""
+        <div class="w-full p-8 flex items-center justify-center font-bold">
+          Brak podglądu
+        </div>
+        """
+    end
   end
 
   @impl true
