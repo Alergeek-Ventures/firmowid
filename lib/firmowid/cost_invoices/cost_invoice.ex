@@ -20,10 +20,6 @@ defmodule Firmowid.CostInvoices.CostInvoice do
     field :due_date, :date
 
     field :total_amount, :decimal
-    # NOTE: FA(3) schema contains VAT breakdown fields (P_13_1 through P_13_11 for
-    # net amounts by rate, P_14_1 through P_14_5 for VAT amounts). These are not
-    # stored individually - only the total P_15 is captured in total_amount.
-    # Future: Consider adding vat_breakdown JSONB field if detailed VAT needed.
     field :currency, :string
 
     field :description, :string

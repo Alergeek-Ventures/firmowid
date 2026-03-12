@@ -89,12 +89,15 @@ defmodule Firmowid.CostInvoices do
   def list_cost_invoices(from, to) do
     query =
       from i in CostInvoice,
+        as: :invoice,
         where: i.issue_date >= ^from and i.issue_date <= ^to,
         order_by: [desc: i.issue_date]
 
     query
+    |> exclude_linked_corrections()
     |> Repo.all()
-    |> Repo.preload(:transactions)
+    |> Repo.preload([:transactions, :correction_invoices])
+    |> Enum.map(&merge_corrections_into_original_invoice/1)
   end
 
   @doc """
@@ -154,6 +157,7 @@ defmodule Firmowid.CostInvoices do
   def list_unmatched_cost_invoices(from, to, organization_id) do
     query =
       from i in CostInvoice,
+        as: :invoice,
         left_join: t in assoc(i, :transactions),
         where: is_nil(t.id),
         where: i.skip_invoicing == false,
@@ -161,8 +165,10 @@ defmodule Firmowid.CostInvoices do
         order_by: [desc: i.issue_date]
 
     query
+    |> exclude_linked_corrections()
     |> Repo.all(organization_id: organization_id)
-    |> Repo.preload(:transactions)
+    |> Repo.preload([:transactions, :correction_invoices])
+    |> Enum.map(&merge_corrections_into_original_invoice/1)
   end
 
   def get_cost_invoice(cost_invoice_id) do
@@ -181,7 +187,7 @@ defmodule Firmowid.CostInvoices do
     cost_invoice =
       CostInvoice
       |> Repo.get!(cost_invoice_id)
-      |> Repo.preload([:transactions, :blob, :original_invoice, :correction_invoices])
+      |> Repo.preload([:transactions, :blob, :original_invoice, correction_invoices: :blob])
 
     blob_url =
       case cost_invoice.blob do
@@ -189,16 +195,30 @@ defmodule Firmowid.CostInvoices do
         _ -> Blobs.get_blob_url(cost_invoice.blob_id)
       end
 
-    %{cost_invoice | blob_url: blob_url}
+    correction_invoices =
+      Enum.map(cost_invoice.correction_invoices, fn
+        %{blob: nil} = correction -> correction
+        correction -> %{correction | blob_url: Blobs.get_blob_url(correction.blob_id)}
+      end)
+
+    %{
+      cost_invoice
+      | blob_url: blob_url,
+        correction_invoices: correction_invoices
+    }
   end
 
   def get_cost_invoice_with_blob_url!(cost_invoice_id) do
     cost_invoice =
       CostInvoice
       |> Repo.get!(cost_invoice_id)
-      |> Repo.preload([:transactions, :blob, :original_invoice, :correction_invoices])
+      |> Repo.preload([:transactions, :blob, :original_invoice, correction_invoices: :blob])
 
-    %{cost_invoice | blob_url: Blobs.get_blob_url(cost_invoice.blob_id)}
+    %{
+      cost_invoice
+      | blob_url: Blobs.get_blob_url(cost_invoice.blob_id),
+        correction_invoices: Enum.map(cost_invoice.correction_invoices, &%{&1 | blob_url: Blobs.get_blob_url(&1.blob_id)})
+    }
   end
 
   @doc """
@@ -423,6 +443,56 @@ defmodule Firmowid.CostInvoices do
   end
 
   # Private functions
+
+  defp exclude_linked_corrections(query) do
+    query
+    |> join(
+      :left,
+      [],
+      original_invoice in CostInvoice,
+      on: original_invoice.ksef_number == as(:invoice).original_invoice_ksef_number,
+      as: :original_invoice
+    )
+    |> where([], is_nil(as(:invoice).original_invoice_ksef_number) or is_nil(as(:original_invoice).id))
+  end
+
+  defp merge_corrections_into_original_invoice(%CostInvoice{correction_invoices: []} = invoice), do: invoice
+
+  defp merge_corrections_into_original_invoice(%CostInvoice{} = invoice) do
+    currency_changed? =
+      Enum.any?(invoice.correction_invoices, fn correction ->
+        correction.currency != invoice.currency
+      end)
+
+    total_amount =
+      if currency_changed? do
+        invoice.total_amount
+      else
+        Enum.reduce(invoice.correction_invoices, invoice.total_amount, fn correction, acc ->
+          Decimal.add(acc, correction.total_amount)
+        end)
+      end
+
+    latest_snapshot =
+      Enum.max_by(invoice.correction_invoices, & &1.ksef_permanent_storage_date, NaiveDateTime, fn -> invoice end)
+
+    %{
+      invoice
+      | total_amount: total_amount,
+        currency: latest_snapshot.currency,
+        sale_date: latest_snapshot.sale_date,
+        due_date: latest_snapshot.due_date,
+        seller: latest_snapshot.seller,
+        seller_address: latest_snapshot.seller_address,
+        seller_display_name: latest_snapshot.seller_display_name,
+        seller_nip: latest_snapshot.seller_nip,
+        seller_country_code: latest_snapshot.seller_country_code,
+        seller_email: latest_snapshot.seller_email,
+        seller_phone: latest_snapshot.seller_phone,
+        payment_method: latest_snapshot.payment_method,
+        account_number: latest_snapshot.account_number
+    }
+  end
 
   defp correction_invoice?(%CostInvoice{invoice_type: invoice_type}) do
     invoice_type in @correction_invoice_types
