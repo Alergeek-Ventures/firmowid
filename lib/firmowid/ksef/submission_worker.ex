@@ -42,7 +42,7 @@ defmodule Firmowid.Ksef.SubmissionWorker do
          {:ok, invoice_reference} <- ApiClient.send_invoice(access_token, session_data, invoice_xml),
          :ok <- ApiClient.close_online_session(access_token, session_data.session_reference) do
       Repo.transaction(fn ->
-        lock_invoice(invoice, session_data.session_reference, invoice_xml)
+        lock_invoice(invoice, session_data.session_reference)
 
         schedule_verification(
           sales_invoice_id,
@@ -89,12 +89,11 @@ defmodule Firmowid.Ksef.SubmissionWorker do
     end
   end
 
-  defp lock_invoice(invoice, session_reference, invoice_xml) do
+  defp lock_invoice(invoice, session_reference) do
     invoice
     |> SalesInvoice.ksef_update_changeset(%{
       locked_at: DateTime.utc_now(:second),
-      ksef_session_reference_number: session_reference,
-      ksef_invoice_checksum: Ksef.compute_fa3_checksum(invoice_xml)
+      ksef_session_reference_number: session_reference
     })
     |> Repo.update!()
   end
@@ -136,9 +135,9 @@ defmodule Firmowid.Ksef.SubmissionWorker do
     access_token = SessionWorker.get_access_token!()
 
     case ApiClient.get_invoice_status(access_token, session_reference, invoice_reference) do
-      {:ok, %{ksef_number: ksef_number}} ->
+      {:ok, %{ksef_number: ksef_number, invoice_hash: invoice_hash}} ->
         sales_invoice
-        |> SalesInvoice.ksef_update_changeset(%{ksef_number: ksef_number})
+        |> SalesInvoice.ksef_update_changeset(%{ksef_number: ksef_number, ksef_invoice_checksum: invoice_hash})
         |> Repo.update!()
 
         Logger.info("Invoice #{sales_invoice_id} received KSeF number: #{ksef_number}")

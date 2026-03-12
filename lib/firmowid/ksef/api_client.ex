@@ -349,7 +349,8 @@ defmodule Firmowid.Ksef.ApiClient do
         {:ok,
          %{
            ksef_number: body["ksefNumber"],
-           acquisition_date: body["acquisitionDate"]
+           acquisition_date: body["acquisitionDate"],
+           invoice_hash: body["invoiceHash"]
          }}
 
       {:ok, %{status: 200, body: %{"status" => %{"code" => code}}}} when code in [100, 150] ->
