@@ -38,7 +38,7 @@ defmodule Firmowid.Ksef.InvoiceParser do
         invoice_identifier: tns_xpath(~x"/Faktura/Fa/P_2/text()"s),
         total_amount: tns_xpath(~x"/Faktura/Fa/P_15/text()"s),
         invoice_type: tns_xpath(~x"/Faktura/Fa/RodzajFaktury/text()"s),
-        original_invoice_number: tns_xpath(~x"/Faktura/Fa/DaneFaKorygowanej/NrKSeFFaKorygowanej/text()"os),
+        original_invoice_ksef_number: tns_xpath(~x"/Faktura/Fa/DaneFaKorygowanej/NrKSeFFaKorygowanej/text()"os),
         due_date: tns_xpath(~x"/Faktura/Fa/Platnosc/TerminPlatnosci/Termin/text()"os),
         payment_method: tns_xpath(~x"/Faktura/Fa/Platnosc/FormaPlatnosci/text()"os),
         account_number: tns_xpath(~x"/Faktura/Fa/Platnosc/RachunekBankowy/NrRB/text()"os),

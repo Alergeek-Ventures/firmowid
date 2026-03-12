@@ -44,7 +44,7 @@ defmodule Firmowid.CostInvoices.CostInvoice do
     field :seller_phone, :string
 
     field :invoice_type, Ecto.Enum, values: ~w(vat kor zal roz upr kor_zal kor_roz)a
-    field :original_invoice_number, :string
+    field :original_invoice_ksef_number, :string
 
     field :payment_method, Ecto.Enum, values: ~w(cash card voucher check loan bank_transfer mobile)a
 
@@ -53,11 +53,12 @@ defmodule Firmowid.CostInvoices.CostInvoice do
                  join_through: "cost_invoices_transactions"
 
     has_many :correction_invoices, __MODULE__,
-      foreign_key: :original_invoice_number,
+      foreign_key: :original_invoice_ksef_number,
+      preload_order: [asc: :ksef_permanent_storage_date],
       references: :ksef_number
 
     belongs_to :original_invoice, __MODULE__,
-      foreign_key: :original_invoice_number,
+      foreign_key: :original_invoice_ksef_number,
       references: :ksef_number,
       define_field: false
 
@@ -93,7 +94,7 @@ defmodule Firmowid.CostInvoices.CostInvoice do
       :seller_email,
       :seller_phone,
       :invoice_type,
-      :original_invoice_number,
+      :original_invoice_ksef_number,
       :payment_method
     ])
     |> validate_required([

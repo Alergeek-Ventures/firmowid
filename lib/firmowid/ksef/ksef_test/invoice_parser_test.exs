@@ -263,5 +263,36 @@ defmodule Firmowid.Ksef.InvoiceParserTest do
       # sale_date is P_6 (different from issue_date)
       assert attrs.sale_date == ~D[2025-03-10]
     end
+
+    test "extracts original invoice KSeF number for correction invoices" do
+      xml = """
+      <?xml version="1.0" encoding="utf-8"?>
+      <Faktura xmlns="http://crd.gov.pl/wzor/2025/06/25/13775/">
+        <Podmiot1>
+          <DaneIdentyfikacyjne>
+            <NIP>1234567890</NIP>
+            <Nazwa>Test Seller</Nazwa>
+          </DaneIdentyfikacyjne>
+          <Adres>
+            <KodKraju>PL</KodKraju>
+            <AdresL1>Test Address</AdresL1>
+          </Adres>
+        </Podmiot1>
+        <Fa>
+          <KodWaluty>PLN</KodWaluty>
+          <P_1>2025-04-01</P_1>
+          <P_2>KOR/001</P_2>
+          <P_15>-10.00</P_15>
+          <RodzajFaktury>KOR</RodzajFaktury>
+          <DaneFaKorygowanej>
+            <NrKSeFFaKorygowanej>KSEF-ORIGINAL-123</NrKSeFFaKorygowanej>
+          </DaneFaKorygowanej>
+        </Fa>
+      </Faktura>
+      """
+
+      assert {:ok, attrs} = InvoiceParser.parse(xml)
+      assert attrs.original_invoice_ksef_number == "KSEF-ORIGINAL-123"
+    end
   end
 end
