@@ -39,102 +39,107 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
 
       <div class="flex flex-col lg:flex-row min-w-0 bg-white">
         <InvoiceDetails.aside>
-          <%= if @show_timeline do %>
-            <InvoiceTimeline.invoice_timeline invoice={@invoice} invoice_type={:cost} />
-          <% else %>
-            <div class="flex flex-row gap-4">
-              <.button
-                :if={CostInvoice.deletable?(@invoice)}
-                phx-click="delete"
-                color="light_grey"
-                size="small"
-                new={true}
-              >
-                <.icon name="hero-trash-solid" class="size-4" />
-                <span class="hidden xl:inline">
-                  Usuń
-                </span>
-              </.button>
-
-              <.link
-                :if={@invoice.ksef_number == nil}
-                class={button_styles(%{color: "light_grey", size: "small", new: true})}
-                href={@invoice.blob_url}
-                download
-              >
-                <Lucideicons.download /><span class="hidden xl:inline">Pobierz</span>
-              </.link>
-
-              <.link
-                :if={@invoice.ksef_number != nil}
-                class={button_styles(%{color: "light_grey", size: "small", new: true})}
-                href={Ksef.invoice_url!(@invoice)}
-                target="_blank"
-              >
-                <Lucideicons.database /><span class="hidden xl:inline">Otwórz w KSeF</span>
-              </.link>
-
-              <.button
-                :if={@invoice.ksef_number != nil}
-                class="ml-auto"
-                color="light_grey"
-                size="small"
-                new={true}
-                phx-click="show_timeline"
-                phx-target={@myself}
-              >
-                Historia faktury
-              </.button>
-            </div>
-
-            <InvoiceDetails.invoice_metadata>
-              <InvoiceDetails.invoice_metadata_piece
-                label="Numer faktury"
-                value={@invoice.invoice_identifier}
-                piece_id="invoice-identifier"
+          <div id="aside-dynamic-content">
+            <%= if @show_timeline do %>
+              <InvoiceTimeline.invoice_timeline
+                invoice={@invoice}
+                invoice_type={:cost}
               />
-              <InvoiceDetails.invoice_metadata_piece
-                :if={@invoice.ksef_number != nil}
-                label="Identyfikator KSeF"
-                value={@invoice.ksef_number}
-                piece_id="ksef-id"
-              />
+            <% else %>
+              <div class="flex flex-row gap-4">
+                <.button
+                  :if={CostInvoice.deletable?(@invoice)}
+                  phx-click="delete"
+                  color="light_grey"
+                  size="small"
+                  new={true}
+                >
+                  <.icon name="hero-trash-solid" class="size-4" />
+                  <span class="hidden xl:inline">
+                    Usuń
+                  </span>
+                </.button>
 
-              <InvoiceDetails.invoice_metadata_piece
-                :if={@invoice.original_invoice_ksef_number != nil}
-                label="Identyfikator KSeF faktury korygowanej"
-                value={@invoice.original_invoice_ksef_number}
-                piece_id="original-invoice-ksef-id"
-              />
+                <.link
+                  :if={@invoice.ksef_number == nil}
+                  class={button_styles(%{color: "light_grey", size: "small", new: true})}
+                  href={@invoice.blob_url}
+                  download
+                >
+                  <Lucideicons.download /><span class="hidden xl:inline">Pobierz</span>
+                </.link>
 
-              <InvoiceDetails.invoice_metadata_piece
-                label="Sprzedawca"
-                value={@invoice.seller}
-                piece_id="seller"
-                multiline
-              />
-              <InvoiceDetails.invoice_metadata_piece
-                label="Data wystawienia"
-                value={@invoice.issue_date}
-                piece_id="issue-date"
-              />
-              <InvoiceDetails.invoice_metadata_piece
-                label="Data sprzedaży"
-                value={@invoice.sale_date}
-                piece_id="sale-date"
-              />
-              <InvoiceDetails.invoice_metadata_piece
-                label="Termin płatności"
-                value={@invoice.due_date}
-                piece_id="due-date"
-              />
-            </InvoiceDetails.invoice_metadata>
+                <.link
+                  :if={@invoice.ksef_number != nil}
+                  class={button_styles(%{color: "light_grey", size: "small", new: true})}
+                  href={Ksef.invoice_url!(@invoice)}
+                  target="_blank"
+                >
+                  <Lucideicons.database /><span class="hidden xl:inline">Otwórz w KSeF</span>
+                </.link>
 
-            <InvoiceDetails.invoice_amount
-              is_cost_invoice={true}
-              total_amount={Money.new(@invoice.currency, @invoice.total_amount)}
-            />
-          <% end %>
+                <.button
+                  :if={@invoice.ksef_number != nil}
+                  class="ml-auto"
+                  color="light_grey"
+                  size="small"
+                  new={true}
+                  phx-click="show_timeline"
+                  phx-target={@myself}
+                >
+                  Historia faktury
+                </.button>
+              </div>
+
+              <InvoiceDetails.invoice_metadata>
+                <InvoiceDetails.invoice_metadata_piece
+                  label="Numer faktury"
+                  value={@invoice.invoice_identifier}
+                  piece_id="invoice-identifier"
+                />
+                <InvoiceDetails.invoice_metadata_piece
+                  :if={@invoice.ksef_number != nil}
+                  label="Identyfikator KSeF"
+                  value={@invoice.ksef_number}
+                  piece_id="ksef-id"
+                />
+
+                <InvoiceDetails.invoice_metadata_piece
+                  :if={@invoice.original_invoice_ksef_number != nil}
+                  label="Identyfikator KSeF faktury korygowanej"
+                  value={@invoice.original_invoice_ksef_number}
+                  piece_id="original-invoice-ksef-id"
+                />
+
+                <InvoiceDetails.invoice_metadata_piece
+                  label="Sprzedawca"
+                  value={@invoice.seller}
+                  piece_id="seller"
+                  multiline
+                />
+                <InvoiceDetails.invoice_metadata_piece
+                  label="Data wystawienia"
+                  value={@invoice.issue_date}
+                  piece_id="issue-date"
+                />
+                <InvoiceDetails.invoice_metadata_piece
+                  label="Data sprzedaży"
+                  value={@invoice.sale_date}
+                  piece_id="sale-date"
+                />
+                <InvoiceDetails.invoice_metadata_piece
+                  label="Termin płatności"
+                  value={@invoice.due_date}
+                  piece_id="due-date"
+                />
+              </InvoiceDetails.invoice_metadata>
+
+              <InvoiceDetails.invoice_amount
+                is_cost_invoice={true}
+                total_amount={Money.new(@invoice.currency, @invoice.total_amount)}
+              />
+            <% end %>
+          </div>
 
           <InvoiceDetails.invoice_preview>
             <:subpreview
@@ -188,7 +193,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
         true -> :image
       end
 
-    assigns = %{preview_url: invoice.blob_url}
+    assigns = %{preview_url: invoice.blob_url, id: invoice.id}
 
     case preview_type do
       :pdf ->
@@ -210,9 +215,9 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
 
       :xml ->
         ~H"""
-        <InvoiceDetails.scalable_invoice_preview>
+        <InvoiceDetails.scalable_invoice_preview id={"invoice-scaler-#{@id}"}>
           <div
-            id="invoice-preview"
+            id={"invoice-preview-#{@id}"}
             data-fa3-url={@preview_url}
             phx-update="ignore"
             phx-hook=".FA3Viewer"
@@ -228,7 +233,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
           export default {
             async mounted() {
               const templateUrl = "/templates/kseffaktura_fa(3).xsl";
-              const fa3Url = this.el.getAttribute("data-fa3-url");
+              const fa3Url = this.el.dataset.fa3Url;
 
               const [template, fa3Content] = await Promise.all([
                 fetch(templateUrl).then((response) => response.text()),
@@ -236,23 +241,23 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
               ]);
 
               const fa3Html = this.transformDocument(template, fa3Content);
+              fa3Html.body.style.userSelect = "none";
+              fa3Html.body.style.margin = "0";
+              fa3Html.body.style.padding = "32px";
+              const srcDoc = this.serializeDocument(fa3Html);
 
-              const iFrame = document.createElement("iframe");
-              iFrame.className = "w-[800px] h-full";
-              iFrame.addEventListener("load", () => {
-                const frameDoc = iFrame.contentDocument;
+              const iframe = document.createElement("iframe");
+              iframe.className = "w-[800px] h-full";
+              iframe.srcdoc = srcDoc;
+              this.el.replaceChildren(iframe);
 
-                const imported = frameDoc.adoptNode(fa3Html.documentElement);
-                frameDoc.documentElement.replaceWith(imported);
+              iframe.addEventListener("load", () => {
+                this.el.style.height = `${iframe.contentDocument.body.scrollHeight + 32}px`;
+              }, { once: true });
+            },
 
-                frameDoc.body.style.userSelect = "none";
-                frameDoc.body.style.margin = "0";
-                frameDoc.body.style.padding = "32px";
-
-                this.el.style.height = `${frameDoc.body.scrollHeight + 32}px`;
-              });
-
-              this.el.replaceChildren(iFrame);
+            serializeDocument(document) {
+              return new XMLSerializer().serializeToString(document);
             },
 
             transformDocument(template, content) {
