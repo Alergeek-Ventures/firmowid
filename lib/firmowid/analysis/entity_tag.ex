@@ -12,6 +12,17 @@ defmodule Firmowid.Analysis.EntityTag do
   Categories are mutually exclusive per entity: an entity is either tagged with
   one or more project tags, OR marked as company, OR marked as internal.
   This is enforced by a database trigger.
+
+  ## Orphan cleanup
+
+  * **Tag definition deleted** → entity tags are cleaned up via `ON DELETE CASCADE`
+    on the `tag_definition_id` foreign key.
+  * **Parent entity deleted** (invoice/transaction) → entity tags are **not**
+    automatically removed because the polymorphic `entity_id` has no FK
+    constraint. The application code in `Timetracker.delete_project/1` handles
+    tag definition cleanup; direct entity deletion relies on the fact that
+    orphaned entity tags are harmless (they reference a UUID that no longer
+    matches any row and are filtered out by joins).
   """
   use Firmowid.Schema
 

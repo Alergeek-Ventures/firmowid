@@ -97,59 +97,37 @@
   </div>
 
   <div class="grid grid-cols-1 gap-6 sm:grid-cols-3 mb-8">
-    <button
-      phx-click="select-section"
-      phx-value-section="income"
-      class={[
-        "rounded-lg p-6 text-left cursor-pointer transition-all duration-200",
-        "bg-blueBg border-2 text-blueText",
-        if(@expanded_section == :income,
-          do: "border-blueText ring-2 ring-blueText/20",
-          else: "border-blueBg hover:border-blueText/50"
-        )
-      ]}
-    >
-      <div class="flex items-center">
-        <div class="shrink-0">
-          <.icon name="hero-arrow-trending-up" class="h-8 w-8 text-blueText" />
-        </div>
-        <div class="ml-4">
-          <p class="text-sm font-medium text-blueText">Przychody</p>
-          <p class="text-2xl font-bold text-blueText">
-            {Money.new(:PLN, @total_income)}
-          </p>
-        </div>
-      </div>
-    </button>
+    <.summary_card
+      section="income"
+      label="Przychody"
+      amount={@total_income}
+      icon="hero-arrow-trending-up"
+      active={@expanded_section == :income}
+      bg="bg-blueBg"
+      border="border-blueBg"
+      text="text-blueText"
+      active_border="border-blueText"
+      ring="ring-blueText/20"
+      hover_border="hover:border-blueText/50"
+    />
 
-    <button
-      phx-click="select-section"
-      phx-value-section="expenses"
-      class={[
-        "rounded-lg p-6 text-left cursor-pointer transition-all duration-200",
-        "bg-orangeBg border-2 text-orangeText",
-        if(@expanded_section == :expenses,
-          do: "border-orangeText ring-2 ring-orangeText/20",
-          else: "border-orangeBg hover:border-orangeText/50"
-        )
-      ]}
-    >
-      <div class="flex items-center">
-        <div class="shrink-0">
-          <.icon name="hero-arrow-trending-down" class="h-8 w-8 text-orangeText" />
-        </div>
-        <div class="ml-4">
-          <p class="text-sm font-medium text-orangeText">Koszty</p>
-          <p class="text-2xl font-bold text-orangeText">
-            {Money.new(:PLN, @total_expenses)}
-          </p>
-        </div>
-      </div>
-    </button>
+    <.summary_card
+      section="expenses"
+      label="Koszty"
+      amount={@total_expenses}
+      icon="hero-arrow-trending-down"
+      active={@expanded_section == :expenses}
+      bg="bg-orangeBg"
+      border="border-orangeBg"
+      text="text-orangeText"
+      active_border="border-orangeText"
+      ring="ring-orangeText/20"
+      hover_border="hover:border-orangeText/50"
+    />
 
     <div class={[
       "border-2 rounded-lg p-6",
-      if(Decimal.positive?(@net_profit),
+      if(@profitable?,
         do: "bg-greenBg border-greenBg text-greenText",
         else: "bg-redBg border-redBg text-redText"
       )
@@ -158,19 +136,19 @@
         <div class="shrink-0">
           <.icon
             name="hero-calculator"
-            class={"h-8 w-8 #{if(Decimal.positive?(@net_profit), do: "text-greenText", else: "text-redText")}"}
+            class={"h-8 w-8 #{if(@profitable?, do: "text-greenText", else: "text-redText")}"}
           />
         </div>
         <div class="ml-4">
           <p class={[
             "text-sm font-medium",
-            if(Decimal.positive?(@net_profit), do: "text-greenText", else: "text-redText")
+            if(@profitable?, do: "text-greenText", else: "text-redText")
           ]}>
             Zysk netto
           </p>
           <p class={[
             "text-2xl font-bold",
-            if(Decimal.positive?(@net_profit), do: "text-greenText", else: "text-redText")
+            if(@profitable?, do: "text-greenText", else: "text-redText")
           ]}>
             {Money.new(:PLN, @net_profit)}
           </p>

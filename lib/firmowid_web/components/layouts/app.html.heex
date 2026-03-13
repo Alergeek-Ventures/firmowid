@@ -39,7 +39,7 @@
             <.icon name="hero-clipboard-document-list" class="w-5 h-5" /> Fakturowanie
           </.link>
         <% end %>
-        <%= if Bodyguard.permit?(Firmowid.Analysis, :read, @current_user) and FunWithFlags.enabled?(:advanced_features, for: @current_user) do %>
+        <%= if Bodyguard.permit?(Firmowid.Analysis, :read, @current_user) do %>
           <.link
             navigate={~p"/analiza"}
             class={[

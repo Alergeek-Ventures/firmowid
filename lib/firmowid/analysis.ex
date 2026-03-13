@@ -294,13 +294,15 @@ defmodule Firmowid.Analysis do
     cost_invoices = filter_entities(cost_invoices, :cost_invoice, entity_tags_map, tag_filters)
     transactions = filter_entities(transactions, :transaction, entity_tags_map, tag_filters)
 
+    today = Date.utc_today()
+
     %{income: income, expenses: expenses} =
       Enum.reduce(
         sales_invoices ++ cost_invoices ++ transactions,
         %{income: Decimal.new(0), expenses: Decimal.new(0)},
         fn entity, acc ->
           {amount, currency} = get_amount_and_currency(entity)
-          normalized_amount = Currencies.normalize_amount_to_pln(amount, currency, Date.utc_today())
+          normalized_amount = Currencies.normalize_amount_to_pln(amount, currency, today)
 
           if Decimal.negative?(normalized_amount) do
             Map.update!(acc, :expenses, &Decimal.add(&1, normalized_amount))
@@ -379,6 +381,8 @@ defmodule Firmowid.Analysis do
       )
 
     # Only include invoices that are matched or skipped (analysis-relevant).
+    # IMPORTANT: This is the SQL equivalent of `matched_or_skipped?/1` used
+    # in `get_organization_totals/3`. Keep both in sync.
     si_matched_query =
       from(sit in SalesInvoicesTransactions,
         where: sit.sales_invoice_id == parent_as(:entity).id
@@ -444,8 +448,13 @@ defmodule Firmowid.Analysis do
   # bank transaction or explicitly marked `skip_invoicing`.  Unmatched,
   # non-skipped invoices are still in-flight in the invoicing workflow and
   # must not appear on the analysis dashboard.
+  #
+  # IMPORTANT: This rule is duplicated in SQL inside `get_months_with_entries/0`
+  # (the `si_matched_query`/`ci_matched_query` subqueries and the
+  # `skip_invoicing == true` WHERE clauses). If you change this logic, update
+  # both places.
   defp matched_or_skipped?(%{skip_invoicing: true}), do: true
-  defp matched_or_skipped?(%{transactions: txs}) when txs != [], do: true
+  defp matched_or_skipped?(%{transactions: txs}) when is_list(txs) and txs != [], do: true
   defp matched_or_skipped?(_), do: false
 
   # Builds a list of {entity_type, entity_id} tuples for bulk tag loading.
@@ -487,7 +496,8 @@ defmodule Firmowid.Analysis do
   # Filters a list of entities and attaches entity_tags to each struct:
   # 1. Always excludes internal-tagged entities
   # 2. When tag_filters is non-empty, includes only entities matching at least one filter (OR)
-  # 3. Sets entity.entity_tags on each surviving entity for display in the entries table
+  # 3. Overwrites entity.entity_tags with a plain list for display in the entries table.
+  #    This is intentional — the entities are not persisted or re-preloaded after this point.
   defp filter_entities(entities, entity_type, entity_tags_map, tag_filters) do
     entities
     |> Enum.map(fn entity ->

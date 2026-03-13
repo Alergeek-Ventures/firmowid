@@ -138,6 +138,8 @@ defmodule FirmowidWeb.Router do
       live "/zaproszenia", OrganizationInvitesLive.Index, :index
 
       live "/analiza", AnalysisLive.Dashboard, :index
+
+      live "/development", DevelopmentLive, :index
     end
   end
 

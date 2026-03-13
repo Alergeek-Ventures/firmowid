@@ -9,6 +9,7 @@ defmodule Firmowid.Timetracker do
 
   alias Ecto.Multi
   alias Firmowid.Accounts
+  alias Firmowid.Analysis
   alias Firmowid.Blobs
   alias Firmowid.Helpers.TimeConverter
   alias Firmowid.Repo
@@ -353,8 +354,6 @@ defmodule Firmowid.Timetracker do
   with a rotating color, then linked to the project via `tag_definition_id`.
   """
   def create_project(attrs \\ %{}) do
-    alias Firmowid.Analysis
-
     name = attrs["name"] || attrs[:name] || ""
 
     Multi.new()
@@ -377,8 +376,6 @@ defmodule Firmowid.Timetracker do
   Updates a project and atomically syncs the associated tag definition name.
   """
   def update_project(%Project{} = project, attrs) do
-    alias Firmowid.Analysis
-
     Multi.new()
     |> Multi.update(:project, Project.changeset(project, attrs))
     |> Multi.run(:sync_tag_name, fn _repo, %{project: updated} ->
@@ -396,8 +393,6 @@ defmodule Firmowid.Timetracker do
   Deletes a project and atomically cleans up its orphaned tag definition.
   """
   def delete_project(%Project{} = project) do
-    alias Firmowid.Analysis
-
     Multi.new()
     |> Multi.delete(:project, project)
     |> Multi.run(:cleanup_tag, fn _repo, _changes ->

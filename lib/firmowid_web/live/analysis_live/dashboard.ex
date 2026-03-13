@@ -1,5 +1,11 @@
 defmodule FirmowidWeb.AnalysisLive.Dashboard do
-  @moduledoc false
+  @moduledoc """
+  LiveView for the financial analysis dashboard.
+
+  Displays monthly income, expenses, and net profit with tag-based filtering.
+  URL params control the active month (`?month=YYYY-MM-DD`) and tag filters
+  (`?tags=company,project:<id>`).
+  """
   use FirmowidWeb, :live_view
 
   alias Firmowid.Analysis
@@ -50,8 +56,12 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
   end
 
   @impl true
-  def handle_event("select-section", %{"section" => section}, socket) do
-    {:noreply, assign(socket, :expanded_section, String.to_existing_atom(section))}
+  def handle_event("select-section", %{"section" => "income"}, socket) do
+    {:noreply, assign(socket, :expanded_section, :income)}
+  end
+
+  def handle_event("select-section", %{"section" => "expenses"}, socket) do
+    {:noreply, assign(socket, :expanded_section, :expenses)}
   end
 
   @impl true
@@ -78,21 +88,22 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
 
   @impl true
   def handle_event("set-entity-category", %{"entity_type" => type, "entity_id" => id, "kind" => kind}, socket) do
-    kind = String.to_existing_atom(kind)
-    Analysis.set_entity_category(String.to_existing_atom(type), id, kind)
+    entity_type = cast_entity_type!(type)
+    kind = cast_entity_kind!(kind)
+    Analysis.set_entity_category(entity_type, id, kind)
     {:noreply, load_data(socket)}
   end
 
   @impl true
   def handle_event("clear-entity-tags", %{"entity_type" => type, "entity_id" => id}, socket) do
-    Analysis.clear_entity_tags(String.to_existing_atom(type), id)
+    Analysis.clear_entity_tags(cast_entity_type!(type), id)
     {:noreply, load_data(socket)}
   end
 
   @impl true
   def handle_event("toggle-project-tag", params, socket) do
     %{"entity_type" => type, "entity_id" => id, "tag_definition_id" => tag_def_id} = params
-    entity_type = String.to_existing_atom(type)
+    entity_type = cast_entity_type!(type)
 
     # Find the current entity in assigns and compute toggled project tag IDs
     current_tags = find_entity_tags(socket.assigns, entity_type, id)
@@ -137,6 +148,7 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
     |> assign(:total_income, totals.total_income)
     |> assign(:total_expenses, totals.total_expenses)
     |> assign(:net_profit, totals.net_profit)
+    |> assign(:profitable?, Decimal.positive?(totals.net_profit))
     |> assign(:transactions, totals.transactions)
     |> assign(:sales_invoices, totals.sales_invoices)
     |> assign(:cost_invoices, totals.cost_invoices)
@@ -207,4 +219,41 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
   def tag_filter_active?(tag_filters, filter) do
     filter in tag_filters
   end
+
+  defp summary_card(assigns) do
+    ~H"""
+    <button
+      phx-click="select-section"
+      phx-value-section={@section}
+      class={[
+        "rounded-lg p-6 text-left cursor-pointer transition-all duration-200",
+        @bg,
+        "border-2",
+        @text,
+        if(@active, do: "#{@active_border} ring-2 #{@ring}", else: "#{@border} #{@hover_border}")
+      ]}
+    >
+      <div class="flex items-center">
+        <div class="shrink-0">
+          <.icon name={@icon} class={"h-8 w-8 #{@text}"} />
+        </div>
+        <div class="ml-4">
+          <p class={["text-sm font-medium", @text]}>{@label}</p>
+          <p class={["text-2xl font-bold", @text]}>
+            {Money.new(:PLN, @amount)}
+          </p>
+        </div>
+      </div>
+    </button>
+    """
+  end
+
+  # Casts browser-supplied entity type strings to known atoms.
+  defp cast_entity_type!("sales_invoice"), do: :sales_invoice
+  defp cast_entity_type!("cost_invoice"), do: :cost_invoice
+  defp cast_entity_type!("transaction"), do: :transaction
+
+  # Casts browser-supplied entity kind strings to known atoms.
+  defp cast_entity_kind!("company"), do: :company
+  defp cast_entity_kind!("internal"), do: :internal
 end

@@ -16,8 +16,9 @@ development scripts.
 **Accessing the dev server:**
 
 - Check `.server.port` for the port number - for example: `http://localhost:16423`
-- Use `piotr@firmowid.pl` / `kolejka123456` as credentials (look at
+- Use `kira@bytecraft.collective` / `kolejka123456` as credentials (look at
   `seeds.exs` if in doubt)
+- Visit `/development` for the full seed data guide
 
 **Local setup:**
 

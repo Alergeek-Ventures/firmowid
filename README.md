@@ -17,6 +17,10 @@
   - wejdź na [`localhost:4000`](http://localhost:4000)
 
 
+## Development Guide
+
+Po uruchomieniu serwera, zaloguj się na `kira@bytecraft.collective` / `kolejka123456` i odwiedź [`/development`](http://localhost:4000/development) aby zobaczyć pełny przewodnik po danych testowych, kontrahentach, projektach i scenariuszach KSeF.
+
 ## Instalacja Środowiska dla elixira:  
 Do zarządzania wersjami elixira używamy [asdf](https://asdf-vm.com/guide/getting-started.html)
 ### MacOS, Linux, Windows
