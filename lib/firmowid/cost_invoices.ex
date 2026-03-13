@@ -118,8 +118,9 @@ defmodule Firmowid.CostInvoices do
     CostInvoice
     |> where(
       [d],
-      (d.issue_date >= ^from and d.issue_date <= ^to) or
-        (d.sale_date >= ^from and d.sale_date <= ^to)
+      not is_nil(d.blob_id) and
+        ((d.issue_date >= ^from and d.issue_date <= ^to) or
+           (d.sale_date >= ^from and d.sale_date <= ^to))
     )
     |> Repo.all()
     |> Repo.preload(:blob)
