@@ -1,11 +1,10 @@
-<div class="flex flex-col gap-4 text-black/70 pl-[72px] pr-12 mt-4">
+<div class="flex flex-col gap-6 w-full max-w-7xl mx-auto my-4">
   <div class="flex items-center justify-between">
     <form class="flex gap-5" phx-submit="search">
       <.date_picker
         id="month"
-        selected_date={@filter_date}
+        selected_date={@selected_date}
         active_months={@active_months}
-        class="w-60 rounded-[5px] gap-2 py-[7px] px-4 font-medium"
       />
       <div class={[
         @search_expanded && "focus-within:ring-2",
@@ -37,35 +36,17 @@
       </div>
     </form>
 
-    <.button
-      class="ml-2 text-black/80 flex items-center py-[6px] pr-4 pl-2.5 font-medium rounded-[5px]"
-      phx-click="create_employee"
-      color="light_grey"
+    <.link
+      navigate="/zaproszenia"
+      class={button_styles(%{new: true, color: "light_grey", size: "medium"})}
     >
-      <.icon name="hero-plus-mini" class="size-6 mr-1" /> Dodaj pracownika
-    </.button>
+      <.icon name="hero-plus-mini" class="size-6" /> Dodaj pracownika
+    </.link>
   </div>
 
-  <div class="flex gap-4 text-sm font-semibold mt-3.5">
-    <%= for {archived, label} <- [
-        {false, "Wszyscy"},
-        {true, "Zarchiwizowani"},
-    ] do %>
-      <.button
-        class={[
-          @archived == archived && "!bg-darkGrey !text-white !rounded-[5px]",
-          "relative text-darkGrey text-center bg-lightGreyBg",
-          "hover:bg-greyButtonBg py-1.5 px-2 text-sm font-medium leading-6",
-          "flex items-center justify-center uppercase border-none text-sm"
-        ]}
-        phx-click="change_archived_filter"
-        phx-value-archived={if archived, do: "true", else: "false"}
-      >
-        {label}
-      </.button>
-    <% end %>
+  <div class="flex gap-4">
     <.switch
-      class="ml-auto mt-3 flex-row-reverse gap-4"
+      class="ml-auto flex-row-reverse gap-4"
       label="Widok wypłat"
       field={@form[:viewing_wages]}
       phx-click="toggle_wages_view"
@@ -75,131 +56,136 @@
   <form
     phx-submit="save_wages"
     class={[
-      @view == :standard && "grid-cols-[8fr_auto_24px_240px]",
-      @view != :standard && "grid-cols-[5fr_minmax(max-content,2fr)_1.5fr_1fr_24px_240px]",
-      "grid w-full gap-x-10 gap-y-2 mt-3"
+      "grid gap-x-6 gap-y-2",
+      @view == :standard && "grid-cols-[1fr_min-content_min-content_min-content]",
+      @view != :standard && "grid-cols-[2fr_1fr_1fr_1fr_min-content_min-content]"
     ]}
   >
-    <div class="grid grid-cols-subgrid col-span-full items-center gap-x-4 text-[11px] uppercase text-grey-600 px-2 font-semibold mb-1.5">
-      <div class="my-1">Pracownik</div>
-      <div>Przepracowane godziny</div>
-      <%= if @view != :standard do %>
-        <div class="flex gap-2 -mt-1">
-          <button
-            id="wage-editor-toggle"
-            class={[
-              @view == :wage_editor && "px-3",
-              @view != :wage_editor && "ml-3 pl-2",
-              "flex gap-2 items-center bg-greyButtonBg rounded p-1 uppercase font-semibold text-darkGrey text-xs"
-            ]}
-            phx-click="toggle_wage_editor"
-            phx-hook="ConfirmLeave"
-            data-unsaved={@view == :wage_editor}
-            type="button"
-          >
-            <%= if @view == :wage_editor do %>
-              <.arrow_left_icon />
-            <% else %>
-              Stawka <.icon name="hero-pencil-square-solid" class="size-4" />
-            <% end %>
-          </button>
-          <%= if @view == :wage_editor do %>
+    <div class="grid grid-cols-subgrid col-span-full items-center text-sm/snug text-grey-700 px-4 h-11">
+      <p>Pracownik</p>
+      <p class="text-right text-nowrap">Przepracowane godziny</p>
+
+      <%= if @view in [:wages, :wage_editor] do %>
+        <%= case @view do %>
+          <% :wages -> %>
             <button
-              class="bg-redBg text-redText rounded uppercase px-3 py-1 font-bold text-[11px]"
-              type="submit"
+              phx-click="toggle_wage_editor"
+              type="button"
+              class="px-2 py-1 rounded-sm hover:bg-grey-200 transition flex items-center gap-1.5 justify-self-end"
             >
-              Zapisz
+              Stawka <.icon name="hero-pencil-square-solid" class="size-4" />
             </button>
-          <% end %>
-        </div>
-        <div>Wynagrodzenie</div>
+          <% :wage_editor -> %>
+            <div class="flex gap-2 justify-self-end">
+              <button
+                id="wage-editor-toggle"
+                class="bg-grey-200 text-grey-700 rounded-sm px-3 py-1 inline-flex"
+                phx-click="toggle_wage_editor"
+                phx-hook="ConfirmLeave"
+                data-unsaved={true}
+                type="button"
+              >
+                <.icon name="hero-arrow-uturn-left-micro" class="size-4" />
+              </button>
+              <button
+                class="bg-orange-200 text-orange-700 rounded-sm uppercase px-3 py-1 font-medium text-caps-sm/tight w-22"
+                type="submit"
+              >
+                Zapisz
+              </button>
+            </div>
+        <% end %>
+
+        <p class="text-right">Wynagrodzenie</p>
       <% end %>
     </div>
-    <%= if length(@employees) == 0 do %>
+
+    <%= if Enum.empty?(@employees) do %>
       <div class="col-span-full text-center text-darkGrey py-10">
         Brak wyników. Spróbuj zmienić kryteria wyszukiwania.
       </div>
     <% else %>
-      <%= for employee <- @employees do %>
+      <div
+        :for={employee <- @employees}
+        :key={employee.user.id}
+        class="grid grid-cols-subgrid col-span-full h-14"
+      >
         <div class={[
-          @view == :standard && "col-span-3",
-          @view != :standard && "col-span-5",
-          "group grid grid-cols-subgrid items-center gap-4 bg-white rounded-[5px] px-4 py-3 h-16"
+          "grid grid-cols-subgrid items-center bg-white rounded-sm px-4",
+          if(@view == :standard, do: "col-span-3", else: "col-span-5")
         ]}>
-          <div class="flex items-center gap-3 peer">
+          <div class="flex items-center gap-4">
             <.avatar><.icon name="hero-user" class="h-8 w-8" /></.avatar>
             <.link
               navigate={~p"/zarzadzanie/pracownicy/#{employee.user.id}"}
-              class="text-black border-b border-transparent group-hover:border-black transition-colors"
+              class="hover:underline"
             >
               {employee.user.name || employee.user.email}
             </.link>
           </div>
 
-          <div class={[
-            @view == :standard && "ml-auto",
-            "text-black"
-          ]}>
-            {TimeConverter.time_worked_in_seconds_to_hours(employee.time_worked)} {if @view ==
-                                                                                        :standard,
-                                                                                      do: "h",
-                                                                                      else:
-                                                                                        "godz."}
-          </div>
+          <p class="text-right">
+            {TimeConverter.time_worked_in_seconds_to_hours(employee.time_worked)} h
+          </p>
 
-          <%= if @view != :standard do %>
-            <.input
-              type="number"
-              class="flex flex-row-reverse gap-1 items-center text-base text-black justify-end m-0"
-              label="zł/godz."
-              input_class={
-                [
-                  @view == :wages && "border-transparent px-0",
-                  @view == :wage_editor && "border-greyButtonBg text-darkGrey",
-                  "w-12 py-1 px-2 text-right text-base [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                ]
-                |> Enum.join(" ")
-              }
-              step="0.01"
-              min="0"
-              name={"employee[#{employee.user.id}][wage]"}
-              value={Decimal.round(employee.hourly_rate || 0)}
-              readonly={@view == :wages}
-            />
-            <div class="font-semibold text-black text-right">
+          <%= if @view in [:wages, :wage_editor] do %>
+            <%= case @view do %>
+              <% :wages -> %>
+                <p class="text-right mx-2">
+                  {Decimal.round(employee.hourly_rate || 0)} zł/godz.
+                </p>
+              <% :wage_editor -> %>
+                <div class="flex gap-1 items-center mx-2 justify-self-end">
+                  <.input
+                    type="number"
+                    class="w-14"
+                    input_class="text-right"
+                    new={true}
+                    step="0.01"
+                    min="0"
+                    name={"employee[#{employee.user.id}][wage]"}
+                    value={Decimal.round(employee.hourly_rate || 0)}
+                  />
+                  <p>zł/godz.</p>
+                </div>
+            <% end %>
+
+            <p class="font-medium text-right">
               {:PLN
               |> Money.new(
-                Decimal.mult(
-                  employee.hourly_rate || 0,
-                  Decimal.new(TimeConverter.time_worked_in_seconds_to_hours(employee.time_worked))
-                )
+                employee.time_worked
+                |> TimeConverter.time_worked_in_seconds_to_hours()
+                |> Decimal.new()
+                |> Decimal.mult(employee.hourly_rate || 0)
               )
               |> Money.to_string!(fractional_digits: 0, currency_symbol: "PLN")}
-            </div>
+            </p>
           <% end %>
+
           <.link
             navigate={~p"/zarzadzanie/pracownicy/#{employee.user.id}"}
-            class="self-stretch pl-1 flex items-center"
+            class="flex items-center"
           >
-            <.chevron_right_icon class="h-4 w-4 mb-0.5" />
+            <Lucideicons.chevron_right class="size-4 shrink-0 text-grey-700" />
           </.link>
         </div>
-        <div class="flex items-center gap-6 bg-white rounded-[5px] pl-4 pr-5 h-16">
-          <span class="text-[11px] font-semibold text-darkGrey bg-greyButtonBg pl-2 pr-1 py-[4px] uppercase rounded-[5px] flex items-center justify-between flex-1 gap-1">
-            Brak <.icon name="hero-x-mark-micro" />
-          </span>
-          <.document_x_icon class="stroke-greyButtonBg shrink-0 mr-[5px] mb-[1px]" />
+
+        <div class="flex items-center gap-4 bg-white rounded-sm p-4 ml-2">
+          <.hours_record_status hours_record={employee.hours_record} user={employee.user} />
+
           <button
-            title="Numer konta"
             type="button"
-            onclick={"navigator.clipboard.writeText('#{employee.user.id}')"}
-            phx-click="employee_bank_number_copied"
-            class="hover:text-black transition-colors mb-0.5"
+            id={"copy-bank-number-#{employee.user.id}"}
+            phx-hook="Tippy"
+            data-tippy-content="Skopiuj numer konta"
+            disabled={is_nil(employee.user.bank_account_number)}
+            onclick={"navigator.clipboard.writeText('#{employee.user.bank_account_number}')"}
+            class="text-grey-700 hover:text-grey-800 active:text-grey-900 disabled:text-grey-400 inline-flex active:scale-95 transition"
           >
-            <.icon name="hero-credit-card" />
+            <.icon name="hero-credit-card-micro" class="size-6 shrink-0" />
           </button>
         </div>
-      <% end %>
+      </div>
     <% end %>
   </form>
 </div>

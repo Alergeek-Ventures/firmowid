@@ -8,6 +8,7 @@ defmodule Firmowid.Management do
   alias Firmowid.Accounts
   alias Firmowid.Repo
   alias Firmowid.Timetracker
+  alias Firmowid.Timetracker.HoursRecord
   alias Firmowid.Timetracker.Session
   alias Firmowid.Timetracker.UserSalary
 
@@ -38,12 +39,12 @@ defmodule Firmowid.Management do
     where(query, [user], ilike(user.name, ^"%#{search}%") or ilike(user.email, ^"%#{search}%"))
   end
 
-  def list_employees(filter_date, archived \\ false, search \\ "") do
+  def list_employees(date, archived \\ false, search \\ "") do
     time_worked_query =
       from(s in Session,
         where:
-          fragment("extract(month from ?) = ?", s.start_datetime, ^filter_date.month) and
-            fragment("extract(year from ?) = ?", s.start_datetime, ^filter_date.year),
+          fragment("extract(month from ?) = ?", s.start_datetime, ^date.month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^date.year),
         group_by: s.user_id,
         select: %{
           user_id: s.user_id,
@@ -59,13 +60,15 @@ defmodule Firmowid.Management do
     from(u in Accounts.User,
       # TODO: add database support for archived users
       where: ^archived == false,
-      left_join: us in UserSalary,
+      left_join: us in subquery(Timetracker.user_salaries_as_of_query(date)),
       on: us.user_id == u.id,
-      where: is_nil(us.deleted_at),
-      left_lateral_join: s in subquery(time_worked_query),
+      left_join: s in subquery(time_worked_query),
       on: s.user_id == u.id,
+      left_join: hr in HoursRecord,
+      on: hr.user_id == u.id and hr.year == ^date.year and hr.month == ^date.month,
       select: %{
         user: u,
+        hours_record: hr,
         hourly_rate: us.hourly_rate,
         time_worked: coalesce(s.time_worked, 0)
       }
@@ -79,7 +82,10 @@ defmodule Firmowid.Management do
       Enum.reduce_while(employees, :ok, fn employee, _acc ->
         new_hourly_wage = Decimal.new(employees_params[employee.user.id]["wage"])
 
-        case Timetracker.create_user_salary(%{user_id: employee.user.id, hourly_rate: new_hourly_wage}) do
+        case Timetracker.create_user_salary(%{
+               user_id: employee.user.id,
+               hourly_rate: new_hourly_wage
+             }) do
           {:ok, %UserSalary{}} -> {:cont, :ok}
           {:error, changeset} -> Repo.rollback(changeset)
         end

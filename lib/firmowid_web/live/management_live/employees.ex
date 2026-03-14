@@ -12,54 +12,53 @@ defmodule FirmowidWeb.ManagementLive.Employees do
 
     socket =
       socket
-      |> assign(:filter_date, Date.utc_today())
-      |> assign(:search, "")
-      |> assign(:archived, false)
+      |> assign(:page_title, "Zarządzanie pracownikami")
       |> assign(:view, :standard)
       |> assign(:search_expanded, false)
       |> assign(:active_months, Timetracker.get_months_with_sessions())
-      |> assign_employees()
       |> assign_form()
-      |> assign_title()
 
     {:ok, socket}
   end
 
-  defp assign_employees(socket) do
-    assign(
-      socket,
-      :employees,
-      Management.list_employees(socket.assigns.filter_date, socket.assigns.archived, socket.assigns.search)
-    )
+  @impl true
+  def handle_params(params, _uri, socket) do
+    params = Map.take(params, ["month", "q", "archived"])
+
+    selected_date =
+      case params do
+        %{"month" => month} -> Date.from_iso8601!(month)
+        _ -> Date.utc_today()
+      end
+
+    socket =
+      socket
+      |> assign(:params, params)
+      |> assign(:selected_date, selected_date)
+      |> assign(:search, params["q"] || "")
+      |> assign(:archived, params["archived"] == "true")
+      |> assign_employees()
+
+    {:noreply, socket}
+  end
+
+  defp assign_employees(%{assigns: %{selected_date: selected_date, archived: archived, search: search}} = socket) do
+    assign(socket, :employees, Management.list_employees(selected_date, archived, search))
   end
 
   defp assign_form(socket) do
     assign(socket, :form, to_form(%{"wages_view" => socket.assigns.view != :standard}))
   end
 
-  defp assign_title(socket) do
-    title =
-      case socket.assigns.view do
-        :wage_editor -> "✏️ Edycja stawek"
-        _ -> "Zarządzanie pracownikami"
-      end
-
-    assign(socket, :page_title, title)
-  end
-
   @impl true
-  def handle_event("change_archived_filter", %{"archived" => archived}, socket) do
-    {:noreply,
-     socket
-     |> assign(:archived, archived == "true")
-     |> assign_employees()}
-  end
-
   def handle_event("toggle_wages_view", _params, socket) do
     {:noreply,
      socket
-     |> update(:view, &if(&1 == :wages, do: :standard, else: :wages))
-     |> assign_title()
+     |> update(:view, fn
+       :wages -> :standard
+       :wage_editor -> :standard
+       :standard -> :wages
+     end)
      |> assign_form()}
   end
 
@@ -69,7 +68,6 @@ defmodule FirmowidWeb.ManagementLive.Employees do
     {:noreply,
      socket
      |> assign(:view, if(editing_wages, do: :wage_editor, else: :wages))
-     |> assign_title()
      |> push_event("unsaved-changed", %{value: editing_wages})}
   end
 
@@ -81,47 +79,57 @@ defmodule FirmowidWeb.ManagementLive.Employees do
         {:noreply,
          socket
          |> assign(:view, :wages)
-         |> assign_title()
          |> push_event("unsaved-changed", %{value: false})
          |> assign_employees()}
 
       {:error, changeset} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się zaktualizować stawek: #{inspect(changeset.errors)}")}
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Nie udało się zaktualizować stawek: #{inspect(changeset.errors)}"
+         )}
     end
   end
 
   def handle_event("search", %{"q" => search}, socket) do
-    {:noreply,
-     socket
-     |> assign(:search, search)
-     |> assign_employees()}
+    params = Map.put(socket.assigns.params, "q", search)
+    {:noreply, push_patch(socket, to: ~p"/zarzadzanie/pracownicy?#{params}")}
   end
 
   def handle_event("change-month", %{"month" => month}, socket) do
-    {:noreply,
-     socket
-     |> assign(:filter_date, Date.from_iso8601!(month))
-     |> assign_employees()}
+    params = Map.put(socket.assigns.params, "month", month)
+    {:noreply, push_patch(socket, to: ~p"/zarzadzanie/pracownicy?#{params}")}
   end
 
   def handle_event("toggle_search", _params, socket) do
     {:noreply, update(socket, :search_expanded, &(!&1))}
   end
 
-  def handle_event("employee_bank_number_copied", _params, socket) do
-    socket = put_flash(socket, :info, "Numer konta bankowego skopiowany do schowka")
-    Process.send_after(self(), :fade_flash, 3_000)
-    {:noreply, socket}
+  attr :hours_record, :map, required: true
+  attr :user, :map, required: true
+
+  def hours_record_status(%{hours_record: nil} = assigns) do
+    ~H"""
+    <span class="text-caps-sm/tight font-medium bg-grey-200 text-grey-700 px-2 py-1 uppercase rounded-sm flex items-center justify-between gap-2.5 w-[111px]">
+      Brak <.icon name="hero-x-mark-micro" class="size-4" />
+    </span>
+    <Lucideicons.file_x class="text-grey-400 shrink-0" />
+    """
   end
 
-  def handle_event("create_employee", _params, socket) do
-    Bodyguard.permit!(Management, :create_employee, socket.assigns.current_user)
-    # TODO: implement creating employee
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_info(:fade_flash, socket) do
-    {:noreply, clear_flash(socket)}
+  def hours_record_status(assigns) do
+    ~H"""
+    <span class="text-caps-sm/tight font-medium bg-green-200 text-green-700 px-2 py-1 uppercase rounded-sm flex items-center justify-between gap-2.5 min-w-[111px] w-full">
+      EWIDENCJA <.icon name="hero-check-micro" />
+    </span>
+    <a
+      href={~p"/czasosledz/ewidencja/#{@hours_record.id}"}
+      download={"Ewidencja_#{@hours_record.year}_#{@hours_record.month}_#{@user.name || @user.email}.pdf"}
+      class="p-0.5 transition hover:bg-greyButtonBg rounded-md inline-flex items-center justify-center"
+    >
+      <.icon name="hero-arrow-down-tray-mini" class="text-grey-400 shrink-0" />
+    </a>
+    """
   end
 end

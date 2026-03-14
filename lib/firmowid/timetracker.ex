@@ -1205,45 +1205,28 @@ defmodule Firmowid.Timetracker do
   Returns the user salary that was active on the given date.
 
   The lookup uses the salary update timestamp to find the latest change
-  on or before the date and ensures the salary was not deleted yet.
+  on or before the end of the month and ensures the salary was not deleted yet.
   """
   @spec get_user_salary_as_of(String.t() | integer(), Date.t()) :: UserSalary.t() | nil
   def get_user_salary_as_of(user_id, date) do
-    as_of_end_dt = DateTime.new!(date, ~T[23:59:59], "Etc/UTC")
+    org_id = Repo.get_org_id()
 
-    UserSalary
-    |> where([us], us.user_id == ^user_id)
-    |> where([us], us.updated_at <= ^as_of_end_dt)
-    |> where([us], is_nil(us.deleted_at) or us.deleted_at > ^date)
-    |> order_by([us], desc: us.updated_at)
-    |> limit(1)
+    date
+    |> user_salaries_as_of_query()
+    |> where([us], us.user_id == ^user_id and us.organization_id == ^org_id)
     |> Repo.one()
   end
 
-  @doc """
-  Gets the complete salary history for a user, sorted from most recent to oldest.
+  def user_salaries_as_of_query(%Date{} = date) do
+    # lookup salaries as of last day of a month
+    as_of_date = Date.end_of_month(date)
+    as_of_end_dt = DateTime.new!(as_of_date, ~T[23:59:59], "Etc/UTC")
 
-  For salaries on the same day, uses updated_at timestamp for precise ordering.
-  This provides a complete audit trail of all salary changes.
-
-  ## Examples
-
-      iex> get_salary_history(user_id)
-      [
-        %UserSalary{hourly_rate: #Decimal<50.00>, deleted_at: nil, updated_at: ~U[2025-01-16 14:30:00Z]},
-        %UserSalary{hourly_rate: #Decimal<45.00>, deleted_at: ~D[2025-01-16], updated_at: ~U[2025-01-16 14:25:00Z]},
-        %UserSalary{hourly_rate: #Decimal<40.00>, deleted_at: ~D[2025-01-10], updated_at: ~U[2025-01-10 09:15:00Z]}
-      ]
-  """
-  def get_salary_history(user_id) do
     UserSalary
-    |> where([us], us.user_id == ^user_id)
-    |> order_by([us],
-      asc: fragment("CASE WHEN ? IS NULL THEN 0 ELSE 1 END", us.deleted_at),
-      desc: us.deleted_at,
-      desc: us.updated_at
-    )
-    |> Repo.all()
+    |> where([us], us.updated_at <= ^as_of_end_dt)
+    |> where([us], is_nil(us.deleted_at) or us.deleted_at > ^as_of_date)
+    |> order_by([us], asc: us.user_id, desc_nulls_first: us.deleted_at)
+    |> distinct([us], us.user_id)
   end
 
   def create_user_salary(attrs \\ %{}) do
