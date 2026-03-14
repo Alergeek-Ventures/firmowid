@@ -1,142 +1,106 @@
-<%= if is_nil(@employee) do %>
-  <div class="flex justify-center p-6">
-    <div>
-      <h2 class="text-xl font-semibold mb-4">Pracownik nie znaleziony</h2>
-      <p class="mb-4">Nie znaleziono pracownika o podanym identyfikatorze.</p>
-      <.return_to_employees_list />
-    </div>
-  </div>
-<% else %>
-  <div class="flex gap-10 pr-12">
-    <div class="space-y-8 mt-1.5">
-      <.link navigate={~p"/zarzadzanie/pracownicy"} class="flex gap-5 items-center">
-        <.icon name="hero-arrow-left-circle-solid" class="size-8 -ml-1" />
-        <span class="text-darkGrey">Pracownicy</span>
-      </.link>
-      <.card class="ml-12 min-w-[380px] min-h-[689px]">
-        <div class="flex gap-3">
-          <.avatar>
-            <%!-- TODO: add user avatar --%>
-            <.icon name="hero-user" class="size-20 mb-2 text-darkGrey" />
-          </.avatar>
-          <div>
-            <h2 class="text-lg font-bold">{get_employee_display_name(@employee)}</h2>
-            <div class="text-darkGrey text-sm flex gap-2 items-center">
-              <img src="/images/slack.png" alt="slack logo" width={24} height={24} />
-              <%= if @employee.slack_id do %>
-                <.link
-                  href={"#{get_employee_slack_url(@employee)}/team/#{@employee.slack_id}"}
-                  class="border-b border-transparent hover:border-darkGrey transition-colors"
-                >
-                  napisz na Slacku
-                </.link>
-              <% else %>
-                <span class="text-darkGrey">Brak danych</span>
-              <% end %>
-            </div>
-          </div>
-        </div>
-        <div class="space-y-4">
-          <.user_card_info label="Numer telefonu">
-            <%= if @employee.phone do %>
-              {@employee.phone}
-            <% else %>
-              <span class="text-darkGrey">Brak danych</span>
-            <% end %>
-          </.user_card_info>
-          <.user_card_info label="Adres e-mail">{@employee.email}</.user_card_info>
-          <.user_card_info label="Numer konta bankowego">
-            <%= if @employee.bank_account_number do %>
-              <span>{@employee.bank_account_number}</span>
-              <%!-- TODO: ensure "copy bank account number" works --%>
-              <button
-                id="copy-bank-account-number"
-                onclick={"navigator.clipboard.writeText('#{@employee.bank_account_number}')"}
-                type="button"
-                class={[
-                  "h-6 w-7 text-darkGrey rounded-[3px]",
-                  "bg-greyButtonBg self-center justify-self-end",
-                  "shrink-0 flex flex-row justify-center items-center",
-                  "hover:border-darkGrey border border-transparent",
-                  "active:bg-darkGrey active:text-lightGreyBg",
-                  "transition-all transition-duration-300"
-                ]}
-              >
-                <.icon name="hero-document-duplicate" class="size-5" />
-              </button>
-            <% else %>
-              <span class="text-darkGrey">Brak danych</span>
-            <% end %>
-          </.user_card_info>
-          <.user_card_info label="Projekty" class="pt-3.5">
-            <div class="flex flex-wrap gap-2 mt-2.5 text-sm">
-              <%= for project <- @employee.projects do %>
-                <%!-- TODO: deeplink to specific project --%>
-                <.link
-                  navigate={~p"/zarzadzanie/projekty"}
-                  class="bg-blueBg text-blueText rounded-full px-4 py-[3px] font-semibold"
-                >
-                  {project.name}
-                </.link>
-              <% end %>
-            </div>
-          </.user_card_info>
-        </div>
-        <div class="mt-auto ml-auto text-darkGrey flex gap-2 items-center">
-          <%= if @employee.birthday do %>
-            <span class="text-sm">
-              {TimeFormatter.format_date(@employee.birthday, "d MMMM")}
-            </span>
-            <.icon name="hero-cake" class="size-5 mb-1" />
-          <% else %>
-            <span class="text-sm text-darkGrey">Brak daty urodzenia</span>
-          <% end %>
-        </div>
-      </.card>
-    </div>
-    <div class="mt-[26px] w-full">
-      <%!-- TODO: add tab switching animation (see figma prototype) --%>
-      <div class="flex gap-10 px-9 relative">
-        <%= for {permission, {path, label, action}} <-
-            [
-              {:read_employee_projects, {~p"/zarzadzanie/pracownicy/#{@employee.id}", "Projekty i ewidencja", :projects}},
-              {:read_employee_profile, {~p"/zarzadzanie/pracownicy/#{@employee.id}/profil", "Profil pracownika", :profile}},
-              {:read_employee_documents, {~p"/zarzadzanie/pracownicy/#{@employee.id}/dokumenty", "Dokumenty", :documents}},
-              {:read_employee_leaves, {~p"/zarzadzanie/pracownicy/#{@employee.id}/urlopy", "Urlopy", :leaves}}
-            ]
-           do %>
+<div class="grid grid-cols-[max-content_1fr] grid-rows-[repeat(2,min-content)] gap-x-10 w-full max-w-7xl mx-auto my-4">
+  <.link
+    navigate={~p"/zarzadzanie/pracownicy"}
+    class="flex gap-2 items-center justify-self-start mb-8"
+  >
+    <.icon name="hero-arrow-left-circle-solid" class="size-8" />
+    <span class="text-darkGrey">Pracownicy</span>
+  </.link>
+
+  <.card class="w-full max-w-[380px] min-h-[689px] row-start-2">
+    <div class="flex gap-3">
+      <.avatar>
+        <%!-- TODO: add user avatar --%>
+        <.icon name="hero-user" class="size-20 text-darkGrey" />
+      </.avatar>
+      <div>
+        <h2 class="text-lg font-bold">{get_employee_display_name(@employee)}</h2>
+        <div :if={@employee.slack_id != nil} class="text-darkGrey text-sm flex gap-2 items-center">
+          <img src="/images/slack.png" alt="slack logo" width={24} height={24} />
           <.link
-            :if={Bodyguard.permit?(Management, permission, @current_user)}
-            navigate={path}
-            class={
-              classes([
-                "phx-click-loading:opacity-50 py-2.5 pb-5 px-3 rounded-md font-medium text-darkGrey transition-all",
-                "shadow shadow-transparent hover:text-black hover:shadow-black/10 hover:bg-white",
-                @live_action == action &&
-                  "text-black shadow-black/10 bg-grey-50"
-              ])
-            }
+            href={"#{get_employee_slack_url(@employee)}/team/#{@employee.slack_id}"}
+            class="border-b border-transparent hover:border-darkGrey transition-colors"
           >
-            {label}
+            napisz na Slacku
           </.link>
-        <% end %>
-      </div>
-      <div class="-mt-2.5 relative space-y-10">
-        <%= case @live_action do %>
-          <% :projects -> %>
-            <.employee_projects_tab
-              employee={@employee}
-              projects_filter_date={@projects_filter_date}
-              active_months={@active_months}
-            />
-          <% :profile -> %>
-            <.employee_profile_tab employee={@employee} />
-          <% :documents -> %>
-            <.employee_documents_tab employee={@employee} />
-          <% :leaves -> %>
-            <.employee_leaves_tab employee={@employee} leaves_filter_year={@leaves_filter_year} />
-        <% end %>
+        </div>
       </div>
     </div>
+
+    <.user_card_info :if={@employee.phone != nil} label="Numer telefonu">
+      {@employee.phone}
+    </.user_card_info>
+    <.user_card_info label="Adres e-mail">{@employee.email}</.user_card_info>
+    <.user_card_info :if={@employee.bank_account_number != nil} label="Numer konta bankowego">
+      <span>{@employee.bank_account_number}</span>
+      <button
+        id="copy-bank-account-number"
+        onclick={"navigator.clipboard.writeText('#{@employee.bank_account_number}')"}
+        type="button"
+        class={[
+          "h-6 w-7 text-darkGrey rounded-[3px]",
+          "bg-greyButtonBg self-center justify-self-end",
+          "shrink-0 flex flex-row justify-center items-center",
+          "hover:border-darkGrey border border-transparent",
+          "active:bg-darkGrey active:text-lightGreyBg",
+          "transition-all transition-duration-300"
+        ]}
+      >
+        <.icon name="hero-document-duplicate" class="size-5" />
+      </button>
+    </.user_card_info>
+
+    <.user_card_info :if={not Enum.empty?(@employee.projects)} label="Projekty">
+      <div class="flex flex-wrap gap-2 mt-2 text-sm/tight">
+        <.link
+          :for={project <- @employee.projects}
+          navigate={~p"/zarzadzanie/projekty/#{project.id}"}
+          class="bg-turquoise-200 text-turquoise-700 rounded-full px-4 py-1 text-sm/snug hover:bg-turquoise-300 hover:text-turquoise-800 transition"
+        >
+          {project.name}
+        </.link>
+      </div>
+    </.user_card_info>
+
+    <span
+      :if={@employee.birthday != nil}
+      class="mt-auto text-sm/snug text-grey-700 inline-flex gap-2 items-center"
+    >
+      {TimeFormatter.format_date(@employee.birthday, "d MMMM")}
+      <.icon name="hero-cake" class="size-5" />
+    </span>
+  </.card>
+
+  <div :if={false} class="flex gap-10 px-6 self-end col-start-2">
+    <.link
+      :for={
+        {path, label, action} <-
+          [
+            {~p"/zarzadzanie/pracownicy/#{@employee.id}", "Projekty i ewidencja", :projects}
+          ]
+      }
+      navigate={path}
+      class={
+        classes([
+          "phx-click-loading:opacity-50 p-3 rounded-t-md font-medium text-darkGrey transition-all",
+          "shadow shadow-transparent hover:text-black hover:shadow-black/10 hover:bg-white",
+          @live_action == action &&
+            "text-black shadow-black/10 bg-grey-50"
+        ])
+      }
+    >
+      {label}
+    </.link>
   </div>
-<% end %>
+
+  <div class="w-full space-y-6 row-start-2 col-start-2">
+    <%= case @live_action do %>
+      <% :projects -> %>
+        <.employee_projects_tab
+          employee={@employee}
+          projects_filter_date={@projects_filter_date}
+          active_months={@active_months}
+        />
+    <% end %>
+  </div>
+</div>

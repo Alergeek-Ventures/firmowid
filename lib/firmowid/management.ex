@@ -93,49 +93,44 @@ defmodule Firmowid.Management do
     end)
   end
 
-  def list_employee_details(user_id, filter_date) do
-    case Repo.get(Accounts.User, user_id) do
+  def list_employee_details(user_id, date) do
+    sessions_query =
+      from s in Session,
+        where:
+          fragment("extract(month from ?) = ?", s.start_datetime, ^date.month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^date.year) and
+            s.user_id == ^user_id,
+        group_by: [s.user_id, s.project_id, s.title],
+        select: %{
+          title: s.title,
+          project_id: s.project_id,
+          duration:
+            "extract(epoch from coalesce(?, now()) - ?)"
+            |> fragment(s.end_datetime, s.start_datetime)
+            |> sum()
+            |> coalesce(0)
+            |> type(:integer)
+        }
+
+    Accounts.User
+    |> Repo.get(user_id)
+    |> Repo.preload([:projects, sessions: sessions_query])
+    |> case do
       nil ->
         nil
 
       user ->
-        salary_query = from(us in UserSalary, where: is_nil(us.deleted_at), limit: 1)
-
-        sessions_query =
-          from s in Session,
-            where:
-              fragment("extract(month from ?) = ?", s.start_datetime, ^filter_date.month) and
-                fragment("extract(year from ?) = ?", s.start_datetime, ^filter_date.year) and
-                s.user_id == ^user_id,
-            select: %{
-              title: s.title,
-              project_id: s.project_id,
-              duration:
-                "extract(epoch from coalesce(?, now()) - ?)"
-                |> fragment(s.end_datetime, s.start_datetime)
-                |> coalesce(0)
-                |> type(:integer)
-            }
-
-        result =
-          Repo.preload(user, [:projects, sessions: sessions_query, user_salaries: salary_query])
-
-        result
-        |> Map.put(
-          :hourly_rate,
-          case result.user_salaries do
-            [] -> Decimal.new(0)
-            list -> list |> hd() |> Map.get(:hourly_rate, Decimal.new(0))
+        hourly_rate =
+          case Timetracker.get_user_salary_as_of(user.id, date) do
+            nil -> Decimal.new(0)
+            %{hourly_rate: rate} -> rate
           end
-        )
-        |> Map.put(:time_worked, Enum.sum(Enum.map(result.sessions, & &1.duration)))
-        |> Map.put(
-          :projects,
-          Enum.map(result.projects, fn project ->
-            sessions = Enum.filter(result.sessions, &(&1.project_id == project.id))
-            Map.put(project, :sessions, sessions)
-          end)
-        )
+
+        user
+        |> Repo.preload(projects: [sessions: fn _ids -> user.sessions end])
+        |> Map.put(:hourly_rate, hourly_rate)
+        |> Map.put(:hours_record, Timetracker.get_hours_record_by_month(user.id, date))
+        |> Map.put(:time_worked, user.sessions |> Enum.map(& &1.duration) |> Enum.sum())
     end
   end
 end

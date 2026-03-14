@@ -7,9 +7,11 @@ defmodule Firmowid.Timetracker.Project do
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices.Counterparty
   alias Firmowid.Timetracker.ProjectUser
+  alias Firmowid.Timetracker.Session
 
   schema "projects" do
     field :name, :string
+    field :archived_at, :date
     field :hours, :integer, virtual: true, default: 0
 
     many_to_many :users,
@@ -20,11 +22,11 @@ defmodule Firmowid.Timetracker.Project do
              ProjectUser,
              on_replace: :delete
 
+    has_many :sessions, Session
+
     belongs_to :counterparty, Counterparty
     belongs_to :organization, Firmowid.Accounts.Organization
     belongs_to :tag_definition, Firmowid.Analysis.TagDefinition
-
-    field :archived_at, :date
 
     timestamps()
   end
