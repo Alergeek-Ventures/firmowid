@@ -11,8 +11,13 @@
 #   seeds/voidstack.exs  — VoidStack Labs evil org for authorization testing
 #
 # Run with: mix run priv/repo/seeds.exs
-# Idempotent — safe to re-run without duplicating data.
+#
+# If the Bytecraft org already exists the database is considered seeded
+# and the entire script is a no-op (fast early exit).
 
+import Ecto.Query
+
+alias Firmowid.Accounts.Organization
 alias Firmowid.Repo
 alias Firmowid.Seeds.Bytecraft
 alias Firmowid.Seeds.MonthM0
@@ -27,18 +32,25 @@ for file <- ~w(helpers bytecraft month_m2 month_m1 month_m0 timetracker voidstac
   Code.require_file("#{file}.exs", seeds_dir)
 end
 
-Repo.transaction(fn ->
-  # — Primary organization: Bytecraft Collective —
-  ctx = Bytecraft.seed!()
+already_seeded? =
+  Repo.exists?(from(o in Organization, where: o.nip == "6161525811"), skip_organization_id: true)
 
-  # — Monthly financial data (newest → oldest for tagging context) —
-  MonthM2.seed!(ctx)
-  MonthM1.seed!(ctx)
-  MonthM0.seed!(ctx)
+if already_seeded? do
+  IO.puts("[seeds] Database already seeded — skipping")
+else
+  Repo.transaction(fn ->
+    # — Primary organization: Bytecraft Collective —
+    ctx = Bytecraft.seed!()
 
-  # — Timetracker: salaries, sessions, hours records —
-  TimetrackerSeeds.seed!(ctx)
+    # — Monthly financial data (newest → oldest for tagging context) —
+    MonthM2.seed!(ctx)
+    MonthM1.seed!(ctx)
+    MonthM0.seed!(ctx)
 
-  # — Evil org: VoidStack Labs —
-  Voidstack.seed!()
-end)
+    # — Timetracker: salaries, sessions, hours records —
+    TimetrackerSeeds.seed!(ctx)
+
+    # — Evil org: VoidStack Labs —
+    Voidstack.seed!()
+  end)
+end
