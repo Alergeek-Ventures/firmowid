@@ -6,6 +6,7 @@ defmodule Firmowid.BankData.Worker do
 
   alias Firmowid.BankData
   alias Firmowid.BankData.Requisition
+  alias Firmowid.BankData.TokenManager
   alias Firmowid.Repo
 
   require Logger
@@ -50,22 +51,28 @@ defmodule Firmowid.BankData.Worker do
           {:cancel, :expired_eua}
 
         {:error, :unauthorized} ->
-          Logger.warning("Bank account #{bank_account_id} authorization failed; may need token refresh or reconnection")
-
+          Logger.warning("Bank account #{bank_account_id} authorization failed; refreshing token before retry")
+          TokenManager.refresh_now()
           {:error, :unauthorized}
 
         {:error, :forbidden} ->
           Logger.warning("Bank account #{bank_account_id} access forbidden; cancelling sync job")
           {:cancel, :forbidden}
 
+        {:error, :bad_request} ->
+          Logger.error("Bank account #{bank_account_id} bad request; cancelling sync job")
+          {:cancel, :bad_request}
+
+        {:error, :conflict} ->
+          Logger.warning("Bank account #{bank_account_id} account suspended or in error state; will retry")
+          {:error, :conflict}
+
         {:error, :rate_limited} ->
           Logger.warning("Rate limited while fetching transactions for bank account #{bank_account_id}")
-
           {:snooze, 86_400}
 
         {:error, :server_error} ->
           Logger.warning("Server error while fetching transactions for bank account #{bank_account_id}; will retry")
-
           {:error, :server_error}
 
         {:error, reason} ->
@@ -133,8 +140,12 @@ defmodule Firmowid.BankData.Worker do
       else
         {:error, :not_found} ->
           Logger.error("Requisition #{requisition_id} not found for organization #{organization_id}")
-
           {:cancel, :not_found}
+
+        {:error, :unauthorized} ->
+          Logger.warning("Requisition #{requisition_id} authorization failed; refreshing token before retry")
+          TokenManager.refresh_now()
+          {:error, :unauthorized}
 
         {:error, reason} ->
           Logger.error("Failed to fetch requisition status: #{inspect(reason)}")
@@ -150,6 +161,15 @@ defmodule Firmowid.BankData.Worker do
 
     case Firmowid.BankData.ApiClient.delete_requisition(requisition_id) do
       {:ok, _} ->
+        :ok
+
+      {:error, :unauthorized} ->
+        Logger.warning("Delete requisition #{requisition_id} authorization failed; refreshing token before retry")
+        TokenManager.refresh_now()
+        {:error, :unauthorized}
+
+      {:error, :not_found} ->
+        Logger.info("Remote requisition #{requisition_id} already deleted or not found; treating as success")
         :ok
 
       {:error, reason} ->

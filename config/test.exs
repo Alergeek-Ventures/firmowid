@@ -41,6 +41,9 @@ config :firmowid, :bank_data_api_client,
   bank_data_institutions: [
     plug: {Req.Test, :bank_data_institutions}
   ],
+  bank_data_institution: [
+    plug: {Req.Test, :bank_data_institution}
+  ],
   bank_data_requisition: [
     plug: {Req.Test, :bank_data_requisition}
   ],

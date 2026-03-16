@@ -142,13 +142,12 @@ defmodule Firmowid.BankData do
   @doc """
   Get requisition status from GoCardless API.
   """
-
-  @spec get_requisition_status(binary()) ::
-          {:ok, binary()} | {:error, {:unexpected_response, map()}}
+  @spec get_requisition_status(binary()) :: {:ok, binary()} | {:error, term()}
   def get_requisition_status(requisition_id) do
     case ApiClient.get_requisition(requisition_id) do
-      %{"status" => status} -> {:ok, status}
-      other -> {:error, {:unexpected_response, other}}
+      {:ok, %{"status" => status}} -> {:ok, status}
+      {:ok, other} -> {:error, {:unexpected_response, other}}
+      {:error, _} = error -> error
     end
   end
 
@@ -157,16 +156,15 @@ defmodule Firmowid.BankData do
   organization ID.
   """
   @spec create_requisition(binary(), integer(), binary(), binary()) ::
-          {:ok, binary()} | {:error, {:unexpected_response, map()}}
+          {:ok, binary()} | {:error, term()}
   def create_requisition(institution_id, max_transaction_days, organization_id, redirect_url) do
-    requisition =
-      ApiClient.create_requisition(
-        institution_id,
-        max_transaction_days,
-        redirect_url
-      )
-
-    with {:ok, _} <-
+    with {:ok, requisition} <-
+           ApiClient.create_requisition(
+             institution_id,
+             max_transaction_days,
+             redirect_url
+           ),
+         {:ok, _} <-
            Repo.insert(%Requisition{
              id: requisition["id"],
              status: :pending,
@@ -287,11 +285,9 @@ defmodule Firmowid.BankData do
   end
 
   def create_or_update_bank_accounts_for_requisition(requisition_id, organization_id) do
-    bank_accounts =
-      requisition_id
-      |> ApiClient.get_accounts_for_requisition()
-      |> Enum.map(fn account ->
-        bank_account =
+    with {:ok, accounts} <- ApiClient.get_accounts_for_requisition(requisition_id) do
+      bank_accounts =
+        Enum.map(accounts, fn account ->
           Finances.create_bank_account(%{
             iban: account["iban"],
             gocardless_id: account["id"],
@@ -303,11 +299,10 @@ defmodule Firmowid.BankData do
             organization_id: organization_id,
             requisition_id: requisition_id
           })
+        end)
 
-        bank_account
-      end)
-
-    {:ok, bank_accounts}
+      {:ok, bank_accounts}
+    end
   end
 
   @doc """
@@ -412,7 +407,7 @@ defmodule Firmowid.BankData do
     ids_query =
       from(r in Requisition)
       |> join(:left, [r], b in assoc(r, :bank_accounts))
-      |> where([r, b], r.inserted_at < ^cutoff_dt and is_nil(b.id))
+      |> where([r, b], r.inserted_at < ^cutoff_dt and not is_nil(b.id))
       |> select([r], r.id)
 
     multi =

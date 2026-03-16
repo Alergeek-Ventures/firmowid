@@ -15,9 +15,15 @@ defmodule FirmowidWeb.BankSyncLive.Create do
     # Check billing limits for bank connections
     bank_connections_limit_check = Billing.check(socket.assigns.current_org.id, :bank_connections)
 
+    available_institutions =
+      case BankData.get_available_institutions_for_country("pl") do
+        {:ok, institutions} -> institutions
+        {:error, _} -> []
+      end
+
     socket =
       socket
-      |> assign(:available_institutions, BankData.get_available_institutions_for_country("pl"))
+      |> assign(:available_institutions, available_institutions)
       |> assign(:requisition_link, nil)
       |> assign(:bank_connections_limit_check, bank_connections_limit_check)
 

@@ -56,6 +56,31 @@ defmodule Firmowid.BankData.CleanupWorkerTest do
     refute Repo.get(Requisition, req.id, organization_id: org_id)
   end
 
+  test "expired (90+ days) requisitions WITHOUT accounts are not touched by expired cleanup" do
+    %{organization_id: org_id} = admin_fixture()
+
+    {:ok, req} =
+      %Requisition{status: :accepted, organization_id: org_id}
+      |> Requisition.changeset()
+      |> Repo.insert(organization_id: org_id)
+
+    # No bank accounts created for this requisition
+
+    # backdate inserted_at by 100 days
+    long_ago = DateTime.add(DateTime.utc_now(), -100, :day)
+
+    Repo.update_all(
+      from(r in Requisition, where: r.id == ^req.id),
+      [set: [inserted_at: long_ago]],
+      organization_id: org_id
+    )
+
+    # The expired cleanup should only target requisitions WITH accounts
+    # so this orphaned one should be handled by the orphaned cleanup instead
+    count = Firmowid.BankData.cleanup_delete_expired_remote_requisitions(long_ago, org_id)
+    assert count == 0
+  end
+
   test "expired (90+ days) remote deletion keeps local row when accounts exist" do
     %{organization_id: org_id} = admin_fixture()
 

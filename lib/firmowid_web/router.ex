@@ -132,7 +132,6 @@ defmodule FirmowidWeb.Router do
       live "/zarzadzanie/projekty/:id/edycja", ManagementLive.ProjectForm, :edit
       live "/zarzadzanie/kontrahenci", ManagementLive.Clients
 
-      live "/ustawienia/bank", BankSyncLive.Index, :index
       live "/ustawienia/bank/dodaj", BankSyncLive.Create, :index
 
       live "/zaproszenia", OrganizationInvitesLive.Index, :index

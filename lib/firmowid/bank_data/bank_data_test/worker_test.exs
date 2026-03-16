@@ -237,6 +237,145 @@ defmodule Firmowid.BankData.WorkerTest do
                })
     end
 
+    test "unauthorized returns error (retryable) after refreshing token" do
+      %{organization_id: org_id} = admin_fixture()
+
+      {:ok, req} =
+        %Requisition{status: :accepted, organization_id: org_id}
+        |> Requisition.changeset()
+        |> Repo.insert(organization_id: org_id)
+
+      ba =
+        Finances.create_bank_account(%{
+          iban: "PL123",
+          organization_id: org_id,
+          requisition_id: req.id,
+          gocardless_id: "acc-1"
+        })
+
+      # transactions 401
+      Req.Test.stub(:bank_data_transactions, fn conn ->
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.send_resp(
+          401,
+          Jason.encode!(%{summary: "Invalid token", detail: "Token is invalid", status_code: 401})
+        )
+      end)
+
+      assert {:error, :unauthorized} =
+               Worker.perform(%Oban.Job{
+                 args: %{
+                   "name" => "bank_account_sync",
+                   "bank_account_id" => ba.id,
+                   "organization_id" => org_id
+                 }
+               })
+    end
+
+    test "expired_eua cancels permanently" do
+      %{organization_id: org_id} = admin_fixture()
+
+      {:ok, req} =
+        %Requisition{status: :accepted, organization_id: org_id}
+        |> Requisition.changeset()
+        |> Repo.insert(organization_id: org_id)
+
+      ba =
+        Finances.create_bank_account(%{
+          iban: "PL123",
+          organization_id: org_id,
+          requisition_id: req.id,
+          gocardless_id: "acc-1"
+        })
+
+      Req.Test.stub(:bank_data_transactions, fn conn ->
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.send_resp(
+          401,
+          Jason.encode!(%{
+            summary: "End User Agreement (EUA) abc123 has expired",
+            detail: "EUA was valid for 90 days",
+            status_code: 401
+          })
+        )
+      end)
+
+      assert {:cancel, :expired_eua} =
+               Worker.perform(%Oban.Job{
+                 args: %{
+                   "name" => "bank_account_sync",
+                   "bank_account_id" => ba.id,
+                   "organization_id" => org_id
+                 }
+               })
+    end
+
+    test "bad_request cancels permanently" do
+      %{organization_id: org_id} = admin_fixture()
+
+      {:ok, req} =
+        %Requisition{status: :accepted, organization_id: org_id}
+        |> Requisition.changeset()
+        |> Repo.insert(organization_id: org_id)
+
+      ba =
+        Finances.create_bank_account(%{
+          iban: "PL123",
+          organization_id: org_id,
+          requisition_id: req.id,
+          gocardless_id: "acc-1"
+        })
+
+      Req.Test.stub(:bank_data_transactions, fn conn ->
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.send_resp(400, Jason.encode!(%{summary: "Bad request", status_code: 400}))
+      end)
+
+      assert {:cancel, :bad_request} =
+               Worker.perform(%Oban.Job{
+                 args: %{
+                   "name" => "bank_account_sync",
+                   "bank_account_id" => ba.id,
+                   "organization_id" => org_id
+                 }
+               })
+    end
+
+    test "conflict returns error (retryable)" do
+      %{organization_id: org_id} = admin_fixture()
+
+      {:ok, req} =
+        %Requisition{status: :accepted, organization_id: org_id}
+        |> Requisition.changeset()
+        |> Repo.insert(organization_id: org_id)
+
+      ba =
+        Finances.create_bank_account(%{
+          iban: "PL123",
+          organization_id: org_id,
+          requisition_id: req.id,
+          gocardless_id: "acc-1"
+        })
+
+      Req.Test.stub(:bank_data_transactions, fn conn ->
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.send_resp(409, Jason.encode!(%{summary: "Account suspended", status_code: 409}))
+      end)
+
+      assert {:error, :conflict} =
+               Worker.perform(%Oban.Job{
+                 args: %{
+                   "name" => "bank_account_sync",
+                   "bank_account_id" => ba.id,
+                   "organization_id" => org_id
+                 }
+               })
+    end
+
     test "not_found cancels" do
       assert {:cancel, :not_found} =
                Worker.perform(%Oban.Job{
