@@ -22,7 +22,7 @@ defmodule Firmowid.Blobs do
     extension = Enum.at(possible_extensions, 0, "pdf")
     upload_path = preprocess_blob(upload_path, extension)
 
-    blob_id = UUIDv7.autogenerate()
+    blob_id = UUIDv7.generate()
 
     blob_checksum =
       upload_path

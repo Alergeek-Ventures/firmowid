@@ -256,7 +256,7 @@ defmodule Firmowid.Finances do
     transactions =
       Enum.map(transactions, fn transaction ->
         Map.merge(transaction, %{
-          id: UUIDv7.autogenerate(),
+          id: UUIDv7.generate(),
           inserted_at: DateTime.truncate(DateTime.utc_now(), :second),
           updated_at: DateTime.truncate(DateTime.utc_now(), :second)
         })

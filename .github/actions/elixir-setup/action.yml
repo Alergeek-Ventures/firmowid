@@ -121,10 +121,3 @@ runs:
       if: inputs.build-app == 'true'
       env:
         ERL_COMPILER_OPTIONS: "+JPn"
-
-    - name: Compile Application
-      run: mix compile ${{ inputs.build-flags }}
-      shell: sh
-      if: inputs.build-app == 'true'
-      env:
-        ERL_COMPILER_OPTIONS: "+JPn"

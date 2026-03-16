@@ -55,12 +55,7 @@ defmodule FirmowidWeb.FileController do
             source:
               {:url,
                {"#{url_with_protocol}/#{download_path}",
-                [
-                  {
-                    "Cookie",
-                    "_firmowid_key=#{conn.cookies["_firmowid_key"]}"
-                  }
-                ], []}},
+                [headers: [{"cookie", "_firmowid_key=#{conn.cookies["_firmowid_key"]}"}]]}},
             path: "sprzedazowe/#{file_name}.pdf"
           ]
         end)
