@@ -205,7 +205,7 @@ defmodule Firmowid.BankDataTest do
       ])
     end)
 
-    institutions = BankData.get_available_institutions_for_country("PL")
+    {:ok, institutions} = BankData.get_available_institutions_for_country("PL")
 
     assert length(institutions) == 1
 

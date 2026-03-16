@@ -3,6 +3,8 @@ defmodule Firmowid.NipTest do
 
   alias Firmowid.SalesInvoices.NipApiClient
 
+  @moduletag capture_log: true
+
   describe "nip api client" do
     test "fetches the org data by nip" do
       {:ok, org} = NipApiClient.fetch_org_data_by_nip("6793209719")
