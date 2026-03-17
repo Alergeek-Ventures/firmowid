@@ -173,17 +173,6 @@
           >
             Projekty
           </.link>
-          <.link
-            :if={FunWithFlags.enabled?(:counterparties, for: @current_user)}
-            navigate="/zarzadzanie/kontrahenci"
-            class={[
-              "hover:text-white transition-colors",
-              String.starts_with?(@current_uri.path, "/zarzadzanie/kontrahenci") &&
-                "text-white/90"
-            ]}
-          >
-            Kontrahenci
-          </.link>
         </div>
         <button
           class="text-white cursor-pointer opacity-0 ml-auto relative flex size-6 transition-opacity"

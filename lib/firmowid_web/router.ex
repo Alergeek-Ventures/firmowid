@@ -127,7 +127,6 @@ defmodule FirmowidWeb.Router do
       live "/zarzadzanie/projekty/dodaj", ManagementLive.ProjectForm, :new
       live "/zarzadzanie/projekty/:id", ManagementLive.Project, :show
       live "/zarzadzanie/projekty/:id/edycja", ManagementLive.ProjectForm, :edit
-      live "/zarzadzanie/kontrahenci", ManagementLive.Clients
 
       live "/ustawienia/bank/dodaj", BankSyncLive.Create, :index
 
