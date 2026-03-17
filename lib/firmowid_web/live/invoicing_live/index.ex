@@ -493,15 +493,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
     entries = Invoicing.get_invoicing_entries(date_range_from, date_range_to, filter)
 
-    # For :unmatched filter with grouping enabled, we need context about all transactions
-    # to avoid grouping when some transactions are skipped/matched
-    entries =
-      if socket.assigns.params.group_by_party && filter == :unmatched do
-        all_transactions = Finances.list_transactions(date_range_from, date_range_to)
-        group_cost_transactions_by_party(entries, true, all_transactions)
-      else
-        group_cost_transactions_by_party(entries, socket.assigns.params.group_by_party, [])
-      end
+    entries = group_cost_transactions_by_party(entries, socket.assigns.params.group_by_party)
 
     socket = assign(socket, :invoicing_entries, entries)
 
@@ -515,10 +507,8 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     # grouped transactions count as one item each
     pending_invoicing_entries_count =
       if socket.assigns.params.group_by_party do
-        all_transactions = Finances.list_transactions(date_range_from, date_range_to)
-
         pending_entries
-        |> group_cost_transactions_by_party(true, all_transactions)
+        |> group_cost_transactions_by_party(true)
         |> Enum.count()
       else
         raw_pending_count
@@ -578,7 +568,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     assign(socket, :page_title, "Fakturowanie")
   end
 
-  defp group_cost_transactions_by_party(entries, true, context_transactions) do
+  defp group_cost_transactions_by_party(entries, true) do
     # Separate transactions from other entries (invoices)
     {transactions, other_entries} =
       Enum.split_with(entries, fn
@@ -598,50 +588,18 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     # Group income transactions by debtor_name
     income_by_party = Enum.group_by(income_transactions, & &1.debtor_name)
 
-    # Build sets of parties that have non-groupable transactions in the full context
-    {cost_parties_with_mixed_state, income_parties_with_mixed_state} =
-      if context_transactions == [] do
-        {MapSet.new(), MapSet.new()}
-      else
-        cost_mixed =
-          context_transactions
-          |> Enum.filter(fn
-            %Transaction{transaction_amount: amount} = t ->
-              Decimal.lt?(amount, 0) && !groupable_transaction?(t)
-
-            _ ->
-              false
-          end)
-          |> MapSet.new(& &1.creditor_name)
-
-        income_mixed =
-          context_transactions
-          |> Enum.filter(fn
-            %Transaction{transaction_amount: amount} = t ->
-              Decimal.gte?(amount, 0) && !groupable_transaction?(t)
-
-            _ ->
-              false
-          end)
-          |> MapSet.new(& &1.debtor_name)
-
-        {cost_mixed, income_mixed}
-      end
-
     # Process cost transaction groups
     {cost_groups, ungrouped_cost} =
-      Enum.split_with(cost_by_party, fn {party, txns} ->
+      Enum.split_with(cost_by_party, fn {_party, txns} ->
         length(txns) >= 2 &&
-          Enum.all?(txns, &groupable_transaction?/1) &&
-          !MapSet.member?(cost_parties_with_mixed_state, party)
+          Enum.all?(txns, &groupable_transaction?/1)
       end)
 
     # Process income transaction groups
     {income_groups, ungrouped_income} =
-      Enum.split_with(income_by_party, fn {party, txns} ->
+      Enum.split_with(income_by_party, fn {_party, txns} ->
         length(txns) >= 2 &&
-          Enum.all?(txns, &groupable_transaction?/1) &&
-          !MapSet.member?(income_parties_with_mixed_state, party)
+          Enum.all?(txns, &groupable_transaction?/1)
       end)
 
     # Build group structs
@@ -665,7 +623,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   end
 
   # Pattern match: grouping disabled
-  defp group_cost_transactions_by_party(entries, false, _context) do
+  defp group_cost_transactions_by_party(entries, false) do
     entries
   end
 
