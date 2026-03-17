@@ -41,7 +41,9 @@ defmodule Mix.Tasks.Check do
     {"Dialyzer", ["dialyzer"]}
   ]
 
-  @test_check {"Tests", ["test"]}
+  # Include :external tests locally — devs have third-party credentials.
+  # CI runs plain `mix test` which excludes :external by default.
+  @test_check {"Tests", ["test", "--include", "external"]}
 
   @impl Mix.Task
   def run(args) do

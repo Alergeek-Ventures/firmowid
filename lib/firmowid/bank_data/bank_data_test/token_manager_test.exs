@@ -5,6 +5,10 @@ defmodule Firmowid.BankData.TokenManagerTest do
 
   @moduletag capture_log: true
 
+  # Requires real GoCardless credentials (GO_LIMITLESS_SECRET_ID/KEY).
+  # Excluded by default; included when running `mix check` locally.
+  @moduletag :external
+
   # We test the GenServer by starting a fresh instance per test.
   # The global TokenManager started by Application is already running,
   # so we start a named instance with a different name and test the
