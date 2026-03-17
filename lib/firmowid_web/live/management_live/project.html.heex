@@ -1,4 +1,4 @@
-<div class="max-w-7xl w-full mx-auto space-y-8">
+<div class="max-w-7xl w-full mx-auto my-4 space-y-8">
   <div class="flex flex-row items-start justify-between">
     <div class="space-y-1">
       <p class="text-sm text-grey-500 leading-snug">
@@ -59,7 +59,7 @@
     <div class="grid grid-cols-4 gap-4">
       <div class="bg-white rounded-sm p-4">
         <p class="text-grey-500 leading-snug mb-6">Przepracowane godziny</p>
-        <p class="text-lg text-black leading-tight font-bold mb-1">
+        <p class="text-lg text-black leading-tight font-medium mb-1">
           {format_hours(@total_time_worked)}
         </p>
 
@@ -85,7 +85,7 @@
 
       <div class="bg-white rounded-sm p-4">
         <p class="text-grey-500 leading-snug mb-6">Koszty pracowników</p>
-        <p class="text-lg text-black leading-tight font-bold mb-1">
+        <p class="text-lg text-black leading-tight font-medium mb-1">
           <%= if @total_cost do %>
             {:PLN
             |> Money.new(@total_cost)

@@ -505,29 +505,32 @@ defmodule Firmowid.Timetracker do
     |> Enum.sort_by(&{&1.removed_from_project, &1.name, &1.email})
   end
 
+  defp project_total_time_worked_query(project_id) do
+    Session
+    |> where([s], s.project_id == ^project_id)
+    |> select(
+      [s],
+      "extract(epoch from coalesce(?, now()) - ?)"
+      |> fragment(s.end_datetime, s.start_datetime)
+      |> sum()
+      |> coalesce(0)
+      |> type(:integer)
+    )
+  end
+
   @doc """
   Returns total worked seconds for a project in a given month.
   """
   @spec get_project_total_time_worked(String.t(), Date.t()) :: non_neg_integer()
   def get_project_total_time_worked(project_id, %Date{} = date) do
-    query =
-      from s in Session,
-        where:
-          s.project_id == ^project_id and
-            fragment("extract(month from ?) = ?", s.start_datetime, ^date.month) and
-            fragment("extract(year from ?) = ?", s.start_datetime, ^date.year),
-        limit: 1,
-        select:
-          "extract(epoch from coalesce(?, now()) - ?)"
-          |> fragment(
-            s.end_datetime,
-            s.start_datetime
-          )
-          |> sum()
-          |> coalesce(0)
-          |> type(:integer)
-
-    Repo.one(query)
+    project_id
+    |> project_total_time_worked_query()
+    |> where(
+      [s],
+      fragment("extract(month from ?) = ?", s.start_datetime, ^date.month) and
+        fragment("extract(year from ?) = ?", s.start_datetime, ^date.year)
+    )
+    |> Repo.one()
   end
 
   @doc """
@@ -535,21 +538,9 @@ defmodule Firmowid.Timetracker do
   """
   @spec get_project_total_time_worked_all_time(String.t()) :: non_neg_integer()
   def get_project_total_time_worked_all_time(project_id) do
-    query =
-      from s in Session,
-        where: s.project_id == ^project_id,
-        limit: 1,
-        select:
-          "extract(epoch from coalesce(?, now()) - ?)"
-          |> fragment(
-            s.end_datetime,
-            s.start_datetime
-          )
-          |> sum()
-          |> coalesce(0)
-          |> type(:integer)
-
-    Repo.one(query)
+    project_id
+    |> project_total_time_worked_query()
+    |> Repo.one()
   end
 
   @doc """
@@ -562,16 +553,9 @@ defmodule Firmowid.Timetracker do
   def get_project_total_cost(project_id, %Date{} = date) do
     organization_id = Repo.get_org_id()
 
-    as_of_date = Date.end_of_month(date)
-    as_of_end_dt = DateTime.new!(as_of_date, ~T[23:59:59], "Etc/UTC")
-
     latest_salary_as_of_query =
-      UserSalary
-      |> where([us], us.updated_at <= ^as_of_end_dt)
-      |> where([us], us.organization_id == ^organization_id)
-      |> where([us], is_nil(us.deleted_at) or us.deleted_at > ^as_of_date)
-      |> order_by([us], asc: us.user_id, desc: us.updated_at)
-      |> distinct([us], us.user_id)
+      date
+      |> user_salaries_as_of_query()
       |> select([us], %{user_id: us.user_id, hourly_rate: us.hourly_rate})
 
     session_summary =
@@ -682,7 +666,9 @@ defmodule Firmowid.Timetracker do
   end
 
   defp month_value_to_date(%Date{} = date), do: Date.beginning_of_month(date)
+
   defp month_value_to_date(%NaiveDateTime{} = dt), do: dt |> NaiveDateTime.to_date() |> Date.beginning_of_month()
+
   defp month_value_to_date(%DateTime{} = dt), do: dt |> DateTime.to_date() |> Date.beginning_of_month()
 
   def get_project_users_with_removed(project_id) do
