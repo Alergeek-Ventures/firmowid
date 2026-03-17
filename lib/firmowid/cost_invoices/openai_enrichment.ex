@@ -8,14 +8,17 @@ defmodule Firmowid.CostInvoices.OpenAIEnrichment do
 
     request =
       Chat.Completions.new(
-        model: "gpt-4o-mini",
-        max_completion_tokens: 80,
+        model: "gpt-5-nano",
+        max_completion_tokens: 1200,
+        reasoning_effort: "low",
         messages: [
-          ChatMessage.system(
-            "Jesteś asystentem dla osób zajmujących się dokumentami " <>
-              "i transakcjami w przedsiębiorstwie. Pomagasz w opisywaniu " <>
-              "katalogowaniu i dopasowaniu ich do siebie."
-          ),
+          %{
+            role: "developer",
+            content:
+              "Jesteś asystentem dla osób zajmujących się dokumentami " <>
+                "i transakcjami w przedsiębiorstwie. Pomagasz w opisywaniu " <>
+                "katalogowaniu i dopasowaniu ich do siebie."
+          },
           "
               Oto metadane faktury sprzedażowej, którą chcą skatalogować:
               {

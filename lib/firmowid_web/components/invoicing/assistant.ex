@@ -31,7 +31,10 @@ defmodule FirmowidWeb.Components.Invoicing.Assistant do
       <button
         type="submit"
         disabled={@loading}
-        class="text-grey-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        class={[
+          "transition-colors duration-300 disabled:cursor-not-allowed",
+          if(@loading, do: "text-black", else: "text-grey-200")
+        ]}
       >
         <%= if @loading do %>
           <.icon name="hero-arrow-path" class="animate-spin" />

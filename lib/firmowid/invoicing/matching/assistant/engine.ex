@@ -12,6 +12,8 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
     - exec_function (name, args -> result)
     - options (model, etc.)
   No domain logic; only plumbing.
+
+  Uses gpt-5 (reasoning model) via the OpenAI Responses API.
   """
 
   alias Firmowid.Invoicing.Matching.Assistant.Message
@@ -37,7 +39,7 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
       send(listening_process, user_message)
       MessagesStorage.append(conversation_id, user_message)
 
-      base_messages = [ChatMessage.system(prompt)] ++ to_llm_messages(conversation_id)
+      base_messages = [%{role: "developer", content: prompt}] ++ to_llm_messages(conversation_id)
 
       do_function_loop_streaming(
         conversation_id,
@@ -64,9 +66,10 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
       Responses.create!(
         openai,
         %{
-          model: "gpt-4o",
+          model: "gpt-5",
           input: messages,
-          tools: Enum.map(tools, &Tool.to_openai_response/1)
+          tools: Enum.map(tools, &Tool.to_openai_response/1),
+          reasoning: %{effort: "low", summary: "auto"}
         },
         stream: true
       )
@@ -77,6 +80,14 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
       |> Stream.map(& &1.data)
       |> Stream.transform(nil, fn item, acc ->
         case item do
+          # Reasoning events (output items, summaries) are internal to gpt-5
+          # and not surfaced to the user.
+          %{"type" => "response.output_item.done", "item" => %{"type" => "reasoning"}} ->
+            {[], acc}
+
+          %{"type" => "response.reasoning_summary" <> _} ->
+            {[], acc}
+
           %{
             "type" => "response.output_item.added",
             "item" => %{"type" => "message"}
@@ -128,6 +139,17 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
             msgs = execute_function_call(call_msg, tools)
             {msgs, nil}
 
+          %{"type" => "error", "error" => error} ->
+            Logger.error("OpenAI API error during streaming: #{inspect(error)}")
+
+            error_msg =
+              Message.new(:assistant, "Przepraszam, wystąpił błąd. Spróbuj ponownie.", %{
+                done: true,
+                error: error
+              })
+
+            {[error_msg], nil}
+
           _ ->
             {[], acc}
         end
@@ -139,6 +161,9 @@ defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
     msgs = Enum.to_list(stream)
 
     cond do
+      _has_error = Enum.any?(msgs, &(Map.get(&1.payload, :error) != nil)) ->
+        {:error, :api_error}
+
       _replied_with_text = Enum.any?(msgs, &(&1.role == :assistant and &1.text != "")) ->
         {:ok, List.last(msgs)}
 
