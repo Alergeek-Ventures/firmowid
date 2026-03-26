@@ -16,6 +16,10 @@ defmodule FirmowidWeb.ManagementLive.Employees do
       |> assign(:view, :standard)
       |> assign(:search_expanded, false)
       |> assign(:active_months, Timetracker.get_months_with_sessions())
+      |> assign(
+        :can_export_csv,
+        Bodyguard.permit?(Timetracker, :read_hours_records, socket.assigns.current_user)
+      )
       |> assign_form()
 
     {:ok, socket}

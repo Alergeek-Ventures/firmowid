@@ -26,6 +26,10 @@ defmodule FirmowidWeb.ManagementLive.Project do
       |> assign(:selected_date, selected_date)
       |> assign(:active_months, Timetracker.get_months_with_sessions_by_project(project_id))
       |> assign(:project, load_project!(project_id))
+      |> assign(
+        :can_delete_project,
+        Bodyguard.permit?(Timetracker, :delete_project, socket.assigns.current_user)
+      )
       |> assign_project_data()
 
     {:noreply, socket}
@@ -83,6 +87,18 @@ defmodule FirmowidWeb.ManagementLive.Project do
       |> assign_project_data()
 
     {:noreply, socket}
+  end
+
+  def handle_event("delete_project", _, socket) do
+    project = socket.assigns.project
+    Bodyguard.permit!(Timetracker, :delete_project, socket.assigns.current_user, project)
+
+    {:ok, _project} = Timetracker.delete_project(project)
+
+    {:noreply,
+     socket
+     |> put_flash(:info, "Projekt został usunięty.")
+     |> push_navigate(to: ~p"/zarzadzanie/projekty")}
   end
 
   defp assign_project_data(%{assigns: %{selected_date: _date, project: project}} = socket)

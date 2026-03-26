@@ -53,6 +53,15 @@
     <.button color="grey" size="small" new={true} phx-click="unarchive_project">
       Przywróć projekt
     </.button>
+    <.button
+      :if={@can_delete_project}
+      variant="outline"
+      color="red"
+      size="small"
+      phx-click={show_modal("delete_project_modal")}
+    >
+      Usuń projekt
+    </.button>
   </div>
 
   <div class="flex flex-col gap-12">
@@ -240,3 +249,33 @@
     </div>
   </div>
 </div>
+
+<.modal :if={@can_delete_project} id="delete_project_modal">
+  <div class="space-y-6">
+    <h3 class="text-lg font-medium">
+      Czy na pewno chcesz usunąć projekt <b>{@project.name}</b>?
+    </h3>
+    <p class="text-sm text-grey-700">
+      Ta operacja jest nieodwracalna. Wszystkie dane związane z tym projektem zostaną trwale usunięte.
+    </p>
+    <div class="flex gap-4 justify-end">
+      <.button
+        type="button"
+        variant="outline"
+        new={true}
+        phx-click={hide_modal("delete_project_modal")}
+      >
+        Anuluj
+      </.button>
+      <.button
+        type="button"
+        variant="outline"
+        color="red"
+        phx-click="delete_project"
+        phx-disable-with="Usuwam..."
+      >
+        Usuń projekt
+      </.button>
+    </div>
+  </div>
+</.modal>

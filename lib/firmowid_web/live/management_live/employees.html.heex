@@ -36,12 +36,24 @@
       </div>
     </form>
 
-    <.link
-      navigate="/zaproszenia"
-      class={button_styles(%{new: true, color: "light_grey", size: "medium"})}
-    >
-      <.icon name="hero-plus-mini" class="size-6" /> Dodaj pracownika
-    </.link>
+    <div class="flex gap-4">
+      <.link
+        :if={@can_export_csv}
+        class={button_styles(%{variant: "ghost", size: "small", new: true})}
+        download
+        href={
+          ~p"/czasosledz/projekty/csv?month=#{@selected_date.month}&year=#{@selected_date.year}"
+        }
+      >
+        <Lucideicons.cloud_download class="size-4" /> Pobierz raport wypłat
+      </.link>
+      <.link
+        navigate="/zaproszenia"
+        class={button_styles(%{new: true, color: "light_grey", size: "medium"})}
+      >
+        <.icon name="hero-plus-mini" class="size-6" /> Dodaj pracownika
+      </.link>
+    </div>
   </div>
 
   <div class="flex gap-4">
