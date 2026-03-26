@@ -17,6 +17,7 @@ defmodule Firmowid.Repo do
   def installed_extensions, do: ["uuid-ossp"]
 
   @tenant_key {__MODULE__, :organization_id}
+  @paradedb_key {__MODULE__, :paradedb_unnamed}
 
   def put_org_id(organization_id) do
     Process.put(@tenant_key, organization_id)
@@ -30,9 +31,32 @@ defmodule Firmowid.Repo do
     Process.delete(@tenant_key)
   end
 
+  @doc """
+  Enable `prepare: :unnamed` for the current process.
+
+  ParadeDB's `@@@` operator is incompatible with Postgrex prepared statement
+  caching. Call this before any Ash query that uses `paradedb_search/2`.
+  The flag is process-scoped and cleared automatically on process exit.
+  """
+  @spec put_paradedb_unnamed :: :unnamed | nil
+  def put_paradedb_unnamed do
+    Process.put(@paradedb_key, :unnamed)
+  end
+
+  @doc "Disable `prepare: :unnamed` for the current process."
+  @spec drop_paradedb_unnamed :: :unnamed | nil
+  def drop_paradedb_unnamed do
+    Process.delete(@paradedb_key)
+  end
+
   @impl true
   def default_options(_operation) do
-    [organization_id: get_org_id()]
+    opts = [organization_id: get_org_id()]
+
+    case Process.get(@paradedb_key) do
+      :unnamed -> [{:prepare, :unnamed} | opts]
+      _ -> opts
+    end
   end
 
   @impl true

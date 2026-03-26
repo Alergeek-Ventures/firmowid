@@ -11,7 +11,16 @@ import Config
 config :ash, Ash.Type.UUIDv7, match_v4_uuids?: true
 
 config :ash,
+  custom_expressions: [Firmowid.Ash.Expressions.ParadeDBSearch],
   default_belongs_to_type: :uuid_v7,
+  # TEMPORARY: Repo.put_org_id stores org context in the process dictionary.
+  # Ash spawns async tasks for relationship loading which don't inherit it,
+  # causing org_id loss. This disables async globally — a meaningful performance
+  # trade-off (no parallel relationship loading).
+  #
+  # TODO: remove once Repo.put_org_id is eliminated and all multitenancy is
+  # handled via Ash's attribute-based strategy (which passes tenant explicitly).
+  disable_async?: true,
   include_embedded_source_by_default?: false,
   show_keysets_for_all_actions?: false
 
