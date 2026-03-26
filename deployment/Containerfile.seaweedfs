@@ -1,0 +1,19 @@
+# SeaweedFS S3-compatible server for CI
+#
+# The upstream image has no default CMD, so GitHub Actions service containers
+# (which cannot pass command args) would just print usage and exit.
+# This wrapper adds the default command to run the all-in-one server with S3.
+#
+# No HEALTHCHECK is baked in — SeaweedFS needs ~25s to boot all components
+# (master -> volume -> filer -> S3), which exceeds GHA runner's health timeout.
+# Readiness is handled in workflow steps instead (retry loop on bucket creation).
+#
+# Dependabot tracks the FROM tag and opens PRs on new releases.
+# On merge, .github/workflows/build-seaweedfs.yml rebuilds and pushes to GHCR.
+#
+# Build: docker build -f deployment/Containerfile.seaweedfs -t seaweedfs-s3:latest .
+# Run:   docker run -p 8333:8333 seaweedfs-s3:latest
+
+FROM docker.io/chrislusf/seaweedfs:3.74
+
+CMD ["server", "-s3"]

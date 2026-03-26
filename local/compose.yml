@@ -1,34 +1,54 @@
+# Development Docker Compose configuration
+#
+# Works standalone (defaults for main branch) or with env vars (worktree mode).
+# Environment variables (set via .env.local for worktrees):
+#   COMPOSE_PROJECT_NAME - e.g., firmowid-feature-auth (default: firmowid)
+#   DB_PORT              - Postgres port (mapped to container 5432)
+#   S3_PORT              - SeaweedFS S3 port (mapped to container 8333)
+#   CHROME_PORT          - Chromium port (mapped to container 9222)
+
 services:
-  postgres:
+  db:
     image: paradedb/paradedb:0.19.11
-    container_name: redux-postgres
+    container_name: ${COMPOSE_PROJECT_NAME:-firmowid}-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: firmowid
     ports:
-      - "5433:5432"
+      - "${DB_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  localstack:
-    image: localstack/localstack:latest
-    container_name: localstack_main
-    environment:
-      - SERVICES=s3
-      - AWS_DEFAULT_REGION=us-east-1
+  s3:
+    image: docker.io/chrislusf/seaweedfs:3.74
+    container_name: ${COMPOSE_PROJECT_NAME:-firmowid}-s3
+    command: server -s3
     ports:
-      - "4566:4566"
+      - "${S3_PORT:-4566}:8333"
+    environment:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
     volumes:
-      - ./s3-init/create-s3-bucket.sh:/etc/localstack/init/ready.d/create-s3-bucket.sh:Z
-      - localstack_data:/var/lib/localstack
+      - seaweedfs_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8333/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
 
   chromium:
     build:
       context: ..
       dockerfile: deployment/Containerfile.chromium
-    container_name: firmowid-chromium
+    container_name: ${COMPOSE_PROJECT_NAME:-firmowid}-chromium
     ports:
-      - "9222:9222"
+      - "${CHROME_PORT:-9222}:9222"
     healthcheck:
       test:
         [
@@ -46,4 +66,4 @@ services:
 
 volumes:
   postgres_data:
-  localstack_data:
+  seaweedfs_data:

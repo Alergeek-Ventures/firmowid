@@ -24,7 +24,7 @@ DEBUGGER_PORT=9229
 BRANCH=main
 DATABASE_URL=postgresql://postgres:postgres@localhost:5433/firmowid
 
-# AWS credentials for localstack (required by ex_aws)
+# AWS credentials for SeaweedFS S3 (required by ex_aws)
 AWS_ACCESS_KEY_ID=test
 AWS_SECRET_ACCESS_KEY=test
 EOF
@@ -38,7 +38,7 @@ DEBUGGER_PORT={{ ('debugger-' ~ branch) | hash_port }}
 BRANCH={{ branch | sanitize }}
 DATABASE_URL=postgresql://postgres:postgres@localhost:{{ ('db-' ~ branch) | hash_port }}/firmowid
 
-# AWS credentials for localstack (required by ex_aws)
+# AWS credentials for SeaweedFS S3 (required by ex_aws)
 AWS_ACCESS_KEY_ID=test
 AWS_SECRET_ACCESS_KEY=test
 EOF

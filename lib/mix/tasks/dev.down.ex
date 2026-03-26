@@ -132,7 +132,7 @@ defmodule Mix.Tasks.Dev.Down do
       {"CHROME_PORT", chrome_port}
     ]
 
-    compose_result = podman(["compose", "-f", "local/compose.worktree.yml", "down", "-v"], compose_env)
+    compose_result = podman(["compose", "-f", "local/compose.yml", "down", "-v"], compose_env)
 
     case compose_result do
       {output, 0} ->

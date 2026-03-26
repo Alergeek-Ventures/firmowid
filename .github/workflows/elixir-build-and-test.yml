@@ -64,10 +64,10 @@ jobs:
       SECRET_KEY_BASE: "REMOVED_PHOENIX_SECRET_KEY_BASE"
       CLOAK_VAULT_KEY: "REMOVED_CLOAK_VAULT_KEY"
 
-      # S3 / LocalStack configuration (matches config/test.exs)
-      S3_HOST: localstack
+      # S3 / SeaweedFS configuration (matches config/test.exs)
+      S3_HOST: seaweedfs
       S3_SCHEME: "http://"
-      S3_PORT: "4566"
+      S3_PORT: "8333"
       S3_BUCKET: firmowid-uploads
       AWS_ACCESS_KEY_ID: test
       AWS_SECRET_ACCESS_KEY: test
@@ -88,24 +88,33 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-      localstack:
-        image: localstack/localstack:latest
+      seaweedfs:
+        image: ghcr.io/alergeek-ventures/firmowid/seaweedfs-s3:latest
+        credentials:
+          username: ${{ github.actor }}
+          password: ${{ secrets.github_token }}
         env:
-          SERVICES: s3
-          DEBUG: 1
-        ports:
-          - 4566:4566
-        volumes:
-          - ${{ github.workspace }}/local/s3-init:/etc/localstack/init/ready.d
-        options: >-
-          --health-cmd "curl -s http://localhost:4566/_localstack/health | grep -q '\"s3\": \"running\"'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Wait for SeaweedFS S3 and create bucket
+        run: |
+          echo "Waiting for SeaweedFS S3 to be ready..."
+          for i in $(seq 1 30); do
+            if curl -sf http://seaweedfs:8333/healthz > /dev/null 2>&1; then
+              echo "SeaweedFS S3 is ready (attempt $i)"
+              curl -f -X PUT http://seaweedfs:8333/firmowid-uploads
+              exit 0
+            fi
+            echo "Attempt $i: not ready yet, waiting 2s..."
+            sleep 2
+          done
+          echo "SeaweedFS S3 failed to start within 60s"
+          exit 1
 
       - name: Setup Elixir Project
         uses: ./.github/actions/elixir-setup

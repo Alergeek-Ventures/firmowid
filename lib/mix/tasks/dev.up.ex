@@ -6,7 +6,7 @@ defmodule Mix.Tasks.Dev.Up do
 
   1. Loads configuration from .env.local (or uses defaults)
   2. Verifies .env exists (copied by `wt step copy-ignored`)
-  3. Starts Podman Compose services (Postgres, Localstack, Chromium)
+  3. Starts Podman Compose services via local/compose.yml (Postgres, SeaweedFS S3, Chromium)
   4. Runs mix setup (ecto.create, ecto.migrate, assets)
   5. Registers Caddy route for `{branch}.firmowid.localhost`
   6. Starts Phoenix server in background
@@ -119,16 +119,13 @@ defmodule Mix.Tasks.Dev.Up do
     BRANCH=#{env["BRANCH"]}
     DATABASE_URL=#{env["DATABASE_URL"]}
 
-    # AWS credentials for localstack (required by ex_aws)
+    # AWS credentials for SeaweedFS S3 (required by ex_aws)
     AWS_ACCESS_KEY_ID=#{env["AWS_ACCESS_KEY_ID"]}
     AWS_SECRET_ACCESS_KEY=#{env["AWS_SECRET_ACCESS_KEY"]}
     """
 
     File.write!(".env.local", content)
     Mix.shell().info("Generated .env.local with defaults")
-
-    File.write!(".opencode.port", env["PORT"])
-    Mix.shell().info("Generated .opencode.port")
   end
 
   defp verify_env_exists do
@@ -156,7 +153,7 @@ defmodule Mix.Tasks.Dev.Up do
     ]
 
     compose_result =
-      podman(["compose", "-f", "local/compose.worktree.yml", "up", "-d"], compose_env)
+      podman(["compose", "-f", "local/compose.yml", "up", "-d"], compose_env)
 
     case compose_result do
       {output, 0} ->
