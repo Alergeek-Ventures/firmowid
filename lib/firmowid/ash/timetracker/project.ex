@@ -11,6 +11,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Resource
+  alias Firmowid.Ash.Timetracker.ProjectUser
 
   require Resource
 
@@ -39,7 +40,24 @@ defmodule Firmowid.Ash.Timetracker.Project do
       allow_nil?(false)
     end
 
+    belongs_to :counterparty, Firmowid.Ash.Core.Counterparty do
+      allow_nil?(true)
+      attribute_writable?(true)
+    end
+
+    belongs_to :tag_definition, Firmowid.Ash.Core.TagDefinition do
+      allow_nil?(true)
+      attribute_writable?(true)
+    end
+
     has_many :sessions, Firmowid.Ash.Timetracker.Session
+    has_many :project_users, ProjectUser
+
+    many_to_many :users, Firmowid.Ash.Core.User do
+      through(ProjectUser)
+      source_attribute_on_join_resource(:project_id)
+      destination_attribute_on_join_resource(:user_id)
+    end
   end
 
   actions do
