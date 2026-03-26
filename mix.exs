@@ -49,6 +49,10 @@ defmodule Firmowid.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:ash, "~> 3.21"},
+      {:ash_postgres, "~> 2.8"},
+      {:ash_phoenix, "~> 2.3"},
+      {:picosat_elixir, "~> 0.2"},
       {:cloak_ecto, "~> 1.3.0"},
       {:x509, "~> 0.9"},
       {:argon2_elixir, "~> 4.1"},

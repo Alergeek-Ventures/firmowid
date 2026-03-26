@@ -4,7 +4,17 @@ defmodule Firmowid.Repo do
     adapter: Ecto.Adapters.Postgres,
     pool_size: 10
 
+  use AshPostgres.Repo,
+    define_ecto_repo?: false,
+    warn_on_missing_ash_functions?: false
+
   require Ecto.Query
+
+  @impl AshPostgres.Repo
+  def min_pg_version, do: %Version{major: 17, minor: 0, patch: 0}
+
+  @impl AshPostgres.Repo
+  def installed_extensions, do: ["uuid-ossp"]
 
   @tenant_key {__MODULE__, :organization_id}
 

@@ -6,6 +6,15 @@
 
 import Config
 
+# Existing data uses UUIDv4 PKs generated before the uuid_v7 switch.
+# Allow Ash to load both v4 and v7 UUIDs from the DB.
+config :ash, Ash.Type.UUIDv7, match_v4_uuids?: true
+
+config :ash,
+  default_belongs_to_type: :uuid_v7,
+  include_embedded_source_by_default?: false,
+  show_keysets_for_all_actions?: false
+
 config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 
 config :error_tracker,
@@ -67,7 +76,11 @@ config :firmowid, :ksef,
 
 config :firmowid,
   ecto_repos: [Firmowid.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  ash_domains: [
+    Firmowid.Ash.Core,
+    Firmowid.Ash.Timetracker
+  ]
 
 config :fun_with_flags, :cache_bust_notifications,
   enabled: true,
