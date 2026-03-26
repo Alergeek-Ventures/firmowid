@@ -226,7 +226,7 @@
           </p>
         </div>
         <div class="divide-y divide-grey-200">
-          <FirmowidWeb.Components.Session.render_new
+          <FirmowidWeb.Components.Session.render
             :for={sessions <- @today_sessions}
             :key={hd(sessions).id}
             sessions={sessions}
@@ -253,7 +253,7 @@
                 {format_day_header(day)}
               </p>
               <div class="divide-y divide-grey-200">
-                <FirmowidWeb.Components.Session.render_new
+                <FirmowidWeb.Components.Session.render
                   :for={sessions <- session_group}
                   :key={hd(sessions).id}
                   sessions={sessions}

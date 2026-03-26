@@ -9,14 +9,9 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   alias FirmowidWeb.TimetrackerLive.GroupedSessionForm
   alias FirmowidWeb.TimetrackerLive.SessionForm
 
-  embed_templates "index_*"
-
   def mount(_params, _session, socket) do
     Bodyguard.permit!(Timetracker, :read_user_sessions, socket.assigns.current_user)
     Bodyguard.permit!(Timetracker, :read_user_projects, socket.assigns.current_user)
-
-    user = socket.assigns.current_user
-    new_timetracker_enabled = FunWithFlags.enabled?(:new_timetracker, for: user)
 
     last_session = Timetracker.get_most_recent_session(socket.assigns.current_user.id)
     active_projects = Timetracker.list_user_active_projects(socket.assigns.current_user.id)
@@ -28,7 +23,6 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
 
     {:ok,
      socket
-     |> assign(:new_timetracker_enabled, new_timetracker_enabled)
      |> assign(:form, to_form(SessionForm.changeset(%{"project_id" => default_project_id})))
      |> assign(:active_projects, active_projects)
      |> assign(:projects_by_id, Map.new(active_projects, &{&1.id, &1}))
@@ -366,39 +360,6 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     end
   end
 
-  def handle_event("edit_session", %{"session_form" => params}, socket) do
-    session = Timetracker.get_session!(params["id"])
-
-    Bodyguard.permit!(Timetracker, :update_session, socket.assigns.current_user, session)
-
-    params =
-      params
-      |> Map.update("start_datetime", nil, &string_to_datetime(&1, socket.assigns.timezone))
-      |> Map.update("end_datetime", nil, &string_to_datetime(&1, socket.assigns.timezone))
-
-    case Timetracker.update_session(session, params) do
-      {:ok, session} ->
-        {:noreply,
-         socket
-         |> assign_sessions()
-         |> push_event("js-exec", %{
-           to: "#edit-session-modal-#{session.id}",
-           attr: "phx-remove"
-         })}
-
-      {:error, :overlap} ->
-        LiveToast.send_toast(:error, "Sesja nachodzi na inną sesję.")
-        {:noreply, socket}
-
-      {:error, changeset} ->
-        Enum.each(changeset.errors, fn {_field, {message, _}} ->
-          LiveToast.send_toast(:error, "#{message}")
-        end)
-
-        {:noreply, socket}
-    end
-  end
-
   def handle_event("edit_sessions", %{"sessions_form" => %{"ids" => ids} = form}, socket) do
     form =
       form
@@ -511,15 +472,6 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     end)
   end
 
-  defp string_to_datetime("", _timezone), do: nil
-  defp string_to_datetime(nil, _timezone), do: nil
-
-  defp string_to_datetime(string, timezone) do
-    (string <> ":00")
-    |> NaiveDateTime.from_iso8601!()
-    |> DateTime.from_naive!(timezone)
-  end
-
   def assign_month_stats(socket) do
     now = DateTime.now!(socket.assigns.timezone)
 
@@ -554,8 +506,4 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
       month: current_month
     })
   end
-
-  def render(%{new_timetracker_enabled: true} = assigns), do: index_new(assigns)
-
-  def render(assigns), do: index_old(assigns)
 end

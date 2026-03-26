@@ -130,7 +130,7 @@ defmodule FirmowidWeb.TimetrackerLiveTest do
 
       result =
         lv
-        |> element("button", "Zatrzymaj")
+        |> element("button", "Stop")
         |> render_click()
 
       assert result =~ "Test Session"
@@ -143,7 +143,7 @@ defmodule FirmowidWeb.TimetrackerLiveTest do
       {:ok, lv, _html} = live(conn, ~p"/czasosledz")
 
       lv
-      |> element("#confirm-delete-session-#{session.id}")
+      |> element("button[phx-click='delete_session'][phx-value-id='#{session.id}']")
       |> render_click()
 
       assert nil == Timetracker.get_session(session.id)
@@ -164,7 +164,7 @@ defmodule FirmowidWeb.TimetrackerLiveTest do
       result =
         lv
         |> form("#edit-session-form-#{session.id}", %{
-          session_form: %{
+          sessions_form: %{
             "title" => new_title
           }
         })

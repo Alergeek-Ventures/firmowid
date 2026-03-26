@@ -114,12 +114,6 @@ defmodule FirmowidWeb.Router do
       live "/sprzedazowe/:id/edytuj", SalesInvoicesLive.Edit, :edit
       live "/sprzedazowe/:id", SalesInvoicesLive.Show, :show
 
-      live "/czasosledz/projekty", Project.Index, :projects
-      live "/czasosledz/projekty/dodaj", Project.ProjectNew, :new
-      live "/czasosledz/projekty/:id", Project.Index, :projects
-      live "/czasosledz/archiwum", Project.Index, :archive
-      live "/czasosledz/archiwum/:id", Project.Index, :archive
-
       live "/zarzadzanie/pracownicy", ManagementLive.Employees
       live "/zarzadzanie/pracownicy/:id", ManagementLive.Employee, :projects
       live "/zarzadzanie/projekty", ManagementLive.Projects, :index
