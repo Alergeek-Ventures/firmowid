@@ -1,7 +1,7 @@
 # Worktrunk Project Configuration
 # Enables isolated dev environments per worktree with deterministic ports
 
-[post-create]
+[pre-start]
 # Copy deps, _build, .env from main worktree (uses COW/reflink when available)
 copy_ignored = "wt step copy-ignored"
 # Fix execute permissions on binaries (lost during COW copy on some filesystems)
