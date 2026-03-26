@@ -19,6 +19,5 @@ defmodule Firmowid.Ash.Timetracker do
     resource(Firmowid.Ash.Timetracker.Project)
     resource(Firmowid.Ash.Timetracker.ProjectUser)
     resource(Firmowid.Ash.Timetracker.Session)
-    resource(Firmowid.Ash.Timetracker.UserSalary)
   end
 end

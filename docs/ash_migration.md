@@ -1,6 +1,6 @@
 # Ash Framework Migration Plan
 
-Status: **In Progress — Phase 2 (flesh out Session & Project actions)** | Last updated: 2026-03-26
+Status: **In Progress — Phase 2 (Payroll domain extracted, continuing Timetracker actions)** | Last updated: 2026-03-26
 
 ## Goal
 
@@ -48,7 +48,8 @@ agents that respect the same authorization and tenancy rules as the web UI.
 
 ```
 Firmowid.Accounts         - Users, Organizations, Auth, Invites
-Firmowid.Timetracker      - Sessions, Projects, ProjectUsers, UserSalary, HoursRecord
+Firmowid.Timetracker      - Sessions, Projects, ProjectUsers, HoursRecord
+Firmowid.Payroll           - UserSalary (extracted from Timetracker — salary is HR/payroll, not time-tracking)
 Firmowid.Management       - Admin read-layer over Timetracker + Accounts
 Firmowid.SalesInvoices     - Sales invoices, items, counterparties, KSeF
 Firmowid.CostInvoices      - Cost invoices, inbound email, OCR enrichment
@@ -506,12 +507,16 @@ lib/firmowid/ash/
     counterparty.ex                 # Firmowid.Ash.Core.Counterparty
     tag_definition.ex               # Firmowid.Ash.Core.TagDefinition
     blob.ex                         # Firmowid.Ash.Core.Blob
+  payroll/
+    payroll.ex                      # Firmowid.Ash.Payroll domain
+    user_salary.ex                  # Firmowid.Ash.Payroll.UserSalary
+    changes/
+      retire_existing_salary.ex     # Ash.Resource.Change — retires active salary before creating new one
   timetracker/
     timetracker.ex                  # Firmowid.Ash.Timetracker domain
     session.ex                      # Firmowid.Ash.Timetracker.Session
     project.ex                      # Firmowid.Ash.Timetracker.Project
     project_user.ex                 # Firmowid.Ash.Timetracker.ProjectUser
-    user_salary.ex                  # Firmowid.Ash.Timetracker.UserSalary
     hours_record.ex                 # Firmowid.Ash.Timetracker.HoursRecord
     checks/
       hours_record_submitted.ex     # custom policy check
@@ -633,8 +638,11 @@ through Ecto.
   `destroy`. TagDefinition sync via after_action change. Managed relationship
   for ProjectUser. ParadeDB search via CustomExpression.
 - **ProjectUser** — managed relationship on Project.
-- **UserSalary** — CRUD + soft-delete `retire` action (sets `deleted_at`).
-  `create` retires existing active salary in same transaction.
+- **UserSalary** — Extracted to `Firmowid.Ash.Payroll` domain. CRUD + soft-delete
+  `retire` action + `create_with_retire` (retires existing active salary in same
+  transaction via `RetireExistingSalary` change module). Read actions: `get_latest`
+  (active salary for a user), `as_of` (date-based lookup with end-of-month logic).
+  Generic action: `salaries_csv` (payroll CSV for a month/year).
 - **HoursRecord** — CRUD with blob relationship. `create` calls
   `Blobs.create_blob` in after_action.
 
@@ -732,16 +740,20 @@ Ordered sequence. Each item is an atomic, committable step.
 
 ### Timetracker resources — flesh out existing
 
-- [ ] 9. Flesh out `Timetracker.Session` — all write actions (start, stop, create, update, destroy), overlap error handling, all read actions (list_user_sessions, get_current, weeks_with_sessions, duration queries, month summaries, grouped sessions, most_recent, by_ids), lockdown calculation, bulk_update
+- [x] 9. Flesh out `Timetracker.Session` — all write actions (start, stop, create, update, destroy), overlap error handling, all read actions (list_user_sessions, get_current, weeks_with_sessions, duration queries, month summaries, grouped sessions, most_recent, by_ids), lockdown calculation, bulk_update
 - [ ] 10. Flesh out `Timetracker.Project` — all write actions (create, update, archive, unarchive, destroy) + TagDefinition sync via after_action + all read variants (active/archived with search and duration aggregation, with_users, by_ids, get with preloads)
 - [ ] 11. Add `HoursRecordSubmitted` custom policy check (`Ash.Policy.SimpleCheck`)
 
-### Salary, hours record, cost/reporting functions
+### Payroll domain (extracted from Timetracker) ✅ DONE
 
-- [ ] 12. Salary actions — `get_latest`, `get_as_of` (with date-based lookup), `create` (retires existing), `update`
+- [x] 12. Salary actions — `get_latest`, `as_of` (date-based lookup), `create_with_retire` (retires existing), `update`, `retire`. Extracted to `Firmowid.Ash.Payroll` domain.
+- [x] 15a. CSV generation — `salaries_csv` generic action on `Payroll.UserSalary`
+
+### Hours record, cost/reporting functions
+
 - [ ] 13. Hours record actions — `get_by_month`, `get_month_hours_records` (users + records), `create` (with blob upload)
 - [ ] 14. Cost/reporting read actions — `get_project_total_time_worked`, `get_project_total_cost`, per-user cost breakdowns, all-time variants
-- [ ] 15. CSV generation — `get_salaries_csv`, `get_project_tasks_csv` (as code interface functions or dedicated actions)
+- [ ] 15b. CSV generation — `get_project_tasks_csv` (as action on Session or Project)
 
 ### Domain code interface + auth wiring
 
@@ -758,7 +770,7 @@ Ordered sequence. Each item is an atomic, committable step.
 ### Delete old code
 
 - [ ] 22. Delete `Firmowid.Timetracker` context module (lib/firmowid/timetracker.ex)
-- [ ] 23. Delete old Ecto schemas: Session, Project, ProjectUser, UserSalary, HoursRecord
+- [ ] 23. Delete old Ecto schemas: Session, Project, ProjectUser, UserSalary (now in Payroll), HoursRecord
 - [ ] 24. Clean up Bodyguard references in deleted code
 
 ### Tests
@@ -888,6 +900,58 @@ throughout the plan.
 18. **Project relationships fully wired** — counterparty, tag_definition,
     project_users, users (many_to_many through ProjectUser), sessions. All
     verified loading correctly via Tidewave with `disable_async?: true`.
+
+19. **Ash validation `on:` only accepts action types** (`:create`, `:update`,
+    `:destroy`, `:read`, `:action`), NOT action names. So `:start` (a named
+    create action) can't be used — use `:create` to cover both `start` and
+    `create` actions.
+
+20. **Custom validations are not atomic-compatible** — update actions using
+    custom validations (like `DatetimeOrder`, `ProjectAccess`) need
+    `require_atomic? false`.
+
+21. **Session overlap is enforced by a DB trigger** (`no_session_overlap_trigger`
+    calling `prevent_session_overlap()`), NOT an exclusion constraint. It raises
+    a generic exception with message "Session for this user overlaps with an
+    existing session." AshPostgres catches this as `Ash.Error.Unknown` wrapping
+    the Postgrex error.
+
+22. **Session lockdown calculation** uses `EXISTS` subquery against
+    `hours_records` table matching `user_id` + month/year extracted from
+    `start_datetime`. Verified: January sessions → `lockdown: true` (hours
+    records exist), March sessions → `lockdown: false` (no hours records).
+
+23. **`get?(true)` on Ash read actions does NOT auto-set `limit: 1`.** Must add
+    `prepare build(limit: 1)` explicitly for single-result actions, otherwise
+    `Ash.read_one` raises `MultipleResults`.
+
+24. **`Ash.Query.filter/2` is a macro** — cannot use it with `^pin` inside
+    `prepare fn`. Use `Ash.Query.do_filter/2` with keyword syntax
+    (e.g. `Ash.Query.do_filter(query, user_id: actor_id)`) for runtime
+    filtering inside prepare functions.
+
+25. **Generic actions (`:action` type) need their own policy** — the
+    `:read`/`:create`/`:update`/`:destroy` policies don't cover them. Must add
+    `policy [action_type(:action), ...] do ... end`.
+
+26. **`Ash.Query.for_read/3` vs `for_read/4` — opts vs params.** Calling
+    `Ash.Query.for_read(Resource, :action, actor: actor, tenant: tenant)` passes
+    the keyword list as **params** (3rd arg), not opts. The domain's
+    `require_actor?` check then fails because no actor is in opts. Must use
+    `Ash.Query.for_read(Resource, :action, %{}, actor: actor, tenant: tenant)`
+    to pass params as 3rd arg and opts as 4th.
+
+27. **Change module context has `.actor` and `.tenant`.** The `context` parameter
+    in `Ash.Resource.Change.change/3` is `%Ash.Resource.Change.Context{}` with
+    `.actor`, `.tenant` fields. Capture it in the outer `change/3` and close over
+    it in `before_action` lambdas. Prefer dedicated Change modules over inline
+    `change(fn ...)` for non-trivial logic.
+
+28. **Salary decoupled from Timetracker into Payroll domain.** `UserSalary` is an
+    HR/payroll concern, not time-tracking. Cost calculations that need both salary
+    and session data use cross-domain Ecto joins (same DB, works because Ash
+    resources are Ecto schemas). The `salaries_csv` generic action lives on
+    `Payroll.UserSalary` even though it joins `Timetracker.HoursRecord`.
 
 ## Rejected Alternatives
 

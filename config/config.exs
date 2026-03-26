@@ -88,6 +88,7 @@ config :firmowid,
   generators: [timestamp_type: :utc_datetime],
   ash_domains: [
     Firmowid.Ash.Core,
+    Firmowid.Ash.Payroll,
     Firmowid.Ash.Timetracker
   ]
 
