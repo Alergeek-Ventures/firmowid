@@ -5,12 +5,13 @@ on:
 
 permissions:
   actions: write
+  packages: read
 
 jobs:
   clear-cache:
     runs-on: self-hosted
     container:
-      image: ghcr.io/alergeek-ventures/infrastructure/cicd-image:f6d0013d860d06603390db840c615faa03b36b84
+      image: ghcr.io/alergeek-ventures/infrastructure/cicd-image:5b1d7150888c47322a6b5cda04796dfd1dbfb34c
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.github_token }}
