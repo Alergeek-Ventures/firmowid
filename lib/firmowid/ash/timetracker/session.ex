@@ -173,8 +173,8 @@ defmodule Firmowid.Ash.Timetracker.Session do
       argument :user_id, :uuid
       argument :project_id, :uuid
 
-      run fn input, _context ->
-        {:ok, query_months_with_sessions(input.arguments)}
+      run fn input, context ->
+        {:ok, read_months_with_sessions(input.arguments, context)}
       end
     end
 
@@ -315,6 +315,18 @@ defmodule Firmowid.Ash.Timetracker.Session do
       public? true
     end
 
+    calculate :month_start,
+              :naive_datetime,
+              expr(fragment("date_trunc('month', ?)", start_datetime)) do
+      description "First day of the month this session belongs to (truncated start_datetime)."
+    end
+
+    calculate :week_start,
+              :naive_datetime,
+              expr(fragment("date_trunc('week', ?)", start_datetime)) do
+      description "Monday of the week this session belongs to (ISO week, truncated start_datetime)."
+    end
+
     calculate :lockdown,
               :boolean,
               expr(exists(hours_records, true)) do
@@ -391,28 +403,18 @@ defmodule Firmowid.Ash.Timetracker.Session do
     )
   end
 
-  defp query_months_with_sessions(args) do
-    import Ecto.Query
+  defp read_months_with_sessions(args, context) do
+    ash_opts = [actor: context.actor, tenant: context.tenant]
 
-    query =
-      __MODULE__
-      |> select([s], "date_trunc('month', ?)" |> fragment(s.start_datetime) |> selected_as(:date))
-      |> distinct([s], selected_as(:date))
-      |> order_by([s], desc: selected_as(:date))
-
-    query =
-      case args[:user_id] do
-        nil -> query
-        uid -> where(query, [s], s.user_id == ^uid)
-      end
-
-    case_result =
-      case args[:project_id] do
-        nil -> query
-        pid -> where(query, [s], s.project_id == ^pid)
-      end
-
-    Firmowid.Repo.all(case_result)
+    __MODULE__
+    |> maybe_filter(:user_id, args[:user_id])
+    |> maybe_filter(:project_id, args[:project_id])
+    |> Ash.Query.distinct(:month_start)
+    |> Ash.Query.distinct_sort(month_start: :desc)
+    |> Ash.Query.sort(month_start: :desc)
+    |> Ash.Query.load(:month_start)
+    |> Ash.read!(ash_opts)
+    |> Enum.map(& &1.month_start)
   end
 
   defp aggregate_total_time_worked(args, context) do
