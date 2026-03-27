@@ -1098,11 +1098,15 @@ defmodule Firmowid.Ash.Timetracker.Project do
 
     # Add new users
     for uid <- to_add do
-      Firmowid.Repo.insert!(%ProjectUser{
-        project_id: project_id,
-        user_id: uid,
-        organization_id: org_id
-      })
+      Firmowid.Repo.insert!(
+        %ProjectUser{
+          id: Ash.UUIDv7.generate(),
+          project_id: project_id,
+          user_id: uid,
+          organization_id: org_id
+        },
+        skip_organization_id: true
+      )
     end
 
     :ok

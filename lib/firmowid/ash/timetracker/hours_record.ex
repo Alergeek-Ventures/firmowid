@@ -68,24 +68,17 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
         description "Original filename of the uploaded document."
       end
 
-      change fn changeset, context ->
-        Ash.Changeset.after_action(changeset, fn _changeset, record ->
-          upload_path = changeset.arguments.upload_path
-          upload_filename = changeset.arguments.upload_filename
+      change fn changeset, _context ->
+        upload_path = Ash.Changeset.get_argument(changeset, :upload_path)
+        upload_filename = Ash.Changeset.get_argument(changeset, :upload_filename)
 
-          case Firmowid.Blobs.create_blob(upload_path, "binary/octet-stream", upload_filename) do
-            {:ok, blob} ->
-              record
-              |> Ash.Changeset.for_update(:update, %{blob_id: blob.id},
-                actor: context.actor,
-                tenant: context.tenant
-              )
-              |> Ash.update()
+        case Firmowid.Blobs.create_blob(upload_path, "binary/octet-stream", upload_filename) do
+          {:ok, blob} ->
+            Ash.Changeset.force_change_attribute(changeset, :blob_id, blob.id)
 
-            {:error, reason} ->
-              {:error, reason}
-          end
-        end)
+          {:error, reason} ->
+            Ash.Changeset.add_error(changeset, reason)
+        end
       end
     end
 
