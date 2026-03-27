@@ -26,7 +26,7 @@ jobs:
       otp: ${{ steps.versions.outputs.otp }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Extract versions
         id: versions
@@ -54,7 +54,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Setup Elixir Project
         id: setup
@@ -67,7 +67,7 @@ jobs:
       # Cache key based on Erlang/Elixir version and the mix.lock hash
       - name: Restore PLT cache
         id: plt_cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
         with:
           key: |
             plt-${{ runner.os }}-${{ steps.setup.outputs.otp-version }}-${{ steps.setup.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}
@@ -85,7 +85,7 @@ jobs:
       # so we separate the cache restore and save steps in case running dialyzer fails.
       - name: Save PLT cache
         id: plt_cache_save
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
         if: steps.plt_cache.outputs.cache-hit != 'true'
         with:
           key: |
