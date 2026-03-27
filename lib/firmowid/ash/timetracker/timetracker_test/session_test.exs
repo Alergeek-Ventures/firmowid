@@ -273,37 +273,4 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
       assert ~N[2025-05-01 00:00:00] in month_dates
     end
   end
-
-  describe "most_demanding_project/2" do
-    test "returns nil when no sessions", %{scope: scope} do
-      {:ok, result} = AshSession.most_demanding_project(4, 2025, scope: scope)
-      assert is_nil(result)
-    end
-
-    test "returns project with most hours", %{user: user, project: project, scope: scope} do
-      project2 = project_fixture(%{organization_id: user.organization_id})
-      user_project_fixture(user.id, project2.id)
-
-      # project1: 1h
-      session_fixture(%{
-        user_id: user.id,
-        project_id: project.id,
-        start_datetime: ~U[2025-04-01 00:00:00Z],
-        end_datetime: ~U[2025-04-01 01:00:00Z]
-      })
-
-      # project2: 2h
-      session_fixture(%{
-        user_id: user.id,
-        project_id: project2.id,
-        start_datetime: ~U[2025-04-01 03:00:00Z],
-        end_datetime: ~U[2025-04-01 05:00:00Z]
-      })
-
-      {:ok, result} = AshSession.most_demanding_project(4, 2025, scope: scope)
-
-      assert result.project.id == project2.id
-      assert result.time_worked == 2 * 3600
-    end
-  end
 end

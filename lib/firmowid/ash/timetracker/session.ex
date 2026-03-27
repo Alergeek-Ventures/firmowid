@@ -43,7 +43,6 @@ defmodule Firmowid.Ash.Timetracker.Session do
     define :months_with_sessions
     define :total_time_worked
     define :project_tasks_csv, args: [:project_id, :month, :year]
-    define :most_demanding_project, args: [:month, :year]
   end
 
   actions do
@@ -200,17 +199,6 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
       run fn input, _context ->
         {:ok, query_project_tasks_csv(input.arguments)}
-      end
-    end
-
-    action :most_demanding_project, :map do
-      description "The project with the most time worked in a given month/year."
-
-      argument :month, :integer, allow_nil?: false
-      argument :year, :integer, allow_nil?: false
-
-      run fn input, _context ->
-        {:ok, query_most_demanding_project(input.arguments)}
       end
     end
   end
@@ -446,34 +434,6 @@ defmodule Firmowid.Ash.Timetracker.Session do
     query = apply_optional_filter(query, :project_id, args[:project_id])
 
     Firmowid.Repo.one(query) || 0
-  end
-
-  defp query_most_demanding_project(args) do
-    import Ecto.Query
-
-    %{month: month, year: year} = args
-
-    Firmowid.Repo.one(
-      from(s in __MODULE__,
-        join: p in Project,
-        on: s.project_id == p.id,
-        where:
-          fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
-            fragment("extract(year from ?) = ?", s.start_datetime, ^year),
-        group_by: p.id,
-        order_by: [desc: selected_as(:time_worked)],
-        limit: 1,
-        select: %{
-          project: p,
-          time_worked:
-            "extract(epoch from coalesce(?, now()) - ?)"
-            |> fragment(s.end_datetime, s.start_datetime)
-            |> sum()
-            |> type(:integer)
-            |> selected_as(:time_worked)
-        }
-      )
-    )
   end
 
   defp apply_month_year_filter(query, month, year) when is_integer(month) and is_integer(year) do

@@ -452,22 +452,6 @@ defmodule Firmowid.Ash.Timetracker.Project do
       end
     end
 
-    action :archived, {:array, :map} do
-      description "Archived projects with monthly session duration (hours). Supports optional ParadeDB search."
-
-      argument :date, :date, allow_nil?: false
-      argument :search, :string
-
-      run fn input, _context ->
-        list_projects_with_duration(
-          _archived? = true,
-          _all_time? = false,
-          input.arguments.date,
-          input.arguments[:search]
-        )
-      end
-    end
-
     action :archived_total, {:array, :map} do
       description "Archived projects with all-time session duration (hours). Supports optional ParadeDB search."
 
@@ -593,16 +577,6 @@ defmodule Firmowid.Ash.Timetracker.Project do
 
       run fn input, _context ->
         {:ok, ProjectCosts.query_project_users_with_removed(input.arguments.project_id)}
-      end
-    end
-
-    action :project_users_with_sessions, {:array, :map} do
-      description "Users with their sessions and total duration for a project."
-
-      argument :project_id, :uuid, allow_nil?: false
-
-      run fn input, _context ->
-        {:ok, query_project_users_with_sessions(input.arguments.project_id)}
       end
     end
 
@@ -931,45 +905,6 @@ defmodule Firmowid.Ash.Timetracker.Project do
         select: %{user: u, removed_from_project: is_nil(pu.id)}
       )
     )
-  end
-
-  defp query_project_users_with_sessions(project_id) do
-    import Ecto.Query
-
-    users = query_project_users_with_removed(project_id)
-    user_ids = Enum.map(users, & &1.user.id)
-
-    sessions_grouped =
-      from(s in Session,
-        where: s.project_id == ^project_id and s.user_id in ^user_ids,
-        select: s
-      )
-      |> Firmowid.Repo.all()
-      |> Enum.group_by(& &1.user_id)
-
-    Enum.map(users, fn %{user: user, removed_from_project: removed} ->
-      user_sessions = Map.get(sessions_grouped, user.id, [])
-
-      time_worked =
-        Enum.reduce(user_sessions, 0, fn s, acc ->
-          acc + compute_session_duration(s)
-        end)
-
-      %{
-        user: user,
-        removed_from_project: removed,
-        time_worked: time_worked,
-        sessions: user_sessions
-      }
-    end)
-  end
-
-  defp compute_session_duration(%{end_datetime: nil, start_datetime: start}) do
-    DateTime.diff(DateTime.utc_now(), start, :second)
-  end
-
-  defp compute_session_duration(%{end_datetime: end_dt, start_datetime: start}) do
-    DateTime.diff(end_dt, start, :second)
   end
 
   defp compute_user_projects_with_duration(user_id, %Date{} = date) do
