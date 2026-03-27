@@ -88,12 +88,14 @@ defmodule Firmowid.Invoicing do
     query = Map.get(params, :query)
     include_cost = should_include_cost?(params)
 
+    has_amount_filter = not is_nil(Map.get(params, :amount_gt)) or not is_nil(Map.get(params, :amount_lt))
+
     queries =
       Enum.filter(
         [
           include_cost && select_for_search(build_cost_invoice_query(params), "cost", query),
           Map.get(params, :include_sales, true) &&
-            select_for_search(build_sales_invoice_query(params), "sales", query)
+            select_for_search(build_sales_invoice_query(params), "sales", query, has_amount_filter)
         ],
         & &1
       )
@@ -120,7 +122,9 @@ defmodule Firmowid.Invoicing do
     Map.get(params, :include_cost, true) and not has_sales_only_filter
   end
 
-  defp select_for_search(base_query, type, query) when query in [nil, ""] do
+  defp select_for_search(base_query, type, query, has_group_by \\ false)
+
+  defp select_for_search(base_query, type, query, _has_group_by) when query in [nil, ""] do
     select(base_query, [i], %{
       id: i.id,
       type: ^type,
@@ -130,7 +134,20 @@ defmodule Firmowid.Invoicing do
     })
   end
 
-  defp select_for_search(base_query, type, _query) do
+  # ParadeDB bug in v0.22.3/PG18: pdb.score() crashes with "no relation entry
+  # for relid N" when used together with LEFT JOIN + GROUP BY. Wrapping in max()
+  # works around it — the value is the same per grouped id anyway.
+  defp select_for_search(base_query, type, _query, true = _has_group_by) do
+    select(base_query, [i], %{
+      id: i.id,
+      type: ^type,
+      date: i.issue_date,
+      score: max(fragment("pdb.score(?)", i.id)),
+      organization_id: i.organization_id
+    })
+  end
+
+  defp select_for_search(base_query, type, _query, _has_group_by) do
     select(base_query, [i], %{
       id: i.id,
       type: ^type,
