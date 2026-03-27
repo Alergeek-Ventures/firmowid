@@ -54,3 +54,6 @@ else
     Voidstack.seed!()
   end)
 end
+
+# — Feature flags (always runs, idempotent) —
+FunWithFlags.enable(:analysis_dashboard, for_group: "domain:alergeek.ventures")

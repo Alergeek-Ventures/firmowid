@@ -39,7 +39,7 @@
             <.icon name="hero-clipboard-document-list" class="w-5 h-5" /> Fakturowanie
           </.link>
         <% end %>
-        <%= if Bodyguard.permit?(Firmowid.Analysis, :read, @current_user) do %>
+        <%= if flag_enabled?(:analysis_dashboard, @current_user) and Bodyguard.permit?(Firmowid.Analysis, :read, @current_user) do %>
           <.link
             navigate={~p"/analiza"}
             class={[
@@ -48,6 +48,14 @@
             ]}
           >
             <.icon name="hero-scale" class="w-5 h-5" /> Analiza
+            <span
+              id="analiza-beta"
+              class="text-xs bg-white/20 rounded px-1.5 py-0.5 ml-1"
+              phx-hook="Tippy"
+              data-tippy-content="Prace nad tą funkcjonalnością jeszcze trwają! Twój feedback pozwoli nam sprawić, że będzie jeszcze lepsza."
+            >
+              BETA
+            </span>
           </.link>
         <% end %>
         <.link

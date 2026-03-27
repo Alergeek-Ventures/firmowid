@@ -89,6 +89,7 @@ defmodule FirmowidWeb do
       import FirmowidWeb.BillingComponents
       import FirmowidWeb.Components.Landing
       import FirmowidWeb.CoreComponents
+      import FirmowidWeb.Flags
       import FirmowidWeb.Icons
       # HTML escaping functionality
       import Phoenix.HTML

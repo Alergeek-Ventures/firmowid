@@ -329,3 +329,10 @@ end
 defimpl FunWithFlags.Actor, for: Firmowid.Accounts.User do
   def id(%{email: email}), do: "user:#{email}"
 end
+
+defimpl FunWithFlags.Group, for: Firmowid.Accounts.User do
+  def in?(%{email: email}, group) do
+    [_local, domain] = String.split(email, "@", parts: 2)
+    group == "domain:#{domain}"
+  end
+end
