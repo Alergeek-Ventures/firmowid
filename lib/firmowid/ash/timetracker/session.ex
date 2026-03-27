@@ -247,6 +247,13 @@ defmodule Firmowid.Ash.Timetracker.Session do
       authorize_if relates_to_actor_via(:user)
     end
 
+    # TODO: Generic actions use raw Ecto queries that bypass per-record read
+    # policies. While action dispatch is authorized here, the data fetched
+    # inside is not ownership-scoped. Callers always pass actor's user_id,
+    # but that's enforced by the caller, not the policy. Phase 3 will replace
+    # raw Ecto with Ash.read (which enforces :read policies), at which point
+    # we can tighten this further. Until then, the risk is limited to
+    # aggregate stats (total seconds, week dates) — not individual records.
     policy [action_type(:action), actor_attribute_equals(:role, :employee)] do
       authorize_if always()
     end

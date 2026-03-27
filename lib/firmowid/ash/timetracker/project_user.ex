@@ -34,8 +34,8 @@ defmodule Firmowid.Ash.Timetracker.ProjectUser do
       authorize_if always()
     end
 
-    policy action_type(:read) do
-      authorize_if always()
+    policy [action_type(:read), actor_attribute_equals(:role, :employee)] do
+      authorize_if relates_to_actor_via(:user)
     end
   end
 

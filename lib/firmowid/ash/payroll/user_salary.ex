@@ -168,7 +168,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
     end
 
     policy action_type(:read) do
-      authorize_if always()
+      authorize_if actor_attribute_equals(:role, :admin)
     end
 
     policy action_type(:action) do
