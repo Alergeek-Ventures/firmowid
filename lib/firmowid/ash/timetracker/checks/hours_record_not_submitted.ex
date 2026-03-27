@@ -13,15 +13,15 @@ defmodule Firmowid.Ash.Timetracker.Checks.HoursRecordNotSubmitted do
   """
   use Ash.Policy.SimpleCheck
 
-  import Ecto.Query, only: [from: 2]
-
   alias Firmowid.Ash.Timetracker.HoursRecord
+
+  require Ash.Query
 
   @impl true
   def describe(_opts), do: "hours record has not been submitted for the session's month"
 
   @impl true
-  def match?(_actor, %{subject: %Ash.Changeset{} = changeset}, _opts) do
+  def match?(actor, %{subject: %Ash.Changeset{} = changeset}, _opts) do
     start_datetime = session_start_datetime(changeset)
 
     case start_datetime do
@@ -31,7 +31,7 @@ defmodule Firmowid.Ash.Timetracker.Checks.HoursRecordNotSubmitted do
         {:ok, true}
 
       %DateTime{} = dt ->
-        {:ok, not hours_record_exists?(changeset, dt)}
+        {:ok, not hours_record_exists?(changeset, dt, actor)}
     end
   end
 
@@ -45,21 +45,20 @@ defmodule Firmowid.Ash.Timetracker.Checks.HoursRecordNotSubmitted do
     changeset.data.start_datetime
   end
 
-  defp hours_record_exists?(changeset, %DateTime{} = dt) do
+  defp hours_record_exists?(changeset, %DateTime{} = dt, actor) do
     user_id = session_user_id(changeset)
     org_id = changeset.tenant
 
     if user_id && org_id do
-      Firmowid.Repo.exists?(
-        from(hr in HoursRecord,
-          where:
-            hr.user_id == ^user_id and
-              hr.organization_id == ^org_id and
-              hr.month == ^dt.month and
-              hr.year == ^dt.year
-        ),
-        skip_organization_id: true
-      )
+      month = dt.month
+      year = dt.year
+
+      HoursRecord
+      |> Ash.Query.filter(user_id: user_id, month: month, year: year)
+      # TODO: migrate away from authorize?: false — policy checks must read
+      # HoursRecord existence regardless of actor ownership. Replace when
+      # policy checks can run in a privileged context.
+      |> Ash.exists?(actor: actor, tenant: org_id, authorize?: false)
     else
       false
     end

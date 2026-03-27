@@ -24,6 +24,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
   alias Firmowid.Ash.Timetracker.Session
   alias Firmowid.Helpers.TimeConverter
 
+  require Ash.Query
   require Resource
 
   postgres do
@@ -513,6 +514,11 @@ defmodule Firmowid.Ash.Timetracker.Project do
       change set_attribute(:archived_at, nil)
     end
 
+    update :link_tag do
+      description "Internal action to link a tag definition to a project after creation."
+      accept [:tag_definition_id]
+    end
+
     destroy :destroy do
       description "Delete a project and clean up its orphaned tag definition."
       require_atomic? false
@@ -527,8 +533,8 @@ defmodule Firmowid.Ash.Timetracker.Project do
       argument :project_id, :uuid, allow_nil?: false
       argument :user_ids, {:array, :uuid}, allow_nil?: false
 
-      run fn input, _context ->
-        {:ok, set_project_users(input.arguments.project_id, input.arguments.user_ids)}
+      run fn input, context ->
+        {:ok, set_project_users(input, context)}
       end
     end
 
@@ -1068,16 +1074,18 @@ defmodule Firmowid.Ash.Timetracker.Project do
 
   # ── Private helpers for user assignment ──────────────────────────────
 
-  defp set_project_users(project_id, user_ids) do
-    import Ecto.Query
+  defp set_project_users(input, context) do
+    project_id = input.arguments.project_id
+    user_ids = input.arguments.user_ids
+    # TODO: migrate away from authorize?: false — replace with a dedicated
+    # admin-scoped action on ProjectUser once project membership management
+    # has its own policies (currently admin-only via :set_users policy gate).
+    ash_opts = [actor: context.actor, tenant: context.tenant, authorize?: false]
 
     existing =
-      Firmowid.Repo.all(
-        from(pu in ProjectUser,
-          where: pu.project_id == ^project_id,
-          select: pu
-        )
-      )
+      ProjectUser
+      |> Ash.Query.filter(project_id: project_id)
+      |> Ash.read!(ash_opts)
 
     existing_user_ids = MapSet.new(existing, & &1.user_id)
     desired_user_ids = MapSet.new(user_ids)
@@ -1085,28 +1093,20 @@ defmodule Firmowid.Ash.Timetracker.Project do
     to_add = MapSet.difference(desired_user_ids, existing_user_ids)
     to_remove = MapSet.difference(existing_user_ids, desired_user_ids)
 
-    org_id = Firmowid.Repo.get_org_id()
-
     # Remove users no longer in the set
-    if !Enum.empty?(to_remove) do
-      remove_ids = MapSet.to_list(to_remove)
-
-      ProjectUser
-      |> where([pu], pu.project_id == ^project_id and pu.user_id in ^remove_ids)
-      |> Firmowid.Repo.delete_all()
-    end
+    existing
+    |> Enum.filter(fn pu -> MapSet.member?(to_remove, pu.user_id) end)
+    |> Enum.each(fn pu -> Ash.destroy!(pu, ash_opts) end)
 
     # Add new users
     for uid <- to_add do
-      Firmowid.Repo.insert!(
-        %ProjectUser{
-          id: Ash.UUIDv7.generate(),
-          project_id: project_id,
-          user_id: uid,
-          organization_id: org_id
-        },
-        skip_organization_id: true
+      ProjectUser
+      |> Ash.Changeset.for_create(
+        :create,
+        %{project_id: project_id, user_id: uid},
+        ash_opts
       )
+      |> Ash.create!()
     end
 
     :ok
