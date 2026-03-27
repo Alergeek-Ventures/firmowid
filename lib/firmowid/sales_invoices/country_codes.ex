@@ -42,6 +42,12 @@ defmodule Firmowid.SalesInvoices.CountryCodes do
     "XL" => "Melilla"
   }
 
+  # Compile-time map from string codes to atoms, ensuring all territory atoms exist
+  # in the VM before any runtime call to String.to_existing_atom/1.
+  @territory_atoms Map.new(@valid_country_codes -- Map.keys(@special_code_names), fn code ->
+                     {code, String.to_atom(code)}
+                   end)
+
   @spec all_countries() :: [String.t()]
   def all_countries, do: @valid_country_codes
 
@@ -159,12 +165,9 @@ defmodule Firmowid.SalesInvoices.CountryCodes do
         name
 
       :error ->
-        # Safe to use String.to_atom since we only call this for validated country codes
-        territory_code = String.to_atom(code)
-
-        case Territory.from_territory_code(territory_code) do
+        case Territory.from_territory_code(@territory_atoms[code]) do
           {:ok, name} -> name
-          {:error, _} -> code
+          _other -> code
         end
     end
   end

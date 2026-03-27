@@ -7,6 +7,9 @@ defmodule Firmowid.SalesInvoices.Pdf do
   alias Firmowid.SalesInvoices.SalesInvoice
   alias FirmowidWeb.PdfHelpers
 
+  # sobelow_skip ["Traversal.FileModule"]
+  # Path in the output callback comes from ChromicPDF (framework-generated temp file),
+  # not user input.
   @dialyzer {:nowarn_function, generate: 1, generate: 2}
   @spec generate(SalesInvoice.t(), keyword()) :: {:ok, binary()} | {:error, term()}
   def generate(%SalesInvoice{} = invoice, opts \\ []) do

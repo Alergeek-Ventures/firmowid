@@ -137,6 +137,7 @@ defmodule Firmowid.ReductoApiClient do
   defp upload_to_reducto(file_url, _s3_host), do: file_url
 
   # sobelow_skip ["Traversal.FileModule"]
+  # dest_path is constructed internally from Briefly temp paths, not user input.
   defp download_file(file_url, dest_path) do
     # Validate dest_path to prevent directory traversal
     dest_path = Path.expand(dest_path)
@@ -146,6 +147,7 @@ defmodule Firmowid.ReductoApiClient do
   end
 
   # sobelow_skip ["Traversal.FileModule"]
+  # file_path is constructed internally from Briefly temp paths, not user input.
   defp upload_file(file_url, file_path) do
     # Validate file_path to prevent directory traversal
     file_path = Path.expand(file_path)

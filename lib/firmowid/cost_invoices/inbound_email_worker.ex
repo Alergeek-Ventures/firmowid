@@ -119,7 +119,8 @@ defmodule Firmowid.CostInvoices.InboundEmailWorker do
     end
   end
 
-  # Temp file handling
+  # sobelow_skip ["Traversal.FileModule"]
+  # Path comes from Briefly.create/1 (OS-managed temp directory), not user input.
   defp write_to_temp_file(binary, original_filename) do
     extension = Path.extname(original_filename)
 

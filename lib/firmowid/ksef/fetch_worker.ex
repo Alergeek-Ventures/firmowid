@@ -156,6 +156,9 @@ defmodule Firmowid.Ksef.FetchWorker do
     end
   end
 
+  # sobelow_skip ["DOS.StringToAtom"]
+  # Value is part["method"] from the KSeF API response — always "GET" or "POST",
+  # not user-controlled. Req.request!/1 requires an atom for the :method option.
   defp download_part(part) do
     method = part["method"] |> String.downcase() |> String.to_atom()
 
@@ -298,6 +301,8 @@ defmodule Firmowid.Ksef.FetchWorker do
     )
   end
 
+  # sobelow_skip ["Traversal.FileModule"]
+  # Path comes from Briefly.create/1 (OS-managed temp directory), not user input.
   defp write_to_temp_file(binary, original_filename) do
     extension = Path.extname(original_filename)
 

@@ -17,6 +17,8 @@ defmodule FirmowidWeb.Plugs.AnalyticsDashboardGuard do
   @impl true
   def init(opts), do: opts
 
+  # sobelow_skip ["XSS.SendResp"]
+  # Response body is a hardcoded HTML string literal (disabled_html/0), no user input interpolated.
   @impl true
   def call(conn, _opts) do
     if analytics_path?(conn) and not Analytics.phoenix_analytics_enabled?() do

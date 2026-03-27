@@ -58,6 +58,8 @@ defmodule FirmowidWeb.PdfHelpers do
   """
   def file_to_data_uri(nil), do: nil
 
+  # sobelow_skip ["Traversal.FileModule"]
+  # Callers pass hardcoded priv/static paths or nil, not user input.
   def file_to_data_uri(path) when is_binary(path) do
     case File.read(path) do
       {:ok, body} ->
@@ -138,6 +140,8 @@ defmodule FirmowidWeb.PdfHelpers do
     """
   end
 
+  # sobelow_skip ["Traversal.FileModule"]
+  # Reads a hardcoded path (priv/static/assets/app.css), not user input.
   defp get_app_css do
     css_path = Path.join(:code.priv_dir(:firmowid), "static/assets/app.css")
 
