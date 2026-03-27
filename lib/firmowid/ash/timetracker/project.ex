@@ -586,8 +586,8 @@ defmodule Firmowid.Ash.Timetracker.Project do
       argument :user_id, :uuid, allow_nil?: false
       argument :date, :date, allow_nil?: false
 
-      run fn input, _context ->
-        {:ok, compute_user_projects_with_duration(input.arguments.user_id, input.arguments.date)}
+      run fn input, context ->
+        {:ok, ProjectCosts.read_user_projects_with_duration(input, context)}
       end
     end
   end
@@ -907,42 +907,29 @@ defmodule Firmowid.Ash.Timetracker.Project do
     )
   end
 
-  defp compute_user_projects_with_duration(user_id, %Date{} = date) do
-    import Ecto.Query
+  defp read_user_projects_with_duration(input, context) do
+    ash_opts = [actor: context.actor, tenant: input.tenant]
+    user_id = input.arguments.user_id
+    %Date{month: month, year: year} = input.arguments.date
 
-    # Get all projects for the user
-    projects =
-      Firmowid.Repo.all(
-        from(p in __MODULE__,
-          join: pu in ProjectUser,
-          on: p.id == pu.project_id,
-          where: pu.user_id == ^user_id,
-          select: p
-        )
+    duration_filter =
+      Ash.Query.filter(
+        Session,
+        user_id == ^user_id and fragment("extract(month from ?) = ?", start_datetime, ^month) and
+          fragment("extract(year from ?) = ?", start_datetime, ^year)
       )
 
-    # Get per-project duration in the given month
-    duration_map =
-      from(s in Session,
-        where:
-          s.user_id == ^user_id and
-            fragment("extract(month from ?) = ?", s.start_datetime, ^date.month) and
-            fragment("extract(year from ?) = ?", s.start_datetime, ^date.year),
-        group_by: s.project_id,
-        select: {
-          s.project_id,
-          fragment(
-            "SUM(EXTRACT(EPOCH FROM COALESCE(?, NOW()) - ?))::integer",
-            s.end_datetime,
-            s.start_datetime
-          )
-        }
-      )
-      |> Firmowid.Repo.all()
-      |> Map.new()
-
-    projects
-    |> Enum.map(&Map.put(&1, :duration, Map.get(duration_map, &1.id, 0)))
+    __MODULE__
+    |> Ash.Query.for_read(:for_user, %{user_id: user_id}, ash_opts)
+    |> Ash.Query.aggregate(:duration, :sum, :sessions,
+      field: :duration,
+      default: 0,
+      query: duration_filter
+    )
+    |> Ash.read!(ash_opts)
+    |> Enum.map(fn project ->
+      Map.put(project, :duration, project.aggregates[:duration] || 0)
+    end)
     |> Enum.sort_by(& &1.duration, :desc)
   end
 
