@@ -40,18 +40,7 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
     projects =
       Enum.map(socket.assigns.projects, fn
         %{id: ^project_id} = project ->
-          project
-          |> Map.put(:expanded, !project.expanded)
-          |> Map.put_new_lazy(
-            :sessions,
-            fn ->
-              Timetracker.get_grouped_user_project_sessions(
-                socket.assigns.current_user.id,
-                project_id,
-                socket.assigns.selected_date
-              )
-            end
-          )
+          Map.put(project, :expanded, !project.expanded)
 
         project ->
           project
@@ -79,10 +68,19 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
   def refetch_data(socket) do
     selected_date = socket.assigns.selected_date
 
+    user_id = socket.assigns.current_user.id
+
     projects =
-      socket.assigns.current_user.id
+      user_id
       |> Timetracker.list_user_projects_with_duration(selected_date)
-      |> Enum.map(&Map.put(&1, :expanded, false))
+      |> Enum.map(fn project ->
+        sessions =
+          Timetracker.get_grouped_user_project_sessions(user_id, project.id, selected_date)
+
+        project
+        |> Map.put(:expanded, false)
+        |> Map.put(:sessions, sessions)
+      end)
 
     current_month_hours_record =
       Timetracker.get_hours_record_by_month(
