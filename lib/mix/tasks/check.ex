@@ -12,7 +12,7 @@ defmodule Mix.Tasks.Check do
   2. `mix format --check-formatted` - Verify code formatting
   3. `mix deps.unlock --check-unused` - Check for unused dependencies
   4. `mix xref graph --label compile-connected --fail-above 1` - Check compile-time deps
-  5. `mix credo --ignore refactor,design` - Static code analysis
+  5. `mix credo --strict` - Static code analysis
   6. `mix sobelow --config` - Security vulnerability scanning
   7. `mix dialyzer` - Type checking
   8. `mix test` - Run test suite (skipped with --no-test)
@@ -36,7 +36,7 @@ defmodule Mix.Tasks.Check do
     {"Format", ["format", "--check-formatted"]},
     {"Unused Deps", ["deps.unlock", "--check-unused"]},
     {"Xref", ["xref", "graph", "--label", "compile-connected", "--fail-above", "1"]},
-    {"Credo", ["credo", "--ignore", "refactor,design"]},
+    {"Credo", ["credo", "--strict"]},
     {"Sobelow", ["sobelow", "--config", "--compact"]},
     {"Dialyzer", ["dialyzer"]}
   ]

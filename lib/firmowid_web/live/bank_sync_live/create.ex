@@ -4,6 +4,7 @@ defmodule FirmowidWeb.BankSyncLive.Create do
 
   alias Firmowid.Analytics
   alias Firmowid.BankData
+  alias Firmowid.BankData.Worker, as: BankDataWorker
   alias Firmowid.Billing
 
   require Logger
@@ -52,7 +53,7 @@ defmodule FirmowidWeb.BankSyncLive.Create do
         requisition_id: requisition_id,
         organization_id: organization_id
       }
-      |> Firmowid.BankData.Worker.new()
+      |> BankDataWorker.new()
       |> Firmowid.Oban.insert!()
 
       error = params["error"]

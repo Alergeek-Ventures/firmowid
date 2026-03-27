@@ -5,6 +5,7 @@ defmodule Firmowid.BankData.Worker do
     max_attempts: 5
 
   alias Firmowid.BankData
+  alias Firmowid.BankData.ApiClient
   alias Firmowid.BankData.Requisition
   alias Firmowid.BankData.TokenManager
   alias Firmowid.Repo
@@ -37,51 +38,9 @@ defmodule Firmowid.BankData.Worker do
     Repo.put_org_id(organization_id)
 
     try do
-      case BankData.sync_bank_account(bank_account_id) do
-        :ok ->
-          :ok
-
-        {:error, :not_found} ->
-          Logger.warning("Bank account #{bank_account_id} not found; cancelling sync job")
-          {:cancel, :not_found}
-
-        {:error, :expired_eua} ->
-          Logger.warning("Bank account #{bank_account_id} End User Agreement has expired; user must reconnect account")
-
-          {:cancel, :expired_eua}
-
-        {:error, :unauthorized} ->
-          Logger.warning("Bank account #{bank_account_id} authorization failed; refreshing token before retry")
-          TokenManager.refresh_now()
-          {:error, :unauthorized}
-
-        {:error, :forbidden} ->
-          Logger.warning("Bank account #{bank_account_id} access forbidden; cancelling sync job")
-          {:cancel, :forbidden}
-
-        {:error, :bad_request} ->
-          Logger.error("Bank account #{bank_account_id} bad request; cancelling sync job")
-          {:cancel, :bad_request}
-
-        {:error, :conflict} ->
-          Logger.warning("Bank account #{bank_account_id} account suspended or in error state; will retry")
-          {:error, :conflict}
-
-        {:error, :rate_limited} ->
-          Logger.warning("Rate limited while fetching transactions for bank account #{bank_account_id}")
-          {:snooze, 86_400}
-
-        {:error, :server_error} ->
-          Logger.warning("Server error while fetching transactions for bank account #{bank_account_id}; will retry")
-          {:error, :server_error}
-
-        {:error, reason} ->
-          Logger.error(
-            "Unexpected error while fetching transactions for bank account #{bank_account_id}: #{inspect(reason)}"
-          )
-
-          {:error, reason}
-      end
+      bank_account_id
+      |> BankData.sync_bank_account()
+      |> handle_sync_result(bank_account_id)
     after
       Repo.drop_org_id()
     end
@@ -159,7 +118,7 @@ defmodule Firmowid.BankData.Worker do
   def perform(%Oban.Job{args: %{"name" => "delete_remote_requisition", "requisition_id" => requisition_id}}) do
     Logger.info("Deleting remote requisition #{requisition_id}")
 
-    case Firmowid.BankData.ApiClient.delete_requisition(requisition_id) do
+    case ApiClient.delete_requisition(requisition_id) do
       {:ok, _} ->
         :ok
 
@@ -181,6 +140,36 @@ defmodule Firmowid.BankData.Worker do
   def perform(%Oban.Job{args: args}) do
     Logger.error("Unknown job args: #{inspect(args)}")
     {:cancel, :unknown_job}
+  end
+
+  defp handle_sync_result(:ok, _account_id), do: :ok
+
+  defp handle_sync_result({:error, :unauthorized}, account_id) do
+    Logger.warning("Bank account #{account_id} authorization failed; refreshing token before retry")
+    TokenManager.refresh_now()
+    {:error, :unauthorized}
+  end
+
+  defp handle_sync_result({:error, :rate_limited}, account_id) do
+    Logger.warning("Rate limited while fetching transactions for bank account #{account_id}")
+    {:snooze, 86_400}
+  end
+
+  defp handle_sync_result({:error, reason}, account_id)
+       when reason in [:not_found, :expired_eua, :forbidden, :bad_request] do
+    level = if reason == :bad_request, do: :error, else: :warning
+    Logger.log(level, "Bank account #{account_id} #{reason}; cancelling sync job")
+    {:cancel, reason}
+  end
+
+  defp handle_sync_result({:error, reason}, account_id) when reason in [:conflict, :server_error] do
+    Logger.warning("Bank account #{account_id} #{reason}; will retry")
+    {:error, reason}
+  end
+
+  defp handle_sync_result({:error, reason}, account_id) do
+    Logger.error("Unexpected error while fetching transactions for bank account #{account_id}: #{inspect(reason)}")
+    {:error, reason}
   end
 
   # attempt starts at 1 and increments each execution

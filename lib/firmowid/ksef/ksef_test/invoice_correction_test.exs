@@ -16,6 +16,9 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
   import SweetXml
 
   alias Firmowid.Ksef.InvoiceRenderer
+  alias Firmowid.Repo
+  alias Firmowid.SalesInvoices
+  alias Firmowid.SalesInvoices.SalesInvoice
 
   setup do
     Firmowid.AccountsFixtures.user_fixture()
@@ -57,11 +60,11 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
 
     {:ok, updated} =
       invoice
-      |> Firmowid.SalesInvoices.SalesInvoice.ksef_update_changeset(%{
+      |> SalesInvoice.ksef_update_changeset(%{
         locked_at: locked_at,
         ksef_number: ksef_number
       })
-      |> Firmowid.Repo.update()
+      |> Repo.update()
 
     updated
   end
@@ -96,8 +99,8 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
         buyer_name
       )
 
-    {:ok, correction} = Firmowid.SalesInvoices.create_correction_invoice(original, attrs)
-    Firmowid.Repo.preload(correction, [:sales_invoice_items, :corrected_invoice])
+    {:ok, correction} = SalesInvoices.create_correction_invoice(original, attrs)
+    Repo.preload(correction, [:sales_invoice_items, :corrected_invoice])
   end
 
   defp maybe_put(map, _key, nil), do: map
@@ -108,10 +111,10 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
     for item <- invoice.sales_invoice_items do
       item
       |> Ecto.Changeset.change(%{unit_price: Decimal.new(price)})
-      |> Firmowid.Repo.update!()
+      |> Repo.update!()
     end
 
-    Firmowid.Repo.preload(invoice, :sales_invoice_items, force: true)
+    Repo.preload(invoice, :sales_invoice_items, force: true)
   end
 
   # Renders FA3 XML and parses it for assertions.
@@ -492,7 +495,7 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
         )
         |> then(fn kor ->
           {:ok, updated} =
-            Firmowid.SalesInvoices.update_sales_invoice(kor, %{
+            SalesInvoices.update_sales_invoice(kor, %{
               sales_invoice_items: [
                 %{
                   name: "Item A",
@@ -593,11 +596,11 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
         |> correct(unit_price: "100.00")
         |> then(fn kor ->
           {:ok, updated} =
-            Firmowid.SalesInvoices.update_sales_invoice(kor, %{
+            SalesInvoices.update_sales_invoice(kor, %{
               buyer_address: "ul. Nowa 99, 00-002 Krakow"
             })
 
-          Firmowid.Repo.preload(updated, [:sales_invoice_items, :corrected_invoice])
+          Repo.preload(updated, [:sales_invoice_items, :corrected_invoice])
         end)
 
       xml = render_xml(kor1)
@@ -620,7 +623,7 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
       # Directly modify the buyer_id to simulate a tax ID change
       kor1_with_changed_id =
         kor1
-        |> Firmowid.Repo.preload(corrected_invoice: :sales_invoice_items)
+        |> Repo.preload(corrected_invoice: :sales_invoice_items)
         |> Map.put(:buyer_id, "1111111111")
 
       assert_raise RuntimeError, ~r/Buyer tax ID cannot change/, fn ->
@@ -635,7 +638,7 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
       # Directly modify seller data to simulate a change
       kor1_with_changed_seller =
         kor1
-        |> Firmowid.Repo.preload(corrected_invoice: :sales_invoice_items)
+        |> Repo.preload(corrected_invoice: :sales_invoice_items)
         |> Map.put(:seller_display_name, "Completely Different Company")
 
       assert_raise RuntimeError, ~r/Seller data cannot change/, fn ->

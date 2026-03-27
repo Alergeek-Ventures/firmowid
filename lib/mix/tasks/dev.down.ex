@@ -179,8 +179,7 @@ defmodule Mix.Tasks.Dev.Down do
   defp parse_env(content) do
     content
     |> String.split("\n", trim: true)
-    |> Enum.reject(&String.starts_with?(&1, "#"))
-    |> Enum.reject(&(String.trim(&1) == ""))
+    |> Enum.reject(fn line -> String.starts_with?(line, "#") or String.trim(line) == "" end)
     |> Map.new(fn line ->
       [key, value] = String.split(line, "=", parts: 2)
       {String.trim(key), String.trim(value)}

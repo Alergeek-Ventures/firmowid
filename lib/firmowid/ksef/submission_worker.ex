@@ -134,71 +134,9 @@ defmodule Firmowid.Ksef.SubmissionWorker do
     sales_invoice = SalesInvoices.get_sales_invoice!(sales_invoice_id)
     access_token = SessionWorker.get_access_token!()
 
-    case ApiClient.get_invoice_status(access_token, session_reference, invoice_reference) do
-      {:ok, %{ksef_number: ksef_number, invoice_hash: invoice_hash}} ->
-        sales_invoice
-        |> SalesInvoice.ksef_update_changeset(%{ksef_number: ksef_number, ksef_invoice_checksum: invoice_hash})
-        |> Repo.update!()
-
-        Logger.info("Invoice #{sales_invoice_id} received KSeF number: #{ksef_number}")
-        Ksef.broadcast_ksef_status(Repo.get_org_id(), sales_invoice_id, :submitted)
-
-      :pending ->
-        Logger.debug("Invoice #{sales_invoice_id} still pending, will retry")
-        {:snooze, 10}
-
-      :retry ->
-        Logger.debug("Invoice #{sales_invoice_id} needs retry, will retry")
-
-        # todo: allow resubmitting locked invoices
-        # %{
-        #   "action" => "submit",
-        #   "organization_id" => Repo.get_org_id(),
-        #   "sales_invoice_id" => sales_invoice_id
-        # }
-        # |> new()
-        # |> Firmowid.Oban.insert()
-
-        unlock_invoice(sales_invoice)
-
-      {:error, {:invoice_duplicate, original_ksef_number, original_session_reference}} ->
-        Logger.warning("Invoice #{sales_invoice_id} is a duplicate of KSeF number #{original_ksef_number}")
-
-        # todo: prepare correction invoice draft if original invoice is different from this one
-        sales_invoice
-        |> SalesInvoice.ksef_update_changeset(%{
-          ksef_number: original_ksef_number,
-          ksef_session_reference_number: original_session_reference
-        })
-        |> Repo.update!()
-
-        Ksef.broadcast_ksef_status(Repo.get_org_id(), sales_invoice_id, :submitted)
-        :ok
-
-      {:error, {:invoice_processing_failed, code, status} = error} ->
-        Logger.error("Invoice #{sales_invoice_id} processing failed: code=#{code}, status=#{inspect(status)}")
-
-        unlock_invoice(sales_invoice)
-        Ksef.broadcast_ksef_status(Repo.get_org_id(), sales_invoice_id, :failed)
-        {:cancel, error}
-
-      {:error, {:unexpected_status, status, body} = error} ->
-        Logger.error("Unexpected status while verifying invoice #{sales_invoice_id}: #{status} - #{inspect(body)}")
-
-        unlock_invoice(sales_invoice)
-        Ksef.broadcast_ksef_status(Repo.get_org_id(), sales_invoice_id, :failed)
-        {:cancel, error}
-
-      {:error, reason} = error ->
-        Logger.error("Failed to verify invoice #{sales_invoice_id}: #{inspect(reason)}")
-
-        if final_attempt?(job) do
-          unlock_invoice(sales_invoice)
-          Ksef.broadcast_ksef_status(Repo.get_org_id(), sales_invoice_id, :failed)
-        end
-
-        error
-    end
+    access_token
+    |> ApiClient.get_invoice_status(session_reference, invoice_reference)
+    |> handle_verification_result(sales_invoice, job)
   rescue
     e ->
       if final_attempt?(job) do
@@ -210,6 +148,66 @@ defmodule Firmowid.Ksef.SubmissionWorker do
       end
 
       reraise e, __STACKTRACE__
+  end
+
+  defp handle_verification_result({:ok, %{ksef_number: ksef_number, invoice_hash: hash}}, invoice, _job) do
+    invoice
+    |> SalesInvoice.ksef_update_changeset(%{ksef_number: ksef_number, ksef_invoice_checksum: hash})
+    |> Repo.update!()
+
+    Logger.info("Invoice #{invoice.id} received KSeF number: #{ksef_number}")
+    Ksef.broadcast_ksef_status(Repo.get_org_id(), invoice.id, :submitted)
+  end
+
+  defp handle_verification_result(:pending, invoice, _job) do
+    Logger.debug("Invoice #{invoice.id} still pending, will retry")
+    {:snooze, 10}
+  end
+
+  defp handle_verification_result(:retry, invoice, _job) do
+    Logger.debug("Invoice #{invoice.id} needs retry, will retry")
+
+    # TODO: allow resubmitting locked invoices
+    unlock_invoice(invoice)
+  end
+
+  defp handle_verification_result({:error, {:invoice_duplicate, ksef_number, session_ref}}, invoice, _job) do
+    Logger.warning("Invoice #{invoice.id} is a duplicate of KSeF number #{ksef_number}")
+
+    # TODO: prepare correction invoice draft if original invoice is different from this one
+    invoice
+    |> SalesInvoice.ksef_update_changeset(%{ksef_number: ksef_number, ksef_session_reference_number: session_ref})
+    |> Repo.update!()
+
+    Ksef.broadcast_ksef_status(Repo.get_org_id(), invoice.id, :submitted)
+    :ok
+  end
+
+  defp handle_verification_result({:error, {:invoice_processing_failed, _, _} = error}, invoice, _job) do
+    fail_invoice(invoice, error)
+  end
+
+  defp handle_verification_result({:error, {:unexpected_status, _, _} = error}, invoice, _job) do
+    fail_invoice(invoice, error)
+  end
+
+  defp handle_verification_result({:error, reason} = error, invoice, job) do
+    Logger.error("Failed to verify invoice #{invoice.id}: #{inspect(reason)}")
+
+    if final_attempt?(job), do: fail_invoice_status(invoice)
+
+    error
+  end
+
+  defp fail_invoice(invoice, error) do
+    Logger.error("Invoice #{invoice.id} verification failed: #{inspect(error)}")
+    fail_invoice_status(invoice)
+    {:cancel, error}
+  end
+
+  defp fail_invoice_status(invoice) do
+    unlock_invoice(invoice)
+    Ksef.broadcast_ksef_status(Repo.get_org_id(), invoice.id, :failed)
   end
 
   defp final_attempt?(%Oban.Job{attempt: attempt, max_attempts: max_attempts}) do

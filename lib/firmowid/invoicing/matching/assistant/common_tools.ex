@@ -27,12 +27,8 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
 
         filtered =
           args
-          |> Enum.filter(fn {k, _v} -> k in allowed_keys end)
           |> Enum.filter(fn
-            {_k, ""} -> false
-            {_k, nil} -> false
-            {_k, []} -> false
-            {_k, _v} -> true
+            {k, v} -> k in allowed_keys and v not in ["", nil, []]
           end)
           |> Map.new(fn {k, v} -> {String.to_existing_atom(k), v} end)
 
@@ -80,12 +76,8 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
 
         filtered =
           args
-          |> Enum.filter(fn {k, _v} -> k in allowed_keys end)
           |> Enum.filter(fn
-            {_k, ""} -> false
-            {_k, nil} -> false
-            {_k, []} -> false
-            {_k, _v} -> true
+            {k, v} -> k in allowed_keys and v not in ["", nil, []]
           end)
           |> Map.new(fn {k, v} -> {String.to_existing_atom(k), v} end)
 
@@ -203,12 +195,8 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
           filters when is_map(filters) ->
             filtered =
               filters
-              |> Enum.filter(fn {k, _v} -> k in allowed_keys end)
               |> Enum.filter(fn
-                {_k, ""} -> false
-                {_k, nil} -> false
-                {_k, []} -> false
-                {_k, _v} -> true
+                {k, v} -> k in allowed_keys and v not in ["", nil, []]
               end)
               |> Map.new(fn {k, v} -> {String.to_existing_atom(k), v} end)
 

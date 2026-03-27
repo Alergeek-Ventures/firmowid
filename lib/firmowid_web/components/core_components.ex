@@ -19,6 +19,7 @@ defmodule FirmowidWeb.CoreComponents do
 
   import Tails
 
+  alias Phoenix.HTML.Form
   alias Phoenix.HTML.FormField
   alias Phoenix.LiveView.JS
 
@@ -353,7 +354,7 @@ defmodule FirmowidWeb.CoreComponents do
   attr :errors, :list, default: []
   attr :checked, :boolean, doc: "the checked flag for checkbox inputs"
   attr :prompt, :string, default: nil, doc: "the prompt for select inputs"
-  attr :options, :list, doc: "the options to pass to Phoenix.HTML.Form.options_for_select/2"
+  attr :options, :list, doc: "the options to pass to Form.options_for_select/2"
   attr :multiple, :boolean, default: false, doc: "the multiple flag for select inputs"
 
   attr :input_class, :string, default: nil, doc: "the class to apply to the input tag"
@@ -393,7 +394,7 @@ defmodule FirmowidWeb.CoreComponents do
       type="hidden"
       name={@name}
       id={@id}
-      value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+      value={Form.normalize_value(@type, @value)}
       {@rest}
     />
     """
@@ -402,7 +403,7 @@ defmodule FirmowidWeb.CoreComponents do
   def input(%{type: "checkbox"} = assigns) do
     assigns =
       assign_new(assigns, :checked, fn ->
-        Phoenix.HTML.Form.normalize_value("checkbox", assigns[:value])
+        Form.normalize_value("checkbox", assigns[:value])
       end)
 
     ~H"""
@@ -453,7 +454,7 @@ defmodule FirmowidWeb.CoreComponents do
           {@rest}
         >
           <option :if={@prompt} value="">{@prompt}</option>
-          {Phoenix.HTML.Form.options_for_select(@options, @value)}
+          {Form.options_for_select(@options, @value)}
         </select>
         <Lucideicons.chevron_down class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none size-4 text-grey-700 peer-disabled:text-grey-300" />
       </div>
@@ -481,7 +482,7 @@ defmodule FirmowidWeb.CoreComponents do
         {@rest}
       >
         <option :if={@prompt} value="">{@prompt}</option>
-        {Phoenix.HTML.Form.options_for_select(@options, @value)}
+        {Form.options_for_select(@options, @value)}
       </select>
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
@@ -503,7 +504,7 @@ defmodule FirmowidWeb.CoreComponents do
         }
         aria-invalid={to_string(not Enum.empty?(@errors))}
         {@rest}
-      ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
+      ><%= Form.normalize_value("textarea", @value) %></textarea>
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
@@ -525,7 +526,7 @@ defmodule FirmowidWeb.CoreComponents do
           ])
         }
         {@rest}
-      ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
+      ><%= Form.normalize_value("textarea", @value) %></textarea>
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
@@ -541,7 +542,7 @@ defmodule FirmowidWeb.CoreComponents do
         name={@name}
         id={@id}
         size={@input_size}
-        value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+        value={Form.normalize_value(@type, @value)}
         aria-invalid={to_string(not Enum.empty?(@errors))}
         class={
           classes([
@@ -566,7 +567,7 @@ defmodule FirmowidWeb.CoreComponents do
         name={@name}
         id={@id}
         size={@input_size}
-        value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+        value={Form.normalize_value(@type, @value)}
         class={
           classes([
             "block w-full rounded text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 read-only:cursor-default read-only:bg-gray-100",
@@ -1072,7 +1073,7 @@ defmodule FirmowidWeb.CoreComponents do
         type="checkbox"
         name={@field.name}
         id={@field.id}
-        checked={Phoenix.HTML.Form.normalize_value("checkbox", @field.value)}
+        checked={Form.normalize_value("checkbox", @field.value)}
         value="true"
         class="sr-only peer"
         disabled={@disabled}

@@ -31,34 +31,24 @@ defmodule Firmowid.Ksef.SessionWorker do
 
     Logger.info("Starting KSeF authentication for organization #{organization_id}")
 
-    case Ksef.get_credential() do
+    with %Credential{} = credential <- Ksef.get_credential(),
+         {:ok, %{access_token: access_token, refresh_token: refresh_token}} <-
+           perform_authentication(credential) do
+      Ksef.fetch_cost_invoices(DateTime.shift(DateTime.utc_now(), day: -30))
+      schedule_reauthentication!(refresh_token)
+      Cachex.put(:ksef, {:access_token, organization_id}, access_token, expire: access_token_ttl(access_token))
+    else
       nil ->
         Logger.error("No KSeF credentials found for organization #{organization_id}")
         {:cancel, :no_credentials}
 
-      credential ->
-        case perform_authentication(credential) do
-          {:ok, %{access_token: access_token, refresh_token: refresh_token}} ->
-            date_from = DateTime.shift(DateTime.utc_now(), day: -30)
-            Ksef.fetch_cost_invoices(date_from)
-
-            schedule_reauthentication!(refresh_token)
-            Cachex.put(:ksef, {:access_token, organization_id}, access_token, expire: access_token_ttl(access_token))
-
-          {:error, _reason} = error ->
-            if final_attempt?(job) do
-              Ksef.unauthenticate()
-            end
-
-            error
-        end
+      {:error, _reason} = error ->
+        if final_attempt?(job), do: Ksef.unauthenticate()
+        error
     end
   rescue
     e ->
-      if final_attempt?(job) do
-        Ksef.unauthenticate()
-      end
-
+      if final_attempt?(job), do: Ksef.unauthenticate()
       reraise e, __STACKTRACE__
   end
 

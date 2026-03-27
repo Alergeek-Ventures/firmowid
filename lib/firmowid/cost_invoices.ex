@@ -287,25 +287,8 @@ defmodule Firmowid.CostInvoices do
     Repo.transaction(fn ->
       case Blobs.create_blob(upload_path, content_type, original_filename) do
         {:ok, blob} ->
-          worker_args = %{
-            name: "extract_cost_invoice_metadata",
-            blob_id: blob.id,
-            organization_id: blob.organization_id
-          }
-
-          worker_args =
-            if inbound_email_id do
-              Map.put(worker_args, :inbound_email_id, inbound_email_id)
-            else
-              worker_args
-            end
-
-          worker_args
-          |> Firmowid.CostInvoices.Worker.new()
-          |> Firmowid.Oban.insert!()
-
+          enqueue_extraction_job(blob, inbound_email_id)
           broadcast_cost_invoice_list_updated(blob.organization_id)
-
           blob
 
         {:error,
@@ -320,6 +303,15 @@ defmodule Firmowid.CostInvoices do
           Repo.rollback(:failure)
       end
     end)
+  end
+
+  defp enqueue_extraction_job(blob, inbound_email_id) do
+    %{name: "extract_cost_invoice_metadata", blob_id: blob.id, organization_id: blob.organization_id}
+    |> then(fn args ->
+      if inbound_email_id, do: Map.put(args, :inbound_email_id, inbound_email_id), else: args
+    end)
+    |> Firmowid.CostInvoices.Worker.new()
+    |> Firmowid.Oban.insert!()
   end
 
   @doc """
@@ -498,6 +490,8 @@ defmodule Firmowid.CostInvoices do
     invoice_type in @correction_invoice_types
   end
 
+  # sobelow_skip ["Traversal.FileModule"]
+  # Path comes from Briefly.create/1 (OS-managed temp directory), not user input.
   def hydrate_invoice_with_fa3_blob(%CostInvoice{ksef_number: ksef_number, blob_id: blob_id} = invoice)
       when not is_nil(ksef_number) and is_nil(blob_id) do
     with {:ok, xml} <- Ksef.get_invoice_xml_by_ksef_number(ksef_number),

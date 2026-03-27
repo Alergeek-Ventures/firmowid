@@ -930,14 +930,13 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
 
   defp apply_default_vat_rate(params) do
     update_in(params, ["sales_invoice_items"], fn items ->
-      items
-      |> items_to_list()
-      |> Map.new(fn {key, item} ->
-        item = if item["vat_rate"] in [nil, ""], do: Map.put(item, "vat_rate", "23"), else: item
-        {key, item}
-      end)
+      items |> items_to_list() |> Map.new(&default_vat_rate_for_item/1)
     end)
   end
+
+  defp default_vat_rate_for_item({key, %{"vat_rate" => rate} = item}) when rate not in [nil, ""], do: {key, item}
+
+  defp default_vat_rate_for_item({key, item}), do: {key, Map.put(item, "vat_rate", "23")}
 
   defp apply_forced_vat_rate(params, rate) do
     update_in(params, ["sales_invoice_items"], fn items ->

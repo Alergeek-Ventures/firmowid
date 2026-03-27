@@ -117,5 +117,5 @@ jobs:
         if: always()
 
       - name: Check Credo
-        run: mix credo --ignore refactor,design
+        run: mix credo --strict
         if: always()

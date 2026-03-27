@@ -79,18 +79,17 @@ defmodule Firmowid.Management do
 
   def update_user_salaries(employees, employees_params) do
     Repo.transaction(fn ->
-      Enum.reduce_while(employees, :ok, fn employee, _acc ->
-        new_hourly_wage = Decimal.new(employees_params[employee.user.id]["wage"])
-
-        case Timetracker.create_user_salary(%{
-               user_id: employee.user.id,
-               hourly_rate: new_hourly_wage
-             }) do
-          {:ok, %UserSalary{}} -> {:cont, :ok}
-          {:error, changeset} -> Repo.rollback(changeset)
-        end
-      end)
+      Enum.each(employees, &update_single_salary(&1, employees_params))
     end)
+  end
+
+  defp update_single_salary(employee, employees_params) do
+    new_hourly_wage = Decimal.new(employees_params[employee.user.id]["wage"])
+
+    case Timetracker.create_user_salary(%{user_id: employee.user.id, hourly_rate: new_hourly_wage}) do
+      {:ok, %UserSalary{}} -> :ok
+      {:error, changeset} -> Repo.rollback(changeset)
+    end
   end
 
   def list_employee_details(user_id, date) do

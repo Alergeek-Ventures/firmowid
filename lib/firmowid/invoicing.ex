@@ -85,295 +85,210 @@ defmodule Firmowid.Invoicing do
       - `is_reverse_charge`: `boolean` - if true, only reverse charge invoices are included
   """
   def search_invoices(params \\ %{}) do
-    include_sales = Map.get(params, :include_sales, true)
-    include_cost = Map.get(params, :include_cost, true)
     query = Map.get(params, :query)
+    include_cost = should_include_cost?(params)
 
-    include_cost =
-      if not is_nil(Map.get(params, :buyer_type)) or not is_nil(Map.get(params, :is_cash)) or
-           not is_nil(Map.get(params, :is_reverse_charge)) do
-        false
-      else
-        include_cost
-      end
-
-    # From prebuilt queries, select just the id, type, date and bm25 score (to hydrate later)
-    # This is needed because if we got whole structs, union_all on different schemas doesn't work
-    # And we need to subquery to order by score
-    cost_query =
-      if include_cost do
-        base = build_cost_invoice_query(params)
-
-        if query in [nil, ""] do
-          select(base, [ci], %{
-            id: ci.id,
-            type: "cost",
-            date: ci.issue_date,
-            score: 0.0,
-            organization_id: ci.organization_id
-          })
-        else
-          select(base, [ci], %{
-            id: ci.id,
-            type: "cost",
-            date: ci.issue_date,
-            score: fragment("pdb.score(?)", ci.id),
-            organization_id: ci.organization_id
-          })
-        end
-      end
-
-    sales_query =
-      if include_sales do
-        base = build_sales_invoice_query(params)
-
-        if query in [nil, ""] do
-          select(base, [si], %{
-            id: si.id,
-            type: "sales",
-            date: si.issue_date,
-            score: 0.0,
-            organization_id: si.organization_id
-          })
-        else
-          select(base, [si], %{
-            id: si.id,
-            type: "sales",
-            date: si.issue_date,
-            score: fragment("pdb.score(?)", si.id),
-            organization_id: si.organization_id
-          })
-        end
-      end
-
-    queries = Enum.filter([cost_query, sales_query], fn q -> not is_nil(q) end)
-
-    unified_query =
-      case queries do
-        [single] ->
-          single
-
-        [first, second] ->
-          union_all(first, ^second)
-
-        [] ->
-          from(cost_invoice in CostInvoice,
-            where: false,
-            select: %{id: nil, type: nil, date: nil, score: nil, organization_id: nil}
-          )
-      end
-
-    # For performance, reduced into two maps, hydrated all of one type at once, and reassembled list
-    base =
-      unified_query
-      |> subquery()
-      |> order_by(
-        ^if query in [nil, ""] do
-          [desc: :date]
-        else
-          [desc: :score]
-        end
+    queries =
+      Enum.filter(
+        [
+          include_cost && select_for_search(build_cost_invoice_query(params), "cost", query),
+          Map.get(params, :include_sales, true) &&
+            select_for_search(build_sales_invoice_query(params), "sales", query)
+        ],
+        & &1
       )
-      |> limit(50)
+
+    unified_query = unify_queries(queries)
+
+    order = if query in [nil, ""], do: [desc: :date], else: [desc: :score]
 
     # Paradedb @@@ (~> in Ecto) operator needs this, otherwise "Postgres expressions not solved" error
-    results = Repo.all(base, prepare: :unnamed)
+    unified_query
+    |> subquery()
+    |> order_by(^order)
+    |> limit(50)
+    |> Repo.all(prepare: :unnamed)
+    |> hydrate_search_results()
+  end
 
-    hydrate_search_results(results)
+  defp should_include_cost?(params) do
+    has_sales_only_filter =
+      not is_nil(Map.get(params, :buyer_type)) or
+        not is_nil(Map.get(params, :is_cash)) or
+        not is_nil(Map.get(params, :is_reverse_charge))
+
+    Map.get(params, :include_cost, true) and not has_sales_only_filter
+  end
+
+  defp select_for_search(base_query, type, query) when query in [nil, ""] do
+    select(base_query, [i], %{
+      id: i.id,
+      type: ^type,
+      date: i.issue_date,
+      score: 0.0,
+      organization_id: i.organization_id
+    })
+  end
+
+  defp select_for_search(base_query, type, _query) do
+    select(base_query, [i], %{
+      id: i.id,
+      type: ^type,
+      date: i.issue_date,
+      score: fragment("pdb.score(?)", i.id),
+      organization_id: i.organization_id
+    })
+  end
+
+  defp unify_queries([single]), do: single
+  defp unify_queries([first, second]), do: union_all(first, ^second)
+
+  defp unify_queries([]) do
+    from(cost_invoice in CostInvoice,
+      where: false,
+      select: %{id: nil, type: nil, date: nil, score: nil, organization_id: nil}
+    )
   end
 
   defp build_cost_invoice_query(params) do
-    query = Map.get(params, :query)
-    only_unmatched = Map.get(params, :only_unmatched, false)
-    currency = Map.get(params, :currency)
-    amount_gt = Map.get(params, :amount_gt)
-    amount_lt = Map.get(params, :amount_lt)
-    date_from = Map.get(params, :date_from)
-    date_to = Map.get(params, :date_to)
+    from(cost_invoice in CostInvoice, as: :cost_invoice)
+    |> maybe_filter_unmatched_cost(Map.get(params, :only_unmatched, false))
+    |> maybe_cost_filter(:currency, Map.get(params, :currency))
+    |> maybe_cost_filter(:amount_gt, Map.get(params, :amount_gt))
+    |> maybe_cost_filter(:amount_lt, Map.get(params, :amount_lt))
+    |> maybe_cost_filter(:date_from, Map.get(params, :date_from))
+    |> maybe_cost_filter(:date_to, Map.get(params, :date_to))
+    |> maybe_search_cost_invoices(Map.get(params, :query))
+  end
 
-    base_query = from(cost_invoice in CostInvoice, as: :cost_invoice)
+  defp maybe_filter_unmatched_cost(query, false), do: query
+  defp maybe_filter_unmatched_cost(query, nil), do: query
 
-    base_query =
-      if only_unmatched do
-        base_query
-        |> join(:left, [cost_invoice], t in assoc(cost_invoice, :transactions))
-        |> where([cost_invoice, t], is_nil(t.id))
-        |> where([cost_invoice], cost_invoice.skip_invoicing == false)
-      else
-        base_query
-      end
+  defp maybe_filter_unmatched_cost(query, _) do
+    query
+    |> join(:left, [cost_invoice], t in assoc(cost_invoice, :transactions))
+    |> where([cost_invoice, t], is_nil(t.id))
+    |> where([cost_invoice], cost_invoice.skip_invoicing == false)
+  end
 
-    base_query =
-      if currency,
-        do: where(base_query, [cost_invoice], cost_invoice.currency == ^currency),
-        else: base_query
+  defp maybe_cost_filter(query, _field, nil), do: query
+  defp maybe_cost_filter(query, :currency, val), do: where(query, [ci], ci.currency == ^val)
+  defp maybe_cost_filter(query, :amount_gt, val), do: where(query, [ci], ci.total_amount >= ^val)
+  defp maybe_cost_filter(query, :amount_lt, val), do: where(query, [ci], ci.total_amount <= ^val)
+  defp maybe_cost_filter(query, :date_from, val), do: where(query, [ci], ci.issue_date >= ^val)
+  defp maybe_cost_filter(query, :date_to, val), do: where(query, [ci], ci.issue_date <= ^val)
 
-    base_query =
-      if amount_gt,
-        do: where(base_query, [cost_invoice], cost_invoice.total_amount >= ^amount_gt),
-        else: base_query
+  defp maybe_search_cost_invoices(query, search) when search in [nil, ""], do: query
 
-    base_query =
-      if amount_lt,
-        do: where(base_query, [cost_invoice], cost_invoice.total_amount <= ^amount_lt),
-        else: base_query
+  defp maybe_search_cost_invoices(query, search) do
+    search_dynamic =
+      Enum.reduce(
+        [
+          dynamic([cost_invoice], cost_invoice.seller ~> ^search),
+          dynamic([cost_invoice], cost_invoice.seller_display_name ~> ^search),
+          dynamic([cost_invoice], cost_invoice.description ~> ^search),
+          dynamic([cost_invoice], cost_invoice.invoice_identifier ~> ^search)
+        ],
+        fn expr, acc -> dynamic([cost_invoice], ^acc or ^expr) end
+      )
 
-    base_query =
-      if date_from,
-        do: where(base_query, [cost_invoice], cost_invoice.issue_date >= ^date_from),
-        else: base_query
-
-    base_query =
-      if date_to,
-        do: where(base_query, [cost_invoice], cost_invoice.issue_date <= ^date_to),
-        else: base_query
-
-    if query in [nil, ""] do
-      base_query
-    else
-      search_dynamic =
-        Enum.reduce(
-          [
-            dynamic([cost_invoice], cost_invoice.seller ~> ^query),
-            dynamic([cost_invoice], cost_invoice.seller_display_name ~> ^query),
-            dynamic([cost_invoice], cost_invoice.description ~> ^query),
-            dynamic([cost_invoice], cost_invoice.invoice_identifier ~> ^query)
-          ],
-          fn expr, acc -> dynamic([cost_invoice], ^acc or ^expr) end
-        )
-
-      where(base_query, ^search_dynamic)
-    end
+    where(query, ^search_dynamic)
   end
 
   defp build_sales_invoice_query(params) do
-    query = Map.get(params, :query)
-    only_unmatched = Map.get(params, :only_unmatched)
-    currency = Map.get(params, :currency)
     amount_gt = Map.get(params, :amount_gt)
     amount_lt = Map.get(params, :amount_lt)
-    date_from = Map.get(params, :date_from)
-    date_to = Map.get(params, :date_to)
-    buyer_type = Map.get(params, :buyer_type)
-    is_cash_account = Map.get(params, :is_cash)
-    is_reverse_charge = Map.get(params, :is_reverse_charge)
 
-    base_query = from(SalesInvoice, as: :sales_invoice)
+    from(SalesInvoice, as: :sales_invoice)
+    |> where([sales_invoice], sales_invoice.ksef_invoice_kind == :vat)
+    |> maybe_join_items_for_amount(amount_gt, amount_lt)
+    |> maybe_sales_amount_filter(:gt, amount_gt)
+    |> maybe_sales_amount_filter(:lt, amount_lt)
+    |> maybe_filter_unmatched_sales(Map.get(params, :only_unmatched))
+    |> maybe_sales_filter(:currency, Map.get(params, :currency))
+    |> maybe_sales_filter(:date_from, Map.get(params, :date_from))
+    |> maybe_sales_filter(:date_to, Map.get(params, :date_to))
+    |> maybe_sales_filter(:buyer_type, Map.get(params, :buyer_type))
+    |> maybe_sales_filter(:is_cash, Map.get(params, :is_cash))
+    |> maybe_sales_filter(:is_reverse_charge, Map.get(params, :is_reverse_charge))
+    |> maybe_search_sales_invoices(Map.get(params, :query))
+  end
 
-    base_query = where(base_query, [sales_invoice], sales_invoice.ksef_invoice_kind == :vat)
+  defp maybe_join_items_for_amount(query, nil, nil), do: query
 
-    needs_items_join = not is_nil(amount_gt) or not is_nil(amount_lt)
+  defp maybe_join_items_for_amount(query, _amount_gt, _amount_lt) do
+    query
+    |> join(:left, [sales_invoice], sales_invoice_item in assoc(sales_invoice, :sales_invoice_items))
+    |> group_by([sales_invoice], sales_invoice.id)
+  end
 
-    base_query =
-      if needs_items_join do
-        base_query
-        |> join(
-          :left,
-          [sales_invoice],
-          sales_invoice_item in assoc(sales_invoice, :sales_invoice_items)
-        )
-        |> group_by([sales_invoice], sales_invoice.id)
-      else
-        base_query
-      end
+  # Note: vat_rate is now a string (KSeF code), so we use a CASE expression
+  # to convert it to numeric for gross calculation
+  defp maybe_sales_amount_filter(query, _op, nil), do: query
 
-    # equivalent to get_gross
-    # Note: vat_rate is now a string (KSeF code), so we use a CASE expression
-    # to convert it to numeric for gross calculation
-    base_query =
-      if amount_gt do
-        having(
-          base_query,
-          [sales_invoice, sales_invoice_item],
-          sum(
-            sales_invoice_item.quantity * sales_invoice_item.unit_price *
-              (1 + fragment(@vat_rate_to_decimal_sql, sales_invoice_item.vat_rate))
-          ) >= ^amount_gt
-        )
-      else
-        base_query
-      end
+  defp maybe_sales_amount_filter(query, :gt, amount) do
+    having(
+      query,
+      [sales_invoice, sales_invoice_item],
+      sum(
+        sales_invoice_item.quantity * sales_invoice_item.unit_price *
+          (1 + fragment(@vat_rate_to_decimal_sql, sales_invoice_item.vat_rate))
+      ) >= ^amount
+    )
+  end
 
-    base_query =
-      if amount_lt do
-        having(
-          base_query,
-          [sales_invoice, sales_invoice_item],
-          sum(
-            sales_invoice_item.quantity * sales_invoice_item.unit_price *
-              (1 + fragment(@vat_rate_to_decimal_sql, sales_invoice_item.vat_rate))
-          ) <= ^amount_lt
-        )
-      else
-        base_query
-      end
+  defp maybe_sales_amount_filter(query, :lt, amount) do
+    having(
+      query,
+      [sales_invoice, sales_invoice_item],
+      sum(
+        sales_invoice_item.quantity * sales_invoice_item.unit_price *
+          (1 + fragment(@vat_rate_to_decimal_sql, sales_invoice_item.vat_rate))
+      ) <= ^amount
+    )
+  end
 
-    base_query =
-      if only_unmatched do
-        base_query
-        |> where(
-          [sales_invoice],
-          fragment(
-            "NOT EXISTS (SELECT 1 FROM sales_invoices_transactions WHERE sales_invoice_id = ?)",
-            sales_invoice.id
-          )
-        )
-        |> where([sales_invoice], sales_invoice.skip_invoicing == false)
-      else
-        base_query
-      end
+  defp maybe_filter_unmatched_sales(query, nil), do: query
+  defp maybe_filter_unmatched_sales(query, false), do: query
 
-    base_query =
-      if currency,
-        do: where(base_query, [sales_invoice], sales_invoice.currency == ^currency),
-        else: base_query
+  defp maybe_filter_unmatched_sales(query, _) do
+    query
+    |> where(
+      [si],
+      fragment("NOT EXISTS (SELECT 1 FROM sales_invoices_transactions WHERE sales_invoice_id = ?)", si.id)
+    )
+    |> where([si], si.skip_invoicing == false)
+  end
 
-    base_query =
-      if date_from,
-        do: where(base_query, [sales_invoice], sales_invoice.issue_date >= ^date_from),
-        else: base_query
+  defp maybe_sales_filter(query, _field, nil), do: query
+  defp maybe_sales_filter(query, :currency, val), do: where(query, [si], si.currency == ^val)
+  defp maybe_sales_filter(query, :date_from, val), do: where(query, [si], si.issue_date >= ^val)
+  defp maybe_sales_filter(query, :date_to, val), do: where(query, [si], si.issue_date <= ^val)
+  defp maybe_sales_filter(query, :buyer_type, val), do: where(query, [si], si.buyer_type == ^val)
+  defp maybe_sales_filter(query, :is_cash, _), do: where(query, [si], si.is_cash_account == true)
 
-    base_query =
-      if date_to,
-        do: where(base_query, [sales_invoice], sales_invoice.issue_date <= ^date_to),
-        else: base_query
+  defp maybe_sales_filter(query, :is_reverse_charge, _), do: where(query, [si], si.is_reverse_charge == true)
 
-    base_query =
-      if buyer_type,
-        do: where(base_query, [sales_invoice], sales_invoice.buyer_type == ^buyer_type),
-        else: base_query
+  defp maybe_search_sales_invoices(query, search) when search in [nil, ""], do: query
 
-    base_query =
-      if is_cash_account,
-        do: where(base_query, [sales_invoice], sales_invoice.is_cash_account == true),
-        else: base_query
+  defp maybe_search_sales_invoices(query, search) do
+    search_dynamic =
+      Enum.reduce(
+        [
+          # BM25 search fields - must match columns in the index
+          dynamic([sales_invoice], sales_invoice.buyer_full_name ~> ^search),
+          dynamic([sales_invoice], sales_invoice.buyer_given_name ~> ^search),
+          dynamic([sales_invoice], sales_invoice.buyer_surname ~> ^search),
+          dynamic([sales_invoice], sales_invoice.invoice_number ~> ^search),
+          dynamic([sales_invoice], sales_invoice.buyer_email ~> ^search),
+          dynamic([sales_invoice], sales_invoice.buyer_description ~> ^search),
+          dynamic([sales_invoice], sales_invoice.buyer_id ~> ^search),
+          dynamic([sales_invoice], sales_invoice.item_names ~> ^search)
+        ],
+        fn expr, acc -> dynamic([sales_invoice], ^acc or ^expr) end
+      )
 
-    base_query =
-      if is_reverse_charge,
-        do: where(base_query, [sales_invoice], sales_invoice.is_reverse_charge == true),
-        else: base_query
-
-    if query in [nil, ""] do
-      base_query
-    else
-      search_dynamic =
-        Enum.reduce(
-          [
-            # BM25 search fields - must match columns in the index
-            dynamic([sales_invoice], sales_invoice.buyer_full_name ~> ^query),
-            dynamic([sales_invoice], sales_invoice.buyer_given_name ~> ^query),
-            dynamic([sales_invoice], sales_invoice.buyer_surname ~> ^query),
-            dynamic([sales_invoice], sales_invoice.invoice_number ~> ^query),
-            dynamic([sales_invoice], sales_invoice.buyer_email ~> ^query),
-            dynamic([sales_invoice], sales_invoice.buyer_description ~> ^query),
-            dynamic([sales_invoice], sales_invoice.buyer_id ~> ^query),
-            dynamic([sales_invoice], sales_invoice.item_names ~> ^query)
-          ],
-          fn expr, acc -> dynamic([sales_invoice], ^acc or ^expr) end
-        )
-
-      where(base_query, ^search_dynamic)
-    end
+    where(query, ^search_dynamic)
   end
 
   defp hydrate_search_results(results) do

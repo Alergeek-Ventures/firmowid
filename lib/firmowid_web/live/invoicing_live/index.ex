@@ -71,46 +71,40 @@ defmodule FirmowidWeb.InvoicingLive.Index do
   def handle_params(params, _url, socket) do
     Bodyguard.permit!(Invoicing, :read, socket.assigns.current_user)
 
-    socket = apply_action(socket, socket.assigns.live_action, params)
-
-    month =
-      case Map.get(params, "month") do
-        nil -> Date.beginning_of_month(Date.utc_today())
-        date_string -> Date.from_iso8601!(date_string)
-      end
-
-    filter =
-      case Map.get(params, "filter") do
-        nil -> :invoices
-        filter_string -> String.to_existing_atom(filter_string)
-      end
-
-    # Grouping is sticky across filter changes; defaults to true on first load
-    group_by_party =
-      case Map.get(params, "group_by_party") do
-        "true" -> true
-        "false" -> false
-        nil -> true
-        _ -> false
-      end
-
-    show_modal = Map.get(params, "show_modal") == "true"
-
-    socket =
-      if show_modal do
-        push_event(socket, "js-exec", %{to: "#tutorial-modal", attr: "phx-show"})
-      else
-        socket
-      end
+    parsed = parse_url_params(params)
 
     socket =
       socket
-      # UI controls
-      |> assign(:params, %{month: month, filter: filter, group_by_party: group_by_party})
+      |> apply_action(socket.assigns.live_action, params)
+      |> maybe_show_tutorial(Map.get(params, "show_modal") == "true")
+      |> assign(:params, parsed)
       |> refetch_invoicing_entries()
 
     {:noreply, socket}
   end
+
+  defp parse_url_params(params) do
+    %{
+      month: parse_month(Map.get(params, "month")),
+      filter: parse_filter(Map.get(params, "filter")),
+      group_by_party: parse_group_by_party(Map.get(params, "group_by_party"))
+    }
+  end
+
+  defp parse_month(nil), do: Date.beginning_of_month(Date.utc_today())
+  defp parse_month(date_string), do: Date.from_iso8601!(date_string)
+
+  defp parse_filter(nil), do: :invoices
+  defp parse_filter(filter_string), do: String.to_existing_atom(filter_string)
+
+  defp parse_group_by_party("true"), do: true
+  defp parse_group_by_party("false"), do: false
+  defp parse_group_by_party(nil), do: true
+  defp parse_group_by_party(_), do: false
+
+  defp maybe_show_tutorial(socket, true), do: push_event(socket, "js-exec", %{to: "#tutorial-modal", attr: "phx-show"})
+
+  defp maybe_show_tutorial(socket, _), do: socket
 
   @impl true
   def handle_event("change-month", %{"month" => month}, socket) do
@@ -437,51 +431,45 @@ defmodule FirmowidWeb.InvoicingLive.Index do
 
     for entry <- entries do
       consume_uploaded_entry(socket, entry, fn %{path: path} ->
-        Analytics.track_event("cost_invoice_upload", user, %{
-          file_type: entry.client_type
-        })
-
-        case CostInvoices.upload_cost_invoice(path, entry.client_type, entry.client_name) do
-          {:error, {:blob_already_exists, blob_checksum}} ->
-            cost_invoice = CostInvoices.get_cost_invoice_by_checksum!(blob_checksum)
-
-            LiveToast.send_toast(
-              :info,
-              "Ta faktura jest już w systemie",
-              title: "#{cost_invoice.issue_date} / #{cost_invoice.seller_display_name}",
-              action: fn assigns ->
-                assigns =
-                  assign(
-                    assigns,
-                    :issue_date,
-                    cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601()
-                  )
-
-                ~H"""
-                <.link
-                  class="text-sm text-bold underline"
-                  navigate={~p"/fakturowanie?month=#{@issue_date}&filter=invoices"}
-                >
-                  Wyświetl <.icon name="hero-arrow-right-solid" class="h-3 w-3" />
-                </.link>
-                """
-              end
-            )
-
-          {:error, :failure} ->
-            LiveToast.send_toast(
-              :error,
-              "Nie udało się wgrać pliku"
-            )
-
-          _ ->
-            nil
-        end
-
+        Analytics.track_event("cost_invoice_upload", user, %{file_type: entry.client_type})
+        handle_upload_result(CostInvoices.upload_cost_invoice(path, entry.client_type, entry.client_name))
         {:ok, nil}
       end)
     end
   end
+
+  defp handle_upload_result({:error, {:blob_already_exists, blob_checksum}}) do
+    cost_invoice = CostInvoices.get_cost_invoice_by_checksum!(blob_checksum)
+
+    LiveToast.send_toast(
+      :info,
+      "Ta faktura jest już w systemie",
+      title: "#{cost_invoice.issue_date} / #{cost_invoice.seller_display_name}",
+      action: fn assigns ->
+        assigns =
+          assign(
+            assigns,
+            :issue_date,
+            cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601()
+          )
+
+        ~H"""
+        <.link
+          class="text-sm text-bold underline"
+          navigate={~p"/fakturowanie?month=#{@issue_date}&filter=invoices"}
+        >
+          Wyświetl <.icon name="hero-arrow-right-solid" class="h-3 w-3" />
+        </.link>
+        """
+      end
+    )
+  end
+
+  defp handle_upload_result({:error, :failure}) do
+    LiveToast.send_toast(:error, "Nie udało się wgrać pliku")
+  end
+
+  defp handle_upload_result(_), do: nil
 
   defp refetch_invoicing_entries(socket) do
     Bodyguard.permit!(Invoicing, :read, socket.assigns.current_user)

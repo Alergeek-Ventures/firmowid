@@ -161,25 +161,26 @@ defmodule Firmowid.BankData.ApiClient do
   @spec get_accounts_for_requisition(String.t()) :: {:ok, list(map())} | {:error, term()}
   def get_accounts_for_requisition(requisition_id) do
     with {:ok, requisition_body} <- get_requisition(requisition_id) do
-      accounts = Map.get(requisition_body, "accounts", [])
-
       results =
-        Enum.map(accounts, fn account_id ->
-          with {:ok, account_response} <- get_account_status(account_id),
-               {:ok, account_details} <- get_account_details(account_id),
-               {:ok, institution} <- get_institution(account_response["institution_id"]) do
-            {:ok,
-             account_response
-             |> Map.merge(account_details)
-             |> Map.put("institution", institution)}
-          end
-        end)
+        requisition_body
+        |> Map.get("accounts", [])
+        |> Enum.map(&fetch_enriched_account/1)
 
-      # If any account fetch failed, return the first error
       case Enum.find(results, &match?({:error, _}, &1)) do
         {:error, _} = error -> error
         nil -> {:ok, Enum.map(results, fn {:ok, account} -> account end)}
       end
+    end
+  end
+
+  defp fetch_enriched_account(account_id) do
+    with {:ok, account_response} <- get_account_status(account_id),
+         {:ok, account_details} <- get_account_details(account_id),
+         {:ok, institution} <- get_institution(account_response["institution_id"]) do
+      {:ok,
+       account_response
+       |> Map.merge(account_details)
+       |> Map.put("institution", institution)}
     end
   end
 

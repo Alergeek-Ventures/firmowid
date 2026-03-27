@@ -172,6 +172,11 @@ defmodule Firmowid.Accounts do
     provider_id = Map.get(attrs, "provider_id") || Map.get(attrs, :provider_id)
     email = Map.get(attrs, "email") || Map.get(attrs, :email)
 
+    find_existing_oauth_user(provider, provider_id) ||
+      check_email_and_create(attrs, provider, email)
+  end
+
+  defp find_existing_oauth_user(provider, provider_id) do
     # First check if user exists with this provider and provider_id (original OAuth signup)
     case get_user_by_provider(provider, provider_id) do
       %User{} = user ->
@@ -179,16 +184,14 @@ defmodule Firmowid.Accounts do
 
       nil ->
         # For Google, also check if they've linked their account via google_provider_id
-        case provider do
-          "google" ->
-            case get_user_by_google_id(provider_id) do
-              %User{} = user -> {:ok, user}
-              nil -> check_email_and_create(attrs, provider, email)
-            end
+        if provider == "google", do: find_by_google_id(provider_id)
+    end
+  end
 
-          _ ->
-            check_email_and_create(attrs, provider, email)
-        end
+  defp find_by_google_id(provider_id) do
+    case get_user_by_google_id(provider_id) do
+      %User{} = user -> {:ok, user}
+      nil -> nil
     end
   end
 
@@ -301,35 +304,35 @@ defmodule Firmowid.Accounts do
          {user_token, %User{} = verified_user} <- Repo.one(query, skip_organization_id: true),
          true <- user.id == verified_user.id,
          google_provider_id when not is_nil(google_provider_id) <- user_token.google_provider_id do
-      # Link the Google account
-      result =
-        Ecto.Multi.new()
-        |> Ecto.Multi.update(
-          :user,
-          User.link_google_changeset(verified_user, google_provider_id),
-          skip_organization_id: true
-        )
-        |> Ecto.Multi.delete_all(
-          :tokens,
-          UserToken.by_user_and_contexts_query(verified_user, ["link_google_account"]),
-          skip_organization_id: true
-        )
-        |> Repo.transaction()
-
-      case result do
-        {:ok, %{user: user}} ->
-          {:ok, user}
-
-        {:error, :user, %Ecto.Changeset{} = changeset, _} ->
-          # Check if the error is due to google_provider_id unique constraint violation
-          if has_unique_constraint_error?(changeset, :google_provider_id) do
-            {:error, :google_account_already_linked}
-          else
-            {:error, changeset}
-          end
-      end
+      execute_google_link(verified_user, google_provider_id)
     else
       _ -> {:error, :invalid_token}
+    end
+  end
+
+  defp execute_google_link(user, google_provider_id) do
+    result =
+      Ecto.Multi.new()
+      |> Ecto.Multi.update(
+        :user,
+        User.link_google_changeset(user, google_provider_id),
+        skip_organization_id: true
+      )
+      |> Ecto.Multi.delete_all(
+        :tokens,
+        UserToken.by_user_and_contexts_query(user, ["link_google_account"]),
+        skip_organization_id: true
+      )
+      |> Repo.transaction()
+
+    case result do
+      {:ok, %{user: linked_user}} ->
+        {:ok, linked_user}
+
+      {:error, :user, %Ecto.Changeset{} = changeset, _} ->
+        if has_unique_constraint_error?(changeset, :google_provider_id),
+          do: {:error, :google_account_already_linked},
+          else: {:error, changeset}
     end
   end
 

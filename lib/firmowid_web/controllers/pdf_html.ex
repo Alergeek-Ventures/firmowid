@@ -1,6 +1,8 @@
 defmodule FirmowidWeb.PdfHTML do
   use FirmowidWeb, :html
 
+  alias FirmowidWeb.SalesInvoices.Template
+
   attr :sales_invoice, :map, required: true
   attr :currency_rate, :map, required: false, default: nil
   attr :class, :string, default: nil
@@ -10,6 +12,6 @@ defmodule FirmowidWeb.PdfHTML do
   attr :reference_invoice, :map, default: nil
 
   def sales_invoice(assigns) do
-    FirmowidWeb.SalesInvoices.Template.sales_invoice(assigns)
+    Template.sales_invoice(assigns)
   end
 end

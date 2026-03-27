@@ -122,93 +122,64 @@ defmodule Firmowid.Finances do
   end
 
   def search_transactions(params \\ %{}) do
-    query = Map.get(params, :query)
-    only_unmatched = Map.get(params, :only_unmatched, true)
-    currency = Map.get(params, :currency)
-    amount_gt = Map.get(params, :amount_gt)
-    amount_lt = Map.get(params, :amount_lt)
-    date_from = Map.get(params, :date_from)
-    date_to = Map.get(params, :date_to)
-
-    base_query =
-      preload(from(Transaction, as: :transaction), [
-        :cost_invoices_transactions,
-        :sales_invoices_transactions
-      ])
-
-    base_query =
-      if only_unmatched do
-        base_query
-        |> where(
-          [t],
-          from(ci in CostInvoicesTransactions,
-            where: parent_as(:transaction).id == ci.transaction_id
-          )
-          |> union(
-            ^from(si in SalesInvoicesTransactions,
-              where: parent_as(:transaction).id == si.transaction_id
-            )
-          )
-          |> exists() == false
-        )
-        |> where([t], t.skip_invoicing == false)
-      else
-        base_query
-      end
-
-    base_query =
-      if is_nil(currency) do
-        base_query
-      else
-        where(base_query, [t], t.transaction_currency == ^currency)
-      end
-
-    base_query =
-      if is_nil(amount_gt) do
-        base_query
-      else
-        where(base_query, [t], t.transaction_amount >= ^amount_gt)
-      end
-
-    base_query =
-      if is_nil(amount_lt) do
-        base_query
-      else
-        where(base_query, [t], t.transaction_amount <= ^amount_lt)
-      end
-
-    base_query =
-      if is_nil(date_from) do
-        base_query
-      else
-        where(base_query, [t], t.booking_date >= ^date_from or t.value_date >= ^date_from)
-      end
-
-    base_query =
-      if is_nil(date_to) do
-        base_query
-      else
-        where(base_query, [t], t.booking_date <= ^date_to or t.value_date <= ^date_to)
-      end
-
-    base_query =
-      if is_nil(query) do
-        order_by(base_query, [t], desc: t.booking_date)
-      else
-        base_query
-        |> where(
-          [t],
-          t.debtor_name ~> ^query or
-            t.creditor_name ~> ^query or
-            t.remittance_information_unstructured ~> ^query or
-            t.transaction_currency ~> ^query
-        )
-        |> order_by([t], fragment("pdb.score(?) DESC", t.id))
-      end
-
-    base_query
+    from(Transaction, as: :transaction)
+    |> preload([
+      :cost_invoices_transactions,
+      :sales_invoices_transactions
+    ])
+    |> maybe_filter_unmatched(Map.get(params, :only_unmatched, true))
+    |> maybe_filter(:currency, Map.get(params, :currency))
+    |> maybe_filter(:amount_gt, Map.get(params, :amount_gt))
+    |> maybe_filter(:amount_lt, Map.get(params, :amount_lt))
+    |> maybe_filter(:date_from, Map.get(params, :date_from))
+    |> maybe_filter(:date_to, Map.get(params, :date_to))
+    |> maybe_search_transactions(Map.get(params, :query))
     |> limit(50)
     |> Repo.all()
+  end
+
+  defp maybe_filter_unmatched(query, false), do: query
+
+  defp maybe_filter_unmatched(query, _) do
+    query
+    |> where(
+      [t],
+      from(ci in CostInvoicesTransactions,
+        where: parent_as(:transaction).id == ci.transaction_id
+      )
+      |> union(
+        ^from(si in SalesInvoicesTransactions,
+          where: parent_as(:transaction).id == si.transaction_id
+        )
+      )
+      |> exists() == false
+    )
+    |> where([t], t.skip_invoicing == false)
+  end
+
+  defp maybe_filter(query, _field, nil), do: query
+  defp maybe_filter(query, :currency, val), do: where(query, [t], t.transaction_currency == ^val)
+  defp maybe_filter(query, :amount_gt, val), do: where(query, [t], t.transaction_amount >= ^val)
+  defp maybe_filter(query, :amount_lt, val), do: where(query, [t], t.transaction_amount <= ^val)
+
+  defp maybe_filter(query, :date_from, val), do: where(query, [t], t.booking_date >= ^val or t.value_date >= ^val)
+
+  defp maybe_filter(query, :date_to, val), do: where(query, [t], t.booking_date <= ^val or t.value_date <= ^val)
+
+  defp maybe_search_transactions(query, nil) do
+    order_by(query, [t], desc: t.booking_date)
+  end
+
+  defp maybe_search_transactions(query, search) do
+    query
+    |> where(
+      [t],
+      t.debtor_name ~> ^search or
+        t.creditor_name ~> ^search or
+        t.remittance_information_unstructured ~> ^search or
+        t.transaction_currency ~> ^search
+    )
+    |> order_by([t], fragment("pdb.score(?) DESC", t.id))
   end
 
   def list_unmatched_transactions(from, to) do

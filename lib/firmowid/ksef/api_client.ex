@@ -65,33 +65,33 @@ defmodule Firmowid.Ksef.ApiClient do
   end
 
   defp fetch_and_parse_public_key(target_usage) do
-    with {:ok, %{body: certificates}} <- Req.get(request(), url: "/security/public-key-certificates") do
-      certificate =
-        Enum.find_value(certificates, fn
-          %{"usage" => [^target_usage]} = certificate ->
-            now = DateTime.utc_now()
-            valid_from = parse_datetime!(certificate["validFrom"])
-            valid_to = parse_datetime!(certificate["validTo"])
-
-            if DateTime.after?(now, valid_from) and DateTime.before?(now, valid_to) do
-              {certificate["certificate"], valid_to}
-            end
-
-          _ ->
-            nil
-        end)
-
-      case certificate do
-        nil ->
-          {:error, :no_valid_certificate_found}
-
-        {certificate, valid_to} ->
-          certificate
-          |> Base.decode64!()
-          |> X509.Certificate.from_der!(:Certificate)
-          |> then(&{:ok, &1, valid_to})
-      end
+    with {:ok, %{body: certificates}} <- Req.get(request(), url: "/security/public-key-certificates"),
+         {cert_b64, valid_to} <- find_valid_certificate(certificates, target_usage) do
+      cert_b64
+      |> Base.decode64!()
+      |> X509.Certificate.from_der!(:Certificate)
+      |> then(&{:ok, &1, valid_to})
+    else
+      nil -> {:error, :no_valid_certificate_found}
+      {:error, _} = error -> error
     end
+  end
+
+  defp find_valid_certificate(certificates, target_usage) do
+    now = DateTime.utc_now()
+
+    Enum.find_value(certificates, fn
+      %{"usage" => [^target_usage]} = cert ->
+        valid_from = parse_datetime!(cert["validFrom"])
+        valid_to = parse_datetime!(cert["validTo"])
+
+        if DateTime.after?(now, valid_from) and DateTime.before?(now, valid_to) do
+          {cert["certificate"], valid_to}
+        end
+
+      _ ->
+        nil
+    end)
   end
 
   defp prepare_encrypted_token(ksef_token, timestamp) when is_binary(ksef_token) and is_binary(timestamp) do

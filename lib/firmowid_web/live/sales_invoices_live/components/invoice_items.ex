@@ -3,12 +3,13 @@ defmodule FirmowidWeb.SalesInvoicesLive.Components.InvoiceItems do
   use FirmowidWeb, :html
 
   alias Firmowid.Ksef.VatRate
+  alias Firmowid.Nbp.ApiClient, as: NbpApiClient
   alias Firmowid.SalesInvoices.SalesInvoice
   alias Firmowid.SalesInvoices.SalesInvoiceItem
 
   defp currency_options do
     # Use only currencies supported by NBP (plus PLN as base currency)
-    nbp_currencies = Firmowid.Nbp.ApiClient.supported_currencies()
+    nbp_currencies = NbpApiClient.supported_currencies()
     all_supported = ["PLN" | nbp_currencies]
 
     popular = ["PLN", "EUR", "USD"]

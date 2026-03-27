@@ -9,6 +9,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
   alias Firmowid.Accounts.Organization
   alias Firmowid.Analytics
   alias Firmowid.BankData
+  alias Firmowid.BankData.ApiClient
   alias Firmowid.Billing
   alias Firmowid.Blobs
   alias Firmowid.Finances
@@ -136,6 +137,10 @@ defmodule FirmowidWeb.SettingsLive.Index do
     {:noreply, new_socket}
   end
 
+  defp handle_progress(name, %{done?: false}, socket) when name in [:organization_avatar, :user_avatar] do
+    {:noreply, socket}
+  end
+
   defp handle_progress(name, entry, socket) when name in [:organization_avatar, :user_avatar] do
     if name == :organization_avatar do
       Bodyguard.permit!(
@@ -146,19 +151,15 @@ defmodule FirmowidWeb.SettingsLive.Index do
       )
     end
 
-    if entry.done? do
-      case consume_uploaded_entry(socket, entry, fn %{path: path} ->
-             {:ok, Blobs.create_blob(path, entry.client_type, entry.client_name)}
-           end) do
-        {:ok, blob} ->
-          handle_avatar_upload(name, blob.id, socket)
+    case consume_uploaded_entry(socket, entry, fn %{path: path} ->
+           {:ok, Blobs.create_blob(path, entry.client_type, entry.client_name)}
+         end) do
+      {:ok, blob} ->
+        handle_avatar_upload(name, blob.id, socket)
 
-        {:error, _err} ->
-          LiveToast.send_toast(:error, "Wystąpił błąd podczas aktualizacji zdjęcia.")
-          {:noreply, socket}
-      end
-    else
-      {:noreply, socket}
+      {:error, _err} ->
+        LiveToast.send_toast(:error, "Wystąpił błąd podczas aktualizacji zdjęcia.")
+        {:noreply, socket}
     end
   end
 
@@ -344,7 +345,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
 
       # Determine the correct transaction horizon for this institution (as in /dodaj)
       transaction_days =
-        case Firmowid.BankData.ApiClient.get_institution(bank_account.institution_id) do
+        case ApiClient.get_institution(bank_account.institution_id) do
           {:ok, %{"transaction_total_days" => days}} when is_integer(days) -> days
           _ -> 90
         end

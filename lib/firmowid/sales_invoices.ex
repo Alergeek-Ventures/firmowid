@@ -352,11 +352,22 @@ defmodule Firmowid.SalesInvoices do
   def parse_invoice_number(invoice_number) when is_binary(invoice_number) do
     case Regex.run(@invoice_number_regex, invoice_number) do
       [_, num, month, year] ->
-        {:ok, %{num: String.to_integer(num), month: String.to_integer(month), year: String.to_integer(year), series: nil}}
+        {:ok,
+         %{
+           num: String.to_integer(num),
+           month: String.to_integer(month),
+           year: String.to_integer(year),
+           series: nil
+         }}
 
       [_, num, month, year, series] ->
         {:ok,
-         %{num: String.to_integer(num), month: String.to_integer(month), year: String.to_integer(year), series: series}}
+         %{
+           num: String.to_integer(num),
+           month: String.to_integer(month),
+           year: String.to_integer(year),
+           series: series
+         }}
 
       nil ->
         :error
@@ -758,8 +769,13 @@ defmodule Firmowid.SalesInvoices do
 
     reference_invoice =
       original_invoice.corrections
-      |> Enum.reject(&(&1.id == invoice.id))
-      |> Enum.reject(&DateTime.after?(&1.locked_at || &1.inserted_at, invoice.locked_at || invoice.inserted_at))
+      |> Enum.reject(fn correction ->
+        correction.id == invoice.id or
+          DateTime.after?(
+            correction.locked_at || correction.inserted_at,
+            invoice.locked_at || invoice.inserted_at
+          )
+      end)
       |> Enum.max_by(&(&1.locked_at || &1.inserted_at), DateTime, fn -> original_invoice end)
       |> Repo.preload(:sales_invoice_items)
 
@@ -788,19 +804,21 @@ defmodule Firmowid.SalesInvoices do
   def delete_sales_invoice(%SalesInvoice{} = invoice) do
     if SalesInvoice.deletable?(invoice) do
       result = Repo.delete(invoice)
-
-      with {:ok, deleted_invoice} <- result do
-        if !correction_invoice?(deleted_invoice) do
-          case Billing.decrement(deleted_invoice.organization_id, :sales_invoices) do
-            {:ok, _} -> :ok
-            {:error, reason} -> Logger.warning("Failed to decrement sales_invoices limit: #{inspect(reason)}")
-          end
-        end
-      end
-
+      with {:ok, deleted} <- result, do: maybe_decrement_billing(deleted)
       result
     else
       {:error, :ksef_submitted}
+    end
+  end
+
+  defp maybe_decrement_billing(%SalesInvoice{} = invoice) do
+    if correction_invoice?(invoice), do: :ok, else: do_decrement_billing(invoice)
+  end
+
+  defp do_decrement_billing(invoice) do
+    case Billing.decrement(invoice.organization_id, :sales_invoices) do
+      {:ok, _} -> :ok
+      {:error, reason} -> Logger.warning("Failed to decrement sales_invoices limit: #{inspect(reason)}")
     end
   end
 

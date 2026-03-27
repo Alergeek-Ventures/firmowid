@@ -463,7 +463,8 @@ defmodule Firmowid.Timetracker do
           u.id == hr.user_id and
             hr.month == ^month and
             hr.year == ^year,
-        # Include user if they are currently assigned to the project OR have sessions for this project in the given month/year
+        # Include user if they are currently assigned to the project
+        # OR have sessions for this project in the given month/year
         where: not is_nil(pu.id) or not is_nil(s.user_id),
         order_by: [u.name, u.email],
         select: %{
@@ -632,14 +633,18 @@ defmodule Firmowid.Timetracker do
     |> Enum.reduce(%{}, fn month_date, acc ->
       project_id
       |> get_project_month_users_with_cost(month_date)
-      |> Enum.reduce(acc, fn user, users_acc ->
-        Map.update(users_acc, user.id, all_time_user_from_month(user), fn existing ->
-          merge_all_time_user(existing, user)
-        end)
-      end)
+      |> merge_month_users(acc)
     end)
     |> Map.values()
     |> Enum.sort_by(&{&1.removed_from_project, &1.name, &1.email})
+  end
+
+  defp merge_month_users(month_users, acc) do
+    Enum.reduce(month_users, acc, fn user, users_acc ->
+      Map.update(users_acc, user.id, all_time_user_from_month(user), fn existing ->
+        merge_all_time_user(existing, user)
+      end)
+    end)
   end
 
   defp all_time_user_from_month(user) do
@@ -1219,28 +1224,27 @@ defmodule Firmowid.Timetracker do
     user_id = Map.get(attrs, :user_id) || Map.get(attrs, "user_id")
 
     Repo.transaction(fn ->
-      # First, mark the current active salary as deleted if it exists
-      case get_latest_user_salary(user_id) do
-        nil ->
-          # no existing salary - proceed with creation
-          :ok
+      maybe_deactivate_current_salary(user_id)
 
-        existing_salary ->
-          # mark existing salary as deleted
-          case update_user_salary(existing_salary, %{deleted_at: Date.utc_today()}) do
-            {:ok, _} -> :ok
-            {:error, changeset} -> Repo.rollback(changeset)
-          end
-      end
-
-      # then create new salary record with deleted_at as NULL
-      case %UserSalary{}
-           |> UserSalary.changeset(attrs)
-           |> Repo.insert() do
+      case %UserSalary{} |> UserSalary.changeset(attrs) |> Repo.insert() do
         {:ok, salary} -> salary
         {:error, changeset} -> Repo.rollback(changeset)
       end
     end)
+  end
+
+  defp maybe_deactivate_current_salary(user_id) do
+    case get_latest_user_salary(user_id) do
+      nil -> :ok
+      salary -> deactivate_salary!(salary)
+    end
+  end
+
+  defp deactivate_salary!(salary) do
+    case update_user_salary(salary, %{deleted_at: Date.utc_today()}) do
+      {:ok, _} -> :ok
+      {:error, changeset} -> Repo.rollback(changeset)
+    end
   end
 
   def update_user_salary(%UserSalary{} = user_salary, attrs) do

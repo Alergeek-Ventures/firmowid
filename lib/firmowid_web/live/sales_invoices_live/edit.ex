@@ -22,62 +22,69 @@ defmodule FirmowidWeb.SalesInvoicesLive.Edit do
   def mount(%{"id" => id}, _session, socket) do
     invoice = SalesInvoices.get_sales_invoice(id)
 
-    if is_nil(invoice) do
-      {:ok,
-       socket
-       |> put_flash(:error, "Nie znaleziono faktury")
-       |> push_navigate(to: ~p"/sprzedazowe")}
-    else
-      current_user = socket.assigns.current_user
-      Bodyguard.permit!(SalesInvoices, :show, current_user, invoice)
-      Bodyguard.permit!(SalesInvoices, :update, current_user, invoice)
+    cond do
+      is_nil(invoice) ->
+        {:ok,
+         socket
+         |> put_flash(:error, "Nie znaleziono faktury")
+         |> push_navigate(to: ~p"/sprzedazowe")}
 
-      if SalesInvoice.editable?(invoice) do
-        {:ok, organization} = Accounts.get_organization(Repo.get_org_id())
-        bank_accounts = Finances.list_bank_accounts()
+      not SalesInvoice.editable?(invoice) ->
+        current_user = socket.assigns.current_user
+        Bodyguard.permit!(SalesInvoices, :show, current_user, invoice)
+        Bodyguard.permit!(SalesInvoices, :update, current_user, invoice)
 
-        invoice = Repo.preload(invoice, [:corrected_invoice])
-
-        invoice_changeset =
-          if SalesInvoice.ksef_submitted?(invoice) do
-            original_invoice = if invoice.ksef_invoice_kind == :kor, do: invoice.corrected_invoice, else: invoice
-            reference_invoice = invoice
-
-            original_invoice
-            |> SalesInvoice.prepare_correction_invoice_changeset(reference_invoice)
-            |> Ecto.Changeset.change(%{
-              issue_date: Date.utc_today(),
-              invoice_number: SalesInvoices.get_next_invoice_number(Date.utc_today(), series: "FK")
-            })
-            |> changeset()
-          else
-            changeset(invoice)
-          end
-
-        socket =
-          socket
-          |> assign(:invoice, invoice)
-          |> assign(:organization, organization)
-          |> assign(:reference_invoice, SalesInvoices.get_reference_invoice(invoice))
-          |> assign(:correction_reason_touched, false)
-          |> assign(:last_auto_reason, "")
-          |> assign_form_with_preview(invoice_changeset)
-          |> assign(:bank_accounts, bank_accounts)
-          |> assign(
-            :selected_bank_account,
-            Enum.find(bank_accounts, &(&1.iban == invoice.seller_account_number)) ||
-              Enum.find(bank_accounts, &(&1.is_default and &1.currency == invoice.currency))
-          )
-          |> assign(:counterparties, SalesInvoices.list_counterparties())
-          |> assign(:ksef_connected?, Ksef.get_credential() != nil)
-
-        {:ok, socket}
-      else
         {:ok,
          socket
          |> put_flash(:error, not_editable_message(invoice))
          |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}")}
-      end
+
+      true ->
+        current_user = socket.assigns.current_user
+        Bodyguard.permit!(SalesInvoices, :show, current_user, invoice)
+        Bodyguard.permit!(SalesInvoices, :update, current_user, invoice)
+
+        {:ok, mount_editable_invoice(socket, invoice)}
+    end
+  end
+
+  defp mount_editable_invoice(socket, invoice) do
+    {:ok, organization} = Accounts.get_organization(Repo.get_org_id())
+    bank_accounts = Finances.list_bank_accounts()
+    invoice = Repo.preload(invoice, [:corrected_invoice])
+    invoice_changeset = build_invoice_changeset(invoice)
+
+    socket
+    |> assign(:invoice, invoice)
+    |> assign(:organization, organization)
+    |> assign(:reference_invoice, SalesInvoices.get_reference_invoice(invoice))
+    |> assign(:correction_reason_touched, false)
+    |> assign(:last_auto_reason, "")
+    |> assign_form_with_preview(invoice_changeset)
+    |> assign(:bank_accounts, bank_accounts)
+    |> assign(
+      :selected_bank_account,
+      Enum.find(bank_accounts, &(&1.iban == invoice.seller_account_number)) ||
+        Enum.find(bank_accounts, &(&1.is_default and &1.currency == invoice.currency))
+    )
+    |> assign(:counterparties, SalesInvoices.list_counterparties())
+    |> assign(:ksef_connected?, Ksef.get_credential() != nil)
+  end
+
+  defp build_invoice_changeset(invoice) do
+    if SalesInvoice.ksef_submitted?(invoice) do
+      original_invoice =
+        if invoice.ksef_invoice_kind == :kor, do: invoice.corrected_invoice, else: invoice
+
+      original_invoice
+      |> SalesInvoice.prepare_correction_invoice_changeset(invoice)
+      |> Ecto.Changeset.change(%{
+        issue_date: Date.utc_today(),
+        invoice_number: SalesInvoices.get_next_invoice_number(Date.utc_today(), series: "FK")
+      })
+      |> changeset()
+    else
+      changeset(invoice)
     end
   end
 

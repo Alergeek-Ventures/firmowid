@@ -101,8 +101,7 @@ defmodule Mix.Tasks.Dev.Up do
   defp parse_env(content) do
     content
     |> String.split("\n", trim: true)
-    |> Enum.reject(&String.starts_with?(&1, "#"))
-    |> Enum.reject(&(String.trim(&1) == ""))
+    |> Enum.reject(fn line -> String.starts_with?(line, "#") or String.trim(line) == "" end)
     |> Map.new(fn line ->
       [key, value] = String.split(line, "=", parts: 2)
       {String.trim(key), String.trim(value)}
@@ -317,33 +316,31 @@ defmodule Mix.Tasks.Dev.Up do
   end
 
   defp ensure_wt_server_exists(admin_base_url, branch, port) do
-    hostname = dev_hostname(branch)
-
     wt_server_config = %{
       "listen" => [":8080"],
       "automatic_https" => %{"disable" => true},
       "routes" => []
     }
 
-    case Req.get(admin_base_url <> "/config/apps/http/servers/wt",
-           connect_options: [timeout: 200],
-           receive_timeout: 300
-         ) do
+    maybe_create_wt_server(admin_base_url, wt_server_config)
+
+    _ = Req.delete("#{admin_base_url}/id/wt:firmowid:#{branch}")
+
+    route_config = %{
+      "@id" => "wt:firmowid:#{branch}",
+      "match" => [%{"host" => [dev_hostname(branch)]}],
+      "handle" => [%{"handler" => "reverse_proxy", "upstreams" => [%{"dial" => "127.0.0.1:#{port}"}]}]
+    }
+
+    caddy_put(admin_base_url <> "/config/apps/http/servers/wt/routes/0", route_config, "register Caddy route")
+  end
+
+  defp maybe_create_wt_server(admin_base_url, wt_server_config) do
+    wt_url = admin_base_url <> "/config/apps/http/servers/wt"
+
+    case Req.get(wt_url, connect_options: [timeout: 200], receive_timeout: 300) do
       {:ok, %{status: 200, body: nil}} ->
-        case Req.put(admin_base_url <> "/config/apps/http/servers/wt",
-               json: wt_server_config,
-               connect_options: [timeout: 200],
-               receive_timeout: 1_000
-             ) do
-          {:ok, %{status: status}} when status in 200..299 ->
-            :ok
-
-          {:ok, %{status: status, body: body}} ->
-            {:error, "Failed to create Caddy wt server (status #{status}): #{inspect(body)}"}
-
-          {:error, reason} ->
-            {:error, "Failed to create Caddy wt server: #{inspect(reason)}"}
-        end
+        caddy_put(wt_url, wt_server_config, "create Caddy wt server")
 
       {:ok, %{status: status}} when status in 200..299 ->
         :ok
@@ -354,28 +351,13 @@ defmodule Mix.Tasks.Dev.Up do
       {:error, reason} ->
         {:error, "Failed to read Caddy wt server: #{inspect(reason)}"}
     end
+  end
 
-    _ = Req.delete("#{admin_base_url}/id/wt:firmowid:#{branch}")
-
-    route_config = %{
-      "@id" => "wt:firmowid:#{branch}",
-      "match" => [%{"host" => [hostname]}],
-      "handle" => [%{"handler" => "reverse_proxy", "upstreams" => [%{"dial" => "127.0.0.1:#{port}"}]}]
-    }
-
-    case Req.put("#{admin_base_url}/config/apps/http/servers/wt/routes/0",
-           json: route_config,
-           connect_options: [timeout: 200],
-           receive_timeout: 1_000
-         ) do
-      {:ok, %{status: status}} when status in 200..299 ->
-        :ok
-
-      {:ok, %{status: status, body: body}} ->
-        {:error, "Failed to register Caddy route (status #{status}): #{inspect(body)}"}
-
-      {:error, reason} ->
-        {:error, "Failed to register Caddy route: #{inspect(reason)}"}
+  defp caddy_put(url, json, operation) do
+    case Req.put(url, json: json, connect_options: [timeout: 200], receive_timeout: 1_000) do
+      {:ok, %{status: status}} when status in 200..299 -> :ok
+      {:ok, %{status: status, body: body}} -> {:error, "Failed to #{operation} (status #{status}): #{inspect(body)}"}
+      {:error, reason} -> {:error, "Failed to #{operation}: #{inspect(reason)}"}
     end
   end
 end

@@ -550,39 +550,7 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
   end
 
   defp render_cell(%{column: "status"} = assigns) do
-    value =
-      case assigns.invoicing_entry do
-        %{skip_invoicing: true} ->
-          "skipped"
-
-        %CostInvoice{} = invoice ->
-          if invoice.transactions == [] do
-            "unmatched"
-          else
-            "matched"
-          end
-
-        %SalesInvoice{} = invoice ->
-          case Ksef.get_submission_info(invoice).status do
-            :submitting -> "ksef_sending"
-            :failed -> "ksef_failed"
-            # :submitted or :not_submitted - use standard matched/unmatched logic
-            _ -> if invoice.transactions == [], do: "unmatched", else: "matched"
-          end
-
-        %Transaction{} = transaction ->
-          if transaction.cost_invoices_transactions != [] or
-               transaction.sales_invoices_transactions != [] do
-            "matched"
-          else
-            "unmatched"
-          end
-
-        _ ->
-          "unmatched"
-      end
-
-    assigns = assign(assigns, :status, value)
+    assigns = assign(assigns, :status, status_for_entry(assigns.invoicing_entry))
 
     ~H"<.render_cell column={@column} status={@status} invoicing_entry={@invoicing_entry} />"
   end
@@ -711,6 +679,27 @@ defmodule FirmowidWeb.InvoicingLive.InvoicingEntriesTable do
     {@value}
     """
   end
+
+  defp status_for_entry(%{skip_invoicing: true}), do: "skipped"
+
+  defp status_for_entry(%CostInvoice{transactions: []}), do: "unmatched"
+  defp status_for_entry(%CostInvoice{}), do: "matched"
+
+  defp status_for_entry(%SalesInvoice{} = invoice) do
+    case Ksef.get_submission_info(invoice).status do
+      :submitting -> "ksef_sending"
+      :failed -> "ksef_failed"
+      _ -> if invoice.transactions == [], do: "unmatched", else: "matched"
+    end
+  end
+
+  defp status_for_entry(%Transaction{} = t) do
+    if t.cost_invoices_transactions != [] or t.sales_invoices_transactions != [],
+      do: "matched",
+      else: "unmatched"
+  end
+
+  defp status_for_entry(_), do: "unmatched"
 
   attr :group, TransactionGroup, required: true
   attr :columns, :list, required: true

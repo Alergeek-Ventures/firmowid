@@ -113,39 +113,7 @@ defmodule FirmowidWeb.GoogleAuthController do
         UserAuth.log_in_user(conn, user)
 
       {:error, :email_already_exists} ->
-        # User exists with password - send email to link accounts
-        # Re-fetch user to ensure they still exist and handle race condition
-        case Accounts.get_user_by_email(user_params.email) do
-          %Accounts.User{} = user ->
-            Accounts.deliver_link_google_account_instructions(
-              user,
-              profile,
-              &url(~p"/auth/google/link/#{&1}")
-            )
-
-            conn
-            |> put_flash(
-              :info,
-              "Znaleźliśmy istniejące konto z tym adresem e-mail. Wysłaliśmy Ci wiadomość z instrukcjami, jak połączyć konto Google."
-            )
-            |> redirect(to: ~p"/zaloguj")
-
-          nil ->
-            # Rare race condition: user was deleted between checks
-            # Retry the whole OAuth flow since user no longer exists
-            case Accounts.get_or_create_oauth_user(user_params) do
-              {:ok, user} ->
-                Analytics.identify(user)
-                Analytics.track_event("user_log_in", user, %{auth_provider: "google"})
-
-                UserAuth.log_in_user(conn, user)
-
-              _error ->
-                conn
-                |> put_flash(:error, "Wystąpił błąd. Spróbuj ponownie.")
-                |> redirect(to: ~p"/zaloguj")
-            end
-        end
+        handle_email_already_exists(conn, user_params, profile)
 
       {:error, :provider_mismatch} ->
         conn
@@ -157,6 +125,42 @@ defmodule FirmowidWeb.GoogleAuthController do
 
         conn
         |> put_flash(:error, "Nie udało się utworzyć konta: #{inspect(errors)}")
+        |> redirect(to: ~p"/zaloguj")
+    end
+  end
+
+  defp handle_email_already_exists(conn, user_params, profile) do
+    case Accounts.get_user_by_email(user_params.email) do
+      %Accounts.User{} = user ->
+        Accounts.deliver_link_google_account_instructions(
+          user,
+          profile,
+          &url(~p"/auth/google/link/#{&1}")
+        )
+
+        conn
+        |> put_flash(
+          :info,
+          "Znaleźliśmy istniejące konto z tym adresem e-mail. Wysłaliśmy Ci wiadomość z instrukcjami, jak połączyć konto Google."
+        )
+        |> redirect(to: ~p"/zaloguj")
+
+      nil ->
+        # Rare race condition: user was deleted between checks
+        retry_oauth_flow(conn, user_params)
+    end
+  end
+
+  defp retry_oauth_flow(conn, user_params) do
+    case Accounts.get_or_create_oauth_user(user_params) do
+      {:ok, user} ->
+        Analytics.identify(user)
+        Analytics.track_event("user_log_in", user, %{auth_provider: "google"})
+        UserAuth.log_in_user(conn, user)
+
+      _error ->
+        conn
+        |> put_flash(:error, "Wystąpił błąd. Spróbuj ponownie.")
         |> redirect(to: ~p"/zaloguj")
     end
   end

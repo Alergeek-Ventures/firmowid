@@ -1,3 +1,7 @@
+# SSE streaming transform handles 8+ event types in a single Stream.transform callback;
+# splitting would scatter tightly-coupled protocol logic. Will be revisited during ReqLLM migration.
+# credo:disable-for-this-file Credo.Check.Refactor.CyclomaticComplexity
+# credo:disable-for-this-file Credo.Check.Refactor.Nesting
 defmodule Firmowid.Invoicing.Matching.Assistant.Engine do
   @moduledoc """
   Generic engine for LLM-powered assistants with function/tool support.

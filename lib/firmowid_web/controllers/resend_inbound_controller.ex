@@ -2,6 +2,7 @@ defmodule FirmowidWeb.ResendInboundController do
   use FirmowidWeb, :controller
 
   alias Firmowid.Accounts
+  alias Firmowid.Accounts.Organization
   alias Firmowid.CostInvoices.InboundEmail
   alias Firmowid.CostInvoices.InboundEmailWorker
   alias Firmowid.Repo
@@ -51,7 +52,7 @@ defmodule FirmowidWeb.ResendInboundController do
     case String.split(email, "@") do
       [nickname, "firmowid.pl"] ->
         # Look up organization by nickname
-        case Repo.get_by(Firmowid.Accounts.Organization, [inbound_email_nickname: nickname], skip_organization_id: true) do
+        case Repo.get_by(Organization, [inbound_email_nickname: nickname], skip_organization_id: true) do
           nil -> nil
           org -> {:ok, org.id}
         end

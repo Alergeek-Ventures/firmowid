@@ -9,6 +9,46 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   alias FirmowidWeb.TimetrackerLive.GroupedSessionForm
   alias FirmowidWeb.TimetrackerLive.SessionForm
 
+  @day_names %{
+    1 => "Poniedziałek",
+    2 => "Wtorek",
+    3 => "Środa",
+    4 => "Czwartek",
+    5 => "Piątek",
+    6 => "Sobota",
+    7 => "Niedziela"
+  }
+
+  @month_names_genitive %{
+    1 => "stycznia",
+    2 => "lutego",
+    3 => "marca",
+    4 => "kwietnia",
+    5 => "maja",
+    6 => "czerwca",
+    7 => "lipca",
+    8 => "sierpnia",
+    9 => "września",
+    10 => "października",
+    11 => "listopada",
+    12 => "grudnia"
+  }
+
+  @month_names_locative %{
+    1 => "styczniu",
+    2 => "lutym",
+    3 => "marcu",
+    4 => "kwietniu",
+    5 => "maju",
+    6 => "czerwcu",
+    7 => "lipcu",
+    8 => "sierpniu",
+    9 => "wrześniu",
+    10 => "październiku",
+    11 => "listopadzie",
+    12 => "grudniu"
+  }
+
   def mount(_params, _session, socket) do
     Bodyguard.permit!(Timetracker, :read_user_sessions, socket.assigns.current_user)
     Bodyguard.permit!(Timetracker, :read_user_projects, socket.assigns.current_user)
@@ -395,52 +435,15 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
 
   def format_day_header(%Date{} = date) do
     day_name =
-      Calendar.strftime(date, "%A",
-        day_of_week_names: fn number ->
-          case number do
-            1 -> "Poniedziałek"
-            2 -> "Wtorek"
-            3 -> "Środa"
-            4 -> "Czwartek"
-            5 -> "Piątek"
-            6 -> "Sobota"
-            7 -> "Niedziela"
-            _ -> "Unknown"
-          end
-        end
-      )
+      Calendar.strftime(date, "%A", day_of_week_names: fn number -> Map.get(@day_names, number, "Unknown") end)
 
     day_number = Calendar.strftime(date, "%d.%m")
     "#{day_name} (#{day_number})"
   end
 
   def format_current_day_header(%Date{} = date) do
-    day_name =
-      case Date.day_of_week(date) do
-        1 -> "Poniedziałek"
-        2 -> "Wtorek"
-        3 -> "Środa"
-        4 -> "Czwartek"
-        5 -> "Piątek"
-        6 -> "Sobota"
-        7 -> "Niedziela"
-      end
-
-    month_name =
-      case date.month do
-        1 -> "stycznia"
-        2 -> "lutego"
-        3 -> "marca"
-        4 -> "kwietnia"
-        5 -> "maja"
-        6 -> "czerwca"
-        7 -> "lipca"
-        8 -> "sierpnia"
-        9 -> "września"
-        10 -> "października"
-        11 -> "listopada"
-        12 -> "grudnia"
-      end
+    day_name = Map.fetch!(@day_names, Date.day_of_week(date))
+    month_name = Map.fetch!(@month_names_genitive, date.month)
 
     "#{day_name}, #{date.day}. #{month_name}"
   end
@@ -482,21 +485,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     minutes = rem(div(total_seconds, 60), 60)
     percentage = round(total_seconds / (160 * 3600) * 100)
 
-    current_month =
-      case now.month do
-        1 -> "styczniu"
-        2 -> "lutym"
-        3 -> "marcu"
-        4 -> "kwietniu"
-        5 -> "maju"
-        6 -> "czerwcu"
-        7 -> "lipcu"
-        8 -> "sierpniu"
-        9 -> "wrześniu"
-        10 -> "październiku"
-        11 -> "listopadzie"
-        12 -> "grudniu"
-      end
+    current_month = Map.fetch!(@month_names_locative, now.month)
 
     assign(socket, :month_stats, %{
       hours: hours,
