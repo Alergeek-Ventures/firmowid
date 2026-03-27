@@ -22,44 +22,281 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
   require Resource
 
-  code_interface do
-    define(:list_user_sessions, args: [:user_id])
-    define(:get_current)
-    define(:most_recent, args: [:user_id])
-    define(:by_ids, args: [:ids])
-    define(:start)
-    define(:stop)
-    define(:create)
-    define(:update)
-    define(:destroy)
-    define(:weeks_with_sessions, args: [:user_id])
-    define(:grouped_user_project_sessions, args: [:user_id, :project_id, :month, :year])
-    define(:months_with_sessions)
-    define(:total_time_worked)
-    define(:project_tasks_csv, args: [:project_id, :month, :year])
-    define(:most_demanding_project, args: [:month, :year])
-  end
-
   postgres do
-    table("sessions")
+    table "sessions"
     repo(Firmowid.Repo)
     migrate?(false)
   end
 
+  code_interface do
+    define :list_user_sessions, args: [:user_id]
+    define :get_current
+    define :most_recent, args: [:user_id]
+    define :by_ids, args: [:ids]
+    define :start
+    define :stop
+    define :create
+    define :update
+    define :destroy
+    define :weeks_with_sessions, args: [:user_id]
+    define :grouped_user_project_sessions, args: [:user_id, :project_id, :month, :year]
+    define :months_with_sessions
+    define :total_time_worked
+    define :project_tasks_csv, args: [:project_id, :month, :year]
+    define :most_demanding_project, args: [:month, :year]
+  end
+
+  actions do
+    defaults [:read, :destroy]
+
+    # ── Read actions ──────────────────────────────────────────────────
+
+    read :list_user_sessions do
+      description "List a user's sessions, optionally filtered to those starting on or after a date."
+
+      argument :user_id, :uuid, allow_nil?: false
+      argument :after_date, :date
+
+      prepare build(sort: [start_datetime: :desc], load: [:duration, :lockdown])
+
+      filter expr(user_id == ^arg(:user_id))
+
+      prepare fn query, _context ->
+        case Ash.Query.get_argument(query, :after_date) do
+          nil ->
+            query
+
+          date ->
+            dt = DateTime.new!(date, ~T[00:00:00], "Etc/UTC")
+            Ash.Query.do_filter(query, start_datetime: [greater_than_or_equal: dt])
+        end
+      end
+    end
+
+    read :get_current do
+      description "Get the currently running session (no end_datetime) for the acting user."
+      get? true
+
+      prepare build(sort: [start_datetime: :desc], limit: 1, load: [:duration])
+
+      filter expr(is_nil(end_datetime))
+
+      prepare fn query, context ->
+        case context.actor do
+          %{id: actor_id} -> Ash.Query.do_filter(query, user_id: actor_id)
+          _ -> query
+        end
+      end
+    end
+
+    read :most_recent do
+      description "Get the most recent session for a user."
+      get? true
+
+      argument :user_id, :uuid, allow_nil?: false
+
+      prepare build(sort: [start_datetime: :desc], limit: 1)
+
+      filter expr(user_id == ^arg(:user_id))
+    end
+
+    read :by_ids do
+      description "Fetch sessions by a list of IDs."
+
+      argument :ids, {:array, :uuid}, allow_nil?: false
+
+      prepare build(load: [:duration])
+
+      filter expr(id in ^arg(:ids))
+    end
+
+    # ── Write actions ─────────────────────────────────────────────────
+
+    create :start do
+      description "Start a new time tracking session (auto-sets start_datetime to now)."
+      accept [:title, :project_id, :is_remote]
+
+      change set_attribute(:start_datetime, &DateTime.utc_now/0)
+      change relate_actor(:user)
+    end
+
+    create :create do
+      description "Create a session with explicit attributes (for import or admin use)."
+      accept [:title, :start_datetime, :end_datetime, :project_id, :is_remote, :user_id]
+    end
+
+    update :stop do
+      description "Stop a running session by setting end_datetime to now."
+      accept []
+      require_atomic? false
+
+      change set_attribute(:end_datetime, &DateTime.utc_now/0)
+    end
+
+    update :update do
+      description "Update session attributes."
+      accept [:title, :start_datetime, :end_datetime, :project_id, :is_remote]
+      require_atomic? false
+    end
+
+    # ── Generic actions (non-standard return shapes) ──────────────────
+
+    action :weeks_with_sessions, {:array, :date} do
+      description "Distinct weeks (as Monday dates) that have sessions for a user."
+
+      argument :user_id, :uuid, allow_nil?: false
+      argument :after_date, :date
+      argument :limit, :integer
+      argument :timezone, :string, default: "Etc/UTC"
+
+      run fn input, _context ->
+        {:ok, query_weeks_with_sessions(input.arguments)}
+      end
+    end
+
+    action :grouped_user_project_sessions, {:array, :map} do
+      description "Sessions grouped by title for a user+project+month/year, returning title + sum duration (seconds)."
+
+      argument :user_id, :uuid, allow_nil?: false
+      argument :project_id, :uuid, allow_nil?: false
+      argument :month, :integer, allow_nil?: false
+      argument :year, :integer, allow_nil?: false
+
+      run fn input, _context ->
+        {:ok, query_grouped_user_project_sessions(input.arguments)}
+      end
+    end
+
+    action :months_with_sessions, {:array, :naive_datetime} do
+      description "Distinct months (as date_trunc values) that have sessions. Optionally filtered by user or project."
+
+      argument :user_id, :uuid
+      argument :project_id, :uuid
+
+      run fn input, _context ->
+        {:ok, query_months_with_sessions(input.arguments)}
+      end
+    end
+
+    action :total_time_worked, :integer do
+      description "Sum of session durations (seconds). When month/year are given, scoped to that month; when omitted, all-time. Optionally filtered by user and/or project."
+
+      argument :month, :integer
+      argument :year, :integer
+      argument :user_id, :uuid
+      argument :project_id, :uuid
+
+      run fn input, _context ->
+        {:ok, query_total_time_worked(input.arguments)}
+      end
+    end
+
+    action :project_tasks_csv, :string do
+      description "CSV of tasks (grouped sessions) for a project in a given month, with duration in ceiled hours."
+
+      argument :project_id, :uuid, allow_nil?: false
+      argument :month, :integer, allow_nil?: false
+      argument :year, :integer, allow_nil?: false
+
+      run fn input, _context ->
+        {:ok, query_project_tasks_csv(input.arguments)}
+      end
+    end
+
+    action :most_demanding_project, :map do
+      description "The project with the most time worked in a given month/year."
+
+      argument :month, :integer, allow_nil?: false
+      argument :year, :integer, allow_nil?: false
+
+      run fn input, _context ->
+        {:ok, query_most_demanding_project(input.arguments)}
+      end
+    end
+  end
+
+  policies do
+    bypass actor_attribute_equals(:role, :admin) do
+      authorize_if always()
+    end
+
+    policy [action_type(:read), actor_attribute_equals(:role, :employee)] do
+      authorize_if relates_to_actor_via(:user)
+    end
+
+    # Stopping a running session is always allowed (the old Bodyguard rule
+    # checked `end_datetime == nil` to bypass lockdown).
+    policy [action(:stop), actor_attribute_equals(:role, :employee)] do
+      authorize_if relates_to_actor_via(:user)
+    end
+
+    # For all other writes, the session's month must not have a submitted
+    # hours record, AND the user must own the session.
+    policy [
+      action_type([:create, :update, :destroy]),
+      actor_attribute_equals(:role, :employee)
+    ] do
+      forbid_unless HoursRecordNotSubmitted
+      authorize_if relates_to_actor_via(:user)
+    end
+
+    policy [action_type(:action), actor_attribute_equals(:role, :employee)] do
+      authorize_if always()
+    end
+  end
+
+  validations do
+    validate {DatetimeOrder, start_field: :start_datetime, end_field: :end_datetime},
+      on: [:create, :update]
+
+    validate {ProjectAccess, []},
+      on: [:create, :update],
+      where: [changing(:project_id)]
+  end
+
   multitenancy do
-    strategy(:attribute)
-    attribute(:organization_id)
+    strategy :attribute
+    attribute :organization_id
   end
 
   attributes do
-    uuid_v7_primary_key(:id)
+    uuid_v7_primary_key :id
 
-    attribute(:title, :string, public?: true, allow_nil?: false)
-    attribute(:start_datetime, :utc_datetime, public?: true, allow_nil?: false)
-    attribute(:end_datetime, :utc_datetime, public?: true)
-    attribute(:is_remote, :boolean, public?: true, default: false)
+    attribute :title, :string, public?: true, allow_nil?: false
+    attribute :start_datetime, :utc_datetime, public?: true, allow_nil?: false
+    attribute :end_datetime, :utc_datetime, public?: true
+    attribute :is_remote, :boolean, public?: true, default: false
 
     Resource.firmowid_timestamps()
+  end
+
+  relationships do
+    belongs_to :user, Firmowid.Ash.Core.User do
+      allow_nil? false
+      attribute_writable? true
+    end
+
+    belongs_to :project, Project do
+      allow_nil? false
+      attribute_writable? true
+    end
+
+    belongs_to :organization, Firmowid.Ash.Core.Organization do
+      allow_nil? false
+    end
+
+    has_many :hours_records, Firmowid.Ash.Timetracker.HoursRecord do
+      no_attributes? true
+
+      description "HoursRecords matching this session's user, month, year, and org — used for lockdown checks."
+
+      filter expr(
+               user_id == parent(user_id) and
+                 organization_id == parent(organization_id) and
+                 month == fragment("EXTRACT(MONTH FROM ?)::integer", parent(start_datetime)) and
+                 year == fragment("EXTRACT(YEAR FROM ?)::integer", parent(start_datetime))
+             )
+    end
   end
 
   calculations do
@@ -72,247 +309,15 @@ defmodule Firmowid.Ash.Timetracker.Session do
                   fragment("EXTRACT(EPOCH FROM (? - ?))::integer", end_datetime, start_datetime)
                 end
               ) do
-      public?(true)
+      public? true
     end
 
     calculate :lockdown,
               :boolean,
-              expr(
-                fragment(
-                  "EXISTS (SELECT 1 FROM hours_records hr WHERE hr.user_id = ? AND hr.month = EXTRACT(MONTH FROM ?)::integer AND hr.year = EXTRACT(YEAR FROM ?)::integer AND hr.organization_id = ?)",
-                  user_id,
-                  start_datetime,
-                  start_datetime,
-                  organization_id
-                )
-              ) do
-      public?(true)
-      description("Whether an hours record has been submitted for this session's month, locking edits.")
-    end
-  end
+              expr(exists(hours_records, true)) do
+      public? true
 
-  relationships do
-    belongs_to :user, Firmowid.Ash.Core.User do
-      allow_nil?(false)
-      attribute_writable?(true)
-    end
-
-    belongs_to :project, Project do
-      allow_nil?(false)
-      attribute_writable?(true)
-    end
-
-    belongs_to :organization, Firmowid.Ash.Core.Organization do
-      allow_nil?(false)
-    end
-  end
-
-  validations do
-    validate({DatetimeOrder, start_field: :start_datetime, end_field: :end_datetime},
-      on: [:create, :update]
-    )
-
-    validate({ProjectAccess, []},
-      on: [:create, :update],
-      where: [changing(:project_id)]
-    )
-  end
-
-  actions do
-    defaults([:read, :destroy])
-
-    # ── Read actions ──────────────────────────────────────────────────
-
-    read :list_user_sessions do
-      description("List a user's sessions, optionally filtered to those starting on or after a date.")
-
-      argument(:user_id, :uuid, allow_nil?: false)
-      argument(:after_date, :date)
-
-      prepare(build(sort: [start_datetime: :desc], load: [:duration, :lockdown]))
-
-      filter(expr(user_id == ^arg(:user_id)))
-
-      prepare(fn query, _context ->
-        case Ash.Query.get_argument(query, :after_date) do
-          nil ->
-            query
-
-          date ->
-            dt = DateTime.new!(date, ~T[00:00:00], "Etc/UTC")
-            Ash.Query.do_filter(query, start_datetime: [greater_than_or_equal: dt])
-        end
-      end)
-    end
-
-    read :get_current do
-      description("Get the currently running session (no end_datetime) for the acting user.")
-      get?(true)
-
-      prepare(build(sort: [start_datetime: :desc], limit: 1, load: [:duration]))
-
-      filter(expr(is_nil(end_datetime)))
-
-      prepare(fn query, context ->
-        case context.actor do
-          %{id: actor_id} -> Ash.Query.do_filter(query, user_id: actor_id)
-          _ -> query
-        end
-      end)
-    end
-
-    read :most_recent do
-      description("Get the most recent session for a user.")
-      get?(true)
-
-      argument(:user_id, :uuid, allow_nil?: false)
-
-      prepare(build(sort: [start_datetime: :desc], limit: 1))
-
-      filter(expr(user_id == ^arg(:user_id)))
-    end
-
-    read :by_ids do
-      description("Fetch sessions by a list of IDs.")
-
-      argument(:ids, {:array, :uuid}, allow_nil?: false)
-
-      prepare(build(load: [:duration]))
-
-      filter(expr(id in ^arg(:ids)))
-    end
-
-    # ── Write actions ─────────────────────────────────────────────────
-
-    create :start do
-      description("Start a new time tracking session (auto-sets start_datetime to now).")
-      accept([:title, :project_id, :is_remote])
-
-      change(set_attribute(:start_datetime, &DateTime.utc_now/0))
-      change(relate_actor(:user))
-    end
-
-    create :create do
-      description("Create a session with explicit attributes (for import or admin use).")
-      accept([:title, :start_datetime, :end_datetime, :project_id, :is_remote, :user_id])
-    end
-
-    update :stop do
-      description("Stop a running session by setting end_datetime to now.")
-      accept([])
-      require_atomic?(false)
-
-      change(set_attribute(:end_datetime, &DateTime.utc_now/0))
-    end
-
-    update :update do
-      description("Update session attributes.")
-      accept([:title, :start_datetime, :end_datetime, :project_id, :is_remote])
-      require_atomic?(false)
-    end
-
-    # ── Generic actions (non-standard return shapes) ──────────────────
-
-    action :weeks_with_sessions, {:array, :date} do
-      description("Distinct weeks (as Monday dates) that have sessions for a user.")
-
-      argument(:user_id, :uuid, allow_nil?: false)
-      argument(:after_date, :date)
-      argument(:limit, :integer)
-      argument(:timezone, :string, default: "Etc/UTC")
-
-      run(fn input, _context ->
-        {:ok, query_weeks_with_sessions(input.arguments)}
-      end)
-    end
-
-    action :grouped_user_project_sessions, {:array, :map} do
-      description("Sessions grouped by title for a user+project+month/year, returning title + sum duration (seconds).")
-
-      argument(:user_id, :uuid, allow_nil?: false)
-      argument(:project_id, :uuid, allow_nil?: false)
-      argument(:month, :integer, allow_nil?: false)
-      argument(:year, :integer, allow_nil?: false)
-
-      run(fn input, _context ->
-        {:ok, query_grouped_user_project_sessions(input.arguments)}
-      end)
-    end
-
-    action :months_with_sessions, {:array, :naive_datetime} do
-      description("Distinct months (as date_trunc values) that have sessions. Optionally filtered by user or project.")
-
-      argument(:user_id, :uuid)
-      argument(:project_id, :uuid)
-
-      run(fn input, _context ->
-        {:ok, query_months_with_sessions(input.arguments)}
-      end)
-    end
-
-    action :total_time_worked, :integer do
-      description(
-        "Sum of session durations (seconds). When month/year are given, scoped to that month; when omitted, all-time. Optionally filtered by user and/or project."
-      )
-
-      argument(:month, :integer)
-      argument(:year, :integer)
-      argument(:user_id, :uuid)
-      argument(:project_id, :uuid)
-
-      run(fn input, _context ->
-        {:ok, query_total_time_worked(input.arguments)}
-      end)
-    end
-
-    action :project_tasks_csv, :string do
-      description("CSV of tasks (grouped sessions) for a project in a given month, with duration in ceiled hours.")
-
-      argument(:project_id, :uuid, allow_nil?: false)
-      argument(:month, :integer, allow_nil?: false)
-      argument(:year, :integer, allow_nil?: false)
-
-      run(fn input, _context ->
-        {:ok, query_project_tasks_csv(input.arguments)}
-      end)
-    end
-
-    action :most_demanding_project, :map do
-      description("The project with the most time worked in a given month/year.")
-
-      argument(:month, :integer, allow_nil?: false)
-      argument(:year, :integer, allow_nil?: false)
-
-      run(fn input, _context ->
-        {:ok, query_most_demanding_project(input.arguments)}
-      end)
-    end
-  end
-
-  policies do
-    bypass actor_attribute_equals(:role, :admin) do
-      authorize_if(always())
-    end
-
-    policy [action_type(:read), actor_attribute_equals(:role, :employee)] do
-      authorize_if(relates_to_actor_via(:user))
-    end
-
-    # Stopping a running session is always allowed (the old Bodyguard rule
-    # checked `end_datetime == nil` to bypass lockdown).
-    policy [action(:stop), actor_attribute_equals(:role, :employee)] do
-      authorize_if(relates_to_actor_via(:user))
-    end
-
-    # For all other writes, the session's month must not have a submitted
-    # hours record, AND the user must own the session.
-    policy [action_type([:create, :update, :destroy]), actor_attribute_equals(:role, :employee)] do
-      forbid_unless(HoursRecordNotSubmitted)
-      authorize_if(relates_to_actor_via(:user))
-    end
-
-    policy [action_type(:action), actor_attribute_equals(:role, :employee)] do
-      authorize_if(always())
+      description "Whether an hours record has been submitted for this session's month, locking edits."
     end
   end
 

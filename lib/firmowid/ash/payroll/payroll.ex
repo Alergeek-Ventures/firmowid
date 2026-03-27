@@ -9,12 +9,12 @@ defmodule Firmowid.Ash.Payroll do
   """
   use Ash.Domain
 
-  authorization do
-    authorize(:by_default)
-    require_actor?(true)
+  resources do
+    resource Firmowid.Ash.Payroll.UserSalary
   end
 
-  resources do
-    resource(Firmowid.Ash.Payroll.UserSalary)
+  authorization do
+    authorize :by_default
+    require_actor? true
   end
 end

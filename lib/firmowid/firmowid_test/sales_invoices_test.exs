@@ -29,7 +29,8 @@ defmodule Firmowid.SalesInvoicesTest do
     test "normalizes item vat_rate to oo on update when reverse charge is enabled" do
       _user = user_fixture()
 
-      create_attrs = Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{vat_rate: "23"})])
+      create_attrs =
+        Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{vat_rate: "23"})])
 
       assert {:ok, invoice} = SalesInvoices.create_sales_invoice(%SalesInvoice{}, create_attrs)
 
@@ -59,7 +60,9 @@ defmodule Firmowid.SalesInvoicesTest do
       changeset = SalesInvoice.changeset(invoice, %{is_reverse_charge: true})
       assert {:ok, preview_invoice} = Ecto.Changeset.apply_action(changeset, :update)
 
-      assert Enum.all?(preview_invoice.sales_invoice_items, fn %SalesInvoiceItem{vat_rate: vat_rate} ->
+      assert Enum.all?(preview_invoice.sales_invoice_items, fn %SalesInvoiceItem{
+                                                                 vat_rate: vat_rate
+                                                               } ->
                vat_rate == "oo"
              end)
     end

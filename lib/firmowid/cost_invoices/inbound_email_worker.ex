@@ -33,6 +33,7 @@ defmodule Firmowid.CostInvoices.InboundEmailWorker do
 
       {:error, :unexpected_sender} ->
         Logger.warning("Rejecting email #{id} from unexpected sender #{inbound_email.sender_email}")
+
         CostInvoices.mark_inbound_email_processed(inbound_email, :unexpected_sender)
         {:error, :unexpected_sender}
 
@@ -79,8 +80,11 @@ defmodule Firmowid.CostInvoices.InboundEmailWorker do
   end
 
   defp valid_attachment?(attachment) do
-    content_type = attachment["content_type"] || attachment[:content_type] || attachment["contentType"]
-    String.starts_with?(content_type, "application/pdf") or String.starts_with?(content_type, "image/")
+    content_type =
+      attachment["content_type"] || attachment[:content_type] || attachment["contentType"]
+
+    String.starts_with?(content_type, "application/pdf") or
+      String.starts_with?(content_type, "image/")
   end
 
   # Attachment scheduling - download and pass to upload_cost_invoice
@@ -110,7 +114,8 @@ defmodule Firmowid.CostInvoices.InboundEmailWorker do
 
     with {:ok, binary} <- Client.download_attachment(download_url),
          {:ok, temp_path} <- write_to_temp_file(binary, filename),
-         {:ok, _blob} <- CostInvoices.upload_cost_invoice(temp_path, content_type, filename, inbound_email_id) do
+         {:ok, _blob} <-
+           CostInvoices.upload_cost_invoice(temp_path, content_type, filename, inbound_email_id) do
       {:ok, filename}
     else
       {:error, reason} = error ->

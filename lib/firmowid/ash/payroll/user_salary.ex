@@ -23,104 +23,64 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
 
   require Resource
 
-  code_interface do
-    define(:create)
-    define(:create_with_retire)
-    define(:retire)
-    define(:get_latest, args: [:user_id])
-    define(:as_of, args: [:date])
-    define(:salaries_csv, args: [:month, :year])
-  end
-
   postgres do
-    table("user_salaries")
+    table "user_salaries"
     repo(Firmowid.Repo)
     migrate?(false)
   end
 
-  multitenancy do
-    strategy(:attribute)
-    attribute(:organization_id)
-  end
-
-  attributes do
-    uuid_v7_primary_key(:id)
-
-    attribute :hourly_rate, :decimal do
-      public?(true)
-      allow_nil?(false)
-      constraints(min: 0)
-    end
-
-    attribute(:deleted_at, :date, public?: true)
-
-    Resource.firmowid_timestamps()
-  end
-
-  relationships do
-    belongs_to :user, User do
-      allow_nil?(false)
-      attribute_writable?(true)
-    end
-
-    belongs_to :organization, Firmowid.Ash.Core.Organization do
-      allow_nil?(false)
-    end
-  end
-
-  identities do
-    identity :active_user_salary, [:user_id, :organization_id] do
-      nils_distinct?(false)
-      where(expr(is_nil(deleted_at)))
-      message("User already has an active salary record")
-    end
+  code_interface do
+    define :create
+    define :create_with_retire
+    define :retire
+    define :get_latest, args: [:user_id]
+    define :as_of, args: [:date]
+    define :salaries_csv, args: [:month, :year]
   end
 
   actions do
-    defaults([:read, :destroy, update: :*])
+    defaults [:read, :destroy, update: :*]
 
     create :create do
-      accept([:hourly_rate, :user_id])
+      accept [:hourly_rate, :user_id]
     end
 
     update :retire do
-      accept([])
-      change(set_attribute(:deleted_at, &Date.utc_today/0))
+      accept []
+      change set_attribute(:deleted_at, &Date.utc_today/0)
     end
 
     create :create_with_retire do
-      description("Retires any existing active salary for the user, then creates the new one.")
-      accept([:hourly_rate, :user_id])
-      change(Firmowid.Ash.Payroll.Changes.RetireExistingSalary)
+      description "Retires any existing active salary for the user, then creates the new one."
+      accept [:hourly_rate, :user_id]
+      change Firmowid.Ash.Payroll.Changes.RetireExistingSalary
     end
 
     read :get_latest do
-      description("Returns the active (non-retired) salary for a given user.")
-      get?(true)
-      prepare(build(limit: 1))
+      description "Returns the active (non-retired) salary for a given user."
+      get? true
+      prepare build(limit: 1)
 
       argument :user_id, :uuid do
-        allow_nil?(false)
+        allow_nil? false
       end
 
-      prepare(fn query, _context ->
+      prepare fn query, _context ->
         user_id = Ash.Query.get_argument(query, :user_id)
         Ash.Query.do_filter(query, user_id: user_id, deleted_at: [is_nil: true])
-      end)
+      end
     end
 
     read :as_of do
-      description("Returns salaries active on a given date (end-of-month lookup). Optionally filter to a single user.")
+      description "Returns salaries active on a given date (end-of-month lookup). Optionally filter to a single user."
 
       argument :date, :date do
-        allow_nil?(false)
+        allow_nil? false
       end
 
-      argument(:user_id, :uuid)
+      argument :user_id, :uuid
 
-      prepare(fn query, _context ->
-        import Ecto.Query, only: [dynamic: 2]
-
+      prepare fn query, _context ->
         date = Ash.Query.get_argument(query, :date)
         as_of_date = Date.end_of_month(date)
         as_of_end_dt = DateTime.new!(as_of_date, ~T[23:59:59], "Etc/UTC")
@@ -141,23 +101,23 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
             uid -> Ash.Query.do_filter(query, user_id: uid)
           end
         end)
-      end)
+      end
     end
 
     action :salaries_csv, :string do
-      description("Generates a payroll CSV for a given month and year. Joins salary-as-of data with hours records.")
+      description "Generates a payroll CSV for a given month and year. Joins salary-as-of data with hours records."
 
       argument :month, :integer do
-        allow_nil?(false)
-        constraints(min: 1, max: 12)
+        allow_nil? false
+        constraints min: 1, max: 12
       end
 
       argument :year, :integer do
-        allow_nil?(false)
-        constraints(min: 1900)
+        allow_nil? false
+        constraints min: 1900
       end
 
-      run(fn input, _context ->
+      run fn input, context ->
         import Ecto.Query
 
         %{month: month, year: year} = input.arguments
@@ -198,21 +158,59 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
           |> Enum.join()
 
         {:ok, csv}
-      end)
+      end
     end
   end
 
   policies do
     bypass actor_attribute_equals(:role, :admin) do
-      authorize_if(always())
+      authorize_if always()
     end
 
     policy action_type(:read) do
-      authorize_if(always())
+      authorize_if always()
     end
 
     policy action_type(:action) do
-      authorize_if(actor_attribute_equals(:role, :admin))
+      authorize_if actor_attribute_equals(:role, :admin)
+    end
+  end
+
+  multitenancy do
+    strategy :attribute
+    attribute :organization_id
+  end
+
+  attributes do
+    uuid_v7_primary_key :id
+
+    attribute :hourly_rate, :decimal do
+      public? true
+      allow_nil? false
+      constraints min: 0
+    end
+
+    attribute :deleted_at, :date, public?: true
+
+    Resource.firmowid_timestamps()
+  end
+
+  relationships do
+    belongs_to :user, User do
+      allow_nil? false
+      attribute_writable? true
+    end
+
+    belongs_to :organization, Firmowid.Ash.Core.Organization do
+      allow_nil? false
+    end
+  end
+
+  identities do
+    identity :active_user_salary, [:user_id, :organization_id] do
+      nils_distinct? false
+      where expr(is_nil(deleted_at))
+      message "User already has an active salary record"
     end
   end
 

@@ -181,7 +181,10 @@ defmodule FirmowidWeb.SalesInvoicesLive.Edit do
           {:noreply,
            socket
            |> push_event("unsaved-changed", %{value: false})
-           |> put_flash(:info, "Faktura została wystawiona, ale nie można jej wysłać do KSeF — brak połączenia z KSeF")
+           |> put_flash(
+             :info,
+             "Faktura została wystawiona, ale nie można jej wysłać do KSeF — brak połączenia z KSeF"
+           )
            |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
         else
           send_invoice_to_ksef(socket, invoice)
@@ -266,7 +269,10 @@ defmodule FirmowidWeb.SalesInvoicesLive.Edit do
         invoice_number = SalesInvoices.get_next_invoice_number(issue_date, series: "FK")
 
         correction_invoice_params =
-          Map.merge(correction_invoice_params, %{"invoice_number" => invoice_number, "issue_date" => issue_date})
+          Map.merge(correction_invoice_params, %{
+            "invoice_number" => invoice_number,
+            "issue_date" => issue_date
+          })
 
         SalesInvoices.create_correction_invoice(original_invoice, correction_invoice_params)
 
@@ -320,7 +326,8 @@ defmodule FirmowidWeb.SalesInvoicesLive.Edit do
   end
 
   defp maybe_auto_fill_correction_reason(socket) do
-    if not SalesInvoice.ksef_submitted?(socket.assigns.invoice) or socket.assigns.correction_reason_touched do
+    if not SalesInvoice.ksef_submitted?(socket.assigns.invoice) or
+         socket.assigns.correction_reason_touched do
       sync_user_reason_to_preview(socket)
     else
       auto_fill_correction_reason(socket)
@@ -361,7 +368,12 @@ defmodule FirmowidWeb.SalesInvoicesLive.Edit do
 
   defp changeset(sales_invoice, params \\ %{}) do
     sales_invoice
-    |> Ecto.Changeset.cast(params, [:issue_date, :invoice_number, :ksef_invoice_kind, :correction_reason])
+    |> Ecto.Changeset.cast(params, [
+      :issue_date,
+      :invoice_number,
+      :ksef_invoice_kind,
+      :correction_reason
+    ])
     |> SalesInvoice.step1_changeset(params)
     |> SalesInvoice.step2_changeset(params)
     |> SalesInvoice.step3_changeset(params)

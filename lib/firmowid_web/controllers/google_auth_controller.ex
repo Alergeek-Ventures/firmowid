@@ -31,7 +31,10 @@ defmodule FirmowidWeb.GoogleAuthController do
 
           {:error, error} ->
             conn
-            |> put_flash(:error, "Nie udało się pobrać profilu użytkownika z Google: #{inspect(error)}")
+            |> put_flash(
+              :error,
+              "Nie udało się pobrać profilu użytkownika z Google: #{inspect(error)}"
+            )
             |> redirect(to: ~p"/zaloguj")
         end
 
@@ -191,7 +194,10 @@ defmodule FirmowidWeb.GoogleAuthController do
             Analytics.track_event("user_log_in", updated_user, %{auth_provider: "google"})
 
             conn
-            |> put_flash(:info, "Twoje konto Google zostało pomyślnie połączone! Możesz teraz logować się przez Google.")
+            |> put_flash(
+              :info,
+              "Twoje konto Google zostało pomyślnie połączone! Możesz teraz logować się przez Google."
+            )
             |> UserAuth.log_in_user(updated_user)
 
           {:error, :invalid_token} ->

@@ -46,7 +46,8 @@ defmodule FirmowidWeb.FileController do
         date_range_from
         |> SalesInvoices.list_invoices_in_date_range(date_range_to)
         |> Enum.map(fn invoice ->
-          file_name = clean_filename("#{invoice.invoice_number}_#{SalesInvoices.buyer_display_name(invoice)}")
+          file_name =
+            clean_filename("#{invoice.invoice_number}_#{SalesInvoices.buyer_display_name(invoice)}")
 
           url_with_protocol = FirmowidWeb.Endpoint.url()
           download_path = ~p"/sprzedazowe/#{invoice.id}/pobierz"

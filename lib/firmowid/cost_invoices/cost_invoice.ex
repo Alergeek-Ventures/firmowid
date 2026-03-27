@@ -110,7 +110,9 @@ defmodule Firmowid.CostInvoices.CostInvoice do
       :organization_id
     ])
     |> validate_non_correction_total_amount_sign()
-    |> check_constraint(:total_amount, name: :cost_invoices_non_correction_total_amount_non_positive)
+    |> check_constraint(:total_amount,
+      name: :cost_invoices_non_correction_total_amount_non_positive
+    )
     |> foreign_key_constraint(:inbound_email_id)
     |> unique_constraint(:ksef_number, name: :cost_invoices_ksef_number_idx)
   end
@@ -124,7 +126,11 @@ defmodule Firmowid.CostInvoices.CostInvoice do
         changeset
 
       is_nil(total_amount) or Decimal.gt?(total_amount, 0) ->
-        add_error(changeset, :total_amount, "must be less than or equal to 0 for non-correction invoices")
+        add_error(
+          changeset,
+          :total_amount,
+          "must be less than or equal to 0 for non-correction invoices"
+        )
 
       true ->
         changeset
@@ -136,6 +142,7 @@ defmodule Firmowid.CostInvoices.CostInvoice do
   """
   @spec ksef_imported?(t()) :: boolean()
   def ksef_imported?(%__MODULE__{ksef_downloaded_at: nil, ksef_permanent_storage_date: nil, ksef_number: nil}), do: false
+
   def ksef_imported?(%__MODULE__{}), do: true
 
   @doc """

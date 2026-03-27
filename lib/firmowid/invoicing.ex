@@ -235,7 +235,11 @@ defmodule Firmowid.Invoicing do
 
   defp maybe_join_items_for_amount(query, _amount_gt, _amount_lt) do
     query
-    |> join(:left, [sales_invoice], sales_invoice_item in assoc(sales_invoice, :sales_invoice_items))
+    |> join(
+      :left,
+      [sales_invoice],
+      sales_invoice_item in assoc(sales_invoice, :sales_invoice_items)
+    )
     |> group_by([sales_invoice], sales_invoice.id)
   end
 
@@ -272,7 +276,10 @@ defmodule Firmowid.Invoicing do
     query
     |> where(
       [si],
-      fragment("NOT EXISTS (SELECT 1 FROM sales_invoices_transactions WHERE sales_invoice_id = ?)", si.id)
+      fragment(
+        "NOT EXISTS (SELECT 1 FROM sales_invoices_transactions WHERE sales_invoice_id = ?)",
+        si.id
+      )
     )
     |> where([si], si.skip_invoicing == false)
   end

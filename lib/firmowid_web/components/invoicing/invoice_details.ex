@@ -333,7 +333,10 @@ defmodule FirmowidWeb.Components.Invoicing.InvoiceDetails do
         assigns
       else
         assigns
-        |> assign(:total, Enum.reduce(transactions, Decimal.new(0), &Decimal.add(&1.transaction_amount, &2)))
+        |> assign(
+          :total,
+          Enum.reduce(transactions, Decimal.new(0), &Decimal.add(&1.transaction_amount, &2))
+        )
         |> assign(:currency, hd(transactions).transaction_currency)
       end
 

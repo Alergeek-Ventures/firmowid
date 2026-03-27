@@ -193,7 +193,9 @@ defmodule Firmowid.Analysis do
       Multi.delete_all(
         Multi.new(),
         :clear_tags,
-        from(et in EntityTag, where: et.entity_type == ^entity_type and et.entity_id == ^entity_id)
+        from(et in EntityTag,
+          where: et.entity_type == ^entity_type and et.entity_id == ^entity_id
+        )
       )
 
     multi =

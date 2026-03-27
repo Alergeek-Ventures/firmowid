@@ -430,6 +430,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
     case Accounts.add_email_to_org_allowlist(org_id, String.trim(email)) do
       {:ok, updated_org} ->
         LiveToast.send_toast(:info, "Adres e-mail został dodany do listy dozwolonych.")
+
         {:noreply, assign(socket, :current_org, Accounts.get_organization_with_avatar(updated_org))}
 
       {:error, _} ->
@@ -451,6 +452,7 @@ defmodule FirmowidWeb.SettingsLive.Index do
     case Accounts.remove_email_from_org_allowlist(org_id, email) do
       {:ok, updated_org} ->
         LiveToast.send_toast(:info, "Adres e-mail został usunięty z listy dozwolonych.")
+
         {:noreply, assign(socket, :current_org, Accounts.get_organization_with_avatar(updated_org))}
 
       {:error, _} ->

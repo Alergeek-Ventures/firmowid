@@ -99,10 +99,12 @@ defmodule Firmowid.BankData.Worker do
       else
         {:error, :not_found} ->
           Logger.error("Requisition #{requisition_id} not found for organization #{organization_id}")
+
           {:cancel, :not_found}
 
         {:error, :unauthorized} ->
           Logger.warning("Requisition #{requisition_id} authorization failed; refreshing token before retry")
+
           TokenManager.refresh_now()
           {:error, :unauthorized}
 
@@ -124,11 +126,13 @@ defmodule Firmowid.BankData.Worker do
 
       {:error, :unauthorized} ->
         Logger.warning("Delete requisition #{requisition_id} authorization failed; refreshing token before retry")
+
         TokenManager.refresh_now()
         {:error, :unauthorized}
 
       {:error, :not_found} ->
         Logger.info("Remote requisition #{requisition_id} already deleted or not found; treating as success")
+
         :ok
 
       {:error, reason} ->
@@ -146,6 +150,7 @@ defmodule Firmowid.BankData.Worker do
 
   defp handle_sync_result({:error, :unauthorized}, account_id) do
     Logger.warning("Bank account #{account_id} authorization failed; refreshing token before retry")
+
     TokenManager.refresh_now()
     {:error, :unauthorized}
   end
@@ -169,6 +174,7 @@ defmodule Firmowid.BankData.Worker do
 
   defp handle_sync_result({:error, reason}, account_id) do
     Logger.error("Unexpected error while fetching transactions for bank account #{account_id}: #{inspect(reason)}")
+
     {:error, reason}
   end
 

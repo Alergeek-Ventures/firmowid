@@ -9,15 +9,15 @@ defmodule Firmowid.Ash.Timetracker do
   """
   use Ash.Domain
 
-  authorization do
-    authorize(:by_default)
-    require_actor?(true)
+  resources do
+    resource Firmowid.Ash.Timetracker.HoursRecord
+    resource Firmowid.Ash.Timetracker.Project
+    resource Firmowid.Ash.Timetracker.ProjectUser
+    resource Firmowid.Ash.Timetracker.Session
   end
 
-  resources do
-    resource(Firmowid.Ash.Timetracker.HoursRecord)
-    resource(Firmowid.Ash.Timetracker.Project)
-    resource(Firmowid.Ash.Timetracker.ProjectUser)
-    resource(Firmowid.Ash.Timetracker.Session)
+  authorization do
+    authorize :by_default
+    require_actor? true
   end
 end

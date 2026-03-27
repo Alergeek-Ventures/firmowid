@@ -15,38 +15,44 @@ defmodule Firmowid.Ash.Core.Organization do
   require Resource
 
   postgres do
-    table("organizations")
+    table "organizations"
     repo(Firmowid.Repo)
     migrate?(false)
   end
 
-  attributes do
-    uuid_v7_primary_key(:id)
+  actions do
+    defaults [:read]
+  end
 
-    attribute(:name, :string, public?: true, allow_nil?: false)
-    attribute(:nip, :string, public?: true, allow_nil?: false)
-    attribute(:address, :string, public?: true)
-    attribute(:phone_number, :string, public?: true)
-    attribute(:organization_type, :string, public?: true)
-    attribute(:correspondence_name, :string, public?: true)
-    attribute(:correspondence_address, :string, public?: true)
-    attribute(:is_vat_payer, :boolean, public?: true, default: true)
-    attribute(:allowed_sender_emails, {:array, :string}, public?: true, default: [])
-    attribute(:inbound_email_nickname, :string, public?: true, allow_nil?: false)
+  policies do
+    policy action_type(:read) do
+      authorize_if always()
+    end
+  end
+
+  attributes do
+    uuid_v7_primary_key :id
+
+    attribute :name, :string, public?: true, allow_nil?: false
+    attribute :nip, :string, public?: true, allow_nil?: false
+    attribute :address, :string, public?: true
+    attribute :phone_number, :string, public?: true
+    attribute :organization_type, :string, public?: true
+    attribute :correspondence_name, :string, public?: true
+    attribute :correspondence_address, :string, public?: true
+    attribute :is_vat_payer, :boolean, public?: true, default: true
+    attribute :allowed_sender_emails, {:array, :string}, public?: true, default: []
+    attribute :inbound_email_nickname, :string, public?: true, allow_nil?: false
 
     Resource.firmowid_timestamps()
   end
 
   relationships do
     belongs_to :owner, User do
-      allow_nil?(false)
-      attribute_writable?(true)
+      allow_nil? false
+      attribute_writable? true
     end
 
     has_many :users, User
-  end
-
-  actions do
-    defaults([:read])
   end
 end

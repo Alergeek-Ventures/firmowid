@@ -138,7 +138,9 @@ defmodule FirmowidWeb.OrganizationLive do
       |> String.trim()
       |> Accounts.consume_organization_invite(user.id)
 
-    Analytics.track_event("organization_invite_accepted", user, %{organization_id: organization_id})
+    Analytics.track_event("organization_invite_accepted", user, %{
+      organization_id: organization_id
+    })
 
     {:noreply, redirect(socket, to: "/")}
   end

@@ -172,7 +172,11 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
           :halt
 
         result ->
-          Enum.map_join(result, "\n\n", &CostInvoiceAssistant.transaction_input(&1, heading_level: 2))
+          Enum.map_join(
+            result,
+            "\n\n",
+            &CostInvoiceAssistant.transaction_input(&1, heading_level: 2)
+          )
       end,
       handler: fn args ->
         allowed_keys = [

@@ -172,9 +172,14 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
       xml = render_xml(kor1)
       doc = parse(xml)
 
-      assert xpath(doc, ~x"//DaneFaKorygowanej/NrFaKorygowanej/text()"s) == original.invoice_number
-      assert xpath(doc, ~x"//DaneFaKorygowanej/DataWystFaKorygowanej/text()"s) == Date.to_iso8601(original.issue_date)
-      assert xpath(doc, ~x"//DaneFaKorygowanej/NrKSeFFaKorygowanej/text()"s) == original.ksef_number
+      assert xpath(doc, ~x"//DaneFaKorygowanej/NrFaKorygowanej/text()"s) ==
+               original.invoice_number
+
+      assert xpath(doc, ~x"//DaneFaKorygowanej/DataWystFaKorygowanej/text()"s) ==
+               Date.to_iso8601(original.issue_date)
+
+      assert xpath(doc, ~x"//DaneFaKorygowanej/NrKSeFFaKorygowanej/text()"s) ==
+               original.ksef_number
     end
 
     test "second correction in chain still references the original, not KOR1" do
@@ -183,8 +188,11 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
       xml = render_xml(kor2)
       doc = parse(xml)
 
-      assert xpath(doc, ~x"//DaneFaKorygowanej/NrFaKorygowanej/text()"s) == original.invoice_number
-      assert xpath(doc, ~x"//DaneFaKorygowanej/DataWystFaKorygowanej/text()"s) == Date.to_iso8601(original.issue_date)
+      assert xpath(doc, ~x"//DaneFaKorygowanej/NrFaKorygowanej/text()"s) ==
+               original.invoice_number
+
+      assert xpath(doc, ~x"//DaneFaKorygowanej/DataWystFaKorygowanej/text()"s) ==
+               Date.to_iso8601(original.issue_date)
     end
 
     test "third correction in chain still references the original" do
@@ -193,8 +201,11 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
       xml = render_xml(kor3)
       doc = parse(xml)
 
-      assert xpath(doc, ~x"//DaneFaKorygowanej/NrFaKorygowanej/text()"s) == original.invoice_number
-      assert xpath(doc, ~x"//DaneFaKorygowanej/DataWystFaKorygowanej/text()"s) == Date.to_iso8601(original.issue_date)
+      assert xpath(doc, ~x"//DaneFaKorygowanej/NrFaKorygowanej/text()"s) ==
+               original.invoice_number
+
+      assert xpath(doc, ~x"//DaneFaKorygowanej/DataWystFaKorygowanej/text()"s) ==
+               Date.to_iso8601(original.issue_date)
     end
   end
 
@@ -270,7 +281,9 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
 
   describe "StanPrzed line items use reference invoice" do
     test "first correction: before items come from original" do
-      original = [item_name: "Original Service", unit_price: "100.00"] |> build_original() |> submit()
+      original =
+        [item_name: "Original Service", unit_price: "100.00"] |> build_original() |> submit()
+
       kor1 = correct(original, item_name: "Corrected Service v1", unit_price: "150.00")
 
       xml = render_xml(kor1)
@@ -559,7 +572,9 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
         |> build_domestic_invoice()
         |> submit()
 
-      _kor1 = original |> correct(buyer_name: "Updated Buyer v1", unit_price: "150.00") |> submit()
+      _kor1 =
+        original |> correct(buyer_name: "Updated Buyer v1", unit_price: "150.00") |> submit()
+
       kor2 = correct(original, buyer_name: "Updated Buyer v2", unit_price: "200.00")
 
       xml = render_xml(kor2)

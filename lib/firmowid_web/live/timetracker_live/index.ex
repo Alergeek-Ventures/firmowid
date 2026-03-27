@@ -142,7 +142,9 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
       end)
       |> Enum.uniq()
 
-    projects_by_id = project_ids_in_sessions |> Timetracker.list_projects_by_ids() |> Map.new(&{&1.id, &1})
+    projects_by_id =
+      project_ids_in_sessions |> Timetracker.list_projects_by_ids() |> Map.new(&{&1.id, &1})
+
     projects_by_id = Map.merge(socket.assigns.projects_by_id, projects_by_id)
 
     socket

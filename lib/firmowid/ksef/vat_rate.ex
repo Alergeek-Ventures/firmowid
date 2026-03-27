@@ -89,7 +89,8 @@ defmodule Firmowid.Ksef.VatRate do
       iex> VatRate.available_rates("US", :other)
       {:fixed, "np I"}
   """
-  @spec available_rates(String.t(), atom()) :: {:select, [String.t()], String.t()} | {:fixed, String.t()}
+  @spec available_rates(String.t(), atom()) ::
+          {:select, [String.t()], String.t()} | {:fixed, String.t()}
   def available_rates("PL", _id_type), do: {:select, @domestic_rates, "23"}
 
   def available_rates(country, :eu_vat) do

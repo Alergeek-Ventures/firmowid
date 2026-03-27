@@ -90,7 +90,10 @@ defmodule FirmowidWeb.AnalysisLive.EntriesTable do
       |> assign(:party, party || "")
       |> assign(:description, transaction.remittance_information_unstructured)
       |> assign(:date, transaction.booking_date)
-      |> assign(:amount, Money.new(transaction.transaction_currency, transaction.transaction_amount))
+      |> assign(
+        :amount,
+        Money.new(transaction.transaction_currency, transaction.transaction_amount)
+      )
       |> assign(:amount_decimal, transaction.transaction_amount)
       |> assign(:navigate, nil)
       |> assign(:entity_tags, Map.get(transaction, :entity_tags, []))

@@ -74,6 +74,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
 
   defp create_and_redirect(socket, org_id) do
     {:ok, creator_draft_id, _creator_draft} = CreatorDraftStore.create(org_id)
+
     {:noreply, push_patch(socket, to: creator_draft_url(creator_draft_id, :counterparty), replace: true)}
   end
 
@@ -92,16 +93,28 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
 
         case build_copied_invoice(base_invoice, socket.assigns.bank_accounts) do
           {:ok, invoice} ->
-            socket = assign(socket, invoice: invoice, creator_draft_id: creator_draft_id, org_id: org_id)
+            socket =
+              assign(socket, invoice: invoice, creator_draft_id: creator_draft_id, org_id: org_id)
+
             creator_draft_data = serialize_to_creator_draft(socket)
-            CreatorDraftStore.put(org_id, creator_draft_id, %{step: :items, data: creator_draft_data})
+
+            CreatorDraftStore.put(org_id, creator_draft_id, %{
+              step: :items,
+              data: creator_draft_data
+            })
 
             {:noreply, push_patch(socket, to: creator_draft_url(creator_draft_id, :items), replace: true)}
 
           {:partial, invoice, changeset} ->
-            socket = assign(socket, invoice: invoice, creator_draft_id: creator_draft_id, org_id: org_id)
+            socket =
+              assign(socket, invoice: invoice, creator_draft_id: creator_draft_id, org_id: org_id)
+
             creator_draft_data = serialize_to_creator_draft(socket)
-            CreatorDraftStore.put(org_id, creator_draft_id, %{step: :counterparty, data: creator_draft_data})
+
+            CreatorDraftStore.put(org_id, creator_draft_id, %{
+              step: :counterparty,
+              data: creator_draft_data
+            })
 
             {:noreply, setup_partial_copy(socket, changeset, creator_draft_id)}
         end
@@ -170,7 +183,11 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
           case Map.get(creator_draft, :partial_copy_changeset) do
             %Ecto.Changeset{} = changeset ->
               # Consume the changeset — remove it from the store so it doesn't re-trigger
-              CreatorDraftStore.put(org_id, creator_draft_id, Map.delete(creator_draft, :partial_copy_changeset))
+              CreatorDraftStore.put(
+                org_id,
+                creator_draft_id,
+                Map.delete(creator_draft, :partial_copy_changeset)
+              )
 
               socket
               |> assign(:counterparty_form, to_form(changeset, action: :validate))
@@ -359,12 +376,18 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
   end
 
   defp update_counterparty_stream(socket, search, no_search?, filter, sort_order) do
-    counterparties = SalesInvoices.search_counterparties(search, type: filter, sort_order: sort_order)
+    counterparties =
+      SalesInvoices.search_counterparties(search, type: filter, sort_order: sort_order)
 
     socket
     |> assign(
       :params,
-      to_form(%{"search" => search, "filter" => filter_to_string(filter), "sort_order" => Atom.to_string(sort_order)},
+      to_form(
+        %{
+          "search" => search,
+          "filter" => filter_to_string(filter),
+          "sort_order" => Atom.to_string(sort_order)
+        },
         as: "search_form"
       )
     )
@@ -722,7 +745,9 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
   end
 
   def handle_event("validate_payment", %{"sales_invoice" => params}, socket) do
-    form = socket.assigns.invoice |> SalesInvoice.step3_changeset(params) |> to_form(action: :validate)
+    form =
+      socket.assigns.invoice |> SalesInvoice.step3_changeset(params) |> to_form(action: :validate)
+
     {:noreply, assign(socket, :payment_form, form)}
   end
 
@@ -880,7 +905,10 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
             # Navigate to summary page with error flash
             {:noreply,
              socket
-             |> put_flash(:error, "Faktura została wystawiona, ale wysyłka do KSeF nie powiodła się")
+             |> put_flash(
+               :error,
+               "Faktura została wystawiona, ale wysyłka do KSeF nie powiodła się"
+             )
              |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
         end
 
@@ -898,7 +926,9 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
   # - Non-EU → force "np I"
   # - Polish buyer → user selects from dropdown (no override)
   defp apply_vat_rate_from_context(params, invoice) do
-    is_reverse_charge = to_boolean(params["is_reverse_charge"] || invoice.is_reverse_charge || false)
+    is_reverse_charge =
+      to_boolean(params["is_reverse_charge"] || invoice.is_reverse_charge || false)
+
     buyer_country = invoice.buyer_country
     buyer_id_type = SalesInvoice.buyer_id_type(invoice)
 
@@ -948,6 +978,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
 
   defp items_to_list(nil), do: []
   defp items_to_list(items) when is_map(items), do: Map.to_list(items)
+
   defp items_to_list(items) when is_list(items), do: Enum.with_index(items, fn item, idx -> {to_string(idx), item} end)
 
   @doc """
@@ -966,7 +997,10 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
         "Uzupełnij nazwę firmy w ustawieniach organizacji."
 
       # Invoice number already taken
-      match?({_, [constraint: :unique, constraint_name: _]}, Keyword.get(changeset.errors, :invoice_number, {nil, []})) ->
+      match?(
+        {_, [constraint: :unique, constraint_name: _]},
+        Keyword.get(changeset.errors, :invoice_number, {nil, []})
+      ) ->
         "Numer faktury jest już zajęty. Zmień numer faktury i spróbuj ponownie."
 
       true ->
@@ -1015,8 +1049,16 @@ defmodule FirmowidWeb.SalesInvoicesLive.Creator do
   def validate_organization_for_invoicing(organization) do
     errors =
       []
-      |> maybe_add_error(is_nil(organization.nip) or organization.nip == "", :nip, "NIP firmy jest wymagany")
-      |> maybe_add_error(is_nil(organization.name) or organization.name == "", :name, "Nazwa firmy jest wymagana")
+      |> maybe_add_error(
+        is_nil(organization.nip) or organization.nip == "",
+        :nip,
+        "NIP firmy jest wymagany"
+      )
+      |> maybe_add_error(
+        is_nil(organization.name) or organization.name == "",
+        :name,
+        "Nazwa firmy jest wymagana"
+      )
       |> maybe_add_error(
         is_nil(organization.address) or organization.address == "",
         :address,

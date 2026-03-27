@@ -89,7 +89,8 @@ defmodule Firmowid.SalesInvoices.Counterparty do
     end)
   end
 
-  @spec tax_id_type(map() | Ecto.Changeset.t()) :: :nip | :eu_vat | :other_id | :optional_id | :no_id
+  @spec tax_id_type(map() | Ecto.Changeset.t()) ::
+          :nip | :eu_vat | :other_id | :optional_id | :no_id
   def tax_id_type(%{pesel: pesel, country: country}) do
     CountryCodes.tax_id_type(country, pesel)
   end

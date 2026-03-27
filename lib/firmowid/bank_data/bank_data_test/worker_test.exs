@@ -117,7 +117,11 @@ defmodule Firmowid.BankData.WorkerTest do
 
         # sync jobs enqueued in oban (manual mode records rows)
         count =
-          Repo.one(from(j in Oban.Job, where: fragment("(args->>'name') = ?", "bank_account_sync"), select: count()),
+          Repo.one(
+            from(j in Oban.Job,
+              where: fragment("(args->>'name') = ?", "bank_account_sync"),
+              select: count()
+            ),
             prefix: "oban",
             skip_organization_id: true
           )
@@ -363,7 +367,10 @@ defmodule Firmowid.BankData.WorkerTest do
       Req.Test.stub(:bank_data_transactions, fn conn ->
         conn
         |> Plug.Conn.put_resp_content_type("application/json")
-        |> Plug.Conn.send_resp(409, Jason.encode!(%{summary: "Account suspended", status_code: 409}))
+        |> Plug.Conn.send_resp(
+          409,
+          Jason.encode!(%{summary: "Account suspended", status_code: 409})
+        )
       end)
 
       assert {:error, :conflict} =

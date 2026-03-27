@@ -20,7 +20,8 @@ defmodule Firmowid.MixProject do
         plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
         plt_add_apps: [:mix, :ex_unit]
       ],
-      usage_rules: usage_rules()
+      usage_rules: usage_rules(),
+      consolidate_protocols: Mix.env() != :dev
     ]
   end
 
@@ -49,6 +50,7 @@ defmodule Firmowid.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:sourceror, "~> 1.8", only: [:dev, :test]},
       {:ash, "~> 3.21"},
       {:ash_postgres, "~> 2.8"},
       {:ash_phoenix, "~> 2.3"},

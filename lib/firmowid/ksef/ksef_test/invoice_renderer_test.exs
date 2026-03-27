@@ -400,7 +400,10 @@ defmodule Firmowid.Ksef.InvoiceRendererTest do
   defp update_ksef_submission(invoice, ksef_number) do
     {:ok, updated} =
       invoice
-      |> SalesInvoice.ksef_update_changeset(%{locked_at: DateTime.utc_now(), ksef_number: ksef_number})
+      |> SalesInvoice.ksef_update_changeset(%{
+        locked_at: DateTime.utc_now(),
+        ksef_number: ksef_number
+      })
       |> Repo.update()
 
     updated

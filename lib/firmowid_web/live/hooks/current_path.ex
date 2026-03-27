@@ -18,7 +18,13 @@ defmodule FirmowidWeb.Live.Hooks.CurrentPath do
   """
 
   def on_mount(:save_request_uri, _params, _session, socket) do
-    socket = Phoenix.LiveView.attach_hook(socket, :save_request_path, :handle_params, &save_request_path/3)
+    socket =
+      Phoenix.LiveView.attach_hook(
+        socket,
+        :save_request_path,
+        :handle_params,
+        &save_request_path/3
+      )
 
     {:cont, socket}
   end

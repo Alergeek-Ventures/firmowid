@@ -87,7 +87,12 @@ defmodule FirmowidWeb.SalesInvoicesLive.Show do
          |> push_navigate(to: ~p"/fakturowanie?month=#{Date.to_iso8601(socket.assigns.invoice.issue_date)}")}
 
       {:error, :ksef_submitted} ->
-        {:noreply, put_flash(socket, :error, "Nie można usunąć faktury wysłanej do KSeF. Wystaw fakturę korygującą.")}
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Nie można usunąć faktury wysłanej do KSeF. Wystaw fakturę korygującą."
+         )}
     end
   end
 

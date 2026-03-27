@@ -15,33 +15,39 @@ defmodule Firmowid.Ash.Core.Blob do
   require Resource
 
   postgres do
-    table("blobs")
+    table "blobs"
     repo(Firmowid.Repo)
     migrate?(false)
   end
 
+  actions do
+    defaults [:read]
+  end
+
+  policies do
+    policy action_type(:read) do
+      authorize_if always()
+    end
+  end
+
   multitenancy do
-    strategy(:attribute)
-    attribute(:organization_id)
+    strategy :attribute
+    attribute :organization_id
   end
 
   attributes do
-    uuid_v7_primary_key(:id)
+    uuid_v7_primary_key :id
 
-    attribute(:blob_path, :string, public?: true, allow_nil?: false)
-    attribute(:blob_checksum, :string, public?: true, allow_nil?: false)
-    attribute(:original_filename, :string, public?: true, allow_nil?: false)
+    attribute :blob_path, :string, public?: true, allow_nil?: false
+    attribute :blob_checksum, :string, public?: true, allow_nil?: false
+    attribute :original_filename, :string, public?: true, allow_nil?: false
 
     Resource.firmowid_timestamps()
   end
 
   relationships do
     belongs_to :organization, Firmowid.Ash.Core.Organization do
-      allow_nil?(false)
+      allow_nil? false
     end
-  end
-
-  actions do
-    defaults([:read])
   end
 end

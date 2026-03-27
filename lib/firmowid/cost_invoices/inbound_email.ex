@@ -14,6 +14,7 @@ defmodule Firmowid.CostInvoices.InboundEmail do
     field :body, :string
     field :received_at, :utc_datetime
     field :processed_at, :utc_datetime
+
     field :failure_reason, Ecto.Enum, values: [:unexpected_sender, :no_attachment, :processing_failed]
 
     timestamps()

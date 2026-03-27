@@ -26,36 +26,11 @@ defmodule Firmowid.Ash.Timetracker.Project do
 
   require Resource
 
-  code_interface do
-    define(:get, get_by: [:id])
-    define(:by_ids, args: [:ids])
-    define(:with_users)
-    define(:for_user, args: [:user_id])
-    define(:active_for_user, args: [:user_id])
-    define(:active, args: [:date])
-    define(:archived, args: [:date])
-    define(:archived_total)
-    define(:create)
-    define(:update)
-    define(:archive)
-    define(:unarchive)
-    define(:destroy)
-    define(:set_users, args: [:user_ids])
-    define(:project_total_cost, args: [:project_id, :date])
-    define(:project_total_cost_all_time, args: [:project_id])
-    define(:project_month_users_with_cost, args: [:project_id, :date])
-    define(:project_users_with_cost_all_time, args: [:project_id])
-    define(:project_users_with_removed, args: [:project_id])
-    define(:project_users_with_sessions, args: [:project_id])
-    define(:user_projects_with_duration, args: [:user_id, :date])
-  end
-
   postgres do
-    table("projects")
+    table "projects"
     repo(Firmowid.Repo)
     migrate?(false)
   end
-
 
   code_interface do
     define :get, get_by: [:id]
@@ -411,240 +386,287 @@ defmodule Firmowid.Ash.Timetracker.Project do
       source_attribute_on_join_resource(:project_id)
       destination_attribute_on_join_resource(:user_id)
     end
+
   end
 
   actions do
-    defaults([:read])
+    defaults [:read]
 
     # ── Read actions ──────────────────────────────────────────────────
 
     read :get do
-      description("Get a single project by ID with users and counterparty preloaded.")
-      get?(true)
+      description "Get a single project by ID with users and counterparty preloaded."
+      get? true
 
-      prepare(build(load: [:users, :counterparty]))
+      prepare build(load: [:users, :counterparty])
     end
 
     read :by_ids do
-      description("Fetch projects by a list of IDs.")
+      description "Fetch projects by a list of IDs."
 
-      argument(:ids, {:array, :uuid}, allow_nil?: false)
+      argument :ids, {:array, :uuid}, allow_nil?: false
 
-      filter(expr(id in ^arg(:ids)))
+      filter expr(id in ^arg(:ids))
     end
 
     read :with_users do
-      description("All projects preloaded with their users.")
+      description "All projects preloaded with their users."
 
-      prepare(build(load: [:users]))
+      prepare build(load: [:users])
     end
 
     read :for_user do
-      description("Projects that a specific user belongs to (via project_users join).")
+      description "Projects that a specific user belongs to (via project_users join)."
 
-      argument(:user_id, :uuid, allow_nil?: false)
+      argument :user_id, :uuid, allow_nil?: false
 
-      filter(expr(exists(project_users, user_id == ^arg(:user_id))))
+      filter expr(exists(project_users, user_id == ^arg(:user_id)))
     end
 
     read :active_for_user do
-      description("Active (non-archived) projects for a specific user, ordered by name.")
+      description "Active (non-archived) projects for a specific user, ordered by name."
 
-      argument(:user_id, :uuid, allow_nil?: false)
+      argument :user_id, :uuid, allow_nil?: false
 
-      filter(expr(is_nil(archived_at) and exists(project_users, user_id == ^arg(:user_id))))
+      filter expr(is_nil(archived_at) and exists(project_users, user_id == ^arg(:user_id)))
 
-      prepare(build(sort: [name: :asc]))
+      prepare build(sort: [name: :asc])
     end
 
     # ── List actions with duration aggregation ─────────────────────────
 
     action :active, {:array, :map} do
-      description("Active projects with monthly session duration (hours). Supports optional ParadeDB search.")
+      description "Active projects with monthly session duration (hours). Supports optional ParadeDB search."
 
-      argument(:date, :date, allow_nil?: false)
-      argument(:search, :string)
+      argument :date, :date, allow_nil?: false
+      argument :search, :string
 
-      run(fn input, _context ->
+      run fn input, _context ->
         list_projects_with_duration(
           _archived? = false,
           _all_time? = false,
           input.arguments.date,
           input.arguments[:search]
         )
-      end)
+      end
     end
 
     action :archived, {:array, :map} do
-      description("Archived projects with monthly session duration (hours). Supports optional ParadeDB search.")
+      description "Archived projects with monthly session duration (hours). Supports optional ParadeDB search."
 
-      argument(:date, :date, allow_nil?: false)
-      argument(:search, :string)
+      argument :date, :date, allow_nil?: false
+      argument :search, :string
 
-      run(fn input, _context ->
+      run fn input, _context ->
         list_projects_with_duration(
           _archived? = true,
           _all_time? = false,
           input.arguments.date,
           input.arguments[:search]
         )
-      end)
+      end
     end
 
     action :archived_total, {:array, :map} do
-      description("Archived projects with all-time session duration (hours). Supports optional ParadeDB search.")
+      description "Archived projects with all-time session duration (hours). Supports optional ParadeDB search."
 
-      argument(:search, :string)
+      argument :search, :string
 
-      run(fn input, _context ->
+      run fn input, _context ->
         list_projects_with_duration(
           _archived? = true,
           _all_time? = true,
           nil,
           input.arguments[:search]
         )
-      end)
+      end
     end
 
     # ── Write actions ─────────────────────────────────────────────────
 
     create :create do
-      description("Create a project with automatic TagDefinition creation for analysis tagging.")
+      description "Create a project with automatic TagDefinition creation for analysis tagging."
 
-      accept([:name, :counterparty_id])
-      change(CreateProjectTag)
+      accept [:name, :counterparty_id]
+      change CreateProjectTag
     end
 
     update :update do
-      description("Update project attributes and sync the associated tag definition name.")
-      accept([:name, :counterparty_id])
-      require_atomic?(false)
-      change(SyncProjectTagName)
+      description "Update project attributes and sync the associated tag definition name."
+      accept [:name, :counterparty_id]
+      require_atomic? false
+      change SyncProjectTagName, where: [changing(:name)]
     end
 
     update :archive do
-      description("Archive a project by setting archived_at to today.")
-      accept([])
-      require_atomic?(false)
+      description "Archive a project by setting archived_at to today."
+      accept []
+      require_atomic? false
 
-      change(set_attribute(:archived_at, &Date.utc_today/0))
+      change set_attribute(:archived_at, &Date.utc_today/0)
     end
 
     update :unarchive do
-      description("Unarchive a project by clearing archived_at.")
-      accept([])
+      description "Unarchive a project by clearing archived_at."
+      accept []
 
-      change(set_attribute(:archived_at, nil))
+      change set_attribute(:archived_at, nil)
     end
 
     destroy :destroy do
-      description("Delete a project and clean up its orphaned tag definition.")
-      require_atomic?(false)
-      change(CleanupProjectTag)
+      description "Delete a project and clean up its orphaned tag definition."
+      require_atomic? false
+      change CleanupProjectTag
     end
 
     # ── User assignment ───────────────────────────────────────────────
 
     action :set_users, :term do
-      description("Set the exact list of users for a project. Adds missing, removes extra.")
+      description "Set the exact list of users for a project. Adds missing, removes extra."
 
-      argument(:project_id, :uuid, allow_nil?: false)
-      argument(:user_ids, {:array, :uuid}, allow_nil?: false)
+      argument :project_id, :uuid, allow_nil?: false
+      argument :user_ids, {:array, :uuid}, allow_nil?: false
 
-      run(fn input, _context ->
+      run fn input, _context ->
         {:ok, set_project_users(input.arguments.project_id, input.arguments.user_ids)}
-      end)
+      end
     end
 
     # ── Cost/reporting generic actions ─────────────────────────────────
 
     action :project_total_cost, :decimal do
-      description(
-        "Total cost of work for a project in a given month. Uses hourly rates active at month end, rounds per-user time up to full hours. Returns nil when no salaries exist."
-      )
+      description "Total cost of work for a project in a given month. Uses hourly rates active at month end, rounds per-user time up to full hours. Returns nil when no salaries exist."
 
-      argument(:project_id, :uuid, allow_nil?: false)
-      argument(:date, :date, allow_nil?: false)
+      argument :project_id, :uuid, allow_nil?: false
+      argument :date, :date, allow_nil?: false
 
-      run(fn input, _context ->
-        {:ok, compute_project_total_cost(input.arguments.project_id, input.arguments.date)}
-      end)
+      run fn input, _context ->
+        {:ok, ProjectCosts.compute_project_total_cost(input.arguments.project_id, input.arguments.date)}
+      end
     end
 
     action :project_total_cost_all_time, :decimal do
-      description("Total cost across all months for a project. Sums month-by-month costs.")
+      description "Total cost across all months for a project. Sums month-by-month costs."
 
-      argument(:project_id, :uuid, allow_nil?: false)
+      argument :project_id, :uuid, allow_nil?: false
 
-      run(fn input, _context ->
+      run fn input, _context ->
         {:ok, compute_project_total_cost_all_time(input.arguments.project_id)}
-      end)
+      end
     end
 
     action :project_month_users_with_cost, {:array, :map} do
-      description("Per-user time and cost for a project in a given month. Includes salary, avatar, removed status.")
+      description "Per-user time and cost for a project in a given month. Includes salary, avatar, removed status."
 
-      argument(:project_id, :uuid, allow_nil?: false)
-      argument(:date, :date, allow_nil?: false)
+      argument :project_id, :uuid, allow_nil?: false
+      argument :date, :date, allow_nil?: false
 
-      run(fn input, _context ->
-        {:ok, compute_project_month_users_with_cost(input.arguments.project_id, input.arguments.date)}
-      end)
+      run fn input, _context ->
+        {:ok,
+         ProjectCosts.compute_project_month_users_with_cost(
+           input.arguments.project_id,
+           input.arguments.date
+         )}
+      end
     end
 
     action :project_users_with_cost_all_time, {:array, :map} do
-      description("Per-user time and cost across all months for a project.")
+      description "Per-user time and cost across all months for a project."
 
-      argument(:project_id, :uuid, allow_nil?: false)
+      argument :project_id, :uuid, allow_nil?: false
 
-      run(fn input, _context ->
+      run fn input, _context ->
         {:ok, compute_project_users_with_cost_all_time(input.arguments.project_id)}
-      end)
+      end
     end
 
     action :project_users_with_removed, {:array, :map} do
-      description("Users associated with a project — includes users who have sessions but were removed from the project.")
+      description "Users associated with a project — includes users who have sessions but were removed from the project."
 
-      argument(:project_id, :uuid, allow_nil?: false)
+      argument :project_id, :uuid, allow_nil?: false
 
-      run(fn input, _context ->
-        {:ok, query_project_users_with_removed(input.arguments.project_id)}
-      end)
+      run fn input, _context ->
+        {:ok, ProjectCosts.query_project_users_with_removed(input.arguments.project_id)}
+      end
     end
 
     action :project_users_with_sessions, {:array, :map} do
-      description("Users with their sessions and total duration for a project.")
+      description "Users with their sessions and total duration for a project."
 
-      argument(:project_id, :uuid, allow_nil?: false)
+      argument :project_id, :uuid, allow_nil?: false
 
-      run(fn input, _context ->
+      run fn input, _context ->
         {:ok, query_project_users_with_sessions(input.arguments.project_id)}
-      end)
+      end
     end
 
     action :user_projects_with_duration, {:array, :map} do
-      description("A user's projects with per-project session duration in a given month.")
+      description "A user's projects with per-project session duration in a given month."
 
-      argument(:user_id, :uuid, allow_nil?: false)
-      argument(:date, :date, allow_nil?: false)
+      argument :user_id, :uuid, allow_nil?: false
+      argument :date, :date, allow_nil?: false
 
-      run(fn input, _context ->
+      run fn input, _context ->
         {:ok, compute_user_projects_with_duration(input.arguments.user_id, input.arguments.date)}
-      end)
+      end
     end
   end
 
   policies do
     bypass actor_attribute_equals(:role, :admin) do
-      authorize_if(always())
+      authorize_if always()
     end
 
     policy action_type(:read) do
-      authorize_if(always())
+      authorize_if always()
     end
 
     policy action_type(:action) do
-      authorize_if(always())
+      authorize_if always()
+    end
+  end
+
+  multitenancy do
+    strategy :attribute
+    attribute :organization_id
+  end
+
+  attributes do
+    uuid_v7_primary_key :id
+
+    attribute :name, :string do
+      public? true
+      allow_nil? false
+      constraints min_length: 2, max_length: 100
+    end
+
+    attribute :archived_at, :date, public?: true
+
+    Resource.firmowid_timestamps()
+  end
+
+  relationships do
+    belongs_to :organization, Firmowid.Ash.Core.Organization do
+      allow_nil? false
+    end
+
+    belongs_to :counterparty, Firmowid.Ash.Core.Counterparty do
+      allow_nil? true
+      attribute_writable? true
+    end
+
+    belongs_to :tag_definition, Firmowid.Ash.Core.TagDefinition do
+      allow_nil? true
+      attribute_writable? true
+    end
+
+    has_many :sessions, Session
+    has_many :project_users, ProjectUser
+
+    many_to_many :users, Firmowid.Ash.Core.User do
+      through ProjectUser
+      source_attribute_on_join_resource :project_id
+      destination_attribute_on_join_resource :user_id
     end
   end
 
@@ -1009,7 +1031,9 @@ defmodule Firmowid.Ash.Timetracker.Project do
   end
 
   defp month_value_to_date(%Date{} = date), do: Date.beginning_of_month(date)
+
   defp month_value_to_date(%NaiveDateTime{} = dt), do: dt |> NaiveDateTime.to_date() |> Date.beginning_of_month()
+
   defp month_value_to_date(%DateTime{} = dt), do: dt |> DateTime.to_date() |> Date.beginning_of_month()
 
   defp add_nullable_decimals(nil, nil), do: nil
@@ -1074,7 +1098,11 @@ defmodule Firmowid.Ash.Timetracker.Project do
 
     # Add new users
     for uid <- to_add do
-      Firmowid.Repo.insert!(%ProjectUser{project_id: project_id, user_id: uid, organization_id: org_id})
+      Firmowid.Repo.insert!(%ProjectUser{
+        project_id: project_id,
+        user_id: uid,
+        organization_id: org_id
+      })
     end
 
     :ok

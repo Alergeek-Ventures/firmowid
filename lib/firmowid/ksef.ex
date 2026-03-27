@@ -33,7 +33,8 @@ defmodule Firmowid.Ksef do
 
   Status can be `:submitted` (successfully received KSeF number) or `:failed` (submission failed).
   """
-  @spec broadcast_ksef_status(pos_integer(), pos_integer(), :submitted | :failed) :: :ok | {:error, term()}
+  @spec broadcast_ksef_status(pos_integer(), pos_integer(), :submitted | :failed) ::
+          :ok | {:error, term()}
   def broadcast_ksef_status(organization_id, invoice_id, status) do
     Phoenix.PubSub.broadcast(
       Firmowid.PubSub,
@@ -233,7 +234,11 @@ defmodule Firmowid.Ksef do
   def invoice_url!(%CostInvoice{seller_nip: seller_nip, issue_date: issue_date} = invoice) do
     if CostInvoice.ksef_imported?(invoice) do
       invoice = Repo.preload(invoice, :blob)
-      checksum = invoice.blob.blob_checksum |> Base.decode16!(case: :lower) |> Base.url_encode64(padding: false)
+
+      checksum =
+        invoice.blob.blob_checksum
+        |> Base.decode16!(case: :lower)
+        |> Base.url_encode64(padding: false)
 
       invoice_url(seller_nip, issue_date, checksum)
     else
@@ -255,8 +260,11 @@ defmodule Firmowid.Ksef do
   defp backfill_ksef_checksum!(%SalesInvoice{ksef_number: ksef_number} = invoice) do
     invoice_xml =
       case get_invoice_xml_by_ksef_number(ksef_number) do
-        {:ok, xml} -> xml
-        {:error, reason} -> raise "Failed to fetch KSeF invoice XML for checksum backfill: #{inspect(reason)}"
+        {:ok, xml} ->
+          xml
+
+        {:error, reason} ->
+          raise "Failed to fetch KSeF invoice XML for checksum backfill: #{inspect(reason)}"
       end
 
     checksum = compute_fa3_checksum(invoice_xml)

@@ -39,7 +39,8 @@ defmodule Firmowid.Ksef.SubmissionWorker do
          invoice_xml = InvoiceRenderer.render_fa3(invoice),
          access_token = SessionWorker.get_access_token!(),
          {:ok, session_data} <- ApiClient.open_online_session(access_token),
-         {:ok, invoice_reference} <- ApiClient.send_invoice(access_token, session_data, invoice_xml),
+         {:ok, invoice_reference} <-
+           ApiClient.send_invoice(access_token, session_data, invoice_xml),
          :ok <- ApiClient.close_online_session(access_token, session_data.session_reference) do
       Repo.transaction(fn ->
         lock_invoice(invoice, session_data.session_reference)
@@ -152,7 +153,10 @@ defmodule Firmowid.Ksef.SubmissionWorker do
 
   defp handle_verification_result({:ok, %{ksef_number: ksef_number, invoice_hash: hash}}, invoice, _job) do
     invoice
-    |> SalesInvoice.ksef_update_changeset(%{ksef_number: ksef_number, ksef_invoice_checksum: hash})
+    |> SalesInvoice.ksef_update_changeset(%{
+      ksef_number: ksef_number,
+      ksef_invoice_checksum: hash
+    })
     |> Repo.update!()
 
     Logger.info("Invoice #{invoice.id} received KSeF number: #{ksef_number}")
@@ -176,7 +180,10 @@ defmodule Firmowid.Ksef.SubmissionWorker do
 
     # TODO: prepare correction invoice draft if original invoice is different from this one
     invoice
-    |> SalesInvoice.ksef_update_changeset(%{ksef_number: ksef_number, ksef_session_reference_number: session_ref})
+    |> SalesInvoice.ksef_update_changeset(%{
+      ksef_number: ksef_number,
+      ksef_session_reference_number: session_ref
+    })
     |> Repo.update!()
 
     Ksef.broadcast_ksef_status(Repo.get_org_id(), invoice.id, :submitted)

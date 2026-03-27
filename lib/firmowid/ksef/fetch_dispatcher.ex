@@ -22,7 +22,8 @@ defmodule Firmowid.Ksef.FetchDispatcher do
   @impl Oban.Worker
   def perform(%Oban.Job{}) do
     # Get all organizations with active KSeF credentials
-    organization_ids = Repo.all(from(c in Credential, select: c.organization_id), skip_organization_id: true)
+    organization_ids =
+      Repo.all(from(c in Credential, select: c.organization_id), skip_organization_id: true)
 
     Logger.info("Dispatching KSeF fetch jobs for #{length(organization_ids)} organizations")
 
