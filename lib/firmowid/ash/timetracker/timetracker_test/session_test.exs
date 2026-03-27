@@ -4,6 +4,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
   import Firmowid.AccountsFixtures
   import Firmowid.TimetrackerFixtures
 
+  alias Firmowid.Ash.Scope
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
 
   setup do
@@ -11,7 +12,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
     project = project_fixture(%{organization_id: user.organization_id})
     user_project_fixture(user.id, project.id)
 
-    scope = %Firmowid.Ash.Scope{
+    scope = %Scope{
       current_user: user,
       current_tenant: user.organization_id
     }
@@ -206,7 +207,16 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
       assert result == 0
     end
 
-    test "sums across multiple sessions and users", %{user: user, project: project, scope: scope} do
+    test "sums across multiple sessions and users (admin)", %{user: user, project: project} do
+      # Summing across users requires admin role — employee read policy
+      # scopes to own sessions only.
+      admin = user_in_org_fixture(user.organization_id, %{role: :admin})
+
+      admin_scope = %Scope{
+        current_user: admin,
+        current_tenant: admin.organization_id
+      }
+
       user2 = user_in_org_fixture(user.organization_id)
       user_project_fixture(user2.id, project.id)
 
@@ -231,7 +241,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
         end_datetime: ~U[2025-04-01 01:00:00Z]
       })
 
-      {:ok, result} = AshSession.total_time_worked(%{month: 4, year: 2025}, scope: scope)
+      {:ok, result} = AshSession.total_time_worked(%{month: 4, year: 2025}, scope: admin_scope)
       assert result == 3 * 3600
     end
   end

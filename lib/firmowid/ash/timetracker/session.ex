@@ -20,6 +20,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
   alias Firmowid.Ash.Timetracker.Validations.ProjectAccess
   alias Firmowid.Helpers.TimeConverter
 
+  require Ash.Query
   require Resource
 
   postgres do
@@ -185,8 +186,8 @@ defmodule Firmowid.Ash.Timetracker.Session do
       argument :user_id, :uuid
       argument :project_id, :uuid
 
-      run fn input, _context ->
-        {:ok, query_total_time_worked(input.arguments)}
+      run fn input, context ->
+        {:ok, aggregate_total_time_worked(input.arguments, context)}
       end
     end
 
@@ -414,56 +415,36 @@ defmodule Firmowid.Ash.Timetracker.Session do
     Firmowid.Repo.all(case_result)
   end
 
-  defp query_total_time_worked(args) do
-    import Ecto.Query
+  defp aggregate_total_time_worked(args, context) do
+    ash_opts = [actor: context.actor, tenant: context.tenant]
 
     query =
-      from(s in __MODULE__,
-        limit: 1,
-        select:
-          "extract(epoch from coalesce(?, now()) - ?)"
-          |> fragment(s.end_datetime, s.start_datetime)
-          |> sum()
-          |> coalesce(0)
-          |> type(:integer)
-          |> selected_as(:time_worked)
-      )
+      __MODULE__
+      |> maybe_filter_month_year(args[:month], args[:year])
+      |> maybe_filter(:user_id, args[:user_id])
+      |> maybe_filter(:project_id, args[:project_id])
 
-    query = apply_month_year_filter(query, args[:month], args[:year])
-    query = apply_optional_filter(query, :user_id, args[:user_id])
-    query = apply_optional_filter(query, :project_id, args[:project_id])
+    %{total: total} =
+      Ash.aggregate!(query, {:total, :sum, field: :duration, default: 0}, ash_opts)
 
-    Firmowid.Repo.one(query) || 0
+    total
   end
 
-  defp apply_month_year_filter(query, month, year) when is_integer(month) and is_integer(year) do
-    import Ecto.Query
-
-    where(
+  defp maybe_filter_month_year(query, month, year) when is_integer(month) and is_integer(year) do
+    Ash.Query.filter(
       query,
-      [s],
-      fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
-        fragment("extract(year from ?) = ?", s.start_datetime, ^year)
+      fragment("extract(month from ?) = ?", start_datetime, ^month) and
+        fragment("extract(year from ?) = ?", start_datetime, ^year)
     )
   end
 
-  defp apply_month_year_filter(query, _, _), do: query
+  defp maybe_filter_month_year(query, _, _), do: query
 
-  defp apply_optional_filter(query, :user_id, nil), do: query
+  defp maybe_filter(query, :user_id, nil), do: query
+  defp maybe_filter(query, :user_id, uid), do: Ash.Query.filter(query, user_id == ^uid)
 
-  defp apply_optional_filter(query, :user_id, uid) do
-    import Ecto.Query
-
-    where(query, [s], s.user_id == ^uid)
-  end
-
-  defp apply_optional_filter(query, :project_id, nil), do: query
-
-  defp apply_optional_filter(query, :project_id, pid) do
-    import Ecto.Query
-
-    where(query, [s], s.project_id == ^pid)
-  end
+  defp maybe_filter(query, :project_id, nil), do: query
+  defp maybe_filter(query, :project_id, pid), do: Ash.Query.filter(query, project_id == ^pid)
 
   defp query_project_tasks_csv(args) do
     import Ecto.Query
