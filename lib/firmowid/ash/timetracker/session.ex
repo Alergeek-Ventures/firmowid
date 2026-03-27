@@ -149,8 +149,8 @@ defmodule Firmowid.Ash.Timetracker.Session do
       argument :limit, :integer
       argument :timezone, :string, default: "Etc/UTC"
 
-      run fn input, _context ->
-        {:ok, query_weeks_with_sessions(input.arguments)}
+      run fn input, context ->
+        {:ok, read_weeks_with_sessions(input.arguments, context)}
       end
     end
 
@@ -342,40 +342,39 @@ defmodule Firmowid.Ash.Timetracker.Session do
   # module (similar to how ProjectCosts was extracted from Project) to keep
   # the resource module focused on Ash DSL declarations.
 
-  defp query_weeks_with_sessions(args) do
-    import Ecto.Query
-
-    user_id = args.user_id
-    after_date = args[:after_date]
-    limit = args[:limit]
+  defp read_weeks_with_sessions(args, context) do
+    ash_opts = [actor: context.actor, tenant: context.tenant]
     timezone = args[:timezone] || "Etc/UTC"
 
     query =
       __MODULE__
-      |> where([s], s.user_id == ^user_id)
-      |> select([s], fragment("date_trunc('week', ?)", s.start_datetime))
-      |> distinct(true)
-      |> order_by([s], desc: fragment("date_trunc('week', ?)", s.start_datetime))
-
-    query =
-      if after_date do
-        dt = DateTime.new!(after_date, ~T[00:00:00])
-        where(query, [s], s.start_datetime < ^dt)
-      else
-        query
-      end
-
-    query = if limit, do: limit(query, ^limit), else: query
+      |> Ash.Query.filter(user_id == ^args.user_id)
+      |> maybe_filter_before_date(args[:after_date])
+      |> Ash.Query.distinct(:week_start)
+      |> Ash.Query.distinct_sort(week_start: :desc)
+      |> Ash.Query.sort(week_start: :desc)
+      |> Ash.Query.load(:week_start)
+      |> maybe_limit(args[:limit])
 
     query
-    |> Firmowid.Repo.all()
-    |> Enum.map(fn date ->
-      date
+    |> Ash.read!(ash_opts)
+    |> Enum.map(fn session ->
+      session.week_start
       |> DateTime.from_naive!("Etc/UTC")
       |> DateTime.shift_zone!(timezone)
       |> DateTime.to_date()
     end)
   end
+
+  defp maybe_filter_before_date(query, nil), do: query
+
+  defp maybe_filter_before_date(query, %Date{} = date) do
+    dt = DateTime.new!(date, ~T[00:00:00])
+    Ash.Query.filter(query, start_datetime < ^dt)
+  end
+
+  defp maybe_limit(query, nil), do: query
+  defp maybe_limit(query, limit), do: Ash.Query.limit(query, limit)
 
   defp query_grouped_user_project_sessions(args) do
     import Ecto.Query
