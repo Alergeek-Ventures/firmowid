@@ -75,7 +75,7 @@ jobs:
 
     services:
       db:
-        image: paradedb/paradedb:0.19.11@sha256:42dec62a5c37984a63ada97891ab4f39603efe1cce740a585d4cff46436e7f78
+        image: paradedb/paradedb:v0.22.3@sha256:5df9a7d78ad9b8c2fe1d4f0098b4cbd48c3e3e543925059d21465a81916830b7
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
