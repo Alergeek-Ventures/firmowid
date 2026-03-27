@@ -437,7 +437,14 @@ defmodule Firmowid.Ash.Timetracker.Project do
     # ── List actions with duration aggregation ─────────────────────────
 
     action :active, {:array, :map} do
-      description "Active projects with monthly session duration (hours). Supports optional ParadeDB search."
+      description """
+      Active projects with monthly session duration (hours). Supports optional ParadeDB search.
+
+      Admin-only. Uses raw Ecto: LEFT JOIN duration subquery + ParadeDB @@@ operator
+      for full-text search with BM25 scoring. Organization scoping via Repo.prepare_query.
+      Raw Ecto is required because ParadeDB needs unnamed prepared statements and
+      the duration subquery uses GROUP BY returning a non-struct shape.
+      """
 
       argument :date, :date, allow_nil?: false
       argument :search, :string
@@ -453,7 +460,11 @@ defmodule Firmowid.Ash.Timetracker.Project do
     end
 
     action :archived_total, {:array, :map} do
-      description "Archived projects with all-time session duration (hours). Supports optional ParadeDB search."
+      description """
+      Archived projects with all-time session duration (hours). Supports optional ParadeDB search.
+
+      Admin-only. Same raw Ecto approach as :active — see its description.
+      """
 
       argument :search, :string
 
@@ -525,7 +536,16 @@ defmodule Firmowid.Ash.Timetracker.Project do
     # ── Cost/reporting generic actions ─────────────────────────────────
 
     action :project_total_cost, :decimal do
-      description "Total cost of work for a project in a given month. Uses hourly rates active at month end, rounds per-user time up to full hours. Returns nil when no salaries exist."
+      description """
+      Total cost of work for a project in a given month. Returns nil when no salaries exist.
+
+      Admin-only. Uses raw Ecto: cross-resource join of sessions (GROUP BY user_id)
+      with a temporal salary subquery (DISTINCT ON user_id, salary active at month end).
+      Rounds per-user time up to full hours, multiplies by hourly rate.
+      Raw Ecto is required because the temporal DISTINCT ON salary lookup and the
+      cross-resource aggregation (sessions × salaries) have no Ash equivalent.
+      Organization scoping is explicit in the session subquery via Repo.get_org_id().
+      """
 
       argument :project_id, :uuid, allow_nil?: false
       argument :date, :date, allow_nil?: false
@@ -536,17 +556,29 @@ defmodule Firmowid.Ash.Timetracker.Project do
     end
 
     action :project_total_cost_all_time, :decimal do
-      description "Total cost across all months for a project. Sums month-by-month costs."
+      description """
+      Total cost across all months for a project. Sums month-by-month costs.
+
+      Admin-only. Uses Ash read (months_with_sessions via :month_start calculation)
+      + raw Ecto cost computation per month (see :project_total_cost).
+      """
 
       argument :project_id, :uuid, allow_nil?: false
 
-      run fn input, _context ->
-        {:ok, compute_project_total_cost_all_time(input.arguments.project_id)}
+      run fn input, context ->
+        {:ok, ProjectCosts.compute_project_total_cost_all_time(input.arguments.project_id, context)}
       end
     end
 
     action :project_month_users_with_cost, {:array, :map} do
-      description "Per-user time and cost for a project in a given month. Includes salary, avatar, removed status."
+      description """
+      Per-user time and cost for a project in a given month. Includes salary, avatar, removed status.
+
+      Admin-only. Uses raw Ecto: 4-way join (User, ProjectUser, session subquery, HoursRecord)
+      + per-user salary lookup via temporal DISTINCT ON subquery + Accounts avatar.
+      Raw Ecto is required for the cross-resource joins and temporal salary lookup.
+      Organization scoping via Repo.prepare_query on the outer users query.
+      """
 
       argument :project_id, :uuid, allow_nil?: false
       argument :date, :date, allow_nil?: false
@@ -561,17 +593,33 @@ defmodule Firmowid.Ash.Timetracker.Project do
     end
 
     action :project_users_with_cost_all_time, {:array, :map} do
-      description "Per-user time and cost across all months for a project."
+      description """
+      Per-user time and cost across all months for a project.
+
+      Admin-only. Uses Ash read (months_with_sessions) + raw Ecto cost per month
+      (see :project_month_users_with_cost), then merges per-user totals in Elixir.
+      """
 
       argument :project_id, :uuid, allow_nil?: false
 
-      run fn input, _context ->
-        {:ok, compute_project_users_with_cost_all_time(input.arguments.project_id)}
+      run fn input, context ->
+        {:ok,
+         ProjectCosts.compute_project_users_with_cost_all_time(
+           input.arguments.project_id,
+           context
+         )}
       end
     end
 
     action :project_users_with_removed, {:array, :map} do
-      description "Users associated with a project — includes users who have sessions but were removed from the project."
+      description """
+      Users associated with a project — includes users who have sessions but were removed from the project.
+
+      Admin-only. Uses raw Ecto: LEFT JOIN on Accounts.User ↔ ProjectUser with
+      EXISTS subquery on sessions. Raw Ecto is required because Ash.Core.User is
+      a read-only wrapper with no relationships to sessions or project_users.
+      Organization scoping via Repo.prepare_query.
+      """
 
       argument :project_id, :uuid, allow_nil?: false
 
@@ -581,7 +629,12 @@ defmodule Firmowid.Ash.Timetracker.Project do
     end
 
     action :user_projects_with_duration, {:array, :map} do
-      description "A user's projects with per-project session duration in a given month."
+      description """
+      A user's projects with per-project session duration in a given month.
+
+      Uses Ash reads with :for_user action + Ash.Query.aggregate for filtered
+      duration sum. Passes actor and tenant through properly.
+      """
 
       argument :user_id, :uuid, allow_nil?: false
       argument :date, :date, allow_nil?: false
@@ -601,6 +654,17 @@ defmodule Firmowid.Ash.Timetracker.Project do
       authorize_if relates_to_actor_via([:project_users, :user])
     end
 
+    # user_projects_with_duration uses Ash reads internally (passes actor/tenant,
+    # enforces :for_user read policies). Any authenticated user may call it —
+    # the internal :for_user read ensures employees only see their own projects.
+    bypass action(:user_projects_with_duration) do
+      authorize_if always()
+    end
+
+    # All other generic actions (active, archived_total, cost/reporting, user
+    # assignment, project_users_with_removed) are admin-only. Most use raw Ecto
+    # for cross-resource joins, GROUP BY, or ParadeDB search that bypass Ash read
+    # policies. See each action's description for details.
     policy action_type(:action) do
       authorize_if actor_attribute_equals(:role, :admin)
     end
@@ -797,9 +861,11 @@ defmodule Firmowid.Ash.Timetracker.Project do
     )
   end
 
-  defp compute_project_total_cost_all_time(project_id) do
+  defp compute_project_total_cost_all_time(project_id, context) do
+    ash_opts = [actor: context.actor, tenant: context.tenant]
+
     project_id
-    |> query_months_with_sessions_by_project()
+    |> read_months_with_sessions_by_project(ash_opts)
     |> Enum.reduce(nil, fn month_date, acc ->
       month_cost = compute_project_total_cost(project_id, month_date)
       add_nullable_decimals(acc, month_cost)
@@ -833,9 +899,11 @@ defmodule Firmowid.Ash.Timetracker.Project do
     |> Enum.sort_by(&{&1.removed_from_project, &1.name, &1.email})
   end
 
-  defp compute_project_users_with_cost_all_time(project_id) do
+  defp compute_project_users_with_cost_all_time(project_id, context) do
+    ash_opts = [actor: context.actor, tenant: context.tenant]
+
     project_id
-    |> query_months_with_sessions_by_project()
+    |> read_months_with_sessions_by_project(ash_opts)
     |> Enum.reduce(%{}, fn month_date, acc ->
       project_id
       |> compute_project_month_users_with_cost(month_date)
@@ -933,20 +1001,19 @@ defmodule Firmowid.Ash.Timetracker.Project do
     |> Enum.sort_by(& &1.duration, :desc)
   end
 
-  defp query_months_with_sessions_by_project(project_id) do
-    import Ecto.Query
-
-    from(s in Session,
-      where: s.project_id == ^project_id,
-      select:
-        "date_trunc('month', ?)"
-        |> fragment(s.start_datetime)
-        |> selected_as(:date),
-      distinct: [desc: selected_as(:date)],
-      order_by: [desc: selected_as(:date)]
-    )
-    |> Firmowid.Repo.all()
-    |> Enum.map(&month_value_to_date/1)
+  defp read_months_with_sessions_by_project(project_id, ash_opts) do
+    Session
+    |> Ash.Query.filter(project_id == ^project_id)
+    |> Ash.Query.distinct(:month_start)
+    |> Ash.Query.distinct_sort(month_start: :desc)
+    |> Ash.Query.sort(month_start: :desc)
+    |> Ash.Query.load(:month_start)
+    |> Ash.read!(ash_opts)
+    |> Enum.map(fn session ->
+      session.month_start
+      |> NaiveDateTime.to_date()
+      |> Date.beginning_of_month()
+    end)
   end
 
   defp query_user_salary_as_of(user_id, %Date{} = date) do
@@ -957,12 +1024,6 @@ defmodule Firmowid.Ash.Timetracker.Project do
     |> where([us], us.user_id == ^user_id)
     |> Firmowid.Repo.one(skip_organization_id: true)
   end
-
-  defp month_value_to_date(%Date{} = date), do: Date.beginning_of_month(date)
-
-  defp month_value_to_date(%NaiveDateTime{} = dt), do: dt |> NaiveDateTime.to_date() |> Date.beginning_of_month()
-
-  defp month_value_to_date(%DateTime{} = dt), do: dt |> DateTime.to_date() |> Date.beginning_of_month()
 
   defp add_nullable_decimals(nil, nil), do: nil
   defp add_nullable_decimals(nil, b), do: b

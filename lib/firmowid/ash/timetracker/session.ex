@@ -155,14 +155,21 @@ defmodule Firmowid.Ash.Timetracker.Session do
     end
 
     action :grouped_user_project_sessions, {:array, :map} do
-      description "Sessions grouped by title for a user+project+month/year, returning title + sum duration (seconds)."
+      description """
+      Sessions grouped by title for a user+project+month/year, returning title + sum duration (seconds).
+
+      Uses raw Ecto GROUP BY because Ash cannot return non-struct aggregate shapes.
+      Organization scoping is applied automatically via Repo.prepare_query.
+      Employee access is restricted to own sessions via actor check in the run function.
+      """
 
       argument :user_id, :uuid, allow_nil?: false
       argument :project_id, :uuid, allow_nil?: false
       argument :month, :integer, allow_nil?: false
       argument :year, :integer, allow_nil?: false
 
-      run fn input, _context ->
+      run fn input, context ->
+        enforce_own_sessions!(context.actor, input.arguments.user_id)
         {:ok, query_grouped_user_project_sessions(input.arguments)}
       end
     end
@@ -192,7 +199,12 @@ defmodule Firmowid.Ash.Timetracker.Session do
     end
 
     action :project_tasks_csv, :string do
-      description "CSV of tasks (grouped sessions) for a project in a given month, with duration in ceiled hours."
+      description """
+      CSV of tasks (grouped sessions) for a project in a given month, with duration in ceiled hours.
+
+      Admin-only. Uses raw Ecto GROUP BY because Ash cannot return non-struct
+      aggregate shapes. Organization scoping via Repo.prepare_query.
+      """
 
       argument :project_id, :uuid, allow_nil?: false
       argument :month, :integer, allow_nil?: false
@@ -236,15 +248,31 @@ defmodule Firmowid.Ash.Timetracker.Session do
       authorize_if relates_to_actor_via(:user)
     end
 
-    # TODO: Generic actions use raw Ecto queries that bypass per-record read
-    # policies. While action dispatch is authorized here, the data fetched
-    # inside is not ownership-scoped. Callers always pass actor's user_id,
-    # but that's enforced by the caller, not the policy. Phase 3 will replace
-    # raw Ecto with Ash.read (which enforces :read policies), at which point
-    # we can tighten this further. Until then, the risk is limited to
-    # aggregate stats (total seconds, week dates) — not individual records.
-    policy [action_type(:action), actor_attribute_equals(:role, :employee)] do
+    # Generic actions that employees can call. These use either Ash reads
+    # (total_time_worked, months_with_sessions, weeks_with_sessions) which
+    # enforce :read policies, or raw Ecto GROUP BY (grouped_user_project_sessions)
+    # with an in-action actor check (enforce_own_sessions!) to prevent employees
+    # from querying other users' data.
+    #
+    # TODO: replace `authorize_if always()` with proper per-action policies once
+    # these generic actions can be expressed as Ash reads with aggregates. The
+    # current pattern relies on internal Ash reads for security — safe but should
+    # not be copied blindly to new domains.
+    policy [
+      action([
+        :weeks_with_sessions,
+        :months_with_sessions,
+        :total_time_worked,
+        :grouped_user_project_sessions
+      ]),
+      actor_attribute_equals(:role, :employee)
+    ] do
       authorize_if always()
+    end
+
+    # project_tasks_csv is admin-only — it aggregates all users' data for a project.
+    policy [action(:project_tasks_csv), actor_attribute_equals(:role, :employee)] do
+      forbid_if always()
     end
   end
 
@@ -341,6 +369,18 @@ defmodule Firmowid.Ash.Timetracker.Session do
   # TODO: extract these imperative helpers into a dedicated SessionQueries
   # module (similar to how ProjectCosts was extracted from Project) to keep
   # the resource module focused on Ash DSL declarations.
+
+  # Ensures employees can only query their own sessions in generic actions
+  # that bypass Ash read policies (raw Ecto GROUP BY queries). Admins may
+  # query any user's data. Raises Ash.Error.Forbidden on violation.
+  defp enforce_own_sessions!(%{role: :admin}, _user_id), do: :ok
+
+  defp enforce_own_sessions!(%{id: actor_id}, user_id) when actor_id == user_id, do: :ok
+
+  defp enforce_own_sessions!(_actor, _user_id) do
+    raise Ash.Error.Forbidden,
+      errors: ["employees can only access their own sessions"]
+  end
 
   defp read_weeks_with_sessions(args, context) do
     ash_opts = [actor: context.actor, tenant: context.tenant]
