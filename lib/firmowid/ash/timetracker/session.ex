@@ -230,10 +230,17 @@ defmodule Firmowid.Ash.Timetracker.Session do
       authorize_if relates_to_actor_via(:user)
     end
 
-    # For all other writes, the session's month must not have a submitted
-    # hours record, AND the user must own the session.
+    # Create: employee can only create sessions for themselves.
+    # `relates_to_actor_via` can't filter on creates, so we check the
+    # changeset attribute directly via a simple check.
+    policy [action_type(:create), actor_attribute_equals(:role, :employee)] do
+      forbid_unless HoursRecordNotSubmitted
+      authorize_if OwnsResource
+    end
+
+    # Update/destroy: session must belong to the actor and month not submitted.
     policy [
-      action_type([:create, :update, :destroy]),
+      action_type([:update, :destroy]),
       actor_attribute_equals(:role, :employee)
     ] do
       forbid_unless HoursRecordNotSubmitted

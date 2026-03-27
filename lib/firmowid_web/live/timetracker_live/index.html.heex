@@ -24,7 +24,7 @@
       <%= if Enum.empty?(@active_projects) do %>
         <div class="w-full text-center py-8 text-darkGrey">
           <p class="text-lg font-semibold">Nie masz przypisanych projektów</p>
-          <%= if Bodyguard.permit?(Firmowid.Timetracker, :create_project, @current_user) do %>
+          <%= if @current_user.role == :admin do %>
             <p class="text-sm mt-2">
               Dodaj swój pierwszy projekt i przypisz się do niego, aby rozpocząć śledzenie czasu
             </p>
@@ -47,8 +47,7 @@
           class="w-full flex flex-col sticky top-[12.1rem]"
         >
           <div class="flex flex-col gap-4">
-            <% is_hours_record_submitted =
-              Timetracker.submitted_hours_record?(@current_user.id, Date.utc_today()) %>
+            <% is_hours_record_submitted = @is_hours_record_submitted %>
 
             <.input
               field={@form[:title]}

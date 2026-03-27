@@ -2,34 +2,35 @@ defmodule FirmowidWeb.ManagementLive.Project do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Accounts
+  alias Firmowid.Ash.Timetracker.Project, as: AshProject
+  alias Firmowid.Ash.Timetracker.Session, as: AshSession
   alias Firmowid.SalesInvoices.Counterparty
-  alias Firmowid.Timetracker
   alias FirmowidWeb.Helpers.TimeFormatter
 
   @impl true
   def mount(_params, _session, socket) do
-    Bodyguard.permit!(Timetracker, :read_projects, socket.assigns.current_user)
     {:ok, socket}
   end
 
   @impl true
   def handle_params(%{"id" => project_id} = params, _url, socket) do
+    scope = socket.assigns.ash_scope
+
     selected_date =
       case params do
         %{"month" => month} -> Date.from_iso8601!(month)
         _ -> Date.utc_today()
       end
 
+    {:ok, active_months} =
+      AshSession.months_with_sessions(%{project_id: project_id}, scope: scope)
+
     socket =
       socket
       |> assign(:selected_date, selected_date)
-      |> assign(:active_months, Timetracker.get_months_with_sessions_by_project(project_id))
-      |> assign(:project, load_project!(project_id))
-      |> assign(
-        :can_delete_project,
-        Bodyguard.permit?(Timetracker, :delete_project, socket.assigns.current_user)
-      )
+      |> assign(:active_months, active_months)
+      |> assign(:project, load_project!(project_id, scope))
+      |> assign(:can_delete_project, socket.assigns.current_user.role == :admin)
       |> assign_project_data()
 
     {:noreply, socket}
@@ -41,17 +42,26 @@ defmodule FirmowidWeb.ManagementLive.Project do
   end
 
   def handle_event("toggle-user", %{"id" => user_id}, socket) do
+    scope = socket.assigns.ash_scope
+
     users =
       Enum.map(socket.assigns.users, fn
         %{id: ^user_id} = user ->
           user
           |> Map.put(:expanded, !user.expanded)
           |> Map.put_new_lazy(:sessions_with_duration, fn ->
-            Timetracker.get_grouped_user_project_sessions(
-              user.id,
-              socket.assigns.project.id,
-              socket.assigns.selected_date
-            )
+            date = socket.assigns.selected_date
+
+            {:ok, sessions} =
+              AshSession.grouped_user_project_sessions(
+                user.id,
+                socket.assigns.project.id,
+                date.month,
+                date.year,
+                scope: scope
+              )
+
+            sessions
           end)
 
         user ->
@@ -62,10 +72,10 @@ defmodule FirmowidWeb.ManagementLive.Project do
   end
 
   def handle_event("archive_project", _, socket) do
+    scope = socket.assigns.ash_scope
     project = socket.assigns.project
-    Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user, project)
 
-    {:ok, project} = Timetracker.archive_project(project)
+    {:ok, project} = AshProject.archive(project, scope: scope)
 
     socket =
       socket
@@ -76,10 +86,10 @@ defmodule FirmowidWeb.ManagementLive.Project do
   end
 
   def handle_event("unarchive_project", _, socket) do
+    scope = socket.assigns.ash_scope
     project = socket.assigns.project
-    Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user, project)
 
-    {:ok, project} = Timetracker.unarchive_project(project)
+    {:ok, project} = AshProject.unarchive(project, scope: scope)
 
     socket =
       socket
@@ -90,10 +100,10 @@ defmodule FirmowidWeb.ManagementLive.Project do
   end
 
   def handle_event("delete_project", _, socket) do
+    scope = socket.assigns.ash_scope
     project = socket.assigns.project
-    Bodyguard.permit!(Timetracker, :delete_project, socket.assigns.current_user, project)
 
-    {:ok, _project} = Timetracker.delete_project(project)
+    :ok = AshProject.destroy(project, scope: scope)
 
     {:noreply,
      socket
@@ -103,10 +113,19 @@ defmodule FirmowidWeb.ManagementLive.Project do
 
   defp assign_project_data(%{assigns: %{selected_date: _date, project: project}} = socket)
        when not is_nil(project.archived_at) do
+    scope = socket.assigns.ash_scope
+
+    {:ok, users} = AshProject.project_users_with_cost_all_time(project.id, scope: scope)
+
+    {:ok, total_time_worked} =
+      AshSession.total_time_worked(%{project_id: project.id}, scope: scope)
+
+    {:ok, total_cost} = AshProject.project_total_cost_all_time(project.id, scope: scope)
+
     socket
-    |> assign(:users, Timetracker.get_project_users_with_cost_all_time(project.id))
-    |> assign(:total_time_worked, Timetracker.get_project_total_time_worked_all_time(project.id))
-    |> assign(:total_cost, Timetracker.get_project_total_cost_all_time(project.id))
+    |> assign(:users, users)
+    |> assign(:total_time_worked, total_time_worked)
+    |> assign(:total_cost, total_cost)
     |> assign(:previous_month_label, nil)
     |> assign(:hours_delta, nil)
     |> assign(:cost_delta, nil)
@@ -114,22 +133,35 @@ defmodule FirmowidWeb.ManagementLive.Project do
 
   defp assign_project_data(%{assigns: %{selected_date: date, project: project}} = socket)
        when is_nil(project.archived_at) do
+    scope = socket.assigns.ash_scope
     previous_month = date |> Date.shift(month: -1) |> Date.beginning_of_month()
 
-    current_month_total_time_worked =
-      Timetracker.get_project_total_time_worked(project.id, date)
+    {:ok, current_month_total_time_worked} =
+      AshSession.total_time_worked(
+        %{month: date.month, year: date.year, project_id: project.id},
+        scope: scope
+      )
 
-    previous_month_total_time_worked =
-      Timetracker.get_project_total_time_worked(project.id, previous_month)
+    {:ok, previous_month_total_time_worked} =
+      AshSession.total_time_worked(
+        %{month: previous_month.month, year: previous_month.year, project_id: project.id},
+        scope: scope
+      )
 
-    current_month_total_cost = Timetracker.get_project_total_cost(project.id, date)
-    previous_month_total_cost = Timetracker.get_project_total_cost(project.id, previous_month)
+    {:ok, current_month_total_cost} =
+      AshProject.project_total_cost(project.id, date, scope: scope)
+
+    {:ok, previous_month_total_cost} =
+      AshProject.project_total_cost(project.id, previous_month, scope: scope)
 
     previous_month_label =
       Cldr.Date.to_string!(previous_month, Firmowid.Cldr, format: "MMMM", locale: "pl")
 
+    {:ok, users} =
+      AshProject.project_month_users_with_cost(project.id, date, scope: scope)
+
     socket
-    |> assign(:users, Timetracker.get_project_month_users_with_cost(project.id, date))
+    |> assign(:users, users)
     |> assign(:total_time_worked, current_month_total_time_worked)
     |> assign(:total_cost, current_month_total_cost)
     |> assign(:previous_month_label, previous_month_label)
@@ -203,8 +235,19 @@ defmodule FirmowidWeb.ManagementLive.Project do
     end
   end
 
-  defp load_project!(id) do
-    project = Timetracker.get_project!(id)
-    %{project | users: Enum.map(project.users, &Accounts.get_user_with_avatar/1)}
+  defp load_project!(id, scope) do
+    project = AshProject.get!(id, scope: scope)
+    users = Enum.map(project.users, &resolve_avatar/1)
+    %{project | users: users}
+  end
+
+  defp resolve_avatar(user) do
+    avatar_url =
+      case Map.get(user, :avatar_blob_id) do
+        nil -> nil
+        blob_id -> Firmowid.Blobs.get_blob_url(blob_id)
+      end
+
+    Map.put(user, :avatar_url, avatar_url)
   end
 end

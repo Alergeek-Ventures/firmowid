@@ -2,9 +2,13 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Ash.Error.Invalid
+  alias Ash.Error.Unknown
+  alias Ash.Error.Unknown.UnknownError
   alias Firmowid.Analytics
-  alias Firmowid.Timetracker
-  alias Firmowid.Timetracker.Session
+  alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
+  alias Firmowid.Ash.Timetracker.Project, as: AshProject
+  alias Firmowid.Ash.Timetracker.Session, as: AshSession
   alias FirmowidWeb.Helpers.TimeFormatter
   alias FirmowidWeb.TimetrackerLive.GroupedSessionForm
   alias FirmowidWeb.TimetrackerLive.SessionForm
@@ -50,11 +54,11 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   }
 
   def mount(_params, _session, socket) do
-    Bodyguard.permit!(Timetracker, :read_user_sessions, socket.assigns.current_user)
-    Bodyguard.permit!(Timetracker, :read_user_projects, socket.assigns.current_user)
+    scope = socket.assigns.ash_scope
+    user = socket.assigns.current_user
 
-    last_session = Timetracker.get_most_recent_session(socket.assigns.current_user.id)
-    active_projects = Timetracker.list_user_active_projects(socket.assigns.current_user.id)
+    {:ok, last_session} = AshSession.most_recent(user.id, scope: scope, not_found_error?: false)
+    {:ok, active_projects} = AshProject.active_for_user(user.id, scope: scope)
 
     default_project_id =
       if last_session && Enum.any?(active_projects, &(&1.id == last_session.project_id)) do
@@ -71,10 +75,16 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def assign_sessions(%{assigns: assigns} = socket) when not is_map_key(assigns, :sessions_after) do
-    last_four_weeks =
-      socket.assigns.current_user.id
-      |> Timetracker.weeks_with_user_sessions(timezone: socket.assigns.timezone, limit: 4)
-      |> List.last(Date.utc_today())
+    scope = socket.assigns.ash_scope
+
+    {:ok, weeks} =
+      AshSession.weeks_with_sessions(
+        socket.assigns.current_user.id,
+        %{timezone: socket.assigns.timezone, limit: 4},
+        scope: scope
+      )
+
+    last_four_weeks = List.last(weeks, Date.utc_today())
 
     socket
     |> assign(:sessions_after, last_four_weeks)
@@ -82,12 +92,15 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def assign_sessions(%{assigns: %{sessions_after: %Date{} = after_date}} = socket) do
+    scope = socket.assigns.ash_scope
     timezone = socket.assigns.timezone
+    user_id = socket.assigns.current_user.id
+
+    {:ok, sessions} =
+      AshSession.list_user_sessions(user_id, %{after_date: after_date}, scope: scope)
 
     sessions =
-      socket.assigns.current_user.id
-      |> Timetracker.list_user_sessions(after_date: after_date)
-      |> Enum.map(fn session ->
+      Enum.map(sessions, fn session ->
         session
         |> Map.update!(:start_datetime, &DateTime.shift_zone!(&1, timezone))
         |> Map.update!(:end_datetime, fn
@@ -96,14 +109,14 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
         end)
       end)
 
-    next_sessions_after =
-      socket.assigns.current_user.id
-      |> Timetracker.weeks_with_user_sessions(
-        timezone: timezone,
-        limit: 1,
-        after_date: after_date
+    {:ok, next_weeks} =
+      AshSession.weeks_with_sessions(
+        user_id,
+        %{timezone: timezone, limit: 1, after_date: after_date},
+        scope: scope
       )
-      |> List.first()
+
+    next_sessions_after = List.first(next_weeks)
 
     {today_sessions, rest_sessions} =
       Enum.split_with(sessions, fn session ->
@@ -128,7 +141,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
          end)}
       end)
 
-    current_session = Timetracker.get_current_session(socket.assigns.current_user.id)
+    {:ok, current_session} = AshSession.get_current(scope: scope, not_found_error?: false)
 
     project_ids_in_sessions =
       sessions
@@ -142,8 +155,8 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
       end)
       |> Enum.uniq()
 
-    projects_by_id =
-      project_ids_in_sessions |> Timetracker.list_projects_by_ids() |> Map.new(&{&1.id, &1})
+    {:ok, projects_list} = AshProject.by_ids(project_ids_in_sessions, scope: scope)
+    projects_by_id = Map.new(projects_list, &{&1.id, &1})
 
     projects_by_id = Map.merge(socket.assigns.projects_by_id, projects_by_id)
 
@@ -192,7 +205,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
 
   def handle_session_save_result(result, socket) do
     case result do
-      {:ok, %{end_time: nil} = session} ->
+      {:ok, %{end_datetime: nil} = session} ->
         {:noreply,
          socket
          |> assign(:current_session, session)
@@ -205,13 +218,39 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
          |> expand_sessions(session)
          |> assign_sessions()}
 
-      {:error, :overlap} ->
-        LiveToast.send_toast(:error, "Sesja nachodzi na inną sesję.")
+      {:error, %Unknown{} = error} ->
+        if overlap_error?(error) do
+          LiveToast.send_toast(:error, "Sesja nachodzi na inną sesję.")
+        else
+          raise error
+        end
+
         {:noreply, socket}
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, :form, to_form(changeset))}
+      {:error, %Invalid{} = error} ->
+        messages =
+          Enum.map_join(error.errors, ", ", fn err -> Map.get(err, :message, "Nieznany błąd") end)
+
+        LiveToast.send_toast(:error, messages)
+        {:noreply, socket}
+
+      {:error, _other} ->
+        LiveToast.send_toast(:error, "Wystąpił nieoczekiwany błąd.")
+        {:noreply, socket}
     end
+  end
+
+  defp overlap_error?(%Unknown{errors: errors}) do
+    Enum.any?(errors, fn
+      %UnknownError{error: %Postgrex.Error{postgres: %{message: msg}}} ->
+        String.contains?(msg, "overlaps")
+
+      %UnknownError{error: message} when is_binary(message) ->
+        String.contains?(message, "overlaps")
+
+      _ ->
+        false
+    end)
   end
 
   def validate_and_update(params, socket) do
@@ -227,18 +266,33 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     end
   end
 
-  defp timetracker_update_sessions(changesets, socket) do
-    case Timetracker.update_sessions(changesets) do
-      {:ok, _sessions} ->
+  defp ash_update_sessions(session_updates, socket) do
+    scope = socket.assigns.ash_scope
+
+    results =
+      Enum.reduce_while(session_updates, :ok, fn {session, attrs}, :ok ->
+        case AshSession.update(session, attrs, scope: scope) do
+          {:ok, _updated} -> {:cont, :ok}
+          {:error, error} -> {:halt, {:error, session.id, error}}
+        end
+      end)
+
+    case results do
+      :ok ->
         {:noreply, assign_sessions(socket)}
 
-      {:error, :overlap} ->
-        LiveToast.send_toast(:error, "Sesja nachodzi na inną sesję.")
+      {:error, _session_id, %Unknown{} = error} ->
+        if overlap_error?(error) do
+          LiveToast.send_toast(:error, "Sesja nachodzi na inną sesję.")
+        else
+          LiveToast.send_toast(:error, "Wystąpił błąd podczas aktualizacji sesji.")
+        end
+
         {:noreply, socket}
 
-      {:error, session_id, changeset, _changes_so_far} ->
-        Enum.each(changeset.errors, fn {_field, {message, _}} ->
-          LiveToast.send_toast(:error, "#{message} (sesja ID: #{session_id})")
+      {:error, session_id, %Invalid{errors: errors}} ->
+        Enum.each(errors, fn error ->
+          LiveToast.send_toast(:error, "#{Exception.message(error)} (sesja ID: #{session_id})")
         end)
 
         {:noreply, socket}
@@ -246,6 +300,7 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def edit_session(params, socket) do
+    scope = socket.assigns.ash_scope
     current_session = socket.assigns.current_session
 
     current_session
@@ -254,15 +309,8 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     |> SessionForm.attributes(socket.assigns.current_user.id, socket.assigns.timezone)
     |> case do
       {:ok, attributes} ->
-        Bodyguard.permit!(
-          Timetracker,
-          :update_session,
-          socket.assigns.current_user,
-          current_session
-        )
-
         current_session
-        |> Timetracker.update_session(attributes)
+        |> AshSession.update(attributes, scope: scope)
         |> handle_session_save_result(socket)
 
       {:error, changeset} ->
@@ -270,13 +318,10 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     end
   end
 
-  defp ids_to_session_changeset(ids, socket, attrs \\ %{}) do
-    ids
-    |> Timetracker.list_sessions_by_ids()
-    |> Enum.map(fn session ->
-      Bodyguard.permit!(Timetracker, :update_session, socket.assigns.current_user, session)
-      Session.changeset(session, attrs)
-    end)
+  defp fetch_sessions_by_ids(ids, socket) do
+    scope = socket.assigns.ash_scope
+    {:ok, sessions} = AshSession.by_ids(ids, scope: scope)
+    sessions
   end
 
   def edit_sessions(ids, form, socket) do
@@ -285,16 +330,39 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
       |> GroupedSessionForm.changeset()
       |> Ecto.Changeset.apply_changes()
 
-    ids
-    |> ids_to_session_changeset(socket)
-    |> GroupedSessionForm.from_changesets(form, socket.assigns.timezone)
-    |> timetracker_update_sessions(socket)
+    sessions = fetch_sessions_by_ids(ids, socket)
+
+    session_updates =
+      Enum.map(sessions, fn session ->
+        times =
+          form.start_end_times
+          |> Enum.find(fn s -> s.id == session.id end)
+          |> SessionForm.times_to_datetimes(socket.assigns.timezone)
+
+        {start_datetime, end_datetime} = times
+
+        attrs = %{
+          title: form.title,
+          project_id: form.project_id,
+          start_datetime: start_datetime,
+          end_datetime: end_datetime
+        }
+
+        {session, attrs}
+      end)
+
+    ash_update_sessions(session_updates, socket)
   end
 
   def edit_sessions_realtime(ids, %{"title" => title, "project_id" => project_id}, socket) do
-    ids
-    |> ids_to_session_changeset(socket, %{title: title, project_id: project_id})
-    |> timetracker_update_sessions(socket)
+    sessions = fetch_sessions_by_ids(ids, socket)
+
+    session_updates =
+      Enum.map(sessions, fn session ->
+        {session, %{title: title, project_id: project_id}}
+      end)
+
+    ash_update_sessions(session_updates, socket)
   end
 
   def handle_event("toggle_extended_form", _, %{assigns: %{current_session: nil}} = socket) do
@@ -336,21 +404,26 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def handle_event("save", %{"session_form" => session}, socket) do
+    scope = socket.assigns.ash_scope
+
     {:ok, validated_session} =
       session
       |> SessionForm.changeset()
       |> SessionForm.attributes(socket.assigns.current_user.id, socket.assigns.timezone)
 
-    Bodyguard.permit!(
-      Timetracker,
-      :create_session,
-      socket.assigns.current_user,
-      validated_session
-    )
-
     socket = assign(socket, is_form_extended: false)
 
-    result = Timetracker.start_session(validated_session)
+    # If the form has explicit start/end times, use :create (full attrs);
+    # otherwise use :start (auto-sets start_datetime to now)
+    result =
+      if validated_session[:end_datetime] || validated_session[:start_datetime] do
+        AshSession.create(validated_session, scope: scope)
+      else
+        AshSession.start(
+          Map.take(validated_session, [:title, :project_id, :is_remote]),
+          scope: scope
+        )
+      end
 
     case result do
       {:ok, started_session} ->
@@ -366,12 +439,13 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def handle_event("end_session", _, socket) do
-    session = Timetracker.get_session!(socket.assigns.current_session.id)
-    Bodyguard.permit!(Timetracker, :update_session, socket.assigns.current_user, session)
+    scope = socket.assigns.ash_scope
+    current_session = socket.assigns.current_session
 
-    case Timetracker.end_session(socket.assigns.current_session) do
+    case AshSession.stop(current_session, scope: scope) do
       {:ok, ended_session} ->
-        duration_minutes = div(Session.calculate_session_duration(ended_session), 60)
+        duration_seconds = DateTime.diff(ended_session.end_datetime, ended_session.start_datetime)
+        duration_minutes = div(duration_seconds, 60)
 
         Analytics.track_event("session_end", socket.assigns.current_user, %{
           session_duration_minutes: duration_minutes,
@@ -383,52 +457,54 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
          |> assign(is_form_extended: false)
          |> assign_sessions()}
 
-      {:error, _changeset} ->
+      {:error, _error} ->
         {:noreply, socket}
     end
   end
 
   def handle_event("delete_session", %{"id" => id}, socket) do
-    session = Timetracker.get_session!(id)
-    Bodyguard.permit!(Timetracker, :delete_session, socket.assigns.current_user, session)
+    scope = socket.assigns.ash_scope
+    session = Ash.get!(AshSession, id, scope: scope)
 
-    case Timetracker.delete_session(id) do
-      {:ok, _session} ->
+    case AshSession.destroy(session, scope: scope) do
+      :ok ->
         {:noreply, assign_sessions(socket)}
 
-      {:error, _changeset} ->
+      {:error, _error} ->
         LiveToast.send_toast(:error, "Nie udało się usunąć sesji")
         {:noreply, socket}
     end
   end
 
-  def handle_event("edit_sessions", %{"sessions_form" => %{"ids" => ids} = form}, socket) do
+  def handle_event("edit_sessions", %{"sessions_form" => %{"ids" => ids} = form_params}, socket) do
     form =
-      form
+      form_params
       |> GroupedSessionForm.changeset()
       |> Ecto.Changeset.apply_changes()
 
-    ids
-    |> Timetracker.list_sessions_by_ids()
-    |> Enum.map(fn session ->
-      Bodyguard.permit!(Timetracker, :update_session, socket.assigns.current_user, session)
+    sessions = fetch_sessions_by_ids(ids, socket)
 
-      Session.changeset(session)
-    end)
-    |> GroupedSessionForm.from_changesets(
-      form,
-      socket.assigns.timezone
-    )
-    |> timetracker_update_sessions(socket)
+    session_updates =
+      Enum.map(sessions, fn session ->
+        {start_datetime, end_datetime} =
+          form.start_end_times
+          |> Enum.find(fn s -> s.id == session.id end)
+          |> SessionForm.times_to_datetimes(socket.assigns.timezone)
+
+        attrs = %{
+          title: form.title,
+          project_id: form.project_id,
+          start_datetime: start_datetime,
+          end_datetime: end_datetime
+        }
+
+        {session, attrs}
+      end)
+
+    ash_update_sessions(session_updates, socket)
   end
 
   def handle_event("load_more", _, socket) do
-    Bodyguard.permit!(
-      Timetracker,
-      :read_user_sessions,
-      socket.assigns.current_user
-    )
-
     {:noreply,
      socket
      |> assign(:sessions_after, socket.assigns.next_sessions_after)
@@ -472,16 +548,19 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
 
   def calculate_total_duration(sessions) do
     Enum.reduce(sessions, 0, fn session, acc ->
-      acc +
-        Session.calculate_session_duration(session)
+      acc + (session.duration || 0)
     end)
   end
 
   def assign_month_stats(socket) do
+    scope = socket.assigns.ash_scope
     now = DateTime.now!(socket.assigns.timezone)
 
-    total_seconds =
-      Timetracker.get_sessions_duration_in_month(socket.assigns.current_user.id, now)
+    {:ok, total_seconds} =
+      AshSession.total_time_worked(
+        %{month: now.month, year: now.year, user_id: socket.assigns.current_user.id},
+        scope: scope
+      )
 
     hours = div(total_seconds, 60 * 60)
     minutes = rem(div(total_seconds, 60), 60)
@@ -489,12 +568,22 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
 
     current_month = Map.fetch!(@month_names_locative, now.month)
 
-    assign(socket, :month_stats, %{
+    today = Date.utc_today()
+
+    {:ok, hours_record} =
+      AshHoursRecord.by_month(socket.assigns.current_user.id, today.month, today.year,
+        scope: scope,
+        not_found_error?: false
+      )
+
+    socket
+    |> assign(:month_stats, %{
       hours: hours,
       minutes: minutes,
       elapsed: DateTime.add(now, -total_seconds),
       percentage: percentage,
       month: current_month
     })
+    |> assign(:is_hours_record_submitted, hours_record != nil)
   end
 end

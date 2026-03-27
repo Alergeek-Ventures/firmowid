@@ -2,16 +2,20 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Timetracker
+  alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
+  alias Firmowid.Ash.Timetracker.Project, as: AshProject
+  alias Firmowid.Ash.Timetracker.Session, as: AshSession
   alias FirmowidWeb.Helpers.TimeFormatter
 
   @impl true
   def mount(_params, _session, socket) do
+    scope = socket.assigns.ash_scope
     current_user = socket.assigns.current_user
-    Bodyguard.permit!(Timetracker, :read_user_hours_records, current_user)
 
     selected_date = Date.utc_today()
-    active_months = Timetracker.get_months_with_sessions(current_user.id)
+
+    {:ok, active_months} =
+      AshSession.months_with_sessions(%{user_id: current_user.id}, scope: scope)
 
     can_use_hours_records = current_user.name && current_user.employment_date
 
@@ -66,38 +70,45 @@ defmodule FirmowidWeb.HoursRecordLive.Index do
   end
 
   def refetch_data(socket) do
+    scope = socket.assigns.ash_scope
     selected_date = socket.assigns.selected_date
-
     user_id = socket.assigns.current_user.id
 
+    {:ok, projects_with_duration} =
+      AshProject.user_projects_with_duration(user_id, selected_date, scope: scope)
+
     projects =
-      user_id
-      |> Timetracker.list_user_projects_with_duration(selected_date)
-      |> Enum.map(fn project ->
-        sessions =
-          Timetracker.get_grouped_user_project_sessions(user_id, project.id, selected_date)
+      Enum.map(projects_with_duration, fn project ->
+        {:ok, sessions} =
+          AshSession.grouped_user_project_sessions(
+            user_id,
+            project.id,
+            selected_date.month,
+            selected_date.year,
+            scope: scope
+          )
 
         project
         |> Map.put(:expanded, false)
         |> Map.put(:sessions, sessions)
       end)
 
-    current_month_hours_record =
-      Timetracker.get_hours_record_by_month(
-        socket.assigns.current_user.id,
-        selected_date
+    {:ok, current_month_hours_record} =
+      AshHoursRecord.by_month(user_id, selected_date.month, selected_date.year,
+        scope: scope,
+        not_found_error?: false
+      )
+
+    {:ok, total_duration} =
+      AshSession.total_time_worked(
+        %{month: selected_date.month, year: selected_date.year, user_id: user_id},
+        scope: scope
       )
 
     socket
     |> assign(:current_hours_record, current_month_hours_record)
     |> assign(:projects, projects)
-    |> assign(
-      :total_duration,
-      Timetracker.get_sessions_duration_in_month(
-        socket.assigns.current_user.id,
-        selected_date
-      )
-    )
+    |> assign(:total_duration, total_duration)
   end
 
   def error_to_string(:too_large), do: "Image too large"

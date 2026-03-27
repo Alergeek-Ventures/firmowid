@@ -4,9 +4,9 @@ defmodule FirmowidWeb.ManagementLive.Employee do
 
   import FirmowidWeb.ManagementLive.Employees, only: [hours_record_status: 1]
 
+  alias Firmowid.Ash.Timetracker.Session, as: AshSession
   alias Firmowid.Helpers.TimeConverter
   alias Firmowid.Management
-  alias Firmowid.Timetracker
   alias FirmowidWeb.Helpers.TimeFormatter
 
   @impl true
@@ -17,6 +17,8 @@ defmodule FirmowidWeb.ManagementLive.Employee do
 
   @impl true
   def handle_params(%{"id" => id} = params, _uri, socket) do
+    scope = socket.assigns.ash_scope
+
     selected_date =
       case params do
         %{"month" => month} -> Date.from_iso8601!(month)
@@ -29,9 +31,12 @@ defmodule FirmowidWeb.ManagementLive.Employee do
           push_navigate(socket, to: ~p"/zarzadzanie/pracownicy")
 
         employee ->
+          {:ok, active_months} =
+            AshSession.months_with_sessions(%{user_id: id}, scope: scope)
+
           socket
           |> assign(:employee, employee)
-          |> assign(:active_months, Timetracker.get_months_with_sessions(id))
+          |> assign(:active_months, active_months)
           |> assign(:projects_filter_date, selected_date)
           |> assign(:page_title, get_employee_display_name(employee))
       end
@@ -48,6 +53,7 @@ defmodule FirmowidWeb.ManagementLive.Employee do
   @impl true
   def handle_event("change-month", %{"month" => month}, socket) do
     employee = socket.assigns.employee
+
     {:noreply, push_patch(socket, to: ~p"/zarzadzanie/pracownicy/#{employee.id}?month=#{month}")}
   end
 

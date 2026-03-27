@@ -35,12 +35,14 @@ defmodule Firmowid.Ash.Timetracker.Validations.ProjectAccess do
   defp check_access(user_id, project_id) do
     query =
       from pu in "projects_users",
-        where: pu.user_id == ^user_id and pu.project_id == ^project_id,
+        where:
+          pu.user_id == type(^user_id, Ecto.UUID) and
+            pu.project_id == type(^project_id, Ecto.UUID),
         join: p in "projects",
         on: p.id == pu.project_id and is_nil(p.archived_at),
         select: 1
 
-    if Repo.exists?(query) do
+    if Repo.exists?(query, skip_organization_id: true) do
       :ok
     else
       {:error,

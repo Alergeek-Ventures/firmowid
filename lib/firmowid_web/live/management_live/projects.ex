@@ -2,19 +2,22 @@ defmodule FirmowidWeb.ManagementLive.Projects do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Management
+  alias Firmowid.Ash.Timetracker.Project, as: AshProject
+  alias Firmowid.Ash.Timetracker.Session, as: AshSession
   alias Firmowid.SalesInvoices.Counterparty
-  alias Firmowid.Timetracker
 
   @impl true
   def mount(_params, _session, socket) do
-    Bodyguard.permit!(Management, :read_projects, socket.assigns.current_user)
+    scope = socket.assigns.ash_scope
+
+    {:ok, all_projects} = Ash.read(AshProject, scope: scope)
+    {:ok, active_months} = AshSession.months_with_sessions(%{}, scope: scope)
 
     socket =
       socket
       |> assign(:page_title, "Zarządzanie projektami")
-      |> assign(:zero_state?, Enum.empty?(Timetracker.list_projects()))
-      |> assign(:active_months, Timetracker.get_months_with_sessions())
+      |> assign(:zero_state?, Enum.empty?(all_projects))
+      |> assign(:active_months, active_months)
 
     {:ok, socket}
   end
@@ -50,21 +53,25 @@ defmodule FirmowidWeb.ManagementLive.Projects do
   end
 
   def handle_event("unarchive_project", %{"id" => id}, socket) do
-    project = Timetracker.get_project!(id)
-    Bodyguard.permit!(Timetracker, :update_project, socket.assigns.current_user, project)
+    scope = socket.assigns.ash_scope
+    project = AshProject.get!(id, scope: scope)
 
-    {:ok, _project} = Timetracker.unarchive_project(project)
+    {:ok, _project} = AshProject.unarchive(project, scope: scope)
 
     {:noreply, assign_projects(socket)}
   end
 
   defp assign_projects(socket) do
+    scope = socket.assigns.ash_scope
     search = socket.assigns.params["q"] || ""
 
-    projects =
+    {:ok, projects} =
       case socket.assigns.live_action do
-        :index -> Timetracker.list_active_projects(socket.assigns.selected_date, search)
-        :archive -> Timetracker.list_archived_projects_total(search)
+        :index ->
+          AshProject.list_active(socket.assigns.selected_date, %{search: search}, scope: scope)
+
+        :archive ->
+          AshProject.list_archived(%{search: search}, scope: scope)
       end
 
     assign(socket, :projects, projects)

@@ -4,7 +4,7 @@ defmodule FirmowidWeb.TimetrackerLive.SessionForm do
 
   import Ecto.Changeset
 
-  alias Firmowid.Timetracker.Session
+  alias Firmowid.Ash.Timetracker.Session
 
   embedded_schema do
     field :title, :string
@@ -47,7 +47,12 @@ defmodule FirmowidWeb.TimetrackerLive.SessionForm do
     |> apply_action(:create)
     |> case do
       {:ok, form} ->
-        {:ok, form |> Map.from_struct() |> convert_times(timezone) |> Map.put(:user_id, user_id)}
+        {:ok,
+         form
+         |> Map.from_struct()
+         |> Map.drop([:id, :__struct__])
+         |> convert_times(timezone)
+         |> Map.put(:user_id, user_id)}
 
       other ->
         other

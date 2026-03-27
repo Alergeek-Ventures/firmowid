@@ -2,8 +2,8 @@ defmodule FirmowidWeb.HoursRecordLive.UploadForm do
   @moduledoc false
   use FirmowidWeb, :live_component
 
+  alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
   alias Firmowid.Helpers.TimeConverter
-  alias Firmowid.Timetracker
 
   @impl true
   def mount(socket) do
@@ -126,7 +126,6 @@ defmodule FirmowidWeb.HoursRecordLive.UploadForm do
 
   @impl true
   def handle_event("download", _params, socket) do
-    Bodyguard.permit!(Timetracker, :read_user_hours_records, socket.assigns.current_user)
     {:noreply, assign(socket, :state, :sign)}
   end
 
@@ -139,20 +138,23 @@ defmodule FirmowidWeb.HoursRecordLive.UploadForm do
   end
 
   def handle_event("send", _params, socket) do
-    Bodyguard.permit!(Timetracker, :create_hours_record, socket.assigns.current_user)
+    scope = socket.assigns.ash_scope
 
     consume_uploaded_entries(socket, :hours_record, fn %{path: path}, entry ->
-      %{
-        user_id: socket.assigns.current_user.id,
-        number_of_hours: TimeConverter.time_worked_in_seconds_to_hours(socket.assigns.total_duration),
-        month: socket.assigns.selected_date.month,
-        year: socket.assigns.selected_date.year
-      }
-      |> Timetracker.create_hours_record(
-        path,
-        entry.client_name
-      )
-      |> case do
+      result =
+        AshHoursRecord.create(
+          %{
+            user_id: socket.assigns.current_user.id,
+            number_of_hours: TimeConverter.time_worked_in_seconds_to_hours(socket.assigns.total_duration),
+            month: socket.assigns.selected_date.month,
+            year: socket.assigns.selected_date.year,
+            upload_path: path,
+            upload_filename: entry.client_name
+          },
+          scope: scope
+        )
+
+      case result do
         {:error, error} ->
           LiveToast.send_toast(:error, "Wystąpił błąd podczas zapisywania pliku.")
           {:ok, {:error, error}}

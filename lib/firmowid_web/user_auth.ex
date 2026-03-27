@@ -6,6 +6,7 @@ defmodule FirmowidWeb.UserAuth do
   import Plug.Conn
 
   alias Firmowid.Accounts
+  alias Firmowid.Ash.Scope
   alias FirmowidWeb.FallbackController
 
   # Make the remember me cookie valid for 60 days.
@@ -195,9 +196,15 @@ defmodule FirmowidWeb.UserAuth do
 
     if not is_nil(socket.assigns.current_user) and
          not is_nil(socket.assigns.current_user.organization_id) do
-      Firmowid.Repo.put_org_id(socket.assigns.current_user.organization_id)
+      user = socket.assigns.current_user
+      Firmowid.Repo.put_org_id(user.organization_id)
 
-      {:cont, Phoenix.Component.assign(socket, :current_org, socket.assigns.current_user.organization)}
+      ash_scope = %Scope{current_user: user, current_tenant: user.organization_id}
+
+      {:cont,
+       socket
+       |> Phoenix.Component.assign(:current_org, user.organization)
+       |> Phoenix.Component.assign(:ash_scope, ash_scope)}
     else
       socket =
         socket
@@ -279,9 +286,14 @@ defmodule FirmowidWeb.UserAuth do
         |> redirect(to: ~p"/organization")
         |> halt()
       else
-        Firmowid.Repo.put_org_id(conn.assigns[:current_user].organization_id)
+        user = conn.assigns[:current_user]
+        Firmowid.Repo.put_org_id(user.organization_id)
 
-        assign(conn, :current_org, conn.assigns[:current_user].organization)
+        ash_scope = %Scope{current_user: user, current_tenant: user.organization_id}
+
+        conn
+        |> assign(:current_org, user.organization)
+        |> assign(:ash_scope, ash_scope)
       end
     end
   end
@@ -289,9 +301,14 @@ defmodule FirmowidWeb.UserAuth do
   def require_authenticated_user_with_organization_api(conn, _opts) do
     if not is_nil(conn.assigns[:current_user]) and
          not is_nil(conn.assigns[:current_user].organization_id) do
-      Firmowid.Repo.put_org_id(conn.assigns[:current_user].organization_id)
+      user = conn.assigns[:current_user]
+      Firmowid.Repo.put_org_id(user.organization_id)
 
-      assign(conn, :current_org, conn.assigns[:current_user].organization)
+      ash_scope = %Scope{current_user: user, current_tenant: user.organization_id}
+
+      conn
+      |> assign(:current_org, user.organization)
+      |> assign(:ash_scope, ash_scope)
     else
       conn
       |> FallbackController.call({:error, :unauthorized})

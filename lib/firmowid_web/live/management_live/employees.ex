@@ -2,24 +2,24 @@ defmodule FirmowidWeb.ManagementLive.Employees do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Ash.Timetracker.Session, as: AshSession
   alias Firmowid.Helpers.TimeConverter
   alias Firmowid.Management
-  alias Firmowid.Timetracker
 
   @impl true
   def mount(_params, _session, socket) do
     Bodyguard.permit!(Management, :read_employees, socket.assigns.current_user)
+    scope = socket.assigns.ash_scope
+
+    {:ok, active_months} = AshSession.months_with_sessions(%{}, scope: scope)
 
     socket =
       socket
       |> assign(:page_title, "Zarządzanie pracownikami")
       |> assign(:view, :standard)
       |> assign(:search_expanded, false)
-      |> assign(:active_months, Timetracker.get_months_with_sessions())
-      |> assign(
-        :can_export_csv,
-        Bodyguard.permit?(Timetracker, :read_hours_records, socket.assigns.current_user)
-      )
+      |> assign(:active_months, active_months)
+      |> assign(:can_export_csv, socket.assigns.current_user.role == :admin)
       |> assign_form()
 
     {:ok, socket}
