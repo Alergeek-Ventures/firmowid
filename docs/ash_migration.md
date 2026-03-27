@@ -741,7 +741,7 @@ Ordered sequence. Each item is an atomic, committable step.
 ### Timetracker resources — flesh out existing
 
 - [x] 9. Flesh out `Timetracker.Session` — all write actions (start, stop, create, update, destroy), overlap error handling, all read actions (list_user_sessions, get_current, weeks_with_sessions, duration queries, month summaries, grouped sessions, most_recent, by_ids), lockdown calculation, bulk_update
-- [ ] 10. Flesh out `Timetracker.Project` — all write actions (create, update, archive, unarchive, destroy) + TagDefinition sync via after_action + all read variants (active/archived with search and duration aggregation, with_users, by_ids, get with preloads)
+- [x] 10. Flesh out `Timetracker.Project` — all write actions (create, update, archive, unarchive, destroy) + TagDefinition sync via after_action changes + all read variants (active/archived with search and duration aggregation, with_users, by_ids, get with preloads, for_user, active_for_user)
 - [ ] 11. Add `HoursRecordSubmitted` custom policy check (`Ash.Policy.SimpleCheck`)
 
 ### Payroll domain (extracted from Timetracker) ✅ DONE
@@ -952,6 +952,24 @@ throughout the plan.
     and session data use cross-domain Ecto joins (same DB, works because Ash
     resources are Ecto schemas). The `salaries_csv` generic action lives on
     `Payroll.UserSalary` even though it joins `Timetracker.HoursRecord`.
+
+29. **Raw Ecto queries on table strings lose UUID type info.** When using
+    `from(p in "projects", ...)` instead of `from(p in ProjectSchema, ...)`,
+    Postgrex doesn't know column types and fails with "expected a binary of 16
+    bytes" for UUID columns. Always use schema modules (old Ecto or Ash resource)
+    in `from()` — they carry the column type metadata.
+
+30. **Xref `--fail-above` threshold needs bumping for Ash.** Ash/Spark DSL
+    domains create compile-connected references to all their resources. Each
+    `resources do ... end` block in a domain module creates N compile edges.
+    Threshold bumped from 1 → 20 to accommodate Ash domains.
+
+31. **Project ↔ TagDefinition sync uses dedicated Change modules.** Three
+    separate `Ash.Resource.Change` modules handle the lifecycle:
+    `CreateProjectTag` (after_action: creates tag + links via update_all),
+    `SyncProjectTagName` (after_action: syncs name on project update),
+    `CleanupProjectTag` (after_action: deletes orphaned tag on destroy).
+    All delegate to existing `Firmowid.Analysis` context functions.
 
 ## Rejected Alternatives
 

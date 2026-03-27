@@ -10,7 +10,7 @@ defmodule Firmowid.Ash.Scope do
   defstruct [:current_user, :current_tenant]
 
   @type t :: %__MODULE__{
-          current_user: Firmowid.Accounts.User.t() | nil,
+          current_user: map() | nil,
           current_tenant: binary() | nil
         }
 
