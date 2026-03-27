@@ -1,14 +1,65 @@
+# Dependabot configuration
+#
+# Schedule: Every Monday at 06:00 Warsaw time.
+#
+# Strategy:
+#   - Minor/patch (non-breaking) updates are grouped into a single PR per ecosystem.
+#   - Major (breaking) updates get individual PRs.
+#   - Security patches are instant (repo-level setting, not configured here).
+#
+# Ecosystems:
+#   - mix          → Elixir deps (mix.exs / mix.lock)
+#   - docker       → Containerfiles in /deployment (app, seaweedfs, chromium)
+#   - docker-compose → Service images in /local/compose.yml (paradedb, seaweedfs)
+#   - github-actions → Action versions in .github/workflows/
+
 version: 2
 updates:
-- package-ecosystem: mix
-  directory: "/"
-  schedule:
-    interval: weekly
-    time: "12:00"
-  open-pull-requests-limit: 10
+  # ── Elixir dependencies ──────────────────────────────────────────────
+  - package-ecosystem: "mix"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Warsaw"
+    open-pull-requests-limit: 15
+    groups:
+      non-breaking:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
 
-- package-ecosystem: docker
-  directory: "/deployment"
-  schedule:
-    interval: weekly
-    time: "12:00"
+  # ── Container images (Containerfile.app, .seaweedfs, .chromium) ─────
+  - package-ecosystem: "docker"
+    directory: "/deployment"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Warsaw"
+
+  # ── Docker Compose service images (paradedb, seaweedfs) ─────────────
+  - package-ecosystem: "docker-compose"
+    directory: "/local"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Warsaw"
+
+  # ── GitHub Actions ──────────────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Warsaw"
+    groups:
+      non-breaking:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"

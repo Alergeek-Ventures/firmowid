@@ -10,7 +10,7 @@ on:
 
 jobs:
   version-sync:
-    name: Validate Dockerfile versions match .tool-versions
+    name: Validate image and tool versions are in sync
     runs-on: self-hosted
     container:
       image: ghcr.io/alergeek-ventures/infrastructure/cicd-image:5b1d7150888c47322a6b5cda04796dfd1dbfb34c
@@ -21,6 +21,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # ── Elixir / Erlang: .tool-versions ↔ Containerfile.app ────────
       - name: Extract versions from .tool-versions
         id: tool_versions
         run: |
@@ -38,7 +39,8 @@ jobs:
       - name: Extract versions from Containerfile
         id: dockerfile_versions
         run: |
-          BUILDER_IMAGE=$(grep '^ARG BUILDER_IMAGE=' deployment/Containerfile.app | sed 's/.*hexpm\/elixir:\([^"]*\)".*/\1/')
+          # Strip the @sha256:... digest before parsing version components
+          BUILDER_IMAGE=$(grep '^ARG BUILDER_IMAGE=' deployment/Containerfile.app | sed 's/.*hexpm\/elixir:\([^"@]*\).*/\1/')
 
           DOCKERFILE_ELIXIR=$(echo "$BUILDER_IMAGE" | sed 's/-erlang.*//')
           DOCKERFILE_ERLANG=$(echo "$BUILDER_IMAGE" | sed 's/.*erlang-\([0-9.]*\)-.*/\1/')
@@ -50,14 +52,14 @@ jobs:
           echo "  Elixir: $DOCKERFILE_ELIXIR"
           echo "  Erlang: $DOCKERFILE_ERLANG"
 
-      - name: Compare versions
+      - name: Compare Elixir/Erlang versions
         run: |
           TOOL_ELIXIR="${{ steps.tool_versions.outputs.elixir }}"
           TOOL_ERLANG="${{ steps.tool_versions.outputs.erlang }}"
           DOCKERFILE_ELIXIR="${{ steps.dockerfile_versions.outputs.dockerfile_elixir }}"
           DOCKERFILE_ERLANG="${{ steps.dockerfile_versions.outputs.dockerfile_erlang }}"
 
-          echo "Comparing versions..."
+          echo "=== Elixir / Erlang ==="
           echo ""
 
           MISMATCH=0
@@ -65,7 +67,7 @@ jobs:
           if [ "$TOOL_ELIXIR" != "$DOCKERFILE_ELIXIR" ]; then
             echo "❌ Elixir version mismatch!"
             echo "   .tool-versions: $TOOL_ELIXIR"
-            echo "   Dockerfile:     $DOCKERFILE_ELIXIR"
+            echo "   Containerfile:  $DOCKERFILE_ELIXIR"
             MISMATCH=1
           else
             echo "✅ Elixir version matches: $TOOL_ELIXIR"
@@ -74,7 +76,7 @@ jobs:
           if [ "$TOOL_ERLANG" != "$DOCKERFILE_ERLANG" ]; then
             echo "❌ Erlang version mismatch!"
             echo "   .tool-versions: $TOOL_ERLANG"
-            echo "   Dockerfile:     $DOCKERFILE_ERLANG"
+            echo "   Containerfile:  $DOCKERFILE_ERLANG"
             MISMATCH=1
           else
             echo "✅ Erlang version matches: $TOOL_ERLANG"
@@ -90,4 +92,54 @@ jobs:
           fi
 
           echo ""
-          echo "✅ All versions match!"
+          echo "✅ Elixir/Erlang versions in sync"
+
+      # ── ParadeDB: compose.yml (source of truth) ↔ CI workflow ──────
+      - name: Compare ParadeDB image across compose and CI
+        run: |
+          echo "=== ParadeDB ==="
+          echo ""
+
+          # Extract full image ref (tag@sha256:digest) from each file
+          COMPOSE_PARADEDB=$(grep 'image:.*paradedb/paradedb' local/compose.yml | sed 's/.*image: *//')
+          CI_PARADEDB=$(grep 'image:.*paradedb/paradedb' .github/workflows/elixir-build-and-test.yml | sed 's/.*image: *//')
+
+          echo "  compose.yml:             $COMPOSE_PARADEDB"
+          echo "  elixir-build-and-test:   $CI_PARADEDB"
+
+          if [ "$COMPOSE_PARADEDB" != "$CI_PARADEDB" ]; then
+            echo ""
+            echo "❌ ParadeDB image mismatch!"
+            echo "   Source of truth (local/compose.yml): $COMPOSE_PARADEDB"
+            echo "   Out of sync (.github/workflows/elixir-build-and-test.yml): $CI_PARADEDB"
+            echo ""
+            echo "Please update the service image in elixir-build-and-test.yml to match compose.yml."
+            exit 1
+          fi
+
+          echo "✅ ParadeDB image in sync"
+
+      # ── SeaweedFS: compose.yml (source of truth) ↔ Containerfile ───
+      - name: Compare SeaweedFS image across compose and Containerfile
+        run: |
+          echo "=== SeaweedFS ==="
+          echo ""
+
+          # Extract the image ref after "image:" or "FROM"
+          COMPOSE_SEAWEEDFS=$(grep 'image:.*seaweedfs' local/compose.yml | sed 's/.*image: *//')
+          CONTAINERFILE_SEAWEEDFS=$(grep '^FROM.*seaweedfs' deployment/Containerfile.seaweedfs | sed 's/^FROM *//')
+
+          echo "  compose.yml:               $COMPOSE_SEAWEEDFS"
+          echo "  Containerfile.seaweedfs:   $CONTAINERFILE_SEAWEEDFS"
+
+          if [ "$COMPOSE_SEAWEEDFS" != "$CONTAINERFILE_SEAWEEDFS" ]; then
+            echo ""
+            echo "❌ SeaweedFS image mismatch!"
+            echo "   Source of truth (local/compose.yml): $COMPOSE_SEAWEEDFS"
+            echo "   Out of sync (deployment/Containerfile.seaweedfs): $CONTAINERFILE_SEAWEEDFS"
+            echo ""
+            echo "Please update the FROM line in Containerfile.seaweedfs to match compose.yml."
+            exit 1
+          fi
+
+          echo "✅ SeaweedFS image in sync"

@@ -8,7 +8,7 @@
 # Build: docker build -f deployment/Containerfile.chromium -t firmowid-chromium:latest .
 # Run:   docker run -p 9222:9222 firmowid-chromium:latest
 
-FROM zenika/alpine-chrome:124
+FROM zenika/alpine-chrome:124@sha256:1db3ae560c20f70f31bca4ea81fac3fc19cfb22343990d65326e92a5b59760a7
 
 # Install nginx for reverse proxy and fontconfig for custom fonts
 USER root
