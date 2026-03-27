@@ -1,41 +1,43 @@
 defmodule Firmowid.TimetrackerFixtures do
   @moduledoc """
-  This module defines test helpers for creating
-  entities via the `Firmowid.Timetracker` context.
+  Test helpers for creating Timetracker entities.
+
+  Uses Ash code interface with `authorize?: false` to bypass policies
+  while still exercising the resource's action logic (validations,
+  changes, multitenancy).
   """
 
+  alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary
+  alias Firmowid.Ash.Timetracker.Project, as: AshProject
+  alias Firmowid.Ash.Timetracker.Session, as: AshSession
   alias Firmowid.Repo
-  alias Firmowid.Timetracker
 
   def unique_project_name, do: "project_#{System.unique_integer()}"
 
   def project_fixture(attrs \\ %{}) do
-    {:ok, project} =
-      attrs
-      |> Enum.into(%{
-        name: unique_project_name(),
-        description: "some description",
-        organization_id: attrs[:organization_id] || Repo.get_org_id()
-      })
-      |> Timetracker.create_project()
+    params = %{name: attrs[:name] || unique_project_name()}
+    tenant = attrs[:organization_id] || Repo.get_org_id()
 
+    {:ok, project} = AshProject.create(params, tenant: tenant, authorize?: false, actor: %{})
     project
   end
 
   def session_fixture(attrs \\ %{}) do
-    {:ok, session} =
-      attrs
-      |> Enum.into(%{
-        title: "Test Session",
-        project_id: attrs[:project_id] || project_fixture().id,
-        user_id: attrs[:user_id],
-        start_datetime: attrs[:start_datetime] || DateTime.utc_now()
-      })
-      |> Timetracker.start_session()
+    params = %{
+      title: attrs[:title] || "Test Session",
+      project_id: attrs[:project_id] || project_fixture().id,
+      user_id: attrs[:user_id],
+      start_datetime: attrs[:start_datetime] || DateTime.utc_now(),
+      is_remote: attrs[:is_remote] || false
+    }
 
-    # If end_datetime is provided, end the session
+    tenant = attrs[:organization_id] || Repo.get_org_id()
+    opts = [tenant: tenant, authorize?: false, actor: %{}]
+
+    {:ok, session} = AshSession.create(params, opts)
+
     if attrs[:end_datetime] do
-      {:ok, session} = Timetracker.end_session(session.id, attrs[:end_datetime])
+      {:ok, session} = AshSession.update(session, %{end_datetime: attrs[:end_datetime]}, opts)
       session
     else
       session
@@ -43,18 +45,30 @@ defmodule Firmowid.TimetrackerFixtures do
   end
 
   def user_project_fixture(user_id, project_id) do
-    {:ok, _project} = Timetracker.add_user_to_project(user_id, project_id)
+    alias Firmowid.Ash.Timetracker.ProjectUser, as: AshProjectUser
+
+    {:ok, pu} =
+      AshProjectUser.create(
+        %{user_id: user_id, project_id: project_id},
+        tenant: Repo.get_org_id(),
+        authorize?: false,
+        actor: %{}
+      )
+
+    pu
   end
 
   def user_salary_fixture(attrs \\ %{}) do
-    {:ok, user_salary} =
-      attrs
-      |> Enum.into(%{
-        hourly_rate: Decimal.new("50.00"),
-        user_id: attrs[:user_id] || raise("user_id is required for user_salary_fixture")
-      })
-      |> Timetracker.create_user_salary()
+    params = %{
+      hourly_rate: attrs[:hourly_rate] || Decimal.new("50.00"),
+      user_id: attrs[:user_id] || raise("user_id is required for user_salary_fixture")
+    }
 
-    user_salary
+    tenant = attrs[:organization_id] || Repo.get_org_id()
+
+    {:ok, salary} =
+      AshUserSalary.create_with_retire(params, tenant: tenant, authorize?: false, actor: %{})
+
+    salary
   end
 end

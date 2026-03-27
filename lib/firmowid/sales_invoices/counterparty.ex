@@ -10,9 +10,9 @@ defmodule Firmowid.SalesInvoices.Counterparty do
 
   import Ecto.Changeset
 
+  alias Firmowid.Ash.Timetracker.Project
   alias Firmowid.SalesInvoices.CountryCodes
   alias Firmowid.SalesInvoices.SalesInvoice
-  alias Firmowid.Timetracker.Project
 
   @type t :: %__MODULE__{}
 

@@ -52,11 +52,13 @@ defmodule Firmowid.Ash.Timetracker.ProjectUser do
 
   relationships do
     belongs_to :project, Firmowid.Ash.Timetracker.Project do
+      public? true
       allow_nil? false
       attribute_writable? true
     end
 
     belongs_to :user, Firmowid.Ash.Core.User do
+      public? true
       allow_nil? false
       attribute_writable? true
     end

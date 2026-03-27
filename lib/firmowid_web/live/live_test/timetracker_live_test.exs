@@ -1,11 +1,13 @@
 defmodule FirmowidWeb.TimetrackerLiveTest do
   use FirmowidWeb.ConnCase, async: true
 
+  import Ecto.Query
   import Firmowid.AccountsFixtures
   import Firmowid.TimetrackerFixtures
   import Phoenix.LiveViewTest
 
-  alias Firmowid.Timetracker
+  alias Firmowid.Ash.Timetracker.Session
+  alias Firmowid.Repo
 
   describe "Timetracker page works" do
     test "renders timetracker page", %{conn: conn} do
@@ -29,7 +31,7 @@ defmodule FirmowidWeb.TimetrackerLiveTest do
     setup %{conn: conn} do
       user = user_fixture()
       project = project_fixture(%{name: "Test Project"})
-      Timetracker.add_user_to_project(user.id, project.id)
+      user_project_fixture(user.id, project.id)
 
       %{
         conn: log_in_user(conn, user),
@@ -54,7 +56,7 @@ defmodule FirmowidWeb.TimetrackerLiveTest do
         |> render_submit()
 
       assert result =~ title
-      current_session = Timetracker.get_current_session(user.id)
+      current_session = get_current_session(user.id)
       assert current_session.title == title
       assert current_session.project_id == project.id
       assert is_nil(current_session.end_datetime)
@@ -82,7 +84,7 @@ defmodule FirmowidWeb.TimetrackerLiveTest do
 
       assert result =~ title
       assert result =~ "14:00"
-      current_session = Timetracker.get_current_session(user.id)
+      current_session = get_current_session(user.id)
       assert current_session.title == title
       assert current_session.project_id == project.id
       assert is_nil(current_session.end_datetime)
@@ -111,19 +113,19 @@ defmodule FirmowidWeb.TimetrackerLiveTest do
       assert result =~ title
       assert result =~ "09:00"
       assert result =~ "17:00"
-      [current_session] = Timetracker.list_user_sessions(user.id)
+      [current_session] = list_user_sessions(user.id)
       assert current_session.title == title
       assert current_session.project_id == project.id
       assert current_session.end_datetime
     end
 
     test "pauses active session", %{conn: conn, user: user, project: project} do
-      {:ok, session} =
-        Timetracker.start_session(%{
-          "user_id" => user.id,
-          "project_id" => project.id,
-          "title" => "Test Session",
-          "start_datetime" => DateTime.utc_now()
+      session =
+        session_fixture(%{
+          user_id: user.id,
+          project_id: project.id,
+          title: "Test Session",
+          start_datetime: DateTime.utc_now()
         })
 
       {:ok, lv, _html} = live(conn, ~p"/czasosledz")
@@ -134,7 +136,7 @@ defmodule FirmowidWeb.TimetrackerLiveTest do
         |> render_click()
 
       assert result =~ "Test Session"
-      ended_session = Timetracker.get_session!(session.id)
+      ended_session = Repo.get!(Session, session.id)
       assert ended_session.end_datetime
     end
 
@@ -146,7 +148,7 @@ defmodule FirmowidWeb.TimetrackerLiveTest do
       |> element("button[phx-click='delete_session'][phx-value-id='#{session.id}']")
       |> render_click()
 
-      assert nil == Timetracker.get_session(session.id)
+      assert is_nil(Repo.get(Session, session.id))
     end
 
     test "edits session", %{conn: conn, user: user, project: project} do
@@ -171,7 +173,7 @@ defmodule FirmowidWeb.TimetrackerLiveTest do
         |> render_submit()
 
       assert result =~ new_title
-      updated_session = Timetracker.get_session!(session.id)
+      updated_session = Repo.get!(Session, session.id)
       assert updated_session.title == new_title
     end
   end
@@ -197,5 +199,22 @@ defmodule FirmowidWeb.TimetrackerLiveTest do
 
       assert html =~ "Przejdź do zarządzania projektami"
     end
+  end
+
+  # Helper: fetch the running (no end_datetime) session for a user
+  defp get_current_session(user_id) do
+    Session
+    |> where([s], s.user_id == ^user_id and is_nil(s.end_datetime))
+    |> order_by([s], desc: s.start_datetime)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  # Helper: list all sessions for a user
+  defp list_user_sessions(user_id) do
+    Session
+    |> where([s], s.user_id == ^user_id)
+    |> order_by([s], desc: s.start_datetime)
+    |> Repo.all()
   end
 end

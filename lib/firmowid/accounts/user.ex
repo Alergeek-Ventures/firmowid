@@ -24,12 +24,12 @@ defmodule Firmowid.Accounts.User do
     field :removed_from_project, :boolean, virtual: true, default: false
 
     many_to_many :projects,
-                 Firmowid.Timetracker.Project,
+                 Firmowid.Ash.Timetracker.Project,
                  join_through: "projects_users"
 
-    has_many :user_salaries, Firmowid.Timetracker.UserSalary, on_delete: :delete_all
+    has_many :user_salaries, Firmowid.Ash.Payroll.UserSalary, on_delete: :delete_all
 
-    has_many :sessions, Firmowid.Timetracker.Session, on_delete: :nothing
+    has_many :sessions, Firmowid.Ash.Timetracker.Session, on_delete: :nothing
 
     field :marketing_consent, :boolean, default: false
 

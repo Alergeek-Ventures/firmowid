@@ -9,12 +9,12 @@ defmodule Firmowid.Seeds.Bytecraft do
 
   alias Firmowid.Accounts
   alias Firmowid.Accounts.Organization
+  alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.BankData.Requisition
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.Counterparty
   alias Firmowid.Seeds.Helpers
-  alias Firmowid.Timetracker
 
   def seed! do
     users = seed_users()
@@ -271,22 +271,20 @@ defmodule Firmowid.Seeds.Bytecraft do
   # ===========================================================================
 
   defp seed_projects(bytecraft, users, counterparties) do
-    alias Firmowid.Timetracker.ProjectUser
+    tenant = bytecraft.id
 
     get_or_create = fn name, counterparty_id ->
       case Repo.one(
-             from(p in Firmowid.Timetracker.Project,
-               where: p.name == ^name and p.organization_id == ^bytecraft.id,
+             from(p in AshProject,
+               where: p.name == ^name and p.organization_id == ^tenant,
                limit: 1
              )
            ) do
         nil ->
-          attrs =
-            if counterparty_id,
-              do: %{name: name, counterparty_id: counterparty_id},
-              else: %{name: name}
+          params =
+            then(%{name: name}, fn p -> if counterparty_id, do: Map.put(p, :counterparty_id, counterparty_id), else: p end)
 
-          {:ok, project} = Timetracker.create_project(attrs)
+          {:ok, project} = AshProject.create(params, tenant: tenant, authorize?: false, actor: %{})
           project
 
         project ->
@@ -299,25 +297,20 @@ defmodule Firmowid.Seeds.Bytecraft do
     flatmate = get_or_create.("FlatMate", counterparties.flatearth.id)
     taco = get_or_create.("TacoOverflow", counterparties.taco.id)
 
-    for {user_id, project_id} <- [
-          {users.kira.id, firmowid.id},
-          {users.tomek.id, firmowid.id},
-          {users.tomek.id, ghostpet.id},
-          {users.maren.id, ghostpet.id},
-          {users.kira.id, flatmate.id},
-          {users.sable.id, flatmate.id},
-          {users.jules.id, taco.id},
-          {users.maren.id, taco.id},
-          {users.tomek.id, taco.id}
-        ] do
-      if !Repo.one(
-           from(pu in ProjectUser,
-             where: pu.user_id == ^user_id and pu.project_id == ^project_id,
-             limit: 1
-           )
-         ) do
-        Timetracker.add_user_to_project(user_id, project_id)
-      end
+    project_users = %{
+      firmowid => [users.kira.id, users.tomek.id],
+      ghostpet => [users.tomek.id, users.maren.id],
+      flatmate => [users.kira.id, users.sable.id],
+      taco => [users.jules.id, users.maren.id, users.tomek.id]
+    }
+
+    for {project, user_ids} <- project_users do
+      {:ok, _} =
+        AshProject.set_users(user_ids, %{project_id: project.id},
+          tenant: tenant,
+          authorize?: false,
+          actor: %{}
+        )
     end
 
     projects = %{firmowid: firmowid, ghostpet: ghostpet, flatmate: flatmate, taco: taco}

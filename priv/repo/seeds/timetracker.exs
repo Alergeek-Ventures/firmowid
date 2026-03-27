@@ -13,12 +13,12 @@ defmodule Firmowid.Seeds.Timetracker do
 
   import Ecto.Query
 
+  alias Firmowid.Ash.Payroll.UserSalary
+  alias Firmowid.Ash.Timetracker.HoursRecord
+  alias Firmowid.Ash.Timetracker.Session
   alias Firmowid.Blobs
   alias Firmowid.Repo
   alias Firmowid.Seeds.Helpers
-  alias Firmowid.Timetracker.HoursRecord
-  alias Firmowid.Timetracker.Session
-  alias Firmowid.Timetracker.UserSalary
 
   # ---------------------------------------------------------------------------
   # Public API

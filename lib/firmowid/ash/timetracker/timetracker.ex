@@ -2,10 +2,9 @@ defmodule Firmowid.Ash.Timetracker do
   @moduledoc """
   Ash domain for time tracking.
 
-  Wraps the existing `sessions` and `projects` tables. During migration, both
-  this domain and the old `Firmowid.Timetracker` context coexist — the old
-  context handles writes from the current UI, while this domain is used by
-  the new UI and AshAI/MCP.
+  Manages sessions, projects, project memberships, and hours records.
+  All reads and writes go through Ash actions with policy-based
+  authorization and attribute multitenancy via `organization_id`.
   """
   use Ash.Domain
 

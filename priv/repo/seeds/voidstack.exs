@@ -12,12 +12,12 @@ defmodule Firmowid.Seeds.Voidstack do
 
   alias Firmowid.Accounts
   alias Firmowid.Accounts.Organization
+  alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.CostInvoices
   alias Firmowid.Finances
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
   alias Firmowid.Seeds.Helpers
-  alias Firmowid.Timetracker
 
   def seed! do
     dragan = seed_dragan()
@@ -76,20 +76,33 @@ defmodule Firmowid.Seeds.Voidstack do
   defp seed_project(dragan) do
     project =
       case Repo.one(
-             from(p in Firmowid.Timetracker.Project,
+             from(p in AshProject,
                where: p.name == "Shadow Protocol",
                limit: 1
              )
            ) do
         nil ->
-          {:ok, p} = Timetracker.create_project(%{name: "Shadow Protocol"})
+          {:ok, p} =
+            AshProject.create(
+              %{name: "Shadow Protocol"},
+              tenant: Repo.get_org_id(),
+              authorize?: false,
+              actor: %{}
+            )
+
           p
 
         p ->
           p
       end
 
-    Timetracker.add_user_to_project(dragan.id, project.id)
+    {:ok, _} =
+      AshProject.set_users([dragan.id], %{project_id: project.id},
+        tenant: Repo.get_org_id(),
+        authorize?: false,
+        actor: %{}
+      )
+
     project
   end
 

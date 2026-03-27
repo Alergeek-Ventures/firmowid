@@ -6,11 +6,10 @@ defmodule Firmowid.Management do
   import Ecto.Query, warn: false
 
   alias Firmowid.Accounts
+  alias Firmowid.Ash.Payroll.UserSalary
+  alias Firmowid.Ash.Timetracker.HoursRecord
+  alias Firmowid.Ash.Timetracker.Session
   alias Firmowid.Repo
-  alias Firmowid.Timetracker
-  alias Firmowid.Timetracker.HoursRecord
-  alias Firmowid.Timetracker.Session
-  alias Firmowid.Timetracker.UserSalary
 
   # employees
   def authorize(:read_employees, %{role: :admin}, _), do: true
@@ -60,7 +59,7 @@ defmodule Firmowid.Management do
     from(u in Accounts.User,
       # TODO: add database support for archived users
       where: ^archived == false,
-      left_join: us in subquery(Timetracker.user_salaries_as_of_query(date)),
+      left_join: us in subquery(UserSalary.salary_as_of_subquery(date, Repo.get_org_id())),
       on: us.user_id == u.id,
       left_join: s in subquery(time_worked_query),
       on: s.user_id == u.id,
@@ -86,8 +85,21 @@ defmodule Firmowid.Management do
   defp update_single_salary(employee, employees_params) do
     new_hourly_wage = Decimal.new(employees_params[employee.user.id]["wage"])
 
-    case Timetracker.create_user_salary(%{user_id: employee.user.id, hourly_rate: new_hourly_wage}) do
-      {:ok, %UserSalary{}} -> :ok
+    # Use Ash create_with_retire which retires existing salary in a change.
+    # We skip Ash authorization here because this runs inside a Management
+    # Bodyguard-guarded transaction (admin-only), not via an Ash scope.
+    case UserSalary
+         |> Ash.Changeset.for_create(
+           :create_with_retire,
+           %{
+             user_id: employee.user.id,
+             hourly_rate: new_hourly_wage
+           },
+           actor: %{},
+           tenant: Repo.get_org_id()
+         )
+         |> Ash.create(authorize?: false, actor: %{}) do
+      {:ok, _salary} -> :ok
       {:error, changeset} -> Repo.rollback(changeset)
     end
   end
@@ -113,23 +125,54 @@ defmodule Firmowid.Management do
 
     Accounts.User
     |> Repo.get(user_id)
-    |> Repo.preload([:projects, sessions: sessions_query])
+    |> Repo.preload(sessions: sessions_query)
     |> case do
       nil ->
         nil
 
       user ->
         hourly_rate =
-          case Timetracker.get_user_salary_as_of(user.id, date) do
+          case get_user_salary_as_of(user.id, date) do
             nil -> Decimal.new(0)
             %{hourly_rate: rate} -> rate
           end
 
+        hours_record = get_hours_record_by_month(user.id, date)
+
+        # Group sessions by project and attach to manually loaded projects.
+        # We can't use Repo.preload(projects: [sessions: fn ...]) because
+        # Ash resources use Ash.NotLoaded (not Ecto.Association.NotLoaded)
+        # which confuses Ecto's preload logic.
+        sessions_by_project = Enum.group_by(user.sessions, & &1.project_id)
+
+        projects =
+          Enum.map(Repo.preload(user, :projects).projects, fn project ->
+            Map.put(project, :sessions, Map.get(sessions_by_project, project.id, []))
+          end)
+
         user
-        |> Repo.preload(projects: [sessions: fn _ids -> user.sessions end])
+        |> Map.put(:projects, projects)
         |> Map.put(:hourly_rate, hourly_rate)
-        |> Map.put(:hours_record, Timetracker.get_hours_record_by_month(user.id, date))
+        |> Map.put(:hours_record, hours_record)
         |> Map.put(:time_worked, user.sessions |> Enum.map(& &1.duration) |> Enum.sum())
     end
+  end
+
+  # Inlined from old Timetracker — returns the salary active on the given date for a user.
+  defp get_user_salary_as_of(user_id, date) do
+    import Ecto.Query, only: [where: 3]
+
+    date
+    |> UserSalary.salary_as_of_subquery(Repo.get_org_id())
+    |> where([us], us.user_id == ^user_id)
+    |> Repo.one(skip_organization_id: true)
+  end
+
+  # Inlined from old Timetracker.
+  defp get_hours_record_by_month(user_id, date) do
+    HoursRecord
+    |> where([hr], hr.user_id == ^user_id)
+    |> where([hr], hr.month == ^date.month and hr.year == ^date.year)
+    |> Repo.one()
   end
 end
