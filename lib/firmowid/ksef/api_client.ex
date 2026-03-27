@@ -65,8 +65,7 @@ defmodule Firmowid.Ksef.ApiClient do
   end
 
   defp fetch_and_parse_public_key(target_usage) do
-    with {:ok, %{body: certificates}} <-
-           Req.get(request(), url: "/security/public-key-certificates"),
+    with {:ok, %{body: certificates}} <- Req.get(request(), url: "/security/public-key-certificates"),
          {cert_b64, valid_to} <- find_valid_certificate(certificates, target_usage) do
       cert_b64
       |> Base.decode64!()
@@ -158,8 +157,7 @@ defmodule Firmowid.Ksef.ApiClient do
       url: "/auth/#{reference_number}",
       retry: fn
         # status code 100 means "in progress"
-        _req, res ->
-          match?(%Req.Response{status: 200, body: %{"status" => %{"code" => 100}}}, res)
+        _req, res -> match?(%Req.Response{status: 200, body: %{"status" => %{"code" => 100}}}, res)
       end
     )
     |> case do
@@ -225,10 +223,7 @@ defmodule Firmowid.Ksef.ApiClient do
   def get_invoice_xml(access_token, ksef_number) when is_binary(ksef_number) do
     encoded_number = URI.encode(ksef_number)
 
-    case Req.get(request(access_token),
-           url: "/invoices/ksef/#{encoded_number}",
-           decode_body: false
-         ) do
+    case Req.get(request(access_token), url: "/invoices/ksef/#{encoded_number}", decode_body: false) do
       {:ok, %{status: 200, body: body}} ->
         {:ok, body}
 

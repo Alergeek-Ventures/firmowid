@@ -84,8 +84,7 @@ defmodule Firmowid.BankData.Transaction do
 
     if creditor_name == "Nest Bank S.A." and
          String.contains?(remittance_information_unstructured, "Nr karty") do
-      [new_creditor_name | [description | _]] =
-        String.split(remittance_information_unstructured, "Nr karty")
+      [new_creditor_name | [description | _]] = String.split(remittance_information_unstructured, "Nr karty")
 
       new_creditor_name =
         new_creditor_name

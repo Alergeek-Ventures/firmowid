@@ -17,10 +17,7 @@ defmodule FirmowidWeb.Components.Invoicing.CostInvoiceDetails do
     socket =
       socket
       |> assign(assigns)
-      |> assign(
-        :invoices_for_preview,
-        Enum.reverse([assigns.invoice | assigns.invoice.correction_invoices])
-      )
+      |> assign(:invoices_for_preview, Enum.reverse([assigns.invoice | assigns.invoice.correction_invoices]))
 
     {:ok, socket}
   end

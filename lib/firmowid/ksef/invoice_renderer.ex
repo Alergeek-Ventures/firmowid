@@ -36,13 +36,7 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
     do_render(assigns)
   end
 
-  EEx.function_from_file(
-    :defp,
-    :do_render,
-    "lib/firmowid/ksef/fa3_invoice_template.xml.eex",
-    [:assigns],
-    trim: true
-  )
+  EEx.function_from_file(:defp, :do_render, "lib/firmowid/ksef/fa3_invoice_template.xml.eex", [:assigns], trim: true)
 
   defp xml_escape(%SalesInvoice{} = invoice) do
     invoice
@@ -93,7 +87,6 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
 
   def format_decimal(nil), do: "0.00"
   def format_decimal(%Decimal{} = value), do: value |> Decimal.round(2) |> Decimal.to_string()
-
   def format_decimal(value) when is_number(value), do: :erlang.float_to_binary(value / 1, decimals: 2)
 
   @doc """
@@ -139,8 +132,7 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
     after_summary = items_to_summary_map(after_items)
 
     # Merge all rate keys from both before and after
-    all_keys =
-      MapSet.union(MapSet.new(Map.keys(before_summary)), MapSet.new(Map.keys(after_summary)))
+    all_keys = MapSet.union(MapSet.new(Map.keys(before_summary)), MapSet.new(Map.keys(after_summary)))
 
     all_keys
     |> Enum.map(fn {rate, type} = key ->
@@ -168,19 +160,8 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
       {item.vat_rate, VatRate.summary_type(item.vat_rate)}
     end)
     |> Enum.map(fn {{rate, type}, group_items} ->
-      net =
-        Enum.reduce(
-          group_items,
-          Decimal.new(0),
-          &Decimal.add(&2, SalesInvoiceItem.get_net_value(&1))
-        )
-
-      vat =
-        Enum.reduce(
-          group_items,
-          Decimal.new(0),
-          &Decimal.add(&2, SalesInvoiceItem.get_vat_value(&1))
-        )
+      net = Enum.reduce(group_items, Decimal.new(0), &Decimal.add(&2, SalesInvoiceItem.get_net_value(&1)))
+      vat = Enum.reduce(group_items, Decimal.new(0), &Decimal.add(&2, SalesInvoiceItem.get_vat_value(&1)))
 
       %{
         rate: rate,
@@ -199,20 +180,8 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
       {item.vat_rate, VatRate.summary_type(item.vat_rate)}
     end)
     |> Map.new(fn {{rate, type} = key, group_items} ->
-      net =
-        Enum.reduce(
-          group_items,
-          Decimal.new(0),
-          &Decimal.add(&2, SalesInvoiceItem.get_net_value(&1))
-        )
-
-      vat =
-        Enum.reduce(
-          group_items,
-          Decimal.new(0),
-          &Decimal.add(&2, SalesInvoiceItem.get_vat_value(&1))
-        )
-
+      net = Enum.reduce(group_items, Decimal.new(0), &Decimal.add(&2, SalesInvoiceItem.get_net_value(&1)))
+      vat = Enum.reduce(group_items, Decimal.new(0), &Decimal.add(&2, SalesInvoiceItem.get_vat_value(&1)))
       {key, %{rate: rate, type: type, net: net, vat: vat}}
     end)
   end
@@ -256,7 +225,6 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
   Returns nil if no name is available (optional in simplified invoices per art. 106e ust. 5 pkt 3).
   """
   def buyer_name(%{buyer_display_name: name}) when is_binary(name) and name != "", do: name
-
   def buyer_name(%{buyer_type: :company, buyer_full_name: name}) when is_binary(name) and name != "", do: name
 
   def buyer_name(%{buyer_type: :individual, buyer_given_name: given_name, buyer_surname: surname})

@@ -51,10 +51,7 @@ defmodule FirmowidWeb.User.ConfirmationLive do
           %{} ->
             {:noreply,
              socket
-             |> put_flash(
-               :error,
-               "Link potwierdzający użytkownika jest nieprawidłowy lub wygasł."
-             )
+             |> put_flash(:error, "Link potwierdzający użytkownika jest nieprawidłowy lub wygasł.")
              |> redirect(to: ~p"/")}
         end
     end

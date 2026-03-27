@@ -41,8 +41,7 @@ defmodule FirmowidWeb.UserForgotPasswordLiveTest do
         |> render_submit()
         |> follow_redirect(conn, "/")
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
-               "Jeśli Twój email jest w naszym systemie"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Jeśli Twój email jest w naszym systemie"
 
       assert Repo.get_by!(Accounts.UserToken, [user_id: user.id], skip_organization_id: true).context ==
                "reset_password"
@@ -57,9 +56,7 @@ defmodule FirmowidWeb.UserForgotPasswordLiveTest do
         |> render_submit()
         |> follow_redirect(conn, "/")
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
-               "Jeśli Twój email jest w naszym systemie"
-
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Jeśli Twój email jest w naszym systemie"
       assert Repo.all(Accounts.UserToken, skip_organization_id: true) == []
     end
   end

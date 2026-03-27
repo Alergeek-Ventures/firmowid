@@ -151,11 +151,8 @@ defmodule Firmowid.Ksef.FetchWorker do
 
   defp unzip_package!(zip_binary) when is_binary(zip_binary) do
     case :zip.unzip(zip_binary, [:memory]) do
-      {:ok, files} ->
-        Enum.map(files, fn {filename, content} -> {to_string(filename), content} end)
-
-      {:error, reason} ->
-        raise "Failed to unzip KSeF package: #{inspect(reason)}"
+      {:ok, files} -> Enum.map(files, fn {filename, content} -> {to_string(filename), content} end)
+      {:error, reason} -> raise "Failed to unzip KSeF package: #{inspect(reason)}"
     end
   end
 
@@ -280,7 +277,6 @@ defmodule Firmowid.Ksef.FetchWorker do
            errors: [blob_checksum: {"has already been taken", _}]
          }} ->
           Logger.error("Duplicate blob detected for #{ksef_number}.xml, skipping invoice creation")
-
           :ok
 
         {:error, reason} ->
@@ -296,18 +292,12 @@ defmodule Firmowid.Ksef.FetchWorker do
     attrs
     |> Map.update!(:total_amount, &Decimal.negate(&1))
     |> Map.put(:ksef_number, ksef_number)
-    |> Map.put(
-      :ksef_permanent_storage_date,
-      parse_datetime!(ksef_metadata["permanentStorageDate"])
-    )
+    |> Map.put(:ksef_permanent_storage_date, parse_datetime!(ksef_metadata["permanentStorageDate"]))
     |> Map.put(:ksef_downloaded_at, DateTime.utc_now())
     |> Map.put(:organization_id, Repo.get_org_id())
     |> Map.put(
       :description,
-      OpenAIEnrichment.generate_description(%{
-        "seller" => attrs.seller,
-        "items_list" => attrs.items_list
-      })
+      OpenAIEnrichment.generate_description(%{"seller" => attrs.seller, "items_list" => attrs.items_list})
     )
   end
 

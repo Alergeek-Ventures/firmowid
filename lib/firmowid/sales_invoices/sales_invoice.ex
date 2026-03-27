@@ -3,9 +3,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   use Firmowid.Schema
 
   import Ecto.Changeset
-
-  import Firmowid.SalesInvoices.Counterparty,
-    only: [validate_nip: 2, validate_eu_vat: 2, validate_optional_id: 2]
+  import Firmowid.SalesInvoices.Counterparty, only: [validate_nip: 2, validate_eu_vat: 2, validate_optional_id: 2]
 
   alias Firmowid.Ksef.VatRate
   alias Firmowid.SalesInvoices.Counterparty
@@ -21,11 +19,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     field :sale_date, :date
     field :issue_date, :date
     field :due_date, :date
-
-    field :payment_method, Ecto.Enum,
-      values: ~w[cash card voucher check credit transfer mobile]a,
-      default: :transfer
-
+    field :payment_method, Ecto.Enum, values: ~w[cash card voucher check credit transfer mobile]a, default: :transfer
     field :currency, :string
 
     field :seller_nip, :string
@@ -173,8 +167,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   end
 
   # rename to buyer_tax_id_type
-  @spec buyer_id_type(map() | Ecto.Changeset.t()) ::
-          :nip | :eu_vat | :other_id | :optional_id | :no_id
+  @spec buyer_id_type(map() | Ecto.Changeset.t()) :: :nip | :eu_vat | :other_id | :optional_id | :no_id
   def buyer_id_type(%{buyer_type: buyer_type, buyer_pesel: buyer_pesel, buyer_country: buyer_country}) do
     CountryCodes.tax_id_type(buyer_country, buyer_pesel, buyer_type)
   end
@@ -189,11 +182,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     buyer_pesel = get_field(changeset, :buyer_pesel)
     buyer_country = get_field(changeset, :buyer_country)
 
-    buyer_id_type(%{
-      buyer_type: buyer_type,
-      buyer_pesel: buyer_pesel,
-      buyer_country: buyer_country
-    })
+    buyer_id_type(%{buyer_type: buyer_type, buyer_pesel: buyer_pesel, buyer_country: buyer_country})
   end
 
   def changeset(sales_invoice, attrs \\ %{}) do
@@ -277,27 +266,18 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
   defp normalize_reverse_charge_item_vat_rate(changeset) do
     is_reverse_charge = get_field(changeset, :is_reverse_charge)
-
-    target_rate =
-      if is_reverse_charge, do: "oo", else: fallback_vat_rate_for_non_reverse_charge(changeset)
+    target_rate = if is_reverse_charge, do: "oo", else: fallback_vat_rate_for_non_reverse_charge(changeset)
 
     case fetch_change(changeset, :sales_invoice_items) do
       {:ok, changed_items} ->
         {normalized_items, _changed?} =
           normalize_item_changesets(changed_items, is_reverse_charge, target_rate)
 
-        changeset = %{
-          changeset
-          | changes: Map.put(changeset.changes, :sales_invoice_items, normalized_items)
-        }
+        changeset = %{changeset | changes: Map.put(changeset.changes, :sales_invoice_items, normalized_items)}
 
         %{
           changeset
-          | params:
-              update_items_in_params(
-                changeset.params,
-                &normalize_item_params(&1, is_reverse_charge, target_rate)
-              )
+          | params: update_items_in_params(changeset.params, &normalize_item_params(&1, is_reverse_charge, target_rate))
         }
 
       :error ->
@@ -308,21 +288,14 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
         changeset =
           if changed? do
-            %{
-              changeset
-              | changes: Map.put(changeset.changes, :sales_invoice_items, normalized_items)
-            }
+            %{changeset | changes: Map.put(changeset.changes, :sales_invoice_items, normalized_items)}
           else
             changeset
           end
 
         %{
           changeset
-          | params:
-              update_items_in_params(
-                changeset.params,
-                &normalize_item_params(&1, is_reverse_charge, target_rate)
-              )
+          | params: update_items_in_params(changeset.params, &normalize_item_params(&1, is_reverse_charge, target_rate))
         }
     end
   end
@@ -387,21 +360,11 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     cond do
       Map.has_key?(item_params, "vat_rate") ->
         current_rate = Map.get(item_params, "vat_rate")
-
-        Map.put(
-          item_params,
-          "vat_rate",
-          normalize_rate(current_rate, is_reverse_charge, target_rate)
-        )
+        Map.put(item_params, "vat_rate", normalize_rate(current_rate, is_reverse_charge, target_rate))
 
       Map.has_key?(item_params, :vat_rate) ->
         current_rate = Map.get(item_params, :vat_rate)
-
-        Map.put(
-          item_params,
-          :vat_rate,
-          normalize_rate(current_rate, is_reverse_charge, target_rate)
-        )
+        Map.put(item_params, :vat_rate, normalize_rate(current_rate, is_reverse_charge, target_rate))
 
       true ->
         item_params
@@ -416,13 +379,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
   def step3_changeset(sales_invoice, attrs \\ %{}) do
     sales_invoice
-    |> cast(attrs, [
-      :sale_date,
-      :due_date,
-      :due_date_days,
-      :payment_method,
-      :seller_account_number
-    ])
+    |> cast(attrs, [:sale_date, :due_date, :due_date_days, :payment_method, :seller_account_number])
     |> calculate_due_date()
     |> validate_required([:sale_date, :due_date, :payment_method, :seller_account_number])
     |> validate_length(:seller_account_number, min: 10, max: 34)
@@ -583,12 +540,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   This bypasses the lock check since it's used to update KSeF tracking data.
   """
   def ksef_update_changeset(sales_invoice, attrs) do
-    cast(sales_invoice, attrs, [
-      :ksef_number,
-      :ksef_session_reference_number,
-      :ksef_invoice_checksum,
-      :locked_at
-    ])
+    cast(sales_invoice, attrs, [:ksef_number, :ksef_session_reference_number, :ksef_invoice_checksum, :locked_at])
   end
 
   @doc """

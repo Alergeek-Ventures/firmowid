@@ -116,18 +116,7 @@ defmodule FirmowidWeb.CoreComponents do
   attr :color, :string,
     doc: "The button color.",
     default: "black",
-    values: [
-      "black",
-      "green",
-      "red",
-      "orange",
-      "grey",
-      "light_grey",
-      "light_orange",
-      "special",
-      "none",
-      "turquoise"
-    ]
+    values: ["black", "green", "red", "orange", "grey", "light_grey", "light_orange", "special", "none", "turquoise"]
 
   attr :size, :string, default: "medium", values: ["medium", "small"]
 

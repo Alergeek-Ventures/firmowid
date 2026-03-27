@@ -49,8 +49,7 @@ defmodule Firmowid.SalesInvoices.CreatorDraftStore do
   Retrieves a creator draft by organization_id and creator_draft_id.
   Returns {:ok, creator_draft} if found, {:error, :not_found} otherwise.
   """
-  @spec get(organization_id(), creator_draft_id()) ::
-          {:ok, creator_draft()} | {:error, :not_found}
+  @spec get(organization_id(), creator_draft_id()) :: {:ok, creator_draft()} | {:error, :not_found}
   def get(organization_id, creator_draft_id) do
     case Cachex.get(@cache, key(organization_id, creator_draft_id)) do
       {:ok, nil} -> {:error, :not_found}
@@ -68,10 +67,7 @@ defmodule Firmowid.SalesInvoices.CreatorDraftStore do
     case get(organization_id, creator_draft_id) do
       {:ok, creator_draft} ->
         updated_creator_draft = Map.merge(creator_draft, updates)
-
-        {:ok, true} =
-          Cachex.put(@cache, key(organization_id, creator_draft_id), updated_creator_draft)
-
+        {:ok, true} = Cachex.put(@cache, key(organization_id, creator_draft_id), updated_creator_draft)
         {:ok, updated_creator_draft}
 
       {:error, :not_found} ->

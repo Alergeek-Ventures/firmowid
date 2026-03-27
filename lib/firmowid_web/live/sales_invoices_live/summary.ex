@@ -264,12 +264,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Summary do
 
     previous_invoices =
       original_invoice.corrections
-      |> Enum.filter(
-        &DateTime.before?(
-          &1.locked_at || &1.inserted_at,
-          invoice.locked_at || invoice.inserted_at
-        )
-      )
+      |> Enum.filter(&DateTime.before?(&1.locked_at || &1.inserted_at, invoice.locked_at || invoice.inserted_at))
       |> List.insert_at(0, original_invoice)
       |> Enum.reverse()
 

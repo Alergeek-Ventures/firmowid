@@ -36,7 +36,6 @@ defmodule Firmowid.Ksef.SessionWorker do
            perform_authentication(credential) do
       Ksef.fetch_cost_invoices(DateTime.shift(DateTime.utc_now(), day: -30))
       schedule_reauthentication!(refresh_token)
-
       Cachex.put(:ksef, {:access_token, organization_id}, access_token, expire: access_token_ttl(access_token))
     else
       nil ->

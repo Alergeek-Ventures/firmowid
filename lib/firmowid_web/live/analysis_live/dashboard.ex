@@ -142,8 +142,7 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
     date_range_to = Date.end_of_month(month)
     tag_filters = socket.assigns.tag_filters
 
-    totals =
-      Analysis.get_organization_totals(date_range_from, date_range_to, tag_filters: tag_filters)
+    totals = Analysis.get_organization_totals(date_range_from, date_range_to, tag_filters: tag_filters)
 
     socket
     |> assign(:total_income, totals.total_income)

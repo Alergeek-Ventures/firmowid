@@ -11,11 +11,9 @@ defmodule Firmowid.CostInvoicesTest do
       user = user_fixture()
       invoice = insert_ksef_cost_invoice!(user.organization_id)
 
-      assert_raise RuntimeError,
-                   ~r/Cost invoice #{invoice.id} is imported from KSeF and cannot be deleted/,
-                   fn ->
-                     CostInvoices.delete_cost_invoice(invoice.id)
-                   end
+      assert_raise RuntimeError, ~r/Cost invoice #{invoice.id} is imported from KSeF and cannot be deleted/, fn ->
+        CostInvoices.delete_cost_invoice(invoice.id)
+      end
 
       assert Repo.get(CostInvoice, invoice.id)
     end
@@ -36,8 +34,7 @@ defmodule Firmowid.CostInvoicesTest do
     test "hides only corrections whose original invoice exists in list_cost_invoices/2" do
       user = user_fixture()
 
-      visible_invoice =
-        insert_cost_invoice!(user.organization_id, %{invoice_identifier: "VISIBLE-REGULAR"})
+      visible_invoice = insert_cost_invoice!(user.organization_id, %{invoice_identifier: "VISIBLE-REGULAR"})
 
       original_invoice =
         insert_cost_invoice!(user.organization_id, %{
@@ -83,8 +80,7 @@ defmodule Firmowid.CostInvoicesTest do
     test "hides only corrections whose original invoice exists from list_unmatched_cost_invoices/3" do
       user = user_fixture()
 
-      visible_invoice =
-        insert_cost_invoice!(user.organization_id, %{invoice_identifier: "VISIBLE-UNMATCHED"})
+      visible_invoice = insert_cost_invoice!(user.organization_id, %{invoice_identifier: "VISIBLE-UNMATCHED"})
 
       original_invoice =
         insert_cost_invoice!(user.organization_id, %{
@@ -117,11 +113,7 @@ defmodule Firmowid.CostInvoicesTest do
         })
 
       invoices =
-        CostInvoices.list_unmatched_cost_invoices(
-          ~D[2026-02-01],
-          ~D[2026-02-28],
-          user.organization_id
-        )
+        CostInvoices.list_unmatched_cost_invoices(~D[2026-02-01], ~D[2026-02-28], user.organization_id)
 
       invoice_ids = Enum.map(invoices, & &1.id)
 

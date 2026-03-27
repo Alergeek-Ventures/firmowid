@@ -51,12 +51,7 @@ defmodule FirmowidWeb.Router do
     if Mix.env() == :dev do
       pipe_through [:browser, :analytics_guard]
     else
-      pipe_through [
-        :browser,
-        :require_authenticated_user_with_organization,
-        :require_superuser,
-        :analytics_guard
-      ]
+      pipe_through [:browser, :require_authenticated_user_with_organization, :require_superuser, :analytics_guard]
     end
 
     live_dashboard "/dashboard",

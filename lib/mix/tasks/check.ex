@@ -31,9 +31,16 @@ defmodule Mix.Tasks.Check do
 
   use Mix.Task
 
+  # Format runs as a system command (not Mix.Task.rerun) because Spark.Formatter's
+  # subdirectory plugin triggers internal compilation that conflicts with the
+  # captured group leader used by Mix.Task.rerun, causing Sourceror to appear
+  # unavailable during Spark's compile-time Code.ensure_loaded? check.
+  @cmd_checks [
+    {"Format", ["format", "--check-formatted"]}
+  ]
+
   @static_checks [
     {"Compiling", ["compile", "--warnings-as-errors"]},
-    {"Format", ["format", "--check-formatted"]},
     {"Unused Deps", ["deps.unlock", "--check-unused"]},
     {"Xref", ["xref", "graph", "--label", "compile-connected", "--fail-above", "20"]},
     {"Credo", ["credo", "--strict"]},
@@ -57,10 +64,16 @@ defmodule Mix.Tasks.Check do
         @static_checks ++ [@test_check]
       end
 
-    results =
-      Enum.map(checks, fn {name, task_args} ->
-        run_check(name, task_args, verbose)
+    cmd_results =
+      Enum.map(@cmd_checks, fn {name, task_args} ->
+        run_cmd_check(name, task_args, verbose)
       end)
+
+    results =
+      cmd_results ++
+        Enum.map(checks, fn {name, task_args} ->
+          run_check(name, task_args, verbose)
+        end)
 
     failed = Enum.filter(results, fn {_, status, _} -> status == :error end)
 
@@ -71,6 +84,34 @@ defmodule Mix.Tasks.Check do
     else
       IO.puts(IO.ANSI.red() <> "#{length(failed)} check(s) failed." <> IO.ANSI.reset())
       System.halt(1)
+    end
+  end
+
+  defp run_cmd_check(name, [task | args], verbose) do
+    padded_name = String.pad_trailing(name, 12)
+    IO.write("#{padded_name} ")
+
+    mix = System.find_executable("mix") || "mix"
+    cmd_args = [task | args]
+
+    {output, exit_code} = System.cmd(mix, cmd_args, stderr_to_stdout: true)
+
+    case exit_code do
+      0 ->
+        IO.puts(IO.ANSI.green() <> "OK" <> IO.ANSI.reset())
+        if verbose, do: IO.puts(output)
+        {name, :ok, output}
+
+      _ ->
+        IO.puts(IO.ANSI.red() <> "FAIL" <> IO.ANSI.reset())
+
+        if !verbose do
+          IO.puts("")
+          IO.puts(output)
+          IO.puts("")
+        end
+
+        {name, :error, output}
     end
   end
 

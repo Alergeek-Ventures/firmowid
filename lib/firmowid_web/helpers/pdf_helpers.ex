@@ -150,18 +150,14 @@ defmodule FirmowidWeb.PdfHelpers do
         # Replace Google Fonts import with @font-face pointing to container's local font.
         # The Google Fonts @import won't work when Chrome can't make external requests.
         # Tailwind v4 minifies `@import url("...")` to `@import "..."`, so we match both forms.
-        String.replace(
-          css,
-          ~r/@import\s+(?:url\()?"https:\/\/fonts\.googleapis\.com\/css2\?family=Lexend[^"]+"\)?;/,
-          """
-          @font-face {
-            font-family: 'Lexend';
-            font-style: normal;
-            font-weight: 100 900;
-            src: local('Lexend'), url('file:///usr/share/fonts/truetype/lexend/Lexend.ttf') format('truetype');
-          }
-          """
-        )
+        String.replace(css, ~r/@import\s+(?:url\()?"https:\/\/fonts\.googleapis\.com\/css2\?family=Lexend[^"]+"\)?;/, """
+        @font-face {
+          font-family: 'Lexend';
+          font-style: normal;
+          font-weight: 100 900;
+          src: local('Lexend'), url('file:///usr/share/fonts/truetype/lexend/Lexend.ttf') format('truetype');
+        }
+        """)
 
       {:error, reason} ->
         Logger.warning("Could not read app.css for PDF generation: #{inspect(reason)}. PDF may lack styles.")

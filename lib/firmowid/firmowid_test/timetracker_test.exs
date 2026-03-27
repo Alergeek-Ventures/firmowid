@@ -100,10 +100,7 @@ defmodule Firmowid.TimetrackerTest do
         end_datetime: ~U[2025-02-20 11:00:00Z]
       })
 
-      assert Decimal.equal?(
-               Timetracker.get_project_total_cost_all_time(project.id),
-               Decimal.new("200")
-             )
+      assert Decimal.equal?(Timetracker.get_project_total_cost_all_time(project.id), Decimal.new("200"))
     end
 
     test "get_project_users_with_cost_all_time/1 aggregates per-user time and monthly-rounded cost (salary changes + missing salary)" do
@@ -227,10 +224,7 @@ defmodule Firmowid.TimetrackerTest do
       # January: 50 + 160 = 210
       # February: 300 + 40 = 340
       # Total: 550
-      assert Decimal.equal?(
-               Timetracker.get_project_total_cost_all_time(project.id),
-               expected_total_cost
-             )
+      assert Decimal.equal?(Timetracker.get_project_total_cost_all_time(project.id), expected_total_cost)
 
       users =
         project.id

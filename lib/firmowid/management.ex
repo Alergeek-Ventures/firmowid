@@ -86,10 +86,7 @@ defmodule Firmowid.Management do
   defp update_single_salary(employee, employees_params) do
     new_hourly_wage = Decimal.new(employees_params[employee.user.id]["wage"])
 
-    case Timetracker.create_user_salary(%{
-           user_id: employee.user.id,
-           hourly_rate: new_hourly_wage
-         }) do
+    case Timetracker.create_user_salary(%{user_id: employee.user.id, hourly_rate: new_hourly_wage}) do
       {:ok, %UserSalary{}} -> :ok
       {:error, changeset} -> Repo.rollback(changeset)
     end

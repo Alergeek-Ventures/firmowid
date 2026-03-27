@@ -204,7 +204,6 @@ defmodule Firmowid.BankData.TokenManager do
 
       {:ok, %{status: status, body: body}} ->
         Logger.error("Failed to obtain token pair from /token/new/: #{status} #{inspect(body)}")
-
         {:error, {:unexpected_status, status}, %{state | fetch_failures: state.fetch_failures + 1}}
 
       {:error, reason} ->

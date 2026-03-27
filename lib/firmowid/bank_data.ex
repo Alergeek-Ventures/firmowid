@@ -94,11 +94,8 @@ defmodule Firmowid.BankData do
 
     with {:ok, accepted_requisition} <- result do
       case Billing.increment(accepted_requisition.organization_id, :bank_connections) do
-        {:ok, _} ->
-          :ok
-
-        {:error, reason} ->
-          Logger.warning("Failed to increment bank_connections limit: #{inspect(reason)}")
+        {:ok, _} -> :ok
+        {:error, reason} -> Logger.warning("Failed to increment bank_connections limit: #{inspect(reason)}")
       end
     end
 
@@ -124,11 +121,8 @@ defmodule Firmowid.BankData do
 
     with {:ok, rejected} <- result, true <- was_accepted do
       case Billing.decrement(rejected.organization_id, :bank_connections) do
-        {:ok, _} ->
-          :ok
-
-        {:error, reason} ->
-          Logger.warning("Failed to decrement bank_connections limit: #{inspect(reason)}")
+        {:ok, _} -> :ok
+        {:error, reason} -> Logger.warning("Failed to decrement bank_connections limit: #{inspect(reason)}")
       end
     end
 

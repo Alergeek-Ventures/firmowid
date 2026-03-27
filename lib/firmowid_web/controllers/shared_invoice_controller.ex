@@ -67,10 +67,7 @@ defmodule FirmowidWeb.SharedInvoiceController do
   defp prepare_invoice_with_org_context(invoice) do
     org = invoice.organization
     Repo.put_org_id(invoice.organization_id)
-
-    invoice =
-      invoice |> SalesInvoices.populate_logo_url() |> SalesInvoices.populate_reference_invoices()
-
+    invoice = invoice |> SalesInvoices.populate_logo_url() |> SalesInvoices.populate_reference_invoices()
     {invoice, org}
   end
 

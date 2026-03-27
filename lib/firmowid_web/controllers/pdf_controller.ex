@@ -21,10 +21,7 @@ defmodule FirmowidWeb.PdfController do
   end
 
   defp render_sales_invoice(conn, %SalesInvoices.SalesInvoice{} = sales_invoice) do
-    sales_invoice =
-      sales_invoice
-      |> Repo.preload([:corrected_invoice])
-      |> SalesInvoices.populate_reference_invoices()
+    sales_invoice = sales_invoice |> Repo.preload([:corrected_invoice]) |> SalesInvoices.populate_reference_invoices()
 
     render(conn, :sales_invoice,
       layout: false,

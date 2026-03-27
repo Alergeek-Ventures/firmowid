@@ -217,11 +217,7 @@ defmodule Firmowid.CostInvoices do
     %{
       cost_invoice
       | blob_url: Blobs.get_blob_url(cost_invoice.blob_id),
-        correction_invoices:
-          Enum.map(
-            cost_invoice.correction_invoices,
-            &%{&1 | blob_url: Blobs.get_blob_url(&1.blob_id)}
-          )
+        correction_invoices: Enum.map(cost_invoice.correction_invoices, &%{&1 | blob_url: Blobs.get_blob_url(&1.blob_id)})
     }
   end
 
@@ -249,11 +245,8 @@ defmodule Firmowid.CostInvoices do
 
     if !correction_invoice?(cost_invoice) do
       case Billing.decrement(organization_id, :cost_invoices) do
-        {:ok, _} ->
-          :ok
-
-        {:error, reason} ->
-          Logger.warning("Failed to decrement cost_invoices limit: #{inspect(reason)}")
+        {:ok, _} -> :ok
+        {:error, reason} -> Logger.warning("Failed to decrement cost_invoices limit: #{inspect(reason)}")
       end
     end
 
@@ -313,11 +306,7 @@ defmodule Firmowid.CostInvoices do
   end
 
   defp enqueue_extraction_job(blob, inbound_email_id) do
-    %{
-      name: "extract_cost_invoice_metadata",
-      blob_id: blob.id,
-      organization_id: blob.organization_id
-    }
+    %{name: "extract_cost_invoice_metadata", blob_id: blob.id, organization_id: blob.organization_id}
     |> then(fn args ->
       if inbound_email_id, do: Map.put(args, :inbound_email_id, inbound_email_id), else: args
     end)
@@ -345,11 +334,8 @@ defmodule Firmowid.CostInvoices do
 
     if !correction_invoice?(cost_invoice) do
       case Billing.increment(organization_id, :cost_invoices) do
-        {:ok, _} ->
-          :ok
-
-        {:error, reason} ->
-          Logger.warning("Failed to increment cost_invoices limit: #{inspect(reason)}")
+        {:ok, _} -> :ok
+        {:error, reason} -> Logger.warning("Failed to increment cost_invoices limit: #{inspect(reason)}")
       end
     end
 
@@ -459,10 +445,7 @@ defmodule Firmowid.CostInvoices do
       on: original_invoice.ksef_number == as(:invoice).original_invoice_ksef_number,
       as: :original_invoice
     )
-    |> where(
-      [],
-      is_nil(as(:invoice).original_invoice_ksef_number) or is_nil(as(:original_invoice).id)
-    )
+    |> where([], is_nil(as(:invoice).original_invoice_ksef_number) or is_nil(as(:original_invoice).id))
   end
 
   defp merge_corrections_into_original_invoice(%CostInvoice{correction_invoices: []} = invoice), do: invoice
@@ -483,12 +466,7 @@ defmodule Firmowid.CostInvoices do
       end
 
     latest_snapshot =
-      Enum.max_by(
-        invoice.correction_invoices,
-        & &1.ksef_permanent_storage_date,
-        NaiveDateTime,
-        fn -> invoice end
-      )
+      Enum.max_by(invoice.correction_invoices, & &1.ksef_permanent_storage_date, NaiveDateTime, fn -> invoice end)
 
     %{
       invoice
@@ -534,7 +512,6 @@ defmodule Firmowid.CostInvoices do
     else
       {:error, reason} ->
         Logger.error("Failed to fetch KSeF XML for cost invoice #{invoice.id}: #{inspect(reason)}")
-
         invoice
     end
   end

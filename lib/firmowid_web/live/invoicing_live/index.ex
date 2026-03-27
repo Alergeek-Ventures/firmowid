@@ -432,9 +432,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     for entry <- entries do
       consume_uploaded_entry(socket, entry, fn %{path: path} ->
         Analytics.track_event("cost_invoice_upload", user, %{file_type: entry.client_type})
-
         handle_upload_result(CostInvoices.upload_cost_invoice(path, entry.client_type, entry.client_name))
-
         {:ok, nil}
       end)
     end
@@ -607,13 +605,7 @@ defmodule FirmowidWeb.InvoicingLive.Index do
     ungrouped_cost_flat = Enum.flat_map(ungrouped_cost, fn {_party, txns} -> txns end)
     ungrouped_income_flat = Enum.flat_map(ungrouped_income, fn {_party, txns} -> txns end)
 
-    [
-      cost_group_structs,
-      income_group_structs,
-      ungrouped_cost_flat,
-      ungrouped_income_flat,
-      other_entries
-    ]
+    [cost_group_structs, income_group_structs, ungrouped_cost_flat, ungrouped_income_flat, other_entries]
     |> Enum.concat()
     |> Invoicing.order_entries_for_display()
   end

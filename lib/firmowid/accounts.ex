@@ -300,8 +300,7 @@ defmodule Firmowid.Accounts do
 
   """
   def link_google_account_with_token(user, token) do
-    with {:ok, query} <-
-           UserToken.verify_email_token_with_data_query(token, "link_google_account"),
+    with {:ok, query} <- UserToken.verify_email_token_with_data_query(token, "link_google_account"),
          {user_token, %User{} = verified_user} <- Repo.one(query, skip_organization_id: true),
          true <- user.id == verified_user.id,
          google_provider_id when not is_nil(google_provider_id) <- user_token.google_provider_id do

@@ -150,11 +150,8 @@ defmodule Firmowid.Invoicing.Timeline do
       ordered: false
     )
     |> Enum.reduce([], fn
-      {:ok, submission_info}, acc ->
-        maybe_add_submission_events(acc, submission_info)
-
-      {:exit, reason}, _acc ->
-        raise "Failed to fetch submission info for correction: #{inspect(reason)}"
+      {:ok, submission_info}, acc -> maybe_add_submission_events(acc, submission_info)
+      {:exit, reason}, _acc -> raise "Failed to fetch submission info for correction: #{inspect(reason)}"
     end)
     |> Enum.map(fn
       %{event: :submitted} = event -> %{event | event: :correction_submitted}

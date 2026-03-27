@@ -50,7 +50,7 @@ defmodule Firmowid.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:sourceror, "~> 1.8", only: [:dev, :test]},
+      {:sourceror, "~> 1.8"},
       {:ash, "~> 3.21"},
       {:ash_postgres, "~> 2.8"},
       {:ash_phoenix, "~> 2.3"},

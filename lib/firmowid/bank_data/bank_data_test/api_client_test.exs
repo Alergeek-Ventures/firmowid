@@ -18,10 +18,7 @@ defmodule Firmowid.BankData.ApiClientTest do
       Req.Test.stub(:bank_data_institutions, fn conn ->
         conn
         |> Plug.Conn.put_resp_content_type("application/json")
-        |> Plug.Conn.send_resp(
-          401,
-          Jason.encode!(%{summary: "Invalid token", detail: "expired", status_code: 401})
-        )
+        |> Plug.Conn.send_resp(401, Jason.encode!(%{summary: "Invalid token", detail: "expired", status_code: 401}))
       end)
 
       assert {:error, :unauthorized} = ApiClient.get_available_institutions_for_country("PL")
@@ -57,10 +54,7 @@ defmodule Firmowid.BankData.ApiClientTest do
       Req.Test.stub(:bank_data_requisition, fn conn ->
         conn
         |> Plug.Conn.put_resp_content_type("application/json")
-        |> Plug.Conn.send_resp(
-          401,
-          Jason.encode!(%{summary: "Invalid token", detail: "expired", status_code: 401})
-        )
+        |> Plug.Conn.send_resp(401, Jason.encode!(%{summary: "Invalid token", detail: "expired", status_code: 401}))
       end)
 
       assert {:error, :unauthorized} = ApiClient.get_requisition("req-1")
@@ -134,10 +128,7 @@ defmodule Firmowid.BankData.ApiClientTest do
       Req.Test.stub(:bank_data_transactions, fn conn ->
         conn
         |> Plug.Conn.put_resp_content_type("application/json")
-        |> Plug.Conn.send_resp(
-          409,
-          Jason.encode!(%{summary: "Account suspended", status_code: 409})
-        )
+        |> Plug.Conn.send_resp(409, Jason.encode!(%{summary: "Account suspended", status_code: 409}))
       end)
 
       assert {:error, :conflict} = ApiClient.get_booked_transactions_for_account("acc-1")

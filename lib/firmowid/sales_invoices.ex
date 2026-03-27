@@ -348,8 +348,7 @@ defmodule Firmowid.SalesInvoices do
       :error
   """
   @spec parse_invoice_number(String.t()) ::
-          {:ok, %{num: integer(), month: integer(), year: integer(), series: String.t() | nil}}
-          | :error
+          {:ok, %{num: integer(), month: integer(), year: integer(), series: String.t() | nil}} | :error
   def parse_invoice_number(invoice_number) when is_binary(invoice_number) do
     case Regex.run(@invoice_number_regex, invoice_number) do
       [_, num, month, year] ->
@@ -655,11 +654,8 @@ defmodule Firmowid.SalesInvoices do
 
     with {:ok, created_invoice} <- result do
       case Billing.increment(created_invoice.organization_id, :sales_invoices) do
-        {:ok, _} ->
-          :ok
-
-        {:error, reason} ->
-          Logger.warning("Failed to increment sales_invoices limit: #{inspect(reason)}")
+        {:ok, _} -> :ok
+        {:error, reason} -> Logger.warning("Failed to increment sales_invoices limit: #{inspect(reason)}")
       end
     end
 
@@ -696,8 +692,7 @@ defmodule Firmowid.SalesInvoices do
   chain (same rule as editing). The corrected (original) invoice must be a locked,
   KSeF-submitted VAT invoice.
   """
-  @spec cancel_sales_invoice(SalesInvoice.t()) ::
-          {:ok, SalesInvoice.t()} | {:error, Ecto.Changeset.t()}
+  @spec cancel_sales_invoice(SalesInvoice.t()) :: {:ok, SalesInvoice.t()} | {:error, Ecto.Changeset.t()}
   def cancel_sales_invoice(%SalesInvoice{ksef_invoice_kind: :vat} = original_invoice) do
     if SalesInvoice.ksef_submitted?(original_invoice) do
       latest_snapshot = get_latest_invoice_snapshot(original_invoice)
@@ -822,11 +817,8 @@ defmodule Firmowid.SalesInvoices do
 
   defp do_decrement_billing(invoice) do
     case Billing.decrement(invoice.organization_id, :sales_invoices) do
-      {:ok, _} ->
-        :ok
-
-      {:error, reason} ->
-        Logger.warning("Failed to decrement sales_invoices limit: #{inspect(reason)}")
+      {:ok, _} -> :ok
+      {:error, reason} -> Logger.warning("Failed to decrement sales_invoices limit: #{inspect(reason)}")
     end
   end
 
@@ -909,8 +901,7 @@ defmodule Firmowid.SalesInvoices do
     |> Repo.update()
   end
 
-  @spec delete_counterparty(Counterparty.t()) ::
-          {:ok, Counterparty.t()} | {:error, Ecto.Changeset.t()}
+  @spec delete_counterparty(Counterparty.t()) :: {:ok, Counterparty.t()} | {:error, Ecto.Changeset.t()}
   def delete_counterparty(%Counterparty{} = counterparty) do
     Repo.delete(counterparty)
   end
