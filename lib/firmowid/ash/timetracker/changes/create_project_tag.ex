@@ -29,8 +29,9 @@ defmodule Firmowid.Ash.Timetracker.Changes.CreateProjectTag do
   defp link_tag_definition(project, tag_def_id) do
     import Ecto.Query
 
-    alias Firmowid.Timetracker.Project, as: OldProject
-
-    Firmowid.Repo.update_all(from(p in OldProject, where: p.id == ^project.id), set: [tag_definition_id: tag_def_id])
+    Firmowid.Repo.update_all(
+      from(p in Firmowid.Ash.Timetracker.Project, where: p.id == ^project.id),
+      set: [tag_definition_id: tag_def_id]
+    )
   end
 end

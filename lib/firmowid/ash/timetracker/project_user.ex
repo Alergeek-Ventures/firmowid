@@ -14,6 +14,11 @@ defmodule Firmowid.Ash.Timetracker.ProjectUser do
 
   require Resource
 
+  code_interface do
+    define(:create)
+    define(:destroy)
+  end
+
   postgres do
     table("projects_users")
     repo(Firmowid.Repo)

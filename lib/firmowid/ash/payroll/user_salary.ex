@@ -23,6 +23,15 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
 
   require Resource
 
+  code_interface do
+    define(:create)
+    define(:create_with_retire)
+    define(:retire)
+    define(:get_latest, args: [:user_id])
+    define(:as_of, args: [:date])
+    define(:salaries_csv, args: [:month, :year])
+  end
+
   postgres do
     table("user_salaries")
     repo(Firmowid.Repo)

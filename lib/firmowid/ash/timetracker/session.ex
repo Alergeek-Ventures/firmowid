@@ -13,11 +13,32 @@ defmodule Firmowid.Ash.Timetracker.Session do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Resource
+  alias Firmowid.Ash.Timetracker.Checks.HoursRecordNotSubmitted
+  alias Firmowid.Ash.Timetracker.Checks.OwnsResource
+  alias Firmowid.Ash.Timetracker.Project
   alias Firmowid.Ash.Timetracker.Validations.DatetimeOrder
   alias Firmowid.Ash.Timetracker.Validations.ProjectAccess
   alias Firmowid.Helpers.TimeConverter
 
   require Resource
+
+  code_interface do
+    define(:list_user_sessions, args: [:user_id])
+    define(:get_current)
+    define(:most_recent, args: [:user_id])
+    define(:by_ids, args: [:ids])
+    define(:start)
+    define(:stop)
+    define(:create)
+    define(:update)
+    define(:destroy)
+    define(:weeks_with_sessions, args: [:user_id])
+    define(:grouped_user_project_sessions, args: [:user_id, :project_id, :month, :year])
+    define(:months_with_sessions)
+    define(:total_time_worked)
+    define(:project_tasks_csv, args: [:project_id, :month, :year])
+    define(:most_demanding_project, args: [:month, :year])
+  end
 
   postgres do
     table("sessions")
@@ -76,7 +97,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
       attribute_writable?(true)
     end
 
-    belongs_to :project, Firmowid.Ash.Timetracker.Project do
+    belongs_to :project, Project do
       allow_nil?(false)
       attribute_writable?(true)
     end
@@ -201,41 +222,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
       argument(:timezone, :string, default: "Etc/UTC")
 
       run(fn input, _context ->
-        import Ecto.Query
-
-        user_id = input.arguments.user_id
-        after_date = input.arguments[:after_date]
-        limit = input.arguments[:limit]
-        timezone = input.arguments[:timezone] || "Etc/UTC"
-
-        query =
-          Session
-          |> where([s], s.user_id == ^user_id)
-          |> select([s], fragment("date_trunc('week', ?)", s.start_datetime))
-          |> distinct(true)
-          |> order_by([s], desc: fragment("date_trunc('week', ?)", s.start_datetime))
-
-        query =
-          if after_date do
-            dt = DateTime.new!(after_date, ~T[00:00:00])
-            where(query, [s], s.start_datetime < ^dt)
-          else
-            query
-          end
-
-        query = if limit, do: limit(query, ^limit), else: query
-
-        dates =
-          query
-          |> Firmowid.Repo.all()
-          |> Enum.map(fn date ->
-            date
-            |> DateTime.from_naive!("Etc/UTC")
-            |> DateTime.shift_zone!(timezone)
-            |> DateTime.to_date()
-          end)
-
-        {:ok, dates}
+        {:ok, query_weeks_with_sessions(input.arguments)}
       end)
     end
 
@@ -248,31 +235,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
       argument(:year, :integer, allow_nil?: false)
 
       run(fn input, _context ->
-        import Ecto.Query
-
-        %{user_id: user_id, project_id: project_id, month: month, year: year} = input.arguments
-
-        results =
-          Firmowid.Repo.all(
-            from s in Session,
-              where:
-                s.user_id == ^user_id and s.project_id == ^project_id and
-                  fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
-                  fragment("extract(year from ?) = ?", s.start_datetime, ^year),
-              group_by: s.title,
-              order_by: [desc: selected_as(:time_worked)],
-              select: %{
-                title: s.title,
-                duration:
-                  "extract(epoch from coalesce(?, now()) - ?)"
-                  |> fragment(s.end_datetime, s.start_datetime)
-                  |> sum()
-                  |> type(:integer)
-                  |> selected_as(:time_worked)
-              }
-          )
-
-        {:ok, results}
+        {:ok, query_grouped_user_project_sessions(input.arguments)}
       end)
     end
 
@@ -283,70 +246,34 @@ defmodule Firmowid.Ash.Timetracker.Session do
       argument(:project_id, :uuid)
 
       run(fn input, _context ->
-        import Ecto.Query
-
-        query =
-          Session
-          |> select([s], "date_trunc('month', ?)" |> fragment(s.start_datetime) |> selected_as(:date))
-          |> distinct([s], selected_as(:date))
-          |> order_by([s], desc: selected_as(:date))
-
-        query =
-          case input.arguments[:user_id] do
-            nil -> query
-            uid -> where(query, [s], s.user_id == ^uid)
-          end
-
-        query =
-          case input.arguments[:project_id] do
-            nil -> query
-            pid -> where(query, [s], s.project_id == ^pid)
-          end
-
-        {:ok, Firmowid.Repo.all(query)}
+        {:ok, query_months_with_sessions(input.arguments)}
       end)
     end
 
     action :total_time_worked, :integer do
-      description("Sum of session durations (seconds) for a month/year, optionally filtered by user and/or project.")
+      description(
+        "Sum of session durations (seconds). When month/year are given, scoped to that month; when omitted, all-time. Optionally filtered by user and/or project."
+      )
 
-      argument(:month, :integer, allow_nil?: false)
-      argument(:year, :integer, allow_nil?: false)
+      argument(:month, :integer)
+      argument(:year, :integer)
       argument(:user_id, :uuid)
       argument(:project_id, :uuid)
 
       run(fn input, _context ->
-        import Ecto.Query
+        {:ok, query_total_time_worked(input.arguments)}
+      end)
+    end
 
-        %{month: month, year: year} = input.arguments
+    action :project_tasks_csv, :string do
+      description("CSV of tasks (grouped sessions) for a project in a given month, with duration in ceiled hours.")
 
-        query =
-          from s in Session,
-            where:
-              fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
-                fragment("extract(year from ?) = ?", s.start_datetime, ^year),
-            limit: 1,
-            select:
-              "extract(epoch from coalesce(?, now()) - ?)"
-              |> fragment(s.end_datetime, s.start_datetime)
-              |> sum()
-              |> coalesce(0)
-              |> type(:integer)
-              |> selected_as(:time_worked)
+      argument(:project_id, :uuid, allow_nil?: false)
+      argument(:month, :integer, allow_nil?: false)
+      argument(:year, :integer, allow_nil?: false)
 
-        query =
-          case input.arguments[:user_id] do
-            nil -> query
-            uid -> where(query, [s], s.user_id == ^uid)
-          end
-
-        query =
-          case input.arguments[:project_id] do
-            nil -> query
-            pid -> where(query, [s], s.project_id == ^pid)
-          end
-
-        {:ok, Firmowid.Repo.one(query) || 0}
+      run(fn input, _context ->
+        {:ok, query_project_tasks_csv(input.arguments)}
       end)
     end
 
@@ -357,33 +284,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
       argument(:year, :integer, allow_nil?: false)
 
       run(fn input, _context ->
-        import Ecto.Query
-
-        %{month: month, year: year} = input.arguments
-
-        result =
-          Firmowid.Repo.one(
-            from s in Session,
-              join: p in Firmowid.Timetracker.Project,
-              on: s.project_id == p.id,
-              where:
-                fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
-                  fragment("extract(year from ?) = ?", s.start_datetime, ^year),
-              group_by: p.id,
-              order_by: [desc: selected_as(:time_worked)],
-              limit: 1,
-              select: %{
-                project: p,
-                time_worked:
-                  "extract(epoch from coalesce(?, now()) - ?)"
-                  |> fragment(s.end_datetime, s.start_datetime)
-                  |> sum()
-                  |> type(:integer)
-                  |> selected_as(:time_worked)
-              }
-          )
-
-        {:ok, result}
+        {:ok, query_most_demanding_project(input.arguments)}
       end)
     end
   end
@@ -397,12 +298,221 @@ defmodule Firmowid.Ash.Timetracker.Session do
       authorize_if(relates_to_actor_via(:user))
     end
 
+    # Stopping a running session is always allowed (the old Bodyguard rule
+    # checked `end_datetime == nil` to bypass lockdown).
+    policy [action(:stop), actor_attribute_equals(:role, :employee)] do
+      authorize_if(relates_to_actor_via(:user))
+    end
+
+    # For all other writes, the session's month must not have a submitted
+    # hours record, AND the user must own the session.
     policy [action_type([:create, :update, :destroy]), actor_attribute_equals(:role, :employee)] do
+      forbid_unless(HoursRecordNotSubmitted)
       authorize_if(relates_to_actor_via(:user))
     end
 
     policy [action_type(:action), actor_attribute_equals(:role, :employee)] do
       authorize_if(always())
     end
+  end
+
+  # ── Private helpers for generic actions ──────────────────────────────
+  #
+  # TODO: extract these imperative helpers into a dedicated SessionQueries
+  # module (similar to how ProjectCosts was extracted from Project) to keep
+  # the resource module focused on Ash DSL declarations.
+
+  defp query_weeks_with_sessions(args) do
+    import Ecto.Query
+
+    user_id = args.user_id
+    after_date = args[:after_date]
+    limit = args[:limit]
+    timezone = args[:timezone] || "Etc/UTC"
+
+    query =
+      __MODULE__
+      |> where([s], s.user_id == ^user_id)
+      |> select([s], fragment("date_trunc('week', ?)", s.start_datetime))
+      |> distinct(true)
+      |> order_by([s], desc: fragment("date_trunc('week', ?)", s.start_datetime))
+
+    query =
+      if after_date do
+        dt = DateTime.new!(after_date, ~T[00:00:00])
+        where(query, [s], s.start_datetime < ^dt)
+      else
+        query
+      end
+
+    query = if limit, do: limit(query, ^limit), else: query
+
+    query
+    |> Firmowid.Repo.all()
+    |> Enum.map(fn date ->
+      date
+      |> DateTime.from_naive!("Etc/UTC")
+      |> DateTime.shift_zone!(timezone)
+      |> DateTime.to_date()
+    end)
+  end
+
+  defp query_grouped_user_project_sessions(args) do
+    import Ecto.Query
+
+    %{user_id: user_id, project_id: project_id, month: month, year: year} = args
+
+    Firmowid.Repo.all(
+      from(s in __MODULE__,
+        where:
+          s.user_id == ^user_id and s.project_id == ^project_id and
+            fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^year),
+        group_by: s.title,
+        order_by: [desc: selected_as(:time_worked)],
+        select: %{
+          title: s.title,
+          duration:
+            "extract(epoch from coalesce(?, now()) - ?)"
+            |> fragment(s.end_datetime, s.start_datetime)
+            |> sum()
+            |> type(:integer)
+            |> selected_as(:time_worked)
+        }
+      )
+    )
+  end
+
+  defp query_months_with_sessions(args) do
+    import Ecto.Query
+
+    query =
+      __MODULE__
+      |> select([s], "date_trunc('month', ?)" |> fragment(s.start_datetime) |> selected_as(:date))
+      |> distinct([s], selected_as(:date))
+      |> order_by([s], desc: selected_as(:date))
+
+    query =
+      case args[:user_id] do
+        nil -> query
+        uid -> where(query, [s], s.user_id == ^uid)
+      end
+
+    case_result =
+      case args[:project_id] do
+        nil -> query
+        pid -> where(query, [s], s.project_id == ^pid)
+      end
+
+    Firmowid.Repo.all(case_result)
+  end
+
+  defp query_total_time_worked(args) do
+    import Ecto.Query
+
+    query =
+      from(s in __MODULE__,
+        limit: 1,
+        select:
+          "extract(epoch from coalesce(?, now()) - ?)"
+          |> fragment(s.end_datetime, s.start_datetime)
+          |> sum()
+          |> coalesce(0)
+          |> type(:integer)
+          |> selected_as(:time_worked)
+      )
+
+    query = apply_month_year_filter(query, args[:month], args[:year])
+    query = apply_optional_filter(query, :user_id, args[:user_id])
+    query = apply_optional_filter(query, :project_id, args[:project_id])
+
+    Firmowid.Repo.one(query) || 0
+  end
+
+  defp query_most_demanding_project(args) do
+    import Ecto.Query
+
+    %{month: month, year: year} = args
+
+    Firmowid.Repo.one(
+      from(s in __MODULE__,
+        join: p in Project,
+        on: s.project_id == p.id,
+        where:
+          fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^year),
+        group_by: p.id,
+        order_by: [desc: selected_as(:time_worked)],
+        limit: 1,
+        select: %{
+          project: p,
+          time_worked:
+            "extract(epoch from coalesce(?, now()) - ?)"
+            |> fragment(s.end_datetime, s.start_datetime)
+            |> sum()
+            |> type(:integer)
+            |> selected_as(:time_worked)
+        }
+      )
+    )
+  end
+
+  defp apply_month_year_filter(query, month, year) when is_integer(month) and is_integer(year) do
+    import Ecto.Query
+
+    where(
+      query,
+      [s],
+      fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
+        fragment("extract(year from ?) = ?", s.start_datetime, ^year)
+    )
+  end
+
+  defp apply_month_year_filter(query, _, _), do: query
+
+  defp apply_optional_filter(query, :user_id, nil), do: query
+
+  defp apply_optional_filter(query, :user_id, uid) do
+    import Ecto.Query
+
+    where(query, [s], s.user_id == ^uid)
+  end
+
+  defp apply_optional_filter(query, :project_id, nil), do: query
+
+  defp apply_optional_filter(query, :project_id, pid) do
+    import Ecto.Query
+
+    where(query, [s], s.project_id == ^pid)
+  end
+
+  defp query_project_tasks_csv(args) do
+    import Ecto.Query
+
+    %{project_id: project_id, month: month, year: year} = args
+
+    from(s in __MODULE__,
+      where:
+        s.project_id == ^project_id and
+          fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
+          fragment("extract(year from ?) = ?", s.start_datetime, ^year),
+      group_by: s.title,
+      order_by: [desc: selected_as(:time_worked)],
+      select: %{
+        title: s.title,
+        duration:
+          "extract(epoch from coalesce(?, now()) - ?)"
+          |> fragment(s.end_datetime, s.start_datetime)
+          |> sum()
+          |> type(:integer)
+          |> selected_as(:time_worked)
+      }
+    )
+    |> Firmowid.Repo.all()
+    |> Enum.map(fn task ->
+      %{task | duration: ceil(task.duration / 3600)}
+    end)
+    |> CSV.encode(headers: [title: "Zadanie", duration: "Czas trwania (godziny)"])
+    |> Enum.join()
   end
 end
