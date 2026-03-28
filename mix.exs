@@ -54,7 +54,7 @@ defmodule Firmowid.MixProject do
       {:ash, "~> 3.21"},
       {:ash_postgres, "~> 2.8"},
       {:ash_phoenix, "~> 2.3"},
-      {:picosat_elixir, "~> 0.2"},
+      {:simple_sat, "~> 0.1"},
       {:cloak_ecto, "~> 1.3.0"},
       {:x509, "~> 0.9"},
       {:argon2_elixir, "~> 4.1"},
