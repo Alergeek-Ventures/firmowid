@@ -1,5 +1,16 @@
 defmodule Firmowid.Management do
-  @moduledoc false
+  @moduledoc """
+  Admin management context — employee listings, salary details, employee profiles.
+
+  Uses Bodyguard for authorization (not Ash policies). Queries Ash resources
+  directly via raw Ecto, bypassing Ash's policy engine and action layer.
+  Organization scoping relies on `Repo.prepare_query/3` (process-dict org_id).
+
+  This is intentional during the migration period: Management was written before
+  Ash adoption and its queries involve cross-domain joins (User × Session ×
+  HoursRecord × UserSalary) that have no Ash equivalent yet. Migrate to Ash
+  generic actions with proper policies once cross-domain reads are supported.
+  """
 
   @behaviour Bodyguard.Policy
 

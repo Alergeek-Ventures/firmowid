@@ -2,7 +2,11 @@ defmodule FirmowidWeb.DevelopmentLive do
   @moduledoc """
   Development guide page showing seed data overview, credentials, and testing info.
 
-  Only accessible within the :admin live_session (requires authenticated user with organization).
+  Intentionally accessible to all authenticated org members (not just admins).
+  Lives in the :admin live_session which requires an authenticated user with an
+  organization, but has no additional role-based gate. This is a read-only
+  reference page with no sensitive data — it shows seed data structure and
+  testing guidance.
   """
   use FirmowidWeb, :live_view
 

@@ -1069,6 +1069,14 @@ defmodule Firmowid.Accounts do
   end
 
   def get_user_with_avatar(%User{} = user) do
+    do_get_user_with_avatar(user)
+  end
+
+  def get_user_with_avatar(%Firmowid.Ash.Core.User{} = user) do
+    do_get_user_with_avatar(user)
+  end
+
+  defp do_get_user_with_avatar(user) do
     avatar_url =
       case user.avatar_blob_id do
         nil -> nil

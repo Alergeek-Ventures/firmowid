@@ -1,10 +1,13 @@
 defmodule FirmowidWeb.CsvController do
+  @moduledoc false
   use FirmowidWeb, :controller
 
   alias Ash.Error.Forbidden
   alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
+
+  action_fallback FirmowidWeb.FallbackController
 
   def salaries(conn, %{"month" => month_str, "year" => year_str}) do
     scope = conn.assigns.ash_scope
@@ -19,11 +22,9 @@ defmodule FirmowidWeb.CsvController do
           disposition: :attachment
         )
 
-    send_download(conn, {:binary, csv_content},
-      filename: "wyplaty_#{month}_#{year}.csv",
-      content_type: "text/csv",
-      disposition: :attachment
-    )
+      {:error, %Forbidden{}} ->
+        {:error, :unauthorized}
+    end
   end
 
   def project(conn, %{"id" => project_id, "month" => month_str, "year" => year_str}) do
