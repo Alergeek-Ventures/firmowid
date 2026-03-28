@@ -7,7 +7,11 @@
             <.live_file_input upload={@uploads.user_avatar} />
           </div>
           <.avatar class="size-28">
-            <.avatar_image src={@current_user.avatar_url} alt="Avatar" />
+            <.avatar_image
+              :if={Map.has_key?(@current_user, :avatar_url)}
+              src={@current_user.avatar_url}
+              alt="Avatar"
+            />
             <.avatar_fallback>
               {String.slice(@current_user.email, 0, 1) |> String.upcase()}
             </.avatar_fallback>

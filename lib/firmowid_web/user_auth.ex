@@ -198,11 +198,13 @@ defmodule FirmowidWeb.UserAuth do
          not is_nil(socket.assigns.current_user.organization_id) do
       user = socket.assigns.current_user
       Firmowid.Repo.put_org_id(user.organization_id)
+      user = Accounts.get_user_with_avatar(user)
 
       ash_scope = %Scope{current_user: user, current_tenant: user.organization_id}
 
       {:cont,
        socket
+       |> Phoenix.Component.assign(:current_user, user)
        |> Phoenix.Component.assign(:current_org, user.organization)
        |> Phoenix.Component.assign(:ash_scope, ash_scope)}
     else
@@ -286,12 +288,14 @@ defmodule FirmowidWeb.UserAuth do
         |> redirect(to: ~p"/organization")
         |> halt()
       else
-        user = conn.assigns[:current_user]
-        Firmowid.Repo.put_org_id(user.organization_id)
+        Firmowid.Repo.put_org_id(conn.assigns[:current_user].organization_id)
+
+        user = Accounts.get_user_with_avatar(conn.assigns[:current_user])
 
         ash_scope = %Scope{current_user: user, current_tenant: user.organization_id}
 
         conn
+        |> assign(:current_user, user)
         |> assign(:current_org, user.organization)
         |> assign(:ash_scope, ash_scope)
       end

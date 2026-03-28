@@ -83,7 +83,14 @@
         <% end %>
       </div>
 
-      <div class="relative max-md:hidden flex-1 text-right flex justify-end">
+      <div class="relative max-md:hidden flex-1 text-right flex justify-end items-center gap-3">
+        <button
+          type="button"
+          phx-click={show_modal("feedback-modal")}
+          class="flex items-center gap-1.5 transition-colors cursor-pointer"
+        >
+          <.icon name="hero-chat-bubble-left-ellipsis" class="w-5 h-5" /> Feedback
+        </button>
         <div class="relative">
           <button
             phx-click={
@@ -91,37 +98,43 @@
                 to: "#dropdown_content",
                 in:
                   {"transition-all transform ease-in", "opacity-0 scale-95",
-                   "opacity-100 scale-100"},
+                   "opacity-100 duration-50 scale-100"},
                 out:
-                  {"transition-all transform ease-in duration-200",
+                  {"transition-all transform ease-in duration-50",
                    "opacity-100 translate-y-0 sm:scale-100",
                    "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"},
                 display: "flex"
               )
-              |> JS.toggle_class("invert", to: "#dropdown_button")
             }
             id="dropdown_button"
-            phx-click-away={
-              hide("#dropdown_content") |> JS.remove_class("invert", to: "#dropdown_button")
-            }
-            phx-window-keydown={
-              hide("#dropdown_content") |> JS.remove_class("invert", to: "#dropdown_button")
-            }
+            phx-click-away={hide("#dropdown_content")}
+            phx-window-keydown={hide("#dropdown_content")}
             phx-key="Escape"
-            class="bg-black transition p-2 py-3 hover:invert rounded-md w-full flex justify-end"
+            class={[
+              "transition rounded-full cursor-pointer hover:bg-white",
+              "hover:text-black p-1 px-2"
+            ]}
             title={@current_user.email}
           >
-            <.icon name="hero-user" class="w-5 h-5 mr-1" />
-            <span class="lowercase text-sm max-lg:hidden">
-              {@current_user.email}
-            </span>
+            <%= if Map.has_key?(@current_user, :avatar_url) do %>
+              <.avatar class="size-9 border-2 border-white/20">
+                <.avatar_image src={@current_user.avatar_url} alt={@current_user.email} />
+                <.avatar_fallback class="bg-darkGrey text-white">
+                  <.icon name="hero-user" class="w-5 h-5" />
+                </.avatar_fallback>
+              </.avatar>
+            <% else %>
+              <.icon name="hero-user" class="w-5 h-5" />
+            <% end %>
           </button>
           <div
             id="dropdown_content"
             style="display: none"
-            class="absolute flex-col font-semibold p-3 rounded-md gap-2 right-0
-        w-full top-[70px] bg-black text-left max-lg:w-auto z-50"
+            class="absolute flex-col font-semibold p-3 rounded-md gap-2 right-0 w-full min-w-[250px] top-[50px] bg-black text-left max-lg:w-auto z-50"
           >
+            <div class="p-2 pb-4 border-b border-darkGrey/50 text-white/50 text-xs lowercase truncate">
+              {@current_user.email}
+            </div>
             <.link navigate={~p"/ustawienia"} class="rounded-md p-2 hover:bg-darkGrey/50">
               Ustawienia
             </.link>
@@ -191,6 +204,12 @@
       </div>
     <% end %>
   </.navbar>
+  <.live_component
+    module={FirmowidWeb.FeedbackLive.FormComponent}
+    id="feedback-form"
+    current_user={@current_user}
+    current_uri={@current_uri}
+  />
 <% end %>
 
 <main class={
