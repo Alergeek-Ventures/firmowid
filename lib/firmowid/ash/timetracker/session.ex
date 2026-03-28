@@ -156,11 +156,12 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
     action :grouped_user_project_sessions, {:array, :map} do
       description """
-      Sessions grouped by title for a user+project+month/year, returning title + sum duration (seconds).
+      Sessions grouped by title for a user+project+month/year, returning
+      `[%{title: String.t(), duration: integer()}]` sorted by duration desc.
 
-      Uses raw Ecto GROUP BY because Ash cannot return non-struct aggregate shapes.
-      Organization scoping is applied automatically via Repo.prepare_query.
-      Employee access is restricted to own sessions via actor check in the run function.
+      Uses Ash read with `:duration` calculation, then Elixir-side grouping.
+      Read policies and multitenancy are enforced by the Ash read layer.
+      Employee access is additionally restricted to own sessions via actor check.
       """
 
       argument :user_id, :uuid, allow_nil?: false
@@ -170,7 +171,17 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
       run fn input, context ->
         enforce_own_sessions!(context.actor, input.arguments.user_id)
-        {:ok, query_grouped_user_project_sessions(input.arguments)}
+
+        sessions =
+          read_sessions_grouped_by_title(
+            input.arguments.month,
+            input.arguments.year,
+            context,
+            user_id: input.arguments.user_id,
+            project_id: input.arguments.project_id
+          )
+
+        {:ok, sessions}
       end
     end
 
@@ -200,18 +211,32 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
     action :project_tasks_csv, :string do
       description """
-      CSV of tasks (grouped sessions) for a project in a given month, with duration in ceiled hours.
+      CSV of tasks (grouped sessions) for a project in a given month, with
+      duration in ceiled hours. Admin-only.
 
-      Admin-only. Uses raw Ecto GROUP BY because Ash cannot return non-struct
-      aggregate shapes. Organization scoping via Repo.prepare_query.
+      Uses Ash read with `:duration` calculation, then Elixir-side grouping
+      and CSV encoding. Read policies and multitenancy enforced by Ash.
       """
 
       argument :project_id, :uuid, allow_nil?: false
       argument :month, :integer, allow_nil?: false
       argument :year, :integer, allow_nil?: false
 
-      run fn input, _context ->
-        {:ok, query_project_tasks_csv(input.arguments)}
+      run fn input, context ->
+        csv =
+          input.arguments.month
+          |> read_sessions_grouped_by_title(
+            input.arguments.year,
+            context,
+            project_id: input.arguments.project_id
+          )
+          |> Enum.map(fn task ->
+            %{task | duration: TimeConverter.time_worked_in_seconds_to_hours(task.duration)}
+          end)
+          |> CSV.encode(headers: [title: "Zadanie", duration: "Czas trwania (godziny)"])
+          |> Enum.join()
+
+        {:ok, csv}
       end
     end
   end
@@ -248,10 +273,9 @@ defmodule Firmowid.Ash.Timetracker.Session do
       authorize_if relates_to_actor_via(:user)
     end
 
-    # Generic actions that employees can call. These use either Ash reads
-    # (total_time_worked, months_with_sessions, weeks_with_sessions) which
-    # enforce :read policies, or raw Ecto GROUP BY (grouped_user_project_sessions)
-    # with an in-action actor check (enforce_own_sessions!) to prevent employees
+    # Generic actions that employees can call. These use Ash reads internally
+    # (which enforce :read policies). grouped_user_project_sessions additionally
+    # has an in-action actor check (enforce_own_sessions!) to prevent employees
     # from querying other users' data.
     #
     # TODO: replace `authorize_if always()` with proper per-action policies once
@@ -370,9 +394,15 @@ defmodule Firmowid.Ash.Timetracker.Session do
   # module (similar to how ProjectCosts was extracted from Project) to keep
   # the resource module focused on Ash DSL declarations.
 
-  # Ensures employees can only query their own sessions in generic actions
-  # that bypass Ash read policies (raw Ecto GROUP BY queries). Admins may
-  # query any user's data. Raises Ash.Error.Forbidden on violation.
+  # Ensures employees can only query their own sessions in generic actions.
+  # While the underlying Ash reads enforce :read policies (own sessions only),
+  # this provides an explicit fail-fast check. Admins may query any user's data.
+  #
+  # Hand-rolled instead of using Ash policies because generic actions don't
+  # receive a query/changeset that the policy engine can filter on — they
+  # operate on arbitrary return types (:map, {:array, :map}). Replace with a
+  # dedicated read action + policies once these reporting queries can be
+  # expressed as Ash reads with aggregates.
   defp enforce_own_sessions!(%{role: :admin}, _user_id), do: :ok
 
   defp enforce_own_sessions!(%{id: actor_id}, user_id) when actor_id == user_id, do: :ok
@@ -416,30 +446,24 @@ defmodule Firmowid.Ash.Timetracker.Session do
   defp maybe_limit(query, nil), do: query
   defp maybe_limit(query, limit), do: Ash.Query.limit(query, limit)
 
-  defp query_grouped_user_project_sessions(args) do
-    import Ecto.Query
+  # Reads sessions for the given month/year, groups by title, and sums the
+  # `:duration` calculation. Returns `[%{title: String.t(), duration: integer()}]`
+  # sorted by duration descending. Accepts optional `user_id:` and `project_id:`
+  # keyword filters.
+  defp read_sessions_grouped_by_title(month, year, context, filters) do
+    ash_opts = [actor: context.actor, tenant: context.tenant]
 
-    %{user_id: user_id, project_id: project_id, month: month, year: year} = args
-
-    Firmowid.Repo.all(
-      from(s in __MODULE__,
-        where:
-          s.user_id == ^user_id and s.project_id == ^project_id and
-            fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
-            fragment("extract(year from ?) = ?", s.start_datetime, ^year),
-        group_by: s.title,
-        order_by: [desc: selected_as(:time_worked)],
-        select: %{
-          title: s.title,
-          duration:
-            "extract(epoch from coalesce(?, now()) - ?)"
-            |> fragment(s.end_datetime, s.start_datetime)
-            |> sum()
-            |> type(:integer)
-            |> selected_as(:time_worked)
-        }
-      )
-    )
+    __MODULE__
+    |> maybe_filter_month_year(month, year)
+    |> maybe_filter(:user_id, filters[:user_id])
+    |> maybe_filter(:project_id, filters[:project_id])
+    |> Ash.Query.load(:duration)
+    |> Ash.read!(ash_opts)
+    |> Enum.group_by(& &1.title)
+    |> Enum.map(fn {title, sessions} ->
+      %{title: title, duration: sessions |> Enum.map(& &1.duration) |> Enum.sum()}
+    end)
+    |> Enum.sort_by(& &1.duration, :desc)
   end
 
   defp read_months_with_sessions(args, context) do
@@ -486,34 +510,4 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
   defp maybe_filter(query, :project_id, nil), do: query
   defp maybe_filter(query, :project_id, pid), do: Ash.Query.filter(query, project_id == ^pid)
-
-  defp query_project_tasks_csv(args) do
-    import Ecto.Query
-
-    %{project_id: project_id, month: month, year: year} = args
-
-    from(s in __MODULE__,
-      where:
-        s.project_id == ^project_id and
-          fragment("extract(month from ?) = ?", s.start_datetime, ^month) and
-          fragment("extract(year from ?) = ?", s.start_datetime, ^year),
-      group_by: s.title,
-      order_by: [desc: selected_as(:time_worked)],
-      select: %{
-        title: s.title,
-        duration:
-          "extract(epoch from coalesce(?, now()) - ?)"
-          |> fragment(s.end_datetime, s.start_datetime)
-          |> sum()
-          |> type(:integer)
-          |> selected_as(:time_worked)
-      }
-    )
-    |> Firmowid.Repo.all()
-    |> Enum.map(fn task ->
-      %{task | duration: ceil(task.duration / 3600)}
-    end)
-    |> CSV.encode(headers: [title: "Zadanie", duration: "Czas trwania (godziny)"])
-    |> Enum.join()
-  end
 end
