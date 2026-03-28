@@ -20,7 +20,7 @@ defmodule Firmowid.Seeds.MonthM0 do
 
   import Ecto.Query
 
-  alias Firmowid.Analysis
+  alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.Finances
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
@@ -162,7 +162,10 @@ defmodule Firmowid.Seeds.MonthM0 do
         remittance_information_unstructured: "Opłata za prowadzenie rachunku walutowego THB"
       })
 
-    Analysis.set_entity_category(:transaction, txn.id, :internal)
+    EntityTag.set_entity_category!(
+      %{entity_type: :transaction, resource_id: txn.id, kind: :internal},
+      scope: seed_scope()
+    )
   end
 
   # — Matched: GhostPet partial month —
@@ -216,9 +219,14 @@ defmodule Firmowid.Seeds.MonthM0 do
       bytecraft.id
     )
 
-    Analysis.set_entity_project_tags(:sales_invoice, invoice.id, [
-      projects.ghostpet.tag_definition_id
-    ])
+    EntityTag.set_entity_project_tags!(
+      %{
+        entity_type: :sales_invoice,
+        resource_id: invoice.id,
+        tag_definition_ids: [projects.ghostpet.tag_definition_id]
+      },
+      scope: seed_scope()
+    )
   end
 
   # — Unmatched cost invoice —
@@ -474,5 +482,14 @@ defmodule Firmowid.Seeds.MonthM0 do
         ]
       )
     end
+  end
+
+  # Builds a scope for Ash calls in seeds. Uses Repo.get_org_id() (already set
+  # by Bytecraft.seed!) as tenant and a synthetic admin actor to bypass policies.
+  defp seed_scope do
+    %Firmowid.Ash.Scope{
+      current_user: %{id: "00000000-0000-0000-0000-000000000000", role: :admin},
+      current_tenant: Repo.get_org_id()
+    }
   end
 end

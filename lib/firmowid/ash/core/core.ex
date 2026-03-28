@@ -12,7 +12,6 @@ defmodule Firmowid.Ash.Core do
     resource Firmowid.Ash.Core.Blob
     resource Firmowid.Ash.Core.Counterparty
     resource Firmowid.Ash.Core.Organization
-    resource Firmowid.Ash.Core.TagDefinition
     resource Firmowid.Ash.Core.User
   end
 

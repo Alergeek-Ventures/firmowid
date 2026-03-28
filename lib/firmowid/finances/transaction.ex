@@ -36,9 +36,9 @@ defmodule Firmowid.Finances.Transaction do
                  Firmowid.SalesInvoices.SalesInvoice,
                  join_through: "sales_invoices_transactions"
 
-    has_many :entity_tags, Firmowid.Analysis.EntityTag,
-      foreign_key: :entity_id,
-      where: [entity_type: :transaction]
+    has_many :entity_tags,
+             {"transaction_entity_tags", Firmowid.Ash.Analysis.EntityTag},
+             foreign_key: :resource_id
 
     belongs_to :organization, Firmowid.Accounts.Organization
 

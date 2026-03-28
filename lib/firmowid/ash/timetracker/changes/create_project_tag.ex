@@ -2,11 +2,13 @@ defmodule Firmowid.Ash.Timetracker.Changes.CreateProjectTag do
   @moduledoc """
   After-action change that creates an Analysis `TagDefinition` for a new project.
 
-  Delegates to `Firmowid.Analysis.create_project_tag/1` (old context, not yet migrated)
+  Calls `Analysis.TagDefinition.create_for_project/2` via the Ash code interface
   and links the resulting tag definition back to the project via an Ash update.
   Runs inside the same transaction as the create action.
   """
   use Ash.Resource.Change
+
+  alias Firmowid.Ash.Analysis.TagDefinition
 
   @impl true
   def init(opts), do: {:ok, opts}
@@ -14,9 +16,12 @@ defmodule Firmowid.Ash.Timetracker.Changes.CreateProjectTag do
   @impl true
   def change(changeset, _opts, context) do
     Ash.Changeset.after_action(changeset, fn _changeset, project ->
-      name = project.name
+      scope = build_scope(context)
 
-      with {:ok, tag_def} <- Firmowid.Analysis.create_project_tag(name) do
+      # authorize?: false because this is an internal system operation —
+      # the parent project action already verified the actor's permissions.
+      with {:ok, tag_def} <-
+             TagDefinition.create_for_project(project.name, scope: scope, authorize?: false) do
         link_tag_definition(project, tag_def.id, context)
       end
     end)
@@ -33,5 +38,12 @@ defmodule Firmowid.Ash.Timetracker.Changes.CreateProjectTag do
       authorize?: false
     )
     |> Ash.update()
+  end
+
+  defp build_scope(context) do
+    %Firmowid.Ash.Scope{
+      current_user: context.actor,
+      current_tenant: context.tenant
+    }
   end
 end

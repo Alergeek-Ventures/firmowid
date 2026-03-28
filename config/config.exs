@@ -96,6 +96,7 @@ config :firmowid,
   ecto_repos: [Firmowid.Repo],
   generators: [timestamp_type: :utc_datetime],
   ash_domains: [
+    Firmowid.Ash.Analysis,
     Firmowid.Ash.Core,
     Firmowid.Ash.Payroll,
     Firmowid.Ash.Timetracker

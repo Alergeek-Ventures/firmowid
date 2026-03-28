@@ -39,7 +39,7 @@
             <.icon name="hero-clipboard-document-list" class="w-5 h-5" /> Fakturowanie
           </.link>
         <% end %>
-        <%= if flag_enabled?(:analysis_dashboard, @current_user) and Bodyguard.permit?(Firmowid.Analysis, :read, @current_user) do %>
+        <%= if flag_enabled?(:analysis_dashboard, @current_user) and @current_user.role == :admin do %>
           <.link
             navigate={~p"/analiza"}
             class={[
@@ -67,7 +67,7 @@
         >
           <.icon name="hero-clock" class="w-5 h-5" /> Czasośledź
         </.link>
-        <%= if Bodyguard.permit?(Firmowid.Analysis, :read, @current_user) do %>
+        <%= if @current_user.role == :admin do %>
           <.link
             navigate={~p"/zarzadzanie/pracownicy"}
             class={[

@@ -27,8 +27,9 @@ defmodule Firmowid.Seeds.MonthM1 do
     PLN side of conv.     +4,750 PLN  → :internal (skip_invoicing)
   """
 
-  alias Firmowid.Analysis
+  alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.CostInvoices
+  alias Firmowid.Repo
   alias Firmowid.SalesInvoices
   alias Firmowid.Seeds.Helpers
 
@@ -449,59 +450,70 @@ defmodule Firmowid.Seeds.MonthM1 do
     )
 
     # — Tagging —
+    scope = seed_scope()
 
     # Revenue → project tags
-    Analysis.set_entity_project_tags(:sales_invoice, sale_ghostpet.id, [
-      projects.ghostpet.tag_definition_id
-    ])
-
-    Analysis.set_entity_project_tags(:sales_invoice, sale_flatmate.id, [
-      projects.flatmate.tag_definition_id
-    ])
-
-    Analysis.set_entity_project_tags(:sales_invoice, sale_taco.id, [
-      projects.taco.tag_definition_id
-    ])
+    tag_project!(:sales_invoice, sale_ghostpet.id, [projects.ghostpet.tag_definition_id], scope)
+    tag_project!(:sales_invoice, sale_flatmate.id, [projects.flatmate.tag_definition_id], scope)
+    tag_project!(:sales_invoice, sale_taco.id, [projects.taco.tag_definition_id], scope)
 
     # Costs → mixed tags
-    Analysis.set_entity_project_tags(:cost_invoice, cost_ovh.id, [
-      projects.firmowid.tag_definition_id
-    ])
-
-    Analysis.set_entity_category(:cost_invoice, cost_opencode.id, :company)
-    Analysis.set_entity_category(:cost_invoice, cost_rent.id, :company)
+    tag_project!(:cost_invoice, cost_ovh.id, [projects.firmowid.tag_definition_id], scope)
+    tag_category!(:cost_invoice, cost_opencode.id, :company, scope)
+    tag_category!(:cost_invoice, cost_rent.id, :company, scope)
     # cost_biuro intentionally untagged
 
     # Bank fee → :company
-    Analysis.set_entity_category(:transaction, txn_bankfee.id, :company)
+    tag_category!(:transaction, txn_bankfee.id, :company, scope)
 
     # THB → :internal
-    Analysis.set_entity_category(:transaction, txn_thb_out.id, :internal)
-    Analysis.set_entity_category(:transaction, txn_thb_pln.id, :internal)
+    tag_category!(:transaction, txn_thb_out.id, :internal, scope)
+    tag_category!(:transaction, txn_thb_pln.id, :internal, scope)
 
     # Wages → project tags (all projects person worked on)
-    Analysis.set_entity_project_tags(:transaction, txn_wage_kira.id, [
-      projects.firmowid.tag_definition_id,
-      projects.flatmate.tag_definition_id
-    ])
+    tag_project!(
+      :transaction,
+      txn_wage_kira.id,
+      [projects.firmowid.tag_definition_id, projects.flatmate.tag_definition_id],
+      scope
+    )
 
-    Analysis.set_entity_project_tags(:transaction, txn_wage_tomek.id, [
-      projects.firmowid.tag_definition_id,
-      projects.ghostpet.tag_definition_id,
-      projects.taco.tag_definition_id
-    ])
+    tag_project!(
+      :transaction,
+      txn_wage_tomek.id,
+      [projects.firmowid.tag_definition_id, projects.ghostpet.tag_definition_id, projects.taco.tag_definition_id],
+      scope
+    )
 
-    Analysis.set_entity_project_tags(:transaction, txn_wage_sable.id, [
-      projects.flatmate.tag_definition_id
-    ])
+    tag_project!(:transaction, txn_wage_sable.id, [projects.flatmate.tag_definition_id], scope)
+    tag_project!(:transaction, txn_wage_jules.id, [projects.taco.tag_definition_id], scope)
 
-    Analysis.set_entity_project_tags(:transaction, txn_wage_jules.id, [
-      projects.taco.tag_definition_id
-    ])
+    tag_project!(
+      :transaction,
+      txn_wage_maren.id,
+      [projects.ghostpet.tag_definition_id, projects.taco.tag_definition_id],
+      scope
+    )
+  end
 
-    Analysis.set_entity_project_tags(:transaction, txn_wage_maren.id, [
-      projects.ghostpet.tag_definition_id,
-      projects.taco.tag_definition_id
-    ])
+  defp tag_category!(entity_type, resource_id, kind, scope) do
+    EntityTag.set_entity_category!(
+      %{entity_type: entity_type, resource_id: resource_id, kind: kind},
+      scope: scope
+    )
+  end
+
+  defp tag_project!(entity_type, resource_id, tag_definition_ids, scope) do
+    EntityTag.set_entity_project_tags!(
+      %{entity_type: entity_type, resource_id: resource_id, tag_definition_ids: tag_definition_ids},
+      scope: scope
+    )
+  end
+
+  defp seed_scope do
+    %Firmowid.Ash.Scope{
+      current_user: %{id: "00000000-0000-0000-0000-000000000000", role: :admin},
+      current_tenant: Repo.get_org_id()
+    }
   end
 end

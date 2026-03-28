@@ -8,17 +8,19 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
   """
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Analysis
+  alias Firmowid.Ash.Analysis
+  alias Firmowid.Ash.Analysis.EntityTag
+  alias Firmowid.Ash.Analysis.TagDefinition
 
   @impl true
   def mount(_params, _session, socket) do
-    Bodyguard.permit!(Analysis, :read, socket.assigns.current_user)
+    scope = socket.assigns.ash_scope
 
     active_months =
-      Analysis.get_months_with_entries() ++
+      Analysis.get_months_with_entries(scope) ++
         [Date.utc_today()]
 
-    tag_definitions = Analysis.list_tag_definitions()
+    tag_definitions = TagDefinition.list_tag_definitions!(scope: scope)
 
     socket =
       socket
@@ -90,13 +92,23 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
   def handle_event("set-entity-category", %{"entity_type" => type, "entity_id" => id, "kind" => kind}, socket) do
     entity_type = cast_entity_type!(type)
     kind = cast_entity_kind!(kind)
-    Analysis.set_entity_category(entity_type, id, kind)
+    scope = socket.assigns.ash_scope
+
+    EntityTag.set_entity_category!(%{entity_type: entity_type, resource_id: id, kind: kind},
+      scope: scope
+    )
+
     {:noreply, load_data(socket)}
   end
 
   @impl true
   def handle_event("clear-entity-tags", %{"entity_type" => type, "entity_id" => id}, socket) do
-    Analysis.clear_entity_tags(cast_entity_type!(type), id)
+    scope = socket.assigns.ash_scope
+
+    EntityTag.clear_entity_tags!(%{entity_type: cast_entity_type!(type), resource_id: id},
+      scope: scope
+    )
+
     {:noreply, load_data(socket)}
   end
 
@@ -104,6 +116,7 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
   def handle_event("toggle-project-tag", params, socket) do
     %{"entity_type" => type, "entity_id" => id, "tag_definition_id" => tag_def_id} = params
     entity_type = cast_entity_type!(type)
+    scope = socket.assigns.ash_scope
 
     # Find the current entity in assigns and compute toggled project tag IDs
     current_tags = find_entity_tags(socket.assigns, entity_type, id)
@@ -120,7 +133,11 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
         [tag_def_id | current_project_ids]
       end
 
-    Analysis.set_entity_project_tags(entity_type, id, updated_ids)
+    EntityTag.set_entity_project_tags!(
+      %{entity_type: entity_type, resource_id: id, tag_definition_ids: updated_ids},
+      scope: scope
+    )
+
     {:noreply, load_data(socket)}
   end
 
@@ -141,8 +158,10 @@ defmodule FirmowidWeb.AnalysisLive.Dashboard do
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
     tag_filters = socket.assigns.tag_filters
+    scope = socket.assigns.ash_scope
 
-    totals = Analysis.get_organization_totals(date_range_from, date_range_to, tag_filters: tag_filters)
+    totals =
+      Analysis.get_organization_totals(date_range_from, date_range_to, [tag_filters: tag_filters], scope)
 
     socket
     |> assign(:total_income, totals.total_income)

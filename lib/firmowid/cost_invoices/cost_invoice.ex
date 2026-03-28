@@ -58,9 +58,9 @@ defmodule Firmowid.CostInvoices.CostInvoice do
       references: :ksef_number,
       define_field: false
 
-    has_many :entity_tags, Firmowid.Analysis.EntityTag,
-      foreign_key: :entity_id,
-      where: [entity_type: :cost_invoice]
+    has_many :entity_tags,
+             {"cost_invoice_entity_tags", Firmowid.Ash.Analysis.EntityTag},
+             foreign_key: :resource_id
 
     belongs_to :organization, Firmowid.Accounts.Organization
 

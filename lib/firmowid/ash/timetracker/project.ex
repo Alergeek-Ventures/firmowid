@@ -373,7 +373,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
       attribute_writable? true
     end
 
-    belongs_to :tag_definition, Firmowid.Ash.Core.TagDefinition do
+    belongs_to :tag_definition, Firmowid.Ash.Analysis.TagDefinition do
       allow_nil? true
       attribute_writable? true
     end
