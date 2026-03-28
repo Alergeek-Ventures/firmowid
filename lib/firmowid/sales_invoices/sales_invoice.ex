@@ -203,7 +203,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       :correction_reason,
       :counterparty_id
     ])
-    |> validate_length(:correction_reason, max: 256)
+    |> validate_length(:correction_reason, max: 256, message: "powinna mieć co najwyżej 256 znaków")
     |> buyer_changeset(attrs)
     |> seller_changeset(attrs)
     |> cast_assoc(:sales_invoice_items,
@@ -216,7 +216,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     |> put_change(:organization_id, Firmowid.Repo.get_org_id())
     |> unique_constraint([:invoice_number, :organization_id],
       name: :sales_invoices_invoice_number_organization_id_index,
-      message: "Invoice number already exists for this organization"
+      message: "numer faktury już istnieje dla tej organizacji"
     )
   end
 
@@ -242,7 +242,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       :currency,
       :seller_account_number
     ])
-    |> validate_required([:buyer_country, :buyer_address])
+    |> validate_required([:buyer_country, :buyer_address], message: "nie może być puste")
     |> validate_country_code(:buyer_country)
     |> validate_buyer_id()
     |> validate_buyer_id_required_for_ksef()
@@ -260,8 +260,8 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       drop_param: :items_drop
     )
     |> normalize_reverse_charge_item_vat_rate()
-    |> validate_required([:currency])
-    |> validate_format(:currency, ~r/^[A-Z]{3}$/)
+    |> validate_required([:currency], message: "nie może być puste")
+    |> validate_format(:currency, ~r/^[A-Z]{3}$/, message: "ma nieprawidłowy format")
   end
 
   defp normalize_reverse_charge_item_vat_rate(changeset) do
@@ -381,8 +381,14 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
     sales_invoice
     |> cast(attrs, [:sale_date, :due_date, :due_date_days, :payment_method, :seller_account_number])
     |> calculate_due_date()
-    |> validate_required([:sale_date, :due_date, :payment_method, :seller_account_number])
-    |> validate_length(:seller_account_number, min: 10, max: 34)
+    |> validate_required([:sale_date, :due_date, :payment_method, :seller_account_number],
+      message: "nie może być puste"
+    )
+    |> validate_length(:seller_account_number,
+      min: 10,
+      max: 34,
+      message: "powinien mieć od 10 do 34 znaków"
+    )
   end
 
   defp calculate_due_date(changeset) do
@@ -516,7 +522,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
 
       _other ->
         # Companies and foreign buyers need an ID for KSeF
-        validate_required(changeset, [:buyer_id])
+        validate_required(changeset, [:buyer_id], message: "nie może być puste")
     end
   end
 
@@ -562,19 +568,22 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   def ksef_submission_changeset(%__MODULE__{} = sales_invoice) do
     sales_invoice
     |> change()
-    |> validate_required([
-      # Seller fields
-      :seller_nip,
-      :seller_address,
-      # Buyer fields - country is ALWAYS required when buyer_address is present
-      :buyer_country,
-      :buyer_address,
-      # Invoice fields
-      :invoice_number,
-      :issue_date,
-      :currency,
-      :payment_method
-    ])
+    |> validate_required(
+      [
+        # Seller fields
+        :seller_nip,
+        :seller_address,
+        # Buyer fields - country is ALWAYS required when buyer_address is present
+        :buyer_country,
+        :buyer_address,
+        # Invoice fields
+        :invoice_number,
+        :issue_date,
+        :currency,
+        :payment_method
+      ],
+      message: "nie może być puste"
+    )
     |> validate_seller_name()
     |> validate_buyer_identification()
     |> validate_country_code(:buyer_country)
@@ -743,13 +752,13 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   defp check_if_locked(%__MODULE__{locked_at: _locked_at} = sales_invoice) do
     sales_invoice
     |> change()
-    |> add_error(:base, "Invoice is locked and cannot be modified")
+    |> add_error(:base, "faktura jest zablokowana i nie może być modyfikowana")
   end
 
   defp check_if_locked(%Ecto.Changeset{data: %__MODULE__{}} = changeset) do
     case get_field(changeset, :locked_at) do
       nil -> changeset
-      _locked_at -> add_error(changeset, :base, "Invoice is locked and cannot be modified")
+      _locked_at -> add_error(changeset, :base, "faktura jest zablokowana i nie może być modyfikowana")
     end
   end
 

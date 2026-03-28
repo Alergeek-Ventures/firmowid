@@ -68,7 +68,7 @@ defmodule Firmowid.SalesInvoices.Counterparty do
       :phone,
       :description
     ])
-    |> validate_required([:type])
+    |> validate_required([:type], message: "nie może być puste")
     |> validate_country_code(:country)
     |> validate_country_code(:mail_country)
     |> validate_tax_id()

@@ -59,7 +59,7 @@ defmodule FirmowidWeb.SalesInvoicesLive.Components.InvoiceItems do
     |> List.first()
     |> case do
       nil -> nil
-      {_, _} -> "To pole nie może zostać puste."
+      {_msg, _opts} = error -> translate_error(error)
     end
   end
 

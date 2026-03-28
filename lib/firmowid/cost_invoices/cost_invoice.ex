@@ -97,22 +97,28 @@ defmodule Firmowid.CostInvoices.CostInvoice do
       :original_invoice_ksef_number,
       :payment_method
     ])
-    |> validate_required([
-      :seller,
-      :seller_display_name,
-      :sale_date,
-      :issue_date,
-      :total_amount,
-      :currency,
-      :description,
-      :invoice_identifier,
-      :skip_invoicing,
-      :organization_id
-    ])
+    |> validate_required(
+      [
+        :seller,
+        :seller_display_name,
+        :sale_date,
+        :issue_date,
+        :total_amount,
+        :currency,
+        :description,
+        :invoice_identifier,
+        :skip_invoicing,
+        :organization_id
+      ],
+      message: "nie może być puste"
+    )
     |> validate_non_correction_total_amount_sign()
-    |> check_constraint(:total_amount, name: :cost_invoices_non_correction_total_amount_non_positive)
-    |> foreign_key_constraint(:inbound_email_id)
-    |> unique_constraint(:ksef_number, name: :cost_invoices_ksef_number_idx)
+    |> check_constraint(:total_amount,
+      name: :cost_invoices_non_correction_total_amount_non_positive,
+      message: "jest nieprawidłowe"
+    )
+    |> foreign_key_constraint(:inbound_email_id, message: "nie istnieje")
+    |> unique_constraint(:ksef_number, name: :cost_invoices_ksef_number_idx, message: "jest już zajęte")
   end
 
   defp validate_non_correction_total_amount_sign(changeset) do
@@ -124,7 +130,7 @@ defmodule Firmowid.CostInvoices.CostInvoice do
         changeset
 
       is_nil(total_amount) or Decimal.gt?(total_amount, 0) ->
-        add_error(changeset, :total_amount, "must be less than or equal to 0 for non-correction invoices")
+        add_error(changeset, :total_amount, "musi być mniejsze lub równe 0 dla faktur niebędących korektami")
 
       true ->
         changeset

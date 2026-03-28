@@ -56,8 +56,8 @@ defmodule Firmowid.SalesInvoices.SalesInvoiceItem do
       :vat_rate
     ])
     |> cast_assoc(:sales_invoice)
-    |> validate_required([:name, :quantity, :unit, :unit_price, :vat_rate])
-    |> validate_inclusion(:vat_rate, VatRate.valid_rates())
+    |> validate_required([:name, :quantity, :unit, :unit_price, :vat_rate], message: "nie może być puste")
+    |> validate_inclusion(:vat_rate, VatRate.valid_rates(), message: "nieprawidłowa stawka VAT")
     |> put_change(:organization_id, Firmowid.Repo.get_org_id())
     |> put_change(:index, index)
     |> then(fn changeset ->
