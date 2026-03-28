@@ -21,7 +21,7 @@ defmodule FirmowidWeb.FeedbackLive.FormComponent do
   # Create an API-type survey in PostHog dashboard and paste the IDs here.
   # See: https://posthog.com/docs/surveys/implementing-custom-surveys
   @survey_id "019d3547-2ac9-0000-3af2-d6fbe2319c0b"
-  @question_id "1"
+  @question_id "bc5052e4-721e-4a98-8321-7bc2d04590bd"
   @survey_name "Feedback w aplikacji"
   @question_text "Jak możemy usprawnić Firmowida?"
 
