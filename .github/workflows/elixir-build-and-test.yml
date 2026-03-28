@@ -101,21 +101,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - name: Wait for SeaweedFS S3 and create bucket
-        run: |
-          echo "Waiting for SeaweedFS S3 to be ready..."
-          for i in $(seq 1 30); do
-            if curl -sf http://seaweedfs:8333/healthz > /dev/null 2>&1; then
-              echo "SeaweedFS S3 is ready (attempt $i)"
-              curl -f -X PUT http://seaweedfs:8333/firmowid-uploads
-              exit 0
-            fi
-            echo "Attempt $i: not ready yet, waiting 2s..."
-            sleep 2
-          done
-          echo "SeaweedFS S3 failed to start within 60s"
-          exit 1
-
       - name: Setup Elixir Project
         uses: ./.github/actions/elixir-setup
         with:
