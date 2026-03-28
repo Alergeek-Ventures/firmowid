@@ -430,7 +430,7 @@ defmodule Firmowid.Ksef.InvoiceRendererTest do
   end
 
   defp load_example_fixture(name) do
-    ["test", "support", "fixtures", "ksef", "fa3_examples", name]
+    ["test", "fixtures", "ksef", "fa3_examples", name]
     |> Path.join()
     |> File.read!()
   end

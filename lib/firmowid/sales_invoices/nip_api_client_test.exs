@@ -1,4 +1,4 @@
-defmodule Firmowid.NipTest do
+defmodule Firmowid.SalesInvoices.NipApiClientTest do
   use Firmowid.DataCase
 
   alias Firmowid.SalesInvoices.NipApiClient

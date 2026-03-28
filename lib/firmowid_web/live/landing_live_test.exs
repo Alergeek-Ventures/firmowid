@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.PageControllerTest do
+defmodule FirmowidWeb.LandingLiveTest do
   use FirmowidWeb.ConnCase
 
   test "GET /", %{conn: conn} do

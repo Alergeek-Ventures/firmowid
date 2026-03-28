@@ -1,4 +1,4 @@
-defmodule Firmowid.InvoicesSearchTest do
+defmodule Firmowid.InvoicingSearchTest do
   use Firmowid.DataCase
 
   import Firmowid.AccountsFixtures

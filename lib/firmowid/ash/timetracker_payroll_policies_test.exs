@@ -235,7 +235,7 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
       scope = employee_scope(employee_a)
 
       assert {:error, %Forbidden{}} =
-               AshProject.active(Date.utc_today(), scope: scope)
+               AshProject.list_active(Date.utc_today(), %{}, scope: scope)
     end
   end
 

@@ -11,7 +11,7 @@ defmodule FirmowidWeb.CostInvoicesApiControllerTest do
 
     test "uploads cost invoice successfully", %{conn: conn} do
       upload = %Plug.Upload{
-        path: "test/support/fixtures/receipt.png",
+        path: "test/fixtures/receipt.png",
         filename: "receipt.png",
         content_type: "image/png"
       }
@@ -33,7 +33,7 @@ defmodule FirmowidWeb.CostInvoicesApiControllerTest do
 
     test "returns error when cost invoice already exists", %{conn: conn} do
       upload = %Plug.Upload{
-        path: "test/support/fixtures/receipt.png",
+        path: "test/fixtures/receipt.png",
         filename: "receipt.png",
         content_type: "image/png"
       }
@@ -49,7 +49,7 @@ defmodule FirmowidWeb.CostInvoicesApiControllerTest do
 
     test "returns error when blob is invalid", %{conn: conn} do
       upload = %Plug.Upload{
-        path: "test/support/fixtures/invalid_file.txt",
+        path: "test/fixtures/invalid_file.txt",
         filename: "invalid_file.txt",
         content_type: "text/plain"
       }
@@ -69,7 +69,7 @@ defmodule FirmowidWeb.CostInvoicesApiControllerTest do
 
     test "returns 401 when attempting to upload", %{conn: conn} do
       upload = %Plug.Upload{
-        path: "test/support/fixtures/receipt.png",
+        path: "test/fixtures/receipt.png",
         filename: "receipt.png",
         content_type: "image/png"
       }
@@ -83,7 +83,7 @@ defmodule FirmowidWeb.CostInvoicesApiControllerTest do
       conn = log_in_api_user(conn, user_fixture())
 
       upload = %Plug.Upload{
-        path: "test/support/fixtures/receipt.png",
+        path: "test/fixtures/receipt.png",
         filename: "receipt.png",
         content_type: "image/png"
       }
