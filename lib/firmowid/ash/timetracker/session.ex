@@ -34,6 +34,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
     define :get_current
     define :most_recent, args: [:user_id]
     define :by_ids, args: [:ids]
+    define :list_overlapping, args: [:user_id, :start_datetime]
     define :start
     define :stop
     define :create
@@ -108,6 +109,33 @@ defmodule Firmowid.Ash.Timetracker.Session do
       prepare build(load: [:duration])
 
       filter expr(id in ^arg(:ids))
+    end
+
+    read :list_overlapping do
+      description """
+      Find sessions that overlap with a given time range for a user.
+
+      Used for pre-save conflict detection. See `filter_overlap/3` for the
+      overlap predicate that mirrors the DB trigger.
+      """
+
+      argument :user_id, :uuid, allow_nil?: false
+      argument :start_datetime, :utc_datetime, allow_nil?: false
+      argument :end_datetime, :utc_datetime
+      argument :exclude_id, :uuid
+
+      prepare build(sort: [start_datetime: :asc], load: [:duration, :lockdown])
+
+      filter expr(user_id == ^arg(:user_id))
+
+      prepare fn query, _context ->
+        exclude_id = Ash.Query.get_argument(query, :exclude_id)
+        new_end = Ash.Query.get_argument(query, :end_datetime)
+
+        query
+        |> maybe_exclude_id(exclude_id)
+        |> filter_overlap(Ash.Query.get_argument(query, :start_datetime), new_end)
+      end
     end
 
     # ── Write actions ─────────────────────────────────────────────────
@@ -340,6 +368,9 @@ defmodule Firmowid.Ash.Timetracker.Session do
       allow_nil? false
     end
 
+    # fragment() is required here because Ash expressions don't have a built-in
+    # EXTRACT function. The alternative would be adding month/year calculations
+    # to Session, but that's a larger refactor for a simple join condition.
     has_many :hours_records, Firmowid.Ash.Timetracker.HoursRecord do
       no_attributes? true
 
@@ -510,4 +541,36 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
   defp maybe_filter(query, :project_id, nil), do: query
   defp maybe_filter(query, :project_id, pid), do: Ash.Query.filter(query, project_id == ^pid)
+
+  # ── Overlap query helpers ─────────────────────────────────────────────
+
+  defp maybe_exclude_id(query, nil), do: query
+  defp maybe_exclude_id(query, id), do: Ash.Query.filter(query, id != ^id)
+
+  # Mirrors the DB trigger: start < COALESCE(new_end, 'infinity') AND COALESCE(end, 'infinity') > new.start
+  #
+  # We use a far-future sentinel instead of Postgres 'infinity' because Ash expressions
+  # don't support the 'infinity' timestamp literal. The sentinel must exceed any realistic
+  # session end time. This is safe because the DB trigger uses actual 'infinity' as the
+  # authoritative constraint — this filter is only for the pre-save overlap query.
+  @open_end_sentinel ~U[9999-12-31 23:59:59Z]
+
+  defp filter_overlap(query, new_start, nil) do
+    # New session has no end (running) — overlaps anything that hasn't ended before new_start
+    Ash.Query.filter(
+      query,
+      # if/3 is Ash expression syntax (ternary), not Elixir's if/do — parentheses are required.
+      # credo:disable-for-next-line Credo.Check.Readability.ParenthesesInCondition
+      if(is_nil(end_datetime), ^@open_end_sentinel, end_datetime) > ^new_start
+    )
+  end
+
+  # credo:disable-for-lines:5 Credo.Check.Readability.ParenthesesInCondition
+  defp filter_overlap(query, new_start, new_end) do
+    Ash.Query.filter(
+      query,
+      start_datetime < ^new_end and
+        if(is_nil(end_datetime), ^@open_end_sentinel, end_datetime) > ^new_start
+    )
+  end
 end

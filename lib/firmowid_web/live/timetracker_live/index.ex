@@ -7,8 +7,10 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   alias Ash.Error.Unknown.UnknownError
   alias Firmowid.Analytics
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
+  alias Firmowid.Ash.Timetracker.OverlapResolver
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
+  alias Firmowid.Ash.Timetracker.TrimPlan
   alias FirmowidWeb.Helpers.TimeFormatter
   alias FirmowidWeb.TimetrackerLive.GroupedSessionForm
   alias FirmowidWeb.TimetrackerLive.SessionForm
@@ -71,7 +73,8 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
      |> assign(:active_projects, active_projects)
      |> assign(:projects_by_id, Map.new(active_projects, &{&1.id, &1}))
      |> assign_sessions()
-     |> assign(:is_form_extended, false)}
+     |> assign(:is_form_extended, false)
+     |> assign(:trim_plan, nil)}
   end
 
   def assign_sessions(%{assigns: assigns} = socket) when not is_map_key(assigns, :sessions_after) do
@@ -253,6 +256,88 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
     end)
   end
 
+  # ── Overlap detection and resolution ─────────────────────────────────
+
+  # TOCTOU note: The trim plan is computed here and shown to the user for
+  # confirmation. Between this check and `confirm_overlap_save`, the overlap
+  # landscape may change (another session created/modified). The DB trigger
+  # `prevent_overlapping_sessions` acts as the authoritative safety net — if
+  # it fires during execution, we catch the error and ask the user to retry.
+  defp save_with_overlap_check(attrs, socket) do
+    scope = socket.assigns.ash_scope
+    user_id = socket.assigns.current_user.id
+
+    # Determine the effective time range for the new session.
+    # Quick-start (no explicit times) uses now → infinity.
+    {new_start, new_end} = effective_time_range(attrs)
+
+    case AshSession.list_overlapping(user_id, new_start, %{end_datetime: new_end}, scope: scope) do
+      {:ok, []} ->
+        # No overlaps — save normally (original flow)
+        save_session_directly(attrs, socket)
+
+      {:ok, overlapping_sessions} ->
+        case TrimPlan.compute(new_start, new_end, overlapping_sessions) do
+          {:ok, actions} ->
+            trim_plan = %{
+              new_session_attrs: attrs,
+              new_start: new_start,
+              new_end: new_end,
+              actions: actions,
+              overlapping_sessions: overlapping_sessions
+            }
+
+            {:noreply,
+             socket
+             |> assign(:trim_plan, trim_plan)
+             |> assign(:is_form_extended, false)}
+
+          {:error, :locked_conflict, locked_sessions} ->
+            titles = Enum.map_join(locked_sessions, ", ", & &1.title)
+
+            LiveToast.send_toast(
+              :error,
+              "Sesja nachodzi na zatwierdzone sesje: #{titles}. Zmień czas nowej sesji."
+            )
+
+            {:noreply, socket}
+        end
+
+      {:error, _} ->
+        LiveToast.send_toast(:error, "Nie udało się sprawdzić konfliktów. Spróbuj ponownie.")
+        {:noreply, socket}
+    end
+  end
+
+  defp effective_time_range(attrs) do
+    start_dt = attrs[:start_datetime] || DateTime.utc_now()
+    end_dt = attrs[:end_datetime]
+    {start_dt, end_dt}
+  end
+
+  defp save_session_directly(attrs, socket) do
+    scope = socket.assigns.ash_scope
+    socket = assign(socket, is_form_extended: false)
+
+    result = create_session(attrs, scope)
+
+    case result do
+      {:ok, started_session} ->
+        Analytics.track_event("session_start", socket.assigns.current_user, %{
+          project_id: started_session.project_id
+        })
+
+      _ ->
+        :ok
+    end
+
+    handle_session_save_result(result, socket)
+  end
+
+  defp create_session(attrs, scope) do
+    OverlapResolver.create_session(attrs, scope)
+  end
+
   def validate_and_update(params, socket) do
     current_sessions_ids =
       socket.assigns.today_sessions
@@ -404,38 +489,52 @@ defmodule FirmowidWeb.TimetrackerLive.Index do
   end
 
   def handle_event("save", %{"session_form" => session}, socket) do
+    case session
+         |> SessionForm.changeset()
+         |> SessionForm.attributes(socket.assigns.current_user.id, socket.assigns.timezone) do
+      {:ok, attrs} ->
+        save_with_overlap_check(attrs, socket)
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, form: to_form(changeset))}
+    end
+  end
+
+  # See TOCTOU note in save_with_overlap_check/2 — stale plan is caught
+  # by the DB trigger and surfaced as a retry toast.
+  def handle_event("confirm_overlap_save", _params, socket) do
+    %{new_session_attrs: attrs, actions: actions} = socket.assigns.trim_plan
     scope = socket.assigns.ash_scope
 
-    {:ok, validated_session} =
-      session
-      |> SessionForm.changeset()
-      |> SessionForm.attributes(socket.assigns.current_user.id, socket.assigns.timezone)
+    result = OverlapResolver.execute(actions, attrs, scope)
 
-    socket = assign(socket, is_form_extended: false)
-
-    # If the form has explicit start/end times, use :create (full attrs);
-    # otherwise use :start (auto-sets start_datetime to now)
-    result =
-      if validated_session[:end_datetime] || validated_session[:start_datetime] do
-        AshSession.create(validated_session, scope: scope)
-      else
-        AshSession.start(
-          Map.take(validated_session, [:title, :project_id, :is_remote]),
-          scope: scope
-        )
-      end
+    socket = assign(socket, trim_plan: nil)
 
     case result do
-      {:ok, started_session} ->
+      {:ok, new_session} ->
         Analytics.track_event("session_start", socket.assigns.current_user, %{
-          project_id: started_session.project_id
+          project_id: new_session.project_id
         })
 
-      _ ->
-        :ok
-    end
+        handle_session_save_result({:ok, new_session}, socket)
 
-    handle_session_save_result(result, socket)
+      {:error, %Unknown{} = error} ->
+        if overlap_error?(error) do
+          LiveToast.send_toast(:error, "Konflikt sesji uległ zmianie. Spróbuj ponownie.")
+        else
+          raise error
+        end
+
+        {:noreply, assign_sessions(socket)}
+
+      {:error, _} ->
+        LiveToast.send_toast(:error, "Wystąpił nieoczekiwany błąd. Spróbuj ponownie.")
+        {:noreply, assign_sessions(socket)}
+    end
+  end
+
+  def handle_event("cancel_overlap_save", _params, socket) do
+    {:noreply, assign(socket, trim_plan: nil)}
   end
 
   def handle_event("end_session", _, socket) do

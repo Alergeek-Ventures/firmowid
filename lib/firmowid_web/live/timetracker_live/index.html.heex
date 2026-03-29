@@ -276,3 +276,64 @@
     </div>
   </div>
 </div>
+
+<.modal
+  :if={@trim_plan}
+  id="overlap-confirmation"
+  show={true}
+  on_cancel={JS.push("cancel_overlap_save")}
+>
+  <div class="space-y-6">
+    <div>
+      <h3 class="text-lg font-bold text-grey-900">Nakładające się sesje</h3>
+      <p class="mt-1 text-sm text-darkGrey">
+        Nowa sesja nachodzi na istniejące. Zapisanie wymaga poniższych zmian:
+      </p>
+    </div>
+
+    <%!-- New session preview --%>
+    <FirmowidWeb.Components.Timetracker.Overlap.new_session_card
+      title={@trim_plan.new_session_attrs[:title]}
+      start_datetime={@trim_plan.new_start}
+      end_datetime={@trim_plan.new_end}
+      date={@trim_plan.new_start}
+      timezone={@timezone}
+    />
+
+    <%!-- Affected sessions --%>
+    <div class="space-y-3">
+      <p class="text-sm font-medium text-darkGrey">Zmiany w istniejących sesjach:</p>
+
+      <FirmowidWeb.Components.Timetracker.Overlap.trim_action_card
+        :for={action <- @trim_plan.actions}
+        action={action}
+        timezone={@timezone}
+        projects_by_id={@projects_by_id}
+      />
+    </div>
+
+    <%!-- Action buttons --%>
+    <div class="flex gap-4 pt-2 w-full justify-end">
+      <.button
+        type="button"
+        phx-click={
+          JS.push("cancel_overlap_save")
+          |> hide_modal("overlap-confirmation")
+        }
+        new={true}
+        color="grey"
+      >
+        Anuluj
+      </.button>
+      <.button
+        phx-click="confirm_overlap_save"
+        variant="solid"
+        color="orange"
+        new={true}
+        phx-disable-with="Zapisywanie..."
+      >
+        Zapisz i dostosuj sesje
+      </.button>
+    </div>
+  </div>
+</.modal>
