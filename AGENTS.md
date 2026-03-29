@@ -89,18 +89,9 @@ All checks must pass before changes can be merged.
 - All modules must have `@moduledoc` describing their purpose
 - Public functions should have `@doc` and `@spec`
 
-### Credo Rules
-
-- Keep function nesting depth <= 2 (extract helper functions)
-- Keep cyclomatic complexity <= 9 (use maps/pattern matching instead of long case/cond)
-- Sort aliases alphabetically
-- Use `if/else` instead of `cond` with single condition
-- Avoid `apply/3` when argument count is known (use direct calls or helper functions)
-- No TODO/FIXME comments (convert to issues or remove)
-
 ### Sobelow
 
-- All issues from Sobelow must be fixed
+- All issues from Sobelow must be fixed - if it's a false positive, explain why
 - Never skip rules via config - use `# sobelow_skip` comments with explanations
 - When adding a skip comment, always explain WHY it's safe:
 
@@ -140,6 +131,22 @@ E.g. installing `osgrep` - not via `npm install -g` but rather create a new
 folder, gitignore it, install via local `npm install`. Write down the documentation
 in README (benchmarking section).
 
+# Documentation
+
+Always strive to use libraries, frameworks and packages in an optmial way.
+Follow best practices, good patterns and refactor code that's not doing that.
+
+## Online
+
+Use available tools or navigate to the documentation on websites. Verify APIs
+for the used versions of packages, check cookbooks, guides and examples to make
+sure you're "holding it right".
+
+## Usage rules
+
+These are linked to installed dependencies, so should be exactly matching to
+the code you write.
+
 <!-- usage-rules-start -->
 <!-- phoenix:ecto-start -->
 ## phoenix:ecto usage
@@ -157,6 +164,74 @@ in README (benchmarking section).
 ## phoenix:phoenix usage
 [phoenix:phoenix usage rules](deps/phoenix/usage-rules/phoenix.md)
 <!-- phoenix:phoenix-end -->
+<!-- ash-start -->
+## ash usage
+_A declarative, extensible framework for building Elixir applications._
+
+[ash usage rules](deps/ash/usage-rules.md)
+<!-- ash-end -->
+<!-- ash:actions-start -->
+## ash:actions usage
+[ash:actions usage rules](deps/ash/usage-rules/actions.md)
+<!-- ash:actions-end -->
+<!-- ash:aggregates-start -->
+## ash:aggregates usage
+[ash:aggregates usage rules](deps/ash/usage-rules/aggregates.md)
+<!-- ash:aggregates-end -->
+<!-- ash:authorization-start -->
+## ash:authorization usage
+[ash:authorization usage rules](deps/ash/usage-rules/authorization.md)
+<!-- ash:authorization-end -->
+<!-- ash:calculations-start -->
+## ash:calculations usage
+[ash:calculations usage rules](deps/ash/usage-rules/calculations.md)
+<!-- ash:calculations-end -->
+<!-- ash:code_interfaces-start -->
+## ash:code_interfaces usage
+[ash:code_interfaces usage rules](deps/ash/usage-rules/code_interfaces.md)
+<!-- ash:code_interfaces-end -->
+<!-- ash:code_structure-start -->
+## ash:code_structure usage
+[ash:code_structure usage rules](deps/ash/usage-rules/code_structure.md)
+<!-- ash:code_structure-end -->
+<!-- ash:data_layers-start -->
+## ash:data_layers usage
+[ash:data_layers usage rules](deps/ash/usage-rules/data_layers.md)
+<!-- ash:data_layers-end -->
+<!-- ash:exist_expressions-start -->
+## ash:exist_expressions usage
+[ash:exist_expressions usage rules](deps/ash/usage-rules/exist_expressions.md)
+<!-- ash:exist_expressions-end -->
+<!-- ash:generating_code-start -->
+## ash:generating_code usage
+[ash:generating_code usage rules](deps/ash/usage-rules/generating_code.md)
+<!-- ash:generating_code-end -->
+<!-- ash:migrations-start -->
+## ash:migrations usage
+[ash:migrations usage rules](deps/ash/usage-rules/migrations.md)
+<!-- ash:migrations-end -->
+<!-- ash:query_filter-start -->
+## ash:query_filter usage
+[ash:query_filter usage rules](deps/ash/usage-rules/query_filter.md)
+<!-- ash:query_filter-end -->
+<!-- ash:querying_data-start -->
+## ash:querying_data usage
+[ash:querying_data usage rules](deps/ash/usage-rules/querying_data.md)
+<!-- ash:querying_data-end -->
+<!-- ash:relationships-start -->
+## ash:relationships usage
+[ash:relationships usage rules](deps/ash/usage-rules/relationships.md)
+<!-- ash:relationships-end -->
+<!-- ash:testing-start -->
+## ash:testing usage
+[ash:testing usage rules](deps/ash/usage-rules/testing.md)
+<!-- ash:testing-end -->
+<!-- ash_postgres-start -->
+## ash_postgres usage
+_The PostgreSQL data layer for Ash Framework_
+
+[ash_postgres usage rules](deps/ash_postgres/usage-rules.md)
+<!-- ash_postgres-end -->
 <!-- usage_rules:elixir-start -->
 ## usage_rules:elixir usage
 [usage_rules:elixir usage rules](deps/usage_rules/usage-rules/elixir.md)

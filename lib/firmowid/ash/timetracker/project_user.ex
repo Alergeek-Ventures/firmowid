@@ -16,8 +16,8 @@ defmodule Firmowid.Ash.Timetracker.ProjectUser do
 
   postgres do
     table "projects_users"
-    repo(Firmowid.Repo)
-    migrate?(false)
+    repo Firmowid.Repo
+    migrate? false
   end
 
   code_interface do

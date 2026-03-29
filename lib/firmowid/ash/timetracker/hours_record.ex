@@ -17,8 +17,8 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
 
   postgres do
     table "hours_records"
-    repo(Firmowid.Repo)
-    migrate?(false)
+    repo Firmowid.Repo
+    migrate? false
   end
 
   code_interface do

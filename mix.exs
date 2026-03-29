@@ -160,6 +160,25 @@ defmodule Firmowid.MixProject do
         {"phoenix:html", link: :markdown},
         {"phoenix:liveview", link: :markdown},
         {"phoenix:phoenix", link: :markdown},
+        {:ash,
+         sub_rules: [
+           :actions,
+           :aggregates,
+           :authorization,
+           :calculations,
+           :code_interfaces,
+           :code_structure,
+           :data_layers,
+           :exist_expressions,
+           :generating_code,
+           :migrations,
+           :query_filter,
+           :querying_data,
+           :relationships,
+           :testing
+         ],
+         link: :markdown},
+        {"ash_postgres", link: :markdown},
         {:usage_rules, sub_rules: [:elixir, :otp], main: false, link: :markdown}
       ]
     ]

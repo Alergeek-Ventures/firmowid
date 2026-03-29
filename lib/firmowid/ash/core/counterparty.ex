@@ -16,8 +16,8 @@ defmodule Firmowid.Ash.Core.Counterparty do
 
   postgres do
     table "counterparties"
-    repo(Firmowid.Repo)
-    migrate?(false)
+    repo Firmowid.Repo
+    migrate? false
   end
 
   actions do

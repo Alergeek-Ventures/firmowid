@@ -25,8 +25,8 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
 
   postgres do
     table "user_salaries"
-    repo(Firmowid.Repo)
-    migrate?(false)
+    repo Firmowid.Repo
+    migrate? false
   end
 
   code_interface do

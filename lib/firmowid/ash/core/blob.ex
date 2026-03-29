@@ -16,8 +16,8 @@ defmodule Firmowid.Ash.Core.Blob do
 
   postgres do
     table "blobs"
-    repo(Firmowid.Repo)
-    migrate?(false)
+    repo Firmowid.Repo
+    migrate? false
   end
 
   actions do

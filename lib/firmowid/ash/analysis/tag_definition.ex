@@ -21,8 +21,8 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
 
   postgres do
     table "tag_definitions"
-    repo(Firmowid.Repo)
-    migrate?(false)
+    repo Firmowid.Repo
+    migrate? false
   end
 
   code_interface do

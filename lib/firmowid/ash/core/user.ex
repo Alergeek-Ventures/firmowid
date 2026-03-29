@@ -16,8 +16,8 @@ defmodule Firmowid.Ash.Core.User do
 
   postgres do
     table "users"
-    repo(Firmowid.Repo)
-    migrate?(false)
+    repo Firmowid.Repo
+    migrate? false
   end
 
   actions do

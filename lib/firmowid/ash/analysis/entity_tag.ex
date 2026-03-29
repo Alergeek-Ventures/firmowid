@@ -42,9 +42,9 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
   require Resource
 
   postgres do
-    polymorphic?(true)
-    repo(Firmowid.Repo)
-    migrate?(false)
+    polymorphic? true
+    repo Firmowid.Repo
+    migrate? false
   end
 
   code_interface do
