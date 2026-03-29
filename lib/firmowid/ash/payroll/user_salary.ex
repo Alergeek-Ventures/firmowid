@@ -36,6 +36,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
     define :get_latest, args: [:user_id]
     define :as_of, args: [:date]
     define :salaries_csv, args: [:month, :year]
+    define :bulk_update_salaries, args: [:entries]
   end
 
   actions do
@@ -158,6 +159,39 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
           |> Enum.join()
 
         {:ok, csv}
+      end
+    end
+
+    action :bulk_update_salaries, {:array, :struct} do
+      description """
+      Admin-only. Creates new salaries (retiring existing ones) for multiple
+      employees in a single atomic transaction. Uses Ash.bulk_create for
+      proper transaction management.
+      """
+
+      argument :entries, {:array, :map}, allow_nil?: false
+
+      run fn input, context ->
+        result =
+          Ash.bulk_create(
+            input.arguments.entries,
+            __MODULE__,
+            :create_with_retire,
+            actor: context.actor,
+            tenant: context.tenant,
+            transaction: :all,
+            return_records?: true,
+            return_errors?: true,
+            stop_on_error?: true
+          )
+
+        case result do
+          %Ash.BulkResult{status: :success} ->
+            {:ok, result.records}
+
+          %Ash.BulkResult{errors: errors} ->
+            {:error, List.first(errors)}
+        end
       end
     end
   end

@@ -7,7 +7,6 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
 
   @impl true
   def mount(_params, _session, %{assigns: %{live_action: :new}} = socket) do
-    Bodyguard.permit!(Firmowid.Management, :read_projects, socket.assigns.current_user)
     scope = socket.assigns.ash_scope
 
     form =
@@ -19,7 +18,6 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
   end
 
   def mount(%{"id" => id}, _session, %{assigns: %{live_action: :edit}} = socket) do
-    Bodyguard.permit!(Firmowid.Management, :read_projects, socket.assigns.current_user)
     scope = socket.assigns.ash_scope
 
     case AshProject.get(id, scope: scope, not_found_error?: false) do

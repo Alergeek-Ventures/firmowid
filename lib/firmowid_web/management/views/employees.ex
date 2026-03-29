@@ -2,13 +2,12 @@ defmodule FirmowidWeb.Management.Views.Employees do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
   alias Firmowid.Helpers.TimeConverter
-  alias Firmowid.Management
 
   @impl true
   def mount(_params, _session, socket) do
-    Bodyguard.permit!(Management, :read_employees, socket.assigns.current_user)
     scope = socket.assigns.ash_scope
 
     {:ok, active_months} = AshSession.months_with_sessions(%{}, scope: scope)
@@ -46,8 +45,17 @@ defmodule FirmowidWeb.Management.Views.Employees do
     {:noreply, socket}
   end
 
-  defp assign_employees(%{assigns: %{selected_date: selected_date, archived: archived, search: search}} = socket) do
-    assign(socket, :employees, Management.list_employees(selected_date, archived, search))
+  defp assign_employees(
+         %{assigns: %{selected_date: selected_date, archived: archived, search: search, ash_scope: scope}} = socket
+       ) do
+    {:ok, employees} =
+      AshSession.list_employees_for_month(
+        selected_date,
+        %{archived: archived, search: search},
+        scope: scope
+      )
+
+    assign(socket, :employees, employees)
   end
 
   defp assign_form(socket) do
@@ -76,9 +84,17 @@ defmodule FirmowidWeb.Management.Views.Employees do
   end
 
   def handle_event("save_wages", %{"employee" => employees_params}, %{assigns: %{view: :wage_editor}} = socket) do
-    Bodyguard.permit!(Management, :change_user_wages, socket.assigns.current_user)
+    scope = socket.assigns.ash_scope
 
-    case Management.update_user_salaries(socket.assigns.employees, employees_params) do
+    entries =
+      Enum.map(socket.assigns.employees, fn employee ->
+        %{
+          user_id: employee.user.id,
+          hourly_rate: Decimal.new(employees_params[employee.user.id]["wage"])
+        }
+      end)
+
+    case AshUserSalary.bulk_update_salaries(entries, scope: scope) do
       {:ok, _} ->
         {:noreply,
          socket
@@ -86,12 +102,12 @@ defmodule FirmowidWeb.Management.Views.Employees do
          |> push_event("unsaved-changed", %{value: false})
          |> assign_employees()}
 
-      {:error, changeset} ->
+      {:error, error} ->
         {:noreply,
          put_flash(
            socket,
            :error,
-           "Nie udało się zaktualizować stawek: #{inspect(changeset.errors)}"
+           "Nie udało się zaktualizować stawek: #{inspect(error)}"
          )}
     end
   end

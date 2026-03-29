@@ -9,7 +9,6 @@ defmodule FirmowidWeb.Management.Views.Project do
 
   @impl true
   def mount(_params, _session, socket) do
-    Bodyguard.permit!(Firmowid.Management, :read_projects, socket.assigns.current_user)
     {:ok, socket}
   end
 

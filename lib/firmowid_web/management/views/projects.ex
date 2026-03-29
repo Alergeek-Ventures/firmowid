@@ -8,7 +8,6 @@ defmodule FirmowidWeb.Management.Views.Projects do
 
   @impl true
   def mount(_params, _session, socket) do
-    Bodyguard.permit!(Firmowid.Management, :read_projects, socket.assigns.current_user)
     scope = socket.assigns.ash_scope
 
     {:ok, all_projects} = Ash.read(AshProject, scope: scope)

@@ -6,12 +6,10 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
   alias Firmowid.Helpers.TimeConverter
-  alias Firmowid.Management
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
   @impl true
   def mount(_params, _session, socket) do
-    Bodyguard.permit!(Management, :read_employee, socket.assigns.current_user)
     {:ok, socket}
   end
 
@@ -26,11 +24,11 @@ defmodule FirmowidWeb.Management.Views.Employee do
       end
 
     socket =
-      case Management.list_employee_details(id, selected_date) do
-        nil ->
+      case AshSession.employee_details(id, selected_date, scope: scope) do
+        {:ok, nil} ->
           push_navigate(socket, to: ~p"/zarzadzanie/pracownicy")
 
-        employee ->
+        {:ok, employee} ->
           {:ok, active_months} =
             AshSession.months_with_sessions(%{user_id: id}, scope: scope)
 

@@ -12,9 +12,11 @@ defmodule Firmowid.Ash.Timetracker.Session do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Payroll.UserSalary
   alias Firmowid.Ash.Resource
   alias Firmowid.Ash.Timetracker.Checks.HoursRecordNotSubmitted
   alias Firmowid.Ash.Timetracker.Checks.OwnsResource
+  alias Firmowid.Ash.Timetracker.HoursRecord
   alias Firmowid.Ash.Timetracker.Project
   alias Firmowid.Ash.Timetracker.Validations.DatetimeOrder
   alias Firmowid.Ash.Timetracker.Validations.ProjectAccess
@@ -45,6 +47,8 @@ defmodule Firmowid.Ash.Timetracker.Session do
     define :months_with_sessions
     define :total_time_worked
     define :project_tasks_csv, args: [:project_id, :month, :year]
+    define :list_employees_for_month, args: [:date]
+    define :employee_details, args: [:user_id, :date]
   end
 
   actions do
@@ -267,6 +271,44 @@ defmodule Firmowid.Ash.Timetracker.Session do
         {:ok, csv}
       end
     end
+
+    action :list_employees_for_month, {:array, :map} do
+      description """
+      Admin-only. Returns employee data for a given month: user, hours record,
+      hourly rate, and total time worked. Cross-domain join
+      (User × Session × HoursRecord × UserSalary) via raw Ecto.
+
+      Replaces the former `Management.list_employees/3` context function.
+      Organization scoping uses `Repo.put_org_id` bridge for the raw Ecto
+      queries; Ash policy enforcement gates access to admins.
+      """
+
+      argument :date, :date, allow_nil?: false
+      argument :archived, :boolean, default: false
+      argument :search, :string, default: ""
+
+      run fn input, context ->
+        {:ok, query_employees_for_month(input.arguments, context)}
+      end
+    end
+
+    action :employee_details, :map do
+      description """
+      Admin-only. Returns a single employee's details for a given month:
+      user with projects (each with grouped sessions), hourly rate,
+      hours record, and total time worked.
+
+      Replaces the former `Management.list_employee_details/2` context function.
+      Returns `nil` when the user is not found.
+      """
+
+      argument :user_id, :uuid, allow_nil?: false
+      argument :date, :date, allow_nil?: false
+
+      run fn input, context ->
+        {:ok, get_employee_details(input.arguments, context)}
+      end
+    end
   end
 
   policies do
@@ -322,8 +364,11 @@ defmodule Firmowid.Ash.Timetracker.Session do
       authorize_if always()
     end
 
-    # project_tasks_csv is admin-only — it aggregates all users' data for a project.
-    policy [action(:project_tasks_csv), actor_attribute_equals(:role, :employee)] do
+    # Admin-only generic actions — they aggregate data across all users.
+    policy [
+      action([:project_tasks_csv, :list_employees_for_month, :employee_details]),
+      actor_attribute_equals(:role, :employee)
+    ] do
       forbid_if always()
     end
   end
@@ -371,7 +416,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
     # fragment() is required here because Ash expressions don't have a built-in
     # EXTRACT function. The alternative would be adding month/year calculations
     # to Session, but that's a larger refactor for a simple join condition.
-    has_many :hours_records, Firmowid.Ash.Timetracker.HoursRecord do
+    has_many :hours_records, HoursRecord do
       no_attributes? true
 
       description "HoursRecords matching this session's user, month, year, and org — used for lockdown checks."
@@ -541,6 +586,158 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
   defp maybe_filter(query, :project_id, nil), do: query
   defp maybe_filter(query, :project_id, pid), do: Ash.Query.filter(query, project_id == ^pid)
+
+  # ── Employee management helpers (admin-only generic actions) ──────────
+  #
+  # Cross-domain joins (User × Session × HoursRecord × UserSalary) via raw
+  # Ecto. Organization scoping uses the Repo.put_org_id bridge — explicit
+  # here so these survive if `disable_async?` is ever turned off.
+  #
+  # Ported from the former Firmowid.Management context module.
+
+  defp query_employees_for_month(args, context) do
+    import Ecto.Query
+
+    %{date: date, archived: archived, search: search} = args
+
+    # Bridge: ensure process-dict org scoping for raw Ecto queries
+    Firmowid.Repo.put_org_id(context.tenant)
+
+    time_worked_query =
+      from(s in __MODULE__,
+        where:
+          fragment("extract(month from ?) = ?", s.start_datetime, ^date.month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^date.year),
+        group_by: s.user_id,
+        select: %{
+          user_id: s.user_id,
+          time_worked:
+            "extract(epoch from coalesce(?, now()) - ?)"
+            |> fragment(s.end_datetime, s.start_datetime)
+            |> sum()
+            |> coalesce(0)
+            |> type(:integer)
+        }
+      )
+
+    from(u in Firmowid.Accounts.User,
+      where: ^archived == false,
+      left_join: us in subquery(UserSalary.salary_as_of_subquery(date, context.tenant)),
+      on: us.user_id == u.id,
+      left_join: s in subquery(time_worked_query),
+      on: s.user_id == u.id,
+      left_join: hr in HoursRecord,
+      on: hr.user_id == u.id and hr.year == ^date.year and hr.month == ^date.month,
+      select: %{
+        user: u,
+        hours_record: hr,
+        hourly_rate: us.hourly_rate,
+        time_worked: coalesce(s.time_worked, 0)
+      }
+    )
+    |> filter_employee_search(search)
+    |> Firmowid.Repo.all()
+  end
+
+  defp filter_employee_search(query, ""), do: query
+  defp filter_employee_search(query, nil), do: query
+
+  defp filter_employee_search(query, search) do
+    sanitized =
+      search
+      |> String.replace("\\", "\\\\")
+      |> String.replace("%", "\\%")
+      |> String.replace("_", "\\_")
+
+    where(
+      query,
+      [user],
+      ilike(user.name, ^"%#{sanitized}%") or ilike(user.email, ^"%#{sanitized}%")
+    )
+  end
+
+  defp get_employee_details(args, context) do
+    import Ecto.Query
+
+    %{user_id: user_id, date: date} = args
+
+    # Bridge: ensure process-dict org scoping for raw Ecto queries
+    Firmowid.Repo.put_org_id(context.tenant)
+
+    sessions_query =
+      from(s in __MODULE__,
+        where:
+          fragment("extract(month from ?) = ?", s.start_datetime, ^date.month) and
+            fragment("extract(year from ?) = ?", s.start_datetime, ^date.year) and
+            s.user_id == ^user_id,
+        group_by: [s.user_id, s.project_id, s.title],
+        select: %{
+          title: s.title,
+          project_id: s.project_id,
+          duration:
+            "extract(epoch from coalesce(?, now()) - ?)"
+            |> fragment(s.end_datetime, s.start_datetime)
+            |> sum()
+            |> coalesce(0)
+            |> type(:integer)
+        }
+      )
+
+    Firmowid.Accounts.User
+    |> Firmowid.Repo.get(user_id)
+    |> Firmowid.Repo.preload(sessions: sessions_query)
+    |> case do
+      nil ->
+        nil
+
+      user ->
+        hourly_rate =
+          case employee_salary_as_of(user_id, date, context.tenant) do
+            nil -> Decimal.new(0)
+            %{hourly_rate: rate} -> rate
+          end
+
+        hours_record = employee_hours_record(user_id, date)
+
+        # Group sessions by project and attach to manually loaded projects.
+        # We can't use Repo.preload(projects: [sessions: fn ...]) because
+        # Ash resources use Ash.NotLoaded (not Ecto.Association.NotLoaded)
+        # which confuses Ecto's preload logic.
+        sessions_by_project = Enum.group_by(user.sessions, & &1.project_id)
+
+        projects =
+          user
+          |> Firmowid.Repo.preload(:projects)
+          |> Map.get(:projects)
+          |> Enum.map(fn project ->
+            Map.put(project, :sessions, Map.get(sessions_by_project, project.id, []))
+          end)
+
+        user
+        |> Map.put(:projects, projects)
+        |> Map.put(:hourly_rate, hourly_rate)
+        |> Map.put(:hours_record, hours_record)
+        |> Map.put(:time_worked, user.sessions |> Enum.map(& &1.duration) |> Enum.sum())
+    end
+  end
+
+  defp employee_salary_as_of(user_id, date, tenant) do
+    import Ecto.Query, only: [where: 3]
+
+    date
+    |> UserSalary.salary_as_of_subquery(tenant)
+    |> where([us], us.user_id == ^user_id)
+    |> Firmowid.Repo.one(skip_organization_id: true)
+  end
+
+  defp employee_hours_record(user_id, date) do
+    import Ecto.Query
+
+    HoursRecord
+    |> where([hr], hr.user_id == ^user_id)
+    |> where([hr], hr.month == ^date.month and hr.year == ^date.year)
+    |> Firmowid.Repo.one()
+  end
 
   # ── Overlap query helpers ─────────────────────────────────────────────
 
