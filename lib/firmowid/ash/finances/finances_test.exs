@@ -3,8 +3,8 @@ defmodule Firmowid.FinancesTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Firmowid.Ash.Finances.TransactionQueries
   alias Firmowid.BankData.Requisition
-  alias Firmowid.Finances
   alias Firmowid.Finances.BankAccount
   alias Firmowid.Finances.Transaction
 
@@ -56,7 +56,7 @@ defmodule Firmowid.FinancesTest do
       |> Transaction.changeset(%{})
       |> Firmowid.Repo.insert!()
 
-    results = Finances.search_transactions(%{only_unmatched: false})
+    results = TransactionQueries.search(%{only_unmatched: false})
 
     assert Enum.any?(results, &(&1.id == t.id))
   end
@@ -83,7 +83,7 @@ defmodule Firmowid.FinancesTest do
       |> Transaction.changeset(%{})
       |> Firmowid.Repo.insert!()
 
-    results = Finances.search_transactions(%{only_matched: true})
+    results = TransactionQueries.search(%{only_matched: true})
 
     assert Enum.any?(results, &(&1.id == t.id))
   end
@@ -108,7 +108,7 @@ defmodule Firmowid.FinancesTest do
       |> Firmowid.Repo.insert!()
 
     results =
-      Finances.search_transactions(%{query: "Acme"})
+      TransactionQueries.search(%{query: "Acme"})
 
     assert Enum.any?(results, &(&1.id == t.id))
   end

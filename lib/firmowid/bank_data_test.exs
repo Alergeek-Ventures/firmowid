@@ -7,7 +7,6 @@ defmodule Firmowid.BankDataTest do
   alias Firmowid.BankData
   alias Firmowid.BankData.Requisition
   alias Firmowid.BankData.Transaction
-  alias Firmowid.Finances
   alias Firmowid.Finances.BankAccount
 
   test "syncing accounts for requisition works" do
@@ -230,26 +229,20 @@ defmodule Firmowid.BankDataTest do
   test "cant insert two default accounts for one currency " do
     %{organization_id: organization_id} = user_fixture()
 
-    {:ok, req1} = Repo.insert(%Requisition{status: :accepted, organization_id: organization_id})
+    Firmowid.Ash.Finances.BankAccount.create_manual!(
+      %{iban: "PL12345678901234567890123456", currency: "PLN", is_default: true},
+      tenant: organization_id,
+      authorize?: false,
+      actor: %{}
+    )
 
-    {:ok, req2} = Repo.insert(%Requisition{status: :accepted, organization_id: organization_id})
-
-    Finances.create_bank_account(%{
-      iban: "PL12345678901234567890123456",
-      organization_id: organization_id,
-      currency: "PLN",
-      is_default: true,
-      requisition_id: req1.id
-    })
-
-    assert_raise Ecto.ConstraintError, fn ->
-      Finances.create_bank_account(%{
-        iban: "EN12345678901234567890123456",
-        organization_id: organization_id,
-        currency: "PLN",
-        is_default: true,
-        requisition_id: req2.id
-      })
+    assert_raise Ash.Error.Invalid, fn ->
+      Firmowid.Ash.Finances.BankAccount.create_manual!(
+        %{iban: "EN12345678901234567890123456", currency: "PLN", is_default: true},
+        tenant: organization_id,
+        authorize?: false,
+        actor: %{}
+      )
     end
   end
 

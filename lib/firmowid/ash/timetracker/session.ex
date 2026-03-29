@@ -12,6 +12,8 @@ defmodule Firmowid.Ash.Timetracker.Session do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  import Ecto.Query, warn: false
+
   alias Firmowid.Ash.Payroll.UserSalary
   alias Firmowid.Ash.Resource
   alias Firmowid.Ash.Timetracker.Checks.HoursRecordNotSubmitted
@@ -306,7 +308,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
       argument :date, :date, allow_nil?: false
 
       run fn input, context ->
-        {:ok, get_employee_details(input.arguments, context)}
+        {:ok, find_employee_details(input.arguments, context)}
       end
     end
   end
@@ -596,8 +598,6 @@ defmodule Firmowid.Ash.Timetracker.Session do
   # Ported from the former Firmowid.Management context module.
 
   defp query_employees_for_month(args, context) do
-    import Ecto.Query
-
     %{date: date, archived: archived, search: search} = args
 
     # Bridge: ensure process-dict org scoping for raw Ecto queries
@@ -620,6 +620,10 @@ defmodule Firmowid.Ash.Timetracker.Session do
         }
       )
 
+    # TODO: add database support for archived users — the `archived` argument
+    # is accepted but the User schema has no `archived` column yet. The filter
+    # below is a compile-time constant expression (no-op). When the column is
+    # added, replace with: `where: u.archived == ^archived`.
     from(u in Firmowid.Accounts.User,
       where: ^archived == false,
       left_join: us in subquery(UserSalary.salary_as_of_subquery(date, context.tenant)),
@@ -656,9 +660,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
     )
   end
 
-  defp get_employee_details(args, context) do
-    import Ecto.Query
-
+  defp find_employee_details(args, context) do
     %{user_id: user_id, date: date} = args
 
     # Bridge: ensure process-dict org scoping for raw Ecto queries
@@ -722,8 +724,6 @@ defmodule Firmowid.Ash.Timetracker.Session do
   end
 
   defp employee_salary_as_of(user_id, date, tenant) do
-    import Ecto.Query, only: [where: 3]
-
     date
     |> UserSalary.salary_as_of_subquery(tenant)
     |> where([us], us.user_id == ^user_id)
@@ -731,8 +731,6 @@ defmodule Firmowid.Ash.Timetracker.Session do
   end
 
   defp employee_hours_record(user_id, date) do
-    import Ecto.Query
-
     HoursRecord
     |> where([hr], hr.user_id == ^user_id)
     |> where([hr], hr.month == ^date.month and hr.year == ^date.year)

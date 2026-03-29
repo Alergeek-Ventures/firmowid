@@ -3,7 +3,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Accounts
-  alias Firmowid.Finances
+  alias Firmowid.BankData
   alias Firmowid.Ksef
   alias Firmowid.Ksef.VatRate
   alias Firmowid.Repo
@@ -47,7 +47,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     # Load static data that doesn't change during the wizard
     socket =
       socket
-      |> assign(:bank_accounts, Finances.list_bank_accounts())
+      |> assign(:bank_accounts, BankData.list_bank_accounts())
       |> assign(:last_counterparties, SalesInvoices.list_counterparties())
       |> assign(:last_invoices, SalesInvoices.list_recent_invoices())
       |> assign(:ksef_connected?, Ksef.get_credential() != nil)

@@ -23,7 +23,7 @@ defmodule Firmowid.Ksef do
   Messages received will be in the format:
   `{:ksef_invoice_status, %{invoice_id: id, status: :submitted | :failed}}`
   """
-  @spec subscribe_ksef_status(pos_integer()) :: :ok | {:error, term()}
+  @spec subscribe_ksef_status(String.t()) :: :ok | {:error, term()}
   def subscribe_ksef_status(organization_id) do
     Phoenix.PubSub.subscribe(Firmowid.PubSub, "#{@ksef_broadcast_topic}:#{organization_id}")
   end

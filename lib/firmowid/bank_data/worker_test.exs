@@ -6,13 +6,24 @@ defmodule Firmowid.BankData.WorkerTest do
 
   alias Firmowid.BankData.Requisition
   alias Firmowid.BankData.Worker
-  alias Firmowid.Finances
+  alias Firmowid.Finances.BankAccount
   alias Firmowid.Repo
 
   @moduletag capture_log: true
 
   setup do
     :ok
+  end
+
+  defp bank_account_fixture(org_id, requisition_id) do
+    Firmowid.Ash.Finances.BankAccount
+    |> Ash.Changeset.for_create(
+      :sync_from_bank,
+      %{iban: "PL123", gocardless_id: "acc-1", requisition_id: requisition_id},
+      tenant: org_id,
+      actor: %{}
+    )
+    |> Ash.create!(tenant: org_id, authorize?: false, actor: %{})
   end
 
   describe "check_requisition_status" do
@@ -108,7 +119,7 @@ defmodule Firmowid.BankData.WorkerTest do
 
         # bank account created
         assert Repo.one(
-                 from(b in Finances.BankAccount,
+                 from(b in BankAccount,
                    where: b.requisition_id == ^req.id,
                    select: count()
                  ),
@@ -214,13 +225,7 @@ defmodule Firmowid.BankData.WorkerTest do
         |> Requisition.changeset()
         |> Repo.insert(organization_id: org_id)
 
-      ba =
-        Finances.create_bank_account(%{
-          iban: "PL123",
-          organization_id: org_id,
-          requisition_id: req.id,
-          gocardless_id: "acc-1"
-        })
+      ba = bank_account_fixture(org_id, req.id)
 
       # transactions 429
       Req.Test.stub(:bank_data_transactions, fn conn ->
@@ -245,13 +250,7 @@ defmodule Firmowid.BankData.WorkerTest do
         |> Requisition.changeset()
         |> Repo.insert(organization_id: org_id)
 
-      ba =
-        Finances.create_bank_account(%{
-          iban: "PL123",
-          organization_id: org_id,
-          requisition_id: req.id,
-          gocardless_id: "acc-1"
-        })
+      ba = bank_account_fixture(org_id, req.id)
 
       # transactions 401
       Req.Test.stub(:bank_data_transactions, fn conn ->
@@ -281,13 +280,7 @@ defmodule Firmowid.BankData.WorkerTest do
         |> Requisition.changeset()
         |> Repo.insert(organization_id: org_id)
 
-      ba =
-        Finances.create_bank_account(%{
-          iban: "PL123",
-          organization_id: org_id,
-          requisition_id: req.id,
-          gocardless_id: "acc-1"
-        })
+      ba = bank_account_fixture(org_id, req.id)
 
       Req.Test.stub(:bank_data_transactions, fn conn ->
         conn
@@ -320,13 +313,7 @@ defmodule Firmowid.BankData.WorkerTest do
         |> Requisition.changeset()
         |> Repo.insert(organization_id: org_id)
 
-      ba =
-        Finances.create_bank_account(%{
-          iban: "PL123",
-          organization_id: org_id,
-          requisition_id: req.id,
-          gocardless_id: "acc-1"
-        })
+      ba = bank_account_fixture(org_id, req.id)
 
       Req.Test.stub(:bank_data_transactions, fn conn ->
         conn
@@ -352,13 +339,7 @@ defmodule Firmowid.BankData.WorkerTest do
         |> Requisition.changeset()
         |> Repo.insert(organization_id: org_id)
 
-      ba =
-        Finances.create_bank_account(%{
-          iban: "PL123",
-          organization_id: org_id,
-          requisition_id: req.id,
-          gocardless_id: "acc-1"
-        })
+      ba = bank_account_fixture(org_id, req.id)
 
       Req.Test.stub(:bank_data_transactions, fn conn ->
         conn
@@ -395,13 +376,7 @@ defmodule Firmowid.BankData.WorkerTest do
         |> Requisition.changeset()
         |> Repo.insert(organization_id: org_id)
 
-      ba =
-        Finances.create_bank_account(%{
-          iban: "PL123",
-          organization_id: org_id,
-          requisition_id: req.id,
-          gocardless_id: "acc-1"
-        })
+      ba = bank_account_fixture(org_id, req.id)
 
       # transactions success
       Req.Test.stub(:bank_data_transactions, fn conn ->

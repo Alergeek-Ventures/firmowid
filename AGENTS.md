@@ -49,6 +49,21 @@ changes that affect the user interface or are introducing something new.
 Always go above and beyond to make sure that that whoever comes after you
 understands what you've done, that it works and that it's correct.
 
+## Automated Tests
+
+They have value, and we have these in our codebase, as part of our validation suite.
+They have to be super fast, test critical paths for regressions.
+
+Do not **overtest**. Discuss with users about testing; we never want to be held back
+by outdated / inflexible tests.
+
+## Automated Test File Location
+
+Tests are colocated with the code they test — placed as close to the source files as
+possible inside `lib/`, not in a separate `test/` tree. This is followed across the
+entire codebase. Example: tests for `lib/firmowid/ash/finances/transaction.ex` live
+at `lib/firmowid/ash/finances/finances_test.exs`.
+
 ## Code Quality Verification
 
 Before submitting changes, always run the quality checks:

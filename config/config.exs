@@ -101,6 +101,7 @@ config :firmowid,
   ash_domains: [
     Firmowid.Ash.Analysis,
     Firmowid.Ash.Core,
+    Firmowid.Ash.Finances,
     Firmowid.Ash.Payroll,
     Firmowid.Ash.Timetracker
   ]

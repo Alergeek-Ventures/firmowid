@@ -21,7 +21,7 @@ defmodule Firmowid.Seeds.MonthM0 do
   import Ecto.Query
 
   alias Firmowid.Ash.Analysis.EntityTag
-  alias Firmowid.Finances
+  alias Firmowid.Ash.Finances.TransactionQueries
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
   alias Firmowid.Seeds.Helpers
@@ -142,7 +142,7 @@ defmodule Firmowid.Seeds.MonthM0 do
       }
     ]
 
-    Finances.create_or_update_transactions(transactions)
+    TransactionQueries.create_or_update(transactions)
   end
 
   # — THB bank fee —

@@ -65,7 +65,7 @@
             Twoja organizacja
           </.link>
         <% end %>
-        <%= if Bodyguard.permit?(Firmowid.Finances, :read_bank_accounts, @current_user) do %>
+        <%= if @current_user.role == :admin do %>
           <.link
             patch={~p"/ustawienia/konta-bankowe"}
             class={

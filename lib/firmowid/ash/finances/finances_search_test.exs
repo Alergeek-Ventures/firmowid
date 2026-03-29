@@ -3,7 +3,7 @@ defmodule Firmowid.FinancesSearchTest do
 
   import Firmowid.AccountsFixtures
 
-  alias Firmowid.Finances
+  alias Firmowid.Ash.Finances.TransactionQueries
   alias Firmowid.Finances.Transaction
   alias Firmowid.Repo
 
@@ -34,7 +34,7 @@ defmodule Firmowid.FinancesSearchTest do
         })
 
       # Run the search
-      [found_transaction] = Finances.search_transactions(%{query: "Acme", currency: "USD"})
+      [found_transaction] = TransactionQueries.search(%{query: "Acme", currency: "USD"})
 
       assert found_transaction.id == transaction1.id
       assert found_transaction.debtor_name == "Acme Corp"
@@ -53,7 +53,7 @@ defmodule Firmowid.FinancesSearchTest do
           organization_id: organization_id
         })
 
-      results = Finances.search_transactions(%{query: "NonExistent"})
+      results = TransactionQueries.search(%{query: "NonExistent"})
       assert results == []
     end
 
@@ -86,22 +86,22 @@ defmodule Firmowid.FinancesSearchTest do
 
       # Set org context to org1, search for org2's transaction
       Repo.put_org_id(org1_id)
-      results = Finances.search_transactions(%{query: "UniqueOrg2"})
+      results = TransactionQueries.search(%{query: "UniqueOrg2"})
       assert results == []
 
       # Set org context to org2, search for org1's transaction
       Repo.put_org_id(org2_id)
-      results = Finances.search_transactions(%{query: "UniqueOrg1"})
+      results = TransactionQueries.search(%{query: "UniqueOrg1"})
       assert results == []
 
       # Set org context to org1, search for org1's transaction
       Repo.put_org_id(org1_id)
-      results = Finances.search_transactions(%{query: "UniqueOrg1"})
+      results = TransactionQueries.search(%{query: "UniqueOrg1"})
       assert Enum.map(results, & &1.id) == [tx1.id]
 
       # Set org context to org2, search for org2's transaction
       Repo.put_org_id(org2_id)
-      results = Finances.search_transactions(%{query: "UniqueOrg2"})
+      results = TransactionQueries.search(%{query: "UniqueOrg2"})
       assert Enum.map(results, & &1.id) == [tx2.id]
     end
   end
@@ -145,7 +145,7 @@ defmodule Firmowid.FinancesSearchTest do
     end
 
     test "filters by amount_gt and amount_lt", %{t1: _t1, t2: t2, t3: _t3} do
-      results = Finances.search_transactions(%{amount_gt: 150, amount_lt: 250})
+      results = TransactionQueries.search(%{amount_gt: 150, amount_lt: 250})
       assert Enum.map(results, & &1.id) == [t2.id]
     end
 
@@ -156,7 +156,7 @@ defmodule Firmowid.FinancesSearchTest do
     } do
       # Should match t2 and t3 (booking_date or value_date in range)
       results =
-        Finances.search_transactions(%{date_from: ~D[2024-02-01], date_to: ~D[2024-03-01]})
+        TransactionQueries.search(%{date_from: ~D[2024-02-01], date_to: ~D[2024-03-01]})
 
       ids = Enum.map(results, & &1.id)
       assert t2.id in ids
@@ -167,7 +167,7 @@ defmodule Firmowid.FinancesSearchTest do
     test "matches if either booking_date or value_date is in range", %{t1: t1, t2: _t2, t3: _t3} do
       # Only t1 has value_date in this range
       results =
-        Finances.search_transactions(%{date_from: ~D[2024-01-02], date_to: ~D[2024-01-02]})
+        TransactionQueries.search(%{date_from: ~D[2024-01-02], date_to: ~D[2024-01-02]})
 
       assert Enum.map(results, & &1.id) == [t1.id]
     end

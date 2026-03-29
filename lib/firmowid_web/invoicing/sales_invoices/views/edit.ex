@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Accounts
-  alias Firmowid.Finances
+  alias Firmowid.BankData
   alias Firmowid.Ksef
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
@@ -50,7 +50,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
   defp mount_editable_invoice(socket, invoice) do
     {:ok, organization} = Accounts.get_organization(Repo.get_org_id())
-    bank_accounts = Finances.list_bank_accounts()
+    bank_accounts = BankData.list_bank_accounts()
     invoice = Repo.preload(invoice, [:corrected_invoice])
     invoice_changeset = build_invoice_changeset(invoice)
 

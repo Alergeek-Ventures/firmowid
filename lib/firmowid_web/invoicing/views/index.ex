@@ -5,10 +5,11 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   import FirmowidWeb.Billing.Components.Billing
 
   alias Firmowid.Analytics
+  alias Firmowid.Ash.Finances, as: AshFinances
+  alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
   alias Firmowid.BankData
   alias Firmowid.Billing
   alias Firmowid.CostInvoices
-  alias Firmowid.Finances
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.TransactionGroup
@@ -24,7 +25,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     if connected?(socket) do
       CostInvoices.subscribe_cost_invoice_broadcast(organization_id)
-      Finances.subscribe_transaction_broadcast(organization_id)
+      AshFinances.subscribe_transaction_broadcast(organization_id)
       SalesInvoices.subscribe_sales_invoice_broadcast(organization_id)
       Invoicing.subscribe_invoicing_broadcast(organization_id)
       BankData.subscribe_requisition_updates(organization_id)
@@ -266,7 +267,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         CostInvoices.toggle_skip_invoicing(id)
 
       "transaction" ->
-        Finances.toggle_skip_invoicing(id)
+        AshTransaction.toggle_skip_invoicing!(%{id: id}, scope: socket.assigns.ash_scope)
 
       "sales_invoice" ->
         SalesInvoices.toggle_skip_invoicing(id)

@@ -9,7 +9,8 @@ defmodule Firmowid.Seeds.Helpers do
 
   alias Firmowid.Blobs
   alias Firmowid.CostInvoices
-  alias Firmowid.Finances
+  alias Firmowid.Finances.BankAccount
+  alias Firmowid.Finances.Transaction
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
 
@@ -59,7 +60,7 @@ defmodule Firmowid.Seeds.Helpers do
   def get_or_insert_txn(itid, org_id, attrs) do
     existing =
       Repo.one(
-        from(t in Finances.Transaction,
+        from(t in Transaction,
           where:
             t.internal_transaction_id == ^itid and
               t.organization_id == ^org_id,
@@ -73,7 +74,7 @@ defmodule Firmowid.Seeds.Helpers do
 
         Repo.insert!(
           struct!(
-            Finances.Transaction,
+            Transaction,
             Map.merge(attrs, %{
               id: Ecto.UUID.generate(),
               internal_transaction_id: itid,
@@ -141,7 +142,7 @@ defmodule Firmowid.Seeds.Helpers do
   end
 
   def get_or_create_bank_account(id, attrs) do
-    Repo.get(Finances.BankAccount, id) ||
-      Repo.insert!(struct!(Finances.BankAccount, Map.put(attrs, :id, id)))
+    Repo.get(BankAccount, id) ||
+      Repo.insert!(struct!(BankAccount, Map.put(attrs, :id, id)))
   end
 end

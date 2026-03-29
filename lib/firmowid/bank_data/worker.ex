@@ -4,6 +4,7 @@ defmodule Firmowid.BankData.Worker do
     queue: :bank_data,
     max_attempts: 5
 
+  alias Firmowid.Ash.Finances.BankAccount
   alias Firmowid.BankData
   alias Firmowid.BankData.ApiClient
   alias Firmowid.BankData.Requisition
@@ -47,7 +48,15 @@ defmodule Firmowid.BankData.Worker do
   end
 
   def perform(%Oban.Job{args: %{"name" => "dispatch_sync_jobs_for_all_bank_accounts"}}) do
-    Firmowid.Finances.get_bank_accounts_for_sync()
+    # Cross-tenant dispatch: fetches all bank accounts with a GoCardless ID
+    # across all orgs, then groups by org and dispatches per-account sync jobs.
+    # The :list_for_sync action has multitenancy :bypass so no tenant is needed.
+    # authorize?: false / actor: %{} — cross-tenant background job; no authenticated
+    # user is present. actor: %{} is a placeholder for a future dedicated system
+    # actor struct. Using an empty map (rather than nil) prevents nil-actor crashes
+    # if authorization is accidentally re-enabled on list_for_sync.
+    [authorize?: false, actor: %{}]
+    |> BankAccount.list_for_sync!()
     |> Enum.group_by(& &1.organization_id)
     |> Enum.each(fn {organization_id, accounts} ->
       changesets =

@@ -9,11 +9,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Accounts
   alias Firmowid.Accounts.Organization
   alias Firmowid.Analytics
+  alias Firmowid.Ash.Finances.BankAccount, as: AshBankAccount
   alias Firmowid.BankData
   alias Firmowid.BankData.ApiClient
   alias Firmowid.Billing
   alias Firmowid.Blobs
-  alias Firmowid.Finances
   alias Firmowid.Ksef
   alias FirmowidWeb.Core.Endpoint
 
@@ -34,7 +34,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   def mount(_params, _session, socket) do
     bank_accounts =
-      if Bodyguard.permit?(Finances, :read_bank_accounts, socket.assigns.current_user) do
+      if socket.assigns.current_user.role == :admin do
         BankData.list_bank_accounts()
       else
         []
@@ -217,11 +217,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("delete_bank_account", %{"account_id" => account_id}, socket) do
-    bank_account = Finances.get_bank_account!(account_id)
-    Bodyguard.permit!(Finances, :delete_bank_account, socket.assigns.current_user, bank_account)
+    scope = socket.assigns.ash_scope
+    bank_account = AshBankAccount.get_by_id!(account_id, scope: scope)
 
-    case Finances.delete_bank_account(account_id) do
-      {:ok, _} ->
+    case AshBankAccount.destroy(bank_account, scope: scope) do
+      :ok ->
         LiveToast.send_toast(:info, "Konto bankowe zostało usunięte.")
         bank_accounts = BankData.list_bank_accounts()
 
@@ -237,15 +237,16 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("make_default_account", %{"account_id" => account_id}, socket) do
-    bank_account = Finances.get_bank_account!(account_id)
-    Bodyguard.permit!(Finances, :update_bank_account, socket.assigns.current_user, bank_account)
+    scope = socket.assigns.ash_scope
 
-    case Finances.make_account_default(account_id) do
+    case AshBankAccount.make_default(%{id: account_id}, scope: scope) do
       {:ok, _} ->
+        bank_accounts = BankData.list_bank_accounts()
+
         {:noreply,
          socket
-         |> assign(:bank_accounts, BankData.list_bank_accounts())
-         |> assign(:bank_account_statuses, derive_statuses(BankData.list_bank_accounts()))}
+         |> assign(:bank_accounts, bank_accounts)
+         |> assign(:bank_account_statuses, derive_statuses(bank_accounts))}
 
       {:error, _} ->
         LiveToast.send_toast(
@@ -313,10 +314,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("rename_bank_account", %{"account_id" => account_id, "name" => name}, socket) do
-    bank_account = Finances.get_bank_account!(account_id)
-    Bodyguard.permit!(Finances, :update_bank_account, socket.assigns.current_user, bank_account)
+    scope = socket.assigns.ash_scope
+    bank_account = AshBankAccount.get_by_id!(account_id, scope: scope)
 
-    case Finances.rename_bank_account(account_id, name) do
+    case AshBankAccount.rename(bank_account, name, scope: scope) do
       {:ok, _} ->
         LiveToast.send_toast(:info, "Nazwa konta została zmieniona.")
         accounts = BankData.list_bank_accounts()
@@ -333,7 +334,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("reconnect_bank_account", %{"account_id" => account_id}, socket) do
-    bank_account = Finances.get_bank_account!(account_id)
+    scope = socket.assigns.ash_scope
+    bank_account = AshBankAccount.get_by_id!(account_id, scope: scope)
     Bodyguard.permit!(BankData, :create_requisition, socket.assigns.current_user)
 
     # If the account doesn't have an institution associated (legacy/imported),
@@ -368,20 +370,17 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("create_manual_bank_account", params, socket) do
-    Bodyguard.permit!(Finances, :create_bank_account, socket.assigns.current_user)
-
-    org_id = socket.assigns.current_user.organization_id
+    scope = socket.assigns.ash_scope
 
     attrs = %{
       iban: params["iban"],
       name: params["name"],
       currency: params["currency"],
-      organization_id: org_id,
-      institution_name: "Manual"
+      owner_name: params["owner_name"]
     }
 
-    case Finances.create_manual_bank_account(attrs) do
-      %Finances.BankAccount{} ->
+    case AshBankAccount.create_manual(attrs, scope: scope) do
+      {:ok, %AshBankAccount{}} ->
         LiveToast.send_toast(:info, "Konto zostało dodane.")
         accounts = BankData.list_bank_accounts()
 
@@ -390,7 +389,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
          |> assign(:bank_accounts, accounts)
          |> assign(:bank_account_statuses, derive_statuses(accounts))}
 
-      _ ->
+      {:error, _} ->
         LiveToast.send_toast(:error, "Nie udało się dodać konta.")
         {:noreply, socket}
     end

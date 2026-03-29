@@ -1,5 +1,6 @@
 defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
   @moduledoc false
+  alias Firmowid.Ash.Finances.TransactionQueries
   alias Firmowid.Invoicing.Matching.Assistant.CommonTools
   alias Firmowid.Invoicing.Matching.Assistant.Engine
   alias Firmowid.Invoicing.Matching.Assistant.Message
@@ -126,7 +127,7 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
               Firmowid.SalesInvoices.get_sales_invoice(sales_invoice_id)
             end
 
-          transactions = Firmowid.Finances.get_transactions!(transaction_ids)
+          transactions = TransactionQueries.get_by_ids(transaction_ids)
 
           hallucinated_invoice = is_nil(sales_invoice)
 

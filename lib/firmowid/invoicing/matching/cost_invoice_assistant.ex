@@ -3,6 +3,7 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
   Invoice-matching assistant: defines prompt, tools, and function handlers for invoice-to-transaction matching.
   Delegates LLM and function-call plumbing to AssistantEngine.
   """
+  alias Firmowid.Ash.Finances.TransactionQueries
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.Matching.Assistant.CommonTools
@@ -138,7 +139,7 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
               Firmowid.CostInvoices.get_cost_invoice(cost_invoice_id)
             end
 
-          transactions = Firmowid.Finances.get_transactions!(transaction_ids)
+          transactions = TransactionQueries.get_by_ids(transaction_ids)
 
           hallucinated_invoice = is_nil(cost_invoice)
 

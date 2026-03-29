@@ -12,9 +12,9 @@ defmodule Firmowid.Seeds.Voidstack do
 
   alias Firmowid.Accounts
   alias Firmowid.Accounts.Organization
+  alias Firmowid.Ash.Finances.TransactionQueries
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.CostInvoices
-  alias Firmowid.Finances
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
   alias Firmowid.Seeds.Helpers
@@ -186,7 +186,7 @@ defmodule Firmowid.Seeds.Voidstack do
       }
     ]
 
-    Finances.create_or_update_transactions(transactions)
+    TransactionQueries.create_or_update(transactions)
   end
 
   defp seed_cost_invoice(voidstack) do

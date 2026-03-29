@@ -5,11 +5,11 @@ defmodule Firmowid.Invoicing do
   import Ecto.Query, warn: false
   import Paradex, only: [~>: 2]
 
+  alias Firmowid.Ash.Finances.TransactionQueries
   alias Firmowid.CostInvoices
   # SQL fragment that converts KSeF VAT rate string codes to numeric decimals.
   # Must match VatRate.to_numeric/1 behavior for consistency.
   alias Firmowid.CostInvoices.CostInvoice
-  alias Firmowid.Finances
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.Matching
   alias Firmowid.Invoicing.TransactionGroup
@@ -410,7 +410,7 @@ defmodule Firmowid.Invoicing do
         [
           CostInvoices.list_cost_invoices(from, to),
           SalesInvoices.list_sales_invoices(from, to),
-          Finances.list_transactions(from, to)
+          TransactionQueries.list_by_date_range(from, to)
         ]
         |> Enum.concat()
         |> order_entries_for_display()
@@ -419,7 +419,7 @@ defmodule Firmowid.Invoicing do
         [
           CostInvoices.list_unmatched_cost_invoices(from, to),
           SalesInvoices.list_unmatched_sales_invoices(from, to),
-          Finances.list_unmatched_transactions(from, to)
+          TransactionQueries.list_unmatched(from, to)
         ]
         |> Enum.concat()
         |> order_entries_for_display()
@@ -432,7 +432,7 @@ defmodule Firmowid.Invoicing do
 
       :transactions ->
         from
-        |> Finances.list_transactions(to)
+        |> TransactionQueries.list_by_date_range(to)
         |> order_entries_for_display()
     end
   end
@@ -505,7 +505,7 @@ defmodule Firmowid.Invoicing do
   @spec get_potential_transactions_for_invoice(SalesInvoice.t() | CostInvoice.t()) :: [map()]
   def get_potential_transactions_for_invoice(invoice) do
     unmatched_transactions =
-      Finances.list_unmatched_transactions(~D[2000-01-01], ~D[2100-12-30])
+      TransactionQueries.list_unmatched(~D[2000-01-01], ~D[2100-12-30])
 
     attached_transactions = Map.get(invoice, :transactions, [])
 
@@ -531,7 +531,7 @@ defmodule Firmowid.Invoicing do
     Logger.info("Matching cost invoice #{cost_invoice.id} for organization #{organization_id}")
 
     unmatched_transactions =
-      Finances.list_unmatched_transactions(~D[2000-01-01], ~D[2100-12-30])
+      TransactionQueries.list_unmatched(~D[2000-01-01], ~D[2100-12-30])
 
     Logger.info("Found #{length(unmatched_transactions)} unmatched transactions")
 
@@ -604,7 +604,7 @@ defmodule Firmowid.Invoicing do
     Logger.info("Matching sales invoice #{sales_invoice.id} for organization #{organization_id}")
 
     unmatched_transactions =
-      Finances.list_unmatched_transactions(~D[2000-01-01], ~D[2100-12-30])
+      TransactionQueries.list_unmatched(~D[2000-01-01], ~D[2100-12-30])
 
     Logger.info("Found #{length(unmatched_transactions)} unmatched transactions")
 

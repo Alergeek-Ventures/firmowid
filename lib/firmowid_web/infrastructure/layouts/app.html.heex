@@ -138,7 +138,7 @@
             <.link navigate={~p"/ustawienia"} class="rounded-md p-2 hover:bg-darkGrey/50">
               Ustawienia
             </.link>
-            <%= if Bodyguard.permit?(Firmowid.Finances, :read_bank_accounts, @current_user) do %>
+            <%= if @current_user.role == :admin do %>
               <.link
                 navigate={~p"/ustawienia/konta-bankowe"}
                 class="rounded-md p-2 hover:bg-darkGrey/50"

@@ -18,12 +18,12 @@ defmodule Firmowid.Ash.Analysis do
 
   alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.Ash.Analysis.TagDefinition
+  alias Firmowid.Ash.Finances.TransactionQueries
   alias Firmowid.Ash.Scope
   alias Firmowid.CostInvoices
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.CostInvoices.CostInvoicesTransactions
   alias Firmowid.Currencies
-  alias Firmowid.Finances
   alias Firmowid.Finances.Transaction
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
@@ -78,7 +78,7 @@ defmodule Firmowid.Ash.Analysis do
       |> CostInvoices.list_cost_invoices_by_sale_date(date_to)
       |> Enum.filter(&matched_or_skipped?/1)
 
-    transactions = Finances.list_skipped_unmatched_transactions(date_from, date_to)
+    transactions = TransactionQueries.list_skipped_unmatched(date_from, date_to)
 
     all_entities = build_entity_id_list(sales_invoices, cost_invoices, transactions)
     entity_tags_map = load_entity_tags_map(all_entities, scope)

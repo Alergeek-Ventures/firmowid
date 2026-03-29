@@ -1,5 +1,6 @@
 defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
   @moduledoc false
+  alias Firmowid.Ash.Finances.TransactionQueries
   alias Firmowid.Invoicing.Matching.Assistant.FilterValidation
   alias Firmowid.Invoicing.Matching.Assistant.Tool
   alias Firmowid.Invoicing.Matching.CostInvoiceAssistant
@@ -219,7 +220,7 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
                     validated_filtered
                   end
 
-                Firmowid.Finances.search_transactions(final_filtered)
+                TransactionQueries.search(final_filtered)
 
               {:error, error} ->
                 {:error, error}

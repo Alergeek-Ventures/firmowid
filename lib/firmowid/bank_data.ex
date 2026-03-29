@@ -4,12 +4,14 @@ defmodule Firmowid.BankData do
 
   import Ecto.Query, warn: false
 
+  alias Firmowid.Ash.Finances.BankAccount, as: FinancesBankAccount
+  alias Firmowid.Ash.Finances.Transaction, as: FinancesTransaction
   alias Firmowid.BankData.ApiClient
   alias Firmowid.BankData.Requisition
   alias Firmowid.BankData.Transaction
   alias Firmowid.BankData.Worker
   alias Firmowid.Billing
-  alias Firmowid.Finances
+  alias Firmowid.Finances.BankAccount
   alias Firmowid.Repo
 
   require Logger
@@ -176,11 +178,11 @@ defmodule Firmowid.BankData do
   Fetch a bank account by id.
   """
   @spec get_bank_account(binary(), Keyword.t()) ::
-          {:ok, Finances.BankAccount.t()} | {:error, :not_found}
+          {:ok, BankAccount.t()} | {:error, :not_found}
   def get_bank_account(bank_account_id, opts \\ []) do
-    case Repo.get(Finances.BankAccount, bank_account_id, opts) do
+    case Repo.get(BankAccount, bank_account_id, opts) do
       nil -> {:error, :not_found}
-      %Finances.BankAccount{} = bank_account -> {:ok, bank_account}
+      %BankAccount{} = bank_account -> {:ok, bank_account}
     end
   end
 
@@ -210,7 +212,7 @@ defmodule Firmowid.BankData do
   end
 
   def list_bank_accounts do
-    from(b in Finances.BankAccount,
+    from(b in BankAccount,
       order_by: [b.inserted_at, b.id]
     )
     |> Repo.all()
@@ -264,20 +266,30 @@ defmodule Firmowid.BankData do
   end
 
   defp upsert_booked_transactions(booked_transactions, bank_account_id, organization_id) do
-    booked_transactions
-    |> Enum.map(fn transaction_from_api ->
-      converted_transaction =
-        transaction_from_api
-        |> Transaction.map_camel_to_snake()
-        |> Transaction.flatten_api_response()
-        |> Transaction.changeset()
-        |> Ecto.Changeset.apply_changes()
+    transactions =
+      Enum.map(booked_transactions, fn transaction_from_api ->
+        converted_transaction =
+          transaction_from_api
+          |> Transaction.map_camel_to_snake()
+          |> Transaction.flatten_api_response()
+          |> Transaction.changeset()
+          |> Ecto.Changeset.apply_changes()
 
-      converted_transaction
-      |> Map.merge(%{bank_account_id: bank_account_id, organization_id: organization_id})
-      |> Map.from_struct()
-    end)
-    |> Finances.create_or_update_transactions()
+        converted_transaction
+        |> Map.from_struct()
+        |> Map.delete(:id)
+        |> Map.put(:bank_account_id, bank_account_id)
+      end)
+
+    # authorize?: false / actor: %{} — background system context; no authenticated
+    # user is present. actor: %{} is a placeholder for a future dedicated system
+    # actor struct. Using an empty map (rather than nil) prevents nil-actor crashes
+    # if authorization is accidentally re-enabled on this action in the future.
+    FinancesTransaction.bulk_upsert_from_sync!(transactions,
+      tenant: organization_id,
+      authorize?: false,
+      actor: %{}
+    )
 
     {:ok, nil}
   end
@@ -286,17 +298,27 @@ defmodule Firmowid.BankData do
     with {:ok, accounts} <- ApiClient.get_accounts_for_requisition(requisition_id) do
       bank_accounts =
         Enum.map(accounts, fn account ->
-          Finances.create_bank_account(%{
-            iban: account["iban"],
-            gocardless_id: account["id"],
-            owner_name: account["ownerName"],
-            institution_id: account["institution_id"],
-            institution_name: account["institution"]["name"],
-            currency: account["currency"],
-            name: account["name"],
-            organization_id: organization_id,
-            requisition_id: requisition_id
-          })
+          # authorize?: false / actor: %{} — called from the GoCardless callback
+          # flow (no authenticated user). actor: %{} is a placeholder for a future
+          # system actor struct; prevents nil-actor crashes if authorization is
+          # accidentally re-enabled on this action.
+          FinancesBankAccount
+          |> Ash.Changeset.for_create(
+            :sync_from_bank,
+            %{
+              iban: account["iban"],
+              gocardless_id: account["id"],
+              owner_name: account["ownerName"],
+              institution_id: account["institution_id"],
+              institution_name: account["institution"]["name"],
+              currency: account["currency"],
+              name: account["name"],
+              requisition_id: requisition_id
+            },
+            tenant: organization_id,
+            actor: %{}
+          )
+          |> Ash.create!(tenant: organization_id, authorize?: false, actor: %{})
         end)
 
       {:ok, bank_accounts}
@@ -353,7 +375,7 @@ defmodule Firmowid.BankData do
   """
   def cleanup_delete_orphaned_requisitions(cutoff_dt, organization_id) do
     sub =
-      from(b in Finances.BankAccount,
+      from(b in BankAccount,
         where: b.requisition_id == parent_as(:req).id,
         select: 1
       )
