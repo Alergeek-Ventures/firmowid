@@ -1,0 +1,37 @@
+<div class="max-w-6xl w-full mx-auto flex-1 flex flex-col my-4 relative">
+  <.link
+    patch={~p"/sprzedazowe?creator_draft=#{@creator_draft_id}&step=#{@step_number - 1}"}
+    class="flex items-center gap-2 text-sm absolute -left-[calc(68px+1.5rem)] -top-[2.5px]"
+  >
+    <Lucideicons.circle_chevron_left /> Wróć
+  </.link>
+
+  <.form
+    for={@payment_form}
+    phx-change="validate_payment"
+    phx-submit="submit_payment"
+    class="px-9 flex flex-col gap-8"
+  >
+    <.render_header invoice={@invoice} step={@step_number} title="Termin i forma płatności" />
+
+    <FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment.invoice_payment
+      payment_form={@payment_form}
+      invoice={@invoice}
+      bank_accounts={@bank_accounts}
+      selected_bank_account={@selected_bank_account}
+    />
+
+    <div class="w-full flex flex-row justify-end mt-12">
+      <.button
+        type="submit"
+        phx-disable-with="Przetwarzanie..."
+        class="max-w-44 w-full h-11"
+        color="turquoise"
+        new={true}
+        disabled={not @payment_form.source.valid?}
+      >
+        Dalej
+      </.button>
+    </div>
+  </.form>
+</div>

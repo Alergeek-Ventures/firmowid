@@ -32,7 +32,7 @@ config :firmowid, Firmowid.Repo,
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
-config :firmowid, FirmowidWeb.Endpoint,
+config :firmowid, FirmowidWeb.Core.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   server: false
 

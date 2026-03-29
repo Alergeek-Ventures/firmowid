@@ -41,9 +41,9 @@ defmodule FirmowidWeb do
     quote do
       use Phoenix.Controller,
         formats: [:html, :json],
-        layouts: [html: FirmowidWeb.Layouts]
+        layouts: [html: FirmowidWeb.Infrastructure.Layouts]
 
-      use Gettext, backend: FirmowidWeb.Gettext
+      use Gettext, backend: FirmowidWeb.Core.Gettext
 
       import Plug.Conn
 
@@ -54,7 +54,7 @@ defmodule FirmowidWeb do
   def live_view do
     quote do
       use Phoenix.LiveView,
-        layout: {FirmowidWeb.Layouts, :app},
+        layout: {FirmowidWeb.Infrastructure.Layouts, :app},
         container: {:div, class: "min-h-full flex flex-col"}
 
       unquote(html_helpers())
@@ -84,13 +84,9 @@ defmodule FirmowidWeb do
 
   defp html_helpers do
     quote do
-      use Gettext, backend: FirmowidWeb.Gettext
+      use Gettext, backend: FirmowidWeb.Core.Gettext
 
-      import FirmowidWeb.BillingComponents
-      import FirmowidWeb.Components.Landing
-      import FirmowidWeb.CoreComponents
-      import FirmowidWeb.Flags
-      import FirmowidWeb.Icons
+      import FirmowidWeb.DesignSystem.Components.CoreComponents
       # HTML escaping functionality
       import Phoenix.HTML
       # Core UI components and translation
@@ -107,26 +103,10 @@ defmodule FirmowidWeb do
   def verified_routes do
     quote do
       use Phoenix.VerifiedRoutes,
-        endpoint: FirmowidWeb.Endpoint,
-        router: FirmowidWeb.Router,
+        endpoint: FirmowidWeb.Core.Endpoint,
+        router: FirmowidWeb.Core.Router,
         statics: FirmowidWeb.static_paths()
     end
-  end
-
-  def toast_class_fn(assigns) do
-    [
-      # base classes
-      "group/toast z-100 pointer-events-auto relative w-full items-center justify-between origin-center overflow-hidden rounded-lg p-4 shadow-lg border col-start-1 col-end-1 row-start-1 row-end-2",
-      # start hidden if javascript is enabled
-      "[@media(scripting:enabled)]:opacity-0 [@media(scripting:enabled){[data-phx-main]_&}]:opacity-100",
-      # used to hide the disconnected flashes
-      if(assigns[:rest][:hidden] == true, do: "hidden", else: "flex"),
-      # override styles per severity
-      assigns[:kind] == :success && "bg-greenBg text-greenText",
-      assigns[:kind] == :notice && "bg-blueBg text-blueText",
-      assigns[:kind] == :info && "bg-lightGreyBg text-black",
-      assigns[:kind] == :error && "!text-redText !bg-redBg"
-    ]
   end
 
   @doc """

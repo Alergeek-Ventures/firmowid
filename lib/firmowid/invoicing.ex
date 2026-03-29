@@ -12,10 +12,10 @@ defmodule Firmowid.Invoicing do
   alias Firmowid.Finances
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.Matching
+  alias Firmowid.Invoicing.TransactionGroup
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.SalesInvoice
-  alias FirmowidWeb.InvoicingLive.TransactionGroup
 
   require Logger
 

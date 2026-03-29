@@ -1,0 +1,341 @@
+<div class="max-w-6xl w-full mx-auto ">
+  <.form
+    for={@form}
+    phx-change="validate"
+    phx-submit="send_to_ksef"
+    phx-hook="ConfirmLeave"
+    id="invoice-form"
+    class="grid grid-cols-[min-content_1fr_repeat(7,min-content)] gap-x-2"
+  >
+    <.input type="hidden" field={@form[:invoice_number]} />
+    <.input type="hidden" field={@form[:issue_date]} />
+    <.input type="hidden" field={@form[:ksef_invoice_kind]} />
+
+    <div class="col-start-2 col-end-9">
+      <FirmowidWeb.Invoicing.SalesInvoices.Views.Creator.render_header
+        invoice={@invoice}
+        step={
+          if SalesInvoice.ksef_submitted?(@invoice),
+            do: "Faktura korygująca",
+            else: "Edycja faktury"
+        }
+        title={"Edycja faktury #{@invoice.invoice_number}"}
+      />
+    </div>
+
+    <div class="col-span-full grid grid-cols-subgrid gap-y-14 py-14">
+      <div class="col-span-full grid grid-cols-subgrid">
+        <FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems.invoice_items
+          invoice={@invoice}
+          invoice_changeset={@form.source}
+        />
+      </div>
+
+      <hr class="text-grey-200 col-start-2 col-end-9" />
+
+      <div class="col-start-2 col-end-9 flex flex-row gap-14 items-start">
+        <div class="grid grid-cols-[min-content_1fr] gap-x-5 gap-y-4 items-start w-full">
+          <label class="text-grey-700 whitespace-nowrap" for={@form[:counterparty_id].id}>
+            Kontrahent
+          </label>
+
+          <div class="col-start-2 border border-grey-200 rounded-lg p-4 grid grid-cols-[repeat(2,auto)] gap-x-5 gap-y-1 items-start">
+            <p class="text-grey-500 text-sm/snug">Nazwa</p>
+            <p class="text-grey-700 text-sm/snug font-bold">
+              {@form[:buyer_display_name].value}
+            </p>
+
+            <%= case SalesInvoice.buyer_id_type(@form.source) do %>
+              <% :no_id -> %>
+                <p class="text-grey-500 text-sm/snug">PESEL</p>
+                <p class="text-grey-700 text-sm/snug">
+                  {@form[:buyer_pesel].value}
+                </p>
+              <% :optional_id -> %>
+                <%= if @form[:buyer_id].value && @form[:buyer_id].value != "" do %>
+                  <p class="text-grey-500 text-sm/snug">Identyfikator</p>
+                  <p class="text-grey-700 text-sm/snug">
+                    {@form[:buyer_id].value}
+                  </p>
+                <% end %>
+              <% id_type -> %>
+                <p class="text-grey-500 text-sm/snug">
+                  {case id_type do
+                    :nip -> "NIP"
+                    :eu_vat -> "VAT-EU"
+                    :other_id -> "Identyfikator"
+                  end}
+                </p>
+                <p class="text-grey-700 text-sm/snug">
+                  {@form[:buyer_id].value}
+                </p>
+            <% end %>
+
+            <p class="text-grey-500 text-sm/snug">Adres</p>
+            <p class="text-grey-700 text-sm/snug">
+              {@form[:buyer_address].value}
+            </p>
+
+            <%= if @form[:buyer_given_name].value && @form[:buyer_surname].value do %>
+              <p class="text-grey-500 text-sm/snug">Imię i nazwisko</p>
+              <p class="text-grey-700 text-sm/snug">
+                {@form[:buyer_given_name].value} {@form[:buyer_surname].value}
+              </p>
+            <% end %>
+          </div>
+
+          <.button
+            type="button"
+            color="light_grey"
+            size="small"
+            new={true}
+            class="justify-self-end col-start-2"
+            phx-click={show_modal("buyer-edit-modal")}
+          >
+            Zmień
+          </.button>
+        </div>
+
+        <FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment.invoice_payment
+          invoice={@invoice}
+          bank_accounts={@bank_accounts}
+          selected_bank_account={@selected_bank_account}
+          payment_form={@form}
+        />
+      </div>
+
+      <hr class="text-grey-200 col-start-2 col-end-9" />
+
+      <div :if={SalesInvoice.ksef_submitted?(@invoice)} class="col-start-2 col-end-9">
+        <.input
+          field={@form[:correction_reason]}
+          type="textarea"
+          new={true}
+          label="Przyczyna korekty"
+          placeholder="np. korekta ceny, zmiana danych nabywcy..."
+          maxlength="256"
+        />
+        <p class="text-xs text-grey-400 mt-1">
+          Wymagana prawnie (Art. 106j ust. 2 pkt 3 ustawy o VAT). Maksymalnie 256 znaków.
+        </p>
+      </div>
+
+      <div class="col-span-full flex flex-col xl:flex-row gap-14 justify-center items-center">
+        <%= if SalesInvoice.ksef_submitted?(@invoice) do %>
+          <div class="space-y-4">
+            <p class="text-black text-lg/6 font-medium">
+              Faktura {@invoice.invoice_number}
+            </p>
+
+            <div class="border border-grey-200 rounded-lg bg-white shadow-sm overflow-hidden max-w-[650px]">
+              <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
+                sales_invoice={@invoice}
+                reference_invoice={@reference_invoice}
+                currency_rate={Firmowid.SalesInvoices.get_currency_rate(@invoice)}
+                show_vat={@current_org.is_vat_payer}
+              />
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <p class="text-black text-lg/6 font-medium">
+              Faktura korygująca {@preview_invoice.invoice_number}
+            </p>
+
+            <div class={[
+              "border border-grey-200 rounded-lg bg-white shadow-sm overflow-hidden max-w-[650px]",
+              @stale_preview_invoice? && "opacity-50"
+            ]}>
+              <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
+                sales_invoice={@preview_invoice}
+                reference_invoice={@invoice}
+                currency_rate={@currency_rate}
+                show_vat={@current_org.is_vat_payer}
+              />
+            </div>
+          </div>
+        <% else %>
+          <div class={[
+            "border border-grey-200 rounded-lg bg-white shadow-sm overflow-hidden max-w-[650px]",
+            @stale_preview_invoice? && "opacity-50"
+          ]}>
+            <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
+              sales_invoice={@preview_invoice}
+              currency_rate={@currency_rate}
+              show_vat={@current_org.is_vat_payer}
+            />
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="col-start-2 col-end-9 flex justify-end gap-4 mb-14">
+      <.button
+        type="button"
+        color="light_grey"
+        new={true}
+        phx-click="cancel_edit"
+      >
+        Anuluj
+      </.button>
+
+      <.button
+        :if={not SalesInvoice.ksef_submitted?(@invoice) and @invoice.ksef_invoice_kind == :vat}
+        type="button"
+        color="light_grey"
+        new={true}
+        phx-click="save_as_draft"
+        phx-disable-with="Zapisywanie..."
+      >
+        Zapisz wersję roboczą
+      </.button>
+
+      <.button
+        type="submit"
+        color="turquoise"
+        new={true}
+      >
+        {if SalesInvoice.ksef_submitted?(@invoice),
+          do: "Wystaw fakturę korygującą",
+          else: "Zapisz i wyślij do KSeF"}
+      </.button>
+    </div>
+    <.modal id="buyer-edit-modal">
+      <h2 class="text-xl font-semibold text-grey-900 mb-6">Edytuj dane nabywcy</h2>
+
+      <div class="space-y-6">
+        <div class="bg-grey-50 px-5 py-3 rounded-lg">
+          <p class="text-sm text-grey-700">
+            <%= if to_string(@form[:buyer_type].value) == "company" do %>
+              Firma / Jednoosobowa Działalność Gospodarcza
+            <% else %>
+              Osoba prywatna
+            <% end %>
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-6">
+          <div class="space-y-4">
+            <p class="text-sm font-medium text-grey-700">Dane podstawowe</p>
+
+            <div
+              :if={
+                to_string(@form[:buyer_type].value) == "company" and @form[:buyer_tax_id].value
+              }
+              class="space-y-1"
+            >
+              <p class="text-grey-500 text-sm">NIP</p>
+              <p class="text-grey-900 font-medium">{@form[:buyer_tax_id].value}</p>
+            </div>
+
+            <.input
+              :if={to_string(@form[:buyer_type].value) == "company"}
+              field={@form[:buyer_full_name]}
+              type="text"
+              placeholder="Nazwa firmy"
+              new={true}
+            />
+
+            <div
+              :if={
+                to_string(@form[:buyer_type].value) == "individual" and @form[:buyer_pesel].value
+              }
+              class="space-y-1"
+            >
+              <p class="text-grey-500 text-sm">PESEL</p>
+              <p class="text-grey-900 font-medium">{@form[:buyer_pesel].value}</p>
+            </div>
+
+            <div
+              :if={to_string(@form[:buyer_type].value) == "individual"}
+              class="grid grid-cols-2 gap-2"
+            >
+              <.input
+                field={@form[:buyer_given_name]}
+                type="text"
+                placeholder="Imię"
+                new={true}
+              />
+              <.input
+                field={@form[:buyer_surname]}
+                type="text"
+                placeholder="Nazwisko"
+                new={true}
+              />
+            </div>
+
+            <.input
+              field={@form[:buyer_display_name]}
+              type="text"
+              placeholder="Nazwa wyświetlana (opcjonalnie)"
+              new={true}
+            />
+          </div>
+
+          <div class="space-y-4">
+            <p class="text-sm font-medium text-grey-700">Dane adresowe</p>
+
+            <.input
+              field={@form[:buyer_address]}
+              type="textarea"
+              placeholder="Adres"
+              input_class="resize-none min-h-[6rem]"
+            />
+
+            <%= if to_string(@form[:buyer_country].value) == "PL" do %>
+              <div class="space-y-1">
+                <p class="text-grey-500 text-sm">Kraj</p>
+                <p class="text-grey-900 font-medium">Polska</p>
+              </div>
+            <% else %>
+              <.input
+                field={@form[:buyer_country]}
+                type="select"
+                options={SalesInvoices.CountryCodes.country_options()}
+                prompt="Wybierz kraj"
+                new={true}
+              />
+            <% end %>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <p class="text-sm font-medium text-grey-700">Dodatkowe informacje</p>
+
+          <div class="grid grid-cols-2 gap-4">
+            <.input
+              field={@form[:buyer_email]}
+              type="email"
+              placeholder="E-mail"
+              new={true}
+            />
+            <.input
+              field={@form[:buyer_phone]}
+              type="tel"
+              placeholder="Telefon"
+              new={true}
+            />
+          </div>
+
+          <.input
+            field={@form[:buyer_description]}
+            type="textarea"
+            placeholder="Opis"
+            input_class="resize-none"
+          />
+        </div>
+
+        <div class="flex justify-end pt-4">
+          <.button
+            type="button"
+            color="turquoise"
+            new={true}
+            phx-click={hide_modal("buyer-edit-modal")}
+          >
+            Zamknij
+          </.button>
+        </div>
+      </div>
+    </.modal>
+  </.form>
+</div>

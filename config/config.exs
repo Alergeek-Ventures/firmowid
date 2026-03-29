@@ -75,11 +75,14 @@ config :firmowid, Firmowid.Repo,
   migration_timestamps: [type: :utc_datetime],
   types: Firmowid.PostgrexTypes
 
-config :firmowid, FirmowidWeb.Endpoint,
+config :firmowid, FirmowidWeb.Core.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
-    formats: [html: FirmowidWeb.ErrorHTML, json: FirmowidWeb.ErrorJSON],
+    formats: [
+      html: FirmowidWeb.Infrastructure.Components.ErrorHtml,
+      json: FirmowidWeb.Infrastructure.Components.ErrorJson
+    ],
     layout: false
   ],
   pubsub_server: Firmowid.PubSub,

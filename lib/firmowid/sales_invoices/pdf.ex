@@ -5,7 +5,7 @@ defmodule Firmowid.SalesInvoices.Pdf do
 
   alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.SalesInvoice
-  alias FirmowidWeb.PdfHelpers
+  alias FirmowidWeb.Infrastructure.Utilities.PdfHelpers
 
   # sobelow_skip ["Traversal.FileModule"]
   # Path in the output callback comes from ChromicPDF (framework-generated temp file),
@@ -26,7 +26,7 @@ defmodule Firmowid.SalesInvoices.Pdf do
 
     html_content =
       PdfHelpers.render_pdf_html(
-        FirmowidWeb.PdfHTML,
+        FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf,
         :sales_invoice,
         layout: false,
         sales_invoice: invoice,

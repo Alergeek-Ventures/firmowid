@@ -1,0 +1,40 @@
+<div class="max-w-6xl w-full mx-auto flex-1 flex flex-col my-4 relative">
+  <.link
+    patch={~p"/sprzedazowe?creator_draft=#{@creator_draft_id}&step=#{@step_number - 1}"}
+    class="flex items-center gap-2 text-sm absolute -left-[calc(68px+1.5rem)] -top-[2.5px]"
+  >
+    <Lucideicons.circle_chevron_left /> Wróć
+  </.link>
+
+  <.form
+    for={@items_form}
+    phx-change="validate_items"
+    phx-submit="submit_items"
+    id="invoice-form"
+    class="grid grid-cols-[min-content_1fr_repeat(7,min-content)] gap-x-2"
+  >
+    <div class="col-start-2 col-end-9 mb-8">
+      <.render_header
+        invoice={@invoice}
+        step={@step_number}
+        title="Sprzedawane towary/usługi"
+      />
+    </div>
+
+    <FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems.invoice_items
+      invoice={@invoice}
+      invoice_changeset={@items_form.source}
+    />
+
+    <.button
+      type="submit"
+      phx-disable-with="Przetwarzanie..."
+      class="col-start-1 col-end-9 ml-auto mt-20 max-w-44 w-full h-11"
+      color="turquoise"
+      new={true}
+      disabled={not @items_form.source.valid?}
+    >
+      Dalej
+    </.button>
+  </.form>
+</div>

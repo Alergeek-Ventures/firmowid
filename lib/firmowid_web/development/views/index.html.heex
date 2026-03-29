@@ -1,0 +1,816 @@
+<div class="max-w-4xl mx-auto pb-12">
+  <%!-- Header + intro — always visible --%>
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold mb-5">Bytecraft Collective</h1>
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <p class="text-sm text-darkGrey">Domyślne konto</p>
+        <p class="font-medium mt-0.5">
+          <code class="bg-orange-100 text-orange-800 px-2 py-0.5 rounded text-sm">
+            kira@bytecraft.collective
+          </code>
+          <span class="text-darkGrey mx-1">/</span>
+          <code class="bg-grey-100 px-2 py-0.5 rounded text-sm font-mono">kolejka123456</code>
+        </p>
+      </div>
+      <div class="text-right text-sm text-darkGrey">
+        <div>Kira Voss · Lead Architect</div>
+        <div class="text-xs">admin / superuser · B2B</div>
+      </div>
+    </div>
+
+    <div class="mt-4 pt-4 border-t border-grey-100 text-sm text-grey-700 flex flex-col gap-8">
+      <p>
+        Pięcioosobowy software house z Warszawy. Trzy projekty komercyjne (<em>GhostPet</em>, <em>FlatMate</em>, <em>TacoOverflow</em>) + wewnętrzny <em>Firmowid</em>. Cztery waluty, egzotyczne konto THB, integracja KSeF. Trzy miesiące historii — M-2 i M-1 zamknięte, M-0 do dopasowania.
+      </p>
+      <p class="font-bold">Wykorzystaj tę organizację do testów - poniżej wszystkie
+        informacje.</p>
+    </div>
+  </div>
+
+  <%!-- Sections --%>
+  <div class="space-y-3">
+    <%!-- 1. Zespół --%>
+    <div class="bg-white rounded-lg border border-grey-200 overflow-hidden">
+      <button
+        phx-click={toggle_section("team")}
+        type="button"
+        id="section-trigger-team"
+        aria-controls="section-panel-team"
+        class="w-full flex items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
+      >
+        <div class="flex items-center gap-3">
+          <.icon name="hero-users" class="size-5 text-darkGrey" />
+          <span class="font-semibold">Zespół Bytecraft Collective</span>
+          <span class="text-xs text-darkGrey">5 osób</span>
+        </div>
+        <.icon
+          name="hero-chevron-down"
+          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
+        />
+      </button>
+      <div
+        id="section-panel-team"
+        role="region"
+        class="grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all duration-300 ease-in-out"
+      >
+        <div class="overflow-hidden">
+          <div class="px-5 pb-5 border-t border-grey-100">
+            <div class="overflow-x-auto mt-4">
+              <table class="min-w-full text-sm">
+                <thead>
+                  <tr class="border-b border-grey-200">
+                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Użytkownik</th>
+                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Email</th>
+                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Rola</th>
+                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Stanowisko</th>
+                    <th class="text-left py-2 font-medium text-darkGrey">Umowa</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-grey-100">
+                  <tr>
+                    <td class="py-2 pr-4 font-medium">Kira Voss</td>
+                    <td class="py-2 pr-4">
+                      <code class="bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded text-xs">
+                        kira@bytecraft.collective
+                      </code>
+                    </td>
+                    <td class="py-2 pr-4">admin / superuser</td>
+                    <td class="py-2 pr-4">Lead Architect</td>
+                    <td class="py-2">B2B</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2 pr-4">Tomek Briar</td>
+                    <td class="py-2 pr-4">
+                      <code class="bg-grey-100 px-1.5 py-0.5 rounded text-xs">
+                        tomek@bytecraft.collective
+                      </code>
+                    </td>
+                    <td class="py-2 pr-4">admin</td>
+                    <td class="py-2 pr-4">Backend Engineer</td>
+                    <td class="py-2">UoP</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2 pr-4">Sable Orin</td>
+                    <td class="py-2 pr-4">
+                      <code class="bg-grey-100 px-1.5 py-0.5 rounded text-xs">
+                        sable@bytecraft.collective
+                      </code>
+                    </td>
+                    <td class="py-2 pr-4">pracownik</td>
+                    <td class="py-2 pr-4">Product Designer</td>
+                    <td class="py-2">Zlecenie</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2 pr-4">Jules Kadar</td>
+                    <td class="py-2 pr-4">
+                      <code class="bg-grey-100 px-1.5 py-0.5 rounded text-xs">
+                        jules@bytecraft.collective
+                      </code>
+                    </td>
+                    <td class="py-2 pr-4">pracownik</td>
+                    <td class="py-2 pr-4">DevOps Lead</td>
+                    <td class="py-2">B2B</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2 pr-4">Maren Solke</td>
+                    <td class="py-2 pr-4">
+                      <code class="bg-grey-100 px-1.5 py-0.5 rounded text-xs">
+                        maren@bytecraft.collective
+                      </code>
+                    </td>
+                    <td class="py-2 pr-4">pracownik</td>
+                    <td class="py-2 pr-4">Frontend Engineer</td>
+                    <td class="py-2">UoP</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="mt-3 text-xs text-darkGrey">
+              Hasło dla wszystkich:
+              <code class="bg-grey-100 px-1.5 py-0.5 rounded font-mono">kolejka123456</code>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%!-- 2. Organizacja i konta --%>
+    <div class="bg-white rounded-lg border border-grey-200 overflow-hidden">
+      <button
+        phx-click={toggle_section("org")}
+        type="button"
+        id="section-trigger-org"
+        aria-controls="section-panel-org"
+        class="w-full flex items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
+      >
+        <div class="flex items-center gap-3">
+          <.icon name="hero-building-office" class="size-5 text-darkGrey" />
+          <span class="font-semibold">Bytecraft Collective sp. z o.o.</span>
+          <span class="text-xs font-mono text-darkGrey">NIP 6161525811</span>
+        </div>
+        <.icon
+          name="hero-chevron-down"
+          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
+        />
+      </button>
+      <div
+        id="section-panel-org"
+        role="region"
+        class="grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all duration-300 ease-in-out"
+      >
+        <div class="overflow-hidden">
+          <div class="px-5 pb-5 border-t border-grey-100">
+            <div class="mt-4 text-sm">
+              <span class="text-darkGrey">Adres:</span> ul. Marszałkowska 11/4, 00-624 Warszawa
+            </div>
+
+            <h3 class="text-sm font-semibold mt-5 mb-2">Konta bankowe</h3>
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-sm">
+                <thead>
+                  <tr class="border-b border-grey-200">
+                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Waluta</th>
+                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Bank</th>
+                    <th class="text-left py-2 font-medium text-darkGrey">IBAN</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-grey-100">
+                  <tr>
+                    <td class="py-1.5 pr-4 font-medium">PLN (domyślne)</td>
+                    <td class="py-1.5 pr-4">ING Bank Śląski</td>
+                    <td class="py-1.5 font-mono text-xs">PL61105000997603123456789012</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1.5 pr-4">EUR</td>
+                    <td class="py-1.5 pr-4">ING Bank Śląski</td>
+                    <td class="py-1.5 font-mono text-xs">PL85105000997603123456789013</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1.5 pr-4">USD</td>
+                    <td class="py-1.5 pr-4">ING Bank Śląski</td>
+                    <td class="py-1.5 font-mono text-xs">PL42105000997603123456789014</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1.5 pr-4">GBP</td>
+                    <td class="py-1.5 pr-4">ING Bank Śląski</td>
+                    <td class="py-1.5 font-mono text-xs">PL19105000997603123456789015</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1.5 pr-4">THB</td>
+                    <td class="py-1.5 pr-4">Bank Millennium</td>
+                    <td class="py-1.5 font-mono text-xs">PL73116022020000000512345678</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%!-- 3. Projekty --%>
+    <div class="bg-white rounded-lg border border-grey-200 overflow-hidden">
+      <button
+        phx-click={toggle_section("projects")}
+        type="button"
+        id="section-trigger-projects"
+        aria-controls="section-panel-projects"
+        class="w-full flex items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
+      >
+        <div class="flex items-center gap-3">
+          <.icon name="hero-rectangle-stack" class="size-5 text-darkGrey" />
+          <span class="font-semibold">Projekty i klienci</span>
+          <span class="text-xs text-darkGrey">4 projekty · 3 kontrahentów</span>
+        </div>
+        <.icon
+          name="hero-chevron-down"
+          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
+        />
+      </button>
+      <div
+        id="section-panel-projects"
+        role="region"
+        class="grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all duration-300 ease-in-out"
+      >
+        <div class="overflow-hidden">
+          <div class="px-5 pb-5 border-t border-grey-100">
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div class="rounded-lg border border-grey-200 p-4">
+                <div class="flex items-center gap-2 mb-1">
+                  <div class="w-2 h-2 rounded-full bg-grey-400"></div>
+                  <h4 class="font-semibold text-sm">Firmowid</h4>
+                </div>
+                <p class="text-xs text-darkGrey ml-4">
+                  Projekt wewnętrzny, brak kontrahenta. Rozliczanie kosztów infra (OVH, narzędzia).
+                </p>
+                <p class="text-xs text-grey-400 ml-4 mt-1">Kira, Tomek</p>
+              </div>
+
+              <div class="rounded-lg border border-grey-200 p-4">
+                <div class="flex items-center gap-2 mb-1">
+                  <div class="w-2 h-2 rounded-full bg-turquoise-500"></div>
+                  <h4 class="font-semibold text-sm">GhostPet</h4>
+                  <span class="text-xs bg-turquoise-100 text-turquoise-700 px-1.5 py-0.5 rounded">
+                    USD
+                  </span>
+                </div>
+                <p class="text-xs text-darkGrey ml-4">
+                  Rozmowy AI ze zmarłymi zwierzakami. Klient: GhostPet Inc. (US, EIN 47-8830291).
+                </p>
+                <p class="text-xs text-grey-400 ml-4 mt-1">Tomek, Maren</p>
+              </div>
+
+              <div class="rounded-lg border border-grey-200 p-4">
+                <div class="flex items-center gap-2 mb-1">
+                  <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                  <h4 class="font-semibold text-sm">FlatMate</h4>
+                  <span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
+                    GBP
+                  </span>
+                </div>
+                <p class="text-xs text-darkGrey ml-4">
+                  Randki dla zwolenników płaskiej Ziemi. Klient: FlatEarth Dating Ltd.
+                  (GB, bez VAT — post-Brexit, odwrotne obciążenie).
+                </p>
+                <p class="text-xs text-grey-400 ml-4 mt-1">Kira, Sable</p>
+              </div>
+
+              <div class="rounded-lg border border-grey-200 p-4">
+                <div class="flex items-center gap-2 mb-1">
+                  <div class="w-2 h-2 rounded-full bg-orange-500"></div>
+                  <h4 class="font-semibold text-sm">TacoOverflow</h4>
+                  <span class="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
+                    EUR
+                  </span>
+                </div>
+                <p class="text-xs text-darkGrey ml-4">
+                  Klon SO, gdzie każda odpowiedź = przepis na taco.
+                  Klient: TacoOverflow Inc. (DE, VAT DE317256842, odwrotne obciążenie).
+                </p>
+                <p class="text-xs text-grey-400 ml-4 mt-1">Jules, Maren, Tomek</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%!-- 4. Czasośledź / Lista płac --%>
+    <div class="bg-white rounded-lg border border-grey-200 overflow-hidden">
+      <button
+        phx-click={toggle_section("timetracker")}
+        type="button"
+        id="section-trigger-timetracker"
+        aria-controls="section-panel-timetracker"
+        class="w-full flex items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
+      >
+        <div class="flex items-center gap-3">
+          <.icon name="hero-clock" class="size-5 text-darkGrey" />
+          <span class="font-semibold">Czasośledź i lista płac</span>
+          <a
+            href="/czasosledz"
+            class="text-xs text-turquoise-600 hover:underline"
+            phx-click="noop"
+            phx-value-stop="true"
+          >
+            /czasosledz
+          </a>
+        </div>
+        <.icon
+          name="hero-chevron-down"
+          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
+        />
+      </button>
+      <div
+        id="section-panel-timetracker"
+        role="region"
+        class="grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all duration-300 ease-in-out"
+      >
+        <div class="overflow-hidden">
+          <div class="px-5 pb-5 border-t border-grey-100">
+            <p class="text-sm text-darkGrey mt-4 mb-4">
+              Stawki godzinowe, sesje pracy i ewidencja godzin dla 2 zamkniętych miesięcy.
+              Bieżący miesiąc ma sesje, ale brak ewidencji — testuj kreator wysyłki.
+            </p>
+
+            <h3 class="text-sm font-semibold mb-2">Stawki godzinowe</h3>
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-sm">
+                <thead>
+                  <tr class="border-b border-grey-200">
+                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Pracownik</th>
+                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Stawka (PLN/h)</th>
+                    <th class="text-left py-2 font-medium text-darkGrey">Uwagi</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-grey-100">
+                  <tr>
+                    <td class="py-1.5 pr-4">Kira Voss</td>
+                    <td class="py-1.5 pr-4 font-mono">150,00</td>
+                    <td class="py-1.5 text-darkGrey text-xs">
+                      Poprzednia: 120,00 (podwyżka 3 mies. temu)
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-1.5 pr-4">Tomek Briar</td>
+                    <td class="py-1.5 pr-4 font-mono">120,00</td>
+                    <td class="py-1.5 text-darkGrey">—</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1.5 pr-4">Sable Orin</td>
+                    <td class="py-1.5 pr-4 font-mono">100,00</td>
+                    <td class="py-1.5 text-darkGrey">—</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1.5 pr-4">Jules Kadar</td>
+                    <td class="py-1.5 pr-4 font-mono">130,00</td>
+                    <td class="py-1.5 text-darkGrey">—</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1.5 pr-4">Maren Solke</td>
+                    <td class="py-1.5 pr-4 font-mono">110,00</td>
+                    <td class="py-1.5 text-darkGrey">—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <h3 class="font-semibold text-sm mb-1">Sesje pracy</h3>
+                <ul class="text-darkGrey text-xs ml-4 list-disc space-y-0.5">
+                  <li>M-2 i M-1: ~30–36 sesji/mies., 2–5h, mix biuro/zdalnie</li>
+                  <li>M-0: ~12 sesji (miesiąc w toku)</li>
+                  <li>Każdy pracownik na swoich przypisanych projektach</li>
+                </ul>
+              </div>
+              <div>
+                <h3 class="font-semibold text-sm mb-1">Ewidencja godzin</h3>
+                <ul class="text-darkGrey text-xs ml-4 list-disc space-y-0.5">
+                  <li>M-2 i M-1: wysłane z podpisanymi PDF-ami</li>
+                  <li>
+                    M-0: <strong>brak</strong> — kreator wysyłki do przetestowania
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <p class="text-xs text-grey-400 mt-3">
+              Panel admina:
+              <a href="/zarzadzanie/projekty" class="text-turquoise-600 hover:underline">
+                /zarzadzanie/projekty
+              </a>
+              — przegląd godzin, stawek i eksport CSV.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%!-- 5. Dashboard analityczny --%>
+    <div class="bg-white rounded-lg border border-grey-200 overflow-hidden">
+      <button
+        phx-click={toggle_section("analysis")}
+        type="button"
+        id="section-trigger-analysis"
+        aria-controls="section-panel-analysis"
+        class="w-full flex items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
+      >
+        <div class="flex items-center gap-3">
+          <.icon name="hero-chart-bar" class="size-5 text-darkGrey" />
+          <span class="font-semibold">Dashboard analityczny</span>
+          <a
+            href="/analiza"
+            class="text-xs text-turquoise-600 hover:underline"
+            phx-click="noop"
+            phx-value-stop="true"
+          >
+            /analiza
+          </a>
+        </div>
+        <.icon
+          name="hero-chevron-down"
+          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
+        />
+      </button>
+      <div
+        id="section-panel-analysis"
+        role="region"
+        class="grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all duration-300 ease-in-out"
+      >
+        <div class="overflow-hidden">
+          <div class="px-5 pb-5 border-t border-grey-100">
+            <p class="text-sm text-darkGrey mt-4 mb-4">
+              Trzy miesiące danych prezentują workflow dopasowywania i tagowania.
+              Daty względne — uruchom seedy ponownie, aby odświeżyć.
+            </p>
+
+            <div class="space-y-4">
+              <%!-- M-2 --%>
+              <div class="rounded-lg bg-grey-100/50 p-4">
+                <h4 class="text-sm font-semibold flex items-center gap-2">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+                    M-2
+                  </span>
+                  2 miesiące temu — w pełni dopasowane
+                </h4>
+                <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0.5 text-xs text-darkGrey">
+                  <div class="flex justify-between">
+                    <span>GhostPet 5 950 $</span>
+                    <span class="text-turquoise-600">projekt:GhostPet</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>FlatMate 4 480 £</span>
+                    <span class="text-green-600">projekt:FlatMate</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>TacoOverflow 7 800 €</span>
+                    <span class="text-orange-600">projekt:TacoOverflow</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>OVH Cloud -2 400 PLN</span>
+                    <span class="text-grey-500">projekt:Firmowid</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>GitHub -250 $</span>
+                    <span class="text-grey-500">:firma</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>Regus czynsz -4 500 PLN</span>
+                    <span class="text-grey-500">:firma</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>Apple laptopy -18 000 PLN</span>
+                    <span class="text-grey-500">:firma</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>Dell monitory -4 500 PLN</span>
+                    <span class="text-grey-400 italic">bez tagu</span>
+                  </div>
+                  <div class="flex justify-between md:col-span-2">
+                    <span>THB freelance +150k, konwersja -50k/+4 800 PLN</span>
+                    <span class="text-grey-500">:wewnętrzny</span>
+                  </div>
+                  <div class="flex justify-between md:col-span-2">
+                    <span>
+                      Wynagrodzenia: Kira -4 800, Tomek -4 320, Sable -1 800, Jules -3 510, Maren -3 080 PLN
+                    </span>
+                    <span class="text-grey-500">projekty pracownika</span>
+                  </div>
+                </div>
+              </div>
+
+              <%!-- M-1 --%>
+              <div class="rounded-lg bg-grey-100/50 p-4">
+                <h4 class="text-sm font-semibold flex items-center gap-2">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-turquoise-100 text-turquoise-700">
+                    M-1
+                  </span>
+                  1 miesiąc temu — w pełni dopasowane
+                </h4>
+                <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0.5 text-xs text-darkGrey">
+                  <div class="flex justify-between">
+                    <span>GhostPet 8 500 $</span>
+                    <span class="text-turquoise-600">projekt:GhostPet</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>FlatMate 3 360 £</span>
+                    <span class="text-green-600">projekt:FlatMate</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>TacoOverflow 5 850 €</span>
+                    <span class="text-orange-600">projekt:TacoOverflow</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>OVH Cloud -2 400 PLN</span>
+                    <span class="text-grey-500">projekt:Firmowid</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>OpenCode -120 €</span>
+                    <span class="text-grey-500">:firma</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>Regus czynsz -4 500 PLN</span>
+                    <span class="text-grey-500">:firma</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>Biuro Plus -380 PLN</span>
+                    <span class="text-grey-400 italic">bez tagu</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>Opłata bankowa -25 PLN</span>
+                    <span class="text-grey-500">:firma</span>
+                  </div>
+                  <div class="flex justify-between md:col-span-2">
+                    <span>Konwersja THB -50k / +4 750 PLN</span>
+                    <span class="text-grey-500">:wewnętrzny</span>
+                  </div>
+                  <div class="flex justify-between md:col-span-2">
+                    <span>
+                      Wynagrodzenia: Kira -4 500, Tomek -4 560, Sable -1 600, Jules -3 250, Maren -3 300 PLN
+                    </span>
+                    <span class="text-grey-500">projekty pracownika</span>
+                  </div>
+                </div>
+              </div>
+
+              <%!-- M-0 --%>
+              <div class="rounded-lg bg-grey-100/50 p-4">
+                <h4 class="text-sm font-semibold flex items-center gap-2">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700">
+                    M-0
+                  </span>
+                  Bieżący miesiąc — głównie niedopasowane
+                </h4>
+                <div class="mt-2 text-xs text-darkGrey space-y-0.5">
+                  <div>
+                    7 niedopasowanych transakcji (TacoOverflow, GitHub, OVH, czynsz, materiały, opłata, OpenCode)
+                  </div>
+                  <div>
+                    1 dopasowana: GhostPet 3 400 $
+                    <span class="text-turquoise-600">→ projekt:GhostPet</span>
+                  </div>
+                  <div>1 niedopasowana faktura kosztowa: OVH -2 400 PLN</div>
+                  <div>
+                    Opłata THB -150 THB (skip_invoicing)
+                    <span class="text-grey-500">→ :wewnętrzny</span>
+                  </div>
+                  <div>4 faktury demonstracyjne KSeF (patrz niżej)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%!-- 6. KSeF --%>
+    <div class="bg-white rounded-lg border border-grey-200 overflow-hidden">
+      <button
+        phx-click={toggle_section("ksef")}
+        type="button"
+        id="section-trigger-ksef"
+        aria-controls="section-panel-ksef"
+        class="w-full flex items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
+      >
+        <div class="flex items-center gap-3">
+          <.icon name="hero-document-check" class="size-5 text-darkGrey" />
+          <span class="font-semibold">Środowisko testowe KSeF</span>
+          <span class="text-xs text-darkGrey">4 faktury demo</span>
+        </div>
+        <.icon
+          name="hero-chevron-down"
+          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
+        />
+      </button>
+      <div
+        id="section-panel-ksef"
+        role="region"
+        class="grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all duration-300 ease-in-out"
+      >
+        <div class="overflow-hidden">
+          <div class="px-5 pb-5 border-t border-grey-100">
+            <div class="mt-4 text-sm space-y-2 mb-4">
+              <div>
+                <span class="text-darkGrey">URL testowy:</span>
+                <a
+                  href="https://ap-test.ksef.mf.gov.pl/web/tokens/generate-token"
+                  class="text-turquoise-600 hover:underline"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  ap-test.ksef.mf.gov.pl
+                </a>
+              </div>
+              <div>
+                <span class="text-darkGrey">NIP testowy:</span>
+                <code class="bg-grey-100 px-1.5 py-0.5 rounded font-mono">6161525811</code>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-sm">
+                <thead>
+                  <tr class="border-b border-grey-200">
+                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Nr faktury</th>
+                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Stan</th>
+                    <th class="text-left py-2 font-medium text-darkGrey">Opis</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-grey-100">
+                  <tr>
+                    <td class="py-1.5 pr-4 font-mono text-xs">01/MM/RRRR</td>
+                    <td class="py-1.5 pr-4">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-grey-200 text-grey-700">
+                        Szkic
+                      </span>
+                    </td>
+                    <td class="py-1.5 text-xs">
+                      NexaTech — audyt architektury + konsultacje DevOps, bez wysyłki
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-1.5 pr-4 font-mono text-xs">02/MM/RRRR</td>
+                    <td class="py-1.5 pr-4">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+                        Sukces
+                      </span>
+                    </td>
+                    <td class="py-1.5 text-xs">
+                      NexaTech — prototyp MVP, ma numer KSeF, zablokowana
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-1.5 pr-4 font-mono text-xs">03/MM/RRRR</td>
+                    <td class="py-1.5 pr-4">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700">
+                        Wysyłka
+                      </span>
+                    </td>
+                    <td class="py-1.5 text-xs">
+                      NexaTech — szkolenie Elixir/Phoenix, zablokowana, Oban w trakcie
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-1.5 pr-4 font-mono text-xs">04/MM/RRRR</td>
+                    <td class="py-1.5 pr-4">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
+                        Błąd
+                      </span>
+                    </td>
+                    <td class="py-1.5 text-xs">
+                      NexaTech — wsparcie wdrożeniowe, odrzucone zadanie Oban
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%!-- 7. System tagowania --%>
+    <div class="bg-white rounded-lg border border-grey-200 overflow-hidden">
+      <button
+        phx-click={toggle_section("tags")}
+        type="button"
+        id="section-trigger-tags"
+        aria-controls="section-panel-tags"
+        class="w-full flex items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
+      >
+        <div class="flex items-center gap-3">
+          <.icon name="hero-tag" class="size-5 text-darkGrey" />
+          <span class="font-semibold">System tagowania</span>
+          <span class="text-xs text-darkGrey">3 kategorie</span>
+        </div>
+        <.icon
+          name="hero-chevron-down"
+          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
+        />
+      </button>
+      <div
+        id="section-panel-tags"
+        role="region"
+        class="grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all duration-300 ease-in-out"
+      >
+        <div class="overflow-hidden">
+          <div class="px-5 pb-5 border-t border-grey-100">
+            <p class="text-sm text-darkGrey mt-4 mb-3">
+              Tagi encji kategoryzują dopasowane wpisy na dashboardzie analitycznym.
+              Stosowane do dopasowanych par (transakcja + faktura)
+              lub do encji z <code class="bg-grey-100 px-1 rounded text-xs">skip_invoicing</code>.
+            </p>
+
+            <div class="space-y-2">
+              <div class="flex items-start gap-3 rounded-lg bg-grey-100/50 p-3">
+                <code class="text-xs bg-turquoise-100 text-turquoise-700 px-1.5 py-0.5 rounded shrink-0">
+                  :project
+                </code>
+                <div class="text-xs text-darkGrey">
+                  <strong>Tagi projektowe</strong> — przypisanie wpisu do projektu.
+                  Każdy projekt automatycznie tworzy TagDefinition.
+                </div>
+              </div>
+              <div class="flex items-start gap-3 rounded-lg bg-grey-100/50 p-3">
+                <code class="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded shrink-0">
+                  :company
+                </code>
+                <div class="text-xs text-darkGrey">
+                  <strong>Firma</strong> — ogólne koszty firmy
+                  (czynsz biura, opłaty bankowe, narzędzia).
+                </div>
+              </div>
+              <div class="flex items-start gap-3 rounded-lg bg-grey-100/50 p-3">
+                <code class="text-xs bg-grey-200 text-grey-700 px-1.5 py-0.5 rounded shrink-0">
+                  :internal
+                </code>
+                <div class="text-xs text-darkGrey">
+                  <strong>Wewnętrzny</strong> — przelewy wewnętrzne, konwersje walut.
+                  Wyłączone z podsumowań.
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-grey-400 mt-3">
+              Kategorie wzajemnie wykluczające się: wpis może mieć tagi projektowe
+              LUB wbudowaną kategorię, nie jedno i drugie.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%!-- 8. VoidStack Labs --%>
+    <div class="bg-white rounded-lg border border-grey-200 overflow-hidden">
+      <button
+        phx-click={toggle_section("voidstack")}
+        type="button"
+        id="section-trigger-voidstack"
+        aria-controls="section-panel-voidstack"
+        class="w-full flex items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
+      >
+        <div class="flex items-center gap-3">
+          <.icon name="hero-shield-exclamation" class="size-5 text-red-400" />
+          <span class="font-semibold">VoidStack Labs</span>
+          <span class="text-xs text-darkGrey">testy izolacji tenantów</span>
+        </div>
+        <.icon
+          name="hero-chevron-down"
+          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
+        />
+      </button>
+      <div
+        id="section-panel-voidstack"
+        role="region"
+        class="grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all duration-300 ease-in-out"
+      >
+        <div class="overflow-hidden">
+          <div class="px-5 pb-5 border-t border-grey-100">
+            <p class="text-sm text-darkGrey mt-4 mb-3">
+              Oddzielna organizacja do testów autoryzacji. Były stażysta Bytecrafta,
+              Dragan Krypt, prowadzi 12-osobową operację z przerobionej kręgielni w Bratysławie.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              <div>
+                <span class="text-darkGrey">Login:</span>
+                <code class="bg-grey-100 px-1.5 py-0.5 rounded text-xs">dragan@voidstack.io</code>
+                <span class="text-darkGrey mx-0.5">/</span>
+                <code class="bg-grey-100 px-1.5 py-0.5 rounded text-xs font-mono">
+                  kolejka123456
+                </code>
+              </div>
+              <div>
+                <span class="text-darkGrey">NIP:</span>
+                <span class="font-mono">7871963656</span>
+              </div>
+            </div>
+            <p class="text-xs text-grey-400 mt-3">
+              1 projekt (Shadow Protocol), 1 konto bankowe, 4 transakcji,
+              1 faktura kosztowa, 1 faktura sprzedażowa.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

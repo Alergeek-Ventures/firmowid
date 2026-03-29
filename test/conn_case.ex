@@ -25,7 +25,7 @@ defmodule FirmowidWeb.ConnCase do
       import Phoenix.ConnTest
       import Plug.Conn
       # The default endpoint for testing
-      @endpoint FirmowidWeb.Endpoint
+      @endpoint FirmowidWeb.Core.Endpoint
 
       # Import conveniences for testing with connections
     end

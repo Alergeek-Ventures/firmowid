@@ -5,6 +5,8 @@ defmodule Firmowid.Application do
 
   use Application
 
+  alias FirmowidWeb.Core.Endpoint
+
   @impl true
   def start(_type, _args) do
     Oban.Telemetry.attach_default_logger()
@@ -12,7 +14,7 @@ defmodule Firmowid.Application do
 
     children =
       [
-        FirmowidWeb.Telemetry,
+        FirmowidWeb.Core.Telemetry,
         Firmowid.Repo,
         {ChromicPDF, Application.get_env(:firmowid, ChromicPDF)},
         {Ecto.Migrator, repos: Application.fetch_env!(:firmowid, :ecto_repos)},
@@ -30,7 +32,7 @@ defmodule Firmowid.Application do
         maybe_posthog_supervisor() ++
         [
           # Start to serve requests, typically the last entry
-          FirmowidWeb.Endpoint
+          Endpoint
         ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
@@ -61,7 +63,7 @@ defmodule Firmowid.Application do
   # whenever the application is updated.
   @impl true
   def config_change(changed, _new, removed) do
-    FirmowidWeb.Endpoint.config_change(changed, removed)
+    Endpoint.config_change(changed, removed)
     :ok
   end
 end

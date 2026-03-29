@@ -1,5 +1,7 @@
 import Config
 
+alias FirmowidWeb.Core.Endpoint
+
 config :ex_aws, :s3,
   host: "localhost",
   scheme: "http://",
@@ -10,6 +12,25 @@ config :ex_aws,
   secret_access_key: "test"
 
 config :firmowid, ChromicPDF, chrome_address: {"localhost", 9222}
+
+config :firmowid, Endpoint,
+  http: [port: 4000],
+  check_origin: false,
+  code_reloader: true,
+  debug_errors: true,
+  watchers: [
+    esbuild: {Esbuild, :install_and_run, [:firmowid, ~w(--sourcemap=inline --watch)]},
+    tailwind: {Tailwind, :install_and_run, [:firmowid, ~w(--watch)]}
+  ],
+  live_reload: [
+    patterns: [
+      ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
+      ~r"priv/gettext/.*(po)$",
+      ~r"lib/firmowid_web/(controllers|live|components)/.*(ex|heex)$"
+    ]
+  ]
+
+config :firmowid, Endpoint, secret_key_base: "REMOVED_PHOENIX_SECRET_KEY_BASE"
 
 # Database (port 5433 matches local/compose.yml)
 config :firmowid, Firmowid.Repo,
@@ -28,26 +49,6 @@ config :firmowid, Firmowid.Vault,
     default:
       {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: Base.decode64!("REMOVED_DEV_VAULT_KEY")}
   ]
-
-config :firmowid, FirmowidWeb.Endpoint,
-  http: [port: 4000],
-  check_origin: false,
-  code_reloader: true,
-  debug_errors: true,
-  watchers: [
-    esbuild: {Esbuild, :install_and_run, [:firmowid, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:firmowid, ~w(--watch)]}
-  ],
-  live_reload: [
-    patterns: [
-      ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
-      ~r"priv/gettext/.*(po)$",
-      ~r"lib/firmowid_web/(controllers|live|components)/.*(ex|heex)$"
-    ]
-  ]
-
-config :firmowid, FirmowidWeb.Endpoint,
-  secret_key_base: "REMOVED_PHOENIX_SECRET_KEY_BASE"
 
 config :firmowid, :ksef, base_url: "https://api-test.ksef.mf.gov.pl/v2/"
 

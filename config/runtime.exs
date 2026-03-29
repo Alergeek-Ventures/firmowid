@@ -2,6 +2,8 @@ import Config
 
 # Only load dotenv in dev/test when .env files exist (skip in CI)
 # Load both .env and .env.local (worktree-specific overrides)
+alias FirmowidWeb.Core.Endpoint
+
 if config_env() in [:dev, :test] and File.exists?(".env") do
   files = if File.exists?(".env.local"), do: [".env", ".env.local"], else: [".env"]
   Dotenv.load!(files)
@@ -24,7 +26,7 @@ end
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
 if System.get_env("PHX_SERVER") do
-  config :firmowid, FirmowidWeb.Endpoint, server: true
+  config :firmowid, Endpoint, server: true
 end
 
 # import_config/1 is not enabled for this configuration file.
@@ -59,12 +61,12 @@ vault_key =
     "CLOAK_VAULT_KEY" |> System.get_env(dev_vault_key) |> Base.decode64!()
   end
 
+config :firmowid, Endpoint, secret_key_base: secret_key_base
+
 config :firmowid, Firmowid.Vault,
   ciphers: [
     default: {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: vault_key}
   ]
-
-config :firmowid, FirmowidWeb.Endpoint, secret_key_base: secret_key_base
 
 config :firmowid,
   go_limitless_secret_id: System.get_env("GO_LIMITLESS_SECRET_ID"),
@@ -177,7 +179,7 @@ end
 
 # Phoenix HTTP port - only override if PORT is set (worktree)
 if config_env() == :dev and System.get_env("PORT") do
-  config :firmowid, FirmowidWeb.Endpoint, http: [port: String.to_integer(System.get_env("PORT"))]
+  config :firmowid, Endpoint, http: [port: String.to_integer(System.get_env("PORT"))]
 end
 
 # LiveDebugger port - only override if DEBUGGER_PORT is set (worktree)
@@ -224,7 +226,7 @@ if config_env() == :prod do
 
   # PHX_HOST depends on the machine you deploy to, so you need to set it in runtime
   # also only production uses https
-  config :firmowid, FirmowidWeb.Endpoint,
+  config :firmowid, Endpoint,
     url: [
       host: System.get_env("PHX_HOST") || raise("PHX_HOST environment variable is not set"),
       port: 443,

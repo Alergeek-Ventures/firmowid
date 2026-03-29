@@ -1,0 +1,319 @@
+<.limit_warning check_result={@cost_invoices_limit_check} type={:cost_invoices} />
+
+<div class="mt-16 mb-16 flex flex-col justify-center items-center gap-16 text-center md:hidden">
+  <.icon name="hero-document-magnifying-glass-solid" class="w-16 h-16" />
+  <div class="flex flex-col gap-4">
+    <p class="font-bold">Podgląd dokumentów nie jest aktualnie dostępny na urządzeniu mobilnym</p>
+    <p>Zeskanuj dokument naciskając przycisk poniżej, a będzie on dostępny na
+      komputerze.</p>
+  </div>
+</div>
+
+<div class={[
+  "flex max-md:justify-center justify-between py-3",
+  "sticky top-navbar bg-lightGreyBg z-10"
+]}>
+  <div class="flex items-center gap-4">
+    <.date_picker
+      id="month"
+      active_months={@active_months}
+      selected_date={@params.month}
+      class="w-48 gap-2"
+    />
+
+    <button
+      id="open-search"
+      phx-click="open-search"
+      phx-hook="Tippy"
+      data-tippy-content="Szukaj faktur"
+      class="flex items-center justify-center w-10 h-10 rounded-lg
+              border border-transparent bg-greyButtonBg hover:bg-blueText hover:text-white
+              transition-colors text-darkGrey"
+    >
+      <.icon name="hero-magnifying-glass" class="w-5 h-5" />
+    </button>
+  </div>
+
+  <div phx-drop-target={@uploads.file.ref} class="flex flex-row gap-4">
+    <%= if @invoicing_entries != [] do %>
+      <.live_component
+        id="download-component"
+        module={FirmowidWeb.Invoicing.Components.DownloadModal}
+        month={@params.month}
+      />
+    <% end %>
+    <.link
+      :if={Bodyguard.permit?(Firmowid.SalesInvoices, :create_sales_invoice, @current_user)}
+      navigate={~p"/sprzedazowe"}
+      id="sales-invoice-link"
+      data-tippy-content="Wystaw fakturę sprzedażową"
+      phx-hook="Tippy"
+      class={
+        button_styles(%{
+          class: "relative flex flex-row gap-4 items-center justify-center
+                  rounded-lg px-3 py-2 max-md:hidden bg-greyButtonBg border-greyButtonBg
+                  hover:border-blueText hover:bg-blueText hover:text-white
+                  border transition-colors text-black"
+        })
+      }
+    >
+      <.icon name="hero-document-duplicate" class="w-5 h-5" />
+      <span class="max-xl:hidden">
+        Wystaw fakturę
+      </span>
+    </.link>
+    <form
+      :if={Bodyguard.permit?(Firmowid.Invoicing, :upload, @current_user)}
+      id="upload-form"
+      phx-change="upload"
+      phx-submit="upload"
+    >
+      <div class="hidden">
+        <.live_file_input upload={@uploads.file} />
+      </div>
+      <label
+        for={@uploads.file.ref}
+        class={
+          button_styles(%{
+            class: [
+              "relative flex flex-row  items-center justify-between",
+              "border box-border rounded-lg px-3 py-2 border-black",
+              "hover:border-orangeText hover:bg-orangeText hover:text-white",
+              "transition-colors max-md:h-16 max-md:w-64",
+              "max-md:gap-4 text-md font-normal max-lg:w-auto w-44",
+              @is_month_closed && @params.filter == :unmatched && "!bg-transparent !text-black"
+            ]
+          })
+        }
+      >
+        <%= if @currently_uploading_count > 0 or @processing_blobs_count > 0 do %>
+          <span
+            id="upload-count-indicator"
+            phx-hook="Tippy"
+            data-tippy-content="Pliki są przetwarzane i za kilka chwil będą dostępne w Firmowidzie"
+            class="absolute overflow-hidden flex items-center justify-center -top-3 -right-3 h-7 w-7 bg-black rounded-full"
+          >
+            <span class="absolute animate-spin bg-gradient-to-r from-[#727272] to-black block w-full h-full" />
+            <span class="bg-black flex items-center justify-center w-6 h-6 z-10 rounded-full">
+              <%= if @currently_uploading_count > 0 do %>
+                <.icon name="hero-arrow-up-circle-solid" class="text-white leading-none w-6 h-6" />
+              <% else %>
+                <%= case @processing_blobs_count do %>
+                  <% 1 -> %>
+                    <.icon
+                      name="hero-arrow-up-circle-solid"
+                      class="text-white leading-none w-6 h-6"
+                    />
+                  <% 0 -> %>
+                  <% _ -> %>
+                    <span>{@processing_blobs_count}</span>
+                <% end %>
+              <% end %>
+            </span>
+          </span>
+        <% end %>
+        <.icon name="hero-plus-micro" class="w-6 h-6" />
+        <span class="block md:hidden lg:block sm:grow sm:text-center">
+          Dodaj fakturę
+        </span>
+      </label>
+    </form>
+  </div>
+</div>
+<.live_component
+  module={FirmowidWeb.Invoicing.Components.SearchOverlay}
+  id="invoice-search-overlay"
+  show_search={@show_search}
+  search_query={@search_query}
+  search_results={@search_results}
+/>
+
+<div class={[
+  !@is_month_touched && "hidden",
+  "flex flex-row gap-4 items-center max-md:hidden",
+  "mt-4 mb-3"
+]}>
+  <%= for {filter, label} <- [
+        {:invoices, "Faktury"},
+        {:transactions, "Transakcje"},
+    ] do %>
+    <.button
+      class={[
+        @params.filter == filter && "!bg-darkGrey !text-white !rounded-lg",
+        "relative text-darkGrey text-center bg-lightGreyBg",
+        "hover:bg-greyButtonBg py-1 px-3 text-sm font-normal leading-6",
+        "flex items-center justify-center uppercase border-none text-sm"
+      ]}
+      phx-click="change-filter"
+      phx-value-filter={filter}
+    >
+      {label}
+    </.button>
+  <% end %>
+
+  <.button
+    class={[
+      @is_month_closed && "!text-lightGreyBg",
+      @params.filter == :unmatched && "!bg-darkGrey !text-white",
+      @params.filter == :unmatched && @is_month_closed &&
+        "!text-black !bg-greenBg !border-greenText",
+      "relative text-darkGrey text-center bg-lightGreyBg",
+      "hover:bg-greyButtonBg py-1 px-3 text-sm leading-6 font-normal",
+      "flex items-center justify-center uppercase border-none text-sm"
+    ]}
+    phx-click="change-filter"
+    phx-value-filter={:unmatched}
+    id="unmatched-filter"
+    phx-hook="Confetti"
+    data-confetti-enabled={if @is_month_closed, do: "true", else: "false"}
+  >
+    <%= if @pending_invoicing_entries_count != 0 do %>
+      <span class={[
+        "absolute overflow-hidden flex items-center justify-center",
+        "-top-3 left-full -translate-x-3 px-2 rounded-full",
+        "bg-orangeBg text-orangeText border-lightGreyBg border-2"
+      ]}>
+        {@pending_invoicing_entries_count}
+      </span>
+    <% end %>
+    <%= if @is_month_closed do %>
+      Miesiąc zamknięty
+    <% else %>
+      Nieprzypisane
+    <% end %>
+  </.button>
+
+  <.switch
+    :if={@params.filter in [:transactions, :all, :unmatched]}
+    class="ml-auto"
+    label="Grupuj według kontrahenta"
+    field={to_form(%{"group_by_party" => @params.group_by_party})[:group_by_party]}
+    phx-click="toggle-grouping"
+  />
+</div>
+
+<div
+  :if={Bodyguard.permit?(Firmowid.Invoicing, :read, @current_user)}
+  class="mt-2 flex flex-col gap-4 max-md:hidden"
+>
+  <%= if @is_month_closed and @params.filter == :unmatched do %>
+    <.live_component
+      id="month-closed-zero-state"
+      module={FirmowidWeb.Invoicing.Components.MonthClosedZeroState}
+      month={@params.month}
+    />
+  <% else %>
+    <FirmowidWeb.Invoicing.Components.EntriesTable.table
+      mode={@params.filter}
+      invoicing_entries={@invoicing_entries}
+      has_connected_bank_account={@has_connected_bank_account}
+    />
+  <% end %>
+</div>
+
+<div
+  :if={Bodyguard.permit?(Firmowid.Invoicing, :upload, @current_user)}
+  id="file-drop-overlay"
+  class="fixed top-[10lvw] left-[5lvw] w-[90lvw] h-[80lvh] bg-[#CEE6E666]
+  rounded-lg items-center justify-center z-20 opacity-0
+  transition-opacity hidden"
+  phx-hook="FileUploadDragNDrop"
+  phx-drop-target={@uploads.file.ref}
+>
+  <div class="absolute top-0 left-0 border-2 border-blueBg rounded-lg w-full
+    h-full opacity-100" />
+  <div class="flex flex-col items-center justify-center gap-8 bg-blueText
+    text-white
+    p-4 py-8 rounded-xl">
+    <.icon name="hero-cloud-arrow-up" class="w-16 h-16" />
+    <p class="text-xl opacity-100 text-center max-w-[25lvw]">
+      Przeciągnij faktury, aby załadować je do Firmowida.
+    </p>
+    <p class="text-sm opacity-80 text-center max-w-[25lvw]">
+      (max 50 plików, PDF, JPG oraz PNG)
+    </p>
+  </div>
+</div>
+
+<.modal class="max-w-4xl" id="tutorial-modal" on_cancel={JS.push("hide-tutorial-modal")}>
+  <div class="flex flex-col gap-8 p-4">
+    <h3 class="text-lg font-semibold">
+      Czas na ostatni krok - <p class="inline text-greenText">wgraj faktury</p>!
+    </h3>
+    <p>
+      Twoje transakcje (do 3 miesięcy wstecz) są już widoczne w Firmowidzie.
+      Teraz wgraj swoje faktury, aby program mógł je dopasować do transakcji. <br />
+      <br /> Możesz to zrobić:
+    </p>
+    <div class="grid grid-cols-3 text-center">
+      <div class="flex flex-col  items-center gap-2">
+        <svg
+          width="36"
+          height="40"
+          viewBox="0 0 36 40"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M12.6667 26.6668V22.6668M12.6667 22.6668V9.3335C12.6667 8.62625 12.9476 7.94797 13.4477 7.44788C13.9478 6.94778 14.6261 6.66683 15.3333 6.66683C16.0406 6.66683 16.7189 6.94778 17.219 7.44788C17.719 7.94797 18 8.62625 18 9.3335V20.0002H26.9413C29.368 20.0002 31.3333 21.9655 31.3333 24.3922V26.6668C31.3333 29.8494 30.0691 32.9017 27.8186 35.1521C25.5682 37.4025 22.5159 38.6668 19.3333 38.6668H18C15.171 38.6668 12.4579 37.543 10.4575 35.5426C8.45714 33.5422 7.33333 30.8291 7.33333 28.0002C7.33333 26.5857 7.89524 25.2291 8.89543 24.2289C9.89562 23.2287 11.2522 22.6668 12.6667 22.6668ZM22 14.6668H27.3333C29.1014 14.6668 30.7971 13.9644 32.0474 12.7142C33.2976 11.464 34 9.76827 34 8.00016C34 6.23205 33.2976 4.53636 32.0474 3.28612C30.7971 2.03587 29.1014 1.3335 27.3333 1.3335H8.66667C6.89856 1.3335 5.20286 2.03587 3.95262 3.28612C2.70238 4.53636 2 6.23205 2 8.00016C2 9.76827 2.70238 11.464 3.95262 12.7142C5.20286 13.9644 6.89856 14.6668 8.66667 14.6668"
+            stroke="#3B7777"
+            stroke-width="2.66667"
+          />
+        </svg>
+
+        <p>za pomocą przycisku <br /> <b> + Dodaj dokument</b> w prawym górnym rogu</p>
+      </div>
+      <div class="flex flex-col  items-center gap-2">
+        <svg
+          width="40"
+          height="37"
+          viewBox="0 0 40 37"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M5.45453 23.4529C4.10369 22.0728 3.08465 20.4033 2.47459 18.571C1.86453 16.7387 1.67945 14.7916 1.93337 12.8771C2.18728 10.9627 2.87354 9.13112 3.94016 7.52119C5.00677 5.91125 6.42577 4.56515 8.08968 3.58485C9.75359 2.60456 11.6188 2.01577 13.5439 1.86308C15.4691 1.7104 17.4038 1.99783 19.2014 2.7036C20.999 3.40936 22.6124 4.51496 23.9195 5.93665C25.2265 7.35833 26.1929 9.05882 26.7454 10.9093H30C31.7555 10.9091 33.4645 11.4735 34.8745 12.5192C36.2846 13.5649 37.3209 15.0363 37.8305 16.7162C38.34 18.3961 38.2958 20.1954 37.7042 21.8482C37.1127 23.501 36.0052 24.9197 34.5454 25.8948M20 18.182V34.5457"
+            stroke="#3B7777"
+            stroke-width="2.72727"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M27.2727 25.4544L20 18.1816L12.7273 25.4544"
+            stroke="#3B7777"
+            stroke-width="2.72727"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <p class="mt-1"><b>przeciągając pliki</b> bezpośrednio na stronę</p>
+      </div>
+      <div class="flex flex-col justify-between items-center gap-2">
+        <svg
+          width="38"
+          height="34"
+          viewBox="0 0 38 34"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M3.99996 33.9998C3.08329 33.9998 2.29885 33.6737 1.64663 33.0215C0.994404 32.3693 0.667737 31.5843 0.666626 30.6665V10.6665C0.666626 9.74984 0.993293 8.9654 1.64663 8.31318C2.29996 7.66095 3.0844 7.33429 3.99996 7.33318H9.24996L11.3333 5.08318C11.6388 4.74984 12.0072 4.48595 12.4383 4.29151C12.8694 4.09707 13.3205 3.99984 13.7916 3.99984H20.6666C21.1388 3.99984 21.535 4.15984 21.855 4.47984C22.175 4.79984 22.3344 5.1954 22.3333 5.66651C22.3322 6.13762 22.1722 6.53373 21.8533 6.85484C21.5344 7.17595 21.1388 7.3354 20.6666 7.33318H13.7916L10.75 10.6665H3.99996V30.6665H30.6666V17.3332C30.6666 16.861 30.8266 16.4654 31.1466 16.1465C31.4666 15.8276 31.8622 15.6676 32.3333 15.6665C32.8044 15.6654 33.2005 15.8254 33.5216 16.1465C33.8427 16.4676 34.0022 16.8632 34 17.3332V30.6665C34 31.5832 33.6738 32.3682 33.0216 33.0215C32.3694 33.6748 31.5844 34.001 30.6666 33.9998H3.99996ZM30.6666 7.33318H29C28.5277 7.33318 28.1322 7.17318 27.8133 6.85318C27.4944 6.53318 27.3344 6.13762 27.3333 5.66651C27.3322 5.1954 27.4922 4.79984 27.8133 4.47984C28.1344 4.15984 28.53 3.99984 29 3.99984H30.6666V2.33318C30.6666 1.86095 30.8266 1.4654 31.1466 1.14651C31.4666 0.827621 31.8622 0.667621 32.3333 0.66651C32.8044 0.665399 33.2005 0.825399 33.5216 1.14651C33.8427 1.46762 34.0022 1.86318 34 2.33318V3.99984H35.6666C36.1388 3.99984 36.535 4.15984 36.855 4.47984C37.175 4.79984 37.3344 5.1954 37.3333 5.66651C37.3322 6.13762 37.1722 6.53373 36.8533 6.85484C36.5344 7.17595 36.1388 7.3354 35.6666 7.33318H34V8.99984C34 9.47206 33.84 9.86818 33.52 10.1882C33.2 10.5082 32.8044 10.6676 32.3333 10.6665C31.8622 10.6654 31.4666 10.5054 31.1466 10.1865C30.8266 9.86762 30.6666 9.47206 30.6666 8.99984V7.33318ZM17.3333 28.1665C19.4166 28.1665 21.1877 27.4376 22.6466 25.9798C24.1055 24.5221 24.8344 22.751 24.8333 20.6665C24.8322 18.5821 24.1033 16.8115 22.6466 15.3548C21.19 13.8982 19.4188 13.1687 17.3333 13.1665C15.2477 13.1643 13.4772 13.8937 12.0216 15.3548C10.5661 16.816 9.83663 18.5865 9.83329 20.6665C9.83329 22.751 10.5638 24.5221 12.0216 25.9798C13.4794 27.4376 15.2494 28.1665 17.3333 28.1665Z"
+            fill="#3B7777"
+          />
+        </svg>
+
+        <p class="mt-1">
+          <b>robiąc zdjęcie</b> <br /> wejdź na firmowid.pl na swoim telefonie
+        </p>
+      </div>
+    </div>
+    <.button
+      phx-click="hide-tutorial-modal"
+      phx-disable-with="Zamykam..."
+      class="mt-4 ml-auto"
+      color="green"
+    >
+      Zamknij
+    </.button>
+  </div>
+</.modal>
