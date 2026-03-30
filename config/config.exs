@@ -100,6 +100,7 @@ config :firmowid,
   generators: [timestamp_type: :utc_datetime],
   ash_domains: [
     Firmowid.Ash.Analysis,
+    Firmowid.Ash.Blobs,
     Firmowid.Ash.Core,
     Firmowid.Ash.Finances,
     Firmowid.Ash.Payroll,

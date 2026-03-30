@@ -12,8 +12,8 @@ defmodule Firmowid.Accounts do
   alias Firmowid.Accounts.User
   alias Firmowid.Accounts.UserNotifier
   alias Firmowid.Accounts.UserToken
+  alias Firmowid.Ash.Blobs.Blob, as: AshBlob
   alias Firmowid.Billing
-  alias Firmowid.Blobs
   alias Firmowid.Repo
 
   def authorize(:create_organization_invite, %{role: :admin}, _), do: true
@@ -761,7 +761,12 @@ defmodule Firmowid.Accounts do
         {:ok, new_org} = update_organization(organization, %{avatar_blob_id: blob_id})
 
         if organization.avatar_blob_id do
-          Blobs.delete_blob(organization.avatar_blob_id)
+          # TODO: replace authorize?: false + actor: %{} with system actor once available
+          AshBlob.destroy_blob!(organization.avatar_blob_id,
+            tenant: organization.id,
+            authorize?: false,
+            actor: %{}
+          )
         end
 
         {:ok, new_org}
@@ -774,7 +779,7 @@ defmodule Firmowid.Accounts do
     avatar_url =
       case organization.avatar_blob_id do
         nil -> nil
-        id -> Blobs.get_blob_url(id)
+        id -> AshBlob.get_url!(id, tenant: organization.id, authorize?: false, actor: %{})
       end
 
     Map.put(organization, :avatar_url, avatar_url)
@@ -1059,7 +1064,12 @@ defmodule Firmowid.Accounts do
         {:ok, _new_user} = result = update_user_profile(user, %{avatar_blob_id: blob_id})
 
         if user.avatar_blob_id do
-          Blobs.delete_blob(user.avatar_blob_id)
+          # TODO: replace authorize?: false + actor: %{} with system actor once available
+          AshBlob.destroy_blob!(user.avatar_blob_id,
+            tenant: user.organization_id,
+            authorize?: false,
+            actor: %{}
+          )
         end
 
         result
@@ -1080,7 +1090,7 @@ defmodule Firmowid.Accounts do
     avatar_url =
       case user.avatar_blob_id do
         nil -> nil
-        blob_id -> Blobs.get_blob_url(blob_id)
+        blob_id -> AshBlob.get_url!(blob_id, tenant: user.organization_id, authorize?: false, actor: %{})
       end
 
     Map.put(user, :avatar_url, avatar_url)

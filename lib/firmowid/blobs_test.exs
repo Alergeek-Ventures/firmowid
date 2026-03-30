@@ -3,20 +3,22 @@ defmodule Firmowid.BlobsTest do
 
   import Firmowid.AccountsFixtures
 
-  alias Firmowid.Blobs
-  alias Firmowid.Blobs.Blob
+  alias Firmowid.Ash.Blobs.Blob, as: AshBlob
+  alias Firmowid.Repo
 
-  describe "create_blob/3" do
+  # TODO: replace authorize?: false with system actor once available
+  defp blob_opts, do: [tenant: Repo.get_org_id(), authorize?: false, actor: %{}]
+
+  describe "create_blob" do
     test "uploads file to S3 and creates a blob record" do
       user = user_fixture()
 
       {:ok, path} = Briefly.create()
       File.write!(path, "hello from blob test")
 
-      assert {:ok, %Blob{} = blob} = Blobs.create_blob(path, "text/plain", "test.txt")
+      assert {:ok, blob} = AshBlob.create_blob(path, "text/plain", "test.txt", blob_opts())
 
       assert blob.original_filename == "test.txt"
-      assert blob.organization_id == user.organization_id
       assert blob.blob_path =~ ~r"^#{user.organization_id}/.+\.txt$"
       assert blob.blob_checksum
     end
@@ -34,50 +36,53 @@ defmodule Firmowid.BlobsTest do
         |> Base.encode16()
         |> String.downcase()
 
-      assert {:ok, %Blob{blob_checksum: ^expected_checksum}} =
-               Blobs.create_blob(path, "application/pdf", "invoice.pdf")
+      assert {:ok, blob} = AshBlob.create_blob(path, "application/pdf", "invoice.pdf", blob_opts())
+      assert blob.blob_checksum == expected_checksum
     end
   end
 
-  describe "get_blob!/1" do
+  describe "by_id" do
     test "retrieves an uploaded blob" do
       _user = user_fixture()
 
       {:ok, path} = Briefly.create()
       File.write!(path, "get blob test")
 
-      {:ok, blob} = Blobs.create_blob(path, "text/plain", "get-me.txt")
+      {:ok, blob} = AshBlob.create_blob(path, "text/plain", "get-me.txt", blob_opts())
 
-      fetched = Blobs.get_blob!(blob.id)
+      fetched = AshBlob.by_id!(blob.id, blob_opts())
       assert fetched.id == blob.id
       assert fetched.original_filename == "get-me.txt"
     end
   end
 
-  describe "delete_blob/1" do
+  describe "destroy_blob" do
     test "deletes blob record and S3 object" do
       _user = user_fixture()
 
       {:ok, path} = Briefly.create()
       File.write!(path, "delete me")
 
-      {:ok, blob} = Blobs.create_blob(path, "text/plain", "delete-me.txt")
+      {:ok, blob} = AshBlob.create_blob(path, "text/plain", "delete-me.txt", blob_opts())
 
-      assert {:ok, _} = Blobs.delete_blob(blob.id)
-      assert_raise Ecto.NoResultsError, fn -> Blobs.get_blob!(blob.id) end
+      assert {:ok, _} = AshBlob.destroy_blob(blob.id, blob_opts())
+
+      assert_raise Ash.Error.Invalid, fn ->
+        AshBlob.by_id!(blob.id, blob_opts())
+      end
     end
   end
 
-  describe "get_blob_url/1" do
+  describe "url calculation" do
     test "returns a presigned URL for the blob" do
       _user = user_fixture()
 
       {:ok, path} = Briefly.create()
       File.write!(path, "url test")
 
-      {:ok, blob} = Blobs.create_blob(path, "text/plain", "url-test.txt")
+      {:ok, blob} = AshBlob.create_blob(path, "text/plain", "url-test.txt", blob_opts())
 
-      url = Blobs.get_blob_url(blob.id)
+      url = AshBlob.get_url!(blob.id, blob_opts())
       assert url =~ "firmowid-uploads"
       assert url =~ blob.blob_path
       assert url =~ "X-Amz-Signature"

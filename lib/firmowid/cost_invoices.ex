@@ -4,10 +4,11 @@ defmodule Firmowid.CostInvoices do
 
   import Ecto.Query, warn: false
 
+  alias Ash.Error.Unknown
+  alias Ash.Error.Unknown.UnknownError
   alias Ecto.Multi
+  alias Firmowid.Ash.Blobs.Blob, as: AshBlob
   alias Firmowid.Billing
-  alias Firmowid.Blobs
-  alias Firmowid.Blobs.Blob
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.CostInvoices.CostInvoicesTransactions
   alias Firmowid.CostInvoices.InboundEmail
@@ -127,7 +128,7 @@ defmodule Firmowid.CostInvoices do
     )
     |> Repo.all()
     |> Repo.preload(:blob)
-    |> Enum.map(&Map.put(&1, :file_url, Blobs.get_blob_url(&1.blob_id)))
+    |> Enum.map(&Map.put(&1, :file_url, AshBlob.get_url!(&1.blob_id, blob_opts())))
   end
 
   @doc """
@@ -192,13 +193,13 @@ defmodule Firmowid.CostInvoices do
     blob_url =
       case cost_invoice.blob do
         nil -> nil
-        _ -> Blobs.get_blob_url(cost_invoice.blob_id)
+        _ -> AshBlob.get_url!(cost_invoice.blob_id, blob_opts())
       end
 
     correction_invoices =
       Enum.map(cost_invoice.correction_invoices, fn
         %{blob: nil} = correction -> correction
-        correction -> %{correction | blob_url: Blobs.get_blob_url(correction.blob_id)}
+        correction -> %{correction | blob_url: AshBlob.get_url!(correction.blob_id, blob_opts())}
       end)
 
     %{
@@ -216,8 +217,9 @@ defmodule Firmowid.CostInvoices do
 
     %{
       cost_invoice
-      | blob_url: Blobs.get_blob_url(cost_invoice.blob_id),
-        correction_invoices: Enum.map(cost_invoice.correction_invoices, &%{&1 | blob_url: Blobs.get_blob_url(&1.blob_id)})
+      | blob_url: AshBlob.get_url!(cost_invoice.blob_id, blob_opts()),
+        correction_invoices:
+          Enum.map(cost_invoice.correction_invoices, &%{&1 | blob_url: AshBlob.get_url!(&1.blob_id, blob_opts())})
     }
   end
 
@@ -251,7 +253,7 @@ defmodule Firmowid.CostInvoices do
     end
 
     blob_id = cost_invoice.blob_id
-    Blobs.delete_blob(blob_id)
+    AshBlob.destroy_blob!(blob_id, blob_opts())
 
     broadcast_cost_invoice_list_updated(organization_id)
   end
@@ -285,25 +287,49 @@ defmodule Firmowid.CostInvoices do
 
   defp create_cost_invoice_job(upload_path, content_type, original_filename, inbound_email_id) do
     Repo.transaction(fn ->
-      case Blobs.create_blob(upload_path, content_type, original_filename) do
+      case AshBlob.create_blob(upload_path, content_type, original_filename, blob_opts()) do
         {:ok, blob} ->
           enqueue_extraction_job(blob, inbound_email_id)
           broadcast_cost_invoice_list_updated(blob.organization_id)
           blob
 
-        {:error,
-         %Ecto.Changeset{
-           changes: %{blob_checksum: blob_checksum},
-           errors: [blob_checksum: {"has already been taken", _}]
-         }} ->
-          Repo.rollback({:blob_already_exists, blob_checksum})
-
-        {:error, reason} ->
-          Logger.error("Failed to upload cost invoice: #{inspect(reason)}")
-          Repo.rollback(:failure)
+        {:error, error} ->
+          handle_blob_create_error(error)
       end
     end)
   end
+
+  defp handle_blob_create_error(%Unknown{} = error) do
+    if blob_already_exists_error?(error) do
+      Repo.rollback({:blob_already_exists, nil})
+    else
+      Logger.error("Failed to upload cost invoice: #{inspect(error)}")
+      Repo.rollback(:failure)
+    end
+  end
+
+  defp handle_blob_create_error(reason) do
+    Logger.error("Failed to upload cost invoice: #{inspect(reason)}")
+    Repo.rollback(:failure)
+  end
+
+  defp blob_already_exists_error?(%Unknown{errors: errors}) do
+    Enum.any?(errors, fn
+      %UnknownError{error: %Ecto.ConstraintError{constraint: constraint}} ->
+        String.contains?(constraint, "blob_checksum")
+
+      %UnknownError{error: %Ecto.Changeset{errors: changeset_errors}} ->
+        Keyword.has_key?(changeset_errors, :blob_checksum)
+
+      %UnknownError{error: error} when is_binary(error) ->
+        String.contains?(error, "blob_checksum") and String.contains?(error, "has already been taken")
+
+      _ ->
+        false
+    end)
+  end
+
+  defp blob_already_exists_error?(_), do: false
 
   defp enqueue_extraction_job(blob, inbound_email_id) do
     %{name: "extract_cost_invoice_metadata", blob_id: blob.id, organization_id: blob.organization_id}
@@ -497,16 +523,16 @@ defmodule Firmowid.CostInvoices do
     with {:ok, xml} <- Ksef.get_invoice_xml_by_ksef_number(ksef_number),
          {:ok, path} <- Briefly.create(extname: ".xml"),
          :ok <- File.write(path, xml),
-         {:ok, blob} <- Blobs.create_blob(path, "application/xml", "#{ksef_number}.xml") do
+         {:ok, blob} <- AshBlob.create_blob(path, "application/xml", "#{ksef_number}.xml", blob_opts()) do
       try do
         invoice
         |> CostInvoice.changeset(%{blob_id: blob.id})
         |> Repo.update!()
         |> Repo.preload(:blob, force: true)
-        |> Map.put(:blob_url, Blobs.get_blob_url(blob.id))
+        |> Map.put(:blob_url, AshBlob.get_url!(blob.id, blob_opts()))
       rescue
         error ->
-          Blobs.delete_blob(blob.id)
+          AshBlob.destroy_blob!(blob.id, blob_opts())
           reraise error, __STACKTRACE__
       end
     else
@@ -517,4 +543,8 @@ defmodule Firmowid.CostInvoices do
   end
 
   def hydrate_invoice_with_fa3_blob(%CostInvoice{} = invoice), do: invoice
+
+  # TODO: replace authorize?: false with system actor once available
+  # TODO: replace authorize?: false + actor: %{} with system actor once available
+  defp blob_opts, do: [tenant: Repo.get_org_id(), authorize?: false, actor: %{}]
 end

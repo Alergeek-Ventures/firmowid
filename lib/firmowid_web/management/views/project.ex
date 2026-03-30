@@ -237,15 +237,17 @@ defmodule FirmowidWeb.Management.Views.Project do
 
   defp load_project!(id, scope) do
     project = AshProject.get!(id, scope: scope)
-    users = Enum.map(project.users, &resolve_avatar/1)
+    users = Enum.map(project.users, &resolve_avatar(&1, scope))
     %{project | users: users}
   end
 
-  defp resolve_avatar(user) do
+  defp resolve_avatar(user, scope) do
+    alias Firmowid.Ash.Blobs.Blob, as: AshBlob
+
     avatar_url =
       case Map.get(user, :avatar_blob_id) do
         nil -> nil
-        blob_id -> Firmowid.Blobs.get_blob_url(blob_id)
+        blob_id -> AshBlob.get_url!(blob_id, scope: scope)
       end
 
     Map.put(user, :avatar_url, avatar_url)

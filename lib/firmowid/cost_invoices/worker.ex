@@ -5,7 +5,7 @@ defmodule Firmowid.CostInvoices.Worker do
     unique: true,
     max_attempts: 2
 
-  alias Firmowid.Blobs
+  alias Firmowid.Ash.Blobs.Blob, as: AshBlob
   alias Firmowid.CostInvoices
   alias Firmowid.CostInvoices.OpenAIEnrichment
   alias Firmowid.ReductoApiClient
@@ -141,15 +141,18 @@ defmodule Firmowid.CostInvoices.Worker do
         Firmowid.Repo.put_org_id(organization_id)
         inbound_email_id = Map.get(args, "inbound_email_id")
 
+        # TODO: replace authorize?: false + actor: %{} with system actor once available
+        blob_opts = [tenant: organization_id, authorize?: false, actor: %{}]
+
         try do
-          extract_cost_invoice_metadata(blob_id, organization_id, inbound_email_id)
+          extract_cost_invoice_metadata(blob_id, organization_id, inbound_email_id, blob_opts)
         rescue
           error ->
             Logger.error("Failed to extract cost invoice metadata for blob #{blob_id}: #{inspect(error)}")
 
             # on failure, clean up dangling blob from DB and S3
-            blob = Blobs.get_blob!(blob_id)
-            Blobs.delete_blob(blob_id)
+            blob = AshBlob.by_id!(blob_id, blob_opts)
+            AshBlob.destroy_blob!(blob_id, blob_opts)
 
             CostInvoices.broadcast_cost_invoice_failed_to_process(
               blob.original_filename,
@@ -166,9 +169,8 @@ defmodule Firmowid.CostInvoices.Worker do
     end
   end
 
-  defp extract_cost_invoice_metadata(blob_id, organization_id, inbound_email_id) do
-    # Organization context already set in perform/1, so get_blob_url uses it automatically
-    blob_url = Blobs.get_blob_url(blob_id)
+  defp extract_cost_invoice_metadata(blob_id, organization_id, inbound_email_id, blob_opts) do
+    blob_url = AshBlob.get_url!(blob_id, blob_opts)
 
     {:ok, extracted_metadata} =
       ReductoApiClient.extract(
@@ -182,7 +184,7 @@ defmodule Firmowid.CostInvoices.Worker do
         create_cost_invoice(extracted_metadata, blob_id, organization_id, inbound_email_id)
 
       _invalid ->
-        handle_invalid_document(blob_id, organization_id)
+        handle_invalid_document(blob_id, organization_id, blob_opts)
     end
 
     :ok
@@ -207,9 +209,9 @@ defmodule Firmowid.CostInvoices.Worker do
     CostInvoices.create_cost_invoice(extracted_metadata)
   end
 
-  defp handle_invalid_document(blob_id, organization_id) do
-    blob = Blobs.get_blob!(blob_id)
-    Blobs.delete_blob(blob_id)
+  defp handle_invalid_document(blob_id, organization_id, blob_opts) do
+    blob = AshBlob.by_id!(blob_id, blob_opts)
+    AshBlob.destroy_blob!(blob_id, blob_opts)
 
     CostInvoices.broadcast_invalid_document_uploaded(blob.original_filename, organization_id)
   end

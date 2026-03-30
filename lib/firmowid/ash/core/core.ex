@@ -9,7 +9,6 @@ defmodule Firmowid.Ash.Core do
   use Ash.Domain
 
   resources do
-    resource Firmowid.Ash.Core.Blob
     resource Firmowid.Ash.Core.Counterparty
     resource Firmowid.Ash.Core.Organization
     resource Firmowid.Ash.Core.User

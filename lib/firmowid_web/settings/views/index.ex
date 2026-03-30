@@ -9,11 +9,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Accounts
   alias Firmowid.Accounts.Organization
   alias Firmowid.Analytics
+  alias Firmowid.Ash.Blobs.Blob, as: AshBlob
   alias Firmowid.Ash.Finances.BankAccount, as: AshBankAccount
   alias Firmowid.BankData
   alias Firmowid.BankData.ApiClient
   alias Firmowid.Billing
-  alias Firmowid.Blobs
   alias Firmowid.Ksef
   alias FirmowidWeb.Core.Endpoint
 
@@ -152,8 +152,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
       )
     end
 
+    scope = socket.assigns.ash_scope
+
     case consume_uploaded_entry(socket, entry, fn %{path: path} ->
-           {:ok, Blobs.create_blob(path, entry.client_type, entry.client_name)}
+           AshBlob.create_blob(path, entry.client_type, entry.client_name, scope: scope)
          end) do
       {:ok, blob} ->
         handle_avatar_upload(name, blob.id, socket)
