@@ -27,7 +27,7 @@ defmodule Firmowid.Ash.Timetracker.ProjectCosts do
   subquery, rounds each user's hours up, and sums. Returns `nil` when no
   matching data exists.
   """
-  @spec compute_project_total_cost(Ash.UUID.t(), Date.t()) :: Decimal.t() | nil
+  @spec compute_project_total_cost(Ash.UUID.t(), Date.t()) :: Decimal.t()
   def compute_project_total_cost(project_id, %Date{} = date) do
     organization_id = Firmowid.Repo.get_org_id()
 
@@ -59,21 +59,21 @@ defmodule Firmowid.Ash.Timetracker.ProjectCosts do
         select: fragment("SUM(? * CEIL(? / 3600.0))::numeric", us.hourly_rate, ss.time_worked)
       ),
       skip_organization_id: true
-    )
+    ) || Decimal.new(0)
   end
 
   @doc """
   Total cost across all months for a project. Sums month-by-month costs.
   """
-  @spec compute_project_total_cost_all_time(Ash.UUID.t(), map()) :: Decimal.t() | nil
+  @spec compute_project_total_cost_all_time(Ash.UUID.t(), map()) :: Decimal.t()
   def compute_project_total_cost_all_time(project_id, context) do
     ash_opts = [actor: context.actor, tenant: context.tenant]
 
     project_id
     |> read_months_with_sessions_by_project(ash_opts)
-    |> Enum.reduce(nil, fn month_date, acc ->
+    |> Enum.reduce(Decimal.new(0), fn month_date, acc ->
       month_cost = compute_project_total_cost(project_id, month_date)
-      add_nullable_decimals(acc, month_cost)
+      Decimal.add(acc, month_cost)
     end)
   end
 

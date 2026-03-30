@@ -50,15 +50,25 @@ defmodule Firmowid.BankData.Worker do
   def perform(%Oban.Job{args: %{"name" => "dispatch_sync_jobs_for_all_bank_accounts"}}) do
     # Cross-tenant dispatch: fetches all bank accounts with a GoCardless ID
     # across all orgs, then groups by org and dispatches per-account sync jobs.
-    # The :list_for_sync action has multitenancy :bypass so no tenant is needed.
+    # The :list_for_sync action has multitenancy :bypass so Ash skips tenant
+    # validation. We also set put_skip_org_id so Repo.prepare_query/3 skips
+    # organization_id enforcement for this cross-tenant read.
     # authorize?: false / actor: %{} — cross-tenant background job; no authenticated
     # user is present. actor: %{} is a placeholder for a future dedicated system
     # actor struct. Using an empty map (rather than nil) prevents nil-actor crashes
     # if authorization is accidentally re-enabled on list_for_sync.
-    [authorize?: false, actor: %{}]
-    |> BankAccount.list_for_sync!()
-    |> Enum.group_by(& &1.organization_id)
-    |> Enum.each(fn {organization_id, accounts} ->
+    Repo.put_skip_org_id()
+
+    accounts_by_org =
+      try do
+        [authorize?: false, actor: %{}]
+        |> BankAccount.list_for_sync!()
+        |> Enum.group_by(& &1.organization_id)
+      after
+        Repo.drop_skip_org_id()
+      end
+
+    Enum.each(accounts_by_org, fn {organization_id, accounts} ->
       changesets =
         accounts
         |> Enum.map(&%{bank_account_id: &1.id, organization_id: organization_id, name: "bank_account_sync"})

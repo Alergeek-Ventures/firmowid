@@ -18,6 +18,7 @@ defmodule Firmowid.Repo do
 
   @tenant_key {__MODULE__, :organization_id}
   @paradedb_key {__MODULE__, :paradedb_unnamed}
+  @skip_org_key {__MODULE__, :skip_organization_id}
 
   def put_org_id(organization_id) do
     Process.put(@tenant_key, organization_id)
@@ -29,6 +30,25 @@ defmodule Firmowid.Repo do
 
   def drop_org_id do
     Process.delete(@tenant_key)
+  end
+
+  @doc """
+  Skip organization scoping for the current process.
+
+  Useful for cross-tenant Ash actions (e.g. `multitenancy :bypass`) where
+  `skip_organization_id: true` cannot be passed through the Ash → Ecto opts
+  chain. The flag is process-scoped and cleared automatically on process exit.
+  Always pair with `drop_skip_org_id/0` in a `try/after` block.
+  """
+  @spec put_skip_org_id :: true | nil
+  def put_skip_org_id do
+    Process.put(@skip_org_key, true)
+  end
+
+  @doc "Re-enable organization scoping for the current process."
+  @spec drop_skip_org_id :: true | nil
+  def drop_skip_org_id do
+    Process.delete(@skip_org_key)
   end
 
   @doc """
@@ -52,6 +72,11 @@ defmodule Firmowid.Repo do
   @impl true
   def default_options(_operation) do
     opts = [organization_id: get_org_id()]
+
+    opts =
+      if Process.get(@skip_org_key),
+        do: [{:skip_organization_id, true} | opts],
+        else: opts
 
     case Process.get(@paradedb_key) do
       :unnamed -> [{:prepare, :unnamed} | opts]

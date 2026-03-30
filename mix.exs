@@ -109,7 +109,7 @@ defmodule Firmowid.MixProject do
       {:briefly, "~> 0.5.0"},
       {:error_tracker, "~> 0.7"},
       {:recase, "~> 0.9.0"},
-      {:oban, "~> 2.17"},
+      {:oban, "~> 2.21"},
       {:ecto_psql_extras, "~> 0.6"},
       {:any_ascii, "~> 0.3.3"},
       {:multipart, "~> 0.6.0"},
