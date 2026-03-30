@@ -7,8 +7,8 @@ defmodule Firmowid.CostInvoices do
   alias Ash.Error.Unknown
   alias Ash.Error.Unknown.UnknownError
   alias Ecto.Multi
+  alias Firmowid.Ash.Billing.Limits, as: AshLimits
   alias Firmowid.Ash.Blobs.Blob, as: AshBlob
-  alias Firmowid.Billing
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.CostInvoices.CostInvoicesTransactions
   alias Firmowid.CostInvoices.InboundEmail
@@ -246,7 +246,7 @@ defmodule Firmowid.CostInvoices do
     organization_id = cost_invoice.organization_id
 
     if !correction_invoice?(cost_invoice) do
-      case Billing.decrement(organization_id, :cost_invoices) do
+      case AshLimits.decrement(organization_id, :cost_invoices, authorize?: false, actor: %{}) do
         {:ok, _} -> :ok
         {:error, reason} -> Logger.warning("Failed to decrement cost_invoices limit: #{inspect(reason)}")
       end
@@ -359,7 +359,7 @@ defmodule Firmowid.CostInvoices do
       |> Repo.insert!(organization_id: organization_id)
 
     if !correction_invoice?(cost_invoice) do
-      case Billing.increment(organization_id, :cost_invoices) do
+      case AshLimits.increment(organization_id, :cost_invoices, authorize?: false, actor: %{}) do
         {:ok, _} -> :ok
         {:error, reason} -> Logger.warning("Failed to increment cost_invoices limit: #{inspect(reason)}")
       end

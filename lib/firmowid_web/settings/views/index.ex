@@ -9,11 +9,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Accounts
   alias Firmowid.Accounts.Organization
   alias Firmowid.Analytics
+  alias Firmowid.Ash.Billing.Limits, as: AshLimits
   alias Firmowid.Ash.Blobs.Blob, as: AshBlob
   alias Firmowid.Ash.Finances.BankAccount, as: AshBankAccount
   alias Firmowid.BankData
   alias Firmowid.BankData.ApiClient
-  alias Firmowid.Billing
   alias Firmowid.Ksef
   alias FirmowidWeb.Core.Endpoint
 
@@ -100,7 +100,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
      )
      |> assign(:current_org, Accounts.get_organization_with_avatar(socket.assigns.current_org))
      |> assign(:main_class, "bg-white")
-     |> assign(:usage_summary, Billing.get_usage_summary(socket.assigns.current_org.id))
+     |> assign(:usage_summary, AshLimits.usage_summary!(socket.assigns.current_org.id, scope: socket.assigns.ash_scope))
      |> assign(:days_until_reset, days_until_monthly_reset())}
   end
 

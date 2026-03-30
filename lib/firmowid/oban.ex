@@ -33,7 +33,7 @@ defmodule Firmowid.Oban do
           {"0 13 * * *", Firmowid.Invoicing.Worker, args: %{name: "matching"}},
           {"0 14 * * *", Firmowid.Currencies.CleanupWorker, args: %{}},
           {"0 */2 * * *", Firmowid.Ksef.FetchDispatcher, args: %{}},
-          {"0 1 1 * *", Firmowid.Billing.ResetWorker, args: %{}}
+          {"0 1 1 * *", Firmowid.Ash.Billing.ResetWorker, args: %{}}
         ]
       }
     ]

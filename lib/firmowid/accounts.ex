@@ -12,8 +12,8 @@ defmodule Firmowid.Accounts do
   alias Firmowid.Accounts.User
   alias Firmowid.Accounts.UserNotifier
   alias Firmowid.Accounts.UserToken
+  alias Firmowid.Ash.Billing.Limits, as: AshLimits
   alias Firmowid.Ash.Blobs.Blob, as: AshBlob
-  alias Firmowid.Billing
   alias Firmowid.Repo
 
   def authorize(:create_organization_invite, %{role: :admin}, _), do: true
@@ -673,7 +673,7 @@ defmodule Firmowid.Accounts do
   def create_organization(attrs \\ %{}, owner) do
     organization = create_organization_with_nickname(attrs, owner, 10)
 
-    Billing.create_limits(organization.id)
+    AshLimits.create!(organization.id, authorize?: false, actor: %{})
 
     owner
     |> User.organization_changeset(%{organization_id: organization.id})

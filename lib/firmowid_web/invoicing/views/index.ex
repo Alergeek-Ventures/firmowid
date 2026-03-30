@@ -5,10 +5,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   import FirmowidWeb.Billing.Components.Billing
 
   alias Firmowid.Analytics
+  alias Firmowid.Ash.Billing.Limits, as: AshLimits
   alias Firmowid.Ash.Finances, as: AshFinances
   alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
   alias Firmowid.BankData
-  alias Firmowid.Billing
   alias Firmowid.CostInvoices
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing
@@ -58,7 +58,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     socket = assign(socket, :active_months, active_months)
 
     # Check billing limits for cost invoices
-    cost_invoices_limit_check = Billing.check(organization_id, :cost_invoices)
+    cost_invoices_limit_check = AshLimits.check!(organization_id, :cost_invoices, scope: socket.assigns.ash_scope)
 
     socket =
       socket

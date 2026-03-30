@@ -4,13 +4,13 @@ defmodule Firmowid.BankData do
 
   import Ecto.Query, warn: false
 
+  alias Firmowid.Ash.Billing.Limits, as: AshLimits
   alias Firmowid.Ash.Finances.BankAccount, as: FinancesBankAccount
   alias Firmowid.Ash.Finances.Transaction, as: FinancesTransaction
   alias Firmowid.BankData.ApiClient
   alias Firmowid.BankData.Requisition
   alias Firmowid.BankData.Transaction
   alias Firmowid.BankData.Worker
-  alias Firmowid.Billing
   alias Firmowid.Finances.BankAccount
   alias Firmowid.Repo
 
@@ -95,7 +95,9 @@ defmodule Firmowid.BankData do
       |> Repo.update()
 
     with {:ok, accepted_requisition} <- result do
-      case Billing.increment(accepted_requisition.organization_id, :bank_connections) do
+      org_id = accepted_requisition.organization_id
+
+      case AshLimits.increment(org_id, :bank_connections, authorize?: false, actor: %{}) do
         {:ok, _} -> :ok
         {:error, reason} -> Logger.warning("Failed to increment bank_connections limit: #{inspect(reason)}")
       end
@@ -122,7 +124,7 @@ defmodule Firmowid.BankData do
       |> Repo.update()
 
     with {:ok, rejected} <- result, true <- was_accepted do
-      case Billing.decrement(rejected.organization_id, :bank_connections) do
+      case AshLimits.decrement(rejected.organization_id, :bank_connections, authorize?: false, actor: %{}) do
         {:ok, _} -> :ok
         {:error, reason} -> Logger.warning("Failed to decrement bank_connections limit: #{inspect(reason)}")
       end

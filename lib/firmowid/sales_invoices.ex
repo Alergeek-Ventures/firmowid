@@ -7,7 +7,7 @@ defmodule Firmowid.SalesInvoices do
 
   alias Ecto.Multi
   alias Firmowid.Accounts
-  alias Firmowid.Billing
+  alias Firmowid.Ash.Billing.Limits, as: AshLimits
   alias Firmowid.Nbp
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices.Counterparty
@@ -653,7 +653,7 @@ defmodule Firmowid.SalesInvoices do
       |> Repo.insert()
 
     with {:ok, created_invoice} <- result do
-      case Billing.increment(created_invoice.organization_id, :sales_invoices) do
+      case AshLimits.increment(created_invoice.organization_id, :sales_invoices, authorize?: false, actor: %{}) do
         {:ok, _} -> :ok
         {:error, reason} -> Logger.warning("Failed to increment sales_invoices limit: #{inspect(reason)}")
       end
@@ -816,7 +816,7 @@ defmodule Firmowid.SalesInvoices do
   end
 
   defp do_decrement_billing(invoice) do
-    case Billing.decrement(invoice.organization_id, :sales_invoices) do
+    case AshLimits.decrement(invoice.organization_id, :sales_invoices, authorize?: false, actor: %{}) do
       {:ok, _} -> :ok
       {:error, reason} -> Logger.warning("Failed to decrement sales_invoices limit: #{inspect(reason)}")
     end
