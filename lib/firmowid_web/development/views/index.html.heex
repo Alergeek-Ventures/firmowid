@@ -1,25 +1,25 @@
-<div class="max-w-4xl mx-auto pb-12">
+<div class="mx-auto max-w-4xl pb-12">
   <%!-- Header + intro — always visible --%>
   <div class="mb-6">
-    <h1 class="text-2xl font-bold mb-5">Bytecraft Collective</h1>
-    <div class="flex items-center justify-between flex-wrap gap-3">
+    <h1 class="mb-5 text-2xl font-bold">Bytecraft Collective</h1>
+    <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <p class="text-sm text-darkGrey">Domyślne konto</p>
-        <p class="font-medium mt-0.5">
-          <code class="bg-orange-100 text-orange-800 px-2 py-0.5 rounded text-sm">
+        <p class="text-darkGrey text-sm">Domyślne konto</p>
+        <p class="mt-0.5 font-medium">
+          <code class="rounded bg-orange-100 px-2 py-0.5 text-sm text-orange-800">
             kira@bytecraft.collective
           </code>
           <span class="text-darkGrey mx-1">/</span>
-          <code class="bg-grey-100 px-2 py-0.5 rounded text-sm font-mono">kolejka123456</code>
+          <code class="bg-grey-100 rounded px-2 py-0.5 font-mono text-sm">kolejka123456</code>
         </p>
       </div>
-      <div class="text-right text-sm text-darkGrey">
+      <div class="text-darkGrey text-right text-sm">
         <div>Kira Voss · Lead Architect</div>
         <div class="text-xs">admin / superuser · B2B</div>
       </div>
     </div>
 
-    <div class="mt-4 pt-4 border-t border-grey-100 text-sm text-grey-700 flex flex-col gap-8">
+    <div class="border-grey-100 text-grey-700 mt-4 flex flex-col gap-8 border-t pt-4 text-sm">
       <p>
         Pięcioosobowy software house z Warszawy. Trzy projekty komercyjne (<em>GhostPet</em>, <em>FlatMate</em>, <em>TacoOverflow</em>) + wewnętrzny <em>Firmowid</em>. Cztery waluty, egzotyczne konto THB, integracja KSeF. Trzy miesiące historii — M-2 i M-1 zamknięte, M-0 do dopasowania.
       </p>
@@ -31,47 +31,47 @@
   <%!-- Sections --%>
   <div class="space-y-3">
     <%!-- 1. Zespół --%>
-    <div class="bg-white rounded-lg border border-grey-200 overflow-hidden">
+    <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
       <button
         phx-click={toggle_section("team")}
         type="button"
         id="section-trigger-team"
         aria-controls="section-panel-team"
-        class="w-full flex items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
+        class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
-          <.icon name="hero-users" class="size-5 text-darkGrey" />
+          <.icon name="hero-users" class="text-darkGrey size-5" />
           <span class="font-semibold">Zespół Bytecraft Collective</span>
-          <span class="text-xs text-darkGrey">5 osób</span>
+          <span class="text-darkGrey text-xs">5 osób</span>
         </div>
         <.icon
           name="hero-chevron-down"
-          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
+          class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
         />
       </button>
       <div
         id="section-panel-team"
         role="region"
-        class="grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all duration-300 ease-in-out"
+        class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out data-expanded:grid-rows-[1fr]"
       >
         <div class="overflow-hidden">
-          <div class="px-5 pb-5 border-t border-grey-100">
-            <div class="overflow-x-auto mt-4">
+          <div class="border-grey-100 border-t px-5 pb-5">
+            <div class="mt-4 overflow-x-auto">
               <table class="min-w-full text-sm">
                 <thead>
-                  <tr class="border-b border-grey-200">
-                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Użytkownik</th>
-                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Email</th>
-                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Rola</th>
-                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Stanowisko</th>
-                    <th class="text-left py-2 font-medium text-darkGrey">Umowa</th>
+                  <tr class="border-grey-200 border-b">
+                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Użytkownik</th>
+                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Email</th>
+                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Rola</th>
+                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Stanowisko</th>
+                    <th class="text-darkGrey py-2 text-left font-medium">Umowa</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-grey-100">
+                <tbody class="divide-grey-100 divide-y">
                   <tr>
                     <td class="py-2 pr-4 font-medium">Kira Voss</td>
                     <td class="py-2 pr-4">
-                      <code class="bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded text-xs">
+                      <code class="rounded bg-orange-100 px-1.5 py-0.5 text-xs text-orange-800">
                         kira@bytecraft.collective
                       </code>
                     </td>
@@ -82,7 +82,7 @@
                   <tr>
                     <td class="py-2 pr-4">Tomek Briar</td>
                     <td class="py-2 pr-4">
-                      <code class="bg-grey-100 px-1.5 py-0.5 rounded text-xs">
+                      <code class="bg-grey-100 rounded px-1.5 py-0.5 text-xs">
                         tomek@bytecraft.collective
                       </code>
                     </td>
@@ -93,7 +93,7 @@
                   <tr>
                     <td class="py-2 pr-4">Sable Orin</td>
                     <td class="py-2 pr-4">
-                      <code class="bg-grey-100 px-1.5 py-0.5 rounded text-xs">
+                      <code class="bg-grey-100 rounded px-1.5 py-0.5 text-xs">
                         sable@bytecraft.collective
                       </code>
                     </td>
@@ -104,7 +104,7 @@
                   <tr>
                     <td class="py-2 pr-4">Jules Kadar</td>
                     <td class="py-2 pr-4">
-                      <code class="bg-grey-100 px-1.5 py-0.5 rounded text-xs">
+                      <code class="bg-grey-100 rounded px-1.5 py-0.5 text-xs">
                         jules@bytecraft.collective
                       </code>
                     </td>
@@ -115,7 +115,7 @@
                   <tr>
                     <td class="py-2 pr-4">Maren Solke</td>
                     <td class="py-2 pr-4">
-                      <code class="bg-grey-100 px-1.5 py-0.5 rounded text-xs">
+                      <code class="bg-grey-100 rounded px-1.5 py-0.5 text-xs">
                         maren@bytecraft.collective
                       </code>
                     </td>
@@ -126,9 +126,9 @@
                 </tbody>
               </table>
             </div>
-            <p class="mt-3 text-xs text-darkGrey">
+            <p class="text-darkGrey mt-3 text-xs">
               Hasło dla wszystkich:
-              <code class="bg-grey-100 px-1.5 py-0.5 rounded font-mono">kolejka123456</code>
+              <code class="bg-grey-100 rounded px-1.5 py-0.5 font-mono">kolejka123456</code>
             </p>
           </div>
         </div>
@@ -136,46 +136,46 @@
     </div>
 
     <%!-- 2. Organizacja i konta --%>
-    <div class="bg-white rounded-lg border border-grey-200 overflow-hidden">
+    <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
       <button
         phx-click={toggle_section("org")}
         type="button"
         id="section-trigger-org"
         aria-controls="section-panel-org"
-        class="w-full flex items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
+        class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
-          <.icon name="hero-building-office" class="size-5 text-darkGrey" />
+          <.icon name="hero-building-office" class="text-darkGrey size-5" />
           <span class="font-semibold">Bytecraft Collective sp. z o.o.</span>
-          <span class="text-xs font-mono text-darkGrey">NIP 6161525811</span>
+          <span class="text-darkGrey font-mono text-xs">NIP 6161525811</span>
         </div>
         <.icon
           name="hero-chevron-down"
-          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
+          class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
         />
       </button>
       <div
         id="section-panel-org"
         role="region"
-        class="grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all duration-300 ease-in-out"
+        class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out data-expanded:grid-rows-[1fr]"
       >
         <div class="overflow-hidden">
-          <div class="px-5 pb-5 border-t border-grey-100">
+          <div class="border-grey-100 border-t px-5 pb-5">
             <div class="mt-4 text-sm">
               <span class="text-darkGrey">Adres:</span> ul. Marszałkowska 11/4, 00-624 Warszawa
             </div>
 
-            <h3 class="text-sm font-semibold mt-5 mb-2">Konta bankowe</h3>
+            <h3 class="mt-5 mb-2 text-sm font-semibold">Konta bankowe</h3>
             <div class="overflow-x-auto">
               <table class="min-w-full text-sm">
                 <thead>
-                  <tr class="border-b border-grey-200">
-                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Waluta</th>
-                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Bank</th>
-                    <th class="text-left py-2 font-medium text-darkGrey">IBAN</th>
+                  <tr class="border-grey-200 border-b">
+                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Waluta</th>
+                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Bank</th>
+                    <th class="text-darkGrey py-2 text-left font-medium">IBAN</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-grey-100">
+                <tbody class="divide-grey-100 divide-y">
                   <tr>
                     <td class="py-1.5 pr-4 font-medium">PLN (domyślne)</td>
                     <td class="py-1.5 pr-4">ING Bank Śląski</td>
@@ -210,85 +210,85 @@
     </div>
 
     <%!-- 3. Projekty --%>
-    <div class="bg-white rounded-lg border border-grey-200 overflow-hidden">
+    <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
       <button
         phx-click={toggle_section("projects")}
         type="button"
         id="section-trigger-projects"
         aria-controls="section-panel-projects"
-        class="w-full flex items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
+        class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
-          <.icon name="hero-rectangle-stack" class="size-5 text-darkGrey" />
+          <.icon name="hero-rectangle-stack" class="text-darkGrey size-5" />
           <span class="font-semibold">Projekty i klienci</span>
-          <span class="text-xs text-darkGrey">4 projekty · 3 kontrahentów</span>
+          <span class="text-darkGrey text-xs">4 projekty · 3 kontrahentów</span>
         </div>
         <.icon
           name="hero-chevron-down"
-          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
+          class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
         />
       </button>
       <div
         id="section-panel-projects"
         role="region"
-        class="grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all duration-300 ease-in-out"
+        class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out data-expanded:grid-rows-[1fr]"
       >
         <div class="overflow-hidden">
-          <div class="px-5 pb-5 border-t border-grey-100">
-            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div class="rounded-lg border border-grey-200 p-4">
-                <div class="flex items-center gap-2 mb-1">
-                  <div class="w-2 h-2 rounded-full bg-grey-400"></div>
-                  <h4 class="font-semibold text-sm">Firmowid</h4>
+          <div class="border-grey-100 border-t px-5 pb-5">
+            <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div class="border-grey-200 rounded-lg border p-4">
+                <div class="mb-1 flex items-center gap-2">
+                  <div class="bg-grey-400 size-2 rounded-full"></div>
+                  <h4 class="text-sm font-semibold">Firmowid</h4>
                 </div>
-                <p class="text-xs text-darkGrey ml-4">
+                <p class="text-darkGrey ml-4 text-xs">
                   Projekt wewnętrzny, brak kontrahenta. Rozliczanie kosztów infra (OVH, narzędzia).
                 </p>
-                <p class="text-xs text-grey-400 ml-4 mt-1">Kira, Tomek</p>
+                <p class="text-grey-400 mt-1 ml-4 text-xs">Kira, Tomek</p>
               </div>
 
-              <div class="rounded-lg border border-grey-200 p-4">
-                <div class="flex items-center gap-2 mb-1">
-                  <div class="w-2 h-2 rounded-full bg-turquoise-500"></div>
-                  <h4 class="font-semibold text-sm">GhostPet</h4>
-                  <span class="text-xs bg-turquoise-100 text-turquoise-700 px-1.5 py-0.5 rounded">
+              <div class="border-grey-200 rounded-lg border p-4">
+                <div class="mb-1 flex items-center gap-2">
+                  <div class="bg-turquoise-500 size-2 rounded-full"></div>
+                  <h4 class="text-sm font-semibold">GhostPet</h4>
+                  <span class="bg-turquoise-100 text-turquoise-700 rounded px-1.5 py-0.5 text-xs">
                     USD
                   </span>
                 </div>
-                <p class="text-xs text-darkGrey ml-4">
+                <p class="text-darkGrey ml-4 text-xs">
                   Rozmowy AI ze zmarłymi zwierzakami. Klient: GhostPet Inc. (US, EIN 47-8830291).
                 </p>
-                <p class="text-xs text-grey-400 ml-4 mt-1">Tomek, Maren</p>
+                <p class="text-grey-400 mt-1 ml-4 text-xs">Tomek, Maren</p>
               </div>
 
-              <div class="rounded-lg border border-grey-200 p-4">
-                <div class="flex items-center gap-2 mb-1">
-                  <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                  <h4 class="font-semibold text-sm">FlatMate</h4>
-                  <span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
+              <div class="border-grey-200 rounded-lg border p-4">
+                <div class="mb-1 flex items-center gap-2">
+                  <div class="size-2 rounded-full bg-green-500"></div>
+                  <h4 class="text-sm font-semibold">FlatMate</h4>
+                  <span class="rounded bg-green-100 px-1.5 py-0.5 text-xs text-green-700">
                     GBP
                   </span>
                 </div>
-                <p class="text-xs text-darkGrey ml-4">
+                <p class="text-darkGrey ml-4 text-xs">
                   Randki dla zwolenników płaskiej Ziemi. Klient: FlatEarth Dating Ltd.
                   (GB, bez VAT — post-Brexit, odwrotne obciążenie).
                 </p>
-                <p class="text-xs text-grey-400 ml-4 mt-1">Kira, Sable</p>
+                <p class="text-grey-400 mt-1 ml-4 text-xs">Kira, Sable</p>
               </div>
 
-              <div class="rounded-lg border border-grey-200 p-4">
-                <div class="flex items-center gap-2 mb-1">
-                  <div class="w-2 h-2 rounded-full bg-orange-500"></div>
-                  <h4 class="font-semibold text-sm">TacoOverflow</h4>
-                  <span class="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
+              <div class="border-grey-200 rounded-lg border p-4">
+                <div class="mb-1 flex items-center gap-2">
+                  <div class="size-2 rounded-full bg-orange-500"></div>
+                  <h4 class="text-sm font-semibold">TacoOverflow</h4>
+                  <span class="rounded bg-orange-100 px-1.5 py-0.5 text-xs text-orange-700">
                     EUR
                   </span>
                 </div>
-                <p class="text-xs text-darkGrey ml-4">
+                <p class="text-darkGrey ml-4 text-xs">
                   Klon SO, gdzie każda odpowiedź = przepis na taco.
                   Klient: TacoOverflow Inc. (DE, VAT DE317256842, odwrotne obciążenie).
                 </p>
-                <p class="text-xs text-grey-400 ml-4 mt-1">Jules, Maren, Tomek</p>
+                <p class="text-grey-400 mt-1 ml-4 text-xs">Jules, Maren, Tomek</p>
               </div>
             </div>
           </div>
@@ -297,20 +297,20 @@
     </div>
 
     <%!-- 4. Czasośledź / Lista płac --%>
-    <div class="bg-white rounded-lg border border-grey-200 overflow-hidden">
+    <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
       <button
         phx-click={toggle_section("timetracker")}
         type="button"
         id="section-trigger-timetracker"
         aria-controls="section-panel-timetracker"
-        class="w-full flex items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
+        class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
-          <.icon name="hero-clock" class="size-5 text-darkGrey" />
+          <.icon name="hero-clock" class="text-darkGrey size-5" />
           <span class="font-semibold">Czasośledź i lista płac</span>
           <a
             href="/czasosledz"
-            class="text-xs text-turquoise-600 hover:underline"
+            class="text-turquoise-600 text-xs hover:underline"
             phx-click="noop"
             phx-value-stop="true"
           >
@@ -319,75 +319,75 @@
         </div>
         <.icon
           name="hero-chevron-down"
-          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
+          class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
         />
       </button>
       <div
         id="section-panel-timetracker"
         role="region"
-        class="grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all duration-300 ease-in-out"
+        class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out data-expanded:grid-rows-[1fr]"
       >
         <div class="overflow-hidden">
-          <div class="px-5 pb-5 border-t border-grey-100">
-            <p class="text-sm text-darkGrey mt-4 mb-4">
+          <div class="border-grey-100 border-t px-5 pb-5">
+            <p class="text-darkGrey my-4 text-sm">
               Stawki godzinowe, sesje pracy i ewidencja godzin dla 2 zamkniętych miesięcy.
               Bieżący miesiąc ma sesje, ale brak ewidencji — testuj kreator wysyłki.
             </p>
 
-            <h3 class="text-sm font-semibold mb-2">Stawki godzinowe</h3>
+            <h3 class="mb-2 text-sm font-semibold">Stawki godzinowe</h3>
             <div class="overflow-x-auto">
               <table class="min-w-full text-sm">
                 <thead>
-                  <tr class="border-b border-grey-200">
-                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Pracownik</th>
-                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Stawka (PLN/h)</th>
-                    <th class="text-left py-2 font-medium text-darkGrey">Uwagi</th>
+                  <tr class="border-grey-200 border-b">
+                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Pracownik</th>
+                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Stawka (PLN/h)</th>
+                    <th class="text-darkGrey py-2 text-left font-medium">Uwagi</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-grey-100">
+                <tbody class="divide-grey-100 divide-y">
                   <tr>
                     <td class="py-1.5 pr-4">Kira Voss</td>
                     <td class="py-1.5 pr-4 font-mono">150,00</td>
-                    <td class="py-1.5 text-darkGrey text-xs">
+                    <td class="text-darkGrey py-1.5 text-xs">
                       Poprzednia: 120,00 (podwyżka 3 mies. temu)
                     </td>
                   </tr>
                   <tr>
                     <td class="py-1.5 pr-4">Tomek Briar</td>
                     <td class="py-1.5 pr-4 font-mono">120,00</td>
-                    <td class="py-1.5 text-darkGrey">—</td>
+                    <td class="text-darkGrey py-1.5">—</td>
                   </tr>
                   <tr>
                     <td class="py-1.5 pr-4">Sable Orin</td>
                     <td class="py-1.5 pr-4 font-mono">100,00</td>
-                    <td class="py-1.5 text-darkGrey">—</td>
+                    <td class="text-darkGrey py-1.5">—</td>
                   </tr>
                   <tr>
                     <td class="py-1.5 pr-4">Jules Kadar</td>
                     <td class="py-1.5 pr-4 font-mono">130,00</td>
-                    <td class="py-1.5 text-darkGrey">—</td>
+                    <td class="text-darkGrey py-1.5">—</td>
                   </tr>
                   <tr>
                     <td class="py-1.5 pr-4">Maren Solke</td>
                     <td class="py-1.5 pr-4 font-mono">110,00</td>
-                    <td class="py-1.5 text-darkGrey">—</td>
+                    <td class="text-darkGrey py-1.5">—</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div class="mt-5 grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
               <div>
-                <h3 class="font-semibold text-sm mb-1">Sesje pracy</h3>
-                <ul class="text-darkGrey text-xs ml-4 list-disc space-y-0.5">
+                <h3 class="mb-1 text-sm font-semibold">Sesje pracy</h3>
+                <ul class="text-darkGrey ml-4 list-disc space-y-0.5 text-xs">
                   <li>M-2 i M-1: ~30–36 sesji/mies., 2–5h, mix biuro/zdalnie</li>
                   <li>M-0: ~12 sesji (miesiąc w toku)</li>
                   <li>Każdy pracownik na swoich przypisanych projektach</li>
                 </ul>
               </div>
               <div>
-                <h3 class="font-semibold text-sm mb-1">Ewidencja godzin</h3>
-                <ul class="text-darkGrey text-xs ml-4 list-disc space-y-0.5">
+                <h3 class="mb-1 text-sm font-semibold">Ewidencja godzin</h3>
+                <ul class="text-darkGrey ml-4 list-disc space-y-0.5 text-xs">
                   <li>M-2 i M-1: wysłane z podpisanymi PDF-ami</li>
                   <li>
                     M-0: <strong>brak</strong> — kreator wysyłki do przetestowania
@@ -395,7 +395,7 @@
                 </ul>
               </div>
             </div>
-            <p class="text-xs text-grey-400 mt-3">
+            <p class="text-grey-400 mt-3 text-xs">
               Panel admina:
               <a href="/zarzadzanie/projekty" class="text-turquoise-600 hover:underline">
                 /zarzadzanie/projekty
@@ -408,20 +408,20 @@
     </div>
 
     <%!-- 5. Dashboard analityczny --%>
-    <div class="bg-white rounded-lg border border-grey-200 overflow-hidden">
+    <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
       <button
         phx-click={toggle_section("analysis")}
         type="button"
         id="section-trigger-analysis"
         aria-controls="section-panel-analysis"
-        class="w-full flex items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
+        class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
-          <.icon name="hero-chart-bar" class="size-5 text-darkGrey" />
+          <.icon name="hero-chart-bar" class="text-darkGrey size-5" />
           <span class="font-semibold">Dashboard analityczny</span>
           <a
             href="/analiza"
-            class="text-xs text-turquoise-600 hover:underline"
+            class="text-turquoise-600 text-xs hover:underline"
             phx-click="noop"
             phx-value-stop="true"
           >
@@ -430,31 +430,31 @@
         </div>
         <.icon
           name="hero-chevron-down"
-          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
+          class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
         />
       </button>
       <div
         id="section-panel-analysis"
         role="region"
-        class="grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all duration-300 ease-in-out"
+        class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out data-expanded:grid-rows-[1fr]"
       >
         <div class="overflow-hidden">
-          <div class="px-5 pb-5 border-t border-grey-100">
-            <p class="text-sm text-darkGrey mt-4 mb-4">
+          <div class="border-grey-100 border-t px-5 pb-5">
+            <p class="text-darkGrey my-4 text-sm">
               Trzy miesiące danych prezentują workflow dopasowywania i tagowania.
               Daty względne — uruchom seedy ponownie, aby odświeżyć.
             </p>
 
             <div class="space-y-4">
               <%!-- M-2 --%>
-              <div class="rounded-lg bg-grey-100/50 p-4">
-                <h4 class="text-sm font-semibold flex items-center gap-2">
-                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+              <div class="bg-grey-100/50 rounded-lg p-4">
+                <h4 class="flex items-center gap-2 text-sm font-semibold">
+                  <span class="inline-flex items-center rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
                     M-2
                   </span>
                   2 miesiące temu — w pełni dopasowane
                 </h4>
-                <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0.5 text-xs text-darkGrey">
+                <div class="text-darkGrey mt-2 grid grid-cols-1 gap-x-6 gap-y-0.5 text-xs md:grid-cols-2">
                   <div class="flex justify-between">
                     <span>GhostPet 5 950 $</span>
                     <span class="text-turquoise-600">projekt:GhostPet</span>
@@ -501,14 +501,14 @@
               </div>
 
               <%!-- M-1 --%>
-              <div class="rounded-lg bg-grey-100/50 p-4">
-                <h4 class="text-sm font-semibold flex items-center gap-2">
-                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-turquoise-100 text-turquoise-700">
+              <div class="bg-grey-100/50 rounded-lg p-4">
+                <h4 class="flex items-center gap-2 text-sm font-semibold">
+                  <span class="bg-turquoise-100 text-turquoise-700 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium">
                     M-1
                   </span>
                   1 miesiąc temu — w pełni dopasowane
                 </h4>
-                <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0.5 text-xs text-darkGrey">
+                <div class="text-darkGrey mt-2 grid grid-cols-1 gap-x-6 gap-y-0.5 text-xs md:grid-cols-2">
                   <div class="flex justify-between">
                     <span>GhostPet 8 500 $</span>
                     <span class="text-turquoise-600">projekt:GhostPet</span>
@@ -555,14 +555,14 @@
               </div>
 
               <%!-- M-0 --%>
-              <div class="rounded-lg bg-grey-100/50 p-4">
-                <h4 class="text-sm font-semibold flex items-center gap-2">
-                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700">
+              <div class="bg-grey-100/50 rounded-lg p-4">
+                <h4 class="flex items-center gap-2 text-sm font-semibold">
+                  <span class="inline-flex items-center rounded bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
                     M-0
                   </span>
                   Bieżący miesiąc — głównie niedopasowane
                 </h4>
-                <div class="mt-2 text-xs text-darkGrey space-y-0.5">
+                <div class="text-darkGrey mt-2 space-y-0.5 text-xs">
                   <div>
                     7 niedopasowanych transakcji (TacoOverflow, GitHub, OVH, czynsz, materiały, opłata, OpenCode)
                   </div>
@@ -585,32 +585,32 @@
     </div>
 
     <%!-- 6. KSeF --%>
-    <div class="bg-white rounded-lg border border-grey-200 overflow-hidden">
+    <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
       <button
         phx-click={toggle_section("ksef")}
         type="button"
         id="section-trigger-ksef"
         aria-controls="section-panel-ksef"
-        class="w-full flex items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
+        class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
-          <.icon name="hero-document-check" class="size-5 text-darkGrey" />
+          <.icon name="hero-document-check" class="text-darkGrey size-5" />
           <span class="font-semibold">Środowisko testowe KSeF</span>
-          <span class="text-xs text-darkGrey">4 faktury demo</span>
+          <span class="text-darkGrey text-xs">4 faktury demo</span>
         </div>
         <.icon
           name="hero-chevron-down"
-          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
+          class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
         />
       </button>
       <div
         id="section-panel-ksef"
         role="region"
-        class="grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all duration-300 ease-in-out"
+        class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out data-expanded:grid-rows-[1fr]"
       >
         <div class="overflow-hidden">
-          <div class="px-5 pb-5 border-t border-grey-100">
-            <div class="mt-4 text-sm space-y-2 mb-4">
+          <div class="border-grey-100 border-t px-5 pb-5">
+            <div class="my-4 space-y-2 text-sm">
               <div>
                 <span class="text-darkGrey">URL testowy:</span>
                 <a
@@ -624,24 +624,24 @@
               </div>
               <div>
                 <span class="text-darkGrey">NIP testowy:</span>
-                <code class="bg-grey-100 px-1.5 py-0.5 rounded font-mono">6161525811</code>
+                <code class="bg-grey-100 rounded px-1.5 py-0.5 font-mono">6161525811</code>
               </div>
             </div>
 
             <div class="overflow-x-auto">
               <table class="min-w-full text-sm">
                 <thead>
-                  <tr class="border-b border-grey-200">
-                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Nr faktury</th>
-                    <th class="text-left py-2 pr-4 font-medium text-darkGrey">Stan</th>
-                    <th class="text-left py-2 font-medium text-darkGrey">Opis</th>
+                  <tr class="border-grey-200 border-b">
+                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Nr faktury</th>
+                    <th class="text-darkGrey py-2 pr-4 text-left font-medium">Stan</th>
+                    <th class="text-darkGrey py-2 text-left font-medium">Opis</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-grey-100">
+                <tbody class="divide-grey-100 divide-y">
                   <tr>
                     <td class="py-1.5 pr-4 font-mono text-xs">01/MM/RRRR</td>
                     <td class="py-1.5 pr-4">
-                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-grey-200 text-grey-700">
+                      <span class="bg-grey-200 text-grey-700 inline-flex items-center rounded px-2 py-0.5 text-xs font-medium">
                         Szkic
                       </span>
                     </td>
@@ -652,7 +652,7 @@
                   <tr>
                     <td class="py-1.5 pr-4 font-mono text-xs">02/MM/RRRR</td>
                     <td class="py-1.5 pr-4">
-                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+                      <span class="inline-flex items-center rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
                         Sukces
                       </span>
                     </td>
@@ -663,7 +663,7 @@
                   <tr>
                     <td class="py-1.5 pr-4 font-mono text-xs">03/MM/RRRR</td>
                     <td class="py-1.5 pr-4">
-                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700">
+                      <span class="inline-flex items-center rounded bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
                         Wysyłka
                       </span>
                     </td>
@@ -674,7 +674,7 @@
                   <tr>
                     <td class="py-1.5 pr-4 font-mono text-xs">04/MM/RRRR</td>
                     <td class="py-1.5 pr-4">
-                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
+                      <span class="inline-flex items-center rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
                         Błąd
                       </span>
                     </td>
@@ -691,67 +691,67 @@
     </div>
 
     <%!-- 7. System tagowania --%>
-    <div class="bg-white rounded-lg border border-grey-200 overflow-hidden">
+    <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
       <button
         phx-click={toggle_section("tags")}
         type="button"
         id="section-trigger-tags"
         aria-controls="section-panel-tags"
-        class="w-full flex items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
+        class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
-          <.icon name="hero-tag" class="size-5 text-darkGrey" />
+          <.icon name="hero-tag" class="text-darkGrey size-5" />
           <span class="font-semibold">System tagowania</span>
-          <span class="text-xs text-darkGrey">3 kategorie</span>
+          <span class="text-darkGrey text-xs">3 kategorie</span>
         </div>
         <.icon
           name="hero-chevron-down"
-          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
+          class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
         />
       </button>
       <div
         id="section-panel-tags"
         role="region"
-        class="grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all duration-300 ease-in-out"
+        class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out data-expanded:grid-rows-[1fr]"
       >
         <div class="overflow-hidden">
-          <div class="px-5 pb-5 border-t border-grey-100">
-            <p class="text-sm text-darkGrey mt-4 mb-3">
+          <div class="border-grey-100 border-t px-5 pb-5">
+            <p class="text-darkGrey mt-4 mb-3 text-sm">
               Tagi encji kategoryzują dopasowane wpisy na dashboardzie analitycznym.
               Stosowane do dopasowanych par (transakcja + faktura)
-              lub do encji z <code class="bg-grey-100 px-1 rounded text-xs">skip_invoicing</code>.
+              lub do encji z <code class="bg-grey-100 rounded px-1 text-xs">skip_invoicing</code>.
             </p>
 
             <div class="space-y-2">
-              <div class="flex items-start gap-3 rounded-lg bg-grey-100/50 p-3">
-                <code class="text-xs bg-turquoise-100 text-turquoise-700 px-1.5 py-0.5 rounded shrink-0">
+              <div class="bg-grey-100/50 flex items-start gap-3 rounded-lg p-3">
+                <code class="bg-turquoise-100 text-turquoise-700 shrink-0 rounded px-1.5 py-0.5 text-xs">
                   :project
                 </code>
-                <div class="text-xs text-darkGrey">
+                <div class="text-darkGrey text-xs">
                   <strong>Tagi projektowe</strong> — przypisanie wpisu do projektu.
                   Każdy projekt automatycznie tworzy TagDefinition.
                 </div>
               </div>
-              <div class="flex items-start gap-3 rounded-lg bg-grey-100/50 p-3">
-                <code class="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded shrink-0">
+              <div class="bg-grey-100/50 flex items-start gap-3 rounded-lg p-3">
+                <code class="shrink-0 rounded bg-orange-100 px-1.5 py-0.5 text-xs text-orange-700">
                   :company
                 </code>
-                <div class="text-xs text-darkGrey">
+                <div class="text-darkGrey text-xs">
                   <strong>Firma</strong> — ogólne koszty firmy
                   (czynsz biura, opłaty bankowe, narzędzia).
                 </div>
               </div>
-              <div class="flex items-start gap-3 rounded-lg bg-grey-100/50 p-3">
-                <code class="text-xs bg-grey-200 text-grey-700 px-1.5 py-0.5 rounded shrink-0">
+              <div class="bg-grey-100/50 flex items-start gap-3 rounded-lg p-3">
+                <code class="bg-grey-200 text-grey-700 shrink-0 rounded px-1.5 py-0.5 text-xs">
                   :internal
                 </code>
-                <div class="text-xs text-darkGrey">
+                <div class="text-darkGrey text-xs">
                   <strong>Wewnętrzny</strong> — przelewy wewnętrzne, konwersje walut.
                   Wyłączone z podsumowań.
                 </div>
               </div>
             </div>
-            <p class="text-xs text-grey-400 mt-3">
+            <p class="text-grey-400 mt-3 text-xs">
               Kategorie wzajemnie wykluczające się: wpis może mieć tagi projektowe
               LUB wbudowaną kategorię, nie jedno i drugie.
             </p>
@@ -761,41 +761,41 @@
     </div>
 
     <%!-- 8. VoidStack Labs --%>
-    <div class="bg-white rounded-lg border border-grey-200 overflow-hidden">
+    <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
       <button
         phx-click={toggle_section("voidstack")}
         type="button"
         id="section-trigger-voidstack"
         aria-controls="section-panel-voidstack"
-        class="w-full flex items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
+        class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
           <.icon name="hero-shield-exclamation" class="size-5 text-red-400" />
           <span class="font-semibold">VoidStack Labs</span>
-          <span class="text-xs text-darkGrey">testy izolacji tenantów</span>
+          <span class="text-darkGrey text-xs">testy izolacji tenantów</span>
         </div>
         <.icon
           name="hero-chevron-down"
-          class="section-chevron size-4 text-darkGrey transition-transform duration-300 ease-in-out"
+          class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
         />
       </button>
       <div
         id="section-panel-voidstack"
         role="region"
-        class="grid grid-rows-[0fr] data-[expanded]:grid-rows-[1fr] transition-all duration-300 ease-in-out"
+        class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out data-expanded:grid-rows-[1fr]"
       >
         <div class="overflow-hidden">
-          <div class="px-5 pb-5 border-t border-grey-100">
-            <p class="text-sm text-darkGrey mt-4 mb-3">
+          <div class="border-grey-100 border-t px-5 pb-5">
+            <p class="text-darkGrey mt-4 mb-3 text-sm">
               Oddzielna organizacja do testów autoryzacji. Były stażysta Bytecrafta,
               Dragan Krypt, prowadzi 12-osobową operację z przerobionej kręgielni w Bratysławie.
             </p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <div class="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
               <div>
                 <span class="text-darkGrey">Login:</span>
-                <code class="bg-grey-100 px-1.5 py-0.5 rounded text-xs">dragan@voidstack.io</code>
+                <code class="bg-grey-100 rounded px-1.5 py-0.5 text-xs">dragan@voidstack.io</code>
                 <span class="text-darkGrey mx-0.5">/</span>
-                <code class="bg-grey-100 px-1.5 py-0.5 rounded text-xs font-mono">
+                <code class="bg-grey-100 rounded px-1.5 py-0.5 font-mono text-xs">
                   kolejka123456
                 </code>
               </div>
@@ -804,7 +804,7 @@
                 <span class="font-mono">7871963656</span>
               </div>
             </div>
-            <p class="text-xs text-grey-400 mt-3">
+            <p class="text-grey-400 mt-3 text-xs">
               1 projekt (Shadow Protocol), 1 konto bankowe, 4 transakcji,
               1 faktura kosztowa, 1 faktura sprzedażowa.
             </p>

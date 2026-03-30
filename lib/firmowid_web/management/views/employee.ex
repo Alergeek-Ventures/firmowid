@@ -56,29 +56,29 @@ defmodule FirmowidWeb.Management.Views.Employee do
   end
 
   attr :label, :string, required: true
-  attr :class, :string, default: ""
+  attr :class, :any, default: ""
   slot :inner_block
 
   defp user_card_info(assigns) do
     ~H"""
-    <div class={classes(["space-y-1", @class])}>
+    <div class={["space-y-1", @class]}>
       <div class="text-grey-700 text-sm/snug">{@label}</div>
-      <div class="flex gap-2 items-center text-base/snug">{render_slot(@inner_block)}</div>
+      <div class="flex items-center gap-2 text-base/snug">{render_slot(@inner_block)}</div>
     </div>
     """
   end
 
-  attr :class, :string, default: ""
+  attr :class, :any, default: ""
+  attr :gap_size, :string, default: "6"
   slot :inner_block, required: true
 
   defp card(assigns) do
     ~H"""
-    <section class={
-      classes([
-        "bg-white text-black p-6 rounded-md shadow flex flex-col gap-y-6",
-        @class
-      ])
-    }>
+    <section class={[
+      "flex flex-col rounded-md bg-white p-6 text-black shadow",
+      @gap_size && "gap-y-#{@gap_size}",
+      @class
+    ]}>
       {render_slot(@inner_block)}
     </section>
     """
@@ -88,7 +88,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
   defp card_header(assigns) do
     ~H"""
-    <h3 class="text-base/tight font-medium text-grey-900">{render_slot(@inner_block)}</h3>
+    <h3 class="text-grey-900 text-base/tight font-medium">{render_slot(@inner_block)}</h3>
     """
   end
 
@@ -98,12 +98,12 @@ defmodule FirmowidWeb.Management.Views.Employee do
     ~H"""
     <div
       id={"project-accordion-#{@project.id}"}
-      class="overflow-hidden grid grid-cols-[1fr_min-content_min-content] gap-x-6 group"
+      class="group grid grid-cols-[1fr_min-content_min-content] gap-x-6 overflow-hidden"
     >
       <button
         type="button"
         phx-click={toggle_project_accordion(@project.id)}
-        class="grid grid-cols-subgrid col-span-full items-center py-4 group"
+        class="group col-span-full grid grid-cols-subgrid items-center py-4"
       >
         <span class="text-start text-nowrap">{@project.name}</span>
         <span class="text-nowrap">
@@ -114,14 +114,14 @@ defmodule FirmowidWeb.Management.Views.Employee do
         </span>
         <.icon
           name="hero-chevron-down"
-          class="group-data-expanded:rotate-180 size-4 transition-transform duration-200 ease-in-out"
+          class="size-4 transition-transform duration-200 ease-in-out group-data-expanded:rotate-180"
         />
       </button>
       <div
-        class="grid grid-rows-[0fr] group-data-expanded:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-in-out col-span-2 overflow-hidden"
+        class="col-span-2 grid grid-rows-[0fr] overflow-hidden transition-[grid-template-rows] duration-300 ease-in-out group-data-expanded:grid-rows-[1fr]"
         role="region"
       >
-        <div class="flex flex-col gap-y-2 ml-4 *:last:mb-4 overflow-hidden">
+        <div class="ml-4 flex flex-col gap-y-2 overflow-hidden *:last:mb-4">
           <%= if Enum.empty?(@project.sessions) do %>
             <p class="text-grey-700">
               Brak sesji w tym miesiącu
@@ -129,9 +129,9 @@ defmodule FirmowidWeb.Management.Views.Employee do
           <% else %>
             <div
               :for={session <- @project.sessions}
-              class="flex justify-between text-base/snug text-grey-700"
+              class="text-grey-700 flex justify-between text-base/snug"
             >
-              <p class="text-nowrap truncate">{session.title}</p>
+              <p class="truncate text-nowrap">{session.title}</p>
               <p>
                 {TimeConverter.time_worked_in_seconds_to_hours(session.duration)} h
               </p>
@@ -170,9 +170,9 @@ defmodule FirmowidWeb.Management.Views.Employee do
       </div>
     </.card>
 
-    <div class="flex gap-6 items-start">
+    <div class="flex items-start gap-6">
       <.card class="grow">
-        <div class="flex justify-between items-center">
+        <div class="flex items-center justify-between">
           <.card_header>
             Projekty pracownika
           </.card_header>
@@ -182,9 +182,9 @@ defmodule FirmowidWeb.Management.Views.Employee do
             active_months={@active_months}
           />
         </div>
-        <div class="divide-y divide-lightGreyBg">
+        <div class="divide-lightGreyBg divide-y">
           <%= if Enum.empty?(@employee.projects) do %>
-            <div class="text-sm text-darkGrey mt-4">Brak projektów</div>
+            <div class="text-darkGrey mt-4 text-sm">Brak projektów</div>
           <% else %>
             <.project_accordion :for={project <- @employee.projects} project={project} />
           <% end %>
@@ -215,7 +215,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
             </.user_card_info>
           </div>
         </.card>
-        <.card class="gap-y-4">
+        <.card gap_size="4">
           <.card_header>
             Ewidencja
           </.card_header>

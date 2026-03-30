@@ -64,7 +64,6 @@ defmodule Firmowid.MixProject do
       {:phoenix_ecto, "~> 4.5"},
       {:bodyguard, "~> 2.4"},
       {:ecto_sql, "~> 3.11"},
-      {:tails, "~> 0.1.11"},
       {:postgrex, ">= 0.0.0"},
       {:uuid_v7, "~> 0.6.0"},
       {:phoenix_html, "~> 4.1"},
@@ -142,7 +141,8 @@ defmodule Firmowid.MixProject do
       {:csv, "~> 3.2"},
       {:lucide_icons, "~> 2.0"},
       {:qr_code, "~> 3.2.0"},
-      {:usage_rules, "~> 1.1", only: [:dev]}
+      {:usage_rules, "~> 1.1", only: [:dev]},
+      {:canonical_tailwind, "~> 0.1", only: [:dev, :test], runtime: false}
     ]
   end
 

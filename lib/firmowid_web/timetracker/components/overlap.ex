@@ -19,15 +19,15 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
   def new_session_card(assigns) do
     ~H"""
     <div class="rounded-lg border border-green-200 bg-green-100 p-4">
-      <div class="flex items-center gap-2 mb-1">
-        <span class="inline-flex items-center rounded-full bg-greenBg px-2 py-0.5 text-xs font-medium text-greenText">
+      <div class="mb-1 flex items-center gap-2">
+        <span class="bg-greenBg text-greenText inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium">
           Nowa sesja
         </span>
-        <span class="text-sm font-medium text-grey-900">
+        <span class="text-grey-900 text-sm font-medium">
           {@title}
         </span>
       </div>
-      <p class="text-sm text-greenText">
+      <p class="text-greenText text-sm">
         {format_date_local(@date, @timezone)}, {format_datetime_local(@start_datetime, @timezone)} – {format_datetime_local(
           @end_datetime,
           @timezone
@@ -48,23 +48,22 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
     assigns = assign(assigns, :session, elem(assigns.action, 1))
 
     ~H"""
-    <div class="rounded-lg border border-grey-200 bg-grey-50 p-4">
-      <div class="flex items-center justify-between gap-2 mb-2">
-        <div class="flex items-center gap-2 min-w-0">
-          <% {label, color} = trim_action_style(@action) %>
+    <div class="bg-grey-50 border-grey-200 rounded-lg border p-4">
+      <div class="mb-2 flex items-center justify-between gap-2">
+        <div class="flex min-w-0 items-center gap-2">
           <span class={[
-            "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium shrink-0",
-            color
+            "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-medium",
+            trim_action_badge_styles(@action)
           ]}>
-            {label}
+            {trim_action_label(@action)}
           </span>
-          <span class="text-sm font-medium text-grey-900 truncate">
+          <span class="text-grey-900 truncate text-sm font-medium">
             {@session.title}
           </span>
         </div>
         <span
           :if={@projects_by_id[@session.project_id]}
-          class="text-xs text-darkGrey shrink-0"
+          class="text-darkGrey shrink-0 text-xs"
         >
           {Map.get(@projects_by_id, @session.project_id).name}
         </span>
@@ -73,7 +72,7 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
       <div class="flex flex-col gap-1 text-sm">
         <div class="flex items-center gap-2">
           <span class="text-darkGrey w-12 shrink-0">Przed:</span>
-          <span class="line-through text-darkGrey">
+          <span class="text-darkGrey line-through">
             {format_datetime_local(@session.start_datetime, @timezone)} – {format_datetime_local(
               @session.end_datetime,
               @timezone
@@ -99,7 +98,7 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
     ~H"""
     <div class="flex items-center gap-2">
       <span class="text-darkGrey w-12 shrink-0">Po:</span>
-      <span class="font-medium text-grey-900">
+      <span class="text-grey-900 font-medium">
         {format_datetime_local(@session.start_datetime, @timezone)} – {format_datetime_local(
           @new_end,
           @timezone
@@ -115,7 +114,7 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
     ~H"""
     <div class="flex items-center gap-2">
       <span class="text-darkGrey w-12 shrink-0">Po:</span>
-      <span class="font-medium text-grey-900">
+      <span class="text-grey-900 font-medium">
         {format_datetime_local(@new_start, @timezone)} – {format_datetime_local(
           @session.end_datetime,
           @timezone
@@ -129,7 +128,7 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
     ~H"""
     <div class="flex items-center gap-2">
       <span class="text-darkGrey w-12 shrink-0">Po:</span>
-      <span class="font-medium text-redText">Sesja zostanie usunięta</span>
+      <span class="text-redText font-medium">Sesja zostanie usunięta</span>
     </div>
     """
   end
@@ -141,13 +140,13 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
     <div class="flex items-center gap-2">
       <span class="text-darkGrey w-12 shrink-0">Po:</span>
       <div class="flex flex-col gap-0.5">
-        <span class="font-medium text-grey-900">
+        <span class="text-grey-900 font-medium">
           {format_datetime_local(@session.start_datetime, @timezone)} – {format_datetime_local(
             @new_end,
             @timezone
           )}
         </span>
-        <span class="font-medium text-grey-900">
+        <span class="text-grey-900 font-medium">
           {format_datetime_local(@remainder.start_datetime, @timezone)} – {format_datetime_local(
             @remainder.end_datetime,
             @timezone
@@ -160,12 +159,21 @@ defmodule FirmowidWeb.Timetracker.Components.Overlap do
 
   # ── Helpers ──────────────────────────────────────────────────────────
 
-  defp trim_action_style(action) do
+  defp trim_action_label(action) do
     case action do
-      {:trim_end, _, _} -> {"Skrócona", "bg-orangeBg text-orangeText"}
-      {:trim_start, _, _} -> {"Skrócona", "bg-orangeBg text-orangeText"}
-      {:delete, _} -> {"Usunięta", "bg-redBg text-redText"}
-      {:split, _, _, _} -> {"Podzielona", "bg-blueBg text-blueText"}
+      {:trim_end, _, _} -> "Skrócona"
+      {:trim_start, _, _} -> "Skrócona"
+      {:delete, _} -> "Usunięta"
+      {:split, _, _, _} -> "Podzielona"
+    end
+  end
+
+  defp trim_action_badge_styles(action) do
+    case action do
+      {:trim_end, _, _} -> "bg-orangeBg text-orangeText"
+      {:trim_start, _, _} -> "bg-orangeBg text-orangeText"
+      {:delete, _} -> "bg-redBg text-redText"
+      {:split, _, _, _} -> "bg-blueBg text-blueText"
     end
   end
 

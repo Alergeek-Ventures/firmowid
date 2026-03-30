@@ -18,30 +18,30 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
 
   def table(assigns) do
     ~H"""
-    <table class="table-fixed border-separate border-spacing-y-2 w-full">
+    <table class="w-full table-fixed border-separate border-spacing-y-2">
       <col />
       <col class="w-32" />
       <col class="w-52" />
       <col class="w-36" />
       <thead>
         <tr>
-          <th class="pt-2 font-normal text-left text-darkGrey text-xs uppercase pb-2 pl-5">
+          <th class="text-darkGrey py-2 pl-5 text-left text-xs font-normal uppercase">
             Kontrahent
           </th>
-          <th class="pt-2 font-normal text-left text-darkGrey text-xs uppercase pb-2">
+          <th class="text-darkGrey py-2 text-left text-xs font-normal uppercase">
             Data sprzedaży
           </th>
-          <th class="pt-2 font-normal text-left text-darkGrey text-xs uppercase pb-2">
+          <th class="text-darkGrey py-2 text-left text-xs font-normal uppercase">
             Tagi
           </th>
-          <th class="pt-2 font-normal text-left text-darkGrey text-xs uppercase pb-2">
+          <th class="text-darkGrey py-2 text-left text-xs font-normal uppercase">
             Kwota
           </th>
         </tr>
       </thead>
       <tbody>
         <tr :if={@entries == []}>
-          <td colspan="4" class="text-center text-darkGrey py-8">Brak wpisów</td>
+          <td colspan="4" class="text-darkGrey py-8 text-center">Brak wpisów</td>
         </tr>
         <.row :for={entry <- @entries} entry={entry} tag_definitions={@tag_definitions} />
       </tbody>
@@ -121,8 +121,8 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
 
     ~H"""
     <tr>
-      <td class="bg-white py-2 rounded-l-md pl-5 pr-5">
-        <div class="whitespace-nowrap overflow-hidden text-ellipsis">
+      <td class="rounded-l-md bg-white px-5 py-2">
+        <div class="truncate">
           <%= if @navigate do %>
             <.link navigate={@navigate} class="hover:underline">
               <.party_cell party={@party} description={@description} />
@@ -136,7 +136,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
         {@date}
       </td>
       <td class="bg-white py-2">
-        <div class="flex items-center gap-1 relative">
+        <div class="relative flex items-center gap-1">
           <.tag_pills entity_tags={@entity_tags} />
           <.tag_selector_popover
             :if={@taggable}
@@ -150,13 +150,13 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
         </div>
       </td>
       <td class={[
-        "py-2 rounded-r-md",
+        "rounded-r-md py-2",
         if(Decimal.gte?(@amount_decimal, 0),
-          do: "text-blueText bg-blueBg",
-          else: "text-orangeText bg-orangeBg"
+          do: "bg-blueBg text-blueText",
+          else: "bg-orangeBg text-orangeText"
         )
       ]}>
-        <div class="text-right pr-5 py-1">
+        <div class="py-1 pr-5 text-right">
           {@amount}
         </div>
       </td>
@@ -170,25 +170,25 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
       id={"tag-trigger-#{@entity_id}"}
       type="button"
       phx-click={show_popover(@popover_id)}
-      class="inline-flex items-center justify-center rounded-md p-1 text-darkGrey/50 hover:text-darkGrey hover:bg-grey-200 transition cursor-pointer shrink-0"
+      class="hover:bg-grey-200 hover:text-darkGrey text-darkGrey/50 inline-flex shrink-0 cursor-pointer items-center justify-center rounded-md p-1 transition"
     >
-      <.icon name="hero-pencil-square-mini" class="h-4.5 w-4.5" />
+      <.icon name="hero-pencil-square-mini" class="size-4.5" />
     </button>
     <.popover
       id={@popover_id}
       reference_id={"tag-trigger-#{@entity_id}"}
       placement="bottom-start"
-      class="bg-grey-50 border border-grey-200 rounded-lg w-56"
+      class="bg-grey-50 border-grey-200 w-56 rounded-lg border"
     >
-      <ul class="overflow-auto p-1 flex flex-col gap-0.5 max-h-64">
+      <ul class="flex max-h-64 flex-col gap-0.5 overflow-auto p-1">
         <li
           phx-click="clear-entity-tags"
           phx-value-entity_type={@entity_type}
           phx-value-entity_id={@entity_id}
           class={[
-            "px-2 py-1.5 rounded text-sm cursor-pointer transition",
+            "cursor-pointer rounded px-2 py-1.5 text-sm transition",
             if(@current_kind == nil,
-              do: "bg-orange-100 text-orange-800 font-medium",
+              do: "bg-orange-100 font-medium text-orange-800",
               else: "hover:bg-orange-100 hover:text-orange-800"
             )
           ]}
@@ -201,9 +201,9 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
           phx-value-entity_id={@entity_id}
           phx-value-kind="company"
           class={[
-            "px-2 py-1.5 rounded text-sm cursor-pointer transition",
+            "cursor-pointer rounded px-2 py-1.5 text-sm transition",
             if(@current_kind == :company,
-              do: "bg-orange-100 text-orange-800 font-medium",
+              do: "bg-orange-100 font-medium text-orange-800",
               else: "hover:bg-orange-100 hover:text-orange-800"
             )
           ]}
@@ -216,9 +216,9 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
           phx-value-entity_id={@entity_id}
           phx-value-kind="internal"
           class={[
-            "px-2 py-1.5 rounded text-sm cursor-pointer transition",
+            "cursor-pointer rounded px-2 py-1.5 text-sm transition",
             if(@current_kind == :internal,
-              do: "bg-orange-100 text-orange-800 font-medium",
+              do: "bg-orange-100 font-medium text-orange-800",
               else: "hover:bg-orange-100 hover:text-orange-800"
             )
           ]}
@@ -227,12 +227,12 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
         </li>
         <li
           :if={@tag_definitions != []}
-          class="border-t border-grey-200 mt-0.5 pt-0.5"
+          class="border-grey-200 mt-0.5 border-t pt-0.5"
           role="separator"
         >
         </li>
         <li :for={tag_def <- @tag_definitions}>
-          <label class="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition hover:bg-orange-100 hover:text-orange-800">
+          <label class="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 transition hover:bg-orange-100 hover:text-orange-800">
             <input
               type="checkbox"
               checked={MapSet.member?(@current_project_ids, tag_def.id)}
@@ -240,15 +240,15 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
               phx-value-entity_type={@entity_type}
               phx-value-entity_id={@entity_id}
               phx-value-tag_definition_id={tag_def.id}
-              class="w-4 h-4 border border-darkGrey rounded-[3px] focus:ring-0"
+              class="border-darkGrey size-4 rounded-[3px] border focus:ring-0"
               style={"color: #{tag_def.color}"}
             />
             <span
-              class="inline-block w-2 h-2 rounded-full shrink-0"
+              class="inline-block size-2 shrink-0 rounded-full"
               style={"background-color: #{tag_def.color}"}
             >
             </span>
-            <span class="text-sm text-darkGrey truncate">{tag_def.name}</span>
+            <span class="text-darkGrey truncate text-sm">{tag_def.name}</span>
           </label>
         </li>
       </ul>
@@ -259,7 +259,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
   defp party_cell(assigns) do
     ~H"""
     {@party}
-    <span :if={@description != "" and @description != nil} class="text-darkGrey opacity-50 text-sm">
+    <span :if={@description != "" and @description != nil} class="text-darkGrey text-sm opacity-50">
       {@description}
     </span>
     """
@@ -269,7 +269,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
 
   defp tag_pills(assigns) do
     ~H"""
-    <span class="inline-flex gap-1 flex-wrap">
+    <span class="inline-flex flex-wrap gap-1">
       <span
         :for={tag <- @entity_tags}
         class="inline-flex rounded-full px-2 py-0 text-[11px] font-medium whitespace-nowrap"

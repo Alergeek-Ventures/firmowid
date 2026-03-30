@@ -1,4 +1,4 @@
-<div class="max-w-6xl w-full mx-auto ">
+<div class="mx-auto w-full max-w-6xl">
   <.form
     for={@form}
     phx-change="validate"
@@ -33,13 +33,13 @@
 
       <hr class="text-grey-200 col-start-2 col-end-9" />
 
-      <div class="col-start-2 col-end-9 flex flex-row gap-14 items-start">
-        <div class="grid grid-cols-[min-content_1fr] gap-x-5 gap-y-4 items-start w-full">
+      <div class="col-start-2 col-end-9 flex flex-row items-start gap-14">
+        <div class="grid w-full grid-cols-[min-content_1fr] items-start gap-x-5 gap-y-4">
           <label class="text-grey-700 whitespace-nowrap" for={@form[:counterparty_id].id}>
             Kontrahent
           </label>
 
-          <div class="col-start-2 border border-grey-200 rounded-lg p-4 grid grid-cols-[repeat(2,auto)] gap-x-5 gap-y-1 items-start">
+          <div class="border-grey-200 col-start-2 grid grid-cols-[repeat(2,auto)] items-start gap-x-5 gap-y-1 rounded-lg border p-4">
             <p class="text-grey-500 text-sm/snug">Nazwa</p>
             <p class="text-grey-700 text-sm/snug font-bold">
               {@form[:buyer_display_name].value}
@@ -89,7 +89,7 @@
             color="light_grey"
             size="small"
             new={true}
-            class="justify-self-end col-start-2"
+            class="col-start-2 justify-self-end"
             phx-click={show_modal("buyer-edit-modal")}
           >
             Zmień
@@ -115,19 +115,19 @@
           placeholder="np. korekta ceny, zmiana danych nabywcy..."
           maxlength="256"
         />
-        <p class="text-xs text-grey-400 mt-1">
+        <p class="text-grey-400 mt-1 text-xs">
           Wymagana prawnie (Art. 106j ust. 2 pkt 3 ustawy o VAT). Maksymalnie 256 znaków.
         </p>
       </div>
 
-      <div class="col-span-full flex flex-col xl:flex-row gap-14 justify-center items-center">
+      <div class="col-span-full flex flex-col items-center justify-center gap-14 xl:flex-row">
         <%= if SalesInvoice.ksef_submitted?(@invoice) do %>
           <div class="space-y-4">
-            <p class="text-black text-lg/6 font-medium">
+            <p class="text-lg/6 font-medium text-black">
               Faktura {@invoice.invoice_number}
             </p>
 
-            <div class="border border-grey-200 rounded-lg bg-white shadow-sm overflow-hidden max-w-[650px]">
+            <div class="border-grey-200 max-w-[650px] overflow-hidden rounded-lg border bg-white shadow-sm">
               <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
                 sales_invoice={@invoice}
                 reference_invoice={@reference_invoice}
@@ -138,12 +138,12 @@
           </div>
 
           <div class="space-y-4">
-            <p class="text-black text-lg/6 font-medium">
+            <p class="text-lg/6 font-medium text-black">
               Faktura korygująca {@preview_invoice.invoice_number}
             </p>
 
             <div class={[
-              "border border-grey-200 rounded-lg bg-white shadow-sm overflow-hidden max-w-[650px]",
+              "border-grey-200 max-w-[650px] overflow-hidden rounded-lg border bg-white shadow-sm",
               @stale_preview_invoice? && "opacity-50"
             ]}>
               <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
@@ -156,7 +156,7 @@
           </div>
         <% else %>
           <div class={[
-            "border border-grey-200 rounded-lg bg-white shadow-sm overflow-hidden max-w-[650px]",
+            "border-grey-200 max-w-[650px] overflow-hidden rounded-lg border bg-white shadow-sm",
             @stale_preview_invoice? && "opacity-50"
           ]}>
             <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
@@ -169,7 +169,7 @@
       </div>
     </div>
 
-    <div class="col-start-2 col-end-9 flex justify-end gap-4 mb-14">
+    <div class="col-start-2 col-end-9 mb-14 flex justify-end gap-4">
       <.button
         type="button"
         color="light_grey"
@@ -201,11 +201,11 @@
       </.button>
     </div>
     <.modal id="buyer-edit-modal">
-      <h2 class="text-xl font-semibold text-grey-900 mb-6">Edytuj dane nabywcy</h2>
+      <h2 class="text-grey-900 mb-6 text-xl font-semibold">Edytuj dane nabywcy</h2>
 
       <div class="space-y-6">
-        <div class="bg-grey-50 px-5 py-3 rounded-lg">
-          <p class="text-sm text-grey-700">
+        <div class="bg-grey-50 rounded-lg px-5 py-3">
+          <p class="text-grey-700 text-sm">
             <%= if to_string(@form[:buyer_type].value) == "company" do %>
               Firma / Jednoosobowa Działalność Gospodarcza
             <% else %>
@@ -216,7 +216,7 @@
 
         <div class="grid grid-cols-2 gap-6">
           <div class="space-y-4">
-            <p class="text-sm font-medium text-grey-700">Dane podstawowe</p>
+            <p class="text-grey-700 text-sm font-medium">Dane podstawowe</p>
 
             <div
               :if={
@@ -273,7 +273,7 @@
           </div>
 
           <div class="space-y-4">
-            <p class="text-sm font-medium text-grey-700">Dane adresowe</p>
+            <p class="text-grey-700 text-sm font-medium">Dane adresowe</p>
 
             <.input
               field={@form[:buyer_address]}
@@ -300,7 +300,7 @@
         </div>
 
         <div class="space-y-4">
-          <p class="text-sm font-medium text-grey-700">Dodatkowe informacje</p>
+          <p class="text-grey-700 text-sm font-medium">Dodatkowe informacje</p>
 
           <div class="grid grid-cols-2 gap-4">
             <.input

@@ -12,22 +12,22 @@ defmodule FirmowidWeb.HoursRecord.Components.PdfTemplate do
 
   def hours_record(assigns) do
     ~H"""
-    <div class="w-[210mm] border print:border-none h-[267mm] relative py-[120px] px-[32px] mx-auto bg-white text-[16px]">
+    <div class="relative mx-auto h-[267mm] w-[210mm] border bg-white px-[32px] py-[120px] text-[16px] print:border-none">
       <div class="flex justify-between">
         <div>
           <%= if @avatar_data_uri do %>
-            <img src={@avatar_data_uri} class="w-[200px] h-[200px]" />
+            <img src={@avatar_data_uri} class="h-[200px] w-[200px]" />
           <% else %>
-            <img :if={@avatar_url} src={@avatar_url} class="w-[200px] h-[200px]" />
+            <img :if={@avatar_url} src={@avatar_url} class="h-[200px] w-[200px]" />
           <% end %>
         </div>
-        <div class="flex flex-col items-end mt-10 mr-9">
+        <div class="mt-10 mr-9 flex flex-col items-end">
           <span>Imię i nazwisko Zleceniobiorcy</span>
           <span class="mt-1">{@name}</span>
         </div>
       </div>
 
-      <div class="text-center mt-[60px] mb-[35px]">
+      <div class="mt-[60px] mb-[35px] text-center">
         <h1 class="font-bold">Informacja o liczbie godzin wykonania zlecenia</h1>
       </div>
       <div class="flex justify-center">
@@ -44,7 +44,7 @@ defmodule FirmowidWeb.HoursRecord.Components.PdfTemplate do
         </div>
       </div>
 
-      <div class="text-right mr-[68px] mt-[160px]">
+      <div class="mt-[160px] mr-[68px] text-right">
         <p>Podpis Zleceniobiorcy</p>
       </div>
     </div>

@@ -113,22 +113,19 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="assistant-chat relative flex flex-col mx-auto w-full h-full">
+    <div class="assistant-chat relative mx-auto flex size-full flex-col">
       <button
         id="chat-close-button"
         phx-hook="Tippy"
         data-tippy-content="Zamknij czat"
         phx-click="close_chat"
         phx-target="#invoice-show"
-        class={[
-          "text-sm text-grey-700 self-end flex items-center gap-2 hover:text-grey-400 transition-colors mb-4",
-          "absolute top-0 right-0 bg-lightGreyBg hover:border-grey-400 border border-transparent rounded p-2 z-10"
-        ]}
+        class="bg-lightGreyBg hover:border-grey-400 hover:text-grey-400 text-grey-700 absolute top-0 right-0 z-10 mb-4 flex items-center gap-2 self-end rounded border border-transparent p-2 text-sm transition-colors"
       >
         <.icon name="hero-x-mark-mini" />
       </button>
       <div
-        class="flex flex-col grow gap-12 py-4 pr-4 overflow-y-auto"
+        class="flex grow flex-col gap-12 overflow-y-auto py-4 pr-4"
         id="messages"
         phx-update="stream"
         phx-hook="ScrollToBottom"
@@ -137,7 +134,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
           {Components.message(msg, @myself, current_user: @current_user)}
         </div>
         <%= if @zero_state do %>
-          <div class="flex flex-row flex-wrap gap-3 items-center justify-center py-4">
+          <div class="flex flex-row flex-wrap items-center justify-center gap-3 py-4">
             <%= for possible_message <- [
             "Ta faktura pokrywa wszystkie transakcje z poprzedniego miesiąca",
             "Transakcja za tę fakturę ma inną nazwę kontrahenta",
@@ -146,7 +143,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
               <.button
                 phx-click="send"
                 color="orange"
-                class="text-sm text-orangeText bg-orangeBg font-bold hover:text-orangeBg hover:bg-orangeText"
+                class="bg-orangeBg hover:bg-orangeText hover:text-orangeBg text-orangeText text-sm font-bold"
                 phx-target={@myself}
                 phx-value-message={possible_message}
               >
@@ -164,7 +161,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
         myself={@myself}
       />
 
-      <div :if={@waiting_for_decision} class="flex flex-col gap-3 items-center mb-8">
+      <div :if={@waiting_for_decision} class="mb-8 flex flex-col items-center gap-3">
         <p>Połączyć te transakcje z fakturą?</p>
         <div class="grid grid-cols-2 gap-3">
           <.button

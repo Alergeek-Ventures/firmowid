@@ -1,25 +1,25 @@
-<div class="grid grid-cols-[max-content_1fr] grid-rows-[repeat(2,min-content)] gap-x-10 w-full max-w-7xl mx-auto my-4">
+<div class="mx-auto my-4 grid w-full max-w-7xl grid-cols-[max-content_1fr] grid-rows-[repeat(2,min-content)] gap-x-10">
   <.link
     navigate={~p"/zarzadzanie/pracownicy"}
-    class="flex gap-2 items-center justify-self-start mb-8"
+    class="mb-8 flex items-center gap-2 justify-self-start"
   >
     <.icon name="hero-arrow-left-circle-solid" class="size-8" />
     <span class="text-darkGrey">Pracownicy</span>
   </.link>
 
-  <.card class="w-full max-w-[380px] min-h-[689px] row-start-2">
+  <.card class="row-start-2 min-h-[689px] w-full max-w-[380px]">
     <div class="flex gap-3">
       <.avatar>
         <%!-- TODO: add user avatar --%>
-        <.icon name="hero-user" class="size-20 text-darkGrey" />
+        <.icon name="hero-user" class="text-darkGrey size-20" />
       </.avatar>
       <div>
         <h2 class="text-lg font-bold">{get_employee_display_name(@employee)}</h2>
-        <div :if={@employee.slack_id != nil} class="text-darkGrey text-sm flex gap-2 items-center">
+        <div :if={@employee.slack_id != nil} class="text-darkGrey flex items-center gap-2 text-sm">
           <img src="/images/slack.png" alt="slack logo" width={24} height={24} />
           <.link
             href={"#{get_employee_slack_url(@employee)}/team/#{@employee.slack_id}"}
-            class="border-b border-transparent hover:border-darkGrey transition-colors"
+            class="hover:border-darkGrey border-b border-transparent transition-colors"
           >
             napisz na Slacku
           </.link>
@@ -38,12 +38,12 @@
         onclick={"navigator.clipboard.writeText('#{@employee.bank_account_number}')"}
         type="button"
         class={[
-          "h-6 w-7 text-darkGrey rounded-[3px]",
+          "text-darkGrey h-6 w-7 rounded-[3px]",
           "bg-greyButtonBg self-center justify-self-end",
-          "shrink-0 flex flex-row justify-center items-center",
+          "flex shrink-0 flex-row items-center justify-center",
           "hover:border-darkGrey border border-transparent",
           "active:bg-darkGrey active:text-lightGreyBg",
-          "transition-all transition-duration-300"
+          "transition-duration-300 transition-all"
         ]}
       >
         <.icon name="hero-document-duplicate" class="size-5" />
@@ -51,11 +51,11 @@
     </.user_card_info>
 
     <.user_card_info :if={not Enum.empty?(@employee.projects)} label="Projekty">
-      <div class="flex flex-wrap gap-2 mt-2 text-sm/tight">
+      <div class="mt-2 flex flex-wrap gap-2 text-sm/tight">
         <.link
           :for={project <- @employee.projects}
           navigate={~p"/zarzadzanie/projekty/#{project.id}"}
-          class="bg-turquoise-200 text-turquoise-700 rounded-full px-4 py-1 text-sm/snug hover:bg-turquoise-300 hover:text-turquoise-800 transition"
+          class="bg-turquoise-200 hover:bg-turquoise-300 hover:text-turquoise-800 text-turquoise-700 rounded-full px-4 py-1 text-sm/snug transition"
         >
           {project.name}
         </.link>
@@ -64,14 +64,14 @@
 
     <span
       :if={@employee.birthday != nil}
-      class="mt-auto text-sm/snug text-grey-700 inline-flex gap-2 items-center"
+      class="text-grey-700 mt-auto inline-flex items-center gap-2 text-sm/snug"
     >
       {TimeFormatter.format_date(@employee.birthday, "d MMMM")}
       <.icon name="hero-cake" class="size-5" />
     </span>
   </.card>
 
-  <div :if={false} class="flex gap-10 px-6 self-end col-start-2">
+  <div :if={false} class="col-start-2 flex gap-10 self-end px-6">
     <.link
       :for={
         {path, label, action} <-
@@ -80,20 +80,18 @@
           ]
       }
       navigate={path}
-      class={
-        classes([
-          "phx-click-loading:opacity-50 p-3 rounded-t-md font-medium text-darkGrey transition-all",
-          "shadow shadow-transparent hover:text-black hover:shadow-black/10 hover:bg-white",
-          @live_action == action &&
-            "text-black shadow-black/10 bg-grey-50"
-        ])
-      }
+      class={[
+        "phx-click-loading:opacity-50 text-darkGrey rounded-t-md p-3 font-medium transition-all",
+        "shadow shadow-transparent hover:bg-white hover:text-black hover:shadow-black/10",
+        @live_action == action &&
+          "bg-grey-50 text-black shadow-black/10"
+      ]}
     >
       {label}
     </.link>
   </div>
 
-  <div class="w-full space-y-6 row-start-2 col-start-2">
+  <div class="col-start-2 row-start-2 w-full space-y-6">
     <%= case @live_action do %>
       <% :projects -> %>
         <.employee_projects_tab

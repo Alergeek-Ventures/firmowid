@@ -1,4 +1,4 @@
-<div class="max-w-7xl w-full mx-auto flex flex-col gap-8 flex-1">
+<div class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8">
   <.form
     for={@form}
     phx-change="validate"
@@ -7,10 +7,10 @@
   >
     <div class="flex flex-row items-start justify-between">
       <div class="space-y-1">
-        <p :if={@live_action == :edit} class="text-sm text-grey-500 leading-snug">
+        <p :if={@live_action == :edit} class="text-grey-500 text-sm/snug">
           {@project.name}
         </p>
-        <p class="text-2xl leading-tight font-medium flex flex-row items-center gap-4">
+        <p class="flex flex-row items-center gap-4 text-2xl/tight font-medium">
           {case @live_action do
             :new -> "Nowy projekt"
             :edit -> "Edycja projektu"
@@ -40,19 +40,19 @@
       </div>
     </div>
 
-    <div class="flex flex-col gap-12 flex-1">
+    <div class="flex flex-1 flex-col gap-12">
       <div class="flex flex-col gap-4">
         <p class="text-grey-900 py-1 font-medium">
           Informacje ogólne
         </p>
-        <div class="grid grid-cols-[min-content_1fr] gap-x-5 gap-y-2 items-center">
-          <label class="text-sm text-grey-700 text-nowrap" for={@form[:name].id}>
+        <div class="grid grid-cols-[min-content_1fr] items-center gap-x-5 gap-y-2">
+          <label class="text-grey-700 text-sm text-nowrap" for={@form[:name].id}>
             Nazwa projektu
           </label>
           <.input field={@form[:name]} class="max-w-90" new={true} />
 
           <%= if false do %>
-            <label class="text-sm text-grey-700 text-nowrap" for={@form[:counterparty_id].id}>
+            <label class="text-grey-700 text-sm text-nowrap" for={@form[:counterparty_id].id}>
               Kontrahent
             </label>
             <.input
@@ -68,15 +68,15 @@
     </div>
   </.form>
 
-  <div class="flex flex-col gap-6 flex-1">
+  <div class="flex flex-1 flex-col gap-6">
     <div class="flex flex-row items-center justify-between gap-8">
       <p class="text-grey-900 font-medium">
         Pracownicy
       </p>
 
-      <div class="flex flex-row gap-2 w-full max-w-sm justify-end">
+      <div class="flex w-full max-w-sm flex-row justify-end gap-2">
         <div class="relative w-full">
-          <Lucideicons.search class="absolute text-grey-900 size-6 inset-y-0 my-auto left-1.5" />
+          <Lucideicons.search class="text-grey-900 absolute inset-y-0 left-1.5 my-auto size-6" />
 
           <.input
             id="user_search"
@@ -163,30 +163,30 @@
     <%= if Enum.empty?(@project_users) do %>
       <div
         id="project_users_list"
-        class="border border-grey-200 rounded-lg flex justify-center items-center p-6 flex-1"
+        class="border-grey-200 flex flex-1 items-center justify-center rounded-lg border p-6"
       >
-        <p class="text-sm/snug text-grey-700 text-center text-balance max-w-sm">
+        <p class="text-grey-700 max-w-sm text-center text-sm/snug text-balance">
           Aby dodać pracownika do tego projektu, wpisz jego imię lub nazwisko, a następnie kliknij wybraną osobę na liście wyników.
         </p>
       </div>
     <% else %>
       <div
         id="project_users_list"
-        class="flex flex-col gap-6 bg-white rounded-lg p-6 pr-4 phx-click-loading:opacity-75"
+        class="phx-click-loading:opacity-75 flex flex-col gap-6 rounded-lg bg-white p-6 pr-4"
       >
         <div
           :for={entry <- @project_users}
           :key={entry.user.id}
           class="flex flex-row items-center gap-4"
         >
-          <.avatar class={classes(["size-[50px]", entry.removed_from_project && "opacity-50"])}>
+          <.avatar class={["size-[50px]", entry.removed_from_project && "opacity-50"]}>
             <.avatar_image src={entry.user.avatar_url} alt="Avatar" />
-            <.avatar_fallback class="bg-blueBg text-blueText">
+            <.avatar_fallback bg_color="blueBg" class="text-blueText">
               {String.slice(entry.user.name || entry.user.email || "", 0, 1) |> String.upcase()}
             </.avatar_fallback>
           </.avatar>
 
-          <p class={classes([entry.removed_from_project && "text-grey-500"])}>
+          <p class={[entry.removed_from_project && "text-grey-500"]}>
             {entry.user.name || entry.user.email}
           </p>
 

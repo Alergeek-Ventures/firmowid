@@ -1,4 +1,4 @@
-<div class="min-h-screen flex flex-col bg-grey-100">
+<div class="bg-grey-100 flex min-h-screen flex-col">
   <%!-- Navbar --%>
   <.landing_navbar />
 
@@ -40,34 +40,34 @@
       <%!-- deleted until we have different images for each item --%>
       <div
         id="ksef-images"
-        class="relative flex justify-center md:justify-end w-full h-full px-auto items-center"
+        class="px-auto relative flex size-full items-center justify-center md:justify-end"
       >
         <img
           id="ksef-example-1"
           src={~p"/images/ksef.png"}
           alt=""
-          class="pointer-events-none h-full rounded-[8px] border-[2px] border-grey-100 opacity-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full object-scale-down"
+          class="border-grey-100 pointer-events-none absolute top-1/2 left-1/2 h-full max-h-full w-auto -translate-1/2 rounded-[8px] border-2 object-scale-down opacity-0"
         />
 
         <img
           id="ksef-example-2"
           src={~p"/images/ksef.png"}
           alt=""
-          class="pointer-events-none h-full rounded-[8px] border-[2px] border-grey-100 opacity-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full object-scale-down"
+          class="border-grey-100 pointer-events-none absolute top-1/2 left-1/2 h-full max-h-full w-auto -translate-1/2 rounded-[8px] border-2 object-scale-down opacity-0"
         />
 
         <img
           id="ksef-example-3"
           src={~p"/images/ksef.png"}
           alt=""
-          class="pointer-events-none h-full rounded-[8px] border-[2px] border-grey-100 opacity-0 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto max-h-full object-scale-down"
+          class="border-grey-100 pointer-events-none absolute top-1/2 left-1/2 h-full max-h-full w-auto -translate-1/2 rounded-[8px] border-2 object-scale-down opacity-0"
         />
 
         <img
           id="default-photo"
           src={~p"/images/ksef.png"}
           alt=""
-          class="pointer-events-none rounded-[8px] border-[2px] border-grey-100 opacity-100 relative w-full h-auto object-scale-down"
+          class="border-grey-100 pointer-events-none relative h-auto w-full rounded-[8px] border-2 object-scale-down opacity-100"
         />
       </div>
     </:image>
@@ -107,7 +107,7 @@
           id="functionality-arrow"
           src={~p"/images/functionality_arrow.svg"}
           alt=""
-          class="pointer-events-none absolute md:rotate-[20deg] lg:rotate-0 md:top-12 lg:top-[-42px] lg:left-[118%] md:left-[32%] md:scale-[55%] lg:scale-[1.4] hidden md:block opacity-100 transition-opacity duration-200 delay-[50ms]"
+          class="pointer-events-none absolute hidden opacity-100 transition-opacity delay-50 duration-200 md:top-12 md:left-[32%] md:block md:scale-[55%] md:rotate-20 lg:top-[-42px] lg:left-[118%] lg:scale-[1.4] lg:rotate-0"
         />
       </span>
       <.solution_item image_container_id="invoicing-images" index={2}>
@@ -117,34 +117,34 @@
     <:image>
       <div
         id="invoicing-images"
-        class="relative flex justify-center md:justify-end w-full h-full items-center [&_img:not(#default-photo)]:pointer-events-none [&_img:not(#default-photo)]:transition-opacity [&_img:not(#default-photo)]:absolute [&_img:not(#default-photo)]:left-1/2 [&_img:not(#default-photo)]:top-1/2 [&_img:not(#default-photo)]:-translate-x-1/2 [&_img:not(#default-photo)]:-translate-y-1/2 [&_img]:w-auto [&_img]:max-h-full [&_img]:object-scale-down [&_img]:duration-[400ms]"
+        class="relative flex size-full items-center justify-center md:justify-end [&_img]:max-h-full [&_img]:w-auto [&_img]:object-scale-down [&_img]:duration-400 [&_img:not(#default-photo)]:pointer-events-none [&_img:not(#default-photo)]:absolute [&_img:not(#default-photo)]:top-1/2 [&_img:not(#default-photo)]:left-1/2 [&_img:not(#default-photo)]:-translate-1/2 [&_img:not(#default-photo)]:transition-opacity"
       >
         <img
           id="invoicing-example-1"
           src={~p"/images/invoice_upload.png"}
           alt=""
-          class="opacity-0 max-w-[90%]"
+          class="max-w-[90%] opacity-0"
         />
 
         <img
           id="invoicing-example-2"
           src={~p"/images/bank_linking.png"}
           alt=""
-          class="opacity-0 max-w-[668px]"
+          class="max-w-[668px] opacity-0"
         />
 
         <img
           id="invoicing-example-3"
           src={~p"/images/invoice_matching.png"}
           alt=""
-          class="opacity-0 max-w-[678px]"
+          class="max-w-[678px] opacity-0"
         />
 
         <img
           id="default-photo"
           src={~p"/images/figurine.png"}
           alt=""
-          class="aspect-[782/508] h-[91%] self-center hidden md:block opacity-[0.03]"
+          class="hidden aspect-782/508 h-[91%] self-center opacity-[0.03] md:block"
         />
       </div>
     </:image>
@@ -157,7 +157,7 @@
     <:cta>
       <a
         href="#video"
-        class="inline-flex flex-col items-center px-8 pt-4 mb-2 text-base font-medium text-darkGrey hover:text-black transition-colors duration-500"
+        class="text-darkGrey mb-2 inline-flex flex-col items-center px-8 pt-4 text-base font-medium transition-colors duration-500 hover:text-black"
       >
         Zobacz filmik
         <svg
@@ -245,7 +245,7 @@
     <:image>
       <.mockup
         label="Budget dashboard"
-        class="flex aspect-[798/375] max-h-[374px] w-full"
+        class="flex aspect-798/375 max-h-[374px] w-full"
       />
     </:image>
   </.feature_section>

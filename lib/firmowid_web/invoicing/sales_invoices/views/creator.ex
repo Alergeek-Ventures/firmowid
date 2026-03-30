@@ -1089,7 +1089,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     ~H"""
     <div class="flex flex-col gap-4">
-      <div class="flex flex-row gap-4 text-sm/snug text-grey-500">
+      <div class="text-grey-500 flex flex-row gap-4 text-sm/snug">
         <h2>
           Kreator faktur |
           <span class="text-grey-700">

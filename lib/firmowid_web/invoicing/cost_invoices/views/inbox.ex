@@ -22,74 +22,74 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
   def render(assigns) do
     ~H"""
     <div class="px-4 sm:px-6 lg:px-8">
-      <div class="sm:flex sm:items-center mb-6">
+      <div class="mb-6 sm:flex sm:items-center">
         <div class="sm:flex-auto">
-          <h1 class="text-xl font-bold leading-6 text-black">Skrzynka odbiorcza</h1>
-          <p class="mt-2 text-sm text-darkGrey">
+          <h1 class="text-xl/6 font-bold text-black">Skrzynka odbiorcza</h1>
+          <p class="text-darkGrey mt-2 text-sm">
             Lista wszystkich e-maili z fakturami kosztowymi
           </p>
         </div>
       </div>
 
-      <table class="table-fixed border-separate border-spacing-y-3 w-full">
+      <table class="w-full table-fixed border-separate border-spacing-y-3">
         <col class="w-44" />
         <col />
         <col />
         <col class="w-36" />
         <col />
-        <thead class="sticky top-[130px] bg-lightGreyBg z-[1]">
+        <thead class="bg-lightGreyBg sticky top-[130px] z-1">
           <tr>
-            <th class="pt-4 font-normal text-left text-darkGrey text-xs uppercase pb-2 pl-5">
+            <th class="text-darkGrey pt-4 pb-2 pl-5 text-left text-xs font-normal uppercase">
               Data otrzymania
             </th>
-            <th class="pt-4 font-normal text-left text-darkGrey text-xs uppercase pb-2">
+            <th class="text-darkGrey pt-4 pb-2 text-left text-xs font-normal uppercase">
               Nadawca
             </th>
-            <th class="pt-4 font-normal text-left text-darkGrey text-xs uppercase pb-2">
+            <th class="text-darkGrey pt-4 pb-2 text-left text-xs font-normal uppercase">
               Temat
             </th>
-            <th class="pt-4 font-normal text-left text-darkGrey text-xs uppercase pb-2">
+            <th class="text-darkGrey pt-4 pb-2 text-left text-xs font-normal uppercase">
               Status
             </th>
-            <th class="pt-4 font-normal text-left text-darkGrey text-xs uppercase pb-2">
+            <th class="text-darkGrey pt-4 pb-2 text-left text-xs font-normal uppercase">
               Szczegóły
             </th>
           </tr>
         </thead>
         <tbody id="emails" phx-update="stream">
           <tr :for={{id, email} <- @streams.emails} id={id}>
-            <td class="transition-all duration-500 bg-white py-4 rounded-l-md pl-5 font-light text-sm">
+            <td class="rounded-l-md bg-white py-4 pl-5 text-sm font-light transition-all duration-500">
               {Calendar.strftime(email.received_at, "%Y-%m-%d %H:%M")}
             </td>
-            <td class="transition-all duration-500 bg-white py-4 text-sm">
-              <div class="w-full whitespace-nowrap overflow-hidden text-ellipsis">
+            <td class="bg-white py-4 text-sm transition-all duration-500">
+              <div class="w-full truncate">
                 {email.sender_email}
               </div>
             </td>
-            <td class="transition-all duration-500 bg-white py-4 text-sm">
-              <div class="w-full whitespace-nowrap overflow-hidden text-ellipsis">
+            <td class="bg-white py-4 text-sm transition-all duration-500">
+              <div class="w-full truncate">
                 {email.subject || "(bez tematu)"}
               </div>
             </td>
-            <td class="transition-all duration-500 bg-white py-4">
+            <td class="bg-white py-4 transition-all duration-500">
               <%= if is_nil(email.processed_at) do %>
-                <div class="text-xs h-6 flex flex-row justify-center items-center py-2 px-2 rounded-md w-32 bg-greyButtonBg text-darkGrey">
+                <div class="bg-greyButtonBg text-darkGrey flex h-6 w-32 flex-row items-center justify-center rounded-md p-2 text-xs">
                   <div class="font-normal uppercase">Przetwarzanie</div>
                 </div>
               <% else %>
                 <%= if is_nil(email.failure_reason) do %>
-                  <div class="text-xs h-6 flex flex-row justify-center items-center py-2 px-2 rounded-md w-32 bg-greenBg text-greenText">
+                  <div class="bg-greenBg text-greenText flex h-6 w-32 flex-row items-center justify-center rounded-md p-2 text-xs">
                     <div class="font-normal uppercase">Sukces</div>
-                    <.icon name="hero-check-micro" class="w-4 h-4 ml-1" />
+                    <.icon name="hero-check-micro" class="ml-1 size-4" />
                   </div>
                 <% else %>
-                  <div class="text-xs h-6 flex flex-row justify-center items-center py-2 px-2 rounded-md w-32 bg-redBg text-redText">
+                  <div class="bg-redBg text-redText flex h-6 w-32 flex-row items-center justify-center rounded-md p-2 text-xs">
                     <div class="font-normal uppercase">Błąd</div>
                   </div>
                 <% end %>
               <% end %>
             </td>
-            <td class="transition-all duration-500 bg-white py-2 rounded-r-md pr-5 text-sm">
+            <td class="rounded-r-md bg-white py-2 pr-5 text-sm transition-all duration-500">
               <%= if is_nil(email.processed_at) do %>
                 <span class="text-darkGrey opacity-50">W trakcie...</span>
               <% else %>
@@ -134,14 +134,14 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
         <div class="relative" id={"invoice-dropdown-#{@email.id}"}>
           <button
             type="button"
-            class="text-blueText hover:underline flex items-center gap-1"
+            class="text-blueText flex items-center gap-1 hover:underline"
             phx-click={JS.toggle(to: "#invoice-list-#{@email.id}")}
           >
-            {length(@email.cost_invoices)} faktur <.icon name="hero-chevron-down" class="w-4 h-4" />
+            {length(@email.cost_invoices)} faktur <.icon name="hero-chevron-down" class="size-4" />
           </button>
           <div
             id={"invoice-list-#{@email.id}"}
-            class="hidden absolute z-10 mt-2 w-56 rounded-md bg-white shadow-lg ring-1 ring-black/5"
+            class="absolute z-10 mt-2 hidden w-56 rounded-md bg-white shadow-lg ring-1 ring-black/5"
           >
             <div class="py-1">
               <.link

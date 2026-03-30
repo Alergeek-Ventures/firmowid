@@ -3,12 +3,12 @@
   title={"#{if @lang == :en, do: "Invoice", else: "Faktura"} #{@invoice.invoice_number || ""} — #{Firmowid.SalesInvoices.buyer_display_name(@invoice) || ""}"}
 >
   <div class="grid grid-cols-[min-content_1fr] justify-center">
-    <div class="hidden xl:flex flex-col h-min gap-2 p-4 sticky left-0 top-0">
+    <div class="sticky top-0 left-0 hidden h-min flex-col gap-2 p-4 xl:flex">
       <a
         :for={invoice <- [@invoice | @invoice.corrections]}
         href={"#invoice-#{invoice.id}"}
         data-active={false}
-        class="text-grey-700 hover:text-grey-900 only:hidden data-active:text-grey-800"
+        class="data-active:text-grey-800 hover:text-grey-900 text-grey-700 only:hidden"
       >
         {invoice.invoice_number}
       </a>
@@ -17,11 +17,11 @@
       <div
         :for={invoice <- [@invoice | @invoice.corrections]}
         id={"invoice-#{invoice.id}"}
-        class="max-w-6xl w-full mx-auto flex-1 flex flex-col my-4"
+        class="mx-auto my-4 flex w-full max-w-6xl flex-1 flex-col"
       >
         <div class="px-9">
           <div class="mt-8 flex gap-6">
-            <div class="flex-1 max-w-[650px]">
+            <div class="max-w-[650px] flex-1">
               <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
                 sales_invoice={invoice}
                 currency_rate={@currency_rate}
@@ -29,19 +29,19 @@
                 reference_invoice={invoice.reference_invoice}
               />
             </div>
-            <div class="space-y-6 min-w-[350px]">
-              <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-medium text-grey-700">
+            <div class="min-w-[350px] space-y-6">
+              <div class="mb-4 flex items-center justify-between">
+                <h2 class="text-grey-700 text-lg font-medium">
                   {if @lang == :en, do: "Invoice details", else: "Dane faktury"}
                 </h2>
                 <div :if={invoice.invoice_type == :foreign} class="flex gap-1">
                   <a
                     href={~p"/faktura/#{@conn.params["token"]}?lang=pl"}
                     class={[
-                      "px-2 py-1 text-xs font-medium rounded transition-colors",
+                      "rounded px-2 py-1 text-xs font-medium transition-colors",
                       if(@lang == :pl,
                         do: "bg-black text-white",
-                        else: "bg-greyButtonBg text-darkGrey hover:bg-grey-300"
+                        else: "bg-greyButtonBg hover:bg-grey-300 text-darkGrey"
                       )
                     ]}
                   >
@@ -50,10 +50,10 @@
                   <a
                     href={~p"/faktura/#{@conn.params["token"]}?lang=en"}
                     class={[
-                      "px-2 py-1 text-xs font-medium rounded transition-colors",
+                      "rounded px-2 py-1 text-xs font-medium transition-colors",
                       if(@lang == :en,
                         do: "bg-black text-white",
-                        else: "bg-greyButtonBg text-darkGrey hover:bg-grey-300"
+                        else: "bg-greyButtonBg hover:bg-grey-300 text-darkGrey"
                       )
                     ]}
                   >
@@ -73,18 +73,18 @@
                     :vat -> ~p"/faktura/#{@conn.params["token"]}/pdf"
                   end
                 }
-                class="flex items-center justify-center gap-2 w-full px-4 py-3 text-sm font-medium text-white bg-black rounded-lg hover:bg-orangeText transition-colors"
+                class="hover:bg-orangeText flex w-full items-center justify-center gap-2 rounded-lg bg-black px-4 py-3 text-sm font-medium text-white transition-colors"
               >
-                <.icon name="hero-arrow-down-tray" class="w-4 h-4" />
+                <.icon name="hero-arrow-down-tray" class="size-4" />
                 {if @lang == :en, do: "Download PDF", else: "Pobierz PDF"}
               </a>
               <a
                 :if={not is_nil(invoice.ksef_number)}
                 href={Firmowid.Ksef.invoice_url!(invoice)}
                 target="_blank"
-                class="flex items-center justify-center gap-2 w-full px-4 py-3 text-sm font-medium text-white bg-black rounded-lg hover:bg-orangeText transition-colors"
+                class="hover:bg-orangeText flex w-full items-center justify-center gap-2 rounded-lg bg-black px-4 py-3 text-sm font-medium text-white transition-colors"
               >
-                <.icon name="hero-arrow-trending-up" class="w-4 h-4" />
+                <.icon name="hero-arrow-trending-up" class="size-4" />
                 {if @lang == :en, do: "View in KSeF", else: "Zobacz w KSeF"}
               </a>
             </div>

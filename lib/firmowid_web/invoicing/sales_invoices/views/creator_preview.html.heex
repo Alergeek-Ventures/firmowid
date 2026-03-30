@@ -1,7 +1,7 @@
-<div class="max-w-6xl w-full mx-auto flex-1 flex flex-col my-4 relative">
+<div class="relative mx-auto my-4 flex w-full max-w-6xl flex-1 flex-col">
   <.link
     patch={~p"/sprzedazowe?creator_draft=#{@creator_draft_id}&step=#{@step_number - 1}"}
-    class="flex items-center gap-2 text-sm absolute -left-[calc(68px+1.5rem)] -top-[2.5px]"
+    class="absolute -top-[2.5px] -left-[calc(68px+1.5rem)] flex items-center gap-2 text-sm"
   >
     <Lucideicons.circle_chevron_left /> Wróć
   </.link>
@@ -10,8 +10,8 @@
     <.render_header invoice={@invoice} step={@step_number} title="Podgląd faktury" />
 
     <div class="mt-8 flex gap-6">
-      <div class="flex-1 max-w-[650px]">
-        <div class="border border-grey-200 rounded-lg bg-white shadow-sm overflow-hidden">
+      <div class="max-w-[650px] flex-1">
+        <div class="border-grey-200 overflow-hidden rounded-lg border bg-white shadow-sm">
           <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
             sales_invoice={@preview_invoice}
             currency_rate={@currency_rate}
@@ -21,15 +21,15 @@
       </div>
 
       <div class="space-y-6">
-        <h2 class="text-lg font-medium text-grey-700 mb-4">Dane faktury</h2>
+        <h2 class="text-grey-700 mb-4 text-lg font-medium">Dane faktury</h2>
         <form phx-change="update_invoice_number">
-          <label class="block text-sm text-grey-500 mb-2">Numer faktury</label>
+          <label class="text-grey-500 mb-2 block text-sm">Numer faktury</label>
           <input
             type="text"
             name="invoice_number"
             value={@invoice_number}
             phx-debounce="300"
-            class="w-full border border-grey-200 rounded-lg px-3 py-2 text-sm text-grey-700 placeholder:text-grey-400 focus:outline-hidden focus:ring-2 focus:ring-turquoise-500 focus:border-transparent"
+            class="border-grey-200 focus:ring-turquoise-500 placeholder:text-grey-400 text-grey-700 w-full rounded-lg border px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:outline-hidden"
           />
         </form>
 
@@ -37,9 +37,9 @@
         <%= if @invoice_warnings != [] do %>
           <div class="space-y-3">
             <%= for warning <- @invoice_warnings do %>
-              <div class="p-3 bg-amber-50 bg-orangeBg rounded-lg text-sm">
-                <div class="flex items-start gap-2 text-orangeText">
-                  <Lucideicons.alert_triangle class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+              <div class="bg-orangeBg rounded-lg bg-amber-50 p-3 text-sm">
+                <div class="text-orangeText flex items-start gap-2">
+                  <Lucideicons.alert_triangle class="mt-0.5 size-4 shrink-0 text-amber-500" />
                   <span>
                     <%= case warning do %>
                       <% {:invalid_format, _} -> %>
@@ -51,13 +51,13 @@
                     <% end %>
                   </span>
                 </div>
-                <div class="mt-2 flex flex-wrap gap-2 ml-6">
+                <div class="mt-2 ml-6 flex flex-wrap gap-2">
                   <%= for suggestion <- warning_suggestions(warning) do %>
                     <button
                       type="button"
                       phx-click="select_series"
                       phx-value-number={suggestion}
-                      class="px-3 py-1 text-xs rounded bg-turquoise-300 text-turquoise-900 transition"
+                      class="bg-turquoise-300 text-turquoise-900 rounded px-3 py-1 text-xs transition"
                     >
                       Użyj {suggestion}
                     </button>
@@ -73,7 +73,7 @@
                 type="button"
                 phx-click="select_series"
                 phx-value-number={next_number}
-                class={"px-3 py-1.5 text-sm rounded-lg border #{if @invoice_number == next_number, do: "border-turquoise-500 bg-turquoise-50 text-turquoise-700", else: "border-grey-200 bg-white text-grey-600 hover:bg-grey-50"}"}
+                class={"rounded-lg border px-3 py-1.5 text-sm #{if @invoice_number == next_number, do: "bg-turquoise-50 border-turquoise-500 text-turquoise-700", else: "border-grey-200 hover:bg-grey-50 text-grey-600 bg-white"}"}
               >
                 {next_number}
               </button>
@@ -81,13 +81,10 @@
           </div>
         <% end %>
 
-        <label class="block text-sm text-grey-500 mb-2">Komentarz</label>
+        <label class="text-grey-500 mb-2 block text-sm">Komentarz</label>
         <textarea
           rows="4"
-          class="w-full border border-grey-200 rounded-lg px-3 py-2 text-sm
-              text-grey-700 placeholder:text-grey-400 focus:outline-hidden
-              focus:ring-2 focus:ring-turquoise-500 focus:border-transparent
-              resize-none cursor-not-allowed"
+          class="border-grey-200 focus:ring-turquoise-500 placeholder:text-grey-400 text-grey-700 w-full cursor-not-allowed resize-none rounded-lg border px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:outline-hidden"
           placeholder="Dodaj komentarz do faktury... (wkrótce dostępne)"
           disabled
         ></textarea>
@@ -98,7 +95,7 @@
             type="button"
             phx-click="save_as_draft"
             phx-disable-with="Zapisywanie..."
-            class="w-full h-11"
+            class="h-11 w-full"
             color="light_grey"
             new={true}
           >
@@ -110,7 +107,7 @@
               type="button"
               phx-click="send_to_ksef"
               phx-disable-with="Wysyłanie..."
-              class="w-full h-11"
+              class="h-11 w-full"
               color="turquoise"
               new={true}
             >
@@ -121,7 +118,7 @@
               type="button"
               phx-click="confirm_invoice"
               phx-disable-with="Zapisywanie..."
-              class="w-full h-11"
+              class="h-11 w-full"
               color="turquoise"
               new={true}
             >

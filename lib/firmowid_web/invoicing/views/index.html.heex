@@ -1,7 +1,7 @@
 <.limit_warning check_result={@cost_invoices_limit_check} type={:cost_invoices} />
 
-<div class="mt-16 mb-16 flex flex-col justify-center items-center gap-16 text-center md:hidden">
-  <.icon name="hero-document-magnifying-glass-solid" class="w-16 h-16" />
+<div class="my-16 flex flex-col items-center justify-center gap-16 text-center md:hidden">
+  <.icon name="hero-document-magnifying-glass-solid" class="size-16" />
   <div class="flex flex-col gap-4">
     <p class="font-bold">Podgląd dokumentów nie jest aktualnie dostępny na urządzeniu mobilnym</p>
     <p>Zeskanuj dokument naciskając przycisk poniżej, a będzie on dostępny na
@@ -10,8 +10,8 @@
 </div>
 
 <div class={[
-  "flex max-md:justify-center justify-between py-3",
-  "sticky top-navbar bg-lightGreyBg z-10"
+  "flex justify-between py-3 max-md:justify-center",
+  "bg-lightGreyBg top-navbar sticky z-10"
 ]}>
   <div class="flex items-center gap-4">
     <.date_picker
@@ -26,11 +26,9 @@
       phx-click="open-search"
       phx-hook="Tippy"
       data-tippy-content="Szukaj faktur"
-      class="flex items-center justify-center w-10 h-10 rounded-lg
-              border border-transparent bg-greyButtonBg hover:bg-blueText hover:text-white
-              transition-colors text-darkGrey"
+      class="bg-greyButtonBg hover:bg-blueText text-darkGrey flex size-10 items-center justify-center rounded-lg border border-transparent transition-colors hover:text-white"
     >
-      <.icon name="hero-magnifying-glass" class="w-5 h-5" />
+      <.icon name="hero-magnifying-glass" class="size-5" />
     </button>
   </div>
 
@@ -50,14 +48,12 @@
       phx-hook="Tippy"
       class={
         button_styles(%{
-          class: "relative flex flex-row gap-4 items-center justify-center
-                  rounded-lg px-3 py-2 max-md:hidden bg-greyButtonBg border-greyButtonBg
-                  hover:border-blueText hover:bg-blueText hover:text-white
-                  border transition-colors text-black"
+          class:
+            "bg-greyButtonBg border-greyButtonBg hover:bg-blueText! hover:border-blueText! relative flex flex-row items-center justify-center gap-4 rounded-lg border px-3 py-2 text-black! transition-colors hover:text-white! max-md:hidden"
         })
       }
     >
-      <.icon name="hero-document-duplicate" class="w-5 h-5" />
+      <.icon name="hero-document-duplicate" class="size-5" />
       <span class="max-xl:hidden">
         Wystaw fakturę
       </span>
@@ -76,12 +72,12 @@
         class={
           button_styles(%{
             class: [
-              "relative flex flex-row  items-center justify-between",
-              "border box-border rounded-lg px-3 py-2 border-black",
-              "hover:border-orangeText hover:bg-orangeText hover:text-white",
+              "relative flex flex-row items-center justify-between",
+              "box-border rounded-lg border border-black px-3 py-2",
+              "hover:bg-orangeText hover:border-orangeText hover:text-white",
               "transition-colors max-md:h-16 max-md:w-64",
-              "max-md:gap-4 text-md font-normal max-lg:w-auto w-44",
-              @is_month_closed && @params.filter == :unmatched && "!bg-transparent !text-black"
+              "text-md w-44 font-normal max-lg:w-auto max-md:gap-4",
+              @is_month_closed && @params.filter == :unmatched && "bg-transparent! text-black!"
             ]
           })
         }
@@ -91,18 +87,18 @@
             id="upload-count-indicator"
             phx-hook="Tippy"
             data-tippy-content="Pliki są przetwarzane i za kilka chwil będą dostępne w Firmowidzie"
-            class="absolute overflow-hidden flex items-center justify-center -top-3 -right-3 h-7 w-7 bg-black rounded-full"
+            class="absolute -top-3 -right-3 flex size-7 items-center justify-center overflow-hidden rounded-full bg-black"
           >
-            <span class="absolute animate-spin bg-gradient-to-r from-[#727272] to-black block w-full h-full" />
-            <span class="bg-black flex items-center justify-center w-6 h-6 z-10 rounded-full">
+            <span class="absolute block size-full animate-spin bg-linear-to-r from-[#727272] to-black" />
+            <span class="z-10 flex size-6 items-center justify-center rounded-full bg-black">
               <%= if @currently_uploading_count > 0 do %>
-                <.icon name="hero-arrow-up-circle-solid" class="text-white leading-none w-6 h-6" />
+                <.icon name="hero-arrow-up-circle-solid" class="size-6 leading-none text-white" />
               <% else %>
                 <%= case @processing_blobs_count do %>
                   <% 1 -> %>
                     <.icon
                       name="hero-arrow-up-circle-solid"
-                      class="text-white leading-none w-6 h-6"
+                      class="size-6 leading-none text-white"
                     />
                   <% 0 -> %>
                   <% _ -> %>
@@ -112,8 +108,8 @@
             </span>
           </span>
         <% end %>
-        <.icon name="hero-plus-micro" class="w-6 h-6" />
-        <span class="block md:hidden lg:block sm:grow sm:text-center">
+        <.icon name="hero-plus-micro" class="size-6" />
+        <span class="block sm:grow sm:text-center md:hidden lg:block">
           Dodaj fakturę
         </span>
       </label>
@@ -130,7 +126,7 @@
 
 <div class={[
   !@is_month_touched && "hidden",
-  "flex flex-row gap-4 items-center max-md:hidden",
+  "flex flex-row items-center gap-4 max-md:hidden",
   "mt-4 mb-3"
 ]}>
   <%= for {filter, label} <- [
@@ -139,10 +135,10 @@
     ] do %>
     <.button
       class={[
-        @params.filter == filter && "!bg-darkGrey !text-white !rounded-lg",
-        "relative text-darkGrey text-center bg-lightGreyBg",
-        "hover:bg-greyButtonBg py-1 px-3 text-sm font-normal leading-6",
-        "flex items-center justify-center uppercase border-none text-sm"
+        @params.filter == filter && "bg-darkGrey! rounded-lg! text-white!",
+        "bg-lightGreyBg text-darkGrey! relative text-center",
+        "hover:bg-greyButtonBg px-3 py-1 text-sm/6 font-normal",
+        "flex items-center justify-center border-none text-sm uppercase"
       ]}
       phx-click="change-filter"
       phx-value-filter={filter}
@@ -153,13 +149,13 @@
 
   <.button
     class={[
-      @is_month_closed && "!text-lightGreyBg",
-      @params.filter == :unmatched && "!bg-darkGrey !text-white",
+      @is_month_closed && "text-lightGreyBg!",
+      @params.filter == :unmatched && "bg-darkGrey! text-white!",
       @params.filter == :unmatched && @is_month_closed &&
-        "!text-black !bg-greenBg !border-greenText",
-      "relative text-darkGrey text-center bg-lightGreyBg",
-      "hover:bg-greyButtonBg py-1 px-3 text-sm leading-6 font-normal",
-      "flex items-center justify-center uppercase border-none text-sm"
+        "bg-greenBg! border-greenText! text-black!",
+      "bg-lightGreyBg text-darkGrey! relative text-center",
+      "hover:bg-greyButtonBg px-3 py-1 text-sm/6 font-normal",
+      "flex items-center justify-center border-none text-sm uppercase"
     ]}
     phx-click="change-filter"
     phx-value-filter={:unmatched}
@@ -169,9 +165,9 @@
   >
     <%= if @pending_invoicing_entries_count != 0 do %>
       <span class={[
-        "absolute overflow-hidden flex items-center justify-center",
-        "-top-3 left-full -translate-x-3 px-2 rounded-full",
-        "bg-orangeBg text-orangeText border-lightGreyBg border-2"
+        "absolute flex items-center justify-center overflow-hidden",
+        "-top-3 left-full -translate-x-3 rounded-full px-2",
+        "bg-orangeBg border-lightGreyBg text-orangeText border-2"
       ]}>
         {@pending_invoicing_entries_count}
       </span>
@@ -214,22 +210,17 @@
 <div
   :if={Bodyguard.permit?(Firmowid.Invoicing, :upload, @current_user)}
   id="file-drop-overlay"
-  class="fixed top-[10lvw] left-[5lvw] w-[90lvw] h-[80lvh] bg-[#CEE6E666]
-  rounded-lg items-center justify-center z-20 opacity-0
-  transition-opacity hidden"
+  class="fixed top-[10lvw] left-[5lvw] z-20 hidden h-[80lvh] w-[90lvw] items-center justify-center rounded-lg bg-[#CEE6E666] opacity-0 transition-opacity"
   phx-hook="FileUploadDragNDrop"
   phx-drop-target={@uploads.file.ref}
 >
-  <div class="absolute top-0 left-0 border-2 border-blueBg rounded-lg w-full
-    h-full opacity-100" />
-  <div class="flex flex-col items-center justify-center gap-8 bg-blueText
-    text-white
-    p-4 py-8 rounded-xl">
-    <.icon name="hero-cloud-arrow-up" class="w-16 h-16" />
-    <p class="text-xl opacity-100 text-center max-w-[25lvw]">
+  <div class="border-blueBg absolute top-0 left-0 size-full rounded-lg border-2 opacity-100" />
+  <div class="bg-blueText flex flex-col items-center justify-center gap-8 rounded-xl p-4 py-8 text-white">
+    <.icon name="hero-cloud-arrow-up" class="size-16" />
+    <p class="max-w-[25lvw] text-center text-xl opacity-100">
       Przeciągnij faktury, aby załadować je do Firmowida.
     </p>
-    <p class="text-sm opacity-80 text-center max-w-[25lvw]">
+    <p class="max-w-[25lvw] text-center text-sm opacity-80">
       (max 50 plików, PDF, JPG oraz PNG)
     </p>
   </div>
@@ -238,7 +229,7 @@
 <.modal class="max-w-4xl" id="tutorial-modal" on_cancel={JS.push("hide-tutorial-modal")}>
   <div class="flex flex-col gap-8 p-4">
     <h3 class="text-lg font-semibold">
-      Czas na ostatni krok - <p class="inline text-greenText">wgraj faktury</p>!
+      Czas na ostatni krok - <p class="text-greenText inline">wgraj faktury</p>!
     </h3>
     <p>
       Twoje transakcje (do 3 miesięcy wstecz) są już widoczne w Firmowidzie.
@@ -246,7 +237,7 @@
       <br /> Możesz to zrobić:
     </p>
     <div class="grid grid-cols-3 text-center">
-      <div class="flex flex-col  items-center gap-2">
+      <div class="flex flex-col items-center gap-2">
         <svg
           width="36"
           height="40"
@@ -263,7 +254,7 @@
 
         <p>za pomocą przycisku <br /> <b> + Dodaj dokument</b> w prawym górnym rogu</p>
       </div>
-      <div class="flex flex-col  items-center gap-2">
+      <div class="flex flex-col items-center gap-2">
         <svg
           width="40"
           height="37"
@@ -288,7 +279,7 @@
         </svg>
         <p class="mt-1"><b>przeciągając pliki</b> bezpośrednio na stronę</p>
       </div>
-      <div class="flex flex-col justify-between items-center gap-2">
+      <div class="flex flex-col items-center justify-between gap-2">
         <svg
           width="38"
           height="34"

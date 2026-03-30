@@ -16,7 +16,7 @@ defmodule FirmowidWeb.Auth.Views.Confirmation do
         </:actions>
       </.simple_form>
 
-      <p class="text-center mt-4">
+      <p class="mt-4 text-center">
         <.link href={~p"/zarejestruj"}>Zarejestruj się</.link>
         | <.link href={~p"/zaloguj"}>Zaloguj się</.link>
       </p>

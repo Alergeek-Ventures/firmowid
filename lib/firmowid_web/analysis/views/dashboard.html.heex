@@ -1,6 +1,6 @@
 <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
   <div class="mb-8">
-    <div class="flex justify-between items-center">
+    <div class="flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-bold text-gray-900">Analiza finansowa</h1>
         <p class="mt-2 text-gray-600">Przegląd przychodów i kosztów organizacji</p>
@@ -11,13 +11,13 @@
             id="tag-filter-trigger"
             phx-click={show_popover("tag-filter-popover")}
             class={[
-              "transition duration-100 ease-out inline-flex flex-row items-center justify-center",
+              "inline-flex flex-row items-center justify-center transition duration-100 ease-out",
               "cursor-pointer border whitespace-nowrap",
-              "text-base/tight font-medium h-11 rounded-lg py-2 px-2.75 gap-2.5 [&>svg]:size-6",
+              "h-11 gap-2.5 rounded-lg px-2.75 py-2 text-base/tight font-medium [&>svg]:size-6",
               if(@tag_filters != [],
-                do: "bg-orange-100 text-orange-800 border-orange-200",
+                do: "border-orange-200 bg-orange-100 text-orange-800",
                 else:
-                  "text-grey-900 bg-grey-200 hover:bg-grey-300 active:bg-grey-400 border-transparent"
+                  "active:bg-grey-400 bg-grey-200 hover:bg-grey-300 text-grey-900 border-transparent"
               )
             ]}
           >
@@ -33,53 +33,53 @@
             id="tag-filter-popover"
             reference_id="tag-filter-trigger"
             placement="bottom-end"
-            class="bg-grey-50 border border-grey-200 rounded-lg w-64"
+            class="bg-grey-50 border-grey-200 w-64 rounded-lg border"
           >
-            <div class="p-1 max-h-80 overflow-y-auto">
-              <div class="px-2 py-1.5 text-caps-sm text-darkGrey uppercase font-medium">
+            <div class="max-h-80 overflow-y-auto p-1">
+              <div class="text-caps-sm text-darkGrey px-2 py-1.5 font-medium uppercase">
                 Kategorie
               </div>
-              <label class="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition hover:bg-orange-100 hover:text-orange-800">
+              <label class="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 transition hover:bg-orange-100 hover:text-orange-800">
                 <input
                   type="checkbox"
                   checked={tag_filter_active?(@tag_filters, {:company})}
                   phx-click="toggle-tag"
                   phx-value-tag="company"
-                  class="w-4 h-4 border border-darkGrey text-darkGrey rounded-[3px] focus:ring-0"
+                  class="border-darkGrey text-darkGrey size-4 rounded-[3px] border focus:ring-0"
                 />
-                <span class="text-sm text-darkGrey">Firma</span>
+                <span class="text-darkGrey text-sm">Firma</span>
               </label>
 
               <div
                 :if={@tag_definitions != []}
-                class="px-2 py-1.5 text-caps-sm text-darkGrey uppercase font-medium mt-1"
+                class="text-caps-sm text-darkGrey mt-1 px-2 py-1.5 font-medium uppercase"
               >
                 Projekty
               </div>
               <label
                 :for={tag_def <- @tag_definitions}
-                class="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition hover:bg-orange-100 hover:text-orange-800"
+                class="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 transition hover:bg-orange-100 hover:text-orange-800"
               >
                 <input
                   type="checkbox"
                   checked={tag_filter_active?(@tag_filters, {:project, tag_def.id})}
                   phx-click="toggle-tag"
                   phx-value-tag={"project:#{tag_def.id}"}
-                  class="w-4 h-4 border border-darkGrey rounded-[3px] focus:ring-0"
+                  class="border-darkGrey size-4 rounded-[3px] border focus:ring-0"
                   style={"color: #{tag_def.color}"}
                 />
                 <span
-                  class="inline-block w-2 h-2 rounded-full shrink-0"
+                  class="inline-block size-2 shrink-0 rounded-full"
                   style={"background-color: #{tag_def.color}"}
                 >
                 </span>
-                <span class="text-sm text-darkGrey truncate">{tag_def.name}</span>
+                <span class="text-darkGrey truncate text-sm">{tag_def.name}</span>
               </label>
 
               <button
                 :if={@tag_filters != []}
                 phx-click="clear-tag-filters"
-                class="w-full mt-1 px-2 py-1.5 text-xs text-darkGrey hover:text-orange-800 text-center border-t border-grey-200 cursor-pointer transition"
+                class="border-grey-200 text-darkGrey mt-1 w-full cursor-pointer border-t px-2 py-1.5 text-center text-xs transition hover:text-orange-800"
               >
                 Wyczyść filtry
               </button>
@@ -96,7 +96,7 @@
     </div>
   </div>
 
-  <div class="grid grid-cols-1 gap-6 sm:grid-cols-3 mb-8">
+  <div class="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
     <.summary_card
       section="income"
       label="Przychody"
@@ -126,7 +126,7 @@
     />
 
     <div class={[
-      "border-2 rounded-lg p-6",
+      "rounded-lg border-2 p-6",
       if(@profitable?,
         do: "bg-greenBg border-greenBg text-greenText",
         else: "bg-redBg border-redBg text-redText"
@@ -136,7 +136,7 @@
         <div class="shrink-0">
           <.icon
             name="hero-calculator"
-            class={"h-8 w-8 #{if(@profitable?, do: "text-greenText", else: "text-redText")}"}
+            class={"size-8 #{if(@profitable?, do: "text-greenText", else: "text-redText")}"}
           />
         </div>
         <div class="ml-4">

@@ -131,7 +131,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
 
   def hours_record_status(%{hours_record: nil} = assigns) do
     ~H"""
-    <span class="text-caps-sm/tight font-medium bg-grey-200 text-grey-700 px-2 py-1 uppercase rounded-sm flex items-center justify-between gap-2.5 w-[111px]">
+    <span class="bg-grey-200 text-caps-sm/tight text-grey-700 flex w-[111px] items-center justify-between gap-2.5 rounded-sm px-2 py-1 font-medium uppercase">
       Brak <.icon name="hero-x-mark-micro" class="size-4" />
     </span>
     <Lucideicons.file_x class="text-grey-400 shrink-0" />
@@ -140,13 +140,13 @@ defmodule FirmowidWeb.Management.Views.Employees do
 
   def hours_record_status(assigns) do
     ~H"""
-    <span class="text-caps-sm/tight font-medium bg-green-200 text-green-700 px-2 py-1 uppercase rounded-sm flex items-center justify-between gap-2.5 min-w-[111px] w-full">
+    <span class="text-caps-sm/tight flex w-full min-w-[111px] items-center justify-between gap-2.5 rounded-sm bg-green-200 px-2 py-1 font-medium text-green-700 uppercase">
       EWIDENCJA <.icon name="hero-check-micro" />
     </span>
     <a
       href={~p"/czasosledz/ewidencja/#{@hours_record.id}"}
       download={"Ewidencja_#{@hours_record.year}_#{@hours_record.month}_#{@user.name || @user.email}.pdf"}
-      class="p-0.5 transition hover:bg-greyButtonBg rounded-md inline-flex items-center justify-center"
+      class="hover:bg-greyButtonBg inline-flex items-center justify-center rounded-md p-0.5 transition"
     >
       <.icon name="hero-arrow-down-tray-mini" class="text-grey-400 shrink-0" />
     </a>

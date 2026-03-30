@@ -90,7 +90,6 @@ defmodule FirmowidWeb do
       # HTML escaping functionality
       import Phoenix.HTML
       # Core UI components and translation
-      import Tails
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS

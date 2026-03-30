@@ -9,15 +9,15 @@ defmodule FirmowidWeb.Organization.Views.Index do
   def render(assigns) do
     ~H"""
     <%= if @current_user.organization_id == nil do %>
-      <div class="w-screen min-h-screen flex relative justify-center items-center">
+      <div class="relative flex min-h-screen w-screen items-center justify-center">
         <img
           src="/images/figurine.png"
-          class="h-[135vh] overflow-clip opacity-10 fixed -top-20 left-1/2"
+          class="fixed -top-20 left-1/2 h-[135vh] overflow-clip opacity-10"
         />
-        <div class="grow max-w-screen-md z-10">
-          <h1 class="text-lg font-bold mb-16">Czas na przypisanie organizacji do Twojego konta</h1>
-          <div class="flex md:flex-row justify-between">
-            <div class="flex flex-col justify-between gap-4 max-w-[400px]">
+        <div class="z-10 max-w-3xl grow">
+          <h1 class="mb-16 text-lg font-bold">Czas na przypisanie organizacji do Twojego konta</h1>
+          <div class="flex justify-between md:flex-row">
+            <div class="flex max-w-[400px] flex-col justify-between gap-4">
               <p>
                 Jesteś <span class="font-bold">właścicielem przedsiębiorstwa</span>?
                 Wypełnij formularz, aby utworzyć organizację wewnątrz Firmowida.
@@ -38,14 +38,14 @@ defmodule FirmowidWeb.Organization.Views.Index do
                 <p class="m-0">Adres przedsiębiorstwa</p>
                 <div class="flex flex-row gap-2">
                   <.input
-                    class="!w-3/4"
+                    class="w-3/4!"
                     field={@organization_form[:street]}
                     placeholder="Ulica"
                     type="text"
                     required
                   />
                   <.input
-                    class="!w-1/4"
+                    class="w-1/4!"
                     field={@organization_form[:number]}
                     placeholder="/"
                     type="text"
@@ -61,14 +61,14 @@ defmodule FirmowidWeb.Organization.Views.Index do
                 <.input field={@organization_form[:city]} placeholder="Miasto" type="text" required />
 
                 <:actions>
-                  <.button class="!w-full" phx-disable-with="Tworzenie organizacji...">
+                  <.button class="w-full!" phx-disable-with="Tworzenie organizacji...">
                     Utwórz organizację
                   </.button>
                 </:actions>
               </.simple_form>
             </div>
 
-            <div class="max-w-[250px] flex flex-col justify-between">
+            <div class="flex max-w-[250px] flex-col justify-between">
               <div>
                 <p>
                   Jesteś <span class="font-bold">współpracownikiem</span>

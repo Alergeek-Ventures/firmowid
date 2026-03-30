@@ -73,7 +73,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
         return_to={@return_to}
       />
 
-      <div class="flex flex-col lg:flex-row min-w-0 bg-white">
+      <div class="flex min-w-0 flex-col bg-white lg:flex-row">
         <InvoiceDetails.aside>
           <%= if @show_timeline do %>
             <InvoiceTimeline.invoice_timeline
@@ -150,7 +150,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 class={[
                   "ml-auto",
                   @submission_info.status == :failed &&
-                    "hover:ring-redText text-redText hover:text-redBg hover:bg-redText"
+                    "hover:bg-redText hover:ring-redText hover:text-redBg text-redText"
                 ]}
                 color="light_grey"
                 size="small"
@@ -161,11 +161,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 Historia faktury
                 <span
                   :if={@submission_info.status == :failed}
-                  class={[
-                    "absolute -top-2.5 -right-2.5 bg-redText text-redBg text-xs w-5 h-5",
-                    "rounded-full flex items-center justify-center font-bold
-                    border-redBg border-2 p-1"
-                  ]}
+                  class="bg-redText border-redBg text-redBg absolute -top-2.5 -right-2.5 flex size-5 items-center justify-center rounded-full border-2 p-1 text-xs font-bold"
                 >
                   !
                 </span>
@@ -188,7 +184,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 color="turquoise"
                 size="small"
                 new={true}
-                class={@submission_info.status == :submitting && "cursor-wait"}
+                class={[@submission_info.status == :submitting && "cursor-wait"]}
                 phx-click="send_to_ksef"
                 phx-target={@myself}
               >

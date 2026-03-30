@@ -13,7 +13,7 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
   def input(assigns) do
     ~H"""
     <form
-      class="flex flex-row gap-2 border border-grey-200 h-10 py-1 px-4 mx-16 mb-8 rounded-lg bg-white"
+      class="border-grey-200 mx-16 mb-8 flex h-10 flex-row gap-2 rounded-lg border bg-white px-4 py-1"
       phx-submit="send"
       phx-target={@myself}
     >
@@ -23,10 +23,7 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
         autocomplete="off"
         placeholder={if @loading, do: "Firmowid myśli...", else: "Napisz swoją wiadomość"}
         disabled={@loading}
-        class={[
-          "placeholder:text-grey-200 text-black w-full p-0 border-none focus:ring-0",
-          "focus:outline-hidden disabled:opacity-50 disabled:cursor-not-allowed"
-        ]}
+        class="placeholder:text-grey-200 w-full border-none p-0 text-black focus:ring-0 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
       />
       <button
         type="submit"
@@ -51,9 +48,9 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
     assigns = %{text: text, current_user: current_user}
 
     ~H"""
-    <div class="flex flex-row gap-3 justify-end">
-      <p class="px-4 py-2 bg-grey-200 rounded max-w-2xl">{@text}</p>
-      <div class="w-10 h-10">
+    <div class="flex flex-row justify-end gap-3">
+      <p class="bg-grey-200 max-w-2xl rounded px-4 py-2">{@text}</p>
+      <div class="size-10">
         <.avatar class="size-10">
           <.avatar_image src={@current_user.avatar_url} alt="Avatar" />
           <.avatar_fallback>
@@ -70,7 +67,7 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
 
     ~H"""
     <div class="flex flex-row gap-3">
-      <img src="/images/logo_firmowid.png" class="w-10 h-10 mt-2" />
+      <img src="/images/logo_firmowid.png" class="mt-2 size-10" />
       <div class="prose prose-p:p-2 prose-p:text-black prose-p:whitespace-pre-wrap max-w-2xl">
         {render_content(@text)}
       </div>
@@ -112,35 +109,35 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
     assigns = %{filters: filters, date_filter: date_filter, amount_filter: amount_filter}
 
     ~H"""
-    <div class="flex flex-row gap-2 items-center ml-[52px] py-2 px-4 flex-wrap max-w-2xl min-h-8 box-content">
-      <p class="text-sm text-nowrap leading-none">Szukam transakcji</p>
+    <div class="ml-[52px] box-content flex min-h-8 max-w-2xl flex-row flex-wrap items-center gap-2 px-4 py-2">
+      <p class="text-sm leading-none text-nowrap">Szukam transakcji</p>
       <div
         :if={@date_filter not in ["", nil]}
-        class="py-1 px-3 bg-orange-100 text-orange-900 rounded whitespace-nowrap animate-fade-in"
+        class="animate-fade-in rounded bg-orange-100 px-3 py-1 whitespace-nowrap text-orange-900"
       >
         data: <span class="font-semibold">{@date_filter}</span>
       </div>
       <div
         :if={@amount_filter not in ["", nil]}
-        class="py-1 px-3 bg-orange-100 text-orange-900 rounded whitespace-nowrap animate-fade-in"
+        class="animate-fade-in rounded bg-orange-100 px-3 py-1 whitespace-nowrap text-orange-900"
       >
         kwota: <span class="font-semibold">{@amount_filter}</span>
       </div>
       <div
         :if={@filters["currency"] not in ["", nil]}
-        class="py-1 px-3 bg-orange-100 text-orange-900 rounded whitespace-nowrap animate-fade-in"
+        class="animate-fade-in rounded bg-orange-100 px-3 py-1 whitespace-nowrap text-orange-900"
       >
         waluta: <span class="font-semibold">{@filters["currency"]}</span>
       </div>
       <div
         :if={@filters["query"] not in ["", nil]}
-        class="py-1 px-3 bg-orange-100 text-orange-900 rounded whitespace-nowrap animate-fade-in"
+        class="animate-fade-in rounded bg-orange-100 px-3 py-1 whitespace-nowrap text-orange-900"
       >
         fraza: <span class="font-semibold">{@filters["query"]}</span>
       </div>
       <div
         :if={not @filters["only_unmatched"]}
-        class="py-1 px-3 bg-orange-100 text-orange-900 rounded whitespace-nowrap animate-fade-in"
+        class="animate-fade-in rounded bg-orange-100 px-3 py-1 whitespace-nowrap text-orange-900"
       >
         również dopasowane
       </div>
@@ -167,29 +164,29 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
     }
 
     ~H"""
-    <div class="ml-[52px] py-2 px-4 max-w-2xl -mt-12 flex flex-col gap-6">
+    <div class="-mt-12 ml-[52px] flex max-w-2xl flex-col gap-6 px-4 py-2">
       <p>{@message}</p>
 
-      <ul class="gap-2 flex flex-col w-full">
+      <ul class="flex w-full flex-col gap-2">
         <li
           :for={transaction <- @transactions}
-          class="py-1 px-3 flex flex-row gap-4 justify-between items-start bg-grey-50 rounded"
+          class="bg-grey-50 flex flex-row items-start justify-between gap-4 rounded px-3 py-1"
         >
           <div class="grid grid-cols-[min-content_1fr] gap-x-3">
-            <span class="text-sm text-grey-700">
+            <span class="text-grey-700 text-sm">
               {@displayed_party}
             </span>
-            <span class="text-black truncate">
+            <span class="truncate text-black">
               {case @displayed_party do
                 "Nadawca" -> transaction.debtor_name
                 "Odbiorca" -> transaction.creditor_name
                 _ -> ""
               end}
             </span>
-            <span class="text-sm text-grey-700">Zaksięgowano</span>
+            <span class="text-grey-700 text-sm">Zaksięgowano</span>
             <span class="text-black">{TimeFormatter.format_date(transaction.booking_date)}</span>
           </div>
-          <div class="flex flex-row gap-3 items-center">
+          <div class="flex flex-row items-center gap-3">
             {transaction.amount}
             <.icon name="hero-credit-card-micro" class="text-grey-700" />
           </div>
@@ -220,7 +217,7 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
     assigns = %{text: text}
 
     ~H"""
-    <div class="flex flex-row gap-2 items-center ml-[52px] py-2 px-4 flex-wrap -mt-12">
+    <div class="-mt-12 ml-[52px] flex flex-row flex-wrap items-center gap-2 px-4 py-2">
       <p class="text-sm">{@text}</p>
     </div>
     """
@@ -233,7 +230,7 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
       case message do
         %{role: :function_call, payload: %{name: _, args: _} = assigns} ->
           ~H"""
-          <div class="flex flex-row gap-4 items-center">
+          <div class="flex flex-row items-center gap-4">
             <div>🛠️ <b>{@name}</b> called</div>
             <div><pre>{inspect(@args)}</pre></div>
           </div>
@@ -241,7 +238,7 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
 
         %{role: :function_result, payload: %{name: _, result: _} = assigns} ->
           ~H"""
-          <div class="flex flex-row gap-4 items-center">
+          <div class="flex flex-row items-center gap-4">
             <div>🛠️ <b>{@name}</b> result</div>
             <div><pre>{inspect(@result)}</pre></div>
           </div>

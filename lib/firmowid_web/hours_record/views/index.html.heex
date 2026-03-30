@@ -7,22 +7,22 @@
       id="selected_date"
       active_months={@active_months}
       selected_date={@selected_date}
-      class="font-bold px-4 py-2.5 text-darkGrey max-w-[360px] h-full w-full"
+      class="text-darkGrey size-full max-w-[360px] px-4 py-2.5 font-bold"
     />
   </div>
 
-  <div class="flex justify-between gap-20 md:flex-row flex-col mt-8">
-    <div class="space-y-2 w-full col-span-4">
+  <div class="mt-8 flex flex-col justify-between gap-20 md:flex-row">
+    <div class="col-span-4 w-full space-y-2">
       <%= for project <- @projects do %>
-        <div class="flex flex-col divide-y divide-greyButtonBg px-4 rounded-md bg-grey-50">
-          <div class="flex items-center py-5 gap-6">
+        <div class="bg-grey-50 divide-greyButtonBg flex flex-col divide-y rounded-md px-4">
+          <div class="flex items-center gap-6 py-5">
             <span class="mr-auto">{project.name}</span>
             <span>{TimeFormatter.format_duration(project.duration)}</span>
             <button
               phx-click="toggle-project"
               phx-value-id={project.id}
               disabled={project.duration == 0}
-              class="disabled:opacity-50 disabled:cursor-not-allowed"
+              class="disabled:cursor-not-allowed disabled:opacity-50"
             >
               <.icon :if={project.expanded} name="hero-chevron-up-mini" class="text-darkGrey" />
               <.icon :if={!project.expanded} name="hero-chevron-down-mini" class="text-darkGrey" />
@@ -39,13 +39,13 @@
       <% end %>
     </div>
 
-    <div class="flex flex-col gap-6 max-w-[360px] w-full">
-      <div class="p-4 p-4 rounded-sm flex flex-col space-y-8 bg-grey-50">
+    <div class="flex w-full max-w-[360px] flex-col gap-6">
+      <div class="bg-grey-50 flex flex-col space-y-8 rounded-sm p-4">
         <h3 class="font-bold">Podsumowanie:</h3>
         <div>
           <p class="mb-3">Przepracowane godziny:</p>
           <p class="text-xl font-bold">{TimeFormatter.format_duration(@total_duration)}</p>
-          <p class="text-sm text-darkGrey">
+          <p class="text-darkGrey text-sm">
             {TimeFormatter.format_duration(@total_duration, :with_days)}
           </p>
         </div>
@@ -54,24 +54,24 @@
           <p class="text-xl font-bold">
             {TimeFormatter.format_duration(most_demanding.duration)}
           </p>
-          <p class="text-sm text-darkGrey">{most_demanding.name}</p>
+          <p class="text-darkGrey text-sm">{most_demanding.name}</p>
         </div>
       </div>
-      <div :if={@total_duration > 3599} class="flex flex-col p-4 rounded-md gap-6 bg-grey-50">
-        <div class="flex items-center justify-between gap-2 bg-grey-50">
+      <div :if={@total_duration > 3599} class="bg-grey-50 flex flex-col gap-6 rounded-md p-4">
+        <div class="bg-grey-50 flex items-center justify-between gap-2">
           <span class="font-bold">Ewidencja godzin</span>
 
           <%= if @current_hours_record do %>
-            <span class="text-xs font-semibold text-greenText bg-greenBg pl-2 pr-1 py-[5px] uppercase rounded-md flex items-center justify-center gap-1">
+            <span class="bg-greenBg text-greenText flex items-center justify-center gap-1 rounded-md py-[5px] pr-1 pl-2 text-xs font-semibold uppercase">
               WYSŁANO <.icon name="hero-check-micro" />
             </span>
           <% else %>
-            <span class="text-xs font-semibold text-darkGrey bg-greyButtonBg pl-2 pr-1 py-[5px] uppercase rounded-md flex items-center justify-center gap-1">
+            <span class="bg-greyButtonBg text-darkGrey flex items-center justify-center gap-1 rounded-md py-[5px] pr-1 pl-2 text-xs font-semibold uppercase">
               BRAK <.icon name="hero-x-mark-micro" />
             </span>
           <% end %>
         </div>
-        <p :if={!@can_use_hours_records} class="text-sm mt-2">
+        <p :if={!@can_use_hours_records} class="mt-2 text-sm">
           Aby wypełnić ewidencję godzin musisz ustawić imię i nazwisko oraz datę zatrudnienia w
           <.link navigate={~p"/ustawienia"} class="text-orangeText hover:underline">
             Ustawieniach
@@ -87,7 +87,7 @@
           ash_scope={@ash_scope}
         />
       </div>
-      <p :if={@total_duration <= 3599} class="text-sm text-center mt-2">
+      <p :if={@total_duration <= 3599} class="mt-2 text-center text-sm">
         Aby wypełnić ewidencję godzin musisz dodać przynajmniej jedną godzinę pracy
       </p>
     </div>

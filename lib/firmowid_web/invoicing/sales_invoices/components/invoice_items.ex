@@ -107,9 +107,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     }
 
     ~H"""
-    <div class="col-start-2 col-end-9 space-y-8 mb-8">
-      <div class="flex flex-row items-center gap-5 mb-2">
-        <label class="text-grey-700 flex flex-row items-center gap-5 mr-auto">
+    <div class="col-start-2 col-end-9 mb-8 space-y-8">
+      <div class="mb-2 flex flex-row items-center gap-5">
+        <label class="text-grey-700 mr-auto flex flex-row items-center gap-5">
           <span><strong>1.</strong> Wybrana waluta</span>
           <.input
             field={@items_form[:currency]}
@@ -125,7 +125,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             :if={@invoice.buyer_country != "PL"}
             field={@items_form[:is_reverse_charge]}
             color="turquoise"
-            class="flex-row-reverse gap-2 text-sm text-grey-700"
+            class="text-grey-700 flex-row-reverse gap-2 text-sm"
           >
             <:label_slot>
               Reverse charge
@@ -133,7 +133,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                 id="reverse-charge-tooltip"
                 phx-hook="Tippy"
                 data-tippy-content="Reverse charge (odwrotne obciążenie) to mechanizm, w którym obowiązek rozliczenia podatku VAT spoczywa na nabywcy usługi; dotyczy m.in. importu usług z Unii Europejskiej."
-                class="size-4 ml-[0.125rem]"
+                class="ml-0.5 size-4"
               />
             </:label_slot>
           </.switch>
@@ -144,14 +144,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
               field={@items_form[:is_reverse_charge]}
               label="Rabat"
               color="turquoise"
-              class="flex-row-reverse gap-2 text-sm text-grey-700"
+              class="text-grey-700 flex-row-reverse gap-2 text-sm"
             />
             <.switch
               :if={false}
               field={@items_form[:is_reverse_charge]}
               label="PKWiU"
               color="turquoise"
-              class="flex-row-reverse gap-2 text-sm text-grey-700"
+              class="text-grey-700 flex-row-reverse gap-2 text-sm"
             />
           </div>
         </div>
@@ -167,7 +167,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
         </.button>
       </div>
     </div>
-    <div class="col-start-2 col-end-9 grid grid-cols-subgrid text-sm/snug text-grey-700 mb-1 py-1 pl-2">
+    <div class="text-grey-700 col-start-2 col-end-9 mb-1 grid grid-cols-subgrid py-1 pl-2 text-sm/snug">
       <.error :if={@name_error} is_tooltip={true} target="name">
         {@name_error}
       </.error>
@@ -190,7 +190,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       </p>
 
       <%= if to_boolean(@items_form[:is_reverse_charge].value) do %>
-        <p class="text-end col-span-2">Wartość</p>
+        <p class="col-span-2 text-end">Wartość</p>
       <% else %>
         <p class="text-end">Wartość netto</p>
         <p class="text-end">Wartość brutto</p>
@@ -207,7 +207,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             placeholder="Wprowadź nazwę"
             phx-debounce
             class="w-full"
-            input_class={item[:name].errors != [] && "border-redText"}
+            input_class={[item[:name].errors != [] && "border-redText"]}
             new={true}
             is_tooltip={true}
           />
@@ -219,7 +219,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             step=".000001"
             min="0"
             class="w-16"
-            input_class={"text-center #{if item[:quantity].errors != [], do: "border-redText", else: ""}"}
+            input_class={["text-center", item[:quantity].errors != [] && "border-redText"]}
             new={true}
             is_tooltip={true}
           />
@@ -250,11 +250,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
               min="0"
               placeholder="0,00"
               class="w-24"
-              input_class={"text-center #{if item[:unit_price].errors != [], do: "border-redText", else: ""}"}
+              input_class={["text-center", item[:unit_price].errors != [] && "border-redText"]}
               new={true}
               is_tooltip={true}
             />
-            <p class="text-sm text-grey-500">{@items_form[:currency].value}</p>
+            <p class="text-grey-500 text-sm">{@items_form[:currency].value}</p>
           </div>
 
           <%= if to_boolean(@items_form[:is_reverse_charge].value) do %>
@@ -262,7 +262,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
               Money.new(@items_form[:currency].value, item[:gross_value].value || "0.00") %>
 
             <p class={[
-              "text-end w-[14.5rem] truncate col-span-2",
+              "col-span-2 w-58 truncate text-end",
               if(Money.zero?(gross_value), do: "text-grey-500")
             ]}>
               {Money.to_string!(gross_value, currency_symbol: "")}
@@ -274,13 +274,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
               Money.new(@items_form[:currency].value, item[:gross_value].value || "0.00") %>
 
             <p class={[
-              "text-end w-28 truncate",
+              "w-28 truncate text-end",
               if(Money.zero?(net_value), do: "text-grey-500")
             ]}>
               {Money.to_string!(net_value, currency_symbol: "")}
             </p>
             <p class={[
-              "text-end w-28 truncate",
+              "w-28 truncate text-end",
               if(Money.zero?(gross_value), do: "text-grey-500")
             ]}>
               {Money.to_string!(gross_value, currency_symbol: "")}
@@ -293,7 +293,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             value={item.index}
             phx-click={JS.dispatch("change")}
             disabled={@single_item?}
-            class="ml-1 transition-colors ease-out duration-200 text-grey-300 hover:text-grey-700 cursor-pointer disabled:cursor-default disabled:text-transparent"
+            class="hover:text-grey-700 text-grey-300 ml-1 cursor-pointer transition-colors duration-200 ease-out disabled:cursor-default disabled:text-transparent"
           >
             <Lucideicons.x class="size-4" />
           </button>
@@ -309,7 +309,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       name="sales_invoice[items_sort][]"
       value="new"
       phx-click={JS.dispatch("change")}
-      class="col-start-2 col-span-1 mt-3"
+      class="col-span-1 col-start-2 mt-3"
       size="small"
       color="light_grey"
       new={true}
@@ -318,30 +318,30 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     </.button>
 
     <div class={[
-      "col-start-1 col-end-9 ml-auto grid grid-cols-[1fr_repeat(2,min-content)] gap-y-2 gap-x-2 min-w-min w-72 mt-3 whitespace-nowrap items-center leading-snug",
+      "col-start-1 col-end-9 mt-3 ml-auto grid w-72 min-w-min grid-cols-[1fr_repeat(2,min-content)] items-center gap-2 leading-snug whitespace-nowrap",
       if(Money.zero?(@summary.net_value), do: "text-grey-500", else: "text-black")
     ]}>
       <%= if to_boolean(@items_form[:is_reverse_charge].value) do %>
-        <p class="text-sm text-grey-500 text-left">Suma</p>
-        <p class="text-[27px]/tight font-medium text-right">
+        <p class="text-grey-500 text-left text-sm">Suma</p>
+        <p class="text-right text-[27px]/tight font-medium">
           {Money.to_string!(@summary.gross_value, currency_symbol: "")}
         </p>
         <p class="text-right">{@items_form[:currency].value}</p>
       <% else %>
-        <p class="text-sm text-grey-500 text-left">Suma netto</p>
+        <p class="text-grey-500 text-left text-sm">Suma netto</p>
         <p class="text-right">
           {Money.to_string!(@summary.net_value, currency_symbol: "")}
         </p>
         <p class="text-right">{@items_form[:currency].value}</p>
 
-        <p class="text-sm text-grey-500 text-left">Suma VAT</p>
+        <p class="text-grey-500 text-left text-sm">Suma VAT</p>
         <p class="text-right">
           {Money.to_string!(@summary.vat_value, currency_symbol: "")}
         </p>
         <p class="text-right">{@items_form[:currency].value}</p>
 
-        <p class="text-sm text-grey-500 text-left">Suma brutto</p>
-        <p class="text-[27px]/tight font-medium text-right">
+        <p class="text-grey-500 text-left text-sm">Suma brutto</p>
+        <p class="text-right text-[27px]/tight font-medium">
           {Money.to_string!(@summary.gross_value, currency_symbol: "")}
         </p>
         <p class="text-right">{@items_form[:currency].value}</p>

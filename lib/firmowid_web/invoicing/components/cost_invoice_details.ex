@@ -37,7 +37,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
         description={@invoice.description}
       />
 
-      <div class="flex flex-col lg:flex-row min-w-0 bg-white">
+      <div class="flex min-w-0 flex-col bg-white lg:flex-row">
         <InvoiceDetails.aside>
           <div id="aside-dynamic-content">
             <%= if @show_timeline do %>
@@ -204,9 +204,9 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
             data-pdf-url={@preview_url}
             phx-update="ignore"
             phx-hook="PDFViewer"
-            class="w-full h-fit max-h-[80vh] overflow-x-hidden overflow-y-hidden bg-white"
+            class="h-fit max-h-[80vh] w-full overflow-x-hidden overflow-y-hidden bg-white"
           >
-            <div class="w-full p-8 flex items-center justify-center font-bold">
+            <div class="flex w-full items-center justify-center p-8 font-bold">
               Ładowanie dokumentu...
             </div>
           </div>
@@ -221,9 +221,9 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
             data-fa3-url={@preview_url}
             phx-update="ignore"
             phx-hook=".FA3Viewer"
-            class="h-full w-full"
+            class="size-full"
           >
-            <div class="w-full p-8 flex items-center justify-center font-bold">
+            <div class="flex w-full items-center justify-center p-8 font-bold">
               Ładowanie dokumentu...
             </div>
           </div>
@@ -276,15 +276,15 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
       :image ->
         ~H"""
         <a href={@preview_url} target="_blank">
-          <div class="w-full h-full max-h-[80vh] overflow-x-hidden bg-black">
-            <img src={@preview_url} class="w-full h-full object-contain" />
+          <div class="size-full max-h-[80vh] overflow-x-hidden bg-black">
+            <img src={@preview_url} class="size-full object-contain" />
           </div>
         </a>
         """
 
       :none ->
         ~H"""
-        <div class="w-full p-8 flex items-center justify-center font-bold">
+        <div class="flex w-full items-center justify-center p-8 font-bold">
           Brak podglądu
         </div>
         """

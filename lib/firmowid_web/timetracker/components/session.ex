@@ -21,7 +21,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       for={GroupedSessionForm.from_sessions(@sessions)}
       phx-submit="validate_and_update_list_onsubmit"
       phx-change="validate_and_update_list_onchange"
-      class="flex flex-row items-center pl-1 min-w-0 w-full py-1"
+      class="flex w-full min-w-0 flex-row items-center py-1 pl-1"
     >
       <input :for={s <- @sessions} type="hidden" name="sessions_form[ids][]" value={s.id} />
       <input
@@ -31,12 +31,12 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         value={sessions_form[:project_id].value}
       />
 
-      <div class="flex flex-row items-center group min-w-0 flex-1 gap-1 mr-4">
+      <div class="group mr-4 flex min-w-0 flex-1 flex-row items-center gap-1">
         <input
           id={sessions_form[:title].id}
           name={sessions_form[:title].name}
           value={sessions_form[:title].value}
-          class="border-none p-1 -ml-1 rounded read-only:bg-transparent hover:bg-grey-200 bg-grey-200 transition focus:ring-0 truncate min-w-0 max-w-full"
+          class="bg-grey-200 hover:bg-grey-200 -ml-1 max-w-full min-w-0 truncate rounded border-none p-1 transition read-only:bg-transparent focus:ring-0"
           style="field-sizing: content;"
           phx-click={JS.remove_attribute("readonly")}
           phx-blur={JS.set_attribute({"readonly", true})}
@@ -57,7 +57,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
             JS.remove_attribute("readonly", to: "##{sessions_form[:title].id}")
             |> JS.focus(to: "##{sessions_form[:title].id}")
           }
-          class="opacity-0 group-hover:opacity-100 transition focus:outline-hidden"
+          class="opacity-0 transition group-hover:opacity-100 focus:outline-hidden"
         >
         </button>
       </div>
@@ -69,7 +69,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         selecttarget={select_id}
         phx-click={show_popover(select_id)}
         disabled={parent_session.lockdown}
-        class="text-sm text-darkGrey uppercase bg-transparent hover:bg-grey-200 transition py-1 px-2 rounded border-none focus:ring-0 disabled:pointer-events-none !bg-none cursor-pointer ml-auto min-w-0"
+        class="hover:bg-grey-200 text-darkGrey ml-auto min-w-0 cursor-pointer rounded border-none bg-transparent bg-none! px-2 py-1 text-sm uppercase transition focus:ring-0 disabled:pointer-events-none"
       >
         {case Enum.find(@active_projects, &(&1.id == parent_session.project_id)) do
           nil -> "Select"
@@ -81,12 +81,12 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         placement="bottom-end"
         id={select_id}
         reference_id={"project-select-#{parent_session.id}"}
-        class="bg-grey-50 border border-grey-200 w-[230px] rounded-lg  "
+        class="bg-grey-50 border-grey-200 w-[230px] rounded-lg border"
       >
-        <ul class="overflow-auto p-1 flex flex-col gap-1">
+        <ul class="flex flex-col gap-1 overflow-auto p-1">
           <li
             :for={project <- @active_projects}
-            class="px-2 py-1.5 rounded text-sm cursor-pointer transition hover:bg-orange-100 hover:text-orange-800 "
+            class="cursor-pointer rounded px-2 py-1.5 text-sm transition hover:bg-orange-100 hover:text-orange-800"
             phx-click={
               JS.set_attribute(
                 {"value", project.id},
@@ -104,7 +104,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       <% popover_id = "edit-sessions-popover-#{parent_session.id}" %>
       <% total_duration = @sessions |> Index.calculate_total_duration() %>
       <button
-        class="font-bold w-14 shrink-0 text-center hover:bg-grey-200 transition py-1 rounded-md ml-4 lg:ml-8"
+        class="hover:bg-grey-200 ml-4 w-14 shrink-0 rounded-md py-1 text-center font-bold transition lg:ml-8"
         id={"session-timer-#{parent_session.id}"}
         type="button"
         popovertarget={popover_id}
@@ -121,18 +121,18 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         id={popover_id}
         reference_id={form_id}
         placement="bottom-end"
-        class="bg-white border border-grey-200 rounded-lg shadow-lg py-4 px-6 space-y-6"
+        class="border-grey-200 space-y-6 rounded-lg border bg-white px-6 py-4 shadow-lg"
       >
-        <div class="grid grid-cols-[repeat(5,auto)] gap-y-3 gap-x-4">
-          <div class="grid grid-cols-subgrid col-span-5 text-sm text-grey-700">
+        <div class="grid grid-cols-[repeat(5,auto)] gap-x-4 gap-y-3">
+          <div class="text-grey-700 col-span-5 grid grid-cols-subgrid text-sm">
             <p class="col-start-2">Data</p>
             <p>Od</p>
             <p>Do</p>
           </div>
-          <div class="grid grid-cols-subgrid col-span-5 gap-y-4 items-center">
+          <div class="col-span-5 grid grid-cols-subgrid items-center gap-y-4">
             <.inputs_for :let={session} field={sessions_form[:start_end_times]}>
               <.input type="hidden" field={session[:id]} />
-              <p class="text-sm text-grey-600 font-semibold line-clamp-1">
+              <p class="text-grey-600 line-clamp-1 text-sm font-semibold">
                 Sesja {session.index + 1}
               </p>
               <.input
@@ -170,12 +170,12 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
             type="button"
             color="light_grey"
             variant="outline"
-            class="text-sm flex-1 max-w-28"
+            class="max-w-28 flex-1 text-sm"
             phx-click={hide_popover(popover_id)}
           >
             Anuluj
           </.button>
-          <.button type="submit" color="orange" class="text-sm flex-1 max-w-28">
+          <.button type="submit" color="orange" class="max-w-28 flex-1 text-sm">
             Zapisz
           </.button>
         </div>

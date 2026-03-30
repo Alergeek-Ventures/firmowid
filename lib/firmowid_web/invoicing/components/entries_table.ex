@@ -39,12 +39,12 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   def table(%{invoicing_entries: [], has_connected_bank_account: true} = assigns) do
     ~H"""
-    <div class="flex flex-col gap-4 justify-center items-center min-h-[300px]">
-      <.icon name="hero-cloud-arrow-up" class="h-16 w-16 text-greenText" />
+    <div class="flex min-h-[300px] flex-col items-center justify-center gap-4">
+      <.icon name="hero-cloud-arrow-up" class="text-greenText size-16" />
       <p class="text-center text-black">
         Brak transakcji i dokumentów dla wybranej daty
       </p>
-      <p class="text-center text-darkGrey">
+      <p class="text-darkGrey text-center">
         Przeciągnij pliki, aby je wgrać
       </p>
     </div>
@@ -53,7 +53,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   def table(%{invoicing_entries: [], has_connected_bank_account: false} = assigns) do
     ~H"""
-    <div class="flex flex-col gap-24 justify-center min-h-[300px] px-8 mx-auto mt-16">
+    <div class="mx-auto mt-16 flex min-h-[300px] flex-col justify-center gap-24 px-8">
       <div class="flex flex-col gap-8">
         <h1 class="text-xl font-bold">Witaj w Firmowidzie!</h1>
         <div class="flex flex-col gap-1">
@@ -65,12 +65,12 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           </p>
         </div>
       </div>
-      <div class="flex md:flex-row md:gap-20 gap-8 items-start justify-between">
+      <div class="flex items-start justify-between gap-8 md:flex-row md:gap-20">
         <div class="max-w-[500px]">
-          <h2 class="text-xl font-bold mb-2 flex items-end gap-2">
-            <.icon name="hero-building-library" class="h-10 w-10 text-greenText" /> Krok 1.
+          <h2 class="mb-2 flex items-end gap-2 text-xl font-bold">
+            <.icon name="hero-building-library" class="text-greenText size-10" /> Krok 1.
           </h2>
-          <h3 class="text-xl mb-4">Podepnij konto bankowe</h3>
+          <h3 class="mb-4 text-xl">Podepnij konto bankowe</h3>
           <p class="mb-8">Dzięki temu wszystkie transakcje pojawią się w Firmowidzie
             automatycznie. Co więcej, po wykryciu odpowiedniej faktury transakcja
             połączy się z dokumentem.</p>
@@ -79,12 +79,12 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           </.link>
         </div>
         <div class="max-w-[400px]">
-          <h2 class="text-xl font-bold mb-2 flex items-end gap-2">
-            <.icon name="hero-cloud-arrow-up" class="h-10 w-10 text-greenText" /> Krok 2.
+          <h2 class="mb-2 flex items-end gap-2 text-xl font-bold">
+            <.icon name="hero-cloud-arrow-up" class="text-greenText size-10" /> Krok 2.
           </h2>
-          <h3 class="text-xl mb-4">Wgraj faktury</h3>
+          <h3 class="mb-4 text-xl">Wgraj faktury</h3>
           <p class="mb-2">Możesz to zrobić:</p>
-          <ul class="list-disc space-y-2 list-outside ml-4">
+          <ul class="ml-4 list-outside list-disc space-y-2">
             <li>
               Za pomocą przycisku <span class="font-bold">+ Dodaj dokument</span> w prawym górnym rogu
             </li>
@@ -128,12 +128,12 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
     <table
       id="invoicing-entries"
-      class="table-fixed border-separate border-spacing-y-3 -mt-8"
+      class="-mt-8 table-fixed border-separate border-spacing-y-3"
       phx-hook="ListItemRemovalAnimation"
     >
       <col
         :for={column <- @columns}
-        class={
+        class={[
           case column do
             "issue_date" -> "w-36"
             "booking_date" -> "w-44"
@@ -145,9 +145,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             "amount" -> "w-44"
             _ -> ""
           end
-        }
+        ]}
       />
-      <thead class="sticky top-[130px] bg-lightGreyBg z-[1]">
+      <thead class="bg-lightGreyBg sticky top-[130px] z-1">
         <tr>
           <th
             :for={column <- @columns}
@@ -155,13 +155,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             phx-hook="ScrollStyle"
             data-classes="border-b-4 border-solid border-darkGrey/40"
             data-scroll-offset="90"
-            class={
-              [
-                "pt-2 font-normal text-left text-darkGrey text-xs uppercase pb-2 h-[60px] align-bottom",
-                column == "party" && "pl-5"
-              ]
-              |> Enum.join(" ")
-            }
+            class={[
+              "text-darkGrey h-[60px] py-2 text-left align-bottom text-xs font-normal uppercase",
+              column == "party" && "pl-5"
+            ]}
           >
             <.column_label column={column} />
           </th>
@@ -242,21 +239,21 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         :for={column <- @columns}
         class={
           [
-            "transition-all duration-500 bg-white py-2",
-            column == "party" && "rounded-l-md pl-5 pr-5 text-ellipsis max-xl:max-w-72",
+            "bg-white py-2 transition-all duration-500",
+            column == "party" && "rounded-l-md px-5 text-ellipsis max-xl:max-w-72",
             String.ends_with?(column, "date") && "font-light",
             column == "amount" && "rounded-r-md",
             column == "amount" &&
               Decimal.gte?(@amount, 0) &&
-              "text-blueText !bg-blueBg",
+              "bg-blueBg! text-blueText",
             column == "amount" && Decimal.lt?(@amount, 0) &&
-              "text-orangeText !bg-orangeBg",
+              "bg-orangeBg! text-orangeText",
             # Draft invoices get a dotted border
-            @is_draft && column == "party" && "border-l-2 border-y-2 border-dashed border-darkGrey/50",
+            @is_draft && column == "party" && "border-darkGrey/50 border-y-2 border-l-2 border-dashed",
             @is_draft && column == "amount" &&
-              "border-r-2 border-y-2 border-dashed border-darkGrey/50",
+              "border-darkGrey/50 border-y-2 border-r-2 border-dashed",
             @is_draft && column not in ["party", "amount"] &&
-              "border-y-2 border-dashed border-darkGrey/50"
+              "border-darkGrey/50 border-y-2 border-dashed"
           ]
         }
       >
@@ -267,7 +264,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
               # this column has no defined width, so we limit the worst offenders "manually"
               column == "party" && "max-w-[50vw]",
               # required to display the "dot freshness" indicator that is rendered outside of the cell
-              column != "amount" && "w-full whitespace-nowrap overflow-hidden text-ellipsis"
+              column != "amount" && "w-full truncate"
             ]
           }
         >
@@ -285,9 +282,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     assigns = assign(assigns, :amount, amount)
 
     ~H"""
-    <div class={[
-      "text-right pr-5 py-2 relative"
-    ]}>
+    <div class="relative py-2 pr-5 text-right">
       {@amount}
     </div>
     """
@@ -299,9 +294,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     assigns = assign(assigns, :amount, amount)
 
     ~H"""
-    <div class={[
-      "text-right pr-5 py-2 relative"
-    ]}>
+    <div class="relative py-2 pr-5 text-right">
       {@amount}
     </div>
     """
@@ -323,9 +316,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       |> assign(:amount, amount)
 
     ~H"""
-    <div class={[
-      "text-right pr-5 py-2 relative"
-    ]}>
+    <div class="relative py-2 pr-5 text-right">
       {@amount}
 
       <%= if @is_fresh do %>
@@ -334,14 +325,11 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           phx-hook="Tippy"
           data-tippy-delay="10"
           data-tippy-content="Ten dokument właśnie został dodany!"
-          class="absolute top-[-10px] right-[-4px] flex h-3 w-3"
+          class="absolute top-[-10px] right-[-4px] flex size-3"
         >
-          <span class={[
-            "animate-ping absolute inline-flex h-full w-full",
-            "rounded-full bg-blueText opacity-75"
-          ]}>
+          <span class="bg-blueText absolute inline-flex size-full animate-ping rounded-full opacity-75">
           </span>
-          <span class="relative inline-flex rounded-full h-3 w-3 bg-blueText"></span>
+          <span class="bg-blueText relative inline-flex size-3 rounded-full"></span>
         </span>
       <% end %>
     </div>
@@ -364,16 +352,11 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             "Dokument został pominięty. Transakcje nie będą do niego przypisywane"
         end
       }
-      class="flex flex-row gap-2 w-32 overflow-hidden"
+      class="flex w-32 flex-row gap-2 overflow-hidden"
     >
       <div
         id={"#{@invoicing_entry.id}-label"}
-        class={[
-          "text-xs h-6",
-          "flex flex-row justify-center items-center py-2 px-2 rounded-md",
-          "transition-all duration-500",
-          "w-20 bg-greenBg text-greenText"
-        ]}
+        class="bg-greenBg text-greenText flex h-6 w-20 flex-row items-center justify-center rounded-md p-2 text-xs transition-all duration-500"
       >
         <.icon
           name={
@@ -385,7 +368,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
                 "hero-document-text-solid"
             end
           }
-          class="h-4 w-4"
+          class="size-4"
         />
       </div>
       <button
@@ -400,12 +383,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           end
         }
         class={[
-          "transition-all duration-500 cursor-pointer",
-          "w-20",
-          "h-6 uppercase text-xs text-darkGrey bg-greyButtonBg rounded-md"
+          "bg-greyButtonBg text-darkGrey h-6 w-20 cursor-pointer rounded-md text-xs uppercase transition-all duration-500"
         ]}
       >
-        <.icon name="hero-arrow-uturn-left-micro" class="h-4 w-4" />
+        <.icon name="hero-arrow-uturn-left-micro" class="size-4" />
       </button>
     </div>
     """
@@ -418,15 +399,11 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       phx-hook="Tippy"
       data-tippy-delay="1000"
       data-tippy-content="Faktura jest wysyłana do KSeF. Proszę czekać na potwierdzenie."
-      class="flex flex-row gap-2 w-32 overflow-hidden"
+      class="flex w-32 flex-row gap-2 overflow-hidden"
     >
-      <div class={[
-        "text-xs h-6",
-        "flex flex-row justify-center items-center py-2 px-2 rounded-md",
-        "w-full justify-between text-darkGrey"
-      ]}>
+      <div class="text-darkGrey flex h-6 w-full flex-row items-center justify-center rounded-md p-2 text-xs">
         <div class="font-normal uppercase">Wysyłanie...</div>
-        <.icon name="hero-arrow-path" class="w-4 h-4 animate-spin" />
+        <.icon name="hero-arrow-path" class="size-4 animate-spin" />
       </div>
     </div>
     """
@@ -439,15 +416,11 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       phx-hook="Tippy"
       data-tippy-delay="1000"
       data-tippy-content="Wysyłanie faktury do KSeF nie powiodło się. Nasz zespół został poinformowany i działa nad naprawą problemu."
-      class="flex flex-row gap-2 w-32 overflow-hidden"
+      class="flex w-32 flex-row gap-2 overflow-hidden"
     >
-      <div class={[
-        "text-xs h-6",
-        "flex flex-row justify-center items-center py-2 px-2 rounded-md",
-        "w-full justify-between animate-error-pulse"
-      ]}>
+      <div class="animate-error-pulse flex h-6 w-full flex-row items-center justify-center rounded-md p-2 text-xs">
         <div class="font-normal uppercase">Błąd wysyłania</div>
-        <.icon name="hero-exclamation-triangle-mini" class="w-4 h-4" />
+        <.icon name="hero-exclamation-triangle-mini" class="size-4" />
       </div>
     </div>
     """
@@ -463,17 +436,13 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             "Udało się połączyć transakcje i dokument - to oznacza, " <>
               "że faktura jest opłacona i przygotowana do zaksięgowania."
       }
-      class="
-      flex flex-row gap-2 w-32 overflow-hidden"
+      class="flex w-32 flex-row gap-2 overflow-hidden"
     >
       <div class={[
-        "text-xs h-6",
-        "flex flex-row items-center py-2 px-2 rounded-md",
-        "transition-all duration-500",
-        "w-full justify-between bg-greenBg text-greenText"
+        "bg-greenBg text-greenText flex h-6 w-full flex-row items-center justify-between rounded-md p-2 text-xs transition-all duration-500"
       ]}>
         <div class="font-normal uppercase">Komplet</div>
-        <.icon name="hero-check-micro" class="w-5 h-5" />
+        <.icon name="hero-check-micro" class="size-5" />
       </div>
     </div>
     """
@@ -498,15 +467,12 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
               "(np. gotówką)"
         end
       }
-      class="flex flex-row gap-2 w-32 overflow-hidden"
+      class="flex w-32 flex-row gap-2 overflow-hidden"
     >
       <div
         id={"#{@invoicing_entry.id}-label"}
         class={[
-          "text-xs h-6",
-          "flex flex-row justify-center items-center py-2 px-2 rounded-md",
-          "transition-all duration-500",
-          "w-10",
+          "flex h-6 w-10 flex-row items-center justify-center rounded-md p-2 text-xs transition-all duration-500",
           case @invoicing_entry do
             %Transaction{} -> "bg-redBg text-redText"
             _ -> "bg-greyButtonBg text-darkGrey"
@@ -523,7 +489,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
                 "hero-document-text-solid"
             end
           }
-          class="h-4 w-4"
+          class="size-4"
         />
       </div>
       <button
@@ -538,9 +504,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           end
         }
         class={[
-          "transition-all duration-500 cursor-pointer",
-          "w-20",
-          "h-6 uppercase text-xs text-darkGrey bg-greyButtonBg rounded-md"
+          "bg-greyButtonBg text-darkGrey h-6 w-20 cursor-pointer rounded-md text-xs uppercase transition-all duration-500"
         ]}
       >
         Pomiń
@@ -664,7 +628,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   defp render_cell(%{party: _, description: _, column: "party"} = assigns) do
     ~H"""
-    {@party} <span class="text-darkGrey opacity-50 text-sm">{@description}</span>
+    {@party} <span class="text-darkGrey text-sm opacity-50">{@description}</span>
     """
   end
 
@@ -722,30 +686,30 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       <td
         :for={column <- @columns}
         class={[
-          "transition-all duration-500 bg-white py-2",
-          column == "party" && "rounded-l-md pl-5 pr-5 text-ellipsis max-xl:max-w-72",
+          "bg-white py-2 transition-all duration-500",
+          column == "party" && "rounded-l-md px-5 text-ellipsis max-xl:max-w-72",
           String.ends_with?(column, "date") && "font-light",
           column == "amount" && "rounded-r-md",
-          column == "amount" && Decimal.gte?(@group.total, 0) && "text-blueText !bg-blueBg",
-          column == "amount" && Decimal.lt?(@group.total, 0) && "text-orangeText !bg-orangeBg"
+          column == "amount" && Decimal.gte?(@group.total, 0) && "bg-blueBg! text-blueText",
+          column == "amount" && Decimal.lt?(@group.total, 0) && "bg-orangeBg! text-orangeText"
         ]}
       >
         <div
           data-overflow-hider-id={@group.id}
           class={[
             column == "party" && "max-w-[50vw]",
-            column != "amount" && "w-full whitespace-nowrap overflow-hidden text-ellipsis"
+            column != "amount" && "w-full truncate"
           ]}
         >
           <%= if column == "party" do %>
             <span>{@group.party}</span>
             <span
               id={"chevron-#{@group.id}"}
-              class="inline-flex items-center justify-center w-4 h-4 mx-1 transition-transform"
+              class="mx-1 inline-flex size-4 items-center justify-center transition-transform"
             >
-              <.icon name="hero-chevron-right" class="w-3 h-3" />
+              <.icon name="hero-chevron-right" class="size-3" />
             </span>
-            <span class="text-darkGrey opacity-50 text-sm">
+            <span class="text-darkGrey text-sm opacity-50">
               {pluralize_transaction_count(@group.count)}
             </span>
           <% else %>
@@ -760,28 +724,28 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         <td
           :for={column <- @columns}
           class={[
-            "transition-all duration-500 bg-white py-2",
-            column == "party" && "rounded-l-md pl-5 pr-5 text-ellipsis max-xl:max-w-72",
+            "bg-white py-2 transition-all duration-500",
+            column == "party" && "rounded-l-md px-5 text-ellipsis max-xl:max-w-72",
             String.ends_with?(column, "date") && "font-light",
             column == "amount" && "rounded-r-md",
             column == "amount" &&
               Decimal.gte?(transaction.transaction_amount, 0) &&
-              "text-blueText !bg-blueBg",
+              "bg-blueBg! text-blueText",
             column == "amount" &&
               Decimal.lt?(transaction.transaction_amount, 0) &&
-              "text-orangeText !bg-orangeBg"
+              "bg-orangeBg! text-orangeText"
           ]}
         >
           <div
             data-overflow-hider-id={transaction.id}
             class={[
               column == "party" && "max-w-[50vw]",
-              column != "amount" && "w-full whitespace-nowrap overflow-hidden text-ellipsis"
+              column != "amount" && "w-full truncate"
             ]}
           >
             <%= if column == "party" do %>
               <div class="flex items-center gap-2">
-                <.icon name="hero-arrow-turn-down-right" class="w-3 h-3 text-darkGrey opacity-50" />
+                <.icon name="hero-arrow-turn-down-right" class="text-darkGrey size-3 opacity-50" />
                 <.render_cell column={column} invoicing_entry={transaction} />
               </div>
             <% else %>
@@ -796,7 +760,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   defp render_group_cell(%{column: "amount"} = assigns) do
     ~H"""
-    <div class="text-right pr-5 py-2 relative">
+    <div class="relative py-2 pr-5 text-right">
       {Money.new(@group.currency, @group.total)}
     </div>
     """
@@ -820,14 +784,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
     ~H"""
     <%= if @is_unmatched do %>
-      <div class="flex flex-row gap-2 w-32 overflow-hidden">
-        <div class={[
-          "text-xs h-6",
-          "flex flex-row justify-center items-center py-2 px-2 rounded-md",
-          "transition-all duration-500",
-          "w-10 bg-redBg text-redText"
-        ]}>
-          <.icon name="hero-credit-card-mini" class="h-4 w-4" />
+      <div class="flex w-32 flex-row gap-2 overflow-hidden">
+        <div class="bg-redBg text-redText flex h-6 w-10 flex-row items-center justify-center rounded-md p-2 text-xs transition-all duration-500">
+          <.icon name="hero-credit-card-mini" class="size-4" />
         </div>
         <button
           id={"#{@group.id}-button"}
@@ -836,11 +795,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
               value: %{group_id: @group.id, transaction_ids: Enum.map(@group.transactions, & &1.id)}
             )
           }
-          class={[
-            "transition-all duration-500 cursor-pointer",
-            "w-20",
-            "h-6 uppercase text-xs text-darkGrey bg-greyButtonBg rounded-md"
-          ]}
+          class="bg-greyButtonBg text-darkGrey h-6 w-20 cursor-pointer rounded-md text-xs uppercase transition-all duration-500"
         >
           Pomiń
         </button>

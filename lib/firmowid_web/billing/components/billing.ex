@@ -30,11 +30,11 @@ defmodule FirmowidWeb.Billing.Components.Billing do
     ~H"""
     <%= case @check_result do %>
       <% {:warning, :over_limit, %{used: used, limit: limit}} -> %>
-        <div class="bg-orangeBg border border-orangeText/20 rounded-lg p-4 mb-4">
+        <div class="bg-orangeBg border-orangeText/20 mb-4 rounded-lg border p-4">
           <div class="flex items-start gap-3">
             <div class="shrink-0">
               <svg
-                class="h-5 w-5 text-orangeText"
+                class="text-orangeText size-5"
                 viewBox="0 0 20 20"
                 fill="currentColor"
                 aria-hidden="true"
@@ -47,15 +47,15 @@ defmodule FirmowidWeb.Billing.Components.Billing do
               </svg>
             </div>
             <div class="flex-1">
-              <h3 class="text-sm font-medium text-orangeText">
+              <h3 class="text-orangeText text-sm font-medium">
                 {limit_title(@type)}
               </h3>
-              <p class="mt-1 text-sm text-orangeText/80">
+              <p class="text-orangeText/80 mt-1 text-sm">
                 {limit_message(@type, used, limit)}
               </p>
               <a
                 href="/ustawienia/organizacja#limity"
-                class="mt-2 inline-block text-sm font-medium text-orangeText underline hover:text-orangeText/70"
+                class="hover:text-orangeText/70 text-orangeText mt-2 inline-block text-sm font-medium underline"
               >
                 Zobacz szczegóły w ustawieniach
               </a>
@@ -93,27 +93,23 @@ defmodule FirmowidWeb.Billing.Components.Billing do
 
     ~H"""
     <div class="text-xs">
-      <div class="flex justify-between items-center mb-1">
+      <div class="mb-1 flex items-center justify-between">
         <span class="text-darkGrey">{@label}</span>
-        <span class={classes(["font-medium", @over_limit && "text-orangeText"])}>
+        <span class={["font-medium", @over_limit && "text-orangeText"]}>
           {@used}/{@limit}
         </span>
       </div>
-      <div class="w-full h-2 bg-greyButtonBg rounded-full overflow-hidden">
+      <div class="bg-greyButtonBg h-2 w-full overflow-hidden rounded-full">
         <div
-          class={
-            classes([
-              "h-full rounded-full transition-all duration-300",
-              if(@over_limit, do: "bg-orangeText", else: "bg-greenText")
-            ])
-          }
+          class={[
+            "h-full rounded-full transition-all duration-300",
+            if(@over_limit, do: "bg-orangeText", else: "bg-greenText")
+          ]}
           style={"width: #{@percentage}%"}
         >
         </div>
       </div>
-      <div class={
-        classes(["mt-1", if(@over_limit, do: "text-orangeText/70", else: "text-darkGrey/60")])
-      }>
+      <div class={["mt-1", if(@over_limit, do: "text-orangeText/70", else: "text-darkGrey/60")]}>
         {@reset_text}
       </div>
     </div>

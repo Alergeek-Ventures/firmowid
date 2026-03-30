@@ -150,10 +150,8 @@ config :spark,
     "Ash.Domain": [section_order: [:resources, :policies, :authorization, :domain, :execution]]
   ]
 
-config :tails, colors_file: Path.join(__DIR__, "../assets/tailwind.colors.json")
-
 config :tailwind,
-  version: "4.1.12",
+  version: "4.2.2",
   firmowid: [
     args: ~w(
       --input=css/app.css

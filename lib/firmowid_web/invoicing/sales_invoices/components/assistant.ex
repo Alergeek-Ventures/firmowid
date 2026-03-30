@@ -112,7 +112,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="assistant-chat relative flex flex-col w-full h-full pt-8 px-14.5">
+    <div class="assistant-chat relative flex size-full flex-col px-14.5 pt-8">
       <.button
         id="chat-close-button"
         phx-hook="Tippy"
@@ -121,12 +121,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
         phx-target="#invoice-show"
         variant="ghost"
         new={true}
-        class="mb-4 absolute top-0 right-0 z-10 p-0 h-auto"
+        class="absolute top-0 right-0 z-10 mb-4 h-auto p-0"
       >
         <.icon name="hero-x-mark-mini" class="size-6" />
       </.button>
       <div
-        class="flex flex-col grow gap-12 pr-4 overflow-y-auto"
+        class="flex grow flex-col gap-12 overflow-y-auto pr-4"
         id="messages"
         phx-update="stream"
         phx-hook="ScrollToBottom"
@@ -135,7 +135,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
           {Components.message(msg, @myself, current_user: @current_user)}
         </div>
         <%= if @zero_state do %>
-          <div class="flex flex-row flex-wrap gap-4 items-center justify-center py-4">
+          <div class="flex flex-row flex-wrap items-center justify-center gap-4 py-4">
             <%= for possible_message <- [
             "Ta faktura pokrywa wszystkie transakcje z poprzedniego miesiąca",
             "Transakcja za tę fakturę ma inną nazwę kontrahenta",
@@ -144,7 +144,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
               <.button
                 phx-click="send"
                 color="orange"
-                class="text-sm leading-tight text-orange-700 bg-orange-200 font-medium hover:text-orange-200 hover:bg-orange-700 rounded py-1 px-[9px] h-auto"
+                class="h-auto rounded bg-orange-200 px-[9px] py-1 text-sm/tight font-medium text-orange-700 hover:bg-orange-700 hover:text-orange-200"
                 phx-target={@myself}
                 phx-value-message={possible_message}
               >
@@ -162,7 +162,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
         myself={@myself}
       />
 
-      <div :if={@waiting_for_decision} class="flex flex-col gap-3 items-center mb-8">
+      <div :if={@waiting_for_decision} class="mb-8 flex flex-col items-center gap-3">
         <p>Połączyć te transakcje z fakturą?</p>
         <div class="grid grid-cols-2 gap-3">
           <.button

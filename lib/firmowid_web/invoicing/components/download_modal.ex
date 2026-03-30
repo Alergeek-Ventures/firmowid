@@ -28,10 +28,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
         phx-click={show_modal("download-modal")}
         data-tippy-content="Pobierz wszystkie faktury wystawione lub z datą sprzedaży w tym miesiącu"
         phx-hook="Tippy"
-        class="relative flex flex-row gap-4 items-center justify-center
-            rounded-lg px-3 py-2 max-md:hidden bg-greyButtonBg
-            border-greyButtonBg hover:border-darkGrey hover:bg-darkGrey
-            hover:text-white border transition-colors"
+        class="bg-greyButtonBg border-greyButtonBg hover:bg-darkGrey hover:border-darkGrey relative flex flex-row items-center justify-center gap-4 rounded-lg border px-3 py-2 transition-colors hover:text-white max-md:hidden"
       >
         <span aria-hidden="true"><.icon name="hero-cloud-arrow-down" class="size-6" /></span>
         <span class="max-xl:hidden">
@@ -44,7 +41,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
           <h3 class="text-lg font-semibold text-balance">Pobierz faktury</h3>
           <p class="text-pretty">
             W pliku
-            <span class="inline-flex items-center gap-1 bg-lightGreyBg border border-black rounded px-2 py-1">
+            <span class="bg-lightGreyBg inline-flex items-center gap-1 rounded border border-black px-2 py-1">
               <span aria-hidden="true"><.icon name="hero-document-solid" class="size-4" /></span>
               {@month |> Calendar.strftime("%Y-%m")}-dokumenty.zip
             </span>
@@ -82,10 +79,10 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
             href={download_href(@month, assigns)}
             download
             class={[
-              "text-center py-2 rounded-md transition-colors",
+              "rounded-md py-2 text-center transition-colors",
               if(@any_selected,
-                do: "bg-black text-white hover:bg-gray-800 cursor-pointer",
-                else: "bg-gray-300 text-gray-500 pointer-events-none"
+                do: "cursor-pointer bg-black text-white hover:bg-gray-800",
+                else: "pointer-events-none bg-gray-300 text-gray-500"
               )
             ]}
             aria-disabled={if(!@any_selected, do: "true")}

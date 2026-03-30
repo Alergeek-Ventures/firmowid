@@ -44,7 +44,7 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
             {"Kwota", @invoice.total_amount |> Decimal.abs()},
             {"Waluta", @invoice.currency}
           ] do %>
-              <label for={"transfer-#{label}"} class="text-sm self-start text-nowrap">
+              <label for={"transfer-#{label}"} class="self-start text-sm text-nowrap">
                 {label}
               </label>
               <code id={"transfer-#{label}"} class="text-right text-black">{value}</code>
@@ -62,7 +62,7 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
             <% end %>
           </div>
           <div class="flex flex-row gap-6">
-            <div class="flex items-center justify-center grow bg-orange-200 px-4 py-2 rounded-lg">
+            <div class="flex grow items-center justify-center rounded-lg bg-orange-200 px-4 py-2">
               <h4 class="text-orange-700">
                 Zawsze weryfikuj kopiowane dane z fakturą!
               </h4>

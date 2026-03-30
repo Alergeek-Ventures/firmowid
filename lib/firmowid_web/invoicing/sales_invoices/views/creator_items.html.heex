@@ -1,7 +1,7 @@
-<div class="max-w-6xl w-full mx-auto flex-1 flex flex-col my-4 relative">
+<div class="relative mx-auto my-4 flex w-full max-w-6xl flex-1 flex-col">
   <.link
     patch={~p"/sprzedazowe?creator_draft=#{@creator_draft_id}&step=#{@step_number - 1}"}
-    class="flex items-center gap-2 text-sm absolute -left-[calc(68px+1.5rem)] -top-[2.5px]"
+    class="absolute -top-[2.5px] -left-[calc(68px+1.5rem)] flex items-center gap-2 text-sm"
   >
     <Lucideicons.circle_chevron_left /> Wróć
   </.link>
@@ -29,7 +29,7 @@
     <.button
       type="submit"
       phx-disable-with="Przetwarzanie..."
-      class="col-start-1 col-end-9 ml-auto mt-20 max-w-44 w-full h-11"
+      class="col-start-1 col-end-9 mt-20 ml-auto h-11 w-full max-w-44"
       color="turquoise"
       new={true}
       disabled={not @items_form.source.valid?}

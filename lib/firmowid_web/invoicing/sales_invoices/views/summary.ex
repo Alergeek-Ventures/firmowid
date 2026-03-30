@@ -52,20 +52,20 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="max-w-6xl w-full mx-auto my-4 flex flex-col gap-4">
-      <p class="text-sm text-grey-500">
+    <div class="mx-auto my-4 flex w-full max-w-6xl flex-col gap-4">
+      <p class="text-grey-500 text-sm">
         Kreator faktur | <span class="text-grey-700">Faktura wystawiona</span>
       </p>
       <%= case @submission_info.status do %>
         <% :submitting -> %>
-          <h1 class="text-[27px]/tight font-medium flex items-baseline gap-1">
+          <h1 class="flex items-baseline gap-1 text-[27px]/tight font-medium">
             Faktura w trakcie wysyłania
             <span class="inline-flex gap-1">
-              <span class="w-1.5 h-1.5 bg-grey-400 rounded-full animate-bounce [animation-delay:-0.3s]">
+              <span class="bg-grey-400 size-1.5 animate-bounce rounded-full [animation-delay:-0.3s]">
               </span>
-              <span class="w-1.5 h-1.5 bg-grey-400 rounded-full animate-bounce [animation-delay:-0.15s]">
+              <span class="bg-grey-400 size-1.5 animate-bounce rounded-full [animation-delay:-0.15s]">
               </span>
-              <span class="w-1.5 h-1.5 bg-grey-400 rounded-full animate-bounce"></span>
+              <span class="bg-grey-400 size-1.5 animate-bounce rounded-full"></span>
             </span>
           </h1>
         <% :submitted -> %>
@@ -109,7 +109,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
         <div class="flex items-center gap-4">
           <.link
             navigate={~p"/sprzedazowe/#{@invoice.id}"}
-            class="text-sm text-grey-600 hover:text-grey-900"
+            class="hover:text-grey-900 text-grey-600 text-sm"
           >
             Przejdź do faktury
           </.link>
@@ -122,30 +122,29 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
         </div>
       </div>
       <%= if @submission_info.status == :failed do %>
-        <div class="text-center flex flex-col justify-center items-center gap-4 bg-redBg text-redText p-8 rounded-md">
-          <Lucideicons.triangle_alert class="w-10 h-10 text-red-600" />
+        <div class="bg-redBg text-redText flex flex-col items-center justify-center gap-4 rounded-md p-8 text-center">
+          <Lucideicons.triangle_alert class="size-10 text-red-600" />
           <h2 class="text-xl">Wysyłka do KSeF nie powiodła się.</h2>
-          <p :if={@submission_info.error} class="text-sm max-w-lg">
+          <p :if={@submission_info.error} class="max-w-lg text-sm">
             {@submission_info.error}
           </p>
-          <p class="text-sm text-grey-600 mt-2">
+          <p class="text-grey-600 mt-2 text-sm">
             Edytuj fakturę, aby ponowić wysyłkę.
           </p>
           <.link
             navigate={~p"/sprzedazowe/#{@invoice.id}"}
             class={[
-              "flex items-center gap-2 px-4 py-2 rounded-md mt-4",
-              "bg-turquoise text-white hover:bg-turquoise/90 transition-colors"
+              "bg-turquoise hover:bg-turquoise/90 mt-4 flex items-center gap-2 rounded-md px-4 py-2 text-white transition-colors"
             ]}
           >
-            <Lucideicons.pencil class="w-4 h-4" /> Przejdź do faktury
+            <Lucideicons.pencil class="size-4" /> Przejdź do faktury
           </.link>
         </div>
       <% end %>
 
-      <div class="h-8 invisible" />
+      <div class="invisible h-8" />
 
-      <div class="grid grid-cols-[1fr_650px_1fr] gap-8 justify-center items-start">
+      <div class="grid grid-cols-[1fr_650px_1fr] items-start justify-center gap-8">
         <% list_width = 224 %>
         <% template_width = 595 %>
         <% template_height = 842 %>
@@ -156,11 +155,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             :for={previous_invoice <- @previous_invoices}
             class="space-y-2"
           >
-            <p class="text-sm/tight text-grey-700 pl-1">
+            <p class="text-grey-700 pl-1 text-sm/tight">
               {previous_invoice.invoice_number}
             </p>
             <div
-              class="border border-grey-200 rounded-lg bg-white shadow-sm overflow-hidden"
+              class="border-grey-200 overflow-hidden rounded-lg border bg-white shadow-sm"
               style={"width: #{template_width * scale}px; height: #{template_height * scale}px;"}
             >
               <div class="origin-top-left" style={"transform: scale(#{scale})"}>
@@ -177,10 +176,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
 
         <div class="relative">
           <%!-- Success state - behind invoice (z-0) --%>
-          <div class="absolute inset-0 flex items-center justify-center z-0">
+          <div class="absolute inset-0 z-0 flex items-center justify-center">
             <div class="text-center">
-              <Lucideicons.circle_check class="w-24 h-24 text-greenText mx-auto" />
-              <p class="mt-4 text-xl font-medium text-grey-700">Wysłano do KSeF!</p>
+              <Lucideicons.circle_check class="text-greenText mx-auto size-24" />
+              <p class="text-grey-700 mt-4 text-xl font-medium">Wysłano do KSeF!</p>
             </div>
           </div>
 
@@ -190,7 +189,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             phx-hook="PaperPlane"
             class="relative z-10"
           >
-            <div class="max-w-[650px] w-full border border-grey-200 rounded-lg bg-white shadow-sm overflow-hidden">
+            <div class="border-grey-200 w-full max-w-[650px] overflow-hidden rounded-lg border bg-white shadow-sm">
               <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
                 sales_invoice={@invoice}
                 currency_rate={@currency_rate}

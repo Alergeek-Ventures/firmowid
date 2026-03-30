@@ -31,7 +31,7 @@ defmodule FirmowidWeb.Auth.Views.ResetPassword do
         </:actions>
       </.simple_form>
 
-      <p class="text-center text-sm mt-4">
+      <p class="mt-4 text-center text-sm">
         <.link href={~p"/zarejestruj"}>Zarejestruj się</.link>
         | <.link href={~p"/zaloguj"}>Zaloguj się</.link>
       </p>

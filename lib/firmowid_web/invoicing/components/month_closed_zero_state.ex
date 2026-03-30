@@ -4,10 +4,10 @@ defmodule FirmowidWeb.Invoicing.Components.MonthClosedZeroState do
 
   def render(assigns) do
     ~H"""
-    <div class="justify-center flex flex-col md:flex-row gap-4 my-8">
+    <div class="my-8 flex flex-col justify-center gap-4 md:flex-row">
       <img src="/images/celebration.jpg" class="h-[360px]" draggable="false" />
-      <div class="flex flex-col gap-6 text-center items-center">
-        <h2 class="font-bold text-xl">Gratulacje!</h2>
+      <div class="flex flex-col items-center gap-6 text-center">
+        <h2 class="text-xl font-bold">Gratulacje!</h2>
         <p class="max-w-[400px]">
           Ten miesiąc jest już za nami, więc nie pojawi się już więcej transakcji.
         </p>

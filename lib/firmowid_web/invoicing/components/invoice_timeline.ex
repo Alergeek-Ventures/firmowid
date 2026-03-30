@@ -29,8 +29,8 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
 
     ~H"""
     <div class="flex flex-col gap-6">
-      <div class="flex flex-row justify-between items-start">
-        <h3 class="text-sm/snug text-grey-700">Historia dokumentu</h3>
+      <div class="flex flex-row items-start justify-between">
+        <h3 class="text-grey-700 text-sm/snug">Historia dokumentu</h3>
         <.button
           phx-click="hide_timeline"
           phx-target="#invoice-show"
@@ -48,7 +48,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
         </p>
       <% else %>
         <div class="relative">
-          <div class="absolute left-[5px] top-4 bottom-7 w-0.5 bg-grey-200"></div>
+          <div class="bg-grey-200 absolute top-4 bottom-7 left-[5px] w-0.5"></div>
 
           <div class="flex flex-col gap-6">
             <.event :for={event <- @events} event={event} invoice_type={@invoice_type} />
@@ -66,26 +66,26 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
 
   defp timeline_item(assigns) do
     ~H"""
-    <div class="relative flex flex-row gap-4 items-start">
+    <div class="relative flex flex-row items-start gap-4">
       <div class={[
-        "relative z-10 w-3 h-3 rounded-full shrink-0 mt-1",
-        event_dot_color(@event.event)
+        "relative z-10 mt-1 size-3 shrink-0 rounded-full",
+        event_dot_styles(@event.event)
       ]}>
       </div>
 
       <div class="flex flex-col gap-1">
-        <div class="flex flex-row gap-2 items-baseline">
+        <div class="flex flex-row items-baseline gap-2">
           <span class={[
-            "text-sm/snug uppercase font-bold",
+            "text-sm/snug font-bold uppercase",
             @event.event in [:failed, :correction_failed] && "text-redText"
           ]}>
             {render_slot(@label)}
           </span>
-          <span class="text-sm/snug text-grey-700">
+          <span class="text-grey-700 text-sm/snug">
             {format_datetime(@event.occurred_at)}
           </span>
         </div>
-        <span class="text-sm/snug text-grey-700">
+        <span class="text-grey-700 text-sm/snug">
           {render_slot(@content)}
         </span>
       </div>
@@ -104,7 +104,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
       </:label>
       <:content>
         numer dokumentu:
-        <span class="font-bold text-turquoise-700">{@event.metadata.invoice_number}</span>
+        <span class="text-turquoise-700 font-bold">{@event.metadata.invoice_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -128,7 +128,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
       </:label>
       <:content>
         nadano numer KSeF:
-        <span class="font-bold text-turquoise-700">{@event.metadata.ksef_number}</span>
+        <span class="text-turquoise-700 font-bold">{@event.metadata.ksef_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -156,7 +156,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
       </:label>
       <:content>
         nadano numer KSeF:
-        <span class="font-bold text-turquoise-700">{@event.metadata.ksef_number}</span>
+        <span class="text-turquoise-700 font-bold">{@event.metadata.ksef_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -170,7 +170,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
       </:label>
       <:content>
         nadano numer KSeF:
-        <span class="font-bold text-turquoise-700">{@event.metadata.ksef_number}</span>
+        <span class="text-turquoise-700 font-bold">{@event.metadata.ksef_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -184,7 +184,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
       </:label>
       <:content>
         numer dokumentu:
-        <span class="font-bold text-turquoise-700">{@event.metadata.invoice_number}</span>
+        <span class="text-turquoise-700 font-bold">{@event.metadata.invoice_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -221,7 +221,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
       </:label>
       <:content>
         nadano numer KSeF:
-        <span class="font-bold text-turquoise-700">{@event.metadata.ksef_number}</span>
+        <span class="text-turquoise-700 font-bold">{@event.metadata.ksef_number}</span>
       </:content>
     </.timeline_item>
     """
@@ -246,15 +246,15 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     """
   end
 
-  defp event_dot_color(:confirmed), do: "bg-greenText"
-  defp event_dot_color(:failed), do: "bg-redText"
-  defp event_dot_color(:submitted), do: "bg-blueText"
-  defp event_dot_color(:downloaded), do: "bg-greenText"
-  defp event_dot_color(:correction_downloaded), do: "bg-greenText"
-  defp event_dot_color(:correction_confirmed), do: "bg-greenText"
-  defp event_dot_color(:correction_failed), do: "bg-redText"
-  defp event_dot_color(:correction_submitted), do: "bg-blueText"
-  defp event_dot_color(_), do: "bg-grey-200"
+  defp event_dot_styles(:confirmed), do: "bg-greenText"
+  defp event_dot_styles(:failed), do: "bg-redText"
+  defp event_dot_styles(:submitted), do: "bg-blueText"
+  defp event_dot_styles(:downloaded), do: "bg-greenText"
+  defp event_dot_styles(:correction_downloaded), do: "bg-greenText"
+  defp event_dot_styles(:correction_confirmed), do: "bg-greenText"
+  defp event_dot_styles(:correction_failed), do: "bg-redText"
+  defp event_dot_styles(:correction_submitted), do: "bg-blueText"
+  defp event_dot_styles(_), do: "bg-grey-200"
 
   defp format_datetime(nil), do: ""
   defp format_datetime(%DateTime{} = dt), do: Calendar.strftime(dt, "%d.%m.%Y")

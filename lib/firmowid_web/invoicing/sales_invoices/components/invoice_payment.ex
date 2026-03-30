@@ -9,7 +9,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
 
   def invoice_payment(assigns) do
     ~H"""
-    <div class="grid grid-cols-[min-content_1fr] gap-x-5 gap-y-4 items-center">
+    <div class="grid grid-cols-[min-content_1fr] items-center gap-x-5 gap-y-4">
       <label class="text-grey-700 whitespace-nowrap" for={@payment_form[:sale_date].id}>
         Data sprzedaży
       </label>
@@ -53,31 +53,27 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
       />
 
       <div class={[
-        "col-start-2 border border-grey-200 p-4 rounded-lg w-min min-w-[400px]",
-        "grid grid-cols-[min-content_1fr] gap-4 gap-y-2 items-center",
-        "transition-opacity duration-200",
+        "border-grey-200 col-start-2 grid w-min min-w-[400px] grid-cols-[min-content_1fr] items-center gap-4 gap-y-2 rounded-lg border p-4 transition-opacity duration-200",
         if(Ecto.Changeset.get_field(@payment_form.source, :payment_method) == :transfer,
           do: "opacity-100",
-          else: "opacity-0 pointer-events-none"
+          else: "pointer-events-none opacity-0"
         )
       ]}>
         <.input field={@payment_form[:seller_account_number]} type="hidden" class="hidden" />
 
         <%= if Enum.empty?(@bank_accounts) do %>
-          <p class="col-span-2 text-sm/snug text-grey-700">
+          <p class="text-grey-700 col-span-2 text-sm/snug">
             Żadne z Twoich kont nie jest podpięte.
           </p>
           <.link
-            class={
-              classes([
-                button_styles(%{size: "small", color: "light_grey", new: true}),
-                "inline-flex items-center gap-1.5"
-              ])
-            }
+            class={[
+              "inline-flex items-center gap-1.5",
+              button_styles(%{size: "small", color: "light_grey", new: true})
+            ]}
             target="_blank"
             href="/ustawienia/konta-bankowe"
           >
-            <Lucideicons.plus class="size-4 inline-flex" /> Podepnij konto
+            <Lucideicons.plus class="inline-flex size-4" /> Podepnij konto
           </.link>
         <% end %>
 
@@ -100,24 +96,24 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
         <% end %>
 
         <%= if not Enum.empty?(@bank_accounts) and @selected_bank_account != nil do %>
-          <div class="pb-2 pr-2">
-            <Lucideicons.landmark class="size-[42px] text-grey-700" />
+          <div class="pr-2 pb-2">
+            <Lucideicons.landmark class="text-grey-700 size-[42px]" />
           </div>
 
-          <div class="flex flex-row gap-2 items-center">
+          <div class="flex flex-row items-center gap-2">
             <p
               :if={
                 @selected_bank_account.is_default and
                   @selected_bank_account.currency == @invoice.currency
               }
-              class="h-min py-1 px-4 rounded-full text-sm/snug text-green-700 bg-green-200"
+              class="h-min rounded-full bg-green-200 px-4 py-1 text-sm/snug text-green-700"
             >
               domyślny <strong>{@selected_bank_account.currency}</strong>
             </p>
 
             <p
               :if={@selected_bank_account.currency != @invoice.currency}
-              class="h-min py-1 px-4 rounded-full text-sm/snug text-redText bg-redBg"
+              class="bg-redBg text-redText h-min rounded-full px-4 py-1 text-sm/snug"
             >
               waluta konta: <strong>{@selected_bank_account.currency}</strong>
             </p>
@@ -127,7 +123,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
               size="small"
               color="light_grey"
               new={true}
-              class="h-min ml-auto"
+              class="ml-auto h-min"
               phx-click={show_modal("bank_account_selector_modal")}
             >
               Zmień
@@ -145,42 +141,41 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
       <%!-- Bank account selector modal --%>
       <div class="absolute">
         <.modal id="bank_account_selector_modal" class="max-w-4xl">
-          <h2 class="text-xl font-medium mb-2">Zmiana rachunku</h2>
+          <h2 class="mb-2 text-xl font-medium">Zmiana rachunku</h2>
           <p class="text-grey-600 mb-6">Wybierz rachunek bankowy, na który chcesz otrzymać wpłatę.</p>
 
           <div class="space-y-3">
             <%= for account <- @bank_accounts do %>
               <div class={[
-                "grid grid-cols-[min-content_min-content_1fr_min-content_min-content] items-center gap-2 p-4 border rounded-lg transition-colors",
+                "grid grid-cols-[min-content_min-content_1fr_min-content_min-content] items-center gap-2 rounded-lg border p-4 transition-colors",
                 if(@selected_bank_account && @selected_bank_account.id == account.id,
-                  do: "border-grey-400 bg-grey-50",
+                  do: "bg-grey-50 border-grey-400",
                   else: "border-grey-200 hover:border-grey-300"
                 )
               ]}>
-                <Lucideicons.landmark class="size-10 text-grey-600 shrink-0 mr-4" />
+                <Lucideicons.landmark class="text-grey-600 mr-4 size-10 shrink-0" />
 
                 <div class="flex flex-col gap-2 text-sm">
-                  <span :if={account.name} class="block text-grey-500">Nazwa</span>
-                  <span class="block text-grey-500">Bank</span>
-                  <span class="block text-grey-500">Numer</span>
+                  <span :if={account.name} class="text-grey-500 block">Nazwa</span>
+                  <span class="text-grey-500 block">Bank</span>
+                  <span class="text-grey-500 block">Numer</span>
                 </div>
 
                 <div class="flex flex-col gap-2 text-sm">
-                  <span :if={account.name} class="block text-grey-700 truncate">{account.name}</span>
-                  <span class="block text-grey-700 truncate">{account.institution_name}</span>
-                  <span class="block text-grey-700">{account.iban}</span>
+                  <span :if={account.name} class="text-grey-700 block truncate">{account.name}</span>
+                  <span class="text-grey-700 block truncate">{account.institution_name}</span>
+                  <span class="text-grey-700 block">{account.iban}</span>
                 </div>
 
                 <p
                   :if={account.is_default and account.currency == @invoice.currency}
-                  class="py-1 px-3 rounded-full text-sm/snug text-green-700
-        bg-green-200 whitespace-nowrap mx-4"
+                  class="mx-4 rounded-full bg-green-200 px-3 py-1 text-sm/snug whitespace-nowrap text-green-700"
                 >
                   domyślny <strong>{account.currency}</strong>
                 </p>
 
                 <%= if @selected_bank_account && @selected_bank_account.id == account.id do %>
-                  <span class="py-1.5 px-3 rounded-md text-sm font-medium text-white bg-grey-800">
+                  <span class="bg-grey-800 rounded-md px-3 py-1.5 text-sm font-medium text-white">
                     Wybrany
                   </span>
                 <% else %>

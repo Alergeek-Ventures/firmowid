@@ -245,16 +245,15 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
       phx-click="select-section"
       phx-value-section={@section}
       class={[
-        "rounded-lg p-6 text-left cursor-pointer transition-all duration-200",
+        "cursor-pointer rounded-lg border-2 p-6 text-left transition-all duration-200",
+        if(@active, do: "#{@active_border} ring-2 #{@ring}", else: "#{@border} #{@hover_border}"),
         @bg,
-        "border-2",
-        @text,
-        if(@active, do: "#{@active_border} ring-2 #{@ring}", else: "#{@border} #{@hover_border}")
+        @text
       ]}
     >
       <div class="flex items-center">
         <div class="shrink-0">
-          <.icon name={@icon} class={"h-8 w-8 #{@text}"} />
+          <.icon name={@icon} class={["size-8", @text]} />
         </div>
         <div class="ml-4">
           <p class={["text-sm font-medium", @text]}>{@label}</p>

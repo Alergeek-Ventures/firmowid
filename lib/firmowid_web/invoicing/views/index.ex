@@ -339,10 +339,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
         ~H"""
         <.link
-          class="text-sm text-bold underline"
+          class="text-bold text-sm underline"
           navigate={~p"/fakturowanie?month=#{@issue_date}&filter=invoices"}
         >
-          Wyświetl <.icon name="hero-arrow-right-solid" class="h-3 w-3" />
+          Wyświetl <.icon name="hero-arrow-right-solid" class="size-3" />
         </.link>
         """
       end
@@ -368,10 +368,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
         ~H"""
         <.link
-          class="text-sm text-bold underline"
+          class="text-bold text-sm underline"
           navigate={~p"/fakturowanie?month=#{@issue_date}&filter=invoices"}
         >
-          Wyświetl <.icon name="hero-arrow-right-solid" class="h-3 w-3" />
+          Wyświetl <.icon name="hero-arrow-right-solid" class="size-3" />
         </.link>
         """
       end
@@ -458,10 +458,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
         ~H"""
         <.link
-          class="text-sm text-bold underline"
+          class="text-bold text-sm underline"
           navigate={~p"/fakturowanie?month=#{@issue_date}&filter=invoices"}
         >
-          Wyświetl <.icon name="hero-arrow-right-solid" class="h-3 w-3" />
+          Wyświetl <.icon name="hero-arrow-right-solid" class="size-3" />
         </.link>
         """
       end

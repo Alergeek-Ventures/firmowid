@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Settings.Components.EditButton do
   @moduledoc false
   use FirmowidWeb, :html
 
-  attr :class, :string, default: nil
+  attr :class, :any, default: nil
 
   attr :tag_name, :string,
     default: "button",
@@ -16,16 +16,13 @@ defmodule FirmowidWeb.Settings.Components.EditButton do
     ~H"""
     <.dynamic_tag
       tag_name={@tag_name}
-      class={
-        classes([
-          button_styles(),
-          "bg-white flex justify-center p-0 size-8 items-center rounded border-none hover:border-darkGrey phx-click-loading:bg-lightGreyBg phx-click-loading:cursor-default phx-click-loading:opacity-60 text-darkGrey active:text-darkGrey/60 active:bg-lightGreyBg cursor-pointer",
-          @class
-        ])
-      }
+      class={[
+        "active:bg-lightGreyBg active:text-darkGrey/60 hover:border-darkGrey phx-click-loading:bg-lightGreyBg phx-click-loading:cursor-default phx-click-loading:opacity-75 phx-submit-loading:opacity-75 text-darkGrey flex size-8 cursor-pointer items-center justify-center rounded border border-none bg-white p-0 leading-6 transition-all duration-200 disabled:pointer-events-none disabled:opacity-40",
+        @class
+      ]}
       {@rest}
     >
-      <Lucideicons.square_pen class="h-4 w-4" />
+      <Lucideicons.square_pen class="size-4" />
     </.dynamic_tag>
     """
   end

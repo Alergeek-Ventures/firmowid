@@ -1,16 +1,16 @@
 <%= if @current_user && !is_nil(@current_user.organization_id) do %>
   <%!-- simulates the navbar height, so the content does not jump when the navbar collapses --%>
   <%= if String.starts_with?(@current_uri.path, "/zarzadzanie") do %>
-    <div class="h-navbar-management bg-lightGreyBg w-full" />
+    <div class="bg-lightGreyBg h-navbar-management w-full" />
   <% end %>
   <.navbar class={[
     if(String.starts_with?(@current_uri.path, "/zarzadzanie"), do: "fixed", else: "sticky"),
-    "top-0 left-0 right-0 z-50"
+    "inset-x-0 top-0 z-50"
   ]}>
     <div
       class={[
-        "text-white flex",
-        "items-center justify-between h-navbar py-6",
+        "flex text-white",
+        "h-navbar items-center justify-between py-6",
         "text-sm transition-all"
       ]}
       id="navbar-main"
@@ -20,11 +20,11 @@
           "!h-0 !py-0 overflow-hidden"
       }
     >
-      <.navbar_logo navigate={~p"/"} class="flex-1 mt-0.5" />
+      <.navbar_logo navigate={~p"/"} class="mt-0.5 flex-1" />
       <div class={[
         String.starts_with?(@current_uri.path, "/zarzadzanie") &&
           "border-b py-[18px]",
-        "flex uppercase items-center gap-10 max-md:hidden border-darkGrey"
+        "border-darkGrey flex items-center gap-10 uppercase max-md:hidden"
       ]}>
         <%= if Bodyguard.permit?(Firmowid.Invoicing, :show, @current_user) do %>
           <.link
@@ -33,10 +33,10 @@
               !String.starts_with?(@current_uri.path, "/analiza") &&
                 !String.starts_with?(@current_uri.path, "/czasosledz") &&
                 !String.starts_with?(@current_uri.path, "/zarzadzanie") && "opacity-90",
-              "flex items-center gap-2 transition-all hover:opacity-100 opacity-50"
+              "flex items-center gap-2 opacity-50 transition-all hover:opacity-100"
             ]}
           >
-            <.icon name="hero-clipboard-document-list" class="w-5 h-5" /> Fakturowanie
+            <.icon name="hero-clipboard-document-list" class="size-5" /> Fakturowanie
           </.link>
         <% end %>
         <%= if flag_enabled?(:analysis_dashboard, @current_user) and @current_user.role == :admin do %>
@@ -44,13 +44,13 @@
             navigate={~p"/analiza"}
             class={[
               String.starts_with?(@current_uri.path, "/analiza") && "opacity-90",
-              "flex items-center gap-2 transition-all hover:opacity-100 opacity-50"
+              "flex items-center gap-2 opacity-50 transition-all hover:opacity-100"
             ]}
           >
-            <.icon name="hero-scale" class="w-5 h-5" /> Analiza
+            <.icon name="hero-scale" class="size-5" /> Analiza
             <span
               id="analiza-beta"
-              class="text-xs bg-white/20 rounded px-1.5 py-0.5 ml-1"
+              class="ml-1 rounded bg-white/20 px-1.5 py-0.5 text-xs"
               phx-hook="Tippy"
               data-tippy-content="Prace nad tą funkcjonalnością jeszcze trwają! Twój feedback pozwoli nam sprawić, że będzie jeszcze lepsza."
             >
@@ -62,34 +62,34 @@
           navigate={~p"/czasosledz"}
           class={[
             String.starts_with?(@current_uri.path, "/czasosledz") && "opacity-90",
-            "flex items-center gap-2 transition-all hover:opacity-100 opacity-50"
+            "flex items-center gap-2 opacity-50 transition-all hover:opacity-100"
           ]}
         >
-          <.icon name="hero-clock" class="w-5 h-5" /> Czasośledź
+          <.icon name="hero-clock" class="size-5" /> Czasośledź
         </.link>
         <%= if @current_user.role == :admin do %>
           <.link
             navigate={~p"/zarzadzanie/pracownicy"}
             class={[
               String.starts_with?(@current_uri.path, "/zarzadzanie") && "opacity-90",
-              "flex items-center gap-2 transition-all hover:opacity-100 opacity-50"
+              "flex items-center gap-2 opacity-50 transition-all hover:opacity-100"
             ]}
           >
             <.icon
               name="hero-presentation-chart-line"
-              class="w-5 h-5"
+              class="size-5"
             /> Zarządzanie
           </.link>
         <% end %>
       </div>
 
-      <div class="relative max-md:hidden flex-1 text-right flex justify-end items-center gap-3">
+      <div class="relative flex flex-1 items-center justify-end gap-3 text-right max-md:hidden">
         <button
           type="button"
           phx-click={show_modal("feedback-modal")}
-          class="flex items-center gap-1.5 transition-colors cursor-pointer"
+          class="flex cursor-pointer items-center gap-1.5 transition-colors"
         >
-          <.icon name="hero-chat-bubble-left-ellipsis" class="w-5 h-5" /> Feedback
+          <.icon name="hero-chat-bubble-left-ellipsis" class="size-5" /> Feedback
         </button>
         <div class="relative">
           <button
@@ -110,38 +110,35 @@
             phx-click-away={hide("#dropdown_content")}
             phx-window-keydown={hide("#dropdown_content")}
             phx-key="Escape"
-            class={[
-              "transition rounded-full cursor-pointer hover:bg-white",
-              "hover:text-black p-1 px-2"
-            ]}
+            class="cursor-pointer rounded-full p-1 px-2 transition hover:bg-white hover:text-black"
             title={@current_user.email}
           >
             <%= if Map.has_key?(@current_user, :avatar_url) do %>
               <.avatar class="size-9 border-2 border-white/20">
                 <.avatar_image src={@current_user.avatar_url} alt={@current_user.email} />
-                <.avatar_fallback class="bg-darkGrey text-white">
-                  <.icon name="hero-user" class="w-5 h-5" />
+                <.avatar_fallback bg_color="darkGrey" class="text-white">
+                  <.icon name="hero-user" class="size-5" />
                 </.avatar_fallback>
               </.avatar>
             <% else %>
-              <.icon name="hero-user" class="w-5 h-5" />
+              <.icon name="hero-user" class="size-5" />
             <% end %>
           </button>
           <div
             id="dropdown_content"
             style="display: none"
-            class="absolute flex-col font-semibold p-3 rounded-md gap-2 right-0 w-full min-w-[250px] top-[50px] bg-black text-left max-lg:w-auto z-50"
+            class="absolute top-[50px] right-0 z-50 w-full min-w-[250px] flex-col gap-2 rounded-md bg-black p-3 text-left font-semibold max-lg:w-auto"
           >
-            <div class="p-2 pb-4 border-b border-darkGrey/50 text-white/50 text-xs lowercase truncate">
+            <div class="border-darkGrey/50 truncate border-b p-2 pb-4 text-xs text-white/50 lowercase">
               {@current_user.email}
             </div>
-            <.link navigate={~p"/ustawienia"} class="rounded-md p-2 hover:bg-darkGrey/50">
+            <.link navigate={~p"/ustawienia"} class="hover:bg-darkGrey/50 rounded-md p-2">
               Ustawienia
             </.link>
             <%= if @current_user.role == :admin do %>
               <.link
                 navigate={~p"/ustawienia/konta-bankowe"}
-                class="rounded-md p-2 hover:bg-darkGrey/50"
+                class="hover:bg-darkGrey/50 rounded-md p-2"
               >
                 Konta bankowe
               </.link>
@@ -149,7 +146,7 @@
             <.link
               href={~p"/wyloguj"}
               method="delete"
-              class="rounded-md p-2 hover:bg-darkGrey/50 flex justify-between"
+              class="hover:bg-darkGrey/50 flex justify-between rounded-md p-2"
             >
               Wyloguj się <.icon name="hero-arrow-right-start-on-rectangle" />
             </.link>
@@ -158,19 +155,19 @@
       </div>
     </div>
     <%= if String.starts_with?(@current_uri.path, "/zarzadzanie") do %>
-      <div class="grid grid-cols-3 gap-4 items-center py-2.5 w-full text-white/50 font-semibold">
+      <div class="grid w-full grid-cols-3 items-center gap-4 py-2.5 font-semibold text-white/50">
         <.navbar_logo
           navigate={~p"/"}
-          class="opacity-0 transition-opacity mr-auto mt-0.5"
+          class="mt-0.5 mr-auto opacity-0 transition-opacity"
           id="firmowid-logo-management"
           phx-hook="CollapsibleNavbar"
           data-classes="opacity-100"
         />
-        <div class="uppercase flex justify-center gap-14 text-sm">
+        <div class="flex justify-center gap-14 text-sm uppercase">
           <.link
             navigate="/zarzadzanie/pracownicy"
             class={[
-              "hover:text-white transition-colors",
+              "transition-colors hover:text-white",
               String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy") &&
                 "text-white/90"
             ]}
@@ -180,7 +177,7 @@
           <.link
             navigate="/zarzadzanie/projekty"
             class={[
-              "hover:text-white transition-colors",
+              "transition-colors hover:text-white",
               String.starts_with?(@current_uri.path, "/zarzadzanie/projekty") && "text-white/90"
             ]}
           >
@@ -188,7 +185,7 @@
           </.link>
         </div>
         <button
-          class="text-white cursor-pointer opacity-0 ml-auto relative flex size-6 transition-opacity"
+          class="relative ml-auto flex size-6 cursor-pointer text-white opacity-0 transition-opacity"
           id="navbar-burger-button"
           phx-hook="CollapsibleNavbar"
           data-classes="opacity-100"
@@ -212,15 +209,13 @@
   />
 <% end %>
 
-<main class={
-  classes([
-    is_nil(assigns[:no_padding]) &&
-      "px-4 py-4 sm:px-6 lg:px-8",
-    "flex-1 bg-lightGreyBg flex flex-col",
-    assigns[:main_class]
-  ])
-}>
-  <div class="mx-auto size-full flex-1 flex flex-col">
+<main class={[
+  is_nil(assigns[:no_padding]) &&
+    "p-4 sm:px-6 lg:px-8",
+  "bg-lightGreyBg flex flex-1 flex-col",
+  assigns[:main_class]
+]}>
+  <div class="mx-auto flex size-full flex-1 flex-col">
     <LiveToast.toast_group
       flash={@flash}
       kinds={[:info, :error, :success, :notice]}

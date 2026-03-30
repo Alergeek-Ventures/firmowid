@@ -21,15 +21,15 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   def invoice_header(assigns) do
     ~H"""
     <header class={[
-      "flex flex-row px-4 py-7 lg:px-8 items-center gap-4 lg:gap-8",
+      "flex flex-row items-center gap-4 px-4 py-7 lg:gap-8 lg:px-8",
       @is_cost_invoice && "bg-orange-200",
       !@is_cost_invoice && "bg-turquoise-200"
     ]}>
       <.link navigate={@return_to || ~p"/fakturowanie?month=#{@issue_date |> Date.to_iso8601()}"}>
-        <.icon name="hero-arrow-left-circle-solid" class="w-7 h-7" />
+        <.icon name="hero-arrow-left-circle-solid" class="size-7" />
       </.link>
       <div class="flex flex-col gap-2">
-        <h1 class="text-lg lg:text-2xl leading-tight font-medium">{@party_display_name}</h1>
+        <h1 class="text-lg/tight font-medium lg:text-2xl">{@party_display_name}</h1>
         <h2 class="text-darkGrey">{@description}</h2>
       </div>
     </header>
@@ -40,11 +40,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   def aside(assigns) do
     ~H"""
-    <aside class={[
-      "w-full lg:max-w-lg xl:max-w-[659px] shrink-0",
-      "flex flex-col order-last lg:order-0 p-8",
-      "lg:overflow-y-auto lg:h-[calc(100vh-var(--navbar-height)-128px)]"
-    ]}>
+    <aside class="order-last flex w-full shrink-0 flex-col p-8 lg:order-0 lg:h-[calc(100vh-var(--navbar-height)-128px)] lg:max-w-lg lg:overflow-y-auto xl:max-w-[659px]">
       {render_slot(@inner_block)}
     </aside>
     """
@@ -54,7 +50,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   def main(assigns) do
     ~H"""
-    <main class="px-8 pb-8 mt-8 border-b-2 lg:border-b-0 lg:border-l-2 border-grey-100 w-full">
+    <main class="border-grey-100 mt-8 w-full border-b-2 px-8 pb-8 lg:border-b-0 lg:border-l-2">
       {render_slot(@inner_block)}
     </main>
     """
@@ -66,16 +62,16 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   def invoice_preview(assigns) do
     ~H"""
-    <div class="mt-8 flex flex-col gap-4 w-full max-w-max mx-auto">
-      <h3 class="self-start text-sm leading/snug text-grey-700 ml-1">Podgląd faktury</h3>
+    <div class="mx-auto mt-8 flex w-full max-w-max flex-col gap-4">
+      <h3 class="leading/snug text-grey-700 ml-1 self-start text-sm">Podgląd faktury</h3>
       <%= case @subpreview do %>
         <% [main] -> %>
           <.invoice_preview_border>
             {render_slot(main)}
           </.invoice_preview_border>
         <% [main | subpreviews] -> %>
-          <div class="flex flex-col-reverse xl:flex-row gap-4 w-full">
-            <div class="flex flex-col gap-4 w-full min-w-0 shrink-2">
+          <div class="flex w-full flex-col-reverse gap-4 xl:flex-row">
+            <div class="flex w-full min-w-0 shrink-2 flex-col gap-4">
               <.invoice_subpreview
                 :for={subpreview <- subpreviews}
                 label={subpreview.invoice_number_label}
@@ -97,7 +93,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   defp invoice_preview_border(assigns) do
     ~H"""
-    <div class="border-grey-200 border-2 rounded overflow-hidden transition-opacity transition-duration-300 hover:opacity-50 w-full">
+    <div class="border-grey-200 transition-duration-300 w-full overflow-hidden rounded border-2 transition-opacity hover:opacity-50">
       {render_slot(@inner_block)}
     </div>
     """
@@ -108,8 +104,8 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   defp invoice_subpreview(assigns) do
     ~H"""
-    <div class="flex flex-col gap-2 w-full min-w-0">
-      <p class="text-sm/tight text-grey-700 font-medium ml-1">
+    <div class="flex w-full min-w-0 flex-col gap-2">
+      <p class="text-grey-700 ml-1 text-sm/tight font-medium">
         {@label}
       </p>
       <.invoice_preview_border>
@@ -125,14 +121,14 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   def invoice_amount(assigns) do
     ~H"""
-    <div class="flex flex-row gap-2 items-start justify-between pl-1">
+    <div class="flex flex-row items-start justify-between gap-2 pl-1">
       <label class="text-grey-700 text-sm/snug" for="total-amount">
         {if @lang == :en, do: "Total to pay", else: "Razem do zapłaty"}
       </label>
       <p
         id="total-amount"
         class={[
-          "text-lg/tight bg-[#DEDEDE4C] px-4 py-2 rounded",
+          "rounded bg-[#DEDEDE4C] px-4 py-2 text-lg/tight",
           @is_cost_invoice && "text-orange-700",
           !@is_cost_invoice && "text-turquoise-700"
         ]}
@@ -147,7 +143,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   def invoice_metadata(assigns) do
     ~H"""
-    <div class="grid grid-cols-[min-content_1fr] items-center gap-y-1 gap-x-2 py-6">
+    <div class="grid grid-cols-[min-content_1fr] items-center gap-x-2 gap-y-1 py-6">
       {render_slot(@inner_block)}
     </div>
     """
@@ -233,11 +229,11 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   def invoice_metadata_piece(assigns) do
     ~H"""
-    <div class="grid grid-cols-subgrid col-span-2 rounded odd:bg-greyButtonBg/[0.3] py-0.5 px-1">
+    <div class="odd:bg-greyButtonBg/[0.3] col-span-2 grid grid-cols-subgrid rounded px-1 py-0.5">
       <label
         for={@piece_id}
         class={[
-          "text-sm/snug text-darkGrey text-nowrap",
+          "text-darkGrey text-sm/snug text-nowrap",
           !@multiline && "self-center"
         ]}
       >
@@ -263,11 +259,11 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       id={"match-prediction-score-#{@transaction_id}"}
       phx-hook="Tippy"
       data-tippy-content={"Ocena AI: #{Float.round(100 *@prediction_score, 2)}% pewności"}
-      class="flex flex-col justify-between p-2 size-8 shrink-0 rounded-md bg-green-200"
+      class="flex size-8 shrink-0 flex-col justify-between rounded-md bg-green-200 p-2"
     >
-      <div class="w-full rounded-md h-0.5 bg-green-700" />
-      <div class="w-[70%] rounded-md h-0.5 bg-green-700" />
-      <div class="w-[40%] rounded-md h-0.5 bg-green-700" />
+      <div class="h-0.5 w-full rounded-md bg-green-700" />
+      <div class="h-0.5 w-[70%] rounded-md bg-green-700" />
+      <div class="h-0.5 w-[40%] rounded-md bg-green-700" />
     </div>
     """
   end
@@ -278,11 +274,11 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       id={"match-prediction-score-#{@transaction_id}"}
       phx-hook="Tippy"
       data-tippy-content={"Ocena AI: #{Float.round(100 *@prediction_score, 2)}% pewności"}
-      class="flex flex-col justify-between p-2 size-8 shrink-0 rounded-md bg-orange-200"
+      class="flex size-8 shrink-0 flex-col justify-between rounded-md bg-orange-200 p-2"
     >
-      <div class="w-full rounded-md h-0.5 bg-white" />
-      <div class="w-[70%] rounded-md h-0.5 bg-orange-700" />
-      <div class="w-[40%] rounded-md h-0.5 bg-orange-700" />
+      <div class="h-0.5 w-full rounded-md bg-white" />
+      <div class="h-0.5 w-[70%] rounded-md bg-orange-700" />
+      <div class="h-0.5 w-[40%] rounded-md bg-orange-700" />
     </div>
     """
   end
@@ -293,11 +289,11 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       id={"match-prediction-score-#{@transaction_id}"}
       phx-hook="Tippy"
       data-tippy-content={"Ocena AI: #{Float.round(100 *@prediction_score, 2)}% pewności"}
-      class="flex flex-col justify-between p-2 size-8 shrink-0 rounded-md bg-red-200"
+      class="flex size-8 shrink-0 flex-col justify-between rounded-md bg-red-200 p-2"
     >
-      <div class="w-full rounded-md h-0.5 bg-white" />
-      <div class="w-[70%] rounded-md h-0.5 bg-white" />
-      <div class="w-[40%] rounded-md h-0.5 bg-red-700" />
+      <div class="h-0.5 w-full rounded-md bg-white" />
+      <div class="h-0.5 w-[70%] rounded-md bg-white" />
+      <div class="h-0.5 w-[40%] rounded-md bg-red-700" />
     </div>
     """
   end
@@ -339,11 +335,11 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
     ~H"""
     <div class="flex flex-col gap-4">
-      <div class="flex flex-row justify-between items-center">
+      <div class="flex flex-row items-center justify-between">
         <p class="text-lg/tight font-medium">Dopasowanie</p>
 
         <div class="flex flex-row gap-2">
-          <div class="self-stretch px-[14.5px] flex flex-row items-center rounded-md bg-green-200">
+          <div class="flex flex-row items-center self-stretch rounded-md bg-green-200 px-[14.5px]">
             <p class="text-sm/tight font-medium text-green-700">Komplet</p>
           </div>
           <.button
@@ -352,14 +348,14 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
             new={true}
             phx-click="disconnect"
           >
-            <.icon name="hero-arrow-uturn-left-micro" class="h-4 w-4" />
+            <.icon name="hero-arrow-uturn-left-micro" class="size-4" />
           </.button>
         </div>
       </div>
 
       <div
         :for={transaction <- @transactions}
-        class="grid grid-flow-col grid-cols-[2fr_1fr_1fr] grid-rows-2 gap-x-4 gap-y-6 p-4 rounded-md bg-[#D0E6CE66]"
+        class="grid grid-flow-col grid-cols-[2fr_1fr_1fr] grid-rows-2 gap-x-4 gap-y-6 rounded-md bg-[#D0E6CE66] p-4"
       >
         <%= for {label, val} <- [
             {"Kontrahent", if(@is_cost_invoice, do: transaction.creditor_name, else: transaction.debtor_name)},
@@ -368,12 +364,12 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
             transaction.value_date && {"Przewalutowano", transaction.value_date},
           ] do %>
           <div class="space-y-1">
-            <p class="text-sm/snug text-grey-700">{label}</p>
+            <p class="text-grey-700 text-sm/snug">{label}</p>
             <p class="leading-snug">{val}</p>
           </div>
         <% end %>
 
-        <div class="flex items-end justify-end text-right row-span-2">
+        <div class="row-span-2 flex items-end justify-end text-right">
           <p class={["leading-snug text-green-700", @single_transaction? && "text-lg"]}>
             {Money.new(transaction.transaction_amount, transaction.transaction_currency)}
           </p>
@@ -382,9 +378,9 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
       <div
         :if={not @single_transaction?}
-        class="flex flex-row justify-between items-center p-4 rounded-md bg-[#D0E6CE66]"
+        class="flex flex-row items-center justify-between rounded-md bg-[#D0E6CE66] p-4"
       >
-        <p class="text-sm text-grey-700">Suma</p>
+        <p class="text-grey-700 text-sm">Suma</p>
 
         <p class="text-lg/tight text-green-700">
           {if @is_cost_invoice, do: "-", else: ""}{Money.new(@total, @currency)}
@@ -399,10 +395,10 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   def invoice_skipped_view(assigns) do
     ~H"""
     <div class="space-y-4">
-      <div class="flex flex-row justify-between items-center">
+      <div class="flex flex-row items-center justify-between">
         <p class="text-lg/tight font-medium">Transakcja pominięta</p>
-        <div class="flex flex-row gap-2 w-32">
-          <div class="flex-1 h-8 flex justify-center items-center p-2 rounded-md bg-green-200 text-green-700">
+        <div class="flex w-32 flex-row gap-2">
+          <div class="flex h-8 flex-1 items-center justify-center rounded-md bg-green-200 p-2 text-green-700">
             <.icon name="hero-document-text-micro" class="size-4" />
           </div>
           <.button
@@ -416,12 +412,12 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           </.button>
         </div>
       </div>
-      <div class="flex flex-col gap-6 p-6 rounded bg-grey-100">
+      <div class="bg-grey-100 flex flex-col gap-6 rounded p-6">
         <p class="text-base/snug">Transakcja została pominięta dla dokumentu</p>
         <div :if={false} class="space-y-2">
-          <label class="text-sm/snug text-grey-700" for="temp">Powód pominięcia</label>
+          <label class="text-grey-700 text-sm/snug" for="temp">Powód pominięcia</label>
 
-          <div class="flex flex-row gap-2 items-center">
+          <div class="flex flex-row items-center gap-2">
             <.input id="temp" name="test" value="" class="flex-1" new={true} />
             <.button
               color={if(@is_cost_invoice, do: "orange", else: "turquoise")}
@@ -443,10 +439,10 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   def skip_invoicing(assigns) do
     ~H"""
-    <div class="gap-y-6 gap-x-6 lg:gap-x-10 grid grid-cols-[1fr_8rem]">
+    <div class="grid grid-cols-[1fr_8rem] gap-6 lg:gap-x-10">
       <%= if @show_bank_transfer_modal do %>
-        <div class="grid grid-cols-subgrid col-span-full">
-          <p class="text-sm/snug text-grey-700 text-balance">
+        <div class="col-span-full grid grid-cols-subgrid">
+          <p class="text-grey-700 text-sm/snug text-balance">
             Wykonaj przelew teraz - kliknij przycisk, aby skopiować potrzebne dane.
           </p>
           <.live_component
@@ -456,8 +452,8 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           />
         </div>
       <% end %>
-      <div :if={@show_assistant} class="grid grid-cols-subgrid col-span-full">
-        <p class="text-sm/snug text-grey-700 text-balance self-center">
+      <div :if={@show_assistant} class="col-span-full grid grid-cols-subgrid">
+        <p class="text-grey-700 self-center text-sm/snug text-balance">
           Poproś Firmowida o pomoc w znalezieniu transakcji.
         </p>
 
@@ -473,13 +469,13 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
         </.button>
       </div>
 
-      <div class="grid grid-cols-subgrid col-span-full">
-        <p class="text-sm/snug text-grey-700 text-balance">
+      <div class="col-span-full grid grid-cols-subgrid">
+        <p class="text-grey-700 text-sm/snug text-balance">
           A może żadna transakcja nie pasuje, bo zapłacono gotówką, lub na inne konto?
           Pomiń jej szukanie. Firmowid oznaczy ją jako rozliczoną poza systemem.
         </p>
-        <div class="w-full flex flex-row gap-2 items-start">
-          <div class="flex justify-center items-center p-2 rounded-md text-grey-700 bg-grey-200">
+        <div class="flex w-full flex-row items-start gap-2">
+          <div class="bg-grey-200 text-grey-700 flex items-center justify-center rounded-md p-2">
             <.icon name="hero-document-text-solid" class="size-4" />
           </div>
           <.button
@@ -507,7 +503,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
     ~H"""
     <div class="flex flex-col gap-18">
       <%= if @not_found do %>
-        <div class="gap-4 flex flex-col items-center pt-8 pb-6 px-4">
+        <div class="flex flex-col items-center gap-4 px-4 pt-8 pb-6">
           <Lucideicons.file_question_mark class="size-12" />
 
           <div class="space-y-2 text-center">
@@ -570,12 +566,12 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
     assigns = assign(assigns, :green_idx, green_idx)
 
     ~H"""
-    <div class="flex flex-col gap-16 @container">
+    <div class="@container flex flex-col gap-16">
       <div class="flex flex-col gap-4">
         <h2 class="text-lg/tight font-medium">Potencjalne transakcje dla dokumentu</h2>
 
-        <div class="grid grid-cols-[1fr_repeat(3,min-content)] @3xl:grid-cols-[1fr_120px_120px_min-content] gap-y-4 gap-x-6 @2xl:gap-x-8">
-          <div class="grid grid-cols-subgrid col-span-full text-sm/snug text-grey-700">
+        <div class="grid grid-cols-[1fr_repeat(3,min-content)] gap-x-6 gap-y-4 @2xl:gap-x-8 @3xl:grid-cols-[1fr_120px_120px_min-content]">
+          <div class="text-grey-700 col-span-full grid grid-cols-subgrid text-sm/snug">
             <span>Informacje</span>
             <span class="text-right">Data</span>
             <span class="text-right">Kwota</span>
@@ -584,11 +580,11 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           <%= for {{tx, score}, idx} <- Enum.with_index(@potential_transactions) do %>
             <div
               id={"potential-transaction-#{tx.id}"}
-              class="grid grid-cols-subgrid col-span-full items-center"
+              class="col-span-full grid grid-cols-subgrid items-center"
             >
               <div class="space-y-1">
-                <p class="font-semibold text-truncate line-clamp-1">{Map.get(tx, @name_field)}</p>
-                <p class="text-sm/snug text-grey-600 text-truncate line-clamp-2">
+                <p class="text-truncate line-clamp-1 font-semibold">{Map.get(tx, @name_field)}</p>
+                <p class="text-grey-600 text-truncate line-clamp-2 text-sm/snug">
                   {tx.remittance_information_unstructured}
                 </p>
               </div>
@@ -622,14 +618,14 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   end
 
   attr :id, :string, default: "invoice-preview-scaler"
-  attr :class, :string, default: nil
+  attr :class, :any, default: nil
   slot :inner_block, required: true
 
   def scalable_invoice_preview(assigns) do
     ~H"""
     <div
       id={@id}
-      class={classes(["origin-top-left w-full", @class])}
+      class={["w-full origin-top-left", @class]}
       phx-hook=".AutoHeightScaler"
     >
       <div class="origin-top-left" data-scaler-inner>

@@ -4,9 +4,9 @@ defmodule FirmowidWeb.Auth.Views.Login do
 
   def render(assigns) do
     ~H"""
-    <div class="w-screen h-screen overflow-clip flex items-center justify-center relative">
-      <img src="/images/figurine.png" class="h-[135vh] opacity-10 absolute -top-20 left-1/2" />
-      <div class="max-w-sm z-10">
+    <div class="relative flex h-screen w-screen items-center justify-center overflow-clip">
+      <img src="/images/figurine.png" class="absolute -top-20 left-1/2 h-[135vh] opacity-10" />
+      <div class="z-10 max-w-sm">
         <h1 class="text-center text-2xl font-bold">
           Wejdź do Firmowida
         </h1>
@@ -30,19 +30,16 @@ defmodule FirmowidWeb.Auth.Views.Login do
 
         <p class="mt-4 text-center">
           Nie masz konta?
-          <.link navigate={~p"/zarejestruj"} class="font-semibold text-brand hover:underline">
+          <.link navigate={~p"/zarejestruj"} class="text-brand font-semibold hover:underline">
             Zarejestruj się
           </.link>
         </p>
 
         <.link
           href={~p"/auth/google"}
-          class="flex items-center justify-center gap-3 w-full px-4 py-2
-          rounded-md bg-white text-sm font-medium border transition-colors
-          duration-200 hover:text-white
-          text-gray-700 hover:bg-black mt-8"
+          class="mt-8 flex w-full items-center justify-center gap-3 rounded-md border bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors duration-200 hover:bg-black hover:text-white"
         >
-          <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <svg class="size-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
               fill="#4285F4"

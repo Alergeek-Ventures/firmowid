@@ -42,14 +42,14 @@ defmodule FirmowidWeb.Feedback.Components.Form do
     <div id={@id}>
       <.modal id="feedback-modal" on_cancel={JS.push("reset", target: "##{@id}")}>
         <div :if={!@submitted}>
-          <h2 class="text-xl font-semibold mb-2">Podziel się swoim feedbackiem</h2>
-          <p class="text-sm text-darkGrey mb-6">
+          <h2 class="mb-2 text-xl font-semibold">Podziel się swoim feedbackiem</h2>
+          <p class="text-darkGrey mb-6 text-sm">
             Twoja opinia pomaga nam rozwijać Firmowida. Napisz co możemy poprawić,
             co działa dobrze, albo czego Ci brakuje.
           </p>
           <form phx-submit="save" phx-target={"##{@id}"} class="space-y-6">
             <div>
-              <label for="feedback-content" class="block text-sm font-medium mb-2">
+              <label for="feedback-content" class="mb-2 block text-sm font-medium">
                 Co możemy poprawić?
               </label>
               <textarea
@@ -58,8 +58,7 @@ defmodule FirmowidWeb.Feedback.Components.Form do
                 rows="5"
                 required
                 placeholder="Opisz swój pomysł, sugestię lub zgłoś problem"
-                class="w-full rounded-md border border-grey/30 px-3 py-2 text-sm
-                  focus:border-orangeText focus:ring-orangeText resize-y min-h-[120px]"
+                class="border-grey/30 focus:border-orangeText focus:ring-orangeText min-h-[120px] w-full resize-y rounded-md border px-3 py-2 text-sm"
               ><%= @content %></textarea>
             </div>
             <div class="flex justify-end gap-3">
@@ -77,10 +76,10 @@ defmodule FirmowidWeb.Feedback.Components.Form do
             </div>
           </form>
         </div>
-        <div :if={@submitted} class="text-center p-4">
-          <div class="text-4xl mb-4">&#127881;</div>
-          <h2 class="text-xl font-semibold mb-2">Dziękujemy za feedback!</h2>
-          <p class="text-sm text-darkGrey mb-6">
+        <div :if={@submitted} class="p-4 text-center">
+          <div class="mb-4 text-4xl">&#127881;</div>
+          <h2 class="mb-2 text-xl font-semibold">Dziękujemy za feedback!</h2>
+          <p class="text-darkGrey mb-6 text-sm">
             Twoja opinia jest dla nas bardzo ważna i pomoże nam ulepszyć
             aplikację.
           </p>
