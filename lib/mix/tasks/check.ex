@@ -11,7 +11,7 @@ defmodule Mix.Tasks.Check do
   1. `mix compile --warnings-as-errors` - Compile with strict warnings
   2. `mix format --check-formatted` - Verify code formatting
   3. `mix deps.unlock --check-unused` - Check for unused dependencies
-  4. `mix xref graph --label compile-connected --fail-above 20` - Check compile-time deps
+  4. `mix xref graph --label compile-connected` - Check compile-time dependency ceiling
   5. `mix credo --strict` - Static code analysis
   6. `mix sobelow --config` - Security vulnerability scanning
   7. `mix dialyzer` - Type checking

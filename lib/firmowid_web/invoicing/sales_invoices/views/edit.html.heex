@@ -15,7 +15,7 @@
       <FirmowidWeb.Invoicing.SalesInvoices.Views.Creator.render_header
         invoice={@invoice}
         step={
-          if SalesInvoice.ksef_submitted?(@invoice),
+          if EctoSalesInvoice.ksef_submitted?(@invoice),
             do: "Faktura korygująca",
             else: "Edycja faktury"
         }
@@ -45,7 +45,7 @@
               {@form[:buyer_display_name].value}
             </p>
 
-            <%= case SalesInvoice.buyer_id_type(@form.source) do %>
+            <%= case EctoSalesInvoice.buyer_id_type(@form.source) do %>
               <% :no_id -> %>
                 <p class="text-grey-500 text-sm/snug">PESEL</p>
                 <p class="text-grey-700 text-sm/snug">
@@ -106,7 +106,7 @@
 
       <hr class="text-grey-200 col-start-2 col-end-9" />
 
-      <div :if={SalesInvoice.ksef_submitted?(@invoice)} class="col-start-2 col-end-9">
+      <div :if={EctoSalesInvoice.ksef_submitted?(@invoice)} class="col-start-2 col-end-9">
         <.input
           field={@form[:correction_reason]}
           type="textarea"
@@ -121,7 +121,7 @@
       </div>
 
       <div class="col-span-full flex flex-col items-center justify-center gap-14 xl:flex-row">
-        <%= if SalesInvoice.ksef_submitted?(@invoice) do %>
+        <%= if EctoSalesInvoice.ksef_submitted?(@invoice) do %>
           <div class="space-y-4">
             <p class="text-lg/6 font-medium text-black">
               Faktura {@invoice.invoice_number}
@@ -180,7 +180,9 @@
       </.button>
 
       <.button
-        :if={not SalesInvoice.ksef_submitted?(@invoice) and @invoice.ksef_invoice_kind == :vat}
+        :if={
+          not EctoSalesInvoice.ksef_submitted?(@invoice) and @invoice.ksef_invoice_kind == :vat
+        }
         type="button"
         color="light_grey"
         new={true}
@@ -195,7 +197,7 @@
         color="turquoise"
         new={true}
       >
-        {if SalesInvoice.ksef_submitted?(@invoice),
+        {if EctoSalesInvoice.ksef_submitted?(@invoice),
           do: "Wystaw fakturę korygującą",
           else: "Zapisz i wyślij do KSeF"}
       </.button>

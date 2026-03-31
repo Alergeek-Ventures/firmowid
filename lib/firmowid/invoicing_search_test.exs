@@ -1,4 +1,5 @@
 defmodule Firmowid.InvoicingSearchTest do
+  @moduledoc false
   use Firmowid.DataCase
 
   import Firmowid.AccountsFixtures
@@ -6,12 +7,12 @@ defmodule Firmowid.InvoicingSearchTest do
   alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.Blobs.Blob
-  alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.CostInvoices.CostInvoice, as: EctoCostInvoice
   alias Firmowid.CostInvoices.CostInvoicesTransactions
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices.SalesInvoice
+  alias Firmowid.SalesInvoices.SalesInvoice, as: EctoSalesInvoice
   alias Firmowid.SalesInvoices.SalesInvoiceItem
 
   describe "search_invoices/1" do
@@ -20,7 +21,7 @@ defmodule Firmowid.InvoicingSearchTest do
       organization_id = Repo.get_org_id()
 
       sales_invoice1 =
-        Repo.insert!(%SalesInvoice{
+        Repo.insert!(%EctoSalesInvoice{
           invoice_number: "SI-ACME-123",
           buyer_full_name: "Acme Corp",
           seller_display_name: "Our Company",
@@ -42,7 +43,7 @@ defmodule Firmowid.InvoicingSearchTest do
         })
 
       cost_invoice1 =
-        Repo.insert!(%CostInvoice{
+        Repo.insert!(%EctoCostInvoice{
           seller: "Acme Solutions",
           seller_display_name: "Acme Solutions",
           invoice_identifier: "CI-ACME-456",
@@ -58,7 +59,7 @@ defmodule Firmowid.InvoicingSearchTest do
         })
 
       _sales_invoice2 =
-        Repo.insert!(%SalesInvoice{
+        Repo.insert!(%EctoSalesInvoice{
           invoice_number: "SI-OTHER-789",
           buyer_full_name: "Another Company",
           seller_display_name: "Our Company",
@@ -80,7 +81,7 @@ defmodule Firmowid.InvoicingSearchTest do
         })
 
       _cost_invoice2 =
-        Repo.insert!(%CostInvoice{
+        Repo.insert!(%EctoCostInvoice{
           seller: "Other Supplier",
           seller_display_name: "Other Supplier",
           invoice_identifier: "CI-OTHER-987",
@@ -115,7 +116,7 @@ defmodule Firmowid.InvoicingSearchTest do
       organization_id = Repo.get_org_id()
 
       _ =
-        Repo.insert!(%SalesInvoice{
+        Repo.insert!(%EctoSalesInvoice{
           invoice_number: "SI-SOME-111",
           buyer_full_name: "Some Company",
           seller_display_name: "Our Company",
@@ -137,7 +138,7 @@ defmodule Firmowid.InvoicingSearchTest do
         })
 
       _ =
-        Repo.insert!(%CostInvoice{
+        Repo.insert!(%EctoCostInvoice{
           seller: "Another Vendor",
           seller_display_name: "Another Vendor",
           invoice_identifier: "CI-ANOTHER-222",
@@ -162,7 +163,7 @@ defmodule Firmowid.InvoicingSearchTest do
       org1_id = user1.organization_id
 
       si1 =
-        Repo.insert!(%SalesInvoice{
+        Repo.insert!(%EctoSalesInvoice{
           invoice_number: "SI-ORG1-UNIQUE",
           buyer_full_name: "Org1 Buyer",
           seller_display_name: "Org1 Seller",
@@ -184,7 +185,7 @@ defmodule Firmowid.InvoicingSearchTest do
         })
 
       ci1 =
-        Repo.insert!(%CostInvoice{
+        Repo.insert!(%EctoCostInvoice{
           seller: "Org1 Vendor",
           seller_display_name: "Org1 Vendor",
           invoice_identifier: "CI-ORG1-UNIQUE",
@@ -204,7 +205,7 @@ defmodule Firmowid.InvoicingSearchTest do
       org2_id = user2.organization_id
 
       si2 =
-        Repo.insert!(%SalesInvoice{
+        Repo.insert!(%EctoSalesInvoice{
           invoice_number: "SI-ORG2-UNIQUE",
           buyer_full_name: "Org2 Buyer",
           seller_display_name: "Org2 Seller",
@@ -226,7 +227,7 @@ defmodule Firmowid.InvoicingSearchTest do
         })
 
       ci2 =
-        Repo.insert!(%CostInvoice{
+        Repo.insert!(%EctoCostInvoice{
           seller: "Org2 Vendor",
           seller_display_name: "Org2 Vendor",
           invoice_identifier: "CI-ORG2-UNIQUE",
@@ -272,7 +273,7 @@ defmodule Firmowid.InvoicingSearchTest do
 
       # Unmatched invoices
       unmatched_sales_invoice =
-        Repo.insert!(%SalesInvoice{
+        Repo.insert!(%EctoSalesInvoice{
           invoice_number: "SI-UNMATCHED-1",
           buyer_full_name: "Unmatched Sales",
           seller_display_name: "Our Company",
@@ -287,7 +288,7 @@ defmodule Firmowid.InvoicingSearchTest do
         })
 
       unmatched_sales_invoice_skipped =
-        Repo.insert!(%SalesInvoice{
+        Repo.insert!(%EctoSalesInvoice{
           invoice_number: "SI-UNMATCHED-2",
           buyer_full_name: "Unmatched Sales",
           seller_display_name: "Our Company",
@@ -310,7 +311,7 @@ defmodule Firmowid.InvoicingSearchTest do
         })
 
       unmatched_cost_invoice =
-        Repo.insert!(%CostInvoice{
+        Repo.insert!(%EctoCostInvoice{
           seller: "Unmatched Cost",
           seller_display_name: "Unmatched Cost",
           invoice_identifier: "CI-UNMATCHED-1",
@@ -327,7 +328,7 @@ defmodule Firmowid.InvoicingSearchTest do
 
       # Matched invoices
       matched_sales_invoice =
-        Repo.insert!(%SalesInvoice{
+        Repo.insert!(%EctoSalesInvoice{
           invoice_number: "SI-MATCHED-1",
           buyer_full_name: "Matched Sales",
           seller_display_name: "Our Company",
@@ -349,7 +350,7 @@ defmodule Firmowid.InvoicingSearchTest do
         })
 
       matched_cost_invoice =
-        Repo.insert!(%CostInvoice{
+        Repo.insert!(%EctoCostInvoice{
           seller: "Matched Cost",
           seller_display_name: "Matched Cost",
           invoice_identifier: "CI-MATCHED-1",
@@ -426,7 +427,7 @@ defmodule Firmowid.InvoicingSearchTest do
       organization_id = Repo.get_org_id()
 
       sales_invoice_company =
-        Repo.insert!(%SalesInvoice{
+        Repo.insert!(%EctoSalesInvoice{
           invoice_number: "SI-COMPANY-1",
           buyer_full_name: "Company Buyer Inc.",
           seller_display_name: "Our Company",
@@ -440,7 +441,7 @@ defmodule Firmowid.InvoicingSearchTest do
         })
 
       sales_invoice_individual =
-        Repo.insert!(%SalesInvoice{
+        Repo.insert!(%EctoSalesInvoice{
           invoice_number: "SI-INDIVIDUAL-1",
           buyer_given_name: "John",
           buyer_surname: "Doe",
@@ -463,7 +464,7 @@ defmodule Firmowid.InvoicingSearchTest do
         })
 
       _cost_invoice =
-        Repo.insert!(%CostInvoice{
+        Repo.insert!(%EctoCostInvoice{
           seller: "Some Vendor",
           seller_display_name: "Some Vendor",
           invoice_identifier: "CI-VENDOR-1",
@@ -498,7 +499,7 @@ defmodule Firmowid.InvoicingSearchTest do
       organization_id = Repo.get_org_id()
 
       si1 =
-        Repo.insert!(%SalesInvoice{
+        Repo.insert!(%EctoSalesInvoice{
           invoice_number: "SI-ALPHA-1",
           buyer_full_name: "Alpha Corp",
           seller_display_name: "Our Company",
@@ -513,7 +514,7 @@ defmodule Firmowid.InvoicingSearchTest do
         })
 
       si2 =
-        Repo.insert!(%SalesInvoice{
+        Repo.insert!(%EctoSalesInvoice{
           invoice_number: "SI-BETA-2",
           buyer_full_name: "Beta Corp",
           seller_display_name: "Our Company",
@@ -528,7 +529,7 @@ defmodule Firmowid.InvoicingSearchTest do
         })
 
       si3 =
-        Repo.insert!(%SalesInvoice{
+        Repo.insert!(%EctoSalesInvoice{
           invoice_number: "SI-GAMMA-3",
           buyer_full_name: "Gamma Corp",
           seller_display_name: "Our Company",
@@ -641,7 +642,7 @@ defmodule Firmowid.InvoicingSearchTest do
       organization_id = Repo.get_org_id()
 
       sales_invoice =
-        Repo.insert!(%SalesInvoice{
+        Repo.insert!(%EctoSalesInvoice{
           invoice_number: "SI-FILTER-SALES",
           buyer_full_name: "Sales Filter Co",
           seller_display_name: "Our Company",
@@ -663,7 +664,7 @@ defmodule Firmowid.InvoicingSearchTest do
         })
 
       cost_invoice =
-        Repo.insert!(%CostInvoice{
+        Repo.insert!(%EctoCostInvoice{
           seller: "Cost Filter Inc",
           seller_display_name: "Cost Filter Inc",
           invoice_identifier: "CI-FILTER-COST",
@@ -684,7 +685,7 @@ defmodule Firmowid.InvoicingSearchTest do
 
       assert length(results_only_sales) == 1
       assert Enum.any?(results_only_sales, &(&1.id == sales_invoice.id))
-      refute Enum.any?(results_only_sales, &(&1.__struct__ == CostInvoice))
+      refute Enum.any?(results_only_sales, &(&1.__struct__ == EctoCostInvoice))
 
       # Test include_sales: false, include_cost: true
       results_only_cost =
@@ -714,7 +715,7 @@ defmodule Firmowid.InvoicingSearchTest do
       organization_id = Repo.get_org_id()
 
       sales_invoice_with_items =
-        Repo.insert!(%SalesInvoice{
+        Repo.insert!(%EctoSalesInvoice{
           invoice_number: "SI-ITEM-SEARCH",
           buyer_full_name: "Item Search Buyer",
           seller_display_name: "Our Company",
@@ -769,7 +770,7 @@ defmodule Firmowid.InvoicingSearchTest do
 
       # Matching Sales Invoice
       sales_invoice_combined_match =
-        Repo.insert!(%SalesInvoice{
+        Repo.insert!(%EctoSalesInvoice{
           invoice_number: "SI-COMBINED-MATCH",
           buyer_full_name: "Combined Search Buyer",
           seller_display_name: "Our Company",
@@ -807,7 +808,7 @@ defmodule Firmowid.InvoicingSearchTest do
         })
 
       cost_invoice_combined_match =
-        Repo.insert!(%CostInvoice{
+        Repo.insert!(%EctoCostInvoice{
           seller: "Combined Search Vendor",
           seller_display_name: "Combined Search Vendor",
           invoice_identifier: "CI-COMBINED-MATCH",
@@ -824,7 +825,7 @@ defmodule Firmowid.InvoicingSearchTest do
 
       # Non-matching Sales Invoice (different currency)
       _sales_invoice_diff_currency =
-        Repo.insert!(%SalesInvoice{
+        Repo.insert!(%EctoSalesInvoice{
           invoice_number: "SI-DIFF-CURRENCY",
           buyer_full_name: "Combined Search Buyer USD",
           seller_display_name: "Our Company",
@@ -848,7 +849,7 @@ defmodule Firmowid.InvoicingSearchTest do
         })
 
       _cost_invoice_diff_date =
-        Repo.insert!(%CostInvoice{
+        Repo.insert!(%EctoCostInvoice{
           seller: "Combined Search Vendor Sept",
           seller_display_name: "Combined Search Vendor Sept",
           invoice_identifier: "CI-DIFF-DATE",
@@ -866,7 +867,7 @@ defmodule Firmowid.InvoicingSearchTest do
 
       # Non-matching Sales Invoice (already matched)
       sales_invoice_matched =
-        Repo.insert!(%SalesInvoice{
+        Repo.insert!(%EctoSalesInvoice{
           invoice_number: "SI-ALREADY-MATCHED",
           buyer_full_name: "Combined Search Buyer Matched",
           seller_display_name: "Our Company",
@@ -913,7 +914,7 @@ defmodule Firmowid.InvoicingSearchTest do
         })
 
       _cost_invoice_low_amount =
-        Repo.insert!(%CostInvoice{
+        Repo.insert!(%EctoCostInvoice{
           seller: "Combined Search Vendor Low Amount",
           seller_display_name: "Combined Search Vendor Low Amount",
           invoice_identifier: "CI-LOW-AMOUNT",

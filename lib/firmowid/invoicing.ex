@@ -12,12 +12,12 @@ defmodule Firmowid.Invoicing do
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   # SQL fragment that converts KSeF VAT rate string codes to numeric decimals.
   # Must match VatRate.to_numeric/1 behavior for consistency.
-  alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.CostInvoices.CostInvoice, as: EctoCostInvoice
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.Matching
   alias Firmowid.Invoicing.TransactionGroup
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices.SalesInvoice
+  alias Firmowid.SalesInvoices.SalesInvoice, as: EctoSalesInvoice
 
   require Logger
 
@@ -166,14 +166,14 @@ defmodule Firmowid.Invoicing do
   defp unify_queries([first, second]), do: union_all(first, ^second)
 
   defp unify_queries([]) do
-    from(cost_invoice in CostInvoice,
+    from(cost_invoice in EctoCostInvoice,
       where: false,
       select: %{id: nil, type: nil, date: nil, score: nil, organization_id: nil}
     )
   end
 
   defp build_cost_invoice_query(params) do
-    from(cost_invoice in CostInvoice, as: :cost_invoice)
+    from(cost_invoice in EctoCostInvoice, as: :cost_invoice)
     |> maybe_filter_unmatched_cost(Map.get(params, :only_unmatched, false))
     |> maybe_cost_filter(:currency, Map.get(params, :currency))
     |> maybe_cost_filter(:amount_gt, Map.get(params, :amount_gt))
@@ -221,7 +221,7 @@ defmodule Firmowid.Invoicing do
     amount_gt = Map.get(params, :amount_gt)
     amount_lt = Map.get(params, :amount_lt)
 
-    from(SalesInvoice, as: :sales_invoice)
+    from(EctoSalesInvoice, as: :sales_invoice)
     |> where([sales_invoice], sales_invoice.ksef_invoice_kind == :vat)
     |> maybe_join_items_for_amount(amount_gt, amount_lt)
     |> maybe_sales_amount_filter(:gt, amount_gt)
@@ -324,7 +324,7 @@ defmodule Firmowid.Invoicing do
 
     hydrated_cost_invoices =
       if Enum.any?(cost_invoice_ids) do
-        from(cost_invoice in CostInvoice,
+        from(cost_invoice in EctoCostInvoice,
           where: cost_invoice.id in ^cost_invoice_ids,
           preload: [:transactions]
         )
@@ -373,7 +373,7 @@ defmodule Firmowid.Invoicing do
       )
 
     sales_invoices_query =
-      from(si in SalesInvoice,
+      from(si in EctoSalesInvoice,
         select: %{
           date_string:
             fragment(
@@ -385,7 +385,7 @@ defmodule Firmowid.Invoicing do
       )
 
     cost_invoices_query =
-      from(ci in CostInvoice,
+      from(ci in EctoCostInvoice,
         select: %{
           date_string:
             fragment(

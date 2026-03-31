@@ -15,7 +15,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.CorrectionReason
-  alias Firmowid.SalesInvoices.SalesInvoice
+  alias Firmowid.SalesInvoices.SalesInvoice, as: EctoSalesInvoice
   alias FirmowidWeb.Invoicing.SalesInvoices.Views.Creator
 
   require Logger
@@ -80,12 +80,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   end
 
   defp build_invoice_changeset(invoice) do
-    if SalesInvoice.ksef_submitted?(invoice) do
+    if EctoSalesInvoice.ksef_submitted?(invoice) do
       original_invoice =
         if invoice.ksef_invoice_kind == :kor, do: invoice.corrected_invoice, else: invoice
 
       original_invoice
-      |> SalesInvoice.prepare_correction_invoice_changeset(invoice)
+      |> EctoSalesInvoice.prepare_correction_invoice_changeset(invoice)
       |> Ecto.Changeset.change(%{
         issue_date: Date.utc_today(),
         invoice_number: SalesInvoices.get_next_invoice_number(Date.utc_today(), series: "FK")
@@ -144,7 +144,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   end
 
   def handle_event("save_as_draft", _params, socket) do
-    if SalesInvoice.ksef_submitted?(socket.assigns.invoice) do
+    if EctoSalesInvoice.ksef_submitted?(socket.assigns.invoice) do
       {:noreply, put_flash(socket, :error, "Nie można zapisać korekty jako wersji roboczej")}
     else
       # Use the current form params that have been validated through phx-change
@@ -170,10 +170,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
     invoice =
       cond do
-        SalesInvoice.draft?(invoice) ->
+        EctoSalesInvoice.draft?(invoice) ->
           create_confirmed_invoice(organization, invoice, params)
 
-        not SalesInvoice.ksef_submitted?(invoice) ->
+        not EctoSalesInvoice.ksef_submitted?(invoice) ->
           update_confirmed_invoice(organization, invoice, params)
 
         true ->
@@ -313,7 +313,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   end
 
   defp detect_correction_reason_touched(params, socket) do
-    if SalesInvoice.ksef_submitted?(socket.assigns.invoice) do
+    if EctoSalesInvoice.ksef_submitted?(socket.assigns.invoice) do
       user_reason = Map.get(params, "correction_reason", "")
       last_auto = socket.assigns.last_auto_reason
 
@@ -328,7 +328,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   end
 
   defp maybe_auto_fill_correction_reason(socket) do
-    if not SalesInvoice.ksef_submitted?(socket.assigns.invoice) or socket.assigns.correction_reason_touched do
+    if not EctoSalesInvoice.ksef_submitted?(socket.assigns.invoice) or socket.assigns.correction_reason_touched do
       sync_user_reason_to_preview(socket)
     else
       auto_fill_correction_reason(socket)
@@ -370,16 +370,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   defp changeset(sales_invoice, params \\ %{}) do
     sales_invoice
     |> Ecto.Changeset.cast(params, [:issue_date, :invoice_number, :ksef_invoice_kind, :correction_reason])
-    |> SalesInvoice.step1_changeset(params)
-    |> SalesInvoice.step2_changeset(params)
-    |> SalesInvoice.step3_changeset(params)
+    |> EctoSalesInvoice.step1_changeset(params)
+    |> EctoSalesInvoice.step2_changeset(params)
+    |> EctoSalesInvoice.step3_changeset(params)
   end
 
-  defp not_editable_message(%SalesInvoice{ksef_invoice_kind: :vat}) do
+  defp not_editable_message(%AshSalesInvoice{ksef_invoice_kind: :vat}) do
     "Nie można edytować tej faktury — posiada korekty. Edytuj ostatnią korektę."
   end
 
-  defp not_editable_message(%SalesInvoice{ksef_invoice_kind: :kor}) do
+  defp not_editable_message(%AshSalesInvoice{ksef_invoice_kind: :kor}) do
     "Nie można edytować tej korekty — istnieje nowsza korekta."
   end
 end

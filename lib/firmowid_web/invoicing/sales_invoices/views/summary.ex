@@ -12,7 +12,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Ksef
   alias Firmowid.SalesInvoices
-  alias Firmowid.SalesInvoices.SalesInvoice
+  alias Firmowid.SalesInvoices.SalesInvoice, as: EctoSalesInvoice
 
   require Logger
 
@@ -92,7 +92,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
           </.link>
           <.button
             :if={
-              @ksef_connected? and SalesInvoice.confirmed?(@invoice) and
+              @ksef_connected? and EctoSalesInvoice.confirmed?(@invoice) and
                 @submission_info.status in [:not_submitted, :failed]
             }
             color="light_grey"
@@ -254,7 +254,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
     end
   end
 
-  defp get_previous_invoices(%SalesInvoice{ksef_invoice_kind: :kor} = invoice) do
+  defp get_previous_invoices(%{ksef_invoice_kind: :kor} = invoice) do
     original_invoice = SalesInvoices.populate_reference_invoices(invoice.corrected_invoice)
 
     previous_invoices =
@@ -272,13 +272,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
         found_invoice ->
           %{
             invoice
-            | reference_invoice: found_invoice.reference_invoice,
-              corrected_invoice: found_invoice.corrected_invoice
+            | reference_invoice: Map.get(found_invoice, :reference_invoice),
+              corrected_invoice: Map.get(found_invoice, :corrected_invoice)
           }
       end
 
     {previous_invoices, invoice}
   end
 
-  defp get_previous_invoices(%SalesInvoice{ksef_invoice_kind: :vat} = invoice), do: {[], invoice}
+  defp get_previous_invoices(%{ksef_invoice_kind: :vat} = invoice), do: {[], invoice}
 end

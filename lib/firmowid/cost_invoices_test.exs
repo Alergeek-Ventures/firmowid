@@ -1,4 +1,5 @@
 defmodule Firmowid.CostInvoicesTest do
+  @moduledoc false
   use Firmowid.DataCase
 
   import Firmowid.AccountsFixtures

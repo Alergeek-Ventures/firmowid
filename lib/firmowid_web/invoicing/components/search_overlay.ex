@@ -66,7 +66,7 @@ defmodule FirmowidWeb.Invoicing.Components.SearchOverlay do
                         end %>
                       <% amount =
                         case invoice do
-                          %Firmowid.CostInvoices.CostInvoice{} ->
+                          %Firmowid.Ash.Invoicing.CostInvoice{} ->
                             Money.new(invoice.currency, invoice.total_amount)
 
                           %Firmowid.Ash.Invoicing.SalesInvoice{} ->
@@ -93,7 +93,7 @@ defmodule FirmowidWeb.Invoicing.Components.SearchOverlay do
                               </span>
                               <span class="text-sm font-medium">
                                 {case invoice do
-                                  %Firmowid.CostInvoices.CostInvoice{seller: n} ->
+                                  %Firmowid.Ash.Invoicing.CostInvoice{seller: n} ->
                                     n
 
                                   %Firmowid.Ash.Invoicing.SalesInvoice{} = si ->
@@ -111,7 +111,7 @@ defmodule FirmowidWeb.Invoicing.Components.SearchOverlay do
                           </div>
                           <div class="text-darkGrey/60 line-clamp-1 text-[11px]">
                             {cond do
-                              match?(%Firmowid.CostInvoices.CostInvoice{}, invoice) ->
+                              match?(%Firmowid.Ash.Invoicing.CostInvoice{}, invoice) ->
                                 invoice.description || invoice.invoice_identifier
 
                               match?(%Firmowid.Ash.Invoicing.SalesInvoice{}, invoice) ->

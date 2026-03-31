@@ -9,8 +9,8 @@ defmodule Firmowid.Ash.Analysis do
 
   Cross-domain aggregation functions (`get_organization_totals/4`,
   `get_months_with_entries/1`) live here as regular functions because they
-  orchestrate calls to Ecto contexts (`SalesInvoices`, `CostInvoices`,
-  `Finances`, `Currencies`) that haven't migrated to Ash yet.
+  orchestrate calls across both Ash resources (`CostInvoice`, `SalesInvoice`)
+  and legacy Ecto contexts (`Finances`, `Currencies`) still being migrated.
   """
   use Ash.Domain
 
@@ -22,12 +22,12 @@ defmodule Firmowid.Ash.Analysis do
   alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Ash.Scope
-  alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.CostInvoices.CostInvoice, as: EctoCostInvoice
   alias Firmowid.CostInvoices.CostInvoicesTransactions
   alias Firmowid.Currencies
   alias Firmowid.Finances.Transaction
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices.SalesInvoice
+  alias Firmowid.SalesInvoices.SalesInvoice, as: EctoSalesInvoice
   alias Firmowid.SalesInvoices.SalesInvoicesTransactions
 
   require Ash.Query
@@ -190,7 +190,7 @@ defmodule Firmowid.Ash.Analysis do
       )
 
     sales_invoices_query =
-      from(si in SalesInvoice,
+      from(si in EctoSalesInvoice,
         as: :entity,
         where: si.skip_invoicing == true or exists(subquery(si_matched_query)),
         where: not exists(subquery(si_internal_query)),
@@ -198,7 +198,7 @@ defmodule Firmowid.Ash.Analysis do
       )
 
     cost_invoices_query =
-      from(ci in CostInvoice,
+      from(ci in EctoCostInvoice,
         as: :entity,
         where: ci.skip_invoicing == true or exists(subquery(ci_matched_query)),
         where: not exists(subquery(ci_internal_query)),

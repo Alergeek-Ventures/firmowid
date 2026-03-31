@@ -1,4 +1,5 @@
 defmodule Firmowid.Invoicing.Matching.ParametrizedResultTest do
+  @moduledoc false
   use ExUnit.Case, async: true
 
   alias Firmowid.Ash.Invoicing.CostInvoice

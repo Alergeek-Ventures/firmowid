@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
   """
   use FirmowidWeb, :controller
 
+  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.Pdf
@@ -30,6 +31,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
           layout: false,
           invoice: invoice,
           lang: lang,
+          buyer_display_name: AshSalesInvoice.buyer_display_name(invoice) || "",
           currency_rate: SalesInvoices.get_currency_rate(invoice),
           show_vat: org.is_vat_payer
         )

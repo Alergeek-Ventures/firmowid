@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
   @moduledoc false
   use FirmowidWeb, :live_component
 
-  alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ksef
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
