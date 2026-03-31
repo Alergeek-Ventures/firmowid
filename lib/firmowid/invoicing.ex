@@ -6,6 +6,8 @@ defmodule Firmowid.Invoicing do
   import Paradex, only: [~>: 2]
 
   alias Firmowid.Ash.Finances.TransactionQueries
+  alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
+  alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.CostInvoices
   # SQL fragment that converts KSeF VAT rate string codes to numeric decimals.
   # Must match VatRate.to_numeric/1 behavior for consistency.
@@ -540,10 +542,13 @@ defmodule Firmowid.Invoicing do
         Logger.info("Prediction score: #{prediction_score}")
 
         if Matching.RegressionPredictor.confident_match?(prediction_score) do
-          CostInvoices.create_cost_invoices_transactions_connection(
-            cost_invoice.id,
-            transaction.id,
-            organization_id
+          # TODO: replace authorize?: false + actor: %{} with system actor once available
+          CostInvoiceTransaction.create_connections(
+            [cost_invoice.id],
+            [transaction.id],
+            organization_id,
+            authorize?: false,
+            actor: %{}
           )
 
           broadcast_cost_invoice_match(
@@ -613,10 +618,13 @@ defmodule Firmowid.Invoicing do
         Logger.info("Prediction score: #{prediction_score}")
 
         if Matching.RegressionPredictor.confident_match?(prediction_score) do
-          SalesInvoices.create_sales_invoices_transactions_connection(
-            sales_invoice.id,
-            transaction.id,
-            organization_id
+          # TODO: replace authorize?: false + actor: %{} with system actor once available
+          SalesInvoiceTransaction.create_connections(
+            [sales_invoice.id],
+            [transaction.id],
+            organization_id,
+            authorize?: false,
+            actor: %{}
           )
 
           Logger.info("Matched sales invoice #{sales_invoice.id} with transaction #{transaction.id}")

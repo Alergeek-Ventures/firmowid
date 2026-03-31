@@ -6,11 +6,9 @@ defmodule Firmowid.CostInvoices do
 
   alias Ash.Error.Unknown
   alias Ash.Error.Unknown.UnknownError
-  alias Ecto.Multi
   alias Firmowid.Ash.Billing.Limits, as: AshLimits
   alias Firmowid.Ash.Blobs.Blob, as: AshBlob
   alias Firmowid.CostInvoices.CostInvoice
-  alias Firmowid.CostInvoices.CostInvoicesTransactions
   alias Firmowid.Ksef
   alias Firmowid.Repo
 
@@ -373,45 +371,6 @@ defmodule Firmowid.CostInvoices do
     }
     |> Firmowid.Invoicing.Worker.new()
     |> Firmowid.Oban.insert!()
-  end
-
-  def create_cost_invoices_transactions_connection(invoice_ids, transaction_ids, organization_id) do
-    invoice_ids =
-      if is_list(invoice_ids) do
-        invoice_ids
-      else
-        [invoice_ids]
-      end
-
-    transaction_ids =
-      if is_list(transaction_ids) do
-        transaction_ids
-      else
-        [transaction_ids]
-      end
-
-    changesets =
-      for invoice_id <- invoice_ids, transaction_id <- transaction_ids do
-        CostInvoicesTransactions.changeset(%{
-          cost_invoice_id: invoice_id,
-          transaction_id: transaction_id,
-          organization_id: organization_id
-        })
-      end
-
-    changesets
-    |> Enum.reduce(Multi.new(), fn %{changes: data} = changeset, acc ->
-      Multi.insert(acc, {data.cost_invoice_id, data.transaction_id}, changeset)
-    end)
-    |> Repo.transaction()
-  end
-
-  def delete_cost_invoices_transactions_connections(cost_invoice_id) do
-    query = where(from(CostInvoicesTransactions), [c], c.cost_invoice_id == ^cost_invoice_id)
-
-    Repo.delete_all(query)
-    organization_id = Repo.get_org_id()
-    broadcast_cost_invoice_list_updated(organization_id)
   end
 
   def list_cost_invoices_by_ids(ids, date_from \\ nil, date_to \\ nil) do

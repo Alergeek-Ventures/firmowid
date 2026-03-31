@@ -4,13 +4,11 @@ defmodule Firmowid.SalesInvoices do
 
   import Ecto.Query, warn: false
 
-  alias Ecto.Multi
   alias Firmowid.Accounts
   alias Firmowid.Ash.Billing.Limits, as: AshLimits
   alias Firmowid.Nbp
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices.SalesInvoice
-  alias Firmowid.SalesInvoices.SalesInvoicesTransactions
 
   require Logger
 
@@ -262,43 +260,6 @@ defmodule Firmowid.SalesInvoices do
       corrected_invoice: :corrections
     ])
     |> populate_logo_url()
-  end
-
-  def create_sales_invoices_transactions_connection(invoice_ids, transaction_ids, organization_id) do
-    invoice_ids =
-      if is_list(invoice_ids) do
-        invoice_ids
-      else
-        [invoice_ids]
-      end
-
-    transaction_ids =
-      if is_list(transaction_ids) do
-        transaction_ids
-      else
-        [transaction_ids]
-      end
-
-    changesets =
-      for invoice_id <- invoice_ids, transaction_id <- transaction_ids do
-        SalesInvoicesTransactions.changeset(%{
-          sales_invoice_id: invoice_id,
-          transaction_id: transaction_id,
-          organization_id: organization_id
-        })
-      end
-
-    changesets
-    |> Enum.reduce(Multi.new(), fn %{changes: data} = changeset, acc ->
-      Multi.insert(acc, {data.sales_invoice_id, data.transaction_id}, changeset)
-    end)
-    |> Repo.transaction()
-  end
-
-  def delete_sales_invoices_transactions_connections(invoice_id) do
-    query = where(from(SalesInvoicesTransactions), [c], c.sales_invoice_id == ^invoice_id)
-
-    Repo.delete_all(query)
   end
 
   def toggle_skip_invoicing(id) do

@@ -3,6 +3,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Analytics
+  alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.Invoicing
   alias Firmowid.Ksef
   alias Firmowid.SalesInvoices
@@ -113,10 +114,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
     Bodyguard.permit!(SalesInvoices, :update, socket.assigns.current_user, socket.assigns.invoice)
     user = socket.assigns.current_user
 
-    SalesInvoices.create_sales_invoices_transactions_connection(
-      socket.assigns.invoice.id,
-      tx_id,
-      user.organization_id
+    # TODO: replace authorize?: false + actor: %{} with system actor once available
+    SalesInvoiceTransaction.create_connections(
+      [socket.assigns.invoice.id],
+      [tx_id],
+      user.organization_id,
+      authorize?: false,
+      actor: %{}
     )
 
     Analytics.track_event("sales_invoice_match", user, %{transaction_count: 1})
@@ -128,7 +132,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   @impl true
   def handle_event("disconnect", _params, socket) do
     Bodyguard.permit!(SalesInvoices, :update, socket.assigns.current_user, socket.assigns.invoice)
-    SalesInvoices.delete_sales_invoices_transactions_connections(socket.assigns.invoice.id)
+    # TODO: replace authorize?: false + actor: %{} with system actor once available
+    SalesInvoiceTransaction.delete_for_invoice(socket.assigns.invoice.id, authorize?: false, actor: %{})
 
     Analytics.track_event("sales_invoice_unmatch", socket.assigns.current_user, %{})
 

@@ -1,6 +1,7 @@
 defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
   @moduledoc false
   alias Firmowid.Ash.Finances.TransactionQueries
+  alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.Invoicing.Matching.Assistant.CommonTools
   alias Firmowid.Invoicing.Matching.Assistant.Engine
   alias Firmowid.Invoicing.Matching.Assistant.Message
@@ -45,10 +46,13 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
         sales_invoice = sales_invoice_ids |> hd() |> Firmowid.SalesInvoices.get_sales_invoice()
         organization_id = sales_invoice.organization_id
 
-        Firmowid.SalesInvoices.create_sales_invoices_transactions_connection(
+        # TODO: replace authorize?: false + actor: %{} with system actor once available
+        SalesInvoiceTransaction.create_connections(
           sales_invoice_ids,
           transaction_ids,
-          organization_id
+          organization_id,
+          authorize?: false,
+          actor: %{}
         )
 
         MessagesStorage.delete(conversation_id)

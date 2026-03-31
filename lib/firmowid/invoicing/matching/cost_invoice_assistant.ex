@@ -4,6 +4,7 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
   Delegates LLM and function-call plumbing to AssistantEngine.
   """
   alias Firmowid.Ash.Finances.TransactionQueries
+  alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.Matching.Assistant.CommonTools
@@ -52,10 +53,13 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
         cost_invoice = cost_invoice_ids |> hd() |> Firmowid.CostInvoices.get_cost_invoice!()
         organization_id = cost_invoice.organization_id
 
-        Firmowid.CostInvoices.create_cost_invoices_transactions_connection(
+        # TODO: replace authorize?: false + actor: %{} with system actor once available
+        CostInvoiceTransaction.create_connections(
           cost_invoice_ids,
           transaction_ids,
-          organization_id
+          organization_id,
+          authorize?: false,
+          actor: %{}
         )
 
         MessagesStorage.delete(conversation_id)

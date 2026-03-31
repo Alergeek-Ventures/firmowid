@@ -28,6 +28,8 @@ defmodule Firmowid.Seeds.MonthM1 do
   """
 
   alias Firmowid.Ash.Analysis.EntityTag
+  alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
+  alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.CostInvoices
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
@@ -407,47 +409,16 @@ defmodule Firmowid.Seeds.MonthM1 do
 
     # — Matching —
 
-    SalesInvoices.create_sales_invoices_transactions_connection(
-      sale_ghostpet.id,
-      txn_ghostpet.id,
-      bytecraft.id
-    )
+    bridge_opts = [authorize?: false, actor: %{}]
 
-    SalesInvoices.create_sales_invoices_transactions_connection(
-      sale_flatmate.id,
-      txn_flatmate.id,
-      bytecraft.id
-    )
+    SalesInvoiceTransaction.create_connections([sale_ghostpet.id], [txn_ghostpet.id], bytecraft.id, bridge_opts)
+    SalesInvoiceTransaction.create_connections([sale_flatmate.id], [txn_flatmate.id], bytecraft.id, bridge_opts)
+    SalesInvoiceTransaction.create_connections([sale_taco.id], [txn_taco.id], bytecraft.id, bridge_opts)
 
-    SalesInvoices.create_sales_invoices_transactions_connection(
-      sale_taco.id,
-      txn_taco.id,
-      bytecraft.id
-    )
-
-    CostInvoices.create_cost_invoices_transactions_connection(
-      cost_ovh.id,
-      txn_ovh.id,
-      bytecraft.id
-    )
-
-    CostInvoices.create_cost_invoices_transactions_connection(
-      cost_opencode.id,
-      txn_opencode.id,
-      bytecraft.id
-    )
-
-    CostInvoices.create_cost_invoices_transactions_connection(
-      cost_rent.id,
-      txn_rent.id,
-      bytecraft.id
-    )
-
-    CostInvoices.create_cost_invoices_transactions_connection(
-      cost_biuro.id,
-      txn_biuro.id,
-      bytecraft.id
-    )
+    CostInvoiceTransaction.create_connections([cost_ovh.id], [txn_ovh.id], bytecraft.id, bridge_opts)
+    CostInvoiceTransaction.create_connections([cost_opencode.id], [txn_opencode.id], bytecraft.id, bridge_opts)
+    CostInvoiceTransaction.create_connections([cost_rent.id], [txn_rent.id], bytecraft.id, bridge_opts)
+    CostInvoiceTransaction.create_connections([cost_biuro.id], [txn_biuro.id], bytecraft.id, bridge_opts)
 
     # — Tagging —
     scope = seed_scope()

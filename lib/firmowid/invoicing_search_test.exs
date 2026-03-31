@@ -3,6 +3,7 @@ defmodule Firmowid.InvoicingSearchTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.Blobs.Blob
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.CostInvoices.CostInvoicesTransactions
@@ -395,10 +396,12 @@ defmodule Firmowid.InvoicingSearchTest do
           organization_id: organization_id
         })
 
-      Firmowid.SalesInvoices.create_sales_invoices_transactions_connection(
-        matched_sales_invoice.id,
-        transaction_for_sales.id,
-        organization_id
+      SalesInvoiceTransaction.create_connections(
+        [matched_sales_invoice.id],
+        [transaction_for_sales.id],
+        organization_id,
+        authorize?: false,
+        actor: %{}
       )
 
       Repo.insert!(%CostInvoicesTransactions{
@@ -891,10 +894,12 @@ defmodule Firmowid.InvoicingSearchTest do
           organization_id: organization_id
         })
 
-      Firmowid.SalesInvoices.create_sales_invoices_transactions_connection(
-        sales_invoice_matched.id,
-        transaction_for_matched_sales.id,
-        organization_id
+      SalesInvoiceTransaction.create_connections(
+        [sales_invoice_matched.id],
+        [transaction_for_matched_sales.id],
+        organization_id,
+        authorize?: false,
+        actor: %{}
       )
 
       # Non-matching Cost Invoice (amount out of range)

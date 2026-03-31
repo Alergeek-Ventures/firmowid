@@ -213,10 +213,12 @@ defmodule Firmowid.Seeds.MonthM0 do
         ]
       })
 
-    SalesInvoices.create_sales_invoices_transactions_connection(
-      invoice.id,
-      txn.id,
-      bytecraft.id
+    Firmowid.Ash.Invoicing.SalesInvoiceTransaction.create_connections(
+      [invoice.id],
+      [txn.id],
+      bytecraft.id,
+      authorize?: false,
+      actor: %{}
     )
 
     EntityTag.set_entity_project_tags!(

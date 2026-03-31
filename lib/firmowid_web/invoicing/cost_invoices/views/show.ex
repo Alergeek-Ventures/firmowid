@@ -3,6 +3,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Analytics
+  alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.CostInvoices
   alias Firmowid.Invoicing
 
@@ -71,10 +72,13 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
 
     Bodyguard.permit!(CostInvoices, :update, user, socket.assigns.invoice)
 
-    CostInvoices.create_cost_invoices_transactions_connection(
-      socket.assigns.invoice.id,
-      tx_id,
-      user.organization_id
+    # TODO: replace authorize?: false + actor: %{} with system actor once available
+    CostInvoiceTransaction.create_connections(
+      [socket.assigns.invoice.id],
+      [tx_id],
+      user.organization_id,
+      authorize?: false,
+      actor: %{}
     )
 
     Analytics.track_event("cost_invoice_match", user, %{transaction_count: 1})
@@ -86,7 +90,9 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
   @impl true
   def handle_event("disconnect", _params, socket) do
     Bodyguard.permit!(CostInvoices, :update, socket.assigns.current_user, socket.assigns.invoice)
-    CostInvoices.delete_cost_invoices_transactions_connections(socket.assigns.invoice.id)
+    # TODO: replace authorize?: false + actor: %{} with system actor once available
+    CostInvoiceTransaction.delete_for_invoice(socket.assigns.invoice.id, authorize?: false, actor: %{})
+    CostInvoices.broadcast_cost_invoice_list_updated(socket.assigns.current_user.organization_id)
 
     Analytics.track_event("cost_invoice_unmatch", socket.assigns.current_user, %{})
 
