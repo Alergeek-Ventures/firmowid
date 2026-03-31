@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Invoicing do
 
   resources do
     resource Firmowid.Ash.Invoicing.Counterparty
+    resource Firmowid.Ash.Invoicing.InboundEmail
   end
 
   authorization do

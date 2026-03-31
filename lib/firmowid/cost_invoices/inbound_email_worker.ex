@@ -12,38 +12,42 @@ defmodule Firmowid.CostInvoices.InboundEmailWorker do
     max_attempts: 3
 
   alias Firmowid.Accounts
+  alias Firmowid.Ash.Invoicing.InboundEmail
   alias Firmowid.CostInvoices
   alias Firmowid.Repo
   alias Firmowid.Resend.Client
 
   require Logger
 
+  # TODO: replace authorize?: false + actor: %{} with system actor once available
+  @bridge_opts [authorize?: false, actor: %{}]
+
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"inbound_email_id" => id, "organization_id" => org_id}}) do
     Repo.put_org_id(org_id)
-    inbound_email = CostInvoices.get_inbound_email!(id)
+    inbound_email = InboundEmail.get!(id, [tenant: org_id] ++ @bridge_opts)
 
     Logger.info("Processing inbound email #{id} from #{inbound_email.sender_email}")
 
     case process_email(inbound_email, org_id) do
       {:ok, count} ->
-        CostInvoices.mark_inbound_email_processed(inbound_email, nil)
+        InboundEmail.mark_processed!(inbound_email, nil, @bridge_opts)
         Logger.info("Successfully scheduled #{count} attachments from inbound email #{id}")
         :ok
 
       {:error, :unexpected_sender} ->
         Logger.warning("Rejecting email #{id} from unexpected sender #{inbound_email.sender_email}")
-        CostInvoices.mark_inbound_email_processed(inbound_email, :unexpected_sender)
+        InboundEmail.mark_processed!(inbound_email, :unexpected_sender, @bridge_opts)
         {:error, :unexpected_sender}
 
       {:error, :no_attachments} ->
         Logger.info("Email #{id} has no valid attachments to process")
-        CostInvoices.mark_inbound_email_processed(inbound_email, :no_attachment)
+        InboundEmail.mark_processed!(inbound_email, :no_attachment, @bridge_opts)
         {:error, :no_attachments}
 
       {:error, reason} ->
         Logger.error("Failed to process inbound email #{id}: #{inspect(reason)}")
-        CostInvoices.mark_inbound_email_processed(inbound_email, :processing_failed)
+        InboundEmail.mark_processed!(inbound_email, :processing_failed, @bridge_opts)
         {:error, reason}
     end
   end

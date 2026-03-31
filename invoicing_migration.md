@@ -74,14 +74,17 @@ Single domain: `Firmowid.Ash.Invoicing` — all invoice-related resources live h
 
 ---
 
-### Slice 2: InboundEmail
+### Slice 2: InboundEmail ✅
 
 **Goal:** New `Firmowid.Ash.Invoicing.InboundEmail` resource. Replace context functions.
 
-- Actions: `:read`, `:create`, `:mark_processed` (update — sets `processed_at` + `failure_reason`)
-- Delete from `CostInvoices` context: `list_inbound_emails`, `get_inbound_email!`, `create_inbound_email`, `mark_inbound_email_processed`
-- Update call sites: `inbound_email_worker.ex`, `inbox.ex` view, `cost_invoices/worker.ex`
+**Completed.** Resource created with `:read`, `:by_id`, `:list_all`, `:create`, `:mark_processed` actions.
+
+- Deleted `list_inbound_emails`, `get_inbound_email!`, `mark_inbound_email_processed` from `CostInvoices` context
+- Updated call sites: `inbound_email_worker.ex` (bridge opts), `inbox.ex` (Ash scope), `inbound.ex` controller (Ash create + error handling)
+- `cost_invoices` loaded via Ecto query in `after_action` hook on `:list_all` (CostInvoice is still Ecto schema — converts to Ash relationship in Slice 4)
 - Ecto schema `CostInvoices.InboundEmail` stays (referenced by CostInvoice Ecto schema `belongs_to`)
+- Duplicate webhook detection uses `Ash.Error.Invalid` pattern instead of Ecto changeset errors
 
 ---
 

@@ -11,7 +11,6 @@ defmodule Firmowid.CostInvoices do
   alias Firmowid.Ash.Blobs.Blob, as: AshBlob
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.CostInvoices.CostInvoicesTransactions
-  alias Firmowid.CostInvoices.InboundEmail
   alias Firmowid.Ksef
   alias Firmowid.Repo
 
@@ -436,28 +435,6 @@ defmodule Firmowid.CostInvoices do
     |> order_by(desc: :issue_date)
     |> Repo.all()
     |> Repo.preload(:transactions)
-  end
-
-  ## Inbound Email functions
-
-  def list_inbound_emails do
-    InboundEmail
-    |> order_by([e], desc: e.received_at)
-    |> Repo.all()
-    |> Repo.preload(:cost_invoices)
-  end
-
-  def get_inbound_email!(id) do
-    Repo.get!(InboundEmail, id)
-  end
-
-  def mark_inbound_email_processed(inbound_email, failure_reason \\ nil) do
-    inbound_email
-    |> InboundEmail.changeset(%{
-      processed_at: DateTime.utc_now(),
-      failure_reason: failure_reason
-    })
-    |> Repo.update!()
   end
 
   # Private functions

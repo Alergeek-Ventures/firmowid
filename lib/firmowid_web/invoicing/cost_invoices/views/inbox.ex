@@ -2,13 +2,13 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  alias Firmowid.CostInvoices
+  alias Firmowid.Ash.Invoicing.InboundEmail
 
   @impl true
   def mount(_params, _session, socket) do
-    Bodyguard.permit!(CostInvoices, :read_inbox, socket.assigns.current_user)
+    scope = socket.assigns.ash_scope
 
-    emails = CostInvoices.list_inbound_emails()
+    emails = InboundEmail.list_all!(scope: scope)
 
     socket =
       socket
