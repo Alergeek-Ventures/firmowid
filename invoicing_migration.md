@@ -139,15 +139,25 @@ Single domain: `Firmowid.Ash.Invoicing` — all invoice-related resources live h
 
 ---
 
-### Slice 6: CostInvoice mutations
+### Slice 6: CostInvoice mutations — COMPLETED ✅
 
 **Goal:** Add write actions to CostInvoice Ash resource. Delete CostInvoices context.
 
-- Actions: `:create_from_metadata`, `:destroy` (with blob cleanup + billing decrement), `:toggle_skip`, `:upload` (generic — blob + extraction job), `:hydrate_with_fa3_blob`
-- Move `CostInvoices.Worker` to `Firmowid.Ash.Invoicing.CostInvoiceWorker`
-- PubSub: explicit broadcasts or Ash notifier
-- Delete `lib/firmowid/cost_invoices.ex` context module
-- Bodyguard removed from cost invoices
+- Ash write actions added: `:create_internal` (create), `:toggle_skip` (update), `:update_blob_id` (update)
+- Generic action `:create_from_metadata` wraps `:create_internal` with map argument
+- Orchestration functions moved to Ash CostInvoice module:
+  - `delete_cost_invoice/1` — reads invoice via Ash, destroys blob (SQL cascade), decrements billing
+  - `toggle_skip_invoicing/1` — Ash update with toggled flag
+  - `upload_cost_invoice/4` — content type validation, blob creation, extraction job enqueue
+  - `create_cost_invoice/1` — Ash create + billing increment + broadcast + matching job
+  - `hydrate_invoice_with_fa3_blob/1` — KSeF XML fetch, blob creation, Ash update
+- PubSub: explicit broadcast functions on the Ash CostInvoice module (not Ash notifiers)
+- `lib/firmowid/cost_invoices.ex` context module deleted
+- Bodyguard calls replaced with `Invoicing` policy (`:show`, `:update`, `:upload`)
+- Worker files stay in `lib/firmowid/cost_invoices/` for now (worker.ex, inbound_email_worker.ex, openai_enrichment.ex)
+- Ecto schema stays (used by raw Ecto queries in invoicing.ex, analysis.ex, by_checksum action)
+- Identity added: `:ksef_number` (nils_distinct)
+- Custom validation: `validate_non_correction_total_amount_sign` ported from Ecto changeset
 
 ---
 
