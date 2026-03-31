@@ -6,6 +6,7 @@
 #   - Minor/patch (non-breaking) updates are grouped into a single PR per ecosystem.
 #   - Major (breaking) updates get individual PRs.
 #   - Security patches are instant (repo-level setting, not configured here).
+#   - 7-day cooldown on all updates (supply chain attack mitigation).
 #
 # Ecosystems:
 #   - mix          → Elixir deps (mix.exs / mix.lock)
@@ -24,6 +25,8 @@ updates:
       time: "06:00"
       timezone: "Europe/Warsaw"
     open-pull-requests-limit: 15
+    cooldown:
+      default-days: 7
     groups:
       non-breaking:
         applies-to: version-updates
@@ -39,6 +42,8 @@ updates:
       day: "monday"
       time: "06:00"
       timezone: "Europe/Warsaw"
+    cooldown:
+      default-days: 7
 
   # ── Docker Compose service images (paradedb, seaweedfs) ─────────────
   - package-ecosystem: "docker-compose"
@@ -48,6 +53,8 @@ updates:
       day: "monday"
       time: "06:00"
       timezone: "Europe/Warsaw"
+    cooldown:
+      default-days: 7
 
   # ── GitHub Actions ──────────────────────────────────────────────────
   - package-ecosystem: "github-actions"
@@ -57,6 +64,8 @@ updates:
       day: "monday"
       time: "06:00"
       timezone: "Europe/Warsaw"
+    cooldown:
+      default-days: 7
     groups:
       non-breaking:
         applies-to: version-updates
