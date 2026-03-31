@@ -29,12 +29,13 @@ defmodule FirmowidWeb.Landing.Components.Landing do
         class="mx-auto flex max-w-7xl items-center justify-between rounded-lg bg-black/10 px-6 py-2 backdrop-blur-sm transition-all duration-500"
       >
         <%!-- Logo --%>
-        <span
+        <a
+          href="/"
           id="navbar-logo"
-          class="pointer-events-none text-[28px] font-extrabold text-black transition-colors duration-500 select-none"
+          class="text-[28px] font-extrabold text-black no-underline transition-colors duration-500 select-none"
         >
           Firmowid
-        </span>
+        </a>
 
         <%!-- Right nav links - hidden on mobile --%>
         <div class="hidden items-center gap-4 text-[16px] font-medium text-black md:flex">
@@ -716,7 +717,7 @@ defmodule FirmowidWeb.Landing.Components.Landing do
           </div>
 
           <%!-- Footer columns --%>
-          <div class="flex gap-32">
+          <div class="flex gap-16 lg:gap-32">
             <div class="flex flex-col gap-3 text-base font-bold text-white">
               <a href="#ksef" class="hover:text-grey-300 hidden">O Firmowidzie</a>
               <a
@@ -736,10 +737,20 @@ defmodule FirmowidWeb.Landing.Components.Landing do
                 Kontakt
               </a>
             </div>
+            <div class="flex flex-col gap-3 text-base font-bold text-white">
+              <a href="/regulamin" class="hover:text-grey-300">
+                Regulamin
+              </a>
+              <a href="/polityka-prywatnosci" class="hover:text-grey-300">
+                Polityka Prywatności
+              </a>
+            </div>
           </div>
         </div>
         <%!-- Copyright --%>
-        <p class="w-full text-xs font-light">© 2025 Firmowid. Wszystkie prawa zastrzeżone.</p>
+        <p class="w-full text-xs font-light">
+          © {Date.utc_today().year} Firmowid. Wszystkie prawa zastrzeżone.
+        </p>
       </div>
     </section>
     """

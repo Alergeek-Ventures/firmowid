@@ -35,6 +35,8 @@ defmodule Firmowid.Analytics do
   @phoenix_analytics_session_cookie "pa_session_id"
 
   @anonymous_id "anonymous"
+  @cookie_consent_cookie "cookie_consent"
+  @consent_accepted "accepted"
 
   @doc """
   Tracks an HTTP request.
@@ -101,6 +103,18 @@ defmodule Firmowid.Analytics do
   end
 
   @doc """
+  Returns whether cookie consent has been accepted on this connection.
+
+  When consent is not accepted (rejected or not yet given), analytics
+  falls back to anonymous tracking — no user identification, generic
+  distinct ID only.
+  """
+  @spec consent_accepted?(Plug.Conn.t()) :: boolean()
+  def consent_accepted?(conn) do
+    conn.cookies[@cookie_consent_cookie] == @consent_accepted
+  end
+
+  @doc """
   Returns whether PhoenixAnalytics is enabled.
   """
   @spec phoenix_analytics_enabled?() :: boolean()
@@ -138,7 +152,12 @@ defmodule Firmowid.Analytics do
   end
 
   defp do_capture_posthog_pageview(conn) do
-    distinct_id = get_distinct_id_from_conn(conn)
+    # When consent is not accepted, force anonymous tracking —
+    # aggregate analytics are preserved without identifying users.
+    distinct_id =
+      if consent_accepted?(conn),
+        do: get_distinct_id_from_conn(conn),
+        else: @anonymous_id
 
     properties = %{
       "$current_url" => current_url(conn),
