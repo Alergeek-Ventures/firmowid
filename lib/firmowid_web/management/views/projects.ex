@@ -2,9 +2,9 @@ defmodule FirmowidWeb.Management.Views.Projects do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Ash.Invoicing.Counterparty
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
-  alias Firmowid.SalesInvoices.Counterparty
 
   @impl true
   def mount(_params, _session, socket) do

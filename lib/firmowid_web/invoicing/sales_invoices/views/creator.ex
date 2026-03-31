@@ -3,6 +3,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Accounts
+  alias Firmowid.Ash.Invoicing.Counterparty, as: AshCounterparty
   alias Firmowid.BankData
   alias Firmowid.Ksef
   alias Firmowid.Ksef.VatRate
@@ -48,7 +49,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     socket =
       socket
       |> assign(:bank_accounts, BankData.list_bank_accounts())
-      |> assign(:last_counterparties, SalesInvoices.list_counterparties())
+      |> assign(:last_counterparties, AshCounterparty.list_all!(scope: socket.assigns.ash_scope))
       |> assign(:last_invoices, SalesInvoices.list_recent_invoices())
       |> assign(:ksef_connected?, Ksef.get_credential() != nil)
       |> assign(:open_counterparty_modal, false)
@@ -359,7 +360,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   defp update_counterparty_stream(socket, search, no_search?, filter, sort_order) do
-    counterparties = SalesInvoices.search_counterparties(search, type: filter, sort_order: sort_order)
+    counterparties =
+      case AshCounterparty.search(search, filter, nil, sort_order, scope: socket.assigns.ash_scope) do
+        {:ok, results} -> results
+        _ -> []
+      end
 
     socket
     |> assign(
@@ -621,8 +626,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   def handle_event("select_counterparty", %{"counterparty_id" => counterparty_id}, socket) do
-    counterparty = SalesInvoices.get_counterparty!(counterparty_id)
-    tax_id_type = Counterparty.tax_id_type(counterparty)
+    counterparty = AshCounterparty.get!(counterparty_id, scope: socket.assigns.ash_scope)
+    tax_id_type = AshCounterparty.tax_id_type(counterparty)
 
     is_reverse_charge = reverse_charge_for_id_type?(tax_id_type)
     currency = currency_for_country(counterparty.country)

@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Accounts
+  alias Firmowid.Ash.Invoicing.Counterparty, as: AshCounterparty
   alias Firmowid.BankData
   alias Firmowid.Ksef
   alias Firmowid.Repo
@@ -67,7 +68,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
       Enum.find(bank_accounts, &(&1.iban == invoice.seller_account_number)) ||
         Enum.find(bank_accounts, &(&1.is_default and &1.currency == invoice.currency))
     )
-    |> assign(:counterparties, SalesInvoices.list_counterparties())
+    |> assign(:counterparties, AshCounterparty.list_all!(scope: socket.assigns.ash_scope))
     |> assign(:ksef_connected?, Ksef.get_credential() != nil)
   end
 

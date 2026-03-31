@@ -3,14 +3,12 @@ defmodule Firmowid.SalesInvoices do
   @behaviour Bodyguard.Policy
 
   import Ecto.Query, warn: false
-  import Paradex, only: [~>: 2]
 
   alias Ecto.Multi
   alias Firmowid.Accounts
   alias Firmowid.Ash.Billing.Limits, as: AshLimits
   alias Firmowid.Nbp
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices.Counterparty
   alias Firmowid.SalesInvoices.SalesInvoice
   alias Firmowid.SalesInvoices.SalesInvoicesTransactions
 
@@ -868,113 +866,6 @@ defmodule Firmowid.SalesInvoices do
     |> where([s], s.issue_date >= ^range_start and s.issue_date < ^range_end)
     |> order_by([s], desc: s.issue_date, desc: s.invoice_number)
     |> list_sales_invoices()
-  end
-
-  def list_counterparties do
-    Counterparty
-    |> order_by([c], asc: fragment("COALESCE(?, ?)", c.display_name, c.surname))
-    |> Repo.all()
-  end
-
-  @spec get_counterparty(UUIDv7.t()) :: Counterparty.t() | nil
-  def get_counterparty(id) do
-    Repo.get(Counterparty, id)
-  end
-
-  @spec get_counterparty!(UUIDv7.t()) :: Counterparty.t()
-  def get_counterparty!(id) do
-    Repo.get!(Counterparty, id)
-  end
-
-  @spec create_counterparty(map()) :: {:ok, Counterparty.t()} | {:error, Ecto.Changeset.t()}
-  def create_counterparty(attrs) do
-    %Counterparty{}
-    |> Counterparty.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @spec update_counterparty(Counterparty.t(), map()) ::
-          {:ok, Counterparty.t()} | {:error, Ecto.Changeset.t()}
-  def update_counterparty(%Counterparty{} = counterparty, attrs) do
-    counterparty
-    |> Counterparty.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @spec delete_counterparty(Counterparty.t()) :: {:ok, Counterparty.t()} | {:error, Ecto.Changeset.t()}
-  def delete_counterparty(%Counterparty{} = counterparty) do
-    Repo.delete(counterparty)
-  end
-
-  def change_counterparty(%Counterparty{} = counterparty, attrs \\ %{}) do
-    Counterparty.changeset(counterparty, attrs)
-  end
-
-  @spec search_counterparties(String.t(), keyword()) :: [Counterparty.t()]
-  def search_counterparties(search_term, opts \\ []) do
-    type = Keyword.get(opts, :type)
-    sort_by = Keyword.get(opts, :sort_by, :name)
-    sort_order = Keyword.get(opts, :sort_order, :asc)
-
-    {search_mode, base_query} = apply_counterparty_search(Counterparty, search_term)
-
-    base_query
-    |> apply_counterparty_type_filter(type)
-    |> apply_counterparty_sorting(search_mode, sort_by, sort_order)
-    |> limit(25)
-    |> Repo.all(prepare: :unnamed)
-  end
-
-  defp apply_counterparty_search(query, nil), do: {:no_search, query}
-  defp apply_counterparty_search(query, ""), do: {:no_search, query}
-
-  defp apply_counterparty_search(query, search_term) do
-    search_query =
-      where(
-        query,
-        [c],
-        c.display_name ~> ^search_term or
-          c.full_name ~> ^search_term or
-          c.given_name ~> ^search_term or
-          c.surname ~> ^search_term or
-          c.tax_id ~> ^search_term or
-          c.email ~> ^search_term
-      )
-
-    {:search, search_query}
-  end
-
-  defp apply_counterparty_type_filter(query, nil), do: query
-
-  defp apply_counterparty_type_filter(query, type) when type in [:individual, :company] do
-    where(query, [c], c.type == ^type)
-  end
-
-  defp apply_counterparty_type_filter(query, _), do: query
-
-  # When searching, order by BM25 score first
-  defp apply_counterparty_sorting(query, :search, _sort_by, _order) do
-    order_by(query, [c], fragment("paradedb.score(?) DESC", c.id))
-  end
-
-  # When not searching, use the existing sorting logic
-  # For individuals: given_name is set, full_name is NULL
-  # For companies: full_name is set, given_name is NULL
-  defp apply_counterparty_sorting(query, :no_search, :name, order) do
-    order_by(query, [c], [{^order, fragment("COALESCE(?, ?)", c.given_name, c.full_name)}])
-  end
-
-  defp apply_counterparty_sorting(query, :no_search, :display_name, order) do
-    order_by(query, [c], [{^order, fragment("COALESCE(?, ?)", c.full_name, c.given_name)}])
-  end
-
-  defp apply_counterparty_sorting(query, :no_search, :created_at, order) do
-    order_by(query, [c], [{^order, c.inserted_at}])
-  end
-
-  defp apply_counterparty_sorting(query, :no_search, _, order) do
-    # Default to name sorting
-    apply_counterparty_sorting(query, :no_search, :name, order)
   end
 
   @token_bytes 32

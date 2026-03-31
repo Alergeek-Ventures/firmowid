@@ -11,8 +11,8 @@ defmodule Firmowid.Seeds.Bytecraft do
   alias Firmowid.Accounts.Organization
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.BankData.Requisition
+  alias Firmowid.Ash.Invoicing.Counterparty, as: AshCounterparty
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.Counterparty
   alias Firmowid.Seeds.Helpers
 
@@ -220,7 +220,8 @@ defmodule Firmowid.Seeds.Bytecraft do
         end
 
       case existing do
-        nil -> SalesInvoices.create_counterparty(attrs)
+        # TODO: replace authorize?: false + actor: %{} with system actor once available
+        nil -> AshCounterparty.create(attrs, tenant: bytecraft.id, authorize?: false, actor: %{})
         counterparty -> {:ok, counterparty}
       end
     end

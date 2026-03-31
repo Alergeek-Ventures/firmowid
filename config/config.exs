@@ -104,6 +104,7 @@ config :firmowid,
     Firmowid.Ash.Blobs,
     Firmowid.Ash.Core,
     Firmowid.Ash.Finances,
+    Firmowid.Ash.Invoicing,
     Firmowid.Ash.Payroll,
     Firmowid.Ash.Timetracker
   ]

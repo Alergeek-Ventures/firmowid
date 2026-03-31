@@ -368,7 +368,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
       allow_nil? false
     end
 
-    belongs_to :counterparty, Firmowid.Ash.Core.Counterparty do
+    belongs_to :counterparty, Firmowid.Ash.Invoicing.Counterparty do
       allow_nil? true
       attribute_writable? true
     end
