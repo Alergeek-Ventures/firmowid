@@ -12,8 +12,8 @@ defmodule Firmowid.CostInvoices.InboundEmailWorker do
     max_attempts: 3
 
   alias Firmowid.Accounts
+  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.Ash.Invoicing.InboundEmail
-  alias Firmowid.CostInvoices
   alias Firmowid.Repo
   alias Firmowid.Resend.Client
 
@@ -114,7 +114,7 @@ defmodule Firmowid.CostInvoices.InboundEmailWorker do
 
     with {:ok, binary} <- Client.download_attachment(download_url),
          {:ok, temp_path} <- write_to_temp_file(binary, filename),
-         {:ok, _blob} <- CostInvoices.upload_cost_invoice(temp_path, content_type, filename, inbound_email_id) do
+         {:ok, _blob} <- AshCostInvoice.upload_cost_invoice(temp_path, content_type, filename, inbound_email_id) do
       {:ok, filename}
     else
       {:error, reason} = error ->

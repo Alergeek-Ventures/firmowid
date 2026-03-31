@@ -6,7 +6,7 @@ defmodule Firmowid.CostInvoices.Worker do
     max_attempts: 2
 
   alias Firmowid.Ash.Blobs.Blob, as: AshBlob
-  alias Firmowid.CostInvoices
+  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.CostInvoices.OpenAIEnrichment
   alias Firmowid.ReductoApiClient
 
@@ -154,7 +154,7 @@ defmodule Firmowid.CostInvoices.Worker do
             blob = AshBlob.by_id!(blob_id, blob_opts)
             AshBlob.destroy_blob!(blob_id, blob_opts)
 
-            CostInvoices.broadcast_cost_invoice_failed_to_process(
+            AshCostInvoice.broadcast_cost_invoice_failed_to_process(
               blob.original_filename,
               organization_id
             )
@@ -206,13 +206,13 @@ defmodule Firmowid.CostInvoices.Worker do
         extracted_metadata
       end
 
-    CostInvoices.create_cost_invoice(extracted_metadata)
+    AshCostInvoice.create_cost_invoice(extracted_metadata)
   end
 
   defp handle_invalid_document(blob_id, organization_id, blob_opts) do
     blob = AshBlob.by_id!(blob_id, blob_opts)
     AshBlob.destroy_blob!(blob_id, blob_opts)
 
-    CostInvoices.broadcast_invalid_document_uploaded(blob.original_filename, organization_id)
+    AshCostInvoice.broadcast_invalid_document_uploaded(blob.original_filename, organization_id)
   end
 end

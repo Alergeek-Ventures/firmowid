@@ -10,7 +10,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
   alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.BankData
-  alias Firmowid.CostInvoices
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.TransactionGroup
@@ -25,7 +24,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     Bodyguard.permit!(Invoicing, :read, user)
 
     if connected?(socket) do
-      CostInvoices.subscribe_cost_invoice_broadcast(organization_id)
+      AshCostInvoice.subscribe_cost_invoice_broadcast(organization_id)
       AshFinances.subscribe_transaction_broadcast(organization_id)
       SalesInvoices.subscribe_sales_invoice_broadcast(organization_id)
       Invoicing.subscribe_invoicing_broadcast(organization_id)
@@ -265,7 +264,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     case type do
       "cost_invoice" ->
-        CostInvoices.toggle_skip_invoicing(id)
+        AshCostInvoice.toggle_skip_invoicing(id)
 
       "transaction" ->
         AshTransaction.toggle_skip_invoicing!(%{id: id}, scope: socket.assigns.ash_scope)
@@ -436,7 +435,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     for entry <- entries do
       consume_uploaded_entry(socket, entry, fn %{path: path} ->
         Analytics.track_event("cost_invoice_upload", user, %{file_type: entry.client_type})
-        handle_upload_result(CostInvoices.upload_cost_invoice(path, entry.client_type, entry.client_name))
+        handle_upload_result(AshCostInvoice.upload_cost_invoice(path, entry.client_type, entry.client_name))
         {:ok, nil}
       end)
     end
@@ -550,7 +549,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     socket
     |> assign(
       :processing_blobs_count,
-      CostInvoices.get_processing_cost_invoices_count()
+      AshCostInvoice.get_processing_cost_invoices_count()
     )
     |> assign(
       :currently_uploading_count,

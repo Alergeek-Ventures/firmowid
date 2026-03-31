@@ -5,7 +5,6 @@ defmodule Firmowid.CostInvoicesTest do
   import Firmowid.AccountsFixtures
 
   alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
-  alias Firmowid.CostInvoices
   alias Firmowid.CostInvoices.CostInvoice
 
   # TODO: replace authorize?: false + actor: %{} with system actor once available
@@ -17,7 +16,7 @@ defmodule Firmowid.CostInvoicesTest do
       invoice = insert_ksef_cost_invoice!(user.organization_id)
 
       assert_raise RuntimeError, ~r/Cost invoice #{invoice.id} is imported from KSeF and cannot be deleted/, fn ->
-        CostInvoices.delete_cost_invoice(invoice.id)
+        AshCostInvoice.delete_cost_invoice(invoice.id)
       end
 
       assert Repo.get(CostInvoice, invoice.id)

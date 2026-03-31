@@ -2,55 +2,68 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   @moduledoc """
   Ash resource for cost (purchase) invoices.
 
-  Read-only in this slice — mutations remain in the legacy `CostInvoices` Ecto
-  context until Slice 6.
-
-  ## Actions
+  ## Read Actions
 
     * `:read` — default read
-    * `:by_id` — single record by ID, preloads transactions
+    * `:by_id` — single record by ID
     * `:list_for_month` — by issue_date range, excludes linked corrections,
       merges corrections into originals, preloads transactions + corrections
     * `:list_unmatched` — unmatched (no transactions, not skipped) in due_date range,
       excludes linked corrections, merges corrections
     * `:list_by_sale_date` — by sale_date range, preloads transactions
     * `:list_by_ids` — filter by ID list with optional date range
-    * `:list_invoices_in_date_range` — invoices with blobs in issue/sale date range,
-      returns with blob_url loaded
+    * `:list_invoices_in_date_range` — invoices with blobs in issue/sale date range
     * `:by_checksum` — find by blob checksum (join on blobs)
     * `:get_with_blob_url` — single record with blob_url, transactions, corrections, original_invoice
 
+  ## Write Actions
+
+    * `:create_from_metadata` — create from AI-extracted or KSeF-parsed metadata
+    * `:toggle_skip` — toggle the skip_invoicing flag
+    * `:update_blob_id` — attach a blob to an existing invoice
+
   ## Calculations
 
-    * `:blob_url` — presigned S3 URL for the attached blob
     * `:ksef_imported` — whether the invoice was imported from KSeF
     * `:deletable` — whether the invoice can be deleted (not KSeF-imported)
 
-  ## Public functions
+  ## Public Functions (orchestration)
 
-    * `merge_corrections_into_original_invoice/1` — folds correction invoice
-      data (amounts, dates, seller info) into the original invoice struct.
-    * `ksef_imported?/1` — predicate check on struct fields.
-    * `deletable?/1` — inverse of `ksef_imported?/1`.
+    * `delete_cost_invoice/1` — destroy blob (cascades invoice) + billing decrement
+    * `upload_cost_invoice/4` — validate content type, create blob, enqueue extraction job
+    * `hydrate_invoice_with_fa3_blob/1` — fetch KSeF XML, create blob, update invoice
+    * `subscribe_cost_invoice_broadcast/1` — subscribe to PubSub topic
+    * `broadcast_cost_invoice_added/1` — broadcast new invoice event
+    * `broadcast_cost_invoice_list_updated/1` — broadcast list refresh event
+    * `broadcast_cost_invoice_failed_to_process/2` — broadcast processing failure
+    * `broadcast_invalid_document_uploaded/2` — broadcast invalid document
+    * `get_processing_cost_invoices_count/0` — count pending extraction jobs
   """
   use Ash.Resource,
     domain: Firmowid.Ash.Invoicing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Ash.Error.Unknown
+  alias Ash.Error.Unknown.UnknownError
+  alias Firmowid.Ash.Billing.Limits, as: AshLimits
   alias Firmowid.Ash.Blobs.Blob, as: AshBlob
   alias Firmowid.Ash.Resource
   alias Firmowid.CostInvoices.CostInvoice, as: EctoCostInvoice
+  alias Firmowid.Ksef
+  alias Firmowid.Repo
 
   require Ash.Query
   require Ecto.Query
+  require Logger
   require Resource
 
   @correction_invoice_types [:kor, :kor_zal, :kor_roz]
+  @cost_invoice_broadcast_topic "cost_invoice_broadcast_topic"
 
   postgres do
     table "cost_invoices"
-    repo Firmowid.Repo
+    repo Repo
     migrate? false
   end
 
@@ -64,6 +77,9 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     define :list_invoices_in_date_range, args: [:date_from, :date_to]
     define :by_checksum, args: [:blob_checksum]
     define :get_with_blob_url, args: [:id], action: :get_with_blob_url
+    define :create_from_metadata, args: [:metadata], action: :create_from_metadata
+    define :toggle_skip, action: :toggle_skip
+    define :update_blob_id, args: [:blob_id], action: :update_blob_id
   end
 
   actions do
@@ -159,7 +175,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
         import Ecto.Query
 
         result =
-          Firmowid.Repo.one!(
+          Repo.one!(
             from(c in EctoCostInvoice,
               join: b in Firmowid.Blobs.Blob,
               on: b.id == c.blob_id,
@@ -197,10 +213,91 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
         {:ok, invoice}
       end
     end
+
+    # -- Write actions --------------------------------------------------------
+
+    action :create_from_metadata, :struct do
+      constraints instance_of: __MODULE__
+      argument :metadata, :map, allow_nil?: false
+
+      run fn input, context ->
+        metadata = input.arguments.metadata
+        opts = Ash.Context.to_opts(context)
+
+        cost_invoice =
+          __MODULE__
+          |> Ash.Changeset.for_create(:create_internal, metadata, opts)
+          |> Ash.create!()
+
+        {:ok, cost_invoice}
+      end
+    end
+
+    create :create_internal do
+      accept [
+        :blob_id,
+        :inbound_email_id,
+        :seller,
+        :seller_address,
+        :seller_display_name,
+        :account_number,
+        :sale_date,
+        :issue_date,
+        :due_date,
+        :total_amount,
+        :currency,
+        :description,
+        :invoice_identifier,
+        :skip_invoicing,
+        :ksef_number,
+        :ksef_permanent_storage_date,
+        :ksef_downloaded_at,
+        :seller_nip,
+        :seller_country_code,
+        :seller_email,
+        :seller_phone,
+        :invoice_type,
+        :original_invoice_ksef_number,
+        :payment_method
+      ]
+
+      validate present([
+                 :seller,
+                 :seller_display_name,
+                 :sale_date,
+                 :issue_date,
+                 :total_amount,
+                 :currency,
+                 :description,
+                 :invoice_identifier
+               ])
+
+      change fn changeset, _context ->
+        validate_non_correction_total_amount_sign(changeset)
+      end
+    end
+
+    update :toggle_skip do
+      require_atomic? false
+
+      change fn changeset, _context ->
+        current = Ash.Changeset.get_attribute(changeset, :skip_invoicing)
+        Ash.Changeset.force_change_attribute(changeset, :skip_invoicing, !current)
+      end
+    end
+
+    update :update_blob_id do
+      accept [:blob_id]
+      require_atomic? false
+    end
   end
 
   policies do
     policy action_type(:read) do
+      authorize_if always()
+    end
+
+    policy action_type([:create, :update]) do
       authorize_if always()
     end
   end
@@ -310,7 +407,11 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
               expr(not ksef_imported)
   end
 
-  # Public functions -----------------------------------------------------------
+  identities do
+    identity :ksef_number, [:ksef_number], nils_distinct?: true
+  end
+
+  # Public functions — predicates -----------------------------------------------
 
   @doc """
   Returns true when invoice data was imported from KSeF FA(3) XML.
@@ -377,7 +478,299 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
   def merge_corrections_into_original_invoice(invoice), do: invoice
 
+  # Public functions — orchestration -------------------------------------------
+
+  @doc """
+  Deletes a cost invoice by ID.
+
+  Destroys the associated blob (SQL cascade deletes the invoice row).
+  Decrements the billing counter for non-correction invoices.
+
+  Note: The billing counter decrement happens outside the delete transaction.
+  This is intentional — billing limits are soft limits (informational only),
+  so we prioritize successful invoice deletion over counter accuracy.
+  """
+  @spec delete_cost_invoice(Ash.UUID.t()) :: :ok
+  def delete_cost_invoice(cost_invoice_id) do
+    # TODO: replace authorize?: false + actor: %{} with system actor once available
+    opts = [tenant: Repo.get_org_id(), authorize?: false, actor: %{}]
+
+    cost_invoice =
+      __MODULE__
+      |> Ash.Query.filter_input(%{id: %{eq: cost_invoice_id}})
+      |> Ash.Query.load([:blob])
+      |> Ash.read_one!(opts)
+
+    if ksef_imported?(cost_invoice) do
+      raise "Cost invoice #{cost_invoice_id} is imported from KSeF and cannot be deleted"
+    end
+
+    organization_id = cost_invoice.organization_id
+
+    if !correction_invoice?(cost_invoice) do
+      case AshLimits.decrement(organization_id, :cost_invoices, authorize?: false, actor: %{}) do
+        {:ok, _} ->
+          :ok
+
+        {:error, reason} ->
+          Logger.warning("Failed to decrement cost_invoices limit: #{inspect(reason)}")
+      end
+    end
+
+    AshBlob.destroy_blob!(cost_invoice.blob_id, opts)
+
+    broadcast_cost_invoice_list_updated(organization_id)
+  end
+
+  @doc """
+  Toggles the `skip_invoicing` flag on a cost invoice.
+  Returns the updated invoice and broadcasts a list update.
+  """
+  @spec toggle_skip_invoicing(Ash.UUID.t()) :: struct()
+  def toggle_skip_invoicing(id) do
+    # TODO: replace authorize?: false + actor: %{} with system actor once available
+    opts = [tenant: Repo.get_org_id(), authorize?: false, actor: %{}]
+
+    cost_invoice = Ash.get!(__MODULE__, id, opts)
+
+    cost_invoice =
+      cost_invoice
+      |> Ash.Changeset.for_update(:toggle_skip, %{}, opts)
+      |> Ash.update!()
+
+    broadcast_cost_invoice_list_updated(cost_invoice.organization_id)
+
+    cost_invoice
+  end
+
+  @doc """
+  Uploads a cost invoice file. Validates content type, creates a blob,
+  and enqueues an extraction job.
+
+  Returns `{:ok, blob}` wrapped in a transaction result, or
+  `{:error, :unsupported_content_type}`.
+  """
+  @spec upload_cost_invoice(String.t(), String.t(), String.t(), Ash.UUID.t() | nil) ::
+          {:ok, struct()} | {:error, term()}
+  def upload_cost_invoice(upload_path, content_type, original_filename, inbound_email_id \\ nil)
+
+  def upload_cost_invoice(upload_path, "image/" <> _ext = content_type, original_filename, inbound_email_id) do
+    create_cost_invoice_job(upload_path, content_type, original_filename, inbound_email_id)
+  end
+
+  def upload_cost_invoice(upload_path, "application/pdf" = content_type, original_filename, inbound_email_id) do
+    create_cost_invoice_job(upload_path, content_type, original_filename, inbound_email_id)
+  end
+
+  def upload_cost_invoice(_upload_path, _content_type, _original_filename, _inbound_email_id) do
+    {:error, :unsupported_content_type}
+  end
+
+  @doc """
+  Creates a cost invoice from extracted metadata (AI or KSeF parser).
+
+  Increments the billing counter for non-correction invoices,
+  broadcasts the new invoice, and enqueues a matching job.
+  """
+  @spec create_cost_invoice(map()) :: Oban.Job.t()
+  def create_cost_invoice(extracted_metadata) do
+    # TODO: replace authorize?: false + actor: %{} with system actor once available
+    organization_id = Map.get(extracted_metadata, "organization_id", Repo.get_org_id())
+    opts = [tenant: organization_id, authorize?: false, actor: %{}]
+
+    {:ok, cost_invoice} = create_from_metadata(extracted_metadata, opts)
+
+    if !correction_invoice?(cost_invoice) do
+      case AshLimits.increment(organization_id, :cost_invoices, authorize?: false, actor: %{}) do
+        {:ok, _} ->
+          :ok
+
+        {:error, reason} ->
+          Logger.warning("Failed to increment cost_invoices limit: #{inspect(reason)}")
+      end
+    end
+
+    broadcast_cost_invoice_added(cost_invoice)
+
+    %{
+      name: "match_cost_invoice",
+      cost_invoice_id: cost_invoice.id,
+      organization_id: organization_id
+    }
+    |> Firmowid.Invoicing.Worker.new()
+    |> Firmowid.Oban.insert!()
+  end
+
+  @doc """
+  Fetches the KSeF FA(3) XML for a cost invoice missing a blob, creates a blob
+  from it, and attaches it to the invoice.
+  """
+  # sobelow_skip ["Traversal.FileModule"]
+  # Path comes from Briefly.create/1 (OS-managed temp directory), not user input.
+  @spec hydrate_invoice_with_fa3_blob(struct()) :: struct()
+  def hydrate_invoice_with_fa3_blob(%{ksef_number: ksef_number, blob_id: blob_id} = invoice)
+      when not is_nil(ksef_number) and is_nil(blob_id) do
+    # TODO: replace authorize?: false + actor: %{} with system actor once available
+    opts = [tenant: invoice.organization_id, authorize?: false, actor: %{}]
+
+    with {:ok, xml} <- Ksef.get_invoice_xml_by_ksef_number(ksef_number),
+         {:ok, path} <- Briefly.create(extname: ".xml"),
+         :ok <- File.write(path, xml),
+         {:ok, blob} <- AshBlob.create_blob(path, "application/xml", "#{ksef_number}.xml", opts) do
+      try do
+        invoice
+        |> Ash.Changeset.for_update(:update_blob_id, %{blob_id: blob.id}, opts)
+        |> Ash.update!()
+
+        # Return with blob loaded
+        Ash.load!(invoice, [blob: [:url]], opts)
+      rescue
+        error ->
+          AshBlob.destroy_blob!(blob.id, opts)
+          reraise error, __STACKTRACE__
+      end
+    else
+      {:error, reason} ->
+        Logger.error("Failed to fetch KSeF XML for cost invoice #{invoice.id}: #{inspect(reason)}")
+
+        invoice
+    end
+  end
+
+  def hydrate_invoice_with_fa3_blob(invoice), do: invoice
+
+  # Public functions — PubSub --------------------------------------------------
+
+  @doc "Subscribe to cost invoice broadcasts for the given organization."
+  @spec subscribe_cost_invoice_broadcast(Ash.UUID.t()) :: :ok | {:error, term()}
+  def subscribe_cost_invoice_broadcast(organization_id) do
+    Phoenix.PubSub.subscribe(
+      Firmowid.PubSub,
+      "#{@cost_invoice_broadcast_topic}:#{organization_id}"
+    )
+  end
+
+  @doc "Broadcast that a new cost invoice was added."
+  @spec broadcast_cost_invoice_added(struct()) :: :ok | {:error, term()}
+  def broadcast_cost_invoice_added(cost_invoice) do
+    Phoenix.PubSub.broadcast(
+      Firmowid.PubSub,
+      "#{@cost_invoice_broadcast_topic}:#{cost_invoice.organization_id}",
+      {:cost_invoice_added, cost_invoice}
+    )
+  end
+
+  @doc "Broadcast that the cost invoice list should be refreshed."
+  @spec broadcast_cost_invoice_list_updated(Ash.UUID.t()) :: :ok | {:error, term()}
+  def broadcast_cost_invoice_list_updated(organization_id) do
+    Phoenix.PubSub.broadcast(
+      Firmowid.PubSub,
+      "#{@cost_invoice_broadcast_topic}:#{organization_id}",
+      :cost_invoice_list_updated
+    )
+  end
+
+  @doc "Broadcast that a cost invoice failed to process."
+  @spec broadcast_cost_invoice_failed_to_process(String.t(), Ash.UUID.t()) ::
+          :ok | {:error, term()}
+  def broadcast_cost_invoice_failed_to_process(original_filename, organization_id) do
+    Phoenix.PubSub.broadcast(
+      Firmowid.PubSub,
+      "#{@cost_invoice_broadcast_topic}:#{organization_id}",
+      {:cost_invoice_failed_to_process, original_filename}
+    )
+  end
+
+  @doc "Broadcast that an invalid (non-invoice) document was uploaded."
+  @spec broadcast_invalid_document_uploaded(String.t(), Ash.UUID.t()) :: :ok | {:error, term()}
+  def broadcast_invalid_document_uploaded(original_filename, organization_id) do
+    Phoenix.PubSub.broadcast(
+      Firmowid.PubSub,
+      "#{@cost_invoice_broadcast_topic}:#{organization_id}",
+      {:invalid_document_uploaded, original_filename}
+    )
+  end
+
+  # Public functions — utility -------------------------------------------------
+
+  @doc "Returns the count of Oban jobs pending cost invoice extraction."
+  @spec get_processing_cost_invoices_count() :: non_neg_integer()
+  def get_processing_cost_invoices_count do
+    import Ecto.Query
+
+    Oban.Job
+    |> where(
+      [j],
+      j.state in ["available", "scheduled", "executing"] and
+        fragment("args->>'name' = ?", "extract_cost_invoice_metadata")
+    )
+    |> Repo.aggregate(:count, oban_jobs: true)
+  end
+
   # Private helpers -----------------------------------------------------------
+
+  defp create_cost_invoice_job(upload_path, content_type, original_filename, inbound_email_id) do
+    # TODO: replace authorize?: false + actor: %{} with system actor once available
+    blob_opts = [tenant: Repo.get_org_id(), authorize?: false, actor: %{}]
+
+    Repo.transaction(fn ->
+      case AshBlob.create_blob(upload_path, content_type, original_filename, blob_opts) do
+        {:ok, blob} ->
+          enqueue_extraction_job(blob, inbound_email_id)
+          broadcast_cost_invoice_list_updated(blob.organization_id)
+          blob
+
+        {:error, error} ->
+          handle_blob_create_error(error)
+      end
+    end)
+  end
+
+  defp handle_blob_create_error(%Unknown{} = error) do
+    if blob_already_exists_error?(error) do
+      Repo.rollback({:blob_already_exists, nil})
+    else
+      Logger.error("Failed to upload cost invoice: #{inspect(error)}")
+      Repo.rollback(:failure)
+    end
+  end
+
+  defp handle_blob_create_error(reason) do
+    Logger.error("Failed to upload cost invoice: #{inspect(reason)}")
+    Repo.rollback(:failure)
+  end
+
+  defp blob_already_exists_error?(%Unknown{errors: errors}) do
+    Enum.any?(errors, fn
+      %UnknownError{error: %Ecto.ConstraintError{constraint: constraint}} ->
+        String.contains?(constraint, "blob_checksum")
+
+      %UnknownError{error: %Ecto.Changeset{errors: changeset_errors}} ->
+        Keyword.has_key?(changeset_errors, :blob_checksum)
+
+      %UnknownError{error: error} when is_binary(error) ->
+        String.contains?(error, "blob_checksum") and
+          String.contains?(error, "has already been taken")
+
+      _ ->
+        false
+    end)
+  end
+
+  defp blob_already_exists_error?(_), do: false
+
+  defp enqueue_extraction_job(blob, inbound_email_id) do
+    %{
+      name: "extract_cost_invoice_metadata",
+      blob_id: blob.id,
+      organization_id: blob.organization_id
+    }
+    |> then(fn args ->
+      if inbound_email_id, do: Map.put(args, :inbound_email_id, inbound_email_id), else: args
+    end)
+    |> Firmowid.CostInvoices.Worker.new()
+    |> Firmowid.Oban.insert!()
+  end
 
   # Excludes corrections whose original invoice exists in the system.
   # Orphaned corrections (original deleted) and standalone corrections
@@ -396,5 +789,24 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
   defp merge_corrections_after_read(_query, results, _context) do
     {:ok, Enum.map(results, &merge_corrections_into_original_invoice/1)}
+  end
+
+  defp validate_non_correction_total_amount_sign(changeset) do
+    invoice_type = Ash.Changeset.get_attribute(changeset, :invoice_type)
+    total_amount = Ash.Changeset.get_attribute(changeset, :total_amount)
+
+    cond do
+      invoice_type in @correction_invoice_types ->
+        changeset
+
+      is_nil(total_amount) or Decimal.gt?(total_amount, 0) ->
+        Ash.Changeset.add_error(changeset,
+          field: :total_amount,
+          message: "must be <= 0 for non-correction invoices"
+        )
+
+      true ->
+        changeset
+    end
   end
 end

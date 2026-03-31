@@ -2,15 +2,16 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Api do
   @moduledoc false
   use FirmowidWeb, :controller
 
-  alias Firmowid.CostInvoices
+  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
+  alias Firmowid.Invoicing
   alias FirmowidWeb.Infrastructure.Components.ErrorJson
 
   action_fallback FirmowidWeb.Infrastructure.Controllers.Fallback
 
   def create(conn, %{"blob" => blob_params}) do
-    with :ok <- Bodyguard.permit(CostInvoices, :upload, conn.assigns.current_user),
+    with :ok <- Bodyguard.permit(Invoicing, :upload, conn.assigns.current_user),
          {:ok, blob} <-
-           CostInvoices.upload_cost_invoice(
+           AshCostInvoice.upload_cost_invoice(
              blob_params.path,
              blob_params.content_type,
              blob_params.filename

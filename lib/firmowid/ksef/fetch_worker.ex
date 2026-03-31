@@ -8,7 +8,7 @@ defmodule Firmowid.Ksef.FetchWorker do
   import Firmowid.Ksef.ApiClient, only: [parse_datetime!: 1]
 
   alias Firmowid.Ash.Blobs.Blob, as: AshBlob
-  alias Firmowid.CostInvoices
+  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.CostInvoices.OpenAIEnrichment
   alias Firmowid.Ksef.ApiClient
   alias Firmowid.Ksef.Encryption
@@ -256,7 +256,7 @@ defmodule Firmowid.Ksef.FetchWorker do
             # CostInvoice.create_cost_invoice/1 doesn't return result tuple. It raises on failure
             attrs
             |> Map.put(:blob_id, blob.id)
-            |> CostInvoices.create_cost_invoice()
+            |> AshCostInvoice.create_cost_invoice()
 
             :ok
           rescue
@@ -264,7 +264,7 @@ defmodule Firmowid.Ksef.FetchWorker do
             error ->
               AshBlob.destroy_blob!(blob.id, blob_opts)
 
-              CostInvoices.broadcast_cost_invoice_failed_to_process(
+              AshCostInvoice.broadcast_cost_invoice_failed_to_process(
                 "#{ksef_number}.xml",
                 Repo.get_org_id()
               )
