@@ -3,6 +3,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Analytics
+  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.Invoicing
   alias Firmowid.Ksef
@@ -13,7 +14,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   def mount(%{"id" => id} = params, _session, socket) do
     current_user = socket.assigns.current_user
 
-    sales_invoice = SalesInvoices.get_sales_invoice(id)
+    scope = socket.assigns.ash_scope
+    sales_invoice = AshSalesInvoice.by_id!(id, scope: scope)
     Bodyguard.permit!(SalesInvoices, :show, current_user, sales_invoice)
 
     if sales_invoice.ksef_invoice_kind == :kor do
@@ -26,9 +28,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
       potential_transactions = Invoicing.get_potential_transactions_for_invoice(sales_invoice)
 
       sales_invoice =
-        id
-        |> SalesInvoices.get_sales_invoice_with_logo_url()
-        |> SalesInvoices.populate_reference_invoices()
+        sales_invoice
+        |> AshSalesInvoice.populate_logo_url()
+        |> AshSalesInvoice.populate_reference_invoices()
 
       # Subscribe to KSeF status updates for live feedback
       Ksef.subscribe_ksef_status(current_user.organization_id)
@@ -70,7 +72,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
     Bodyguard.permit!(SalesInvoices, :update, socket.assigns.current_user, socket.assigns.invoice)
 
     SalesInvoices.toggle_skip_invoicing(socket.assigns.invoice.id)
-    invoice = refresh_invoice(socket.assigns.invoice.id)
+    invoice = refresh_invoice(socket.assigns.invoice.id, socket.assigns.ash_scope)
 
     {:noreply, assign(socket, :invoice, invoice)}
   end
@@ -125,7 +127,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
 
     Analytics.track_event("sales_invoice_match", user, %{transaction_count: 1})
 
-    invoice = refresh_invoice(socket.assigns.invoice.id)
+    invoice = refresh_invoice(socket.assigns.invoice.id, socket.assigns.ash_scope)
     {:noreply, assign(socket, :invoice, invoice)}
   end
 
@@ -137,7 +139,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
 
     Analytics.track_event("sales_invoice_unmatch", socket.assigns.current_user, %{})
 
-    invoice = refresh_invoice(socket.assigns.invoice.id)
+    invoice = refresh_invoice(socket.assigns.invoice.id, socket.assigns.ash_scope)
     {:noreply, assign(socket, :invoice, invoice)}
   end
 
@@ -165,17 +167,18 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
     Endpoint.url() <> "/faktura/" <> token
   end
 
-  defp refresh_invoice(id) do
+  defp refresh_invoice(id, scope) do
     id
-    |> SalesInvoices.get_sales_invoice_with_logo_url()
-    |> SalesInvoices.populate_reference_invoices()
+    |> AshSalesInvoice.by_id!(scope: scope)
+    |> AshSalesInvoice.populate_logo_url()
+    |> AshSalesInvoice.populate_reference_invoices()
   end
 
   @impl true
   def handle_info({:ksef_invoice_status, %{invoice_id: invoice_id, status: status}}, socket) do
     # Handle KSeF submission status updates
     if socket.assigns.invoice.id == invoice_id do
-      invoice = refresh_invoice(invoice_id)
+      invoice = refresh_invoice(invoice_id, socket.assigns.ash_scope)
 
       # Update component with new invoice data
       send_update(FirmowidWeb.Invoicing.Components.SalesInvoiceDetails,

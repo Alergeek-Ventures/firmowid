@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
   @moduledoc false
   use FirmowidWeb, :controller
 
-  alias Firmowid.Repo
+  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.Pdf
 
@@ -10,25 +10,30 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
 
   plug :put_view, html: FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf
 
+  # TODO: replace authorize?: false + actor: %{} with system actor once available
+  @bridge_opts [authorize?: false, actor: %{}]
+
   def index(conn, %{"id" => id}) do
-    sales_invoice =
-      SalesInvoices.get_sales_invoice_with_logo_url(id)
+    opts = [tenant: conn.assigns.current_user.organization_id] ++ @bridge_opts
 
-    # Authorization check - prevent cross-organization access
-    with %SalesInvoices.SalesInvoice{} <- sales_invoice do
-      Bodyguard.permit!(SalesInvoices, :show, conn.assigns.current_user, sales_invoice)
+    case AshSalesInvoice.by_id(id, opts) do
+      {:ok, sales_invoice} ->
+        sales_invoice = AshSalesInvoice.populate_logo_url(sales_invoice)
+        Bodyguard.permit!(SalesInvoices, :show, conn.assigns.current_user, sales_invoice)
+        render_sales_invoice(conn, sales_invoice)
+
+      {:error, _} ->
+        send_resp(conn, 404, "Not found")
     end
-
-    render_sales_invoice(conn, sales_invoice)
   end
 
-  defp render_sales_invoice(conn, %SalesInvoices.SalesInvoice{} = sales_invoice) do
-    sales_invoice = sales_invoice |> Repo.preload([:corrected_invoice]) |> SalesInvoices.populate_reference_invoices()
+  defp render_sales_invoice(conn, %AshSalesInvoice{} = sales_invoice) do
+    sales_invoice = AshSalesInvoice.populate_reference_invoices(sales_invoice)
 
     render(conn, :sales_invoice,
       layout: false,
       sales_invoice: sales_invoice,
-      currency_rate: SalesInvoices.get_currency_rate(sales_invoice),
+      currency_rate: AshSalesInvoice.get_currency_rate(sales_invoice),
       reference_invoice: sales_invoice.reference_invoice,
       class: "mx-auto",
       show_vat: conn.assigns.current_org.is_vat_payer,
@@ -37,19 +42,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
     )
   end
 
-  defp render_sales_invoice(conn, nil) do
-    send_resp(conn, 404, "Not found")
-  end
-
   def pdf(conn, %{"id" => id}) do
-    case SalesInvoices.get_sales_invoice_with_logo_url(id) do
-      nil ->
+    opts = [tenant: conn.assigns.current_user.organization_id] ++ @bridge_opts
+
+    case AshSalesInvoice.by_id(id, opts) do
+      {:error, _} ->
         send_resp(conn, 404, "Not found")
 
-      sales_invoice ->
+      {:ok, sales_invoice} ->
+        sales_invoice = AshSalesInvoice.populate_logo_url(sales_invoice)
         Bodyguard.permit!(SalesInvoices, :show, conn.assigns.current_user, sales_invoice)
-
-        sales_invoice = Repo.preload(sales_invoice, [:corrected_invoice])
 
         case Pdf.generate(sales_invoice, show_vat: conn.assigns.current_org.is_vat_payer) do
           {:ok, pdf_binary} ->

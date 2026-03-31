@@ -8,6 +8,7 @@ defmodule Firmowid.Invoicing do
   alias Firmowid.Ash.Finances.TransactionQueries
   alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
+  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   # SQL fragment that converts KSeF VAT rate string codes to numeric decimals.
   # Must match VatRate.to_numeric/1 behavior for consistency.
@@ -16,7 +17,6 @@ defmodule Firmowid.Invoicing do
   alias Firmowid.Invoicing.Matching
   alias Firmowid.Invoicing.TransactionGroup
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.SalesInvoice
 
   require Logger
@@ -336,8 +336,10 @@ defmodule Firmowid.Invoicing do
 
     hydrated_sales_invoices =
       if Enum.any?(sales_invoice_ids) do
+        sales_opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
+
         sales_invoice_ids
-        |> SalesInvoices.list_sales_invoices_by_ids()
+        |> AshSalesInvoice.list_by_ids!(nil, nil, sales_opts)
         |> Map.new(fn i -> {i.id, i} end)
       else
         %{}
@@ -417,7 +419,7 @@ defmodule Firmowid.Invoicing do
       :all ->
         [
           AshCostInvoice.list_for_month!(from, to, cost_opts),
-          SalesInvoices.list_sales_invoices(from, to),
+          AshSalesInvoice.list_for_month!(from, to, sales_opts),
           TransactionQueries.list_by_date_range(from, to)
         ]
         |> Enum.concat()
@@ -426,7 +428,7 @@ defmodule Firmowid.Invoicing do
       :unmatched ->
         [
           AshCostInvoice.list_unmatched!(from, to, cost_opts),
-          SalesInvoices.list_unmatched_sales_invoices(from, to),
+          AshSalesInvoice.list_unmatched!(from, to, sales_opts),
           TransactionQueries.list_unmatched(from, to)
         ]
         |> Enum.concat()
@@ -435,7 +437,7 @@ defmodule Firmowid.Invoicing do
       :invoices ->
         from
         |> AshCostInvoice.list_for_month!(to, cost_opts)
-        |> Enum.concat(SalesInvoices.list_sales_invoices(from, to))
+        |> Enum.concat(AshSalesInvoice.list_for_month!(from, to, sales_opts))
         |> order_entries_for_display()
 
       :transactions ->
@@ -445,7 +447,7 @@ defmodule Firmowid.Invoicing do
     end
   end
 
-  defp get_date(%SalesInvoice{} = invoice) do
+  defp get_date(%AshSalesInvoice{} = invoice) do
     invoice.issue_date
   end
 
@@ -459,7 +461,7 @@ defmodule Firmowid.Invoicing do
 
   defp get_date(%TransactionGroup{date: date}), do: date
 
-  defp matched?(%SalesInvoice{} = invoice),
+  defp matched?(%AshSalesInvoice{} = invoice),
     do: Enum.any?(invoice.transactions) or Map.get(invoice, :skip_invoicing, false)
 
   defp matched?(%AshCostInvoice{} = invoice),
@@ -479,11 +481,11 @@ defmodule Firmowid.Invoicing do
 
   # Checks if invoice is a draft (no invoice number assigned)
   # Only applicable to SalesInvoice - other types are never drafts
-  defp draft?(%SalesInvoice{} = invoice), do: SalesInvoice.draft?(invoice)
+  defp draft?(%AshSalesInvoice{} = invoice), do: AshSalesInvoice.draft?(invoice)
   defp draft?(_), do: false
 
   # Extracts invoice number for sorting - only SalesInvoice has invoice numbers
-  defp get_invoice_number(%SalesInvoice{invoice_number: num}), do: num
+  defp get_invoice_number(%AshSalesInvoice{invoice_number: num}), do: num
   defp get_invoice_number(_), do: nil
 
   def order_entries_for_display(invoicing_entries) do
@@ -606,16 +608,18 @@ defmodule Firmowid.Invoicing do
 
   def match_sales_invoices(organization_id) do
     Repo.put_org_id(organization_id)
+    sales_opts = [tenant: organization_id] ++ @bridge_opts
 
-    unmatched_sales_invoices = SalesInvoices.list_unmatched_sales_invoices()
+    unmatched_sales_invoices = AshSalesInvoice.list_unmatched!(sales_opts)
 
     Enum.each(unmatched_sales_invoices, &match_sales_invoice(&1.id, organization_id))
   end
 
   def match_sales_invoice(sales_invoice_id, organization_id) do
     Repo.put_org_id(organization_id)
+    sales_opts = [tenant: organization_id] ++ @bridge_opts
 
-    sales_invoice = SalesInvoices.get_sales_invoice(sales_invoice_id)
+    sales_invoice = AshSalesInvoice.by_id!(sales_invoice_id, sales_opts)
 
     Logger.info("Matching sales invoice #{sales_invoice.id} for organization #{organization_id}")
 

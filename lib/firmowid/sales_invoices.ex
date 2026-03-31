@@ -61,172 +61,6 @@ defmodule Firmowid.SalesInvoices do
     )
   end
 
-  @doc """
-  Returns the name for display purposes on an invoice.
-
-  Priority:
-  1. buyer_display_name (if set) - user's preferred short name
-  2. For companies: buyer_full_name (legal name)
-  3. For individuals: "buyer_given_name buyer_surname"
-
-  Uses map pattern matching to be compatible with LiveView assigns
-  which may add internal fields like :__given__.
-  """
-  @spec buyer_display_name(SalesInvoice.t() | map()) :: String.t() | nil
-  def buyer_display_name(%{__struct__: SalesInvoice, buyer_display_name: name}) when is_binary(name) and name != "" do
-    name
-  end
-
-  def buyer_display_name(%{__struct__: SalesInvoice, buyer_type: :company, buyer_full_name: name}) when is_binary(name) do
-    name
-  end
-
-  def buyer_display_name(%{
-        __struct__: SalesInvoice,
-        buyer_type: :individual,
-        buyer_given_name: given_name,
-        buyer_surname: surname
-      })
-      when is_binary(given_name) and is_binary(surname) do
-    "#{given_name} #{surname}"
-  end
-
-  def buyer_display_name(_), do: nil
-
-  def search_sales_invoices(search_term) do
-    SalesInvoice
-    |> where(
-      [i],
-      ilike(i.invoice_number, ^"%#{search_term}%") or
-        ilike(i.buyer_full_name, ^"%#{search_term}%") or
-        ilike(i.buyer_given_name, ^"%#{search_term}%") or
-        ilike(i.buyer_display_name, ^"%#{search_term}%") or
-        ilike(i.buyer_surname, ^"%#{search_term}%") or
-        ilike(i.buyer_address, ^"%#{search_term}%") or
-        ilike(i.buyer_id, ^"%#{search_term}%") or
-        ilike(i.buyer_pesel, ^"%#{search_term}%")
-    )
-    |> join(:left, [i], items in assoc(i, :sales_invoice_items))
-    |> group_by([i], i.id)
-    |> having([i, items], count(items.id) > 0)
-    |> limit(15)
-    |> order_by(desc: :updated_at)
-    |> Repo.all()
-    |> Repo.preload(:sales_invoice_items)
-  end
-
-  @doc """
-  Unmatched invoices - due in a given date range, but
-  without a match and not skipped.
-  """
-  def list_unmatched_sales_invoices do
-    list_unmatched_sales_invoices(~D[1970-01-01], ~D[2999-12-31])
-  end
-
-  def list_unmatched_sales_invoices(from, to) do
-    query =
-      from si in SalesInvoice,
-        left_join: sit in assoc(si, :transactions),
-        where: si.ksef_invoice_kind == :vat,
-        where: is_nil(sit.id),
-        where: si.due_date >= ^from,
-        where: si.due_date <= ^to,
-        where: si.skip_invoicing == false,
-        order_by: [desc: :issue_date]
-
-    list_sales_invoices(query)
-  end
-
-  def list_sales_invoices(from, to) do
-    SalesInvoice
-    |> where(
-      [d],
-      d.issue_date >= ^from and d.issue_date <= ^to
-    )
-    |> order_by(desc: :issue_date)
-    |> list_sales_invoices()
-  end
-
-  @doc """
-  Lists sales invoices whose sale falls within the given date range.
-  Used by the analysis dashboard so invoices appear in the month they were sold.
-  """
-  @spec list_sales_invoices_by_sale_date(Date.t(), Date.t()) :: [SalesInvoice.t()]
-  def list_sales_invoices_by_sale_date(from, to) do
-    SalesInvoice
-    |> where([d], d.sale_date >= ^from and d.sale_date <= ^to)
-    |> order_by(desc: :sale_date)
-    |> list_sales_invoices()
-  end
-
-  def list_sales_invoices(base_query \\ SalesInvoice) do
-    latest_corrections_query =
-      from(c in SalesInvoice,
-        where: c.ksef_invoice_kind == :kor,
-        distinct: [asc: c.corrected_invoice_id],
-        order_by: [asc: c.corrected_invoice_id, desc: c.locked_at, desc: c.inserted_at],
-        preload: [:sales_invoice_items]
-      )
-
-    sales_invoices =
-      base_query
-      |> where([si], si.ksef_invoice_kind == :vat)
-      |> preload([:sales_invoice_items, :transactions, corrections: ^latest_corrections_query])
-      |> Repo.all()
-
-    snapshot_fields = [
-      :invoice_type,
-      :sale_date,
-      :due_date,
-      :payment_method,
-      :currency,
-      :seller_nip,
-      :seller_display_name,
-      :seller_address,
-      :seller_name,
-      :seller_surname,
-      :seller_account_number,
-      :buyer_type,
-      :buyer_id,
-      :buyer_full_name,
-      :buyer_given_name,
-      :buyer_surname,
-      :buyer_pesel,
-      :buyer_display_name,
-      :buyer_address,
-      :buyer_country,
-      :buyer_is_different_mail_address,
-      :buyer_mail_address,
-      :buyer_mail_country,
-      :buyer_email,
-      :buyer_phone,
-      :buyer_description,
-      :is_cash_account,
-      :is_reverse_charge,
-      :sales_invoice_items
-    ]
-
-    Enum.map(sales_invoices, fn
-      %{corrections: []} = invoice ->
-        invoice
-
-      # we handle only one correction case, because we preload only latest correction
-      %{corrections: [correction]} = invoice ->
-        Map.merge(invoice, Map.take(correction, snapshot_fields))
-    end)
-  end
-
-  def list_invoices_in_date_range(from, to) do
-    SalesInvoice
-    |> where(
-      [d],
-      (d.issue_date >= ^from and d.issue_date <= ^to) or
-        (d.sale_date >= ^from and d.sale_date <= ^to)
-    )
-    |> order_by(desc: :issue_date)
-    |> Repo.all()
-  end
-
   @spec get_sales_invoice(UUIDv7.t()) :: SalesInvoice.t() | nil
   def get_sales_invoice(id) do
     SalesInvoice
@@ -250,18 +84,6 @@ defmodule Firmowid.SalesInvoices do
     ])
   end
 
-  def get_sales_invoice_with_logo_url(id) do
-    SalesInvoice
-    |> Repo.get(id)
-    |> Repo.preload([
-      :sales_invoice_items,
-      :transactions,
-      corrections: :sales_invoice_items,
-      corrected_invoice: :corrections
-    ])
-    |> populate_logo_url()
-  end
-
   def toggle_skip_invoicing(id) do
     sales_invoice = get_sales_invoice(id)
 
@@ -273,15 +95,6 @@ defmodule Firmowid.SalesInvoices do
     broadcast_sales_invoice_list_updated(sales_invoice.organization_id)
 
     sales_invoice
-  end
-
-  def get_latest_sales_invoice do
-    SalesInvoice
-    |> order_by(desc: :updated_at)
-    |> limit(1)
-    |> Repo.one()
-    |> Repo.preload(:sales_invoice_items)
-    |> populate_logo_url()
   end
 
   # Invoice Number Series Support
@@ -783,51 +596,6 @@ defmodule Firmowid.SalesInvoices do
 
   defp correction_invoice?(%SalesInvoice{ksef_invoice_kind: :kor}), do: true
   defp correction_invoice?(_), do: false
-
-  def list_sales_invoices_by_ids(ids, date_from \\ nil, date_to \\ nil) do
-    query =
-      SalesInvoice
-      |> where([si], si.id in ^ids)
-      |> where([si], si.ksef_invoice_kind == :vat)
-
-    query =
-      if date_from do
-        where(query, [si], si.issue_date >= ^date_from)
-      else
-        query
-      end
-
-    query =
-      if date_to do
-        where(query, [si], si.issue_date <= ^date_to)
-      else
-        query
-      end
-
-    query
-    |> order_by(desc: :issue_date)
-    |> list_sales_invoices()
-  end
-
-  @doc """
-  Lists recent invoices from the previous two full months.
-
-  For example, if today is 2026-02-03, this returns all confirmed invoices
-  with `issue_date` in January 2026 or December 2025.
-
-  Results are sorted by `issue_date` descending, then `invoice_number` descending.
-  """
-  def list_recent_invoices do
-    today = Date.utc_today()
-    range_end = %{today | day: 1}
-    range_start = Date.shift(range_end, month: -2)
-
-    SalesInvoice
-    |> where([s], not is_nil(s.invoice_number))
-    |> where([s], s.issue_date >= ^range_start and s.issue_date < ^range_end)
-    |> order_by([s], desc: s.issue_date, desc: s.invoice_number)
-    |> list_sales_invoices()
-  end
 
   @token_bytes 32
   @spec create_or_get_share_token(SalesInvoice.t()) ::

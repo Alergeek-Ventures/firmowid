@@ -56,23 +56,23 @@ defmodule FirmowidWeb.Invoicing.Components.SearchOverlay do
                     <%= for invoice <- @search_results do %>
                       <% type =
                         case invoice do
-                          %Firmowid.CostInvoices.CostInvoice{} -> "cost"
-                          %Firmowid.SalesInvoices.SalesInvoice{} -> "sales"
+                          %Firmowid.Ash.Invoicing.CostInvoice{} -> "cost"
+                          %Firmowid.Ash.Invoicing.SalesInvoice{} -> "sales"
                         end %>
                       <% date =
                         case invoice do
-                          %Firmowid.CostInvoices.CostInvoice{issue_date: d} -> d
-                          %Firmowid.SalesInvoices.SalesInvoice{issue_date: d} -> d
+                          %Firmowid.Ash.Invoicing.CostInvoice{issue_date: d} -> d
+                          %Firmowid.Ash.Invoicing.SalesInvoice{issue_date: d} -> d
                         end %>
                       <% amount =
                         case invoice do
                           %Firmowid.CostInvoices.CostInvoice{} ->
                             Money.new(invoice.currency, invoice.total_amount)
 
-                          %Firmowid.SalesInvoices.SalesInvoice{} ->
+                          %Firmowid.Ash.Invoicing.SalesInvoice{} ->
                             Money.new(
                               invoice.currency,
-                              Firmowid.SalesInvoices.SalesInvoice.get_gross_value(invoice)
+                              Firmowid.Ash.Invoicing.SalesInvoice.get_gross_value(invoice)
                             )
                         end %>
                       <li>
@@ -96,8 +96,8 @@ defmodule FirmowidWeb.Invoicing.Components.SearchOverlay do
                                   %Firmowid.CostInvoices.CostInvoice{seller: n} ->
                                     n
 
-                                  %Firmowid.SalesInvoices.SalesInvoice{} = si ->
-                                    Firmowid.SalesInvoices.buyer_display_name(si) ||
+                                  %Firmowid.Ash.Invoicing.SalesInvoice{} = si ->
+                                    Firmowid.Ash.Invoicing.SalesInvoice.buyer_display_name(si) ||
                                       "szkic faktury sprzedażowej"
                                 end || "—"}
                               </span>
@@ -114,7 +114,7 @@ defmodule FirmowidWeb.Invoicing.Components.SearchOverlay do
                               match?(%Firmowid.CostInvoices.CostInvoice{}, invoice) ->
                                 invoice.description || invoice.invoice_identifier
 
-                              match?(%Firmowid.SalesInvoices.SalesInvoice{}, invoice) ->
+                              match?(%Firmowid.Ash.Invoicing.SalesInvoice{}, invoice) ->
                                 invoice.item_names || invoice.invoice_number
 
                               true ->

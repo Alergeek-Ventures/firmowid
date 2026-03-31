@@ -9,8 +9,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   """
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Ksef
-  alias Firmowid.Repo
   alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.SalesInvoice
 
@@ -20,10 +20,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   def mount(%{"id" => id}, _session, socket) do
     current_user = socket.assigns.current_user
 
-    invoice =
-      id
-      |> SalesInvoices.get_sales_invoice!()
-      |> Repo.preload([:sales_invoice_items, corrected_invoice: :sales_invoice_items])
+    scope = socket.assigns.ash_scope
+    invoice = AshSalesInvoice.by_id!(id, scope: scope)
 
     Bodyguard.permit!(SalesInvoices, :show, current_user, invoice)
 
@@ -34,7 +32,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
       Ksef.subscribe_ksef_status(current_user.organization_id)
     end
 
-    currency_rate = SalesInvoices.get_currency_rate(invoice)
+    currency_rate = AshSalesInvoice.get_currency_rate(invoice)
 
     {previous_invoices, invoice} = get_previous_invoices(invoice)
 
@@ -228,10 +226,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
     # Only handle if this is the invoice we're viewing
     if socket.assigns.invoice.id == invoice_id do
       # Refetch invoice from DB to get latest state (including ksef_number)
-      invoice =
-        invoice_id
-        |> SalesInvoices.get_sales_invoice!()
-        |> Repo.preload([:sales_invoice_items, corrected_invoice: :sales_invoice_items])
+      # TODO: replace authorize?: false + actor: %{} with system actor once available
+      invoice = AshSalesInvoice.by_id!(invoice_id, authorize?: false, actor: %{})
 
       # Convert PubSub status to SubmissionInfo status
       submission_info = Ksef.get_submission_info(invoice)

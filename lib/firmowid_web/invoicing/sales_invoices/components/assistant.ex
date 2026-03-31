@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
 
   alias Firmowid.Accounts
   alias Firmowid.Ash.Finances.TransactionQueries
+  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Invoicing.Matching.Assistant.Message
   alias Firmowid.Invoicing.Matching.Assistant.MessagesStorage
   alias Firmowid.Invoicing.Matching.SalesInvoiceAssistant
@@ -85,7 +86,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
   end
 
   def handle_event("accept", _params, socket) do
-    invoice = Firmowid.SalesInvoices.get_sales_invoice!(socket.assigns.invoice_id)
+    # TODO: replace authorize?: false + actor: %{} with system actor once available
+    invoice = AshSalesInvoice.by_id!(socket.assigns.invoice_id, authorize?: false, actor: %{})
     Bodyguard.permit!(Firmowid.SalesInvoices, :update, socket.assigns.current_user, invoice)
     SalesInvoiceAssistant.accept_linking(socket.assigns.conversation_id)
 
@@ -98,7 +100,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
   end
 
   def handle_event("reject", _params, socket) do
-    invoice = Firmowid.SalesInvoices.get_sales_invoice!(socket.assigns.invoice_id)
+    # TODO: replace authorize?: false + actor: %{} with system actor once available
+    invoice = AshSalesInvoice.by_id!(socket.assigns.invoice_id, authorize?: false, actor: %{})
     Bodyguard.permit!(Firmowid.SalesInvoices, :update, socket.assigns.current_user, invoice)
 
     SalesInvoiceAssistant.reject_linking(socket.assigns.conversation_id)

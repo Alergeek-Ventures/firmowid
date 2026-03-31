@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
   alias Firmowid.Accounts
   alias Firmowid.Ash.Invoicing.Counterparty, as: AshCounterparty
+  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.BankData
   alias Firmowid.Ksef
   alias Firmowid.Repo
@@ -21,7 +22,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
-    invoice = SalesInvoices.get_sales_invoice(id)
+    scope = socket.assigns.ash_scope
+
+    invoice =
+      case AshSalesInvoice.by_id(id, scope: scope) do
+        {:ok, inv} -> inv
+        {:error, _} -> nil
+      end
 
     cond do
       is_nil(invoice) ->
@@ -30,7 +37,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
          |> put_flash(:error, "Nie znaleziono faktury")
          |> push_navigate(to: ~p"/sprzedazowe")}
 
-      not SalesInvoice.editable?(invoice) ->
+      not AshSalesInvoice.editable?(invoice) ->
         current_user = socket.assigns.current_user
         Bodyguard.permit!(SalesInvoices, :show, current_user, invoice)
         Bodyguard.permit!(SalesInvoices, :update, current_user, invoice)

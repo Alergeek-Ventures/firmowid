@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   alias Firmowid.Accounts
   alias Firmowid.Ash.Invoicing.Counterparty, as: AshCounterparty
+  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.BankData
   alias Firmowid.Ksef
   alias Firmowid.Ksef.VatRate
@@ -50,7 +51,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       socket
       |> assign(:bank_accounts, BankData.list_bank_accounts())
       |> assign(:last_counterparties, AshCounterparty.list_all!(scope: socket.assigns.ash_scope))
-      |> assign(:last_invoices, SalesInvoices.list_recent_invoices())
+      |> assign(:last_invoices, AshSalesInvoice.list_recent!(scope: socket.assigns.ash_scope))
       |> assign(:ksef_connected?, Ksef.get_credential() != nil)
       |> assign(:open_counterparty_modal, false)
 
@@ -79,14 +80,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   defp create_creator_draft_from_copy(socket, org_id, invoice_id) do
-    case SalesInvoices.get_sales_invoice(invoice_id) do
-      nil ->
+    case AshSalesInvoice.by_id(invoice_id, scope: socket.assigns.ash_scope) do
+      {:error, _} ->
         {:noreply,
          socket
          |> put_flash(:error, "Faktura nie została znaleziona")
          |> push_patch(to: ~p"/sprzedazowe", replace: true)}
 
-      base_invoice ->
+      {:ok, base_invoice} ->
         Bodyguard.permit!(SalesInvoices, :show, socket.assigns.current_user, base_invoice)
 
         {:ok, creator_draft_id, _creator_draft} = CreatorDraftStore.create(org_id)
@@ -661,7 +662,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   def handle_event("select_base_invoice", %{"invoice_id" => invoice_id}, socket) do
-    base_invoice = SalesInvoices.get_sales_invoice!(invoice_id)
+    base_invoice = AshSalesInvoice.by_id!(invoice_id, scope: socket.assigns.ash_scope)
     Bodyguard.permit!(SalesInvoices, :show, socket.assigns.current_user, base_invoice)
 
     case build_copied_invoice(base_invoice, socket.assigns.bank_accounts) do
@@ -1089,7 +1090,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   attr :title, :string, required: true
 
   def render_header(assigns) do
-    buyer_name = assigns[:invoice] && SalesInvoices.buyer_display_name(assigns.invoice)
+    buyer_name = assigns[:invoice] && AshSalesInvoice.buyer_display_name(assigns.invoice)
     assigns = assign(assigns, :buyer_name, buyer_name)
 
     ~H"""

@@ -3,6 +3,7 @@ defmodule Firmowid.InvoicingSearchTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.Blobs.Blob
   alias Firmowid.CostInvoices.CostInvoice
@@ -99,8 +100,8 @@ defmodule Firmowid.InvoicingSearchTest do
 
       assert length(results) == 2
 
-      found_sales_invoice = Enum.find(results, &(&1.__struct__ == SalesInvoice))
-      found_cost_invoice = Enum.find(results, &(&1.__struct__ == CostInvoice))
+      found_sales_invoice = Enum.find(results, &(&1.__struct__ == AshSalesInvoice))
+      found_cost_invoice = Enum.find(results, &(&1.__struct__ == EctoCostInvoice))
 
       assert found_sales_invoice.id == sales_invoice1.id
       assert found_sales_invoice.buyer_full_name == "Acme Corp"
@@ -691,7 +692,7 @@ defmodule Firmowid.InvoicingSearchTest do
 
       assert length(results_only_cost) == 1
       assert Enum.any?(results_only_cost, &(&1.id == cost_invoice.id))
-      refute Enum.any?(results_only_cost, &(&1.__struct__ == SalesInvoice))
+      refute Enum.any?(results_only_cost, &(&1.__struct__ == AshSalesInvoice))
 
       # Test include_sales: true, include_cost: true (or default behavior)
       results_both =

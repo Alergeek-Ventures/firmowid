@@ -8,10 +8,9 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
   """
   use FirmowidWeb, :html
 
-  alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Finances.Transaction
-  alias Firmowid.SalesInvoices
-  alias Firmowid.SalesInvoices.SalesInvoice
 
   attr :entries, :list, required: true
   attr :tag_definitions, :list, required: true
@@ -52,7 +51,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
   defp row(%{entry: %SalesInvoice{} = invoice} = assigns) do
     assigns =
       assigns
-      |> assign(:party, SalesInvoices.buyer_display_name(invoice) || "")
+      |> assign(:party, SalesInvoice.buyer_display_name(invoice) || "")
       |> assign(:description, Enum.map_join(invoice.sales_invoice_items, ", ", & &1.name))
       |> assign(:date, invoice.sale_date || invoice.issue_date)
       |> assign(:amount, Money.new(invoice.currency, SalesInvoice.get_gross_value(invoice)))

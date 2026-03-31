@@ -119,16 +119,23 @@ Single domain: `Firmowid.Ash.Invoicing` — all invoice-related resources live h
 
 ---
 
-### Slice 5: SalesInvoice reads
+### Slice 5: SalesInvoice reads — COMPLETED ✅
 
 **Goal:** Ash resource on `sales_invoices` table with read actions.
 
-- `Firmowid.Ash.Invoicing.SalesInvoice`
-- Read actions: `:read`, `:by_id`, `:list_by_date_range`, `:list_unmatched`, `:list_by_sale_date`, `:list_by_ids`, `:list_recent`, `:search`, `:by_share_token`
-- Calculations: `gross_value`, `net_value`, `vat_value`, `buyer_display_name`, `logo_url`, `currency_rate`
-- Relationships: `belongs_to :counterparty` (Ash.Invoicing.Counterparty), `many_to_many :transactions`, `has_many :corrections`, `belongs_to :corrected_invoice`, `has_many :sales_invoice_items`, `has_many :entity_tags`
-- Correction chain logic (`populate_reference_invoices`, `get_latest_invoice_snapshot`) as resource functions or generic actions
+- `Firmowid.Ash.Invoicing.SalesInvoice` — full read-only resource
+- `Firmowid.Ash.Invoicing.SalesInvoiceItem` — read-only resource for line items
+- Read actions: `:read`, `:by_id`, `:list_for_month`, `:list_unmatched`, `:list_by_sale_date`, `:list_by_ids`, `:list_invoices_in_date_range`, `:list_recent`, `:search` (generic), `:by_share_token` (generic)
+- Public functions (not calculations — loaded explicitly): `buyer_display_name/1`, `populate_logo_url/1`, `populate_reference_invoices/1`, `get_latest_invoice_snapshot/1`, `get_currency_rate/1`, `get_net_value/1`, `get_vat_value/1`, `get_gross_value/1`, `draft?/1`, `confirmed?/1`, `deletable?/1`, `ksef_submitted?/1`, `editable?/1`, `buyer_from_eu?/1`, `buyer_region/1`, `buyer_id_type/1`
+- Relationships: `belongs_to :counterparty`, `belongs_to :organization`, `many_to_many :transactions` (via SalesInvoiceTransaction), `has_many :corrections` (self-referential), `belongs_to :corrected_invoice`, `has_many :sales_invoice_items`, `has_many :entity_tags`
+- Correction chain merging via `prepare after_action` (overlay `@snapshot_fields` from latest correction)
+- `Ksef.get_submission_info/1` updated to accept both Ash and Ecto structs (map patterns — bridge)
+- All read call sites updated (~20 files: invoicing, analysis, show/edit/creator/summary views, controllers, matching modules, components)
+- Read functions deleted from SalesInvoices context (~232 LOC removed)
+- Xref threshold raised from 20→22 (two new resources in domain)
 - Ecto schema stays for writes (Slice 7)
+- `submission_worker.ex` intentionally left using Ecto reads (tightly coupled to mutations — Slice 7)
+- Remaining functions in SalesInvoices context: `populate_logo_url`, `populate_reference_invoices`, `get_reference_invoice`, `get_currency_rate`, `get_invoice_by_share_token`, `get_sales_invoice/!`, `get_latest_invoice_snapshot` — still called by mutation-adjacent code (creator, edit, shared page, PDF, KSeF) — migrate in Slice 7
 
 ---
 

@@ -3,7 +3,7 @@ defmodule FirmowidWeb.Infrastructure.Controllers.FileDownload do
   use FirmowidWeb, :controller
 
   alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
-  alias Firmowid.SalesInvoices
+  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias FirmowidWeb.Core.Endpoint
 
   require Logger
@@ -52,10 +52,15 @@ defmodule FirmowidWeb.Infrastructure.Controllers.FileDownload do
 
     sales_invoices =
       if include_sales do
+        # TODO: replace authorize?: false + actor: %{} with system actor once available
         date_range_from
-        |> SalesInvoices.list_invoices_in_date_range(date_range_to)
+        |> AshSalesInvoice.list_invoices_in_date_range!(date_range_to,
+          tenant: conn.assigns.current_user.organization_id,
+          authorize?: false,
+          actor: %{}
+        )
         |> Enum.map(fn invoice ->
-          file_name = clean_filename("#{invoice.invoice_number}_#{SalesInvoices.buyer_display_name(invoice)}")
+          file_name = clean_filename("#{invoice.invoice_number}_#{AshSalesInvoice.buyer_display_name(invoice)}")
 
           url_with_protocol = Endpoint.url()
           download_path = ~p"/sprzedazowe/#{invoice.id}/pobierz"

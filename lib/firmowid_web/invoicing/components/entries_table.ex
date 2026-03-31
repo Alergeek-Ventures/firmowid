@@ -4,11 +4,11 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   import FirmowidWeb.DesignSystem.Components.CoreComponents
 
-  alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.TransactionGroup
   alias Firmowid.Ksef
-  alias Firmowid.SalesInvoices.SalesInvoice
 
   attr :invoicing_entries, :list, required: true
   attr :has_connected_bank_account, :boolean, default: false
@@ -34,7 +34,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   # Using map pattern match to avoid Dialyzer false positive about
   # LiveView internal assign fields (:__given__, etc.)
   defp get_sales_invoice_buyer_name(%{__struct__: SalesInvoice} = invoice) do
-    Firmowid.SalesInvoices.buyer_display_name(invoice) || ""
+    SalesInvoice.buyer_display_name(invoice) || ""
   end
 
   def table(%{invoicing_entries: [], has_connected_bank_account: true} = assigns) do

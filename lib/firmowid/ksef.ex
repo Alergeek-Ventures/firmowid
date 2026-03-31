@@ -298,8 +298,10 @@ defmodule Firmowid.Ksef do
       iex> get_submission_info(%SalesInvoice{ksef_session_reference_number: nil, ksef_number: nil})
       %SubmissionInfo{status: :not_submitted}
   """
-  @spec get_submission_info(SalesInvoice.t()) :: SubmissionInfo.t()
-  def get_submission_info(%SalesInvoice{ksef_number: ksef_number} = invoice) when not is_nil(ksef_number) do
+  # Bridge: accepts both Ecto SalesInvoice and Ash SalesInvoice structs.
+  # Map patterns used instead of %SalesInvoice{} — dies by starvation in Slice 7.
+  @spec get_submission_info(map()) :: SubmissionInfo.t()
+  def get_submission_info(%{ksef_number: ksef_number} = invoice) when not is_nil(ksef_number) do
     # Successfully submitted - has KSeF number
     job = get_latest_submission_job(invoice.id)
 
@@ -312,7 +314,7 @@ defmodule Firmowid.Ksef do
     }
   end
 
-  def get_submission_info(%SalesInvoice{ksef_session_reference_number: ref} = invoice) when not is_nil(ref) do
+  def get_submission_info(%{ksef_session_reference_number: ref} = invoice) when not is_nil(ref) do
     # Has session reference - check job status for submitting vs failed
     job = get_latest_submission_job(invoice.id)
 
@@ -353,7 +355,7 @@ defmodule Firmowid.Ksef do
     end
   end
 
-  def get_submission_info(%SalesInvoice{} = invoice) do
+  def get_submission_info(%{id: _id} = invoice) do
     # No session reference - check if there's a pending job
     job = get_latest_submission_job(invoice.id)
 

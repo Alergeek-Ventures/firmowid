@@ -1,6 +1,6 @@
 <.shared_page
   lang={to_string(@lang)}
-  title={"#{if @lang == :en, do: "Invoice", else: "Faktura"} #{@invoice.invoice_number || ""} — #{Firmowid.SalesInvoices.buyer_display_name(@invoice) || ""}"}
+  title={"#{if @lang == :en, do: "Invoice", else: "Faktura"} #{@invoice.invoice_number || ""} — #{@buyer_display_name}"}
 >
   <div class="grid grid-cols-[min-content_1fr] justify-center">
     <div class="sticky top-0 left-0 hidden h-min flex-col gap-2 p-4 xl:flex">

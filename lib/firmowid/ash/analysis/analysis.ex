@@ -20,13 +20,13 @@ defmodule Firmowid.Ash.Analysis do
   alias Firmowid.Ash.Analysis.TagDefinition
   alias Firmowid.Ash.Finances.TransactionQueries
   alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Ash.Scope
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.CostInvoices.CostInvoicesTransactions
   alias Firmowid.Currencies
   alias Firmowid.Finances.Transaction
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.SalesInvoice
   alias Firmowid.SalesInvoices.SalesInvoicesTransactions
 
@@ -70,7 +70,11 @@ defmodule Firmowid.Ash.Analysis do
 
     sales_invoices =
       date_from
-      |> SalesInvoices.list_sales_invoices_by_sale_date(date_to)
+      |> AshSalesInvoice.list_by_sale_date!(date_to,
+        tenant: scope.current_tenant,
+        actor: scope.current_user,
+        authorize?: false
+      )
       |> Enum.filter(&matched_or_skipped?/1)
 
     # TODO: replace authorize?: false + actor: %{} with system actor once available
@@ -216,10 +220,10 @@ defmodule Firmowid.Ash.Analysis do
 
   # ── Private helpers ──────────────────────────────────────────────────
 
-  defp get_amount_and_currency(%SalesInvoice{} = entity) do
+  defp get_amount_and_currency(%AshSalesInvoice{} = entity) do
     value =
       entity
-      |> SalesInvoice.get_gross_value()
+      |> AshSalesInvoice.get_gross_value()
       |> Decimal.abs()
 
     {value, entity.currency}
@@ -281,7 +285,7 @@ defmodule Firmowid.Ash.Analysis do
     |> Enum.group_by(fn {type, tag} -> {type, tag.resource_id} end, fn {_type, tag} -> tag end)
   end
 
-  defp entity_id(%SalesInvoice{id: id}), do: id
+  defp entity_id(%AshSalesInvoice{id: id}), do: id
   defp entity_id(%AshCostInvoice{id: id}), do: id
   defp entity_id(%Transaction{id: id}), do: id
 

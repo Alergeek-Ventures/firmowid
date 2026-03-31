@@ -14,6 +14,8 @@ defmodule Firmowid.Ash.Invoicing do
     resource Firmowid.Ash.Invoicing.SalesInvoiceTransaction
     resource Firmowid.Ash.Invoicing.CostInvoiceTransaction
     resource Firmowid.Ash.Invoicing.CostInvoice
+    resource Firmowid.Ash.Invoicing.SalesInvoice
+    resource Firmowid.Ash.Invoicing.SalesInvoiceItem
   end
 
   authorization do

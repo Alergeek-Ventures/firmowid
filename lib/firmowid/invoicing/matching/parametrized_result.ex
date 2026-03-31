@@ -5,8 +5,8 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
   """
 
   alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Finances.Transaction
-  alias Firmowid.SalesInvoices.SalesInvoice
 
   @enforce_keys [
     :days_lag_le_3,
@@ -98,7 +98,7 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
   defp get_invoice_display_name(%CostInvoice{seller_display_name: name}), do: name
 
   defp get_invoice_display_name(%SalesInvoice{} = invoice) do
-    Firmowid.SalesInvoices.buyer_display_name(invoice)
+    SalesInvoice.buyer_display_name(invoice)
   end
 
   defp get_invoice_account_number(%CostInvoice{account_number: acc}), do: acc

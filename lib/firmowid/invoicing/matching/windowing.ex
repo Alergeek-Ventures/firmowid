@@ -8,9 +8,9 @@ defmodule Firmowid.Invoicing.Matching.Windowing do
   """
 
   alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Currencies
   alias Firmowid.Finances.Transaction
-  alias Firmowid.SalesInvoices.SalesInvoice
 
   @doc """
   Pre-filter the transactions list to only include ones

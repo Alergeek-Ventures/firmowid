@@ -2,10 +2,10 @@ defmodule Firmowid.Invoicing.Matching.WindowingTest do
   use ExUnit.Case, async: true
 
   alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.Matching.Windowing
-  alias Firmowid.SalesInvoices.SalesInvoice
-  alias Firmowid.SalesInvoices.SalesInvoiceItem
 
   describe "pre_filter_invoice_transactions/2" do
     setup do

@@ -2,10 +2,9 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   @moduledoc false
   use FirmowidWeb, :live_component
 
+  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Ksef
   alias Firmowid.Ksef.SubmissionInfo
-  alias Firmowid.SalesInvoices
-  alias Firmowid.SalesInvoices.SalesInvoice
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
 
@@ -26,9 +25,9 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
         %SubmissionInfo{status: :not_submitted}
       end
 
-    invoice = SalesInvoices.populate_reference_invoices(assigns.invoice)
-    latest_invoice_snapshot = SalesInvoices.get_latest_invoice_snapshot(assigns.invoice)
-    cancelled? = latest_invoice_snapshot |> SalesInvoice.get_gross_value() |> Decimal.eq?(0)
+    invoice = AshSalesInvoice.populate_reference_invoices(assigns.invoice)
+    latest_invoice_snapshot = AshSalesInvoice.get_latest_invoice_snapshot(assigns.invoice)
+    cancelled? = latest_invoice_snapshot |> AshSalesInvoice.get_gross_value() |> Decimal.eq?(0)
 
     description =
       latest_invoice_snapshot.sales_invoice_items
@@ -41,7 +40,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
       |> assign(
         invoice: invoice,
         submission_info: submission_info,
-        party_display_name: SalesInvoices.buyer_display_name(latest_invoice_snapshot),
+        party_display_name: AshSalesInvoice.buyer_display_name(latest_invoice_snapshot),
         description: description,
         latest_invoice_snapshot: latest_invoice_snapshot,
         invoices_for_preview: Enum.reverse([invoice | invoice.corrections]),
@@ -52,7 +51,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
     {:ok, socket}
   end
 
-  attr :invoice, SalesInvoice, required: true
+  attr :invoice, AshSalesInvoice, required: true
   attr :preview_url, :string, required: true
   attr :preview_type, :atom, required: true
   attr :potential_transactions, :list, default: []
@@ -95,7 +94,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                   id="edit-invoice-link"
                   phx-hook="Tippy"
                   data-tippy-content={
-                    if SalesInvoice.ksef_submitted?(@invoice),
+                    if AshSalesInvoice.ksef_submitted?(@invoice),
                       do: "Wystaw fakturę korygującą",
                       else: "Edytuj fakturę"
                   }
@@ -110,7 +109,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 </.link>
 
                 <.button
-                  :if={SalesInvoice.deletable?(@invoice)}
+                  :if={AshSalesInvoice.deletable?(@invoice)}
                   phx-click={show_modal("delete-invoice-modal")}
                   color="light_grey"
                   size="small"
@@ -123,7 +122,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 </.button>
 
                 <.button
-                  :if={SalesInvoice.ksef_submitted?(@invoice) and not @cancelled?}
+                  :if={AshSalesInvoice.ksef_submitted?(@invoice) and not @cancelled?}
                   phx-click={show_modal("cancel-invoice-modal")}
                   color="light_grey"
                   size="small"
@@ -169,7 +168,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
 
               <.button
                 :if={
-                  @ksef_connected? and SalesInvoice.confirmed?(@invoice) and
+                  @ksef_connected? and AshSalesInvoice.confirmed?(@invoice) and
                     @submission_info.status in [:not_submitted, :submitting]
                 }
                 id="send-to-ksef-button"
@@ -196,7 +195,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 <% end %>
               </.button>
 
-              <div :if={SalesInvoice.deletable?(@invoice)} class="absolute">
+              <div :if={AshSalesInvoice.deletable?(@invoice)} class="absolute">
                 <.modal id="delete-invoice-modal" on_cancel={hide_modal("delete-invoice-modal")}>
                   <p>
                     Czy na pewno chcesz usunąć fakturę <span class="font-semibold">{@invoice.invoice_number}</span>?
@@ -252,7 +251,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
               </div>
 
               <span
-                :if={SalesInvoice.confirmed?(@invoice)}
+                :if={AshSalesInvoice.confirmed?(@invoice)}
                 id="share-invoice-button-container"
                 phx-hook="Tippy"
                 data-tippy-content="Skopiuj link do faktury"
@@ -285,7 +284,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
               />
               <InvoiceDetails.invoice_metadata_piece
                 label="Kupujący"
-                value={Firmowid.SalesInvoices.buyer_display_name(@latest_invoice_snapshot)}
+                value={AshSalesInvoice.buyer_display_name(@latest_invoice_snapshot)}
                 piece_id="buyer"
               />
               <InvoiceDetails.invoice_metadata_piece
@@ -310,7 +309,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
               total_amount={
                 Money.new(
                   @latest_invoice_snapshot.currency,
-                  Firmowid.SalesInvoices.SalesInvoice.get_gross_value(@latest_invoice_snapshot)
+                  AshSalesInvoice.get_gross_value(@latest_invoice_snapshot)
                 )
               }
             />
@@ -328,7 +327,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 >
                   <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
                     sales_invoice={invoice}
-                    currency_rate={Firmowid.SalesInvoices.get_currency_rate(invoice)}
+                    currency_rate={AshSalesInvoice.get_currency_rate(invoice)}
                     show_vat={@show_vat_for_sales_invoice}
                     reference_invoice={invoice.reference_invoice}
                   />

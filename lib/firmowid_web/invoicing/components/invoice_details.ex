@@ -9,8 +9,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   use FirmowidWeb, :html
 
-  alias Firmowid.SalesInvoices
-  alias Firmowid.SalesInvoices.SalesInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoice
 
   attr :is_cost_invoice, :boolean
   attr :issue_date, Date, required: true
@@ -192,7 +191,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
         />
         <.invoice_metadata_piece
           label={@labels.buyer}
-          value={SalesInvoices.buyer_display_name(@invoice)}
+          value={SalesInvoice.buyer_display_name(@invoice)}
           piece_id="buyer"
           multiline
         />
