@@ -199,6 +199,21 @@
   padding-inline: 2rem;
 }
 
+/* ── Native-feel defaults ───────────────────────────────────────────── */
+html,
+body {
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent text selection on non-button interactive chrome */
+th,
+[role="tab"],
+[role="menuitem"] {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 /* ── Custom properties ──────────────────────────────────────────────── */
 html {
   scroll-behavior: smooth;

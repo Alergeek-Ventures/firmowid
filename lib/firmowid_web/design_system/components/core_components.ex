@@ -146,7 +146,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
       "phx-submit-loading:opacity-75 phx-click-loading:opacity-75 phx-click-loading:cursor-default",
       "transition duration-100 ease-out",
       "inline-flex flex-row items-center justify-center",
-      "cursor-pointer disabled:pointer-events-none border whitespace-nowrap",
+      "cursor-pointer disabled:pointer-events-none border whitespace-nowrap select-none",
       variant == "solid" && "border-transparent",
       button_styles(:color_new, assigns),
       button_styles(:size_new, assigns),
@@ -158,7 +158,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
     [
       "phx-submit-loading:opacity-75 phx-click-loading:opacity-75 phx-click-loading:cursor-default cursor-pointer transition-all",
       "duration-200 border leading-6 rounded-lg",
-      "disabled:opacity-40 disabled:pointer-events-none active:text-white/80",
+      "disabled:opacity-40 disabled:pointer-events-none active:text-white/80 select-none",
       button_styles(:color, assigns),
       button_styles(:size, assigns),
       assigns[:class]
@@ -226,7 +226,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   end
 
   defp button_styles(:color, %{color: "light_orange"}) do
-    "bg-orangeBg text-orangeText border-none hover:bg-[#f0e0d8] focus:outline-hidden focus:ring-1 focus:ring-orangeText"
+    "bg-orangeBg text-orangeText border-none hover:bg-[#f0e0d8] focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-orangeText"
   end
 
   defp button_styles(:color, %{color: "grey", variant: "outline"}) do
@@ -1155,7 +1155,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
 
   def navbar(assigns) do
     ~H"""
-    <nav class={["bg-black px-4 text-white sm:px-6 lg:px-8", @class]} {@rest}>
+    <nav class={["bg-black px-4 text-white select-none sm:px-6 lg:px-8", @class]} {@rest}>
       {render_slot(@inner_block)}
     </nav>
     """
