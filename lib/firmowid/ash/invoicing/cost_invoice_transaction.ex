@@ -27,7 +27,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTransaction do
   end
 
   actions do
-    defaults []
+    defaults [:read]
 
     action :create_connections, :term do
       argument :invoice_ids, {:array, :uuid}, allow_nil?: false

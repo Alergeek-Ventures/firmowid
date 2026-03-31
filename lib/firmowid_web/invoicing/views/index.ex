@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias Firmowid.Ash.Billing.Limits, as: AshLimits
   alias Firmowid.Ash.Finances, as: AshFinances
   alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
+  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.BankData
   alias Firmowid.CostInvoices
   alias Firmowid.Finances.Transaction
@@ -442,7 +443,9 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp handle_upload_result({:error, {:blob_already_exists, blob_checksum}}) do
-    cost_invoice = CostInvoices.get_cost_invoice_by_checksum!(blob_checksum)
+    # TODO: replace authorize?: false + actor: %{} with system actor once available
+    cost_invoice =
+      AshCostInvoice.by_checksum!(blob_checksum, tenant: Firmowid.Repo.get_org_id(), authorize?: false, actor: %{})
 
     LiveToast.send_toast(
       :info,

@@ -6,9 +6,9 @@ defmodule Firmowid.Invoicing do
   import Paradex, only: [~>: 2]
 
   alias Firmowid.Ash.Finances.TransactionQueries
+  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
-  alias Firmowid.CostInvoices
   # SQL fragment that converts KSeF VAT rate string codes to numeric decimals.
   # Must match VatRate.to_numeric/1 behavior for consistency.
   alias Firmowid.CostInvoices.CostInvoice
@@ -20,6 +20,9 @@ defmodule Firmowid.Invoicing do
   alias Firmowid.SalesInvoices.SalesInvoice
 
   require Logger
+
+  # TODO: replace authorize?: false + actor: %{} with system actor once available
+  @bridge_opts [authorize?: false, actor: %{}]
 
   @vat_rate_to_decimal_sql """
   CASE ?
@@ -407,10 +410,13 @@ defmodule Firmowid.Invoicing do
   end
 
   def get_invoicing_entries(from, to, filter) do
+    cost_opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
+    sales_opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
+
     case filter do
       :all ->
         [
-          CostInvoices.list_cost_invoices(from, to),
+          AshCostInvoice.list_for_month!(from, to, cost_opts),
           SalesInvoices.list_sales_invoices(from, to),
           TransactionQueries.list_by_date_range(from, to)
         ]
@@ -419,7 +425,7 @@ defmodule Firmowid.Invoicing do
 
       :unmatched ->
         [
-          CostInvoices.list_unmatched_cost_invoices(from, to),
+          AshCostInvoice.list_unmatched!(from, to, cost_opts),
           SalesInvoices.list_unmatched_sales_invoices(from, to),
           TransactionQueries.list_unmatched(from, to)
         ]
@@ -428,7 +434,7 @@ defmodule Firmowid.Invoicing do
 
       :invoices ->
         from
-        |> CostInvoices.list_cost_invoices(to)
+        |> AshCostInvoice.list_for_month!(to, cost_opts)
         |> Enum.concat(SalesInvoices.list_sales_invoices(from, to))
         |> order_entries_for_display()
 
@@ -443,7 +449,7 @@ defmodule Firmowid.Invoicing do
     invoice.issue_date
   end
 
-  defp get_date(%CostInvoice{} = invoice) do
+  defp get_date(%AshCostInvoice{} = invoice) do
     invoice.issue_date
   end
 
@@ -456,7 +462,8 @@ defmodule Firmowid.Invoicing do
   defp matched?(%SalesInvoice{} = invoice),
     do: Enum.any?(invoice.transactions) or Map.get(invoice, :skip_invoicing, false)
 
-  defp matched?(%CostInvoice{} = invoice), do: Enum.any?(invoice.transactions) or Map.get(invoice, :skip_invoicing, false)
+  defp matched?(%AshCostInvoice{} = invoice),
+    do: Enum.any?(invoice.transactions) or Map.get(invoice, :skip_invoicing, false)
 
   defp matched?(%Transaction{} = transaction),
     do:
@@ -504,7 +511,8 @@ defmodule Firmowid.Invoicing do
     end)
   end
 
-  @spec get_potential_transactions_for_invoice(SalesInvoice.t() | CostInvoice.t()) :: [map()]
+  # Bridge: accepts both Ecto and Ash invoice structs during migration
+  @spec get_potential_transactions_for_invoice(struct()) :: [map()]
   def get_potential_transactions_for_invoice(invoice) do
     unmatched_transactions =
       TransactionQueries.list_unmatched(~D[2000-01-01], ~D[2100-12-30])
@@ -519,16 +527,19 @@ defmodule Firmowid.Invoicing do
 
   def match_cost_invoices(organization_id) do
     Repo.put_org_id(organization_id)
+    cost_opts = [tenant: organization_id] ++ @bridge_opts
 
-    unmatched_cost_invoices = CostInvoices.list_unmatched_cost_invoices()
+    unmatched_cost_invoices =
+      AshCostInvoice.list_unmatched!(~D[1970-01-01], ~D[2100-01-01], cost_opts)
 
     Enum.each(unmatched_cost_invoices, &match_cost_invoice(&1.id, organization_id))
   end
 
   def match_cost_invoice(cost_invoice_id, organization_id) do
     Repo.put_org_id(organization_id)
+    cost_opts = [tenant: organization_id] ++ @bridge_opts
 
-    cost_invoice = CostInvoices.get_cost_invoice!(cost_invoice_id)
+    cost_invoice = AshCostInvoice.by_id!(cost_invoice_id, cost_opts)
 
     Logger.info("Matching cost invoice #{cost_invoice.id} for organization #{organization_id}")
 

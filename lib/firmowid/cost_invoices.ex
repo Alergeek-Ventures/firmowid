@@ -64,16 +64,6 @@ defmodule Firmowid.CostInvoices do
     )
   end
 
-  def get_cost_invoice_by_checksum!(blob_checksum) do
-    from(c in CostInvoice,
-      join: b in Blob,
-      on: b.id == c.blob_id,
-      where: b.blob_checksum == ^blob_checksum
-    )
-    |> Repo.one!()
-    |> Repo.preload(:blob)
-  end
-
   def get_processing_cost_invoices_count do
     Oban.Job
     |> where(
@@ -82,142 +72,6 @@ defmodule Firmowid.CostInvoices do
         fragment("args->>'name' = ?", "extract_cost_invoice_metadata")
     )
     |> Repo.aggregate(:count, oban_jobs: true)
-  end
-
-  def list_cost_invoices(from, to) do
-    query =
-      from i in CostInvoice,
-        as: :invoice,
-        where: i.issue_date >= ^from and i.issue_date <= ^to,
-        order_by: [desc: i.issue_date]
-
-    query
-    |> exclude_linked_corrections()
-    |> Repo.all()
-    |> Repo.preload([:transactions, :correction_invoices])
-    |> Enum.map(&merge_corrections_into_original_invoice/1)
-  end
-
-  @doc """
-  Lists cost invoices whose sale falls within the given date range.
-
-  `sale_date` is NOT NULL at the DB level for cost invoices.
-  """
-  @spec list_cost_invoices_by_sale_date(Date.t(), Date.t()) :: [CostInvoice.t()]
-  def list_cost_invoices_by_sale_date(from, to) do
-    query =
-      from i in CostInvoice,
-        where: i.sale_date >= ^from and i.sale_date <= ^to,
-        order_by: [desc: i.sale_date]
-
-    query
-    |> Repo.all()
-    |> Repo.preload(:transactions)
-  end
-
-  def list_invoices_in_date_range(from, to) do
-    CostInvoice
-    |> where(
-      [d],
-      not is_nil(d.blob_id) and
-        ((d.issue_date >= ^from and d.issue_date <= ^to) or
-           (d.sale_date >= ^from and d.sale_date <= ^to))
-    )
-    |> Repo.all()
-    |> Repo.preload(:blob)
-    |> Enum.map(&Map.put(&1, :file_url, AshBlob.get_url!(&1.blob_id, blob_opts())))
-  end
-
-  @doc """
-  Unmatched means - not assigned to a transaction and not skipped.
-  If date range is provided - due in the given date range.
-  """
-  def list_unmatched_cost_invoices do
-    organization_id = Repo.get_org_id()
-
-    if is_nil(organization_id) do
-      raise "Organization id is not set"
-    end
-
-    list_unmatched_cost_invoices(~D[1970-01-01], ~D[2100-01-01], organization_id)
-  end
-
-  def list_unmatched_cost_invoices(from, to) do
-    organization_id = Repo.get_org_id()
-
-    if is_nil(organization_id) do
-      raise "Organization id is not set"
-    end
-
-    list_unmatched_cost_invoices(from, to, organization_id)
-  end
-
-  def list_unmatched_cost_invoices(from, to, organization_id) do
-    query =
-      from i in CostInvoice,
-        as: :invoice,
-        left_join: t in assoc(i, :transactions),
-        where: is_nil(t.id),
-        where: i.skip_invoicing == false,
-        where: i.due_date >= ^from and i.due_date <= ^to,
-        order_by: [desc: i.issue_date]
-
-    query
-    |> exclude_linked_corrections()
-    |> Repo.all(organization_id: organization_id)
-    |> Repo.preload([:transactions, :correction_invoices])
-    |> Enum.map(&merge_corrections_into_original_invoice/1)
-  end
-
-  def get_cost_invoice(cost_invoice_id) do
-    CostInvoice
-    |> Repo.get(cost_invoice_id)
-    |> Repo.preload(:transactions)
-  end
-
-  def get_cost_invoice!(cost_invoice_id) do
-    CostInvoice
-    |> Repo.get!(cost_invoice_id)
-    |> Repo.preload(:transactions)
-  end
-
-  def get_cost_invoice_with_blob_url(cost_invoice_id) do
-    cost_invoice =
-      CostInvoice
-      |> Repo.get!(cost_invoice_id)
-      |> Repo.preload([:transactions, :blob, :original_invoice, correction_invoices: :blob])
-
-    blob_url =
-      case cost_invoice.blob do
-        nil -> nil
-        _ -> AshBlob.get_url!(cost_invoice.blob_id, blob_opts())
-      end
-
-    correction_invoices =
-      Enum.map(cost_invoice.correction_invoices, fn
-        %{blob: nil} = correction -> correction
-        correction -> %{correction | blob_url: AshBlob.get_url!(correction.blob_id, blob_opts())}
-      end)
-
-    %{
-      cost_invoice
-      | blob_url: blob_url,
-        correction_invoices: correction_invoices
-    }
-  end
-
-  def get_cost_invoice_with_blob_url!(cost_invoice_id) do
-    cost_invoice =
-      CostInvoice
-      |> Repo.get!(cost_invoice_id)
-      |> Repo.preload([:transactions, :blob, :original_invoice, correction_invoices: :blob])
-
-    %{
-      cost_invoice
-      | blob_url: AshBlob.get_url!(cost_invoice.blob_id, blob_opts()),
-        correction_invoices:
-          Enum.map(cost_invoice.correction_invoices, &%{&1 | blob_url: AshBlob.get_url!(&1.blob_id, blob_opts())})
-    }
   end
 
   @doc """
@@ -256,7 +110,7 @@ defmodule Firmowid.CostInvoices do
   end
 
   def toggle_skip_invoicing(id) do
-    cost_invoice = get_cost_invoice!(id)
+    cost_invoice = Repo.get!(CostInvoice, id)
 
     cost_invoice =
       cost_invoice
@@ -373,99 +227,28 @@ defmodule Firmowid.CostInvoices do
     |> Firmowid.Oban.insert!()
   end
 
-  def list_cost_invoices_by_ids(ids, date_from \\ nil, date_to \\ nil) do
-    query = where(CostInvoice, [ci], ci.id in ^ids)
-
-    query =
-      if date_from do
-        where(query, [ci], ci.issue_date >= ^date_from)
-      else
-        query
-      end
-
-    query =
-      if date_to do
-        where(query, [ci], ci.issue_date <= ^date_to)
-      else
-        query
-      end
-
-    query
-    |> order_by(desc: :issue_date)
-    |> Repo.all()
-    |> Repo.preload(:transactions)
-  end
-
-  # Private functions
-
-  defp exclude_linked_corrections(query) do
-    query
-    |> join(
-      :left,
-      [],
-      original_invoice in CostInvoice,
-      on: original_invoice.ksef_number == as(:invoice).original_invoice_ksef_number,
-      as: :original_invoice
-    )
-    |> where([], is_nil(as(:invoice).original_invoice_ksef_number) or is_nil(as(:original_invoice).id))
-  end
-
-  defp merge_corrections_into_original_invoice(%CostInvoice{correction_invoices: []} = invoice), do: invoice
-
-  defp merge_corrections_into_original_invoice(%CostInvoice{} = invoice) do
-    currency_changed? =
-      Enum.any?(invoice.correction_invoices, fn correction ->
-        correction.currency != invoice.currency
-      end)
-
-    total_amount =
-      if currency_changed? do
-        invoice.total_amount
-      else
-        Enum.reduce(invoice.correction_invoices, invoice.total_amount, fn correction, acc ->
-          Decimal.add(acc, correction.total_amount)
-        end)
-      end
-
-    latest_snapshot =
-      Enum.max_by(invoice.correction_invoices, & &1.ksef_permanent_storage_date, NaiveDateTime, fn -> invoice end)
-
-    %{
-      invoice
-      | total_amount: total_amount,
-        currency: latest_snapshot.currency,
-        sale_date: latest_snapshot.sale_date,
-        due_date: latest_snapshot.due_date,
-        seller: latest_snapshot.seller,
-        seller_address: latest_snapshot.seller_address,
-        seller_display_name: latest_snapshot.seller_display_name,
-        seller_nip: latest_snapshot.seller_nip,
-        seller_country_code: latest_snapshot.seller_country_code,
-        seller_email: latest_snapshot.seller_email,
-        seller_phone: latest_snapshot.seller_phone,
-        payment_method: latest_snapshot.payment_method,
-        account_number: latest_snapshot.account_number
-    }
-  end
-
   defp correction_invoice?(%CostInvoice{invoice_type: invoice_type}) do
     invoice_type in @correction_invoice_types
   end
 
   # sobelow_skip ["Traversal.FileModule"]
   # Path comes from Briefly.create/1 (OS-managed temp directory), not user input.
-  def hydrate_invoice_with_fa3_blob(%CostInvoice{ksef_number: ksef_number, blob_id: blob_id} = invoice)
+  def hydrate_invoice_with_fa3_blob(%{ksef_number: ksef_number, blob_id: blob_id} = invoice)
       when not is_nil(ksef_number) and is_nil(blob_id) do
+    # Fetch the Ecto schema for the changeset update
+    ecto_invoice = Repo.get!(CostInvoice, invoice.id)
+
     with {:ok, xml} <- Ksef.get_invoice_xml_by_ksef_number(ksef_number),
          {:ok, path} <- Briefly.create(extname: ".xml"),
          :ok <- File.write(path, xml),
          {:ok, blob} <- AshBlob.create_blob(path, "application/xml", "#{ksef_number}.xml", blob_opts()) do
       try do
-        invoice
+        ecto_invoice
         |> CostInvoice.changeset(%{blob_id: blob.id})
         |> Repo.update!()
-        |> Repo.preload(:blob, force: true)
-        |> Map.put(:blob_url, AshBlob.get_url!(blob.id, blob_opts()))
+
+        # Return the Ash struct with blob loaded
+        Ash.load!(invoice, [blob: [:url]], authorize?: false, actor: %{})
       rescue
         error ->
           AshBlob.destroy_blob!(blob.id, blob_opts())
@@ -478,7 +261,7 @@ defmodule Firmowid.CostInvoices do
     end
   end
 
-  def hydrate_invoice_with_fa3_blob(%CostInvoice{} = invoice), do: invoice
+  def hydrate_invoice_with_fa3_blob(invoice), do: invoice
 
   # TODO: replace authorize?: false with system actor once available
   # TODO: replace authorize?: false + actor: %{} with system actor once available

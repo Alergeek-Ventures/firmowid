@@ -3,8 +3,12 @@ defmodule Firmowid.CostInvoicesTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.CostInvoices
   alias Firmowid.CostInvoices.CostInvoice
+
+  # TODO: replace authorize?: false + actor: %{} with system actor once available
+  @bridge_opts [authorize?: false, actor: %{}]
 
   describe "delete_cost_invoice/1" do
     test "returns error for KSeF-imported invoice and does not delete it" do
@@ -31,8 +35,9 @@ defmodule Firmowid.CostInvoicesTest do
   end
 
   describe "cost invoice lists" do
-    test "hides only corrections whose original invoice exists in list_cost_invoices/2" do
+    test "hides only corrections whose original invoice exists in list_for_month" do
       user = user_fixture()
+      opts = [tenant: user.organization_id] ++ @bridge_opts
 
       visible_invoice = insert_cost_invoice!(user.organization_id, %{invoice_identifier: "VISIBLE-REGULAR"})
 
@@ -50,7 +55,7 @@ defmodule Firmowid.CostInvoicesTest do
           total_amount: Decimal.new("10.00")
         })
 
-      hidden_correction =
+      _hidden_correction =
         insert_cost_invoice!(user.organization_id, %{
           invoice_identifier: "HIDDEN-CORRECTION",
           invoice_type: :kor,
@@ -66,7 +71,7 @@ defmodule Firmowid.CostInvoicesTest do
           total_amount: Decimal.new("10.00")
         })
 
-      invoices = CostInvoices.list_cost_invoices(~D[2026-02-01], ~D[2026-02-28])
+      invoices = AshCostInvoice.list_for_month!(~D[2026-02-01], ~D[2026-02-28], opts)
 
       invoice_ids = Enum.map(invoices, & &1.id)
 
@@ -74,11 +79,12 @@ defmodule Firmowid.CostInvoicesTest do
       assert original_invoice.id in invoice_ids
       assert visible_correction.id in invoice_ids
       assert orphaned_correction.id in invoice_ids
-      refute hidden_correction.id in invoice_ids
+      refute Enum.any?(invoices, &(&1.invoice_identifier == "HIDDEN-CORRECTION"))
     end
 
-    test "hides only corrections whose original invoice exists from list_unmatched_cost_invoices/3" do
+    test "hides only corrections whose original invoice exists from list_unmatched" do
       user = user_fixture()
+      opts = [tenant: user.organization_id] ++ @bridge_opts
 
       visible_invoice = insert_cost_invoice!(user.organization_id, %{invoice_identifier: "VISIBLE-UNMATCHED"})
 
@@ -96,7 +102,7 @@ defmodule Firmowid.CostInvoicesTest do
           total_amount: Decimal.new("12.34")
         })
 
-      hidden_correction =
+      _hidden_correction =
         insert_cost_invoice!(user.organization_id, %{
           invoice_identifier: "HIDDEN-UNMATCHED-CORRECTION",
           invoice_type: :kor,
@@ -112,8 +118,7 @@ defmodule Firmowid.CostInvoicesTest do
           total_amount: Decimal.new("12.34")
         })
 
-      invoices =
-        CostInvoices.list_unmatched_cost_invoices(~D[2026-02-01], ~D[2026-02-28], user.organization_id)
+      invoices = AshCostInvoice.list_unmatched!(~D[2026-02-01], ~D[2026-02-28], opts)
 
       invoice_ids = Enum.map(invoices, & &1.id)
 
@@ -121,7 +126,7 @@ defmodule Firmowid.CostInvoicesTest do
       assert original_invoice.id in invoice_ids
       assert visible_correction.id in invoice_ids
       assert orphaned_correction.id in invoice_ids
-      refute hidden_correction.id in invoice_ids
+      refute Enum.any?(invoices, &(&1.invoice_identifier == "HIDDEN-UNMATCHED-CORRECTION"))
     end
   end
 

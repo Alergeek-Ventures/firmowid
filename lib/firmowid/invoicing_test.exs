@@ -1,12 +1,17 @@
 defmodule Firmowid.InvoicingTest do
+  @moduledoc false
   use Firmowid.DataCase
 
   import Firmowid.AccountsFixtures
 
   alias Firmowid.Accounts.User
+  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.Blobs.Blob
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.Invoicing
+
+  # TODO: replace authorize?: false + actor: %{} with system actor once available
+  @bridge_opts [authorize?: false, actor: %{}]
 
   describe "order_entries_for_display/2" do
     test "sorts properly by name" do
@@ -31,8 +36,8 @@ defmodule Firmowid.InvoicingTest do
 
       {c, d} =
         prep_entries(
-          %{id: "01000000-0000-0000-0000-000000000003", issue_date: ~D[2022-04-01]},
-          %{id: "01000000-0000-0000-0000-000000000004", issue_date: ~D[2022-03-01]},
+          %{issue_date: ~D[2022-04-01]},
+          %{issue_date: ~D[2022-03-01]},
           organization_id
         )
 
@@ -57,6 +62,8 @@ defmodule Firmowid.InvoicingTest do
     end
   end
 
+  # Inserts cost invoices via Ecto, then re-fetches as Ash structs so that
+  # `order_entries_for_display/1` pattern matches work correctly.
   defp prep_entries(override_a, override_b, organization_id) do
     a_blob =
       Repo.insert!(%Blob{
@@ -66,9 +73,8 @@ defmodule Firmowid.InvoicingTest do
         organization_id: organization_id
       })
 
-    a =
+    ecto_a =
       %CostInvoice{
-        id: "01000000-0000-0000-0000-000000000001",
         invoice_identifier: "a",
         description: "a",
         total_amount: Decimal.from_float(-100.0),
@@ -94,9 +100,8 @@ defmodule Firmowid.InvoicingTest do
         organization_id: organization_id
       })
 
-    b =
+    ecto_b =
       %CostInvoice{
-        id: "01000000-0000-0000-0000-000000000002",
         invoice_identifier: "b",
         description: "b",
         total_amount: Decimal.from_float(-100.0),
@@ -113,6 +118,11 @@ defmodule Firmowid.InvoicingTest do
       }
       |> Map.merge(override_b)
       |> Repo.insert!()
+
+    # Re-fetch as Ash structs with transactions loaded
+    ash_opts = [tenant: organization_id, load: [:transactions]] ++ @bridge_opts
+    a = AshCostInvoice.by_id!(ecto_a.id, ash_opts)
+    b = AshCostInvoice.by_id!(ecto_b.id, ash_opts)
 
     {a, b}
   end

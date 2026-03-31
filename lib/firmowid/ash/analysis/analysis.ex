@@ -19,8 +19,8 @@ defmodule Firmowid.Ash.Analysis do
   alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.Ash.Analysis.TagDefinition
   alias Firmowid.Ash.Finances.TransactionQueries
+  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.Ash.Scope
-  alias Firmowid.CostInvoices
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.CostInvoices.CostInvoicesTransactions
   alias Firmowid.Currencies
@@ -73,9 +73,14 @@ defmodule Firmowid.Ash.Analysis do
       |> SalesInvoices.list_sales_invoices_by_sale_date(date_to)
       |> Enum.filter(&matched_or_skipped?/1)
 
+    # TODO: replace authorize?: false + actor: %{} with system actor once available
     cost_invoices =
       date_from
-      |> CostInvoices.list_cost_invoices_by_sale_date(date_to)
+      |> AshCostInvoice.list_by_sale_date!(date_to,
+        tenant: scope.current_tenant,
+        actor: scope.current_user,
+        authorize?: false
+      )
       |> Enum.filter(&matched_or_skipped?/1)
 
     transactions = TransactionQueries.list_skipped_unmatched(date_from, date_to)
@@ -220,7 +225,7 @@ defmodule Firmowid.Ash.Analysis do
     {value, entity.currency}
   end
 
-  defp get_amount_and_currency(%CostInvoice{} = entity) do
+  defp get_amount_and_currency(%AshCostInvoice{} = entity) do
     value = entity.total_amount |> Decimal.abs() |> Decimal.mult(Decimal.new("-1"))
     {value, entity.currency}
   end
@@ -277,7 +282,7 @@ defmodule Firmowid.Ash.Analysis do
   end
 
   defp entity_id(%SalesInvoice{id: id}), do: id
-  defp entity_id(%CostInvoice{id: id}), do: id
+  defp entity_id(%AshCostInvoice{id: id}), do: id
   defp entity_id(%Transaction{id: id}), do: id
 
   # Filters entities and attaches entity_tags to each struct:

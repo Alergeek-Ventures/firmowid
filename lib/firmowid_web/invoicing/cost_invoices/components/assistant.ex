@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
 
   alias Firmowid.Accounts
   alias Firmowid.Ash.Finances.TransactionQueries
+  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.Invoicing.Matching.Assistant.Message
   alias Firmowid.Invoicing.Matching.Assistant.MessagesStorage
   alias Firmowid.Invoicing.Matching.CostInvoiceAssistant
@@ -85,7 +86,8 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
   end
 
   def handle_event("accept", _params, socket) do
-    invoice = Firmowid.CostInvoices.get_cost_invoice!(socket.assigns.invoice_id)
+    scope = socket.assigns.ash_scope
+    invoice = AshCostInvoice.by_id!(socket.assigns.invoice_id, scope: scope)
     Bodyguard.permit!(Firmowid.CostInvoices, :update, socket.assigns.current_user, invoice)
 
     CostInvoiceAssistant.accept_linking(socket.assigns.conversation_id)
@@ -99,7 +101,8 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
   end
 
   def handle_event("reject", _params, socket) do
-    invoice = Firmowid.CostInvoices.get_cost_invoice!(socket.assigns.invoice_id)
+    scope = socket.assigns.ash_scope
+    invoice = AshCostInvoice.by_id!(socket.assigns.invoice_id, scope: scope)
     Bodyguard.permit!(Firmowid.CostInvoices, :update, socket.assigns.current_user, invoice)
 
     CostInvoiceAssistant.reject_linking(socket.assigns.conversation_id)

@@ -13,6 +13,7 @@ defmodule Firmowid.Ash.Invoicing do
     resource Firmowid.Ash.Invoicing.InboundEmail
     resource Firmowid.Ash.Invoicing.SalesInvoiceTransaction
     resource Firmowid.Ash.Invoicing.CostInvoiceTransaction
+    resource Firmowid.Ash.Invoicing.CostInvoice
   end
 
   authorization do

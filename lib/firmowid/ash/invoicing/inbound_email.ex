@@ -14,11 +14,6 @@ defmodule Firmowid.Ash.Invoicing.InboundEmail do
     * `:create` — webhook handler creates the record
     * `:mark_processed` — sets `processed_at` and optional `failure_reason`
 
-  ## Notes
-
-  `cost_invoices` is not a proper Ash relationship because `CostInvoice` is still
-  an Ecto schema (migrating in Slice 4). The `:list_all` action uses `Repo.preload`
-  in an after-action hook to load them.
   """
   use Ash.Resource,
     domain: Firmowid.Ash.Invoicing,
@@ -27,7 +22,6 @@ defmodule Firmowid.Ash.Invoicing.InboundEmail do
 
   alias Firmowid.Ash.Resource
 
-  require Ecto.Query
   require Resource
 
   postgres do
@@ -51,24 +45,7 @@ defmodule Firmowid.Ash.Invoicing.InboundEmail do
     end
 
     read :list_all do
-      prepare build(sort: [received_at: :desc])
-
-      prepare after_action(fn _query, results, _context ->
-                ids = Enum.map(results, & &1.id)
-
-                cost_invoices_by_email =
-                  Firmowid.CostInvoices.CostInvoice
-                  |> Ecto.Query.where([c], c.inbound_email_id in ^ids)
-                  |> Firmowid.Repo.all()
-                  |> Enum.group_by(& &1.inbound_email_id)
-
-                results =
-                  Enum.map(results, fn email ->
-                    Map.put(email, :cost_invoices, Map.get(cost_invoices_by_email, email.id, []))
-                  end)
-
-                {:ok, results}
-              end)
+      prepare build(sort: [received_at: :desc], load: [:cost_invoices])
     end
 
     create :create do
@@ -138,6 +115,8 @@ defmodule Firmowid.Ash.Invoicing.InboundEmail do
     belongs_to :organization, Firmowid.Ash.Core.Organization do
       allow_nil? false
     end
+
+    has_many :cost_invoices, Firmowid.Ash.Invoicing.CostInvoice
   end
 
   identities do

@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Infrastructure.Controllers.FileDownload do
   @moduledoc false
   use FirmowidWeb, :controller
 
-  alias Firmowid.CostInvoices
+  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.SalesInvoices
   alias FirmowidWeb.Core.Endpoint
 
@@ -19,13 +19,20 @@ defmodule FirmowidWeb.Infrastructure.Controllers.FileDownload do
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
 
+    # TODO: replace authorize?: false + actor: %{} with system actor once available
     cost_invoices =
       date_range_from
-      |> CostInvoices.list_invoices_in_date_range(date_range_to)
+      |> AshCostInvoice.list_invoices_in_date_range!(date_range_to,
+        tenant: conn.assigns.current_user.organization_id,
+        authorize?: false,
+        actor: %{}
+      )
       |> Enum.filter(&include_cost_invoice?(&1, include_digital, include_ksef, include_photos))
       |> Enum.map(fn document ->
+        blob_url = document.blob.url
+
         file_extension =
-          document.file_url
+          blob_url
           # drop S3 postfix (?AMZ...)
           |> String.split("?")
           |> hd()
@@ -38,7 +45,7 @@ defmodule FirmowidWeb.Infrastructure.Controllers.FileDownload do
           )
 
         [
-          source: {:url, document.file_url},
+          source: {:url, blob_url},
           path: "kosztowe/#{file_name}#{file_extension}"
         ]
       end)
@@ -104,7 +111,7 @@ defmodule FirmowidWeb.Infrastructure.Controllers.FileDownload do
 
   defp include_cost_invoice?(invoice, include_digital, include_ksef, include_photos) do
     extension =
-      invoice.file_url
+      invoice.blob.url
       |> String.split("?")
       |> hd()
       |> Path.extname()

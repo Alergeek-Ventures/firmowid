@@ -4,7 +4,7 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
   for - we calculate set of parameters, that will be used to rank the transactions.
   """
 
-  alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Finances.Transaction
   alias Firmowid.SalesInvoices.SalesInvoice
 

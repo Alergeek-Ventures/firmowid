@@ -4,8 +4,8 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
   Delegates LLM and function-call plumbing to AssistantEngine.
   """
   alias Firmowid.Ash.Finances.TransactionQueries
+  alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
-  alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.Matching.Assistant.CommonTools
   alias Firmowid.Invoicing.Matching.Assistant.Engine
@@ -50,8 +50,7 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
           args: %{"transaction_ids" => transaction_ids, "cost_invoice_ids" => cost_invoice_ids}
         }
       } ->
-        cost_invoice = cost_invoice_ids |> hd() |> Firmowid.CostInvoices.get_cost_invoice!()
-        organization_id = cost_invoice.organization_id
+        organization_id = Firmowid.Repo.get_org_id()
 
         # TODO: replace authorize?: false + actor: %{} with system actor once available
         CostInvoiceTransaction.create_connections(
@@ -138,9 +137,19 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
                     } ->
           cost_invoice_id = List.first(cost_invoice_ids)
 
+          # TODO: replace authorize?: false + actor: %{} with system actor once available
           cost_invoice =
             if cost_invoice_id do
-              Firmowid.CostInvoices.get_cost_invoice(cost_invoice_id)
+              cost_invoice_id
+              |> CostInvoice.get(
+                tenant: Firmowid.Repo.get_org_id(),
+                authorize?: false,
+                actor: %{}
+              )
+              |> case do
+                {:ok, invoice} -> invoice
+                _ -> nil
+              end
             end
 
           transactions = TransactionQueries.get_by_ids(transaction_ids)

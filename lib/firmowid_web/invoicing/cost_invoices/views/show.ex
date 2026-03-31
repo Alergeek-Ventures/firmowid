@@ -3,6 +3,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Analytics
+  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.CostInvoices
   alias Firmowid.Invoicing
@@ -10,8 +11,9 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     current_user = socket.assigns.current_user
+    scope = socket.assigns.ash_scope
 
-    cost_invoice = CostInvoices.get_cost_invoice_with_blob_url(id)
+    cost_invoice = AshCostInvoice.get_with_blob_url!(id, scope: scope)
     Bodyguard.permit!(CostInvoices, :show, current_user, cost_invoice)
 
     if is_nil(cost_invoice.original_invoice) do
@@ -83,7 +85,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
 
     Analytics.track_event("cost_invoice_match", user, %{transaction_count: 1})
 
-    invoice = CostInvoices.get_cost_invoice_with_blob_url!(socket.assigns.invoice.id)
+    invoice = AshCostInvoice.get_with_blob_url!(socket.assigns.invoice.id, scope: socket.assigns.ash_scope)
     {:noreply, assign(socket, :invoice, invoice)}
   end
 
@@ -96,7 +98,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
 
     Analytics.track_event("cost_invoice_unmatch", socket.assigns.current_user, %{})
 
-    invoice = CostInvoices.get_cost_invoice_with_blob_url!(socket.assigns.invoice.id)
+    invoice = AshCostInvoice.get_with_blob_url!(socket.assigns.invoice.id, scope: socket.assigns.ash_scope)
     {:noreply, assign(socket, :invoice, invoice)}
   end
 

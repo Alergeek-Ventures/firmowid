@@ -7,7 +7,7 @@ defmodule Firmowid.Invoicing.Matching.Windowing do
   in the matching process.
   """
 
-  alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Currencies
   alias Firmowid.Finances.Transaction
   alias Firmowid.SalesInvoices.SalesInvoice

@@ -8,7 +8,7 @@ Single domain: `Firmowid.Ash.Invoicing` — all invoice-related resources live h
 
 ## Migration Slices
 
-### Slice 1: Counterparty (move + upgrade) — IN PROGRESS
+### Slice 1: Counterparty (move + upgrade) — COMPLETED ✅
 
 **Goal:** Move `Firmowid.Ash.Core.Counterparty` read-only wrapper to `Firmowid.Ash.Invoicing.Counterparty` with full CRUD + search + validations + calculations.
 
@@ -88,7 +88,7 @@ Single domain: `Firmowid.Ash.Invoicing` — all invoice-related resources live h
 
 ---
 
-### Slice 3: Transaction connections (unified)
+### Slice 3: Transaction connections (unified) — COMPLETED ✅
 
 **Goal:** Both join tables as Ash resources with shared pattern.
 
@@ -101,15 +101,20 @@ Single domain: `Firmowid.Ash.Invoicing` — all invoice-related resources live h
 
 ---
 
-### Slice 4: CostInvoice reads
+### Slice 4: CostInvoice reads — COMPLETED ✅
 
 **Goal:** Ash resource on `cost_invoices` table with read actions.
 
 - `Firmowid.Ash.Invoicing.CostInvoice`
-- Read actions: `:read`, `:by_id`, `:list_by_date_range`, `:list_unmatched`, `:list_by_sale_date`, `:list_by_ids`, `:list_invoices_in_date_range`
-- `blob_url` as calculation (replaces `AshBlob.get_url!/2` bridge)
-- Relationships: `belongs_to :blob` (Ash.Blobs.Blob), `many_to_many :transactions` (via Ash join), `has_many :correction_invoices`, `belongs_to :original_invoice`, `has_many :entity_tags`, `belongs_to :inbound_email`
-- Correction merging logic as post-read function or calculation
+- Read actions: `:read`, `:by_id`, `:list_for_month`, `:list_unmatched`, `:list_by_sale_date`, `:list_by_ids`, `:list_invoices_in_date_range`, `:by_checksum` (generic), `:get_with_blob_url` (generic)
+- Blob URL accessed via `blob: [:url]` load (no `blob_url` calculation — user preference)
+- Relationships: `belongs_to :blob` (Ash.Blobs.Blob), `many_to_many :transactions` (via CostInvoiceTransaction join), `has_many :correction_invoices`, `belongs_to :original_invoice`, `has_many :entity_tags`, `belongs_to :inbound_email`
+- Correction merging logic via `prepare after_action` + `prepare before_action` (exclude linked corrections, merge corrections into originals)
+- `CostInvoiceTransaction` and `SalesInvoiceTransaction` now have `defaults [:read]` for relationship traversal
+- InboundEmail updated: proper `has_many :cost_invoices` relationship (replaced Ecto after_action hack)
+- Matching modules (`windowing.ex`, `parametrized_result.ex`, `cost_invoice_assistant.ex`) alias updated to Ash CostInvoice
+- All call sites updated: invoicing.ex, analysis.ex, show.ex, index.ex, assistant.ex, file_download.ex, cost_invoice_details.ex
+- Read functions deleted from CostInvoices context (~200 LOC removed)
 - Ecto schema stays for writes (Slice 6)
 
 ---

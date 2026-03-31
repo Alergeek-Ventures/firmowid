@@ -63,7 +63,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                 <.link
                   :if={@invoice.ksef_number == nil}
                   class={button_styles(%{color: "light_grey", size: "small", new: true})}
-                  href={@invoice.blob_url}
+                  href={@invoice.blob && @invoice.blob.url}
                   download
                 >
                   <Lucideicons.download /><span class="hidden xl:inline">Pobierz</span>
@@ -184,16 +184,8 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
 
   defp preview(assigns) do
     invoice = assigns.invoice
-
-    preview_type =
-      cond do
-        is_nil(invoice.blob) -> :none
-        String.ends_with?(invoice.blob.blob_path, ".pdf") -> :pdf
-        String.ends_with?(invoice.blob.blob_path, ".xml") -> :xml
-        true -> :image
-      end
-
-    assigns = %{preview_url: invoice.blob_url, id: invoice.id}
+    preview_type = preview_type(invoice.blob)
+    assigns = %{preview_url: invoice.blob && invoice.blob.url, id: invoice.id}
 
     case preview_type do
       :pdf ->
@@ -288,6 +280,16 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
           Brak podglądu
         </div>
         """
+    end
+  end
+
+  defp preview_type(nil), do: :none
+
+  defp preview_type(%{blob_path: path}) when is_binary(path) do
+    cond do
+      String.ends_with?(path, ".pdf") -> :pdf
+      String.ends_with?(path, ".xml") -> :xml
+      true -> :image
     end
   end
 

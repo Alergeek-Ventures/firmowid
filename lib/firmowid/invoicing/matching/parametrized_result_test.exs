@@ -1,7 +1,7 @@
 defmodule Firmowid.Invoicing.Matching.ParametrizedResultTest do
   use ExUnit.Case, async: true
 
-  alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.Matching.ParametrizedResult
 
