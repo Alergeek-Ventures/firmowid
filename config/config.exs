@@ -40,7 +40,7 @@ config :error_tracker,
   otp_app: :firmowid
 
 config :esbuild,
-  version: "0.17.11",
+  version: "0.27.4",
   firmowid: [
     args:
       ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets --external:/fonts/* --external:/images/* --alias:@=.),
