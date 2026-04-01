@@ -144,7 +144,7 @@ defmodule Firmowid.Ash.Billing.Limits do
           actor: context.actor,
           authorize?: false
         )
-        |> Ash.update()
+        |> Ash.update(return_notifications?: true)
       end
     end
 
@@ -165,7 +165,7 @@ defmodule Firmowid.Ash.Billing.Limits do
           actor: context.actor,
           authorize?: false
         )
-        |> Ash.update()
+        |> Ash.update(return_notifications?: true)
       end
     end
 
