@@ -7,7 +7,7 @@ defmodule Firmowid.CostInvoices.CostInvoice do
   @type t :: %__MODULE__{}
 
   schema "cost_invoices" do
-    belongs_to :blob, Firmowid.Blobs.Blob
+    belongs_to :blob, Firmowid.Ash.Blobs.Blob
     belongs_to :inbound_email, Firmowid.CostInvoices.InboundEmail
 
     field :seller, :string

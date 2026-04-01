@@ -11,7 +11,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
-  alias Firmowid.Ash.Blobs.Blob
+  alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -73,7 +73,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
         upload_path = Ash.Changeset.get_argument(changeset, :upload_path)
         upload_filename = Ash.Changeset.get_argument(changeset, :upload_filename)
 
-        case Blob.create_blob(
+        case Blobs.create_blob(
                upload_path,
                "binary/octet-stream",
                upload_filename,
@@ -179,7 +179,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
       attribute_writable? true
     end
 
-    belongs_to :blob, Blob do
+    belongs_to :blob, Firmowid.Ash.Blobs.Blob do
       allow_nil? false
       attribute_writable? true
     end

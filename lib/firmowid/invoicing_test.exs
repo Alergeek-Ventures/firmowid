@@ -5,8 +5,8 @@ defmodule Firmowid.InvoicingTest do
   import Firmowid.AccountsFixtures
 
   alias Firmowid.Accounts.User
+  alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
-  alias Firmowid.Blobs.Blob
   alias Firmowid.CostInvoices.CostInvoice
   alias Firmowid.Invoicing
 
@@ -67,6 +67,7 @@ defmodule Firmowid.InvoicingTest do
   defp prep_entries(override_a, override_b, organization_id) do
     a_blob =
       Repo.insert!(%Blob{
+        id: UUIDv7.generate(),
         blob_checksum: UUIDv7.generate(),
         blob_path: "a.pdf",
         original_filename: "a.pdf",
@@ -94,6 +95,7 @@ defmodule Firmowid.InvoicingTest do
 
     b_blob =
       Repo.insert!(%Blob{
+        id: UUIDv7.generate(),
         blob_checksum: UUIDv7.generate(),
         blob_path: "b.pdf",
         original_filename: "b.pdf",

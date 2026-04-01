@@ -9,7 +9,11 @@ defmodule Firmowid.Ash.Blobs do
   use Ash.Domain
 
   resources do
-    resource Firmowid.Ash.Blobs.Blob
+    resource Firmowid.Ash.Blobs.Blob do
+      define :get_blob, action: :read, get_by: [:id]
+      define :create_blob, args: [:upload_path, :content_type, :original_filename]
+      define :destroy_blob, action: :destroy
+    end
   end
 
   authorization do

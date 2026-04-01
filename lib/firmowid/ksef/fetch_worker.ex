@@ -7,7 +7,7 @@ defmodule Firmowid.Ksef.FetchWorker do
   import Ecto.Query
   import Firmowid.Ksef.ApiClient, only: [parse_datetime!: 1]
 
-  alias Firmowid.Ash.Blobs.Blob, as: AshBlob
+  alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.CostInvoices.OpenAIEnrichment
   alias Firmowid.Ksef.ApiClient
@@ -248,7 +248,7 @@ defmodule Firmowid.Ksef.FetchWorker do
       # TODO: replace authorize?: false + actor: %{} with system actor once available
       blob_opts = [tenant: Repo.get_org_id(), authorize?: false, actor: %{}]
 
-      case AshBlob.create_blob(path, "application/xml", "#{ksef_number}.xml", blob_opts) do
+      case Blobs.create_blob(path, "application/xml", "#{ksef_number}.xml", blob_opts) do
         {:ok, blob} ->
           Logger.info("Creating cost invoice #{ksef_number} from #{ksef_number}.xml")
 
@@ -262,7 +262,7 @@ defmodule Firmowid.Ksef.FetchWorker do
           rescue
             # on failure, clean up dangling blob from DB and S3
             error ->
-              AshBlob.destroy_blob!(blob.id, blob_opts)
+              Blobs.destroy_blob!(blob, blob_opts)
 
               AshCostInvoice.broadcast_cost_invoice_failed_to_process(
                 "#{ksef_number}.xml",

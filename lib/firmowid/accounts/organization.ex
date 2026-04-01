@@ -19,7 +19,7 @@ defmodule Firmowid.Accounts.Organization do
     field :inbound_email_nickname, :string
 
     belongs_to :owner, User
-    belongs_to :avatar_blob, Firmowid.Blobs.Blob
+    belongs_to :avatar_blob, Firmowid.Ash.Blobs.Blob
     has_many :users, User
 
     timestamps()

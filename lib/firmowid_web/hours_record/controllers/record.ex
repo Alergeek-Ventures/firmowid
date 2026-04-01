@@ -3,7 +3,6 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
   use FirmowidWeb, :controller
 
   alias Firmowid.Accounts
-  alias Firmowid.Ash.Blobs.Blob, as: AshBlob
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
   alias Firmowid.Helpers.TimeConverter
@@ -117,8 +116,8 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
   def download(conn, %{"id" => id}) do
     scope = conn.assigns.ash_scope
 
-    record = AshHoursRecord.get!(id, scope: scope, load: [:user])
-    url = AshBlob.get_url!(record.blob_id, scope: scope)
+    record = AshHoursRecord.get!(id, scope: scope, load: [:user, blob: [:url]])
+    url = record.blob.url
 
     {:ok, file} = Req.get(url)
 

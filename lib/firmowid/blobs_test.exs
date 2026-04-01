@@ -3,7 +3,7 @@ defmodule Firmowid.BlobsTest do
 
   import Firmowid.AccountsFixtures
 
-  alias Firmowid.Ash.Blobs.Blob, as: AshBlob
+  alias Firmowid.Ash.Blobs
   alias Firmowid.Repo
 
   # TODO: replace authorize?: false with system actor once available
@@ -16,7 +16,7 @@ defmodule Firmowid.BlobsTest do
       {:ok, path} = Briefly.create()
       File.write!(path, "hello from blob test")
 
-      assert {:ok, blob} = AshBlob.create_blob(path, "text/plain", "test.txt", blob_opts())
+      assert {:ok, blob} = Blobs.create_blob(path, "text/plain", "test.txt", blob_opts())
 
       assert blob.original_filename == "test.txt"
       assert blob.blob_path =~ ~r"^#{user.organization_id}/.+\.txt$"
@@ -36,21 +36,23 @@ defmodule Firmowid.BlobsTest do
         |> Base.encode16()
         |> String.downcase()
 
-      assert {:ok, blob} = AshBlob.create_blob(path, "application/pdf", "invoice.pdf", blob_opts())
+      assert {:ok, blob} =
+               Blobs.create_blob(path, "application/pdf", "invoice.pdf", blob_opts())
+
       assert blob.blob_checksum == expected_checksum
     end
   end
 
-  describe "by_id" do
+  describe "get_blob" do
     test "retrieves an uploaded blob" do
       _user = user_fixture()
 
       {:ok, path} = Briefly.create()
       File.write!(path, "get blob test")
 
-      {:ok, blob} = AshBlob.create_blob(path, "text/plain", "get-me.txt", blob_opts())
+      {:ok, blob} = Blobs.create_blob(path, "text/plain", "get-me.txt", blob_opts())
 
-      fetched = AshBlob.by_id!(blob.id, blob_opts())
+      fetched = Blobs.get_blob!(blob.id, blob_opts())
       assert fetched.id == blob.id
       assert fetched.original_filename == "get-me.txt"
     end
@@ -63,12 +65,12 @@ defmodule Firmowid.BlobsTest do
       {:ok, path} = Briefly.create()
       File.write!(path, "delete me")
 
-      {:ok, blob} = AshBlob.create_blob(path, "text/plain", "delete-me.txt", blob_opts())
+      {:ok, blob} = Blobs.create_blob(path, "text/plain", "delete-me.txt", blob_opts())
 
-      assert {:ok, _} = AshBlob.destroy_blob(blob.id, blob_opts())
+      assert :ok = Blobs.destroy_blob(blob, blob_opts())
 
       assert_raise Ash.Error.Invalid, fn ->
-        AshBlob.by_id!(blob.id, blob_opts())
+        Blobs.get_blob!(blob.id, blob_opts())
       end
     end
   end
@@ -80,12 +82,12 @@ defmodule Firmowid.BlobsTest do
       {:ok, path} = Briefly.create()
       File.write!(path, "url test")
 
-      {:ok, blob} = AshBlob.create_blob(path, "text/plain", "url-test.txt", blob_opts())
+      {:ok, blob} = Blobs.create_blob(path, "text/plain", "url-test.txt", blob_opts())
 
-      url = AshBlob.get_url!(blob.id, blob_opts())
-      assert url =~ "firmowid-uploads"
-      assert url =~ blob.blob_path
-      assert url =~ "X-Amz-Signature"
+      blob_with_url = Blobs.get_blob!(blob.id, Keyword.put(blob_opts(), :load, [:url]))
+      assert blob_with_url.url =~ "firmowid-uploads"
+      assert blob_with_url.url =~ blob.blob_path
+      assert blob_with_url.url =~ "X-Amz-Signature"
     end
   end
 end

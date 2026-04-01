@@ -51,7 +51,7 @@ defmodule Firmowid.Accounts.User do
 
     field :employment_contract_type, Ecto.Enum, values: [:umowa_o_prace, :umowa_zlecenie, :umowa_o_dzielo, :b2b]
 
-    belongs_to :avatar_blob, Firmowid.Blobs.Blob
+    belongs_to :avatar_blob, Firmowid.Ash.Blobs.Blob
     belongs_to :organization, Firmowid.Accounts.Organization
 
     timestamps()

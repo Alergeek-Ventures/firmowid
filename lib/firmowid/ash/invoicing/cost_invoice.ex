@@ -44,12 +44,9 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
-  alias Ash.Error.Unknown
-  alias Ash.Error.Unknown.UnknownError
   alias Firmowid.Ash.Billing.Limits, as: AshLimits
-  alias Firmowid.Ash.Blobs.Blob, as: AshBlob
+  alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Resource
-  alias Firmowid.CostInvoices.CostInvoice, as: EctoCostInvoice
   alias Firmowid.Ksef
   alias Firmowid.Repo
 
@@ -167,29 +164,15 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       prepare build(load: [blob: [:url]])
     end
 
-    action :by_checksum, :struct do
-      constraints instance_of: __MODULE__
+    read :by_checksum do
+      description "Find a cost invoice by its blob's SHA-256 checksum."
+      get? true
+
       argument :blob_checksum, :string, allow_nil?: false
 
-      run fn input, context ->
-        import Ecto.Query
+      filter expr(exists(blob, blob_checksum == ^arg(:blob_checksum)))
 
-        result =
-          Repo.one!(
-            from(c in EctoCostInvoice,
-              join: b in Firmowid.Blobs.Blob,
-              on: b.id == c.blob_id,
-              where: b.blob_checksum == ^input.arguments.blob_checksum
-            )
-          )
-
-        # Convert to Ash struct
-        __MODULE__
-        |> Ash.Query.filter_input(%{id: %{eq: result.id}})
-        |> Ash.Query.load([:blob])
-        |> Ash.read_one!(Ash.Context.to_opts(context))
-        |> then(&{:ok, &1})
-      end
+      prepare build(load: [:blob])
     end
 
     action :get_with_blob_url, :struct do
@@ -357,7 +340,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       allow_nil? false
     end
 
-    belongs_to :blob, AshBlob do
+    belongs_to :blob, Firmowid.Ash.Blobs.Blob do
       attribute_writable? true
       define_attribute? false
       source_attribute :blob_id
@@ -517,7 +500,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       end
     end
 
-    AshBlob.destroy_blob!(cost_invoice.blob_id, opts)
+    Blobs.destroy_blob!(cost_invoice.blob, opts)
 
     broadcast_cost_invoice_list_updated(organization_id)
   end
@@ -616,7 +599,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     with {:ok, xml} <- Ksef.get_invoice_xml_by_ksef_number(ksef_number),
          {:ok, path} <- Briefly.create(extname: ".xml"),
          :ok <- File.write(path, xml),
-         {:ok, blob} <- AshBlob.create_blob(path, "application/xml", "#{ksef_number}.xml", opts) do
+         {:ok, blob} <- Blobs.create_blob(path, "application/xml", "#{ksef_number}.xml", opts) do
       try do
         invoice
         |> Ash.Changeset.for_update(:update_blob_id, %{blob_id: blob.id}, opts)
@@ -626,7 +609,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
         Ash.load!(invoice, [blob: [:url]], opts)
       rescue
         error ->
-          AshBlob.destroy_blob!(blob.id, opts)
+          Blobs.destroy_blob!(blob, opts)
           reraise error, __STACKTRACE__
       end
     else
@@ -713,51 +696,52 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     # TODO: replace authorize?: false + actor: %{} with system actor once available
     blob_opts = [tenant: Repo.get_org_id(), authorize?: false, actor: %{}]
 
-    Repo.transaction(fn ->
-      case AshBlob.create_blob(upload_path, content_type, original_filename, blob_opts) do
-        {:ok, blob} ->
-          enqueue_extraction_job(blob, inbound_email_id)
-          broadcast_cost_invoice_list_updated(blob.organization_id)
-          blob
+    result =
+      Repo.transaction(fn ->
+        case Blobs.create_blob(upload_path, content_type, original_filename, blob_opts) do
+          {:ok, blob} ->
+            enqueue_extraction_job(blob, inbound_email_id)
+            broadcast_cost_invoice_list_updated(blob.organization_id)
+            blob
 
-        {:error, error} ->
-          handle_blob_create_error(error)
-      end
-    end)
-  end
+          {:error, error} ->
+            Repo.rollback(error)
+        end
+      end)
 
-  defp handle_blob_create_error(%Unknown{} = error) do
-    if blob_already_exists_error?(error) do
-      Repo.rollback({:blob_already_exists, nil})
-    else
-      Logger.error("Failed to upload cost invoice: #{inspect(error)}")
-      Repo.rollback(:failure)
+    case result do
+      {:ok, blob} ->
+        {:ok, blob}
+
+      {:error, error} ->
+        if blob_checksum_conflict?(error) do
+          checksum = get_in(error, [Access.key(:attributes), :blob_checksum])
+          {:error, {:blob_already_exists, checksum}}
+        else
+          Logger.error("Failed to upload cost invoice: #{inspect(error)}")
+          {:error, error}
+        end
     end
   end
 
-  defp handle_blob_create_error(reason) do
-    Logger.error("Failed to upload cost invoice: #{inspect(reason)}")
-    Repo.rollback(:failure)
-  end
-
-  defp blob_already_exists_error?(%Unknown{errors: errors}) do
+  defp blob_checksum_conflict?(%{errors: errors}) do
     Enum.any?(errors, fn
-      %UnknownError{error: %Ecto.ConstraintError{constraint: constraint}} ->
-        String.contains?(constraint, "blob_checksum")
+      %Ash.Error.Changes.InvalidChanges{fields: fields} when is_list(fields) ->
+        :blob_checksum in fields
 
-      %UnknownError{error: %Ecto.Changeset{errors: changeset_errors}} ->
-        Keyword.has_key?(changeset_errors, :blob_checksum)
-
-      %UnknownError{error: error} when is_binary(error) ->
+      %{error: error} when is_binary(error) ->
         String.contains?(error, "blob_checksum") and
-          String.contains?(error, "has already been taken")
+          String.contains?(error, "unique_constraint")
+
+      %{error: %Ecto.ConstraintError{constraint: constraint}} ->
+        String.contains?(constraint, "blob_checksum")
 
       _ ->
         false
     end)
   end
 
-  defp blob_already_exists_error?(_), do: false
+  defp blob_checksum_conflict?(_), do: false
 
   defp enqueue_extraction_job(blob, inbound_email_id) do
     %{

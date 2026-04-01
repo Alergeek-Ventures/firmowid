@@ -242,12 +242,12 @@ defmodule FirmowidWeb.Management.Views.Project do
   end
 
   defp resolve_avatar(user, scope) do
-    alias Firmowid.Ash.Blobs.Blob, as: AshBlob
+    alias Firmowid.Ash.Blobs
 
     avatar_url =
       case Map.get(user, :avatar_blob_id) do
         nil -> nil
-        blob_id -> AshBlob.get_url!(blob_id, scope: scope)
+        blob_id -> Blobs.get_blob!(blob_id, scope: scope, load: [:url]).url
       end
 
     Map.put(user, :avatar_url, avatar_url)

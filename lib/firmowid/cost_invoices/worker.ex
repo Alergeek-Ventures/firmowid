@@ -5,7 +5,7 @@ defmodule Firmowid.CostInvoices.Worker do
     unique: true,
     max_attempts: 2
 
-  alias Firmowid.Ash.Blobs.Blob, as: AshBlob
+  alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.CostInvoices.OpenAIEnrichment
   alias Firmowid.ReductoApiClient
@@ -151,8 +151,8 @@ defmodule Firmowid.CostInvoices.Worker do
             Logger.error("Failed to extract cost invoice metadata for blob #{blob_id}: #{inspect(error)}")
 
             # on failure, clean up dangling blob from DB and S3
-            blob = AshBlob.by_id!(blob_id, blob_opts)
-            AshBlob.destroy_blob!(blob_id, blob_opts)
+            blob = Blobs.get_blob!(blob_id, blob_opts)
+            Blobs.destroy_blob!(blob, blob_opts)
 
             AshCostInvoice.broadcast_cost_invoice_failed_to_process(
               blob.original_filename,
@@ -170,7 +170,7 @@ defmodule Firmowid.CostInvoices.Worker do
   end
 
   defp extract_cost_invoice_metadata(blob_id, organization_id, inbound_email_id, blob_opts) do
-    blob_url = AshBlob.get_url!(blob_id, blob_opts)
+    blob_url = Blobs.get_blob!(blob_id, Keyword.put(blob_opts, :load, [:url])).url
 
     {:ok, extracted_metadata} =
       ReductoApiClient.extract(
@@ -210,8 +210,8 @@ defmodule Firmowid.CostInvoices.Worker do
   end
 
   defp handle_invalid_document(blob_id, organization_id, blob_opts) do
-    blob = AshBlob.by_id!(blob_id, blob_opts)
-    AshBlob.destroy_blob!(blob_id, blob_opts)
+    blob = Blobs.get_blob!(blob_id, blob_opts)
+    Blobs.destroy_blob!(blob, blob_opts)
 
     AshCostInvoice.broadcast_invalid_document_uploaded(blob.original_filename, organization_id)
   end

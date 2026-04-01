@@ -4,9 +4,9 @@ defmodule Firmowid.InvoicingSearchTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
-  alias Firmowid.Blobs.Blob
   alias Firmowid.CostInvoices.CostInvoice, as: EctoCostInvoice
   alias Firmowid.CostInvoices.CostInvoicesTransactions
   alias Firmowid.Finances.Transaction
@@ -36,6 +36,7 @@ defmodule Firmowid.InvoicingSearchTest do
 
       blob1 =
         Repo.insert!(%Blob{
+          id: UUIDv7.generate(),
           blob_path: "/test/path/acme_invoice_1.pdf",
           blob_checksum: "acme_checksum_1",
           original_filename: "acme_invoice_1.pdf",
@@ -74,6 +75,7 @@ defmodule Firmowid.InvoicingSearchTest do
 
       blob2 =
         Repo.insert!(%Blob{
+          id: UUIDv7.generate(),
           blob_path: "/test/path/other_invoice_2.pdf",
           blob_checksum: "other_checksum_2",
           original_filename: "other_invoice_2.pdf",
@@ -131,6 +133,7 @@ defmodule Firmowid.InvoicingSearchTest do
 
       blob3 =
         Repo.insert!(%Blob{
+          id: UUIDv7.generate(),
           blob_path: "/test/path/another_vendor_invoice_3.pdf",
           blob_checksum: "another_vendor_checksum_3",
           original_filename: "another_vendor_invoice_3.pdf",
@@ -178,6 +181,7 @@ defmodule Firmowid.InvoicingSearchTest do
 
       blob4 =
         Repo.insert!(%Blob{
+          id: UUIDv7.generate(),
           blob_path: "/test/path/org1_invoice_4.pdf",
           blob_checksum: "org1_checksum_4",
           original_filename: "org1_invoice_4.pdf",
@@ -220,6 +224,7 @@ defmodule Firmowid.InvoicingSearchTest do
 
       blob5 =
         Repo.insert!(%Blob{
+          id: UUIDv7.generate(),
           blob_path: "/test/path/org2_invoice_5.pdf",
           blob_checksum: "org2_checksum_5",
           original_filename: "org2_invoice_5.pdf",
@@ -304,6 +309,7 @@ defmodule Firmowid.InvoicingSearchTest do
 
       blob6 =
         Repo.insert!(%Blob{
+          id: UUIDv7.generate(),
           blob_path: "/test/path/unmatched_cost_invoice_6.pdf",
           blob_checksum: "unmatched_cost_checksum_6",
           original_filename: "unmatched_cost_invoice_6.pdf",
@@ -343,6 +349,7 @@ defmodule Firmowid.InvoicingSearchTest do
 
       blob7 =
         Repo.insert!(%Blob{
+          id: UUIDv7.generate(),
           blob_path: "/test/path/matched_cost_invoice_7.pdf",
           blob_checksum: "matched_cost_checksum_7",
           original_filename: "matched_cost_invoice_7.pdf",
@@ -457,6 +464,7 @@ defmodule Firmowid.InvoicingSearchTest do
 
       blob8 =
         Repo.insert!(%Blob{
+          id: UUIDv7.generate(),
           blob_path: "/test/path/some_vendor_invoice_8.pdf",
           blob_checksum: "some_vendor_checksum_8",
           original_filename: "some_vendor_invoice_8.pdf",
@@ -657,6 +665,7 @@ defmodule Firmowid.InvoicingSearchTest do
 
       blob9 =
         Repo.insert!(%Blob{
+          id: UUIDv7.generate(),
           blob_path: "/test/path/cost_filter_invoice_9.pdf",
           blob_checksum: "cost_filter_checksum_9",
           original_filename: "cost_filter_invoice_9.pdf",
@@ -801,6 +810,7 @@ defmodule Firmowid.InvoicingSearchTest do
       # Matching Cost Invoice
       blob_combined_match =
         Repo.insert!(%Blob{
+          id: UUIDv7.generate(),
           blob_path: "/test/path/combined_cost_invoice.pdf",
           blob_checksum: "combined_cost_checksum",
           original_filename: "combined_cost_invoice.pdf",
@@ -842,6 +852,7 @@ defmodule Firmowid.InvoicingSearchTest do
       # Non-matching Cost Invoice (outside date range)
       blob_diff_date =
         Repo.insert!(%Blob{
+          id: UUIDv7.generate(),
           blob_path: "/test/path/diff_date_cost_invoice.pdf",
           blob_checksum: "diff_date_checksum",
           original_filename: "diff_date_cost_invoice.pdf",
@@ -907,6 +918,7 @@ defmodule Firmowid.InvoicingSearchTest do
       # Non-matching Cost Invoice (amount out of range)
       blob_low_amount =
         Repo.insert!(%Blob{
+          id: UUIDv7.generate(),
           blob_path: "/test/path/low_amount_cost_invoice.pdf",
           blob_checksum: "low_amount_checksum",
           original_filename: "low_amount_cost_invoice.pdf",

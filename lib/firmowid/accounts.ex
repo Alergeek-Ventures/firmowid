@@ -13,7 +13,7 @@ defmodule Firmowid.Accounts do
   alias Firmowid.Accounts.UserNotifier
   alias Firmowid.Accounts.UserToken
   alias Firmowid.Ash.Billing.Limits, as: AshLimits
-  alias Firmowid.Ash.Blobs.Blob, as: AshBlob
+  alias Firmowid.Ash.Blobs
   alias Firmowid.Repo
 
   def authorize(:create_organization_invite, %{role: :admin}, _), do: true
@@ -762,11 +762,11 @@ defmodule Firmowid.Accounts do
 
         if organization.avatar_blob_id do
           # TODO: replace authorize?: false + actor: %{} with system actor once available
-          AshBlob.destroy_blob!(organization.avatar_blob_id,
-            tenant: organization.id,
-            authorize?: false,
-            actor: %{}
-          )
+          blob_opts = [tenant: organization.id, authorize?: false, actor: %{}]
+
+          organization.avatar_blob_id
+          |> Blobs.get_blob!(blob_opts)
+          |> Blobs.destroy_blob!(blob_opts)
         end
 
         {:ok, new_org}
@@ -779,7 +779,7 @@ defmodule Firmowid.Accounts do
     avatar_url =
       case organization.avatar_blob_id do
         nil -> nil
-        id -> AshBlob.get_url!(id, tenant: organization.id, authorize?: false, actor: %{})
+        id -> Blobs.get_blob!(id, tenant: organization.id, authorize?: false, actor: %{}, load: [:url]).url
       end
 
     Map.put(organization, :avatar_url, avatar_url)
@@ -1065,11 +1065,11 @@ defmodule Firmowid.Accounts do
 
         if user.avatar_blob_id do
           # TODO: replace authorize?: false + actor: %{} with system actor once available
-          AshBlob.destroy_blob!(user.avatar_blob_id,
-            tenant: user.organization_id,
-            authorize?: false,
-            actor: %{}
-          )
+          blob_opts = [tenant: user.organization_id, authorize?: false, actor: %{}]
+
+          user.avatar_blob_id
+          |> Blobs.get_blob!(blob_opts)
+          |> Blobs.destroy_blob!(blob_opts)
         end
 
         result
@@ -1089,8 +1089,12 @@ defmodule Firmowid.Accounts do
   defp do_get_user_with_avatar(user) do
     avatar_url =
       case user.avatar_blob_id do
-        nil -> nil
-        blob_id -> AshBlob.get_url!(blob_id, tenant: user.organization_id, authorize?: false, actor: %{})
+        nil ->
+          nil
+
+        blob_id ->
+          opts = [tenant: user.organization_id, authorize?: false, actor: %{}, load: [:url]]
+          Blobs.get_blob!(blob_id, opts).url
       end
 
     Map.put(user, :avatar_url, avatar_url)
