@@ -4,7 +4,7 @@ defmodule Firmowid.BankData.Worker do
     queue: :bank_data,
     max_attempts: 5
 
-  alias Firmowid.Ash.Finances.BankAccount
+  alias Firmowid.Ash.Finances
   alias Firmowid.BankData
   alias Firmowid.BankData.ApiClient
   alias Firmowid.BankData.Requisition
@@ -62,7 +62,7 @@ defmodule Firmowid.BankData.Worker do
     accounts_by_org =
       try do
         [authorize?: false, actor: %{}]
-        |> BankAccount.list_for_sync!()
+        |> Finances.list_bank_accounts_for_sync!()
         |> Enum.group_by(& &1.organization_id)
       after
         Repo.drop_skip_org_id()

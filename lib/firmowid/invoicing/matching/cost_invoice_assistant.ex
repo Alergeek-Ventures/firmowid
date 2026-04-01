@@ -3,7 +3,7 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
   Invoice-matching assistant: defines prompt, tools, and function handlers for invoice-to-transaction matching.
   Delegates LLM and function-call plumbing to AssistantEngine.
   """
-  alias Firmowid.Ash.Finances.TransactionQueries
+  alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Finances.Transaction
@@ -12,6 +12,7 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
   alias Firmowid.Invoicing.Matching.Assistant.Message
   alias Firmowid.Invoicing.Matching.Assistant.MessagesStorage
   alias Firmowid.Invoicing.Matching.Assistant.Tool
+  alias Firmowid.Repo
 
   @intro_message ~S"""
   Cześć, tu Firmowid!
@@ -50,7 +51,7 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
           args: %{"transaction_ids" => transaction_ids, "cost_invoice_ids" => cost_invoice_ids}
         }
       } ->
-        organization_id = Firmowid.Repo.get_org_id()
+        organization_id = Repo.get_org_id()
 
         # TODO: replace authorize?: false + actor: %{} with system actor once available
         CostInvoiceTransaction.create_connections(
@@ -142,7 +143,7 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
             if cost_invoice_id do
               cost_invoice_id
               |> CostInvoice.get(
-                tenant: Firmowid.Repo.get_org_id(),
+                tenant: Repo.get_org_id(),
                 authorize?: false,
                 actor: %{}
               )
@@ -152,7 +153,13 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
               end
             end
 
-          transactions = TransactionQueries.get_by_ids(transaction_ids)
+          transactions =
+            Finances.list_transactions!(
+              filter: [id: [in: transaction_ids]],
+              tenant: Repo.get_org_id(),
+              authorize?: false,
+              actor: %{}
+            )
 
           hallucinated_invoice = is_nil(cost_invoice)
 

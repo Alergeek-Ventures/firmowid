@@ -7,7 +7,7 @@ defmodule Firmowid.Seeds.Helpers do
 
   import Ecto.Query
 
-  alias Firmowid.Blobs
+  alias Firmowid.Ash.Blobs
   alias Firmowid.CostInvoices
   alias Firmowid.Finances.BankAccount
   alias Firmowid.Finances.Transaction

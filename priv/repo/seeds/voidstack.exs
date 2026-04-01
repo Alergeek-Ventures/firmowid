@@ -12,7 +12,7 @@ defmodule Firmowid.Seeds.Voidstack do
 
   alias Firmowid.Accounts
   alias Firmowid.Accounts.Organization
-  alias Firmowid.Ash.Finances.TransactionQueries
+  alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.CostInvoices
   alias Firmowid.Repo
@@ -138,7 +138,6 @@ defmodule Firmowid.Seeds.Voidstack do
         transaction_currency: "PLN",
         booking_date: Helpers.date_this_month(1),
         bank_account_id: bank.id,
-        organization_id: voidstack.id,
         skip_invoicing: true,
         remittance_information_unstructured: "Opłata za prowadzenie rachunku"
       },
@@ -152,7 +151,6 @@ defmodule Firmowid.Seeds.Voidstack do
         transaction_currency: "PLN",
         booking_date: Helpers.date_this_month(4),
         bank_account_id: bank.id,
-        organization_id: voidstack.id,
         skip_invoicing: false,
         remittance_information_unstructured: "Allegro — fotel biurowy ergonomiczny"
       },
@@ -166,7 +164,6 @@ defmodule Firmowid.Seeds.Voidstack do
         transaction_currency: "PLN",
         booking_date: Helpers.date_this_month(6),
         bank_account_id: bank.id,
-        organization_id: voidstack.id,
         skip_invoicing: false,
         remittance_information_unstructured: "Żabka — napoje energetyczne dla zespołu × 25 szt."
       },
@@ -180,20 +177,23 @@ defmodule Firmowid.Seeds.Voidstack do
         transaction_currency: "PLN",
         booking_date: Helpers.date_this_month(8),
         bank_account_id: bank.id,
-        organization_id: voidstack.id,
         skip_invoicing: false,
         remittance_information_unstructured: "Shadow Protocol — dostawa fazy 1"
       }
     ]
 
-    TransactionQueries.create_or_update(transactions)
+    Ash.bulk_create!(transactions, AshTransaction, :upsert_from_sync,
+      tenant: voidstack.id,
+      authorize?: false,
+      actor: %{}
+    )
   end
 
   defp seed_cost_invoice(voidstack) do
     today = Helpers.today()
 
     blob =
-      Repo.get(Firmowid.Blobs.Blob, "aaaaaaaa-1111-4b80-9d53-a71d0efc4cad")
+      Repo.get(Firmowid.Ash.Blobs.Blob, "aaaaaaaa-1111-4b80-9d53-a71d0efc4cad")
 
     if is_nil(Repo.get(CostInvoices.CostInvoice, "aaaaaaaa-3333-7433-bd41-3d8b719610a4")) do
       Repo.insert!(%CostInvoices.CostInvoice{

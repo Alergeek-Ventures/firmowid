@@ -1,4 +1,4 @@
-defmodule Firmowid.BlobsTest do
+defmodule Firmowid.Ash.Blobs.BlobsTest do
   use Firmowid.DataCase
 
   import Firmowid.AccountsFixtures

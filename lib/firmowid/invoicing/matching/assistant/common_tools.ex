@@ -1,9 +1,10 @@
 defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
   @moduledoc false
-  alias Firmowid.Ash.Finances.TransactionQueries
+  alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Invoicing.Matching.Assistant.FilterValidation
   alias Firmowid.Invoicing.Matching.Assistant.Tool
   alias Firmowid.Invoicing.Matching.CostInvoiceAssistant
+  alias Firmowid.Repo
 
   def normalize_to_pln do
     %Tool{
@@ -220,7 +221,7 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
                     validated_filtered
                   end
 
-                TransactionQueries.search(final_filtered)
+                search_transactions_via_ash(final_filtered)
 
               {:error, error} ->
                 {:error, error}
@@ -231,5 +232,60 @@ defmodule Firmowid.Invoicing.Matching.Assistant.CommonTools do
         end
       end
     }
+  end
+
+  # ── Private helpers ──────────────────────────────────────────────────
+
+  defp search_transactions_via_ash(params) do
+    ash_args =
+      params
+      |> Map.take([:query, :date_from, :date_to])
+      |> then(fn args ->
+        only_unmatched = Map.get(params, :only_unmatched, true)
+        if only_unmatched, do: Map.put(args, :status, :pending), else: args
+      end)
+
+    query =
+      Transaction
+      |> Ash.Query.for_read(:read, ash_args,
+        authorize?: false,
+        actor: %{},
+        tenant: Repo.get_org_id()
+      )
+      |> Ash.Query.load([:cost_invoices, :sales_invoices])
+      |> Ash.Query.limit(50)
+      |> then(fn q ->
+        # Only add default sort when ParadeDB search isn't overriding it
+        if Map.get(params, :query) in [nil, ""],
+          do: Ash.Query.sort(q, booking_date: :desc),
+          else: q
+      end)
+
+    case Ash.read(query) do
+      {:ok, results} ->
+        results
+        |> maybe_filter_in_memory(:currency, Map.get(params, :currency))
+        |> maybe_filter_in_memory(:amount_gt, Map.get(params, :amount_gt))
+        |> maybe_filter_in_memory(:amount_lt, Map.get(params, :amount_lt))
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp maybe_filter_in_memory(results, _field, nil), do: results
+
+  defp maybe_filter_in_memory(results, :currency, val) do
+    Enum.filter(results, &(&1.transaction_currency == val))
+  end
+
+  defp maybe_filter_in_memory(results, :amount_gt, val) do
+    val = Decimal.new(to_string(val))
+    Enum.filter(results, &(Decimal.compare(&1.transaction_amount, val) in [:gt, :eq]))
+  end
+
+  defp maybe_filter_in_memory(results, :amount_lt, val) do
+    val = Decimal.new(to_string(val))
+    Enum.filter(results, &(Decimal.compare(&1.transaction_amount, val) in [:lt, :eq]))
   end
 end

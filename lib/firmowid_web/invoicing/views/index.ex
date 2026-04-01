@@ -3,18 +3,19 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   use FirmowidWeb, :live_view
 
   import FirmowidWeb.Billing.Components.Billing
+  import FirmowidWeb.Core.PubSubDebounce
 
   alias Firmowid.Analytics
   alias Firmowid.Ash.Billing
-  alias Firmowid.Ash.Finances, as: AshFinances
+  alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
   alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.BankData
-  alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.TransactionGroup
   alias Firmowid.Ksef
   alias Firmowid.SalesInvoices
+  alias FirmowidWeb.Core.Endpoint
 
   @impl true
   def mount(_params, _session, socket) do
@@ -25,7 +26,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     if connected?(socket) do
       AshCostInvoice.subscribe_cost_invoice_broadcast(organization_id)
-      AshFinances.subscribe_transaction_broadcast(organization_id)
+      Endpoint.subscribe("transaction:updated:#{organization_id}")
       SalesInvoices.subscribe_sales_invoice_broadcast(organization_id)
       Invoicing.subscribe_invoicing_broadcast(organization_id)
       BankData.subscribe_requisition_updates(organization_id)
@@ -71,6 +72,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       |> assign(:search_query, "")
       |> assign(:search_results, [])
       |> assign(:cost_invoices_limit_check, cost_invoices_limit_check)
+      |> assign(:transactions_debounce_timer, nil)
 
     {:ok, socket}
   end
@@ -267,25 +269,35 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   def handle_info({:toggle_skip_invoicing, %{id: id, type: type}}, socket) do
     Bodyguard.permit!(Invoicing, :update, socket.assigns.current_user)
 
-    case type do
-      "cost_invoice" ->
-        AshCostInvoice.toggle_skip_invoicing(id)
+    socket =
+      case type do
+        "cost_invoice" ->
+          AshCostInvoice.toggle_skip_invoicing(id)
+          socket
 
-      "transaction" ->
-        AshTransaction.toggle_skip_invoicing!(%{id: id}, scope: socket.assigns.ash_scope)
+        "transaction" ->
+          scope = socket.assigns.ash_scope
+          tx = Finances.get_transaction!(id, scope: scope)
+          new_skip = !tx.skip_invoicing
+          Finances.set_transaction_skip_invoicing!(tx, %{skip_invoicing: new_skip}, scope: scope)
+          toggle_transaction_skip(socket, id, new_skip)
 
-      "sales_invoice" ->
-        SalesInvoices.toggle_skip_invoicing(id)
-    end
+        "sales_invoice" ->
+          SalesInvoices.toggle_skip_invoicing(id)
+          socket
+      end
 
     {:noreply, socket}
   end
 
   @impl true
-  def handle_info(:transaction_list_updated, socket) do
-    socket = refetch_invoicing_entries(socket)
+  def handle_info(%Phoenix.Socket.Broadcast{payload: %Ash.Notifier.Notification{resource: AshTransaction}}, socket) do
+    {:noreply, debounce_refetch(socket, :transactions, 10_000)}
+  end
 
-    {:noreply, socket}
+  @impl true
+  def handle_info({:debounced_refetch, :transactions}, socket) do
+    {:noreply, refetch_invoicing_entries(socket)}
   end
 
   @impl true
@@ -481,6 +493,29 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   defp handle_upload_result(_), do: nil
 
+  # TODO: re-add Transaction struct constraints once legacy Ecto schema is removed
+  defp toggle_transaction_skip(socket, id, new_skip) do
+    entries =
+      Enum.map(socket.assigns.invoicing_entries, fn
+        %{__struct__: _, id: ^id, skip_invoicing: _} = tx ->
+          Map.put(tx, :skip_invoicing, new_skip)
+
+        %TransactionGroup{transactions: txns} = group ->
+          updated =
+            Enum.map(txns, fn
+              %{__struct__: _, id: ^id, skip_invoicing: _} = tx -> Map.put(tx, :skip_invoicing, new_skip)
+              other -> other
+            end)
+
+          %{group | transactions: updated}
+
+        other ->
+          other
+      end)
+
+    assign(socket, :invoicing_entries, entries)
+  end
+
   defp refetch_invoicing_entries(socket) do
     Bodyguard.permit!(Invoicing, :read, socket.assigns.current_user)
 
@@ -568,15 +603,16 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   defp group_cost_transactions_by_party(entries, true) do
     # Separate transactions from other entries (invoices)
+    # TODO: re-add Transaction struct constraints once legacy Ecto schema is removed
     {transactions, other_entries} =
       Enum.split_with(entries, fn
-        %Transaction{} -> true
+        %{__struct__: _, transaction_amount: _} -> true
         _ -> false
       end)
 
     # Split into cost (negative) and income (positive) transactions
     {cost_transactions, income_transactions} =
-      Enum.split_with(transactions, fn %Transaction{transaction_amount: amount} ->
+      Enum.split_with(transactions, fn %{transaction_amount: amount} ->
         Decimal.lt?(amount, 0)
       end)
 
@@ -625,14 +661,9 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     entries
   end
 
-  defp groupable_transaction?(%Transaction{} = transaction) do
-    not_skipped = transaction.skip_invoicing == false
-
-    not_matched =
-      transaction.cost_invoices_transactions == [] &&
-        transaction.sales_invoices_transactions == []
-
-    not_skipped && not_matched
+  # TODO: re-add Transaction struct constraints once legacy Ecto schema is removed
+  defp groupable_transaction?(%{skip_invoicing: skip, cost_invoices: cost, sales_invoices: sales}) do
+    not skip and cost == [] and sales == []
   end
 
   defp groupable_transaction?(_), do: false

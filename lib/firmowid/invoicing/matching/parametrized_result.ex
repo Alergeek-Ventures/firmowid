@@ -6,7 +6,8 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
 
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Finances.Transaction
+
+  # TODO: re-add Transaction struct constraints once legacy Ecto schema is removed
 
   @enforce_keys [
     :days_lag_le_3,
@@ -48,7 +49,7 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
   Calculate a set of parameters for a given invoice and transaction pair.
   It is later used to rank the transactions (logistic regression).
   """
-  @spec generate_parametrized_result(CostInvoice.t() | SalesInvoice.t(), Transaction.t()) ::
+  @spec generate_parametrized_result(CostInvoice.t() | SalesInvoice.t(), map()) ::
           %__MODULE__{}
   def generate_parametrized_result(invoice, transaction) do
     days_diff =
@@ -107,11 +108,11 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
   defp get_invoice_identifier(%CostInvoice{invoice_identifier: id}), do: id
   defp get_invoice_identifier(%SalesInvoice{invoice_number: id}), do: id
 
-  defp get_transaction_side_name(%CostInvoice{}, %Transaction{creditor_name: name}), do: name
-  defp get_transaction_side_name(%SalesInvoice{}, %Transaction{debtor_name: name}), do: name
+  defp get_transaction_side_name(%CostInvoice{}, %{creditor_name: name}), do: name
+  defp get_transaction_side_name(%SalesInvoice{}, %{debtor_name: name}), do: name
 
-  defp get_transaction_side_account(%CostInvoice{}, %Transaction{creditor_account: acc}), do: acc
-  defp get_transaction_side_account(%SalesInvoice{}, %Transaction{debtor_account: acc}), do: acc
+  defp get_transaction_side_account(%CostInvoice{}, %{creditor_account: acc}), do: acc
+  defp get_transaction_side_account(%SalesInvoice{}, %{debtor_account: acc}), do: acc
 
   @spec amount_present_in_remittance_information_unstructured(
           String.t() | nil,
@@ -160,7 +161,7 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
     Date.diff(booking_date, due_date)
   end
 
-  @spec calculate_relative_amount_difference(CostInvoice.t() | SalesInvoice.t(), Transaction.t()) ::
+  @spec calculate_relative_amount_difference(CostInvoice.t() | SalesInvoice.t(), map()) ::
           float()
   defp calculate_relative_amount_difference(invoice, transaction) do
     # 1. Bring both amounts to PLN
@@ -235,9 +236,9 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
     |> String.replace(~r/[^A-Z0-9]/, "")
   end
 
-  @spec calculate_signed_amount_match(CostInvoice.t() | SalesInvoice.t(), Transaction.t()) ::
+  @spec calculate_signed_amount_match(CostInvoice.t() | SalesInvoice.t(), map()) ::
           float()
-  defp calculate_signed_amount_match(%CostInvoice{} = cost_invoice, %Transaction{} = transaction) do
+  defp calculate_signed_amount_match(%CostInvoice{} = cost_invoice, transaction) do
     inv_amount_pln =
       Firmowid.Currencies.normalize_amount_to_pln(
         get_invoice_amount(cost_invoice),
@@ -264,7 +265,7 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
     ratio |> Nx.clip(-5.0, 5.0) |> Nx.to_number()
   end
 
-  defp calculate_signed_amount_match(%SalesInvoice{} = sales_invoice, %Transaction{} = transaction) do
+  defp calculate_signed_amount_match(%SalesInvoice{} = sales_invoice, transaction) do
     inv_amount_pln =
       Firmowid.Currencies.normalize_amount_to_pln(
         get_invoice_amount(sales_invoice),

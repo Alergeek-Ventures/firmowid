@@ -1,6 +1,6 @@
 defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
   @moduledoc false
-  alias Firmowid.Ash.Finances.TransactionQueries
+  alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.Invoicing.Matching.Assistant.CommonTools
@@ -135,7 +135,13 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
               AshSalesInvoice.by_id!(sales_invoice_id, opts)
             end
 
-          transactions = TransactionQueries.get_by_ids(transaction_ids)
+          transactions =
+            Finances.list_transactions!(
+              filter: [id: [in: transaction_ids]],
+              tenant: Firmowid.Repo.get_org_id(),
+              authorize?: false,
+              actor: %{}
+            )
 
           hallucinated_invoice = is_nil(sales_invoice)
 

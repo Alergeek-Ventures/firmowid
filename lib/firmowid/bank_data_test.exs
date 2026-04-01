@@ -4,6 +4,7 @@ defmodule Firmowid.BankDataTest do
   import Firmowid.AccountsFixtures
 
   alias Firmowid.Accounts.Organization
+  alias Firmowid.Ash.Finances
   alias Firmowid.BankData
   alias Firmowid.BankData.Requisition
   alias Firmowid.BankData.Transaction
@@ -229,7 +230,7 @@ defmodule Firmowid.BankDataTest do
   test "cant insert two default accounts for one currency " do
     %{organization_id: organization_id} = user_fixture()
 
-    Firmowid.Ash.Finances.BankAccount.create_manual!(
+    Finances.create_manual_bank_account!(
       %{iban: "PL12345678901234567890123456", currency: "PLN", is_default: true},
       tenant: organization_id,
       authorize?: false,
@@ -237,7 +238,7 @@ defmodule Firmowid.BankDataTest do
     )
 
     assert_raise Ash.Error.Invalid, fn ->
-      Firmowid.Ash.Finances.BankAccount.create_manual!(
+      Finances.create_manual_bank_account!(
         %{iban: "EN12345678901234567890123456", currency: "PLN", is_default: true},
         tenant: organization_id,
         authorize?: false,

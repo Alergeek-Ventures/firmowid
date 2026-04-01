@@ -10,17 +10,15 @@ defmodule Firmowid.Invoicing.Matching.Windowing do
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Currencies
-  alias Firmowid.Finances.Transaction
+
+  # TODO: re-add Transaction struct constraints once legacy Ecto schema is removed
 
   @doc """
   Pre-filter the transactions list to only include ones
   that are sligthly within a time window and
   amount window. These windows are very generous.
   """
-  @spec pre_filter_invoice_transactions(CostInvoice.t() | SalesInvoice.t(), [Transaction.t()]) ::
-          [
-            Transaction.t()
-          ]
+  @spec pre_filter_invoice_transactions(CostInvoice.t() | SalesInvoice.t(), [map()]) :: [map()]
   def pre_filter_invoice_transactions(%CostInvoice{} = cost_invoice, transactions) do
     if is_nil(cost_invoice.issue_date) or is_nil(cost_invoice.due_date) do
       []
@@ -61,8 +59,8 @@ defmodule Firmowid.Invoicing.Matching.Windowing do
     Timex.between?(transaction_date, past_cutoff, future_cutoff, inclusive: true)
   end
 
-  @spec within_amount_window(CostInvoice.t() | SalesInvoice.t(), Transaction.t()) :: boolean()
-  defp within_amount_window(%CostInvoice{} = cost_invoice, %Transaction{} = transaction) do
+  @spec within_amount_window(CostInvoice.t() | SalesInvoice.t(), map()) :: boolean()
+  defp within_amount_window(%CostInvoice{} = cost_invoice, transaction) do
     is_transaction_a_cost = Decimal.lt?(transaction.transaction_amount, 0)
 
     total_amount =
@@ -91,7 +89,7 @@ defmodule Firmowid.Invoicing.Matching.Windowing do
     is_transaction_a_cost and is_between_amount_window
   end
 
-  defp within_amount_window(%SalesInvoice{} = sales_invoice, %Transaction{} = transaction) do
+  defp within_amount_window(%SalesInvoice{} = sales_invoice, transaction) do
     is_transaction_a_sale = Decimal.gt?(transaction.transaction_amount, 0)
 
     total_amount =

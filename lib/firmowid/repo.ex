@@ -122,7 +122,7 @@ defmodule Firmowid.Repo do
 
   # Tables that don't have organization_id and should bypass scoping
   @unscoped_table_prefixes ~w(pg_ error_tracker_)
-  @unscoped_tables ~w(requests)
+  @unscoped_tables ~w(organizations requests)
 
   defp unscoped_table?(%Ecto.Query{from: %{source: {table, _}}}) when is_binary(table) do
     table in @unscoped_tables ||

@@ -3,17 +3,18 @@ defmodule Firmowid.Invoicing do
   @behaviour Bodyguard.Policy
 
   import Ecto.Query, warn: false
-  import Paradex, only: [~>: 2]
 
-  alias Firmowid.Ash.Finances.TransactionQueries
+  alias Firmowid.Ash.Finances
+  alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
   alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
+  alias Firmowid.CostInvoices.CostInvoice, as: EctoCostInvoice
+  # Legacy Ecto schema — used only in get_all_months_with_invoicing_entries raw SQL union
+  alias Firmowid.Finances.Transaction, as: EctoTransaction
   # SQL fragment that converts KSeF VAT rate string codes to numeric decimals.
   # Must match VatRate.to_numeric/1 behavior for consistency.
-  alias Firmowid.CostInvoices.CostInvoice, as: EctoCostInvoice
-  alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.Matching
   alias Firmowid.Invoicing.TransactionGroup
   alias Firmowid.Repo
@@ -23,6 +24,10 @@ defmodule Firmowid.Invoicing do
 
   # TODO: replace authorize?: false + actor: %{} with system actor once available
   @bridge_opts [authorize?: false, actor: %{}]
+  @transaction_load_opts [
+    load: [:cost_invoices, :sales_invoices],
+    query: [sort: [booking_date: :desc]]
+  ]
 
   @vat_rate_to_decimal_sql """
   CASE ?
@@ -203,18 +208,14 @@ defmodule Firmowid.Invoicing do
   defp maybe_search_cost_invoices(query, search) when search in [nil, ""], do: query
 
   defp maybe_search_cost_invoices(query, search) do
-    search_dynamic =
-      Enum.reduce(
-        [
-          dynamic([cost_invoice], cost_invoice.seller ~> ^search),
-          dynamic([cost_invoice], cost_invoice.seller_display_name ~> ^search),
-          dynamic([cost_invoice], cost_invoice.description ~> ^search),
-          dynamic([cost_invoice], cost_invoice.invoice_identifier ~> ^search)
-        ],
-        fn expr, acc -> dynamic([cost_invoice], ^acc or ^expr) end
-      )
-
-    where(query, ^search_dynamic)
+    where(
+      query,
+      [cost_invoice],
+      fragment("? &&& ?", cost_invoice.seller, ^search) or
+        fragment("? &&& ?", cost_invoice.seller_display_name, ^search) or
+        fragment("? &&& ?", cost_invoice.description, ^search) or
+        fragment("? &&& ?", cost_invoice.invoice_identifier, ^search)
+    )
   end
 
   defp build_sales_invoice_query(params) do
@@ -294,23 +295,19 @@ defmodule Firmowid.Invoicing do
   defp maybe_search_sales_invoices(query, search) when search in [nil, ""], do: query
 
   defp maybe_search_sales_invoices(query, search) do
-    search_dynamic =
-      Enum.reduce(
-        [
-          # BM25 search fields - must match columns in the index
-          dynamic([sales_invoice], sales_invoice.buyer_full_name ~> ^search),
-          dynamic([sales_invoice], sales_invoice.buyer_given_name ~> ^search),
-          dynamic([sales_invoice], sales_invoice.buyer_surname ~> ^search),
-          dynamic([sales_invoice], sales_invoice.invoice_number ~> ^search),
-          dynamic([sales_invoice], sales_invoice.buyer_email ~> ^search),
-          dynamic([sales_invoice], sales_invoice.buyer_description ~> ^search),
-          dynamic([sales_invoice], sales_invoice.buyer_id ~> ^search),
-          dynamic([sales_invoice], sales_invoice.item_names ~> ^search)
-        ],
-        fn expr, acc -> dynamic([sales_invoice], ^acc or ^expr) end
-      )
-
-    where(query, ^search_dynamic)
+    where(
+      query,
+      [sales_invoice],
+      # BM25 search fields - must match columns in the index
+      fragment("? &&& ?", sales_invoice.buyer_full_name, ^search) or
+        fragment("? &&& ?", sales_invoice.buyer_given_name, ^search) or
+        fragment("? &&& ?", sales_invoice.buyer_surname, ^search) or
+        fragment("? &&& ?", sales_invoice.invoice_number, ^search) or
+        fragment("? &&& ?", sales_invoice.buyer_email, ^search) or
+        fragment("? &&& ?", sales_invoice.buyer_description, ^search) or
+        fragment("? &&& ?", sales_invoice.buyer_id, ^search) or
+        fragment("? &&& ?", sales_invoice.item_names, ^search)
+    )
   end
 
   defp hydrate_search_results(results) do
@@ -361,7 +358,7 @@ defmodule Firmowid.Invoicing do
   """
   def get_all_months_with_invoicing_entries do
     transactions_query =
-      from(t in Transaction,
+      from(t in EctoTransaction,
         select: %{
           date_string:
             fragment(
@@ -412,37 +409,40 @@ defmodule Firmowid.Invoicing do
   end
 
   def get_invoicing_entries(from, to, filter) do
-    cost_opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
-    sales_opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
+    ash_opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
+    tx_opts = ash_opts ++ @transaction_load_opts
 
     case filter do
       :all ->
         [
-          AshCostInvoice.list_for_month!(from, to, cost_opts),
-          AshSalesInvoice.list_for_month!(from, to, sales_opts),
-          TransactionQueries.list_by_date_range(from, to)
+          AshCostInvoice.list_for_month!(from, to, ash_opts),
+          AshSalesInvoice.list_for_month!(from, to, ash_opts),
+          Finances.list_transactions!(%{date_from: from, date_to: to}, tx_opts)
         ]
         |> Enum.concat()
         |> order_entries_for_display()
 
       :unmatched ->
         [
-          AshCostInvoice.list_unmatched!(from, to, cost_opts),
-          AshSalesInvoice.list_unmatched!(from, to, sales_opts),
-          TransactionQueries.list_unmatched(from, to)
+          AshCostInvoice.list_unmatched!(from, to, ash_opts),
+          AshSalesInvoice.list_unmatched!(from, to, ash_opts),
+          Finances.list_transactions!(
+            %{date_from: from, date_to: to, status: :pending},
+            tx_opts
+          )
         ]
         |> Enum.concat()
         |> order_entries_for_display()
 
       :invoices ->
         from
-        |> AshCostInvoice.list_for_month!(to, cost_opts)
-        |> Enum.concat(AshSalesInvoice.list_for_month!(from, to, sales_opts))
+        |> AshCostInvoice.list_for_month!(to, ash_opts)
+        |> Enum.concat(AshSalesInvoice.list_for_month!(from, to, ash_opts))
         |> order_entries_for_display()
 
       :transactions ->
-        from
-        |> TransactionQueries.list_by_date_range(to)
+        %{date_from: from, date_to: to}
+        |> Finances.list_transactions!(tx_opts)
         |> order_entries_for_display()
     end
   end
@@ -455,7 +455,7 @@ defmodule Firmowid.Invoicing do
     invoice.issue_date
   end
 
-  defp get_date(%Transaction{} = transaction) do
+  defp get_date(%AshTransaction{} = transaction) do
     transaction.booking_date
   end
 
@@ -467,10 +467,8 @@ defmodule Firmowid.Invoicing do
   defp matched?(%AshCostInvoice{} = invoice),
     do: Enum.any?(invoice.transactions) or Map.get(invoice, :skip_invoicing, false)
 
-  defp matched?(%Transaction{} = transaction),
-    do:
-      Enum.any?(transaction.sales_invoices_transactions ++ transaction.cost_invoices_transactions) or
-        Map.get(transaction, :skip_invoicing, false)
+  defp matched?(%AshTransaction{} = transaction),
+    do: Enum.any?(transaction.cost_invoices ++ transaction.sales_invoices) or transaction.skip_invoicing
 
   defp matched?(%TransactionGroup{}) do
     # Groups only contain unmatched transactions by design
@@ -516,8 +514,13 @@ defmodule Firmowid.Invoicing do
   # Bridge: accepts both Ecto and Ash invoice structs during migration
   @spec get_potential_transactions_for_invoice(struct()) :: [map()]
   def get_potential_transactions_for_invoice(invoice) do
+    ash_opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
+
     unmatched_transactions =
-      TransactionQueries.list_unmatched(~D[2000-01-01], ~D[2100-12-30])
+      Finances.list_transactions!(
+        %{date_from: ~D[2000-01-01], date_to: ~D[2100-12-30], status: :pending},
+        ash_opts
+      )
 
     attached_transactions = Map.get(invoice, :transactions, [])
 
@@ -545,8 +548,13 @@ defmodule Firmowid.Invoicing do
 
     Logger.info("Matching cost invoice #{cost_invoice.id} for organization #{organization_id}")
 
+    ash_opts = [tenant: organization_id] ++ @bridge_opts
+
     unmatched_transactions =
-      TransactionQueries.list_unmatched(~D[2000-01-01], ~D[2100-12-30])
+      Finances.list_transactions!(
+        %{date_from: ~D[2000-01-01], date_to: ~D[2100-12-30], status: :pending},
+        ash_opts
+      )
 
     Logger.info("Found #{length(unmatched_transactions)} unmatched transactions")
 
@@ -624,7 +632,10 @@ defmodule Firmowid.Invoicing do
     Logger.info("Matching sales invoice #{sales_invoice.id} for organization #{organization_id}")
 
     unmatched_transactions =
-      TransactionQueries.list_unmatched(~D[2000-01-01], ~D[2100-12-30])
+      Finances.list_transactions!(
+        %{date_from: ~D[2000-01-01], date_to: ~D[2100-12-30], status: :pending},
+        sales_opts
+      )
 
     Logger.info("Found #{length(unmatched_transactions)} unmatched transactions")
 

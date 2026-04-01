@@ -4,9 +4,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   import FirmowidWeb.DesignSystem.Components.CoreComponents
 
+  alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.TransactionGroup
   alias Firmowid.Ksef
 
@@ -567,12 +567,12 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       |> assign(:description, transaction.remittance_information_unstructured)
       |> assign(
         :navigate,
-        if transaction.sales_invoices_transactions == [] do
-          if transaction.cost_invoices_transactions != [] do
-            ~p"/kosztowe/#{List.first(transaction.cost_invoices_transactions).id}"
+        if transaction.sales_invoices == [] do
+          if transaction.cost_invoices != [] do
+            ~p"/kosztowe/#{List.first(transaction.cost_invoices).id}"
           end
         else
-          ~p"/sprzedazowe/#{List.first(transaction.sales_invoices_transactions).id}"
+          ~p"/sprzedazowe/#{List.first(transaction.sales_invoices).id}"
         end
       )
 
@@ -658,7 +658,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   end
 
   defp status_for_entry(%Transaction{} = t) do
-    if t.cost_invoices_transactions != [] or t.sales_invoices_transactions != [],
+    if t.cost_invoices != [] or t.sales_invoices != [],
       do: "matched",
       else: "unmatched"
   end

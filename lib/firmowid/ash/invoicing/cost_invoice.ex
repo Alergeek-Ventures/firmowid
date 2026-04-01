@@ -283,6 +283,10 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     policy action_type([:create, :update]) do
       authorize_if always()
     end
+
+    policy action_type(:action) do
+      authorize_if always()
+    end
   end
 
   multitenancy do
@@ -682,15 +686,20 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
   defp create_cost_invoice_job(upload_path, content_type, original_filename, inbound_email_id) do
     # TODO: replace authorize?: false + actor: %{} with system actor once available
-    blob_opts = [tenant: Repo.get_org_id(), authorize?: false, actor: %{}]
+    blob_opts = [
+      tenant: Repo.get_org_id(),
+      authorize?: false,
+      actor: %{},
+      return_notifications?: true
+    ]
 
     result =
       Repo.transaction(fn ->
         case Blobs.create_blob(upload_path, content_type, original_filename, blob_opts) do
-          {:ok, blob} ->
+          {:ok, blob, notifications} ->
             enqueue_extraction_job(blob, inbound_email_id)
             broadcast_cost_invoice_list_updated(blob.organization_id)
-            blob
+            {blob, notifications}
 
           {:error, error} ->
             Repo.rollback(error)
@@ -698,7 +707,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       end)
 
     case result do
-      {:ok, blob} ->
+      {:ok, {blob, notifications}} ->
+        Ash.Notifier.notify(notifications)
         {:ok, blob}
 
       {:error, error} ->

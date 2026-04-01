@@ -3,7 +3,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
   use FirmowidWeb, :live_component
 
   alias Firmowid.Accounts
-  alias Firmowid.Ash.Finances.TransactionQueries
+  alias Firmowid.Ash.Finances
   alias Firmowid.Invoicing.Matching.Assistant.Message
   alias Firmowid.Invoicing.Matching.Assistant.MessagesStorage
   alias Firmowid.Invoicing.Matching.CostInvoiceAssistant
@@ -26,7 +26,13 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
             done: true
           }
         } ->
-          transactions = TransactionQueries.get_by_ids(msg.payload.args["transaction_ids"])
+          transactions =
+            Finances.list_transactions!(
+              filter: [id: [in: msg.payload.args["transaction_ids"]]],
+              tenant: socket.assigns.current_user.organization_id,
+              actor: socket.assigns.current_user
+            )
+
           msg = Map.put(msg, :transactions, transactions)
 
           socket

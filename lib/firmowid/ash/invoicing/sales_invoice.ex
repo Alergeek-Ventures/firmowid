@@ -494,9 +494,9 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   def populate_logo_url(nil), do: nil
 
   def populate_logo_url(%{__struct__: __MODULE__} = invoice) do
-    # TODO: replace authorize?: false + actor: %{} with system actor once available
-    loaded = Ash.load!(invoice, [:organization], authorize?: false, actor: %{})
-    organization = Accounts.get_organization_with_avatar(loaded.organization)
+    # Use legacy Ecto organization which has avatar_blob_id (Ash resource doesn't yet)
+    {:ok, ecto_org} = Accounts.get_organization(invoice.organization_id)
+    organization = Accounts.get_organization_with_avatar(ecto_org)
     Map.put(invoice, :logo_url, organization.avatar_url)
   end
 
@@ -538,10 +538,14 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       [corrections, references]
       |> Enum.zip()
       |> Enum.map(fn {correction, reference} ->
-        %{correction | reference_invoice: reference, corrected_invoice: invoice}
+        correction
+        |> Map.put(:reference_invoice, reference)
+        |> Map.put(:corrected_invoice, invoice)
       end)
 
-    %{invoice | corrections: corrections}
+    invoice
+    |> Map.put(:corrections, corrections)
+    |> Map.put(:reference_invoice, nil)
   end
 
   def populate_reference_invoices(%{__struct__: __MODULE__, ksef_invoice_kind: :kor} = invoice) do
@@ -565,7 +569,9 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         end
       end)
 
-    %{invoice | reference_invoice: reference_invoice, corrected_invoice: original_invoice}
+    invoice
+    |> Map.put(:reference_invoice, reference_invoice)
+    |> Map.put(:corrected_invoice, original_invoice)
   end
 
   @doc """

@@ -1,19 +1,24 @@
 # credo:disable-for-this-file Credo.Check.Readability.Specs
 defmodule Firmowid.Seeds.MonthM1 do
   @moduledoc """
-  Seeds for M-1 (1 month ago) — fully matched & tagged.
+  Seeds for M-1 (1 month ago) — mostly matched & tagged.
 
-  Revenue:
+  Revenue (matched):
     GhostPet    50h × $170 = $8,500 (USD)   → project:GhostPet
     FlatMate    30h × £112 = £3,360 (GBP)    → project:FlatMate
     TacoOverflow 45h × €130 = €5,850 (EUR)   → project:TacoOverflow
 
-  Costs:
+  Costs (matched):
     OVH Cloud hosting     -2,400 PLN  → project:Firmowid
     OpenCode Zen           -€120 EUR  → :company
     Regus office rent     -4,500 PLN  → :company
     Biuro Plus supplies     -380 PLN  → untagged
     ING bank fee             -25 PLN  → :company
+
+  Unmatched — for grouping tests:
+    Hetzner (3 txns, same creditor, cost — should group)
+    DigitalPigeon Inc. (2 txns, same debtor, income — should group)
+    Spotify (1 txn, cost — should NOT group, too few)
 
   Wages (skip_invoicing, :company):
     Kira Voss       -4,500 PLN (30h × 150 PLN/h)
@@ -30,9 +35,7 @@ defmodule Firmowid.Seeds.MonthM1 do
   alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
-  alias Firmowid.CostInvoices
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices
   alias Firmowid.Seeds.Helpers
 
   def seed!(ctx) do
@@ -43,6 +46,8 @@ defmodule Firmowid.Seeds.MonthM1 do
     due_date = Helpers.date_months_ago(1, 28)
     booking = Helpers.date_months_ago(1, 20)
     prefix = Helpers.month_prefix(1)
+
+    seed_unmatched_for_grouping(bytecraft, banks)
 
     # — Revenue transactions —
 
@@ -464,6 +469,102 @@ defmodule Firmowid.Seeds.MonthM1 do
       txn_wage_maren.id,
       [projects.ghostpet.tag_definition_id, projects.taco.tag_definition_id],
       scope
+    )
+  end
+
+  # — Unmatched transactions for grouping tests —
+
+  defp seed_unmatched_for_grouping(bytecraft, banks) do
+    alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
+
+    transactions = [
+      # Hetzner — 3 cost transactions from the same creditor → should group
+      %{
+        internal_transaction_id: "m1_hetzner_1",
+        creditor_name: "Hetzner Online GmbH",
+        creditor_account: "DE72100110012627388415",
+        debtor_name: "Bytecraft Collective sp. z o.o.",
+        debtor_account: "PL85105000997603123456789013",
+        transaction_amount: -89.00,
+        transaction_currency: "EUR",
+        booking_date: Helpers.date_months_ago(1, 3),
+        bank_account_id: banks.eur.id,
+        skip_invoicing: false,
+        remittance_information_unstructured: "Hetzner Cloud — CX41 serwer produkcyjny"
+      },
+      %{
+        internal_transaction_id: "m1_hetzner_2",
+        creditor_name: "Hetzner Online GmbH",
+        creditor_account: "DE72100110012627388415",
+        debtor_name: "Bytecraft Collective sp. z o.o.",
+        debtor_account: "PL85105000997603123456789013",
+        transaction_amount: -45.00,
+        transaction_currency: "EUR",
+        booking_date: Helpers.date_months_ago(1, 10),
+        bank_account_id: banks.eur.id,
+        skip_invoicing: false,
+        remittance_information_unstructured: "Hetzner Cloud — CPX21 serwer staging"
+      },
+      %{
+        internal_transaction_id: "m1_hetzner_3",
+        creditor_name: "Hetzner Online GmbH",
+        creditor_account: "DE72100110012627388415",
+        debtor_name: "Bytecraft Collective sp. z o.o.",
+        debtor_account: "PL85105000997603123456789013",
+        transaction_amount: -12.50,
+        transaction_currency: "EUR",
+        booking_date: Helpers.date_months_ago(1, 15),
+        bank_account_id: banks.eur.id,
+        skip_invoicing: false,
+        remittance_information_unstructured: "Hetzner Cloud — backup storage BX11"
+      },
+      # DigitalPigeon — 2 income transactions from the same debtor → should group
+      %{
+        internal_transaction_id: "m1_dpigeon_1",
+        creditor_name: "Bytecraft Collective sp. z o.o.",
+        creditor_account: "PL85105000997603123456789013",
+        debtor_name: "DigitalPigeon Inc.",
+        debtor_account: "DE89370400440532019999",
+        transaction_amount: 1_200.00,
+        transaction_currency: "EUR",
+        booking_date: Helpers.date_months_ago(1, 8),
+        bank_account_id: banks.eur.id,
+        skip_invoicing: false,
+        remittance_information_unstructured: "DigitalPigeon — konsultacje API integracji, faza 1"
+      },
+      %{
+        internal_transaction_id: "m1_dpigeon_2",
+        creditor_name: "Bytecraft Collective sp. z o.o.",
+        creditor_account: "PL85105000997603123456789013",
+        debtor_name: "DigitalPigeon Inc.",
+        debtor_account: "DE89370400440532019999",
+        transaction_amount: 800.00,
+        transaction_currency: "EUR",
+        booking_date: Helpers.date_months_ago(1, 18),
+        bank_account_id: banks.eur.id,
+        skip_invoicing: false,
+        remittance_information_unstructured: "DigitalPigeon — konsultacje API integracji, faza 2"
+      },
+      # Spotify — 1 cost transaction, should NOT group (only 1 txn)
+      %{
+        internal_transaction_id: "m1_spotify",
+        creditor_name: "Spotify AB",
+        creditor_account: "SE3550000000058398257466",
+        debtor_name: "Bytecraft Collective sp. z o.o.",
+        debtor_account: "PL85105000997603123456789013",
+        transaction_amount: -17.99,
+        transaction_currency: "EUR",
+        booking_date: Helpers.date_months_ago(1, 1),
+        bank_account_id: banks.eur.id,
+        skip_invoicing: false,
+        remittance_information_unstructured: "Spotify Premium — subskrypcja zespołowa"
+      }
+    ]
+
+    Ash.bulk_create!(transactions, AshTransaction, :upsert_from_sync,
+      tenant: bytecraft.id,
+      authorize?: false,
+      actor: %{}
     )
   end
 

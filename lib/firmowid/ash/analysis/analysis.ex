@@ -18,14 +18,15 @@ defmodule Firmowid.Ash.Analysis do
 
   alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.Ash.Analysis.TagDefinition
-  alias Firmowid.Ash.Finances.TransactionQueries
+  alias Firmowid.Ash.Finances
+  alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
   alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Ash.Scope
   alias Firmowid.CostInvoices.CostInvoice, as: EctoCostInvoice
   alias Firmowid.CostInvoices.CostInvoicesTransactions
   alias Firmowid.Currencies
-  alias Firmowid.Finances.Transaction
+  alias Firmowid.Finances.Transaction, as: EctoTransaction
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices.SalesInvoice, as: EctoSalesInvoice
   alias Firmowid.SalesInvoices.SalesInvoicesTransactions
@@ -87,7 +88,13 @@ defmodule Firmowid.Ash.Analysis do
       )
       |> Enum.filter(&matched_or_skipped?/1)
 
-    transactions = TransactionQueries.list_skipped_unmatched(date_from, date_to)
+    transactions =
+      Finances.list_transactions!(
+        %{date_from: date_from, date_to: date_to, status: :skipped},
+        tenant: scope.current_tenant,
+        actor: scope.current_user,
+        authorize?: false
+      )
 
     all_entities = build_entity_id_list(sales_invoices, cost_invoices, transactions)
     entity_tags_map = load_entity_tags_map(all_entities, scope)
@@ -170,7 +177,7 @@ defmodule Firmowid.Ash.Analysis do
       )
 
     transactions_query =
-      from(t in Transaction,
+      from(t in EctoTransaction,
         as: :transaction,
         where: t.skip_invoicing == true,
         where: not exists(subquery(sales_match_query)),
@@ -234,7 +241,7 @@ defmodule Firmowid.Ash.Analysis do
     {value, entity.currency}
   end
 
-  defp get_amount_and_currency(%Transaction{} = entity) do
+  defp get_amount_and_currency(%AshTransaction{} = entity) do
     {entity.transaction_amount, entity.transaction_currency}
   end
 
@@ -287,7 +294,7 @@ defmodule Firmowid.Ash.Analysis do
 
   defp entity_id(%AshSalesInvoice{id: id}), do: id
   defp entity_id(%AshCostInvoice{id: id}), do: id
-  defp entity_id(%Transaction{id: id}), do: id
+  defp entity_id(%AshTransaction{id: id}), do: id
 
   # Filters entities and attaches entity_tags to each struct:
   # 1. Always excludes internal-tagged entities

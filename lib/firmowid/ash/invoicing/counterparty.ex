@@ -295,18 +295,17 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
 
   defp apply_search(query, search_term) do
     import Ecto.Query
-    import Paradex, only: [~>: 2]
 
     search_query =
       where(
         query,
         [c],
-        c.display_name ~> ^search_term or
-          c.full_name ~> ^search_term or
-          c.given_name ~> ^search_term or
-          c.surname ~> ^search_term or
-          c.tax_id ~> ^search_term or
-          c.email ~> ^search_term
+        fragment("? ||| ?", c.display_name, ^search_term) or
+          fragment("? ||| ?", c.full_name, ^search_term) or
+          fragment("? ||| ?", c.given_name, ^search_term) or
+          fragment("? ||| ?", c.surname, ^search_term) or
+          fragment("? ||| ?", c.tax_id, ^search_term) or
+          fragment("? ||| ?", c.email, ^search_term)
       )
 
     {:search, search_query}
@@ -325,7 +324,7 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
   defp apply_sorting(query, :search, _sort_by, _order) do
     import Ecto.Query
 
-    order_by(query, [c], fragment("paradedb.score(?) DESC", c.id))
+    order_by(query, [c], fragment("pdb.score(?) DESC", c.id))
   end
 
   defp apply_sorting(query, :no_search, :name, order) do

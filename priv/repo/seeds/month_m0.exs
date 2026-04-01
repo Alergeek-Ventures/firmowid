@@ -21,7 +21,7 @@ defmodule Firmowid.Seeds.MonthM0 do
   import Ecto.Query
 
   alias Firmowid.Ash.Analysis.EntityTag
-  alias Firmowid.Ash.Finances.TransactionQueries
+  alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
   alias Firmowid.Seeds.Helpers
@@ -142,7 +142,13 @@ defmodule Firmowid.Seeds.MonthM0 do
       }
     ]
 
-    TransactionQueries.create_or_update(transactions)
+    transactions
+    |> Enum.map(&Map.delete(&1, :organization_id))
+    |> Ash.bulk_create!(AshTransaction, :upsert_from_sync,
+      tenant: bytecraft.id,
+      authorize?: false,
+      actor: %{}
+    )
   end
 
   # — THB bank fee —

@@ -11,7 +11,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Analytics
   alias Firmowid.Ash.Billing
   alias Firmowid.Ash.Blobs
-  alias Firmowid.Ash.Finances.BankAccount, as: AshBankAccount
+  alias Firmowid.Ash.Finances
   alias Firmowid.BankData
   alias Firmowid.BankData.ApiClient
   alias Firmowid.Ksef
@@ -220,9 +220,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   def handle_event("delete_bank_account", %{"account_id" => account_id}, socket) do
     scope = socket.assigns.ash_scope
-    bank_account = AshBankAccount.get_by_id!(account_id, scope: scope)
+    bank_account = Finances.get_bank_account!(account_id, scope: scope)
 
-    case AshBankAccount.destroy(bank_account, scope: scope) do
+    case Finances.destroy_bank_account(bank_account, scope: scope) do
       :ok ->
         LiveToast.send_toast(:info, "Konto bankowe zostało usunięte.")
         bank_accounts = BankData.list_bank_accounts()
@@ -241,7 +241,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
   def handle_event("make_default_account", %{"account_id" => account_id}, socket) do
     scope = socket.assigns.ash_scope
 
-    case AshBankAccount.make_default(%{id: account_id}, scope: scope) do
+    bank_account = Finances.get_bank_account!(account_id, scope: scope)
+
+    case Finances.update_bank_account(bank_account, %{is_default: true}, scope: scope) do
       {:ok, _} ->
         bank_accounts = BankData.list_bank_accounts()
 
@@ -317,9 +319,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   def handle_event("rename_bank_account", %{"account_id" => account_id, "name" => name}, socket) do
     scope = socket.assigns.ash_scope
-    bank_account = AshBankAccount.get_by_id!(account_id, scope: scope)
+    bank_account = Finances.get_bank_account!(account_id, scope: scope)
 
-    case AshBankAccount.rename(bank_account, name, scope: scope) do
+    case Finances.update_bank_account(bank_account, %{name: name}, scope: scope) do
       {:ok, _} ->
         LiveToast.send_toast(:info, "Nazwa konta została zmieniona.")
         accounts = BankData.list_bank_accounts()
@@ -337,7 +339,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   def handle_event("reconnect_bank_account", %{"account_id" => account_id}, socket) do
     scope = socket.assigns.ash_scope
-    bank_account = AshBankAccount.get_by_id!(account_id, scope: scope)
+    bank_account = Finances.get_bank_account!(account_id, scope: scope)
     Bodyguard.permit!(BankData, :create_requisition, socket.assigns.current_user)
 
     # If the account doesn't have an institution associated (legacy/imported),
@@ -381,8 +383,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
       owner_name: params["owner_name"]
     }
 
-    case AshBankAccount.create_manual(attrs, scope: scope) do
-      {:ok, %AshBankAccount{}} ->
+    case Finances.create_manual_bank_account(attrs, scope: scope) do
+      {:ok, _} ->
         LiveToast.send_toast(:info, "Konto zostało dodane.")
         accounts = BankData.list_bank_accounts()
 

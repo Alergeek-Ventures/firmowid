@@ -712,9 +712,10 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
   a correction invoice (faktura korygująca). Invoices that failed KSeF submission
   are not considered submitted — they can be edited directly and re-submitted.
   """
-  @spec ksef_submitted?(t()) :: boolean()
-  def ksef_submitted?(%__MODULE__{ksef_number: nil}), do: false
-  def ksef_submitted?(%__MODULE__{}), do: true
+  # TODO: re-add SalesInvoice struct constraint once legacy Ecto schema is removed
+  @spec ksef_submitted?(t() | map()) :: boolean()
+  def ksef_submitted?(%{ksef_number: nil}), do: false
+  def ksef_submitted?(%{ksef_number: _}), do: true
 
   @doc """
   Returns true if the invoice can be edited (navigated to the edit page).

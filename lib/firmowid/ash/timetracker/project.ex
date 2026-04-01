@@ -451,7 +451,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
     # @@@ operator. The hardcoded "name @@@ ?" avoids this.
     query
     |> Ash.Query.filter(fragment("name @@@ ?", ^search))
-    |> Ash.Query.sort({calc(fragment("paradedb.score(?)", id), type: :float), :desc})
+    |> Ash.Query.sort({calc(fragment("pdb.score(?)", id), type: :float), :desc})
   end
 
   # ── Private helpers for user assignment ──────────────────────────────

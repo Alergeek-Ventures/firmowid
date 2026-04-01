@@ -5,7 +5,7 @@ defmodule Firmowid.BankData do
   import Ecto.Query, warn: false
 
   alias Firmowid.Ash.Billing
-  alias Firmowid.Ash.Finances.BankAccount, as: FinancesBankAccount
+  alias Firmowid.Ash.Finances.BankAccount, as: BankAccountResource
   alias Firmowid.Ash.Finances.Transaction, as: FinancesTransaction
   alias Firmowid.BankData.ApiClient
   alias Firmowid.BankData.Requisition
@@ -279,10 +279,18 @@ defmodule Firmowid.BankData do
     # user is present. actor: %{} is a placeholder for a future dedicated system
     # actor struct. Using an empty map (rather than nil) prevents nil-actor crashes
     # if authorization is accidentally re-enabled on this action in the future.
-    FinancesTransaction.bulk_upsert_from_sync!(transactions,
+    Ash.bulk_create(
+      transactions,
+      FinancesTransaction,
+      :upsert_from_sync,
       tenant: organization_id,
       authorize?: false,
-      actor: %{}
+      actor: %{},
+      upsert?: true,
+      return_errors?: true,
+      stop_on_error?: false,
+      batch_size: 100,
+      notify?: true
     )
 
     {:ok, nil}
@@ -296,7 +304,7 @@ defmodule Firmowid.BankData do
           # flow (no authenticated user). actor: %{} is a placeholder for a future
           # system actor struct; prevents nil-actor crashes if authorization is
           # accidentally re-enabled on this action.
-          FinancesBankAccount
+          BankAccountResource
           |> Ash.Changeset.for_create(
             :sync_from_bank,
             %{

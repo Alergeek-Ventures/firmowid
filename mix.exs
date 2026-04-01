@@ -120,7 +120,6 @@ defmodule Firmowid.MixProject do
       {:ecto_dev_logger, "~> 0.14"},
       {:nx, "~> 0.10"},
       {:mdex, "~> 0.7"},
-      {:paradex, "~> 0.4.0"},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:openai_ex, "~> 0.9.19"},
