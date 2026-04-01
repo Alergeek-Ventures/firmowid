@@ -44,7 +44,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
-  alias Firmowid.Ash.Billing.Limits, as: AshLimits
+  alias Firmowid.Ash.Billing
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Resource
   alias Firmowid.Ksef
@@ -491,13 +491,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     organization_id = cost_invoice.organization_id
 
     if !correction_invoice?(cost_invoice) do
-      case AshLimits.decrement(organization_id, :cost_invoices, authorize?: false, actor: %{}) do
-        {:ok, _} ->
-          :ok
-
-        {:error, reason} ->
-          Logger.warning("Failed to decrement cost_invoices limit: #{inspect(reason)}")
-      end
+      adjust_billing_counter(organization_id, :cost_invoices, :decrement_counter)
     end
 
     Blobs.destroy_blob!(cost_invoice.blob, opts)
@@ -564,13 +558,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     {:ok, cost_invoice} = create_from_metadata(extracted_metadata, opts)
 
     if !correction_invoice?(cost_invoice) do
-      case AshLimits.increment(organization_id, :cost_invoices, authorize?: false, actor: %{}) do
-        {:ok, _} ->
-          :ok
-
-        {:error, reason} ->
-          Logger.warning("Failed to increment cost_invoices limit: #{inspect(reason)}")
-      end
+      adjust_billing_counter(organization_id, :cost_invoices, :increment_counter)
     end
 
     broadcast_cost_invoice_added(cost_invoice)
@@ -791,6 +779,18 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
       true ->
         changeset
+    end
+  end
+
+  defp adjust_billing_counter(organization_id, type, action) do
+    billing_opts = [tenant: organization_id, authorize?: false, actor: %{}]
+
+    with {:ok, limits} <- Billing.get_limits(billing_opts),
+         {:ok, _} <- apply(Billing, action, [limits, %{type: type}, billing_opts]) do
+      :ok
+    else
+      {:error, reason} ->
+        Logger.warning("Failed to #{action} #{type} billing limit: #{inspect(reason)}")
     end
   end
 end

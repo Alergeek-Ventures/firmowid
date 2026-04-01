@@ -9,7 +9,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Accounts
   alias Firmowid.Accounts.Organization
   alias Firmowid.Analytics
-  alias Firmowid.Ash.Billing.Limits, as: AshLimits
+  alias Firmowid.Ash.Billing
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Finances.BankAccount, as: AshBankAccount
   alias Firmowid.BankData
@@ -100,7 +100,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
      )
      |> assign(:current_org, Accounts.get_organization_with_avatar(socket.assigns.current_org))
      |> assign(:main_class, "bg-white")
-     |> assign(:usage_summary, AshLimits.usage_summary!(socket.assigns.current_org.id, scope: socket.assigns.ash_scope))
+     |> assign(:usage_summary, billing_usage_summary(socket.assigns.current_org.id, socket.assigns.ash_scope))
      |> assign(:days_until_reset, days_until_monthly_reset())}
   end
 
@@ -631,6 +631,20 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
       {account.id, status}
     end)
+  end
+
+  defp billing_usage_summary(org_id, scope) do
+    limits = Billing.get_limits!(tenant: org_id, scope: scope)
+
+    usage = fn used, limit ->
+      %{used: used, limit: limit, over_limit: used >= limit}
+    end
+
+    %{
+      cost_invoices: usage.(limits.cost_invoices_used, limits.cost_invoices_limit),
+      sales_invoices: usage.(limits.sales_invoices_used, limits.sales_invoices_limit),
+      bank_connections: usage.(limits.bank_connections_used, limits.bank_connections_limit)
+    }
   end
 
   defp days_until_monthly_reset do

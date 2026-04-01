@@ -5,7 +5,7 @@ defmodule Firmowid.SalesInvoices do
   import Ecto.Query, warn: false
 
   alias Firmowid.Accounts
-  alias Firmowid.Ash.Billing.Limits, as: AshLimits
+  alias Firmowid.Ash.Billing
   alias Firmowid.Nbp
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices.SalesInvoice
@@ -425,10 +425,7 @@ defmodule Firmowid.SalesInvoices do
       |> Repo.insert()
 
     with {:ok, created_invoice} <- result do
-      case AshLimits.increment(created_invoice.organization_id, :sales_invoices, authorize?: false, actor: %{}) do
-        {:ok, _} -> :ok
-        {:error, reason} -> Logger.warning("Failed to increment sales_invoices limit: #{inspect(reason)}")
-      end
+      adjust_billing_counter(created_invoice.organization_id, :sales_invoices, :increment_counter)
     end
 
     result
@@ -588,10 +585,7 @@ defmodule Firmowid.SalesInvoices do
   end
 
   defp do_decrement_billing(invoice) do
-    case AshLimits.decrement(invoice.organization_id, :sales_invoices, authorize?: false, actor: %{}) do
-      {:ok, _} -> :ok
-      {:error, reason} -> Logger.warning("Failed to decrement sales_invoices limit: #{inspect(reason)}")
-    end
+    adjust_billing_counter(invoice.organization_id, :sales_invoices, :decrement_counter)
   end
 
   defp correction_invoice?(%SalesInvoice{ksef_invoice_kind: :kor}), do: true
@@ -649,5 +643,17 @@ defmodule Firmowid.SalesInvoices do
     @token_bytes
     |> :crypto.strong_rand_bytes()
     |> Base.url_encode64(padding: false)
+  end
+
+  defp adjust_billing_counter(organization_id, type, action) do
+    billing_opts = [tenant: organization_id, authorize?: false, actor: %{}]
+
+    with {:ok, limits} <- Billing.get_limits(billing_opts),
+         {:ok, _} <- apply(Billing, action, [limits, %{type: type}, billing_opts]) do
+      :ok
+    else
+      {:error, reason} ->
+        Logger.warning("Failed to #{action} #{type} billing limit: #{inspect(reason)}")
+    end
   end
 end

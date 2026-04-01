@@ -7,13 +7,13 @@ defmodule FirmowidWeb.Billing.Components.Billing do
   @doc """
   Renders a warning banner when the organization is over their usage limit.
 
-  The `check_result` should be the result of calling `Firmowid.Ash.Billing.Limits.check!/3`
+  The `check_result` should be the result of calling `Firmowid.Ash.Billing.check!/3`
   in the LiveView's mount or handle_params.
 
   ## Examples
 
       # In LiveView mount/handle_params:
-      check_result = AshLimits.check!(org_id, :cost_invoices, scope: scope)
+      check_result = Billing.check!(org_id, :cost_invoices, scope: scope)
       socket = assign(socket, :cost_invoices_limit_check, check_result)
 
       # In template:

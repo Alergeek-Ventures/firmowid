@@ -4,7 +4,7 @@ defmodule Firmowid.BankData do
 
   import Ecto.Query, warn: false
 
-  alias Firmowid.Ash.Billing.Limits, as: AshLimits
+  alias Firmowid.Ash.Billing
   alias Firmowid.Ash.Finances.BankAccount, as: FinancesBankAccount
   alias Firmowid.Ash.Finances.Transaction, as: FinancesTransaction
   alias Firmowid.BankData.ApiClient
@@ -95,12 +95,7 @@ defmodule Firmowid.BankData do
       |> Repo.update()
 
     with {:ok, accepted_requisition} <- result do
-      org_id = accepted_requisition.organization_id
-
-      case AshLimits.increment(org_id, :bank_connections, authorize?: false, actor: %{}) do
-        {:ok, _} -> :ok
-        {:error, reason} -> Logger.warning("Failed to increment bank_connections limit: #{inspect(reason)}")
-      end
+      adjust_billing_counter(accepted_requisition.organization_id, :bank_connections, :increment_counter)
     end
 
     result
@@ -124,10 +119,7 @@ defmodule Firmowid.BankData do
       |> Repo.update()
 
     with {:ok, rejected} <- result, true <- was_accepted do
-      case AshLimits.decrement(rejected.organization_id, :bank_connections, authorize?: false, actor: %{}) do
-        {:ok, _} -> :ok
-        {:error, reason} -> Logger.warning("Failed to decrement bank_connections limit: #{inspect(reason)}")
-      end
+      adjust_billing_counter(rejected.organization_id, :bank_connections, :decrement_counter)
     end
 
     result
@@ -458,6 +450,18 @@ defmodule Firmowid.BankData do
     case Repo.transact(multi, organization_id: organization_id) do
       {:ok, %{ids: ids}} -> length(ids || [])
       {:error, _op, _reason, _changes} -> 0
+    end
+  end
+
+  defp adjust_billing_counter(organization_id, type, action) do
+    billing_opts = [tenant: organization_id, authorize?: false, actor: %{}]
+
+    with {:ok, limits} <- Billing.get_limits(billing_opts),
+         {:ok, _} <- apply(Billing, action, [limits, %{type: type}, billing_opts]) do
+      :ok
+    else
+      {:error, reason} ->
+        Logger.warning("Failed to #{action} #{type} billing limit: #{inspect(reason)}")
     end
   end
 end

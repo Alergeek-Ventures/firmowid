@@ -5,7 +5,7 @@ defmodule FirmowidWeb.BankSync.Views.Create do
   import FirmowidWeb.Billing.Components.Billing
 
   alias Firmowid.Analytics
-  alias Firmowid.Ash.Billing.Limits, as: AshLimits
+  alias Firmowid.Ash.Billing
   alias Firmowid.BankData
   alias Firmowid.BankData.Worker, as: BankDataWorker
 
@@ -16,8 +16,12 @@ defmodule FirmowidWeb.BankSync.Views.Create do
     Bodyguard.permit!(BankData, :create_requisition, socket.assigns.current_user)
 
     # Check billing limits for bank connections
+    limits = Billing.get_limits!(tenant: socket.assigns.current_org.id, scope: socket.assigns.ash_scope)
+
     bank_connections_limit_check =
-      AshLimits.check!(socket.assigns.current_org.id, :bank_connections, scope: socket.assigns.ash_scope)
+      if limits.bank_connections_used >= limits.bank_connections_limit,
+        do: {:warning, :over_limit, %{used: limits.bank_connections_used, limit: limits.bank_connections_limit}},
+        else: :ok
 
     available_institutions =
       case BankData.get_available_institutions_for_country("pl") do

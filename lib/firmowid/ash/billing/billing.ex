@@ -6,13 +6,16 @@ defmodule Firmowid.Ash.Billing do
   Limits are checked but not enforced — actions proceed with warnings when over
   limit. Monthly invoice counters are reset by `Firmowid.Ash.Billing.ResetWorker`
   on the 1st of each month.
-
-  This is a PoC feature — kept intentionally simple.
   """
   use Ash.Domain
 
   resources do
-    resource Firmowid.Ash.Billing.Limits
+    resource Firmowid.Ash.Billing.Limits do
+      define :create_limits, action: :create
+      define :get_limits, action: :read, get?: true
+      define :increment_counter
+      define :decrement_counter
+    end
   end
 
   authorization do

@@ -8,7 +8,19 @@ defmodule Firmowid.Ash.Billing.ResetWorker do
 
   @impl Oban.Worker
   def perform(_job) do
-    # TODO: replace authorize?: false + actor: %{} with system actor once available
-    Limits.reset_monthly_counters(authorize?: false, actor: %{})
+    # TODO: replace actor: %{} with a proper system actor once available
+    result =
+      Ash.bulk_update!(Limits, :reset_counters, %{},
+        strategy: [:atomic],
+        authorize?: false,
+        actor: %{},
+        read_action: :read_all,
+        return_errors?: true
+      )
+
+    case result.errors do
+      [] -> :ok
+      errors -> {:error, errors}
+    end
   end
 end
