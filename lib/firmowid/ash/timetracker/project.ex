@@ -60,6 +60,14 @@ defmodule Firmowid.Ash.Timetracker.Project do
   actions do
     defaults [:read]
 
+    read :searchable do
+      description "Read projects with optional ParadeDB full-text search on name."
+
+      argument :search, :string
+
+      prepare {Firmowid.Ash.Preparations.ParadeDBSearch, columns: ~w(name), argument: :search}
+    end
+
     # ── Read actions ──────────────────────────────────────────────────
 
     read :get do
@@ -397,9 +405,11 @@ defmodule Firmowid.Ash.Timetracker.Project do
 
     duration_filter = build_duration_filter(all_time?, date)
 
+    search_args = if search in [nil, ""], do: %{}, else: %{search: search}
+
     results =
       __MODULE__
-      |> Ash.Query.for_read(:read, %{}, ash_opts)
+      |> Ash.Query.for_read(:searchable, search_args, ash_opts)
       |> apply_archive_filter(archived?)
       |> Ash.Query.aggregate(:duration, :sum, :sessions,
         field: :duration,
@@ -407,7 +417,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
         query: duration_filter
       )
       |> Ash.Query.load(:counterparty)
-      |> apply_search_and_order(search)
+      |> maybe_default_sort(search)
       |> Ash.read!(ash_opts)
 
     Firmowid.Repo.drop_paradedb_unnamed()
@@ -437,22 +447,14 @@ defmodule Firmowid.Ash.Timetracker.Project do
     Ash.Query.filter(query, is_nil(archived_at))
   end
 
-  defp apply_search_and_order(query, search) when search in [nil, ""] do
+  # When no search term is active, the preparation is a no-op so we apply
+  # default alphabetical sorting. When search is active, the preparation
+  # already sorts by pdb.score() relevance.
+  defp maybe_default_sort(query, search) when search in [nil, ""] do
     Ash.Query.sort(query, name: :asc)
   end
 
-  defp apply_search_and_order(query, search) when is_binary(search) do
-    import Ash.Expr
-
-    Firmowid.Repo.put_paradedb_unnamed()
-
-    # Use hardcoded column name in fragment — AshPostgres applies ::text casts
-    # to column references (e.g. `name` → `name::text`) which breaks ParadeDB's
-    # @@@ operator. The hardcoded "name @@@ ?" avoids this.
-    query
-    |> Ash.Query.filter(fragment("name @@@ ?", ^search))
-    |> Ash.Query.sort({calc(fragment("pdb.score(?)", id), type: :float), :desc})
-  end
+  defp maybe_default_sort(query, _search), do: query
 
   # ── Private helpers for user assignment ──────────────────────────────
 

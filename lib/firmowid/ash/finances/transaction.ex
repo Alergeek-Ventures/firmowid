@@ -10,9 +10,9 @@ defmodule Firmowid.Ash.Finances.Transaction do
     primary_read_warning?: false
 
   alias Firmowid.Ash.Finances.Calculations.TransactionAmount
-  alias Firmowid.Ash.Finances.Preparations.ParadeDBSearch
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
+  alias Firmowid.Ash.Preparations.ParadeDBSearch
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -95,7 +95,8 @@ defmodule Firmowid.Ash.Finances.Transaction do
         where argument_equals(:status, :skipped)
       end
 
-      prepare ParadeDBSearch
+      prepare {ParadeDBSearch,
+               columns: ~w(debtor_name creditor_name remittance_information_unstructured transaction_currency)}
     end
 
     create :upsert_from_sync do

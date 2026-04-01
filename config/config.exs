@@ -11,7 +11,6 @@ import Config
 config :ash, Ash.Type.UUIDv7, match_v4_uuids?: true
 
 config :ash,
-  custom_expressions: [Firmowid.Ash.Expressions.ParadeDBSearch],
   default_belongs_to_type: :uuid_v7,
   # TEMPORARY: Repo.put_org_id stores org context in the process dictionary.
   # Ash spawns async tasks for relationship loading which don't inherit it,

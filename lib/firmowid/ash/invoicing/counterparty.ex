@@ -47,8 +47,7 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
     define :destroy
 
     define :search,
-      args: [:search_term, {:optional, :type}, {:optional, :sort_by}, {:optional, :sort_order}],
-      action: :search
+      args: [:search_term, {:optional, :type}, {:optional, :sort_by}, {:optional, :sort_order}]
   end
 
   actions do
@@ -108,8 +107,7 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
       change {ValidateCounterparty, []}
     end
 
-    action :search, {:array, :struct} do
-      constraints items: [instance_of: __MODULE__]
+    read :search do
       description "Full-text search counterparties via ParadeDB."
 
       argument :search_term, :string
@@ -117,56 +115,16 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
       argument :sort_by, :atom, default: :name
       argument :sort_order, :atom, default: :asc, constraints: [one_of: [:asc, :desc]]
 
-      run fn input, context ->
-        import Ecto.Query
+      prepare {Firmowid.Ash.Preparations.ParadeDBSearch,
+               columns: ~w(display_name full_name given_name surname tax_id email),
+               operator: :disjunction,
+               argument: :search_term}
 
-        search_term = input.arguments[:search_term]
-        type = input.arguments[:type]
-        sort_by = input.arguments[:sort_by]
-        sort_order = input.arguments[:sort_order]
-        org_id = context.tenant
+      prepare Firmowid.Ash.Invoicing.Preparations.CounterpartySearchSort
 
-        base = from(c in Firmowid.SalesInvoices.Counterparty, where: c.organization_id == ^org_id)
+      filter expr(is_nil(^arg(:type)) or type == ^arg(:type))
 
-        {search_mode, query} = apply_search(base, search_term)
-        query = apply_type_filter(query, type)
-        query = apply_sorting(query, search_mode, sort_by, sort_order)
-        query = limit(query, 25)
-
-        ecto_rows = Firmowid.Repo.all(query, prepare: :unnamed)
-
-        results =
-          Enum.map(ecto_rows, fn row ->
-            attrs =
-              row
-              |> Map.from_struct()
-              |> Map.take([
-                :id,
-                :type,
-                :tax_id,
-                :full_name,
-                :given_name,
-                :surname,
-                :pesel,
-                :display_name,
-                :address,
-                :country,
-                :is_different_mail_address,
-                :mail_address,
-                :mail_country,
-                :email,
-                :phone,
-                :description,
-                :inserted_at,
-                :updated_at,
-                :organization_id
-              ])
-
-            struct(__MODULE__, attrs)
-          end)
-
-        {:ok, results}
-      end
+      prepare build(limit: 25)
     end
   end
 
@@ -184,10 +142,6 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
     end
 
     policy action_type(:destroy) do
-      authorize_if always()
-    end
-
-    policy action(:search) do
       authorize_if always()
     end
   end
@@ -286,66 +240,5 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
   @spec validate_optional_id(Ecto.Changeset.t(), atom()) :: Ecto.Changeset.t()
   def validate_optional_id(changeset, field) do
     validate_length(changeset, field, max: 50, message: "musi mieć maksymalnie 50 znaków")
-  end
-
-  # ── Private helpers for search action ───────────────────────────────
-
-  defp apply_search(query, nil), do: {:no_search, query}
-  defp apply_search(query, ""), do: {:no_search, query}
-
-  defp apply_search(query, search_term) do
-    import Ecto.Query
-
-    search_query =
-      where(
-        query,
-        [c],
-        fragment("? ||| ?", c.display_name, ^search_term) or
-          fragment("? ||| ?", c.full_name, ^search_term) or
-          fragment("? ||| ?", c.given_name, ^search_term) or
-          fragment("? ||| ?", c.surname, ^search_term) or
-          fragment("? ||| ?", c.tax_id, ^search_term) or
-          fragment("? ||| ?", c.email, ^search_term)
-      )
-
-    {:search, search_query}
-  end
-
-  defp apply_type_filter(query, nil), do: query
-
-  defp apply_type_filter(query, type) when type in [:individual, :company] do
-    import Ecto.Query
-
-    where(query, [c], c.type == ^type)
-  end
-
-  defp apply_type_filter(query, _), do: query
-
-  defp apply_sorting(query, :search, _sort_by, _order) do
-    import Ecto.Query
-
-    order_by(query, [c], fragment("pdb.score(?) DESC", c.id))
-  end
-
-  defp apply_sorting(query, :no_search, :name, order) do
-    import Ecto.Query
-
-    order_by(query, [c], [{^order, fragment("COALESCE(?, ?)", c.given_name, c.full_name)}])
-  end
-
-  defp apply_sorting(query, :no_search, :display_name, order) do
-    import Ecto.Query
-
-    order_by(query, [c], [{^order, fragment("COALESCE(?, ?)", c.full_name, c.given_name)}])
-  end
-
-  defp apply_sorting(query, :no_search, :created_at, order) do
-    import Ecto.Query
-
-    order_by(query, [c], [{^order, c.inserted_at}])
-  end
-
-  defp apply_sorting(query, :no_search, _, order) do
-    apply_sorting(query, :no_search, :name, order)
   end
 end
