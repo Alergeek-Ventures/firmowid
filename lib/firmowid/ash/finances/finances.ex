@@ -18,6 +18,19 @@ defmodule Firmowid.Ash.Finances do
       define :list_bank_accounts_for_sync, action: :list_for_sync
     end
 
+    resource Firmowid.Ash.Finances.Institution do
+      define :list_institutions, action: :for_country, args: [:country]
+    end
+
+    resource Firmowid.Ash.Finances.Requisition do
+      define :create_requisition,
+        action: :create_requisition,
+        args: [:institution_id, :max_transaction_days, :redirect_url]
+
+      define :get_requisition, action: :read, get_by: [:id]
+      define :list_requisitions, action: :read
+    end
+
     resource Firmowid.Ash.Finances.Transaction do
       define :get_transaction, action: :read, get_by: [:id]
       define :list_transactions, action: :read

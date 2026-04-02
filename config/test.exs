@@ -3,6 +3,8 @@ import Config
 # Only in tests, remove the complexity from the password hashing algorithm
 config :argon2_elixir, t_cost: 1, m_cost: 8
 
+config :ash, policies: [show_policy_breakdowns?: true]
+
 config :ex_aws, :s3,
   scheme: System.get_env("S3_SCHEME", "http://"),
   host: System.get_env("S3_HOST", "localhost"),
@@ -13,7 +15,6 @@ config :firmowid, ChromicPDF, on_demand: true
 
 # In test we don't send emails
 config :firmowid, Firmowid.Mailer, adapter: Swoosh.Adapters.Test
-config :firmowid, Firmowid.Oban, testing: :inline
 
 # Configure your database
 #
@@ -35,6 +36,8 @@ config :firmowid, Firmowid.Repo,
 config :firmowid, FirmowidWeb.Core.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   server: false
+
+config :firmowid, Oban, testing: :inline
 
 # stubs for request testing (for now bank_data mostly)
 config :firmowid, :bank_data_api_client,

@@ -44,7 +44,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
-  alias Firmowid.Ash.Billing
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Resource
   alias Firmowid.Ksef
@@ -494,10 +493,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
     organization_id = cost_invoice.organization_id
 
-    if !correction_invoice?(cost_invoice) do
-      adjust_billing_counter(organization_id, :cost_invoices, :decrement_counter)
-    end
-
     Blobs.destroy_blob!(cost_invoice.blob, opts)
 
     broadcast_cost_invoice_list_updated(organization_id)
@@ -560,10 +555,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     opts = [tenant: organization_id, authorize?: false, actor: %{}]
 
     {:ok, cost_invoice} = create_from_metadata(extracted_metadata, opts)
-
-    if !correction_invoice?(cost_invoice) do
-      adjust_billing_counter(organization_id, :cost_invoices, :increment_counter)
-    end
 
     broadcast_cost_invoice_added(cost_invoice)
 
@@ -789,18 +780,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
       true ->
         changeset
-    end
-  end
-
-  defp adjust_billing_counter(organization_id, type, action) do
-    billing_opts = [tenant: organization_id, authorize?: false, actor: %{}]
-
-    with {:ok, limits} <- Billing.get_limits(billing_opts),
-         {:ok, _} <- apply(Billing, action, [limits, %{type: type}, billing_opts]) do
-      :ok
-    else
-      {:error, reason} ->
-        Logger.warning("Failed to #{action} #{type} billing limit: #{inspect(reason)}")
     end
   end
 end

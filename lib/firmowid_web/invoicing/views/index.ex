@@ -2,20 +2,20 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  import FirmowidWeb.Billing.Components.Billing
   import FirmowidWeb.Core.PubSubDebounce
 
+  alias Ash.Notifier.Notification
   alias Firmowid.Analytics
-  alias Firmowid.Ash.Billing
   alias Firmowid.Ash.Finances
+  alias Firmowid.Ash.Finances.Requisition, as: AshRequisition
   alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
   alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
-  alias Firmowid.BankData
   alias Firmowid.Invoicing
   alias Firmowid.Invoicing.TransactionGroup
   alias Firmowid.Ksef
   alias Firmowid.SalesInvoices
   alias FirmowidWeb.Core.Endpoint
+  alias Phoenix.Socket.Broadcast
 
   @impl true
   def mount(_params, _session, socket) do
@@ -29,7 +29,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       Endpoint.subscribe("transaction:updated:#{organization_id}")
       SalesInvoices.subscribe_sales_invoice_broadcast(organization_id)
       Invoicing.subscribe_invoicing_broadcast(organization_id)
-      BankData.subscribe_requisition_updates(organization_id)
+      # Ash native PubSub for requisition status changes
+      Endpoint.subscribe("requisition:linked:#{organization_id}")
+      Endpoint.subscribe("requisition:rejected:#{organization_id}")
+      Endpoint.subscribe("requisition:error:#{organization_id}")
       Ksef.subscribe_ksef_status(organization_id)
     end
 
@@ -46,8 +49,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       end
 
     connected_bank_accounts =
-      organization_id
-      |> BankData.list_requisitions()
+      [scope: socket.assigns.ash_scope]
+      |> Finances.list_requisitions!()
       |> Enum.count(&(&1.status == :accepted))
 
     socket = assign(socket, :has_connected_bank_account, connected_bank_accounts > 0)
@@ -58,20 +61,11 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     socket = assign(socket, :active_months, active_months)
 
-    # Check billing limits for cost invoices
-    limits = Billing.get_limits!(tenant: organization_id, scope: socket.assigns.ash_scope)
-
-    cost_invoices_limit_check =
-      if limits.cost_invoices_used >= limits.cost_invoices_limit,
-        do: {:warning, :over_limit, %{used: limits.cost_invoices_used, limit: limits.cost_invoices_limit}},
-        else: :ok
-
     socket =
       socket
       |> assign(:show_search, false)
       |> assign(:search_query, "")
       |> assign(:search_results, [])
-      |> assign(:cost_invoices_limit_check, cost_invoices_limit_check)
       |> assign(:transactions_debounce_timer, nil)
 
     {:ok, socket}
@@ -291,7 +285,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   @impl true
-  def handle_info(%Phoenix.Socket.Broadcast{payload: %Ash.Notifier.Notification{resource: AshTransaction}}, socket) do
+  def handle_info(%Broadcast{payload: %Notification{resource: AshTransaction}}, socket) do
     {:noreply, debounce_refetch(socket, :transactions, 10_000)}
   end
 
@@ -397,15 +391,24 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {:noreply, socket}
   end
 
-  def handle_info({:requisition_status_update, %{status: status}}, socket) do
+  # Handle Ash native PubSub broadcasts for requisition status changes
+  def handle_info(
+        %Broadcast{topic: "requisition:" <> _, payload: %Notification{resource: AshRequisition, action: action}},
+        socket
+      ) do
     {toast_type, message} =
-      case status do
-        :linked -> {:success, "Konto bankowe zostało pomyślnie połączone!"}
-        :processing -> {:info, "Łączenie z bankiem w toku..."}
-        :rejected -> {:error, "Połączenie z bankiem zostało odrzucone. Spróbuj ponownie."}
-        :expired -> {:error, "Link do połączenia wygasł. Utwórz nowe połączenie."}
-        :timeout -> {:error, "Przekroczono limit czasu połączenia. Spróbuj ponownie."}
-        :error -> {:error, "Wystąpił błąd podczas łączenia konta bankowego. Spróbuj ponownie."}
+      case action do
+        :accept ->
+          {:success, "Konto bankowe zostało pomyślnie połączone!"}
+
+        :reject ->
+          {:error, "Połączenie z bankiem zostało odrzucone. Spróbuj ponownie."}
+
+        :handle_check_error ->
+          {:error, "Wystąpił błąd podczas łączenia konta bankowego. Spróbuj ponownie."}
+
+        _ ->
+          {:info, "Status połączenia z bankiem został zaktualizowany."}
       end
 
     LiveToast.send_toast(toast_type, message)

@@ -88,7 +88,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoice do
       on_replace: :delete
 
     many_to_many :transactions,
-                 Firmowid.Finances.Transaction,
+                 Firmowid.Ash.Finances.Transaction,
                  join_through: "sales_invoices_transactions"
 
     has_many :entity_tags,

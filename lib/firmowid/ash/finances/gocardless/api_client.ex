@@ -1,4 +1,4 @@
-defmodule Firmowid.BankData.ApiClient do
+defmodule Firmowid.Ash.Finances.GoCardless.ApiClient do
   @moduledoc """
   HTTP client for the GoCardless Bank Account Data API (v2).
 
@@ -6,7 +6,7 @@ defmodule Firmowid.BankData.ApiClient do
   reason is one of the atoms defined in `handle_response/1`.
   """
 
-  alias Firmowid.BankData.TokenManager
+  alias Firmowid.Ash.Finances.GoCardless.TokenManager
 
   require Logger
 
@@ -239,6 +239,34 @@ defmodule Firmowid.BankData.ApiClient do
            |> Req.delete()
            |> handle_response() do
       {:ok, requisition_body}
+    end
+  end
+
+  @doc """
+  Wraps an API call with a single token-refresh retry on `:unauthorized`.
+
+  If the wrapped function returns `{:error, :unauthorized}`, refreshes the
+  access token via `TokenManager.refresh_now/0` and retries once. All other
+  results (including `{:error, :expired_eua}`) pass through unchanged.
+
+  ## Example
+
+      ApiClient.with_token_refresh(fn ->
+        ApiClient.get_booked_transactions_for_account(account_id)
+      end)
+  """
+  @spec with_token_refresh((-> {:ok, term()} | {:error, term()})) ::
+          {:ok, term()} | {:error, term()}
+  def with_token_refresh(fun) when is_function(fun, 0) do
+    case fun.() do
+      {:error, :unauthorized} ->
+        case TokenManager.refresh_now() do
+          nil -> {:error, :token_refresh_failed}
+          _token -> fun.()
+        end
+
+      other ->
+        other
     end
   end
 

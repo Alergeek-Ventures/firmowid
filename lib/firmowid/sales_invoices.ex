@@ -5,12 +5,9 @@ defmodule Firmowid.SalesInvoices do
   import Ecto.Query, warn: false
 
   alias Firmowid.Accounts
-  alias Firmowid.Ash.Billing
   alias Firmowid.Nbp
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices.SalesInvoice
-
-  require Logger
 
   def authorize(:read_sales_invoice, %{role: :admin}, _), do: true
   def authorize(:create_sales_invoice, %{role: :admin}, _), do: true
@@ -424,10 +421,6 @@ defmodule Firmowid.SalesInvoices do
       |> SalesInvoice.changeset(attrs)
       |> Repo.insert()
 
-    with {:ok, created_invoice} <- result do
-      adjust_billing_counter(created_invoice.organization_id, :sales_invoices, :increment_counter)
-    end
-
     result
   end
 
@@ -572,24 +565,11 @@ defmodule Firmowid.SalesInvoices do
   """
   def delete_sales_invoice(%SalesInvoice{} = invoice) do
     if SalesInvoice.deletable?(invoice) do
-      result = Repo.delete(invoice)
-      with {:ok, deleted} <- result, do: maybe_decrement_billing(deleted)
-      result
+      Repo.delete(invoice)
     else
       {:error, :ksef_submitted}
     end
   end
-
-  defp maybe_decrement_billing(%SalesInvoice{} = invoice) do
-    if correction_invoice?(invoice), do: :ok, else: do_decrement_billing(invoice)
-  end
-
-  defp do_decrement_billing(invoice) do
-    adjust_billing_counter(invoice.organization_id, :sales_invoices, :decrement_counter)
-  end
-
-  defp correction_invoice?(%SalesInvoice{ksef_invoice_kind: :kor}), do: true
-  defp correction_invoice?(_), do: false
 
   @token_bytes 32
   @spec create_or_get_share_token(SalesInvoice.t()) ::
@@ -643,17 +623,5 @@ defmodule Firmowid.SalesInvoices do
     @token_bytes
     |> :crypto.strong_rand_bytes()
     |> Base.url_encode64(padding: false)
-  end
-
-  defp adjust_billing_counter(organization_id, type, action) do
-    billing_opts = [tenant: organization_id, authorize?: false, actor: %{}]
-
-    with {:ok, limits} <- Billing.get_limits(billing_opts),
-         {:ok, _} <- apply(Billing, action, [limits, %{type: type}, billing_opts]) do
-      :ok
-    else
-      {:error, reason} ->
-        Logger.warning("Failed to #{action} #{type} billing limit: #{inspect(reason)}")
-    end
   end
 end

@@ -450,33 +450,8 @@
               {String.slice(@current_org.name, 0, 1) |> String.upcase()}
             </.avatar_fallback>
           </.avatar>
-
-          <div id="limity" class="mt-8 w-full">
-            <p class="mb-4 text-sm font-bold">Limity organizacji</p>
-            <div class="space-y-4">
-              <.usage_limit_bar
-                label="Faktury kosztowe"
-                used={@usage_summary.cost_invoices.used}
-                limit={@usage_summary.cost_invoices.limit}
-                over_limit={@usage_summary.cost_invoices.over_limit}
-                reset_text={"Odnowienie za #{@days_until_reset} dni"}
-              />
-              <.usage_limit_bar
-                label="Faktury sprzedażowe"
-                used={@usage_summary.sales_invoices.used}
-                limit={@usage_summary.sales_invoices.limit}
-                over_limit={@usage_summary.sales_invoices.over_limit}
-                reset_text={"Odnowienie za #{@days_until_reset} dni"}
-              />
-              <.usage_limit_bar
-                label="Połączenia bankowe"
-                used={@usage_summary.bank_connections.used}
-                limit={@usage_summary.bank_connections.limit}
-                over_limit={@usage_summary.bank_connections.over_limit}
-                reset_text="(limit stały)"
-              />
-            </div>
-          </div>
+          
+<!-- TODO: implement real billing/usage tracking to replace removed Billing domain -->
         </div>
       </div>
     <% :account -> %>

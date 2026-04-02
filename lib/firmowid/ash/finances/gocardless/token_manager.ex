@@ -1,4 +1,4 @@
-defmodule Firmowid.BankData.TokenManager do
+defmodule Firmowid.Ash.Finances.GoCardless.TokenManager do
   @moduledoc """
   Manages GoCardless Bank Account Data API access tokens.
 
@@ -87,6 +87,7 @@ defmodule Firmowid.BankData.TokenManager do
     end
   end
 
+  @impl true
   def handle_call(:refresh_now, _from, state) do
     case do_full_token_refresh(state) do
       {:ok, new_state} ->
@@ -204,6 +205,7 @@ defmodule Firmowid.BankData.TokenManager do
 
       {:ok, %{status: status, body: body}} ->
         Logger.error("Failed to obtain token pair from /token/new/: #{status} #{inspect(body)}")
+
         {:error, {:unexpected_status, status}, %{state | fetch_failures: state.fetch_failures + 1}}
 
       {:error, reason} ->

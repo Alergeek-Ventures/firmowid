@@ -2,6 +2,8 @@ import Config
 
 alias FirmowidWeb.Core.Endpoint
 
+config :ash, policies: [show_policy_breakdowns?: true]
+
 config :ex_aws, :s3,
   host: "localhost",
   scheme: "http://",

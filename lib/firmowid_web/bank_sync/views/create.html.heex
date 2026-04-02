@@ -1,6 +1,4 @@
 <section class="container mx-auto flex flex-col gap-8 pt-4">
-  <.limit_warning check_result={@bank_connections_limit_check} type={:bank_connections} />
-
   <.header>
     Dodaj konto bankowe
   </.header>
@@ -35,17 +33,17 @@
           </p>
         </button>
       </form>
-      <%= for instiution <- @available_institutions do %>
+      <%= for institution <- @available_institutions do %>
         <form
-          id={"instiution-#{instiution["id"]}"}
+          id={"institution-#{institution.id}"}
           phx-submit="institution_selected"
-          phx-value-institution-id={instiution["id"]}
-          phx-value-institution-transaction-total-days={instiution["transaction_total_days"]}
+          phx-value-institution-id={institution.id}
+          phx-value-institution-transaction-total-days={institution.transaction_total_days}
         >
           <button class="flex size-full flex-col items-center justify-center gap-4 rounded-xl border-2 border-black/20 bg-white p-4 text-center transition-all hover:border-black hover:bg-white/10">
-            <img src={instiution["logo"]} class="h-20 w-auto" />
+            <img src={institution.logo} class="h-20 w-auto" />
             <p>
-              {instiution["name"]}
+              {institution.name}
             </p>
           </button>
         </form>

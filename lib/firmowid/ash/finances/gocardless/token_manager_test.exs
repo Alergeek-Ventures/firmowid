@@ -1,7 +1,7 @@
-defmodule Firmowid.BankData.TokenManagerTest do
+defmodule Firmowid.Ash.Finances.GoCardless.TokenManagerTest do
   use ExUnit.Case, async: false
 
-  alias Firmowid.BankData.TokenManager
+  alias Firmowid.Ash.Finances.GoCardless.TokenManager
 
   @moduletag capture_log: true
 

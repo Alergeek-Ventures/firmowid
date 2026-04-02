@@ -12,7 +12,6 @@ defmodule Firmowid.Accounts do
   alias Firmowid.Accounts.User
   alias Firmowid.Accounts.UserNotifier
   alias Firmowid.Accounts.UserToken
-  alias Firmowid.Ash.Billing
   alias Firmowid.Ash.Blobs
   alias Firmowid.Repo
 
@@ -672,8 +671,6 @@ defmodule Firmowid.Accounts do
   """
   def create_organization(attrs \\ %{}, owner) do
     organization = create_organization_with_nickname(attrs, owner, 10)
-
-    Billing.create_limits!(tenant: organization.id, authorize?: false, actor: %{})
 
     owner
     |> User.organization_changeset(%{organization_id: organization.id})

@@ -13,6 +13,6 @@ defmodule Firmowid.Invoicing.TransactionGroup do
           count: integer(),
           currency: String.t(),
           date: Date.t(),
-          transactions: [Firmowid.Finances.Transaction.t()]
+          transactions: [Firmowid.Ash.Finances.Transaction.t()]
         }
 end

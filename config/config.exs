@@ -32,6 +32,8 @@ config :ash,
   transaction_rollback_on_error?: true,
   redact_sensitive_values_in_errors?: true
 
+config :ash_oban, pro?: false
+
 config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 
 config :error_tracker,
@@ -87,6 +89,32 @@ config :firmowid, FirmowidWeb.Core.Endpoint,
   pubsub_server: Firmowid.PubSub,
   live_view: [signing_salt: "s6RVH6WQ"]
 
+config :firmowid, Oban,
+  repo: Firmowid.Repo,
+  prefix: "oban",
+  engine: Oban.Engines.Basic,
+  queues: [
+    bank_data: 1,
+    invoicing: 1,
+    cost_invoices: 5,
+    inbound_emails: 3,
+    ksef_submissions: 2,
+    ksef_sessions: 5,
+    ksef_fetch: 2,
+    default: 1
+  ],
+  plugins: [
+    {Oban.Plugins.Lifeline, rescue_after: to_timeout(minute: 30)},
+    {Firmowid.Oban.KsefAwarePruner, max_age: 60 * 60 * 24 * 30},
+    {Oban.Plugins.Cron,
+     timezone: "Europe/Warsaw",
+     crontab: [
+       {"0 13 * * *", Firmowid.Invoicing.Worker, args: %{name: "matching"}},
+       {"0 14 * * *", Firmowid.Currencies.CleanupWorker, args: %{}},
+       {"0 */2 * * *", Firmowid.Ksef.FetchDispatcher, args: %{}}
+     ]}
+  ]
+
 # Packmatic URL source - increase connect timeout for batch downloads
 config :firmowid, Packmatic.Source.URL, timeout: 30_000
 
@@ -99,13 +127,13 @@ config :firmowid,
   generators: [timestamp_type: :utc_datetime],
   ash_domains: [
     Firmowid.Ash.Analysis,
-    Firmowid.Ash.Billing,
     Firmowid.Ash.Blobs,
     Firmowid.Ash.Core,
     Firmowid.Ash.Finances,
     Firmowid.Ash.Invoicing,
     Firmowid.Ash.Payroll,
-    Firmowid.Ash.Timetracker
+    Firmowid.Ash.Timetracker,
+    Firmowid.Ash.Events
   ]
 
 config :fun_with_flags, :cache_bust_notifications,

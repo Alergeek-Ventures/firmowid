@@ -6,7 +6,7 @@ defmodule Firmowid.CostInvoices.CostInvoicesTransactions do
 
   schema "cost_invoices_transactions" do
     belongs_to :cost_invoice, Firmowid.CostInvoices.CostInvoice
-    belongs_to :transaction, Firmowid.Finances.Transaction
+    belongs_to :transaction, Firmowid.Ash.Finances.Transaction
 
     belongs_to :organization, Firmowid.Accounts.Organization
 

@@ -4,9 +4,9 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
   Delegates LLM and function-call plumbing to AssistantEngine.
   """
   alias Firmowid.Ash.Finances
+  alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
-  alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.Matching.Assistant.CommonTools
   alias Firmowid.Invoicing.Matching.Assistant.Engine
   alias Firmowid.Invoicing.Matching.Assistant.Message
@@ -383,7 +383,7 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
     - **Numer konta odbiorcy:** #{transaction.debtor_account}
     - **Nadawca:** #{transaction.creditor_name}
     - **Numer konta nadawcy:** #{transaction.creditor_account}
-    - **Powiązane faktury kosztowe:** #{Enum.map_join(transaction.cost_invoices_transactions, ", ", & &1.id)}
+    - **Powiązane faktury kosztowe:** #{Enum.map_join(transaction.cost_invoices, ", ", & &1.id)}
 
     > UUID: `#{transaction.id}`
     """

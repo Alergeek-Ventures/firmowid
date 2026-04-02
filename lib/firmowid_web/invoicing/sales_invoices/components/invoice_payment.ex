@@ -4,7 +4,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
 
   attr :invoice, Firmowid.SalesInvoices.SalesInvoice, required: true
   attr :bank_accounts, :list, required: true
-  attr :selected_bank_account, Firmowid.Finances.BankAccount, required: false
+  attr :selected_bank_account, :map, required: false
   attr :payment_form, Phoenix.HTML.Form, required: true
 
   def invoice_payment(assigns) do

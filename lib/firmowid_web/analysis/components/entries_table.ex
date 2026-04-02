@@ -8,9 +8,9 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
   """
   use FirmowidWeb, :html
 
+  alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Finances.Transaction
 
   attr :entries, :list, required: true
   attr :tag_definitions, :list, required: true

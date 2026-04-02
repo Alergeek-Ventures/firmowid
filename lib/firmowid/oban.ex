@@ -1,44 +1,21 @@
 defmodule Firmowid.Oban do
   @moduledoc """
-  Oban configuration for Firmowid.
+  Wrapper around the default `Oban` instance that automatically injects
+  `organization_id` into every job's `meta` field from the current process
+  dictionary (`Firmowid.Repo.get_org_id/0`).
+
+  All non-Ash workers should insert jobs through this module to ensure
+  multi-tenant scoping. AshOban-managed workers use Ash's own tenant
+  mechanism (`args["tenant"]`) and insert directly via `Oban.insert!/1`.
   """
 
-  use Oban,
-    otp_app: :firmowid,
-    repo: Firmowid.Repo,
-    prefix: "oban",
-    engine: Oban.Engines.Basic,
-    queues: [
-      bank_data: 1,
-      invoicing: 1,
-      cost_invoices: 5,
-      inbound_emails: 3,
-      ksef_submissions: 2,
-      ksef_sessions: 5,
-      ksef_fetch: 2,
-      default: 1
-    ],
-    plugins: [
-      {Oban.Plugins.Lifeline, rescue_after: to_timeout(minute: 30)},
-      # Custom pruner that preserves KSeF submission jobs for error state display
-      {Firmowid.Oban.KsefAwarePruner, max_age: 60 * 60 * 24 * 30},
-      # retry orphaned jobs after 30 minutes
-      {
-        Oban.Plugins.Cron,
-        # remove jobs after 30 days
-        timezone: "Europe/Warsaw",
-        crontab: [
-          {"0 12 */2 * *", Firmowid.BankData.Worker, args: %{name: "dispatch_sync_jobs_for_all_bank_accounts"}},
-          {"0 13 * * *", Firmowid.BankData.CleanupWorker, args: %{}},
-          {"0 13 * * *", Firmowid.Invoicing.Worker, args: %{name: "matching"}},
-          {"0 14 * * *", Firmowid.Currencies.CleanupWorker, args: %{}},
-          {"0 */2 * * *", Firmowid.Ksef.FetchDispatcher, args: %{}},
-          {"0 1 1 * *", Firmowid.Ash.Billing.ResetWorker, args: %{}}
-        ]
-      }
-    ]
-
   alias Ecto.Changeset
+
+  @doc "Cancels all jobs matching the given queryable. Delegates to `Oban.cancel_all_jobs/2`."
+  @spec cancel_all_jobs(Ecto.Queryable.t()) :: {:ok, non_neg_integer()}
+  def cancel_all_jobs(queryable) do
+    Oban.cancel_all_jobs(Oban, queryable)
+  end
 
   defp put_org_id(changeset, organization_id) do
     meta =
@@ -49,14 +26,14 @@ defmodule Firmowid.Oban do
     Changeset.put_change(changeset, :meta, meta)
   end
 
-  def insert(changeset, opts) do
+  def insert(changeset, opts \\ []) do
     cond do
       opts[:skip_organization_id] ->
-        Oban.insert(__MODULE__, changeset, opts)
+        Oban.insert(Oban, changeset, opts)
 
       organization_id = Firmowid.Repo.get_org_id() ->
         changeset = put_org_id(changeset, organization_id)
-        Oban.insert(__MODULE__, changeset, opts)
+        Oban.insert(Oban, changeset, opts)
 
       true ->
         raise "expected organization_id or skip_organization_id to be set"
@@ -66,11 +43,11 @@ defmodule Firmowid.Oban do
   def insert!(changeset, opts \\ []) do
     cond do
       opts[:skip_organization_id] ->
-        Oban.insert!(__MODULE__, changeset, opts)
+        Oban.insert!(Oban, changeset, opts)
 
       organization_id = Firmowid.Repo.get_org_id() ->
         changeset = put_org_id(changeset, organization_id)
-        Oban.insert!(__MODULE__, changeset, opts)
+        Oban.insert!(Oban, changeset, opts)
 
       true ->
         raise "expected organization_id or skip_organization_id to be set"
@@ -78,16 +55,16 @@ defmodule Firmowid.Oban do
   end
 
   @spec insert_all(list(), Keyword.t()) :: {:ok, list()} | {:error, term()}
-  def insert_all(changesets, opts) do
+  def insert_all(changesets, opts \\ []) do
     result =
       cond do
         opts[:skip_organization_id] ->
-          Oban.insert_all(__MODULE__, changesets, opts)
+          Oban.insert_all(Oban, changesets, opts)
 
         organization_id = Firmowid.Repo.get_org_id() ->
           changesets_with_org = Enum.map(changesets, &put_org_id(&1, organization_id))
 
-          Oban.insert_all(__MODULE__, changesets_with_org, opts)
+          Oban.insert_all(Oban, changesets_with_org, opts)
 
         true ->
           raise "expected organization_id or skip_organization_id to be set"

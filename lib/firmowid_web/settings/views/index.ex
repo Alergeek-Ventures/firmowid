@@ -2,18 +2,15 @@ defmodule FirmowidWeb.Settings.Views.Index do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  import FirmowidWeb.Billing.Components.Billing
   import FirmowidWeb.Settings.Components.EditButton
 
   alias Ecto.Changeset
   alias Firmowid.Accounts
   alias Firmowid.Accounts.Organization
   alias Firmowid.Analytics
-  alias Firmowid.Ash.Billing
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Finances
-  alias Firmowid.BankData
-  alias Firmowid.BankData.ApiClient
+  alias Firmowid.Ash.Finances.GoCardless.ApiClient
   alias Firmowid.Ksef
   alias FirmowidWeb.Core.Endpoint
 
@@ -33,9 +30,15 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def mount(_params, _session, socket) do
+    # Use Ash native code interface for listing bank accounts
     bank_accounts =
       if socket.assigns.current_user.role == :admin do
-        BankData.list_bank_accounts()
+        scope = socket.assigns.ash_scope
+
+        case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?]) do
+          {:ok, accounts} -> accounts
+          {:error, _} -> []
+        end
       else
         []
       end
@@ -99,9 +102,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
        progress: &handle_progress/3
      )
      |> assign(:current_org, Accounts.get_organization_with_avatar(socket.assigns.current_org))
-     |> assign(:main_class, "bg-white")
-     |> assign(:usage_summary, billing_usage_summary(socket.assigns.current_org.id, socket.assigns.ash_scope))
-     |> assign(:days_until_reset, days_until_monthly_reset())}
+     |> assign(:main_class, "bg-white")}
   end
 
   def handle_params(%{"token" => token}, _uri, %{assigns: %{live_action: :confirm_email}} = socket) do
@@ -225,7 +226,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
     case Finances.destroy_bank_account(bank_account, scope: scope) do
       :ok ->
         LiveToast.send_toast(:info, "Konto bankowe zostało usunięte.")
-        bank_accounts = BankData.list_bank_accounts()
+
+        bank_accounts =
+          case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?]) do
+            {:ok, accounts} -> accounts
+            {:error, _} -> []
+          end
 
         {:noreply,
          socket
@@ -245,7 +251,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     case Finances.update_bank_account(bank_account, %{is_default: true}, scope: scope) do
       {:ok, _} ->
-        bank_accounts = BankData.list_bank_accounts()
+        bank_accounts =
+          case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?]) do
+            {:ok, accounts} -> accounts
+            {:error, _} -> []
+          end
 
         {:noreply,
          socket
@@ -324,7 +334,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
     case Finances.update_bank_account(bank_account, %{name: name}, scope: scope) do
       {:ok, _} ->
         LiveToast.send_toast(:info, "Nazwa konta została zmieniona.")
-        accounts = BankData.list_bank_accounts()
+
+        accounts =
+          case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?]) do
+            {:ok, accs} -> accs
+            {:error, _} -> []
+          end
 
         {:noreply,
          socket
@@ -340,7 +355,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
   def handle_event("reconnect_bank_account", %{"account_id" => account_id}, socket) do
     scope = socket.assigns.ash_scope
     bank_account = Finances.get_bank_account!(account_id, scope: scope)
-    Bodyguard.permit!(BankData, :create_requisition, socket.assigns.current_user)
 
     # If the account doesn't have an institution associated (legacy/imported),
     # redirect the user to the standard bank connection flow.
@@ -357,11 +371,14 @@ defmodule FirmowidWeb.Settings.Views.Index do
           _ -> 90
         end
 
-      case BankData.create_requisition(
+      # Use Ash native code interface with authorization
+      case Finances.create_requisition(
              bank_account.institution_id,
              transaction_days,
-             organization_id,
-             redirect_url
+             redirect_url,
+             tenant: organization_id,
+             actor: socket.assigns.current_user,
+             authorize?: true
            ) do
         {:ok, link} ->
           {:noreply, Phoenix.LiveView.redirect(socket, external: link)}
@@ -386,7 +403,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
     case Finances.create_manual_bank_account(attrs, scope: scope) do
       {:ok, _} ->
         LiveToast.send_toast(:info, "Konto zostało dodane.")
-        accounts = BankData.list_bank_accounts()
+
+        accounts =
+          case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?]) do
+            {:ok, accs} -> accs
+            {:error, _} -> []
+          end
 
         {:noreply,
          socket
@@ -615,13 +637,13 @@ defmodule FirmowidWeb.Settings.Views.Index do
           is_nil(account.gocardless_id) ->
             :processing
 
-          not BankData.bank_account_has_success?(account.id) ->
+          not account.has_successful_sync? ->
             :processing
 
           account.requisition && account.requisition.status == :rejected ->
             :disconnected
 
-          BankData.bank_account_broken?(account.id) ->
+          account.broken? ->
             :broken
 
           account.requisition && account.requisition.status == :pending ->
@@ -633,25 +655,5 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
       {account.id, status}
     end)
-  end
-
-  defp billing_usage_summary(org_id, scope) do
-    limits = Billing.get_limits!(tenant: org_id, scope: scope)
-
-    usage = fn used, limit ->
-      %{used: used, limit: limit, over_limit: used >= limit}
-    end
-
-    %{
-      cost_invoices: usage.(limits.cost_invoices_used, limits.cost_invoices_limit),
-      sales_invoices: usage.(limits.sales_invoices_used, limits.sales_invoices_limit),
-      bank_connections: usage.(limits.bank_connections_used, limits.bank_connections_limit)
-    }
-  end
-
-  defp days_until_monthly_reset do
-    today = Date.utc_today()
-    next_month = today |> Date.end_of_month() |> Date.add(1)
-    Date.diff(next_month, today)
   end
 end

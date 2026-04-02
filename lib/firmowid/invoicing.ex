@@ -5,14 +5,12 @@ defmodule Firmowid.Invoicing do
   import Ecto.Query, warn: false
 
   alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
+  alias Firmowid.Ash.Finances.Transaction, as: EctoTransaction
   alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.CostInvoices.CostInvoice, as: EctoCostInvoice
-  # Legacy Ecto schema — used only in get_all_months_with_invoicing_entries raw SQL union
-  alias Firmowid.Finances.Transaction, as: EctoTransaction
   # SQL fragment that converts KSeF VAT rate string codes to numeric decimals.
   # Must match VatRate.to_numeric/1 behavior for consistency.
   alias Firmowid.Invoicing.Matching
@@ -455,7 +453,7 @@ defmodule Firmowid.Invoicing do
     invoice.issue_date
   end
 
-  defp get_date(%AshTransaction{} = transaction) do
+  defp get_date(%EctoTransaction{} = transaction) do
     transaction.booking_date
   end
 
@@ -467,7 +465,7 @@ defmodule Firmowid.Invoicing do
   defp matched?(%AshCostInvoice{} = invoice),
     do: Enum.any?(invoice.transactions) or Map.get(invoice, :skip_invoicing, false)
 
-  defp matched?(%AshTransaction{} = transaction),
+  defp matched?(%EctoTransaction{} = transaction),
     do: Enum.any?(transaction.cost_invoices ++ transaction.sales_invoices) or transaction.skip_invoicing
 
   defp matched?(%TransactionGroup{}) do

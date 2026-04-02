@@ -19,14 +19,13 @@ defmodule Firmowid.Ash.Analysis do
   alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.Ash.Analysis.TagDefinition
   alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
+  alias Firmowid.Ash.Finances.Transaction, as: EctoTransaction
   alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Ash.Scope
   alias Firmowid.CostInvoices.CostInvoice, as: EctoCostInvoice
   alias Firmowid.CostInvoices.CostInvoicesTransactions
   alias Firmowid.Currencies
-  alias Firmowid.Finances.Transaction, as: EctoTransaction
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices.SalesInvoice, as: EctoSalesInvoice
   alias Firmowid.SalesInvoices.SalesInvoicesTransactions
@@ -241,7 +240,7 @@ defmodule Firmowid.Ash.Analysis do
     {value, entity.currency}
   end
 
-  defp get_amount_and_currency(%AshTransaction{} = entity) do
+  defp get_amount_and_currency(%EctoTransaction{} = entity) do
     {entity.transaction_amount, entity.transaction_currency}
   end
 
@@ -294,7 +293,7 @@ defmodule Firmowid.Ash.Analysis do
 
   defp entity_id(%AshSalesInvoice{id: id}), do: id
   defp entity_id(%AshCostInvoice{id: id}), do: id
-  defp entity_id(%AshTransaction{id: id}), do: id
+  defp entity_id(%EctoTransaction{id: id}), do: id
 
   # Filters entities and attaches entity_tags to each struct:
   # 1. Always excludes internal-tagged entities

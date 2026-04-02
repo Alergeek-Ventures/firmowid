@@ -5,11 +5,11 @@ defmodule Firmowid.InvoicingSearchTest do
   import Firmowid.AccountsFixtures
 
   alias Firmowid.Ash.Blobs.Blob
+  alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.CostInvoices.CostInvoice, as: EctoCostInvoice
   alias Firmowid.CostInvoices.CostInvoicesTransactions
-  alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices.SalesInvoice, as: EctoSalesInvoice
@@ -374,8 +374,9 @@ defmodule Firmowid.InvoicingSearchTest do
 
       # Create transactions and link them to the "matched" invoices
       transaction_for_sales =
-        Repo.insert!(%Transaction{
+        Ash.Seed.seed!(Transaction, %{
           transaction_id: "TX-SALES-1",
+          internal_transaction_id: "INT-TX-SALES-1",
           creditor_name: "Matched Sales Transaction",
           creditor_account: "ACC123",
           debtor_name: "Our Company",
@@ -385,13 +386,13 @@ defmodule Firmowid.InvoicingSearchTest do
           booking_date: ~D[2024-04-10],
           value_date: ~D[2024-04-10],
           remittance_information_unstructured: "Payment for SI-MATCHED-1",
-          bank_account_id: nil,
           organization_id: organization_id
         })
 
       transaction_for_cost =
-        Repo.insert!(%Transaction{
+        Ash.Seed.seed!(Transaction, %{
           transaction_id: "TX-COST-1",
+          internal_transaction_id: "INT-TX-COST-1",
           creditor_name: "Our Company",
           creditor_account: "ACC456",
           debtor_name: "Matched Cost Transaction",
@@ -401,7 +402,6 @@ defmodule Firmowid.InvoicingSearchTest do
           booking_date: ~D[2024-04-15],
           value_date: ~D[2024-04-15],
           remittance_information_unstructured: "Payment for CI-MATCHED-1",
-          bank_account_id: nil,
           organization_id: organization_id
         })
 
@@ -892,8 +892,9 @@ defmodule Firmowid.InvoicingSearchTest do
         })
 
       transaction_for_matched_sales =
-        Repo.insert!(%Transaction{
+        Ash.Seed.seed!(Transaction, %{
           transaction_id: "TX-MATCHED-SALES",
+          internal_transaction_id: "INT-TX-MATCHED-SALES",
           creditor_name: "Matched Sales Transaction",
           creditor_account: "ACC123",
           debtor_name: "Our Company",
@@ -903,7 +904,6 @@ defmodule Firmowid.InvoicingSearchTest do
           booking_date: ~D[2024-08-20],
           value_date: ~D[2024-08-20],
           remittance_information_unstructured: "Payment for SI-ALREADY-MATCHED",
-          bank_account_id: nil,
           organization_id: organization_id
         })
 

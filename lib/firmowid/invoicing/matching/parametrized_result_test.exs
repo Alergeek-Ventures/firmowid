@@ -2,8 +2,8 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResultTest do
   @moduledoc false
   use ExUnit.Case, async: true
 
+  alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Finances.Transaction
   alias Firmowid.Invoicing.Matching.ParametrizedResult
 
   describe "generate_parametrized_result/2" do

@@ -9,9 +9,8 @@ defmodule Firmowid.Seeds.Bytecraft do
 
   alias Firmowid.Accounts
   alias Firmowid.Accounts.Organization
-  alias Firmowid.Ash.Timetracker.Project, as: AshProject
-  alias Firmowid.BankData.Requisition
   alias Firmowid.Ash.Invoicing.Counterparty, as: AshCounterparty
+  alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices.Counterparty
   alias Firmowid.Seeds.Helpers
@@ -327,12 +326,14 @@ defmodule Firmowid.Seeds.Bytecraft do
   # ===========================================================================
 
   defp seed_blob(bytecraft) do
-    Helpers.get_or_create_blob("4ff0d0b1-3298-4b80-9d53-a71d0efc4cad", %{
-      blob_path: "4ff0d0b1-3298-4b80-9d53-a71d0efc4cad/seed-invoice-placeholder.pdf",
-      blob_checksum: "ff2c9062d9a8189522a59805210ebe5d2211e5868d724a47863a0b740d6892b6",
-      original_filename: "seed-invoice-placeholder.pdf",
-      organization_id: bytecraft.id
-    })
+    Helpers.seed_blob!(
+      %{
+        blob_path: "4ff0d0b1-3298-4b80-9d53-a71d0efc4cad/seed-invoice-placeholder.pdf",
+        blob_checksum: "ff2c9062d9a8189522a59805210ebe5d2211e5868d724a47863a0b740d6892b6",
+        original_filename: "seed-invoice-placeholder.pdf"
+      },
+      bytecraft.id
+    )
   end
 
   # ===========================================================================
@@ -340,69 +341,64 @@ defmodule Firmowid.Seeds.Bytecraft do
   # ===========================================================================
 
   defp seed_bank_accounts(bytecraft) do
+    tenant = bytecraft.id
+
     mock_requisition =
-      Repo.get(Requisition, "b42a914c-d658-46bb-ab4c-950967fbebe1") ||
-        Repo.insert!(%Requisition{
-          id: "b42a914c-d658-46bb-ab4c-950967fbebe1",
-          status: :accepted,
-          organization_id: bytecraft.id
-        })
+      Helpers.seed_requisition!("b42a914c-d658-46bb-ab4c-950967fbebe1", tenant)
 
     ing_base = %{
       institution_id: "ING_BANK_SLASKI_PL",
       institution_name: "ING Bank Śląski",
       owner_name: "Bytecraft Collective sp. z o.o.",
-      organization_id: bytecraft.id,
       requisition_id: mock_requisition.id
     }
 
     pln =
-      Helpers.get_or_create_bank_account(
-        "5e99d40d-8bcb-4088-b6a1-08950daa5ec2",
+      Helpers.seed_bank_account!(
         Map.merge(ing_base, %{
           iban: "PL61105000997603123456789012",
           gocardless_id: "c5831186-ca3e-4edc-a4f5-a48b1d1ead51",
           currency: "PLN",
           is_default: true
-        })
+        }),
+        tenant
       )
 
     eur =
-      Helpers.get_or_create_bank_account(
-        "5e99d40d-8bcb-4088-b6a1-08950daa5ec3",
+      Helpers.seed_bank_account!(
         Map.merge(ing_base, %{
           iban: "PL85105000997603123456789013",
           gocardless_id: "c5831186-ca3e-4edc-a4f5-a48b1d1ead52",
           currency: "EUR",
           is_default: false
-        })
+        }),
+        tenant
       )
 
     usd =
-      Helpers.get_or_create_bank_account(
-        "5e99d40d-8bcb-4088-b6a1-08950daa5ec4",
+      Helpers.seed_bank_account!(
         Map.merge(ing_base, %{
           iban: "PL42105000997603123456789014",
           gocardless_id: "c5831186-ca3e-4edc-a4f5-a48b1d1ead53",
           currency: "USD",
           is_default: false
-        })
+        }),
+        tenant
       )
 
     gbp =
-      Helpers.get_or_create_bank_account(
-        "5e99d40d-8bcb-4088-b6a1-08950daa5ec5",
+      Helpers.seed_bank_account!(
         Map.merge(ing_base, %{
           iban: "PL19105000997603123456789015",
           gocardless_id: "c5831186-ca3e-4edc-a4f5-a48b1d1ead54",
           currency: "GBP",
           is_default: false
-        })
+        }),
+        tenant
       )
 
     thb =
-      Helpers.get_or_create_bank_account(
-        "5e99d40d-8bcb-4088-b6a1-08950daa5ec6",
+      Helpers.seed_bank_account!(
         %{
           iban: "PL73116022020000000512345678",
           institution_id: "MILLENNIUM_BANK_PL",
@@ -410,10 +406,10 @@ defmodule Firmowid.Seeds.Bytecraft do
           owner_name: "Bytecraft Collective sp. z o.o.",
           gocardless_id: "c5831186-ca3e-4edc-a4f5-a48b1d1ead55",
           currency: "THB",
-          organization_id: bytecraft.id,
           is_default: false,
           requisition_id: mock_requisition.id
-        }
+        },
+        tenant
       )
 
     %{pln: pln, eur: eur, usd: usd, gbp: gbp, thb: thb}

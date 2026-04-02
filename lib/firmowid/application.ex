@@ -10,7 +10,18 @@ defmodule Firmowid.Application do
   @impl true
   def start(_type, _args) do
     Oban.Telemetry.attach_default_logger()
+    attach_oban_tenant_bridge()
     Ecto.DevLogger.install(Firmowid.Repo)
+
+    # Merge AshOban trigger/scheduled_action cron entries into the Oban runtime config.
+    ash_oban_config =
+      AshOban.config(
+        Application.fetch_env!(:firmowid, :ash_domains),
+        Application.fetch_env!(:firmowid, Oban),
+        require?: false
+      )
+
+    Application.put_env(:firmowid, Oban, ash_oban_config)
 
     children =
       [
@@ -23,9 +34,9 @@ defmodule Firmowid.Application do
         Supervisor.child_spec({Cachex, name: :currencies}, id: :currencies_cache),
         Supervisor.child_spec({Cachex, name: :ksef}, id: :ksef_cache),
         Supervisor.child_spec({Cachex, name: :creator_drafts}, id: :creator_drafts_cache),
-        Firmowid.BankData.TokenManager,
+        Firmowid.Ash.Finances.GoCardless.TokenManager,
         Firmowid.Vault,
-        Firmowid.Oban,
+        {Oban, Application.fetch_env!(:firmowid, Oban)},
         Firmowid.Invoicing.Matching.Assistant.MessagesStorage,
         Firmowid.Currencies
       ] ++
@@ -38,7 +49,26 @@ defmodule Firmowid.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Firmowid.Supervisor]
-    Supervisor.start_link(children, opts)
+    result = Supervisor.start_link(children, opts)
+
+    result
+  end
+
+  # AshOban workers set the tenant on Ash queries/changesets, but the custom
+  # Repo.prepare_query/3 also requires organization_id in the process dictionary.
+  # This telemetry handler bridges the gap by calling Repo.put_org_id/1 with the
+  # tenant from AshOban job args before each Oban job executes.
+  defp attach_oban_tenant_bridge do
+    :telemetry.attach(
+      "firmowid-oban-tenant-bridge",
+      [:oban, :job, :start],
+      fn _event, _measurements, %{job: job}, _config ->
+        if tenant = job.args["tenant"] do
+          Firmowid.Repo.put_org_id(tenant)
+        end
+      end,
+      nil
+    )
   end
 
   defp maybe_posthog_supervisor do

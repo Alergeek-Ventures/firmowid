@@ -48,6 +48,7 @@ npm-debug.log
 .aider
 .aider*
 .expert
+.playwright-mcp
 
 .env
 .env.local
@@ -61,3 +62,4 @@ priv/static/.DS_Store
 
 # dialyxir cache
 /priv/plts/*
+

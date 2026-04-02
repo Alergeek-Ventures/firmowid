@@ -6,7 +6,7 @@ defmodule Firmowid.SalesInvoices.SalesInvoicesTransactions do
 
   schema "sales_invoices_transactions" do
     belongs_to :sales_invoice, Firmowid.SalesInvoices.SalesInvoice
-    belongs_to :transaction, Firmowid.Finances.Transaction
+    belongs_to :transaction, Firmowid.Ash.Finances.Transaction
 
     belongs_to :organization, Firmowid.Accounts.Organization
 

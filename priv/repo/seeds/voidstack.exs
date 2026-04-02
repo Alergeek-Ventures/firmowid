@@ -107,25 +107,29 @@ defmodule Firmowid.Seeds.Voidstack do
   end
 
   defp seed_blob(voidstack) do
-    Helpers.get_or_create_blob("aaaaaaaa-1111-4b80-9d53-a71d0efc4cad", %{
-      blob_path: "aaaaaaaa-1111-4b80-9d53-a71d0efc4cad/void-invoice.pdf",
-      blob_checksum: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-      original_filename: "void-invoice.pdf",
-      organization_id: voidstack.id
-    })
+    Helpers.seed_blob!(
+      %{
+        blob_path: "aaaaaaaa-1111-4b80-9d53-a71d0efc4cad/void-invoice.pdf",
+        blob_checksum: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        original_filename: "void-invoice.pdf"
+      },
+      voidstack.id
+    )
   end
 
   defp seed_bank_and_transactions(voidstack) do
     bank =
-      Helpers.get_or_create_bank_account("aaaaaaaa-2222-4088-b6a1-08950daa5ec2", %{
-        iban: "PL98109024020000000142345678",
-        institution_id: "SANTANDER_PL",
-        institution_name: "Santander Bank Polska",
-        owner_name: "VoidStack Labs sp. z o.o.",
-        currency: "PLN",
-        organization_id: voidstack.id,
-        is_default: true
-      })
+      Helpers.seed_bank_account!(
+        %{
+          iban: "PL98109024020000000142345678",
+          institution_id: "SANTANDER_PL",
+          institution_name: "Santander Bank Polska",
+          owner_name: "VoidStack Labs sp. z o.o.",
+          currency: "PLN",
+          is_default: true
+        },
+        voidstack.id
+      )
 
     transactions = [
       %{

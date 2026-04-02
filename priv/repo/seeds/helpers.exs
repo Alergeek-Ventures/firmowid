@@ -3,14 +3,18 @@ defmodule Firmowid.Seeds.Helpers do
   @moduledoc """
   Shared helpers for seed scripts: date utilities, idempotent insert helpers,
   and common data (Bytecraft seller info).
+
+  Finance-related helpers use `Ash.Seed` which bypasses actions/validations
+  and writes directly to the data layer — ideal for deterministic seed data.
   """
 
   import Ecto.Query
 
-  alias Firmowid.Ash.Blobs
+  alias Firmowid.Ash.Blobs.Blob, as: AshBlob
+  alias Firmowid.Ash.Finances.BankAccount, as: AshBankAccount
+  alias Firmowid.Ash.Finances.Requisition, as: AshRequisition
+  alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
   alias Firmowid.CostInvoices
-  alias Firmowid.Finances.BankAccount
-  alias Firmowid.Finances.Transaction
   alias Firmowid.Repo
   alias Firmowid.SalesInvoices
 
@@ -54,41 +58,41 @@ defmodule Firmowid.Seeds.Helpers do
   end
 
   # ---------------------------------------------------------------------------
-  # Idempotent insert helpers
+  # Finance seed helpers — Ash.Seed (bypasses actions, goes to data layer)
   # ---------------------------------------------------------------------------
 
-  def get_or_insert_txn(itid, org_id, attrs) do
-    existing =
-      Repo.one(
-        from(t in Transaction,
-          where:
-            t.internal_transaction_id == ^itid and
-              t.organization_id == ^org_id,
-          limit: 1
+  def seed_requisition!(id, org_id) do
+    case Ash.get(AshRequisition, id, tenant: org_id, authorize?: false, actor: %{}) do
+      {:ok, existing} ->
+        existing
+
+      _ ->
+        Ash.create!(AshRequisition, %{id: id},
+          action: :persist,
+          tenant: org_id,
+          authorize?: false,
+          actor: %{}
         )
-      )
-
-    case existing do
-      nil ->
-        now = DateTime.truncate(DateTime.utc_now(), :second)
-
-        Repo.insert!(
-          struct!(
-            Transaction,
-            Map.merge(attrs, %{
-              id: Ecto.UUID.generate(),
-              internal_transaction_id: itid,
-              organization_id: org_id,
-              inserted_at: now,
-              updated_at: now
-            })
-          )
-        )
-
-      txn ->
-        txn
     end
   end
+
+  def seed_bank_account!(attrs, org_id) do
+    Ash.Seed.upsert!(AshBankAccount, Map.put(attrs, :organization_id, org_id),
+      identity: :unique_iban_per_org,
+      tenant: org_id
+    )
+  end
+
+  def seed_transaction!(attrs, org_id) do
+    Ash.Seed.upsert!(AshTransaction, Map.put(attrs, :organization_id, org_id),
+      identity: :unique_internal_tx_per_org,
+      tenant: org_id
+    )
+  end
+
+  # ---------------------------------------------------------------------------
+  # Non-finance helpers (still using old context modules — to be migrated later)
+  # ---------------------------------------------------------------------------
 
   def get_or_create_sales_invoice(inv_number, org_id, attrs) do
     case Repo.one(
@@ -134,15 +138,10 @@ defmodule Firmowid.Seeds.Helpers do
     end
   end
 
-  def get_or_create_blob(id, attrs) do
-    case Repo.get(Blobs.Blob, id) do
-      nil -> Repo.insert!(struct!(Blobs.Blob, Map.put(attrs, :id, id)))
-      existing -> existing
-    end
-  end
-
-  def get_or_create_bank_account(id, attrs) do
-    Repo.get(BankAccount, id) ||
-      Repo.insert!(struct!(BankAccount, Map.put(attrs, :id, id)))
+  def seed_blob!(attrs, org_id) do
+    Ash.Seed.upsert!(AshBlob, Map.put(attrs, :organization_id, org_id),
+      identity: :unique_checksum_per_org,
+      tenant: org_id
+    )
   end
 end

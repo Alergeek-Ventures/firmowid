@@ -155,18 +155,22 @@ defmodule Firmowid.Seeds.MonthM0 do
 
   defp seed_thb_fee(bytecraft, banks) do
     txn =
-      Helpers.get_or_insert_txn("m0_thb_bankfee", bytecraft.id, %{
-        creditor_name: "Bank Millennium S.A.",
-        creditor_account: "INTERNAL",
-        debtor_name: "Bytecraft Collective sp. z o.o.",
-        debtor_account: "PL73116022020000000512345678",
-        transaction_amount: -150.00,
-        transaction_currency: "THB",
-        booking_date: Helpers.date_this_month(1),
-        bank_account_id: banks.thb.id,
-        skip_invoicing: true,
-        remittance_information_unstructured: "Opłata za prowadzenie rachunku walutowego THB"
-      })
+      Helpers.seed_transaction!(
+        %{
+          internal_transaction_id: "m0_thb_bankfee",
+          creditor_name: "Bank Millennium S.A.",
+          creditor_account: "INTERNAL",
+          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_account: "PL73116022020000000512345678",
+          transaction_amount: -150.00,
+          transaction_currency: "THB",
+          booking_date: Helpers.date_this_month(1),
+          bank_account_id: banks.thb.id,
+          skip_invoicing: true,
+          remittance_information_unstructured: "Opłata za prowadzenie rachunku walutowego THB"
+        },
+        bytecraft.id
+      )
 
     EntityTag.set_entity_category!(
       %{entity_type: :transaction, resource_id: txn.id, kind: :internal},
@@ -178,18 +182,22 @@ defmodule Firmowid.Seeds.MonthM0 do
 
   defp seed_matched_ghostpet(bytecraft, banks, projects, cps, prefix) do
     txn =
-      Helpers.get_or_insert_txn("m0_sale_ghostpet", bytecraft.id, %{
-        creditor_name: "Bytecraft Collective sp. z o.o.",
-        creditor_account: "PL42105000997603123456789014",
-        debtor_name: "GhostPet Inc.",
-        debtor_account: "N/A",
-        transaction_amount: 3_400.00,
-        transaction_currency: "USD",
-        booking_date: Helpers.date_this_month(10),
-        bank_account_id: banks.usd.id,
-        skip_invoicing: false,
-        remittance_information_unstructured: "Faktura BC/05/#{prefix} — GhostPet niepełny miesiąc"
-      })
+      Helpers.seed_transaction!(
+        %{
+          internal_transaction_id: "m0_sale_ghostpet",
+          creditor_name: "Bytecraft Collective sp. z o.o.",
+          creditor_account: "PL42105000997603123456789014",
+          debtor_name: "GhostPet Inc.",
+          debtor_account: "N/A",
+          transaction_amount: 3_400.00,
+          transaction_currency: "USD",
+          booking_date: Helpers.date_this_month(10),
+          bank_account_id: banks.usd.id,
+          skip_invoicing: false,
+          remittance_information_unstructured: "Faktura BC/05/#{prefix} — GhostPet niepełny miesiąc"
+        },
+        bytecraft.id
+      )
 
     invoice =
       Helpers.get_or_create_sales_invoice("BC/05/#{prefix}", bytecraft.id, %{

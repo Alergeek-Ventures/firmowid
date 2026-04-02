@@ -33,9 +33,9 @@ defmodule Firmowid.Seeds.MonthM1 do
   """
 
   alias Firmowid.Ash.Analysis.EntityTag
+  alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
-  alias Firmowid.Repo
   alias Firmowid.Seeds.Helpers
 
   def seed!(ctx) do
@@ -52,222 +52,282 @@ defmodule Firmowid.Seeds.MonthM1 do
     # — Revenue transactions —
 
     txn_ghostpet =
-      Helpers.get_or_insert_txn("m1_sale_ghostpet", bytecraft.id, %{
-        creditor_name: "Bytecraft Collective sp. z o.o.",
-        creditor_account: "PL42105000997603123456789014",
-        debtor_name: "GhostPet Inc.",
-        debtor_account: "N/A",
-        transaction_amount: 8_500.00,
-        transaction_currency: "USD",
-        booking_date: booking,
-        bank_account_id: banks.usd.id,
-        skip_invoicing: false,
-        remittance_information_unstructured: "Faktura BC/01/#{prefix} — GhostPet moduł papugi i AI wsparcia w żałobie"
-      })
+      Helpers.seed_transaction!(
+        %{
+          internal_transaction_id: "m1_sale_ghostpet",
+          creditor_name: "Bytecraft Collective sp. z o.o.",
+          creditor_account: "PL42105000997603123456789014",
+          debtor_name: "GhostPet Inc.",
+          debtor_account: "N/A",
+          transaction_amount: 8_500.00,
+          transaction_currency: "USD",
+          booking_date: booking,
+          bank_account_id: banks.usd.id,
+          skip_invoicing: false,
+          remittance_information_unstructured: "Faktura BC/01/#{prefix} — GhostPet moduł papugi i AI wsparcia w żałobie"
+        },
+        bytecraft.id
+      )
 
     txn_flatmate =
-      Helpers.get_or_insert_txn("m1_sale_flatmate", bytecraft.id, %{
-        creditor_name: "Bytecraft Collective sp. z o.o.",
-        creditor_account: "PL19105000997603123456789015",
-        debtor_name: "FlatEarth Dating Ltd.",
-        debtor_account: "N/A",
-        transaction_amount: 3_360.00,
-        transaction_currency: "GBP",
-        booking_date: booking,
-        bank_account_id: banks.gbp.id,
-        skip_invoicing: false,
-        remittance_information_unstructured: "Faktura BC/02/#{prefix} — FlatMate system powiadomień na krawędzi dysku"
-      })
+      Helpers.seed_transaction!(
+        %{
+          internal_transaction_id: "m1_sale_flatmate",
+          creditor_name: "Bytecraft Collective sp. z o.o.",
+          creditor_account: "PL19105000997603123456789015",
+          debtor_name: "FlatEarth Dating Ltd.",
+          debtor_account: "N/A",
+          transaction_amount: 3_360.00,
+          transaction_currency: "GBP",
+          booking_date: booking,
+          bank_account_id: banks.gbp.id,
+          skip_invoicing: false,
+          remittance_information_unstructured: "Faktura BC/02/#{prefix} — FlatMate system powiadomień na krawędzi dysku"
+        },
+        bytecraft.id
+      )
 
     txn_taco =
-      Helpers.get_or_insert_txn("m1_sale_taco", bytecraft.id, %{
-        creditor_name: "Bytecraft Collective sp. z o.o.",
-        creditor_account: "PL85105000997603123456789013",
-        debtor_name: "TacoOverflow Inc.",
-        debtor_account: "DE89370400440532013000",
-        transaction_amount: 5_850.00,
-        transaction_currency: "EUR",
-        booking_date: booking,
-        bank_account_id: banks.eur.id,
-        skip_invoicing: false,
-        remittance_information_unstructured: "Faktura BC/03/#{prefix} — TacoOverflow system odznak ostrości"
-      })
+      Helpers.seed_transaction!(
+        %{
+          internal_transaction_id: "m1_sale_taco",
+          creditor_name: "Bytecraft Collective sp. z o.o.",
+          creditor_account: "PL85105000997603123456789013",
+          debtor_name: "TacoOverflow Inc.",
+          debtor_account: "DE89370400440532013000",
+          transaction_amount: 5_850.00,
+          transaction_currency: "EUR",
+          booking_date: booking,
+          bank_account_id: banks.eur.id,
+          skip_invoicing: false,
+          remittance_information_unstructured: "Faktura BC/03/#{prefix} — TacoOverflow system odznak ostrości"
+        },
+        bytecraft.id
+      )
 
     # — Cost transactions —
 
     txn_ovh =
-      Helpers.get_or_insert_txn("m1_cost_ovh", bytecraft.id, %{
-        creditor_name: "OVH Cloud Sp. z o.o.",
-        creditor_account: "PL50102013300000210201234567",
-        debtor_name: "Bytecraft Collective sp. z o.o.",
-        debtor_account: "PL61105000997603123456789012",
-        transaction_amount: -2_400.00,
-        transaction_currency: "PLN",
-        booking_date: Helpers.date_months_ago(1, 5),
-        bank_account_id: banks.pln.id,
-        skip_invoicing: false,
-        remittance_information_unstructured: "OVH Cloud — serwery dedykowane"
-      })
+      Helpers.seed_transaction!(
+        %{
+          internal_transaction_id: "m1_cost_ovh",
+          creditor_name: "OVH Cloud Sp. z o.o.",
+          creditor_account: "PL50102013300000210201234567",
+          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_account: "PL61105000997603123456789012",
+          transaction_amount: -2_400.00,
+          transaction_currency: "PLN",
+          booking_date: Helpers.date_months_ago(1, 5),
+          bank_account_id: banks.pln.id,
+          skip_invoicing: false,
+          remittance_information_unstructured: "OVH Cloud — serwery dedykowane"
+        },
+        bytecraft.id
+      )
 
     txn_opencode =
-      Helpers.get_or_insert_txn("m1_cost_opencode", bytecraft.id, %{
-        creditor_name: "OpenCode GmbH",
-        creditor_account: "DE44500105175407324931",
-        debtor_name: "Bytecraft Collective sp. z o.o.",
-        debtor_account: "PL85105000997603123456789013",
-        transaction_amount: -120.00,
-        transaction_currency: "EUR",
-        booking_date: Helpers.date_months_ago(1, 7),
-        bank_account_id: banks.eur.id,
-        skip_invoicing: false,
-        remittance_information_unstructured: "OpenCode Zen — asystent AI do programowania, plan zespołowy"
-      })
+      Helpers.seed_transaction!(
+        %{
+          internal_transaction_id: "m1_cost_opencode",
+          creditor_name: "OpenCode GmbH",
+          creditor_account: "DE44500105175407324931",
+          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_account: "PL85105000997603123456789013",
+          transaction_amount: -120.00,
+          transaction_currency: "EUR",
+          booking_date: Helpers.date_months_ago(1, 7),
+          bank_account_id: banks.eur.id,
+          skip_invoicing: false,
+          remittance_information_unstructured: "OpenCode Zen — asystent AI do programowania, plan zespołowy"
+        },
+        bytecraft.id
+      )
 
     txn_rent =
-      Helpers.get_or_insert_txn("m1_cost_rent", bytecraft.id, %{
-        creditor_name: "Regus Business Centre Sp. z o.o.",
-        creditor_account: "PL15109024020000000134672891",
-        debtor_name: "Bytecraft Collective sp. z o.o.",
-        debtor_account: "PL61105000997603123456789012",
-        transaction_amount: -4_500.00,
-        transaction_currency: "PLN",
-        booking_date: Helpers.date_months_ago(1, 1),
-        bank_account_id: banks.pln.id,
-        skip_invoicing: false,
-        remittance_information_unstructured: "Regus — wynajem biura"
-      })
+      Helpers.seed_transaction!(
+        %{
+          internal_transaction_id: "m1_cost_rent",
+          creditor_name: "Regus Business Centre Sp. z o.o.",
+          creditor_account: "PL15109024020000000134672891",
+          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_account: "PL61105000997603123456789012",
+          transaction_amount: -4_500.00,
+          transaction_currency: "PLN",
+          booking_date: Helpers.date_months_ago(1, 1),
+          bank_account_id: banks.pln.id,
+          skip_invoicing: false,
+          remittance_information_unstructured: "Regus — wynajem biura"
+        },
+        bytecraft.id
+      )
 
     txn_biuro =
-      Helpers.get_or_insert_txn("m1_cost_biuro", bytecraft.id, %{
-        creditor_name: "Biuro Plus Sp. z o.o.",
-        creditor_account: "PL88109024020000000139876543",
-        debtor_name: "Bytecraft Collective sp. z o.o.",
-        debtor_account: "PL61105000997603123456789012",
-        transaction_amount: -380.00,
-        transaction_currency: "PLN",
-        booking_date: Helpers.date_months_ago(1, 12),
-        bank_account_id: banks.pln.id,
-        skip_invoicing: false,
-        remittance_information_unstructured: "Biuro Plus — papier, tonery, materiały biurowe"
-      })
+      Helpers.seed_transaction!(
+        %{
+          internal_transaction_id: "m1_cost_biuro",
+          creditor_name: "Biuro Plus Sp. z o.o.",
+          creditor_account: "PL88109024020000000139876543",
+          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_account: "PL61105000997603123456789012",
+          transaction_amount: -380.00,
+          transaction_currency: "PLN",
+          booking_date: Helpers.date_months_ago(1, 12),
+          bank_account_id: banks.pln.id,
+          skip_invoicing: false,
+          remittance_information_unstructured: "Biuro Plus — papier, tonery, materiały biurowe"
+        },
+        bytecraft.id
+      )
 
     txn_bankfee =
-      Helpers.get_or_insert_txn("m1_cost_bankfee", bytecraft.id, %{
-        creditor_name: "ING Bank Śląski S.A.",
-        creditor_account: "INTERNAL",
-        debtor_name: "Bytecraft Collective sp. z o.o.",
-        debtor_account: "PL61105000997603123456789012",
-        transaction_amount: -25.00,
-        transaction_currency: "PLN",
-        booking_date: Helpers.date_months_ago(1, 1),
-        bank_account_id: banks.pln.id,
-        skip_invoicing: true,
-        remittance_information_unstructured: "Opłata za prowadzenie rachunku"
-      })
+      Helpers.seed_transaction!(
+        %{
+          internal_transaction_id: "m1_cost_bankfee",
+          creditor_name: "ING Bank Śląski S.A.",
+          creditor_account: "INTERNAL",
+          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_account: "PL61105000997603123456789012",
+          transaction_amount: -25.00,
+          transaction_currency: "PLN",
+          booking_date: Helpers.date_months_ago(1, 1),
+          bank_account_id: banks.pln.id,
+          skip_invoicing: true,
+          remittance_information_unstructured: "Opłata za prowadzenie rachunku"
+        },
+        bytecraft.id
+      )
 
     # — THB transactions —
 
     txn_thb_out =
-      Helpers.get_or_insert_txn("m1_thb_conversion_out", bytecraft.id, %{
-        creditor_name: "Bank Millennium S.A.",
-        creditor_account: "INTERNAL",
-        debtor_name: "Bytecraft Collective sp. z o.o.",
-        debtor_account: "PL73116022020000000512345678",
-        transaction_amount: -50_000.00,
-        transaction_currency: "THB",
-        booking_date: Helpers.date_months_ago(1, 10),
-        bank_account_id: banks.thb.id,
-        skip_invoicing: true,
-        remittance_information_unstructured: "Przewalutowanie THB → PLN, kurs 0.095"
-      })
+      Helpers.seed_transaction!(
+        %{
+          internal_transaction_id: "m1_thb_conversion_out",
+          creditor_name: "Bank Millennium S.A.",
+          creditor_account: "INTERNAL",
+          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_account: "PL73116022020000000512345678",
+          transaction_amount: -50_000.00,
+          transaction_currency: "THB",
+          booking_date: Helpers.date_months_ago(1, 10),
+          bank_account_id: banks.thb.id,
+          skip_invoicing: true,
+          remittance_information_unstructured: "Przewalutowanie THB → PLN, kurs 0.095"
+        },
+        bytecraft.id
+      )
 
     txn_thb_pln =
-      Helpers.get_or_insert_txn("m1_thb_conversion_pln", bytecraft.id, %{
-        creditor_name: "Bytecraft Collective sp. z o.o.",
-        creditor_account: "PL61105000997603123456789012",
-        debtor_name: "Bank Millennium S.A.",
-        debtor_account: "INTERNAL",
-        transaction_amount: 4_750.00,
-        transaction_currency: "PLN",
-        booking_date: Helpers.date_months_ago(1, 10),
-        bank_account_id: banks.pln.id,
-        skip_invoicing: true,
-        remittance_information_unstructured: "Wpływ z przewalutowania THB → PLN (50,000 THB)"
-      })
+      Helpers.seed_transaction!(
+        %{
+          internal_transaction_id: "m1_thb_conversion_pln",
+          creditor_name: "Bytecraft Collective sp. z o.o.",
+          creditor_account: "PL61105000997603123456789012",
+          debtor_name: "Bank Millennium S.A.",
+          debtor_account: "INTERNAL",
+          transaction_amount: 4_750.00,
+          transaction_currency: "PLN",
+          booking_date: Helpers.date_months_ago(1, 10),
+          bank_account_id: banks.pln.id,
+          skip_invoicing: true,
+          remittance_information_unstructured: "Wpływ z przewalutowania THB → PLN (50,000 THB)"
+        },
+        bytecraft.id
+      )
 
     # — Wage payment transactions (skip_invoicing — no invoice for salaries) —
 
     wage_booking = Helpers.date_months_ago(1, 28)
 
     txn_wage_kira =
-      Helpers.get_or_insert_txn("m1_wage_kira", bytecraft.id, %{
-        creditor_name: "Kira Voss",
-        creditor_account: "PL11109024020000000187654321",
-        debtor_name: "Bytecraft Collective sp. z o.o.",
-        debtor_account: "PL61105000997603123456789012",
-        transaction_amount: -4_500.00,
-        transaction_currency: "PLN",
-        booking_date: wage_booking,
-        bank_account_id: banks.pln.id,
-        skip_invoicing: true,
-        remittance_information_unstructured: "Wynagrodzenie — Kira Voss, #{prefix}"
-      })
+      Helpers.seed_transaction!(
+        %{
+          internal_transaction_id: "m1_wage_kira",
+          creditor_name: "Kira Voss",
+          creditor_account: "PL11109024020000000187654321",
+          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_account: "PL61105000997603123456789012",
+          transaction_amount: -4_500.00,
+          transaction_currency: "PLN",
+          booking_date: wage_booking,
+          bank_account_id: banks.pln.id,
+          skip_invoicing: true,
+          remittance_information_unstructured: "Wynagrodzenie — Kira Voss, #{prefix}"
+        },
+        bytecraft.id
+      )
 
     txn_wage_tomek =
-      Helpers.get_or_insert_txn("m1_wage_tomek", bytecraft.id, %{
-        creditor_name: "Tomek Briar",
-        creditor_account: "PL22109024020000000198765432",
-        debtor_name: "Bytecraft Collective sp. z o.o.",
-        debtor_account: "PL61105000997603123456789012",
-        transaction_amount: -4_560.00,
-        transaction_currency: "PLN",
-        booking_date: wage_booking,
-        bank_account_id: banks.pln.id,
-        skip_invoicing: true,
-        remittance_information_unstructured: "Wynagrodzenie — Tomek Briar, #{prefix}"
-      })
+      Helpers.seed_transaction!(
+        %{
+          internal_transaction_id: "m1_wage_tomek",
+          creditor_name: "Tomek Briar",
+          creditor_account: "PL22109024020000000198765432",
+          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_account: "PL61105000997603123456789012",
+          transaction_amount: -4_560.00,
+          transaction_currency: "PLN",
+          booking_date: wage_booking,
+          bank_account_id: banks.pln.id,
+          skip_invoicing: true,
+          remittance_information_unstructured: "Wynagrodzenie — Tomek Briar, #{prefix}"
+        },
+        bytecraft.id
+      )
 
     txn_wage_sable =
-      Helpers.get_or_insert_txn("m1_wage_sable", bytecraft.id, %{
-        creditor_name: "Sable Orin",
-        creditor_account: "PL33109024020000000209876543",
-        debtor_name: "Bytecraft Collective sp. z o.o.",
-        debtor_account: "PL61105000997603123456789012",
-        transaction_amount: -1_600.00,
-        transaction_currency: "PLN",
-        booking_date: wage_booking,
-        bank_account_id: banks.pln.id,
-        skip_invoicing: true,
-        remittance_information_unstructured: "Wynagrodzenie — Sable Orin, #{prefix}"
-      })
+      Helpers.seed_transaction!(
+        %{
+          internal_transaction_id: "m1_wage_sable",
+          creditor_name: "Sable Orin",
+          creditor_account: "PL33109024020000000209876543",
+          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_account: "PL61105000997603123456789012",
+          transaction_amount: -1_600.00,
+          transaction_currency: "PLN",
+          booking_date: wage_booking,
+          bank_account_id: banks.pln.id,
+          skip_invoicing: true,
+          remittance_information_unstructured: "Wynagrodzenie — Sable Orin, #{prefix}"
+        },
+        bytecraft.id
+      )
 
     txn_wage_jules =
-      Helpers.get_or_insert_txn("m1_wage_jules", bytecraft.id, %{
-        creditor_name: "Jules Kadar",
-        creditor_account: "PL44109024020000000210987654",
-        debtor_name: "Bytecraft Collective sp. z o.o.",
-        debtor_account: "PL61105000997603123456789012",
-        transaction_amount: -3_250.00,
-        transaction_currency: "PLN",
-        booking_date: wage_booking,
-        bank_account_id: banks.pln.id,
-        skip_invoicing: true,
-        remittance_information_unstructured: "Wynagrodzenie — Jules Kadar, #{prefix}"
-      })
+      Helpers.seed_transaction!(
+        %{
+          internal_transaction_id: "m1_wage_jules",
+          creditor_name: "Jules Kadar",
+          creditor_account: "PL44109024020000000210987654",
+          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_account: "PL61105000997603123456789012",
+          transaction_amount: -3_250.00,
+          transaction_currency: "PLN",
+          booking_date: wage_booking,
+          bank_account_id: banks.pln.id,
+          skip_invoicing: true,
+          remittance_information_unstructured: "Wynagrodzenie — Jules Kadar, #{prefix}"
+        },
+        bytecraft.id
+      )
 
     txn_wage_maren =
-      Helpers.get_or_insert_txn("m1_wage_maren", bytecraft.id, %{
-        creditor_name: "Maren Solke",
-        creditor_account: "PL55109024020000000221098765",
-        debtor_name: "Bytecraft Collective sp. z o.o.",
-        debtor_account: "PL61105000997603123456789012",
-        transaction_amount: -3_300.00,
-        transaction_currency: "PLN",
-        booking_date: wage_booking,
-        bank_account_id: banks.pln.id,
-        skip_invoicing: true,
-        remittance_information_unstructured: "Wynagrodzenie — Maren Solke, #{prefix}"
-      })
+      Helpers.seed_transaction!(
+        %{
+          internal_transaction_id: "m1_wage_maren",
+          creditor_name: "Maren Solke",
+          creditor_account: "PL55109024020000000221098765",
+          debtor_name: "Bytecraft Collective sp. z o.o.",
+          debtor_account: "PL61105000997603123456789012",
+          transaction_amount: -3_300.00,
+          transaction_currency: "PLN",
+          booking_date: wage_booking,
+          bank_account_id: banks.pln.id,
+          skip_invoicing: true,
+          remittance_information_unstructured: "Wynagrodzenie — Maren Solke, #{prefix}"
+        },
+        bytecraft.id
+      )
 
     # — Sales invoices —
 
@@ -475,8 +535,6 @@ defmodule Firmowid.Seeds.MonthM1 do
   # — Unmatched transactions for grouping tests —
 
   defp seed_unmatched_for_grouping(bytecraft, banks) do
-    alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
-
     transactions = [
       # Hetzner — 3 cost transactions from the same creditor → should group
       %{
@@ -585,7 +643,7 @@ defmodule Firmowid.Seeds.MonthM1 do
   defp seed_scope do
     %Firmowid.Ash.Scope{
       current_user: %{id: "00000000-0000-0000-0000-000000000000", role: :admin},
-      current_tenant: Repo.get_org_id()
+      current_tenant: Firmowid.Repo.get_org_id()
     }
   end
 end

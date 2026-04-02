@@ -1,30 +1,22 @@
 defmodule FirmowidWeb.BankSync.Views.Create do
-  @moduledoc false
+  @moduledoc """
+  LiveView for creating GoCardless bank connections.
+
+  Uses Ash native code interfaces from Firmowid.Ash.Finances domain.
+  The AshOban trigger on Requisition auto-schedules status polling.
+  """
   use FirmowidWeb, :live_view
 
-  import FirmowidWeb.Billing.Components.Billing
-
   alias Firmowid.Analytics
-  alias Firmowid.Ash.Billing
-  alias Firmowid.BankData
-  alias Firmowid.BankData.Worker, as: BankDataWorker
+  alias Firmowid.Ash.Finances
 
   require Logger
 
   @impl true
   def mount(_params, _session, socket) do
-    Bodyguard.permit!(BankData, :create_requisition, socket.assigns.current_user)
-
-    # Check billing limits for bank connections
-    limits = Billing.get_limits!(tenant: socket.assigns.current_org.id, scope: socket.assigns.ash_scope)
-
-    bank_connections_limit_check =
-      if limits.bank_connections_used >= limits.bank_connections_limit,
-        do: {:warning, :over_limit, %{used: limits.bank_connections_used, limit: limits.bank_connections_limit}},
-        else: :ok
-
+    # Use Ash native code interface for institutions
     available_institutions =
-      case BankData.get_available_institutions_for_country("pl") do
+      case Finances.list_institutions("pl", actor: socket.assigns.current_user) do
         {:ok, institutions} -> institutions
         {:error, _} -> []
       end
@@ -33,14 +25,12 @@ defmodule FirmowidWeb.BankSync.Views.Create do
       socket
       |> assign(:available_institutions, available_institutions)
       |> assign(:requisition_link, nil)
-      |> assign(:bank_connections_limit_check, bank_connections_limit_check)
 
     {:ok, socket}
   end
 
   @impl true
   def handle_params(params, url, socket) do
-    Bodyguard.permit!(BankData, :create_requisition, socket.assigns.current_user)
     # extract domain for redirecting when submitting an account
     # (makes it work for both localhost and production)
     socket = assign(socket, :redirect_url, url |> String.split("?") |> List.first())
@@ -49,20 +39,9 @@ defmodule FirmowidWeb.BankSync.Views.Create do
 
     if is_nil(requisition_id) do
       {:noreply, socket}
-
-      # Always schedule asynchronous requisition resolution in the background
     else
-      current_user = socket.assigns.current_user
-      organization_id = current_user.organization_id
-
-      %{
-        name: "check_requisition_status",
-        requisition_id: requisition_id,
-        organization_id: organization_id
-      }
-      |> BankDataWorker.new()
-      |> Firmowid.Oban.insert!()
-
+      # AshOban trigger auto-schedules status check when requisition is pending.
+      # No manual worker insertion needed.
       error = params["error"]
 
       if is_nil(error) do
@@ -92,17 +71,20 @@ defmodule FirmowidWeb.BankSync.Views.Create do
       ) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
-    Bodyguard.permit!(BankData, :create_requisition, user)
 
     # it comes as as string
     transaction_total_days = String.to_integer(transaction_total_days)
 
+    # Use Ash native code interface with authorization
+    # The AshOban trigger auto-schedules status polling on create
     {:ok, link} =
-      BankData.create_requisition(
+      Finances.create_requisition(
         institution_id,
         transaction_total_days,
-        organization_id,
-        socket.assigns.redirect_url
+        socket.assigns.redirect_url,
+        tenant: organization_id,
+        actor: user,
+        authorize?: true
       )
 
     Analytics.track_event("bank_institution_select", user, %{

@@ -45,7 +45,7 @@ defmodule Firmowid.CostInvoices.CostInvoice do
     field :payment_method, Ecto.Enum, values: ~w(cash card voucher check loan bank_transfer mobile)a
 
     many_to_many :transactions,
-                 Firmowid.Finances.Transaction,
+                 Firmowid.Ash.Finances.Transaction,
                  join_through: "cost_invoices_transactions"
 
     has_many :correction_invoices, __MODULE__,

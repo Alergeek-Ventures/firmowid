@@ -111,13 +111,21 @@ defmodule Firmowid.Repo do
   # - FunWithFlags queries (passes `fun_with_flags: true`)
 
   # - Unscoped tables (see @unscoped_tables and @unscoped_table_prefixes)
+  # - Ash-managed tables (Ash multitenancy handles the WHERE clause)
+
+  # Tables managed by Ash resources with `multitenancy strategy: :attribute`.
+  # Ash enforces the organization_id WHERE clause via `set_tenant/1` —
+  # prepare_query stands down to avoid double-filtering or crashes in
+  # background jobs (AshOban) where the process dictionary isn't set.
+  @ash_managed_tables ~w(requisitions)
 
   defp skip_organization_scoping?(query, opts) do
     opts[:skip_organization_id] ||
       opts[:schema_migration] ||
       opts[:prefix] == "oban" ||
       opts[:fun_with_flags] ||
-      unscoped_table?(query)
+      unscoped_table?(query) ||
+      ash_managed_table?(query)
   end
 
   # Tables that don't have organization_id and should bypass scoping
@@ -130,4 +138,9 @@ defmodule Firmowid.Repo do
   end
 
   defp unscoped_table?(_), do: false
+
+  defp ash_managed_table?(%Ecto.Query{from: %{source: {table, _}}}) when is_binary(table),
+    do: table in @ash_managed_tables
+
+  defp ash_managed_table?(_), do: false
 end
