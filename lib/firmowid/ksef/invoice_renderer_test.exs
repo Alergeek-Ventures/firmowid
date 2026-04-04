@@ -10,10 +10,10 @@ defmodule Firmowid.Ksef.InvoiceRendererTest do
 
   import Firmowid.KsefTestHelpers
 
+  alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ksef.InvoiceRenderer
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices
-  alias Firmowid.SalesInvoices.SalesInvoice
 
   @moduletag :ksef_xsd
 
@@ -164,7 +164,15 @@ defmodule Firmowid.Ksef.InvoiceRendererTest do
     test "cancellation correction (zeroed items) passes XSD validation", %{model: model} do
       original = simulate_ksef_submission(build_domestic_invoice(), with_ksef_number: true)
 
-      {:ok, cancellation} = SalesInvoices.cancel_sales_invoice(original)
+      cancellation =
+        original.id
+        |> SalesInvoice.cancel!(authorize?: false, actor: %{}, tenant: original.organization_id)
+        |> Ash.load!([:sales_invoice_items, corrected_invoice: :sales_invoice_items],
+          authorize?: false,
+          actor: %{},
+          tenant: original.organization_id
+        )
+
       xml = InvoiceRenderer.render_fa3(cancellation)
 
       assert :ok = validate_xml(xml, model)
@@ -306,127 +314,175 @@ defmodule Firmowid.Ksef.InvoiceRendererTest do
   end
 
   defp build_example_2_original do
-    attrs = %{
-      invoice_number: "FV2026/02/150",
-      issue_date: ~D[2026-02-15],
-      sale_date: ~D[2026-01-27],
-      due_date: nil,
-      currency: "PLN",
-      payment_method: :transfer,
-      seller_nip: "9999999999",
-      seller_display_name: "ABC AGD sp. z o. o.",
-      seller_address: "ul. Kwiatowa 1 m. 2",
-      seller_account_number: nil,
-      buyer_type: :company,
-      buyer_id: "1111111111",
-      buyer_full_name: "F.H.U. Jan Kowalski",
-      buyer_address: "ul. Polna 1",
-      buyer_country: "PL",
-      is_reverse_charge: false,
-      ksef_invoice_kind: :vat,
-      sales_invoice_items: [
-        %{
-          name: "lodówka Zimnotech mk1",
-          quantity: Decimal.new("1"),
-          unit: "szt.",
-          unit_price: Decimal.new("1626.01"),
-          vat_rate: "23"
-        }
-      ]
-    }
+    org_id = Repo.get_org_id()
 
-    {:ok, invoice} = SalesInvoices.create_sales_invoice(%SalesInvoice{}, attrs)
-    Repo.preload(invoice, :sales_invoice_items)
+    invoice =
+      Ash.Seed.seed!(SalesInvoice, %{
+        invoice_number: "FV2026/02/150",
+        issue_date: ~D[2026-02-15],
+        sale_date: ~D[2026-01-27],
+        due_date: nil,
+        currency: "PLN",
+        payment_method: :transfer,
+        seller_nip: "9999999999",
+        seller_display_name: "ABC AGD sp. z o. o.",
+        seller_address: "ul. Kwiatowa 1 m. 2",
+        seller_account_number: nil,
+        buyer_type: :company,
+        buyer_id: "1111111111",
+        buyer_full_name: "F.H.U. Jan Kowalski",
+        buyer_address: "ul. Polna 1",
+        buyer_country: "PL",
+        is_reverse_charge: false,
+        ksef_invoice_kind: :vat,
+        invoice_type: :poland,
+        organization_id: org_id
+      })
+
+    Ash.Seed.seed!(SalesInvoiceItem, %{
+      name: "lodówka Zimnotech mk1",
+      quantity: Decimal.new("1"),
+      unit: "szt.",
+      unit_price: Decimal.new("1626.01"),
+      vat_rate: "23",
+      sales_invoice_id: invoice.id,
+      organization_id: invoice.organization_id,
+      index: 0
+    })
+
+    Ash.load!(invoice, [:sales_invoice_items], authorize?: false, actor: %{}, tenant: invoice.organization_id)
   end
 
   defp build_example_2_correction(original) do
-    Repo.put_org_id(original.organization_id)
+    correction =
+      Ash.Seed.seed!(SalesInvoice, %{
+        invoice_number: "FK2026/03/200",
+        issue_date: ~D[2026-03-15],
+        sale_date: ~D[2026-01-27],
+        due_date: nil,
+        correction_reason: "obniżka ceny o 200 zł z uwagi na uszkodzenia estetyczne",
+        ksef_invoice_kind: :kor,
+        corrected_invoice_id: original.id,
+        invoice_type: original.invoice_type,
+        currency: original.currency,
+        payment_method: original.payment_method,
+        seller_nip: original.seller_nip,
+        seller_display_name: original.seller_display_name,
+        seller_address: original.seller_address,
+        seller_account_number: original.seller_account_number,
+        buyer_type: original.buyer_type,
+        buyer_id: original.buyer_id,
+        buyer_full_name: original.buyer_full_name,
+        buyer_address: original.buyer_address,
+        buyer_country: original.buyer_country,
+        is_reverse_charge: original.is_reverse_charge,
+        organization_id: original.organization_id
+      })
 
-    attrs = %{
-      invoice_number: "FK2026/03/200",
-      issue_date: ~D[2026-03-15],
-      sale_date: ~D[2026-01-27],
-      due_date: nil,
-      correction_reason: "obniżka ceny o 200 zł z uwagi na uszkodzenia estetyczne",
-      sales_invoice_items: [
-        %{
-          name: "lodówka Zimnotech mk1",
-          quantity: Decimal.new("1"),
-          unit: "szt.",
-          unit_price: Decimal.new("1463.41"),
-          vat_rate: "23"
-        }
-      ]
-    }
+    Ash.Seed.seed!(SalesInvoiceItem, %{
+      name: "lodówka Zimnotech mk1",
+      quantity: Decimal.new("1"),
+      unit: "szt.",
+      unit_price: Decimal.new("1463.41"),
+      vat_rate: "23",
+      sales_invoice_id: correction.id,
+      organization_id: correction.organization_id,
+      index: 0
+    })
 
-    {:ok, correction} = SalesInvoices.create_correction_invoice(original, attrs)
-    Repo.preload(correction, [:sales_invoice_items, :corrected_invoice])
+    Ash.load!(correction, [:sales_invoice_items, :corrected_invoice],
+      authorize?: false,
+      actor: %{},
+      tenant: correction.organization_id
+    )
   end
 
   defp build_example_5_original do
-    attrs = %{
-      invoice_number: "FV2026/02/150",
-      issue_date: ~D[2026-02-15],
-      sale_date: nil,
-      due_date: nil,
-      currency: "PLN",
-      payment_method: :transfer,
-      seller_nip: "9999999999",
-      seller_display_name: "ABC AGD sp. z o. o.",
-      seller_address: "ul. Kwiatowa 1 m. 2",
-      seller_account_number: nil,
-      buyer_type: :company,
-      buyer_id: "1111111111",
-      buyer_full_name: "CDE sp. j.",
-      buyer_address: "ul. Sadowa 1 lok. 3",
-      buyer_country: "PL",
-      is_reverse_charge: false,
-      ksef_invoice_kind: :vat,
-      sales_invoice_items: [
-        %{
-          name: "Usluga programistyczna",
-          quantity: Decimal.new("1"),
-          unit: "szt.",
-          unit_price: Decimal.new("100.00"),
-          vat_rate: "23"
-        }
-      ]
-    }
+    org_id = Repo.get_org_id()
 
-    {:ok, invoice} = SalesInvoices.create_sales_invoice(%SalesInvoice{}, attrs)
-    Repo.preload(invoice, :sales_invoice_items)
+    invoice =
+      Ash.Seed.seed!(SalesInvoice, %{
+        invoice_number: "FV2026/02/150",
+        issue_date: ~D[2026-02-15],
+        sale_date: nil,
+        due_date: nil,
+        currency: "PLN",
+        payment_method: :transfer,
+        seller_nip: "9999999999",
+        seller_display_name: "ABC AGD sp. z o. o.",
+        seller_address: "ul. Kwiatowa 1 m. 2",
+        seller_account_number: nil,
+        buyer_type: :company,
+        buyer_id: "1111111111",
+        buyer_full_name: "CDE sp. j.",
+        buyer_address: "ul. Sadowa 1 lok. 3",
+        buyer_country: "PL",
+        is_reverse_charge: false,
+        ksef_invoice_kind: :vat,
+        invoice_type: :poland,
+        organization_id: org_id
+      })
+
+    Ash.Seed.seed!(SalesInvoiceItem, %{
+      name: "Usluga programistyczna",
+      quantity: Decimal.new("1"),
+      unit: "szt.",
+      unit_price: Decimal.new("100.00"),
+      vat_rate: "23",
+      sales_invoice_id: invoice.id,
+      organization_id: invoice.organization_id,
+      index: 0
+    })
+
+    Ash.load!(invoice, [:sales_invoice_items], authorize?: false, actor: %{}, tenant: invoice.organization_id)
   end
 
   defp update_ksef_submission(invoice, ksef_number) do
-    {:ok, updated} =
-      invoice
-      |> SalesInvoice.ksef_update_changeset(%{locked_at: DateTime.utc_now(), ksef_number: ksef_number})
-      |> Repo.update()
-
-    updated
+    Ash.Seed.update!(invoice, %{locked_at: DateTime.utc_now(), ksef_number: ksef_number})
   end
 
   defp build_example_5_correction(original) do
-    attrs = %{
-      invoice_number: "FK2026/04/23",
-      issue_date: ~D[2026-04-01],
-      sale_date: nil,
-      due_date: nil,
-      correction_reason: "błędna nazwa nabywcy",
-      buyer_full_name: "CeDeE s.c.",
-      sales_invoice_items: [
-        %{
-          name: "Usluga programistyczna",
-          quantity: Decimal.new("1"),
-          unit: "szt.",
-          unit_price: Decimal.new("100.00"),
-          vat_rate: "23"
-        }
-      ]
-    }
+    correction =
+      Ash.Seed.seed!(SalesInvoice, %{
+        invoice_number: "FK2026/04/23",
+        issue_date: ~D[2026-04-01],
+        sale_date: nil,
+        due_date: nil,
+        correction_reason: "błędna nazwa nabywcy",
+        ksef_invoice_kind: :kor,
+        corrected_invoice_id: original.id,
+        invoice_type: original.invoice_type,
+        currency: original.currency,
+        payment_method: original.payment_method,
+        seller_nip: original.seller_nip,
+        seller_display_name: original.seller_display_name,
+        seller_address: original.seller_address,
+        seller_account_number: original.seller_account_number,
+        buyer_type: original.buyer_type,
+        buyer_id: original.buyer_id,
+        buyer_full_name: "CeDeE s.c.",
+        buyer_address: original.buyer_address,
+        buyer_country: original.buyer_country,
+        is_reverse_charge: original.is_reverse_charge,
+        organization_id: original.organization_id
+      })
 
-    {:ok, correction} = SalesInvoices.create_correction_invoice(original, attrs)
-    Repo.preload(correction, [:sales_invoice_items, :corrected_invoice])
+    Ash.Seed.seed!(SalesInvoiceItem, %{
+      name: "Usluga programistyczna",
+      quantity: Decimal.new("1"),
+      unit: "szt.",
+      unit_price: Decimal.new("100.00"),
+      vat_rate: "23",
+      sales_invoice_id: correction.id,
+      organization_id: correction.organization_id,
+      index: 0
+    })
+
+    Ash.load!(correction, [:sales_invoice_items, :corrected_invoice],
+      authorize?: false,
+      actor: %{},
+      tenant: correction.organization_id
+    )
   end
 
   defp load_example_fixture(name) do

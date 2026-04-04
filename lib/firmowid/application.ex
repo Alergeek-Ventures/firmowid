@@ -33,7 +33,6 @@ defmodule Firmowid.Application do
         {Phoenix.PubSub, name: Firmowid.PubSub},
         Supervisor.child_spec({Cachex, name: :currencies}, id: :currencies_cache),
         Supervisor.child_spec({Cachex, name: :ksef}, id: :ksef_cache),
-        Supervisor.child_spec({Cachex, name: :creator_drafts}, id: :creator_drafts_cache),
         Firmowid.Ash.Finances.GoCardless.TokenManager,
         Firmowid.Vault,
         {Oban, Application.fetch_env!(:firmowid, Oban)},

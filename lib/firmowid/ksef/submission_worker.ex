@@ -12,13 +12,12 @@ defmodule Firmowid.Ksef.SubmissionWorker do
     queue: :ksef_submissions,
     max_attempts: 3
 
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ksef
   alias Firmowid.Ksef.ApiClient
   alias Firmowid.Ksef.InvoiceRenderer
   alias Firmowid.Ksef.SessionWorker
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices
-  alias Firmowid.SalesInvoices.SalesInvoice
 
   require Logger
 
@@ -71,42 +70,62 @@ defmodule Firmowid.Ksef.SubmissionWorker do
     end
   end
 
-  defp load_invoice(sales_invoice_id) do
-    invoice = SalesInvoices.get_sales_invoice(sales_invoice_id)
+  # TODO: replace authorize?: false + actor: %{} with system actor once available
+  @bridge_opts [authorize?: false, actor: %{}]
 
-    cond do
-      is_nil(invoice) ->
+  defp load_invoice(sales_invoice_id) do
+    opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
+
+    case SalesInvoice.by_id(
+           sales_invoice_id,
+           Keyword.put(opts, :load, sales_invoice_items: [:net_value, :vat_value, :gross_value])
+         ) do
+      {:ok, nil} ->
         {:error, :invoice_not_found}
 
-      not is_nil(invoice.locked_at) ->
-        {:error, :invoice_already_submitted}
+      {:ok, invoice} ->
+        cond do
+          not is_nil(invoice.locked_at) ->
+            {:error, :invoice_already_submitted}
 
-      SalesInvoice.draft?(invoice) ->
-        {:error, :invoice_is_draft}
+          is_nil(invoice.invoice_number) ->
+            {:error, :invoice_is_draft}
 
-      true ->
-        {:ok, invoice}
+          true ->
+            {:ok, invoice}
+        end
+
+      {:error, _} ->
+        {:error, :invoice_not_found}
     end
   end
 
   defp lock_invoice(invoice, session_reference) do
-    invoice
-    |> SalesInvoice.ksef_update_changeset(%{
-      locked_at: DateTime.utc_now(:second),
-      ksef_session_reference_number: session_reference
-    })
-    |> Repo.update!()
+    opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
+
+    SalesInvoice.update_ksef_fields!(
+      invoice,
+      %{
+        locked_at: DateTime.utc_now(:second),
+        ksef_session_reference_number: session_reference
+      },
+      opts
+    )
   end
 
   # Unlocks invoice for editing/resubmission while preserving ksef_session_reference_number.
   # The session reference is kept as it represents the last used session - successful or failed.
   defp unlock_invoice(invoice) do
-    invoice
-    |> SalesInvoice.ksef_update_changeset(%{
-      ksef_number: nil,
-      locked_at: nil
-    })
-    |> Repo.update!()
+    opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
+
+    SalesInvoice.update_ksef_fields!(
+      invoice,
+      %{
+        ksef_number: nil,
+        locked_at: nil
+      },
+      opts
+    )
   end
 
   defp schedule_verification(sales_invoice_id, session_reference, invoice_reference) do
@@ -131,7 +150,8 @@ defmodule Firmowid.Ksef.SubmissionWorker do
        ) do
     Logger.info("Verifying KSeF submission for sales invoice #{sales_invoice_id}")
 
-    sales_invoice = SalesInvoices.get_sales_invoice!(sales_invoice_id)
+    opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
+    sales_invoice = SalesInvoice.by_id!(sales_invoice_id, opts)
     access_token = SessionWorker.get_access_token!()
 
     access_token
@@ -140,9 +160,9 @@ defmodule Firmowid.Ksef.SubmissionWorker do
   rescue
     e ->
       if final_attempt?(job) do
-        sales_invoice_id
-        |> SalesInvoices.get_sales_invoice!()
-        |> unlock_invoice()
+        opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
+        sales_invoice = SalesInvoice.by_id!(sales_invoice_id, opts)
+        unlock_invoice(sales_invoice)
 
         Ksef.broadcast_ksef_status(Repo.get_org_id(), sales_invoice_id, :failed)
       end
@@ -151,9 +171,16 @@ defmodule Firmowid.Ksef.SubmissionWorker do
   end
 
   defp handle_verification_result({:ok, %{ksef_number: ksef_number, invoice_hash: hash}}, invoice, _job) do
-    invoice
-    |> SalesInvoice.ksef_update_changeset(%{ksef_number: ksef_number, ksef_invoice_checksum: hash})
-    |> Repo.update!()
+    opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
+
+    SalesInvoice.update_ksef_fields!(
+      invoice,
+      %{
+        ksef_number: ksef_number,
+        ksef_invoice_checksum: hash
+      },
+      opts
+    )
 
     Logger.info("Invoice #{invoice.id} received KSeF number: #{ksef_number}")
     Ksef.broadcast_ksef_status(Repo.get_org_id(), invoice.id, :submitted)
@@ -173,11 +200,17 @@ defmodule Firmowid.Ksef.SubmissionWorker do
 
   defp handle_verification_result({:error, {:invoice_duplicate, ksef_number, session_ref}}, invoice, _job) do
     Logger.warning("Invoice #{invoice.id} is a duplicate of KSeF number #{ksef_number}")
+    opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
 
     # TODO: prepare correction invoice draft if original invoice is different from this one
-    invoice
-    |> SalesInvoice.ksef_update_changeset(%{ksef_number: ksef_number, ksef_session_reference_number: session_ref})
-    |> Repo.update!()
+    SalesInvoice.update_ksef_fields!(
+      invoice,
+      %{
+        ksef_number: ksef_number,
+        ksef_session_reference_number: session_ref
+      },
+      opts
+    )
 
     Ksef.broadcast_ksef_status(Repo.get_org_id(), invoice.id, :submitted)
     :ok

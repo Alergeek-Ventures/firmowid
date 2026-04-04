@@ -20,15 +20,13 @@ defmodule Firmowid.Ash.Analysis do
   alias Firmowid.Ash.Analysis.TagDefinition
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Transaction, as: EctoTransaction
-  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
+  alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
+  alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.Ash.Scope
-  alias Firmowid.CostInvoices.CostInvoice, as: EctoCostInvoice
-  alias Firmowid.CostInvoices.CostInvoicesTransactions
   alias Firmowid.Currencies
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices.SalesInvoice, as: EctoSalesInvoice
-  alias Firmowid.SalesInvoices.SalesInvoicesTransactions
 
   require Ash.Query
 
@@ -69,8 +67,9 @@ defmodule Firmowid.Ash.Analysis do
     tag_filters = Keyword.get(opts, :tag_filters, [])
 
     sales_invoices =
-      date_from
-      |> AshSalesInvoice.list_by_sale_date!(date_to,
+      %{date_from: date_from, date_to: date_to, date_field: :sale_date}
+      |> SalesInvoice.read!(
+        load: [:sales_invoice_items, :transactions],
         tenant: scope.current_tenant,
         actor: scope.current_user,
         authorize?: false
@@ -79,8 +78,9 @@ defmodule Firmowid.Ash.Analysis do
 
     # TODO: replace authorize?: false + actor: %{} with system actor once available
     cost_invoices =
-      date_from
-      |> AshCostInvoice.list_by_sale_date!(date_to,
+      %{date_from: date_from, date_to: date_to, date_field: :sale_date}
+      |> CostInvoice.read!(
+        load: [:transactions, :effective_total_amount, :effective_currency],
         tenant: scope.current_tenant,
         actor: scope.current_user,
         authorize?: false
@@ -89,7 +89,7 @@ defmodule Firmowid.Ash.Analysis do
 
     transactions =
       Finances.list_transactions!(
-        %{date_from: date_from, date_to: date_to, status: :skipped},
+        %{date_from: date_from, date_to: date_to, reconciliation: :skipped},
         tenant: scope.current_tenant,
         actor: scope.current_user,
         authorize?: false
@@ -144,12 +144,12 @@ defmodule Firmowid.Ash.Analysis do
     Repo.put_org_id(scope.current_tenant)
 
     sales_match_query =
-      from(sit in SalesInvoicesTransactions,
+      from(sit in SalesInvoiceTransaction,
         where: sit.transaction_id == parent_as(:transaction).id
       )
 
     cost_match_query =
-      from(cit in CostInvoicesTransactions,
+      from(cit in CostInvoiceTransaction,
         where: cit.transaction_id == parent_as(:transaction).id
       )
 
@@ -186,17 +186,17 @@ defmodule Firmowid.Ash.Analysis do
       )
 
     si_matched_query =
-      from(sit in SalesInvoicesTransactions,
+      from(sit in SalesInvoiceTransaction,
         where: sit.sales_invoice_id == parent_as(:entity).id
       )
 
     ci_matched_query =
-      from(cit in CostInvoicesTransactions,
+      from(cit in CostInvoiceTransaction,
         where: cit.cost_invoice_id == parent_as(:entity).id
       )
 
     sales_invoices_query =
-      from(si in EctoSalesInvoice,
+      from(si in SalesInvoice,
         as: :entity,
         where: si.skip_invoicing == true or exists(subquery(si_matched_query)),
         where: not exists(subquery(si_internal_query)),
@@ -204,7 +204,7 @@ defmodule Firmowid.Ash.Analysis do
       )
 
     cost_invoices_query =
-      from(ci in EctoCostInvoice,
+      from(ci in CostInvoice,
         as: :entity,
         where: ci.skip_invoicing == true or exists(subquery(ci_matched_query)),
         where: not exists(subquery(ci_internal_query)),
@@ -226,18 +226,15 @@ defmodule Firmowid.Ash.Analysis do
 
   # ── Private helpers ──────────────────────────────────────────────────
 
-  defp get_amount_and_currency(%AshSalesInvoice{} = entity) do
-    value =
-      entity
-      |> AshSalesInvoice.get_gross_value()
-      |> Decimal.abs()
+  defp get_amount_and_currency(%SalesInvoice{} = entity) do
+    value = Decimal.abs(entity.gross_value)
 
     {value, entity.currency}
   end
 
-  defp get_amount_and_currency(%AshCostInvoice{} = entity) do
-    value = entity.total_amount |> Decimal.abs() |> Decimal.mult(Decimal.new("-1"))
-    {value, entity.currency}
+  defp get_amount_and_currency(%CostInvoice{} = entity) do
+    value = entity.effective_total_amount |> Decimal.abs() |> Decimal.mult(Decimal.new("-1"))
+    {value, entity.effective_currency}
   end
 
   defp get_amount_and_currency(%EctoTransaction{} = entity) do
@@ -291,8 +288,8 @@ defmodule Firmowid.Ash.Analysis do
     |> Enum.group_by(fn {type, tag} -> {type, tag.resource_id} end, fn {_type, tag} -> tag end)
   end
 
-  defp entity_id(%AshSalesInvoice{id: id}), do: id
-  defp entity_id(%AshCostInvoice{id: id}), do: id
+  defp entity_id(%SalesInvoice{id: id}), do: id
+  defp entity_id(%CostInvoice{id: id}), do: id
   defp entity_id(%EctoTransaction{id: id}), do: id
 
   # Filters entities and attaches entity_tags to each struct:
@@ -303,7 +300,7 @@ defmodule Firmowid.Ash.Analysis do
     entities
     |> Enum.map(fn entity ->
       tags = Map.get(entity_tags_map, {entity_type, entity_id(entity)}, [])
-      {%{entity | entity_tags: tags}, tags}
+      {Map.put(entity, :entity_tags, tags), tags}
     end)
     |> Enum.filter(fn {_entity, tags} ->
       not internal?(tags) and matches_tag_filters?(tags, tag_filters)

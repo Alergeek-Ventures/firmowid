@@ -424,7 +424,7 @@ display_current_invoice = fn index ->
     ## Sales Invoice #{index} of #{length(sales_invoices_to_match)}
 
     - Date: #{current_invoice.issue_date}
-    - Amount: #{Firmowid.SalesInvoices.SalesInvoice.get_gross_value(current_invoice)}
+    - Amount: #{current_invoice.gross_value}
     - Currency: #{current_invoice.currency}
     - Buyer: #{current_invoice.buyer_display_name}
     - Seller bank account: #{current_invoice.seller_account_number}

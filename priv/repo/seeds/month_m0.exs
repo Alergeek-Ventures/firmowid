@@ -22,8 +22,8 @@ defmodule Firmowid.Seeds.MonthM0 do
 
   alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
+  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices
   alias Firmowid.Seeds.Helpers
 
   def seed!(ctx) do
@@ -227,10 +227,10 @@ defmodule Firmowid.Seeds.MonthM0 do
         ]
       })
 
-    Firmowid.Ash.Invoicing.SalesInvoiceTransaction.create_connections(
-      [invoice.id],
+    Firmowid.Ash.Invoicing.connect_sales_invoice_transactions!(
+      invoice,
       [txn.id],
-      bytecraft.id,
+      tenant: bytecraft.id,
       authorize?: false,
       actor: %{}
     )
@@ -322,44 +322,41 @@ defmodule Firmowid.Seeds.MonthM0 do
 
     existing =
       Repo.one(
-        from(si in SalesInvoices.SalesInvoice,
+        from(si in AshSalesInvoice,
           where: si.invoice_number == ^inv_number and si.organization_id == ^bytecraft.id,
           limit: 1
         )
       )
 
     if is_nil(existing) do
-      {:ok, invoice} =
-        SalesInvoices.create_sales_invoice(
-          %SalesInvoices.SalesInvoice{organization_id: bytecraft.id},
-          Helpers.bc_seller_info()
-          |> Map.merge(%{
-            "invoice_number" => inv_number,
+      invoice =
+        Helpers.get_or_create_sales_invoice(
+          inv_number,
+          bytecraft.id,
+          Map.merge(@ksef_buyer, %{
             "invoice_type" => "poland",
             "issue_date" => Helpers.date_this_month(10),
             "sale_date" => Helpers.date_this_month(10),
             "due_date" => Helpers.date_this_month(24),
-            "currency" => "PLN"
+            "currency" => "PLN",
+            "sales_invoice_items" => [
+              %{
+                "name" => "Prototyp MVP — panel analityczny NexaTech",
+                "quantity" => 10,
+                "unit" => "godz.",
+                "unit_price" => 200.00,
+                "vat_rate" => "23"
+              }
+            ]
           })
-          |> Map.merge(@ksef_buyer)
-          |> Map.put("sales_invoice_items", [
-            %{
-              "name" => "Prototyp MVP — panel analityczny NexaTech",
-              "quantity" => 10,
-              "unit" => "godz.",
-              "unit_price" => 200.00,
-              "vat_rate" => "23"
-            }
-          ])
         )
 
-      invoice
-      |> Ecto.Changeset.change(%{
+      Ash.Seed.update!(invoice, %{
         ksef_number: "5213843762-20250110-ABC123DEF456-00",
         ksef_session_reference_number: "20250110-SE-ABC123DEF456-00",
+        ksef_invoice_checksum: "dGVzdC1jaGVja3N1bS1mb3Ita3NlZi1zZWVk",
         locked_at: DateTime.truncate(DateTime.utc_now(), :second)
       })
-      |> Repo.update!()
     end
   end
 
@@ -369,44 +366,39 @@ defmodule Firmowid.Seeds.MonthM0 do
 
     existing =
       Repo.one(
-        from(si in SalesInvoices.SalesInvoice,
+        from(si in AshSalesInvoice,
           where: si.invoice_number == ^inv_number and si.organization_id == ^bytecraft.id,
           limit: 1
         )
       )
 
     if is_nil(existing) do
-      {:ok, invoice} =
-        SalesInvoices.create_sales_invoice(
-          %SalesInvoices.SalesInvoice{organization_id: bytecraft.id},
-          Helpers.bc_seller_info()
-          |> Map.merge(%{
-            "invoice_number" => inv_number,
+      invoice =
+        Helpers.get_or_create_sales_invoice(
+          inv_number,
+          bytecraft.id,
+          Map.merge(@ksef_buyer, %{
             "invoice_type" => "poland",
             "issue_date" => Helpers.date_this_month(5),
             "sale_date" => Helpers.date_this_month(5),
             "due_date" => Helpers.date_this_month(19),
-            "currency" => "PLN"
+            "currency" => "PLN",
+            "sales_invoice_items" => [
+              %{
+                "name" => "Szkolenie zespołu — Elixir i Phoenix LiveView",
+                "quantity" => 5,
+                "unit" => "godz.",
+                "unit_price" => 150.00,
+                "vat_rate" => "23"
+              }
+            ]
           })
-          |> Map.merge(@ksef_buyer)
-          |> Map.put("sales_invoice_items", [
-            %{
-              "name" => "Szkolenie zespołu — Elixir i Phoenix LiveView",
-              "quantity" => 5,
-              "unit" => "godz.",
-              "unit_price" => 150.00,
-              "vat_rate" => "23"
-            }
-          ])
         )
 
-      invoice
-      |> Ecto.Changeset.change(%{
-        ksef_number: nil,
+      Ash.Seed.update!(invoice, %{
         ksef_session_reference_number: "20250115-SE-SENDING123-00",
         locked_at: DateTime.truncate(DateTime.utc_now(), :second)
       })
-      |> Repo.update!()
 
       Repo.query!(
         """
@@ -435,44 +427,39 @@ defmodule Firmowid.Seeds.MonthM0 do
 
     existing =
       Repo.one(
-        from(si in SalesInvoices.SalesInvoice,
+        from(si in AshSalesInvoice,
           where: si.invoice_number == ^inv_number and si.organization_id == ^bytecraft.id,
           limit: 1
         )
       )
 
     if is_nil(existing) do
-      {:ok, invoice} =
-        SalesInvoices.create_sales_invoice(
-          %SalesInvoices.SalesInvoice{organization_id: bytecraft.id},
-          Helpers.bc_seller_info()
-          |> Map.merge(%{
-            "invoice_number" => inv_number,
+      invoice =
+        Helpers.get_or_create_sales_invoice(
+          inv_number,
+          bytecraft.id,
+          Map.merge(@ksef_buyer, %{
             "invoice_type" => "poland",
             "issue_date" => Helpers.date_this_month(3),
             "sale_date" => Helpers.date_this_month(3),
             "due_date" => Helpers.date_this_month(17),
-            "currency" => "PLN"
+            "currency" => "PLN",
+            "sales_invoice_items" => [
+              %{
+                "name" => "Wsparcie przy wdrożeniu — monitoring i alerty",
+                "quantity" => 3,
+                "unit" => "godz.",
+                "unit_price" => 100.00,
+                "vat_rate" => "23"
+              }
+            ]
           })
-          |> Map.merge(@ksef_buyer)
-          |> Map.put("sales_invoice_items", [
-            %{
-              "name" => "Wsparcie przy wdrożeniu — monitoring i alerty",
-              "quantity" => 3,
-              "unit" => "godz.",
-              "unit_price" => 100.00,
-              "vat_rate" => "23"
-            }
-          ])
         )
 
-      invoice
-      |> Ecto.Changeset.change(%{
-        ksef_number: nil,
+      Ash.Seed.update!(invoice, %{
         ksef_session_reference_number: "20250120-SE-FAILED456-00",
         locked_at: DateTime.truncate(DateTime.utc_now(), :second)
       })
-      |> Repo.update!()
 
       Repo.query!(
         """

@@ -1,8 +1,8 @@
 defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
   @moduledoc false
   alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
+  alias Firmowid.Ash.Invoicing
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.Matching.Assistant.CommonTools
   alias Firmowid.Invoicing.Matching.Assistant.Engine
   alias Firmowid.Invoicing.Matching.Assistant.Message
@@ -46,16 +46,13 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
           args: %{"transaction_ids" => transaction_ids, "sales_invoice_ids" => sales_invoice_ids}
         }
       } ->
-        organization_id = Firmowid.Repo.get_org_id()
-
         # TODO: replace authorize?: false + actor: %{} with system actor once available
-        SalesInvoiceTransaction.create_connections(
-          sales_invoice_ids,
-          transaction_ids,
-          organization_id,
-          authorize?: false,
-          actor: %{}
-        )
+        bridge_opts = [tenant: Firmowid.Repo.get_org_id(), authorize?: false, actor: %{}]
+
+        Enum.each(sales_invoice_ids, fn si_id ->
+          sales_invoice = Invoicing.get_sales_invoice!(si_id, bridge_opts)
+          Invoicing.connect_sales_invoice_transactions(sales_invoice, transaction_ids, bridge_opts)
+        end)
 
         MessagesStorage.delete(conversation_id)
 
@@ -132,7 +129,7 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
             if sales_invoice_id do
               organization_id = Firmowid.Repo.get_org_id()
               opts = [tenant: organization_id] ++ @bridge_opts
-              AshSalesInvoice.by_id!(sales_invoice_id, opts)
+              SalesInvoice.by_id!(sales_invoice_id, opts)
             end
 
           transactions =
@@ -171,7 +168,7 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
     ]
   end
 
-  defp system_prompt(%AshSalesInvoice{} = invoice) do
+  defp system_prompt(%SalesInvoice{} = invoice) do
     """
     # Wprowadzenie
 
@@ -326,7 +323,7 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
     """
   end
 
-  defp sales_invoice_input(%AshSalesInvoice{} = invoice, opts \\ []) do
+  defp sales_invoice_input(%SalesInvoice{} = invoice, opts \\ []) do
     heading_level = Keyword.get(opts, :heading_level, 1)
 
     invoice_type =
@@ -341,12 +338,12 @@ defmodule Firmowid.Invoicing.Matching.SalesInvoiceAssistant do
     > **Opis:**
 
     - **Rodzaj faktury**: #{invoice_type}
-    - **Nazwa kupującego**: #{AshSalesInvoice.buyer_display_name(invoice)}
+    - **Nazwa kupującego**: #{invoice.buyer_display_name_label}
     - **Adres kupującego**: #{invoice.buyer_address}
     - **Data wystawienia**: #{invoice.issue_date}
     - **Data sprzedaży**: #{invoice.sale_date}
     - **Termin płatności**: #{invoice.due_date}
-    - **Kwota**: #{AshSalesInvoice.get_gross_value(invoice)}
+    - **Kwota**: #{invoice.gross_value}
     - **Waluta**: #{invoice.currency}
 
     > UUID: `#{invoice.id}`

@@ -2,10 +2,11 @@ defmodule FirmowidWeb.Infrastructure.Controllers.FileDownload do
   @moduledoc false
   use FirmowidWeb, :controller
 
-  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
+  alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias FirmowidWeb.Core.Endpoint
 
+  require Ash.Query
   require Logger
 
   def batch(conn, params) do
@@ -21,8 +22,11 @@ defmodule FirmowidWeb.Infrastructure.Controllers.FileDownload do
 
     # TODO: replace authorize?: false + actor: %{} with system actor once available
     cost_invoices =
-      date_range_from
-      |> AshCostInvoice.list_invoices_in_date_range!(date_range_to,
+      CostInvoice
+      |> Ash.Query.for_read(:read, %{date_from: date_range_from, date_to: date_range_to, date_field: :any})
+      |> Ash.Query.filter(not is_nil(blob_id))
+      |> Ash.Query.load([:effective_seller_display_name, blob: [:url]])
+      |> Ash.read!(
         tenant: conn.assigns.current_user.organization_id,
         authorize?: false,
         actor: %{}
@@ -41,7 +45,7 @@ defmodule FirmowidWeb.Infrastructure.Controllers.FileDownload do
         # append part of SHA256 hash to avoid filename collisions
         file_name =
           clean_filename(
-            "#{document.issue_date}_#{document.seller_display_name}_#{String.slice(document.blob.blob_checksum, 0, 8)}"
+            "#{document.issue_date}_#{document.effective_seller_display_name}_#{String.slice(document.blob.blob_checksum, 0, 8)}"
           )
 
         [
@@ -53,14 +57,14 @@ defmodule FirmowidWeb.Infrastructure.Controllers.FileDownload do
     sales_invoices =
       if include_sales do
         # TODO: replace authorize?: false + actor: %{} with system actor once available
-        date_range_from
-        |> AshSalesInvoice.list_invoices_in_date_range!(date_range_to,
+        %{date_from: date_range_from, date_to: date_range_to, date_field: :any}
+        |> SalesInvoice.read!(
           tenant: conn.assigns.current_user.organization_id,
           authorize?: false,
           actor: %{}
         )
         |> Enum.map(fn invoice ->
-          file_name = clean_filename("#{invoice.invoice_number}_#{AshSalesInvoice.buyer_display_name(invoice)}")
+          file_name = clean_filename("#{invoice.invoice_number}_#{invoice.buyer_display_name_label}")
 
           url_with_protocol = Endpoint.url()
           download_path = ~p"/sprzedazowe/#{invoice.id}/pobierz"

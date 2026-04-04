@@ -65,6 +65,8 @@ Before submitting changes, always run the quality checks:
 mix check
 ```
 
+> Do not `tail` or `grep` the output - it's super compact, specifically for agents.
+
 This single command runs all quality checks in order:
 
 1. `mix compile --warnings-as-errors` - Compile with strict warnings

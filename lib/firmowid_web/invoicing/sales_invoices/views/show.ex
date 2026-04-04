@@ -3,20 +3,37 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Analytics
-  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
-  alias Firmowid.Invoicing
+  alias Firmowid.Ash.Invoicing
+  alias Firmowid.Ash.Invoicing.InvoiceMatching
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ksef
-  alias Firmowid.SalesInvoices
   alias FirmowidWeb.Core.Endpoint
+
+  @item_calcs [:net_value, :vat_value, :gross_value]
+  @detail_loads [
+    :is_deletable,
+    :transactions,
+    sales_invoice_items: @item_calcs,
+    corrections: [sales_invoice_items: @item_calcs],
+    corrected_invoice: :corrections,
+    latest_correction: [sales_invoice_items: @item_calcs]
+  ]
 
   @impl true
   def mount(%{"id" => id} = params, _session, socket) do
     current_user = socket.assigns.current_user
 
     scope = socket.assigns.ash_scope
-    sales_invoice = AshSalesInvoice.by_id!(id, scope: scope)
-    Bodyguard.permit!(SalesInvoices, :show, current_user, sales_invoice)
+
+    sales_invoice =
+      case SalesInvoice.by_id(id, load: @detail_loads, scope: scope) do
+        {:ok, invoice} ->
+          invoice
+
+        {:error, _} ->
+          raise Ecto.NoResultsError,
+            queryable: SalesInvoice
+      end
 
     if sales_invoice.ksef_invoice_kind == :kor do
       # ensure `return_to` is preserved when redirecting to the corrected invoice
@@ -25,12 +42,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
 
       {:ok, redirect(socket, to: redirect_path)}
     else
-      potential_transactions = Invoicing.get_potential_transactions_for_invoice(sales_invoice)
+      alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
+
+      potential_transactions = InvoiceMatching.get_potential_transactions_for_invoice(sales_invoice)
 
       sales_invoice =
-        sales_invoice
-        |> AshSalesInvoice.populate_logo_url()
-        |> AshSalesInvoice.populate_reference_invoices()
+        then(sales_invoice, fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)
+
+      logo_url = Invoicing.get_logo_url(sales_invoice.organization_id)
 
       # Subscribe to KSeF status updates for live feedback
       Ksef.subscribe_ksef_status(current_user.organization_id)
@@ -38,6 +57,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
       socket =
         socket
         |> assign(:invoice, sales_invoice)
+        |> assign(:logo_url, logo_url)
         |> assign(:potential_transactions, potential_transactions)
         |> assign(:preview_url, "")
         |> assign(:preview_type, :html)
@@ -56,6 +76,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
       id="invoice-show"
       module={FirmowidWeb.Invoicing.Components.SalesInvoiceDetails}
       invoice={@invoice}
+      logo_url={@logo_url}
       preview_url={@preview_url}
       preview_type={@preview_type}
       show_vat_for_sales_invoice={@current_org.is_vat_payer}
@@ -69,9 +90,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
 
   @impl true
   def handle_event("toggle-invoicing", _params, socket) do
-    Bodyguard.permit!(SalesInvoices, :update, socket.assigns.current_user, socket.assigns.invoice)
-
-    SalesInvoices.toggle_skip_invoicing(socket.assigns.invoice.id)
+    SalesInvoice.toggle_skip!(socket.assigns.invoice, scope: socket.assigns.ash_scope)
     invoice = refresh_invoice(socket.assigns.invoice.id, socket.assigns.ash_scope)
 
     {:noreply, assign(socket, :invoice, invoice)}
@@ -79,10 +98,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
 
   @impl true
   def handle_event("delete", _params, socket) do
-    Bodyguard.permit!(SalesInvoices, :delete, socket.assigns.current_user, socket.assigns.invoice)
-
-    case SalesInvoices.delete_sales_invoice(socket.assigns.invoice) do
-      {:ok, _deleted} ->
+    case SalesInvoice.destroy(socket.assigns.invoice, scope: socket.assigns.ash_scope) do
+      :ok ->
         Analytics.track_event("sales_invoice_delete", socket.assigns.current_user, %{})
 
         {:noreply,
@@ -90,37 +107,33 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
          |> put_flash(:info, "Faktura została usunięta")
          |> push_navigate(to: ~p"/fakturowanie?month=#{Date.to_iso8601(socket.assigns.invoice.issue_date)}")}
 
-      {:error, :ksef_submitted} ->
+      {:error, _error} ->
         {:noreply, put_flash(socket, :error, "Nie można usunąć faktury wysłanej do KSeF. Wystaw fakturę korygującą.")}
     end
   end
 
   @impl true
   def handle_event("cancel", _params, socket) do
-    Bodyguard.permit!(SalesInvoices, :cancel, socket.assigns.current_user, socket.assigns.invoice)
-
-    case SalesInvoices.cancel_sales_invoice(socket.assigns.invoice) do
+    case SalesInvoice.cancel(socket.assigns.invoice.id, scope: socket.assigns.ash_scope) do
       {:ok, correction} ->
         {:noreply,
          socket
          |> put_flash(:info, "Wystawiono korektę anulującą")
          |> push_navigate(to: ~p"/sprzedazowe/#{correction.id}/podsumowanie")}
 
-      {:error, _changeset} ->
+      {:error, _error} ->
         {:noreply, put_flash(socket, :error, "Nie udało się anulować faktury")}
     end
   end
 
   @impl true
   def handle_event("connect", %{"transaction_id" => tx_id}, socket) do
-    Bodyguard.permit!(SalesInvoices, :update, socket.assigns.current_user, socket.assigns.invoice)
     user = socket.assigns.current_user
 
     # TODO: replace authorize?: false + actor: %{} with system actor once available
-    SalesInvoiceTransaction.create_connections(
-      [socket.assigns.invoice.id],
+    Invoicing.connect_sales_invoice_transactions(
+      socket.assigns.invoice,
       [tx_id],
-      user.organization_id,
       authorize?: false,
       actor: %{}
     )
@@ -133,9 +146,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
 
   @impl true
   def handle_event("disconnect", _params, socket) do
-    Bodyguard.permit!(SalesInvoices, :update, socket.assigns.current_user, socket.assigns.invoice)
     # TODO: replace authorize?: false + actor: %{} with system actor once available
-    SalesInvoiceTransaction.delete_for_invoice(socket.assigns.invoice.id, authorize?: false, actor: %{})
+    Invoicing.disconnect_sales_invoice_transactions(socket.assigns.invoice, authorize?: false, actor: %{})
 
     Analytics.track_event("sales_invoice_unmatch", socket.assigns.current_user, %{})
 
@@ -146,9 +158,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   @impl true
   def handle_event("create_share_link", _params, socket) do
     invoice = socket.assigns.invoice
-    Bodyguard.permit!(SalesInvoices, :update, socket.assigns.current_user, invoice)
 
-    case SalesInvoices.create_or_get_share_token(invoice) do
+    case SalesInvoice.generate_share_token(invoice, scope: socket.assigns.ash_scope) do
       {:ok, updated_invoice} ->
         url = share_url(updated_invoice.share_token)
 
@@ -158,7 +169,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
          |> push_event("copy-to-clipboard", %{text: url})
          |> put_flash(:info, "Link skopiowany do schowka")}
 
-      {:error, _changeset} ->
+      {:error, _error} ->
         {:noreply, put_flash(socket, :error, "Nie udało się utworzyć linku")}
     end
   end
@@ -168,10 +179,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   end
 
   defp refresh_invoice(id, scope) do
-    id
-    |> AshSalesInvoice.by_id!(scope: scope)
-    |> AshSalesInvoice.populate_logo_url()
-    |> AshSalesInvoice.populate_reference_invoices()
+    alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
+
+    invoice = Invoicing.get_sales_invoice!(id, load: @detail_loads, scope: scope)
+    %{invoice | corrections: AnnotatedCorrections.annotate(invoice)}
   end
 
   @impl true

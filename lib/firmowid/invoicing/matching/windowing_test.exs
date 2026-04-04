@@ -92,17 +92,22 @@ defmodule Firmowid.Invoicing.Matching.WindowingTest do
     end
 
     test "filters transactions for SalesInvoice" do
+      item =
+        Ash.load!(
+          %SalesInvoiceItem{quantity: Decimal.new("1"), unit_price: Decimal.new("10.0"), vat_rate: "23"},
+          [:net_value, :vat_value, :gross_value],
+          authorize?: false,
+          actor: %{}
+        )
+
+      gross_value = Enum.reduce([item], Decimal.new(0), &Decimal.add(&2, &1.gross_value))
+
       sales_invoice = %SalesInvoice{
         issue_date: ~D[2025-01-01],
         due_date: ~D[2025-01-31],
         currency: "PLN",
-        sales_invoice_items: [
-          %SalesInvoiceItem{
-            quantity: 1,
-            unit_price: Decimal.new("10.0"),
-            vat_rate: "23"
-          }
-        ]
+        sales_invoice_items: [item],
+        gross_value: gross_value
       }
 
       transactions = [

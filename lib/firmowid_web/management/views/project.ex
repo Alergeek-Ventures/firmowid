@@ -2,7 +2,6 @@ defmodule FirmowidWeb.Management.Views.Project do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Ash.Invoicing.Counterparty
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter

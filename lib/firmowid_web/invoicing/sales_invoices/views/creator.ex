@@ -1,19 +1,22 @@
 defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
-  @moduledoc false
+  @moduledoc """
+  LiveView for the sales invoice creator wizard.
+
+  Uses `WizardDraft` (Ash ETS resource) for ephemeral wizard state,
+  `AshPhoenix.Form` for per-step form building and validation, and
+  `SalesInvoice.confirm_from_draft` for final invoice creation.
+  """
   use FirmowidWeb, :live_view
 
   alias Firmowid.Accounts
   alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Invoicing.Counterparty, as: AshCounterparty
-  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
+  alias Firmowid.Ash.Invoicing
+  alias Firmowid.Ash.Invoicing.Counterparty
+  alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoiceItem
+  alias Firmowid.Ash.Invoicing.WizardDraft
   alias Firmowid.Ksef
-  alias Firmowid.Ksef.VatRate
-  alias Firmowid.Repo
-  alias Firmowid.SalesInvoices
-  alias Firmowid.SalesInvoices.Counterparty
-  alias Firmowid.SalesInvoices.CreatorDraftStore
-  alias Firmowid.SalesInvoices.SalesInvoice
-  alias Firmowid.SalesInvoices.SalesInvoiceItem
+  alias Firmowid.SalesInvoices.CountryCodes
 
   require Logger
 
@@ -36,6 +39,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   defp number_to_step(_), do: :counterparty
 
   @impl true
+  def render(%{loading: true} = assigns), do: ~H""
   def render(%{step: :counterparty} = assigns), do: creator_counterparty(assigns)
   def render(%{step: :items} = assigns), do: creator_items(assigns)
   def render(%{step: :payment} = assigns), do: creator_payment(assigns)
@@ -43,15 +47,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   @impl true
   def mount(_params, _session, socket) do
-    Bodyguard.permit!(SalesInvoices, :read_sales_invoice, socket.assigns.current_user)
-    Bodyguard.permit!(SalesInvoices, :create_sales_invoice, socket.assigns.current_user)
-
     # Load static data that doesn't change during the wizard
     socket =
       socket
       |> assign(:bank_accounts, Finances.list_bank_accounts!(scope: socket.assigns.ash_scope))
-      |> assign(:last_counterparties, AshCounterparty.list_all!(scope: socket.assigns.ash_scope))
-      |> assign(:last_invoices, AshSalesInvoice.list_recent!(scope: socket.assigns.ash_scope))
+      |> assign(:last_counterparties, Counterparty.list_all!(load: [:display_label], scope: socket.assigns.ash_scope))
+      |> assign(:last_invoices, recent_invoices(socket.assigns.ash_scope))
       |> assign(:ksef_connected?, Ksef.get_credential() != nil)
       |> assign(:open_counterparty_modal, false)
 
@@ -60,27 +61,45 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    org_id = Repo.get_org_id()
+    scope = socket.assigns.ash_scope
 
     case params do
       %{"creator_draft" => creator_draft_id} ->
-        handle_existing_creator_draft(socket, org_id, creator_draft_id, params)
+        handle_existing_draft(socket, scope, creator_draft_id, params)
 
       %{"skopiuj" => invoice_id} ->
-        create_creator_draft_from_copy(socket, org_id, invoice_id)
+        # Defer to connected socket — same reason as below
+        if connected?(socket) do
+          create_draft_from_copy(socket, scope, invoice_id)
+        else
+          {:noreply, assign(socket, :loading, true)}
+        end
 
-      _no_creator_draft ->
-        create_and_redirect(socket, org_id)
+      _no_draft ->
+        # WizardDraft uses process-local ETS — draft must be created and read
+        # within the same LiveView process. During static render (disconnected),
+        # push_patch becomes an HTTP redirect to a new process that can't find
+        # the draft. We defer creation until the WebSocket connects.
+        if connected?(socket) do
+          create_and_redirect(socket, scope)
+        else
+          {:noreply, assign(socket, :loading, true)}
+        end
     end
   end
 
-  defp create_and_redirect(socket, org_id) do
-    {:ok, creator_draft_id, _creator_draft} = CreatorDraftStore.create(org_id)
-    {:noreply, push_patch(socket, to: creator_draft_url(creator_draft_id, :counterparty), replace: true)}
+  defp create_and_redirect(socket, scope) do
+    org_id = scope.current_tenant
+    {:ok, draft} = WizardDraft.create(%{organization_id: org_id}, scope: scope)
+    {:noreply, push_patch(socket, to: creator_draft_url(draft.id, :counterparty), replace: true)}
   end
 
-  defp create_creator_draft_from_copy(socket, org_id, invoice_id) do
-    case AshSalesInvoice.by_id(invoice_id, scope: socket.assigns.ash_scope) do
+  defp create_draft_from_copy(socket, scope, invoice_id) do
+    org_id = scope.current_tenant
+
+    item_calcs = [:net_value, :vat_value, :gross_value]
+
+    case SalesInvoice.by_id(invoice_id, load: [sales_invoice_items: item_calcs], scope: scope) do
       {:error, _} ->
         {:noreply,
          socket
@@ -88,41 +107,82 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
          |> push_patch(to: ~p"/sprzedazowe", replace: true)}
 
       {:ok, base_invoice} ->
-        Bodyguard.permit!(SalesInvoices, :show, socket.assigns.current_user, base_invoice)
+        {:ok, draft} = WizardDraft.create(%{organization_id: org_id}, scope: scope)
 
-        {:ok, creator_draft_id, _creator_draft} = CreatorDraftStore.create(org_id)
+        case populate_draft_from_invoice(draft, base_invoice, socket.assigns.bank_accounts, scope) do
+          {:ok, draft} ->
+            invoice = draft_to_invoice(draft)
+            socket = assign(socket, invoice: invoice, creator_draft_id: draft.id, org_id: org_id)
+            {:noreply, push_patch(socket, to: creator_draft_url(draft.id, :items), replace: true)}
 
-        case build_copied_invoice(base_invoice, socket.assigns.bank_accounts) do
-          {:ok, invoice} ->
-            socket = assign(socket, invoice: invoice, creator_draft_id: creator_draft_id, org_id: org_id)
-            creator_draft_data = serialize_to_creator_draft(socket)
-            CreatorDraftStore.put(org_id, creator_draft_id, %{step: :items, data: creator_draft_data})
-
-            {:noreply, push_patch(socket, to: creator_draft_url(creator_draft_id, :items), replace: true)}
-
-          {:partial, invoice, changeset} ->
-            socket = assign(socket, invoice: invoice, creator_draft_id: creator_draft_id, org_id: org_id)
-            creator_draft_data = serialize_to_creator_draft(socket)
-            CreatorDraftStore.put(org_id, creator_draft_id, %{step: :counterparty, data: creator_draft_data})
-
-            {:noreply, setup_partial_copy(socket, changeset, creator_draft_id)}
+          {:partial, draft, changeset} ->
+            invoice = draft_to_invoice(draft)
+            socket = assign(socket, invoice: invoice, creator_draft_id: draft.id, org_id: org_id)
+            {:noreply, setup_partial_copy(socket, changeset, draft.id)}
         end
     end
   end
 
-  defp setup_partial_copy(socket, changeset, creator_draft_id) do
-    # Store the failed changeset in the CreatorDraftStore so it survives the push_patch redirect.
-    # We can't rely on socket assigns because push_patch re-enters handle_params
-    # with the socket state from before the first handle_params call.
-    org_id = socket.assigns.org_id
+  defp populate_draft_from_invoice(draft, base_invoice, bank_accounts, scope) do
+    default_bank_account =
+      Enum.find(bank_accounts, &(&1.is_default and &1.currency == base_invoice.currency))
 
-    CreatorDraftStore.put(org_id, creator_draft_id, %{
-      step: :counterparty,
-      data: serialize_to_creator_draft(socket),
-      partial_copy_changeset: changeset
-    })
+    items =
+      Enum.map(base_invoice.sales_invoice_items, fn item ->
+        %{
+          index: item.index,
+          name: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+          unit_price: item.unit_price,
+          vat_rate: item.vat_rate
+        }
+      end)
 
+    attrs = %{
+      counterparty_id: base_invoice.counterparty_id,
+      buyer_type: base_invoice.buyer_type,
+      buyer_id: base_invoice.buyer_id,
+      buyer_full_name: base_invoice.buyer_full_name,
+      buyer_given_name: base_invoice.buyer_given_name,
+      buyer_surname: base_invoice.buyer_surname,
+      buyer_pesel: base_invoice.buyer_pesel,
+      buyer_display_name: base_invoice.buyer_display_name,
+      buyer_address: base_invoice.buyer_address,
+      buyer_country: base_invoice.buyer_country,
+      buyer_email: base_invoice.buyer_email,
+      buyer_phone: base_invoice.buyer_phone,
+      buyer_description: base_invoice.buyer_description,
+      invoice_type: base_invoice.invoice_type,
+      is_reverse_charge: base_invoice.is_reverse_charge,
+      currency: base_invoice.currency,
+      seller_account_number: if(default_bank_account, do: default_bank_account.iban),
+      items: items
+    }
+
+    case WizardDraft.populate_from_invoice(draft, attrs, scope: scope) do
+      {:ok, draft} ->
+        # Validate counterparty data — old invoices may have data that no longer passes validation
+        form =
+          draft
+          |> AshPhoenix.Form.for_update(:update_counterparty, scope: scope)
+          |> AshPhoenix.Form.validate(draft |> Map.from_struct() |> Map.new(fn {k, v} -> {to_string(k), v} end))
+
+        if form.valid? do
+          {:ok, draft}
+        else
+          {:partial, draft, form}
+        end
+
+      {:error, _} = error ->
+        error
+    end
+  end
+
+  defp setup_partial_copy(socket, form, creator_draft_id) do
     socket
+    |> assign(:counterparty_form, to_form(form))
+    |> assign(:open_counterparty_modal, true)
     |> LiveToast.put_toast(
       :error,
       "Skopiowano pozycje z faktury, ale dane kontrahenta wymagają poprawy — uzupełnij formularz."
@@ -130,8 +190,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     |> push_patch(to: creator_draft_url(creator_draft_id, :counterparty), replace: true)
   end
 
-  defp handle_existing_creator_draft(socket, org_id, creator_draft_id, params) do
-    # If we already have this creator draft loaded and step hasn't changed,
+  defp handle_existing_draft(socket, scope, creator_draft_id, params) do
+    # If we already have this draft loaded and step hasn't changed,
     # just update step-specific params (tab, search) without refetching
     current_creator_draft_id = socket.assigns[:creator_draft_id]
     current_step = socket.assigns[:step]
@@ -140,16 +200,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     if current_creator_draft_id == creator_draft_id and current_step == requested_step do
       {:noreply, maybe_setup_step(socket, requested_step, params)}
     else
-      fetch_and_restore_creator_draft(socket, org_id, creator_draft_id, params)
+      fetch_and_restore_draft(socket, scope, creator_draft_id, params)
     end
   end
 
-  defp fetch_and_restore_creator_draft(socket, org_id, creator_draft_id, params) do
-    case CreatorDraftStore.get(org_id, creator_draft_id) do
-      {:ok, creator_draft} ->
-        restore_creator_draft(socket, org_id, creator_draft_id, creator_draft, params)
+  defp fetch_and_restore_draft(socket, scope, creator_draft_id, params) do
+    case Invoicing.get_wizard_draft(creator_draft_id, scope: scope) do
+      {:ok, draft} ->
+        restore_draft(socket, scope, draft, params)
 
-      {:error, :not_found} ->
+      {:error, _} ->
         {:noreply,
          socket
          |> put_flash(:info, "Szkic kreatora nie został znaleziony, rozpoczynamy od nowa")
@@ -157,58 +217,77 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     end
   end
 
-  defp restore_creator_draft(socket, org_id, creator_draft_id, creator_draft, params) do
+  defp restore_draft(socket, scope, draft, params) do
+    org_id = scope.current_tenant
     requested_step = parse_step_param(params["step"])
-    max_allowed_step = calculate_max_step(creator_draft.data)
+    max_allowed_step = calculate_max_step(draft)
 
     # Clamp requested step to what's allowed based on data
     step = clamp_step(requested_step, max_allowed_step)
 
-    case restore_from_creator_draft(socket, creator_draft.data, step) do
-      {:ok, socket} ->
-        # If this draft was created from a partial copy (invalid counterparty data),
-        # pre-fill the counterparty form and auto-open the modal for the user to fix.
-        socket =
-          case Map.get(creator_draft, :partial_copy_changeset) do
-            %Ecto.Changeset{} = changeset ->
-              # Consume the changeset — remove it from the store so it doesn't re-trigger
-              CreatorDraftStore.put(org_id, creator_draft_id, Map.delete(creator_draft, :partial_copy_changeset))
+    invoice = draft_to_invoice(draft)
 
-              socket
-              |> assign(:counterparty_form, to_form(changeset, action: :validate))
-              |> assign(:open_counterparty_modal, true)
+    socket =
+      socket
+      |> assign(:invoice, invoice)
+      |> assign(:draft, draft)
+      |> assign(:creator_draft_id, draft.id)
+      |> assign(:org_id, org_id)
+      |> assign(:step, step)
+      |> assign(:step_number, step_to_number(step))
+      |> maybe_setup_step(step, params)
 
-            _ ->
-              socket
-          end
+    # If step was clamped, redirect to correct URL
+    socket =
+      if step == requested_step do
+        socket
+      else
+        push_patch(socket, to: creator_draft_url(draft.id, step), replace: true)
+      end
 
-        socket =
-          socket
-          |> assign(:creator_draft_id, creator_draft_id)
-          |> assign(:org_id, org_id)
-          |> assign(:step, step)
-          |> assign(:step_number, step_to_number(step))
-          |> maybe_setup_step(step, params)
+    {:noreply, socket}
+  end
 
-        # If step was clamped, redirect to correct URL
-        socket =
-          if step == requested_step do
-            socket
-          else
-            push_patch(socket, to: creator_draft_url(creator_draft_id, step), replace: true)
-          end
+  # Build a SalesInvoice struct from WizardDraft data for form/template compatibility
+  defp draft_to_invoice(draft) do
+    items =
+      Enum.map(draft.items || [], fn item ->
+        struct(SalesInvoiceItem,
+          id: item.id,
+          index: item.index,
+          name: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+          unit_price: item.unit_price,
+          vat_rate: item.vat_rate
+        )
+      end)
 
-        {:noreply, socket}
-
-      {:error, reason} ->
-        Logger.warning("Failed to restore creator draft #{creator_draft_id}: #{inspect(reason)}")
-        CreatorDraftStore.delete(org_id, creator_draft_id)
-
-        {:noreply,
-         socket
-         |> put_flash(:info, "Poprzedni szkic kreatora byl nieprawidlowy, rozpoczynamy od nowa")
-         |> push_patch(to: ~p"/sprzedazowe", replace: true)}
-    end
+    SalesInvoice
+    |> struct(
+      counterparty_id: draft.counterparty_id,
+      buyer_type: draft.buyer_type,
+      buyer_id: draft.buyer_id,
+      buyer_full_name: draft.buyer_full_name,
+      buyer_given_name: draft.buyer_given_name,
+      buyer_surname: draft.buyer_surname,
+      buyer_pesel: draft.buyer_pesel,
+      buyer_display_name: draft.buyer_display_name,
+      buyer_address: draft.buyer_address,
+      buyer_country: draft.buyer_country,
+      buyer_email: draft.buyer_email,
+      buyer_phone: draft.buyer_phone,
+      buyer_description: draft.buyer_description,
+      invoice_type: draft.invoice_type,
+      is_reverse_charge: draft.is_reverse_charge,
+      currency: draft.currency,
+      seller_account_number: draft.seller_account_number,
+      sales_invoice_items: items,
+      sale_date: draft.sale_date,
+      due_date: draft.due_date,
+      payment_method: draft.payment_method
+    )
+    |> Ash.load!([:buyer_id_type, :buyer_display_name_label], authorize?: false, actor: %{})
   end
 
   # Parse step from URL param (number string) to step name atom
@@ -229,19 +308,18 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     end
   end
 
-  defp calculate_max_step(data) do
+  defp calculate_max_step(draft) do
     cond do
-      # Has all payment data -> can access preview and summary
-      Map.has_key?(data, "sale_date") and Map.has_key?(data, "due_date") and
-          Map.has_key?(data, "payment_method") ->
+      # Has all payment data -> can access preview
+      draft.sale_date && draft.due_date && draft.payment_method ->
         :preview
 
       # Has items data -> can access payment
-      Map.has_key?(data, "items") and data["items"] != [] ->
+      draft.items != nil and draft.items != [] ->
         :payment
 
       # Has counterparty data -> can access items
-      Map.has_key?(data, "buyer_country") ->
+      draft.buyer_country ->
         :items
 
       # Default -> counterparty
@@ -270,31 +348,51 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   defp maybe_setup_step(socket, :items, _params) do
-    # Items - setup items form
-    invoice = socket.assigns.invoice
-    assign_items_form(socket, SalesInvoice.step2_changeset(invoice))
+    draft = socket.assigns.draft
+    scope = socket.assigns.ash_scope
+
+    ash_form =
+      AshPhoenix.Form.for_update(draft, :update_items, scope: scope, forms: [auto?: true])
+
+    # Ensure at least one empty item row exists
+    ash_form =
+      if Enum.empty?(Map.get(ash_form.forms, :items, [])) do
+        AshPhoenix.Form.add_form(ash_form, [:items])
+      else
+        ash_form
+      end
+
+    socket
+    |> assign(:items_form, to_form(ash_form))
+    |> assign(:items_field, :items)
   end
 
   defp maybe_setup_step(socket, :payment, _params) do
-    # Payment - setup payment form
-    invoice = socket.assigns.invoice
+    draft = socket.assigns.draft
+    scope = socket.assigns.ash_scope
     bank_accounts = socket.assigns.bank_accounts
 
     # Find selected bank account: match by IBAN if set, otherwise find default for currency
     selected_bank_account =
-      find_selected_bank_account(bank_accounts, invoice.seller_account_number, invoice.currency)
+      find_selected_bank_account(bank_accounts, draft.seller_account_number, draft.currency)
 
-    # Set default values for payment form
+    # Pre-fill defaults for empty fields
     defaults = %{
-      "sale_date" => invoice.sale_date || Date.utc_today(),
-      "due_date_days" => calculate_due_date_days(invoice) || 21,
-      "payment_method" => :transfer,
-      "seller_account_number" => selected_bank_account && selected_bank_account.iban
+      "sale_date" => draft.sale_date || Date.utc_today(),
+      "due_date_days" => calculate_due_date_days(draft) || 21,
+      "payment_method" => draft.payment_method || :transfer,
+      "seller_account_number" => draft.seller_account_number || (selected_bank_account && selected_bank_account.iban)
     }
+
+    form =
+      draft
+      |> AshPhoenix.Form.for_update(:update_payment, scope: scope)
+      |> AshPhoenix.Form.validate(defaults)
+      |> to_form()
 
     socket
     |> assign(:selected_bank_account, selected_bank_account)
-    |> assign(:payment_form, invoice |> SalesInvoice.step3_changeset(defaults) |> to_form())
+    |> assign(:payment_form, form)
   end
 
   defp maybe_setup_step(socket, :preview, _params) do
@@ -305,15 +403,18 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     # Generate preview data
     issue_date = Date.utc_today()
-    invoice_number = SalesInvoices.get_next_invoice_number(issue_date)
+    scope = socket.assigns.ash_scope
+    invoice_number = SalesInvoice.get_next_number!(issue_date, nil, nil, scope: scope)
 
     # Get all series suggestions (nil = default, "A" = always shown, plus any existing)
-    series_suggestions = SalesInvoices.get_next_numbers_for_series(issue_date)
+    series_suggestions = Invoicing.get_next_numbers_for_series(issue_date, scope: scope)
 
     # Validate initial invoice number
-    invoice_warnings = SalesInvoices.validate_invoice_number(invoice_number, issue_date)
+    invoice_warnings = SalesInvoice.validate_number!(invoice_number, issue_date, nil, scope: scope)
 
     # Build preview invoice with seller data from organization
+    logo_url = Invoicing.get_logo_url(org_id)
+
     preview_invoice = %{
       invoice
       | invoice_number: invoice_number,
@@ -325,11 +426,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     }
 
     # Get currency rate for non-PLN invoices
-    currency_rate = SalesInvoices.get_currency_rate(preview_invoice)
+    currency_rate = Invoicing.get_currency_rate(preview_invoice)
 
     socket
     |> assign(:organization, organization)
     |> assign(:invoice_number, invoice_number)
+    |> assign(:logo_url, logo_url)
     |> assign(:preview_invoice, preview_invoice)
     |> assign(:currency_rate, currency_rate)
     |> assign(:series_suggestions, series_suggestions)
@@ -347,11 +449,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   defp maybe_init_counterparty_form(socket) do
-    assign(
-      socket,
-      :counterparty_form,
-      %SalesInvoice{} |> SalesInvoice.step1_changeset(%{buyer_type: :company}) |> to_form()
-    )
+    draft = socket.assigns.draft
+    scope = socket.assigns.ash_scope
+
+    form =
+      draft
+      |> AshPhoenix.Form.for_update(:update_counterparty, scope: scope)
+      |> to_form()
+
+    assign(socket, :counterparty_form, form)
   end
 
   defp calculate_due_date_days(invoice) do
@@ -362,7 +468,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   defp update_counterparty_stream(socket, search, no_search?, filter, sort_order) do
     counterparties =
-      case AshCounterparty.search(search, filter, nil, sort_order, scope: socket.assigns.ash_scope) do
+      case Counterparty.search(search, filter, nil, sort_order, scope: socket.assigns.ash_scope) do
         {:ok, results} -> results
         _ -> []
       end
@@ -389,174 +495,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   defp default_tab([]), do: :last_invoices
   defp default_tab(_counterparties), do: :last_counterparties
 
-  # Creator draft serialization/restoration
-
-  defp serialize_to_creator_draft(socket) do
-    invoice = socket.assigns.invoice
-    items = invoice.sales_invoice_items || []
-
-    %{
-      # Counterparty data (step 0)
-      "counterparty_id" => invoice.counterparty_id,
-      "buyer_type" => invoice.buyer_type && Atom.to_string(invoice.buyer_type),
-      "buyer_id" => invoice.buyer_id,
-      "buyer_full_name" => invoice.buyer_full_name,
-      "buyer_given_name" => invoice.buyer_given_name,
-      "buyer_surname" => invoice.buyer_surname,
-      "buyer_pesel" => invoice.buyer_pesel,
-      "buyer_display_name" => invoice.buyer_display_name,
-      "buyer_address" => invoice.buyer_address,
-      "buyer_country" => invoice.buyer_country,
-      "buyer_email" => invoice.buyer_email,
-      "buyer_phone" => invoice.buyer_phone,
-      "buyer_description" => invoice.buyer_description,
-      "invoice_type" => invoice.invoice_type && Atom.to_string(invoice.invoice_type),
-      "is_reverse_charge" => invoice.is_reverse_charge,
-      "currency" => invoice.currency,
-      "seller_account_number" => invoice.seller_account_number,
-      # Items data (step 1)
-      "items" => Enum.map(items, &serialize_item/1),
-      # Payment data (step 2)
-      "sale_date" => invoice.sale_date && Date.to_iso8601(invoice.sale_date),
-      "due_date" => invoice.due_date && Date.to_iso8601(invoice.due_date),
-      "payment_method" => invoice.payment_method && Atom.to_string(invoice.payment_method)
-    }
-    |> Enum.reject(fn {_k, v} -> is_nil(v) end)
-    |> Map.new()
-  end
-
-  defp serialize_item(item) do
-    %{
-      "index" => item.index,
-      "name" => item.name,
-      "quantity" => item.quantity && Decimal.to_string(item.quantity),
-      "unit" => item.unit,
-      "unit_price" => item.unit_price && Decimal.to_string(item.unit_price),
-      "vat_rate" => item.vat_rate
-    }
-  end
-
-  defp restore_from_creator_draft(socket, data, _step) do
-    invoice = build_invoice_from_data(data)
-    {:ok, assign(socket, :invoice, invoice)}
-  rescue
-    e ->
-      {:error, e}
-  end
-
-  defp build_invoice_from_data(data) do
-    items = Enum.map(data["items"] || [], &build_item_from_data/1)
-
-    %SalesInvoice{
-      counterparty_id: data["counterparty_id"],
-      buyer_type: data["buyer_type"] && String.to_existing_atom(data["buyer_type"]),
-      buyer_id: data["buyer_id"],
-      buyer_full_name: data["buyer_full_name"],
-      buyer_given_name: data["buyer_given_name"],
-      buyer_surname: data["buyer_surname"],
-      buyer_pesel: data["buyer_pesel"],
-      buyer_display_name: data["buyer_display_name"],
-      buyer_address: data["buyer_address"],
-      buyer_country: data["buyer_country"],
-      buyer_email: data["buyer_email"],
-      buyer_phone: data["buyer_phone"],
-      buyer_description: data["buyer_description"],
-      invoice_type: data["invoice_type"] && String.to_existing_atom(data["invoice_type"]),
-      is_reverse_charge: data["is_reverse_charge"] || false,
-      currency: data["currency"],
-      seller_account_number: data["seller_account_number"],
-      sales_invoice_items: items,
-      sale_date: data["sale_date"] && Date.from_iso8601!(data["sale_date"]),
-      due_date: data["due_date"] && Date.from_iso8601!(data["due_date"]),
-      payment_method: data["payment_method"] && String.to_existing_atom(data["payment_method"])
-    }
-  end
-
-  defp build_item_from_data(data) do
-    %SalesInvoiceItem{
-      index: data["index"],
-      name: data["name"],
-      quantity: data["quantity"] && Decimal.new(data["quantity"]),
-      unit: data["unit"],
-      unit_price: data["unit_price"] && Decimal.new(data["unit_price"]),
-      vat_rate: data["vat_rate"]
-    }
-  end
-
-  defp build_copied_invoice(base_invoice, bank_accounts) do
-    # Copy counterparty data from the base invoice
-    counterparty_data = %{
-      counterparty_id: base_invoice.counterparty_id,
-      buyer_type: base_invoice.buyer_type,
-      buyer_id: base_invoice.buyer_id,
-      buyer_full_name: base_invoice.buyer_full_name,
-      buyer_given_name: base_invoice.buyer_given_name,
-      buyer_surname: base_invoice.buyer_surname,
-      buyer_pesel: base_invoice.buyer_pesel,
-      buyer_display_name: base_invoice.buyer_display_name,
-      buyer_address: base_invoice.buyer_address,
-      buyer_country: base_invoice.buyer_country,
-      buyer_email: base_invoice.buyer_email,
-      buyer_phone: base_invoice.buyer_phone,
-      buyer_description: base_invoice.buyer_description,
-      invoice_type: base_invoice.invoice_type,
-      is_reverse_charge: base_invoice.is_reverse_charge,
-      currency: base_invoice.currency
-    }
-
-    default_bank_account =
-      Enum.find(bank_accounts, &(&1.is_default and &1.currency == base_invoice.currency))
-
-    counterparty_data =
-      if default_bank_account do
-        Map.put(counterparty_data, :seller_account_number, default_bank_account.iban)
-      else
-        counterparty_data
-      end
-
-    # Copy items from base invoice
-    copied_items =
-      base_invoice.sales_invoice_items
-      |> Enum.map(&Map.take(&1, [:index, :name, :quantity, :unit, :unit_price, :vat_rate]))
-      |> Enum.map(&struct(SalesInvoiceItem, &1))
-
-    # Validate counterparty data — old invoices may have data that no longer passes validation
-    changeset = SalesInvoice.step1_changeset(%SalesInvoice{}, counterparty_data)
-
-    case Ecto.Changeset.apply_action(changeset, :insert) do
-      {:ok, invoice} ->
-        {:ok, %{invoice | sales_invoice_items: copied_items}}
-
-      {:error, changeset} ->
-        # Counterparty data is invalid — return items-only invoice and the failed changeset
-        # so the caller can land the user on the counterparty step with the modal pre-filled
-        invoice = %SalesInvoice{sales_invoice_items: copied_items}
-        {:partial, invoice, changeset}
-    end
-  end
-
   # Navigation helpers
-
-  defp persist_and_navigate(socket, step, invoice) do
-    socket = assign(socket, :invoice, invoice)
-    creator_draft_data = serialize_to_creator_draft(socket)
-
-    CreatorDraftStore.put(socket.assigns.org_id, socket.assigns.creator_draft_id, %{
-      step: step,
-      data: creator_draft_data
-    })
-
-    push_patch(socket, to: creator_draft_url(socket.assigns.creator_draft_id, step))
-  end
-
-  defp persist_creator_draft(socket) do
-    creator_draft_data = serialize_to_creator_draft(socket)
-
-    CreatorDraftStore.put(socket.assigns.org_id, socket.assigns.creator_draft_id, %{
-      step: socket.assigns.step,
-      data: creator_draft_data
-    })
-  end
 
   defp creator_draft_url(creator_draft_id, step) when is_atom(step) do
     ~p"/sprzedazowe?creator_draft=#{creator_draft_id}&step=#{step_to_number(step)}"
@@ -594,85 +533,127 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   @impl true
-  def handle_event("validate_items", %{"sales_invoice" => params}, socket) do
-    params = apply_vat_rate_from_context(params, socket.assigns.invoice)
-    changeset = SalesInvoice.step2_changeset(socket.assigns.invoice, params)
-    {:noreply, assign_items_form(socket, changeset)}
+  def handle_event("validate_items", %{"form" => params}, socket) do
+    form =
+      socket.assigns.items_form.source
+      |> AshPhoenix.Form.validate(params)
+      |> to_form()
+
+    {:noreply, assign(socket, :items_form, form)}
   end
 
-  def handle_event("submit_items", %{"sales_invoice" => params}, socket) do
-    params = apply_vat_rate_from_context(params, socket.assigns.invoice)
-    old_currency = socket.assigns.invoice.currency
+  def handle_event("submit_items", %{"form" => params}, socket) do
+    old_currency = socket.assigns.draft.currency
 
-    result =
-      socket.assigns.invoice
-      |> SalesInvoice.step2_changeset(params)
-      |> Ecto.Changeset.apply_action(:insert)
-
-    case result do
-      {:ok, invoice} ->
+    case AshPhoenix.Form.submit(socket.assigns.items_form.source, params: params) do
+      {:ok, updated_draft} ->
         # Reset bank account if currency changed
-        invoice =
-          if invoice.currency == old_currency do
-            invoice
+        updated_draft =
+          if updated_draft.currency == old_currency do
+            updated_draft
           else
-            %{invoice | seller_account_number: nil}
+            # Reset bank account when currency changes — avoids payment step
+            # validations (sale_date/due_date not set yet)
+            Invoicing.reset_wizard_draft_bank_account!(updated_draft, scope: socket.assigns.ash_scope)
           end
 
-        {:noreply, persist_and_navigate(socket, :payment, invoice)}
+        invoice = draft_to_invoice(updated_draft)
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, items_form: to_form(changeset))}
+        socket =
+          socket
+          |> assign(:draft, updated_draft)
+          |> assign(:invoice, invoice)
+
+        {:noreply, push_patch(socket, to: creator_draft_url(socket.assigns.creator_draft_id, :payment))}
+
+      {:error, form} ->
+        {:noreply, assign(socket, items_form: to_form(form))}
     end
   end
 
   def handle_event("select_counterparty", %{"counterparty_id" => counterparty_id}, socket) do
-    counterparty = AshCounterparty.get!(counterparty_id, scope: socket.assigns.ash_scope)
-    tax_id_type = AshCounterparty.tax_id_type(counterparty)
+    scope = socket.assigns.ash_scope
+    counterparty = Counterparty.get!(counterparty_id, load: [:tax_id_type], scope: scope)
+    tax_id_type = counterparty.tax_id_type
 
     is_reverse_charge = reverse_charge_for_id_type?(tax_id_type)
     currency = currency_for_country(counterparty.country)
     invoice_type = invoice_type_for_country(counterparty.country)
     default_bank_account = find_default_bank_account(socket.assigns.bank_accounts, currency)
 
-    invoice =
-      socket.assigns.invoice
-      |> SalesInvoice.step1_changeset(%{
-        counterparty_id: counterparty.id,
-        buyer_type: counterparty.type,
-        buyer_id: counterparty.tax_id,
-        buyer_full_name: counterparty.full_name,
-        buyer_given_name: counterparty.given_name,
-        buyer_surname: counterparty.surname,
-        buyer_display_name: counterparty.display_name,
-        buyer_address: counterparty.address,
-        buyer_pesel: counterparty.pesel,
-        buyer_country: counterparty.country,
-        buyer_email: counterparty.email,
-        buyer_phone: counterparty.phone,
-        buyer_description: counterparty.description,
-        is_reverse_charge: is_reverse_charge,
-        currency: currency,
-        invoice_type: invoice_type,
-        seller_account_number: if(default_bank_account, do: default_bank_account.iban)
-      })
-      |> Ecto.Changeset.apply_action!(:insert)
+    attrs = %{
+      counterparty_id: counterparty.id,
+      buyer_type: counterparty.type,
+      buyer_id: counterparty.tax_id,
+      buyer_full_name: counterparty.full_name,
+      buyer_given_name: counterparty.given_name,
+      buyer_surname: counterparty.surname,
+      buyer_display_name: counterparty.display_name,
+      buyer_address: counterparty.address,
+      buyer_pesel: counterparty.pesel,
+      buyer_country: counterparty.country,
+      buyer_email: counterparty.email,
+      buyer_phone: counterparty.phone,
+      buyer_description: counterparty.description,
+      is_reverse_charge: is_reverse_charge,
+      currency: currency,
+      invoice_type: invoice_type,
+      seller_account_number: if(default_bank_account, do: default_bank_account.iban)
+    }
 
-    {:noreply, persist_and_navigate(socket, :items, invoice)}
+    case WizardDraft.update_counterparty(socket.assigns.draft, attrs, scope: scope) do
+      {:ok, updated_draft} ->
+        invoice = draft_to_invoice(updated_draft)
+
+        socket =
+          socket
+          |> assign(:draft, updated_draft)
+          |> assign(:invoice, invoice)
+
+        {:noreply, push_patch(socket, to: creator_draft_url(socket.assigns.creator_draft_id, :items))}
+
+      {:error, _error} ->
+        # Counterparty has invalid data (e.g. missing tax ID for required type).
+        # Pre-fill the manual counterparty form with what we have and open the modal.
+        form =
+          socket.assigns.draft
+          |> AshPhoenix.Form.for_update(:update_counterparty, scope: scope)
+          |> AshPhoenix.Form.validate(Map.new(attrs, fn {k, v} -> {to_string(k), v} end))
+
+        socket =
+          socket
+          |> assign(:counterparty_form, to_form(form))
+          |> assign(:open_counterparty_modal, true)
+
+        {:noreply, LiveToast.put_toast(socket, :error, "Dane kontrahenta wymagają uzupełnienia — popraw formularz.")}
+    end
   end
 
   def handle_event("select_base_invoice", %{"invoice_id" => invoice_id}, socket) do
-    base_invoice = AshSalesInvoice.by_id!(invoice_id, scope: socket.assigns.ash_scope)
-    Bodyguard.permit!(SalesInvoices, :show, socket.assigns.current_user, base_invoice)
+    scope = socket.assigns.ash_scope
+    base_invoice = SalesInvoice.by_id!(invoice_id, load: [:sales_invoice_items], scope: scope)
+    draft = socket.assigns.draft
 
-    case build_copied_invoice(base_invoice, socket.assigns.bank_accounts) do
-      {:ok, invoice} ->
-        {:noreply, persist_and_navigate(socket, :items, invoice)}
+    case populate_draft_from_invoice(draft, base_invoice, socket.assigns.bank_accounts, scope) do
+      {:ok, updated_draft} ->
+        invoice = draft_to_invoice(updated_draft)
 
-      {:partial, invoice, changeset} ->
-        socket = assign(socket, :invoice, invoice)
-        persist_creator_draft(socket)
-        {:noreply, setup_partial_copy(socket, changeset, socket.assigns.creator_draft_id)}
+        socket =
+          socket
+          |> assign(:invoice, invoice)
+          |> assign(:draft, updated_draft)
+
+        {:noreply, push_patch(socket, to: creator_draft_url(draft.id, :items))}
+
+      {:partial, updated_draft, changeset} ->
+        invoice = draft_to_invoice(updated_draft)
+
+        socket =
+          socket
+          |> assign(:invoice, invoice)
+          |> assign(:draft, updated_draft)
+
+        {:noreply, setup_partial_copy(socket, changeset, draft.id)}
     end
   end
 
@@ -694,84 +675,75 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     {:noreply, update_counterparty_query_params(socket, search: nil, filter: nil)}
   end
 
-  def handle_event("validate_counterparty", %{"sales_invoice" => params}, socket) do
-    form = %SalesInvoice{} |> SalesInvoice.step1_changeset(params) |> to_form(action: :validate)
+  def handle_event("validate_counterparty", %{"form" => params}, socket) do
+    form =
+      socket.assigns.counterparty_form.source
+      |> AshPhoenix.Form.validate(params)
+      |> to_form()
+
     {:noreply, assign(socket, :counterparty_form, form)}
   end
 
-  def handle_event("submit_counterparty", %{"sales_invoice" => params}, socket) do
-    changeset = SalesInvoice.step1_changeset(socket.assigns.invoice, params)
+  def handle_event("submit_counterparty", %{"form" => params}, socket) do
+    case AshPhoenix.Form.submit(socket.assigns.counterparty_form.source, params: params) do
+      {:ok, updated_draft} ->
+        invoice = draft_to_invoice(updated_draft)
 
-    case Ecto.Changeset.apply_action(changeset, :insert) do
-      {:ok, invoice} ->
-        buyer_id_type = SalesInvoice.buyer_id_type(invoice)
-        is_reverse_charge = reverse_charge_for_id_type?(buyer_id_type)
-        currency = currency_for_country(invoice.buyer_country)
-        invoice_type = invoice_type_for_country(invoice.buyer_country)
-        default_bank_account = find_default_bank_account(socket.assigns.bank_accounts, currency)
+        socket =
+          socket
+          |> assign(:draft, updated_draft)
+          |> assign(:invoice, invoice)
 
-        invoice =
-          invoice
-          |> Ecto.Changeset.change(%{
-            is_reverse_charge: is_reverse_charge,
-            currency: currency,
-            invoice_type: invoice_type,
-            seller_account_number: default_bank_account && default_bank_account.iban
-          })
-          |> Ecto.Changeset.apply_changes()
+        {:noreply, push_patch(socket, to: creator_draft_url(socket.assigns.creator_draft_id, :items))}
 
-        {:noreply, persist_and_navigate(socket, :items, invoice)}
-
-      {:error, changeset} ->
-        {:noreply, assign(socket, :counterparty_form, to_form(changeset))}
+      {:error, form} ->
+        {:noreply, assign(socket, :counterparty_form, to_form(form))}
     end
   end
 
-  def handle_event("validate_payment", %{"sales_invoice" => params}, socket) do
-    form = socket.assigns.invoice |> SalesInvoice.step3_changeset(params) |> to_form(action: :validate)
+  def handle_event("validate_payment", %{"form" => params}, socket) do
+    form =
+      socket.assigns.payment_form.source
+      |> AshPhoenix.Form.validate(params)
+      |> to_form()
+
     {:noreply, assign(socket, :payment_form, form)}
   end
 
   def handle_event("select_bank_account", %{"account_id" => account_id}, socket) do
     bank_account = Enum.find(socket.assigns.bank_accounts, &(&1.id == account_id))
 
-    # Update invoice with selected bank account's IBAN (for creator draft persistence)
-    invoice = %{socket.assigns.invoice | seller_account_number: bank_account.iban}
-
-    # Preserve current form values and update the seller_account_number
-    current_params = socket.assigns.payment_form.params || %{}
+    # Update the form with the selected bank account IBAN
+    current_params = socket.assigns.payment_form.source.params || %{}
     updated_params = Map.put(current_params, "seller_account_number", bank_account.iban)
 
     form =
-      invoice
-      |> SalesInvoice.step3_changeset(updated_params)
-      |> to_form(action: :validate)
+      socket.assigns.payment_form.source
+      |> AshPhoenix.Form.validate(updated_params)
+      |> to_form()
 
     socket =
       socket
-      |> assign(:invoice, invoice)
       |> assign(:selected_bank_account, bank_account)
       |> assign(:payment_form, form)
-
-    # Persist to creator draft immediately so selection survives page refresh
-    persist_creator_draft(socket)
 
     {:noreply, socket}
   end
 
-  def handle_event("submit_payment", %{"sales_invoice" => params}, socket) do
-    result =
-      socket.assigns.invoice
-      |> SalesInvoice.step3_changeset(params)
-      |> Ecto.Changeset.apply_action(:insert)
+  def handle_event("submit_payment", %{"form" => params}, socket) do
+    case AshPhoenix.Form.submit(socket.assigns.payment_form.source, params: params) do
+      {:ok, updated_draft} ->
+        invoice = draft_to_invoice(updated_draft)
 
-    case result do
-      {:ok, invoice} ->
-        # Navigate to preview step
-        {:noreply, persist_and_navigate(socket, :preview, invoice)}
+        socket =
+          socket
+          |> assign(:draft, updated_draft)
+          |> assign(:invoice, invoice)
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, payment_form: to_form(changeset))}
+        {:noreply, push_patch(socket, to: creator_draft_url(socket.assigns.creator_draft_id, :preview))}
+
+      {:error, form} ->
+        {:noreply, assign(socket, payment_form: to_form(form))}
     end
   end
 
@@ -781,7 +753,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     issue_date = socket.assigns.preview_invoice.issue_date
 
     # Validate the new invoice number
-    invoice_warnings = SalesInvoices.validate_invoice_number(invoice_number, issue_date)
+    scope = socket.assigns.ash_scope
+    invoice_warnings = SalesInvoice.validate_number!(invoice_number, issue_date, nil, scope: scope)
 
     {:noreply,
      socket
@@ -796,7 +769,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     issue_date = socket.assigns.preview_invoice.issue_date
 
     # Validate (should be empty for suggestions, but check anyway)
-    invoice_warnings = SalesInvoices.validate_invoice_number(invoice_number, issue_date)
+    scope = socket.assigns.ash_scope
+    invoice_warnings = SalesInvoice.validate_number!(invoice_number, issue_date, nil, scope: scope)
 
     {:noreply,
      socket
@@ -806,250 +780,121 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   def handle_event("save_as_draft", _params, socket) do
+    scope = socket.assigns.ash_scope
     organization = socket.assigns.organization
+    draft = socket.assigns.draft
 
-    # Convert items to maps so cast_assoc processes them through changeset
-    # (which sets organization_id via Repo.get_org_id())
-    items_attrs =
-      Enum.map(
-        socket.assigns.invoice.sales_invoice_items,
-        &Map.take(&1, [:index, :name, :quantity, :unit, :unit_price, :vat_rate])
-      )
-
-    # Clear existing items from struct so cast_assoc treats attrs as new inserts
-    # (otherwise Ecto tries to match by primary key and fails on id: nil)
-    invoice = %{socket.assigns.invoice | sales_invoice_items: []}
-
-    # Insert invoice without invoice_number (this creates a draft/szkic)
-    # Set issue_date to today and populate seller data from organization
-    result =
-      invoice
-      |> SalesInvoice.changeset(%{
-        issue_date: Date.utc_today(),
-        seller_display_name: organization.name,
-        seller_address: organization.address,
-        seller_nip: organization.nip,
-        is_cash_account: invoice.payment_method == :cash,
-        sales_invoice_items: items_attrs
-      })
-      |> Repo.insert()
-
-    case result do
+    case create_invoice_from_draft(draft, nil, organization, scope) do
       {:ok, invoice} ->
-        # Delete creator draft (wizard state)
-        CreatorDraftStore.delete(socket.assigns.org_id, socket.assigns.creator_draft_id)
-
         {:noreply,
          socket
          |> put_flash(:info, "Faktura zapisana jako szkic")
          |> redirect(to: ~p"/sprzedazowe/#{invoice.id}")}
 
-      {:error, changeset} ->
-        Logger.error("Failed to save invoice as draft: #{inspect(changeset.errors)}")
-
+      {:error, error} ->
+        Logger.error("Failed to save invoice as draft: #{inspect(error)}")
         {:noreply, put_flash(socket, :error, "Nie udało się zapisać faktury")}
     end
   end
 
   def handle_event("confirm_invoice", _params, socket) do
-    case create_confirmed_invoice(socket) do
-      {:ok, invoice} ->
-        # Delete creator draft (wizard state)
-        CreatorDraftStore.delete(socket.assigns.org_id, socket.assigns.creator_draft_id)
+    scope = socket.assigns.ash_scope
+    organization = socket.assigns.organization
+    draft = socket.assigns.draft
+    invoice_number = socket.assigns.invoice_number
 
-        # Navigate to summary page
-        {:noreply, push_navigate(socket, to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
-
-      {:error, changeset} ->
-        Logger.error("Failed to confirm invoice: #{inspect(changeset.errors)}")
-
-        error_message = get_invoice_error_message(changeset)
-        {:noreply, put_flash(socket, :error, error_message)}
+    with :ok <- validate_organization_for_invoicing(organization),
+         {:ok, invoice} <- create_invoice_from_draft(draft, invoice_number, organization, scope) do
+      {:noreply, push_navigate(socket, to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
+    else
+      {:error, error} ->
+        Logger.error("Failed to confirm invoice: #{inspect(error)}")
+        {:noreply, put_flash(socket, :error, get_error_message(error))}
     end
   end
 
   def handle_event("send_to_ksef", _params, socket) do
-    case create_confirmed_invoice(socket) do
-      {:ok, invoice} ->
-        # Delete creator draft (wizard state)
-        CreatorDraftStore.delete(socket.assigns.org_id, socket.assigns.creator_draft_id)
-
-        # Submit to KSeF (job will run async, Summary page will track status)
-        case Ksef.submit_sales_invoice(invoice.id) do
-          {:ok, _job} ->
-            # Navigate to summary page - it will show sending status
-            {:noreply, push_navigate(socket, to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
-
-          {:error, reason} ->
-            Logger.error("Failed to submit invoice to KSeF: #{inspect(reason)}")
-
-            # Navigate to summary page with error flash
-            {:noreply,
-             socket
-             |> put_flash(:error, "Faktura została wystawiona, ale wysyłka do KSeF nie powiodła się")
-             |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
-        end
-
-      {:error, changeset} ->
-        Logger.error("Failed to confirm invoice: #{inspect(changeset.errors)}")
-
-        error_message = get_invoice_error_message(changeset)
-        {:noreply, put_flash(socket, :error, error_message)}
-    end
-  end
-
-  # Apply correct VAT rate based on buyer context.
-  # - is_reverse_charge = true → force "oo" for all items
-  # - EU B2B (has EU VAT ID) → force "np II"
-  # - Non-EU → force "np I"
-  # - Polish buyer → user selects from dropdown (no override)
-  defp apply_vat_rate_from_context(params, invoice) do
-    is_reverse_charge = to_boolean(params["is_reverse_charge"] || invoice.is_reverse_charge || false)
-    buyer_country = invoice.buyer_country
-    buyer_id_type = SalesInvoice.buyer_id_type(invoice)
-
-    forced_rate =
-      if is_reverse_charge do
-        "oo"
-      else
-        get_fixed_vat_rate(buyer_country, buyer_id_type)
-      end
-
-    case forced_rate do
-      nil ->
-        # Polish buyer or EU B2C - user selects rate, apply default if empty
-        apply_default_vat_rate(params)
-
-      rate ->
-        # Force VAT rate for all items
-        apply_forced_vat_rate(params, rate)
-    end
-  end
-
-  # Returns fixed VAT rate if buyer context allows only one option, nil otherwise
-  defp get_fixed_vat_rate(buyer_country, buyer_id_type) do
-    case VatRate.available_rates(buyer_country, buyer_id_type) do
-      {:fixed, rate} -> rate
-      {:select, _, _} -> nil
-    end
-  end
-
-  defp apply_default_vat_rate(params) do
-    update_in(params, ["sales_invoice_items"], fn items ->
-      items |> items_to_list() |> Map.new(&default_vat_rate_for_item/1)
-    end)
-  end
-
-  defp default_vat_rate_for_item({key, %{"vat_rate" => rate} = item}) when rate not in [nil, ""], do: {key, item}
-
-  defp default_vat_rate_for_item({key, item}), do: {key, Map.put(item, "vat_rate", "23")}
-
-  defp apply_forced_vat_rate(params, rate) do
-    update_in(params, ["sales_invoice_items"], fn items ->
-      items
-      |> items_to_list()
-      |> Map.new(fn {key, item} -> {key, Map.put(item, "vat_rate", rate)} end)
-    end)
-  end
-
-  defp items_to_list(nil), do: []
-  defp items_to_list(items) when is_map(items), do: Map.to_list(items)
-  defp items_to_list(items) when is_list(items), do: Enum.with_index(items, fn item, idx -> {to_string(idx), item} end)
-
-  @doc """
-  Converts changeset errors to user-friendly error messages for invoice operations.
-  """
-  def get_invoice_error_message(changeset) do
-    cond do
-      # Organization validation errors (missing NIP, name, or address)
-      Keyword.has_key?(changeset.errors, :nip) ->
-        "Uzupełnij NIP firmy w ustawieniach organizacji."
-
-      Keyword.has_key?(changeset.errors, :address) ->
-        "Uzupełnij adres firmy w ustawieniach organizacji."
-
-      Keyword.has_key?(changeset.errors, :name) ->
-        "Uzupełnij nazwę firmy w ustawieniach organizacji."
-
-      # Invoice number already taken
-      match?({_, [constraint: :unique, constraint_name: _]}, Keyword.get(changeset.errors, :invoice_number, {nil, []})) ->
-        "Numer faktury jest już zajęty. Zmień numer faktury i spróbuj ponownie."
-
-      true ->
-        "Nie udało się wystawić faktury"
-    end
-  end
-
-  defp create_confirmed_invoice(socket) do
+    scope = socket.assigns.ash_scope
     organization = socket.assigns.organization
+    draft = socket.assigns.draft
+    invoice_number = socket.assigns.invoice_number
 
-    with :ok <- validate_organization_for_invoicing(organization) do
-      invoice_number = socket.assigns.invoice_number
-      issue_date = Date.utc_today()
-
-      # Convert items to maps so cast_assoc processes them through changeset
-      # (which sets organization_id via Repo.get_org_id())
-      items_attrs =
-        Enum.map(
-          socket.assigns.invoice.sales_invoice_items,
-          &Map.take(&1, [:index, :name, :quantity, :unit, :unit_price, :vat_rate])
-        )
-
-      # Clear existing items from struct so cast_assoc treats attrs as new inserts
-      # (otherwise Ecto tries to match by primary key and fails on id: nil)
-      invoice = %{socket.assigns.invoice | sales_invoice_items: []}
-
-      # Insert invoice with invoice_number and seller data from organization
-      invoice
-      |> SalesInvoice.changeset(%{
-        invoice_number: invoice_number,
-        issue_date: issue_date,
-        seller_display_name: organization.name,
-        seller_address: organization.address,
-        seller_nip: organization.nip,
-        is_cash_account: invoice.payment_method == :cash,
-        sales_invoice_items: items_attrs
-      })
-      |> Repo.insert()
+    with :ok <- validate_organization_for_invoicing(organization),
+         {:ok, invoice} <- create_invoice_from_draft(draft, invoice_number, organization, scope) do
+      submit_to_ksef_and_navigate(socket, invoice)
+    else
+      {:error, error} ->
+        Logger.error("Failed to confirm invoice: #{inspect(error)}")
+        {:noreply, put_flash(socket, :error, get_error_message(error))}
     end
   end
+
+  defp submit_to_ksef_and_navigate(socket, invoice) do
+    case Ksef.submit_sales_invoice(invoice.id) do
+      {:ok, _job} ->
+        {:noreply, push_navigate(socket, to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
+
+      {:error, reason} ->
+        Logger.error("Failed to submit invoice to KSeF: #{inspect(reason)}")
+
+        {:noreply,
+         socket
+         |> put_flash(:error, "Faktura została wystawiona, ale wysyłka do KSeF nie powiodła się")
+         |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
+    end
+  end
+
+  defp create_invoice_from_draft(draft, invoice_number, organization, scope) do
+    org_data = %{name: organization.name, address: organization.address, nip: organization.nip}
+    SalesInvoice.confirm_from_draft(draft.id, invoice_number, org_data, scope: scope)
+  end
+
+  defp get_error_message(%Ash.Error.Invalid{} = error) do
+    errors =
+      error
+      |> Ash.Error.to_ash_error()
+      |> Map.get(:errors, [])
+
+    messages =
+      errors
+      |> Enum.map(fn e -> Map.get(e, :message, "") end)
+      |> Enum.reject(&(&1 == ""))
+      |> Enum.uniq()
+
+    case messages do
+      [] -> "Nie udało się wystawić faktury"
+      msgs -> Enum.join(msgs, ", ")
+    end
+  end
+
+  defp get_error_message({:organization_validation, field}) do
+    case field do
+      :nip -> "Uzupełnij NIP firmy w ustawieniach organizacji."
+      :name -> "Uzupełnij nazwę firmy w ustawieniach organizacji."
+      :address -> "Uzupełnij adres firmy w ustawieniach organizacji."
+    end
+  end
+
+  defp get_error_message(_), do: "Nie udało się wystawić faktury"
 
   @doc """
   Validates that organization has all required data for KSeF invoice submission.
-  Returns :ok if valid, {:error, changeset} with validation errors otherwise.
+  Returns `:ok` if valid, `{:error, {:organization_validation, field}}` otherwise.
   """
   def validate_organization_for_invoicing(organization) do
-    errors =
-      []
-      |> maybe_add_error(is_nil(organization.nip) or organization.nip == "", :nip, "NIP firmy jest wymagany")
-      |> maybe_add_error(is_nil(organization.name) or organization.name == "", :name, "Nazwa firmy jest wymagana")
-      |> maybe_add_error(
-        is_nil(organization.address) or organization.address == "",
-        :address,
-        "Adres firmy jest wymagany"
-      )
+    cond do
+      is_nil(organization.nip) or organization.nip == "" ->
+        {:error, {:organization_validation, :nip}}
 
-    if errors == [] do
-      :ok
-    else
-      # Create a changeset-like error structure for consistent error handling
-      changeset = %Ecto.Changeset{
-        action: :validate,
-        errors: errors,
-        valid?: false,
-        data: organization,
-        changes: %{}
-      }
+      is_nil(organization.name) or organization.name == "" ->
+        {:error, {:organization_validation, :name}}
 
-      {:error, changeset}
+      is_nil(organization.address) or organization.address == "" ->
+        {:error, {:organization_validation, :address}}
+
+      true ->
+        :ok
     end
-  end
-
-  defp maybe_add_error(errors, true, field, message), do: [{field, {message, []}} | errors]
-  defp maybe_add_error(errors, false, _field, _message), do: errors
-
-  def assign_items_form(socket, changeset) do
-    assign(socket, :items_form, to_form(changeset, action: :validate))
   end
 
   def to_boolean(bool) when is_boolean(bool), do: bool
@@ -1085,12 +930,26 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   defp invoice_type_for_country("PL"), do: :poland
   defp invoice_type_for_country(_), do: :foreign
 
-  attr :invoice, SalesInvoice, default: nil
+  # Confirmed VAT invoices from the previous 2 months (replaces list_recent action).
+  # The range covers [first_of_month - 2 months, last day of previous month].
+  defp recent_invoices(scope) do
+    today = Date.utc_today()
+    first_of_this_month = %{today | day: 1}
+    range_start = Date.shift(first_of_this_month, month: -2)
+    range_end = Date.shift(first_of_this_month, day: -1)
+
+    SalesInvoice.read!(
+      %{date_from: range_start, date_to: range_end, kind: :vat, submission: :confirmed},
+      scope: scope
+    )
+  end
+
+  attr :invoice, :any, default: nil
   attr :step, :any, required: true
   attr :title, :string, required: true
 
   def render_header(assigns) do
-    buyer_name = assigns[:invoice] && AshSalesInvoice.buyer_display_name(assigns.invoice)
+    buyer_name = assigns[:invoice] && assigns.invoice.buyer_display_name_label
     assigns = assign(assigns, :buyer_name, buyer_name)
 
     ~H"""
@@ -1112,7 +971,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
             Kontrahent <span class="text-grey-700">{@buyer_name}</span>
           </p>
           <p>
-            <%= case SalesInvoice.buyer_id_type(@invoice) do %>
+            <%= case @invoice.buyer_id_type do %>
               <% :nip -> %>
                 NIP <span class="text-grey-700">{@invoice.buyer_id}</span>
               <% :eu_vat -> %>

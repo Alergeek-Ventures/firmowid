@@ -72,7 +72,7 @@ defmodule FirmowidWeb.Invoicing.Components.SearchOverlay do
                           %Firmowid.Ash.Invoicing.SalesInvoice{} ->
                             Money.new(
                               invoice.currency,
-                              Firmowid.Ash.Invoicing.SalesInvoice.get_gross_value(invoice)
+                              invoice.gross_value
                             )
                         end %>
                       <li>
@@ -97,7 +97,7 @@ defmodule FirmowidWeb.Invoicing.Components.SearchOverlay do
                                     n
 
                                   %Firmowid.Ash.Invoicing.SalesInvoice{} = si ->
-                                    Firmowid.Ash.Invoicing.SalesInvoice.buyer_display_name(si) ||
+                                    si.buyer_display_name_label ||
                                       "szkic faktury sprzedażowej"
                                 end || "—"}
                               </span>

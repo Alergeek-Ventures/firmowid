@@ -15,10 +15,10 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
   import Firmowid.KsefTestHelpers
   import SweetXml
 
+  alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ksef.InvoiceRenderer
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices
-  alias Firmowid.SalesInvoices.SalesInvoice
 
   setup do
     Firmowid.AccountsFixtures.user_fixture()
@@ -58,15 +58,7 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
     ksef_number =
       "1234567890-20260115-#{String.slice(ksef_hex, 0, 6)}-#{String.slice(ksef_hex, 6, 6)}-#{String.slice(ksef_hex, 12, 2)}"
 
-    {:ok, updated} =
-      invoice
-      |> SalesInvoice.ksef_update_changeset(%{
-        locked_at: locked_at,
-        ksef_number: ksef_number
-      })
-      |> Repo.update()
-
-    updated
+    Ash.Seed.update!(invoice, %{locked_at: locked_at, ksef_number: ksef_number})
   end
 
   # Creates a correction invoice with distinct item data.
@@ -75,46 +67,77 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
     item_name = Keyword.get(opts, :item_name, "Corrected Service")
     buyer_name = Keyword.get(opts, :buyer_name, nil)
 
-    items = [
+    correction_attrs =
       %{
-        name: item_name,
-        quantity: Decimal.new("1"),
-        unit: "szt.",
-        unit_price: Decimal.new(item_price),
-        vat_rate: "23"
+        invoice_number: unique_invoice_number("KOR/"),
+        issue_date: ~D[2026-01-20],
+        sale_date: ~D[2026-01-15],
+        due_date: ~D[2026-02-05],
+        payment_method: original.payment_method,
+        ksef_invoice_kind: :kor,
+        corrected_invoice_id: original.id,
+        # Copy fields from original
+        invoice_type: original.invoice_type,
+        currency: original.currency,
+        seller_nip: original.seller_nip,
+        seller_display_name: original.seller_display_name,
+        seller_address: original.seller_address,
+        seller_name: original.seller_name,
+        seller_surname: original.seller_surname,
+        seller_account_number: original.seller_account_number,
+        buyer_type: original.buyer_type,
+        buyer_id: original.buyer_id,
+        buyer_full_name: buyer_name || original.buyer_full_name,
+        buyer_given_name: original.buyer_given_name,
+        buyer_surname: original.buyer_surname,
+        buyer_display_name: original.buyer_display_name,
+        buyer_address: original.buyer_address,
+        buyer_country: original.buyer_country,
+        buyer_is_different_mail_address: original.buyer_is_different_mail_address,
+        buyer_mail_address: original.buyer_mail_address,
+        buyer_mail_country: original.buyer_mail_country,
+        buyer_email: original.buyer_email,
+        buyer_phone: original.buyer_phone,
+        buyer_description: original.buyer_description,
+        buyer_pesel: original.buyer_pesel,
+        is_reverse_charge: original.is_reverse_charge,
+        is_cash_account: original.is_cash_account,
+        counterparty_id: original.counterparty_id,
+        organization_id: original.organization_id
       }
-    ]
 
-    attrs =
-      maybe_put(
-        %{
-          invoice_number: unique_invoice_number("KOR/"),
-          issue_date: ~D[2026-01-20],
-          sale_date: ~D[2026-01-15],
-          due_date: ~D[2026-02-05],
-          payment_method: original.payment_method,
-          sales_invoice_items: items
-        },
-        :buyer_full_name,
-        buyer_name
-      )
+    correction = Ash.Seed.seed!(SalesInvoice, correction_attrs)
 
-    {:ok, correction} = SalesInvoices.create_correction_invoice(original, attrs)
-    Repo.preload(correction, [:sales_invoice_items, :corrected_invoice])
+    Ash.Seed.seed!(SalesInvoiceItem, %{
+      name: item_name,
+      quantity: Decimal.new("1"),
+      unit: "szt.",
+      unit_price: Decimal.new(item_price),
+      vat_rate: "23",
+      sales_invoice_id: correction.id,
+      organization_id: correction.organization_id,
+      index: 0
+    })
+
+    Ash.load!(correction, [:corrected_invoice, sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+      authorize?: false,
+      actor: %{},
+      tenant: correction.organization_id
+    )
   end
 
-  defp maybe_put(map, _key, nil), do: map
-  defp maybe_put(map, key, value), do: Map.put(map, key, value)
-
-  # Updates all item prices on an invoice via direct DB update.
+  # Updates all item prices on an invoice via direct seed.
   defp update_item_prices(invoice, price) do
     for item <- invoice.sales_invoice_items do
-      item
-      |> Ecto.Changeset.change(%{unit_price: Decimal.new(price)})
-      |> Repo.update!()
+      Ash.Seed.update!(item, %{unit_price: Decimal.new(price)})
     end
 
-    Repo.preload(invoice, :sales_invoice_items, force: true)
+    Ash.load!(invoice, [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+      authorize?: false,
+      actor: %{},
+      lazy?: false,
+      tenant: invoice.organization_id
+    )
   end
 
   # Renders FA3 XML and parses it for assertions.
@@ -432,12 +455,8 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
         |> then(fn kor ->
           # Update VAT rate to 8% after creation
           [item] = kor.sales_invoice_items
-
-          item
-          |> Ecto.Changeset.change(%{vat_rate: "8"})
-          |> Repo.update!()
-
-          Repo.preload(kor, :sales_invoice_items, force: true)
+          Ash.Seed.update!(item, %{vat_rate: "8"})
+          Ash.load!(kor, [:sales_invoice_items], authorize?: false, actor: %{}, lazy?: false, tenant: kor.organization_id)
         end)
 
       xml = render_xml(kor1)
@@ -465,12 +484,8 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
         )
         |> then(fn kor ->
           [item] = kor.sales_invoice_items
-
-          item
-          |> Ecto.Changeset.change(%{quantity: Decimal.new("2")})
-          |> Repo.update!()
-
-          Repo.preload(kor, :sales_invoice_items, force: true)
+          Ash.Seed.update!(item, %{quantity: Decimal.new("2")})
+          Ash.load!(kor, [:sales_invoice_items], authorize?: false, actor: %{}, lazy?: false, tenant: kor.organization_id)
         end)
 
       xml = render_xml(kor1)
@@ -494,27 +509,39 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
           unit_price: "100.00"
         )
         |> then(fn kor ->
-          {:ok, updated} =
-            SalesInvoices.update_sales_invoice(kor, %{
-              sales_invoice_items: [
-                %{
-                  name: "Item A",
-                  quantity: Decimal.new("1"),
-                  unit: "szt.",
-                  unit_price: Decimal.new("100.00"),
-                  vat_rate: "23"
-                },
-                %{
-                  name: "Item B",
-                  quantity: Decimal.new("1"),
-                  unit: "szt.",
-                  unit_price: Decimal.new("50.00"),
-                  vat_rate: "23"
-                }
-              ]
-            })
+          # Delete existing items and seed new ones
+          for item <- kor.sales_invoice_items do
+            Repo.delete!(item)
+          end
 
-          Repo.preload(updated, [:sales_invoice_items, :corrected_invoice])
+          Ash.Seed.seed!(SalesInvoiceItem, %{
+            name: "Item A",
+            quantity: Decimal.new("1"),
+            unit: "szt.",
+            unit_price: Decimal.new("100.00"),
+            vat_rate: "23",
+            sales_invoice_id: kor.id,
+            organization_id: kor.organization_id,
+            index: 0
+          })
+
+          Ash.Seed.seed!(SalesInvoiceItem, %{
+            name: "Item B",
+            quantity: Decimal.new("1"),
+            unit: "szt.",
+            unit_price: Decimal.new("50.00"),
+            vat_rate: "23",
+            sales_invoice_id: kor.id,
+            organization_id: kor.organization_id,
+            index: 1
+          })
+
+          Ash.load!(kor, [:sales_invoice_items, :corrected_invoice],
+            authorize?: false,
+            actor: %{},
+            lazy?: false,
+            tenant: kor.organization_id
+          )
         end)
 
       xml = render_xml(kor1)
@@ -595,12 +622,13 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
         original
         |> correct(unit_price: "100.00")
         |> then(fn kor ->
-          {:ok, updated} =
-            SalesInvoices.update_sales_invoice(kor, %{
-              buyer_address: "ul. Nowa 99, 00-002 Krakow"
-            })
-
-          Repo.preload(updated, [:sales_invoice_items, :corrected_invoice])
+          kor
+          |> Ash.Seed.update!(%{buyer_address: "ul. Nowa 99, 00-002 Krakow"})
+          |> Ash.load!([:sales_invoice_items, :corrected_invoice],
+            authorize?: false,
+            actor: %{},
+            tenant: kor.organization_id
+          )
         end)
 
       xml = render_xml(kor1)
@@ -623,7 +651,11 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
       # Directly modify the buyer_id to simulate a tax ID change
       kor1_with_changed_id =
         kor1
-        |> Repo.preload(corrected_invoice: :sales_invoice_items)
+        |> Ash.load!([:corrected_invoice, corrected_invoice: :sales_invoice_items],
+          authorize?: false,
+          actor: %{},
+          tenant: kor1.organization_id
+        )
         |> Map.put(:buyer_id, "1111111111")
 
       assert_raise RuntimeError, ~r/Buyer tax ID cannot change/, fn ->
@@ -638,7 +670,11 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
       # Directly modify seller data to simulate a change
       kor1_with_changed_seller =
         kor1
-        |> Repo.preload(corrected_invoice: :sales_invoice_items)
+        |> Ash.load!([:corrected_invoice, corrected_invoice: :sales_invoice_items],
+          authorize?: false,
+          actor: %{},
+          tenant: kor1.organization_id
+        )
         |> Map.put(:seller_display_name, "Completely Different Company")
 
       assert_raise RuntimeError, ~r/Seller data cannot change/, fn ->

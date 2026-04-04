@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
   attr :sales_invoice, :map, required: true
   attr :show_vat, :boolean, default: true
   attr :logo_data_uri, :string, default: nil
+  attr :logo_url, :string, default: nil
 
   defp invoice_header(assigns) do
     ~H"""
@@ -97,7 +98,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
           <%= if @logo_data_uri do %>
             <img src={@logo_data_uri} class="size-8" />
           <% else %>
-            <img :if={@sales_invoice.logo_url} src={@sales_invoice.logo_url} class="size-8" />
+            <img
+              :if={@logo_url}
+              src={@logo_url}
+              class="size-8"
+            />
           <% end %>
         </div>
       </div>
@@ -286,14 +291,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
                 <td class="py-1 text-right">
                   {Money.new(
                     @sales_invoice.currency,
-                    item |> Firmowid.SalesInvoices.SalesInvoiceItem.get_net_value(),
+                    item.net_value,
                     currency_symbol: ""
                   )}
                 </td>
                 <td :if={@show_vat} class="py-1 text-right">
                   {Money.new(
                     @sales_invoice.currency,
-                    item |> Firmowid.SalesInvoices.SalesInvoiceItem.get_gross_value(),
+                    item.gross_value,
                     currency_symbol: ""
                   )}
                 </td>
@@ -306,7 +311,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
                 <td class="py-1 text-right">
                   {Money.new!(
                     @sales_invoice.currency,
-                    item |> Firmowid.SalesInvoices.SalesInvoiceItem.get_net_value()
+                    item.net_value
                   )
                   |> Money.to_string!(currency_symbol: "")}
                 </td>
@@ -389,14 +394,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
                 <td class="py-1 text-right">
                   {Money.new(
                     @sales_invoice.currency,
-                    item |> Firmowid.SalesInvoices.SalesInvoiceItem.get_net_value(),
+                    item.net_value,
                     currency_symbol: ""
                   )}
                 </td>
                 <td :if={@show_vat} class="py-1 text-right">
                   {Money.new(
                     @sales_invoice.currency,
-                    item |> Firmowid.SalesInvoices.SalesInvoiceItem.get_gross_value(),
+                    item.gross_value,
                     currency_symbol: ""
                   )}
                 </td>
@@ -409,7 +414,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
                 <td class="py-1 text-right">
                   {Money.new!(
                     @sales_invoice.currency,
-                    item |> Firmowid.SalesInvoices.SalesInvoiceItem.get_net_value()
+                    item.net_value
                   )
                   |> Money.to_string!(currency_symbol: "")}
                 </td>
@@ -487,7 +492,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
           <span>
             {Money.new(
               @sales_invoice.currency,
-              @sales_invoice |> Firmowid.SalesInvoices.SalesInvoice.get_net_value()
+              @sales_invoice.net_value
             )}
           </span>
         </div>
@@ -497,7 +502,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
             <span>
               {Money.new(
                 @sales_invoice.currency,
-                @sales_invoice |> Firmowid.SalesInvoices.SalesInvoice.get_vat_value()
+                @sales_invoice.vat_value
               )}
             </span>
           </div>
@@ -506,7 +511,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
             <span class="text-sm/tight font-bold">
               {Money.new(
                 @sales_invoice.currency,
-                @sales_invoice |> Firmowid.SalesInvoices.SalesInvoice.get_gross_value()
+                @sales_invoice.gross_value
               )}
             </span>
           </div>
@@ -524,7 +529,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
           <span class="text-sm/snug">
             {Money.new!(
               @sales_invoice.currency,
-              @sales_invoice |> Firmowid.SalesInvoices.SalesInvoice.get_net_value()
+              @sales_invoice.net_value
             )}
           </span>
         </div>
@@ -538,19 +543,17 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
   attr :reference_invoice, :map, required: true
 
   defp correction_summary(assigns) do
-    alias Firmowid.SalesInvoices.SalesInvoice
-
     invoice = assigns.sales_invoice
     reference = assigns.reference_invoice
     currency = invoice.currency
 
-    before_net = SalesInvoice.get_net_value(reference)
-    before_vat = SalesInvoice.get_vat_value(reference)
-    before_gross = SalesInvoice.get_gross_value(reference)
+    before_net = reference.net_value
+    before_vat = reference.vat_value
+    before_gross = reference.gross_value
 
-    after_net = SalesInvoice.get_net_value(invoice)
-    after_vat = SalesInvoice.get_vat_value(invoice)
-    after_gross = SalesInvoice.get_gross_value(invoice)
+    after_net = invoice.net_value
+    after_vat = invoice.vat_value
+    after_gross = invoice.gross_value
 
     delta_net = Decimal.sub(after_net, before_net)
     delta_vat = Decimal.sub(after_vat, before_vat)
@@ -784,6 +787,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
   attr :sales_invoice, :map, required: true
   attr :show_vat, :boolean, default: true
   attr :logo_data_uri, :string, default: nil
+  attr :logo_url, :string, default: nil
   attr :footer_logo_data_uri, :string, default: nil
   attr :reference_invoice, :map, default: nil
 
@@ -799,6 +803,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
         sales_invoice={@sales_invoice}
         show_vat={@show_vat}
         logo_data_uri={@logo_data_uri}
+        logo_url={@logo_url}
       />
       <hr class="border-greyButtonBg my-6" />
       <.seller_buyer_section sales_invoice={@sales_invoice} />
@@ -851,7 +856,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
         invoice_type={@sales_invoice.invoice_type}
       />
       <.qrcode
-        :if={Firmowid.SalesInvoices.SalesInvoice.ksef_submitted?(@sales_invoice)}
+        :if={@sales_invoice.ksef_number}
         sales_invoice={@sales_invoice}
       />
     </div>

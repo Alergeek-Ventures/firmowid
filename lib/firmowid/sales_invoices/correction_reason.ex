@@ -11,7 +11,7 @@ defmodule Firmowid.SalesInvoices.CorrectionReason do
   required by Art. 106j ust. 2 pkt 3 ustawy o VAT.
   """
 
-  alias Firmowid.SalesInvoices.SalesInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoice
 
   @max_length 256
 

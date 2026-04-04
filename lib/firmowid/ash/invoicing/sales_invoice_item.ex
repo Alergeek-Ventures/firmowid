@@ -2,22 +2,29 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceItem do
   @moduledoc """
   Ash resource for sales invoice line items.
 
-  Read-only in this slice — mutations remain in the legacy Ecto schema
-  until Slice 7.
+  ## Actions
 
-  ## Public functions
+    * `:read` — default read
+    * `:create` — create a new item (used by `manage_relationship` on SalesInvoice)
+    * `:update` — update an existing item
+    * `:destroy` — delete an item
 
-    * `get_net_value/1` — quantity × unit_price
-    * `get_vat_value/1` — net_value × (vat_rate / 100)
-    * `get_gross_value/1` — net_value + vat_value
+  ## Calculations
+
+    * `:vat_rate_numeric` — converts KSeF string VAT rate to decimal (e.g. "23" → 0.23)
+    * `:net_value` — quantity × unit_price
+    * `:vat_value` — net_value × vat_rate_numeric
+    * `:gross_value` — net_value + vat_value
+
+  All are expression-based, SQL-pushable, and work on plain structs via `Ash.load!/3`.
   """
   use Ash.Resource,
     domain: Firmowid.Ash.Invoicing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Invoicing.Validations.ValidateVatRate
   alias Firmowid.Ash.Resource
-  alias Firmowid.Ksef.VatRate
 
   require Resource
 
@@ -28,11 +35,28 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceItem do
   end
 
   actions do
-    defaults [:read]
+    defaults [:read, :destroy]
+
+    create :create do
+      primary? true
+      accept [:index, :name, :quantity, :unit, :unit_price, :vat_rate]
+      validate {ValidateVatRate, []}
+    end
+
+    update :update do
+      primary? true
+      require_atomic? false
+      accept [:index, :name, :quantity, :unit, :unit_price, :vat_rate]
+      validate {ValidateVatRate, []}
+    end
   end
 
   policies do
     policy action_type(:read) do
+      authorize_if always()
+    end
+
+    policy action_type([:create, :update, :destroy]) do
       authorize_if always()
     end
   end
@@ -65,28 +89,26 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceItem do
     end
   end
 
-  # Public functions -----------------------------------------------------------
+  calculations do
+    # Converts KSeF string VAT rate code to numeric decimal.
+    # All non-numeric rates (zw, oo, np I, np II, 0 KR, 0 WDT, 0 EX) → 0.
+    calculate :vat_rate_numeric,
+              :decimal,
+              expr(
+                cond do
+                  vat_rate == "23" -> 0.23
+                  vat_rate == "22" -> 0.22
+                  vat_rate == "8" -> 0.08
+                  vat_rate == "7" -> 0.07
+                  vat_rate == "5" -> 0.05
+                  vat_rate == "4" -> 0.04
+                  vat_rate == "3" -> 0.03
+                  true -> 0
+                end
+              )
 
-  @doc "Returns the net value (quantity × unit_price) for this line item."
-  @spec get_net_value(struct()) :: Decimal.t()
-  def get_net_value(%{unit_price: unit_price, quantity: quantity}) when not is_nil(unit_price) and not is_nil(quantity) do
-    Decimal.mult(unit_price, quantity)
-  end
-
-  def get_net_value(_), do: Decimal.new(0)
-
-  @doc "Returns the VAT amount for this line item."
-  @spec get_vat_value(struct()) :: Decimal.t()
-  def get_vat_value(%{unit_price: _, quantity: _, vat_rate: vat_rate} = item) when not is_nil(vat_rate) do
-    numeric_rate = VatRate.to_numeric(vat_rate)
-    Decimal.mult(get_net_value(item), Decimal.div(numeric_rate, 100))
-  end
-
-  def get_vat_value(_), do: Decimal.new(0)
-
-  @doc "Returns the gross value (net + VAT) for this line item."
-  @spec get_gross_value(struct()) :: Decimal.t()
-  def get_gross_value(item) do
-    Decimal.add(get_net_value(item), get_vat_value(item))
+    calculate :net_value, :decimal, expr(quantity * unit_price)
+    calculate :vat_value, :decimal, expr(net_value * vat_rate_numeric)
+    calculate :gross_value, :decimal, expr(net_value + vat_value)
   end
 end

@@ -14,9 +14,10 @@ defmodule Firmowid.Seeds.Helpers do
   alias Firmowid.Ash.Finances.BankAccount, as: AshBankAccount
   alias Firmowid.Ash.Finances.Requisition, as: AshRequisition
   alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
-  alias Firmowid.CostInvoices
+  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoiceItem, as: AshSalesInvoiceItem
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices
 
   # ---------------------------------------------------------------------------
   # Date helpers — all seed dates are relative to today so the dashboard
@@ -91,46 +92,101 @@ defmodule Firmowid.Seeds.Helpers do
   end
 
   # ---------------------------------------------------------------------------
-  # Non-finance helpers (still using old context modules — to be migrated later)
+  # Invoice seed helpers — Ash.Seed (bypasses actions, goes to data layer)
   # ---------------------------------------------------------------------------
 
   def get_or_create_sales_invoice(inv_number, org_id, attrs) do
     case Repo.one(
-           from(si in SalesInvoices.SalesInvoice,
+           from(si in AshSalesInvoice,
              where: si.invoice_number == ^inv_number and si.organization_id == ^org_id,
              limit: 1
            )
          ) do
       nil ->
-        {:ok, inv} =
-          SalesInvoices.create_sales_invoice(
-            %SalesInvoices.SalesInvoice{organization_id: org_id},
-            Map.merge(bc_seller_info(), Map.put(attrs, "invoice_number", inv_number))
-          )
-
-        inv
+        seed_sales_invoice!(inv_number, org_id, attrs)
 
       inv ->
         inv
     end
   end
 
+  defp seed_sales_invoice!(inv_number, org_id, attrs) do
+    {items_raw, invoice_attrs} = Map.pop(attrs, "sales_invoice_items", [])
+
+    invoice_data =
+      bc_seller_info()
+      |> Map.merge(invoice_attrs)
+      |> Map.put("invoice_number", inv_number)
+      |> atomize_string_keys()
+      |> Map.put(:organization_id, org_id)
+      |> Map.put(:ksef_invoice_kind, :vat)
+
+    invoice = Ash.Seed.seed!(AshSalesInvoice, invoice_data, tenant: org_id)
+
+    Enum.with_index(items_raw, fn item_raw, index ->
+      item_data =
+        item_raw
+        |> atomize_string_keys()
+        |> Map.merge(%{
+          sales_invoice_id: invoice.id,
+          organization_id: org_id,
+          index: index
+        })
+        |> ensure_decimal_fields([:quantity, :unit_price])
+
+      Ash.Seed.seed!(AshSalesInvoiceItem, item_data, tenant: org_id)
+    end)
+
+    invoice
+  end
+
+  defp atomize_string_keys(map) do
+    Map.new(map, fn
+      {key, value} when is_binary(key) -> {String.to_existing_atom(key), value}
+      {key, value} -> {key, value}
+    end)
+  end
+
+  defp ensure_decimal_fields(map, fields) do
+    Enum.reduce(fields, map, fn field, acc ->
+      case Map.get(acc, field) do
+        %Decimal{} -> acc
+        value when is_number(value) -> Map.put(acc, field, Decimal.new("#{value}"))
+        value when is_binary(value) -> Map.put(acc, field, Decimal.new(value))
+        _ -> acc
+      end
+    end)
+  end
+
   def get_or_create_cost_invoice(invoice_identifier, org_id, attrs) do
     case Repo.one(
-           from(ci in CostInvoices.CostInvoice,
+           from(ci in AshCostInvoice,
              where: ci.invoice_identifier == ^invoice_identifier and ci.organization_id == ^org_id,
              limit: 1
            )
          ) do
       nil ->
-        Repo.insert!(
-          struct!(
-            CostInvoices.CostInvoice,
-            Map.merge(attrs, %{
-              invoice_identifier: invoice_identifier,
-              organization_id: org_id
-            })
+        checksum = :sha256 |> :crypto.hash("cost-invoice:#{invoice_identifier}:#{org_id}") |> Base.encode16(case: :lower)
+        filename = "#{String.replace(invoice_identifier, "/", "-")}.pdf"
+
+        blob =
+          seed_blob!(
+            %{
+              blob_path: "seeds/cost-invoices/#{filename}",
+              blob_checksum: checksum,
+              original_filename: filename
+            },
+            org_id
           )
+
+        Ash.Seed.seed!(
+          AshCostInvoice,
+          Map.merge(attrs, %{
+            invoice_identifier: invoice_identifier,
+            organization_id: org_id,
+            blob_id: blob.id
+          }),
+          tenant: org_id
         )
 
       ci ->

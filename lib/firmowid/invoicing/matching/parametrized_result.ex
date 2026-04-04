@@ -99,7 +99,7 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
   defp get_invoice_display_name(%CostInvoice{seller_display_name: name}), do: name
 
   defp get_invoice_display_name(%SalesInvoice{} = invoice) do
-    SalesInvoice.buyer_display_name(invoice)
+    invoice.buyer_display_name_label
   end
 
   defp get_invoice_account_number(%CostInvoice{account_number: acc}), do: acc
@@ -202,7 +202,7 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResult do
 
   defp get_invoice_amount(%CostInvoice{} = ci), do: ci.total_amount
 
-  defp get_invoice_amount(%SalesInvoice{} = si), do: SalesInvoice.get_gross_value(si)
+  defp get_invoice_amount(%SalesInvoice{} = si), do: si.gross_value
 
   @spec calculate_transaction_side_similarity(String.t(), String.t()) :: float()
   defp calculate_transaction_side_similarity(transaction_side_name, seller_display_name) do

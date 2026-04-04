@@ -8,8 +8,8 @@ defmodule Firmowid.Ksef.FetchWorker do
   import Firmowid.Ksef.ApiClient, only: [parse_datetime!: 1]
 
   alias Firmowid.Ash.Blobs
-  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
-  alias Firmowid.CostInvoices.OpenAIEnrichment
+  alias Firmowid.Ash.Invoicing
+  alias Firmowid.Ash.Invoicing.Services.OpenAIEnrichment
   alias Firmowid.Ksef.ApiClient
   alias Firmowid.Ksef.Encryption
   alias Firmowid.Ksef.InvoiceParser
@@ -253,20 +253,19 @@ defmodule Firmowid.Ksef.FetchWorker do
           Logger.info("Creating cost invoice #{ksef_number} from #{ksef_number}.xml")
 
           try do
-            # CostInvoice.create_cost_invoice/1 doesn't return result tuple. It raises on failure
+            # Invoicing.create_cost_invoice/1 doesn't return result tuple. It raises on failure
             attrs
             |> Map.put(:blob_id, blob.id)
-            |> AshCostInvoice.create_cost_invoice()
+            |> Invoicing.create_cost_invoice()
 
             :ok
           rescue
             # on failure, clean up dangling blob from DB and S3
             error ->
-              Blobs.destroy_blob!(blob, blob_opts)
-
-              AshCostInvoice.broadcast_cost_invoice_failed_to_process(
-                "#{ksef_number}.xml",
-                Repo.get_org_id()
+              # notification_metadata carries reason through Ash PubSub on blob:destroyed topic
+              Blobs.destroy_blob!(
+                blob,
+                Keyword.put(blob_opts, :notification_metadata, %{reason: :processing_failed})
               )
 
               ErrorTracker.report(error, __STACKTRACE__)

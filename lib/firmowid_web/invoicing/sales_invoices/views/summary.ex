@@ -9,10 +9,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   """
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
+  alias Firmowid.Ash.Invoicing
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ksef
-  alias Firmowid.SalesInvoices
-  alias Firmowid.SalesInvoices.SalesInvoice, as: EctoSalesInvoice
 
   require Logger
 
@@ -21,9 +20,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
     current_user = socket.assigns.current_user
 
     scope = socket.assigns.ash_scope
-    invoice = AshSalesInvoice.by_id!(id, scope: scope)
 
-    Bodyguard.permit!(SalesInvoices, :show, current_user, invoice)
+    invoice =
+      SalesInvoice.by_id!(id,
+        load: [
+          sales_invoice_items: [:net_value, :vat_value, :gross_value],
+          corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+          corrected_invoice: :corrections,
+          latest_correction: [sales_invoice_items: [:net_value, :vat_value, :gross_value]]
+        ],
+        scope: scope
+      )
+
+    logo_url = Invoicing.get_logo_url(invoice.organization_id)
 
     submission_info = Ksef.get_submission_info(invoice)
 
@@ -32,13 +41,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
       Ksef.subscribe_ksef_status(current_user.organization_id)
     end
 
-    currency_rate = AshSalesInvoice.get_currency_rate(invoice)
+    currency_rate = Invoicing.get_currency_rate(invoice)
 
     {previous_invoices, invoice} = get_previous_invoices(invoice)
 
     socket =
       socket
       |> assign(:invoice, invoice)
+      |> assign(:logo_url, logo_url)
       |> assign(:previous_invoices, previous_invoices)
       |> assign(:submission_info, submission_info)
       |> assign(:currency_rate, currency_rate)
@@ -92,7 +102,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
           </.link>
           <.button
             :if={
-              @ksef_connected? and EctoSalesInvoice.confirmed?(@invoice) and
+              @ksef_connected? and @invoice.invoice_number and
                 @submission_info.status in [:not_submitted, :failed]
             }
             color="light_grey"
@@ -166,6 +176,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
                   currency_rate={@currency_rate}
                   show_vat={@current_org.is_vat_payer}
                   reference_invoice={previous_invoice.reference_invoice}
+                  logo_url={@logo_url}
                 />
               </div>
             </div>
@@ -193,6 +204,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
                 currency_rate={@currency_rate}
                 show_vat={@current_org.is_vat_payer}
                 reference_invoice={@invoice.reference_invoice}
+                logo_url={@logo_url}
               />
             </div>
           </div>
@@ -227,7 +239,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
     if socket.assigns.invoice.id == invoice_id do
       # Refetch invoice from DB to get latest state (including ksef_number)
       # TODO: replace authorize?: false + actor: %{} with system actor once available
-      invoice = AshSalesInvoice.by_id!(invoice_id, authorize?: false, actor: %{})
+      invoice =
+        SalesInvoice.by_id!(
+          invoice_id,
+          load: [
+            sales_invoice_items: [:net_value, :vat_value, :gross_value],
+            corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+            corrected_invoice: :corrections,
+            latest_correction: [sales_invoice_items: [:net_value, :vat_value, :gross_value]]
+          ],
+          authorize?: false,
+          actor: %{},
+          tenant: socket.assigns.current_user.organization_id
+        )
 
       # Convert PubSub status to SubmissionInfo status
       submission_info = Ksef.get_submission_info(invoice)
@@ -255,11 +279,23 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   end
 
   defp get_previous_invoices(%{ksef_invoice_kind: :kor} = invoice) do
-    original_invoice = SalesInvoices.populate_reference_invoices(invoice.corrected_invoice)
+    alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
+
+    # Re-fetch corrected invoice to ensure all attributes are loaded,
+    # then annotate corrections directly (avoids Ash.load! re-fetch issue)
+    original_invoice =
+      invoice.corrected_invoice.id
+      |> SalesInvoice.by_id!(
+        authorize?: false,
+        actor: %{},
+        tenant: invoice.organization_id,
+        load: [corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]]]
+      )
+      |> then(fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)
 
     previous_invoices =
       original_invoice.corrections
-      |> Enum.filter(&DateTime.before?(&1.locked_at || &1.inserted_at, invoice.locked_at || invoice.inserted_at))
+      |> Enum.filter(&DateTime.before?(safe_timestamp(&1), safe_timestamp(invoice)))
       |> List.insert_at(0, original_invoice)
       |> Enum.reverse()
 
@@ -281,4 +317,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   end
 
   defp get_previous_invoices(%{ksef_invoice_kind: :vat} = invoice), do: {[], invoice}
+
+  defp safe_timestamp(record) do
+    case record do
+      %{locked_at: %DateTime{} = ts} -> ts
+      %{inserted_at: %DateTime{} = ts} -> ts
+      _ -> ~U[1970-01-01 00:00:00Z]
+    end
+  end
 end

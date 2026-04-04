@@ -11,8 +11,8 @@ defmodule Firmowid.Seeds.Bytecraft do
   alias Firmowid.Accounts.Organization
   alias Firmowid.Ash.Invoicing.Counterparty, as: AshCounterparty
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
+  alias Firmowid.Ksef.Credential
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices.Counterparty
   alias Firmowid.Seeds.Helpers
 
   def seed! do
@@ -23,6 +23,7 @@ defmodule Firmowid.Seeds.Bytecraft do
     counterparties = seed_counterparties(bytecraft)
     projects = seed_projects(bytecraft, users, counterparties)
     blob = seed_blob(bytecraft)
+    seed_ksef_credential(bytecraft)
     bank_accounts = seed_bank_accounts(bytecraft)
 
     %{
@@ -198,7 +199,7 @@ defmodule Firmowid.Seeds.Bytecraft do
         cond do
           attrs[:tax_id] && attrs[:tax_id] != "" ->
             Repo.one(
-              from(c in Counterparty,
+              from(c in AshCounterparty,
                 where: c.tax_id == ^attrs[:tax_id] and c.organization_id == ^bytecraft.id,
                 limit: 1
               )
@@ -206,7 +207,7 @@ defmodule Firmowid.Seeds.Bytecraft do
 
           attrs[:display_name] ->
             Repo.one(
-              from(c in Counterparty,
+              from(c in AshCounterparty,
                 where:
                   c.display_name == ^attrs[:display_name] and
                     c.organization_id == ^bytecraft.id,
@@ -334,6 +335,28 @@ defmodule Firmowid.Seeds.Bytecraft do
       },
       bytecraft.id
     )
+  end
+
+  # ===========================================================================
+  # KSeF credential — test environment token for Bytecraft (NIP 6161525811)
+  # ===========================================================================
+
+  @ksef_token "20260405-EC-28297E1000-AA3A3DCEA6-57|nip-6161525811|c8948520f70e428f850a668b445c5ba3579da2cb100d43fbb725d377b3eaa819"
+
+  defp seed_ksef_credential(bytecraft) do
+    case Repo.get_by(Credential, organization_id: bytecraft.id) do
+      nil ->
+        %Credential{}
+        |> Credential.changeset(%{
+          organization_id: bytecraft.id,
+          auth_type: :token,
+          credentials: @ksef_token
+        })
+        |> Repo.insert!()
+
+      credential ->
+        credential
+    end
   end
 
   # ===========================================================================

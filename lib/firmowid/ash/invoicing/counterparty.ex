@@ -10,25 +10,18 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
     * `:display_label` — human-friendly name (display_name > full_name > given_name surname)
     * `:tax_id_type` — `:nip | :eu_vat | :other_id | :optional_id | :no_id`
 
-  ## Public functions
 
-    * `validate_nip/2`, `validate_eu_vat/2`, `validate_optional_id/2` — changeset
-      validators imported by the legacy `SalesInvoice` Ecto schema until Slice 7.
-    * `display_label/1` — imperative version of the `:display_label` calculation.
-    * `tax_id_type/1` — imperative version of the `:tax_id_type` calculation.
   """
   use Ash.Resource,
     domain: Firmowid.Ash.Invoicing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
-  import Ecto.Changeset, only: [validate_format: 4, validate_length: 3]
-
-  alias Firmowid.Ash.Invoicing.Calculations.CounterpartyDisplayLabel
-  alias Firmowid.Ash.Invoicing.Calculations.CounterpartyTaxIdType
-  alias Firmowid.Ash.Invoicing.Changes.ValidateCounterparty
+  alias Firmowid.Ash.Invoicing.Changes.ClearIrrelevantBuyerFields
+  alias Firmowid.Ash.Invoicing.Changes.ValidateCountryCode
+  alias Firmowid.Ash.Invoicing.Validations.ValidateNameFields
+  alias Firmowid.Ash.Invoicing.Validations.ValidateTaxId
   alias Firmowid.Ash.Resource
-  alias Firmowid.SalesInvoices.CountryCodes
 
   require Ash.Query
   require Resource
@@ -47,7 +40,12 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
     define :destroy
 
     define :search,
-      args: [:search_term, {:optional, :type}, {:optional, :sort_by}, {:optional, :sort_order}]
+      args: [
+        :search_term,
+        {:optional, :type},
+        {:optional, :sort_by},
+        {:optional, :sort_order}
+      ]
   end
 
   actions do
@@ -80,7 +78,22 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
         :description
       ]
 
-      change {ValidateCounterparty, []}
+      change {ValidateCountryCode, field: :country}
+      change {ValidateCountryCode, field: :mail_country}
+
+      change {ClearIrrelevantBuyerFields,
+              type_field: :type,
+              company_fields: [:tax_id, :full_name],
+              individual_fields: [
+                :pesel,
+                :given_name,
+                :surname
+              ]}
+
+      validate {ValidateTaxId, id_field: :tax_id, country_field: :country, pesel_field: :pesel, type_field: :type}
+
+      validate {ValidateNameFields,
+                type_field: :type, full_name_field: :full_name, given_name_field: :given_name, surname_field: :surname}
     end
 
     update :update do
@@ -104,7 +117,22 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
         :description
       ]
 
-      change {ValidateCounterparty, []}
+      change {ValidateCountryCode, field: :country}
+      change {ValidateCountryCode, field: :mail_country}
+
+      change {ClearIrrelevantBuyerFields,
+              type_field: :type,
+              company_fields: [:tax_id, :full_name],
+              individual_fields: [
+                :pesel,
+                :given_name,
+                :surname
+              ]}
+
+      validate {ValidateTaxId, id_field: :tax_id, country_field: :country, pesel_field: :pesel, type_field: :type}
+
+      validate {ValidateNameFields,
+                type_field: :type, full_name_field: :full_name, given_name_field: :given_name, surname_field: :surname}
     end
 
     read :search do
@@ -113,7 +141,10 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
       argument :search_term, :string
       argument :type, :atom, constraints: [one_of: [:individual, :company]]
       argument :sort_by, :atom, default: :name
-      argument :sort_order, :atom, default: :asc, constraints: [one_of: [:asc, :desc]]
+
+      argument :sort_order, :atom,
+        default: :asc,
+        constraints: [one_of: [:asc, :desc]]
 
       prepare {Firmowid.Ash.Preparations.ParadeDBSearch,
                columns: ~w(display_name full_name given_name surname tax_id email),
@@ -184,61 +215,69 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
   end
 
   calculations do
-    calculate :display_label, :string, CounterpartyDisplayLabel
-    calculate :tax_id_type, :atom, CounterpartyTaxIdType
+    calculate :display_label,
+              :string,
+              expr(
+                cond do
+                  not is_nil(display_name) and display_name != "" -> display_name
+                  type == :company -> full_name
+                  true -> given_name <> " " <> surname
+                end
+              )
+
+    calculate :tax_id_type,
+              :atom,
+              expr(
+                cond do
+                  not is_nil(pesel) and pesel != "" ->
+                    :no_id
+
+                  type == :individual and country == "PL" ->
+                    :no_id
+
+                  country == "PL" ->
+                    :nip
+
+                  country in [
+                    "AT",
+                    "BE",
+                    "BG",
+                    "CY",
+                    "CZ",
+                    "DK",
+                    "EE",
+                    "FI",
+                    "FR",
+                    "DE",
+                    "EL",
+                    "GR",
+                    "HR",
+                    "HU",
+                    "IE",
+                    "IT",
+                    "LV",
+                    "LT",
+                    "LU",
+                    "MT",
+                    "NL",
+                    "PT",
+                    "RO",
+                    "SK",
+                    "SI",
+                    "ES",
+                    "SE",
+                    "XI"
+                  ] ->
+                    :eu_vat
+
+                  country == "US" ->
+                    :optional_id
+
+                  true ->
+                    :other_id
+                end
+              )
+
     calculate :list_all_order, :string, expr(fragment("COALESCE(?, ?)", display_name, surname))
-  end
-
-  # ── Public functions (imperative API) ───────────────────────────────
-
-  @doc """
-  Returns the display label for a counterparty struct.
-
-  Imperative version of the `:display_label` calculation. Used in templates
-  that receive pre-loaded structs (e.g. management views).
-  """
-  @spec display_label(map()) :: String.t()
-  def display_label(%{display_name: name}) when is_binary(name) and name != "", do: name
-  def display_label(%{type: :company, full_name: name}) when is_binary(name), do: name
-
-  def display_label(%{type: :individual, given_name: given_name, surname: surname}) do
-    [given_name, surname]
-    |> Enum.reject(&is_nil/1)
-    |> Enum.join(" ")
-  end
-
-  def display_label(_), do: ""
-
-  @doc """
-  Returns the tax ID type for a counterparty struct or changeset.
-  """
-  @spec tax_id_type(map() | Ecto.Changeset.t()) ::
-          :nip | :eu_vat | :other_id | :optional_id | :no_id
-  def tax_id_type(%{pesel: pesel, country: country}) do
-    CountryCodes.tax_id_type(country, pesel)
-  end
-
-  def tax_id_type(%Ecto.Changeset{} = changeset) do
-    pesel = Ecto.Changeset.get_field(changeset, :pesel)
-    country = Ecto.Changeset.get_field(changeset, :country)
-    tax_id_type(%{pesel: pesel, country: country})
-  end
-
-  @doc "Validates a Polish NIP format on the given changeset field."
-  @spec validate_nip(Ecto.Changeset.t(), atom()) :: Ecto.Changeset.t()
-  def validate_nip(changeset, field) do
-    validate_format(changeset, field, ~r/^[1-9]((\d[1-9])|([1-9]\d))\d{7}$/, message: "musi być numerem NIP")
-  end
-
-  @doc "Validates an EU VAT number format on the given changeset field."
-  @spec validate_eu_vat(Ecto.Changeset.t(), atom()) :: Ecto.Changeset.t()
-  def validate_eu_vat(changeset, field) do
-    validate_format(changeset, field, ~r/^(\d|[A-Z]|\+|\*){1,12}$/, message: "musi być numerem VAT-EU")
-  end
-
-  @doc "Validates optional ID length (max 50) on the given changeset field."
-  @spec validate_optional_id(Ecto.Changeset.t(), atom()) :: Ecto.Changeset.t()
-  def validate_optional_id(changeset, field) do
-    validate_length(changeset, field, max: 50, message: "musi mieć maksymalnie 50 znaków")
   end
 end

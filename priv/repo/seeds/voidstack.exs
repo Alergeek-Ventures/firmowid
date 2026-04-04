@@ -13,10 +13,9 @@ defmodule Firmowid.Seeds.Voidstack do
   alias Firmowid.Accounts
   alias Firmowid.Accounts.Organization
   alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
+  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
-  alias Firmowid.CostInvoices
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices
   alias Firmowid.Seeds.Helpers
 
   def seed! do
@@ -24,9 +23,9 @@ defmodule Firmowid.Seeds.Voidstack do
     voidstack = seed_organization(dragan)
     Repo.put_org_id(voidstack.id)
     seed_project(dragan)
-    seed_blob(voidstack)
+    blob = seed_blob(voidstack)
     seed_bank_and_transactions(voidstack)
-    seed_cost_invoice(voidstack)
+    seed_cost_invoice(voidstack, blob)
     seed_sales_invoice(voidstack)
   end
 
@@ -193,85 +192,71 @@ defmodule Firmowid.Seeds.Voidstack do
     )
   end
 
-  defp seed_cost_invoice(voidstack) do
+  defp seed_cost_invoice(voidstack, blob) do
     today = Helpers.today()
 
-    blob =
-      Repo.get(Firmowid.Ash.Blobs.Blob, "aaaaaaaa-1111-4b80-9d53-a71d0efc4cad")
-
-    if is_nil(Repo.get(CostInvoices.CostInvoice, "aaaaaaaa-3333-7433-bd41-3d8b719610a4")) do
-      Repo.insert!(%CostInvoices.CostInvoice{
-        id: "aaaaaaaa-3333-7433-bd41-3d8b719610a4",
-        blob_id: blob && blob.id,
-        seller: "Allegro.pl Sp. z o.o.",
-        seller_display_name: "Allegro",
-        sale_date: Helpers.date_this_month(4),
-        issue_date: Helpers.date_this_month(5),
-        due_date: Helpers.date_this_month(19),
-        total_amount: -1_200.00,
-        currency: "PLN",
-        invoice_identifier: "ALG/#{today.year}/#{String.pad_leading("#{today.month}", 2, "0")}/001",
-        description: "Fotel biurowy ergonomiczny — Dragan upierał się przy modelu wyścigowym",
-        skip_invoicing: false,
-        organization_id: voidstack.id,
-        seller_address: "ul. Grunwaldzka 182, 60-166 Poznań"
-      })
+    if is_nil(Repo.get(AshCostInvoice, "aaaaaaaa-3333-7433-bd41-3d8b719610a4")) do
+      Ash.Seed.seed!(
+        AshCostInvoice,
+        %{
+          id: "aaaaaaaa-3333-7433-bd41-3d8b719610a4",
+          blob_id: blob.id,
+          seller: "Allegro.pl Sp. z o.o.",
+          seller_display_name: "Allegro",
+          sale_date: Helpers.date_this_month(4),
+          issue_date: Helpers.date_this_month(5),
+          due_date: Helpers.date_this_month(19),
+          total_amount: Decimal.new("-1200.00"),
+          currency: "PLN",
+          invoice_identifier: "ALG/#{today.year}/#{String.pad_leading("#{today.month}", 2, "0")}/001",
+          description: "Fotel biurowy ergonomiczny — Dragan upierał się przy modelu wyścigowym",
+          skip_invoicing: false,
+          organization_id: voidstack.id,
+          seller_address: "ul. Grunwaldzka 182, 60-166 Poznań"
+        },
+        tenant: voidstack.id
+      )
     end
   end
 
   defp seed_sales_invoice(voidstack) do
     prefix = Helpers.month_prefix(0)
-    inv_number = "VS/01/#{prefix}"
 
-    existing =
-      Repo.one(
-        from(si in SalesInvoices.SalesInvoice,
-          where: si.invoice_number == ^inv_number and si.organization_id == ^voidstack.id,
-          limit: 1
-        )
-      )
-
-    if is_nil(existing) do
-      SalesInvoices.create_sales_invoice(
-        %SalesInvoices.SalesInvoice{organization_id: voidstack.id},
+    Helpers.get_or_create_sales_invoice("VS/01/#{prefix}", voidstack.id, %{
+      "invoice_type" => "poland",
+      "issue_date" => Helpers.date_this_month(8),
+      "sale_date" => Helpers.date_this_month(8),
+      "due_date" => Helpers.date_this_month(22),
+      "currency" => "PLN",
+      "seller_display_name" => "VoidStack Labs sp. z o.o.",
+      "seller_address" => "ul. Kręgielnia 1, 811 01 Bratislava (oddział w Polsce)",
+      "seller_nip" => "7871963656",
+      "seller_account_number" => "PL98109024020000000142345678",
+      "buyer_display_name" => "Mysterious Client LLC",
+      "buyer_full_name" => "Mysterious Client LLC",
+      "buyer_address" => "ul. Tajemnicza 13, 00-666 Warszawa",
+      "buyer_country" => "PL",
+      "buyer_id" => "5213370128",
+      "buyer_type" => "company",
+      "payment_method" => "transfer",
+      "is_reverse_charge" => false,
+      "is_cash_account" => false,
+      "sales_invoice_items" => [
         %{
-          "invoice_number" => inv_number,
-          "invoice_type" => "poland",
-          "issue_date" => Helpers.date_this_month(8),
-          "sale_date" => Helpers.date_this_month(8),
-          "due_date" => Helpers.date_this_month(22),
-          "currency" => "PLN",
-          "seller_display_name" => "VoidStack Labs sp. z o.o.",
-          "seller_address" => "ul. Kręgielnia 1, 811 01 Bratislava (oddział w Polsce)",
-          "seller_nip" => "7871963656",
-          "seller_account_number" => "PL98109024020000000142345678",
-          "buyer_display_name" => "Mysterious Client LLC",
-          "buyer_full_name" => "Mysterious Client LLC",
-          "buyer_address" => "ul. Tajemnicza 13, 00-666 Warszawa",
-          "buyer_country" => "PL",
-          "buyer_id" => "5213370128",
-          "buyer_type" => "company",
-          "payment_method" => "transfer",
-          "is_reverse_charge" => false,
-          "is_cash_account" => false,
-          "sales_invoice_items" => [
-            %{
-              "name" => "Shadow Protocol — dostawa fazy 1",
-              "quantity" => 120,
-              "unit" => "godz.",
-              "unit_price" => 100.00,
-              "vat_rate" => "23"
-            },
-            %{
-              "name" => "Awaryjne zaopatrzenie w napoje energetyczne",
-              "quantity" => 25,
-              "unit" => "szt.",
-              "unit_price" => 3.50,
-              "vat_rate" => "23"
-            }
-          ]
+          "name" => "Shadow Protocol — dostawa fazy 1",
+          "quantity" => 120,
+          "unit" => "godz.",
+          "unit_price" => 100.00,
+          "vat_rate" => "23"
+        },
+        %{
+          "name" => "Awaryjne zaopatrzenie w napoje energetyczne",
+          "quantity" => 25,
+          "unit" => "szt.",
+          "unit_price" => 3.50,
+          "vat_rate" => "23"
         }
-      )
-    end
+      ]
+    })
   end
 end

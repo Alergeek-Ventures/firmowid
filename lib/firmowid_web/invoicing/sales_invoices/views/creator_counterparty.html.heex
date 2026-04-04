@@ -165,7 +165,7 @@
                   <% :individual -> %>
                     <Lucideicons.user class="text-grey-500 size-4" />
                 <% end %>
-                <span class="truncate">{Counterparty.display_label(counterparty)}</span>
+                <span class="truncate">{counterparty.display_label}</span>
               </span>
             </p>
 
@@ -174,7 +174,7 @@
             </p>
 
             <p class="text-grey-500 text-left">
-              {SalesInvoices.CountryCodes.country_name(counterparty.country)}
+              {CountryCodes.country_name(counterparty.country)}
             </p>
 
             <Lucideicons.chevron_right class="group-hover:text-grey-900 text-grey-500 transition duration-200 ease-out" />
@@ -231,7 +231,7 @@
               >
                 <div class="grid min-w-0 grid-cols-[max-content_minmax(0,1fr)] gap-x-5 gap-y-2 text-sm">
                   <p class="text-grey-700">Nazwa</p>
-                  <p class="truncate text-black">{Counterparty.display_label(counterparty)}</p>
+                  <p class="truncate text-black">{counterparty.display_label}</p>
 
                   <%= if counterparty.type == :individual do %>
                     <p class="text-grey-700">PESEL</p>
@@ -243,7 +243,7 @@
 
                   <p class="text-grey-700">Kraj</p>
                   <p class="text-grey-500">
-                    {SalesInvoices.CountryCodes.country_name(counterparty.country)}
+                    {CountryCodes.country_name(counterparty.country)}
                   </p>
                 </div>
 
@@ -274,7 +274,7 @@
               >
                 <div class="grid min-w-0 grid-cols-[max-content_minmax(0,1fr)] gap-x-5 gap-y-2 text-sm">
                   <p class="text-grey-700">Kontrahent</p>
-                  <p class="truncate text-black">{AshSalesInvoice.buyer_display_name(invoice)}</p>
+                  <p class="truncate text-black">{invoice.buyer_display_name_label}</p>
 
                   <p class="text-grey-700">Numer</p>
                   <p class="text-grey-500">{invoice.invoice_number}</p>
@@ -283,7 +283,7 @@
                   <p class="text-grey-500">
                     {Money.new(
                       invoice.currency,
-                      SalesInvoices.SalesInvoice.get_gross_value(invoice)
+                      invoice.gross_value
                     )
                     |> Money.to_string!()}
                   </p>
@@ -352,7 +352,7 @@
               {"Tax ID (opcjonalnie)", false}
 
             country when country != "" ->
-              if SalesInvoices.CountryCodes.eu_country?(country) do
+              if CountryCodes.eu_country?(country) do
                 {"VAT-EU", true}
               else
                 {"Identyfikator podatkowy", true}
@@ -418,7 +418,7 @@
         <.input
           field={@counterparty_form[:buyer_country]}
           type="select"
-          options={SalesInvoices.CountryCodes.country_options()}
+          options={CountryCodes.country_options()}
           prompt="Wybierz kraj"
           new={true}
         />

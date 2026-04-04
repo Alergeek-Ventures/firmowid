@@ -39,7 +39,7 @@
       />
     <% end %>
     <.link
-      :if={Bodyguard.permit?(Firmowid.SalesInvoices, :create_sales_invoice, @current_user)}
+      :if={@current_user.role == :admin}
       navigate={~p"/sprzedazowe"}
       id="sales-invoice-link"
       data-tippy-content="Wystaw fakturę sprzedażową"
@@ -57,7 +57,7 @@
       </span>
     </.link>
     <form
-      :if={Bodyguard.permit?(Firmowid.Invoicing, :upload, @current_user)}
+      :if={@current_user.role == :admin}
       id="upload-form"
       phx-change="upload"
       phx-submit="upload"
@@ -187,7 +187,7 @@
 </div>
 
 <div
-  :if={Bodyguard.permit?(Firmowid.Invoicing, :read, @current_user)}
+  :if={@current_user.role == :admin}
   class="mt-2 flex flex-col gap-4 max-md:hidden"
 >
   <%= if @is_month_closed and @params.filter == :unmatched do %>
@@ -206,7 +206,7 @@
 </div>
 
 <div
-  :if={Bodyguard.permit?(Firmowid.Invoicing, :upload, @current_user)}
+  :if={@current_user.role == :admin}
   id="file-drop-overlay"
   class="fixed top-[10lvw] left-[5lvw] z-20 hidden h-[80lvh] w-[90lvw] items-center justify-center rounded-lg bg-[#CEE6E666] opacity-0 transition-opacity"
   phx-hook="FileUploadDragNDrop"

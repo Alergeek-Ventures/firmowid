@@ -6,38 +6,45 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   alias Ash.Notifier.Notification
   alias Firmowid.Analytics
+  alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Finances.Requisition, as: AshRequisition
-  alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
-  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
-  alias Firmowid.Invoicing
+  alias Firmowid.Ash.Finances.Requisition
+  alias Firmowid.Ash.Finances.Transaction
+  alias Firmowid.Ash.Invoicing
+  alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.TransactionGroup
   alias Firmowid.Ksef
-  alias Firmowid.SalesInvoices
   alias FirmowidWeb.Core.Endpoint
   alias Phoenix.Socket.Broadcast
+
+  require Ash.Query
 
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
     organization_id = user.organization_id
 
-    Bodyguard.permit!(Invoicing, :read, user)
-
     if connected?(socket) do
-      AshCostInvoice.subscribe_cost_invoice_broadcast(organization_id)
+      # Ash PubSub — invoicing resources
+      Endpoint.subscribe("blob:created:#{organization_id}")
+      Endpoint.subscribe("blob:destroyed:#{organization_id}")
+      Endpoint.subscribe("cost_invoice:created:#{organization_id}")
+      Endpoint.subscribe("cost_invoice:updated:#{organization_id}")
+      Endpoint.subscribe("sales_invoice:created:#{organization_id}")
+      Endpoint.subscribe("sales_invoice:updated:#{organization_id}")
+      Endpoint.subscribe("sales_invoice:destroyed:#{organization_id}")
+      # Ash PubSub — finances
       Endpoint.subscribe("transaction:updated:#{organization_id}")
-      SalesInvoices.subscribe_sales_invoice_broadcast(organization_id)
-      Invoicing.subscribe_invoicing_broadcast(organization_id)
-      # Ash native PubSub for requisition status changes
       Endpoint.subscribe("requisition:linked:#{organization_id}")
       Endpoint.subscribe("requisition:rejected:#{organization_id}")
       Endpoint.subscribe("requisition:error:#{organization_id}")
+      # KSeF status (separate system)
       Ksef.subscribe_ksef_status(organization_id)
     end
 
     socket =
-      if Bodyguard.permit?(Invoicing, :upload, user) do
+      if user.role == :admin do
         allow_upload(socket, :file,
           max_entries: 50,
           accept: ["application/pdf", "image/*"],
@@ -56,7 +63,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     socket = assign(socket, :has_connected_bank_account, connected_bank_accounts > 0)
 
     active_months =
-      Invoicing.get_all_months_with_invoicing_entries() ++
+      get_active_months(socket.assigns.ash_scope) ++
         [Date.beginning_of_month(Date.utc_today())]
 
     socket = assign(socket, :active_months, active_months)
@@ -73,8 +80,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   @impl true
   def handle_params(params, _url, socket) do
-    Bodyguard.permit!(Invoicing, :read, socket.assigns.current_user)
-
     parsed = parse_url_params(params)
 
     socket =
@@ -153,8 +158,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   @impl true
   def handle_event("upload", _, socket) do
-    Bodyguard.permit!(Invoicing, :upload, socket.assigns.current_user)
-
     socket = refetch_upload_counts(socket)
 
     {:noreply, socket}
@@ -227,7 +230,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   def handle_event("update-search", %{"q" => q}, socket) do
-    Bodyguard.permit!(Invoicing, :read, socket.assigns.current_user)
     q = String.trim(q)
 
     results =
@@ -244,8 +246,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   def handle_event("goto-invoice", %{"id" => id, "type" => type}, socket) do
-    Bodyguard.permit!(Invoicing, :read, socket.assigns.current_user)
-
     Analytics.track_event("invoicing_search_select", socket.assigns.current_user, %{
       invoice_type: type
     })
@@ -261,12 +261,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   @impl true
   def handle_info({:toggle_skip_invoicing, %{id: id, type: type}}, socket) do
-    Bodyguard.permit!(Invoicing, :update, socket.assigns.current_user)
-
     socket =
       case type do
         "cost_invoice" ->
-          AshCostInvoice.toggle_skip_invoicing(id)
+          scope = socket.assigns.ash_scope
+          cost_invoice = Invoicing.get_cost_invoice!(id, scope: scope)
+          Invoicing.toggle_cost_invoice_skip!(cost_invoice, scope: scope)
           socket
 
         "transaction" ->
@@ -277,7 +277,9 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           toggle_transaction_skip(socket, id, new_skip)
 
         "sales_invoice" ->
-          SalesInvoices.toggle_skip_invoicing(id)
+          scope = socket.assigns.ash_scope
+          invoice = SalesInvoice.by_id!(id, scope: scope)
+          SalesInvoice.toggle_skip!(invoice, scope: scope)
           socket
       end
 
@@ -285,7 +287,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   @impl true
-  def handle_info(%Broadcast{payload: %Notification{resource: AshTransaction}}, socket) do
+  def handle_info(%Broadcast{payload: %Notification{resource: Transaction}}, socket) do
     {:noreply, debounce_refetch(socket, :transactions, 10_000)}
   end
 
@@ -294,47 +296,60 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {:noreply, refetch_invoicing_entries(socket)}
   end
 
+  # Blob created — file is being processed, refresh list
   @impl true
-  def handle_info(:cost_invoice_list_updated, socket) do
-    socket = refetch_invoicing_entries(socket)
-
-    {:noreply, socket}
+  def handle_info(%Broadcast{payload: %Notification{resource: Blob, action: %{type: :create}}}, socket) do
+    {:noreply, refetch_invoicing_entries(socket)}
   end
 
+  # Blob destroyed — processing failed
   @impl true
-  def handle_info(:sales_invoice_list_updated, socket) do
-    socket = refetch_invoicing_entries(socket)
+  def handle_info(
+        %Broadcast{
+          payload:
+            %Notification{resource: Blob, action: %{type: :destroy}, metadata: %{reason: :processing_failed}} =
+              notification
+        },
+        socket
+      ) do
+    LiveToast.send_toast(:error, notification.data.original_filename, title: "Nie udało się wgrać pliku")
 
-    {:noreply, socket}
+    {:noreply, refetch_invoicing_entries(socket)}
   end
 
+  # Blob destroyed — invalid document uploaded
   @impl true
-  def handle_info({:ksef_invoice_status, _payload}, socket) do
-    socket = refetch_invoicing_entries(socket)
-
-    {:noreply, socket}
-  end
-
-  def handle_info({:cost_invoice_failed_to_process, original_filename}, socket) do
-    LiveToast.send_toast(:error, original_filename, title: "Nie udało się wgrać pliku")
-
-    socket = refetch_invoicing_entries(socket)
-
-    {:noreply, socket}
-  end
-
-  def handle_info({:invalid_document_uploaded, original_filename}, socket) do
+  def handle_info(
+        %Broadcast{
+          payload:
+            %Notification{resource: Blob, action: %{type: :destroy}, metadata: %{reason: :invalid_document}} =
+              notification
+        },
+        socket
+      ) do
     LiveToast.send_toast(
       :error,
-      "Plik #{original_filename} nie zawiera wymaganych danych. Upewnij się, że wgrywasz fakturę, paragon lub rachunek.",
+      "Plik #{notification.data.original_filename} nie zawiera wymaganych danych. Upewnij się, że wgrywasz fakturę, paragon lub rachunek.",
       title: "Nieprawidłowy dokument"
     )
 
     {:noreply, socket}
   end
 
-  def handle_info({:cost_invoice_added, cost_invoice}, socket) do
+  # Blob destroyed — normal cleanup (delete invoice, etc.)
+  @impl true
+  def handle_info(%Broadcast{payload: %Notification{resource: Blob, action: %{type: :destroy}}}, socket) do
+    {:noreply, refetch_invoicing_entries(socket)}
+  end
+
+  # Cost invoice created — show success toast with link
+  @impl true
+  def handle_info(
+        %Broadcast{payload: %Notification{resource: CostInvoice, action: %{type: :create}} = notification},
+        socket
+      ) do
     socket = refetch_invoicing_entries(socket)
+    cost_invoice = notification.data
 
     LiveToast.send_toast(
       :success,
@@ -362,8 +377,14 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {:noreply, socket}
   end
 
-  def handle_info({:cost_invoice_match, %{cost_invoice: cost_invoice}}, socket) do
+  # Cost invoice connected to transaction — show match toast
+  @impl true
+  def handle_info(
+        %Broadcast{payload: %Notification{resource: CostInvoice, action: %{name: :connect_transactions}, data: ci}},
+        socket
+      ) do
     socket = refetch_invoicing_entries(socket)
+    cost_invoice = ci
 
     LiveToast.send_toast(
       :success,
@@ -391,9 +412,26 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {:noreply, socket}
   end
 
+  # Cost invoice — generic update/destroy catch-all
+  @impl true
+  def handle_info(%Broadcast{payload: %Notification{resource: CostInvoice}}, socket) do
+    {:noreply, refetch_invoicing_entries(socket)}
+  end
+
+  # Sales invoice — any change
+  @impl true
+  def handle_info(%Broadcast{payload: %Notification{resource: SalesInvoice}}, socket) do
+    {:noreply, refetch_invoicing_entries(socket)}
+  end
+
+  @impl true
+  def handle_info({:ksef_invoice_status, _payload}, socket) do
+    {:noreply, refetch_invoicing_entries(socket)}
+  end
+
   # Handle Ash native PubSub broadcasts for requisition status changes
   def handle_info(
-        %Broadcast{topic: "requisition:" <> _, payload: %Notification{resource: AshRequisition, action: action}},
+        %Broadcast{topic: "requisition:" <> _, payload: %Notification{resource: Requisition, action: action}},
         socket
       ) do
     {toast_type, message} =
@@ -449,13 +487,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp handle_uploads(entries, socket) do
-    Bodyguard.permit!(Invoicing, :upload, socket.assigns.current_user)
     user = socket.assigns.current_user
 
     for entry <- entries do
       consume_uploaded_entry(socket, entry, fn %{path: path} ->
         Analytics.track_event("cost_invoice_upload", user, %{file_type: entry.client_type})
-        handle_upload_result(AshCostInvoice.upload_cost_invoice(path, entry.client_type, entry.client_name))
+        handle_upload_result(Invoicing.upload_cost_invoice(path, entry.client_type, entry.client_name))
         {:ok, nil}
       end)
     end
@@ -464,7 +501,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp handle_upload_result({:error, {:blob_already_exists, blob_checksum}}) do
     # TODO: replace authorize?: false + actor: %{} with system actor once available
     cost_invoice =
-      AshCostInvoice.by_checksum!(blob_checksum, tenant: Firmowid.Repo.get_org_id(), authorize?: false, actor: %{})
+      CostInvoice.by_checksum!(blob_checksum, tenant: Firmowid.Repo.get_org_id(), authorize?: false, actor: %{})
 
     LiveToast.send_toast(
       :info,
@@ -520,22 +557,21 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp refetch_invoicing_entries(socket) do
-    Bodyguard.permit!(Invoicing, :read, socket.assigns.current_user)
-
     month = socket.assigns.params.month
     filter = socket.assigns.params.filter
+    scope = socket.assigns.ash_scope
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
 
-    entries = Invoicing.get_invoicing_entries(date_range_from, date_range_to, filter)
+    entries = fetch_entries(date_range_from, date_range_to, filter, scope)
 
     entries = group_cost_transactions_by_party(entries, socket.assigns.params.group_by_party)
 
     socket = assign(socket, :invoicing_entries, entries)
 
-    # actual data
+    # Pending entries for badge count
     pending_entries =
-      Invoicing.get_invoicing_entries(date_range_from, date_range_to, :unmatched)
+      fetch_entries(date_range_from, date_range_to, :unmatched, scope)
 
     raw_pending_count = Enum.count(pending_entries)
 
@@ -550,49 +586,32 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         raw_pending_count
       end
 
-    # any transactions / invoices present in it
-    # nothing for this month was added yet
-    # leftovers from previous month need also not to be present
-    # Note: use raw count here — semantic check regardless of grouping
-    is_month_touched =
+    # Check if any entries exist this month (regardless of filter)
+    all_entries_count =
       date_range_from
-      |> Invoicing.get_invoicing_entries(
-        date_range_to,
-        :all
-      )
-      |> Enum.count() > 0 or
-        raw_pending_count > 0
+      |> fetch_entries(date_range_to, :all, scope)
+      |> Enum.count()
 
-    # no new transactions can be added
+    is_month_touched = all_entries_count > 0 or raw_pending_count > 0
+
+    # No new transactions can be added after month ends
     has_month_ended =
-      socket.assigns.params.month
+      month
       |> Date.end_of_month()
       |> Date.compare(Date.utc_today()) == :lt
 
-    socket =
-      socket
-      |> assign(
-        :is_month_touched,
-        is_month_touched
-      )
-      |> assign(
-        :is_month_closed,
-        is_month_touched and has_month_ended and raw_pending_count == 0
-      )
-      |> assign(
-        :pending_invoicing_entries_count,
-        pending_invoicing_entries_count
-      )
-      |> refetch_upload_counts()
-
     socket
+    |> assign(:is_month_touched, is_month_touched)
+    |> assign(:is_month_closed, is_month_touched and has_month_ended and raw_pending_count == 0)
+    |> assign(:pending_invoicing_entries_count, pending_invoicing_entries_count)
+    |> refetch_upload_counts()
   end
 
   defp refetch_upload_counts(socket) do
     socket
     |> assign(
       :processing_blobs_count,
-      AshCostInvoice.get_processing_cost_invoices_count()
+      Invoicing.get_processing_cost_invoices_count()
     )
     |> assign(
       :currently_uploading_count,
@@ -656,7 +675,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     [cost_group_structs, income_group_structs, ungrouped_cost_flat, ungrouped_income_flat, other_entries]
     |> Enum.concat()
-    |> Invoicing.order_entries_for_display()
+    |> order_entries_for_display()
   end
 
   # Pattern match: grouping disabled
@@ -693,4 +712,157 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       transactions: transactions
     }
   end
+
+  # ── Entries — direct resource calls ─────────────────────────────────
+
+  @cost_invoice_loads [
+    :transactions,
+    :effective_total_amount,
+    :effective_currency,
+    :effective_seller_display_name
+  ]
+  @sales_invoice_loads [
+    :sales_invoice_items,
+    :transactions,
+    corrections: :sales_invoice_items,
+    latest_correction: :sales_invoice_items
+  ]
+
+  defp fetch_entries(from, to, filter, scope) do
+    case filter do
+      :all ->
+        [
+          list_cost_invoices(from, to, %{date_field: :issue_date}, scope),
+          list_sales_invoices(from, to, %{date_field: :issue_date, kind: :vat}, scope),
+          list_transactions(from, to, %{}, scope)
+        ]
+        |> Enum.concat()
+        |> order_entries_for_display()
+
+      :unmatched ->
+        [
+          list_cost_invoices(from, to, %{date_field: :due_date, reconciliation: :pending}, scope),
+          list_sales_invoices(from, to, %{date_field: :due_date, kind: :vat, reconciliation: :pending}, scope),
+          list_transactions(from, to, %{reconciliation: :pending}, scope)
+        ]
+        |> Enum.concat()
+        |> order_entries_for_display()
+
+      :invoices ->
+        [
+          list_cost_invoices(from, to, %{date_field: :issue_date}, scope),
+          list_sales_invoices(from, to, %{date_field: :issue_date, kind: :vat}, scope)
+        ]
+        |> Enum.concat()
+        |> order_entries_for_display()
+
+      :transactions ->
+        from
+        |> list_transactions(to, %{}, scope)
+        |> order_entries_for_display()
+    end
+  end
+
+  defp list_cost_invoices(from, to, extra_args, scope) do
+    args = Map.merge(%{date_from: from, date_to: to}, extra_args)
+    Invoicing.list_cost_invoices!(args, load: @cost_invoice_loads, scope: scope)
+  end
+
+  defp list_sales_invoices(from, to, extra_args, scope) do
+    args = Map.merge(%{date_from: from, date_to: to}, extra_args)
+
+    Invoicing.list_sales_invoices!(args, load: @sales_invoice_loads, scope: scope)
+  end
+
+  defp list_transactions(from, to, extra_args, scope) do
+    args = Map.merge(%{date_from: from, date_to: to}, extra_args)
+
+    Finances.list_transactions!(args,
+      load: [:cost_invoices, :sales_invoices],
+      query: [sort: [booking_date: :desc]],
+      scope: scope
+    )
+  end
+
+  # ── Active months — 3 Ash reads + Elixir dedup ─────────────────────
+
+  defp get_active_months(scope) do
+    scope_opts = [scope: scope]
+
+    sales_months =
+      SalesInvoice
+      |> Ash.Query.select([:issue_date])
+      |> Ash.Query.for_read(:read, %{}, scope_opts)
+      |> Ash.read!(scope_opts)
+      |> Enum.map(& &1.issue_date)
+
+    cost_months =
+      CostInvoice
+      |> Ash.Query.select([:issue_date])
+      |> Ash.Query.for_read(:read, %{}, scope_opts)
+      |> Ash.read!(scope_opts)
+      |> Enum.map(& &1.issue_date)
+
+    tx_months =
+      Transaction
+      |> Ash.Query.select([:booking_date])
+      |> Ash.Query.for_read(:read, %{}, scope_opts)
+      |> Ash.read!(scope_opts)
+      |> Enum.map(& &1.booking_date)
+
+    (sales_months ++ cost_months ++ tx_months)
+    |> Enum.map(&Date.beginning_of_month/1)
+    |> Enum.uniq()
+    |> Enum.sort(Date)
+  end
+
+  # ── Entry sorting for display ──────────────────────────────────────
+
+  @doc false
+  defp order_entries_for_display(entries) do
+    Enum.sort(entries, fn a, b ->
+      cond do
+        # Draft invoices first (only SalesInvoice)
+        entry_draft?(a) != entry_draft?(b) ->
+          entry_draft?(a)
+
+        entry_matched?(a) != entry_matched?(b) ->
+          # Unmatched first
+          not entry_matched?(a)
+
+        entry_date(a) != entry_date(b) ->
+          # Newer first
+          Date.after?(entry_date(a), entry_date(b))
+
+        # Invoice number descending (only SalesInvoice)
+        (inv_a = entry_invoice_number(a)) != (inv_b = entry_invoice_number(b)) ->
+          inv_a >= inv_b
+
+        true ->
+          a.id < b.id
+      end
+    end)
+  end
+
+  defp entry_date(%SalesInvoice{issue_date: date}), do: date
+  defp entry_date(%CostInvoice{issue_date: date}), do: date
+  defp entry_date(%Transaction{booking_date: date}), do: date
+  defp entry_date(%TransactionGroup{date: date}), do: date
+
+  defp entry_matched?(%SalesInvoice{} = inv), do: Enum.any?(inv.transactions) or Map.get(inv, :skip_invoicing, false)
+
+  defp entry_matched?(%CostInvoice{} = inv), do: Enum.any?(inv.transactions) or Map.get(inv, :skip_invoicing, false)
+
+  defp entry_matched?(%Transaction{} = tx), do: Enum.any?(tx.cost_invoices ++ tx.sales_invoices) or tx.skip_invoicing
+
+  # Groups only contain unmatched transactions by design
+  defp entry_matched?(%TransactionGroup{}), do: false
+  defp entry_matched?(_), do: false
+
+  # Draft = no invoice number assigned (only SalesInvoice)
+  defp entry_draft?(%SalesInvoice{invoice_number: num}), do: is_nil(num)
+  defp entry_draft?(_), do: false
+
+  defp entry_invoice_number(%SalesInvoice{invoice_number: num}), do: num
+  defp entry_invoice_number(_), do: nil
 end

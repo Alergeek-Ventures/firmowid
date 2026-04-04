@@ -378,20 +378,30 @@ defmodule Firmowid.Invoicing.Matching.ParametrizedResultTest do
 
   describe "SalesInvoice integration" do
     test "generates parametrized result for SalesInvoice end-to-end" do
-      sales_invoice = %Firmowid.Ash.Invoicing.SalesInvoice{
-        buyer_display_name: "Acme Corp",
-        seller_account_number: "PL61109010140000071219812874",
-        issue_date: ~D[2025-01-01],
-        currency: "PLN",
-        invoice_number: "FV/2025/01/01",
-        sales_invoice_items: [
+      item =
+        Ash.load!(
           %Firmowid.Ash.Invoicing.SalesInvoiceItem{
             name: "Service",
             quantity: Decimal.new("2"),
             unit_price: Decimal.new("100.00"),
             vat_rate: "23"
-          }
-        ]
+          },
+          [:net_value, :vat_value, :gross_value],
+          authorize?: false,
+          actor: %{}
+        )
+
+      gross_value = Enum.reduce([item], Decimal.new(0), &Decimal.add(&2, &1.gross_value))
+
+      sales_invoice = %Firmowid.Ash.Invoicing.SalesInvoice{
+        buyer_display_name: "Acme Corp",
+        buyer_display_name_label: "Acme Corp",
+        seller_account_number: "PL61109010140000071219812874",
+        issue_date: ~D[2025-01-01],
+        currency: "PLN",
+        invoice_number: "FV/2025/01/01",
+        sales_invoice_items: [item],
+        gross_value: gross_value
       }
 
       transaction = %Transaction{

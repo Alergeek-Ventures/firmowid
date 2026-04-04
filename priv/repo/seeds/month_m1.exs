@@ -34,8 +34,7 @@ defmodule Firmowid.Seeds.MonthM1 do
 
   alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
-  alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
-  alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
+  alias Firmowid.Ash.Invoicing
   alias Firmowid.Seeds.Helpers
 
   def seed!(ctx) do
@@ -474,16 +473,16 @@ defmodule Firmowid.Seeds.MonthM1 do
 
     # — Matching —
 
-    bridge_opts = [authorize?: false, actor: %{}]
+    bridge_opts = [tenant: bytecraft.id, authorize?: false, actor: %{}]
 
-    SalesInvoiceTransaction.create_connections([sale_ghostpet.id], [txn_ghostpet.id], bytecraft.id, bridge_opts)
-    SalesInvoiceTransaction.create_connections([sale_flatmate.id], [txn_flatmate.id], bytecraft.id, bridge_opts)
-    SalesInvoiceTransaction.create_connections([sale_taco.id], [txn_taco.id], bytecraft.id, bridge_opts)
+    Invoicing.connect_sales_invoice_transactions!(sale_ghostpet, [txn_ghostpet.id], bridge_opts)
+    Invoicing.connect_sales_invoice_transactions!(sale_flatmate, [txn_flatmate.id], bridge_opts)
+    Invoicing.connect_sales_invoice_transactions!(sale_taco, [txn_taco.id], bridge_opts)
 
-    CostInvoiceTransaction.create_connections([cost_ovh.id], [txn_ovh.id], bytecraft.id, bridge_opts)
-    CostInvoiceTransaction.create_connections([cost_opencode.id], [txn_opencode.id], bytecraft.id, bridge_opts)
-    CostInvoiceTransaction.create_connections([cost_rent.id], [txn_rent.id], bytecraft.id, bridge_opts)
-    CostInvoiceTransaction.create_connections([cost_biuro.id], [txn_biuro.id], bytecraft.id, bridge_opts)
+    Invoicing.connect_cost_invoice_transactions!(cost_ovh, [txn_ovh.id], bridge_opts)
+    Invoicing.connect_cost_invoice_transactions!(cost_opencode, [txn_opencode.id], bridge_opts)
+    Invoicing.connect_cost_invoice_transactions!(cost_rent, [txn_rent.id], bridge_opts)
+    Invoicing.connect_cost_invoice_transactions!(cost_biuro, [txn_biuro.id], bridge_opts)
 
     # — Tagging —
     scope = seed_scope()

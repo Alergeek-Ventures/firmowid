@@ -5,7 +5,7 @@ defmodule Firmowid.Invoicing.Worker do
   import Ecto.Query, warn: false
 
   alias Firmowid.Accounts.Organization
-  alias Firmowid.Invoicing
+  alias Firmowid.Ash.Invoicing.InvoiceMatching
   alias Firmowid.Repo
 
   require Logger
@@ -44,7 +44,7 @@ defmodule Firmowid.Invoicing.Worker do
       } ->
         Logger.info("Matching cost invoice #{cost_invoice_id}")
         Repo.put_org_id(organization_id)
-        Invoicing.match_cost_invoice(cost_invoice_id, organization_id)
+        InvoiceMatching.match_cost_invoice(cost_invoice_id, organization_id)
 
       _ ->
         Logger.error("Unknown job args: #{inspect(job.args)}")
@@ -54,7 +54,7 @@ defmodule Firmowid.Invoicing.Worker do
   end
 
   defp match_invoices(organization_id) do
-    Invoicing.match_cost_invoices(organization_id)
-    Invoicing.match_sales_invoices(organization_id)
+    InvoiceMatching.match_cost_invoices(organization_id)
+    InvoiceMatching.match_sales_invoices(organization_id)
   end
 end

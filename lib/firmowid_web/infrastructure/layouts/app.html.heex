@@ -26,7 +26,7 @@
           "border-b py-[18px]",
         "border-darkGrey flex items-center gap-10 uppercase max-md:hidden"
       ]}>
-        <%= if Bodyguard.permit?(Firmowid.Invoicing, :show, @current_user) do %>
+        <%= if @current_user.role == :admin do %>
           <.link
             navigate={~p"/fakturowanie"}
             class={[

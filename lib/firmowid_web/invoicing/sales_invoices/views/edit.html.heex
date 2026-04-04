@@ -10,12 +10,17 @@
     <.input type="hidden" field={@form[:invoice_number]} />
     <.input type="hidden" field={@form[:issue_date]} />
     <.input type="hidden" field={@form[:ksef_invoice_kind]} />
+    <.input
+      :if={@form[:original_invoice_id].value}
+      type="hidden"
+      field={@form[:original_invoice_id]}
+    />
 
     <div class="col-start-2 col-end-9">
       <FirmowidWeb.Invoicing.SalesInvoices.Views.Creator.render_header
         invoice={@invoice}
         step={
-          if EctoSalesInvoice.ksef_submitted?(@invoice),
+          if @invoice.ksef_number,
             do: "Faktura korygująca",
             else: "Edycja faktury"
         }
@@ -28,6 +33,7 @@
         <FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems.invoice_items
           invoice={@invoice}
           invoice_changeset={@form.source}
+          items_field={:sales_invoice_items}
         />
       </div>
 
@@ -45,7 +51,7 @@
               {@form[:buyer_display_name].value}
             </p>
 
-            <%= case EctoSalesInvoice.buyer_id_type(@form.source) do %>
+            <%= case @form.source.buyer_id_type do %>
               <% :no_id -> %>
                 <p class="text-grey-500 text-sm/snug">PESEL</p>
                 <p class="text-grey-700 text-sm/snug">
@@ -106,7 +112,7 @@
 
       <hr class="text-grey-200 col-start-2 col-end-9" />
 
-      <div :if={EctoSalesInvoice.ksef_submitted?(@invoice)} class="col-start-2 col-end-9">
+      <div :if={@invoice.ksef_number} class="col-start-2 col-end-9">
         <.input
           field={@form[:correction_reason]}
           type="textarea"
@@ -121,7 +127,7 @@
       </div>
 
       <div class="col-span-full flex flex-col items-center justify-center gap-14 xl:flex-row">
-        <%= if EctoSalesInvoice.ksef_submitted?(@invoice) do %>
+        <%= if @invoice.ksef_number do %>
           <div class="space-y-4">
             <p class="text-lg/6 font-medium text-black">
               Faktura {@invoice.invoice_number}
@@ -131,8 +137,9 @@
               <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
                 sales_invoice={@invoice}
                 reference_invoice={@reference_invoice}
-                currency_rate={Firmowid.SalesInvoices.get_currency_rate(@invoice)}
+                currency_rate={Invoicing.get_currency_rate(@invoice)}
                 show_vat={@current_org.is_vat_payer}
+                logo_url={@logo_url}
               />
             </div>
           </div>
@@ -151,6 +158,7 @@
                 reference_invoice={@invoice}
                 currency_rate={@currency_rate}
                 show_vat={@current_org.is_vat_payer}
+                logo_url={@logo_url}
               />
             </div>
           </div>
@@ -163,6 +171,7 @@
               sales_invoice={@preview_invoice}
               currency_rate={@currency_rate}
               show_vat={@current_org.is_vat_payer}
+              logo_url={@logo_url}
             />
           </div>
         <% end %>
@@ -180,9 +189,7 @@
       </.button>
 
       <.button
-        :if={
-          not EctoSalesInvoice.ksef_submitted?(@invoice) and @invoice.ksef_invoice_kind == :vat
-        }
+        :if={is_nil(@invoice.ksef_number) and @invoice.ksef_invoice_kind == :vat}
         type="button"
         color="light_grey"
         new={true}
@@ -197,7 +204,7 @@
         color="turquoise"
         new={true}
       >
-        {if EctoSalesInvoice.ksef_submitted?(@invoice),
+        {if @invoice.ksef_number,
           do: "Wystaw fakturę korygującą",
           else: "Zapisz i wyślij do KSeF"}
       </.button>
@@ -293,7 +300,7 @@
               <.input
                 field={@form[:buyer_country]}
                 type="select"
-                options={SalesInvoices.CountryCodes.country_options()}
+                options={Firmowid.SalesInvoices.CountryCodes.country_options()}
                 prompt="Wybierz kraj"
                 new={true}
               />

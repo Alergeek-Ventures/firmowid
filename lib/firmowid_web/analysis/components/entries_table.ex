@@ -51,11 +51,11 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
   defp row(%{entry: %SalesInvoice{} = invoice} = assigns) do
     assigns =
       assigns
-      |> assign(:party, SalesInvoice.buyer_display_name(invoice) || "")
+      |> assign(:party, invoice.buyer_display_name_label || "")
       |> assign(:description, Enum.map_join(invoice.sales_invoice_items, ", ", & &1.name))
       |> assign(:date, invoice.sale_date || invoice.issue_date)
-      |> assign(:amount, Money.new(invoice.currency, SalesInvoice.get_gross_value(invoice)))
-      |> assign(:amount_decimal, SalesInvoice.get_gross_value(invoice))
+      |> assign(:amount, Money.new(invoice.currency, invoice.gross_value))
+      |> assign(:amount_decimal, invoice.gross_value)
       |> assign(:navigate, ~p"/sprzedazowe/#{invoice.id}")
       |> assign_entity_fields(invoice, :sales_invoice)
 

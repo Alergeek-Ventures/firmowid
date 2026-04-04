@@ -5,8 +5,8 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
   """
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Transaction
+  alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Invoicing.Matching.Assistant.CommonTools
   alias Firmowid.Invoicing.Matching.Assistant.Engine
   alias Firmowid.Invoicing.Matching.Assistant.Message
@@ -51,16 +51,13 @@ defmodule Firmowid.Invoicing.Matching.CostInvoiceAssistant do
           args: %{"transaction_ids" => transaction_ids, "cost_invoice_ids" => cost_invoice_ids}
         }
       } ->
-        organization_id = Repo.get_org_id()
-
         # TODO: replace authorize?: false + actor: %{} with system actor once available
-        CostInvoiceTransaction.create_connections(
-          cost_invoice_ids,
-          transaction_ids,
-          organization_id,
-          authorize?: false,
-          actor: %{}
-        )
+        bridge_opts = [tenant: Repo.get_org_id(), authorize?: false, actor: %{}]
+
+        Enum.each(cost_invoice_ids, fn ci_id ->
+          cost_invoice = Invoicing.get_cost_invoice!(ci_id, bridge_opts)
+          Invoicing.connect_cost_invoice_transactions(cost_invoice, transaction_ids, bridge_opts)
+        end)
 
         MessagesStorage.delete(conversation_id)
 

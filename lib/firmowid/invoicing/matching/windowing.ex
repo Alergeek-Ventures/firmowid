@@ -93,8 +93,7 @@ defmodule Firmowid.Invoicing.Matching.Windowing do
     is_transaction_a_sale = Decimal.gt?(transaction.transaction_amount, 0)
 
     total_amount =
-      sales_invoice
-      |> SalesInvoice.get_gross_value()
+      sales_invoice.gross_value
       |> Decimal.abs()
       |> Currencies.normalize_amount_to_pln(
         sales_invoice.currency,

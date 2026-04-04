@@ -2,7 +2,8 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   @moduledoc false
   use FirmowidWeb, :live_component
 
-  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
+  alias Firmowid.Ash.Invoicing
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ksef
   alias Firmowid.Ksef.SubmissionInfo
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
@@ -17,6 +18,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
 
   @impl true
   def update(assigns, socket) do
+    alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
     # Fetch submission info when invoice is assigned
     submission_info =
       if assigns[:invoice] do
@@ -25,9 +27,23 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
         %SubmissionInfo{status: :not_submitted}
       end
 
-    invoice = AshSalesInvoice.populate_reference_invoices(assigns.invoice)
-    latest_invoice_snapshot = AshSalesInvoice.get_latest_invoice_snapshot(assigns.invoice)
-    cancelled? = latest_invoice_snapshot |> AshSalesInvoice.get_gross_value() |> Decimal.eq?(0)
+    # Use already-loaded corrections and annotate directly
+    # (Ash.load! with :annotated_corrections re-fetches, losing attribute selection)
+    invoice =
+      assigns.invoice
+      |> Ash.load!([corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]]],
+        authorize?: false,
+        actor: %{},
+        tenant: assigns.invoice.organization_id
+      )
+      |> then(fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)
+
+    latest_invoice_snapshot =
+      assigns.invoice
+      |> Ash.load!([:effective_snapshot], authorize?: false, actor: %{}, tenant: assigns.invoice.organization_id)
+      |> Map.get(:effective_snapshot)
+
+    cancelled? = Decimal.eq?(latest_invoice_snapshot.gross_value, 0)
 
     description =
       latest_invoice_snapshot.sales_invoice_items
@@ -40,7 +56,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
       |> assign(
         invoice: invoice,
         submission_info: submission_info,
-        party_display_name: AshSalesInvoice.buyer_display_name(latest_invoice_snapshot),
+        party_display_name: latest_invoice_snapshot.buyer_display_name_label,
         description: description,
         latest_invoice_snapshot: latest_invoice_snapshot,
         invoices_for_preview: Enum.reverse([invoice | invoice.corrections]),
@@ -51,7 +67,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
     {:ok, socket}
   end
 
-  attr :invoice, AshSalesInvoice, required: true
+  attr :invoice, SalesInvoice, required: true
   attr :preview_url, :string, required: true
   attr :preview_type, :atom, required: true
   attr :potential_transactions, :list, default: []
@@ -94,7 +110,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                   id="edit-invoice-link"
                   phx-hook="Tippy"
                   data-tippy-content={
-                    if AshSalesInvoice.ksef_submitted?(@invoice),
+                    if @invoice.ksef_number,
                       do: "Wystaw fakturę korygującą",
                       else: "Edytuj fakturę"
                   }
@@ -109,7 +125,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 </.link>
 
                 <.button
-                  :if={AshSalesInvoice.deletable?(@invoice)}
+                  :if={@invoice.is_deletable}
                   phx-click={show_modal("delete-invoice-modal")}
                   color="light_grey"
                   size="small"
@@ -122,7 +138,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 </.button>
 
                 <.button
-                  :if={AshSalesInvoice.ksef_submitted?(@invoice) and not @cancelled?}
+                  :if={@invoice.ksef_number and not @cancelled?}
                   phx-click={show_modal("cancel-invoice-modal")}
                   color="light_grey"
                   size="small"
@@ -168,7 +184,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
 
               <.button
                 :if={
-                  @ksef_connected? and AshSalesInvoice.confirmed?(@invoice) and
+                  @ksef_connected? and @invoice.invoice_number and
                     @submission_info.status in [:not_submitted, :submitting]
                 }
                 id="send-to-ksef-button"
@@ -195,7 +211,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 <% end %>
               </.button>
 
-              <div :if={AshSalesInvoice.deletable?(@invoice)} class="absolute">
+              <div :if={@invoice.is_deletable} class="absolute">
                 <.modal id="delete-invoice-modal" on_cancel={hide_modal("delete-invoice-modal")}>
                   <p>
                     Czy na pewno chcesz usunąć fakturę <span class="font-semibold">{@invoice.invoice_number}</span>?
@@ -251,7 +267,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
               </div>
 
               <span
-                :if={AshSalesInvoice.confirmed?(@invoice)}
+                :if={@invoice.invoice_number}
                 id="share-invoice-button-container"
                 phx-hook="Tippy"
                 data-tippy-content="Skopiuj link do faktury"
@@ -284,7 +300,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
               />
               <InvoiceDetails.invoice_metadata_piece
                 label="Kupujący"
-                value={AshSalesInvoice.buyer_display_name(@latest_invoice_snapshot)}
+                value={@latest_invoice_snapshot.buyer_display_name_label}
                 piece_id="buyer"
               />
               <InvoiceDetails.invoice_metadata_piece
@@ -309,7 +325,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
               total_amount={
                 Money.new(
                   @latest_invoice_snapshot.currency,
-                  AshSalesInvoice.get_gross_value(@latest_invoice_snapshot)
+                  @latest_invoice_snapshot.gross_value
                 )
               }
             />
@@ -327,7 +343,8 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 >
                   <FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf.sales_invoice
                     sales_invoice={invoice}
-                    currency_rate={AshSalesInvoice.get_currency_rate(invoice)}
+                    logo_url={assigns[:logo_url]}
+                    currency_rate={Invoicing.get_currency_rate(invoice)}
                     show_vat={@show_vat_for_sales_invoice}
                     reference_invoice={invoice.reference_invoice}
                   />

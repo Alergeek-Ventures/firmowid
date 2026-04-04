@@ -45,7 +45,7 @@ defmodule Firmowid.Ash.Invoicing.InboundEmail do
     end
 
     read :list_all do
-      prepare build(sort: [received_at: :desc], load: [:cost_invoices])
+      prepare build(sort: [received_at: :desc])
     end
 
     create :create do

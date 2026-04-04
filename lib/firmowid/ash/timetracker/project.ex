@@ -74,7 +74,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
       description "Get a single project by ID with users and counterparty preloaded."
       get? true
 
-      prepare build(load: [:users, :counterparty])
+      prepare build(load: [:users, counterparty: [:display_label]])
     end
 
     read :by_ids do
@@ -416,7 +416,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
         default: 0,
         query: duration_filter
       )
-      |> Ash.Query.load(:counterparty)
+      |> Ash.Query.load(counterparty: [:display_label])
       |> maybe_default_sort(search)
       |> Ash.read!(ash_opts)
 

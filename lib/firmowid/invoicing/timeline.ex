@@ -5,10 +5,10 @@ defmodule Firmowid.Invoicing.Timeline do
   Used by both sales and cost invoice detail views.
   """
 
-  alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ksef
   alias Firmowid.Ksef.SubmissionInfo
-  alias Firmowid.SalesInvoices.SalesInvoice
 
   @type event :: %{
           occurred_at: DateTime.t() | NaiveDateTime.t() | nil,
@@ -107,7 +107,9 @@ defmodule Firmowid.Invoicing.Timeline do
     [event | events]
   end
 
-  defguardp is_loaded(corrections) when not is_struct(corrections, Ecto.Association.NotLoaded)
+  defguardp is_loaded(corrections)
+            when not is_struct(corrections, Ecto.Association.NotLoaded) and
+                   not is_struct(corrections, Ash.NotLoaded)
 
   defp maybe_add_correction_events(events, %SalesInvoice{corrections: corrections}) when is_loaded(corrections) do
     correction_events =

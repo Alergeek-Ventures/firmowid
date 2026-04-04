@@ -2,79 +2,53 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   @moduledoc """
   Ash resource for sales invoices.
 
-  Read-only in this slice — mutations remain in the legacy `SalesInvoices` Ecto
-  context until Slice 7.
+  ## Read Actions
 
-  ## Actions
-
-    * `:read` — default read
+    * `:read` — consolidated read with optional filters: `date_from`, `date_to`,
+      `date_field` (`:issue_date` | `:sale_date` | `:due_date` | `:any`),
+      `kind` (`:vat` | `:kor`), `status` (`:unmatched` | `:confirmed`), `ids`
     * `:by_id` — single record by ID, preloads items, transactions, corrections, corrected_invoice
-    * `:list_for_month` — by issue_date range, VAT only, correction merging
-    * `:list_unmatched` — unmatched (no transactions, not skipped) in due_date range, VAT only
-    * `:list_by_sale_date` — by sale_date range, preloads transactions
-    * `:list_by_ids` — filter by ID list with optional date range, VAT only, correction merging
-    * `:list_invoices_in_date_range` — invoices with issue_date OR sale_date in range
-    * `:list_recent` — confirmed invoices from previous 2 months, correction merging
-    * `:search` — ILIKE search with items having count > 0
     * `:by_share_token` — find by share token (cross-tenant)
+
+  ## Write Actions
+
+    * `:create` — full invoice creation (from wizard confirm or direct)
+    * `:update` — update draft or confirmed invoice
+    * `:create_correction` — create a correction invoice (KOR) for a VAT invoice
+    * `:destroy` — delete invoice (only if not KSeF-submitted)
+    * `:toggle_skip` — toggle skip_invoicing flag
+    * `:generate_share_token` — generate or return existing share token
+    * `:lock_for_ksef` / `:unlock_for_ksef` — KSeF submission lock management
+    * `:update_ksef_fields` — update KSeF tracking fields
+
+  ## Generic Actions
+
+    * `:cancel` — cancel a KSeF-submitted invoice via zero-quantity correction
+    * `:get_next_number` — get next available invoice number for date/series
+    * `:validate_number` — validate an invoice number (format, duplicate, gap)
+    * `:list_series` — list distinct invoice number series
 
   ## Public functions
 
-    * `buyer_display_name/1` — display name for invoice buyer
-    * `populate_logo_url/1` — loads organization avatar URL into `logo_url` field
-    * `populate_reference_invoices/1` — builds correction chain with reference invoices
-    * `get_latest_invoice_snapshot/1` — returns latest state of invoice (original or latest correction)
-    * `get_currency_rate/1` — NBP exchange rate for non-PLN invoices
-    * `get_net_value/1`, `get_vat_value/1`, `get_gross_value/1` — totals from items
-    * `draft?/1`, `confirmed?/1`, `deletable?/1`, `ksef_submitted?/1`, `editable?/1`
+
   """
   use Ash.Resource,
     domain: Firmowid.Ash.Invoicing,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    notifiers: [Ash.Notifier.PubSub],
+    primary_read_warning?: false
 
-  alias Firmowid.Accounts
-  alias Firmowid.Ash.Invoicing.SalesInvoiceItem, as: AshSalesInvoiceItem
+  alias Firmowid.Ash.Invoicing, as: InvoicingDomain
+  alias Firmowid.Ash.Invoicing.Changes
+  alias Firmowid.Ash.Invoicing.SalesInvoiceItem
+  alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
+  alias Firmowid.Ash.Invoicing.Validations
   alias Firmowid.Ash.Resource
-  alias Firmowid.Nbp
-  alias Firmowid.SalesInvoices.CountryCodes
-  alias Firmowid.SalesInvoices.SalesInvoice, as: EctoSalesInvoice
 
   require Ash.Query
-  require Ecto.Query
+  require Firmowid.Ash.Invoicing.SalesInvoice.EffectiveFields, as: EffectiveFields
   require Resource
-
-  @snapshot_fields [
-    :invoice_type,
-    :sale_date,
-    :due_date,
-    :payment_method,
-    :currency,
-    :seller_nip,
-    :seller_display_name,
-    :seller_address,
-    :seller_name,
-    :seller_surname,
-    :seller_account_number,
-    :buyer_type,
-    :buyer_id,
-    :buyer_full_name,
-    :buyer_given_name,
-    :buyer_surname,
-    :buyer_pesel,
-    :buyer_display_name,
-    :buyer_address,
-    :buyer_country,
-    :buyer_is_different_mail_address,
-    :buyer_mail_address,
-    :buyer_mail_country,
-    :buyer_email,
-    :buyer_phone,
-    :buyer_description,
-    :is_cash_account,
-    :is_reverse_charge,
-    :sales_invoice_items
-  ]
 
   postgres do
     table "sales_invoices"
@@ -83,205 +57,186 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   end
 
   code_interface do
+    # Reads
     define :by_id, args: [:id], action: :by_id
     define :get, args: [:id], action: :by_id
-    define :list_for_month, args: [:date_from, :date_to]
-    define :list_unmatched, args: [{:optional, :date_from}, {:optional, :date_to}]
-    define :list_by_sale_date, args: [:date_from, :date_to]
-    define :list_by_ids, args: [:ids, {:optional, :date_from}, {:optional, :date_to}]
-    define :list_invoices_in_date_range, args: [:date_from, :date_to]
-    define :list_recent, args: []
-    define :search, args: [:search_term]
+    define :read, action: :read
     define :by_share_token, args: [:token]
+
+    # Writes
+    define :create, action: :create
+    define :update, action: :update
+    define :destroy, action: :destroy
+    define :create_correction, action: :create_correction
+    define :cancel, args: [:invoice_id], action: :cancel
+    define :toggle_skip, action: :toggle_skip
+    define :generate_share_token, action: :generate_share_token
+    define :lock_for_ksef, action: :lock_for_ksef
+    define :unlock_for_ksef, action: :unlock_for_ksef
+    define :update_ksef_fields, action: :update_ksef_fields
+
+    # Wizard
+    define :confirm_from_draft, args: [:draft_id, {:optional, :invoice_number}, :organization]
+
+    # Invoice numbering
+    define :get_next_number, args: [:date, {:optional, :series}, {:optional, :omit_invoice_id}]
+    define :validate_number, args: [:invoice_number, :issue_date, {:optional, :omit_invoice_id}]
+    define :list_series, args: []
   end
 
   actions do
-    defaults [:read]
+    defaults []
 
-    read :by_id do
-      get_by [:id]
+    read :read do
+      primary? true
 
-      prepare build(
-                load: [
-                  :sales_invoice_items,
-                  :transactions,
-                  corrections: :sales_invoice_items,
-                  corrected_invoice: :corrections
-                ]
-              )
-    end
-
-    read :list_for_month do
-      argument :date_from, :date, allow_nil?: false
-      argument :date_to, :date, allow_nil?: false
-
-      filter expr(
-               ksef_invoice_kind == :vat and
-                 issue_date >= ^arg(:date_from) and issue_date <= ^arg(:date_to)
-             )
-
-      prepare build(
-                sort: [issue_date: :desc],
-                load: [:sales_invoice_items, :transactions, corrections: :sales_invoice_items]
-              )
-
-      prepare after_action(&merge_corrections_after_read/3)
-    end
-
-    read :list_unmatched do
       argument :date_from, :date
       argument :date_to, :date
 
-      prepare fn query, _context ->
-        date_from = query.arguments[:date_from] || ~D[1970-01-01]
-        date_to = query.arguments[:date_to] || ~D[2999-12-31]
-
-        query
-        |> Ash.Query.filter_input(%{
-          ksef_invoice_kind: %{eq: :vat},
-          due_date: %{greater_than_or_equal: date_from, less_than_or_equal: date_to},
-          skip_invoicing: %{eq: false}
-        })
-        |> Ash.Query.sort(issue_date: :desc)
-        |> Ash.Query.load([
-          :sales_invoice_items,
-          :transactions,
-          corrections: :sales_invoice_items
-        ])
+      argument :date_field, :atom do
+        constraints one_of: [:issue_date, :sale_date, :due_date, :any]
+        default :issue_date
       end
 
-      prepare before_action(&filter_unmatched/2)
-      prepare after_action(&merge_corrections_after_read/3)
-    end
-
-    read :list_by_sale_date do
-      argument :date_from, :date, allow_nil?: false
-      argument :date_to, :date, allow_nil?: false
-
-      filter expr(sale_date >= ^arg(:date_from) and sale_date <= ^arg(:date_to))
-      prepare build(sort: [sale_date: :desc], load: [:transactions])
-    end
-
-    read :list_by_ids do
-      argument :ids, {:array, :uuid_v7}, allow_nil?: false
-      argument :date_from, :date
-      argument :date_to, :date
-
-      prepare fn query, _context ->
-        ids = query.arguments.ids
-        date_from = query.arguments[:date_from]
-        date_to = query.arguments[:date_to]
-
-        query = Ash.Query.filter_input(query, %{id: %{in: ids}, ksef_invoice_kind: %{eq: :vat}})
-
-        query =
-          if date_from do
-            Ash.Query.filter_input(query, %{issue_date: %{greater_than_or_equal: date_from}})
-          else
-            query
-          end
-
-        query =
-          if date_to do
-            Ash.Query.filter_input(query, %{issue_date: %{less_than_or_equal: date_to}})
-          else
-            query
-          end
-
-        query
-        |> Ash.Query.sort(issue_date: :desc)
-        |> Ash.Query.load([
-          :sales_invoice_items,
-          :transactions,
-          corrections: :sales_invoice_items
-        ])
+      argument :kind, :atom do
+        constraints one_of: [:vat, :kor]
       end
 
-      prepare after_action(&merge_corrections_after_read/3)
-    end
+      argument :reconciliation, :atom do
+        constraints one_of: [:pending, :matched, :skipped]
+      end
 
-    read :list_invoices_in_date_range do
-      argument :date_from, :date, allow_nil?: false
-      argument :date_to, :date, allow_nil?: false
+      argument :submission, :atom do
+        constraints one_of: [:draft, :confirmed]
+      end
 
-      filter expr(
-               (issue_date >= ^arg(:date_from) and issue_date <= ^arg(:date_to)) or
-                 (sale_date >= ^arg(:date_from) and sale_date <= ^arg(:date_to))
-             )
+      argument :ids, {:array, :uuid_v7}
+
+      # Date filtering — conditional on date_field
+      prepare {Firmowid.Ash.Invoicing.Preparations.FilterByDateField, []}
+
+      # Kind filter
+      prepare build(filter: expr(ksef_invoice_kind == ^arg(:kind))) do
+        where present(:kind)
+      end
+
+      # :pending — no linked transactions, not skipped
+      prepare build(
+                filter:
+                  expr(
+                    not exists(transactions, true) and
+                      skip_invoicing == false
+                  )
+              ) do
+        where argument_equals(:reconciliation, :pending)
+      end
+
+      # :matched — linked to at least one transaction
+      prepare build(filter: expr(exists(transactions, true))) do
+        where argument_equals(:reconciliation, :matched)
+      end
+
+      # :skipped — no linked transactions, skipped
+      prepare build(
+                filter:
+                  expr(
+                    not exists(transactions, true) and
+                      skip_invoicing == true
+                  )
+              ) do
+        where argument_equals(:reconciliation, :skipped)
+      end
+
+      # :draft — no invoice_number assigned yet
+      prepare build(filter: expr(is_nil(invoice_number))) do
+        where argument_equals(:submission, :draft)
+      end
+
+      # :confirmed — has invoice_number
+      prepare build(filter: expr(not is_nil(invoice_number))) do
+        where argument_equals(:submission, :confirmed)
+      end
+
+      # Filter by IDs
+      prepare build(filter: expr(id in ^arg(:ids))) do
+        where present(:ids)
+      end
 
       prepare build(sort: [issue_date: :desc])
     end
 
-    read :list_recent do
-      prepare fn query, _context ->
-        today = Date.utc_today()
-        range_end = %{today | day: 1}
-        range_start = Date.shift(range_end, month: -2)
-
-        query
-        |> Ash.Query.filter_input(%{
-          ksef_invoice_kind: %{eq: :vat},
-          invoice_number: %{is_nil: false},
-          issue_date: %{
-            greater_than_or_equal: range_start,
-            less_than: range_end
-          }
-        })
-        |> Ash.Query.sort(issue_date: :desc, invoice_number: :desc)
-        |> Ash.Query.load([
-          :sales_invoice_items,
-          :transactions,
-          corrections: :sales_invoice_items
-        ])
-      end
-
-      prepare after_action(&merge_corrections_after_read/3)
+    read :by_id do
+      get_by [:id]
     end
 
-    action :search, {:array, :struct} do
-      constraints items: [instance_of: __MODULE__]
-      argument :search_term, :string, allow_nil?: false
+    read :search do
+      description "Full-text BM25 search for sales invoices with optional filters."
 
-      run fn input, context ->
-        import Ecto.Query
+      argument :query, :string
+      argument :currency, :string
+      argument :amount_gt, :decimal
+      argument :amount_lt, :decimal
+      argument :date_from, :date
+      argument :date_to, :date
+      argument :only_unmatched, :boolean
+      argument :buyer_type, :atom, constraints: [one_of: [:company, :individual]]
+      argument :is_cash, :boolean
+      argument :is_reverse_charge, :boolean
 
-        search_term = "%#{input.arguments.search_term}%"
-        opts = Ash.Context.to_opts(context)
-        tenant = opts[:tenant]
+      # Only VAT invoices in search (not corrections)
+      filter expr(ksef_invoice_kind == :vat)
 
-        results =
-          EctoSalesInvoice
-          |> where([i], i.organization_id == ^tenant)
-          |> where(
-            [i],
-            ilike(i.invoice_number, ^search_term) or
-              ilike(i.buyer_full_name, ^search_term) or
-              ilike(i.buyer_given_name, ^search_term) or
-              ilike(i.buyer_display_name, ^search_term) or
-              ilike(i.buyer_surname, ^search_term) or
-              ilike(i.buyer_address, ^search_term) or
-              ilike(i.buyer_id, ^search_term) or
-              ilike(i.buyer_pesel, ^search_term)
-          )
-          |> join(:left, [i], items in assoc(i, :sales_invoice_items))
-          |> group_by([i], i.id)
-          |> having([i, items], count(items.id) > 0)
-          |> limit(15)
-          |> order_by(desc: :updated_at)
-          |> select([i], i.id)
-          |> Firmowid.Repo.all(skip_organization_id: true)
+      # ParadeDB BM25 search
+      prepare {Firmowid.Ash.Preparations.ParadeDBSearch,
+               columns:
+                 ~w(buyer_full_name buyer_given_name buyer_surname invoice_number buyer_email buyer_description buyer_id item_names)}
 
-        if results == [] do
-          {:ok, []}
-        else
-          __MODULE__
-          |> Ash.Query.filter_input(%{id: %{in: results}})
-          |> Ash.Query.load([:sales_invoice_items])
-          |> Ash.Query.sort(updated_at: :desc)
-          |> Ash.read!(opts)
-          |> then(&{:ok, &1})
-        end
+      # Conditional filters
+      prepare build(filter: expr(currency == ^arg(:currency))) do
+        where present(:currency)
       end
+
+      prepare build(filter: expr(gross_value >= ^arg(:amount_gt))) do
+        where present(:amount_gt)
+      end
+
+      prepare build(filter: expr(gross_value <= ^arg(:amount_lt))) do
+        where present(:amount_lt)
+      end
+
+      prepare build(filter: expr(issue_date >= ^arg(:date_from))) do
+        where present(:date_from)
+      end
+
+      prepare build(filter: expr(issue_date <= ^arg(:date_to))) do
+        where present(:date_to)
+      end
+
+      # Unmatched: no linked transactions and not skipped
+      prepare build(
+                filter:
+                  expr(
+                    not exists(transactions, true) and
+                      skip_invoicing == false
+                  )
+              ) do
+        where argument_equals(:only_unmatched, true)
+      end
+
+      prepare build(filter: expr(buyer_type == ^arg(:buyer_type))) do
+        where present(:buyer_type)
+      end
+
+      prepare build(filter: expr(is_cash_account == true)) do
+        where argument_equals(:is_cash, true)
+      end
+
+      prepare build(filter: expr(is_reverse_charge == true)) do
+        where argument_equals(:is_reverse_charge, true)
+      end
+
+      prepare build(sort: [issue_date: :desc])
+      prepare build(limit: 50)
     end
 
     action :by_share_token, :struct do
@@ -289,6 +244,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       argument :token, :string, allow_nil?: false
 
       run fn input, context ->
+        # Justified Ecto exception: cross-tenant lookup by share token.
+        # Ash multitenancy requires tenant to be set before querying, but here
+        # we don't know the tenant until we find the invoice. The initial lookup
+        # uses Repo.one(skip_organization_id: true) to discover the org_id,
+        # then the full read uses the standard :by_id action with proper tenant.
         import Ecto.Query
 
         token = input.arguments.token
@@ -300,40 +260,518 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
             [share_token, correction_id] -> {share_token, correction_id}
           end
 
-        invoice_id =
+        invoice_row =
           if correction_id do
-            EctoSalesInvoice
+            __MODULE__
             |> where([i], i.id == ^correction_id and i.ksef_invoice_kind == :kor)
-            |> join(:inner, [i], o in EctoSalesInvoice, on: o.share_token == ^share_token)
-            |> select([i], i.id)
+            |> join(:inner, [i], o in __MODULE__, on: o.share_token == ^share_token)
+            |> select([i], {i.id, i.organization_id})
             |> Firmowid.Repo.one(skip_organization_id: true)
           else
-            EctoSalesInvoice
+            __MODULE__
             |> where([i], i.share_token == ^share_token)
-            |> select([i], i.id)
+            |> select([i], {i.id, i.organization_id})
             |> Firmowid.Repo.one(skip_organization_id: true)
           end
 
-        case invoice_id do
+        case invoice_row do
           nil ->
             {:ok, nil}
 
-          id ->
+          {id, org_id} ->
+            Firmowid.Repo.put_org_id(org_id)
+
+            read_opts =
+              opts
+              |> Keyword.delete(:tenant)
+              |> Keyword.put(:tenant, org_id)
+
             result =
               __MODULE__
-              |> Ash.Query.filter_input(%{id: %{eq: id}})
-              |> Ash.Query.load([
-                :organization,
-                :sales_invoice_items,
-                :transactions,
-                corrections: :sales_invoice_items,
-                corrected_invoice: :corrections
-              ])
-              |> Ash.read_one!(Keyword.delete(opts, :tenant))
+              |> Ash.Query.for_read(:by_id, %{id: id}, read_opts)
+              |> Ash.Query.load([:organization])
+              |> Ash.read_one!(read_opts)
 
             {:ok, result}
         end
       end
+    end
+
+    # -- Write actions ---------------------------------------------------------
+
+    create :create do
+      accept [
+        :invoice_type,
+        :invoice_number,
+        :sale_date,
+        :issue_date,
+        :due_date,
+        :payment_method,
+        :currency,
+        :is_cash_account,
+        :is_reverse_charge,
+        :skip_invoicing,
+        :ksef_invoice_kind,
+        :correction_reason,
+        :counterparty_id,
+        :corrected_invoice_id,
+        :seller_nip,
+        :seller_display_name,
+        :seller_address,
+        :seller_name,
+        :seller_surname,
+        :seller_account_number,
+        :buyer_type,
+        :buyer_id,
+        :buyer_full_name,
+        :buyer_given_name,
+        :buyer_surname,
+        :buyer_pesel,
+        :buyer_display_name,
+        :buyer_address,
+        :buyer_country,
+        :buyer_is_different_mail_address,
+        :buyer_mail_address,
+        :buyer_mail_country,
+        :buyer_email,
+        :buyer_phone,
+        :buyer_description
+      ]
+
+      argument :sales_invoice_items, {:array, :map}, allow_nil?: false
+
+      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
+
+      change manage_relationship(:sales_invoice_items, type: :direct_control)
+
+      change {Changes.SetItemNames, []}
+      change {Changes.SetIsCashAccount, []}
+      change {Changes.ValidateCountryCode, field: :buyer_country}
+
+      validate {Validations.ValidateTaxId,
+                id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
+
+      validate {Validations.ValidateNameFields,
+                type_field: :buyer_type,
+                full_name_field: :buyer_full_name,
+                given_name_field: :buyer_given_name,
+                surname_field: :buyer_surname}
+
+      validate present([:issue_date, :currency]), message: "Pole jest wymagane"
+    end
+
+    update :update do
+      require_atomic? false
+
+      accept [
+        :invoice_type,
+        :invoice_number,
+        :sale_date,
+        :issue_date,
+        :due_date,
+        :payment_method,
+        :currency,
+        :is_cash_account,
+        :is_reverse_charge,
+        :ksef_invoice_kind,
+        :correction_reason,
+        :counterparty_id,
+        :seller_nip,
+        :seller_display_name,
+        :seller_address,
+        :seller_name,
+        :seller_surname,
+        :seller_account_number,
+        :buyer_type,
+        :buyer_id,
+        :buyer_full_name,
+        :buyer_given_name,
+        :buyer_surname,
+        :buyer_pesel,
+        :buyer_display_name,
+        :buyer_address,
+        :buyer_country,
+        :buyer_is_different_mail_address,
+        :buyer_mail_address,
+        :buyer_mail_country,
+        :buyer_email,
+        :buyer_phone,
+        :buyer_description
+      ]
+
+      argument :sales_invoice_items, {:array, :map}
+      argument :due_date_days, :integer
+
+      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
+
+      change manage_relationship(:sales_invoice_items, type: :direct_control)
+
+      change {Changes.SetItemNames, []}
+      change {Changes.SetIsCashAccount, []}
+      change {Changes.CalculateDueDate, []}
+      change {Changes.ValidateCountryCode, field: :buyer_country}
+
+      validate {Validations.CheckIfLocked, []}
+
+      validate {Validations.ValidateTaxId,
+                id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
+
+      validate {Validations.ValidateNameFields,
+                type_field: :buyer_type,
+                full_name_field: :buyer_full_name,
+                given_name_field: :buyer_given_name,
+                surname_field: :buyer_surname}
+    end
+
+    create :create_correction do
+      accept [
+        :invoice_number,
+        :issue_date,
+        :sale_date,
+        :due_date,
+        :correction_reason,
+        :payment_method,
+        :currency,
+        :seller_account_number,
+        :buyer_type,
+        :buyer_id,
+        :buyer_full_name,
+        :buyer_given_name,
+        :buyer_surname,
+        :buyer_pesel,
+        :buyer_display_name,
+        :buyer_address,
+        :buyer_country,
+        :buyer_email,
+        :buyer_phone,
+        :buyer_description,
+        :is_reverse_charge
+      ]
+
+      argument :original_invoice_id, :uuid_v7, allow_nil?: false
+      argument :sales_invoice_items, {:array, :map}, allow_nil?: false
+
+      change {Changes.PrepareCorrection, []}
+
+      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
+
+      change manage_relationship(:sales_invoice_items, type: :direct_control)
+
+      change {Changes.SetItemNames, []}
+
+      validate present([:invoice_number, :issue_date]), message: "Pole jest wymagane"
+
+      validate string_length(:correction_reason, max: 256),
+        message: "Powód korekty może mieć maksymalnie 256 znaków"
+    end
+
+    destroy :destroy do
+      require_atomic? false
+
+      validate {Validations.CheckIfLocked, []}
+
+      validate fn changeset, _context ->
+        if Ash.Changeset.get_data(changeset, :ksef_number) do
+          {:error, field: :base, message: "KSeF-submitted invoices cannot be deleted"}
+        else
+          :ok
+        end
+      end
+    end
+
+    update :toggle_skip do
+      require_atomic? false
+      accept []
+
+      change fn changeset, _context ->
+        current = Ash.Changeset.get_data(changeset, :skip_invoicing)
+        Ash.Changeset.force_change_attribute(changeset, :skip_invoicing, !current)
+      end
+    end
+
+    update :generate_share_token do
+      require_atomic? false
+      accept []
+      change {Changes.GenerateShareToken, []}
+    end
+
+    update :denormalize_item_names do
+      description "Internal action to update the denormalized item_names field. Used by SetItemNames change to avoid recursion."
+      require_atomic? false
+      accept [:item_names]
+    end
+
+    update :lock_for_ksef do
+      require_atomic? false
+      accept []
+      change set_attribute(:locked_at, &DateTime.utc_now/0)
+    end
+
+    update :unlock_for_ksef do
+      require_atomic? false
+      accept []
+      change set_attribute(:locked_at, nil)
+    end
+
+    update :update_ksef_fields do
+      require_atomic? false
+      accept [:ksef_number, :ksef_session_reference_number, :ksef_invoice_checksum, :locked_at]
+    end
+
+    # -- Generic actions -------------------------------------------------------
+
+    action :cancel, :struct do
+      constraints instance_of: __MODULE__
+      argument :invoice_id, :uuid_v7, allow_nil?: false
+
+      run fn input, context ->
+        opts = Ash.Context.to_opts(context)
+
+        invoice =
+          __MODULE__
+          |> Ash.get!(input.arguments.invoice_id, opts)
+          |> Ash.load!(
+            [:sales_invoice_items, :effective_snapshot, corrections: :sales_invoice_items],
+            opts
+          )
+
+        if invoice.ksef_invoice_kind == :vat and invoice.ksef_number != nil do
+          latest = invoice.effective_snapshot
+          issue_date = Date.utc_today()
+
+          # Get next FK-series number
+          {:ok, invoice_number} =
+            __MODULE__
+            |> Ash.ActionInput.for_action(
+              :get_next_number,
+              %{date: issue_date, series: "FK"},
+              opts
+            )
+            |> Ash.run_action(opts)
+
+          zeroed_items =
+            Enum.map(latest.sales_invoice_items, fn item ->
+              item
+              |> Map.take([:index, :name, :unit, :unit_price, :vat_rate])
+              |> Map.put(:quantity, Decimal.new(0))
+            end)
+
+          correction_reason =
+            case latest.invoice_type do
+              :foreign -> "Anulowanie faktury / Invoice cancellation"
+              _poland -> "Anulowanie faktury"
+            end
+
+          Ash.create(
+            __MODULE__,
+            %{
+              original_invoice_id: invoice.id,
+              invoice_number: invoice_number,
+              issue_date: issue_date,
+              sale_date: latest.sale_date,
+              due_date: latest.due_date,
+              correction_reason: correction_reason,
+              sales_invoice_items: zeroed_items
+            },
+            Keyword.put(opts, :action, :create_correction)
+          )
+        else
+          {:error, "can only cancel KSeF-submitted VAT invoices"}
+        end
+      end
+    end
+
+    action :confirm_from_draft, :struct do
+      constraints instance_of: __MODULE__
+
+      argument :draft_id, :uuid_v7, allow_nil?: false
+      argument :invoice_number, :string
+      argument :organization, :map, allow_nil?: false
+
+      run fn input, context ->
+        opts = Ash.Context.to_opts(context)
+        draft = Ash.get!(Firmowid.Ash.Invoicing.WizardDraft, input.arguments.draft_id, opts)
+        org = input.arguments.organization
+
+        items =
+          draft.items
+          |> Enum.with_index()
+          |> Enum.map(fn {item, idx} ->
+            item
+            |> Map.take([:name, :quantity, :unit, :unit_price, :vat_rate])
+            |> Map.put(:index, idx)
+          end)
+
+        attrs = %{
+          counterparty_id: draft.counterparty_id,
+          buyer_type: draft.buyer_type,
+          buyer_id: draft.buyer_id,
+          buyer_full_name: draft.buyer_full_name,
+          buyer_given_name: draft.buyer_given_name,
+          buyer_surname: draft.buyer_surname,
+          buyer_pesel: draft.buyer_pesel,
+          buyer_display_name: draft.buyer_display_name,
+          buyer_address: draft.buyer_address,
+          buyer_country: draft.buyer_country,
+          buyer_email: draft.buyer_email,
+          buyer_phone: draft.buyer_phone,
+          buyer_description: draft.buyer_description,
+          invoice_type: draft.invoice_type,
+          is_reverse_charge: draft.is_reverse_charge,
+          currency: draft.currency,
+          seller_account_number: draft.seller_account_number,
+          sale_date: draft.sale_date,
+          due_date: draft.due_date,
+          payment_method: draft.payment_method,
+          invoice_number: input.arguments.invoice_number,
+          issue_date: Date.utc_today(),
+          seller_display_name: org[:name] || org["name"],
+          seller_address: org[:address] || org["address"],
+          seller_nip: org[:nip] || org["nip"],
+          is_cash_account: draft.payment_method == :cash,
+          sales_invoice_items: items
+        }
+
+        case Ash.create(__MODULE__, attrs, Keyword.put(opts, :action, :create)) do
+          {:ok, invoice} ->
+            Ash.destroy!(draft, opts)
+            {:ok, invoice}
+
+          {:error, error} ->
+            {:error, error}
+        end
+      end
+    end
+
+    action :get_next_number, :string do
+      argument :date, :date, allow_nil?: false
+      argument :series, :string
+      argument :omit_invoice_id, :uuid
+
+      run fn input, context ->
+        date = input.arguments.date
+        year = date.year
+        month = date.month
+        series = input.arguments[:series]
+        omit_invoice_id = input.arguments[:omit_invoice_id]
+        opts = Ash.Context.to_opts(context)
+
+        existing_numbers =
+          month
+          |> read_invoice_numbers_matching(year, series, omit_invoice_id, opts)
+          |> Enum.map(&parse_invoice_number/1)
+          |> Enum.filter(&match?({:ok, _}, &1))
+          |> Enum.map(fn {:ok, %{num: num}} -> num end)
+
+        starting_num =
+          case Enum.max(existing_numbers, fn -> 0 end) do
+            0 -> 1
+            max_num -> max_num + 1
+          end
+
+        {:ok, find_free_invoice_number(starting_num, month, year, series, omit_invoice_id, opts)}
+      end
+    end
+
+    action :validate_number, {:array, :term} do
+      argument :invoice_number, :string, allow_nil?: false
+      argument :issue_date, :date, allow_nil?: false
+      argument :omit_invoice_id, :uuid
+
+      run fn input, context ->
+        invoice_number = input.arguments.invoice_number
+        issue_date = input.arguments.issue_date
+        omit_invoice_id = input.arguments[:omit_invoice_id]
+        opts = Ash.Context.to_opts(context)
+
+        all_suggestions =
+          issue_date
+          |> InvoicingDomain.get_next_numbers_for_series(opts,
+            omit_invoice_id: omit_invoice_id
+          )
+          |> Map.values()
+          |> Enum.sort_by(fn num -> if String.contains?(num, "/A"), do: 1, else: 0 end)
+
+        parsed = parse_invoice_number(invoice_number)
+
+        warnings = []
+
+        warnings =
+          if parsed == :error do
+            [{:invalid_format, all_suggestions} | warnings]
+          else
+            warnings
+          end
+
+        warnings =
+          if invoice_number_exists?(invoice_number, omit_invoice_id, opts) do
+            [{:duplicate, all_suggestions} | warnings]
+          else
+            warnings
+          end
+
+        warnings =
+          case parsed do
+            {:ok, %{num: current_num, series: parsed_series}} ->
+              {:ok, expected} =
+                __MODULE__
+                |> Ash.ActionInput.for_action(
+                  :get_next_number,
+                  %{date: issue_date, series: parsed_series, omit_invoice_id: omit_invoice_id},
+                  opts
+                )
+                |> Ash.run_action(opts)
+
+              case parse_invoice_number(expected) do
+                {:ok, %{num: expected_num}} when current_num > expected_num ->
+                  [{:gap, expected} | warnings]
+
+                _ ->
+                  warnings
+              end
+
+            :error ->
+              warnings
+          end
+
+        {:ok, Enum.reverse(warnings)}
+      end
+    end
+
+    action :list_series, {:array, :string} do
+      run fn _input, context ->
+        opts = Ash.Context.to_opts(context)
+
+        result =
+          opts
+          |> read_all_invoice_numbers()
+          |> Enum.map(&parse_invoice_number/1)
+          |> Enum.filter(&match?({:ok, _}, &1))
+          |> Enum.map(fn {:ok, %{series: s}} -> s end)
+          |> Enum.uniq()
+          |> Enum.sort_by(fn
+            nil -> ""
+            s -> s
+          end)
+
+        {:ok, result}
+      end
+    end
+
+    update :connect_transactions do
+      description "Connect transactions to this sales invoice via the join table."
+      require_atomic? false
+      argument :transaction_ids, {:array, :uuid}, allow_nil?: false
+
+      change manage_relationship(:transaction_ids, :transactions, type: :append)
+    end
+
+    update :disconnect_transactions do
+      description "Disconnect all transactions from this sales invoice."
+      require_atomic? false
+      argument :transaction_ids, {:array, :uuid}, default: []
+
+      change manage_relationship(:transaction_ids, :transactions, type: :append_and_remove)
     end
   end
 
@@ -345,6 +783,24 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     policy action_type(:action) do
       authorize_if always()
     end
+
+    policy action_type([:create, :update, :destroy]) do
+      authorize_if always()
+    end
+  end
+
+  pub_sub do
+    module FirmowidWeb.Core.Endpoint
+    prefix "sales_invoice"
+
+    publish :create, ["created", :_tenant]
+    publish :update, ["updated", :_tenant]
+    publish :destroy, ["destroyed", :_tenant]
+    publish :toggle_skip, ["updated", :_tenant]
+    publish :create_correction, ["created", :_tenant]
+    publish :generate_share_token, ["updated", :_tenant]
+    publish :connect_transactions, ["updated", :_tenant]
+    publish :disconnect_transactions, ["updated", :_tenant]
   end
 
   multitenancy do
@@ -447,12 +903,17 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       sort locked_at: :asc_nils_last, inserted_at: :asc
     end
 
-    has_many :sales_invoice_items, AshSalesInvoiceItem do
+    has_one :latest_correction, __MODULE__ do
+      destination_attribute :corrected_invoice_id
+      sort locked_at: :desc_nils_last, inserted_at: :desc
+    end
+
+    has_many :sales_invoice_items, SalesInvoiceItem do
       sort index: :asc
     end
 
     many_to_many :transactions, Firmowid.Ash.Finances.Transaction do
-      through Firmowid.Ash.Invoicing.SalesInvoiceTransaction
+      through SalesInvoiceTransaction
       source_attribute_on_join_resource :sales_invoice_id
       destination_attribute_on_join_resource :transaction_id
     end
@@ -463,253 +924,231 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     end
   end
 
-  # Public functions -----------------------------------------------------------
+  calculations do
+    EffectiveFields.effective_correction_calculations()
 
-  @doc """
-  Returns the display name for the buyer on a sales invoice.
+    calculate :effective_items,
+              {:array, :struct},
+              Firmowid.Ash.Invoicing.Calculations.EffectiveItems
 
-  Priority:
-  1. `buyer_display_name` (if set)
-  2. For companies: `buyer_full_name`
-  3. For individuals: "buyer_given_name buyer_surname"
-  """
-  @spec buyer_display_name(struct() | map()) :: String.t() | nil
-  def buyer_display_name(%{buyer_display_name: name}) when is_binary(name) and name != "", do: name
+    # net_value, vat_value, gross_value moved to aggregates (sum over expression calcs on items)
 
-  def buyer_display_name(%{buyer_type: :company, buyer_full_name: name}) when is_binary(name), do: name
+    calculate :effective_snapshot,
+              :struct,
+              Firmowid.Ash.Invoicing.Calculations.EffectiveSnapshot do
+      description "Latest correction if exists, otherwise self."
+      constraints instance_of: __MODULE__
+    end
 
-  def buyer_display_name(%{buyer_type: :individual, buyer_given_name: given_name, buyer_surname: surname})
-      when is_binary(given_name) and is_binary(surname) do
-    "#{given_name} #{surname}"
+    calculate :reference_invoice, :struct, Firmowid.Ash.Invoicing.Calculations.ReferenceInvoice do
+      constraints instance_of: __MODULE__
+    end
+
+    calculate :annotated_corrections,
+              {:array, :struct},
+              Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections do
+      constraints items: [instance_of: __MODULE__]
+    end
+
+    # Boolean status calculations — DB-pushable, filterable, sortable
+    calculate :is_draft, :boolean, expr(is_nil(invoice_number))
+    calculate :is_confirmed, :boolean, expr(not is_nil(invoice_number))
+    calculate :is_ksef_submitted, :boolean, expr(not is_nil(ksef_number))
+    calculate :is_deletable, :boolean, expr(is_nil(ksef_number) and is_nil(locked_at))
+
+    calculate :buyer_id_type,
+              :atom,
+              expr(
+                cond do
+                  not is_nil(buyer_pesel) and buyer_pesel != "" ->
+                    :no_id
+
+                  buyer_type == :individual and buyer_country == "PL" ->
+                    :no_id
+
+                  buyer_country == "PL" ->
+                    :nip
+
+                  buyer_country in [
+                    "AT",
+                    "BE",
+                    "BG",
+                    "CY",
+                    "CZ",
+                    "DK",
+                    "EE",
+                    "FI",
+                    "FR",
+                    "DE",
+                    "EL",
+                    "GR",
+                    "HR",
+                    "HU",
+                    "IE",
+                    "IT",
+                    "LV",
+                    "LT",
+                    "LU",
+                    "MT",
+                    "NL",
+                    "PT",
+                    "RO",
+                    "SK",
+                    "SI",
+                    "ES",
+                    "SE",
+                    "XI"
+                  ] ->
+                    :eu_vat
+
+                  buyer_country == "US" ->
+                    :optional_id
+
+                  true ->
+                    :other_id
+                end
+              ) do
+      description "Tax ID type for the buyer based on country, PESEL, and buyer type."
+    end
+
+    calculate :is_editable, :boolean, Firmowid.Ash.Invoicing.Calculations.IsEditable do
+      description "Whether the invoice can be edited. KOR: only if latest correction. VAT: only if no corrections exist."
+    end
+
+    # Display name calculation — DB-pushable version of buyer_display_name/1
+    calculate :buyer_display_name_label,
+              :string,
+              expr(
+                cond do
+                  not is_nil(buyer_display_name) and buyer_display_name != "" ->
+                    buyer_display_name
+
+                  buyer_type == :company ->
+                    buyer_full_name
+
+                  true ->
+                    buyer_given_name <> " " <> buyer_surname
+                end
+              )
   end
 
-  def buyer_display_name(_), do: nil
-
-  @doc """
-  Populates the `logo_url` virtual field by loading the organization's avatar.
-
-  Returns nil if the invoice is nil.
-  """
-  @spec populate_logo_url(struct() | nil) :: struct() | nil
-  def populate_logo_url(nil), do: nil
-
-  def populate_logo_url(%{__struct__: __MODULE__} = invoice) do
-    # Use legacy Ecto organization which has avatar_blob_id (Ash resource doesn't yet)
-    {:ok, ecto_org} = Accounts.get_organization(invoice.organization_id)
-    organization = Accounts.get_organization_with_avatar(ecto_org)
-    Map.put(invoice, :logo_url, organization.avatar_url)
+  aggregates do
+    sum :net_value, :sales_invoice_items, :net_value
+    sum :vat_value, :sales_invoice_items, :vat_value
+    sum :gross_value, :sales_invoice_items, :gross_value
   end
 
-  @doc """
-  Returns the currency exchange rate for a sales invoice.
-
-  For PLN invoices, returns nil (no conversion needed).
-  For other currencies, fetches the NBP exchange rate for the currency conversion date.
-  """
-  @spec get_currency_rate(struct()) :: map() | nil
-  def get_currency_rate(%{currency: "PLN"}), do: nil
-
-  def get_currency_rate(%{currency: currency, issue_date: issue_date, sale_date: sale_date}) do
-    conversion_date = get_currency_conversion_date(issue_date, sale_date)
-    Nbp.ApiClient.get_exchange_rate(currency, conversion_date)
-  end
-
-  @doc """
-  Returns the currency conversion date for a sales invoice.
-  """
-  @spec get_currency_conversion_date(Date.t(), Date.t()) :: Date.t()
-  def get_currency_conversion_date(issue_date, sale_date) do
-    if Date.before?(issue_date, sale_date), do: issue_date, else: sale_date
-  end
-
-  @doc """
-  Builds the correction chain, populating `reference_invoice` and `corrected_invoice`
-  virtual fields on each correction in the chain.
-
-  For VAT invoices: populates corrections with their reference invoices.
-  For KOR invoices: populates both the reference and corrected invoice chain.
-  """
-  @spec populate_reference_invoices(struct()) :: struct()
-  def populate_reference_invoices(%{__struct__: __MODULE__, ksef_invoice_kind: :vat} = invoice) do
-    corrections = Enum.sort_by(invoice.corrections, &(&1.locked_at || &1.inserted_at), DateTime)
-    references = [invoice | corrections]
-
-    corrections =
-      [corrections, references]
-      |> Enum.zip()
-      |> Enum.map(fn {correction, reference} ->
-        correction
-        |> Map.put(:reference_invoice, reference)
-        |> Map.put(:corrected_invoice, invoice)
-      end)
-
-    invoice
-    |> Map.put(:corrections, corrections)
-    |> Map.put(:reference_invoice, nil)
-  end
-
-  def populate_reference_invoices(%{__struct__: __MODULE__, ksef_invoice_kind: :kor} = invoice) do
-    original_invoice = populate_reference_invoices(invoice.corrected_invoice)
-
-    reference_invoice =
-      original_invoice.corrections
-      |> Enum.reject(fn correction ->
-        correction.id == invoice.id or
-          DateTime.after?(
-            correction.locked_at || correction.inserted_at,
-            invoice.locked_at || invoice.inserted_at
-          )
-      end)
-      |> Enum.max_by(&(&1.locked_at || &1.inserted_at), DateTime, fn -> original_invoice end)
-      |> then(fn ref ->
-        if is_list(ref.sales_invoice_items) and ref.sales_invoice_items != [] do
-          ref
-        else
-          Ash.load!(ref, [:sales_invoice_items], authorize?: false, actor: %{})
-        end
-      end)
-
-    invoice
-    |> Map.put(:reference_invoice, reference_invoice)
-    |> Map.put(:corrected_invoice, original_invoice)
-  end
-
-  @doc """
-  Returns the latest state (snapshot) of an invoice — either the latest correction
-  or the original if no corrections exist.
-  """
-  @spec get_latest_invoice_snapshot(struct()) :: struct()
-  def get_latest_invoice_snapshot(%{__struct__: __MODULE__, ksef_invoice_kind: :vat} = invoice) do
-    invoice.corrections
-    |> Enum.max_by(
-      fn correction -> correction.locked_at || correction.inserted_at end,
-      DateTime,
-      fn -> invoice end
-    )
-    |> then(fn snapshot ->
-      if is_list(snapshot.sales_invoice_items) and snapshot.sales_invoice_items != [] do
-        snapshot
-      else
-        Ash.load!(snapshot, [:sales_invoice_items], authorize?: false, actor: %{})
-      end
-    end)
-  end
-
-  @doc "Returns the net value total across all items."
-  @spec get_net_value(struct()) :: Decimal.t()
-  def get_net_value(%{sales_invoice_items: items, currency: currency}) do
-    currency
-    |> Money.new(
-      Enum.reduce(items, Decimal.new(0), fn item, acc ->
-        Decimal.add(acc, AshSalesInvoiceItem.get_net_value(item))
-      end)
-    )
-    |> Money.round()
-    |> Money.to_decimal()
-  end
-
-  @doc "Returns the total VAT across all items."
-  @spec get_vat_value(struct()) :: Decimal.t()
-  def get_vat_value(%{sales_invoice_items: items, currency: currency}) do
-    currency
-    |> Money.new(
-      Enum.reduce(items, Decimal.new(0), fn item, acc ->
-        Decimal.add(acc, AshSalesInvoiceItem.get_vat_value(item))
-      end)
-    )
-    |> Money.round()
-    |> Money.to_decimal()
-  end
-
-  @doc "Returns the gross value (net + VAT) total."
-  @spec get_gross_value(struct()) :: Decimal.t()
-  def get_gross_value(%{currency: currency} = invoice) do
-    currency
-    |> Money.new(Decimal.add(get_net_value(invoice), get_vat_value(invoice)))
-    |> Money.round()
-    |> Money.to_decimal()
-  end
-
-  @doc "Returns true if the invoice is a draft (no invoice number)."
-  @spec draft?(struct()) :: boolean()
-  def draft?(%{invoice_number: nil}), do: true
-  def draft?(%{invoice_number: _}), do: false
-
-  @doc "Returns true if the invoice is confirmed (has an invoice number)."
-  @spec confirmed?(struct()) :: boolean()
-  def confirmed?(%{invoice_number: nil}), do: false
-  def confirmed?(%{invoice_number: _}), do: true
-
-  @doc "Returns true if the invoice can be deleted."
-  @spec deletable?(struct()) :: boolean()
-  def deletable?(%{ksef_number: nil, locked_at: nil}), do: true
-  def deletable?(%{}), do: false
-
-  @doc "Returns true if the invoice has been submitted to KSeF."
-  @spec ksef_submitted?(struct()) :: boolean()
-  def ksef_submitted?(%{ksef_number: nil}), do: false
-  def ksef_submitted?(%{}), do: true
-
-  @doc """
-  Returns true if the invoice can be edited.
-
-  Requires corrections preloaded for VAT invoices,
-  and corrected_invoice with corrections for KOR invoices.
-  """
-  @spec editable?(struct()) :: boolean()
-  def editable?(%{ksef_invoice_kind: :kor, corrected_invoice: %{corrections: corrections}} = invoice) do
-    latest_correction = List.last(corrections)
-    latest_correction != nil and latest_correction.id == invoice.id
-  end
-
-  def editable?(%{ksef_invoice_kind: :vat, corrections: corrections}) when is_list(corrections) do
-    Enum.empty?(corrections)
-  end
-
-  def editable?(%{invoice_number: nil}), do: true
-  def editable?(%{locked_at: nil}), do: true
-  def editable?(%{}), do: false
-
-  @doc "Returns true if the buyer is from an EU country."
-  @spec buyer_from_eu?(struct()) :: boolean()
-  def buyer_from_eu?(%{buyer_country: country}) when is_binary(country) do
-    CountryCodes.eu_country?(country)
-  end
-
-  def buyer_from_eu?(_), do: false
-
-  @doc "Returns the buyer's region (:eu, :non_eu, or :invalid)."
-  @spec buyer_region(struct()) :: :eu | :non_eu | :invalid
-  def buyer_region(%{buyer_country: country}) when is_binary(country) do
-    CountryCodes.region(country)
-  end
-
-  def buyer_region(_), do: :invalid
-
-  @doc "Returns the buyer ID type based on country, PESEL, and buyer type."
-  @spec buyer_id_type(struct()) :: :nip | :eu_vat | :other_id | :optional_id | :no_id
-  def buyer_id_type(%{buyer_type: buyer_type, buyer_pesel: buyer_pesel, buyer_country: buyer_country}) do
-    CountryCodes.tax_id_type(buyer_country, buyer_pesel, buyer_type)
+  identities do
+    identity :invoice_number_per_org, [:invoice_number, :organization_id],
+      nils_distinct?: false,
+      message: "numer faktury już istnieje dla tej organizacji"
   end
 
   # Private helpers -----------------------------------------------------------
 
-  defp filter_unmatched(query, _context) do
-    Ash.Query.filter(query, count(transactions) == 0)
+  # Invoice numbering helpers -------------------------------------------------
+
+  @invoice_number_regex ~r/^(\d+)\/(\d+)\/(\d+)(?:\/(.+))?$/
+
+  @doc false
+  def parse_invoice_number(invoice_number) when is_binary(invoice_number) do
+    case Regex.run(@invoice_number_regex, invoice_number) do
+      [_, num, month, year] ->
+        {:ok,
+         %{
+           num: String.to_integer(num),
+           month: String.to_integer(month),
+           year: String.to_integer(year),
+           series: nil
+         }}
+
+      [_, num, month, year, series] ->
+        {:ok,
+         %{
+           num: String.to_integer(num),
+           month: String.to_integer(month),
+           year: String.to_integer(year),
+           series: series
+         }}
+
+      nil ->
+        :error
+    end
   end
 
-  defp merge_corrections_after_read(_query, results, _context) do
-    {:ok, Enum.map(results, &merge_latest_correction/1)}
+  def parse_invoice_number(_), do: :error
+
+  @doc false
+  def format_invoice_number(num, month, year, nil) do
+    "#{String.pad_leading("#{num}", 2, "0")}/#{String.pad_leading("#{month}", 2, "0")}/#{year}"
   end
 
-  defp merge_latest_correction(%{corrections: []} = invoice), do: invoice
-
-  defp merge_latest_correction(%{corrections: corrections} = invoice) when is_list(corrections) do
-    latest =
-      Enum.max_by(corrections, fn c -> c.locked_at || c.inserted_at end, DateTime, fn -> nil end)
-
-    if latest, do: Map.merge(invoice, Map.take(latest, @snapshot_fields)), else: invoice
+  def format_invoice_number(num, month, year, series) do
+    "#{String.pad_leading("#{num}", 2, "0")}/#{String.pad_leading("#{month}", 2, "0")}/#{year}/#{series}"
   end
 
-  defp merge_latest_correction(invoice), do: invoice
+  defp build_series_pattern(month, year, nil) do
+    month_str = String.pad_leading("#{month}", 2, "0")
+    "^\\d+/#{month_str}/#{year}$"
+  end
+
+  defp build_series_pattern(month, year, series) do
+    month_str = String.pad_leading("#{month}", 2, "0")
+    escaped_series = Regex.escape(series)
+    "^\\d+/#{month_str}/#{year}/#{escaped_series}$"
+  end
+
+  defp find_free_invoice_number(num, month, year, series, omit_invoice_id, opts) do
+    invoice_number = format_invoice_number(num, month, year, series)
+
+    if invoice_number_exists?(invoice_number, omit_invoice_id, opts) do
+      find_free_invoice_number(num + 1, month, year, series, omit_invoice_id, opts)
+    else
+      invoice_number
+    end
+  end
+
+  defp invoice_number_exists?(invoice_number, omit_invoice_id, opts) do
+    query = Ash.Query.filter(__MODULE__, invoice_number == ^invoice_number)
+
+    query =
+      if omit_invoice_id do
+        Ash.Query.filter(query, id != ^omit_invoice_id)
+      else
+        query
+      end
+
+    Ash.exists?(query, opts)
+  end
+
+  # Reads all invoice numbers matching a series pattern (month/year/series).
+  # Uses fragment("? ~ ?", ...) for Postgres regex — Ash has no native regex operator.
+  # Same escape hatch pattern as ParadeDB `&&&`.
+  defp read_invoice_numbers_matching(month, year, series, omit_invoice_id, opts) do
+    series_pattern = build_series_pattern(month, year, series)
+
+    query =
+      __MODULE__
+      |> Ash.Query.filter(not is_nil(invoice_number))
+      |> Ash.Query.filter(fragment("? ~ ?", invoice_number, ^series_pattern))
+
+    query =
+      if omit_invoice_id do
+        Ash.Query.filter(query, id != ^omit_invoice_id)
+      else
+        query
+      end
+
+    query
+    |> Ash.read!(opts)
+    |> Enum.map(& &1.invoice_number)
+  end
+
+  @doc false
+  def read_all_invoice_numbers(opts) do
+    __MODULE__
+    |> Ash.Query.filter(not is_nil(invoice_number))
+    |> Ash.read!(opts)
+    |> Enum.map(& &1.invoice_number)
+  end
 end

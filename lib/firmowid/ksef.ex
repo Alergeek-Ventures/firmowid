@@ -3,7 +3,8 @@ defmodule Firmowid.Ksef do
   import Ecto.Query, warn: false
 
   alias Firmowid.Accounts
-  alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ksef.ApiClient
   alias Firmowid.Ksef.Credential
   alias Firmowid.Ksef.FetchWorker
@@ -11,7 +12,6 @@ defmodule Firmowid.Ksef do
   alias Firmowid.Ksef.SubmissionInfo
   alias Firmowid.Ksef.SubmissionWorker
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices.SalesInvoice
 
   @ksef_broadcast_topic "ksef_status"
 
@@ -194,50 +194,49 @@ defmodule Firmowid.Ksef do
   end
 
   defp validate_invoice_for_submission(sales_invoice_id) do
-    invoice =
-      SalesInvoice
-      |> where([i], i.id == ^sales_invoice_id)
-      |> Repo.one()
+    opts = [tenant: Repo.get_org_id(), authorize?: false, actor: %{}]
 
-    cond do
-      is_nil(invoice) ->
-        {:error, :invoice_not_found}
-
-      SalesInvoice.ksef_submitted?(invoice) ->
-        {:error, :invoice_already_locked}
-
-      SalesInvoice.draft?(invoice) ->
-        {:error, :invoice_is_draft}
-
-      true ->
-        validate_ksef_fields(invoice)
+    case SalesInvoice.by_id(sales_invoice_id, opts) do
+      {:ok, nil} -> {:error, :invoice_not_found}
+      {:ok, invoice} -> validate_invoice_state(invoice)
+      {:error, _} -> {:error, :invoice_not_found}
     end
   end
 
-  defp validate_ksef_fields(invoice) do
-    changeset = SalesInvoice.ksef_submission_changeset(invoice)
+  defp validate_invoice_state(invoice) do
+    cond do
+      not is_nil(invoice.ksef_number) -> {:error, :invoice_already_locked}
+      is_nil(invoice.invoice_number) -> {:error, :invoice_is_draft}
+      true -> validate_ksef_required_fields(invoice)
+    end
+  end
 
-    if changeset.valid? do
+  @ksef_required_fields [:seller_nip, :seller_display_name, :seller_address, :issue_date, :invoice_number]
+
+  defp validate_ksef_required_fields(invoice) do
+    missing = Enum.filter(@ksef_required_fields, &is_nil(Map.get(invoice, &1)))
+
+    if missing == [] do
       {:ok, invoice}
     else
-      {:error, {:invalid_for_ksef, changeset.errors}}
+      {:error, {:invalid_for_ksef, Enum.map(missing, &{&1, {"is required for KSeF submission", []}})}}
     end
   end
 
-  def invoice_url!(%SalesInvoice{seller_nip: seller_nip, issue_date: issue_date, ksef_number: ksef_number} = invoice)
+  def invoice_url!(%{seller_nip: seller_nip, issue_date: issue_date, ksef_number: ksef_number} = invoice)
       when not is_nil(ksef_number) do
     checksum = invoice.ksef_invoice_checksum || backfill_ksef_checksum!(invoice)
     invoice_url(seller_nip, issue_date, checksum)
   end
 
   def invoice_url!(%CostInvoice{seller_nip: seller_nip, issue_date: issue_date} = invoice) do
-    if CostInvoice.ksef_imported?(invoice) do
+    if is_nil(invoice.ksef_number) do
+      raise ArgumentError, "Cannot generate KSeF URL for non-KSeF-imported cost invoice"
+    else
       invoice = Repo.preload(invoice, :blob)
       checksum = invoice.blob.blob_checksum |> Base.decode16!(case: :lower) |> Base.url_encode64(padding: false)
 
       invoice_url(seller_nip, issue_date, checksum)
-    else
-      raise ArgumentError, "Cannot generate KSeF URL for non-KSeF-imported cost invoice"
     end
   end
 
@@ -252,7 +251,7 @@ defmodule Firmowid.Ksef do
     |> to_string()
   end
 
-  defp backfill_ksef_checksum!(%SalesInvoice{ksef_number: ksef_number} = invoice) do
+  defp backfill_ksef_checksum!(%{ksef_number: ksef_number} = invoice) do
     invoice_xml =
       case get_invoice_xml_by_ksef_number(ksef_number) do
         {:ok, xml} -> xml
@@ -261,9 +260,13 @@ defmodule Firmowid.Ksef do
 
     checksum = compute_fa3_checksum(invoice_xml)
 
-    invoice
-    |> SalesInvoice.ksef_update_changeset(%{ksef_invoice_checksum: checksum})
-    |> Repo.update!()
+    SalesInvoice.update_ksef_fields!(
+      invoice,
+      %{ksef_invoice_checksum: checksum},
+      authorize?: false,
+      actor: %{},
+      tenant: invoice.organization_id
+    )
 
     checksum
   end

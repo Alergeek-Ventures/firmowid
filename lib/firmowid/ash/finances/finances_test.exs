@@ -88,10 +88,10 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
     }
   end
 
-  describe "status filtering" do
-    test "status: :pending returns only unmatched, non-skipped transactions", ctx do
+  describe "reconciliation filtering" do
+    test "reconciliation: :pending returns only unmatched, non-skipped transactions", ctx do
       ids =
-        %{status: :pending}
+        %{reconciliation: :pending}
         |> Finances.list_transactions!(
           actor: ctx.user,
           tenant: ctx.org_id
@@ -103,9 +103,9 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
       refute ctx.matched_tx.id in ids
     end
 
-    test "status: :skipped returns only skipped transactions", ctx do
+    test "reconciliation: :skipped returns only skipped transactions", ctx do
       ids =
-        %{status: :skipped}
+        %{reconciliation: :skipped}
         |> Finances.list_transactions!(
           actor: ctx.user,
           tenant: ctx.org_id
@@ -117,9 +117,9 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
       refute ctx.matched_tx.id in ids
     end
 
-    test "status: :matched returns only transactions linked to invoices", ctx do
+    test "reconciliation: :matched returns only transactions linked to invoices", ctx do
       ids =
-        %{status: :matched}
+        %{reconciliation: :matched}
         |> Finances.list_transactions!(
           actor: ctx.user,
           tenant: ctx.org_id

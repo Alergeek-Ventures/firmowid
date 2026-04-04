@@ -1,36 +1,61 @@
 defmodule Firmowid.Ksef.InvoiceRenderer do
   @moduledoc false
   alias Firmowid.Ksef.VatRate
-  alias Firmowid.Repo
-  alias Firmowid.SalesInvoices
-  alias Firmowid.SalesInvoices.SalesInvoice
-  alias Firmowid.SalesInvoices.SalesInvoiceItem
 
   require EEx
+
+  @item_calcs [:net_value, :vat_value, :gross_value]
+  @invoice_aggs [:net_value, :vat_value, :gross_value]
+  @invoice_calcs [:buyer_id_type]
 
   @doc """
   Renders the FA(3) XML template with the given sales invoice.
   """
-  def render_fa3(%SalesInvoice{} = invoice) do
+  def render_fa3(%{__struct__: _, ksef_invoice_kind: _} = invoice) do
+    tenant = invoice.organization_id
+
     invoice =
       case invoice do
         %{ksef_invoice_kind: :kor} ->
           invoice
-          |> Repo.preload([:sales_invoice_items, corrected_invoice: :sales_invoice_items])
-          |> SalesInvoices.populate_reference_invoices()
+          |> Ash.load!(
+            @invoice_aggs ++
+              @invoice_calcs ++
+              [
+                sales_invoice_items: @item_calcs,
+                corrected_invoice:
+                  @invoice_aggs ++
+                    @invoice_calcs ++
+                    [
+                      sales_invoice_items: @item_calcs,
+                      corrections: @invoice_aggs ++ @invoice_calcs ++ [sales_invoice_items: @item_calcs]
+                    ]
+              ],
+            authorize?: false,
+            actor: %{},
+            tenant: tenant,
+            lazy?: false
+          )
+          |> annotate_correction_chain()
           |> validate_correction_buyer_tax_id!()
           # for now we raise because edit view does not allow for changing seller data
           # change in seller data should be intentional and not automatic like in creator
           |> validate_correction_seller_data!()
 
         invoice ->
-          Repo.preload(invoice, :sales_invoice_items)
+          Ash.load!(invoice, @invoice_aggs ++ @invoice_calcs ++ [sales_invoice_items: @item_calcs],
+            authorize?: false,
+            actor: %{},
+            tenant: tenant
+          )
       end
+
+    reference_invoice = Map.get(invoice, :reference_invoice)
 
     assigns = [
       invoice: xml_escape(invoice),
-      reference_invoice: if(invoice.reference_invoice, do: xml_escape(invoice.reference_invoice)),
-      vat_summary: calculate_vat_summary(invoice, invoice.reference_invoice)
+      reference_invoice: if(reference_invoice, do: xml_escape(reference_invoice)),
+      vat_summary: calculate_vat_summary(invoice, reference_invoice)
     ]
 
     do_render(assigns)
@@ -38,14 +63,14 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
 
   EEx.function_from_file(:defp, :do_render, "lib/firmowid/ksef/fa3_invoice_template.xml.eex", [:assigns], trim: true)
 
-  defp xml_escape(%SalesInvoice{} = invoice) do
+  defp xml_escape(%{__struct__: _} = invoice) do
     invoice
     |> Map.from_struct()
     |> Map.new(fn
       {:sales_invoice_items, items} when is_list(items) ->
         {:sales_invoice_items, xml_escape_items(items)}
 
-      {:corrected_invoice, %SalesInvoice{} = corrected} ->
+      {:corrected_invoice, %{__struct__: _} = corrected} ->
         {:corrected_invoice, xml_escape(corrected)}
 
       {key, value} ->
@@ -75,7 +100,7 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
   defp xml_escape(value), do: xml_escape(to_string(value))
 
   defp xml_escape_items(items) when is_list(items) do
-    Enum.map(items, fn %SalesInvoiceItem{} = item ->
+    Enum.map(items, fn %{__struct__: _} = item ->
       item
       |> Map.from_struct()
       |> Map.new(fn
@@ -125,7 +150,7 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
 
   # For correction invoices (KOR) with before/after method, calculate delta (after - before)
   # Uses the reference invoice (previous correction or original) as the "before" state.
-  defp calculate_vat_summary(%SalesInvoice{ksef_invoice_kind: :kor, sales_invoice_items: after_items}, %SalesInvoice{
+  defp calculate_vat_summary(%{ksef_invoice_kind: :kor, sales_invoice_items: after_items}, %{
          sales_invoice_items: before_items
        }) do
     before_summary = items_to_summary_map(before_items)
@@ -154,14 +179,14 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
   end
 
   # Regular invoice VAT summary
-  defp calculate_vat_summary(%SalesInvoice{sales_invoice_items: items}, _reference_invoice) do
+  defp calculate_vat_summary(%{sales_invoice_items: items}, _reference_invoice) do
     items
     |> Enum.group_by(fn item ->
       {item.vat_rate, VatRate.summary_type(item.vat_rate)}
     end)
     |> Enum.map(fn {{rate, type}, group_items} ->
-      net = Enum.reduce(group_items, Decimal.new(0), &Decimal.add(&2, SalesInvoiceItem.get_net_value(&1)))
-      vat = Enum.reduce(group_items, Decimal.new(0), &Decimal.add(&2, SalesInvoiceItem.get_vat_value(&1)))
+      net = Enum.reduce(group_items, Decimal.new(0), &Decimal.add(&2, &1.net_value))
+      vat = Enum.reduce(group_items, Decimal.new(0), &Decimal.add(&2, &1.vat_value))
 
       %{
         rate: rate,
@@ -180,8 +205,8 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
       {item.vat_rate, VatRate.summary_type(item.vat_rate)}
     end)
     |> Map.new(fn {{rate, type} = key, group_items} ->
-      net = Enum.reduce(group_items, Decimal.new(0), &Decimal.add(&2, SalesInvoiceItem.get_net_value(&1)))
-      vat = Enum.reduce(group_items, Decimal.new(0), &Decimal.add(&2, SalesInvoiceItem.get_vat_value(&1)))
+      net = Enum.reduce(group_items, Decimal.new(0), &Decimal.add(&2, &1.net_value))
+      vat = Enum.reduce(group_items, Decimal.new(0), &Decimal.add(&2, &1.vat_value))
       {key, %{rate: rate, type: type, net: net, vat: vat}}
     end)
   end
@@ -191,8 +216,8 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
   Returns after_gross - before_gross, using the reference invoice as the "before" state.
   """
   def gross_value_delta(invoice, reference_invoice) do
-    after_gross = SalesInvoice.get_gross_value(invoice)
-    before_gross = SalesInvoice.get_gross_value(reference_invoice)
+    after_gross = invoice.gross_value
+    before_gross = reference_invoice.gross_value
     Decimal.sub(after_gross, before_gross)
   end
 
@@ -244,7 +269,7 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
   """
   def validate_correction_buyer_tax_id!(%{ksef_invoice_kind: :kor, corrected_invoice: corrected} = invoice) do
     if invoice.buyer_id != corrected.buyer_id or
-         SalesInvoice.buyer_id_type(invoice) != SalesInvoice.buyer_id_type(corrected) do
+         invoice.buyer_id_type != corrected.buyer_id_type do
       raise "Buyer tax ID cannot change in correction invoice. " <>
               "Original: #{inspect(corrected.buyer_id)}, New: #{inspect(invoice.buyer_id)}"
     end
@@ -319,5 +344,47 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
       current.unit != reference.unit or
       not Decimal.eq?(current.unit_price, reference.unit_price) or
       current.vat_rate != reference.vat_rate
+  end
+
+  # Builds the correction chain for a KOR invoice, annotating each correction
+  # with its reference_invoice. Uses already-loaded data — no Ash.load! calls.
+  defp annotate_correction_chain(%{ksef_invoice_kind: :kor} = invoice) do
+    original = invoice.corrected_invoice
+    corrections = Enum.sort_by(original.corrections, &safe_timestamp/1, DateTime)
+    references = [original | corrections]
+
+    annotated =
+      [corrections, references]
+      |> Enum.zip()
+      |> Enum.map(fn {correction, reference} ->
+        correction
+        |> Map.put(:reference_invoice, reference)
+        |> Map.put(:corrected_invoice, original)
+      end)
+
+    # Find the reference for this specific KOR
+    my_ref =
+      corrections
+      |> Enum.reject(fn c ->
+        c.id == invoice.id or safe_after?(c, safe_timestamp(invoice))
+      end)
+      |> Enum.max_by(&safe_timestamp/1, DateTime, fn -> original end)
+
+    invoice
+    |> Map.put(:corrections, annotated)
+    |> Map.put(:reference_invoice, my_ref)
+    |> Map.put(:corrected_invoice, original)
+  end
+
+  defp safe_timestamp(record) do
+    case {record.locked_at, record.inserted_at} do
+      {%DateTime{} = ts, _} -> ts
+      {_, %DateTime{} = ts} -> ts
+      _ -> ~U[1970-01-01 00:00:00Z]
+    end
+  end
+
+  defp safe_after?(record, %DateTime{} = reference) do
+    DateTime.after?(safe_timestamp(record), reference)
   end
 end

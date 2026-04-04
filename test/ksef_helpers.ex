@@ -6,14 +6,14 @@ defmodule Firmowid.KsefTestHelpers do
   compiles the FA(3) schema with erlsom, and provides
   validation and invoice fixture functions.
 
-  All fixture functions use the SalesInvoices context to create
-  real database records, ensuring tests validate the full integration
-  path from changeset to XML rendering.
+  All fixture functions use `Ash.Seed.seed!` to create real database records
+  through the Ash resource layer, ensuring tests validate the full integration
+  path from resource to XML rendering.
   """
 
+  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoiceItem, as: AshSalesInvoiceItem
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices
-  alias Firmowid.SalesInvoices.SalesInvoice
 
   @schema_cache_dir Path.join([:code.priv_dir(:firmowid), "ksef_schemas"])
 
@@ -72,216 +72,258 @@ defmodule Firmowid.KsefTestHelpers do
     vat_rate = Keyword.get(opts, :vat_rate, "23")
     item_count = Keyword.get(opts, :items, 1)
 
-    attrs = %{
-      invoice_number: unique_invoice_number(),
-      issue_date: ~D[2026-01-15],
-      sale_date: Keyword.get(opts, :sale_date, ~D[2026-01-15]),
-      due_date: ~D[2026-01-30],
-      currency: "PLN",
-      payment_method: :transfer,
-      seller_nip: "1234567890",
-      seller_display_name: "Test Seller Sp. z o.o.",
-      seller_address: "ul. Testowa 1, 00-001 Warszawa",
-      seller_account_number: "12345678901234567890123456",
-      buyer_type: :company,
-      buyer_id: "9876543210",
-      buyer_full_name: Keyword.get(opts, :buyer_name, "Test Buyer S.A."),
-      buyer_address: Keyword.get(opts, :buyer_address, "ul. Kupiecka 2, 00-002 Krakow"),
-      buyer_country: "PL",
-      is_reverse_charge: false,
-      ksef_invoice_kind: :vat,
-      sales_invoice_items: build_item_attrs(item_count, vat_rate, opts)
-    }
+    invoice =
+      Ash.Seed.seed!(AshSalesInvoice, %{
+        invoice_number: unique_invoice_number(),
+        issue_date: ~D[2026-01-15],
+        sale_date: Keyword.get(opts, :sale_date, ~D[2026-01-15]),
+        due_date: ~D[2026-01-30],
+        currency: "PLN",
+        payment_method: :transfer,
+        seller_nip: "1234567890",
+        seller_display_name: "Test Seller Sp. z o.o.",
+        seller_address: "ul. Testowa 1, 00-001 Warszawa",
+        seller_account_number: "12345678901234567890123456",
+        buyer_type: :company,
+        buyer_id: "9876543210",
+        buyer_full_name: Keyword.get(opts, :buyer_name, "Test Buyer S.A."),
+        buyer_address: Keyword.get(opts, :buyer_address, "ul. Kupiecka 2, 00-002 Krakow"),
+        buyer_country: "PL",
+        is_reverse_charge: false,
+        ksef_invoice_kind: :vat,
+        invoice_type: :poland,
+        organization_id: Repo.get_org_id()
+      })
 
-    {:ok, invoice} = SalesInvoices.create_sales_invoice(%SalesInvoice{}, attrs)
-    Repo.preload(invoice, :sales_invoice_items)
+    seed_items!(invoice, build_item_attrs(item_count, vat_rate, opts))
+
+    Ash.load!(invoice, [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+      authorize?: false,
+      actor: %{},
+      tenant: invoice.organization_id
+    )
   end
 
   def build_multi_rate_invoice(opts \\ []) do
-    attrs = %{
-      invoice_number: unique_invoice_number(),
-      issue_date: ~D[2026-01-15],
-      sale_date: ~D[2026-01-15],
-      due_date: ~D[2026-01-30],
-      currency: "PLN",
-      payment_method: :transfer,
-      seller_nip: "1234567890",
-      seller_display_name: "Test Seller Sp. z o.o.",
-      seller_address: "ul. Testowa 1, 00-001 Warszawa",
-      seller_account_number: "12345678901234567890123456",
-      buyer_type: :company,
-      buyer_id: "9876543210",
-      buyer_full_name: Keyword.get(opts, :buyer_name, "Test Buyer S.A."),
-      buyer_address: "ul. Kupiecka 2, 00-002 Krakow",
-      buyer_country: "PL",
-      is_reverse_charge: false,
-      ksef_invoice_kind: :vat,
-      sales_invoice_items: [
-        %{
-          name: "Service at 23%",
-          quantity: Decimal.new("1"),
-          unit: "szt.",
-          unit_price: Decimal.new("100.00"),
-          vat_rate: "23"
-        },
-        %{
-          name: "Service at 8%",
-          quantity: Decimal.new("1"),
-          unit: "szt.",
-          unit_price: Decimal.new("100.00"),
-          vat_rate: "8"
-        },
-        %{
-          name: "Service at 5%",
-          quantity: Decimal.new("1"),
-          unit: "szt.",
-          unit_price: Decimal.new("100.00"),
-          vat_rate: "5"
-        }
-      ]
-    }
+    invoice =
+      Ash.Seed.seed!(AshSalesInvoice, %{
+        invoice_number: unique_invoice_number(),
+        issue_date: ~D[2026-01-15],
+        sale_date: ~D[2026-01-15],
+        due_date: ~D[2026-01-30],
+        currency: "PLN",
+        payment_method: :transfer,
+        seller_nip: "1234567890",
+        seller_display_name: "Test Seller Sp. z o.o.",
+        seller_address: "ul. Testowa 1, 00-001 Warszawa",
+        seller_account_number: "12345678901234567890123456",
+        buyer_type: :company,
+        buyer_id: "9876543210",
+        buyer_full_name: Keyword.get(opts, :buyer_name, "Test Buyer S.A."),
+        buyer_address: "ul. Kupiecka 2, 00-002 Krakow",
+        buyer_country: "PL",
+        is_reverse_charge: false,
+        ksef_invoice_kind: :vat,
+        invoice_type: :poland,
+        organization_id: Repo.get_org_id()
+      })
 
-    {:ok, invoice} = SalesInvoices.create_sales_invoice(%SalesInvoice{}, attrs)
-    Repo.preload(invoice, :sales_invoice_items)
+    items = [
+      %{
+        name: "Service at 23%",
+        quantity: Decimal.new("1"),
+        unit: "szt.",
+        unit_price: Decimal.new("100.00"),
+        vat_rate: "23"
+      },
+      %{
+        name: "Service at 8%",
+        quantity: Decimal.new("1"),
+        unit: "szt.",
+        unit_price: Decimal.new("100.00"),
+        vat_rate: "8"
+      },
+      %{
+        name: "Service at 5%",
+        quantity: Decimal.new("1"),
+        unit: "szt.",
+        unit_price: Decimal.new("100.00"),
+        vat_rate: "5"
+      }
+    ]
+
+    seed_items!(invoice, items)
+
+    Ash.load!(invoice, [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+      authorize?: false,
+      actor: %{},
+      tenant: invoice.organization_id
+    )
   end
 
   def build_reverse_charge_invoice(opts \\ []) do
-    attrs = %{
-      invoice_type: :foreign,
-      invoice_number: unique_invoice_number(),
-      issue_date: ~D[2026-01-15],
-      sale_date: ~D[2026-01-15],
-      due_date: ~D[2026-01-30],
-      currency: Keyword.get(opts, :currency, "EUR"),
-      payment_method: :transfer,
-      seller_nip: "1234567890",
-      seller_display_name: "Test Seller Sp. z o.o.",
-      seller_address: "ul. Testowa 1, 00-001 Warszawa",
-      seller_account_number: "12345678901234567890123456",
-      buyer_type: :company,
-      buyer_id: "123456789",
-      buyer_full_name: "German Client GmbH",
-      buyer_address: "Teststrasse 1, 10115 Berlin",
-      buyer_country: "DE",
-      is_reverse_charge: true,
-      ksef_invoice_kind: :vat,
-      sales_invoice_items: [
-        %{
-          name: "Software Development Services",
-          quantity: Decimal.new("40"),
-          unit: "h",
-          unit_price: Decimal.new("100.00"),
-          vat_rate: "oo"
-        }
-      ]
-    }
+    invoice =
+      Ash.Seed.seed!(AshSalesInvoice, %{
+        invoice_type: :foreign,
+        invoice_number: unique_invoice_number(),
+        issue_date: ~D[2026-01-15],
+        sale_date: ~D[2026-01-15],
+        due_date: ~D[2026-01-30],
+        currency: Keyword.get(opts, :currency, "EUR"),
+        payment_method: :transfer,
+        seller_nip: "1234567890",
+        seller_display_name: "Test Seller Sp. z o.o.",
+        seller_address: "ul. Testowa 1, 00-001 Warszawa",
+        seller_account_number: "12345678901234567890123456",
+        buyer_type: :company,
+        buyer_id: "123456789",
+        buyer_full_name: "German Client GmbH",
+        buyer_address: "Teststrasse 1, 10115 Berlin",
+        buyer_country: "DE",
+        is_reverse_charge: true,
+        ksef_invoice_kind: :vat,
+        organization_id: Repo.get_org_id()
+      })
 
-    {:ok, invoice} = SalesInvoices.create_sales_invoice(%SalesInvoice{}, attrs)
-    Repo.preload(invoice, :sales_invoice_items)
+    seed_items!(invoice, [
+      %{
+        name: "Software Development Services",
+        quantity: Decimal.new("40"),
+        unit: "h",
+        unit_price: Decimal.new("100.00"),
+        vat_rate: "oo"
+      }
+    ])
+
+    Ash.load!(invoice, [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+      authorize?: false,
+      actor: %{},
+      tenant: invoice.organization_id
+    )
   end
 
   def build_eu_vat_invoice(opts \\ []) do
-    attrs = %{
-      invoice_number: unique_invoice_number(),
-      issue_date: ~D[2026-01-15],
-      sale_date: ~D[2026-01-15],
-      due_date: ~D[2026-01-30],
-      currency: "PLN",
-      payment_method: :transfer,
-      seller_nip: "1234567890",
-      seller_display_name: "Test Seller Sp. z o.o.",
-      seller_address: "ul. Testowa 1, 00-001 Warszawa",
-      seller_account_number: "12345678901234567890123456",
-      buyer_type: :company,
-      buyer_id: "12345678901",
-      buyer_full_name: Keyword.get(opts, :buyer_name, "French Company SARL"),
-      buyer_address: "1 Rue de Test, 75001 Paris",
-      buyer_country: "FR",
-      is_reverse_charge: false,
-      ksef_invoice_kind: :vat,
-      sales_invoice_items: [
-        %{
-          name: "Consulting Services",
-          quantity: Decimal.new("10"),
-          unit: "h",
-          unit_price: Decimal.new("150.00"),
-          vat_rate: "23"
-        }
-      ]
-    }
+    invoice =
+      Ash.Seed.seed!(AshSalesInvoice, %{
+        invoice_number: unique_invoice_number(),
+        issue_date: ~D[2026-01-15],
+        sale_date: ~D[2026-01-15],
+        due_date: ~D[2026-01-30],
+        currency: "PLN",
+        payment_method: :transfer,
+        seller_nip: "1234567890",
+        seller_display_name: "Test Seller Sp. z o.o.",
+        seller_address: "ul. Testowa 1, 00-001 Warszawa",
+        seller_account_number: "12345678901234567890123456",
+        buyer_type: :company,
+        buyer_id: "12345678901",
+        buyer_full_name: Keyword.get(opts, :buyer_name, "French Company SARL"),
+        buyer_address: "1 Rue de Test, 75001 Paris",
+        buyer_country: "FR",
+        is_reverse_charge: false,
+        ksef_invoice_kind: :vat,
+        invoice_type: :poland,
+        organization_id: Repo.get_org_id()
+      })
 
-    {:ok, invoice} = SalesInvoices.create_sales_invoice(%SalesInvoice{}, attrs)
-    Repo.preload(invoice, :sales_invoice_items)
+    seed_items!(invoice, [
+      %{
+        name: "Consulting Services",
+        quantity: Decimal.new("10"),
+        unit: "h",
+        unit_price: Decimal.new("150.00"),
+        vat_rate: "23"
+      }
+    ])
+
+    Ash.load!(invoice, [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+      authorize?: false,
+      actor: %{},
+      tenant: invoice.organization_id
+    )
   end
 
   def build_other_id_invoice(opts \\ []) do
-    attrs = %{
-      invoice_type: :foreign,
-      invoice_number: unique_invoice_number(),
-      issue_date: ~D[2026-01-15],
-      sale_date: ~D[2026-01-15],
-      due_date: ~D[2026-01-30],
-      currency: "USD",
-      payment_method: :transfer,
-      seller_nip: "1234567890",
-      seller_display_name: "Test Seller Sp. z o.o.",
-      seller_address: "ul. Testowa 1, 00-001 Warszawa",
-      seller_account_number: "12345678901234567890123456",
-      buyer_type: :company,
-      buyer_id: "US123456789",
-      buyer_full_name: Keyword.get(opts, :buyer_name, "US Corporation Inc."),
-      buyer_address: "123 Main St, New York, NY 10001",
-      buyer_country: "US",
-      is_reverse_charge: true,
-      ksef_invoice_kind: :vat,
-      sales_invoice_items: [
-        %{
-          name: "Software License",
-          quantity: Decimal.new("1"),
-          unit: "szt.",
-          unit_price: Decimal.new("5000.00"),
-          vat_rate: "oo"
-        }
-      ]
-    }
+    invoice =
+      Ash.Seed.seed!(AshSalesInvoice, %{
+        invoice_type: :foreign,
+        invoice_number: unique_invoice_number(),
+        issue_date: ~D[2026-01-15],
+        sale_date: ~D[2026-01-15],
+        due_date: ~D[2026-01-30],
+        currency: "USD",
+        payment_method: :transfer,
+        seller_nip: "1234567890",
+        seller_display_name: "Test Seller Sp. z o.o.",
+        seller_address: "ul. Testowa 1, 00-001 Warszawa",
+        seller_account_number: "12345678901234567890123456",
+        buyer_type: :company,
+        buyer_id: "US123456789",
+        buyer_full_name: Keyword.get(opts, :buyer_name, "US Corporation Inc."),
+        buyer_address: "123 Main St, New York, NY 10001",
+        buyer_country: "US",
+        is_reverse_charge: true,
+        ksef_invoice_kind: :vat,
+        organization_id: Repo.get_org_id()
+      })
 
-    {:ok, invoice} = SalesInvoices.create_sales_invoice(%SalesInvoice{}, attrs)
-    Repo.preload(invoice, :sales_invoice_items)
+    seed_items!(invoice, [
+      %{
+        name: "Software License",
+        quantity: Decimal.new("1"),
+        unit: "szt.",
+        unit_price: Decimal.new("5000.00"),
+        vat_rate: "oo"
+      }
+    ])
+
+    Ash.load!(invoice, [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+      authorize?: false,
+      actor: %{},
+      tenant: invoice.organization_id
+    )
   end
 
   def build_no_id_invoice(opts \\ []) do
-    attrs = %{
-      invoice_number: unique_invoice_number(),
-      issue_date: ~D[2026-01-15],
-      sale_date: ~D[2026-01-15],
-      due_date: ~D[2026-01-30],
-      currency: "PLN",
-      payment_method: :transfer,
-      seller_nip: "1234567890",
-      seller_display_name: "Test Seller Sp. z o.o.",
-      seller_address: "ul. Testowa 1, 00-001 Warszawa",
-      seller_account_number: "12345678901234567890123456",
-      buyer_type: :individual,
-      buyer_id: nil,
-      buyer_given_name: Keyword.get(opts, :buyer_first_name, "Jan"),
-      buyer_surname: Keyword.get(opts, :buyer_last_name, "Kowalski"),
-      buyer_address: Keyword.get(opts, :buyer_address, "ul. Prywatna 5, 00-005 Warszawa"),
-      buyer_country: "PL",
-      is_reverse_charge: false,
-      ksef_invoice_kind: :vat,
-      sales_invoice_items: [
-        %{
-          name: "Retail Service",
-          quantity: Decimal.new("1"),
-          unit: "szt.",
-          unit_price: Decimal.new("200.00"),
-          vat_rate: "23"
-        }
-      ]
-    }
+    invoice =
+      Ash.Seed.seed!(AshSalesInvoice, %{
+        invoice_number: unique_invoice_number(),
+        issue_date: ~D[2026-01-15],
+        sale_date: ~D[2026-01-15],
+        due_date: ~D[2026-01-30],
+        currency: "PLN",
+        payment_method: :transfer,
+        seller_nip: "1234567890",
+        seller_display_name: "Test Seller Sp. z o.o.",
+        seller_address: "ul. Testowa 1, 00-001 Warszawa",
+        seller_account_number: "12345678901234567890123456",
+        buyer_type: :individual,
+        buyer_id: nil,
+        buyer_given_name: Keyword.get(opts, :buyer_first_name, "Jan"),
+        buyer_surname: Keyword.get(opts, :buyer_last_name, "Kowalski"),
+        buyer_address: Keyword.get(opts, :buyer_address, "ul. Prywatna 5, 00-005 Warszawa"),
+        buyer_country: "PL",
+        is_reverse_charge: false,
+        ksef_invoice_kind: :vat,
+        invoice_type: :poland,
+        organization_id: Repo.get_org_id()
+      })
 
-    {:ok, invoice} = SalesInvoices.create_sales_invoice(%SalesInvoice{}, attrs)
-    Repo.preload(invoice, :sales_invoice_items)
+    seed_items!(invoice, [
+      %{
+        name: "Retail Service",
+        quantity: Decimal.new("1"),
+        unit: "szt.",
+        unit_price: Decimal.new("200.00"),
+        vat_rate: "23"
+      }
+    ])
+
+    Ash.load!(invoice, [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+      authorize?: false,
+      actor: %{},
+      tenant: invoice.organization_id
+    )
   end
 
   def simulate_ksef_submission(invoice, opts \\ []) do
@@ -292,38 +334,83 @@ defmodule Firmowid.KsefTestHelpers do
         "1234567890-20260115-#{String.slice(hex, 0, 6)}-#{String.slice(hex, 6, 6)}-#{String.slice(hex, 12, 2)}"
       end
 
-    {:ok, updated} =
-      invoice
-      |> SalesInvoice.ksef_update_changeset(%{
-        locked_at: DateTime.utc_now(),
-        ksef_number: ksef_number
-      })
-      |> Repo.update()
-
-    updated
+    Ash.Seed.update!(invoice, %{locked_at: DateTime.utc_now(), ksef_number: ksef_number})
   end
 
   def build_correction_invoice(original, opts \\ []) do
-    attrs = %{
-      invoice_number: unique_invoice_number("KOR/"),
-      issue_date: ~D[2026-01-20],
-      sale_date: ~D[2026-01-15],
-      due_date: ~D[2026-02-05],
-      payment_method: original.payment_method,
-      sales_invoice_items:
-        Keyword.get(opts, :items, [
-          %{
-            name: "Corrected Service",
-            quantity: Decimal.new("-1"),
-            unit: "szt.",
-            unit_price: Decimal.new("100.00"),
-            vat_rate: "23"
-          }
-        ])
-    }
+    correction =
+      Ash.Seed.seed!(AshSalesInvoice, %{
+        invoice_number: unique_invoice_number("KOR/"),
+        issue_date: ~D[2026-01-20],
+        sale_date: ~D[2026-01-15],
+        due_date: ~D[2026-02-05],
+        payment_method: original.payment_method,
+        ksef_invoice_kind: :kor,
+        corrected_invoice_id: original.id,
+        # Copy fields from original
+        invoice_type: original.invoice_type,
+        currency: original.currency,
+        seller_nip: original.seller_nip,
+        seller_display_name: original.seller_display_name,
+        seller_address: original.seller_address,
+        seller_name: original.seller_name,
+        seller_surname: original.seller_surname,
+        seller_account_number: original.seller_account_number,
+        buyer_type: original.buyer_type,
+        buyer_id: original.buyer_id,
+        buyer_full_name: original.buyer_full_name,
+        buyer_given_name: original.buyer_given_name,
+        buyer_surname: original.buyer_surname,
+        buyer_display_name: original.buyer_display_name,
+        buyer_address: original.buyer_address,
+        buyer_country: original.buyer_country,
+        buyer_is_different_mail_address: original.buyer_is_different_mail_address,
+        buyer_mail_address: original.buyer_mail_address,
+        buyer_mail_country: original.buyer_mail_country,
+        buyer_email: original.buyer_email,
+        buyer_phone: original.buyer_phone,
+        buyer_description: original.buyer_description,
+        buyer_pesel: original.buyer_pesel,
+        is_reverse_charge: original.is_reverse_charge,
+        is_cash_account: original.is_cash_account,
+        counterparty_id: original.counterparty_id,
+        organization_id: original.organization_id
+      })
 
-    {:ok, correction} = SalesInvoices.create_correction_invoice(original, attrs)
-    Repo.preload(correction, [:sales_invoice_items, :corrected_invoice])
+    items =
+      Keyword.get(opts, :items, [
+        %{
+          name: "Corrected Service",
+          quantity: Decimal.new("-1"),
+          unit: "szt.",
+          unit_price: Decimal.new("100.00"),
+          vat_rate: "23"
+        }
+      ])
+
+    seed_items!(correction, items)
+
+    Ash.load!(correction, [:corrected_invoice, sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+      authorize?: false,
+      actor: %{},
+      tenant: correction.organization_id
+    )
+  end
+
+  # Seeds invoice line items from a list of attribute maps.
+  defp seed_items!(invoice, item_attrs) do
+    item_attrs
+    |> Enum.with_index()
+    |> Enum.each(fn {attrs, index} ->
+      Ash.Seed.seed!(
+        AshSalesInvoiceItem,
+        Map.merge(attrs, %{
+          sales_invoice_id: invoice.id,
+          organization_id: invoice.organization_id,
+          index: index
+        })
+      )
+    end)
   end
 
   defp localize_schema_refs(content) do

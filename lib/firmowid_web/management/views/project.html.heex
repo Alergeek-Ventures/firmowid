@@ -2,7 +2,7 @@
   <div class="flex flex-row items-start justify-between">
     <div class="space-y-1">
       <p class="text-grey-500 text-sm/snug">
-        {case Counterparty.display_label(@project.counterparty) do
+        {case @project.counterparty.display_label do
           "" -> @current_org.name
           label -> label
         end}

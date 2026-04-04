@@ -8,9 +8,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
   """
   use FirmowidWeb, :controller
 
-  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
+  alias Firmowid.Ash.Invoicing
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices
   alias Firmowid.SalesInvoices.Pdf
 
   require Logger
@@ -22,29 +22,38 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
   plug :put_root_layout, html: false
 
   def show(conn, %{"token" => token_string} = params) do
-    case SalesInvoices.get_invoice_by_share_token(token_string) do
+    # by_share_token bypasses tenant — public endpoint
+    case SalesInvoice.by_share_token(token_string, authorize?: false, actor: %{}) do
+      {:ok, nil} ->
+        conn |> put_status(404) |> render(:not_found, layout: false)
+
       {:ok, invoice} ->
-        {invoice, org} = prepare_invoice_with_org_context(invoice)
+        {invoice, logo_url, org} = prepare_invoice_with_org_context(invoice)
         lang = resolve_lang(params, invoice)
 
         render(conn, :show,
           layout: false,
           invoice: invoice,
+          logo_url: logo_url,
           lang: lang,
-          buyer_display_name: AshSalesInvoice.buyer_display_name(invoice) || "",
-          currency_rate: SalesInvoices.get_currency_rate(invoice),
+          buyer_display_name: invoice.buyer_display_name_label || "",
+          currency_rate: Invoicing.get_currency_rate(invoice),
           show_vat: org.is_vat_payer
         )
 
-      {:error, :not_found} ->
+      {:error, _} ->
         conn |> put_status(404) |> render(:not_found, layout: false)
     end
   end
 
   def pdf(conn, %{"token" => token_string}) do
-    case SalesInvoices.get_invoice_by_share_token(token_string) do
+    case SalesInvoice.by_share_token(token_string, authorize?: false, actor: %{}) do
+      {:ok, nil} ->
+        conn |> put_status(404) |> render(:not_found, layout: false)
+
       {:ok, invoice} ->
-        {invoice, org} = prepare_invoice_with_org_context(invoice)
+        {invoice, logo_url, org} = prepare_invoice_with_org_context(invoice)
+        invoice = Map.put(invoice, :logo_url, logo_url)
 
         case Pdf.generate(invoice, show_vat: org.is_vat_payer) do
           {:ok, pdf_binary} ->
@@ -60,7 +69,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
             conn |> put_status(500) |> render(:error, layout: false)
         end
 
-      {:error, :not_found} ->
+      {:error, _} ->
         conn |> put_status(404) |> render(:not_found, layout: false)
     end
   end
@@ -69,10 +78,32 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
   # so that downstream queries (e.g. logo URL resolution) work on this
   # unauthenticated, public endpoint where no plug sets the org automatically.
   defp prepare_invoice_with_org_context(invoice) do
+    alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
+
     org = invoice.organization
     Repo.put_org_id(invoice.organization_id)
-    invoice = invoice |> SalesInvoices.populate_logo_url() |> SalesInvoices.populate_reference_invoices()
-    {invoice, org}
+
+    logo_url = Invoicing.get_logo_url(invoice.organization_id)
+
+    invoice =
+      invoice
+      |> Ash.load!(
+        [
+          :net_value,
+          :vat_value,
+          :gross_value,
+          :buyer_display_name_label,
+          sales_invoice_items: [:net_value, :vat_value, :gross_value],
+          corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+          reference_invoice: []
+        ],
+        authorize?: false,
+        actor: %{},
+        tenant: invoice.organization_id
+      )
+      |> then(fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)
+
+    {invoice, logo_url, org}
   end
 
   defp resolve_lang(%{"lang" => "pl"}, _invoice), do: :pl

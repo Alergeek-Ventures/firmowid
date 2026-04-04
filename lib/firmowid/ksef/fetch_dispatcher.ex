@@ -12,7 +12,7 @@ defmodule Firmowid.Ksef.FetchDispatcher do
 
   import Ecto.Query
 
-  alias Firmowid.CostInvoices.CostInvoice
+  alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ksef
   alias Firmowid.Ksef.Credential
   alias Firmowid.Repo

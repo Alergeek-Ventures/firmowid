@@ -1,11 +1,15 @@
 defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
-  @moduledoc false
+  @moduledoc """
+  Component for editing invoice line items.
+
+  Works with AshPhoenix.Form (WizardDraft, SalesInvoice).
+  The parent view passes a pre-built Phoenix form and the items field name.
+  """
   use FirmowidWeb, :html
 
   alias Firmowid.Ksef.VatRate
   alias Firmowid.Nbp.ApiClient, as: NbpApiClient
-  alias Firmowid.SalesInvoices.SalesInvoice
-  alias Firmowid.SalesInvoices.SalesInvoiceItem
+  alias Phoenix.HTML.FormData
 
   defp currency_options do
     # Use only currencies supported by NBP (plus PLN as base currency)
@@ -25,11 +29,41 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   defp to_boolean("true"), do: true
   defp to_boolean("false"), do: false
 
+  defp item_net_value(item_form) do
+    unit_price = parse_decimal(item_form[:unit_price].value)
+    quantity = parse_decimal(item_form[:quantity].value)
+
+    if unit_price && quantity, do: Decimal.mult(unit_price, quantity), else: Decimal.new(0)
+  end
+
+  defp item_gross_value(item_form) do
+    net = item_net_value(item_form)
+    vat_rate = to_string(item_form[:vat_rate].value || "0")
+    vat_rate_numeric = VatRate.to_numeric(vat_rate)
+    vat = Decimal.mult(net, Decimal.div(vat_rate_numeric, 100))
+    Decimal.add(net, vat)
+  end
+
+  defp parse_decimal(nil), do: nil
+  defp parse_decimal(""), do: nil
+  defp parse_decimal(%Decimal{} = d), do: d
+
+  defp parse_decimal(value) when is_binary(value) do
+    case Decimal.parse(value) do
+      {d, _} -> d
+      :error -> nil
+    end
+  end
+
+  defp parse_decimal(value) when is_integer(value), do: Decimal.new(value)
+  defp parse_decimal(value) when is_float(value), do: Decimal.from_float(value)
+  defp parse_decimal(_), do: nil
+
   defp compute_vat_options(invoice, is_reverse_charge) do
     if is_reverse_charge do
       {VatRate.select_options_short(["oo"]), true}
     else
-      buyer_id_type = SalesInvoice.buyer_id_type(invoice)
+      buyer_id_type = invoice.buyer_id_type
 
       case VatRate.available_rates(invoice.buyer_country, buyer_id_type) do
         {:select, rates, _default} -> {VatRate.select_options_short(rates), false}
@@ -38,23 +72,22 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     end
   end
 
-  defp invoice_summary(%Ecto.Changeset{} = changeset) do
-    items = Ecto.Changeset.get_assoc(changeset, :sales_invoice_items, :struct)
-    currency = Ecto.Changeset.get_field(changeset, :currency)
-
-    invoice = %{sales_invoice_items: items, currency: currency}
+  defp invoice_summary(items, currency) do
+    items = Ash.load!(items, [:net_value, :vat_value, :gross_value], authorize?: false, actor: %{})
+    net = Enum.reduce(items, Decimal.new(0), fn item, acc -> Decimal.add(acc, item.net_value || Decimal.new(0)) end)
+    vat = Enum.reduce(items, Decimal.new(0), fn item, acc -> Decimal.add(acc, item.vat_value || Decimal.new(0)) end)
+    gross = Enum.reduce(items, Decimal.new(0), fn item, acc -> Decimal.add(acc, item.gross_value || Decimal.new(0)) end)
 
     %{
-      net_value: Money.new(currency, SalesInvoice.get_net_value(invoice)),
-      vat_value: Money.new(currency, SalesInvoice.get_vat_value(invoice)),
-      gross_value: Money.new(currency, SalesInvoice.get_gross_value(invoice))
+      net_value: Money.new(currency, net),
+      vat_value: Money.new(currency, vat),
+      gross_value: Money.new(currency, gross)
     }
   end
 
-  defp get_first_error_for_field(changeset, field_name) do
-    changeset
-    |> Ecto.Changeset.get_assoc(:sales_invoice_items)
-    |> Enum.flat_map(& &1.errors)
+  defp get_first_error_for_items(items_forms, field_name) do
+    items_forms
+    |> Enum.flat_map(fn item_form -> item_form.errors end)
     |> Keyword.get_values(field_name)
     |> List.first()
     |> case do
@@ -63,47 +96,77 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     end
   end
 
-  attr :invoice, SalesInvoice, required: true
-  attr :invoice_changeset, Ecto.Changeset, required: true
+  defp extract_items_as_structs(%AshPhoenix.Form{} = form, items_field) do
+    form.forms
+    |> access_forms(items_field)
+    |> Enum.map(fn item_form ->
+      %{
+        name: AshPhoenix.Form.value(item_form, :name),
+        quantity: AshPhoenix.Form.value(item_form, :quantity),
+        unit: AshPhoenix.Form.value(item_form, :unit),
+        unit_price: AshPhoenix.Form.value(item_form, :unit_price),
+        vat_rate: AshPhoenix.Form.value(item_form, :vat_rate)
+      }
+    end)
+  end
 
-  def invoice_items(%{invoice_changeset: changeset, invoice: invoice}) do
-    sales_invoice_items = Ecto.Changeset.get_assoc(changeset, :sales_invoice_items, :struct)
+  defp extract_items_as_structs(_source, _field), do: []
 
-    single_sales_invoice_item =
-      case sales_invoice_items do
-        [_single_item] -> true
+  defp get_currency(%AshPhoenix.Form{} = form), do: AshPhoenix.Form.value(form, :currency)
+
+  defp get_reverse_charge(%AshPhoenix.Form{} = form), do: AshPhoenix.Form.value(form, :is_reverse_charge) || false
+
+  defp form_valid?(%AshPhoenix.Form{} = form), do: form.valid?
+
+  attr :invoice, :any, required: true
+  attr :invoice_changeset, :any, required: true
+  attr :items_field, :atom, default: :sales_invoice_items
+
+  def invoice_items(%{invoice_changeset: source, invoice: invoice, items_field: items_field}) do
+    items = extract_items_as_structs(source, items_field)
+
+    single_item? =
+      case items do
+        [_single] -> true
         _ -> false
       end
 
-    changeset =
-      case sales_invoice_items do
-        [] ->
-          Ecto.Changeset.put_assoc(changeset, :sales_invoice_items, [%SalesInvoiceItem{}])
+    # Ensure at least one item exists for the form
+    {source, items} = ensure_minimum_item(source, items, items_field)
 
-        _ ->
-          changeset
-      end
-
-    # Compute VAT rate options based on buyer context
-    is_reverse_charge = Ecto.Changeset.get_field(changeset, :is_reverse_charge) || false
+    is_reverse_charge = get_reverse_charge(source)
     {vat_options, vat_disabled?} = compute_vat_options(invoice, is_reverse_charge)
 
-    items_form = to_form(changeset, action: :validate)
+    currency = get_currency(source) || "PLN"
+    items_form = build_form(source)
 
-    name_error = get_first_error_for_field(changeset, :name)
-    quantity_error = get_first_error_for_field(changeset, :quantity)
-    unit_price_error = get_first_error_for_field(changeset, :unit_price)
+    # Get nested item forms for error extraction
+    item_forms = get_nested_item_forms(source, items_field)
+    name_error = get_first_error_for_items(item_forms, :name)
+    quantity_error = get_first_error_for_items(item_forms, :quantity)
+    unit_price_error = get_first_error_for_items(item_forms, :unit_price)
+
+    # Sort/drop param names
+    form_name = items_form.name
+    sort_param = "#{form_name}[#{sort_param_name(source, items_field)}][]"
+    drop_param = "#{form_name}[#{drop_param_name(source, items_field)}][]"
+    add_param = sort_param
 
     assigns = %{
       invoice: invoice,
       items_form: items_form,
-      summary: invoice_summary(changeset),
-      single_item?: single_sales_invoice_item,
+      items_field: items_field,
+      summary: invoice_summary(items, currency),
+      single_item?: single_item?,
       vat_options: vat_options,
       vat_disabled?: vat_disabled?,
       name_error: name_error,
       quantity_error: quantity_error,
-      unit_price_error: unit_price_error
+      unit_price_error: unit_price_error,
+      valid?: form_valid?(source),
+      sort_param: sort_param,
+      drop_param: drop_param,
+      add_param: add_param
     }
 
     ~H"""
@@ -115,7 +178,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             field={@items_form[:currency]}
             type="select"
             options={currency_options()}
-            disabled={SalesInvoice.buyer_id_type(@invoice) == :nip}
+            disabled={@invoice.buyer_id_type == :nip}
             new={true}
           />
         </label>
@@ -198,9 +261,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     </div>
 
     <div class="col-span-full grid grid-cols-subgrid gap-y-2" id="items_list" phx-hook=".Sortable">
-      <.inputs_for :let={item} field={@items_form[:sales_invoice_items]}>
+      <.inputs_for :let={item} field={@items_form[@items_field]}>
         <div class="col-span-full grid grid-cols-subgrid items-center">
-          <input type="hidden" name="sales_invoice[items_sort][]" value={item.index} />
+          <input type="hidden" name={@sort_param} value={item.index} />
+          <input type="hidden" name={item[:index].name} value={item.index} />
           <Lucideicons.grip_vertical class="text-grey-700 mr-1" drag-handle />
           <.input
             field={item[:name]}
@@ -259,7 +323,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
 
           <%= if to_boolean(@items_form[:is_reverse_charge].value) do %>
             <% gross_value =
-              Money.new(@items_form[:currency].value, item[:gross_value].value || "0.00") %>
+              Money.new(@items_form[:currency].value, item_gross_value(item)) %>
 
             <p class={[
               "col-span-2 w-58 truncate text-end",
@@ -269,9 +333,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             </p>
           <% else %>
             <% net_value =
-              Money.new(@items_form[:currency].value, item[:net_value].value || "0.00") %>
+              Money.new(@items_form[:currency].value, item_net_value(item)) %>
             <% gross_value =
-              Money.new(@items_form[:currency].value, item[:gross_value].value || "0.00") %>
+              Money.new(@items_form[:currency].value, item_gross_value(item)) %>
 
             <p class={[
               "w-28 truncate text-end",
@@ -289,7 +353,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
 
           <button
             type="button"
-            name="sales_invoice[items_drop][]"
+            name={@drop_param}
             value={item.index}
             phx-click={JS.dispatch("change")}
             disabled={@single_item?}
@@ -300,13 +364,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
         </div>
       </.inputs_for>
 
-      <input type="hidden" name="sales_invoice[items_drop][]" />
+      <input type="hidden" name={@drop_param} />
     </div>
 
     <%!-- todo: add loading state --%>
     <.button
       type="button"
-      name="sales_invoice[items_sort][]"
+      name={@add_param}
       value="new"
       phx-click={JS.dispatch("change")}
       class="col-span-1 col-start-2 mt-3"
@@ -364,4 +428,31 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     </script>
     """
   end
+
+  # Build a Phoenix form from whatever source type we get
+  defp build_form(%AshPhoenix.Form{} = form), do: FormData.to_form(form, [])
+
+  # Get nested item forms for error extraction
+  defp get_nested_item_forms(%AshPhoenix.Form{} = form, items_field) do
+    form.forms
+    |> access_forms(items_field)
+    |> Enum.map(&FormData.to_form(&1, []))
+  end
+
+  # Ensure at least one item for the form
+  defp ensure_minimum_item(source, [], _items_field) do
+    # For AshPhoenix.Form, empty items should be handled at the form level
+    # The form already has the item forms from the resource data
+    {source, []}
+  end
+
+  defp ensure_minimum_item(source, items, _items_field), do: {source, items}
+
+  # Access nested forms from either a keyword list or map
+  defp access_forms(forms, key) when is_map(forms), do: Map.get(forms, key, [])
+  defp access_forms(forms, key) when is_list(forms), do: Keyword.get(forms, key, [])
+
+  defp sort_param_name(%AshPhoenix.Form{}, items_field), do: "_sort_#{items_field}"
+
+  defp drop_param_name(%AshPhoenix.Form{}, items_field), do: "_drop_#{items_field}"
 end

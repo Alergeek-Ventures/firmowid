@@ -8,7 +8,8 @@ defmodule Firmowid.Ash.Blobs.Blob do
   use Ash.Resource,
     domain: Firmowid.Ash.Blobs,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    notifiers: [Ash.Notifier.PubSub]
 
   alias Firmowid.Ash.Blobs.Changes.DeleteFromS3
   alias Firmowid.Ash.Blobs.Changes.UploadToS3
@@ -47,6 +48,14 @@ defmodule Firmowid.Ash.Blobs.Blob do
     policy always() do
       authorize_if always()
     end
+  end
+
+  pub_sub do
+    module FirmowidWeb.Core.Endpoint
+    prefix "blob"
+
+    publish :create_blob, ["created", :_tenant]
+    publish :destroy, ["destroyed", :_tenant]
   end
 
   multitenancy do

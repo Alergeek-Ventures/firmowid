@@ -6,7 +6,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Inbound do
   alias Firmowid.Accounts
   alias Firmowid.Accounts.Organization
   alias Firmowid.Ash.Invoicing.InboundEmail
-  alias Firmowid.CostInvoices.InboundEmailWorker
+  alias Firmowid.Ash.Invoicing.Workers.InboundEmailWorker
   alias Firmowid.Repo
 
   require Logger
@@ -56,7 +56,9 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Inbound do
   defp parse_recipient_email(email) do
     case String.split(email, "@") do
       [nickname, "firmowid.pl"] ->
-        # Look up organization by nickname
+        # Justified Ecto exception: cross-tenant lookup by email nickname.
+        # Same pattern as SalesInvoice.by_share_token — tenant unknown until
+        # we find the org. Accounts domain is not yet Ash-native.
         case Repo.get_by(Organization, [inbound_email_nickname: nickname], skip_organization_id: true) do
           nil -> nil
           org -> {:ok, org.id}

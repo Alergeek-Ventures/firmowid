@@ -33,7 +33,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
       <InvoiceDetails.invoice_header
         is_cost_invoice={true}
         issue_date={@invoice.issue_date}
-        party_display_name={@invoice.seller_display_name}
+        party_display_name={@invoice.effective_seller_display_name}
         description={@invoice.description}
       />
 
@@ -48,7 +48,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
             <% else %>
               <div class="flex flex-row gap-4">
                 <.button
-                  :if={CostInvoice.deletable?(@invoice)}
+                  :if={@invoice.is_deletable}
                   phx-click="delete"
                   color="light_grey"
                   size="small"
@@ -136,7 +136,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
 
               <InvoiceDetails.invoice_amount
                 is_cost_invoice={true}
-                total_amount={Money.new(@invoice.currency, @invoice.total_amount)}
+                total_amount={Money.new(@invoice.effective_currency, @invoice.effective_total_amount)}
               />
             <% end %>
           </div>

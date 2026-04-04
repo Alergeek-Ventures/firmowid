@@ -191,7 +191,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
         />
         <.invoice_metadata_piece
           label={@labels.buyer}
-          value={SalesInvoice.buyer_display_name(@invoice)}
+          value={@invoice.buyer_display_name_label}
           piece_id="buyer"
           multiline
         />
@@ -215,7 +215,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       <.invoice_amount
         is_cost_invoice={false}
         lang={@lang}
-        total_amount={Money.new(@invoice.currency, SalesInvoice.get_gross_value(@invoice))}
+        total_amount={Money.new(@invoice.currency, @invoice.gross_value)}
       />
     </div>
     """

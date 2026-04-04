@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
   @moduledoc false
   use FirmowidWeb, :html
 
-  attr :invoice, Firmowid.SalesInvoices.SalesInvoice, required: true
+  attr :invoice, :map, required: true
   attr :bank_accounts, :list, required: true
   attr :selected_bank_account, :map, required: false
   attr :payment_form, Phoenix.HTML.Form, required: true
@@ -54,7 +54,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
 
       <div class={[
         "border-grey-200 col-start-2 grid w-min min-w-[400px] grid-cols-[min-content_1fr] items-center gap-4 gap-y-2 rounded-lg border p-4 transition-opacity duration-200",
-        if(Ecto.Changeset.get_field(@payment_form.source, :payment_method) == :transfer,
+        if(to_string(@payment_form[:payment_method].value) == "transfer",
           do: "opacity-100",
           else: "pointer-events-none opacity-0"
         )
@@ -80,7 +80,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
         <%= if not Enum.empty?(@bank_accounts) and @selected_bank_account == nil do %>
           <p class="col-span-2">
             Brak domyślnego konta dla tej waluty
-            ({@payment_form[:currency].value}).
+            ({Map.get(@invoice, :currency)}).
           </p>
 
           <.button

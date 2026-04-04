@@ -60,7 +60,6 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
 
   # pseudo mount
   def update(%{invoice: invoice, current_user: current_user}, socket) do
-    Bodyguard.permit!(Firmowid.Invoicing, :show, current_user)
     conversation_id = CostInvoiceAssistant.start_conversation(invoice)
     messages = MessagesStorage.get(conversation_id)
 
@@ -91,8 +90,6 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
   end
 
   def handle_event("accept", _params, socket) do
-    Bodyguard.permit!(Firmowid.Invoicing, :update, socket.assigns.current_user)
-
     CostInvoiceAssistant.accept_linking(socket.assigns.conversation_id)
 
     socket =
@@ -104,8 +101,6 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
   end
 
   def handle_event("reject", _params, socket) do
-    Bodyguard.permit!(Firmowid.Invoicing, :update, socket.assigns.current_user)
-
     CostInvoiceAssistant.reject_linking(socket.assigns.conversation_id)
 
     {:noreply,

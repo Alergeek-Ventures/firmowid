@@ -44,6 +44,12 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         })
       end)
 
+      Req.Test.stub(:bank_data_transactions, fn conn ->
+        Req.Test.json(conn, %{
+          "transactions" => %{"booked" => []}
+        })
+      end)
+
       %{user: user}
     end
 

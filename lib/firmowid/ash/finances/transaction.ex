@@ -32,7 +32,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
 
       All arguments are optional:
       - `date_from`, `date_to` — date range on `booking_date`.
-      - `status`:
+      - `reconciliation`:
         - `:matched` (linked to an invoice)
         - `:pending` (unmatched, not skipped)
         - `:skipped` (unmatched, skipped)
@@ -48,7 +48,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
       argument :date_to, :date
       argument :query, :string
 
-      argument :status, :atom do
+      argument :reconciliation, :atom do
         constraints one_of: [:matched, :skipped, :pending]
       end
 
@@ -69,7 +69,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
                       skip_invoicing == false
                   )
               ) do
-        where argument_equals(:status, :pending)
+        where argument_equals(:reconciliation, :pending)
       end
 
       # :matched — linked to at least one invoice
@@ -80,7 +80,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
                       exists(sales_invoices, true)
                   )
               ) do
-        where argument_equals(:status, :matched)
+        where argument_equals(:reconciliation, :matched)
       end
 
       # :skipped — unmatched and skipped
@@ -92,7 +92,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
                       skip_invoicing == true
                   )
               ) do
-        where argument_equals(:status, :skipped)
+        where argument_equals(:reconciliation, :skipped)
       end
 
       prepare {ParadeDBSearch,

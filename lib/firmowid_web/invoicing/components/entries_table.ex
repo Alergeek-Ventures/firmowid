@@ -34,7 +34,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   # Using map pattern match to avoid Dialyzer false positive about
   # LiveView internal assign fields (:__given__, etc.)
   defp get_sales_invoice_buyer_name(%{__struct__: SalesInvoice} = invoice) do
-    SalesInvoice.buyer_display_name(invoice) || ""
+    invoice.buyer_display_name_label || ""
   end
 
   def table(%{invoicing_entries: [], has_connected_bank_account: true} = assigns) do
@@ -221,14 +221,14 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         :amount,
         case assigns.invoicing_entry do
           %Transaction{} -> assigns.invoicing_entry.transaction_amount
-          %CostInvoice{} -> assigns.invoicing_entry.total_amount
-          %SalesInvoice{} -> SalesInvoice.get_gross_value(assigns.invoicing_entry)
+          %CostInvoice{} -> assigns.invoicing_entry.effective_total_amount
+          %SalesInvoice{} -> assigns.invoicing_entry.gross_value
         end
       )
       |> assign(
         :is_draft,
         case assigns.invoicing_entry do
-          %SalesInvoice{} = invoice -> SalesInvoice.draft?(invoice)
+          %SalesInvoice{} = invoice -> is_nil(invoice.invoice_number)
           _ -> false
         end
       )
@@ -289,7 +289,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   end
 
   defp render_cell(%{column: "amount", invoicing_entry: %SalesInvoice{} = invoice} = assigns) do
-    amount = Money.new(invoice.currency, SalesInvoice.get_gross_value(invoice))
+    amount = Money.new(invoice.currency, invoice.gross_value)
 
     assigns = assign(assigns, :amount, amount)
 
@@ -308,7 +308,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           DateTime.add(DateTime.utc_now(), -120, :second)
         )
 
-    amount = Money.new(invoice.currency, invoice.total_amount)
+    amount = Money.new(invoice.effective_currency, invoice.effective_total_amount)
 
     assigns =
       assigns
@@ -582,7 +582,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   defp render_cell(%{invoicing_entry: %CostInvoice{} = invoice, column: "party"} = assigns) do
     assigns =
       assigns
-      |> assign(:party, invoice.seller_display_name)
+      |> assign(:party, invoice.effective_seller_display_name)
       |> assign(:description, invoice.description)
       |> assign(:navigate, ~p"/kosztowe/#{invoice.id}")
 

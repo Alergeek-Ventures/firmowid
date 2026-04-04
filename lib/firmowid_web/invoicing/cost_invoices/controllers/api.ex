@@ -2,22 +2,20 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Api do
   @moduledoc false
   use FirmowidWeb, :controller
 
-  alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
-  alias Firmowid.Invoicing
+  alias Firmowid.Ash.Invoicing
   alias FirmowidWeb.Infrastructure.Components.ErrorJson
 
   action_fallback FirmowidWeb.Infrastructure.Controllers.Fallback
 
-  def create(conn, %{"blob" => blob_params}) do
-    with :ok <- Bodyguard.permit(Invoicing, :upload, conn.assigns.current_user),
-         {:ok, blob} <-
-           AshCostInvoice.upload_cost_invoice(
-             blob_params.path,
-             blob_params.content_type,
-             blob_params.filename
-           ) do
-      json(conn, %{message: "Cost invoice uploaded successfully", blob_id: blob.id})
-    else
+  def create(%{assigns: %{current_user: %{role: :admin}}} = conn, %{"blob" => blob_params}) do
+    case Invoicing.upload_cost_invoice(
+           blob_params.path,
+           blob_params.content_type,
+           blob_params.filename
+         ) do
+      {:ok, blob} ->
+        json(conn, %{message: "Cost invoice uploaded successfully", blob_id: blob.id})
+
       {:error, {:blob_already_exists, _checksum}} ->
         conn
         |> put_status(:conflict)
@@ -30,9 +28,6 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Api do
         |> put_view(ErrorJson)
         |> render(:error, error: "Unsupported content type")
 
-      {:error, :unauthorized} ->
-        {:error, :unauthorized}
-
       {:error, _} ->
         conn
         |> put_status(:unprocessable_entity)
@@ -41,10 +36,14 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Api do
     end
   end
 
-  def create(conn, _params) do
+  def create(%{assigns: %{current_user: %{role: :admin}}} = conn, _params) do
     conn
     |> put_status(:bad_request)
     |> put_view(ErrorJson)
     |> render(:error, error: "Missing blob parameter")
+  end
+
+  def create(_conn, _params) do
+    {:error, :unauthorized}
   end
 end

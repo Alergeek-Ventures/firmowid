@@ -100,7 +100,7 @@
             <div class="space-y-1 truncate">
               <p class="text-base/snug">{project.name}</p>
               <p class="text-grey-500 text-sm/snug">
-                {case Counterparty.display_label(project.counterparty) do
+                {case project.counterparty.display_label do
                   "" -> @current_org.name
                   label -> label
                 end}
@@ -142,7 +142,7 @@
             <div class="space-y-1 truncate">
               <p class="text-base/snug">{project.name}</p>
               <p class="text-grey-500 text-sm/snug">
-                {case Counterparty.display_label(project.counterparty) do
+                {case project.counterparty.display_label do
                   "" -> @current_org.name
                   label -> label
                 end}
