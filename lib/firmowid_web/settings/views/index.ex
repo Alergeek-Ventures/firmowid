@@ -11,7 +11,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.GoCardless.ApiClient
-  alias Firmowid.Ksef
+  alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Core.Endpoint
 
   def form_basic_info_changeset(organization, attrs \\ %{}) do

@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.TransactionGroup
-  alias Firmowid.Ksef
+  alias Firmowid.Ash.Ksef
 
   attr :invoicing_entries, :list, required: true
   attr :has_connected_bank_account, :boolean, default: false

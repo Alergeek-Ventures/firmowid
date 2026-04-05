@@ -1,4 +1,4 @@
-defmodule Firmowid.Resend.Client do
+defmodule Firmowid.Ash.Invoicing.Services.ResendClient do
   @moduledoc """
   Resend API client for inbound email operations.
 

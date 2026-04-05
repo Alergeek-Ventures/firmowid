@@ -10,8 +10,8 @@ defmodule Firmowid.Seeds.Bytecraft do
   alias Firmowid.Accounts
   alias Firmowid.Accounts.Organization
   alias Firmowid.Ash.Invoicing.Counterparty, as: AshCounterparty
+  alias Firmowid.Ash.Ksef.Credential
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
-  alias Firmowid.Ksef.Credential
   alias Firmowid.Repo
   alias Firmowid.Seeds.Helpers
 
@@ -344,17 +344,15 @@ defmodule Firmowid.Seeds.Bytecraft do
   @ksef_token "20260405-EC-28297E1000-AA3A3DCEA6-57|nip-6161525811|c8948520f70e428f850a668b445c5ba3579da2cb100d43fbb725d377b3eaa819"
 
   defp seed_ksef_credential(bytecraft) do
-    case Repo.get_by(Credential, organization_id: bytecraft.id) do
-      nil ->
-        %Credential{}
-        |> Credential.changeset(%{
+    case Ash.read(Ash.Query.for_read(Credential, :by_organization, %{organization_id: bytecraft.id})) do
+      {:ok, []} ->
+        Ash.Seed.seed!(Credential, %{
           organization_id: bytecraft.id,
           auth_type: :token,
           credentials: @ksef_token
         })
-        |> Repo.insert!()
 
-      credential ->
+      {:ok, [credential]} ->
         credential
     end
   end

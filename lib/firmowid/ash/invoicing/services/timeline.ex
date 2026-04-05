@@ -7,8 +7,8 @@ defmodule Firmowid.Ash.Invoicing.Services.Timeline do
 
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ksef
-  alias Firmowid.Ksef.SubmissionInfo
+  alias Firmowid.Ash.Ksef
+  alias Firmowid.Ash.Ksef.SubmissionInfo
 
   @type event :: %{
           occurred_at: DateTime.t() | NaiveDateTime.t() | nil,

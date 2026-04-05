@@ -105,12 +105,12 @@ config :firmowid, Oban,
   ],
   plugins: [
     {Oban.Plugins.Lifeline, rescue_after: to_timeout(minute: 30)},
-    {Firmowid.Oban.KsefAwarePruner, max_age: 60 * 60 * 24 * 30},
+    {Firmowid.Ash.Ksef.KsefAwarePruner, max_age: 60 * 60 * 24 * 30},
     {Oban.Plugins.Cron,
      timezone: "Europe/Warsaw",
      crontab: [
        {"0 13 * * *", Firmowid.Ash.Invoicing.Workers.MatchingWorker, args: %{name: "matching"}},
-       {"0 */2 * * *", Firmowid.Ksef.FetchDispatcher, args: %{}}
+       {"0 */2 * * *", Firmowid.Ash.Ksef.Workers.FetchDispatcher, args: %{}}
      ]}
   ]
 
@@ -133,7 +133,8 @@ config :firmowid,
     Firmowid.Ash.Invoicing,
     Firmowid.Ash.Payroll,
     Firmowid.Ash.Timetracker,
-    Firmowid.Ash.Events
+    Firmowid.Ash.Events,
+    Firmowid.Ash.Ksef
   ]
 
 config :fun_with_flags, :cache_bust_notifications,

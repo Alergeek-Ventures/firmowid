@@ -2,6 +2,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
   @moduledoc false
   use FirmowidWeb, :html
 
+  alias Firmowid.Ash.Ksef
+  alias Firmowid.Ash.Ksef.VatRate
+
   attr :sales_invoice, :map, required: true
   attr :show_vat, :boolean, default: true
   attr :logo_data_uri, :string, default: nil
@@ -286,7 +289,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
                   )}
                 </td>
                 <td :if={@show_vat} class="py-1 text-right">
-                  {Firmowid.Ksef.VatRate.label(item.vat_rate)}
+                  {VatRate.label(item.vat_rate)}
                 </td>
                 <td class="py-1 text-right">
                   {Money.new(
@@ -389,7 +392,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
                   )}
                 </td>
                 <td :if={@show_vat} class="py-1 text-right">
-                  {Firmowid.Ksef.VatRate.label(item.vat_rate)}
+                  {VatRate.label(item.vat_rate)}
                 </td>
                 <td class="py-1 text-right">
                   {Money.new(
@@ -761,7 +764,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
   defp qrcode(assigns) do
     {:ok, qrcode} =
       assigns.sales_invoice
-      |> Firmowid.Ksef.invoice_url!()
+      |> Ksef.invoice_url!()
       |> QRCode.create()
       |> QRCode.render(:svg)
       |> QRCode.to_base64()

@@ -1,7 +1,7 @@
-defmodule Firmowid.Ksef.InvoiceParserTest do
+defmodule Firmowid.Ash.Ksef.Services.InvoiceParserTest do
   use ExUnit.Case, async: true
 
-  alias Firmowid.Ksef.InvoiceParser
+  alias Firmowid.Ash.Ksef.Services.InvoiceParser
 
   describe "parse/1" do
     test "handles missing optional FormaPlatnosci" do

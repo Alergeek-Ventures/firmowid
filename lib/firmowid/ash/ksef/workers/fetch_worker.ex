@@ -1,19 +1,20 @@
-defmodule Firmowid.Ksef.FetchWorker do
+defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
   @moduledoc false
   use Oban.Worker,
     queue: :ksef_fetch,
     max_attempts: 3
 
   import Ecto.Query
-  import Firmowid.Ksef.ApiClient, only: [parse_datetime!: 1]
+  import Firmowid.Ash.Ksef.Services.ApiClient, only: [parse_datetime!: 1]
 
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Invoicing
+  alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.Services.OpenAIEnrichment
-  alias Firmowid.Ksef.ApiClient
-  alias Firmowid.Ksef.Encryption
-  alias Firmowid.Ksef.InvoiceParser
-  alias Firmowid.Ksef.SessionWorker
+  alias Firmowid.Ash.Ksef.Services.ApiClient
+  alias Firmowid.Ash.Ksef.Services.Encryption
+  alias Firmowid.Ash.Ksef.Services.InvoiceParser
+  alias Firmowid.Ash.Ksef.Workers.SessionWorker
   alias Firmowid.Repo
 
   require Logger
@@ -151,8 +152,11 @@ defmodule Firmowid.Ksef.FetchWorker do
 
   defp unzip_package!(zip_binary) when is_binary(zip_binary) do
     case :zip.unzip(zip_binary, [:memory]) do
-      {:ok, files} -> Enum.map(files, fn {filename, content} -> {to_string(filename), content} end)
-      {:error, reason} -> raise "Failed to unzip KSeF package: #{inspect(reason)}"
+      {:ok, files} ->
+        Enum.map(files, fn {filename, content} -> {to_string(filename), content} end)
+
+      {:error, reason} ->
+        raise "Failed to unzip KSeF package: #{inspect(reason)}"
     end
   end
 
@@ -195,7 +199,7 @@ defmodule Firmowid.Ksef.FetchWorker do
     Logger.info("KSeF invoice numbers from export: #{inspect(ksef_numbers)}")
 
     existing_invoices =
-      CostInvoices.CostInvoice
+      CostInvoice
       |> where([c], c.ksef_number in ^ksef_numbers)
       |> select([c], c.ksef_number)
       |> Repo.all()
@@ -279,6 +283,7 @@ defmodule Firmowid.Ksef.FetchWorker do
            errors: [blob_checksum: {"has already been taken", _}]
          }} ->
           Logger.error("Duplicate blob detected for #{ksef_number}.xml, skipping invoice creation")
+
           :ok
 
         {:error, reason} ->
@@ -294,12 +299,18 @@ defmodule Firmowid.Ksef.FetchWorker do
     attrs
     |> Map.update!(:total_amount, &Decimal.negate(&1))
     |> Map.put(:ksef_number, ksef_number)
-    |> Map.put(:ksef_permanent_storage_date, parse_datetime!(ksef_metadata["permanentStorageDate"]))
+    |> Map.put(
+      :ksef_permanent_storage_date,
+      parse_datetime!(ksef_metadata["permanentStorageDate"])
+    )
     |> Map.put(:ksef_downloaded_at, DateTime.utc_now())
     |> Map.put(:organization_id, Repo.get_org_id())
     |> Map.put(
       :description,
-      OpenAIEnrichment.generate_description(%{"seller" => attrs.seller, "items_list" => attrs.items_list})
+      OpenAIEnrichment.generate_description(%{
+        "seller" => attrs.seller,
+        "items_list" => attrs.items_list
+      })
     )
   end
 

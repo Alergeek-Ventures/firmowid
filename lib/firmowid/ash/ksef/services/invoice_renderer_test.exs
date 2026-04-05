@@ -1,4 +1,4 @@
-defmodule Firmowid.Ksef.InvoiceRendererTest do
+defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
   @moduledoc """
   Tests for InvoiceRenderer.render_fa3/1 with XSD validation.
 
@@ -8,11 +8,11 @@ defmodule Firmowid.Ksef.InvoiceRendererTest do
 
   use Firmowid.DataCase, async: false
 
-  import Firmowid.KsefTestHelpers
+  import Firmowid.Ash.Ksef.KsefTestHelpers
 
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
-  alias Firmowid.Ksef.InvoiceRenderer
+  alias Firmowid.Ash.Ksef.Services.InvoiceRenderer
   alias Firmowid.Repo
 
   @moduletag :ksef_xsd
@@ -350,7 +350,11 @@ defmodule Firmowid.Ksef.InvoiceRendererTest do
       index: 0
     })
 
-    Ash.load!(invoice, [:sales_invoice_items], authorize?: false, actor: %{}, tenant: invoice.organization_id)
+    Ash.load!(invoice, [:sales_invoice_items],
+      authorize?: false,
+      actor: %{},
+      tenant: invoice.organization_id
+    )
   end
 
   defp build_example_2_correction(original) do
@@ -434,7 +438,11 @@ defmodule Firmowid.Ksef.InvoiceRendererTest do
       index: 0
     })
 
-    Ash.load!(invoice, [:sales_invoice_items], authorize?: false, actor: %{}, tenant: invoice.organization_id)
+    Ash.load!(invoice, [:sales_invoice_items],
+      authorize?: false,
+      actor: %{},
+      tenant: invoice.organization_id
+    )
   end
 
   defp update_ksef_submission(invoice, ksef_number) do

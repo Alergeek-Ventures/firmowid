@@ -1,4 +1,4 @@
-defmodule Firmowid.ReductoApiClient do
+defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClient do
   @moduledoc """
   Reducto is a document metadata extraction API and parsing / chunking service.
   Uses Reducto API V3 - see https://docs.reducto.ai/extract/overview
@@ -100,6 +100,7 @@ defmodule Firmowid.ReductoApiClient do
   end
 
   defp maybe_add_system_prompt(instructions, nil), do: instructions
+
   defp maybe_add_system_prompt(instructions, prompt), do: Map.put(instructions, :system_prompt, prompt)
 
   # When citations are enabled, values are wrapped in %{"value" => ..., "citations" => [...]}
@@ -153,7 +154,9 @@ defmodule Firmowid.ReductoApiClient do
     file_path = Path.expand(file_path)
 
     {:ok, file_contents} = File.read(file_path)
-    filename = Path.basename(file_path) <> (file_url |> String.split("?") |> hd() |> Path.extname())
+
+    filename =
+      Path.basename(file_path) <> (file_url |> String.split("?") |> hd() |> Path.extname())
 
     multipart =
       Multipart.add_part(

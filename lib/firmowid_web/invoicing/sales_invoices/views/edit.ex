@@ -18,7 +18,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Invoicing.Services.CorrectionReason
-  alias Firmowid.Ksef
+  alias Firmowid.Ash.Ksef
   alias Firmowid.Repo
   alias FirmowidWeb.Invoicing.SalesInvoices.Views.Creator
 

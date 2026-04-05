@@ -1,17 +1,33 @@
-defmodule Firmowid.Ksef do
-  @moduledoc false
+defmodule Firmowid.Ash.Ksef do
+  @moduledoc """
+  KSeF (Krajowy System e-Faktur) Ash domain.
+
+  Handles Poland's national e-invoicing integration:
+  - Authentication (token-based, per-organization)
+  - Cost invoice fetching (encrypted export → XML parsing → CostInvoice creation)
+  - Sales invoice submission (XML rendering → encryption → send → poll for confirmation)
+  - Session management (access token caching via Cachex, refresh token rotation)
+  - Submission status tracking (Oban job queries → SubmissionInfo struct)
+  """
+
+  use Ash.Domain
+
   import Ecto.Query, warn: false
 
   alias Firmowid.Accounts
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ksef.ApiClient
-  alias Firmowid.Ksef.Credential
-  alias Firmowid.Ksef.FetchWorker
-  alias Firmowid.Ksef.SessionWorker
-  alias Firmowid.Ksef.SubmissionInfo
-  alias Firmowid.Ksef.SubmissionWorker
+  alias Firmowid.Ash.Ksef.Credential
+  alias Firmowid.Ash.Ksef.Services.ApiClient
+  alias Firmowid.Ash.Ksef.SubmissionInfo
+  alias Firmowid.Ash.Ksef.Workers.FetchWorker
+  alias Firmowid.Ash.Ksef.Workers.SessionWorker
+  alias Firmowid.Ash.Ksef.Workers.SubmissionWorker
   alias Firmowid.Repo
+
+  resources do
+    resource Credential
+  end
 
   @ksef_broadcast_topic "ksef_status"
 
@@ -33,7 +49,8 @@ defmodule Firmowid.Ksef do
 
   Status can be `:submitted` (successfully received KSeF number) or `:failed` (submission failed).
   """
-  @spec broadcast_ksef_status(pos_integer(), pos_integer(), :submitted | :failed) :: :ok | {:error, term()}
+  @spec broadcast_ksef_status(pos_integer(), pos_integer(), :submitted | :failed) ::
+          :ok | {:error, term()}
   def broadcast_ksef_status(organization_id, invoice_id, status) do
     Phoenix.PubSub.broadcast(
       Firmowid.PubSub,
@@ -64,13 +81,13 @@ defmodule Firmowid.Ksef do
          :ok <- validate_nip_match(token_nip, organization.nip),
          :ok <- validate_no_existing_credential() do
       {:ok, credential} =
-        %Credential{}
-        |> Credential.changeset(%{
+        Credential
+        |> Ash.Changeset.for_create(:create, %{
           organization_id: org_id,
           auth_type: :token,
           credentials: ksef_token
         })
-        |> Repo.insert()
+        |> Ash.create()
 
       %{"organization_id" => org_id}
       |> SessionWorker.new()
@@ -110,7 +127,13 @@ defmodule Firmowid.Ksef do
   end
 
   def get_credential do
-    Repo.get_by(Credential, organization_id: Repo.get_org_id())
+    org_id = Repo.get_org_id()
+
+    case Ash.read(Ash.Query.for_read(Credential, :by_organization, %{organization_id: org_id})) do
+      {:ok, [credential]} -> credential
+      {:ok, []} -> nil
+      _ -> nil
+    end
   end
 
   def unauthenticate do
@@ -121,13 +144,17 @@ defmodule Firmowid.Ksef do
 
       Firmowid.Oban.cancel_all_jobs(
         from(j in Oban.Job,
-          where: j.worker in ["Firmowid.Ksef.SessionWorker", "Firmowid.Ksef.FetchWorker"],
+          where:
+            j.worker in [
+              "Firmowid.Ash.Ksef.Workers.SessionWorker",
+              "Firmowid.Ash.Ksef.Workers.FetchWorker"
+            ],
           where: fragment("?->>'organization_id' = ?", j.args, ^Repo.get_org_id()),
           where: j.state in ["available", "scheduled", "executing"]
         )
       )
 
-      Repo.delete(credential)
+      Ash.destroy!(credential)
     end)
   end
 
@@ -211,7 +238,13 @@ defmodule Firmowid.Ksef do
     end
   end
 
-  @ksef_required_fields [:seller_nip, :seller_display_name, :seller_address, :issue_date, :invoice_number]
+  @ksef_required_fields [
+    :seller_nip,
+    :seller_display_name,
+    :seller_address,
+    :issue_date,
+    :invoice_number
+  ]
 
   defp validate_ksef_required_fields(invoice) do
     missing = Enum.filter(@ksef_required_fields, &is_nil(Map.get(invoice, &1)))
@@ -234,7 +267,11 @@ defmodule Firmowid.Ksef do
       raise ArgumentError, "Cannot generate KSeF URL for non-KSeF-imported cost invoice"
     else
       invoice = Repo.preload(invoice, :blob)
-      checksum = invoice.blob.blob_checksum |> Base.decode16!(case: :lower) |> Base.url_encode64(padding: false)
+
+      checksum =
+        invoice.blob.blob_checksum
+        |> Base.decode16!(case: :lower)
+        |> Base.url_encode64(padding: false)
 
       invoice_url(seller_nip, issue_date, checksum)
     end
@@ -254,8 +291,11 @@ defmodule Firmowid.Ksef do
   defp backfill_ksef_checksum!(%{ksef_number: ksef_number} = invoice) do
     invoice_xml =
       case get_invoice_xml_by_ksef_number(ksef_number) do
-        {:ok, xml} -> xml
-        {:error, reason} -> raise "Failed to fetch KSeF invoice XML for checksum backfill: #{inspect(reason)}"
+        {:ok, xml} ->
+          xml
+
+        {:error, reason} ->
+          raise "Failed to fetch KSeF invoice XML for checksum backfill: #{inspect(reason)}"
       end
 
     checksum = compute_fa3_checksum(invoice_xml)
@@ -386,7 +426,7 @@ defmodule Firmowid.Ksef do
     Oban.Job
     |> where(
       [j],
-      j.worker == "Firmowid.Ksef.SubmissionWorker" and
+      j.worker == "Firmowid.Ash.Ksef.Workers.SubmissionWorker" and
         fragment("?->>'sales_invoice_id' = ?", j.args, ^to_string(sales_invoice_id))
     )
     |> order_by([j], desc: j.inserted_at)

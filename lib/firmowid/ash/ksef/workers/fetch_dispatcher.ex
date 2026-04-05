@@ -1,4 +1,4 @@
-defmodule Firmowid.Ksef.FetchDispatcher do
+defmodule Firmowid.Ash.Ksef.Workers.FetchDispatcher do
   @moduledoc """
   Dispatches fetch jobs for all organizations with active KSeF credentials.
 
@@ -13,8 +13,8 @@ defmodule Firmowid.Ksef.FetchDispatcher do
   import Ecto.Query
 
   alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ksef
-  alias Firmowid.Ksef.Credential
+  alias Firmowid.Ash.Ksef
+  alias Firmowid.Ash.Ksef.Credential
   alias Firmowid.Repo
 
   require Logger
@@ -22,7 +22,8 @@ defmodule Firmowid.Ksef.FetchDispatcher do
   @impl Oban.Worker
   def perform(%Oban.Job{}) do
     # Get all organizations with active KSeF credentials
-    organization_ids = Repo.all(from(c in Credential, select: c.organization_id), skip_organization_id: true)
+    organization_ids =
+      Repo.all(from(c in Credential, select: c.organization_id), skip_organization_id: true)
 
     Logger.info("Dispatching KSeF fetch jobs for #{length(organization_ids)} organizations")
 

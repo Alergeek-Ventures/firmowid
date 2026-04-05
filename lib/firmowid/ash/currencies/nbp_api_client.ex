@@ -1,4 +1,4 @@
-defmodule Firmowid.Nbp.ApiClient do
+defmodule Firmowid.Ash.Currencies.NbpApiClient do
   @moduledoc """
   Client for the National Bank of Poland (NBP) API.
 

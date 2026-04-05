@@ -1,4 +1,4 @@
-defmodule Firmowid.KsefTestHelpers do
+defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
   @moduledoc """
   Helpers for KSeF FA(3) XSD validation in tests.
 
@@ -10,10 +10,12 @@ defmodule Firmowid.KsefTestHelpers do
   through the Ash resource layer, ensuring tests validate the full integration
   path from resource to XML rendering.
   """
-
-  alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoiceItem, as: AshSalesInvoiceItem
+  alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Repo
+
+  # erlsom is a test-only dependency, suppress undefined module warning in non-test envs
+  @compile {:no_warn_undefined, [:erlsom]}
 
   @schema_cache_dir Path.join([:code.priv_dir(:firmowid), "ksef_schemas"])
 
@@ -31,6 +33,9 @@ defmodule Firmowid.KsefTestHelpers do
     "#{prefix}#{id}/01/2026"
   end
 
+  # sobelow_skip ["Traversal.FileModule"]
+  # path is constructed from @schema_cache_dir (priv/ksef_schemas), not user input.
+  # This caches external XSD schemas for FA(3) validation in tests.
   def ensure_schemas_cached! do
     File.mkdir_p!(@schema_cache_dir)
 
@@ -73,7 +78,7 @@ defmodule Firmowid.KsefTestHelpers do
     item_count = Keyword.get(opts, :items, 1)
 
     invoice =
-      Ash.Seed.seed!(AshSalesInvoice, %{
+      Ash.Seed.seed!(SalesInvoice, %{
         invoice_number: unique_invoice_number(),
         issue_date: ~D[2026-01-15],
         sale_date: Keyword.get(opts, :sale_date, ~D[2026-01-15]),
@@ -106,7 +111,7 @@ defmodule Firmowid.KsefTestHelpers do
 
   def build_multi_rate_invoice(opts \\ []) do
     invoice =
-      Ash.Seed.seed!(AshSalesInvoice, %{
+      Ash.Seed.seed!(SalesInvoice, %{
         invoice_number: unique_invoice_number(),
         issue_date: ~D[2026-01-15],
         sale_date: ~D[2026-01-15],
@@ -163,7 +168,7 @@ defmodule Firmowid.KsefTestHelpers do
 
   def build_reverse_charge_invoice(opts \\ []) do
     invoice =
-      Ash.Seed.seed!(AshSalesInvoice, %{
+      Ash.Seed.seed!(SalesInvoice, %{
         invoice_type: :foreign,
         invoice_number: unique_invoice_number(),
         issue_date: ~D[2026-01-15],
@@ -204,7 +209,7 @@ defmodule Firmowid.KsefTestHelpers do
 
   def build_eu_vat_invoice(opts \\ []) do
     invoice =
-      Ash.Seed.seed!(AshSalesInvoice, %{
+      Ash.Seed.seed!(SalesInvoice, %{
         invoice_number: unique_invoice_number(),
         issue_date: ~D[2026-01-15],
         sale_date: ~D[2026-01-15],
@@ -245,7 +250,7 @@ defmodule Firmowid.KsefTestHelpers do
 
   def build_other_id_invoice(opts \\ []) do
     invoice =
-      Ash.Seed.seed!(AshSalesInvoice, %{
+      Ash.Seed.seed!(SalesInvoice, %{
         invoice_type: :foreign,
         invoice_number: unique_invoice_number(),
         issue_date: ~D[2026-01-15],
@@ -286,7 +291,7 @@ defmodule Firmowid.KsefTestHelpers do
 
   def build_no_id_invoice(opts \\ []) do
     invoice =
-      Ash.Seed.seed!(AshSalesInvoice, %{
+      Ash.Seed.seed!(SalesInvoice, %{
         invoice_number: unique_invoice_number(),
         issue_date: ~D[2026-01-15],
         sale_date: ~D[2026-01-15],
@@ -331,6 +336,7 @@ defmodule Firmowid.KsefTestHelpers do
       if Keyword.get(opts, :with_ksef_number, false) do
         # KSeF number format: NIP-DATE-HEXHEX-HEXHEX-HEX
         hex = 8 |> :crypto.strong_rand_bytes() |> Base.encode16(case: :upper)
+
         "1234567890-20260115-#{String.slice(hex, 0, 6)}-#{String.slice(hex, 6, 6)}-#{String.slice(hex, 12, 2)}"
       end
 
@@ -339,7 +345,7 @@ defmodule Firmowid.KsefTestHelpers do
 
   def build_correction_invoice(original, opts \\ []) do
     correction =
-      Ash.Seed.seed!(AshSalesInvoice, %{
+      Ash.Seed.seed!(SalesInvoice, %{
         invoice_number: unique_invoice_number("KOR/"),
         issue_date: ~D[2026-01-20],
         sale_date: ~D[2026-01-15],
@@ -390,7 +396,9 @@ defmodule Firmowid.KsefTestHelpers do
 
     seed_items!(correction, items)
 
-    Ash.load!(correction, [:corrected_invoice, sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+    Ash.load!(
+      correction,
+      [:corrected_invoice, sales_invoice_items: [:net_value, :vat_value, :gross_value]],
       authorize?: false,
       actor: %{},
       tenant: correction.organization_id
@@ -403,7 +411,7 @@ defmodule Firmowid.KsefTestHelpers do
     |> Enum.with_index()
     |> Enum.each(fn {attrs, index} ->
       Ash.Seed.seed!(
-        AshSalesInvoiceItem,
+        SalesInvoiceItem,
         Map.merge(attrs, %{
           sales_invoice_id: invoice.id,
           organization_id: invoice.organization_id,

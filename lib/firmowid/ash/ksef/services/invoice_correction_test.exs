@@ -1,4 +1,4 @@
-defmodule Firmowid.Ksef.InvoiceCorrectionTest do
+defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
   @moduledoc """
   Tests for correction invoice chain behavior in KSeF XML rendering.
 
@@ -12,12 +12,12 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
 
   use Firmowid.DataCase, async: false
 
-  import Firmowid.KsefTestHelpers
+  import Firmowid.Ash.Ksef.KsefTestHelpers
   import SweetXml
 
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
-  alias Firmowid.Ksef.InvoiceRenderer
+  alias Firmowid.Ash.Ksef.Services.InvoiceRenderer
   alias Firmowid.Repo
 
   setup do
@@ -119,7 +119,9 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
       index: 0
     })
 
-    Ash.load!(correction, [:corrected_invoice, sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+    Ash.load!(
+      correction,
+      [:corrected_invoice, sales_invoice_items: [:net_value, :vat_value, :gross_value]],
       authorize?: false,
       actor: %{},
       tenant: correction.organization_id
@@ -195,9 +197,14 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
       xml = render_xml(kor1)
       doc = parse(xml)
 
-      assert xpath(doc, ~x"//DaneFaKorygowanej/NrFaKorygowanej/text()"s) == original.invoice_number
-      assert xpath(doc, ~x"//DaneFaKorygowanej/DataWystFaKorygowanej/text()"s) == Date.to_iso8601(original.issue_date)
-      assert xpath(doc, ~x"//DaneFaKorygowanej/NrKSeFFaKorygowanej/text()"s) == original.ksef_number
+      assert xpath(doc, ~x"//DaneFaKorygowanej/NrFaKorygowanej/text()"s) ==
+               original.invoice_number
+
+      assert xpath(doc, ~x"//DaneFaKorygowanej/DataWystFaKorygowanej/text()"s) ==
+               Date.to_iso8601(original.issue_date)
+
+      assert xpath(doc, ~x"//DaneFaKorygowanej/NrKSeFFaKorygowanej/text()"s) ==
+               original.ksef_number
     end
 
     test "second correction in chain still references the original, not KOR1" do
@@ -206,8 +213,11 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
       xml = render_xml(kor2)
       doc = parse(xml)
 
-      assert xpath(doc, ~x"//DaneFaKorygowanej/NrFaKorygowanej/text()"s) == original.invoice_number
-      assert xpath(doc, ~x"//DaneFaKorygowanej/DataWystFaKorygowanej/text()"s) == Date.to_iso8601(original.issue_date)
+      assert xpath(doc, ~x"//DaneFaKorygowanej/NrFaKorygowanej/text()"s) ==
+               original.invoice_number
+
+      assert xpath(doc, ~x"//DaneFaKorygowanej/DataWystFaKorygowanej/text()"s) ==
+               Date.to_iso8601(original.issue_date)
     end
 
     test "third correction in chain still references the original" do
@@ -216,8 +226,11 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
       xml = render_xml(kor3)
       doc = parse(xml)
 
-      assert xpath(doc, ~x"//DaneFaKorygowanej/NrFaKorygowanej/text()"s) == original.invoice_number
-      assert xpath(doc, ~x"//DaneFaKorygowanej/DataWystFaKorygowanej/text()"s) == Date.to_iso8601(original.issue_date)
+      assert xpath(doc, ~x"//DaneFaKorygowanej/NrFaKorygowanej/text()"s) ==
+               original.invoice_number
+
+      assert xpath(doc, ~x"//DaneFaKorygowanej/DataWystFaKorygowanej/text()"s) ==
+               Date.to_iso8601(original.issue_date)
     end
   end
 
@@ -293,7 +306,9 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
 
   describe "StanPrzed line items use reference invoice" do
     test "first correction: before items come from original" do
-      original = [item_name: "Original Service", unit_price: "100.00"] |> build_original() |> submit()
+      original =
+        [item_name: "Original Service", unit_price: "100.00"] |> build_original() |> submit()
+
       kor1 = correct(original, item_name: "Corrected Service v1", unit_price: "150.00")
 
       xml = render_xml(kor1)
@@ -456,7 +471,13 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
           # Update VAT rate to 8% after creation
           [item] = kor.sales_invoice_items
           Ash.Seed.update!(item, %{vat_rate: "8"})
-          Ash.load!(kor, [:sales_invoice_items], authorize?: false, actor: %{}, lazy?: false, tenant: kor.organization_id)
+
+          Ash.load!(kor, [:sales_invoice_items],
+            authorize?: false,
+            actor: %{},
+            lazy?: false,
+            tenant: kor.organization_id
+          )
         end)
 
       xml = render_xml(kor1)
@@ -485,7 +506,13 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
         |> then(fn kor ->
           [item] = kor.sales_invoice_items
           Ash.Seed.update!(item, %{quantity: Decimal.new("2")})
-          Ash.load!(kor, [:sales_invoice_items], authorize?: false, actor: %{}, lazy?: false, tenant: kor.organization_id)
+
+          Ash.load!(kor, [:sales_invoice_items],
+            authorize?: false,
+            actor: %{},
+            lazy?: false,
+            tenant: kor.organization_id
+          )
         end)
 
       xml = render_xml(kor1)
@@ -586,7 +613,9 @@ defmodule Firmowid.Ksef.InvoiceCorrectionTest do
         |> build_domestic_invoice()
         |> submit()
 
-      _kor1 = original |> correct(buyer_name: "Updated Buyer v1", unit_price: "150.00") |> submit()
+      _kor1 =
+        original |> correct(buyer_name: "Updated Buyer v1", unit_price: "150.00") |> submit()
+
       kor2 = correct(original, buyer_name: "Updated Buyer v2", unit_price: "200.00")
 
       xml = render_xml(kor2)

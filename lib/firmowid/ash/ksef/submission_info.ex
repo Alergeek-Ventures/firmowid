@@ -1,4 +1,4 @@
-defmodule Firmowid.Ksef.SubmissionInfo do
+defmodule Firmowid.Ash.Ksef.SubmissionInfo do
   @moduledoc """
   Struct representing the KSeF submission status for a sales invoice.
 

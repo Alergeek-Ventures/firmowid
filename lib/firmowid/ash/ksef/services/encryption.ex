@@ -1,6 +1,6 @@
-defmodule Firmowid.Ksef.Encryption do
+defmodule Firmowid.Ash.Ksef.Services.Encryption do
   @moduledoc false
-  alias Firmowid.Ksef.ApiClient
+  alias Firmowid.Ash.Ksef.Services.ApiClient
 
   @doc """
   Encrypts data with AES-256-CBC and PKCS#7 padding.

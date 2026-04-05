@@ -16,7 +16,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Invoicing.WizardDraft
-  alias Firmowid.Ksef
+  alias Firmowid.Ash.Ksef
 
   require Logger
 

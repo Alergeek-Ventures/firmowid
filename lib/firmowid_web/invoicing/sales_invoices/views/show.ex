@@ -6,7 +6,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.InvoiceMatching
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ksef
+  alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Core.Endpoint
 
   @item_calcs [:net_value, :vat_value, :gross_value]

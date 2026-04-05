@@ -8,7 +8,7 @@ defmodule Firmowid.Ash.Invoicing.Validations.ValidateVatRate do
   """
   use Ash.Resource.Validation
 
-  alias Firmowid.Ksef.VatRate
+  alias Firmowid.Ash.Ksef.VatRate
 
   @impl true
   def validate(changeset, opts, _context) do

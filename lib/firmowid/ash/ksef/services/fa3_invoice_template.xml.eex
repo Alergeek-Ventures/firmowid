@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<% alias Firmowid.Ksef.InvoiceRenderer, as: T %>
+<% alias Firmowid.Ash.Ksef.Services.InvoiceRenderer, as: T %>
 <Faktura xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://crd.gov.pl/wzor/2025/06/25/13775/">
 	<Naglowek>
 		<KodFormularza kodSystemowy="FA (3)" wersjaSchemy="1-0E">FA</KodFormularza>

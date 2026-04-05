@@ -403,7 +403,7 @@ defmodule Firmowid.Seeds.MonthM0 do
       Repo.query!(
         """
         INSERT INTO oban.oban_jobs (state, queue, worker, args, attempt, max_attempts, inserted_at, scheduled_at, attempted_at, priority, tags, meta)
-        VALUES ('executing', 'ksef_submissions', 'Firmowid.Ksef.SubmissionWorker',
+        VALUES ('executing', 'ksef_submissions', 'Firmowid.Ash.Ksef.Workers.SubmissionWorker',
                 $1::jsonb, 1, 3, NOW(), NOW(), NOW(), 0, ARRAY[]::text[], $2::jsonb)
         ON CONFLICT DO NOTHING
         """,
@@ -464,7 +464,7 @@ defmodule Firmowid.Seeds.MonthM0 do
       Repo.query!(
         """
         INSERT INTO oban.oban_jobs (state, queue, worker, args, attempt, max_attempts, inserted_at, scheduled_at, discarded_at, priority, tags, meta, errors)
-        VALUES ('discarded', 'ksef_submissions', 'Firmowid.Ksef.SubmissionWorker',
+        VALUES ('discarded', 'ksef_submissions', 'Firmowid.Ash.Ksef.Workers.SubmissionWorker',
                 $1::jsonb, 3, 3, NOW() - INTERVAL '1 hour', NOW() - INTERVAL '1 hour', NOW(), 0, ARRAY[]::text[], $2::jsonb,
                 ARRAY[
                   '{"at": "2025-01-20T14:05:00Z", "attempt": 1, "error": "KSeF API error: connection timeout"}',

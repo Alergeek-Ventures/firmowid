@@ -1,4 +1,4 @@
-defmodule Firmowid.Ksef.SessionWorker do
+defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
   @moduledoc """
   Maintains active KSeF sessions with automatic renewal.
 
@@ -18,9 +18,9 @@ defmodule Firmowid.Ksef.SessionWorker do
   import Ecto.Query
 
   alias Firmowid.Accounts
-  alias Firmowid.Ksef
-  alias Firmowid.Ksef.ApiClient
-  alias Firmowid.Ksef.Credential
+  alias Firmowid.Ash.Ksef
+  alias Firmowid.Ash.Ksef.Credential
+  alias Firmowid.Ash.Ksef.Services.ApiClient
   alias Firmowid.Repo
 
   require Logger
@@ -36,6 +36,7 @@ defmodule Firmowid.Ksef.SessionWorker do
            perform_authentication(credential) do
       Ksef.fetch_cost_invoices(DateTime.shift(DateTime.utc_now(), day: -30))
       schedule_reauthentication!(refresh_token)
+
       Cachex.put(:ksef, {:access_token, organization_id}, access_token, expire: access_token_ttl(access_token))
     else
       nil ->
@@ -81,7 +82,8 @@ defmodule Firmowid.Ksef.SessionWorker do
       Repo.one(
         from(j in Oban.Job,
           where:
-            j.worker == "Firmowid.Ksef.SessionWorker" and j.state in ["scheduled", "available"] and
+            j.worker == "Firmowid.Ash.Ksef.Workers.SessionWorker" and
+              j.state in ["scheduled", "available"] and
               fragment("?->>'organization_id' = ?::text", j.args, ^organization_id) and
               not is_nil(fragment("?->>'refresh_token'", j.args)),
           order_by: [desc: j.scheduled_at],

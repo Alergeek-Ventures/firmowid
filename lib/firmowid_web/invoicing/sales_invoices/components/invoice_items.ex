@@ -7,8 +7,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   """
   use FirmowidWeb, :html
 
-  alias Firmowid.Ksef.VatRate
-  alias Firmowid.Nbp.ApiClient, as: NbpApiClient
+  alias Firmowid.Ash.Currencies.NbpApiClient
+  alias Firmowid.Ash.Ksef.VatRate
   alias Phoenix.HTML.FormData
 
   defp currency_options do

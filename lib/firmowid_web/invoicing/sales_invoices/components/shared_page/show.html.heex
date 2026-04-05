@@ -81,7 +81,7 @@
               </a>
               <a
                 :if={not is_nil(invoice.ksef_number)}
-                href={Firmowid.Ksef.invoice_url!(invoice)}
+                href={Firmowid.Ash.Ksef.invoice_url!(invoice)}
                 target="_blank"
                 class="hover:bg-orangeText flex w-full items-center justify-center gap-2 rounded-lg bg-black px-4 py-3 text-sm font-medium text-white transition-colors"
               >

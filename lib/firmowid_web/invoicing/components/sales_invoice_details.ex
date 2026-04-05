@@ -4,8 +4,8 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
 
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ksef
-  alias Firmowid.Ksef.SubmissionInfo
+  alias Firmowid.Ash.Ksef
+  alias Firmowid.Ash.Ksef.SubmissionInfo
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
 

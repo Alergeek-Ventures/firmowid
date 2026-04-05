@@ -3,7 +3,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
   use FirmowidWeb, :live_component
 
   alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ksef
+  alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
 

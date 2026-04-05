@@ -13,7 +13,7 @@ defmodule Firmowid.Ash.Invoicing.Workers.CostInvoiceWorker do
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.Services.OpenAIEnrichment
-  alias Firmowid.ReductoApiClient
+  alias Firmowid.Ash.Invoicing.Services.ReductoApiClient
 
   require Logger
 

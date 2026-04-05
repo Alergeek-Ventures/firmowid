@@ -1,4 +1,4 @@
-defmodule Firmowid.Ksef.InvoiceParser do
+defmodule Firmowid.Ash.Ksef.Services.InvoiceParser do
   @moduledoc """
   Parses FA(3) KSeF invoice XML into a map suitable for CostInvoice changeset.
   """
@@ -15,7 +15,7 @@ defmodule Firmowid.Ksef.InvoiceParser do
   ## Example
 
       iex> xml = File.read!("path/to/invoice.xml")
-      iex> {:ok, attrs} = Firmowid.Ksef.InvoiceParser.parse(xml)
+      iex> {:ok, attrs} = Firmowid.Ash.Ksef.Services.InvoiceParser.parse(xml)
       iex> attrs.seller_nip
       "7191575524"
   """

@@ -1,4 +1,4 @@
-defmodule Firmowid.Oban.KsefAwarePruner do
+defmodule Firmowid.Ash.Ksef.KsefAwarePruner do
   @moduledoc """
   Custom Oban pruner that preserves KSeF submission jobs.
 
@@ -14,7 +14,7 @@ defmodule Firmowid.Oban.KsefAwarePruner do
   Replace the standard Pruner in your Oban config:
 
       plugins: [
-        {Firmowid.Oban.KsefAwarePruner, max_age: 60 * 60 * 24 * 30},
+        {Firmowid.Ash.Ksef.KsefAwarePruner, max_age: 60 * 60 * 24 * 30},
         ...
       ]
 

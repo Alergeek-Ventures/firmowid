@@ -1,4 +1,4 @@
-defmodule Firmowid.Ksef.SubmissionWorker do
+defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
   @moduledoc """
   Handles sales invoice submission to KSeF.
 
@@ -13,10 +13,10 @@ defmodule Firmowid.Ksef.SubmissionWorker do
     max_attempts: 3
 
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ksef
-  alias Firmowid.Ksef.ApiClient
-  alias Firmowid.Ksef.InvoiceRenderer
-  alias Firmowid.Ksef.SessionWorker
+  alias Firmowid.Ash.Ksef
+  alias Firmowid.Ash.Ksef.Services.ApiClient
+  alias Firmowid.Ash.Ksef.Services.InvoiceRenderer
+  alias Firmowid.Ash.Ksef.Workers.SessionWorker
   alias Firmowid.Repo
 
   require Logger
@@ -38,7 +38,8 @@ defmodule Firmowid.Ksef.SubmissionWorker do
          invoice_xml = InvoiceRenderer.render_fa3(invoice),
          access_token = SessionWorker.get_access_token!(),
          {:ok, session_data} <- ApiClient.open_online_session(access_token),
-         {:ok, invoice_reference} <- ApiClient.send_invoice(access_token, session_data, invoice_xml),
+         {:ok, invoice_reference} <-
+           ApiClient.send_invoice(access_token, session_data, invoice_xml),
          :ok <- ApiClient.close_online_session(access_token, session_data.session_reference) do
       Repo.transaction(fn ->
         lock_invoice(invoice, session_data.session_reference)

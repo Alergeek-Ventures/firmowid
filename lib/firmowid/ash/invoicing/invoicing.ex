@@ -23,11 +23,12 @@ defmodule Firmowid.Ash.Invoicing do
   use Ash.Domain
 
   alias Firmowid.Ash.Blobs
+  alias Firmowid.Ash.Currencies.NbpApiClient
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.Workers.CostInvoiceWorker
   alias Firmowid.Ash.Invoicing.Workers.MatchingWorker
-  alias Firmowid.Nbp.ApiClient
+  alias Firmowid.Ash.Ksef
 
   require Ash.Query
 
@@ -322,7 +323,7 @@ defmodule Firmowid.Ash.Invoicing do
       when not is_nil(ksef_number) and is_nil(blob_id) do
     opts = [tenant: invoice.organization_id] ++ @bridge_opts
 
-    with {:ok, xml} <- Firmowid.Ksef.get_invoice_xml_by_ksef_number(ksef_number),
+    with {:ok, xml} <- Ksef.get_invoice_xml_by_ksef_number(ksef_number),
          {:ok, path} <- Briefly.create(extname: ".xml"),
          :ok <- File.write(path, xml),
          {:ok, blob} <-
@@ -463,7 +464,7 @@ defmodule Firmowid.Ash.Invoicing do
 
   def get_currency_rate(%{currency: currency, issue_date: issue_date, sale_date: sale_date}) do
     conversion_date = get_currency_conversion_date(issue_date, sale_date)
-    ApiClient.get_exchange_rate(currency, conversion_date)
+    NbpApiClient.get_exchange_rate(currency, conversion_date)
   end
 
   @doc """

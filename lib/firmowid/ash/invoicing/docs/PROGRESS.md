@@ -72,27 +72,43 @@ All 17 items from the `14-ash-native-cleanup.md` worklist have been addressed:
 16. ✅ **Added transaction join code interfaces to domain** — `create_sales_invoice_connections`, `delete_sales_invoice_connections`, `create_cost_invoice_connections`, `delete_cost_invoice_connections` all defined on `invoicing.ex`.
 17. ✅ **Added explanatory comment to Oban count query** — Documented why raw Ecto on `Oban.Job` is the only justified exception.
 
-### NEXT: Phase 15 — Deep Ash-Native Refactor
+### COMPLETED: Phase 15 — Deep Ash-Native Refactor
 
 Plan: `lib/firmowid/ash/invoicing/docs/15-deep-ash-native-refactor.md`
 
-Previous session accomplished (Phase 14.5 — search migration + callsite loads):
-1. ✅ Search migrated to Ash-native — deleted `search.ex`, `:search` actions on both resources
-2. ✅ `gross_value_sql` expression calc + `gross_total` aggregate on SalesInvoice
-3. ✅ `search_invoices/1` orchestration on domain
-4. ✅ Predicate calcs wired to templates (`is_ksef_imported`, `is_deletable` renamed with `is_` prefix)
-5. ✅ Orchestration functions moved to domain (delete/upload/create cost invoice, hydrate, processing count)
-6. ✅ ALL loads removed from actions — callsites decide what to load
-7. ✅ All callsites updated with explicit loads
-8. ✅ `mix check` passes, manual smoke test passes
+All 6 phases completed:
+- ✅ **Phase 0**: SalesInvoiceItem — 4 inline expression calcs replace 3 module calcs + 3 plain functions
+- ✅ **Phase 1**: SalesInvoice — 3 sum aggregates replace 3 module calcs + 3 plain functions
+- ✅ **Phase 2**: Predicates — deleted 4 SalesInvoice + 3 CostInvoice predicate functions, updated ~19 callsites
+- ✅ **Phase 3**: Orchestration → domain (logo, currency rate, numbering series moved to invoicing.ex)
+- ✅ **Phase 4**: Entries refactor — renamed status→reconciliation, :unmatched→:pending, deleted entries.ex (224 lines)
+- ✅ **Phase 5**: Remaining functions — all plain functions on SalesInvoice/CostInvoice/Counterparty converted
 
-Remaining work (6 phases):
-- **Phase 0**: SalesInvoiceItem — pure expression calcs (replace module calcs)
-- **Phase 1**: SalesInvoice — sum aggregates replace module calcs
-- **Phase 2**: Predicates — delete duplicate functions, use calc fields
-- **Phase 3**: Orchestration → domain (logo, currency rate, numbering series)
-- **Phase 4**: Entries refactor — align with Transaction reference, rename status→reconciliation, :unmatched→:pending, delete entries.ex
-- **Phase 5**: Remaining functions — expression calcs, module calcs, aggregates for everything
+### COMPLETED: Directory consolidation + Currencies domain
+
+1. ✅ Relocated 3 test files to ash/invoicing/, rewrote to use domain code interfaces
+2. ✅ Eliminated `lib/firmowid/cost_invoices/` (3 files → ash/invoicing/workers/ + services/)
+3. ✅ Eliminated `lib/firmowid/invoicing/` (22 files → ash/invoicing/ subdirectories)
+4. ✅ Eliminated `lib/firmowid/sales_invoices/` (9 files → ash/invoicing/ subdirectories)
+5. ✅ Created `Firmowid.Ash.Currencies` domain (ExchangeRate resource, Converter agent, DatabaseCache)
+6. ✅ Eliminated `lib/firmowid/currencies/` + `lib/firmowid/currencies.ex`
+7. ✅ Moved `TimeConverter` → `Timetracker.seconds_to_hours/1`, eliminated `lib/firmowid/helpers/`
+
+### NEXT: KSeF domain consolidation + API client relocations
+
+Plan: `lib/firmowid/ash/ksef/docs/00-ksef-domain-consolidation.md`
+Worker rename guide: `lib/firmowid/ash/ksef/docs/01-oban-worker-rename-migration.md`
+
+Scope:
+- Move `lib/firmowid/ksef/` (16 files) → `lib/firmowid/ash/ksef/` as Ash domain
+- Convert `Credential` to Ash resource
+- Rename all worker modules (with Oban migration for stored worker strings)
+- Move `KsefAwarePruner` from `lib/firmowid/oban/`
+- Move NBP ApiClient → `Ash.Currencies.NbpApiClient`
+- Move Resend Client → `Ash.Invoicing.Services.ResendClient`
+- Move ReductoApiClient → `Ash.Invoicing.Services.ReductoApiClient`
+- Fix stale `CostInvoices.CostInvoice` alias in fetch_worker.ex (existing bug)
+- Update ~60 callsite references across lib, web, tests, seeds, config
 
 ### Remaining justified Ecto exceptions:
 | Exception | File | Reason |

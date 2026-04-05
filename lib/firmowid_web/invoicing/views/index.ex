@@ -14,7 +14,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.TransactionGroup
-  alias Firmowid.Ksef
+  alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Core.Endpoint
   alias Phoenix.Socket.Broadcast
 

@@ -13,8 +13,8 @@ defmodule Firmowid.Ash.Invoicing.Workers.InboundEmailWorker do
 
   alias Firmowid.Accounts
   alias Firmowid.Ash.Invoicing
+  alias Firmowid.Ash.Invoicing.Services.ResendClient
   alias Firmowid.Repo
-  alias Firmowid.Resend.Client
 
   require Logger
 
@@ -73,7 +73,7 @@ defmodule Firmowid.Ash.Invoicing.Workers.InboundEmailWorker do
 
   # Attachment listing and filtering
   defp list_and_filter_attachments(inbound_email) do
-    with {:ok, attachments} <- Client.list_attachments(inbound_email.resend_email_id) do
+    with {:ok, attachments} <- ResendClient.list_attachments(inbound_email.resend_email_id) do
       attachments
       |> Enum.filter(&valid_attachment?/1)
       |> case do
@@ -116,7 +116,7 @@ defmodule Firmowid.Ash.Invoicing.Workers.InboundEmailWorker do
 
     Logger.debug("Scheduling attachment #{filename} (#{content_type})")
 
-    with {:ok, binary} <- Client.download_attachment(download_url),
+    with {:ok, binary} <- ResendClient.download_attachment(download_url),
          {:ok, temp_path} <- write_to_temp_file(binary, filename),
          {:ok, _blob} <-
            Invoicing.upload_cost_invoice(temp_path, content_type, filename, inbound_email_id) do
