@@ -29,7 +29,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     end
   end
 
-  def initiate_export(args) do
+  defp initiate_export(args) do
     date_from = parse_datetime!(args["date_from"])
     encryption_data = Encryption.generate_encryption_data()
 
@@ -46,7 +46,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     end
   end
 
-  def poll_export(%{"reference_number" => reference_number} = args) do
+  defp poll_export(%{"reference_number" => reference_number} = args) do
     session = SessionWorker.get_access_token!()
 
     case ApiClient.get_export_status(session, reference_number) do

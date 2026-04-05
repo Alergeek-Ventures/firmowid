@@ -104,6 +104,8 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
     end
   end
 
+  @doc "Returns a valid KSeF access token for the current organization. Refreshes or re-authenticates as needed."
+  @spec get_access_token!() :: String.t()
   def get_access_token! do
     organization_id = Repo.get_org_id()
 
@@ -131,6 +133,8 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
     end)
   end
 
+  @doc "Invalidates the cached KSeF access token for the current organization."
+  @spec invalidate_access_token() :: {:ok, true} | {:ok, false}
   def invalidate_access_token do
     organization_id = Repo.get_org_id()
     Cachex.del(:ksef, {:access_token, organization_id})

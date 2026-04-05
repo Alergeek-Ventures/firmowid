@@ -73,6 +73,9 @@ defmodule Firmowid.Ash.Ksef do
     - `{:error, :nip_mismatch}` if NIP in token doesn't match organization's NIP
     - `{:error, :already_connected}` if organization already has KSeF credentials
   """
+  @spec authenticate_with_ksef_token(String.t()) ::
+          {:ok, Credential.t()}
+          | {:error, :invalid_token_format | :nip_mismatch | :already_connected}
   def authenticate_with_ksef_token(ksef_token) when is_binary(ksef_token) do
     org_id = Repo.get_org_id()
     {:ok, organization} = Accounts.get_organization(org_id)
@@ -126,6 +129,10 @@ defmodule Firmowid.Ash.Ksef do
     end
   end
 
+  @doc """
+  Returns the KSeF credential for the current organization, or `nil` if none exists.
+  """
+  @spec get_credential() :: Credential.t() | nil
   def get_credential do
     org_id = Repo.get_org_id()
 
@@ -136,6 +143,13 @@ defmodule Firmowid.Ash.Ksef do
     end
   end
 
+  @doc """
+  Disconnects the current organization from KSeF.
+
+  Invalidates the cached access token, cancels all pending KSeF jobs,
+  and deletes the stored credential.
+  """
+  @spec unauthenticate() :: {:ok, term()} | {:error, term()}
   def unauthenticate do
     SessionWorker.invalidate_access_token()
 
@@ -158,6 +172,10 @@ defmodule Firmowid.Ash.Ksef do
     end)
   end
 
+  @doc """
+  Enqueues an Oban job to fetch cost invoices from KSeF starting from `date_from`.
+  """
+  @spec fetch_cost_invoices(DateTime.t()) :: {:ok, Oban.Job.t()} | {:error, term()}
   def fetch_cost_invoices(date_from) do
     %{
       "action" => "initiate_export",
@@ -256,6 +274,13 @@ defmodule Firmowid.Ash.Ksef do
     end
   end
 
+  @doc """
+  Generates the KSeF verification URL for an invoice (sales or cost).
+
+  For sales invoices, backfills the checksum from KSeF API if missing.
+  Raises on cost invoices without a KSeF number.
+  """
+  @spec invoice_url!(map()) :: String.t()
   def invoice_url!(%{seller_nip: seller_nip, issue_date: issue_date, ksef_number: ksef_number} = invoice)
       when not is_nil(ksef_number) do
     checksum = invoice.ksef_invoice_checksum || backfill_ksef_checksum!(invoice)
@@ -311,6 +336,8 @@ defmodule Firmowid.Ash.Ksef do
     checksum
   end
 
+  @doc "Computes SHA-256 checksum of FA(3) XML content, URL-safe base64 encoded."
+  @spec compute_fa3_checksum(binary()) :: String.t()
   def compute_fa3_checksum(xml_content) when is_binary(xml_content) do
     :sha256
     |> :crypto.hash(xml_content)
