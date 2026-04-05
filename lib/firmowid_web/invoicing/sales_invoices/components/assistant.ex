@@ -4,9 +4,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
 
   alias Firmowid.Accounts
   alias Firmowid.Ash.Finances
-  alias Firmowid.Invoicing.Matching.Assistant.Message
-  alias Firmowid.Invoicing.Matching.Assistant.MessagesStorage
-  alias Firmowid.Invoicing.Matching.SalesInvoiceAssistant
+  alias Firmowid.Ash.Invoicing.Matching.Assistant.Message
+  alias Firmowid.Ash.Invoicing.Matching.Assistant.MessagesStorage
+  alias Firmowid.Ash.Invoicing.Matching.SalesInvoiceAssistant
   alias FirmowidWeb.Invoicing.Components.Assistant, as: Components
 
   @impl true

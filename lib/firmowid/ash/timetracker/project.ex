@@ -16,13 +16,13 @@ defmodule Firmowid.Ash.Timetracker.Project do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Resource
+  alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Changes.CleanupProjectTag
   alias Firmowid.Ash.Timetracker.Changes.CreateProjectTag
   alias Firmowid.Ash.Timetracker.Changes.SyncProjectTagName
   alias Firmowid.Ash.Timetracker.ProjectCosts
   alias Firmowid.Ash.Timetracker.ProjectUser
   alias Firmowid.Ash.Timetracker.Session
-  alias Firmowid.Helpers.TimeConverter
 
   require Ash.Query
   require Resource
@@ -424,7 +424,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
 
     Enum.map(results, fn project ->
       seconds = project.aggregates[:duration] || 0
-      hours = TimeConverter.time_worked_in_seconds_to_hours(seconds)
+      hours = Timetracker.seconds_to_hours(seconds)
       Map.put(project, :hours, hours)
     end)
   end

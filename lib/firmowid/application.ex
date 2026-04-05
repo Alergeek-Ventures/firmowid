@@ -36,8 +36,8 @@ defmodule Firmowid.Application do
         Firmowid.Ash.Finances.GoCardless.TokenManager,
         Firmowid.Vault,
         {Oban, Application.fetch_env!(:firmowid, Oban)},
-        Firmowid.Invoicing.Matching.Assistant.MessagesStorage,
-        Firmowid.Currencies
+        Firmowid.Ash.Invoicing.Matching.Assistant.MessagesStorage,
+        Firmowid.Ash.Currencies.Converter
       ] ++
         maybe_posthog_supervisor() ++
         [

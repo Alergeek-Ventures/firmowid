@@ -2,8 +2,8 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
   @moduledoc false
   use FirmowidWeb, :live_component
 
+  alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
-  alias Firmowid.Helpers.TimeConverter
 
   @impl true
   def mount(socket) do
@@ -143,7 +143,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
         AshHoursRecord.create(
           %{
             user_id: socket.assigns.current_user.id,
-            number_of_hours: TimeConverter.time_worked_in_seconds_to_hours(socket.assigns.total_duration),
+            number_of_hours: Timetracker.seconds_to_hours(socket.assigns.total_duration),
             month: socket.assigns.selected_date.month,
             year: socket.assigns.selected_date.year,
             upload_path: path,

@@ -26,7 +26,7 @@ defmodule Firmowid.Ash.Invoicing do
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.Workers.CostInvoiceWorker
-  alias Firmowid.Invoicing.Worker, as: MatchingWorker
+  alias Firmowid.Ash.Invoicing.Workers.MatchingWorker
   alias Firmowid.Nbp.ApiClient
 
   require Ash.Query

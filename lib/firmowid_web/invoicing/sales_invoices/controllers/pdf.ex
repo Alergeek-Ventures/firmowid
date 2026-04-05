@@ -4,7 +4,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
 
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.SalesInvoices.Pdf
+  alias Firmowid.Ash.Invoicing.Services.Pdf
 
   require Logger
 

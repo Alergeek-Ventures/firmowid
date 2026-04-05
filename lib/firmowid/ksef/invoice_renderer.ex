@@ -145,7 +145,7 @@ defmodule Firmowid.Ksef.InvoiceRenderer do
   #
   # All these cases have zero VAT, so there's nothing to convert to PLN.
   # If a future use case requires P_14_XW (e.g., B2C to EU consumer with Polish VAT),
-  # add `vat_pln` to the summary map using `Firmowid.Currencies.normalize_amount_to_pln/3`
+  # add `vat_pln` to the summary map using `Firmowid.Ash.Currencies.Converter.normalize_amount_to_pln/3`
   # with the rate date from `SalesInvoice.get_currency_conversion_date/1`.
 
   # For correction invoices (KOR) with before/after method, calculate delta (after - before)

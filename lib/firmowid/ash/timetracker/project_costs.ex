@@ -86,7 +86,7 @@ defmodule Firmowid.Ash.Timetracker.ProjectCosts do
   @spec compute_project_month_users_with_cost(Ash.UUID.t(), Date.t()) :: [map()]
   def compute_project_month_users_with_cost(project_id, %Date{} = date) do
     alias Firmowid.Accounts
-    alias Firmowid.Helpers.TimeConverter
+    alias Firmowid.Ash.Timetracker
 
     as_of_date = Date.end_of_month(date)
 
@@ -95,7 +95,7 @@ defmodule Firmowid.Ash.Timetracker.ProjectCosts do
     |> Enum.map(fn %{user: u, time_worked: t, removed_from_project: r, hours_record: hr} ->
       salary = query_user_salary_as_of(u.id, as_of_date)
       hourly_rate = salary && salary.hourly_rate
-      hours = TimeConverter.time_worked_in_seconds_to_hours(t)
+      hours = Timetracker.seconds_to_hours(t)
       cost = hourly_rate && Decimal.mult(hourly_rate, Decimal.new(hours))
 
       u

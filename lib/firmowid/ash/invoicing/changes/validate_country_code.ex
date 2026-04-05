@@ -12,7 +12,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.ValidateCountryCode do
   """
   use Ash.Resource.Change
 
-  alias Firmowid.SalesInvoices.CountryCodes
+  alias Firmowid.Ash.Invoicing.CountryCodes
 
   @impl true
   def change(changeset, opts, _context) do

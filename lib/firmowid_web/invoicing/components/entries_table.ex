@@ -7,7 +7,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Invoicing.TransactionGroup
+  alias Firmowid.Ash.Invoicing.TransactionGroup
   alias Firmowid.Ksef
 
   attr :invoicing_entries, :list, required: true

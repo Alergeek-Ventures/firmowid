@@ -18,6 +18,7 @@ defmodule Firmowid.Ash.Analysis do
 
   alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.Ash.Analysis.TagDefinition
+  alias Firmowid.Ash.Currencies.Converter, as: Currencies
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Transaction, as: EctoTransaction
   alias Firmowid.Ash.Invoicing.CostInvoice
@@ -25,7 +26,6 @@ defmodule Firmowid.Ash.Analysis do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.Ash.Scope
-  alias Firmowid.Currencies
   alias Firmowid.Repo
 
   require Ash.Query

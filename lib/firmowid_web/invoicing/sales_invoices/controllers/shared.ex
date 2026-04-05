@@ -10,8 +10,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
 
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Invoicing.Services.Pdf
   alias Firmowid.Repo
-  alias Firmowid.SalesInvoices.Pdf
 
   require Logger
 

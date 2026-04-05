@@ -22,7 +22,7 @@ defmodule Firmowid.Ksef.VatRate do
   - Non-EU: fixed `np I`
   - Reverse charge: handled separately (auto `oo`)
   """
-  alias Firmowid.SalesInvoices.CountryCodes
+  alias Firmowid.Ash.Invoicing.CountryCodes
 
   # All valid KSeF codes per FA(3) XSD TStawkaPodatku
   @all_valid_rates [

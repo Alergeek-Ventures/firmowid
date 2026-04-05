@@ -3,9 +3,9 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
   use FirmowidWeb, :controller
 
   alias Firmowid.Accounts
+  alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
-  alias Firmowid.Helpers.TimeConverter
   alias FirmowidWeb.Infrastructure.Utilities.PdfHelpers
 
   @dialyzer {:no_return, pdf: 2}
@@ -33,7 +33,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
         scope: scope
       )
 
-    total_hours = TimeConverter.time_worked_in_seconds_to_hours(duration_seconds)
+    total_hours = Timetracker.seconds_to_hours(duration_seconds)
 
     # Render HTML to string
     html_content =
@@ -94,7 +94,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
         scope: scope
       )
 
-    total_hours = TimeConverter.time_worked_in_seconds_to_hours(duration_seconds)
+    total_hours = Timetracker.seconds_to_hours(duration_seconds)
 
     render(conn, :preview,
       layout: false,

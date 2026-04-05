@@ -57,14 +57,14 @@ config :ex_money,
   default_cldr_backend: Firmowid.Cldr,
   auto_start_exchange_rate_service: true,
   exchange_rates_retrieve_every: :never,
-  exchange_rates_cache_module: Firmowid.Currencies.DatabaseCache
+  exchange_rates_cache_module: Firmowid.Ash.Currencies.DatabaseCache
 
 config :firmowid, ChromicPDF,
   discard_stderr: false,
   no_sandbox: true
 
+config :firmowid, Firmowid.Ash.Currencies.Converter, rates_provider: :mock
 config :firmowid, Firmowid.Cldr, locales: ["pl"]
-config :firmowid, Firmowid.Currencies, rates_provider: :mock
 
 # local mailer uses /mailbox route
 config :firmowid, Firmowid.Mailer, adapter: Swoosh.Adapters.Local
@@ -109,8 +109,7 @@ config :firmowid, Oban,
     {Oban.Plugins.Cron,
      timezone: "Europe/Warsaw",
      crontab: [
-       {"0 13 * * *", Firmowid.Invoicing.Worker, args: %{name: "matching"}},
-       {"0 14 * * *", Firmowid.Currencies.CleanupWorker, args: %{}},
+       {"0 13 * * *", Firmowid.Ash.Invoicing.Workers.MatchingWorker, args: %{name: "matching"}},
        {"0 */2 * * *", Firmowid.Ksef.FetchDispatcher, args: %{}}
      ]}
   ]
@@ -129,6 +128,7 @@ config :firmowid,
     Firmowid.Ash.Analysis,
     Firmowid.Ash.Blobs,
     Firmowid.Ash.Core,
+    Firmowid.Ash.Currencies,
     Firmowid.Ash.Finances,
     Firmowid.Ash.Invoicing,
     Firmowid.Ash.Payroll,

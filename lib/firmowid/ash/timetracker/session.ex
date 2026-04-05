@@ -16,13 +16,13 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
   alias Firmowid.Ash.Payroll.UserSalary
   alias Firmowid.Ash.Resource
+  alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Checks.HoursRecordNotSubmitted
   alias Firmowid.Ash.Timetracker.Checks.OwnsResource
   alias Firmowid.Ash.Timetracker.HoursRecord
   alias Firmowid.Ash.Timetracker.Project
   alias Firmowid.Ash.Timetracker.Validations.DatetimeOrder
   alias Firmowid.Ash.Timetracker.Validations.ProjectAccess
-  alias Firmowid.Helpers.TimeConverter
 
   require Ash.Query
   require Resource
@@ -265,7 +265,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
             project_id: input.arguments.project_id
           )
           |> Enum.map(fn task ->
-            %{task | duration: TimeConverter.time_worked_in_seconds_to_hours(task.duration)}
+            %{task | duration: Timetracker.seconds_to_hours(task.duration)}
           end)
           |> CSV.encode(headers: [title: "Zadanie", duration: "Czas trwania (godziny)"])
           |> Enum.join()

@@ -138,7 +138,7 @@
           </div>
 
           <p class="text-right">
-            {TimeConverter.time_worked_in_seconds_to_hours(employee.time_worked)} h
+            {Timetracker.seconds_to_hours(employee.time_worked)} h
           </p>
 
           <%= if @view in [:wages, :wage_editor] do %>
@@ -167,7 +167,7 @@
               {:PLN
               |> Money.new(
                 employee.time_worked
-                |> TimeConverter.time_worked_in_seconds_to_hours()
+                |> Timetracker.seconds_to_hours()
                 |> Decimal.new()
                 |> Decimal.mult(employee.hourly_rate || 0)
               )

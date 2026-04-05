@@ -7,7 +7,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
 
   use FirmowidWeb, :html
 
-  alias Firmowid.Invoicing.Timeline
+  alias Firmowid.Ash.Invoicing.Services.Timeline
   alias Firmowid.Ksef.SubmissionInfo
 
   attr :invoice, :map, required: true

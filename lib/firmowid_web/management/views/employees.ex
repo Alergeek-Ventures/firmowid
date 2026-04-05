@@ -3,8 +3,8 @@ defmodule FirmowidWeb.Management.Views.Employees do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary
+  alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
-  alias Firmowid.Helpers.TimeConverter
 
   @impl true
   def mount(_params, _session, socket) do

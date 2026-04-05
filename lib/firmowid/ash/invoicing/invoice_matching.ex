@@ -4,14 +4,14 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
 
   Handles automatic and manual matching of invoices (sales and cost)
   to bank transactions. Uses the ML-based scoring from
-  `Firmowid.Invoicing.Matching` sub-modules for prediction.
+  `Firmowid.Ash.Invoicing.Matching` sub-modules for prediction.
   """
 
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Invoicing, as: InvoicingDomain
   alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing.Matching
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Invoicing.Matching
   alias Firmowid.Repo
 
   require Logger

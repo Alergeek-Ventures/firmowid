@@ -20,8 +20,8 @@ defmodule Firmowid.Ash.Invoicing.Changes.NormalizeReverseChargeVatRates do
   """
   use Ash.Resource.Change
 
+  alias Firmowid.Ash.Invoicing.CountryCodes
   alias Firmowid.Ksef.VatRate
-  alias Firmowid.SalesInvoices.CountryCodes
 
   @impl true
   def change(changeset, opts, _context) do

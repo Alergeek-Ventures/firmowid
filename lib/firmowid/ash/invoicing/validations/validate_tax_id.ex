@@ -14,7 +14,7 @@ defmodule Firmowid.Ash.Invoicing.Validations.ValidateTaxId do
   """
   use Ash.Resource.Validation
 
-  alias Firmowid.SalesInvoices.CountryCodes
+  alias Firmowid.Ash.Invoicing.CountryCodes
 
   @impl true
   def validate(changeset, opts, _context) do

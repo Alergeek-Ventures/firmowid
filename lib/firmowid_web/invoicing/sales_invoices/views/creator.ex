@@ -12,11 +12,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.Counterparty
+  alias Firmowid.Ash.Invoicing.CountryCodes
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Invoicing.WizardDraft
   alias Firmowid.Ksef
-  alias Firmowid.SalesInvoices.CountryCodes
 
   require Logger
 

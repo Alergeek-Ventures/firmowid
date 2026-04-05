@@ -4,8 +4,8 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
   import FirmowidWeb.Management.Views.Employees, only: [hours_record_status: 1]
 
+  alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
-  alias Firmowid.Helpers.TimeConverter
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
   @impl true
@@ -110,7 +110,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
           {@project.sessions
           |> Enum.map(& &1.duration)
           |> Enum.sum()
-          |> TimeConverter.time_worked_in_seconds_to_hours()} h
+          |> Timetracker.seconds_to_hours()} h
         </span>
         <.icon
           name="hero-chevron-down"
@@ -133,7 +133,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
             >
               <p class="truncate text-nowrap">{session.title}</p>
               <p>
-                {TimeConverter.time_worked_in_seconds_to_hours(session.duration)} h
+                {Timetracker.seconds_to_hours(session.duration)} h
               </p>
             </div>
           <% end %>
@@ -198,7 +198,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
           <div class="flex flex-col gap-4">
             <.user_card_info label="Przepracowano">
               <span class="text-turquoise-700 font-medium">
-                {TimeConverter.time_worked_in_seconds_to_hours(@employee.time_worked)} godz.
+                {Timetracker.seconds_to_hours(@employee.time_worked)} godz.
               </span>
             </.user_card_info>
             <.user_card_info label="Wynagrodzenie">
@@ -207,7 +207,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
                 |> Money.new(
                   Decimal.mult(
                     @employee.hourly_rate,
-                    Decimal.new(TimeConverter.time_worked_in_seconds_to_hours(@employee.time_worked))
+                    Decimal.new(Timetracker.seconds_to_hours(@employee.time_worked))
                   )
                 )
                 |> Money.to_string!(no_fraction_if_integer: true, currency_symbol: "PLN")}

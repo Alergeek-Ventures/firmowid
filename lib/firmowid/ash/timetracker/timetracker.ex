@@ -19,4 +19,10 @@ defmodule Firmowid.Ash.Timetracker do
     authorize :by_default
     require_actor? true
   end
+
+  @doc "Converts a duration in seconds to whole hours (rounded up)."
+  @spec seconds_to_hours(integer()) :: integer()
+  def seconds_to_hours(seconds) when is_integer(seconds) do
+    ceil(seconds / 3600)
+  end
 end
