@@ -260,4 +260,8 @@ defmodule Firmowid.Ash.Ksef.VatRate do
   def summary_type("oo"), do: :reverse_charge
   def summary_type("np I"), do: :not_subject_i
   def summary_type("np II"), do: :not_subject_ii
+
+  def summary_type(rate) do
+    raise ArgumentError, "Unknown VAT rate for summary_type: #{inspect(rate)}"
+  end
 end

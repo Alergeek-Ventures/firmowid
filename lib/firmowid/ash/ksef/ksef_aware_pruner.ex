@@ -70,6 +70,7 @@ defmodule Firmowid.Ash.Ksef.KsefAwarePruner do
   end
 
   @impl Plugin
+  @spec validate(Keyword.t()) :: :ok | {:error, String.t()}
   def validate(opts) do
     Validation.validate_schema(opts,
       conf: :any,

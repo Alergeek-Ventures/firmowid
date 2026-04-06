@@ -288,6 +288,9 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   def payment_method_code(:voucher), do: "3"
   def payment_method_code(:check), do: "4"
   def payment_method_code(:credit), do: "5"
+  # :loan is the CostInvoice atom for FA(3) code "5" (parsed by InvoiceParser);
+  # :credit is the SalesInvoice equivalent. Both map to "5".
+  def payment_method_code(:loan), do: "5"
   def payment_method_code(:transfer), do: "6"
   def payment_method_code(:mobile), do: "7"
   # Fallback for nil or unexpected values - default to transfer
@@ -429,6 +432,9 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
     corrections = Enum.sort_by(original.corrections, &safe_timestamp/1, DateTime)
     references = [original | corrections]
 
+    # zip/1 intentionally truncates: corrections has N elements, references has N+1.
+    # Each correction[i] gets references[i] as its "before" state. The extra reference
+    # (last element = last correction) would be for a future correction not yet created.
     annotated =
       [corrections, references]
       |> Enum.zip()

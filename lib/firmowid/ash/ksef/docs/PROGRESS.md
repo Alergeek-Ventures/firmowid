@@ -1,9 +1,9 @@
 # KSeF Domain Consolidation — Progress
 
-## Status: COMPLETE + REFINED (Pass 5)
+## Status: COMPLETE + REFINED (Pass 6)
 
 All steps from the execution plan in `00-ksef-domain-consolidation.md` have been
-executed and verified. Five refinement passes completed.
+executed and verified. Six refinement passes completed.
 `mix check` passes (compile, format, credo, sobelow, dialyzer, tests).
 
 ## Completed Steps
@@ -122,6 +122,37 @@ executed and verified. Five refinement passes completed.
     `Ksef.submission_failed?/1` (no longer exists) → `Ksef.get_submission_info/1`.
 37. **Architecture diagram updated** — `00-ksef-domain-consolidation.md` now
     includes `encryption_test.exs` and `submission_info_test.exs` in the file tree.
+
+## Refinement Pass 6 (bug fixes from deep review)
+
+38. **`payment_method_code(:loan)` added** — InvoiceParser maps FA(3) code `"5"` →
+    `:loan` (CostInvoice atom), but InvoiceRenderer only had `:credit` → `"5"`
+    (SalesInvoice atom). Added `:loan` → `"5"` clause to prevent silent fallthrough
+    to `"6"` (transfer) if the renderer is ever extended to handle cost invoices.
+39. **`unauthenticate/0` now cancels SubmissionWorker jobs** — Previously only
+    cancelled SessionWorker and FetchWorker. In-flight submission jobs would
+    continue after disconnect, calling `get_access_token!()` on a deleted credential.
+40. **`validate_invoice_state/1` reordered** — Now checks draft status before lock
+    status. Also checks `locked_at` (in-progress submission) in addition to
+    `ksef_number` (completed submission) to prevent resubmitting in-flight invoices.
+41. **`invoice_url!/1` dead code eliminated** — Refactored to three explicit clauses:
+    CostInvoice without ksef_number (raises), CostInvoice with ksef_number (blob
+    checksum), and generic map with ksef_number (backfill checksum). Previously the
+    first clause matched CostInvoice with ksef_number, making the second clause's
+    `is_nil(ksef_number)` guard unreachable.
+42. **`get_credential/0` error handling tightened** — Replaced catch-all `_ -> nil`
+    with explicit pattern matching for Ash's NotFound error wrapping (`%Ash.Error.Invalid{
+    errors: [%Ash.Error.Query.NotFound{} | _]}`). Unexpected errors now propagate
+    instead of being silently treated as "not connected."
+43. **`unpad_pkcs7/1` empty binary clause** — Added explicit `<<>>` clause returning
+    empty binary instead of `FunctionClauseError` on corrupted/truncated ciphertext.
+44. **`KsefAwarePruner.validate/1` @spec** — Added missing `@spec` for consistency
+    with other `@impl Plugin` callbacks in the same module.
+45. **`VatRate.summary_type/1` fallback** — Added ArgumentError fallback clause for
+    unknown rates, preventing cryptic `FunctionClauseError` if a new rate is added
+    to `@all_valid_rates` without updating `summary_type/1`.
+46. **Correction chain comment** — Added explanatory comment to `Enum.zip/1` truncation
+    in `annotate_correction_chain/1` clarifying the intentional N vs N+1 length mismatch.
 
 ## Bug Fixes Applied During Migration
 

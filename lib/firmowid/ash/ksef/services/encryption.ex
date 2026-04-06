@@ -31,6 +31,8 @@ defmodule Firmowid.Ash.Ksef.Services.Encryption do
     |> unpad_pkcs7()
   end
 
+  defp unpad_pkcs7(<<>>), do: <<>>
+
   defp unpad_pkcs7(data) when byte_size(data) > 0 do
     <<pad>> = binary_part(data, byte_size(data), -1)
 

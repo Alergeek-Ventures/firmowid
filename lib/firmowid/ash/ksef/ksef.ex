@@ -14,6 +14,7 @@ defmodule Firmowid.Ash.Ksef do
 
   import Ecto.Query, warn: false
 
+  alias Ash.Error.Query.NotFound
   alias Firmowid.Accounts
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
@@ -136,8 +137,9 @@ defmodule Firmowid.Ash.Ksef do
 
     case Credential.get_by_organization(org_id) do
       {:ok, credential} -> credential
-      {:error, %Ash.Error.Query.NotFound{}} -> nil
-      _ -> nil
+      # Ash wraps NotFound inside Ash.Error.Invalid for get? actions
+      {:error, %NotFound{}} -> nil
+      {:error, %{errors: [%NotFound{} | _]}} -> nil
     end
   end
 
@@ -159,7 +161,8 @@ defmodule Firmowid.Ash.Ksef do
           where:
             j.worker in [
               "Firmowid.Ash.Ksef.Workers.SessionWorker",
-              "Firmowid.Ash.Ksef.Workers.FetchWorker"
+              "Firmowid.Ash.Ksef.Workers.FetchWorker",
+              "Firmowid.Ash.Ksef.Workers.SubmissionWorker"
             ],
           where: fragment("?->>'organization_id' = ?", j.args, ^Repo.get_org_id()),
           where: j.state in ["available", "scheduled", "executing"]
@@ -256,9 +259,14 @@ defmodule Firmowid.Ash.Ksef do
 
   defp validate_invoice_state(invoice) do
     cond do
-      not is_nil(invoice.ksef_number) -> {:error, :invoice_already_locked}
-      is_nil(invoice.invoice_number) -> {:error, :invoice_is_draft}
-      true -> validate_ksef_required_fields(invoice)
+      is_nil(invoice.invoice_number) ->
+        {:error, :invoice_is_draft}
+
+      not is_nil(invoice.ksef_number) or not is_nil(invoice.locked_at) ->
+        {:error, :invoice_already_locked}
+
+      true ->
+        validate_ksef_required_fields(invoice)
     end
   end
 
@@ -287,30 +295,30 @@ defmodule Firmowid.Ash.Ksef do
   Raises on cost invoices without a KSeF number.
   """
   @spec invoice_url!(map()) :: String.t()
+  def invoice_url!(%CostInvoice{ksef_number: nil}) do
+    raise ArgumentError, "Cannot generate KSeF URL for non-KSeF-imported cost invoice"
+  end
+
+  def invoice_url!(%CostInvoice{seller_nip: seller_nip, issue_date: issue_date} = invoice) do
+    invoice =
+      Ash.load!(invoice, [:blob],
+        authorize?: false,
+        actor: %{},
+        tenant: invoice.organization_id
+      )
+
+    checksum =
+      invoice.blob.blob_checksum
+      |> Base.decode16!(case: :lower)
+      |> Base.url_encode64(padding: false)
+
+    invoice_url(seller_nip, issue_date, checksum)
+  end
+
   def invoice_url!(%{seller_nip: seller_nip, issue_date: issue_date, ksef_number: ksef_number} = invoice)
       when not is_nil(ksef_number) do
     checksum = invoice.ksef_invoice_checksum || backfill_ksef_checksum!(invoice)
     invoice_url(seller_nip, issue_date, checksum)
-  end
-
-  def invoice_url!(%CostInvoice{seller_nip: seller_nip, issue_date: issue_date} = invoice) do
-    if is_nil(invoice.ksef_number) do
-      raise ArgumentError, "Cannot generate KSeF URL for non-KSeF-imported cost invoice"
-    else
-      invoice =
-        Ash.load!(invoice, [:blob],
-          authorize?: false,
-          actor: %{},
-          tenant: invoice.organization_id
-        )
-
-      checksum =
-        invoice.blob.blob_checksum
-        |> Base.decode16!(case: :lower)
-        |> Base.url_encode64(padding: false)
-
-      invoice_url(seller_nip, issue_date, checksum)
-    end
   end
 
   defp invoice_url(seller_nip, issue_date, checksum) do
