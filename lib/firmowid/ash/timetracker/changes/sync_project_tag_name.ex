@@ -27,8 +27,8 @@ defmodule Firmowid.Ash.Timetracker.Changes.SyncProjectTagName do
 
   defp sync_tag_name(tag_definition_id, name, context) do
     scope = %Firmowid.Ash.Scope{
-      current_user: context.actor,
-      current_tenant: context.tenant
+      actor: context.actor,
+      tenant: context.tenant
     }
 
     # authorize?: false because this is an internal system operation —

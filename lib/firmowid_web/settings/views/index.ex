@@ -4,35 +4,53 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   import FirmowidWeb.Settings.Components.EditButton
 
-  alias Ecto.Changeset
-  alias Firmowid.Accounts
-  alias Firmowid.Accounts.Organization
+  alias Ash.Error.Forbidden
+  alias Ash.Notifier.Notification
   alias Firmowid.Analytics
   alias Firmowid.Ash.Blobs
+  alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Core.Argon2Provider
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.GoCardless.ApiClient
+  alias Firmowid.Ash.Finances.Requisition
   alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Core.Endpoint
+  alias Phoenix.Socket.Broadcast
 
-  def form_basic_info_changeset(organization, attrs \\ %{}) do
-    Organization.basic_info_changeset(organization, attrs)
+  def form_basic_info_form(organization) do
+    organization
+    |> AshPhoenix.Form.for_update(:update_basic_info,
+      domain: Core,
+      as: "organization"
+    )
+    |> to_form()
   end
 
-  def form_correspondence_changeset(organization, attrs \\ %{}) do
-    Organization.correspondence_changeset(organization, attrs)
+  def form_correspondence_form(organization) do
+    organization
+    |> AshPhoenix.Form.for_update(:update_correspondence,
+      domain: Core,
+      as: "organization"
+    )
+    |> to_form()
   end
 
-  def form_user_changeset(user, attrs \\ %{}) do
-    Changeset.cast(user, attrs, [
-      :name,
-      :employment_date
-    ])
+  def form_user_form(user) do
+    user
+    |> AshPhoenix.Form.for_update(:update_profile,
+      domain: Core,
+      as: "user"
+    )
+    |> to_form()
   end
 
   def mount(_params, _session, socket) do
+    current_user = socket.assigns.current_user
+    current_org = socket.assigns.current_org
+
     # Use Ash native code interface for listing bank accounts
     bank_accounts =
-      if socket.assigns.current_user.role == :admin do
+      if current_user.role == :admin do
         scope = socket.assigns.ash_scope
 
         case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?]) do
@@ -43,23 +61,19 @@ defmodule FirmowidWeb.Settings.Views.Index do
         []
       end
 
+    # Subscribe to requisition updates for real-time bank account sync
+    if connected?(socket) and current_user.role == :admin do
+      Endpoint.subscribe("requisition:linked:#{current_org.id}")
+      Endpoint.subscribe("requisition:rejected:#{current_org.id}")
+      Endpoint.subscribe("requisition:error:#{current_org.id}")
+    end
+
     socket =
-      if Bodyguard.permit?(
-           Accounts,
-           :update_organization,
-           socket.assigns.current_user,
-           socket.assigns.current_org
-         ) do
+      if current_user.role == :admin do
         socket
-        |> assign(
-          :company_form,
-          to_form(form_basic_info_changeset(socket.assigns.current_org))
-        )
-        |> assign(
-          :correspondence_form,
-          to_form(form_correspondence_changeset(socket.assigns.current_org))
-        )
-        |> assign(:ksef_credential, Ksef.get_credential())
+        |> assign(:company_form, form_basic_info_form(current_org))
+        |> assign(:correspondence_form, form_correspondence_form(current_org))
+        |> assign(:ksef_credential, Ksef.get_credential(socket.assigns.ash_scope))
         |> allow_upload(:organization_avatar,
           accept: ~w(.jpg .jpeg .png),
           max_entries: 1,
@@ -70,28 +84,45 @@ defmodule FirmowidWeb.Settings.Views.Index do
         socket
       end
 
-    user = socket.assigns.current_user
-    socket = assign(socket, :user_form, to_form(form_user_changeset(user)))
+    socket = assign(socket, :user_form, form_user_form(current_user))
 
-    # Security section forms
-    email_form = user |> Accounts.change_user_email() |> to_form()
-    password_form = user |> Accounts.change_user_password() |> to_form()
+    # Security section forms - use AshPhoenix.Form with ash_auth actions
+    email_form =
+      current_user
+      |> AshPhoenix.Form.for_update(:update_profile,
+        domain: Core,
+        as: "user"
+      )
+      |> to_form()
+
+    password_form =
+      current_user
+      |> AshPhoenix.Form.for_update(:change_password,
+        domain: Core,
+        as: "user",
+        actor: current_user
+      )
+      |> to_form()
+
+    # Load avatars using Ash.load!
+    org_with_avatar =
+      Ash.load!(current_org, [avatar_blob: [:url]],
+        tenant: current_org.id,
+        authorize?: false,
+        actor: %{}
+      )
 
     {:ok,
      socket
      |> assign(:editing_basic_info, false)
      |> assign(:editing_correspondence, false)
      |> assign(:editing_personal_info, false)
-     |> assign(
-       :delete_account_form,
-       to_form(Accounts.change_user_delete_account(user))
-     )
+     |> assign(:delete_account_form, to_form(%{"current_password" => ""}, as: "user"))
      |> assign(:current_password, nil)
      |> assign(:email_form_current_password, nil)
-     |> assign(:current_email, user.email)
+     |> assign(:current_email, current_user.email)
      |> assign(:email_form, email_form)
      |> assign(:password_form, password_form)
-     |> assign(:trigger_submit, false)
      |> assign(:bank_accounts, bank_accounts)
      |> assign(:bank_account_statuses, derive_statuses(bank_accounts))
      |> assign(:uploaded_files, [])
@@ -101,17 +132,20 @@ defmodule FirmowidWeb.Settings.Views.Index do
        auto_upload: true,
        progress: &handle_progress/3
      )
-     |> assign(:current_org, Accounts.get_organization_with_avatar(socket.assigns.current_org))
+     |> assign(:current_org, org_with_avatar)
      |> assign(:main_class, "bg-white")}
   end
 
   def handle_params(%{"token" => token}, _uri, %{assigns: %{live_action: :confirm_email}} = socket) do
+    # Handle email change confirmation using ash_auth confirmation add-on
+    strategy = AshAuthentication.Info.strategy!(Core.User, :confirm_email_update)
+
     socket =
-      case Accounts.update_user_email(socket.assigns.current_user, token) do
-        :ok ->
+      case AshAuthentication.Strategy.action(strategy, :confirm, %{"confirm" => token}) do
+        {:ok, _user} ->
           put_flash(socket, :info, "Email został zmieniony pomyślnie.")
 
-        :error ->
+        {:error, _error} ->
           put_flash(socket, :error, "Link do zmiany emaila jest nieprawidłowy lub wygasł.")
       end
 
@@ -123,20 +157,47 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_avatar_upload(:user_avatar, blob_id, socket) do
-    {:ok, updated} = Accounts.update_user_avatar(socket.assigns.current_user, blob_id)
+    current_user = socket.assigns.current_user
+
+    {:ok, updated} =
+      Core.update_user_avatar(current_user, %{avatar_blob_id: blob_id},
+        authorize?: false,
+        actor: %{}
+      )
+
+    # Load avatar using Ash.load!
+    updated_with_avatar =
+      Ash.load!(updated, [avatar_blob: [:url]],
+        tenant: updated.organization_id,
+        authorize?: false,
+        actor: %{}
+      )
 
     LiveToast.send_toast(:info, "Zdjęcie zostało zaktualizowane.")
 
-    {:noreply, assign(socket, :current_user, Accounts.get_user_with_avatar(updated))}
+    {:noreply, assign(socket, :current_user, updated_with_avatar)}
   end
 
   def handle_avatar_upload(:organization_avatar, blob_id, socket) do
-    {:ok, updated} = Accounts.update_organization_avatar(socket.assigns.current_org, blob_id)
+    current_org = socket.assigns.current_org
+
+    {:ok, updated} =
+      Core.update_organization_avatar(current_org, %{avatar_blob_id: blob_id},
+        authorize?: false,
+        actor: %{}
+      )
+
+    # Load avatar using Ash.load!
+    updated_with_avatar =
+      Ash.load!(updated, [avatar_blob: [:url]],
+        tenant: updated.id,
+        authorize?: false,
+        actor: %{}
+      )
 
     LiveToast.send_toast(:info, "Zdjęcie zostało zaktualizowane.")
-    new_socket = assign(socket, :current_org, Accounts.get_organization_with_avatar(updated))
 
-    {:noreply, new_socket}
+    {:noreply, assign(socket, :current_org, updated_with_avatar)}
   end
 
   defp handle_progress(name, %{done?: false}, socket) when name in [:organization_avatar, :user_avatar] do
@@ -145,12 +206,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   defp handle_progress(name, entry, socket) when name in [:organization_avatar, :user_avatar] do
     if name == :organization_avatar do
-      Bodyguard.permit!(
-        Accounts,
-        :update_organization,
-        socket.assigns.current_user,
-        socket.assigns.current_org
-      )
+      if socket.assigns.current_user.role != :admin do
+        raise Forbidden, message: "Tylko administrator może zmienić logo organizacji."
+      end
     end
 
     scope = socket.assigns.ash_scope
@@ -172,25 +230,28 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("delete_account", %{"user" => params}, socket) do
-    case Accounts.delete_user(socket.assigns.current_user, params["current_password"]) do
-      {:ok, _} ->
-        LiveToast.send_toast(:info, "Konto zostało usunięte.")
+    user = socket.assigns.current_user
+    password = params["current_password"]
 
-        {:noreply, redirect(socket, to: ~p"/")}
+    # Verify password at callsite before destroying user
+    if Argon2Provider.valid?(password, user.hashed_password) do
+      case Core.destroy_user(user, authorize?: false, actor: %{}) do
+        :ok ->
+          LiveToast.send_toast(:info, "Konto zostało usunięte.")
+          {:noreply, redirect(socket, to: ~p"/")}
 
-      {:error, :invalid_password} ->
-        LiveToast.send_toast(:error, "Nieprawidłowe hasło")
-        {:noreply, socket}
+        {:error, error} ->
+          LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania konta")
 
-      {:error, error} ->
-        LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania konta")
+          exception = RuntimeError.exception("Failed to delete user account: #{inspect(error)}")
+          {:current_stacktrace, stacktrace} = Process.info(self(), :current_stacktrace)
+          ErrorTracker.report(exception, stacktrace)
 
-        # Create a RuntimeError with the error details for tracking
-        exception = RuntimeError.exception("Failed to delete user account: #{inspect(error)}")
-        {:current_stacktrace, stacktrace} = Process.info(self(), :current_stacktrace)
-        ErrorTracker.report(exception, stacktrace)
-
-        {:noreply, socket}
+          {:noreply, socket}
+      end
+    else
+      LiveToast.send_toast(:error, "Nieprawidłowe hasło")
+      {:noreply, socket}
     end
   end
 
@@ -208,13 +269,14 @@ defmodule FirmowidWeb.Settings.Views.Index do
           false
       end
 
-    case Accounts.update_user_profile(socket.assigns.current_user, %{
-           marketing_consent: consent
-         }) do
+    case Core.update_profile(socket.assigns.current_user, %{marketing_consent: consent},
+           authorize?: false,
+           actor: %{}
+         ) do
       {:ok, user} ->
         {:noreply, assign(socket, :current_user, user)}
 
-      {:error, _changeset} ->
+      {:error, _error} ->
         {:noreply, socket}
     end
   end
@@ -272,58 +334,65 @@ defmodule FirmowidWeb.Settings.Views.Index do
     end
   end
 
-  def handle_event("save", %{"organization" => organization}, socket) do
-    Bodyguard.permit!(
-      Accounts,
-      :update_organization,
-      socket.assigns.current_user,
-      socket.assigns.current_org
-    )
+  def handle_event("save", %{"organization" => org_params}, socket) do
+    current_user = socket.assigns.current_user
+    _current_org = socket.assigns.current_org
 
-    case Accounts.update_organization(
-           socket.assigns.current_org,
-           organization
-         ) do
+    if current_user.role != :admin do
+      raise Forbidden, message: "Tylko administrator może aktualizować organizację."
+    end
+
+    # Determine which form to submit based on which fields are present
+    {form_key, _action} =
+      cond do
+        Map.has_key?(org_params, "correspondence_name") ->
+          {:correspondence_form, :update_correspondence}
+
+        Map.has_key?(org_params, "name") or Map.has_key?(org_params, "nip") ->
+          {:company_form, :update_basic_info}
+
+        true ->
+          {:company_form, :update_organization}
+      end
+
+    form = socket.assigns[form_key]
+
+    case AshPhoenix.Form.submit(form, params: org_params) do
       {:ok, updated_org} ->
+        # Load avatar using Ash.load!
+        updated_with_avatar =
+          Ash.load!(updated_org, [avatar_blob: [:url]],
+            tenant: updated_org.id,
+            authorize?: false,
+            actor: %{}
+          )
+
         {:noreply,
          socket
          |> assign(:editing_basic_info, false)
          |> assign(:editing_correspondence, false)
-         |> assign(
-           :correspondence_form,
-           to_form(form_correspondence_changeset(updated_org))
-         )
-         |> assign(
-           :company_form,
-           to_form(form_basic_info_changeset(updated_org))
-         )
-         |> assign(:current_org, Accounts.get_organization_with_avatar(updated_org))}
+         |> assign(:correspondence_form, form_correspondence_form(updated_with_avatar))
+         |> assign(:company_form, form_basic_info_form(updated_with_avatar))
+         |> assign(:current_org, updated_with_avatar)}
 
-      {:error, changeset} ->
-        # Determine which form had the error based on changeset fields
-        socket =
-          if Changeset.get_field(changeset, :correspondence_name) ||
-               Changeset.get_field(changeset, :correspondence_address) do
-            assign(socket, :correspondence_form, to_form(changeset))
-          else
-            assign(socket, :company_form, to_form(changeset))
-          end
-
-        {:noreply, socket}
+      {:error, form} ->
+        {:noreply, assign(socket, form_key, form)}
     end
   end
 
   def handle_event("save", %{"user" => user_params}, socket) do
-    case Accounts.update_user_profile(socket.assigns.current_user, user_params) do
+    form = socket.assigns.user_form
+
+    case AshPhoenix.Form.submit(form, params: user_params) do
       {:ok, updated_user} ->
         {:noreply,
          socket
          |> assign(:editing_personal_info, false)
          |> assign(:current_user, updated_user)
-         |> assign(:user_form, to_form(form_user_changeset(updated_user)))}
+         |> assign(:user_form, form_user_form(updated_user))}
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, :user_form, to_form(changeset))}
+      {:error, form} ->
+        {:noreply, assign(socket, :user_form, form)}
     end
   end
 
@@ -422,20 +491,25 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("regenerate_inbound_nickname", _params, socket) do
-    Bodyguard.permit!(
-      Accounts,
-      :update_organization,
-      socket.assigns.current_user,
-      socket.assigns.current_org
-    )
+    current_user = socket.assigns.current_user
+    current_org = socket.assigns.current_org
 
-    org_id = socket.assigns.current_user.organization_id
+    if current_user.role != :admin do
+      raise Forbidden, message: "Tylko administrator może zmienić adres e-mail."
+    end
 
-    case Accounts.regenerate_organization_nickname(org_id) do
+    case Core.regenerate_nickname(current_org, authorize?: false, actor: %{}) do
       {:ok, updated_org} ->
-        LiveToast.send_toast(:info, "Nowy adres e-mail został wygenerowany.")
+        # Load avatar using Ash.load!
+        updated_with_avatar =
+          Ash.load!(updated_org, [avatar_blob: [:url]],
+            tenant: updated_org.id,
+            authorize?: false,
+            actor: %{}
+          )
 
-        {:noreply, assign(socket, :current_org, Accounts.get_organization_with_avatar(updated_org))}
+        LiveToast.send_toast(:info, "Nowy adres e-mail został wygenerowany.")
+        {:noreply, assign(socket, :current_org, updated_with_avatar)}
 
       {:error, _} ->
         LiveToast.send_toast(:error, "Wystąpił błąd podczas generowania nowego adresu.")
@@ -444,19 +518,28 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("add_allowed_email", %{"email" => email}, socket) do
-    Bodyguard.permit!(
-      Accounts,
-      :update_organization,
-      socket.assigns.current_user,
-      socket.assigns.current_org
-    )
+    current_user = socket.assigns.current_user
+    current_org = socket.assigns.current_org
 
-    org_id = socket.assigns.current_user.organization_id
+    if current_user.role != :admin do
+      raise Forbidden, message: "Tylko administrator może zarządzać listą dozwolonych adresów."
+    end
 
-    case Accounts.add_email_to_org_allowlist(org_id, String.trim(email)) do
+    case Core.add_sender_email(current_org, %{email: String.trim(email)},
+           authorize?: false,
+           actor: %{}
+         ) do
       {:ok, updated_org} ->
+        # Load avatar using Ash.load!
+        updated_with_avatar =
+          Ash.load!(updated_org, [avatar_blob: [:url]],
+            tenant: updated_org.id,
+            authorize?: false,
+            actor: %{}
+          )
+
         LiveToast.send_toast(:info, "Adres e-mail został dodany do listy dozwolonych.")
-        {:noreply, assign(socket, :current_org, Accounts.get_organization_with_avatar(updated_org))}
+        {:noreply, assign(socket, :current_org, updated_with_avatar)}
 
       {:error, _} ->
         LiveToast.send_toast(:error, "Wystąpił błąd podczas dodawania adresu e-mail.")
@@ -465,19 +548,28 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("remove_allowed_email", %{"email" => email}, socket) do
-    Bodyguard.permit!(
-      Accounts,
-      :update_organization,
-      socket.assigns.current_user,
-      socket.assigns.current_org
-    )
+    current_user = socket.assigns.current_user
+    current_org = socket.assigns.current_org
 
-    org_id = socket.assigns.current_user.organization_id
+    if current_user.role != :admin do
+      raise Forbidden, message: "Tylko administrator może zarządzać listą dozwolonych adresów."
+    end
 
-    case Accounts.remove_email_from_org_allowlist(org_id, email) do
+    case Core.remove_sender_email(current_org, %{email: email},
+           authorize?: false,
+           actor: %{}
+         ) do
       {:ok, updated_org} ->
+        # Load avatar using Ash.load!
+        updated_with_avatar =
+          Ash.load!(updated_org, [avatar_blob: [:url]],
+            tenant: updated_org.id,
+            authorize?: false,
+            actor: %{}
+          )
+
         LiveToast.send_toast(:info, "Adres e-mail został usunięty z listy dozwolonych.")
-        {:noreply, assign(socket, :current_org, Accounts.get_organization_with_avatar(updated_org))}
+        {:noreply, assign(socket, :current_org, updated_with_avatar)}
 
       {:error, _} ->
         LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania adresu e-mail.")
@@ -486,14 +578,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("save_ksef_token", %{"ksef_token" => ksef_token}, socket) do
-    Bodyguard.permit!(
-      Accounts,
-      :update_organization,
-      socket.assigns.current_user,
-      socket.assigns.current_org
-    )
+    if socket.assigns.current_user.role != :admin do
+      raise Forbidden, message: "Tylko administrator może zarządzać KSeF."
+    end
 
-    case Ksef.authenticate_with_ksef_token(ksef_token) do
+    case Ksef.authenticate_with_ksef_token(ksef_token, socket.assigns.ash_scope) do
       {:ok, credential} ->
         Analytics.track_event("ksef_connect", socket.assigns.current_user, %{})
 
@@ -515,14 +604,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("disconnect_ksef", _params, socket) do
-    Bodyguard.permit!(
-      Accounts,
-      :update_organization,
-      socket.assigns.current_user,
-      socket.assigns.current_org
-    )
+    if socket.assigns.current_user.role != :admin do
+      raise Forbidden, message: "Tylko administrator może zarządzać KSeF."
+    end
 
-    case Ksef.unauthenticate() do
+    case Ksef.unauthenticate(socket.assigns.ash_scope) do
       {:ok, _} ->
         Analytics.track_event("ksef_disconnect", socket.assigns.current_user, %{})
 
@@ -551,31 +637,26 @@ defmodule FirmowidWeb.Settings.Views.Index do
     %{"current_password" => password, "user" => user_params} = params
 
     email_form =
-      socket.assigns.current_user
-      |> Accounts.change_user_email(user_params)
-      |> Map.put(:action, :validate)
-      |> to_form()
+      AshPhoenix.Form.validate(socket.assigns.email_form, user_params)
 
     {:noreply, assign(socket, email_form: email_form, email_form_current_password: password)}
   end
 
   def handle_event("update_email", params, socket) do
-    %{"current_password" => password, "user" => user_params} = params
-    user = socket.assigns.current_user
+    %{"current_password" => _password, "user" => user_params} = params
 
-    case Accounts.apply_user_email(user, password, user_params) do
-      {:ok, applied_user} ->
-        Accounts.deliver_user_update_email_instructions(
-          applied_user,
-          user.email,
-          &url(~p"/ustawienia/bezpieczenstwo/potwierdz/#{&1}")
-        )
+    # Email change uses the confirm_email_update confirmation add-on
+    strategy = AshAuthentication.Info.strategy!(Core.User, :confirm_email_update)
 
+    case AshAuthentication.Strategy.action(strategy, :request, %{
+           "email" => user_params["email"]
+         }) do
+      {:ok, _user} ->
         info = "Link potwierdzający zmianę adresu email został wysłany na nowy adres."
         {:noreply, socket |> put_flash(:info, info) |> assign(email_form_current_password: nil)}
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, :email_form, to_form(Map.put(changeset, :action, :insert)))}
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "Nie udało się zainicjować zmiany emaila.")}
     end
   end
 
@@ -583,50 +664,88 @@ defmodule FirmowidWeb.Settings.Views.Index do
     %{"current_password" => password, "user" => user_params} = params
 
     password_form =
-      socket.assigns.current_user
-      |> Accounts.change_user_password(user_params)
-      |> Map.put(:action, :validate)
-      |> to_form()
+      AshPhoenix.Form.validate(socket.assigns.password_form, user_params)
 
     {:noreply, assign(socket, password_form: password_form, current_password: password)}
   end
 
   def handle_event("update_password", params, socket) do
-    %{"current_password" => password, "user" => user_params} = params
-    user = socket.assigns.current_user
+    %{"current_password" => _password, "user" => user_params} = params
 
-    case Accounts.update_user_password(user, password, user_params) do
-      {:ok, user} ->
-        password_form =
-          user
-          |> Accounts.change_user_password(user_params)
-          |> to_form()
+    case AshPhoenix.Form.submit(socket.assigns.password_form, params: user_params) do
+      {:ok, _user} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Hasło zostało zmienione pomyślnie.")
+         |> push_navigate(to: ~p"/ustawienia/bezpieczenstwo")}
 
-        {:noreply, assign(socket, trigger_submit: true, password_form: password_form)}
-
-      {:error, changeset} ->
-        {:noreply, assign(socket, password_form: to_form(changeset))}
+      {:error, form} ->
+        {:noreply, assign(socket, password_form: form)}
     end
   end
 
   def handle_event("link_google_account", _params, socket) do
-    {:noreply, redirect(socket, external: ~p"/auth/google")}
+    {:noreply, redirect(socket, external: "/auth/user/google/request")}
   end
 
   def handle_event("unlink_google_account", _params, socket) do
-    case Accounts.unlink_google_account(socket.assigns.current_user) do
+    user = socket.assigns.current_user
+
+    case Core.unlink_google_account(user, authorize?: false, actor: %{}) do
       {:ok, updated_user} ->
         LiveToast.send_toast(:info, "Konto Google zostało odłączone.")
         {:noreply, assign(socket, :current_user, updated_user)}
 
-      {:error, :not_linked} ->
-        LiveToast.send_toast(:error, "Konto Google nie jest połączone.")
-        {:noreply, socket}
+      {:error, error} ->
+        message =
+          case error do
+            %{errors: [%{message: msg}]} -> msg
+            _ -> "Wystąpił błąd podczas odłączania konta Google."
+          end
 
-      {:error, _} ->
-        LiveToast.send_toast(:error, "Wystąpił błąd podczas odłączania konta Google.")
+        LiveToast.send_toast(:error, message)
         {:noreply, socket}
     end
+  end
+
+  # Handle Ash native PubSub broadcasts for requisition status changes
+  def handle_info(
+        %Broadcast{topic: "requisition:" <> _, payload: %Notification{resource: Requisition, action: action}},
+        socket
+      ) do
+    # Refresh bank accounts list
+    scope = socket.assigns.ash_scope
+
+    bank_accounts =
+      case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?]) do
+        {:ok, accounts} -> accounts
+        {:error, _} -> []
+      end
+
+    socket =
+      socket
+      |> assign(:bank_accounts, bank_accounts)
+      |> assign(:bank_account_statuses, derive_statuses(bank_accounts))
+
+    # Show toast notification
+    {toast_type, message} =
+      case action do
+        :accept ->
+          {:success, "Konto bankowe zostało pomyślnie połączone!"}
+
+        :reject ->
+          {:error, "Połączenie z bankiem zostało odrzucone. Spróbuj ponownie."}
+
+        :handle_check_error ->
+          {:error, "Wystąpił błąd podczas łączenia konta bankowego. Spróbuj ponownie."}
+
+        _ ->
+          {:info, "Status połączenia z bankiem został zaktualizowany."}
+      end
+
+    LiveToast.send_toast(toast_type, message)
+
+    {:noreply, socket}
   end
 
   defp derive_statuses(bank_accounts) do

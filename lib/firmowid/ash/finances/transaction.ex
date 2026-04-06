@@ -146,10 +146,22 @@ defmodule Firmowid.Ash.Finances.Transaction do
       authorize_if always()
     end
 
-    policy action_type(:read) do
+    # invoice_matcher: full access for transaction linking
+    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:invoice_matcher]} do
       authorize_if always()
     end
 
+    # Other system actors: read-only access
+    bypass Firmowid.Ash.Checks.IsSystemActor do
+      authorize_if action_type(:read)
+    end
+
+    # :invoicing and :accountant: read-only
+    policy [action_type(:read), {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}] do
+      authorize_if always()
+    end
+
+    # Write actions (non-system, non-admin): admin only
     policy action_type([:create, :update, :destroy]) do
       authorize_if actor_attribute_equals(:role, :admin)
     end

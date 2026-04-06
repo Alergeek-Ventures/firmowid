@@ -14,6 +14,8 @@ defmodule Firmowid.Ash.Invoicing.Workers.CostInvoiceWorker do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.Services.OpenAIEnrichment
   alias Firmowid.Ash.Invoicing.Services.ReductoApiClient
+  alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
 
   require Logger
 
@@ -143,11 +145,11 @@ defmodule Firmowid.Ash.Invoicing.Workers.CostInvoiceWorker do
         "blob_id" => blob_id,
         "organization_id" => organization_id
       } ->
-        Firmowid.Repo.put_org_id(organization_id)
-        inbound_email_id = Map.get(args, "inbound_email_id")
+        actor = %SystemActor{org_id: organization_id, role: :cost_invoice_processor}
+        scope = %Scope{actor: actor, tenant: organization_id}
 
-        # TODO: replace authorize?: false + actor: %{} with system actor once available
-        blob_opts = [tenant: organization_id, authorize?: false, actor: %{}]
+        inbound_email_id = Map.get(args, "inbound_email_id")
+        blob_opts = [scope: scope]
 
         try do
           extract_cost_invoice_metadata(blob_id, organization_id, inbound_email_id, blob_opts)

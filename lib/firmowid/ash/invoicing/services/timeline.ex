@@ -141,12 +141,9 @@ defmodule Firmowid.Ash.Invoicing.Services.Timeline do
   defp maybe_add_correction_events(events, _invoice), do: events
 
   defp correction_submission_events(corrections) do
-    org_id = Firmowid.Repo.get_org_id()
-
     corrections
     |> Task.async_stream(
       fn correction ->
-        Firmowid.Repo.put_org_id(org_id)
         Ksef.get_submission_info(correction)
       end,
       ordered: false

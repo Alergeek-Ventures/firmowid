@@ -15,9 +15,7 @@
 # If the Bytecraft org already exists the database is considered seeded
 # and the entire script is a no-op (fast early exit).
 
-import Ecto.Query
-
-alias Firmowid.Accounts.Organization
+alias Firmowid.Ash.Core.Organization, as: CoreOrganization
 alias Firmowid.Repo
 alias Firmowid.Seeds.Bytecraft
 alias Firmowid.Seeds.MonthM0
@@ -26,6 +24,8 @@ alias Firmowid.Seeds.MonthM2
 alias Firmowid.Seeds.Timetracker, as: TimetrackerSeeds
 alias Firmowid.Seeds.Voidstack
 
+require Ash.Query
+
 seeds_dir = Path.join(__DIR__, "seeds")
 
 for file <- ~w(helpers bytecraft month_m2 month_m1 month_m0 timetracker voidstack) do
@@ -33,7 +33,13 @@ for file <- ~w(helpers bytecraft month_m2 month_m1 month_m0 timetracker voidstac
 end
 
 already_seeded? =
-  Repo.exists?(from(o in Organization, where: o.nip == "6161525811"), skip_organization_id: true)
+  case Ash.read(Ash.Query.filter(CoreOrganization, nip == ^"6161525811"),
+         authorize?: false,
+         actor: %{}
+       ) do
+    {:ok, [_ | _]} -> true
+    _ -> false
+  end
 
 if already_seeded? do
   IO.puts("[seeds] Database already seeded — skipping")

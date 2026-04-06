@@ -3,11 +3,9 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Inbound do
   use FirmowidWeb, :controller
 
   alias Ash.Error.Invalid
-  alias Firmowid.Accounts
-  alias Firmowid.Accounts.Organization
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Invoicing.InboundEmail
   alias Firmowid.Ash.Invoicing.Workers.InboundEmailWorker
-  alias Firmowid.Repo
 
   require Logger
 
@@ -16,7 +14,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Inbound do
 
   def handle_webhook(conn, %{"type" => "email.received", "data" => data}) do
     with {:ok, org_id} <- extract_org_id_from_recipients(Map.get(data, "to", [])),
-         {:ok, _org} <- Accounts.get_organization(org_id),
+         _org = Core.get_organization!(org_id, authorize?: false, actor: %{}),
          attrs = build_inbound_email_attrs(data, org_id),
          {:ok, inbound_email} <- create_inbound_email(attrs, org_id) do
       enqueue_processing(inbound_email, org_id)
@@ -56,12 +54,10 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Inbound do
   defp parse_recipient_email(email) do
     case String.split(email, "@") do
       [nickname, "firmowid.pl"] ->
-        # Justified Ecto exception: cross-tenant lookup by email nickname.
-        # Same pattern as SalesInvoice.by_share_token — tenant unknown until
-        # we find the org. Accounts domain is not yet Ash-native.
-        case Repo.get_by(Organization, [inbound_email_nickname: nickname], skip_organization_id: true) do
-          nil -> nil
-          org -> {:ok, org.id}
+        case Core.get_organization_by_nickname(nickname, @bridge_opts) do
+          {:ok, nil} -> nil
+          {:ok, org} -> {:ok, org.id}
+          {:error, _} -> nil
         end
 
       _ ->
@@ -96,7 +92,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Inbound do
   defp enqueue_processing(inbound_email, org_id) do
     %{inbound_email_id: inbound_email.id, organization_id: org_id}
     |> InboundEmailWorker.new()
-    |> Firmowid.Oban.insert([])
+    |> Firmowid.Oban.insert(skip_organization_id: true)
   end
 
   defp log_success(org_id, data) do

@@ -153,8 +153,19 @@ defmodule Firmowid.Ash.Finances.BankAccount do
       authorize_if always()
     end
 
-    policy action_type(:read) do
+    # invoice_matcher and cost_invoice_processor: read-only access
+    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:invoice_matcher, :cost_invoice_processor]} do
+      authorize_if action_type(:read)
+    end
+
+    # :invoicing and :accountant: read-only
+    policy [action_type(:read), {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}] do
       authorize_if always()
+    end
+
+    # Write actions: admin only (non-AshOban)
+    policy action_type([:create, :update, :destroy]) do
+      authorize_if actor_attribute_equals(:role, :admin)
     end
   end
 

@@ -3,8 +3,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
   use FirmowidWeb, :live_view
 
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
-  alias Firmowid.Ash.Timetracker.Project, as: AshProject
-  alias Firmowid.Ash.Timetracker.Session, as: AshSession
+  alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
   @impl true
@@ -13,9 +12,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
     current_user = socket.assigns.current_user
 
     selected_date = Date.utc_today()
-
-    {:ok, active_months} =
-      AshSession.months_with_sessions(%{user_id: current_user.id}, scope: scope)
+    active_months = months_with_sessions(%{user_id: current_user.id}, scope)
 
     can_use_hours_records = current_user.name && current_user.employment_date
 
@@ -73,36 +70,55 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
     scope = socket.assigns.ash_scope
     selected_date = socket.assigns.selected_date
     user_id = socket.assigns.current_user.id
+    month = selected_date.month
+    year = selected_date.year
 
-    {:ok, projects_with_duration} =
-      AshProject.user_projects_with_duration(user_id, selected_date, scope: scope)
-
+    # User's projects with month duration, sorted by time descending
     projects =
-      Enum.map(projects_with_duration, fn project ->
-        {:ok, sessions} =
-          AshSession.grouped_user_project_sessions(
-            user_id,
-            project.id,
-            selected_date.month,
-            selected_date.year,
+      Firmowid.Ash.Timetracker.Project
+      |> Ash.Query.for_read(:list, %{user_id: user_id}, scope: scope)
+      |> Ash.Query.aggregate(:duration, :sum, :sessions,
+        field: :duration,
+        default: 0,
+        query: Ash.Query.for_read(Session, :list, %{user_id: user_id, month: month, year: year}, scope: scope)
+      )
+      |> Ash.read!(scope: scope)
+      |> Enum.map(fn project ->
+        seconds = project.aggregates[:duration] || 0
+
+        # Eagerly fetch sessions grouped by title for this user+project+month
+        grouped_sessions =
+          Session
+          |> Ash.Query.for_read(
+            :list,
+            %{user_id: user_id, project_id: project.id, month: month, year: year},
             scope: scope
           )
+          |> Ash.Query.load(:duration)
+          |> Ash.read!(scope: scope)
+          |> Enum.group_by(& &1.title)
+          |> Enum.map(fn {title, ss} ->
+            %{title: title, duration: ss |> Enum.map(& &1.duration) |> Enum.sum()}
+          end)
+          |> Enum.sort_by(& &1.duration, :desc)
 
         project
+        |> Map.put(:duration, seconds)
         |> Map.put(:expanded, false)
-        |> Map.put(:sessions, sessions)
+        |> Map.put(:sessions, grouped_sessions)
       end)
+      |> Enum.sort_by(& &1.duration, :desc)
+
+    # Total duration for this user this month
+    total_query = Ash.Query.for_read(Session, :list, %{user_id: user_id, month: month, year: year})
+
+    %{total: total_duration} =
+      Ash.aggregate!(total_query, {:total, :sum, field: :duration, default: 0}, scope: scope)
 
     {:ok, current_month_hours_record} =
-      AshHoursRecord.by_month(user_id, selected_date.month, selected_date.year,
+      AshHoursRecord.by_month(user_id, month, year,
         scope: scope,
         not_found_error?: false
-      )
-
-    {:ok, total_duration} =
-      AshSession.total_time_worked(
-        %{month: selected_date.month, year: selected_date.year, user_id: user_id},
-        scope: scope
       )
 
     socket
@@ -114,4 +130,16 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
   def error_to_string(:too_large), do: "Image too large"
   def error_to_string(:too_many_files), do: "Too many files"
   def error_to_string(:not_accepted), do: "Unacceptable file type"
+
+  # Distinct months (as naive_datetime) that have sessions, newest first.
+  defp months_with_sessions(filters, scope) do
+    Session
+    |> Ash.Query.for_read(:list, filters, scope: scope)
+    |> Ash.Query.distinct(:month_start)
+    |> Ash.Query.distinct_sort(month_start: :desc)
+    |> Ash.Query.sort(month_start: :desc)
+    |> Ash.Query.load(:month_start)
+    |> Ash.read!(scope: scope)
+    |> Enum.map(& &1.month_start)
+  end
 end

@@ -9,10 +9,20 @@ defmodule Firmowid.Ash.Timetracker do
   use Ash.Domain
 
   resources do
-    resource Firmowid.Ash.Timetracker.HoursRecord
-    resource Firmowid.Ash.Timetracker.Project
+    resource Firmowid.Ash.Timetracker.HoursRecord do
+      define :list_hours_records, action: :list
+    end
+
+    resource Firmowid.Ash.Timetracker.Project do
+      define :list_projects, action: :list
+      define :get_project, action: :get
+    end
+
     resource Firmowid.Ash.Timetracker.ProjectUser
-    resource Firmowid.Ash.Timetracker.Session
+
+    resource Firmowid.Ash.Timetracker.Session do
+      define :list_sessions, action: :list
+    end
   end
 
   authorization do

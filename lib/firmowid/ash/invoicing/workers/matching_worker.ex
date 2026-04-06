@@ -8,8 +8,10 @@ defmodule Firmowid.Ash.Invoicing.Workers.MatchingWorker do
 
   import Ecto.Query, warn: false
 
-  alias Firmowid.Accounts.Organization
+  alias Firmowid.Ash.Core.Organization
   alias Firmowid.Ash.Invoicing.InvoiceMatching
+  alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
   alias Firmowid.Repo
 
   require Logger
@@ -37,8 +39,9 @@ defmodule Firmowid.Ash.Invoicing.Workers.MatchingWorker do
             "Matching invoices for organization: organization_id=#{organization_id}, job_id=#{job.id}"
           )
 
-          Repo.put_org_id(organization_id)
-          match_invoices(organization_id)
+          actor = %SystemActor{org_id: organization_id, role: :invoice_matcher}
+          scope = %Scope{actor: actor, tenant: organization_id}
+          match_invoices(scope)
         end)
 
       %{
@@ -47,8 +50,10 @@ defmodule Firmowid.Ash.Invoicing.Workers.MatchingWorker do
         "organization_id" => organization_id
       } ->
         Logger.info("Matching cost invoice #{cost_invoice_id}")
-        Repo.put_org_id(organization_id)
-        InvoiceMatching.match_cost_invoice(cost_invoice_id, organization_id)
+
+        actor = %SystemActor{org_id: organization_id, role: :invoice_matcher}
+        scope = %Scope{actor: actor, tenant: organization_id}
+        InvoiceMatching.match_cost_invoice(cost_invoice_id, scope)
 
       _ ->
         Logger.error("Unknown job args: #{inspect(job.args)}")
@@ -57,8 +62,8 @@ defmodule Firmowid.Ash.Invoicing.Workers.MatchingWorker do
     :ok
   end
 
-  defp match_invoices(organization_id) do
-    InvoiceMatching.match_cost_invoices(organization_id)
-    InvoiceMatching.match_sales_invoices(organization_id)
+  defp match_invoices(scope) do
+    InvoiceMatching.match_cost_invoices(scope)
+    InvoiceMatching.match_sales_invoices(scope)
   end
 end

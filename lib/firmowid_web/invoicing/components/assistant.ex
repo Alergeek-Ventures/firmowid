@@ -52,9 +52,13 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
       <p class="bg-grey-200 max-w-2xl rounded px-4 py-2">{@text}</p>
       <div class="size-10">
         <.avatar class="size-10">
-          <.avatar_image src={@current_user.avatar_url} alt="Avatar" />
+          <.avatar_image
+            :if={@current_user.avatar_blob && @current_user.avatar_blob.url}
+            src={@current_user.avatar_blob && @current_user.avatar_blob.url}
+            alt="Avatar"
+          />
           <.avatar_fallback>
-            {String.slice(@current_user.email, 0, 1) |> String.upcase()}
+            {to_string(@current_user.email) |> String.slice(0, 1) |> String.upcase()}
           </.avatar_fallback>
         </.avatar>
       </div>

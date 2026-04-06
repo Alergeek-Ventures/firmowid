@@ -2,7 +2,6 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
   @moduledoc false
   use FirmowidWeb, :live_component
 
-  alias Firmowid.Accounts
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Invoicing.Matching.Assistant.Message
   alias Firmowid.Ash.Invoicing.Matching.Assistant.MessagesStorage
@@ -59,8 +58,8 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
   def update(%{event: %Message{}}, socket), do: {:ok, socket}
 
   # pseudo mount
-  def update(%{invoice: invoice, current_user: current_user}, socket) do
-    conversation_id = CostInvoiceAssistant.start_conversation(invoice)
+  def update(%{invoice: invoice, current_user: current_user, scope: scope}, socket) do
+    conversation_id = CostInvoiceAssistant.start_conversation(invoice, scope)
     messages = MessagesStorage.get(conversation_id)
 
     socket =
@@ -72,7 +71,14 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
       |> stream(:messages, messages)
       |> assign(:waiting_for_decision, false)
       |> assign(:zero_state, true)
-      |> assign(:current_user, Accounts.get_user_with_avatar(current_user))
+      |> assign(
+        :current_user,
+        Ash.load!(current_user, [avatar_blob: [:url]],
+          tenant: current_user.organization_id,
+          authorize?: false,
+          actor: %{}
+        )
+      )
 
     {:ok, socket}
   end

@@ -11,12 +11,18 @@ defmodule FirmowidWeb.Auth.Views.Login do
           Wejdź do Firmowida
         </h1>
 
-        <.simple_form for={@form} id="login_form" action={~p"/zaloguj"} phx-update="ignore">
+        <.simple_form
+          for={@form}
+          id="login_form"
+          action={~p"/auth/user/password/sign_in"}
+          phx-update="ignore"
+          method="post"
+        >
           <.input field={@form[:email]} type="email" label="Email" required />
           <.input field={@form[:password]} type="password" label="Hasło" required />
 
           <:actions>
-            <.input field={@form[:remember_me]} type="checkbox" label="Zapamiętaj mnie" />
+            <.input name="remember_me" value="true" type="checkbox" label="Zapamiętaj mnie" />
             <.link href={~p"/resetuj-haslo"} class="text-sm font-semibold">
               Zapomniałeś hasła?
             </.link>
@@ -36,7 +42,7 @@ defmodule FirmowidWeb.Auth.Views.Login do
         </p>
 
         <.link
-          href={~p"/auth/google"}
+          href="/auth/user/google/request"
           class="mt-8 flex w-full items-center justify-center gap-3 rounded-md border bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors duration-200 hover:bg-black hover:text-white"
         >
           <svg class="size-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

@@ -17,37 +17,42 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
   alias Firmowid.Ash.Ksef.Services.ApiClient
   alias Firmowid.Ash.Ksef.Services.InvoiceRenderer
   alias Firmowid.Ash.Ksef.Workers.SessionWorker
+  alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
   alias Firmowid.Repo
 
   require Logger
 
   @impl Oban.Worker
+  @spec perform(Oban.Job.t()) :: Oban.Worker.result()
   def perform(%Oban.Job{args: %{"action" => action, "organization_id" => organization_id} = args} = job) do
-    Repo.put_org_id(organization_id)
+    actor = %SystemActor{org_id: organization_id, role: :sales_invoice_processor}
+    scope = %Scope{actor: actor, tenant: organization_id}
 
     case action do
-      "submit" -> submit_invoice(args)
-      "verify" -> verify_invoice(args, job)
+      "submit" -> submit_invoice(args, scope)
+      "verify" -> verify_invoice(args, job, scope)
     end
   end
 
-  defp submit_invoice(%{"sales_invoice_id" => sales_invoice_id}) do
+  defp submit_invoice(%{"sales_invoice_id" => sales_invoice_id}, scope) do
     Logger.info("Starting KSeF submission for sales invoice #{sales_invoice_id}")
 
-    with {:ok, invoice} <- load_invoice(sales_invoice_id),
+    with {:ok, invoice} <- load_invoice(sales_invoice_id, scope),
          invoice_xml = InvoiceRenderer.render_fa3(invoice),
-         access_token = SessionWorker.get_access_token!(),
+         access_token = SessionWorker.get_access_token!(scope.tenant),
          {:ok, session_data} <- ApiClient.open_online_session(access_token),
          {:ok, invoice_reference} <-
            ApiClient.send_invoice(access_token, session_data, invoice_xml),
          :ok <- ApiClient.close_online_session(access_token, session_data.session_reference) do
       Repo.transaction(fn ->
-        lock_invoice(invoice, session_data.session_reference)
+        lock_invoice(invoice, session_data.session_reference, scope)
 
         schedule_verification(
           sales_invoice_id,
           session_data.session_reference,
-          invoice_reference
+          invoice_reference,
+          scope.tenant
         )
       end)
 
@@ -71,11 +76,8 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     end
   end
 
-  # TODO: replace authorize?: false + actor: %{} with system actor once available
-  @bridge_opts [authorize?: false, actor: %{}]
-
-  defp load_invoice(sales_invoice_id) do
-    opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
+  defp load_invoice(sales_invoice_id, scope) do
+    opts = [scope: scope]
 
     case SalesInvoice.by_id(
            sales_invoice_id,
@@ -101,8 +103,8 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     end
   end
 
-  defp lock_invoice(invoice, session_reference) do
-    opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
+  defp lock_invoice(invoice, session_reference, scope) do
+    opts = [scope: scope]
 
     SalesInvoice.update_ksef_fields!(
       invoice,
@@ -116,8 +118,8 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
 
   # Unlocks invoice for editing/resubmission while preserving ksef_session_reference_number.
   # The session reference is kept as it represents the last used session - successful or failed.
-  defp unlock_invoice(invoice) do
-    opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
+  defp unlock_invoice(invoice, scope) do
+    opts = [scope: scope]
 
     SalesInvoice.update_ksef_fields!(
       invoice,
@@ -129,16 +131,16 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     )
   end
 
-  defp schedule_verification(sales_invoice_id, session_reference, invoice_reference) do
+  defp schedule_verification(sales_invoice_id, session_reference, invoice_reference, organization_id) do
     %{
       "action" => "verify",
-      "organization_id" => Repo.get_org_id(),
+      "organization_id" => organization_id,
       "sales_invoice_id" => sales_invoice_id,
       "session_reference" => session_reference,
       "invoice_reference" => invoice_reference
     }
     |> new()
-    |> Firmowid.Oban.insert!()
+    |> Firmowid.Oban.insert!(skip_organization_id: true)
   end
 
   defp verify_invoice(
@@ -147,32 +149,33 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
            "session_reference" => session_reference,
            "invoice_reference" => invoice_reference
          },
-         %Oban.Job{} = job
+         %Oban.Job{} = job,
+         scope
        ) do
     Logger.info("Verifying KSeF submission for sales invoice #{sales_invoice_id}")
 
-    opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
+    opts = [scope: scope]
     sales_invoice = SalesInvoice.by_id!(sales_invoice_id, opts)
-    access_token = SessionWorker.get_access_token!()
+    access_token = SessionWorker.get_access_token!(scope.tenant)
 
     access_token
     |> ApiClient.get_invoice_status(session_reference, invoice_reference)
-    |> handle_verification_result(sales_invoice, job)
+    |> handle_verification_result(sales_invoice, job, scope)
   rescue
     e ->
       if final_attempt?(job) do
-        opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
+        opts = [scope: scope]
         sales_invoice = SalesInvoice.by_id!(sales_invoice_id, opts)
-        unlock_invoice(sales_invoice)
+        unlock_invoice(sales_invoice, scope)
 
-        Ksef.broadcast_ksef_status(Repo.get_org_id(), sales_invoice_id, :failed)
+        Ksef.broadcast_ksef_status(scope.tenant, sales_invoice_id, :failed)
       end
 
       reraise e, __STACKTRACE__
   end
 
-  defp handle_verification_result({:ok, %{ksef_number: ksef_number, invoice_hash: hash}}, invoice, _job) do
-    opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
+  defp handle_verification_result({:ok, %{ksef_number: ksef_number, invoice_hash: hash}}, invoice, _job, scope) do
+    opts = [scope: scope]
 
     SalesInvoice.update_ksef_fields!(
       invoice,
@@ -184,24 +187,24 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     )
 
     Logger.info("Invoice #{invoice.id} received KSeF number: #{ksef_number}")
-    Ksef.broadcast_ksef_status(Repo.get_org_id(), invoice.id, :submitted)
+    Ksef.broadcast_ksef_status(scope.tenant, invoice.id, :submitted)
   end
 
-  defp handle_verification_result(:pending, invoice, _job) do
+  defp handle_verification_result(:pending, invoice, _job, _scope) do
     Logger.debug("Invoice #{invoice.id} still pending, will retry")
     {:snooze, 10}
   end
 
-  defp handle_verification_result(:retry, invoice, _job) do
+  defp handle_verification_result(:retry, invoice, _job, scope) do
     Logger.debug("Invoice #{invoice.id} needs retry, will retry")
 
     # TODO: allow resubmitting locked invoices
-    unlock_invoice(invoice)
+    unlock_invoice(invoice, scope)
   end
 
-  defp handle_verification_result({:error, {:invoice_duplicate, ksef_number, session_ref}}, invoice, _job) do
+  defp handle_verification_result({:error, {:invoice_duplicate, ksef_number, session_ref}}, invoice, _job, scope) do
     Logger.warning("Invoice #{invoice.id} is a duplicate of KSeF number #{ksef_number}")
-    opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
+    opts = [scope: scope]
 
     # TODO: prepare correction invoice draft if original invoice is different from this one
     SalesInvoice.update_ksef_fields!(
@@ -213,51 +216,38 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
       opts
     )
 
-    Ksef.broadcast_ksef_status(Repo.get_org_id(), invoice.id, :submitted)
+    Ksef.broadcast_ksef_status(scope.tenant, invoice.id, :submitted)
     :ok
   end
 
-  defp handle_verification_result({:error, {:invoice_processing_failed, _, _} = error}, invoice, _job) do
-    fail_invoice(invoice, error)
+  defp handle_verification_result({:error, {:invoice_processing_failed, _, _} = error}, invoice, _job, scope) do
+    fail_invoice(invoice, error, scope)
   end
 
-  defp handle_verification_result({:error, {:unexpected_status, _, _} = error}, invoice, _job) do
-    fail_invoice(invoice, error)
+  defp handle_verification_result({:error, {:unexpected_status, _, _} = error}, invoice, _job, scope) do
+    fail_invoice(invoice, error, scope)
   end
 
-  defp handle_verification_result({:error, reason} = error, invoice, job) do
+  defp handle_verification_result({:error, reason} = error, invoice, job, scope) do
     Logger.error("Failed to verify invoice #{invoice.id}: #{inspect(reason)}")
 
-    if final_attempt?(job), do: fail_invoice_status(invoice)
+    if final_attempt?(job), do: fail_invoice_status(invoice, scope)
 
     error
   end
 
-  defp fail_invoice(invoice, error) do
+  defp fail_invoice(invoice, error, scope) do
     Logger.error("Invoice #{invoice.id} verification failed: #{inspect(error)}")
-    fail_invoice_status(invoice)
+    fail_invoice_status(invoice, scope)
     {:cancel, error}
   end
 
-  defp fail_invoice_status(invoice) do
-    unlock_invoice(invoice)
-    Ksef.broadcast_ksef_status(Repo.get_org_id(), invoice.id, :failed)
+  defp fail_invoice_status(invoice, scope) do
+    unlock_invoice(invoice, scope)
+    Ksef.broadcast_ksef_status(scope.tenant, invoice.id, :failed)
   end
 
   defp final_attempt?(%Oban.Job{attempt: attempt, max_attempts: max_attempts}) do
     attempt >= max_attempts
-  end
-
-  @doc """
-  Custom backoff that normalizes the attempt number for exponential backoff.
-
-  Oban's default backoff uses `job.attempt` directly, but since we have
-  `max_attempts: 3`, the first retry would already have `attempt: 2`.
-  This corrects the attempt number so exponential backoff starts from 1.
-  """
-  @impl Oban.Worker
-  def backoff(%Oban.Job{} = job) do
-    corrected_attempt = 3 - (job.max_attempts - job.attempt)
-    Oban.Worker.backoff(%{job | attempt: corrected_attempt})
   end
 end

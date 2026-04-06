@@ -15,7 +15,7 @@ defmodule Firmowid.Ash.Ksef do
   import Ecto.Query, warn: false
 
   alias Ash.Error.Query.NotFound
-  alias Firmowid.Accounts
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef.Credential
@@ -24,11 +24,15 @@ defmodule Firmowid.Ash.Ksef do
   alias Firmowid.Ash.Ksef.Workers.FetchWorker
   alias Firmowid.Ash.Ksef.Workers.SessionWorker
   alias Firmowid.Ash.Ksef.Workers.SubmissionWorker
+  alias Firmowid.Ash.Scope
   alias Firmowid.Repo
 
   resources do
     resource Credential
   end
+
+  # TODO: replace authorize?: false + actor: %{} with system actor once available
+  @bridge_opts [authorize?: false, actor: %{}]
 
   @ksef_broadcast_topic "ksef_status"
 
@@ -74,26 +78,30 @@ defmodule Firmowid.Ash.Ksef do
     - `{:error, :nip_mismatch}` if NIP in token doesn't match organization's NIP
     - `{:error, :already_connected}` if organization already has KSeF credentials
   """
-  @spec authenticate_with_ksef_token(String.t()) ::
+  @spec authenticate_with_ksef_token(String.t(), Scope.t()) ::
           {:ok, Credential.t()}
           | {:error, :invalid_token_format | :nip_mismatch | :already_connected}
-  def authenticate_with_ksef_token(ksef_token) when is_binary(ksef_token) do
-    org_id = Repo.get_org_id()
-    {:ok, organization} = Accounts.get_organization(org_id)
+  def authenticate_with_ksef_token(ksef_token, scope) when is_binary(ksef_token) do
+    org_id = scope.tenant
+    organization = Core.get_organization!(org_id, authorize?: false, actor: %{})
 
     with {:ok, token_nip} <- extract_nip_from_token(ksef_token),
          :ok <- validate_nip_match(token_nip, organization.nip),
-         :ok <- validate_no_existing_credential() do
+         :ok <- validate_no_existing_credential(scope) do
       {:ok, credential} =
-        Credential.create(%{
-          organization_id: org_id,
-          auth_type: :token,
-          credentials: ksef_token
-        })
+        Credential.create(
+          %{
+            organization_id: org_id,
+            auth_type: :token,
+            credentials: ksef_token
+          },
+          authorize?: false,
+          actor: %{}
+        )
 
       %{"organization_id" => org_id}
       |> SessionWorker.new()
-      |> Firmowid.Oban.insert!()
+      |> Firmowid.Oban.insert!(skip_organization_id: true)
 
       {:ok, credential}
     end
@@ -121,82 +129,86 @@ defmodule Firmowid.Ash.Ksef do
     end
   end
 
-  defp validate_no_existing_credential do
-    case get_credential() do
+  defp validate_no_existing_credential(scope) do
+    case get_credential(scope) do
       nil -> :ok
       _credential -> {:error, :already_connected}
     end
   end
 
   @doc """
-  Returns the KSeF credential for the current organization, or `nil` if none exists.
+  Returns the KSeF credential for the given scope's organization, or `nil` if none exists.
   """
-  @spec get_credential() :: Credential.t() | nil
-  def get_credential do
-    org_id = Repo.get_org_id()
+  @spec get_credential(Scope.t()) :: Credential.t() | nil
+  def get_credential(scope) do
+    org_id = scope.tenant
 
-    case Credential.get_by_organization(org_id) do
+    case Credential.get_by_organization(org_id, authorize?: false, actor: %{}) do
       {:ok, credential} -> credential
       # Ash wraps NotFound inside Ash.Error.Invalid for get? actions
-      {:error, %NotFound{}} -> nil
-      {:error, %{errors: [%NotFound{} | _]}} -> nil
+      {:error, %Ash.Error.Invalid{errors: [%NotFound{} | _]}} -> nil
     end
   end
 
   @doc """
-  Disconnects the current organization from KSeF.
+  Disconnects the given organization from KSeF.
 
   Invalidates the cached access token, cancels all pending KSeF jobs,
   and deletes the stored credential.
   """
-  @spec unauthenticate() :: {:ok, term()} | {:error, term()}
-  def unauthenticate do
-    SessionWorker.invalidate_access_token()
+  @spec unauthenticate(Scope.t()) :: {:ok, term()} | {:error, :not_connected | term()}
+  def unauthenticate(scope) do
+    org_id = scope.tenant
+    SessionWorker.invalidate_access_token(org_id)
 
-    Repo.transact(fn ->
-      credential = get_credential()
+    case get_credential(scope) do
+      nil ->
+        {:error, :not_connected}
 
-      Firmowid.Oban.cancel_all_jobs(
-        from(j in Oban.Job,
-          where:
-            j.worker in [
-              "Firmowid.Ash.Ksef.Workers.SessionWorker",
-              "Firmowid.Ash.Ksef.Workers.FetchWorker",
-              "Firmowid.Ash.Ksef.Workers.SubmissionWorker"
-            ],
-          where: fragment("?->>'organization_id' = ?", j.args, ^Repo.get_org_id()),
-          where: j.state in ["available", "scheduled", "executing"]
-        )
-      )
+      credential ->
+        Repo.transact(fn ->
+          Firmowid.Oban.cancel_all_jobs(
+            from(j in Oban.Job,
+              where:
+                j.worker in [
+                  "Firmowid.Ash.Ksef.Workers.SessionWorker",
+                  "Firmowid.Ash.Ksef.Workers.FetchWorker",
+                  "Firmowid.Ash.Ksef.Workers.SubmissionWorker"
+                ],
+              where: fragment("?->>'organization_id' = ?", j.args, ^org_id),
+              where: j.state in ["available", "scheduled", "executing"]
+            )
+          )
 
-      Credential.destroy!(credential)
-    end)
+          :ok = Credential.destroy!(credential, authorize?: false, actor: %{})
+          {:ok, :disconnected}
+        end)
+    end
   end
 
   @doc """
   Enqueues an Oban job to fetch cost invoices from KSeF starting from `date_from`.
   """
-  @spec fetch_cost_invoices(DateTime.t()) :: {:ok, Oban.Job.t()} | {:error, term()}
-  def fetch_cost_invoices(date_from) do
+  @spec fetch_cost_invoices(DateTime.t(), Scope.t()) :: {:ok, Oban.Job.t()} | {:error, term()}
+  def fetch_cost_invoices(date_from, scope) do
     %{
       "action" => "initiate_export",
-      "organization_id" => Repo.get_org_id(),
+      "organization_id" => scope.tenant,
       "date_from" => DateTime.to_iso8601(date_from)
     }
     |> FetchWorker.new()
-    |> Firmowid.Oban.insert()
+    |> Firmowid.Oban.insert(skip_organization_id: true)
   end
 
   @doc """
   Fetches FA XML invoice by KSeF number.
   Rate limit 64 req/h
   """
-  @spec get_invoice_xml_by_ksef_number(String.t()) :: {:ok, binary()} | {:error, term()}
-  def get_invoice_xml_by_ksef_number(ksef_number) when is_binary(ksef_number) do
-    with :ok <- validate_ksef_authenticated() do
-      access_token = SessionWorker.get_access_token!()
-      ApiClient.get_invoice_xml(access_token, ksef_number)
-    end
+  @spec get_invoice_xml_by_ksef_number(String.t(), String.t()) ::
+          {:ok, binary()} | {:error, term()}
+  def get_invoice_xml_by_ksef_number(ksef_number, organization_id) when is_binary(ksef_number) do
+    access_token = SessionWorker.get_access_token!(organization_id)
+    ApiClient.get_invoice_xml(access_token, ksef_number)
   end
 
   @doc """
@@ -219,7 +231,7 @@ defmodule Firmowid.Ash.Ksef do
   - `:invoice_already_locked` - Invoice has already been submitted or manually locked
   - `{:invalid_for_ksef, errors}` - Invoice is missing required fields for KSeF submission
   """
-  @spec submit_sales_invoice(Ash.UUID.t()) ::
+  @spec submit_sales_invoice(Ash.UUID.t(), Scope.t()) ::
           {:ok, Oban.Job.t()}
           | {:error,
              :not_authenticated
@@ -227,28 +239,28 @@ defmodule Firmowid.Ash.Ksef do
              | :invoice_is_draft
              | :invoice_already_locked
              | {:invalid_for_ksef, list()}}
-  def submit_sales_invoice(sales_invoice_id) do
-    with :ok <- validate_ksef_authenticated(),
-         {:ok, invoice} <- validate_invoice_for_submission(sales_invoice_id) do
+  def submit_sales_invoice(sales_invoice_id, scope) do
+    with :ok <- validate_ksef_authenticated(scope),
+         {:ok, invoice} <- validate_invoice_for_submission(sales_invoice_id, scope) do
       %{
         "action" => "submit",
-        "organization_id" => Repo.get_org_id(),
+        "organization_id" => scope.tenant,
         "sales_invoice_id" => invoice.id
       }
       |> SubmissionWorker.new()
-      |> Firmowid.Oban.insert()
+      |> Firmowid.Oban.insert(skip_organization_id: true)
     end
   end
 
-  defp validate_ksef_authenticated do
-    case get_credential() do
+  defp validate_ksef_authenticated(scope) do
+    case get_credential(scope) do
       nil -> {:error, :not_authenticated}
       _credential -> :ok
     end
   end
 
-  defp validate_invoice_for_submission(sales_invoice_id) do
-    opts = [tenant: Repo.get_org_id(), authorize?: false, actor: %{}]
+  defp validate_invoice_for_submission(sales_invoice_id, scope) do
+    opts = [scope: scope]
 
     case SalesInvoice.by_id(sales_invoice_id, opts) do
       {:ok, nil} -> {:error, :invoice_not_found}
@@ -300,12 +312,8 @@ defmodule Firmowid.Ash.Ksef do
   end
 
   def invoice_url!(%CostInvoice{seller_nip: seller_nip, issue_date: issue_date} = invoice) do
-    invoice =
-      Ash.load!(invoice, [:blob],
-        authorize?: false,
-        actor: %{},
-        tenant: invoice.organization_id
-      )
+    opts = Keyword.put(@bridge_opts, :tenant, invoice.organization_id)
+    invoice = Ash.load!(invoice, [:blob], opts)
 
     checksum =
       invoice.blob.blob_checksum
@@ -332,14 +340,15 @@ defmodule Firmowid.Ash.Ksef do
     |> to_string()
   end
 
-  defp backfill_ksef_checksum!(%{ksef_number: ksef_number} = invoice) do
+  defp backfill_ksef_checksum!(%{ksef_number: ksef_number, organization_id: organization_id} = invoice) do
     invoice_xml =
-      case get_invoice_xml_by_ksef_number(ksef_number) do
+      case get_invoice_xml_by_ksef_number(ksef_number, organization_id) do
         {:ok, xml} ->
           xml
 
         {:error, reason} ->
-          raise "Failed to fetch KSeF invoice XML for checksum backfill: #{inspect(reason)}"
+          raise RuntimeError,
+                "Failed to fetch KSeF invoice XML for checksum backfill (ksef_number: #{ksef_number}): #{inspect(reason)}"
       end
 
     checksum = compute_fa3_checksum(invoice_xml)
@@ -347,9 +356,7 @@ defmodule Firmowid.Ash.Ksef do
     SalesInvoice.update_ksef_fields!(
       invoice,
       %{ksef_invoice_checksum: checksum},
-      authorize?: false,
-      actor: %{},
-      tenant: invoice.organization_id
+      Keyword.put(@bridge_opts, :tenant, invoice.organization_id)
     )
 
     checksum
@@ -387,8 +394,8 @@ defmodule Firmowid.Ash.Ksef do
       iex> get_submission_info(%SalesInvoice{ksef_session_reference_number: nil, ksef_number: nil})
       %SubmissionInfo{status: :not_submitted}
   """
-  # Bridge: accepts both Ecto SalesInvoice and Ash SalesInvoice structs.
-  # Map patterns used instead of %SalesInvoice{} — dies by starvation in Slice 7.
+  # Uses map patterns instead of %SalesInvoice{} to accept any struct with the
+  # required fields (avoids compile-time coupling to SalesInvoice struct shape).
   @spec get_submission_info(map()) :: SubmissionInfo.t()
   def get_submission_info(%{ksef_number: ksef_number} = invoice) when not is_nil(ksef_number) do
     # Successfully submitted - has KSeF number

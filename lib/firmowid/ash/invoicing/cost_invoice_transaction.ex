@@ -9,7 +9,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTransaction do
   """
   use Ash.Resource,
     domain: Firmowid.Ash.Invoicing,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Resource
 
@@ -23,6 +24,27 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTransaction do
 
   actions do
     defaults [:read, :destroy, create: [:cost_invoice_id, :transaction_id]]
+  end
+
+  policies do
+    bypass actor_attribute_equals(:role, :admin) do
+      authorize_if always()
+    end
+
+    # Matcher and invoice processors: full access
+    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:invoice_matcher, :cost_invoice_processor]} do
+      authorize_if always()
+    end
+
+    # Other system actors: no access
+    policy Firmowid.Ash.Checks.IsSystemActor do
+      forbid_if always()
+    end
+
+    # :accountant and above: all actions
+    policy {Firmowid.Ash.Checks.AtLeastRole, role: :accountant} do
+      authorize_if always()
+    end
   end
 
   multitenancy do

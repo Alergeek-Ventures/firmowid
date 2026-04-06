@@ -2,24 +2,27 @@ defmodule Firmowid.Ash.Scope do
   @moduledoc """
   Bundles actor and tenant into a single struct for Ash operations.
 
-  Used as `scope:` option on all Ash calls. During migration, both this and
-  `Repo.put_org_id/1` coexist — this for Ash domains, `put_org_id` for Ecto contexts.
+  Used as `scope:` option on all Ash calls.
+
+  Fields:
+  - `actor` — the acting entity (a `User`, `SystemActor`, or `nil`)
+  - `tenant` — the organization ID (binary UUID or `nil`)
   """
   alias Firmowid.Ash.Scope
 
-  defstruct [:current_user, :current_tenant]
+  defstruct [:actor, :tenant]
 
   @type t :: %__MODULE__{
-          current_user: map() | nil,
-          current_tenant: binary() | nil
+          actor: map() | nil,
+          tenant: binary() | nil
         }
 
   defimpl Ash.Scope.ToOpts do
     @spec get_actor(Scope.t()) :: {:ok, term()} | :error
-    def get_actor(%{current_user: user}), do: {:ok, user}
+    def get_actor(%{actor: actor}), do: {:ok, actor}
 
     @spec get_tenant(Scope.t()) :: {:ok, term()} | :error
-    def get_tenant(%{current_tenant: tenant}), do: {:ok, tenant}
+    def get_tenant(%{tenant: tenant}), do: {:ok, tenant}
 
     @spec get_context(Scope.t()) :: :error
     def get_context(_), do: :error

@@ -2,7 +2,6 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
   @moduledoc false
   use FirmowidWeb, :controller
 
-  alias Firmowid.Accounts
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
@@ -18,8 +17,12 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
     # Get avatar URL and convert to data URI
     avatar_url =
       conn.assigns.current_org
-      |> Accounts.get_organization_with_avatar()
-      |> Map.get(:avatar_url)
+      |> Ash.load!([avatar_blob: [:url]], tenant: conn.assigns.current_org.id, authorize?: false, actor: %{})
+      |> Map.get(:avatar_blob)
+      |> case do
+        %{url: url} -> url
+        _ -> nil
+      end
 
     avatar_data_uri = PdfHelpers.url_to_data_uri(avatar_url)
 
@@ -27,11 +30,15 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
     start_date = Date.beginning_of_month(date_parsed)
     end_date = Date.end_of_month(date_parsed)
 
-    {:ok, duration_seconds} =
-      AshSession.total_time_worked(
-        %{month: date_parsed.month, year: date_parsed.year, user_id: conn.assigns.current_user.id},
-        scope: scope
-      )
+    session_query =
+      Ash.Query.for_read(AshSession, :list, %{
+        month: date_parsed.month,
+        year: date_parsed.year,
+        user_id: conn.assigns.current_user.id
+      })
+
+    %{total: duration_seconds} =
+      Ash.aggregate!(session_query, {:total, :sum, field: :duration, default: 0}, scope: scope)
 
     total_hours = Timetracker.seconds_to_hours(duration_seconds)
 
@@ -88,11 +95,11 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
     start_date = Date.beginning_of_month(date)
     end_date = Date.end_of_month(date)
 
-    {:ok, duration_seconds} =
-      AshSession.total_time_worked(
-        %{month: date.month, year: date.year, user_id: conn.assigns.current_user.id},
-        scope: scope
-      )
+    session_query =
+      Ash.Query.for_read(AshSession, :list, %{month: date.month, year: date.year, user_id: conn.assigns.current_user.id})
+
+    %{total: duration_seconds} =
+      Ash.aggregate!(session_query, {:total, :sum, field: :duration, default: 0}, scope: scope)
 
     total_hours = Timetracker.seconds_to_hours(duration_seconds)
 
@@ -105,8 +112,12 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
       hours: total_hours,
       avatar_url:
         conn.assigns.current_org
-        |> Accounts.get_organization_with_avatar()
-        |> Map.get(:avatar_url),
+        |> Ash.load!([avatar_blob: [:url]], tenant: conn.assigns.current_org.id, authorize?: false, actor: %{})
+        |> Map.get(:avatar_blob)
+        |> case do
+          %{url: url} -> url
+          _ -> nil
+        end,
       avatar_data_uri: nil
     )
   end

@@ -6,14 +6,16 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   alias Ash.Error.Unknown
   alias Ash.Error.Unknown.UnknownError
   alias Firmowid.Analytics
+  alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
   alias Firmowid.Ash.Timetracker.OverlapResolver
-  alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
   alias Firmowid.Ash.Timetracker.TrimPlan
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Timetracker.Utilities.GroupedSessionForm
   alias FirmowidWeb.Timetracker.Utilities.SessionForm
+
+  require Ash.Query
 
   @day_names %{
     1 => "Poniedziałek",
@@ -60,7 +62,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     user = socket.assigns.current_user
 
     {:ok, last_session} = AshSession.most_recent(user.id, scope: scope, not_found_error?: false)
-    {:ok, active_projects} = AshProject.active_for_user(user.id, scope: scope)
+    active_projects = Timetracker.list_projects!(%{user_id: user.id, active_only: true}, scope: scope)
 
     default_project_id =
       if last_session && Enum.any?(active_projects, &(&1.id == last_session.project_id)) do
@@ -79,13 +81,24 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
   def assign_sessions(%{assigns: assigns} = socket) when not is_map_key(assigns, :sessions_after) do
     scope = socket.assigns.ash_scope
+    user_id = socket.assigns.current_user.id
+    timezone = socket.assigns.timezone
 
-    {:ok, weeks} =
-      AshSession.weeks_with_sessions(
-        socket.assigns.current_user.id,
-        %{timezone: socket.assigns.timezone, limit: 4},
-        scope: scope
-      )
+    weeks =
+      AshSession
+      |> Ash.Query.for_read(:list, %{user_id: user_id}, scope: scope)
+      |> Ash.Query.distinct(:week_start)
+      |> Ash.Query.distinct_sort(week_start: :desc)
+      |> Ash.Query.sort(week_start: :desc)
+      |> Ash.Query.load(:week_start)
+      |> Ash.Query.limit(4)
+      |> Ash.read!(scope: scope)
+      |> Enum.map(fn s ->
+        s.week_start
+        |> DateTime.from_naive!("Etc/UTC")
+        |> DateTime.shift_zone!(timezone)
+        |> DateTime.to_date()
+      end)
 
     last_four_weeks = List.last(weeks, Date.utc_today())
 
@@ -112,12 +125,24 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
         end)
       end)
 
-    {:ok, next_weeks} =
-      AshSession.weeks_with_sessions(
-        user_id,
-        %{timezone: timezone, limit: 1, after_date: after_date},
-        scope: scope
-      )
+    before_dt = DateTime.new!(after_date, ~T[00:00:00])
+
+    next_weeks =
+      AshSession
+      |> Ash.Query.for_read(:list, %{user_id: user_id}, scope: scope)
+      |> Ash.Query.filter(start_datetime < ^before_dt)
+      |> Ash.Query.distinct(:week_start)
+      |> Ash.Query.distinct_sort(week_start: :desc)
+      |> Ash.Query.sort(week_start: :desc)
+      |> Ash.Query.load(:week_start)
+      |> Ash.Query.limit(1)
+      |> Ash.read!(scope: scope)
+      |> Enum.map(fn s ->
+        s.week_start
+        |> DateTime.from_naive!("Etc/UTC")
+        |> DateTime.shift_zone!(timezone)
+        |> DateTime.to_date()
+      end)
 
     next_sessions_after = List.first(next_weeks)
 
@@ -158,7 +183,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
       end)
       |> Enum.uniq()
 
-    {:ok, projects_list} = AshProject.by_ids(project_ids_in_sessions, scope: scope)
+    projects_list = Timetracker.list_projects!(%{ids: project_ids_in_sessions}, scope: scope)
     projects_by_id = Map.new(projects_list, &{&1.id, &1})
 
     projects_by_id = Map.merge(socket.assigns.projects_by_id, projects_by_id)
@@ -405,8 +430,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
   defp fetch_sessions_by_ids(ids, socket) do
     scope = socket.assigns.ash_scope
-    {:ok, sessions} = AshSession.by_ids(ids, scope: scope)
-    sessions
+    Timetracker.list_sessions!(%{ids: ids}, scope: scope)
   end
 
   def edit_sessions(ids, form, socket) do
@@ -655,11 +679,13 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     scope = socket.assigns.ash_scope
     now = DateTime.now!(socket.assigns.timezone)
 
-    {:ok, total_seconds} =
-      AshSession.total_time_worked(
-        %{month: now.month, year: now.year, user_id: socket.assigns.current_user.id},
+    total_query =
+      Ash.Query.for_read(AshSession, :list, %{month: now.month, year: now.year, user_id: socket.assigns.current_user.id},
         scope: scope
       )
+
+    %{total: total_seconds} =
+      Ash.aggregate!(total_query, {:total, :sum, field: :duration, default: 0}, scope: scope)
 
     hours = div(total_seconds, 60 * 60)
     minutes = rem(div(total_seconds, 60), 60)

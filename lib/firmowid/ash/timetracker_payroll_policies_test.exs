@@ -23,11 +23,11 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
   # ── Helpers ──────────────────────────────────────────────────────────
 
   defp admin_scope(admin) do
-    %Scope{current_user: admin, current_tenant: admin.organization_id}
+    %Scope{actor: admin, tenant: admin.organization_id}
   end
 
   defp employee_scope(employee) do
-    %Scope{current_user: employee, current_tenant: employee.organization_id}
+    %Scope{actor: employee, tenant: employee.organization_id}
   end
 
   defp setup_org(_context) do
@@ -64,9 +64,9 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
   describe "UserSalary policies" do
     setup :setup_org
 
-    setup %{employee_a: employee_a, employee_b: employee_b} do
-      salary_a = user_salary_fixture(%{user_id: employee_a.id})
-      salary_b = user_salary_fixture(%{user_id: employee_b.id})
+    setup %{employee_a: employee_a, employee_b: employee_b, org_id: org_id} do
+      salary_a = user_salary_fixture(%{user_id: employee_a.id, organization_id: org_id})
+      salary_b = user_salary_fixture(%{user_id: employee_b.id, organization_id: org_id})
 
       %{salary_a: salary_a, salary_b: salary_b}
     end
@@ -108,10 +108,10 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
   describe "HoursRecord policies" do
     setup :setup_org
 
-    setup %{employee_a: employee_a, employee_b: employee_b} do
-      project = project_fixture()
-      user_project_fixture(employee_a.id, project.id)
-      user_project_fixture(employee_b.id, project.id)
+    setup %{employee_a: employee_a, employee_b: employee_b, org_id: org_id} do
+      project = project_fixture(%{organization_id: org_id})
+      user_project_fixture(employee_a.id, project.id, org_id)
+      user_project_fixture(employee_b.id, project.id, org_id)
 
       now = Date.utc_today()
       hr_a = insert_hours_record!(employee_a, now.month, now.year)
@@ -157,24 +157,6 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
       assert {:error, %Invalid{}} =
                AshHoursRecord.by_month(employee_b.id, now.month, now.year, scope: scope)
     end
-
-    test "employee cannot call month_hours_records generic action", %{
-      employee_a: employee_a
-    } do
-      scope = employee_scope(employee_a)
-      now = Date.utc_today()
-
-      assert {:error, %Forbidden{}} =
-               AshHoursRecord.month_hours_records(now.month, now.year, scope: scope)
-    end
-
-    test "admin can call month_hours_records generic action", %{admin: admin} do
-      scope = admin_scope(admin)
-      now = Date.utc_today()
-
-      assert {:ok, _results} =
-               AshHoursRecord.month_hours_records(now.month, now.year, scope: scope)
-    end
   end
 
   # ── Project policies ────────────────────────────────────────────────
@@ -182,11 +164,11 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
   describe "Project policies" do
     setup :setup_org
 
-    setup %{employee_a: employee_a} do
-      project_assigned = project_fixture(%{name: "Assigned Project"})
-      project_unassigned = project_fixture(%{name: "Unassigned Project"})
+    setup %{employee_a: employee_a, org_id: org_id} do
+      project_assigned = project_fixture(%{name: "Assigned Project", organization_id: org_id})
+      project_unassigned = project_fixture(%{name: "Unassigned Project", organization_id: org_id})
 
-      user_project_fixture(employee_a.id, project_assigned.id)
+      user_project_fixture(employee_a.id, project_assigned.id, org_id)
 
       %{project_assigned: project_assigned, project_unassigned: project_unassigned}
     end
@@ -228,15 +210,6 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
       assert {:error, %Invalid{}} =
                AshProject.get(project_unassigned.id, scope: scope)
     end
-
-    test "employee cannot call generic actions (admin-only)", %{
-      employee_a: employee_a
-    } do
-      scope = employee_scope(employee_a)
-
-      assert {:error, %Forbidden{}} =
-               AshProject.list_active(Date.utc_today(), %{}, scope: scope)
-    end
   end
 
   # ── ProjectUser policies ────────────────────────────────────────────
@@ -244,10 +217,10 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
   describe "ProjectUser policies" do
     setup :setup_org
 
-    setup %{employee_a: employee_a, employee_b: employee_b} do
-      project = project_fixture()
-      pu_a = user_project_fixture(employee_a.id, project.id)
-      pu_b = user_project_fixture(employee_b.id, project.id)
+    setup %{employee_a: employee_a, employee_b: employee_b, org_id: org_id} do
+      project = project_fixture(%{organization_id: org_id})
+      pu_a = user_project_fixture(employee_a.id, project.id, org_id)
+      pu_b = user_project_fixture(employee_b.id, project.id, org_id)
 
       %{project: project, pu_a: pu_a, pu_b: pu_b}
     end

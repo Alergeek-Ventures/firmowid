@@ -8,16 +8,11 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
   """
 
   alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Invoicing, as: InvoicingDomain
-  alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.Matching
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Repo
+  alias Firmowid.Ash.Scope
 
   require Logger
-
-  # TODO: replace authorize?: false + actor: %{} with system actor once available
-  @bridge_opts [authorize?: false, actor: %{}]
 
   @doc """
   Returns potential transactions for an invoice, scored and sorted by match likelihood.
@@ -25,14 +20,12 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
   Combines unmatched transactions with already-attached ones and scores them
   using the ML regression predictor.
   """
-  @spec get_potential_transactions_for_invoice(struct()) :: [{struct(), float()}]
-  def get_potential_transactions_for_invoice(invoice) do
-    ash_opts = [tenant: Repo.get_org_id()] ++ @bridge_opts
-
+  @spec get_potential_transactions_for_invoice(struct(), Scope.t()) :: [{struct(), float()}]
+  def get_potential_transactions_for_invoice(invoice, scope) do
     unmatched_transactions =
       Finances.list_transactions!(
         %{date_from: ~D[2000-01-01], date_to: ~D[2100-12-30], reconciliation: :pending},
-        ash_opts
+        scope: scope
       )
 
     attached_transactions = Map.get(invoice, :transactions, [])
@@ -46,43 +39,36 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
   @doc """
   Auto-matches all unmatched cost invoices for an organization.
   """
-  @spec match_cost_invoices(String.t()) :: :ok
-  def match_cost_invoices(organization_id) do
-    Repo.put_org_id(organization_id)
-    cost_opts = [tenant: organization_id] ++ @bridge_opts
-
+  @spec match_cost_invoices(Scope.t()) :: :ok
+  def match_cost_invoices(scope) do
     unmatched_cost_invoices =
-      CostInvoice.read!(
+      Invoicing.list_cost_invoices!(
         %{
           date_from: ~D[1970-01-01],
           date_to: ~D[2100-01-01],
           date_field: :due_date,
           reconciliation: :pending
         },
-        cost_opts
+        scope: scope
       )
 
-    Enum.each(unmatched_cost_invoices, &match_cost_invoice(&1.id, organization_id))
+    Enum.each(unmatched_cost_invoices, &match_cost_invoice(&1.id, scope))
   end
 
   @doc """
   Auto-matches a single cost invoice to the best available transaction.
   """
-  @spec match_cost_invoice(String.t(), String.t()) :: :ok
-  def match_cost_invoice(cost_invoice_id, organization_id) do
-    Repo.put_org_id(organization_id)
-    cost_opts = [tenant: organization_id] ++ @bridge_opts
+  @spec match_cost_invoice(String.t(), Scope.t()) :: :ok
+  def match_cost_invoice(cost_invoice_id, scope) do
+    org_id = scope.tenant
+    cost_invoice = Invoicing.get_cost_invoice!(cost_invoice_id, scope: scope)
 
-    cost_invoice = CostInvoice.by_id!(cost_invoice_id, cost_opts)
-
-    Logger.info("Matching cost invoice #{cost_invoice.id} for organization #{organization_id}")
-
-    ash_opts = [tenant: organization_id] ++ @bridge_opts
+    Logger.info("Matching cost invoice #{cost_invoice.id} for organization #{org_id}")
 
     unmatched_transactions =
       Finances.list_transactions!(
         %{date_from: ~D[2000-01-01], date_to: ~D[2100-12-30], reconciliation: :pending},
-        ash_opts
+        scope: scope
       )
 
     Logger.info("Found #{length(unmatched_transactions)} unmatched transactions")
@@ -92,12 +78,7 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
         Logger.info("Prediction score: #{prediction_score}")
 
         if Matching.RegressionPredictor.confident_match?(prediction_score) do
-          InvoicingDomain.connect_cost_invoice_transactions(
-            cost_invoice,
-            [transaction.id],
-            authorize?: false,
-            actor: %{}
-          )
+          Invoicing.connect_cost_invoice_transactions!(cost_invoice, [transaction.id], scope: scope)
 
           Logger.info("Matched cost invoice #{cost_invoice.id} with transaction #{transaction.id}")
         else
@@ -112,36 +93,31 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
   @doc """
   Auto-matches all unmatched sales invoices for an organization.
   """
-  @spec match_sales_invoices(String.t()) :: :ok
-  def match_sales_invoices(organization_id) do
-    Repo.put_org_id(organization_id)
-    sales_opts = [tenant: organization_id] ++ @bridge_opts
-
+  @spec match_sales_invoices(Scope.t()) :: :ok
+  def match_sales_invoices(scope) do
     unmatched_sales_invoices =
-      SalesInvoice.read!(
+      Invoicing.list_sales_invoices!(
         %{kind: :vat, reconciliation: :pending, date_field: :due_date},
-        sales_opts
+        scope: scope
       )
 
-    Enum.each(unmatched_sales_invoices, &match_sales_invoice(&1.id, organization_id))
+    Enum.each(unmatched_sales_invoices, &match_sales_invoice(&1.id, scope))
   end
 
   @doc """
   Auto-matches a single sales invoice to the best available transaction.
   """
-  @spec match_sales_invoice(String.t(), String.t()) :: :ok
-  def match_sales_invoice(sales_invoice_id, organization_id) do
-    Repo.put_org_id(organization_id)
-    sales_opts = [tenant: organization_id] ++ @bridge_opts
+  @spec match_sales_invoice(String.t(), Scope.t()) :: :ok
+  def match_sales_invoice(sales_invoice_id, scope) do
+    org_id = scope.tenant
+    sales_invoice = Invoicing.get_sales_invoice!(sales_invoice_id, scope: scope)
 
-    sales_invoice = SalesInvoice.by_id!(sales_invoice_id, sales_opts)
-
-    Logger.info("Matching sales invoice #{sales_invoice.id} for organization #{organization_id}")
+    Logger.info("Matching sales invoice #{sales_invoice.id} for organization #{org_id}")
 
     unmatched_transactions =
       Finances.list_transactions!(
         %{date_from: ~D[2000-01-01], date_to: ~D[2100-12-30], reconciliation: :pending},
-        sales_opts
+        scope: scope
       )
 
     Logger.info("Found #{length(unmatched_transactions)} unmatched transactions")
@@ -151,12 +127,7 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
         Logger.info("Prediction score: #{prediction_score}")
 
         if Matching.RegressionPredictor.confident_match?(prediction_score) do
-          InvoicingDomain.connect_sales_invoice_transactions(
-            sales_invoice,
-            [transaction.id],
-            authorize?: false,
-            actor: %{}
-          )
+          Invoicing.connect_sales_invoice_transactions!(sales_invoice, [transaction.id], scope: scope)
 
           Logger.info("Matched sales invoice #{sales_invoice.id} with transaction #{transaction.id}")
         else

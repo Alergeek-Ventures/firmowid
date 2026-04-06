@@ -159,9 +159,15 @@
           >
             <div class="flex flex-row items-center gap-4">
               <.avatar class="ring-greyButtonBg/50 size-8 ring-1">
-                <.avatar_image src={user.avatar_url} alt="Avatar" />
+                <.avatar_image
+                  :if={user.avatar_blob && user.avatar_blob.url}
+                  src={user.avatar_blob && user.avatar_blob.url}
+                  alt="Avatar"
+                />
                 <.avatar_fallback class="bg-blueBg text-blueText">
-                  {String.slice(user.name || user.email || "", 0, 1) |> String.upcase()}
+                  {to_string(user.name || user.email || "")
+                  |> String.slice(0, 1)
+                  |> String.upcase()}
                 </.avatar_fallback>
               </.avatar>
               <p class="leading-snug">

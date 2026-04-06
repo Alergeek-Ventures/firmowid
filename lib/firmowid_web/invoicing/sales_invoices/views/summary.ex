@@ -25,6 +25,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
     invoice =
       SalesInvoice.by_id!(id,
         load: [
+          :net_value,
+          :vat_value,
+          :gross_value,
           sales_invoice_items: [:net_value, :vat_value, :gross_value],
           corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
           corrected_invoice: :corrections,
@@ -53,7 +56,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
       |> assign(:previous_invoices, previous_invoices)
       |> assign(:submission_info, submission_info)
       |> assign(:currency_rate, currency_rate)
-      |> assign(:ksef_connected?, Ksef.get_credential() != nil)
+      |> assign(:ksef_connected?, Ksef.get_credential(socket.assigns.ash_scope) != nil)
 
     {:ok, socket}
   end
@@ -65,8 +68,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
       <p class="text-grey-500 text-sm">
         Kreator faktur | <span class="text-grey-700">Faktura wystawiona</span>
       </p>
-      <%= case @submission_info.status do %>
-        <% :submitting -> %>
+      <%= cond do %>
+        <% SubmissionInfo.submitting?(@submission_info) -> %>
           <h1 class="flex items-baseline gap-1 text-[27px]/tight font-medium">
             Faktura w trakcie wysyłania
             <span class="inline-flex gap-1">
@@ -77,13 +80,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
               <span class="bg-grey-400 size-1.5 animate-bounce rounded-full"></span>
             </span>
           </h1>
-        <% :submitted -> %>
+        <% SubmissionInfo.submitted?(@submission_info) -> %>
           <h1 class="text-[27px]/tight font-medium">Faktura wysłana do KSeF</h1>
-        <% :failed -> %>
+        <% SubmissionInfo.failed?(@submission_info) -> %>
           <h1 class="text-[27px]/tight font-medium text-red-600">
             Wysyłka do KSeF nie powiodła się
           </h1>
-        <% _ -> %>
+        <% true -> %>
           <h1 class="text-[27px]/tight font-medium">Faktura wystawiona</h1>
       <% end %>
 
@@ -103,7 +106,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
           </.link>
           <.button
             :if={
-              (@ksef_connected? and @invoice.invoice_number and
+              (@ksef_connected? and not is_nil(@invoice.invoice_number) and
                  SubmissionInfo.not_submitted?(@submission_info)) or
                 SubmissionInfo.failed?(@submission_info)
             }
@@ -220,13 +223,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   def handle_event("send_to_ksef", _params, socket) do
     invoice = socket.assigns.invoice
 
-    case Ksef.submit_sales_invoice(invoice.id) do
+    case Ksef.submit_sales_invoice(invoice.id, socket.assigns.ash_scope) do
       {:ok, _job} ->
         Ksef.subscribe_ksef_status(socket.assigns.current_user.organization_id)
 
         {:noreply,
          socket
-         |> assign(:submission_info, %{socket.assigns.submission_info | status: :submitting})
+         |> assign(:submission_info, %SubmissionInfo{status: :submitting})
          |> put_flash(:info, "Wysyłka do KSeF rozpoczęta")}
 
       {:error, reason} ->
@@ -245,6 +248,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
         SalesInvoice.by_id!(
           invoice_id,
           load: [
+            :net_value,
+            :vat_value,
+            :gross_value,
             sales_invoice_items: [:net_value, :vat_value, :gross_value],
             corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
             corrected_invoice: :corrections,

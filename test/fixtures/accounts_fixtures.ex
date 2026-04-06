@@ -1,14 +1,13 @@
 defmodule Firmowid.AccountsFixtures do
   @moduledoc """
-  This module defines test helpers for creating
-  entities via the `Firmowid.Accounts` context.
+  Test helpers for creating users and organizations via the Ash Core domain.
   """
 
-  alias Firmowid.Accounts
-  alias Firmowid.Repo
+  alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Core.User
 
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
-  def valid_user_password, do: "hello world!"
+  def valid_user_password, do: "hello world!!"
 
   defp unique_nip do
     [:positive]
@@ -25,74 +24,72 @@ defmodule Firmowid.AccountsFixtures do
     })
   end
 
-  @spec admin_fixture() :: any()
+  @doc """
+  Creates a user with an organization. Accepts optional attrs:
+    - `:email` — defaults to a unique email
+    - `:password` — defaults to `valid_user_password/0`
+    - `:role` — defaults to `:employee`
+    - `:organization_id` — when provided, joins that org instead of creating a new one
+  """
+  @spec user_fixture(map()) :: User.t()
+  def user_fixture(attrs \\ %{}) do
+    email = attrs[:email] || unique_user_email()
+    password = attrs[:password] || valid_user_password()
+
+    user =
+      Core.register_with_password!(%{email: email, password: password},
+        authorize?: false,
+        actor: %{}
+      )
+
+    user =
+      case attrs[:organization_id] do
+        nil ->
+          org =
+            Core.create_organization!(
+              %{nip: unique_nip(), name: "Test Organization", owner_id: user.id},
+              authorize?: false,
+              actor: %{}
+            )
+
+          Core.set_organization!(user, %{organization_id: org.id},
+            authorize?: false,
+            actor: %{},
+            tenant: org.id
+          )
+
+        org_id ->
+          Core.set_organization!(user, %{organization_id: org_id},
+            authorize?: false,
+            actor: %{},
+            tenant: org_id
+          )
+      end
+
+    role = attrs[:role] || :employee
+    Core.update_role!(user, %{role: role}, authorize?: false, actor: %{})
+  end
+
+  @doc """
+  Creates a user with `:admin` role. Forwards all attrs to `user_fixture/1`.
+  """
+  @spec admin_fixture(map()) :: User.t()
   def admin_fixture(attrs \\ %{}) do
     user_fixture(Map.merge(%{role: :admin}, attrs))
   end
 
-  def user_fixture(attrs \\ %{}) do
-    {:ok, user} =
-      attrs
-      |> valid_user_attributes()
-      |> Accounts.register_user()
-
-    {:ok, organization} =
-      Accounts.create_organization(
-        %{
-          "nip" => unique_nip(),
-          "name" => "Test Organization",
-          "owner_id" => user.id
-        },
-        user
-      )
-
-    Repo.put_org_id(organization.id)
-
-    {:ok, user} =
-      user.id
-      |> Accounts.get_user!()
-      |> Accounts.update_user(
-        Map.merge(
-          %{
-            role: :employee
-          },
-          Map.take(attrs, [:role, :system_role])
-        )
-      )
-
-    user
-  end
-
+  @doc """
+  Creates a user in an existing organization without creating a new one.
+  """
+  @spec user_in_org_fixture(Ecto.UUID.t(), map()) :: User.t()
   def user_in_org_fixture(organization_id, attrs \\ %{}) do
-    # register the user without an organization
-    {:ok, user} =
-      attrs
-      |> valid_user_attributes()
-      |> Accounts.register_user()
-
-    Repo.put_org_id(organization_id)
-
-    # update the user to be part of the specified organization
-    {:ok, user} =
-      user
-      |> Ecto.Changeset.change(%{organization_id: organization_id})
-      |> Repo.update()
-
-    {:ok, user} =
-      user.id
-      |> Accounts.get_user!()
-      |> Accounts.update_user(
-        Map.merge(
-          %{
-            role: :employee
-          },
-          Map.take(attrs, [:role, :system_role])
-        )
-      )
-
-    user
+    user_fixture(Map.put(attrs, :organization_id, organization_id))
   end
 
+  @doc """
+  Intercepts a token from a sent email for use in confirmation / reset-password tests.
+  The `fun` receives a URL-building function and should return `{:ok, email}`.
+  """
   def extract_user_token(fun) do
     {:ok, captured_email} = fun.(&"[TOKEN]#{&1}[TOKEN]")
     [_, token | _] = String.split(captured_email.text_body, "[TOKEN]")

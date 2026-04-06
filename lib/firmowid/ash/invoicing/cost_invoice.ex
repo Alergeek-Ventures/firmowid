@@ -38,6 +38,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     notifiers: [Ash.Notifier.PubSub],
     primary_read_warning?: false
 
+  alias Firmowid.Ash.Checks.AtLeastRole
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Resource
 
@@ -288,15 +290,52 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   end
 
   policies do
-    policy action_type(:read) do
+    bypass actor_attribute_equals(:role, :admin) do
       authorize_if always()
     end
 
-    policy action_type([:create, :update]) do
+    # cost_invoice_processor: full access
+    bypass {SystemActorRole, roles: [:cost_invoice_processor]} do
       authorize_if always()
     end
 
-    policy action_type(:action) do
+    # ksef_session: read + create_internal
+    bypass {SystemActorRole, roles: [:ksef_session]} do
+      authorize_if action_type(:read)
+    end
+
+    bypass {SystemActorRole, roles: [:ksef_session]} do
+      authorize_if action(:create_internal)
+    end
+
+    # invoice_matcher: read + connect/disconnect transactions
+    bypass {SystemActorRole, roles: [:invoice_matcher]} do
+      authorize_if action_type(:read)
+    end
+
+    bypass {SystemActorRole, roles: [:invoice_matcher]} do
+      authorize_if action([:connect_transactions, :disconnect_transactions])
+    end
+
+    # Other system actors: no access
+    policy Firmowid.Ash.Checks.IsSystemActor do
+      forbid_if always()
+    end
+
+    # :invoicing and :accountant: read-only
+    policy [action_type(:read), {AtLeastRole, role: :invoicing}] do
+      authorize_if always()
+    end
+
+    # :accountant: write actions
+    policy [
+      action_type([:create, :update]),
+      {AtLeastRole, role: :accountant}
+    ] do
+      authorize_if always()
+    end
+
+    policy [action_type(:action), {AtLeastRole, role: :accountant}] do
       authorize_if always()
     end
   end

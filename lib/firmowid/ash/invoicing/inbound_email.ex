@@ -20,6 +20,7 @@ defmodule Firmowid.Ash.Invoicing.InboundEmail do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -76,15 +77,26 @@ defmodule Firmowid.Ash.Invoicing.InboundEmail do
   end
 
   policies do
-    policy action_type(:read) do
+    bypass actor_attribute_equals(:role, :admin) do
       authorize_if always()
     end
 
-    policy action_type(:create) do
-      authorize_if always()
+    # cost_invoice_processor: read + mark_processed
+    bypass {SystemActorRole, roles: [:cost_invoice_processor]} do
+      authorize_if action_type(:read)
     end
 
-    policy action_type(:update) do
+    bypass {SystemActorRole, roles: [:cost_invoice_processor]} do
+      authorize_if action(:mark_processed)
+    end
+
+    # Other system actors: no access
+    policy Firmowid.Ash.Checks.IsSystemActor do
+      forbid_if always()
+    end
+
+    # :invoicing and :accountant: read-only
+    policy [action_type(:read), {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}] do
       authorize_if always()
     end
   end

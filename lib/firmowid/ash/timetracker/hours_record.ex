@@ -27,7 +27,6 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
     define :by_month, args: [:user_id, :month, :year]
     define :create
     define :destroy
-    define :month_hours_records, args: [:month, :year]
   end
 
   actions do
@@ -51,6 +50,24 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
       argument :year, :integer, allow_nil?: false
 
       filter expr(user_id == ^arg(:user_id) and month == ^arg(:month) and year == ^arg(:year))
+    end
+
+    read :list do
+      argument :user_id, :uuid
+      argument :month, :integer
+      argument :year, :integer
+
+      prepare build(filter: expr(user_id == ^arg(:user_id))) do
+        where present(:user_id)
+      end
+
+      prepare build(filter: expr(month == ^arg(:month))) do
+        where present(:month)
+      end
+
+      prepare build(filter: expr(year == ^arg(:year))) do
+        where present(:year)
+      end
     end
 
     # ── Write actions ─────────────────────────────────────────────────
@@ -88,35 +105,6 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
         end
       end
     end
-
-    # ── Generic actions ───────────────────────────────────────────────
-
-    action :month_hours_records, {:array, :map} do
-      description "All users with their hours records for a given month/year."
-
-      argument :month, :integer, allow_nil?: false
-      argument :year, :integer, allow_nil?: false
-
-      run fn input, _context ->
-        import Ecto.Query
-
-        %{month: month, year: year} = input.arguments
-
-        # TODO: replace raw Ecto with Ash reads when cross-domain joins
-        # (User × HoursRecord) are supported — requires migrating Accounts to Ash.
-        results =
-          Firmowid.Repo.all(
-            from(u in Firmowid.Accounts.User,
-              left_join: hr in Firmowid.Ash.Timetracker.HoursRecord,
-              on: u.id == hr.user_id and hr.month == ^month and hr.year == ^year,
-              order_by: [u.name, u.email],
-              select: %{user: u, hours_record: hr}
-            )
-          )
-
-        {:ok, results}
-      end
-    end
   end
 
   policies do
@@ -124,6 +112,12 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
       authorize_if always()
     end
 
+    # System actors have no access to payroll-adjacent employee data
+    policy Firmowid.Ash.Checks.IsSystemActor do
+      forbid_if always()
+    end
+
+    # Employee policies: own records only
     policy [action_type(:read), actor_attribute_equals(:role, :employee)] do
       authorize_if relates_to_actor_via(:user)
     end
@@ -142,6 +136,9 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
     policy [action_type(:action), actor_attribute_equals(:role, :employee)] do
       forbid_if always()
     end
+
+    # :invoicing and :accountant have no access to hours records (personal payroll data)
+    # No matching policies = forbidden (default Ash behavior with authorize :by_default)
   end
 
   multitenancy do

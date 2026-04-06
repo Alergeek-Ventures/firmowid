@@ -9,13 +9,17 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
   All fixture functions use `Ash.Seed.seed!` to create real database records
   through the Ash resource layer, ensuring tests validate the full integration
   path from resource to XML rendering.
+
+  All `build_*` functions require an `org_id:` keyword option specifying the
+  organization UUID to use for the seeded records.
   """
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
-  alias Firmowid.Repo
 
   # erlsom is a test-only dependency, suppress undefined module warning in non-test envs
   @compile {:no_warn_undefined, [:erlsom]}
+
+  @bridge_opts [authorize?: false, actor: %{}]
 
   @schema_cache_dir Path.join([:code.priv_dir(:firmowid), "ksef_schemas"])
 
@@ -68,7 +72,7 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     # Use include_dirs option to tell erlsom where to find imported schemas
     case :erlsom.compile_xsd_file(charlist_path, include_dirs: [include_dir]) do
       {:ok, model} -> model
-      {:error, reason} -> raise "Failed to compile KSeF schema: #{inspect(reason)}"
+      {:error, reason} -> raise RuntimeError, "Failed to compile KSeF schema: #{inspect(reason)}"
     end
   end
 
@@ -81,9 +85,14 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     end
   end
 
-  @doc "Builds a domestic VAT invoice fixture with configurable rate, items, and buyer."
+  @doc """
+  Builds a domestic VAT invoice fixture with configurable rate, items, and buyer.
+
+  Requires `org_id:` in opts.
+  """
   @spec build_domestic_invoice(keyword()) :: map()
   def build_domestic_invoice(opts \\ []) do
+    org_id = Keyword.fetch!(opts, :org_id)
     vat_rate = Keyword.get(opts, :vat_rate, "23")
     item_count = Keyword.get(opts, :items, 1)
 
@@ -107,21 +116,27 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
         is_reverse_charge: false,
         ksef_invoice_kind: :vat,
         invoice_type: :poland,
-        organization_id: Repo.get_org_id()
+        organization_id: org_id
       })
 
     seed_items!(invoice, build_item_attrs(item_count, vat_rate, opts))
 
-    Ash.load!(invoice, [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-      authorize?: false,
-      actor: %{},
-      tenant: invoice.organization_id
+    Ash.load!(
+      invoice,
+      [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+      Keyword.put(@bridge_opts, :tenant, invoice.organization_id)
     )
   end
 
-  @doc "Builds a multi-rate invoice fixture with items at 23%, 8%, and 5% VAT."
+  @doc """
+  Builds a multi-rate invoice fixture with items at 23%, 8%, and 5% VAT.
+
+  Requires `org_id:` in opts.
+  """
   @spec build_multi_rate_invoice(keyword()) :: map()
   def build_multi_rate_invoice(opts \\ []) do
+    org_id = Keyword.fetch!(opts, :org_id)
+
     invoice =
       Ash.Seed.seed!(SalesInvoice, %{
         invoice_number: unique_invoice_number(),
@@ -142,7 +157,7 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
         is_reverse_charge: false,
         ksef_invoice_kind: :vat,
         invoice_type: :poland,
-        organization_id: Repo.get_org_id()
+        organization_id: org_id
       })
 
     items = [
@@ -171,16 +186,22 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
 
     seed_items!(invoice, items)
 
-    Ash.load!(invoice, [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-      authorize?: false,
-      actor: %{},
-      tenant: invoice.organization_id
+    Ash.load!(
+      invoice,
+      [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+      Keyword.put(@bridge_opts, :tenant, invoice.organization_id)
     )
   end
 
-  @doc "Builds a reverse charge (oo) invoice fixture for EU B2B."
+  @doc """
+  Builds a reverse charge (oo) invoice fixture for EU B2B.
+
+  Requires `org_id:` in opts.
+  """
   @spec build_reverse_charge_invoice(keyword()) :: map()
   def build_reverse_charge_invoice(opts \\ []) do
+    org_id = Keyword.fetch!(opts, :org_id)
+
     invoice =
       Ash.Seed.seed!(SalesInvoice, %{
         invoice_type: :foreign,
@@ -201,7 +222,7 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
         buyer_country: "DE",
         is_reverse_charge: true,
         ksef_invoice_kind: :vat,
-        organization_id: Repo.get_org_id()
+        organization_id: org_id
       })
 
     seed_items!(invoice, [
@@ -214,16 +235,22 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
       }
     ])
 
-    Ash.load!(invoice, [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-      authorize?: false,
-      actor: %{},
-      tenant: invoice.organization_id
+    Ash.load!(
+      invoice,
+      [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+      Keyword.put(@bridge_opts, :tenant, invoice.organization_id)
     )
   end
 
-  @doc "Builds an EU VAT invoice fixture with French buyer and standard 23% rate."
+  @doc """
+  Builds an EU VAT invoice fixture with French buyer and standard 23% rate.
+
+  Requires `org_id:` in opts.
+  """
   @spec build_eu_vat_invoice(keyword()) :: map()
   def build_eu_vat_invoice(opts \\ []) do
+    org_id = Keyword.fetch!(opts, :org_id)
+
     invoice =
       Ash.Seed.seed!(SalesInvoice, %{
         invoice_number: unique_invoice_number(),
@@ -244,7 +271,7 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
         is_reverse_charge: false,
         ksef_invoice_kind: :vat,
         invoice_type: :poland,
-        organization_id: Repo.get_org_id()
+        organization_id: org_id
       })
 
     seed_items!(invoice, [
@@ -257,10 +284,10 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
       }
     ])
 
-    Ash.load!(invoice, [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-      authorize?: false,
-      actor: %{},
-      tenant: invoice.organization_id
+    Ash.load!(
+      invoice,
+      [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+      Keyword.put(@bridge_opts, :tenant, invoice.organization_id)
     )
   end
 
@@ -269,9 +296,13 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
 
   Uses `oo` (reverse charge) VAT rate to test the renderer's handling of the
   combination, even though the correct business rate for US buyers is `np I`.
+
+  Requires `org_id:` in opts.
   """
   @spec build_other_id_invoice(keyword()) :: map()
   def build_other_id_invoice(opts \\ []) do
+    org_id = Keyword.fetch!(opts, :org_id)
+
     invoice =
       Ash.Seed.seed!(SalesInvoice, %{
         invoice_type: :foreign,
@@ -292,7 +323,7 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
         buyer_country: "US",
         is_reverse_charge: true,
         ksef_invoice_kind: :vat,
-        organization_id: Repo.get_org_id()
+        organization_id: org_id
       })
 
     seed_items!(invoice, [
@@ -305,16 +336,22 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
       }
     ])
 
-    Ash.load!(invoice, [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-      authorize?: false,
-      actor: %{},
-      tenant: invoice.organization_id
+    Ash.load!(
+      invoice,
+      [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+      Keyword.put(@bridge_opts, :tenant, invoice.organization_id)
     )
   end
 
-  @doc "Builds an invoice fixture with an individual buyer (no tax ID, BrakID=1)."
+  @doc """
+  Builds an invoice fixture with an individual buyer (no tax ID, BrakID=1).
+
+  Requires `org_id:` in opts.
+  """
   @spec build_no_id_invoice(keyword()) :: map()
   def build_no_id_invoice(opts \\ []) do
+    org_id = Keyword.fetch!(opts, :org_id)
+
     invoice =
       Ash.Seed.seed!(SalesInvoice, %{
         invoice_number: unique_invoice_number(),
@@ -336,7 +373,7 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
         is_reverse_charge: false,
         ksef_invoice_kind: :vat,
         invoice_type: :poland,
-        organization_id: Repo.get_org_id()
+        organization_id: org_id
       })
 
     seed_items!(invoice, [
@@ -349,10 +386,10 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
       }
     ])
 
-    Ash.load!(invoice, [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-      authorize?: false,
-      actor: %{},
-      tenant: invoice.organization_id
+    Ash.load!(
+      invoice,
+      [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+      Keyword.put(@bridge_opts, :tenant, invoice.organization_id)
     )
   end
 
@@ -428,9 +465,7 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     Ash.load!(
       correction,
       [:corrected_invoice, sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-      authorize?: false,
-      actor: %{},
-      tenant: correction.organization_id
+      Keyword.put(@bridge_opts, :tenant, correction.organization_id)
     )
   end
 

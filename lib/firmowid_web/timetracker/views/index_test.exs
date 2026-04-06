@@ -30,8 +30,8 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
   describe "session management" do
     setup %{conn: conn} do
       user = user_fixture()
-      project = project_fixture(%{name: "Test Project"})
-      user_project_fixture(user.id, project.id)
+      project = project_fixture(%{name: "Test Project", organization_id: user.organization_id})
+      user_project_fixture(user.id, project.id, user.organization_id)
 
       %{
         conn: log_in_user(conn, user),
@@ -125,7 +125,8 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
           user_id: user.id,
           project_id: project.id,
           title: "Test Session",
-          start_datetime: DateTime.utc_now()
+          start_datetime: DateTime.utc_now(),
+          organization_id: user.organization_id
         })
 
       {:ok, lv, _html} = live(conn, ~p"/czasosledz")
@@ -141,7 +142,7 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
     end
 
     test "deletes session", %{conn: conn, user: user, project: project} do
-      session = session_fixture(%{user_id: user.id, project_id: project.id})
+      session = session_fixture(%{user_id: user.id, project_id: project.id, organization_id: user.organization_id})
       {:ok, lv, _html} = live(conn, ~p"/czasosledz")
 
       lv
@@ -156,7 +157,8 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
         session_fixture(%{
           user_id: user.id,
           project_id: project.id,
-          title: "Old Title"
+          title: "Old Title",
+          organization_id: user.organization_id
         })
 
       {:ok, lv, _html} = live(conn, ~p"/czasosledz")

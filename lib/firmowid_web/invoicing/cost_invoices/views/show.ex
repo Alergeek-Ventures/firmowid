@@ -31,7 +31,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
 
     if is_nil(cost_invoice.original_invoice) do
       cost_invoice = Invoicing.hydrate_invoice_with_fa3_blob(cost_invoice)
-      potential_transactions = InvoiceMatching.get_potential_transactions_for_invoice(cost_invoice)
+      potential_transactions = InvoiceMatching.get_potential_transactions_for_invoice(cost_invoice, scope)
 
       socket =
         socket
@@ -55,6 +55,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
       invoice={@invoice}
       potential_transactions={@potential_transactions}
       current_user={@current_user}
+      scope={@ash_scope}
     />
     """
   end
@@ -70,7 +71,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
 
   @impl true
   def handle_event("delete", _params, socket) do
-    Invoicing.delete_cost_invoice(socket.assigns.invoice.id)
+    Invoicing.delete_cost_invoice(socket.assigns.invoice.id, socket.assigns.ash_scope)
 
     Analytics.track_event("cost_invoice_delete", socket.assigns.current_user, %{})
 

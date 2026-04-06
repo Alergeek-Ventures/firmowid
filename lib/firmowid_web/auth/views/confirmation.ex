@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Auth.Views.Confirmation do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Accounts
+  alias Firmowid.Ash.Core.User
 
   def render(%{live_action: :edit} = assigns) do
     ~H"""
@@ -32,14 +32,16 @@ defmodule FirmowidWeb.Auth.Views.Confirmation do
   # Do not log in the user after confirmation to avoid a
   # leaked token giving the user access to the account.
   def handle_event("confirm_account", %{"user" => %{"token" => token}}, socket) do
-    case Accounts.confirm_user(token) do
-      {:ok, _} ->
+    strategy = AshAuthentication.Info.strategy!(User, :confirm_new_user)
+
+    case AshAuthentication.Strategy.action(strategy, :confirm, %{"confirm" => token}) do
+      {:ok, _user} ->
         {:noreply,
          socket
          |> put_flash(:info, "Użytkownik został potwierdzony pomyślnie.")
          |> redirect(to: ~p"/")}
 
-      :error ->
+      {:error, _error} ->
         # If there is a current user and the account was already confirmed,
         # then odds are that the confirmation link was already visited, either
         # by some automation or by the user themselves, so we redirect without

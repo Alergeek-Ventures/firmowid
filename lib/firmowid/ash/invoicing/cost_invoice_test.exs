@@ -6,6 +6,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
 
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
 
   # TODO: replace authorize?: false + actor: %{} with system actor once available
   @bridge_opts [authorize?: false, actor: %{}]
@@ -15,10 +17,15 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
       user = user_fixture()
       invoice = insert_ksef_cost_invoice!(user.organization_id)
 
+      scope = %Scope{
+        actor: %SystemActor{org_id: user.organization_id, role: :admin},
+        tenant: user.organization_id
+      }
+
       assert_raise RuntimeError,
                    ~r/Cost invoice #{invoice.id} is imported from KSeF and cannot be deleted/,
                    fn ->
-                     Invoicing.delete_cost_invoice(invoice.id)
+                     Invoicing.delete_cost_invoice(invoice.id, scope)
                    end
 
       opts = [tenant: user.organization_id] ++ @bridge_opts

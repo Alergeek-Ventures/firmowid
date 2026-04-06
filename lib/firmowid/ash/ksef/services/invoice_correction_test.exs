@@ -19,9 +19,11 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Ksef.Services.InvoiceRenderer
 
+  @bridge_opts [authorize?: false, actor: %{}]
+
   setup do
-    Firmowid.AccountsFixtures.user_fixture()
-    :ok
+    user = Firmowid.AccountsFixtures.user_fixture()
+    %{org_id: user.organization_id}
   end
 
   # ---------------------------------------------------------------------------
@@ -29,12 +31,20 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
   # ---------------------------------------------------------------------------
 
   # Creates an original invoice with the given items and buyer name.
+  # Requires `org_id:` in opts.
   defp build_original(opts \\ []) do
+    org_id = Keyword.fetch!(opts, :org_id)
     item_price = Keyword.get(opts, :unit_price, "100.00")
     item_name = Keyword.get(opts, :item_name, "Original Service")
     buyer_name = Keyword.get(opts, :buyer_name, "Test Buyer S.A.")
 
-    [vat_rate: "23", buyer_name: buyer_name, item_name: item_name, quantity: Decimal.new("1")]
+    [
+      vat_rate: "23",
+      buyer_name: buyer_name,
+      item_name: item_name,
+      quantity: Decimal.new("1"),
+      org_id: org_id
+    ]
     |> build_domestic_invoice()
     |> then(fn invoice ->
       # Update unit_price if non-default (build_domestic_invoice always uses 100.00)
@@ -121,9 +131,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
     Ash.load!(
       correction,
       [:corrected_invoice, sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-      authorize?: false,
-      actor: %{},
-      tenant: correction.organization_id
+      Keyword.put(@bridge_opts, :tenant, correction.organization_id)
     )
   end
 
@@ -133,11 +141,10 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
       Ash.Seed.update!(item, %{unit_price: Decimal.new(price)})
     end
 
-    Ash.load!(invoice, [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-      authorize?: false,
-      actor: %{},
-      lazy?: false,
-      tenant: invoice.organization_id
+    Ash.load!(
+      invoice,
+      [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+      Keyword.merge(@bridge_opts, tenant: invoice.organization_id, lazy?: false)
     )
   end
 
@@ -163,14 +170,14 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
 
   # Builds a chain: original -> KOR1 -> KOR2 -> KOR3 with distinct data at each level.
   # Returns {original, kor1, kor2, kor3}.
-  defp build_correction_chain do
+  defp build_correction_chain(org_id) do
     # Use explicit timestamps with 1-second gaps to ensure distinct ordering.
     # locked_at is :utc_datetime (second precision), so sub-second gaps don't work.
     t0 = ~U[2026-01-15 10:00:00Z]
     t1 = ~U[2026-01-15 10:00:01Z]
     t2 = ~U[2026-01-15 10:00:02Z]
 
-    original = build_original(item_name: "Original Service", unit_price: "100.00")
+    original = build_original(item_name: "Original Service", unit_price: "100.00", org_id: org_id)
     original = submit(original, t0)
 
     kor1 = correct(original, item_name: "Corrected Service v1", unit_price: "150.00")
@@ -189,8 +196,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
   # ---------------------------------------------------------------------------
 
   describe "DaneFaKorygowanej always references the original invoice" do
-    test "first correction references the original" do
-      original = submit(build_original())
+    test "first correction references the original", %{org_id: org_id} do
+      original = submit(build_original(org_id: org_id))
       kor1 = correct(original)
 
       xml = render_xml(kor1)
@@ -206,8 +213,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
                original.ksef_number
     end
 
-    test "second correction in chain still references the original, not KOR1" do
-      {original, _kor1, kor2, _kor3} = build_correction_chain()
+    test "second correction in chain still references the original, not KOR1", %{org_id: org_id} do
+      {original, _kor1, kor2, _kor3} = build_correction_chain(org_id)
 
       xml = render_xml(kor2)
       doc = parse(xml)
@@ -219,8 +226,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
                Date.to_iso8601(original.issue_date)
     end
 
-    test "third correction in chain still references the original" do
-      {original, _kor1, _kor2, kor3} = build_correction_chain()
+    test "third correction in chain still references the original", %{org_id: org_id} do
+      {original, _kor1, _kor2, kor3} = build_correction_chain(org_id)
 
       xml = render_xml(kor3)
       doc = parse(xml)
@@ -238,8 +245,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
   # ---------------------------------------------------------------------------
 
   describe "P_15 gross delta uses reference invoice" do
-    test "first correction: delta = KOR1.gross - original.gross" do
-      original = [unit_price: "100.00"] |> build_original() |> submit()
+    test "first correction: delta = KOR1.gross - original.gross", %{org_id: org_id} do
+      original = [unit_price: "100.00", org_id: org_id] |> build_original() |> submit()
       kor1 = correct(original, unit_price: "150.00")
 
       xml = render_xml(kor1)
@@ -252,8 +259,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
              "P_15 should be #{expected} but got #{p15}"
     end
 
-    test "second correction: delta = KOR2.gross - KOR1.gross (not original)" do
-      {_original, _kor1, kor2, _kor3} = build_correction_chain()
+    test "second correction: delta = KOR2.gross - KOR1.gross (not original)", %{org_id: org_id} do
+      {_original, _kor1, kor2, _kor3} = build_correction_chain(org_id)
 
       xml = render_xml(kor2)
       doc = parse(xml)
@@ -267,8 +274,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
              "P_15 should be #{expected} (KOR2 - KOR1) but got #{p15}"
     end
 
-    test "third correction: delta = KOR3.gross - KOR2.gross" do
-      {_original, _kor1, _kor2, kor3} = build_correction_chain()
+    test "third correction: delta = KOR3.gross - KOR2.gross", %{org_id: org_id} do
+      {_original, _kor1, _kor2, kor3} = build_correction_chain(org_id)
 
       xml = render_xml(kor3)
       doc = parse(xml)
@@ -282,8 +289,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
              "P_15 should be #{expected} (KOR3 - KOR2) but got #{p15}"
     end
 
-    test "correction that reduces price yields negative P_15" do
-      original = [unit_price: "200.00"] |> build_original() |> submit()
+    test "correction that reduces price yields negative P_15", %{org_id: org_id} do
+      original = [unit_price: "200.00", org_id: org_id] |> build_original() |> submit()
       kor1 = correct(original, unit_price: "50.00")
 
       xml = render_xml(kor1)
@@ -304,9 +311,11 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
   # ---------------------------------------------------------------------------
 
   describe "StanPrzed line items use reference invoice" do
-    test "first correction: before items come from original" do
+    test "first correction: before items come from original", %{org_id: org_id} do
       original =
-        [item_name: "Original Service", unit_price: "100.00"] |> build_original() |> submit()
+        [item_name: "Original Service", unit_price: "100.00", org_id: org_id]
+        |> build_original()
+        |> submit()
 
       kor1 = correct(original, item_name: "Corrected Service v1", unit_price: "150.00")
 
@@ -328,8 +337,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
       assert after_prices == ["150.00"]
     end
 
-    test "second correction: before items come from KOR1, not original" do
-      {_original, _kor1, kor2, _kor3} = build_correction_chain()
+    test "second correction: before items come from KOR1, not original", %{org_id: org_id} do
+      {_original, _kor1, kor2, _kor3} = build_correction_chain(org_id)
 
       xml = render_xml(kor2)
       doc = parse(xml)
@@ -345,8 +354,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
       assert after_names == ["Corrected Service v2"]
     end
 
-    test "third correction: before items come from KOR2" do
-      {_original, _kor1, _kor2, kor3} = build_correction_chain()
+    test "third correction: before items come from KOR2", %{org_id: org_id} do
+      {_original, _kor1, _kor2, kor3} = build_correction_chain(org_id)
 
       xml = render_xml(kor3)
       doc = parse(xml)
@@ -361,9 +370,9 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
       assert after_names == ["Corrected Service v3"]
     end
 
-    test "before and after row counts match their respective invoices" do
+    test "before and after row counts match their respective invoices", %{org_id: org_id} do
       original =
-        [vat_rate: "23", items: 3, item_name: "Multi Item"]
+        [vat_rate: "23", items: 3, item_name: "Multi Item", org_id: org_id]
         |> build_domestic_invoice()
         |> submit()
 
@@ -390,9 +399,9 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
   # ---------------------------------------------------------------------------
 
   describe "FaWiersz conditional rendering" do
-    test "buyer-only correction: no FaWiersz rendered" do
+    test "buyer-only correction: no FaWiersz rendered", %{org_id: org_id} do
       original =
-        [item_name: "Original Service", unit_price: "100.00"]
+        [item_name: "Original Service", unit_price: "100.00", org_id: org_id]
         |> build_original()
         |> submit()
 
@@ -416,9 +425,9 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
       assert podmiot2k_name == "Test Buyer S.A."
     end
 
-    test "item name change: FaWiersz rendered" do
+    test "item name change: FaWiersz rendered", %{org_id: org_id} do
       original =
-        [item_name: "Original Service", unit_price: "100.00"]
+        [item_name: "Original Service", unit_price: "100.00", org_id: org_id]
         |> build_original()
         |> submit()
 
@@ -435,9 +444,9 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
       assert after_names == ["Updated Service"]
     end
 
-    test "unit_price change: FaWiersz rendered" do
+    test "unit_price change: FaWiersz rendered", %{org_id: org_id} do
       original =
-        [item_name: "Service", unit_price: "100.00"]
+        [item_name: "Service", unit_price: "100.00", org_id: org_id]
         |> build_original()
         |> submit()
 
@@ -453,9 +462,9 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
       assert after_prices == ["200.00"]
     end
 
-    test "vat_rate change: FaWiersz rendered" do
+    test "vat_rate change: FaWiersz rendered", %{org_id: org_id} do
       original =
-        [item_name: "Service", unit_price: "100.00", vat_rate: "23"]
+        [item_name: "Service", unit_price: "100.00", vat_rate: "23", org_id: org_id]
         |> build_domestic_invoice()
         |> submit()
 
@@ -471,11 +480,10 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
           [item] = kor.sales_invoice_items
           Ash.Seed.update!(item, %{vat_rate: "8"})
 
-          Ash.load!(kor, [:sales_invoice_items],
-            authorize?: false,
-            actor: %{},
-            lazy?: false,
-            tenant: kor.organization_id
+          Ash.load!(
+            kor,
+            [:sales_invoice_items],
+            Keyword.merge(@bridge_opts, tenant: kor.organization_id, lazy?: false)
           )
         end)
 
@@ -489,9 +497,9 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
       assert after_vat == ["8"]
     end
 
-    test "quantity change: FaWiersz rendered" do
+    test "quantity change: FaWiersz rendered", %{org_id: org_id} do
       original =
-        [item_name: "Service", unit_price: "100.00", quantity: Decimal.new("1")]
+        [item_name: "Service", unit_price: "100.00", quantity: Decimal.new("1"), org_id: org_id]
         |> build_domestic_invoice()
         |> submit()
 
@@ -506,11 +514,10 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
           [item] = kor.sales_invoice_items
           Ash.Seed.update!(item, %{quantity: Decimal.new("2")})
 
-          Ash.load!(kor, [:sales_invoice_items],
-            authorize?: false,
-            actor: %{},
-            lazy?: false,
-            tenant: kor.organization_id
+          Ash.load!(
+            kor,
+            [:sales_invoice_items],
+            Keyword.merge(@bridge_opts, tenant: kor.organization_id, lazy?: false)
           )
         end)
 
@@ -524,8 +531,9 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
       assert after_qty == ["2"]
     end
 
-    test "item count change: FaWiersz rendered" do
-      original = submit(build_original(item_name: "Single Item", unit_price: "100.00"))
+    test "item count change: FaWiersz rendered", %{org_id: org_id} do
+      original =
+        submit(build_original(item_name: "Single Item", unit_price: "100.00", org_id: org_id))
 
       # Correction with 2 items instead of 1
       kor1 =
@@ -537,7 +545,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
         |> then(fn kor ->
           # Delete existing items and seed new ones
           for item <- kor.sales_invoice_items do
-            Ash.destroy!(item, authorize?: false, actor: %{}, tenant: kor.organization_id)
+            Ash.destroy!(item, Keyword.put(@bridge_opts, :tenant, kor.organization_id))
           end
 
           Ash.Seed.seed!(SalesInvoiceItem, %{
@@ -562,11 +570,10 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
             index: 1
           })
 
-          Ash.load!(kor, [:sales_invoice_items, :corrected_invoice],
-            authorize?: false,
-            actor: %{},
-            lazy?: false,
-            tenant: kor.organization_id
+          Ash.load!(
+            kor,
+            [:sales_invoice_items, :corrected_invoice],
+            Keyword.merge(@bridge_opts, tenant: kor.organization_id, lazy?: false)
           )
         end)
 
@@ -586,9 +593,9 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
   # ---------------------------------------------------------------------------
 
   describe "Podmiot2K uses reference invoice buyer data" do
-    test "buyer change in first correction: Podmiot2K shows original buyer" do
+    test "buyer change in first correction: Podmiot2K shows original buyer", %{org_id: org_id} do
       original =
-        [vat_rate: "23", buyer_name: "Original Buyer Corp."]
+        [vat_rate: "23", buyer_name: "Original Buyer Corp.", org_id: org_id]
         |> build_domestic_invoice()
         |> submit()
 
@@ -606,9 +613,11 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
       assert podmiot2_name == "Updated Buyer Corp."
     end
 
-    test "buyer change in second correction: Podmiot2K shows KOR1 buyer, not original" do
+    test "buyer change in second correction: Podmiot2K shows KOR1 buyer, not original", %{
+      org_id: org_id
+    } do
       original =
-        [vat_rate: "23", buyer_name: "Original Buyer Corp."]
+        [vat_rate: "23", buyer_name: "Original Buyer Corp.", org_id: org_id]
         |> build_domestic_invoice()
         |> submit()
 
@@ -628,8 +637,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
       assert podmiot2_name == "Updated Buyer v2"
     end
 
-    test "no buyer change: Podmiot2K is absent" do
-      original = submit(build_original())
+    test "no buyer change: Podmiot2K is absent", %{org_id: org_id} do
+      original = submit(build_original(org_id: org_id))
       kor1 = correct(original, unit_price: "150.00")
 
       xml = render_xml(kor1)
@@ -640,9 +649,9 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
       assert is_nil(podmiot2k)
     end
 
-    test "buyer address change triggers Podmiot2K with reference address" do
+    test "buyer address change triggers Podmiot2K with reference address", %{org_id: org_id} do
       original =
-        [vat_rate: "23", buyer_address: "ul. Stara 1, 00-001 Warszawa"]
+        [vat_rate: "23", buyer_address: "ul. Stara 1, 00-001 Warszawa", org_id: org_id]
         |> build_domestic_invoice()
         |> submit()
 
@@ -652,10 +661,9 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
         |> then(fn kor ->
           kor
           |> Ash.Seed.update!(%{buyer_address: "ul. Nowa 99, 00-002 Krakow"})
-          |> Ash.load!([:sales_invoice_items, :corrected_invoice],
-            authorize?: false,
-            actor: %{},
-            tenant: kor.organization_id
+          |> Ash.load!(
+            [:sales_invoice_items, :corrected_invoice],
+            Keyword.put(@bridge_opts, :tenant, kor.organization_id)
           )
         end)
 
@@ -672,47 +680,45 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
   # ---------------------------------------------------------------------------
 
   describe "validation guards" do
-    test "raises when buyer tax ID changes between correction and original" do
-      original = submit(build_original())
+    test "raises when buyer tax ID changes between correction and original", %{org_id: org_id} do
+      original = submit(build_original(org_id: org_id))
       kor1 = correct(original, unit_price: "150.00")
 
       # Directly modify the buyer_id to simulate a tax ID change
       kor1_with_changed_id =
         kor1
-        |> Ash.load!([:corrected_invoice, corrected_invoice: :sales_invoice_items],
-          authorize?: false,
-          actor: %{},
-          tenant: kor1.organization_id
+        |> Ash.load!(
+          [:corrected_invoice, corrected_invoice: :sales_invoice_items],
+          Keyword.put(@bridge_opts, :tenant, kor1.organization_id)
         )
         |> Map.put(:buyer_id, "1111111111")
 
-      assert_raise RuntimeError, ~r/Buyer tax ID cannot change/, fn ->
+      assert_raise ArgumentError, ~r/Buyer tax ID cannot change/, fn ->
         InvoiceRenderer.render_fa3(kor1_with_changed_id)
       end
     end
 
-    test "raises when seller data changes between correction and original" do
-      original = submit(build_original())
+    test "raises when seller data changes between correction and original", %{org_id: org_id} do
+      original = submit(build_original(org_id: org_id))
       kor1 = correct(original, unit_price: "150.00")
 
       # Directly modify seller data to simulate a change
       kor1_with_changed_seller =
         kor1
-        |> Ash.load!([:corrected_invoice, corrected_invoice: :sales_invoice_items],
-          authorize?: false,
-          actor: %{},
-          tenant: kor1.organization_id
+        |> Ash.load!(
+          [:corrected_invoice, corrected_invoice: :sales_invoice_items],
+          Keyword.put(@bridge_opts, :tenant, kor1.organization_id)
         )
         |> Map.put(:seller_display_name, "Completely Different Company")
 
-      assert_raise RuntimeError, ~r/Seller data cannot change/, fn ->
+      assert_raise ArgumentError, ~r/Seller data cannot change/, fn ->
         InvoiceRenderer.render_fa3(kor1_with_changed_seller)
       end
     end
 
-    test "does not raise when buyer non-ID data changes (name, address)" do
+    test "does not raise when buyer non-ID data changes (name, address)", %{org_id: org_id} do
       original =
-        [vat_rate: "23", buyer_name: "Old Buyer Name"]
+        [vat_rate: "23", buyer_name: "Old Buyer Name", org_id: org_id]
         |> build_domestic_invoice()
         |> submit()
 
@@ -729,8 +735,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
   # ---------------------------------------------------------------------------
 
   describe "VAT summary delta uses reference invoice" do
-    test "first correction: P_13_1/P_14_1 delta = KOR1 - original" do
-      original = [unit_price: "100.00"] |> build_original() |> submit()
+    test "first correction: P_13_1/P_14_1 delta = KOR1 - original", %{org_id: org_id} do
+      original = [unit_price: "100.00", org_id: org_id] |> build_original() |> submit()
       kor1 = correct(original, unit_price: "150.00")
 
       xml = render_xml(kor1)
@@ -745,8 +751,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
       assert Decimal.eq?(p14_1, Decimal.new("11.50"))
     end
 
-    test "second correction: P_13_1/P_14_1 delta = KOR2 - KOR1" do
-      {_original, _kor1, kor2, _kor3} = build_correction_chain()
+    test "second correction: P_13_1/P_14_1 delta = KOR2 - KOR1", %{org_id: org_id} do
+      {_original, _kor1, kor2, _kor3} = build_correction_chain(org_id)
 
       xml = render_xml(kor2)
       doc = parse(xml)

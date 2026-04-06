@@ -301,5 +301,64 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceParserTest do
       assert {:ok, attrs} = InvoiceParser.parse(xml)
       assert attrs.original_invoice_ksef_number == "KSEF-ORIGINAL-123"
     end
+
+    test "returns error for unknown invoice type" do
+      xml = """
+      <?xml version="1.0" encoding="utf-8"?>
+      <Faktura xmlns="http://crd.gov.pl/wzor/2025/06/25/13775/">
+        <Podmiot1>
+          <DaneIdentyfikacyjne>
+            <NIP>1234567890</NIP>
+            <Nazwa>Test</Nazwa>
+          </DaneIdentyfikacyjne>
+          <Adres>
+            <KodKraju>PL</KodKraju>
+            <AdresL1>Addr</AdresL1>
+          </Adres>
+        </Podmiot1>
+        <Fa>
+          <KodWaluty>PLN</KodWaluty>
+          <P_1>2025-01-01</P_1>
+          <P_2>INV/001</P_2>
+          <P_15>100</P_15>
+          <RodzajFaktury>UNKNOWN</RodzajFaktury>
+        </Fa>
+      </Faktura>
+      """
+
+      assert {:error, error} = InvoiceParser.parse(xml)
+      assert error =~ "Unknown FA(3) invoice type"
+    end
+
+    test "returns error for unknown payment method code" do
+      xml = """
+      <?xml version="1.0" encoding="utf-8"?>
+      <Faktura xmlns="http://crd.gov.pl/wzor/2025/06/25/13775/">
+        <Podmiot1>
+          <DaneIdentyfikacyjne>
+            <NIP>1234567890</NIP>
+            <Nazwa>Test</Nazwa>
+          </DaneIdentyfikacyjne>
+          <Adres>
+            <KodKraju>PL</KodKraju>
+            <AdresL1>Addr</AdresL1>
+          </Adres>
+        </Podmiot1>
+        <Fa>
+          <KodWaluty>PLN</KodWaluty>
+          <P_1>2025-01-01</P_1>
+          <P_2>INV/001</P_2>
+          <P_15>100</P_15>
+          <RodzajFaktury>VAT</RodzajFaktury>
+          <Platnosc>
+            <FormaPlatnosci>99</FormaPlatnosci>
+          </Platnosc>
+        </Fa>
+      </Faktura>
+      """
+
+      assert {:error, error} = InvoiceParser.parse(xml)
+      assert error =~ "Unknown FA(3) payment method code"
+    end
   end
 end

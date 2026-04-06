@@ -69,8 +69,27 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
       authorize_if always()
     end
 
+    # invoice_matcher: read-only
+    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:invoice_matcher]} do
+      authorize_if action_type(:read)
+    end
+
+    # Other system actors: no access
+    policy Firmowid.Ash.Checks.IsSystemActor do
+      forbid_if always()
+    end
+
+    # All human roles: read
     policy action_type(:read) do
-      authorize_if actor_attribute_equals(:role, :employee)
+      authorize_if always()
+    end
+
+    # :accountant and above: write
+    policy [
+      action_type([:create, :update, :destroy]),
+      {Firmowid.Ash.Checks.AtLeastRole, role: :accountant}
+    ] do
+      authorize_if always()
     end
   end
 

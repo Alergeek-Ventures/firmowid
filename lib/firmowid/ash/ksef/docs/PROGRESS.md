@@ -1,10 +1,11 @@
 # KSeF Domain Consolidation — Progress
 
-## Status: COMPLETE + REFINED (Pass 6)
+## Status: COMPLETE + VERIFIED (Pass 15 — Web Layer Consistency)
 
 All steps from the execution plan in `00-ksef-domain-consolidation.md` have been
-executed and verified. Six refinement passes completed.
+executed and verified. Eleven refinement passes completed.
 `mix check` passes (compile, format, credo, sobelow, dialyzer, tests).
+346 tests, 0 failures. Zero bare `raise` calls remain.
 
 ## Completed Steps
 
@@ -154,6 +155,138 @@ executed and verified. Six refinement passes completed.
 46. **Correction chain comment** — Added explanatory comment to `Enum.zip/1` truncation
     in `annotate_correction_chain/1` clarifying the intentional N vs N+1 length mismatch.
 
+## Refinement Pass 7 (convention alignment + bug fixes)
+
+47. **`@bridge_opts` convention adopted** — Added `@bridge_opts [authorize?: false,
+    actor: %{}]` to `ksef.ex`, `InvoiceRenderer`, `FetchWorker`, and
+    `FetchDispatcher`. All inline `authorize?: false, actor: %{}` patterns now use
+    the module attribute, matching the codebase-wide convention (see `Invoicing`,
+    `SubmissionWorker`, `DatabaseCache`, etc.).
+48. **`get_credential/0` dead code removed** — The `{:error, %NotFound{}}` pattern
+    at line 141 never matched because Ash always wraps NotFound inside
+    `%Ash.Error.Invalid{errors: [%NotFound{} | _]}`. Verified via Tidewave eval.
+    Removed the unreachable clause, keeping only the correct wrapped pattern.
+49. **`unauthenticate/0` nil credential guard** — Previously, calling
+    `unauthenticate/0` when no credential existed would crash with a
+    `FunctionClauseError` on `Credential.destroy!(nil)`. Now returns
+    `{:error, :not_connected}` instead. The web layer already handles
+    `{:error, _}` gracefully. Added `:not_connected` to the `@spec`.
+50. **`InvoiceParser` error messages improved** — `parse_invoice_type/1` and
+    `parse_payment_method/1` now raise `ArgumentError` with the offending value
+    included in the message (e.g., `"Unknown FA(3) invoice type: \"XYZ\""`),
+    instead of generic `RuntimeError` with no context.
+
+## Refinement Pass 8 (dead code removal + error path testing)
+
+51. **Dead `backoff/1` overrides removed** — Both `SubmissionWorker.backoff/1` and
+    `FetchWorker.backoff/1` implemented the formula `3 - (max_attempts - attempt)`
+    which, with `max_attempts: 3`, simplifies to the identity function (`attempt`).
+    Oban's default `backoff/1` already uses `attempt` directly when
+    `max_attempts <= 20` (the clamped max). The custom overrides were no-ops.
+    Verified by evaluating `3 - (3 - n) = n` for all valid attempts.
+52. **Error fallback tests added** — `VatRate.summary_type/1` ArgumentError
+    fallback now tested (ensures unknown rates raise with descriptive message).
+    `InvoiceParser.parse/1` now tested for unknown invoice types and unknown
+    payment method codes (ensures errors propagate with context).
+    Total test count: 102 → 105.
+
+## Refinement Pass 9 (final polish + convention alignment)
+
+53. **Stale comment fixed** — `ksef.ex` `get_submission_info/1` had a comment
+    referencing "Slice 7" (an internal development context). Replaced with a
+    clear technical explanation: "Uses map patterns instead of %SalesInvoice{} to
+    accept any struct with the required fields (avoids compile-time coupling)."
+54. **`@bridge_opts` convention extended to all KSeF files** — All inline
+    `authorize?: false, actor: %{}` patterns across `ksef_test_helpers.ex` (7 calls),
+    `invoice_correction_test.exs` (7 calls), and `invoice_renderer_test.exs` (6 calls)
+    now use `@bridge_opts` module attribute. Every file in the KSeF domain now
+    consistently uses the convention — no inline authorization bypass patterns remain.
+
+## Refinement Pass 10 (error safety + pattern matching)
+
+55. **`SessionWorker` unsafe `raise reason` fixed** — In the `Cachex.fetch!` callback,
+    `raise reason` was called where `reason` could be an atom, struct, or any term.
+    `raise/1` requires a string or exception struct — passing an atom that's not an
+    exception module would crash with `ArgumentError`. Wrapped in a string:
+    `raise "KSeF session renewal failed: #{inspect(reason)}"`.
+56. **`ApiClient.get_auth_status/2` catch-all fixed** — Replaced opaque `rest -> rest`
+    with explicit `{:error, _reason} = error -> error`. The catch-all could silently
+    pass through unexpected return values; the explicit pattern ensures only error
+    tuples are forwarded.
+57. **`InvoiceRenderer.seller_name/1` exception type** — Changed from `raise("...")`
+    (raises `RuntimeError`) to `raise(ArgumentError, "...")`. A missing seller name
+    is a data validation error, not a runtime error.
+58. **`ksef.ex` `backfill_ksef_checksum!/1` exception enriched** — Changed from
+    `raise "..."` to `raise RuntimeError, "..."` with the `ksef_number` included in
+    the message for easier debugging when checksum backfill fails.
+
+## Refinement Pass 11 (exception types + @spec completeness)
+
+59. **Bare `raise "..."` → explicit exception types** — All remaining bare `raise`
+    calls across the KSeF domain now use explicit exception types:
+    - `ApiClient.parse_datetime!/1`: `raise` → `raise ArgumentError` (invalid input)
+    - `ApiClient` Cachex callback: `raise` → `raise RuntimeError` (infrastructure failure)
+    - `Encryption.unpad_pkcs7/1`: `raise` → `raise ArgumentError` (corrupted input, 2 clauses)
+    - `FetchWorker`: `raise` → `raise RuntimeError` in 4 places (expired parts,
+      unzip failures, checksum mismatches, download failures); checksum mismatch now
+      includes part ordinal number for debugging
+    - `SessionWorker` Cachex callback: `raise` → `raise RuntimeError` with improved message
+    - `KsefTestHelpers.compile_ksef_schema!/0`: `raise` → `raise RuntimeError`
+60. **`@spec perform/1` added to all Oban workers** — `SessionWorker`, `SubmissionWorker`,
+    `FetchWorker`, and `FetchDispatcher` now have `@spec perform(Oban.Job.t()) ::
+    Oban.Worker.result()` on their `@impl Oban.Worker` callbacks.
+61. **`KsefAwarePruner.handle_info/2` catch-all documented** — Added `@doc false` to
+    the unexpected-message catch-all clause to suppress missing-doc warnings.
+
+## Refinement Pass 12 (final bare raise elimination + validation exception types)
+
+62. **Last 3 bare `raise "..."` calls fixed** — Pass 11 missed 3 bare raise calls:
+    - `SessionWorker` Cachex callback (line 132): `raise "KSeF session renewal
+      failed..."` → `raise RuntimeError, "..."` (infrastructure failure, consistent
+      with the other Cachex callback at line 128)
+    - `InvoiceRenderer.validate_correction_buyer_tax_id!/1`: `raise "Buyer tax ID
+      cannot change..."` → `raise ArgumentError, "..."` (data validation error,
+      not a runtime error)
+    - `InvoiceRenderer.validate_correction_seller_data!/1`: `raise "Seller data
+      cannot change..."` → `raise ArgumentError, "..."` (data validation error)
+    - `fa3_invoice_template.xml.eex` VAT summary fallback: `raise "Unexpected VAT
+      rate..."` → `raise RuntimeError, "..."` (internal invariant violation)
+    Tests updated: `InvoiceCorrectionTest` assertions changed from `RuntimeError` to
+    `ArgumentError` for the two validation guard tests.
+    **Zero bare `raise` calls remain** across the entire KSeF domain (verified with
+    `rg '^\s+raise\s+"' lib/firmowid/ash/ksef/`).
+
+## Refinement Pass 13 (DRY + bug fix)
+
+63. **`tenant_opts/0` helper extracted** — Replaced 10 instances of the repeated
+    `[tenant: Repo.get_org_id()] ++ @bridge_opts` pattern across `ksef.ex`,
+    `submission_worker.ex` (7 occurrences), and `fetch_worker.ex` (2 occurrences)
+    with a `defp tenant_opts/0` helper in each module.
+64. **`gross_value` aggregate not loaded bug** — `@sales_invoice_loads` in
+    `lib/firmowid_web/invoicing/views/index.ex` did not include `:gross_value`.
+    The `entries_table.ex` component uses `invoice.gross_value` at line 226/293
+    to render the amount column and for Decimal comparisons (color coding). This
+    caused a `FunctionClauseError` in `Decimal.decimal/1` when viewing the
+    invoicing page — `Decimal.gte?(#Ash.NotLoaded<:aggregate>, 0)`. Added
+    `:gross_value` to `@sales_invoice_loads`. Manually verified fix in browser.
+65. **Invoice-level aggregates missing in detail views** — `show.ex`, `summary.ex`,
+    and `edit.ex` loaded item-level calcs (`sales_invoice_items: [:net_value,
+    :vat_value, :gross_value]`) but not invoice-level aggregates (`:net_value`,
+    `:vat_value`, `:gross_value`). The `template.ex` component uses these at lines
+    498/508/517/535. Added top-level aggregate loads to all three views and the
+    `search_invoices` function in `invoicing.ex`. Follows the pattern from `shared.ex`
+    (PDF controller) which correctly loads both levels.
+66. **`BadBooleanError` in summary.ex** — Line 109 used `@invoice.invoice_number and`
+    which fails in newer Phoenix LiveView because `invoice_number` is a string, not
+    a boolean. Changed to `not is_nil(@invoice.invoice_number) and`. This was
+    introduced during refinement pass 5 when `@submission_info.status in [...]` was
+    replaced with `SubmissionInfo.not_submitted?/1` helper calls.
+67. **Manual testing passed** — KSeF settings page (`/ustawienia/organizacja`)
+    shows "Połączono z KSeF" with token auth type. Invoicing page (`/fakturowanie`)
+    renders all invoice rows with correct amounts, KSeF statuses (KOMPLET, BŁĄD
+    WYSYŁANIA, POMIŃ), and color coding. Invoice summary (`/podsumowanie`) renders
+    complete invoice preview with correct aggregates.
+
 ## Bug Fixes Applied During Migration
 
 - **`CostInvoices.CostInvoice` → `Firmowid.Ash.Invoicing.CostInvoice`** in FetchWorker
@@ -170,6 +303,42 @@ executed and verified. Six refinement passes completed.
   for test env where the table may not exist.
 - **Seed file**: Plan suggested `Ash.Seed.seed!` for credential in bytecraft seeds.
   Used `Ash.read` + `Ash.Seed.seed!` pattern matching the idempotent seed style.
+
+## Final Review (Pass 14)
+
+68. **Comprehensive code review** — All 25 files in the KSeF domain reviewed
+    line-by-line. No code issues found. Verified:
+    - Zero stale module references in `lib/`, `config/`, `priv/` (only docs
+      contain old names for historical context)
+    - All public functions have `@doc` and `@spec`
+    - All modules have accurate `@moduledoc`
+    - Zero bare `raise` calls — all use explicit exception types
+    - `@bridge_opts` + `tenant_opts/0` conventions consistently applied
+    - Error handling tight — no catch-all patterns swallowing errors
+    - 105 KSeF domain tests all green (unit, integration, XSD, correction chains)
+    - `mix check` fully green (format, compile, credo, sobelow, dialyzer, tests)
+    - Web layer consumers verified (LiveViews, components, templates) — all use
+      correct module names and `SubmissionInfo` helpers appropriately
+    - Cross-domain integration verified (Invoicing, Accounts, Currencies)
+
+## Refinement Pass 15 (web layer consistency)
+
+69. **`summary.ex` raw `.status` atom checks replaced** — The `case @submission_info.status`
+    block in the render template (lines 71–91) was the only place in the web layer that
+    bypassed `SubmissionInfo` helper functions. Replaced with `cond` using
+    `SubmissionInfo.submitting?/1`, `SubmissionInfo.submitted?/1`, and
+    `SubmissionInfo.failed?/1`. All web consumers now consistently use helpers.
+70. **`summary.ex` struct update fixed** — `%{socket.assigns.submission_info | status: :submitting}`
+    (generic map update syntax) replaced with `%SubmissionInfo{status: :submitting}`
+    (proper struct construction). Consistent with `sales_invoice_details.ex` pattern.
+71. **Full web layer audit** — All 12 web files consuming the KSeF domain reviewed:
+    - Zero remaining raw `.status` comparisons against `SubmissionInfo`
+    - All aliases used and correct
+    - SubmissionInfo helpers consistently applied across entries_table, sales_invoice_details,
+      summary, invoice_timeline
+    - Manual testing verified: summary page renders correctly for `:not_submitted`,
+      `:failed`, and `:submitted` states
+    - `mix check` fully green after changes
 
 ## Justified Ecto Exceptions (Remaining)
 

@@ -7,11 +7,12 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Api do
 
   action_fallback FirmowidWeb.Infrastructure.Controllers.Fallback
 
-  def create(%{assigns: %{current_user: %{role: :admin}}} = conn, %{"blob" => blob_params}) do
+  def create(%{assigns: %{current_user: %{role: :admin}, ash_scope: scope}} = conn, %{"blob" => blob_params}) do
     case Invoicing.upload_cost_invoice(
            blob_params.path,
            blob_params.content_type,
-           blob_params.filename
+           blob_params.filename,
+           scope
          ) do
       {:ok, blob} ->
         json(conn, %{message: "Cost invoice uploaded successfully", blob_id: blob.id})
@@ -36,7 +37,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Api do
     end
   end
 
-  def create(%{assigns: %{current_user: %{role: :admin}}} = conn, _params) do
+  def create(%{assigns: %{current_user: %{role: :admin}, ash_scope: _scope}} = conn, _params) do
     conn
     |> put_status(:bad_request)
     |> put_view(ErrorJson)

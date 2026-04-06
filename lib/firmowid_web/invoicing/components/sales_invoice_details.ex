@@ -75,6 +75,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   attr :current_user, :map, required: true
   attr :return_to, :string, default: nil
   attr :ksef_connected?, :boolean, default: false
+  attr :scope, :map, required: true
 
   @impl true
   def render(assigns) do
@@ -138,7 +139,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 </.button>
 
                 <.button
-                  :if={@invoice.ksef_number and not @cancelled?}
+                  :if={!!@invoice.ksef_number and not @cancelled?}
                   phx-click={show_modal("cancel-invoice-modal")}
                   color="light_grey"
                   size="small"
@@ -370,6 +371,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 id="invoice-assistant"
                 invoice={@invoice}
                 current_user={@current_user}
+                scope={@scope}
               />
             <% true -> %>
               <InvoiceDetails.potential_transactions
@@ -404,7 +406,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   def handle_event("send_to_ksef", _params, socket) do
     invoice = socket.assigns.invoice
 
-    case Ksef.submit_sales_invoice(invoice.id) do
+    case Ksef.submit_sales_invoice(invoice.id, socket.assigns.scope) do
       {:ok, _job} ->
         Ksef.subscribe_ksef_status(socket.assigns.current_user.organization_id)
 

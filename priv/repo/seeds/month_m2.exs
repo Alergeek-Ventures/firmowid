@@ -511,7 +511,7 @@ defmodule Firmowid.Seeds.MonthM2 do
     Invoicing.connect_cost_invoice_transactions!(cost_monitors, [txn_monitors.id], bridge_opts)
 
     # — Tagging —
-    scope = seed_scope()
+    scope = seed_scope(bytecraft)
 
     # Revenue → project tags
     tag_project!(:sales_invoice, sale_ghostpet.id, [projects.ghostpet.tag_definition_id], scope)
@@ -570,10 +570,10 @@ defmodule Firmowid.Seeds.MonthM2 do
     )
   end
 
-  defp seed_scope do
+  defp seed_scope(bytecraft) do
     %Firmowid.Ash.Scope{
-      current_user: %{id: "00000000-0000-0000-0000-000000000000", role: :admin},
-      current_tenant: Firmowid.Repo.get_org_id()
+      actor: %{id: "00000000-0000-0000-0000-000000000000", role: :admin},
+      tenant: bytecraft.id
     }
   end
 end

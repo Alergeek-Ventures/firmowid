@@ -233,11 +233,14 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     q = String.trim(q)
 
     results =
-      Invoicing.search_invoices(%{
-        query: q,
-        include_sales: true,
-        include_cost: true
-      })
+      Invoicing.search_invoices(
+        %{
+          query: q,
+          include_sales: true,
+          include_cost: true
+        },
+        socket.assigns.ash_scope
+      )
 
     {:noreply,
      socket
@@ -488,20 +491,29 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   defp handle_uploads(entries, socket) do
     user = socket.assigns.current_user
+    scope = socket.assigns.ash_scope
 
     for entry <- entries do
       consume_uploaded_entry(socket, entry, fn %{path: path} ->
         Analytics.track_event("cost_invoice_upload", user, %{file_type: entry.client_type})
-        handle_upload_result(Invoicing.upload_cost_invoice(path, entry.client_type, entry.client_name))
+
+        handle_upload_result(
+          Invoicing.upload_cost_invoice(
+            path,
+            entry.client_type,
+            entry.client_name,
+            scope
+          ),
+          scope
+        )
+
         {:ok, nil}
       end)
     end
   end
 
-  defp handle_upload_result({:error, {:blob_already_exists, blob_checksum}}) do
-    # TODO: replace authorize?: false + actor: %{} with system actor once available
-    cost_invoice =
-      CostInvoice.by_checksum!(blob_checksum, tenant: Firmowid.Repo.get_org_id(), authorize?: false, actor: %{})
+  defp handle_upload_result({:error, {:blob_already_exists, blob_checksum}}, scope) do
+    cost_invoice = Invoicing.get_cost_invoice_by_checksum!(blob_checksum, scope: scope)
 
     LiveToast.send_toast(
       :info,
@@ -527,11 +539,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     )
   end
 
-  defp handle_upload_result({:error, :failure}) do
-    LiveToast.send_toast(:error, "Nie udało się wgrać pliku")
-  end
-
-  defp handle_upload_result(_), do: nil
+  defp handle_upload_result(_result, _scope), do: nil
 
   # TODO: re-add Transaction struct constraints once legacy Ecto schema is removed
   defp toggle_transaction_skip(socket, id, new_skip) do
@@ -722,6 +730,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     :effective_seller_display_name
   ]
   @sales_invoice_loads [
+    :gross_value,
     :sales_invoice_items,
     :transactions,
     corrections: :sales_invoice_items,

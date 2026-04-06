@@ -10,19 +10,20 @@ defmodule Firmowid.Seeds.Voidstack do
 
   import Ecto.Query
 
-  alias Firmowid.Accounts
-  alias Firmowid.Accounts.Organization
+  alias Firmowid.Ash.Core.Organization, as: CoreOrganization
+  alias Firmowid.Ash.Core.User, as: CoreUser
   alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
   alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.Repo
   alias Firmowid.Seeds.Helpers
 
+  require Ash.Query
+
   def seed! do
     dragan = seed_dragan()
     voidstack = seed_organization(dragan)
-    Repo.put_org_id(voidstack.id)
-    seed_project(dragan)
+    seed_project(dragan, voidstack)
     blob = seed_blob(voidstack)
     seed_bank_and_transactions(voidstack)
     seed_cost_invoice(voidstack, blob)
@@ -31,12 +32,22 @@ defmodule Firmowid.Seeds.Voidstack do
 
   defp seed_dragan do
     dragan =
-      case Accounts.register_user(%{email: "dragan@voidstack.io", password: "kolejka123456"}) do
-        {:ok, user} -> user
-        {:error, _} -> Accounts.get_user_by_email("dragan@voidstack.io")
+      case Ash.read(
+             Ash.Query.filter(CoreUser, email == ^"dragan@voidstack.io"),
+             authorize?: false,
+             actor: %{}
+           ) do
+        {:ok, [user]} ->
+          user
+
+        {:ok, []} ->
+          Ash.Seed.seed!(CoreUser, %{
+            email: "dragan@voidstack.io",
+            hashed_password: Argon2.hash_pwd_salt("kolejka123456")
+          })
       end
 
-    Accounts.update_user(dragan, %{
+    Ash.Seed.update!(dragan, %{
       system_role: :user,
       role: :admin,
       name: "Dragan Krypt",
@@ -44,35 +55,29 @@ defmodule Firmowid.Seeds.Voidstack do
       employment_contract_type: :b2b,
       phone: "+421 902 555 666"
     })
-
-    dragan
   end
 
   defp seed_organization(dragan) do
-    case Repo.one(
-           from(o in Organization, where: o.nip == "7871963656", limit: 1),
-           skip_organization_id: true
+    case Ash.read(
+           Ash.Query.filter(CoreOrganization, nip == ^"7871963656"),
+           authorize?: false,
+           actor: %{}
          ) do
-      nil ->
-        {:ok, org} =
-          Accounts.create_organization(
-            %{
-              "name" => "VoidStack Labs spółka z ograniczoną odpowiedzialnością",
-              "nip" => "7871963656",
-              "address" => "ul. Kręgielnia 1, 811 01 Bratislava (oddział w Polsce)",
-              "owner_id" => dragan.id
-            },
-            dragan
-          )
-
+      {:ok, [org]} ->
         org
 
-      org ->
-        org
+      {:ok, []} ->
+        Ash.Seed.seed!(CoreOrganization, %{
+          name: "VoidStack Labs spółka z ograniczoną odpowiedzialnością",
+          nip: "7871963656",
+          address: "ul. Kręgielnia 1, 811 01 Bratislava (oddział w Polsce)",
+          owner_id: dragan.id,
+          inbound_email_nickname: "voidstack"
+        })
     end
   end
 
-  defp seed_project(dragan) do
+  defp seed_project(dragan, voidstack) do
     project =
       case Repo.one(
              from(p in AshProject,
@@ -84,7 +89,7 @@ defmodule Firmowid.Seeds.Voidstack do
           {:ok, p} =
             AshProject.create(
               %{name: "Shadow Protocol"},
-              tenant: Repo.get_org_id(),
+              tenant: voidstack.id,
               authorize?: false,
               actor: %{}
             )
@@ -97,7 +102,7 @@ defmodule Firmowid.Seeds.Voidstack do
 
     {:ok, _} =
       AshProject.set_users([dragan.id], %{project_id: project.id},
-        tenant: Repo.get_org_id(),
+        tenant: voidstack.id,
         authorize?: false,
         actor: %{}
       )

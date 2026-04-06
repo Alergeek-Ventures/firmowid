@@ -36,6 +36,7 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
 
   alias Firmowid.Ash.Analysis.TagDefinition
   alias Firmowid.Ash.Analysis.Validations.KindTagDefinitionConsistency
+  alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Resource
 
   require Ash.Query
@@ -194,8 +195,31 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
       authorize_if always()
     end
 
+    # invoice_matcher: read-only
+    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:invoice_matcher]} do
+      authorize_if action_type(:read)
+    end
+
+    # Other system actors: no access
+    policy Firmowid.Ash.Checks.IsSystemActor do
+      forbid_if always()
+    end
+
+    # All human roles: read
     policy action_type(:read) do
-      authorize_if actor_attribute_equals(:role, :employee)
+      authorize_if always()
+    end
+
+    # :accountant and above: write (tag/untag invoices and transactions)
+    policy [
+      action_type([:create, :update, :destroy]),
+      {AtLeastRole, role: :accountant}
+    ] do
+      authorize_if always()
+    end
+
+    policy [action_type(:action), {AtLeastRole, role: :accountant}] do
+      authorize_if always()
     end
   end
 
@@ -254,8 +278,8 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
 
   defp build_scope(context) do
     %Firmowid.Ash.Scope{
-      current_user: context.actor,
-      current_tenant: context.tenant
+      actor: context.actor,
+      tenant: context.tenant
     }
   end
 

@@ -17,25 +17,29 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
 
   import Ecto.Query
 
-  alias Firmowid.Accounts
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.Credential
   alias Firmowid.Ash.Ksef.Services.ApiClient
+  alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
   alias Firmowid.Repo
 
   require Logger
 
   @impl Oban.Worker
+  @spec perform(Oban.Job.t()) :: Oban.Worker.result()
   def perform(%Oban.Job{args: %{"organization_id" => organization_id}} = job) do
-    Repo.put_org_id(organization_id)
+    actor = %SystemActor{org_id: organization_id, role: :ksef_session}
+    scope = %Scope{actor: actor, tenant: organization_id}
 
     Logger.info("Starting KSeF authentication for organization #{organization_id}")
 
-    with %Credential{} = credential <- Ksef.get_credential(),
+    with %Credential{} = credential <- Ksef.get_credential(scope),
          {:ok, %{access_token: access_token, refresh_token: refresh_token}} <-
            perform_authentication(credential) do
-      Ksef.fetch_cost_invoices(DateTime.shift(DateTime.utc_now(), day: -30))
-      schedule_reauthentication!(refresh_token)
+      Ksef.fetch_cost_invoices(DateTime.shift(DateTime.utc_now(), day: -30), scope)
+      schedule_reauthentication!(refresh_token, organization_id)
 
       Cachex.put(:ksef, {:access_token, organization_id}, access_token, expire: access_token_ttl(access_token))
     else
@@ -44,22 +48,25 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
         {:cancel, :no_credentials}
 
       {:error, _reason} = error ->
-        if final_attempt?(job), do: Ksef.unauthenticate()
+        if final_attempt?(job), do: Ksef.unauthenticate(scope)
         error
     end
   rescue
     e ->
-      if final_attempt?(job), do: Ksef.unauthenticate()
+      actor = %SystemActor{org_id: organization_id, role: :ksef_session}
+      scope = %Scope{actor: actor, tenant: organization_id}
+      if final_attempt?(job), do: Ksef.unauthenticate(scope)
       reraise e, __STACKTRACE__
   end
 
   defp perform_authentication(%Credential{organization_id: org_id, auth_type: :token, credentials: token}) do
-    {:ok, organization} = Accounts.get_organization(org_id)
+    # Organization resource allows read by always() — no authorize?: false needed
+    organization = Core.get_organization!(org_id, actor: %{}, authorize?: false)
 
     ApiClient.auth(organization.nip, token)
   end
 
-  defp schedule_reauthentication!(refresh_token) do
+  defp schedule_reauthentication!(refresh_token, organization_id) do
     schedule_at =
       refresh_token
       |> ApiClient.token_expire_time()
@@ -68,16 +75,14 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
     refresh_token = refresh_token |> Firmowid.Vault.encrypt!() |> Base.encode64()
 
     %{
-      "organization_id" => Repo.get_org_id(),
+      "organization_id" => organization_id,
       "refresh_token" => refresh_token
     }
     |> new(scheduled_at: schedule_at)
-    |> Firmowid.Oban.insert!()
+    |> Firmowid.Oban.insert!(skip_organization_id: true)
   end
 
-  defp get_refresh_token do
-    organization_id = Repo.get_org_id()
-
+  defp get_refresh_token(organization_id) do
     refresh_token =
       Repo.one(
         from(j in Oban.Job,
@@ -104,14 +109,11 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
     end
   end
 
-  @doc "Returns a valid KSeF access token for the current organization. Refreshes or re-authenticates as needed."
-  @spec get_access_token!() :: String.t()
-  def get_access_token! do
-    organization_id = Repo.get_org_id()
-
+  @doc "Returns a valid KSeF access token for the given organization. Refreshes or re-authenticates as needed."
+  @spec get_access_token!(String.t()) :: String.t()
+  def get_access_token!(organization_id) do
     Cachex.fetch!(:ksef, {:access_token, organization_id}, fn _key ->
-      Repo.put_org_id(organization_id)
-      refresh_token = get_refresh_token()
+      refresh_token = get_refresh_token(organization_id)
 
       case ApiClient.refresh_session(refresh_token) do
         {:ok, access_token} ->
@@ -122,21 +124,20 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
 
           %{"organization_id" => organization_id}
           |> new()
-          |> Firmowid.Oban.insert!()
+          |> Firmowid.Oban.insert!(skip_organization_id: true)
 
-          raise "Refresh token expired"
+          raise RuntimeError, "Refresh token expired, re-authentication scheduled"
 
         {:error, reason} ->
           Logger.error("Session renewal failed: #{inspect(reason)}")
-          raise reason
+          raise RuntimeError, "KSeF session renewal failed: #{inspect(reason)}"
       end
     end)
   end
 
-  @doc "Invalidates the cached KSeF access token for the current organization."
-  @spec invalidate_access_token() :: {:ok, true} | {:ok, false}
-  def invalidate_access_token do
-    organization_id = Repo.get_org_id()
+  @doc "Invalidates the cached KSeF access token for the given organization."
+  @spec invalidate_access_token(String.t()) :: {:ok, true} | {:ok, false}
+  def invalidate_access_token(organization_id) do
     Cachex.del(:ksef, {:access_token, organization_id})
   end
 

@@ -32,7 +32,7 @@ defmodule Firmowid.Ash.Finances.Changes.CheckRequisitionStatus do
       tenant = record.organization_id
 
       case fetch_status(record.id) do
-        {:ok, %{"status" => "LN"}} when record.status == :accepted ->
+        {:ok, %{"status" => "LN"}} when record.state == :accepted ->
           Logger.debug("Requisition #{record.id} already accepted, skipping")
           changeset
 

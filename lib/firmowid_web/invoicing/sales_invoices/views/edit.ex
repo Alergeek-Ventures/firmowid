@@ -11,7 +11,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   """
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Accounts
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.Counterparty
@@ -19,7 +19,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Invoicing.Services.CorrectionReason
   alias Firmowid.Ash.Ksef
-  alias Firmowid.Repo
   alias FirmowidWeb.Invoicing.SalesInvoices.Views.Creator
 
   require Logger
@@ -31,6 +30,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     invoice =
       case SalesInvoice.by_id(id,
              load: [
+               :net_value,
+               :vat_value,
+               :gross_value,
                :is_editable,
                :buyer_id_type,
                sales_invoice_items: [:net_value, :vat_value, :gross_value],
@@ -63,8 +65,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   end
 
   defp mount_editable_invoice(socket, invoice) do
-    {:ok, organization} = Accounts.get_organization(Repo.get_org_id())
-    bank_accounts = Finances.list_bank_accounts!(scope: socket.assigns.ash_scope)
+    scope = socket.assigns.ash_scope
+    organization = Core.get_organization!(scope.tenant, authorize?: false, actor: %{})
+    bank_accounts = Finances.list_bank_accounts!(scope: scope)
 
     logo_url = Invoicing.get_logo_url(invoice.organization_id)
 
@@ -72,7 +75,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
       case invoice.ksef_invoice_kind do
         :kor ->
           invoice
-          |> Ash.load!(:reference_invoice, authorize?: false, actor: %{}, tenant: Repo.get_org_id())
+          |> Ash.load!(:reference_invoice, scope: scope)
           |> Map.get(:reference_invoice)
 
         :vat ->
@@ -96,7 +99,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
         Enum.find(bank_accounts, &(&1.is_default and &1.currency == invoice.currency))
     )
     |> assign(:counterparties, Counterparty.list_all!(scope: socket.assigns.ash_scope))
-    |> assign(:ksef_connected?, Ksef.get_credential() != nil)
+    |> assign(:ksef_connected?, Ksef.get_credential(socket.assigns.ash_scope) != nil)
   end
 
   # Build AshPhoenix.Form for edit — dispatches based on invoice state
@@ -284,7 +287,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   end
 
   defp handle_submit_result({:ok, invoice}, socket) do
-    if Ksef.get_credential() == nil do
+    if Ksef.get_credential(socket.assigns.ash_scope) == nil do
       {:noreply,
        socket
        |> push_event("unsaved-changed", %{value: false})
@@ -310,7 +313,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
   @doc false
   def send_invoice_to_ksef(socket, invoice) do
-    case Ksef.submit_sales_invoice(invoice.id) do
+    case Ksef.submit_sales_invoice(invoice.id, socket.assigns.ash_scope) do
       {:ok, _job} ->
         {:noreply,
          socket

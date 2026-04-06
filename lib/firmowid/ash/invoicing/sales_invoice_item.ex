@@ -23,6 +23,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceItem do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Invoicing.Validations.ValidateVatRate
   alias Firmowid.Ash.Resource
 
@@ -52,11 +53,30 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceItem do
   end
 
   policies do
-    policy action_type(:read) do
+    bypass actor_attribute_equals(:role, :admin) do
       authorize_if always()
     end
 
-    policy action_type([:create, :update, :destroy]) do
+    # sales_invoice_processor: all actions
+    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:sales_invoice_processor]} do
+      authorize_if always()
+    end
+
+    # Other system actors: no access (deny by default)
+    policy Firmowid.Ash.Checks.IsSystemActor do
+      forbid_if always()
+    end
+
+    # :invoicing and :accountant: read
+    policy [action_type(:read), {AtLeastRole, role: :invoicing}] do
+      authorize_if always()
+    end
+
+    # :accountant: write
+    policy [
+      action_type([:create, :update, :destroy]),
+      {AtLeastRole, role: :accountant}
+    ] do
       authorize_if always()
     end
   end

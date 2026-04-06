@@ -100,6 +100,28 @@ defmodule Firmowid.Ash.Invoicing.Matching.Assistant.MessagesStorage do
     end)
   end
 
+  @doc """
+  Sets the scope for the given conversation_id.
+  """
+  def set_scope(conversation_id, scope) do
+    Agent.update(__MODULE__, fn state ->
+      Map.update(state, conversation_id, %{messages: [], invoice: nil, scope: scope}, fn conv ->
+        Map.put(conv, :scope, scope)
+      end)
+    end)
+  end
+
+  @doc """
+  Gets the scope for the given conversation_id. Returns nil if not set.
+  """
+  def get_scope(conversation_id) do
+    Agent.get(__MODULE__, fn state ->
+      state
+      |> Map.get(conversation_id, %{})
+      |> Map.get(:scope)
+    end)
+  end
+
   def delete(conversation_id) do
     Agent.update(__MODULE__, fn state ->
       Map.delete(state, conversation_id)

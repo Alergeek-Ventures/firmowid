@@ -92,7 +92,7 @@
 					<P_13_10><%= T.format_decimal(summary.net) %></P_13_10>
 
 				<% true -> %>
-					<% raise "Unexpected VAT rate in KSeF template: #{inspect(summary.rate)} (type: #{inspect(summary.type)})" %>
+				<% raise RuntimeError, "Unexpected VAT rate in KSeF template: #{inspect(summary.rate)} (type: #{inspect(summary.type)})" %>
 			<% end %>
 		<% end %>
 

@@ -10,8 +10,8 @@ defmodule Firmowid.Ash.Timetracker.HoursRecordTest do
     user = user_fixture()
 
     scope = %Firmowid.Ash.Scope{
-      current_user: user,
-      current_tenant: user.organization_id
+      actor: user,
+      tenant: user.organization_id
     }
 
     %{user: user, scope: scope}

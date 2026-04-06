@@ -2,9 +2,9 @@ defmodule FirmowidWeb.Auth.Views.Registration do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Accounts
-  alias Firmowid.Accounts.User
   alias Firmowid.Analytics
+  alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Core.User
 
   def render(assigns) do
     ~H"""
@@ -24,9 +24,6 @@ defmodule FirmowidWeb.Auth.Views.Registration do
         id="registration_form"
         phx-submit="save"
         phx-change="validate"
-        phx-trigger-action={@trigger_submit}
-        action={~p"/zaloguj?_action=registered"}
-        method="post"
       >
         <.error :if={@check_errors}>
           Coś poszło nie tak...
@@ -52,7 +49,7 @@ defmodule FirmowidWeb.Auth.Views.Registration do
       </div>
 
       <.link
-        href={~p"/auth/google"}
+        href="/auth/user/google/request"
         class="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
       >
         <svg class="size-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -80,48 +77,41 @@ defmodule FirmowidWeb.Auth.Views.Registration do
   end
 
   def mount(_params, _session, socket) do
-    changeset = Accounts.change_user_registration(%User{})
+    form =
+      User
+      |> AshPhoenix.Form.for_create(:register_with_password,
+        domain: Core,
+        as: "user"
+      )
+      |> to_form()
 
     socket =
       socket
-      |> assign(trigger_submit: false, check_errors: false)
-      |> assign_form(changeset)
+      |> assign(check_errors: false)
+      |> assign(:form, form)
 
-    {:ok, socket, temporary_assigns: [form: nil]}
+    {:ok, socket}
   end
 
   def handle_event("save", %{"user" => user_params}, socket) do
-    case Accounts.register_user(user_params) do
+    case AshPhoenix.Form.submit(socket.assigns.form, params: user_params) do
       {:ok, user} ->
         Analytics.identify(user)
         Analytics.track_event("user_sign_up", user, %{auth_provider: "password"})
 
-        {:ok, _} =
-          Accounts.deliver_user_confirmation_instructions(
-            user,
-            &url(~p"/potwierdz/#{&1}")
-          )
+        # Confirmation email is auto-sent by ash_auth confirmation add-on
+        {:noreply,
+         socket
+         |> put_flash(:info, "Konto zostało utworzone. Sprawdź email, aby potwierdzić konto.")
+         |> redirect(to: ~p"/")}
 
-        changeset = Accounts.change_user_registration(user)
-        {:noreply, socket |> assign(trigger_submit: true) |> assign_form(changeset)}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
+      {:error, form} ->
+        {:noreply, socket |> assign(check_errors: true) |> assign(:form, form)}
     end
   end
 
   def handle_event("validate", %{"user" => user_params}, socket) do
-    changeset = Accounts.change_user_registration(%User{}, user_params)
-    {:noreply, assign_form(socket, Map.put(changeset, :action, :validate))}
-  end
-
-  defp assign_form(socket, %Ecto.Changeset{} = changeset) do
-    form = to_form(changeset, as: "user")
-
-    if changeset.valid? do
-      assign(socket, form: form, check_errors: false)
-    else
-      assign(socket, form: form)
-    end
+    form = AshPhoenix.Form.validate(socket.assigns.form, user_params)
+    {:noreply, assign(socket, form: form)}
   end
 end

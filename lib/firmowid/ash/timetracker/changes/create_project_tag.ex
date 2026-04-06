@@ -42,8 +42,8 @@ defmodule Firmowid.Ash.Timetracker.Changes.CreateProjectTag do
 
   defp build_scope(context) do
     %Firmowid.Ash.Scope{
-      current_user: context.actor,
-      current_tenant: context.tenant
+      actor: context.actor,
+      tenant: context.tenant
     }
   end
 end

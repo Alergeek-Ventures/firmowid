@@ -5,7 +5,6 @@ defmodule Firmowid.Ash.Invoicing.Matching.Assistant.CommonTools do
   alias Firmowid.Ash.Invoicing.Matching.Assistant.FilterValidation
   alias Firmowid.Ash.Invoicing.Matching.Assistant.Tool
   alias Firmowid.Ash.Invoicing.Matching.CostInvoiceAssistant
-  alias Firmowid.Repo
 
   def normalize_to_pln do
     %Tool{
@@ -113,6 +112,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.Assistant.CommonTools do
 
   def search_transactions(opts) do
     negative = Keyword.fetch!(opts, :negative)
+    scope = Keyword.fetch!(opts, :scope)
 
     %Tool{
       name: "search_transactions",
@@ -226,7 +226,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.Assistant.CommonTools do
                     validated_filtered
                   end
 
-                search_transactions_via_ash(final_filtered)
+                search_transactions_via_ash(final_filtered, scope)
 
               {:error, error} ->
                 {:error, error}
@@ -241,7 +241,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.Assistant.CommonTools do
 
   # ── Private helpers ──────────────────────────────────────────────────
 
-  defp search_transactions_via_ash(params) do
+  defp search_transactions_via_ash(params, scope) do
     ash_args =
       params
       |> Map.take([:query, :date_from, :date_to])
@@ -252,11 +252,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.Assistant.CommonTools do
 
     query =
       Transaction
-      |> Ash.Query.for_read(:read, ash_args,
-        authorize?: false,
-        actor: %{},
-        tenant: Repo.get_org_id()
-      )
+      |> Ash.Query.for_read(:read, ash_args, scope: scope)
       |> Ash.Query.load([:cost_invoices, :sales_invoices])
       |> Ash.Query.limit(50)
       |> then(fn q ->

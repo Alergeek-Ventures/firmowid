@@ -10,12 +10,17 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
-  alias Firmowid.Repo
+  alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
 
   # TODO: replace authorize?: false + actor: %{} with system actor once available
   @bridge_opts [authorize?: false, actor: %{}]
 
-  describe "search_invoices/1" do
+  defp scope_for_org(org_id) do
+    %Scope{actor: %SystemActor{org_id: org_id, role: :admin}, tenant: org_id}
+  end
+
+  describe "search_invoices/2" do
     test "returns matching invoices using BM25 search" do
       user = user_fixture()
       organization_id = user.organization_id
@@ -84,7 +89,11 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           blob_id: blob2.id
         })
 
-      results = Invoicing.search_invoices(%{query: "Acme", currency: "USD"})
+      results =
+        Invoicing.search_invoices(
+          %{query: "Acme", currency: "USD"},
+          scope_for_org(organization_id)
+        )
 
       assert length(results) == 2
 
@@ -135,7 +144,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           blob_id: blob3.id
         })
 
-      results = Invoicing.search_invoices(%{query: "NonExistent"})
+      results = Invoicing.search_invoices(%{query: "NonExistent"}, scope_for_org(organization_id))
       assert results == []
     end
 
@@ -212,26 +221,22 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           blob_id: blob5.id
         })
 
-      # Set org context to org1, search for org2's invoices
-      Repo.put_org_id(org1_id)
-      results = Invoicing.search_invoices(%{query: "Org2"})
+      # Search with org1 scope — should not find org2's invoices
+      results = Invoicing.search_invoices(%{query: "Org2"}, scope_for_org(org1_id))
       assert results == []
 
-      # Set org context to org2, search for org1's invoices
-      Repo.put_org_id(org2_id)
-      results = Invoicing.search_invoices(%{query: "Org1"})
+      # Search with org2 scope — should not find org1's invoices
+      results = Invoicing.search_invoices(%{query: "Org1"}, scope_for_org(org2_id))
       assert results == []
 
-      # Set org context to org1, search for org1's invoices
-      Repo.put_org_id(org1_id)
-      results = Invoicing.search_invoices(%{query: "Org1"})
+      # Search with org1 scope — should find org1's invoices
+      results = Invoicing.search_invoices(%{query: "Org1"}, scope_for_org(org1_id))
       assert length(results) == 2
       assert Enum.any?(results, &(&1.id == si1.id))
       assert Enum.any?(results, &(&1.id == ci1.id))
 
-      # Set org context to org2, search for org2's invoices
-      Repo.put_org_id(org2_id)
-      results = Invoicing.search_invoices(%{query: "Org2"})
+      # Search with org2 scope — should find org2's invoices
+      results = Invoicing.search_invoices(%{query: "Org2"}, scope_for_org(org2_id))
       assert length(results) == 2
       assert Enum.any?(results, &(&1.id == si2.id))
       assert Enum.any?(results, &(&1.id == ci2.id))
@@ -370,7 +375,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
         opts
       )
 
-      results = Invoicing.search_invoices(%{only_unmatched: true})
+      results = Invoicing.search_invoices(%{only_unmatched: true}, scope_for_org(organization_id))
 
       assert length(results) == 2
       assert Enum.any?(results, &(&1.id == unmatched_sales_invoice.id))
@@ -380,8 +385,8 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
     end
 
     test "filters sales invoices by buyer_type" do
-      _user = user_fixture()
-      organization_id = Repo.get_org_id()
+      user = user_fixture()
+      organization_id = user.organization_id
 
       sales_invoice_company =
         Ash.Seed.seed!(SalesInvoice, %{
@@ -431,23 +436,27 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
         })
 
       # Test for :company buyer_type
-      results_company = Invoicing.search_invoices(%{buyer_type: :company})
+      results_company =
+        Invoicing.search_invoices(%{buyer_type: :company}, scope_for_org(organization_id))
+
       assert length(results_company) == 1
       assert Enum.any?(results_company, &(&1.id == sales_invoice_company.id))
       refute Enum.any?(results_company, &(&1.id == sales_invoice_individual.id))
 
       # Test for :individual buyer_type
-      results_individual = Invoicing.search_invoices(%{buyer_type: :individual})
+      results_individual =
+        Invoicing.search_invoices(%{buyer_type: :individual}, scope_for_org(organization_id))
+
       assert length(results_individual) == 1
       assert Enum.any?(results_individual, &(&1.id == sales_invoice_individual.id))
       refute Enum.any?(results_individual, &(&1.id == sales_invoice_company.id))
     end
   end
 
-  describe "search_invoices/1 with amount and date filters" do
+  describe "search_invoices/2 with amount and date filters" do
     setup do
-      _user = user_fixture()
-      organization_id = Repo.get_org_id()
+      user = user_fixture()
+      organization_id = user.organization_id
 
       si1 =
         Ash.Seed.seed!(SalesInvoice, %{
@@ -546,22 +555,33 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
         organization_id: organization_id
       })
 
-      %{si1: si1, si2: si2, si3: si3}
+      %{si1: si1, si2: si2, si3: si3, organization_id: organization_id}
     end
 
-    test "filters by amount_gt and amount_lt", %{si2: si2} do
+    test "filters by amount_gt and amount_lt", %{si2: si2, organization_id: organization_id} do
       results =
-        Invoicing.search_invoices(%{
-          amount_gt: Decimal.new("210.00"),
-          amount_lt: Decimal.new("250.00")
-        })
+        Invoicing.search_invoices(
+          %{
+            amount_gt: Decimal.new("210.00"),
+            amount_lt: Decimal.new("250.00")
+          },
+          scope_for_org(organization_id)
+        )
 
       assert Enum.map(results, & &1.id) == [si2.id]
     end
 
-    test "filters by date_from and date_to", %{si1: si1, si2: si2, si3: si3} do
+    test "filters by date_from and date_to", %{
+      si1: si1,
+      si2: si2,
+      si3: si3,
+      organization_id: organization_id
+    } do
       results =
-        Invoicing.search_invoices(%{date_from: ~D[2024-02-01], date_to: ~D[2024-03-01]})
+        Invoicing.search_invoices(
+          %{date_from: ~D[2024-02-01], date_to: ~D[2024-03-01]},
+          scope_for_org(organization_id)
+        )
 
       ids = Enum.map(results, & &1.id)
       assert si2.id in ids
@@ -569,16 +589,19 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       refute si1.id in ids
     end
 
-    test "matches if issue_date is in range", %{si1: si1} do
+    test "matches if issue_date is in range", %{si1: si1, organization_id: organization_id} do
       results =
-        Invoicing.search_invoices(%{date_from: ~D[2024-01-01], date_to: ~D[2024-01-01]})
+        Invoicing.search_invoices(
+          %{date_from: ~D[2024-01-01], date_to: ~D[2024-01-01]},
+          scope_for_org(organization_id)
+        )
 
       assert Enum.map(results, & &1.id) == [si1.id]
     end
 
     test "filters by include_sales and include_cost" do
-      _user = user_fixture()
-      organization_id = Repo.get_org_id()
+      user = user_fixture()
+      organization_id = user.organization_id
 
       sales_invoice =
         Ash.Seed.seed!(SalesInvoice, %{
@@ -614,7 +637,10 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
 
       # Test include_sales: true, include_cost: false
       results_only_sales =
-        Invoicing.search_invoices(%{query: "Filter", include_sales: true, include_cost: false})
+        Invoicing.search_invoices(
+          %{query: "Filter", include_sales: true, include_cost: false},
+          scope_for_org(organization_id)
+        )
 
       assert length(results_only_sales) == 1
       assert Enum.any?(results_only_sales, &(&1.id == sales_invoice.id))
@@ -622,7 +648,10 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
 
       # Test include_sales: false, include_cost: true
       results_only_cost =
-        Invoicing.search_invoices(%{query: "Filter", include_sales: false, include_cost: true})
+        Invoicing.search_invoices(
+          %{query: "Filter", include_sales: false, include_cost: true},
+          scope_for_org(organization_id)
+        )
 
       assert length(results_only_cost) == 1
       assert Enum.any?(results_only_cost, &(&1.id == cost_invoice.id))
@@ -630,7 +659,10 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
 
       # Test include_sales: true, include_cost: true (or default behavior)
       results_both =
-        Invoicing.search_invoices(%{query: "Filter", include_sales: true, include_cost: true})
+        Invoicing.search_invoices(
+          %{query: "Filter", include_sales: true, include_cost: true},
+          scope_for_org(organization_id)
+        )
 
       assert length(results_both) == 2
       assert Enum.any?(results_both, &(&1.id == sales_invoice.id))
@@ -638,14 +670,17 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
 
       # Test include_sales: false, include_cost: false
       results_none =
-        Invoicing.search_invoices(%{query: "Filter", include_sales: false, include_cost: false})
+        Invoicing.search_invoices(
+          %{query: "Filter", include_sales: false, include_cost: false},
+          scope_for_org(organization_id)
+        )
 
       assert results_none == []
     end
 
     test "searches in sales invoice item_names" do
-      _user = user_fixture()
-      organization_id = Repo.get_org_id()
+      user = user_fixture()
+      organization_id = user.organization_id
 
       sales_invoice_with_items =
         Ash.Seed.seed!(SalesInvoice, %{
@@ -685,21 +720,25 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       })
 
       # Search for a term in item_names
-      results = Invoicing.search_invoices(%{query: "Project X"})
+      results = Invoicing.search_invoices(%{query: "Project X"}, scope_for_org(organization_id))
       assert length(results) == 1
       assert Enum.any?(results, &(&1.id == sales_invoice_with_items.id))
 
-      results_software = Invoicing.search_invoices(%{query: "Software License"})
+      results_software =
+        Invoicing.search_invoices(%{query: "Software License"}, scope_for_org(organization_id))
+
       assert length(results_software) == 1
       assert Enum.any?(results_software, &(&1.id == sales_invoice_with_items.id))
 
-      results_no_match = Invoicing.search_invoices(%{query: "Hardware"})
+      results_no_match =
+        Invoicing.search_invoices(%{query: "Hardware"}, scope_for_org(organization_id))
+
       assert results_no_match == []
     end
 
     test "uses all common search parameters simultaneously" do
-      _user = user_fixture()
-      organization_id = Repo.get_org_id()
+      user = user_fixture()
+      organization_id = user.organization_id
       opts = [tenant: organization_id] ++ @bridge_opts
 
       # Matching Sales Invoice
@@ -843,15 +882,18 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
 
       # Perform the search with all common parameters
       results =
-        Invoicing.search_invoices(%{
-          query: "Combined Search",
-          currency: "EUR",
-          only_unmatched: true,
-          amount_gt: Decimal.new("-250.00"),
-          amount_lt: Decimal.new("300.00"),
-          date_from: ~D[2024-08-01],
-          date_to: ~D[2024-08-31]
-        })
+        Invoicing.search_invoices(
+          %{
+            query: "Combined Search",
+            currency: "EUR",
+            only_unmatched: true,
+            amount_gt: Decimal.new("-250.00"),
+            amount_lt: Decimal.new("300.00"),
+            date_from: ~D[2024-08-01],
+            date_to: ~D[2024-08-31]
+          },
+          scope_for_org(organization_id)
+        )
 
       assert length(results) == 2
       assert Enum.any?(results, &(&1.id == sales_invoice_combined_match.id))

@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Accounts
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
 
   @impl true
@@ -115,22 +115,39 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
 
   defp assign_form_view(socket, project, form) do
     scope = socket.assigns.ash_scope
-    project_id = if project, do: project.id
 
     project_users =
-      case project_id do
+      case project do
         nil ->
           []
 
-        project_id ->
-          {:ok, users} = AshProject.project_users_with_removed(project_id, scope: scope)
+        project ->
+          # Current members from the loaded relationship
+          member_ids = MapSet.new(project.users, & &1.id)
 
-          users
-          |> Enum.map(fn %{user: user, removed_from_project: removed} ->
-            %{
-              user: Accounts.get_user_with_avatar(user),
-              removed_from_project: removed
-            }
+          # Users with sessions for this project (may include removed members)
+          session_user_ids =
+            Firmowid.Ash.Timetracker.Session
+            |> Ash.Query.for_read(:list, %{project_id: project.id}, scope: scope)
+            |> Ash.read!(scope: scope)
+            |> MapSet.new(& &1.user_id)
+
+          all_ids = MapSet.union(member_ids, session_user_ids)
+
+          users_by_id = Map.new(project.users, &{&1.id, &1})
+
+          all_ids
+          |> Enum.map(fn uid ->
+            user = resolve_user(uid, users_by_id, scope)
+
+            user_with_avatar =
+              Ash.load!(user, [avatar_blob: [:url]],
+                tenant: user.organization_id,
+                authorize?: false,
+                actor: %{}
+              )
+
+            %{user: user_with_avatar, removed_from_project: not MapSet.member?(member_ids, uid)}
           end)
           |> Enum.sort_by(&{&1.removed_from_project, &1.user.name, &1.user.email})
       end
@@ -144,7 +161,13 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
   defp assign_edit_users(socket, project_users) do
     available_users =
       list_users_with_projects()
-      |> Enum.map(&Accounts.get_user_with_avatar/1)
+      |> Enum.map(fn user ->
+        Ash.load!(user, [avatar_blob: [:url]],
+          tenant: user.organization_id,
+          authorize?: false,
+          actor: %{}
+        )
+      end)
       |> Enum.reject(fn user ->
         Enum.any?(project_users, fn %{user: project_user} -> project_user.id == user.id end)
       end)
@@ -167,11 +190,18 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
     end
   end
 
-  # User-centric query — inlined here because the User schema hasn't been migrated
-  # to Ash yet. Once Accounts is Ash-native, replace with an Ash read action.
+  # Resolve a user by ID: prefer already-loaded project members, fall back to Core.
+  defp resolve_user(uid, users_by_id, scope) do
+    case Map.get(users_by_id, uid) do
+      nil -> Core.get_user!(uid, scope: scope)
+      u -> u
+    end
+  end
+
+  # User-centric query using Ash Core domain
   defp list_users_with_projects do
-    Firmowid.Accounts.User
-    |> Firmowid.Repo.all()
-    |> Firmowid.Repo.preload(:projects)
+    [authorize?: false, actor: %{}]
+    |> Core.list_users!()
+    |> Ash.load!([:projects], authorize?: false, actor: %{}, lazy?: true)
   end
 end

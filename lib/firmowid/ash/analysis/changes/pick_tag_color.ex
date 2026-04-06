@@ -14,8 +14,8 @@ defmodule Firmowid.Ash.Analysis.Changes.PickTagColor do
   @impl true
   def change(changeset, _opts, context) do
     scope = %Firmowid.Ash.Scope{
-      current_user: context.actor,
-      current_tenant: context.tenant
+      actor: context.actor,
+      tenant: context.tenant
     }
 
     count =

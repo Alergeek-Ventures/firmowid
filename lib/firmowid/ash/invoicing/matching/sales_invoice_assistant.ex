@@ -9,34 +9,34 @@ defmodule Firmowid.Ash.Invoicing.Matching.SalesInvoiceAssistant do
   alias Firmowid.Ash.Invoicing.Matching.Assistant.Tool
   alias Firmowid.Ash.Invoicing.SalesInvoice
 
-  # TODO: replace authorize?: false + actor: %{} with system actor once available
-  @bridge_opts [authorize?: false, actor: %{}]
-
   @intro_message ~S"""
   Cześć, tu Firmowid!
   Żeby pomóc Ci znaleźć transakcję, potrzebuję trochę więcej informacji. Możesz wpisać je tutaj albo skorzystać z jednej z podpowiedzi poniżej.
   """
 
-  def start_conversation(invoice) do
+  def start_conversation(invoice, scope) do
     conversation_id = UUIDv7.generate()
     MessagesStorage.set_invoice(conversation_id, invoice)
+    MessagesStorage.set_scope(conversation_id, scope)
     MessagesStorage.append(conversation_id, Message.new(:assistant, @intro_message))
     conversation_id
   end
 
   def send_message_streaming(conversation_id, message) do
     invoice = MessagesStorage.get_invoice(conversation_id)
+    scope = MessagesStorage.get_scope(conversation_id)
 
     Engine.send_message_streaming(
       conversation_id,
       message,
       system_prompt(invoice),
-      tools()
+      tools(scope)
     )
   end
 
   def accept_linking(conversation_id) do
     msg = MessagesStorage.get_latest(conversation_id)
+    scope = MessagesStorage.get_scope(conversation_id)
 
     case msg do
       %Message{
@@ -46,16 +46,13 @@ defmodule Firmowid.Ash.Invoicing.Matching.SalesInvoiceAssistant do
           args: %{"transaction_ids" => transaction_ids, "sales_invoice_ids" => sales_invoice_ids}
         }
       } ->
-        # TODO: replace authorize?: false + actor: %{} with system actor once available
-        bridge_opts = [tenant: Firmowid.Repo.get_org_id(), authorize?: false, actor: %{}]
-
         Enum.each(sales_invoice_ids, fn si_id ->
-          sales_invoice = Invoicing.get_sales_invoice!(si_id, bridge_opts)
+          sales_invoice = Invoicing.get_sales_invoice!(si_id, scope: scope)
 
-          Invoicing.connect_sales_invoice_transactions(
+          Invoicing.connect_sales_invoice_transactions!(
             sales_invoice,
             transaction_ids,
-            bridge_opts
+            scope: scope
           )
         end)
 
@@ -88,11 +85,11 @@ defmodule Firmowid.Ash.Invoicing.Matching.SalesInvoiceAssistant do
     end
   end
 
-  def tools do
+  def tools(scope) do
     [
       CommonTools.normalize_to_pln(),
       CommonTools.calculate(),
-      CommonTools.search_transactions(negative: false),
+      CommonTools.search_transactions(negative: false, scope: scope),
       %Tool{
         name: "link_sales_invoice_to_transaction",
         description: """
@@ -132,17 +129,18 @@ defmodule Firmowid.Ash.Invoicing.Matching.SalesInvoiceAssistant do
 
           sales_invoice =
             if sales_invoice_id do
-              organization_id = Firmowid.Repo.get_org_id()
-              opts = [tenant: organization_id] ++ @bridge_opts
-              SalesInvoice.by_id!(sales_invoice_id, opts)
+              sales_invoice_id
+              |> Invoicing.get_sales_invoice(scope: scope)
+              |> case do
+                {:ok, invoice} -> invoice
+                _ -> nil
+              end
             end
 
           transactions =
             Finances.list_transactions!(
               filter: [id: [in: transaction_ids]],
-              tenant: Firmowid.Repo.get_org_id(),
-              authorize?: false,
-              actor: %{}
+              scope: scope
             )
 
           hallucinated_invoice = is_nil(sales_invoice)

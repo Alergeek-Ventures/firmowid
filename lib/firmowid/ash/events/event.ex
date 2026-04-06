@@ -11,6 +11,7 @@ defmodule Firmowid.Ash.Events.Event do
   use Ash.Resource,
     domain: Firmowid.Ash.Events,
     data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer],
     extensions: [AshEvents.EventLog]
 
   postgres do
@@ -27,5 +28,22 @@ defmodule Firmowid.Ash.Events.Event do
 
   actions do
     defaults [:read]
+  end
+
+  policies do
+    bypass actor_attribute_equals(:role, :admin) do
+      authorize_if always()
+    end
+
+    # AshEvents writes events internally — they need bypass too
+    # System actors: no read access (internal event log)
+    policy Firmowid.Ash.Checks.IsSystemActor do
+      forbid_if always()
+    end
+
+    # Only admins can read events
+    policy action_type(:read) do
+      authorize_if actor_attribute_equals(:role, :admin)
+    end
   end
 end

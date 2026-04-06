@@ -90,7 +90,10 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceParser do
   defp parse_invoice_type("UPR"), do: :upr
   defp parse_invoice_type("KOR_ZAL"), do: :kor_zal
   defp parse_invoice_type("KOR_ROZ"), do: :kor_roz
-  defp parse_invoice_type(_), do: raise("Unknown invoice type")
+
+  defp parse_invoice_type(type) do
+    raise ArgumentError, "Unknown FA(3) invoice type: #{inspect(type)}"
+  end
 
   defp parse_payment_method(nil), do: nil
   defp parse_payment_method("1"), do: :cash
@@ -100,7 +103,10 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceParser do
   defp parse_payment_method("5"), do: :loan
   defp parse_payment_method("6"), do: :bank_transfer
   defp parse_payment_method("7"), do: :mobile
-  defp parse_payment_method(_), do: raise("Unknown payment method")
+
+  defp parse_payment_method(code) do
+    raise ArgumentError, "Unknown FA(3) payment method code: #{inspect(code)}"
+  end
 
   defp trim_fields(map) do
     Map.new(map, fn

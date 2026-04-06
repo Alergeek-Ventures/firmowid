@@ -2,8 +2,8 @@ defmodule FirmowidWeb.Organization.Views.Index do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Accounts
   alias Firmowid.Analytics
+  alias Firmowid.Ash.Core
 
   @impl true
   def render(assigns) do
@@ -86,7 +86,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
               <div class="mt-8 mb-2.5 text-center">
                 <p>
                   Nie to konto?
-                  <.link class="underline" href={~p"/wyloguj"} method="delete">
+                  <.link class="underline" href={~p"/sign-out"}>
                     Wyloguj
                   </.link>
                 </p>
@@ -114,10 +114,16 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
     address = "#{address.street} #{address.number}, #{address.postal_code} #{address.city}"
 
-    {:ok, created_org} =
+    org_params =
       organization
       |> Map.put("address", address)
-      |> Accounts.create_organization(user)
+      |> Map.put("owner_id", user.id)
+
+    created_org =
+      Core.create_organization!(org_params,
+        authorize?: false,
+        actor: %{}
+      )
 
     Analytics.track_event("organization_created", user, %{organization_id: created_org.id})
 
@@ -133,12 +139,25 @@ defmodule FirmowidWeb.Organization.Views.Index do
   def handle_event("join", %{"code" => invite_code}, socket) do
     user = socket.assigns.current_user
 
-    {:ok, organization_id} =
-      invite_code
-      |> String.trim()
-      |> Accounts.consume_organization_invite(user.id)
+    trimmed_code = String.trim(invite_code)
 
-    Analytics.track_event("organization_invite_accepted", user, %{organization_id: organization_id})
+    # Find invite by code (unscoped read - invite codes are unique)
+    invite =
+      Core.read_invite_by_code!(%{invite_code: trimmed_code},
+        authorize?: false,
+        actor: %{}
+      )
+
+    # Consume the invite (scoped to the invite's organization)
+    Core.consume_invite!(invite, %{user_id: user.id},
+      tenant: invite.organization_id,
+      authorize?: false,
+      actor: %{}
+    )
+
+    Analytics.track_event("organization_invite_accepted", user, %{
+      organization_id: invite.organization_id
+    })
 
     {:noreply, redirect(socket, to: "/")}
   end

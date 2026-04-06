@@ -10,11 +10,11 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
   setup do
     user = user_fixture()
     project = project_fixture(%{organization_id: user.organization_id})
-    user_project_fixture(user.id, project.id)
+    user_project_fixture(user.id, project.id, user.organization_id)
 
     scope = %Scope{
-      current_user: user,
-      current_tenant: user.organization_id
+      actor: user,
+      tenant: user.organization_id
     }
 
     %{user: user, project: project, scope: scope}
@@ -101,7 +101,8 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
         session_fixture(%{
           user_id: user.id,
           project_id: project.id,
-          title: "Old Title"
+          title: "Old Title",
+          organization_id: user.organization_id
         })
 
       {:ok, updated} = AshSession.update(session, %{title: "New Title"}, scope: scope)
@@ -115,7 +116,8 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
       session =
         session_fixture(%{
           user_id: user.id,
-          project_id: project.id
+          project_id: project.id,
+          organization_id: user.organization_id
         })
 
       assert :ok = AshSession.destroy(session, scope: scope)
@@ -133,7 +135,8 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
         user_id: user.id,
         project_id: project.id,
         start_datetime: ~U[2025-04-01 00:00:00Z],
-        end_datetime: ~U[2025-04-01 01:00:00Z]
+        end_datetime: ~U[2025-04-01 01:00:00Z],
+        organization_id: user.organization_id
       })
 
       result =
@@ -155,7 +158,8 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
       session_fixture(%{
         user_id: user.id,
         project_id: project.id,
-        start_datetime: ~U[2025-04-01 00:00:00Z]
+        start_datetime: ~U[2025-04-01 00:00:00Z],
+        organization_id: user.organization_id
       })
 
       result =
@@ -170,117 +174,6 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
         )
 
       assert {:error, _} = result
-    end
-  end
-
-  describe "total_time_worked/2" do
-    test "returns 0 when no sessions exist", %{scope: scope} do
-      {:ok, result} = AshSession.total_time_worked(%{month: 4, year: 2025}, scope: scope)
-      assert result == 0
-    end
-
-    test "sums durations for a given month", %{user: user, project: project, scope: scope} do
-      session_fixture(%{
-        user_id: user.id,
-        project_id: project.id,
-        start_datetime: ~U[2025-04-01 00:00:00Z],
-        end_datetime: ~U[2025-04-01 01:00:00Z]
-      })
-
-      {:ok, result} = AshSession.total_time_worked(%{month: 4, year: 2025}, scope: scope)
-      assert result == 3600
-    end
-
-    test "does not include sessions from other months", %{
-      user: user,
-      project: project,
-      scope: scope
-    } do
-      session_fixture(%{
-        user_id: user.id,
-        project_id: project.id,
-        start_datetime: ~U[2025-04-01 00:00:00Z],
-        end_datetime: ~U[2025-04-01 01:00:00Z]
-      })
-
-      {:ok, result} = AshSession.total_time_worked(%{month: 5, year: 2025}, scope: scope)
-      assert result == 0
-    end
-
-    test "sums across multiple sessions and users (admin)", %{user: user, project: project} do
-      # Summing across users requires admin role — employee read policy
-      # scopes to own sessions only.
-      admin = user_in_org_fixture(user.organization_id, %{role: :admin})
-
-      admin_scope = %Scope{
-        current_user: admin,
-        current_tenant: admin.organization_id
-      }
-
-      user2 = user_in_org_fixture(user.organization_id)
-      user_project_fixture(user2.id, project.id)
-
-      session_fixture(%{
-        user_id: user.id,
-        project_id: project.id,
-        start_datetime: ~U[2025-04-01 00:00:00Z],
-        end_datetime: ~U[2025-04-01 01:00:00Z]
-      })
-
-      session_fixture(%{
-        user_id: user.id,
-        project_id: project.id,
-        start_datetime: ~U[2025-04-01 02:00:00Z],
-        end_datetime: ~U[2025-04-01 03:00:00Z]
-      })
-
-      session_fixture(%{
-        user_id: user2.id,
-        project_id: project.id,
-        start_datetime: ~U[2025-04-01 00:00:00Z],
-        end_datetime: ~U[2025-04-01 01:00:00Z]
-      })
-
-      {:ok, result} = AshSession.total_time_worked(%{month: 4, year: 2025}, scope: admin_scope)
-      assert result == 3 * 3600
-    end
-  end
-
-  describe "months_with_sessions/2" do
-    test "returns empty when no sessions", %{scope: scope} do
-      {:ok, result} = AshSession.months_with_sessions(%{}, scope: scope)
-      assert result == []
-    end
-
-    test "returns distinct months", %{user: user, project: project, scope: scope} do
-      session_fixture(%{
-        user_id: user.id,
-        project_id: project.id,
-        start_datetime: ~U[2025-04-01 00:00:00Z],
-        end_datetime: ~U[2025-04-01 01:00:00Z]
-      })
-
-      session_fixture(%{
-        user_id: user.id,
-        project_id: project.id,
-        start_datetime: ~U[2025-04-02 00:00:00Z],
-        end_datetime: ~U[2025-04-02 01:00:00Z]
-      })
-
-      session_fixture(%{
-        user_id: user.id,
-        project_id: project.id,
-        start_datetime: ~U[2025-05-01 00:00:00Z],
-        end_datetime: ~U[2025-05-01 01:00:00Z]
-      })
-
-      {:ok, months} = AshSession.months_with_sessions(%{}, scope: scope)
-
-      month_dates = Enum.map(months, &NaiveDateTime.truncate(&1, :second))
-
-      assert length(month_dates) == 2
-      assert ~N[2025-04-01 00:00:00] in month_dates
-      assert ~N[2025-05-01 00:00:00] in month_dates
     end
   end
 end

@@ -25,6 +25,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
   attr :invoice, CostInvoice, required: true
   attr :potential_transactions, :list, default: []
   attr :current_user, :map, required: true
+  attr :scope, :map, required: true
 
   @impl true
   def render(assigns) do
@@ -166,6 +167,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                 id="invoice-assistant"
                 invoice={@invoice}
                 current_user={@current_user}
+                scope={@scope}
               />
             <% true -> %>
               <InvoiceDetails.potential_transactions

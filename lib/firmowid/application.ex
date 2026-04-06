@@ -10,7 +10,6 @@ defmodule Firmowid.Application do
   @impl true
   def start(_type, _args) do
     Oban.Telemetry.attach_default_logger()
-    attach_oban_tenant_bridge()
     Ecto.DevLogger.install(Firmowid.Repo)
 
     # Merge AshOban trigger/scheduled_action cron entries into the Oban runtime config.
@@ -51,23 +50,6 @@ defmodule Firmowid.Application do
     result = Supervisor.start_link(children, opts)
 
     result
-  end
-
-  # AshOban workers set the tenant on Ash queries/changesets, but the custom
-  # Repo.prepare_query/3 also requires organization_id in the process dictionary.
-  # This telemetry handler bridges the gap by calling Repo.put_org_id/1 with the
-  # tenant from AshOban job args before each Oban job executes.
-  defp attach_oban_tenant_bridge do
-    :telemetry.attach(
-      "firmowid-oban-tenant-bridge",
-      [:oban, :job, :start],
-      fn _event, _measurements, %{job: job}, _config ->
-        if tenant = job.args["tenant"] do
-          Firmowid.Repo.put_org_id(tenant)
-        end
-      end,
-      nil
-    )
   end
 
   defp maybe_posthog_supervisor do

@@ -117,6 +117,7 @@ defmodule Firmowid.Ash.Ksef.KsefAwarePruner do
     {:noreply, schedule_prune(state)}
   end
 
+  @doc false
   def handle_info(message, state) do
     Logger.warning(
       message: "Received unexpected message: #{inspect(message)}",

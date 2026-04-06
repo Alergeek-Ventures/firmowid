@@ -2,15 +2,18 @@ defmodule FirmowidWeb.Management.Views.Projects do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
-  alias Firmowid.Ash.Timetracker.Session, as: AshSession
+  alias Firmowid.Ash.Timetracker.Session
+
+  require Ash.Query
 
   @impl true
   def mount(_params, _session, socket) do
     scope = socket.assigns.ash_scope
 
-    {:ok, all_projects} = Ash.read(AshProject, scope: scope)
-    {:ok, active_months} = AshSession.months_with_sessions(%{}, scope: scope)
+    all_projects = Timetracker.list_projects!(%{}, scope: scope)
+    active_months = months_with_sessions(%{}, scope)
 
     socket =
       socket
@@ -62,16 +65,51 @@ defmodule FirmowidWeb.Management.Views.Projects do
 
   defp assign_projects(socket) do
     scope = socket.assigns.ash_scope
+    date = socket.assigns.selected_date
     search = socket.assigns.params["q"] || ""
 
-    {:ok, projects} =
+    {filter_args, all_time?} =
       case socket.assigns.live_action do
-        :index ->
-          AshProject.list_active(socket.assigns.selected_date, %{search: search}, scope: scope)
-
-        :archive ->
-          AshProject.list_archived(%{search: search}, scope: scope)
+        :index -> {%{active_only: true}, false}
+        :archive -> {%{archived_only: true}, true}
       end
+
+    search_args = if search in [nil, ""], do: %{}, else: %{search: search}
+    args = Map.merge(filter_args, search_args)
+
+    month = date.month
+    year = date.year
+
+    duration_filter =
+      if all_time? do
+        Ash.Query.new(Session)
+      else
+        Ash.Query.filter(
+          Session,
+          fragment("extract(month from ?) = ?", start_datetime, ^month) and
+            fragment("extract(year from ?) = ?", start_datetime, ^year)
+        )
+      end
+
+    default_sort = if search in [nil, ""], do: [name: :asc], else: []
+
+    projects =
+      AshProject
+      |> Ash.Query.for_read(:list, args, scope: scope)
+      |> Ash.Query.aggregate(:duration, :sum, :sessions,
+        field: :duration,
+        default: 0,
+        query: duration_filter
+      )
+      |> Ash.Query.load(counterparty: [:display_label])
+      |> Ash.Query.sort(default_sort)
+      |> Ash.read!(scope: scope)
+      |> Enum.map(fn project ->
+        seconds = project.aggregates[:duration] || 0
+        Map.put(project, :hours, Timetracker.seconds_to_hours(seconds))
+      end)
+
+    Firmowid.Repo.drop_paradedb_unnamed()
 
     assign(socket, :projects, projects)
   end
@@ -90,5 +128,17 @@ defmodule FirmowidWeb.Management.Views.Projects do
       end
 
     push_patch(socket, to: path)
+  end
+
+  # Distinct months (as naive_datetime) that have sessions, newest first.
+  defp months_with_sessions(filters, scope) do
+    Session
+    |> Ash.Query.for_read(:list, filters, scope: scope)
+    |> Ash.Query.distinct(:month_start)
+    |> Ash.Query.distinct_sort(month_start: :desc)
+    |> Ash.Query.sort(month_start: :desc)
+    |> Ash.Query.load(:month_start)
+    |> Ash.read!(scope: scope)
+    |> Enum.map(& &1.month_start)
   end
 end

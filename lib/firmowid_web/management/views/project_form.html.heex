@@ -180,9 +180,15 @@
           class="flex flex-row items-center gap-4"
         >
           <.avatar class={["size-[50px]", entry.removed_from_project && "opacity-50"]}>
-            <.avatar_image src={entry.user.avatar_url} alt="Avatar" />
+            <.avatar_image
+              :if={entry.user.avatar_blob && entry.user.avatar_blob.url}
+              src={entry.user.avatar_blob && entry.user.avatar_blob.url}
+              alt="Avatar"
+            />
             <.avatar_fallback bg_color="blueBg" class="text-blueText">
-              {String.slice(entry.user.name || entry.user.email || "", 0, 1) |> String.upcase()}
+              {to_string(entry.user.name || entry.user.email || "")
+              |> String.slice(0, 1)
+              |> String.upcase()}
             </.avatar_fallback>
           </.avatar>
 

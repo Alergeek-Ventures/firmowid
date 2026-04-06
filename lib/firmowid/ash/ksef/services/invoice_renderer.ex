@@ -16,6 +16,9 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
 
   require EEx
 
+  # TODO: replace authorize?: false + actor: %{} with system actor once available
+  @bridge_opts [authorize?: false, actor: %{}]
+
   @item_calcs [:net_value, :vat_value, :gross_value]
   @invoice_aggs [:net_value, :vat_value, :gross_value]
   @invoice_calcs [:buyer_id_type]
@@ -47,10 +50,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
                       corrections: @invoice_aggs ++ @invoice_calcs ++ [sales_invoice_items: @item_calcs]
                     ]
               ],
-            authorize?: false,
-            actor: %{},
-            tenant: tenant,
-            lazy?: false
+            Keyword.merge(@bridge_opts, tenant: tenant, lazy?: false)
           )
           |> annotate_correction_chain()
           |> validate_correction_buyer_tax_id!()
@@ -62,9 +62,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
           Ash.load!(
             invoice,
             @invoice_aggs ++ @invoice_calcs ++ [sales_invoice_items: @item_calcs],
-            authorize?: false,
-            actor: %{},
-            tenant: tenant
+            Keyword.put(@bridge_opts, :tenant, tenant)
           )
       end
 
@@ -304,7 +302,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
     String.trim("#{name} #{surname}")
   end
 
-  def seller_name(_), do: raise("Seller name is missing")
+  def seller_name(_), do: raise(ArgumentError, "Seller name is missing")
 
   @doc """
   Returns the buyer name for KSeF invoice.
@@ -340,7 +338,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   def validate_correction_buyer_tax_id!(%{ksef_invoice_kind: :kor, corrected_invoice: corrected} = invoice) do
     if invoice.buyer_id != corrected.buyer_id or
          invoice.buyer_id_type != corrected.buyer_id_type do
-      raise "Buyer tax ID cannot change in correction invoice. " <>
+      raise ArgumentError,
+            "Buyer tax ID cannot change in correction invoice. " <>
               "Original: #{inspect(corrected.buyer_id)}, New: #{inspect(invoice.buyer_id)}"
     end
 
@@ -363,7 +362,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
         invoice.seller_address != corrected.seller_address
 
     if seller_data_changed? do
-      raise "Seller data cannot change in correction invoice. " <>
+      raise ArgumentError,
+            "Seller data cannot change in correction invoice. " <>
               "Original: #{corrected |> Map.take([:seller_display_name, :seller_name, :seller_surname, :seller_address]) |> inspect()}, " <>
               "New: #{invoice |> Map.take([:seller_display_name, :seller_name, :seller_surname, :seller_address]) |> inspect()}"
     end

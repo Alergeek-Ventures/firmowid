@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   """
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Accounts
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.Counterparty
@@ -53,7 +53,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       |> assign(:bank_accounts, Finances.list_bank_accounts!(scope: socket.assigns.ash_scope))
       |> assign(:last_counterparties, Counterparty.list_all!(load: [:display_label], scope: socket.assigns.ash_scope))
       |> assign(:last_invoices, recent_invoices(socket.assigns.ash_scope))
-      |> assign(:ksef_connected?, Ksef.get_credential() != nil)
+      |> assign(:ksef_connected?, Ksef.get_credential(socket.assigns.ash_scope) != nil)
       |> assign(:open_counterparty_modal, false)
 
     {:ok, socket}
@@ -89,13 +89,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   defp create_and_redirect(socket, scope) do
-    org_id = scope.current_tenant
+    org_id = scope.tenant
     {:ok, draft} = WizardDraft.create(%{organization_id: org_id}, scope: scope)
     {:noreply, push_patch(socket, to: creator_draft_url(draft.id, :counterparty), replace: true)}
   end
 
   defp create_draft_from_copy(socket, scope, invoice_id) do
-    org_id = scope.current_tenant
+    org_id = scope.tenant
 
     item_calcs = [:net_value, :vat_value, :gross_value]
 
@@ -218,7 +218,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   defp restore_draft(socket, scope, draft, params) do
-    org_id = scope.current_tenant
+    org_id = scope.tenant
     requested_step = parse_step_param(params["step"])
     max_allowed_step = calculate_max_step(draft)
 
@@ -287,7 +287,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       due_date: draft.due_date,
       payment_method: draft.payment_method
     )
-    |> Ash.load!([:buyer_id_type, :buyer_display_name_label], authorize?: false, actor: %{})
+    |> Ash.load!(
+      [
+        :buyer_id_type,
+        :buyer_display_name_label,
+        :net_value,
+        :vat_value,
+        :gross_value,
+        sales_invoice_items: [:net_value, :vat_value, :gross_value]
+      ],
+      tenant: draft.organization_id,
+      authorize?: false,
+      actor: %{}
+    )
   end
 
   # Parse step from URL param (number string) to step name atom
@@ -398,7 +410,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   defp maybe_setup_step(socket, :preview, _params) do
     # Preview - load organization and build preview invoice
     org_id = socket.assigns.org_id
-    {:ok, organization} = Accounts.get_organization(org_id)
+    organization = Core.get_organization!(org_id, authorize?: false, actor: %{})
     invoice = socket.assigns.invoice
 
     # Generate preview data
@@ -533,6 +545,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   @impl true
+  def handle_event("add_item", %{"field" => field}, socket) do
+    form =
+      socket.assigns.items_form.source
+      |> AshPhoenix.Form.add_form(String.to_existing_atom(field))
+      |> to_form()
+
+    {:noreply, assign(socket, :items_form, form)}
+  end
+
   def handle_event("validate_items", %{"form" => params}, socket) do
     form =
       socket.assigns.items_form.source
@@ -830,7 +851,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   defp submit_to_ksef_and_navigate(socket, invoice) do
-    case Ksef.submit_sales_invoice(invoice.id) do
+    case Ksef.submit_sales_invoice(invoice.id, socket.assigns.ash_scope) do
       {:ok, _job} ->
         {:noreply, push_navigate(socket, to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
 

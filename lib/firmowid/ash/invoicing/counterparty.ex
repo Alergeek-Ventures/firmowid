@@ -17,6 +17,7 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Invoicing.Changes.ClearIrrelevantBuyerFields
   alias Firmowid.Ash.Invoicing.Changes.ValidateCountryCode
   alias Firmowid.Ash.Invoicing.Validations.ValidateNameFields
@@ -160,19 +161,31 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
   end
 
   policies do
-    policy action_type(:read) do
+    bypass actor_attribute_equals(:role, :admin) do
       authorize_if always()
     end
 
-    policy action_type(:create) do
+    # Invoicing system roles: read-only
+    bypass {Firmowid.Ash.Checks.SystemActorRole,
+            roles: [:sales_invoice_processor, :cost_invoice_processor, :invoice_matcher]} do
+      authorize_if action_type(:read)
+    end
+
+    # Other system actors: no access
+    policy Firmowid.Ash.Checks.IsSystemActor do
+      forbid_if always()
+    end
+
+    # :invoicing and :accountant: read
+    policy [action_type(:read), {AtLeastRole, role: :invoicing}] do
       authorize_if always()
     end
 
-    policy action_type(:update) do
-      authorize_if always()
-    end
-
-    policy action_type(:destroy) do
+    # :accountant: write
+    policy [
+      action_type([:create, :update, :destroy]),
+      {AtLeastRole, role: :accountant}
+    ] do
       authorize_if always()
     end
   end

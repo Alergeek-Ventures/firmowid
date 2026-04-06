@@ -24,8 +24,8 @@ defmodule Firmowid.Ash.Timetracker.Changes.CleanupProjectTag do
 
   defp delete_tag_definition(tag_definition_id, context) do
     scope = %Firmowid.Ash.Scope{
-      current_user: context.actor,
-      current_tenant: context.tenant
+      actor: context.actor,
+      tenant: context.tenant
     }
 
     # authorize?: false because this is an internal system operation —

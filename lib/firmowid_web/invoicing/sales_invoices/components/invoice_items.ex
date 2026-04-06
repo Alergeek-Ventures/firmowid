@@ -72,11 +72,28 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     end
   end
 
+  defp summary_item_net(%{quantity: qty, unit_price: price}) when not is_nil(qty) and not is_nil(price) do
+    Decimal.mult(parse_decimal(qty) || Decimal.new(0), parse_decimal(price) || Decimal.new(0))
+  end
+
+  defp summary_item_net(_), do: Decimal.new(0)
+
+  defp summary_item_vat_rate(%{vat_rate: vat_rate}) do
+    numeric = VatRate.to_numeric(to_string(vat_rate || "0"))
+    Decimal.div(numeric, 100)
+  end
+
   defp invoice_summary(items, currency) do
-    items = Ash.load!(items, [:net_value, :vat_value, :gross_value], authorize?: false, actor: %{})
-    net = Enum.reduce(items, Decimal.new(0), fn item, acc -> Decimal.add(acc, item.net_value || Decimal.new(0)) end)
-    vat = Enum.reduce(items, Decimal.new(0), fn item, acc -> Decimal.add(acc, item.vat_value || Decimal.new(0)) end)
-    gross = Enum.reduce(items, Decimal.new(0), fn item, acc -> Decimal.add(acc, item.gross_value || Decimal.new(0)) end)
+    zero = Decimal.new(0)
+
+    {net, vat, gross} =
+      Enum.reduce(items, {zero, zero, zero}, fn item, {net_acc, vat_acc, gross_acc} ->
+        net = summary_item_net(item)
+        vat = Decimal.mult(net, summary_item_vat_rate(item))
+        gross = Decimal.add(net, vat)
+
+        {Decimal.add(net_acc, net), Decimal.add(vat_acc, vat), Decimal.add(gross_acc, gross)}
+      end)
 
     %{
       net_value: Money.new(currency, net),
@@ -370,9 +387,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     <%!-- todo: add loading state --%>
     <.button
       type="button"
-      name={@add_param}
-      value="new"
-      phx-click={JS.dispatch("change")}
+      phx-click="add_item"
+      phx-value-field={@items_field}
       class="col-span-1 col-start-2 mt-3"
       size="small"
       color="light_grey"

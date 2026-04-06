@@ -24,30 +24,34 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
   alias Firmowid.Ash.Ksef.Services.Encryption
   alias Firmowid.Ash.Ksef.Services.InvoiceParser
   alias Firmowid.Ash.Ksef.Workers.SessionWorker
-  alias Firmowid.Repo
+  alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
 
   require Ash.Query
   require Logger
 
   @impl Oban.Worker
+  @spec perform(Oban.Job.t()) :: Oban.Worker.result()
   def perform(%{args: %{"action" => action, "organization_id" => organization_id} = args}) do
-    Repo.put_org_id(organization_id)
+    actor = %SystemActor{org_id: organization_id, role: :ksef_session}
+    scope = %Scope{actor: actor, tenant: organization_id}
 
     case action do
-      "initiate_export" -> initiate_export(args)
-      "poll_export" -> poll_export(args)
+      "initiate_export" -> initiate_export(args, organization_id)
+      "poll_export" -> poll_export(args, scope)
     end
   end
 
-  defp initiate_export(args) do
+  defp initiate_export(args, organization_id) do
     date_from = parse_datetime!(args["date_from"])
     encryption_data = Encryption.generate_encryption_data()
 
-    case perform_initiate_export(date_from, encryption_data) do
+    case perform_initiate_export(date_from, encryption_data, organization_id) do
       {:ok, reference_number} ->
         schedule_poll_job(
           reference_number,
-          encryption_data
+          encryption_data,
+          organization_id
         )
 
       {:error, reason} = error ->
@@ -56,12 +60,12 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     end
   end
 
-  defp poll_export(%{"reference_number" => reference_number} = args) do
-    session = SessionWorker.get_access_token!()
+  defp poll_export(%{"reference_number" => reference_number} = args, scope) do
+    session = SessionWorker.get_access_token!(scope.tenant)
 
     case ApiClient.get_export_status(session, reference_number) do
       {:ok, package} ->
-        process_downloaded_package(package, args)
+        process_downloaded_package(package, args, scope)
 
       :pending ->
         {:snooze, 30}
@@ -72,18 +76,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     end
   end
 
-  @doc """
-  Custom backoff that normalizes the attempt number for exponential backoff.
-
-  See `SubmissionWorker.backoff/1` for rationale.
-  """
-  @impl Oban.Worker
-  def backoff(%Oban.Job{} = job) do
-    corrected_attempt = 3 - (job.max_attempts - job.attempt)
-    Oban.Worker.backoff(%{job | attempt: corrected_attempt})
-  end
-
-  defp perform_initiate_export(date_from, encryption_data) do
+  defp perform_initiate_export(date_from, encryption_data, organization_id) do
     filters = %{
       # Subject2 means cost invoices
       "subjectType" => "Subject2",
@@ -98,16 +91,16 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
       "initializationVector" => Base.encode64(encryption_data.iv)
     }
 
-    session = SessionWorker.get_access_token!()
+    session = SessionWorker.get_access_token!(organization_id)
     ApiClient.initiate_invoice_export(session, filters, encryption_data)
   end
 
-  defp process_downloaded_package(%{"parts" => []}, _args) do
+  defp process_downloaded_package(%{"parts" => []}, _args, _scope) do
     Logger.info("KSeF export completed with no invoices to download")
     {:ok, 0}
   end
 
-  defp process_downloaded_package(package, args) do
+  defp process_downloaded_package(package, args, scope) do
     encryption_key = Base.decode64!(args["encryption_key"])
     encryption_iv = Base.decode64!(args["encryption_iv"])
 
@@ -125,10 +118,10 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
 
     invoices = Enum.filter(files, fn {name, _} -> String.ends_with?(name, ".xml") end)
 
-    result = create_cost_invoices_from_package(metadata, invoices)
+    result = create_cost_invoices_from_package(metadata, invoices, scope)
 
     if package["isTruncated"] do
-      schedule_next_fetch(package["lastPermanentStorageDate"])
+      schedule_next_fetch(package["lastPermanentStorageDate"], scope.tenant)
     end
 
     result
@@ -140,7 +133,8 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
       expiration_date = parse_datetime!(part["expirationDate"])
 
       if DateTime.before?(expiration_date, DateTime.utc_now()) do
-        raise "Package part #{part["ordinalNumber"]} has expired on #{expiration_date}"
+        raise RuntimeError,
+              "Package part #{part["ordinalNumber"]} has expired on #{expiration_date}"
       end
 
       part
@@ -157,7 +151,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     )
     |> Stream.map(fn
       {:ok, body} -> body
-      {:exit, reason} -> raise("Failed to download package part: #{inspect(reason)}")
+      {:exit, reason} -> raise RuntimeError, "Failed to download package part: #{inspect(reason)}"
     end)
     |> Enum.to_list()
   end
@@ -170,7 +164,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
         Enum.map(files, fn {filename, content} -> {to_string(filename), content} end)
 
       {:error, reason} ->
-        raise "Failed to unzip KSeF package: #{inspect(reason)}"
+        raise RuntimeError, "Failed to unzip KSeF package: #{inspect(reason)}"
     end
   end
 
@@ -201,11 +195,11 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     if checksum == part_hash do
       data
     else
-      raise "Checksum mismatch for downloaded part"
+      raise RuntimeError, "Checksum mismatch for downloaded part #{part["ordinalNumber"]}"
     end
   end
 
-  defp create_cost_invoices_from_package(metadata_json, invoice_files) do
+  defp create_cost_invoices_from_package(metadata_json, invoice_files, scope) do
     metadata_by_ksef_number = parse_metadata_json(metadata_json)
 
     ksef_numbers = Map.keys(metadata_by_ksef_number)
@@ -216,7 +210,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
       CostInvoice
       |> Ash.Query.filter(ksef_number in ^ksef_numbers)
       |> Ash.Query.select([:ksef_number])
-      |> Ash.read!(authorize?: false, actor: %{}, tenant: Repo.get_org_id())
+      |> Ash.read!(scope: scope)
       |> MapSet.new(& &1.ksef_number)
 
     invoice_entries =
@@ -238,7 +232,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     |> Enum.map(fn {ksef_number, xml_content} ->
       metadata = Map.fetch!(metadata_by_ksef_number, ksef_number)
 
-      create_cost_invoice_from_xml(ksef_number, xml_content, metadata)
+      create_cost_invoice_from_xml(ksef_number, xml_content, metadata, scope)
     end)
     |> accumulate_errors()
   end
@@ -259,12 +253,12 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     |> Map.new(fn invoice -> {invoice["ksefNumber"], invoice} end)
   end
 
-  defp create_cost_invoice_from_xml(ksef_number, xml_content, ksef_metadata) do
+  defp create_cost_invoice_from_xml(ksef_number, xml_content, ksef_metadata, scope) do
     with {:ok, attrs} <- InvoiceParser.parse(xml_content),
-         attrs = enrich_cost_invoice_with_metadata(attrs, ksef_number, ksef_metadata),
+         attrs =
+           enrich_cost_invoice_with_metadata(attrs, ksef_number, ksef_metadata, scope.tenant),
          {:ok, path} <- write_to_temp_file(xml_content, "#{ksef_number}.xml") do
-      # TODO: replace authorize?: false + actor: %{} with system actor once available
-      blob_opts = [tenant: Repo.get_org_id(), authorize?: false, actor: %{}]
+      blob_opts = [scope: scope]
 
       case Blobs.create_blob(path, "application/xml", "#{ksef_number}.xml", blob_opts) do
         {:ok, blob} ->
@@ -309,7 +303,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     end
   end
 
-  defp enrich_cost_invoice_with_metadata(attrs, ksef_number, ksef_metadata) do
+  defp enrich_cost_invoice_with_metadata(attrs, ksef_number, ksef_metadata, organization_id) do
     attrs
     |> Map.update!(:total_amount, &Decimal.negate(&1))
     |> Map.put(:ksef_number, ksef_number)
@@ -318,7 +312,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
       parse_datetime!(ksef_metadata["permanentStorageDate"])
     )
     |> Map.put(:ksef_downloaded_at, DateTime.utc_now())
-    |> Map.put(:organization_id, Repo.get_org_id())
+    |> Map.put(:organization_id, organization_id)
     |> Map.put(
       :description,
       OpenAIEnrichment.generate_description(%{
@@ -341,27 +335,27 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     end
   end
 
-  defp schedule_poll_job(reference_number, encryption_data) do
+  defp schedule_poll_job(reference_number, encryption_data, organization_id) do
     %{
       "action" => "poll_export",
-      "organization_id" => Repo.get_org_id(),
+      "organization_id" => organization_id,
       "reference_number" => reference_number,
       "encryption_key" => Base.encode64(encryption_data.key),
       "encryption_iv" => Base.encode64(encryption_data.iv)
     }
     |> new(schedule_in: 15)
-    |> Firmowid.Oban.insert()
+    |> Firmowid.Oban.insert(skip_organization_id: true)
   end
 
-  defp schedule_next_fetch(last_permanent_storage_date) do
+  defp schedule_next_fetch(last_permanent_storage_date, organization_id) do
     Logger.info("Scheduling next KSeF fetch starting from #{last_permanent_storage_date}")
 
     %{
       "action" => "initiate_export",
-      "organization_id" => Repo.get_org_id(),
+      "organization_id" => organization_id,
       "date_from" => last_permanent_storage_date
     }
     |> new()
-    |> Firmowid.Oban.insert()
+    |> Firmowid.Oban.insert(skip_organization_id: true)
   end
 end

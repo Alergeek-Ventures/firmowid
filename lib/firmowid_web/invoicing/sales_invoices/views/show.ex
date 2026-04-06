@@ -11,6 +11,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
 
   @item_calcs [:net_value, :vat_value, :gross_value]
   @detail_loads [
+    :net_value,
+    :vat_value,
+    :gross_value,
     :is_deletable,
     :transactions,
     sales_invoice_items: @item_calcs,
@@ -44,7 +47,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
     else
       alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
 
-      potential_transactions = InvoiceMatching.get_potential_transactions_for_invoice(sales_invoice)
+      potential_transactions = InvoiceMatching.get_potential_transactions_for_invoice(sales_invoice, scope)
 
       sales_invoice =
         then(sales_invoice, fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)
@@ -63,7 +66,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
         |> assign(:preview_type, :html)
         |> assign(:no_padding, true)
         |> assign(:return_to, params["return_to"])
-        |> assign(:ksef_connected?, Ksef.get_credential() != nil)
+        |> assign(:ksef_connected?, Ksef.get_credential(socket.assigns.ash_scope) != nil)
 
       {:ok, socket}
     end
@@ -84,6 +87,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
       current_user={@current_user}
       return_to={@return_to}
       ksef_connected?={@ksef_connected?}
+      scope={@ash_scope}
     />
     """
   end

@@ -77,7 +77,7 @@ defmodule Firmowid.Ash.Currencies.ExchangeRate do
     end
 
     policy action(:upsert) do
-      authorize_if always()
+      forbid_if always()
     end
 
     policy action(:cleanup_expired) do

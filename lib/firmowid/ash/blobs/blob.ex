@@ -13,6 +13,7 @@ defmodule Firmowid.Ash.Blobs.Blob do
 
   alias Firmowid.Ash.Blobs.Changes.DeleteFromS3
   alias Firmowid.Ash.Blobs.Changes.UploadToS3
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -45,7 +46,40 @@ defmodule Firmowid.Ash.Blobs.Blob do
   end
 
   policies do
-    policy always() do
+    bypass actor_attribute_equals(:role, :admin) do
+      authorize_if always()
+    end
+
+    # Invoice processors and ksef_session: read + create
+    bypass {SystemActorRole, roles: [:cost_invoice_processor, :sales_invoice_processor]} do
+      authorize_if action_type(:read)
+    end
+
+    bypass {SystemActorRole, roles: [:cost_invoice_processor, :sales_invoice_processor]} do
+      authorize_if action(:create_blob)
+    end
+
+    # ksef_session: read only
+    bypass {SystemActorRole, roles: [:ksef_session]} do
+      authorize_if action_type(:read)
+    end
+
+    # Other system actors: no access
+    policy Firmowid.Ash.Checks.IsSystemActor do
+      forbid_if always()
+    end
+
+    # :employee: read + create (for HoursRecord PDF uploads)
+    policy [action_type(:read), actor_attribute_equals(:role, :employee)] do
+      authorize_if always()
+    end
+
+    policy [action(:create_blob), actor_attribute_equals(:role, :employee)] do
+      authorize_if always()
+    end
+
+    # :invoicing and :accountant: read only
+    policy [action_type(:read), {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}] do
       authorize_if always()
     end
   end

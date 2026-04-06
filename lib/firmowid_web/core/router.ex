@@ -1,6 +1,7 @@
 defmodule FirmowidWeb.Core.Router do
   use FirmowidWeb, :router
   use PhoenixAnalytics.Web, :router
+  use AshAuthentication.Phoenix.Router
 
   import ErrorTracker.Web.Router
   import FirmowidWeb.Infrastructure.Plugs.RedirectTrailing
@@ -8,12 +9,12 @@ defmodule FirmowidWeb.Core.Router do
   import Oban.Web.Router
   import Phoenix.LiveDashboard.Router
 
-  alias Auth.Controllers.Google
-  alias Auth.Controllers.Session
-  alias Auth.Controllers.SessionApi
+  alias Auth.Controllers.AuthController
   alias FirmowidWeb.Infrastructure.Hooks.CurrentPath
+  alias FirmowidWeb.Infrastructure.Hooks.RedirectAuthenticated
+  alias FirmowidWeb.Infrastructure.Hooks.RequireNoOrganization
+  alias FirmowidWeb.Infrastructure.Hooks.RequireOrganization
   alias FirmowidWeb.Infrastructure.Hooks.Timezone
-  alias FirmowidWeb.Infrastructure.UserAuth
   alias Invoicing.SalesInvoices.Controllers.Pdf
   alias Invoicing.SalesInvoices.Controllers.Shared
   alias Management.Views.ProjectForm
@@ -29,12 +30,13 @@ defmodule FirmowidWeb.Core.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
 
-    plug :fetch_current_user
+    plug :sign_in_with_remember_me
+    plug :load_from_session
   end
 
   pipeline :api do
     plug :accepts, ["json"]
-    plug :fetch_api_user
+    plug :load_from_bearer
   end
 
   pipeline :webhook do
@@ -85,13 +87,25 @@ defmodule FirmowidWeb.Core.Router do
     post "/kosztowe/skrzynka", Invoicing.CostInvoices.Controllers.Inbound, :handle_webhook
   end
 
-  ## Authentication routes
+  ## Authentication routes (Ash Authentication)
+
+  scope "/", FirmowidWeb do
+    pipe_through :browser
+
+    auth_routes(AuthController, Firmowid.Ash.Core.User, path: "/auth")
+    sign_out_route(AuthController)
+  end
+
+  # TODO: Add email-confirmation-based account linking flow for security.
+  # TODO: Handle linking different-email Google account with different-email password account.
+
+  ## Organization onboarding (authenticated, no org)
 
   scope "/", FirmowidWeb do
     pipe_through [:browser, :require_authenticated_user_without_organization]
 
-    live_session :require_authenticated_user_without_organization,
-      on_mount: [{UserAuth, :ensure_authenticated_without_organization}] do
+    ash_authentication_live_session :without_org,
+      on_mount: [{RequireNoOrganization, :default}] do
       live "/organization/", Organization.Views.Index, :index
     end
   end
@@ -108,9 +122,9 @@ defmodule FirmowidWeb.Core.Router do
     get "/czasosledz/projekty/csv", Csv, :salaries
     get "/czasosledz/projekty/:id/csv", Csv, :project
 
-    live_session :admin,
+    ash_authentication_live_session :with_org,
       on_mount: [
-        {UserAuth, :ensure_authenticated_with_organization},
+        {RequireOrganization, :default},
         {CurrentPath, :save_request_uri},
         Timezone
       ] do
@@ -147,9 +161,9 @@ defmodule FirmowidWeb.Core.Router do
     get "/czasosledz/ewidencja/:date/podglad", HoursRecord.Controllers.Record, :preview
     get "/czasosledz/ewidencja/:id", HoursRecord.Controllers.Record, :download
 
-    live_session :require_authenticated_user_with_organization,
+    ash_authentication_live_session :with_org_extended,
       on_mount: [
-        {UserAuth, :ensure_authenticated_with_organization},
+        {RequireOrganization, :default},
         {CurrentPath, :save_request_uri},
         Timezone
       ] do
@@ -170,9 +184,9 @@ defmodule FirmowidWeb.Core.Router do
   scope "/", FirmowidWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
-    live_session :redirect_if_user_is_authenticated,
+    ash_authentication_live_session :guest,
       on_mount: [
-        {UserAuth, :redirect_if_user_is_authenticated},
+        {RedirectAuthenticated, :default},
         {CurrentPath, :save_request_uri},
         Timezone
       ] do
@@ -181,8 +195,6 @@ defmodule FirmowidWeb.Core.Router do
       live "/resetuj-haslo", Auth.Views.ForgotPassword, :new
       live "/resetuj-haslo/:token", Auth.Views.ResetPassword, :edit
     end
-
-    post "/zaloguj", Session, :create
   end
 
   scope "/faktura", FirmowidWeb do
@@ -192,22 +204,11 @@ defmodule FirmowidWeb.Core.Router do
     get "/:token/pdf", Shared, :pdf
   end
 
-  scope "/auth", FirmowidWeb do
-    pipe_through [:browser]
-
-    get "/google", Google, :request
-    get "/google/callback", Google, :callback
-    get "/google/link/:token", Google, :link
-  end
-
   scope "/", FirmowidWeb do
     pipe_through [:browser]
 
-    delete "/wyloguj", Session, :delete
-
-    live_session :current_user,
+    ash_authentication_live_session :public,
       on_mount: [
-        {UserAuth, :mount_current_user},
         {CurrentPath, :save_request_uri},
         Timezone
       ] do
@@ -222,7 +223,8 @@ defmodule FirmowidWeb.Core.Router do
   scope "/api", FirmowidWeb do
     pipe_through [:api]
 
-    post "/login", SessionApi, :create
+    # API login endpoint - SessionApi controller rewritten for Ash Authentication
+    post "/login", Auth.Controllers.SessionApi, :create
   end
 
   scope "/api", FirmowidWeb do

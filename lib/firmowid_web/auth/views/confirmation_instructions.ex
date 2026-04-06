@@ -2,7 +2,8 @@ defmodule FirmowidWeb.Auth.Views.ConfirmationInstructions do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Accounts
+  alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Core.Senders.ConfirmationSender
 
   def render(assigns) do
     ~H"""
@@ -34,11 +35,11 @@ defmodule FirmowidWeb.Auth.Views.ConfirmationInstructions do
   end
 
   def handle_event("send_instructions", %{"user" => %{"email" => email}}, socket) do
-    if user = Accounts.get_user_by_email(email) do
-      Accounts.deliver_user_confirmation_instructions(
-        user,
-        &url(~p"/potwierdz/#{&1}")
-      )
+    # Try to find user and resend confirmation if not yet confirmed
+    # Always show the same message for security (don't reveal if email exists)
+    with {:ok, user} <- fetch_user_by_email(email),
+         true <- is_nil(user.confirmed_at) do
+      send_confirmation_email(user)
     end
 
     info =
@@ -48,5 +49,25 @@ defmodule FirmowidWeb.Auth.Views.ConfirmationInstructions do
      socket
      |> put_flash(:info, info)
      |> redirect(to: ~p"/")}
+  end
+
+  defp fetch_user_by_email(email) do
+    case Core.get_user_by_email(email, authorize?: false, actor: %{}) do
+      {:ok, user} -> {:ok, user}
+      _ -> :error
+    end
+  end
+
+  defp send_confirmation_email(user) do
+    # Generate a confirmation token and send it
+    # This mimics what the confirmation add-on does on user creation
+    # Generate a JWT token with confirmation purpose
+    {:ok, token, _claims} =
+      AshAuthentication.Jwt.token_for_user(user, %{
+        "act" => "confirm_new_user",
+        "confirm" => true
+      })
+
+    ConfirmationSender.send(user, token, [])
   end
 end

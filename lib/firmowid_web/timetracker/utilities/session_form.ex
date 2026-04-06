@@ -1,6 +1,6 @@
 defmodule FirmowidWeb.Timetracker.Utilities.SessionForm do
   @moduledoc false
-  use Firmowid.Schema
+  use Ecto.Schema
 
   import Ecto.Changeset
 

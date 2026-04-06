@@ -1,4 +1,4 @@
-defmodule Firmowid.Accounts.ContractType do
+defmodule Firmowid.Ash.Core.ContractType do
   @moduledoc """
   Employment contract type enum helpers.
 
@@ -18,7 +18,7 @@ defmodule Firmowid.Accounts.ContractType do
 
   ## Examples
 
-      iex> Firmowid.Accounts.ContractType.values()
+      iex> Firmowid.Ash.Core.ContractType.values()
       [:umowa_o_prace, :umowa_zlecenie, :umowa_o_dzielo, :b2b]
   """
   def values, do: Map.keys(@titles)
@@ -28,10 +28,10 @@ defmodule Firmowid.Accounts.ContractType do
 
   ## Examples
 
-      iex> Firmowid.Accounts.ContractType.title(:umowa_o_prace)
+      iex> Firmowid.Ash.Core.ContractType.title(:umowa_o_prace)
       "Umowa o pracę"
 
-      iex> Firmowid.Accounts.ContractType.title(nil)
+      iex> Firmowid.Ash.Core.ContractType.title(nil)
       nil
   """
   def title(nil), do: nil
@@ -42,7 +42,7 @@ defmodule Firmowid.Accounts.ContractType do
 
   ## Examples
 
-      iex> Firmowid.Accounts.ContractType.options_for_select()
+      iex> Firmowid.Ash.Core.ContractType.options_for_select()
       [{"Umowa o pracę", :umowa_o_prace}, {"Umowa zlecenie", :umowa_zlecenie}, ...]
   """
   def options_for_select, do: Enum.map(@titles, fn {k, v} -> {v, k} end)

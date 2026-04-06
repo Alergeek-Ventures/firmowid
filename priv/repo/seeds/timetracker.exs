@@ -122,7 +122,7 @@ defmodule Firmowid.Seeds.Timetracker do
   # ---------------------------------------------------------------------------
 
   defp seed_sessions_m2(ctx) do
-    %{users: users, projects: projects} = ctx
+    %{users: users, projects: projects, bytecraft: bytecraft} = ctx
 
     m2_sessions = [
       # Kira — Firmowid (code reviews, architecture)
@@ -172,7 +172,7 @@ defmodule Firmowid.Seeds.Timetracker do
       session_attrs(users.maren, projects.taco, "TacoOverflow — poprawki CSS", 2, 12, 10, 0, 12, 0, false)
     ]
 
-    insert_sessions(m2_sessions)
+    insert_sessions(m2_sessions, bytecraft)
   end
 
   # ---------------------------------------------------------------------------
@@ -180,7 +180,7 @@ defmodule Firmowid.Seeds.Timetracker do
   # ---------------------------------------------------------------------------
 
   defp seed_sessions_m1(ctx) do
-    %{users: users, projects: projects} = ctx
+    %{users: users, projects: projects, bytecraft: bytecraft} = ctx
 
     m1_sessions = [
       # Kira — Firmowid
@@ -224,7 +224,7 @@ defmodule Firmowid.Seeds.Timetracker do
       session_attrs(users.maren, projects.taco, "Responsywność — widok tabletu", 1, 9, 9, 0, 12, 0, false)
     ]
 
-    insert_sessions(m1_sessions)
+    insert_sessions(m1_sessions, bytecraft)
   end
 
   # ---------------------------------------------------------------------------
@@ -232,7 +232,7 @@ defmodule Firmowid.Seeds.Timetracker do
   # ---------------------------------------------------------------------------
 
   defp seed_sessions_m0(ctx) do
-    %{users: users, projects: projects} = ctx
+    %{users: users, projects: projects, bytecraft: bytecraft} = ctx
 
     # Fewer sessions — month is "in progress"
     m0_sessions = [
@@ -258,7 +258,7 @@ defmodule Firmowid.Seeds.Timetracker do
       session_attrs(users.maren, projects.taco, "Landing page — poprawki copy", 0, 4, 10, 0, 13, 0, false)
     ]
 
-    insert_sessions(m0_sessions)
+    insert_sessions(m0_sessions, bytecraft)
   end
 
   # ---------------------------------------------------------------------------
@@ -308,7 +308,7 @@ defmodule Firmowid.Seeds.Timetracker do
     }
   end
 
-  defp insert_sessions(session_list) do
+  defp insert_sessions(session_list, bytecraft) do
     for attrs <- session_list do
       existing =
         Repo.one(
@@ -332,7 +332,7 @@ defmodule Firmowid.Seeds.Timetracker do
           is_remote: attrs.is_remote,
           user_id: attrs.user_id,
           project_id: attrs.project_id,
-          organization_id: Repo.get_org_id(),
+          organization_id: bytecraft.id,
           inserted_at: now,
           updated_at: now
         })

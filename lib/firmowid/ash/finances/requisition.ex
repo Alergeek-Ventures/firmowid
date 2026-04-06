@@ -184,11 +184,17 @@ defmodule Firmowid.Ash.Finances.Requisition do
       authorize_if always()
     end
 
+    # System actors don't manage bank connections
+    policy Firmowid.Ash.Checks.IsSystemActor do
+      forbid_if always()
+    end
+
     policy action(:create_requisition) do
       authorize_if actor_attribute_equals(:role, :admin)
     end
 
-    policy action_type(:read) do
+    # :invoicing and :accountant: read-only
+    policy [action_type(:read), {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}] do
       authorize_if always()
     end
 

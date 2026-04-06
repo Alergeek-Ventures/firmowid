@@ -7,18 +7,19 @@ defmodule Firmowid.Seeds.Bytecraft do
 
   import Ecto.Query
 
-  alias Firmowid.Accounts
-  alias Firmowid.Accounts.Organization
+  alias Firmowid.Ash.Core.Organization, as: CoreOrganization
+  alias Firmowid.Ash.Core.User, as: CoreUser
   alias Firmowid.Ash.Invoicing.Counterparty, as: AshCounterparty
   alias Firmowid.Ash.Ksef.Credential
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.Repo
   alias Firmowid.Seeds.Helpers
 
+  require Ash.Query
+
   def seed! do
     users = seed_users()
     bytecraft = seed_organization(users.kira)
-    Repo.put_org_id(bytecraft.id)
     seed_org_membership(bytecraft, users)
     counterparties = seed_counterparties(bytecraft)
     projects = seed_projects(bytecraft, users, counterparties)
@@ -42,9 +43,19 @@ defmodule Firmowid.Seeds.Bytecraft do
 
   defp seed_users do
     register = fn email ->
-      case Accounts.register_user(%{email: email, password: "kolejka123456"}) do
-        {:ok, user} -> user
-        {:error, _} -> Accounts.get_user_by_email(email)
+      case Ash.read(
+             Ash.Query.filter(CoreUser, email == ^email),
+             authorize?: false,
+             actor: %{}
+           ) do
+        {:ok, [user]} ->
+          user
+
+        {:ok, []} ->
+          Ash.Seed.seed!(CoreUser, %{
+            email: email,
+            hashed_password: Argon2.hash_pwd_salt("kolejka123456")
+          })
       end
     end
 
@@ -54,98 +65,103 @@ defmodule Firmowid.Seeds.Bytecraft do
     jules = register.("jules@bytecraft.collective")
     maren = register.("maren@bytecraft.collective")
 
-    Accounts.update_user(kira, %{
-      system_role: :superuser,
-      role: :admin,
-      name: "Kira Voss",
-      employment_date: ~D[2022-03-01],
-      phone: "+48 501 200 300",
-      slack_id: "U_KIRA_001",
-      bank_account_number: "PL61 1050 0099 7603 1234 5678 9012",
-      birthday: ~D[1991-11-07],
-      position: "Lead Architect",
-      employment_contract_type: :b2b,
-      correspondence_street: "ul. Marszałkowska 11/4",
-      correspondence_city: "Warszawa",
-      correspondence_code: "00-624",
-      residence_street: "ul. Marszałkowska 11/4",
-      residence_city: "Warszawa",
-      residence_code: "00-624"
-    })
+    kira =
+      Ash.Seed.update!(kira, %{
+        system_role: :superuser,
+        role: :admin,
+        name: "Kira Voss",
+        employment_date: ~D[2022-03-01],
+        phone: "+48 501 200 300",
+        slack_id: "U_KIRA_001",
+        bank_account_number: "PL61 1050 0099 7603 1234 5678 9012",
+        birthday: ~D[1991-11-07],
+        position: "Lead Architect",
+        employment_contract_type: :b2b,
+        correspondence_street: "ul. Marszałkowska 11/4",
+        correspondence_city: "Warszawa",
+        correspondence_code: "00-624",
+        residence_street: "ul. Marszałkowska 11/4",
+        residence_city: "Warszawa",
+        residence_code: "00-624"
+      })
 
-    Accounts.update_user(tomek, %{
-      system_role: :user,
-      role: :admin,
-      name: "Tomek Briar",
-      employment_date: ~D[2022-06-15],
-      phone: "+48 502 300 400",
-      slack_id: "U_TOMEK_002",
-      bank_account_number: "PL27 1140 2004 0000 3002 0135 5387",
-      birthday: ~D[1994-04-22],
-      position: "Backend Engineer",
-      employment_contract_type: :umowa_o_prace,
-      correspondence_street: "ul. Świdnicka 36/8",
-      correspondence_city: "Wrocław",
-      correspondence_code: "50-068",
-      residence_street: "ul. Świdnicka 36/8",
-      residence_city: "Wrocław",
-      residence_code: "50-068"
-    })
+    tomek =
+      Ash.Seed.update!(tomek, %{
+        system_role: :user,
+        role: :accountant,
+        name: "Tomek Briar",
+        employment_date: ~D[2022-06-15],
+        phone: "+48 502 300 400",
+        slack_id: "U_TOMEK_002",
+        bank_account_number: "PL27 1140 2004 0000 3002 0135 5387",
+        birthday: ~D[1994-04-22],
+        position: "Backend Engineer",
+        employment_contract_type: :umowa_o_prace,
+        correspondence_street: "ul. Świdnicka 36/8",
+        correspondence_city: "Wrocław",
+        correspondence_code: "50-068",
+        residence_street: "ul. Świdnicka 36/8",
+        residence_city: "Wrocław",
+        residence_code: "50-068"
+      })
 
-    Accounts.update_user(sable, %{
-      system_role: :user,
-      role: :employee,
-      name: "Sable Orin",
-      employment_date: ~D[2023-01-10],
-      phone: "+48 503 400 500",
-      slack_id: "U_SABLE_003",
-      birthday: ~D[1996-08-14],
-      position: "Product Designer",
-      employment_contract_type: :umowa_zlecenie,
-      student_status_until: ~D[2025-09-30],
-      correspondence_street: "ul. Floriańska 22/10",
-      correspondence_city: "Kraków",
-      correspondence_code: "31-021",
-      residence_street: "ul. Floriańska 22/10",
-      residence_city: "Kraków",
-      residence_code: "31-021"
-    })
+    sable =
+      Ash.Seed.update!(sable, %{
+        system_role: :user,
+        role: :employee,
+        name: "Sable Orin",
+        employment_date: ~D[2023-01-10],
+        phone: "+48 503 400 500",
+        slack_id: "U_SABLE_003",
+        birthday: ~D[1996-08-14],
+        position: "Product Designer",
+        employment_contract_type: :umowa_zlecenie,
+        student_status_until: ~D[2025-09-30],
+        correspondence_street: "ul. Floriańska 22/10",
+        correspondence_city: "Kraków",
+        correspondence_code: "31-021",
+        residence_street: "ul. Floriańska 22/10",
+        residence_city: "Kraków",
+        residence_code: "31-021"
+      })
 
-    Accounts.update_user(jules, %{
-      system_role: :user,
-      role: :employee,
-      name: "Jules Kadar",
-      employment_date: ~D[2023-04-01],
-      phone: "+48 504 500 600",
-      slack_id: "U_JULES_004",
-      birthday: ~D[1989-12-03],
-      position: "DevOps Lead",
-      employment_contract_type: :b2b,
-      correspondence_street: "ul. Piotrkowska 80/15",
-      correspondence_city: "Łódź",
-      correspondence_code: "90-265",
-      residence_street: "ul. Piotrkowska 80/15",
-      residence_city: "Łódź",
-      residence_code: "90-265"
-    })
+    jules =
+      Ash.Seed.update!(jules, %{
+        system_role: :user,
+        role: :invoicing,
+        name: "Jules Kadar",
+        employment_date: ~D[2023-04-01],
+        phone: "+48 504 500 600",
+        slack_id: "U_JULES_004",
+        birthday: ~D[1989-12-03],
+        position: "DevOps Lead",
+        employment_contract_type: :b2b,
+        correspondence_street: "ul. Piotrkowska 80/15",
+        correspondence_city: "Łódź",
+        correspondence_code: "90-265",
+        residence_street: "ul. Piotrkowska 80/15",
+        residence_city: "Łódź",
+        residence_code: "90-265"
+      })
 
-    Accounts.update_user(maren, %{
-      system_role: :user,
-      role: :employee,
-      name: "Maren Solke",
-      employment_date: ~D[2023-09-01],
-      phone: "+48 505 600 700",
-      slack_id: "U_MAREN_005",
-      birthday: ~D[1997-02-28],
-      position: "Frontend Engineer",
-      employment_contract_type: :umowa_o_prace,
-      correspondence_street: "ul. Długa 45/2",
-      correspondence_city: "Gdańsk",
-      correspondence_code: "80-831",
-      residence_street: "ul. Długa 45/2",
-      residence_city: "Gdańsk",
-      residence_code: "80-831"
-    })
+    maren =
+      Ash.Seed.update!(maren, %{
+        system_role: :user,
+        role: :employee,
+        name: "Maren Solke",
+        employment_date: ~D[2023-09-01],
+        phone: "+48 505 600 700",
+        slack_id: "U_MAREN_005",
+        birthday: ~D[1997-02-28],
+        position: "Frontend Engineer",
+        employment_contract_type: :umowa_o_prace,
+        correspondence_street: "ul. Długa 45/2",
+        correspondence_city: "Gdańsk",
+        correspondence_code: "80-831",
+        residence_street: "ul. Długa 45/2",
+        residence_city: "Gdańsk",
+        residence_code: "80-831"
+      })
 
     %{kira: kira, tomek: tomek, sable: sable, jules: jules, maren: maren}
   end
@@ -155,36 +171,29 @@ defmodule Firmowid.Seeds.Bytecraft do
   # ===========================================================================
 
   defp seed_organization(kira) do
-    case Repo.one(
-           from(o in Organization, where: o.nip == "6161525811", limit: 1),
-           skip_organization_id: true
+    case Ash.read(
+           Ash.Query.filter(CoreOrganization, nip == ^"6161525811"),
+           authorize?: false,
+           actor: %{}
          ) do
-      nil ->
-        {:ok, org} =
-          Accounts.create_organization(
-            %{
-              "name" => "Bytecraft Collective spółka z ograniczoną odpowiedzialnością",
-              "nip" => "6161525811",
-              "address" => "ul. Marszałkowska 11/4, 00-624 Warszawa",
-              "owner_id" => kira.id
-            },
-            kira
-          )
-
+      {:ok, [org]} ->
         org
 
-      org ->
-        org
+      {:ok, []} ->
+        Ash.Seed.seed!(CoreOrganization, %{
+          name: "Bytecraft Collective spółka z ograniczoną odpowiedzialnością",
+          nip: "6161525811",
+          address: "ul. Marszałkowska 11/4, 00-624 Warszawa",
+          owner_id: kira.id,
+          inbound_email_nickname: "bytecraft"
+        })
     end
   end
 
   defp seed_org_membership(bytecraft, users) do
-    for user <- [users.tomek, users.sable, users.jules, users.maren] do
+    for user <- [users.kira, users.tomek, users.sable, users.jules, users.maren] do
       if is_nil(user.organization_id) or user.organization_id != bytecraft.id do
-        case Accounts.create_organization_invites(bytecraft.id, users.kira.id) do
-          {:ok, invite} -> Accounts.consume_organization_invite(invite.invite_code, user.id)
-          {:error, _} -> :ok
-        end
+        Ash.Seed.update!(user, %{organization_id: bytecraft.id})
       end
     end
   end

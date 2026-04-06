@@ -2,7 +2,8 @@ defmodule FirmowidWeb.Auth.Views.Settings do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Accounts
+  alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Core.User
 
   def render(assigns) do
     ~H"""
@@ -38,18 +39,9 @@ defmodule FirmowidWeb.Auth.Views.Settings do
         <.simple_form
           for={@password_form}
           id="password_form"
-          action={~p"/zaloguj?_action=password_updated"}
-          method="post"
           phx-change="validate_password"
           phx-submit="update_password"
-          phx-trigger-action={@trigger_submit}
         >
-          <input
-            name={@password_form[:email].name}
-            type="hidden"
-            id="hidden_user_email"
-            value={@current_email}
-          />
           <.input field={@password_form[:password]} type="password" label="Nowe hasło" required />
           <.input
             field={@password_form[:password_confirmation]}
@@ -75,12 +67,15 @@ defmodule FirmowidWeb.Auth.Views.Settings do
   end
 
   def mount(%{"token" => token}, _session, socket) do
+    # Handle email change confirmation token
+    strategy = AshAuthentication.Info.strategy!(User, :confirm_email_update)
+
     socket =
-      case Accounts.update_user_email(socket.assigns.current_user, token) do
-        :ok ->
+      case AshAuthentication.Strategy.action(strategy, :confirm, %{"confirm" => token}) do
+        {:ok, _user} ->
           put_flash(socket, :info, "Email został zmieniony pomyślnie.")
 
-        :error ->
+        {:error, _error} ->
           put_flash(socket, :error, "Link do zmiany emaila jest nieprawidłowy lub wygasł.")
       end
 
@@ -89,8 +84,29 @@ defmodule FirmowidWeb.Auth.Views.Settings do
 
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
-    email_form = user |> Accounts.change_user_email() |> to_form()
-    password_form = user |> Accounts.change_user_password() |> to_form()
+
+    # Create forms for email and password changes
+    # Note: ash_authentication generates :change_password action for password changes
+    # Email changes use the confirm_email_update confirmation add-on
+    email_form =
+      user
+      |> AshPhoenix.Form.for_update(:update_profile,
+        domain: Core,
+        as: "user",
+        actor: user,
+        authorize?: true
+      )
+      |> to_form()
+
+    password_form =
+      user
+      |> AshPhoenix.Form.for_update(:change_password,
+        domain: Core,
+        as: "user",
+        actor: user,
+        authorize?: true
+      )
+      |> to_form()
 
     socket =
       socket
@@ -99,7 +115,6 @@ defmodule FirmowidWeb.Auth.Views.Settings do
       |> assign(:current_email, user.email)
       |> assign(:email_form, email_form)
       |> assign(:password_form, password_form)
-      |> assign(:trigger_submit, false)
 
     {:ok, socket}
   end
@@ -108,31 +123,28 @@ defmodule FirmowidWeb.Auth.Views.Settings do
     %{"current_password" => password, "user" => user_params} = params
 
     email_form =
-      socket.assigns.current_user
-      |> Accounts.change_user_email(user_params)
-      |> Map.put(:action, :validate)
-      |> to_form()
+      AshPhoenix.Form.validate(socket.assigns.email_form, user_params)
 
     {:noreply, assign(socket, email_form: email_form, email_form_current_password: password)}
   end
 
   def handle_event("update_email", params, socket) do
-    %{"current_password" => password, "user" => user_params} = params
-    user = socket.assigns.current_user
+    %{"current_password" => _password, "user" => user_params} = params
+    _user = socket.assigns.current_user
 
-    case Accounts.apply_user_email(user, password, user_params) do
-      {:ok, applied_user} ->
-        Accounts.deliver_user_update_email_instructions(
-          applied_user,
-          user.email,
-          &url(~p"/potwierdz/#{&1}")
-        )
+    # Email change uses the confirm_email_update confirmation add-on
+    # which inhibits the update and sends a confirmation email
+    strategy = AshAuthentication.Info.strategy!(User, :confirm_email_update)
 
+    case AshAuthentication.Strategy.action(strategy, :request, %{
+           "email" => user_params["email"]
+         }) do
+      {:ok, _user} ->
         info = "Link potwierdzający zmianę adresu email został wysłany na nowy adres."
         {:noreply, socket |> put_flash(:info, info) |> assign(email_form_current_password: nil)}
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, :email_form, to_form(Map.put(changeset, :action, :insert)))}
+      {:error, error} ->
+        {:noreply, put_flash(socket, :error, "Nie udało się zainicjować zmiany emaila: #{inspect(error)}")}
     end
   end
 
@@ -140,29 +152,23 @@ defmodule FirmowidWeb.Auth.Views.Settings do
     %{"current_password" => password, "user" => user_params} = params
 
     password_form =
-      socket.assigns.current_user
-      |> Accounts.change_user_password(user_params)
-      |> Map.put(:action, :validate)
-      |> to_form()
+      AshPhoenix.Form.validate(socket.assigns.password_form, user_params)
 
     {:noreply, assign(socket, password_form: password_form, current_password: password)}
   end
 
   def handle_event("update_password", params, socket) do
-    %{"current_password" => password, "user" => user_params} = params
-    user = socket.assigns.current_user
+    %{"current_password" => _password, "user" => user_params} = params
 
-    case Accounts.update_user_password(user, password, user_params) do
-      {:ok, user} ->
-        password_form =
-          user
-          |> Accounts.change_user_password(user_params)
-          |> to_form()
+    case AshPhoenix.Form.submit(socket.assigns.password_form, params: user_params) do
+      {:ok, _user} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Hasło zostało zmienione pomyślnie.")
+         |> push_navigate(to: ~p"/ustawienia/bezpieczenstwo")}
 
-        {:noreply, assign(socket, trigger_submit: true, password_form: password_form)}
-
-      {:error, changeset} ->
-        {:noreply, assign(socket, password_form: to_form(changeset))}
+      {:error, form} ->
+        {:noreply, assign(socket, password_form: form)}
     end
   end
 end

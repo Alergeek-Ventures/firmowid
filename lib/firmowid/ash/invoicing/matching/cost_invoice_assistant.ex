@@ -12,7 +12,6 @@ defmodule Firmowid.Ash.Invoicing.Matching.CostInvoiceAssistant do
   alias Firmowid.Ash.Invoicing.Matching.Assistant.Message
   alias Firmowid.Ash.Invoicing.Matching.Assistant.MessagesStorage
   alias Firmowid.Ash.Invoicing.Matching.Assistant.Tool
-  alias Firmowid.Repo
 
   @intro_message ~S"""
   Cześć, tu Firmowid!
@@ -22,26 +21,29 @@ defmodule Firmowid.Ash.Invoicing.Matching.CostInvoiceAssistant do
   @doc """
   Starts a new conversation for a given invoice, returns conversation_id.
   """
-  def start_conversation(invoice) do
+  def start_conversation(invoice, scope) do
     conversation_id = UUIDv7.generate()
     MessagesStorage.set_invoice(conversation_id, invoice)
+    MessagesStorage.set_scope(conversation_id, scope)
     MessagesStorage.append(conversation_id, Message.new(:assistant, @intro_message))
     conversation_id
   end
 
   def send_message_streaming(conversation_id, message) do
     invoice = MessagesStorage.get_invoice(conversation_id)
+    scope = MessagesStorage.get_scope(conversation_id)
 
     Engine.send_message_streaming(
       conversation_id,
       message,
       system_prompt(invoice),
-      tools()
+      tools(scope)
     )
   end
 
   def accept_linking(conversation_id) do
     msg = MessagesStorage.get_latest(conversation_id)
+    scope = MessagesStorage.get_scope(conversation_id)
 
     case msg do
       %Message{
@@ -51,12 +53,10 @@ defmodule Firmowid.Ash.Invoicing.Matching.CostInvoiceAssistant do
           args: %{"transaction_ids" => transaction_ids, "cost_invoice_ids" => cost_invoice_ids}
         }
       } ->
-        # TODO: replace authorize?: false + actor: %{} with system actor once available
-        bridge_opts = [tenant: Repo.get_org_id(), authorize?: false, actor: %{}]
-
         Enum.each(cost_invoice_ids, fn ci_id ->
-          cost_invoice = Invoicing.get_cost_invoice!(ci_id, bridge_opts)
-          Invoicing.connect_cost_invoice_transactions(cost_invoice, transaction_ids, bridge_opts)
+          cost_invoice = Invoicing.get_cost_invoice!(ci_id, scope: scope)
+
+          Invoicing.connect_cost_invoice_transactions!(cost_invoice, transaction_ids, scope: scope)
         end)
 
         MessagesStorage.delete(conversation_id)
@@ -91,11 +91,11 @@ defmodule Firmowid.Ash.Invoicing.Matching.CostInvoiceAssistant do
   @doc """
   Returns the list of tools (as Tool structs) available to the assistant.
   """
-  def tools do
+  def tools(scope) do
     [
       CommonTools.normalize_to_pln(),
       CommonTools.calculate(),
-      CommonTools.search_transactions(negative: true),
+      CommonTools.search_transactions(negative: true, scope: scope),
       %Tool{
         name: "link_cost_invoice_to_transaction",
         description: """
@@ -135,15 +135,10 @@ defmodule Firmowid.Ash.Invoicing.Matching.CostInvoiceAssistant do
                     } ->
           cost_invoice_id = List.first(cost_invoice_ids)
 
-          # TODO: replace authorize?: false + actor: %{} with system actor once available
           cost_invoice =
             if cost_invoice_id do
               cost_invoice_id
-              |> CostInvoice.get(
-                tenant: Repo.get_org_id(),
-                authorize?: false,
-                actor: %{}
-              )
+              |> Invoicing.get_cost_invoice(scope: scope)
               |> case do
                 {:ok, invoice} -> invoice
                 _ -> nil
@@ -153,9 +148,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.CostInvoiceAssistant do
           transactions =
             Finances.list_transactions!(
               filter: [id: [in: transaction_ids]],
-              tenant: Repo.get_org_id(),
-              authorize?: false,
-              actor: %{}
+              scope: scope
             )
 
           hallucinated_invoice = is_nil(cost_invoice)

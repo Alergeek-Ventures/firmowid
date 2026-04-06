@@ -10,8 +10,8 @@ defmodule Firmowid.Ash.Payroll.UserSalaryTest do
     org_id = admin.organization_id
 
     scope = %Firmowid.Ash.Scope{
-      current_user: admin,
-      current_tenant: org_id
+      actor: admin,
+      tenant: org_id
     }
 
     %{user: admin, org_id: org_id, scope: scope}

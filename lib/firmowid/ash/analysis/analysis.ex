@@ -14,19 +14,15 @@ defmodule Firmowid.Ash.Analysis do
   """
   use Ash.Domain
 
-  import Ecto.Query, warn: false
-
   alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.Ash.Analysis.TagDefinition
   alias Firmowid.Ash.Currencies.Converter, as: Currencies
   alias Firmowid.Ash.Finances
-  alias Firmowid.Ash.Finances.Transaction, as: EctoTransaction
+  alias Firmowid.Ash.Finances.Transaction
+  alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.Ash.Scope
-  alias Firmowid.Repo
 
   require Ash.Query
 
@@ -66,23 +62,23 @@ defmodule Firmowid.Ash.Analysis do
   def get_organization_totals(date_from, date_to, opts \\ [], scope) do
     tag_filters = Keyword.get(opts, :tag_filters, [])
 
+    # TODO: replace authorize?: false + actor: %{} with system actor once available
     sales_invoices =
       %{date_from: date_from, date_to: date_to, date_field: :sale_date}
-      |> SalesInvoice.read!(
+      |> Invoicing.list_sales_invoices!(
         load: [:sales_invoice_items, :transactions],
-        tenant: scope.current_tenant,
-        actor: scope.current_user,
+        tenant: scope.tenant,
+        actor: scope.actor,
         authorize?: false
       )
       |> Enum.filter(&matched_or_skipped?/1)
 
-    # TODO: replace authorize?: false + actor: %{} with system actor once available
     cost_invoices =
       %{date_from: date_from, date_to: date_to, date_field: :sale_date}
-      |> CostInvoice.read!(
+      |> Invoicing.list_cost_invoices!(
         load: [:transactions, :effective_total_amount, :effective_currency],
-        tenant: scope.current_tenant,
-        actor: scope.current_user,
+        tenant: scope.tenant,
+        actor: scope.actor,
         authorize?: false
       )
       |> Enum.filter(&matched_or_skipped?/1)
@@ -90,8 +86,8 @@ defmodule Firmowid.Ash.Analysis do
     transactions =
       Finances.list_transactions!(
         %{date_from: date_from, date_to: date_to, reconciliation: :skipped},
-        tenant: scope.current_tenant,
-        actor: scope.current_user,
+        tenant: scope.tenant,
+        actor: scope.actor,
         authorize?: false
       )
 
@@ -140,91 +136,30 @@ defmodule Firmowid.Ash.Analysis do
   """
   @spec get_months_with_entries(Scope.t()) :: [Date.t()]
   def get_months_with_entries(scope) do
-    # Set org_id for Ecto queries (Repo.prepare_query reads process dict)
-    Repo.put_org_id(scope.current_tenant)
+    # TODO: replace authorize?: false + actor: %{} with system actor once available
+    opts = [tenant: scope.tenant, actor: scope.actor, authorize?: false]
 
-    sales_match_query =
-      from(sit in SalesInvoiceTransaction,
-        where: sit.transaction_id == parent_as(:transaction).id
-      )
+    tx_months =
+      %{reconciliation: :skipped}
+      |> Finances.list_transactions!(opts)
+      |> Enum.map(&Date.beginning_of_month(&1.booking_date))
 
-    cost_match_query =
-      from(cit in CostInvoiceTransaction,
-        where: cit.transaction_id == parent_as(:transaction).id
-      )
+    si_months = invoice_months(&Invoicing.list_sales_invoices!/2, :sale_date, opts)
+    ci_months = invoice_months(&Invoicing.list_cost_invoices!/2, :sale_date, opts)
 
-    # Internal exclusion subqueries — now per-table instead of filtering on entity_type
-    tx_internal_query =
-      from(et in {"transaction_entity_tags", EntityTag},
-        where:
-          et.kind == :internal and
-            et.resource_id == parent_as(:transaction).id
-      )
-
-    si_internal_query =
-      from(et in {"sales_invoice_entity_tags", EntityTag},
-        where:
-          et.kind == :internal and
-            et.resource_id == parent_as(:entity).id
-      )
-
-    ci_internal_query =
-      from(et in {"cost_invoice_entity_tags", EntityTag},
-        where:
-          et.kind == :internal and
-            et.resource_id == parent_as(:entity).id
-      )
-
-    transactions_query =
-      from(t in EctoTransaction,
-        as: :transaction,
-        where: t.skip_invoicing == true,
-        where: not exists(subquery(sales_match_query)),
-        where: not exists(subquery(cost_match_query)),
-        where: not exists(subquery(tx_internal_query)),
-        select: %{month: t.booking_date, organization_id: t.organization_id}
-      )
-
-    si_matched_query =
-      from(sit in SalesInvoiceTransaction,
-        where: sit.sales_invoice_id == parent_as(:entity).id
-      )
-
-    ci_matched_query =
-      from(cit in CostInvoiceTransaction,
-        where: cit.cost_invoice_id == parent_as(:entity).id
-      )
-
-    sales_invoices_query =
-      from(si in SalesInvoice,
-        as: :entity,
-        where: si.skip_invoicing == true or exists(subquery(si_matched_query)),
-        where: not exists(subquery(si_internal_query)),
-        select: %{month: si.sale_date, organization_id: si.organization_id}
-      )
-
-    cost_invoices_query =
-      from(ci in CostInvoice,
-        as: :entity,
-        where: ci.skip_invoicing == true or exists(subquery(ci_matched_query)),
-        where: not exists(subquery(ci_internal_query)),
-        select: %{month: ci.sale_date, organization_id: ci.organization_id}
-      )
-
-    union_query =
-      transactions_query
-      |> union(^sales_invoices_query)
-      |> union(^cost_invoices_query)
-
-    from(u in subquery(union_query),
-      select: u.month,
-      distinct: true
-    )
-    |> Repo.all()
-    |> Enum.map(&Date.beginning_of_month/1)
+    (tx_months ++ si_months ++ ci_months)
+    |> Enum.uniq()
+    |> Enum.sort()
   end
 
   # ── Private helpers ──────────────────────────────────────────────────
+
+  defp invoice_months(list_fn, date_field, opts) do
+    Enum.map(
+      list_fn.(%{reconciliation: :matched}, opts) ++ list_fn.(%{reconciliation: :skipped}, opts),
+      &Date.beginning_of_month(Map.fetch!(&1, date_field))
+    )
+  end
 
   defp get_amount_and_currency(%SalesInvoice{} = entity) do
     value = Decimal.abs(entity.gross_value)
@@ -237,7 +172,7 @@ defmodule Firmowid.Ash.Analysis do
     {value, entity.effective_currency}
   end
 
-  defp get_amount_and_currency(%EctoTransaction{} = entity) do
+  defp get_amount_and_currency(%Transaction{} = entity) do
     {entity.transaction_amount, entity.transaction_currency}
   end
 
@@ -290,7 +225,7 @@ defmodule Firmowid.Ash.Analysis do
 
   defp entity_id(%SalesInvoice{id: id}), do: id
   defp entity_id(%CostInvoice{id: id}), do: id
-  defp entity_id(%EctoTransaction{id: id}), do: id
+  defp entity_id(%Transaction{id: id}), do: id
 
   # Filters entities and attaches entity_tags to each struct:
   # 1. Always excludes internal-tagged entities

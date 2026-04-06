@@ -21,6 +21,8 @@ defmodule Firmowid.Ash.Finances.Changes.ResetCurrencyDefaults do
              tenant: changeset.tenant,
              authorize?: false,
              return_errors?: true,
+             strategy: [:stream],
+             allow_stream_with: :full_read,
              filter: [currency: currency]
            ) do
         %Ash.BulkResult{status: :success} -> changeset

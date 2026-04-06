@@ -24,7 +24,8 @@ Application.ensure_all_started(:hackney)
 ## Conversation Setup
 
 ```elixir
-Firmowid.Repo.put_org_id("01948dfc-1367-7e4f-90e2-54b685167481")
+# NOTE: put_org_id has been removed. Use tenant: org_id on Ash calls instead.
+org_id = "01948dfc-1367-7e4f-90e2-54b685167481"
 ```
 
 ```elixir

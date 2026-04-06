@@ -169,7 +169,17 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
   end
 
   policies do
-    policy always() do
+    bypass actor_attribute_equals(:role, :admin) do
+      authorize_if always()
+    end
+
+    # Other system actors: no access
+    policy Firmowid.Ash.Checks.IsSystemActor do
+      forbid_if always()
+    end
+
+    # :accountant and above: all actions
+    policy {Firmowid.Ash.Checks.AtLeastRole, role: :accountant} do
       authorize_if always()
     end
   end

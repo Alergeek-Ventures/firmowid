@@ -13,7 +13,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Ksef.Services.InvoiceRenderer
-  alias Firmowid.Repo
+
+  @bridge_opts [authorize?: false, actor: %{}]
 
   @moduletag :ksef_xsd
 
@@ -25,8 +26,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
 
   setup do
     user = Firmowid.AccountsFixtures.user_fixture()
-    Repo.put_org_id(user.organization_id)
-    :ok
+    %{org_id: user.organization_id}
   end
 
   # ---------------------------------------------------------------------------
@@ -34,36 +34,36 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
   # ---------------------------------------------------------------------------
 
   describe "render_fa3/1 - domestic VAT invoices" do
-    test "23% VAT invoice passes XSD validation", %{model: model} do
-      invoice = build_domestic_invoice(vat_rate: "23")
+    test "23% VAT invoice passes XSD validation", %{model: model, org_id: org_id} do
+      invoice = build_domestic_invoice(vat_rate: "23", org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert :ok = validate_xml(xml, model)
     end
 
-    test "8% VAT invoice passes XSD validation", %{model: model} do
-      invoice = build_domestic_invoice(vat_rate: "8")
+    test "8% VAT invoice passes XSD validation", %{model: model, org_id: org_id} do
+      invoice = build_domestic_invoice(vat_rate: "8", org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert :ok = validate_xml(xml, model)
     end
 
-    test "5% VAT invoice passes XSD validation", %{model: model} do
-      invoice = build_domestic_invoice(vat_rate: "5")
+    test "5% VAT invoice passes XSD validation", %{model: model, org_id: org_id} do
+      invoice = build_domestic_invoice(vat_rate: "5", org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert :ok = validate_xml(xml, model)
     end
 
-    test "multi-rate invoice (23%, 8%, 5%) passes XSD validation", %{model: model} do
-      invoice = build_multi_rate_invoice()
+    test "multi-rate invoice (23%, 8%, 5%) passes XSD validation", %{model: model, org_id: org_id} do
+      invoice = build_multi_rate_invoice(org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert :ok = validate_xml(xml, model)
     end
 
-    test "0% domestic rate (0 KR) passes XSD validation", %{model: model} do
-      invoice = build_domestic_invoice(vat_rate: "0 KR")
+    test "0% domestic rate (0 KR) passes XSD validation", %{model: model, org_id: org_id} do
+      invoice = build_domestic_invoice(vat_rate: "0 KR", org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert :ok = validate_xml(xml, model)
@@ -75,29 +75,29 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
   # ---------------------------------------------------------------------------
 
   describe "render_fa3/1 - reverse charge invoices" do
-    test "EU B2B reverse charge invoice passes XSD validation", %{model: model} do
-      invoice = build_reverse_charge_invoice()
+    test "EU B2B reverse charge invoice passes XSD validation", %{model: model, org_id: org_id} do
+      invoice = build_reverse_charge_invoice(org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert :ok = validate_xml(xml, model)
     end
 
-    test "reverse charge with EUR currency passes XSD validation", %{model: model} do
-      invoice = build_reverse_charge_invoice(currency: "EUR")
+    test "reverse charge with EUR currency passes XSD validation", %{model: model, org_id: org_id} do
+      invoice = build_reverse_charge_invoice(currency: "EUR", org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert :ok = validate_xml(xml, model)
     end
 
-    test "reverse charge with USD currency passes XSD validation", %{model: model} do
-      invoice = build_reverse_charge_invoice(currency: "USD")
+    test "reverse charge with USD currency passes XSD validation", %{model: model, org_id: org_id} do
+      invoice = build_reverse_charge_invoice(currency: "USD", org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert :ok = validate_xml(xml, model)
     end
 
-    test "reverse charge with PLN currency passes XSD validation", %{model: model} do
-      invoice = build_reverse_charge_invoice(currency: "PLN")
+    test "reverse charge with PLN currency passes XSD validation", %{model: model, org_id: org_id} do
+      invoice = build_reverse_charge_invoice(currency: "PLN", org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert :ok = validate_xml(xml, model)
@@ -109,29 +109,32 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
   # ---------------------------------------------------------------------------
 
   describe "render_fa3/1 - buyer identification types" do
-    test "Polish NIP buyer passes XSD validation", %{model: model} do
-      invoice = build_domestic_invoice(buyer_id: :nip)
+    test "Polish NIP buyer passes XSD validation", %{model: model, org_id: org_id} do
+      invoice = build_domestic_invoice(buyer_id: :nip, org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert :ok = validate_xml(xml, model)
     end
 
-    test "EU VAT buyer (KodUE + NrVatUE) passes XSD validation", %{model: model} do
-      invoice = build_eu_vat_invoice()
+    test "EU VAT buyer (KodUE + NrVatUE) passes XSD validation", %{model: model, org_id: org_id} do
+      invoice = build_eu_vat_invoice(org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert :ok = validate_xml(xml, model)
     end
 
-    test "other ID buyer (non-EU with NrID) passes XSD validation", %{model: model} do
-      invoice = build_other_id_invoice()
+    test "other ID buyer (non-EU with NrID) passes XSD validation", %{
+      model: model,
+      org_id: org_id
+    } do
+      invoice = build_other_id_invoice(org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert :ok = validate_xml(xml, model)
     end
 
-    test "no ID buyer (BrakID=1) passes XSD validation", %{model: model} do
-      invoice = build_no_id_invoice()
+    test "no ID buyer (BrakID=1) passes XSD validation", %{model: model, org_id: org_id} do
+      invoice = build_no_id_invoice(org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert :ok = validate_xml(xml, model)
@@ -143,8 +146,9 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
   # ---------------------------------------------------------------------------
 
   describe "render_fa3/1 - correction invoices" do
-    test "KOR invoice with KSeF number passes XSD validation", %{model: model} do
-      original = simulate_ksef_submission(build_domestic_invoice(), with_ksef_number: true)
+    test "KOR invoice with KSeF number passes XSD validation", %{model: model, org_id: org_id} do
+      original =
+        simulate_ksef_submission(build_domestic_invoice(org_id: org_id), with_ksef_number: true)
 
       correction = build_correction_invoice(original)
       xml = InvoiceRenderer.render_fa3(correction)
@@ -152,8 +156,11 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
       assert :ok = validate_xml(xml, model)
     end
 
-    test "KOR for reverse charge invoice passes XSD validation", %{model: model} do
-      original = simulate_ksef_submission(build_reverse_charge_invoice(), with_ksef_number: true)
+    test "KOR for reverse charge invoice passes XSD validation", %{model: model, org_id: org_id} do
+      original =
+        simulate_ksef_submission(build_reverse_charge_invoice(org_id: org_id),
+          with_ksef_number: true
+        )
 
       correction = build_correction_invoice(original)
       xml = InvoiceRenderer.render_fa3(correction)
@@ -161,17 +168,19 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
       assert :ok = validate_xml(xml, model)
     end
 
-    test "cancellation correction (zeroed items) passes XSD validation", %{model: model} do
-      original = simulate_ksef_submission(build_domestic_invoice(), with_ksef_number: true)
+    test "cancellation correction (zeroed items) passes XSD validation", %{
+      model: model,
+      org_id: org_id
+    } do
+      original =
+        simulate_ksef_submission(build_domestic_invoice(org_id: org_id), with_ksef_number: true)
+
+      opts = Keyword.put(@bridge_opts, :tenant, original.organization_id)
 
       cancellation =
         original.id
-        |> SalesInvoice.cancel!(authorize?: false, actor: %{}, tenant: original.organization_id)
-        |> Ash.load!([:sales_invoice_items, corrected_invoice: :sales_invoice_items],
-          authorize?: false,
-          actor: %{},
-          tenant: original.organization_id
-        )
+        |> SalesInvoice.cancel!(opts)
+        |> Ash.load!([:sales_invoice_items, corrected_invoice: :sales_invoice_items], opts)
 
       xml = InvoiceRenderer.render_fa3(cancellation)
 
@@ -188,8 +197,11 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
   # ---------------------------------------------------------------------------
 
   describe "render_fa3/1 - edge cases" do
-    test "XML special characters in buyer name are properly escaped", %{model: model} do
-      invoice = build_domestic_invoice(buyer_name: "Test & Co <Corp> \"Ltd\"")
+    test "XML special characters in buyer name are properly escaped", %{
+      model: model,
+      org_id: org_id
+    } do
+      invoice = build_domestic_invoice(buyer_name: "Test & Co <Corp> \"Ltd\"", org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       # Verify escaping in raw XML
@@ -201,15 +213,18 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
       assert :ok = validate_xml(xml, model)
     end
 
-    test "XML special characters in item name are properly escaped", %{model: model} do
-      invoice = build_domestic_invoice(item_name: "Service's 'special' <deal>")
+    test "XML special characters in item name are properly escaped", %{
+      model: model,
+      org_id: org_id
+    } do
+      invoice = build_domestic_invoice(item_name: "Service's 'special' <deal>", org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert :ok = validate_xml(xml, model)
     end
 
-    test "large quantities use normal notation (no scientific)", %{model: model} do
-      invoice = build_domestic_invoice(quantity: Decimal.new("100"))
+    test "large quantities use normal notation (no scientific)", %{model: model, org_id: org_id} do
+      invoice = build_domestic_invoice(quantity: Decimal.new("100"), org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       # Verify format in raw XML - should not be scientific notation
@@ -220,8 +235,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
       assert :ok = validate_xml(xml, model)
     end
 
-    test "very large quantities are formatted correctly", %{model: model} do
-      invoice = build_domestic_invoice(quantity: Decimal.new("1000000"))
+    test "very large quantities are formatted correctly", %{model: model, org_id: org_id} do
+      invoice = build_domestic_invoice(quantity: Decimal.new("1000000"), org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       # Should not be 1E+6
@@ -231,16 +246,16 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
       assert :ok = validate_xml(xml, model)
     end
 
-    test "fractional quantities are formatted correctly", %{model: model} do
-      invoice = build_domestic_invoice(quantity: Decimal.new("0.5"))
+    test "fractional quantities are formatted correctly", %{model: model, org_id: org_id} do
+      invoice = build_domestic_invoice(quantity: Decimal.new("0.5"), org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert xml =~ ">0.5<"
       assert :ok = validate_xml(xml, model)
     end
 
-    test "optional sale_date can be omitted", %{model: model} do
-      invoice = build_domestic_invoice(sale_date: nil)
+    test "optional sale_date can be omitted", %{model: model, org_id: org_id} do
+      invoice = build_domestic_invoice(sale_date: nil, org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       # P_6 element should not be present
@@ -249,8 +264,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
       assert :ok = validate_xml(xml, model)
     end
 
-    test "optional buyer_address can be omitted", %{model: model} do
-      invoice = build_domestic_invoice(buyer_address: nil)
+    test "optional buyer_address can be omitted", %{model: model, org_id: org_id} do
+      invoice = build_domestic_invoice(buyer_address: nil, org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       # Buyer Address section should not be present
@@ -260,8 +275,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
       assert :ok = validate_xml(xml, model)
     end
 
-    test "multiple line items are valid", %{model: model} do
-      invoice = build_domestic_invoice(items: 5)
+    test "multiple line items are valid", %{model: model, org_id: org_id} do
+      invoice = build_domestic_invoice(items: 5, org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       # Should have 5 FaWiersz elements
@@ -270,8 +285,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
       assert :ok = validate_xml(xml, model)
     end
 
-    test "invoice with 10 line items is valid", %{model: model} do
-      invoice = build_domestic_invoice(items: 10)
+    test "invoice with 10 line items is valid", %{model: model, org_id: org_id} do
+      invoice = build_domestic_invoice(items: 10, org_id: org_id)
       xml = InvoiceRenderer.render_fa3(invoice)
 
       assert length(Regex.scan(~r/<FaWiersz>/, xml)) == 10
@@ -284,8 +299,11 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
   # ---------------------------------------------------------------------------
 
   describe "render_fa3/1 - FA(3) example fixtures" do
-    test "example 2 correction invoice matches fixture (normalized)", %{model: model} do
-      original = build_example_2_original()
+    test "example 2 correction invoice matches fixture (normalized)", %{
+      model: model,
+      org_id: org_id
+    } do
+      original = build_example_2_original(org_id)
       original = update_ksef_submission(original, "9999999999-20230908-8BEF280C8D35-4D")
 
       correction = build_example_2_correction(original)
@@ -298,8 +316,11 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
       assert normalize_fa3(xml) == normalize_fa3(expected)
     end
 
-    test "example 5 correction invoice matches fixture (normalized)", %{model: model} do
-      original = build_example_5_original()
+    test "example 5 correction invoice matches fixture (normalized)", %{
+      model: model,
+      org_id: org_id
+    } do
+      original = build_example_5_original(org_id)
       original = update_ksef_submission(original, "9999999999-20230908-8BEF280C8D35-4D")
 
       correction = build_example_5_correction(original)
@@ -313,9 +334,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
     end
   end
 
-  defp build_example_2_original do
-    org_id = Repo.get_org_id()
-
+  defp build_example_2_original(org_id) do
     invoice =
       Ash.Seed.seed!(SalesInvoice, %{
         invoice_number: "FV2026/02/150",
@@ -350,10 +369,10 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
       index: 0
     })
 
-    Ash.load!(invoice, [:sales_invoice_items],
-      authorize?: false,
-      actor: %{},
-      tenant: invoice.organization_id
+    Ash.load!(
+      invoice,
+      [:sales_invoice_items],
+      Keyword.put(@bridge_opts, :tenant, invoice.organization_id)
     )
   end
 
@@ -394,16 +413,14 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
       index: 0
     })
 
-    Ash.load!(correction, [:sales_invoice_items, :corrected_invoice],
-      authorize?: false,
-      actor: %{},
-      tenant: correction.organization_id
+    Ash.load!(
+      correction,
+      [:sales_invoice_items, :corrected_invoice],
+      Keyword.put(@bridge_opts, :tenant, correction.organization_id)
     )
   end
 
-  defp build_example_5_original do
-    org_id = Repo.get_org_id()
-
+  defp build_example_5_original(org_id) do
     invoice =
       Ash.Seed.seed!(SalesInvoice, %{
         invoice_number: "FV2026/02/150",
@@ -438,10 +455,10 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
       index: 0
     })
 
-    Ash.load!(invoice, [:sales_invoice_items],
-      authorize?: false,
-      actor: %{},
-      tenant: invoice.organization_id
+    Ash.load!(
+      invoice,
+      [:sales_invoice_items],
+      Keyword.put(@bridge_opts, :tenant, invoice.organization_id)
     )
   end
 
@@ -486,10 +503,10 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
       index: 0
     })
 
-    Ash.load!(correction, [:sales_invoice_items, :corrected_invoice],
-      authorize?: false,
-      actor: %{},
-      tenant: correction.organization_id
+    Ash.load!(
+      correction,
+      [:sales_invoice_items, :corrected_invoice],
+      Keyword.put(@bridge_opts, :tenant, correction.organization_id)
     )
   end
 

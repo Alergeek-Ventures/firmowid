@@ -115,6 +115,12 @@ defmodule Firmowid.Ash.Ksef.VatRateTest do
       assert VatRate.summary_type("np I") == :not_subject_i
       assert VatRate.summary_type("np II") == :not_subject_ii
     end
+
+    test "raises ArgumentError for unknown rate" do
+      assert_raise ArgumentError, ~r/Unknown VAT rate for summary_type/, fn ->
+        VatRate.summary_type("99")
+      end
+    end
   end
 
   describe "select_options/1" do

@@ -13,9 +13,9 @@ defmodule Firmowid.Ash.Invoicing do
   external APIs, billing counters). These live as regular functions on this
   module because they can't be expressed as single Ash actions:
 
-    * `search_invoices/1` — cross-resource search (CostInvoice + SalesInvoice)
-    * `delete_cost_invoice/1` — destroy blob (cascades invoice) + billing
-    * `upload_cost_invoice/4` — validate type, create blob, enqueue extraction
+    * `search_invoices/2` — cross-resource search (CostInvoice + SalesInvoice)
+    * `delete_cost_invoice/2` — destroy blob (cascades invoice) + billing
+    * `upload_cost_invoice/4-5` — validate type, create blob, enqueue extraction
     * `create_cost_invoice/1` — create from metadata + enqueue matching job
     * `hydrate_invoice_with_fa3_blob/1` — fetch KSeF XML, create blob, attach
     * `get_processing_cost_invoices_count/0` — pending extraction job count
@@ -29,11 +29,10 @@ defmodule Firmowid.Ash.Invoicing do
   alias Firmowid.Ash.Invoicing.Workers.CostInvoiceWorker
   alias Firmowid.Ash.Invoicing.Workers.MatchingWorker
   alias Firmowid.Ash.Ksef
+  alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
 
   require Ash.Query
-
-  # TODO: replace authorize?: false + actor: %{} with system actor once available
-  @bridge_opts [authorize?: false, actor: %{}]
 
   resources do
     resource Firmowid.Ash.Invoicing.Counterparty do
@@ -154,9 +153,9 @@ defmodule Firmowid.Ash.Invoicing do
     * `:only_unmatched` — only invoices without linked transactions
     * `:buyer_type`, `:is_cash`, `:is_reverse_charge` — sales-only filters
   """
-  @spec search_invoices(map()) :: [struct()]
-  def search_invoices(params \\ %{}) do
-    opts = [tenant: Firmowid.Repo.get_org_id()] ++ @bridge_opts
+  @spec search_invoices(map(), Scope.t()) :: [struct()]
+  def search_invoices(params \\ %{}, scope) do
+    opts = [scope: scope]
 
     has_sales_only_filter =
       not is_nil(Map.get(params, :buyer_type)) or
@@ -177,7 +176,7 @@ defmodule Firmowid.Ash.Invoicing do
       if include_sales do
         search_sales_invoices!(
           search_args(params, :sales),
-          Keyword.put(opts, :load, [:sales_invoice_items])
+          Keyword.put(opts, :load, [:gross_value, :sales_invoice_items])
         )
       else
         []
@@ -245,9 +244,9 @@ defmodule Firmowid.Ash.Invoicing do
   This is intentional — billing limits are soft limits (informational only),
   so we prioritize successful invoice deletion over counter accuracy.
   """
-  @spec delete_cost_invoice(Ash.UUID.t()) :: :ok
-  def delete_cost_invoice(cost_invoice_id) do
-    opts = [tenant: Firmowid.Repo.get_org_id()] ++ @bridge_opts
+  @spec delete_cost_invoice(Ash.UUID.t(), Scope.t()) :: :ok
+  def delete_cost_invoice(cost_invoice_id, scope) do
+    opts = [scope: scope]
 
     cost_invoice =
       CostInvoice
@@ -267,25 +266,49 @@ defmodule Firmowid.Ash.Invoicing do
   end
 
   @doc """
+  Returns the most recent KSeF permanent storage date across all cost invoices
+  for the given organization, or `nil` if none exist.
+  """
+  @spec last_ksef_permanent_storage_date(Ash.UUID.t()) :: NaiveDateTime.t() | nil
+  def last_ksef_permanent_storage_date(org_id) do
+    actor = %SystemActor{org_id: org_id, role: :ksef_session}
+    scope = %Scope{actor: actor, tenant: org_id}
+
+    %{last_date: date} =
+      Ash.aggregate!(
+        CostInvoice,
+        {:last_date, :max, field: :ksef_permanent_storage_date},
+        scope: scope
+      )
+
+    date
+  end
+
+  @doc """
   Uploads a cost invoice file. Validates content type, creates a blob,
   and enqueues an extraction job.
 
   Returns `{:ok, blob}` wrapped in a transaction result, or
   `{:error, :unsupported_content_type}`.
   """
-  @spec upload_cost_invoice(String.t(), String.t(), String.t(), Ash.UUID.t() | nil) ::
+  @spec upload_cost_invoice(String.t(), String.t(), String.t(), Scope.t()) ::
           {:ok, struct()} | {:error, term()}
-  def upload_cost_invoice(upload_path, content_type, original_filename, inbound_email_id \\ nil)
+  @spec upload_cost_invoice(String.t(), String.t(), String.t(), Ash.UUID.t() | nil, Scope.t()) ::
+          {:ok, struct()} | {:error, term()}
 
-  def upload_cost_invoice(upload_path, "image/" <> _ext = content_type, original_filename, inbound_email_id) do
-    create_cost_invoice_job(upload_path, content_type, original_filename, inbound_email_id)
+  def upload_cost_invoice(upload_path, content_type, original_filename, scope) when is_struct(scope, Scope) do
+    upload_cost_invoice(upload_path, content_type, original_filename, nil, scope)
   end
 
-  def upload_cost_invoice(upload_path, "application/pdf" = content_type, original_filename, inbound_email_id) do
-    create_cost_invoice_job(upload_path, content_type, original_filename, inbound_email_id)
+  def upload_cost_invoice(upload_path, "image/" <> _ext = content_type, original_filename, inbound_email_id, scope) do
+    create_cost_invoice_job(upload_path, content_type, original_filename, inbound_email_id, scope)
   end
 
-  def upload_cost_invoice(_upload_path, _content_type, _original_filename, _inbound_email_id) do
+  def upload_cost_invoice(upload_path, "application/pdf" = content_type, original_filename, inbound_email_id, scope) do
+    create_cost_invoice_job(upload_path, content_type, original_filename, inbound_email_id, scope)
+  end
+
+  def upload_cost_invoice(_upload_path, _content_type, _original_filename, _inbound_email_id, _scope) do
     {:error, :unsupported_content_type}
   end
 
@@ -298,10 +321,14 @@ defmodule Firmowid.Ash.Invoicing do
   """
   @spec create_cost_invoice(map()) :: Oban.Job.t()
   def create_cost_invoice(extracted_metadata) do
-    organization_id = Map.get(extracted_metadata, "organization_id", Firmowid.Repo.get_org_id())
-    opts = [tenant: organization_id] ++ @bridge_opts
+    organization_id =
+      Map.get(extracted_metadata, "organization_id") ||
+        raise "organization_id is required in extracted_metadata"
 
-    {:ok, cost_invoice} = CostInvoice.create_from_metadata(extracted_metadata, opts)
+    actor = %SystemActor{org_id: organization_id, role: :cost_invoice_processor}
+    scope = %Scope{actor: actor, tenant: organization_id}
+
+    {:ok, cost_invoice} = CostInvoice.create_from_metadata(extracted_metadata, scope: scope)
 
     %{
       name: "match_cost_invoice",
@@ -309,7 +336,7 @@ defmodule Firmowid.Ash.Invoicing do
       organization_id: organization_id
     }
     |> MatchingWorker.new()
-    |> Firmowid.Oban.insert!()
+    |> Firmowid.Oban.insert!(skip_organization_id: true)
   end
 
   @doc """
@@ -321,9 +348,12 @@ defmodule Firmowid.Ash.Invoicing do
   @spec hydrate_invoice_with_fa3_blob(struct()) :: struct()
   def hydrate_invoice_with_fa3_blob(%{ksef_number: ksef_number, blob_id: blob_id} = invoice)
       when not is_nil(ksef_number) and is_nil(blob_id) do
-    opts = [tenant: invoice.organization_id] ++ @bridge_opts
+    org_id = invoice.organization_id
+    actor = %SystemActor{org_id: org_id, role: :cost_invoice_processor}
+    scope = %Scope{actor: actor, tenant: org_id}
+    opts = [scope: scope]
 
-    with {:ok, xml} <- Ksef.get_invoice_xml_by_ksef_number(ksef_number),
+    with {:ok, xml} <- Ksef.get_invoice_xml_by_ksef_number(ksef_number, org_id),
          {:ok, path} <- Briefly.create(extname: ".xml"),
          :ok <- File.write(path, xml),
          {:ok, blob} <-
@@ -373,12 +403,8 @@ defmodule Firmowid.Ash.Invoicing do
 
   # ── Private helpers ─────────────────────────────────────────────────
 
-  defp create_cost_invoice_job(upload_path, content_type, original_filename, inbound_email_id) do
-    blob_opts =
-      [
-        tenant: Firmowid.Repo.get_org_id(),
-        return_notifications?: true
-      ] ++ @bridge_opts
+  defp create_cost_invoice_job(upload_path, content_type, original_filename, inbound_email_id, scope) do
+    blob_opts = [scope: scope, return_notifications?: true]
 
     result =
       Firmowid.Repo.transaction(fn ->
@@ -444,11 +470,18 @@ defmodule Firmowid.Ash.Invoicing do
   """
   @spec get_logo_url(Ash.UUID.t()) :: String.t() | nil
   def get_logo_url(organization_id) when is_binary(organization_id) do
-    alias Firmowid.Accounts
+    alias Firmowid.Ash.Core
 
-    {:ok, ecto_org} = Accounts.get_organization(organization_id)
-    organization = Accounts.get_organization_with_avatar(ecto_org)
-    organization.avatar_url
+    organization =
+      organization_id
+      |> Core.get_organization!(authorize?: false, actor: %{})
+      |> Ash.load!([avatar_blob: [:url]],
+        tenant: organization_id,
+        authorize?: false,
+        actor: %{}
+      )
+
+    organization.avatar_blob[:url]
   end
 
   def get_logo_url(_), do: nil
@@ -522,6 +555,6 @@ defmodule Firmowid.Ash.Invoicing do
       if inbound_email_id, do: Map.put(args, :inbound_email_id, inbound_email_id), else: args
     end)
     |> CostInvoiceWorker.new()
-    |> Firmowid.Oban.insert!()
+    |> Firmowid.Oban.insert!(skip_organization_id: true)
   end
 end

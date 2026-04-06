@@ -12,7 +12,10 @@ defmodule Firmowid.Ash.Ksef.Credential do
 
   use Ash.Resource,
     domain: Firmowid.Ash.Ksef,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer]
+
+  alias Firmowid.Ash.Checks.SystemActorRole
 
   postgres do
     table "ksef_credentials"
@@ -44,6 +47,32 @@ defmodule Firmowid.Ash.Ksef.Credential do
       prepare fn query, _context ->
         Ash.Query.select(query, [:organization_id])
       end
+    end
+  end
+
+  policies do
+    bypass actor_attribute_equals(:role, :admin) do
+      authorize_if always()
+    end
+
+    # ksef_session: all actions
+    bypass {SystemActorRole, roles: [:ksef_session]} do
+      authorize_if always()
+    end
+
+    # sales_invoice_processor: read
+    bypass {SystemActorRole, roles: [:sales_invoice_processor]} do
+      authorize_if action_type(:read)
+    end
+
+    # cross_tenant_reader: read (for all_organization_ids action)
+    bypass {SystemActorRole, roles: [:cross_tenant_reader]} do
+      authorize_if action_type(:read)
+    end
+
+    # Other actors: no access
+    policy always() do
+      forbid_if always()
     end
   end
 

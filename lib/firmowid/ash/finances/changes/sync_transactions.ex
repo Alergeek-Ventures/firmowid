@@ -75,6 +75,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
         :upsert_from_sync,
         tenant: bank_account.organization_id,
         authorize?: false,
+        actor: %{},
         upsert?: true,
         return_errors?: true,
         stop_on_error?: false,

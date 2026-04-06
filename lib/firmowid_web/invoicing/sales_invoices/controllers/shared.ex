@@ -3,15 +3,17 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
   Handles public, unauthenticated access to shared invoices via token-based URLs.
 
   This controller serves the shared invoice preview page and PDF download
-  without requiring authentication. Organization context is set explicitly
-  via `Repo.put_org_id/1` since no auth plug provides it.
+  without requiring authentication. After the initial cross-tenant lookup
+  (justified Ecto exception — we don't know the org until we find the invoice),
+  subsequent calls use an `:anonymous` SystemActor scoped to the invoice's org.
   """
   use FirmowidWeb, :controller
 
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.Services.Pdf
-  alias Firmowid.Repo
+  alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
 
   require Logger
 
@@ -22,13 +24,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
   plug :put_root_layout, html: false
 
   def show(conn, %{"token" => token_string} = params) do
-    # by_share_token bypasses tenant — public endpoint
+    # Justified Ecto exception: cross-tenant lookup by share token.
+    # The initial load uses authorize?: false to discover org_id before
+    # we can build a proper scope.
     case SalesInvoice.by_share_token(token_string, authorize?: false, actor: %{}) do
       {:ok, nil} ->
         conn |> put_status(404) |> render(:not_found, layout: false)
 
       {:ok, invoice} ->
-        {invoice, logo_url, org} = prepare_invoice_with_org_context(invoice)
+        scope = build_anonymous_scope(invoice)
+        {invoice, logo_url, org} = prepare_invoice_with_org_context(invoice, scope)
         lang = resolve_lang(params, invoice)
 
         render(conn, :show,
@@ -47,12 +52,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
   end
 
   def pdf(conn, %{"token" => token_string}) do
+    # Justified Ecto exception: cross-tenant lookup by share token.
     case SalesInvoice.by_share_token(token_string, authorize?: false, actor: %{}) do
       {:ok, nil} ->
         conn |> put_status(404) |> render(:not_found, layout: false)
 
       {:ok, invoice} ->
-        {invoice, logo_url, org} = prepare_invoice_with_org_context(invoice)
+        scope = build_anonymous_scope(invoice)
+        {invoice, logo_url, org} = prepare_invoice_with_org_context(invoice, scope)
         invoice = Map.put(invoice, :logo_url, logo_url)
 
         case Pdf.generate(invoice, show_vat: org.is_vat_payer) do
@@ -74,14 +81,21 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
     end
   end
 
-  # Sets the organization context in the process dictionary (via Repo.put_org_id/1)
-  # so that downstream queries (e.g. logo URL resolution) work on this
-  # unauthenticated, public endpoint where no plug sets the org automatically.
-  defp prepare_invoice_with_org_context(invoice) do
+  defp build_anonymous_scope(invoice) do
+    org_id = invoice.organization_id
+
+    %Scope{
+      actor: %SystemActor{org_id: org_id, role: :anonymous},
+      tenant: org_id
+    }
+  end
+
+  # Loads the invoice with all calculations required for display.
+  # Uses the anonymous scope for authorization.
+  defp prepare_invoice_with_org_context(invoice, scope) do
     alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
 
     org = invoice.organization
-    Repo.put_org_id(invoice.organization_id)
 
     logo_url = Invoicing.get_logo_url(invoice.organization_id)
 
@@ -97,9 +111,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
           corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
           reference_invoice: []
         ],
-        authorize?: false,
-        actor: %{},
-        tenant: invoice.organization_id
+        scope: scope
       )
       |> then(fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)
 

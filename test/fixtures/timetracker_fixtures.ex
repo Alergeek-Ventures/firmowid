@@ -10,28 +10,29 @@ defmodule Firmowid.TimetrackerFixtures do
   alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
-  alias Firmowid.Repo
 
   def unique_project_name, do: "project_#{System.unique_integer()}"
 
   def project_fixture(attrs \\ %{}) do
     params = %{name: attrs[:name] || unique_project_name()}
-    tenant = attrs[:organization_id] || Repo.get_org_id()
+    tenant = attrs[:organization_id] || raise "organization_id is required for project_fixture"
 
     {:ok, project} = AshProject.create(params, tenant: tenant, authorize?: false, actor: %{})
     project
   end
 
   def session_fixture(attrs \\ %{}) do
+    tenant = attrs[:organization_id] || raise "organization_id is required for session_fixture"
+    project_id = attrs[:project_id] || project_fixture(%{organization_id: tenant}).id
+
     params = %{
       title: attrs[:title] || "Test Session",
-      project_id: attrs[:project_id] || project_fixture().id,
+      project_id: project_id,
       user_id: attrs[:user_id],
       start_datetime: attrs[:start_datetime] || DateTime.utc_now(),
       is_remote: attrs[:is_remote] || false
     }
 
-    tenant = attrs[:organization_id] || Repo.get_org_id()
     opts = [tenant: tenant, authorize?: false, actor: %{}]
 
     {:ok, session} = AshSession.create(params, opts)
@@ -44,13 +45,16 @@ defmodule Firmowid.TimetrackerFixtures do
     end
   end
 
-  def user_project_fixture(user_id, project_id) do
+  def user_project_fixture(user_id, project_id, organization_id \\ nil) do
     alias Firmowid.Ash.Timetracker.ProjectUser, as: AshProjectUser
+
+    # organization_id can be passed explicitly; if not, it must be set via test context
+    tenant = organization_id || raise "organization_id is required for user_project_fixture"
 
     {:ok, pu} =
       AshProjectUser.create(
         %{user_id: user_id, project_id: project_id},
-        tenant: Repo.get_org_id(),
+        tenant: tenant,
         authorize?: false,
         actor: %{}
       )
@@ -64,7 +68,7 @@ defmodule Firmowid.TimetrackerFixtures do
       user_id: attrs[:user_id] || raise("user_id is required for user_salary_fixture")
     }
 
-    tenant = attrs[:organization_id] || Repo.get_org_id()
+    tenant = attrs[:organization_id] || raise "organization_id is required for user_salary_fixture"
 
     {:ok, salary} =
       AshUserSalary.create_with_retire(params, tenant: tenant, authorize?: false, actor: %{})

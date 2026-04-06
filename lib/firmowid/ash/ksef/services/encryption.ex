@@ -38,7 +38,7 @@ defmodule Firmowid.Ash.Ksef.Services.Encryption do
 
     # Validate padding value is in valid range
     if pad < 1 or pad > 16 or pad > byte_size(data) do
-      raise "Invalid PKCS#7 padding"
+      raise ArgumentError, "Invalid PKCS#7 padding"
     end
 
     # Verify all padding bytes have the same value
@@ -46,7 +46,7 @@ defmodule Firmowid.Ash.Ksef.Services.Encryption do
     padding_bytes = binary_part(data, data_len - pad, pad)
 
     if padding_bytes != :binary.copy(<<pad>>, pad) do
-      raise "Invalid PKCS#7 padding bytes"
+      raise ArgumentError, "Invalid PKCS#7 padding bytes"
     end
 
     binary_part(data, 0, data_len - pad)

@@ -34,11 +34,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.Assistant.Engine do
     listening_process = self()
     send(listening_process, {:loading, true})
 
-    org_id = Firmowid.Repo.get_org_id()
-
     Task.start_link(fn ->
-      Firmowid.Repo.put_org_id(org_id)
-
       user_message = Message.new(:user, user_message)
       send(listening_process, user_message)
       MessagesStorage.append(conversation_id, user_message)

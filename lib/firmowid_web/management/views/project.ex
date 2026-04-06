@@ -2,8 +2,11 @@ defmodule FirmowidWeb.Management.Views.Project do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary
+  alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
-  alias Firmowid.Ash.Timetracker.Session, as: AshSession
+  alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
   @impl true
@@ -21,14 +24,13 @@ defmodule FirmowidWeb.Management.Views.Project do
         _ -> Date.utc_today()
       end
 
-    {:ok, active_months} =
-      AshSession.months_with_sessions(%{project_id: project_id}, scope: scope)
+    active_months = months_with_sessions(%{project_id: project_id}, scope)
 
     socket =
       socket
       |> assign(:selected_date, selected_date)
       |> assign(:active_months, active_months)
-      |> assign(:project, load_project!(project_id, scope))
+      |> assign(:project, AshProject.get!(project_id, scope: scope))
       |> assign(:can_delete_project, socket.assigns.current_user.role == :admin)
       |> assign_project_data()
 
@@ -42,6 +44,8 @@ defmodule FirmowidWeb.Management.Views.Project do
 
   def handle_event("toggle-user", %{"id" => user_id}, socket) do
     scope = socket.assigns.ash_scope
+    project = socket.assigns.project
+    date = socket.assigns.selected_date
 
     users =
       Enum.map(socket.assigns.users, fn
@@ -49,18 +53,15 @@ defmodule FirmowidWeb.Management.Views.Project do
           user
           |> Map.put(:expanded, !user.expanded)
           |> Map.put_new_lazy(:sessions_with_duration, fn ->
-            date = socket.assigns.selected_date
-
-            {:ok, sessions} =
-              AshSession.grouped_user_project_sessions(
-                user.id,
-                socket.assigns.project.id,
-                date.month,
-                date.year,
-                scope: scope
-              )
-
-            sessions
+            Session
+            |> Ash.Query.for_read(
+              :list,
+              %{user_id: user_id, project_id: project.id, month: date.month, year: date.year},
+              scope: scope
+            )
+            |> Ash.Query.load(:duration)
+            |> Ash.read!(scope: scope)
+            |> group_sessions_by_title()
           end)
 
         user ->
@@ -110,16 +111,31 @@ defmodule FirmowidWeb.Management.Views.Project do
      |> push_navigate(to: ~p"/zarzadzanie/projekty")}
   end
 
-  defp assign_project_data(%{assigns: %{selected_date: _date, project: project}} = socket)
-       when not is_nil(project.archived_at) do
+  # ── Archived project: all-time totals ─────────────────────────────────
+
+  defp assign_project_data(%{assigns: %{project: %{archived_at: archived_at} = project}} = socket)
+       when not is_nil(archived_at) do
     scope = socket.assigns.ash_scope
 
-    {:ok, users} = AshProject.project_users_with_cost_all_time(project.id, scope: scope)
+    sessions =
+      Session
+      |> Ash.Query.for_read(:list, %{project_id: project.id}, scope: scope)
+      |> Ash.Query.load(:duration)
+      |> Ash.read!(scope: scope)
 
-    {:ok, total_time_worked} =
-      AshSession.total_time_worked(%{project_id: project.id}, scope: scope)
+    total_time_worked = sessions |> Enum.map(& &1.duration) |> Enum.sum()
 
-    {:ok, total_cost} = AshProject.project_total_cost_all_time(project.id, scope: scope)
+    # All salaries for cost computation — use most recent salary per user (as_of today)
+    salaries = AshUserSalary.as_of!(Date.utc_today(), scope: scope)
+    salary_by_user = Map.new(salaries, &{&1.user_id, &1.hourly_rate})
+
+    users = build_users_with_cost(project, sessions, salary_by_user, %{}, scope)
+
+    total_cost =
+      users
+      |> Enum.map(& &1.cost)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
 
     socket
     |> assign(:users, users)
@@ -130,45 +146,116 @@ defmodule FirmowidWeb.Management.Views.Project do
     |> assign(:cost_delta, nil)
   end
 
-  defp assign_project_data(%{assigns: %{selected_date: date, project: project}} = socket)
-       when is_nil(project.archived_at) do
+  # ── Active project: current month + previous month delta ──────────────
+
+  defp assign_project_data(%{assigns: %{selected_date: date, project: project}} = socket) do
     scope = socket.assigns.ash_scope
     previous_month = date |> Date.shift(month: -1) |> Date.beginning_of_month()
 
-    {:ok, current_month_total_time_worked} =
-      AshSession.total_time_worked(
-        %{month: date.month, year: date.year, project_id: project.id},
+    # Current month sessions
+    current_sessions =
+      Session
+      |> Ash.Query.for_read(:list, %{project_id: project.id, month: date.month, year: date.year}, scope: scope)
+      |> Ash.Query.load(:duration)
+      |> Ash.read!(scope: scope)
+
+    current_total_time = current_sessions |> Enum.map(& &1.duration) |> Enum.sum()
+
+    # Previous month sessions (for delta)
+    prev_sessions =
+      Session
+      |> Ash.Query.for_read(
+        :list,
+        %{project_id: project.id, month: previous_month.month, year: previous_month.year},
         scope: scope
       )
+      |> Ash.Query.load(:duration)
+      |> Ash.read!(scope: scope)
 
-    {:ok, previous_month_total_time_worked} =
-      AshSession.total_time_worked(
-        %{month: previous_month.month, year: previous_month.year, project_id: project.id},
-        scope: scope
-      )
+    prev_total_time = prev_sessions |> Enum.map(& &1.duration) |> Enum.sum()
 
-    {:ok, current_month_total_cost} =
-      AshProject.project_total_cost(project.id, date, scope: scope)
+    # Salaries as of each month
+    current_salaries = AshUserSalary.as_of!(date, scope: scope)
+    current_salary_by_user = Map.new(current_salaries, &{&1.user_id, &1.hourly_rate})
 
-    {:ok, previous_month_total_cost} =
-      AshProject.project_total_cost(project.id, previous_month, scope: scope)
+    prev_salaries = AshUserSalary.as_of!(previous_month, scope: scope)
+    prev_salary_by_user = Map.new(prev_salaries, &{&1.user_id, &1.hourly_rate})
+
+    # Hours records for current month (for lockdown display)
+    hours_records =
+      Timetracker.list_hours_records!(%{month: date.month, year: date.year}, scope: scope)
+
+    hr_by_user = Map.new(hours_records, &{&1.user_id, &1})
+
+    # Current month cost
+    current_total_cost = compute_total_cost(current_sessions, current_salary_by_user)
+    prev_total_cost = compute_total_cost(prev_sessions, prev_salary_by_user)
 
     previous_month_label =
       Cldr.Date.to_string!(previous_month, Firmowid.Cldr, format: "MMMM", locale: "pl")
 
-    {:ok, users} =
-      AshProject.project_month_users_with_cost(project.id, date, scope: scope)
+    users = build_users_with_cost(project, current_sessions, current_salary_by_user, hr_by_user, scope)
 
     socket
     |> assign(:users, users)
-    |> assign(:total_time_worked, current_month_total_time_worked)
-    |> assign(:total_cost, current_month_total_cost)
+    |> assign(:total_time_worked, current_total_time)
+    |> assign(:total_cost, current_total_cost)
     |> assign(:previous_month_label, previous_month_label)
-    |> assign(
-      :hours_delta,
-      percent_delta(current_month_total_time_worked, previous_month_total_time_worked)
-    )
-    |> assign(:cost_delta, percent_delta(current_month_total_cost, previous_month_total_cost))
+    |> assign(:hours_delta, percent_delta(current_total_time, prev_total_time))
+    |> assign(:cost_delta, percent_delta(current_total_cost, prev_total_cost))
+  end
+
+  # TODO: add unit tests for cost calculation helpers (build_users_with_cost/5,
+  # compute_total_cost/2) — they encode business rules (ceiling hours, salary
+  # lookups, removed-from-project flag) that were previously covered by the
+  # now-deleted ProjectCosts generic action tests.
+
+  # Build per-user cost maps. `project.users` gives current members; sessions
+  # may include users no longer in the project.
+  defp build_users_with_cost(project, sessions, salary_by_user, hr_by_user, scope) do
+    time_by_user =
+      sessions
+      |> Enum.group_by(& &1.user_id)
+      |> Map.new(fn {uid, ss} -> {uid, ss |> Enum.map(& &1.duration) |> Enum.sum()} end)
+
+    member_ids = MapSet.new(project.users, & &1.id)
+    session_user_ids = MapSet.new(Map.keys(time_by_user))
+    all_user_ids = MapSet.union(member_ids, session_user_ids)
+
+    users_by_id = Map.new(project.users, &{&1.id, &1})
+
+    all_user_ids
+    |> Enum.map(fn uid ->
+      user = resolve_user(uid, users_by_id, scope)
+
+      user = Ash.load!(user, [avatar_blob: [:url]], tenant: user.organization_id, authorize?: false, actor: %{})
+      time = Map.get(time_by_user, uid, 0)
+      rate = Map.get(salary_by_user, uid)
+      hours = Timetracker.seconds_to_hours(time)
+      cost = rate && Decimal.mult(rate, Decimal.new(hours))
+
+      user
+      |> Map.put(:time_worked, time)
+      |> Map.put(:hourly_rate, rate)
+      |> Map.put(:cost, cost)
+      |> Map.put(:hours_record, Map.get(hr_by_user, uid))
+      |> Map.put(:removed_from_project, not MapSet.member?(member_ids, uid))
+      |> Map.put(:expanded, false)
+    end)
+    |> Enum.sort_by(&{&1.removed_from_project, &1.name, &1.email})
+  end
+
+  defp compute_total_cost(sessions, salary_by_user) do
+    sessions
+    |> Enum.group_by(& &1.user_id)
+    |> Enum.map(fn {uid, ss} ->
+      time = ss |> Enum.map(& &1.duration) |> Enum.sum()
+      rate = Map.get(salary_by_user, uid)
+      hours = Timetracker.seconds_to_hours(time)
+      rate && Decimal.mult(rate, Decimal.new(hours))
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
   end
 
   defp percent_delta(_current, prev) when prev in [nil, 0], do: nil
@@ -234,21 +321,33 @@ defmodule FirmowidWeb.Management.Views.Project do
     end
   end
 
-  defp load_project!(id, scope) do
-    project = AshProject.get!(id, scope: scope)
-    users = Enum.map(project.users, &resolve_avatar(&1, scope))
-    %{project | users: users}
+  # Group raw sessions (with :duration loaded) by title, summing durations.
+  defp group_sessions_by_title(sessions) do
+    sessions
+    |> Enum.group_by(& &1.title)
+    |> Enum.map(fn {title, ss} ->
+      %{title: title, duration: ss |> Enum.map(& &1.duration) |> Enum.sum()}
+    end)
+    |> Enum.sort_by(& &1.duration, :desc)
   end
 
-  defp resolve_avatar(user, scope) do
-    alias Firmowid.Ash.Blobs
+  # Resolve a user by ID: prefer already-loaded project members, fall back to Core.
+  defp resolve_user(uid, users_by_id, scope) do
+    case Map.get(users_by_id, uid) do
+      nil -> Core.get_user!(uid, scope: scope)
+      u -> u
+    end
+  end
 
-    avatar_url =
-      case Map.get(user, :avatar_blob_id) do
-        nil -> nil
-        blob_id -> Blobs.get_blob!(blob_id, scope: scope, load: [:url]).url
-      end
-
-    Map.put(user, :avatar_url, avatar_url)
+  # Distinct months (as naive_datetime) that have sessions, newest first.
+  defp months_with_sessions(filters, scope) do
+    Session
+    |> Ash.Query.for_read(:list, filters, scope: scope)
+    |> Ash.Query.distinct(:month_start)
+    |> Ash.Query.distinct_sort(month_start: :desc)
+    |> Ash.Query.sort(month_start: :desc)
+    |> Ash.Query.load(:month_start)
+    |> Ash.read!(scope: scope)
+    |> Enum.map(& &1.month_start)
   end
 end

@@ -2,28 +2,30 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
   @moduledoc false
   use FirmowidWeb, :controller
 
-  alias Ash.Error.Forbidden
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary
+  alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
-  alias Firmowid.Ash.Timetracker.Session, as: AshSession
+  alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Infrastructure.Controllers.FileDownload
 
   action_fallback FirmowidWeb.Infrastructure.Controllers.Fallback
 
   def salaries(conn, %{"month" => month_str, "year" => year_str}) do
-    scope = conn.assigns.ash_scope
-    month = String.to_integer(month_str)
-    year = String.to_integer(year_str)
+    case conn.assigns.current_user.role do
+      :admin ->
+        scope = conn.assigns.ash_scope
+        month = String.to_integer(month_str)
+        year = String.to_integer(year_str)
+        csv_content = build_salaries_csv(month, year, scope)
 
-    case AshUserSalary.salaries_csv(month, year, scope: scope) do
-      {:ok, csv_content} ->
         send_download(conn, {:binary, csv_content},
           filename: "wyplaty_#{month}_#{year}.csv",
           content_type: "text/csv",
           disposition: :attachment
         )
 
-      {:error, %Forbidden{}} ->
+      _ ->
         {:error, :unauthorized}
     end
   end
@@ -33,24 +35,77 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
     month = String.to_integer(month_str)
     year = String.to_integer(year_str)
 
-    case AshProject.get(project_id, scope: scope, not_found_error?: false) do
-      {:ok, nil} ->
-        {:error, :not_found}
+    with :admin <- conn.assigns.current_user.role,
+         {:ok, project} when not is_nil(project) <-
+           AshProject.get(project_id, scope: scope, not_found_error?: false) do
+      csv_content = build_project_tasks_csv(project_id, month, year, scope)
+      project_name = FileDownload.clean_filename(project.name)
 
-      {:ok, project} ->
-        case AshSession.project_tasks_csv(project_id, month, year, scope: scope) do
-          {:ok, csv_content} ->
-            project_name = FileDownload.clean_filename(project.name)
-
-            send_download(conn, {:binary, csv_content},
-              filename: "#{project_name}_#{month}_#{year}.csv",
-              content_type: "text/csv",
-              disposition: :attachment
-            )
-
-          {:error, %Forbidden{}} ->
-            {:error, :unauthorized}
-        end
+      send_download(conn, {:binary, csv_content},
+        filename: "#{project_name}_#{month}_#{year}.csv",
+        content_type: "text/csv",
+        disposition: :attachment
+      )
+    else
+      _ -> {:error, :unauthorized}
     end
+  end
+
+  # ── Private helpers ───────────────────────────────────────────────────
+
+  defp build_salaries_csv(month, year, scope) do
+    as_of_date = Date.new!(year, month, 1)
+
+    users = Core.list_users!(%{}, scope: scope)
+    salaries = AshUserSalary.as_of!(as_of_date, scope: scope)
+    salary_by_user = Map.new(salaries, &{&1.user_id, &1.hourly_rate})
+
+    hours_records = Timetracker.list_hours_records!(%{month: month, year: year}, scope: scope)
+    hr_by_user = Map.new(hours_records, &{&1.user_id, &1})
+
+    users
+    |> Enum.filter(&Map.has_key?(hr_by_user, &1.id))
+    |> Enum.sort_by(& &1.name)
+    |> Enum.map(fn user ->
+      hr = hr_by_user[user.id]
+      rate = salary_by_user[user.id]
+
+      %{
+        name: user.name,
+        hourly_rate: rate,
+        number_of_hours: hr.number_of_hours,
+        salary: salary_amount(rate, hr.number_of_hours)
+      }
+    end)
+    |> CSV.encode(
+      headers: [
+        name: "Imie i Nazwisko",
+        hourly_rate: "Stawka godzinowa",
+        number_of_hours: "Liczba godzin",
+        salary: "Wynagrodzenie"
+      ]
+    )
+    |> Enum.join()
+  end
+
+  defp build_project_tasks_csv(project_id, month, year, scope) do
+    Session
+    |> Ash.Query.for_read(:list, %{project_id: project_id, month: month, year: year}, scope: scope)
+    |> Ash.Query.load(:duration)
+    |> Ash.read!(scope: scope)
+    |> Enum.group_by(& &1.title)
+    |> Enum.map(fn {title, ss} ->
+      total = ss |> Enum.map(& &1.duration) |> Enum.sum()
+      %{title: title, duration: Timetracker.seconds_to_hours(total)}
+    end)
+    |> Enum.sort_by(& &1.duration, :desc)
+    |> CSV.encode(headers: [title: "Zadanie", duration: "Czas trwania (godziny)"])
+    |> Enum.join()
+  end
+
+  defp salary_amount(nil, _hours), do: Decimal.new(0)
+
+  defp salary_amount(rate, hours) do
+    Decimal.mult(rate, Decimal.new(hours))
   end
 end

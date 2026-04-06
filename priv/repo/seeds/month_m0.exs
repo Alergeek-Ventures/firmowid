@@ -174,7 +174,7 @@ defmodule Firmowid.Seeds.MonthM0 do
 
     EntityTag.set_entity_category!(
       %{entity_type: :transaction, resource_id: txn.id, kind: :internal},
-      scope: seed_scope()
+      scope: seed_scope(bytecraft)
     )
   end
 
@@ -241,7 +241,7 @@ defmodule Firmowid.Seeds.MonthM0 do
         resource_id: invoice.id,
         tag_definition_ids: [projects.ghostpet.tag_definition_id]
       },
-      scope: seed_scope()
+      scope: seed_scope(bytecraft)
     )
   end
 
@@ -487,12 +487,12 @@ defmodule Firmowid.Seeds.MonthM0 do
     end
   end
 
-  # Builds a scope for Ash calls in seeds. Uses Repo.get_org_id() (already set
-  # by Bytecraft.seed!) as tenant and a synthetic admin actor to bypass policies.
-  defp seed_scope do
+  # Builds a scope for Ash calls in seeds. Uses bytecraft.id as tenant and a
+  # synthetic admin actor to bypass policies.
+  defp seed_scope(bytecraft) do
     %Firmowid.Ash.Scope{
-      current_user: %{id: "00000000-0000-0000-0000-000000000000", role: :admin},
-      current_tenant: Repo.get_org_id()
+      actor: %{id: "00000000-0000-0000-0000-000000000000", role: :admin},
+      tenant: bytecraft.id
     }
   end
 end

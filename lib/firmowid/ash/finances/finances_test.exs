@@ -10,7 +10,8 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
 
   setup do
-    user = user_fixture()
+    # Admin user required — transactions are not accessible to :employee role
+    user = admin_fixture()
     org_id = user.organization_id
     seed_opts = [tenant: org_id]
 
@@ -169,12 +170,6 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
         },
         tenant: org2_id
       )
-
-      # TODO: Remove put_org_id once Repo.prepare_query no longer double-filters
-      # Ash attribute multitenancy already adds WHERE organization_id = ?, but
-      # prepare_query adds another one from get_org_id(). When they disagree
-      # (user_fixture sets put_org_id to the latest org), queries return empty.
-      Firmowid.Repo.put_org_id(ctx.org_id)
 
       org1_ids =
         %{}

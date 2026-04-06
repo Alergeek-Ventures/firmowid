@@ -34,7 +34,7 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
   def parse_datetime!(iso8601) do
     case DateTime.from_iso8601(iso8601) do
       {:ok, dt, _} -> dt
-      {:error, _} -> raise "Invalid ISO8601 datetime: #{iso8601}"
+      {:error, _} -> raise ArgumentError, "Invalid ISO8601 datetime: #{iso8601}"
     end
   end
 
@@ -81,7 +81,7 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
           {:commit, cert, expire: expire}
 
         {:error, reason} ->
-          raise "Failed to fetch KSeF public key (#{usage}): #{inspect(reason)}"
+          raise RuntimeError, "Failed to fetch KSeF public key (#{usage}): #{inspect(reason)}"
       end
     end)
   end
@@ -194,7 +194,7 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
     |> case do
       {:ok, %{body: %{"status" => %{"code" => 200}}}} -> :success
       {:ok, %{body: body}} -> {:error, body}
-      rest -> rest
+      {:error, _reason} = error -> error
     end
   end
 

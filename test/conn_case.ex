@@ -17,6 +17,8 @@ defmodule FirmowidWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
+  alias AshAuthentication.Plug.Helpers, as: AuthHelpers
+
   using do
     quote do
       use FirmowidWeb, :verified_routes
@@ -55,16 +57,14 @@ defmodule FirmowidWeb.ConnCase do
   It returns an updated `conn`.
   """
   def log_in_user(conn, user) do
-    token = Firmowid.Accounts.generate_user_session_token(user)
-
     conn
     |> Phoenix.ConnTest.init_test_session(%{})
-    |> Plug.Conn.put_session(:user_token, token)
+    |> AuthHelpers.store_in_session(user)
   end
 
   def log_in_api_user(conn, user) do
-    token = Firmowid.Accounts.generate_user_session_token(user)
+    {:ok, token, _claims} = AshAuthentication.Jwt.token_for_user(user)
 
-    Plug.Conn.put_req_header(conn, "authorization", "Bearer #{Base.url_encode64(token)}")
+    Plug.Conn.put_req_header(conn, "authorization", "Bearer #{token}")
   end
 end
