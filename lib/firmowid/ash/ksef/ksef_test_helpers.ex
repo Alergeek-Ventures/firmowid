@@ -264,7 +264,12 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     )
   end
 
-  @doc "Builds an invoice fixture with a non-EU buyer (US) using NrID identification."
+  @doc """
+  Builds an invoice fixture with a non-EU buyer (US) using NrID identification.
+
+  Uses `oo` (reverse charge) VAT rate to test the renderer's handling of the
+  combination, even though the correct business rate for US buyers is `np I`.
+  """
   @spec build_other_id_invoice(keyword()) :: map()
   def build_other_id_invoice(opts \\ []) do
     invoice =
