@@ -1,5 +1,17 @@
 defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
-  @moduledoc false
+  @moduledoc """
+  Renders sales invoices into KSeF FA(3) XML format.
+
+  Handles the full rendering pipeline:
+  - Loading required calculations and aggregates (net/vat/gross values)
+  - XML escaping of all string values
+  - VAT summary calculation (grouped by rate and type)
+  - Correction invoice (KOR) chain resolution and before/after delta computation
+  - Validation of correction constraints (buyer tax ID, seller data immutability)
+
+  The XML template is compiled from `fa3_invoice_template.xml.eex` at compile time
+  using `EEx.function_from_file/5`.
+  """
   alias Firmowid.Ash.Ksef.VatRate
 
   require EEx
@@ -10,7 +22,11 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
 
   @doc """
   Renders the FA(3) XML template with the given sales invoice.
+
+  Loads required calculations/aggregates, handles correction chain annotation,
+  validates correction constraints, and delegates to the compiled EEx template.
   """
+  @spec render_fa3(map()) :: iodata()
   def render_fa3(%{__struct__: _, ksef_invoice_kind: _} = invoice) do
     tenant = invoice.organization_id
 
@@ -118,6 +134,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
     end)
   end
 
+  @doc "Formats a decimal value to 2 decimal places for KSeF XML monetary fields."
+  @spec format_decimal(Decimal.t() | number() | nil) :: String.t()
   def format_decimal(nil), do: "0.00"
   def format_decimal(%Decimal{} = value), do: value |> Decimal.round(2) |> Decimal.to_string()
 
@@ -127,6 +145,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   Formats quantity values with up to 6 decimal places (TIlosci type in XSD).
   Uses normal notation (not scientific) as required by XSD.
   """
+  @spec format_quantity(Decimal.t() | number()) :: String.t()
   def format_quantity(%Decimal{} = value) do
     # Use :normal to avoid scientific notation (e.g., "1E+2" -> "100")
     Decimal.to_string(value, :normal)
@@ -140,6 +159,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   Since vat_rate is now stored as a KSeF-compliant string code
   (e.g., "23", "8", "0 KR", "oo", "np I"), this is a simple passthrough.
   """
+  @spec format_vat_rate(String.t()) :: String.t()
   def format_vat_rate(rate) when is_binary(rate), do: rate
 
   # NOTE: P_14_XW (VAT in PLN for foreign currency invoices) is NOT implemented.
@@ -222,15 +242,47 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   end
 
   @doc """
+  Renders the buyer identification XML fragment for FA(3) Podmiot2/Podmiot2K.
+
+  Returns an iodata XML fragment containing the appropriate identification element
+  (`NIP`, `KodUE`+`NrVatUE`, `KodKraju`+`NrID`, or `BrakID`) based on the
+  invoice's `buyer_id_type`.
+
+  Used by the EEx template to avoid duplicating the buyer ID switch logic
+  between Podmiot2 (current buyer) and Podmiot2K (previous buyer in corrections).
+  """
+  @spec buyer_id_xml(map()) :: String.t()
+  def buyer_id_xml(%{buyer_id_type: :nip} = inv), do: "<NIP>#{inv.buyer_id}</NIP>"
+
+  def buyer_id_xml(%{buyer_id_type: :eu_vat} = inv),
+    do: "<KodUE>#{inv.buyer_country}</KodUE><NrVatUE>#{inv.buyer_id}</NrVatUE>"
+
+  def buyer_id_xml(%{buyer_id_type: :other_id} = inv),
+    do: country_xml(inv.buyer_country) <> "<NrID>#{inv.buyer_id}</NrID>"
+
+  def buyer_id_xml(%{buyer_id_type: :optional_id, buyer_id: id} = inv) when is_binary(id) and id != "",
+    do: country_xml(inv.buyer_country) <> "<NrID>#{id}</NrID>"
+
+  def buyer_id_xml(%{buyer_id_type: :optional_id}), do: "<BrakID>1</BrakID>"
+
+  def buyer_id_xml(%{buyer_id_type: :no_id}), do: "<BrakID>1</BrakID>"
+
+  defp country_xml(nil), do: ""
+  defp country_xml(country), do: "<KodKraju>#{country}</KodKraju>"
+
+  @doc """
   Calculates the gross value delta for correction invoices (KOR).
   Returns after_gross - before_gross, using the reference invoice as the "before" state.
   """
+  @spec gross_value_delta(map(), map()) :: Decimal.t()
   def gross_value_delta(invoice, reference_invoice) do
     after_gross = invoice.gross_value
     before_gross = reference_invoice.gross_value
     Decimal.sub(after_gross, before_gross)
   end
 
+  @doc "Converts a payment method atom to the FA(3) numeric code string."
+  @spec payment_method_code(atom()) :: String.t()
   def payment_method_code(:cash), do: "1"
   def payment_method_code(:card), do: "2"
   def payment_method_code(:voucher), do: "3"
@@ -241,6 +293,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   # Fallback for nil or unexpected values - default to transfer
   def payment_method_code(_), do: "6"
 
+  @doc "Returns the seller name for KSeF invoice. Prefers `seller_display_name`, falls back to name+surname."
+  @spec seller_name(map()) :: String.t()
   def seller_name(%{seller_display_name: name}) when is_binary(name) and name != "", do: name
 
   def seller_name(%{seller_name: name, seller_surname: surname}) when is_binary(name) and is_binary(surname) do
@@ -259,6 +313,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
 
   Returns nil if no name is available (optional in simplified invoices per art. 106e ust. 5 pkt 3).
   """
+  @spec buyer_name(map()) :: String.t() | nil
   def buyer_name(%{buyer_display_name: name}) when is_binary(name) and name != "", do: name
 
   def buyer_name(%{buyer_type: :company, buyer_full_name: name}) when is_binary(name) and name != "", do: name
@@ -278,6 +333,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   Per KSeF FA(3) schema: buyer NIP changes require zeroing out the invoice,
   not a simple correction.
   """
+  @spec validate_correction_buyer_tax_id!(map()) :: map()
   def validate_correction_buyer_tax_id!(%{ksef_invoice_kind: :kor, corrected_invoice: corrected} = invoice) do
     if invoice.buyer_id != corrected.buyer_id or
          invoice.buyer_id_type != corrected.buyer_id_type do
@@ -290,6 +346,11 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
 
   def validate_correction_buyer_tax_id!(invoice), do: invoice
 
+  @doc """
+  Validates that seller data hasn't changed in correction invoice.
+  Raises if seller NIP, name, or address differ between correction and corrected invoice.
+  """
+  @spec validate_correction_seller_data!(map()) :: map()
   def validate_correction_seller_data!(%{ksef_invoice_kind: :kor, corrected_invoice: corrected} = invoice) do
     seller_data_changed? =
       invoice.seller_nip != corrected.seller_nip or
@@ -313,6 +374,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   Checks if buyer data changed between the current invoice and the reference invoice.
   For correction invoices, the reference is the previous correction (or original if first correction).
   """
+  @spec buyer_data_changed?(map(), map()) :: boolean()
   def buyer_data_changed?(invoice, reference_invoice) do
     invoice.buyer_type != reference_invoice.buyer_type or
       invoice.buyer_full_name != reference_invoice.buyer_full_name or
@@ -323,6 +385,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
       invoice.buyer_country != reference_invoice.buyer_country
   end
 
+  @doc "Fallback: returns `false` when no reference invoice is provided (non-correction context)."
+  @spec buyer_data_changed?(map()) :: boolean()
   def buyer_data_changed?(_), do: false
 
   @doc """
@@ -332,6 +396,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   Compares: name, quantity, unit, unit_price, vat_rate
   Ignores: id (always differs between invoices), timestamps
   """
+  @spec invoice_items_changed?(map(), map()) :: boolean()
   def invoice_items_changed?(%{sales_invoice_items: current_items}, %{sales_invoice_items: reference_items}) do
     # If counts differ, items definitely changed
     if length(current_items) == length(reference_items) do

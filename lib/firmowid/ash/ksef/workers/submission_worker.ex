@@ -248,10 +248,16 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     attempt >= max_attempts
   end
 
+  @doc """
+  Custom backoff that normalizes the attempt number for exponential backoff.
+
+  Oban's default backoff uses `job.attempt` directly, but since we have
+  `max_attempts: 3`, the first retry would already have `attempt: 2`.
+  This corrects the attempt number so exponential backoff starts from 1.
+  """
   @impl Oban.Worker
   def backoff(%Oban.Job{} = job) do
-    # Use exponential backoff starting from attempt 1
     corrected_attempt = 3 - (job.max_attempts - job.attempt)
-    Worker.backoff(%{job | attempt: corrected_attempt})
+    Oban.Worker.backoff(%{job | attempt: corrected_attempt})
   end
 end

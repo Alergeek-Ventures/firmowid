@@ -18,7 +18,6 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Ksef.Services.InvoiceRenderer
-  alias Firmowid.Repo
 
   setup do
     Firmowid.AccountsFixtures.user_fixture()
@@ -538,7 +537,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
         |> then(fn kor ->
           # Delete existing items and seed new ones
           for item <- kor.sales_invoice_items do
-            Repo.delete!(item)
+            Ash.destroy!(item, authorize?: false, actor: %{}, tenant: kor.organization_id)
           end
 
           Ash.Seed.seed!(SalesInvoiceItem, %{

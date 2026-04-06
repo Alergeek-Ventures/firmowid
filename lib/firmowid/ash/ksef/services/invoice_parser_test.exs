@@ -1,4 +1,11 @@
 defmodule Firmowid.Ash.Ksef.Services.InvoiceParserTest do
+  @moduledoc """
+  Tests for FA(3) XML invoice parser.
+
+  Validates parsing of namespaced XML, various payment methods, optional
+  fields, sale_date fallback to issue_date, and correction invoice metadata.
+  """
+
   use ExUnit.Case, async: true
 
   alias Firmowid.Ash.Ksef.Services.InvoiceParser

@@ -1,10 +1,19 @@
 defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
-  @moduledoc false
+  @moduledoc """
+  Oban worker for fetching cost invoices from KSeF.
+
+  Manages the two-phase fetch lifecycle:
+  1. `initiate_export` — requests an encrypted export of cost invoices from KSeF
+  2. `poll_export` — polls for export readiness, downloads encrypted package parts,
+     decrypts, unzips, parses FA(3) XML, and creates `CostInvoice` records
+
+  Handles paginated exports (truncated results schedule follow-up fetches),
+  duplicate detection via existing KSeF numbers, and blob storage for raw XML.
+  """
   use Oban.Worker,
     queue: :ksef_fetch,
     max_attempts: 3
 
-  import Ecto.Query
   import Firmowid.Ash.Ksef.Services.ApiClient, only: [parse_datetime!: 1]
 
   alias Firmowid.Ash.Blobs
@@ -17,6 +26,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
   alias Firmowid.Ash.Ksef.Workers.SessionWorker
   alias Firmowid.Repo
 
+  require Ash.Query
   require Logger
 
   @impl Oban.Worker
@@ -62,10 +72,14 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     end
   end
 
+  @doc """
+  Custom backoff that normalizes the attempt number for exponential backoff.
+
+  See `SubmissionWorker.backoff/1` for rationale.
+  """
   @impl Oban.Worker
   def backoff(%Oban.Job{} = job) do
     corrected_attempt = 3 - (job.max_attempts - job.attempt)
-
     Oban.Worker.backoff(%{job | attempt: corrected_attempt})
   end
 
@@ -200,10 +214,10 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
 
     existing_invoices =
       CostInvoice
-      |> where([c], c.ksef_number in ^ksef_numbers)
-      |> select([c], c.ksef_number)
-      |> Repo.all()
-      |> MapSet.new()
+      |> Ash.Query.filter(ksef_number in ^ksef_numbers)
+      |> Ash.Query.select([:ksef_number])
+      |> Ash.read!(authorize?: false, actor: %{}, tenant: Repo.get_org_id())
+      |> MapSet.new(& &1.ksef_number)
 
     invoice_entries =
       Enum.map(invoice_files, fn {filename, xml} ->

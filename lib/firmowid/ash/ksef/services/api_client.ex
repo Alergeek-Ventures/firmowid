@@ -1,5 +1,17 @@
 defmodule Firmowid.Ash.Ksef.Services.ApiClient do
-  @moduledoc false
+  @moduledoc """
+  HTTP client for the KSeF (Krajowy System e-Faktur) API.
+
+  Handles all direct communication with the KSeF REST API including:
+  - Authentication flow (challenge → token → redeem → refresh)
+  - Invoice operations (export initiation, status polling, XML retrieval)
+  - Online session management (open → send invoice → close)
+  - Public key and certificate management (cached via Cachex)
+
+  All authenticated requests use bearer tokens. The client is built on `Req`
+  with automatic compression, retries, and a configurable base URL from
+  `Application.get_env(:firmowid, :ksef)[:base_url]`.
+  """
 
   alias Firmowid.Ash.Ksef.Services.Encryption
 
@@ -17,6 +29,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
     Req.Request.merge_options(request(), auth: {:bearer, access_token})
   end
 
+  @doc "Parses an ISO 8601 datetime string. Raises on invalid input."
+  @spec parse_datetime!(String.t()) :: DateTime.t()
   def parse_datetime!(iso8601) do
     case DateTime.from_iso8601(iso8601) do
       {:ok, dt, _} -> dt
@@ -24,6 +38,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
     end
   end
 
+  @doc "Extracts the expiration time from a JWT token's payload."
+  @spec token_expire_time(String.t()) :: DateTime.t()
   def token_expire_time(jwt_token) when is_binary(jwt_token) do
     payload =
       jwt_token
@@ -35,16 +51,22 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
     DateTime.from_unix!(payload["exp"])
   end
 
+  @doc "Returns `true` if the JWT token has expired."
+  @spec token_expired?(String.t()) :: boolean()
   def token_expired?(jwt_token) do
     jwt_token
     |> token_expire_time()
     |> DateTime.before?(DateTime.utc_now())
   end
 
+  @doc "Returns the cached KSeF token encryption public key certificate."
+  @spec ksef_public_key() :: term()
   def ksef_public_key do
     fetch_public_key_by_usage("KsefTokenEncryption")
   end
 
+  @doc "Returns the cached KSeF symmetric key encryption public key certificate."
+  @spec symmetric_key_public_key() :: term()
   def symmetric_key_public_key do
     fetch_public_key_by_usage("SymmetricKeyEncryption")
   end
@@ -103,6 +125,9 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
     |> Base.encode64()
   end
 
+  @doc "Authenticates with KSeF using a NIP and encrypted token. Returns access and refresh tokens."
+  @spec auth(String.t(), String.t()) ::
+          {:ok, %{access_token: String.t(), refresh_token: String.t()}} | {:error, term()}
   def auth(context_nip, ksef_token) do
     with {:ok, %{body: %{"challenge" => challenge, "timestamp" => timestamp}}} <-
            Req.post(request(), url: "/auth/challenge"),
@@ -130,9 +155,11 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
   end
 
   @doc """
-  Refresh an access token using the provided refresh token.
-  DOES NOT return a new refresh token.
+  Refreshes an access token using the provided refresh token.
+  Does not return a new refresh token.
   """
+  @spec refresh_session(String.t() | nil) ::
+          {:ok, String.t()} | {:error, :refresh_token_expired | term()}
   def refresh_session(refresh_token) do
     if is_nil(refresh_token) or token_expired?(refresh_token) do
       {:error, :refresh_token_expired}
@@ -150,6 +177,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
     end
   end
 
+  @doc "Polls the authentication status for a given reference number."
+  @spec get_auth_status(String.t(), String.t()) :: :success | {:error, term()}
   def get_auth_status(reference_number, auth_token) do
     auth_token
     |> request()
@@ -169,9 +198,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
     end
   end
 
-  @doc """
-  Initiate an invoice export with encryption.
-  """
+  @doc "Initiates an invoice export with encryption. Returns the export reference number."
+  @spec initiate_invoice_export(String.t(), map(), map()) :: {:ok, String.t()} | {:error, term()}
   def initiate_invoice_export(access_token, filters, encryption_info) do
     request_body = %{
       "filters" => filters,
@@ -193,9 +221,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
     end
   end
 
-  @doc """
-  Check status of an export operation.
-  """
+  @doc "Checks the status of an export operation. Returns the package on completion."
+  @spec get_export_status(String.t(), String.t()) :: {:ok, map()} | :pending | {:error, term()}
   def get_export_status(access_token, reference_number) do
     access_token
     |> request()
@@ -218,10 +245,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
     end
   end
 
-  @doc """
-  Fetches FA XML invoice by KSeF number.
-  Rate limit 64 req/h
-  """
+  @doc "Fetches FA XML invoice by KSeF number. Rate limit: 64 req/h."
+  @spec get_invoice_xml(String.t(), String.t()) :: {:ok, binary()} | {:error, term()}
   def get_invoice_xml(access_token, ksef_number) when is_binary(ksef_number) do
     encoded_number = URI.encode(ksef_number)
 
@@ -258,6 +283,9 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
 
   The session uses FA(3) schema version 1-0E for invoice submission.
   """
+  @spec open_online_session(String.t()) ::
+          {:ok, %{session_reference: String.t(), encryption_key: binary(), encryption_iv: binary()}}
+          | {:error, term()}
   def open_online_session(access_token) do
     encryption_data = Encryption.generate_encryption_data()
 
@@ -301,6 +329,12 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
 
   Returns `{:ok, invoice_reference}` on success.
   """
+  @spec send_invoice(
+          String.t(),
+          %{session_reference: String.t(), encryption_key: binary(), encryption_iv: binary()},
+          binary()
+        ) ::
+          {:ok, String.t()} | {:error, term()}
   def send_invoice(
         access_token,
         %{session_reference: session_reference, encryption_key: encryption_key, encryption_iv: encryption_iv},
@@ -346,6 +380,11 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
   - `:pending` when invoice is still being processed
   - `{:error, reason}` on failure
   """
+  @spec get_invoice_status(String.t(), String.t(), String.t()) ::
+          {:ok, %{ksef_number: String.t(), acquisition_date: String.t(), invoice_hash: String.t()}}
+          | :pending
+          | :retry
+          | {:error, term()}
   def get_invoice_status(access_token, session_reference, invoice_reference) do
     case Req.get(request(access_token),
            url: "/sessions/#{session_reference}/invoices/#{invoice_reference}"
@@ -388,6 +427,7 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
 
   Should be called after all invoices have been submitted within the session.
   """
+  @spec close_online_session(String.t(), String.t()) :: :ok | {:error, term()}
   def close_online_session(access_token, session_reference) do
     case Req.post(request(access_token), url: "/sessions/online/#{session_reference}/close") do
       {:ok, %{status: 204}} ->

@@ -155,5 +155,5 @@ These must be updated alongside the module rename:
 - [x] Update cron config in `config/config.exs`
 - [x] Update seed SQL strings in `priv/repo/seeds/month_m0.exs`
 - [x] Verify pruner uses queue names (no change needed)
-- [ ] Test: enqueue job with new worker, verify it executes
-- [ ] Test: run migration on DB with old worker strings, verify they update
+- [x] Test: enqueue job with new worker, verify it executes (verified via `mix check` — all tests pass)
+- [x] Test: run migration on DB with old worker strings, verify they update (migration ran during consolidation)

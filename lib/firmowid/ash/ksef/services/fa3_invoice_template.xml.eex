@@ -19,30 +19,7 @@
 	</Podmiot1>
 	<Podmiot2>
 		<DaneIdentyfikacyjne>
-			<%= case @invoice.buyer_id_type do %>
-				<% :nip -> %>
-					<NIP><%= @invoice.buyer_id %></NIP>
-				<% :eu_vat -> %>
-					<KodUE><%= @invoice.buyer_country %></KodUE>
-					<NrVatUE><%= @invoice.buyer_id %></NrVatUE>
-				<% :other_id -> %>
-					<%= if @invoice.buyer_country do %>
-						<KodKraju><%= @invoice.buyer_country %></KodKraju>
-					<% end %>
-					<NrID><%= @invoice.buyer_id %></NrID>
-				<% :optional_id -> %>
-					<%!-- US: tax ID is optional - use NrID if provided, BrakID otherwise --%>
-					<%= if @invoice.buyer_id && @invoice.buyer_id != "" do %>
-						<%= if @invoice.buyer_country do %>
-							<KodKraju><%= @invoice.buyer_country %></KodKraju>
-						<% end %>
-						<NrID><%= @invoice.buyer_id %></NrID>
-					<% else %>
-						<BrakID>1</BrakID>
-					<% end %>
-				<% :no_id -> %>
-					<BrakID>1</BrakID>
-			<% end %>
+			<%= T.buyer_id_xml(@invoice) %>
 			<%= if name = T.buyer_name(@invoice) do %>
 				<Nazwa><%= name %></Nazwa>
 			<% end %>
@@ -165,29 +142,7 @@
 			<%= if T.buyer_data_changed?(@invoice, @reference_invoice) do %>
 				<Podmiot2K>
 					<DaneIdentyfikacyjne>
-						<%= case @reference_invoice.buyer_id_type do %>
-							<% :nip -> %>
-								<NIP><%= @reference_invoice.buyer_id %></NIP>
-							<% :eu_vat -> %>
-								<KodUE><%= @reference_invoice.buyer_country %></KodUE>
-								<NrVatUE><%= @reference_invoice.buyer_id %></NrVatUE>
-							<% :other_id -> %>
-								<%= if @reference_invoice.buyer_country do %>
-									<KodKraju><%= @reference_invoice.buyer_country %></KodKraju>
-								<% end %>
-								<NrID><%= @reference_invoice.buyer_id %></NrID>
-							<% :optional_id -> %>
-								<%= if @reference_invoice.buyer_id && @reference_invoice.buyer_id != "" do %>
-									<%= if @reference_invoice.buyer_country do %>
-										<KodKraju><%= @reference_invoice.buyer_country %></KodKraju>
-									<% end %>
-									<NrID><%= @reference_invoice.buyer_id %></NrID>
-								<% else %>
-									<BrakID>1</BrakID>
-								<% end %>
-							<% :no_id -> %>
-								<BrakID>1</BrakID>
-						<% end %>
+						<%= T.buyer_id_xml(@reference_invoice) %>
 						<%= if name = T.buyer_name(@reference_invoice) do %>
 							<Nazwa><%= name %></Nazwa>
 						<% end %>

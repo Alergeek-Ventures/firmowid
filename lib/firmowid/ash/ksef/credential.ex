@@ -20,6 +20,13 @@ defmodule Firmowid.Ash.Ksef.Credential do
     migrate? false
   end
 
+  code_interface do
+    define :create
+    define :destroy
+    define :get_by_organization, args: [:organization_id], action: :by_organization
+    define :all_organization_ids, action: :all_organization_ids
+  end
+
   actions do
     defaults [:read, :destroy]
 
@@ -31,6 +38,12 @@ defmodule Firmowid.Ash.Ksef.Credential do
       argument :organization_id, :uuid, allow_nil?: false
       get? true
       filter expr(organization_id == ^arg(:organization_id))
+    end
+
+    read :all_organization_ids do
+      prepare fn query, _context ->
+        Ash.Query.select(query, [:organization_id])
+      end
     end
   end
 

@@ -33,4 +33,7 @@ defmodule Firmowid.Ash.Ksef.EncryptedBinaryType do
   def dump_to_native(value, _constraints) do
     Ecto.Type.dump(@ecto_type, value)
   end
+
+  @impl Ash.Type
+  def describe(_constraints), do: "an encrypted binary (Cloak AES-256-GCM)"
 end

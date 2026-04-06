@@ -1,17 +1,30 @@
 defmodule Firmowid.Ash.Ksef.Services.Encryption do
-  @moduledoc false
+  @moduledoc """
+  Cryptographic operations for KSeF invoice exchange.
+
+  Provides AES-256-CBC symmetric encryption (with PKCS#7 padding) for invoice
+  XML payloads, and RSA public-key encryption for symmetric key transport.
+
+  KSeF requires:
+  - Invoice XML encrypted with AES-256-CBC before submission
+  - The AES key itself encrypted with KSeF's RSA public key
+  - Separate RSA keys for token encryption vs symmetric key encryption
+  """
   alias Firmowid.Ash.Ksef.Services.ApiClient
 
   @doc """
   Encrypts data with AES-256-CBC and PKCS#7 padding.
   Used for encrypting invoice XML before sending to KSeF.
   """
+  @spec encrypt_aes256_cbc(binary(), binary(), binary()) :: binary()
   def encrypt_aes256_cbc(data, key, iv) do
     data
     |> pad_pkcs7()
     |> then(&:crypto.crypto_one_time(:aes_256_cbc, key, iv, &1, encrypt: true))
   end
 
+  @doc "Decrypts AES-256-CBC encrypted data and removes PKCS#7 padding."
+  @spec decrypt_aes256_cbc(binary(), binary(), binary()) :: binary()
   def decrypt_aes256_cbc(encrypted_data, key, iv) do
     :aes_256_cbc
     |> :crypto.crypto_one_time(key, iv, encrypted_data, encrypt: false)
@@ -43,6 +56,8 @@ defmodule Firmowid.Ash.Ksef.Services.Encryption do
     data <> :binary.copy(<<pad_len>>, pad_len)
   end
 
+  @doc "Generates a random AES-256 key (32 bytes) and IV (16 bytes) for symmetric encryption."
+  @spec generate_encryption_data() :: %{key: binary(), iv: binary()}
   def generate_encryption_data do
     key = :crypto.strong_rand_bytes(32)
     iv = :crypto.strong_rand_bytes(16)
@@ -50,10 +65,14 @@ defmodule Firmowid.Ash.Ksef.Services.Encryption do
     %{key: key, iv: iv}
   end
 
+  @doc "Encrypts data with KSeF's token encryption RSA public key (OAEP SHA-256)."
+  @spec encrypt_with_rsa_public_key(binary()) :: binary()
   def encrypt_with_rsa_public_key(data) do
     encrypt_with_certificate(data, ApiClient.ksef_public_key())
   end
 
+  @doc "Encrypts data with KSeF's symmetric key encryption RSA public key (OAEP SHA-256)."
+  @spec encrypt_symmetric_key(binary()) :: binary()
   def encrypt_symmetric_key(data) do
     encrypt_with_certificate(data, ApiClient.symmetric_key_public_key())
   end

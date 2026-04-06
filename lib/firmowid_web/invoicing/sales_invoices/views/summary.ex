@@ -12,6 +12,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef
+  alias Firmowid.Ash.Ksef.SubmissionInfo
 
   require Logger
 
@@ -37,7 +38,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
     submission_info = Ksef.get_submission_info(invoice)
 
     # Subscribe to KSeF status updates if submission is in progress
-    if submission_info.status == :submitting do
+    if SubmissionInfo.submitting?(submission_info) do
       Ksef.subscribe_ksef_status(current_user.organization_id)
     end
 
@@ -102,8 +103,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
           </.link>
           <.button
             :if={
-              @ksef_connected? and @invoice.invoice_number and
-                @submission_info.status in [:not_submitted, :failed]
+              (@ksef_connected? and @invoice.invoice_number and
+                 SubmissionInfo.not_submitted?(@submission_info)) or
+                SubmissionInfo.failed?(@submission_info)
             }
             color="light_grey"
             size="small"
@@ -129,7 +131,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
           </.link>
         </div>
       </div>
-      <%= if @submission_info.status == :failed do %>
+      <%= if SubmissionInfo.failed?(@submission_info) do %>
         <div class="bg-redBg text-redText flex flex-col items-center justify-center gap-4 rounded-md p-8 text-center">
           <Lucideicons.triangle_alert class="size-10 text-red-600" />
           <h2 class="text-xl">Wysyłka do KSeF nie powiodła się.</h2>

@@ -164,7 +164,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 :if={@show_timeline_button}
                 class={[
                   "ml-auto",
-                  @submission_info.status == :failed &&
+                  SubmissionInfo.failed?(@submission_info) &&
                     "hover:bg-redText hover:ring-redText hover:text-redBg text-redText"
                 ]}
                 color="light_grey"
@@ -175,7 +175,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
               >
                 Historia faktury
                 <span
-                  :if={@submission_info.status == :failed}
+                  :if={SubmissionInfo.failed?(@submission_info)}
                   class="bg-redText border-redBg text-redBg absolute -top-2.5 -right-2.5 flex size-5 items-center justify-center rounded-full border-2 p-1 text-xs font-bold"
                 >
                   !
@@ -185,13 +185,14 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
               <.button
                 :if={
                   @ksef_connected? and @invoice.invoice_number and
-                    @submission_info.status in [:not_submitted, :submitting]
+                    (SubmissionInfo.not_submitted?(@submission_info) or
+                       SubmissionInfo.submitting?(@submission_info))
                 }
                 id="send-to-ksef-button"
-                disabled={@submission_info.status == :submitting}
+                disabled={SubmissionInfo.submitting?(@submission_info)}
                 phx-hook="Tippy"
                 data-tippy-content={
-                  if @submission_info.status == :submitting,
+                  if SubmissionInfo.submitting?(@submission_info),
                     do: "Wysyłanie...",
                     else: "Wyślij do KSeF"
                 }
@@ -199,12 +200,12 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 color="turquoise"
                 size="small"
                 new={true}
-                class={[@submission_info.status == :submitting && "cursor-wait"]}
+                class={[SubmissionInfo.submitting?(@submission_info) && "cursor-wait"]}
                 phx-click="send_to_ksef"
                 phx-target={@myself}
               >
                 Wyślij
-                <%= if @submission_info.status == :submitting do %>
+                <%= if SubmissionInfo.submitting?(@submission_info) do %>
                   <.icon name="hero-arrow-path" class="size-5 animate-spin" />
                 <% else %>
                   <Lucideicons.send class="size-5" />
@@ -426,6 +427,5 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
 
   defp ksef_error_message(_), do: "Nie udało się wysłać faktury do KSeF"
 
-  defp show_timeline_button?(%SubmissionInfo{status: :not_submitted}), do: false
-  defp show_timeline_button?(_submission_info), do: true
+  defp show_timeline_button?(submission_info), do: SubmissionInfo.attempted?(submission_info)
 end

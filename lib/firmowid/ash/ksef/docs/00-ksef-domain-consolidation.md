@@ -21,27 +21,32 @@ integration handles:
 lib/firmowid/ash/ksef/
 ├── docs/
 │   ├── 00-ksef-domain-consolidation.md    # this file
-│   └── 01-oban-worker-rename-migration.md # worker rename migration guide
+│   ├── 01-oban-worker-rename-migration.md # worker rename migration guide
+│   └── PROGRESS.md                        # migration progress log
 ├── ksef.ex                    # Ash domain + orchestration functions
 ├── credential.ex              # Ash resource (ksef_credentials table)
+├── encrypted_binary_type.ex   # Ash.Type wrapper for Cloak.Ecto.Binary
 ├── ksef_aware_pruner.ex       # Custom Oban pruner (preserves submission jobs)
+├── ksef_test_helpers.ex       # Test fixtures (seeded invoices, XSD validation)
 ├── submission_info.ex         # Plain struct — submission status
+├── submission_info_test.exs    # Unit tests for SubmissionInfo helpers
 ├── vat_rate.ex                # KSeF FA(3) VAT rate codes (shared with Invoicing)
+├── vat_rate_test.exs          # Unit tests for VAT rate logic
 ├── workers/
 │   ├── session_worker.ex      # Oban — auth + session renewal
 │   ├── submission_worker.ex   # Oban — send invoice + verify
 │   ├── fetch_worker.ex        # Oban — export + download + parse
 │   └── fetch_dispatcher.ex    # Oban — cron: schedule fetch for all orgs
-├── services/
-│   ├── api_client.ex          # HTTP client for KSeF API
-│   ├── encryption.ex          # AES-256-CBC + RSA for KSeF
-│   ├── invoice_parser.ex      # FA(3) XML → CostInvoice attrs
-│   ├── invoice_renderer.ex    # SalesInvoice → FA(3) XML
-│   ├── invoice_renderer_test.exs
-│   ├── invoice_parser_test.exs
-│   ├── invoice_correction_test.exs
-│   └── fa3_invoice_template.xml.eex
-└── ksef_test_helpers.ex       # Test fixtures (seeded invoices, XSD validation)
+└── services/
+    ├── api_client.ex          # HTTP client for KSeF API
+    ├── encryption.ex          # AES-256-CBC + RSA for KSeF
+    ├── invoice_parser.ex      # FA(3) XML → CostInvoice attrs
+    ├── invoice_parser_test.exs
+    ├── invoice_renderer.ex    # SalesInvoice → FA(3) XML
+    ├── invoice_renderer_test.exs
+    ├── invoice_correction_test.exs
+    ├── encryption_test.exs    # Unit tests for AES-256-CBC + PKCS#7
+    └── fa3_invoice_template.xml.eex
 ```
 
 ## Module rename mapping
@@ -80,8 +85,9 @@ schema, converted to Ash resource:
 - **No multitenancy** — queried by explicit `organization_id` filter, not
   tenant. Global table (one credential per org, looked up during auth).
 - Added to `@unscoped_tables` in Repo.
-- `Firmowid.Encrypted.Binary` works as an Ash attribute type — Ash uses Ecto
-  under the hood via AshPostgres.
+- Uses `Firmowid.Ash.Ksef.EncryptedBinaryType` — a thin Ash.Type wrapper around
+  `Firmowid.Encrypted.Binary` (Cloak Ecto type). Required because Ash validates
+  attribute types and Cloak.Ecto.Binary is not a native Ash type.
 - Actions: `:read`, `:create`, `:destroy`, `:by_organization` (read with filter)
 - `migrate?: false` — table already exists.
 
@@ -101,9 +107,11 @@ See `01-oban-worker-rename-migration.md` for the full migration guide.
 
 | Exception | File | Reason |
 |-----------|------|--------|
-| Oban job queries | `ksef.ex`, `session_worker.ex` | `oban_jobs: true` — Oban has no Ash interface |
+| Oban job queries | `ksef.ex`, `session_worker.ex` | Oban has no Ash interface; queries against `oban_jobs` table |
 | `Repo.get_org_id()` / `Repo.put_org_id()` | All workers | Tenant context for worker processes |
 | Oban job cancel query | `ksef.ex` | `Firmowid.Oban.cancel_all_jobs` with Ecto query |
+| `from(ci in CostInvoice, ...)` | `fetch_dispatcher.ex` | Aggregate query for `max(ksef_permanent_storage_date)` — cross-domain, not worth adding CostInvoice aggregate for single KSeF use |
+| `Repo.transaction` / `Repo.transact` | `submission_worker.ex`, `ksef.ex` | Atomic grouping of lock+schedule and cancel+destroy |
 
 ## Cross-domain dependencies
 

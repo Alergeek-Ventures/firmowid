@@ -58,4 +58,29 @@ defmodule Firmowid.Ash.Ksef.SubmissionInfo do
     :session_reference,
     :error
   ]
+
+  @doc "Returns `true` if the invoice was successfully submitted to KSeF."
+  @spec submitted?(t()) :: boolean()
+  def submitted?(%__MODULE__{status: :submitted}), do: true
+  def submitted?(%__MODULE__{}), do: false
+
+  @doc "Returns `true` if the submission is currently in progress."
+  @spec submitting?(t()) :: boolean()
+  def submitting?(%__MODULE__{status: :submitting}), do: true
+  def submitting?(%__MODULE__{}), do: false
+
+  @doc "Returns `true` if the submission failed."
+  @spec failed?(t()) :: boolean()
+  def failed?(%__MODULE__{status: :failed}), do: true
+  def failed?(%__MODULE__{}), do: false
+
+  @doc "Returns `true` if the invoice has never been submitted."
+  @spec not_submitted?(t()) :: boolean()
+  def not_submitted?(%__MODULE__{status: :not_submitted}), do: true
+  def not_submitted?(%__MODULE__{}), do: false
+
+  @doc "Returns `true` if submission has been attempted (submitted, submitting, or failed)."
+  @spec attempted?(t()) :: boolean()
+  def attempted?(%__MODULE__{status: :not_submitted}), do: false
+  def attempted?(%__MODULE__{}), do: true
 end

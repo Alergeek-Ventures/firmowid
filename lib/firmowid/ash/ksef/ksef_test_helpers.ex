@@ -28,11 +28,15 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     {"StrukturyDanych_v10-0E.xsd", "#{@base_url}/StrukturyDanych_v10-0E.xsd"}
   ]
 
+  @doc "Generates a unique invoice number with an optional prefix."
+  @spec unique_invoice_number(String.t()) :: String.t()
   def unique_invoice_number(prefix \\ "") do
     id = System.unique_integer([:positive])
     "#{prefix}#{id}/01/2026"
   end
 
+  @doc "Downloads and caches external XSD schemas from gov.pl for FA(3) validation."
+  @spec ensure_schemas_cached!() :: :ok
   # sobelow_skip ["Traversal.FileModule"]
   # path is constructed from @schema_cache_dir (priv/ksef_schemas), not user input.
   # This caches external XSD schemas for FA(3) validation in tests.
@@ -54,6 +58,8 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     :ok
   end
 
+  @doc "Compiles the FA(3) XSD schema with erlsom. Returns the compiled model."
+  @spec compile_ksef_schema!() :: term()
   def compile_ksef_schema! do
     schema_path = Path.join(@schema_cache_dir, "schemat.xsd")
     charlist_path = String.to_charlist(schema_path)
@@ -66,6 +72,8 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     end
   end
 
+  @doc "Validates XML against a compiled XSD model. Returns `:ok` or `{:error, reason}`."
+  @spec validate_xml(binary(), term()) :: :ok | {:error, term()}
   def validate_xml(xml, model) when is_binary(xml) do
     case :erlsom.scan(xml, model) do
       {:ok, _record, _rest} -> :ok
@@ -73,6 +81,8 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     end
   end
 
+  @doc "Builds a domestic VAT invoice fixture with configurable rate, items, and buyer."
+  @spec build_domestic_invoice(keyword()) :: map()
   def build_domestic_invoice(opts \\ []) do
     vat_rate = Keyword.get(opts, :vat_rate, "23")
     item_count = Keyword.get(opts, :items, 1)
@@ -109,6 +119,8 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     )
   end
 
+  @doc "Builds a multi-rate invoice fixture with items at 23%, 8%, and 5% VAT."
+  @spec build_multi_rate_invoice(keyword()) :: map()
   def build_multi_rate_invoice(opts \\ []) do
     invoice =
       Ash.Seed.seed!(SalesInvoice, %{
@@ -166,6 +178,8 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     )
   end
 
+  @doc "Builds a reverse charge (oo) invoice fixture for EU B2B."
+  @spec build_reverse_charge_invoice(keyword()) :: map()
   def build_reverse_charge_invoice(opts \\ []) do
     invoice =
       Ash.Seed.seed!(SalesInvoice, %{
@@ -207,6 +221,8 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     )
   end
 
+  @doc "Builds an EU VAT invoice fixture with French buyer and standard 23% rate."
+  @spec build_eu_vat_invoice(keyword()) :: map()
   def build_eu_vat_invoice(opts \\ []) do
     invoice =
       Ash.Seed.seed!(SalesInvoice, %{
@@ -248,6 +264,8 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     )
   end
 
+  @doc "Builds an invoice fixture with a non-EU buyer (US) using NrID identification."
+  @spec build_other_id_invoice(keyword()) :: map()
   def build_other_id_invoice(opts \\ []) do
     invoice =
       Ash.Seed.seed!(SalesInvoice, %{
@@ -289,6 +307,8 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     )
   end
 
+  @doc "Builds an invoice fixture with an individual buyer (no tax ID, BrakID=1)."
+  @spec build_no_id_invoice(keyword()) :: map()
   def build_no_id_invoice(opts \\ []) do
     invoice =
       Ash.Seed.seed!(SalesInvoice, %{
@@ -331,6 +351,8 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     )
   end
 
+  @doc "Simulates KSeF submission by locking the invoice and optionally assigning a KSeF number."
+  @spec simulate_ksef_submission(map(), keyword()) :: map()
   def simulate_ksef_submission(invoice, opts \\ []) do
     ksef_number =
       if Keyword.get(opts, :with_ksef_number, false) do
@@ -343,6 +365,8 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     Ash.Seed.update!(invoice, %{locked_at: DateTime.utc_now(), ksef_number: ksef_number})
   end
 
+  @doc "Builds a correction (KOR) invoice fixture referencing the given original invoice."
+  @spec build_correction_invoice(map(), keyword()) :: map()
   def build_correction_invoice(original, opts \\ []) do
     correction =
       Ash.Seed.seed!(SalesInvoice, %{

@@ -49,7 +49,7 @@ defmodule Firmowid.Ash.Ksef do
 
   Status can be `:submitted` (successfully received KSeF number) or `:failed` (submission failed).
   """
-  @spec broadcast_ksef_status(pos_integer(), pos_integer(), :submitted | :failed) ::
+  @spec broadcast_ksef_status(Ash.UUID.t(), Ash.UUID.t(), :submitted | :failed) ::
           :ok | {:error, term()}
   def broadcast_ksef_status(organization_id, invoice_id, status) do
     Phoenix.PubSub.broadcast(
@@ -84,13 +84,11 @@ defmodule Firmowid.Ash.Ksef do
          :ok <- validate_nip_match(token_nip, organization.nip),
          :ok <- validate_no_existing_credential() do
       {:ok, credential} =
-        Credential
-        |> Ash.Changeset.for_create(:create, %{
+        Credential.create(%{
           organization_id: org_id,
           auth_type: :token,
           credentials: ksef_token
         })
-        |> Ash.create()
 
       %{"organization_id" => org_id}
       |> SessionWorker.new()
@@ -136,9 +134,9 @@ defmodule Firmowid.Ash.Ksef do
   def get_credential do
     org_id = Repo.get_org_id()
 
-    case Ash.read(Ash.Query.for_read(Credential, :by_organization, %{organization_id: org_id})) do
-      {:ok, [credential]} -> credential
-      {:ok, []} -> nil
+    case Credential.get_by_organization(org_id) do
+      {:ok, credential} -> credential
+      {:error, %Ash.Error.Query.NotFound{}} -> nil
       _ -> nil
     end
   end
@@ -168,7 +166,7 @@ defmodule Firmowid.Ash.Ksef do
         )
       )
 
-      Ash.destroy!(credential)
+      Credential.destroy!(credential)
     end)
   end
 
@@ -218,6 +216,14 @@ defmodule Firmowid.Ash.Ksef do
   - `:invoice_already_locked` - Invoice has already been submitted or manually locked
   - `{:invalid_for_ksef, errors}` - Invoice is missing required fields for KSeF submission
   """
+  @spec submit_sales_invoice(Ash.UUID.t()) ::
+          {:ok, Oban.Job.t()}
+          | {:error,
+             :not_authenticated
+             | :invoice_not_found
+             | :invoice_is_draft
+             | :invoice_already_locked
+             | {:invalid_for_ksef, list()}}
   def submit_sales_invoice(sales_invoice_id) do
     with :ok <- validate_ksef_authenticated(),
          {:ok, invoice} <- validate_invoice_for_submission(sales_invoice_id) do
@@ -291,7 +297,12 @@ defmodule Firmowid.Ash.Ksef do
     if is_nil(invoice.ksef_number) do
       raise ArgumentError, "Cannot generate KSeF URL for non-KSeF-imported cost invoice"
     else
-      invoice = Repo.preload(invoice, :blob)
+      invoice =
+        Ash.load!(invoice, [:blob],
+          authorize?: false,
+          actor: %{},
+          tenant: invoice.organization_id
+        )
 
       checksum =
         invoice.blob.blob_checksum

@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.TransactionGroup
   alias Firmowid.Ash.Ksef
+  alias Firmowid.Ash.Ksef.SubmissionInfo
 
   attr :invoicing_entries, :list, required: true
   attr :has_connected_bank_account, :boolean, default: false
@@ -650,10 +651,12 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   defp status_for_entry(%CostInvoice{}), do: "matched"
 
   defp status_for_entry(%SalesInvoice{} = invoice) do
-    case Ksef.get_submission_info(invoice).status do
-      :submitting -> "ksef_sending"
-      :failed -> "ksef_failed"
-      _ -> if invoice.transactions == [], do: "unmatched", else: "matched"
+    submission_info = Ksef.get_submission_info(invoice)
+
+    cond do
+      SubmissionInfo.submitting?(submission_info) -> "ksef_sending"
+      SubmissionInfo.failed?(submission_info) -> "ksef_failed"
+      true -> if invoice.transactions == [], do: "unmatched", else: "matched"
     end
   end
 
