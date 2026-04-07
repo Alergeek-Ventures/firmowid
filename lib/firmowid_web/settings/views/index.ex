@@ -53,7 +53,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
       if current_user.role == :admin do
         scope = socket.assigns.ash_scope
 
-        case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?]) do
+        case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?, :requisition]) do
           {:ok, accounts} -> accounts
           {:error, _} -> []
         end
@@ -290,7 +290,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         LiveToast.send_toast(:info, "Konto bankowe zostało usunięte.")
 
         bank_accounts =
-          case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?]) do
+          case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?, :requisition]) do
             {:ok, accounts} -> accounts
             {:error, _} -> []
           end
@@ -314,7 +314,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     case Finances.update_bank_account(bank_account, %{is_default: true}, scope: scope) do
       {:ok, _} ->
         bank_accounts =
-          case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?]) do
+          case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?, :requisition]) do
             {:ok, accounts} -> accounts
             {:error, _} -> []
           end
@@ -405,7 +405,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         LiveToast.send_toast(:info, "Nazwa konta została zmieniona.")
 
         accounts =
-          case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?]) do
+          case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?, :requisition]) do
             {:ok, accs} -> accs
             {:error, _} -> []
           end
@@ -474,7 +474,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         LiveToast.send_toast(:info, "Konto zostało dodane.")
 
         accounts =
-          case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?]) do
+          case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?, :requisition]) do
             {:ok, accs} -> accs
             {:error, _} -> []
           end
@@ -717,7 +717,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     scope = socket.assigns.ash_scope
 
     bank_accounts =
-      case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?]) do
+      case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?, :requisition]) do
         {:ok, accounts} -> accounts
         {:error, _} -> []
       end

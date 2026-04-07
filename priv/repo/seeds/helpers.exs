@@ -19,6 +19,23 @@ defmodule Firmowid.Seeds.Helpers do
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem, as: AshSalesInvoiceItem
   alias Firmowid.Repo
 
+  # A minimal valid single-page blank PDF used as placeholder content for seed blobs.
+  # Each xref entry must be exactly 20 bytes (including the trailing \r\n).
+  @minimal_pdf IO.iodata_to_binary([
+                 "%PDF-1.4\n",
+                 "1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n",
+                 "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n",
+                 "3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<<>>>>endobj\n",
+                 "xref\n0 4\n",
+                 "0000000000 65535 f \r\n",
+                 "0000000009 00000 n \r\n",
+                 "0000000058 00000 n \r\n",
+                 "0000000115 00000 n \r\n",
+                 "trailer<</Size 4/Root 1 0 R>>\n",
+                 "startxref\n206\n",
+                 "%%EOF\n"
+               ])
+
   # ---------------------------------------------------------------------------
   # Date helpers — all seed dates are relative to today so the dashboard
   # always shows data in the current month and the two preceding months.
@@ -195,9 +212,22 @@ defmodule Firmowid.Seeds.Helpers do
   end
 
   def seed_blob!(attrs, org_id) do
-    Ash.Seed.upsert!(AshBlob, Map.put(attrs, :organization_id, org_id),
-      identity: :unique_checksum_per_org,
-      tenant: org_id
-    )
+    blob =
+      Ash.Seed.upsert!(AshBlob, Map.put(attrs, :organization_id, org_id),
+        identity: :unique_checksum_per_org,
+        tenant: org_id
+      )
+
+    upload_seed_blob_to_s3!(blob.blob_path)
+
+    blob
+  end
+
+  defp upload_seed_blob_to_s3!(blob_path) do
+    bucket = Application.get_env(:firmowid, :uploads_bucket)
+
+    bucket
+    |> ExAws.S3.put_object(blob_path, @minimal_pdf, content_type: "application/pdf")
+    |> ExAws.request!()
   end
 end

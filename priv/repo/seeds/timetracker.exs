@@ -13,7 +13,6 @@ defmodule Firmowid.Seeds.Timetracker do
 
   import Ecto.Query
 
-  alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Payroll.UserSalary
   alias Firmowid.Ash.Timetracker.HoursRecord
   alias Firmowid.Ash.Timetracker.Session
@@ -383,18 +382,18 @@ defmodule Firmowid.Seeds.Timetracker do
     case existing do
       nil ->
         # Create a placeholder blob for the signed hours PDF
-        blob_id = Ecto.UUID.generate()
         checksum = Base.encode16(:crypto.hash(:sha256, "hours-#{user_id}-#{month}-#{year}"), case: :lower)
+        blob_id = Ecto.UUID.generate()
 
         blob =
-          Repo.get(Blobs.Blob, blob_id) ||
-            Repo.insert!(%Blobs.Blob{
-              id: blob_id,
+          Helpers.seed_blob!(
+            %{
               blob_path: "hours-records/#{blob_id}/ewidencja-#{month}-#{year}.pdf",
               blob_checksum: checksum,
-              original_filename: "ewidencja-#{month}-#{year}.pdf",
-              organization_id: org_id
-            })
+              original_filename: "ewidencja-#{month}-#{year}.pdf"
+            },
+            org_id
+          )
 
         now = DateTime.truncate(DateTime.utc_now(), :second)
 

@@ -63,3 +63,8 @@ priv/static/.DS_Store
 # dialyxir cache
 /priv/plts/*
 
+
+# E2E test artifacts
+/e2e/screenshots/
+/playwright-*.log
+

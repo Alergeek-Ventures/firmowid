@@ -91,7 +91,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
   end
 
   # Loads the invoice with all calculations required for display.
-  # Uses the anonymous scope for authorization.
+  # Authorization was already performed by share token lookup, so we skip it
+  # here to ensure aggregates and calculations are fully accessible.
   defp prepare_invoice_with_org_context(invoice, scope) do
     alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
 
@@ -108,10 +109,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
           :gross_value,
           :buyer_display_name_label,
           sales_invoice_items: [:net_value, :vat_value, :gross_value],
-          corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+          corrections: [
+            :net_value,
+            :vat_value,
+            :gross_value,
+            sales_invoice_items: [:net_value, :vat_value, :gross_value]
+          ],
           reference_invoice: []
         ],
-        scope: scope
+        scope: scope,
+        authorize?: false
       )
       |> then(fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)
 

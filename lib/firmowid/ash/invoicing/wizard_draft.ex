@@ -17,9 +17,10 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
 
   ## ETS scoping
 
-  `private? true` means the table is NOT publicly accessible outside the OTP
-  app, but ALL processes within the app share it. Multitenancy via
-  `organization_id` provides org isolation, same as Postgres resources.
+  `private? false` means the ETS table is managed by `Ash.DataLayer.Ets.TableManager`,
+  a GenServer that owns a named, public table shared across all processes. Drafts
+  persist for the BEAM VM lifecycle. Multitenancy via `organization_id` provides
+  org isolation, same as Postgres resources.
   """
   use Ash.Resource,
     domain: Firmowid.Ash.Invoicing,
@@ -31,7 +32,7 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
   alias Firmowid.Ash.Invoicing.WizardDraft
 
   ets do
-    private? true
+    private? false
   end
 
   code_interface do

@@ -48,6 +48,8 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
               />
             <% else %>
               <div class="flex flex-row gap-4">
+                <%!-- TODO: BUG-9 - Add confirmation modal before delete, matching the pattern
+                     in sales_invoice_details.ex (which uses a modal with explicit confirm/cancel). --%>
                 <.button
                   :if={@invoice.is_deletable}
                   phx-click="delete"

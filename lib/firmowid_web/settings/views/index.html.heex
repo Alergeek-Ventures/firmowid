@@ -410,7 +410,7 @@
             </p>
             <div class="flex gap-4">
               <.button
-                phx-click="disconnect_ksef"
+                phx-click={JS.push("disconnect_ksef") |> hide_modal("confirm_disconnect_ksef")}
                 variant="outline"
                 color="red"
                 phx-disable-with="Rozłączanie..."

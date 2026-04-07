@@ -76,10 +76,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         end
 
       _no_draft ->
-        # WizardDraft uses process-local ETS — draft must be created and read
-        # within the same LiveView process. During static render (disconnected),
-        # push_patch becomes an HTTP redirect to a new process that can't find
-        # the draft. We defer creation until the WebSocket connects.
+        # Defer draft creation until the WebSocket connects — during static
+        # render (disconnected), push_patch becomes an HTTP redirect which
+        # would create a draft in the dead-render process and then immediately
+        # redirect away from it.
         if connected?(socket) do
           create_and_redirect(socket, scope)
         else

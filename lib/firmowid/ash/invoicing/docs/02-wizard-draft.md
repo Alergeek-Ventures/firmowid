@@ -50,7 +50,7 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
     authorizers: [Ash.Policy.Authorizer]
 
   ets do
-    private? true
+    private? false
   end
 
   attributes do
@@ -186,9 +186,10 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
 end
 
 # NOTE on ETS scoping:
-# ETS `private? true` means the table is NOT publicly accessible outside the OTP app,
-# but ALL processes within the app share it. It is NOT per-LiveView-process scoped.
-# Multitenancy via organization_id is required for org isolation, same as Postgres resources.
+# ETS `private? false` means the table is managed by `Ash.DataLayer.Ets.TableManager`,
+# a GenServer that owns a named, public table shared across all processes. Drafts persist
+# for the BEAM VM lifecycle. Multitenancy via organization_id is required for org isolation,
+# same as Postgres resources.
 ```
 
 ## Code interfaces on domain

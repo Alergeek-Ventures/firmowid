@@ -110,7 +110,12 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
   @spec match_sales_invoice(String.t(), Scope.t()) :: :ok
   def match_sales_invoice(sales_invoice_id, scope) do
     org_id = scope.tenant
-    sales_invoice = Invoicing.get_sales_invoice!(sales_invoice_id, scope: scope)
+
+    sales_invoice =
+      Invoicing.get_sales_invoice!(sales_invoice_id,
+        load: [:buyer_display_name_label],
+        scope: scope
+      )
 
     Logger.info("Matching sales invoice #{sales_invoice.id} for organization #{org_id}")
 

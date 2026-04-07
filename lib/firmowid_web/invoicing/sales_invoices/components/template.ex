@@ -793,6 +793,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
   attr :logo_url, :string, default: nil
   attr :footer_logo_data_uri, :string, default: nil
   attr :reference_invoice, :map, default: nil
+  attr :currency_rate, :map, default: nil
 
   def sales_invoice(assigns) do
     if assigns.sales_invoice.ksef_invoice_kind == :kor and is_nil(assigns.reference_invoice) do

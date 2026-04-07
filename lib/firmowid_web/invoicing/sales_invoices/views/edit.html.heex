@@ -51,7 +51,7 @@
               {@form[:buyer_display_name].value}
             </p>
 
-            <%= case @form.source.buyer_id_type do %>
+            <%= case @invoice.buyer_id_type do %>
               <% :no_id -> %>
                 <p class="text-grey-500 text-sm/snug">PESEL</p>
                 <p class="text-grey-700 text-sm/snug">

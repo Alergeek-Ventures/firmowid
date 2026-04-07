@@ -15,6 +15,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
     :vat_value,
     :gross_value,
     :is_deletable,
+    :buyer_display_name_label,
     :transactions,
     sales_invoice_items: @item_calcs,
     corrections: [sales_invoice_items: @item_calcs],
