@@ -1,4 +1,7 @@
 defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
+  # TODO: This component is ~95% identical to CostInvoices.Components.Assistant.
+  # Parameterize into a single component that takes the assistant module and
+  # navigation path as assigns.
   @moduledoc false
   use FirmowidWeb, :live_component
 
@@ -73,11 +76,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
       |> assign(:zero_state, true)
       |> assign(
         :current_user,
-        Ash.load!(current_user, [avatar_blob: [:url]],
-          tenant: current_user.organization_id,
-          authorize?: false,
-          actor: %{}
-        )
+        Ash.load!(current_user, [avatar_blob: [:url]], scope: scope)
       )
 
     {:ok, socket}
@@ -96,7 +95,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
   end
 
   def handle_event("accept", _params, socket) do
-    # TODO: replace authorize?: false + actor: %{} with system actor once available
     SalesInvoiceAssistant.accept_linking(socket.assigns.conversation_id)
 
     socket =

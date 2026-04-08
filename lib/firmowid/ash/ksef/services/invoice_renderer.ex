@@ -13,11 +13,10 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   using `EEx.function_from_file/5`.
   """
   alias Firmowid.Ash.Ksef.VatRate
+  alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
 
   require EEx
-
-  # TODO: replace authorize?: false + actor: %{} with system actor once available
-  @bridge_opts [authorize?: false, actor: %{}]
 
   @item_calcs [:net_value, :vat_value, :gross_value]
   @invoice_aggs [:net_value, :vat_value, :gross_value]
@@ -30,8 +29,11 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   validates correction constraints, and delegates to the compiled EEx template.
   """
   @spec render_fa3(map()) :: iodata()
-  def render_fa3(%{__struct__: _, ksef_invoice_kind: _} = invoice) do
-    tenant = invoice.organization_id
+  def render_fa3(%{__struct__: _, ksef_invoice_kind: _} = invoice), do: render_fa3(invoice, [])
+
+  @spec render_fa3(map(), keyword()) :: iodata()
+  def render_fa3(%{__struct__: _, ksef_invoice_kind: _} = invoice, opts) do
+    tenant_opts = renderer_opts(invoice, opts)
 
     invoice =
       case invoice do
@@ -50,7 +52,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
                       corrections: @invoice_aggs ++ @invoice_calcs ++ [sales_invoice_items: @item_calcs]
                     ]
               ],
-            Keyword.merge(@bridge_opts, tenant: tenant, lazy?: false)
+            Keyword.put(tenant_opts, :lazy?, false)
           )
           |> annotate_correction_chain()
           |> validate_correction_buyer_tax_id!()
@@ -62,7 +64,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
           Ash.load!(
             invoice,
             @invoice_aggs ++ @invoice_calcs ++ [sales_invoice_items: @item_calcs],
-            Keyword.put(@bridge_opts, :tenant, tenant)
+            tenant_opts
           )
       end
 
@@ -75,6 +77,25 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
     ]
 
     do_render(assigns)
+  end
+
+  defp renderer_opts(invoice, opts) do
+    cond do
+      Keyword.has_key?(opts, :scope) ->
+        opts
+
+      Keyword.has_key?(opts, :actor) ->
+        opts |> Keyword.delete(:tenant) |> Keyword.put(:tenant, invoice.organization_id)
+
+      true ->
+        actor = %SystemActor{org_id: invoice.organization_id, role: :sales_invoice_processor}
+        scope = %Scope{actor: actor, tenant: invoice.organization_id}
+
+        opts
+        |> Keyword.delete(:actor)
+        |> Keyword.delete(:tenant)
+        |> Keyword.put(:scope, scope)
+    end
   end
 
   EEx.function_from_file(

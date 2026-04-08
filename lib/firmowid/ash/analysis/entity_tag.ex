@@ -284,15 +284,18 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
   end
 
   defp clear_tags_for_resource(table, resource_id, scope) do
-    __MODULE__
-    |> Ash.Query.set_context(%{data_layer: %{table: table}})
-    |> Ash.Query.filter(resource_id == ^resource_id)
-    |> Ash.read!(scope: scope)
-    |> Enum.each(fn tag ->
-      tag
-      |> Ash.Changeset.for_destroy(:destroy, %{}, scope: scope)
-      |> Ash.Changeset.set_context(%{data_layer: %{table: table}})
-      |> Ash.destroy!()
-    end)
+    query =
+      __MODULE__
+      |> Ash.Query.set_context(%{data_layer: %{table: table}})
+      |> Ash.Query.filter(resource_id == ^resource_id)
+
+    %Ash.BulkResult{} =
+      Ash.bulk_destroy(query, :destroy, %{},
+        scope: scope,
+        context: %{data_layer: %{table: table}},
+        strategy: :stream,
+        return_errors?: true,
+        stop_on_error?: true
+      )
   end
 end

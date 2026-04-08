@@ -13,9 +13,9 @@
   >
     <:col :let={organization_invite} label="Data">
       <%= if is_nil(organization_invite.consumed_at) do %>
-        {organization_invite.expires_at |> Date.to_string()}
+        {organization_invite.expires_at |> Calendar.strftime("%Y-%m-%d")}
       <% else %>
-        {organization_invite.consumed_at |> Date.to_string()}
+        {organization_invite.consumed_at |> Calendar.strftime("%Y-%m-%d")}
       <% end %>
     </:col>
     <:col :let={organization_invite} label="Kod zaproszenia">

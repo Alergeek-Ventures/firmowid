@@ -161,13 +161,13 @@ defmodule Firmowid.Ash.Invoicing.Matching.Assistant.Engine do
     msgs = Enum.to_list(stream)
 
     cond do
-      _has_error = Enum.any?(msgs, &(Map.get(&1.payload, :error) != nil)) ->
+      Enum.any?(msgs, &(Map.get(&1.payload, :error) != nil)) ->
         {:error, :api_error}
 
-      _replied_with_text = Enum.any?(msgs, &(&1.role == :assistant and &1.text != "")) ->
+      Enum.any?(msgs, &(&1.role == :assistant and &1.text != "")) ->
         {:ok, List.last(msgs)}
 
-      _halted = Enum.any?(msgs, &Map.get(&1.payload, :halt, false)) ->
+      Enum.any?(msgs, &Map.get(&1.payload, :halt, false)) ->
         {:ok, :function_halted}
 
       true ->

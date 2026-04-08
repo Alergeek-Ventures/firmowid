@@ -1,5 +1,12 @@
 defmodule FirmowidWeb.Settings.Views.Index do
-  @moduledoc false
+  @moduledoc """
+  Settings page LiveView.
+
+  TODO: This view handles ~15 distinct responsibilities (company settings,
+  user profile, email/password change, account deletion, bank accounts,
+  KSeF auth, inbound email, marketing consent, Google linking, avatars,
+  requisition PubSub). Split into focused LiveComponents per section.
+  """
   use FirmowidWeb, :live_view
 
   import FirmowidWeb.Settings.Components.EditButton
@@ -10,11 +17,13 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Argon2Provider
+  alias Firmowid.Ash.Core.UserIdentity
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.GoCardless.ApiClient
   alias Firmowid.Ash.Finances.Requisition
   alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Core.Endpoint
+  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias Phoenix.Socket.Broadcast
 
   def form_basic_info_form(organization) do
@@ -47,33 +56,26 @@ defmodule FirmowidWeb.Settings.Views.Index do
   def mount(_params, _session, socket) do
     current_user = socket.assigns.current_user
     current_org = socket.assigns.current_org
+    admin? = current_user.role == :admin
+    scope = socket.assigns.ash_scope
 
     # Use Ash native code interface for listing bank accounts
-    bank_accounts =
-      if current_user.role == :admin do
-        scope = socket.assigns.ash_scope
-
-        case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?, :requisition]) do
-          {:ok, accounts} -> accounts
-          {:error, _} -> []
-        end
-      else
-        []
-      end
+    bank_accounts = if(admin?, do: list_bank_accounts(scope), else: [])
+    pending_requisitions = if(admin?, do: list_pending_requisitions(scope), else: [])
 
     # Subscribe to requisition updates for real-time bank account sync
-    if connected?(socket) and current_user.role == :admin do
+    if connected?(socket) and admin? do
       Endpoint.subscribe("requisition:linked:#{current_org.id}")
       Endpoint.subscribe("requisition:rejected:#{current_org.id}")
-      Endpoint.subscribe("requisition:error:#{current_org.id}")
+      Endpoint.subscribe("requisition:expired:#{current_org.id}")
     end
 
     socket =
-      if current_user.role == :admin do
+      if admin? do
         socket
         |> assign(:company_form, form_basic_info_form(current_org))
         |> assign(:correspondence_form, form_correspondence_form(current_org))
-        |> assign(:ksef_credential, Ksef.get_credential(socket.assigns.ash_scope))
+        |> assign(:ksef_credential, Ksef.get_credential(scope))
         |> allow_upload(:organization_avatar,
           accept: ~w(.jpg .jpeg .png),
           max_entries: 1,
@@ -106,17 +108,24 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     # Load avatars using Ash.load!
     org_with_avatar =
-      Ash.load!(current_org, [avatar_blob: [:url]],
-        tenant: current_org.id,
-        authorize?: false,
-        actor: %{}
-      )
+      Ash.load!(current_org, [avatar_blob: [:url]], scope: scope)
+
+    google_connected? =
+      case Ash.read_one(UserIdentity,
+             filter: [user_id: current_user.id, strategy: "google"],
+             scope: scope
+           ) do
+        {:ok, nil} -> false
+        {:ok, _identity} -> true
+        {:error, _} -> false
+      end
 
     {:ok,
      socket
      |> assign(:editing_basic_info, false)
      |> assign(:editing_correspondence, false)
      |> assign(:editing_personal_info, false)
+     |> assign(:trigger_submit, false)
      |> assign(:delete_account_form, to_form(%{"current_password" => ""}, as: "user"))
      |> assign(:current_password, nil)
      |> assign(:email_form_current_password, nil)
@@ -124,7 +133,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:email_form, email_form)
      |> assign(:password_form, password_form)
      |> assign(:bank_accounts, bank_accounts)
+     |> assign(:pending_requisitions, pending_requisitions)
      |> assign(:bank_account_statuses, derive_statuses(bank_accounts))
+     |> assign(:google_connected?, google_connected?)
      |> assign(:uploaded_files, [])
      |> allow_upload(:user_avatar,
        accept: ~w(.jpg .jpeg .png),
@@ -160,18 +171,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_user = socket.assigns.current_user
 
     {:ok, updated} =
-      Core.update_user_avatar(current_user, %{avatar_blob_id: blob_id},
-        authorize?: false,
-        actor: %{}
-      )
+      Core.update_user_avatar(current_user, %{avatar_blob_id: blob_id}, scope: socket.assigns.ash_scope)
 
     # Load avatar using Ash.load!
     updated_with_avatar =
-      Ash.load!(updated, [avatar_blob: [:url]],
-        tenant: updated.organization_id,
-        authorize?: false,
-        actor: %{}
-      )
+      Ash.load!(updated, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
     LiveToast.send_toast(:info, "Zdjęcie zostało zaktualizowane.")
 
@@ -182,18 +186,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_org = socket.assigns.current_org
 
     {:ok, updated} =
-      Core.update_organization_avatar(current_org, %{avatar_blob_id: blob_id},
-        authorize?: false,
-        actor: %{}
-      )
+      Core.update_organization_avatar(current_org, %{avatar_blob_id: blob_id}, scope: socket.assigns.ash_scope)
 
     # Load avatar using Ash.load!
     updated_with_avatar =
-      Ash.load!(updated, [avatar_blob: [:url]],
-        tenant: updated.id,
-        authorize?: false,
-        actor: %{}
-      )
+      Ash.load!(updated, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
     LiveToast.send_toast(:info, "Zdjęcie zostało zaktualizowane.")
 
@@ -235,7 +232,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     # Verify password at callsite before destroying user
     if Argon2Provider.valid?(password, user.hashed_password) do
-      case Core.destroy_user(user, authorize?: false, actor: %{}) do
+      case Core.destroy_user(user, scope: socket.assigns.ash_scope) do
         :ok ->
           LiveToast.send_toast(:info, "Konto zostało usunięte.")
           {:noreply, redirect(socket, to: ~p"/")}
@@ -269,9 +266,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
           false
       end
 
-    case Core.update_profile(socket.assigns.current_user, %{marketing_consent: consent},
-           authorize?: false,
-           actor: %{}
+    case Core.update_profile(
+           socket.assigns.current_user,
+           %{marketing_consent: consent},
+           scope: socket.assigns.ash_scope
          ) do
       {:ok, user} ->
         {:noreply, assign(socket, :current_user, user)}
@@ -289,15 +287,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
       :ok ->
         LiveToast.send_toast(:info, "Konto bankowe zostało usunięte.")
 
-        bank_accounts =
-          case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?, :requisition]) do
-            {:ok, accounts} -> accounts
-            {:error, _} -> []
-          end
+        bank_accounts = list_bank_accounts(scope)
 
         {:noreply,
          socket
          |> assign(:bank_accounts, bank_accounts)
+         |> assign(:pending_requisitions, list_pending_requisitions(scope))
          |> assign(:bank_account_statuses, derive_statuses(bank_accounts))}
 
       {:error, _} ->
@@ -313,15 +308,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     case Finances.update_bank_account(bank_account, %{is_default: true}, scope: scope) do
       {:ok, _} ->
-        bank_accounts =
-          case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?, :requisition]) do
-            {:ok, accounts} -> accounts
-            {:error, _} -> []
-          end
+        bank_accounts = list_bank_accounts(scope)
 
         {:noreply,
          socket
          |> assign(:bank_accounts, bank_accounts)
+         |> assign(:pending_requisitions, list_pending_requisitions(scope))
          |> assign(:bank_account_statuses, derive_statuses(bank_accounts))}
 
       {:error, _} ->
@@ -361,11 +353,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
       {:ok, updated_org} ->
         # Load avatar using Ash.load!
         updated_with_avatar =
-          Ash.load!(updated_org, [avatar_blob: [:url]],
-            tenant: updated_org.id,
-            authorize?: false,
-            actor: %{}
-          )
+          Ash.load!(updated_org, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
         {:noreply,
          socket
@@ -404,15 +392,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
       {:ok, _} ->
         LiveToast.send_toast(:info, "Nazwa konta została zmieniona.")
 
-        accounts =
-          case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?, :requisition]) do
-            {:ok, accs} -> accs
-            {:error, _} -> []
-          end
+        accounts = list_bank_accounts(scope)
 
         {:noreply,
          socket
          |> assign(:bank_accounts, accounts)
+         |> assign(:pending_requisitions, list_pending_requisitions(scope))
          |> assign(:bank_account_statuses, derive_statuses(accounts))}
 
       {:error, _} ->
@@ -473,15 +458,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
       {:ok, _} ->
         LiveToast.send_toast(:info, "Konto zostało dodane.")
 
-        accounts =
-          case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?, :requisition]) do
-            {:ok, accs} -> accs
-            {:error, _} -> []
-          end
+        accounts = list_bank_accounts(scope)
 
         {:noreply,
          socket
          |> assign(:bank_accounts, accounts)
+         |> assign(:pending_requisitions, list_pending_requisitions(scope))
          |> assign(:bank_account_statuses, derive_statuses(accounts))}
 
       {:error, _} ->
@@ -498,15 +480,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
       raise Forbidden, message: "Tylko administrator może zmienić adres e-mail."
     end
 
-    case Core.regenerate_nickname(current_org, authorize?: false, actor: %{}) do
+    case Core.regenerate_nickname(current_org, scope: socket.assigns.ash_scope) do
       {:ok, updated_org} ->
         # Load avatar using Ash.load!
         updated_with_avatar =
-          Ash.load!(updated_org, [avatar_blob: [:url]],
-            tenant: updated_org.id,
-            authorize?: false,
-            actor: %{}
-          )
+          Ash.load!(updated_org, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
         LiveToast.send_toast(:info, "Nowy adres e-mail został wygenerowany.")
         {:noreply, assign(socket, :current_org, updated_with_avatar)}
@@ -525,18 +503,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
       raise Forbidden, message: "Tylko administrator może zarządzać listą dozwolonych adresów."
     end
 
-    case Core.add_sender_email(current_org, %{email: String.trim(email)},
-           authorize?: false,
-           actor: %{}
-         ) do
+    case Core.add_sender_email(current_org, %{email: String.trim(email)}, scope: socket.assigns.ash_scope) do
       {:ok, updated_org} ->
         # Load avatar using Ash.load!
         updated_with_avatar =
-          Ash.load!(updated_org, [avatar_blob: [:url]],
-            tenant: updated_org.id,
-            authorize?: false,
-            actor: %{}
-          )
+          Ash.load!(updated_org, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
         LiveToast.send_toast(:info, "Adres e-mail został dodany do listy dozwolonych.")
         {:noreply, assign(socket, :current_org, updated_with_avatar)}
@@ -555,18 +526,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
       raise Forbidden, message: "Tylko administrator może zarządzać listą dozwolonych adresów."
     end
 
-    case Core.remove_sender_email(current_org, %{email: email},
-           authorize?: false,
-           actor: %{}
-         ) do
+    case Core.remove_sender_email(current_org, %{email: email}, scope: socket.assigns.ash_scope) do
       {:ok, updated_org} ->
         # Load avatar using Ash.load!
         updated_with_avatar =
-          Ash.load!(updated_org, [avatar_blob: [:url]],
-            tenant: updated_org.id,
-            authorize?: false,
-            actor: %{}
-          )
+          Ash.load!(updated_org, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
         LiveToast.send_toast(:info, "Adres e-mail został usunięty z listy dozwolonych.")
         {:noreply, assign(socket, :current_org, updated_with_avatar)}
@@ -691,7 +655,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   def handle_event("unlink_google_account", _params, socket) do
     user = socket.assigns.current_user
 
-    case Core.unlink_google_account(user, authorize?: false, actor: %{}) do
+    case Core.unlink_google_account(user, scope: socket.assigns.ash_scope) do
       {:ok, updated_user} ->
         LiveToast.send_toast(:info, "Konto Google zostało odłączone.")
         {:noreply, assign(socket, :current_user, updated_user)}
@@ -717,7 +681,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
     scope = socket.assigns.ash_scope
 
     bank_accounts =
-      case Finances.list_bank_accounts(scope: scope, load: [:broken?, :has_successful_sync?, :requisition]) do
+      case Finances.list_bank_accounts(
+             scope: scope,
+             load: [:broken?, :has_successful_sync?, :latest_successful_sync_at, :requisition]
+           ) do
         {:ok, accounts} -> accounts
         {:error, _} -> []
       end
@@ -725,6 +692,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     socket =
       socket
       |> assign(:bank_accounts, bank_accounts)
+      |> assign(:pending_requisitions, list_pending_requisitions(scope))
       |> assign(:bank_account_statuses, derive_statuses(bank_accounts))
 
     # Show toast notification
@@ -750,29 +718,53 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   defp derive_statuses(bank_accounts) do
     Map.new(bank_accounts, fn account ->
-      status =
-        cond do
-          # Manual accounts (no backend link) or accounts with no successful sync yet
-          is_nil(account.gocardless_id) ->
-            :processing
+      requisition_status = account.requisition && account.requisition.status
 
-          not account.has_successful_sync? ->
-            :processing
-
-          account.requisition && account.requisition.status == :rejected ->
-            :disconnected
-
-          account.broken? ->
-            :broken
-
-          account.requisition && account.requisition.status == :pending ->
-            :processing
-
-          true ->
-            :connected
-        end
+      status = derive_bank_account_status(account, requisition_status)
 
       {account.id, status}
     end)
   end
+
+  defp derive_bank_account_status(account, _requisition_status) when is_nil(account.gocardless_id), do: :disconnected
+
+  defp derive_bank_account_status(account, requisition_status)
+       when requisition_status in [:rejected, :expired] or account.broken?, do: :broken
+
+  defp derive_bank_account_status(account, requisition_status)
+       when requisition_status == :accepted and not account.has_successful_sync?, do: :processing
+
+  defp derive_bank_account_status(_account, :pending), do: :processing
+
+  defp derive_bank_account_status(account, _requisition_status) when account.has_successful_sync?, do: :connected
+
+  defp derive_bank_account_status(_account, _requisition_status), do: :disconnected
+
+  defp list_bank_accounts(scope) do
+    case Finances.list_bank_accounts(
+           scope: scope,
+           load: [:broken?, :has_successful_sync?, :latest_successful_sync_at, :requisition]
+         ) do
+      {:ok, accounts} -> accounts
+      {:error, _} -> []
+    end
+  end
+
+  defp list_pending_requisitions(scope) do
+    case Finances.list_requisitions(scope: scope) do
+      {:ok, requisitions} -> Enum.filter(requisitions, &(&1.status == :pending))
+      {:error, _} -> []
+    end
+  end
+
+  defp format_last_sync_info(nil), do: "jeszcze nie zsynchronizowano"
+
+  defp format_last_sync_info(%DateTime{} = datetime), do: TimeFormatter.format_relative_time(datetime)
+
+  defp format_last_sync_info(_), do: "jeszcze nie zsynchronizowano"
+
+  defp status_label(:connected), do: "Połączone"
+  defp status_label(:broken), do: "Wymaga ponownego połączenia"
+  defp status_label(:disconnected), do: "Rozłączone"
+  defp status_label(:processing), do: "Połączone, oczekuje na synchronizację"
 end

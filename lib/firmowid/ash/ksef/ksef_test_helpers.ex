@@ -15,11 +15,11 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
   """
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
+  alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
 
   # erlsom is a test-only dependency, suppress undefined module warning in non-test envs
   @compile {:no_warn_undefined, [:erlsom]}
-
-  @bridge_opts [authorize?: false, actor: %{}]
 
   @schema_cache_dir Path.join([:code.priv_dir(:firmowid), "ksef_schemas"])
 
@@ -124,7 +124,7 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     Ash.load!(
       invoice,
       [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-      Keyword.put(@bridge_opts, :tenant, invoice.organization_id)
+      load_opts(invoice.organization_id)
     )
   end
 
@@ -189,7 +189,7 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     Ash.load!(
       invoice,
       [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-      Keyword.put(@bridge_opts, :tenant, invoice.organization_id)
+      load_opts(invoice.organization_id)
     )
   end
 
@@ -238,7 +238,7 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     Ash.load!(
       invoice,
       [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-      Keyword.put(@bridge_opts, :tenant, invoice.organization_id)
+      load_opts(invoice.organization_id)
     )
   end
 
@@ -287,7 +287,7 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     Ash.load!(
       invoice,
       [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-      Keyword.put(@bridge_opts, :tenant, invoice.organization_id)
+      load_opts(invoice.organization_id)
     )
   end
 
@@ -339,7 +339,7 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     Ash.load!(
       invoice,
       [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-      Keyword.put(@bridge_opts, :tenant, invoice.organization_id)
+      load_opts(invoice.organization_id)
     )
   end
 
@@ -389,7 +389,7 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     Ash.load!(
       invoice,
       [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-      Keyword.put(@bridge_opts, :tenant, invoice.organization_id)
+      load_opts(invoice.organization_id)
     )
   end
 
@@ -465,8 +465,13 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     Ash.load!(
       correction,
       [:corrected_invoice, sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-      Keyword.put(@bridge_opts, :tenant, correction.organization_id)
+      load_opts(correction.organization_id)
     )
+  end
+
+  defp load_opts(organization_id) do
+    actor = %SystemActor{org_id: organization_id, role: :sales_invoice_processor}
+    [scope: %Scope{actor: actor, tenant: organization_id}]
   end
 
   # Seeds invoice line items from a list of attribute maps.

@@ -20,12 +20,15 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
   alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Invoicing.Changes.ClearIrrelevantBuyerFields
   alias Firmowid.Ash.Invoicing.Changes.ValidateCountryCode
+  alias Firmowid.Ash.Invoicing.CountryCodes
   alias Firmowid.Ash.Invoicing.Validations.ValidateNameFields
   alias Firmowid.Ash.Invoicing.Validations.ValidateTaxId
   alias Firmowid.Ash.Resource
 
   require Ash.Query
   require Resource
+
+  @eu_countries CountryCodes.eu_countries_with_aliases()
 
   postgres do
     table "counterparties"
@@ -228,6 +231,8 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
   end
 
   calculations do
+    # TODO: Rename to :display_name_label for consistency with
+    # SalesInvoice.buyer_display_name_label and WizardDraft.buyer_display_name_label.
     calculate :display_label,
               :string,
               expr(
@@ -238,6 +243,9 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
                 end
               )
 
+    # NOTE: This expr() logic is intentionally duplicated across Counterparty,
+    # SalesInvoice (as :buyer_id_type), and WizardDraft (as :buyer_id_type)
+    # because Ash expr() runs in the DB. Runtime equivalent: CountryCodes.tax_id_type/3
     calculate :tax_id_type,
               :atom,
               expr(
@@ -251,36 +259,7 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
                   country == "PL" ->
                     :nip
 
-                  country in [
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CY",
-                    "CZ",
-                    "DK",
-                    "EE",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "EL",
-                    "GR",
-                    "HR",
-                    "HU",
-                    "IE",
-                    "IT",
-                    "LV",
-                    "LT",
-                    "LU",
-                    "MT",
-                    "NL",
-                    "PT",
-                    "RO",
-                    "SK",
-                    "SI",
-                    "ES",
-                    "SE",
-                    "XI"
-                  ] ->
+                  country in ^@eu_countries ->
                     :eu_vat
 
                   country == "US" ->

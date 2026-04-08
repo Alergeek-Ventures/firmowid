@@ -4,6 +4,7 @@ defmodule Firmowid.AccountsFixtures do
   """
 
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Core.Nip
   alias Firmowid.Ash.Core.User
 
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
@@ -13,8 +14,27 @@ defmodule Firmowid.AccountsFixtures do
     [:positive]
     |> System.unique_integer()
     |> Integer.to_string()
-    |> String.pad_leading(10, "0")
-    |> String.slice(-10..-1)
+    |> String.pad_leading(9, "0")
+    |> String.slice(-9..-1)
+    |> build_valid_nip()
+  end
+
+  defp build_valid_nip(first_nine_digits) do
+    case Enum.find(0..9, fn control_digit ->
+           Nip.valid?(first_nine_digits <> Integer.to_string(control_digit))
+         end) do
+      nil ->
+        first_nine_digits
+        |> String.to_integer()
+        |> Kernel.+(1)
+        |> Integer.to_string()
+        |> String.pad_leading(9, "0")
+        |> String.slice(-9..-1)
+        |> build_valid_nip()
+
+      control_digit ->
+        first_nine_digits <> Integer.to_string(control_digit)
+    end
   end
 
   def valid_user_attributes(attrs \\ %{}) do
@@ -67,7 +87,7 @@ defmodule Firmowid.AccountsFixtures do
       end
 
     role = attrs[:role] || :employee
-    Core.update_role!(user, %{role: role}, authorize?: false, actor: %{})
+    Core.update_role!(user, %{role: role}, authorize?: false)
   end
 
   @doc """

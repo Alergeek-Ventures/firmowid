@@ -14,6 +14,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Ksef.Services.InvoiceRenderer
 
+  # authorize?: false bypasses policies, actor: %{} satisfies require_actor? true
+  # on domains like Invoicing.
   @bridge_opts [authorize?: false, actor: %{}]
 
   @moduletag :ksef_xsd

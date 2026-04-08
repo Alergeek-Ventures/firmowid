@@ -11,13 +11,14 @@ defmodule Firmowid.Seeds.Timetracker do
   - No hours records for M-0 (so the upload wizard is testable)
   """
 
-  import Ecto.Query
-
   alias Firmowid.Ash.Payroll.UserSalary
   alias Firmowid.Ash.Timetracker.HoursRecord
   alias Firmowid.Ash.Timetracker.Session
-  alias Firmowid.Repo
   alias Firmowid.Seeds.Helpers
+
+  require Ash.Query
+
+  @seed_actor %{id: "00000000-0000-0000-0000-000000000000", role: :admin}
 
   # ---------------------------------------------------------------------------
   # Public API
@@ -55,65 +56,36 @@ defmodule Firmowid.Seeds.Timetracker do
   end
 
   defp get_or_create_salary(user_id, org_id, hourly_rate) do
-    existing =
-      Repo.one(
-        from(us in UserSalary,
-          where:
-            us.user_id == ^user_id and
-              us.organization_id == ^org_id and
-              is_nil(us.deleted_at),
-          limit: 1
-        )
-      )
-
-    case existing do
-      nil ->
-        now = DateTime.truncate(DateTime.utc_now(), :second)
-
-        Repo.insert!(%UserSalary{
-          id: Ecto.UUID.generate(),
-          hourly_rate: hourly_rate,
-          user_id: user_id,
-          organization_id: org_id,
-          inserted_at: now,
-          updated_at: now
-        })
-
-      salary ->
-        salary
-    end
+    Ash.Seed.seed!(
+      UserSalary,
+      %{
+        hourly_rate: hourly_rate,
+        user_id: user_id,
+        organization_id: org_id
+      },
+      tenant: org_id
+    )
   end
 
   defp create_historical_salary(user_id, org_id, hourly_rate) do
-    # Check if historical salary already exists (deleted one with this rate)
-    existing =
-      Repo.one(
-        from(us in UserSalary,
-          where:
-            us.user_id == ^user_id and
-              us.organization_id == ^org_id and
-              not is_nil(us.deleted_at),
-          limit: 1
-        )
-      )
+    three_months_ago = Helpers.months_ago(3)
+    one_month_ago = Helpers.months_ago(1)
 
-    if !existing do
-      three_months_ago = Helpers.months_ago(3)
-      one_month_ago = Helpers.months_ago(1)
+    started = DateTime.new!(three_months_ago, ~T[09:00:00], "Etc/UTC")
+    ended = DateTime.new!(Date.beginning_of_month(one_month_ago), ~T[09:00:00], "Etc/UTC")
 
-      started = DateTime.new!(three_months_ago, ~T[09:00:00], "Etc/UTC")
-      ended = DateTime.new!(Date.beginning_of_month(one_month_ago), ~T[09:00:00], "Etc/UTC")
-
-      Repo.insert!(%UserSalary{
-        id: Ecto.UUID.generate(),
+    Ash.Seed.seed!(
+      UserSalary,
+      %{
         hourly_rate: hourly_rate,
         deleted_at: Date.beginning_of_month(one_month_ago),
         user_id: user_id,
         organization_id: org_id,
         inserted_at: started,
         updated_at: ended
-      })
-    end
+      },
+      tenant: org_id
+    )
   end
 
   # ---------------------------------------------------------------------------
@@ -271,7 +243,7 @@ defmodule Firmowid.Seeds.Timetracker do
       ref_date = Helpers.months_ago(months_back)
 
       for user <- [users.kira, users.tomek, users.sable, users.jules, users.maren] do
-        hours = count_user_hours(user.id, ref_date.month, ref_date.year)
+        hours = count_user_hours(user.id, bytecraft.id, ref_date.month, ref_date.year)
 
         if hours > 0 do
           get_or_create_hours_record(
@@ -309,53 +281,40 @@ defmodule Firmowid.Seeds.Timetracker do
 
   defp insert_sessions(session_list, bytecraft) do
     for attrs <- session_list do
-      existing =
-        Repo.one(
-          from(s in Session,
-            where:
-              s.user_id == ^attrs.user_id and
-                s.start_datetime == ^attrs.start_datetime and
-                s.project_id == ^attrs.project_id,
-            limit: 1
-          )
-        )
-
-      if !existing do
-        now = DateTime.truncate(DateTime.utc_now(), :second)
-
-        Repo.insert!(%Session{
-          id: Ecto.UUID.generate(),
+      Ash.Seed.seed!(
+        Session,
+        %{
           title: attrs.title,
           start_datetime: attrs.start_datetime,
           end_datetime: attrs.end_datetime,
           is_remote: attrs.is_remote,
           user_id: attrs.user_id,
           project_id: attrs.project_id,
-          organization_id: bytecraft.id,
-          inserted_at: now,
-          updated_at: now
-        })
-      end
+          organization_id: bytecraft.id
+        },
+        tenant: bytecraft.id
+      )
     end
   end
 
-  defp count_user_hours(user_id, month, year) do
+  defp count_user_hours(user_id, org_id, month, year) do
     start_date = Date.new!(year, month, 1)
     end_date = Date.end_of_month(start_date)
 
     start_dt = DateTime.new!(start_date, ~T[00:00:00], "Etc/UTC")
     end_dt = DateTime.new!(end_date, ~T[23:59:59], "Etc/UTC")
 
-    sessions =
-      Repo.all(
-        from(s in Session,
-          where:
-            s.user_id == ^user_id and
-              not is_nil(s.end_datetime) and
-              s.start_datetime >= ^start_dt and
-              s.start_datetime <= ^end_dt
-        )
+    query =
+      Ash.Query.filter(
+        Session,
+        user_id == ^user_id and
+          organization_id == ^org_id and
+          not is_nil(end_datetime) and
+          start_datetime >= ^start_dt and
+          start_datetime <= ^end_dt
       )
+
+    sessions = Ash.read!(query, tenant: org_id, actor: @seed_actor)
 
     total_seconds =
       Enum.reduce(sessions, 0, fn s, acc ->
@@ -367,50 +326,32 @@ defmodule Firmowid.Seeds.Timetracker do
   end
 
   defp get_or_create_hours_record(user_id, org_id, month, year, hours) do
-    existing =
-      Repo.one(
-        from(hr in HoursRecord,
-          where:
-            hr.user_id == ^user_id and
-              hr.month == ^month and
-              hr.year == ^year and
-              hr.organization_id == ^org_id,
-          limit: 1
-        )
+    # Create a placeholder blob for the signed hours PDF
+    checksum = Base.encode16(:crypto.hash(:sha256, "hours-#{user_id}-#{month}-#{year}"), case: :lower)
+    blob_path = "hours-records/#{user_id}/#{year}-#{month}/ewidencja-#{month}-#{year}.pdf"
+
+    blob =
+      Helpers.seed_blob!(
+        %{
+          blob_path: blob_path,
+          blob_checksum: checksum,
+          original_filename: "ewidencja-#{month}-#{year}.pdf"
+        },
+        org_id
       )
 
-    case existing do
-      nil ->
-        # Create a placeholder blob for the signed hours PDF
-        checksum = Base.encode16(:crypto.hash(:sha256, "hours-#{user_id}-#{month}-#{year}"), case: :lower)
-        blob_id = Ecto.UUID.generate()
-
-        blob =
-          Helpers.seed_blob!(
-            %{
-              blob_path: "hours-records/#{blob_id}/ewidencja-#{month}-#{year}.pdf",
-              blob_checksum: checksum,
-              original_filename: "ewidencja-#{month}-#{year}.pdf"
-            },
-            org_id
-          )
-
-        now = DateTime.truncate(DateTime.utc_now(), :second)
-
-        Repo.insert!(%HoursRecord{
-          id: Ecto.UUID.generate(),
-          month: month,
-          year: year,
-          number_of_hours: hours,
-          blob_id: blob.id,
-          user_id: user_id,
-          organization_id: org_id,
-          inserted_at: now,
-          updated_at: now
-        })
-
-      record ->
-        record
-    end
+    Ash.Seed.upsert!(
+      HoursRecord,
+      %{
+        month: month,
+        year: year,
+        number_of_hours: hours,
+        blob_id: blob.id,
+        user_id: user_id,
+        organization_id: org_id
+      },
+      identity: :unique_month_year_user,
+      tenant: org_id
+    )
   end
 end

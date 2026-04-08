@@ -16,7 +16,6 @@
 # and the entire script is a no-op (fast early exit).
 
 alias Firmowid.Ash.Core.Organization, as: CoreOrganization
-alias Firmowid.Repo
 alias Firmowid.Seeds.Bytecraft
 alias Firmowid.Seeds.MonthM0
 alias Firmowid.Seeds.MonthM1
@@ -26,6 +25,8 @@ alias Firmowid.Seeds.Voidstack
 
 require Ash.Query
 
+seed_actor = %{id: "00000000-0000-0000-0000-000000000000", role: :admin}
+
 seeds_dir = Path.join(__DIR__, "seeds")
 
 for file <- ~w(helpers bytecraft month_m2 month_m1 month_m0 timetracker voidstack) do
@@ -33,10 +34,7 @@ for file <- ~w(helpers bytecraft month_m2 month_m1 month_m0 timetracker voidstac
 end
 
 already_seeded? =
-  case Ash.read(Ash.Query.filter(CoreOrganization, nip == ^"6161525811"),
-         authorize?: false,
-         actor: %{}
-       ) do
+  case Ash.read(Ash.Query.filter(CoreOrganization, nip == ^"6161525811"), actor: seed_actor) do
     {:ok, [_ | _]} -> true
     _ -> false
   end
@@ -44,21 +42,19 @@ already_seeded? =
 if already_seeded? do
   IO.puts("[seeds] Database already seeded — skipping")
 else
-  Repo.transaction(fn ->
-    # — Primary organization: Bytecraft Collective —
-    ctx = Bytecraft.seed!()
+  # — Primary organization: Bytecraft Collective —
+  ctx = Bytecraft.seed!()
 
-    # — Monthly financial data (newest → oldest for tagging context) —
-    MonthM2.seed!(ctx)
-    MonthM1.seed!(ctx)
-    MonthM0.seed!(ctx)
+  # — Monthly financial data (newest → oldest for tagging context) —
+  MonthM2.seed!(ctx)
+  MonthM1.seed!(ctx)
+  MonthM0.seed!(ctx)
 
-    # — Timetracker: salaries, sessions, hours records —
-    TimetrackerSeeds.seed!(ctx)
+  # — Timetracker: salaries, sessions, hours records —
+  TimetrackerSeeds.seed!(ctx)
 
-    # — Evil org: VoidStack Labs —
-    Voidstack.seed!()
-  end)
+  # — Evil org: VoidStack Labs —
+  Voidstack.seed!()
 end
 
 # — Feature flags (always runs, idempotent) —

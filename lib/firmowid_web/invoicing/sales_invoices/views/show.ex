@@ -53,7 +53,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
       sales_invoice =
         then(sales_invoice, fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)
 
-      logo_url = Invoicing.get_logo_url(sales_invoice.organization_id)
+      logo_url = Invoicing.get_logo_url(sales_invoice.organization_id, scope: scope)
 
       # Subscribe to KSeF status updates for live feedback
       Ksef.subscribe_ksef_status(current_user.organization_id)
@@ -135,13 +135,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   def handle_event("connect", %{"transaction_id" => tx_id}, socket) do
     user = socket.assigns.current_user
 
-    # TODO: replace authorize?: false + actor: %{} with system actor once available
-    Invoicing.connect_sales_invoice_transactions(
-      socket.assigns.invoice,
-      [tx_id],
-      authorize?: false,
-      actor: %{}
-    )
+    Invoicing.connect_sales_invoice_transactions(socket.assigns.invoice, [tx_id], scope: socket.assigns.ash_scope)
 
     Analytics.track_event("sales_invoice_match", user, %{transaction_count: 1})
 
@@ -151,8 +145,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
 
   @impl true
   def handle_event("disconnect", _params, socket) do
-    # TODO: replace authorize?: false + actor: %{} with system actor once available
-    Invoicing.disconnect_sales_invoice_transactions(socket.assigns.invoice, authorize?: false, actor: %{})
+    Invoicing.disconnect_sales_invoice_transactions(socket.assigns.invoice,
+      scope: socket.assigns.ash_scope
+    )
 
     Analytics.track_event("sales_invoice_unmatch", socket.assigns.current_user, %{})
 

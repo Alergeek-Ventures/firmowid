@@ -11,11 +11,14 @@ defmodule Firmowid.Ash.Invoicing.Services.Pdf do
   # Path in the output callback comes from ChromicPDF (framework-generated temp file),
   # not user input.
   @dialyzer {:nowarn_function, generate: 1, generate: 2}
+  @item_calcs [:net_value, :vat_value, :gross_value]
   @spec generate(SalesInvoice.t(), keyword()) :: {:ok, binary()} | {:error, term()}
   def generate(%SalesInvoice{} = invoice, opts \\ []) do
     alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
 
     show_vat = Keyword.get(opts, :show_vat, true)
+    ash_scope = Keyword.get(opts, :scope)
+    ash_opts = ash_opts(invoice, ash_scope)
 
     logo_data_uri = PdfHelpers.url_to_data_uri(Map.get(invoice, :logo_url))
 
@@ -26,11 +29,17 @@ defmodule Firmowid.Ash.Invoicing.Services.Pdf do
 
     invoice =
       invoice
-      |> Ash.load!([corrections: :sales_invoice_items],
-        authorize?: false,
-        actor: %{},
-        tenant: invoice.organization_id
+      |> Ash.load!(
+        [
+          :net_value,
+          :vat_value,
+          :gross_value,
+          sales_invoice_items: @item_calcs,
+          corrections: [sales_invoice_items: @item_calcs]
+        ],
+        ash_opts
       )
+      |> maybe_load_reference_invoice(ash_opts)
       |> then(fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)
 
     html_content =
@@ -68,4 +77,27 @@ defmodule Firmowid.Ash.Invoicing.Services.Pdf do
       }
     )
   end
+
+  defp maybe_load_reference_invoice(%{ksef_invoice_kind: kind} = invoice, _ash_opts) when kind != :kor, do: invoice
+
+  defp maybe_load_reference_invoice(invoice, ash_opts) do
+    invoice =
+      Ash.load!(
+        invoice,
+        [reference_invoice: [sales_invoice_items: @item_calcs]],
+        ash_opts
+      )
+
+    reference_invoice =
+      Ash.load!(
+        invoice.reference_invoice,
+        [:net_value, :vat_value, :gross_value, sales_invoice_items: @item_calcs],
+        ash_opts
+      )
+
+    %{invoice | reference_invoice: reference_invoice}
+  end
+
+  defp ash_opts(invoice, nil), do: [tenant: invoice.organization_id]
+  defp ash_opts(_invoice, scope), do: [scope: scope]
 end

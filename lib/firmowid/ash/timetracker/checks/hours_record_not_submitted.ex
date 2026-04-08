@@ -55,10 +55,7 @@ defmodule Firmowid.Ash.Timetracker.Checks.HoursRecordNotSubmitted do
 
       HoursRecord
       |> Ash.Query.filter(user_id: user_id, month: month, year: year)
-      # TODO: migrate away from authorize?: false — policy checks must read
-      # HoursRecord existence regardless of actor ownership. Replace when
-      # policy checks can run in a privileged context.
-      |> Ash.exists?(actor: actor, tenant: org_id, authorize?: false)
+      |> Ash.exists?(actor: actor, tenant: org_id)
     else
       false
     end

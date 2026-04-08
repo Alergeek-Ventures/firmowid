@@ -10,9 +10,13 @@ defmodule Firmowid.Ash.Invoicing.Changes.SetItemNames do
   use Ash.Resource.Change
 
   @impl true
-  def change(changeset, _opts, _context) do
+  def change(changeset, _opts, context) do
     Ash.Changeset.after_action(changeset, fn _changeset, record ->
-      opts = [authorize?: false, actor: %{}, tenant: record.organization_id]
+      opts =
+        context
+        |> Ash.Context.to_opts()
+        |> Keyword.delete(:tenant)
+        |> Keyword.put(:tenant, record.organization_id)
 
       record = Ash.load!(record, [:sales_invoice_items], opts)
 

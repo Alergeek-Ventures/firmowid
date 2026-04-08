@@ -2,23 +2,6 @@ defmodule Firmowid.Ash.Invoicing do
   @moduledoc """
   Ash domain for invoicing — counterparties, sales invoices, cost invoices,
   and supporting resources.
-
-  All public API goes through this domain's code interfaces. LiveViews and
-  controllers call the domain, not resource modules directly. Follows the
-  same pattern as `Firmowid.Ash.Finances`.
-
-  ## Orchestration functions
-
-  Some operations combine multiple Ash calls with side effects (Oban jobs,
-  external APIs, billing counters). These live as regular functions on this
-  module because they can't be expressed as single Ash actions:
-
-    * `search_invoices/2` — cross-resource search (CostInvoice + SalesInvoice)
-    * `delete_cost_invoice/2` — destroy blob (cascades invoice) + billing
-    * `upload_cost_invoice/4-5` — validate type, create blob, enqueue extraction
-    * `create_cost_invoice/1` — create from metadata + enqueue matching job
-    * `hydrate_invoice_with_fa3_blob/1` — fetch KSeF XML, create blob, attach
-    * `get_processing_cost_invoices_count/0` — pending extraction job count
   """
   use Ash.Domain
 
@@ -26,7 +9,6 @@ defmodule Firmowid.Ash.Invoicing do
   alias Firmowid.Ash.Currencies.NbpApiClient
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.Workers.CostInvoiceWorker
   alias Firmowid.Ash.Invoicing.Workers.MatchingWorker
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Scope
@@ -62,7 +44,6 @@ defmodule Firmowid.Ash.Invoicing do
       define :get_cost_invoice, action: :by_id, args: [:id]
       define :get_cost_invoice_by_checksum, action: :by_checksum, args: [:blob_checksum]
       define :search_cost_invoices, action: :search
-      define :create_cost_invoice_from_metadata, action: :create_from_metadata, args: [:metadata]
       define :toggle_cost_invoice_skip, action: :toggle_skip
       define :update_cost_invoice_blob, action: :update_blob_id, args: [:blob_id]
 
@@ -115,6 +96,8 @@ defmodule Firmowid.Ash.Invoicing do
     resource Firmowid.Ash.Invoicing.SalesInvoiceTransaction
     resource Firmowid.Ash.Invoicing.CostInvoiceTransaction
     resource Firmowid.Ash.Invoicing.SalesInvoiceItem
+
+    resource Firmowid.Ash.Invoicing.WizardDraft.Item
 
     resource Firmowid.Ash.Invoicing.WizardDraft do
       define :list_wizard_drafts, action: :read
@@ -285,58 +268,37 @@ defmodule Firmowid.Ash.Invoicing do
   end
 
   @doc """
-  Uploads a cost invoice file. Validates content type, creates a blob,
-  and enqueues an extraction job.
-
-  Returns `{:ok, blob}` wrapped in a transaction result, or
-  `{:error, :unsupported_content_type}`.
-  """
-  @spec upload_cost_invoice(String.t(), String.t(), String.t(), Scope.t()) ::
-          {:ok, struct()} | {:error, term()}
-  @spec upload_cost_invoice(String.t(), String.t(), String.t(), Ash.UUID.t() | nil, Scope.t()) ::
-          {:ok, struct()} | {:error, term()}
-
-  def upload_cost_invoice(upload_path, content_type, original_filename, scope) when is_struct(scope, Scope) do
-    upload_cost_invoice(upload_path, content_type, original_filename, nil, scope)
-  end
-
-  def upload_cost_invoice(upload_path, "image/" <> _ext = content_type, original_filename, inbound_email_id, scope) do
-    create_cost_invoice_job(upload_path, content_type, original_filename, inbound_email_id, scope)
-  end
-
-  def upload_cost_invoice(upload_path, "application/pdf" = content_type, original_filename, inbound_email_id, scope) do
-    create_cost_invoice_job(upload_path, content_type, original_filename, inbound_email_id, scope)
-  end
-
-  def upload_cost_invoice(_upload_path, _content_type, _original_filename, _inbound_email_id, _scope) do
-    {:error, :unsupported_content_type}
-  end
-
-  @doc """
   Creates a cost invoice from extracted metadata (AI or KSeF parser).
 
   Increments the billing counter for non-correction invoices and enqueues
   a matching job. PubSub notification is sent automatically via the `pub_sub`
-  block on `:create_internal` (triggered by `:create_from_metadata`).
+  block on `:create`.
   """
-  @spec create_cost_invoice(map()) :: Oban.Job.t()
+  @spec create_cost_invoice(map()) :: {:ok, Oban.Job.t()} | {:error, term()}
   def create_cost_invoice(extracted_metadata) do
     organization_id =
       Map.get(extracted_metadata, "organization_id") ||
+        Map.get(extracted_metadata, :organization_id) ||
         raise "organization_id is required in extracted_metadata"
+
+    sanitized_metadata =
+      Map.drop(extracted_metadata, [
+        "organization_id",
+        :organization_id
+      ])
 
     actor = %SystemActor{org_id: organization_id, role: :cost_invoice_processor}
     scope = %Scope{actor: actor, tenant: organization_id}
 
-    {:ok, cost_invoice} = CostInvoice.create_from_metadata(extracted_metadata, scope: scope)
-
-    %{
-      name: "match_cost_invoice",
-      cost_invoice_id: cost_invoice.id,
-      organization_id: organization_id
-    }
-    |> MatchingWorker.new()
-    |> Firmowid.Oban.insert!(skip_organization_id: true)
+    with {:ok, cost_invoice} <- CostInvoice.create(sanitized_metadata, scope: scope) do
+      %{
+        name: "match_cost_invoice",
+        cost_invoice_id: cost_invoice.id,
+        organization_id: organization_id
+      }
+      |> MatchingWorker.new()
+      |> Firmowid.Oban.insert(skip_organization_id: true)
+    end
   end
 
   @doc """
@@ -388,77 +350,16 @@ defmodule Firmowid.Ash.Invoicing do
   Uses raw Ecto query on `Oban.Job` because Oban provides no public count API.
   This is the only justified raw Ecto usage remaining in the invoicing domain.
   """
-  @spec get_processing_cost_invoices_count() :: non_neg_integer()
-  def get_processing_cost_invoices_count do
-    import Ecto.Query
-
-    Oban.Job
-    |> where(
-      [j],
-      j.state in ["available", "scheduled", "executing"] and
-        fragment("args->>'name' = ?", "extract_cost_invoice_metadata")
+  @spec get_processing_cost_invoices_count(Scope.t()) :: non_neg_integer()
+  def get_processing_cost_invoices_count(scope) do
+    Firmowid.Ash.Blobs.Blob
+    |> Ash.Query.for_read(:read, %{}, scope: scope)
+    |> Ash.Query.filter(
+      processing_target == :cost_invoice and
+        (processing_state == :pending or processing_state == :processing)
     )
-    |> Firmowid.Repo.aggregate(:count, oban_jobs: true)
+    |> Ash.count!(scope: scope)
   end
-
-  # ── Private helpers ─────────────────────────────────────────────────
-
-  defp create_cost_invoice_job(upload_path, content_type, original_filename, inbound_email_id, scope) do
-    blob_opts = [scope: scope, return_notifications?: true]
-
-    result =
-      Firmowid.Repo.transaction(fn ->
-        case Blobs.create_blob(
-               upload_path,
-               content_type,
-               original_filename,
-               blob_opts
-             ) do
-          {:ok, blob, notifications} ->
-            enqueue_extraction_job(blob, inbound_email_id)
-            {blob, notifications}
-
-          {:error, error} ->
-            Firmowid.Repo.rollback(error)
-        end
-      end)
-
-    case result do
-      {:ok, {blob, notifications}} ->
-        Ash.Notifier.notify(notifications)
-        {:ok, blob}
-
-      {:error, error} ->
-        if blob_checksum_conflict?(error) do
-          checksum = get_in(error, [Access.key(:attributes), :blob_checksum])
-          {:error, {:blob_already_exists, checksum}}
-        else
-          require Logger
-
-          Logger.error("Failed to upload cost invoice: #{inspect(error)}")
-          {:error, error}
-        end
-    end
-  end
-
-  defp blob_checksum_conflict?(%{errors: errors}) do
-    Enum.any?(errors, fn
-      %Ash.Error.Changes.InvalidChanges{fields: fields} when is_list(fields) ->
-        :blob_checksum in fields
-
-      %{error: error} when is_binary(error) ->
-        String.contains?(error, "blob_checksum") and
-          String.contains?(error, "unique_constraint")
-
-      %{error: %Ecto.ConstraintError{constraint: constraint}} ->
-        String.contains?(constraint, "blob_checksum")
-
-      _ ->
-        false
-    end)
-  end
-
-  defp blob_checksum_conflict?(_), do: false
 
   # ---------------------------------------------------------------------------
   # Logo / currency / numbering orchestration
@@ -468,23 +369,23 @@ defmodule Firmowid.Ash.Invoicing do
   @doc """
   Returns the organization's logo URL for the given organization ID.
   """
-  @spec get_logo_url(Ash.UUID.t()) :: String.t() | nil
-  def get_logo_url(organization_id) when is_binary(organization_id) do
+  @spec get_logo_url(Ash.UUID.t(), keyword()) :: String.t() | nil
+  def get_logo_url(organization_id, opts \\ [])
+
+  def get_logo_url(organization_id, opts) when is_binary(organization_id) do
     alias Firmowid.Ash.Core
+
+    ash_opts = Keyword.take(opts, [:scope])
 
     organization =
       organization_id
-      |> Core.get_organization!(authorize?: false, actor: %{})
-      |> Ash.load!([avatar_blob: [:url]],
-        tenant: organization_id,
-        authorize?: false,
-        actor: %{}
-      )
+      |> Core.get_organization!(ash_opts)
+      |> Ash.load!([avatar_blob: [:url]], Keyword.put(ash_opts, :tenant, organization_id))
 
     organization.avatar_blob[:url]
   end
 
-  def get_logo_url(_), do: nil
+  def get_logo_url(_organization_id, _opts), do: nil
 
   @doc """
   Returns the currency exchange rate for a sales invoice.
@@ -492,13 +393,26 @@ defmodule Firmowid.Ash.Invoicing do
   For PLN invoices, returns nil (no conversion needed).
   For other currencies, fetches the NBP exchange rate for the currency conversion date.
   """
-  @spec get_currency_rate(struct()) :: map() | nil
+  @spec get_currency_rate(map()) :: map() | nil
   def get_currency_rate(%{currency: "PLN"}), do: nil
 
-  def get_currency_rate(%{currency: currency, issue_date: issue_date, sale_date: sale_date}) do
+  def get_currency_rate(%{currency: currency, issue_date: %Date{} = issue_date, sale_date: %Date{} = sale_date}) do
     conversion_date = get_currency_conversion_date(issue_date, sale_date)
-    NbpApiClient.get_exchange_rate(currency, conversion_date)
+
+    case NbpApiClient.get_exchange_rate(currency, conversion_date) do
+      {:ok, rate} -> rate
+      {:error, _reason} -> nil
+    end
   end
+
+  def get_currency_rate(%{currency: currency, issue_date: %Date{} = issue_date, sale_date: nil}) do
+    case NbpApiClient.get_exchange_rate(currency, issue_date) do
+      {:ok, rate} -> rate
+      {:error, _reason} -> nil
+    end
+  end
+
+  def get_currency_rate(_), do: nil
 
   @doc """
   Returns the currency conversion date for a sales invoice.
@@ -543,18 +457,5 @@ defmodule Firmowid.Ash.Invoicing do
 
       {series, number}
     end)
-  end
-
-  defp enqueue_extraction_job(blob, inbound_email_id) do
-    %{
-      name: "extract_cost_invoice_metadata",
-      blob_id: blob.id,
-      organization_id: blob.organization_id
-    }
-    |> then(fn args ->
-      if inbound_email_id, do: Map.put(args, :inbound_email_id, inbound_email_id), else: args
-    end)
-    |> CostInvoiceWorker.new()
-    |> Firmowid.Oban.insert!(skip_organization_id: true)
   end
 end

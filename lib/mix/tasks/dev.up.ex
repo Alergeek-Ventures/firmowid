@@ -70,11 +70,11 @@ defmodule Mix.Tasks.Dev.Up do
     register_caddy_route(branch, port)
 
     # Step 6: Start Phoenix server in background
-    start_phoenix_server()
+    start_phoenix_server(port)
 
     Mix.shell().info("")
     Mix.shell().info("Environment ready:")
-    Mix.shell().info("  Phoenix:   http://#{sanitize_branch(branch)}.firmowid.localhost:8080 (or localhost:#{port})")
+    Mix.shell().info("  Phoenix:   http://#{sanitize_branch(branch)}.firmowid.localhost (or localhost:#{port})")
     Mix.shell().info("  Tidewave:  https://localhost:#{port}/tidewave/mcp")
     Mix.shell().info("  Postgres:  localhost:#{db_port}")
     Mix.shell().info("  S3:        localhost:#{s3_port}")
@@ -229,7 +229,7 @@ defmodule Mix.Tasks.Dev.Up do
     end
   end
 
-  defp start_phoenix_server do
+  defp start_phoenix_server(port) do
     Mix.shell().info("Starting Phoenix server in background...")
 
     # Ensure tmp directory exists
@@ -239,6 +239,44 @@ defmodule Mix.Tasks.Dev.Up do
     pid_file = "tmp/phoenix.pid"
     log_file = "tmp/phoenix.log"
 
+    session = "firmowid-#{port}"
+
+    if System.find_executable("tmux") do
+      # If tmux session already exists, do not create a new one. Just write the
+      # session name to the pid file so dev.down can stop it, and inform the user.
+      case System.cmd("tmux", ["has-session", "-t", session], stderr_to_stdout: true) do
+        {_, 0} ->
+          File.write!(pid_file, "tmux:#{session}\n")
+          Mix.shell().info("Tmux session '#{session}' already exists. Attach with: tmux attach -t #{session}")
+
+        _ ->
+          # Start phoenix inside a detached tmux session. Keep TERM set so
+          # Phoenix/emitted tools will produce ANSI color sequences. Use tee
+          # inside the session to append output (including ANSI) to the log file.
+          cmd = "tmux new -d -s #{session} \"sh -lc 'env TERM=xterm-256color mix phx.server'\""
+
+          case System.cmd("sh", ["-c", cmd], stderr_to_stdout: true) do
+            {_output, 0} ->
+              File.write!(pid_file, "tmux:#{session}\n")
+              Mix.shell().info("Phoenix server started in tmux session '#{session}'")
+              Mix.shell().info("Attach: tmux attach -t #{session}")
+              Mix.shell().info("Stop: tmux kill-session -t #{session}")
+              Mix.shell().info("Logs: tail -f #{log_file}")
+
+            {output, code} ->
+              Mix.shell().error("Failed to start Phoenix in tmux (exit #{code}):")
+              Mix.shell().error(output)
+              Mix.shell().info("Falling back to nohup start")
+              start_phoenix_server_nohup(pid_file, log_file)
+          end
+      end
+    else
+      # Fallback to existing nohup behavior
+      start_phoenix_server_nohup(pid_file, log_file)
+    end
+  end
+
+  defp start_phoenix_server_nohup(pid_file, log_file) do
     # Use nohup + shell to properly background the process
     spawn(fn ->
       System.cmd(
@@ -256,7 +294,7 @@ defmodule Mix.Tasks.Dev.Up do
         Mix.shell().info("Phoenix server started (PID: #{String.trim(pid)})")
 
       {:error, _} ->
-        Mix.shell().info("Phoenix server starting... (check tmp/phoenix.log)")
+        Mix.shell().info("Phoenix server starting... (check #{log_file})")
     end
   end
 

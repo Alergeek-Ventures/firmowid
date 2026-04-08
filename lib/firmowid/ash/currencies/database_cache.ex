@@ -10,9 +10,10 @@ defmodule Firmowid.Ash.Currencies.DatabaseCache do
   @behaviour Money.ExchangeRates.Cache
 
   alias Firmowid.Ash.Currencies
+  alias Firmowid.Ash.SystemActor
 
-  # TODO: replace authorize?: false + actor: %{} with system actor once available
-  @bridge_opts [authorize?: false, actor: %{}]
+  @cache_actor %SystemActor{org_id: nil, role: :exchange_rate_cache}
+  @cache_opts [actor: @cache_actor]
 
   @impl true
   def init, do: :ok
@@ -47,7 +48,7 @@ defmodule Firmowid.Ash.Currencies.DatabaseCache do
       expires_at: DateTime.add(DateTime.utc_now(), 30, :day)
     }
 
-    Currencies.upsert_exchange_rate!(attrs, @bridge_opts)
+    Currencies.upsert_exchange_rate!(attrs, @cache_opts)
     :ok
   end
 
@@ -56,7 +57,7 @@ defmodule Firmowid.Ash.Currencies.DatabaseCache do
 
   @spec get_cache_entry(Date.t()) :: struct() | nil
   def get_cache_entry(cache_date) do
-    case Currencies.get_exchange_rate_by_date(cache_date, @bridge_opts) do
+    case Currencies.get_exchange_rate_by_date(cache_date) do
       {:ok, entry} -> entry
       {:error, _} -> nil
     end

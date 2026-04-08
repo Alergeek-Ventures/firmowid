@@ -34,6 +34,7 @@ defmodule Firmowid.Ash.Core do
       define :update_profile, action: :update_profile
       define :update_role, action: :update_role
       define :set_organization, action: :set_organization
+      define :clear_organization, action: :clear_organization
       define :update_user_avatar, action: :update_avatar
       define :destroy_user, action: :destroy
       define :request_confirmation, action: :request_confirmation

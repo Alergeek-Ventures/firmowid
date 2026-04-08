@@ -8,6 +8,10 @@ defmodule Firmowid.Ash.Timetracker do
   """
   use Ash.Domain
 
+  alias Firmowid.Ash.Timetracker.Session
+
+  require Ash.Query
+
   resources do
     resource Firmowid.Ash.Timetracker.HoursRecord do
       define :list_hours_records, action: :list
@@ -20,7 +24,7 @@ defmodule Firmowid.Ash.Timetracker do
 
     resource Firmowid.Ash.Timetracker.ProjectUser
 
-    resource Firmowid.Ash.Timetracker.Session do
+    resource Session do
       define :list_sessions, action: :list
     end
   end
@@ -34,5 +38,23 @@ defmodule Firmowid.Ash.Timetracker do
   @spec seconds_to_hours(integer()) :: integer()
   def seconds_to_hours(seconds) when is_integer(seconds) do
     ceil(seconds / 3600)
+  end
+
+  @doc """
+  Returns distinct months (as `NaiveDateTime`) that have sessions matching
+  the given filters, newest first.
+
+  Used by management views and hours record index to populate month selectors.
+  """
+  @spec months_with_sessions(map(), keyword()) :: [NaiveDateTime.t()]
+  def months_with_sessions(filters, scope) do
+    Session
+    |> Ash.Query.for_read(:list, filters, scope: scope)
+    |> Ash.Query.distinct(:month_start)
+    |> Ash.Query.distinct_sort(month_start: :desc)
+    |> Ash.Query.sort(month_start: :desc)
+    |> Ash.Query.load(:month_start)
+    |> Ash.read!(scope: scope)
+    |> Enum.map(& &1.month_start)
   end
 end

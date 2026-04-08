@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
   alias Firmowid.Analytics
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Core.Organization
 
   @impl true
   def render(assigns) do
@@ -22,7 +23,16 @@ defmodule FirmowidWeb.Organization.Views.Index do
                 Jesteś <span class="font-bold">właścicielem przedsiębiorstwa</span>?
                 Wypełnij formularz, aby utworzyć organizację wewnątrz Firmowida.
               </p>
-              <.simple_form for={@organization_form} id="organization_form" phx-submit="create">
+              <.simple_form
+                for={@organization_form}
+                id="organization_form"
+                phx-submit="create"
+                phx-change="validate"
+              >
+                <.error :if={@check_errors}>
+                  Popraw błędy w formularzu.
+                </.error>
+
                 <.input
                   field={@organization_form[:nip]}
                   type="text"
@@ -39,26 +49,35 @@ defmodule FirmowidWeb.Organization.Views.Index do
                 <div class="flex flex-row gap-2">
                   <.input
                     class="w-3/4!"
-                    field={@organization_form[:street]}
+                    name="address[street]"
+                    value={@address_form["street"]}
                     placeholder="Ulica"
                     type="text"
                     required
                   />
                   <.input
                     class="w-1/4!"
-                    field={@organization_form[:number]}
+                    name="address[number]"
+                    value={@address_form["number"]}
                     placeholder="/"
                     type="text"
                     required
                   />
                 </div>
                 <.input
-                  field={@organization_form[:postal_code]}
+                  name="address[postal_code]"
+                  value={@address_form["postal_code"]}
                   placeholder="Kod pocztowy"
                   type="text"
                   required
                 />
-                <.input field={@organization_form[:city]} placeholder="Miasto" type="text" required />
+                <.input
+                  name="address[city]"
+                  value={@address_form["city"]}
+                  placeholder="Miasto"
+                  type="text"
+                  required
+                />
 
                 <:actions>
                   <.button class="w-full!" phx-disable-with="Tworzenie organizacji...">
@@ -102,37 +121,52 @@ defmodule FirmowidWeb.Organization.Views.Index do
   end
 
   @impl true
-  def handle_event("create", organization, socket) do
-    user = socket.assigns.current_user
-
-    address = %{
-      street: organization["street"],
-      number: organization["number"],
-      postal_code: organization["postal_code"],
-      city: organization["city"]
-    }
-
-    address = "#{address.street} #{address.number}, #{address.postal_code} #{address.city}"
-
-    org_params =
-      organization
-      |> Map.put("address", address)
-      |> Map.put("owner_id", user.id)
-
-    created_org =
-      Core.create_organization!(org_params,
-        authorize?: false,
-        actor: %{}
-      )
-
-    Analytics.track_event("organization_created", user, %{organization_id: created_org.id})
+  def handle_event("validate", %{"organization" => organization, "address" => address_form}, socket) do
+    form =
+      socket.assigns.organization_form.source
+      |> AshPhoenix.Form.validate(add_address(organization, address_form))
+      |> to_form()
 
     socket =
       socket
-      |> LiveToast.put_toast(:success, "Pomyślnie utworzono organizację")
-      |> redirect(to: "/")
+      |> assign(:organization_form, form)
+      |> assign(:address_form, address_form)
+      |> assign(:check_errors, false)
 
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("create", %{"organization" => organization, "address" => address_form}, socket) do
+    user = socket.assigns.current_user
+
+    params =
+      organization
+      |> add_address(address_form)
+      |> Map.put("owner_id", user.id)
+
+    case AshPhoenix.Form.submit(socket.assigns.organization_form.source,
+           params: params
+         ) do
+      {:ok, created_org} ->
+        Analytics.track_event("organization_created", user, %{organization_id: created_org.id})
+
+        socket =
+          socket
+          |> LiveToast.put_toast(:success, "Pomyślnie utworzono organizację")
+          |> redirect(to: "/")
+
+        {:noreply, socket}
+
+      {:error, form} ->
+        socket =
+          socket
+          |> assign(:organization_form, to_form(form))
+          |> assign(:address_form, address_form)
+          |> assign(:check_errors, true)
+
+        {:noreply, socket}
+    end
   end
 
   @impl true
@@ -143,17 +177,10 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
     # Find invite by code (unscoped read - invite codes are unique)
     invite =
-      Core.read_invite_by_code!(%{invite_code: trimmed_code},
-        authorize?: false,
-        actor: %{}
-      )
+      Core.read_invite_by_code!(%{invite_code: trimmed_code}, actor: user)
 
     # Consume the invite (scoped to the invite's organization)
-    Core.consume_invite!(invite, %{user_id: user.id},
-      tenant: invite.organization_id,
-      authorize?: false,
-      actor: %{}
-    )
+    Core.consume_invite!(invite, %{user_id: user.id}, tenant: invite.organization_id, actor: user)
 
     Analytics.track_event("organization_invite_accepted", user, %{
       organization_id: invite.organization_id
@@ -170,19 +197,20 @@ defmodule FirmowidWeb.Organization.Views.Index do
     socket = assign(socket, :no_padding, true)
 
     if is_nil(organization_id) do
+      organization_form =
+        Organization
+        |> AshPhoenix.Form.for_create(:create,
+          domain: Core,
+          actor: user,
+          as: "organization"
+        )
+        |> to_form()
+
       socket =
         socket
-        |> assign(
-          :organization_form,
-          to_form(%{
-            "name" => "",
-            "nip" => "",
-            "street" => "",
-            "number" => "",
-            "postal_code" => "",
-            "city" => ""
-          })
-        )
+        |> assign(:organization_form, organization_form)
+        |> assign(:address_form, %{"street" => "", "number" => "", "postal_code" => "", "city" => ""})
+        |> assign(:check_errors, false)
         |> assign(
           :join_form,
           to_form(%{
@@ -195,5 +223,9 @@ defmodule FirmowidWeb.Organization.Views.Index do
     else
       {:ok, redirect(socket, to: "/")}
     end
+  end
+
+  defp add_address(params, %{"street" => street, "number" => number, "postal_code" => postal_code, "city" => city}) do
+    Map.put(params, "address", "#{street} #{number}, #{postal_code} #{city}")
   end
 end

@@ -1,5 +1,8 @@
 defmodule Firmowid.Ash.Invoicing.Matching.Assistant.CommonTools do
-  @moduledoc false
+  @moduledoc """
+  Shared tool definitions (search, normalize, filter) used by cost and sales
+  invoice matching assistants.
+  """
   alias Firmowid.Ash.Currencies.Converter, as: Currencies
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.Matching.Assistant.FilterValidation
@@ -90,14 +93,14 @@ defmodule Firmowid.Ash.Invoicing.Matching.Assistant.CommonTools do
                 Enum.reduce(numbers, &Decimal.add/2)
 
               "-" ->
-                Enum.reduce(numbers, &Decimal.sub/2)
+                Enum.reduce(numbers, fn elem, acc -> Decimal.sub(acc, elem) end)
 
               "*" ->
                 Enum.reduce(numbers, &Decimal.mult/2)
 
               "/" ->
                 try do
-                  Enum.reduce(numbers, &Decimal.div/2)
+                  Enum.reduce(numbers, fn elem, acc -> Decimal.div(acc, elem) end)
                 rescue
                   Decimal.Error -> {:error, "Dzielenie przez zero"}
                 end

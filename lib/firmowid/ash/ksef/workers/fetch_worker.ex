@@ -19,7 +19,6 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Invoicing.Services.OpenAIEnrichment
   alias Firmowid.Ash.Ksef.Services.ApiClient
   alias Firmowid.Ash.Ksef.Services.Encryption
   alias Firmowid.Ash.Ksef.Services.InvoiceParser
@@ -147,7 +146,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
         |> Encryption.decrypt_aes256_cbc(key, iv)
         |> validate_part_checksum!(part)
       end,
-      timeout: :infinity
+      timeout: to_timeout(minute: 5)
     )
     |> Stream.map(fn
       {:ok, body} -> body
@@ -260,43 +259,9 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
          {:ok, path} <- write_to_temp_file(xml_content, "#{ksef_number}.xml") do
       blob_opts = [scope: scope]
 
-      case Blobs.create_blob(path, "application/xml", "#{ksef_number}.xml", blob_opts) do
-        {:ok, blob} ->
-          Logger.info("Creating cost invoice #{ksef_number} from #{ksef_number}.xml")
-
-          try do
-            # Invoicing.create_cost_invoice/1 doesn't return result tuple. It raises on failure
-            attrs
-            |> Map.put(:blob_id, blob.id)
-            |> Invoicing.create_cost_invoice()
-
-            :ok
-          rescue
-            # on failure, clean up dangling blob from DB and S3
-            error ->
-              # notification_metadata carries reason through Ash PubSub on blob:destroyed topic
-              Blobs.destroy_blob!(
-                blob,
-                Keyword.put(blob_opts, :notification_metadata, %{reason: :processing_failed})
-              )
-
-              ErrorTracker.report(error, __STACKTRACE__)
-
-              {:error, "Failed to create cost invoice from XML #{ksef_number}.xml: #{inspect(error)}"}
-          end
-
-        {:error,
-         %Ecto.Changeset{
-           changes: %{blob_checksum: _blob_checksum},
-           errors: [blob_checksum: {"has already been taken", _}]
-         }} ->
-          Logger.error("Duplicate blob detected for #{ksef_number}.xml, skipping invoice creation")
-
-          :ok
-
-        {:error, reason} ->
-          {:error, "Failed to upload cost invoice from XML #{ksef_number}.xml: #{inspect(reason)}"}
-      end
+      path
+      |> Blobs.create_blob("application/xml", "#{ksef_number}.xml", blob_opts)
+      |> handle_blob_upload_result(ksef_number, attrs, blob_opts)
     else
       {:error, reason} ->
         {:error, "Failed to create cost invoice from XML #{ksef_number}.xml: #{inspect(reason)}"}
@@ -313,13 +278,6 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     )
     |> Map.put(:ksef_downloaded_at, DateTime.utc_now())
     |> Map.put(:organization_id, organization_id)
-    |> Map.put(
-      :description,
-      OpenAIEnrichment.generate_description(%{
-        "seller" => attrs.seller,
-        "items_list" => attrs.items_list
-      })
-    )
   end
 
   # sobelow_skip ["Traversal.FileModule"]
@@ -357,5 +315,72 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     }
     |> new()
     |> Firmowid.Oban.insert(skip_organization_id: true)
+  end
+
+  defp handle_blob_upload_result({:ok, blob}, ksef_number, attrs, blob_opts) do
+    Logger.info("Creating cost invoice #{ksef_number} from #{ksef_number}.xml")
+
+    try do
+      attrs
+      |> Map.put(:blob_id, blob.id)
+      |> Invoicing.create_cost_invoice()
+
+      :ok
+    rescue
+      error ->
+        scoped_blob_opts = with_blob_scope(blob, blob_opts)
+
+        Blobs.destroy_blob!(
+          blob,
+          Keyword.put(scoped_blob_opts, :notification_metadata, %{reason: :processing_failed})
+        )
+
+        ErrorTracker.report(error, __STACKTRACE__)
+
+        {:error, "Failed to create cost invoice from XML #{ksef_number}.xml: #{inspect(error)}"}
+    end
+  end
+
+  defp handle_blob_upload_result({:error, %Ash.Error.Invalid{errors: errors}}, ksef_number, _attrs, _blob_opts)
+       when is_list(errors) do
+    if duplicate_blob_error?(errors) do
+      Logger.warning("Duplicate blob detected for #{ksef_number}.xml, skipping invoice creation")
+      :ok
+    else
+      {:error, "Failed to upload cost invoice from XML #{ksef_number}.xml: #{inspect(errors)}"}
+    end
+  end
+
+  defp handle_blob_upload_result(
+         {:error, %Ecto.Changeset{errors: [blob_checksum: {"has already been taken", _}]}},
+         ksef_number,
+         _attrs,
+         _blob_opts
+       ) do
+    Logger.warning("Duplicate blob detected for #{ksef_number}.xml, skipping invoice creation")
+    :ok
+  end
+
+  defp handle_blob_upload_result({:error, reason}, ksef_number, _attrs, _blob_opts) do
+    {:error, "Failed to upload cost invoice from XML #{ksef_number}.xml: #{inspect(reason)}"}
+  end
+
+  defp with_blob_scope(blob, blob_opts) do
+    scope = Keyword.fetch!(blob_opts, :scope)
+    actor = Map.put(scope.actor, :blob_id, blob.id)
+    Keyword.put(blob_opts, :scope, %{scope | actor: actor})
+  end
+
+  defp duplicate_blob_error?(errors) do
+    Enum.any?(errors, fn
+      %Ash.Error.Changes.InvalidAttribute{
+        field: :blob_checksum,
+        message: "has already been taken"
+      } ->
+        true
+
+      _ ->
+        false
+    end)
   end
 end

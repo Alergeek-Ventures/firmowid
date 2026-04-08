@@ -14,6 +14,7 @@ defmodule Firmowid.Ash.Invoicing.Validations.ValidateTaxId do
   """
   use Ash.Resource.Validation
 
+  alias Firmowid.Ash.Core.Nip
   alias Firmowid.Ash.Invoicing.CountryCodes
 
   @impl true
@@ -38,10 +39,10 @@ defmodule Firmowid.Ash.Invoicing.Validations.ValidateTaxId do
   end
 
   defp validate_nip(tax_id, field) when is_binary(tax_id) and tax_id != "" do
-    if Regex.match?(~r/^[1-9]((\d[1-9])|([1-9]\d))\d{7}$/, tax_id) do
+    if Nip.valid?(tax_id) do
       :ok
     else
-      {:error, field: field, message: "musi być numerem NIP"}
+      {:error, field: field, message: "musi być poprawnym numerem NIP"}
     end
   end
 

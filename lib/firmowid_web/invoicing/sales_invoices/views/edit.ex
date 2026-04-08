@@ -3,6 +3,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   LiveView for editing sales invoices with live PDF preview.
 
   Shows the original invoice and a live preview of changes being made.
+  # TODO: move invoice preview/VAT summation logic to Ash calculations
   For non-draft invoices, edits create a correction invoice (faktura korygujaca).
 
   Uses AshPhoenix.Form for form building and validation:
@@ -19,6 +20,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Invoicing.Services.CorrectionReason
   alias Firmowid.Ash.Ksef
+  alias FirmowidWeb.Invoicing.FormHelpers
   alias FirmowidWeb.Invoicing.SalesInvoices.Views.Creator
 
   require Logger
@@ -35,9 +37,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
                :gross_value,
                :is_editable,
                :buyer_id_type,
+               :reference_invoice,
                sales_invoice_items: [:net_value, :vat_value, :gross_value],
                corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-               corrected_invoice: :corrections,
+               corrected_invoice: [
+                 :sales_invoice_items,
+                 corrections: :sales_invoice_items
+               ],
                latest_correction: [sales_invoice_items: [:net_value, :vat_value, :gross_value]]
              ],
              scope: scope
@@ -66,21 +72,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
   defp mount_editable_invoice(socket, invoice) do
     scope = socket.assigns.ash_scope
-    organization = Core.get_organization!(scope.tenant, authorize?: false, actor: %{})
+    organization = Core.get_organization!(scope.tenant, scope: scope)
     bank_accounts = Finances.list_bank_accounts!(scope: scope)
 
-    logo_url = Invoicing.get_logo_url(invoice.organization_id)
+    logo_url = Invoicing.get_logo_url(invoice.organization_id, scope: scope)
 
-    reference_invoice =
-      case invoice.ksef_invoice_kind do
-        :kor ->
-          invoice
-          |> Ash.load!(:reference_invoice, scope: scope)
-          |> Map.get(:reference_invoice)
-
-        :vat ->
-          nil
-      end
+    reference_invoice = load_reference_invoice(invoice, scope)
 
     ash_form = build_ash_form(invoice, socket.assigns.ash_scope)
 
@@ -100,6 +97,26 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     )
     |> assign(:counterparties, Counterparty.list_all!(scope: socket.assigns.ash_scope))
     |> assign(:ksef_connected?, Ksef.get_credential(socket.assigns.ash_scope) != nil)
+  end
+
+  defp load_reference_invoice(%{ksef_invoice_kind: :vat}, _scope), do: nil
+
+  defp load_reference_invoice(%{ksef_invoice_kind: :kor, reference_invoice: ref}, scope) do
+    case ref do
+      %SalesInvoice{id: id} ->
+        SalesInvoice.by_id!(id,
+          load: [
+            :net_value,
+            :vat_value,
+            :gross_value,
+            sales_invoice_items: [:net_value, :vat_value, :gross_value]
+          ],
+          scope: scope
+        )
+
+      _ ->
+        nil
+    end
   end
 
   # Build AshPhoenix.Form for edit — dispatches based on invoice state
@@ -134,7 +151,39 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
       if invoice.ksef_invoice_kind == :kor, do: invoice.corrected_invoice, else: invoice
 
     # Get latest snapshot (most recent correction or original)
-    original_invoice = Ash.load!(original_invoice, [:effective_snapshot], authorize?: false, actor: %{})
+    original_invoice =
+      Ash.load!(
+        original_invoice,
+        [
+          :effective_snapshot,
+          latest_correction: [
+            :currency,
+            :sale_date,
+            :due_date,
+            :payment_method,
+            :seller_account_number,
+            :seller_nip,
+            :seller_display_name,
+            :seller_address,
+            :buyer_type,
+            :buyer_id,
+            :buyer_full_name,
+            :buyer_given_name,
+            :buyer_surname,
+            :buyer_pesel,
+            :buyer_display_name,
+            :buyer_address,
+            :buyer_country,
+            :buyer_email,
+            :buyer_phone,
+            :buyer_description,
+            :is_reverse_charge,
+            :sales_invoice_items
+          ]
+        ],
+        scope: scope
+      )
+
     latest = original_invoice.effective_snapshot
 
     # Pre-populate form params from the latest snapshot
@@ -408,6 +457,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   defp build_preview_from_form(ash_form, socket) do
     invoice = socket.assigns.invoice
     items = build_preview_items(ash_form)
+    {net_value, vat_value, gross_value} = preview_totals(items)
     ksef_invoice_kind = form_value_atom(ash_form, :ksef_invoice_kind) || invoice.ksef_invoice_kind
 
     preview =
@@ -421,7 +471,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
         |> Map.merge(%{
           ksef_invoice_kind: ksef_invoice_kind,
           correction_reason: AshPhoenix.Form.value(ash_form, :correction_reason),
-          sales_invoice_items: items
+          sales_invoice_items: items,
+          net_value: net_value,
+          vat_value: vat_value,
+          gross_value: gross_value
         })
       )
 
@@ -433,16 +486,51 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     |> access_forms(:sales_invoice_items)
     |> Enum.with_index()
     |> Enum.map(fn {item_form, idx} ->
+      quantity = parse_decimal(AshPhoenix.Form.value(item_form, :quantity)) || Decimal.new(0)
+      unit_price = parse_decimal(AshPhoenix.Form.value(item_form, :unit_price)) || Decimal.new(0)
+      vat_rate = to_string(AshPhoenix.Form.value(item_form, :vat_rate) || "0")
+      {net_value, vat_value, gross_value} = preview_item_totals(quantity, unit_price, vat_rate)
+
       struct(SalesInvoiceItem,
         index: idx,
         name: AshPhoenix.Form.value(item_form, :name),
-        quantity: parse_decimal(AshPhoenix.Form.value(item_form, :quantity)),
+        quantity: quantity,
         unit: AshPhoenix.Form.value(item_form, :unit),
-        unit_price: parse_decimal(AshPhoenix.Form.value(item_form, :unit_price)),
-        vat_rate: to_string(AshPhoenix.Form.value(item_form, :vat_rate) || "0")
+        unit_price: unit_price,
+        vat_rate: vat_rate,
+        net_value: net_value,
+        vat_value: vat_value,
+        gross_value: gross_value
       )
     end)
   end
+
+  defp preview_item_totals(quantity, unit_price, vat_rate) do
+    net_value = Decimal.mult(quantity, unit_price)
+    vat_value = Decimal.mult(net_value, vat_rate_decimal(vat_rate))
+    gross_value = Decimal.add(net_value, vat_value)
+
+    {net_value, vat_value, gross_value}
+  end
+
+  defp preview_totals(items) do
+    Enum.reduce(items, {Decimal.new(0), Decimal.new(0), Decimal.new(0)}, fn item, {net, vat, gross} ->
+      {
+        Decimal.add(net, item.net_value || Decimal.new(0)),
+        Decimal.add(vat, item.vat_value || Decimal.new(0)),
+        Decimal.add(gross, item.gross_value || Decimal.new(0))
+      }
+    end)
+  end
+
+  defp vat_rate_decimal("23"), do: Decimal.new("0.23")
+  defp vat_rate_decimal("22"), do: Decimal.new("0.22")
+  defp vat_rate_decimal("8"), do: Decimal.new("0.08")
+  defp vat_rate_decimal("7"), do: Decimal.new("0.07")
+  defp vat_rate_decimal("5"), do: Decimal.new("0.05")
+  defp vat_rate_decimal("4"), do: Decimal.new("0.04")
+  defp vat_rate_decimal("3"), do: Decimal.new("0.03")
+  defp vat_rate_decimal(_), do: Decimal.new(0)
 
   defp build_preview_identity(ash_form, invoice) do
     %{
@@ -494,7 +582,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
   defp maybe_attach_corrected_invoice(preview, :kor, socket) do
     original_invoice = socket.assigns.invoice.corrected_invoice || socket.assigns.invoice
-    Map.put(preview, :corrected_invoice, original_invoice)
+    reference = socket.assigns[:reference_invoice]
+
+    preview
+    |> Map.put(:corrected_invoice, original_invoice)
+    |> Map.put(:reference_invoice, reference)
   end
 
   defp maybe_attach_corrected_invoice(preview, _kind, _socket), do: preview
@@ -568,8 +660,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
   # --- Helpers ---
 
-  defp access_forms(forms, key) when is_map(forms), do: Map.get(forms, key, [])
-  defp access_forms(forms, key) when is_list(forms), do: Keyword.get(forms, key, [])
+  defp access_forms(forms, key), do: FormHelpers.access_forms(forms, key)
 
   defp parse_date(nil), do: nil
   defp parse_date(""), do: nil
@@ -594,20 +685,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   defp parse_boolean("false"), do: false
   defp parse_boolean(_), do: false
 
-  defp parse_decimal(nil), do: nil
-  defp parse_decimal(""), do: nil
-  defp parse_decimal(%Decimal{} = d), do: d
-
-  defp parse_decimal(value) when is_binary(value) do
-    case Decimal.parse(value) do
-      {d, _} -> d
-      :error -> nil
-    end
-  end
-
-  defp parse_decimal(value) when is_integer(value), do: Decimal.new(value)
-  defp parse_decimal(value) when is_float(value), do: Decimal.from_float(value)
-  defp parse_decimal(_), do: nil
+  defp parse_decimal(value), do: FormHelpers.parse_decimal(value)
 
   defp not_editable_message(%SalesInvoice{ksef_invoice_kind: :vat}) do
     "Nie można edytować tej faktury — posiada korekty. Edytuj ostatnią korektę."

@@ -20,6 +20,22 @@ defmodule Firmowid.Ash.SystemActor do
   - `:invoice_matcher` — matches bank transactions to invoices. Can read transactions,
     invoices, bank accounts, and connect/disconnect transaction links.
 
+  - `:bank_sync` — synchronizes bank data from GoCardless. Can expire requisitions
+    and upsert synced transactions.
+
+  - `:analysis_reader` — performs organization-wide read-only financial analysis
+    across invoices and transactions.
+
+  - `:exchange_rate_cache` — persists exchange-rate cache entries for the Money
+    exchange-rate backend.
+
+  - `:organization_owner_setup` — bootstrap-only actor used immediately after
+    organization creation to assign the new organization to its owner and promote
+    that specific user to `:admin`.
+
+  - `:project_tag_manager` — manages analysis tag definitions created as an
+    implementation detail of timetracker projects.
+
   - `:cross_tenant_reader` — reads data across organization boundaries. Used by the
     KSeF fetch dispatcher to enumerate all organizations and queue per-org work.
 
@@ -32,14 +48,21 @@ defmodule Firmowid.Ash.SystemActor do
           | :sales_invoice_processor
           | :ksef_session
           | :invoice_matcher
+          | :bank_sync
+          | :analysis_reader
+          | :exchange_rate_cache
+          | :organization_owner_setup
+          | :project_tag_manager
           | :cross_tenant_reader
           | :anonymous
 
   @enforce_keys [:org_id, :role]
-  defstruct [:org_id, :role]
+  defstruct [:org_id, :role, :blob_id, :user_id]
 
   @type t :: %__MODULE__{
           org_id: binary() | nil,
-          role: role()
+          role: role(),
+          blob_id: binary() | nil,
+          user_id: binary() | nil
         }
 end

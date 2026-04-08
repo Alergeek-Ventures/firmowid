@@ -8,16 +8,47 @@ defmodule Firmowid.Seeds.Helpers do
   and writes directly to the data layer — ideal for deterministic seed data.
   """
 
-  import Ecto.Query
-
   alias Firmowid.Ash.Blobs.Blob, as: AshBlob
   alias Firmowid.Ash.Finances.BankAccount, as: AshBankAccount
   alias Firmowid.Ash.Finances.Requisition, as: AshRequisition
   alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
   alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
+  alias Firmowid.Ash.Invoicing.CostInvoiceTransaction, as: AshCostInvoiceTransaction
   alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem, as: AshSalesInvoiceItem
-  alias Firmowid.Repo
+  alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction, as: AshSalesInvoiceTransaction
+
+  require Ash.Query
+
+  @seed_actor %{id: "00000000-0000-0000-0000-000000000000", role: :admin}
+
+  @string_key_to_atom %{
+    "invoice_type" => :invoice_type,
+    "issue_date" => :issue_date,
+    "sale_date" => :sale_date,
+    "due_date" => :due_date,
+    "currency" => :currency,
+    "buyer_display_name" => :buyer_display_name,
+    "buyer_full_name" => :buyer_full_name,
+    "buyer_address" => :buyer_address,
+    "buyer_country" => :buyer_country,
+    "buyer_id" => :buyer_id,
+    "buyer_type" => :buyer_type,
+    "payment_method" => :payment_method,
+    "is_reverse_charge" => :is_reverse_charge,
+    "is_cash_account" => :is_cash_account,
+    "counterparty_id" => :counterparty_id,
+    "invoice_number" => :invoice_number,
+    "seller_display_name" => :seller_display_name,
+    "seller_address" => :seller_address,
+    "seller_nip" => :seller_nip,
+    "seller_account_number" => :seller_account_number,
+    "name" => :name,
+    "quantity" => :quantity,
+    "unit" => :unit,
+    "unit_price" => :unit_price,
+    "vat_rate" => :vat_rate
+  }
 
   # A minimal valid single-page blank PDF used as placeholder content for seed blobs.
   # Each xref entry must be exactly 20 bytes (including the trailing \r\n).
@@ -80,18 +111,12 @@ defmodule Firmowid.Seeds.Helpers do
   # ---------------------------------------------------------------------------
 
   def seed_requisition!(id, org_id) do
-    case Ash.get(AshRequisition, id, tenant: org_id, authorize?: false, actor: %{}) do
-      {:ok, existing} ->
-        existing
-
-      _ ->
-        Ash.create!(AshRequisition, %{id: id},
-          action: :persist,
-          tenant: org_id,
-          authorize?: false,
-          actor: %{}
-        )
-    end
+    Ash.Seed.upsert!(
+      AshRequisition,
+      %{id: id, organization_id: org_id},
+      identity: :unique_id,
+      tenant: org_id
+    )
   end
 
   def seed_bank_account!(attrs, org_id) do
@@ -113,17 +138,9 @@ defmodule Firmowid.Seeds.Helpers do
   # ---------------------------------------------------------------------------
 
   def get_or_create_sales_invoice(inv_number, org_id, attrs) do
-    case Repo.one(
-           from(si in AshSalesInvoice,
-             where: si.invoice_number == ^inv_number and si.organization_id == ^org_id,
-             limit: 1
-           )
-         ) do
-      nil ->
-        seed_sales_invoice!(inv_number, org_id, attrs)
-
-      inv ->
-        inv
+    case find_sales_invoice(inv_number, org_id) do
+      nil -> seed_sales_invoice!(inv_number, org_id, attrs)
+      invoice -> invoice
     end
   end
 
@@ -159,7 +176,7 @@ defmodule Firmowid.Seeds.Helpers do
 
   defp atomize_string_keys(map) do
     Map.new(map, fn
-      {key, value} when is_binary(key) -> {String.to_existing_atom(key), value}
+      {key, value} when is_binary(key) -> {Map.get(@string_key_to_atom, key, key), value}
       {key, value} -> {key, value}
     end)
   end
@@ -176,12 +193,7 @@ defmodule Firmowid.Seeds.Helpers do
   end
 
   def get_or_create_cost_invoice(invoice_identifier, org_id, attrs) do
-    case Repo.one(
-           from(ci in AshCostInvoice,
-             where: ci.invoice_identifier == ^invoice_identifier and ci.organization_id == ^org_id,
-             limit: 1
-           )
-         ) do
+    case find_cost_invoice(invoice_identifier, org_id) do
       nil ->
         checksum = :sha256 |> :crypto.hash("cost-invoice:#{invoice_identifier}:#{org_id}") |> Base.encode16(case: :lower)
         filename = "#{String.replace(invoice_identifier, "/", "-")}.pdf"
@@ -206,8 +218,32 @@ defmodule Firmowid.Seeds.Helpers do
           tenant: org_id
         )
 
-      ci ->
-        ci
+      invoice ->
+        invoice
+    end
+  end
+
+  defp find_sales_invoice(inv_number, org_id) do
+    query =
+      AshSalesInvoice
+      |> Ash.Query.filter(invoice_number == ^inv_number and organization_id == ^org_id)
+      |> Ash.Query.limit(1)
+
+    case Ash.read(query, tenant: org_id, actor: @seed_actor) do
+      {:ok, [invoice | _]} -> invoice
+      _ -> nil
+    end
+  end
+
+  defp find_cost_invoice(invoice_identifier, org_id) do
+    query =
+      AshCostInvoice
+      |> Ash.Query.filter(invoice_identifier == ^invoice_identifier and organization_id == ^org_id)
+      |> Ash.Query.limit(1)
+
+    case Ash.read(query, tenant: org_id, actor: @seed_actor) do
+      {:ok, [invoice | _]} -> invoice
+      _ -> nil
     end
   end
 
@@ -221,6 +257,70 @@ defmodule Firmowid.Seeds.Helpers do
     upload_seed_blob_to_s3!(blob.blob_path)
 
     blob
+  end
+
+  def connect_sales_invoice_transaction!(sales_invoice_id, transaction_id, org_id) do
+    if !sales_invoice_transaction_exists?(sales_invoice_id, transaction_id, org_id) do
+      Ash.Seed.seed!(
+        AshSalesInvoiceTransaction,
+        %{
+          sales_invoice_id: sales_invoice_id,
+          transaction_id: transaction_id,
+          organization_id: org_id
+        },
+        tenant: org_id
+      )
+    end
+
+    :ok
+  end
+
+  def connect_cost_invoice_transaction!(cost_invoice_id, transaction_id, org_id) do
+    if !cost_invoice_transaction_exists?(cost_invoice_id, transaction_id, org_id) do
+      Ash.Seed.seed!(
+        AshCostInvoiceTransaction,
+        %{
+          cost_invoice_id: cost_invoice_id,
+          transaction_id: transaction_id,
+          organization_id: org_id
+        },
+        tenant: org_id
+      )
+    end
+
+    :ok
+  end
+
+  defp sales_invoice_transaction_exists?(sales_invoice_id, transaction_id, org_id) do
+    query =
+      AshSalesInvoiceTransaction
+      |> Ash.Query.filter(
+        sales_invoice_id == ^sales_invoice_id and
+          transaction_id == ^transaction_id and
+          organization_id == ^org_id
+      )
+      |> Ash.Query.limit(1)
+
+    case Ash.read(query, tenant: org_id, actor: @seed_actor) do
+      {:ok, [_ | _]} -> true
+      _ -> false
+    end
+  end
+
+  defp cost_invoice_transaction_exists?(cost_invoice_id, transaction_id, org_id) do
+    query =
+      AshCostInvoiceTransaction
+      |> Ash.Query.filter(
+        cost_invoice_id == ^cost_invoice_id and
+          transaction_id == ^transaction_id and
+          organization_id == ^org_id
+      )
+      |> Ash.Query.limit(1)
+
+    case Ash.read(query, tenant: org_id, actor: @seed_actor) do
+      {:ok, [_ | _]} -> true
+      _ -> false
+    end
   end
 
   defp upload_seed_blob_to_s3!(blob_path) do

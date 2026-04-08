@@ -12,6 +12,7 @@ defmodule FirmowidWeb.Core.Router do
   alias Auth.Controllers.AuthController
   alias FirmowidWeb.Infrastructure.Hooks.CurrentPath
   alias FirmowidWeb.Infrastructure.Hooks.RedirectAuthenticated
+  alias FirmowidWeb.Infrastructure.Hooks.RequireAdmin
   alias FirmowidWeb.Infrastructure.Hooks.RequireNoOrganization
   alias FirmowidWeb.Infrastructure.Hooks.RequireOrganization
   alias FirmowidWeb.Infrastructure.Hooks.Timezone
@@ -68,7 +69,7 @@ defmodule FirmowidWeb.Core.Router do
     live_dashboard "/dashboard",
       metrics: FirmowidWeb.Core.Telemetry
 
-    oban_dashboard("/oban", oban_name: Firmowid.Oban)
+    oban_dashboard("/oban", oban_name: Oban)
 
     error_tracker_dashboard("/errors")
 
@@ -106,7 +107,7 @@ defmodule FirmowidWeb.Core.Router do
 
     ash_authentication_live_session :without_org,
       on_mount: [{RequireNoOrganization, :default}] do
-      live "/organization/", Organization.Views.Index, :index
+      live "/organization", Organization.Views.Index, :index
     end
   end
 
@@ -137,14 +138,6 @@ defmodule FirmowidWeb.Core.Router do
       live "/sprzedazowe/:id/edytuj", Invoicing.SalesInvoices.Views.Edit, :edit
       live "/sprzedazowe/:id", Invoicing.SalesInvoices.Views.Show, :show
 
-      live "/zarzadzanie/pracownicy", Management.Views.Employees
-      live "/zarzadzanie/pracownicy/:id", Management.Views.Employee, :projects
-      live "/zarzadzanie/projekty", Projects, :index
-      live "/zarzadzanie/projekty/archiwum", Projects, :archive
-      live "/zarzadzanie/projekty/dodaj", ProjectForm, :new
-      live "/zarzadzanie/projekty/:id", Management.Views.Project, :show
-      live "/zarzadzanie/projekty/:id/edycja", ProjectForm, :edit
-
       live "/ustawienia/bank/dodaj", BankSync.Views.Create, :index
 
       live "/zaproszenia", Organization.Invites.Views.Index, :index
@@ -152,6 +145,22 @@ defmodule FirmowidWeb.Core.Router do
       live "/analiza", Analysis.Views.Dashboard, :index
 
       live "/development", Development.Views.Index, :index
+    end
+
+    ash_authentication_live_session :with_org_management,
+      on_mount: [
+        {RequireOrganization, :default},
+        {RequireAdmin, :default},
+        {CurrentPath, :save_request_uri},
+        Timezone
+      ] do
+      live "/zarzadzanie/pracownicy", Management.Views.Employees
+      live "/zarzadzanie/pracownicy/:id", Management.Views.Employee, :projects
+      live "/zarzadzanie/projekty", Projects, :index
+      live "/zarzadzanie/projekty/archiwum", Projects, :archive
+      live "/zarzadzanie/projekty/dodaj", ProjectForm, :new
+      live "/zarzadzanie/projekty/:id", Management.Views.Project, :show
+      live "/zarzadzanie/projekty/:id/edycja", ProjectForm, :edit
     end
   end
 
@@ -225,11 +234,5 @@ defmodule FirmowidWeb.Core.Router do
 
     # API login endpoint - SessionApi controller rewritten for Ash Authentication
     post "/login", Auth.Controllers.SessionApi, :create
-  end
-
-  scope "/api", FirmowidWeb do
-    pipe_through [:api, :require_authenticated_user_with_organization_api]
-
-    post "/cost-invoices", Invoicing.CostInvoices.Controllers.Api, :create
   end
 end

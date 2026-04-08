@@ -68,4 +68,29 @@ defmodule FirmowidWeb.Infrastructure.Utilities.TimeFormatter do
   def format_date(date, format) do
     Cldr.Date.to_string!(date, Firmowid.Cldr, format: format, locale: "pl")
   end
+
+  @doc """
+  Format DateTime as relative Polish time, e.g. "2 dni temu".
+  """
+  def format_relative_time(datetime, now \\ DateTime.utc_now())
+
+  def format_relative_time(%DateTime{} = datetime, now) do
+    seconds =
+      now
+      |> DateTime.diff(datetime, :second)
+      |> max(0)
+
+    cond do
+      seconds < 60 -> "przed chwilą"
+      seconds < 3600 -> "#{div(seconds, 60)} min temu"
+      seconds < 86_400 -> "#{div(seconds, 3600)} godz. temu"
+      true -> "#{div(seconds, 86_400)} dni temu"
+    end
+  end
+
+  def format_relative_time(%NaiveDateTime{} = datetime, now) do
+    datetime
+    |> DateTime.from_naive!("Etc/UTC")
+    |> format_relative_time(now)
+  end
 end

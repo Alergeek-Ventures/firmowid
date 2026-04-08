@@ -2,6 +2,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
   alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
@@ -110,7 +111,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
       |> Enum.sort_by(& &1.duration, :desc)
 
     # Total duration for this user this month
-    total_query = Ash.Query.for_read(Session, :list, %{user_id: user_id, month: month, year: year})
+    total_query = Ash.Query.for_read(Session, :list, %{user_id: user_id, month: month, year: year}, scope: scope)
 
     %{total: total_duration} =
       Ash.aggregate!(total_query, {:total, :sum, field: :duration, default: 0}, scope: scope)
@@ -132,14 +133,5 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
   def error_to_string(:not_accepted), do: "Unacceptable file type"
 
   # Distinct months (as naive_datetime) that have sessions, newest first.
-  defp months_with_sessions(filters, scope) do
-    Session
-    |> Ash.Query.for_read(:list, filters, scope: scope)
-    |> Ash.Query.distinct(:month_start)
-    |> Ash.Query.distinct_sort(month_start: :desc)
-    |> Ash.Query.sort(month_start: :desc)
-    |> Ash.Query.load(:month_start)
-    |> Ash.read!(scope: scope)
-    |> Enum.map(& &1.month_start)
-  end
+  defp months_with_sessions(filters, scope), do: Timetracker.months_with_sessions(filters, scope)
 end

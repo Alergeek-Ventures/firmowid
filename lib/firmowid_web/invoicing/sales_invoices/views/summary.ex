@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
         scope: scope
       )
 
-    logo_url = Invoicing.get_logo_url(invoice.organization_id)
+    logo_url = Invoicing.get_logo_url(invoice.organization_id, scope: scope)
 
     submission_info = Ksef.get_submission_info(invoice)
 
@@ -47,7 +47,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
 
     currency_rate = Invoicing.get_currency_rate(invoice)
 
-    {previous_invoices, invoice} = get_previous_invoices(invoice)
+    {previous_invoices, invoice} = get_previous_invoices(invoice, scope)
 
     socket =
       socket
@@ -142,7 +142,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             {@submission_info.error}
           </p>
           <p class="text-grey-600 mt-2 text-sm">
-            Edytuj fakturę, aby ponowić wysyłkę.
+            Jeżeli koliduje numer faktury - skopiuj ją i nadaj jej nowy numer.
+            A tę usuń.
           </p>
           <.link
             navigate={~p"/sprzedazowe/#{@invoice.id}"}
@@ -242,8 +243,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   def handle_info({:ksef_invoice_status, %{invoice_id: invoice_id, status: status}}, socket) do
     # Only handle if this is the invoice we're viewing
     if socket.assigns.invoice.id == invoice_id do
-      # Refetch invoice from DB to get latest state (including ksef_number)
-      # TODO: replace authorize?: false + actor: %{} with system actor once available
       invoice =
         SalesInvoice.by_id!(
           invoice_id,
@@ -256,15 +255,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             corrected_invoice: :corrections,
             latest_correction: [sales_invoice_items: [:net_value, :vat_value, :gross_value]]
           ],
-          authorize?: false,
-          actor: %{},
-          tenant: socket.assigns.current_user.organization_id
+          scope: socket.assigns.ash_scope
         )
 
       # Convert PubSub status to SubmissionInfo status
       submission_info = Ksef.get_submission_info(invoice)
 
-      {previous_invoices, invoice} = get_previous_invoices(invoice)
+      {previous_invoices, invoice} = get_previous_invoices(invoice, socket.assigns.ash_scope)
 
       socket =
         socket
@@ -286,7 +283,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
     end
   end
 
-  defp get_previous_invoices(%{ksef_invoice_kind: :kor} = invoice) do
+  defp get_previous_invoices(%{ksef_invoice_kind: :kor} = invoice, scope) do
     alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
 
     # Re-fetch corrected invoice to ensure all attributes are loaded,
@@ -294,10 +291,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
     original_invoice =
       invoice.corrected_invoice.id
       |> SalesInvoice.by_id!(
-        authorize?: false,
-        actor: %{},
-        tenant: invoice.organization_id,
-        load: [corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]]]
+        scope: scope,
+        load: [
+          :net_value,
+          :vat_value,
+          :gross_value,
+          sales_invoice_items: [:net_value, :vat_value, :gross_value],
+          corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]]
+        ]
       )
       |> then(fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)
 
@@ -324,7 +325,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
     {previous_invoices, invoice}
   end
 
-  defp get_previous_invoices(%{ksef_invoice_kind: :vat} = invoice), do: {[], invoice}
+  defp get_previous_invoices(%{ksef_invoice_kind: :vat} = invoice, _scope), do: {[], invoice}
 
   defp safe_timestamp(record) do
     case record do

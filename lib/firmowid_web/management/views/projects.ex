@@ -56,11 +56,14 @@ defmodule FirmowidWeb.Management.Views.Projects do
 
   def handle_event("unarchive_project", %{"id" => id}, socket) do
     scope = socket.assigns.ash_scope
-    project = AshProject.get!(id, scope: scope)
 
-    {:ok, _project} = AshProject.unarchive(project, scope: scope)
-
-    {:noreply, assign_projects(socket)}
+    with {:ok, project} <- AshProject.get(id, scope: scope, not_found_error?: false),
+         {:ok, _project} <- AshProject.unarchive(project, scope: scope) do
+      {:noreply, assign_projects(socket)}
+    else
+      _ ->
+        {:noreply, put_flash(socket, :error, "Nie udało się przywrócić projektu")}
+    end
   end
 
   defp assign_projects(socket) do
@@ -131,14 +134,5 @@ defmodule FirmowidWeb.Management.Views.Projects do
   end
 
   # Distinct months (as naive_datetime) that have sessions, newest first.
-  defp months_with_sessions(filters, scope) do
-    Session
-    |> Ash.Query.for_read(:list, filters, scope: scope)
-    |> Ash.Query.distinct(:month_start)
-    |> Ash.Query.distinct_sort(month_start: :desc)
-    |> Ash.Query.sort(month_start: :desc)
-    |> Ash.Query.load(:month_start)
-    |> Ash.read!(scope: scope)
-    |> Enum.map(& &1.month_start)
-  end
+  defp months_with_sessions(filters, scope), do: Timetracker.months_with_sessions(filters, scope)
 end

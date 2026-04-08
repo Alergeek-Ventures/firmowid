@@ -3,7 +3,7 @@ defmodule Firmowid.Ash.Invoicing.Workers.InboundEmailWorker do
   Processes inbound emails by:
   1. Validating sender against organization allowlist
   2. Downloading PDF/image attachments from Resend
-  3. Scheduling CostInvoiceWorker jobs for each attachment
+  3. Creating processing-target blobs for each attachment
   4. Marking inbound_email record with result
   """
 
@@ -11,6 +11,7 @@ defmodule Firmowid.Ash.Invoicing.Workers.InboundEmailWorker do
     queue: :inbound_emails,
     max_attempts: 3
 
+  alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.Services.ResendClient
@@ -39,12 +40,12 @@ defmodule Firmowid.Ash.Invoicing.Workers.InboundEmailWorker do
         Logger.warning("Rejecting email #{id} from unexpected sender #{inbound_email.sender_email}")
 
         Invoicing.mark_inbound_email_processed!(inbound_email, :unexpected_sender, opts)
-        {:error, :unexpected_sender}
+        {:cancel, :unexpected_sender}
 
       {:error, :no_attachments} ->
         Logger.info("Email #{id} has no valid attachments to process")
         Invoicing.mark_inbound_email_processed!(inbound_email, :no_attachment, opts)
-        {:error, :no_attachments}
+        {:cancel, :no_attachments}
 
       {:error, reason} ->
         Logger.error("Failed to process inbound email #{id}: #{inspect(reason)}")
@@ -91,7 +92,7 @@ defmodule Firmowid.Ash.Invoicing.Workers.InboundEmailWorker do
       String.starts_with?(content_type, "image/")
   end
 
-  # Attachment scheduling - download and pass to upload_cost_invoice
+  # Attachment scheduling - download and pass to blob processing
   defp schedule_attachments(attachments, inbound_email_id, scope) do
     results = Enum.map(attachments, &schedule_single_attachment(&1, inbound_email_id, scope))
 
@@ -119,7 +120,7 @@ defmodule Firmowid.Ash.Invoicing.Workers.InboundEmailWorker do
     with {:ok, binary} <- ResendClient.download_attachment(download_url),
          {:ok, temp_path} <- write_to_temp_file(binary, filename),
          {:ok, _blob} <-
-           Invoicing.upload_cost_invoice(
+           create_blob_for_cost_invoice(
              temp_path,
              content_type,
              filename,
@@ -132,6 +133,17 @@ defmodule Firmowid.Ash.Invoicing.Workers.InboundEmailWorker do
         Logger.error("Failed to schedule attachment #{filename}: #{inspect(reason)}")
         error
     end
+  end
+
+  defp create_blob_for_cost_invoice(temp_path, content_type, filename, inbound_email_id, scope) do
+    Blobs.create_blob_for_processing(
+      temp_path,
+      content_type,
+      filename,
+      :cost_invoice,
+      %{inbound_email_id: inbound_email_id},
+      scope: scope
+    )
   end
 
   # sobelow_skip ["Traversal.FileModule"]

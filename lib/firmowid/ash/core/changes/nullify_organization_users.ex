@@ -8,17 +8,16 @@ defmodule Firmowid.Ash.Core.Changes.NullifyOrganizationUsers do
   alias Firmowid.Ash.Core.User
 
   @impl true
-  def change(changeset, _opts, _context) do
+  def change(changeset, _opts, context) do
     Ash.Changeset.before_action(changeset, fn changeset ->
       organization_id = Ash.Changeset.get_data(changeset, :id)
 
       User
       |> Ash.Query.filter(organization_id == ^organization_id)
-      |> Ash.bulk_update!(:update_profile, %{},
+      |> Ash.bulk_update!(:clear_organization, %{},
         strategy: :atomic,
         atomic_update: %{organization_id: nil},
-        authorize?: false,
-        actor: %{}
+        actor: context.actor
       )
 
       changeset

@@ -3,8 +3,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   LiveView for the sales invoice creator wizard.
 
   Uses `WizardDraft` (Ash ETS resource) for ephemeral wizard state,
+  # TODO: move domain validation (validate_organization_for_invoicing,
+  # reverse_charge_for_id_type?, currency_for_country) to Ash calculations/validations
   `AshPhoenix.Form` for per-step form building and validation, and
   `SalesInvoice.confirm_from_draft` for final invoice creation.
+
+  The draft itself carries expression calculations (`buyer_id_type`,
+  `buyer_display_name_label`) and aggregates (`net_value`, `vat_value`,
+  `gross_value`) via its `has_many :items` relationship, so no intermediate
+  `SalesInvoice` struct is needed — the loaded draft IS the `@invoice` assign.
   """
   use FirmowidWeb, :live_view
 
@@ -14,7 +21,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   alias Firmowid.Ash.Invoicing.Counterparty
   alias Firmowid.Ash.Invoicing.CountryCodes
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Invoicing.WizardDraft
   alias Firmowid.Ash.Ksef
 
@@ -37,6 +43,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   # Convert URL number to step name
   defp number_to_step(num) when is_map_key(@steps, num), do: Map.fetch!(@steps, num)
   defp number_to_step(_), do: :counterparty
+
+  # Calculations and aggregates to load on the draft for template rendering
+  @draft_loads [
+    :buyer_id_type,
+    :buyer_display_name_label,
+    :net_value,
+    :vat_value,
+    :gross_value,
+    items: [:net_value, :vat_value, :gross_value]
+  ]
 
   @impl true
   def render(%{loading: true} = assigns), do: ~H""
@@ -90,8 +106,17 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   defp create_and_redirect(socket, scope) do
     org_id = scope.tenant
-    {:ok, draft} = WizardDraft.create(%{organization_id: org_id}, scope: scope)
-    {:noreply, push_patch(socket, to: creator_draft_url(draft.id, :counterparty), replace: true)}
+
+    case WizardDraft.create(%{organization_id: org_id}, scope: scope) do
+      {:ok, draft} ->
+        {:noreply, push_patch(socket, to: creator_draft_url(draft.id, :counterparty), replace: true)}
+
+      {:error, _error} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Nie masz uprawnień do wystawiania faktur sprzedażowych")
+         |> push_navigate(to: ~p"/fakturowanie")}
+    end
   end
 
   defp create_draft_from_copy(socket, scope, invoice_id) do
@@ -107,20 +132,37 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
          |> push_patch(to: ~p"/sprzedazowe", replace: true)}
 
       {:ok, base_invoice} ->
-        {:ok, draft} = WizardDraft.create(%{organization_id: org_id}, scope: scope)
-
-        case populate_draft_from_invoice(draft, base_invoice, socket.assigns.bank_accounts, scope) do
-          {:ok, draft} ->
-            invoice = draft_to_invoice(draft)
-            socket = assign(socket, invoice: invoice, creator_draft_id: draft.id, org_id: org_id)
-            {:noreply, push_patch(socket, to: creator_draft_url(draft.id, :items), replace: true)}
-
-          {:partial, draft, changeset} ->
-            invoice = draft_to_invoice(draft)
-            socket = assign(socket, invoice: invoice, creator_draft_id: draft.id, org_id: org_id)
-            {:noreply, setup_partial_copy(socket, changeset, draft.id)}
-        end
+        create_and_populate_draft_from_copy(socket, scope, org_id, base_invoice)
     end
+  end
+
+  defp create_and_populate_draft_from_copy(socket, scope, org_id, base_invoice) do
+    case WizardDraft.create(%{organization_id: org_id}, scope: scope) do
+      {:ok, draft} ->
+        handle_populate_draft_result(
+          socket,
+          org_id,
+          populate_draft_from_invoice(draft, base_invoice, socket.assigns.bank_accounts, scope)
+        )
+
+      {:error, _error} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Nie masz uprawnień do wystawiania faktur sprzedażowych")
+         |> push_navigate(to: ~p"/fakturowanie")}
+    end
+  end
+
+  defp handle_populate_draft_result(socket, org_id, {:ok, draft}) do
+    invoice = load_draft_with_calcs(draft, socket.assigns.ash_scope)
+    socket = assign(socket, invoice: invoice, creator_draft_id: draft.id, org_id: org_id)
+    {:noreply, push_patch(socket, to: creator_draft_url(draft.id, :items), replace: true)}
+  end
+
+  defp handle_populate_draft_result(socket, org_id, {:partial, draft, changeset}) do
+    invoice = load_draft_with_calcs(draft, socket.assigns.ash_scope)
+    socket = assign(socket, invoice: invoice, creator_draft_id: draft.id, org_id: org_id)
+    {:noreply, setup_partial_copy(socket, changeset, draft.id)}
   end
 
   defp populate_draft_from_invoice(draft, base_invoice, bank_accounts, scope) do
@@ -220,12 +262,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   defp restore_draft(socket, scope, draft, params) do
     org_id = scope.tenant
     requested_step = parse_step_param(params["step"])
+
+    # Load items for calculate_max_step and for @invoice assign
+    draft = Ash.load!(draft, [:items], scope: scope)
     max_allowed_step = calculate_max_step(draft)
 
     # Clamp requested step to what's allowed based on data
     step = clamp_step(requested_step, max_allowed_step)
 
-    invoice = draft_to_invoice(draft)
+    invoice = load_draft_with_calcs(draft, scope)
 
     socket =
       socket
@@ -248,58 +293,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     {:noreply, socket}
   end
 
-  # Build a SalesInvoice struct from WizardDraft data for form/template compatibility
-  defp draft_to_invoice(draft) do
-    items =
-      Enum.map(draft.items || [], fn item ->
-        struct(SalesInvoiceItem,
-          id: item.id,
-          index: item.index,
-          name: item.name,
-          quantity: item.quantity,
-          unit: item.unit,
-          unit_price: item.unit_price,
-          vat_rate: item.vat_rate
-        )
-      end)
-
-    SalesInvoice
-    |> struct(
-      counterparty_id: draft.counterparty_id,
-      buyer_type: draft.buyer_type,
-      buyer_id: draft.buyer_id,
-      buyer_full_name: draft.buyer_full_name,
-      buyer_given_name: draft.buyer_given_name,
-      buyer_surname: draft.buyer_surname,
-      buyer_pesel: draft.buyer_pesel,
-      buyer_display_name: draft.buyer_display_name,
-      buyer_address: draft.buyer_address,
-      buyer_country: draft.buyer_country,
-      buyer_email: draft.buyer_email,
-      buyer_phone: draft.buyer_phone,
-      buyer_description: draft.buyer_description,
-      invoice_type: draft.invoice_type,
-      is_reverse_charge: draft.is_reverse_charge,
-      currency: draft.currency,
-      seller_account_number: draft.seller_account_number,
-      sales_invoice_items: items,
-      sale_date: draft.sale_date,
-      due_date: draft.due_date,
-      payment_method: draft.payment_method
-    )
-    |> Ash.load!(
-      [
-        :buyer_id_type,
-        :buyer_display_name_label,
-        :net_value,
-        :vat_value,
-        :gross_value,
-        sales_invoice_items: [:net_value, :vat_value, :gross_value]
-      ],
-      tenant: draft.organization_id,
-      authorize?: false,
-      actor: %{}
-    )
+  # Load expression calculations and aggregates on a WizardDraft so it can
+  # serve as the @invoice assign in templates. The loaded draft has:
+  #   - :buyer_id_type, :buyer_display_name_label (expression calcs)
+  #   - :net_value, :vat_value, :gross_value (sum aggregates over items)
+  #   - items with :net_value, :vat_value, :gross_value loaded
+  defp load_draft_with_calcs(draft, scope) do
+    Ash.load!(draft, @draft_loads, scope: scope)
   end
 
   # Parse step from URL param (number string) to step name atom
@@ -322,23 +322,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   defp calculate_max_step(draft) do
     cond do
-      # Has all payment data -> can access preview
-      draft.sale_date && draft.due_date && draft.payment_method ->
-        :preview
-
-      # Has items data -> can access payment
-      draft.items != nil and draft.items != [] ->
-        :payment
-
-      # Has counterparty data -> can access items
-      draft.buyer_country ->
-        :items
-
-      # Default -> counterparty
-      true ->
-        :counterparty
+      draft.sale_date && draft.due_date && draft.payment_method -> :preview
+      has_items?(draft) -> :payment
+      draft.buyer_country -> :items
+      true -> :counterparty
     end
   end
+
+  defp has_items?(%{items: items}) when is_list(items), do: items != []
+  defp has_items?(_draft), do: false
 
   defp maybe_setup_step(socket, :counterparty, params) do
     # Counterparty selection - setup search/tabs
@@ -363,6 +355,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     draft = socket.assigns.draft
     scope = socket.assigns.ash_scope
 
+    # Ensure items are loaded before building the form — auto?: true
+    # detects manage_relationship(:items, ...) and builds nested forms.
+    # If items aren't loaded, on_missing: :destroy would wipe all items.
+    draft = Ash.load!(draft, [:items], scope: scope)
+
     ash_form =
       AshPhoenix.Form.for_update(draft, :update_items, scope: scope, forms: [auto?: true])
 
@@ -374,7 +371,25 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         ash_form
       end
 
+    initial_params = %{
+      "currency" => draft.currency,
+      "is_reverse_charge" => draft.is_reverse_charge,
+      "items" =>
+        Enum.map(draft.items || [], fn item ->
+          %{
+            "name" => item.name,
+            "quantity" => item.quantity,
+            "unit" => item.unit,
+            "unit_price" => item.unit_price,
+            "vat_rate" => item.vat_rate
+          }
+        end)
+    }
+
+    ash_form = AshPhoenix.Form.validate(ash_form, initial_params)
+
     socket
+    |> assign(:draft, draft)
     |> assign(:items_form, to_form(ash_form))
     |> assign(:items_field, :items)
   end
@@ -408,9 +423,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   defp maybe_setup_step(socket, :preview, _params) do
-    # Preview - load organization and build preview invoice
+    # Preview - load organization and build preview invoice map for Pdf component
     org_id = socket.assigns.org_id
-    organization = Core.get_organization!(org_id, authorize?: false, actor: %{})
+    organization = Core.get_organization!(org_id, scope: socket.assigns.ash_scope)
     invoice = socket.assigns.invoice
 
     # Generate preview data
@@ -424,18 +439,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     # Validate initial invoice number
     invoice_warnings = SalesInvoice.validate_number!(invoice_number, issue_date, nil, scope: scope)
 
-    # Build preview invoice with seller data from organization
-    logo_url = Invoicing.get_logo_url(org_id)
+    # Build preview invoice map with seller data from organization
+    logo_url = Invoicing.get_logo_url(org_id, scope: socket.assigns.ash_scope)
 
-    preview_invoice = %{
-      invoice
-      | invoice_number: invoice_number,
-        issue_date: issue_date,
-        seller_display_name: organization.name,
-        seller_address: organization.address,
-        seller_nip: organization.nip,
-        is_cash_account: invoice.payment_method == :cash
-    }
+    preview_invoice = build_preview_map(invoice, organization, invoice_number, issue_date)
 
     # Get currency rate for non-PLN invoices
     currency_rate = Invoicing.get_currency_rate(preview_invoice)
@@ -452,6 +459,60 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   defp maybe_setup_step(socket, _step, _params) do
     socket
+  end
+
+  # Build a plain map from the loaded WizardDraft for the Pdf/Template component.
+  # The Pdf component declares `attr :sales_invoice, :map` so a plain map works.
+  # We map WizardDraft fields + items to the names the template expects.
+  defp build_preview_map(draft, organization, invoice_number, issue_date) do
+    items =
+      (draft.items || [])
+      |> Enum.sort_by(& &1.index)
+      |> Enum.map(fn item ->
+        %{
+          name: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+          unit_price: item.unit_price,
+          vat_rate: item.vat_rate,
+          net_value: item.net_value,
+          vat_value: item.vat_value,
+          gross_value: item.gross_value
+        }
+      end)
+
+    %{
+      invoice_number: invoice_number,
+      issue_date: issue_date,
+      sale_date: draft.sale_date,
+      due_date: draft.due_date,
+      currency: draft.currency,
+      invoice_type: draft.invoice_type,
+      is_reverse_charge: draft.is_reverse_charge,
+      is_cash_account: draft.payment_method == :cash,
+      payment_method: draft.payment_method,
+      seller_account_number: draft.seller_account_number,
+      seller_display_name: organization.name,
+      seller_address: organization.address,
+      seller_nip: organization.nip,
+      buyer_type: draft.buyer_type,
+      buyer_id: draft.buyer_id,
+      buyer_full_name: draft.buyer_full_name,
+      buyer_given_name: draft.buyer_given_name,
+      buyer_surname: draft.buyer_surname,
+      buyer_pesel: draft.buyer_pesel,
+      buyer_address: draft.buyer_address,
+      buyer_country: draft.buyer_country,
+      net_value: draft.net_value,
+      vat_value: draft.vat_value,
+      gross_value: draft.gross_value,
+      sales_invoice_items: items,
+      # Fields the template checks but aren't relevant for new invoices
+      ksef_invoice_kind: :vat,
+      ksef_number: nil,
+      corrected_invoice: nil,
+      correction_reason: nil
+    }
   end
 
   # When copying an invoice with invalid counterparty data, the form is pre-filled
@@ -578,7 +639,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
             Invoicing.reset_wizard_draft_bank_account!(updated_draft, scope: socket.assigns.ash_scope)
           end
 
-        invoice = draft_to_invoice(updated_draft)
+        invoice = load_draft_with_calcs(updated_draft, socket.assigns.ash_scope)
 
         socket =
           socket
@@ -624,7 +685,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     case WizardDraft.update_counterparty(socket.assigns.draft, attrs, scope: scope) do
       {:ok, updated_draft} ->
-        invoice = draft_to_invoice(updated_draft)
+        invoice = load_draft_with_calcs(updated_draft, scope)
 
         socket =
           socket
@@ -657,7 +718,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     case populate_draft_from_invoice(draft, base_invoice, socket.assigns.bank_accounts, scope) do
       {:ok, updated_draft} ->
-        invoice = draft_to_invoice(updated_draft)
+        invoice = load_draft_with_calcs(updated_draft, scope)
 
         socket =
           socket
@@ -667,7 +728,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         {:noreply, push_patch(socket, to: creator_draft_url(draft.id, :items))}
 
       {:partial, updated_draft, changeset} ->
-        invoice = draft_to_invoice(updated_draft)
+        invoice = load_draft_with_calcs(updated_draft, scope)
 
         socket =
           socket
@@ -708,7 +769,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   def handle_event("submit_counterparty", %{"form" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.counterparty_form.source, params: params) do
       {:ok, updated_draft} ->
-        invoice = draft_to_invoice(updated_draft)
+        invoice = load_draft_with_calcs(updated_draft, socket.assigns.ash_scope)
 
         socket =
           socket
@@ -718,7 +779,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         {:noreply, push_patch(socket, to: creator_draft_url(socket.assigns.creator_draft_id, :items))}
 
       {:error, form} ->
-        {:noreply, assign(socket, :counterparty_form, to_form(form))}
+        {:noreply,
+         socket
+         |> assign(:counterparty_form, to_form(form))
+         |> LiveToast.put_toast(:error, "Nie udało się zapisać danych kontrahenta — sprawdź błędy formularza (np. NIP).")}
     end
   end
 
@@ -734,27 +798,38 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   def handle_event("select_bank_account", %{"account_id" => account_id}, socket) do
     bank_account = Enum.find(socket.assigns.bank_accounts, &(&1.id == account_id))
 
-    # Update the form with the selected bank account IBAN
-    current_params = socket.assigns.payment_form.source.params || %{}
-    updated_params = Map.put(current_params, "seller_account_number", bank_account.iban)
+    case bank_account do
+      nil ->
+        {:noreply, socket}
 
-    form =
-      socket.assigns.payment_form.source
-      |> AshPhoenix.Form.validate(updated_params)
-      |> to_form()
+      bank_account ->
+        current_params = socket.assigns.payment_form.source.params || %{}
 
-    socket =
-      socket
-      |> assign(:selected_bank_account, bank_account)
-      |> assign(:payment_form, form)
+        {selected_bank_account, updated_params} =
+          if socket.assigns.selected_bank_account && socket.assigns.selected_bank_account.id == bank_account.id do
+            {nil, Map.put(current_params, "seller_account_number", "")}
+          else
+            {bank_account, Map.put(current_params, "seller_account_number", bank_account.iban)}
+          end
 
-    {:noreply, socket}
+        form =
+          socket.assigns.payment_form.source
+          |> AshPhoenix.Form.validate(updated_params)
+          |> to_form()
+
+        socket =
+          socket
+          |> assign(:selected_bank_account, selected_bank_account)
+          |> assign(:payment_form, form)
+
+        {:noreply, socket}
+    end
   end
 
   def handle_event("submit_payment", %{"form" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.payment_form.source, params: params) do
       {:ok, updated_draft} ->
-        invoice = draft_to_invoice(updated_draft)
+        invoice = load_draft_with_calcs(updated_draft, socket.assigns.ash_scope)
 
         socket =
           socket
@@ -769,8 +844,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   def handle_event("update_invoice_number", %{"invoice_number" => invoice_number}, socket) do
-    # Update the invoice number and rebuild the preview invoice
-    preview_invoice = %{socket.assigns.preview_invoice | invoice_number: invoice_number}
+    # Update the invoice number and rebuild the preview map
+    preview_invoice = Map.put(socket.assigns.preview_invoice, :invoice_number, invoice_number)
     issue_date = socket.assigns.preview_invoice.issue_date
 
     # Validate the new invoice number
@@ -786,7 +861,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   def handle_event("select_series", %{"number" => invoice_number}, socket) do
     # User clicked a series suggestion button - set the invoice number
-    preview_invoice = %{socket.assigns.preview_invoice | invoice_number: invoice_number}
+    preview_invoice = Map.put(socket.assigns.preview_invoice, :invoice_number, invoice_number)
     issue_date = socket.assigns.preview_invoice.issue_date
 
     # Validate (should be empty for suggestions, but check anyway)
@@ -961,6 +1036,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     SalesInvoice.read!(
       %{date_from: range_start, date_to: range_end, kind: :vat, submission: :confirmed},
+      load: [:buyer_display_name_label, :gross_value],
       scope: scope
     )
   end

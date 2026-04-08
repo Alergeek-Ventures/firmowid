@@ -19,6 +19,8 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Ksef.Services.InvoiceRenderer
 
+  # authorize?: false bypasses policies, actor: %{} satisfies require_actor? true
+  # on domains like Invoicing.
   @bridge_opts [authorize?: false, actor: %{}]
 
   setup do
@@ -32,7 +34,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceCorrectionTest do
 
   # Creates an original invoice with the given items and buyer name.
   # Requires `org_id:` in opts.
-  defp build_original(opts \\ []) do
+  defp build_original(opts) do
     org_id = Keyword.fetch!(opts, :org_id)
     item_price = Keyword.get(opts, :unit_price, "100.00")
     item_name = Keyword.get(opts, :item_name, "Original Service")

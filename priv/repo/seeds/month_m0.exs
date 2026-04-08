@@ -8,23 +8,25 @@ defmodule Firmowid.Seeds.MonthM0 do
 
   Unmatched cost invoice: OVH Cloud (current month).
 
-  KSeF showcase invoices (4 states):
+  KSeF showcase invoices (2 states):
     01/ — plain invoice, no KSeF
-    02/ — KSeF success (has ksef_number, locked)
-    03/ — KSeF sending (locked, Oban job executing)
-    04/ — KSeF failed (locked, Oban job discarded with errors)
+    02/ — confirmed draft (locked), not submitted to KSeF
 
   One matched entry: GhostPet partial month ($3,400).
   THB bank fee: -150 THB (skip_invoicing, :internal).
+
+  S08 deterministic assistant scenario:
+    Current-month unmatched sales invoice for Aurora Retail: 1,230.00 PLN.
+    (paired with M-1 seeded aggregate transactions in MonthM1)
   """
 
-  import Ecto.Query
-
   alias Firmowid.Ash.Analysis.EntityTag
-  alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
   alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
-  alias Firmowid.Repo
   alias Firmowid.Seeds.Helpers
+
+  require Ash.Query
+
+  @seed_actor %{id: "00000000-0000-0000-0000-000000000000", role: :admin}
 
   def seed!(ctx) do
     %{bytecraft: bytecraft, bank_accounts: banks, projects: projects, counterparties: cps} = ctx
@@ -36,6 +38,7 @@ defmodule Firmowid.Seeds.MonthM0 do
     seed_matched_ghostpet(bytecraft, banks, projects, cps, prefix)
     seed_unmatched_cost_invoice(bytecraft, prefix)
     seed_ksef_scenarios(bytecraft, prefix)
+    seed_s08_current_month_invoice(bytecraft, prefix)
   end
 
   # — Unmatched transactions (raw bank feed) —
@@ -142,13 +145,9 @@ defmodule Firmowid.Seeds.MonthM0 do
       }
     ]
 
-    transactions
-    |> Enum.map(&Map.delete(&1, :organization_id))
-    |> Ash.bulk_create!(AshTransaction, :upsert_from_sync,
-      tenant: bytecraft.id,
-      authorize?: false,
-      actor: %{}
-    )
+    Enum.each(transactions, fn attrs ->
+      Helpers.seed_transaction!(Map.delete(attrs, :organization_id), bytecraft.id)
+    end)
   end
 
   # — THB bank fee —
@@ -227,13 +226,7 @@ defmodule Firmowid.Seeds.MonthM0 do
         ]
       })
 
-    Firmowid.Ash.Invoicing.connect_sales_invoice_transactions!(
-      invoice,
-      [txn.id],
-      tenant: bytecraft.id,
-      authorize?: false,
-      actor: %{}
-    )
+    Helpers.connect_sales_invoice_transaction!(invoice.id, txn.id, bytecraft.id)
 
     EntityTag.set_entity_project_tags!(
       %{
@@ -271,7 +264,7 @@ defmodule Firmowid.Seeds.MonthM0 do
     "buyer_full_name" => "NexaTech Sp. z o.o.",
     "buyer_address" => "ul. Mokotowska 15/3, 00-640 Warszawa",
     "buyer_country" => "PL",
-    "buyer_id" => "5213843762",
+    "buyer_id" => "5213843765",
     "buyer_type" => "company",
     "payment_method" => "transfer",
     "is_reverse_charge" => false,
@@ -280,9 +273,7 @@ defmodule Firmowid.Seeds.MonthM0 do
 
   defp seed_ksef_scenarios(bytecraft, prefix) do
     seed_ksef_plain(bytecraft, prefix)
-    seed_ksef_success(bytecraft, prefix)
-    seed_ksef_sending(bytecraft, prefix)
-    seed_ksef_failed(bytecraft, prefix)
+    seed_ksef_confirmed_not_sent(bytecraft, prefix)
   end
 
   # 01/ — plain domestic invoice, no KSeF interaction
@@ -316,17 +307,11 @@ defmodule Firmowid.Seeds.MonthM0 do
     )
   end
 
-  # 02/ — KSeF success (has ksef_number, locked)
-  defp seed_ksef_success(bytecraft, prefix) do
+  # 02/ — confirmed draft (locked), not submitted to KSeF
+  defp seed_ksef_confirmed_not_sent(bytecraft, prefix) do
     inv_number = "BC/02/#{prefix}"
 
-    existing =
-      Repo.one(
-        from(si in AshSalesInvoice,
-          where: si.invoice_number == ^inv_number and si.organization_id == ^bytecraft.id,
-          limit: 1
-        )
-      )
+    existing = find_sales_invoice(inv_number, bytecraft.id)
 
     if is_nil(existing) do
       invoice =
@@ -352,139 +337,39 @@ defmodule Firmowid.Seeds.MonthM0 do
         )
 
       Ash.Seed.update!(invoice, %{
-        ksef_number: "5213843762-20250110-ABC123DEF456-00",
-        ksef_session_reference_number: "20250110-SE-ABC123DEF456-00",
-        ksef_invoice_checksum: "dGVzdC1jaGVja3N1bS1mb3Ita3NlZi1zZWVk",
         locked_at: DateTime.truncate(DateTime.utc_now(), :second)
       })
     end
   end
 
-  # 03/ — KSeF sending (locked, Oban job executing)
-  defp seed_ksef_sending(bytecraft, prefix) do
-    inv_number = "BC/03/#{prefix}"
+  # — S08 deterministic assistant scenario (current month invoice) —
 
-    existing =
-      Repo.one(
-        from(si in AshSalesInvoice,
-          where: si.invoice_number == ^inv_number and si.organization_id == ^bytecraft.id,
-          limit: 1
-        )
-      )
-
-    if is_nil(existing) do
-      invoice =
-        Helpers.get_or_create_sales_invoice(
-          inv_number,
-          bytecraft.id,
-          Map.merge(@ksef_buyer, %{
-            "invoice_type" => "poland",
-            "issue_date" => Helpers.date_this_month(5),
-            "sale_date" => Helpers.date_this_month(5),
-            "due_date" => Helpers.date_this_month(19),
-            "currency" => "PLN",
-            "sales_invoice_items" => [
-              %{
-                "name" => "Szkolenie zespołu — Elixir i Phoenix LiveView",
-                "quantity" => 5,
-                "unit" => "godz.",
-                "unit_price" => 150.00,
-                "vat_rate" => "23"
-              }
-            ]
-          })
-        )
-
-      Ash.Seed.update!(invoice, %{
-        ksef_session_reference_number: "20250115-SE-SENDING123-00",
-        locked_at: DateTime.truncate(DateTime.utc_now(), :second)
-      })
-
-      Repo.query!(
-        """
-        INSERT INTO oban.oban_jobs (state, queue, worker, args, attempt, max_attempts, inserted_at, scheduled_at, attempted_at, priority, tags, meta)
-        VALUES ('executing', 'ksef_submissions', 'Firmowid.Ash.Ksef.Workers.SubmissionWorker',
-                $1::jsonb, 1, 3, NOW(), NOW(), NOW(), 0, ARRAY[]::text[], $2::jsonb)
-        ON CONFLICT DO NOTHING
-        """,
-        [
-          %{
-            "action" => "verify",
-            "organization_id" => bytecraft.id,
-            "sales_invoice_id" => invoice.id,
-            "session_reference" => "20250115-SE-SENDING123-00",
-            "invoice_reference" => "INV-REF-SENDING-001"
-          },
-          %{"organization_id" => bytecraft.id}
-        ]
-      )
-    end
-  end
-
-  # 04/ — KSeF failed (locked, Oban job discarded with errors)
-  defp seed_ksef_failed(bytecraft, prefix) do
-    inv_number = "BC/04/#{prefix}"
-
-    existing =
-      Repo.one(
-        from(si in AshSalesInvoice,
-          where: si.invoice_number == ^inv_number and si.organization_id == ^bytecraft.id,
-          limit: 1
-        )
-      )
-
-    if is_nil(existing) do
-      invoice =
-        Helpers.get_or_create_sales_invoice(
-          inv_number,
-          bytecraft.id,
-          Map.merge(@ksef_buyer, %{
-            "invoice_type" => "poland",
-            "issue_date" => Helpers.date_this_month(3),
-            "sale_date" => Helpers.date_this_month(3),
-            "due_date" => Helpers.date_this_month(17),
-            "currency" => "PLN",
-            "sales_invoice_items" => [
-              %{
-                "name" => "Wsparcie przy wdrożeniu — monitoring i alerty",
-                "quantity" => 3,
-                "unit" => "godz.",
-                "unit_price" => 100.00,
-                "vat_rate" => "23"
-              }
-            ]
-          })
-        )
-
-      Ash.Seed.update!(invoice, %{
-        ksef_session_reference_number: "20250120-SE-FAILED456-00",
-        locked_at: DateTime.truncate(DateTime.utc_now(), :second)
-      })
-
-      Repo.query!(
-        """
-        INSERT INTO oban.oban_jobs (state, queue, worker, args, attempt, max_attempts, inserted_at, scheduled_at, discarded_at, priority, tags, meta, errors)
-        VALUES ('discarded', 'ksef_submissions', 'Firmowid.Ash.Ksef.Workers.SubmissionWorker',
-                $1::jsonb, 3, 3, NOW() - INTERVAL '1 hour', NOW() - INTERVAL '1 hour', NOW(), 0, ARRAY[]::text[], $2::jsonb,
-                ARRAY[
-                  '{"at": "2025-01-20T14:05:00Z", "attempt": 1, "error": "KSeF API error: connection timeout"}',
-                  '{"at": "2025-01-20T14:10:00Z", "attempt": 2, "error": "KSeF API error: connection timeout"}',
-                  '{"at": "2025-01-20T14:15:00Z", "attempt": 3, "error": "KSeF API error: connection timeout"}'
-                ]::jsonb[])
-        ON CONFLICT DO NOTHING
-        """,
-        [
-          %{
-            "action" => "verify",
-            "organization_id" => bytecraft.id,
-            "sales_invoice_id" => invoice.id,
-            "session_reference" => "20250120-SE-FAILED456-00",
-            "invoice_reference" => "INV-REF-FAILED-001"
-          },
-          %{"organization_id" => bytecraft.id}
-        ]
-      )
-    end
+  defp seed_s08_current_month_invoice(bytecraft, prefix) do
+    Helpers.get_or_create_sales_invoice("AUR/#{prefix}", bytecraft.id, %{
+      "invoice_type" => "poland",
+      "issue_date" => Helpers.date_this_month(14),
+      "sale_date" => Helpers.date_this_month(14),
+      "due_date" => Helpers.date_this_month(28),
+      "currency" => "PLN",
+      "buyer_display_name" => "Aurora Retail Sp. z o.o.",
+      "buyer_full_name" => "Aurora Retail Sp. z o.o.",
+      "buyer_address" => "ul. Handlowa 12, 00-950 Warszawa",
+      "buyer_country" => "PL",
+      "buyer_id" => "5252445767",
+      "buyer_type" => "company",
+      "payment_method" => "transfer",
+      "is_reverse_charge" => false,
+      "is_cash_account" => false,
+      "sales_invoice_items" => [
+        %{
+          "name" => "Pakiet wdrożeniowy Aurora Retail",
+          "quantity" => 1,
+          "unit" => "szt.",
+          "unit_price" => 1000.00,
+          "vat_rate" => "23"
+        }
+      ]
+    })
   end
 
   # Builds a scope for Ash calls in seeds. Uses bytecraft.id as tenant and a
@@ -494,5 +379,17 @@ defmodule Firmowid.Seeds.MonthM0 do
       actor: %{id: "00000000-0000-0000-0000-000000000000", role: :admin},
       tenant: bytecraft.id
     }
+  end
+
+  defp find_sales_invoice(inv_number, org_id) do
+    query =
+      AshSalesInvoice
+      |> Ash.Query.filter(invoice_number == ^inv_number and organization_id == ^org_id)
+      |> Ash.Query.limit(1)
+
+    case Ash.read(query, tenant: org_id, actor: @seed_actor) do
+      {:ok, [invoice | _]} -> invoice
+      _ -> nil
+    end
   end
 end

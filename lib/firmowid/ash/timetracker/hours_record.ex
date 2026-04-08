@@ -122,6 +122,10 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
       authorize_if relates_to_actor_via(:user)
     end
 
+    policy [action_type(:read), {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}] do
+      authorize_if relates_to_actor_via(:user)
+    end
+
     policy [action_type(:create), actor_attribute_equals(:role, :employee)] do
       authorize_if Firmowid.Ash.Timetracker.Checks.OwnsResource
     end

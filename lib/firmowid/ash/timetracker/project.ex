@@ -112,6 +112,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
     update :unarchive do
       description "Unarchive a project by clearing archived_at."
       accept []
+      require_atomic? false
 
       change set_attribute(:archived_at, nil)
     end
@@ -119,6 +120,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
     update :link_tag do
       description "Internal action to link a tag definition to a project after creation."
       accept [:tag_definition_id]
+      require_atomic? false
     end
 
     destroy :destroy do
@@ -144,6 +146,10 @@ defmodule Firmowid.Ash.Timetracker.Project do
   policies do
     bypass actor_attribute_equals(:role, :admin) do
       authorize_if always()
+    end
+
+    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:project_tag_manager]} do
+      authorize_if action(:link_tag)
     end
 
     # System actors have no access to employee timetracking data
@@ -215,15 +221,18 @@ defmodule Firmowid.Ash.Timetracker.Project do
     end
   end
 
+  identities do
+    identity :unique_name_per_org, [:name, :organization_id],
+      pre_check?: true,
+      message: "has already been taken"
+  end
+
   # ── Private helpers for user assignment ──────────────────────────────
 
   defp set_project_users(input, context) do
     project_id = input.arguments.project_id
     user_ids = input.arguments.user_ids
-    # TODO: migrate away from authorize?: false — replace with a dedicated
-    # admin-scoped action on ProjectUser once project membership management
-    # has its own policies (currently admin-only via :set_users policy gate).
-    ash_opts = [actor: context.actor, tenant: context.tenant, authorize?: false]
+    ash_opts = [actor: context.actor, tenant: context.tenant]
 
     existing =
       ProjectUser

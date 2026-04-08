@@ -2,6 +2,9 @@ defmodule Firmowid.Ash.Invoicing.Matching.CostInvoiceAssistant do
   @moduledoc """
   Invoice-matching assistant: defines prompt, tools, and function handlers for invoice-to-transaction matching.
   Delegates LLM and function-call plumbing to AssistantEngine.
+
+  TODO: ~85% identical to SalesInvoiceAssistant — extract shared InvoiceAssistant
+  with type parameter to reduce duplication.
   """
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Transaction

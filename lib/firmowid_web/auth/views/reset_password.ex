@@ -2,8 +2,6 @@ defmodule FirmowidWeb.Auth.Views.ResetPassword do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Ash.Core.User
-
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
@@ -45,7 +43,7 @@ defmodule FirmowidWeb.Auth.Views.ResetPassword do
   def mount(%{"token" => token}, _session, socket) do
     # Verify token is valid by attempting to get user from it
     case verify_reset_token(token) do
-      {:ok, _user} ->
+      {:ok, _token} ->
         form = to_form(%{"reset_token" => token}, as: "user")
         {:ok, assign(socket, form: form, reset_token: token)}
 
@@ -58,12 +56,11 @@ defmodule FirmowidWeb.Auth.Views.ResetPassword do
   end
 
   defp verify_reset_token(token) do
-    # The reset token is a JWT that ash_authentication can verify
-    # We use the strategy to verify it
-    strategy = AshAuthentication.Info.strategy!(User, :password)
-
-    case AshAuthentication.Strategy.action(strategy, :reset, %{"reset_token" => token}) do
-      {:ok, user} -> {:ok, user}
+    # Verify the JWT signature and claims without triggering the actual reset action.
+    # The previous implementation called Strategy.action(:reset, ...) which could
+    # consume the token before the user submits the form.
+    case AshAuthentication.Jwt.verify(token, :firmowid) do
+      {:ok, %{"act" => "password_reset_with_password"}, _resource} -> {:ok, token}
       _ -> :error
     end
   end

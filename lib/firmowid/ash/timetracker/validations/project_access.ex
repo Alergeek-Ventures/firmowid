@@ -42,10 +42,7 @@ defmodule Firmowid.Ash.Timetracker.Validations.ProjectAccess do
             exists(project, is_nil(archived_at))
         )
       )
-      # TODO: migrate away from authorize?: false — this validation needs to read
-      # ProjectUser regardless of the actor's membership (checking another user's
-      # access). Replace when validations can run in a privileged context.
-      |> Ash.exists?(actor: context.actor, tenant: changeset.tenant, authorize?: false)
+      |> Ash.exists?(actor: context.actor, tenant: changeset.tenant)
 
     if has_access? do
       :ok

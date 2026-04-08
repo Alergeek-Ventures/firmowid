@@ -16,6 +16,7 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
   alias Firmowid.Ash.Core.Organization
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Resource
+  alias Firmowid.Ash.SystemActor
 
   require Resource
 
@@ -68,7 +69,7 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
 
       argument :user_id, :uuid, allow_nil?: false
 
-      validate attribute_does_not_equal(:consumed_at, nil) == false,
+      validate attribute_equals(:consumed_at, nil),
         message: "invite has already been consumed"
 
       change fn changeset, _context ->
@@ -82,17 +83,38 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
         )
       end
 
-      change after_action(fn _changeset, invite ->
+      change after_action(fn _changeset, invite, context ->
                user_id = invite.consumed_by_id
                organization_id = invite.organization_id
 
+               bridge_opts =
+                 case Map.get(context, :tenant) do
+                   nil ->
+                     [
+                       actor: %SystemActor{
+                         org_id: organization_id,
+                         role: :organization_owner_setup,
+                         user_id: user_id
+                       }
+                     ]
+
+                   tenant ->
+                     [
+                       actor: %SystemActor{
+                         org_id: organization_id,
+                         role: :organization_owner_setup,
+                         user_id: user_id
+                       },
+                       tenant: tenant
+                     ]
+                 end
+
                User
-               |> Ash.get!(user_id, authorize?: false, actor: %{})
+               |> Ash.get!(user_id, bridge_opts)
                |> Ash.Changeset.for_update(
                  :set_organization,
                  %{organization_id: organization_id},
-                 authorize?: false,
-                 actor: %{}
+                 bridge_opts
                )
                |> Ash.update!()
 

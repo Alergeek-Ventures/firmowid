@@ -141,11 +141,7 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
             user = resolve_user(uid, users_by_id, scope)
 
             user_with_avatar =
-              Ash.load!(user, [avatar_blob: [:url]],
-                tenant: user.organization_id,
-                authorize?: false,
-                actor: %{}
-              )
+              Ash.load!(user, [avatar_blob: [:url]], scope: scope)
 
             %{user: user_with_avatar, removed_from_project: not MapSet.member?(member_ids, uid)}
           end)
@@ -159,14 +155,13 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
   end
 
   defp assign_edit_users(socket, project_users) do
+    scope = socket.assigns.ash_scope
+
     available_users =
-      list_users_with_projects()
+      scope
+      |> list_users_with_projects()
       |> Enum.map(fn user ->
-        Ash.load!(user, [avatar_blob: [:url]],
-          tenant: user.organization_id,
-          authorize?: false,
-          actor: %{}
-        )
+        Ash.load!(user, [avatar_blob: [:url]], scope: scope)
       end)
       |> Enum.reject(fn user ->
         Enum.any?(project_users, fn %{user: project_user} -> project_user.id == user.id end)
@@ -199,9 +194,9 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
   end
 
   # User-centric query using Ash Core domain
-  defp list_users_with_projects do
-    [authorize?: false, actor: %{}]
-    |> Core.list_users!()
-    |> Ash.load!([:projects], authorize?: false, actor: %{}, lazy?: true)
+  defp list_users_with_projects(scope) do
+    %{}
+    |> Core.list_users!(scope: scope)
+    |> Enum.filter(&(&1.organization_id == scope.tenant))
   end
 end

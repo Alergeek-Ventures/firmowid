@@ -23,7 +23,10 @@
 
       <div class="space-y-6">
         <h2 class="text-grey-700 mb-4 text-lg font-medium">Dane faktury</h2>
-        <form phx-change="update_invoice_number">
+        <form
+          phx-change="update_invoice_number"
+          phx-submit={if @ksef_connected?, do: "send_to_ksef", else: "confirm_invoice"}
+        >
           <label class="text-grey-500 mb-2 block text-sm">Numer faktury</label>
           <input
             type="text"

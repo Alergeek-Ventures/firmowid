@@ -12,7 +12,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
   ## Write Actions
 
-    * `:create_from_metadata` — create from AI-extracted or KSeF-parsed metadata
+    * `:create` — create from AI-extracted or KSeF-parsed metadata
     * `:toggle_skip` — toggle the skip_invoicing flag
     * `:update_blob_id` — attach a blob to an existing invoice
 
@@ -35,11 +35,15 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     domain: Firmowid.Ash.Invoicing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
+    extensions: [AshOban],
     notifiers: [Ash.Notifier.PubSub],
     primary_read_warning?: false
 
+  alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Checks.SystemActorRole
+  alias Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceDescription
+  alias Firmowid.Ash.Invoicing.Changes.EnqueueMissingCostInvoiceDescriptionRefresh
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Resource
 
@@ -54,20 +58,43 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     migrate? false
   end
 
+  oban do
+    triggers do
+      trigger :refresh_missing_description do
+        action :refresh_description
+        read_action :read_missing_description
+        where expr(description == "")
+        scheduler_cron "0 * * * *"
+        max_attempts 2
+        queue :cost_invoices
+
+        worker_module_name Firmowid.Ash.Invoicing.CostInvoice.Worker.RefreshMissingDescription
+
+        scheduler_module_name Firmowid.Ash.Invoicing.CostInvoice.Scheduler.RefreshMissingDescription
+      end
+    end
+  end
+
   code_interface do
     define :by_id, args: [:id], action: :by_id
     define :get, args: [:id], action: :by_id
     define :read, action: :read
     define :by_checksum, args: [:blob_checksum]
-    define :create_from_metadata, args: [:metadata], action: :create_from_metadata
+    define :create, action: :create
     define :toggle_skip, action: :toggle_skip
     define :update_blob_id, args: [:blob_id], action: :update_blob_id
+    define :refresh_description, action: :refresh_description
   end
 
   actions do
     # No `defaults [:read]` — the explicit `:read` below serves as primary
     read :read do
       primary? true
+
+      pagination do
+        required? false
+        keyset? true
+      end
 
       argument :date_from, :date
       argument :date_to, :date
@@ -195,26 +222,18 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       prepare build(limit: 50)
     end
 
-    # -- Write actions --------------------------------------------------------
+    read :read_missing_description do
+      description "Scoped scheduler read for cost invoices missing generated descriptions."
 
-    action :create_from_metadata, :struct do
-      constraints instance_of: __MODULE__
-      argument :metadata, :map, allow_nil?: false
-
-      run fn input, context ->
-        metadata = input.arguments.metadata
-        opts = Ash.Context.to_opts(context)
-
-        cost_invoice =
-          __MODULE__
-          |> Ash.Changeset.for_create(:create_internal, metadata, opts)
-          |> Ash.create!()
-
-        {:ok, cost_invoice}
+      pagination do
+        required? false
+        keyset? true
       end
     end
 
-    create :create_internal do
+    # -- Write actions --------------------------------------------------------
+
+    create :create do
       accept [
         :blob_id,
         :inbound_email_id,
@@ -225,9 +244,9 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
         :sale_date,
         :issue_date,
         :due_date,
+        :items_list,
         :total_amount,
         :currency,
-        :description,
         :invoice_identifier,
         :skip_invoicing,
         :ksef_number,
@@ -247,11 +266,15 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
                  :seller_display_name,
                  :sale_date,
                  :issue_date,
+                 :items_list,
                  :total_amount,
                  :currency,
-                 :description,
                  :invoice_identifier
                ])
+
+      change ComputeCostInvoiceDescription
+
+      change EnqueueMissingCostInvoiceDescriptionRefresh
 
       change fn changeset, _context ->
         validate_non_correction_total_amount_sign(changeset)
@@ -270,6 +293,12 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     update :update_blob_id do
       accept [:blob_id]
       require_atomic? false
+    end
+
+    update :refresh_description do
+      require_atomic? false
+
+      change ComputeCostInvoiceDescription
     end
 
     update :connect_transactions do
@@ -294,18 +323,22 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       authorize_if always()
     end
 
+    bypass AshObanInteraction do
+      authorize_if always()
+    end
+
     # cost_invoice_processor: full access
     bypass {SystemActorRole, roles: [:cost_invoice_processor]} do
       authorize_if always()
     end
 
-    # ksef_session: read + create_internal
+    # ksef_session: read + create
     bypass {SystemActorRole, roles: [:ksef_session]} do
       authorize_if action_type(:read)
     end
 
     bypass {SystemActorRole, roles: [:ksef_session]} do
-      authorize_if action(:create_internal)
+      authorize_if action(:create)
     end
 
     # invoice_matcher: read + connect/disconnect transactions
@@ -313,8 +346,19 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       authorize_if action_type(:read)
     end
 
+    bypass {SystemActorRole, roles: [:analysis_reader]} do
+      authorize_if action_type(:read)
+    end
+
     bypass {SystemActorRole, roles: [:invoice_matcher]} do
       authorize_if action([:connect_transactions, :disconnect_transactions])
+    end
+
+    policy [
+      action([:connect_transactions, :disconnect_transactions]),
+      {AtLeastRole, role: :invoicing}
+    ] do
+      authorize_if always()
     end
 
     # Other system actors: no access
@@ -344,9 +388,10 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     module FirmowidWeb.Core.Endpoint
     prefix "cost_invoice"
 
-    publish :create_internal, ["created", :_tenant]
+    publish :create, ["created", :_tenant]
     publish :toggle_skip, ["updated", :_tenant]
     publish :update_blob_id, ["updated", :_tenant]
+    publish :refresh_description, ["updated", :_tenant]
     publish :connect_transactions, ["updated", :_tenant]
     publish :disconnect_transactions, ["updated", :_tenant]
   end
@@ -371,8 +416,10 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     attribute :total_amount, :decimal, public?: true
     attribute :currency, :string, public?: true
 
-    attribute :description, :string, public?: true
+    attribute :description, :string, public?: true, allow_nil?: false, default: ""
     attribute :invoice_identifier, :string, public?: true
+
+    attribute :items_list, {:array, :map}, public?: true, allow_nil?: false, default: []
 
     attribute :skip_invoicing, :boolean, default: false, public?: true
 
@@ -424,6 +471,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       destination_attribute_on_join_resource :transaction_id
     end
 
+    # Named :correction_invoices (not :corrections as in SalesInvoice) because
+    # cost invoice corrections link via ksef_number, not a direct FK.
     has_many :correction_invoices, __MODULE__ do
       source_attribute :ksef_number
       destination_attribute :original_invoice_ksef_number
@@ -579,6 +628,9 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     identity :ksef_number, [:ksef_number], nils_distinct?: true
   end
 
+  # Cost invoices represent money going out, so total_amount is stored as negative
+  # (convention matching bank transaction sign). A positive total_amount on a
+  # non-correction invoice is invalid — only corrections may flip the sign.
   defp validate_non_correction_total_amount_sign(changeset) do
     invoice_type = Ash.Changeset.get_attribute(changeset, :invoice_type)
     total_amount = Ash.Changeset.get_attribute(changeset, :total_amount)

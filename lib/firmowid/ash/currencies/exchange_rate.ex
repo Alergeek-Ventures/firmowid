@@ -76,6 +76,10 @@ defmodule Firmowid.Ash.Currencies.ExchangeRate do
       authorize_if always()
     end
 
+    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:exchange_rate_cache]} do
+      authorize_if action(:upsert)
+    end
+
     policy action(:upsert) do
       forbid_if always()
     end

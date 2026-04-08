@@ -24,10 +24,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
   plug :put_root_layout, html: false
 
   def show(conn, %{"token" => token_string} = params) do
-    # Justified Ecto exception: cross-tenant lookup by share token.
-    # The initial load uses authorize?: false to discover org_id before
-    # we can build a proper scope.
-    case SalesInvoice.by_share_token(token_string, authorize?: false, actor: %{}) do
+    case SalesInvoice.by_share_token(token_string, scope: anonymous_lookup_scope()) do
       {:ok, nil} ->
         conn |> put_status(404) |> render(:not_found, layout: false)
 
@@ -52,8 +49,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
   end
 
   def pdf(conn, %{"token" => token_string}) do
-    # Justified Ecto exception: cross-tenant lookup by share token.
-    case SalesInvoice.by_share_token(token_string, authorize?: false, actor: %{}) do
+    case SalesInvoice.by_share_token(token_string, scope: anonymous_lookup_scope()) do
       {:ok, nil} ->
         conn |> put_status(404) |> render(:not_found, layout: false)
 
@@ -62,7 +58,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
         {invoice, logo_url, org} = prepare_invoice_with_org_context(invoice, scope)
         invoice = Map.put(invoice, :logo_url, logo_url)
 
-        case Pdf.generate(invoice, show_vat: org.is_vat_payer) do
+        case Pdf.generate(invoice, show_vat: org.is_vat_payer, scope: scope) do
           {:ok, pdf_binary} ->
             filename = (invoice.invoice_number || "faktura") <> ".pdf"
 
@@ -90,6 +86,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
     }
   end
 
+  defp anonymous_lookup_scope do
+    %Scope{actor: %SystemActor{org_id: nil, role: :anonymous}, tenant: nil}
+  end
+
   # Loads the invoice with all calculations required for display.
   # Authorization was already performed by share token lookup, so we skip it
   # here to ensure aggregates and calculations are fully accessible.
@@ -98,7 +98,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
 
     org = invoice.organization
 
-    logo_url = Invoicing.get_logo_url(invoice.organization_id)
+    logo_url = Invoicing.get_logo_url(invoice.organization_id, scope: scope)
 
     invoice =
       invoice
@@ -117,8 +117,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
           ],
           reference_invoice: []
         ],
-        scope: scope,
-        authorize?: false
+        scope: scope
       )
       |> then(fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)
 

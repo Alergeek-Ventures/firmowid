@@ -45,7 +45,14 @@ defmodule FirmowidWeb.BankSync.Views.Create do
       error = params["error"]
 
       if is_nil(error) do
-        {:noreply, push_navigate(socket, to: ~p"/fakturowanie")}
+        {:noreply,
+         socket
+         |> LiveToast.put_toast(
+           :success,
+           "Konto bankowe zostało poprawnie połączone.",
+           title: "Gotowe"
+         )
+         |> push_navigate(to: ~p"/ustawienia/konta-bankowe")}
       else
         details = params["details"]
 

@@ -23,6 +23,7 @@ defmodule Firmowid.Ash.Analysis do
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
 
   require Ash.Query
 
@@ -62,33 +63,34 @@ defmodule Firmowid.Ash.Analysis do
   def get_organization_totals(date_from, date_to, opts \\ [], scope) do
     tag_filters = Keyword.get(opts, :tag_filters, [])
 
-    # TODO: replace authorize?: false + actor: %{} with system actor once available
+    analysis_scope = analysis_scope(scope)
+
     sales_invoices =
       %{date_from: date_from, date_to: date_to, date_field: :sale_date}
       |> Invoicing.list_sales_invoices!(
-        load: [:sales_invoice_items, :transactions],
-        tenant: scope.tenant,
-        actor: scope.actor,
-        authorize?: false
+        load: [:buyer_display_name_label, :gross_value, :sales_invoice_items, :transactions],
+        scope: analysis_scope
       )
       |> Enum.filter(&matched_or_skipped?/1)
 
     cost_invoices =
       %{date_from: date_from, date_to: date_to, date_field: :sale_date}
       |> Invoicing.list_cost_invoices!(
-        load: [:transactions, :effective_total_amount, :effective_currency],
-        tenant: scope.tenant,
-        actor: scope.actor,
-        authorize?: false
+        load: [
+          :transactions,
+          :effective_currency,
+          :effective_seller_display_name,
+          :effective_sale_date,
+          :effective_total_amount
+        ],
+        scope: analysis_scope
       )
       |> Enum.filter(&matched_or_skipped?/1)
 
     transactions =
       Finances.list_transactions!(
         %{date_from: date_from, date_to: date_to, reconciliation: :skipped},
-        tenant: scope.tenant,
-        actor: scope.actor,
-        authorize?: false
+        scope: analysis_scope
       )
 
     all_entities = build_entity_id_list(sales_invoices, cost_invoices, transactions)
@@ -105,14 +107,9 @@ defmodule Firmowid.Ash.Analysis do
         sales_invoices ++ cost_invoices ++ transactions,
         %{income: Decimal.new(0), expenses: Decimal.new(0)},
         fn entity, acc ->
-          {amount, currency} = get_amount_and_currency(entity)
-          normalized_amount = Currencies.normalize_amount_to_pln(amount, currency, today)
-
-          if Decimal.negative?(normalized_amount) do
-            Map.update!(acc, :expenses, &Decimal.add(&1, normalized_amount))
-          else
-            Map.update!(acc, :income, &Decimal.add(&1, normalized_amount))
-          end
+          entity
+          |> get_amount_and_currency()
+          |> accumulate_amount(acc, today)
         end
       )
 
@@ -136,8 +133,7 @@ defmodule Firmowid.Ash.Analysis do
   """
   @spec get_months_with_entries(Scope.t()) :: [Date.t()]
   def get_months_with_entries(scope) do
-    # TODO: replace authorize?: false + actor: %{} with system actor once available
-    opts = [tenant: scope.tenant, actor: scope.actor, authorize?: false]
+    opts = [scope: analysis_scope(scope)]
 
     tx_months =
       %{reconciliation: :skipped}
@@ -161,25 +157,41 @@ defmodule Firmowid.Ash.Analysis do
     )
   end
 
-  defp get_amount_and_currency(%SalesInvoice{} = entity) do
-    value = Decimal.abs(entity.gross_value)
-
-    {value, entity.currency}
+  defp get_amount_and_currency(%SalesInvoice{gross_value: %Decimal{} = gross_value, currency: currency}) do
+    {:ok, {Decimal.abs(gross_value), currency}}
   end
 
-  defp get_amount_and_currency(%CostInvoice{} = entity) do
-    value = entity.effective_total_amount |> Decimal.abs() |> Decimal.mult(Decimal.new("-1"))
-    {value, entity.effective_currency}
+  defp get_amount_and_currency(%SalesInvoice{}), do: :skip
+
+  defp get_amount_and_currency(%CostInvoice{
+         effective_total_amount: %Decimal{} = total_amount,
+         effective_currency: currency
+       }) do
+    value = total_amount |> Decimal.abs() |> Decimal.mult(Decimal.new("-1"))
+    {:ok, {value, currency}}
   end
 
-  defp get_amount_and_currency(%Transaction{} = entity) do
-    {entity.transaction_amount, entity.transaction_currency}
+  defp get_amount_and_currency(%CostInvoice{}), do: :skip
+
+  defp get_amount_and_currency(%Transaction{} = entity),
+    do: {:ok, {entity.transaction_amount, entity.transaction_currency}}
+
+  defp accumulate_amount(:skip, acc, _today), do: acc
+
+  defp accumulate_amount({:ok, {amount, currency}}, acc, today) do
+    normalized_amount = Currencies.normalize_amount_to_pln(amount, currency, today)
+
+    if Decimal.negative?(normalized_amount) do
+      Map.update!(acc, :expenses, &Decimal.add(&1, normalized_amount))
+    else
+      Map.update!(acc, :income, &Decimal.add(&1, normalized_amount))
+    end
   end
 
   # An invoice is analysis-relevant when it has been matched to at least one
   # bank transaction or explicitly marked `skip_invoicing`.
   #
-  # IMPORTANT: This rule is duplicated in SQL inside `get_months_with_entries/1`.
+  # IMPORTANT: This rule is also used in `get_months_with_entries/1` above.
   # If you change this logic, update both places.
   defp matched_or_skipped?(%{skip_invoicing: true}), do: true
   defp matched_or_skipped?(%{transactions: txs}) when is_list(txs) and txs != [], do: true
@@ -216,11 +228,15 @@ defmodule Firmowid.Ash.Analysis do
         |> Ash.Query.set_context(%{data_layer: %{table: table}})
         |> Ash.Query.filter(resource_id in ^ids)
         |> Ash.Query.load(:tag_definition)
-        |> Ash.read!(scope: scope, authorize?: false)
+        |> Ash.read!(scope: scope)
         |> Enum.map(&{entity_type, &1})
       end
     end)
     |> Enum.group_by(fn {type, tag} -> {type, tag.resource_id} end, fn {_type, tag} -> tag end)
+  end
+
+  defp analysis_scope(%Scope{tenant: tenant}) do
+    %Scope{actor: %SystemActor{org_id: tenant, role: :analysis_reader}, tenant: tenant}
   end
 
   defp entity_id(%SalesInvoice{id: id}), do: id

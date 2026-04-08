@@ -17,6 +17,7 @@ defmodule Firmowid.Ash.Core.Organization do
   alias Firmowid.Ash.Core.Changes.NullifyOrganizationUsers
   alias Firmowid.Ash.Core.Changes.SetOwnerOrganization
   alias Firmowid.Ash.Core.User
+  alias Firmowid.Ash.Core.Validations.ValidateNip
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -47,6 +48,7 @@ defmodule Firmowid.Ash.Core.Organization do
       change SetOwnerOrganization
 
       validate match(:nip, ~r/^[0-9]{10}$/)
+      validate {ValidateNip, field: :nip}
     end
 
     # ── General update ──────────────────────────────────────────────
@@ -64,6 +66,7 @@ defmodule Firmowid.Ash.Core.Organization do
       ]
 
       validate match(:nip, ~r/^[0-9]{10}$/)
+      validate {ValidateNip, field: :nip}
     end
 
     # ── Scoped updates ──────────────────────────────────────────────
@@ -78,6 +81,7 @@ defmodule Firmowid.Ash.Core.Organization do
       ]
 
       validate match(:nip, ~r/^[0-9]{10}$/)
+      validate {ValidateNip, field: :nip}
     end
 
     update :update_correspondence do

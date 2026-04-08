@@ -16,6 +16,7 @@ defmodule Firmowid.Ash.Finances.BankAccount do
     extensions: [AshEvents.Events, AshOban]
 
   alias Elixir.Firmowid.Ash.Finances.BankAccount
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Events.Event
   alias Firmowid.Ash.Resource
 
@@ -44,6 +45,7 @@ defmodule Firmowid.Ash.Finances.BankAccount do
     triggers do
       trigger :sync_transactions do
         action :sync_from_gocardless
+        read_action :list_for_sync
         where expr(not is_nil(gocardless_id))
         scheduler_cron "0 12 */2 * *"
         max_attempts 5
@@ -114,10 +116,21 @@ defmodule Firmowid.Ash.Finances.BankAccount do
         where: [changing(:is_default), attribute_equals(:is_default, true)]
     end
 
+    update :clear_default do
+      require_atomic? false
+      accept []
+      change set_attribute(:is_default, false)
+    end
+
     read :list_for_sync do
       description "Cross-org read for background sync workers."
       multitenancy :bypass
       filter expr(not is_nil(gocardless_id))
+
+      pagination do
+        required? false
+        keyset? true
+      end
     end
 
     update :sync_from_gocardless do
@@ -154,17 +167,31 @@ defmodule Firmowid.Ash.Finances.BankAccount do
     end
 
     # invoice_matcher and cost_invoice_processor: read-only access
-    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:invoice_matcher, :cost_invoice_processor]} do
-      authorize_if action_type(:read)
+    bypass {SystemActorRole, roles: [:invoice_matcher, :cost_invoice_processor]} do
+      authorize_if action(:read)
+    end
+
+    bypass {SystemActorRole, roles: [:cost_invoice_processor]} do
+      authorize_if action(:list_for_sync)
+    end
+
+    policy action(:list_for_sync) do
+      forbid_if always()
     end
 
     # :invoicing and :accountant: read-only
-    policy [action_type(:read), {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}] do
+    policy [action(:read), {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}] do
       authorize_if always()
     end
 
-    # Write actions: admin only (non-AshOban)
-    policy action_type([:create, :update, :destroy]) do
+    # Internal upsert used by requisition acceptance flow.
+    policy action(:sync_from_bank) do
+      authorize_if always()
+    end
+
+    # User-facing writes: admin only.
+    # Internal :sync_from_bank upsert is authorized separately above.
+    policy action([:create_manual, :update, :clear_default, :destroy]) do
       authorize_if actor_attribute_equals(:role, :admin)
     end
   end
@@ -231,6 +258,18 @@ defmodule Firmowid.Ash.Finances.BankAccount do
 
       sort occurred_at: :desc
       description "The action name of the most recent sync-related event."
+    end
+
+    first :latest_successful_sync_at, Event, :occurred_at do
+      filter expr(
+               record_id == parent(id) and
+                 resource == BankAccount and
+                 action == :sync_from_gocardless
+             )
+
+      sort occurred_at: :desc
+      public? true
+      description "Timestamp of the latest successful synchronization."
     end
   end
 

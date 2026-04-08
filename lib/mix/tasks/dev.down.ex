@@ -65,15 +65,35 @@ defmodule Mix.Tasks.Dev.Down do
     case File.read(pid_file) do
       {:ok, pid_str} ->
         pid = String.trim(pid_str)
-        Mix.shell().info("Stopping Phoenix server (PID: #{pid})...")
 
-        # Kill the process tree (Phoenix spawns child processes)
-        System.cmd("pkill", ["-P", pid], stderr_to_stdout: true)
-        System.cmd("kill", [pid], stderr_to_stdout: true)
+        if String.starts_with?(pid, "tmux:") do
+          session = String.replace_prefix(pid, "tmux:", "")
+          Mix.shell().info("Stopping Phoenix tmux session: #{session}...")
 
-        # Clean up PID file
-        File.rm(pid_file)
-        Mix.shell().info("Phoenix server stopped")
+          if System.find_executable("tmux") do
+            System.cmd("tmux", ["kill-session", "-t", session], stderr_to_stdout: true)
+            File.rm(pid_file)
+            Mix.shell().info("Phoenix tmux session stopped")
+          else
+            Mix.shell().info("tmux not found on PATH. Please stop the session manually: tmux kill-session -t #{session}")
+          end
+        else
+          Mix.shell().info("Stopping Phoenix server (PID: #{pid})...")
+
+          case Integer.parse(pid) do
+            {int_pid, ""} ->
+              # Kill the process tree (Phoenix spawns child processes)
+              System.cmd("pkill", ["-P", Integer.to_string(int_pid)], stderr_to_stdout: true)
+              System.cmd("kill", [Integer.to_string(int_pid)], stderr_to_stdout: true)
+              File.rm(pid_file)
+              Mix.shell().info("Phoenix server stopped")
+
+            _ ->
+              Mix.shell().info(
+                "Unrecognized PID format in #{pid_file}: #{pid}. Please stop the server manually and remove the PID file."
+              )
+          end
+        end
 
       {:error, :enoent} ->
         Mix.shell().info("No Phoenix PID file found (server may not be running)")

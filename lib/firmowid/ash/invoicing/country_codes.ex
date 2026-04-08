@@ -54,6 +54,15 @@ defmodule Firmowid.Ash.Invoicing.CountryCodes do
   @spec eu_countries() :: [String.t()]
   def eu_countries, do: @eu_country_codes
 
+  @doc """
+  EU country codes including the GR alias for Greece.
+
+  Used in Ash `expr()` calculations where the country field may contain
+  either "EL" (KSeF standard) or "GR" (ISO standard) for Greece.
+  """
+  @spec eu_countries_with_aliases() :: [String.t()]
+  def eu_countries_with_aliases, do: @eu_country_codes ++ ["GR"]
+
   @spec valid_country?(String.t() | nil) :: boolean()
   def valid_country?(code) when is_binary(code) do
     code in @valid_country_codes

@@ -17,31 +17,35 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
   @impl true
   def handle_params(%{"id" => id} = params, _uri, socket) do
-    scope = socket.assigns.ash_scope
+    if socket.assigns.current_user.role == :admin do
+      scope = socket.assigns.ash_scope
 
-    selected_date =
-      case params do
-        %{"month" => month} -> Date.from_iso8601!(month)
-        _ -> Date.utc_today()
-      end
+      selected_date =
+        case params do
+          %{"month" => month} -> Date.from_iso8601!(month)
+          _ -> Date.utc_today()
+        end
 
-    user = Core.get_user!(id, scope: scope, not_found_error?: false)
+      user = Core.get_user!(id, scope: scope, not_found_error?: false)
 
-    socket =
-      if is_nil(user) do
-        push_navigate(socket, to: ~p"/zarzadzanie/pracownicy")
-      else
-        employee = build_employee(user, id, selected_date, scope)
-        active_months = months_with_sessions(%{user_id: id}, scope)
+      socket =
+        if is_nil(user) do
+          push_navigate(socket, to: ~p"/zarzadzanie/pracownicy")
+        else
+          employee = build_employee(user, id, selected_date, scope)
+          active_months = months_with_sessions(%{user_id: id}, scope)
 
-        socket
-        |> assign(:employee, employee)
-        |> assign(:active_months, active_months)
-        |> assign(:projects_filter_date, selected_date)
-        |> assign(:page_title, get_employee_display_name(employee))
-      end
+          socket
+          |> assign(:employee, employee)
+          |> assign(:active_months, active_months)
+          |> assign(:projects_filter_date, selected_date)
+          |> assign(:page_title, get_employee_display_name(employee))
+        end
 
-    {:noreply, socket}
+      {:noreply, socket}
+    else
+      {:noreply, push_navigate(socket, to: ~p"/zarzadzanie/pracownicy")}
+    end
   end
 
   defp build_employee(user, user_id, date, scope) do
@@ -290,14 +294,5 @@ defmodule FirmowidWeb.Management.Views.Employee do
   end
 
   # Distinct months (as naive_datetime) that have sessions, newest first.
-  defp months_with_sessions(filters, scope) do
-    Session
-    |> Ash.Query.for_read(:list, filters, scope: scope)
-    |> Ash.Query.distinct(:month_start)
-    |> Ash.Query.distinct_sort(month_start: :desc)
-    |> Ash.Query.sort(month_start: :desc)
-    |> Ash.Query.load(:month_start)
-    |> Ash.read!(scope: scope)
-    |> Enum.map(& &1.month_start)
-  end
+  defp months_with_sessions(filters, scope), do: Timetracker.months_with_sessions(filters, scope)
 end

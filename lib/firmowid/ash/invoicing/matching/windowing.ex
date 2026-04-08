@@ -52,11 +52,12 @@ defmodule Firmowid.Ash.Invoicing.Matching.Windowing do
   @spec within_time_window?(Date.t(), Date.t(), Date.t()) :: boolean()
   defp within_time_window?(issue_date, due_date, transaction_date) do
     # up to 10 days before it was issued
-    past_cutoff = Timex.shift(issue_date, days: -30)
+    past_cutoff = Date.shift(issue_date, day: -30)
     # up to 30 days after the payment deadline
-    future_cutoff = Timex.shift(due_date, days: 60)
+    future_cutoff = Date.shift(due_date, day: 60)
 
-    Timex.between?(transaction_date, past_cutoff, future_cutoff, inclusive: true)
+    Date.compare(transaction_date, past_cutoff) in [:gt, :eq] and
+      Date.compare(transaction_date, future_cutoff) in [:lt, :eq]
   end
 
   @spec within_amount_window(CostInvoice.t() | SalesInvoice.t(), map()) :: boolean()

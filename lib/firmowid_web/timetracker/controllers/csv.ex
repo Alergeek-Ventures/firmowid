@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Infrastructure.Controllers.FileDownload
+  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
   action_fallback FirmowidWeb.Infrastructure.Controllers.Fallback
 
@@ -28,6 +29,12 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
       _ ->
         {:error, :unauthorized}
     end
+  end
+
+  def salaries(conn, _params) do
+    conn
+    |> put_flash(:error, "Podaj miesiąc i rok dla eksportu CSV.")
+    |> redirect(to: ~p"/zarzadzanie/pracownicy")
   end
 
   def project(conn, %{"id" => project_id, "month" => month_str, "year" => year_str}) do
@@ -92,14 +99,18 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
     Session
     |> Ash.Query.for_read(:list, %{project_id: project_id, month: month, year: year}, scope: scope)
     |> Ash.Query.load(:duration)
+    |> Ash.Query.load(:user)
+    |> Ash.Query.sort(start_datetime: :asc)
     |> Ash.read!(scope: scope)
-    |> Enum.group_by(& &1.title)
-    |> Enum.map(fn {title, ss} ->
-      total = ss |> Enum.map(& &1.duration) |> Enum.sum()
-      %{title: title, duration: Timetracker.seconds_to_hours(total)}
+    |> Enum.map(fn session ->
+      %{
+        user: session.user && (session.user.name || session.user.email),
+        date: session.start_datetime |> DateTime.to_date() |> Date.to_iso8601(),
+        duration: TimeFormatter.format_duration(session.duration || 0),
+        title: session.title
+      }
     end)
-    |> Enum.sort_by(& &1.duration, :desc)
-    |> CSV.encode(headers: [title: "Zadanie", duration: "Czas trwania (godziny)"])
+    |> CSV.encode(headers: [user: "Użytkownik", date: "Data", duration: "Czas trwania", title: "Tytuł"])
     |> Enum.join()
   end
 

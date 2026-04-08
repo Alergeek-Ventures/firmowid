@@ -40,6 +40,13 @@ defmodule Firmowid.Ash.Invoicing.Changes.PrepareCorrection do
     :is_cash_account
   ]
 
+  @latest_snapshot_load [
+    :sales_invoice_items,
+    :sale_date,
+    :due_date,
+    :invoice_type | @copied_fields
+  ]
+
   @impl true
   def change(changeset, _opts, context) do
     original_invoice_id = Ash.Changeset.get_argument(changeset, :original_invoice_id)
@@ -59,19 +66,13 @@ defmodule Firmowid.Ash.Invoicing.Changes.PrepareCorrection do
     original_invoice =
       SalesInvoice.by_id!(
         original_invoice_id,
-        Keyword.merge(opts,
-          load: [
-            :sales_invoice_items,
-            corrections: :sales_invoice_items,
-            latest_correction: :sales_invoice_items
-          ],
-          authorize?: false,
-          actor: %{}
-        )
+        Keyword.put(opts, :load, [
+          :effective_snapshot,
+          :sales_invoice_items,
+          corrections: :sales_invoice_items,
+          latest_correction: @latest_snapshot_load
+        ])
       )
-
-    original_invoice =
-      Ash.load!(original_invoice, [:effective_snapshot], authorize?: false, actor: %{})
 
     latest_snapshot = original_invoice.effective_snapshot
 

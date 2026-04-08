@@ -15,6 +15,7 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Analysis.Changes.PickTagColor
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -69,8 +70,17 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
       authorize_if always()
     end
 
+    bypass {SystemActorRole, roles: [:project_tag_manager]} do
+      authorize_if action([
+                     :create_for_project,
+                     :read,
+                     :update_tag_definition,
+                     :destroy_tag_definition
+                   ])
+    end
+
     # invoice_matcher: read-only
-    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:invoice_matcher]} do
+    bypass {SystemActorRole, roles: [:invoice_matcher]} do
       authorize_if action_type(:read)
     end
 

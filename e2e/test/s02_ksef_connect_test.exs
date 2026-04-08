@@ -62,9 +62,9 @@ defmodule Firmowid.E2E.S02KsefConnectTest do
       disconnect_btn = Playwright.Locator.locator(modal, "button:has-text('Rozłącz')")
       disconnect_btn |> Playwright.Locator.last() |> Playwright.Locator.click()
 
-      # Step 8: Verify disconnected state — token input should reappear
-      wait_for_element(page, "input[placeholder='Wprowadź token KSeF']", timeout: 10_000)
-      assert page_has_text?(page, "Wprowadź token KSeF")
+      # Step 8: Verify disconnected state — token input and connect CTA should reappear
+      assert wait_for_element(page, "input[placeholder='Wprowadź token KSeF']", timeout: 10_000)
+      assert wait_for_text(page, "Połącz z KSeF", timeout: 10_000)
     end
   end
 end

@@ -8,17 +8,17 @@ defmodule Firmowid.Seeds.Voidstack do
   alley in Bratislava.
   """
 
-  import Ecto.Query
-
+  alias Firmowid.Ash.Analysis.TagDefinition, as: AshTagDefinition
   alias Firmowid.Ash.Core.Organization, as: CoreOrganization
   alias Firmowid.Ash.Core.User, as: CoreUser
-  alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
   alias Firmowid.Ash.Invoicing.CostInvoice, as: AshCostInvoice
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
-  alias Firmowid.Repo
+  alias Firmowid.Ash.Timetracker.ProjectUser, as: AshProjectUser
   alias Firmowid.Seeds.Helpers
 
   require Ash.Query
+
+  @seed_actor %{id: "00000000-0000-0000-0000-000000000000", role: :admin}
 
   def seed! do
     dragan = seed_dragan()
@@ -32,20 +32,11 @@ defmodule Firmowid.Seeds.Voidstack do
 
   defp seed_dragan do
     dragan =
-      case Ash.read(
-             Ash.Query.filter(CoreUser, email == ^"dragan@voidstack.io"),
-             authorize?: false,
-             actor: %{}
-           ) do
-        {:ok, [user]} ->
-          user
-
-        {:ok, []} ->
-          Ash.Seed.seed!(CoreUser, %{
-            email: "dragan@voidstack.io",
-            hashed_password: Argon2.hash_pwd_salt("kolejka123456")
-          })
-      end
+      Ash.Seed.upsert!(
+        CoreUser,
+        %{email: "dragan@voidstack.io", hashed_password: Argon2.hash_pwd_salt("kolejka123456")},
+        identity: :unique_email
+      )
 
     Ash.Seed.update!(dragan, %{
       system_role: :user,
@@ -58,54 +49,48 @@ defmodule Firmowid.Seeds.Voidstack do
   end
 
   defp seed_organization(dragan) do
-    case Ash.read(
-           Ash.Query.filter(CoreOrganization, nip == ^"7871963656"),
-           authorize?: false,
-           actor: %{}
-         ) do
-      {:ok, [org]} ->
-        org
-
-      {:ok, []} ->
-        Ash.Seed.seed!(CoreOrganization, %{
-          name: "VoidStack Labs spółka z ograniczoną odpowiedzialnością",
-          nip: "7871963656",
-          address: "ul. Kręgielnia 1, 811 01 Bratislava (oddział w Polsce)",
-          owner_id: dragan.id,
-          inbound_email_nickname: "voidstack"
-        })
-    end
+    Ash.Seed.upsert!(
+      CoreOrganization,
+      %{
+        name: "VoidStack Labs spółka z ograniczoną odpowiedzialnością",
+        nip: "7871963656",
+        address: "ul. Kręgielnia 1, 811 01 Bratislava (oddział w Polsce)",
+        owner_id: dragan.id,
+        inbound_email_nickname: "voidstack"
+      },
+      identity: :unique_nickname
+    )
   end
 
   defp seed_project(dragan, voidstack) do
+    tag_definition =
+      Ash.Seed.upsert!(
+        AshTagDefinition,
+        %{name: "Shadow Protocol", organization_id: voidstack.id},
+        identity: :unique_name_per_org,
+        tenant: voidstack.id
+      )
+
     project =
-      case Repo.one(
-             from(p in AshProject,
-               where: p.name == "Shadow Protocol",
-               limit: 1
-             )
-           ) do
+      case find_project(voidstack.id, "Shadow Protocol") do
         nil ->
-          {:ok, p} =
-            AshProject.create(
-              %{name: "Shadow Protocol"},
-              tenant: voidstack.id,
-              authorize?: false,
-              actor: %{}
-            )
+          Ash.Seed.seed!(
+            AshProject,
+            %{name: "Shadow Protocol", organization_id: voidstack.id, tag_definition_id: tag_definition.id},
+            tenant: voidstack.id
+          )
 
-          p
-
-        p ->
-          p
+        project ->
+          project
       end
 
-    {:ok, _} =
-      AshProject.set_users([dragan.id], %{project_id: project.id},
-        tenant: voidstack.id,
-        authorize?: false,
-        actor: %{}
+    if is_nil(find_project_user(voidstack.id, project.id, dragan.id)) do
+      Ash.Seed.seed!(
+        AshProjectUser,
+        %{project_id: project.id, user_id: dragan.id, organization_id: voidstack.id},
+        tenant: voidstack.id
       )
+    end
 
     project
   end
@@ -190,38 +175,34 @@ defmodule Firmowid.Seeds.Voidstack do
       }
     ]
 
-    Ash.bulk_create!(transactions, AshTransaction, :upsert_from_sync,
-      tenant: voidstack.id,
-      authorize?: false,
-      actor: %{}
-    )
+    Enum.each(transactions, fn attrs ->
+      Helpers.seed_transaction!(attrs, voidstack.id)
+    end)
   end
 
   defp seed_cost_invoice(voidstack, blob) do
     today = Helpers.today()
 
-    if is_nil(Repo.get(AshCostInvoice, "aaaaaaaa-3333-7433-bd41-3d8b719610a4")) do
-      Ash.Seed.seed!(
-        AshCostInvoice,
-        %{
-          id: "aaaaaaaa-3333-7433-bd41-3d8b719610a4",
-          blob_id: blob.id,
-          seller: "Allegro.pl Sp. z o.o.",
-          seller_display_name: "Allegro",
-          sale_date: Helpers.date_this_month(4),
-          issue_date: Helpers.date_this_month(5),
-          due_date: Helpers.date_this_month(19),
-          total_amount: Decimal.new("-1200.00"),
-          currency: "PLN",
-          invoice_identifier: "ALG/#{today.year}/#{String.pad_leading("#{today.month}", 2, "0")}/001",
-          description: "Fotel biurowy ergonomiczny — Dragan upierał się przy modelu wyścigowym",
-          skip_invoicing: false,
-          organization_id: voidstack.id,
-          seller_address: "ul. Grunwaldzka 182, 60-166 Poznań"
-        },
-        tenant: voidstack.id
-      )
-    end
+    Ash.Seed.seed!(
+      AshCostInvoice,
+      %{
+        id: "aaaaaaaa-3333-7433-bd41-3d8b719610a4",
+        blob_id: blob.id,
+        seller: "Allegro.pl Sp. z o.o.",
+        seller_display_name: "Allegro",
+        sale_date: Helpers.date_this_month(4),
+        issue_date: Helpers.date_this_month(5),
+        due_date: Helpers.date_this_month(19),
+        total_amount: Decimal.new("-1200.00"),
+        currency: "PLN",
+        invoice_identifier: "ALG/#{today.year}/#{String.pad_leading("#{today.month}", 2, "0")}/001",
+        description: "Fotel biurowy ergonomiczny — Dragan upierał się przy modelu wyścigowym",
+        skip_invoicing: false,
+        organization_id: voidstack.id,
+        seller_address: "ul. Grunwaldzka 182, 60-166 Poznań"
+      },
+      tenant: voidstack.id
+    )
   end
 
   defp seed_sales_invoice(voidstack) do
@@ -241,7 +222,7 @@ defmodule Firmowid.Seeds.Voidstack do
       "buyer_full_name" => "Mysterious Client LLC",
       "buyer_address" => "ul. Tajemnicza 13, 00-666 Warszawa",
       "buyer_country" => "PL",
-      "buyer_id" => "5213370128",
+      "buyer_id" => "5213370120",
       "buyer_type" => "company",
       "payment_method" => "transfer",
       "is_reverse_charge" => false,
@@ -263,5 +244,29 @@ defmodule Firmowid.Seeds.Voidstack do
         }
       ]
     })
+  end
+
+  defp find_project(tenant, name) do
+    query =
+      AshProject
+      |> Ash.Query.filter(organization_id == ^tenant and name == ^name)
+      |> Ash.Query.limit(1)
+
+    case Ash.read(query, tenant: tenant, actor: @seed_actor) do
+      {:ok, [project | _]} -> project
+      _ -> nil
+    end
+  end
+
+  defp find_project_user(tenant, project_id, user_id) do
+    query =
+      AshProjectUser
+      |> Ash.Query.filter(organization_id == ^tenant and project_id == ^project_id and user_id == ^user_id)
+      |> Ash.Query.limit(1)
+
+    case Ash.read(query, tenant: tenant, actor: @seed_actor) do
+      {:ok, [project_user | _]} -> project_user
+      _ -> nil
+    end
   end
 end

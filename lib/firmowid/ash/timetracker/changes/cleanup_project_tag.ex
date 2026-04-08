@@ -8,6 +8,8 @@ defmodule Firmowid.Ash.Timetracker.Changes.CleanupProjectTag do
   use Ash.Resource.Change
 
   alias Firmowid.Ash.Analysis.TagDefinition
+  alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
 
   @impl true
   def init(opts), do: {:ok, opts}
@@ -23,14 +25,12 @@ defmodule Firmowid.Ash.Timetracker.Changes.CleanupProjectTag do
   defp delete_tag_definition(nil, _context), do: :ok
 
   defp delete_tag_definition(tag_definition_id, context) do
-    scope = %Firmowid.Ash.Scope{
-      actor: context.actor,
+    scope = %Scope{
+      actor: %SystemActor{org_id: context.tenant, role: :project_tag_manager},
       tenant: context.tenant
     }
 
-    # authorize?: false because this is an internal system operation —
-    # the parent project action already verified the actor's permissions.
-    opts = [scope: scope, authorize?: false]
+    opts = [scope: scope]
 
     case TagDefinition.get_tag_definition(tag_definition_id, opts) do
       {:ok, nil} ->

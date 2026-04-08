@@ -85,13 +85,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
   def handle_event("connect", %{"transaction_id" => tx_id}, socket) do
     user = socket.assigns.current_user
 
-    # TODO: replace authorize?: false + actor: %{} with system actor once available
-    Invoicing.connect_cost_invoice_transactions(
-      socket.assigns.invoice,
-      [tx_id],
-      authorize?: false,
-      actor: %{}
-    )
+    Invoicing.connect_cost_invoice_transactions(socket.assigns.invoice, [tx_id], scope: socket.assigns.ash_scope)
 
     Analytics.track_event("cost_invoice_match", user, %{transaction_count: 1})
 
@@ -101,8 +95,9 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
 
   @impl true
   def handle_event("disconnect", _params, socket) do
-    # TODO: replace authorize?: false + actor: %{} with system actor once available
-    Invoicing.disconnect_cost_invoice_transactions(socket.assigns.invoice, authorize?: false, actor: %{})
+    Invoicing.disconnect_cost_invoice_transactions(socket.assigns.invoice,
+      scope: socket.assigns.ash_scope
+    )
 
     Analytics.track_event("cost_invoice_unmatch", socket.assigns.current_user, %{})
 

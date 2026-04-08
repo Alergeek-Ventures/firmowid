@@ -133,7 +133,7 @@ defmodule Firmowid.MixProject do
       {:dotenv, "~> 3.1", only: [:dev, :test]},
       {:tidewave, "~> 0.2", only: :dev},
       {:lazy_html, ">= 0.1.0"},
-      {:erlsom, "~> 1.5", only: :test},
+      {:erlsom, "~> 1.5", only: [:dev, :test]},
       {:playwright, "~> 1.49.1-alpha.2", only: :test},
       {:styler, "~> 1.5", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},

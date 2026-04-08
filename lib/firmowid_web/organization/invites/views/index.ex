@@ -6,17 +6,19 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
   alias Firmowid.Analytics
   alias Firmowid.Ash.Core
 
+  @invite_load [issued_by: [:email], consumed_by: [:email]]
+
   @impl true
   def mount(_params, _session, socket) do
     current_user = socket.assigns.current_user
-    organization_id = current_user.organization_id
+    scope = socket.assigns.ash_scope
 
     if current_user.role != :admin do
       raise Forbidden, message: "Tylko administrator może przeglądać zaproszenia."
     end
 
     invites =
-      Core.list_invites!(tenant: organization_id, authorize?: false, actor: %{})
+      Core.list_invites!(load: @invite_load, scope: scope)
 
     socket =
       socket
@@ -30,17 +32,14 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
   def handle_event("create", _, socket) do
     current_user = socket.assigns.current_user
     organization_id = current_user.organization_id
+    scope = socket.assigns.ash_scope
 
     if current_user.role != :admin do
       raise Forbidden, message: "Tylko administrator może tworzyć zaproszenia."
     end
 
     invite =
-      Core.create_invite!(%{issued_by_id: current_user.id},
-        tenant: organization_id,
-        authorize?: false,
-        actor: %{}
-      )
+      Core.create_invite!(%{issued_by_id: current_user.id}, scope: scope)
 
     Analytics.track_event("organization_invite_created", current_user, %{
       organization_id: organization_id,
@@ -48,7 +47,7 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
     })
 
     invites =
-      Core.list_invites!(tenant: organization_id, authorize?: false, actor: %{})
+      Core.list_invites!(load: @invite_load, scope: scope)
 
     socket =
       assign(socket, :organization_invites, invites)
@@ -59,19 +58,19 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     current_user = socket.assigns.current_user
-    organization_id = current_user.organization_id
+    scope = socket.assigns.ash_scope
 
     if current_user.role != :admin do
       raise Forbidden, message: "Tylko administrator może usuwać zaproszenia."
     end
 
     invite =
-      Core.get_invite!(id, tenant: organization_id, authorize?: false, actor: %{})
+      Core.get_invite!(id, scope: scope)
 
-    Core.destroy_invite!(invite, tenant: organization_id, authorize?: false, actor: %{})
+    Core.destroy_invite!(invite, scope: scope)
 
     invites =
-      Core.list_invites!(tenant: organization_id, authorize?: false, actor: %{})
+      Core.list_invites!(load: @invite_load, scope: scope)
 
     socket =
       assign(socket, :organization_invites, invites)

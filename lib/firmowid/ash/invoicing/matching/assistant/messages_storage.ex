@@ -1,10 +1,15 @@
 defmodule Firmowid.Ash.Invoicing.Matching.Assistant.MessagesStorage do
   @moduledoc """
   In-memory storage for assistant conversations, keyed by conversation_id.
-  Stores lists of Message structs per conversation, and conversation metadata (e.g., invoice).
-  Not for production use.
-  Now supports PubSub for real-time updates and streaming tokens.
-  Only stores and returns Elixir structs (no LLM-specific formats).
+
+  Uses an Agent process for simplicity. Conversations are ephemeral and lost
+  on restart, which is acceptable for this assistant feature. Supports PubSub
+  for real-time updates and streaming tokens. Only stores and returns Elixir
+  structs (no LLM-specific formats).
+
+  TODO: Replace Agent-based in-memory storage with a persistent backend
+  (e.g. ETS, database, or a dedicated GenServer with supervision) for
+  production resilience.
   """
 
   use Agent

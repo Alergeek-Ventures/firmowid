@@ -17,7 +17,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
     # Get avatar URL and convert to data URI
     avatar_url =
       conn.assigns.current_org
-      |> Ash.load!([avatar_blob: [:url]], tenant: conn.assigns.current_org.id, authorize?: false, actor: %{})
+      |> Ash.load!([avatar_blob: [:url]], scope: scope)
       |> Map.get(:avatar_blob)
       |> case do
         %{url: url} -> url
@@ -31,11 +31,16 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
     end_date = Date.end_of_month(date_parsed)
 
     session_query =
-      Ash.Query.for_read(AshSession, :list, %{
-        month: date_parsed.month,
-        year: date_parsed.year,
-        user_id: conn.assigns.current_user.id
-      })
+      Ash.Query.for_read(
+        AshSession,
+        :list,
+        %{
+          month: date_parsed.month,
+          year: date_parsed.year,
+          user_id: conn.assigns.current_user.id
+        },
+        scope: scope
+      )
 
     %{total: duration_seconds} =
       Ash.aggregate!(session_query, {:total, :sum, field: :duration, default: 0}, scope: scope)
@@ -96,7 +101,12 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
     end_date = Date.end_of_month(date)
 
     session_query =
-      Ash.Query.for_read(AshSession, :list, %{month: date.month, year: date.year, user_id: conn.assigns.current_user.id})
+      Ash.Query.for_read(
+        AshSession,
+        :list,
+        %{month: date.month, year: date.year, user_id: conn.assigns.current_user.id},
+        scope: scope
+      )
 
     %{total: duration_seconds} =
       Ash.aggregate!(session_query, {:total, :sum, field: :duration, default: 0}, scope: scope)
@@ -112,7 +122,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
       hours: total_hours,
       avatar_url:
         conn.assigns.current_org
-        |> Ash.load!([avatar_blob: [:url]], tenant: conn.assigns.current_org.id, authorize?: false, actor: %{})
+        |> Ash.load!([avatar_blob: [:url]], scope: scope)
         |> Map.get(:avatar_blob)
         |> case do
           %{url: url} -> url
@@ -127,16 +137,27 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
   def download(conn, %{"id" => id}) do
     scope = conn.assigns.ash_scope
 
-    record = AshHoursRecord.get!(id, scope: scope, load: [:user, blob: [:url]])
-    url = record.blob.url
+    case AshHoursRecord.get(id, scope: scope, load: [:user, blob: [:url]], not_found_error?: false) do
+      {:ok, nil} ->
+        conn
+        |> LiveToast.put_toast(:error, "Nie masz dostępu do tej ewidencji godzin.")
+        |> redirect(to: ~p"/czasosledz")
 
-    {:ok, file} = Req.get(url)
+      {:ok, record} ->
+        url = record.blob.url
+        {:ok, file} = Req.get(url)
 
-    conn
-    |> put_resp_header(
-      "content-disposition",
-      "attachment; filename=\"Ewidencja_#{record.year}_#{record.month}_#{record.user.name}.pdf\""
-    )
-    |> send_resp(200, file.body)
+        conn
+        |> put_resp_header(
+          "content-disposition",
+          "attachment; filename=\"Ewidencja_#{record.year}_#{record.month}_#{record.user.name}.pdf\""
+        )
+        |> send_resp(200, file.body)
+
+      {:error, _error} ->
+        conn
+        |> LiveToast.put_toast(:error, "Nie masz dostępu do tej ewidencji godzin.")
+        |> redirect(to: ~p"/czasosledz")
+    end
   end
 end

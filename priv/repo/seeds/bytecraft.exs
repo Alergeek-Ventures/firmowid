@@ -5,17 +5,18 @@ defmodule Firmowid.Seeds.Bytecraft do
   Creates users, org, counterparties, projects, bank accounts, and a mock blob.
   """
 
-  import Ecto.Query
-
+  alias Firmowid.Ash.Analysis.TagDefinition, as: AshTagDefinition
   alias Firmowid.Ash.Core.Organization, as: CoreOrganization
   alias Firmowid.Ash.Core.User, as: CoreUser
   alias Firmowid.Ash.Invoicing.Counterparty, as: AshCounterparty
   alias Firmowid.Ash.Ksef.Credential
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
-  alias Firmowid.Repo
+  alias Firmowid.Ash.Timetracker.ProjectUser, as: AshProjectUser
   alias Firmowid.Seeds.Helpers
 
   require Ash.Query
+
+  @seed_actor %{id: "00000000-0000-0000-0000-000000000000", role: :admin}
 
   def seed! do
     users = seed_users()
@@ -43,20 +44,11 @@ defmodule Firmowid.Seeds.Bytecraft do
 
   defp seed_users do
     register = fn email ->
-      case Ash.read(
-             Ash.Query.filter(CoreUser, email == ^email),
-             authorize?: false,
-             actor: %{}
-           ) do
-        {:ok, [user]} ->
-          user
-
-        {:ok, []} ->
-          Ash.Seed.seed!(CoreUser, %{
-            email: email,
-            hashed_password: Argon2.hash_pwd_salt("kolejka123456")
-          })
-      end
+      Ash.Seed.upsert!(
+        CoreUser,
+        %{email: email, hashed_password: Argon2.hash_pwd_salt("kolejka123456")},
+        identity: :unique_email
+      )
     end
 
     kira = register.("kira@bytecraft.collective")
@@ -171,23 +163,17 @@ defmodule Firmowid.Seeds.Bytecraft do
   # ===========================================================================
 
   defp seed_organization(kira) do
-    case Ash.read(
-           Ash.Query.filter(CoreOrganization, nip == ^"6161525811"),
-           authorize?: false,
-           actor: %{}
-         ) do
-      {:ok, [org]} ->
-        org
-
-      {:ok, []} ->
-        Ash.Seed.seed!(CoreOrganization, %{
-          name: "Bytecraft Collective spółka z ograniczoną odpowiedzialnością",
-          nip: "6161525811",
-          address: "ul. Marszałkowska 11/4, 00-624 Warszawa",
-          owner_id: kira.id,
-          inbound_email_nickname: "bytecraft"
-        })
-    end
+    Ash.Seed.upsert!(
+      CoreOrganization,
+      %{
+        name: "Bytecraft Collective spółka z ograniczoną odpowiedzialnością",
+        nip: "6161525811",
+        address: "ul. Marszałkowska 11/4, 00-624 Warszawa",
+        owner_id: kira.id,
+        inbound_email_nickname: "bytecraft"
+      },
+      identity: :unique_nickname
+    )
   end
 
   defp seed_org_membership(bytecraft, users) do
@@ -203,40 +189,8 @@ defmodule Firmowid.Seeds.Bytecraft do
   # ===========================================================================
 
   defp seed_counterparties(bytecraft) do
-    get_or_create = fn attrs ->
-      existing =
-        cond do
-          attrs[:tax_id] && attrs[:tax_id] != "" ->
-            Repo.one(
-              from(c in AshCounterparty,
-                where: c.tax_id == ^attrs[:tax_id] and c.organization_id == ^bytecraft.id,
-                limit: 1
-              )
-            )
-
-          attrs[:display_name] ->
-            Repo.one(
-              from(c in AshCounterparty,
-                where:
-                  c.display_name == ^attrs[:display_name] and
-                    c.organization_id == ^bytecraft.id,
-                limit: 1
-              )
-            )
-
-          true ->
-            nil
-        end
-
-      case existing do
-        # TODO: replace authorize?: false + actor: %{} with system actor once available
-        nil -> AshCounterparty.create(attrs, tenant: bytecraft.id, authorize?: false, actor: %{})
-        counterparty -> {:ok, counterparty}
-      end
-    end
-
-    {:ok, ghostpet} =
-      get_or_create.(%{
+    ghostpet =
+      get_or_seed_counterparty!(bytecraft.id, %{
         type: :company,
         tax_id: "US-EIN-47-8830291",
         full_name: "GhostPet Inc.",
@@ -248,8 +202,8 @@ defmodule Firmowid.Seeds.Bytecraft do
         description: "AI conversations with deceased pets. The parrot module is haunted."
       })
 
-    {:ok, flatearth} =
-      get_or_create.(%{
+    flatearth =
+      get_or_seed_counterparty!(bytecraft.id, %{
         type: :company,
         full_name: "FlatEarth Dating Ltd.",
         display_name: "FlatMate",
@@ -260,10 +214,10 @@ defmodule Firmowid.Seeds.Bytecraft do
         description: "Dating app for flat earthers. Kira built the disc map. 200k users."
       })
 
-    {:ok, taco} =
-      get_or_create.(%{
+    taco =
+      get_or_seed_counterparty!(bytecraft.id, %{
         type: :company,
-        tax_id: "DE317256842",
+        tax_id: "317256842",
         full_name: "TacoOverflow Inc.",
         display_name: "TacoOverflow",
         address: "Friedrichstraße 123\n10117 Berlin",
@@ -283,29 +237,10 @@ defmodule Firmowid.Seeds.Bytecraft do
   defp seed_projects(bytecraft, users, counterparties) do
     tenant = bytecraft.id
 
-    get_or_create = fn name, counterparty_id ->
-      case Repo.one(
-             from(p in AshProject,
-               where: p.name == ^name and p.organization_id == ^tenant,
-               limit: 1
-             )
-           ) do
-        nil ->
-          params =
-            then(%{name: name}, fn p -> if counterparty_id, do: Map.put(p, :counterparty_id, counterparty_id), else: p end)
-
-          {:ok, project} = AshProject.create(params, tenant: tenant, authorize?: false, actor: %{})
-          project
-
-        project ->
-          project
-      end
-    end
-
-    firmowid = get_or_create.("Firmowid", nil)
-    ghostpet = get_or_create.("GhostPet", counterparties.ghostpet.id)
-    flatmate = get_or_create.("FlatMate", counterparties.flatearth.id)
-    taco = get_or_create.("TacoOverflow", counterparties.taco.id)
+    firmowid = seed_project!(tenant, "Firmowid", nil)
+    ghostpet = seed_project!(tenant, "GhostPet", counterparties.ghostpet.id)
+    flatmate = seed_project!(tenant, "FlatMate", counterparties.flatearth.id)
+    taco = seed_project!(tenant, "TacoOverflow", counterparties.taco.id)
 
     project_users = %{
       firmowid => [users.kira.id, users.tomek.id],
@@ -315,20 +250,18 @@ defmodule Firmowid.Seeds.Bytecraft do
     }
 
     for {project, user_ids} <- project_users do
-      {:ok, _} =
-        AshProject.set_users(user_ids, %{project_id: project.id},
-          tenant: tenant,
-          authorize?: false,
-          actor: %{}
-        )
+      Enum.each(user_ids, fn user_id ->
+        if is_nil(find_project_user(tenant, project.id, user_id)) do
+          Ash.Seed.seed!(
+            AshProjectUser,
+            %{project_id: project.id, user_id: user_id, organization_id: tenant},
+            tenant: tenant
+          )
+        end
+      end)
     end
 
-    projects = %{firmowid: firmowid, ghostpet: ghostpet, flatmate: flatmate, taco: taco}
-
-    # Preload tag definitions for use in tagging
-    Map.new(projects, fn {key, project} ->
-      {key, Repo.preload(project, :tag_definition)}
-    end)
+    %{firmowid: firmowid, ghostpet: ghostpet, flatmate: flatmate, taco: taco}
   end
 
   # ===========================================================================
@@ -353,17 +286,15 @@ defmodule Firmowid.Seeds.Bytecraft do
   @ksef_token "20260405-EC-28297E1000-AA3A3DCEA6-57|nip-6161525811|c8948520f70e428f850a668b445c5ba3579da2cb100d43fbb725d377b3eaa819"
 
   defp seed_ksef_credential(bytecraft) do
-    case Ash.read(Ash.Query.for_read(Credential, :by_organization, %{organization_id: bytecraft.id})) do
-      {:ok, []} ->
-        Ash.Seed.seed!(Credential, %{
-          organization_id: bytecraft.id,
-          auth_type: :token,
-          credentials: @ksef_token
-        })
-
-      {:ok, [credential]} ->
-        credential
-    end
+    Ash.Seed.upsert!(
+      Credential,
+      %{
+        organization_id: bytecraft.id,
+        auth_type: :token,
+        credentials: @ksef_token
+      },
+      identity: :unique_organization
+    )
   end
 
   # ===========================================================================
@@ -443,5 +374,86 @@ defmodule Firmowid.Seeds.Bytecraft do
       )
 
     %{pln: pln, eur: eur, usd: usd, gbp: gbp, thb: thb}
+  end
+
+  defp get_or_seed_counterparty!(org_id, attrs) do
+    case find_counterparty(org_id, attrs) do
+      nil ->
+        Ash.Seed.seed!(AshCounterparty, Map.put(attrs, :organization_id, org_id), tenant: org_id)
+
+      counterparty ->
+        counterparty
+    end
+  end
+
+  defp find_counterparty(org_id, attrs) do
+    query =
+      cond do
+        attrs[:tax_id] && attrs[:tax_id] != "" ->
+          Ash.Query.filter(AshCounterparty, tax_id == ^attrs[:tax_id] and organization_id == ^org_id)
+
+        attrs[:display_name] ->
+          Ash.Query.filter(AshCounterparty, display_name == ^attrs[:display_name] and organization_id == ^org_id)
+
+        true ->
+          nil
+      end
+
+    case query do
+      nil ->
+        nil
+
+      query ->
+        query = Ash.Query.limit(query, 1)
+
+        case Ash.read(query, tenant: org_id, actor: @seed_actor) do
+          {:ok, [counterparty | _]} -> counterparty
+          _ -> nil
+        end
+    end
+  end
+
+  defp seed_project!(tenant, name, counterparty_id) do
+    tag_definition =
+      Ash.Seed.upsert!(
+        AshTagDefinition,
+        %{name: name, organization_id: tenant},
+        identity: :unique_name_per_org,
+        tenant: tenant
+      )
+
+    project_attrs =
+      then(%{name: name, organization_id: tenant, tag_definition_id: tag_definition.id}, fn attrs ->
+        if counterparty_id, do: Map.put(attrs, :counterparty_id, counterparty_id), else: attrs
+      end)
+
+    case find_project(tenant, name) do
+      nil -> Ash.Seed.seed!(AshProject, project_attrs, tenant: tenant)
+      project -> project
+    end
+  end
+
+  defp find_project(tenant, name) do
+    query =
+      AshProject
+      |> Ash.Query.filter(organization_id == ^tenant and name == ^name)
+      |> Ash.Query.limit(1)
+
+    case Ash.read(query, tenant: tenant, actor: @seed_actor) do
+      {:ok, [project | _]} -> project
+      _ -> nil
+    end
+  end
+
+  defp find_project_user(tenant, project_id, user_id) do
+    query =
+      AshProjectUser
+      |> Ash.Query.filter(organization_id == ^tenant and project_id == ^project_id and user_id == ^user_id)
+      |> Ash.Query.limit(1)
+
+    case Ash.read(query, tenant: tenant, actor: @seed_actor) do
+      {:ok, [project_user | _]} -> project_user
+      _ -> nil
+    end
   end
 end

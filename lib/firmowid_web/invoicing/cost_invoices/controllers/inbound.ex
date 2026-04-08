@@ -6,15 +6,14 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Inbound do
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Invoicing.InboundEmail
   alias Firmowid.Ash.Invoicing.Workers.InboundEmailWorker
+  alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
 
   require Logger
 
-  # TODO: replace authorize?: false + actor: %{} with system actor once available
-  @bridge_opts [authorize?: false, actor: %{}]
-
   def handle_webhook(conn, %{"type" => "email.received", "data" => data}) do
     with {:ok, org_id} <- extract_org_id_from_recipients(Map.get(data, "to", [])),
-         _org = Core.get_organization!(org_id, authorize?: false, actor: %{}),
+         _org = Core.get_organization!(org_id),
          attrs = build_inbound_email_attrs(data, org_id),
          {:ok, inbound_email} <- create_inbound_email(attrs, org_id) do
       enqueue_processing(inbound_email, org_id)
@@ -54,7 +53,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Inbound do
   defp parse_recipient_email(email) do
     case String.split(email, "@") do
       [nickname, "firmowid.pl"] ->
-        case Core.get_organization_by_nickname(nickname, @bridge_opts) do
+        case Core.get_organization_by_nickname(nickname) do
           {:ok, nil} -> nil
           {:ok, org} -> {:ok, org.id}
           {:error, _} -> nil
@@ -86,7 +85,11 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Inbound do
   end
 
   defp create_inbound_email(attrs, org_id) do
-    InboundEmail.create(attrs, [tenant: org_id] ++ @bridge_opts)
+    InboundEmail.create(attrs, scope: inbound_email_scope(org_id))
+  end
+
+  defp inbound_email_scope(org_id) do
+    %Scope{actor: %SystemActor{org_id: org_id, role: :cost_invoice_processor}, tenant: org_id}
   end
 
   defp enqueue_processing(inbound_email, org_id) do

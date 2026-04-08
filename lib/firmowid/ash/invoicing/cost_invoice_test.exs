@@ -9,7 +9,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
 
-  # TODO: replace authorize?: false + actor: %{} with system actor once available
+  # authorize?: false bypasses policies, actor: %{} satisfies require_actor? true
+  # on domains like Invoicing.
   @bridge_opts [authorize?: false, actor: %{}]
 
   describe "delete_cost_invoice/1" do

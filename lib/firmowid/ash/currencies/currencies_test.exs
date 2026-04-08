@@ -6,7 +6,8 @@ defmodule Firmowid.Ash.Currencies.CurrenciesTest do
   alias Firmowid.Ash.Currencies.DatabaseCache
   alias Firmowid.Ash.Currencies.ExchangeRate
 
-  # TODO: replace authorize?: false + actor: %{} with system actor once available
+  # authorize?: false bypasses policies, actor: %{} satisfies require_actor? true
+  # on domains like Currencies.
   @bridge_opts [authorize?: false, actor: %{}]
 
   setup_all do

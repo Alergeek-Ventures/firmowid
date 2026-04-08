@@ -9,6 +9,8 @@ defmodule Firmowid.Ash.Timetracker.Changes.CreateProjectTag do
   use Ash.Resource.Change
 
   alias Firmowid.Ash.Analysis.TagDefinition
+  alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
 
   @impl true
   def init(opts), do: {:ok, opts}
@@ -18,31 +20,23 @@ defmodule Firmowid.Ash.Timetracker.Changes.CreateProjectTag do
     Ash.Changeset.after_action(changeset, fn _changeset, project ->
       scope = build_scope(context)
 
-      # authorize?: false because this is an internal system operation —
-      # the parent project action already verified the actor's permissions.
-      with {:ok, tag_def} <-
-             TagDefinition.create_for_project(project.name, scope: scope, authorize?: false) do
+      with {:ok, tag_def} <- TagDefinition.create_for_project(project.name, scope: scope) do
         link_tag_definition(project, tag_def.id, context)
       end
     end)
   end
 
   defp link_tag_definition(project, tag_def_id, context) do
+    scope = build_scope(context)
+
     project
-    |> Ash.Changeset.for_update(:link_tag, %{tag_definition_id: tag_def_id},
-      actor: context.actor,
-      tenant: context.tenant,
-      # TODO: migrate away from authorize?: false — the :link_tag action is
-      # internal (sets tag_definition_id after tag creation). Replace when
-      # change modules can run actions in a privileged context.
-      authorize?: false
-    )
+    |> Ash.Changeset.for_update(:link_tag, %{tag_definition_id: tag_def_id}, scope: scope)
     |> Ash.update()
   end
 
   defp build_scope(context) do
-    %Firmowid.Ash.Scope{
-      actor: context.actor,
+    %Scope{
+      actor: %SystemActor{org_id: context.tenant, role: :project_tag_manager},
       tenant: context.tenant
     }
   end

@@ -100,8 +100,9 @@
             <div class="space-y-1 truncate">
               <p class="text-base/snug">{project.name}</p>
               <p class="text-grey-500 text-sm/snug">
-                {case project.counterparty.display_label do
+                {case project.counterparty && project.counterparty.display_label do
                   "" -> @current_org.name
+                  nil -> @current_org.name
                   label -> label
                 end}
               </p>
@@ -142,8 +143,9 @@
             <div class="space-y-1 truncate">
               <p class="text-base/snug">{project.name}</p>
               <p class="text-grey-500 text-sm/snug">
-                {case project.counterparty.display_label do
+                {case project.counterparty && project.counterparty.display_label do
                   "" -> @current_org.name
+                  nil -> @current_org.name
                   label -> label
                 end}
               </p>
@@ -157,6 +159,7 @@
             </p>
             <div class="flex flex-row items-center gap-3">
               <.button
+                :if={@current_user.role == :admin}
                 type="button"
                 color="light_grey"
                 size="small"

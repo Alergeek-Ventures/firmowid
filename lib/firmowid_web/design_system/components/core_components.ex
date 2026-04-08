@@ -1133,11 +1133,101 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
     # dynamically, so we need to translate them by calling Gettext
     # with our gettext backend as first argument. Translations are
     # available in the errors.po file (as we use the "errors" domain).
-    if count = opts[:count] do
-      Gettext.dngettext(FirmowidWeb.Core.Gettext, "errors", msg, msg, count, opts)
-    else
-      Gettext.dgettext(FirmowidWeb.Core.Gettext, "errors", msg, opts)
+    translated =
+      if count = opts[:count] do
+        Gettext.dngettext(FirmowidWeb.Core.Gettext, "errors", msg, msg, count, opts)
+      else
+        Gettext.dgettext(FirmowidWeb.Core.Gettext, "errors", msg, opts)
+      end
+
+    localize_common_error(translated, opts)
+  end
+
+  defp localize_common_error("can't be blank", _opts), do: "nie może być puste"
+  defp localize_common_error("is invalid", _opts), do: "jest nieprawidłowe"
+  defp localize_common_error("has invalid format", _opts), do: "ma nieprawidłowy format"
+  defp localize_common_error("has already been taken", _opts), do: "jest już zajęte"
+  defp localize_common_error("must be accepted", _opts), do: "musi zostać zaakceptowane"
+  defp localize_common_error("does not match confirmation", _opts), do: "nie zgadza się z potwierdzeniem"
+  defp localize_common_error("is reserved", _opts), do: "jest zarezerwowane"
+  defp localize_common_error("has an invalid entry", _opts), do: "zawiera nieprawidłowy element"
+  defp localize_common_error("is still associated with this entry", _opts), do: "jest nadal powiązane z tym wpisem"
+  defp localize_common_error("are still associated with this entry", _opts), do: "są nadal powiązane z tym wpisem"
+
+  defp localize_common_error("should be %{count} character(s)", opts),
+    do: interpolate_error("powinno mieć %{count} znak(ów)", opts)
+
+  defp localize_common_error("should be at least %{count} character(s)", opts),
+    do: interpolate_error("powinno mieć co najmniej %{count} znak(ów)", opts)
+
+  defp localize_common_error("should be at most %{count} character(s)", opts),
+    do: interpolate_error("powinno mieć co najwyżej %{count} znak(ów)", opts)
+
+  defp localize_common_error("should be %{count} byte(s)", opts),
+    do: interpolate_error("powinno mieć %{count} bajt(ów)", opts)
+
+  defp localize_common_error("should be at least %{count} byte(s)", opts),
+    do: interpolate_error("powinno mieć co najmniej %{count} bajt(ów)", opts)
+
+  defp localize_common_error("should be at most %{count} byte(s)", opts),
+    do: interpolate_error("powinno mieć co najwyżej %{count} bajt(ów)", opts)
+
+  defp localize_common_error("should have %{count} item(s)", opts),
+    do: interpolate_error("powinno mieć %{count} element(ów)", opts)
+
+  defp localize_common_error("should have at least %{count} item(s)", opts),
+    do: interpolate_error("powinno mieć co najmniej %{count} element(ów)", opts)
+
+  defp localize_common_error("should have at most %{count} item(s)", opts),
+    do: interpolate_error("powinno mieć co najwyżej %{count} element(ów)", opts)
+
+  defp localize_common_error("must be less than %{number}", opts),
+    do: interpolate_error("musi być mniejsze niż %{number}", opts)
+
+  defp localize_common_error("must be greater than %{number}", opts),
+    do: interpolate_error("musi być większe niż %{number}", opts)
+
+  defp localize_common_error("must be less than or equal to %{number}", opts),
+    do: interpolate_error("musi być mniejsze lub równe %{number}", opts)
+
+  defp localize_common_error("must be greater than or equal to %{number}", opts),
+    do: interpolate_error("musi być większe lub równe %{number}", opts)
+
+  defp localize_common_error("must be equal to %{number}", opts), do: interpolate_error("musi być równe %{number}", opts)
+
+  defp localize_common_error("length must be greater than or equal to %{min}", opts),
+    do: interpolate_error("długość musi być większa lub równa %{min}", opts)
+
+  defp localize_common_error("length must be less than or equal to %{max}", opts),
+    do: interpolate_error("długość musi być mniejsza lub równa %{max}", opts)
+
+  defp localize_common_error("must match the pattern %{regex}", opts),
+    do: interpolate_error("musi pasować do wzorca %{regex}", opts)
+
+  defp localize_common_error(message, _opts) when is_binary(message) do
+    cond do
+      Regex.match?(~r/^length must be greater than or equal to \d+$/, message) ->
+        String.replace_prefix(message, "length must be greater than or equal to ", "długość musi być większa lub równa ")
+
+      Regex.match?(~r/^length must be less than or equal to \d+$/, message) ->
+        String.replace_prefix(message, "length must be less than or equal to ", "długość musi być mniejsza lub równa ")
+
+      true ->
+        message
     end
+  end
+
+  defp interpolate_error(message, opts) do
+    Regex.replace(~r"%\{(\w+)\}", message, fn _, key ->
+      opts
+      |> stringify_error_opts()
+      |> Map.get(key, key)
+      |> to_string()
+    end)
+  end
+
+  defp stringify_error_opts(opts) do
+    Map.new(opts, fn {key, value} -> {to_string(key), value} end)
   end
 
   @doc """

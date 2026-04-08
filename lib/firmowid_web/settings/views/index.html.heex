@@ -632,7 +632,7 @@
           <div class="space-y-4">
             <div class="flex items-center gap-4">
               <div class="flex-1">
-                <%= if @current_user.google_provider_id do %>
+                <%= if @google_connected? do %>
                   <div class="flex items-center gap-2">
                     <span class="bg-greenText inline-flex size-5 items-center justify-center rounded-full">
                       <.icon name="hero-check-circle-solid" class="text-greenBg size-5" />
@@ -655,7 +655,7 @@
                 <% end %>
               </div>
               <div>
-                <%= if @current_user.google_provider_id do %>
+                <%= if @google_connected? do %>
                   <.button
                     variant="outline"
                     color="red"
@@ -727,6 +727,7 @@
               field={@password_form[:password_confirmation]}
               type="password"
               label="Potwierdź nowe hasło"
+              required
             />
             <.input
               field={@password_form[:current_password]}
@@ -748,6 +749,23 @@
         <div class="flex gap-1">
           <h2 class="mt-0.5 font-bold">Konta bankowe</h2>
         </div>
+        <%= if Enum.any?(@pending_requisitions) do %>
+          <div class="flex flex-row items-center justify-center gap-8">
+            <.icon name="hero-arrow-path" class="animate-spin" />
+
+            <div class="flex flex-col gap-2 py-4">
+              <p>
+                Trwa konfiguracja połączenia bankowego.
+                Konto pojawi się na liście po zakończeniu autoryzacji i pierwszej
+                synchronizacji.
+              </p>
+              <p>
+                Jeżeli nie uda się jej przeprowadzić -
+                wniosek zostanie automatycznie wygaszony po godzinie.
+              </p>
+            </div>
+          </div>
+        <% end %>
         <%= if Enum.any?(@bank_accounts) do %>
           <div class="mt-10 space-y-4">
             <%= for {institution, accounts} <- Enum.group_by(@bank_accounts, & &1.institution_name) do %>
@@ -757,17 +775,18 @@
                 <%= for account <- accounts do %>
                   <div class={[
                     "border-greyButtonBg rounded-md border p-4",
-                    "relative grid grid-cols-[85px_1fr] gap-2",
-                    "align-center w-[450px] justify-center"
+                    "relative grid grid-cols-[130px_1fr] gap-2",
+                    "align-center w-[480px] justify-center"
                   ]}>
                     <%= for {label, value} <- [
-                          {"Nazwa", account.name},
-                          {"Waluta", account.currency},
-                          {"Numer", account.iban}
-                        ] do %>
+                  {"Nazwa", account.name},
+                  {"Waluta", account.currency},
+                  {"Numer", account.iban},
+                  {"Synchronizacja", format_last_sync_info(account.latest_successful_sync_at)}
+                ] do %>
                       <span class={[
                         "text-darkGrey font-medium uppercase",
-                        "content-center text-xs"
+                        "inline-block content-center text-xs"
                       ]}>
                         {label}
                       </span>
@@ -777,18 +796,24 @@
                           <span
                             :if={@bank_account_statuses[account.id] == :connected}
                             class="bg-greenText inline-flex size-5 items-center justify-center rounded-full"
+                            aria-label={status_label(@bank_account_statuses[account.id])}
+                            title={status_label(@bank_account_statuses[account.id])}
                           >
                             <.icon name="hero-check-circle-solid" class="text-greenBg size-5" />
                           </span>
                           <span
                             :if={@bank_account_statuses[account.id] in [:broken, :disconnected]}
                             class="bg-redBg inline-flex size-5 items-center justify-center rounded-full"
+                            aria-label={status_label(@bank_account_statuses[account.id])}
+                            title={status_label(@bank_account_statuses[account.id])}
                           >
                             <.icon name="hero-x-mark-solid" class="text-redText size-5" />
                           </span>
                           <span
                             :if={@bank_account_statuses[account.id] == :processing}
                             class="bg-blueBg inline-flex size-5 items-center justify-center rounded-full"
+                            aria-label={status_label(@bank_account_statuses[account.id])}
+                            title={status_label(@bank_account_statuses[account.id])}
                           >
                             <.icon name="hero-ellipsis-horizontal" class="text-blueText size-5" />
                           </span>
@@ -947,65 +972,50 @@
               </div>
             <% end %>
           </div>
-          <div class="mt-16 ml-auto flex gap-2">
-            <.link
-              navigate={~p"/ustawienia/bank/dodaj"}
-              class={button_styles(%{variant: "outline"})}
-            >
-              Podepnij kolejne konto
-            </.link>
-            <.button variant="outline" phx-click={show_modal("manual_bank_account_modal")}>
-              Dodaj konto ręcznie
-            </.button>
-          </div>
-          <.modal
-            id="manual_bank_account_modal"
-            on_cancel={hide_modal("manual_bank_account_modal")}
-          >
-            <div class="flex flex-col gap-4">
-              <h3 class="text-lg font-semibold">Dodaj konto bankowe ręcznie</h3>
-              <p class="text-darkGrey text-sm">
-                Ta funkcja pozwala dodać konto bez integracji z bankiem. Synchronizacja transakcji będzie wyłączona.
-              </p>
-              <.form
-                for={%{}}
-                phx-submit="create_manual_bank_account"
-                id="manual_bank_account_form"
-              >
-                <.input name="name" label="Nazwa konta" value="" />
-                <.input name="iban" label="IBAN" value="" />
-                <.input name="currency" label="Waluta" value="" />
-                <div class="mt-4 flex gap-4">
-                  <.button
-                    type="submit"
-                    phx-click={hide_modal("manual_bank_account_modal")}
-                    phx-disable-with="Dodawanie..."
-                  >
-                    Zapisz
-                  </.button>
-                  <.button type="button" phx-click={hide_modal("manual_bank_account_modal")}>
-                    Anuluj
-                  </.button>
-                </div>
-              </.form>
-            </div>
-          </.modal>
-        <% else %>
-          <div class="text-darkGrey py-6 text-left">
-            <p>Nie masz jeszcze żadnych kont bankowych.</p>
-            <p class="mt-2 text-sm">
-              Dodaj swoje pierwsze konto bankowe, aby móc wystawiać faktury.
-            </p>
-            <div class="mt-6">
-              <.link
-                navigate={~p"/ustawienia/bank/dodaj"}
-                class={button_styles(%{variant: "outline"})}
-              >
-                Podepnij konto
-              </.link>
-            </div>
-          </div>
         <% end %>
+        <div class="mt-16 ml-auto flex gap-2">
+          <.link
+            navigate={~p"/ustawienia/bank/dodaj"}
+            class={button_styles(%{variant: "outline"})}
+          >
+            Podepnij konto bankowe
+          </.link>
+          <.button variant="outline" phx-click={show_modal("manual_bank_account_modal")}>
+            Dodaj konto ręcznie
+          </.button>
+        </div>
+        <.modal
+          id="manual_bank_account_modal"
+          on_cancel={hide_modal("manual_bank_account_modal")}
+        >
+          <div class="flex flex-col gap-4">
+            <h3 class="text-lg font-semibold">Dodaj konto bankowe ręcznie</h3>
+            <p class="text-darkGrey text-sm">
+              Ta funkcja pozwala dodać konto bez integracji z bankiem. Synchronizacja transakcji będzie wyłączona.
+            </p>
+            <.form
+              for={%{}}
+              phx-submit="create_manual_bank_account"
+              id="manual_bank_account_form"
+            >
+              <.input name="name" label="Nazwa konta" value="" />
+              <.input name="iban" label="IBAN" value="" />
+              <.input name="currency" label="Waluta" value="" />
+              <div class="mt-4 flex gap-4">
+                <.button
+                  type="submit"
+                  phx-click={hide_modal("manual_bank_account_modal")}
+                  phx-disable-with="Dodawanie..."
+                >
+                  Zapisz
+                </.button>
+                <.button type="button" phx-click={hide_modal("manual_bank_account_modal")}>
+                  Anuluj
+                </.button>
+              </div>
+            </.form>
+          </div>
+        </.modal>
       </div>
   <% end %>
 </div>

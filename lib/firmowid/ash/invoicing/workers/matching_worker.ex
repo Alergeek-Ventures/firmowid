@@ -6,13 +6,9 @@ defmodule Firmowid.Ash.Invoicing.Workers.MatchingWorker do
 
   use Oban.Worker, queue: :invoicing
 
-  import Ecto.Query, warn: false
-
-  alias Firmowid.Ash.Core.Organization
   alias Firmowid.Ash.Invoicing.InvoiceMatching
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
-  alias Firmowid.Repo
 
   require Logger
 
@@ -20,11 +16,16 @@ defmodule Firmowid.Ash.Invoicing.Workers.MatchingWorker do
   def perform(job) do
     case job.args do
       %{"name" => "matching"} ->
-        # Direct query for all organization IDs - this is infrastructure code
         organization_ids =
-          Organization
-          |> select([o], o.id)
-          |> Repo.all(skip_organization_id: true)
+          Firmowid.Ash.Core.Organization
+          |> Ash.Query.select([:id])
+          |> Ash.read!(
+            scope: %Scope{
+              actor: %SystemActor{org_id: nil, role: :invoice_matcher},
+              tenant: nil
+            }
+          )
+          |> Enum.map(& &1.id)
 
         Enum.each(organization_ids, fn organization_id ->
           Logger.info("Matching invoices for organization #{organization_id}")

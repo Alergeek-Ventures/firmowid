@@ -9,6 +9,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
     notifiers: [Ash.Notifier.PubSub],
     primary_read_warning?: false
 
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Finances.Calculations.TransactionAmount
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
@@ -147,8 +148,16 @@ defmodule Firmowid.Ash.Finances.Transaction do
     end
 
     # invoice_matcher: full access for transaction linking
-    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:invoice_matcher]} do
+    bypass {SystemActorRole, roles: [:invoice_matcher]} do
       authorize_if always()
+    end
+
+    bypass {SystemActorRole, roles: [:bank_sync]} do
+      authorize_if action(:upsert_from_sync)
+    end
+
+    bypass {SystemActorRole, roles: [:analysis_reader]} do
+      authorize_if action_type(:read)
     end
 
     # Other system actors: read-only access

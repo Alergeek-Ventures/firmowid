@@ -186,6 +186,8 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   defp decode_tag_key("project:" <> id), do: {:project, id}
 
+  defp decode_tag_key(_), do: :invalid
+
   # Parses tag filters from URL query params.
   # Tags are stored as `tags=company,project:<id>,project:<id>`.
   defp parse_tag_filters(%{"tags" => tags_param}, tag_definitions) when is_binary(tags_param) do
@@ -194,6 +196,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     tags_param
     |> String.split(",", trim: true)
     |> Enum.map(&decode_tag_key/1)
+    |> Enum.reject(&(&1 == :invalid))
     |> Enum.filter(fn
       {:company} -> true
       {:project, id} -> MapSet.member?(valid_project_ids, id)

@@ -11,6 +11,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
     extensions: [AshStateMachine, AshOban],
     notifiers: [Ash.Notifier.PubSub]
 
+  alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Ash.Finances.Changes.DeleteRemoteRequisition
   alias Firmowid.Ash.Resource
 
@@ -23,12 +24,14 @@ defmodule Firmowid.Ash.Finances.Requisition do
   end
 
   state_machine do
+    state_attribute :status
     initial_states [:pending]
     default_initial_state :pending
 
     transitions do
       transition :accept, from: :pending, to: :accepted
       transition :reject, from: [:pending, :accepted], to: :rejected
+      transition :auto_reject, from: :pending, to: :rejected
       transition :expire, from: :accepted, to: :expired
     end
   end
@@ -65,7 +68,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
         action :cleanup_orphan
         read_action :read_global
         where expr(inserted_at < ago(1, "hour") and not exists(bank_accounts, true))
-        scheduler_cron "0 13 * * *"
+        scheduler_cron "0 * * * *"
         max_attempts 3
         queue :bank_data
 
@@ -176,12 +179,20 @@ defmodule Firmowid.Ash.Finances.Requisition do
   end
 
   policies do
-    bypass AshOban.Checks.AshObanInteraction do
+    bypass AshObanInteraction do
       authorize_if always()
     end
 
     bypass actor_attribute_equals(:role, :admin) do
       authorize_if always()
+    end
+
+    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:bank_sync]} do
+      authorize_if action(:expire)
+    end
+
+    policy action(:read_global) do
+      forbid_if always()
     end
 
     # System actors don't manage bank connections
@@ -193,13 +204,23 @@ defmodule Firmowid.Ash.Finances.Requisition do
       authorize_if actor_attribute_equals(:role, :admin)
     end
 
+    # Internal lifecycle actions are executed by background automation and
+    # delegated transitions where actor metadata may be absent.
+    policy action([:check_status, :accept, :reject]) do
+      authorize_if always()
+    end
+
     # :invoicing and :accountant: read-only
-    policy [action_type(:read), {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}] do
+    policy [action(:read), {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}] do
       authorize_if always()
     end
 
     # Internal actions — should never be called directly
-    policy action([:persist, :auto_reject, :cleanup_orphan, :expire, :delete_remote]) do
+    policy action([:persist, :auto_reject, :cleanup_orphan, :delete_remote]) do
+      forbid_if always()
+    end
+
+    policy action(:expire) do
       forbid_if always()
     end
   end

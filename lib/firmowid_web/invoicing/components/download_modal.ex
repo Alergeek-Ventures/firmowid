@@ -2,7 +2,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
   @moduledoc false
   use FirmowidWeb, :live_component
 
-  attr :month, :string, required: true
+  attr :month, :any, required: true
 
   @impl true
   def mount(socket) do
@@ -11,7 +11,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
         include_digital: true,
         include_ksef: false,
         include_photos: false,
-        include_sales: false
+        include_sales: true
       )
 
     {:ok, socket}

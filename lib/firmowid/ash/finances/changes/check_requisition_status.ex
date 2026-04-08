@@ -26,62 +26,15 @@ defmodule Firmowid.Ash.Finances.Changes.CheckRequisitionStatus do
   @processing_statuses ~w(CR GC UA SA GA)
 
   @impl true
-  def change(changeset, _opts, _context) do
+  def change(changeset, _opts, context) do
     Ash.Changeset.before_action(changeset, fn changeset ->
       record = changeset.data
       tenant = record.organization_id
+      ash_opts = Ash.Context.to_opts(context)
 
-      case fetch_status(record.id) do
-        {:ok, %{"status" => "LN"}} when record.state == :accepted ->
-          Logger.debug("Requisition #{record.id} already accepted, skipping")
-          changeset
-
-        {:ok, %{"status" => "LN"}} ->
-          Logger.info("Requisition #{record.id} is now linked")
-          delegate_to(changeset, record, :accept, tenant)
-
-        {:ok, %{"status" => "RJ"}} ->
-          Logger.info("Requisition #{record.id} was rejected")
-          delegate_to(changeset, record, :reject, tenant)
-
-        {:ok, %{"status" => "EX"}} ->
-          Logger.info("Requisition #{record.id} has expired")
-          delegate_to(changeset, record, :expire, tenant)
-
-        {:ok, %{"status" => status}} when status in @processing_statuses ->
-          Logger.info("Requisition #{record.id} still processing with status: #{status}")
-
-          Ash.Changeset.add_error(
-            changeset,
-            SnoozeJob.exception(snooze_for: 60)
-          )
-
-        {:ok, %{"status" => unknown}} ->
-          Logger.error("Unknown requisition status: #{unknown} for #{record.id}")
-
-          Ash.Changeset.add_error(
-            changeset,
-            InvalidAttribute.exception(
-              field: :status,
-              message: "Unknown GoCardless status: #{unknown}"
-            )
-          )
-
-        {:error, :expired_eua} ->
-          Logger.warning("Requisition #{record.id} EUA expired on GoCardless side")
-          delegate_to(changeset, record, :expire, tenant)
-
-        {:error, reason} ->
-          Logger.error("Failed to fetch requisition status for #{record.id}: #{inspect(reason)}")
-
-          Ash.Changeset.add_error(
-            changeset,
-            InvalidAttribute.exception(
-              field: :status,
-              message: "API error: #{inspect(reason)}"
-            )
-          )
-      end
+      record.id
+      |> fetch_status()
+      |> handle_status_result(changeset, record, tenant, ash_opts)
     end)
   end
 
@@ -91,8 +44,72 @@ defmodule Firmowid.Ash.Finances.Changes.CheckRequisitionStatus do
     end)
   end
 
-  defp delegate_to(changeset, record, action, tenant) do
-    opts = [tenant: tenant, authorize?: false, actor: %{}]
+  defp handle_status_result({:ok, %{"status" => "LN"}}, changeset, %{status: :accepted} = record, _tenant, _ash_opts) do
+    Logger.debug("Requisition #{record.id} already accepted, skipping")
+    changeset
+  end
+
+  defp handle_status_result({:ok, %{"status" => "LN"}}, changeset, record, tenant, ash_opts) do
+    Logger.info("Requisition #{record.id} is now linked")
+    delegate_to(changeset, record, :accept, tenant, ash_opts)
+  end
+
+  defp handle_status_result({:ok, %{"status" => "RJ"}}, changeset, record, tenant, ash_opts) do
+    Logger.info("Requisition #{record.id} was rejected")
+    delegate_to(changeset, record, :reject, tenant, ash_opts)
+  end
+
+  defp handle_status_result({:ok, %{"status" => "EX"}}, changeset, record, tenant, ash_opts) do
+    Logger.info("Requisition #{record.id} has expired")
+    delegate_to(changeset, record, :expire, tenant, ash_opts)
+  end
+
+  defp handle_status_result({:ok, %{"status" => status}}, changeset, record, _tenant, _ash_opts)
+       when status in @processing_statuses do
+    Logger.info("Requisition #{record.id} still processing with status: #{status}")
+
+    Ash.Changeset.add_error(
+      changeset,
+      SnoozeJob.exception(snooze_for: 60)
+    )
+  end
+
+  defp handle_status_result({:ok, %{"status" => unknown}}, changeset, record, _tenant, _ash_opts) do
+    Logger.error("Unknown requisition status: #{unknown} for #{record.id}")
+
+    Ash.Changeset.add_error(
+      changeset,
+      InvalidAttribute.exception(
+        field: :status,
+        message: "Unknown GoCardless status: #{unknown}"
+      )
+    )
+  end
+
+  defp handle_status_result({:error, :expired_eua}, changeset, record, tenant, ash_opts) do
+    Logger.warning("Requisition #{record.id} EUA expired on GoCardless side")
+    delegate_to(changeset, record, :expire, tenant, ash_opts)
+  end
+
+  defp handle_status_result({:error, :not_found}, changeset, record, tenant, ash_opts) do
+    Logger.warning("Requisition #{record.id} not found on GoCardless side")
+    delegate_to(changeset, record, :reject, tenant, ash_opts)
+  end
+
+  defp handle_status_result({:error, reason}, changeset, record, _tenant, _ash_opts) do
+    Logger.error("Failed to fetch requisition status for #{record.id}: #{inspect(reason)}")
+
+    Ash.Changeset.add_error(
+      changeset,
+      InvalidAttribute.exception(
+        field: :status,
+        message: "API error: #{inspect(reason)}"
+      )
+    )
+  end
+
+  defp delegate_to(changeset, record, action, tenant, ash_opts) do
+    opts = ash_opts |> Keyword.delete(:tenant) |> Keyword.put(:tenant, tenant)
 
     case apply(Requisition, action, [record, opts]) do
       {:ok, _} ->

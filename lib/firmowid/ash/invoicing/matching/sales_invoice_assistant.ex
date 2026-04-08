@@ -1,4 +1,6 @@
 defmodule Firmowid.Ash.Invoicing.Matching.SalesInvoiceAssistant do
+  # TODO: ~85% identical to CostInvoiceAssistant — extract shared InvoiceAssistant
+  # with type parameter to reduce duplication.
   @moduledoc false
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Invoicing
@@ -26,12 +28,40 @@ defmodule Firmowid.Ash.Invoicing.Matching.SalesInvoiceAssistant do
     invoice = MessagesStorage.get_invoice(conversation_id)
     scope = MessagesStorage.get_scope(conversation_id)
 
-    Engine.send_message_streaming(
-      conversation_id,
-      message,
-      system_prompt(invoice),
-      tools(scope)
-    )
+    case suggest_previous_month_aggregate(invoice, scope) do
+      {:ok, transaction_ids, suggestion_message} ->
+        send(self(), {:loading, true})
+
+        user_message = Message.new(:user, message)
+        send(self(), user_message)
+        MessagesStorage.append(conversation_id, user_message)
+
+        suggestion =
+          Message.new(:function_call, "link_sales_invoice_to_transaction", %{
+            name: "link_sales_invoice_to_transaction",
+            args: %{
+              "message" => suggestion_message,
+              "sales_invoice_ids" => [invoice.id],
+              "transaction_ids" => transaction_ids
+            },
+            call_id: UUIDv7.generate(),
+            done: true
+          })
+
+        send(self(), suggestion)
+        MessagesStorage.append(conversation_id, suggestion)
+
+        send(self(), {:loading, false})
+        :ok
+
+      :no_suggestion ->
+        Engine.send_message_streaming(
+          conversation_id,
+          message,
+          system_prompt(invoice),
+          tools(scope)
+        )
+    end
   end
 
   def accept_linking(conversation_id) do
@@ -324,6 +354,56 @@ defmodule Firmowid.Ash.Invoicing.Matching.SalesInvoiceAssistant do
 
     #{sales_invoice_input(invoice)}
     """
+  end
+
+  defp suggest_previous_month_aggregate(%SalesInvoice{} = invoice, scope) do
+    invoice =
+      Invoicing.get_sales_invoice!(invoice.id,
+        load: [:buyer_display_name_label, :gross_value],
+        scope: scope
+      )
+
+    with %Decimal{} = gross_value <- invoice.gross_value,
+         buyer_name when is_binary(buyer_name) <- invoice.buyer_display_name_label do
+      prev_month_ref = Date.shift(invoice.issue_date, month: -1)
+      date_from = Date.beginning_of_month(prev_month_ref)
+      date_to = Date.end_of_month(prev_month_ref)
+
+      matching_transactions =
+        %{date_from: date_from, date_to: date_to, reconciliation: :pending}
+        |> Finances.list_transactions!(scope: scope)
+        |> Enum.filter(fn tx ->
+          Decimal.gt?(tx.transaction_amount, 0) and
+            tx.transaction_currency == invoice.currency and
+            tx.debtor_name == buyer_name
+        end)
+
+      build_previous_month_suggestion(matching_transactions, gross_value, invoice.currency)
+    else
+      _ -> :no_suggestion
+    end
+  end
+
+  defp build_previous_month_suggestion(matching_transactions, gross_value, currency) do
+    transaction_count = length(matching_transactions)
+
+    with true <- transaction_count in 5..10,
+         sum =
+           Enum.reduce(
+             matching_transactions,
+             Decimal.new("0"),
+             &Decimal.add(&1.transaction_amount, &2)
+           ),
+         true <- Decimal.equal?(sum, gross_value) do
+      transaction_ids = Enum.map(matching_transactions, & &1.id)
+
+      suggestion_message =
+        "Znalazłem #{transaction_count} pasujących transakcji z poprzedniego miesiąca od tego samego kontrahenta — ich suma wynosi #{Money.new(currency, sum)}."
+
+      {:ok, transaction_ids, suggestion_message}
+    else
+      _ -> :no_suggestion
+    end
   end
 
   defp sales_invoice_input(%SalesInvoice{} = invoice, opts \\ []) do

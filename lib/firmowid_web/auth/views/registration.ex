@@ -2,7 +2,6 @@ defmodule FirmowidWeb.Auth.Views.Registration do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Analytics
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.User
 
@@ -24,8 +23,11 @@ defmodule FirmowidWeb.Auth.Views.Registration do
         id="registration_form"
         phx-submit="save"
         phx-change="validate"
+        phx-trigger-action={@trigger_submit}
+        action={~p"/auth/user/password/register"}
+        method="post"
       >
-        <.error :if={@check_errors}>
+        <.error :if={@check_errors and not @form.source.valid?}>
           Coś poszło nie tak...
         </.error>
 
@@ -48,6 +50,7 @@ defmodule FirmowidWeb.Auth.Views.Registration do
         </div>
       </div>
 
+      <%!-- TODO: Extract Google SVG icon into a shared auth component (duplicated in login.ex) --%>
       <.link
         href="/auth/user/google/request"
         class="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
@@ -87,31 +90,32 @@ defmodule FirmowidWeb.Auth.Views.Registration do
 
     socket =
       socket
-      |> assign(check_errors: false)
+      |> assign(trigger_submit: false)
+      |> assign(:check_errors, false)
       |> assign(:form, form)
 
     {:ok, socket}
   end
 
   def handle_event("save", %{"user" => user_params}, socket) do
-    case AshPhoenix.Form.submit(socket.assigns.form, params: user_params) do
-      {:ok, user} ->
-        Analytics.identify(user)
-        Analytics.track_event("user_sign_up", user, %{auth_provider: "password"})
+    form = AshPhoenix.Form.validate(socket.assigns.form, user_params)
 
-        # Confirmation email is auto-sent by ash_auth confirmation add-on
-        {:noreply,
-         socket
-         |> put_flash(:info, "Konto zostało utworzone. Sprawdź email, aby potwierdzić konto.")
-         |> redirect(to: ~p"/")}
-
-      {:error, form} ->
-        {:noreply, socket |> assign(check_errors: true) |> assign(:form, form)}
-    end
+    {:noreply,
+     socket
+     |> assign(:form, form)
+     |> assign(:check_errors, not form.source.valid?)
+     |> assign(:trigger_submit, form.source.valid?)}
   end
 
   def handle_event("validate", %{"user" => user_params}, socket) do
     form = AshPhoenix.Form.validate(socket.assigns.form, user_params)
-    {:noreply, assign(socket, form: form)}
+
+    socket =
+      socket
+      |> assign(:form, form)
+      |> assign(:check_errors, false)
+      |> assign(:trigger_submit, false)
+
+    {:noreply, socket}
   end
 end

@@ -10,8 +10,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
 
   plug :put_view, html: FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf
 
-  # TODO: replace authorize?: false + actor: %{} with system actor once available
-  @bridge_opts [authorize?: false, actor: %{}]
   @item_calcs [:net_value, :vat_value, :gross_value]
   @pdf_loads [
     sales_invoice_items: @item_calcs,
@@ -21,11 +19,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
   ]
 
   def index(conn, %{"id" => id}) do
-    opts = [tenant: conn.assigns.current_user.organization_id, load: @pdf_loads] ++ @bridge_opts
+    opts = [scope: conn.assigns.ash_scope, load: @pdf_loads]
 
     case SalesInvoice.by_id(id, opts) do
       {:ok, sales_invoice} ->
-        logo_url = Invoicing.get_logo_url(sales_invoice.organization_id)
+        logo_url = Invoicing.get_logo_url(sales_invoice.organization_id, scope: conn.assigns.ash_scope)
         render_sales_invoice(conn, sales_invoice, logo_url)
 
       {:error, _} ->
@@ -53,17 +51,20 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
   end
 
   def pdf(conn, %{"id" => id}) do
-    opts = [tenant: conn.assigns.current_user.organization_id, load: @pdf_loads] ++ @bridge_opts
+    opts = [scope: conn.assigns.ash_scope, load: @pdf_loads]
 
     case SalesInvoice.by_id(id, opts) do
       {:error, _} ->
         send_resp(conn, 404, "Not found")
 
       {:ok, sales_invoice} ->
-        logo_url = Invoicing.get_logo_url(sales_invoice.organization_id)
+        logo_url = Invoicing.get_logo_url(sales_invoice.organization_id, scope: conn.assigns.ash_scope)
         sales_invoice = Map.put(sales_invoice, :logo_url, logo_url)
 
-        case Pdf.generate(sales_invoice, show_vat: conn.assigns.current_org.is_vat_payer) do
+        case Pdf.generate(sales_invoice,
+               show_vat: conn.assigns.current_org.is_vat_payer,
+               scope: conn.assigns.ash_scope
+             ) do
           {:ok, pdf_binary} ->
             filename = (sales_invoice.invoice_number || "faktura") <> ".pdf"
 

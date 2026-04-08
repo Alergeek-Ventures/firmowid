@@ -53,13 +53,18 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
       />
 
       <div class={[
-        "border-grey-200 col-start-2 grid w-min min-w-[400px] grid-cols-[min-content_1fr] items-center gap-4 gap-y-2 rounded-lg border p-4 transition-opacity duration-200",
+        "border-grey-200 col-start-2 grid w-min min-w-[600px] grid-cols-[min-content_1fr] items-center gap-4 gap-y-2 rounded-lg border p-4 transition-opacity duration-200",
         if(to_string(@payment_form[:payment_method].value) == "transfer",
           do: "opacity-100",
           else: "pointer-events-none opacity-0"
         )
       ]}>
-        <.input field={@payment_form[:seller_account_number]} type="hidden" class="hidden" />
+        <.input
+          :if={not is_nil(@selected_bank_account)}
+          field={@payment_form[:seller_account_number]}
+          type="hidden"
+          class="hidden"
+        />
 
         <%= if Enum.empty?(@bank_accounts) do %>
           <p class="text-grey-700 col-span-2 text-sm/snug">
@@ -88,11 +93,24 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
             size="small"
             color="light_grey"
             new={true}
-            class="col-span-2 mt-4"
+            class="col-span-2 my-4"
             phx-click={show_modal("bank_account_selector_modal")}
           >
             Wybierz konto
           </.button>
+        <% end %>
+
+        <%= if is_nil(@selected_bank_account) do %>
+          <label class="text-grey-700 min-w-[150px]" for={@payment_form[:seller_account_number].id}>
+            lub wpisz ręcznie:
+          </label>
+          <.input
+            field={@payment_form[:seller_account_number]}
+            type="text"
+            placeholder="np. PL61109010140000071219812874"
+            class="w-full"
+            new={true}
+          />
         <% end %>
 
         <%= if not Enum.empty?(@bank_accounts) and @selected_bank_account != nil do %>
@@ -175,9 +193,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
                 </p>
 
                 <%= if @selected_bank_account && @selected_bank_account.id == account.id do %>
-                  <span class="bg-grey-800 rounded-md px-3 py-1.5 text-sm font-medium text-white">
-                    Wybrany
-                  </span>
+                  <.button
+                    type="button"
+                    size="small"
+                    variant="outline"
+                    new={true}
+                    phx-click="select_bank_account"
+                    phx-value-account_id={account.id}
+                  >
+                    Odznacz
+                  </.button>
                 <% else %>
                   <.button
                     type="button"

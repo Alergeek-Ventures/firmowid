@@ -50,13 +50,10 @@ defmodule Firmowid.E2E.S01AuthenticationTest do
       assert page_has_text?(page, "Zarządzanie")
 
       # Step 5: Sign out via user dropdown
-      # Click the user dropdown (greeting text visible after login)
-      Playwright.Page.click(page, "text=Cześć")
-      Process.sleep(500)
-
-      # Click the sign out link
-      Playwright.Page.click(page, "text=Wyloguj się")
-      Process.sleep(1_000)
+      Playwright.Page.click(page, "#dropdown_button")
+      wait_for_element(page, "#dropdown_content", timeout: 5_000)
+      Playwright.Page.click(page, "#dropdown_content a[href='/sign-out']")
+      wait_for_element(page, "form[action='/zaloguj']", timeout: 10_000)
 
       # Step 6: Verify redirect to landing page after sign out
       assert current_path(page) == "/"

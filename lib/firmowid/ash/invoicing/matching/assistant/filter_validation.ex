@@ -1,5 +1,8 @@
 defmodule Firmowid.Ash.Invoicing.Matching.Assistant.FilterValidation do
-  @moduledoc false
+  @moduledoc """
+  Validates and coerces search filter parameters from LLM tool calls
+  into typed Ash-compatible filters.
+  """
   import Ecto.Changeset
 
   alias Money.Currency

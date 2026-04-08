@@ -12,7 +12,6 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
   import Firmowid.AccountsFixtures
   import Firmowid.TimetrackerFixtures
 
-  alias Ash.Error.Forbidden
   alias Ash.Error.Invalid
   alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary
   alias Firmowid.Ash.Scope

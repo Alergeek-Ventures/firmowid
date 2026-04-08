@@ -14,9 +14,9 @@ defmodule Firmowid.Ash.Finances.Changes.CreateBankAccounts do
   require Logger
 
   @impl true
-  def change(changeset, _opts, _context) do
+  def change(changeset, _opts, context) do
     Ash.Changeset.after_action(changeset, fn _changeset, record ->
-      case create_accounts(record) do
+      case create_accounts(record, context) do
         {:ok, accounts} ->
           Enum.each(accounts, &enqueue_sync/1)
           {:ok, record}
@@ -29,18 +29,22 @@ defmodule Firmowid.Ash.Finances.Changes.CreateBankAccounts do
     end)
   end
 
-  defp create_accounts(record) do
+  defp create_accounts(record, context) do
+    ash_opts = Ash.Context.to_opts(context)
+
     with {:ok, accounts} <- ApiClient.get_accounts_for_requisition(record.id) do
       bank_accounts =
         Enum.map(accounts, fn account ->
+          opts =
+            ash_opts |> Keyword.delete(:tenant) |> Keyword.put(:tenant, record.organization_id)
+
           BankAccount
           |> Ash.Changeset.for_create(
             :sync_from_bank,
             account_params(account, record.id),
-            tenant: record.organization_id,
-            actor: %{}
+            opts
           )
-          |> Ash.create!(tenant: record.organization_id, authorize?: false, actor: %{})
+          |> Ash.create!(opts)
         end)
 
       {:ok, bank_accounts}
@@ -53,20 +57,11 @@ defmodule Firmowid.Ash.Finances.Changes.CreateBankAccounts do
       gocardless_id: account["id"],
       owner_name: account["ownerName"],
       institution_id: account["institution_id"],
-      institution_name: nested_get(account, ["institution", "name"]),
+      institution_name: get_in(account, ["institution", "name"]),
       currency: account["currency"],
       name: account["name"],
       requisition_id: requisition_id
     }
-  end
-
-  defp nested_get(map, keys) do
-    Enum.reduce(keys, map, fn key, acc ->
-      case acc do
-        %{} -> Map.get(acc, key)
-        nil -> nil
-      end
-    end)
   end
 
   defp enqueue_sync(account) do

@@ -18,17 +18,18 @@ defmodule Firmowid.Ash.Finances.Actions.CreateRequisition do
     max_days = input.arguments.max_transaction_days
     redirect_url = input.arguments.redirect_url
     tenant = context.tenant
+    ash_opts = Ash.Context.to_opts(context)
 
     with {:ok, gc_requisition} <-
            ApiClient.create_requisition(institution_id, max_days, redirect_url),
          {:ok, _record} <-
            input.resource
-           |> Ash.Changeset.for_create(:persist, %{id: gc_requisition["id"]},
-             tenant: tenant,
-             authorize?: false,
-             actor: %{}
+           |> Ash.Changeset.for_create(
+             :persist,
+             %{id: gc_requisition["id"]},
+             ash_opts |> Keyword.delete(:tenant) |> Keyword.put(:tenant, tenant)
            )
-           |> Ash.create(tenant: tenant, authorize?: false, actor: %{}) do
+           |> Ash.create(ash_opts |> Keyword.delete(:tenant) |> Keyword.put(:tenant, tenant)) do
       {:ok, gc_requisition["link"]}
     end
   end

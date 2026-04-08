@@ -13,7 +13,7 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
     * `:update_payment` — step 3: payment data, advances to :preview
     * `:populate_from_invoice` — populate from an existing invoice (copy flow)
     * `:read` — default read
-    * `:destroy` — delete a draft
+    * `:destroy` — delete a draft (cascades items)
 
   ## ETS scoping
 
@@ -21,6 +21,12 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
   a GenServer that owns a named, public table shared across all processes. Drafts
   persist for the BEAM VM lifecycle. Multitenancy via `organization_id` provides
   org isolation, same as Postgres resources.
+
+  ## Items relationship
+
+  Items are stored as standalone ETS resources in `WizardDraft.Item`. This enables
+  Ash aggregates (sum net_value, vat_value, gross_value) and expression calculations
+  on items, eliminating the need for the `draft_to_invoice` struct-building workaround.
   """
   use Ash.Resource,
     domain: Firmowid.Ash.Invoicing,
@@ -28,8 +34,11 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Invoicing.Changes
+  alias Firmowid.Ash.Invoicing.CountryCodes
   alias Firmowid.Ash.Invoicing.Validations
   alias Firmowid.Ash.Invoicing.WizardDraft
+
+  @eu_countries CountryCodes.eu_countries_with_aliases()
 
   ets do
     private? false
@@ -45,7 +54,13 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
+
+    destroy :destroy do
+      primary? true
+      require_atomic? false
+      change cascade_destroy(:items)
+    end
 
     create :create do
       primary? true
@@ -103,14 +118,17 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
     update :update_items do
       require_atomic? false
 
-      accept [:currency, :is_reverse_charge, :items]
+      accept [:currency, :is_reverse_charge]
 
-      change {Changes.NormalizeReverseChargeVatRates, source: :attribute, field: :items}
+      argument :items, {:array, :map}
+
+      change manage_relationship(:items, type: :direct_control)
+      change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :items}
       change set_attribute(:step, :payment)
 
       validate present([:currency]), message: "Waluta jest wymagana"
       validate match(:currency, ~r/^[A-Z]{3}$/), message: "Nieprawidłowy kod waluty"
-      validate {Validations.ValidateItemsNotEmpty, field: :items}
+      validate {Validations.ValidateItemsNotEmpty, field: :items, source: :argument}
     end
 
     update :update_payment do
@@ -122,11 +140,12 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
       change {Changes.CalculateDueDate, []}
       change set_attribute(:step, :preview)
 
-      validate present([:sale_date, :due_date, :payment_method, :seller_account_number]),
-        message: "Pole jest wymagane"
+      validate present([:sale_date]), message: "Data sprzedaży jest wymagana"
+      validate present([:due_date]), message: "Termin płatności jest wymagany"
+      validate present([:payment_method]), message: "Forma płatności jest wymagana"
 
-      validate string_length(:seller_account_number, min: 10, max: 34),
-        message: "Numer konta musi mieć od 10 do 34 znaków"
+      validate {Validations.ValidateSellerAccountForTransfer,
+                payment_method_field: :payment_method, seller_account_field: :seller_account_number}
     end
 
     # Resets the bank account number without running payment step validations.
@@ -158,11 +177,14 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
         :is_reverse_charge,
         :currency,
         :seller_account_number,
-        :items,
         :sale_date,
         :due_date,
         :payment_method
       ]
+
+      argument :items, {:array, :map}
+
+      change manage_relationship(:items, type: :direct_control)
 
       # Minimal validation -- the source invoice was already valid
       change {Changes.ValidateCountryCode, field: :buyer_country}
@@ -228,9 +250,6 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
     attribute :currency, :string, default: "PLN", public?: true
     attribute :seller_account_number, :string, public?: true
 
-    # Step 2 -- Items (embedded)
-    attribute :items, {:array, WizardDraft.Item}, public?: true, default: []
-
     # Step 3 -- Payment
     attribute :sale_date, :date, public?: true
     attribute :due_date, :date, public?: true
@@ -241,5 +260,65 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
 
     create_timestamp :inserted_at, type: :utc_datetime, public?: true
     update_timestamp :updated_at, type: :utc_datetime, public?: true
+  end
+
+  relationships do
+    has_many :items, WizardDraft.Item do
+      destination_attribute :wizard_draft_id
+    end
+  end
+
+  calculations do
+    # NOTE: This expr() logic is intentionally duplicated across SalesInvoice,
+    # WizardDraft, and Counterparty (as :tax_id_type) because Ash expr()
+    # calculations run in the DB and cannot call Elixir functions.
+    # Runtime equivalent: CountryCodes.tax_id_type/3
+    calculate :buyer_id_type,
+              :atom,
+              expr(
+                cond do
+                  not is_nil(buyer_pesel) and buyer_pesel != "" ->
+                    :no_id
+
+                  buyer_type == :individual and buyer_country == "PL" ->
+                    :no_id
+
+                  buyer_country == "PL" ->
+                    :nip
+
+                  buyer_country in ^@eu_countries ->
+                    :eu_vat
+
+                  buyer_country == "US" ->
+                    :optional_id
+
+                  true ->
+                    :other_id
+                end
+              ) do
+      description "Tax ID type for the buyer based on country, PESEL, and buyer type."
+    end
+
+    # Display name calculation — mirrors SalesInvoice.buyer_display_name_label
+    calculate :buyer_display_name_label,
+              :string,
+              expr(
+                cond do
+                  not is_nil(buyer_display_name) and buyer_display_name != "" ->
+                    buyer_display_name
+
+                  buyer_type == :company ->
+                    buyer_full_name
+
+                  true ->
+                    buyer_given_name <> " " <> buyer_surname
+                end
+              )
+  end
+
+  aggregates do
+    sum :net_value, :items, :net_value
+    sum :vat_value, :items, :vat_value
+    sum :gross_value, :items, :gross_value
   end
 end

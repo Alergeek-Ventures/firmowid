@@ -55,19 +55,14 @@ defmodule Firmowid.Ash.Ksef.Credential do
       authorize_if always()
     end
 
-    # ksef_session: all actions
+    # ksef_session: manage the current organization's credential
     bypass {SystemActorRole, roles: [:ksef_session]} do
-      authorize_if always()
+      authorize_if action([:create, :destroy, :by_organization])
     end
 
-    # sales_invoice_processor: read
-    bypass {SystemActorRole, roles: [:sales_invoice_processor]} do
-      authorize_if action_type(:read)
-    end
-
-    # cross_tenant_reader: read (for all_organization_ids action)
+    # cross_tenant_reader: enumerate org ids only
     bypass {SystemActorRole, roles: [:cross_tenant_reader]} do
-      authorize_if action_type(:read)
+      authorize_if action(:all_organization_ids)
     end
 
     # Other actors: no access
@@ -87,7 +82,7 @@ defmodule Firmowid.Ash.Ksef.Credential do
 
     attribute :credentials, Firmowid.Ash.Ksef.EncryptedBinaryType do
       allow_nil? false
-      public? true
+      public? false
     end
 
     create_timestamp :inserted_at

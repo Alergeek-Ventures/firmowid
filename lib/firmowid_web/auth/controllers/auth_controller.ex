@@ -19,6 +19,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
     return_to = get_session(conn, :return_to) || ~p"/czasosledz"
 
     conn
+    |> renew_session()
     |> delete_session(:return_to)
     |> store_in_session(user)
     |> Helpers.maybe_put_remember_me_cookies(conn.private[:ash_authentication])
@@ -34,11 +35,35 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   @doc """
   Failure callback when authentication fails
   """
-  def failure(conn, _activity, _reason) do
+  def failure(conn, activity, reason) do
+    {message, path} = failure_message_and_path(activity, reason)
+
     conn
-    |> put_flash(:error, "Niewłaściwy email lub hasło.")
-    |> redirect(to: ~p"/zaloguj")
+    |> put_flash(:error, message)
+    |> redirect(to: path)
   end
+
+  defp failure_message_and_path({:password, :register}, reason) do
+    case reason do
+      %Ash.Error.Invalid{errors: errors} when is_list(errors) ->
+        duplicate_email? =
+          Enum.any?(errors, fn
+            %Ash.Error.Changes.InvalidAttribute{field: :email} -> true
+            _ -> false
+          end)
+
+        if duplicate_email? do
+          {"Taki email jest już zajęty.", ~p"/zarejestruj"}
+        else
+          {"Nie udało się utworzyć konta. Sprawdź formularz i spróbuj ponownie.", ~p"/zarejestruj"}
+        end
+
+      _ ->
+        {"Nie udało się utworzyć konta. Sprawdź formularz i spróbuj ponownie.", ~p"/zarejestruj"}
+    end
+  end
+
+  defp failure_message_and_path(_activity, _reason), do: {"Niewłaściwy email lub hasło.", ~p"/zaloguj"}
 
   @doc """
   Sign out action — clears session, remember-me cookies, and broadcasts disconnect
@@ -54,5 +79,13 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
     |> Helpers.delete_all_remember_me_cookies(:firmowid)
     |> LiveToast.put_toast(:notice, "Wylogowano.")
     |> redirect(to: ~p"/")
+  end
+
+  defp renew_session(conn) do
+    delete_csrf_token()
+
+    conn
+    |> configure_session(renew: true)
+    |> Plug.Conn.clear_session()
   end
 end

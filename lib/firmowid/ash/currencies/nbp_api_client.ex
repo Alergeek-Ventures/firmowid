@@ -24,32 +24,54 @@ defmodule Firmowid.Ash.Currencies.NbpApiClient do
 
   def supported_currency?(_), do: false
 
+  @doc """
+  Fetches the exchange rate for a given currency and date from the NBP API.
+
+  Queries a 20-day range ending at (date - 1 day) to account for weekends/holidays.
+  Returns the most recent rate in the range.
+
+  ## Returns
+
+    * `{:ok, %{effective_date: String.t(), rate: float(), table_number: String.t()}}` on success
+    * `{:error, reason}` on failure (network error, unexpected response, etc.)
+  """
+  @spec get_exchange_rate(String.t(), Date.t()) ::
+          {:ok, %{effective_date: String.t(), rate: float(), table_number: String.t()}}
+          | {:error, term()}
   def get_exchange_rate(currency, date) do
     today = Date.utc_today()
 
-    case_result =
+    clamped_date =
       case Date.compare(date, today) do
         :lt -> date
-        :eq -> today
-        :gt -> today
+        _ -> today
       end
 
-    date_max_till_yesterday = Date.shift(case_result, Duration.new!(day: -1))
+    date_max_till_yesterday = Date.shift(clamped_date, Duration.new!(day: -1))
 
     end_date_str = Date.to_iso8601(date_max_till_yesterday)
 
     start_date_str =
       date_max_till_yesterday |> Date.shift(Duration.new!(day: -20)) |> Date.to_iso8601()
 
-    %{
-      body: %{
-        "rates" => rates
-      }
-    } =
-      Req.get!("https://api.nbp.pl/api/exchangerates/rates/a/#{currency}/#{start_date_str}/#{end_date_str}")
+    url =
+      "https://api.nbp.pl/api/exchangerates/rates/a/#{currency}/#{start_date_str}/#{end_date_str}"
 
-    %{"effectiveDate" => effective_date, "mid" => rate, "no" => table_number} = Enum.at(rates, -1)
+    case Req.get(url) do
+      {:ok, %{status: 200, body: %{"rates" => [_ | _] = rates}}} ->
+        %{"effectiveDate" => effective_date, "mid" => rate, "no" => table_number} =
+          List.last(rates)
 
-    %{effective_date: effective_date, rate: rate, table_number: table_number}
+        {:ok, %{effective_date: effective_date, rate: rate, table_number: table_number}}
+
+      {:ok, %{status: 404}} ->
+        {:error, {:no_rates_found, currency, date}}
+
+      {:ok, %{status: status, body: body}} ->
+        {:error, {:unexpected_status, status, body}}
+
+      {:error, reason} ->
+        {:error, {:request_failed, reason}}
+    end
   end
 end

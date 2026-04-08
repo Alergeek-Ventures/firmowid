@@ -253,47 +253,6 @@ defmodule Firmowid.Ash.Timetracker.Session do
       forbid_unless HoursRecordNotSubmitted
       authorize_if relates_to_actor_via(:user)
     end
-
-    # Stopping a running session is always allowed (the old Bodyguard rule
-    # checked `end_datetime == nil` to bypass lockdown).
-    policy [action(:stop), actor_attribute_equals(:role, :employee)] do
-      authorize_if relates_to_actor_via(:user)
-    end
-
-    policy [action(:stop), AtLeastRole, role: :invoicing] do
-      authorize_if relates_to_actor_via(:user)
-    end
-
-    # Create: employee can only create sessions for themselves.
-    # `relates_to_actor_via` can't filter on creates, so we check the
-    # changeset attribute directly via a simple check.
-    policy [action_type(:create), actor_attribute_equals(:role, :employee)] do
-      forbid_unless HoursRecordNotSubmitted
-      authorize_if OwnsResource
-    end
-
-    policy [action_type(:create), AtLeastRole, role: :invoicing] do
-      forbid_unless HoursRecordNotSubmitted
-      authorize_if OwnsResource
-    end
-
-    # Update/destroy: session must belong to the actor and month not submitted.
-    policy [
-      action_type([:update, :destroy]),
-      actor_attribute_equals(:role, :employee)
-    ] do
-      forbid_unless HoursRecordNotSubmitted
-      authorize_if relates_to_actor_via(:user)
-    end
-
-    policy [
-      action_type([:update, :destroy]),
-      AtLeastRole,
-      role: :invoicing
-    ] do
-      forbid_unless HoursRecordNotSubmitted
-      authorize_if relates_to_actor_via(:user)
-    end
   end
 
   validations do

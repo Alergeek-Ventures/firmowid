@@ -28,11 +28,10 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
       result =
         lv
         |> element("#registration_form")
-        |> render_change(user: %{"email" => "with spaces", "password" => "too short"})
+        |> render_change(user: %{"email" => "", "password" => ""})
 
       assert result =~ "Stwórz konto"
-      assert result =~ "must have the @ sign and no spaces"
-      assert result =~ "should be at least 12 character"
+      assert result =~ "Coś poszło nie tak..."
     end
   end
 
@@ -53,14 +52,14 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
 
       user = user_fixture(%{email: "test@email.com"})
 
-      result =
-        lv
-        |> form("#registration_form",
-          user: %{"email" => user.email, "password" => "valid_password"}
-        )
-        |> render_submit()
+      form =
+        form(lv, "#registration_form", user: %{"email" => user.email, "password" => "valid_password"})
 
-      assert result =~ "has already been taken"
+      render_submit(form)
+      conn = follow_trigger_action(form, conn)
+
+      assert redirected_to(conn) == ~p"/zarejestruj"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Taki email jest już zajęty."
     end
   end
 

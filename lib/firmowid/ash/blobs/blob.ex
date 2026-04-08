@@ -9,10 +9,16 @@ defmodule Firmowid.Ash.Blobs.Blob do
     domain: Firmowid.Ash.Blobs,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
+    extensions: [AshOban],
     notifiers: [Ash.Notifier.PubSub]
 
+  alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Ash.Blobs.Changes.DeleteFromS3
+  alias Firmowid.Ash.Blobs.Changes.EnqueueCostInvoiceBlobProcessing
+  alias Firmowid.Ash.Blobs.Changes.ProcessCostInvoiceBlob
   alias Firmowid.Ash.Blobs.Changes.UploadToS3
+  alias Firmowid.Ash.Blobs.Changes.ValidateProcessingStateTransition
+  alias Firmowid.Ash.Checks.ActorBlobIdMatches
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Resource
 
@@ -24,8 +30,56 @@ defmodule Firmowid.Ash.Blobs.Blob do
     migrate? false
   end
 
+  oban do
+    use_tenant_from_record? true
+
+    triggers do
+      trigger :cleanup_failed_cost_invoice do
+        action :cleanup_failed_cost_invoice
+        read_action :read_global
+
+        where expr(
+                processing_target == :cost_invoice and processing_state == :failed and
+                  inserted_at < ago(1, "hour")
+              )
+
+        scheduler_cron "0 * * * *"
+        queue :cost_invoices
+
+        worker_module_name Firmowid.Ash.Blobs.Blob.Worker.CleanupFailedCostInvoice
+        scheduler_module_name Firmowid.Ash.Blobs.Blob.Scheduler.CleanupFailedCostInvoice
+      end
+
+      trigger :process_cost_invoice do
+        action :process_cost_invoice
+        read_action :read_pending_cost_invoice_processing
+        where expr(processing_target == :cost_invoice and processing_state == :pending)
+        scheduler_cron "0 * * * *"
+        queue :cost_invoices
+
+        worker_module_name Firmowid.Ash.Blobs.Blob.Worker.ProcessCostInvoice
+        scheduler_module_name Firmowid.Ash.Blobs.Blob.Scheduler.ProcessCostInvoice
+      end
+    end
+  end
+
   actions do
     defaults [:read]
+
+    read :read_global do
+      description "Unscoped read for AshOban schedulers — reads across all organizations."
+      multitenancy :allow_global
+      pagination keyset?: true
+    end
+
+    read :read_pending_cost_invoice_processing do
+      description "Scoped scheduler read for pending cost-invoice blob processing."
+
+      pagination do
+        required? false
+        keyset? true
+      end
+    end
 
     create :create_blob do
       description "Upload a file to S3 and create a blob record."
@@ -34,11 +88,77 @@ defmodule Firmowid.Ash.Blobs.Blob do
       argument :content_type, :string, allow_nil?: false
       argument :original_filename, :string, allow_nil?: false
 
+      argument :processing_target, :atom,
+        constraints: [one_of: [:none, :cost_invoice]],
+        default: :none
+
+      argument :processing_metadata, :map, default: %{}
+
       change UploadToS3
+      change Firmowid.Ash.Blobs.Changes.SetProcessingDefaults
+      change EnqueueCostInvoiceBlobProcessing
+    end
+
+    update :mark_processing do
+      require_atomic? false
+      accept []
+      change {ValidateProcessingStateTransition, to: :processing}
+      change set_attribute(:processing_state, :processing)
+    end
+
+    update :mark_processing_pending do
+      require_atomic? false
+      accept []
+      change {ValidateProcessingStateTransition, to: :pending}
+      change set_attribute(:processing_state, :pending)
+    end
+
+    update :mark_processing_succeeded do
+      require_atomic? false
+      accept []
+      change {ValidateProcessingStateTransition, to: :succeeded}
+      change set_attribute(:processing_state, :succeeded)
+      change set_attribute(:processing_metadata, %{})
+    end
+
+    update :mark_processing_failed do
+      require_atomic? false
+      argument :error, :string
+      argument :error_code, :string
+      argument :error_message, :string
+      change {ValidateProcessingStateTransition, to: :failed}
+      change set_attribute(:processing_state, :failed)
+
+      change fn changeset, _context ->
+        error = Ash.Changeset.get_argument(changeset, :error)
+        error_code = Ash.Changeset.get_argument(changeset, :error_code)
+        error_message = Ash.Changeset.get_argument(changeset, :error_message)
+
+        metadata = %{
+          error: error || "unknown_error",
+          error_code: error_code || "processing_failed",
+          error_message: error_message || "Nie udało się przetworzyć pliku."
+        }
+
+        Ash.Changeset.force_change_attribute(changeset, :processing_metadata, metadata)
+      end
+    end
+
+    update :process_cost_invoice do
+      require_atomic? false
+
+      change ProcessCostInvoiceBlob
     end
 
     destroy :destroy do
       description "Delete a blob record and clean up the S3 object."
+      require_atomic? false
+
+      change DeleteFromS3
+    end
+
+    destroy :cleanup_failed_cost_invoice do
+      description "Scheduled trigger — deletes failed cost-invoice blobs older than 1 hour."
       require_atomic? false
 
       change DeleteFromS3
@@ -50,18 +170,58 @@ defmodule Firmowid.Ash.Blobs.Blob do
       authorize_if always()
     end
 
+    bypass AshObanInteraction do
+      authorize_if always()
+    end
+
     # Invoice processors and ksef_session: read + create
     bypass {SystemActorRole, roles: [:cost_invoice_processor, :sales_invoice_processor]} do
-      authorize_if action_type(:read)
+      authorize_if action(:read)
     end
 
     bypass {SystemActorRole, roles: [:cost_invoice_processor, :sales_invoice_processor]} do
       authorize_if action(:create_blob)
     end
 
-    # ksef_session: read only
+    bypass {SystemActorRole, roles: [:cost_invoice_processor]} do
+      authorize_if action([
+                     :mark_processing,
+                     :mark_processing_pending,
+                     :mark_processing_succeeded,
+                     :mark_processing_failed,
+                     :process_cost_invoice
+                   ])
+    end
+
+    # Invoice processors can destroy blobs only if they own them (e.g., cleanup after processing failures)
+    # Both conditions must be true: action is :destroy AND the actor's blob_id matches.
+    policy [
+      action(:destroy),
+      {SystemActorRole, roles: [:cost_invoice_processor, :sales_invoice_processor]}
+    ] do
+      authorize_if ActorBlobIdMatches
+    end
+
+    policy action(:cleanup_failed_cost_invoice) do
+      forbid_if always()
+    end
+
+    # ksef_session: create blobs, read all, and destroy only blobs assigned via actor.blob_id
     bypass {SystemActorRole, roles: [:ksef_session]} do
-      authorize_if action_type(:read)
+      authorize_if action(:create_blob)
+      authorize_if action(:read)
+    end
+
+    policy [action(:destroy), {SystemActorRole, roles: [:ksef_session]}] do
+      authorize_if ActorBlobIdMatches
+    end
+
+    bypass {SystemActorRole, roles: [:cost_invoice_processor]} do
+      authorize_if action(:read_global)
+    end
+
+    policy action(:read_global) do
+      forbid_if always()
     end
 
     # Other system actors: no access
@@ -70,7 +230,7 @@ defmodule Firmowid.Ash.Blobs.Blob do
     end
 
     # :employee: read + create (for HoursRecord PDF uploads)
-    policy [action_type(:read), actor_attribute_equals(:role, :employee)] do
+    policy [action(:read), actor_attribute_equals(:role, :employee)] do
       authorize_if always()
     end
 
@@ -79,7 +239,7 @@ defmodule Firmowid.Ash.Blobs.Blob do
     end
 
     # :invoicing and :accountant: read only
-    policy [action_type(:read), {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}] do
+    policy [action(:read), {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}] do
       authorize_if always()
     end
   end
@@ -90,6 +250,11 @@ defmodule Firmowid.Ash.Blobs.Blob do
 
     publish :create_blob, ["created", :_tenant]
     publish :destroy, ["destroyed", :_tenant]
+    publish :mark_processing, ["updated", :_tenant]
+    publish :mark_processing_pending, ["updated", :_tenant]
+    publish :mark_processing_succeeded, ["updated", :_tenant]
+    publish :mark_processing_failed, ["updated", :_tenant]
+    publish :process_cost_invoice, ["updated", :_tenant]
   end
 
   multitenancy do
@@ -103,6 +268,20 @@ defmodule Firmowid.Ash.Blobs.Blob do
     attribute :blob_path, :string, public?: true, allow_nil?: false
     attribute :blob_checksum, :string, public?: true, allow_nil?: false
     attribute :original_filename, :string, public?: true, allow_nil?: false
+
+    attribute :processing_target, :atom,
+      public?: true,
+      allow_nil?: false,
+      default: :none,
+      constraints: [one_of: [:none, :cost_invoice]]
+
+    attribute :processing_state, :atom,
+      public?: true,
+      allow_nil?: false,
+      default: :succeeded,
+      constraints: [one_of: [:pending, :processing, :succeeded, :failed]]
+
+    attribute :processing_metadata, :map, public?: true, allow_nil?: false, default: %{}
 
     Resource.firmowid_timestamps()
   end

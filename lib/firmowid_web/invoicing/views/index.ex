@@ -1,11 +1,14 @@
 defmodule FirmowidWeb.Invoicing.Views.Index do
   @moduledoc false
+  # TODO: move business logic (transaction grouping by party, get_active_months)
+  # to domain actions/calculations — LiveView should only handle presentation
   use FirmowidWeb, :live_view
 
   import FirmowidWeb.Core.PubSubDebounce
 
   alias Ash.Notifier.Notification
   alias Firmowid.Analytics
+  alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Requisition
@@ -28,6 +31,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     if connected?(socket) do
       # Ash PubSub — invoicing resources
       Endpoint.subscribe("blob:created:#{organization_id}")
+      Endpoint.subscribe("blob:updated:#{organization_id}")
       Endpoint.subscribe("blob:destroyed:#{organization_id}")
       Endpoint.subscribe("cost_invoice:created:#{organization_id}")
       Endpoint.subscribe("cost_invoice:updated:#{organization_id}")
@@ -305,6 +309,16 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {:noreply, refetch_invoicing_entries(socket)}
   end
 
+  # Blob updated — processing state transitions
+  @impl true
+  def handle_info(%Broadcast{payload: %Notification{resource: Blob, action: %{type: :update}, data: blob}}, socket) do
+    if blob.processing_state == :failed do
+      show_blob_processing_failure_toast(blob)
+    end
+
+    {:noreply, refetch_invoicing_entries(socket)}
+  end
+
   # Blob destroyed — processing failed
   @impl true
   def handle_info(
@@ -457,6 +471,31 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {:noreply, socket}
   end
 
+  defp show_blob_processing_failure_toast(%Blob{original_filename: filename, processing_metadata: metadata}) do
+    case processing_failure_reason(metadata) do
+      :invalid_document ->
+        LiveToast.send_toast(
+          :error,
+          processing_failure_message(metadata, filename),
+          title: "Nieprawidłowy dokument"
+        )
+
+      _ ->
+        LiveToast.send_toast(:error, processing_failure_message(metadata, filename), title: "Nie udało się wgrać pliku")
+    end
+  end
+
+  defp processing_failure_reason(%{"error_code" => "invalid_document"}), do: :invalid_document
+  defp processing_failure_reason(%{error_code: "invalid_document"}), do: :invalid_document
+  defp processing_failure_reason(%{"error" => ":invalid_document"}), do: :invalid_document
+  defp processing_failure_reason(%{error: ":invalid_document"}), do: :invalid_document
+  defp processing_failure_reason(_), do: :processing_failed
+
+  defp processing_failure_message(%{"error_message" => message}, _filename) when is_binary(message), do: message
+  defp processing_failure_message(%{error_message: message}, _filename) when is_binary(message), do: message
+
+  defp processing_failure_message(_metadata, filename), do: filename
+
   defp update_param(socket, key, value) do
     params = Map.put(socket.assigns.params, key, value)
 
@@ -498,7 +537,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         Analytics.track_event("cost_invoice_upload", user, %{file_type: entry.client_type})
 
         handle_upload_result(
-          Invoicing.upload_cost_invoice(
+          upload_cost_invoice(
             path,
             entry.client_type,
             entry.client_name,
@@ -512,25 +551,18 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     end
   end
 
-  defp handle_upload_result({:error, {:blob_already_exists, blob_checksum}}, scope) do
-    cost_invoice = Invoicing.get_cost_invoice_by_checksum!(blob_checksum, scope: scope)
-
+  defp handle_upload_result({:ok, {:existing_cost_invoice, cost_invoice}}, _scope) do
     LiveToast.send_toast(
       :info,
       "Ta faktura jest już w systemie",
-      title: "#{cost_invoice.issue_date} / #{cost_invoice.seller_display_name}",
+      title: "Duplikat pliku",
       action: fn assigns ->
-        assigns =
-          assign(
-            assigns,
-            :issue_date,
-            cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601()
-          )
+        assigns = assign(assigns, :cost_invoice_id, cost_invoice.id)
 
         ~H"""
         <.link
           class="text-bold text-sm underline"
-          navigate={~p"/fakturowanie?month=#{@issue_date}&filter=invoices"}
+          navigate={~p"/kosztowe/#{@cost_invoice_id}"}
         >
           Wyświetl <.icon name="hero-arrow-right-solid" class="size-3" />
         </.link>
@@ -539,7 +571,23 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     )
   end
 
+  defp handle_upload_result({:ok, :blob_already_processing}, _scope) do
+    LiveToast.send_toast(:info, "Ten plik jest już przetwarzany")
+  end
+
+  defp handle_upload_result({:ok, :blob_reprocessing_started}, _scope) do
+    LiveToast.send_toast(:info, "Plik został dodany ponownie do kolejki przetwarzania")
+  end
+
+  defp handle_upload_result({:error, :blob_already_exists}, _scope) do
+    LiveToast.send_toast(:info, "Ta faktura jest już w systemie")
+  end
+
   defp handle_upload_result(_result, _scope), do: nil
+
+  defp upload_cost_invoice(path, content_type, original_filename, scope) do
+    Blobs.create_or_retry_cost_invoice_blob(path, content_type, original_filename, scope: scope)
+  end
 
   # TODO: re-add Transaction struct constraints once legacy Ecto schema is removed
   defp toggle_transaction_skip(socket, id, new_skip) do
@@ -616,15 +664,21 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp refetch_upload_counts(socket) do
+    currently_uploading_count =
+      case socket.assigns do
+        %{uploads: %{file: upload}} ->
+          length(Enum.filter(upload.entries, &(!&1.done?)))
+
+        _ ->
+          0
+      end
+
     socket
     |> assign(
       :processing_blobs_count,
-      Invoicing.get_processing_cost_invoices_count()
+      Invoicing.get_processing_cost_invoices_count(socket.assigns.ash_scope)
     )
-    |> assign(
-      :currently_uploading_count,
-      length(Enum.filter(socket.assigns.uploads.file.entries, &(!&1.done?)))
-    )
+    |> assign(:currently_uploading_count, currently_uploading_count)
   end
 
   defp apply_action(socket, :index, _params) do
@@ -732,6 +786,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   @sales_invoice_loads [
     :gross_value,
     :sales_invoice_items,
+    :buyer_display_name_label,
     :transactions,
     corrections: :sales_invoice_items,
     latest_correction: :sales_invoice_items

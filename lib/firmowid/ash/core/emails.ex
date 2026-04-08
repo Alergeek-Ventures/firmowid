@@ -84,6 +84,8 @@ defmodule Firmowid.Ash.Core.Emails do
     email =
       new()
       |> to(recipient)
+      # NOTE: sender email is intentionally hardcoded — this is the verified Resend
+      # sender identity. Changing it requires updating Resend DNS records.
       |> from({"Firmowid", "piotr@firmowid.pl"})
       |> subject(subject)
       |> text_body(body)

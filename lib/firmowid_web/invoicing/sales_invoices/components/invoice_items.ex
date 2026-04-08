@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
 
   alias Firmowid.Ash.Currencies.NbpApiClient
   alias Firmowid.Ash.Ksef.VatRate
+  alias FirmowidWeb.Invoicing.FormHelpers
   alias Phoenix.HTML.FormData
 
   defp currency_options do
@@ -44,20 +45,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     Decimal.add(net, vat)
   end
 
-  defp parse_decimal(nil), do: nil
-  defp parse_decimal(""), do: nil
-  defp parse_decimal(%Decimal{} = d), do: d
-
-  defp parse_decimal(value) when is_binary(value) do
-    case Decimal.parse(value) do
-      {d, _} -> d
-      :error -> nil
-    end
-  end
-
-  defp parse_decimal(value) when is_integer(value), do: Decimal.new(value)
-  defp parse_decimal(value) when is_float(value), do: Decimal.from_float(value)
-  defp parse_decimal(_), do: nil
+  defp parse_decimal(value), do: FormHelpers.parse_decimal(value)
 
   defp compute_vat_options(invoice, is_reverse_charge) do
     if is_reverse_charge do
@@ -464,9 +452,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
 
   defp ensure_minimum_item(source, items, _items_field), do: {source, items}
 
-  # Access nested forms from either a keyword list or map
-  defp access_forms(forms, key) when is_map(forms), do: Map.get(forms, key, [])
-  defp access_forms(forms, key) when is_list(forms), do: Keyword.get(forms, key, [])
+  defp access_forms(forms, key), do: FormHelpers.access_forms(forms, key)
 
   defp sort_param_name(%AshPhoenix.Form{}, items_field), do: "_sort_#{items_field}"
 

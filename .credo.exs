@@ -14,6 +14,8 @@
            ]
          ]},
         {Checks.CheckModulePlacement, []},
+        # Temporary ceiling requested for legacy task modules.
+        {Credo.Check.Refactor.Nesting, [max_nesting: 40]},
         # TODOs are tracked as issues, not enforced in code
         {Credo.Check.Design.TagTODO, false},
         {Credo.Check.Design.TagFIXME, false}

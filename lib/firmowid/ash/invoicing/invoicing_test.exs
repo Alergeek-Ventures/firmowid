@@ -13,7 +13,8 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
 
-  # TODO: replace authorize?: false + actor: %{} with system actor once available
+  # authorize?: false bypasses policies, actor: %{} satisfies require_actor? true
+  # on domains like Invoicing. Use scope_for_org/1 when testing authorization behavior.
   @bridge_opts [authorize?: false, actor: %{}]
 
   defp scope_for_org(org_id) do

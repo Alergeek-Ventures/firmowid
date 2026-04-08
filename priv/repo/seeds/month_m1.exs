@@ -30,11 +30,12 @@ defmodule Firmowid.Seeds.MonthM1 do
   THB:
     Outgoing conversion   -50,000 THB → :internal (skip_invoicing)
     PLN side of conv.     +4,750 PLN  → :internal (skip_invoicing)
+
+  S08 deterministic assistant scenario (unmatched, previous month):
+    Aurora Retail (5 PLN txns) +250 +300 +180 +200 +300 = +1,230 PLN
   """
 
   alias Firmowid.Ash.Analysis.EntityTag
-  alias Firmowid.Ash.Finances.Transaction, as: AshTransaction
-  alias Firmowid.Ash.Invoicing
   alias Firmowid.Seeds.Helpers
 
   def seed!(ctx) do
@@ -47,6 +48,7 @@ defmodule Firmowid.Seeds.MonthM1 do
     prefix = Helpers.month_prefix(1)
 
     seed_unmatched_for_grouping(bytecraft, banks)
+    seed_s08_sales_assistant_transactions(bytecraft, banks)
 
     # — Revenue transactions —
 
@@ -396,7 +398,7 @@ defmodule Firmowid.Seeds.MonthM1 do
         "buyer_full_name" => "TacoOverflow Inc.",
         "buyer_address" => "Friedrichstraße 123, 10117 Berlin",
         "buyer_country" => "DE",
-        "buyer_id" => "DE317256842",
+        "buyer_id" => "317256842",
         "buyer_type" => "company",
         "payment_method" => "transfer",
         "is_reverse_charge" => true,
@@ -473,16 +475,14 @@ defmodule Firmowid.Seeds.MonthM1 do
 
     # — Matching —
 
-    bridge_opts = [tenant: bytecraft.id, authorize?: false, actor: %{}]
+    Helpers.connect_sales_invoice_transaction!(sale_ghostpet.id, txn_ghostpet.id, bytecraft.id)
+    Helpers.connect_sales_invoice_transaction!(sale_flatmate.id, txn_flatmate.id, bytecraft.id)
+    Helpers.connect_sales_invoice_transaction!(sale_taco.id, txn_taco.id, bytecraft.id)
 
-    Invoicing.connect_sales_invoice_transactions!(sale_ghostpet, [txn_ghostpet.id], bridge_opts)
-    Invoicing.connect_sales_invoice_transactions!(sale_flatmate, [txn_flatmate.id], bridge_opts)
-    Invoicing.connect_sales_invoice_transactions!(sale_taco, [txn_taco.id], bridge_opts)
-
-    Invoicing.connect_cost_invoice_transactions!(cost_ovh, [txn_ovh.id], bridge_opts)
-    Invoicing.connect_cost_invoice_transactions!(cost_opencode, [txn_opencode.id], bridge_opts)
-    Invoicing.connect_cost_invoice_transactions!(cost_rent, [txn_rent.id], bridge_opts)
-    Invoicing.connect_cost_invoice_transactions!(cost_biuro, [txn_biuro.id], bridge_opts)
+    Helpers.connect_cost_invoice_transaction!(cost_ovh.id, txn_ovh.id, bytecraft.id)
+    Helpers.connect_cost_invoice_transaction!(cost_opencode.id, txn_opencode.id, bytecraft.id)
+    Helpers.connect_cost_invoice_transaction!(cost_rent.id, txn_rent.id, bytecraft.id)
+    Helpers.connect_cost_invoice_transaction!(cost_biuro.id, txn_biuro.id, bytecraft.id)
 
     # — Tagging —
     scope = seed_scope(bytecraft)
@@ -529,6 +529,35 @@ defmodule Firmowid.Seeds.MonthM1 do
       [projects.ghostpet.tag_definition_id, projects.taco.tag_definition_id],
       scope
     )
+  end
+
+  defp seed_s08_sales_assistant_transactions(bytecraft, banks) do
+    transactions = [
+      %{id: 1, amount: 250.00, day: 4},
+      %{id: 2, amount: 300.00, day: 6},
+      %{id: 3, amount: 180.00, day: 12},
+      %{id: 4, amount: 200.00, day: 18},
+      %{id: 5, amount: 300.00, day: 25}
+    ]
+
+    Enum.each(transactions, fn %{id: id, amount: amount, day: day} ->
+      Helpers.seed_transaction!(
+        %{
+          internal_transaction_id: "m1_s08_aurora_#{id}",
+          creditor_name: "Bytecraft Collective sp. z o.o.",
+          creditor_account: "PL61105000997603123456789012",
+          debtor_name: "Aurora Retail Sp. z o.o.",
+          debtor_account: "PL95109010140000071219812874",
+          transaction_amount: amount,
+          transaction_currency: "PLN",
+          booking_date: Helpers.date_months_ago(1, day),
+          bank_account_id: banks.pln.id,
+          skip_invoicing: false,
+          remittance_information_unstructured: "Aurora Retail — płatność częściowa #{id}/5"
+        },
+        bytecraft.id
+      )
+    end)
   end
 
   # — Unmatched transactions for grouping tests —
@@ -618,11 +647,9 @@ defmodule Firmowid.Seeds.MonthM1 do
       }
     ]
 
-    Ash.bulk_create!(transactions, AshTransaction, :upsert_from_sync,
-      tenant: bytecraft.id,
-      authorize?: false,
-      actor: %{}
-    )
+    Enum.each(transactions, fn attrs ->
+      Helpers.seed_transaction!(attrs, bytecraft.id)
+    end)
   end
 
   defp tag_category!(entity_type, resource_id, kind, scope) do

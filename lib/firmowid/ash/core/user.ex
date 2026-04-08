@@ -15,8 +15,10 @@ defmodule Firmowid.Ash.Core.User do
     domain: Firmowid.Ash.Core,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshAuthentication]
+    extensions: [AshAuthentication],
+    notifiers: [Ash.Notifier.PubSub]
 
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core.Secrets
   alias Firmowid.Ash.Core.UserIdentity
   alias Firmowid.Ash.Resource
@@ -26,6 +28,11 @@ defmodule Firmowid.Ash.Core.User do
   postgres do
     table "users"
     repo Firmowid.Repo
+
+    # Ensure the existing unique index name is mapped for identity error translation.
+    # Without this, duplicate emails can surface as generic Ash/Ecto unknown errors
+    # instead of form field errors.
+    identity_index_names unique_email: "users_email_index"
   end
 
   authentication do
@@ -123,11 +130,13 @@ defmodule Firmowid.Ash.Core.User do
 
       change AshAuthentication.GenerateTokenChange
       change AshAuthentication.Strategy.OAuth2.IdentityChange
-      change set_attribute(:confirmed_at, &DateTime.utc_now/0)
 
       change fn changeset, _ ->
         user_info = Ash.Changeset.get_argument(changeset, :user_info)
-        Ash.Changeset.change_attributes(changeset, Map.take(user_info, ["email", "name"]))
+
+        changeset
+        |> Ash.Changeset.change_attributes(Map.take(user_info, ["email", "name"]))
+        |> maybe_confirm_verified_oauth_email(user_info)
       end
     end
 
@@ -167,6 +176,11 @@ defmodule Firmowid.Ash.Core.User do
       change set_attribute(:organization_id, arg(:organization_id))
     end
 
+    update :clear_organization do
+      accept []
+      change set_attribute(:organization_id, nil)
+    end
+
     update :update_avatar do
       accept [:avatar_blob_id]
     end
@@ -195,20 +209,22 @@ defmodule Firmowid.Ash.Core.User do
       accept []
       require_atomic? false
 
-      change fn changeset, _context ->
+      change fn changeset, context ->
         user_id = changeset.data.id
+        ash_opts = [actor: context.actor]
 
         # Find and destroy the Google UserIdentity
-        case Ash.read_one(UserIdentity,
-               filter: [user_id: user_id, strategy: "google"],
-               authorize?: false,
-               actor: %{}
-             ) do
-          {:ok, nil} ->
+        identity =
+          UserIdentity
+          |> Ash.read!(ash_opts)
+          |> Enum.find(&(&1.user_id == user_id and &1.strategy == "google"))
+
+        case identity do
+          nil ->
             Ash.Changeset.add_error(changeset, message: "Konto Google nie jest połączone.")
 
-          {:ok, identity} ->
-            case Ash.destroy(identity, authorize?: false, actor: %{}) do
+          identity ->
+            case Ash.destroy(identity, ash_opts) do
               :ok ->
                 changeset
 
@@ -217,9 +233,6 @@ defmodule Firmowid.Ash.Core.User do
                   message: "Nie udało się odłączyć konta Google."
                 )
             end
-
-          {:error, _error} ->
-            Ash.Changeset.add_error(changeset, message: "Nie udało się odłączyć konta Google.")
         end
       end
     end
@@ -230,9 +243,15 @@ defmodule Firmowid.Ash.Core.User do
       authorize_if always()
     end
 
-    # Default :read action — needed for relationship loading (e.g. loading user from session/project)
+    bypass {SystemActorRole, roles: [:organization_owner_setup]} do
+      authorize_if action([:set_organization, :update_role])
+      authorize_if expr(id == ^actor(:user_id))
+    end
+
+    # Default :read action — used for loading the current user and explicit admin access.
     policy action(:read) do
-      authorize_if always()
+      authorize_if expr(id == ^actor(:id))
+      authorize_if actor_attribute_equals(:role, :admin)
     end
 
     # :list action — admin-only user listing
@@ -260,6 +279,10 @@ defmodule Firmowid.Ash.Core.User do
       authorize_if expr(id == ^actor(:id))
     end
 
+    policy action(:clear_organization) do
+      authorize_if actor_attribute_equals(:role, :admin)
+    end
+
     policy action(:unlink_google) do
       authorize_if expr(id == ^actor(:id))
     end
@@ -272,6 +295,15 @@ defmodule Firmowid.Ash.Core.User do
       authorize_if expr(id == ^actor(:id))
       authorize_if actor_attribute_equals(:role, :admin)
     end
+  end
+
+  pub_sub do
+    module FirmowidWeb.Core.Endpoint
+    prefix "user"
+
+    # Used by admin employee list LiveView to refresh immediately after
+    # invite consumption assigns a user to an organization.
+    publish :set_organization, ["joined_org", :organization_id]
   end
 
   attributes do
@@ -337,6 +369,21 @@ defmodule Firmowid.Ash.Core.User do
 
   identities do
     identity :unique_email, [:email]
+  end
+
+  defp maybe_confirm_verified_oauth_email(changeset, user_info) do
+    if oauth_email_verified?(user_info) do
+      Ash.Changeset.force_change_attribute(changeset, :confirmed_at, DateTime.utc_now())
+    else
+      changeset
+    end
+  end
+
+  defp oauth_email_verified?(user_info) when is_map(user_info) do
+    Map.get(user_info, "email_verified") == true or
+      Map.get(user_info, :email_verified) == true or
+      Map.get(user_info, "verified_email") == true or
+      Map.get(user_info, :verified_email) == true
   end
 end
 

@@ -129,12 +129,16 @@
         ]}>
           <div class="flex items-center gap-4">
             <.avatar><.icon name="hero-user" class="size-8" /></.avatar>
-            <.link
-              navigate={~p"/zarzadzanie/pracownicy/#{employee.user.id}"}
-              class="hover:underline"
-            >
-              {employee.user.name || employee.user.email}
-            </.link>
+            <%= if @can_export_csv do %>
+              <.link
+                navigate={~p"/zarzadzanie/pracownicy/#{employee.user.id}"}
+                class="hover:underline"
+              >
+                {employee.user.name || employee.user.email}
+              </.link>
+            <% else %>
+              <span>{employee.user.name || employee.user.email}</span>
+            <% end %>
           </div>
 
           <p class="text-right">
@@ -175,12 +179,16 @@
             </p>
           <% end %>
 
-          <.link
-            navigate={~p"/zarzadzanie/pracownicy/#{employee.user.id}"}
-            class="flex items-center"
-          >
-            <Lucideicons.chevron_right class="text-grey-700 size-4 shrink-0" />
-          </.link>
+          <%= if @can_export_csv do %>
+            <.link
+              navigate={~p"/zarzadzanie/pracownicy/#{employee.user.id}"}
+              class="flex items-center"
+            >
+              <Lucideicons.chevron_right class="text-grey-700 size-4 shrink-0" />
+            </.link>
+          <% else %>
+            <div />
+          <% end %>
         </div>
 
         <div class="ml-2 flex items-center gap-4 rounded-sm bg-white p-4">

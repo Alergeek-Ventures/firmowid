@@ -47,21 +47,14 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
         Logger.error("No KSeF credentials found for organization #{organization_id}")
         {:cancel, :no_credentials}
 
-      {:error, _reason} = error ->
-        if final_attempt?(job), do: Ksef.unauthenticate(scope)
+      {:error, reason} = error ->
+        maybe_unauthenticate(scope, reason, job)
         error
     end
-  rescue
-    e ->
-      actor = %SystemActor{org_id: organization_id, role: :ksef_session}
-      scope = %Scope{actor: actor, tenant: organization_id}
-      if final_attempt?(job), do: Ksef.unauthenticate(scope)
-      reraise e, __STACKTRACE__
   end
 
   defp perform_authentication(%Credential{organization_id: org_id, auth_type: :token, credentials: token}) do
-    # Organization resource allows read by always() — no authorize?: false needed
-    organization = Core.get_organization!(org_id, actor: %{}, authorize?: false)
+    organization = Core.get_organization!(org_id)
 
     ApiClient.auth(organization.nip, token)
   end
@@ -82,6 +75,8 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
     |> Firmowid.Oban.insert!(skip_organization_id: true)
   end
 
+  # Oban.Job is not an Ash resource — raw Ecto query is required here.
+  # TODO: Evaluate wrapping Oban job queries behind a dedicated module.
   defp get_refresh_token(organization_id) do
     refresh_token =
       Repo.one(
@@ -150,4 +145,17 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
   defp final_attempt?(%Oban.Job{attempt: attempt, max_attempts: max_attempts}) do
     attempt >= max_attempts
   end
+
+  defp maybe_unauthenticate(scope, reason, job) do
+    if final_attempt?(job) and terminal_auth_failure?(reason) do
+      Ksef.unauthenticate(scope)
+    end
+  end
+
+  defp terminal_auth_failure?(:refresh_token_expired), do: true
+  defp terminal_auth_failure?(:unauthorized), do: true
+  defp terminal_auth_failure?(:forbidden), do: true
+  defp terminal_auth_failure?({:unexpected_status, 401, _body}), do: true
+  defp terminal_auth_failure?({:unexpected_status, 403, _body}), do: true
+  defp terminal_auth_failure?(_reason), do: false
 end

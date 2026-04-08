@@ -6,11 +6,17 @@ defmodule FirmowidWeb.Management.Views.Employees do
   alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Session
+  alias FirmowidWeb.Core.Endpoint
+  alias Phoenix.Socket.Broadcast
 
   @impl true
   def mount(_params, _session, socket) do
     scope = socket.assigns.ash_scope
     active_months = months_with_sessions(%{}, scope)
+
+    if connected?(socket) do
+      Endpoint.subscribe("user:joined_org:#{scope.tenant}")
+    end
 
     socket =
       socket
@@ -22,6 +28,11 @@ defmodule FirmowidWeb.Management.Views.Employees do
       |> assign_form()
 
     {:ok, socket}
+  end
+
+  @impl true
+  def handle_info(%Broadcast{topic: "user:joined_org:" <> _tenant}, socket) do
+    {:noreply, assign_employees(socket)}
   end
 
   @impl true
@@ -46,42 +57,46 @@ defmodule FirmowidWeb.Management.Views.Employees do
   end
 
   defp assign_employees(%{assigns: %{selected_date: date, search: search, ash_scope: scope}} = socket) do
-    # 1. Users (with optional search filter)
-    input = if search in [nil, ""], do: %{}, else: %{search: search}
-    users = Core.list_users!(input, scope: scope)
+    if socket.assigns.current_user.role == :admin do
+      # 1. Users (with optional search filter)
+      input = if search in [nil, ""], do: %{}, else: %{search: search}
+      users = Core.list_users!(input, scope: scope)
 
-    # 2. Time worked per user this month
-    sessions =
-      Session
-      |> Ash.Query.for_read(:list, %{month: date.month, year: date.year}, scope: scope)
-      |> Ash.Query.load(:duration)
-      |> Ash.read!(scope: scope)
+      # 2. Time worked per user this month
+      sessions =
+        Session
+        |> Ash.Query.for_read(:list, %{month: date.month, year: date.year}, scope: scope)
+        |> Ash.Query.load(:duration)
+        |> Ash.read!(scope: scope)
 
-    time_by_user =
-      sessions
-      |> Enum.group_by(& &1.user_id)
-      |> Map.new(fn {uid, ss} -> {uid, ss |> Enum.map(& &1.duration) |> Enum.sum()} end)
+      time_by_user =
+        sessions
+        |> Enum.group_by(& &1.user_id)
+        |> Map.new(fn {uid, ss} -> {uid, ss |> Enum.map(& &1.duration) |> Enum.sum()} end)
 
-    # 3. Salaries as of this month
-    salaries = AshUserSalary.as_of!(date, scope: scope)
-    salary_by_user = Map.new(salaries, &{&1.user_id, &1.hourly_rate})
+      # 3. Salaries as of this month
+      salaries = AshUserSalary.as_of!(date, scope: scope)
+      salary_by_user = Map.new(salaries, &{&1.user_id, &1.hourly_rate})
 
-    # 4. Hours records for this month
-    hours_records = Timetracker.list_hours_records!(%{month: date.month, year: date.year}, scope: scope)
-    hr_by_user = Map.new(hours_records, &{&1.user_id, &1})
+      # 4. Hours records for this month
+      hours_records = Timetracker.list_hours_records!(%{month: date.month, year: date.year}, scope: scope)
+      hr_by_user = Map.new(hours_records, &{&1.user_id, &1})
 
-    # 5. Compose
-    employees =
-      Enum.map(users, fn user ->
-        %{
-          user: user,
-          time_worked: Map.get(time_by_user, user.id, 0),
-          hourly_rate: Map.get(salary_by_user, user.id),
-          hours_record: Map.get(hr_by_user, user.id)
-        }
-      end)
+      # 5. Compose
+      employees =
+        Enum.map(users, fn user ->
+          %{
+            user: user,
+            time_worked: Map.get(time_by_user, user.id, 0),
+            hourly_rate: Map.get(salary_by_user, user.id),
+            hours_record: Map.get(hr_by_user, user.id)
+          }
+        end)
 
-    assign(socket, :employees, employees)
+      assign(socket, :employees, employees)
+    else
+      assign(socket, :employees, [])
+    end
   end
 
   defp assign_form(socket) do
@@ -180,14 +195,5 @@ defmodule FirmowidWeb.Management.Views.Employees do
   end
 
   # Distinct months (as naive_datetime) that have sessions, newest first.
-  defp months_with_sessions(filters, scope) do
-    Session
-    |> Ash.Query.for_read(:list, filters, scope: scope)
-    |> Ash.Query.distinct(:month_start)
-    |> Ash.Query.distinct_sort(month_start: :desc)
-    |> Ash.Query.sort(month_start: :desc)
-    |> Ash.Query.load(:month_start)
-    |> Ash.read!(scope: scope)
-    |> Enum.map(& &1.month_start)
-  end
+  defp months_with_sessions(filters, scope), do: Timetracker.months_with_sessions(filters, scope)
 end

@@ -11,7 +11,20 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   import Plug.Conn
 
   alias Firmowid.Ash.Scope
-  alias FirmowidWeb.Infrastructure.Controllers.Fallback
+
+  @doc """
+  Builds a Scope, loads avatars for user and organization.
+
+  Shared by both the Plug pipeline (`require_authenticated_user_with_organization`)
+  and the LiveView hook (`RequireOrganization.on_mount`).
+  """
+  @spec load_scope_and_avatars(map()) :: {map(), map(), Scope.t()}
+  def load_scope_and_avatars(user) do
+    scope = %Scope{actor: user, tenant: user.organization_id}
+    user = Ash.load!(user, [:organization, avatar_blob: [:url]], scope: scope)
+    org = Ash.load!(user.organization, [avatar_blob: [:url]], scope: scope)
+    {user, org, scope}
+  end
 
   @doc """
   Plug: Requires authenticated user with organization (browser).
@@ -33,24 +46,7 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
         |> halt()
 
       true ->
-        user = conn.assigns[:current_user]
-
-        # Load avatar on user and organization
-        user =
-          Ash.load!(user, [:organization, avatar_blob: [:url]],
-            tenant: user.organization_id,
-            authorize?: false,
-            actor: %{}
-          )
-
-        org =
-          Ash.load!(user.organization, [avatar_blob: [:url]],
-            tenant: user.organization_id,
-            authorize?: false,
-            actor: %{}
-          )
-
-        ash_scope = %Scope{actor: user, tenant: user.organization_id}
+        {user, org, ash_scope} = load_scope_and_avatars(conn.assigns[:current_user])
 
         conn
         |> assign(:current_user, user)
@@ -60,38 +56,28 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   end
 
   @doc """
-  Plug: Requires authenticated user with organization (API).
-  """
-  def require_authenticated_user_with_organization_api(conn, _opts) do
-    user = conn.assigns[:current_user]
-
-    if not is_nil(user) and not is_nil(user.organization_id) do
-      ash_scope = %Scope{actor: user, tenant: user.organization_id}
-
-      conn
-      |> assign(:current_org, user.organization)
-      |> assign(:ash_scope, ash_scope)
-    else
-      conn
-      |> Fallback.call({:error, :unauthorized})
-      |> halt()
-    end
-  end
-
-  @doc """
   Plug: Requires authenticated user without organization (onboarding).
   """
   def require_authenticated_user_without_organization(conn, _opts) do
     user = conn.assigns[:current_user]
 
-    if not is_nil(user) and is_nil(user.organization_id) do
-      conn
-    else
-      conn
-      |> maybe_store_return_to()
-      |> LiveToast.put_toast(:notice, "Musisz się zalogować, żeby wejść na tę stronę.")
-      |> redirect(to: ~p"/organization")
-      |> halt()
+    cond do
+      is_nil(user) ->
+        conn
+        |> maybe_store_return_to()
+        |> LiveToast.put_toast(:notice, "Musisz się zalogować, żeby wejść na tę stronę.")
+        |> redirect(to: ~p"/zaloguj")
+        |> halt()
+
+      is_nil(user.organization_id) ->
+        conn
+
+      true ->
+        conn
+        |> maybe_store_return_to()
+        |> LiveToast.put_toast(:notice, "Ta strona jest dostępna tylko przed wyborem organizacji.")
+        |> redirect(to: signed_in_path(conn))
+        |> halt()
     end
   end
 

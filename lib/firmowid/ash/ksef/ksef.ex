@@ -8,6 +8,9 @@ defmodule Firmowid.Ash.Ksef do
   - Sales invoice submission (XML rendering → encryption → send → poll for confirmation)
   - Session management (access token caching via Cachex, refresh token rotation)
   - Submission status tracking (Oban job queries → SubmissionInfo struct)
+
+  TODO: this module has ~6 responsibilities (~600 lines). Consider extracting
+  submission-info aggregation logic into a dedicated service module.
   """
 
   use Ash.Domain
@@ -30,9 +33,6 @@ defmodule Firmowid.Ash.Ksef do
   resources do
     resource Credential
   end
-
-  # TODO: replace authorize?: false + actor: %{} with system actor once available
-  @bridge_opts [authorize?: false, actor: %{}]
 
   @ksef_broadcast_topic "ksef_status"
 
@@ -83,7 +83,8 @@ defmodule Firmowid.Ash.Ksef do
           | {:error, :invalid_token_format | :nip_mismatch | :already_connected}
   def authenticate_with_ksef_token(ksef_token, scope) when is_binary(ksef_token) do
     org_id = scope.tenant
-    organization = Core.get_organization!(org_id, authorize?: false, actor: %{})
+    opts = [scope: scope]
+    organization = Core.get_organization!(org_id, opts)
 
     with {:ok, token_nip} <- extract_nip_from_token(ksef_token),
          :ok <- validate_nip_match(token_nip, organization.nip),
@@ -95,8 +96,7 @@ defmodule Firmowid.Ash.Ksef do
             auth_type: :token,
             credentials: ksef_token
           },
-          authorize?: false,
-          actor: %{}
+          opts
         )
 
       %{"organization_id" => org_id}
@@ -143,7 +143,7 @@ defmodule Firmowid.Ash.Ksef do
   def get_credential(scope) do
     org_id = scope.tenant
 
-    case Credential.get_by_organization(org_id, authorize?: false, actor: %{}) do
+    case Credential.get_by_organization(org_id, scope: scope) do
       {:ok, credential} -> credential
       # Ash wraps NotFound inside Ash.Error.Invalid for get? actions
       {:error, %Ash.Error.Invalid{errors: [%NotFound{} | _]}} -> nil
@@ -167,6 +167,8 @@ defmodule Firmowid.Ash.Ksef do
 
       credential ->
         Repo.transact(fn ->
+          # Oban.Job is not an Ash resource — raw Ecto query is required here.
+          # TODO: Evaluate wrapping Oban job queries behind a dedicated module.
           Firmowid.Oban.cancel_all_jobs(
             from(j in Oban.Job,
               where:
@@ -180,7 +182,7 @@ defmodule Firmowid.Ash.Ksef do
             )
           )
 
-          :ok = Credential.destroy!(credential, authorize?: false, actor: %{})
+          :ok = Credential.destroy!(credential, scope: scope)
           {:ok, :disconnected}
         end)
     end
@@ -312,7 +314,7 @@ defmodule Firmowid.Ash.Ksef do
   end
 
   def invoice_url!(%CostInvoice{seller_nip: seller_nip, issue_date: issue_date} = invoice) do
-    opts = Keyword.put(@bridge_opts, :tenant, invoice.organization_id)
+    opts = [tenant: invoice.organization_id]
     invoice = Ash.load!(invoice, [:blob], opts)
 
     checksum =
@@ -356,7 +358,7 @@ defmodule Firmowid.Ash.Ksef do
     SalesInvoice.update_ksef_fields!(
       invoice,
       %{ksef_invoice_checksum: checksum},
-      Keyword.put(@bridge_opts, :tenant, invoice.organization_id)
+      tenant: invoice.organization_id
     )
 
     checksum
@@ -475,6 +477,8 @@ defmodule Firmowid.Ash.Ksef do
     end
   end
 
+  # Oban.Job is not an Ash resource — raw Ecto query is required here.
+  # TODO: Evaluate wrapping Oban job queries behind a dedicated module.
   defp get_latest_submission_job(sales_invoice_id) do
     Oban.Job
     |> where(
@@ -555,7 +559,7 @@ defmodule Firmowid.Ash.Ksef do
         "Brak połączenia z KSeF"
 
       String.contains?(error_string, "invoice_duplicate") ->
-        "Faktura została już wcześniej wysłana do KSeF"
+        "KSeF odrzucił wysyłkę jako duplikat. Zmień dane faktury i wyślij ponownie."
 
       true ->
         "Wystąpił nieoczekiwany błąd podczas wysyłania do KSeF"

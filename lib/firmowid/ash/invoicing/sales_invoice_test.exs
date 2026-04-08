@@ -7,7 +7,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
 
-  # TODO: replace authorize?: false + actor: %{} with system actor once available
+  # authorize?: false bypasses policies, actor: %{} satisfies require_actor? true
+  # on domains like Invoicing.
   @bridge_opts [authorize?: false, actor: %{}]
 
   describe "reverse charge VAT normalization" do

@@ -15,11 +15,10 @@ defmodule Firmowid.Ash.Finances.Changes.ResetCurrencyDefaults do
 
       case Ash.bulk_update(
              changeset.resource,
-             :update,
-             %{is_default: false},
+             :clear_default,
+             %{},
              actor: context.actor,
              tenant: changeset.tenant,
-             authorize?: false,
              return_errors?: true,
              strategy: [:stream],
              allow_stream_with: :full_read,

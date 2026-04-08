@@ -87,6 +87,10 @@ defmodule Firmowid.Ash.Invoicing.InboundEmail do
     end
 
     bypass {SystemActorRole, roles: [:cost_invoice_processor]} do
+      authorize_if action(:create)
+    end
+
+    bypass {SystemActorRole, roles: [:cost_invoice_processor]} do
       authorize_if action(:mark_processed)
     end
 

@@ -2,8 +2,9 @@
   <div class="flex flex-row items-start justify-between">
     <div class="space-y-1">
       <p class="text-grey-500 text-sm/snug">
-        {case @project.counterparty.display_label do
+        {case @project.counterparty && @project.counterparty.display_label do
           "" -> @current_org.name
+          nil -> @current_org.name
           label -> label
         end}
       </p>
@@ -50,7 +51,13 @@
       )}. Dane są dostępne tylko do odczytu. Aby edytować projekt lub rejestrować czas, przywróć go do aktywnych.
     </p>
 
-    <.button color="grey" size="small" new={true} phx-click="unarchive_project">
+    <.button
+      :if={@current_user.role == :admin}
+      color="grey"
+      size="small"
+      new={true}
+      phx-click="unarchive_project"
+    >
       Przywróć projekt
     </.button>
     <.button

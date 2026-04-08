@@ -31,17 +31,55 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
     # (Ash.load! with :annotated_corrections re-fetches, losing attribute selection)
     invoice =
       assigns.invoice
-      |> Ash.load!([corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]]],
-        authorize?: false,
-        actor: %{},
-        tenant: assigns.invoice.organization_id
+      |> Ash.load!(
+        [
+          :net_value,
+          :vat_value,
+          :gross_value,
+          sales_invoice_items: [:net_value, :vat_value, :gross_value],
+          corrections: [
+            :net_value,
+            :vat_value,
+            :gross_value,
+            sales_invoice_items: [:net_value, :vat_value, :gross_value]
+          ]
+        ],
+        scope: assigns.scope
       )
       |> then(fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)
 
     latest_invoice_snapshot =
       assigns.invoice
-      |> Ash.load!([:effective_snapshot], authorize?: false, actor: %{}, tenant: assigns.invoice.organization_id)
+      |> Ash.load!(
+        [
+          :effective_snapshot,
+          :gross_value,
+          :currency,
+          latest_correction: [
+            :net_value,
+            :vat_value,
+            :gross_value,
+            :currency,
+            :sale_date,
+            :due_date,
+            :buyer_display_name_label,
+            sales_invoice_items: [:net_value, :vat_value, :gross_value]
+          ]
+        ],
+        scope: assigns.scope
+      )
       |> Map.get(:effective_snapshot)
+      |> Ash.load!(
+        [
+          :net_value,
+          :vat_value,
+          :gross_value,
+          :currency,
+          :buyer_display_name_label,
+          sales_invoice_items: [:net_value, :vat_value, :gross_value]
+        ],
+        scope: assigns.scope
+      )
 
     cancelled? = Decimal.eq?(latest_invoice_snapshot.gross_value, 0)
 
@@ -185,7 +223,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
 
               <.button
                 :if={
-                  @ksef_connected? and @invoice.invoice_number and
+                  @ksef_connected? and not is_nil(@invoice.invoice_number) and
                     (SubmissionInfo.not_submitted?(@submission_info) or
                        SubmissionInfo.submitting?(@submission_info))
                 }

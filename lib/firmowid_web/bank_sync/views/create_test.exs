@@ -24,7 +24,7 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
       %{conn: log_in_user(conn, user), user: user}
     end
 
-    test "redirects to invoicing with pending requisition ready for sync", %{conn: conn, user: user} do
+    test "redirects to bank accounts with success toast for pending requisition", %{conn: conn, user: user} do
       requisition_id = Ecto.UUID.generate()
 
       # Pre-create the requisition as pending (simulating what happens after GoCardless redirect)
@@ -49,8 +49,10 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
 
       assert requisition.status == :pending
 
-      # When user returns from GoCardless, they get redirected to invoicing
-      {:error, {:live_redirect, %{to: "/fakturowanie", flash: %{}}}} =
+      # When user returns from GoCardless, they get redirected to bank accounts
+      {:error,
+       {:live_redirect,
+        %{to: "/ustawienia/konta-bankowe", flash: %{"success" => "Konto bankowe zostało poprawnie połączone."}}}} =
         live(conn, "/ustawienia/bank/dodaj?ref=#{requisition_id}")
 
       # The AshOban trigger on Requisition will automatically poll for status changes.

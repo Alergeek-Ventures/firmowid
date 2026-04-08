@@ -89,14 +89,18 @@ defmodule FirmowidWeb.Management.Views.Project do
     scope = socket.assigns.ash_scope
     project = socket.assigns.project
 
-    {:ok, project} = AshProject.unarchive(project, scope: scope)
+    case AshProject.unarchive(project, scope: scope) do
+      {:ok, updated_project} ->
+        socket =
+          socket
+          |> assign(:project, updated_project)
+          |> assign_project_data()
 
-    socket =
-      socket
-      |> assign(:project, project)
-      |> assign_project_data()
+        {:noreply, socket}
 
-    {:noreply, socket}
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "Nie udało się przywrócić projektu")}
+    end
   end
 
   def handle_event("delete_project", _, socket) do
@@ -228,7 +232,7 @@ defmodule FirmowidWeb.Management.Views.Project do
     |> Enum.map(fn uid ->
       user = resolve_user(uid, users_by_id, scope)
 
-      user = Ash.load!(user, [avatar_blob: [:url]], tenant: user.organization_id, authorize?: false, actor: %{})
+      user = Ash.load!(user, [avatar_blob: [:url]], scope: scope)
       time = Map.get(time_by_user, uid, 0)
       rate = Map.get(salary_by_user, uid)
       hours = Timetracker.seconds_to_hours(time)
@@ -340,14 +344,5 @@ defmodule FirmowidWeb.Management.Views.Project do
   end
 
   # Distinct months (as naive_datetime) that have sessions, newest first.
-  defp months_with_sessions(filters, scope) do
-    Session
-    |> Ash.Query.for_read(:list, filters, scope: scope)
-    |> Ash.Query.distinct(:month_start)
-    |> Ash.Query.distinct_sort(month_start: :desc)
-    |> Ash.Query.sort(month_start: :desc)
-    |> Ash.Query.load(:month_start)
-    |> Ash.read!(scope: scope)
-    |> Enum.map(& &1.month_start)
-  end
+  defp months_with_sessions(filters, scope), do: Timetracker.months_with_sessions(filters, scope)
 end

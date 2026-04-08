@@ -2,6 +2,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   @moduledoc """
   Ash resource for sales invoices.
 
+  TODO: at 1270 lines, consider extracting inline `cancel` (~100 lines),
+  `confirm_from_draft` (~60 lines), and numbering helpers (~110 lines)
+  into dedicated modules — similar to how `EffectiveFields` was extracted.
+
   ## Read Actions
 
     * `:read` — consolidated read with optional filters: `date_from`, `date_to`,
@@ -43,6 +47,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Invoicing, as: InvoicingDomain
   alias Firmowid.Ash.Invoicing.Changes
+  alias Firmowid.Ash.Invoicing.CountryCodes
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.Ash.Invoicing.Validations
@@ -51,6 +56,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   require Ash.Query
   require Firmowid.Ash.Invoicing.SalesInvoice.EffectiveFields, as: EffectiveFields
   require Resource
+
+  @eu_countries CountryCodes.eu_countries_with_aliases()
 
   postgres do
     table "sales_invoices"
@@ -264,11 +271,27 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
         invoice_row =
           if correction_id do
-            __MODULE__
-            |> where([i], i.id == ^correction_id and i.ksef_invoice_kind == :kor)
-            |> join(:inner, [i], o in __MODULE__, on: o.share_token == ^share_token)
-            |> select([i], {i.id, i.organization_id})
-            |> Firmowid.Repo.one(skip_organization_id: true)
+            case Ecto.UUID.dump(correction_id) do
+              {:ok, _uuid} ->
+                __MODULE__
+                |> join(:inner, [correction], shared_invoice in __MODULE__,
+                  on:
+                    shared_invoice.share_token == ^share_token and
+                      correction.corrected_invoice_id == shared_invoice.id
+                )
+                |> where(
+                  [correction, _shared_invoice],
+                  correction.id == ^correction_id and correction.ksef_invoice_kind == :kor
+                )
+                |> select(
+                  [correction, _shared_invoice],
+                  {correction.id, correction.organization_id}
+                )
+                |> Firmowid.Repo.one(skip_organization_id: true)
+
+              :error ->
+                nil
+            end
           else
             __MODULE__
             |> where([i], i.share_token == ^share_token)
@@ -520,6 +543,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
     # -- Generic actions -------------------------------------------------------
 
+    # TODO: Extract the ~100-line inline `run fn` below into a named module
+    # implementing `Ash.Resource.Actions.Implementation` (e.g. Actions.CancelInvoice).
     action :cancel, :struct do
       constraints instance_of: __MODULE__
       argument :invoice_id, :uuid_v7, allow_nil?: false
@@ -527,16 +552,62 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       run fn input, context ->
         opts = Ash.Context.to_opts(context)
 
+        correction_snapshot_load = [
+          :sales_invoice_items,
+          :sale_date,
+          :due_date,
+          :invoice_type,
+          :seller_nip,
+          :seller_display_name,
+          :seller_address,
+          :seller_name,
+          :seller_surname,
+          :seller_account_number,
+          :counterparty_id,
+          :buyer_type,
+          :buyer_id,
+          :buyer_full_name,
+          :buyer_given_name,
+          :buyer_surname,
+          :buyer_display_name,
+          :buyer_address,
+          :buyer_country,
+          :buyer_is_different_mail_address,
+          :buyer_mail_address,
+          :buyer_mail_country,
+          :buyer_email,
+          :buyer_phone,
+          :buyer_description,
+          :buyer_pesel,
+          :payment_method,
+          :currency,
+          :is_reverse_charge,
+          :is_cash_account
+        ]
+
         invoice =
           __MODULE__
           |> Ash.get!(input.arguments.invoice_id, opts)
           |> Ash.load!(
-            [:sales_invoice_items, :effective_snapshot, corrections: :sales_invoice_items],
+            [
+              :effective_snapshot,
+              :sales_invoice_items,
+              latest_correction: correction_snapshot_load,
+              corrections: :sales_invoice_items
+            ],
             opts
           )
 
         if invoice.ksef_invoice_kind == :vat and invoice.ksef_number != nil do
-          latest = invoice.effective_snapshot
+          latest =
+            case invoice.latest_correction do
+              %{__struct__: __MODULE__} = correction ->
+                Ash.load!(correction, correction_snapshot_load, opts)
+
+              _ ->
+                Ash.load!(invoice, correction_snapshot_load, opts)
+            end
+
           issue_date = Date.utc_today()
 
           # Get next FK-series number
@@ -590,7 +661,12 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
       run fn input, context ->
         opts = Ash.Context.to_opts(context)
-        draft = Ash.get!(Firmowid.Ash.Invoicing.WizardDraft, input.arguments.draft_id, opts)
+
+        draft =
+          Firmowid.Ash.Invoicing.WizardDraft
+          |> Ash.get!(input.arguments.draft_id, opts)
+          |> Ash.load!([:items], opts)
+
         org = input.arguments.organization
 
         items =
@@ -694,6 +770,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
         parsed = parse_invoice_number(invoice_number)
 
+        # TODO: Refactor sequential `warnings` accumulation into a pipeline
+        # or a list of check functions to reduce mutable-style reassignments.
         warnings = []
 
         warnings =
@@ -790,8 +868,19 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       authorize_if action_type(:read)
     end
 
+    bypass {SystemActorRole, roles: [:analysis_reader]} do
+      authorize_if action_type(:read)
+    end
+
     bypass {SystemActorRole, roles: [:invoice_matcher]} do
       authorize_if action([:connect_transactions, :disconnect_transactions])
+    end
+
+    policy [
+      action([:connect_transactions, :disconnect_transactions]),
+      {AtLeastRole, role: :invoicing}
+    ] do
+      authorize_if always()
     end
 
     # ksef_session: lock/unlock/update ksef fields
@@ -896,6 +985,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     attribute :buyer_phone, :string, public?: true
     attribute :buyer_description, :string, public?: true
 
+    # Stored (not a calculation) because two independent change hooks collaborate
+    # to maintain it: SetIsCashAccount (payment_method == :cash) and
+    # CastBasedOnInvoiceType (forces false for foreign invoices). A calculation
+    # would need to encode both rules and complicate the snapshot system.
     attribute :is_cash_account, :boolean, default: false, public?: true
     attribute :is_reverse_charge, :boolean, default: false, public?: true
 
@@ -994,6 +1087,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     calculate :is_ksef_submitted, :boolean, expr(not is_nil(ksef_number))
     calculate :is_deletable, :boolean, expr(is_nil(ksef_number) and is_nil(locked_at))
 
+    # NOTE: This expr() logic is intentionally duplicated across SalesInvoice,
+    # WizardDraft, and Counterparty (as :tax_id_type) because Ash expr()
+    # calculations run in the DB and cannot call Elixir functions.
+    # Runtime equivalent: CountryCodes.tax_id_type/3
     calculate :buyer_id_type,
               :atom,
               expr(
@@ -1007,36 +1104,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
                   buyer_country == "PL" ->
                     :nip
 
-                  buyer_country in [
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CY",
-                    "CZ",
-                    "DK",
-                    "EE",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "EL",
-                    "GR",
-                    "HR",
-                    "HU",
-                    "IE",
-                    "IT",
-                    "LV",
-                    "LT",
-                    "LU",
-                    "MT",
-                    "NL",
-                    "PT",
-                    "RO",
-                    "SK",
-                    "SI",
-                    "ES",
-                    "SE",
-                    "XI"
-                  ] ->
+                  buyer_country in ^@eu_countries ->
                     :eu_vat
 
                   buyer_country == "US" ->
