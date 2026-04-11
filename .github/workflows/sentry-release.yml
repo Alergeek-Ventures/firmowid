@@ -49,7 +49,6 @@ jobs:
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       SENTRY_ORG: ${{ vars.SENTRY_ORG || 'alergeek' }}
       SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'firmowid' }}
-      SENTRY_RELEASE: ${{ github.sha }}
 
     steps:
       - name: Checkout repository
@@ -71,26 +70,10 @@ jobs:
           mix esbuild firmowid --minify --sourcemap=external
           mix phx.digest
 
-      - name: Install sentry-cli
-        run: curl -sL https://sentry.io/get-cli/ | bash
-
-      - name: Validate Sentry configuration
-        run: |
-          for variable in SENTRY_AUTH_TOKEN SENTRY_ORG SENTRY_PROJECT SENTRY_RELEASE; do
-            value=$(printenv "$variable")
-            if [ -z "$value" ]; then
-              echo "Missing required variable: $variable"
-              exit 1
-            fi
-          done
-
-      - name: Create Sentry release and upload sourcemaps
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          sentry-cli releases new "$SENTRY_RELEASE"
-          sentry-cli releases set-commits "$SENTRY_RELEASE" --auto
-          sentry-cli releases files "$SENTRY_RELEASE" upload-sourcemaps priv/static/assets --url-prefix "~/assets" --rewrite
-          sentry-cli releases finalize "$SENTRY_RELEASE"
-
-      - name: Verify release exists
-        run: sentry-cli releases info "$SENTRY_RELEASE"
+      - name: Create and finalize Sentry release
+        uses: getsentry/action-release@v3
+        with:
+          environment: production
+          release: ${{ github.sha }}
+          sourcemaps: ./priv/static/assets
+          url_prefix: ~/assets
