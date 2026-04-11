@@ -38,7 +38,7 @@ defmodule Firmowid.MixProject do
   def application do
     [
       mod: {Firmowid.Application, []},
-      extra_applications: [:logger, :runtime_tools, :os_mon, :crypto]
+      extra_applications: [:logger, :runtime_tools, :os_mon, :crypto, :sentry]
     ]
   end
 
@@ -111,6 +111,7 @@ defmodule Firmowid.MixProject do
       {:image, "~> 0.37"},
       {:briefly, "~> 0.5.0"},
       {:error_tracker, "~> 0.7"},
+      {:sentry, "~> 12.0"},
       {:recase, "~> 0.9.0"},
       {:oban, "~> 2.21"},
       {:ecto_psql_extras, "~> 0.6"},

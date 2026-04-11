@@ -33,6 +33,12 @@ config :firmowid, :ksef,
 # Do not print debug messages in production
 config :logger, level: :info
 
+config :sentry,
+  dsn: "https://dc33e5660f563be6b0423120825f8da3@o4511195748630528.ingest.de.sentry.io/4511195751317584",
+  environment_name: Mix.env(),
+  enable_source_code_context: true,
+  root_source_code_paths: [File.cwd!()]
+
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Req
 

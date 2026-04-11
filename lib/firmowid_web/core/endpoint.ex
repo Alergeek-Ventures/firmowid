@@ -1,4 +1,5 @@
 defmodule FirmowidWeb.Core.Endpoint do
+  use Sentry.PlugCapture
   use Phoenix.Endpoint, otp_app: :firmowid
   use ErrorTracker.Integrations.Plug
 
@@ -53,6 +54,8 @@ defmodule FirmowidWeb.Core.Endpoint do
     pass: ["*/*"],
     body_reader: {FirmowidWeb.Core.CacheBodyReader, :read_body, []},
     json_decoder: Phoenix.json_library()
+
+  plug Sentry.PlugContext
 
   plug Plug.MethodOverride
   plug Plug.Head

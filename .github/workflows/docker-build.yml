@@ -35,5 +35,7 @@ jobs:
           context: .
           file: ./deployment/Containerfile.app
           push: false
+          build-args: |
+            SENTRY_UPLOAD_SOURCE=${{ github.event_name == 'pull_request' && 'false' || 'true' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
