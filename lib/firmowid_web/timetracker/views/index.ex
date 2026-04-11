@@ -5,7 +5,6 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   alias Ash.Error.Invalid
   alias Ash.Error.Unknown
   alias Ash.Error.Unknown.UnknownError
-  alias Firmowid.Analytics
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
   alias Firmowid.Ash.Timetracker.OverlapResolver
@@ -346,16 +345,6 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
     result = create_session(attrs, scope)
 
-    case result do
-      {:ok, started_session} ->
-        Analytics.track_event("session_start", socket.assigns.current_user, %{
-          project_id: started_session.project_id
-        })
-
-      _ ->
-        :ok
-    end
-
     handle_session_save_result(result, socket)
   end
 
@@ -536,10 +525,6 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
     case result do
       {:ok, new_session} ->
-        Analytics.track_event("session_start", socket.assigns.current_user, %{
-          project_id: new_session.project_id
-        })
-
         handle_session_save_result({:ok, new_session}, socket)
 
       {:error, %Unknown{} = error} ->
@@ -568,12 +553,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     case AshSession.stop(current_session, scope: scope) do
       {:ok, ended_session} ->
         duration_seconds = DateTime.diff(ended_session.end_datetime, ended_session.start_datetime)
-        duration_minutes = div(duration_seconds, 60)
-
-        Analytics.track_event("session_end", socket.assigns.current_user, %{
-          session_duration_minutes: duration_minutes,
-          project_id: ended_session.project_id
-        })
+        _duration_minutes = div(duration_seconds, 60)
 
         {:noreply,
          socket

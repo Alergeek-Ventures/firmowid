@@ -9,7 +9,6 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   use AshAuthentication.Phoenix.Controller
 
   alias AshAuthentication.Strategy.RememberMe.Plug.Helpers
-  alias Firmowid.Analytics
   alias FirmowidWeb.Core.Endpoint
 
   @doc """
@@ -24,11 +23,6 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
     |> store_in_session(user)
     |> Helpers.maybe_put_remember_me_cookies(conn.private[:ash_authentication])
     |> assign(:current_user, user)
-    |> then(fn conn ->
-      Analytics.identify(user)
-      Analytics.track_event("user_log_in", user, %{})
-      conn
-    end)
     |> redirect(to: return_to)
   end
 

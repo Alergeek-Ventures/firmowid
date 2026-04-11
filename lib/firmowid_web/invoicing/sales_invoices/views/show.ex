@@ -2,7 +2,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Analytics
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.InvoiceMatching
   alias Firmowid.Ash.Invoicing.SalesInvoice
@@ -105,8 +104,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   def handle_event("delete", _params, socket) do
     case SalesInvoice.destroy(socket.assigns.invoice, scope: socket.assigns.ash_scope) do
       :ok ->
-        Analytics.track_event("sales_invoice_delete", socket.assigns.current_user, %{})
-
         {:noreply,
          socket
          |> put_flash(:info, "Faktura została usunięta")
@@ -133,11 +130,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
 
   @impl true
   def handle_event("connect", %{"transaction_id" => tx_id}, socket) do
-    user = socket.assigns.current_user
-
     Invoicing.connect_sales_invoice_transactions(socket.assigns.invoice, [tx_id], scope: socket.assigns.ash_scope)
-
-    Analytics.track_event("sales_invoice_match", user, %{transaction_count: 1})
 
     invoice = refresh_invoice(socket.assigns.invoice.id, socket.assigns.ash_scope)
     {:noreply, assign(socket, :invoice, invoice)}
@@ -148,8 +141,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
     Invoicing.disconnect_sales_invoice_transactions(socket.assigns.invoice,
       scope: socket.assigns.ash_scope
     )
-
-    Analytics.track_event("sales_invoice_unmatch", socket.assigns.current_user, %{})
 
     invoice = refresh_invoice(socket.assigns.invoice.id, socket.assigns.ash_scope)
     {:noreply, assign(socket, :invoice, invoice)}

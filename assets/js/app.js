@@ -24,6 +24,7 @@ import topbar from "../vendor/topbar";
 import { createLiveToastHook } from "live_toast";
 import { Hooks } from "./hooks";
 import { hooks as colocatedHooks } from "phoenix-colocated/firmowid";
+import { initTelemetry } from "./telemetry";
 
 let csrfToken = document
   .querySelector("meta[name='csrf-token']")
@@ -55,6 +56,7 @@ window.addEventListener("phx:js-exec", ({ detail }) => {
 
 // connect if there are any LiveViews on the page
 liveSocket.connect();
+initTelemetry();
 
 // expose liveSocket on window for web console debug logs and latency simulation:
 // >> liveSocket.enableDebug()

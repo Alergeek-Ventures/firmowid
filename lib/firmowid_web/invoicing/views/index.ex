@@ -7,7 +7,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   import FirmowidWeb.Core.PubSubDebounce
 
   alias Ash.Notifier.Notification
-  alias Firmowid.Analytics
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Finances
@@ -142,20 +141,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     # Use existing atoms to avoid atom exhaustion
     filter = String.to_existing_atom(filter)
 
-    Analytics.track_event("invoicing_filter_change", socket.assigns.current_user, %{
-      filter_value: filter
-    })
-
     {:noreply, update_param(socket, :filter, filter)}
   end
 
   def handle_event("toggle-grouping", _params, socket) do
     current = socket.assigns.params.group_by_party
     new_value = !current
-
-    Analytics.track_event("invoicing_grouping_toggle", socket.assigns.current_user, %{
-      is_grouped: new_value
-    })
 
     {:noreply, update_param(socket, :group_by_party, new_value)}
   end
@@ -220,8 +211,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   def handle_event("open-search", _params, socket) do
-    Analytics.track_event("invoicing_search_open", socket.assigns.current_user, %{})
-
     {:noreply,
      socket
      |> assign(:show_search, true)
@@ -253,10 +242,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   def handle_event("goto-invoice", %{"id" => id, "type" => type}, socket) do
-    Analytics.track_event("invoicing_search_select", socket.assigns.current_user, %{
-      invoice_type: type
-    })
-
     path =
       case type do
         "cost" -> ~p"/kosztowe/#{id}"
@@ -529,13 +514,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp handle_uploads(entries, socket) do
-    user = socket.assigns.current_user
     scope = socket.assigns.ash_scope
 
     for entry <- entries do
       consume_uploaded_entry(socket, entry, fn %{path: path} ->
-        Analytics.track_event("cost_invoice_upload", user, %{file_type: entry.client_type})
-
         handle_upload_result(
           upload_cost_invoice(
             path,

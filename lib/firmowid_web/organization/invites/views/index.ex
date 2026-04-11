@@ -3,7 +3,6 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
   use FirmowidWeb, :live_view
 
   alias Ash.Error.Forbidden
-  alias Firmowid.Analytics
   alias Firmowid.Ash.Core
 
   @invite_load [issued_by: [:email], consumed_by: [:email]]
@@ -31,20 +30,13 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
   @impl true
   def handle_event("create", _, socket) do
     current_user = socket.assigns.current_user
-    organization_id = current_user.organization_id
     scope = socket.assigns.ash_scope
 
     if current_user.role != :admin do
       raise Forbidden, message: "Tylko administrator może tworzyć zaproszenia."
     end
 
-    invite =
-      Core.create_invite!(%{issued_by_id: current_user.id}, scope: scope)
-
-    Analytics.track_event("organization_invite_created", current_user, %{
-      organization_id: organization_id,
-      invite_id: invite.id
-    })
+    Core.create_invite!(%{issued_by_id: current_user.id}, scope: scope)
 
     invites =
       Core.list_invites!(load: @invite_load, scope: scope)

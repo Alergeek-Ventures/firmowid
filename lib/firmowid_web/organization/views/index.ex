@@ -2,7 +2,6 @@ defmodule FirmowidWeb.Organization.Views.Index do
   @moduledoc false
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Analytics
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Organization
 
@@ -148,9 +147,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
     case AshPhoenix.Form.submit(socket.assigns.organization_form.source,
            params: params
          ) do
-      {:ok, created_org} ->
-        Analytics.track_event("organization_created", user, %{organization_id: created_org.id})
-
+      {:ok, _created_org} ->
         socket =
           socket
           |> LiveToast.put_toast(:success, "Pomyślnie utworzono organizację")
@@ -181,10 +178,6 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
     # Consume the invite (scoped to the invite's organization)
     Core.consume_invite!(invite, %{user_id: user.id}, tenant: invite.organization_id, actor: user)
-
-    Analytics.track_event("organization_invite_accepted", user, %{
-      organization_id: invite.organization_id
-    })
 
     {:noreply, redirect(socket, to: "/")}
   end

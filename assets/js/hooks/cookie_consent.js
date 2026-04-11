@@ -1,3 +1,5 @@
+import { initTelemetry } from "../telemetry";
+
 /**
  * CookieConsent Hook
  *
@@ -21,6 +23,7 @@ export const CookieConsent = {
       .querySelector("#cookie-consent-accept")
       .addEventListener("click", () => {
         setCookie("cookie_consent", "accepted", 365);
+        initTelemetry();
         this.el.classList.add("hidden");
       });
 

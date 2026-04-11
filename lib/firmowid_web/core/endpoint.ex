@@ -1,7 +1,6 @@
 defmodule FirmowidWeb.Core.Endpoint do
   use Sentry.PlugCapture
   use Phoenix.Endpoint, otp_app: :firmowid
-  use ErrorTracker.Integrations.Plug
 
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
@@ -26,8 +25,6 @@ defmodule FirmowidWeb.Core.Endpoint do
     from: :firmowid,
     gzip: false,
     only: FirmowidWeb.static_paths()
-
-  plug FirmowidWeb.Infrastructure.Plugs.FilteredRequestTracker
 
   if Code.ensure_loaded?(Tidewave) do
     plug Tidewave

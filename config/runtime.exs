@@ -145,25 +145,12 @@ end
 
 # Analytics configuration
 # Env vars:
-#   PHOENIX_ANALYTICS_ENABLED - enable PhoenixAnalytics (local DB + dashboard), defaults to "true"
 #   POSTHOG_ENABLED - enable PostHog analytics, defaults to "false"
 #   POSTHOG_API_KEY - PostHog project API key (required if PostHog enabled)
 #   POSTHOG_API_HOST - PostHog API host, defaults to "https://eu.i.posthog.com"
-phoenix_analytics_enabled = System.get_env("PHOENIX_ANALYTICS_ENABLED", "true") == "true"
 posthog_enabled = System.get_env("POSTHOG_ENABLED", "false") == "true"
 
-config :firmowid, :analytics,
-  phoenix_analytics_enabled: phoenix_analytics_enabled,
-  posthog_enabled: posthog_enabled
-
-if phoenix_analytics_enabled do
-  # PHX_HOST in prod, fallback to "localhost" in dev/test
-  app_domain = System.get_env("PHX_HOST", "localhost")
-
-  config :phoenix_analytics,
-    repo: Firmowid.Repo,
-    app_domain: app_domain
-end
+config :firmowid, :analytics, posthog_enabled: posthog_enabled
 
 if posthog_enabled do
   posthog_api_key =
@@ -172,9 +159,23 @@ if posthog_enabled do
 
   posthog_api_host = System.get_env("POSTHOG_API_HOST", "https://eu.i.posthog.com")
 
+  config :firmowid, :frontend_observability,
+    posthog_enabled: true,
+    posthog_api_key: posthog_api_key,
+    posthog_api_host: posthog_api_host,
+    sentry_dsn: System.get_env("SENTRY_FRONTEND_DSN", ""),
+    sentry_environment: System.get_env("SENTRY_FRONTEND_ENV", to_string(config_env()))
+
   config :posthog,
     api_key: posthog_api_key,
     api_host: posthog_api_host
+else
+  config :firmowid, :frontend_observability,
+    posthog_enabled: false,
+    posthog_api_key: "",
+    posthog_api_host: "",
+    sentry_dsn: System.get_env("SENTRY_FRONTEND_DSN", ""),
+    sentry_environment: System.get_env("SENTRY_FRONTEND_ENV", to_string(config_env()))
 end
 
 # Phoenix HTTP port - only override if PORT is set (worktree)
@@ -186,8 +187,6 @@ end
 if config_env() == :dev and System.get_env("DEBUGGER_PORT") do
   config :live_debugger, port: String.to_integer(System.get_env("DEBUGGER_PORT"))
 end
-
-# ErrorTracker is configured in prod.exs and doesn't require external DSN
 
 if config_env() == :prod do
   # SSL configuration for database connection

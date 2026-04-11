@@ -1,11 +1,5 @@
 import Config
 
-# ErrorTracker configuration
-config :error_tracker,
-  repo: Firmowid.Repo,
-  otp_app: :firmowid,
-  enabled: true
-
 config :firmowid, Firmowid.Ash.Currencies.Converter, rates_provider: :api
 
 # Note we also include the path to a cache manifest

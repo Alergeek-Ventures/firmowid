@@ -1,7 +1,3 @@
-# Stop PhoenixAnalytics to prevent Batcher from trying to write to the database
-# (it doesn't use Sandbox and causes ownership errors)
-Application.stop(:phoenix_analytics)
-
 # Tests tagged :external require real third-party credentials (e.g. GoCardless).
 # Tests tagged :e2e are end-to-end Playwright tests that require a running server.
 # They are excluded by default so CI and plain `mix test` skip them.

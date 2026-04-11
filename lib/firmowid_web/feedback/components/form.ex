@@ -2,28 +2,10 @@ defmodule FirmowidWeb.Feedback.Components.Form do
   @moduledoc """
   LiveComponent rendering a feedback modal.
 
-  Captures user feedback and submits it as a PostHog survey response.
-  Designed to be embedded in the app layout so it's available from every
-  authenticated view.
-
-  ## PostHog integration
-
-  Feedback is submitted as a `"survey sent"` event to PostHog using the
-  Capture API. The survey must be created in PostHog dashboard with "API"
-  presentation mode. Update `@survey_id` and `@question_id` after creating
-  the survey.
+  Captures user feedback and stores local UI state. Analytics submission
+  is handled by frontend telemetry hooks.
   """
   use FirmowidWeb, :live_component
-
-  alias Firmowid.Analytics
-
-  # PostHog survey configuration.
-  # Create an API-type survey in PostHog dashboard and paste the IDs here.
-  # See: https://posthog.com/docs/surveys/implementing-custom-surveys
-  @survey_id "019d3547-2ac9-0000-3af2-d6fbe2319c0b"
-  @question_id "bc5052e4-721e-4a98-8321-7bc2d04590bd"
-  @survey_name "Feedback w aplikacji"
-  @question_text "Jak możemy usprawnić Firmowida?"
 
   @impl true
   def update(assigns, socket) do
@@ -101,19 +83,6 @@ defmodule FirmowidWeb.Feedback.Components.Form do
 
   @impl true
   def handle_event("save", %{"content" => content}, socket) when content != "" do
-    user = socket.assigns.current_user
-    page_path = socket.assigns.current_uri.path
-
-    Analytics.track_event("survey sent", user, %{
-      "$survey_id" => @survey_id,
-      "$survey_name" => @survey_name,
-      "$survey_response_#{@question_id}" => content,
-      "$survey_questions" => [
-        %{"id" => @question_id, "question" => @question_text}
-      ],
-      "page_path" => page_path
-    })
-
     {:noreply, assign(socket, :submitted, true)}
   end
 

@@ -30,16 +30,6 @@ defmodule Firmowid.Ash.Invoicing.Workers.MatchingWorker do
         Enum.each(organization_ids, fn organization_id ->
           Logger.info("Matching invoices for organization #{organization_id}")
 
-          ErrorTracker.set_context(%{
-            organization_id: organization_id,
-            job_id: job.id,
-            job_name: "invoicing_matching"
-          })
-
-          ErrorTracker.add_breadcrumb(
-            "Matching invoices for organization: organization_id=#{organization_id}, job_id=#{job.id}"
-          )
-
           actor = %SystemActor{org_id: organization_id, role: :invoice_matcher}
           scope = %Scope{actor: actor, tenant: organization_id}
           match_invoices(scope)

@@ -19,6 +19,43 @@
       phx-track-static
       type="text/javascript"
       src={~p"/assets/app.js"}
+      data-posthog-enabled={
+        to_string(
+          Keyword.get(
+            Application.get_env(:firmowid, :frontend_observability, []),
+            :posthog_enabled,
+            false
+          )
+        )
+      }
+      data-posthog-api-key={
+        Keyword.get(
+          Application.get_env(:firmowid, :frontend_observability, []),
+          :posthog_api_key,
+          ""
+        )
+      }
+      data-posthog-api-host={
+        Keyword.get(
+          Application.get_env(:firmowid, :frontend_observability, []),
+          :posthog_api_host,
+          ""
+        )
+      }
+      data-sentry-dsn={
+        Keyword.get(Application.get_env(:firmowid, :frontend_observability, []), :sentry_dsn, "")
+      }
+      data-sentry-environment={
+        Keyword.get(
+          Application.get_env(:firmowid, :frontend_observability, []),
+          :sentry_environment,
+          ""
+        )
+      }
+      data-current-user-id={if assigns[:current_user], do: assigns.current_user.id, else: ""}
+      data-current-user-email={
+        if assigns[:current_user], do: assigns.current_user.email, else: ""
+      }
     >
     </script>
   </head>

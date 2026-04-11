@@ -4,11 +4,6 @@ alias FirmowidWeb.Core.Endpoint
 
 config :ash, policies: [show_policy_breakdowns?: true]
 
-config :error_tracker,
-  repo: Firmowid.Repo,
-  otp_app: :firmowid,
-  enabled: false
-
 config :ex_aws, :s3,
   host: "localhost",
   scheme: "http://",
@@ -57,10 +52,7 @@ config :firmowid, Firmowid.Vault,
       {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: Base.decode64!("REMOVED_DEV_VAULT_KEY")}
   ]
 
-config :firmowid, :analytics,
-  phoenix_analytics_enabled: false,
-  posthog_enabled: false
-
+config :firmowid, :analytics, posthog_enabled: false
 config :firmowid, :ksef, base_url: "https://api-test.ksef.mf.gov.pl/v2/"
 
 config :firmowid,

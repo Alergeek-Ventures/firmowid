@@ -87,8 +87,8 @@ Wszystkie zewnętrzne serwisy są opcjonalne. Aplikacja będzie działać bez ni
 
 #### Analityka i monitoring
 
-Śledzenie błędów jest obsługiwane wewnętrznie przez ErrorTracker (nie wymaga zewnętrznej konfiguracji).
-Analityka i flagi funkcjonalności są obsługiwane przez phoenix_analytics i fun_with_flags (wbudowane, bez zewnętrznej konfiguracji).
+Śledzenie błędów jest obsługiwane przez Sentry.
+Analityka i flagi funkcjonalności są obsługiwane przez PostHog i fun_with_flags.
 
 #### Kursy walut
 

@@ -4,6 +4,8 @@ defmodule Firmowid.Ash.Finances.GoCardless.TransactionParser do
   `Ash.bulk_create` with the `:upsert_from_sync` action on Transaction.
   """
 
+  require Logger
+
   @doc """
   Parses a single GoCardless booked transaction API response into a flat map
   ready for `Ash.bulk_create`.
@@ -73,7 +75,7 @@ defmodule Firmowid.Ash.Finances.GoCardless.TransactionParser do
     end
   rescue
     error ->
-      ErrorTracker.report(error, __STACKTRACE__)
+      Logger.error("Failed to normalize Nest Bank card transaction: #{Exception.message(error)}")
       data
   end
 

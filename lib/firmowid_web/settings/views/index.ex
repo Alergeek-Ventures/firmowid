@@ -1,3 +1,5 @@
+require Logger
+
 defmodule FirmowidWeb.Settings.Views.Index do
   @moduledoc """
   Settings page LiveView.
@@ -13,7 +15,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   alias Ash.Error.Forbidden
   alias Ash.Notifier.Notification
-  alias Firmowid.Analytics
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Argon2Provider
@@ -240,9 +241,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         {:error, error} ->
           LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania konta")
 
-          exception = RuntimeError.exception("Failed to delete user account: #{inspect(error)}")
-          {:current_stacktrace, stacktrace} = Process.info(self(), :current_stacktrace)
-          ErrorTracker.report(exception, stacktrace)
+          Logger.error("Failed to delete user account: #{inspect(error)}")
 
           {:noreply, socket}
       end
@@ -548,8 +547,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     case Ksef.authenticate_with_ksef_token(ksef_token, socket.assigns.ash_scope) do
       {:ok, credential} ->
-        Analytics.track_event("ksef_connect", socket.assigns.current_user, %{})
-
         LiveToast.send_toast(:info, "Połączono z KSeF.")
         {:noreply, assign(socket, :ksef_credential, credential)}
 
@@ -574,8 +571,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     case Ksef.unauthenticate(socket.assigns.ash_scope) do
       {:ok, _} ->
-        Analytics.track_event("ksef_disconnect", socket.assigns.current_user, %{})
-
         LiveToast.send_toast(:info, "Rozłączono z KSeF.")
         {:noreply, assign(socket, :ksef_credential, nil)}
 

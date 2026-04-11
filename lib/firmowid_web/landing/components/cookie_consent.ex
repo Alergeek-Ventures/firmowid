@@ -3,12 +3,11 @@ defmodule FirmowidWeb.Landing.Components.CookieConsent do
   Cookie consent banner component.
 
   Displays a bottom-fixed banner on first visit allowing users to accept or reject
-  analytics cookies. The preference is stored in a `cookie_consent` cookie readable
-  by the server, so `Firmowid.Analytics` can switch between full and anonymous
-  PostHog tracking.
+  analytics cookies. The preference is stored in a `cookie_consent` cookie used
+  by frontend telemetry initialization.
 
-  - **Accepted** — full PostHog tracking with user identification.
-  - **Rejected** — anonymous PostHog tracking (no distinct user ID, no identification).
+  - **Accepted** — frontend PostHog and Sentry initialization is allowed.
+  - **Rejected** — frontend analytics/monitoring SDKs are not initialized.
 
   The banner auto-hides when a preference has already been set.
   """
@@ -17,7 +16,7 @@ defmodule FirmowidWeb.Landing.Components.CookieConsent do
   @doc """
   Renders the cookie consent banner.
 
-  Hidden by default via JS — the `CookieConsent` hook checks localStorage
+  Hidden by default via JS — the `CookieConsent` hook checks cookies
   and reveals the banner only when no preference has been recorded.
   """
   def cookie_consent_banner(assigns) do

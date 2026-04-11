@@ -7,7 +7,6 @@ defmodule FirmowidWeb.BankSync.Views.Create do
   """
   use FirmowidWeb, :live_view
 
-  alias Firmowid.Analytics
   alias Firmowid.Ash.Finances
 
   require Logger
@@ -93,10 +92,6 @@ defmodule FirmowidWeb.BankSync.Views.Create do
         actor: user,
         authorize?: true
       )
-
-    Analytics.track_event("bank_institution_select", user, %{
-      institution_id: institution_id
-    })
 
     {:noreply, assign(socket, :requisition_link, link)}
   end

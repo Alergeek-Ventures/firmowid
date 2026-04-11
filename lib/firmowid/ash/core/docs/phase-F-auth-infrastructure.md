@@ -42,7 +42,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   use FirmowidWeb, :controller
   use AshAuthentication.Phoenix.Controller
 
-  alias Firmowid.Analytics
+  # analytics tracking moved to frontend telemetry
 
   def success(conn, _activity, user, _token) do
     return_to = get_session(conn, :return_to) || ~p"/czasosledz"

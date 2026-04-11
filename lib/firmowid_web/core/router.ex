@@ -1,9 +1,7 @@
 defmodule FirmowidWeb.Core.Router do
   use FirmowidWeb, :router
-  use PhoenixAnalytics.Web, :router
   use AshAuthentication.Phoenix.Router
 
-  import ErrorTracker.Web.Router
   import FirmowidWeb.Infrastructure.Plugs.RedirectTrailing
   import FirmowidWeb.Infrastructure.UserAuth
   import Oban.Web.Router
@@ -49,10 +47,6 @@ defmodule FirmowidWeb.Core.Router do
     plug :accepts, ["json"]
   end
 
-  pipeline :analytics_guard do
-    plug FirmowidWeb.Infrastructure.Plugs.AnalyticsDashboardGuard
-  end
-
   scope "/", FirmowidWeb do
     pipe_through :health
 
@@ -61,19 +55,15 @@ defmodule FirmowidWeb.Core.Router do
 
   scope "/admin" do
     if Mix.env() == :dev do
-      pipe_through [:browser, :analytics_guard]
+      pipe_through [:browser]
     else
-      pipe_through [:browser, :require_authenticated_user_with_organization, :require_superuser, :analytics_guard]
+      pipe_through [:browser, :require_authenticated_user_with_organization, :require_superuser]
     end
 
     live_dashboard "/dashboard",
       metrics: FirmowidWeb.Core.Telemetry
 
     oban_dashboard("/oban", oban_name: Oban)
-
-    error_tracker_dashboard("/errors")
-
-    phoenix_analytics_dashboard("/analytics")
 
     forward "/flags", FunWithFlags.UI.Router, namespace: "admin/flags"
 

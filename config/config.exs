@@ -36,10 +36,6 @@ config :ash_oban, pro?: false
 
 config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 
-config :error_tracker,
-  repo: Firmowid.Repo,
-  otp_app: :firmowid
-
 config :esbuild,
   version: "0.27.4",
   firmowid: [

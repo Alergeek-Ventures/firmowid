@@ -335,7 +335,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
           Keyword.put(scoped_blob_opts, :notification_metadata, %{reason: :processing_failed})
         )
 
-        ErrorTracker.report(error, __STACKTRACE__)
+        Logger.error("Failed to create cost invoice from XML #{ksef_number}.xml: #{Exception.message(error)}")
 
         {:error, "Failed to create cost invoice from XML #{ksef_number}.xml: #{inspect(error)}"}
     end
