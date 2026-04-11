@@ -25,8 +25,14 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
 
   @impl true
   def change(changeset, _opts, _context) do
-    Ash.Changeset.after_action(changeset, fn _changeset, bank_account ->
-      perform_sync(bank_account, build_sync_scope(bank_account))
+    Ash.Changeset.after_action(changeset, fn changeset, bank_account ->
+      case perform_sync(bank_account, build_sync_scope(bank_account)) do
+        {:ok, _} ->
+          {:ok, bank_account}
+
+        {:error, reason} ->
+          {:error, Ash.Changeset.add_error(changeset, "sync failed: #{inspect(reason)}")}
+      end
     end)
   end
 

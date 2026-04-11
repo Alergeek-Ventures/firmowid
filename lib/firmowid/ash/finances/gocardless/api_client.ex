@@ -3,7 +3,10 @@ defmodule Firmowid.Ash.Finances.GoCardless.ApiClient do
   HTTP client for the GoCardless Bank Account Data API (v2).
 
   All public functions return `{:ok, result}` or `{:error, reason}` where
-  reason is one of the atoms defined in `handle_response/1`.
+  reason is one of the atoms defined in `handle_response/1`:
+
+  - `:transport_error` — TCP/TLS failure (`Req.TransportError`)
+  - `:server_error`    — HTTP 5xx response from GoCardless
   """
 
   alias Firmowid.Ash.Finances.GoCardless.TokenManager
@@ -197,7 +200,8 @@ defmodule Firmowid.Ash.Finances.GoCardless.ApiClient do
           url: "#{@base_url}/accounts/#{account_id}/transactions",
           auth: {:bearer, get_access_token!()},
           receive_timeout: 240_000,
-          connect_options: [timeout: 240_000]
+          connect_options: [timeout: 240_000],
+          max_retries: 1
         ],
         mock_data(:bank_data_transactions)
       )
@@ -328,7 +332,7 @@ defmodule Firmowid.Ash.Finances.GoCardless.ApiClient do
 
   defp handle_response({:error, %Req.TransportError{} = error}) do
     Logger.warning("GoCardless API transport error: #{inspect(error)}")
-    {:error, :server_error}
+    {:error, :transport_error}
   end
 
   defp handle_response({:error, reason}) do
