@@ -196,8 +196,8 @@ defmodule Firmowid.Ash.Finances.GoCardless.ApiClient do
         [
           url: "#{@base_url}/accounts/#{account_id}/transactions",
           auth: {:bearer, get_access_token!()},
-          receive_timeout: 120_000,
-          connect_options: [timeout: 120_000]
+          receive_timeout: 240_000,
+          connect_options: [timeout: 240_000]
         ],
         mock_data(:bank_data_transactions)
       )
