@@ -58,6 +58,14 @@ defmodule Firmowid.Ash.Core.User do
         monitor_fields [:email]
         confirm_on_create? false
         confirm_on_update? true
+        # This strategy is intended only for explicit email-change updates.
+        # During Google OAuth upsert (`register_with_google`), AshAuthentication
+        # may apply prevent_hijacking filters that use `error(...)` expressions,
+        # which AshPostgres cannot parse in this flow.
+        #
+        # Keeping hijack prevention on `confirm_new_user` preserves protection for
+        # initial account confirmation while avoiding OAuth callback crashes.
+        prevent_hijacking? false
         inhibit_updates? true
         require_interaction? true
         confirm_action_name :confirm_email_update
