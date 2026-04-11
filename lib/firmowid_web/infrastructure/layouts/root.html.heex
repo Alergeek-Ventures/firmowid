@@ -52,6 +52,13 @@
           ""
         )
       }
+      data-sentry-release={
+        Keyword.get(
+          Application.get_env(:firmowid, :frontend_observability, []),
+          :sentry_release,
+          ""
+        )
+      }
       data-current-user-id={if assigns[:current_user], do: assigns.current_user.id, else: ""}
       data-current-user-email={
         if assigns[:current_user], do: assigns.current_user.email, else: ""

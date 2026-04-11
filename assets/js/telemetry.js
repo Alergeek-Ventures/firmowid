@@ -14,7 +14,8 @@ function readConfig() {
       posthogApiKey: "",
       posthogApiHost: "",
       sentryDsn: "",
-      sentryEnvironment: ""
+      sentryEnvironment: "",
+      sentryRelease: ""
     };
   }
 
@@ -24,6 +25,7 @@ function readConfig() {
     posthogApiHost: script.dataset.posthogApiHost || "",
     sentryDsn: script.dataset.sentryDsn || "",
     sentryEnvironment: script.dataset.sentryEnvironment || "",
+    sentryRelease: script.dataset.sentryRelease || "",
     currentUserId: script.dataset.currentUserId || "",
     currentUserEmail: script.dataset.currentUserEmail || ""
   };
@@ -58,6 +60,7 @@ export function initTelemetry() {
     sentry.init({
       dsn: config.sentryDsn,
       environment: config.sentryEnvironment,
+      release: config.sentryRelease || undefined,
       tracesSampleRate: 0.05
     });
 

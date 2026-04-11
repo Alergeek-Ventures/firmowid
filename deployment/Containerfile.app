@@ -14,7 +14,6 @@
 
 ARG BUILDER_IMAGE="hexpm/elixir:1.19.5-erlang-27.3.4.9-alpine-3.22.3@sha256:0394f17f85bd07655e8bc5535eac1ef81b58fa8e964837e62a2314799ef91e60"
 ARG RUNNER_IMAGE="alpine:3.22@sha256:55ae5d250caebc548793f321534bc6a8ef1d116f334f18f4ada1b2daad3251b2"
-ARG SENTRY_UPLOAD_SOURCE=true
 
 FROM ${BUILDER_IMAGE} AS builder
 
@@ -67,7 +66,6 @@ COPY config/runtime.exs config/
 
 COPY rel rel
 RUN mix release
-RUN if [ "$SENTRY_UPLOAD_SOURCE" = "true" ]; then mix sentry.package_source_code; else echo "Skipping sentry source upload"; fi
 
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities

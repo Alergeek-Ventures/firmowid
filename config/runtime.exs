@@ -149,6 +149,7 @@ end
 #   POSTHOG_API_KEY - PostHog project API key (required if PostHog enabled)
 #   POSTHOG_API_HOST - PostHog API host, defaults to "https://eu.i.posthog.com"
 posthog_enabled = System.get_env("POSTHOG_ENABLED", "false") == "true"
+sentry_release = System.get_env("SENTRY_RELEASE") || System.get_env("SOURCE_COMMIT")
 
 config :firmowid, :analytics, posthog_enabled: posthog_enabled
 
@@ -164,7 +165,8 @@ if posthog_enabled do
     posthog_api_key: posthog_api_key,
     posthog_api_host: posthog_api_host,
     sentry_dsn: System.get_env("SENTRY_FRONTEND_DSN", ""),
-    sentry_environment: System.get_env("SENTRY_FRONTEND_ENV", to_string(config_env()))
+    sentry_environment: System.get_env("SENTRY_FRONTEND_ENV", to_string(config_env())),
+    sentry_release: sentry_release || ""
 
   config :posthog,
     api_key: posthog_api_key,
@@ -175,8 +177,11 @@ else
     posthog_api_key: "",
     posthog_api_host: "",
     sentry_dsn: System.get_env("SENTRY_FRONTEND_DSN", ""),
-    sentry_environment: System.get_env("SENTRY_FRONTEND_ENV", to_string(config_env()))
+    sentry_environment: System.get_env("SENTRY_FRONTEND_ENV", to_string(config_env())),
+    sentry_release: sentry_release || ""
 end
+
+config :sentry, release: sentry_release
 
 # Phoenix HTTP port - only override if PORT is set (worktree)
 if config_env() == :dev and System.get_env("PORT") do
