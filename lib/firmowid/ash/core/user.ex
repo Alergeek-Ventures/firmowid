@@ -50,6 +50,10 @@ defmodule Firmowid.Ash.Core.User do
         confirm_on_create? false
         confirm_on_update? true
         inhibit_updates? true
+        # Prevent confirmation hijack filters from being injected into OAuth upsert
+        # create flows (register_with_google), which can trigger data-layer filter
+        # parsing failures for `error(...)` expressions.
+        prevent_hijacking? false
         require_interaction? true
         confirm_action_name :confirm_email_update
         confirmed_at_field :email_change_confirmed_at
