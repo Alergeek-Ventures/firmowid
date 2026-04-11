@@ -59,10 +59,12 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   end
 
   oban do
+    use_tenant_from_record? true
+
     triggers do
       trigger :refresh_missing_description do
         action :refresh_description
-        read_action :read_missing_description
+        read_action :read_global
         where expr(description == "")
         scheduler_cron "0 * * * *"
         max_attempts 2
@@ -220,6 +222,12 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
       prepare build(sort: [issue_date: :desc])
       prepare build(limit: 50)
+    end
+
+    read :read_global do
+      description "Unscoped read for AshOban schedulers — reads across all organizations."
+      multitenancy :allow_global
+      pagination keyset?: true
     end
 
     read :read_missing_description do

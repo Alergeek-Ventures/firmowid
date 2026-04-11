@@ -52,7 +52,7 @@ defmodule Firmowid.Ash.Blobs.Blob do
 
       trigger :process_cost_invoice do
         action :process_cost_invoice
-        read_action :read_pending_cost_invoice_processing
+        read_action :read_global
         where expr(processing_target == :cost_invoice and processing_state == :pending)
         scheduler_cron "0 * * * *"
         queue :cost_invoices
