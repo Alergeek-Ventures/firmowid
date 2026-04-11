@@ -47,8 +47,8 @@ jobs:
     env:
       MIX_ENV: prod
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-      SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-      SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG || 'alergeek' }}
+      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'firmowid' }}
       SENTRY_RELEASE: ${{ github.sha }}
 
     steps:
@@ -77,7 +77,8 @@ jobs:
       - name: Validate Sentry configuration
         run: |
           for variable in SENTRY_AUTH_TOKEN SENTRY_ORG SENTRY_PROJECT SENTRY_RELEASE; do
-            if [ -z "${!variable}" ]; then
+            value=$(printenv "$variable")
+            if [ -z "$value" ]; then
               echo "Missing required variable: $variable"
               exit 1
             fi
