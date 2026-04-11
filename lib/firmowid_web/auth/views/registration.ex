@@ -52,7 +52,7 @@ defmodule FirmowidWeb.Auth.Views.Registration do
 
       <%!-- TODO: Extract Google SVG icon into a shared auth component (duplicated in login.ex) --%>
       <.link
-        href="/auth/user/google/request"
+        href={~p"/auth/user/google"}
         class="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
       >
         <svg class="size-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

@@ -649,7 +649,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("link_google_account", _params, socket) do
-    {:noreply, redirect(socket, external: "/auth/user/google/request")}
+    {:noreply, redirect(socket, to: ~p"/auth/user/google")}
   end
 
   def handle_event("unlink_google_account", _params, socket) do
