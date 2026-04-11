@@ -5,8 +5,7 @@ defmodule Firmowid.Repo do
     pool_size: 10
 
   use AshPostgres.Repo,
-    define_ecto_repo?: false,
-    warn_on_missing_ash_functions?: false
+    define_ecto_repo?: false
 
   require Ecto.Query
 
@@ -14,7 +13,7 @@ defmodule Firmowid.Repo do
   def min_pg_version, do: %Version{major: 17, minor: 0, patch: 0}
 
   @impl AshPostgres.Repo
-  def installed_extensions, do: ["uuid-ossp", "citext"]
+  def installed_extensions, do: ["ash-functions", "uuid-ossp", "citext"]
 
   @paradedb_key {__MODULE__, :paradedb_unnamed}
   @skip_org_key {__MODULE__, :skip_organization_id}

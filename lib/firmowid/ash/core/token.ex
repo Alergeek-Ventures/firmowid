@@ -12,7 +12,8 @@ defmodule Firmowid.Ash.Core.Token do
   use Ash.Resource,
     domain: Firmowid.Ash.Core,
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshAuthentication.TokenResource]
+    extensions: [AshAuthentication.TokenResource],
+    authorizers: [Ash.Policy.Authorizer]
 
   postgres do
     table "tokens"
@@ -22,5 +23,11 @@ defmodule Firmowid.Ash.Core.Token do
 
   token do
     created_at_attribute_name :inserted_at
+  end
+
+  policies do
+    bypass AshAuthentication.Checks.AshAuthenticationInteraction do
+      authorize_if always()
+    end
   end
 end

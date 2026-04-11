@@ -28,11 +28,7 @@ defmodule Firmowid.Ash.Core.User do
   postgres do
     table "users"
     repo Firmowid.Repo
-
-    # Ensure the existing unique index name is mapped for identity error translation.
-    # Without this, duplicate emails can surface as generic Ash/Ecto unknown errors
-    # instead of form field errors.
-    identity_index_names unique_email: "users_email_index"
+    migrate? false
   end
 
   authentication do
@@ -61,14 +57,40 @@ defmodule Firmowid.Ash.Core.User do
         client_secret Secrets
         redirect_uri Secrets
         identity_resource UserIdentity
-        # We intentionally disable AshAuthentication's generic hijack prevention,
-        # because email-change confirmation flow is removed and Google sign-in is
-        # restricted to provider-verified emails in :register_with_google.
-        prevent_hijacking? false
       end
 
       remember_me :remember_me do
         token_lifetime {30, :days}
+      end
+    end
+
+    add_ons do
+      confirmation :confirm do
+        # Monitor email changes — this is what satisfies prevent_hijacking? on the
+        # google strategy. At runtime it blocks upsert-via-Google over unconfirmed
+        # password accounts (CannotConfirmUnconfirmedUser error).
+        monitor_fields [:email]
+
+        # Google OAuth users are already verified by Google — skip the confirmation
+        # flow and set confirmed_at immediately on registration.
+        auto_confirm_actions [:register_with_google]
+
+        # Only send confirmation on create (new registrations). We don't send a
+        # re-confirmation email on email change for now.
+        confirm_on_update? false
+
+        # Required since GHSA-3988-q8q7-p787: prevents email clients / security
+        # scanners from auto-confirming accounts by pre-fetching confirmation links.
+        require_interaction? true
+
+        sender Firmowid.Ash.Core.Senders.ConfirmationSender
+      end
+
+      log_out_everywhere do
+        # Revoke all active tokens when password is changed, forcing re-login
+        # on all other devices/sessions. Requires store_all_tokens? true and
+        # require_token_presence_for_authentication? true (both set above).
+        apply_on_password_change? true
       end
     end
   end
@@ -243,47 +265,54 @@ defmodule Firmowid.Ash.Core.User do
     end
 
     # Default :read action — used for loading the current user and explicit admin access.
-    policy action(:read) do
+    # bypass so it short-circuits the deny catch-all below.
+    bypass action(:read) do
       authorize_if expr(id == ^actor(:id))
       authorize_if actor_attribute_equals(:role, :admin)
     end
 
     # :list action — admin-only user listing
-    policy action(:list) do
+    bypass action(:list) do
       authorize_if actor_attribute_equals(:role, :admin)
     end
 
-    policy action(:update_profile) do
+    bypass action(:update_profile) do
       authorize_if expr(id == ^actor(:id))
     end
 
-    policy action(:update_avatar) do
+    bypass action(:update_avatar) do
       authorize_if expr(id == ^actor(:id))
     end
 
-    policy action(:update_role) do
+    bypass action(:update_role) do
       authorize_if actor_attribute_equals(:role, :admin)
     end
 
-    policy action(:set_organization) do
+    bypass action(:set_organization) do
       authorize_if expr(id == ^actor(:id))
     end
 
-    policy action(:clear_organization) do
+    bypass action(:clear_organization) do
       authorize_if actor_attribute_equals(:role, :admin)
     end
 
-    policy action(:unlink_google) do
+    bypass action(:unlink_google) do
       authorize_if expr(id == ^actor(:id))
     end
 
-    policy action(:change_password) do
+    bypass action(:change_password) do
       authorize_if expr(id == ^actor(:id))
     end
 
-    policy action_type(:destroy) do
+    bypass action_type(:destroy) do
       authorize_if expr(id == ^actor(:id))
       authorize_if actor_attribute_equals(:role, :admin)
+    end
+
+    # Catch-all: deny anything not explicitly covered above. Prevents newly
+    # added or auto-generated actions from being accidentally open.
+    policy always() do
+      forbid_if always()
     end
   end
 

@@ -14,6 +14,10 @@ defmodule Firmowid.Ash.Core.UserIdentity do
     data_layer: AshPostgres.DataLayer,
     extensions: [AshAuthentication.UserIdentity]
 
+  alias Firmowid.Ash.Resource
+
+  require Resource
+
   postgres do
     table "user_identities"
     repo Firmowid.Repo
@@ -22,5 +26,9 @@ defmodule Firmowid.Ash.Core.UserIdentity do
 
   user_identity do
     user_resource Firmowid.Ash.Core.User
+  end
+
+  attributes do
+    Resource.firmowid_timestamps()
   end
 end

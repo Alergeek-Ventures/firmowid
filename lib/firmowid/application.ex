@@ -37,7 +37,8 @@ defmodule Firmowid.Application do
         Firmowid.Vault,
         {Oban, Application.fetch_env!(:firmowid, Oban)},
         Firmowid.Ash.Invoicing.Matching.Assistant.MessagesStorage,
-        Firmowid.Ash.Currencies.Converter
+        Firmowid.Ash.Currencies.Converter,
+        {AshAuthentication.Supervisor, otp_app: :firmowid}
       ] ++
         maybe_posthog_supervisor() ++
         [

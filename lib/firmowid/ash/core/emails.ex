@@ -11,6 +11,28 @@ defmodule Firmowid.Ash.Core.Emails do
   alias Firmowid.Mailer
 
   @doc """
+  Deliver account confirmation instructions to the given user.
+  """
+  @spec deliver_confirmation_instructions(user :: map(), url :: String.t()) ::
+          {:ok, Swoosh.Email.t()} | {:error, term()}
+  def deliver_confirmation_instructions(user, url) do
+    deliver(to_string(user.email), "Potwierdź adres email", """
+
+    ==============================
+
+    Cześć #{user.email},
+
+    Potwierdź swój adres email odwiedzając poniższy adres:
+
+    #{url}
+
+    Jeśli nie zakładałeś konta, zignoruj tę wiadomość.
+
+    ==============================
+    """)
+  end
+
+  @doc """
   Deliver password reset instructions to the given user.
   """
   @spec deliver_reset_password_instructions(user :: map(), url :: String.t()) ::

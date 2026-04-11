@@ -193,6 +193,7 @@ defmodule FirmowidWeb.Core.Router do
       live "/zaloguj", Auth.Views.Login, :new
       live "/resetuj-haslo", Auth.Views.ForgotPassword, :new
       live "/resetuj-haslo/:token", Auth.Views.ResetPassword, :edit
+      live "/potwierdz-email/:token", Auth.Views.ConfirmEmail, :edit
     end
   end
 

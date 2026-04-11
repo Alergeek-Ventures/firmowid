@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   use FirmowidWeb, :controller
   use AshAuthentication.Phoenix.Controller
 
+  alias AshAuthentication.Errors.AuthenticationFailed
   alias AshAuthentication.Strategy.RememberMe.Plug.Helpers
   alias FirmowidWeb.Core.Endpoint
 
@@ -57,11 +58,37 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
     end
   end
 
-  defp failure_message_and_path({:oauth2, _activity}, _reason) do
-    {"Logowanie Google nie powiodło się. Spróbuj ponownie.", ~p"/zaloguj"}
+  defp failure_message_and_path({:password, :sign_in}, reason) do
+    if unconfirmed_user_error?(reason) do
+      {"Twoje konto nie zostało jeszcze potwierdzone. Sprawdź skrzynkę pocztową.", ~p"/zaloguj"}
+    else
+      {"Niewłaściwy email lub hasło.", ~p"/zaloguj"}
+    end
+  end
+
+  defp failure_message_and_path({:google, _phase}, reason) do
+    if unconfirmed_user_error?(reason) do
+      {"Konto z tym adresem email czeka na potwierdzenie. Potwierdź email lub zaloguj się hasłem.", ~p"/zaloguj"}
+    else
+      {"Logowanie Google nie powiodło się. Spróbuj ponownie.", ~p"/zaloguj"}
+    end
   end
 
   defp failure_message_and_path(_activity, _reason), do: {"Niewłaściwy email lub hasło.", ~p"/zaloguj"}
+
+  # Detects confirmation-related errors in both the password and OAuth failure shapes.
+  #
+  # Password sign-in: AuthenticationFailed wrapping UnconfirmedUser directly in caused_by.
+  # OAuth (prevent_hijacking): AuthenticationFailed wrapping Forbidden whose errors list
+  # contains CannotConfirmUnconfirmedUser.
+  defp unconfirmed_user_error?(%AuthenticationFailed{caused_by: %AshAuthentication.Errors.UnconfirmedUser{}}), do: true
+
+  defp unconfirmed_user_error?(%AuthenticationFailed{caused_by: %Ash.Error.Forbidden{errors: errors}})
+       when is_list(errors) do
+    Enum.any?(errors, &match?(%AshAuthentication.Errors.CannotConfirmUnconfirmedUser{}, &1))
+  end
+
+  defp unconfirmed_user_error?(_), do: false
 
   @doc """
   Sign out action — clears session, remember-me cookies, and broadcasts disconnect
