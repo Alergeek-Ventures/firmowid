@@ -150,7 +150,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
       </td>
       <td class={[
         "rounded-r-md py-2",
-        if(Decimal.gte?(@amount_decimal, 0),
+        if(!is_nil(@amount_decimal) and Decimal.gte?(@amount_decimal, 0),
           do: "bg-blueBg text-blueText",
           else: "bg-orangeBg text-orangeText"
         )
