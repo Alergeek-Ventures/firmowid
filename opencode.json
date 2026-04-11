@@ -1,5 +1,18 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "sentry_*": "deny"
+  },
+  "agent": {
+    "sentry": {
+      "mode": "subagent",
+      "permission": {
+        "sentry_*": "allow"
+      },
+      "description": "An agent that has access to Sentry's MCP to check issue details",
+      "prompt": "Your goal is to access Sentry and provide information about issues"
+    }
+  },
   "mcp": {
     "livebook": {
       "type": "local",
@@ -12,6 +25,10 @@
       "type": "remote",
       "url": "http://localhost:{file:.server.port}/tidewave/mcp",
       "enabled": true
+    },
+    "sentry": {
+      "type": "remote",
+      "url": "https://mcp.sentry.dev/mcp/alergeek/firmowid"
     }
   }
 }
