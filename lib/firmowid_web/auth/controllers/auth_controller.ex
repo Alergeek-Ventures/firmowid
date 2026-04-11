@@ -57,6 +57,10 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
     end
   end
 
+  defp failure_message_and_path({:oauth2, _activity}, _reason) do
+    {"Logowanie Google nie powiodło się. Spróbuj ponownie.", ~p"/zaloguj"}
+  end
+
   defp failure_message_and_path(_activity, _reason), do: {"Niewłaściwy email lub hasło.", ~p"/zaloguj"}
 
   @doc """

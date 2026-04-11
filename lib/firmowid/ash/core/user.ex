@@ -49,14 +49,7 @@ defmodule Firmowid.Ash.Core.User do
         monitor_fields [:email]
         confirm_on_create? true
         confirm_on_update? false
-        # Google OAuth registration uses create+upsert (`register_with_google`).
-        # With prevent_hijacking enabled, AshAuthentication injects an `error(...)`
-        # expression filter during upsert, which currently crashes on AshPostgres
-        # parsing in production callback flow.
-        #
-        # We don't rely on user upserts outside OAuth registration, so disabling
-        # this guard avoids callback crashes while confirmation token flow remains.
-        prevent_hijacking? false
+        auto_confirm_actions [:register_with_google]
         require_interaction? true
         confirm_action_name :confirm_new_user
         sender Firmowid.Ash.Core.Senders.ConfirmationSender
@@ -66,14 +59,6 @@ defmodule Firmowid.Ash.Core.User do
         monitor_fields [:email]
         confirm_on_create? false
         confirm_on_update? true
-        # This strategy is intended only for explicit email-change updates.
-        # During Google OAuth upsert (`register_with_google`), AshAuthentication
-        # may apply prevent_hijacking filters that use `error(...)` expressions,
-        # which AshPostgres cannot parse in this flow.
-        #
-        # Keeping hijack prevention on `confirm_new_user` preserves protection for
-        # initial account confirmation while avoiding OAuth callback crashes.
-        prevent_hijacking? false
         inhibit_updates? true
         require_interaction? true
         confirm_action_name :confirm_email_update
@@ -150,9 +135,7 @@ defmodule Firmowid.Ash.Core.User do
       change fn changeset, _ ->
         user_info = Ash.Changeset.get_argument(changeset, :user_info)
 
-        changeset
-        |> Ash.Changeset.change_attributes(Map.take(user_info, ["email", "name"]))
-        |> maybe_confirm_verified_oauth_email(user_info)
+        Ash.Changeset.change_attributes(changeset, Map.take(user_info, ["email", "name"]))
       end
     end
 
@@ -385,21 +368,6 @@ defmodule Firmowid.Ash.Core.User do
 
   identities do
     identity :unique_email, [:email]
-  end
-
-  defp maybe_confirm_verified_oauth_email(changeset, user_info) do
-    if oauth_email_verified?(user_info) do
-      Ash.Changeset.force_change_attribute(changeset, :confirmed_at, DateTime.utc_now())
-    else
-      changeset
-    end
-  end
-
-  defp oauth_email_verified?(user_info) when is_map(user_info) do
-    Map.get(user_info, "email_verified") == true or
-      Map.get(user_info, :email_verified) == true or
-      Map.get(user_info, "verified_email") == true or
-      Map.get(user_info, :verified_email) == true
   end
 end
 
