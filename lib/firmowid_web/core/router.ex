@@ -177,8 +177,6 @@ defmodule FirmowidWeb.Core.Router do
       live "/ustawienia/bezpieczenstwo", Settings.Views.Index, :security
       live "/ustawienia/organizacja", Settings.Views.Index, :organization
       live "/ustawienia/konta-bankowe", Settings.Views.Index, :bank_accounts
-
-      live "/ustawienia/bezpieczenstwo/potwierdz/:token", Settings.Views.Index, :confirm_email
     end
   end
 

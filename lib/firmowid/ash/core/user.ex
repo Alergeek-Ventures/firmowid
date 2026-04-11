@@ -44,23 +44,6 @@ defmodule Firmowid.Ash.Core.User do
       require_token_presence_for_authentication? true
     end
 
-    add_ons do
-      confirmation :confirm_email_update do
-        monitor_fields [:email]
-        confirm_on_create? false
-        confirm_on_update? true
-        inhibit_updates? true
-        # Prevent confirmation hijack filters from being injected into OAuth upsert
-        # create flows (register_with_google), which can trigger data-layer filter
-        # parsing failures for `error(...)` expressions.
-        prevent_hijacking? false
-        require_interaction? true
-        confirm_action_name :confirm_email_update
-        confirmed_at_field :email_change_confirmed_at
-        sender Firmowid.Ash.Core.Senders.EmailChangeSender
-      end
-    end
-
     strategies do
       password :password do
         identity_field :email
@@ -78,6 +61,10 @@ defmodule Firmowid.Ash.Core.User do
         client_secret Secrets
         redirect_uri Secrets
         identity_resource UserIdentity
+        # We intentionally disable AshAuthentication's generic hijack prevention,
+        # because email-change confirmation flow is removed and Google sign-in is
+        # restricted to provider-verified emails in :register_with_google.
+        prevent_hijacking? false
       end
 
       remember_me :remember_me do

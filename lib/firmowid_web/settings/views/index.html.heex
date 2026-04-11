@@ -678,29 +678,6 @@
           </div>
         </div>
         <div class="pt-12">
-          <h2 class="mb-6 font-bold">Zmiana adresu e-mail</h2>
-          <.simple_form
-            for={@email_form}
-            id="email_form"
-            phx-submit="update_email"
-            phx-change="validate_email"
-          >
-            <.input field={@email_form[:email]} type="email" label="Email" required />
-            <.input
-              field={@email_form[:current_password]}
-              name="current_password"
-              id="current_password_for_email"
-              type="password"
-              label="Aktualne hasło"
-              value={@email_form_current_password}
-              required
-            />
-            <:actions>
-              <.button phx-disable-with="Zmieniam...">Zmień Email</.button>
-            </:actions>
-          </.simple_form>
-        </div>
-        <div class="pt-12">
           <h2 class="mb-6 font-bold">Zmiana hasła</h2>
           <.simple_form
             for={@password_form}
@@ -715,7 +692,7 @@
               name={@password_form[:email].name}
               type="hidden"
               id="hidden_user_email"
-              value={@current_email}
+              value={@current_user.email}
             />
             <.input
               field={@password_form[:password]}

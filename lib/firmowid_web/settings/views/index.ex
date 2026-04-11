@@ -89,15 +89,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     socket = assign(socket, :user_form, form_user_form(current_user))
 
-    # Security section forms - use AshPhoenix.Form with ash_auth actions
-    email_form =
-      current_user
-      |> AshPhoenix.Form.for_update(:update_profile,
-        domain: Core,
-        as: "user"
-      )
-      |> to_form()
-
     password_form =
       current_user
       |> AshPhoenix.Form.for_update(:change_password,
@@ -129,9 +120,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:trigger_submit, false)
      |> assign(:delete_account_form, to_form(%{"current_password" => ""}, as: "user"))
      |> assign(:current_password, nil)
-     |> assign(:email_form_current_password, nil)
-     |> assign(:current_email, current_user.email)
-     |> assign(:email_form, email_form)
      |> assign(:password_form, password_form)
      |> assign(:bank_accounts, bank_accounts)
      |> assign(:pending_requisitions, pending_requisitions)
@@ -146,22 +134,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
      )
      |> assign(:current_org, org_with_avatar)
      |> assign(:main_class, "bg-white")}
-  end
-
-  def handle_params(%{"token" => token}, _uri, %{assigns: %{live_action: :confirm_email}} = socket) do
-    # Handle email change confirmation using ash_auth confirmation add-on
-    strategy = AshAuthentication.Info.strategy!(Core.User, :confirm_email_update)
-
-    socket =
-      case AshAuthentication.Strategy.action(strategy, :confirm, %{"confirm" => token}) do
-        {:ok, _user} ->
-          put_flash(socket, :info, "Email został zmieniony pomyślnie.")
-
-        {:error, _error} ->
-          put_flash(socket, :error, "Link do zmiany emaila jest nieprawidłowy lub wygasł.")
-      end
-
-    {:noreply, push_navigate(socket, to: ~p"/ustawienia/bezpieczenstwo")}
   end
 
   def handle_params(_params, _uri, socket) do
@@ -590,33 +562,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   def handle_event("toggle_editing_personal_info", _params, socket) do
     {:noreply, assign(socket, :editing_personal_info, !socket.assigns.editing_personal_info)}
-  end
-
-  def handle_event("validate_email", params, socket) do
-    %{"current_password" => password, "user" => user_params} = params
-
-    email_form =
-      AshPhoenix.Form.validate(socket.assigns.email_form, user_params)
-
-    {:noreply, assign(socket, email_form: email_form, email_form_current_password: password)}
-  end
-
-  def handle_event("update_email", params, socket) do
-    %{"current_password" => _password, "user" => user_params} = params
-
-    # Email change uses the confirm_email_update confirmation add-on
-    strategy = AshAuthentication.Info.strategy!(Core.User, :confirm_email_update)
-
-    case AshAuthentication.Strategy.action(strategy, :request, %{
-           "email" => user_params["email"]
-         }) do
-      {:ok, _user} ->
-        info = "Link potwierdzający zmianę adresu email został wysłany na nowy adres."
-        {:noreply, socket |> put_flash(:info, info) |> assign(email_form_current_password: nil)}
-
-      {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się zainicjować zmiany emaila.")}
-    end
   end
 
   def handle_event("validate_password", params, socket) do

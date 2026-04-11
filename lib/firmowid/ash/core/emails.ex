@@ -32,28 +32,6 @@ defmodule Firmowid.Ash.Core.Emails do
     """)
   end
 
-  @doc """
-  Deliver email change confirmation instructions to the given user.
-  """
-  @spec deliver_update_email_instructions(user :: map(), url :: String.t()) ::
-          {:ok, Swoosh.Email.t()} | {:error, term()}
-  def deliver_update_email_instructions(user, url) do
-    deliver(to_string(user.email), "Instrukcje zmiany adresu email", """
-
-    ==============================
-
-    Cześć #{user.email},
-
-    Możesz zmienić swój adres email odwiedzając poniższy adres:
-
-    #{url}
-
-    Jeśli nie prosiłeś o tę zmianę, zignoruj tę wiadomość.
-
-    ==============================
-    """)
-  end
-
   # ---------------------------------------------------------------------------
   # Private
   # ---------------------------------------------------------------------------
