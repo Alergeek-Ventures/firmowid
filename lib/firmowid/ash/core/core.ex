@@ -37,7 +37,6 @@ defmodule Firmowid.Ash.Core do
       define :clear_organization, action: :clear_organization
       define :update_user_avatar, action: :update_avatar
       define :destroy_user, action: :destroy
-      define :request_confirmation, action: :request_confirmation
       define :unlink_google_account, action: :unlink_google
       define :change_password, action: :change_password
     end

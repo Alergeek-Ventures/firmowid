@@ -45,16 +45,6 @@ defmodule Firmowid.Ash.Core.User do
     end
 
     add_ons do
-      confirmation :confirm_new_user do
-        monitor_fields [:email]
-        confirm_on_create? true
-        confirm_on_update? false
-        auto_confirm_actions [:register_with_google]
-        require_interaction? true
-        confirm_action_name :confirm_new_user
-        sender Firmowid.Ash.Core.Senders.ConfirmationSender
-      end
-
       confirmation :confirm_email_update do
         monitor_fields [:email]
         confirm_on_create? false
@@ -113,13 +103,6 @@ defmodule Firmowid.Ash.Core.User do
     # :register_with_password, :sign_in_with_password,
     # :request_password_reset_with_password, :password_reset_with_password
     # are generated automatically by the password strategy.
-
-    # ── Confirmation resend ─────────────────────────────────────────
-    read :request_confirmation do
-      argument :email, :ci_string, allow_nil?: false
-      filter expr(email == ^arg(:email))
-      get? true
-    end
 
     # ── Google OAuth action ─────────────────────────────────────────
     create :register_with_google do
@@ -277,10 +260,6 @@ defmodule Firmowid.Ash.Core.User do
     # :list action — admin-only user listing
     policy action(:list) do
       authorize_if actor_attribute_equals(:role, :admin)
-    end
-
-    policy action(:request_confirmation) do
-      authorize_if always()
     end
 
     policy action(:update_profile) do

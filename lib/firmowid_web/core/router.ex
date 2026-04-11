@@ -216,8 +216,6 @@ defmodule FirmowidWeb.Core.Router do
       live "/", Landing.Views.Index
       live "/polityka-prywatnosci", Landing.Views.PrivacyPolicy
       live "/regulamin", Landing.Views.TermsOfService
-      live "/potwierdz/:token", Auth.Views.Confirmation, :edit
-      live "/potwierdz", Auth.Views.ConfirmationInstructions, :new
     end
   end
 
