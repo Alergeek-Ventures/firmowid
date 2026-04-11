@@ -129,14 +129,35 @@ defmodule Firmowid.Ash.Core.User do
       upsert_identity :unique_email
       upsert_fields []
 
-      change AshAuthentication.GenerateTokenChange
-      change AshAuthentication.Strategy.OAuth2.IdentityChange
+      # Canonical policy: auto-link only for provider-verified emails.
+      # TODO: Make verified-email auto-linking configurable per organization
+      # (opt-in policy) once org-level auth settings are introduced.
 
       change fn changeset, _ ->
         user_info = Ash.Changeset.get_argument(changeset, :user_info)
+        email = Map.get(user_info, "email")
 
-        Ash.Changeset.change_attributes(changeset, Map.take(user_info, ["email", "name"]))
+        verified_email =
+          Map.get(user_info, "verified_email") || Map.get(user_info, "email_verified")
+
+        cond do
+          not is_binary(email) or email == "" ->
+            Ash.Changeset.add_error(changeset,
+              message: "Logowanie Google nie powiodło się: brak adresu email."
+            )
+
+          verified_email not in [true, "true", 1, "1"] ->
+            Ash.Changeset.add_error(changeset,
+              message: "Logowanie Google nie powiodło się: email Google nie jest zweryfikowany."
+            )
+
+          true ->
+            Ash.Changeset.change_attributes(changeset, Map.take(user_info, ["email", "name"]))
+        end
       end
+
+      change AshAuthentication.GenerateTokenChange
+      change AshAuthentication.Strategy.OAuth2.IdentityChange
     end
 
     # ── Profile management ──────────────────────────────────────────

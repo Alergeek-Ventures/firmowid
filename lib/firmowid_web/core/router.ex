@@ -87,8 +87,10 @@ defmodule FirmowidWeb.Core.Router do
     sign_out_route(AuthController)
   end
 
-  # TODO: Add email-confirmation-based account linking flow for security.
-  # TODO: Handle linking different-email Google account with different-email password account.
+  # Canonical policy: Google accounts auto-link only when provider email is verified
+  # and matches an existing user email (enforced in User.register_with_google).
+  # TODO: Make this auto-link policy opt-in per organization.
+  # TODO: Add explicit UX flow for linking different-email Google and password accounts.
 
   ## Organization onboarding (authenticated, no org)
 
