@@ -1,6 +1,3 @@
-import * as Sentry from "@sentry/browser";
-import posthog from "posthog-js";
-
 const SCRIPT_SELECTOR = "script[src$='/assets/app.js']";
 const CONSENT_COOKIE = "cookie_consent";
 
@@ -52,7 +49,13 @@ export function initTelemetry() {
   const config = readConfig();
 
   if (!sentryInitialized && config.sentryDsn) {
-    Sentry.init({
+    const sentry = window.Sentry;
+
+    if (!sentry) {
+      return;
+    }
+
+    sentry.init({
       dsn: config.sentryDsn,
       environment: config.sentryEnvironment,
       tracesSampleRate: 0.05
@@ -62,6 +65,12 @@ export function initTelemetry() {
   }
 
   if (!posthogInitialized && config.posthogEnabled && config.posthogApiKey) {
+    const posthog = window.posthog;
+
+    if (!posthog) {
+      return;
+    }
+
     posthog.init(config.posthogApiKey, {
       api_host: config.posthogApiHost,
       capture_pageview: false,
