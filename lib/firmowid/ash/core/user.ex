@@ -49,6 +49,14 @@ defmodule Firmowid.Ash.Core.User do
         monitor_fields [:email]
         confirm_on_create? true
         confirm_on_update? false
+        # Google OAuth registration uses create+upsert (`register_with_google`).
+        # With prevent_hijacking enabled, AshAuthentication injects an `error(...)`
+        # expression filter during upsert, which currently crashes on AshPostgres
+        # parsing in production callback flow.
+        #
+        # We don't rely on user upserts outside OAuth registration, so disabling
+        # this guard avoids callback crashes while confirmation token flow remains.
+        prevent_hijacking? false
         require_interaction? true
         confirm_action_name :confirm_new_user
         sender Firmowid.Ash.Core.Senders.ConfirmationSender
