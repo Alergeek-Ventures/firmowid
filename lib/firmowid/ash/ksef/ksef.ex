@@ -28,6 +28,7 @@ defmodule Firmowid.Ash.Ksef do
   alias Firmowid.Ash.Ksef.Workers.SessionWorker
   alias Firmowid.Ash.Ksef.Workers.SubmissionWorker
   alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
   alias Firmowid.Repo
 
   resources do
@@ -309,13 +310,15 @@ defmodule Firmowid.Ash.Ksef do
   Raises on cost invoices without a KSeF number.
   """
   @spec invoice_url!(map()) :: String.t()
-  def invoice_url!(%CostInvoice{ksef_number: nil}) do
+  def invoice_url!(invoice), do: invoice_url!(invoice, [])
+
+  @spec invoice_url!(map(), keyword()) :: String.t()
+  def invoice_url!(%CostInvoice{ksef_number: nil}, _opts) do
     raise ArgumentError, "Cannot generate KSeF URL for non-KSeF-imported cost invoice"
   end
 
-  def invoice_url!(%CostInvoice{seller_nip: seller_nip, issue_date: issue_date} = invoice) do
-    opts = [tenant: invoice.organization_id]
-    invoice = Ash.load!(invoice, [:blob], opts)
+  def invoice_url!(%CostInvoice{seller_nip: seller_nip, issue_date: issue_date} = invoice, opts) do
+    invoice = Ash.load!(invoice, [:blob], invoice_url_opts(invoice, opts))
 
     checksum =
       invoice.blob.blob_checksum
@@ -325,10 +328,29 @@ defmodule Firmowid.Ash.Ksef do
     invoice_url(seller_nip, issue_date, checksum)
   end
 
-  def invoice_url!(%{seller_nip: seller_nip, issue_date: issue_date, ksef_number: ksef_number} = invoice)
+  def invoice_url!(%{seller_nip: seller_nip, issue_date: issue_date, ksef_number: ksef_number} = invoice, _opts)
       when not is_nil(ksef_number) do
     checksum = invoice.ksef_invoice_checksum || backfill_ksef_checksum!(invoice)
     invoice_url(seller_nip, issue_date, checksum)
+  end
+
+  defp invoice_url_opts(invoice, opts) do
+    cond do
+      Keyword.has_key?(opts, :scope) ->
+        opts
+
+      Keyword.has_key?(opts, :actor) ->
+        opts |> Keyword.delete(:tenant) |> Keyword.put(:tenant, invoice.organization_id)
+
+      true ->
+        actor = %SystemActor{org_id: invoice.organization_id, role: :cost_invoice_processor}
+        scope = %Scope{actor: actor, tenant: invoice.organization_id}
+
+        opts
+        |> Keyword.delete(:actor)
+        |> Keyword.delete(:tenant)
+        |> Keyword.put(:scope, scope)
+    end
   end
 
   defp invoice_url(seller_nip, issue_date, checksum) do

@@ -75,7 +75,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                 <.link
                   :if={@invoice.ksef_number != nil}
                   class={button_styles(%{color: "light_grey", size: "small", new: true})}
-                  href={Ksef.invoice_url!(@invoice)}
+                  href={Ksef.invoice_url!(@invoice, scope: @scope)}
                   target="_blank"
                 >
                   <Lucideicons.database /><span class="hidden xl:inline">Otwórz w KSeF</span>
