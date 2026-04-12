@@ -5,6 +5,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
   import Firmowid.AccountsFixtures
 
   alias Firmowid.Ash.Blobs.Blob
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
@@ -904,6 +905,28 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       refute Enum.any?(results, &(&1.id == non_matching_ci_date.id))
       refute Enum.any?(results, &(&1.id == sales_invoice_matched.id))
       refute Enum.any?(results, &(&1.id == non_matching_ci_amount.id))
+    end
+  end
+
+  describe "get_logo_url/2" do
+    test "returns nil when organization has no avatar blob" do
+      user = user_fixture()
+      organization_id = user.organization_id
+
+      assert Invoicing.get_logo_url(organization_id, scope: scope_for_org(organization_id)) == nil
+    end
+
+    test "returns url when organization avatar blob is present" do
+      user = user_fixture()
+      organization_id = user.organization_id
+      scope = scope_for_org(organization_id)
+
+      blob = seed_blob!(organization_id, "org-logo.png", "org-logo-checksum")
+      organization = Core.get_organization!(organization_id, scope: scope)
+
+      Core.update_organization_avatar!(organization, %{avatar_blob_id: blob.id}, scope: scope)
+
+      assert is_binary(Invoicing.get_logo_url(organization_id, scope: scope))
     end
   end
 

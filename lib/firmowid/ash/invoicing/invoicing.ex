@@ -382,7 +382,10 @@ defmodule Firmowid.Ash.Invoicing do
       |> Core.get_organization!(ash_opts)
       |> Ash.load!([avatar_blob: [:url]], Keyword.put(ash_opts, :tenant, organization_id))
 
-    organization.avatar_blob[:url]
+    case organization.avatar_blob do
+      %{url: url} -> url
+      _ -> nil
+    end
   end
 
   def get_logo_url(_organization_id, _opts), do: nil
