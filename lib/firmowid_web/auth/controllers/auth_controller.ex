@@ -11,12 +11,13 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   alias AshAuthentication.Errors.AuthenticationFailed
   alias AshAuthentication.Strategy.RememberMe.Plug.Helpers
   alias FirmowidWeb.Core.Endpoint
+  alias FirmowidWeb.Infrastructure.UserAuth
 
   @doc """
   Success callback after authentication (password sign-in, Google OAuth, etc.)
   """
   def success(conn, _activity, user, _token) do
-    return_to = get_session(conn, :return_to) || ~p"/czasosledz"
+    return_to = get_session(conn, :return_to) || UserAuth.signed_in_path_for_user(user)
 
     conn
     |> renew_session()

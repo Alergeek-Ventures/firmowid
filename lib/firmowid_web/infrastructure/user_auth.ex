@@ -125,5 +125,17 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   @doc """
   Returns the default signed-in path.
   """
-  def signed_in_path(_conn), do: ~p"/czasosledz"
+  @spec signed_in_path(Plug.Conn.t()) :: String.t()
+  def signed_in_path(conn), do: signed_in_path_for_user(conn.assigns[:current_user])
+
+  @doc """
+  Returns the default signed-in path for a user.
+
+  Users with invoicing permissions (`:invoicing`, `:accountant`, `:admin`) are
+  redirected to invoicing hub, while other users land on time tracking.
+  """
+  @spec signed_in_path_for_user(map() | nil) :: String.t()
+  def signed_in_path_for_user(%{role: role}) when role in [:invoicing, :accountant, :admin], do: ~p"/fakturowanie"
+
+  def signed_in_path_for_user(_user), do: ~p"/czasosledz"
 end

@@ -9,6 +9,8 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RedirectAuthenticated do
 
   import Phoenix.LiveView
 
+  alias FirmowidWeb.Infrastructure.UserAuth
+
   def on_mount(:default, _params, _session, socket) do
     case socket.assigns[:current_user] do
       nil ->
@@ -17,8 +19,8 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RedirectAuthenticated do
       %{organization_id: nil} ->
         {:halt, redirect(socket, to: ~p"/organization")}
 
-      _user ->
-        {:halt, redirect(socket, to: ~p"/czasosledz")}
+      user ->
+        {:halt, redirect(socket, to: UserAuth.signed_in_path_for_user(user))}
     end
   end
 end
