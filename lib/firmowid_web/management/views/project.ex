@@ -112,7 +112,7 @@ defmodule FirmowidWeb.Management.Views.Project do
     {:noreply,
      socket
      |> put_flash(:info, "Projekt został usunięty.")
-     |> push_navigate(to: ~p"/zarzadzanie/projekty?month=#{socket.assigns.selected_date}")}
+     |> push_navigate(to: ~p"/zarzadzanie/projekty?#{%{month: socket.assigns.selected_date}}")}
   end
 
   # ── Archived project: all-time totals ─────────────────────────────────
