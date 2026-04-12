@@ -1,0 +1,75 @@
+name: Commit Message Lint
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - "*"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  commitlint:
+    name: Conventional Commits (Angular)
+    runs-on: self-hosted
+    container:
+      image: ghcr.io/alergeek-ventures/infrastructure/cicd-image:5b1d7150888c47322a6b5cda04796dfd1dbfb34c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.github_token }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Print versions
+        run: |
+          git --version
+          node --version
+          npm --version
+
+      - name: Validate current commit message with commitlint
+        if: github.event_name == 'push'
+        run: |
+          npx --yes --package @commitlint/cli --package @commitlint/config-conventional \
+            commitlint --extends @commitlint/config-conventional --last --verbose
+
+      - name: Validate PR commit messages with commitlint
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          npx --yes --package @commitlint/cli --package @commitlint/config-conventional \
+            commitlint --extends @commitlint/config-conventional --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
+
+      - name: Ensure no merge commits are present in PR
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          MERGE_COMMITS=$(git rev-list --merges "$BASE_SHA..$HEAD_SHA")
+
+          if [ -n "$MERGE_COMMITS" ]; then
+            echo "Merge commits are not allowed in pull requests."
+            echo "Found merge commits:"
+            echo "$MERGE_COMMITS"
+            exit 1
+          fi
+
+      - name: Ensure current commit is not a merge commit
+        if: github.event_name == 'push'
+        run: |
+          PARENT_COUNT=$(git rev-list --parents -n 1 HEAD | awk '{print NF-1}')
+
+          if [ "$PARENT_COUNT" -gt 1 ]; then
+            echo "Merge commits are not allowed on push."
+            exit 1
+          fi

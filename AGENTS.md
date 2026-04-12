@@ -40,6 +40,18 @@ Before starting the work, ask user if they want you to commit the changes.
 If they say so, after each successful, atomic change - commit it.
 Make sure it works and is correct before doing so. Instructions below.
 
+All commit messages must follow **Conventional Commits (Angular variant)**:
+
+- required format: `<type>(<scope>): <subject>`
+- `scope` is optional
+- do not use merge commits (`Merge branch ...`) - they are blocked in CI
+
+Examples:
+
+- `feat(payroll): add monthly summary action`
+- `fix: prevent duplicate invoice import`
+- `chore(ci): enforce conventional commits in workflow`
+
 ## Manual testing and good will
 
 While we employ a bunch of tools to analyze code and catch bugs early, it's

@@ -24,6 +24,39 @@
 
 Po uruchomieniu serwera, zaloguj się na `kira@bytecraft.collective` / `kolejka123456` i odwiedź [`/development`](http://localhost:4000/development) aby zobaczyć pełny przewodnik po danych testowych, kontrahentach, projektach i scenariuszach KSeF.
 
+## Konwencja commitów (Conventional Commits, Angular)
+
+W tym repozytorium wymagamy formatu **Conventional Commits (wariant Angular)**.
+
+Format:
+
+`<type>(<scope>): <subject>`
+
+- `scope` jest **opcjonalny**
+- subject piszemy krótko, w trybie rozkazującym, bez kropki na końcu
+
+Przykłady poprawnych commitów:
+
+- `feat(invoicing): add KSeF status badge`
+- `fix: handle missing exchange rate on invoice import`
+- `chore(ci): add commit message lint workflow`
+
+Przykłady niepoprawnych commitów:
+
+- `Update stuff`
+- `fixed bug`
+- `Merge branch 'main' into feature/x`
+
+## Walidacja commitów w CI
+
+Commit messages są walidowane w GitHub Actions zgodnie z konfiguracją `@commitlint/config-conventional` (bez lokalnej konfiguracji w repo).
+
+- dla `push`: sprawdzany jest ostatni commit
+- dla `pull_request`: sprawdzany jest cały zakres commitów PR (`base..head`)
+- merge commit-y są blokowane w CI
+
+Jeśli CI odrzuci commit, popraw wiadomość (`git commit --amend`) albo przepisz historię gałęzi przed ponownym push.
+
 ## Instalacja Środowiska dla elixira  
 
 Do zarządzania wersjami elixira używamy [asdf](https://asdf-vm.com/guide/getting-started.html)
