@@ -46,7 +46,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
         where expr(status == :pending)
         scheduler_cron "* * * * *"
         max_attempts 7
-        queue :bank_data
+        queue :requisition_checks
 
         worker_module_name Firmowid.Ash.Finances.Requisition.Worker.CheckStatus
         scheduler_module_name Firmowid.Ash.Finances.Requisition.Scheduler.CheckStatus
@@ -58,7 +58,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
         where expr(status == :pending and inserted_at < ago(1, "hour"))
         scheduler_cron "0 * * * *"
         max_attempts 3
-        queue :bank_data
+        queue :requisition_checks
 
         worker_module_name Firmowid.Ash.Finances.Requisition.Worker.AutoReject
         scheduler_module_name Firmowid.Ash.Finances.Requisition.Scheduler.AutoReject
@@ -70,7 +70,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
         where expr(inserted_at < ago(1, "hour") and not exists(bank_accounts, true))
         scheduler_cron "0 * * * *"
         max_attempts 3
-        queue :bank_data
+        queue :requisition_checks
 
         worker_module_name Firmowid.Ash.Finances.Requisition.Worker.CleanupOrphan
         scheduler_module_name Firmowid.Ash.Finances.Requisition.Scheduler.CleanupOrphan
@@ -82,7 +82,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
         where expr(status in [:rejected, :expired] and is_nil(remote_deleted_at))
         scheduler_cron "0 * * * *"
         max_attempts 5
-        queue :bank_data
+        queue :requisition_checks
 
         worker_module_name Firmowid.Ash.Finances.Requisition.Worker.DeleteRemote
         scheduler_module_name Firmowid.Ash.Finances.Requisition.Scheduler.DeleteRemote

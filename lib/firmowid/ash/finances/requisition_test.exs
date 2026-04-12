@@ -68,4 +68,20 @@ defmodule Firmowid.Ash.Finances.RequisitionTest do
       assert rejected.status == :rejected
     end
   end
+
+  describe "AshOban queue routing" do
+    test "routes requisition triggers to requisition_checks queue" do
+      assert :requisition_checks ==
+               AshOban.Info.oban_trigger(Requisition, :check_status).queue
+
+      assert :requisition_checks ==
+               AshOban.Info.oban_trigger(Requisition, :auto_reject).queue
+
+      assert :requisition_checks ==
+               AshOban.Info.oban_trigger(Requisition, :cleanup_orphan).queue
+
+      assert :requisition_checks ==
+               AshOban.Info.oban_trigger(Requisition, :delete_remote).queue
+    end
+  end
 end

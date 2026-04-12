@@ -91,6 +91,7 @@ config :firmowid, Oban,
   engine: Oban.Engines.Basic,
   queues: [
     bank_data: 1,
+    requisition_checks: 1,
     invoicing: 1,
     cost_invoices: 5,
     inbound_emails: 3,
