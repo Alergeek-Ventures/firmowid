@@ -60,7 +60,11 @@ defmodule FirmowidWeb.Management.Views.Employees do
     if socket.assigns.current_user.role == :admin do
       # 1. Users (with optional search filter)
       input = if search in [nil, ""], do: %{}, else: %{search: search}
-      users = Core.list_users!(input, scope: scope)
+
+      users =
+        input
+        |> Core.list_users!(scope: scope)
+        |> Ash.load!([avatar_blob: [:url]], scope: scope)
 
       # 2. Time worked per user this month
       sessions =
@@ -84,12 +88,22 @@ defmodule FirmowidWeb.Management.Views.Employees do
 
       # 5. Compose
       employees =
-        Enum.map(users, fn user ->
+        users
+        |> Enum.map(fn user ->
           %{
             user: user,
             time_worked: Map.get(time_by_user, user.id, 0),
             hourly_rate: Map.get(salary_by_user, user.id),
             hours_record: Map.get(hr_by_user, user.id)
+          }
+        end)
+        |> Enum.sort_by(fn employee ->
+          {
+            employee.time_worked == 0,
+            employee.user.name || employee.user.email ||
+              ""
+              |> to_string()
+              |> String.downcase()
           }
         end)
 

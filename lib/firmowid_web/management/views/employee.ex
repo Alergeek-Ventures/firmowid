@@ -26,7 +26,13 @@ defmodule FirmowidWeb.Management.Views.Employee do
           _ -> Date.utc_today()
         end
 
-      user = Core.get_user!(id, scope: scope, not_found_error?: false)
+      user =
+        id
+        |> Core.get_user!(scope: scope, not_found_error?: false)
+        |> case do
+          nil -> nil
+          loaded_user -> Ash.load!(loaded_user, [avatar_blob: [:url]], scope: scope)
+        end
 
       socket =
         if is_nil(user) do

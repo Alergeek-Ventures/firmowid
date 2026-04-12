@@ -679,7 +679,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
     ~H"""
     <img
       class={[
-        "aspect-square size-full object-cover",
+        "aspect-square size-full rounded-full object-cover",
         (!@src || @src === "") && "hidden",
         @class
       ]}

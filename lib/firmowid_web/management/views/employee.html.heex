@@ -9,9 +9,17 @@
 
   <.card class="row-start-2 min-h-[689px] w-full max-w-[380px]">
     <div class="flex gap-3">
-      <.avatar>
-        <%!-- TODO: add user avatar --%>
-        <.icon name="hero-user" class="text-darkGrey size-20" />
+      <.avatar class="ring-greyButtonBg/50 size-20 shrink-0 ring-1">
+        <.avatar_image
+          :if={@employee.avatar_blob && @employee.avatar_blob.url}
+          src={@employee.avatar_blob && @employee.avatar_blob.url}
+          alt="Avatar"
+        />
+        <.avatar_fallback class="bg-blueBg text-blueText text-2xl">
+          {to_string(get_employee_display_name(@employee) || "")
+          |> String.slice(0, 1)
+          |> String.upcase()}
+        </.avatar_fallback>
       </.avatar>
       <div>
         <h2 class="text-lg font-bold">{get_employee_display_name(@employee)}</h2>

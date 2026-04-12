@@ -1,63 +1,67 @@
-<div :if={not @zero_state?} class="mx-auto my-4 flex w-full max-w-7xl flex-1 flex-col">
-  <div class="mb-8 flex flex-row justify-between">
-    <form class="flex gap-4">
-      <.date_picker
-        id="project_date_picker"
-        selected_date={@selected_date}
-        active_months={@active_months}
-      />
-
-      <div
-        id="search-container"
-        data-expanded={to_string(@params["q"] != nil and @params["q"] != "")}
-        class="bg-greyButtonBg group flex min-w-10 items-center justify-center rounded-lg transition-shadow data-[expanded=true]:focus-within:ring-2"
-      >
-        <.input
-          name="q"
-          value={@params["q"] || ""}
-          placeholder="Szukaj projektu"
-          phx-change={JS.push("search", loading: "#projects-list")}
-          phx-debounce="300"
-          input_class="py-0 px-1 bg-transparent border-none"
-          class="w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-64 group-data-[expanded=true]:px-2 group-data-[expanded=true]:py-1 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden"
+<div :if={not @zero_state?} class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 pb-4">
+  <% # top -> collapsed navbar height (56px) / TODO: refactor %>
+  <div class="bg-lightGreyBg sticky top-14 z-10 flex flex-col gap-4 py-3">
+    <div class="flex flex-row justify-between">
+      <form class="flex gap-4">
+        <.date_picker
+          id="project_date_picker"
+          selected_date={@selected_date}
+          active_months={@active_months}
         />
-        <.button
-          type="button"
-          phx-click={
-            JS.toggle_attribute({"data-expanded", "true", "false"}, to: "#search-container")
-            |> JS.focus(to: "#search-container input")
-          }
-          color="light_grey"
-          new={true}
-        >
-          <Lucideicons.search />
-        </.button>
-      </div>
-    </form>
 
-    <.link
-      navigate={~p"/zarzadzanie/projekty/dodaj"}
-      class={button_styles(%{color: "light_grey", size: "medium", new: true})}
-    >
-      <Lucideicons.plus /> Dodaj projekt
-    </.link>
-  </div>
-  <div class="mb-5 flex flex-row gap-4">
-    <.link
-      :for={
-        {path, live_action, label} <- [
-          {~p"/zarzadzanie/projekty?#{@params}", :index, "Aktywne"},
-          {~p"/zarzadzanie/projekty/archiwum?#{@params}", :archive, "Zarchiwizowane"}
-        ]
-      }
-      patch={path}
-      class={[
-        button_styles(%{variant: "ghost", size: "small", new: true}),
-        if(@live_action == live_action, do: "bg-grey-700 hover:text-grey-900 text-white")
-      ]}
-    >
-      {label}
-    </.link>
+        <div
+          id="search-container"
+          data-expanded={to_string(@params["q"] != nil and @params["q"] != "")}
+          class="bg-greyButtonBg group flex min-w-10 items-center justify-center rounded-lg transition-shadow data-[expanded=true]:focus-within:ring-2"
+        >
+          <.input
+            name="q"
+            value={@params["q"] || ""}
+            placeholder="Szukaj projektu"
+            phx-change={JS.push("search", loading: "#projects-list")}
+            phx-debounce="300"
+            input_class="py-0 px-1 bg-transparent border-none"
+            class="w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-64 group-data-[expanded=true]:px-2 group-data-[expanded=true]:py-1 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden"
+          />
+          <.button
+            type="button"
+            phx-click={
+              JS.toggle_attribute({"data-expanded", "true", "false"}, to: "#search-container")
+              |> JS.focus(to: "#search-container input")
+            }
+            color="light_grey"
+            new={true}
+          >
+            <Lucideicons.search />
+          </.button>
+        </div>
+      </form>
+
+      <.link
+        navigate={~p"/zarzadzanie/projekty/dodaj"}
+        class={button_styles(%{color: "light_grey", size: "medium", new: true})}
+      >
+        <Lucideicons.plus /> Dodaj projekt
+      </.link>
+    </div>
+
+    <div class="flex gap-4">
+      <.link
+        :for={
+          {path, live_action, label} <- [
+            {~p"/zarzadzanie/projekty?#{@params}", :index, "Aktywne"},
+            {~p"/zarzadzanie/projekty/archiwum?#{@params}", :archive, "Zarchiwizowane"}
+          ]
+        }
+        patch={path}
+        class={[
+          button_styles(%{variant: "ghost", size: "small", new: true}),
+          if(@live_action == live_action, do: "bg-grey-700 hover:text-grey-900 text-white")
+        ]}
+      >
+        {label}
+      </.link>
+    </div>
   </div>
 
   <%= cond do %>
@@ -83,7 +87,13 @@
         id="projects-list"
         class="phx-change-loading:opacity-50 grid grid-cols-[4fr_8.125rem_1fr_min-content] gap-x-6 gap-y-2"
       >
-        <div class="text-grey-700 col-span-full grid grid-cols-subgrid px-4 py-3 text-sm/snug">
+        <div
+          id="projects-list-header-active"
+          class="bg-lightGreyBg text-grey-700 sticky top-[166px] z-1 col-span-full grid grid-cols-subgrid px-4 py-3 text-sm/snug"
+          phx-hook="ScrollStyle"
+          data-classes="border-b-4 border-solid border-darkGrey/40"
+          data-scroll-offset="90"
+        >
           <p>Projekt</p>
           <p class="text-right">
             <!--Rentowność-->
@@ -98,7 +108,12 @@
             class="col-span-full grid grid-cols-subgrid items-center rounded-sm bg-white p-4"
           >
             <div class="space-y-1 truncate">
-              <p class="text-base/snug">{project.name}</p>
+              <.link
+                navigate={~p"/zarzadzanie/projekty/#{project.id}?#{Map.take(@params, ["month"])}"}
+                class="hover:underline"
+              >
+                <p class="text-base/snug">{project.name}</p>
+              </.link>
               <p class="text-grey-500 text-sm/snug">
                 {case project.counterparty && project.counterparty.display_label do
                   "" -> @current_org.name
@@ -125,7 +140,13 @@
         id="projects-list"
         class="phx-change-loading:opacity-50 grid grid-cols-[4fr_8.125rem_1fr_min-content_min-content] gap-x-10 gap-y-2"
       >
-        <div class="-order-1 col-span-full grid grid-cols-subgrid px-4 py-3 text-sm/snug">
+        <div
+          id="projects-list-header-archive"
+          class="bg-lightGreyBg sticky top-[166px] z-1 -order-1 col-span-full grid grid-cols-subgrid px-4 py-3 text-sm/snug"
+          phx-hook="ScrollStyle"
+          data-classes="border-b-4 border-solid border-darkGrey/40"
+          data-scroll-offset="90"
+        >
           <p>Projekt</p>
           <p class="text-right">
             <!--Rentowność-->
@@ -141,7 +162,12 @@
             class="col-span-full grid grid-cols-subgrid items-center rounded-sm bg-white p-4"
           >
             <div class="space-y-1 truncate">
-              <p class="text-base/snug">{project.name}</p>
+              <.link
+                navigate={~p"/zarzadzanie/projekty/#{project.id}?#{Map.take(@params, ["month"])}"}
+                class="hover:underline"
+              >
+                <p class="text-base/snug">{project.name}</p>
+              </.link>
               <p class="text-grey-500 text-sm/snug">
                 {case project.counterparty && project.counterparty.display_label do
                   "" -> @current_org.name
