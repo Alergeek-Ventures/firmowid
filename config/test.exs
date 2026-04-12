@@ -5,12 +5,6 @@ config :argon2_elixir, t_cost: 1, m_cost: 8
 
 config :ash, policies: [show_policy_breakdowns?: true]
 
-config :ex_aws, :s3,
-  scheme: System.get_env("S3_SCHEME", "http://"),
-  host: System.get_env("S3_HOST", "localhost"),
-  port: String.to_integer(System.get_env("S3_PORT", "4566")),
-  bucket: System.get_env("S3_BUCKET", "firmowid-uploads")
-
 config :firmowid, ChromicPDF, on_demand: true
 
 # In test we don't send emails
@@ -58,6 +52,14 @@ config :firmowid, :bank_data_api_client,
   ]
 
 config :firmowid, :ksef, base_url: "https://api-test.ksef.mf.gov.pl/v2/"
+
+config :firmowid, :s3,
+  scheme: System.get_env("S3_SCHEME", "http://"),
+  host: System.get_env("S3_HOST", "localhost"),
+  port: String.to_integer(System.get_env("S3_PORT", "4566")),
+  region: System.get_env("AWS_REGION", "us-east-1"),
+  access_key_id: System.get_env("AWS_ACCESS_KEY_ID", "test"),
+  secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY", "test")
 
 # Print only warnings and errors during test
 config :logger, level: :warning

@@ -17,6 +17,7 @@ defmodule Firmowid.Seeds.Helpers do
   alias Firmowid.Ash.Invoicing.SalesInvoice, as: AshSalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem, as: AshSalesInvoiceItem
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction, as: AshSalesInvoiceTransaction
+  alias Firmowid.S3Client
 
   require Ash.Query
 
@@ -324,10 +325,6 @@ defmodule Firmowid.Seeds.Helpers do
   end
 
   defp upload_seed_blob_to_s3!(blob_path) do
-    bucket = Application.get_env(:firmowid, :uploads_bucket)
-
-    bucket
-    |> ExAws.S3.put_object(blob_path, @minimal_pdf, content_type: "application/pdf")
-    |> ExAws.request!()
+    S3Client.upload_binary!(@minimal_pdf, blob_path, content_type: "application/pdf")
   end
 end

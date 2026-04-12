@@ -6,15 +6,6 @@ config :ash, policies: [show_policy_breakdowns?: true]
 
 config :ash_authentication, debug_authentication_failures?: true
 
-config :ex_aws, :s3,
-  host: "localhost",
-  scheme: "http://",
-  port: 4566
-
-config :ex_aws,
-  access_key_id: "test",
-  secret_access_key: "test"
-
 config :firmowid, ChromicPDF, chrome_address: {"localhost", 9222}
 
 config :firmowid, Endpoint,
@@ -56,6 +47,14 @@ config :firmowid, Firmowid.Vault,
 
 config :firmowid, :analytics, posthog_enabled: false
 config :firmowid, :ksef, base_url: "https://api-test.ksef.mf.gov.pl/v2/"
+
+config :firmowid, :s3,
+  host: "localhost",
+  scheme: "http://",
+  port: 4566,
+  region: "us-east-1",
+  access_key_id: "test",
+  secret_access_key: "test"
 
 config :firmowid,
   uploads_bucket: "firmowid-uploads"

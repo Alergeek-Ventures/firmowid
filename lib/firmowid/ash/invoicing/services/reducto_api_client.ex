@@ -38,7 +38,7 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClient do
     system_prompt = Keyword.get(options, :system_prompt)
 
     host =
-      :ex_aws
+      :firmowid
       |> Application.get_env(:s3)
       |> Keyword.get(:host)
 

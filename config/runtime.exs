@@ -107,22 +107,30 @@ end
 # S3 configuration
 # S3_PORT: local dev/worktree (uses localhost)
 # S3_HOST/S3_SCHEME/S3_PORT: prod with custom S3-compatible endpoint
-# For real AWS S3, just set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
-if System.get_env("S3_PORT") do
-  config :ex_aws, :s3,
-    host: System.get_env("S3_HOST", "localhost"),
-    scheme: System.get_env("S3_SCHEME", "http://"),
-    port: String.to_integer(System.get_env("S3_PORT"))
-end
-
-# AWS credentials (required for S3 in prod)
-config :ex_aws,
+# For real AWS S3, set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+s3_base = [
+  region: System.get_env("AWS_REGION", "us-east-1"),
   access_key_id: System.get_env("AWS_ACCESS_KEY_ID", ""),
   secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY", "")
+]
+
+s3_config =
+  if System.get_env("S3_PORT") do
+    s3_base ++
+      [
+        host: System.get_env("S3_HOST", "localhost"),
+        scheme: System.get_env("S3_SCHEME", "http://"),
+        port: String.to_integer(System.get_env("S3_PORT"))
+      ]
+  else
+    s3_base
+  end
 
 # Open Exchange Rates API for currency conversion (optional)
 config :ex_money,
   open_exchange_rates_app_id: System.get_env("OPEN_EXCHANGE_RATES_APP_ID")
+
+config :firmowid, :s3, s3_config
 
 # S3 bucket for uploads
 # ChromicPDF - configure remote Chrome connection

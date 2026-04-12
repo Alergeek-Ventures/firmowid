@@ -11,6 +11,8 @@ defmodule Firmowid.Ash.Blobs.Calculations.BlobUrl do
   """
   use Ash.Resource.Calculation
 
+  alias Firmowid.S3Client
+
   @presigned_url_ttl 200
 
   @impl true
@@ -22,15 +24,7 @@ defmodule Firmowid.Ash.Blobs.Calculations.BlobUrl do
   def calculate(records, _opts, _context) do
     Enum.map(records, fn record ->
       if record.blob_path do
-        {:ok, url} =
-          :s3
-          |> ExAws.Config.new([])
-          |> ExAws.S3.presigned_url(
-            :get,
-            Application.get_env(:firmowid, :uploads_bucket),
-            record.blob_path,
-            expires_in: @presigned_url_ttl
-          )
+        {:ok, url} = S3Client.presigned_get_url(record.blob_path, expires_in: @presigned_url_ttl)
 
         url
       end

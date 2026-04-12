@@ -9,19 +9,14 @@ defmodule Firmowid.Ash.Blobs.Changes.DeleteFromS3 do
   """
   use Ash.Resource.Change
 
-  alias ExAws.S3
+  alias Firmowid.S3Client
 
   require Logger
 
   @impl true
   def change(changeset, _opts, _context) do
     Ash.Changeset.after_action(changeset, fn _changeset, record ->
-      bucket =
-        :firmowid
-        |> Application.get_env(:uploads_bucket)
-        |> to_string()
-
-      case bucket |> S3.delete_object(to_string(record.blob_path)) |> ExAws.request() do
+      case S3Client.delete_object(to_string(record.blob_path)) do
         {:ok, _} ->
           {:ok, record}
 

@@ -14,7 +14,7 @@ defmodule Firmowid.Ash.Blobs.Changes.UploadToS3 do
   """
   use Ash.Resource.Change
 
-  alias ExAws.S3
+  alias Firmowid.S3Client
 
   @impl true
   def change(changeset, _opts, _context) do
@@ -56,13 +56,7 @@ defmodule Firmowid.Ash.Blobs.Changes.UploadToS3 do
   end
 
   defp upload_to_s3!(upload_path, blob_path) do
-    upload_path
-    |> S3.Upload.stream_file()
-    |> S3.upload(
-      Application.get_env(:firmowid, :uploads_bucket),
-      blob_path
-    )
-    |> ExAws.request!()
+    S3Client.upload_file!(upload_path, blob_path)
   end
 
   defp preprocess_file(path, extension) when extension in ["jpg", "jpeg", "png", "gif"] do
