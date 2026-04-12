@@ -12,5 +12,31 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
 
   import FirmowidWeb.Infrastructure.Flags
 
+  alias FirmowidWeb.Core.Endpoint
+
   embed_templates "layouts/*"
+
+  @doc """
+  Builds canonical URL for the currently rendered page.
+  """
+  @spec canonical_url(map()) :: String.t()
+  def canonical_url(assigns) do
+    Endpoint.url() <> canonical_path(assigns)
+  end
+
+  defp canonical_path(assigns) do
+    case assigns[:current_uri] do
+      %URI{path: path} when is_binary(path) and path != "" ->
+        path
+
+      _ ->
+        case assigns[:conn] do
+          %{request_path: request_path} when is_binary(request_path) and request_path != "" ->
+            request_path
+
+          _ ->
+            "/"
+        end
+    end
+  end
 end

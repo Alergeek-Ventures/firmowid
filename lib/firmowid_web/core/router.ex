@@ -207,6 +207,8 @@ defmodule FirmowidWeb.Core.Router do
   scope "/", FirmowidWeb do
     pipe_through [:browser]
 
+    get "/sitemap.xml", Infrastructure.Controllers.Sitemap, :index
+
     ash_authentication_live_session :public,
       on_mount: [
         {CurrentPath, :save_request_uri},
