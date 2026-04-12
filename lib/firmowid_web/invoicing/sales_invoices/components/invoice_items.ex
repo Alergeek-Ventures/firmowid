@@ -297,7 +297,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             type="select"
             options={@vat_options}
             phx-debounce
-            class="w-24"
+            container_class="w-24"
             new={true}
             readonly={@vat_disabled?}
           />
@@ -306,7 +306,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             type="select"
             placeholder="0,00"
             phx-debounce
-            class="w-24"
+            container_class="w-24"
             options={["szt.", "godz."]}
             new={true}
           />
@@ -318,7 +318,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
               step=".01"
               min="0"
               placeholder="0,00"
-              class="w-24"
+              class="w-30"
               input_class={["text-center", item[:unit_price].errors != [] && "border-redText"]}
               new={true}
               is_tooltip={true}
