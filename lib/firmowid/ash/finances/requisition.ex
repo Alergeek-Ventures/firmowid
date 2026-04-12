@@ -20,7 +20,6 @@ defmodule Firmowid.Ash.Finances.Requisition do
   postgres do
     table "requisitions"
     repo Firmowid.Repo
-    migrate? false
   end
 
   state_machine do

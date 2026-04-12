@@ -3,6 +3,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecordTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Timetracker.Checks.OwnsResource
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
 
@@ -17,13 +18,25 @@ defmodule Firmowid.Ash.Timetracker.HoursRecordTest do
     %{user: user, scope: scope}
   end
 
+  defp seed_blob!(organization_id) do
+    Ash.Seed.seed!(Blob, %{
+      blob_path: "/test/path/hours_record_#{System.unique_integer([:positive])}.pdf",
+      blob_checksum: "hr-checksum-#{System.unique_integer([:positive])}",
+      original_filename: "hours_record.pdf",
+      organization_id: organization_id
+    })
+  end
+
   describe "by_month/4" do
     test "returns record for a given user and month", %{user: user, scope: scope} do
+      blob = seed_blob!(user.organization_id)
+
       # Insert directly — the create action requires blob upload infrastructure
       Repo.insert!(
         %AshHoursRecord{
           id: Ash.UUIDv7.generate(),
           user_id: user.id,
+          blob_id: blob.id,
           month: 3,
           year: 2025,
           number_of_hours: 160,
@@ -87,10 +100,13 @@ defmodule Firmowid.Ash.Timetracker.HoursRecordTest do
 
   describe "submitted check" do
     test "by_month returns the record when submitted", %{user: user, scope: scope} do
+      blob = seed_blob!(user.organization_id)
+
       Repo.insert!(
         %AshHoursRecord{
           id: Ash.UUIDv7.generate(),
           user_id: user.id,
+          blob_id: blob.id,
           month: 2,
           year: 2025,
           number_of_hours: 160,

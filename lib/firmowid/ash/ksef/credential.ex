@@ -20,7 +20,6 @@ defmodule Firmowid.Ash.Ksef.Credential do
   postgres do
     table "ksef_credentials"
     repo Firmowid.Repo
-    migrate? false
   end
 
   code_interface do

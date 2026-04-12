@@ -17,7 +17,6 @@ defmodule Firmowid.Ash.Events.Event do
   postgres do
     table "ash_events"
     repo Firmowid.Repo
-    migrate? false
   end
 
   event_log do

@@ -13,6 +13,7 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
   import Firmowid.TimetrackerFixtures
 
   alias Ash.Error.Invalid
+  alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
@@ -43,16 +44,25 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
     now = NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
     id = Ash.UUIDv7.generate()
 
+    blob =
+      Ash.Seed.seed!(Blob, %{
+        blob_path: "/test/path/hr_#{System.unique_integer([:positive])}.pdf",
+        blob_checksum: "hr-policy-#{System.unique_integer([:positive])}",
+        original_filename: "hours_record.pdf",
+        organization_id: user.organization_id
+      })
+
     {:ok, id_bin} = Ecto.UUID.dump(id)
     {:ok, uid_bin} = Ecto.UUID.dump(user.id)
     {:ok, oid_bin} = Ecto.UUID.dump(user.organization_id)
+    {:ok, bid_bin} = Ecto.UUID.dump(blob.id)
 
     Repo.query!(
       """
-      INSERT INTO hours_records (id, month, year, number_of_hours, user_id, organization_id, inserted_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO hours_records (id, month, year, number_of_hours, blob_id, user_id, organization_id, inserted_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       """,
-      [id_bin, month, year, 160, uid_bin, oid_bin, now, now]
+      [id_bin, month, year, 160, bid_bin, uid_bin, oid_bin, now, now]
     )
 
     %{id: id, user_id: user.id, month: month, year: year}

@@ -18,7 +18,6 @@ defmodule Firmowid.Ash.Core.Token do
   postgres do
     table "tokens"
     repo Firmowid.Repo
-    migrate? false
   end
 
   token do

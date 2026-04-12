@@ -55,7 +55,10 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   postgres do
     table "cost_invoices"
     repo Firmowid.Repo
-    migrate? false
+
+    references do
+      reference :original_invoice, ignore?: true
+    end
   end
 
   oban do

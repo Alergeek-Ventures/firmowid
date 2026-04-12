@@ -19,7 +19,6 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTransaction do
   postgres do
     table "sales_invoices_transactions"
     repo Firmowid.Repo
-    migrate? false
   end
 
   actions do

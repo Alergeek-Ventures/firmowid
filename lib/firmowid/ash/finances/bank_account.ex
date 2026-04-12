@@ -25,13 +25,14 @@ defmodule Firmowid.Ash.Finances.BankAccount do
   postgres do
     table "bank_accounts"
     repo Firmowid.Repo
-    migrate? false
 
     # Maps the logical identity name to the pre-existing partial unique index name
     # created in migration 20250117142507_add_default_bank_accounts.exs.
     # Without this, AshPostgres would look for `bank_accounts_unique_default_per_currency_index`
     # and fail to convert Ecto.ConstraintError → Ash.Error.Invalid.
     identity_index_names unique_default_per_currency: "bank_accounts_organization_id_currency_is_default_index"
+
+    identity_wheres_to_sql unique_default_per_currency: "is_default = true"
   end
 
   events do

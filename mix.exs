@@ -186,11 +186,15 @@ defmodule Firmowid.MixProject do
 
   defp aliases do
     [
-      setup: ["deps.get", "ecto.setup", "usage_rules.sync --yes", "assets.setup", "assets.build"],
-      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
-      "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
-      e2e: ["ecto.create --quiet", "ecto.migrate --quiet", "test --include e2e --only e2e"],
+      setup: ["deps.get", "db.setup", "usage_rules.sync --yes", "assets.setup", "assets.build"],
+      "db.setup": ["ash.setup", "run priv/repo/seeds.exs"],
+      "ecto.reset": ["ash_postgres.drop --force --force-drop", "db.setup"],
+      test: ["ash_postgres.drop --force --force-drop --quiet", "ash.setup --quiet", "test"],
+      e2e: [
+        "ash_postgres.drop --force --force-drop --quiet",
+        "ash.setup --quiet",
+        "test --include e2e --only e2e"
+      ],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind firmowid", "esbuild firmowid"],
       "assets.deploy": [

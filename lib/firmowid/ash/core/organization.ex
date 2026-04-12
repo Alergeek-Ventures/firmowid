@@ -25,7 +25,6 @@ defmodule Firmowid.Ash.Core.Organization do
   postgres do
     table "organizations"
     repo Firmowid.Repo
-    migrate? false
   end
 
   actions do

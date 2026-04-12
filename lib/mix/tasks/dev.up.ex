@@ -7,7 +7,7 @@ defmodule Mix.Tasks.Dev.Up do
   1. Loads configuration from .env.local (or uses defaults)
   2. Verifies .env exists (copied by `wt step copy-ignored`)
   3. Starts Podman Compose services via local/compose.yml (Postgres, SeaweedFS S3, Chromium)
-  4. Runs mix setup (ecto.create, ecto.migrate, assets)
+  4. Runs mix setup (Ash setup/migrations, assets)
   5. Registers Caddy route for `{branch}.firmowid.localhost`
   6. Starts Phoenix server in background
 

@@ -23,7 +23,6 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
   postgres do
     table "organization_invites"
     repo Firmowid.Repo
-    migrate? false
   end
 
   actions do

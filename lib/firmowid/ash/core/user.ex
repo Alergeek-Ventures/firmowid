@@ -28,7 +28,6 @@ defmodule Firmowid.Ash.Core.User do
   postgres do
     table "users"
     repo Firmowid.Repo
-    migrate? false
   end
 
   authentication do

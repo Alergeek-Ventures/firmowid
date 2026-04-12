@@ -21,7 +21,6 @@ defmodule Firmowid.Ash.Core.UserIdentity do
   postgres do
     table "user_identities"
     repo Firmowid.Repo
-    migrate? false
   end
 
   user_identity do

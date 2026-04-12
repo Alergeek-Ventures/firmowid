@@ -20,7 +20,6 @@ defmodule Firmowid.Ash.Currencies.ExchangeRate do
   postgres do
     table "exchange_rates_cache"
     repo Firmowid.Repo
-    migrate? false
   end
 
   oban do

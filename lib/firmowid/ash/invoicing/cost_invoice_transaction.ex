@@ -19,7 +19,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTransaction do
   postgres do
     table "cost_invoices_transactions"
     repo Firmowid.Repo
-    migrate? false
   end
 
   actions do

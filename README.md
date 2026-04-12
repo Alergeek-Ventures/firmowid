@@ -24,6 +24,19 @@
 
 Po uruchomieniu serwera, zaloguj się na `kira@bytecraft.collective` / `kolejka123456` i odwiedź [`/development`](http://localhost:4000/development) aby zobaczyć pełny przewodnik po danych testowych, kontrahentach, projektach i scenariuszach KSeF.
 
+
+## Polityka migracji (Ash/AshPostgres)
+
+Migracje schematu bazy danych muszą być zarządzane przez narzędzia Ash/AshPostgres.
+
+- Używaj workflow Ash: `mix ash.codegen`, `mix ash.migrate`
+  (oraz bazowego `mix ash_postgres.generate_migrations`).
+- Nie twórz bezpośrednich migracji Ecto (`mix ecto.gen.migration`) w normalnej pracy.
+- Ręczne/bezpośrednie migracje Ecto są dopuszczalne tylko awaryjnie, gdy Ash nie jest
+  w stanie wyrazić zmiany na czas.
+- Każda taka migracja awaryjna musi być opisana w PR/commicie: powód i plan powrotu
+  do migracji zarządzanych przez Ash.
+
 ## Konwencja commitów (Conventional Commits, Angular)
 
 W tym repozytorium wymagamy formatu **Conventional Commits (wariant Angular)**.

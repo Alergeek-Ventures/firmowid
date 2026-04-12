@@ -45,7 +45,6 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
   postgres do
     polymorphic? true
     repo Firmowid.Repo
-    migrate? false
   end
 
   code_interface do

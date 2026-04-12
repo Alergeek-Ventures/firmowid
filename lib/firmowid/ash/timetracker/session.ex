@@ -27,7 +27,6 @@ defmodule Firmowid.Ash.Timetracker.Session do
   postgres do
     table "sessions"
     repo Firmowid.Repo
-    migrate? false
   end
 
   code_interface do

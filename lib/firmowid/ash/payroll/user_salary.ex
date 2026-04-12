@@ -26,7 +26,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
   postgres do
     table "user_salaries"
     repo Firmowid.Repo
-    migrate? false
+    identity_wheres_to_sql active_user_salary: "deleted_at IS NULL"
   end
 
   code_interface do

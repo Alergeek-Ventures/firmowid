@@ -28,7 +28,6 @@ defmodule Firmowid.Ash.Timetracker.Project do
   postgres do
     table "projects"
     repo Firmowid.Repo
-    migrate? false
   end
 
   code_interface do

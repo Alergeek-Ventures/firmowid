@@ -21,7 +21,6 @@ defmodule Firmowid.Ash.Finances.Transaction do
   postgres do
     table "transactions"
     repo Firmowid.Repo
-    migrate? false
   end
 
   actions do

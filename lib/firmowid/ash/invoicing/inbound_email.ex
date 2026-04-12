@@ -28,7 +28,6 @@ defmodule Firmowid.Ash.Invoicing.InboundEmail do
   postgres do
     table "inbound_emails"
     repo Firmowid.Repo
-    migrate? false
   end
 
   code_interface do

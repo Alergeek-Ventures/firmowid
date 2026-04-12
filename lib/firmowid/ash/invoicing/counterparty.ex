@@ -33,7 +33,6 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
   postgres do
     table "counterparties"
     repo Firmowid.Repo
-    migrate? false
   end
 
   code_interface do

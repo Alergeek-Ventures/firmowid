@@ -27,7 +27,6 @@ defmodule Firmowid.Ash.Blobs.Blob do
   postgres do
     table "blobs"
     repo Firmowid.Repo
-    migrate? false
   end
 
   oban do

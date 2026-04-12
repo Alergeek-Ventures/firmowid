@@ -69,6 +69,19 @@ They have to be super fast, test critical paths for regressions.
 Do not **overtest**. Discuss with users about testing; we never want to be held back
 by outdated / inflexible tests.
 
+
+## Migrations Policy (Ash only)
+
+Schema migrations must be managed through Ash/AshPostgres migration tooling.
+
+- Use Ash migration/codegen flow (`mix ash.codegen`, `mix ash.migrate`, and
+  underlying `mix ash_postgres.generate_migrations`).
+- Do **not** generate direct Ecto migrations (`mix ecto.gen.migration`) in normal work.
+- Direct/manual Ecto migrations are allowed only in emergency incidents when Ash
+  tooling cannot express the change in time.
+- Every emergency manual migration must be explicitly documented in PR/commit notes,
+  with reason and follow-up plan to return to Ash-managed schema changes.
+
 ## Code Quality Verification
 
 Before submitting changes, always run the quality checks:
