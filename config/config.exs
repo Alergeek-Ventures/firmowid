@@ -80,7 +80,7 @@ config :firmowid, FirmowidWeb.Core.Endpoint,
       html: FirmowidWeb.Infrastructure.Components.ErrorHtml,
       json: FirmowidWeb.Infrastructure.Components.ErrorJson
     ],
-    layout: false
+    layout: {FirmowidWeb.Infrastructure.Layouts, :root}
   ],
   pubsub_server: Firmowid.PubSub,
   live_view: [signing_salt: "s6RVH6WQ"]

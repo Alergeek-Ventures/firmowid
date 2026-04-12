@@ -7,10 +7,11 @@ defmodule FirmowidWeb.Infrastructure.Components.ErrorHtmlTest do
   alias FirmowidWeb.Infrastructure.Components.ErrorHtml
 
   test "renders 404.html" do
-    assert render_to_string(ErrorHtml, "404", "html", []) == "Not Found"
+    assert render_to_string(ErrorHtml, "404", "html", []) =~ "Nie znaleziono strony"
   end
 
   test "renders 500.html" do
-    assert render_to_string(ErrorHtml, "500", "html", []) == "Internal Server Error"
+    assert render_to_string(ErrorHtml, "500", "html", []) =~
+             "Błąd został automatycznie zgłoszony"
   end
 end
