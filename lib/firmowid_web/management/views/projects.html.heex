@@ -112,7 +112,7 @@
             </p>
             <p class="text-right">{project.hours} h</p>
             <.link
-              navigate={~p"/zarzadzanie/projekty/#{project.id}"}
+              navigate={~p"/zarzadzanie/projekty/#{project.id}?#{Map.take(@params, ["month"])}"}
               class="hover:text-grey-700 text-grey-500"
             >
               <Lucideicons.chevron_right class="size-4" />
@@ -170,7 +170,7 @@
                 Przywróć
               </.button>
               <.link
-                navigate={~p"/zarzadzanie/projekty/#{project.id}"}
+                navigate={~p"/zarzadzanie/projekty/#{project.id}?#{Map.take(@params, ["month"])}"}
                 class="hover:text-grey-700 text-grey-500"
               >
                 <Lucideicons.chevron_right class="size-4" />
