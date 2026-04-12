@@ -97,7 +97,6 @@ defmodule Firmowid.MixProject do
       {:ex_cldr_dates_times, "~> 2.5"},
       {:ex_cldr_territories, "~> 2.11"},
       {:ex_money, "~> 5.0"},
-      {:timex, "~> 3.7"},
       {:faker, "~> 0.18"},
       {:req, "~> 0.5.17"},
       {:req_s3, "~> 0.2.3"},

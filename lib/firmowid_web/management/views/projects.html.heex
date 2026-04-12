@@ -155,7 +155,7 @@
             </p>
             <p class="text-right">{project.hours} h</p>
             <p class="text-right text-black">
-              {project.archived_at |> Timex.to_datetime() |> Timex.format!("{D}.{0M}.{YYYY}")}
+              {Calendar.strftime(project.archived_at, "%d.%m.%Y")}
             </p>
             <div class="flex flex-row items-center gap-3">
               <.button
