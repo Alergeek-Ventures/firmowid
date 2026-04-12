@@ -113,7 +113,7 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
 
     sales_invoice =
       Invoicing.get_sales_invoice!(sales_invoice_id,
-        load: [:buyer_display_name_label],
+        load: [:buyer_display_name_label, :gross_value],
         scope: scope
       )
 
