@@ -52,7 +52,7 @@ defmodule Mix.Tasks.Check do
     # Keep as low as possible — Ash macro expansion inherently raises this ceiling over time
     {"Xref", ["xref", "graph", "--label", "compile-connected", "--fail-above", "40"]},
     {"Credo", ["credo", "--strict"]},
-    {"Sobelow", ["sobelow", "--config", "--compact"]},
+    {"Sobelow", ["sobelow", "--config", "--compact", "--private"]},
     {"Dialyzer", ["dialyzer"]}
   ]
 
