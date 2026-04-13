@@ -43,10 +43,12 @@ defmodule Firmowid.Ash.Finances.BankAccount do
   end
 
   oban do
+    use_tenant_from_record? true
+
     triggers do
       trigger :sync_transactions do
         action :sync_from_gocardless
-        read_action :list_for_sync
+        read_action :read_global_for_sync
         where expr(not is_nil(gocardless_id))
         scheduler_cron "0 12 */2 * *"
         max_attempts 5
@@ -123,9 +125,9 @@ defmodule Firmowid.Ash.Finances.BankAccount do
       change set_attribute(:is_default, false)
     end
 
-    read :list_for_sync do
+    read :read_global_for_sync do
       description "Cross-org read for background sync workers."
-      multitenancy :bypass
+      multitenancy :allow_global
       filter expr(not is_nil(gocardless_id))
 
       pagination do
@@ -173,10 +175,10 @@ defmodule Firmowid.Ash.Finances.BankAccount do
     end
 
     bypass {SystemActorRole, roles: [:cost_invoice_processor]} do
-      authorize_if action(:list_for_sync)
+      authorize_if action(:read_global_for_sync)
     end
 
-    policy action(:list_for_sync) do
+    policy action(:read_global_for_sync) do
       forbid_if always()
     end
 

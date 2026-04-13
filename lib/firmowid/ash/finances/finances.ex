@@ -16,7 +16,7 @@ defmodule Firmowid.Ash.Finances do
       define :update_bank_account, action: :update
       define :clear_bank_account_default, action: :clear_default
       define :destroy_bank_account, action: :destroy
-      define :list_bank_accounts_for_sync, action: :list_for_sync
+      define :list_bank_accounts_for_sync, action: :read_global_for_sync
     end
 
     resource Firmowid.Ash.Finances.Institution do
