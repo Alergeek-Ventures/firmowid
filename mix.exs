@@ -197,6 +197,11 @@ defmodule Firmowid.MixProject do
         "tailwind firmowid --minify",
         "esbuild firmowid --minify",
         "phx.digest"
+      ],
+      "assets.sentry.deploy": [
+        "tailwind firmowid --minify",
+        "esbuild firmowid --minify --sourcemap=external",
+        "phx.digest"
       ]
     ]
   end

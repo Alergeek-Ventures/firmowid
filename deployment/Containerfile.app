@@ -59,7 +59,7 @@ COPY lib lib
 RUN mix compile
 
 # compile assets (must come after mix compile for phoenix-colocated hooks)
-RUN mix assets.deploy
+RUN mix assets.sentry.deploy
 
 # Changes to config/runtime.exs don't require recompiling the code
 COPY config/runtime.exs config/

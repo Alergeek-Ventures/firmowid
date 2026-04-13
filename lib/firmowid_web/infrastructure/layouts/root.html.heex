@@ -20,6 +20,7 @@
       phx-track-static
       type="text/javascript"
       src={~p"/assets/app.js"}
+      data-telemetry-config="true"
       data-posthog-enabled={
         to_string(
           Keyword.get(
@@ -71,7 +72,7 @@
       crossorigin="anonymous"
     >
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/posthog-js@1.296.0/dist/module.full.no-external.min.js">
+    <script src="https://cdn.jsdelivr.net/npm/posthog-js@1.296.0/dist/array.full.no-external.min.js">
     </script>
   </head>
   <body class="h-full">

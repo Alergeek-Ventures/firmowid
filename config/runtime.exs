@@ -155,7 +155,7 @@ end
 # Env vars:
 #   POSTHOG_ENABLED - enable PostHog analytics, defaults to "false"
 #   POSTHOG_API_KEY - PostHog project API key (required if PostHog enabled)
-#   POSTHOG_API_HOST - PostHog API host, defaults to "https://eu.i.posthog.com"
+#   POSTHOG_API_HOST - PostHog API host, defaults to "https://i.alergeek.workers.dev"
 posthog_enabled = System.get_env("POSTHOG_ENABLED", "false") == "true"
 sentry_release = System.get_env("SENTRY_RELEASE") || System.get_env("SOURCE_COMMIT")
 
@@ -166,13 +166,17 @@ if posthog_enabled do
     System.get_env("POSTHOG_API_KEY") ||
       raise "POSTHOG_API_KEY is required when POSTHOG_ENABLED=true"
 
-  posthog_api_host = System.get_env("POSTHOG_API_HOST", "https://eu.i.posthog.com")
+  posthog_api_host = System.get_env("POSTHOG_API_HOST", "https://i.alergeek.workers.dev")
 
   config :firmowid, :frontend_observability,
     posthog_enabled: true,
     posthog_api_key: posthog_api_key,
     posthog_api_host: posthog_api_host,
-    sentry_dsn: System.get_env("SENTRY_FRONTEND_DSN", ""),
+    sentry_dsn:
+      System.get_env(
+        "SENTRY_FRONTEND_DSN",
+        "https://a2fd6c45d207e5d5b3079064e79d1339@o4511195748630528.ingest.de.sentry.io/4511195751317584"
+      ),
     sentry_environment: System.get_env("SENTRY_FRONTEND_ENV", to_string(config_env())),
     sentry_release: sentry_release || ""
 
@@ -184,7 +188,11 @@ else
     posthog_enabled: false,
     posthog_api_key: "",
     posthog_api_host: "",
-    sentry_dsn: System.get_env("SENTRY_FRONTEND_DSN", ""),
+    sentry_dsn:
+      System.get_env(
+        "SENTRY_FRONTEND_DSN",
+        "https://a2fd6c45d207e5d5b3079064e79d1339@o4511195748630528.ingest.de.sentry.io/4511195751317584"
+      ),
     sentry_environment: System.get_env("SENTRY_FRONTEND_ENV", to_string(config_env())),
     sentry_release: sentry_release || ""
 end

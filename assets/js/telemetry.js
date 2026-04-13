@@ -1,4 +1,4 @@
-const SCRIPT_SELECTOR = "script[src$='/assets/app.js']";
+const SCRIPT_SELECTOR = "script[data-telemetry-config='true']";
 const CONSENT_COOKIE = "cookie_consent";
 
 function getAppScript() {
