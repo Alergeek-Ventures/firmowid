@@ -353,16 +353,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   end
 
   def validate_and_update(params, socket) do
-    current_sessions_ids =
-      socket.assigns.today_sessions
-      |> Enum.at(0)
-      |> Enum.map(& &1.id)
-
-    if length(current_sessions_ids) > 1 do
-      edit_sessions_realtime(current_sessions_ids, params, socket)
-    else
-      edit_session(params, socket)
-    end
+    edit_session(params, socket)
   end
 
   defp ash_update_sessions(session_updates, socket) do
@@ -395,6 +386,14 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
         end)
 
         {:noreply, socket}
+
+      {:error, _session_id, %Ash.Error.Forbidden{}} ->
+        LiveToast.send_toast(:error, "Brak uprawnień do edycji tej sesji (sesja może być zablokowana).")
+        {:noreply, socket}
+
+      {:error, _session_id, _other} ->
+        LiveToast.send_toast(:error, "Wystąpił błąd podczas aktualizacji sesji.")
+        {:noreply, socket}
     end
   end
 
@@ -405,7 +404,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     current_session
     |> SessionForm.from_session(socket.assigns.timezone)
     |> SessionForm.changeset(params)
-    |> SessionForm.attributes(socket.assigns.current_user.id, socket.assigns.timezone)
+    |> SessionForm.update_attributes(socket.assigns.timezone)
     |> case do
       {:ok, attributes} ->
         current_session
@@ -504,7 +503,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   def handle_event("save", %{"session_form" => session}, socket) do
     case session
          |> SessionForm.changeset()
-         |> SessionForm.attributes(socket.assigns.current_user.id, socket.assigns.timezone) do
+         |> SessionForm.create_attributes(socket.assigns.current_user.id, socket.assigns.timezone) do
       {:ok, attrs} ->
         save_with_overlap_check(attrs, socket)
 
