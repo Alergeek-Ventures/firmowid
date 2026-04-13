@@ -12,7 +12,7 @@ defmodule Firmowid.MixProject do
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader],
-      test_paths: ["lib", "e2e/test"],
+      test_paths: ["lib"],
       test_pattern: "*_test.exs",
 
       # TEMP: remove this once https://github.com/jeremyjh/dialyxir/issues/561 is resolved
@@ -28,7 +28,7 @@ defmodule Firmowid.MixProject do
 
   def cli do
     [
-      preferred_envs: [check: :test, e2e: :test]
+      preferred_envs: [check: :test]
     ]
   end
 
@@ -43,7 +43,7 @@ defmodule Firmowid.MixProject do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["lib", "test", "e2e/test"]
+  defp elixirc_paths(:test), do: ["lib", "test"]
   defp elixirc_paths(_), do: ["lib"]
 
   # Specifies your project dependencies.
@@ -73,8 +73,7 @@ defmodule Firmowid.MixProject do
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.1.27", override: true},
       {:phoenix_live_dashboard, "~> 0.8.3"},
-      # TODO: Remove override once playwright stops constraining esbuild to ~> 0.8.1.
-      {:esbuild, "~> 0.10", runtime: Mix.env() == :dev, override: true},
+      {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.4", runtime: Mix.env() == :dev},
       {:tz, "~> 0.28"},
       {:heroicons,
@@ -130,7 +129,6 @@ defmodule Firmowid.MixProject do
       {:tidewave, "~> 0.2", only: :dev},
       {:lazy_html, ">= 0.1.0"},
       {:erlsom, "~> 1.5", only: [:dev, :test]},
-      {:playwright, "~> 1.49.1-alpha.2", only: :test},
       {:styler, "~> 1.5", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:credo_naming, "~> 2.1", only: [:dev, :test], runtime: false},
@@ -190,11 +188,6 @@ defmodule Firmowid.MixProject do
       "db.setup": ["ash.setup", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ash_postgres.drop --force --force-drop", "db.setup"],
       test: ["ash_postgres.drop --force --force-drop --quiet", "ash.setup --quiet", "test"],
-      e2e: [
-        "ash_postgres.drop --force --force-drop --quiet",
-        "ash.setup --quiet",
-        "test --include e2e --only e2e"
-      ],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["tailwind firmowid", "esbuild firmowid"],
       "assets.deploy": [
