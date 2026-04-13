@@ -9,9 +9,15 @@ defmodule Firmowid.Application do
 
   @impl true
   def start(_type, _args) do
+    # Increase backtrace depth from default 8 to 64 so that stacktraces
+    # from deep framework calls (Ash, Ecto) include app-level caller frames.
+    # Recommended by Ash creator: https://elixirforum.com/t/62934
+    :erlang.system_flag(:backtrace_depth, 64)
+
     Oban.Telemetry.attach_default_logger()
     Ecto.DevLogger.install(Firmowid.Repo)
     attach_sentry_logger_handler()
+    Firmowid.SentryLiveViewHandler.setup()
 
     # Merge AshOban trigger/scheduled_action cron entries into the Oban runtime config.
     ash_oban_config =
