@@ -27,7 +27,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
         end
 
       user =
-        id
+        %{id: id}
         |> Core.get_org_user!(scope: scope, not_found_error?: false)
         |> case do
           nil -> nil
