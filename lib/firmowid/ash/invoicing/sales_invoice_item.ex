@@ -24,6 +24,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceItem do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Checks.AtLeastRole
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Invoicing.Validations.ValidateVatRate
   alias Firmowid.Ash.Resource
 
@@ -57,8 +58,13 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceItem do
     end
 
     # sales_invoice_processor: all actions
-    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:sales_invoice_processor]} do
+    bypass {SystemActorRole, roles: [:sales_invoice_processor]} do
       authorize_if always()
+    end
+
+    # invoice_matcher: read access for sales invoice aggregate calculations
+    bypass {SystemActorRole, roles: [:invoice_matcher]} do
+      authorize_if action_type(:read)
     end
 
     # Other system actors: no access (deny by default)
