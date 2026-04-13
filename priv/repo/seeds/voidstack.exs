@@ -23,6 +23,7 @@ defmodule Firmowid.Seeds.Voidstack do
   def seed! do
     dragan = seed_dragan()
     voidstack = seed_organization(dragan)
+    seed_org_membership(voidstack, dragan)
     seed_project(dragan, voidstack)
     blob = seed_blob(voidstack)
     seed_bank_and_transactions(voidstack)
@@ -60,6 +61,12 @@ defmodule Firmowid.Seeds.Voidstack do
       },
       identity: :unique_nickname
     )
+  end
+
+  defp seed_org_membership(voidstack, dragan) do
+    if is_nil(dragan.organization_id) or dragan.organization_id != voidstack.id do
+      Ash.Seed.update!(dragan, %{organization_id: voidstack.id})
+    end
   end
 
   defp seed_project(dragan, voidstack) do
