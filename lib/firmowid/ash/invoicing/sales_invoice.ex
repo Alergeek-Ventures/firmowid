@@ -380,6 +380,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
                 surname_field: :buyer_surname}
 
       validate present([:issue_date, :currency]), message: "Pole jest wymagane"
+
+      validate {Validations.ValidateItemsNotEmpty, field: :sales_invoice_items, source: :argument}
     end
 
     update :update do
@@ -443,6 +445,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
                 full_name_field: :buyer_full_name,
                 given_name_field: :buyer_given_name,
                 surname_field: :buyer_surname}
+
+      validate {Validations.ValidateItemsNotEmpty, field: :sales_invoice_items, source: :argument} do
+        where present(:sales_invoice_items)
+      end
     end
 
     create :create_correction do
@@ -485,6 +491,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
       validate string_length(:correction_reason, max: 256),
         message: "Powód korekty może mieć maksymalnie 256 znaków"
+
+      validate {Validations.ValidateItemsNotEmpty, field: :sales_invoice_items, source: :argument}
     end
 
     destroy :destroy do

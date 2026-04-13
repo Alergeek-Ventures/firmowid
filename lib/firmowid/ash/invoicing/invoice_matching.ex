@@ -97,7 +97,7 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
   def match_sales_invoices(scope) do
     unmatched_sales_invoices =
       Invoicing.list_sales_invoices!(
-        %{kind: :vat, reconciliation: :pending, date_field: :due_date},
+        %{kind: :vat, reconciliation: :pending, submission: :confirmed, date_field: :due_date},
         scope: scope
       )
 
