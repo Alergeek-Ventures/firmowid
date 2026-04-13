@@ -338,7 +338,7 @@ defmodule FirmowidWeb.Management.Views.Project do
   # Resolve a user by ID: prefer already-loaded project members, fall back to Core.
   defp resolve_user(uid, users_by_id, scope) do
     case Map.get(users_by_id, uid) do
-      nil -> Core.get_user!(uid, scope: scope)
+      nil -> Core.get_org_user!(uid, scope: scope)
       u -> u
     end
   end

@@ -28,7 +28,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
       user =
         id
-        |> Core.get_user!(scope: scope, not_found_error?: false)
+        |> Core.get_org_user!(scope: scope, not_found_error?: false)
         |> case do
           nil -> nil
           loaded_user -> Ash.load!(loaded_user, [avatar_blob: [:url]], scope: scope)

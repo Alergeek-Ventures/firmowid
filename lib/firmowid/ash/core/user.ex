@@ -101,6 +101,11 @@ defmodule Firmowid.Ash.Core.User do
     read :list do
       argument :search, :string
 
+      prepare fn query, _context ->
+        tenant = query.tenant || raise "User :list action requires a tenant (organization_id)"
+        Ash.Query.do_filter(query, organization_id: tenant)
+      end
+
       prepare build(
                 filter:
                   expr(
@@ -109,6 +114,17 @@ defmodule Firmowid.Ash.Core.User do
                   )
               ) do
         where present(:search)
+      end
+    end
+
+    read :get_org_user do
+      get_by [:id]
+
+      prepare fn query, _context ->
+        tenant =
+          query.tenant || raise "User :get_org_user action requires a tenant (organization_id)"
+
+        Ash.Query.do_filter(query, organization_id: tenant)
       end
     end
 
@@ -273,6 +289,11 @@ defmodule Firmowid.Ash.Core.User do
 
     # :list action — admin-only user listing
     bypass action(:list) do
+      authorize_if actor_attribute_equals(:role, :admin)
+    end
+
+    # :get_org_user — admin-only, tenant-scoped user lookup
+    bypass action(:get_org_user) do
       authorize_if actor_attribute_equals(:role, :admin)
     end
 
