@@ -143,12 +143,14 @@
                 Konta bankowe
               </.link>
             <% end %>
-            <.link
-              href={~p"/sign-out"}
-              class="hover:bg-darkGrey/50 flex justify-between rounded-md p-2"
-            >
-              Wyloguj się <.icon name="hero-arrow-right-start-on-rectangle" />
-            </.link>
+            <.form for={%{}} action={~p"/wyloguj"} method="delete" class="w-full">
+              <button
+                type="submit"
+                class="hover:bg-darkGrey/50 flex w-full cursor-pointer justify-between rounded-md p-2"
+              >
+                Wyloguj się <.icon name="hero-arrow-right-start-on-rectangle" />
+              </button>
+            </.form>
           </div>
         </div>
       </div>

@@ -104,9 +104,11 @@ defmodule FirmowidWeb.Organization.Views.Index do
               <div class="mt-8 mb-2.5 text-center">
                 <p>
                   Nie to konto?
-                  <.link class="underline" href={~p"/sign-out"}>
-                    Wyloguj
-                  </.link>
+                  <.form for={%{}} action={~p"/wyloguj"} method="delete" class="inline">
+                    <button type="submit" class="cursor-pointer underline">
+                      Wyloguj
+                    </button>
+                  </.form>
                 </p>
               </div>
             </div>

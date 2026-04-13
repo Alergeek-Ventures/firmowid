@@ -84,7 +84,7 @@ defmodule FirmowidWeb.Core.Router do
     pipe_through :browser
 
     auth_routes(AuthController, Firmowid.Ash.Core.User, path: "/auth")
-    sign_out_route(AuthController)
+    delete "/wyloguj", AuthController, :sign_out
   end
 
   # Canonical policy: Google accounts auto-link only when provider email is verified
