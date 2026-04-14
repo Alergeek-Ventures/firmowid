@@ -379,7 +379,9 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
             />
           <% end %>
 
-          <InvoiceDetails.invoice_notes internal_notes={@internal_notes} />
+          <%= if @internal_notes != [] do %>
+            <InvoiceDetails.invoice_notes internal_notes={@internal_notes} />
+          <% end %>
 
           <InvoiceDetails.invoice_preview>
             <:subpreview
