@@ -104,6 +104,17 @@ All checks must pass before changes can be merged.
 
 ## Code Style Guidelines
 
+### Frontend architecture conventions (`lib/firmowid_web`)
+
+- **Directory path = module namespace** (`FirmowidWeb.X.Y.Z` lives in
+  `lib/firmowid_web/x/y/z.ex`).
+- Prefer a **feature-first layout** with standard subfolders:
+  `views/`, `components/`, `controllers/`, `utilities/`.
+- Keep dependencies directional: nested/child features may depend on shared
+  parent feature modules, but avoid cross-sibling dependencies.
+- Keep these conventions enforceable in practice (Credo + code review), and
+  always finish refactors with `mix check`.
+
 ### Pure Elixir Files Preference
 
 Avoid writing `.heex` templates. Sometimes, it's unavoidable, but prefer Elixir

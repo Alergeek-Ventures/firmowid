@@ -220,11 +220,4 @@ defmodule FirmowidWeb.Core.Router do
       live "/regulamin", Landing.Views.TermsOfService
     end
   end
-
-  scope "/api", FirmowidWeb do
-    pipe_through [:api]
-
-    # API login endpoint - SessionApi controller rewritten for Ash Authentication
-    post "/login", Auth.Controllers.SessionApi, :create
-  end
 end

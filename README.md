@@ -24,6 +24,16 @@
 
 Po uruchomieniu serwera, zaloguj się na `kira@bytecraft.collective` / `kolejka123456` i odwiedź [`/development`](http://localhost:4000/development) aby zobaczyć pełny przewodnik po danych testowych, kontrahentach, projektach i scenariuszach KSeF.
 
+## Konwencje architektury frontendu (`lib/firmowid_web`)
+
+- Ścieżka pliku musi odpowiadać namespace modułu
+  (`FirmowidWeb.X.Y.Z` ↔ `lib/firmowid_web/x/y/z.ex`).
+- Preferowany układ to **feature-first** z podfolderami: `views/`,
+  `components/`, `controllers/`, `utilities/`.
+- Zachowujemy kierunkowe zależności: moduły dzieci mogą zależeć od wspólnych
+  modułów rodzica, unikamy zależności między rodzeństwem funkcjonalnym.
+- Każdą większą zmianę struktury kończymy pełną walidacją: `mix check`.
+
 
 ## Polityka migracji (Ash/AshPostgres)
 
