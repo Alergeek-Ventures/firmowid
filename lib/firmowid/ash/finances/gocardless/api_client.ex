@@ -15,7 +15,7 @@ defmodule Firmowid.Ash.Finances.GoCardless.ApiClient do
 
   @base_url "https://bankaccountdata.gocardless.com/api/v2"
 
-  @bank_sync_timeout 1_500_000
+  @bank_sync_timeout 1_500_000 * 4
 
   @doc """
   Lists available banking institutions for the given country code.
