@@ -86,6 +86,49 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     assert Decimal.eq?(salary.hourly_rate, Decimal.new("123.45"))
   end
 
+  test "archived employee is hidden from active list and visible in archive", %{conn: conn} do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
+
+    Core.archive_user!(employee, %{}, scope: current_scope(admin))
+
+    conn = log_in_user(conn, admin)
+
+    assert {:ok, _lv, active_html} = live(conn, ~p"/zarzadzanie/pracownicy")
+    refute active_html =~ to_string(employee.email)
+
+    assert {:ok, _lv, archived_html} = live(conn, ~p"/zarzadzanie/pracownicy/archiwum")
+    assert archived_html =~ to_string(employee.email)
+  end
+
+  test "admin cannot archive themselves", %{conn: conn} do
+    admin = admin_fixture(%{name: "Admin Self"})
+    conn = log_in_user(conn, admin)
+
+    {:ok, lv, _html} = live(conn, ~p"/zarzadzanie/pracownicy/#{admin.id}")
+
+    lv
+    |> element("button[phx-click='archive_employee']")
+    |> render_click()
+
+    assert render(lv) =~ "Nie możesz zarchiwizować własnego konta."
+  end
+
+  test "admin can archive another admin", %{conn: conn} do
+    admin = admin_fixture()
+    second_admin = user_in_org_fixture(admin.organization_id, %{role: :admin})
+
+    conn = log_in_user(conn, admin)
+    {:ok, lv, _html} = live(conn, ~p"/zarzadzanie/pracownicy/#{second_admin.id}")
+
+    lv
+    |> element("button[phx-click='archive_employee']")
+    |> render_click()
+
+    assert {:ok, _archive_lv, archive_html} = live(conn, ~p"/zarzadzanie/pracownicy/archiwum")
+    assert archive_html =~ to_string(second_admin.email)
+  end
+
   defp current_scope(admin) do
     %Scope{actor: admin, tenant: admin.organization_id}
   end

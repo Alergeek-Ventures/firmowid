@@ -61,7 +61,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     user = socket.assigns.current_user
 
     {:ok, last_session} = AshSession.most_recent(user.id, scope: scope, not_found_error?: false)
-    active_projects = Timetracker.list_projects!(%{user_id: user.id, active_only: true}, scope: scope)
+    active_projects = Timetracker.list_projects!(%{user_id: user.id, status: :active}, scope: scope)
 
     default_project_id =
       if last_session && Enum.any?(active_projects, &(&1.id == last_session.project_id)) do

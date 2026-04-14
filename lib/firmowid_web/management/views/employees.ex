@@ -22,7 +22,6 @@ defmodule FirmowidWeb.Management.Views.Employees do
       socket
       |> assign(:page_title, "Zarządzanie pracownikami")
       |> assign(:view, :standard)
-      |> assign(:search_expanded, false)
       |> assign(:active_months, active_months)
       |> assign(:can_export_csv, socket.assigns.current_user.role == :admin)
       |> assign_form()
@@ -37,7 +36,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    params = Map.take(params, ["month", "q", "archived"])
+    params = Map.take(params, ["month", "q"])
 
     selected_date =
       case params do
@@ -50,7 +49,6 @@ defmodule FirmowidWeb.Management.Views.Employees do
       |> assign(:params, params)
       |> assign(:selected_date, selected_date)
       |> assign(:search, params["q"] || "")
-      |> assign(:archived, params["archived"] == "true")
       |> assign_employees()
 
     {:noreply, socket}
@@ -59,7 +57,14 @@ defmodule FirmowidWeb.Management.Views.Employees do
   defp assign_employees(%{assigns: %{selected_date: date, search: search, ash_scope: scope}} = socket) do
     if socket.assigns.current_user.role == :admin do
       # 1. Users (with optional search filter)
-      input = if search in [nil, ""], do: %{}, else: %{search: search}
+      list_filters =
+        case socket.assigns.live_action do
+          :index -> %{status: :active}
+          :archive -> %{status: :archived}
+        end
+
+      search_filters = if search in [nil, ""], do: %{}, else: %{search: search}
+      input = Map.merge(list_filters, search_filters)
 
       users =
         input
@@ -169,16 +174,38 @@ defmodule FirmowidWeb.Management.Views.Employees do
 
   def handle_event("search", %{"q" => search}, socket) do
     params = Map.put(socket.assigns.params, "q", search)
-    {:noreply, push_patch(socket, to: ~p"/zarzadzanie/pracownicy?#{params}")}
+
+    path =
+      case socket.assigns.live_action do
+        :index -> ~p"/zarzadzanie/pracownicy?#{params}"
+        :archive -> ~p"/zarzadzanie/pracownicy/archiwum?#{params}"
+      end
+
+    {:noreply, push_patch(socket, to: path)}
   end
 
   def handle_event("change-month", %{"month" => month}, socket) do
     params = Map.put(socket.assigns.params, "month", month)
-    {:noreply, push_patch(socket, to: ~p"/zarzadzanie/pracownicy?#{params}")}
+
+    path =
+      case socket.assigns.live_action do
+        :index -> ~p"/zarzadzanie/pracownicy?#{params}"
+        :archive -> ~p"/zarzadzanie/pracownicy/archiwum?#{params}"
+      end
+
+    {:noreply, push_patch(socket, to: path)}
   end
 
-  def handle_event("toggle_search", _params, socket) do
-    {:noreply, update(socket, :search_expanded, &(!&1))}
+  def handle_event("unarchive_employee", %{"id" => id}, socket) do
+    scope = socket.assigns.ash_scope
+
+    with {:ok, user} <- Core.get_org_user(%{id: id}, scope: scope, not_found_error?: false),
+         {:ok, _user} <- Core.unarchive_user(user, %{}, scope: scope) do
+      {:noreply, assign_employees(socket)}
+    else
+      _ ->
+        {:noreply, put_flash(socket, :error, "Nie udało się przywrócić pracownika")}
+    end
   end
 
   attr :hours_record, :map, required: true

@@ -16,6 +16,7 @@ defmodule FirmowidWeb.Core.Router do
   alias FirmowidWeb.Infrastructure.Hooks.Timezone
   alias Invoicing.SalesInvoices.Controllers.Pdf
   alias Invoicing.SalesInvoices.Controllers.Shared
+  alias Management.Views.Employees
   alias Management.Views.ProjectForm
   alias Management.Views.Projects
   alias Timetracker.Controllers.Csv
@@ -146,7 +147,8 @@ defmodule FirmowidWeb.Core.Router do
         {CurrentPath, :save_request_uri},
         Timezone
       ] do
-      live "/zarzadzanie/pracownicy", Management.Views.Employees
+      live "/zarzadzanie/pracownicy", Employees, :index
+      live "/zarzadzanie/pracownicy/archiwum", Employees, :archive
       live "/zarzadzanie/pracownicy/:id", Management.Views.Employee, :projects
       live "/zarzadzanie/projekty", Projects, :index
       live "/zarzadzanie/projekty/archiwum", Projects, :archive
@@ -215,6 +217,7 @@ defmodule FirmowidWeb.Core.Router do
         {CurrentPath, :save_request_uri},
         Timezone
       ] do
+      live "/konto-wylaczone", Auth.Views.DisabledAccount
       live "/", Landing.Views.Index
       live "/polityka-prywatnosci", Landing.Views.PrivacyPolicy
       live "/regulamin", Landing.Views.TermsOfService

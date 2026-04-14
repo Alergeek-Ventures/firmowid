@@ -1,11 +1,38 @@
 <div class="mx-auto my-4 grid w-full max-w-7xl grid-cols-[max-content_1fr] grid-rows-[repeat(2,min-content)] gap-x-10">
   <.link
-    navigate={~p"/zarzadzanie/pracownicy"}
+    navigate={~p"/zarzadzanie/pracownicy?month=#{Date.to_iso8601(@projects_filter_date)}"}
     class="mb-8 flex items-center gap-2 justify-self-start"
   >
     <.icon name="hero-arrow-left-circle-solid" class="size-8" />
     <span class="text-darkGrey">Pracownicy</span>
   </.link>
+
+  <div class="col-start-2 mb-8 flex min-h-12 items-center justify-end gap-4">
+    <span
+      :if={@employee.archived_at}
+      class="bg-grey-200 text-grey-700 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm/snug font-normal"
+    >
+      <Lucideicons.archive class="size-4" /> zarchiwizowany
+    </span>
+
+    <.button
+      :if={!@employee.archived_at}
+      type="button"
+      color="black"
+      phx-click="archive_employee"
+    >
+      <.icon name="hero-archive-box-mini" class="size-5" /> Archiwizuj
+    </.button>
+
+    <.button
+      :if={@employee.archived_at}
+      type="button"
+      color="black"
+      phx-click="unarchive_employee"
+    >
+      <.icon name="hero-arrow-uturn-left-mini" class="size-5" /> Przywróć pracownika
+    </.button>
+  </div>
 
   <.card class="row-start-2 min-h-[689px] w-full max-w-[380px]">
     <div class="flex gap-3">
@@ -100,6 +127,19 @@
   </div>
 
   <div class="col-start-2 row-start-2 w-full space-y-6">
+    <div
+      :if={@employee.archived_at}
+      class="bg-grey-200 text-grey-700 flex flex-row items-center gap-4 rounded-lg p-4 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]"
+    >
+      <Lucideicons.info class="size-4" />
+
+      <p class="text-sm/snug text-balance">
+        Pracownik został zarchiwizowany {Firmowid.Cldr.Date.to_string!(@employee.archived_at,
+          format: :long
+        )}. Konto jest wyłączone do czasu przywrócenia przez administratora.
+      </p>
+    </div>
+
     <%= case @live_action do %>
       <% :projects -> %>
         <.employee_projects_tab

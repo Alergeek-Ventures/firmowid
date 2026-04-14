@@ -195,6 +195,6 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
 
   # User-centric query using Ash Core domain
   defp list_users_with_projects(scope) do
-    Core.list_users!(scope: scope)
+    Core.list_users!(%{status: :active}, scope: scope)
   end
 end

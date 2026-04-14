@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
       socket =
         if is_nil(user) do
-          push_navigate(socket, to: ~p"/zarzadzanie/pracownicy")
+          push_navigate(socket, to: ~p"/zarzadzanie/pracownicy?month=#{Date.to_iso8601(Date.utc_today())}")
         else
           employee = build_employee(user, id, selected_date, scope)
           active_months = months_with_sessions(%{user_id: id}, scope)
@@ -50,7 +50,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
       {:noreply, socket}
     else
-      {:noreply, push_navigate(socket, to: ~p"/zarzadzanie/pracownicy")}
+      {:noreply, push_navigate(socket, to: ~p"/zarzadzanie/pracownicy?month=#{Date.to_iso8601(Date.utc_today())}")}
     end
   end
 
@@ -125,6 +125,56 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
     {:noreply, push_patch(socket, to: ~p"/zarzadzanie/pracownicy/#{employee.id}?month=#{month}")}
   end
+
+  def handle_event("archive_employee", _params, socket) do
+    scope = socket.assigns.ash_scope
+    date = socket.assigns.projects_filter_date
+
+    with {:ok, user} <- Core.get_org_user(%{id: socket.assigns.employee.id}, scope: scope, not_found_error?: false),
+         {:ok, archived_user} <- Core.archive_user(user, %{}, scope: scope) do
+      loaded_user = Ash.load!(archived_user, [avatar_blob: [:url]], scope: scope)
+      employee = build_employee(loaded_user, loaded_user.id, date, scope)
+
+      {:noreply,
+       socket
+       |> assign(:employee, employee)
+       |> assign(:page_title, get_employee_display_name(employee))}
+    else
+      {:error, %Ash.Error.Forbidden{}} when socket.assigns.current_user.id == socket.assigns.employee.id ->
+        {:noreply, put_flash(socket, :error, "Nie możesz zarchiwizować własnego konta.")}
+
+      {:error, error} ->
+        {:noreply, put_flash(socket, :error, humanize_ash_error(error))}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "Nie udało się zarchiwizować pracownika")}
+    end
+  end
+
+  def handle_event("unarchive_employee", _params, socket) do
+    scope = socket.assigns.ash_scope
+    date = socket.assigns.projects_filter_date
+
+    with {:ok, user} <- Core.get_org_user(%{id: socket.assigns.employee.id}, scope: scope, not_found_error?: false),
+         {:ok, unarchived_user} <- Core.unarchive_user(user, %{}, scope: scope) do
+      loaded_user = Ash.load!(unarchived_user, [avatar_blob: [:url]], scope: scope)
+      employee = build_employee(loaded_user, loaded_user.id, date, scope)
+
+      {:noreply,
+       socket
+       |> assign(:employee, employee)
+       |> assign(:page_title, get_employee_display_name(employee))}
+    else
+      _ ->
+        {:noreply, put_flash(socket, :error, "Nie udało się przywrócić pracownika")}
+    end
+  end
+
+  defp humanize_ash_error(%Ash.Error.Invalid{errors: [first_error | _]}) do
+    Exception.message(first_error)
+  end
+
+  defp humanize_ash_error(error), do: Exception.message(error)
 
   attr :label, :string, required: true
   attr :class, :any, default: ""

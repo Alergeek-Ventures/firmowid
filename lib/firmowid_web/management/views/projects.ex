@@ -73,8 +73,8 @@ defmodule FirmowidWeb.Management.Views.Projects do
 
     {filter_args, all_time?} =
       case socket.assigns.live_action do
-        :index -> {%{active_only: true}, false}
-        :archive -> {%{archived_only: true}, true}
+        :index -> {%{status: :active}, false}
+        :archive -> {%{status: :archived}, true}
       end
 
     search_args = if search in [nil, ""], do: %{}, else: %{search: search}

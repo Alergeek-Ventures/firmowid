@@ -63,15 +63,23 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
   defp build_salaries_csv(month, year, scope) do
     as_of_date = Date.new!(year, month, 1)
 
-    users = Core.list_users!(%{}, scope: scope)
-    salaries = AshUserSalary.as_of!(as_of_date, scope: scope)
-    salary_by_user = Map.new(salaries, &{&1.user_id, &1.hourly_rate})
-
     hours_records = Timetracker.list_hours_records!(%{month: month, year: year}, scope: scope)
     hr_by_user = Map.new(hours_records, &{&1.user_id, &1})
 
+    users =
+      [scope: scope]
+      |> Core.list_users!()
+      |> Enum.filter(fn user ->
+        case Map.get(hr_by_user, user.id) do
+          nil -> false
+          %{number_of_hours: hours} -> Decimal.eq?(hours, Decimal.new(0)) == false
+        end
+      end)
+
+    salaries = AshUserSalary.as_of!(as_of_date, scope: scope)
+    salary_by_user = Map.new(salaries, &{&1.user_id, &1.hourly_rate})
+
     users
-    |> Enum.filter(&Map.has_key?(hr_by_user, &1.id))
     |> Enum.sort_by(& &1.name)
     |> Enum.map(fn user ->
       hr = hr_by_user[user.id]

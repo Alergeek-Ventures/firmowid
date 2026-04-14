@@ -33,11 +33,18 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
       user ->
         {user, org, scope} = UserAuth.load_scope_and_avatars(user)
 
-        {:cont,
-         socket
-         |> assign(:current_user, user)
-         |> assign(:current_org, org)
-         |> assign(:ash_scope, scope)}
+        if UserAuth.archived_user?(user) do
+          {:halt,
+           socket
+           |> LiveToast.put_toast(:error, "To konto zostało wyłączone.")
+           |> redirect(to: ~p"/konto-wylaczone")}
+        else
+          {:cont,
+           socket
+           |> assign(:current_user, user)
+           |> assign(:current_org, org)
+           |> assign(:ash_scope, scope)}
+        end
     end
   end
 end

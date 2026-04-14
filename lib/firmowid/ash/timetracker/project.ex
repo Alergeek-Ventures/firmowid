@@ -61,8 +61,11 @@ defmodule Firmowid.Ash.Timetracker.Project do
 
       argument :user_id, :uuid
       argument :search, :string
-      argument :active_only, :boolean
-      argument :archived_only, :boolean
+
+      argument :status, :atom do
+        constraints one_of: [:active, :archived]
+      end
+
       argument :ids, {:array, :uuid}
 
       prepare build(filter: expr(exists(project_users, user_id == ^arg(:user_id)))) do
@@ -70,11 +73,11 @@ defmodule Firmowid.Ash.Timetracker.Project do
       end
 
       prepare build(filter: expr(is_nil(archived_at))) do
-        where argument_equals(:active_only, true)
+        where argument_equals(:status, :active)
       end
 
       prepare build(filter: expr(not is_nil(archived_at))) do
-        where argument_equals(:archived_only, true)
+        where argument_equals(:status, :archived)
       end
 
       prepare build(filter: expr(id in ^arg(:ids))) do

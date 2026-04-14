@@ -48,10 +48,17 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
       true ->
         {user, org, ash_scope} = load_scope_and_avatars(conn.assigns[:current_user])
 
-        conn
-        |> assign(:current_user, user)
-        |> assign(:current_org, org)
-        |> assign(:ash_scope, ash_scope)
+        if archived_user?(user) do
+          conn
+          |> LiveToast.put_toast(:error, "To konto zostało wyłączone.")
+          |> redirect(to: ~p"/konto-wylaczone")
+          |> halt()
+        else
+          conn
+          |> assign(:current_user, user)
+          |> assign(:current_org, org)
+          |> assign(:ash_scope, ash_scope)
+        end
     end
   end
 
@@ -135,7 +142,13 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   redirected to invoicing hub, while other users land on time tracking.
   """
   @spec signed_in_path_for_user(map() | nil) :: String.t()
+  def signed_in_path_for_user(%{archived_at: archived_at}) when not is_nil(archived_at), do: ~p"/konto-wylaczone"
+
   def signed_in_path_for_user(%{role: role}) when role in [:invoicing, :accountant, :admin], do: ~p"/fakturowanie"
 
   def signed_in_path_for_user(_user), do: ~p"/czasosledz"
+
+  @spec archived_user?(map()) :: boolean()
+  def archived_user?(%{archived_at: archived_at}), do: not is_nil(archived_at)
+  def archived_user?(_), do: false
 end

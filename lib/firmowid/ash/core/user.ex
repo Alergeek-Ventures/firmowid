@@ -100,6 +100,10 @@ defmodule Firmowid.Ash.Core.User do
     read :list do
       argument :search, :string
 
+      argument :status, :atom do
+        constraints one_of: [:active, :archived]
+      end
+
       prepare fn query, _context ->
         tenant = query.tenant || raise "User :list action requires a tenant (organization_id)"
         Ash.Query.do_filter(query, organization_id: tenant)
@@ -113,6 +117,14 @@ defmodule Firmowid.Ash.Core.User do
                   )
               ) do
         where present(:search)
+      end
+
+      prepare build(filter: expr(is_nil(archived_at))) do
+        where argument_equals(:status, :active)
+      end
+
+      prepare build(filter: expr(not is_nil(archived_at))) do
+        where argument_equals(:status, :archived)
       end
     end
 
@@ -212,6 +224,20 @@ defmodule Firmowid.Ash.Core.User do
       change set_attribute(:organization_id, nil)
     end
 
+    update :archive do
+      accept []
+
+      validate {Firmowid.Ash.Core.Validations.NotSelfArchive, []}
+
+      change set_attribute(:archived_at, &Date.utc_today/0)
+    end
+
+    update :unarchive do
+      accept []
+
+      change set_attribute(:archived_at, nil)
+    end
+
     update :update_avatar do
       accept [:avatar_blob_id]
     end
@@ -308,6 +334,14 @@ defmodule Firmowid.Ash.Core.User do
       authorize_if actor_attribute_equals(:role, :admin)
     end
 
+    bypass action(:archive) do
+      authorize_if actor_attribute_equals(:role, :admin)
+    end
+
+    bypass action(:unarchive) do
+      authorize_if actor_attribute_equals(:role, :admin)
+    end
+
     bypass action(:set_organization) do
       authorize_if expr(id == ^actor(:id))
     end
@@ -368,6 +402,7 @@ defmodule Firmowid.Ash.Core.User do
       default: :user
 
     attribute :employment_date, :date, public?: true
+    attribute :archived_at, :date, public?: true
     attribute :avatar_blob_id, :uuid, public?: true
 
     attribute :phone, :string, public?: true
@@ -409,6 +444,9 @@ defmodule Firmowid.Ash.Core.User do
   identities do
     identity :unique_email, [:email]
   end
+
+  # Use a dedicated validation module placed next to the resource file.
+  # See lib/firmowid/ash/core/validations/not_self_archive.ex
 end
 
 # ── FunWithFlags protocol implementations ─────────────────────────

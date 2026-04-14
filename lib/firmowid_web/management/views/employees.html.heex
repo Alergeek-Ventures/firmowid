@@ -2,16 +2,18 @@
   <% # top -> collapsed navbar height (56px) / TODO: refactor %>
   <div class="bg-lightGreyBg sticky top-14 z-10 flex flex-col gap-4 py-3">
     <div class="flex items-center justify-between">
-      <form class="flex gap-5" phx-submit="search">
+      <form class="flex gap-4" phx-submit="search">
         <.date_picker
           id="month"
           selected_date={@selected_date}
           active_months={@active_months}
         />
-        <div class={[
-          @search_expanded && "focus-within:ring-2",
-          "bg-greyButtonBg flex min-w-10 items-center justify-center rounded-[5px] transition-shadow"
-        ]}>
+
+        <div
+          id="search-container"
+          data-expanded={to_string(@search != "")}
+          class="bg-greyButtonBg group flex min-w-10 items-center justify-center rounded-lg transition-shadow data-[expanded=true]:focus-within:ring-2"
+        >
           <.input
             type="text"
             name="q"
@@ -20,21 +22,18 @@
             phx-change="search"
             phx-debounce="300"
             input_class="py-0 px-1 bg-transparent border-none"
-            class={[
-              "border-transparent transition-[width,opacity,padding] duration-300 ease-in-out",
-              "focus:border-none focus:ring-0 focus:outline-hidden",
-              @search_expanded && "w-64 px-2 py-1 opacity-100",
-              !@search_expanded && "w-0 px-0 opacity-0"
-            ]}
+            class="w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-64 group-data-[expanded=true]:px-2 group-data-[expanded=true]:py-1 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden"
           />
           <.button
             type="button"
-            phx-click="toggle_search"
-            color="none"
-            class="text-darkGrey flex border-none bg-transparent p-2"
-            id="search-button"
+            phx-click={
+              JS.toggle_attribute({"data-expanded", "true", "false"}, to: "#search-container")
+              |> JS.focus(to: "#search-container input")
+            }
+            color="light_grey"
+            new={true}
           >
-            <.icon name="hero-magnifying-glass" class="size-5" />
+            <Lucideicons.search />
           </.button>
         </div>
       </form>
@@ -60,6 +59,22 @@
     </div>
 
     <div class="flex gap-4">
+      <.link
+        :for={
+          {path, live_action, label} <- [
+            {~p"/zarzadzanie/pracownicy?#{@params}", :index, "Aktywni"},
+            {~p"/zarzadzanie/pracownicy/archiwum?#{@params}", :archive, "Zarchiwizowani"}
+          ]
+        }
+        patch={path}
+        class={[
+          button_styles(%{variant: "ghost", size: "small", new: true}),
+          if(@live_action == live_action, do: "bg-grey-700 hover:text-grey-900 text-white")
+        ]}
+      >
+        {label}
+      </.link>
+
       <.switch
         class="ml-auto flex-row-reverse gap-4"
         label="Widok wypłat"
@@ -73,8 +88,14 @@
     phx-submit="save_wages"
     class={[
       "grid gap-x-6 gap-y-2",
-      @view == :standard && "grid-cols-[1fr_min-content_min-content_min-content]",
-      @view != :standard && "grid-cols-[2fr_1fr_1fr_1fr_min-content_min-content]"
+      @view == :standard && @live_action == :index &&
+        "grid-cols-[1fr_min-content_min-content_min-content]",
+      @view == :standard && @live_action == :archive &&
+        "grid-cols-[1fr_min-content_min-content_min-content_min-content]",
+      @view != :standard && @live_action == :index &&
+        "grid-cols-[2fr_1fr_1fr_1fr_min-content_min-content]",
+      @view != :standard && @live_action == :archive &&
+        "grid-cols-[2fr_1fr_1fr_1fr_1fr_min-content_min-content]"
     ]}
   >
     <div
@@ -86,6 +107,10 @@
     >
       <p>Pracownik</p>
       <p class="text-right text-nowrap">Przepracowane godziny</p>
+
+      <%= if @live_action == :archive do %>
+        <p class="text-right text-nowrap">Data archiwizacji</p>
+      <% end %>
 
       <%= if @view in [:wages, :wage_editor] do %>
         <%= case @view do %>
@@ -124,7 +149,16 @@
 
     <%= if Enum.empty?(@employees) do %>
       <div class="text-darkGrey col-span-full py-10 text-center">
-        Brak wyników. Spróbuj zmienić kryteria wyszukiwania.
+        <%= if @search != "" do %>
+          Brak wyników. Spróbuj zmienić kryteria wyszukiwania.
+        <% else %>
+          <%= case @live_action do %>
+            <% :index -> %>
+              Brak aktywnych pracowników do wyświetlenia.
+            <% :archive -> %>
+              Brak zarchiwizowanych pracowników do wyświetlenia.
+          <% end %>
+        <% end %>
       </div>
     <% else %>
       <div
@@ -134,7 +168,12 @@
       >
         <div class={[
           "grid grid-cols-subgrid items-center rounded-sm bg-white px-4",
-          if(@view == :standard, do: "col-span-3", else: "col-span-5")
+          cond do
+            @view == :standard and @live_action == :index -> "col-span-3"
+            @view == :standard and @live_action == :archive -> "col-span-4"
+            @view != :standard and @live_action == :index -> "col-span-5"
+            true -> "col-span-6"
+          end
         ]}>
           <div class="flex items-center gap-4">
             <.avatar class="ring-greyButtonBg/50 size-8 shrink-0 ring-1">
@@ -151,7 +190,9 @@
             </.avatar>
             <%= if @can_export_csv do %>
               <.link
-                navigate={~p"/zarzadzanie/pracownicy/#{employee.user.id}"}
+                navigate={
+                  ~p"/zarzadzanie/pracownicy/#{employee.user.id}?month=#{Date.to_iso8601(@selected_date)}"
+                }
                 class="hover:underline"
               >
                 {employee.user.name || employee.user.email}
@@ -164,6 +205,14 @@
           <p class="text-right">
             {Timetracker.seconds_to_hours(employee.time_worked)} h
           </p>
+
+          <%= if @live_action == :archive do %>
+            <p class="text-right text-black">
+              <%= if employee.user.archived_at do %>
+                {Calendar.strftime(employee.user.archived_at, "%d.%m.%Y")}
+              <% end %>
+            </p>
+          <% end %>
 
           <%= if @view in [:wages, :wage_editor] do %>
             <%= case @view do %>
@@ -199,16 +248,20 @@
             </p>
           <% end %>
 
-          <%= if @can_export_csv do %>
-            <.link
-              navigate={~p"/zarzadzanie/pracownicy/#{employee.user.id}"}
-              class="flex items-center"
-            >
-              <Lucideicons.chevron_right class="text-grey-700 size-4 shrink-0" />
-            </.link>
-          <% else %>
-            <div />
-          <% end %>
+          <div class="flex items-center justify-end gap-3">
+            <%= if @can_export_csv do %>
+              <.link
+                navigate={
+                  ~p"/zarzadzanie/pracownicy/#{employee.user.id}?month=#{Date.to_iso8601(@selected_date)}"
+                }
+                class="flex items-center"
+              >
+                <Lucideicons.chevron_right class="text-grey-700 size-4 shrink-0" />
+              </.link>
+            <% else %>
+              <div />
+            <% end %>
+          </div>
         </div>
 
         <div class="ml-2 flex items-center gap-4 rounded-sm bg-white p-4">
