@@ -61,20 +61,28 @@ defmodule Firmowid.Application do
   end
 
   defp attach_sentry_logger_handler do
-    case :logger.add_handler(:firmowid_sentry_handler, Sentry.LoggerHandler, %{
-           config: %{metadata: [:file, :line]}
-         }) do
-      :ok ->
+    # Only attach Sentry logger handler when Sentry is configured with a DSN.
+    # This prevents attempts to register the handler when Sentry is intentionally disabled.
+    case Application.get_env(:sentry, :dsn) do
+      nil ->
         :ok
 
-      {:error, {:already_exist, :firmowid_sentry_handler}} ->
-        :ok
+      _dsn ->
+        case :logger.add_handler(:firmowid_sentry_handler, Sentry.LoggerHandler, %{
+               config: %{metadata: [:file, :line]}
+             }) do
+          :ok ->
+            :ok
 
-      {:error, {:already_exists, :firmowid_sentry_handler}} ->
-        :ok
+          {:error, {:already_exist, :firmowid_sentry_handler}} ->
+            :ok
 
-      {:error, _reason} ->
-        :ok
+          {:error, {:already_exists, :firmowid_sentry_handler}} ->
+            :ok
+
+          {:error, _reason} ->
+            :ok
+        end
     end
   end
 

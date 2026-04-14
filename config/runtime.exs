@@ -177,6 +177,43 @@ end
 posthog_enabled = System.get_env("POSTHOG_ENABLED", "false") == "true"
 sentry_release = System.get_env("SENTRY_RELEASE") || System.get_env("SOURCE_COMMIT")
 
+defmodule RuntimeSentry do
+  @moduledoc false
+
+  def validate(nil, _), do: nil
+  def validate("disabled", _), do: nil
+
+  def validate(val, name) when is_binary(val) do
+    case URI.parse(val) do
+      %URI{scheme: scheme, host: host, userinfo: userinfo, path: path}
+      when scheme in ["http", "https"] and is_binary(host) and is_binary(userinfo) and path not in [nil, "", "/"] ->
+        val
+
+      _ ->
+        raise "Invalid Sentry DSN in #{name}: #{val}. Provide a valid DSN or the exact token 'disabled'."
+    end
+  end
+
+  def validate(val, name),
+    do: raise("Invalid Sentry DSN in #{name}: #{inspect(val)}. Provide a valid DSN or the exact token 'disabled'.")
+end
+
+# Pre-validate frontend and server DSNs
+frontend_raw =
+  System.get_env(
+    "SENTRY_FRONTEND_DSN",
+    "https://a2fd6c45d207e5d5b3079064e79d1339@o4511195748630528.ingest.de.sentry.io/4511195751317584"
+  )
+
+frontend_sentry = RuntimeSentry.validate(frontend_raw, "SENTRY_FRONTEND_DSN")
+server_sentry = RuntimeSentry.validate(System.get_env("SENTRY_DSN"), "SENTRY_DSN")
+
+# If the raw env was the explicit disable token, remove it from process env
+# so Sentry's own config fill-in-from-env won't pick it up.
+if System.get_env("SENTRY_DSN") == "disabled" do
+  System.delete_env("SENTRY_DSN")
+end
+
 config :firmowid, :analytics, posthog_enabled: posthog_enabled
 
 if posthog_enabled do
@@ -190,11 +227,7 @@ if posthog_enabled do
     posthog_enabled: true,
     posthog_api_key: posthog_api_key,
     posthog_api_host: posthog_api_host,
-    sentry_dsn:
-      System.get_env(
-        "SENTRY_FRONTEND_DSN",
-        "https://a2fd6c45d207e5d5b3079064e79d1339@o4511195748630528.ingest.de.sentry.io/4511195751317584"
-      ),
+    sentry_dsn: frontend_sentry,
     sentry_environment: System.get_env("SENTRY_FRONTEND_ENV", to_string(config_env())),
     sentry_release: sentry_release || ""
 
@@ -206,15 +239,15 @@ else
     posthog_enabled: false,
     posthog_api_key: "",
     posthog_api_host: "",
-    sentry_dsn:
-      System.get_env(
-        "SENTRY_FRONTEND_DSN",
-        "https://a2fd6c45d207e5d5b3079064e79d1339@o4511195748630528.ingest.de.sentry.io/4511195751317584"
-      ),
+    sentry_dsn: frontend_sentry,
     sentry_environment: System.get_env("SENTRY_FRONTEND_ENV", to_string(config_env())),
     sentry_release: sentry_release || ""
 end
 
+# server-side Sentry DSN
+config :sentry, dsn: server_sentry
+
+# Keep release separately configured
 config :sentry, release: sentry_release
 
 # Phoenix HTTP port - only override if PORT is set (worktree)
