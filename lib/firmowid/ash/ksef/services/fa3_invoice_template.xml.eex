@@ -213,4 +213,11 @@
 			<% end %>
 		</Platnosc>
 	</Fa>
+
+	<Stopka>
+		<Informacje>
+			<StopkaFaktury><%= @invoice.invoice_note || "" %></StopkaFaktury>
+		</Informacje>
+	</Stopka>
+
 </Faktura>

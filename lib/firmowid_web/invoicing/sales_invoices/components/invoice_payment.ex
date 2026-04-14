@@ -53,7 +53,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
       />
 
       <div class={[
-        "border-grey-200 col-start-2 grid w-min min-w-[600px] grid-cols-[min-content_1fr] items-center gap-4 gap-y-2 rounded-lg border p-4 transition-opacity duration-200",
+        "border-grey-200 col-start-2 grid w-min min-w-[400px] grid-cols-[min-content_1fr] items-center gap-4 gap-y-2 rounded-lg border p-4 transition-opacity duration-200",
         if(to_string(@payment_form[:payment_method].value) == "transfer",
           do: "opacity-100",
           else: "pointer-events-none opacity-0"

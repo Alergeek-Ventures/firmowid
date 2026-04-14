@@ -120,7 +120,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   def invoice_amount(assigns) do
     ~H"""
-    <div class="flex flex-row items-start justify-between gap-2 pl-1">
+    <div class="flex flex-col items-end justify-between gap-2 pl-1">
       <label class="text-grey-700 text-sm/snug" for="total-amount">
         {if @lang == :en, do: "Total to pay", else: "Razem do zapłaty"}
       </label>
@@ -134,6 +134,28 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       >
         {@total_amount}
       </p>
+    </div>
+    """
+  end
+
+  attr :internal_notes, :list, required: true
+
+  def invoice_notes(assigns) do
+    ~H"""
+    <div class="flex flex-col gap-2 py-2 pl-1">
+      <label class="text-darkGrey pb-1 text-sm/snug text-nowrap">
+        Komentarze
+      </label>
+      <ol class="list-inside list-disc">
+        <%= for note <- @internal_notes do %>
+          <li
+            id={"internal_note-#{note}"}
+            class="leading-snug"
+          >
+            {note}
+          </li>
+        <% end %>
+      </ol>
     </div>
     """
   end

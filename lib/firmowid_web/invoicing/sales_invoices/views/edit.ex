@@ -471,6 +471,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
         |> Map.merge(%{
           ksef_invoice_kind: ksef_invoice_kind,
           correction_reason: AshPhoenix.Form.value(ash_form, :correction_reason),
+          invoice_note: AshPhoenix.Form.value(ash_form, :invoice_note),
+          internal_note: AshPhoenix.Form.value(ash_form, :internal_note),
           sales_invoice_items: items,
           net_value: net_value,
           vat_value: vat_value,

@@ -199,6 +199,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       is_reverse_charge: base_invoice.is_reverse_charge,
       currency: base_invoice.currency,
       seller_account_number: if(default_bank_account, do: default_bank_account.iban),
+      invoice_note: base_invoice.invoice_note,
+      internal_note: base_invoice.internal_note,
       items: items
     }
 
@@ -507,6 +509,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       vat_value: draft.vat_value,
       gross_value: draft.gross_value,
       sales_invoice_items: items,
+      invoice_note: draft.invoice_note,
+      internal_note: draft.internal_note,
       # Fields the template checks but aren't relevant for new invoices
       ksef_invoice_kind: :vat,
       ksef_number: nil,
@@ -857,6 +861,28 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
      |> assign(:invoice_number, invoice_number)
      |> assign(:preview_invoice, preview_invoice)
      |> assign(:invoice_warnings, invoice_warnings)}
+  end
+
+  def handle_event("update_notes", %{"invoice_note" => invoice_note, "internal_note" => internal_note}, socket) do
+    scope = socket.assigns.ash_scope
+    draft = socket.assigns.draft
+
+    case WizardDraft.update_notes(draft, %{invoice_note: invoice_note, internal_note: internal_note}, scope: scope) do
+      {:ok, updated_draft} ->
+        invoice = load_draft_with_calcs(updated_draft, scope)
+
+        preview_invoice =
+          Map.merge(socket.assigns.preview_invoice, %{invoice_note: invoice_note, internal_note: internal_note})
+
+        {:noreply,
+         socket
+         |> assign(:draft, updated_draft)
+         |> assign(:invoice, invoice)
+         |> assign(:preview_invoice, preview_invoice)}
+
+      {:error, _error} ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event("select_series", %{"number" => invoice_number}, socket) do

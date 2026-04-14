@@ -357,7 +357,9 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         :buyer_mail_country,
         :buyer_email,
         :buyer_phone,
-        :buyer_description
+        :buyer_description,
+        :invoice_note,
+        :internal_note
       ]
 
       argument :sales_invoice_items, {:array, :map}, allow_nil?: false
@@ -382,6 +384,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       validate present([:issue_date, :currency]), message: "Pole jest wymagane"
 
       validate {Validations.ValidateItemsNotEmpty, field: :sales_invoice_items, source: :argument}
+
+      validate string_length(:internal_note, max: 10_000) do
+        where present(:internal_note)
+      end
     end
 
     update :update do
@@ -420,7 +426,9 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         :buyer_mail_country,
         :buyer_email,
         :buyer_phone,
-        :buyer_description
+        :buyer_description,
+        :invoice_note,
+        :internal_note
       ]
 
       argument :sales_invoice_items, {:array, :map}
@@ -448,6 +456,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
       validate {Validations.ValidateItemsNotEmpty, field: :sales_invoice_items, source: :argument} do
         where present(:sales_invoice_items)
+      end
+
+      validate string_length(:internal_note, max: 10_000) do
+        where present(:internal_note)
       end
     end
 
@@ -712,6 +724,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
           seller_address: org[:address] || org["address"],
           seller_nip: org[:nip] || org["nip"],
           is_cash_account: draft.payment_method == :cash,
+          invoice_note: draft.invoice_note,
+          internal_note: draft.internal_note,
           sales_invoice_items: items
         }
 
@@ -1018,6 +1032,12 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       public?: true
 
     attribute :correction_reason, :string, public?: true
+    # Public note visible on invoice/PDF and sent to KSeF (StopkaFaktury)
+    attribute :invoice_note, :string, public?: true
+    # Internal-only note, visible inside Firmowid only. Max 10_000 chars.
+    attribute :internal_note, :string, public?: false
+    # Validate internal_note length (DB will allow large text but enforce here)
+    # Use an action-level validation instead of a bare validate/1 call inside attributes
 
     Resource.firmowid_timestamps()
   end

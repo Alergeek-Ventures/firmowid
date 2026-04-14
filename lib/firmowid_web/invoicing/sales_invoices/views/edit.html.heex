@@ -40,51 +40,54 @@
       <hr class="text-grey-200 col-start-2 col-end-9" />
 
       <div class="col-start-2 col-end-9 flex flex-row items-start gap-14">
-        <div class="grid w-full grid-cols-[min-content_1fr] items-start gap-x-5 gap-y-4">
-          <label class="text-grey-700 whitespace-nowrap" for={@form[:counterparty_id].id}>
+        <div class="flex w-1/2 min-w-[400px] flex-col gap-4">
+          <label
+            class="text-grey-700 font-bold whitespace-nowrap"
+            for={@form[:counterparty_id].id}
+          >
             Kontrahent
           </label>
 
-          <div class="border-grey-200 col-start-2 grid grid-cols-[repeat(2,auto)] items-start gap-x-5 gap-y-1 rounded-lg border p-4">
-            <p class="text-grey-500 text-sm/snug">Nazwa</p>
-            <p class="text-grey-700 text-sm/snug font-bold">
+          <div class="col-start-2 grid grid-cols-[min-content_1fr] items-start gap-x-5 gap-y-4 py-4">
+            <p class="text-grey-700 whitespace-nowrap">Nazwa</p>
+            <p>
               {@form[:buyer_display_name].value}
             </p>
 
             <%= case @invoice.buyer_id_type do %>
               <% :no_id -> %>
-                <p class="text-grey-500 text-sm/snug">PESEL</p>
-                <p class="text-grey-700 text-sm/snug">
+                <p class="text-grey-700 whitespace-nowrap">PESEL</p>
+                <p>
                   {@form[:buyer_pesel].value}
                 </p>
               <% :optional_id -> %>
                 <%= if @form[:buyer_id].value && @form[:buyer_id].value != "" do %>
-                  <p class="text-grey-500 text-sm/snug">Identyfikator</p>
-                  <p class="text-grey-700 text-sm/snug">
+                  <p class="text-grey-700 whitespace-nowrap">Identyfikator</p>
+                  <p>
                     {@form[:buyer_id].value}
                   </p>
                 <% end %>
               <% id_type -> %>
-                <p class="text-grey-500 text-sm/snug">
+                <p class="text-grey-700 whitespace-nowrap">
                   {case id_type do
                     :nip -> "NIP"
                     :eu_vat -> "VAT-EU"
                     :other_id -> "Identyfikator"
                   end}
                 </p>
-                <p class="text-grey-700 text-sm/snug">
+                <p>
                   {@form[:buyer_id].value}
                 </p>
             <% end %>
 
-            <p class="text-grey-500 text-sm/snug">Adres</p>
-            <p class="text-grey-700 text-sm/snug">
+            <p class="text-grey-700 whitespace-nowrap">Adres</p>
+            <p>
               {@form[:buyer_address].value}
             </p>
 
             <%= if @form[:buyer_given_name].value && @form[:buyer_surname].value do %>
-              <p class="text-grey-500 text-sm/snug">Imię i nazwisko</p>
-              <p class="text-grey-700 text-sm/snug">
+              <p class="text-grey-700 whitespace-nowrap">Imię i nazwisko</p>
+              <p>
                 {@form[:buyer_given_name].value} {@form[:buyer_surname].value}
               </p>
             <% end %>
@@ -102,18 +105,25 @@
           </.button>
         </div>
 
-        <FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment.invoice_payment
-          invoice={@invoice}
-          bank_accounts={@bank_accounts}
-          selected_bank_account={@selected_bank_account}
-          payment_form={@form}
-        />
+        <div class="flex w-1/2 min-w-[400px] flex-col gap-4">
+          <label class="text-grey-700 font-bold whitespace-nowrap">
+            Płatność
+          </label>
+
+          <FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment.invoice_payment
+            invoice={@invoice}
+            bank_accounts={@bank_accounts}
+            selected_bank_account={@selected_bank_account}
+            payment_form={@form}
+          />
+        </div>
       </div>
 
       <hr class="text-grey-200 col-start-2 col-end-9" />
 
       <div :if={@invoice.ksef_number} class="col-start-2 col-end-9">
         <.input
+          class="min-h-20"
           field={@form[:correction_reason]}
           type="textarea"
           new={true}
@@ -126,7 +136,26 @@
         </p>
       </div>
 
-      <div class="col-span-full flex flex-col items-center justify-center gap-14 xl:flex-row">
+      <div class="col-start-2 col-end-9 grid grid-cols-2 gap-4">
+        <.input
+          field={@form[:invoice_note]}
+          type="textarea"
+          new={true}
+          label="Notatka na fakturze"
+          placeholder="Widoczna na fakturze i w KSeF (stopka faktury)"
+          class="min-h-24!"
+        />
+        <.input
+          field={@form[:internal_note]}
+          type="textarea"
+          new={true}
+          label="Komentarz"
+          placeholder="Notatka wewnętrzna (niewidoczna na fakturze - tylko wewnątrz Firmowida)"
+          class="min-h-24"
+        />
+      </div>
+
+      <div class="col-span-full my-14 flex flex-col items-center justify-center gap-14 xl:flex-row">
         <%= if @invoice.ksef_number do %>
           <div class="space-y-4">
             <p class="text-lg/6 font-medium text-black">

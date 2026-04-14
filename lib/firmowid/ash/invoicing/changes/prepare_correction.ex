@@ -32,6 +32,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.PrepareCorrection do
     :buyer_email,
     :buyer_phone,
     :buyer_description,
+    # Do not copy invoice/internal notes into corrections; corrections start fresh
     :buyer_pesel,
     :invoice_type,
     :payment_method,

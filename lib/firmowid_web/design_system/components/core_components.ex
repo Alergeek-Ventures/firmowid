@@ -491,7 +491,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         id={@id}
         name={@name}
         class={[
-          "border-grey-200 focus:border-grey-400 placeholder:text-grey-500 text-grey-900 min-h-12 w-full resize-none rounded-lg border bg-white px-3 py-1.5 leading-tight aria-invalid:border-rose-400"
+          "border-grey-200 focus:border-grey-400 placeholder:text-grey-500 text-grey-900 size-full min-h-12 resize-none rounded-lg border bg-white px-3 py-1.5 leading-tight aria-invalid:border-rose-400"
         ]}
         aria-invalid={to_string(not Enum.empty?(@errors))}
         {@rest}

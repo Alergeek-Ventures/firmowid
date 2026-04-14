@@ -855,6 +855,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
         </div>
       <% end %>
       <.payment_details sales_invoice={@sales_invoice} />
+      <%= if @sales_invoice.invoice_note && @sales_invoice.invoice_note != "" do %>
+        <div class="mt-4 text-[10px]/[14px]">
+          <h3 class="text-darkGrey/70 mb-2 text-[8px] font-bold uppercase">Uwagi / Notes</h3>
+          <div>{@sales_invoice.invoice_note}</div>
+        </div>
+      <% end %>
       <.footer
         footer_logo_data_uri={@footer_logo_data_uri}
         invoice_type={@sales_invoice.invoice_type}

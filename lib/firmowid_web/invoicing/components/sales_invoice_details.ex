@@ -36,11 +36,13 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
           :net_value,
           :vat_value,
           :gross_value,
+          :internal_note,
           sales_invoice_items: [:net_value, :vat_value, :gross_value],
           corrections: [
             :net_value,
             :vat_value,
             :gross_value,
+            :internal_note,
             sales_invoice_items: [:net_value, :vat_value, :gross_value]
           ]
         ],
@@ -88,6 +90,11 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
       |> List.first(%{})
       |> Map.get(:name, "")
 
+    internal_notes =
+      [invoice | invoice.corrections]
+      |> Enum.map(& &1.internal_note)
+      |> Enum.reject(&is_nil/1)
+
     socket =
       socket
       |> assign(assigns)
@@ -98,6 +105,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
         description: description,
         latest_invoice_snapshot: latest_invoice_snapshot,
         invoices_for_preview: Enum.reverse([invoice | invoice.corrections]),
+        internal_notes: internal_notes,
         cancelled?: cancelled?,
         show_timeline_button: show_timeline_button?(submission_info)
       )
@@ -370,6 +378,8 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
               }
             />
           <% end %>
+
+          <InvoiceDetails.invoice_notes internal_notes={@internal_notes} />
 
           <InvoiceDetails.invoice_preview>
             <:subpreview

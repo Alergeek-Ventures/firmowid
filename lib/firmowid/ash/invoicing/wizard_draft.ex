@@ -49,6 +49,7 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
     define :update_counterparty, action: :update_counterparty
     define :update_items, action: :update_items
     define :update_payment, action: :update_payment
+    define :update_notes, action: :update_notes
     define :populate_from_invoice, action: :populate_from_invoice
     define :destroy, action: :destroy
   end
@@ -148,6 +149,13 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
                 payment_method_field: :payment_method, seller_account_field: :seller_account_number}
     end
 
+    # Preview step: update invoice and internal notes
+    update :update_notes do
+      require_atomic? false
+
+      accept [:invoice_note, :internal_note]
+    end
+
     # Resets the bank account number without running payment step validations.
     # Used when currency changes in step 2 — payment fields aren't set yet.
     update :reset_bank_account do
@@ -179,7 +187,9 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
         :seller_account_number,
         :sale_date,
         :due_date,
-        :payment_method
+        :payment_method,
+        :invoice_note,
+        :internal_note
       ]
 
       argument :items, {:array, :map}
@@ -240,6 +250,8 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
     attribute :buyer_email, :string, public?: true
     attribute :buyer_phone, :string, public?: true
     attribute :buyer_description, :string, public?: true
+    attribute :invoice_note, :string, public?: true
+    attribute :internal_note, :string, public?: true
 
     attribute :invoice_type, :atom,
       constraints: [one_of: [:poland, :foreign]],

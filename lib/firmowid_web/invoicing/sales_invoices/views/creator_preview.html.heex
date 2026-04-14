@@ -85,13 +85,23 @@
           </div>
         <% end %>
 
-        <label class="text-grey-500 mb-2 block text-sm">Komentarz</label>
-        <textarea
-          rows="4"
-          class="border-grey-200 focus:ring-turquoise-500 placeholder:text-grey-400 text-grey-700 w-full cursor-not-allowed resize-none rounded-lg border px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:outline-hidden"
-          placeholder="Dodaj komentarz do faktury... (wkrótce dostępne)"
-          disabled
-        ></textarea>
+        <form phx-change="update_notes" phx-debounce="300">
+          <label class="text-grey-500 mb-2 block text-sm">Notatka na fakturze</label>
+          <textarea
+            name="invoice_note"
+            rows="3"
+            class="border-grey-200 focus:ring-turquoise-500 placeholder:text-grey-400 text-grey-700 w-full resize-none rounded-lg border px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:outline-hidden"
+            placeholder="Widoczna na fakturze i w KSeF (stopka faktury)"
+          ><%= @invoice.invoice_note || "" %></textarea>
+
+          <label class="text-grey-500 mt-3 mb-2 block text-sm">Komentarz</label>
+          <textarea
+            name="internal_note"
+            rows="3"
+            class="border-grey-200 focus:ring-turquoise-500 placeholder:text-grey-400 text-grey-700 w-full resize-none rounded-lg border px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:outline-hidden"
+            placeholder="Notatka wewnętrzna (niewidoczna na fakturze - tylko w Firmowidzie)"
+          ><%= @invoice.internal_note || "" %></textarea>
+        </form>
 
         <%!-- Action buttons --%>
         <div class="flex flex-row gap-4 pt-4">
