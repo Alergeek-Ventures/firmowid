@@ -4,7 +4,11 @@ defmodule Firmowid.Ash.Timetracker.ProjectTest do
   import Firmowid.AccountsFixtures
   import Firmowid.TimetrackerFixtures
 
+  alias Firmowid.Ash.Analysis.TagDefinition
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
+
+  require Ash.Query
 
   setup do
     admin = admin_fixture()
@@ -36,6 +40,66 @@ defmodule Firmowid.Ash.Timetracker.ProjectTest do
 
       {:ok, restored} = AshProject.unarchive(archived, scope: scope)
       assert is_nil(restored.archived_at)
+    end
+  end
+
+  describe "organization owner deletion" do
+    test "destroys project-created tag definitions before deleting the account", %{
+      user: admin,
+      org_id: org_id,
+      scope: scope
+    } do
+      {:ok, project} = AshProject.create(%{name: "Project Cleanup"}, scope: scope)
+
+      assert project.tag_definition_id
+      assert :ok = Core.destroy_user(admin, scope: scope)
+
+      refute Core.User
+             |> Ash.Query.filter(id == ^admin.id)
+             |> Ash.exists?(authorize?: false)
+
+      refute Core.Organization
+             |> Ash.Query.filter(id == ^org_id)
+             |> Ash.exists?(authorize?: false)
+
+      refute AshProject
+             |> Ash.Query.filter(id == ^project.id)
+             |> Ash.exists?(actor: admin, authorize?: false, tenant: org_id)
+
+      refute TagDefinition
+             |> Ash.Query.filter(id == ^project.tag_definition_id)
+             |> Ash.exists?(actor: admin, authorize?: false, tenant: org_id)
+    end
+
+    test "rolls back account deletion when the surrounding transaction aborts", %{
+      user: admin,
+      org_id: org_id,
+      scope: scope
+    } do
+      {:ok, project} = AshProject.create(%{name: "Rollback Project"}, scope: scope)
+
+      assert {:error, %Ash.Error.Unknown.UnknownError{error: "unknown error: :forced_rollback"}} =
+               Ash.transact([Core.User, Core.Organization, AshProject, TagDefinition], fn ->
+                 assert :ok = Core.destroy_user_in_transaction(admin, scope: scope)
+
+                 Ash.DataLayer.rollback(Core.User, :forced_rollback)
+               end)
+
+      assert Core.User
+             |> Ash.Query.filter(id == ^admin.id)
+             |> Ash.exists?(authorize?: false)
+
+      assert Core.Organization
+             |> Ash.Query.filter(id == ^org_id)
+             |> Ash.exists?(authorize?: false)
+
+      assert AshProject
+             |> Ash.Query.filter(id == ^project.id)
+             |> Ash.exists?(actor: admin, authorize?: false, tenant: org_id)
+
+      assert TagDefinition
+             |> Ash.Query.filter(id == ^project.tag_definition_id)
+             |> Ash.exists?(actor: admin, authorize?: false, tenant: org_id)
     end
   end
 

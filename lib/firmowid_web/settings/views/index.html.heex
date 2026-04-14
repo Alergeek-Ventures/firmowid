@@ -598,6 +598,12 @@
               </.button>
               <.modal id="confirm_modal">
                 <h3>Czy na pewno chcesz zamknąć konto? <b>Nie da się tego cofnąć!</b></h3>
+                <p class="text-redText mt-2 text-sm">
+                  Usuniemy Twoje konto i wszystkie przypisane do niego dane.
+                  <%= if @current_org.owner_id == @current_user.id do %>
+                    Usuniemy też całą organizację i wszystkie jej dane.
+                  <% end %>
+                </p>
                 <.simple_form
                   for={@delete_account_form}
                   phx-submit="delete_account"

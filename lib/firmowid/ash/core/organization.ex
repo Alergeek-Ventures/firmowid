@@ -14,7 +14,6 @@ defmodule Firmowid.Ash.Core.Organization do
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core.Changes.CleanupOldAvatarBlob
   alias Firmowid.Ash.Core.Changes.GenerateNickname
-  alias Firmowid.Ash.Core.Changes.NullifyOrganizationUsers
   alias Firmowid.Ash.Core.Changes.SetOwnerOrganization
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Core.Validations.ValidateNip
@@ -140,8 +139,6 @@ defmodule Firmowid.Ash.Core.Organization do
     # ── Destroy ─────────────────────────────────────────────────────
     destroy :destroy do
       require_atomic? false
-
-      change NullifyOrganizationUsers
     end
   end
 

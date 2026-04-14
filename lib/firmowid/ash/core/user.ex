@@ -253,6 +253,7 @@ defmodule Firmowid.Ash.Core.User do
     destroy :destroy do
       # Password verification is handled at the callsite (domain function)
       # before invoking this action, matching the existing pattern.
+      require_atomic? false
     end
 
     update :change_password do

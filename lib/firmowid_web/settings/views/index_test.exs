@@ -61,6 +61,29 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
              iban_position(html_after_second_rename, "PL44 1140 2004 0000 3002 0135 5363")
   end
 
+  test "account deletion modal warns organization owner about deleting the organization", %{conn: conn} do
+    admin = admin_fixture()
+
+    conn = log_in_user(conn, admin)
+
+    assert {:ok, _view, html} = live(conn, ~p"/ustawienia/konto")
+
+    assert html =~ "Usuniemy Twoje konto i wszystkie przypisane do niego dane."
+    assert html =~ "Usuniemy też całą organizację i wszystkie jej dane."
+  end
+
+  test "account deletion modal does not warn non-owner about deleting the organization", %{conn: conn} do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.organization_id)
+
+    conn = log_in_user(conn, employee)
+
+    assert {:ok, _view, html} = live(conn, ~p"/ustawienia/konto")
+
+    assert html =~ "Usuniemy Twoje konto i wszystkie przypisane do niego dane."
+    refute html =~ "Usuniemy też całą organizację i wszystkie jej dane."
+  end
+
   defp iban_position(html, iban) do
     case :binary.match(html, iban) do
       {position, _length} -> position
