@@ -54,6 +54,7 @@ jobs:
     needs: extract-versions
     env:
       MIX_ENV: test
+      KSEF_ENV: test
 
       # Database configuration (matches config/test.exs)
       POSTGRES_USER: postgres
