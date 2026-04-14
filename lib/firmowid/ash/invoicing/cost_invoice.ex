@@ -41,6 +41,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
   alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Ash.Checks.AtLeastRole
+  alias Firmowid.Ash.Checks.IsSystemActor
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceDescription
   alias Firmowid.Ash.Invoicing.Changes.EnqueueMissingCostInvoiceDescriptionRefresh
@@ -114,9 +115,20 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       end
 
       argument :ids, {:array, :uuid_v7}
+      argument :inserted_from, :utc_datetime
+      argument :inserted_to, :utc_datetime
+
+      argument :source, :atom do
+        constraints one_of: [:manual_import, :ksef]
+      end
+
+      argument :in_digest, :atom do
+        constraints one_of: [:yes, :no]
+      end
 
       # Date filtering — conditional on date_field
       prepare {Firmowid.Ash.Invoicing.Preparations.FilterByDateField, []}
+      prepare {Firmowid.Ash.Invoicing.Preparations.FilterBySourceAndDigestState, []}
 
       # :pending — no linked transactions, not skipped
       prepare build(
@@ -148,6 +160,14 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       # Filter by IDs
       prepare build(filter: expr(id in ^arg(:ids))) do
         where present(:ids)
+      end
+
+      prepare build(filter: expr(inserted_at >= ^arg(:inserted_from))) do
+        where present(:inserted_from)
+      end
+
+      prepare build(filter: expr(inserted_at < ^arg(:inserted_to))) do
+        where present(:inserted_to)
       end
 
       prepare build(sort: [issue_date: :desc])
@@ -338,31 +358,26 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       authorize_if always()
     end
 
-    # cost_invoice_processor: full access
-    bypass {SystemActorRole, roles: [:cost_invoice_processor]} do
-      authorize_if always()
-    end
+    policy_group IsSystemActor do
+      policy always() do
+        authorize_if {SystemActorRole, roles: [:cost_invoice_processor]}
+      end
 
-    # ksef_session: read + create
-    bypass {SystemActorRole, roles: [:ksef_session]} do
-      authorize_if action_type(:read)
-    end
+      policy action_type(:read) do
+        authorize_if {SystemActorRole, roles: [:ksef_session, :invoice_matcher, :analysis_reader, :ksef_digest]}
+      end
 
-    bypass {SystemActorRole, roles: [:ksef_session]} do
-      authorize_if action(:create)
-    end
+      policy action(:create) do
+        authorize_if {SystemActorRole, roles: [:ksef_session]}
+      end
 
-    # invoice_matcher: read + connect/disconnect transactions
-    bypass {SystemActorRole, roles: [:invoice_matcher]} do
-      authorize_if action_type(:read)
-    end
+      policy action([:connect_transactions, :disconnect_transactions]) do
+        authorize_if {SystemActorRole, roles: [:invoice_matcher]}
+      end
 
-    bypass {SystemActorRole, roles: [:analysis_reader]} do
-      authorize_if action_type(:read)
-    end
-
-    bypass {SystemActorRole, roles: [:invoice_matcher]} do
-      authorize_if action([:connect_transactions, :disconnect_transactions])
+      policy always() do
+        forbid_if always()
+      end
     end
 
     policy [
@@ -373,7 +388,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     end
 
     # Other system actors: no access
-    policy Firmowid.Ash.Checks.IsSystemActor do
+    policy IsSystemActor do
       forbid_if always()
     end
 
@@ -507,6 +522,11 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       source_attribute :id
       destination_attribute :resource_id
     end
+
+    has_one :ksef_invoice_digest_item, Firmowid.Ash.Invoicing.KsefInvoiceDigestItem do
+      source_attribute :id
+      destination_attribute :cost_invoice_id
+    end
   end
 
   calculations do
@@ -516,6 +536,10 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
                 not (is_nil(ksef_downloaded_at) and is_nil(ksef_permanent_storage_date) and
                        is_nil(ksef_number))
               )
+
+    calculate :is_in_ksef_digest,
+              :boolean,
+              expr(exists(ksef_invoice_digest_item, true))
 
     calculate :is_deletable,
               :boolean,

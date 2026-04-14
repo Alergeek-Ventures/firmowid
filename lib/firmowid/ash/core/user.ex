@@ -104,6 +104,10 @@ defmodule Firmowid.Ash.Core.User do
         constraints one_of: [:active, :archived]
       end
 
+      argument :role, :atom do
+        constraints one_of: [:employee, :invoicing, :accountant, :admin]
+      end
+
       prepare fn query, _context ->
         tenant = query.tenant || raise "User :list action requires a tenant (organization_id)"
         Ash.Query.do_filter(query, organization_id: tenant)
@@ -125,6 +129,10 @@ defmodule Firmowid.Ash.Core.User do
 
       prepare build(filter: expr(not is_nil(archived_at))) do
         where argument_equals(:status, :archived)
+      end
+
+      prepare build(filter: expr(role == ^arg(:role))) do
+        where present(:role)
       end
     end
 
@@ -312,9 +320,10 @@ defmodule Firmowid.Ash.Core.User do
       authorize_if actor_attribute_equals(:role, :admin)
     end
 
-    # :list action — admin-only user listing
+    # :list action — admin-only user listing, plus ksef_digest system actor
     bypass action(:list) do
       authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if {SystemActorRole, roles: [:ksef_digest]}
     end
 
     # :get_org_user — admin-only, tenant-scoped user lookup

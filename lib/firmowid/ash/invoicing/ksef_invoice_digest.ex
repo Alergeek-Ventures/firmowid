@@ -1,0 +1,161 @@
+defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
+  @moduledoc """
+  Persisted digest of KSeF cost invoices created in Firmowid within one business window.
+  """
+  use Ash.Resource,
+    domain: Firmowid.Ash.Invoicing,
+    data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: [AshOban]
+
+  alias AshOban.Checks.AshObanInteraction
+  alias Firmowid.Ash.Checks.SystemActorRole
+  alias Firmowid.Ash.Invoicing.Actions.CreateScheduledKsefInvoiceDigests
+  alias Firmowid.Ash.Invoicing.Changes.EnqueueKsefInvoiceDigestSend
+  alias Firmowid.Ash.Invoicing.Changes.SendKsefInvoiceDigest
+  alias Firmowid.Ash.Invoicing.KsefInvoiceDigestItem
+  alias Firmowid.Ash.Resource
+
+  require Resource
+
+  postgres do
+    table "ksef_invoice_digests"
+    repo Firmowid.Repo
+  end
+
+  oban do
+    use_tenant_from_record? true
+
+    scheduled_actions do
+      schedule :create_scheduled_digests, "0 9,12,15,20 * * *" do
+        action :create_scheduled_digests
+        queue :default
+        worker_module_name Firmowid.Ash.Invoicing.KsefInvoiceDigest.Worker.CreateScheduledDigests
+      end
+    end
+
+    triggers do
+      trigger :send_digest do
+        action :send_digest
+        read_action :read_global
+        worker_read_action :read_for_delivery
+        where expr(is_nil(delivered_at))
+        scheduler_cron false
+        max_attempts 3
+        queue :default
+
+        worker_module_name Firmowid.Ash.Invoicing.KsefInvoiceDigest.Worker.SendDigest
+        scheduler_module_name Firmowid.Ash.Invoicing.KsefInvoiceDigest.Scheduler.SendDigest
+      end
+    end
+  end
+
+  code_interface do
+    define :create_digest, action: :create_digest
+    define :by_window, action: :by_window
+    define :send_digest, action: :send_digest
+  end
+
+  actions do
+    defaults [:read]
+
+    read :read_global do
+      description "Unscoped read for AshOban digest delivery."
+      multitenancy :allow_global
+      pagination keyset?: true
+    end
+
+    read :by_window do
+      get? true
+
+      argument :window_start, :utc_datetime, allow_nil?: false
+      argument :window_end, :utc_datetime, allow_nil?: false
+
+      filter expr(window_start == ^arg(:window_start) and window_end == ^arg(:window_end))
+    end
+
+    read :read_for_delivery do
+      prepare build(load: [:organization, :cost_invoices])
+    end
+
+    create :create_digest do
+      accept [:window_start, :window_end]
+
+      argument :cost_invoice_ids, {:array, :uuid}, allow_nil?: false
+
+      change manage_relationship(:cost_invoice_ids, :cost_invoices, type: :append)
+      change EnqueueKsefInvoiceDigestSend
+    end
+
+    update :send_digest do
+      require_atomic? false
+      accept []
+      change SendKsefInvoiceDigest
+    end
+
+    action :create_scheduled_digests, :integer do
+      description "Builds KSeF cost-invoice digests for the most recently closed digest window."
+      run CreateScheduledKsefInvoiceDigests
+    end
+  end
+
+  policies do
+    policy action_type(:read) do
+      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if {Firmowid.Ash.Checks.AtLeastRole, role: :accountant}
+      authorize_if {SystemActorRole, roles: [:ksef_digest]}
+    end
+
+    policy action(:create_scheduled_digests) do
+      authorize_if AshObanInteraction
+    end
+
+    policy action([:by_window, :read_for_delivery, :create_digest, :send_digest]) do
+      authorize_if {SystemActorRole, roles: [:ksef_digest]}
+    end
+
+    policy action(:read_global) do
+      authorize_if {SystemActorRole, roles: [:ksef_digest]}
+    end
+  end
+
+  multitenancy do
+    strategy :attribute
+    attribute :organization_id
+  end
+
+  attributes do
+    uuid_v7_primary_key :id
+
+    attribute :window_start, :utc_datetime, allow_nil?: false, public?: true
+    attribute :window_end, :utc_datetime, allow_nil?: false, public?: true
+    attribute :delivered_at, :utc_datetime, public?: true
+
+    Resource.firmowid_timestamps()
+  end
+
+  relationships do
+    belongs_to :organization, Firmowid.Ash.Core.Organization do
+      allow_nil? false
+    end
+
+    has_many :digest_items, KsefInvoiceDigestItem do
+      source_attribute :id
+      destination_attribute :digest_id
+    end
+
+    many_to_many :cost_invoices, Firmowid.Ash.Invoicing.CostInvoice do
+      through KsefInvoiceDigestItem
+      source_attribute_on_join_resource :digest_id
+      destination_attribute_on_join_resource :cost_invoice_id
+    end
+  end
+
+  aggregates do
+    count :invoice_count, :digest_items
+  end
+
+  identities do
+    identity :unique_window, [:organization_id, :window_start, :window_end]
+  end
+end

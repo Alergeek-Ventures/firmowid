@@ -55,6 +55,9 @@ defmodule Firmowid.Ash.Invoicing do
         action: :disconnect_transactions
     end
 
+    resource Firmowid.Ash.Invoicing.KsefInvoiceDigest
+    resource Firmowid.Ash.Invoicing.KsefInvoiceDigestItem
+
     resource SalesInvoice do
       define :list_sales_invoices, action: :read
       define :get_sales_invoice, action: :by_id, args: [:id]

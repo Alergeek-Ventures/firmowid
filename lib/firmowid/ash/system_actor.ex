@@ -39,6 +39,9 @@ defmodule Firmowid.Ash.SystemActor do
   - `:cross_tenant_reader` — reads data across organization boundaries. Used by the
     KSeF fetch dispatcher to enumerate all organizations and queue per-org work.
 
+  - `:ksef_digest` — builds and delivers scheduled KSeF cost-invoice digests.
+    Can read invoice and admin-user data required for digest delivery.
+
   - `:anonymous` — unauthenticated share-token access. Can only read the specific
     invoice identified by the share token.
   """
@@ -54,6 +57,7 @@ defmodule Firmowid.Ash.SystemActor do
           | :organization_owner_setup
           | :project_tag_manager
           | :cross_tenant_reader
+          | :ksef_digest
           | :anonymous
 
   @enforce_keys [:org_id, :role]
