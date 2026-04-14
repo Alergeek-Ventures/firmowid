@@ -685,9 +685,31 @@ defmodule FirmowidWeb.Settings.Views.Index do
            scope: scope,
            load: [:broken?, :has_successful_sync?, :latest_successful_sync_at, :requisition]
          ) do
-      {:ok, accounts} -> accounts
+      {:ok, accounts} -> Enum.sort_by(accounts, &bank_account_sort_key/1)
       {:error, _} -> []
     end
+  end
+
+  defp grouped_bank_accounts(bank_accounts) do
+    bank_accounts
+    |> Enum.group_by(& &1.institution_name)
+    |> Enum.sort_by(fn {_institution, accounts} ->
+      accounts
+      |> List.first()
+      |> bank_account_sort_key()
+    end)
+  end
+
+  defp bank_account_sort_key(account) do
+    {normalize_iban(account.iban), account.id}
+  end
+
+  defp normalize_iban(nil), do: ""
+
+  defp normalize_iban(iban) do
+    iban
+    |> String.upcase()
+    |> String.replace(~r/\s+/, "")
   end
 
   defp list_pending_requisitions(scope) do

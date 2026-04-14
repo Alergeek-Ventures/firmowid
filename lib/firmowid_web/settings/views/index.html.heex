@@ -745,7 +745,7 @@
         <% end %>
         <%= if Enum.any?(@bank_accounts) do %>
           <div class="mt-10 space-y-4">
-            <%= for {institution, accounts} <- Enum.group_by(@bank_accounts, & &1.institution_name) do %>
+            <%= for {institution, accounts} <- grouped_bank_accounts(@bank_accounts) do %>
               <h3>{if(institution == "Manual", do: "wprowadzone ręcznie", else: institution)}</h3>
 
               <div class="flex flex-wrap items-start gap-4">
