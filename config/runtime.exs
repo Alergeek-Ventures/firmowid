@@ -61,12 +61,30 @@ vault_key =
     "CLOAK_VAULT_KEY" |> System.get_env(dev_vault_key) |> Base.decode64!()
   end
 
+ksef_env =
+  System.get_env("KSEF_ENV") ||
+    raise "KSEF_ENV environment variable is required (allowed: test | prod)"
+
+if ksef_env not in ["test", "prod"] do
+  raise "KSEF_ENV must be one of: test, prod"
+end
+
+default_ksef_base_url =
+  if ksef_env == "prod", do: "https://api.ksef.mf.gov.pl/v2/", else: "https://api-test.ksef.mf.gov.pl/v2/"
+
+default_ksef_qr_code_base_url =
+  if ksef_env == "prod", do: "https://qr.ksef.mf.gov.pl", else: "https://qr-test.ksef.mf.gov.pl"
+
 config :firmowid, Endpoint, secret_key_base: secret_key_base
 
 config :firmowid, Firmowid.Vault,
   ciphers: [
     default: {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: vault_key}
   ]
+
+config :firmowid, :ksef,
+  base_url: default_ksef_base_url,
+  qr_code_base_url: default_ksef_qr_code_base_url
 
 config :firmowid,
   go_limitless_secret_id: System.get_env("GO_LIMITLESS_SECRET_ID"),
@@ -76,9 +94,9 @@ config :firmowid,
   resend_api_key: System.get_env("RESEND_API_KEY"),
   resend_webhook_secret: System.get_env("RESEND_WEBHOOK_SECRET"),
   google_client_id: System.get_env("GOOGLE_CLIENT_ID"),
+  # use DATABASE_URL if set
   google_client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
 
-# use DATABASE_URL if set
 if System.get_env("DATABASE_URL") do
   database_url = System.get_env("DATABASE_URL")
 

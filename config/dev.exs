@@ -46,7 +46,6 @@ config :firmowid, Firmowid.Vault,
   ]
 
 config :firmowid, :analytics, posthog_enabled: false
-config :firmowid, :ksef, base_url: "https://api-test.ksef.mf.gov.pl/v2/"
 
 config :firmowid, :s3,
   host: "localhost",

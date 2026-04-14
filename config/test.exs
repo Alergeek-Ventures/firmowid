@@ -51,8 +51,6 @@ config :firmowid, :bank_data_api_client,
     plug: {Req.Test, :bank_data_transactions}
   ]
 
-config :firmowid, :ksef, base_url: "https://api-test.ksef.mf.gov.pl/v2/"
-
 config :firmowid, :s3,
   scheme: System.get_env("S3_SCHEME", "http://"),
   host: System.get_env("S3_HOST", "localhost"),
