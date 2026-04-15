@@ -18,11 +18,19 @@ RUN apk add --no-cache nginx fontconfig curl
 RUN mkdir -p /var/lib/nginx/logs /var/lib/nginx/tmp && \
     chown -R chrome:chrome /var/lib/nginx /var/log/nginx /tmp
 
-# Download and install Lexend font
-RUN mkdir -p /usr/share/fonts/truetype/lexend && \
+# Download and install Lexend, Open Sans and Montserrat fonts
+RUN mkdir -p /usr/share/fonts/truetype/lexend \
+             /usr/share/fonts/truetype/open-sans \
+             /usr/share/fonts/truetype/montserrat && \
     cd /tmp && \
     wget -q https://github.com/google/fonts/raw/main/ofl/lexend/Lexend%5Bwght%5D.ttf -O Lexend.ttf && \
     mv Lexend.ttf /usr/share/fonts/truetype/lexend/ && \
+    wget -q https://github.com/google/fonts/raw/main/ofl/opensans/OpenSans%5Bwdth%2Cwght%5D.ttf -O OpenSans.ttf && \
+    wget -q https://github.com/google/fonts/raw/main/ofl/opensans/OpenSans-Italic%5Bwdth%2Cwght%5D.ttf -O OpenSans-Italic.ttf && \
+    mv OpenSans.ttf OpenSans-Italic.ttf /usr/share/fonts/truetype/open-sans/ && \
+    wget -q https://github.com/google/fonts/raw/main/ofl/montserrat/Montserrat%5Bwght%5D.ttf -O Montserrat.ttf && \
+    wget -q https://github.com/google/fonts/raw/main/ofl/montserrat/Montserrat-Italic%5Bwght%5D.ttf -O Montserrat-Italic.ttf && \
+    mv Montserrat.ttf Montserrat-Italic.ttf /usr/share/fonts/truetype/montserrat/ && \
     fc-cache -f -v
 
 USER chrome

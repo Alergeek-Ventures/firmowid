@@ -16,6 +16,7 @@ import { NavbarScroll } from "./navbar_scroll";
 import { PaperPlane } from "./paper_plane";
 import { FloatingUIError } from "./floating_error";
 import { CookieConsent } from "./cookie_consent";
+import { DownloadPdf } from "./download_pdf";
 
 export const Hooks = {
   Confetti,
@@ -35,5 +36,6 @@ export const Hooks = {
   NavbarScroll,
   PaperPlane,
   FloatingUIError,
-  CookieConsent
+  CookieConsent,
+  DownloadPdf
 };

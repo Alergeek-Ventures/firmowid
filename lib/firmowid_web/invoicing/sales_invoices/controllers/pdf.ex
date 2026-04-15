@@ -4,7 +4,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
 
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.Services.Pdf
+  alias Firmowid.Ash.Invoicing.Services.SalesInvoicePdf
 
   require Logger
 
@@ -12,6 +12,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
 
   @item_calcs [:net_value, :vat_value, :gross_value]
   @pdf_loads [
+    :internal_note,
     sales_invoice_items: @item_calcs,
     corrections: [sales_invoice_items: @item_calcs],
     reference_invoice: [],
@@ -46,11 +47,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
       show_vat: conn.assigns.current_org.is_vat_payer,
       logo_url: logo_url,
       logo_data_uri: nil,
-      footer_logo_data_uri: nil
+      footer_logo_data_uri: nil,
+      include_internal_note_page: true
     )
   end
 
   def pdf(conn, %{"id" => id}) do
+    include_internal_note = Map.get(conn.params, "include_internal_note", "true") == "true"
     opts = [scope: conn.assigns.ash_scope, load: @pdf_loads]
 
     case SalesInvoice.by_id(id, opts) do
@@ -59,10 +62,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
 
       {:ok, sales_invoice} ->
         logo_url = Invoicing.get_logo_url(sales_invoice.organization_id, scope: conn.assigns.ash_scope)
-        sales_invoice = Map.put(sales_invoice, :logo_url, logo_url)
 
-        case Pdf.generate(sales_invoice,
+        case SalesInvoicePdf.generate(sales_invoice,
                show_vat: conn.assigns.current_org.is_vat_payer,
+               logo_url: logo_url,
+               include_internal_note: include_internal_note,
                scope: conn.assigns.ash_scope
              ) do
           {:ok, pdf_binary} ->

@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
+  alias FirmowidWeb.Invoicing.Components.InvoiceDownloadModal
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
 
   require Logger
@@ -198,13 +199,13 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 </.button>
 
                 <%!-- should download button download invoice with corrections? --%>
-                <.link
-                  class={button_styles(%{color: "light_grey", size: "small", new: true})}
-                  href={~p"/sprzedazowe/#{@invoice.id}/pobierz"}
-                  download
-                >
-                  <Lucideicons.download /><span class="hidden xl:inline">Pobierz</span>
-                </.link>
+                <.live_component
+                  module={InvoiceDownloadModal}
+                  id={"sales-download-#{@invoice.id}"}
+                  download_path={~p"/sprzedazowe/#{@invoice.id}/pobierz"}
+                  button_class={button_styles(%{color: "light_grey", size: "small", new: true})}
+                  button_label="Pobierz"
+                />
               </div>
 
               <.button

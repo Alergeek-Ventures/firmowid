@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
 
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.VatRate
+  alias FirmowidWeb.Invoicing.Components.Print
 
   attr :sales_invoice, :map, required: true
   attr :show_vat, :boolean, default: true
@@ -802,7 +803,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
     end
 
     ~H"""
-    <div class="relative mx-auto box-content h-[calc(842px-2*32px)] w-[calc(595px-2*32px)] bg-white p-8">
+    <Print.a4_page>
       <.invoice_header
         sales_invoice={@sales_invoice}
         show_vat={@show_vat}
@@ -869,7 +870,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
         :if={@sales_invoice.ksef_number}
         sales_invoice={@sales_invoice}
       />
-    </div>
+    </Print.a4_page>
+
+    <Print.internal_note_page
+      :if={@include_internal_note_page && @sales_invoice.internal_note not in [nil, ""]}
+      internal_note={@sales_invoice.internal_note}
+      footer_logo_data_uri={@footer_logo_data_uri}
+    />
     """
   end
 

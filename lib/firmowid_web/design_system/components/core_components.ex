@@ -1042,7 +1042,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         {@rest}
       />
       <div class={[
-        "bg-grey-200 relative h-[26px] w-[49px] rounded-full p-[3px] transition-colors duration-200 ease-out after:absolute after:size-5 after:rounded-full after:bg-white after:transition-transform after:duration-200 after:ease-out after:content-[''] peer-checked:after:translate-x-[23px] disabled:opacity-50",
+        "bg-grey-200 relative h-[24px] w-[38px] rounded-full p-[4px] transition-colors duration-200 ease-out after:absolute after:size-[16px] after:rounded-full after:bg-white after:transition-transform after:duration-200 after:ease-out after:content-[''] peer-checked:after:translate-x-[14px] disabled:opacity-50",
         @color == "orange" && "peer-checked:bg-orange-700",
         @color == "turquoise" && "peer-checked:bg-turquoise-700"
       ]}>

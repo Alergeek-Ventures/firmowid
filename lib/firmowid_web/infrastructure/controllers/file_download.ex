@@ -15,12 +15,14 @@ defmodule FirmowidWeb.Infrastructure.Controllers.FileDownload do
     include_ksef = params["include_ksef"] == "true"
     include_photos = params["include_photos"] == "true"
     include_sales = params["include_sales"] == "true"
+    include_internal_note = Map.get(params, "include_internal_note", "true") == "true"
 
     include_opts = %{
       include_digital: include_digital,
       include_ksef: include_ksef,
       include_photos: include_photos,
-      include_sales: include_sales
+      include_sales: include_sales,
+      include_internal_note: include_internal_note
     }
 
     entries =

@@ -5,19 +5,30 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
+  alias FirmowidWeb.Invoicing.Components.InvoiceDownloadModal
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
+  alias Phoenix.LiveView.JS
 
   @impl true
   def mount(socket) do
-    {:ok, assign(socket, chat: false, show_timeline: false, is_cost_invoice: true)}
+    {:ok,
+     assign(socket,
+       chat: false,
+       show_timeline: false,
+       is_cost_invoice: true
+     )}
   end
 
   @impl true
   def update(assigns, socket) do
+    socket = assign(socket, assigns)
+
     socket =
-      socket
-      |> assign(assigns)
-      |> assign(:invoices_for_preview, Enum.reverse([assigns.invoice | assigns.invoice.correction_invoices]))
+      if Map.has_key?(assigns, :invoice) do
+        assign(socket, :invoices_for_preview, Enum.reverse([assigns.invoice | assigns.invoice.correction_invoices]))
+      else
+        socket
+      end
 
     {:ok, socket}
   end
@@ -63,8 +74,17 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   </span>
                 </.button>
 
+                <.live_component
+                  :if={downloadable_as_pdf?(@invoice)}
+                  module={InvoiceDownloadModal}
+                  id={"cost-download-#{@invoice.id}"}
+                  download_path={~p"/kosztowe/#{@invoice.id}/pobierz"}
+                  button_class={button_styles(%{color: "light_grey", size: "small", new: true})}
+                  button_label="Pobierz PDF do druku"
+                />
+
                 <.link
-                  :if={@invoice.ksef_number == nil}
+                  :if={!downloadable_as_pdf?(@invoice)}
                   class={button_styles(%{color: "light_grey", size: "small", new: true})}
                   href={@invoice.blob && @invoice.blob.url}
                   download
@@ -141,6 +161,46 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                 is_cost_invoice={true}
                 total_amount={Money.new(@invoice.effective_currency, @invoice.effective_total_amount)}
               />
+
+              <div class="group flex flex-col gap-2 py-2 pl-1">
+                <label
+                  class="text-darkGrey text-sm/snug text-nowrap"
+                  for="internal-note-input"
+                >
+                  Komentarz
+                </label>
+
+                <.form
+                  id="internal-note-form"
+                  for={%{}}
+                  phx-target={@myself}
+                  as={:invoice_internal_note}
+                  phx-change="save_internal_note"
+                  class="min-h-24"
+                >
+                  <.input
+                    id="internal-note-input"
+                    name="internal_note"
+                    type="textarea"
+                    placeholder="Komentarz do faktury widoczny tylko dla Twojej firmy"
+                    new={true}
+                    style={
+                      # TODO: fix this during refactor of core components
+                      "min-height: 6rem;"
+                    }
+                    value={@invoice.internal_note}
+                    phx-click={JS.remove_attribute("readonly")}
+                    phx-focus={JS.remove_attribute("readonly")}
+                    phx-blur={JS.set_attribute({"readonly", true})}
+                    phx-click-away={JS.set_attribute({"readonly", true})}
+                    phx-keydown={JS.set_attribute({"readonly", true})}
+                    phx-key="enter"
+                    phx-debounce="300"
+                    class="min-h-24"
+                    readonly
+                  />
+                </.form>
+              </div>
             <% end %>
           </div>
 
@@ -297,6 +357,10 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
     end
   end
 
+  defp downloadable_as_pdf?(%{ksef_number: ksef_number}) when not is_nil(ksef_number), do: true
+  defp downloadable_as_pdf?(%{blob: blob}), do: preview_type(blob) == :pdf
+  defp downloadable_as_pdf?(_invoice), do: false
+
   @impl true
   def handle_event("show_chat", _params, socket) do
     {:noreply, assign(socket, chat: true)}
@@ -312,5 +376,26 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
 
   def handle_event("hide_timeline", _params, socket) do
     {:noreply, assign(socket, show_timeline: false)}
+  end
+
+  def handle_event("save_internal_note", %{"internal_note" => internal_note}, socket) do
+    case CostInvoice.update_internal_note(socket.assigns.invoice, internal_note, scope: socket.assigns.scope) do
+      {:ok, %CostInvoice{} = updated_invoice} ->
+        invoice = %{socket.assigns.invoice | internal_note: updated_invoice.internal_note}
+
+        {:noreply,
+         socket
+         |> assign(:invoice, invoice)
+         |> assign(
+           :invoices_for_preview,
+           Enum.reverse([
+             invoice
+             | invoice.correction_invoices
+           ])
+         )}
+
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "Nie udało się zapisać komentarza")}
+    end
   end
 end

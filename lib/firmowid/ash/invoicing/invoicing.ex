@@ -45,6 +45,11 @@ defmodule Firmowid.Ash.Invoicing do
       define :get_cost_invoice_by_checksum, action: :by_checksum, args: [:blob_checksum]
       define :search_cost_invoices, action: :search
       define :toggle_cost_invoice_skip, action: :toggle_skip
+
+      define :update_cost_invoice_internal_note,
+        action: :update_internal_note,
+        args: [:internal_note]
+
       define :update_cost_invoice_blob, action: :update_blob_id, args: [:blob_id]
 
       define :connect_cost_invoice_transactions,

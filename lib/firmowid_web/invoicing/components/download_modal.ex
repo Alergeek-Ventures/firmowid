@@ -11,7 +11,8 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
         include_digital: true,
         include_ksef: false,
         include_photos: false,
-        include_sales: true
+        include_sales: true,
+        include_internal_note: true
       )
 
     {:ok, socket}
@@ -19,7 +20,10 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
 
   @impl true
   def render(assigns) do
+    switch_form = to_form(%{"include_internal_note" => assigns.include_internal_note}, as: :download)
+
     assigns = assign(assigns, :any_selected, any_selected?(assigns))
+    assigns = assign(assigns, :switch_form, switch_form)
 
     ~H"""
     <div>
@@ -52,13 +56,19 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
           <div class="flex flex-col gap-3">
             <.filter_checkbox
               name="include_digital"
-              label="Dokumenty cyfrowe (PDF)"
+              label="Wgrane dokumenty cyfrowe (PDF)"
               checked={@include_digital}
               myself={@myself}
             />
             <.filter_checkbox
+              name="include_sales"
+              label="Faktury sprzedażowe"
+              checked={@include_sales}
+              myself={@myself}
+            />
+            <.filter_checkbox
               name="include_ksef"
-              label="Dokumenty z KSeF (XML)"
+              label="Kosztowe z KSeF (PDF generowane z danych KSeF)"
               checked={@include_ksef}
               myself={@myself}
             />
@@ -68,13 +78,17 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
               checked={@include_photos}
               myself={@myself}
             />
-            <.filter_checkbox
-              name="include_sales"
-              label="Faktury sprzedażowe"
-              checked={@include_sales}
-              myself={@myself}
-            />
           </div>
+
+          <div class="border-lightGreyBg border-t pt-4">
+            <.form for={@switch_form} phx-change="toggle-note-filter" phx-target={@myself}>
+              <.switch
+                field={@switch_form[:include_internal_note]}
+                label="Dołącz komentarze wewnętrzne do generowanych PDF-ów"
+              />
+            </.form>
+          </div>
+
           <a
             href={download_href(@month, assigns)}
             download
@@ -127,6 +141,15 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
     {:noreply, socket}
   end
 
+  @impl true
+  def handle_event("toggle-note-filter", %{"download" => %{"include_internal_note" => value}}, socket) do
+    {:noreply, assign(socket, include_internal_note: value == "true")}
+  end
+
+  def handle_event("toggle-note-filter", _params, socket) do
+    {:noreply, socket}
+  end
+
   defp any_selected?(assigns) do
     assigns.include_digital || assigns.include_ksef || assigns.include_photos ||
       assigns.include_sales
@@ -139,7 +162,8 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
         include_digital: assigns.include_digital,
         include_ksef: assigns.include_ksef,
         include_photos: assigns.include_photos,
-        include_sales: assigns.include_sales
+        include_sales: assigns.include_sales,
+        include_internal_note: assigns.include_internal_note
       )
 
     "/pobierz-miesiac?#{params}"

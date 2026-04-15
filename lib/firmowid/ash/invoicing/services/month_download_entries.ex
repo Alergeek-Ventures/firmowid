@@ -13,10 +13,11 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntries do
   require Ash.Query
 
   @type include_options :: %{
-          include_digital: boolean(),
-          include_ksef: boolean(),
-          include_photos: boolean(),
-          include_sales: boolean()
+          required(:include_digital) => boolean(),
+          required(:include_ksef) => boolean(),
+          required(:include_photos) => boolean(),
+          required(:include_sales) => boolean(),
+          optional(:include_internal_note) => boolean()
         }
 
   @doc """
@@ -46,23 +47,12 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntries do
       |> Ash.read!(ash_opts)
       |> Enum.filter(&include_cost_invoice?(&1, include_opts))
       |> Enum.map(fn document ->
-        blob_url = document.blob.url
-
-        file_extension =
-          blob_url
-          |> String.split("?")
-          |> hd()
-          |> Path.extname()
-
         file_name =
           clean_filename(
             "#{document.issue_date}_#{document.effective_seller_display_name}_#{String.slice(document.blob.blob_checksum, 0, 8)}"
           )
 
-        [
-          source: {:url, blob_url},
-          path: "kosztowe/#{file_name}#{file_extension}"
-        ]
+        cost_download_entry(document, include_opts, session_cookie, endpoint_url, file_name)
       end)
 
     sales_invoices =
@@ -73,7 +63,8 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntries do
           file_name =
             clean_filename("#{invoice.invoice_number}_#{invoice.buyer_display_name_label}")
 
-          download_path = "/sprzedazowe/#{invoice.id}/pobierz"
+          query = URI.encode_query(include_internal_note: include_internal_note?(include_opts))
+          download_path = "/sprzedazowe/#{invoice.id}/pobierz?#{query}"
 
           base_url = String.trim_trailing(endpoint_url, "/")
 
@@ -119,4 +110,47 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntries do
       _image -> include_opts.include_photos
     end
   end
+
+  defp cost_download_entry(document, include_opts, session_cookie, endpoint_url, file_name) do
+    if pdf_downloadable?(document) do
+      query = URI.encode_query(include_internal_note: include_internal_note?(include_opts))
+      base_url = String.trim_trailing(endpoint_url, "/")
+
+      [
+        source:
+          {:url,
+           {"#{base_url}/kosztowe/#{document.id}/pobierz?#{query}",
+            [headers: [{"cookie", "_firmowid_key=#{session_cookie}"}]]}},
+        path: "kosztowe/#{file_name}.pdf"
+      ]
+    else
+      blob_url = document.blob.url
+
+      file_extension =
+        blob_url
+        |> String.split("?")
+        |> hd()
+        |> Path.extname()
+
+      [
+        source: {:url, blob_url},
+        path: "kosztowe/#{file_name}#{file_extension}"
+      ]
+    end
+  end
+
+  defp pdf_downloadable?(%{ksef_number: ksef_number}) when not is_nil(ksef_number), do: true
+
+  defp pdf_downloadable?(document) do
+    extension =
+      document.blob.url
+      |> String.split("?")
+      |> hd()
+      |> Path.extname()
+      |> String.downcase()
+
+    extension == ".pdf"
+  end
+
+  defp include_internal_note?(include_opts), do: Map.get(include_opts, :include_internal_note, true)
 end

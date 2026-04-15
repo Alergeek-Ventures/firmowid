@@ -12,6 +12,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Pdf do
   attr :logo_url, :string, default: nil
   attr :footer_logo_data_uri, :string, default: nil
   attr :reference_invoice, :map, default: nil
+  attr :include_internal_note_page, :boolean, default: false
 
   def sales_invoice(assigns) do
     Template.sales_invoice(assigns)

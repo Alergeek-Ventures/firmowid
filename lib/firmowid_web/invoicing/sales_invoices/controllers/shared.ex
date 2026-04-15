@@ -11,7 +11,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
 
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.Services.Pdf
+  alias Firmowid.Ash.Invoicing.Services.SalesInvoicePdf
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
 
@@ -56,9 +56,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
       {:ok, invoice} ->
         scope = build_anonymous_scope(invoice)
         {invoice, logo_url, org} = prepare_invoice_with_org_context(invoice, scope)
-        invoice = Map.put(invoice, :logo_url, logo_url)
 
-        case Pdf.generate(invoice, show_vat: org.is_vat_payer, scope: scope) do
+        case SalesInvoicePdf.generate(invoice,
+               show_vat: org.is_vat_payer,
+               logo_url: logo_url,
+               include_internal_note: false,
+               scope: scope
+             ) do
           {:ok, pdf_binary} ->
             filename = (invoice.invoice_number || "faktura") <> ".pdf"
 

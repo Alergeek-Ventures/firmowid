@@ -26,18 +26,20 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias Phoenix.Socket.Broadcast
 
-  def form_basic_info_form(organization) do
+  def form_basic_info_form(organization, scope) do
     organization
     |> AshPhoenix.Form.for_update(:update_basic_info,
+      scope: scope,
       domain: Core,
       as: "organization"
     )
     |> to_form()
   end
 
-  def form_correspondence_form(organization) do
+  def form_correspondence_form(organization, scope) do
     organization
     |> AshPhoenix.Form.for_update(:update_correspondence,
+      scope: scope,
       domain: Core,
       as: "organization"
     )
@@ -73,8 +75,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
     socket =
       if admin? do
         socket
-        |> assign(:company_form, form_basic_info_form(current_org))
-        |> assign(:correspondence_form, form_correspondence_form(current_org))
+        |> assign(:company_form, form_basic_info_form(current_org, scope))
+        |> assign(:correspondence_form, form_correspondence_form(current_org, scope))
         |> assign(:ksef_credential, Ksef.get_credential(scope))
         |> allow_upload(:organization_avatar,
           accept: ~w(.jpg .jpeg .png),
@@ -298,6 +300,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   def handle_event("save", %{"organization" => org_params}, socket) do
     current_user = socket.assigns.current_user
     _current_org = socket.assigns.current_org
+    scope = socket.assigns.ash_scope
 
     if current_user.role != :admin do
       raise Forbidden, message: "Tylko administrator może aktualizować organizację."
@@ -318,7 +321,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     form = socket.assigns[form_key]
 
-    case AshPhoenix.Form.submit(form, params: org_params) do
+    case AshPhoenix.Form.submit(form, params: org_params, scope: scope) do
       {:ok, updated_org} ->
         # Load avatar using Ash.load!
         updated_with_avatar =
@@ -328,8 +331,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
          socket
          |> assign(:editing_basic_info, false)
          |> assign(:editing_correspondence, false)
-         |> assign(:correspondence_form, form_correspondence_form(updated_with_avatar))
-         |> assign(:company_form, form_basic_info_form(updated_with_avatar))
+         |> assign(:correspondence_form, form_correspondence_form(updated_with_avatar, scope))
+         |> assign(:company_form, form_basic_info_form(updated_with_avatar, scope))
          |> assign(:current_org, updated_with_avatar)}
 
       {:error, form} ->

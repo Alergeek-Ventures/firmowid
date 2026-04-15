@@ -79,7 +79,9 @@ RUN apk add --no-cache \
   ncurses-libs \
   ca-certificates \
   vips \
-  curl
+  curl \
+  qpdf \
+  libxslt
 
 # Set the locale (Alpine handles locales differently than Debian)
 ENV LANG=en_US.UTF-8

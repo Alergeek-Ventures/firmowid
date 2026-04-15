@@ -14,6 +14,7 @@ defmodule FirmowidWeb.Core.Router do
   alias FirmowidWeb.Infrastructure.Hooks.RequireNoOrganization
   alias FirmowidWeb.Infrastructure.Hooks.RequireOrganization
   alias FirmowidWeb.Infrastructure.Hooks.Timezone
+  alias Invoicing.CostInvoices.Controllers.Pdf, as: CostInvoicePdf
   alias Invoicing.SalesInvoices.Controllers.Pdf
   alias Invoicing.SalesInvoices.Controllers.Shared
   alias Management.Views.Employees
@@ -110,6 +111,7 @@ defmodule FirmowidWeb.Core.Router do
       :require_authenticated_user_with_organization
     ]
 
+    get "/kosztowe/:id/pobierz", CostInvoicePdf, :pdf
     get "/sprzedazowe/:id/pdf", Pdf, :index
     get "/sprzedazowe/:id/pobierz", Pdf, :pdf
     get "/pobierz-miesiac", Infrastructure.Controllers.FileDownload, :batch

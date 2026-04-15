@@ -88,6 +88,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     define :by_checksum, args: [:blob_checksum]
     define :create, action: :create
     define :toggle_skip, action: :toggle_skip
+    define :update_internal_note, args: [:internal_note], action: :update_internal_note
     define :update_blob_id, args: [:blob_id], action: :update_blob_id
     define :refresh_description, action: :refresh_description
   end
@@ -289,7 +290,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
         :seller_phone,
         :invoice_type,
         :original_invoice_ksef_number,
-        :payment_method
+        :payment_method,
+        :internal_note
       ]
 
       validate present([
@@ -310,6 +312,10 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       change fn changeset, _context ->
         validate_non_correction_total_amount_sign(changeset)
       end
+
+      validate string_length(:internal_note, max: 10_000) do
+        where present(:internal_note)
+      end
     end
 
     update :toggle_skip do
@@ -324,6 +330,15 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     update :update_blob_id do
       accept [:blob_id]
       require_atomic? false
+    end
+
+    update :update_internal_note do
+      accept [:internal_note]
+      require_atomic? false
+
+      validate string_length(:internal_note, max: 10_000) do
+        where present(:internal_note)
+      end
     end
 
     update :refresh_description do
@@ -358,26 +373,20 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       authorize_if always()
     end
 
-    policy_group IsSystemActor do
-      policy always() do
-        authorize_if {SystemActorRole, roles: [:cost_invoice_processor]}
-      end
+    bypass {SystemActorRole, roles: [:cost_invoice_processor]} do
+      authorize_if always()
+    end
 
-      policy action_type(:read) do
-        authorize_if {SystemActorRole, roles: [:ksef_session, :invoice_matcher, :analysis_reader, :ksef_digest]}
-      end
+    bypass {SystemActorRole, roles: [:ksef_session, :invoice_matcher, :analysis_reader, :ksef_digest]} do
+      authorize_if action_type(:read)
+    end
 
-      policy action(:create) do
-        authorize_if {SystemActorRole, roles: [:ksef_session]}
-      end
+    bypass {SystemActorRole, roles: [:ksef_session]} do
+      authorize_if action(:create)
+    end
 
-      policy action([:connect_transactions, :disconnect_transactions]) do
-        authorize_if {SystemActorRole, roles: [:invoice_matcher]}
-      end
-
-      policy always() do
-        forbid_if always()
-      end
+    bypass {SystemActorRole, roles: [:invoice_matcher]} do
+      authorize_if action([:connect_transactions, :disconnect_transactions])
     end
 
     policy [
@@ -417,6 +426,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     publish :create, ["created", :_tenant]
     publish :toggle_skip, ["updated", :_tenant]
     publish :update_blob_id, ["updated", :_tenant]
+    publish :update_internal_note, ["updated", :_tenant]
     publish :refresh_description, ["updated", :_tenant]
     publish :connect_transactions, ["updated", :_tenant]
     publish :disconnect_transactions, ["updated", :_tenant]
@@ -444,6 +454,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
     attribute :description, :string, public?: true, allow_nil?: false, default: ""
     attribute :invoice_identifier, :string, public?: true
+    attribute :internal_note, :string, public?: true
 
     attribute :items_list, {:array, :map}, public?: true, allow_nil?: false, default: []
 
