@@ -7,8 +7,17 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
   2. `poll_export` — polls for export readiness, downloads encrypted package parts,
      decrypts, unzips, parses FA(3) XML, and creates `CostInvoice` records
 
-  Handles paginated exports (truncated results schedule follow-up fetches),
-  duplicate detection via existing KSeF numbers, and blob storage for raw XML.
+  ## Reliability guarantees
+
+  - Uses `restrictToPermanentStorageHwmDate = true` to activate KSeF's HWM
+    (High Water Mark) completeness guarantee — exports only include invoices up
+    to a point where KSeF guarantees no new invoices will appear.
+  - For truncated exports, the next-page fetch is scheduled **before** processing
+    invoices, so a mid-processing crash won't lose the continuation point.
+  - If any invoice in a batch fails to parse or create, the **entire batch fails**
+    and will be retried — no silent cursor advancement past failed invoices.
+  - Individual invoice failures are reported to Sentry with full context.
+  - Polling is bounded to 120 snoozes (~60 minutes) to prevent indefinite polling.
   """
   use Oban.Worker,
     queue: :ksef_fetch,
@@ -29,15 +38,22 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
   require Ash.Query
   require Logger
 
+  @snooze_seconds 30
+  @max_snooze_count 120
+  @worker_max_attempts 3
+
+  @impl Oban.Worker
+  def timeout(_job), do: to_timeout(minute: 20)
+
   @impl Oban.Worker
   @spec perform(Oban.Job.t()) :: Oban.Worker.result()
-  def perform(%{args: %{"action" => action, "organization_id" => organization_id} = args}) do
+  def perform(%{args: %{"action" => action, "organization_id" => organization_id} = args} = job) do
     actor = %SystemActor{org_id: organization_id, role: :ksef_session}
     scope = %Scope{actor: actor, tenant: organization_id}
 
     case action do
       "initiate_export" -> initiate_export(args, organization_id)
-      "poll_export" -> poll_export(args, scope)
+      "poll_export" -> poll_export(args, scope, job)
     end
   end
 
@@ -50,7 +66,8 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
         schedule_poll_job(
           reference_number,
           encryption_data,
-          organization_id
+          organization_id,
+          args["date_from"]
         )
 
       {:error, reason} = error ->
@@ -59,20 +76,48 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     end
   end
 
-  defp poll_export(%{"reference_number" => reference_number} = args, scope) do
+  defp poll_export(%{"reference_number" => reference_number} = args, scope, job) do
     session = SessionWorker.get_access_token!(scope.tenant)
 
     case ApiClient.get_export_status(session, reference_number) do
       {:ok, package} ->
-        process_downloaded_package(package, args, scope)
+        process_downloaded_package(package, args, scope, job)
 
       :pending ->
-        {:snooze, 30}
+        handle_pending_poll(job, scope)
+
+      {:error, :expired} ->
+        handle_expired_export(args, scope)
 
       {:error, reason} = error ->
         Logger.error("Failed to poll KSeF export: #{inspect(reason)}")
         error
     end
+  end
+
+  # In OSS Oban, {:snooze, N} increments both attempt and max_attempts.
+  # We use the job's attempt field to track how many times we've polled.
+  # The initial attempt is 1, so after @max_snooze_count snoozes, attempt will
+  # be @max_snooze_count + 1 (accounting for the original max_attempts offset).
+  defp handle_pending_poll(%{max_attempts: max_attempts}, _scope) do
+    snooze_count = max_attempts - @worker_max_attempts
+
+    if snooze_count >= @max_snooze_count do
+      {:error,
+       "KSeF export polling exceeded maximum #{@max_snooze_count} snoozes (~#{div(@max_snooze_count * @snooze_seconds, 60)} minutes)"}
+    else
+      {:snooze, @snooze_seconds}
+    end
+  end
+
+  defp handle_expired_export(args, scope) do
+    Logger.warning("KSeF export expired, re-initiating from #{args["date_from"]}")
+
+    # Re-initiate the export from the original date_from instead of retrying the expired reference
+    initiate_export(
+      %{"date_from" => args["date_from"], "organization_id" => scope.tenant},
+      scope.tenant
+    )
   end
 
   defp perform_initiate_export(date_from, encryption_data, organization_id) do
@@ -81,7 +126,8 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
       "subjectType" => "Subject2",
       "dateRange" => %{
         "dateType" => "PermanentStorage",
-        "from" => DateTime.to_iso8601(date_from)
+        "from" => DateTime.to_iso8601(date_from),
+        "restrictToPermanentStorageHwmDate" => true
       }
     }
 
@@ -94,12 +140,24 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     ApiClient.initiate_invoice_export(session, filters, encryption_data)
   end
 
-  defp process_downloaded_package(%{"parts" => []}, _args, _scope) do
+  defp process_downloaded_package(%{"parts" => []}, _args, _scope, job) do
     Logger.info("KSeF export completed with no invoices to download")
-    {:ok, 0}
+
+    stamp_job_meta(job, %{
+      total_in_package: 0,
+      created: 0,
+      skipped_duplicate: 0,
+      is_truncated: false
+    })
+
+    :ok
   end
 
-  defp process_downloaded_package(package, args, scope) do
+  defp process_downloaded_package(package, args, scope, job) do
+    # Schedule next-page fetch BEFORE processing invoices.
+    # This ensures continuation is not lost if the worker is killed mid-processing.
+    schedule_continuation_fetch(package, scope.tenant)
+
     encryption_key = Base.decode64!(args["encryption_key"])
     encryption_iv = Base.decode64!(args["encryption_iv"])
 
@@ -116,14 +174,15 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
       end)
 
     invoices = Enum.filter(files, fn {name, _} -> String.ends_with?(name, ".xml") end)
+    is_truncated = package["isTruncated"] == true
 
-    result = create_cost_invoices_from_package(metadata, invoices, scope)
+    create_cost_invoices_from_package(metadata, invoices, scope, job, is_truncated)
+  end
 
+  defp schedule_continuation_fetch(package, organization_id) do
     if package["isTruncated"] do
-      schedule_next_fetch(package["lastPermanentStorageDate"], scope.tenant)
+      schedule_next_fetch(package["lastPermanentStorageDate"], organization_id)
     end
-
-    result
   end
 
   defp download_and_decrypt_parts!(parts, key, iv) do
@@ -198,7 +257,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     end
   end
 
-  defp create_cost_invoices_from_package(metadata_json, invoice_files, scope) do
+  defp create_cost_invoices_from_package(metadata_json, invoice_files, scope, job, is_truncated) do
     metadata_by_ksef_number = parse_metadata_json(metadata_json)
 
     ksef_numbers = Map.keys(metadata_by_ksef_number)
@@ -227,22 +286,65 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
         "rejected=#{inspect(Enum.map(rejected_invoices, &elem(&1, 0)))}"
     )
 
-    downloaded_invoices
-    |> Enum.map(fn {ksef_number, xml_content} ->
-      metadata = Map.fetch!(metadata_by_ksef_number, ksef_number)
+    results =
+      Enum.map(downloaded_invoices, fn {ksef_number, xml_content} ->
+        metadata = Map.fetch!(metadata_by_ksef_number, ksef_number)
 
-      create_cost_invoice_from_xml(ksef_number, xml_content, metadata, scope)
-    end)
-    |> accumulate_errors()
+        case create_cost_invoice_from_xml(ksef_number, xml_content, metadata, scope) do
+          :ok ->
+            :ok
+
+          {:error, reason} = error ->
+            report_invoice_failure(ksef_number, reason, scope.tenant)
+            error
+        end
+      end)
+
+    errors = collect_errors(results)
+    created_count = Enum.count(results, &(&1 == :ok))
+
+    summary = %{
+      total_in_package: length(invoice_entries),
+      created: created_count,
+      skipped_duplicate: length(rejected_invoices),
+      failed: length(errors),
+      is_truncated: is_truncated
+    }
+
+    case errors do
+      [] ->
+        stamp_job_meta(job, summary)
+        :ok
+
+      _ ->
+        stamp_job_meta(job, summary)
+
+        {:error, "Failed to process #{length(errors)} invoice(s): #{Enum.map_join(errors, "; ", &inspect/1)}"}
+    end
   end
 
-  defp accumulate_errors(results) do
-    Enum.reduce(results, :ok, fn
-      :ok, acc -> acc
-      {:ok, _}, acc -> acc
-      {:error, error}, :ok -> {:error, [error]}
-      {:error, error}, {:error, errors} -> {:error, [error | errors]}
+  defp collect_errors(results) do
+    Enum.flat_map(results, fn
+      :ok -> []
+      {:ok, _} -> []
+      {:error, error} -> [error]
     end)
+  end
+
+  defp stamp_job_meta(job, summary) do
+    Oban.update_job(job.id, fn job ->
+      %{meta: Map.merge(job.meta, summary)}
+    end)
+  end
+
+  defp report_invoice_failure(ksef_number, reason, organization_id) do
+    Logger.error("KSeF invoice processing failed for #{ksef_number} (org: #{organization_id}): #{inspect(reason)}")
+
+    Sentry.capture_message(
+      "KSeF invoice processing failed",
+      tags: %{ksef_number: ksef_number, organization_id: organization_id},
+      extra: %{reason: inspect(reason)}
+    )
   end
 
   defp parse_metadata_json(metadata_json) do
@@ -293,13 +395,14 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     end
   end
 
-  defp schedule_poll_job(reference_number, encryption_data, organization_id) do
+  defp schedule_poll_job(reference_number, encryption_data, organization_id, date_from) do
     %{
       "action" => "poll_export",
       "organization_id" => organization_id,
       "reference_number" => reference_number,
       "encryption_key" => Base.encode64(encryption_data.key),
-      "encryption_iv" => Base.encode64(encryption_data.iv)
+      "encryption_iv" => Base.encode64(encryption_data.iv),
+      "date_from" => date_from
     }
     |> new(schedule_in: 15)
     |> Firmowid.Oban.insert(skip_organization_id: true)
@@ -335,9 +438,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
           Keyword.put(scoped_blob_opts, :notification_metadata, %{reason: :processing_failed})
         )
 
-        Logger.error("Failed to create cost invoice from XML #{ksef_number}.xml: #{Exception.message(error)}")
-
-        {:error, "Failed to create cost invoice from XML #{ksef_number}.xml: #{inspect(error)}"}
+        {:error, "Failed to create cost invoice from XML #{ksef_number}.xml: #{Exception.message(error)}"}
     end
   end
 

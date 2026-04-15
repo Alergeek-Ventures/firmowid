@@ -198,7 +198,14 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
     end
   end
 
-  @doc "Initiates an invoice export with encryption. Returns the export reference number."
+  @doc """
+  Initiates an invoice export with encryption. Returns the export reference number.
+
+  The `filters` map must include `"subjectType"` and `"dateRange"`. The `"dateRange"`
+  should use `"PermanentStorage"` date type for reliable incremental sync, and
+  `"restrictToPermanentStorageHwmDate"` should be `true` to activate HWM-based
+  completeness guarantees from KSeF.
+  """
   @spec initiate_invoice_export(String.t(), map(), map()) :: {:ok, String.t()} | {:error, term()}
   def initiate_invoice_export(access_token, filters, encryption_info) do
     request_body = %{

@@ -36,7 +36,10 @@ config :sentry,
     metadata: [:request_id, :user_id]
   ],
   integrations: [
-    oban: [cron: [enabled: true]]
+    oban: [
+      capture_errors: true,
+      cron: [enabled: true]
+    ]
   ]
 
 # Configures Swoosh API Client

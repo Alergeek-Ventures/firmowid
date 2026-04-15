@@ -89,6 +89,7 @@ config :firmowid, Oban,
   repo: Firmowid.Repo,
   prefix: "oban",
   engine: Oban.Engines.Basic,
+  shutdown_grace_period: to_timeout(second: 25),
   queues: [
     bank_data: 1,
     requisition_checks: 1,

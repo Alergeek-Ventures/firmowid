@@ -22,6 +22,10 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
 
   require Logger
 
+  @verify_snooze_seconds 10
+  @max_verify_snooze_count 360
+  @worker_max_attempts 3
+
   @impl Oban.Worker
   @spec perform(Oban.Job.t()) :: Oban.Worker.result()
   def perform(%Oban.Job{args: %{"action" => action, "organization_id" => organization_id} = args} = job) do
@@ -293,9 +297,20 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     Ksef.broadcast_ksef_status(scope.tenant, invoice.id, :submitted)
   end
 
-  defp handle_verification_result(:pending, invoice, _job, _scope, _verification_context) do
-    Logger.debug("Invoice #{invoice.id} still pending, will retry")
-    {:snooze, 10}
+  defp handle_verification_result(:pending, invoice, job, scope, _verification_context) do
+    snooze_count = job.max_attempts - @worker_max_attempts
+
+    if snooze_count >= @max_verify_snooze_count do
+      Logger.error(
+        "Invoice #{invoice.id} verification timed out after #{@max_verify_snooze_count} polls (~#{div(@max_verify_snooze_count * @verify_snooze_seconds, 60)} minutes)"
+      )
+
+      fail_invoice_status(invoice, scope)
+      {:cancel, :verification_timeout}
+    else
+      Logger.debug("Invoice #{invoice.id} still pending, will retry")
+      {:snooze, @verify_snooze_seconds}
+    end
   end
 
   defp handle_verification_result(:retry, invoice, _job, scope, _verification_context) do

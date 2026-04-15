@@ -69,7 +69,10 @@ defmodule Firmowid.Application do
 
       _dsn ->
         case :logger.add_handler(:firmowid_sentry_handler, Sentry.LoggerHandler, %{
-               config: %{metadata: [:file, :line]}
+               config: %{
+                 metadata: [:file, :line],
+                 capture_log_messages: true
+               }
              }) do
           :ok ->
             :ok
