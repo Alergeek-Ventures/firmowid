@@ -158,55 +158,22 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {:noreply, socket}
   end
 
-  def handle_event(
-        "toggle-skip-invoicing",
-        %{"id" => id, "type" => type},
-        %{assigns: %{params: %{filter: :unmatched}}} = socket
-      ) do
-    # mark for removal (animation)
-    socket = push_event(socket, "mark-for-removal", %{id: id})
-
-    # actual removal
-    Process.send_after(self(), {:toggle_skip_invoicing, %{id: id, type: type}}, 500)
-
-    {:noreply, socket}
-  end
-
   def handle_event("toggle-skip-invoicing", %{"id" => id, "type" => type}, socket) do
-    # instantly remove if not in unmatched view (where changing state removes the row)
-    Process.send_after(self(), {:toggle_skip_invoicing, %{id: id, type: type}}, 1)
-
+    socket = do_toggle_skip(socket, id, type)
     {:noreply, socket}
   end
 
   def handle_event(
         "toggle-skip-invoicing-group",
-        %{"group_id" => group_id, "transaction_ids" => transaction_ids},
+        %{"transaction_ids" => transaction_ids},
         %{assigns: %{params: %{filter: :unmatched}}} = socket
       ) do
-    # mark group for removal (animation)
-    socket = push_event(socket, "mark-for-removal", %{id: group_id})
-
-    # mark all child transactions for removal
-    socket =
-      Enum.reduce(transaction_ids, socket, fn id, acc ->
-        push_event(acc, "mark-for-removal", %{id: id})
-      end)
-
-    # actual removal - toggle all transactions
-    Enum.each(transaction_ids, fn id ->
-      Process.send_after(self(), {:toggle_skip_invoicing, %{id: id, type: "transaction"}}, 500)
-    end)
-
+    socket = Enum.reduce(transaction_ids, socket, &do_toggle_skip(&2, &1, "transaction"))
     {:noreply, socket}
   end
 
   def handle_event("toggle-skip-invoicing-group", %{"transaction_ids" => transaction_ids}, socket) do
-    # instantly remove if not in unmatched view
-    Enum.each(transaction_ids, fn id ->
-      Process.send_after(self(), {:toggle_skip_invoicing, %{id: id, type: "transaction"}}, 1)
-    end)
-
+    socket = Enum.reduce(transaction_ids, socket, &do_toggle_skip(&2, &1, "transaction"))
     {:noreply, socket}
   end
 
@@ -252,39 +219,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   @impl true
-  def handle_info({:toggle_skip_invoicing, %{id: id, type: type}}, socket) do
-    socket =
-      case type do
-        "cost_invoice" ->
-          scope = socket.assigns.ash_scope
-          cost_invoice = Invoicing.get_cost_invoice!(id, scope: scope)
-          Invoicing.toggle_cost_invoice_skip!(cost_invoice, scope: scope)
-          socket
-
-        "transaction" ->
-          scope = socket.assigns.ash_scope
-          tx = Finances.get_transaction!(id, scope: scope)
-          new_skip = !tx.skip_invoicing
-          Finances.set_transaction_skip_invoicing!(tx, %{skip_invoicing: new_skip}, scope: scope)
-          toggle_transaction_skip(socket, id, new_skip)
-
-        "sales_invoice" ->
-          scope = socket.assigns.ash_scope
-          invoice = SalesInvoice.by_id!(id, scope: scope)
-          SalesInvoice.toggle_skip!(invoice, scope: scope)
-          socket
-      end
-
-    {:noreply, socket}
-  end
-
-  @impl true
   def handle_info(%Broadcast{payload: %Notification{resource: Transaction}}, socket) do
-    {:noreply, debounce_refetch(socket, :transactions, 10_000)}
+    {:noreply, debounce_refetch(socket, :invoicing_entries, 10_000)}
   end
 
   @impl true
-  def handle_info({:debounced_refetch, :transactions}, socket) do
+  def handle_info({:debounced_refetch, :invoicing_entries}, socket) do
     {:noreply, refetch_invoicing_entries(socket)}
   end
 
@@ -414,16 +354,16 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {:noreply, socket}
   end
 
-  # Cost invoice — generic update/destroy catch-all
+  # Cost invoice — debounced refetch to allow CSS animation to complete
   @impl true
   def handle_info(%Broadcast{payload: %Notification{resource: CostInvoice}}, socket) do
-    {:noreply, refetch_invoicing_entries(socket)}
+    {:noreply, debounce_refetch(socket, :invoicing_entries, 10_000)}
   end
 
-  # Sales invoice — any change
+  # Sales invoice — debounced refetch to allow CSS animation to complete
   @impl true
   def handle_info(%Broadcast{payload: %Notification{resource: SalesInvoice}}, socket) do
-    {:noreply, refetch_invoicing_entries(socket)}
+    {:noreply, debounce_refetch(socket, :invoicing_entries, 10_000)}
   end
 
   @impl true
@@ -571,12 +511,59 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     Blobs.create_or_retry_cost_invoice_blob(path, content_type, original_filename, scope: scope)
   end
 
+  defp do_toggle_skip(socket, id, "transaction") do
+    scope = socket.assigns.ash_scope
+    tx = Finances.get_transaction!(id, scope: scope)
+    new_skip = !tx.skip_invoicing
+    Finances.set_transaction_skip_invoicing!(tx, %{skip_invoicing: new_skip}, scope: scope)
+    toggle_transaction_skip(socket, id, new_skip)
+  end
+
+  defp do_toggle_skip(socket, id, "cost_invoice") do
+    scope = socket.assigns.ash_scope
+    cost_invoice = Invoicing.get_cost_invoice!(id, scope: scope)
+    new_skip = !cost_invoice.skip_invoicing
+    Invoicing.toggle_cost_invoice_skip!(cost_invoice, scope: scope)
+    toggle_entry_skip(socket, id, new_skip)
+  end
+
+  defp do_toggle_skip(socket, id, "sales_invoice") do
+    scope = socket.assigns.ash_scope
+    invoice = SalesInvoice.by_id!(id, scope: scope)
+    new_skip = !invoice.skip_invoicing
+    SalesInvoice.toggle_skip!(invoice, scope: scope)
+    toggle_entry_skip(socket, id, new_skip)
+  end
+
   # TODO: re-add Transaction struct constraints once legacy Ecto schema is removed
   defp toggle_transaction_skip(socket, id, new_skip) do
     entries =
       Enum.map(socket.assigns.invoicing_entries, fn
         %{__struct__: _, id: ^id, skip_invoicing: _} = tx ->
           Map.put(tx, :skip_invoicing, new_skip)
+
+        %TransactionGroup{transactions: txns} = group ->
+          updated =
+            Enum.map(txns, fn
+              %{__struct__: _, id: ^id, skip_invoicing: _} = tx -> Map.put(tx, :skip_invoicing, new_skip)
+              other -> other
+            end)
+
+          %{group | transactions: updated}
+
+        other ->
+          other
+      end)
+
+    assign(socket, :invoicing_entries, entries)
+  end
+
+  # Generalized skip toggle for any entry with id and skip_invoicing fields
+  defp toggle_entry_skip(socket, id, new_skip) do
+    entries =
+      Enum.map(socket.assigns.invoicing_entries, fn
+        %{__struct__: _, id: ^id, skip_invoicing: _} = entry ->
+          Map.put(entry, :skip_invoicing, new_skip)
 
         %TransactionGroup{transactions: txns} = group ->
           updated =

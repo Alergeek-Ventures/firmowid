@@ -116,21 +116,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       )
 
     ~H"""
-    <style>
-      /* needed for groups' chevrons (rotates on expand/collapse) */
-      [id^="chevron-"] {
-        transform-origin: center center;
-        will-change: transform;
-      }
-      [id^="chevron-"].rotate-90 {
-        transform: rotate(90deg);
-      }
-    </style>
-
     <table
       id="invoicing-entries"
       class="-mt-8 table-fixed border-separate border-spacing-y-3"
-      phx-hook="ListItemRemovalAnimation"
     >
       <col
         :for={column <- @columns}
@@ -258,17 +246,14 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           ]
         }
       >
-        <div
-          data-overflow-hider-id={@invoicing_entry.id}
-          class={
-            [
-              # this column has no defined width, so we limit the worst offenders "manually"
-              column == "party" && "max-w-[50vw]",
-              # required to display the "dot freshness" indicator that is rendered outside of the cell
-              column != "amount" && "w-full truncate"
-            ]
-          }
-        >
+        <div class={
+          [
+            # this column has no defined width, so we limit the worst offenders "manually"
+            column == "party" && "max-w-[50vw]",
+            # required to display the "dot freshness" indicator that is rendered outside of the cell
+            column != "amount" && "w-full truncate"
+          ]
+        }>
           <.render_cell column={column} invoicing_entry={@invoicing_entry} />
         </div>
       </td>
@@ -673,12 +658,12 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   defp group_row(assigns) do
     ~H"""
-    <!-- Group header row - styled like a regular transaction -->
     <tr
       id={"#{@group.id}-row"}
-      class="cursor-pointer"
+      class="cursor-pointer duration-200"
       phx-click={
         JS.toggle_class("rotate-90", to: "#chevron-#{@group.id}")
+        |> JS.toggle_class("opacity-50", to: "##{@group.id}-row")
         |> JS.toggle(
           to: "[data-group-transactions='#{@group.id}']",
           in: {"ease-out duration-300", "opacity-0", "opacity-100"},
@@ -697,13 +682,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           column == "amount" && Decimal.lt?(@group.total, 0) && "bg-orangeBg! text-orangeText"
         ]}
       >
-        <div
-          data-overflow-hider-id={@group.id}
-          class={[
-            column == "party" && "max-w-[50vw]",
-            column != "amount" && "w-full truncate"
-          ]}
-        >
+        <div class={[
+          column == "party" && "max-w-[50vw]",
+          column != "amount" && "w-full truncate"
+        ]}>
           <%= if column == "party" do %>
             <span>{@group.party}</span>
             <span
@@ -739,13 +721,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
               "bg-orangeBg! text-orangeText"
           ]}
         >
-          <div
-            data-overflow-hider-id={transaction.id}
-            class={[
-              column == "party" && "max-w-[50vw]",
-              column != "amount" && "w-full truncate"
-            ]}
-          >
+          <div class={[
+            column == "party" && "max-w-[50vw]",
+            column != "amount" && "w-full truncate"
+          ]}>
             <%= if column == "party" do %>
               <div class="flex items-center gap-2">
                 <.icon name="hero-arrow-turn-down-right" class="text-darkGrey size-3 opacity-50" />
@@ -795,7 +774,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           id={"#{@group.id}-button"}
           phx-click={
             JS.push("toggle-skip-invoicing-group",
-              value: %{group_id: @group.id, transaction_ids: Enum.map(@group.transactions, & &1.id)}
+              value: %{transaction_ids: Enum.map(@group.transactions, & &1.id)}
             )
           }
           class="bg-greyButtonBg text-darkGrey h-6 w-20 cursor-pointer rounded-md text-xs uppercase transition-all duration-500"

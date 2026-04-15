@@ -1,4 +1,3 @@
-import { ListItemRemovalAnimation } from "./list_item_removal_animation";
 import { Confetti } from "./confetti";
 import { ScrollStyle } from "./scroll_style";
 import { FileUploadDragNDrop } from "./file_upload_drag_n_drop";
@@ -19,7 +18,6 @@ import { FloatingUIError } from "./floating_error";
 import { CookieConsent } from "./cookie_consent";
 
 export const Hooks = {
-  ListItemRemovalAnimation,
   Confetti,
   ScrollStyle,
   FileUploadDragNDrop,

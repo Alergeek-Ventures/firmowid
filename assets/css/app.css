@@ -149,22 +149,6 @@
     }
   }
 
-  @keyframes fade-and-scale-out {
-    0% {
-      opacity: 1;
-      max-height: 200px;
-    }
-    70% {
-      opacity: 0;
-      max-height: 0px;
-    }
-    100% {
-      opacity: 0;
-      max-height: 0px;
-      margin: 0px;
-    }
-  }
-
   @keyframes slide-from-center {
     0% {
       opacity: 0;
@@ -186,7 +170,6 @@
   }
 
   /* Animations */
-  --animate-list-item-removal: fade-and-scale-out 300ms ease-out forwards;
   --animate-slide-from-center: slide-from-center 300ms ease-out forwards;
   --animate-appear: appear 700ms ease-out forwards;
   --animate-fade-in: appear 150ms ease-out forwards;
