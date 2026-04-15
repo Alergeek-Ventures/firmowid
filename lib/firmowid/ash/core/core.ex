@@ -52,7 +52,11 @@ defmodule Firmowid.Ash.Core do
 
     resource Firmowid.Ash.Core.Token
 
-    resource Firmowid.Ash.Core.UserIdentity
+    resource Firmowid.Ash.Core.UserIdentity do
+      define :read_user_identity_for_strategy,
+        action: :read_for_user_and_strategy,
+        args: [:user_id, :strategy]
+    end
 
     resource Firmowid.Ash.Core.OrganizationInvite do
       define :list_invites, action: :read

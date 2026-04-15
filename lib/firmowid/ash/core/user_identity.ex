@@ -27,6 +27,17 @@ defmodule Firmowid.Ash.Core.UserIdentity do
     user_resource Firmowid.Ash.Core.User
   end
 
+  actions do
+    defaults [:read]
+
+    read :read_for_user_and_strategy do
+      argument :user_id, :uuid, allow_nil?: false
+      argument :strategy, :string, allow_nil?: false
+
+      filter expr(user_id == ^arg(:user_id) and strategy == ^arg(:strategy))
+    end
+  end
+
   attributes do
     Resource.firmowid_timestamps()
   end

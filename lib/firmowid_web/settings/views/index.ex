@@ -18,7 +18,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Argon2Provider
-  alias Firmowid.Ash.Core.UserIdentity
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.GoCardless.ApiClient
   alias Firmowid.Ash.Finances.Requisition
@@ -102,15 +101,14 @@ defmodule FirmowidWeb.Settings.Views.Index do
     org_with_avatar =
       Ash.load!(current_org, [avatar_blob: [:url]], scope: scope)
 
-    google_connected? =
-      case Ash.read_one(UserIdentity,
-             filter: [user_id: current_user.id, strategy: "google"],
-             scope: scope
-           ) do
-        {:ok, nil} -> false
-        {:ok, _identity} -> true
-        {:error, _} -> false
-      end
+    {:ok, google_identities} =
+      Core.read_user_identity_for_strategy(
+        current_user.id,
+        "google",
+        scope: scope
+      )
+
+    google_connected? = google_identities != []
 
     {:ok,
      socket
