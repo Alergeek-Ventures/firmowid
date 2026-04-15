@@ -1,18 +1,22 @@
 # Worktrunk Project Configuration
 # Enables isolated dev environments per worktree with deterministic ports
 
-[pre-start]
-# Copy deps, _build, .env from main worktree (uses COW/reflink when available)
+# Phase 1: Copy deps/_build/.env from main worktree
+[[pre-start]]
 copy_ignored = "wt step copy-ignored"
-# Fix execute permissions on binaries (lost during COW copy on some filesystems)
+
+# Phase 2: Everything else in parallel
+[[pre-start]]
 remove_build = """
 if [[ "$OSTYPE" != "darwin"* ]]; then
   rm -rf _build
 fi
 """
+
+[[pre-start]]
 deps = "mix deps.get"
 
-# Generate .env.local with ports - main gets defaults, other branches get hashed ports
+[[pre-start]]
 env = """
 {% if branch == 'main' %}
 cat > .env.local << 'EOF'
@@ -38,17 +42,18 @@ DEBUGGER_PORT={{ ('debugger-' ~ branch) | hash_port }}
 BRANCH={{ branch | sanitize }}
 DATABASE_URL=postgresql://postgres:postgres@localhost:{{ ('db-' ~ branch) | hash_port }}/firmowid
 
-# AWS credentials for SeaweedFS S3 (required by ex_aws)
+# AWS credentials for SeaweedFs S3 (required by ex_aws)
 AWS_ACCESS_KEY_ID=test
 AWS_SECRET_ACCESS_KEY=test
 EOF
 {% endif %}
 """
 
-# Generate .server.port for AI tools (opencode reads it via {file:.server.port})
+[[pre-start]]
 opencode = "{% if branch == 'main' %}echo '4000'{% else %}echo '{{ branch | hash_port }}'{% endif %} > .server.port"
 
-# Start services (reads from .env.local)
+# Phase 3: Start services (after everything else)
+[[pre-start]]
 up = "mix dev.up"
 
 [pre-remove]
