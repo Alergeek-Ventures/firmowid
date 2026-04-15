@@ -714,8 +714,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     entries
   end
 
-  # TODO: re-add Transaction struct constraints once legacy Ecto schema is removed
-  defp groupable_transaction?(%{skip_invoicing: skip, cost_invoices: cost, sales_invoices: sales}) do
+  defp groupable_transaction?(%Transaction{creditor_name: ""}), do: false
+  defp groupable_transaction?(%Transaction{creditor_name: nil}), do: false
+
+  defp groupable_transaction?(%Transaction{skip_invoicing: skip, cost_invoices: cost, sales_invoices: sales}) do
     not skip and cost == [] and sales == []
   end
 
