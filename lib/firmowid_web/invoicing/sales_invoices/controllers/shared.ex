@@ -11,6 +11,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
 
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Invoicing.Services.MonthDownloadEntries
   alias Firmowid.Ash.Invoicing.Services.SalesInvoicePdf
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
@@ -64,7 +65,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
                scope: scope
              ) do
           {:ok, pdf_binary} ->
-            filename = (invoice.invoice_number || "faktura") <> ".pdf"
+            filename = MonthDownloadEntries.sales_invoice_pdf_filename(invoice)
 
             conn
             |> put_resp_content_type("application/pdf")
