@@ -68,7 +68,6 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   button_label="Pobierz PDF do druku"
                 />
 
-
                 <.link
                   :if={!downloadable_as_pdf?(@invoice)}
                   class={button_styles(%{color: "light_grey", size: "small", new: true})}

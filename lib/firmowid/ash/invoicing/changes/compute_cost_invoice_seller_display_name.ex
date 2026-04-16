@@ -2,8 +2,9 @@ defmodule Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName do
   @moduledoc """
   Computes a stored cost invoice seller display name from invoice contents.
 
-  The value is system-derived and recomputable. Failures are tolerated and fall
-  back to the current seller name.
+  The value is system-derived and recomputable.
+
+  Failed or blank generations leave the current value unchanged.
   """
   use Ash.Resource.Change
 
@@ -40,11 +41,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName do
         Ash.Changeset.force_change_attribute(changeset, :seller_display_name, value)
 
       _ ->
-        Ash.Changeset.force_change_attribute(
-          changeset,
-          :seller_display_name,
-          String.trim(value(changeset, :seller))
-        )
+        changeset
     end
   end
 
