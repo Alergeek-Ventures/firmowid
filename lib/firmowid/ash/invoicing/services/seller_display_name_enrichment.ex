@@ -107,7 +107,7 @@ defmodule Firmowid.Ash.Invoicing.Services.SellerDisplayNameEnrichment do
     request =
       Chat.Completions.new(
         model: "gpt-5-nano",
-        temperature: 0,
+        temperature: 1,
         max_completion_tokens: 300,
         reasoning_effort: "minimal",
         messages: [
