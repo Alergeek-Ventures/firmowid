@@ -434,6 +434,22 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     """
   end
 
+  defp render_cell(%{column: "status", status: "draft"} = assigns) do
+    ~H"""
+    <div
+      id={"status-#{@invoicing_entry.id}"}
+      phx-hook="Tippy"
+      data-tippy-delay="1000"
+      data-tippy-content="To szkic faktury — dokument nie został jeszcze wystawiony."
+      class="flex w-32 flex-row gap-2 overflow-hidden"
+    >
+      <div class="border-2 border-greyButtonBg bg-white text-darkGrey flex h-6 w-full flex-row items-center justify-between rounded-md p-2 text-xs uppercase transition-all duration-500">
+        <p>Szkic</p><.icon name="hero-pencil-square-solid" class="size-4" />
+      </div>
+    </div>
+    """
+  end
+
   defp render_cell(%{column: "status", status: "unmatched"} = assigns) do
     ~H"""
     <div
@@ -639,6 +655,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     submission_info = Ksef.get_submission_info(invoice)
 
     cond do
+      is_nil(invoice.invoice_number) -> "draft"
       SubmissionInfo.submitting?(submission_info) -> "ksef_sending"
       SubmissionInfo.failed?(submission_info) -> "ksef_failed"
       true -> if invoice.transactions == [], do: "unmatched", else: "matched"
