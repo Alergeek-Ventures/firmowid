@@ -10,13 +10,6 @@ defmodule Firmowid.Ash.Invoicing.Services.CostInvoiceBasePdf.Ksef do
 
   @padding_style "<style>body { padding: 16px; }</style>"
 
-  # sobelow_skip ["Traversal.FileModule"]
-  # Hardcoded path to the KSeF XSL template in priv/static, not user input.
-  @xsl_template_path Path.join(
-                       :code.priv_dir(:firmowid),
-                       "static/templates/kseffaktura_fa(3).xsl"
-                     )
-
   @doc """
   Generates the base KSeF cost-invoice PDF.
   """
@@ -44,11 +37,19 @@ defmodule Firmowid.Ash.Invoicing.Services.CostInvoiceBasePdf.Ksef do
     end
   end
 
+  # sobelow_skip ["Traversal.FileModule"]
+  # Hardcoded path to the KSeF XSL template in priv/static, not user input.
   defp load_xsl_content do
-    case File.read(@xsl_template_path) do
+    case File.read(xsl_template_path()) do
       {:ok, xsl_content} -> {:ok, sanitize_xsl_fonts(xsl_content)}
       {:error, reason} -> {:error, reason}
     end
+  end
+
+  # sobelow_skip ["Traversal.FileModule"]
+  # Hardcoded path to the KSeF XSL template in priv/static, not user input.
+  defp xsl_template_path do
+    Path.join(:code.priv_dir(:firmowid), "static/templates/kseffaktura_fa(3).xsl")
   end
 
   defp sanitize_xsl_fonts(xsl_content) do
