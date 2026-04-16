@@ -10,11 +10,6 @@ defmodule Firmowid.Ash.Invoicing.Services.PdfAugmentations.InternalNote do
   alias FirmowidWeb.Infrastructure.Utilities.PdfHelpers
   alias FirmowidWeb.Invoicing.Components.Print
 
-  @footer_logo_path Path.join(
-                      :code.priv_dir(:firmowid),
-                      "static/images/invoice_firmowid_logo.png"
-                    )
-
   @doc """
   Inserts the internal-note page after the first page when requested.
   """
@@ -26,7 +21,7 @@ defmodule Firmowid.Ash.Invoicing.Services.PdfAugmentations.InternalNote do
   end
 
   def maybe_insert(pdf_binary, internal_note, true) when is_binary(internal_note) do
-    footer_logo_data_uri = PdfHelpers.file_to_data_uri(@footer_logo_path)
+    footer_logo_data_uri = PdfHelpers.file_to_data_uri(footer_logo_path())
 
     note_html =
       PdfUtils.render_component_html(Print, :internal_note_page, %{
@@ -37,5 +32,9 @@ defmodule Firmowid.Ash.Invoicing.Services.PdfAugmentations.InternalNote do
     with {:ok, note_pdf} <- PdfUtils.render_html_to_pdf(note_html, scale: 1.25) do
       PdfUtils.insert_page_after_first(pdf_binary, note_pdf)
     end
+  end
+
+  defp footer_logo_path do
+    Path.join(:code.priv_dir(:firmowid), "static/images/invoice_firmowid_logo.png")
   end
 end
