@@ -37,18 +37,28 @@ defmodule Firmowid.Ash.Invoicing.Changes.SendKsefInvoiceDigest do
 
       log_digest_delivery_attempt(digest, admins, selected_admin_user_ids)
 
-      case deliver_to_admins(admins, digest) do
-        :ok ->
-          Ash.Changeset.force_change_attribute(changeset, :delivered_at, DateTime.utc_now())
-
-        {:error, failures} ->
-          Ash.Changeset.add_error(
-            changeset,
-            InvalidAttribute.exception(
-              field: :delivered_at,
-              message: Enum.map_join(failures, "; ", &format_failure/1)
-            )
+      if digest.cost_invoices == [] do
+        Ash.Changeset.add_error(
+          changeset,
+          InvalidAttribute.exception(
+            field: :delivered_at,
+            message: "cannot send KSeF digest without persisted invoices"
           )
+        )
+      else
+        case deliver_to_admins(admins, digest) do
+          :ok ->
+            Ash.Changeset.force_change_attribute(changeset, :delivered_at, DateTime.utc_now())
+
+          {:error, failures} ->
+            Ash.Changeset.add_error(
+              changeset,
+              InvalidAttribute.exception(
+                field: :delivered_at,
+                message: Enum.map_join(failures, "; ", &format_failure/1)
+              )
+            )
+        end
       end
     end)
   end

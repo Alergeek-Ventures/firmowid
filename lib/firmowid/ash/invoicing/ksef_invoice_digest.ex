@@ -13,6 +13,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
   alias Firmowid.Ash.Invoicing.Actions.CreateScheduledKsefInvoiceDigests
   alias Firmowid.Ash.Invoicing.Changes.EnqueueKsefInvoiceDigestSend
   alias Firmowid.Ash.Invoicing.Changes.SendKsefInvoiceDigest
+  alias Firmowid.Ash.Invoicing.Changes.VerifyKsefInvoiceDigestCreate
   alias Firmowid.Ash.Invoicing.KsefInvoiceDigestItem
   alias Firmowid.Ash.Resource
 
@@ -86,6 +87,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
       argument :enqueue_send?, :boolean, allow_nil?: false, default: true
 
       change manage_relationship(:cost_invoice_ids, :cost_invoices, type: :append)
+      change VerifyKsefInvoiceDigestCreate
       change EnqueueKsefInvoiceDigestSend
     end
 

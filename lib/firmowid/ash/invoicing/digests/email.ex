@@ -202,6 +202,16 @@ defmodule Firmowid.Ash.Invoicing.Digests.Email do
     """
   end
 
+  defp text_email(user, _digest, []) do
+    """
+    Cześć #{user.name || user.email},
+
+    W Twojej organizacji pojawiły się nowe faktury kosztowe pobrane z KSeF.
+
+    Wejdź na #{Endpoint.url()}/kosztowe, aby zobaczyć szczegóły.
+    """
+  end
+
   defp text_email(user, _digest, [first | _rest] = invoices) do
     remaining = length(invoices) - 1
 
