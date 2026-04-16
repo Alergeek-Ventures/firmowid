@@ -145,6 +145,20 @@ defmodule Firmowid.Ash.Invoicing.Services.SellerDisplayNameEnrichment do
     - Usuń zbędne formy prawne, jeśli nie są potrzebne do identyfikacji.
     - Wygeneruj najlepszą krótką nazwę na podstawie bieżącej faktury i kontekstu historycznego.
     - Nie dodawaj informacji, których nie ma w danych wejściowych.
+
+    Przykłady:
+    - "STACJA PALIW PKN ORLEN NR 7333 ''BILMEX - TANK'' SPÓŁKA Z OGRANICZONĄ
+      ODPOWIEDZIALNOŚCIĄ SPÓŁKA KOMANDYTOWA 30-348 KRAKÓW UL.GROTA ROWECKIEGO
+      33 BDO00015385" -> "Stacja paliw Orlen w Krakowie"
+      - franczyza, z perspektywy klienta to "Orlen", a nie "Bilmex"
+      - miasto jest ważną informacją gdy mamy doczynienia z franczyzą
+    - "LANTRE SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ" -> "Lantre"
+      - prosta nazwa, bez zbędnych form prawnych
+      - zawsze chcemy mieć słowa pisane wielką literą, nawet jeśli w danych
+      wejściowych są małymi / całe wielkimi literami
+    - "PGE POLSKA GRUPA ENERGETYCZNA SPÓŁKA AKCYJNA" -> "PGE"
+      - akronim zawsze dużymi literami, ale znowu - bez zbędnych form prawnych
+    - "VIKINGCO POLAND SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ" -> "VikingCo"
     """)
   end
 
