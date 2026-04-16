@@ -53,6 +53,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
   code_interface do
     define :create_digest, action: :create_digest
     define :by_window, action: :by_window
+    define :create_scheduled_digests, action: :create_scheduled_digests
     define :send_digest, action: :send_digest
   end
 
@@ -82,6 +83,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
       accept [:window_start, :window_end]
 
       argument :cost_invoice_ids, {:array, :uuid}, allow_nil?: false
+      argument :enqueue_send?, :boolean, allow_nil?: false, default: true
 
       change manage_relationship(:cost_invoice_ids, :cost_invoices, type: :append)
       change EnqueueKsefInvoiceDigestSend
@@ -90,11 +92,16 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
     update :send_digest do
       require_atomic? false
       accept []
+      argument :admin_user_ids, {:array, :uuid}
       change SendKsefInvoiceDigest
     end
 
     action :create_scheduled_digests, :integer do
       description "Builds KSeF cost-invoice digests for the most recently closed digest window."
+      argument :window_start, :utc_datetime
+      argument :window_end, :utc_datetime
+      argument :organization_ids, {:array, :uuid}
+      argument :enqueue_send?, :boolean, allow_nil?: false, default: true
       run CreateScheduledKsefInvoiceDigests
     end
   end
@@ -108,6 +115,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
 
     policy action(:create_scheduled_digests) do
       authorize_if AshObanInteraction
+      authorize_if {SystemActorRole, roles: [:ksef_digest]}
     end
 
     policy action([:by_window, :read_for_delivery, :create_digest, :send_digest]) do

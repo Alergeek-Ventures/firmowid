@@ -26,14 +26,12 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestItem do
       authorize_if {Firmowid.Ash.Checks.AtLeastRole, role: :accountant}
     end
 
-    policy_group Firmowid.Ash.Checks.IsSystemActor do
-      policy always() do
-        authorize_if {Firmowid.Ash.Checks.SystemActorRole, roles: [:ksef_digest]}
-      end
+    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:ksef_digest]} do
+      authorize_if always()
+    end
 
-      policy always() do
-        forbid_if always()
-      end
+    policy Firmowid.Ash.Checks.IsSystemActor do
+      forbid_if always()
     end
   end
 
