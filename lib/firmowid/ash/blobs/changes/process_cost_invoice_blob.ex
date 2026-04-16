@@ -20,6 +20,7 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessCostInvoiceBlob do
   - Dates should be in YYYY-MM-DD format
   - Currency should be a 3-letter ISO 4217 code (e.g., PLN, USD, EUR)
   - For Polish invoices: "Sprzedawca" = seller, "Data wystawienia" = issue date, "Data sprzedaży/dostawy" = sale date
+  - If present, extract the seller tax identifier (for Polish invoices usually NIP)
   - Total amount should be the gross/brutto amount (including VAT/tax)
   - If the document is not an invoice, receipt, or bill (e.g., it's a contract, report, or unrelated document), set document_type to "invalid"
   """
@@ -32,8 +33,8 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessCostInvoiceBlob do
       issue_date: %{type: "string", format: "date"},
       due_date: %{type: "string", format: "date"},
       seller: %{type: "string"},
+      seller_nip: %{type: "string"},
       seller_address: %{type: "string"},
-      seller_display_name: %{type: "string"},
       total_amount: %{type: "number"},
       currency: %{type: "string"},
       invoice_identifier: %{type: "string"},
@@ -131,7 +132,6 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessCostInvoiceBlob do
     attrs =
       extracted_metadata
       |> Map.delete("document_type")
-      |> Map.put_new("seller_display_name", extracted_metadata["seller"])
       |> Map.put("total_amount", -extracted_metadata["total_amount"])
       |> Map.put("organization_id", blob.organization_id)
       |> Map.put("blob_id", blob.id)

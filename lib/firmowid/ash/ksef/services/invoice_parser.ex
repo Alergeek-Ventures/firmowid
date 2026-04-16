@@ -27,7 +27,6 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceParser do
       |> xmap(
         seller_nip: tns_xpath(~x"/Faktura/Podmiot1/DaneIdentyfikacyjne/NIP/text()"os),
         seller: tns_xpath(~x"/Faktura/Podmiot1/DaneIdentyfikacyjne/Nazwa/text()"os),
-        seller_display_name: tns_xpath(~x"/Faktura/Podmiot1/DaneIdentyfikacyjne/Nazwa/text()"os),
         seller_country_code: tns_xpath(~x"/Faktura/Podmiot1/Adres/KodKraju/text()"os),
         seller_address: tns_xpath(~x"/Faktura/Podmiot1/Adres/AdresL1/text()"os),
         seller_email: tns_xpath(~x"/Faktura/Podmiot1/DaneKontaktowe/Email/text()"os),

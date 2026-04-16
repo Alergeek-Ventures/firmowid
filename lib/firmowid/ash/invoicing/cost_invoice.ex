@@ -44,6 +44,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   alias Firmowid.Ash.Checks.IsSystemActor
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceDescription
+  alias Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName
   alias Firmowid.Ash.Invoicing.Changes.EnqueueMissingCostInvoiceDescriptionRefresh
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Resource
@@ -90,6 +91,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     define :toggle_skip, action: :toggle_skip
     define :update_internal_note, args: [:internal_note], action: :update_internal_note
     define :update_blob_id, args: [:blob_id], action: :update_blob_id
+    define :refresh_seller_display_name, action: :refresh_seller_display_name
     define :refresh_description, action: :refresh_description
   end
 
@@ -296,7 +298,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
       validate present([
                  :seller,
-                 :seller_display_name,
                  :sale_date,
                  :issue_date,
                  :items_list,
@@ -304,6 +305,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
                  :currency,
                  :invoice_identifier
                ])
+
+      change ComputeCostInvoiceSellerDisplayName
 
       change ComputeCostInvoiceDescription
 
@@ -345,6 +348,12 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       require_atomic? false
 
       change ComputeCostInvoiceDescription
+    end
+
+    update :refresh_seller_display_name do
+      require_atomic? false
+
+      change ComputeCostInvoiceSellerDisplayName
     end
 
     update :connect_transactions do
@@ -427,6 +436,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     publish :toggle_skip, ["updated", :_tenant]
     publish :update_blob_id, ["updated", :_tenant]
     publish :update_internal_note, ["updated", :_tenant]
+    publish :refresh_seller_display_name, ["updated", :_tenant]
     publish :refresh_description, ["updated", :_tenant]
     publish :connect_transactions, ["updated", :_tenant]
     publish :disconnect_transactions, ["updated", :_tenant]

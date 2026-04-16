@@ -83,7 +83,6 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   </span>
                 </.button>
 
-
                 <.link
                   :if={!downloadable_as_pdf?(@invoice)}
                   class={button_styles(%{color: "light_grey", size: "small", new: true})}
