@@ -377,16 +377,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     initial_params = %{
       "currency" => draft.currency,
       "is_reverse_charge" => draft.is_reverse_charge,
-      "items" =>
-        Enum.map(draft.items || [], fn item ->
-          %{
-            "name" => item.name,
-            "quantity" => item.quantity,
-            "unit" => item.unit,
-            "unit_price" => item.unit_price,
-            "vat_rate" => item.vat_rate
-          }
-        end)
+      "items" => initial_item_params(draft.items || [])
     }
 
     ash_form = AshPhoenix.Form.validate(ash_form, initial_params)
@@ -462,6 +453,20 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   defp maybe_setup_step(socket, _step, _params) do
     socket
+  end
+
+  defp initial_item_params([]), do: [%{}]
+
+  defp initial_item_params(items) do
+    Enum.map(items, fn item ->
+      %{
+        "name" => item.name,
+        "quantity" => item.quantity,
+        "unit" => item.unit,
+        "unit_price" => item.unit_price,
+        "vat_rate" => item.vat_rate
+      }
+    end)
   end
 
   # Build a plain map from the loaded WizardDraft for the Pdf/Template component.

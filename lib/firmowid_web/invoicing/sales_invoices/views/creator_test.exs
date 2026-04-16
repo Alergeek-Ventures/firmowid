@@ -21,6 +21,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     assert render(view) =~ ~s(value="#{Date.to_iso8601(Date.add(Date.utc_today(), 7))}")
   end
 
+  test "items step shows one empty row by default", %{conn: conn} do
+    admin = admin_fixture()
+    draft = items_step_draft!(admin)
+    conn = log_in_user(conn, admin)
+
+    {:ok, _view, html} = live(conn, ~p"/sprzedazowe?creator_draft=#{draft.id}&step=2")
+
+    assert html =~ "Wprowadź nazwę"
+  end
+
   defp payment_step_draft!(admin) do
     scope = [tenant: admin.organization_id, actor: admin, authorize?: false]
 
@@ -41,6 +51,31 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
               vat_rate: "23"
             }
           ]
+        },
+        scope
+      )
+
+    draft
+  end
+
+  defp items_step_draft!(admin) do
+    scope = [tenant: admin.organization_id, actor: admin, authorize?: false]
+
+    {:ok, draft} = WizardDraft.create(%{organization_id: admin.organization_id}, scope)
+
+    {:ok, draft} =
+      WizardDraft.update_counterparty(
+        draft,
+        %{
+          buyer_type: :individual,
+          buyer_given_name: "Jan",
+          buyer_surname: "Kowalski",
+          buyer_pesel: "12345678901",
+          buyer_address: "ul. Testowa 1",
+          buyer_country: "PL",
+          currency: "PLN",
+          invoice_type: :poland,
+          is_reverse_charge: false
         },
         scope
       )
