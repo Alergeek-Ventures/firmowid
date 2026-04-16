@@ -70,6 +70,11 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
   end
 
   @impl true
+  def handle_event("pdf-download-error", _params, socket) do
+    {:noreply, put_flash(socket, :error, "Nie udało się wygenerować PDF")}
+  end
+
+  @impl true
   def handle_event("delete", _params, socket) do
     Invoicing.delete_cost_invoice(socket.assigns.invoice.id, socket.assigns.ash_scope)
 

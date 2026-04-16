@@ -18,6 +18,9 @@ export const DownloadPdf = {
 
       fetch(url)
         .then((r) => {
+          if (!r.ok) {
+            throw new Error(`PDF generation failed: ${r.status}`);
+          }
           const cd = r.headers.get("content-disposition") || "";
           const match = cd.match(/filename="?([^"]+)"?/);
           const filename = match ? match[1] : "faktura.pdf";
@@ -31,17 +34,20 @@ export const DownloadPdf = {
           a.click();
           a.remove();
           URL.revokeObjectURL(a.href);
+
+          const modal = document.getElementById(modalId);
+          if (modal) {
+            window.liveSocket.execJS(modal, modal.dataset.cancel);
+          }
+        })
+        .catch(() => {
+          this.pushEvent("pdf-download-error", {});
         })
         .finally(() => {
           idle.classList.remove("hidden");
           loading.classList.add("hidden");
           loading.classList.remove("inline-flex");
           btn.disabled = false;
-
-          const modal = document.getElementById(modalId);
-          if (modal) {
-            window.liveSocket.execJS(modal, modal.dataset.cancel);
-          }
         });
     });
   },

@@ -54,7 +54,6 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
         currency_rate: Invoicing.get_currency_rate(invoice),
         reference_invoice: invoice.reference_invoice,
         show_vat: show_vat,
-        logo_url: nil,
         logo_data_uri: logo_data_uri,
         footer_logo_data_uri: footer_logo_data_uri,
         class: "mx-auto",

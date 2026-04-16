@@ -27,7 +27,7 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
   def url_to_data_uri(url) when is_binary(url) do
     case Req.get(url) do
       {:ok, %{status: 200, body: body, headers: headers}} ->
-        mime_type = get_mime_type(headers, url, body)
+        mime_type = get_mime_type(headers, url)
         encoded = Base.encode64(body)
         "data:#{mime_type};base64,#{encoded}"
 
@@ -73,51 +73,16 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PdfHelpers do
     end
   end
 
-  defp get_mime_type(headers, url, body) do
-    header_mime_type = content_type_header(headers)
+  defp get_mime_type(headers, url) do
+    # Req returns headers as a map with list values
+    # e.g., %{"content-type" => ["application/octet-stream"]}
+    case Map.get(headers, "content-type") do
+      [mime_type | _] ->
+        mime_type |> String.split(";") |> List.first()
 
-    if header_mime_type in [nil, "", "application/octet-stream", "binary/octet-stream"] do
-      infer_mime_type(body, url)
-    else
-      header_mime_type
-    end
-  end
-
-  defp content_type_header(headers) when is_map(headers) do
-    headers
-    |> Map.get("content-type")
-    |> normalize_content_type()
-  end
-
-  defp normalize_content_type([mime_type | _]), do: normalize_content_type(mime_type)
-
-  defp normalize_content_type(mime_type) when is_binary(mime_type) do
-    mime_type
-    |> String.split(";")
-    |> List.first()
-    |> String.trim()
-  end
-
-  defp normalize_content_type(_mime_type), do: nil
-
-  defp infer_mime_type(body, url) do
-    case mime_type_from_body(body) do
-      nil -> guess_mime_type_from_url(url)
-      mime_type -> mime_type
-    end
-  end
-
-  defp mime_type_from_body(<<0x89, 0x50, 0x4E, 0x47, _rest::binary>>), do: "image/png"
-  defp mime_type_from_body(<<0xFF, 0xD8, 0xFF, _rest::binary>>), do: "image/jpeg"
-  defp mime_type_from_body(<<"GIF87a", _rest::binary>>), do: "image/gif"
-  defp mime_type_from_body(<<"GIF89a", _rest::binary>>), do: "image/gif"
-  defp mime_type_from_body(<<"RIFF", _size::binary-size(4), "WEBP", _rest::binary>>), do: "image/webp"
-
-  defp mime_type_from_body(body) when is_binary(body) do
-    trimmed = if String.valid?(body), do: String.trim_leading(body), else: ""
-
-    if String.starts_with?(trimmed, "<svg") or String.starts_with?(trimmed, "<?xml") do
-      "image/svg+xml"
+      nil ->
+        # Fallback: guess from file extension
+        guess_mime_type_from_url(url)
     end
   end
 

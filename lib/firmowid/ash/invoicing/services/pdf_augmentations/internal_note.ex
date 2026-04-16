@@ -26,22 +26,16 @@ defmodule Firmowid.Ash.Invoicing.Services.PdfAugmentations.InternalNote do
   end
 
   def maybe_insert(pdf_binary, internal_note, true) when is_binary(internal_note) do
-    trimmed_internal_note = String.trim(internal_note)
+    footer_logo_data_uri = PdfHelpers.file_to_data_uri(@footer_logo_path)
 
-    if trimmed_internal_note == "" do
-      {:ok, pdf_binary}
-    else
-      footer_logo_data_uri = PdfHelpers.file_to_data_uri(@footer_logo_path)
+    note_html =
+      PdfUtils.render_component_html(Print, :internal_note_page, %{
+        internal_note: internal_note,
+        footer_logo_data_uri: footer_logo_data_uri
+      })
 
-      note_html =
-        PdfUtils.render_component_html(Print, :internal_note_page, %{
-          internal_note: trimmed_internal_note,
-          footer_logo_data_uri: footer_logo_data_uri
-        })
-
-      with {:ok, note_pdf} <- PdfUtils.render_html_to_pdf(note_html, scale: 1.25) do
-        PdfUtils.insert_page_after_first(pdf_binary, note_pdf)
-      end
+    with {:ok, note_pdf} <- PdfUtils.render_html_to_pdf(note_html, scale: 1.25) do
+      PdfUtils.insert_page_after_first(pdf_binary, note_pdf)
     end
   end
 end

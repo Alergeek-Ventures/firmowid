@@ -95,41 +95,6 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntries do
     |> String.replace("/", "_")
   end
 
-  @doc """
-  Builds the single-download PDF filename for a sales invoice using the same
-  naming convention as monthly batch exports.
-  """
-  @spec sales_invoice_pdf_filename(map()) :: binary()
-  def sales_invoice_pdf_filename(invoice) do
-    buyer_label = Map.get(invoice, :buyer_display_name_label) || "kontrahent"
-    invoice_number = Map.get(invoice, :invoice_number) || "faktura"
-
-    clean_filename("#{invoice_number}_#{buyer_label}") <> ".pdf"
-  end
-
-  @doc """
-  Builds the single-download PDF filename for a cost invoice using the same
-  naming convention as monthly batch exports.
-  """
-  @spec cost_invoice_pdf_filename(map()) :: binary()
-  def cost_invoice_pdf_filename(document) do
-    issue_date = Map.get(document, :issue_date) || Date.utc_today()
-    seller_name = Map.get(document, :effective_seller_display_name) || "dokument"
-
-    checksum_suffix =
-      document
-      |> Map.get(:blob)
-      |> case do
-        %{blob_checksum: blob_checksum} when is_binary(blob_checksum) ->
-          String.slice(blob_checksum, 0, 8)
-
-        _ ->
-          "bezsumy"
-      end
-
-    clean_filename("#{issue_date}_#{seller_name}_#{checksum_suffix}") <> ".pdf"
-  end
-
   @spec include_cost_invoice?(map(), include_options()) :: boolean()
   defp include_cost_invoice?(invoice, include_opts) do
     extension =

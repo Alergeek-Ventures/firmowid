@@ -8,6 +8,8 @@ defmodule Firmowid.Ash.Invoicing.Services.CostInvoiceBasePdf.Ksef do
   alias Firmowid.Ash.Invoicing.Services.PdfUtils
   alias Firmowid.Ash.Ksef
 
+  @padding_style "<style>body { padding: 16px; }</style>"
+
   # sobelow_skip ["Traversal.FileModule"]
   # Hardcoded path to the KSeF XSL template in priv/static, not user input.
   @xsl_template_path Path.join(
@@ -62,14 +64,13 @@ defmodule Firmowid.Ash.Invoicing.Services.CostInvoiceBasePdf.Ksef do
   end
 
   defp qrcode_data_uri(invoice, ash_scope) do
-    {:ok, qrcode} =
+    {:ok, png_binary} =
       invoice
       |> Ksef.invoice_url!(scope: ash_scope)
       |> QRCode.create()
-      |> QRCode.render(:svg)
-      |> QRCode.to_base64()
+      |> QRCode.render(:png)
 
-    {:ok, "data:image/svg+xml; base64, #{qrcode}"}
+    {:ok, "data:image/png;base64,#{Base.encode64(png_binary)}"}
   end
 
   defp render_invoice_pdf(invoice, xml_content, xsl_content, qrcode_data_uri) do
@@ -85,7 +86,7 @@ defmodule Firmowid.Ash.Invoicing.Services.CostInvoiceBasePdf.Ksef do
 
     qr_overlay = qr_code_overlay(qrcode_data_uri, invoice.ksef_number)
 
-    String.replace(sanitized_html, "<body>", "<body>#{qr_overlay}", global: false)
+    String.replace(sanitized_html, "<body>", "<body>#{@padding_style}#{qr_overlay}", global: false)
   end
 
   defp qr_code_overlay(qrcode_data_uri, ksef_number) do

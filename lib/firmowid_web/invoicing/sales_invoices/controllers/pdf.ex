@@ -4,7 +4,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
 
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.Services.MonthDownloadEntries
   alias Firmowid.Ash.Invoicing.Services.SalesInvoicePdf
 
   require Logger
@@ -13,7 +12,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
 
   @item_calcs [:net_value, :vat_value, :gross_value]
   @pdf_loads [
-    :buyer_display_name_label,
     :internal_note,
     sales_invoice_items: @item_calcs,
     corrections: [sales_invoice_items: @item_calcs],
@@ -72,7 +70,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
                scope: conn.assigns.ash_scope
              ) do
           {:ok, pdf_binary} ->
-            filename = MonthDownloadEntries.sales_invoice_pdf_filename(sales_invoice)
+            filename = (sales_invoice.invoice_number || "faktura") <> ".pdf"
 
             conn
             |> put_resp_content_type("application/pdf")
