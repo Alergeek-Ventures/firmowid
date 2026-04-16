@@ -23,6 +23,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.WizardDraft
   alias Firmowid.Ash.Ksef
+  alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
 
   require Logger
 
@@ -405,13 +406,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     selected_bank_account =
       find_selected_bank_account(bank_accounts, draft.seller_account_number, draft.currency)
 
-    # Pre-fill defaults for empty fields
-    defaults = %{
-      "sale_date" => draft.sale_date || Date.utc_today(),
-      "due_date_days" => calculate_due_date_days(draft) || 21,
-      "payment_method" => draft.payment_method || :transfer,
-      "seller_account_number" => draft.seller_account_number || (selected_bank_account && selected_bank_account.iban)
-    }
+    defaults =
+      %{
+        "payment_method" => draft.payment_method || :transfer,
+        "seller_account_number" => draft.seller_account_number || (selected_bank_account && selected_bank_account.iban)
+      }
+      |> maybe_put_date("sale_date", draft.sale_date)
+      |> maybe_put_date("due_date", draft.due_date)
 
     form =
       draft
@@ -537,11 +538,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     assign(socket, :counterparty_form, form)
   end
 
-  defp calculate_due_date_days(invoice) do
-    if invoice.sale_date && invoice.due_date do
-      Date.diff(invoice.due_date, invoice.sale_date)
-    end
-  end
+  defp maybe_put_date(params, _key, nil), do: params
+  defp maybe_put_date(params, key, %Date{} = date), do: Map.put(params, key, Date.to_iso8601(date))
 
   defp update_counterparty_stream(socket, search, no_search?, filter, sort_order) do
     counterparties =
@@ -797,6 +795,26 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       |> to_form()
 
     {:noreply, assign(socket, :payment_form, form)}
+  end
+
+  def handle_event("suggest_payment_date", %{"field" => field, "suggestion" => suggestion}, socket) do
+    with target when not is_nil(target) <- PaymentDateSuggestions.parse_target(field),
+         suggestion_key when not is_nil(suggestion_key) <- PaymentDateSuggestions.parse_suggestion(suggestion) do
+      today = Date.utc_today()
+      current_params = socket.assigns.payment_form.source.params || %{}
+
+      updated_params =
+        PaymentDateSuggestions.apply_suggestion(current_params, target, suggestion_key, today, today)
+
+      form =
+        socket.assigns.payment_form.source
+        |> AshPhoenix.Form.validate(updated_params)
+        |> to_form()
+
+      {:noreply, assign(socket, :payment_form, form)}
+    else
+      _ -> {:noreply, socket}
+    end
   end
 
   def handle_event("select_bank_account", %{"account_id" => account_id}, socket) do

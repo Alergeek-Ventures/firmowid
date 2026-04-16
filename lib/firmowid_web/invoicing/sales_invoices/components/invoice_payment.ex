@@ -2,6 +2,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
   @moduledoc false
   use FirmowidWeb, :html
 
+  alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
+
   attr :invoice, :map, required: true
   attr :bank_accounts, :list, required: true
   attr :selected_bank_account, :map, required: false
@@ -9,7 +11,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
 
   def invoice_payment(assigns) do
     ~H"""
-    <div class="grid grid-cols-[min-content_1fr] items-center gap-x-5 gap-y-4">
+    <div class="grid grid-cols-[min-content_min-content_1fr] items-center gap-x-5 gap-y-4">
       <label class="text-grey-700 whitespace-nowrap" for={@payment_form[:sale_date].id}>
         Data sprzedaży
       </label>
@@ -17,24 +19,49 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
         field={@payment_form[:sale_date]}
         type="date"
         phx-debounce
-        class="w-min"
+        class="w-43 h-8"
         new={true}
       />
+      <div class="flex flex-wrap items-center gap-2">
+        <.button
+          :for={{suggestion, label} <- PaymentDateSuggestions.sale_date_suggestions()}
+          type="button"
+          size="small"
+          class="h-8"
+          color="light_grey"
+          new={true}
+          phx-click="suggest_payment_date"
+          phx-value-field="sale_date"
+          phx-value-suggestion={suggestion}
+        >
+          {label}
+        </.button>
+      </div>
 
-      <label class="text-grey-700 whitespace-nowrap" for={@payment_form[:due_date_days].id}>
+      <label class="text-grey-700 whitespace-nowrap" for={@payment_form[:due_date].id}>
         Termin płatności
       </label>
-      <div class="flex items-center gap-3">
-        <.input
-          field={@payment_form[:due_date_days]}
-          type="select"
-          options={[{"7 dni", 7}, {"14 dni", 14}, {"21 dni", 21}, {"30 dni", 30}, {"60 dni", 60}]}
-          class="w-min"
+      <.input
+        field={@payment_form[:due_date]}
+        type="date"
+        phx-debounce
+        class="w-43 h-8"
+        new={true}
+      />
+      <div class="flex flex-wrap items-center gap-2">
+        <.button
+          :for={{suggestion, label} <- PaymentDateSuggestions.due_date_suggestions()}
+          type="button"
+          size="small"
+          color="light_grey"
           new={true}
-        />
-        <span :if={@payment_form[:due_date].value} class="text-grey-700">
-          {Calendar.strftime(@payment_form[:due_date].value, "%d.%m.%Y")}
-        </span>
+          class="h-8"
+          phx-click="suggest_payment_date"
+          phx-value-field="due_date"
+          phx-value-suggestion={suggestion}
+        >
+          {label}
+        </.button>
       </div>
 
       <label class="text-grey-700 whitespace-nowrap" for={@payment_form[:payment_method].id}>
@@ -51,9 +78,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
         container_class="w-fit"
         new={true}
       />
+      <div></div>
 
       <div class={[
-        "border-grey-200 col-start-2 grid w-min min-w-[400px] grid-cols-[min-content_1fr] items-center gap-4 gap-y-2 rounded-lg border p-4 transition-opacity duration-200",
+        "border-grey-200 col-span-2 col-start-2 grid w-min min-w-[400px] grid-cols-[min-content_1fr] items-center gap-4 gap-y-2 rounded-lg border p-4 transition-opacity duration-200",
         if(to_string(@payment_form[:payment_method].value) == "transfer",
           do: "opacity-100",
           else: "pointer-events-none opacity-0"

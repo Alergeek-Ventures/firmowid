@@ -21,6 +21,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   alias Firmowid.Ash.Invoicing.Services.CorrectionReason
   alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Invoicing.FormHelpers
+  alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
   alias FirmowidWeb.Invoicing.SalesInvoices.Views.Creator
 
   require Logger
@@ -259,6 +260,29 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
       |> push_event("unsaved-changed", %{value: true})
 
     {:noreply, socket}
+  end
+
+  def handle_event("suggest_payment_date", %{"field" => field, "suggestion" => suggestion}, socket) do
+    with target when not is_nil(target) <- PaymentDateSuggestions.parse_target(field),
+         suggestion_key when not is_nil(suggestion_key) <- PaymentDateSuggestions.parse_suggestion(suggestion) do
+      issue_date = current_issue_date(socket)
+      current_params = socket.assigns.form.source.params || %{}
+
+      updated_params =
+        PaymentDateSuggestions.apply_suggestion(
+          current_params,
+          target,
+          suggestion_key,
+          issue_date,
+          Date.utc_today()
+        )
+
+      ash_form = AshPhoenix.Form.validate(socket.assigns.form.source, updated_params)
+
+      {:noreply, assign_form_with_preview(socket, ash_form)}
+    else
+      _ -> {:noreply, socket}
+    end
   end
 
   def handle_event("cancel_edit", _params, socket) do
@@ -599,6 +623,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
   defp form_value_date(ash_form, field) do
     ash_form |> AshPhoenix.Form.value(field) |> parse_date()
+  end
+
+  defp current_issue_date(socket) do
+    form_value_date(socket.assigns.form.source, :issue_date) ||
+      socket.assigns.invoice.issue_date ||
+      Date.utc_today()
   end
 
   # --- Correction reason auto-generation ---

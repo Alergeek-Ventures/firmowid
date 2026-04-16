@@ -136,9 +136,6 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
       require_atomic? false
 
       accept [:sale_date, :due_date, :payment_method, :seller_account_number]
-      argument :due_date_days, :integer
-
-      change {Changes.CalculateDueDate, []}
       change set_attribute(:step, :preview)
 
       validate present([:sale_date]), message: "Data sprzedaży jest wymagana"

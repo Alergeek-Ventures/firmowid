@@ -432,7 +432,6 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       ]
 
       argument :sales_invoice_items, {:array, :map}
-      argument :due_date_days, :integer
 
       change {Changes.NormalizeReverseChargeVatRates, source: :argument, field: :sales_invoice_items}
 
@@ -440,7 +439,6 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
       change {Changes.SetItemNames, []}
       change {Changes.SetIsCashAccount, []}
-      change {Changes.CalculateDueDate, []}
       change {Changes.ValidateCountryCode, field: :buyer_country}
 
       validate {Validations.CheckIfLocked, []}
