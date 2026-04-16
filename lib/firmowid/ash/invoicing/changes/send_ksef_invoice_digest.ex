@@ -11,6 +11,8 @@ defmodule Firmowid.Ash.Invoicing.Changes.SendKsefInvoiceDigest do
   alias Firmowid.Ash.Invoicing.Digests.Email
   alias Firmowid.Ash.SystemActor
 
+  require Logger
+
   @impl true
   def change(changeset, _opts, _context) do
     Ash.Changeset.before_action(changeset, fn changeset ->
@@ -23,6 +25,8 @@ defmodule Firmowid.Ash.Invoicing.Changes.SendKsefInvoiceDigest do
           tenant: digest.organization_id,
           actor: actor
         )
+
+      log_digest_delivery_attempt(digest, admins)
 
       case deliver_to_admins(admins, digest) do
         :ok ->
@@ -38,6 +42,14 @@ defmodule Firmowid.Ash.Invoicing.Changes.SendKsefInvoiceDigest do
           )
       end
     end)
+  end
+
+  defp log_digest_delivery_attempt(digest, admins) do
+    Logger.info("Sending KSeF digest for organization #{digest.organization_id} (#{digest.organization.name})")
+
+    Logger.info("Digest contains #{length(digest.cost_invoices)} invoice(s)")
+
+    Logger.info("Digest recipients: #{Enum.map_join(admins, ", ", & &1.email)}")
   end
 
   defp deliver_to_admins(admins, digest) do
