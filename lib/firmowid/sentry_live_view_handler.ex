@@ -9,17 +9,18 @@ defmodule Firmowid.SentryLiveViewHandler do
   real call chain including application frames.
 
   By contrast, after the re-raise the LiveView GenServer process crashes and
-  the resulting Erlang crash report (picked up by `Sentry.LoggerHandler`) may
+  the resulting Erlang crash report (picked up by Sentry's Logger integration)
+  may
   only contain framework-internal frames — especially when Ash replaces the
   BEAM stacktrace with its own Splode-captured one.
 
   This module bridges that gap for `mount`, `handle_params`, `handle_event`,
   `render`, and LiveComponent callbacks. `handle_info` has no telemetry span
-  in Phoenix LiveView and still relies on `Sentry.LoggerHandler`.
+  in Phoenix LiveView and still relies on Sentry's Logger integration.
 
-  Sentry's built-in event deduplication (`:dedup_events`, enabled by default
-  in v12) prevents the same exception from being reported twice when both this
-  handler and `LoggerHandler` fire for the same crash.
+  We intentionally use this handler instead of `Sentry.LiveViewHook` so that a
+  single LiveView exception capture path preserves the original callback
+  stacktrace without duplicating reports.
 
   ## References
 

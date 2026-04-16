@@ -2,19 +2,17 @@ defmodule Firmowid.SentryFilter do
   @moduledoc """
   Filters noisy Sentry log events.
 
-  Used to drop successful `/health` request logs from Sentry while keeping
-  failing health checks and all other request logs.
+  Used to drop `/health` request logs from Sentry.
   """
 
   @doc """
-  Drops `/health` log events with HTTP status 200.
+  Drops `/health` log events.
   """
   @spec before_send_log(Sentry.LogEvent.t()) :: Sentry.LogEvent.t() | nil
   def before_send_log(%Sentry.LogEvent{attributes: attrs} = log_event) do
-    request_path = get_attr_value(attrs, "request_path")
-    status = get_attr_value(attrs, "status")
+    health_check = get_attr_value(attrs, "health_check")
 
-    if request_path == "/health" and status in [200, "200"] do
+    if health_check in [true, "true"] do
       nil
     else
       log_event

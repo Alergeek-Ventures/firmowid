@@ -16,7 +16,6 @@ defmodule Firmowid.Application do
 
     Oban.Telemetry.attach_default_logger()
     Ecto.DevLogger.install(Firmowid.Repo)
-    attach_sentry_logger_handler()
     Firmowid.SentryLiveViewHandler.setup()
 
     # Merge AshOban trigger/scheduled_action cron entries into the Oban runtime config.
@@ -58,35 +57,6 @@ defmodule Firmowid.Application do
     result = Supervisor.start_link(children, opts)
 
     result
-  end
-
-  defp attach_sentry_logger_handler do
-    # Only attach Sentry logger handler when Sentry is configured with a DSN.
-    # This prevents attempts to register the handler when Sentry is intentionally disabled.
-    case Application.get_env(:sentry, :dsn) do
-      nil ->
-        :ok
-
-      _dsn ->
-        case :logger.add_handler(:firmowid_sentry_handler, Sentry.LoggerHandler, %{
-               config: %{
-                 metadata: [:file, :line],
-                 capture_log_messages: true
-               }
-             }) do
-          :ok ->
-            :ok
-
-          {:error, {:already_exist, :firmowid_sentry_handler}} ->
-            :ok
-
-          {:error, {:already_exists, :firmowid_sentry_handler}} ->
-            :ok
-
-          {:error, _reason} ->
-            :ok
-        end
-    end
   end
 
   defp maybe_posthog_supervisor do

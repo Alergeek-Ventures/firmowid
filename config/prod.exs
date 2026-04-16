@@ -33,7 +33,7 @@ config :sentry,
   enable_logs: true,
   logs: [
     level: :info,
-    metadata: [:request_id, :user_id]
+    metadata: [:request_id, :user_id, :health_check]
   ],
   integrations: [
     oban: [

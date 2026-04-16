@@ -57,8 +57,6 @@ defmodule FirmowidWeb do
         layout: {FirmowidWeb.Infrastructure.Layouts, :app},
         container: {:div, class: "min-h-full flex flex-col"}
 
-      on_mount Sentry.LiveViewHook
-
       unquote(html_helpers())
     end
   end

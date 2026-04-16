@@ -340,12 +340,6 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
 
   defp report_invoice_failure(ksef_number, reason, organization_id) do
     Logger.error("KSeF invoice processing failed for #{ksef_number} (org: #{organization_id}): #{inspect(reason)}")
-
-    Sentry.capture_message(
-      "KSeF invoice processing failed",
-      tags: %{ksef_number: ksef_number, organization_id: organization_id},
-      extra: %{reason: inspect(reason)}
-    )
   end
 
   defp parse_metadata_json(metadata_json) do

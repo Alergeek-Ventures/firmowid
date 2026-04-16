@@ -142,7 +142,7 @@ config :fun_with_flags, :persistence,
 
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id, :module, :org_id, :sender, :resend_email_id]
+  metadata: [:request_id, :module, :org_id, :sender, :resend_email_id, :health_check]
 
 config :phoenix, :json_library, Jason
 
