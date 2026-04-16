@@ -9,6 +9,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.Windowing do
 
   alias Firmowid.Ash.Currencies.Converter, as: Currencies
   alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing.Matching.RateDate
   alias Firmowid.Ash.Invoicing.SalesInvoice
 
   # TODO: re-add Transaction struct constraints once legacy Ecto schema is removed
@@ -69,7 +70,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.Windowing do
       |> Decimal.abs()
       |> Currencies.normalize_amount_to_pln(
         cost_invoice.currency,
-        cost_invoice.issue_date
+        RateDate.normalize_rate_date(cost_invoice.issue_date)
       )
 
     normalized_transaction_amount =
@@ -77,7 +78,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.Windowing do
       |> Decimal.abs()
       |> Currencies.normalize_amount_to_pln(
         transaction.transaction_currency,
-        transaction.booking_date
+        RateDate.normalize_rate_date(transaction.booking_date)
       )
 
     lower_boundary = Decimal.mult(total_amount, Decimal.new("0.9"))
@@ -98,7 +99,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.Windowing do
       |> Decimal.abs()
       |> Currencies.normalize_amount_to_pln(
         sales_invoice.currency,
-        sales_invoice.issue_date
+        RateDate.normalize_rate_date(sales_invoice.issue_date)
       )
 
     normalized_transaction_amount =
@@ -106,7 +107,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.Windowing do
       |> Decimal.abs()
       |> Currencies.normalize_amount_to_pln(
         transaction.transaction_currency,
-        transaction.booking_date
+        RateDate.normalize_rate_date(transaction.booking_date)
       )
 
     lower_boundary = Decimal.mult(total_amount, Decimal.new("0.9"))

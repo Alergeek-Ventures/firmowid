@@ -6,6 +6,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResult do
 
   alias Firmowid.Ash.Currencies.Converter, as: Currencies
   alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing.Matching.RateDate
   alias Firmowid.Ash.Invoicing.SalesInvoice
 
   # TODO: re-add Transaction struct constraints once legacy Ecto schema is removed
@@ -170,14 +171,14 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResult do
       Currencies.normalize_amount_to_pln(
         get_invoice_amount(invoice),
         invoice.currency,
-        get_invoice_date(invoice)
+        invoice |> get_invoice_date() |> RateDate.normalize_rate_date()
       )
 
     tx_pln =
       Currencies.normalize_amount_to_pln(
         transaction.transaction_amount,
         transaction.transaction_currency,
-        transaction.booking_date
+        RateDate.normalize_rate_date(transaction.booking_date)
       )
 
     # 2. Work with absolute values (sign irrelevant for *size* of mismatch)
@@ -244,14 +245,14 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResult do
       Currencies.normalize_amount_to_pln(
         get_invoice_amount(cost_invoice),
         cost_invoice.currency,
-        get_invoice_date(cost_invoice)
+        cost_invoice |> get_invoice_date() |> RateDate.normalize_rate_date()
       )
 
     tx_amount_pln =
       Currencies.normalize_amount_to_pln(
         transaction.transaction_amount,
         transaction.transaction_currency,
-        transaction.booking_date
+        RateDate.normalize_rate_date(transaction.booking_date)
       )
 
     ratio =
@@ -271,14 +272,14 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResult do
       Currencies.normalize_amount_to_pln(
         get_invoice_amount(sales_invoice),
         sales_invoice.currency,
-        get_invoice_date(sales_invoice)
+        sales_invoice |> get_invoice_date() |> RateDate.normalize_rate_date()
       )
 
     tx_amount_pln =
       Currencies.normalize_amount_to_pln(
         transaction.transaction_amount,
         transaction.transaction_currency,
-        transaction.booking_date
+        RateDate.normalize_rate_date(transaction.booking_date)
       )
 
     ratio =
