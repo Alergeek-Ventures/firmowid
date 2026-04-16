@@ -216,7 +216,9 @@
 
 	<Stopka>
 		<Informacje>
-			<StopkaFaktury><%= @invoice.invoice_note || "" %></StopkaFaktury>
+			<%= if is_binary(@invoice.invoice_note) && String.trim(@invoice.invoice_note) != "" do %>
+				<StopkaFaktury><%= @invoice.invoice_note %></StopkaFaktury>
+			<% end %>
 		</Informacje>
 	</Stopka>
 
