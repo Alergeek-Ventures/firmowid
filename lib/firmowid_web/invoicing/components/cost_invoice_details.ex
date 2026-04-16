@@ -59,6 +59,15 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
               />
             <% else %>
               <div class="flex flex-row gap-4">
+                <.live_component
+                  :if={downloadable_as_pdf?(@invoice)}
+                  module={InvoiceDownloadModal}
+                  id={"cost-download-#{@invoice.id}"}
+                  download_path={~p"/kosztowe/#{@invoice.id}/pobierz"}
+                  button_class={button_styles(%{color: "light_grey", size: "small", new: true})}
+                  button_label="Pobierz PDF do druku"
+                />
+
                 <%!-- TODO: BUG-9 - Add confirmation modal before delete, matching the pattern
                      in sales_invoice_details.ex (which uses a modal with explicit confirm/cancel). --%>
                 <.button
@@ -74,14 +83,6 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   </span>
                 </.button>
 
-                <.live_component
-                  :if={downloadable_as_pdf?(@invoice)}
-                  module={InvoiceDownloadModal}
-                  id={"cost-download-#{@invoice.id}"}
-                  download_path={~p"/kosztowe/#{@invoice.id}/pobierz"}
-                  button_class={button_styles(%{color: "light_grey", size: "small", new: true})}
-                  button_label="Pobierz PDF do druku"
-                />
 
                 <.link
                   :if={!downloadable_as_pdf?(@invoice)}
