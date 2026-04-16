@@ -25,6 +25,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
 
   import Firmowid.Ash.Ksef.Services.ApiClient, only: [parse_datetime!: 1]
 
+  alias Ash.Error.Invalid
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
@@ -363,7 +364,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
 
       path
       |> Blobs.create_blob("application/xml", "#{ksef_number}.xml", blob_opts)
-      |> handle_blob_upload_result(ksef_number, attrs, blob_opts)
+      |> handle_blob_upload_result(ksef_number, attrs, blob_opts, path)
     else
       {:error, reason} ->
         {:error, "Failed to create cost invoice from XML #{ksef_number}.xml: #{inspect(reason)}"}
@@ -420,7 +421,42 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     |> Firmowid.Oban.insert(skip_organization_id: true)
   end
 
-  defp handle_blob_upload_result({:ok, blob}, ksef_number, attrs, blob_opts) do
+  defp handle_blob_upload_result({:ok, blob}, ksef_number, attrs, blob_opts, _path) do
+    create_cost_invoice_for_blob(blob, ksef_number, attrs, blob_opts)
+  end
+
+  defp handle_blob_upload_result({:error, error}, ksef_number, attrs, blob_opts, path)
+       when is_struct(error, Invalid) or is_struct(error, Ecto.Changeset) do
+    if blob_checksum_conflict?(error) do
+      handle_duplicate_blob(ksef_number, attrs, blob_opts, path)
+    else
+      {:error, "Failed to upload cost invoice from XML #{ksef_number}.xml: #{inspect(error)}"}
+    end
+  end
+
+  defp handle_blob_upload_result({:error, reason}, ksef_number, _attrs, _blob_opts, _path) do
+    {:error, "Failed to upload cost invoice from XML #{ksef_number}.xml: #{inspect(reason)}"}
+  end
+
+  defp handle_duplicate_blob(ksef_number, attrs, blob_opts, path) do
+    scope = Keyword.fetch!(blob_opts, :scope)
+    checksum = compute_checksum(path)
+
+    case Blobs.find_blob_with_cost_invoice(checksum, scope: scope) do
+      {:ok, _blob, %CostInvoice{}} ->
+        Logger.info("KSeF invoice #{ksef_number} already has a cost invoice, skipping")
+        :ok
+
+      {:ok, blob, nil} ->
+        Logger.info("Found orphan blob for #{ksef_number}, creating cost invoice")
+        create_cost_invoice_for_blob(blob, ksef_number, attrs, blob_opts)
+
+      {:error, :not_found} ->
+        {:error, "Duplicate blob conflict for #{ksef_number}.xml but blob not found by checksum"}
+    end
+  end
+
+  defp create_cost_invoice_for_blob(blob, ksef_number, attrs, blob_opts) do
     Logger.info("Creating cost invoice #{ksef_number} from #{ksef_number}.xml")
 
     try do
@@ -442,37 +478,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     end
   end
 
-  defp handle_blob_upload_result({:error, %Ash.Error.Invalid{errors: errors}}, ksef_number, _attrs, _blob_opts)
-       when is_list(errors) do
-    if duplicate_blob_error?(errors) do
-      Logger.warning("Duplicate blob detected for #{ksef_number}.xml, skipping invoice creation")
-      :ok
-    else
-      {:error, "Failed to upload cost invoice from XML #{ksef_number}.xml: #{inspect(errors)}"}
-    end
-  end
-
-  defp handle_blob_upload_result(
-         {:error, %Ecto.Changeset{errors: [blob_checksum: {"has already been taken", _}]}},
-         ksef_number,
-         _attrs,
-         _blob_opts
-       ) do
-    Logger.warning("Duplicate blob detected for #{ksef_number}.xml, skipping invoice creation")
-    :ok
-  end
-
-  defp handle_blob_upload_result({:error, reason}, ksef_number, _attrs, _blob_opts) do
-    {:error, "Failed to upload cost invoice from XML #{ksef_number}.xml: #{inspect(reason)}"}
-  end
-
-  defp with_blob_scope(blob, blob_opts) do
-    scope = Keyword.fetch!(blob_opts, :scope)
-    actor = Map.put(scope.actor, :blob_id, blob.id)
-    Keyword.put(blob_opts, :scope, %{scope | actor: actor})
-  end
-
-  defp duplicate_blob_error?(errors) do
+  defp blob_checksum_conflict?(%Invalid{errors: errors}) when is_list(errors) do
     Enum.any?(errors, fn
       %Ash.Error.Changes.InvalidAttribute{
         field: :blob_checksum,
@@ -483,5 +489,29 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
       _ ->
         false
     end)
+  end
+
+  defp blob_checksum_conflict?(%Ecto.Changeset{errors: errors}) do
+    Keyword.has_key?(errors, :blob_checksum)
+  end
+
+  defp blob_checksum_conflict?(_), do: false
+
+  # sobelow_skip ["Traversal.FileModule"]
+  # path comes from Briefly.create/1 (OS-managed temp directory), not user input.
+  defp compute_checksum(upload_path) do
+    upload_path
+    |> Path.expand()
+    |> File.stream!()
+    |> Enum.reduce(:crypto.hash_init(:sha256), &:crypto.hash_update(&2, &1))
+    |> :crypto.hash_final()
+    |> Base.encode16()
+    |> String.downcase()
+  end
+
+  defp with_blob_scope(blob, blob_opts) do
+    scope = Keyword.fetch!(blob_opts, :scope)
+    actor = Map.put(scope.actor, :blob_id, blob.id)
+    Keyword.put(blob_opts, :scope, %{scope | actor: actor})
   end
 end

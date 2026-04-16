@@ -44,7 +44,35 @@ defmodule Firmowid.Ash.Blobs do
   end
 
   @doc """
+  Finds an existing blob by checksum within the given scope, along with its linked CostInvoice (if any).
+
+  Used by both manual upload and KSeF flows to resolve duplicate blob conflicts.
+  The query is scoped to the organization via the scope's tenant.
+  """
+  @spec find_blob_with_cost_invoice(String.t(), keyword()) ::
+          {:ok, Blob.t(), CostInvoice.t() | nil} | {:error, :not_found}
+  def find_blob_with_cost_invoice(checksum, opts) do
+    blob_query =
+      Blob
+      |> Ash.Query.filter(blob_checksum == ^checksum)
+      |> Ash.Query.for_read(:read, %{}, opts)
+
+    case Ash.read_one(blob_query, opts) do
+      {:ok, %Blob{} = blob} ->
+        cost_invoice = get_cost_invoice_for_blob(blob, opts)
+        {:ok, blob, cost_invoice}
+
+      _ ->
+        {:error, :not_found}
+    end
+  end
+
+  @doc """
   Creates a cost-invoice blob or requeues processing for an existing failed one.
+
+  Used by the manual upload flow where blobs are processed asynchronously via AshOban
+  (Reducto AI extraction). For KSeF invoices (already-parsed XML), use `create_blob/4`
+  with `find_blob_with_cost_invoice/2` for duplicate recovery instead.
   """
   @spec create_or_retry_cost_invoice_blob(String.t(), String.t(), String.t(), keyword()) ::
           {:ok, Blob.t()}
@@ -69,7 +97,7 @@ defmodule Firmowid.Ash.Blobs do
       {:error, %Invalid{} = error} ->
         if blob_checksum_conflict?(error) do
           checksum = compute_checksum(path)
-          retry_failed_cost_invoice_blob(checksum, scope)
+          handle_duplicate_cost_invoice_blob(checksum, scope)
         else
           {:error, error}
         end
@@ -79,24 +107,23 @@ defmodule Firmowid.Ash.Blobs do
     end
   end
 
-  defp retry_failed_cost_invoice_blob(checksum, %Scope{} = scope) do
+  defp handle_duplicate_cost_invoice_blob(checksum, %Scope{} = scope) do
     opts = [scope: scope]
 
-    query =
-      Blob
-      |> Ash.Query.filter(blob_checksum == ^checksum)
-      |> Ash.Query.for_read(:read, %{}, opts)
+    case find_blob_with_cost_invoice(checksum, opts) do
+      {:ok, blob, cost_invoice} ->
+        recover_duplicate_cost_invoice_blob(blob, cost_invoice, opts)
 
-    case Ash.read_one(query, opts) do
-      {:ok, %Blob{} = blob} ->
-        handle_existing_cost_invoice_blob(blob, opts)
-
-      _ ->
+      {:error, :not_found} ->
         {:error, :blob_already_exists}
     end
   end
 
-  defp handle_existing_cost_invoice_blob(%Blob{processing_target: :cost_invoice, processing_state: :failed} = blob, opts) do
+  defp recover_duplicate_cost_invoice_blob(
+         %Blob{processing_target: :cost_invoice, processing_state: :failed} = blob,
+         _cost_invoice,
+         opts
+       ) do
     with {:ok, pending_blob} <-
            blob
            |> Ash.Changeset.for_update(:mark_processing_pending, %{}, opts)
@@ -107,24 +134,26 @@ defmodule Firmowid.Ash.Blobs do
     end
   end
 
-  defp handle_existing_cost_invoice_blob(%Blob{processing_target: :cost_invoice, processing_state: state} = blob, opts)
+  defp recover_duplicate_cost_invoice_blob(
+         %Blob{processing_target: :cost_invoice, processing_state: state},
+         cost_invoice,
+         _opts
+       )
        when state in [:pending, :processing] do
-    if linked_cost_invoice = get_cost_invoice_for_blob(blob, opts) do
-      {:ok, {:existing_cost_invoice, linked_cost_invoice}}
+    if cost_invoice do
+      {:ok, {:existing_cost_invoice, cost_invoice}}
     else
       {:ok, :blob_already_processing}
     end
   end
 
-  defp handle_existing_cost_invoice_blob(%Blob{processing_target: :cost_invoice} = blob, opts) do
-    if linked_cost_invoice = get_cost_invoice_for_blob(blob, opts) do
-      {:ok, {:existing_cost_invoice, linked_cost_invoice}}
-    else
-      {:error, :blob_already_exists}
-    end
+  defp recover_duplicate_cost_invoice_blob(_blob, %CostInvoice{} = cost_invoice, _opts) do
+    {:ok, {:existing_cost_invoice, cost_invoice}}
   end
 
-  defp handle_existing_cost_invoice_blob(_blob, _opts), do: {:error, :blob_already_exists}
+  defp recover_duplicate_cost_invoice_blob(_blob, nil, _opts) do
+    {:error, :blob_already_exists}
+  end
 
   defp get_cost_invoice_for_blob(%Blob{id: blob_id}, opts) do
     case CostInvoice
