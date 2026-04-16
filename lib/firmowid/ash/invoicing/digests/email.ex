@@ -52,7 +52,7 @@ defmodule Firmowid.Ash.Invoicing.Digests.Email do
   defp digest_subject(1), do: "Nowa faktura w Firmowidzie"
   defp digest_subject(count), do: "#{count} nowe faktury w Firmowidzie"
 
-  defp html_email(user, _digest, invoices) do
+  defp html_email(_user, _digest, invoices) do
     logo_url = "#{Endpoint.url()}/images/logo_firmowid.png"
     app_url = Endpoint.url()
 
@@ -84,9 +84,6 @@ defmodule Firmowid.Ash.Invoicing.Digests.Email do
               <!-- Greeting -->
               <tr>
                 <td style="padding: 32px 40px 24px 40px;">
-                  <p style="margin: 0; font-size: 16px; color: #{@colors.grey}; line-height: 1.6;">
-                    Cześć #{user.name || user.email},
-                  </p>
                   <p style="margin: 12px 0 0 0; font-size: 16px; color: #{@colors.grey}; line-height: 1.6;">
                     W Twojej organizacji pojawiły się nowe faktury kosztowe pobrane z KSeF.
                   </p>
@@ -95,16 +92,6 @@ defmodule Firmowid.Ash.Invoicing.Digests.Email do
 
               <!-- Invoices List -->
               #{invoices_list_html(invoices, app_url)}
-
-              <!-- Action Button -->
-              <tr>
-                <td style="padding: 32px 40px; text-align: center;">
-                  <a href="#{app_url}/kosztowe"
-                     style="display: inline-block; background-color: #{@colors.button_bg}; color: #{@colors.white}; padding: 16px 32px; border-radius: 6px; text-decoration: none; font-size: 16px; font-weight: 600; transition: background-color 0.3s;">
-                    #{button_text(invoices)}
-                  </a>
-                </td>
-              </tr>
             </table>
           </td>
         </tr>
@@ -122,105 +109,81 @@ defmodule Firmowid.Ash.Invoicing.Digests.Email do
 
     invoices_html =
       Enum.map_join(visible_invoices, "\n", fn invoice ->
-        total_amount = invoice.total_amount |> Decimal.abs() |> Decimal.to_string(:normal)
+        invoice_number = invoice.invoice_identifier || "(bez numeru)"
+        invoice_seller = invoice.seller_display_name || invoice.seller || "(bez nazwy)"
 
         """
-        <!-- Invoice Card -->
         <tr>
-          <td style="padding: 8px 40px;">
-            <table role="presentation" style="width: 100%; border: 1px solid #{@colors.border}; border-radius: 6px; background-color: #{@colors.white};">
-              <tr>
-                <td style="padding: 20px;">
-                  <table role="presentation" style="width: 100%;">
-                    <tr>
-                      <td style="padding-bottom: 12px;">
-                        <p style="margin: 0; font-size: 14px; font-weight: 600; color: #{@colors.cost_text};">
-                           #{invoice.seller_display_name}
-                         </p>
-                      </td>
-                      <td style="text-align: right; padding-bottom: 12px;">
-                        <p style="margin: 0; font-size: 18px; font-weight: 600; color: #{@colors.dark};">
-                          #{total_amount} #{invoice.currency}
-                        </p>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td colspan="2" style="padding-top: 16px;">
-                       <a href="#{app_url}/kosztowe/#{invoice.id}"
-                            style="display: inline-block; color: #{@colors.cost_text}; text-decoration: none; font-size: 13px; font-weight: 500;">
-                            Zobacz szczegóły →
-                          </a>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
+          <td style="padding: 6px 40px; font-size: 16px; line-height: 1.6; color: #{@colors.dark};">
+            #{invoice_seller} #{invoice_number}
           </td>
         </tr>
         """
       end)
+
+    remaining = length(invoices) - length(visible_invoices)
+
+    remaining_html =
+      if remaining > 0 do
+        """
+        <tr>
+          <td style="padding: 6px 40px; font-size: 16px; line-height: 1.6; color: #{@colors.grey};">
+            + #{remaining} #{text_invoice_noun(remaining)}
+          </td>
+        </tr>
+        """
+      else
+        ""
+      end
 
     """
     <!-- Invoices Section -->
     <tr>
       <td style="padding: 8px 0 16px 0;">
         #{invoices_html}
+        #{remaining_html}
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 80px 40px 16px 40px; font-size: 16px; line-height: 1.6; color: #{@colors.cost_text};">
+        <a href="#{app_url}/fakturowanie" style="color: #{@colors.cost_text}; text-decoration: none; font-size: 16px;">
+          Zobacz listę faktur w Firmowidzie
+        </a>
       </td>
     </tr>
     """
   end
 
-  defp button_text(invoices) do
-    total_count = length(invoices)
-    remaining = total_count - @max_visible_invoices
+  defp text_email(_user, _digest, [invoice]) do
+    invoice_seller = invoice.seller_display_name || invoice.seller || "(bez nazwy)"
+    invoice_number = invoice.invoice_identifier || "(bez numeru)"
 
-    cond do
-      remaining <= 0 ->
-        "Zobacz w Firmowidzie"
-
-      remaining == 1 ->
-        "Zobacz 1 fakturę więcej w Firmowidzie"
-
-      remaining in 2..4 ->
-        "Zobacz #{remaining} faktury więcej w Firmowidzie"
-
-      true ->
-        "Zobacz #{remaining} faktur więcej w Firmowidzie"
-    end
-  end
-
-  defp text_email(user, _digest, [invoice]) do
     """
-    Cześć #{user.name || user.email},
-
     Masz nową fakturę z KSeF!
 
-    Od #{invoice.seller_display_name}, na kwotę #{invoice.total_amount}.
+    Od #{invoice_seller}, numer: #{invoice_number}.
 
     Wejdź na #{Endpoint.url()}/kosztowe, aby zobaczyć szczegóły.
     """
   end
 
-  defp text_email(user, _digest, []) do
+  defp text_email(_user, _digest, []) do
     """
-    Cześć #{user.name || user.email},
-
     W Twojej organizacji pojawiły się nowe faktury kosztowe pobrane z KSeF.
 
     Wejdź na #{Endpoint.url()}/kosztowe, aby zobaczyć szczegóły.
     """
   end
 
-  defp text_email(user, _digest, [first | _rest] = invoices) do
+  defp text_email(_user, _digest, [first | _rest] = invoices) do
+    invoice_seller = first.seller_display_name || first.seller || "(bez nazwy)"
+    invoice_number = first.invoice_identifier || "(bez numeru)"
     remaining = length(invoices) - 1
 
     """
-    Cześć #{user.name || user.email},
-
     Masz nowe faktury z KSeF!
 
-    Od #{first.seller_display_name}, na kwotę #{first.total_amount}.
+    Pierwsza pozycja: #{invoice_seller}, numer: #{invoice_number}.
 
     Oraz #{remaining} #{text_invoice_noun(remaining)}!
 

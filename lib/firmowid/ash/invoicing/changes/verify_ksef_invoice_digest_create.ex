@@ -38,12 +38,13 @@ defmodule Firmowid.Ash.Invoicing.Changes.VerifyKsefInvoiceDigestCreate do
       actor = %SystemActor{org_id: digest.organization_id, role: :ksef_digest}
 
       digest =
-        Ash.load!(digest, [:digest_items, :cost_invoices],
+        Ash.load!(digest, [:digest_items, :cost_invoices, :cost_invoices_join_assoc],
           tenant: digest.organization_id,
           actor: actor
         )
 
       persisted_invoice_ids = Enum.map(digest.cost_invoices, & &1.id)
+      join_assoc_count = length(digest.cost_invoices_join_assoc)
 
       if length(persisted_invoice_ids) == length(expected_invoice_ids) and
            MapSet.new(persisted_invoice_ids) == MapSet.new(expected_invoice_ids) do
@@ -52,7 +53,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.VerifyKsefInvoiceDigestCreate do
         Logger.error(
           "KSeF digest create verification failed digest_id=#{digest.id} organization_id=#{digest.organization_id} " <>
             "expected_invoice_ids=#{inspect(expected_invoice_ids)} persisted_invoice_ids=#{inspect(persisted_invoice_ids)} " <>
-            "digest_item_count=#{length(digest.digest_items)}"
+            "digest_item_count=#{length(digest.digest_items)} join_assoc_count=#{join_assoc_count}"
         )
 
         {:error,

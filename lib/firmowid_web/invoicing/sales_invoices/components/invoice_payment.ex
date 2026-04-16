@@ -19,7 +19,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
         field={@payment_form[:sale_date]}
         type="date"
         phx-debounce
-        class="w-43 h-8"
+        class="h-8 w-43"
         new={true}
       />
       <div class="flex flex-wrap items-center gap-2">
@@ -45,7 +45,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
         field={@payment_form[:due_date]}
         type="date"
         phx-debounce
-        class="w-43 h-8"
+        class="h-8 w-43"
         new={true}
       />
       <div class="flex flex-wrap items-center gap-2">

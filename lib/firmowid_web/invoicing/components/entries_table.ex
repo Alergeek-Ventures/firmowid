@@ -443,8 +443,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       data-tippy-content="To szkic faktury — dokument nie został jeszcze wystawiony."
       class="flex w-32 flex-row gap-2 overflow-hidden"
     >
-      <div class="border-2 border-greyButtonBg bg-white text-darkGrey flex h-6 w-full flex-row items-center justify-between rounded-md p-2 text-xs uppercase transition-all duration-500">
-        <p>Szkic</p><.icon name="hero-pencil-square-solid" class="size-4" />
+      <div class="border-greyButtonBg text-darkGrey flex h-6 w-full flex-row items-center justify-between rounded-md border-2 bg-white p-2 text-xs uppercase transition-all duration-500">
+        <p>Szkic</p>
+        <.icon name="hero-pencil-square-solid" class="size-4" />
       </div>
     </div>
     """

@@ -86,7 +86,11 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
       argument :cost_invoice_ids, {:array, :uuid}, allow_nil?: false
       argument :enqueue_send?, :boolean, allow_nil?: false, default: true
 
-      change manage_relationship(:cost_invoice_ids, :cost_invoices, type: :append)
+      change manage_relationship(:cost_invoice_ids, :cost_invoices,
+               type: :append,
+               value_is_key: :id
+             )
+
       change VerifyKsefInvoiceDigestCreate
       change EnqueueKsefInvoiceDigestSend
     end
@@ -156,6 +160,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
 
     many_to_many :cost_invoices, Firmowid.Ash.Invoicing.CostInvoice do
       through KsefInvoiceDigestItem
+      could_be_related_at_creation? true
       source_attribute_on_join_resource :digest_id
       destination_attribute_on_join_resource :cost_invoice_id
     end
