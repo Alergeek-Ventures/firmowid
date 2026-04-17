@@ -26,8 +26,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceItem do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
-  alias Firmowid.Ash.Checks.AtLeastRole
-  alias Firmowid.Ash.Checks.SystemActorRole
+  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.Validations.ValidateVatRate
   alias Firmowid.Ash.Resource
 
@@ -56,35 +55,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceItem do
   end
 
   policies do
-    bypass actor_attribute_equals(:role, :admin) do
-      authorize_if always()
-    end
-
-    # sales_invoice_processor: all actions
-    bypass {SystemActorRole, roles: [:sales_invoice_processor]} do
-      authorize_if always()
-    end
-
-    # invoice_matcher: read access for sales invoice aggregate calculations
-    bypass {SystemActorRole, roles: [:invoice_matcher]} do
-      authorize_if action_type(:read)
-    end
-
-    # Other system actors: no access (deny by default)
-    policy Firmowid.Ash.Checks.IsSystemActor do
-      forbid_if always()
-    end
-
-    # :invoicing and :accountant: read
-    policy [action_type(:read), {AtLeastRole, role: :invoicing}] do
-      authorize_if always()
-    end
-
-    # :accountant: write
-    policy [
-      action_type([:create, :update, :destroy]),
-      {AtLeastRole, role: :accountant}
-    ] do
+    policy accessing_from(SalesInvoice, :sales_invoice_items) do
       authorize_if always()
     end
   end
@@ -112,7 +83,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceItem do
       allow_nil? false
     end
 
-    belongs_to :sales_invoice, Firmowid.Ash.Invoicing.SalesInvoice do
+    belongs_to :sales_invoice, SalesInvoice do
       allow_nil? false
     end
   end
