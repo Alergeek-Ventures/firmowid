@@ -437,9 +437,16 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     checksum = compute_checksum(path)
 
     case Blobs.find_blob_with_cost_invoice(checksum, scope: scope) do
-      {:ok, _blob, %CostInvoice{}} ->
+      {:ok, _blob, %CostInvoice{ksef_number: existing_ksef_number}}
+      when existing_ksef_number == ksef_number ->
         Logger.info("KSeF invoice #{ksef_number} already has a cost invoice, skipping")
         :ok
+
+      {:ok, _blob, %CostInvoice{} = existing_invoice} ->
+        {:error,
+         "Checksum collision for #{ksef_number}.xml: blob is already linked to cost invoice " <>
+           "#{existing_invoice.id} (ksef_number=#{inspect(existing_invoice.ksef_number)}, " <>
+           "invoice_type=#{inspect(existing_invoice.invoice_type)})."}
 
       {:ok, blob, nil} ->
         Logger.info("Found orphan blob for #{ksef_number}, creating cost invoice")
@@ -450,25 +457,15 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     end
   end
 
-  defp create_cost_invoice_for_blob(blob, ksef_number, attrs, blob_opts) do
+  defp create_cost_invoice_for_blob(blob, ksef_number, attrs, _blob_opts) do
     Logger.info("Creating cost invoice #{ksef_number} from #{ksef_number}.xml")
 
-    try do
-      attrs
-      |> Map.put(:blob_id, blob.id)
-      |> Invoicing.create_cost_invoice()
+    case attrs |> Map.put(:blob_id, blob.id) |> Invoicing.create_cost_invoice() do
+      {:ok, _job} ->
+        :ok
 
-      :ok
-    rescue
-      error ->
-        scoped_blob_opts = with_blob_scope(blob, blob_opts)
-
-        Blobs.destroy_blob!(
-          blob,
-          Keyword.put(scoped_blob_opts, :notification_metadata, %{reason: :processing_failed})
-        )
-
-        {:error, "Failed to create cost invoice from XML #{ksef_number}.xml: #{Exception.message(error)}"}
+      {:error, reason} ->
+        {:error, "Failed to create cost invoice from XML #{ksef_number}.xml: #{inspect(reason)}"}
     end
   end
 
@@ -501,11 +498,5 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     |> :crypto.hash_final()
     |> Base.encode16()
     |> String.downcase()
-  end
-
-  defp with_blob_scope(blob, blob_opts) do
-    scope = Keyword.fetch!(blob_opts, :scope)
-    actor = Map.put(scope.actor, :blob_id, blob.id)
-    Keyword.put(blob_opts, :scope, %{scope | actor: actor})
   end
 end

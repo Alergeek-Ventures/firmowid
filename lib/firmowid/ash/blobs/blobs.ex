@@ -157,8 +157,7 @@ defmodule Firmowid.Ash.Blobs do
 
   defp get_cost_invoice_for_blob(%Blob{id: blob_id}, opts) do
     case CostInvoice
-         |> Ash.Query.filter(blob_id == ^blob_id)
-         |> Ash.Query.for_read(:read, %{}, opts)
+         |> Ash.Query.for_read(:read_for_blob_lookup, %{blob_id: blob_id}, opts)
          |> Ash.read_one(opts) do
       {:ok, result} -> result
       {:error, _} -> nil

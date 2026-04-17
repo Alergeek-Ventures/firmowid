@@ -265,6 +265,14 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       end
     end
 
+    read :read_for_blob_lookup do
+      description "Tenant-scoped internal read for blob->cost-invoice lookup (includes corrections)."
+
+      argument :blob_id, :uuid, allow_nil?: false
+
+      filter expr(blob_id == ^arg(:blob_id))
+    end
+
     # -- Write actions --------------------------------------------------------
 
     create :create do
