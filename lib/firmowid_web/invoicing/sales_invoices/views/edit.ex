@@ -396,12 +396,44 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
       {:error, reason} ->
         Logger.error("Failed to submit invoice to KSeF: #{inspect(reason)}")
 
+        handle_failed_ksef_submission(socket, invoice, reason)
+    end
+  end
+
+  defp handle_failed_ksef_submission(socket, %{ksef_invoice_kind: :kor} = invoice, reason) do
+    case Ksef.cleanup_failed_correction(invoice.id, socket.assigns.ash_scope) do
+      {:ok, :deleted, original_invoice_id} ->
         {:noreply,
          socket
          |> push_event("unsaved-changed", %{value: false})
-         |> put_flash(:error, "Faktura została wystawiona, ale wysyłka do KSeF nie powiodła się")
+         |> put_flash(:error, Ksef.failed_correction_message(reason))
+         |> push_navigate(to: ~p"/sprzedazowe/#{original_invoice_id}/edytuj")}
+
+      {:error, destroy_error} ->
+        Logger.error("Failed to clean up correction invoice #{invoice.id}: #{inspect(destroy_error)}")
+
+        {:noreply,
+         socket
+         |> push_event("unsaved-changed", %{value: false})
+         |> put_flash(:error, "Nie udało się wysłać korekty do KSeF")
+         |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
+
+      _ ->
+        # Correction already submitted or doesn't exist — shouldn't happen, fallback to summary
+        {:noreply,
+         socket
+         |> push_event("unsaved-changed", %{value: false})
+         |> put_flash(:error, "Nie udało się wysłać korekty do KSeF")
          |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
     end
+  end
+
+  defp handle_failed_ksef_submission(socket, invoice, _reason) do
+    {:noreply,
+     socket
+     |> push_event("unsaved-changed", %{value: false})
+     |> put_flash(:error, "Faktura została wystawiona, ale wysyłka do KSeF nie powiodła się")
+     |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
   end
 
   defp create_confirmed_invoice(organization, form_params, scope, ash_form) do

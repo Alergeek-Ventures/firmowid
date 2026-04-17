@@ -687,7 +687,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
     <h2 class="text-darkGrey/70 mb-2 text-[8px] font-bold uppercase">
       {case @sales_invoice.invoice_type do
         :poland -> "Płatność"
-        :foreign -> "Płatność / payment"
+        :foreign -> "Płatność / Payment"
       end}
     </h2>
     <div class="flex w-fit flex-col gap-1 text-[10px]/[14px]">

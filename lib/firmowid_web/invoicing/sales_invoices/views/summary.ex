@@ -235,52 +235,99 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
 
       {:error, reason} ->
         Logger.error("Failed to submit invoice to KSeF from summary: #{inspect(reason)}")
+
+        handle_failed_summary_submission(socket, invoice, reason)
+    end
+  end
+
+  defp handle_failed_summary_submission(socket, %{ksef_invoice_kind: :kor} = invoice, reason) do
+    case Ksef.cleanup_failed_correction(invoice.id, socket.assigns.ash_scope) do
+      {:ok, :deleted, original_invoice_id} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, Ksef.failed_correction_message(reason))
+         |> push_navigate(to: ~p"/sprzedazowe/#{original_invoice_id}/edytuj")}
+
+      {:error, destroy_error} ->
+        Logger.error("Failed to clean up correction invoice #{invoice.id} from summary: #{inspect(destroy_error)}")
+        {:noreply, put_flash(socket, :error, "Nie udało się wysłać faktury do KSeF")}
+
+      _ ->
         {:noreply, put_flash(socket, :error, "Nie udało się wysłać faktury do KSeF")}
     end
   end
 
+  defp handle_failed_summary_submission(socket, _invoice, _reason) do
+    {:noreply, put_flash(socket, :error, "Nie udało się wysłać faktury do KSeF")}
+  end
+
   @impl true
-  def handle_info({:ksef_invoice_status, %{invoice_id: invoice_id, status: status}}, socket) do
-    # Only handle if this is the invoice we're viewing
-    if socket.assigns.invoice.id == invoice_id do
-      invoice =
-        SalesInvoice.by_id!(
-          invoice_id,
-          load: [
-            :net_value,
-            :vat_value,
-            :gross_value,
-            sales_invoice_items: [:net_value, :vat_value, :gross_value],
-            corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-            corrected_invoice: :corrections,
-            latest_correction: [sales_invoice_items: [:net_value, :vat_value, :gross_value]]
-          ],
-          scope: socket.assigns.ash_scope
-        )
+  def handle_info({:ksef_invoice_status, %{invoice_id: invoice_id, status: :failed}}, socket)
+      when socket.assigns.invoice.id != invoice_id do
+    {:noreply, socket}
+  end
 
-      # Convert PubSub status to SubmissionInfo status
-      submission_info = Ksef.get_submission_info(invoice)
+  def handle_info({:ksef_invoice_status, %{invoice_id: invoice_id, status: :failed}}, socket) do
+    # The worker may have already deleted a failed unsent correction.
+    # If the invoice is gone, redirect back to the original invoice edit page.
+    case SalesInvoice.by_id(invoice_id, scope: socket.assigns.ash_scope) do
+      {:ok, invoice} ->
+        handle_existing_invoice_status(socket, invoice, invoice_id, :failed)
 
-      {previous_invoices, invoice} = get_previous_invoices(invoice, socket.assigns.ash_scope)
+      {:error, _} ->
+        # Correction was deleted by the worker — redirect to original invoice
+        corrected_invoice_id = socket.assigns.invoice.corrected_invoice_id
 
-      socket =
-        socket
-        |> assign(:submission_info, submission_info)
-        |> assign(:invoice, invoice)
-        |> assign(:previous_invoices, previous_invoices)
-
-      # Trigger paper plane animation when submitted successfully
-      socket =
-        if status == :submitted do
-          push_event(socket, "paper-plane-fly", %{})
-        else
-          socket
-        end
-
-      {:noreply, socket}
-    else
-      {:noreply, socket}
+        {:noreply,
+         socket
+         |> put_flash(:error, Ksef.failed_correction_deleted_message())
+         |> push_navigate(to: ~p"/sprzedazowe/#{corrected_invoice_id}/edytuj")}
     end
+  end
+
+  def handle_info({:ksef_invoice_status, %{invoice_id: invoice_id, status: _status}}, socket)
+      when socket.assigns.invoice.id != invoice_id do
+    {:noreply, socket}
+  end
+
+  def handle_info({:ksef_invoice_status, %{invoice_id: invoice_id, status: status}}, socket) do
+    invoice =
+      SalesInvoice.by_id!(
+        invoice_id,
+        load: [
+          :net_value,
+          :vat_value,
+          :gross_value,
+          sales_invoice_items: [:net_value, :vat_value, :gross_value],
+          corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+          corrected_invoice: :corrections,
+          latest_correction: [sales_invoice_items: [:net_value, :vat_value, :gross_value]]
+        ],
+        scope: socket.assigns.ash_scope
+      )
+
+    handle_existing_invoice_status(socket, invoice, invoice_id, status)
+  end
+
+  defp handle_existing_invoice_status(socket, invoice, _invoice_id, status) do
+    submission_info = Ksef.get_submission_info(invoice)
+
+    {previous_invoices, invoice} = get_previous_invoices(invoice, socket.assigns.ash_scope)
+
+    socket =
+      socket
+      |> assign(:submission_info, submission_info)
+      |> assign(:invoice, invoice)
+      |> assign(:previous_invoices, previous_invoices)
+
+    socket =
+      if status == :submitted do
+        push_event(socket, "paper-plane-fly", %{})
+      else
+        socket
+      end
+
+    {:noreply, socket}
   end
 
   defp get_previous_invoices(%{ksef_invoice_kind: :kor} = invoice, scope) do

@@ -361,13 +361,24 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
          invoice.buyer_id_type != corrected.buyer_id_type do
       raise ArgumentError,
             "Buyer tax ID cannot change in correction invoice. " <>
-              "Original: #{inspect(corrected.buyer_id)}, New: #{inspect(invoice.buyer_id)}"
+              "Original: #{inspect(correction_buyer_identity(corrected))}, " <>
+              "New: #{inspect(correction_buyer_identity(invoice))}"
     end
 
     invoice
   end
 
   def validate_correction_buyer_tax_id!(invoice), do: invoice
+
+  defp correction_buyer_identity(invoice) do
+    %{
+      buyer_id: invoice.buyer_id,
+      buyer_id_type: invoice.buyer_id_type,
+      buyer_pesel: invoice.buyer_pesel,
+      buyer_type: invoice.buyer_type,
+      buyer_country: invoice.buyer_country
+    }
+  end
 
   @doc """
   Validates that seller data hasn't changed in correction invoice.

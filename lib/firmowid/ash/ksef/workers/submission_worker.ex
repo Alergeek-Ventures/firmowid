@@ -38,29 +38,13 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     end
   end
 
-  defp submit_invoice(%{"sales_invoice_id" => sales_invoice_id}, _job, scope) do
+  defp submit_invoice(%{"sales_invoice_id" => sales_invoice_id}, job, scope) do
     Logger.info("Starting KSeF submission for sales invoice #{sales_invoice_id}")
 
     with {:ok, invoice} <- load_invoice(sales_invoice_id, scope),
          {:ok, invoice} <- lock_invoice(invoice, scope),
-         invoice_xml = InvoiceRenderer.render_fa3(invoice, scope: scope),
-         access_token = SessionWorker.get_access_token!(scope.tenant),
-         {:ok, session_data} <- ApiClient.open_online_session(access_token),
-         {:ok, invoice} <-
-           persist_session_reference(invoice, session_data.session_reference, scope),
-         {:ok, invoice_reference} <-
-           ApiClient.send_invoice(access_token, session_data, invoice_xml),
-         {:ok, _invoice} <- persist_invoice_reference(invoice, invoice_reference, scope) do
-      maybe_close_session(access_token, session_data.session_reference)
-
-      schedule_verification(
-        sales_invoice_id,
-        session_data.session_reference,
-        invoice_reference,
-        scope.tenant
-      )
-
-      Logger.info("Invoice #{sales_invoice_id} submitted to KSeF, reference: #{invoice_reference}")
+         {:ok, result} <- do_ksef_submission(invoice, scope) do
+      handle_submission_success(result, sales_invoice_id, scope)
     else
       {:resume_verification, invoice, session_reference, invoice_reference} ->
         schedule_verification(invoice.id, session_reference, invoice_reference, scope.tenant)
@@ -82,14 +66,56 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
         {:cancel, :invoice_already_submitted}
 
       {:error, reason} = error ->
-        maybe_unlock_invoice(sales_invoice_id, scope)
-        Logger.error("Failed to submit invoice #{sales_invoice_id}: #{inspect(reason)}")
-        error
+        handle_submission_error(sales_invoice_id, reason, job, scope, error)
+    end
+  end
+
+  # Handles the actual KSeF API interaction (session, render, send).
+  # Returns {:ok, result} or {:error, reason}. Catches exceptions from render_fa3 and get_access_token!.
+  defp do_ksef_submission(invoice, scope) do
+    invoice_xml = InvoiceRenderer.render_fa3(invoice, scope: scope)
+    access_token = SessionWorker.get_access_token!(scope.tenant)
+
+    with {:ok, session_data} <- ApiClient.open_online_session(access_token),
+         {:ok, invoice} <-
+           persist_session_reference(invoice, session_data.session_reference, scope),
+         {:ok, invoice_reference} <-
+           ApiClient.send_invoice(access_token, session_data, invoice_xml),
+         {:ok, _invoice} <- persist_invoice_reference(invoice, invoice_reference, scope) do
+      maybe_close_session(access_token, session_data.session_reference)
+      {:ok, {session_data.session_reference, invoice_reference}}
     end
   rescue
-    e ->
-      maybe_unlock_invoice(sales_invoice_id, scope)
-      reraise e, __STACKTRACE__
+    e -> {:error, {:exception, e, __STACKTRACE__}}
+  end
+
+  defp handle_submission_success({session_reference, invoice_reference}, sales_invoice_id, scope) do
+    schedule_verification(sales_invoice_id, session_reference, invoice_reference, scope.tenant)
+    Logger.info("Invoice #{sales_invoice_id} submitted to KSeF, reference: #{invoice_reference}")
+  end
+
+  defp handle_submission_error(sales_invoice_id, {:exception, e, stacktrace}, job, scope, _error) do
+    maybe_unlock_invoice(sales_invoice_id, scope)
+    Logger.error("Exception during KSeF submission for #{sales_invoice_id}: #{inspect(e)}")
+
+    if final_attempt?(job) do
+      finalize_failed_submission(sales_invoice_id, scope)
+      {:cancel, e}
+    else
+      reraise e, stacktrace
+    end
+  end
+
+  defp handle_submission_error(sales_invoice_id, reason, job, scope, error) do
+    maybe_unlock_invoice(sales_invoice_id, scope)
+    Logger.error("Failed to submit invoice #{sales_invoice_id}: #{inspect(reason)}")
+
+    if final_attempt?(job) do
+      finalize_failed_submission(sales_invoice_id, scope)
+      {:cancel, reason}
+    else
+      error
+    end
   end
 
   defp load_invoice(sales_invoice_id, scope) do
@@ -375,6 +401,23 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
   defp fail_invoice_status(invoice, scope) do
     unlock_invoice(invoice, scope)
     Ksef.broadcast_ksef_status(scope.tenant, invoice.id, :failed)
+  end
+
+  # Called once when a submission job exhausts all retries.
+  # Broadcasts failure, then attempts to cleanup correction invoices that never reached KSeF.
+  defp finalize_failed_submission(sales_invoice_id, scope) do
+    Ksef.broadcast_ksef_status(scope.tenant, sales_invoice_id, :failed)
+
+    case Ksef.cleanup_failed_correction(sales_invoice_id, scope) do
+      {:ok, :deleted, _original_id} ->
+        Logger.info("Auto-deleted failed unsent correction invoice #{sales_invoice_id}")
+
+      {:error, reason} ->
+        Logger.error("Failed to auto-delete correction #{sales_invoice_id}: #{inspect(reason)}")
+
+      _ ->
+        :ok
+    end
   end
 
   defp final_attempt?(%Oban.Job{attempt: attempt, max_attempts: max_attempts}) do

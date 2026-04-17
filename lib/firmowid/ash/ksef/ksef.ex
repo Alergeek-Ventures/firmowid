@@ -618,4 +618,74 @@ defmodule Firmowid.Ash.Ksef do
       nil -> "Błąd walidacji dokumentu przez KSeF"
     end
   end
+
+  # Failed correction cleanup
+
+  @doc """
+  Attempts to delete a failed unsent correction invoice.
+
+  For correction invoices that never reached KSeF (no ksef_number), deletes the correction
+  so the user can retry from the original invoice's correction flow.
+
+  Returns:
+  - `{:ok, :deleted, corrected_invoice_id}` - correction was deleted, redirect to original invoice
+  - `{:ok, :not_correction}` - invoice is not a correction, no cleanup needed
+  - `{:ok, :already_submitted}` - invoice has ksef_number, cannot be deleted
+  - `{:ok, :not_found}` - invoice doesn't exist (may have been deleted already)
+  - `{:error, reason}` - deletion failed
+
+  ## Examples
+
+      iex> cleanup_failed_correction(correction_invoice_id, scope)
+      {:ok, :deleted, "original-invoice-uuid"}
+
+      iex> cleanup_failed_correction(vat_invoice_id, scope)
+      {:ok, :not_correction}
+  """
+  @spec cleanup_failed_correction(Ash.UUID.t(), Scope.t()) ::
+          {:ok, :deleted, Ash.UUID.t()}
+          | {:ok, :not_correction}
+          | {:ok, :already_submitted}
+          | {:ok, :not_found}
+          | {:error, term()}
+  def cleanup_failed_correction(sales_invoice_id, scope) do
+    opts = [scope: scope]
+
+    case SalesInvoice.by_id(sales_invoice_id, opts) do
+      {:ok, %{ksef_invoice_kind: :kor, ksef_number: nil} = invoice} ->
+        case SalesInvoice.destroy(invoice, opts) do
+          :ok -> {:ok, :deleted, invoice.corrected_invoice_id}
+          {:error, reason} -> {:error, reason}
+        end
+
+      {:ok, %{ksef_invoice_kind: :kor}} ->
+        {:ok, :already_submitted}
+
+      {:ok, _invoice} ->
+        {:ok, :not_correction}
+
+      {:error, %NotFound{}} ->
+        {:ok, :not_found}
+
+      {:error, _} ->
+        {:ok, :not_found}
+    end
+  end
+
+  @doc """
+  Returns a user-facing error message for failed correction submission.
+  """
+  @spec failed_correction_message(term()) :: String.t()
+  def failed_correction_message(reason) do
+    "Nie udało się wysłać korekty do KSeF: #{inspect(reason)}. " <>
+      "Korekta została usunięta — popraw dane i spróbuj ponownie."
+  end
+
+  @doc """
+  Returns a shorter message for cases when the correction was deleted by the worker.
+  """
+  @spec failed_correction_deleted_message() :: String.t()
+  def failed_correction_deleted_message do
+    "Nie udało się wysłać korekty do KSeF. Korekta została usunięta — popraw dane i spróbuj ponownie."
+  end
 end

@@ -496,8 +496,18 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       change manage_relationship(:sales_invoice_items, type: :direct_control)
 
       change {Changes.SetItemNames, []}
+      change {Changes.ValidateCountryCode, field: :buyer_country}
 
       validate present([:invoice_number, :issue_date]), message: "Pole jest wymagane"
+
+      validate {Validations.ValidateTaxId,
+                id_field: :buyer_id, country_field: :buyer_country, pesel_field: :buyer_pesel, type_field: :buyer_type}
+
+      validate {Validations.ValidateNameFields,
+                type_field: :buyer_type,
+                full_name_field: :buyer_full_name,
+                given_name_field: :buyer_given_name,
+                surname_field: :buyer_surname}
 
       validate string_length(:correction_reason, max: 256),
         message: "Powód korekty może mieć maksymalnie 256 znaków"

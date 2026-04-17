@@ -41,6 +41,14 @@ defmodule Firmowid.Ash.Invoicing.Changes.PrepareCorrection do
     :is_cash_account
   ]
 
+  @forced_snapshot_fields [
+    :invoice_type,
+    :buyer_type,
+    :buyer_id,
+    :buyer_pesel,
+    :buyer_country
+  ]
+
   @latest_snapshot_load [
     :sales_invoice_items,
     :sale_date,
@@ -86,6 +94,14 @@ defmodule Firmowid.Ash.Invoicing.Changes.PrepareCorrection do
         else
           cs
         end
+      end)
+
+    # Buyer tax identity must stay stable across corrections.
+    # We force the identity-driving fields from the latest effective snapshot
+    # so accidental blank/hidden form params cannot change the derived KSeF buyer ID type.
+    changeset =
+      Enum.reduce(@forced_snapshot_fields, changeset, fn field, cs ->
+        Ash.Changeset.force_change_attribute(cs, field, Map.get(latest_snapshot, field))
       end)
 
     # Also copy sale_date and due_date if not explicitly set

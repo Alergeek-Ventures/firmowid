@@ -66,12 +66,7 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
   defp maybe_load_reference_invoice(%{ksef_invoice_kind: kind} = invoice, _ash_opts) when kind != :kor, do: invoice
 
   defp maybe_load_reference_invoice(invoice, ash_opts) do
-    invoice =
-      Ash.load!(
-        invoice,
-        [reference_invoice: [sales_invoice_items: @item_calcs]],
-        ash_opts
-      )
+    invoice = Ash.load!(invoice, [:reference_invoice, :corrected_invoice], ash_opts)
 
     reference_invoice =
       Ash.load!(
