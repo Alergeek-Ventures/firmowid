@@ -88,7 +88,9 @@ defmodule FirmowidWeb.Management.Views.Employees do
       salary_by_user = Map.new(salaries, &{&1.user_id, &1.hourly_rate})
 
       # 4. Hours records for this month
-      hours_records = Timetracker.list_hours_records!(%{month: date.month, year: date.year}, scope: scope)
+      hours_records =
+        Timetracker.list_hours_records!(%{month: date.month, year: date.year}, scope: scope)
+
       hr_by_user = Map.new(hours_records, &{&1.user_id, &1})
 
       # 5. Compose

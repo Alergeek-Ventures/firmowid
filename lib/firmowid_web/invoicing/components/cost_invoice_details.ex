@@ -25,7 +25,11 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
 
     socket =
       if Map.has_key?(assigns, :invoice) do
-        assign(socket, :invoices_for_preview, Enum.reverse([assigns.invoice | assigns.invoice.correction_invoices]))
+        assign(
+          socket,
+          :invoices_for_preview,
+          Enum.reverse([assigns.invoice | assigns.invoice.correction_invoices])
+        )
       else
         socket
       end

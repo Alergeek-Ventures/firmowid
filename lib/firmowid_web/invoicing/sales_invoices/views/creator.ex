@@ -68,7 +68,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     socket =
       socket
       |> assign(:bank_accounts, Finances.list_bank_accounts!(scope: socket.assigns.ash_scope))
-      |> assign(:last_counterparties, Counterparty.list_all!(load: [:display_label], scope: socket.assigns.ash_scope))
+      |> assign(
+        :last_counterparties,
+        Counterparty.list_all!(load: [:display_label], scope: socket.assigns.ash_scope)
+      )
       |> assign(:last_invoices, recent_invoices(socket.assigns.ash_scope))
       |> assign(:ksef_connected?, Ksef.get_credential(socket.assigns.ash_scope) != nil)
       |> assign(:open_counterparty_modal, false)
@@ -211,7 +214,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         form =
           draft
           |> AshPhoenix.Form.for_update(:update_counterparty, scope: scope)
-          |> AshPhoenix.Form.validate(draft |> Map.from_struct() |> Map.new(fn {k, v} -> {to_string(k), v} end))
+          |> AshPhoenix.Form.validate(
+            draft
+            |> Map.from_struct()
+            |> Map.new(fn {k, v} -> {to_string(k), v} end)
+          )
 
         if form.valid? do
           {:ok, draft}
@@ -431,7 +438,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     series_suggestions = Invoicing.get_next_numbers_for_series(issue_date, scope: scope)
 
     # Validate initial invoice number
-    invoice_warnings = SalesInvoice.validate_number!(invoice_number, issue_date, nil, scope: scope)
+    invoice_warnings =
+      SalesInvoice.validate_number!(invoice_number, issue_date, nil, scope: scope)
 
     # Build preview invoice map with seller data from organization
     logo_url = Invoicing.get_logo_url(org_id, scope: socket.assigns.ash_scope)
@@ -544,6 +552,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   defp maybe_put_date(params, _key, nil), do: params
+
   defp maybe_put_date(params, key, %Date{} = date), do: Map.put(params, key, Date.to_iso8601(date))
 
   defp update_counterparty_stream(socket, search, no_search?, filter, sort_order) do
@@ -556,7 +565,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     socket
     |> assign(
       :params,
-      to_form(%{"search" => search, "filter" => filter_to_string(filter), "sort_order" => Atom.to_string(sort_order)},
+      to_form(
+        %{
+          "search" => search,
+          "filter" => filter_to_string(filter),
+          "sort_order" => Atom.to_string(sort_order)
+        },
         as: "search_form"
       )
     )
@@ -643,7 +657,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
           else
             # Reset bank account when currency changes — avoids payment step
             # validations (sale_date/due_date not set yet)
-            Invoicing.reset_wizard_draft_bank_account!(updated_draft, scope: socket.assigns.ash_scope)
+            Invoicing.reset_wizard_draft_bank_account!(updated_draft,
+              scope: socket.assigns.ash_scope
+            )
           end
 
         invoice = load_draft_with_calcs(updated_draft, socket.assigns.ash_scope)
@@ -714,7 +730,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
           |> assign(:counterparty_form, to_form(form))
           |> assign(:open_counterparty_modal, true)
 
-        {:noreply, LiveToast.put_toast(socket, :error, "Dane kontrahenta wymagają uzupełnienia — popraw formularz.")}
+        {:noreply,
+         LiveToast.put_toast(
+           socket,
+           :error,
+           "Dane kontrahenta wymagają uzupełnienia — popraw formularz."
+         )}
     end
   end
 
@@ -789,7 +810,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         {:noreply,
          socket
          |> assign(:counterparty_form, to_form(form))
-         |> LiveToast.put_toast(:error, "Nie udało się zapisać danych kontrahenta — sprawdź błędy formularza (np. NIP).")}
+         |> LiveToast.put_toast(
+           :error,
+           "Nie udało się zapisać danych kontrahenta — sprawdź błędy formularza (np. NIP)."
+         )}
     end
   end
 
@@ -804,12 +828,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   def handle_event("suggest_payment_date", %{"field" => field, "suggestion" => suggestion}, socket) do
     with target when not is_nil(target) <- PaymentDateSuggestions.parse_target(field),
-         suggestion_key when not is_nil(suggestion_key) <- PaymentDateSuggestions.parse_suggestion(suggestion) do
+         suggestion_key when not is_nil(suggestion_key) <-
+           PaymentDateSuggestions.parse_suggestion(suggestion) do
       today = Date.utc_today()
       current_params = socket.assigns.payment_form.source.params || %{}
 
       updated_params =
-        PaymentDateSuggestions.apply_suggestion(current_params, target, suggestion_key, today, today)
+        PaymentDateSuggestions.apply_suggestion(
+          current_params,
+          target,
+          suggestion_key,
+          today,
+          today
+        )
 
       form =
         socket.assigns.payment_form.source
@@ -833,7 +864,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         current_params = socket.assigns.payment_form.source.params || %{}
 
         {selected_bank_account, updated_params} =
-          if socket.assigns.selected_bank_account && socket.assigns.selected_bank_account.id == bank_account.id do
+          if socket.assigns.selected_bank_account &&
+               socket.assigns.selected_bank_account.id == bank_account.id do
             {nil, Map.put(current_params, "seller_account_number", "")}
           else
             {bank_account, Map.put(current_params, "seller_account_number", bank_account.iban)}
@@ -875,7 +907,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     issue_date = socket.assigns.preview_invoice.issue_date
 
     scope = socket.assigns.ash_scope
-    invoice_warnings = SalesInvoice.validate_number!(invoice_number, issue_date, nil, scope: scope)
+
+    invoice_warnings =
+      SalesInvoice.validate_number!(invoice_number, issue_date, nil, scope: scope)
 
     {:noreply,
      socket
@@ -888,12 +922,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     scope = socket.assigns.ash_scope
     draft = socket.assigns.draft
 
-    case WizardDraft.update_notes(draft, %{invoice_note: invoice_note, internal_note: internal_note}, scope: scope) do
+    case WizardDraft.update_notes(
+           draft,
+           %{invoice_note: invoice_note, internal_note: internal_note},
+           scope: scope
+         ) do
       {:ok, updated_draft} ->
         invoice = load_draft_with_calcs(updated_draft, scope)
 
         preview_invoice =
-          Map.merge(socket.assigns.preview_invoice, %{invoice_note: invoice_note, internal_note: internal_note})
+          Map.merge(socket.assigns.preview_invoice, %{
+            invoice_note: invoice_note,
+            internal_note: internal_note
+          })
 
         {:noreply,
          socket
@@ -913,7 +954,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     # Validate (should be empty for suggestions, but check anyway)
     scope = socket.assigns.ash_scope
-    invoice_warnings = SalesInvoice.validate_number!(invoice_number, issue_date, nil, scope: scope)
+
+    invoice_warnings =
+      SalesInvoice.validate_number!(invoice_number, issue_date, nil, scope: scope)
 
     {:noreply,
      socket

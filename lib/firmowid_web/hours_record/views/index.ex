@@ -111,7 +111,8 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
       |> Enum.sort_by(& &1.duration, :desc)
 
     # Total duration for this user this month
-    total_query = Ash.Query.for_read(Session, :list, %{user_id: user_id, month: month, year: year}, scope: scope)
+    total_query =
+      Ash.Query.for_read(Session, :list, %{user_id: user_id, month: month, year: year}, scope: scope)
 
     %{total: total_duration} =
       Ash.aggregate!(total_query, {:total, :sum, field: :duration, default: 0}, scope: scope)

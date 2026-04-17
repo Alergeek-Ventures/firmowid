@@ -73,7 +73,9 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
     upload_fixture = Path.expand("../../../../test/fixtures/receipt.png", __DIR__)
 
     lv
-    |> file_input("#upload-form", :hours_record, [%{name: "signed-hours.png", content: File.read!(upload_fixture)}])
+    |> file_input("#upload-form", :hours_record, [
+      %{name: "signed-hours.png", content: File.read!(upload_fixture)}
+    ])
     |> render_upload("signed-hours.png")
 
     lv

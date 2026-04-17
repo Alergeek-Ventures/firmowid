@@ -113,7 +113,18 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   attr :color, :string,
     doc: "The button color.",
     default: "black",
-    values: ["black", "green", "red", "orange", "grey", "light_grey", "light_orange", "special", "none", "turquoise"]
+    values: [
+      "black",
+      "green",
+      "red",
+      "orange",
+      "grey",
+      "light_grey",
+      "light_orange",
+      "special",
+      "none",
+      "turquoise"
+    ]
 
   attr :size, :string, default: "medium", values: ["medium", "small"]
 
@@ -1148,10 +1159,14 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   defp localize_common_error("has invalid format", _opts), do: "ma nieprawidłowy format"
   defp localize_common_error("has already been taken", _opts), do: "jest już zajęte"
   defp localize_common_error("must be accepted", _opts), do: "musi zostać zaakceptowane"
+
   defp localize_common_error("does not match confirmation", _opts), do: "nie zgadza się z potwierdzeniem"
+
   defp localize_common_error("is reserved", _opts), do: "jest zarezerwowane"
   defp localize_common_error("has an invalid entry", _opts), do: "zawiera nieprawidłowy element"
+
   defp localize_common_error("is still associated with this entry", _opts), do: "jest nadal powiązane z tym wpisem"
+
   defp localize_common_error("are still associated with this entry", _opts), do: "są nadal powiązane z tym wpisem"
 
   defp localize_common_error("should be %{count} character(s)", opts),
@@ -1207,10 +1222,18 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   defp localize_common_error(message, _opts) when is_binary(message) do
     cond do
       Regex.match?(~r/^length must be greater than or equal to \d+$/, message) ->
-        String.replace_prefix(message, "length must be greater than or equal to ", "długość musi być większa lub równa ")
+        String.replace_prefix(
+          message,
+          "length must be greater than or equal to ",
+          "długość musi być większa lub równa "
+        )
 
       Regex.match?(~r/^length must be less than or equal to \d+$/, message) ->
-        String.replace_prefix(message, "length must be less than or equal to ", "długość musi być mniejsza lub równa ")
+        String.replace_prefix(
+          message,
+          "length must be less than or equal to ",
+          "długość musi być mniejsza lub równa "
+        )
 
       true ->
         message

@@ -36,7 +36,11 @@ defmodule Firmowid.S3Client do
   def upload_binary!(payload, object_key, opts \\ []) when is_binary(payload) do
     content_type = Keyword.get(opts, :content_type)
 
-    Req.put!(req(), url: s3_url(bucket(), object_key), headers: put_content_type([], content_type), body: payload)
+    Req.put!(req(),
+      url: s3_url(bucket(), object_key),
+      headers: put_content_type([], content_type),
+      body: payload
+    )
   end
 
   @doc """

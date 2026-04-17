@@ -61,7 +61,9 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     user = socket.assigns.current_user
 
     {:ok, last_session} = AshSession.most_recent(user.id, scope: scope, not_found_error?: false)
-    active_projects = Timetracker.list_projects!(%{user_id: user.id, status: :active}, scope: scope)
+
+    active_projects =
+      Timetracker.list_projects!(%{user_id: user.id, status: :active}, scope: scope)
 
     default_project_id =
       if last_session && Enum.any?(active_projects, &(&1.id == last_session.project_id)) do
@@ -388,7 +390,11 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
         {:noreply, socket}
 
       {:error, _session_id, %Ash.Error.Forbidden{}} ->
-        LiveToast.send_toast(:error, "Brak uprawnień do edycji tej sesji (sesja może być zablokowana).")
+        LiveToast.send_toast(
+          :error,
+          "Brak uprawnień do edycji tej sesji (sesja może być zablokowana)."
+        )
+
         {:noreply, socket}
 
       {:error, _session_id, _other} ->
@@ -659,7 +665,10 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     now = DateTime.now!(socket.assigns.timezone)
 
     total_query =
-      Ash.Query.for_read(AshSession, :list, %{month: now.month, year: now.year, user_id: socket.assigns.current_user.id},
+      Ash.Query.for_read(
+        AshSession,
+        :list,
+        %{month: now.month, year: now.year, user_id: socket.assigns.current_user.id},
         scope: scope
       )
 

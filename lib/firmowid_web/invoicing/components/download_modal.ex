@@ -20,7 +20,8 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
 
   @impl true
   def render(assigns) do
-    switch_form = to_form(%{"include_internal_note" => assigns.include_internal_note}, as: :download)
+    switch_form =
+      to_form(%{"include_internal_note" => assigns.include_internal_note}, as: :download)
 
     assigns = assign(assigns, :any_selected, any_selected?(assigns))
     assigns = assign(assigns, :switch_form, switch_form)

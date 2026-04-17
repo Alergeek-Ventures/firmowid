@@ -264,7 +264,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
   def handle_event("suggest_payment_date", %{"field" => field, "suggestion" => suggestion}, socket) do
     with target when not is_nil(target) <- PaymentDateSuggestions.parse_target(field),
-         suggestion_key when not is_nil(suggestion_key) <- PaymentDateSuggestions.parse_suggestion(suggestion) do
+         suggestion_key when not is_nil(suggestion_key) <-
+           PaymentDateSuggestions.parse_suggestion(suggestion) do
       issue_date = current_issue_date(socket)
       current_params = socket.assigns.form.source.params || %{}
 
@@ -364,7 +365,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
       {:noreply,
        socket
        |> push_event("unsaved-changed", %{value: false})
-       |> put_flash(:info, "Faktura została wystawiona, ale nie można jej wysłać do KSeF — brak połączenia z KSeF")
+       |> put_flash(
+         :info,
+         "Faktura została wystawiona, ale nie można jej wysłać do KSeF — brak połączenia z KSeF"
+       )
        |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
     else
       send_invoice_to_ksef(socket, invoice)

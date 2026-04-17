@@ -39,7 +39,9 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
       socket =
         if is_nil(user) do
-          push_navigate(socket, to: ~p"/zarzadzanie/pracownicy?month=#{Date.to_iso8601(Date.utc_today())}")
+          push_navigate(socket,
+            to: ~p"/zarzadzanie/pracownicy?month=#{Date.to_iso8601(Date.utc_today())}"
+          )
         else
           employee = build_employee(user, id, selected_date, scope)
           active_months = months_with_sessions(%{user_id: id}, scope)
@@ -53,7 +55,10 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
       {:noreply, socket}
     else
-      {:noreply, push_navigate(socket, to: ~p"/zarzadzanie/pracownicy?month=#{Date.to_iso8601(Date.utc_today())}")}
+      {:noreply,
+       push_navigate(socket,
+         to: ~p"/zarzadzanie/pracownicy?month=#{Date.to_iso8601(Date.utc_today())}"
+       )}
     end
   end
 
@@ -133,7 +138,11 @@ defmodule FirmowidWeb.Management.Views.Employee do
     scope = socket.assigns.ash_scope
     date = socket.assigns.projects_filter_date
 
-    with {:ok, user} <- Core.get_org_user(%{id: socket.assigns.employee.id}, scope: scope, not_found_error?: false),
+    with {:ok, user} <-
+           Core.get_org_user(%{id: socket.assigns.employee.id},
+             scope: scope,
+             not_found_error?: false
+           ),
          {:ok, archived_user} <- Core.archive_user(user, %{}, scope: scope) do
       loaded_user = Ash.load!(archived_user, [avatar_blob: [:url]], scope: scope)
       employee = build_employee(loaded_user, loaded_user.id, date, scope)
@@ -143,7 +152,8 @@ defmodule FirmowidWeb.Management.Views.Employee do
        |> assign(:employee, employee)
        |> assign(:page_title, get_employee_display_name(employee))}
     else
-      {:error, %Ash.Error.Forbidden{}} when socket.assigns.current_user.id == socket.assigns.employee.id ->
+      {:error, %Ash.Error.Forbidden{}}
+      when socket.assigns.current_user.id == socket.assigns.employee.id ->
         {:noreply, put_flash(socket, :error, "Nie możesz zarchiwizować własnego konta.")}
 
       {:error, error} ->
@@ -158,7 +168,11 @@ defmodule FirmowidWeb.Management.Views.Employee do
     scope = socket.assigns.ash_scope
     date = socket.assigns.projects_filter_date
 
-    with {:ok, user} <- Core.get_org_user(%{id: socket.assigns.employee.id}, scope: scope, not_found_error?: false),
+    with {:ok, user} <-
+           Core.get_org_user(%{id: socket.assigns.employee.id},
+             scope: scope,
+             not_found_error?: false
+           ),
          {:ok, unarchived_user} <- Core.unarchive_user(user, %{}, scope: scope) do
       loaded_user = Ash.load!(unarchived_user, [avatar_blob: [:url]], scope: scope)
       employee = build_employee(loaded_user, loaded_user.id, date, scope)

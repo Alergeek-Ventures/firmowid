@@ -250,6 +250,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
 
       {:error, destroy_error} ->
         Logger.error("Failed to clean up correction invoice #{invoice.id} from summary: #{inspect(destroy_error)}")
+
         {:noreply, put_flash(socket, :error, "Nie udało się wysłać faktury do KSeF")}
 
       _ ->

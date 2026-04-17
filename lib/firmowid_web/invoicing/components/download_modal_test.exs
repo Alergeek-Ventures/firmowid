@@ -8,7 +8,9 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModalTest do
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Invoicing.CostInvoice
 
-  test "download modal is rendered and builds month href with sales enabled by default", %{conn: conn} do
+  test "download modal is rendered and builds month href with sales enabled by default", %{
+    conn: conn
+  } do
     admin = admin_fixture()
     seed_cost_invoice!(admin.organization_id, ~D[2026-04-03])
 

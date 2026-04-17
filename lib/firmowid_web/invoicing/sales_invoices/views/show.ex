@@ -47,7 +47,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
     else
       alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
 
-      potential_transactions = InvoiceMatching.get_potential_transactions_for_invoice(sales_invoice, scope)
+      potential_transactions =
+        InvoiceMatching.get_potential_transactions_for_invoice(sales_invoice, scope)
 
       sales_invoice =
         then(sales_invoice, fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)
@@ -115,7 +116,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
          |> push_navigate(to: ~p"/fakturowanie?month=#{Date.to_iso8601(socket.assigns.invoice.issue_date)}")}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Nie można usunąć faktury wysłanej do KSeF. Wystaw fakturę korygującą.")}
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Nie można usunąć faktury wysłanej do KSeF. Wystaw fakturę korygującą."
+         )}
     end
   end
 

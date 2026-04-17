@@ -161,7 +161,12 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     scope = socket.assigns.ash_scope
 
     totals =
-      Analysis.get_organization_totals(date_range_from, date_range_to, [tag_filters: tag_filters], scope)
+      Analysis.get_organization_totals(
+        date_range_from,
+        date_range_to,
+        [tag_filters: tag_filters],
+        scope
+      )
 
     socket
     |> assign(:total_income, totals.total_income)

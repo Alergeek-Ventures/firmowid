@@ -420,6 +420,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp processing_failure_reason(_), do: :processing_failed
 
   defp processing_failure_message(%{"error_message" => message}, _filename) when is_binary(message), do: message
+
   defp processing_failure_message(%{error_message: message}, _filename) when is_binary(message), do: message
 
   defp processing_failure_message(_metadata, filename), do: filename
@@ -548,8 +549,11 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         %TransactionGroup{transactions: txns} = group ->
           updated =
             Enum.map(txns, fn
-              %{__struct__: _, id: ^id, skip_invoicing: _} = tx -> Map.put(tx, :skip_invoicing, new_skip)
-              other -> other
+              %{__struct__: _, id: ^id, skip_invoicing: _} = tx ->
+                Map.put(tx, :skip_invoicing, new_skip)
+
+              other ->
+                other
             end)
 
           %{group | transactions: updated}
@@ -571,8 +575,11 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         %TransactionGroup{transactions: txns} = group ->
           updated =
             Enum.map(txns, fn
-              %{__struct__: _, id: ^id, skip_invoicing: _} = tx -> Map.put(tx, :skip_invoicing, new_skip)
-              other -> other
+              %{__struct__: _, id: ^id, skip_invoicing: _} = tx ->
+                Map.put(tx, :skip_invoicing, new_skip)
+
+              other ->
+                other
             end)
 
           %{group | transactions: updated}
@@ -707,7 +714,13 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     ungrouped_cost_flat = Enum.flat_map(ungrouped_cost, fn {_party, txns} -> txns end)
     ungrouped_income_flat = Enum.flat_map(ungrouped_income, fn {_party, txns} -> txns end)
 
-    [cost_group_structs, income_group_structs, ungrouped_cost_flat, ungrouped_income_flat, other_entries]
+    [
+      cost_group_structs,
+      income_group_structs,
+      ungrouped_cost_flat,
+      ungrouped_income_flat,
+      other_entries
+    ]
     |> Enum.concat()
     |> order_entries_for_display()
   end
@@ -780,7 +793,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       :unmatched ->
         [
           list_cost_invoices(from, to, %{date_field: :due_date, reconciliation: :pending}, scope),
-          list_sales_invoices(from, to, %{date_field: :due_date, kind: :vat, reconciliation: :pending}, scope),
+          list_sales_invoices(
+            from,
+            to,
+            %{date_field: :due_date, kind: :vat, reconciliation: :pending},
+            scope
+          ),
           list_transactions(from, to, %{reconciliation: :pending}, scope)
         ]
         |> Enum.concat()

@@ -31,7 +31,9 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
 
     if is_nil(cost_invoice.original_invoice) do
       cost_invoice = Invoicing.hydrate_invoice_with_fa3_blob(cost_invoice)
-      potential_transactions = InvoiceMatching.get_potential_transactions_for_invoice(cost_invoice, scope)
+
+      potential_transactions =
+        InvoiceMatching.get_potential_transactions_for_invoice(cost_invoice, scope)
 
       socket =
         socket
@@ -88,7 +90,12 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
   def handle_event("connect", %{"transaction_id" => tx_id}, socket) do
     Invoicing.connect_cost_invoice_transactions(socket.assigns.invoice, [tx_id], scope: socket.assigns.ash_scope)
 
-    invoice = CostInvoice.by_id!(socket.assigns.invoice.id, load: @detail_loads, scope: socket.assigns.ash_scope)
+    invoice =
+      CostInvoice.by_id!(socket.assigns.invoice.id,
+        load: @detail_loads,
+        scope: socket.assigns.ash_scope
+      )
+
     {:noreply, assign(socket, :invoice, invoice)}
   end
 
@@ -98,7 +105,12 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
       scope: socket.assigns.ash_scope
     )
 
-    invoice = CostInvoice.by_id!(socket.assigns.invoice.id, load: @detail_loads, scope: socket.assigns.ash_scope)
+    invoice =
+      CostInvoice.by_id!(socket.assigns.invoice.id,
+        load: @detail_loads,
+        scope: socket.assigns.ash_scope
+      )
+
     {:noreply, assign(socket, :invoice, invoice)}
   end
 

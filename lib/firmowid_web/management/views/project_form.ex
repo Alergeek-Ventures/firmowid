@@ -67,7 +67,10 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
         {:noreply, socket}
 
       user ->
-        project_users = [%{user: user, removed_from_project: false} | socket.assigns.project_users]
+        project_users = [
+          %{user: user, removed_from_project: false} | socket.assigns.project_users
+        ]
+
         {:noreply, assign_edit_users(socket, project_users)}
     end
   end

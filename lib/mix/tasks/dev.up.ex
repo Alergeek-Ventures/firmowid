@@ -69,7 +69,9 @@ defmodule Mix.Tasks.Dev.Up do
 
     Mix.shell().info("")
     Mix.shell().info("Environment ready:")
+
     Mix.shell().info("  Phoenix:   http://#{sanitize_branch(branch)}.firmowid.localhost (or localhost:#{port})")
+
     Mix.shell().info("  Tidewave:  https://localhost:#{port}/tidewave/mcp")
     Mix.shell().info("  Postgres:  localhost:#{db_port}")
     Mix.shell().info("  S3:        localhost:#{s3_port}")
@@ -224,6 +226,7 @@ defmodule Mix.Tasks.Dev.Up do
       case System.cmd("tmux", ["has-session", "-t", session], stderr_to_stdout: true) do
         {_, 0} ->
           File.write!(pid_file, "tmux:#{session}\n")
+
           Mix.shell().info("Tmux session '#{session}' already exists. Attach with: tmux attach -t #{session}")
 
         _ ->
@@ -298,6 +301,7 @@ defmodule Mix.Tasks.Dev.Up do
 
         {:error, reason} ->
           Mix.shell().error("Warning: Failed to register Caddy route (is development-caddy running?)")
+
           Mix.shell().error(inspect(reason))
       end
     else
@@ -336,10 +340,16 @@ defmodule Mix.Tasks.Dev.Up do
     route_config = %{
       "@id" => "wt:firmowid:#{branch}",
       "match" => [%{"host" => [dev_hostname(branch)]}],
-      "handle" => [%{"handler" => "reverse_proxy", "upstreams" => [%{"dial" => "127.0.0.1:#{port}"}]}]
+      "handle" => [
+        %{"handler" => "reverse_proxy", "upstreams" => [%{"dial" => "127.0.0.1:#{port}"}]}
+      ]
     }
 
-    caddy_put(admin_base_url <> "/config/apps/http/servers/wt/routes/0", route_config, "register Caddy route")
+    caddy_put(
+      admin_base_url <> "/config/apps/http/servers/wt/routes/0",
+      route_config,
+      "register Caddy route"
+    )
   end
 
   defp maybe_create_wt_server(admin_base_url, wt_server_config) do
@@ -362,9 +372,14 @@ defmodule Mix.Tasks.Dev.Up do
 
   defp caddy_put(url, json, operation) do
     case Req.put(url, json: json, connect_options: [timeout: 200], receive_timeout: 1_000) do
-      {:ok, %{status: status}} when status in 200..299 -> :ok
-      {:ok, %{status: status, body: body}} -> {:error, "Failed to #{operation} (status #{status}): #{inspect(body)}"}
-      {:error, reason} -> {:error, "Failed to #{operation}: #{inspect(reason)}"}
+      {:ok, %{status: status}} when status in 200..299 ->
+        :ok
+
+      {:ok, %{status: status, body: body}} ->
+        {:error, "Failed to #{operation} (status #{status}): #{inspect(body)}"}
+
+      {:error, reason} ->
+        {:error, "Failed to #{operation}: #{inspect(reason)}"}
     end
   end
 end

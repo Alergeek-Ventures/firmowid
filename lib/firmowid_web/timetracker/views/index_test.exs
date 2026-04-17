@@ -142,7 +142,13 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
     end
 
     test "deletes session", %{conn: conn, user: user, project: project} do
-      session = session_fixture(%{user_id: user.id, project_id: project.id, organization_id: user.organization_id})
+      session =
+        session_fixture(%{
+          user_id: user.id,
+          project_id: project.id,
+          organization_id: user.organization_id
+        })
+
       {:ok, lv, _html} = live(conn, ~p"/czasosledz")
 
       lv

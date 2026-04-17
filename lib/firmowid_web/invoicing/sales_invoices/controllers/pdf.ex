@@ -26,7 +26,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
 
     case SalesInvoice.by_id(id, opts) do
       {:ok, sales_invoice} ->
-        logo_url = Invoicing.get_logo_url(sales_invoice.organization_id, scope: conn.assigns.ash_scope)
+        logo_url =
+          Invoicing.get_logo_url(sales_invoice.organization_id, scope: conn.assigns.ash_scope)
+
         render_sales_invoice(conn, sales_invoice, logo_url)
 
       {:error, _} ->
@@ -63,7 +65,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
         send_resp(conn, 404, "Not found")
 
       {:ok, sales_invoice} ->
-        logo_url = Invoicing.get_logo_url(sales_invoice.organization_id, scope: conn.assigns.ash_scope)
+        logo_url =
+          Invoicing.get_logo_url(sales_invoice.organization_id, scope: conn.assigns.ash_scope)
 
         case SalesInvoicePdf.generate(sales_invoice,
                show_vat: conn.assigns.current_org.is_vat_payer,

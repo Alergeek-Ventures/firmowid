@@ -70,7 +70,9 @@ if ksef_env not in ["test", "prod"] do
 end
 
 default_ksef_base_url =
-  if ksef_env == "prod", do: "https://api.ksef.mf.gov.pl/v2/", else: "https://api-test.ksef.mf.gov.pl/v2/"
+  if ksef_env == "prod",
+    do: "https://api.ksef.mf.gov.pl/v2/",
+    else: "https://api-test.ksef.mf.gov.pl/v2/"
 
 default_ksef_qr_code_base_url =
   if ksef_env == "prod", do: "https://qr.ksef.mf.gov.pl", else: "https://qr-test.ksef.mf.gov.pl"
@@ -186,7 +188,8 @@ defmodule RuntimeSentry do
   def validate(val, name) when is_binary(val) do
     case URI.parse(val) do
       %URI{scheme: scheme, host: host, userinfo: userinfo, path: path}
-      when scheme in ["http", "https"] and is_binary(host) and is_binary(userinfo) and path not in [nil, "", "/"] ->
+      when scheme in ["http", "https"] and is_binary(host) and is_binary(userinfo) and
+             path not in [nil, "", "/"] ->
         val
 
       _ ->

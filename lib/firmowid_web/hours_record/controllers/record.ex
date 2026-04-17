@@ -137,7 +137,11 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
   def download(conn, %{"id" => id}) do
     scope = conn.assigns.ash_scope
 
-    case AshHoursRecord.get(id, scope: scope, load: [:user, blob: [:url]], not_found_error?: false) do
+    case AshHoursRecord.get(id,
+           scope: scope,
+           load: [:user, blob: [:url]],
+           not_found_error?: false
+         ) do
       {:ok, nil} ->
         conn
         |> LiveToast.put_toast(:error, "Nie masz dostępu do tej ewidencji godzin.")

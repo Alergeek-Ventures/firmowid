@@ -5,7 +5,9 @@ defmodule FirmowidWeb.Invoicing.Views.RoleAccessTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
-  test "invoicing role can open invoicing hub but cannot start sales invoice creator", %{conn: conn} do
+  test "invoicing role can open invoicing hub but cannot start sales invoice creator", %{
+    conn: conn
+  } do
     admin = admin_fixture()
     invoicing_user = user_in_org_fixture(admin.organization_id, %{role: :invoicing})
 

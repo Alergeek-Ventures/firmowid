@@ -204,7 +204,12 @@ defmodule FirmowidWeb.Organization.Views.Index do
       socket =
         socket
         |> assign(:organization_form, organization_form)
-        |> assign(:address_form, %{"street" => "", "number" => "", "postal_code" => "", "city" => ""})
+        |> assign(:address_form, %{
+          "street" => "",
+          "number" => "",
+          "postal_code" => "",
+          "city" => ""
+        })
         |> assign(:check_errors, false)
         |> assign(
           :join_form,

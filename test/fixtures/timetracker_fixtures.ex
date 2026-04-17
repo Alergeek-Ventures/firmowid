@@ -68,7 +68,9 @@ defmodule Firmowid.TimetrackerFixtures do
       user_id: attrs[:user_id] || raise("user_id is required for user_salary_fixture")
     }
 
-    tenant = attrs[:organization_id] || raise "organization_id is required for user_salary_fixture"
+    tenant =
+      attrs[:organization_id] || raise "organization_id is required for user_salary_fixture"
+
     opts = admin_opts(tenant)
 
     {:ok, salary} = AshUserSalary.create_with_retire(params, opts)
@@ -87,7 +89,8 @@ defmodule Firmowid.TimetrackerFixtures do
       |> Ash.exists?(opts)
 
     if !exists? do
-      {:ok, _project_user} = AshProjectUser.create(%{user_id: user_id, project_id: project_id}, opts)
+      {:ok, _project_user} =
+        AshProjectUser.create(%{user_id: user_id, project_id: project_id}, opts)
     end
 
     :ok

@@ -1,8 +1,20 @@
 [
-  import_deps: [:ecto, :ecto_sql, :phoenix],
-  subdirectories: ["priv/*/migrations", "lib/firmowid/ash"],
-  plugins: [Phoenix.LiveView.HTMLFormatter, Styler],
+  import_deps: [
+    :ash,
+    :ash_authentication,
+    :ash_authentication_phoenix,
+    :ash_postgres,
+    :ash_events,
+    :ash_oban,
+    :ash_state_machine,
+    :reactor,
+    :ecto,
+    :ecto_sql,
+    :phoenix,
+    :phoenix_live_view
+  ],
+  subdirectories: ["priv/*/migrations"],
+  plugins: [Phoenix.LiveView.HTMLFormatter, Spark.Formatter, Styler],
   inputs: ["*.{heex,ex,exs}", "{config,lib,test}/**/*.{heex,ex,exs}", "priv/*/seeds.exs"],
-  excludes: ["lib/firmowid/ash/**/*.{ex,exs}"],
   attribute_formatters: %{class: CanonicalTailwind}
 ]

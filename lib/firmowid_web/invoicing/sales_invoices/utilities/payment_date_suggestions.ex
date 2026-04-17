@@ -62,7 +62,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions d
   Due-date day offsets are counted from the invoice issue date.
   The end-of-current-month suggestion uses the real current month.
   """
-  @spec apply_suggestion(map(), suggestion_target(), suggestion_key(), Date.t(), Date.t()) :: map()
+  @spec apply_suggestion(map(), suggestion_target(), suggestion_key(), Date.t(), Date.t()) ::
+          map()
   def apply_suggestion(params, target, suggestion, issue_date, today \\ Date.utc_today()) do
     date = suggested_date(target, suggestion, issue_date, today)
 
@@ -80,5 +81,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions d
   defp suggested_date(:due_date, :days_3, issue_date, _today), do: Date.add(issue_date, 3)
   defp suggested_date(:due_date, :days_7, issue_date, _today), do: Date.add(issue_date, 7)
   defp suggested_date(:due_date, :days_30, issue_date, _today), do: Date.add(issue_date, 30)
+
   defp suggested_date(:due_date, :end_of_current_month, _issue_date, today), do: Date.end_of_month(today)
 end

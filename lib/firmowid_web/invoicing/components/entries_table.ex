@@ -168,7 +168,12 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   end
 
   defp column_label(assigns) do
-    assigns = assign(assigns, :label, Keyword.get(@column_labels, String.to_existing_atom(assigns.column)))
+    assigns =
+      assign(
+        assigns,
+        :label,
+        Keyword.get(@column_labels, String.to_existing_atom(assigns.column))
+      )
 
     is_special_column =
       case assigns.column do

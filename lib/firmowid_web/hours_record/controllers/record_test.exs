@@ -41,6 +41,8 @@ defmodule FirmowidWeb.HoursRecord.Controllers.RecordTest do
       |> get(~p"/czasosledz/ewidencja/#{record.id}")
 
     assert redirected_to(conn) == ~p"/czasosledz"
-    assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Nie masz dostępu do tej ewidencji godzin."
+
+    assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+             "Nie masz dostępu do tej ewidencji godzin."
   end
 end

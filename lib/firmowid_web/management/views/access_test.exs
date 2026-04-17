@@ -11,7 +11,8 @@ defmodule FirmowidWeb.Management.Views.AccessTest do
 
     conn = log_in_user(conn, invoicing_user)
 
-    assert {:error, {:redirect, %{to: to, flash: flash}}} = live(conn, ~p"/zarzadzanie/pracownicy")
+    assert {:error, {:redirect, %{to: to, flash: flash}}} =
+             live(conn, ~p"/zarzadzanie/pracownicy")
 
     assert to == ~p"/czasosledz"
     assert flash["error"] =~ "Nie masz dostępu do sekcji zarządzania."

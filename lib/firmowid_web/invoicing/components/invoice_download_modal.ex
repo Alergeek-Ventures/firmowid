@@ -14,7 +14,10 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDownloadModal do
   @impl true
   def render(assigns) do
     modal_id = "invoice-download-modal-#{assigns.id}"
-    switch_form = to_form(%{"include_internal_note" => assigns.include_internal_note}, as: :download)
+
+    switch_form =
+      to_form(%{"include_internal_note" => assigns.include_internal_note}, as: :download)
+
     assigns = assign(assigns, modal_id: modal_id, switch_form: switch_form)
 
     ~H"""

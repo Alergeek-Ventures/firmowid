@@ -201,7 +201,8 @@ defmodule FirmowidWeb.Management.Views.Project do
     previous_month_label =
       Cldr.Date.to_string!(previous_month, Firmowid.Cldr, format: "MMMM", locale: "pl")
 
-    users = build_users_with_cost(project, current_sessions, current_salary_by_user, hr_by_user, scope)
+    users =
+      build_users_with_cost(project, current_sessions, current_salary_by_user, hr_by_user, scope)
 
     socket
     |> assign(:users, users)

@@ -65,7 +65,11 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
   defp row(%{entry: %CostInvoice{} = invoice} = assigns) do
     assigns =
       assigns
-      |> assign(:party, invoice.effective_seller_display_name || invoice.seller_display_name || invoice.seller || "")
+      |> assign(
+        :party,
+        invoice.effective_seller_display_name || invoice.seller_display_name || invoice.seller ||
+          ""
+      )
       |> assign(:description, invoice.description)
       |> assign(:date, invoice.effective_sale_date || invoice.sale_date)
       |> assign(:amount, safe_money(invoice.effective_currency, invoice.effective_total_amount))
@@ -89,7 +93,10 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
       |> assign(:party, party || "")
       |> assign(:description, transaction.remittance_information_unstructured)
       |> assign(:date, transaction.booking_date)
-      |> assign(:amount, safe_money(transaction.transaction_currency, transaction.transaction_amount))
+      |> assign(
+        :amount,
+        safe_money(transaction.transaction_currency, transaction.transaction_amount)
+      )
       |> assign(:amount_decimal, transaction.transaction_amount)
       |> assign(:navigate, nil)
       |> assign(:entity_tags, Map.get(transaction, :entity_tags, []))

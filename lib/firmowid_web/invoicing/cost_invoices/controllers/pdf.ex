@@ -33,7 +33,8 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Pdf do
   end
 
   defp cost_invoice_filename(invoice, scope) do
-    invoice = Ash.load!(invoice, [:effective_seller_display_name, blob: [:blob_checksum]], scope: scope)
+    invoice =
+      Ash.load!(invoice, [:effective_seller_display_name, blob: [:blob_checksum]], scope: scope)
 
     MonthDownloadEntries.clean_filename(
       "#{invoice.issue_date}_#{invoice.effective_seller_display_name}_#{String.slice(invoice.blob.blob_checksum, 0, 8)}"

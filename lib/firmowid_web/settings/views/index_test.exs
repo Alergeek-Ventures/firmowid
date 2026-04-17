@@ -40,7 +40,8 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     assert iban_position(html, "PL44 1140 2004 0000 3002 0135 5362") <
              iban_position(html, "PL44 1140 2004 0000 3002 0135 5363")
 
-    assert {:ok, _updated} = Finances.update_bank_account(account_1, %{name: "ZZZ renamed"}, scope: scope)
+    assert {:ok, _updated} =
+             Finances.update_bank_account(account_1, %{name: "ZZZ renamed"}, scope: scope)
 
     assert {:ok, _view, html_after_rename} = live(conn, ~p"/ustawienia/konta-bankowe")
 
@@ -50,7 +51,8 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     assert iban_position(html_after_rename, "PL44 1140 2004 0000 3002 0135 5362") <
              iban_position(html_after_rename, "PL44 1140 2004 0000 3002 0135 5363")
 
-    assert {:ok, _updated} = Finances.update_bank_account(account_3, %{name: "AAA renamed"}, scope: scope)
+    assert {:ok, _updated} =
+             Finances.update_bank_account(account_3, %{name: "AAA renamed"}, scope: scope)
 
     assert {:ok, _view, html_after_second_rename} = live(conn, ~p"/ustawienia/konta-bankowe")
 
@@ -61,7 +63,9 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
              iban_position(html_after_second_rename, "PL44 1140 2004 0000 3002 0135 5363")
   end
 
-  test "account deletion modal warns organization owner about deleting the organization", %{conn: conn} do
+  test "account deletion modal warns organization owner about deleting the organization", %{
+    conn: conn
+  } do
     admin = admin_fixture()
 
     conn = log_in_user(conn, admin)
@@ -72,7 +76,9 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     assert html =~ "Usuniemy też całą organizację i wszystkie jej dane."
   end
 
-  test "account deletion modal does not warn non-owner about deleting the organization", %{conn: conn} do
+  test "account deletion modal does not warn non-owner about deleting the organization", %{
+    conn: conn
+  } do
     admin = admin_fixture()
     employee = user_in_org_fixture(admin.organization_id)
 

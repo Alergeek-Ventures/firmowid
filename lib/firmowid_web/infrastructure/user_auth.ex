@@ -82,7 +82,10 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
       true ->
         conn
         |> maybe_store_return_to()
-        |> LiveToast.put_toast(:notice, "Ta strona jest dostępna tylko przed wyborem organizacji.")
+        |> LiveToast.put_toast(
+          :notice,
+          "Ta strona jest dostępna tylko przed wyborem organizacji."
+        )
         |> redirect(to: signed_in_path(conn))
         |> halt()
     end
