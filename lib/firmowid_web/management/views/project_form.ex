@@ -50,16 +50,11 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
   end
 
   def handle_event("save", %{"project" => params}, socket) do
-    case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
+    case AshPhoenix.Form.submit(socket.assigns.form,
+           params: project_params(params, socket.assigns.project_users)
+         ) do
       {:ok, project} ->
-        case set_project_users(project, socket.assigns.project_users, socket.assigns.ash_scope) do
-          :ok ->
-            {:noreply, push_navigate(socket, to: ~p"/zarzadzanie/projekty/#{project.id}")}
-
-          :error ->
-            LiveToast.send_toast(:error, "Nie udało się zapisać pracowników")
-            {:noreply, socket}
-        end
+        {:noreply, push_navigate(socket, to: ~p"/zarzadzanie/projekty/#{project.id}")}
 
       {:error, form} ->
         {:noreply, assign(socket, :form, to_form(form))}
@@ -164,16 +159,13 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
     |> assign(:available_users, available_users)
   end
 
-  defp set_project_users(project, project_users, scope) do
+  defp project_params(params, project_users) do
     user_ids =
       project_users
       |> Enum.reject(& &1.removed_from_project)
       |> Enum.map(& &1.user.id)
 
-    case AshProject.set_users(user_ids, %{project_id: project.id}, scope: scope) do
-      {:ok, _result} -> :ok
-      {:error, _error} -> :error
-    end
+    Map.put(params, "user_ids", user_ids)
   end
 
   # Resolve a user by ID: prefer already-loaded project members, fall back to Core.

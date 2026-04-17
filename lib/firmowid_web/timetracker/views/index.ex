@@ -65,7 +65,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     scope = socket.assigns.ash_scope
     user = socket.assigns.current_user
 
-    {:ok, last_session} = AshSession.most_recent(user.id, scope: scope, not_found_error?: false)
+    {:ok, last_session} = AshSession.most_recent(scope: scope, not_found_error?: false)
 
     active_projects =
       Timetracker.list_projects!(%{user_id: user.id, status: :active}, scope: scope)
@@ -119,7 +119,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     user_id = socket.assigns.current_user.id
 
     {:ok, sessions} =
-      AshSession.list_user_sessions(user_id, %{after_date: after_date}, scope: scope)
+      AshSession.list_user_sessions(%{after_date: after_date}, scope: scope)
 
     sessions =
       Enum.map(sessions, fn session ->

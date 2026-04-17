@@ -29,10 +29,6 @@ defmodule Firmowid.Ash.Timetracker.ProjectUser do
   end
 
   policies do
-    bypass actor_attribute_equals(:role, :admin) do
-      authorize_if always()
-    end
-
     policy [action_type(:read), actor_attribute_equals(:role, :employee)] do
       authorize_if relates_to_actor_via(:user)
     end

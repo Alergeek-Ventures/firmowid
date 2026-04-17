@@ -38,13 +38,10 @@ defmodule Firmowid.Ash.Timetracker.Project do
     define :archive
     define :unarchive
     define :destroy
-    define :set_users, args: [:user_ids]
   end
 
   actions do
     defaults [:read]
-
-    # ── Read actions ──────────────────────────────────────────────────
 
     read :get do
       description "Get a single project by ID with users and counterparty preloaded."
@@ -87,19 +84,23 @@ defmodule Firmowid.Ash.Timetracker.Project do
       prepare {Firmowid.Ash.Preparations.ParadeDBSearch, columns: ~w(name), argument: :search}
     end
 
-    # ── Write actions ─────────────────────────────────────────────────
-
     create :create do
       description "Create a project with automatic TagDefinition creation for analysis tagging."
 
       accept [:name, :counterparty_id]
+      argument :user_ids, {:array, :uuid}, allow_nil?: true
+
+      change manage_relationship(:user_ids, :users, type: :append_and_remove)
       change CreateProjectTag
     end
 
     update :update do
       description "Update project attributes and sync the associated tag definition name."
       accept [:name, :counterparty_id]
+      argument :user_ids, {:array, :uuid}, allow_nil?: true
       require_atomic? false
+
+      change manage_relationship(:user_ids, :users, type: :append_and_remove)
       change SyncProjectTagName, where: [changing(:name)]
     end
 
@@ -130,26 +131,9 @@ defmodule Firmowid.Ash.Timetracker.Project do
       require_atomic? false
       change CleanupProjectTag
     end
-
-    # ── User assignment ───────────────────────────────────────────────
-
-    action :set_users, :term do
-      description "Set the exact list of users for a project. Adds missing, removes extra."
-
-      argument :project_id, :uuid, allow_nil?: false
-      argument :user_ids, {:array, :uuid}, allow_nil?: false
-
-      run fn input, context ->
-        {:ok, set_project_users(input, context)}
-      end
-    end
   end
 
   policies do
-    bypass actor_attribute_equals(:role, :admin) do
-      authorize_if always()
-    end
-
     bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:project_tag_manager]} do
       authorize_if action(:link_tag)
     end
@@ -159,19 +143,10 @@ defmodule Firmowid.Ash.Timetracker.Project do
       forbid_if always()
     end
 
-    # Employee: can only see assigned projects
-    policy [action_type(:read), actor_attribute_equals(:role, :employee)] do
+    policy action_type(:read) do
+      authorize_if {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}
       authorize_if relates_to_actor_via([:project_users, :user])
-    end
-
-    # :invoicing and :accountant: can see all org projects
-    policy [action_type(:read), {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}] do
-      authorize_if always()
-    end
-
-    # Write and generic actions: admin only
-    policy action_type(:action) do
-      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if accessing_from(Session, :project)
     end
 
     policy action_type([:create, :update, :destroy]) do
@@ -227,42 +202,5 @@ defmodule Firmowid.Ash.Timetracker.Project do
     identity :unique_name_per_org, [:name, :organization_id],
       pre_check?: true,
       message: "has already been taken"
-  end
-
-  # ── Private helpers for user assignment ──────────────────────────────
-
-  defp set_project_users(input, context) do
-    project_id = input.arguments.project_id
-    user_ids = input.arguments.user_ids
-    ash_opts = [actor: context.actor, tenant: context.tenant]
-
-    existing =
-      ProjectUser
-      |> Ash.Query.filter(project_id: project_id)
-      |> Ash.read!(ash_opts)
-
-    existing_user_ids = MapSet.new(existing, & &1.user_id)
-    desired_user_ids = MapSet.new(user_ids)
-
-    to_add = MapSet.difference(desired_user_ids, existing_user_ids)
-    to_remove = MapSet.difference(existing_user_ids, desired_user_ids)
-
-    # Remove users no longer in the set
-    existing
-    |> Enum.filter(fn pu -> MapSet.member?(to_remove, pu.user_id) end)
-    |> Enum.each(fn pu -> Ash.destroy!(pu, ash_opts) end)
-
-    # Add new users
-    for uid <- to_add do
-      ProjectUser
-      |> Ash.Changeset.for_create(
-        :create,
-        %{project_id: project_id, user_id: uid},
-        ash_opts
-      )
-      |> Ash.create!()
-    end
-
-    :ok
   end
 end

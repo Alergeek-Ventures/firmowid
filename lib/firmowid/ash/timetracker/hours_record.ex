@@ -25,11 +25,10 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
     define :get, get_by: [:id]
     define :by_month, args: [:user_id, :month, :year]
     define :create
-    define :destroy
   end
 
   actions do
-    defaults [:read, :destroy, update: :*]
+    defaults [:read]
 
     # ── Read actions ──────────────────────────────────────────────────
 
@@ -107,37 +106,16 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
   end
 
   policies do
-    bypass actor_attribute_equals(:role, :admin) do
-      authorize_if always()
-    end
-
-    # System actors have no access to payroll-adjacent employee data
     policy Firmowid.Ash.Checks.IsSystemActor do
       forbid_if always()
     end
 
-    # Employee policies: own records only
-    policy [action_type(:read), actor_attribute_equals(:role, :employee)] do
+    policy action_type(:read) do
       authorize_if relates_to_actor_via(:user)
     end
 
-    policy [action_type(:read), {Firmowid.Ash.Checks.AtLeastRole, role: :invoicing}] do
-      authorize_if relates_to_actor_via(:user)
-    end
-
-    policy [action_type(:create), actor_attribute_equals(:role, :employee)] do
-      authorize_if Firmowid.Ash.Timetracker.Checks.OwnsResource
-    end
-
-    policy [
-      action_type([:update, :destroy]),
-      actor_attribute_equals(:role, :employee)
-    ] do
-      authorize_if relates_to_actor_via(:user)
-    end
-
-    policy [action_type(:action), actor_attribute_equals(:role, :employee)] do
-      forbid_if always()
+    policy action_type(:create) do
+      authorize_if relating_to_actor(:user)
     end
 
     # :invoicing and :accountant have no access to hours records (personal payroll data)

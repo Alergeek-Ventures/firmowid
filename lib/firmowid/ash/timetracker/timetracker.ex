@@ -6,7 +6,8 @@ defmodule Firmowid.Ash.Timetracker do
   All reads and writes go through Ash actions with policy-based
   authorization and attribute multitenancy via `organization_id`.
   """
-  use Ash.Domain
+  use Ash.Domain,
+    extensions: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Timetracker.Session
 
@@ -26,6 +27,12 @@ defmodule Firmowid.Ash.Timetracker do
 
     resource Session do
       define :list_sessions, action: :list
+    end
+  end
+
+  policies do
+    bypass actor_attribute_equals(:role, :admin) do
+      authorize_if always()
     end
   end
 

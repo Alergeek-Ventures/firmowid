@@ -1,11 +1,11 @@
 defmodule FirmowidWeb.Timetracker.Views.IndexTest do
   use FirmowidWeb.ConnCase, async: true
 
-  import Ecto.Query
   import Firmowid.AccountsFixtures
   import Firmowid.TimetrackerFixtures
   import Phoenix.LiveViewTest
 
+  alias Firmowid.Ash.Scope
   alias Firmowid.Ash.Timetracker.Session
   alias Firmowid.Repo
 
@@ -36,11 +36,12 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
       %{
         conn: log_in_user(conn, user),
         user: user,
+        scope: %Scope{actor: user, tenant: user.organization_id},
         project: project
       }
     end
 
-    test "starts new session", %{conn: conn, user: user, project: project} do
+    test "starts new session", %{conn: conn, scope: scope, project: project} do
       {:ok, lv, _html} = live(conn, ~p"/czasosledz")
 
       title = "Test Session"
@@ -56,13 +57,13 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
         |> render_submit()
 
       assert result =~ title
-      current_session = get_current_session(user.id)
+      current_session = Session.get_current!(scope: scope)
       assert current_session.title == title
       assert current_session.project_id == project.id
       assert is_nil(current_session.end_datetime)
     end
 
-    test "saves new session without end time", %{conn: conn, user: user, project: project} do
+    test "saves new session without end time", %{conn: conn, scope: scope, project: project} do
       {:ok, lv, _html} = live(conn, ~p"/czasosledz")
 
       title = "Test Session"
@@ -84,13 +85,13 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
 
       assert result =~ title
       assert result =~ "14:00"
-      current_session = get_current_session(user.id)
+      current_session = Session.get_current!(scope: scope)
       assert current_session.title == title
       assert current_session.project_id == project.id
       assert is_nil(current_session.end_datetime)
     end
 
-    test "saves new session", %{conn: conn, user: user, project: project} do
+    test "saves new session", %{conn: conn, scope: scope, project: project} do
       {:ok, lv, _html} = live(conn, ~p"/czasosledz")
 
       title = "Test Session"
@@ -113,7 +114,7 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
       assert result =~ title
       assert result =~ "09:00"
       assert result =~ "17:00"
-      [current_session] = list_user_sessions(user.id)
+      [current_session] = Session.list_user_sessions!(scope: scope)
       assert current_session.title == title
       assert current_session.project_id == project.id
       assert current_session.end_datetime
@@ -144,6 +145,7 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
     test "ignores stale validate_and_update after current session ends", %{
       conn: conn,
       user: user,
+      scope: scope,
       project: project
     } do
       session =
@@ -173,7 +175,7 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
 
       ended_session = Repo.get!(Session, session.id)
       assert ended_session.end_datetime
-      assert is_nil(get_current_session(user.id))
+      assert is_nil(Session.get_current!(scope: scope))
     end
 
     test "deletes session", %{conn: conn, user: user, project: project} do
@@ -219,6 +221,21 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
       updated_session = Repo.get!(Session, session.id)
       assert updated_session.title == new_title
     end
+
+    test "suggest previous project", %{conn: conn, user: user, project: project} do
+      session_fixture(%{
+        user_id: user.id,
+        project_id: project.id,
+        title: "Test Session",
+        start_datetime: DateTime.utc_now(),
+        organization_id: user.organization_id
+      })
+
+      {:ok, _lv, html} = live(conn, ~p"/czasosledz")
+
+      assert html =~
+               "<option selected=\"\" value=\"#{project.id}\">"
+    end
   end
 
   describe "project visibility" do
@@ -242,22 +259,5 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
 
       assert html =~ "Przejdź do zarządzania projektami"
     end
-  end
-
-  # Helper: fetch the running (no end_datetime) session for a user
-  defp get_current_session(user_id) do
-    Session
-    |> where([s], s.user_id == ^user_id and is_nil(s.end_datetime))
-    |> order_by([s], desc: s.start_datetime)
-    |> limit(1)
-    |> Repo.one()
-  end
-
-  # Helper: list all sessions for a user
-  defp list_user_sessions(user_id) do
-    Session
-    |> where([s], s.user_id == ^user_id)
-    |> order_by([s], desc: s.start_datetime)
-    |> Repo.all()
   end
 end

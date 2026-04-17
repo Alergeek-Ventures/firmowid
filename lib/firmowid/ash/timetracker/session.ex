@@ -12,10 +12,8 @@ defmodule Firmowid.Ash.Timetracker.Session do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
-  alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Resource
   alias Firmowid.Ash.Timetracker.Checks.HoursRecordNotSubmitted
-  alias Firmowid.Ash.Timetracker.Checks.OwnsResource
   alias Firmowid.Ash.Timetracker.HoursRecord
   alias Firmowid.Ash.Timetracker.Project
   alias Firmowid.Ash.Timetracker.Validations.DatetimeOrder
@@ -30,9 +28,9 @@ defmodule Firmowid.Ash.Timetracker.Session do
   end
 
   code_interface do
-    define :list_user_sessions, args: [:user_id]
-    define :get_current
-    define :most_recent, args: [:user_id]
+    define :list_user_sessions
+    define :get_current, not_found_error?: false
+    define :most_recent
     define :list_overlapping, args: [:user_id, :start_datetime]
     define :start
     define :stop
@@ -90,12 +88,10 @@ defmodule Firmowid.Ash.Timetracker.Session do
     read :list_user_sessions do
       description "List a user's sessions, optionally filtered to those starting on or after a date."
 
-      argument :user_id, :uuid, allow_nil?: false
       argument :after_date, :date
 
-      prepare build(sort: [start_datetime: :desc], load: [:duration, :lockdown])
-
-      filter expr(user_id == ^arg(:user_id))
+      prepare build(sort: [start_datetime: :desc], load: [:lockdown])
+      filter expr(user_id == ^actor(:id))
 
       prepare fn query, _context ->
         case Ash.Query.get_argument(query, :after_date) do
@@ -113,27 +109,16 @@ defmodule Firmowid.Ash.Timetracker.Session do
       description "Get the currently running session (no end_datetime) for the acting user."
       get? true
 
-      prepare build(sort: [start_datetime: :desc], limit: 1, load: [:duration])
-
       filter expr(is_nil(end_datetime))
-
-      prepare fn query, context ->
-        case context.actor do
-          %{id: actor_id} -> Ash.Query.do_filter(query, user_id: actor_id)
-          _ -> query
-        end
-      end
+      filter expr(user_id == ^actor(:id))
     end
 
     read :most_recent do
       description "Get the most recent session for a user."
       get? true
 
-      argument :user_id, :uuid, allow_nil?: false
-
       prepare build(sort: [start_datetime: :desc], limit: 1)
-
-      filter expr(user_id == ^arg(:user_id))
+      filter expr(user_id == ^actor(:id))
     end
 
     read :list_overlapping do
@@ -149,7 +134,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
       argument :end_datetime, :utc_datetime
       argument :exclude_id, :uuid
 
-      prepare build(sort: [start_datetime: :asc], load: [:duration, :lockdown])
+      prepare build(sort: [start_datetime: :asc], load: [:lockdown])
 
       filter expr(user_id == ^arg(:user_id))
 
@@ -194,64 +179,27 @@ defmodule Firmowid.Ash.Timetracker.Session do
   end
 
   policies do
-    bypass actor_attribute_equals(:role, :admin) do
-      authorize_if always()
-    end
-
-    # System actors have no access to employee timetracking data
     policy Firmowid.Ash.Checks.IsSystemActor do
       forbid_if always()
     end
 
-    # Employee policies: own sessions only
-    policy [action_type(:read), actor_attribute_equals(:role, :employee)] do
+    policy action_type(:read) do
       authorize_if relates_to_actor_via(:user)
     end
 
-    # :invoicing and :accountant — timetracking is personal, same as employee
-    policy [action_type(:read), {AtLeastRole, role: :invoicing}] do
-      authorize_if relates_to_actor_via(:user)
-    end
-
-    # Stopping a running session is always allowed (the old Bodyguard rule
-    # checked `end_datetime == nil` to bypass lockdown).
-    policy [action(:stop), actor_attribute_equals(:role, :employee)] do
-      authorize_if relates_to_actor_via(:user)
-    end
-
-    policy [action(:stop), {AtLeastRole, role: :invoicing}] do
-      authorize_if relates_to_actor_via(:user)
-    end
-
-    # Create: employee can only create sessions for themselves.
-    # `relates_to_actor_via` can't filter on creates, so we check the
-    # changeset attribute directly via a simple check.
-    policy [action_type(:create), actor_attribute_equals(:role, :employee)] do
+    policy action_type(:create) do
       forbid_unless HoursRecordNotSubmitted
-      authorize_if OwnsResource
+      authorize_if relating_to_actor(:user)
     end
 
-    policy [action_type(:create), {AtLeastRole, role: :invoicing}] do
-      forbid_unless HoursRecordNotSubmitted
-      authorize_if OwnsResource
-    end
-
-    # Update/destroy: session must belong to the actor and month not submitted.
-    policy [
-      action_type([:update, :destroy]),
-      actor_attribute_equals(:role, :employee)
-    ] do
+    policy action_type([:update, :destroy]) do
       forbid_unless HoursRecordNotSubmitted
       authorize_if relates_to_actor_via(:user)
     end
+  end
 
-    policy [
-      action_type([:update, :destroy]),
-      {AtLeastRole, role: :invoicing}
-    ] do
-      forbid_unless HoursRecordNotSubmitted
-      authorize_if relates_to_actor_via(:user)
-    end
+  preparations do
+    prepare build(load: [:duration])
   end
 
   validations do

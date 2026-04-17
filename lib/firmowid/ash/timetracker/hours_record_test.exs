@@ -4,7 +4,6 @@ defmodule Firmowid.Ash.Timetracker.HoursRecordTest do
   import Firmowid.AccountsFixtures
 
   alias Firmowid.Ash.Blobs.Blob
-  alias Firmowid.Ash.Timetracker.Checks.OwnsResource
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
 
   setup do
@@ -58,43 +57,6 @@ defmodule Firmowid.Ash.Timetracker.HoursRecordTest do
         )
 
       assert is_nil(result)
-    end
-  end
-
-  describe "ownership policy" do
-    test "OwnsResource check rejects another user's id", %{user: user} do
-      other_user = user_fixture(%{organization_id: user.organization_id})
-
-      # Test the check module directly since the :create action has an inline
-      # change that does file I/O (Blobs.create_blob) which runs during
-      # for_create, before policies can be evaluated.
-      changeset =
-        AshHoursRecord
-        |> Ash.Changeset.new()
-        |> Ash.Changeset.change_attribute(:user_id, other_user.id)
-
-      context = %{subject: changeset}
-      refute OwnsResource.match?(user, context, [])
-    end
-
-    test "OwnsResource check accepts own user_id", %{user: user} do
-      changeset =
-        AshHoursRecord
-        |> Ash.Changeset.new()
-        |> Ash.Changeset.change_attribute(:user_id, user.id)
-
-      context = %{subject: changeset}
-      assert OwnsResource.match?(user, context, [])
-    end
-
-    test "OwnsResource check rejects nil actor" do
-      changeset =
-        AshHoursRecord
-        |> Ash.Changeset.new()
-        |> Ash.Changeset.change_attribute(:user_id, Ash.UUIDv7.generate())
-
-      context = %{subject: changeset}
-      refute OwnsResource.match?(nil, context, [])
     end
   end
 
