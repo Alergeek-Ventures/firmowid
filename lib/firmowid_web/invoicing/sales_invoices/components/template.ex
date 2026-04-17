@@ -201,8 +201,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
           <% end %>
 
           <%= if @sales_invoice.buyer_type == :individual and @sales_invoice.invoice_type == :poland do %>
-            <span>PESEL:</span>
-            <span class="text-[10px]">{@sales_invoice.buyer_pesel}</span>
+            <%= if !is_nil(@sales_invoice.buyer_pesel) and
+                @sales_invoice.buyer_pesel != "" do %>
+              <span>PESEL:</span>
+              <span class="text-[10px]">{@sales_invoice.buyer_pesel}</span>
+            <% end %>
           <% else %>
             <span>
               {case @sales_invoice.invoice_type do
