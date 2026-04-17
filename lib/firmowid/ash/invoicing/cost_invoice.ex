@@ -5,8 +5,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   ## Read Actions
 
     * `:read` — primary, with optional filters: `date_from`, `date_to`, `date_field`,
-      `reconciliation` (`:pending`/`:matched`/`:skipped`), `ids`. Excludes linked
-      corrections automatically.
+      `reconciliation` (`:pending`/`:matched`/`:skipped`), `ids`, `corrections`
+      (`:include` corrections only, `:exclude` corrections, `nil` for both).
     * `:by_id` — single record by ID, preloads all relationships including blob URLs
     * `:by_checksum` — find by blob checksum (join on blobs)
 
@@ -175,15 +175,25 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
       prepare build(sort: [issue_date: :desc])
 
-      # Exclude corrections linked to an original invoice — they are merged
-      # into the original for display. Uses before_action (not static filter)
-      # because `original_invoice.id` would recurse through the primary :read.
-      prepare before_action(fn query, _context ->
-                Ash.Query.filter(
-                  query,
-                  is_nil(original_invoice_ksef_number) or is_nil(original_invoice.id)
-                )
-              end)
+      argument :corrections, :atom do
+        constraints one_of: [:include, :exclude]
+      end
+
+      # :exclude — hide corrections that are linked to an existing original invoice
+      prepare build(filter: expr(is_nil(original_invoice_ksef_number) or is_nil(original_invoice.id))) do
+        where argument_equals(:corrections, :exclude)
+      end
+
+      # :include — show only corrections linked to an existing original invoice
+      prepare build(
+                filter:
+                  expr(
+                    not is_nil(original_invoice_ksef_number) and
+                      not is_nil(original_invoice.id)
+                  )
+              ) do
+        where argument_equals(:corrections, :include)
+      end
     end
 
     read :by_id do
@@ -263,14 +273,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
         required? false
         keyset? true
       end
-    end
-
-    read :read_for_blob_lookup do
-      description "Tenant-scoped internal read for blob->cost-invoice lookup (includes corrections)."
-
-      argument :blob_id, :uuid, allow_nil?: false
-
-      filter expr(blob_id == ^arg(:blob_id))
     end
 
     # -- Write actions --------------------------------------------------------

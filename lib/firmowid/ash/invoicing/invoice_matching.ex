@@ -47,7 +47,8 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
           date_from: ~D[1970-01-01],
           date_to: ~D[2100-01-01],
           date_field: :due_date,
-          reconciliation: :pending
+          reconciliation: :pending,
+          corrections: :exclude
         },
         scope: scope
       )

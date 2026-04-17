@@ -191,9 +191,6 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       argument :is_cash, :boolean
       argument :is_reverse_charge, :boolean
 
-      # Only VAT invoices in search (not corrections)
-      filter expr(ksef_invoice_kind == :vat)
-
       # ParadeDB BM25 search
       prepare {Firmowid.Ash.Preparations.ParadeDBSearch,
                columns:

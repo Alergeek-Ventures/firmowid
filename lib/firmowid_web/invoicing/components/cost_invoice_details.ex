@@ -256,7 +256,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
         ~H"""
         <a href={@preview_url} target="_blank">
           <div
-            id="invoice-preview"
+            id={"invoice-preview-#{@id}"}
             data-pdf-url={@preview_url}
             phx-update="ignore"
             phx-hook="PDFViewer"

@@ -12,6 +12,7 @@ defmodule Firmowid.Ash.Blobs do
   alias Ash.Error.Changes.InvalidChanges
   alias Ash.Error.Invalid
   alias Firmowid.Ash.Blobs.Blob
+  alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Scope
 
@@ -59,7 +60,12 @@ defmodule Firmowid.Ash.Blobs do
 
     case Ash.read_one(blob_query, opts) do
       {:ok, %Blob{} = blob} ->
-        cost_invoice = get_cost_invoice_for_blob(blob, opts)
+        cost_invoice =
+          case Invoicing.get_cost_invoice_by_blob_id(blob.id, opts) do
+            {:ok, invoice} -> invoice
+            {:error, _} -> nil
+          end
+
         {:ok, blob, cost_invoice}
 
       _ ->
@@ -153,15 +159,6 @@ defmodule Firmowid.Ash.Blobs do
 
   defp recover_duplicate_cost_invoice_blob(_blob, nil, _opts) do
     {:error, :blob_already_exists}
-  end
-
-  defp get_cost_invoice_for_blob(%Blob{id: blob_id}, opts) do
-    case CostInvoice
-         |> Ash.Query.for_read(:read_for_blob_lookup, %{blob_id: blob_id}, opts)
-         |> Ash.read_one(opts) do
-      {:ok, result} -> result
-      {:error, _} -> nil
-    end
   end
 
   defp blob_checksum_conflict?(%Invalid{errors: errors}) do

@@ -74,7 +74,12 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
 
       invoices =
         Invoicing.list_cost_invoices!(
-          %{date_from: ~D[2026-02-01], date_to: ~D[2026-02-28], date_field: :issue_date},
+          %{
+            date_from: ~D[2026-02-01],
+            date_to: ~D[2026-02-28],
+            date_field: :issue_date,
+            corrections: :exclude
+          },
           opts
         )
 
@@ -130,7 +135,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
             date_from: ~D[2026-02-01],
             date_to: ~D[2026-02-28],
             date_field: :due_date,
-            reconciliation: :pending
+            reconciliation: :pending,
+            corrections: :exclude
           },
           opts
         )

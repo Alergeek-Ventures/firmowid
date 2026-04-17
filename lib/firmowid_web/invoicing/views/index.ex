@@ -799,7 +799,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp list_cost_invoices(from, to, extra_args, scope) do
-    args = Map.merge(%{date_from: from, date_to: to}, extra_args)
+    args = Map.merge(%{date_from: from, date_to: to, corrections: :exclude}, extra_args)
     Invoicing.list_cost_invoices!(args, load: @cost_invoice_loads, scope: scope)
   end
 

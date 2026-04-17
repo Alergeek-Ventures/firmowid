@@ -74,7 +74,7 @@ defmodule Firmowid.Ash.Analysis do
       |> Enum.filter(&matched_or_skipped?/1)
 
     cost_invoices =
-      %{date_from: date_from, date_to: date_to, date_field: :sale_date}
+      %{date_from: date_from, date_to: date_to, date_field: :sale_date, corrections: :exclude}
       |> Invoicing.list_cost_invoices!(
         load: [
           :transactions,
@@ -140,8 +140,10 @@ defmodule Firmowid.Ash.Analysis do
       |> Finances.list_transactions!(opts)
       |> Enum.map(&Date.beginning_of_month(&1.booking_date))
 
-    si_months = invoice_months(&Invoicing.list_sales_invoices!/2, :sale_date, opts)
-    ci_months = invoice_months(&Invoicing.list_cost_invoices!/2, :sale_date, opts)
+    si_months = invoice_months(&Invoicing.list_sales_invoices!/2, :sale_date, %{}, opts)
+
+    ci_months =
+      invoice_months(&Invoicing.list_cost_invoices!/2, :sale_date, %{corrections: :exclude}, opts)
 
     (tx_months ++ si_months ++ ci_months)
     |> Enum.uniq()
@@ -150,9 +152,10 @@ defmodule Firmowid.Ash.Analysis do
 
   # ── Private helpers ──────────────────────────────────────────────────
 
-  defp invoice_months(list_fn, date_field, opts) do
+  defp invoice_months(list_fn, date_field, base_args, opts) do
     Enum.map(
-      list_fn.(%{reconciliation: :matched}, opts) ++ list_fn.(%{reconciliation: :skipped}, opts),
+      list_fn.(Map.put(base_args, :reconciliation, :matched), opts) ++
+        list_fn.(Map.put(base_args, :reconciliation, :skipped), opts),
       &Date.beginning_of_month(Map.fetch!(&1, date_field))
     )
   end
