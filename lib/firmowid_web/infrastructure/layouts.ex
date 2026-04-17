@@ -1,8 +1,8 @@
 defmodule FirmowidWeb.Infrastructure.Layouts do
   @moduledoc """
-  This module holds different layouts used by your application.
+  HTML layout helpers and embedded layout templates for the web UI.
 
-  See the `layouts` directory for all templates available.
+  See the `layouts` directory for available templates.
   The "root" layout is a skeleton rendered as part of the
   application router. The "app" layout is set as the default
   layout on both `use FirmowidWeb, :controller` and

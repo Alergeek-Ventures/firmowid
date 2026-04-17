@@ -23,6 +23,8 @@ defmodule Mix.Tasks.Dev.Down do
 
   use Mix.Task
 
+  alias Mix.Tasks.Dev.Shared
+
   @defaults %{
     "PORT" => "4000",
     "DB_PORT" => "5433",
@@ -132,15 +134,7 @@ defmodule Mix.Tasks.Dev.Down do
   end
 
   defp sanitize_branch(branch) do
-    branch
-    |> String.downcase()
-    |> String.replace(~r/[^a-z0-9-]/, "-")
-    |> String.replace(~r/-+/, "-")
-    |> String.trim("-")
-    |> case do
-      "" -> "main"
-      sanitized -> sanitized
-    end
+    Shared.sanitize_branch(branch)
   end
 
   defp stop_services(branch, port, db_port, s3_port, chrome_port) do
@@ -169,19 +163,7 @@ defmodule Mix.Tasks.Dev.Down do
   # otherwise try podman directly.
   # Env vars are passed inline since distrobox-host-exec doesn't forward them.
   defp podman(args, env) do
-    env_prefix = Enum.map(env, fn {k, v} -> "#{k}=#{v}" end)
-
-    cond do
-      System.find_executable("distrobox-host-exec") ->
-        # Use env command to set variables on the host side
-        System.cmd("distrobox-host-exec", ["env" | env_prefix] ++ ["podman" | args], stderr_to_stdout: true)
-
-      System.find_executable("podman") ->
-        System.cmd("podman", args, env: env, stderr_to_stdout: true)
-
-      System.find_executable("docker") ->
-        System.cmd("docker", args, env: env, stderr_to_stdout: true)
-    end
+    Shared.podman(args, env)
   end
 
   defp load_env do
@@ -197,12 +179,6 @@ defmodule Mix.Tasks.Dev.Down do
   end
 
   defp parse_env(content) do
-    content
-    |> String.split("\n", trim: true)
-    |> Enum.reject(fn line -> String.starts_with?(line, "#") or String.trim(line) == "" end)
-    |> Map.new(fn line ->
-      [key, value] = String.split(line, "=", parts: 2)
-      {String.trim(key), String.trim(value)}
-    end)
+    Shared.parse_env(content)
   end
 end

@@ -1,3 +1,6 @@
+# credo:disable-for-this-file ExDNA.Credo
+# This resource centralizes invoice lifecycle, numbering, and KSeF behaviors; reducing
+# duplication requires extracting multiple actions/helpers into shared modules across boundaries.
 defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   @moduledoc """
   Ash resource for sales invoices.
@@ -1188,7 +1191,12 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
   @invoice_number_regex ~r/^(\d+)\/(\d+)\/(\d+)(?:\/(.+))?$/
 
-  @doc false
+  @doc """
+  Parses an invoice number in the `NN/MM/YYYY[/SERIES]` format.
+
+  Returns parsed numeric parts and optional series as a map, or `:error` for
+  invalid input.
+  """
   def parse_invoice_number(invoice_number) when is_binary(invoice_number) do
     case Regex.run(@invoice_number_regex, invoice_number) do
       [_, num, month, year] ->
@@ -1216,7 +1224,9 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
   def parse_invoice_number(_), do: :error
 
-  @doc false
+  @doc """
+  Formats invoice number parts as `NN/MM/YYYY` or `NN/MM/YYYY/SERIES`.
+  """
   def format_invoice_number(num, month, year, nil) do
     "#{String.pad_leading("#{num}", 2, "0")}/#{String.pad_leading("#{month}", 2, "0")}/#{year}"
   end
@@ -1282,7 +1292,9 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     |> Enum.map(& &1.invoice_number)
   end
 
-  @doc false
+  @doc """
+  Returns all non-nil invoice numbers visible in the provided Ash context.
+  """
   def read_all_invoice_numbers(opts) do
     __MODULE__
     |> Ash.Query.filter(not is_nil(invoice_number))

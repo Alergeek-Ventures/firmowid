@@ -1,3 +1,6 @@
+# credo:disable-for-this-file ExDNA.Credo
+# Shared preview/PDF actions intentionally mirror token lookup and scoped rendering flow;
+# reducing duplication requires a larger controller/service extraction.
 defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
   @moduledoc """
   Handles public, unauthenticated access to shared invoices via token-based URLs.

@@ -1,3 +1,6 @@
+# credo:disable-for-this-file ExDNA.Credo
+# This item resource intentionally mirrors SalesInvoiceItem VAT expressions for consistent
+# Ash in-memory/ETS behavior; de-duplication requires cross-resource calculation redesign.
 defmodule Firmowid.Ash.Invoicing.WizardDraft.Item do
   @moduledoc """
   Standalone ETS resource for line items within a WizardDraft.

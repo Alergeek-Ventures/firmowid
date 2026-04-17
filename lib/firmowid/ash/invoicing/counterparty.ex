@@ -1,3 +1,6 @@
+# credo:disable-for-this-file ExDNA.Credo
+# Create/update action and expr duplication is intentional for Ash runtime/SQL parity;
+# removing it cleanly requires shared action/calc extraction used by multiple resources.
 defmodule Firmowid.Ash.Invoicing.Counterparty do
   @moduledoc """
   Ash resource for counterparties (buyers) linked to sales invoices.

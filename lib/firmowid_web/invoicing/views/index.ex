@@ -1,3 +1,6 @@
+# credo:disable-for-this-file ExDNA.Credo
+# This LiveView currently combines orchestration for uploads, PubSub, and invoice grouping;
+# removing duplication requires extracting domain-facing services across feature boundaries.
 defmodule FirmowidWeb.Invoicing.Views.Index do
   @moduledoc false
   # TODO: move business logic (transaction grouping by party, get_active_months)

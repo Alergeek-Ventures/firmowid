@@ -27,6 +27,8 @@ defmodule Mix.Tasks.Dev.Up do
 
   use Mix.Task
 
+  alias Mix.Tasks.Dev.Shared
+
   @defaults %{
     "PORT" => "4000",
     "DB_PORT" => "5433",
@@ -44,7 +46,6 @@ defmodule Mix.Tasks.Dev.Up do
     # Start applications needed for HTTP requests
     Application.ensure_all_started(:req)
 
-    # Step 1: Load configuration from .env.local or use defaults
     env = load_env()
 
     branch = Map.fetch!(env, "BRANCH")
@@ -54,22 +55,16 @@ defmodule Mix.Tasks.Dev.Up do
     chrome_port = Map.fetch!(env, "CHROME_PORT")
     debugger_port = Map.fetch!(env, "DEBUGGER_PORT")
 
-    # Step 2: Verify .env exists (should be copied by `wt step copy-ignored`)
     verify_env_exists()
 
-    # Step 3: Start Podman Compose services
     start_services(branch, port, db_port, s3_port, chrome_port)
 
-    # Step 4: Run mix setup
     run_setup()
 
-    # Step 4.5: Sync usage rules (AGENTS.md dependency rules)
     sync_usage_rules()
 
-    # Step 5: Register Caddy route
     register_caddy_route(branch, port)
 
-    # Step 6: Start Phoenix server in background
     start_phoenix_server(port)
 
     Mix.shell().info("")
@@ -99,13 +94,7 @@ defmodule Mix.Tasks.Dev.Up do
   end
 
   defp parse_env(content) do
-    content
-    |> String.split("\n", trim: true)
-    |> Enum.reject(fn line -> String.starts_with?(line, "#") or String.trim(line) == "" end)
-    |> Map.new(fn line ->
-      [key, value] = String.split(line, "=", parts: 2)
-      {String.trim(key), String.trim(value)}
-    end)
+    Shared.parse_env(content)
   end
 
   defp generate_env_files(env) do
@@ -174,19 +163,7 @@ defmodule Mix.Tasks.Dev.Up do
   # otherwise try podman directly.
   # Env vars are passed inline since distrobox-host-exec doesn't forward them.
   defp podman(args, env) do
-    env_prefix = Enum.map(env, fn {k, v} -> "#{k}=#{v}" end)
-
-    cond do
-      System.find_executable("distrobox-host-exec") ->
-        # Use env command to set variables on the host side
-        System.cmd("distrobox-host-exec", ["env" | env_prefix] ++ ["podman" | args], stderr_to_stdout: true)
-
-      System.find_executable("podman") ->
-        System.cmd("podman", args, env: env, stderr_to_stdout: true)
-
-      System.find_executable("docker") ->
-        System.cmd("docker", args, env: env, stderr_to_stdout: true)
-    end
+    Shared.podman(args, env)
   end
 
   defp wait_for_postgres(port, attempts \\ 30) do
@@ -338,15 +315,7 @@ defmodule Mix.Tasks.Dev.Up do
   end
 
   defp sanitize_branch(branch) do
-    branch
-    |> String.downcase()
-    |> String.replace(~r/[^a-z0-9-]/, "-")
-    |> String.replace(~r/-+/, "-")
-    |> String.trim("-")
-    |> case do
-      "" -> "main"
-      sanitized -> sanitized
-    end
+    Shared.sanitize_branch(branch)
   end
 
   defp dev_hostname(branch) do

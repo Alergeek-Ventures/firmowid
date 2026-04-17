@@ -26,11 +26,7 @@ defmodule FirmowidWeb.Auth.Views.SettingsTest do
   end
 
   describe "update email form" do
-    setup %{conn: conn} do
-      password = valid_user_password()
-      user = user_fixture(%{password: password})
-      %{conn: log_in_user(conn, user), user: user, password: password}
-    end
+    setup :setup_logged_in_user_with_password
 
     test "updates the user email", %{conn: conn, password: password, user: user} do
       new_email = unique_user_email()
@@ -83,11 +79,7 @@ defmodule FirmowidWeb.Auth.Views.SettingsTest do
   end
 
   describe "update password form" do
-    setup %{conn: conn} do
-      password = valid_user_password()
-      user = user_fixture(%{password: password})
-      %{conn: log_in_user(conn, user), user: user, password: password}
-    end
+    setup :setup_logged_in_user_with_password
 
     test "updates the user password", %{conn: conn, user: user, password: password} do
       new_password = valid_user_password()
@@ -201,5 +193,11 @@ defmodule FirmowidWeb.Auth.Views.SettingsTest do
       assert {:redirect, %{to: path}} = redirect
       assert path == ~p"/zaloguj"
     end
+  end
+
+  defp setup_logged_in_user_with_password(%{conn: conn}) do
+    password = valid_user_password()
+    user = user_fixture(%{password: password})
+    %{conn: log_in_user(conn, user), user: user, password: password}
   end
 end

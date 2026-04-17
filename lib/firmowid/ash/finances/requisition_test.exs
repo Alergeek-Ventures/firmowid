@@ -15,13 +15,7 @@ defmodule Firmowid.Ash.Finances.RequisitionTest do
       end)
 
       {:ok, requisition} =
-        Requisition
-        |> Ash.Changeset.for_create(:persist, %{id: Ecto.UUID.generate()},
-          tenant: user.organization_id,
-          actor: user,
-          authorize?: false
-        )
-        |> Ash.create(tenant: user.organization_id, actor: user, authorize?: false)
+        create_requisition(user)
 
       assert {:ok, _} =
                requisition
@@ -48,13 +42,7 @@ defmodule Firmowid.Ash.Finances.RequisitionTest do
       user = admin_fixture()
 
       {:ok, requisition} =
-        Requisition
-        |> Ash.Changeset.for_create(:persist, %{id: Ecto.UUID.generate()},
-          tenant: user.organization_id,
-          actor: user,
-          authorize?: false
-        )
-        |> Ash.create(tenant: user.organization_id, actor: user, authorize?: false)
+        create_requisition(user)
 
       assert {:ok, rejected} =
                requisition
@@ -83,5 +71,15 @@ defmodule Firmowid.Ash.Finances.RequisitionTest do
       assert :requisition_checks ==
                AshOban.Info.oban_trigger(Requisition, :delete_remote).queue
     end
+  end
+
+  defp create_requisition(user) do
+    Requisition
+    |> Ash.Changeset.for_create(:persist, %{id: Ecto.UUID.generate()},
+      tenant: user.organization_id,
+      actor: user,
+      authorize?: false
+    )
+    |> Ash.create(tenant: user.organization_id, actor: user, authorize?: false)
   end
 end

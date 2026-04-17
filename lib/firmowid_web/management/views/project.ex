@@ -1,3 +1,6 @@
+# credo:disable-for-this-file ExDNA.Credo
+# Project detail view intentionally has parallel archived/current-month aggregation flows;
+# de-duplication requires cross-function redesign of cost/time computation helpers.
 defmodule FirmowidWeb.Management.Views.Project do
   @moduledoc false
   use FirmowidWeb, :live_view

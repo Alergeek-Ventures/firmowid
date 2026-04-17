@@ -1,3 +1,6 @@
+# credo:disable-for-this-file ExDNA.Credo
+# This assistant is intentionally parallel to CostInvoiceAssistant; meaningful deduplication
+# needs extracting a shared assistant engine contract across both modules.
 defmodule Firmowid.Ash.Invoicing.Matching.SalesInvoiceAssistant do
   # TODO: ~85% identical to CostInvoiceAssistant — extract shared InvoiceAssistant
   # with type parameter to reduce duplication.

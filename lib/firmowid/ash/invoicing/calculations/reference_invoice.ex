@@ -11,6 +11,8 @@ defmodule Firmowid.Ash.Invoicing.Calculations.ReferenceInvoice do
   """
   use Ash.Resource.Calculation
 
+  alias Firmowid.Ash.Invoicing.Utilities.SafeTimestamp
+
   @impl true
   def load(_query, _opts, _context) do
     [:corrected_invoice, corrected_invoice: [corrections: :sales_invoice_items]]
@@ -25,26 +27,14 @@ defmodule Firmowid.Ash.Invoicing.Calculations.ReferenceInvoice do
 
   defp reference_for(%{ksef_invoice_kind: :kor, corrected_invoice: %{corrections: corrections}} = invoice)
        when is_list(corrections) do
-    my_timestamp = safe_timestamp(invoice)
+    my_timestamp = SafeTimestamp.safe_timestamp(invoice)
 
     corrections
     |> Enum.reject(fn correction ->
-      correction.id == invoice.id or safe_after?(correction, my_timestamp)
+      correction.id == invoice.id or SafeTimestamp.safe_after?(correction, my_timestamp)
     end)
-    |> Enum.max_by(&safe_timestamp/1, DateTime, fn -> invoice.corrected_invoice end)
+    |> Enum.max_by(&SafeTimestamp.safe_timestamp/1, DateTime, fn -> invoice.corrected_invoice end)
   end
 
   defp reference_for(_), do: nil
-
-  defp safe_timestamp(record) do
-    case {record.locked_at, record.inserted_at} do
-      {%DateTime{} = ts, _} -> ts
-      {_, %DateTime{} = ts} -> ts
-      _ -> ~U[1970-01-01 00:00:00Z]
-    end
-  end
-
-  defp safe_after?(record, %DateTime{} = reference) do
-    DateTime.after?(safe_timestamp(record), reference)
-  end
 end

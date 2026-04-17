@@ -1,3 +1,6 @@
+# credo:disable-for-this-file ExDNA.Credo
+# Wizard step actions intentionally repeat field lists/validations per step; extracting this
+# would require broader action DSL redesign across WizardDraft and related changes/validations.
 defmodule Firmowid.Ash.Invoicing.WizardDraft do
   @moduledoc """
   Ash resource backed by ETS for the sales invoice creator wizard.
@@ -146,21 +149,19 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
                 payment_method_field: :payment_method, seller_account_field: :seller_account_number}
     end
 
-    # Preview step: update invoice and internal notes
     update :update_notes do
       require_atomic? false
 
       accept [:invoice_note, :internal_note]
     end
 
-    # Resets the bank account number without running payment step validations.
-    # Used when currency changes in step 2 — payment fields aren't set yet.
+    # Purposefully bypasses payment validations; currency can change before sale_date,
+    # due_date, and payment_method are filled, but we still need to clear stale IBAN.
     update :reset_bank_account do
       require_atomic? false
       change set_attribute(:seller_account_number, nil)
     end
 
-    # For copy-from-invoice: populate multiple steps at once
     update :populate_from_invoice do
       require_atomic? false
 
@@ -228,7 +229,6 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
       default: :counterparty,
       public?: true
 
-    # Step 1 -- Counterparty
     attribute :counterparty_id, :uuid_v7, public?: true
 
     attribute :buyer_type, :atom,
@@ -259,7 +259,6 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
     attribute :currency, :string, default: "PLN", public?: true
     attribute :seller_account_number, :string, public?: true
 
-    # Step 3 -- Payment
     attribute :sale_date, :date, public?: true
     attribute :due_date, :date, public?: true
 

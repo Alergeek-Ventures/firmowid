@@ -1,10 +1,9 @@
 defmodule Firmowid.Ash.Invoicing.Matching.Windowing do
   @moduledoc """
-  This module is responsible for pre-filtering transactions, narrowing set of
-  every transaction available to the ones relevant to the invoice.
+  Pre-filters transactions to a broad candidate set for invoice matching.
 
-  Pre-filtering is very broad and is only meant to be used as a first step
-  in the matching process.
+  The filter is intentionally permissive and is meant only as the first
+  narrowing step before detailed matching.
   """
 
   alias Firmowid.Ash.Currencies.Converter, as: Currencies

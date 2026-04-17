@@ -11,6 +11,8 @@ defmodule Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections do
   """
   use Ash.Resource.Calculation
 
+  alias Firmowid.Ash.Invoicing.Utilities.SafeTimestamp
+
   @impl true
   def load(_query, _opts, _context) do
     [:corrections, corrections: :sales_invoice_items]
@@ -28,7 +30,7 @@ defmodule Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections do
   Ash.load! re-fetching relationships (which may lose attribute selection).
   """
   def annotate(%{corrections: corrections} = invoice) when is_list(corrections) do
-    sorted = Enum.sort_by(corrections, &safe_timestamp/1, DateTime)
+    sorted = Enum.sort_by(corrections, &SafeTimestamp.safe_timestamp/1, DateTime)
     references = [invoice | sorted]
 
     [sorted, references]
@@ -41,12 +43,4 @@ defmodule Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections do
   end
 
   def annotate(_), do: []
-
-  defp safe_timestamp(record) do
-    case {record.locked_at, record.inserted_at} do
-      {%DateTime{} = ts, _} -> ts
-      {_, %DateTime{} = ts} -> ts
-      _ -> ~U[1970-01-01 00:00:00Z]
-    end
-  end
 end

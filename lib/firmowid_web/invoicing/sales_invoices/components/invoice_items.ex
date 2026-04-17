@@ -433,10 +433,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     """
   end
 
-  # Build a Phoenix form from whatever source type we get
   defp build_form(%AshPhoenix.Form{} = form), do: FormData.to_form(form, [])
 
-  # Get nested item forms for error extraction
   defp get_nested_item_forms(%AshPhoenix.Form{} = form, items_field) do
     form.forms
     |> access_forms(items_field)

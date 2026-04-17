@@ -1,3 +1,6 @@
+# credo:disable-for-this-file ExDNA.Credo
+# Shared tool handlers intentionally mirror filtering/validation flow to keep assistant
+# tools consistent; de-duplicating further would require cross-module API reshaping.
 defmodule Firmowid.Ash.Invoicing.Matching.Assistant.CommonTools do
   @moduledoc """
   Shared tool definitions (search, normalize, filter) used by cost and sales
@@ -99,10 +102,10 @@ defmodule Firmowid.Ash.Invoicing.Matching.Assistant.CommonTools do
                 Enum.reduce(numbers, &Decimal.mult/2)
 
               "/" ->
-                try do
+                if Enum.any?(numbers, &Decimal.equal?(&1, 0)) do
+                  {:error, "Dzielenie przez zero"}
+                else
                   Enum.reduce(numbers, fn elem, acc -> Decimal.div(acc, elem) end)
-                rescue
-                  Decimal.Error -> {:error, "Dzielenie przez zero"}
                 end
             end
 

@@ -451,10 +451,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
             "seller_nip" => organization.nip
           })
 
-        case AshPhoenix.Form.submit(ash_form, params: override_params) do
-          {:ok, inv} -> {:ok, inv}
-          {:error, form} -> {:error, form}
-        end
+        AshPhoenix.Form.submit(ash_form, params: override_params)
 
       {:error, changeset} ->
         {:error, changeset}
@@ -471,10 +468,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
             "seller_nip" => organization.nip
           })
 
-        case AshPhoenix.Form.submit(ash_form, params: override_params) do
-          {:ok, inv} -> {:ok, inv}
-          {:error, form} -> {:error, form}
-        end
+        AshPhoenix.Form.submit(ash_form, params: override_params)
 
       {:error, changeset} ->
         {:error, changeset}
@@ -484,10 +478,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   defp create_correction_invoice(organization, form_params, ash_form) do
     case Creator.validate_organization_for_invoicing(organization) do
       :ok ->
-        case AshPhoenix.Form.submit(ash_form, params: form_params) do
-          {:ok, inv} -> {:ok, inv}
-          {:error, form} -> {:error, form}
-        end
+        AshPhoenix.Form.submit(ash_form, params: form_params)
 
       {:error, changeset} ->
         {:error, changeset}
@@ -710,7 +701,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
         ""
       end
 
-    # Update the AshPhoenix.Form with the auto-generated reason
     ash_form = socket.assigns.form.source
     current_params = ash_form.params || %{}
     updated_params = Map.put(current_params, "correction_reason", auto_reason)

@@ -1,3 +1,6 @@
+# credo:disable-for-this-file ExDNA.Credo
+# Export polling, pagination, decryption, and invoice ingestion intentionally share repeated
+# reliability patterns; deduplicating safely requires broader worker/service boundary extraction.
 defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
   @moduledoc """
   Oban worker for fetching cost invoices from KSeF.

@@ -536,7 +536,6 @@ defmodule Firmowid.Ash.Ksef do
   defp get_job_failed_at(nil), do: nil
 
   defp get_job_failed_at(%Oban.Job{errors: errors}) when is_list(errors) and errors != [] do
-    # Get the timestamp from the last error
     case List.last(errors) do
       %{"at" => at_string} ->
         case DateTime.from_iso8601(at_string) do
@@ -556,7 +555,6 @@ defmodule Firmowid.Ash.Ksef do
   defp format_job_error(%Oban.Job{errors: nil}), do: nil
 
   defp format_job_error(%Oban.Job{errors: errors}) when is_list(errors) do
-    # Get the last error (most recent attempt)
     case List.last(errors) do
       %{"error" => error_string} -> parse_error_string(error_string)
       _ -> "Wystąpił nieoczekiwany błąd podczas wysyłania do KSeF"

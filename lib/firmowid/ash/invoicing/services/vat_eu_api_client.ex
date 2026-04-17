@@ -24,10 +24,7 @@ defmodule Firmowid.Ash.Invoicing.Services.VatEuApiClient do
 
     case Req.post(@endpoint, json: payload) do
       {:ok, %Req.Response{status: 200, body: body}} ->
-        case normalize_response(body) do
-          {:ok, response} -> {:ok, response}
-          {:error, reason} -> {:error, reason}
-        end
+        normalize_response(body)
 
       {:ok, %Req.Response{status: 400}} ->
         {:error, :invalid_request}

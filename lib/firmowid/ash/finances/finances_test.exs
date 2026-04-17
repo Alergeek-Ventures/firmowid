@@ -156,7 +156,6 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
     end
 
     test "does not find transactions across organizations", ctx do
-      # Create a second org with its own transaction
       user2 = user_fixture()
       org2_id = user2.organization_id
 
@@ -176,7 +175,6 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
         |> Finances.list_transactions!(actor: ctx.user, tenant: ctx.org_id)
         |> Enum.map(& &1.id)
 
-      # Should see all 3 setup transactions but not org2's
       assert ctx.pending_tx.id in org1_ids
       assert ctx.skipped_tx.id in org1_ids
       assert ctx.matched_tx.id in org1_ids

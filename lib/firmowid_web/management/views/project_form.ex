@@ -44,24 +44,7 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
     {:noreply, assign(socket, :form, form)}
   end
 
-  def handle_event("save", %{"project" => params}, %{assigns: %{live_action: :new}} = socket) do
-    case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
-      {:ok, project} ->
-        case set_project_users(project, socket.assigns.project_users, socket.assigns.ash_scope) do
-          :ok ->
-            {:noreply, push_navigate(socket, to: ~p"/zarzadzanie/projekty/#{project.id}")}
-
-          :error ->
-            LiveToast.send_toast(:error, "Nie udało się zapisać pracowników")
-            {:noreply, socket}
-        end
-
-      {:error, form} ->
-        {:noreply, assign(socket, :form, to_form(form))}
-    end
-  end
-
-  def handle_event("save", %{"project" => params}, %{assigns: %{live_action: :edit}} = socket) do
+  def handle_event("save", %{"project" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
       {:ok, project} ->
         case set_project_users(project, socket.assigns.project_users, socket.assigns.ash_scope) do

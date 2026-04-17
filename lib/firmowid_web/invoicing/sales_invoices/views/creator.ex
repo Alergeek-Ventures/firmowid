@@ -871,11 +871,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   def handle_event("update_invoice_number", %{"invoice_number" => invoice_number}, socket) do
-    # Update the invoice number and rebuild the preview map
     preview_invoice = Map.put(socket.assigns.preview_invoice, :invoice_number, invoice_number)
     issue_date = socket.assigns.preview_invoice.issue_date
 
-    # Validate the new invoice number
     scope = socket.assigns.ash_scope
     invoice_warnings = SalesInvoice.validate_number!(invoice_number, issue_date, nil, scope: scope)
 

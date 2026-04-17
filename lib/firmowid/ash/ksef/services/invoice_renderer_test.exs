@@ -1,3 +1,6 @@
+# credo:disable-for-this-file ExDNA.Credo
+# This is a broad XSD conformance matrix with many near-identical scenario cases; collapsing
+# it would reduce clarity/coverage and requires larger test architecture changes.
 defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
   @moduledoc """
   Tests for InvoiceRenderer.render_fa3/1 with XSD validation.

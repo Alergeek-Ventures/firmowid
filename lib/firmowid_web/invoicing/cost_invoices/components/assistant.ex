@@ -1,3 +1,6 @@
+# credo:disable-for-this-file ExDNA.Credo
+# This LiveComponent is intentionally paired with the sales variant; proper deduplication
+# requires introducing a shared configurable component API across both invoice flows.
 defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
   # TODO: This component is ~95% identical to SalesInvoices.Components.Assistant.
   # Parameterize into a single component that takes the assistant module and

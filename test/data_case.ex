@@ -1,10 +1,8 @@
 defmodule Firmowid.DataCase do
   @moduledoc """
-  This module defines the setup for tests requiring
-  access to the application's data layer.
+  Shared test setup for specs that access the data layer.
 
-  You may define functions here to be used as helpers in
-  your tests.
+  Place database-focused test helpers here.
 
   Finally, if the test case interacts with the database,
   we enable the SQL sandbox, so changes done to the database

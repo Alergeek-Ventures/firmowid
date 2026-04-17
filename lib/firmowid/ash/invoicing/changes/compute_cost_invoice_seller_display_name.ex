@@ -10,8 +10,6 @@ defmodule Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName do
 
   alias Firmowid.Ash.Invoicing.Services.SellerDisplayNameEnrichment
 
-  require Logger
-
   @impl true
   def change(changeset, _opts, context) do
     seller = value(changeset, :seller)
@@ -25,16 +23,10 @@ defmodule Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName do
 
   defp assign_seller_display_name(changeset, context) do
     seller_display_name =
-      try do
-        SellerDisplayNameEnrichment.generate_display_name(document(changeset),
-          current_cost_invoice_id: changeset.data.id,
-          ash_opts: Ash.Context.to_opts(context)
-        )
-      rescue
-        error ->
-          Logger.warning("Failed to compute cost invoice seller display name: #{inspect(error)}")
-          nil
-      end
+      SellerDisplayNameEnrichment.generate_display_name(document(changeset),
+        current_cost_invoice_id: changeset.data.id,
+        ash_opts: Ash.Context.to_opts(context)
+      )
 
     case seller_display_name do
       value when is_binary(value) and value != "" ->

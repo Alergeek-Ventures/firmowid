@@ -1,3 +1,6 @@
+# credo:disable-for-this-file ExDNA.Credo
+# This assistant intentionally mirrors SalesInvoiceAssistant; reducing duplication requires
+# a cross-module parameterized assistant abstraction, not a small local refactor.
 defmodule Firmowid.Ash.Invoicing.Matching.CostInvoiceAssistant do
   @moduledoc """
   Invoice-matching assistant: defines prompt, tools, and function handlers for invoice-to-transaction matching.

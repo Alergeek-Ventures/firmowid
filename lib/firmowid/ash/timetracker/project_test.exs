@@ -10,17 +10,7 @@ defmodule Firmowid.Ash.Timetracker.ProjectTest do
 
   require Ash.Query
 
-  setup do
-    admin = admin_fixture()
-    org_id = admin.organization_id
-
-    scope = %Firmowid.Ash.Scope{
-      actor: admin,
-      tenant: org_id
-    }
-
-    %{user: admin, org_id: org_id, scope: scope}
-  end
+  setup :setup_scope
 
   describe "create/2" do
     test "creates a project", %{scope: scope} do
@@ -116,5 +106,17 @@ defmodule Firmowid.Ash.Timetracker.ProjectTest do
 
       assert active_ids == Enum.sort([user.id, user2.id])
     end
+  end
+
+  defp setup_scope(_) do
+    admin = admin_fixture()
+    org_id = admin.organization_id
+
+    scope = %Firmowid.Ash.Scope{
+      actor: admin,
+      tenant: org_id
+    }
+
+    %{user: admin, org_id: org_id, scope: scope}
   end
 end

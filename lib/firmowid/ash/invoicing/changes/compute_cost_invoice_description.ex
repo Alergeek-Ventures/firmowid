@@ -9,8 +9,6 @@ defmodule Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceDescription do
 
   alias Firmowid.Ash.Invoicing.Services.OpenAIEnrichment
 
-  require Logger
-
   @impl true
   def change(changeset, _opts, _context) do
     seller = value(changeset, :seller)
@@ -27,20 +25,14 @@ defmodule Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceDescription do
 
   defp assign_description(changeset, seller, items_list) do
     description =
-      try do
-        OpenAIEnrichment.generate_description(%{"seller" => seller, "items_list" => items_list})
-      rescue
-        error ->
-          Logger.warning("Failed to compute cost invoice description: #{inspect(error)}")
-          nil
-      end
+      %{"seller" => seller, "items_list" => items_list}
+      |> OpenAIEnrichment.generate_description()
+      |> String.trim()
 
-    case description do
-      value when is_binary(value) ->
-        Ash.Changeset.force_change_attribute(changeset, :description, String.trim(value))
-
-      _ ->
-        changeset
+    if description == "" do
+      changeset
+    else
+      Ash.Changeset.force_change_attribute(changeset, :description, description)
     end
   end
 

@@ -101,7 +101,13 @@ defmodule Firmowid.Ash.Core do
     end
   end
 
-  @doc false
+  @doc """
+  Runs user-destruction flow inside an existing transaction context.
+
+  This function is public so transaction wrappers and integration tests can
+  execute the same deletion logic when they already control transaction scope.
+  Prefer `destroy_user/2` in regular application code.
+  """
   @spec destroy_user_in_transaction(User.t(), Keyword.t()) :: :ok | {:error, term()}
   def destroy_user_in_transaction(%User{} = user, opts \\ []) do
     with :ok <- maybe_destroy_owned_organization_in_transaction(user, opts) do
@@ -109,7 +115,13 @@ defmodule Firmowid.Ash.Core do
     end
   end
 
-  @doc false
+  @doc """
+  Runs organization-destruction flow inside an existing transaction context.
+
+  It deletes dependent projects and tag definitions, clears organization
+  assignment for users, and then destroys the organization.
+  Prefer `destroy_organization/2` in regular application code.
+  """
   @spec destroy_organization_in_transaction(Organization.t(), Keyword.t()) ::
           :ok | {:error, term()}
   def destroy_organization_in_transaction(%Organization{} = organization, opts \\ []) do

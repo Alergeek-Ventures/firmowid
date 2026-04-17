@@ -56,15 +56,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
     test "handles accept notification without crashing", %{conn: conn, user: user} do
       requisition_id = Ecto.UUID.generate()
 
-      # Create pending requisition
-      {:ok, requisition} =
-        Requisition
-        |> Ash.Changeset.for_create(:persist, %{id: requisition_id},
-          tenant: user.organization_id,
-          actor: user,
-          authorize?: false
-        )
-        |> Ash.create(tenant: user.organization_id, actor: user, authorize?: false)
+      {:ok, requisition} = create_requisition(user, requisition_id)
 
       # Mount the LiveView (subscribes to PubSub topics)
       {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
@@ -90,15 +82,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
     test "handles reject notification without crashing", %{conn: conn, user: user} do
       requisition_id = Ecto.UUID.generate()
 
-      # Create pending requisition
-      {:ok, requisition} =
-        Requisition
-        |> Ash.Changeset.for_create(:persist, %{id: requisition_id},
-          tenant: user.organization_id,
-          actor: user,
-          authorize?: false
-        )
-        |> Ash.create(tenant: user.organization_id, actor: user, authorize?: false)
+      {:ok, requisition} = create_requisition(user, requisition_id)
 
       # Mount the LiveView
       {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/fakturowanie")
@@ -119,5 +103,15 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       # Verify LiveView is still alive and responsive
       assert render(view) =~ "Fakturowanie"
     end
+  end
+
+  defp create_requisition(user, requisition_id) do
+    Requisition
+    |> Ash.Changeset.for_create(:persist, %{id: requisition_id},
+      tenant: user.organization_id,
+      actor: user,
+      authorize?: false
+    )
+    |> Ash.create(tenant: user.organization_id, actor: user, authorize?: false)
   end
 end

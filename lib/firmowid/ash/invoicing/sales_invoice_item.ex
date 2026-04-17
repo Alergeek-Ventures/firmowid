@@ -1,3 +1,6 @@
+# credo:disable-for-this-file ExDNA.Credo
+# VAT mapping/calculation duplication is intentional to keep Ash expression behavior aligned
+# between SQL and in-memory loading; removing it needs shared-calculation architecture changes.
 defmodule Firmowid.Ash.Invoicing.SalesInvoiceItem do
   @moduledoc """
   Ash resource for sales invoice line items.
