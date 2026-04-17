@@ -751,8 +751,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
         <% end %>
         <p class="text-center">
           {case @invoice_type do
-            :poland -> "Faktura wygenerowana za pomocą"
-            :foreign -> "Invoice generated with"
+            :poland -> "Faktura za pomocą"
+            :foreign -> "Invoice from"
           end}
           <a class="font-black" href="https://firmowid.pl" target="_blank" rel="noreferrer noopener">
             Firmowid.pl
@@ -776,7 +776,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
     assigns = assign(assigns, :qrcode, qrcode)
 
     ~H"""
-    <div class="absolute right-8 bottom-8 flex w-24 flex-col items-center justify-center">
+    <div class="absolute right-12 bottom-12 flex w-24 flex-col items-center justify-center">
       <p class="text-center text-[8px] font-medium">
         <%= case @sales_invoice.invoice_type do %>
           <% :poland -> %>
