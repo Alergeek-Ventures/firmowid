@@ -9,11 +9,6 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
   alias FirmowidWeb.Infrastructure.Utilities.PdfHelpers
 
   @item_calcs [:net_value, :vat_value, :gross_value]
-  @footer_logo_path Path.join(
-                      :code.priv_dir(:firmowid),
-                      "static/images/invoice_firmowid_logo.png"
-                    )
-
   @doc """
   Generates the base sales-invoice PDF.
   """
@@ -27,7 +22,7 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
     logo_url = Keyword.get(opts, :logo_url, Map.get(invoice, :logo_url))
 
     logo_data_uri = PdfHelpers.url_to_data_uri(logo_url)
-    footer_logo_data_uri = PdfHelpers.file_to_data_uri(@footer_logo_path)
+    footer_logo_data_uri = PdfHelpers.file_to_data_uri(footer_logo_path())
 
     invoice =
       invoice
@@ -76,6 +71,10 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
       )
 
     %{invoice | reference_invoice: reference_invoice}
+  end
+
+  defp footer_logo_path do
+    Path.join(:code.priv_dir(:firmowid), "static/images/invoice_firmowid_logo.png")
   end
 
   defp ash_opts(invoice, nil), do: [tenant: invoice.organization_id]
