@@ -29,6 +29,11 @@
     "sentry": {
       "type": "remote",
       "url": "https://mcp.sentry.dev/mcp/alergeek/firmowid"
+    },
+    "figma": {
+      "type": "remote",
+      "url": "https://mcp.figma.com/mcp",
+      "enabled": true
     }
   }
 }
