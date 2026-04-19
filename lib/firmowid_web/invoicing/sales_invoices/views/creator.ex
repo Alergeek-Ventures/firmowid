@@ -1124,8 +1124,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     range_start = Date.shift(first_of_this_month, month: -2)
     range_end = Date.shift(first_of_this_month, day: -1)
 
-    SalesInvoice.read!(
-      %{date_from: range_start, date_to: range_end, kind: :vat, submission: :confirmed},
+    Invoicing.list_sales_invoices!(
+      %{
+        date_from: range_start,
+        date_to: range_end,
+        kind: :vat,
+        submission: :confirmed,
+        limit: 10
+      },
       load: [:buyer_display_name_label, :gross_value],
       scope: scope
     )

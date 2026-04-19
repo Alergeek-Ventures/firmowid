@@ -129,6 +129,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
       argument :ids, {:array, :uuid_v7}
 
+      argument :limit, :integer do
+        constraints min: 1
+      end
+
       # Date filtering — conditional on date_field
       prepare {Firmowid.Ash.Invoicing.Preparations.FilterByDateField, []}
 
@@ -180,6 +184,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
 
       prepare build(sort: [issue_date: :desc])
+
+      prepare build(limit: arg(:limit)) do
+        where present(:limit)
+      end
     end
 
     read :by_id do

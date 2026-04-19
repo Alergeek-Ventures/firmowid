@@ -33,12 +33,20 @@
           Nie wprowadziłeś jeszcze żadnego kontrahenta.
           Wprowadź go, klikając poniżej, aby wystawić fakturę.
         </p>
-        <.button
-          type="button"
-          color="turquoise"
+        <span
+          id="add-counterparty-disabled-tooltip"
+          class="inline-flex"
+          phx-hook="Tippy"
+          data-tippy-content="w trakcie prac - wprowadź kontrahenta ręcznie przyciskiem w prawym górnym rogu ekranu"
         >
-          Dodaj kontrahenta
-        </.button>
+          <.button
+            type="button"
+            color="turquoise"
+            disabled
+          >
+            Dodaj kontrahenta
+          </.button>
+        </span>
       </div>
 
       <div
