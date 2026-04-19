@@ -95,9 +95,8 @@
 
           <.button
             type="button"
-            color="light_grey"
+            variant="secondary"
             size="small"
-            new={true}
             class="col-start-2 justify-self-end"
             phx-click={show_modal("buyer-edit-modal")}
           >
@@ -211,8 +210,7 @@
     <div class="col-start-2 col-end-9 mb-14 flex justify-end gap-4">
       <.button
         type="button"
-        color="light_grey"
-        new={true}
+        variant="secondary"
         phx-click="cancel_edit"
       >
         Anuluj
@@ -221,8 +219,7 @@
       <.button
         :if={is_nil(@invoice.ksef_number) and @invoice.ksef_invoice_kind == :vat}
         type="button"
-        color="light_grey"
-        new={true}
+        variant="secondary"
         phx-click="save_as_draft"
         phx-disable-with="Zapisywanie..."
       >
@@ -231,8 +228,8 @@
 
       <.button
         type="submit"
-        color="turquoise"
-        new={true}
+        variant="primary"
+        accent="turquoise"
       >
         {if @invoice.ksef_number,
           do: "Wystaw fakturę korygującą",
@@ -367,8 +364,8 @@
         <div class="flex justify-end pt-4">
           <.button
             type="button"
-            color="turquoise"
-            new={true}
+            variant="primary"
+            accent="turquoise"
             phx-click={hide_modal("buyer-edit-modal")}
           >
             Zamknij

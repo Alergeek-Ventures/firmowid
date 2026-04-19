@@ -81,9 +81,8 @@
 
               <.button
                 type="button"
-                new={true}
                 id="toggle_extended_form"
-                color="light_grey"
+                variant="secondary"
                 class="size-8! rounded-lg! p-0!"
                 phx-click="toggle_extended_form"
                 data-active={@is_form_extended}
@@ -130,10 +129,7 @@
 
                   <.button
                     :if={!@current_session}
-                    new={true}
-                    variant="solid"
-                    color="orange"
-                    size="medium"
+                    variant="primary"
                     class="w-31.5"
                     disabled={is_hours_record_submitted}
                   >
@@ -141,12 +137,9 @@
                   </.button>
                   <.button
                     :if={@current_session}
-                    new={true}
                     phx-click="end_session"
                     type="button"
-                    variant="solid"
-                    color="orange"
-                    size="medium"
+                    variant="primary"
                     class="w-31.5"
                     disabled={is_hours_record_submitted}
                   >
@@ -167,10 +160,7 @@
                   <.button
                     phx-click="end_session"
                     type="button"
-                    variant="solid"
-                    color="orange"
-                    size="medium"
-                    new={true}
+                    variant="primary"
                     class="w-31.5"
                   >
                     Stop
@@ -185,10 +175,7 @@
                     <p class="text-orangeText text-center">w {@month_stats.month}</p>
                   </div>
                   <.button
-                    new={true}
-                    variant="solid"
-                    color="orange"
-                    size="medium"
+                    variant="primary"
                     class="w-31.5"
                     disabled={is_hours_record_submitted}
                   >
@@ -265,14 +252,14 @@
         </div>
       </div>
 
-      <.button
+      <FirmowidWeb.DesignSystem.Components.CoreComponents.button
         :if={@next_sessions_after}
         phx-click="load_more"
         color="grey"
         class="mx-auto block"
       >
         Pokaż więcej
-      </.button>
+      </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
     </div>
   </div>
 </div>
@@ -320,16 +307,13 @@
           JS.push("cancel_overlap_save")
           |> hide_modal("overlap-confirmation")
         }
-        new={true}
-        color="grey"
+        variant="tertiary"
       >
         Anuluj
       </.button>
       <.button
         phx-click="confirm_overlap_save"
-        variant="solid"
-        color="orange"
-        new={true}
+        variant="primary"
         phx-disable-with="Zapisywanie..."
       >
         Zapisz i dostosuj sesje

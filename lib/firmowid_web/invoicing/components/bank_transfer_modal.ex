@@ -2,6 +2,9 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
   @moduledoc false
   use FirmowidWeb, :live_component
 
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Button
+
   attr :invoice, :map, required: true
 
   @impl true
@@ -20,9 +23,8 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
         phx-click={show_modal("bank-transfer-modal")}
         type="button"
         class="w-full"
-        color="grey"
+        variant="tertiary"
         size="small"
-        new={true}
       >
         Skopiuj dane
       </.button>
@@ -53,9 +55,8 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
                 onclick={"navigator.clipboard.writeText('#{value}')"}
                 type="button"
                 class="size-6"
-                color="light_grey"
+                variant="secondary"
                 size="small"
-                new={true}
               >
                 <.icon name="hero-clipboard-document-solid" class="size-4 shrink-0" />
               </.button>
@@ -68,8 +69,8 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
               </h4>
             </div>
             <.button
-              color="orange"
-              new={true}
+              variant="primary"
+              accent="orange"
               phx-click={hide_modal("bank-transfer-modal")}
             >
               Gotowe

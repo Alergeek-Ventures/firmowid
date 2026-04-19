@@ -14,6 +14,9 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   alias FirmowidWeb.Timetracker.Utilities.GroupedSessionForm
   alias FirmowidWeb.Timetracker.Utilities.SessionForm
 
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Button
+
   require Ash.Query
 
   @day_names %{

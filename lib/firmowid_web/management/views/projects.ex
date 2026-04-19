@@ -6,6 +6,9 @@ defmodule FirmowidWeb.Management.Views.Projects do
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.Ash.Timetracker.Session
 
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Button
+
   require Ash.Query
 
   @impl true

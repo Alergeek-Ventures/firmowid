@@ -12,6 +12,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   alias FirmowidWeb.Invoicing.FormHelpers
   alias Phoenix.HTML.FormData
 
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Button
+
   defp currency_options do
     # Use only currencies supported by NBP (plus PLN as base currency)
     nbp_currencies = NbpApiClient.supported_currencies()
@@ -227,10 +230,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       <div class="flex flex-row items-end gap-4">
         <p class="text-grey-700 mr-auto"><strong>2.</strong> Pozycje na fakturze</p>
 
-        <.button :if={false} type="button" size="small" color="light_grey" new={true}>
+        <.button :if={false} type="button" size="small" variant="secondary">
           <Lucideicons.copy /> Skopiuj poprzednie pozycje
         </.button>
-        <.button :if={false} type="button" size="small" color="light_grey" new={true}>
+        <.button :if={false} type="button" size="small" variant="secondary">
           <Lucideicons.clock /> Zaciągnij godziny
         </.button>
       </div>
@@ -379,8 +382,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       phx-value-field={@items_field}
       class="col-span-1 col-start-2 mt-3"
       size="small"
-      color="light_grey"
-      new={true}
+      variant="secondary"
     >
       <Lucideicons.plus /> Dodaj pozycję
     </.button>

@@ -12,6 +12,9 @@ defmodule FirmowidWeb.Management.Views.Project do
   alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Button
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok, socket}

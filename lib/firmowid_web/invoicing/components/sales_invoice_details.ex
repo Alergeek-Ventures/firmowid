@@ -10,6 +10,9 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   alias FirmowidWeb.Invoicing.Components.InvoiceDownloadModal
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
 
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Button
+
   require Logger
 
   @impl true
@@ -175,9 +178,8 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 <.button
                   :if={@invoice.is_deletable}
                   phx-click={show_modal("delete-invoice-modal")}
-                  color="light_grey"
+                  variant="secondary"
                   size="small"
-                  new={true}
                 >
                   <.icon name="hero-trash-solid" class="size-4" />
                   <span class="hidden xl:inline">
@@ -188,9 +190,8 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 <.button
                   :if={!!@invoice.ksef_number and not @cancelled?}
                   phx-click={show_modal("cancel-invoice-modal")}
-                  color="light_grey"
+                  variant="secondary"
                   size="small"
-                  new={true}
                 >
                   <.icon name="hero-trash-solid" class="size-4" />
                   <span class="hidden xl:inline">
@@ -215,9 +216,8 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                   SubmissionInfo.failed?(@submission_info) &&
                     "hover:bg-redText hover:ring-redText hover:text-redBg text-redText"
                 ]}
-                color="light_grey"
+                variant="secondary"
                 size="small"
-                new={true}
                 phx-click="show_timeline"
                 phx-target={@myself}
               >
@@ -245,9 +245,9 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                     else: "Wyślij do KSeF"
                 }
                 data-tippy-delay="100"
-                color="turquoise"
+                variant="primary"
+                accent="turquoise"
                 size="small"
-                new={true}
                 class={[SubmissionInfo.submitting?(@submission_info) && "cursor-wait"]}
                 phx-click="send_to_ksef"
                 phx-target={@myself}
@@ -266,14 +266,14 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                     Czy na pewno chcesz usunąć fakturę <span class="font-semibold">{@invoice.invoice_number}</span>?
                   </p>
                   <div class="mt-6 flex justify-end gap-3">
-                    <.button
+                    <FirmowidWeb.DesignSystem.Components.CoreComponents.button
                       variant="outline"
                       color="black"
                       phx-click={hide_modal("delete-invoice-modal")}
                     >
                       Anuluj
-                    </.button>
-                    <.button
+                    </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
+                    <FirmowidWeb.DesignSystem.Components.CoreComponents.button
                       color="red"
                       phx-click={
                         JS.exec("data-cancel", to: "#delete-invoice-modal")
@@ -282,7 +282,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                       phx-disable-with="Usuwanie..."
                     >
                       Usun
-                    </.button>
+                    </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
                   </div>
                 </.modal>
               </div>
@@ -294,14 +294,14 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                     Wystawimy fakturę korygującą zerującą pozycje.
                   </p>
                   <div class="mt-6 flex justify-end gap-3">
-                    <.button
+                    <FirmowidWeb.DesignSystem.Components.CoreComponents.button
                       variant="outline"
                       color="black"
                       phx-click={hide_modal("cancel-invoice-modal")}
                     >
                       Wróć
-                    </.button>
-                    <.button
+                    </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
+                    <FirmowidWeb.DesignSystem.Components.CoreComponents.button
                       color="orange"
                       phx-click={
                         JS.exec("data-cancel", to: "#cancel-invoice-modal")
@@ -310,7 +310,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                       phx-disable-with="Anulowanie..."
                     >
                       Anuluj fakturę
-                    </.button>
+                    </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
                   </div>
                 </.modal>
               </div>
@@ -325,9 +325,9 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 <.button
                   id="share-invoice-button"
                   phx-hook="CopyToClipboard"
-                  color={if @invoice.share_token, do: "turquoise", else: "light_grey"}
+                  variant={if @invoice.share_token, do: "primary", else: "secondary"}
+                  accent="turquoise"
                   size="small"
-                  new={true}
                   phx-click="create_share_link"
                 >
                   <Lucideicons.share_2 />

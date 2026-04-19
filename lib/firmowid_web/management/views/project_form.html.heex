@@ -31,7 +31,7 @@
           Anuluj
         </.link>
 
-        <.button color="grey" new={true}>
+        <.button variant="tertiary">
           {case @live_action do
             :new -> "Dodaj projekt"
             :edit -> "Zapisz zmiany"
@@ -199,10 +199,9 @@
           <%= if entry.removed_from_project do %>
             <.button
               type="button"
-              color="light_grey"
+              variant="secondary"
               size="small"
               class="ml-auto"
-              new={true}
               phx-click="restore_user"
               phx-value-user_id={entry.user.id}
             >
@@ -214,7 +213,6 @@
               variant="ghost"
               size="small"
               class="ml-auto"
-              new={true}
               phx-click="remove_user"
               phx-value-user_id={entry.user.id}
             >

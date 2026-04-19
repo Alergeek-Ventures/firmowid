@@ -25,6 +25,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
 
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Button
+
   require Logger
 
   embed_templates "creator_*"

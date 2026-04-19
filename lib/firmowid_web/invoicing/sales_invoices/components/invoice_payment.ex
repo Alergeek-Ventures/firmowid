@@ -4,6 +4,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
 
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
 
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Button
+
   attr :invoice, :map, required: true
   attr :bank_accounts, :list, required: true
   attr :selected_bank_account, :map, required: false
@@ -28,8 +31,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
           type="button"
           size="small"
           class="h-8"
-          color="light_grey"
-          new={true}
+          variant="secondary"
           phx-click="suggest_payment_date"
           phx-value-field="sale_date"
           phx-value-suggestion={suggestion}
@@ -53,8 +55,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
           :for={{suggestion, label} <- PaymentDateSuggestions.due_date_suggestions()}
           type="button"
           size="small"
-          color="light_grey"
-          new={true}
+          variant="secondary"
           class="h-8"
           phx-click="suggest_payment_date"
           phx-value-field="due_date"
@@ -119,8 +120,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
           <.button
             type="button"
             size="small"
-            color="light_grey"
-            new={true}
+            variant="secondary"
             class="col-span-2 my-4"
             phx-click={show_modal("bank_account_selector_modal")}
           >
@@ -167,8 +167,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
             <.button
               type="button"
               size="small"
-              color="light_grey"
-              new={true}
+              variant="secondary"
               class="ml-auto h-min"
               phx-click={show_modal("bank_account_selector_modal")}
             >
@@ -225,7 +224,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
                     type="button"
                     size="small"
                     variant="outline"
-                    new={true}
                     phx-click="select_bank_account"
                     phx-value-account_id={account.id}
                   >
@@ -236,7 +234,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
                     type="button"
                     size="small"
                     variant="outline"
-                    new={true}
                     phx-click="select_bank_account"
                     phx-value-account_id={account.id}
                   >
@@ -250,8 +247,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
           <div class="mt-6 flex justify-end">
             <.button
               type="button"
-              color="turquoise"
-              new={true}
+              variant="primary"
+              accent="turquoise"
               phx-click={hide_modal("bank_account_selector_modal")}
             >
               Dalej

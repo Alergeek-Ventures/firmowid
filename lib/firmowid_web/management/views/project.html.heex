@@ -20,7 +20,7 @@
     </div>
 
     <div :if={!@project.archived_at} class="flex flex-row gap-4">
-      <.button variant="outline" new={true} phx-click="archive_project">
+      <.button variant="outline" phx-click="archive_project">
         Archiwizuj
       </.button>
       <.link
@@ -53,14 +53,13 @@
 
     <.button
       :if={@current_user.role == :admin}
-      color="grey"
+      variant="tertiary"
       size="small"
-      new={true}
       phx-click="unarchive_project"
     >
       Przywróć projekt
     </.button>
-    <.button
+    <FirmowidWeb.DesignSystem.Components.CoreComponents.button
       :if={@can_delete_project}
       variant="outline"
       color="red"
@@ -68,7 +67,7 @@
       phx-click={show_modal("delete_project_modal")}
     >
       Usuń projekt
-    </.button>
+    </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
   </div>
 
   <div class="flex flex-col gap-12">
@@ -275,12 +274,11 @@
       <.button
         type="button"
         variant="outline"
-        new={true}
         phx-click={hide_modal("delete_project_modal")}
       >
         Anuluj
       </.button>
-      <.button
+      <FirmowidWeb.DesignSystem.Components.CoreComponents.button
         type="button"
         variant="outline"
         color="red"
@@ -288,7 +286,7 @@
         phx-disable-with="Usuwam..."
       >
         Usuń projekt
-      </.button>
+      </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
     </div>
   </div>
 </.modal>

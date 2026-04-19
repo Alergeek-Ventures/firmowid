@@ -14,6 +14,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
   alias Firmowid.Ash.Invoicing.Matching.SalesInvoiceAssistant
   alias FirmowidWeb.Invoicing.Components.Assistant, as: Components
 
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Button
+
   @impl true
   def update(%{event: {:loading, boolean}}, socket) do
     {:ok, assign(socket, :loading, boolean)}
@@ -132,7 +135,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
         phx-click="close_chat"
         phx-target="#invoice-show"
         variant="ghost"
-        new={true}
         class="absolute top-0 right-0 z-10 mb-4 h-auto p-0"
       >
         <.icon name="hero-x-mark-mini" class="size-6" />
@@ -153,7 +155,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
             "Transakcja za tę fakturę ma inną nazwę kontrahenta",
             "Opłata została wykonana znacznie później niż faktura została wystawiona",
           ] do %>
-              <.button
+              <FirmowidWeb.DesignSystem.Components.CoreComponents.button
                 phx-click="send"
                 color="orange"
                 class="h-auto rounded bg-orange-200 px-[9px] py-1 text-sm/tight font-medium text-orange-700 hover:bg-orange-700 hover:text-orange-200"
@@ -161,7 +163,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
                 phx-value-message={possible_message}
               >
                 {possible_message}
-              </.button>
+              </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
             <% end %>
           </div>
         <% end %>
@@ -177,7 +179,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
       <div :if={@waiting_for_decision} class="mb-8 flex flex-col items-center gap-3">
         <p>Połączyć te transakcje z fakturą?</p>
         <div class="grid grid-cols-2 gap-3">
-          <.button
+          <FirmowidWeb.DesignSystem.Components.CoreComponents.button
             phx-click="reject"
             phx-target={@myself}
             color="light_grey"
@@ -185,10 +187,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
             class="text-nowrap"
           >
             Szukaj dalej
-          </.button>
-          <.button phx-click="accept" phx-target={@myself} color="orange">
+          </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
+          <FirmowidWeb.DesignSystem.Components.CoreComponents.button phx-click="accept" phx-target={@myself} color="orange">
             Zatwierdź
-          </.button>
+          </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
         </div>
       </div>
     </div>

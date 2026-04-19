@@ -26,8 +26,8 @@
         type="submit"
         phx-disable-with="Przetwarzanie..."
         class="h-11 w-full max-w-44"
-        color="turquoise"
-        new={true}
+        variant="primary"
+        accent="turquoise"
         disabled={not @payment_form.source.valid?}
       >
         Dalej

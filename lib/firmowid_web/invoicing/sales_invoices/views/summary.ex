@@ -14,6 +14,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
 
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Button
+
   require Logger
 
   @impl true
@@ -110,9 +113,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
                  SubmissionInfo.not_submitted?(@submission_info)) or
                 SubmissionInfo.failed?(@submission_info)
             }
-            color="light_grey"
+            variant="secondary"
             size="small"
-            new={true}
             phx-click="send_to_ksef"
           >
             <Lucideicons.send /> Wyślij do KSeF

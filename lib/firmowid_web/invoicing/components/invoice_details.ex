@@ -11,6 +11,9 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   alias Firmowid.Ash.Invoicing.SalesInvoice
 
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Button
+
   attr :is_cost_invoice, :boolean
   attr :issue_date, Date, required: true
   attr :party_display_name, :string, required: true
@@ -367,9 +370,8 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
             <p class="text-sm/tight font-medium text-green-700">Komplet</p>
           </div>
           <.button
-            color="light_grey"
+            variant="secondary"
             size="small"
-            new={true}
             phx-click="disconnect"
           >
             <.icon name="hero-arrow-uturn-left-micro" class="size-4" />
@@ -427,9 +429,8 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           </div>
           <.button
             phx-click="toggle-invoicing"
-            color="light_grey"
+            variant="secondary"
             size="small"
-            new={true}
             class="flex-1"
           >
             <.icon name="hero-arrow-uturn-left-micro" class="size-4" />
@@ -444,9 +445,9 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           <div class="flex flex-row items-center gap-2">
             <.input id="temp" name="test" value="" class="flex-1" new={true} />
             <.button
-              color={if(@is_cost_invoice, do: "orange", else: "turquoise")}
+              variant="primary"
+              accent={if(@is_cost_invoice, do: "orange", else: "turquoise")}
               size="small"
-              new={true}
             >
               Zatwierdź
             </.button>
@@ -485,9 +486,9 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           phx-click="show_chat"
           phx-target="#invoice-show"
           class="w-full"
-          color="turquoise"
+          variant="primary"
+          accent="turquoise"
           size="small"
-          new={true}
         >
           Zapytaj
         </.button>
@@ -505,9 +506,8 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           <.button
             phx-click="toggle-invoicing"
             class="w-full"
-            color="light_grey"
+            variant="secondary"
             size="small"
-            new={true}
           >
             Pomiń
           </.button>
@@ -541,9 +541,9 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
             phx-click="show_chat"
             phx-target="#invoice-show"
             class="mt-2"
-            color={if(@is_cost_invoice, do: "orange", else: "turquoise")}
+            variant="primary"
+            accent={if(@is_cost_invoice, do: "orange", else: "turquoise")}
             size="small"
-            new={true}
           >
             Poproś Firmowida o pomoc
           </.button>
@@ -626,9 +626,8 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
                 <.button
                   phx-click="connect"
                   phx-value-transaction_id={tx.id}
-                  color={if(@green_idx == idx, do: "grey", else: "light_grey")}
+                  variant={if(@green_idx == idx, do: "tertiary", else: "secondary")}
                   size="small"
-                  new={true}
                 >
                   Zatwierdź
                 </.button>

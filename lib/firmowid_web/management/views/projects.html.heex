@@ -29,8 +29,7 @@
               JS.toggle_attribute({"data-expanded", "true", "false"}, to: "#search-container")
               |> JS.focus(to: "#search-container input")
             }
-            color="light_grey"
-            new={true}
+            variant="secondary"
           >
             <Lucideicons.search />
           </.button>
@@ -187,9 +186,8 @@
               <.button
                 :if={@current_user.role == :admin}
                 type="button"
-                color="light_grey"
+                variant="secondary"
                 size="small"
-                new={true}
                 phx-click="unarchive_project"
                 phx-value-id={project.id}
               >

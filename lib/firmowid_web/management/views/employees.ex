@@ -9,6 +9,9 @@ defmodule FirmowidWeb.Management.Views.Employees do
   alias FirmowidWeb.Core.Endpoint
   alias Phoenix.Socket.Broadcast
 
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Button
+
   @impl true
   def mount(_params, _session, socket) do
     scope = socket.assigns.ash_scope

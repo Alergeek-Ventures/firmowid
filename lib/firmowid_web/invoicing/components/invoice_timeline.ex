@@ -10,6 +10,9 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
   alias Firmowid.Ash.Invoicing.Services.Timeline
   alias Firmowid.Ash.Ksef.SubmissionInfo
 
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Button
+
   attr :invoice, :map, required: true
   attr :invoice_type, :atom, required: true, values: [:sales, :cost]
   attr :submission_info, SubmissionInfo, default: nil
@@ -34,9 +37,8 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
         <.button
           phx-click="hide_timeline"
           phx-target="#invoice-show"
-          color="light_grey"
+          variant="secondary"
           size="small"
-          new={true}
         >
           <.icon name="hero-chevron-left-mini" class="size-4" /> Wróć do podglądu
         </.button>

@@ -9,6 +9,9 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
   alias Phoenix.LiveView.JS
 
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Button
+
   @impl true
   def mount(socket) do
     {:ok,
@@ -86,9 +89,8 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                 <.button
                   :if={@invoice.is_deletable}
                   phx-click="delete"
-                  color="light_grey"
+                  variant="secondary"
                   size="small"
-                  new={true}
                 >
                   <.icon name="hero-trash-solid" class="size-4" />
                   <span class="hidden xl:inline">
@@ -108,9 +110,8 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                 <.button
                   :if={@invoice.ksef_number != nil}
                   class="ml-auto"
-                  color="light_grey"
+                  variant="secondary"
                   size="small"
-                  new={true}
                   phx-click="show_timeline"
                   phx-target={@myself}
                 >
