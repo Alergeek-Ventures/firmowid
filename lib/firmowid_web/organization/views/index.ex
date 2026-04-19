@@ -4,6 +4,9 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Organization
+  alias Firmowid.Ash.Core.OrganizationInvite
+
+  require Logger
 
   @impl true
   def render(assigns) do
@@ -174,9 +177,21 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
     trimmed_code = String.trim(invite_code)
 
+    Logger.metadata(user_id: user.id, user_email: user.email)
+
     # Find invite by code (unscoped read - invite codes are unique)
     invite =
-      Core.read_invite_by_code!(%{invite_code: trimmed_code}, actor: user)
+      OrganizationInvite
+      |> Ash.Query.for_read(:read_by_code, %{invite_code: trimmed_code}, actor: user)
+      |> Ash.Query.load([:organization])
+      |> Ash.read_one!(actor: user)
+
+    Logger.metadata(
+      user_id: user.id,
+      user_email: user.email,
+      organization_id: invite.organization_id,
+      organization_name: invite.organization.name
+    )
 
     # Consume the invite (scoped to the invite's organization)
     Core.consume_invite!(invite, %{user_id: user.id}, tenant: invite.organization_id, actor: user)

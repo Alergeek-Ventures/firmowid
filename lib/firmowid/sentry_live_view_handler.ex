@@ -87,11 +87,18 @@ defmodule Firmowid.SentryLiveViewHandler do
   end
 
   defp build_extra(metadata) do
+    current_user = get_in(metadata, [:socket, Access.key(:assigns), Access.key(:current_user)])
+    current_org = get_in(metadata, [:socket, Access.key(:assigns), Access.key(:current_org)])
+
     %{}
     |> maybe_put(:event, metadata[:event])
     |> maybe_put(:params, metadata[:params])
     |> maybe_put(:socket_id, get_in(metadata, [:socket, Access.key(:id)]))
     |> maybe_put(:view, get_in(metadata, [:socket, Access.key(:view)]))
+    |> maybe_put(:user_id, current_user && Map.get(current_user, :id))
+    |> maybe_put(:user_email, current_user && Map.get(current_user, :email))
+    |> maybe_put(:organization_id, current_org && Map.get(current_org, :id))
+    |> maybe_put(:organization_name, current_org && Map.get(current_org, :name))
   end
 
   defp maybe_put(map, _key, nil), do: map

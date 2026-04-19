@@ -53,6 +53,7 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
 
     read :read_by_code do
       argument :invite_code, :string, allow_nil?: false
+      multitenancy :allow_global
 
       filter expr(
                invite_code == ^arg(:invite_code) and
