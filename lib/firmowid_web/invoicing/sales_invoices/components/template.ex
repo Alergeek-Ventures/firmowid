@@ -118,7 +118,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
 
   defp seller_buyer_section(assigns) do
     ~H"""
-    <div class="grid grid-cols-2 gap-5 text-[10px] leading-[14px]">
+    <div class="grid grid-cols-2 gap-5 text-[10px]/[14px]">
       <div>
         <h2 class="text-darkGrey/70 mb-2 text-[8px] font-bold">
           {case @sales_invoice.invoice_type do

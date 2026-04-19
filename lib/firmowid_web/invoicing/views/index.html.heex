@@ -125,86 +125,43 @@
   search_results={@search_results}
 />
 
-<div class={[
-  !@is_month_touched && "hidden",
-  "flex flex-row items-center gap-4 max-md:hidden",
-  "mt-4 mb-3"
-]}>
-  <%= for {filter, label} <- [
-        {:invoices, "Faktury"},
-        {:transactions, "Transakcje"},
-    ] do %>
-    <.button
-      class={[
-        @params.filter == filter && "bg-darkGrey! rounded-lg! text-white!",
-        "bg-lightGreyBg text-darkGrey! relative text-center",
-        "hover:bg-greyButtonBg px-3 py-1 text-sm/6 font-normal",
-        "flex items-center justify-center border-none text-sm uppercase"
-      ]}
-      phx-click="change-filter"
-      phx-value-filter={filter}
-    >
-      {label}
-    </.button>
-  <% end %>
+<%!-- Filter bar with tabs, sub-filters, and Grupy button --%>
+<FirmowidWeb.Invoicing.Components.FilterBar.filter_bar
+  params={@params}
+  pending_count={@pending_invoicing_entries_count}
+  is_month_closed={@is_month_closed}
+  is_month_touched={@is_month_touched}
+/>
 
-  <.button
-    class={[
-      @is_month_closed && "text-lightGreyBg!",
-      @params.filter == :unmatched && "bg-darkGrey! text-white!",
-      @params.filter == :unmatched && @is_month_closed &&
-        "bg-greenBg! border-greenText! text-black!",
-      "bg-lightGreyBg text-darkGrey! relative text-center",
-      "hover:bg-greyButtonBg px-3 py-1 text-sm/6 font-normal",
-      "flex items-center justify-center border-none text-sm uppercase"
-    ]}
-    phx-click="change-filter"
-    phx-value-filter={:unmatched}
-    id="unmatched-filter"
-    phx-hook="Confetti"
-    data-confetti-enabled={if @is_month_closed, do: "true", else: "false"}
-  >
-    <%= if @pending_invoicing_entries_count != 0 do %>
-      <span class={[
-        "absolute flex items-center justify-center overflow-hidden",
-        "-top-3 left-full -translate-x-3 rounded-full px-2",
-        "bg-orangeBg border-lightGreyBg text-orangeText border-2"
-      ]}>
-        {@pending_invoicing_entries_count}
-      </span>
-    <% end %>
-    <%= if @is_month_closed do %>
-      Miesiąc zamknięty
-    <% else %>
-      Nieprzypisane
-    <% end %>
-  </.button>
-
-  <.switch
-    :if={@params.filter in [:transactions, :all, :unmatched]}
-    class="ml-auto"
-    label="Grupuj według kontrahenta"
-    field={to_form(%{"group_by_party" => @params.group_by_party})[:group_by_party]}
-    phx-click="toggle-grouping"
-  />
-</div>
-
+<%!-- Main content: Dashboard or List view --%>
 <div
   :if={@current_user.role == :admin}
   class="mt-2 flex flex-col gap-4 max-md:hidden"
 >
-  <%= if @is_month_closed and @params.filter == :unmatched do %>
-    <.live_component
-      id="month-closed-zero-state"
-      module={FirmowidWeb.Invoicing.Components.MonthClosedZeroState}
-      month={@params.month}
-    />
-  <% else %>
-    <FirmowidWeb.Invoicing.Components.EntriesTable.table
-      mode={@params.filter}
-      invoicing_entries={@invoicing_entries}
-      has_connected_bank_account={@has_connected_bank_account}
-    />
+  <%= cond do %>
+    <% @params.view_mode == :dashboard -> %>
+      <FirmowidWeb.Invoicing.Components.Dashboard.dashboard
+        unpaid_invoices={@dashboard_unpaid_invoices}
+        unpaid_invoices_count={@dashboard_unpaid_invoices_count}
+        unmatched_transactions={@dashboard_unmatched_transactions}
+        unmatched_transactions_count={@dashboard_unmatched_transactions_count}
+        matched_entries={@dashboard_matched_entries}
+        matched_entries_count={@dashboard_matched_entries_count}
+        suggestions={@dashboard_suggestions}
+        suggestions_count={@dashboard_suggestions_count}
+        month={@params.month}
+      />
+    <% @is_month_closed and @params.filter == :unmatched -> %>
+      <.live_component
+        id="month-closed-zero-state"
+        module={FirmowidWeb.Invoicing.Components.MonthClosedZeroState}
+        month={@params.month}
+      />
+    <% true -> %>
+      <FirmowidWeb.Invoicing.Components.EntriesTable.table
+        mode={@params.filter}
+        invoicing_entries={@invoicing_entries}
+      />
   <% end %>
 </div>
 

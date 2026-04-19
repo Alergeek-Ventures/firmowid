@@ -12,7 +12,6 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   alias Firmowid.Ash.Ksef.SubmissionInfo
 
   attr :invoicing_entries, :list, required: true
-  attr :has_connected_bank_account, :boolean, default: false
   attr :mode, :atom, required: true
 
   @default_columns ["party", "issue_or_value_date", "due_or_booking_date", "status", "amount"]
@@ -38,7 +37,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     invoice.buyer_display_name_label || ""
   end
 
-  def table(%{invoicing_entries: [], has_connected_bank_account: true} = assigns) do
+  def table(%{invoicing_entries: []} = assigns) do
     ~H"""
     <div class="flex min-h-[300px] flex-col items-center justify-center gap-4">
       <.icon name="hero-cloud-arrow-up" class="text-greenText size-16" />
@@ -48,57 +47,6 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       <p class="text-darkGrey text-center">
         Przeciągnij pliki, aby je wgrać
       </p>
-    </div>
-    """
-  end
-
-  def table(%{invoicing_entries: [], has_connected_bank_account: false} = assigns) do
-    ~H"""
-    <div class="mx-auto mt-16 flex min-h-[300px] flex-col justify-center gap-24 px-8">
-      <div class="flex flex-col gap-8">
-        <h1 class="text-xl font-bold">Witaj w Firmowidzie!</h1>
-        <div class="flex flex-col gap-1">
-          <p>
-            Znajdujesz się w panelu, w którym pojawią się wszystkie Twoje faktury i transakcje.
-          </p>
-          <p>
-            Do pełnej funkcjonalności jeszcze tylko 2 kroki.
-          </p>
-        </div>
-      </div>
-      <div class="flex items-start justify-between gap-8 md:flex-row md:gap-20">
-        <div class="max-w-[500px]">
-          <h2 class="mb-2 flex items-end gap-2 text-xl font-bold">
-            <.icon name="hero-building-library" class="text-greenText size-10" /> Krok 1.
-          </h2>
-          <h3 class="mb-4 text-xl">Podepnij konto bankowe</h3>
-          <p class="mb-8">Dzięki temu wszystkie transakcje pojawią się w Firmowidzie
-            automatycznie. Co więcej, po wykryciu odpowiedniej faktury transakcja
-            połączy się z dokumentem.</p>
-          <.link navigate={~p"/ustawienia/bank/dodaj"} class={button_styles(%{color: "green"})}>
-            Synchronizacja z bankiem
-          </.link>
-        </div>
-        <div class="max-w-[400px]">
-          <h2 class="mb-2 flex items-end gap-2 text-xl font-bold">
-            <.icon name="hero-cloud-arrow-up" class="text-greenText size-10" /> Krok 2.
-          </h2>
-          <h3 class="mb-4 text-xl">Wgraj faktury</h3>
-          <p class="mb-2">Możesz to zrobić:</p>
-          <ul class="ml-4 list-outside list-disc space-y-2">
-            <li>
-              Za pomocą przycisku <span class="font-bold">+ Dodaj dokument</span> w prawym górnym rogu
-            </li>
-            <li>
-              <span class="font-bold">Przeciągając pliki</span> bezpośrednio do tego panelu
-            </li>
-            <li>
-              Logując się na stronę przez telefon komórkowy i <span class="font-bold">przesyłając
-                zdjęcie dokumentu</span>
-            </li>
-          </ul>
-        </div>
-      </div>
     </div>
     """
   end

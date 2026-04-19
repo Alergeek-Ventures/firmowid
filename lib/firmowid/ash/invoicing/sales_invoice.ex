@@ -43,6 +43,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     domain: Firmowid.Ash.Invoicing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
+    extensions: [AshEvents.Events],
     notifiers: [Ash.Notifier.PubSub],
     primary_read_warning?: false
 
@@ -65,6 +66,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   postgres do
     table "sales_invoices"
     repo Firmowid.Repo
+  end
+
+  events do
+    event_log Firmowid.Ash.Events.Event
+    only_actions [:connect_transactions, :disconnect_transactions]
   end
 
   code_interface do

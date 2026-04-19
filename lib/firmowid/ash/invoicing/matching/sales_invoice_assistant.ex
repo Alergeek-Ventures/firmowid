@@ -79,17 +79,28 @@ defmodule Firmowid.Ash.Invoicing.Matching.SalesInvoiceAssistant do
           args: %{"transaction_ids" => transaction_ids, "sales_invoice_ids" => sales_invoice_ids}
         }
       } ->
-        Enum.each(sales_invoice_ids, fn si_id ->
-          sales_invoice = Invoicing.get_sales_invoice!(si_id, scope: scope)
+        result =
+          Enum.reduce_while(sales_invoice_ids, :ok, fn si_id, :ok ->
+            sales_invoice = Invoicing.get_sales_invoice!(si_id, scope: scope)
 
-          Invoicing.connect_sales_invoice_transactions!(
-            sales_invoice,
-            transaction_ids,
-            scope: scope
-          )
-        end)
+            case Invoicing.connect_sales_invoice_transactions_manual(
+                   sales_invoice,
+                   transaction_ids,
+                   scope
+                 ) do
+              {:ok, _sales_invoice} -> {:cont, :ok}
+              {:error, reason} -> {:halt, {:error, reason}}
+            end
+          end)
 
-        MessagesStorage.delete(conversation_id)
+        case result do
+          :ok ->
+            MessagesStorage.delete(conversation_id)
+            :ok
+
+          {:error, reason} ->
+            {:error, reason}
+        end
 
       _ ->
         raise "Accepting linking is only allowed when the last message was a function call to link_sales_invoice_to_transaction"

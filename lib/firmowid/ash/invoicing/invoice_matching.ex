@@ -79,7 +79,12 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
         Logger.info("Prediction score: #{prediction_score}")
 
         if Matching.RegressionPredictor.confident_match?(prediction_score) do
-          Invoicing.connect_cost_invoice_transactions!(cost_invoice, [transaction.id], scope: scope)
+          Invoicing.connect_cost_invoice_transactions_auto_match!(
+            cost_invoice,
+            [transaction.id],
+            prediction_score,
+            scope
+          )
 
           Logger.info("Matched cost invoice #{cost_invoice.id} with transaction #{transaction.id}")
         else
@@ -133,7 +138,12 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
         Logger.info("Prediction score: #{prediction_score}")
 
         if Matching.RegressionPredictor.confident_match?(prediction_score) do
-          Invoicing.connect_sales_invoice_transactions!(sales_invoice, [transaction.id], scope: scope)
+          Invoicing.connect_sales_invoice_transactions_auto_match!(
+            sales_invoice,
+            [transaction.id],
+            prediction_score,
+            scope
+          )
 
           Logger.info("Matched sales invoice #{sales_invoice.id} with transaction #{transaction.id}")
         else

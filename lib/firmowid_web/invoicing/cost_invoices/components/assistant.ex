@@ -98,14 +98,18 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
   end
 
   def handle_event("accept", _params, socket) do
-    CostInvoiceAssistant.accept_linking(socket.assigns.conversation_id)
+    case CostInvoiceAssistant.accept_linking(socket.assigns.conversation_id) do
+      :ok ->
+        socket =
+          socket
+          |> LiveToast.put_toast(:success, "Transakcje zostały dopasowane do faktury")
+          |> push_navigate(to: ~p"/kosztowe/#{socket.assigns.invoice_id}")
 
-    socket =
-      socket
-      |> LiveToast.put_toast(:success, "Transakcje zostały dopasowane do faktury")
-      |> push_navigate(to: ~p"/kosztowe/#{socket.assigns.invoice_id}")
+        {:noreply, socket}
 
-    {:noreply, socket}
+      {:error, _reason} ->
+        {:noreply, LiveToast.put_toast(socket, :error, "Nie udało się dopasować transakcji do faktury")}
+    end
   end
 
   def handle_event("reject", _params, socket) do

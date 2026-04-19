@@ -25,6 +25,22 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   require Ash.Query
 
+  # Load definitions for invoice queries
+  @cost_invoice_loads [
+    :transactions,
+    :effective_total_amount,
+    :effective_currency,
+    :effective_seller_display_name
+  ]
+  @sales_invoice_loads [
+    :gross_value,
+    :sales_invoice_items,
+    :buyer_display_name_label,
+    :transactions,
+    corrections: :sales_invoice_items,
+    latest_correction: :sales_invoice_items
+  ]
+
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
@@ -99,10 +115,13 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp parse_url_params(params) do
+    view_mode = parse_view_mode(Map.get(params, "view"))
+
     %{
       month: parse_month(Map.get(params, "month")),
       filter: parse_filter(Map.get(params, "filter")),
-      group_by_party: parse_group_by_party(Map.get(params, "group_by_party"))
+      subfilter: parse_subfilter(Map.get(params, "subfilter")),
+      view_mode: view_mode
     }
   end
 
@@ -110,12 +129,26 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp parse_month(date_string), do: Date.from_iso8601!(date_string)
 
   defp parse_filter(nil), do: :invoices
-  defp parse_filter(filter_string), do: String.to_existing_atom(filter_string)
+  defp parse_filter(filter_string), do: parse_filter_value(filter_string) || :invoices
 
-  defp parse_group_by_party("true"), do: true
-  defp parse_group_by_party("false"), do: false
-  defp parse_group_by_party(nil), do: true
-  defp parse_group_by_party(_), do: false
+  defp parse_filter_value("all"), do: :all
+  defp parse_filter_value("invoices"), do: :invoices
+  defp parse_filter_value("transactions"), do: :transactions
+  defp parse_filter_value("unmatched"), do: :unmatched
+  defp parse_filter_value(_filter_string), do: nil
+
+  defp parse_view_mode("list"), do: :list
+  defp parse_view_mode(nil), do: :dashboard
+  defp parse_view_mode(_), do: :dashboard
+
+  defp parse_subfilter(nil), do: nil
+  defp parse_subfilter(subfilter_string), do: parse_subfilter_value(subfilter_string)
+
+  defp parse_subfilter_value("oplacone"), do: :oplacone
+  defp parse_subfilter_value("nieoplacone"), do: :nieoplacone
+  defp parse_subfilter_value("dopasowane"), do: :dopasowane
+  defp parse_subfilter_value("bez_dokumentu"), do: :bez_dokumentu
+  defp parse_subfilter_value(_subfilter_string), do: nil
 
   defp maybe_show_tutorial(socket, true), do: push_event(socket, "js-exec", %{to: "#tutorial-modal", attr: "phx-show"})
 
@@ -141,17 +174,36 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   def handle_event("change-filter", %{"filter" => filter}, socket) do
-    # Use existing atoms to avoid atom exhaustion
-    filter = String.to_existing_atom(filter)
+    case parse_filter_value(filter) do
+      nil ->
+        {:noreply, socket}
 
-    {:noreply, update_param(socket, :filter, filter)}
+      parsed_filter ->
+        params =
+          socket.assigns.params
+          |> Map.put(:filter, parsed_filter)
+          |> Map.put(:view_mode, :list)
+          |> Map.put(:subfilter, nil)
+
+        {:noreply, update_params(socket, params)}
+    end
   end
 
-  def handle_event("toggle-grouping", _params, socket) do
-    current = socket.assigns.params.group_by_party
-    new_value = !current
+  def handle_event("change-subfilter", %{"subfilter" => subfilter}, socket) do
+    case parse_subfilter_value(subfilter) do
+      nil ->
+        {:noreply, socket}
 
-    {:noreply, update_param(socket, :group_by_party, new_value)}
+      parsed_subfilter ->
+        next_subfilter =
+          if socket.assigns.params.subfilter == parsed_subfilter do
+            nil
+          else
+            parsed_subfilter
+          end
+
+        {:noreply, update_param(socket, :subfilter, next_subfilter)}
+    end
   end
 
   @impl true
@@ -427,20 +479,35 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   defp update_param(socket, key, value) do
     params = Map.put(socket.assigns.params, key, value)
+    update_params(socket, params)
+  end
 
-    url_params = %{
-      month: params.month |> Date.beginning_of_month() |> Date.to_iso8601(),
-      filter: Atom.to_string(params.filter),
-      group_by_party: to_string(params.group_by_party)
-    }
+  defp update_params(socket, params) do
+    url = build_invoicing_url(params)
+    push_patch(socket, to: url)
+  end
 
-    socket =
-      push_patch(socket,
-        to:
-          ~p"/fakturowanie?month=#{url_params.month}&filter=#{url_params.filter}&group_by_party=#{url_params.group_by_party}"
-      )
+  defp build_invoicing_url(params) do
+    query_parts = [
+      "month=#{params.month |> Date.beginning_of_month() |> Date.to_iso8601()}",
+      "filter=#{Atom.to_string(params.filter)}"
+    ]
 
-    socket
+    query_parts =
+      if params.subfilter do
+        query_parts ++ ["subfilter=#{Atom.to_string(params.subfilter)}"]
+      else
+        query_parts
+      end
+
+    query_parts =
+      if params.view_mode == :list do
+        query_parts ++ ["view=list"]
+      else
+        query_parts
+      end
+
+    "/fakturowanie?" <> Enum.join(query_parts, "&")
   end
 
   defp handle_progress(:file, _, socket) do
@@ -594,37 +661,32 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp refetch_invoicing_entries(socket) do
     month = socket.assigns.params.month
     filter = socket.assigns.params.filter
+    subfilter = socket.assigns.params.subfilter
     scope = socket.assigns.ash_scope
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
 
-    entries = fetch_entries(date_range_from, date_range_to, filter, scope)
+    entries = fetch_entries(date_range_from, date_range_to, filter, subfilter, scope)
 
-    entries = group_cost_transactions_by_party(entries, socket.assigns.params.group_by_party)
+    entries = group_cost_transactions_by_party(entries)
 
     socket = assign(socket, :invoicing_entries, entries)
 
-    # Pending entries for badge count
+    # Pending entries for badge count (no subfilter - we want all unmatched)
     pending_entries =
-      fetch_entries(date_range_from, date_range_to, :unmatched, scope)
+      fetch_entries(date_range_from, date_range_to, :unmatched, nil, scope)
 
     raw_pending_count = Enum.count(pending_entries)
 
-    # Badge count follows the grouping toggle: when grouping is on,
-    # grouped transactions count as one item each
     pending_invoicing_entries_count =
-      if socket.assigns.params.group_by_party do
-        pending_entries
-        |> group_cost_transactions_by_party(true)
-        |> Enum.count()
-      else
-        raw_pending_count
-      end
+      pending_entries
+      |> group_cost_transactions_by_party()
+      |> Enum.count()
 
     # Check if any entries exist this month (regardless of filter)
     all_entries_count =
       date_range_from
-      |> fetch_entries(date_range_to, :all, scope)
+      |> fetch_entries(date_range_to, :all, nil, scope)
       |> Enum.count()
 
     is_month_touched = all_entries_count > 0 or raw_pending_count > 0
@@ -635,11 +697,15 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       |> Date.end_of_month()
       |> Date.compare(Date.utc_today()) == :lt
 
-    socket
-    |> assign(:is_month_touched, is_month_touched)
-    |> assign(:is_month_closed, is_month_touched and has_month_ended and raw_pending_count == 0)
-    |> assign(:pending_invoicing_entries_count, pending_invoicing_entries_count)
-    |> refetch_upload_counts()
+    socket =
+      socket
+      |> assign(:is_month_touched, is_month_touched)
+      |> assign(:is_month_closed, is_month_touched and has_month_ended and raw_pending_count == 0)
+      |> assign(:pending_invoicing_entries_count, pending_invoicing_entries_count)
+      |> refetch_upload_counts()
+
+    # Also fetch dashboard data (used when view_mode is :dashboard)
+    fetch_dashboard_data(socket)
   end
 
   defp refetch_upload_counts(socket) do
@@ -660,11 +726,126 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     |> assign(:currently_uploading_count, currently_uploading_count)
   end
 
+  # ── Dashboard data fetching ─────────────────────────────────────────
+
+  @dashboard_tile_limit 5
+
+  defp fetch_dashboard_data(socket) do
+    if socket.assigns.current_user.role == :admin do
+      month = socket.assigns.params.month
+      scope = socket.assigns.ash_scope
+      date_range_from = Date.beginning_of_month(month)
+      date_range_to = Date.end_of_month(month)
+
+      unpaid_invoices = fetch_unpaid_invoices(date_range_from, date_range_to, scope)
+      unmatched_transactions = fetch_unmatched_transactions(date_range_from, date_range_to, scope)
+      matched_entries = fetch_matched_entries(date_range_from, date_range_to, scope)
+      suggestions = fetch_suggestions(scope)
+
+      socket
+      |> assign(:dashboard_unpaid_invoices, unpaid_invoices.entries)
+      |> assign(:dashboard_unpaid_invoices_count, unpaid_invoices.total_count)
+      |> assign(:dashboard_unmatched_transactions, unmatched_transactions.entries)
+      |> assign(:dashboard_unmatched_transactions_count, unmatched_transactions.total_count)
+      |> assign(:dashboard_matched_entries, matched_entries.entries)
+      |> assign(:dashboard_matched_entries_count, matched_entries.total_count)
+      |> assign(:dashboard_suggestions, suggestions.entries)
+      |> assign(:dashboard_suggestions_count, suggestions.total_count)
+    else
+      socket
+      |> assign(:dashboard_unpaid_invoices, [])
+      |> assign(:dashboard_unpaid_invoices_count, 0)
+      |> assign(:dashboard_unmatched_transactions, [])
+      |> assign(:dashboard_unmatched_transactions_count, 0)
+      |> assign(:dashboard_matched_entries, [])
+      |> assign(:dashboard_matched_entries_count, 0)
+      |> assign(:dashboard_suggestions, [])
+      |> assign(:dashboard_suggestions_count, 0)
+    end
+  end
+
+  defp fetch_unpaid_invoices(from, to, scope) do
+    cost_invoices =
+      Invoicing.list_cost_invoices!(
+        %{date_from: from, date_to: to, date_field: :due_date, reconciliation: :pending},
+        load: @cost_invoice_loads,
+        scope: scope
+      )
+
+    sales_invoices =
+      Invoicing.list_sales_invoices!(
+        %{
+          date_from: from,
+          date_to: to,
+          date_field: :due_date,
+          kind: :vat,
+          reconciliation: :pending
+        },
+        load: @sales_invoice_loads,
+        scope: scope
+      )
+
+    invoices = Enum.sort_by(cost_invoices ++ sales_invoices, &due_date_for_invoice/1, Date)
+
+    %{entries: Enum.take(invoices, @dashboard_tile_limit), total_count: length(invoices)}
+  end
+
+  defp due_date_for_invoice(%CostInvoice{due_date: date}), do: date
+  defp due_date_for_invoice(%SalesInvoice{due_date: date}), do: date
+
+  defp fetch_unmatched_transactions(from, to, scope) do
+    transactions =
+      Finances.list_transactions!(%{date_from: from, date_to: to, reconciliation: :pending},
+        load: [:cost_invoices, :sales_invoices],
+        query: [sort: [booking_date: :desc]],
+        scope: scope
+      )
+
+    %{entries: Enum.take(transactions, @dashboard_tile_limit), total_count: length(transactions)}
+  end
+
+  defp fetch_matched_entries(from, to, scope) do
+    Invoicing.list_recently_matched_entries(from, to, scope,
+      limit: @dashboard_tile_limit,
+      cost_invoice_loads: @cost_invoice_loads,
+      sales_invoice_loads: @sales_invoice_loads
+    )
+  end
+
+  defp fetch_suggestions(scope) do
+    suggestions = []
+
+    # Check bank connection
+    has_bank =
+      [scope: scope]
+      |> Finances.list_requisitions!()
+      |> Enum.any?(&(&1.status == :accepted))
+
+    suggestions =
+      if has_bank do
+        suggestions
+      else
+        [%{type: :connect_bank} | suggestions]
+      end
+
+    # Check KSeF connection
+    has_ksef = Ksef.get_credential(scope) != nil
+
+    suggestions =
+      if has_ksef do
+        suggestions
+      else
+        [%{type: :connect_ksef} | suggestions]
+      end
+
+    %{entries: suggestions, total_count: length(suggestions)}
+  end
+
   defp apply_action(socket, :index, _params) do
     assign(socket, :page_title, "Fakturowanie")
   end
 
-  defp group_cost_transactions_by_party(entries, true) do
+  defp group_cost_transactions_by_party(entries) do
     # Separate transactions from other entries (invoices)
     # TODO: re-add Transaction struct constraints once legacy Ecto schema is removed
     {transactions, other_entries} =
@@ -725,11 +906,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     |> order_entries_for_display()
   end
 
-  # Pattern match: grouping disabled
-  defp group_cost_transactions_by_party(entries, false) do
-    entries
-  end
-
   defp groupable_transaction?(%Transaction{creditor_name: ""}), do: false
   defp groupable_transaction?(%Transaction{creditor_name: nil}), do: false
 
@@ -764,24 +940,9 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   # ── Entries — direct resource calls ─────────────────────────────────
 
-  @cost_invoice_loads [
-    :transactions,
-    :effective_total_amount,
-    :effective_currency,
-    :effective_seller_display_name
-  ]
-  @sales_invoice_loads [
-    :gross_value,
-    :sales_invoice_items,
-    :buyer_display_name_label,
-    :transactions,
-    corrections: :sales_invoice_items,
-    latest_correction: :sales_invoice_items
-  ]
-
-  defp fetch_entries(from, to, filter, scope) do
-    case filter do
-      :all ->
+  defp fetch_entries(from, to, filter, subfilter, scope) do
+    case {filter, subfilter} do
+      {:all, _} ->
         [
           list_cost_invoices(from, to, %{date_field: :issue_date}, scope),
           list_sales_invoices(from, to, %{date_field: :issue_date, kind: :vat}, scope),
@@ -790,7 +951,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         |> Enum.concat()
         |> order_entries_for_display()
 
-      :unmatched ->
+      {:unmatched, _} ->
         [
           list_cost_invoices(from, to, %{date_field: :due_date, reconciliation: :pending}, scope),
           list_sales_invoices(
@@ -804,7 +965,44 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         |> Enum.concat()
         |> order_entries_for_display()
 
-      :invoices ->
+      # Faktury tab with subfilters
+      {:invoices, :oplacone} ->
+        [
+          list_cost_invoices(
+            from,
+            to,
+            %{date_field: :issue_date, reconciliation: :matched},
+            scope
+          ),
+          list_sales_invoices(
+            from,
+            to,
+            %{date_field: :issue_date, kind: :vat, reconciliation: :matched},
+            scope
+          )
+        ]
+        |> Enum.concat()
+        |> order_entries_for_display()
+
+      {:invoices, :nieoplacone} ->
+        [
+          list_cost_invoices(
+            from,
+            to,
+            %{date_field: :issue_date, reconciliation: :pending},
+            scope
+          ),
+          list_sales_invoices(
+            from,
+            to,
+            %{date_field: :issue_date, kind: :vat, reconciliation: :pending},
+            scope
+          )
+        ]
+        |> Enum.concat()
+        |> order_entries_for_display()
+
+      {:invoices, _} ->
         [
           list_cost_invoices(from, to, %{date_field: :issue_date}, scope),
           list_sales_invoices(from, to, %{date_field: :issue_date, kind: :vat}, scope)
@@ -812,7 +1010,18 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         |> Enum.concat()
         |> order_entries_for_display()
 
-      :transactions ->
+      # Transakcje tab with subfilters
+      {:transactions, :dopasowane} ->
+        from
+        |> list_transactions(to, %{reconciliation: :matched}, scope)
+        |> order_entries_for_display()
+
+      {:transactions, :bez_dokumentu} ->
+        from
+        |> list_transactions(to, %{reconciliation: :pending}, scope)
+        |> order_entries_for_display()
+
+      {:transactions, _} ->
         from
         |> list_transactions(to, %{}, scope)
         |> order_entries_for_display()

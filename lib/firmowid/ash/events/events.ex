@@ -8,7 +8,9 @@ defmodule Firmowid.Ash.Events do
   use Ash.Domain
 
   resources do
-    resource Firmowid.Ash.Events.Event
+    resource Firmowid.Ash.Events.Event do
+      define :list_events, action: :read
+    end
   end
 
   authorization do

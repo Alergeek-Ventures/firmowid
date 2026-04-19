@@ -22,7 +22,7 @@ defmodule Firmowid.Ash.Events.Event do
   event_log do
     primary_key_type Ash.Type.UUIDv7
     record_id_type :uuid
-    public_fields [:id, :record_id, :resource, :action, :occurred_at]
+    public_fields [:id, :record_id, :resource, :action, :occurred_at, :metadata]
   end
 
   actions do
@@ -44,5 +44,14 @@ defmodule Firmowid.Ash.Events.Event do
     policy action_type(:read) do
       authorize_if actor_attribute_equals(:role, :admin)
     end
+  end
+
+  multitenancy do
+    strategy :attribute
+    attribute :organization_id
+  end
+
+  attributes do
+    attribute :organization_id, :uuid, allow_nil?: false
   end
 end

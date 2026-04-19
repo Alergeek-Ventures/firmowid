@@ -9,6 +9,7 @@ defmodule Firmowid.Ash.Invoicing do
   alias Firmowid.Ash.Currencies.NbpApiClient
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Invoicing.Services.RecentMatchedEntries
   alias Firmowid.Ash.Invoicing.Workers.MatchingWorker
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Scope
@@ -58,7 +59,8 @@ defmodule Firmowid.Ash.Invoicing do
         args: [:transaction_ids]
 
       define :disconnect_cost_invoice_transactions,
-        action: :disconnect_transactions
+        action: :disconnect_transactions,
+        args: [{:optional, :transaction_ids}]
     end
 
     resource Firmowid.Ash.Invoicing.KsefInvoiceDigest
@@ -99,7 +101,8 @@ defmodule Firmowid.Ash.Invoicing do
         args: [:transaction_ids]
 
       define :disconnect_sales_invoice_transactions,
-        action: :disconnect_transactions
+        action: :disconnect_transactions,
+        args: [{:optional, :transaction_ids}]
     end
 
     resource Firmowid.Ash.Invoicing.SalesInvoiceTransaction
@@ -224,6 +227,130 @@ defmodule Firmowid.Ash.Invoicing do
   defp interleave([], right), do: right
   defp interleave(left, []), do: left
   defp interleave([l | ls], [r | rs]), do: [l, r | interleave(ls, rs)]
+
+  @doc """
+  Returns recently matched invoice entries for the invoicing dashboard.
+  """
+  @spec list_recently_matched_entries(Date.t(), Date.t(), Scope.t(), keyword()) :: map()
+  def list_recently_matched_entries(from, to, scope, opts \\ []) do
+    RecentMatchedEntries.list(from, to, scope, opts)
+  end
+
+  @doc """
+  Manually connects transactions to a cost invoice and records manual match metadata.
+  """
+  @spec connect_cost_invoice_transactions_manual(
+          struct(),
+          [Ash.UUID.t()],
+          Scope.t()
+        ) ::
+          {:ok, struct()} | {:error, term()}
+  def connect_cost_invoice_transactions_manual(cost_invoice, transaction_ids, scope) do
+    connect_cost_invoice_transactions(cost_invoice, transaction_ids,
+      scope: scope,
+      context: manual_match_context(scope)
+    )
+  end
+
+  @doc """
+  Manually disconnects transactions from a cost invoice and records manual match metadata.
+  """
+  @spec disconnect_cost_invoice_transactions_manual(
+          struct(),
+          [Ash.UUID.t()],
+          Scope.t()
+        ) :: {:ok, struct()} | {:error, term()}
+  def disconnect_cost_invoice_transactions_manual(cost_invoice, transaction_ids, scope) do
+    disconnect_cost_invoice_transactions(cost_invoice, transaction_ids,
+      scope: scope,
+      context: manual_match_context(scope)
+    )
+  end
+
+  @doc """
+  Manually connects transactions to a sales invoice and records manual match metadata.
+  """
+  @spec connect_sales_invoice_transactions_manual(
+          struct(),
+          [Ash.UUID.t()],
+          Scope.t()
+        ) ::
+          {:ok, struct()} | {:error, term()}
+  def connect_sales_invoice_transactions_manual(sales_invoice, transaction_ids, scope) do
+    connect_sales_invoice_transactions(sales_invoice, transaction_ids,
+      scope: scope,
+      context: manual_match_context(scope)
+    )
+  end
+
+  @doc """
+  Manually disconnects transactions from a sales invoice and records manual match metadata.
+  """
+  @spec disconnect_sales_invoice_transactions_manual(
+          struct(),
+          [Ash.UUID.t()],
+          Scope.t()
+        ) :: {:ok, struct()} | {:error, term()}
+  def disconnect_sales_invoice_transactions_manual(sales_invoice, transaction_ids, scope) do
+    disconnect_sales_invoice_transactions(sales_invoice, transaction_ids,
+      scope: scope,
+      context: manual_match_context(scope)
+    )
+  end
+
+  @doc """
+  Auto-connects transactions to a cost invoice and records auto-match metadata.
+  """
+  @spec connect_cost_invoice_transactions_auto_match!(
+          struct(),
+          [Ash.UUID.t()],
+          float(),
+          Scope.t()
+        ) ::
+          struct()
+  def connect_cost_invoice_transactions_auto_match!(cost_invoice, transaction_ids, confidence_score, scope) do
+    connect_cost_invoice_transactions!(cost_invoice, transaction_ids,
+      scope: scope,
+      context: auto_match_context(confidence_score)
+    )
+  end
+
+  @doc """
+  Auto-connects transactions to a sales invoice and records auto-match metadata.
+  """
+  @spec connect_sales_invoice_transactions_auto_match!(
+          struct(),
+          [Ash.UUID.t()],
+          float(),
+          Scope.t()
+        ) ::
+          struct()
+  def connect_sales_invoice_transactions_auto_match!(sales_invoice, transaction_ids, confidence_score, scope) do
+    connect_sales_invoice_transactions!(sales_invoice, transaction_ids,
+      scope: scope,
+      context: auto_match_context(confidence_score)
+    )
+  end
+
+  defp manual_match_context(%Scope{} = scope) do
+    matched_by = actor_matcher_id(scope.actor)
+
+    %{
+      ash_events_metadata: %{
+        source: :manual,
+        matched_by: matched_by
+      }
+    }
+  end
+
+  defp auto_match_context(confidence_score) do
+    %{ash_events_metadata: %{confidence_score: confidence_score, source: :auto_match}}
+  end
+
+  defp actor_matcher_id(nil), do: nil
+  defp actor_matcher_id(%{id: id}) when is_binary(id), do: id
+  defp actor_matcher_id(%{user_id: user_id}) when is_binary(user_id), do: user_id
+  defp actor_matcher_id(_actor), do: nil
 
   # ── Cost invoice orchestration ──────────────────────────────────────
 

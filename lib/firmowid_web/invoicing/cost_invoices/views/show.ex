@@ -88,7 +88,11 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
 
   @impl true
   def handle_event("connect", %{"transaction_id" => tx_id}, socket) do
-    Invoicing.connect_cost_invoice_transactions(socket.assigns.invoice, [tx_id], scope: socket.assigns.ash_scope)
+    Invoicing.connect_cost_invoice_transactions_manual(
+      socket.assigns.invoice,
+      [tx_id],
+      socket.assigns.ash_scope
+    )
 
     invoice =
       CostInvoice.by_id!(socket.assigns.invoice.id,
@@ -101,8 +105,12 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
 
   @impl true
   def handle_event("disconnect", _params, socket) do
-    Invoicing.disconnect_cost_invoice_transactions(socket.assigns.invoice,
-      scope: socket.assigns.ash_scope
+    transaction_ids = Enum.map(socket.assigns.invoice.transactions, & &1.id)
+
+    Invoicing.disconnect_cost_invoice_transactions_manual(
+      socket.assigns.invoice,
+      transaction_ids,
+      socket.assigns.ash_scope
     )
 
     invoice =

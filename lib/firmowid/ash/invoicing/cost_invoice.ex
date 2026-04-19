@@ -35,7 +35,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     domain: Firmowid.Ash.Invoicing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshOban],
+    extensions: [AshOban, AshEvents.Events],
     notifiers: [Ash.Notifier.PubSub],
     primary_read_warning?: false
 
@@ -80,6 +80,11 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
         scheduler_module_name Firmowid.Ash.Invoicing.CostInvoice.Scheduler.RefreshMissingDescription
       end
     end
+  end
+
+  events do
+    event_log Firmowid.Ash.Events.Event
+    only_actions [:connect_transactions, :disconnect_transactions]
   end
 
   code_interface do
