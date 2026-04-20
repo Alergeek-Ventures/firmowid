@@ -6,6 +6,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
   use FirmowidWeb, :live_view
 
   import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidWeb.DesignSystem.Components.MonthPicker
   import FirmowidWeb.Management.Views.Employees, only: [hours_record_status: 1]
   import Phoenix.Component, except: [link: 1]
 
@@ -189,6 +190,13 @@ defmodule FirmowidWeb.Management.Views.Employee do
     end
   end
 
+  def handle_event("copy-bank-account-number", %{"number" => number}, socket) do
+    {:noreply,
+     socket
+     |> push_event("copy-to-clipboard", %{text: number})
+     |> LiveToast.put_toast(:success, "Skopiowano numer konta")}
+  end
+
   defp humanize_ash_error(%Ash.Error.Invalid{errors: [first_error | _]}) do
     Exception.message(first_error)
   end
@@ -240,10 +248,11 @@ defmodule FirmowidWeb.Management.Views.Employee do
       id={"project-accordion-#{@project.id}"}
       class="group grid grid-cols-[1fr_min-content_min-content] gap-x-6 overflow-hidden"
     >
-      <button
+      <FirmowidWeb.DesignSystem.Components.Button.button
         type="button"
+        variant="unstyled"
         phx-click={toggle_project_accordion(@project.id)}
-        class="group col-span-full grid grid-cols-subgrid items-center py-4"
+        class="group col-span-full grid w-full cursor-pointer grid-cols-subgrid items-center gap-x-6 py-4 text-left"
       >
         <span class="text-start text-nowrap">{@project.name}</span>
         <span class="text-nowrap">
@@ -256,7 +265,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
           name="hero-chevron-down"
           class="size-4 transition-transform duration-200 ease-in-out group-data-expanded:rotate-180"
         />
-      </button>
+      </FirmowidWeb.DesignSystem.Components.Button.button>
       <div
         class="col-span-2 grid grid-rows-[0fr] overflow-hidden transition-[grid-template-rows] duration-300 ease-in-out group-data-expanded:grid-rows-[1fr]"
         role="region"
@@ -316,7 +325,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
           <.card_header>
             Projekty pracownika
           </.card_header>
-          <.date_picker
+          <.month_picker
             id="projects_filter_month"
             selected_date={@projects_filter_date}
             active_months={@active_months}

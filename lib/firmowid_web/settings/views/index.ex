@@ -11,6 +11,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
   """
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
   import FirmowidWeb.Settings.Components.EditButton
   import Phoenix.Component, except: [link: 1]

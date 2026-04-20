@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Management.Views.Project do
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Core
@@ -48,6 +49,10 @@ defmodule FirmowidWeb.Management.Views.Project do
   @impl true
   def handle_event("change-month", %{"month" => month}, %{assigns: %{project: project}} = socket) do
     {:noreply, push_patch(socket, to: ~p"/zarzadzanie/projekty/#{project.id}?month=#{month}")}
+  end
+
+  def handle_event("pdf-download-error", _params, socket) do
+    {:noreply, put_flash(socket, :error, "Nie udało się pobrać raportu")}
   end
 
   def handle_event("toggle-user", %{"id" => user_id}, socket) do

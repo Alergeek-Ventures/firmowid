@@ -8,6 +8,7 @@ defmodule Firmowid.Ash.Finances.Institution.ForCountry do
 
   alias Firmowid.Ash.Finances.GoCardless.ApiClient
   alias Firmowid.Ash.Finances.Institution
+  alias Firmowid.Ash.Finances.Institution.ColorCache
 
   @impl true
   def read(query, _data_layer_query, _opts, _context) do
@@ -15,12 +16,15 @@ defmodule Firmowid.Ash.Finances.Institution.ForCountry do
 
     case ApiClient.get_available_institutions_for_country(country) do
       {:ok, institutions} ->
+        ColorCache.warm_dominant_color_rgbs(Enum.map(institutions, & &1["logo"]))
+
         results =
           Enum.map(institutions, fn inst ->
             struct!(Institution, %{
               id: inst["id"],
               name: inst["name"],
               logo: inst["logo"],
+              dominant_color_rgb: ColorCache.get_dominant_color_rgb(inst["logo"]),
               bic: inst["bic"],
               countries: inst["countries"] || [],
               transaction_total_days: inst["transaction_total_days"]

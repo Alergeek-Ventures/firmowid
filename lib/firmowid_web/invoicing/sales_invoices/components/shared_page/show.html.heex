@@ -4,14 +4,15 @@
 >
   <div class="grid grid-cols-[min-content_1fr] justify-center">
     <div class="sticky top-0 left-0 hidden h-min flex-col gap-2 p-4 xl:flex">
-      <a
+      <.link
         :for={invoice <- [@invoice | @invoice.corrections]}
-        href={"#invoice-#{invoice.id}"}
+        kind="unstyled"
+        redirect={"#invoice-#{invoice.id}"}
         data-active={false}
         class="data-active:text-grey-800 hover:text-grey-900 text-grey-700 only:hidden"
       >
         {invoice.invoice_number}
-      </a>
+      </.link>
     </div>
     <div>
       <div
@@ -36,8 +37,9 @@
                   {if @lang == :en, do: "Invoice details", else: "Dane faktury"}
                 </h2>
                 <div :if={invoice.invoice_type == :foreign} class="flex gap-1">
-                  <a
-                    href={~p"/faktura/#{@conn.params["token"]}?lang=pl"}
+                  <.link
+                    kind="unstyled"
+                    navigate={~p"/faktura/#{@conn.params["token"]}?lang=pl"}
                     class={[
                       "rounded px-2 py-1 text-xs font-medium transition-colors",
                       if(@lang == :pl,
@@ -47,9 +49,10 @@
                     ]}
                   >
                     🇵🇱 PL
-                  </a>
-                  <a
-                    href={~p"/faktura/#{@conn.params["token"]}?lang=en"}
+                  </.link>
+                  <.link
+                    kind="unstyled"
+                    navigate={~p"/faktura/#{@conn.params["token"]}?lang=en"}
                     class={[
                       "rounded px-2 py-1 text-xs font-medium transition-colors",
                       if(@lang == :en,
@@ -59,7 +62,7 @@
                     ]}
                   >
                     🇬🇧 EN
-                  </a>
+                  </.link>
                 </div>
               </div>
 
@@ -67,8 +70,9 @@
                 invoice={invoice}
                 lang={@lang}
               />
-              <a
-                href={
+              <.link
+                kind="unstyled"
+                navigate={
                   case invoice.ksef_invoice_kind do
                     :kor -> ~p"/faktura/#{@conn.params["token"] <> "." <> invoice.id}/pdf"
                     :vat -> ~p"/faktura/#{@conn.params["token"]}/pdf"
@@ -78,16 +82,17 @@
               >
                 <.icon name="hero-arrow-down-tray" class="size-4" />
                 {if @lang == :en, do: "Download PDF", else: "Pobierz PDF"}
-              </a>
-              <a
+              </.link>
+              <.link
                 :if={not is_nil(invoice.ksef_number)}
-                href={Firmowid.Ash.Ksef.invoice_url!(invoice)}
+                kind="unstyled"
+                external={Firmowid.Ash.Ksef.invoice_url!(invoice)}
                 target="_blank"
                 class="hover:bg-orangeText flex w-full items-center justify-center gap-2 rounded-lg bg-black px-4 py-3 text-sm font-medium text-white transition-colors"
               >
                 <.icon name="hero-arrow-trending-up" class="size-4" />
                 {if @lang == :en, do: "View in KSeF", else: "Zobacz w KSeF"}
-              </a>
+              </.link>
             </div>
           </div>
         </div>

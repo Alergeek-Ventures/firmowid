@@ -34,12 +34,14 @@
       <% end %>
     </:col>
     <:action :let={organization_invite}>
-      <.link
+      <.button
+        type="button"
+        variant="outline"
         phx-click={JS.push("delete", value: %{id: organization_invite.id})}
         data-confirm="Jesteś pewny?"
       >
         Usuń
-      </.link>
+      </.button>
     </:action>
   </.table>
 </div>

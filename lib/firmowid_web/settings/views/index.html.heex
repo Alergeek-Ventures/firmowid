@@ -126,12 +126,7 @@
                     </div>
                   <% end %>
 
-                  <.button
-                    color="orange"
-                    class="ml-auto w-fit"
-                    type="submit"
-                    phx-disable-with="Zapisywanie..."
-                  >
+                  <.button class="ml-auto" type="submit" phx-disable-with="Zapisywanie...">
                     Zatwierdź
                   </.button>
                 </.form>
@@ -203,12 +198,7 @@
                     </div>
                   <% end %>
 
-                  <.button
-                    color="orange"
-                    class="ml-auto w-fit"
-                    type="submit"
-                    phx-disable-with="Zapisywanie..."
-                  >
+                  <.button class="ml-auto" type="submit" phx-disable-with="Zapisywanie...">
                     Zatwierdź
                   </.button>
                 </.form>
@@ -250,11 +240,11 @@
                     {@current_org.inbound_email_nickname}@firmowid.pl
                   </code>
                   <.button
-                    color="orange"
-                    variant="outline"
+                    type="button"
+                    variant="secondary"
+                    size="small"
                     phx-click="regenerate_inbound_nickname"
                     phx-disable-with="Generowanie..."
-                    class="px-3 py-1 text-xs"
                   >
                     Wygeneruj nowy
                   </.button>
@@ -287,14 +277,17 @@
                       <%= for email <- @current_org.allowed_sender_emails do %>
                         <div class="flex items-center gap-2 rounded bg-gray-50 px-3 py-2">
                           <code class="flex-1 text-sm">{email}</code>
-                          <button
+                          <.button
                             type="button"
+                            variant="destructive"
+                            size="small"
                             phx-click="remove_allowed_email"
                             phx-value-email={email}
-                            class="text-red-600 hover:text-red-800"
+                            class="size-8 p-0"
+                            aria-label={"Usuń #{email}"}
                           >
                             <.icon name="hero-x-mark" class="size-5" />
-                          </button>
+                          </.button>
                         </div>
                       <% end %>
                     </div>
@@ -314,12 +307,7 @@
                       placeholder="email@example.com"
                       class="flex-1 rounded-md border-gray-300 text-sm shadow-sm focus:border-orange-500 focus:ring-orange-500"
                     />
-                    <.button
-                      type="submit"
-                      color="orange"
-                      variant="outline"
-                      class="px-3 py-1 text-xs"
-                    >
+                    <.button type="submit" variant="secondary" size="small">
                       Dodaj
                     </.button>
                   </form>
@@ -360,9 +348,9 @@
                   <div class="w-64"></div>
                   <div class="flex-1">
                     <.button
+                      type="button"
                       phx-click={show_modal("confirm_disconnect_ksef")}
-                      variant="outline"
-                      color="red"
+                      variant="destructive"
                     >
                       Rozłącz
                     </.button>
@@ -396,7 +384,7 @@
                   <div class="mt-4 flex">
                     <div class="w-64"></div>
                     <div class="flex-1">
-                      <.button type="submit" color="orange" phx-disable-with="Łączenie...">
+                      <.button type="submit" phx-disable-with="Łączenie...">
                         Połącz z KSeF
                       </.button>
                     </div>
@@ -414,21 +402,25 @@
             </p>
             <div class="flex gap-4">
               <.button
+                type="button"
                 phx-click={JS.push("disconnect_ksef") |> hide_modal("confirm_disconnect_ksef")}
-                variant="outline"
-                color="red"
+                variant="destructive"
                 phx-disable-with="Rozłączanie..."
               >
                 Rozłącz
               </.button>
-              <.button type="button" phx-click={hide_modal("confirm_disconnect_ksef")}>
+              <.button
+                type="button"
+                variant="secondary"
+                phx-click={hide_modal("confirm_disconnect_ksef")}
+              >
                 Anuluj
               </.button>
             </div>
           </.modal>
 
           <div class="mt-6 ml-4">
-            <.link navigate={~p"/zaproszenia"} kind="button" variant="outline">
+            <.link navigate={~p"/zaproszenia"} kind="button" variant="secondary">
               Dodaj współpracowników do organizacji
             </.link>
           </div>
@@ -533,12 +525,7 @@
                   </div>
                 <% end %>
 
-                <.button
-                  color="orange"
-                  class="ml-auto w-fit"
-                  type="submit"
-                  phx-disable-with="Zapisywanie..."
-                >
+                <.button class="ml-auto" type="submit" phx-disable-with="Zapisywanie...">
                   Zatwierdź
                 </.button>
               </.form>
@@ -601,7 +588,7 @@
             <div class="text-darkGrey flex w-64 items-center justify-end pr-4 text-xs font-medium uppercase">
             </div>
             <div class="flex-1">
-              <.button phx-click={show_modal("confirm_modal")} variant="outline" color="red">
+              <.button type="button" phx-click={show_modal("confirm_modal")} variant="destructive">
                 Zamknij konto
               </.button>
               <.modal id="confirm_modal">
@@ -625,10 +612,14 @@
                   />
                   <:actions>
                     <div class="flex gap-4">
-                      <.button variant="outline" color="red" phx-disable-with="Usuwam...">
+                      <.button variant="destructive" phx-disable-with="Usuwam...">
                         Zamknij konto
                       </.button>
-                      <.button type="button" phx-click={hide_modal("confirm_modal")}>
+                      <.button
+                        type="button"
+                        variant="secondary"
+                        phx-click={hide_modal("confirm_modal")}
+                      >
                         Anuluj
                       </.button>
                     </div>
@@ -671,8 +662,7 @@
               <div>
                 <%= if @google_connected? do %>
                   <.button
-                    variant="outline"
-                    color="red"
+                    variant="destructive"
                     phx-click="unlink_google_account"
                     phx-disable-with="Odłączam..."
                   >
@@ -680,7 +670,7 @@
                   </.button>
                 <% else %>
                   <.button
-                    variant="outline"
+                    variant="secondary"
                     phx-click="link_google_account"
                     phx-disable-with="Przekierowywanie..."
                   >
@@ -821,23 +811,20 @@
                         </div>
                       <% end %>
                     <% end %>
-                    <button
+                    <.button
                       :if={
                         @bank_account_statuses[account.id] == :broken or
                           @bank_account_statuses[account.id] == :disconnected
                       }
+                      type="button"
+                      variant="secondary"
+                      size="small"
                       phx-click="reconnect_bank_account"
                       phx-value-account_id={account.id}
-                      class={[
-                        "bg-greyButtonBg text-greyButtonText w-full uppercase",
-                        "border-greyButtonBg border hover:bg-white hover:text-black",
-                        "transform transition-all duration-200 ease-out",
-                        "flex h-8 items-center rounded-md text-xs",
-                        "col-span-full mt-4 justify-center gap-1"
-                      ]}
+                      class="col-span-full mt-4 w-full uppercase"
                     >
                       <.icon name="hero-arrow-path" class="inline-block size-4" /> Powiąż
-                    </button>
+                    </.button>
                     <div
                       :if={account.is_default}
                       class="bg-orangeBg text-orangeText col-span-full mt-4 flex h-8 w-full items-center justify-center rounded-md text-xs uppercase"
@@ -851,59 +838,51 @@
                           <.icon class="text-darkGrey" name="hero-ellipsis-horizontal" />
                         </:trigger>
                         <div class={[
-                          "text-darkGrey flex flex-col gap-2 text-sm",
+                          "text-darkGrey flex flex-col text-sm",
                           "bg-lightGreyBg z-10 w-44 rounded font-semibold shadow-2xl",
                           "border-darkGrey/30 overflow-hidden border"
                         ]}>
-                          <button
+                          <.button
+                            type="button"
+                            variant="ghost"
+                            size="small"
                             phx-click={show_modal("rename_modal_#{account.id}")}
-                            class={[
-                              "px-4 py-2 text-left transition",
-                              "hover:text-white",
-                              "hover:bg-darkGrey phx-click-loading:opacity-50",
-                              "phx-click-loading:cursor-wait"
-                            ]}
+                            class="w-full justify-start rounded-none border-0"
                           >
                             Zmień nazwę
-                          </button>
-                          <button
+                          </.button>
+                          <.button
                             :if={!is_nil(account.institution_id)}
+                            type="button"
+                            variant="ghost"
+                            size="small"
                             phx-click="reconnect_bank_account"
                             phx-value-account_id={account.id}
-                            class={[
-                              "px-4 py-2 text-left transition",
-                              "hover:text-white",
-                              "hover:bg-darkGrey phx-click-loading:opacity-50",
-                              "phx-click-loading:cursor-wait"
-                            ]}
+                            class="w-full justify-start rounded-none border-0"
                           >
                             Połącz ponownie
-                          </button>
+                          </.button>
 
-                          <button
+                          <.button
+                            type="button"
+                            variant="ghost"
+                            size="small"
                             phx-click={show_modal("confirm_delete_bank_account_#{account.id}")}
-                            class={[
-                              "px-4 py-2 text-left transition",
-                              "hover:text-white",
-                              "hover:bg-darkGrey phx-click-loading:opacity-50",
-                              "phx-click-loading:cursor-wait"
-                            ]}
+                            class="w-full justify-start rounded-none border-0"
                           >
                             Usuń
-                          </button>
-                          <button
+                          </.button>
+                          <.button
                             :if={!account.is_default}
+                            type="button"
+                            variant="ghost"
+                            size="small"
                             phx-click="make_default_account"
                             phx-value-account_id={account.id}
-                            class={[
-                              "px-4 py-2 text-left transition",
-                              "hover:text-white",
-                              "hover:bg-darkGrey phx-click-loading:opacity-50",
-                              "phx-click-loading:cursor-wait"
-                            ]}
+                            class="w-full justify-start rounded-none border-0"
                           >
                             Domyślne dla {account.currency}
-                          </button>
+                          </.button>
                         </div>
                       </.dropdown>
                     </div>
@@ -926,6 +905,7 @@
                         </.button>
                         <.button
                           type="button"
+                          variant="secondary"
                           phx-click={hide_modal("rename_modal_#{account.id}")}
                         >
                           Anuluj
@@ -943,17 +923,15 @@
                       <.button
                         phx-click="delete_bank_account"
                         phx-value-account_id={account.id}
-                        variant="outline"
-                        color="red"
+                        variant="destructive"
                         phx-disable-with="Usuwam..."
-                        class="phx-click-loading:cursor-wait phx-click-loading:opacity-50"
                       >
                         Usuń
                       </.button>
                       <.button
                         type="button"
+                        variant="secondary"
                         phx-click={hide_modal("confirm_delete_bank_account_#{account.id}")}
-                        class="phx-click-loading:cursor-wait phx-click-loading:opacity-50"
                       >
                         Anuluj
                       </.button>
@@ -968,11 +946,15 @@
           <.link
             navigate={~p"/ustawienia/bank/dodaj"}
             kind="button"
-            variant="outline"
+            variant="secondary"
           >
             Podepnij konto bankowe
           </.link>
-          <.button variant="outline" phx-click={show_modal("manual_bank_account_modal")}>
+          <.button
+            type="button"
+            variant="secondary"
+            phx-click={show_modal("manual_bank_account_modal")}
+          >
             Dodaj konto ręcznie
           </.button>
         </div>
@@ -1001,7 +983,11 @@
                 >
                   Zapisz
                 </.button>
-                <.button type="button" phx-click={hide_modal("manual_bank_account_modal")}>
+                <.button
+                  type="button"
+                  variant="secondary"
+                  phx-click={hide_modal("manual_bank_account_modal")}
+                >
                   Anuluj
                 </.button>
               </div>

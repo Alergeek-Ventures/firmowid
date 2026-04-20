@@ -16,23 +16,23 @@
       <Lucideicons.archive class="size-4" /> zarchiwizowany
     </span>
 
-    <.button
+    <FirmowidWeb.DesignSystem.Components.Button.button
       :if={!@employee.archived_at}
       type="button"
-      color="black"
+      variant="special"
       phx-click="archive_employee"
     >
       <.icon name="hero-archive-box-mini" class="size-5" /> Archiwizuj
-    </.button>
+    </FirmowidWeb.DesignSystem.Components.Button.button>
 
-    <.button
+    <FirmowidWeb.DesignSystem.Components.Button.button
       :if={@employee.archived_at}
       type="button"
-      color="black"
+      variant="special"
       phx-click="unarchive_employee"
     >
       <.icon name="hero-arrow-uturn-left-mini" class="size-5" /> Przywróć pracownika
-    </.button>
+    </FirmowidWeb.DesignSystem.Components.Button.button>
   </div>
 
   <.card class="row-start-2 min-h-[689px] w-full max-w-[380px]">
@@ -70,21 +70,22 @@
     <.user_card_info label="Adres e-mail">{@employee.email}</.user_card_info>
     <.user_card_info :if={@employee.bank_account_number != nil} label="Numer konta bankowego">
       <span>{@employee.bank_account_number}</span>
-      <button
+      <FirmowidWeb.DesignSystem.Components.Button.button
         id="copy-bank-account-number"
-        onclick={"navigator.clipboard.writeText('#{@employee.bank_account_number}')"}
+        phx-hook="CopyToClipboard"
+        phx-click="copy-bank-account-number"
+        phx-value-number={@employee.bank_account_number}
         type="button"
+        variant="unstyled"
         class={[
-          "text-darkGrey h-6 w-7 rounded-[3px]",
-          "bg-greyButtonBg self-center justify-self-end",
-          "flex shrink-0 flex-row items-center justify-center",
+          "text-darkGrey inline-flex h-6 w-7 items-center justify-center self-center justify-self-end rounded-[3px]",
           "hover:border-darkGrey border border-transparent",
           "active:bg-darkGrey active:text-lightGreyBg",
-          "transition-duration-300 transition-all"
+          "transition-all duration-300"
         ]}
       >
         <.icon name="hero-document-duplicate" class="size-5" />
-      </button>
+      </FirmowidWeb.DesignSystem.Components.Button.button>
     </.user_card_info>
 
     <.user_card_info :if={not Enum.empty?(@employee.projects)} label="Projekty">

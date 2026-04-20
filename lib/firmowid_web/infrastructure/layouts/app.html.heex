@@ -88,15 +88,19 @@
       </div>
 
       <div class="relative flex flex-1 items-center justify-end gap-3 text-right max-md:hidden">
-        <button
+        <FirmowidWeb.DesignSystem.Components.Button.button
           type="button"
           phx-click={show_modal("feedback-modal")}
-          class="flex cursor-pointer items-center gap-1.5 transition-colors"
+          variant="unstyled"
+          class="inline-flex items-center justify-center text-white transition-colors hover:text-white/80 active:text-white/70"
         >
-          <.icon name="hero-chat-bubble-left-ellipsis" class="size-5" /> Feedback
-        </button>
+          <span class="flex items-center gap-1.5">
+            <.icon name="hero-chat-bubble-left-ellipsis" class="size-5" /> Feedback
+          </span>
+        </FirmowidWeb.DesignSystem.Components.Button.button>
         <div class="relative">
-          <button
+          <.button
+            type="button"
             phx-click={
               JS.toggle(
                 to: "#dropdown_content",
@@ -114,20 +118,24 @@
             phx-click-away={hide("#dropdown_content")}
             phx-window-keydown={hide("#dropdown_content")}
             phx-key="Escape"
-            class="cursor-pointer rounded-full p-1 px-2 transition hover:bg-white hover:text-black"
+            variant="unstyled"
+            class="overflow-hidden rounded-full text-white transition hover:bg-white hover:text-black active:bg-white/80"
+            style="border-radius: 9999px"
             title={@current_user.email}
           >
-            <%= if @current_user.avatar_blob && @current_user.avatar_blob.url do %>
-              <.avatar class="size-9 border-2 border-white/20">
-                <.avatar_image src={@current_user.avatar_blob.url} alt={@current_user.email} />
-                <.avatar_fallback bg_color="darkGrey" class="text-white">
-                  <.icon name="hero-user" class="size-5" />
-                </.avatar_fallback>
-              </.avatar>
-            <% else %>
-              <.icon name="hero-user" class="size-5" />
-            <% end %>
-          </button>
+            <span class="flex items-center p-1 px-2">
+              <%= if @current_user.avatar_blob && @current_user.avatar_blob.url do %>
+                <.avatar class="size-9 rounded-full border-2 border-white/20">
+                  <.avatar_image src={@current_user.avatar_blob.url} alt={@current_user.email} />
+                  <.avatar_fallback bg_color="darkGrey" class="text-white">
+                    <.icon name="hero-user" class="size-5" />
+                  </.avatar_fallback>
+                </.avatar>
+              <% else %>
+                <.icon name="hero-user" class="size-5" />
+              <% end %>
+            </span>
+          </.button>
           <div
             id="dropdown_content"
             style="display: none"
@@ -153,12 +161,15 @@
               </.link>
             <% end %>
             <.form for={%{}} action={~p"/wyloguj"} method="delete" class="w-full">
-              <button
+              <FirmowidWeb.DesignSystem.Components.Button.button
                 type="submit"
-                class="hover:bg-darkGrey/50 flex w-full cursor-pointer justify-between rounded-md p-2"
+                variant="unstyled"
+                class="active:bg-darkGrey/70 hover:bg-darkGrey/50 block w-full cursor-pointer rounded-md text-white hover:text-white"
               >
-                Wyloguj się <.icon name="hero-arrow-right-start-on-rectangle" />
-              </button>
+                <span class="flex w-full items-center justify-between p-2">
+                  Wyloguj się <.icon name="hero-arrow-right-start-on-rectangle" />
+                </span>
+              </FirmowidWeb.DesignSystem.Components.Button.button>
             </.form>
           </div>
         </div>
@@ -196,8 +207,10 @@
             Projekty
           </.link>
         </div>
-        <button
-          class="relative ml-auto flex size-6 cursor-pointer text-white opacity-0 transition-opacity"
+        <.button
+          type="button"
+          variant="unstyled"
+          class="relative ml-auto inline-flex size-6 cursor-pointer items-center justify-center text-white opacity-0 transition-opacity"
           id="navbar-burger-button"
           phx-hook="CollapsibleNavbar"
           data-classes="opacity-100"
@@ -209,7 +222,7 @@
           <span class="x-icon absolute inset-0 hidden">
             <.icon name="hero-x-mark" />
           </span>
-        </button>
+        </.button>
       </div>
     <% end %>
   </.navbar>

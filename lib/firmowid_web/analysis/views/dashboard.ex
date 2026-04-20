@@ -8,6 +8,8 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   """
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.MonthPicker
+
   alias Firmowid.Ash.Analysis
   alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.Ash.Analysis.TagDefinition
@@ -249,11 +251,13 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   defp summary_card(assigns) do
     ~H"""
-    <button
+    <FirmowidWeb.DesignSystem.Components.Button.button
       phx-click="select-section"
+      type="button"
+      variant="unstyled"
       phx-value-section={@section}
       class={[
-        "cursor-pointer rounded-lg border-2 p-6 text-left transition-all duration-200",
+        "block w-full cursor-pointer rounded-lg border-2 p-6 text-left transition-all duration-200",
         if(@active, do: "#{@active_border} ring-2 #{@ring}", else: "#{@border} #{@hover_border}"),
         @bg,
         @text
@@ -270,7 +274,7 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
           </p>
         </div>
       </div>
-    </button>
+    </FirmowidWeb.DesignSystem.Components.Button.button>
     """
   end
 

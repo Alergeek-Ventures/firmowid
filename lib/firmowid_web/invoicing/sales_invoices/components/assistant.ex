@@ -155,15 +155,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
             "Transakcja za tę fakturę ma inną nazwę kontrahenta",
             "Opłata została wykonana znacznie później niż faktura została wystawiona",
           ] do %>
-              <FirmowidWeb.DesignSystem.Components.CoreComponents.button
+              <FirmowidWeb.DesignSystem.Components.Button.button
                 phx-click="send"
-                color="orange"
-                class="h-auto rounded bg-orange-200 px-[9px] py-1 text-sm/tight font-medium text-orange-700 hover:bg-orange-700 hover:text-orange-200"
+                variant="secondary"
                 phx-target={@myself}
                 phx-value-message={possible_message}
               >
                 {possible_message}
-              </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
+              </FirmowidWeb.DesignSystem.Components.Button.button>
             <% end %>
           </div>
         <% end %>
@@ -179,22 +178,20 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
       <div :if={@waiting_for_decision} class="mb-8 flex flex-col items-center gap-3">
         <p>Połączyć te transakcje z fakturą?</p>
         <div class="grid grid-cols-2 gap-3">
-          <FirmowidWeb.DesignSystem.Components.CoreComponents.button
+          <.button
             phx-click="reject"
             phx-target={@myself}
-            color="light_grey"
             variant="outline"
             class="text-nowrap"
           >
             Szukaj dalej
-          </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
-          <FirmowidWeb.DesignSystem.Components.CoreComponents.button
+          </.button>
+          <.button
             phx-click="accept"
             phx-target={@myself}
-            color="orange"
           >
             Zatwierdź
-          </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
+          </.button>
         </div>
       </div>
     </div>

@@ -100,7 +100,13 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
         scope: socket.assigns.ash_scope
       )
 
-    {:noreply, assign(socket, :invoice, invoice)}
+    potential_transactions =
+      InvoiceMatching.get_potential_transactions_for_invoice(invoice, socket.assigns.ash_scope)
+
+    {:noreply,
+     socket
+     |> assign(:invoice, invoice)
+     |> assign(:potential_transactions, potential_transactions)}
   end
 
   @impl true
@@ -119,7 +125,13 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
         scope: socket.assigns.ash_scope
       )
 
-    {:noreply, assign(socket, :invoice, invoice)}
+    potential_transactions =
+      InvoiceMatching.get_potential_transactions_for_invoice(invoice, socket.assigns.ash_scope)
+
+    {:noreply,
+     socket
+     |> assign(:invoice, invoice)
+     |> assign(:potential_transactions, potential_transactions)}
   end
 
   @impl true

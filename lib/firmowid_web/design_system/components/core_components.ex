@@ -93,59 +93,6 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
     """
   end
 
-  @doc """
-  Buttons allow users to take actions, and make choices, with a single tap.
-
-  ## Examples
-
-  ```heex
-  <.button>
-    Click me
-  </.button>
-  ```
-
-  """
-
-  attr :class, :any, doc: "Extend existing styles applied to the component."
-
-  attr :rest, :global, include: ~w(disabled form name value)
-
-  attr :color, :string,
-    doc: "The button color.",
-    default: "black",
-    values: [
-      "black",
-      "green",
-      "red",
-      "orange",
-      "grey",
-      "light_grey",
-      "light_orange",
-      "special",
-      "none",
-      "turquoise"
-    ]
-
-  attr :size, :string, default: "medium", values: ["medium", "small"]
-
-  attr :type, :string,
-    default: "submit",
-    doc: "The button type.",
-    values: ["submit", "button", "reset"]
-
-  attr :variant, :string, default: "solid", values: ["outline", "solid", "ghost"]
-  attr :new, :boolean, default: false
-
-  slot :inner_block, required: true
-
-  def button(assigns) do
-    ~H"""
-    <button type={@type} class={button_styles(assigns)} {@rest}>
-      {render_slot(@inner_block)}
-    </button>
-    """
-  end
-
   def button_styles do
     button_styles(%{})
   end
@@ -916,36 +863,6 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         {render_slot(@inner_block)}
       </.link>
     </div>
-    """
-  end
-
-  attr :active_months, :list, default: nil
-  attr :selected_date, :string, required: true
-  attr :disabled, :boolean, default: false
-  attr :rest, :global
-  attr :class, :any, default: nil
-  attr :value, :string, default: nil
-
-  def date_picker(assigns) do
-    ~H"""
-    <label class={[
-      "group has-disabled:bg-grey-100 has-disabled:text-grey-600 w-44 justify-start max-md:hidden",
-      button_styles(%{color: "light_grey", size: "medium", new: true}),
-      @class
-    ]}>
-      <Lucideicons.calendar_1 />
-      <input
-        type="button"
-        phx-hook="AirDatepicker"
-        value={@value}
-        data-enabled-months={
-          @active_months && @active_months |> Enum.map(&Date.to_iso8601/1) |> Enum.join(",")
-        }
-        data-initial-date={@selected_date}
-        disabled={@disabled}
-        {@rest}
-      />
-    </label>
     """
   end
 

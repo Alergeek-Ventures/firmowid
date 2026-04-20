@@ -37,6 +37,7 @@ defmodule Firmowid.Application do
         {DNSCluster, query: Application.get_env(:firmowid, :dns_cluster_query) || :ignore},
         {Phoenix.PubSub, name: Firmowid.PubSub},
         Supervisor.child_spec({Cachex, name: :currencies}, id: :currencies_cache),
+        Supervisor.child_spec({Cachex, name: :institutions}, id: :institutions_cache),
         Supervisor.child_spec({Cachex, name: :ksef}, id: :ksef_cache),
         Firmowid.Ash.Finances.GoCardless.TokenManager,
         Firmowid.Vault,

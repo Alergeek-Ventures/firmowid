@@ -359,16 +359,17 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             </p>
           <% end %>
 
-          <button
+          <.button
             type="button"
             name={@drop_param}
             value={item.index}
             phx-click={JS.dispatch("change")}
             disabled={@single_item?}
+            variant="unstyled"
             class="hover:text-grey-700 text-grey-300 ml-1 cursor-pointer transition-colors duration-200 ease-out disabled:cursor-default disabled:text-transparent"
           >
             <Lucideicons.x class="size-4" />
-          </button>
+          </.button>
         </div>
       </.inputs_for>
 

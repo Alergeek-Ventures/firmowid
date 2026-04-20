@@ -3,6 +3,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
   use FirmowidWeb, :live_view
 
   import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Timetracker

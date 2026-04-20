@@ -58,14 +58,17 @@
                 </div>
                 <div class="mt-2 ml-6 flex flex-wrap gap-2">
                   <%= for suggestion <- warning_suggestions(warning) do %>
-                    <button
+                    <.button
                       type="button"
                       phx-click="select_series"
                       phx-value-number={suggestion}
-                      class="bg-turquoise-300 text-turquoise-900 rounded px-3 py-1 text-xs transition"
+                      variant="secondary"
+                      accent="turquoise"
+                      size="small"
+                      class="text-xs"
                     >
                       Użyj {suggestion}
-                    </button>
+                    </.button>
                   <% end %>
                 </div>
               </div>
@@ -74,14 +77,22 @@
         <% else %>
           <div class="flex flex-wrap gap-2">
             <%= for {_series, next_number} <- Enum.sort_by(@series_suggestions, fn {s, _} -> if s == nil, do: "", else: s end) do %>
-              <button
+              <.button
                 type="button"
                 phx-click="select_series"
                 phx-value-number={next_number}
-                class={"rounded-lg border px-3 py-1.5 text-sm #{if @invoice_number == next_number, do: "bg-turquoise-50 border-turquoise-500 text-turquoise-700", else: "border-grey-200 hover:bg-grey-50 text-grey-600 bg-white"}"}
+                variant={if(@invoice_number == next_number, do: "secondary", else: "outline")}
+                accent="turquoise"
+                size="small"
+                class={
+                  if(@invoice_number == next_number,
+                    do: "border-turquoise-500 text-turquoise-700",
+                    else: "hover:bg-grey-50 text-grey-600"
+                  )
+                }
               >
                 {next_number}
-              </button>
+              </.button>
             <% end %>
           </div>
         <% end %>

@@ -2,18 +2,24 @@ export const DownloadPdf = {
   mounted() {
     this.el.addEventListener("click", (e) => {
       e.preventDefault();
+      e.stopPropagation();
       const btn = this.el;
       const idle = btn.querySelector("[data-download-idle]");
       const loading = btn.querySelector("[data-download-loading]");
       const url =
+        btn.dataset.downloadUrl ||
         btn.dataset.downloadPath +
-        "?include_internal_note=" +
-        btn.dataset.includeNote;
+          "?include_internal_note=" +
+          btn.dataset.includeNote;
       const modalId = btn.dataset.modalId;
+      const successEvent = btn.dataset.downloadSuccessEvent;
+      const successTarget = btn.dataset.downloadTarget;
 
-      idle.classList.add("hidden");
-      loading.classList.remove("hidden");
-      loading.classList.add("inline-flex");
+      if (idle) idle.classList.add("hidden");
+      if (loading) {
+        loading.classList.remove("hidden");
+        loading.classList.add("inline-flex");
+      }
       btn.disabled = true;
 
       fetch(url)
@@ -39,14 +45,24 @@ export const DownloadPdf = {
           if (modal) {
             window.liveSocket.execJS(modal, modal.dataset.cancel);
           }
+
+          if (successEvent) {
+            if (successTarget) {
+              this.pushEventTo(successTarget, successEvent, {});
+            } else {
+              this.pushEvent(successEvent, {});
+            }
+          }
         })
         .catch(() => {
           this.pushEvent("pdf-download-error", {});
         })
         .finally(() => {
-          idle.classList.remove("hidden");
-          loading.classList.add("hidden");
-          loading.classList.remove("inline-flex");
+          if (idle) idle.classList.remove("hidden");
+          if (loading) {
+            loading.classList.add("hidden");
+            loading.classList.remove("inline-flex");
+          }
           btn.disabled = false;
         });
     });

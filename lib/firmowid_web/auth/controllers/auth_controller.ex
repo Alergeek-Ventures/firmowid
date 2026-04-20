@@ -16,6 +16,26 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   @doc """
   Success callback after authentication (password sign-in, Google OAuth, etc.)
   """
+  def success(conn, {:password, :reset}, user, _token) do
+    return_to = get_session(conn, :return_to) || UserAuth.signed_in_path_for_user(user)
+
+    conn
+    |> renew_session()
+    |> delete_session(:return_to)
+    |> store_in_session(user)
+    |> Helpers.maybe_put_remember_me_cookies(conn.private[:ash_authentication])
+    |> assign(:current_user, user)
+    |> LiveToast.put_toast(:success, "Hasło zmienione poprawnie")
+    |> redirect(to: return_to)
+  end
+
+  def success(conn, {:password, :reset_request}, _user, _token) do
+    conn
+    |> delete_session(:return_to)
+    |> put_flash(:info, "Jeśli konto istnieje, wysłaliśmy instrukcje resetowania hasła.")
+    |> redirect(to: ~p"/zaloguj")
+  end
+
   def success(conn, _activity, user, _token) do
     return_to = get_session(conn, :return_to) || UserAuth.signed_in_path_for_user(user)
 
@@ -65,6 +85,14 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
     else
       {"Niewłaściwy email lub hasło.", ~p"/zaloguj"}
     end
+  end
+
+  defp failure_message_and_path({:password, :reset}, _reason) do
+    {"Nie udało się zresetować hasła. Link jest nieprawidłowy lub wygasł.", ~p"/resetuj-haslo"}
+  end
+
+  defp failure_message_and_path({:password, :reset_request}, _reason) do
+    {"Nie udało się wysłać instrukcji resetowania hasła. Spróbuj ponownie.", ~p"/resetuj-haslo"}
   end
 
   defp failure_message_and_path({:google, _phase}, reason) do

@@ -2,6 +2,8 @@ defmodule FirmowidWeb.Auth.Views.Login do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
@@ -31,7 +33,7 @@ defmodule FirmowidWeb.Auth.Views.Login do
             </.link>
           </:actions>
           <:actions>
-            <.button phx-disable-with="Logowanie..." class="w-full px-4 py-2">
+            <.button variant="special" phx-disable-with="Logowanie..." class="w-full">
               Zaloguj się
             </.button>
           </:actions>
@@ -53,7 +55,7 @@ defmodule FirmowidWeb.Auth.Views.Login do
           redirect={~p"/auth/user/google"}
           kind="button"
           variant="outline"
-          class="mt-8 w-full gap-3 bg-white text-sm font-medium text-gray-700 hover:bg-black hover:text-white"
+          class="mt-8 w-full gap-3 border-gray-300 bg-white text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900"
         >
           <svg class="size-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path

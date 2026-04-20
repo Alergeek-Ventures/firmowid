@@ -7,6 +7,10 @@ defmodule FirmowidWeb.Feedback.Components.Form do
   """
   use FirmowidWeb, :live_component
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import Phoenix.Component, except: [link: 1]
+
   @impl true
   def update(assigns, socket) do
     socket =
@@ -44,15 +48,10 @@ defmodule FirmowidWeb.Feedback.Components.Form do
               ><%= @content %></textarea>
             </div>
             <div class="flex justify-end gap-3">
-              <.button
-                type="button"
-                color="grey"
-                variant="outline"
-                phx-click={hide_modal("feedback-modal")}
-              >
+              <.button type="button" variant="outline" phx-click={hide_modal("feedback-modal")}>
                 Zamknij
               </.button>
-              <.button type="submit" color="black">
+              <.button type="submit" variant="special">
                 Wyślij
               </.button>
             </div>
@@ -67,7 +66,7 @@ defmodule FirmowidWeb.Feedback.Components.Form do
           </p>
           <.button
             type="button"
-            color="black"
+            variant="special"
             phx-click={
               JS.push("reset", target: "##{@id}")
               |> hide_modal("feedback-modal")

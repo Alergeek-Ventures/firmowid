@@ -3,11 +3,13 @@
     %{
       name: "default",
       requires: ["./checks/*.ex"],
-      plugins: [{ExDNA.Credo, []}],
+      plugins: [],
       checks: [
         {Checks.RejectDirectHistoryRates, []},
         {Checks.ClassAttributeFormat, []},
+        {Checks.EnforceDesignSystemMarkup, []},
         {Checks.EnforceVerifiedRoutesInDsLink, []},
+        {ExDNA.Credo, [min_mass: 40]},
         {CredoNaming.Check.Consistency.ModuleFilename,
          [
            # Only enforce within lib/firmowid_web/ — exclude everything else

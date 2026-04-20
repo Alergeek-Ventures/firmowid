@@ -49,7 +49,7 @@ defmodule FirmowidWeb.DesignSystem.Components.Link do
   @spec link(map()) :: Phoenix.LiveView.Rendered.t()
   attr :class, :any, default: nil, doc: "Additional classes merged into the component."
 
-  attr :rest, :global, include: ~w(aria-label target rel phx-click phx-disable-with referrerpolicy)
+  attr :rest, :global, include: ~w(aria-label target rel download phx-click phx-disable-with referrerpolicy)
 
   attr :kind, :string,
     values: @kinds,
@@ -304,28 +304,26 @@ defmodule FirmowidWeb.DesignSystem.Components.Link do
          %{kind: "button", size: size, navigate: navigate, patch: nil, redirect: nil, external: nil, mailto: nil} =
            assigns
        ) do
+    accent = resolved_accent(assigns)
+
     assigns
     |> assign(:navigate, navigate)
     |> assign(:variant, assigns.variant || "primary")
-    |> assign(:accent, assigns.accent || "orange")
-    |> assign(
-      :link_classes,
-      button_link_classes(size, assigns.variant || "primary", assigns.accent || "orange")
-    )
+    |> assign(:accent, accent)
+    |> assign(:link_classes, button_link_classes(size, assigns.variant || "primary", accent))
     |> do_render_navigate_link()
   end
 
   defp render_link(
          %{kind: "button", size: size, navigate: nil, patch: patch, redirect: nil, external: nil, mailto: nil} = assigns
        ) do
+    accent = resolved_accent(assigns)
+
     assigns
     |> assign(:patch, patch)
     |> assign(:variant, assigns.variant || "primary")
-    |> assign(:accent, assigns.accent || "orange")
-    |> assign(
-      :link_classes,
-      button_link_classes(size, assigns.variant || "primary", assigns.accent || "orange")
-    )
+    |> assign(:accent, accent)
+    |> assign(:link_classes, button_link_classes(size, assigns.variant || "primary", accent))
     |> do_render_patch_link()
   end
 
@@ -333,14 +331,13 @@ defmodule FirmowidWeb.DesignSystem.Components.Link do
          %{kind: "button", size: size, navigate: nil, patch: nil, redirect: redirect, external: nil, mailto: nil} =
            assigns
        ) do
+    accent = resolved_accent(assigns)
+
     assigns
     |> assign(:redirect, redirect)
     |> assign(:variant, assigns.variant || "primary")
-    |> assign(:accent, assigns.accent || "orange")
-    |> assign(
-      :link_classes,
-      button_link_classes(size, assigns.variant || "primary", assigns.accent || "orange")
-    )
+    |> assign(:accent, accent)
+    |> assign(:link_classes, button_link_classes(size, assigns.variant || "primary", accent))
     |> do_render_redirect_link()
   end
 
@@ -355,13 +352,12 @@ defmodule FirmowidWeb.DesignSystem.Components.Link do
            mailto: nil
          } = assigns
        ) do
+    accent = resolved_accent(assigns)
+
     assigns
     |> assign(:variant, assigns.variant || "primary")
-    |> assign(:accent, assigns.accent || "orange")
-    |> assign(
-      :link_classes,
-      button_link_classes(size, assigns.variant || "primary", assigns.accent || "orange")
-    )
+    |> assign(:accent, accent)
+    |> assign(:link_classes, button_link_classes(size, assigns.variant || "primary", accent))
     |> do_render_external_link()
   end
 
@@ -376,13 +372,12 @@ defmodule FirmowidWeb.DesignSystem.Components.Link do
            mailto: nil
          } = assigns
        ) do
+    accent = resolved_accent(assigns)
+
     assigns
     |> assign(:variant, assigns.variant || "primary")
-    |> assign(:accent, assigns.accent || "orange")
-    |> assign(
-      :link_classes,
-      button_link_classes(size, assigns.variant || "primary", assigns.accent || "orange")
-    )
+    |> assign(:accent, accent)
+    |> assign(:link_classes, button_link_classes(size, assigns.variant || "primary", accent))
     |> do_render_external_link()
   end
 
@@ -390,14 +385,13 @@ defmodule FirmowidWeb.DesignSystem.Components.Link do
          %{kind: "button", size: size, navigate: nil, patch: nil, redirect: nil, external: nil, mailto: mailto} = assigns
        )
        when is_binary(mailto) and byte_size(mailto) > 0 do
+    accent = resolved_accent(assigns)
+
     assigns
     |> assign(:mailto_href, "mailto:" <> mailto)
     |> assign(:variant, assigns.variant || "primary")
-    |> assign(:accent, assigns.accent || "orange")
-    |> assign(
-      :link_classes,
-      button_link_classes(size, assigns.variant || "primary", assigns.accent || "orange")
-    )
+    |> assign(:accent, accent)
+    |> assign(:link_classes, button_link_classes(size, assigns.variant || "primary", accent))
     |> do_render_mailto_link()
   end
 
@@ -444,7 +438,7 @@ defmodule FirmowidWeb.DesignSystem.Components.Link do
   defp text_link_classes("big") do
     [
       "inline-flex items-center justify-center gap-1 whitespace-nowrap select-none transition duration-100 ease-out",
-      "text-base/tight font-medium text-grey-700",
+      "text-base/tight font-normal text-grey-700",
       "hover:text-grey-900 active:text-orange-700",
       "[&>svg]:size-4"
     ]
@@ -453,7 +447,7 @@ defmodule FirmowidWeb.DesignSystem.Components.Link do
   defp text_link_classes("small") do
     [
       "inline-flex items-center justify-center gap-1 whitespace-nowrap select-none transition duration-100 ease-out",
-      "text-sm/tight font-medium text-grey-700",
+      "text-sm/tight font-normal text-grey-700",
       "hover:text-grey-900 active:text-orange-700",
       "[&>svg]:size-4"
     ]
@@ -466,4 +460,8 @@ defmodule FirmowidWeb.DesignSystem.Components.Link do
       ButtonStyles.variant_classes(variant, accent)
     ]
   end
+
+  defp resolved_accent(%{accent: nil, variant: nil}), do: "orange"
+  defp resolved_accent(%{accent: nil, variant: "primary"}), do: "orange"
+  defp resolved_accent(%{accent: accent}), do: accent
 end

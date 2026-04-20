@@ -2,6 +2,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.SharedPage do
   @moduledoc false
   use FirmowidWeb, :html
 
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   embed_templates "shared_page/*"
 
   attr :title, :string, required: true

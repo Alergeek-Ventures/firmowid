@@ -1,0 +1,49 @@
+defmodule FirmowidWeb.DesignSystem.Components.MonthPicker do
+  @moduledoc """
+  App-owned month picker control built on top of the design-system button.
+  """
+
+  use FirmowidWeb, :html
+
+  @doc """
+  Renders a month picker trigger styled like a secondary button.
+  """
+  @spec month_picker(map()) :: Phoenix.LiveView.Rendered.t()
+  attr :active_months, :list, default: nil
+  attr :selected_date, :string, required: true
+  attr :disabled, :boolean, default: false
+  attr :rest, :global
+  attr :class, :any, default: nil
+  attr :value, :string, default: nil
+
+  def month_picker(assigns) do
+    ~H"""
+    <FirmowidWeb.DesignSystem.Components.Button.button
+      as="label"
+      variant="secondary"
+      size="big"
+      class={
+        [
+          "group has-disabled:bg-grey-100 has-disabled:text-grey-600 pr-4 max-md:hidden",
+          # icon has "spacing" in it, we have to compensate
+          @class
+        ]
+      }
+    >
+      <Lucideicons.calendar_1 />
+      <input
+        type="button"
+        class="min-w-0 cursor-pointer bg-transparent text-left outline-none"
+        phx-hook="AirDatepicker"
+        value={@value}
+        data-enabled-months={
+          @active_months && @active_months |> Enum.map(&Date.to_iso8601/1) |> Enum.join(",")
+        }
+        data-initial-date={@selected_date}
+        disabled={@disabled}
+        {@rest}
+      />
+    </FirmowidWeb.DesignSystem.Components.Button.button>
+    """
+  end
+end

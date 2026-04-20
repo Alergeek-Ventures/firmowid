@@ -20,7 +20,7 @@
     </div>
 
     <div :if={!@project.archived_at} class="flex flex-row gap-4">
-      <.button variant="outline" phx-click="archive_project">
+      <.button variant="special" type="button" phx-click="archive_project">
         Archiwizuj
       </.button>
       <.link
@@ -31,7 +31,7 @@
         <Lucideicons.square_pen /> Edytuj
       </.link>
 
-      <.date_picker
+      <.month_picker
         id="project_date_picker"
         selected_date={@selected_date}
         active_months={@active_months}
@@ -54,21 +54,22 @@
 
     <.button
       :if={@current_user.role == :admin}
-      variant="tertiary"
+      variant="special"
       size="small"
+      type="button"
       phx-click="unarchive_project"
     >
       Przywróć projekt
     </.button>
-    <FirmowidWeb.DesignSystem.Components.CoreComponents.button
+    <.button
       :if={@can_delete_project}
-      variant="outline"
-      color="red"
+      variant="destructive"
       size="small"
+      type="button"
       phx-click={show_modal("delete_project_modal")}
     >
       Usuń projekt
-    </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
+    </.button>
   </div>
 
   <div class="flex flex-col gap-12">
@@ -137,16 +138,23 @@
           Pracownicy
         </p>
 
-        <Phoenix.Component.link
+        <.button
           :if={!@project.archived_at}
-          class={button_styles(%{variant: "ghost", size: "small", new: true})}
-          download
-          href={
+          type="button"
+          variant="secondary"
+          size="small"
+          phx-hook="DownloadPdf"
+          data-download-url={
             ~p"/czasosledz/projekty/#{@project.id}/csv?month=#{@selected_date.month}&year=#{@selected_date.year}"
           }
         >
-          <Lucideicons.cloud_download /> Pobierz raport
-        </Phoenix.Component.link>
+          <span data-download-idle class="inline-flex items-center gap-1.5">
+            <Lucideicons.cloud_download /> Pobierz raport
+          </span>
+          <span data-download-loading class="hidden items-center gap-1.5">
+            <Lucideicons.loader_circle class="size-4 animate-spin" /> Pobieranie…
+          </span>
+        </.button>
       </div>
 
       <div class="grid grid-cols-[1fr_repeat(3,minmax(min-content,6rem))_min-content] items-center gap-x-4 gap-y-2">
@@ -205,19 +213,21 @@
                 —
               <% end %>
             </p>
-            <button
+            <.button
               :if={!@project.archived_at}
               phx-click="toggle-user"
+              type="button"
+              variant="unstyled"
               phx-value-id={user.id}
               disabled={user.time_worked == 0}
-              class="cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              class="inline-flex items-center justify-center disabled:opacity-50"
             >
               <%= if user.expanded do %>
                 <Lucideicons.chevron_up class="text-grey-900 size-4" />
               <% else %>
                 <Lucideicons.chevron_down class="text-grey-900 size-4" />
               <% end %>
-            </button>
+            </.button>
 
             <div
               :if={user.expanded}
@@ -279,15 +289,14 @@
       >
         Anuluj
       </.button>
-      <FirmowidWeb.DesignSystem.Components.CoreComponents.button
+      <.button
         type="button"
-        variant="outline"
-        color="red"
+        variant="destructive"
         phx-click="delete_project"
         phx-disable-with="Usuwam..."
       >
         Usuń projekt
-      </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
+      </.button>
     </div>
   </div>
 </.modal>

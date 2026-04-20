@@ -9,8 +9,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   """
   use FirmowidWeb, :live_view
 
-  import FirmowidWeb.DesignSystem.Components.Button
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
@@ -105,13 +103,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
           >
             <Lucideicons.pencil /> Edytuj
           </.link>
-          <Phoenix.Component.link
-            href={~p"/sprzedazowe/#{@invoice.id}/pobierz"}
-            class={button_styles(%{size: "small", color: "light_grey", new: true})}
+          <.link
+            kind="button"
+            variant="secondary"
+            size="small"
+            redirect={~p"/sprzedazowe/#{@invoice.id}/pobierz"}
+            download
           >
             <Lucideicons.download /> Pobierz
-          </Phoenix.Component.link>
-          <.button
+          </.link>
+          <FirmowidWeb.DesignSystem.Components.Button.button
             :if={
               (@ksef_connected? and not is_nil(@invoice.invoice_number) and
                  SubmissionInfo.not_submitted?(@submission_info)) or
@@ -122,7 +123,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             phx-click="send_to_ksef"
           >
             <Lucideicons.send /> Wyślij do KSeF
-          </.button>
+          </FirmowidWeb.DesignSystem.Components.Button.button>
         </div>
 
         <div class="flex items-center gap-4">

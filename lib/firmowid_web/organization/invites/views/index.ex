@@ -2,6 +2,10 @@ defmodule FirmowidWeb.Organization.Invites.Views.Index do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import Phoenix.Component, except: [link: 1]
+
   alias Ash.Error.Forbidden
   alias Firmowid.Ash.Core
 

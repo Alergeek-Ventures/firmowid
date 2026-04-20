@@ -2,6 +2,8 @@ defmodule FirmowidWeb.Auth.Views.ResetPassword do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
@@ -24,14 +26,10 @@ defmodule FirmowidWeb.Auth.Views.ResetPassword do
 
         <input type="hidden" name={@form[:reset_token].name} value={@reset_token} />
         <.input field={@form[:password]} type="password" label="Nowe hasło" required />
-        <.input
-          field={@form[:password_confirmation]}
-          type="password"
-          label="Potwierdź nowe hasło"
-          required
-        />
         <:actions>
-          <.button phx-disable-with="Resetowanie..." class="w-full">Resetuj hasło</.button>
+          <.button variant="special" phx-disable-with="Resetowanie..." class="w-full">
+            Resetuj hasło
+          </.button>
         </:actions>
       </.simple_form>
 

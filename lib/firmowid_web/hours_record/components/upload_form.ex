@@ -2,6 +2,8 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
   @moduledoc false
   use FirmowidWeb, :live_component
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
@@ -55,18 +57,24 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
       </div>
       <%= case @state do %>
         <% :download -> %>
-          <a
-            href={~p"/czasosledz/ewidencja/#{@selected_date |> Date.to_iso8601()}/pdf"}
+          <.link
+            id={"hours-record-download-#{Date.to_iso8601(@selected_date)}"}
+            kind="button"
+            redirect={~p"/czasosledz/ewidencja/#{@selected_date |> Date.to_iso8601()}/pdf"}
             download
             phx-click="download"
             phx-target={@myself}
-            class={[
-              "ml-auto w-full max-w-32 px-6 text-center",
-              button_styles(%{color: "orange", variant: "solid"})
-            ]}
+            phx-hook="DownloadPdf"
+            data-download-url={~p"/czasosledz/ewidencja/#{@selected_date |> Date.to_iso8601()}/pdf"}
+            data-download-success-event="download"
+            data-download-target={@myself}
+            class="ml-auto w-full max-w-32"
           >
-            Pobierz
-          </a>
+            <span data-download-idle>Pobierz</span>
+            <span data-download-loading class="hidden items-center gap-2">
+              <Lucideicons.loader_circle class="size-4 animate-spin" /> Pobieranie…
+            </span>
+          </.link>
         <% :sign -> %>
           <div class="flex items-center justify-between">
             <.link
@@ -81,9 +89,9 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
               />
             </.link>
             <.button
+              type="button"
               phx-click="sign"
               phx-target={@myself}
-              color="orange"
               variant="outline"
               class="w-full max-w-32 text-center"
             >
@@ -117,7 +125,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
                 </div>
               </div>
             </label>
-            <.button disabled={value == :upload} color="orange" class="w-full max-w-32">
+            <.button disabled={value == :upload} class="w-full max-w-32">
               Wyślij
             </.button>
           </form>
@@ -129,6 +137,11 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
   @impl true
   def handle_event("download", _params, socket) do
     {:noreply, assign(socket, :state, :sign)}
+  end
+
+  def handle_event("pdf-download-error", _params, socket) do
+    LiveToast.send_toast(:error, "Nie udało się pobrać ewidencji godzin.")
+    {:noreply, socket}
   end
 
   def handle_event("sign", _params, socket) do

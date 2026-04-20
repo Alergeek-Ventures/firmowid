@@ -3,7 +3,7 @@
   <div class="bg-lightGreyBg sticky top-14 z-10 flex flex-col gap-4 py-3">
     <div class="flex items-center justify-between">
       <form class="flex gap-4" phx-submit="search">
-        <.date_picker
+        <.month_picker
           id="month"
           selected_date={@selected_date}
           active_months={@active_months}
@@ -38,20 +38,22 @@
       </form>
 
       <div class="flex gap-4">
-        <Phoenix.Component.link
+        <.link
           :if={@can_export_csv}
-          class={button_styles(%{variant: "ghost", size: "small", new: true})}
+          kind="button"
+          variant="secondary"
+          size="big"
           download
-          href={
+          redirect={
             ~p"/czasosledz/projekty/csv?month=#{@selected_date.month}&year=#{@selected_date.year}"
           }
         >
-          <Lucideicons.cloud_download class="size-4" /> Pobierz raport wypłat
-        </Phoenix.Component.link>
+          <Lucideicons.file_text /> Raport wypłat
+        </.link>
         <.link
           navigate={~p"/zaproszenia"}
           kind="button"
-          variant="secondary"
+          variant="special"
         >
           <.icon name="hero-plus-mini" class="size-6" /> Dodaj pracownika
         </.link>
@@ -114,31 +116,38 @@
       <%= if @view in [:wages, :wage_editor] do %>
         <%= case @view do %>
           <% :wages -> %>
-            <button
+            <.button
               phx-click="toggle_wage_editor"
               type="button"
-              class="hover:bg-grey-200 flex items-center gap-1.5 justify-self-end rounded-sm px-2 py-1 transition"
+              variant="ghost"
+              size="small"
+              class="justify-self-end"
             >
               Stawka <.icon name="hero-pencil-square-solid" class="size-4" />
-            </button>
+            </.button>
           <% :wage_editor -> %>
             <div class="flex gap-2 justify-self-end">
-              <button
+              <.button
                 id="wage-editor-toggle"
-                class="bg-grey-200 text-grey-700 inline-flex rounded-sm px-3 py-1"
+                variant="secondary"
+                size="small"
+                class="text-grey-700 size-8 p-0"
                 phx-click="toggle_wage_editor"
                 phx-hook="ConfirmLeave"
                 data-unsaved={true}
                 type="button"
               >
                 <.icon name="hero-arrow-uturn-left-micro" class="size-4" />
-              </button>
-              <button
-                class="text-caps-sm/tight w-22 rounded-sm bg-orange-200 px-3 py-1 font-medium text-orange-700 uppercase"
+              </.button>
+              <.button
+                variant="secondary"
+                accent="orange"
+                size="small"
+                class="text-caps-sm/tight w-22 font-medium uppercase"
                 type="submit"
               >
                 Zapisz
-              </button>
+              </.button>
             </div>
         <% end %>
 
@@ -268,17 +277,18 @@
         <div class="ml-2 flex items-center gap-4 rounded-sm bg-white p-4">
           <.hours_record_status hours_record={employee.hours_record} user={employee.user} />
 
-          <button
+          <.button
             type="button"
+            variant="unstyled"
             id={"copy-bank-number-#{employee.user.id}"}
-            phx-hook="Tippy"
-            data-tippy-content="Skopiuj numer konta"
+            phx-hook="CopyToClipboard"
             disabled={is_nil(employee.user.bank_account_number)}
-            onclick={"navigator.clipboard.writeText('#{employee.user.bank_account_number}')"}
-            class="active:text-grey-900 disabled:text-grey-400 hover:text-grey-800 text-grey-700 inline-flex transition active:scale-95"
+            phx-click="copy-bank-number"
+            phx-value-number={employee.user.bank_account_number}
+            class="active:text-grey-900 disabled:text-grey-400 hover:text-grey-800 text-grey-700 inline-flex items-center justify-center transition active:scale-95"
           >
             <.icon name="hero-credit-card-micro" class="size-6 shrink-0" />
-          </button>
+          </.button>
         </div>
       </div>
     <% end %>

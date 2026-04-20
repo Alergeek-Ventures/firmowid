@@ -1,5 +1,7 @@
 # credo:disable-for-this-file ExDNA.Credo
-# Test setup duplicates another domain test by design (tenant-scoped fixture bootstrap); extracting shared helpers would cross domain boundaries and be larger than a small refactor.
+# Test setup duplicates another domain test by design (tenant-scoped fixture
+# bootstrap); extracting shared helpers would cross domain boundaries and be
+# larger than a small refactor.
 defmodule Firmowid.Ash.Payroll.UserSalaryTest do
   use Firmowid.DataCase, async: true
 

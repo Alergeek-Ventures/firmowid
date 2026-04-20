@@ -175,14 +175,15 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
 
   defp tag_selector_popover(assigns) do
     ~H"""
-    <button
+    <FirmowidWeb.DesignSystem.Components.Button.button
       id={"tag-trigger-#{@entity_id}"}
       type="button"
+      variant="unstyled"
       phx-click={show_popover(@popover_id)}
-      class="hover:bg-grey-200 hover:text-darkGrey text-darkGrey/50 inline-flex shrink-0 cursor-pointer items-center justify-center rounded-md p-1 transition"
+      class="hover:bg-grey-200 hover:text-darkGrey text-darkGrey/50 inline-flex shrink-0 items-center justify-center rounded-md p-1 transition"
     >
       <.icon name="hero-pencil-square-mini" class="size-4.5" />
-    </button>
+    </FirmowidWeb.DesignSystem.Components.Button.button>
     <.popover
       id={@popover_id}
       reference_id={"tag-trigger-#{@entity_id}"}

@@ -2,6 +2,8 @@ defmodule FirmowidWeb.Auth.Views.Registration do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
@@ -42,7 +44,7 @@ defmodule FirmowidWeb.Auth.Views.Registration do
         <.input field={@form[:password]} type="password" label="Hasło" required />
 
         <:actions>
-          <.button phx-disable-with="Tworzenie konta..." class="w-full">
+          <.button variant="special" phx-disable-with="Tworzenie konta..." class="w-full">
             Stwórz konto
           </.button>
         </:actions>

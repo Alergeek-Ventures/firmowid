@@ -2,6 +2,10 @@ defmodule FirmowidWeb.Organization.Views.Index do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import Phoenix.Component, except: [link: 1]
+
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Organization
   alias Firmowid.Ash.Core.OrganizationInvite
@@ -82,7 +86,11 @@ defmodule FirmowidWeb.Organization.Views.Index do
                 />
 
                 <:actions>
-                  <.button class="w-full!" phx-disable-with="Tworzenie organizacji...">
+                  <.button
+                    variant="special"
+                    class="w-full"
+                    phx-disable-with="Tworzenie organizacji..."
+                  >
                     Utwórz organizację
                   </.button>
                 </:actions>
@@ -98,7 +106,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
                 <.simple_form for={@join_form} id="join_form" phx-submit="join">
                   <.input field={@join_form[:code]} type="text" label="Kod zaproszenia" required />
                   <:actions>
-                    <.button class="w-full" phx-disable-with="Dołączanie...">
+                    <.button variant="special" class="w-full" phx-disable-with="Dołączanie...">
                       Dołącz do organizacji
                     </.button>
                   </:actions>
@@ -108,9 +116,14 @@ defmodule FirmowidWeb.Organization.Views.Index do
                 <p>
                   Nie to konto?
                   <.form for={%{}} action={~p"/wyloguj"} method="delete" class="inline">
-                    <button type="submit" class="cursor-pointer underline">
+                    <.button
+                      type="submit"
+                      variant="ghost"
+                      size="small"
+                      class="h-auto border-none p-0 underline hover:bg-transparent active:bg-transparent"
+                    >
                       Wyloguj
-                    </button>
+                    </.button>
                   </.form>
                 </p>
               </div>

@@ -20,6 +20,7 @@ defmodule Firmowid.Ash.Finances.Institution do
     attribute :id, :string, primary_key?: true, public?: true, writable?: false, allow_nil?: false
     attribute :name, :string, public?: true, writable?: false
     attribute :logo, :string, public?: true, writable?: false
+    attribute :dominant_color_rgb, :string, public?: true, writable?: false
     attribute :bic, :string, public?: true, writable?: false
     attribute :countries, {:array, :string}, public?: true, writable?: false
     attribute :transaction_total_days, :string, public?: true, writable?: false

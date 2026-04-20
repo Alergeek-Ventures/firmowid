@@ -32,11 +32,12 @@
   <div class="space-y-3">
     <%!-- 1. Zespół --%>
     <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
-      <button
+      <.button
         phx-click={toggle_section("team")}
         type="button"
         id="section-trigger-team"
         aria-controls="section-panel-team"
+        variant="unstyled"
         class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
@@ -48,7 +49,7 @@
           name="hero-chevron-down"
           class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
         />
-      </button>
+      </.button>
       <div
         id="section-panel-team"
         role="region"
@@ -137,11 +138,12 @@
 
     <%!-- 2. Organizacja i konta --%>
     <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
-      <button
+      <.button
         phx-click={toggle_section("org")}
         type="button"
         id="section-trigger-org"
         aria-controls="section-panel-org"
+        variant="unstyled"
         class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
@@ -153,7 +155,7 @@
           name="hero-chevron-down"
           class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
         />
-      </button>
+      </.button>
       <div
         id="section-panel-org"
         role="region"
@@ -211,11 +213,12 @@
 
     <%!-- 3. Projekty --%>
     <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
-      <button
+      <.button
         phx-click={toggle_section("projects")}
         type="button"
         id="section-trigger-projects"
         aria-controls="section-panel-projects"
+        variant="unstyled"
         class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
@@ -227,7 +230,7 @@
           name="hero-chevron-down"
           class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
         />
-      </button>
+      </.button>
       <div
         id="section-panel-projects"
         role="region"
@@ -298,30 +301,32 @@
 
     <%!-- 4. Czasośledź / Lista płac --%>
     <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
-      <button
+      <.button
         phx-click={toggle_section("timetracker")}
         type="button"
         id="section-trigger-timetracker"
         aria-controls="section-panel-timetracker"
+        variant="unstyled"
         class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
           <.icon name="hero-clock" class="text-darkGrey size-5" />
           <span class="font-semibold">Czasośledź i lista płac</span>
-          <a
-            href="/czasosledz"
+          <.link
+            kind="unstyled"
+            redirect="/czasosledz"
             class="text-turquoise-600 text-xs hover:underline"
             phx-click="noop"
             phx-value-stop="true"
           >
             /czasosledz
-          </a>
+          </.link>
         </div>
         <.icon
           name="hero-chevron-down"
           class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
         />
-      </button>
+      </.button>
       <div
         id="section-panel-timetracker"
         role="region"
@@ -397,9 +402,13 @@
             </div>
             <p class="text-grey-400 mt-3 text-xs">
               Panel admina:
-              <a href="/zarzadzanie/projekty" class="text-turquoise-600 hover:underline">
+              <.link
+                kind="unstyled"
+                navigate={~p"/zarzadzanie/projekty"}
+                class="text-turquoise-600 hover:underline"
+              >
                 /zarzadzanie/projekty
-              </a>
+              </.link>
               — przegląd godzin, stawek i eksport CSV.
             </p>
           </div>
@@ -409,30 +418,32 @@
 
     <%!-- 5. Dashboard analityczny --%>
     <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
-      <button
+      <.button
         phx-click={toggle_section("analysis")}
         type="button"
         id="section-trigger-analysis"
         aria-controls="section-panel-analysis"
+        variant="unstyled"
         class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
           <.icon name="hero-chart-bar" class="text-darkGrey size-5" />
           <span class="font-semibold">Dashboard analityczny</span>
-          <a
-            href="/analiza"
+          <.link
+            kind="unstyled"
+            redirect="/analiza"
             class="text-turquoise-600 text-xs hover:underline"
             phx-click="noop"
             phx-value-stop="true"
           >
             /analiza
-          </a>
+          </.link>
         </div>
         <.icon
           name="hero-chevron-down"
           class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
         />
-      </button>
+      </.button>
       <div
         id="section-panel-analysis"
         role="region"
@@ -586,11 +597,12 @@
 
     <%!-- 6. KSeF --%>
     <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
-      <button
+      <.button
         phx-click={toggle_section("ksef")}
         type="button"
         id="section-trigger-ksef"
         aria-controls="section-panel-ksef"
+        variant="unstyled"
         class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
@@ -602,7 +614,7 @@
           name="hero-chevron-down"
           class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
         />
-      </button>
+      </.button>
       <div
         id="section-panel-ksef"
         role="region"
@@ -613,14 +625,14 @@
             <div class="my-4 space-y-2 text-sm">
               <div>
                 <span class="text-darkGrey">URL testowy:</span>
-                <a
-                  href="https://ap-test.ksef.mf.gov.pl/web/tokens/generate-token"
-                  class="text-turquoise-600 hover:underline"
+                <.link
+                  kind="unstyled"
+                  external="https://ap-test.ksef.mf.gov.pl/web/tokens/generate-token"
                   target="_blank"
                   rel="noopener"
                 >
                   ap-test.ksef.mf.gov.pl
-                </a>
+                </.link>
               </div>
               <div>
                 <span class="text-darkGrey">NIP testowy:</span>
@@ -692,11 +704,12 @@
 
     <%!-- 7. System tagowania --%>
     <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
-      <button
+      <.button
         phx-click={toggle_section("tags")}
         type="button"
         id="section-trigger-tags"
         aria-controls="section-panel-tags"
+        variant="unstyled"
         class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
@@ -708,7 +721,7 @@
           name="hero-chevron-down"
           class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
         />
-      </button>
+      </.button>
       <div
         id="section-panel-tags"
         role="region"
@@ -762,11 +775,12 @@
 
     <%!-- 8. VoidStack Labs --%>
     <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
-      <button
+      <.button
         phx-click={toggle_section("voidstack")}
         type="button"
         id="section-trigger-voidstack"
         aria-controls="section-panel-voidstack"
+        variant="unstyled"
         class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
       >
         <div class="flex items-center gap-3">
@@ -778,7 +792,7 @@
           name="hero-chevron-down"
           class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
         />
-      </button>
+      </.button>
       <div
         id="section-panel-voidstack"
         role="region"

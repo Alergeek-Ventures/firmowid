@@ -2,6 +2,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
   @moduledoc false
   use FirmowidWeb, :html
 
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.VatRate
   alias FirmowidWeb.Invoicing.Components.Print
@@ -754,9 +757,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
             :poland -> "Faktura za pomocą"
             :foreign -> "Invoice from"
           end}
-          <a class="font-black" href="https://firmowid.pl" target="_blank" rel="noreferrer noopener">
+          <.link
+            kind="unstyled"
+            external="https://firmowid.pl"
+            target="_blank"
+            rel="noreferrer noopener"
+            class="font-black"
+          >
             Firmowid.pl
-          </a>
+          </.link>
         </p>
       </div>
     </div>

@@ -3,11 +3,10 @@
     <.link kind="unstyled" navigate={~p"/czasosledz/"} class="my-auto">
       <.icon name="hero-arrow-left-circle-solid" />
     </.link>
-    <.date_picker
+    <.month_picker
       id="selected_date"
       active_months={@active_months}
       selected_date={@selected_date}
-      class="text-darkGrey size-full max-w-[360px] px-4 py-2.5 font-bold"
     />
   </div>
 
@@ -15,19 +14,21 @@
     <div class="col-span-4 w-full space-y-2">
       <%= for project <- @projects do %>
         <div class="bg-grey-50 divide-greyButtonBg flex flex-col divide-y rounded-md px-4">
-          <div class="flex items-center gap-6 py-5">
+          <FirmowidWeb.DesignSystem.Components.Button.button
+            phx-click="toggle-project"
+            type="button"
+            phx-value-id={project.id}
+            disabled={project.duration == 0}
+            variant="unstyled"
+            class="flex w-full items-center gap-6 py-5 text-left disabled:cursor-not-allowed disabled:opacity-50"
+          >
             <span class="mr-auto">{project.name}</span>
             <span>{TimeFormatter.format_duration(project.duration)}</span>
-            <button
-              phx-click="toggle-project"
-              phx-value-id={project.id}
-              disabled={project.duration == 0}
-              class="disabled:cursor-not-allowed disabled:opacity-50"
-            >
+            <span class="inline-flex items-center justify-center">
               <.icon :if={project.expanded} name="hero-chevron-up-mini" class="text-darkGrey" />
               <.icon :if={!project.expanded} name="hero-chevron-down-mini" class="text-darkGrey" />
-            </button>
-          </div>
+            </span>
+          </FirmowidWeb.DesignSystem.Components.Button.button>
 
           <div :if={project.expanded} class="space-y-4 py-4 pr-11">
             <div :for={session <- project.sessions} class="flex justify-between text-sm">

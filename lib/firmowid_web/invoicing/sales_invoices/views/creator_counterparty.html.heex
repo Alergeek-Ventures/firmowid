@@ -37,13 +37,14 @@
           phx-hook="Tippy"
           data-tippy-content="w trakcie prac - wprowadź kontrahenta ręcznie przyciskiem w prawym górnym rogu ekranu"
         >
-          <FirmowidWeb.DesignSystem.Components.CoreComponents.button
+          <.button
             type="button"
-            color="turquoise"
+            variant="secondary"
+            accent="turquoise"
             disabled
           >
             Dodaj kontrahenta
-          </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
+          </.button>
         </span>
       </div>
 
@@ -144,21 +145,23 @@
             <p class="text-grey-500 text-center">
               Nie znaleziono kontrahentów.
             </p>
-            <FirmowidWeb.DesignSystem.Components.CoreComponents.button
+            <.button
               variant="outline"
               class="border-transparent"
               phx-click="clear_counterparty_filters"
             >
               Wyczyść filtry
-            </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
+            </.button>
           </div>
 
-          <button
+          <.button
             :for={{dom_id, counterparty} <- @streams.counterparties}
             id={dom_id}
+            type="button"
+            variant="unstyled"
             phx-click="select_counterparty"
             phx-value-counterparty_id={counterparty.id}
-            class="-ring-offset-1 group phx-click-loading:opacity-70 ring-turquoise-300 col-span-full grid grid-cols-subgrid items-center rounded-md bg-white px-4 py-3 text-sm transition duration-200 ease-out hover:ring-2"
+            class="-ring-offset-1 group phx-click-loading:opacity-70 ring-turquoise-300 col-span-full grid cursor-pointer grid-cols-subgrid items-center rounded-md bg-white px-4 py-3 text-left text-sm transition duration-200 ease-out hover:ring-2"
           >
             <p class="flex flex-row items-center gap-2 text-black">
               <span class="inline-flex items-center gap-2">
@@ -180,8 +183,8 @@
               {CountryCodes.country_name(counterparty.country)}
             </p>
 
-            <Lucideicons.chevron_right class="group-hover:text-grey-900 text-grey-500 transition duration-200 ease-out" />
-          </button>
+            <Lucideicons.chevron_right class="group-hover:text-grey-900 text-grey-500 justify-self-end transition duration-200 ease-out" />
+          </.button>
         </div>
       </div>
 
@@ -260,14 +263,14 @@
                   <% end %>
 
                   <div class="flex flex-row gap-2.5">
-                    <FirmowidWeb.DesignSystem.Components.CoreComponents.button
+                    <.button
                       phx-click="select_counterparty"
                       phx-value-counterparty_id={counterparty.id}
                       size="small"
-                      color="light_grey"
+                      variant="secondary"
                     >
                       Wybierz
-                    </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
+                    </.button>
                   </div>
                 </div>
               </div>

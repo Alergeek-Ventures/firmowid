@@ -3,7 +3,7 @@
   <div class="bg-lightGreyBg sticky top-14 z-10 flex flex-col gap-4 py-3">
     <div class="flex flex-row justify-between">
       <form class="flex gap-4">
-        <.date_picker
+        <.month_picker
           id="project_date_picker"
           selected_date={@selected_date}
           active_months={@active_months}
@@ -39,7 +39,7 @@
       <.link
         navigate={~p"/zarzadzanie/projekty/dodaj"}
         kind="button"
-        variant="secondary"
+        variant="special"
       >
         <Lucideicons.plus /> Dodaj projekt
       </.link>

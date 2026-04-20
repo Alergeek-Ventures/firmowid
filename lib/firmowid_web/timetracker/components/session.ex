@@ -2,6 +2,10 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
   @moduledoc false
   use FirmowidWeb, :html
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import Phoenix.Component, except: [link: 1]
+
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Timetracker.Utilities.GroupedSessionForm
   alias FirmowidWeb.Timetracker.Views.Index
@@ -51,31 +55,33 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
           | {length(@sessions)} sesji
         </span>
 
-        <button
+        <.button
           type="button"
           phx-click={
             JS.remove_attribute("readonly", to: "##{sessions_form[:title].id}")
             |> JS.focus(to: "##{sessions_form[:title].id}")
           }
+          variant="unstyled"
           class="opacity-0 transition group-hover:opacity-100 focus:outline-hidden"
         >
-        </button>
+          <span class="sr-only">Edytuj tytuł</span>
+        </.button>
       </div>
 
       <% select_id = "session-project-select-#{parent_session.id}" %>
-      <button
+      <.button
         id={"project-select-#{parent_session.id}"}
         type="button"
-        selecttarget={select_id}
         phx-click={show_popover(select_id)}
         disabled={parent_session.lockdown}
-        class="hover:bg-grey-200 text-darkGrey ml-auto min-w-0 cursor-pointer rounded border-none bg-transparent bg-none! px-2 py-1 text-sm uppercase transition focus:ring-0 disabled:pointer-events-none"
+        variant="unstyled"
+        class="hover:bg-grey-200 text-darkGrey ml-auto min-w-0 cursor-pointer rounded border-none bg-transparent px-2 py-1 text-sm uppercase transition focus:ring-0 disabled:pointer-events-none"
       >
         {case Enum.find(@active_projects, &(&1.id == parent_session.project_id)) do
           nil -> "Select"
           project -> project.name
         end}
-      </button>
+      </.button>
 
       <.popover
         placement="bottom-end"
@@ -103,19 +109,19 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
 
       <% popover_id = "edit-sessions-popover-#{parent_session.id}" %>
       <% total_duration = @sessions |> Index.calculate_total_duration() %>
-      <button
+      <.button
         class="hover:bg-grey-200 ml-4 w-14 shrink-0 rounded-md py-1 text-center font-bold transition lg:ml-8"
         id={"session-timer-#{parent_session.id}"}
         type="button"
-        popovertarget={popover_id}
         phx-click={show_popover(popover_id)}
         phx-hook="Timer"
         data-start_time={DateTime.shift(DateTime.utc_now(), second: -1 * total_duration)}
         data-format="short"
         data-disabled={parent_session.end_datetime != nil}
+        variant="unstyled"
       >
         {TimeFormatter.format_timer(total_duration)}
-      </button>
+      </.button>
 
       <.popover
         id={popover_id}
@@ -154,13 +160,14 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
                 value={format_time(session[:end_time].value)}
                 input_class="border-grey-200 rounded-lg py-2 px-3"
               />
-              <button
+              <.button
                 type="button"
                 phx-click="delete_session"
                 phx-value-id={session[:id].value}
+                variant="unstyled"
               >
                 <Lucideicons.trash_2 class="hover:text-darkGrey text-grey-500 transition-all" />
-              </button>
+              </.button>
             </.inputs_for>
           </div>
         </div>
@@ -168,14 +175,13 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
         <div class="flex justify-end gap-3">
           <.button
             type="button"
-            color="light_grey"
             variant="outline"
             class="max-w-28 flex-1 text-sm"
             phx-click={hide_popover(popover_id)}
           >
             Anuluj
           </.button>
-          <.button type="submit" color="orange" class="max-w-28 flex-1 text-sm">
+          <.button type="submit" class="max-w-28 flex-1 text-sm">
             Zapisz
           </.button>
         </div>

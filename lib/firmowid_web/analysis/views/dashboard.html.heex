@@ -76,21 +76,22 @@
                 <span class="text-darkGrey truncate text-sm">{tag_def.name}</span>
               </label>
 
-              <button
+              <FirmowidWeb.DesignSystem.Components.Button.button
                 :if={@tag_filters != []}
+                type="button"
+                variant="unstyled"
                 phx-click="clear-tag-filters"
-                class="border-grey-200 text-darkGrey mt-1 w-full cursor-pointer border-t px-2 py-1.5 text-center text-xs transition hover:text-orange-800"
+                class="border-grey-200 text-darkGrey mt-1 block w-full cursor-pointer border-t px-2 py-1.5 text-center text-xs hover:text-orange-800"
               >
                 Wyczyść filtry
-              </button>
+              </FirmowidWeb.DesignSystem.Components.Button.button>
             </div>
           </.popover>
         </div>
-        <.date_picker
+        <.month_picker
           id="month"
           active_months={@active_months}
           selected_date={@params.month}
-          class="w-48 gap-2"
         />
       </div>
     </div>

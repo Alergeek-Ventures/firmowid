@@ -48,9 +48,11 @@ defmodule Firmowid.Ash.Invoicing.Services.RecentMatchedEntries do
     matched_events =
       (latest_cost_invoice_match_events(scope) ++
          latest_sales_invoice_match_events(scope))
-      |> Enum.filter(&(&1.action == :connect_transactions))
-      |> Enum.filter(&(NaiveDateTime.compare(&1.occurred_at, month_start) != :lt))
-      |> Enum.filter(&(NaiveDateTime.compare(&1.occurred_at, month_end) != :gt))
+      |> Enum.filter(fn event ->
+        event.action == :connect_transactions and
+          NaiveDateTime.compare(event.occurred_at, month_start) != :lt and
+          NaiveDateTime.compare(event.occurred_at, month_end) != :gt
+      end)
       |> Enum.sort_by(& &1.occurred_at, {:desc, NaiveDateTime})
 
     cost_invoices_by_id =

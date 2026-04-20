@@ -8,7 +8,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   use FirmowidWeb, :live_view
 
   import FirmowidWeb.Core.PubSubDebounce
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Notifier.Notification
@@ -103,13 +106,185 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   @impl true
+  def render(assigns) do
+    ~H"""
+    <div class="my-16 flex flex-col items-center justify-center gap-16 text-center md:hidden">
+      <.icon name="hero-document-magnifying-glass-solid" class="size-16" />
+      <div class="flex flex-col gap-4">
+        <p class="font-bold">Podgląd dokumentów nie jest aktualnie dostępny na urządzeniu mobilnym</p>
+        <p>Zeskanuj dokument naciskając przycisk poniżej, a będzie on dostępny na komputerze.</p>
+      </div>
+    </div>
+
+    <div class="bg-lightGreyBg top-navbar sticky z-10 flex justify-between py-3 max-md:justify-center">
+      <div class="flex items-center gap-4">
+        <.month_picker
+          id="month"
+          active_months={@active_months}
+          selected_date={@params.month}
+        />
+
+        <.button
+          type="button"
+          variant="secondary"
+          size="big"
+          id="open-search"
+          phx-click="open-search"
+          phx-hook="Tippy"
+          data-tippy-content="Szukaj faktur"
+        >
+          <Lucideicons.search />
+        </.button>
+      </div>
+
+      <div
+        phx-drop-target={@current_user.role == :admin && @uploads.file.ref}
+        class="flex flex-row gap-4"
+      >
+        <%= if @invoicing_entries != [] do %>
+          <.live_component
+            id="download-component"
+            module={FirmowidWeb.Invoicing.Components.DownloadModal}
+            month={@params.month}
+          />
+        <% end %>
+        <form
+          :if={@current_user.role == :admin}
+          id="upload-form"
+          phx-change="upload"
+          phx-submit="upload"
+        >
+          <div class="hidden">
+            <.live_file_input upload={@uploads.file} />
+          </div>
+          <FirmowidWeb.DesignSystem.Components.Button.button
+            as="label"
+            for={@uploads.file.ref}
+            variant="secondary"
+            accent="orange"
+          >
+            <%= if @currently_uploading_count > 0 or @processing_blobs_count > 0 do %>
+              <span
+                id="upload-count-indicator"
+                phx-hook="Tippy"
+                data-tippy-content="Pliki są przetwarzane i za kilka chwil będą dostępne w Firmowidzie"
+                class="absolute -top-3 -right-3 flex size-7 items-center justify-center overflow-hidden rounded-full bg-black"
+              >
+                <span class="absolute block size-full animate-spin bg-linear-to-r from-[#727272] to-black" />
+                <span class="z-10 flex size-5 items-center justify-center rounded-full bg-black">
+                  <%= if @currently_uploading_count > 0 do %>
+                    <.icon name="hero-arrow-up-circle-solid" class="size-5 leading-none text-white" />
+                  <% else %>
+                    <%= case @processing_blobs_count do %>
+                      <% 1 -> %>
+                        <.icon
+                          name="hero-arrow-up-circle-solid"
+                          class="size-5 leading-none text-white"
+                        />
+                      <% 0 -> %>
+                      <% _ -> %>
+                        <span>{@processing_blobs_count}</span>
+                    <% end %>
+                  <% end %>
+                </span>
+              </span>
+            <% end %>
+            <Lucideicons.file_input />
+            <span class="block sm:grow sm:text-center md:hidden lg:block">
+              Faktura spoza KSeF
+            </span>
+          </FirmowidWeb.DesignSystem.Components.Button.button>
+        </form>
+        <.link
+          :if={@current_user.role == :admin}
+          navigate={~p"/sprzedazowe"}
+          kind="button"
+          variant="secondary"
+          accent="turquoise"
+          id="sales-invoice-link"
+          class="max-md:hidden"
+        >
+          <Lucideicons.file_pen_line class="size-5" />
+          <span class="max-xl:hidden">
+            Wystaw fakturę
+          </span>
+        </.link>
+      </div>
+    </div>
+    <.live_component
+      module={FirmowidWeb.Invoicing.Components.SearchOverlay}
+      id="invoice-search-overlay"
+      show_search={@show_search}
+      search_query={@search_query}
+      search_results={@search_results}
+    />
+
+    <FirmowidWeb.Invoicing.Components.FilterBar.filter_bar
+      params={@params}
+      pending_count={@pending_invoicing_entries_count}
+      is_month_closed={@is_month_closed}
+      is_month_touched={@is_month_touched}
+    />
+
+    <div
+      :if={@current_user.role == :admin}
+      class="mt-2 flex flex-col gap-4 max-md:hidden"
+    >
+      <%= cond do %>
+        <% @params.view_mode == :dashboard -> %>
+          <FirmowidWeb.Invoicing.Components.Dashboard.dashboard
+            unpaid_invoices={@dashboard_unpaid_invoices}
+            unpaid_invoices_count={@dashboard_unpaid_invoices_count}
+            unmatched_transactions={@dashboard_unmatched_transactions}
+            unmatched_transactions_count={@dashboard_unmatched_transactions_count}
+            matched_entries={@dashboard_matched_entries}
+            matched_entries_count={@dashboard_matched_entries_count}
+            suggestions={@dashboard_suggestions}
+            suggestions_count={@dashboard_suggestions_count}
+            month={@params.month}
+          />
+        <% @is_month_closed and @params.filter == :unmatched -> %>
+          <.live_component
+            id="month-closed-zero-state"
+            module={FirmowidWeb.Invoicing.Components.MonthClosedZeroState}
+            month={@params.month}
+          />
+        <% true -> %>
+          <FirmowidWeb.Invoicing.Components.EntriesTable.table
+            mode={@params.filter}
+            invoicing_entries={@invoicing_entries}
+          />
+      <% end %>
+    </div>
+
+    <div
+      :if={@current_user.role == :admin}
+      id="file-drop-overlay"
+      class="fixed top-[10lvw] left-[5lvw] z-20 hidden h-[80lvh] w-[90lvw] items-center justify-center rounded-lg bg-[#CEE6E666] opacity-0 transition-opacity"
+      phx-hook="FileUploadDragNDrop"
+      phx-drop-target={@current_user.role == :admin && @uploads.file.ref}
+    >
+      <div class="border-blueBg absolute top-0 left-0 size-full rounded-lg border-2 opacity-100" />
+      <div class="bg-blueText flex flex-col items-center justify-center gap-8 rounded-xl p-4 py-8 text-white">
+        <.icon name="hero-cloud-arrow-up" class="size-16" />
+        <p class="max-w-[25lvw] text-center text-xl opacity-100">
+          Przeciągnij faktury, aby załadować je do Firmowida.
+        </p>
+        <p class="max-w-[25lvw] text-center text-sm opacity-80">
+          (max 50 plików, PDF, JPG oraz PNG)
+        </p>
+      </div>
+    </div>
+    """
+  end
+
+  @impl true
   def handle_params(params, _url, socket) do
     parsed = parse_url_params(params)
 
     socket =
       socket
       |> apply_action(socket.assigns.live_action, params)
-      |> maybe_show_tutorial(Map.get(params, "show_modal") == "true")
       |> assign(:params, parsed)
       |> refetch_invoicing_entries()
 
@@ -152,27 +327,11 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp parse_subfilter_value("bez_dokumentu"), do: :bez_dokumentu
   defp parse_subfilter_value(_subfilter_string), do: nil
 
-  defp maybe_show_tutorial(socket, true), do: push_event(socket, "js-exec", %{to: "#tutorial-modal", attr: "phx-show"})
-
-  defp maybe_show_tutorial(socket, _), do: socket
-
   @impl true
   def handle_event("change-month", %{"month" => month}, socket) do
     month = Date.from_iso8601!(month)
 
     {:noreply, update_param(socket, :month, month)}
-  end
-
-  def handle_event("hide-tutorial-modal", _params, socket) do
-    socket =
-      socket
-      |> push_event("js-exec", %{
-        to: "#tutorial-modal",
-        attr: "phx-remove"
-      })
-      |> update_param(:show_modal, false)
-
-    {:noreply, socket}
   end
 
   def handle_event("change-filter", %{"filter" => filter}, socket) do
@@ -225,13 +384,13 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         %{"transaction_ids" => transaction_ids},
         %{assigns: %{params: %{filter: :unmatched}}} = socket
       ) do
-    socket = Enum.reduce(transaction_ids, socket, &do_toggle_skip(&2, &1, "transaction"))
-    {:noreply, socket}
+    Enum.each(transaction_ids, &do_toggle_skip(socket, &1, "transaction"))
+    {:noreply, refetch_invoicing_entries(socket)}
   end
 
   def handle_event("toggle-skip-invoicing-group", %{"transaction_ids" => transaction_ids}, socket) do
-    socket = Enum.reduce(transaction_ids, socket, &do_toggle_skip(&2, &1, "transaction"))
-    {:noreply, socket}
+    Enum.each(transaction_ids, &do_toggle_skip(socket, &1, "transaction"))
+    {:noreply, refetch_invoicing_entries(socket)}
   end
 
   def handle_event("open-search", _params, socket) do

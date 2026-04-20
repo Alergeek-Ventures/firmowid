@@ -2,6 +2,9 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
   @moduledoc false
   use FirmowidWeb, :live_component
 
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   attr :month, :any, required: true
 
   @impl true
@@ -28,18 +31,20 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
 
     ~H"""
     <div>
-      <button
+      <FirmowidWeb.DesignSystem.Components.Button.button
         id="download-button"
+        type="button"
+        variant="secondary"
         phx-click={show_modal("download-modal")}
         data-tippy-content="Pobierz wszystkie faktury wystawione lub z datą sprzedaży w tym miesiącu"
         phx-hook="Tippy"
-        class="bg-greyButtonBg border-greyButtonBg hover:bg-darkGrey hover:border-darkGrey relative flex flex-row items-center justify-center gap-4 rounded-lg border px-3 py-2 transition-colors hover:text-white max-md:hidden"
+        class="relative max-md:hidden"
       >
-        <span aria-hidden="true"><.icon name="hero-cloud-arrow-down" class="size-6" /></span>
+        <Lucideicons.file_down />
         <span class="max-xl:hidden">
           Pobierz
         </span>
-      </button>
+      </FirmowidWeb.DesignSystem.Components.Button.button>
 
       <.modal id="download-modal" on_cancel={hide_modal("download-modal")}>
         <div class="flex flex-col gap-8 p-4">
@@ -90,8 +95,9 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
             </.form>
           </div>
 
-          <a
-            href={download_href(@month, assigns)}
+          <.link
+            kind="unstyled"
+            navigate={download_href(@month, assigns)}
             download
             class={[
               "rounded-md py-2 text-center transition-colors",
@@ -104,7 +110,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
             tabindex={if(!@any_selected, do: "-1")}
           >
             Pobierz dokumenty
-          </a>
+          </.link>
         </div>
       </.modal>
     </div>

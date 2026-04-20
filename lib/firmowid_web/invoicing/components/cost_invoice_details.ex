@@ -73,24 +73,25 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   module={InvoiceDownloadModal}
                   id={"cost-download-#{@invoice.id}"}
                   download_path={~p"/kosztowe/#{@invoice.id}/pobierz"}
-                  button_class={button_styles(%{color: "light_grey", size: "small", new: true})}
+                  trigger_variant="secondary"
+                  trigger_size="small"
                   button_label="Pobierz PDF do druku"
                 />
 
-                <Phoenix.Component.link
+                <.link
                   :if={!downloadable_as_pdf?(@invoice)}
-                  class={button_styles(%{color: "light_grey", size: "small", new: true})}
-                  href={@invoice.blob && @invoice.blob.url}
+                  kind="button"
+                  variant="secondary"
+                  size="small"
+                  external={@invoice.blob && @invoice.blob.url}
                   download
                 >
                   <Lucideicons.download /><span class="hidden xl:inline">Pobierz</span>
-                </Phoenix.Component.link>
+                </.link>
 
-                <%!-- TODO: BUG-9 - Add confirmation modal before delete, matching the pattern
-                     in sales_invoice_details.ex (which uses a modal with explicit confirm/cancel). --%>
                 <.button
                   :if={@invoice.is_deletable}
-                  phx-click="delete"
+                  phx-click={show_modal("delete-invoice-modal")}
                   variant="secondary"
                   size="small"
                 >
@@ -99,6 +100,33 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                     Usuń
                   </span>
                 </.button>
+
+                <div :if={@invoice.is_deletable} class="absolute">
+                  <.modal id="delete-invoice-modal" on_cancel={hide_modal("delete-invoice-modal")}>
+                    <p>
+                      Czy na pewno chcesz usunąć fakturę <span class="font-semibold">{@invoice.invoice_identifier}</span>?
+                    </p>
+                    <div class="mt-6 flex justify-end gap-3">
+                      <.button
+                        type="button"
+                        variant="secondary"
+                        phx-click={hide_modal("delete-invoice-modal")}
+                      >
+                        Anuluj
+                      </.button>
+                      <.button
+                        phx-click={
+                          JS.exec("data-cancel", to: "#delete-invoice-modal")
+                          |> JS.push("delete")
+                        }
+                        variant="destructive"
+                        phx-disable-with="Usuwanie..."
+                      >
+                        Usuń
+                      </.button>
+                    </div>
+                  </.modal>
+                </div>
 
                 <.link
                   :if={@invoice.ksef_number != nil}
@@ -264,7 +292,11 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
     case preview_type do
       :pdf ->
         ~H"""
-        <a href={@preview_url} target="_blank">
+        <.link
+          kind="unstyled"
+          external={@preview_url}
+          target="_blank"
+        >
           <div
             id={"invoice-preview-#{@id}"}
             data-pdf-url={@preview_url}
@@ -276,7 +308,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
               Ładowanie dokumentu...
             </div>
           </div>
-        </a>
+        </.link>
         """
 
       :xml ->
@@ -341,11 +373,15 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
 
       :image ->
         ~H"""
-        <a href={@preview_url} target="_blank">
+        <.link
+          kind="unstyled"
+          external={@preview_url}
+          target="_blank"
+        >
           <div class="size-full max-h-[80vh] overflow-x-hidden bg-black">
             <img src={@preview_url} class="size-full object-contain" />
           </div>
-        </a>
+        </.link>
         """
 
       :none ->

@@ -10,7 +10,8 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   """
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.CoreComponents
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
@@ -467,12 +468,9 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
         {@label}
       </span>
 
-      <button
-        type="button"
-        class="bg-grey-200 hover:bg-grey-300 rounded-[6px] px-2 py-1 text-[11px] font-medium transition-colors"
-      >
+      <.button type="button" variant="secondary" size="small" class="text-[11px]">
         Sprawdź
-      </button>
+      </.button>
     </div>
     """
   end

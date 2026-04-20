@@ -25,11 +25,12 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
         disabled={@loading}
         class="placeholder:text-grey-200 w-full border-none p-0 text-black focus:ring-0 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
       />
-      <button
+      <FirmowidWeb.DesignSystem.Components.Button.button
         type="submit"
+        variant="unstyled"
         disabled={@loading}
         class={[
-          "transition-colors duration-300 disabled:cursor-not-allowed",
+          "inline-flex items-center justify-center transition-colors duration-300",
           if(@loading, do: "text-black", else: "text-grey-200")
         ]}
       >
@@ -38,7 +39,7 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
         <% else %>
           <Lucideicons.send class="size-6" />
         <% end %>
-      </button>
+      </FirmowidWeb.DesignSystem.Components.Button.button>
     </form>
     """
   end

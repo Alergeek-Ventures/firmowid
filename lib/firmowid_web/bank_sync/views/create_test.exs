@@ -1,5 +1,7 @@
 # credo:disable-for-this-file ExDNA.Credo
-# This setup/assertion pattern is intentionally duplicated across feature-level integration tests; deduplicating would require shared test helper APIs and broader test-structure changes.
+# This setup/assertion pattern is intentionally duplicated across feature-level
+# integration tests; deduplicating would require shared test helper APIs and
+# broader test-structure changes.
 defmodule FirmowidWeb.BankSync.Views.CreateTest do
   @moduledoc """
   Tests for the bank connection creation LiveView.

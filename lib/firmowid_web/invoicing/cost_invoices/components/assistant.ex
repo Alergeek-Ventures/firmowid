@@ -8,6 +8,10 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
   @moduledoc false
   use FirmowidWeb, :live_component
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import Phoenix.Component, except: [link: 1]
+
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Invoicing.Matching.Assistant.Message
   alias Firmowid.Ash.Invoicing.Matching.Assistant.MessagesStorage
@@ -125,16 +129,18 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
   def render(assigns) do
     ~H"""
     <div class="assistant-chat relative mx-auto flex size-full flex-col">
-      <button
+      <.button
         id="chat-close-button"
         phx-hook="Tippy"
         data-tippy-content="Zamknij czat"
         phx-click="close_chat"
         phx-target="#invoice-show"
-        class="bg-lightGreyBg hover:border-grey-400 hover:text-grey-400 text-grey-700 absolute top-0 right-0 z-10 mb-4 flex items-center gap-2 self-end rounded border border-transparent p-2 text-sm transition-colors"
+        type="button"
+        variant="unstyled"
+        class="bg-lightGreyBg hover:border-grey-400 hover:text-grey-400 text-grey-700 absolute top-0 right-0 z-10 mb-4 inline-flex cursor-pointer items-center justify-center self-end rounded border border-transparent p-2 text-sm transition"
       >
         <.icon name="hero-x-mark-mini" />
-      </button>
+      </.button>
       <div
         class="flex grow flex-col gap-12 overflow-y-auto py-4 pr-4"
         id="messages"
@@ -151,15 +157,14 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
             "Transakcja za tę fakturę ma inną nazwę kontrahenta",
             "Opłata została wykonana znacznie później niż faktura została wystawiona",
           ] do %>
-              <.button
+              <FirmowidWeb.DesignSystem.Components.Button.button
                 phx-click="send"
-                color="orange"
-                class="bg-orangeBg hover:bg-orangeText hover:text-orangeBg text-orangeText text-sm font-bold"
+                variant="secondary"
                 phx-target={@myself}
                 phx-value-message={possible_message}
               >
                 {possible_message}
-              </.button>
+              </FirmowidWeb.DesignSystem.Components.Button.button>
             <% end %>
           </div>
         <% end %>
@@ -178,13 +183,12 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Components.Assistant do
           <.button
             phx-click="reject"
             phx-target={@myself}
-            color="light_grey"
             variant="outline"
             class="text-nowrap"
           >
             Szukaj dalej
           </.button>
-          <.button phx-click="accept" phx-target={@myself} color="orange">
+          <.button phx-click="accept" phx-target={@myself}>
             Zatwierdź
           </.button>
         </div>

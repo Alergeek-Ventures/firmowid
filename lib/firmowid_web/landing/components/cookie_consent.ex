@@ -13,6 +13,9 @@ defmodule FirmowidWeb.Landing.Components.CookieConsent do
   """
   use FirmowidWeb, :html
 
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   @doc """
   Renders the cookie consent banner.
 
@@ -32,26 +35,33 @@ defmodule FirmowidWeb.Landing.Components.CookieConsent do
             <div class="flex-1 text-sm text-white/80">
               <p>
                 Używamy plików cookies do analityki, aby ulepszać Firmowida.
-                Szczegóły w naszej <a
-                  href="/polityka-prywatnosci"
+                Szczegóły w naszej <.link
+                  kind="unstyled"
+                  navigate={~p"/polityka-prywatnosci"}
                   class="font-semibold text-white underline hover:text-orange-300"
                 >
-                  Polityce Prywatności</a>.
+                   Polityce Prywatności</.link>.
               </p>
             </div>
             <div class="flex shrink-0 gap-3">
-              <button
+              <FirmowidWeb.DesignSystem.Components.Button.button
                 id="cookie-consent-reject"
-                class="cursor-pointer rounded-lg border border-white/20 px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:border-white/40 hover:text-white"
+                type="button"
+                variant="outline"
+                size="small"
+                class="border-white/20 text-white/70 hover:border-white/40 hover:bg-transparent hover:text-white active:bg-white/10 disabled:border-white/10 disabled:text-white/40"
               >
                 Odrzuć
-              </button>
-              <button
+              </FirmowidWeb.DesignSystem.Components.Button.button>
+              <FirmowidWeb.DesignSystem.Components.Button.button
                 id="cookie-consent-accept"
-                class="cursor-pointer rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-white/90"
+                type="button"
+                variant="secondary"
+                size="small"
+                class="bg-white text-black hover:bg-white/90 active:bg-white/80"
               >
                 Akceptuję
-              </button>
+              </FirmowidWeb.DesignSystem.Components.Button.button>
             </div>
           </div>
         </div>

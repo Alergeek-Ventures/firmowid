@@ -4,21 +4,28 @@ defmodule FirmowidWeb.DesignSystem.Utilities.ButtonStyles do
   @doc "Returns the shared design-system size classes for button-like controls."
   @spec size_classes(String.t()) :: String.t()
   def size_classes("big") do
-    "h-11 gap-2.5 rounded-lg px-2.75 py-2 text-base/tight font-medium [&>svg]:size-6"
+    "h-11 gap-2.5 rounded-lg px-2.75 py-2 text-base/tight font-normal [&>svg]:size-5"
   end
 
   def size_classes("small") do
-    "rounded-md px-2 py-1.5 text-sm/tight font-medium gap-1.5 [&>svg]:size-4"
+    "rounded-md px-2 py-1.5 text-sm/tight font-normal gap-1.5 [&>svg]:size-4"
   end
 
   @doc "Returns the shared design-system variant classes for button-like controls."
-  @spec variant_classes(String.t(), String.t()) :: [String.t()]
+  @spec variant_classes(String.t(), String.t() | nil) :: [String.t()]
   def variant_classes("special", _accent) do
     [
       "border-transparent",
       "bg-black text-white",
-      "hover:bg-orange-700 active:bg-orange-800",
+      "hover:bg-grey-700 active:bg-grey-800",
       "disabled:bg-grey-400 disabled:text-grey-400"
+    ]
+  end
+
+  def variant_classes("plain", _accent) do
+    [
+      "border-transparent",
+      "bg-transparent"
     ]
   end
 
@@ -37,6 +44,24 @@ defmodule FirmowidWeb.DesignSystem.Utilities.ButtonStyles do
       "bg-turquoise-700 text-white",
       "hover:bg-turquoise-800 active:bg-turquoise-900",
       "disabled:bg-turquoise-400"
+    ]
+  end
+
+  def variant_classes("secondary", "turquoise") do
+    [
+      "border-transparent",
+      "bg-turquoise-200 text-turquoise-900",
+      "hover:bg-turquoise-300 active:bg-turquoise-400",
+      "disabled:bg-turquoise-100 disabled:text-turquoise-600"
+    ]
+  end
+
+  def variant_classes("secondary", "orange") do
+    [
+      "border-transparent",
+      "bg-orange-200 text-orange-900",
+      "hover:bg-orange-300 active:bg-orange-400",
+      "disabled:bg-orange-100 disabled:text-orange-600"
     ]
   end
 

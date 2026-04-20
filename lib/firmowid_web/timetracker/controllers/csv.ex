@@ -1,5 +1,7 @@
 # credo:disable-for-this-file ExDNA.Credo
-# Cross-file duplicate is framework/controller wiring boilerplate shared across features; extracting it would require a broader controller abstraction, not a couple-line refactor.
+# Cross-file duplicate is framework/controller wiring boilerplate shared across
+# features; extracting it would require a broader controller abstraction, not a
+# couple-line refactor.
 defmodule FirmowidWeb.Timetracker.Controllers.Csv do
   @moduledoc false
   use FirmowidWeb, :controller

@@ -2,8 +2,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   @moduledoc false
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.CoreComponents
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Finances.Transaction
@@ -312,7 +313,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           class="size-4"
         />
       </div>
-      <button
+      <.status_button
         id={"#{@invoicing_entry.id}-button"}
         phx-click="toggle-skip-invoicing"
         phx-value-id={@invoicing_entry.id}
@@ -323,12 +324,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             %SalesInvoice{} -> "sales_invoice"
           end
         }
-        class={[
-          "bg-greyButtonBg text-darkGrey h-6 w-20 cursor-pointer rounded-md text-xs uppercase transition-all duration-500"
-        ]}
-      >
-        <.icon name="hero-arrow-uturn-left-micro" class="size-4" />
-      </button>
+        icon="hero-arrow-uturn-left-micro"
+        class="transition-all duration-500"
+      />
     </div>
     """
   end
@@ -450,7 +448,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           class="size-4"
         />
       </div>
-      <button
+      <.status_button
         id={"#{@invoicing_entry.id}-button"}
         phx-click="toggle-skip-invoicing"
         phx-value-id={@invoicing_entry.id}
@@ -461,12 +459,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             %SalesInvoice{} -> "sales_invoice"
           end
         }
-        class={[
-          "bg-greyButtonBg text-darkGrey h-6 w-20 cursor-pointer rounded-md text-xs uppercase transition-all duration-500"
-        ]}
-      >
-        Pomiń
-      </button>
+        label="Pomiń"
+        class="transition-all duration-500"
+      />
     </div>
     """
   end
@@ -743,17 +738,16 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         <div class="bg-redBg text-redText flex h-6 w-10 flex-row items-center justify-center rounded-md p-2 text-xs transition-all duration-500">
           <.icon name="hero-credit-card-mini" class="size-4" />
         </div>
-        <button
+        <.status_button
           id={"#{@group.id}-button"}
           phx-click={
             JS.push("toggle-skip-invoicing-group",
               value: %{transaction_ids: Enum.map(@group.transactions, & &1.id)}
             )
           }
-          class="bg-greyButtonBg text-darkGrey h-6 w-20 cursor-pointer rounded-md text-xs uppercase transition-all duration-500"
-        >
-          Pomiń
-        </button>
+          label="Pomiń"
+          class="transition-all duration-500"
+        />
       </div>
     <% end %>
     """

@@ -32,13 +32,15 @@ defmodule FirmowidWeb.Invoicing.Components.SearchOverlay do
                   phx-debounce="200"
                 />
               </form>
-              <button
+              <FirmowidWeb.DesignSystem.Components.Button.button
                 phx-click="close-search"
-                class="hover:text-darkGrey text-darkGrey/60 transition-colors"
+                type="button"
+                variant="unstyled"
+                class="hover:text-darkGrey text-darkGrey/60 inline-flex items-center justify-center transition-colors"
                 aria-label="Zamknij"
               >
                 <.icon name="hero-x-mark" class="size-5" />
-              </button>
+              </FirmowidWeb.DesignSystem.Components.Button.button>
             </div>
 
             <div class="max-h-[60vh] overflow-y-auto">
@@ -76,8 +78,10 @@ defmodule FirmowidWeb.Invoicing.Components.SearchOverlay do
                             )
                         end %>
                       <li>
-                        <button
-                          class="focus:bg-lightGreyBg group hover:bg-lightGreyBg flex w-full flex-col gap-1 px-5 py-3 text-left transition-colors"
+                        <FirmowidWeb.DesignSystem.Components.Button.button
+                          type="button"
+                          variant="unstyled"
+                          class="focus:bg-lightGreyBg group flex w-full cursor-pointer flex-col gap-1 px-5 py-3 text-left"
                           phx-click="goto-invoice"
                           phx-value-id={invoice.id}
                           phx-value-type={type}
@@ -121,7 +125,7 @@ defmodule FirmowidWeb.Invoicing.Components.SearchOverlay do
                                 ""
                             end}
                           </div>
-                        </button>
+                        </FirmowidWeb.DesignSystem.Components.Button.button>
                       </li>
                     <% end %>
                   </ul>

@@ -210,7 +210,8 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                   module={InvoiceDownloadModal}
                   id={"sales-download-#{@invoice.id}"}
                   download_path={~p"/sprzedazowe/#{@invoice.id}/pobierz"}
-                  button_class={button_styles(%{color: "light_grey", size: "small", new: true})}
+                  trigger_variant="secondary"
+                  trigger_size="small"
                   button_label="Pobierz"
                 />
               </div>
@@ -272,23 +273,23 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                     Czy na pewno chcesz usunąć fakturę <span class="font-semibold">{@invoice.invoice_number}</span>?
                   </p>
                   <div class="mt-6 flex justify-end gap-3">
-                    <FirmowidWeb.DesignSystem.Components.CoreComponents.button
-                      variant="outline"
-                      color="black"
+                    <.button
+                      type="button"
+                      variant="secondary"
                       phx-click={hide_modal("delete-invoice-modal")}
                     >
                       Anuluj
-                    </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
-                    <FirmowidWeb.DesignSystem.Components.CoreComponents.button
-                      color="red"
+                    </.button>
+                    <.button
                       phx-click={
                         JS.exec("data-cancel", to: "#delete-invoice-modal")
                         |> JS.push("delete")
                       }
+                      variant="destructive"
                       phx-disable-with="Usuwanie..."
                     >
-                      Usun
-                    </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
+                      Usuń
+                    </.button>
                   </div>
                 </.modal>
               </div>
@@ -300,23 +301,23 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                     Wystawimy fakturę korygującą zerującą pozycje.
                   </p>
                   <div class="mt-6 flex justify-end gap-3">
-                    <FirmowidWeb.DesignSystem.Components.CoreComponents.button
-                      variant="outline"
-                      color="black"
+                    <.button
+                      type="button"
+                      variant="secondary"
                       phx-click={hide_modal("cancel-invoice-modal")}
                     >
                       Wróć
-                    </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
-                    <FirmowidWeb.DesignSystem.Components.CoreComponents.button
-                      color="orange"
+                    </.button>
+                    <.button
                       phx-click={
                         JS.exec("data-cancel", to: "#cancel-invoice-modal")
                         |> JS.push("cancel")
                       }
+                      variant="destructive"
                       phx-disable-with="Anulowanie..."
                     >
                       Anuluj fakturę
-                    </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
+                    </.button>
                   </div>
                 </.modal>
               </div>

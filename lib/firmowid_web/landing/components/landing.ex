@@ -5,8 +5,15 @@ defmodule FirmowidWeb.Landing.Components.Landing do
   """
   use FirmowidWeb, :html
 
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   # Container max-width matching PDF margins (160px on desktop)
   @container_class "max-w-[1330px] w-full mx-auto px-6 lg:px-10"
+
+  # IMPORTANT! even though we moved away from direct <a> elements, they are
+  # required on landing page (smooth scrolling, external links). given they are
+  # also styled differently - this is allowed.
 
   @doc """
   Renders the landing page navbar - minimal, clean design matching Figma.
@@ -29,24 +36,26 @@ defmodule FirmowidWeb.Landing.Components.Landing do
         class="mx-auto flex max-w-7xl items-center justify-between rounded-lg bg-black/10 px-6 py-2 backdrop-blur-sm transition-all duration-500"
       >
         <%!-- Logo --%>
-        <a
-          href="/"
+        <.link
+          kind="unstyled"
+          navigate={~p"/"}
           id="navbar-logo"
           class="text-[28px] font-extrabold text-black no-underline transition-colors duration-500 select-none"
         >
           Firmowid
-        </a>
+        </.link>
 
         <%!-- Right nav links - hidden on mobile --%>
         <div class="hidden items-center gap-4 text-[16px] font-medium text-black md:flex">
-          <a
-            href="https://alergeek.ventures/"
+          <.link
+            kind="unstyled"
+            external="https://alergeek.ventures/"
             target="_blank"
             rel="noopener noreferrer"
             class="navbar-link rounded-[5px] px-5 py-[15px] transition-colors duration-500 hover:text-orange-700"
           >
             O nas
-          </a>
+          </.link>
           <a
             href="#cta-footer"
             class="group navbar-link relative z-20 rounded-[5px] px-4 py-2 transition-colors duration-500 hover:text-orange-700"
@@ -81,14 +90,15 @@ defmodule FirmowidWeb.Landing.Components.Landing do
         <%!-- Spacer to account for fixed navbar height --%>
         <span class="hidden items-baseline gap-1.5 md:flex">
           <span class="font-light text-black">Opracowane i wdrożone przez</span>
-          <a
-            href="https://alergeek.ventures/"
+          <.link
+            kind="unstyled"
+            external="https://alergeek.ventures/"
             target="_blank"
             rel="noopener noreferrer"
             class="font-logo hover:text-grey-700 font-bold text-black"
           >
             Alergeek Ventures
-          </a>
+          </.link>
         </span>
       </div>
     </div>
@@ -129,6 +139,7 @@ defmodule FirmowidWeb.Landing.Components.Landing do
                 </div>
                 <div class="flex items-center gap-[25px]">
                   <.link
+                    kind="unstyled"
                     navigate={~p"/zaloguj"}
                     class="hover:bg-grey-200 text-grey-900 relative rounded px-8 py-4 text-base font-medium text-nowrap transition-colors duration-500"
                   >
@@ -140,6 +151,7 @@ defmodule FirmowidWeb.Landing.Components.Landing do
                     />
                   </.link>
                   <.link
+                    kind="unstyled"
                     navigate={~p"/zarejestruj"}
                     class="disabled:bg-grey-800 disabled:text-grey-400 rounded bg-black px-8 py-4 text-base font-medium text-nowrap text-white transition-colors duration-400 hover:bg-orange-700 disabled:cursor-default"
                   >
@@ -654,8 +666,9 @@ defmodule FirmowidWeb.Landing.Components.Landing do
           <%!-- Right: CTA button with decorative elements --%>
           <div class="mt-12 flex size-full items-center justify-center">
             <span class="shrink-0 pt-14 pr-6 pb-7 pl-40">
-              <a
-                href="https://cal.com/franek-madej/firmowid"
+              <.link
+                kind="unstyled"
+                external="https://cal.com/franek-madej/firmowid"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="group relative inline-flex items-center justify-center rounded px-8 py-4 text-[20px] font-medium text-white transition-colors duration-500"
@@ -685,7 +698,7 @@ defmodule FirmowidWeb.Landing.Components.Landing do
                   alt="A pair of decorative arrows"
                   class="pointer-events-none absolute right-[-25.616px] bottom-full translate-y-[-3px] opacity-0 transition-opacity duration-500 group-hover:opacity-100"
                 />
-              </a>
+              </.link>
             </span>
           </div>
         </div>
@@ -705,45 +718,58 @@ defmodule FirmowidWeb.Landing.Components.Landing do
             </p>
             <div class="flex-inline items-center gap-1 text-sm">
               <span class="font-light">Opracowana i wdrożona przez</span>
-              <a
-                href="https://alergeek.ventures/"
+              <.link
+                kind="unstyled"
+                external="https://alergeek.ventures/"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="font-logo hover:text-grey-300 font-bold text-white"
               >
                 Alergeek Ventures
-              </a>
+              </.link>
             </div>
           </div>
 
           <%!-- Footer columns --%>
           <div class="flex gap-16 lg:gap-32">
             <div class="flex flex-col gap-3 text-base font-bold text-white">
-              <a href="#ksef" class="hover:text-grey-300 hidden">O Firmowidzie</a>
-              <a
-                href="https://alergeek.ventures/"
+              <a href="#ksef" class="hover:text-grey-300 hidden">
+                O Firmowidzie
+              </a>
+              <.link
+                kind="unstyled"
+                external="https://alergeek.ventures/"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="hover:text-grey-300"
               >
                 O nas
-              </a>
-              <a
-                href="https://cal.com/franek-madej/firmowid"
+              </.link>
+              <.link
+                kind="unstyled"
+                external="https://cal.com/franek-madej/firmowid"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="hover:text-grey-300"
               >
                 Kontakt
-              </a>
+              </.link>
             </div>
             <div class="flex flex-col gap-3 text-base font-bold text-white">
-              <a href="/regulamin" class="hover:text-grey-300">
+              <.link
+                kind="unstyled"
+                navigate={~p"/regulamin"}
+                class="hover:text-grey-300"
+              >
                 Regulamin
-              </a>
-              <a href="/polityka-prywatnosci" class="hover:text-grey-300">
+              </.link>
+              <.link
+                kind="unstyled"
+                navigate={~p"/polityka-prywatnosci"}
+                class="hover:text-grey-300"
+              >
                 Polityka Prywatności
-              </a>
+              </.link>
             </div>
           </div>
         </div>

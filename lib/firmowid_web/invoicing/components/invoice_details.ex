@@ -12,6 +12,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Invoicing.SalesInvoice
@@ -374,13 +375,11 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           <div class="flex flex-row items-center self-stretch rounded-md bg-green-200 px-[14.5px]">
             <p class="text-sm/tight font-medium text-green-700">Komplet</p>
           </div>
-          <.button
-            variant="secondary"
-            size="small"
+          <.status_button
+            type="button"
             phx-click="disconnect"
-          >
-            <.icon name="hero-arrow-uturn-left-micro" class="size-4" />
-          </.button>
+            icon="hero-arrow-uturn-left-micro"
+          />
         </div>
       </div>
 
@@ -432,14 +431,11 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           <div class="flex h-8 flex-1 items-center justify-center rounded-md bg-green-200 p-2 text-green-700">
             <.icon name="hero-document-text-micro" class="size-4" />
           </div>
-          <.button
+          <.status_button
             phx-click="toggle-invoicing"
-            variant="secondary"
-            size="small"
             class="flex-1"
-          >
-            <.icon name="hero-arrow-uturn-left-micro" class="size-4" />
-          </.button>
+            icon="hero-arrow-uturn-left-micro"
+          />
         </div>
       </div>
       <div class="bg-grey-100 flex flex-col gap-6 rounded p-6">

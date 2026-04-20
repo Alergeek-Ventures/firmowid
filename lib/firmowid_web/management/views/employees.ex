@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Core
@@ -215,6 +216,13 @@ defmodule FirmowidWeb.Management.Views.Employees do
     end
   end
 
+  def handle_event("copy-bank-number", %{"number" => number}, socket) do
+    {:noreply,
+     socket
+     |> push_event("copy-to-clipboard", %{text: number})
+     |> LiveToast.put_toast(:success, "Skopiowano numer konta")}
+  end
+
   attr :hours_record, :map, required: true
   attr :user, :map, required: true
 
@@ -232,13 +240,14 @@ defmodule FirmowidWeb.Management.Views.Employees do
     <span class="text-caps-sm/tight flex w-full min-w-[111px] items-center justify-between gap-2.5 rounded-sm bg-green-200 px-2 py-1 font-medium text-green-700 uppercase">
       EWIDENCJA <.icon name="hero-check-micro" />
     </span>
-    <a
-      href={~p"/czasosledz/ewidencja/#{@hours_record.id}"}
+    <.link
+      kind="unstyled"
+      navigate={~p"/czasosledz/ewidencja/#{@hours_record.id}"}
       download={"Ewidencja_#{@hours_record.year}_#{@hours_record.month}_#{@user.name || @user.email}.pdf"}
       class="hover:bg-greyButtonBg inline-flex items-center justify-center rounded-md p-0.5 transition"
     >
       <.icon name="hero-arrow-down-tray-mini" class="text-grey-400 shrink-0" />
-    </a>
+    </.link>
     """
   end
 

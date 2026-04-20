@@ -10,6 +10,8 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
   """
   use FirmowidWeb, :html
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
   import FirmowidWeb.Infrastructure.Flags
   import Phoenix.Component, except: [link: 1]

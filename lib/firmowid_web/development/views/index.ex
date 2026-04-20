@@ -10,6 +10,11 @@ defmodule FirmowidWeb.Development.Views.Index do
   """
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok, assign(socket, page_title: "Przewodnik deweloperski")}

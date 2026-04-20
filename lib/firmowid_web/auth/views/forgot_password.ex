@@ -2,6 +2,8 @@ defmodule FirmowidWeb.Auth.Views.ForgotPassword do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
@@ -23,7 +25,7 @@ defmodule FirmowidWeb.Auth.Views.ForgotPassword do
       >
         <.input field={@form[:email]} type="email" placeholder="Email" required />
         <:actions>
-          <.button phx-disable-with="Wysyłanie..." class="w-full">
+          <.button variant="special" phx-disable-with="Wysyłanie..." class="w-full">
             Wyślij instrukcje resetowania hasła
           </.button>
         </:actions>

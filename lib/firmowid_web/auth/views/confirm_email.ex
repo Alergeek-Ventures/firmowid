@@ -2,6 +2,8 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmail do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
@@ -21,7 +23,7 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmail do
       >
         <input type="hidden" name={@form[:confirm].name} value={@token} />
         <:actions>
-          <.button phx-disable-with="Potwierdzanie..." class="w-full">
+          <.button variant="special" phx-disable-with="Potwierdzanie..." class="w-full">
             Potwierdź adres email
           </.button>
         </:actions>
