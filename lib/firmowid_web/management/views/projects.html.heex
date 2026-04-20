@@ -38,7 +38,8 @@
 
       <.link
         navigate={~p"/zarzadzanie/projekty/dodaj"}
-        class={button_styles(%{color: "light_grey", size: "medium", new: true})}
+        kind="button"
+        variant="secondary"
       >
         <Lucideicons.plus /> Dodaj projekt
       </.link>
@@ -53,10 +54,10 @@
           ]
         }
         patch={path}
-        class={[
-          button_styles(%{variant: "ghost", size: "small", new: true}),
-          if(@live_action == live_action, do: "bg-grey-700 hover:text-grey-900 text-white")
-        ]}
+        kind="button"
+        variant="ghost"
+        size="small"
+        class={if(@live_action == live_action, do: "bg-grey-700 hover:text-grey-900 text-white")}
       >
         {label}
       </.link>
@@ -108,6 +109,7 @@
           >
             <div class="space-y-1 truncate">
               <.link
+                kind="unstyled"
                 navigate={~p"/zarzadzanie/projekty/#{project.id}?#{Map.take(@params, ["month"])}"}
                 class="hover:underline"
               >
@@ -126,6 +128,7 @@
             </p>
             <p class="text-right">{project.hours} h</p>
             <.link
+              kind="unstyled"
               navigate={~p"/zarzadzanie/projekty/#{project.id}?#{Map.take(@params, ["month"])}"}
               class="hover:text-grey-700 text-grey-500"
             >
@@ -162,6 +165,7 @@
           >
             <div class="space-y-1 truncate">
               <.link
+                kind="unstyled"
                 navigate={~p"/zarzadzanie/projekty/#{project.id}?#{Map.take(@params, ["month"])}"}
                 class="hover:underline"
               >
@@ -194,6 +198,7 @@
                 Przywróć
               </.button>
               <.link
+                kind="unstyled"
                 navigate={~p"/zarzadzanie/projekty/#{project.id}?#{Map.take(@params, ["month"])}"}
                 class="hover:text-grey-700 text-grey-500"
               >
@@ -218,7 +223,9 @@
 
   <.link
     navigate={~p"/zarzadzanie/projekty/dodaj"}
-    class={button_styles(%{color: "light_grey", size: "medium", new: true, class: "mt-6"})}
+    kind="button"
+    variant="secondary"
+    class="mt-6"
   >
     <Lucideicons.plus /> Dodaj projekt
   </.link>

@@ -2,6 +2,11 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   @moduledoc false
   use FirmowidWeb, :live_component
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef
@@ -9,9 +14,6 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Components.InvoiceDownloadModal
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
-
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Button
 
   require Logger
 
@@ -151,8 +153,10 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
             <div class="flex flex-row justify-between gap-4">
               <div class="flex flex-row gap-3 xl:gap-4">
                 <.link
-                  class={button_styles(%{color: "light_grey", size: "small", new: true})}
                   navigate={~p"/sprzedazowe?skopiuj=#{@latest_invoice_snapshot.id}"}
+                  kind="button"
+                  variant="secondary"
+                  size="small"
                 >
                   <Lucideicons.copy /><span class="hidden xl:inline">Kopiuj</span>
                 </.link>
@@ -166,8 +170,10 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                       else: "Edytuj fakturę"
                   }
                   data-tippy-delay="100"
-                  class={button_styles(%{color: "light_grey", size: "small", new: true})}
                   navigate={~p"/sprzedazowe/#{@latest_invoice_snapshot.id}/edytuj"}
+                  kind="button"
+                  variant="secondary"
+                  size="small"
                 >
                   <.icon name="hero-pencil-square" class="size-4" />
                   <span class="hidden xl:inline">
@@ -389,7 +395,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
               :for={invoice <- @invoices_for_preview}
               invoice_number_label={invoice.invoice_number}
             >
-              <.link href={~p"/sprzedazowe/#{invoice.id}/pobierz"} download>
+              <Phoenix.Component.link href={~p"/sprzedazowe/#{invoice.id}/pobierz"} download>
                 <InvoiceDetails.scalable_invoice_preview
                   id={"preview-#{invoice.id}"}
                   class="max-w-full min-w-0"
@@ -402,7 +408,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                     reference_invoice={invoice.reference_invoice}
                   />
                 </InvoiceDetails.scalable_invoice_preview>
-              </.link>
+              </Phoenix.Component.link>
             </:subpreview>
           </InvoiceDetails.invoice_preview>
         </InvoiceDetails.aside>

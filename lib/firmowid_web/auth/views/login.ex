@@ -2,6 +2,9 @@ defmodule FirmowidWeb.Auth.Views.Login do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   def render(assigns) do
     ~H"""
     <div class="relative flex h-screen w-screen items-center justify-center overflow-clip">
@@ -23,7 +26,7 @@ defmodule FirmowidWeb.Auth.Views.Login do
 
           <:actions>
             <.input name="remember_me" value="true" type="checkbox" label="Zapamiętaj mnie" />
-            <.link href={~p"/resetuj-haslo"} class="text-sm font-semibold">
+            <.link kind="unstyled" redirect={~p"/resetuj-haslo"} class="text-sm font-semibold">
               Zapomniałeś hasła?
             </.link>
           </:actions>
@@ -36,15 +39,21 @@ defmodule FirmowidWeb.Auth.Views.Login do
 
         <p class="mt-4 text-center">
           Nie masz konta?
-          <.link navigate={~p"/zarejestruj"} class="text-brand font-semibold hover:underline">
+          <.link
+            kind="unstyled"
+            navigate={~p"/zarejestruj"}
+            class="text-brand font-semibold hover:underline"
+          >
             Zarejestruj się
           </.link>
         </p>
 
         <%!-- TODO: Extract Google SVG icon into a shared auth component (duplicated in registration.ex) --%>
         <.link
-          href={~p"/auth/user/google"}
-          class="mt-8 flex w-full items-center justify-center gap-3 rounded-md border bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors duration-200 hover:bg-black hover:text-white"
+          redirect={~p"/auth/user/google"}
+          kind="button"
+          variant="outline"
+          class="mt-8 w-full gap-3 bg-white text-sm font-medium text-gray-700 hover:bg-black hover:text-white"
         >
           <svg class="size-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path

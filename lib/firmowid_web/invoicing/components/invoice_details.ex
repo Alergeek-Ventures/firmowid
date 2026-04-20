@@ -9,10 +9,12 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   use FirmowidWeb, :html
 
-  alias Firmowid.Ash.Invoicing.SalesInvoice
-
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
+  alias Firmowid.Ash.Invoicing.SalesInvoice
 
   attr :is_cost_invoice, :boolean
   attr :issue_date, Date, required: true
@@ -27,7 +29,10 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       @is_cost_invoice && "bg-orange-200",
       !@is_cost_invoice && "bg-turquoise-200"
     ]}>
-      <.link navigate={@return_to || ~p"/fakturowanie?month=#{@issue_date |> Date.to_iso8601()}"}>
+      <.link
+        kind="unstyled"
+        navigate={@return_to || ~p"/fakturowanie?month=#{@issue_date |> Date.to_iso8601()}"}
+      >
         <.icon name="hero-arrow-left-circle-solid" class="size-7" />
       </.link>
       <div class="flex flex-col gap-2">

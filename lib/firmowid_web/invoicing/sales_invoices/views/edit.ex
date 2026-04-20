@@ -12,6 +12,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   """
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Invoicing
@@ -23,9 +26,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   alias FirmowidWeb.Invoicing.FormHelpers
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
   alias FirmowidWeb.Invoicing.SalesInvoices.Views.Creator
-
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Button
 
   require Logger
 

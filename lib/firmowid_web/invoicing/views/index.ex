@@ -8,6 +8,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   use FirmowidWeb, :live_view
 
   import FirmowidWeb.Core.PubSubDebounce
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
 
   alias Ash.Notifier.Notification
   alias Firmowid.Ash.Blobs
@@ -362,6 +364,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
         ~H"""
         <.link
+          kind="unstyled"
           class="text-bold text-sm underline"
           navigate={~p"/fakturowanie?month=#{@issue_date}&filter=invoices"}
         >
@@ -397,6 +400,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
         ~H"""
         <.link
+          kind="unstyled"
           class="text-bold text-sm underline"
           navigate={~p"/fakturowanie?month=#{@issue_date}&filter=invoices"}
         >
@@ -554,6 +558,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
         ~H"""
         <.link
+          kind="unstyled"
           class="text-bold text-sm underline"
           navigate={~p"/kosztowe/#{@cost_invoice_id}"}
         >

@@ -2,6 +2,11 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   alias Ash.Error.Invalid
   alias Ash.Error.Unknown
   alias Ash.Error.Unknown.UnknownError
@@ -13,9 +18,6 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Timetracker.Utilities.GroupedSessionForm
   alias FirmowidWeb.Timetracker.Utilities.SessionForm
-
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Button
 
   require Ash.Query
 

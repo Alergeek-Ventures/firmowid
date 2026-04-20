@@ -8,14 +8,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
   @moduledoc false
   use FirmowidWeb, :live_component
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Invoicing.Matching.Assistant.Message
   alias Firmowid.Ash.Invoicing.Matching.Assistant.MessagesStorage
   alias Firmowid.Ash.Invoicing.Matching.SalesInvoiceAssistant
   alias FirmowidWeb.Invoicing.Components.Assistant, as: Components
-
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Button
 
   @impl true
   def update(%{event: {:loading, boolean}}, socket) do
@@ -188,7 +188,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant do
           >
             Szukaj dalej
           </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
-          <FirmowidWeb.DesignSystem.Components.CoreComponents.button phx-click="accept" phx-target={@myself} color="orange">
+          <FirmowidWeb.DesignSystem.Components.CoreComponents.button
+            phx-click="accept"
+            phx-target={@myself}
+            color="orange"
+          >
             Zatwierdź
           </FirmowidWeb.DesignSystem.Components.CoreComponents.button>
         </div>

@@ -5,7 +5,9 @@ defmodule FirmowidWeb.Management.Views.Employee do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Link
   import FirmowidWeb.Management.Views.Employees, only: [hours_record_status: 1]
+  import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary

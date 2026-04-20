@@ -3,6 +3,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   use FirmowidWeb, :html
 
   import FirmowidWeb.DesignSystem.Components.CoreComponents
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
@@ -576,7 +578,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   defp render_cell(%{navigate: _, party: _, description: _, column: "party"} = assigns) do
     ~H"""
-    <.link navigate={@navigate} class="hover:underline">
+    <.link kind="unstyled" navigate={@navigate} class="hover:underline">
       <.render_cell party={@party} description={@description} column={@column} />
     </.link>
     """

@@ -2,6 +2,9 @@ defmodule FirmowidWeb.Auth.Views.Registration do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.User
 
@@ -12,7 +15,11 @@ defmodule FirmowidWeb.Auth.Views.Registration do
         Zarejestruj się
         <:subtitle>
           Masz już konto?
-          <.link navigate={~p"/zaloguj"} class="text-brand font-semibold hover:underline">
+          <.link
+            kind="unstyled"
+            navigate={~p"/zaloguj"}
+            class="text-brand font-semibold hover:underline"
+          >
             Zaloguj się
           </.link>
         </:subtitle>
@@ -52,8 +59,10 @@ defmodule FirmowidWeb.Auth.Views.Registration do
 
       <%!-- TODO: Extract Google SVG icon into a shared auth component (duplicated in login.ex) --%>
       <.link
-        href={~p"/auth/user/google"}
-        class="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+        redirect={~p"/auth/user/google"}
+        kind="button"
+        variant="outline"
+        class="w-full gap-3 border-gray-300 bg-white text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
       >
         <svg class="size-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path

@@ -2,8 +2,8 @@ defmodule FirmowidWeb.Invoicing.Components.BankTransferModal do
   @moduledoc false
   use FirmowidWeb, :live_component
 
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
 
   attr :invoice, :map, required: true
 

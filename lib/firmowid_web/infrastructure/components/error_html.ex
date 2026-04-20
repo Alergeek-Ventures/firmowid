@@ -6,6 +6,9 @@ defmodule FirmowidWeb.Infrastructure.Components.ErrorHtml do
   """
   use FirmowidWeb, :html
 
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   def render("404.html", assigns) do
     ~H"""
     <div class="bg-lightGreyBg flex h-full flex-col">
@@ -19,7 +22,9 @@ defmodule FirmowidWeb.Infrastructure.Components.ErrorHtml do
           <p class="mb-6 text-sm text-black/50">
             Strona, której szukasz, nie istnieje lub została przeniesiona.
           </p>
-          <.link navigate={~p"/"} class="text-sm underline">Wróć do strony głównej</.link>
+          <.link kind="unstyled" navigate={~p"/"} class="text-sm underline">
+            Wróć do strony głównej
+          </.link>
         </div>
       </main>
     </div>
@@ -39,7 +44,9 @@ defmodule FirmowidWeb.Infrastructure.Components.ErrorHtml do
           <p class="mb-6 text-sm text-black/50">
             Błąd został automatycznie zgłoszony — nasz zespół zajmie się nim jak najszybciej.
           </p>
-          <.link navigate={~p"/"} class="text-sm underline">Wróć do strony głównej</.link>
+          <.link kind="unstyled" navigate={~p"/"} class="text-sm underline">
+            Wróć do strony głównej
+          </.link>
         </div>
       </main>
     </div>

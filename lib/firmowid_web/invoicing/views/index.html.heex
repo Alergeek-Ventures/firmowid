@@ -44,15 +44,12 @@
     <.link
       :if={@current_user.role == :admin}
       navigate={~p"/sprzedazowe"}
+      kind="button"
+      variant="secondary"
       id="sales-invoice-link"
       data-tippy-content="Wystaw fakturę sprzedażową"
       phx-hook="Tippy"
-      class={
-        button_styles(%{
-          class:
-            "bg-greyButtonBg border-greyButtonBg hover:bg-blueText! hover:border-blueText! relative flex flex-row items-center justify-center gap-4 rounded-lg border px-3 py-2 text-black! transition-colors hover:text-white! max-md:hidden"
-        })
-      }
+      class="bg-greyButtonBg border-greyButtonBg hover:bg-blueText! hover:border-blueText! relative text-black! hover:text-white! max-md:hidden"
     >
       <.icon name="hero-document-duplicate" class="size-5" />
       <span class="max-xl:hidden">

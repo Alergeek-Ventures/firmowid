@@ -209,6 +209,7 @@
                 end
             }
             id={"tab_#{tab}"}
+            kind="unstyled"
             patch={
               ~p"/sprzedazowe?#{Map.merge(%{creator_draft: @creator_draft_id, step: @step_number}, encode_query_params(Map.put(@query_params, :tab, tab)))}"
             }
@@ -297,8 +298,12 @@
 
                   <div class="flex flex-row gap-2.5">
                     <.link
-                      class={button_styles(%{size: "small", variant: "outline"})}
-                      navigate={"/sprzedazowe/#{invoice.id}?return_to=/sprzedazowe?tab=last_invoices"}
+                      navigate={
+                        ~p"/sprzedazowe/#{invoice.id}?#{[return_to: "/sprzedazowe?tab=last_invoices"]}"
+                      }
+                      kind="button"
+                      variant="outline"
+                      size="small"
                     >
                       <Lucideicons.eye />
                     </.link>
@@ -462,7 +467,12 @@
         Anuluj
       </.button>
 
-      <.button type="submit" variant="primary" accent="turquoise" phx-disable-with="Zapisywanie...">
+      <.button
+        type="submit"
+        variant="primary"
+        accent="turquoise"
+        phx-disable-with="Zapisywanie..."
+      >
         Kontynuuj
       </.button>
     </div>

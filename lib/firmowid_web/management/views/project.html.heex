@@ -25,7 +25,8 @@
       </.button>
       <.link
         navigate={~p"/zarzadzanie/projekty/#{@project.id}/edycja"}
-        class={button_styles(%{variant: "outline", new: true, size: "medium"})}
+        kind="button"
+        variant="outline"
       >
         <Lucideicons.square_pen /> Edytuj
       </.link>
@@ -136,7 +137,7 @@
           Pracownicy
         </p>
 
-        <.link
+        <Phoenix.Component.link
           :if={!@project.archived_at}
           class={button_styles(%{variant: "ghost", size: "small", new: true})}
           download
@@ -145,7 +146,7 @@
           }
         >
           <Lucideicons.cloud_download /> Pobierz raport
-        </.link>
+        </Phoenix.Component.link>
       </div>
 
       <div class="grid grid-cols-[1fr_repeat(3,minmax(min-content,6rem))_min-content] items-center gap-x-4 gap-y-2">

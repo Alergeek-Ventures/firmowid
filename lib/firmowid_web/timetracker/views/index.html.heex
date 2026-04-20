@@ -13,7 +13,8 @@
 
     <.link
       navigate={~p"/czasosledz/ewidencja"}
-      class={button_styles(%{variant: "outline", size: "medium", new: true})}
+      kind="button"
+      variant="outline"
     >
       <Lucideicons.clipboard_list /> Ewidencja
     </.link>
@@ -29,6 +30,7 @@
               Dodaj swój pierwszy projekt i przypisz się do niego, aby rozpocząć śledzenie czasu
             </p>
             <.link
+              kind="unstyled"
               navigate={~p"/zarzadzanie/projekty"}
               class="text-orangeText mt-4 inline-block hover:underline"
             >

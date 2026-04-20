@@ -10,6 +10,9 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
   """
   use FirmowidWeb, :html
 
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   alias FirmowidWeb.Invoicing.Components.DashboardTiles
 
   attr :unpaid_invoices, :list, default: []
@@ -133,6 +136,7 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
       </div>
       <.link
         :if={@see_all_url}
+        kind="unstyled"
         navigate={@see_all_url}
         class={[
           "mt-auto block pt-3 text-center text-base font-medium transition-colors duration-200 hover:underline",

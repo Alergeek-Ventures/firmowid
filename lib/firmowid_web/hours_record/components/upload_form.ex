@@ -2,6 +2,9 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
   @moduledoc false
   use FirmowidWeb, :live_component
 
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
 
@@ -66,8 +69,9 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
           </a>
         <% :sign -> %>
           <div class="flex items-center justify-between">
-            <a
-              href="https://moj.gov.pl/nforms/signer/upload?xFormsAppName=SIGNER"
+            <.link
+              kind="unstyled"
+              external="https://moj.gov.pl/nforms/signer/upload?xFormsAppName=SIGNER"
               target="_blank"
               class="hover:underline"
             >
@@ -75,7 +79,7 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
                 name="hero-arrow-top-right-on-square"
                 class="text-orangeText mb-1 ml-1 size-6"
               />
-            </a>
+            </.link>
             <.button
               phx-click="sign"
               phx-target={@myself}

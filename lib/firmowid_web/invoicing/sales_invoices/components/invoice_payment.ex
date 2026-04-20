@@ -2,10 +2,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
   @moduledoc false
   use FirmowidWeb, :html
 
-  alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
-
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
+  alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
 
   attr :invoice, :map, required: true
   attr :bank_accounts, :list, required: true
@@ -100,12 +102,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
             Żadne z Twoich kont nie jest podpięte.
           </p>
           <.link
-            class={[
-              "inline-flex items-center gap-1.5",
-              button_styles(%{size: "small", color: "light_grey", new: true})
-            ]}
+            kind="button"
+            variant="secondary"
+            size="small"
+            class="inline-flex items-center gap-1.5"
             target="_blank"
-            href="/ustawienia/konta-bankowe"
+            redirect={~p"/ustawienia/konta-bankowe"}
           >
             <Lucideicons.plus class="inline-flex size-4" /> Podepnij konto
           </.link>

@@ -2,11 +2,13 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
-
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Button
 
   @impl true
   def mount(_params, _session, %{assigns: %{live_action: :new}} = socket) do

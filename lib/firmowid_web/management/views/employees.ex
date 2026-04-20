@@ -2,15 +2,17 @@ defmodule FirmowidWeb.Management.Views.Employees do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Core.Endpoint
   alias Phoenix.Socket.Broadcast
-
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Button
 
   @impl true
   def mount(_params, _session, socket) do

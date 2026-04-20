@@ -2,15 +2,17 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
   @moduledoc false
   use FirmowidWeb, :live_component
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Components.InvoiceDownloadModal
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
   alias Phoenix.LiveView.JS
-
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Button
 
   @impl true
   def mount(socket) do
@@ -75,14 +77,14 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   button_label="Pobierz PDF do druku"
                 />
 
-                <.link
+                <Phoenix.Component.link
                   :if={!downloadable_as_pdf?(@invoice)}
                   class={button_styles(%{color: "light_grey", size: "small", new: true})}
                   href={@invoice.blob && @invoice.blob.url}
                   download
                 >
                   <Lucideicons.download /><span class="hidden xl:inline">Pobierz</span>
-                </.link>
+                </Phoenix.Component.link>
 
                 <%!-- TODO: BUG-9 - Add confirmation modal before delete, matching the pattern
                      in sales_invoice_details.ex (which uses a modal with explicit confirm/cancel). --%>
@@ -100,9 +102,12 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
 
                 <.link
                   :if={@invoice.ksef_number != nil}
-                  class={button_styles(%{color: "light_grey", size: "small", new: true})}
-                  href={Ksef.invoice_url!(@invoice, scope: @scope)}
+                  external={Ksef.invoice_url!(@invoice, scope: @scope)}
                   target="_blank"
+                  rel="noopener noreferrer"
+                  kind="button"
+                  variant="secondary"
+                  size="small"
                 >
                   <Lucideicons.database /><span class="hidden xl:inline">Otwórz w KSeF</span>
                 </.link>

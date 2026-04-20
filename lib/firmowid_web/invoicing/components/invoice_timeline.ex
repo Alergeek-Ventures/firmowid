@@ -7,11 +7,11 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
 
   use FirmowidWeb, :html
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+
   alias Firmowid.Ash.Invoicing.Services.Timeline
   alias Firmowid.Ash.Ksef.SubmissionInfo
-
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Button
 
   attr :invoice, :map, required: true
   attr :invoice_type, :atom, required: true, values: [:sales, :cost]

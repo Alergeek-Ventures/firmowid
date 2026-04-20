@@ -7,6 +7,7 @@
       checks: [
         {Checks.RejectDirectHistoryRates, []},
         {Checks.ClassAttributeFormat, []},
+        {Checks.EnforceVerifiedRoutesInDsLink, []},
         {CredoNaming.Check.Consistency.ModuleFilename,
          [
            # Only enforce within lib/firmowid_web/ — exclude everything else

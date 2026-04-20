@@ -8,6 +8,9 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
   """
   use FirmowidWeb, :html
 
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   attr :params, :map, required: true
   attr :pending_count, :integer, default: 0
   attr :is_month_closed, :boolean, default: false
@@ -22,6 +25,7 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
       <div class="flex items-center gap-6">
         <div class="flex items-center gap-4">
           <.link
+            kind="unstyled"
             navigate={dashboard_url(@params.month)}
             aria-label="Podsumowanie"
             title="Podsumowanie"
@@ -34,6 +38,7 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
             {:transactions, "Transakcje"}
           ] do %>
             <.link
+              kind="unstyled"
               navigate={filter_url(@params, tab)}
               class={top_level_filter_styles(@params.view_mode == :list && @params.filter == tab)}
             >
@@ -42,6 +47,7 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
           <% end %>
 
           <.link
+            kind="unstyled"
             navigate={filter_url(@params, :unmatched)}
             class={unmatched_filter_styles(@params, @is_month_closed)}
             id="unmatched-filter"
@@ -81,12 +87,14 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
       <span class="text-darkGrey/70 text-sm font-normal">Filtry:</span>
       <div class="flex items-center gap-2">
         <.link
+          kind="unstyled"
           navigate={subfilter_url(@params, :oplacone)}
           class={subfilter_styles(@params.subfilter == :oplacone)}
         >
           Opłacone
         </.link>
         <.link
+          kind="unstyled"
           navigate={subfilter_url(@params, :nieoplacone)}
           class={subfilter_styles(@params.subfilter == :nieoplacone)}
         >
@@ -103,12 +111,14 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
       <span class="text-darkGrey/70 text-sm font-normal">Filtry:</span>
       <div class="flex items-center gap-2">
         <.link
+          kind="unstyled"
           navigate={subfilter_url(@params, :dopasowane)}
           class={subfilter_styles(@params.subfilter == :dopasowane)}
         >
           Dopasowane
         </.link>
         <.link
+          kind="unstyled"
           navigate={subfilter_url(@params, :bez_dokumentu)}
           class={subfilter_styles(@params.subfilter == :bez_dokumentu)}
         >

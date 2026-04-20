@@ -1,5 +1,6 @@
 <div class="mx-auto my-4 grid w-full max-w-7xl grid-cols-[max-content_1fr] grid-rows-[repeat(2,min-content)] gap-x-10">
   <.link
+    kind="unstyled"
     navigate={~p"/zarzadzanie/pracownicy?month=#{Date.to_iso8601(@projects_filter_date)}"}
     class="mb-8 flex items-center gap-2 justify-self-start"
   >
@@ -53,7 +54,8 @@
         <div :if={@employee.slack_id != nil} class="text-darkGrey flex items-center gap-2 text-sm">
           <img src="/images/slack.png" alt="slack logo" width={24} height={24} />
           <.link
-            href={"#{get_employee_slack_url(@employee)}/team/#{@employee.slack_id}"}
+            kind="unstyled"
+            external={"#{get_employee_slack_url(@employee)}/team/#{@employee.slack_id}"}
             class="hover:border-darkGrey border-b border-transparent transition-colors"
           >
             napisz na Slacku
@@ -89,6 +91,7 @@
       <div class="mt-2 flex flex-wrap gap-2 text-sm/tight">
         <.link
           :for={project <- @employee.projects}
+          kind="unstyled"
           navigate={~p"/zarzadzanie/projekty/#{project.id}"}
           class="bg-turquoise-200 hover:bg-turquoise-300 hover:text-turquoise-800 text-turquoise-700 rounded-full px-4 py-1 text-sm/snug transition"
         >
@@ -114,6 +117,7 @@
             {~p"/zarzadzanie/pracownicy/#{@employee.id}", "Projekty i ewidencja", :projects}
           ]
       }
+      kind="unstyled"
       navigate={path}
       class={[
         "phx-click-loading:opacity-50 text-darkGrey rounded-t-md p-3 font-medium transition-all",

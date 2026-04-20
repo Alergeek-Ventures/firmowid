@@ -28,6 +28,7 @@
       ]}>
         <%= if @current_user.role == :admin do %>
           <.link
+            kind="unstyled"
             navigate={~p"/fakturowanie"}
             class={[
               !String.starts_with?(@current_uri.path, "/analiza") &&
@@ -41,6 +42,7 @@
         <% end %>
         <%= if flag_enabled?(:analysis_dashboard, @current_user) and @current_user.role == :admin do %>
           <.link
+            kind="unstyled"
             navigate={~p"/analiza"}
             class={[
               String.starts_with?(@current_uri.path, "/analiza") && "opacity-90",
@@ -59,6 +61,7 @@
           </.link>
         <% end %>
         <.link
+          kind="unstyled"
           navigate={~p"/czasosledz"}
           class={[
             String.starts_with?(@current_uri.path, "/czasosledz") && "opacity-90",
@@ -69,6 +72,7 @@
         </.link>
         <%= if @current_user.role == :admin do %>
           <.link
+            kind="unstyled"
             navigate={~p"/zarzadzanie/pracownicy"}
             class={[
               String.starts_with?(@current_uri.path, "/zarzadzanie") && "opacity-90",
@@ -132,11 +136,16 @@
             <div class="border-darkGrey/50 truncate border-b p-2 pb-4 text-xs text-white/50 lowercase">
               {@current_user.email}
             </div>
-            <.link navigate={~p"/ustawienia"} class="hover:bg-darkGrey/50 rounded-md p-2">
+            <.link
+              kind="unstyled"
+              navigate={~p"/ustawienia"}
+              class="hover:bg-darkGrey/50 rounded-md p-2"
+            >
               Ustawienia
             </.link>
             <%= if @current_user.role == :admin do %>
               <.link
+                kind="unstyled"
                 navigate={~p"/ustawienia/konta-bankowe"}
                 class="hover:bg-darkGrey/50 rounded-md p-2"
               >
@@ -166,7 +175,8 @@
         />
         <div class="flex justify-center gap-14 text-sm uppercase">
           <.link
-            navigate="/zarzadzanie/pracownicy"
+            kind="unstyled"
+            navigate={~p"/zarzadzanie/pracownicy"}
             class={[
               "transition-colors hover:text-white",
               String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy") &&
@@ -176,7 +186,8 @@
             Pracownicy
           </.link>
           <.link
-            navigate="/zarzadzanie/projekty"
+            kind="unstyled"
+            navigate={~p"/zarzadzanie/projekty"}
             class={[
               "transition-colors hover:text-white",
               String.starts_with?(@current_uri.path, "/zarzadzanie/projekty") && "text-white/90"

@@ -11,7 +11,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
   """
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Link
   import FirmowidWeb.Settings.Components.EditButton
+  import Phoenix.Component, except: [link: 1]
 
   alias Ash.Error.Forbidden
   alias Ash.Notifier.Notification

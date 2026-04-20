@@ -2,6 +2,9 @@ defmodule FirmowidWeb.Auth.Views.ResetPassword do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
@@ -33,8 +36,8 @@ defmodule FirmowidWeb.Auth.Views.ResetPassword do
       </.simple_form>
 
       <p class="mt-4 text-center text-sm">
-        <.link href={~p"/zarejestruj"}>Zarejestruj się</.link>
-        | <.link href={~p"/zaloguj"}>Zaloguj się</.link>
+        <.link kind="unstyled" redirect={~p"/zarejestruj"}>Zarejestruj się</.link>
+        | <.link kind="unstyled" redirect={~p"/zaloguj"}>Zaloguj się</.link>
       </p>
     </div>
     """

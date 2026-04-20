@@ -2,6 +2,9 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
   alias Firmowid.Ash.Timetracker.Session

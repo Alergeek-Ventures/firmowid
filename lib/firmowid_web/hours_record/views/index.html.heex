@@ -1,6 +1,6 @@
 <div class="container mx-auto p-6">
   <div class="flex justify-between">
-    <.link navigate={~p"/czasosledz/"} class="my-auto">
+    <.link kind="unstyled" navigate={~p"/czasosledz/"} class="my-auto">
       <.icon name="hero-arrow-left-circle-solid" />
     </.link>
     <.date_picker
@@ -73,7 +73,11 @@
         </div>
         <p :if={!@can_use_hours_records} class="mt-2 text-sm">
           Aby wypełnić ewidencję godzin musisz ustawić imię i nazwisko oraz datę zatrudnienia w
-          <.link navigate={~p"/ustawienia"} class="text-orangeText hover:underline">
+          <.link
+            kind="unstyled"
+            navigate={~p"/ustawienia"}
+            class="text-orangeText hover:underline"
+          >
             Ustawieniach
           </.link>
         </p>

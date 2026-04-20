@@ -11,6 +11,8 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   use FirmowidWeb, :html
 
   import FirmowidWeb.DesignSystem.Components.CoreComponents
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
@@ -61,7 +63,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
       |> assign(:is_overdue, is_overdue)
 
     ~H"""
-    <.link :if={@navigate} navigate={@navigate} class="block">
+    <.link :if={@navigate} kind="unstyled" navigate={@navigate} class="block">
       <div class="flex min-h-full flex-col gap-2">
         <div class="flex items-start justify-between gap-2">
           <span class="truncate text-sm font-medium">{@party}</span>
@@ -224,7 +226,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
   defp transaction_tile_content(assigns) do
     ~H"""
-    <.link navigate={@navigate} class="block">
+    <.link kind="unstyled" navigate={@navigate} class="block">
       <div class="flex min-h-full flex-col gap-2">
         <div class="flex items-start justify-between gap-2">
           <span class="truncate text-sm font-medium">{@party}</span>
@@ -376,7 +378,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
   defp matched_tile_content(assigns) do
     ~H"""
-    <.link navigate={@navigate} class="block">
+    <.link kind="unstyled" navigate={@navigate} class="block">
       <div class="flex min-h-full flex-col gap-1">
         <div class="flex items-start justify-between gap-2">
           <span class="truncate text-sm font-medium">{@party}</span>
@@ -514,7 +516,10 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
       <.link
         navigate={~p"/sprzedazowe/nowa"}
-        class={suggestion_action_styles()}
+        kind="button"
+        variant="secondary"
+        size="small"
+        class="mt-1 w-full"
       >
         Wystaw fakturę
       </.link>
@@ -563,7 +568,10 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
       <.link
         navigate={~p"/ustawienia/bank/dodaj"}
-        class={suggestion_action_styles()}
+        kind="button"
+        variant="secondary"
+        size="small"
+        class="mt-1 w-full"
       >
         Połącz bank
       </.link>
@@ -585,7 +593,13 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
         Faktury będą automatycznie wysyłane do Krajowego Systemu e-Faktur.
       </p>
 
-      <.link navigate={~p"/ustawienia/organizacja"} class={suggestion_action_styles()}>
+      <.link
+        navigate={~p"/ustawienia/organizacja"}
+        kind="button"
+        variant="secondary"
+        size="small"
+        class="mt-1 w-full"
+      >
         Połącz KSeF
       </.link>
     </div>

@@ -9,13 +9,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   """
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
-
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Button
 
   require Logger
 
@@ -97,16 +99,18 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
         <div class="flex items-center gap-4">
           <.link
             navigate={~p"/sprzedazowe/#{@invoice.id}/edytuj"}
-            class={button_styles(%{size: "small", color: "light_grey", new: true})}
+            kind="button"
+            variant="secondary"
+            size="small"
           >
             <Lucideicons.pencil /> Edytuj
           </.link>
-          <.link
+          <Phoenix.Component.link
             href={~p"/sprzedazowe/#{@invoice.id}/pobierz"}
             class={button_styles(%{size: "small", color: "light_grey", new: true})}
           >
             <Lucideicons.download /> Pobierz
-          </.link>
+          </Phoenix.Component.link>
           <.button
             :if={
               (@ksef_connected? and not is_nil(@invoice.invoice_number) and
@@ -123,6 +127,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
 
         <div class="flex items-center gap-4">
           <.link
+            kind="unstyled"
             navigate={~p"/sprzedazowe/#{@invoice.id}"}
             class="hover:text-grey-900 text-grey-600 text-sm"
           >
@@ -130,7 +135,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
           </.link>
           <.link
             navigate={~p"/sprzedazowe"}
-            class={button_styles(%{size: "medium", color: "turquoise", new: true})}
+            kind="button"
+            variant="primary"
+            accent="turquoise"
           >
             Wystaw kolejną
           </.link>
@@ -149,9 +156,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
           </p>
           <.link
             navigate={~p"/sprzedazowe/#{@invoice.id}"}
-            class={[
-              "bg-turquoise hover:bg-turquoise/90 mt-4 flex items-center gap-2 rounded-md px-4 py-2 text-white transition-colors"
-            ]}
+            kind="button"
+            variant="primary"
+            accent="turquoise"
+            class="mt-4"
           >
             <Lucideicons.pencil class="size-4" /> Przejdź do faktury
           </.link>

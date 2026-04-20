@@ -31,6 +31,7 @@
       </div>
       <div class="mt-16 flex gap-10 font-semibold">
         <.link
+          kind="unstyled"
           patch={~p"/ustawienia/konto"}
           class={[
             @live_action == :account && "text-orangeText",
@@ -40,6 +41,7 @@
           Twoje konto
         </.link>
         <.link
+          kind="unstyled"
           patch={~p"/ustawienia/bezpieczenstwo"}
           class={[
             @live_action == :security && "text-orangeText",
@@ -50,6 +52,7 @@
         </.link>
         <%= if @current_user.role == :admin do %>
           <.link
+            kind="unstyled"
             patch={~p"/ustawienia/organizacja"}
             class={[
               @live_action == :organization && "text-orangeText",
@@ -61,6 +64,7 @@
         <% end %>
         <%= if @current_user.role == :admin do %>
           <.link
+            kind="unstyled"
             patch={~p"/ustawienia/konta-bankowe"}
             class={[
               @live_action == :bank_accounts && "text-orangeText",
@@ -424,7 +428,7 @@
           </.modal>
 
           <div class="mt-6 ml-4">
-            <.link navigate={~p"/zaproszenia"} class={button_styles(%{variant: "outline"})}>
+            <.link navigate={~p"/zaproszenia"} kind="button" variant="outline">
               Dodaj współpracowników do organizacji
             </.link>
           </div>
@@ -463,7 +467,11 @@
         <div class="ml-4">
           <div class="flex gap-4">
             <h2 class="font-bold">Dane dostępowe</h2>
-            <.link class="mt-0.5 text-sm hover:underline" patch={~p"/ustawienia/bezpieczenstwo"}>
+            <.link
+              kind="unstyled"
+              class="mt-0.5 text-sm hover:underline"
+              patch={~p"/ustawienia/bezpieczenstwo"}
+            >
               Edytuj
             </.link>
           </div>
@@ -959,7 +967,8 @@
         <div class="mt-16 ml-auto flex gap-2">
           <.link
             navigate={~p"/ustawienia/bank/dodaj"}
-            class={button_styles(%{variant: "outline"})}
+            kind="button"
+            variant="outline"
           >
             Podepnij konto bankowe
           </.link>

@@ -7,13 +7,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   """
   use FirmowidWeb, :html
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+
   alias Firmowid.Ash.Currencies.NbpApiClient
   alias Firmowid.Ash.Ksef.VatRate
   alias FirmowidWeb.Invoicing.FormHelpers
   alias Phoenix.HTML.FormData
-
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Button
 
   defp currency_options do
     # Use only currencies supported by NBP (plus PLN as base currency)

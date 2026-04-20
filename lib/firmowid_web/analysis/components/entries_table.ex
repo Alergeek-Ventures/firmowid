@@ -8,6 +8,9 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
   """
   use FirmowidWeb, :html
 
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
@@ -130,7 +133,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
       <td class="rounded-l-md bg-white px-5 py-2">
         <div class="truncate">
           <%= if @navigate do %>
-            <.link navigate={@navigate} class="hover:underline">
+            <.link kind="unstyled" navigate={@navigate} class="hover:underline">
               <.party_cell party={@party} description={@description} />
             </.link>
           <% else %>
