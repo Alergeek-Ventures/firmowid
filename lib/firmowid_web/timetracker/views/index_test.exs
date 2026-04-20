@@ -141,6 +141,41 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
       assert ended_session.end_datetime
     end
 
+    test "ignores stale validate_and_update after current session ends", %{
+      conn: conn,
+      user: user,
+      project: project
+    } do
+      session =
+        session_fixture(%{
+          user_id: user.id,
+          project_id: project.id,
+          title: "Test Session",
+          start_datetime: DateTime.utc_now(),
+          organization_id: user.organization_id
+        })
+
+      {:ok, lv, _html} = live(conn, ~p"/czasosledz")
+
+      lv
+      |> element("button", "Stop")
+      |> render_click()
+
+      result =
+        render_change(lv, "validate_and_update", %{
+          "session_form" => %{
+            "project_id" => project.id,
+            "title" => "Stale update"
+          }
+        })
+
+      assert result =~ "Stale update"
+
+      ended_session = Repo.get!(Session, session.id)
+      assert ended_session.end_datetime
+      assert is_nil(get_current_session(user.id))
+    end
+
     test "deletes session", %{conn: conn, user: user, project: project} do
       session =
         session_fixture(%{

@@ -403,6 +403,10 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     end
   end
 
+  def edit_session(params, %{assigns: %{current_session: nil}} = socket) do
+    {:noreply, assign(socket, form: to_form(SessionForm.changeset(params)))}
+  end
+
   def edit_session(params, socket) do
     scope = socket.assigns.ash_scope
     current_session = socket.assigns.current_session
