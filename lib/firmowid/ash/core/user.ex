@@ -20,6 +20,7 @@ defmodule Firmowid.Ash.Core.User do
 
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core.Secrets
+  alias Firmowid.Ash.Core.Services.GoogleAvatarImporter
   alias Firmowid.Ash.Core.UserIdentity
   alias Firmowid.Ash.Resource
 
@@ -185,6 +186,14 @@ defmodule Firmowid.Ash.Core.User do
           true ->
             Ash.Changeset.change_attributes(changeset, Map.take(user_info, ["email", "name"]))
         end
+      end
+
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn changeset, user ->
+          user_info = Ash.Changeset.get_argument(changeset, :user_info)
+
+          GoogleAvatarImporter.maybe_import(user, user_info)
+        end)
       end
 
       change AshAuthentication.GenerateTokenChange
