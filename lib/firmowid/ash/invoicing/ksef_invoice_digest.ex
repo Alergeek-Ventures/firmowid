@@ -1,6 +1,6 @@
 defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
   @moduledoc """
-  Persisted digest of KSeF cost invoices created in Firmowid within one business window.
+  Persisted digest of KSeF cost invoices created in Firmowid.
   """
   use Ash.Resource,
     domain: Firmowid.Ash.Invoicing,
@@ -11,7 +11,6 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
   alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Invoicing.Actions.CreateScheduledKsefInvoiceDigests
-  alias Firmowid.Ash.Invoicing.Changes.EnqueueKsefInvoiceDigestSend
   alias Firmowid.Ash.Invoicing.Changes.SendKsefInvoiceDigest
   alias Firmowid.Ash.Invoicing.Changes.VerifyKsefInvoiceDigestCreate
   alias Firmowid.Ash.Invoicing.KsefInvoiceDigestItem
@@ -28,7 +27,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
     use_tenant_from_record? true
 
     scheduled_actions do
-      schedule :create_scheduled_digests, "0 9,12,15,20 * * *" do
+      schedule :create_scheduled_digests, "0 9,15 * * 1-5" do
         action :create_scheduled_digests
         queue :default
         worker_module_name Firmowid.Ash.Invoicing.KsefInvoiceDigest.Worker.CreateScheduledDigests
@@ -53,7 +52,6 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
 
   code_interface do
     define :create_digest, action: :create_digest
-    define :by_window, action: :by_window
     define :create_scheduled_digests, action: :create_scheduled_digests
     define :send_digest, action: :send_digest
   end
@@ -67,24 +65,14 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
       pagination keyset?: true
     end
 
-    read :by_window do
-      get? true
-
-      argument :window_start, :utc_datetime, allow_nil?: false
-      argument :window_end, :utc_datetime, allow_nil?: false
-
-      filter expr(window_start == ^arg(:window_start) and window_end == ^arg(:window_end))
-    end
-
     read :read_for_delivery do
       prepare build(load: [:organization, :cost_invoices])
     end
 
     create :create_digest do
-      accept [:window_start, :window_end]
+      accept []
 
       argument :cost_invoice_ids, {:array, :uuid}, allow_nil?: false
-      argument :enqueue_send?, :boolean, allow_nil?: false, default: true
 
       change manage_relationship(:cost_invoice_ids, :cost_invoices,
                type: :append,
@@ -92,7 +80,6 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
              )
 
       change VerifyKsefInvoiceDigestCreate
-      change EnqueueKsefInvoiceDigestSend
     end
 
     update :send_digest do
@@ -103,9 +90,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
     end
 
     action :create_scheduled_digests, :integer do
-      description "Builds KSeF cost-invoice digests for the most recently closed digest window."
-      argument :window_start, :utc_datetime
-      argument :window_end, :utc_datetime
+      description "Builds KSeF cost-invoice digests for all currently eligible undigested invoices."
       argument :organization_ids, {:array, :uuid}
       argument :enqueue_send?, :boolean, allow_nil?: false, default: true
       run CreateScheduledKsefInvoiceDigests
@@ -124,7 +109,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
       authorize_if {SystemActorRole, roles: [:ksef_digest]}
     end
 
-    policy action([:by_window, :read_for_delivery, :create_digest, :send_digest]) do
+    policy action([:read_for_delivery, :create_digest, :send_digest]) do
       authorize_if {SystemActorRole, roles: [:ksef_digest]}
     end
 
@@ -141,8 +126,6 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
   attributes do
     uuid_v7_primary_key :id
 
-    attribute :window_start, :utc_datetime, allow_nil?: false, public?: true
-    attribute :window_end, :utc_datetime, allow_nil?: false, public?: true
     attribute :delivered_at, :utc_datetime, public?: true
 
     Resource.firmowid_timestamps()
@@ -168,9 +151,5 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
 
   aggregates do
     count :invoice_count, :digest_items
-  end
-
-  identities do
-    identity :unique_window, [:organization_id, :window_start, :window_end]
   end
 end

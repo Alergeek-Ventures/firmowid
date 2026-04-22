@@ -18,9 +18,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
-
-  @confidence_high_threshold 0.92
-  @confidence_mid_threshold 0.87
+  alias Firmowid.Invoicing.RecommendationThresholds
 
   attr :entry, :any, required: true
   attr :type, :atom, required: true
@@ -402,16 +400,10 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
   # Pure logic function — returns {badge_type, confidence_percent} or {nil, nil}
   defp compute_confidence_badge(entry) do
-    score = Map.get(entry, :match_confidence, nil)
-    source = Map.get(entry, :match_source, nil)
-
-    cond do
-      source == :manual -> {:manual, 100}
-      is_nil(score) -> {nil, nil}
-      score >= @confidence_high_threshold -> {:high, round(score * 100)}
-      score >= @confidence_mid_threshold -> {:mid, round(score * 100)}
-      true -> {:low, round(score * 100)}
-    end
+    RecommendationThresholds.match_chip_type(
+      Map.get(entry, :match_confidence, nil),
+      Map.get(entry, :match_source, nil)
+    )
   end
 
   # ── Confidence Chip Component ─────────────────────────────────────

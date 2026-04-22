@@ -16,6 +16,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Invoicing.RecommendationThresholds
 
   attr :is_cost_invoice, :boolean
   attr :issue_date, Date, required: true
@@ -334,11 +335,10 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
     # to retrain and recalculate the thresholds
 
     predicition_level =
-      cond do
-        assigns.prediction_score >= 0.92 and assigns.is_highest_green -> :high
-        assigns.prediction_score >= 0.87 -> :mid
-        true -> :low
-      end
+      RecommendationThresholds.prediction_level(
+        assigns.prediction_score,
+        assigns.is_highest_green
+      )
 
     assigns = assign(assigns, predicition_level: predicition_level)
 
@@ -573,20 +573,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   def potential_transactions_list(assigns) do
     potential_transactions = assigns.potential_transactions
-    green_threshold = 0.69
-    # Find the first index of the highest score >= green_threshold
-    {green_idx, _} =
-      potential_transactions
-      |> Enum.with_index()
-      |> Enum.filter(fn {{_tx, score}, _idx} -> score >= green_threshold end)
-      |> Enum.sort_by(fn {{_tx, score}, _idx} -> -score end)
-      |> Enum.split(1)
-      |> then(fn {first, _rest} ->
-        case first do
-          [{{_tx, _score}, idx}] -> {idx, true}
-          _ -> {-1, false}
-        end
-      end)
+    green_idx = RecommendationThresholds.highest_green_index(potential_transactions)
 
     assigns = assign(assigns, :green_idx, green_idx)
 
