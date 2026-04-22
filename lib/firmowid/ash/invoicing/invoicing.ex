@@ -19,15 +19,13 @@ defmodule Firmowid.Ash.Invoicing do
 
   resources do
     resource Firmowid.Ash.Invoicing.Counterparty do
-      define :list_counterparties, action: :list_all
+      define :list_counterparties, action: :list
       define :get_counterparty, action: :by_id, args: [:id]
       define :create_counterparty, action: :create
       define :update_counterparty, action: :update
+      define :archive_counterparty, action: :archive
+      define :unarchive_counterparty, action: :unarchive
       define :destroy_counterparty, action: :destroy
-
-      define :search_counterparties,
-        action: :search,
-        args: [:search_term, {:optional, :type}, {:optional, :sort_by}, {:optional, :sort_order}]
     end
 
     resource Firmowid.Ash.Invoicing.InboundEmail do
@@ -72,6 +70,11 @@ defmodule Firmowid.Ash.Invoicing do
       define :get_sales_invoice_by_share_token, action: :by_share_token, args: [:token]
       define :create_sales_invoice, action: :create
       define :update_sales_invoice, action: :update
+
+      define :attach_suggested_sales_invoice_counterparty,
+        action: :attach_suggested_counterparty,
+        args: [:counterparty_id]
+
       define :destroy_sales_invoice, action: :destroy
       define :create_sales_invoice_correction, action: :create_correction
       define :cancel_sales_invoice, action: :cancel, args: [:invoice_id]

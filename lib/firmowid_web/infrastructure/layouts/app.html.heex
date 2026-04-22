@@ -206,6 +206,17 @@
           >
             Projekty
           </.link>
+          <.link
+            kind="unstyled"
+            navigate={~p"/zarzadzanie/kontrahenci"}
+            class={[
+              "transition-colors hover:text-white",
+              String.starts_with?(@current_uri.path, "/zarzadzanie/kontrahenci") &&
+                "text-white/90"
+            ]}
+          >
+            Kontrahenci
+          </.link>
         </div>
         <.button
           type="button"

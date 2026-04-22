@@ -27,6 +27,15 @@ defmodule Firmowid.Ash.Invoicing.Changes.ClearIrrelevantBuyerFields do
     end
   end
 
+  @impl true
+  def atomic(changeset, opts, _context) do
+    if Ash.Changeset.changing_attribute?(changeset, opts[:type_field]) do
+      {:atomic, atomic_changes(opts)}
+    else
+      {:ok, changeset}
+    end
+  end
+
   defp clear_fields_for_type(changeset, opts) do
     type_field = opts[:type_field]
     company_fields = opts[:company_fields] || []
@@ -43,5 +52,25 @@ defmodule Firmowid.Ash.Invoicing.Changes.ClearIrrelevantBuyerFields do
     Enum.reduce(fields, changeset, fn field, cs ->
       Ash.Changeset.force_change_attribute(cs, field, nil)
     end)
+  end
+
+  defp atomic_changes(opts) do
+    type_field = opts[:type_field]
+    company_fields = opts[:company_fields] || []
+    individual_fields = opts[:individual_fields] || []
+
+    company_clears =
+      Map.new(
+        company_fields,
+        &{&1, expr(if ^atomic_ref(type_field) == :individual, do: nil, else: ^atomic_ref(&1))}
+      )
+
+    individual_clears =
+      Map.new(
+        individual_fields,
+        &{&1, expr(if ^atomic_ref(type_field) == :company, do: nil, else: ^atomic_ref(&1))}
+      )
+
+    Map.merge(company_clears, individual_clears)
   end
 end

@@ -12,13 +12,15 @@
           Wprowadź ręcznie
         </.button>
 
-        <.button
-          :if={false}
+        <.link
+          :if={@can_manage_counterparties}
+          kind="button"
           size="small"
           variant="secondary"
+          navigate={~p"/zarzadzanie/kontrahenci/dodaj"}
         >
           <Lucideicons.plus /> Dodaj nowego
-        </.button>
+        </.link>
       </div>
     </div>
 
@@ -31,21 +33,15 @@
           Nie wprowadziłeś jeszcze żadnego kontrahenta.
           Wprowadź go, klikając poniżej, aby wystawić fakturę.
         </p>
-        <span
-          id="add-counterparty-disabled-tooltip"
-          class="inline-flex"
-          phx-hook="Tippy"
-          data-tippy-content="w trakcie prac - wprowadź kontrahenta ręcznie przyciskiem w prawym górnym rogu ekranu"
+        <.link
+          :if={@can_manage_counterparties}
+          kind="button"
+          variant="secondary"
+          accent="turquoise"
+          navigate={~p"/zarzadzanie/kontrahenci/dodaj"}
         >
-          <.button
-            type="button"
-            variant="secondary"
-            accent="turquoise"
-            disabled
-          >
-            Dodaj kontrahenta
-          </.button>
-        </span>
+          Dodaj kontrahenta
+        </.link>
       </div>
 
       <div
@@ -329,7 +325,11 @@
   </div>
 </div>
 
-<.modal id="counterparty-modal" show={@open_counterparty_modal}>
+<.modal
+  id="counterparty-modal"
+  show={@open_counterparty_modal}
+  on_cancel={JS.push("close_counterparty_modal")}
+>
   <h2 class="text-grey-900 mb-6 text-xl font-semibold">Wprowadź dane kontrahenta</h2>
 
   <.form
@@ -465,7 +465,7 @@
       <.button
         type="button"
         variant="outline"
-        phx-click={hide_modal("counterparty-modal")}
+        phx-click={JS.push("close_counterparty_modal") |> hide_modal("counterparty-modal")}
       >
         Anuluj
       </.button>

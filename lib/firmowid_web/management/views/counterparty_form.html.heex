@@ -1,0 +1,137 @@
+<div class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8">
+  <.form for={@form} phx-change="validate" phx-submit="save" class="flex flex-col gap-10">
+    <div class="flex flex-row items-start justify-between">
+      <div class="space-y-1">
+        <p :if={@live_action == :edit} class="text-grey-500 text-sm/snug">
+          {@counterparty.display_label}
+        </p>
+        <p class="text-2xl/tight font-medium">
+          {case @live_action do
+            :new -> "Nowy kontrahent"
+            :edit -> "Edycja kontrahenta"
+          end}
+        </p>
+      </div>
+
+      <div class="flex flex-row gap-4">
+        <.link
+          navigate={@cancel_path}
+          kind="button"
+          variant="outline"
+        >
+          Anuluj
+        </.link>
+
+        <.button variant="tertiary">
+          {case @live_action do
+            :new -> "Dodaj kontrahenta"
+            :edit -> "Zapisz zmiany"
+          end}
+        </.button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-8">
+      <section class="rounded-md bg-white p-6 shadow">
+        <h2 class="text-grey-900 mb-6 text-base/tight font-medium">Informacje podstawowe</h2>
+
+        <div class="grid grid-cols-[min-content_1fr] items-center gap-x-5 gap-y-3">
+          <label class="text-grey-700 text-sm text-nowrap" for={@form[:type].id}>Typ</label>
+          <.input
+            field={@form[:type]}
+            type="select"
+            options={[{"Firma", :company}, {"Osoba fizyczna", :individual}]}
+            container_class="max-w-96"
+            new={true}
+          />
+
+          <label class="text-grey-700 text-sm text-nowrap" for={@form[:display_name].id}>
+            Nazwa wyświetlana
+          </label>
+          <.input field={@form[:display_name]} class="max-w-96" new={true} />
+
+          <%= if to_string(@form[:type].value) == "company" do %>
+            <label class="text-grey-700 text-sm text-nowrap" for={@form[:tax_id].id}>
+              NIP / ID
+            </label>
+            <.input field={@form[:tax_id]} class="max-w-96" new={true} />
+
+            <label class="text-grey-700 text-sm text-nowrap" for={@form[:full_name].id}>
+              Pełna nazwa
+            </label>
+            <.input field={@form[:full_name]} class="max-w-96" new={true} />
+          <% else %>
+            <label class="text-grey-700 text-sm text-nowrap" for={@form[:given_name].id}>
+              Imię
+            </label>
+            <.input field={@form[:given_name]} class="max-w-96" new={true} />
+
+            <label class="text-grey-700 text-sm text-nowrap" for={@form[:surname].id}>
+              Nazwisko
+            </label>
+            <.input field={@form[:surname]} class="max-w-96" new={true} />
+
+            <label class="text-grey-700 text-sm text-nowrap" for={@form[:pesel].id}>PESEL</label>
+            <.input field={@form[:pesel]} class="max-w-96" new={true} />
+          <% end %>
+
+          <label class="text-grey-700 text-sm text-nowrap" for={@form[:country].id}>Kraj</label>
+          <.input
+            field={@form[:country]}
+            type="select"
+            options={@country_options}
+            container_class="max-w-96"
+            prompt="Wybierz kraj"
+            new={true}
+          />
+        </div>
+      </section>
+
+      <section class="rounded-md bg-white p-6 shadow">
+        <h2 class="text-grey-900 mb-6 text-base/tight font-medium">Dane kontaktowe i adresowe</h2>
+
+        <div class="grid grid-cols-[min-content_1fr] items-start gap-x-5 gap-y-3">
+          <label class="text-grey-700 pt-2 text-sm text-nowrap" for={@form[:address].id}>
+            Adres
+          </label>
+          <.input field={@form[:address]} type="textarea" class="max-w-96" new={true} />
+
+          <label class="text-grey-700 text-sm text-nowrap" for={@form[:email].id}>Email</label>
+          <.input field={@form[:email]} class="max-w-96" new={true} />
+
+          <label class="text-grey-700 text-sm text-nowrap" for={@form[:phone].id}>Telefon</label>
+          <.input field={@form[:phone]} class="max-w-96" new={true} />
+
+          <label class="text-grey-700 pt-2 text-sm text-nowrap" for={@form[:description].id}>
+            Notatki
+          </label>
+          <.input field={@form[:description]} type="textarea" class="max-w-96" new={true} />
+
+          <label
+            class="text-grey-700 text-sm text-nowrap"
+            for={@form[:is_different_mail_address].id}
+          >
+            Adres korespondencyjny
+          </label>
+          <div class="space-y-3">
+            <.input field={@form[:is_different_mail_address]} type="checkbox" new={true} />
+
+            <%= if Phoenix.HTML.Form.normalize_value("checkbox", @form[:is_different_mail_address].value) do %>
+              <div class="space-y-3">
+                <.input field={@form[:mail_address]} type="textarea" class="max-w-96" new={true} />
+                <.input
+                  field={@form[:mail_country]}
+                  type="select"
+                  options={@country_options}
+                  container_class="max-w-96"
+                  prompt="Wybierz kraj korespondencyjny"
+                  new={true}
+                />
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </section>
+    </div>
+  </.form>
+</div>

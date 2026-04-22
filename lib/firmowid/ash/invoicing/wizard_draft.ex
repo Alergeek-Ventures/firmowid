@@ -87,11 +87,7 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
         :buyer_country,
         :buyer_email,
         :buyer_phone,
-        :buyer_description,
-        :invoice_type,
-        :is_reverse_charge,
-        :currency,
-        :seller_account_number
+        :buyer_description
       ]
 
       change {Changes.ValidateCountryCode, field: :buyer_country}
@@ -101,6 +97,7 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
               company_fields: [:buyer_id, :buyer_full_name],
               individual_fields: [:buyer_pesel, :buyer_given_name, :buyer_surname]}
 
+      change {Changes.DeriveWizardBuyerDefaults, []}
       change {Changes.CastBasedOnInvoiceType, []}
       change set_attribute(:step, :items)
 

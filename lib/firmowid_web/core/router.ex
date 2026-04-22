@@ -17,6 +17,8 @@ defmodule FirmowidWeb.Core.Router do
   alias Invoicing.CostInvoices.Controllers.Pdf, as: CostInvoicePdf
   alias Invoicing.SalesInvoices.Controllers.Pdf
   alias Invoicing.SalesInvoices.Controllers.Shared
+  alias Management.Views.Counterparties
+  alias Management.Views.CounterpartyForm
   alias Management.Views.Employees
   alias Management.Views.ProjectForm
   alias Management.Views.Projects
@@ -152,6 +154,11 @@ defmodule FirmowidWeb.Core.Router do
       live "/zarzadzanie/pracownicy", Employees, :index
       live "/zarzadzanie/pracownicy/archiwum", Employees, :archive
       live "/zarzadzanie/pracownicy/:id", Management.Views.Employee, :projects
+      live "/zarzadzanie/kontrahenci", Counterparties, :index
+      live "/zarzadzanie/kontrahenci/archiwum", Counterparties, :archive
+      live "/zarzadzanie/kontrahenci/dodaj", CounterpartyForm, :new
+      live "/zarzadzanie/kontrahenci/:id", Management.Views.Counterparty, :show
+      live "/zarzadzanie/kontrahenci/:id/edycja", CounterpartyForm, :edit
       live "/zarzadzanie/projekty", Projects, :index
       live "/zarzadzanie/projekty/archiwum", Projects, :archive
       live "/zarzadzanie/projekty/dodaj", ProjectForm, :new

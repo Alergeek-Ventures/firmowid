@@ -3,8 +3,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   LiveView for the sales invoice creator wizard.
 
   Uses `WizardDraft` (Ash ETS resource) for ephemeral wizard state,
-  # TODO: move domain validation (validate_organization_for_invoicing,
-  # reverse_charge_for_id_type?, currency_for_country) to Ash calculations/validations
+  # TODO: move organization validation (validate_organization_for_invoicing)
+  # to Ash-level command validation.
   `AshPhoenix.Form` for per-step form building and validation, and
   `SalesInvoice.confirm_from_draft` for final invoice creation.
 
@@ -75,11 +75,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       |> assign(:bank_accounts, Finances.list_bank_accounts!(scope: socket.assigns.ash_scope))
       |> assign(
         :last_counterparties,
-        Counterparty.list_all!(load: [:display_label], scope: socket.assigns.ash_scope)
+        Invoicing.list_counterparties!(%{status: :active, limit: 25},
+          load: [:display_label],
+          scope: socket.assigns.ash_scope
+        )
       )
       |> assign(:last_invoices, recent_invoices(socket.assigns.ash_scope))
       |> assign(:ksef_connected?, Ksef.get_credential(socket.assigns.ash_scope) != nil)
       |> assign(:open_counterparty_modal, false)
+      |> assign(:can_manage_counterparties, socket.assigns.current_user.role == :admin)
 
     {:ok, socket}
   end
@@ -556,13 +560,22 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     assign(socket, :counterparty_form, form)
   end
 
+  defp reset_counterparty_modal(socket) do
+    socket
+    |> assign(:open_counterparty_modal, false)
+    |> maybe_init_counterparty_form()
+  end
+
   defp maybe_put_date(params, _key, nil), do: params
 
   defp maybe_put_date(params, key, %Date{} = date), do: Map.put(params, key, Date.to_iso8601(date))
 
   defp update_counterparty_stream(socket, search, no_search?, filter, sort_order) do
     counterparties =
-      case Counterparty.search(search, filter, nil, sort_order, scope: socket.assigns.ash_scope) do
+      case Invoicing.list_counterparties(
+             %{search: search, type: filter, status: :active, sort_order: sort_order, limit: 25},
+             scope: socket.assigns.ash_scope
+           ) do
         {:ok, results} -> results
         _ -> []
       end
@@ -682,66 +695,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   def handle_event("select_counterparty", %{"counterparty_id" => counterparty_id}, socket) do
-    scope = socket.assigns.ash_scope
-    counterparty = Counterparty.get!(counterparty_id, load: [:tax_id_type], scope: scope)
-    tax_id_type = counterparty.tax_id_type
-
-    is_reverse_charge = reverse_charge_for_id_type?(tax_id_type)
-    currency = currency_for_country(counterparty.country)
-    invoice_type = invoice_type_for_country(counterparty.country)
-    default_bank_account = find_default_bank_account(socket.assigns.bank_accounts, currency)
-
-    attrs = %{
-      counterparty_id: counterparty.id,
-      buyer_type: counterparty.type,
-      buyer_id: counterparty.tax_id,
-      buyer_full_name: counterparty.full_name,
-      buyer_given_name: counterparty.given_name,
-      buyer_surname: counterparty.surname,
-      buyer_display_name: counterparty.display_name,
-      buyer_address: counterparty.address,
-      buyer_pesel: counterparty.pesel,
-      buyer_country: counterparty.country,
-      buyer_email: counterparty.email,
-      buyer_phone: counterparty.phone,
-      buyer_description: counterparty.description,
-      is_reverse_charge: is_reverse_charge,
-      currency: currency,
-      invoice_type: invoice_type,
-      seller_account_number: if(default_bank_account, do: default_bank_account.iban)
-    }
-
-    case WizardDraft.update_counterparty(socket.assigns.draft, attrs, scope: scope) do
-      {:ok, updated_draft} ->
-        invoice = load_draft_with_calcs(updated_draft, scope)
-
-        socket =
-          socket
-          |> assign(:draft, updated_draft)
-          |> assign(:invoice, invoice)
-
-        {:noreply, push_patch(socket, to: creator_draft_url(socket.assigns.creator_draft_id, :items))}
-
-      {:error, _error} ->
-        # Counterparty has invalid data (e.g. missing tax ID for required type).
-        # Pre-fill the manual counterparty form with what we have and open the modal.
-        form =
-          socket.assigns.draft
-          |> AshPhoenix.Form.for_update(:update_counterparty, scope: scope)
-          |> AshPhoenix.Form.validate(Map.new(attrs, fn {k, v} -> {to_string(k), v} end))
-
-        socket =
-          socket
-          |> assign(:counterparty_form, to_form(form))
-          |> assign(:open_counterparty_modal, true)
-
-        {:noreply,
-         LiveToast.put_toast(
-           socket,
-           :error,
-           "Dane kontrahenta wymagają uzupełnienia — popraw formularz."
-         )}
-    end
+    handle_counterparty_selection(socket, counterparty_id)
   end
 
   def handle_event("select_base_invoice", %{"invoice_id" => invoice_id}, socket) do
@@ -799,6 +753,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     {:noreply, assign(socket, :counterparty_form, form)}
   end
 
+  def handle_event("close_counterparty_modal", _params, socket) do
+    {:noreply, reset_counterparty_modal(socket)}
+  end
+
   def handle_event("submit_counterparty", %{"form" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.counterparty_form.source, params: params) do
       {:ok, updated_draft} ->
@@ -808,6 +766,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
           socket
           |> assign(:draft, updated_draft)
           |> assign(:invoice, invoice)
+          |> assign(:open_counterparty_modal, false)
 
         {:noreply, push_patch(socket, to: creator_draft_url(socket.assigns.creator_draft_id, :items))}
 
@@ -1020,6 +979,71 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     end
   end
 
+  defp handle_counterparty_selection(socket, counterparty_id) do
+    scope = socket.assigns.ash_scope
+
+    case Counterparty.get(counterparty_id, scope: scope) do
+      {:ok, counterparty} ->
+        attrs = %{
+          counterparty_id: counterparty.id,
+          buyer_type: counterparty.type,
+          buyer_id: counterparty.tax_id,
+          buyer_full_name: counterparty.full_name,
+          buyer_given_name: counterparty.given_name,
+          buyer_surname: counterparty.surname,
+          buyer_display_name: counterparty.display_name,
+          buyer_address: counterparty.address,
+          buyer_pesel: counterparty.pesel,
+          buyer_country: counterparty.country,
+          buyer_email: counterparty.email,
+          buyer_phone: counterparty.phone,
+          buyer_description: counterparty.description
+        }
+
+        case WizardDraft.update_counterparty(socket.assigns.draft, attrs, scope: scope) do
+          {:ok, updated_draft} ->
+            invoice = load_draft_with_calcs(updated_draft, scope)
+
+            socket =
+              socket
+              |> assign(:draft, updated_draft)
+              |> assign(:invoice, invoice)
+
+            {:noreply, push_patch(socket, to: creator_draft_url(socket.assigns.creator_draft_id, :items))}
+
+          {:error, _error} ->
+            # Counterparty has invalid data (e.g. missing tax ID for required type).
+            # Pre-fill the manual counterparty form with what we have and open the modal.
+            form =
+              socket.assigns.draft
+              |> AshPhoenix.Form.for_update(:update_counterparty, scope: scope)
+              |> AshPhoenix.Form.validate(Map.new(attrs, fn {k, v} -> {to_string(k), v} end))
+
+            socket =
+              socket
+              |> assign(:counterparty_form, to_form(form))
+              |> assign(:open_counterparty_modal, true)
+
+            {:noreply,
+             LiveToast.put_toast(
+               socket,
+               :error,
+               "Dane kontrahenta wymagają uzupełnienia — popraw formularz."
+             )}
+        end
+
+      {:error, error} ->
+        Logger.warning("Failed to fetch counterparty during selection: #{inspect(error)}")
+
+        {:noreply,
+         LiveToast.put_toast(
+           socket,
+           :error,
+           "Nie udało się pobrać danych kontrahenta. Spróbuj ponownie."
+         )}
+    end
+  end
+
   defp submit_to_ksef_and_navigate(socket, invoice) do
     case Ksef.submit_sales_invoice(invoice.id, socket.assigns.ash_scope) do
       {:ok, _job} ->
@@ -1102,24 +1126,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     Enum.find(bank_accounts, &(&1.iban == iban)) ||
       Enum.find(bank_accounts, &(&1.is_default and &1.currency == currency))
   end
-
-  # Find a default bank account for the given currency
-  defp find_default_bank_account(bank_accounts, currency) do
-    Enum.find(bank_accounts, &(&1.is_default and &1.currency == currency))
-  end
-
-  # Determine if reverse charge applies based on tax ID type
-  defp reverse_charge_for_id_type?(:eu_vat), do: true
-  defp reverse_charge_for_id_type?(:other_id), do: true
-  defp reverse_charge_for_id_type?(_), do: false
-
-  # Determine default currency based on country
-  defp currency_for_country("PL"), do: "PLN"
-  defp currency_for_country(_), do: "EUR"
-
-  # Determine invoice type based on country
-  defp invoice_type_for_country("PL"), do: :poland
-  defp invoice_type_for_country(_), do: :foreign
 
   # Confirmed VAT invoices from the previous 2 months (replaces list_recent action).
   # The range covers [first_of_month - 2 months, last day of previous month].

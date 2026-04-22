@@ -22,6 +22,8 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
 
   alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Invoicing.Changes.ClearIrrelevantBuyerFields
+  alias Firmowid.Ash.Invoicing.Changes.NormalizeBlankCounterpartyFields
+  alias Firmowid.Ash.Invoicing.Changes.NormalizeCounterpartyTaxId
   alias Firmowid.Ash.Invoicing.Changes.ValidateCountryCode
   alias Firmowid.Ash.Invoicing.CountryCodes
   alias Firmowid.Ash.Invoicing.Validations.ValidateNameFields
@@ -39,19 +41,13 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
   end
 
   code_interface do
-    define :list_all, action: :list_all
+    define :list, action: :list
     define :get, args: [:id], action: :by_id
     define :create
     define :update
+    define :archive
+    define :unarchive
     define :destroy
-
-    define :search,
-      args: [
-        :search_term,
-        {:optional, :type},
-        {:optional, :sort_by},
-        {:optional, :sort_order}
-      ]
   end
 
   actions do
@@ -61,8 +57,48 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
       get_by [:id]
     end
 
-    read :list_all do
-      prepare build(sort: [list_all_order: :asc])
+    read :list do
+      argument :search, :string
+      argument :type, :atom, constraints: [one_of: [:individual, :company]]
+
+      argument :status, :atom,
+        default: :active,
+        constraints: [one_of: [:active, :archived, :all]]
+
+      argument :sort_by, :atom,
+        default: :name,
+        constraints: [one_of: [:name, :display_name, :created_at]]
+
+      argument :sort_order, :atom,
+        default: :asc,
+        constraints: [one_of: [:asc, :desc]]
+
+      argument :limit, :integer do
+        constraints min: 1, max: 100
+      end
+
+      prepare {Firmowid.Ash.Preparations.ParadeDBSearch,
+               columns: ~w(display_name full_name given_name surname tax_id email),
+               operator: :disjunction,
+               argument: :search}
+
+      prepare Firmowid.Ash.Invoicing.Preparations.CounterpartySearchSort
+
+      prepare build(filter: expr(type == ^arg(:type))) do
+        where present(:type)
+      end
+
+      prepare build(filter: expr(is_nil(archived_at))) do
+        where argument_equals(:status, :active)
+      end
+
+      prepare build(filter: expr(not is_nil(archived_at))) do
+        where argument_equals(:status, :archived)
+      end
+
+      prepare build(limit: arg(:limit)) do
+        where present(:limit)
+      end
     end
 
     create :create do
@@ -84,6 +120,7 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
         :description
       ]
 
+      change NormalizeBlankCounterpartyFields
       change {ValidateCountryCode, field: :country}
       change {ValidateCountryCode, field: :mail_country}
 
@@ -96,6 +133,8 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
                 :surname
               ]}
 
+      change NormalizeCounterpartyTaxId
+
       validate {ValidateTaxId, id_field: :tax_id, country_field: :country, pesel_field: :pesel, type_field: :type}
 
       validate {ValidateNameFields,
@@ -103,8 +142,6 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
     end
 
     update :update do
-      require_atomic? false
-
       accept [
         :type,
         :tax_id,
@@ -123,6 +160,7 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
         :description
       ]
 
+      change NormalizeBlankCounterpartyFields
       change {ValidateCountryCode, field: :country}
       change {ValidateCountryCode, field: :mail_country}
 
@@ -135,33 +173,28 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
                 :surname
               ]}
 
+      change NormalizeCounterpartyTaxId
+
       validate {ValidateTaxId, id_field: :tax_id, country_field: :country, pesel_field: :pesel, type_field: :type}
 
       validate {ValidateNameFields,
                 type_field: :type, full_name_field: :full_name, given_name_field: :given_name, surname_field: :surname}
     end
 
-    read :search do
-      description "Full-text search counterparties via ParadeDB."
+    update :archive do
+      description "Archive a counterparty by setting archived_at to today."
+      accept []
+      require_atomic? false
 
-      argument :search_term, :string
-      argument :type, :atom, constraints: [one_of: [:individual, :company]]
-      argument :sort_by, :atom, default: :name
+      change set_attribute(:archived_at, &Date.utc_today/0)
+    end
 
-      argument :sort_order, :atom,
-        default: :asc,
-        constraints: [one_of: [:asc, :desc]]
+    update :unarchive do
+      description "Unarchive a counterparty by clearing archived_at."
+      accept []
+      require_atomic? false
 
-      prepare {Firmowid.Ash.Preparations.ParadeDBSearch,
-               columns: ~w(display_name full_name given_name surname tax_id email),
-               operator: :disjunction,
-               argument: :search_term}
-
-      prepare Firmowid.Ash.Invoicing.Preparations.CounterpartySearchSort
-
-      filter expr(is_nil(^arg(:type)) or type == ^arg(:type))
-
-      prepare build(limit: 25)
+      change set_attribute(:archived_at, nil)
     end
   end
 
@@ -209,6 +242,7 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
       default: :company
 
     attribute :tax_id, :string, public?: true
+    attribute :normalized_tax_id, :string, public?: false
     attribute :full_name, :string, public?: true
     attribute :given_name, :string, public?: true
     attribute :surname, :string, public?: true
@@ -216,6 +250,7 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
     attribute :display_name, :string, public?: true
     attribute :address, :string, public?: true
     attribute :country, :string, public?: true
+    attribute :archived_at, :date, public?: true
     attribute :is_different_mail_address, :boolean, public?: true, default: false
     attribute :mail_address, :string, public?: true
     attribute :mail_country, :string, public?: true
@@ -273,5 +308,15 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
               )
 
     calculate :list_all_order, :string, expr(fragment("COALESCE(?, ?)", display_name, surname))
+  end
+
+  identities do
+    identity :unique_tax_id_country_per_org, [:normalized_tax_id, :country, :organization_id],
+      nils_distinct?: true,
+      message: "kontrahent o tym identyfikatorze podatkowym już istnieje"
+
+    identity :unique_pesel_per_org, [:pesel, :organization_id],
+      nils_distinct?: true,
+      message: "kontrahent o tym numerze PESEL już istnieje"
   end
 end

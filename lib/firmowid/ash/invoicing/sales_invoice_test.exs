@@ -4,7 +4,9 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
 
   import Firmowid.AccountsFixtures
 
+  alias Ash.Error.Invalid
   alias Firmowid.Ash.Invoicing
+  alias Firmowid.Ash.Invoicing.Counterparty
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Scope
 
@@ -134,6 +136,69 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
     end
   end
 
+  describe "attach_suggested_counterparty/2" do
+    test "rejects attach when invoice no longer matches suggestion predicate" do
+      user = admin_fixture()
+      scope = scope_for(user)
+
+      counterparty = company_counterparty_fixture(user, %{tax_id: "DE123456789", country: "DE"})
+
+      non_matching_invoice =
+        create_sales_invoice!(
+          user,
+          Map.merge(base_invoice_attrs(), %{
+            buyer_id: "PL9999999999",
+            buyer_country: "PL",
+            buyer_type: :company,
+            sales_invoice_items: [base_item_attrs(%{})]
+          })
+        )
+
+      assert {:error, %Invalid{}} =
+               Invoicing.attach_suggested_sales_invoice_counterparty(
+                 non_matching_invoice,
+                 %{counterparty_id: counterparty.id},
+                 scope: scope
+               )
+
+      refetched = Invoicing.get_sales_invoice!(non_matching_invoice.id, scope: scope)
+      assert is_nil(refetched.counterparty_id)
+    end
+
+    test "rejects attaching already linked invoice to another counterparty" do
+      user = admin_fixture()
+      scope = scope_for(user)
+
+      original_counterparty =
+        company_counterparty_fixture(user, %{tax_id: "DE123456789", country: "DE"})
+
+      other_counterparty =
+        company_counterparty_fixture(user, %{tax_id: "DE987654321", country: "DE"})
+
+      invoice =
+        create_sales_invoice!(
+          user,
+          Map.merge(base_invoice_attrs(), %{
+            buyer_id: "DE123456789",
+            buyer_country: "DE",
+            buyer_type: :company,
+            counterparty_id: original_counterparty.id,
+            sales_invoice_items: [base_item_attrs(%{})]
+          })
+        )
+
+      assert {:error, %Invalid{}} =
+               Invoicing.attach_suggested_sales_invoice_counterparty(
+                 invoice,
+                 %{counterparty_id: other_counterparty.id},
+                 scope: scope
+               )
+
+      refetched = Invoicing.get_sales_invoice!(invoice.id, scope: scope)
+      assert refetched.counterparty_id == original_counterparty.id
+    end
+  end
+
   defp scope_for(user), do: %Scope{actor: user, tenant: user.organization_id}
 
   defp create_sales_invoice!(user, attrs) do
@@ -198,5 +263,21 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
       organization_id: organization_id,
       locked_at: DateTime.utc_now(:second)
     })
+  end
+
+  defp company_counterparty_fixture(user, overrides) do
+    attrs =
+      Map.merge(
+        %{
+          type: :company,
+          tax_id: "DE123456789",
+          full_name: "Counterparty GmbH",
+          address: "Counterpartystrasse 1, 10115 Berlin",
+          country: "DE"
+        },
+        overrides
+      )
+
+    Ash.Seed.seed!(Counterparty, Map.put(attrs, :organization_id, user.organization_id))
   end
 end

@@ -18,6 +18,11 @@ defmodule Firmowid.Seeds.MonthM0 do
   S08 deterministic assistant scenario:
     Current-month unmatched sales invoice for Aurora Retail: 1,230.00 PLN.
     (paired with M-1 seeded aggregate transactions in MonthM1)
+
+  Counterparty suggestions scenario:
+    Two unlinked invoices for GhostPet and two for Samsung, matching only by
+    normalized buyer tax ID, so the management counterparty page can suggest
+    linking them.
   """
 
   alias Firmowid.Ash.Analysis.EntityTag
@@ -39,6 +44,7 @@ defmodule Firmowid.Seeds.MonthM0 do
     seed_unmatched_cost_invoice(bytecraft, prefix)
     seed_ksef_scenarios(bytecraft, prefix)
     seed_s08_current_month_invoice(bytecraft, prefix)
+    seed_counterparty_suggestion_invoices(bytecraft, cps)
   end
 
   # — Unmatched transactions (raw bank feed) —
@@ -370,6 +376,111 @@ defmodule Firmowid.Seeds.MonthM0 do
         }
       ]
     })
+  end
+
+  # — Counterparty suggestions on management page —
+
+  defp seed_counterparty_suggestion_invoices(bytecraft, cps) do
+    seed_ghostpet_suggestion_invoices(bytecraft, cps)
+    seed_samsung_suggestion_invoices(bytecraft, cps)
+  end
+
+  defp seed_ghostpet_suggestion_invoices(bytecraft, cps) do
+    base_attrs = %{
+      "invoice_type" => "foreign",
+      "buyer_display_name" => "GhostPet Inc.",
+      "buyer_full_name" => "GhostPet Inc.",
+      "buyer_address" => "440 N Barranca Ave #7658, Covina, CA 91723",
+      "buyer_country" => "US",
+      "buyer_type" => "company",
+      "payment_method" => "transfer",
+      "is_reverse_charge" => false,
+      "is_cash_account" => false,
+      "sales_invoice_items" => [
+        %{
+          "name" => "GhostPet — test dopasowania kontrahenta po znormalizowanym identyfikatorze",
+          "quantity" => 12,
+          "unit" => "godz.",
+          "unit_price" => 170.00,
+          "vat_rate" => "np I"
+        }
+      ]
+    }
+
+    Helpers.get_or_create_sales_invoice(
+      "UI/GHOST/01/2026",
+      bytecraft.id,
+      Map.merge(base_attrs, %{
+        "issue_date" => Helpers.date_this_month(16),
+        "sale_date" => Helpers.date_this_month(16),
+        "due_date" => Helpers.date_this_month(30),
+        "currency" => "USD",
+        "buyer_id" => "US EIN 47 8830291"
+      })
+    )
+
+    Helpers.get_or_create_sales_invoice(
+      "UI/GHOST/02/2026",
+      bytecraft.id,
+      Map.merge(base_attrs, %{
+        "issue_date" => Helpers.date_this_month(17),
+        "sale_date" => Helpers.date_this_month(17),
+        "due_date" => Helpers.date_this_month(min(Date.days_in_month(Helpers.today()), 31)),
+        "currency" => "USD",
+        "buyer_id" => "us-ein-47-8830291"
+      })
+    )
+
+    cps
+  end
+
+  defp seed_samsung_suggestion_invoices(bytecraft, cps) do
+    base_attrs = %{
+      "invoice_type" => "foreign",
+      "buyer_display_name" => "Samsung",
+      "buyer_full_name" => "Samsung",
+      "buyer_address" => "Huwaeng 12321/321, Seoul",
+      "buyer_country" => "KR",
+      "buyer_type" => "company",
+      "payment_method" => "transfer",
+      "is_reverse_charge" => false,
+      "is_cash_account" => false,
+      "sales_invoice_items" => [
+        %{
+          "name" => "Samsung — wdrożenie panelu partnera",
+          "quantity" => 20,
+          "unit" => "godz.",
+          "unit_price" => 170.00,
+          "vat_rate" => "np I"
+        }
+      ]
+    }
+
+    Helpers.get_or_create_sales_invoice(
+      "UI/SAMSUNG/01/2026",
+      bytecraft.id,
+      Map.merge(base_attrs, %{
+        "issue_date" => Helpers.date_this_month(19),
+        "sale_date" => Helpers.date_this_month(19),
+        "due_date" => Helpers.date_this_month(min(Date.days_in_month(Helpers.today()), 31)),
+        "currency" => "USD",
+        "buyer_id" => "123-123-12"
+      })
+    )
+
+    Helpers.get_or_create_sales_invoice(
+      "UI/SAMSUNG/02/2026",
+      bytecraft.id,
+      Map.merge(base_attrs, %{
+        "issue_date" => Helpers.date_this_month(20),
+        "sale_date" => Helpers.date_this_month(20),
+        "due_date" => Helpers.date_this_month(min(Date.days_in_month(Helpers.today()), 31)),
+        "currency" => "USD",
+        "buyer_id" => "123 123 12"
+      })
+    )
+
+    cps
   end
 
   # Builds a scope for Ash calls in seeds. Uses bytecraft.id as tenant and a

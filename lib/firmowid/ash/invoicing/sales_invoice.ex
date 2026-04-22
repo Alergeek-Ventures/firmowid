@@ -51,6 +51,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Invoicing, as: InvoicingDomain
   alias Firmowid.Ash.Invoicing.Changes
+  alias Firmowid.Ash.Invoicing.Counterparty
   alias Firmowid.Ash.Invoicing.CountryCodes
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
@@ -83,6 +84,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     # Writes
     define :create, action: :create
     define :update, action: :update
+
+    define :attach_suggested_counterparty,
+      args: [:counterparty_id],
+      action: :attach_suggested_counterparty
+
     define :destroy, action: :destroy
     define :create_correction, action: :create_correction
     define :cancel, args: [:invoice_id], action: :cancel
@@ -473,6 +479,53 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       validate string_length(:internal_note, max: 10_000) do
         where present(:internal_note)
       end
+    end
+
+    update :attach_suggested_counterparty do
+      description "Attach an unassigned invoice to a currently suggested counterparty."
+      require_atomic? false
+      accept []
+
+      argument :counterparty_id, :uuid_v7, allow_nil?: false
+
+      validate {Validations.CheckIfLocked, []}
+
+      # Enforce suggestion eligibility atomically at write time.
+      change filter(
+               expr(
+                 is_nil(counterparty_id) and
+                   exists(
+                     Counterparty,
+                     id == ^arg(:counterparty_id) and
+                       type == parent(buyer_type) and
+                       country == parent(buyer_country) and
+                       ((not is_nil(pesel) and
+                           pesel != "" and
+                           not is_nil(parent(buyer_pesel)) and
+                           parent(buyer_pesel) != "" and
+                           fragment(
+                             "regexp_replace(coalesce(?, ''), '\\D', '', 'g')",
+                             parent(buyer_pesel)
+                           ) ==
+                             fragment("regexp_replace(coalesce(?, ''), '\\D', '', 'g')", pesel)) or
+                          ((is_nil(pesel) or pesel == "") and
+                             not is_nil(tax_id) and
+                             tax_id != "" and
+                             not is_nil(parent(buyer_id)) and
+                             parent(buyer_id) != "" and
+                             fragment(
+                               "regexp_replace(upper(coalesce(?, '')), '[^0-9A-Z]', '', 'g')",
+                               parent(buyer_id)
+                             ) ==
+                               fragment(
+                                 "regexp_replace(upper(coalesce(?, '')), '[^0-9A-Z]', '', 'g')",
+                                 tax_id
+                               )))
+                   )
+               )
+             )
+
+      change {Changes.AttachSuggestedCounterparty, []}
     end
 
     create :create_correction do
@@ -942,6 +995,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     publish :toggle_skip, ["updated", :_tenant]
     publish :create_correction, ["created", :_tenant]
     publish :generate_share_token, ["updated", :_tenant]
+    publish :attach_suggested_counterparty, ["updated", :_tenant]
     publish :connect_transactions, ["updated", :_tenant]
     publish :disconnect_transactions, ["updated", :_tenant]
   end
@@ -1042,7 +1096,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       allow_nil? false
     end
 
-    belongs_to :counterparty, Firmowid.Ash.Invoicing.Counterparty do
+    belongs_to :counterparty, Counterparty do
       attribute_writable? true
     end
 
@@ -1108,6 +1162,24 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     calculate :is_confirmed, :boolean, expr(not is_nil(invoice_number))
     calculate :is_ksef_submitted, :boolean, expr(not is_nil(ksef_number))
     calculate :is_deletable, :boolean, expr(is_nil(ksef_number) and is_nil(locked_at))
+
+    calculate :reconciliation_status,
+              :atom,
+              expr(
+                cond do
+                  exists(transactions, true) ->
+                    :matched
+
+                  skip_invoicing == true ->
+                    :skipped
+
+                  true ->
+                    :pending
+                end
+              ) do
+      description "Invoice reconciliation state derived from linked transactions and skip flag."
+      constraints one_of: [:pending, :matched, :skipped]
+    end
 
     # NOTE: This expr() logic is intentionally duplicated across SalesInvoice,
     # WizardDraft, and Counterparty (as :tax_id_type) because Ash expr()

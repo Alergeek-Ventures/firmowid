@@ -13,7 +13,7 @@ defmodule Firmowid.Ash.Invoicing.Preparations.CounterpartySearchSort do
 
   @impl true
   def prepare(query, _opts, _context) do
-    search_term = Ash.Query.get_argument(query, :search_term)
+    search_term = Ash.Query.get_argument(query, :search)
 
     if search_term in [nil, ""] do
       sort_by = Ash.Query.get_argument(query, :sort_by) || :name
@@ -27,13 +27,13 @@ defmodule Firmowid.Ash.Invoicing.Preparations.CounterpartySearchSort do
 
   defp apply_sorting(query, :name, order) do
     Ash.Query.sort(query, [
-      {calc(fragment("COALESCE(?, ?)", given_name, full_name), type: :string), order}
+      {calc(fragment("COALESCE(?, ?, ?)", display_name, full_name, surname), type: :string), order}
     ])
   end
 
   defp apply_sorting(query, :display_name, order) do
     Ash.Query.sort(query, [
-      {calc(fragment("COALESCE(?, ?)", full_name, given_name), type: :string), order}
+      {calc(fragment("COALESCE(?, ?, ?)", display_name, full_name, given_name), type: :string), order}
     ])
   end
 

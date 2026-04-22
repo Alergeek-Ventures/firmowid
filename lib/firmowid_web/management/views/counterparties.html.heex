@@ -1,0 +1,225 @@
+<div :if={not @zero_state?} class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 pb-4">
+  <div class="bg-lightGreyBg sticky top-14 z-10 flex flex-col gap-4 py-3">
+    <div class="flex items-center justify-between gap-4">
+      <form class="flex gap-4" phx-submit="search">
+        <div class="bg-lightGreyBg border-greyButtonBg flex h-11 w-[360px] items-center gap-2 rounded-lg border p-1 focus-within:ring-2">
+          <Lucideicons.search class="text-grey-500 size-6 shrink-0" />
+          <.input
+            type="text"
+            name="q"
+            value={@search}
+            placeholder="Wyszukaj kontrahenta"
+            phx-change="search"
+            phx-debounce="300"
+            input_class="h-full bg-transparent border-none py-0 px-1 text-sm"
+            class="w-full border-transparent focus:border-none focus:ring-0 focus:outline-hidden"
+          />
+        </div>
+      </form>
+
+      <.link navigate={~p"/zarzadzanie/kontrahenci/dodaj"} kind="button" variant="special">
+        <Lucideicons.plus /> Dodaj kontrahenta
+      </.link>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div class="flex flex-wrap items-center gap-6">
+        <div class="flex items-center gap-4">
+          <.link
+            :for={
+              {path, live_action, label} <- [
+                {~p"/zarzadzanie/kontrahenci?#{@params}", :index, "Aktywni"},
+                {~p"/zarzadzanie/kontrahenci/archiwum?#{@params}", :archive, "Zarchiwizowani"}
+              ]
+            }
+            patch={path}
+            kind="button"
+            variant="ghost"
+            size="small"
+            class={
+              if(@live_action == live_action, do: "bg-grey-700 hover:text-grey-900 text-white")
+            }
+          >
+            {label}
+          </.link>
+        </div>
+
+        <div class="bg-greyButtonBg mx-2 h-6 w-px"></div>
+
+        <div class="flex items-center gap-3">
+          <span class="text-darkGrey/70 text-sm font-normal">Filtry:</span>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <.button
+              type="button"
+              variant="unstyled"
+              class={subfilter_styles(@type_filter == :individual)}
+              phx-click="toggle_type"
+              phx-value-type="individual"
+            >
+              <Lucideicons.user class="size-4" /> Osoby fizyczne
+            </.button>
+
+            <.button
+              type="button"
+              variant="unstyled"
+              class={subfilter_styles(@type_filter == :company)}
+              phx-click="toggle_type"
+              phx-value-type="company"
+            >
+              <Lucideicons.building_2 class="size-4" /> Firma
+            </.button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%= cond do %>
+    <% @counterparties_empty? -> %>
+      <div class="border-grey-200 flex flex-1 flex-col items-center justify-center gap-4 rounded-lg border p-6">
+        <%= if @search != "" or not is_nil(@type_filter) do %>
+          <Lucideicons.file_x class="text-grey-300 size-26" />
+          <p class="text-grey-700 text-sm/snug">Nie znaleźliśmy szukanego kontrahenta.</p>
+        <% else %>
+          <Lucideicons.building_2 class="text-grey-300 size-26" />
+          <p class="text-grey-700 text-sm/snug">
+            {case @live_action do
+              :index -> "Nie masz aktywnych kontrahentów do wyświetlenia."
+              :archive -> "Nie masz zarchiwizowanych kontrahentów do wyświetlenia."
+            end}
+          </p>
+        <% end %>
+      </div>
+    <% @live_action == :index -> %>
+      <div class="grid grid-cols-[3fr_1.2fr_min-content] gap-x-6 gap-y-2" id="counterparties-list">
+        <div
+          id="counterparties-list-header-active"
+          class="bg-lightGreyBg text-grey-700 sticky top-[166px] z-1 col-span-full grid grid-cols-subgrid px-4 py-3 text-sm/snug"
+          phx-hook="ScrollStyle"
+          data-classes="border-b-4 border-solid border-darkGrey/40"
+          data-scroll-offset="90"
+        >
+          <p>Kontrahent</p>
+          <p class="text-right">Identyfikator</p>
+        </div>
+
+        <div
+          id="counterparties-stream-active"
+          phx-update="stream"
+          class="col-span-full grid grid-cols-subgrid gap-y-2"
+        >
+          <div
+            :for={{dom_id, counterparty} <- @streams.counterparties}
+            id={dom_id}
+            class="col-span-full grid grid-cols-subgrid items-center rounded-sm bg-white px-4 py-3"
+          >
+            <div class="flex items-center gap-4 truncate">
+              <.counterparty_icon counterparty={counterparty} />
+              <.link
+                kind="unstyled"
+                navigate={~p"/zarzadzanie/kontrahenci/#{counterparty.id}"}
+                class="truncate hover:underline"
+              >
+                {counterparty.display_label}
+              </.link>
+            </div>
+            <p class="text-right text-black">
+              <.counterparty_identifier counterparty={counterparty} />
+            </p>
+            <.link
+              kind="unstyled"
+              navigate={~p"/zarzadzanie/kontrahenci/#{counterparty.id}"}
+              class="hover:text-grey-700 text-grey-500"
+            >
+              <Lucideicons.chevron_right class="size-4" />
+            </.link>
+          </div>
+        </div>
+      </div>
+    <% true -> %>
+      <div
+        class="grid grid-cols-[3fr_1.2fr_1fr_min-content] gap-x-6 gap-y-2"
+        id="counterparties-list"
+      >
+        <div
+          id="counterparties-list-header-archive"
+          class="bg-lightGreyBg text-grey-700 sticky top-[166px] z-1 col-span-full grid grid-cols-subgrid px-4 py-3 text-sm/snug"
+          phx-hook="ScrollStyle"
+          data-classes="border-b-4 border-solid border-darkGrey/40"
+          data-scroll-offset="90"
+        >
+          <p>Kontrahent</p>
+          <p class="text-right">Identyfikator</p>
+          <p class="text-right text-nowrap">Data archiwizacji</p>
+        </div>
+
+        <div
+          id="counterparties-stream-archive"
+          phx-update="stream"
+          class="col-span-full grid grid-cols-subgrid gap-y-2"
+        >
+          <div
+            :for={{dom_id, counterparty} <- @streams.counterparties}
+            id={dom_id}
+            class="col-span-full grid grid-cols-subgrid items-center rounded-sm bg-white px-4 py-3"
+          >
+            <div class="flex items-center gap-4 truncate">
+              <.counterparty_icon counterparty={counterparty} />
+              <.link
+                kind="unstyled"
+                navigate={~p"/zarzadzanie/kontrahenci/#{counterparty.id}"}
+                class="truncate hover:underline"
+              >
+                {counterparty.display_label}
+              </.link>
+            </div>
+            <p class="text-right text-black">
+              <.counterparty_identifier counterparty={counterparty} />
+            </p>
+            <p class="text-right text-black">
+              {Calendar.strftime(counterparty.archived_at, "%d.%m.%Y")}
+            </p>
+            <div class="flex items-center gap-3 justify-self-end">
+              <.button
+                type="button"
+                variant="secondary"
+                size="small"
+                phx-click="unarchive_counterparty"
+                phx-value-id={counterparty.id}
+              >
+                Przywróć
+              </.button>
+              <.link
+                kind="unstyled"
+                navigate={~p"/zarzadzanie/kontrahenci/#{counterparty.id}"}
+                class="hover:text-grey-700 text-grey-500"
+              >
+                <Lucideicons.chevron_right class="size-4" />
+              </.link>
+            </div>
+          </div>
+        </div>
+      </div>
+  <% end %>
+</div>
+
+<div
+  :if={@zero_state?}
+  class="border-grey-200 mx-auto flex size-full max-w-7xl flex-1 flex-col items-center justify-center rounded-lg border p-8"
+>
+  <Lucideicons.building_2 class="text-grey-300 size-26" size={48} />
+
+  <p class="text-grey-700 mt-4 text-center text-sm/snug text-balance">
+    Nie masz jeszcze żadnych kontrahentów. Dodaj pierwszego, klikając poniżej.
+  </p>
+
+  <.link
+    navigate={~p"/zarzadzanie/kontrahenci/dodaj"}
+    kind="button"
+    variant="secondary"
+    class="mt-6"
+  >
+    <Lucideicons.plus /> Dodaj kontrahenta
+  </.link>
+</div>

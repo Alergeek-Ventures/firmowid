@@ -227,7 +227,20 @@ defmodule Firmowid.Seeds.Bytecraft do
         description: "Stack Overflow clone but with taco recipes. Deployed on a Raspberry Pi taped to a microwave."
       })
 
-    %{ghostpet: ghostpet, flatearth: flatearth, taco: taco}
+    samsung =
+      get_or_seed_counterparty!(bytecraft.id, %{
+        type: :company,
+        tax_id: "12312312",
+        full_name: "Samsung",
+        display_name: "Samsung",
+        address: "Huwaeng 12321/321\nSeoul",
+        country: "KR",
+        email: "billing@samsung.example",
+        phone: "+82 2 555 0101",
+        description: "Koreański kontrahent testowy do scenariuszy dopasowywania po znormalizowanym NIP/VAT-ID."
+      })
+
+    %{ghostpet: ghostpet, flatearth: flatearth, taco: taco, samsung: samsung}
   end
 
   # ===========================================================================

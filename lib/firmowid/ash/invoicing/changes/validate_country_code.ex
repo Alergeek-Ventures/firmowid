@@ -12,6 +12,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.ValidateCountryCode do
   """
   use Ash.Resource.Change
 
+  alias Ash.Error.Changes.InvalidAttribute
   alias Firmowid.Ash.Invoicing.CountryCodes
 
   @impl true
@@ -42,4 +43,35 @@ defmodule Firmowid.Ash.Invoicing.Changes.ValidateCountryCode do
         end
     end
   end
+
+  @impl true
+  def atomic(_changeset, opts, _context) do
+    field = opts[:field]
+
+    {:atomic, %{field => normalized_country_expr(field)}}
+  end
+
+  defp normalized_country_expr(field) do
+    expr(
+      cond do
+        is_nil(^atomic_ref(field)) ->
+          nil
+
+        ^atomic_ref(field) == "GR" ->
+          "EL"
+
+        ^atomic_ref(field) in ^valid_country_codes() ->
+          ^atomic_ref(field)
+
+        true ->
+          error(^InvalidAttribute, %{
+            field: ^field,
+            value: expr(^atomic_ref(field)),
+            message: "musi być prawidłowym kodem ISO kraju"
+          })
+      end
+    )
+  end
+
+  defp valid_country_codes, do: CountryCodes.all_countries()
 end
