@@ -162,16 +162,17 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             for={@uploads.file.ref}
             variant="secondary"
             accent="orange"
+            class="relative"
           >
             <%= if @currently_uploading_count > 0 or @processing_blobs_count > 0 do %>
               <span
                 id="upload-count-indicator"
                 phx-hook="Tippy"
                 data-tippy-content="Pliki są przetwarzane i za kilka chwil będą dostępne w Firmowidzie"
-                class="absolute -top-3 -right-3 flex size-7 items-center justify-center overflow-hidden rounded-full bg-black"
+                class="bg-lightGreyBg absolute -top-3 -right-3 flex size-7 items-center justify-center overflow-hidden rounded-full"
               >
-                <span class="absolute block size-full animate-spin bg-linear-to-r from-[#727272] to-black" />
-                <span class="z-10 flex size-5 items-center justify-center rounded-full bg-black">
+                <span class="absolute block size-full animate-[spin_2s_linear_infinite] bg-linear-to-r from-orange-200 to-orange-400" />
+                <span class="bg-lightGreyBg z-10 flex size-5 items-center justify-center rounded-full">
                   <%= if @currently_uploading_count > 0 do %>
                     <.icon name="hero-arrow-up-circle-solid" class="size-5 leading-none text-white" />
                   <% else %>
@@ -188,6 +189,13 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
                   <% end %>
                 </span>
               </span>
+            <% else %>
+              <span
+                id="upload-count-indicator"
+                phx-hook="Tippy"
+                data-tippy-content="Faktury od zagranicznych kontrahentów w formacie PDF lub ich zdjęcia (PNG, JPG)"
+                class="absolute top-0 left-0 size-full"
+              />
             <% end %>
             <Lucideicons.file_input />
             <span class="block sm:grow sm:text-center md:hidden lg:block">
