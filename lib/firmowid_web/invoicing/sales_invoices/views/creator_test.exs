@@ -32,7 +32,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
   end
 
   defp payment_step_draft!(admin) do
-    scope = [tenant: admin.organization_id, actor: admin, authorize?: false]
+    scope = [tenant: admin.organization_id, actor: admin]
 
     {:ok, draft} = WizardDraft.create(%{organization_id: admin.organization_id}, scope)
 
@@ -59,7 +59,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
   end
 
   defp items_step_draft!(admin) do
-    scope = [tenant: admin.organization_id, actor: admin, authorize?: false]
+    scope = [tenant: admin.organization_id, actor: admin]
 
     {:ok, draft} = WizardDraft.create(%{organization_id: admin.organization_id}, scope)
 

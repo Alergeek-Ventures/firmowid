@@ -16,8 +16,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     invite =
       Core.create_invite!(%{issued_by_id: admin.id},
         tenant: admin.organization_id,
-        authorize?: false,
-        actor: %{}
+        actor: admin
       )
 
     conn = log_in_user(conn, admin)
@@ -28,12 +27,9 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     invited_user =
       create_unassigned_employee!(email)
 
-    invite = Core.get_invite!(invite.id, tenant: admin.organization_id, authorize?: false)
+    invite = Core.get_invite!(invite.id, tenant: admin.organization_id, actor: admin)
 
-    Core.consume_invite!(invite, %{user_id: invited_user.id},
-      tenant: admin.organization_id,
-      authorize?: false
-    )
+    Core.consume_invite!(invite, %{user_id: invited_user.id}, tenant: admin.organization_id)
 
     assert_eventually(fn -> render(lv) =~ email end)
   end
@@ -45,19 +41,15 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     invite =
       Core.create_invite!(%{issued_by_id: admin.id},
         tenant: admin.organization_id,
-        authorize?: false,
-        actor: %{}
+        actor: admin
       )
 
     invited_user =
       create_unassigned_employee!(email)
 
-    invite = Core.get_invite!(invite.id, tenant: admin.organization_id, authorize?: false)
+    invite = Core.get_invite!(invite.id, tenant: admin.organization_id, actor: admin)
 
-    Core.consume_invite!(invite, %{user_id: invited_user.id},
-      tenant: admin.organization_id,
-      authorize?: false
-    )
+    Core.consume_invite!(invite, %{user_id: invited_user.id}, tenant: admin.organization_id)
 
     conn = log_in_user(conn, admin)
     {:ok, lv, _html} = live(conn, ~p"/zarzadzanie/pracownicy")
@@ -147,12 +139,9 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
   end
 
   defp create_unassigned_employee!(email) do
-    user =
-      Core.register_with_password!(%{email: email, password: valid_user_password()},
-        authorize?: false,
-        actor: %{}
-      )
-
-    Core.update_role!(user, %{role: :employee}, authorize?: false)
+    Core.register_with_password!(%{email: email, password: valid_user_password()},
+      authorize?: false,
+      actor: %{}
+    )
   end
 end

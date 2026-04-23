@@ -6,14 +6,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
 
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
-
-  # authorize?: false bypasses policies, actor: %{} satisfies require_actor? true
-  # on domains like Invoicing.
-  @bridge_opts [authorize?: false, actor: %{}]
+  alias Firmowid.Ash.Scope
 
   describe "reverse charge VAT normalization" do
     test "normalizes item vat_rate to oo on create when reverse charge is enabled" do
-      user = user_fixture()
+      user = admin_fixture()
 
       attrs =
         Map.merge(base_invoice_attrs(), %{
@@ -30,7 +27,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
     end
 
     test "normalizes item vat_rate to oo on update when reverse charge is enabled" do
-      user = user_fixture()
+      user = admin_fixture()
 
       create_attrs =
         Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{vat_rate: "23"})])
@@ -59,7 +56,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
     end
 
     test "normalizes preloaded item vat_rate to oo when reverse charge flag is enabled via update" do
-      user = user_fixture()
+      user = admin_fixture()
 
       create_attrs =
         Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{vat_rate: "23"})])
@@ -87,7 +84,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
     end
 
     test "normalizes oo back to buyer-context rate when reverse charge is disabled" do
-      user = user_fixture()
+      user = admin_fixture()
 
       create_attrs =
         Map.merge(base_invoice_attrs(), %{
@@ -122,33 +119,31 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
 
   describe "toggle_skip_invoicing/1" do
     test "allows toggling skip_invoicing on locked invoices" do
-      user = user_fixture()
+      user = admin_fixture()
       invoice = locked_sales_invoice_fixture(user.organization_id)
-      opts = [tenant: user.organization_id] ++ @bridge_opts
+      scope = scope_for(user)
 
       assert invoice.skip_invoicing == false
 
-      updated_invoice = Invoicing.toggle_sales_invoice_skip!(invoice, opts)
+      updated_invoice = Invoicing.toggle_sales_invoice_skip!(invoice, scope: scope)
 
       assert updated_invoice.skip_invoicing == true
 
-      refetched = Invoicing.get_sales_invoice!(invoice.id, opts)
+      refetched = Invoicing.get_sales_invoice!(invoice.id, scope: scope)
       assert refetched.skip_invoicing == true
     end
   end
 
-  defp ash_opts(user) do
-    [authorize?: false, actor: %{}, tenant: user.organization_id]
-  end
+  defp scope_for(user), do: %Scope{actor: user, tenant: user.organization_id}
 
   defp create_sales_invoice!(user, attrs) do
-    invoice = Invoicing.create_sales_invoice!(attrs, ash_opts(user))
-    Ash.load!(invoice, [:sales_invoice_items], ash_opts(user))
+    invoice = Invoicing.create_sales_invoice!(attrs, scope: scope_for(user))
+    Ash.load!(invoice, [:sales_invoice_items], scope: scope_for(user))
   end
 
   defp update_sales_invoice!(user, invoice, attrs) do
-    updated = Invoicing.update_sales_invoice!(invoice, attrs, ash_opts(user))
-    Ash.load!(updated, [:sales_invoice_items], ash_opts(user))
+    updated = Invoicing.update_sales_invoice!(invoice, attrs, scope: scope_for(user))
+    Ash.load!(updated, [:sales_invoice_items], scope: scope_for(user))
   end
 
   defp base_invoice_attrs do

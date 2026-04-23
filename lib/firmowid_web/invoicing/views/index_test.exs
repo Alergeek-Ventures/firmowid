@@ -67,10 +67,9 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         requisition
         |> Ash.Changeset.for_update(:accept, %{},
           tenant: user.organization_id,
-          actor: user,
-          authorize?: false
+          actor: user
         )
-        |> Ash.update(tenant: user.organization_id, actor: user, authorize?: false)
+        |> Ash.update(tenant: user.organization_id, actor: user)
 
       # Give PubSub a moment to deliver
       Process.sleep(50)
@@ -92,10 +91,9 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
         requisition
         |> Ash.Changeset.for_update(:reject, %{},
           tenant: user.organization_id,
-          actor: user,
-          authorize?: false
+          actor: user
         )
-        |> Ash.update(tenant: user.organization_id, actor: user, authorize?: false)
+        |> Ash.update(tenant: user.organization_id, actor: user)
 
       # Give PubSub a moment to deliver
       Process.sleep(50)

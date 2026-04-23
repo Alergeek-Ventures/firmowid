@@ -7,21 +7,13 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Scope
-  alias Firmowid.Ash.SystemActor
-
-  # authorize?: false bypasses policies, actor: %{} satisfies require_actor? true
-  # on domains like Invoicing.
-  @bridge_opts [authorize?: false, actor: %{}]
 
   describe "delete_cost_invoice/1" do
     test "returns error for KSeF-imported invoice and does not delete it" do
-      user = user_fixture()
+      user = admin_fixture()
       invoice = insert_ksef_cost_invoice!(user.organization_id)
 
-      scope = %Scope{
-        actor: %SystemActor{org_id: user.organization_id, role: :admin},
-        tenant: user.organization_id
-      }
+      scope = %Scope{actor: user, tenant: user.organization_id}
 
       assert_raise RuntimeError,
                    ~r/Cost invoice #{invoice.id} is imported from KSeF and cannot be deleted/,
@@ -29,15 +21,14 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
                      Invoicing.delete_cost_invoice(invoice.id, scope)
                    end
 
-      opts = [tenant: user.organization_id] ++ @bridge_opts
-      assert {:ok, _} = Invoicing.get_cost_invoice(invoice.id, opts)
+      assert {:ok, _} = Invoicing.get_cost_invoice(invoice.id, scope: scope)
     end
   end
 
   describe "cost invoice lists" do
     test "hides only corrections whose original invoice exists in list_for_month" do
-      user = user_fixture()
-      opts = [tenant: user.organization_id] ++ @bridge_opts
+      user = admin_fixture()
+      scope = %Scope{actor: user, tenant: user.organization_id}
 
       visible_invoice =
         insert_cost_invoice!(user.organization_id, %{invoice_identifier: "VISIBLE-REGULAR"})
@@ -80,7 +71,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
             date_field: :issue_date,
             corrections: :exclude
           },
-          opts
+          scope: scope
         )
 
       invoice_ids = Enum.map(invoices, & &1.id)
@@ -93,8 +84,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
     end
 
     test "hides only corrections whose original invoice exists from list_unmatched" do
-      user = user_fixture()
-      opts = [tenant: user.organization_id] ++ @bridge_opts
+      user = admin_fixture()
+      scope = %Scope{actor: user, tenant: user.organization_id}
 
       visible_invoice =
         insert_cost_invoice!(user.organization_id, %{invoice_identifier: "VISIBLE-UNMATCHED"})
@@ -138,7 +129,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
             reconciliation: :pending,
             corrections: :exclude
           },
-          opts
+          scope: scope
         )
 
       invoice_ids = Enum.map(invoices, & &1.id)

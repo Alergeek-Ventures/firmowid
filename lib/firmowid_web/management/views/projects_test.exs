@@ -27,8 +27,7 @@ defmodule FirmowidWeb.Management.Views.ProjectsTest do
     {:ok, _archived} =
       Project.archive(project,
         tenant: admin.organization_id,
-        actor: admin,
-        authorize?: false
+        actor: admin
       )
 
     conn = log_in_user(conn, admin)

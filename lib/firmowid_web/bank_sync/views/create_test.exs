@@ -50,8 +50,7 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
       assert {:ok, requisition} =
                Ash.get(Requisition, requisition_id,
                  tenant: user.organization_id,
-                 actor: user,
-                 authorize?: false
+                 actor: user
                )
 
       assert requisition.status == :pending

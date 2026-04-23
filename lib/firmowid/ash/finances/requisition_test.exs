@@ -21,16 +21,14 @@ defmodule Firmowid.Ash.Finances.RequisitionTest do
                requisition
                |> Ash.Changeset.for_update(:check_status, %{},
                  tenant: user.organization_id,
-                 actor: user,
-                 authorize?: false
+                 actor: user
                )
-               |> Ash.update(tenant: user.organization_id, actor: user, authorize?: false)
+               |> Ash.update(tenant: user.organization_id, actor: user)
 
       assert {:ok, refreshed} =
                Ash.get(Requisition, requisition.id,
                  tenant: user.organization_id,
-                 actor: user,
-                 authorize?: false
+                 actor: user
                )
 
       assert refreshed.status == :rejected
@@ -48,10 +46,9 @@ defmodule Firmowid.Ash.Finances.RequisitionTest do
                requisition
                |> Ash.Changeset.for_update(:auto_reject, %{},
                  tenant: user.organization_id,
-                 actor: user,
-                 authorize?: false
+                 actor: user
                )
-               |> Ash.update(tenant: user.organization_id, actor: user, authorize?: false)
+               |> Ash.update(tenant: user.organization_id, actor: user)
 
       assert rejected.status == :rejected
     end

@@ -41,8 +41,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
           ]
         },
         tenant: admin.organization_id,
-        actor: admin,
-        authorize?: false
+        actor: admin
       )
 
     conn = log_in_user(conn, admin)
@@ -85,8 +84,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
           ]
         },
         tenant: admin.organization_id,
-        actor: admin,
-        authorize?: false
+        actor: admin
       )
 
     conn = log_in_user(conn, admin)

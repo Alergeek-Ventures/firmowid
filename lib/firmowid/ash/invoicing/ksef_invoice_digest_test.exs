@@ -10,9 +10,9 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
   alias Firmowid.Ash.Invoicing.KsefInvoiceDigest
   alias Firmowid.Ash.Invoicing.Workers.SendKsefInvoiceDigestWorker
   alias Firmowid.Ash.Ksef.Credential
+  alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
   alias Firmowid.Repo
-
-  @bridge_opts [authorize?: false, actor: %{}]
 
   test "send_digest marks persisted digest as delivered when active admins exist" do
     admin = admin_fixture()
@@ -29,19 +29,13 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
     assert {:ok, digest} =
              KsefInvoiceDigest.create_digest(
                %{cost_invoice_ids: [invoice.id]},
-               tenant: organization_id,
-               actor: %{},
-               authorize?: false
+               scope: digest_scope(organization_id)
              )
 
     assert digest.delivered_at == nil
 
     assert {:ok, sent_digest} =
-             KsefInvoiceDigest.send_digest(digest, %{},
-               tenant: organization_id,
-               actor: %{},
-               authorize?: false
-             )
+             KsefInvoiceDigest.send_digest(digest, %{}, scope: digest_scope(organization_id))
 
     assert %DateTime{} = sent_digest.delivered_at
 
@@ -63,17 +57,11 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
     assert {:ok, digest} =
              KsefInvoiceDigest.create_digest(
                %{cost_invoice_ids: [invoice.id]},
-               tenant: organization_id,
-               actor: %{},
-               authorize?: false
+               scope: digest_scope(organization_id)
              )
 
     assert {:error, error} =
-             KsefInvoiceDigest.send_digest(digest, %{},
-               tenant: organization_id,
-               actor: %{},
-               authorize?: false
-             )
+             KsefInvoiceDigest.send_digest(digest, %{}, scope: digest_scope(organization_id))
 
     assert_has_error_message(error, "cannot send KSeF digest without recipients")
 
@@ -90,11 +78,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
       Ash.Seed.seed!(KsefInvoiceDigest, %{organization_id: organization_id})
 
     assert {:error, error} =
-             KsefInvoiceDigest.send_digest(digest, %{},
-               tenant: organization_id,
-               actor: %{},
-               authorize?: false
-             )
+             KsefInvoiceDigest.send_digest(digest, %{}, scope: digest_scope(organization_id))
 
     assert_has_error_message(error, "cannot send KSeF digest without persisted invoices")
 
@@ -137,13 +121,13 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
                  organization_ids: [organization_id],
                  enqueue_send?: false
                },
-               @bridge_opts
+               actor: digest_actor(organization_id)
              )
 
     digest = latest_digest!(organization_id)
 
     loaded_digest =
-      Ash.load!(digest, [:cost_invoices], tenant: organization_id, actor: %{}, authorize?: false)
+      Ash.load!(digest, [:cost_invoices], scope: digest_scope(organization_id))
 
     included_ids = Enum.map(loaded_digest.cost_invoices, & &1.id)
     assert included_invoice.id in included_ids
@@ -152,7 +136,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
     undigested =
       Invoicing.list_cost_invoices!(
         %{source: :ksef, in_digest: :yes},
-        [tenant: organization_id] ++ @bridge_opts
+        scope: digest_scope(organization_id)
       )
 
     assert length(undigested) == 1
@@ -187,7 +171,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
                  organization_ids: [organization_id],
                  enqueue_send?: false
                },
-               @bridge_opts
+               actor: digest_actor(organization_id)
              )
 
     second_invoice =
@@ -203,7 +187,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
                  organization_ids: [organization_id],
                  enqueue_send?: false
                },
-               @bridge_opts
+               actor: digest_actor(organization_id)
              )
 
     assert digest_item_count_for_invoice(invoice_a.id, organization_id) == 1
@@ -240,15 +224,13 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
                  organization_ids: [organization_id],
                  enqueue_send?: false
                },
-               @bridge_opts
+               actor: digest_actor(organization_id)
              )
 
     assert {:error, _} =
              KsefInvoiceDigest.create_digest(
                %{cost_invoice_ids: [invoice.id]},
-               tenant: organization_id,
-               actor: %{},
-               authorize?: false
+               scope: digest_scope(organization_id)
              )
 
     assert digest_item_count_for_invoice(invoice.id, organization_id) == 1
@@ -285,17 +267,13 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
                  organization_ids: [with_credentials_org_id, without_credentials_org_id],
                  enqueue_send?: false
                },
-               @bridge_opts
+               actor: digest_actor(with_credentials_org_id)
              )
 
     digest = latest_digest!(with_credentials_org_id)
 
     digest =
-      Ash.load!(digest, [:cost_invoices],
-        tenant: with_credentials_org_id,
-        actor: %{},
-        authorize?: false
-      )
+      Ash.load!(digest, [:cost_invoices], scope: digest_scope(with_credentials_org_id))
 
     included_ids = Enum.map(digest.cost_invoices, & &1.id)
 
@@ -323,7 +301,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
                  organization_ids: [without_credentials_org_id],
                  enqueue_send?: false
                },
-               @bridge_opts
+               actor: digest_actor(without_credentials_org_id)
              )
 
     assert [] == list_digests(without_credentials_org_id)
@@ -351,7 +329,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
                  organization_ids: [organization_id],
                  enqueue_send?: true
                },
-               @bridge_opts
+               actor: digest_actor(organization_id)
              )
 
     digest = latest_digest!(organization_id)
@@ -408,7 +386,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
     organization_id
     |> list_digests()
     |> Enum.map(fn digest ->
-      Ash.load!(digest, [:cost_invoices], tenant: organization_id, actor: %{}, authorize?: false)
+      Ash.load!(digest, [:cost_invoices], scope: digest_scope(organization_id))
     end)
     |> Enum.find(fn digest ->
       Enum.any?(digest.cost_invoices, &(&1.id == invoice_id))
@@ -422,7 +400,15 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
   defp list_digests(organization_id) do
     KsefInvoiceDigest
     |> Ash.Query.sort(inserted_at: :desc)
-    |> Ash.read!(tenant: organization_id, actor: %{}, authorize?: false)
+    |> Ash.read!(scope: digest_scope(organization_id))
+  end
+
+  defp digest_scope(organization_id) do
+    %Scope{actor: digest_actor(organization_id), tenant: organization_id}
+  end
+
+  defp digest_actor(organization_id) do
+    %SystemActor{org_id: organization_id, role: :ksef_digest}
   end
 
   defp insert_cost_invoice!(organization_id, attrs) do

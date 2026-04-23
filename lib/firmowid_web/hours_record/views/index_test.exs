@@ -17,8 +17,7 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
     # Required by hours-record flow guard in LiveView.
     employee =
       Core.update_profile!(employee, %{name: "Sable Orin", employment_date: ~D[2023-01-10]},
-        authorize?: false,
-        actor: %{},
+        actor: employee,
         tenant: employee.organization_id
       )
 

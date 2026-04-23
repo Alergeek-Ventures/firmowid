@@ -6,6 +6,7 @@ defmodule Firmowid.AccountsFixtures do
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Nip
   alias Firmowid.Ash.Core.User
+  alias Firmowid.Ash.SystemActor
 
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
   def valid_user_password, do: "hello world!!"
@@ -73,21 +74,27 @@ defmodule Firmowid.AccountsFixtures do
             )
 
           Core.set_organization!(user, %{organization_id: org.id},
-            authorize?: false,
-            actor: %{},
+            actor: user,
             tenant: org.id
           )
 
         org_id ->
           Core.set_organization!(user, %{organization_id: org_id},
-            authorize?: false,
-            actor: %{},
+            actor: user,
             tenant: org_id
           )
       end
 
     role = attrs[:role] || :employee
-    Core.update_role!(user, %{role: role}, authorize?: false)
+
+    Core.update_role!(user, %{role: role},
+      actor: %SystemActor{
+        org_id: user.organization_id,
+        role: :organization_owner_setup,
+        user_id: user.id
+      },
+      tenant: user.organization_id
+    )
   end
 
   @doc """
