@@ -128,10 +128,28 @@ defmodule Firmowid.Seeds.Helpers do
   end
 
   def seed_transaction!(attrs, org_id) do
-    Ash.Seed.upsert!(AshTransaction, Map.put(attrs, :organization_id, org_id),
-      identity: :unique_internal_tx_per_org,
+    Ash.Seed.upsert!(AshTransaction, attrs |> normalize_transaction_dates() |> Map.put(:organization_id, org_id),
+      identity: :unique_internal_tx_per_account,
       tenant: org_id
     )
+  end
+
+  defp normalize_transaction_dates(attrs) do
+    booking_date = Map.get(attrs, :booking_date)
+    value_date = Map.get(attrs, :value_date)
+
+    attrs
+    |> maybe_put_date(:booking_date, booking_date || value_date)
+    |> maybe_put_date(:value_date, value_date || booking_date)
+  end
+
+  defp maybe_put_date(attrs, _field, nil), do: attrs
+
+  defp maybe_put_date(attrs, field, value) do
+    case Map.get(attrs, field) do
+      nil -> Map.put(attrs, field, value)
+      _present -> attrs
+    end
   end
 
   # ---------------------------------------------------------------------------

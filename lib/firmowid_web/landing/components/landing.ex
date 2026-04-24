@@ -134,7 +134,7 @@ defmodule FirmowidWeb.Landing.Components.Landing do
                         <img
                           src={~p"/images/hero_mobile_figure.png"}
                           alt="Firmowid"
-                          class="h-[327px] w-[118px] shrink-0 max-w-none object-cover object-top object-[52%_0%]"
+                          class="h-[327px] w-[118px] max-w-none shrink-0 object-cover object-top"
                         />
                       </div>
                     </div>
@@ -142,7 +142,8 @@ defmodule FirmowidWeb.Landing.Components.Landing do
 
                   <div class="space-y-4 px-1 pt-7 text-[16px] leading-[1.3] font-normal text-black">
                     <p>
-                      Firmowid automatyzuje fakturowanie, integruje się z KSeF, pilnuje budżetów <br />i czasu pracy Twoich pracowników.
+                      Firmowid automatyzuje fakturowanie, integruje się z KSeF, pilnuje budżetów
+                      <br />i czasu pracy Twoich pracowników.
                     </p>
                     <p>
                       A Ty? <span class="font-semibold">Ty skupiasz się na swoim biznesie.</span>

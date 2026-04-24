@@ -119,7 +119,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
       ]
 
       upsert? true
-      upsert_identity :unique_internal_tx_per_org
+      upsert_identity :unique_internal_tx_per_account
 
       upsert_fields [
         :transaction_id,
@@ -200,8 +200,8 @@ defmodule Firmowid.Ash.Finances.Transaction do
     attribute :debtor_account, :string, public?: true
     attribute :transaction_amount, :decimal, public?: true
     attribute :transaction_currency, :string, public?: true
-    attribute :booking_date, :date, public?: true
-    attribute :value_date, :date, public?: true
+    attribute :booking_date, :date, public?: true, allow_nil?: false
+    attribute :value_date, :date, public?: true, allow_nil?: false
     attribute :remittance_information_unstructured, :string, public?: true
 
     # Firmowid data
@@ -242,6 +242,10 @@ defmodule Firmowid.Ash.Finances.Transaction do
   end
 
   identities do
-    identity :unique_internal_tx_per_org, [:internal_transaction_id, :organization_id]
+    identity :unique_internal_tx_per_account, [
+      :internal_transaction_id,
+      :bank_account_id,
+      :organization_id
+    ]
   end
 end

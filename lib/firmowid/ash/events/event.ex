@@ -27,11 +27,32 @@ defmodule Firmowid.Ash.Events.Event do
 
   actions do
     defaults [:read]
+
+    read :latest_successful_sync do
+      description "Read successful sync events for event-log lookups."
+
+      argument :organization_id, :uuid, allow_nil?: false
+      argument :record_id, :uuid, allow_nil?: false
+      argument :resource, :atom, allow_nil?: false
+
+      filter expr(
+               action == :sync_from_gocardless and
+                 resource == ^arg(:resource) and
+                 record_id == ^arg(:record_id) and
+                 organization_id == ^arg(:organization_id)
+             )
+
+      prepare build(sort: [occurred_at: :desc], limit: 1)
+    end
   end
 
   policies do
     bypass actor_attribute_equals(:role, :admin) do
       authorize_if always()
+    end
+
+    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:bank_sync]} do
+      authorize_if action(:latest_successful_sync)
     end
 
     # AshEvents writes events internally — they need bypass too

@@ -23,7 +23,11 @@ config :firmowid, Firmowid.Repo,
   hostname: System.get_env("POSTGRES_HOST", "localhost"),
   database: "firmowid_test#{System.get_env("MIX_TEST_PARTITION")}",
   port: String.to_integer(System.get_env("DB_PORT", "5433")),
-  pool: Ecto.Adapters.SQL.Sandbox
+  pool: Ecto.Adapters.SQL.Sandbox,
+  pool_size: 15,
+  queue_target: 5_000,
+  queue_interval: 10_000,
+  ownership_timeout: 300_000
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.

@@ -24,6 +24,8 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
           creditor_name: "Pending Creditor",
           remittance_information_unstructured: "pending payment",
           transaction_currency: "PLN",
+          booking_date: ~D[2024-01-10],
+          value_date: ~D[2024-01-10],
           skip_invoicing: false
         },
         seed_opts
@@ -38,6 +40,8 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
           creditor_name: "Skipped Creditor",
           remittance_information_unstructured: "skipped payment",
           transaction_currency: "PLN",
+          booking_date: ~D[2024-01-11],
+          value_date: ~D[2024-01-11],
           skip_invoicing: true
         },
         seed_opts
@@ -52,6 +56,8 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
           creditor_name: "Matched Creditor",
           remittance_information_unstructured: "matched payment",
           transaction_currency: "PLN",
+          booking_date: ~D[2024-01-12],
+          value_date: ~D[2024-01-12],
           skip_invoicing: false
         },
         seed_opts
@@ -165,7 +171,9 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
           debtor_name: "Other Org Debtor",
           creditor_name: "Other Org Creditor",
           remittance_information_unstructured: "other org payment",
-          transaction_currency: "PLN"
+          transaction_currency: "PLN",
+          booking_date: ~D[2024-01-13],
+          value_date: ~D[2024-01-13]
         },
         tenant: org2_id
       )
