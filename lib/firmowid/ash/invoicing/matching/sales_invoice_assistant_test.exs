@@ -16,7 +16,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.SalesInvoiceAssistantTest do
     admin = admin_fixture()
 
     scope = %Scope{
-      actor: %SystemActor{org_id: admin.organization_id, role: :admin},
+      actor: %SystemActor{org_id: admin.organization_id, role: :invoice_matcher},
       tenant: admin.organization_id
     }
 

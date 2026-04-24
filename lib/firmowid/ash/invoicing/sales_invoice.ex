@@ -897,65 +897,38 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   end
 
   policies do
-    bypass actor_attribute_equals(:role, :admin) do
-      authorize_if always()
+    policy_group always() do
+      policy {SystemActorRole, roles: [:sales_invoice_processor]} do
+        authorize_if always()
+      end
+
+      policy {SystemActorRole, roles: [:analysis_reader]} do
+        authorize_if action_type(:read)
+      end
+
+      policy {SystemActorRole, roles: [:invoice_matcher]} do
+        authorize_if action([:connect_transactions, :disconnect_transactions])
+        authorize_if action_type(:read)
+      end
+
+      policy {SystemActorRole, roles: [:ksef_session]} do
+        authorize_if action([:lock_for_ksef, :unlock_for_ksef, :update_ksef_fields])
+      end
+
+      policy {SystemActorRole, roles: [:anonymous]} do
+        authorize_if action([:by_id, :by_share_token])
+      end
     end
 
-    # sales_invoice_processor: full access to all actions
-    bypass {SystemActorRole, roles: [:sales_invoice_processor]} do
-      authorize_if always()
-    end
+    policy_group {AtLeastRole, role: :invoicing} do
+      policy action_type(:read) do
+        authorize_if always()
+      end
 
-    # invoice_matcher: read + connect/disconnect transactions
-    bypass {SystemActorRole, roles: [:invoice_matcher]} do
-      authorize_if action_type(:read)
-    end
-
-    bypass {SystemActorRole, roles: [:analysis_reader]} do
-      authorize_if action_type(:read)
-    end
-
-    bypass {SystemActorRole, roles: [:invoice_matcher]} do
-      authorize_if action([:connect_transactions, :disconnect_transactions])
-    end
-
-    policy [
-      action([:connect_transactions, :disconnect_transactions]),
-      {AtLeastRole, role: :invoicing}
-    ] do
-      authorize_if always()
-    end
-
-    # ksef_session: lock/unlock/update ksef fields
-    bypass {SystemActorRole, roles: [:ksef_session]} do
-      authorize_if action([:lock_for_ksef, :unlock_for_ksef, :update_ksef_fields])
-    end
-
-    # anonymous: read actions only (share token access)
-    bypass {SystemActorRole, roles: [:anonymous]} do
-      authorize_if action([:by_id, :by_share_token])
-    end
-
-    # Other system actors: no access
-    policy Firmowid.Ash.Checks.IsSystemActor do
-      forbid_if always()
-    end
-
-    # :invoicing and :accountant: read-only
-    policy [action_type(:read), {AtLeastRole, role: :invoicing}] do
-      authorize_if always()
-    end
-
-    # :accountant: write + generic actions
-    policy [
-      action_type([:create, :update, :destroy]),
-      {AtLeastRole, role: :accountant}
-    ] do
-      authorize_if always()
-    end
-
-    policy [action_type(:action), {AtLeastRole, role: :accountant}] do
-      authorize_if always()
+      policy action_type([:create, :update, :destroy, :action]) do
+        authorize_if action([:connect_transactions, :disconnect_transactions])
+        authorize_if {AtLeastRole, role: :accountant}
+      end
     end
   end
 
