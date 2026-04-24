@@ -111,27 +111,32 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
 
   @impl true
   def handle_event("disconnect", _params, socket) do
-    transaction_ids = Enum.map(socket.assigns.invoice.transactions, & &1.id)
+    case Invoicing.disconnect_cost_invoice_transactions_manual(
+           socket.assigns.invoice,
+           [],
+           socket.assigns.ash_scope
+         ) do
+      {:ok, _invoice} ->
+        invoice =
+          CostInvoice.by_id!(socket.assigns.invoice.id,
+            load: @detail_loads,
+            scope: socket.assigns.ash_scope
+          )
 
-    Invoicing.disconnect_cost_invoice_transactions_manual(
-      socket.assigns.invoice,
-      transaction_ids,
-      socket.assigns.ash_scope
-    )
+        potential_transactions =
+          InvoiceMatching.get_potential_transactions_for_invoice(
+            invoice,
+            socket.assigns.ash_scope
+          )
 
-    invoice =
-      CostInvoice.by_id!(socket.assigns.invoice.id,
-        load: @detail_loads,
-        scope: socket.assigns.ash_scope
-      )
+        {:noreply,
+         socket
+         |> assign(:invoice, invoice)
+         |> assign(:potential_transactions, potential_transactions)}
 
-    potential_transactions =
-      InvoiceMatching.get_potential_transactions_for_invoice(invoice, socket.assigns.ash_scope)
-
-    {:noreply,
-     socket
-     |> assign(:invoice, invoice)
-     |> assign(:potential_transactions, potential_transactions)}
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "Nie udało się odłączyć transakcji")}
+    end
   end
 
   @impl true

@@ -450,6 +450,125 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
     end
   end
 
+  describe "manual transaction disconnect" do
+    test "disconnect_sales_invoice_transactions_manual/3 removes all linked transactions when given an empty list" do
+      user = admin_fixture()
+      scope = scope_for(user)
+      organization_id = user.organization_id
+
+      sales_invoice =
+        Ash.Seed.seed!(SalesInvoice, %{
+          invoice_number: "SI-DISCONNECT-#{System.unique_integer([:positive])}",
+          buyer_full_name: "Disconnect Buyer",
+          seller_display_name: "Our Company",
+          sale_date: ~D[2024-06-10],
+          issue_date: ~D[2024-06-10],
+          due_date: ~D[2024-06-24],
+          payment_method: :transfer,
+          currency: "PLN",
+          buyer_type: :company,
+          organization_id: organization_id
+        })
+
+      transaction =
+        Ash.Seed.seed!(Transaction, %{
+          transaction_id: "TX-DISCONNECT-SALES-#{System.unique_integer([:positive])}",
+          internal_transaction_id: "INT-TX-DISCONNECT-SALES-#{System.unique_integer([:positive])}",
+          creditor_name: "Disconnect Buyer",
+          creditor_account: "ACC123",
+          debtor_name: "Our Company",
+          debtor_account: "ACC456",
+          transaction_amount: Decimal.new("100.00"),
+          transaction_currency: "PLN",
+          booking_date: ~D[2024-06-10],
+          value_date: ~D[2024-06-10],
+          remittance_information_unstructured: "Payment for disconnect test sales invoice",
+          organization_id: organization_id
+        })
+
+      {:ok, _invoice} =
+        Invoicing.connect_sales_invoice_transactions_manual(
+          sales_invoice,
+          [transaction.id],
+          scope
+        )
+
+      connected_invoice =
+        Invoicing.get_sales_invoice!(sales_invoice.id, load: [:transactions], scope: scope)
+
+      assert Enum.map(connected_invoice.transactions, & &1.id) == [transaction.id]
+
+      assert {:ok, _invoice} =
+               Invoicing.disconnect_sales_invoice_transactions_manual(
+                 connected_invoice,
+                 [],
+                 scope
+               )
+
+      disconnected_invoice =
+        Invoicing.get_sales_invoice!(sales_invoice.id, load: [:transactions], scope: scope)
+
+      assert disconnected_invoice.transactions == []
+    end
+
+    test "disconnect_cost_invoice_transactions_manual/3 removes all linked transactions when given an empty list" do
+      user = admin_fixture()
+      scope = scope_for(user)
+      organization_id = user.organization_id
+
+      blob =
+        seed_blob!(organization_id, "disconnect_cost_invoice.pdf", "disconnect_cost_checksum")
+
+      cost_invoice =
+        Ash.Seed.seed!(CostInvoice, %{
+          seller: "Disconnect Supplier",
+          seller_display_name: "Disconnect Supplier",
+          invoice_identifier: "CI-DISCONNECT-#{System.unique_integer([:positive])}",
+          description: "Disconnect test invoice",
+          sale_date: ~D[2024-06-12],
+          issue_date: ~D[2024-06-12],
+          due_date: ~D[2024-06-26],
+          total_amount: Decimal.new("-50.00"),
+          currency: "PLN",
+          skip_invoicing: false,
+          organization_id: organization_id,
+          blob_id: blob.id
+        })
+
+      transaction =
+        Ash.Seed.seed!(Transaction, %{
+          transaction_id: "TX-DISCONNECT-COST-#{System.unique_integer([:positive])}",
+          internal_transaction_id: "INT-TX-DISCONNECT-COST-#{System.unique_integer([:positive])}",
+          creditor_name: "Our Company",
+          creditor_account: "ACC456",
+          debtor_name: "Disconnect Supplier",
+          debtor_account: "ACC789",
+          transaction_amount: Decimal.new("50.00"),
+          transaction_currency: "PLN",
+          booking_date: ~D[2024-06-12],
+          value_date: ~D[2024-06-12],
+          remittance_information_unstructured: "Payment for disconnect test cost invoice",
+          organization_id: organization_id
+        })
+
+      {:ok, _invoice} =
+        Invoicing.connect_cost_invoice_transactions_manual(cost_invoice, [transaction.id], scope)
+
+      connected_invoice =
+        Invoicing.get_cost_invoice!(cost_invoice.id, load: [:transactions], scope: scope)
+
+      assert Enum.map(connected_invoice.transactions, & &1.id) == [transaction.id]
+
+      assert {:ok, _invoice} =
+               Invoicing.disconnect_cost_invoice_transactions_manual(connected_invoice, [], scope)
+
+      disconnected_invoice =
+        Invoicing.get_cost_invoice!(cost_invoice.id, load: [:transactions], scope: scope)
+
+      assert disconnected_invoice.transactions == []
+    end
+  end
+
   describe "search_invoices/2 with amount and date filters" do
     setup do
       user = admin_fixture()
