@@ -3,11 +3,15 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
   use FirmowidWeb.ConnCase, async: true
 
   import Firmowid.AccountsFixtures
+  import Firmowid.TimetrackerFixtures
   import Phoenix.LiveViewTest
 
+  alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary
   alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
+  alias Firmowid.Repo
 
   test "employee list updates without refresh after invite consumption", %{conn: conn} do
     admin = admin_fixture()
@@ -121,8 +125,107 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     assert archive_html =~ to_string(second_admin.email)
   end
 
+  test "employee detail page shows payroll and project summary for selected month", %{conn: conn} do
+    admin = admin_fixture()
+
+    employee = user_in_org_fixture(admin.organization_id, %{role: :employee})
+
+    employee =
+      Core.update_profile!(
+        employee,
+        %{
+          name: "Jan Kowalski",
+          phone: "+48 600 700 800",
+          bank_account_number: "PL44 1140 2004 0000 3002 0135 5362"
+        },
+        actor: employee,
+        tenant: admin.organization_id
+      )
+
+    project = project_fixture(%{organization_id: admin.organization_id, name: "Payroll Project"})
+    user_project_fixture(employee.id, project.id, admin.organization_id)
+
+    user_salary_fixture(%{
+      organization_id: admin.organization_id,
+      user_id: employee.id,
+      hourly_rate: Decimal.new("100.00")
+    })
+
+    session_fixture(%{
+      organization_id: admin.organization_id,
+      project_id: project.id,
+      user_id: employee.id,
+      title: "April Session",
+      start_datetime: ~U[2026-04-03 09:00:00Z],
+      end_datetime: ~U[2026-04-03 12:00:00Z]
+    })
+
+    seed_hours_record!(employee.id, admin.organization_id, 4, 2026, 3)
+
+    conn = log_in_user(conn, admin)
+
+    assert {:ok, _lv, html} =
+             live(conn, ~p"/zarzadzanie/pracownicy/#{employee.id}?month=2026-04-01")
+
+    assert html =~ "Jan Kowalski"
+    assert html =~ "+48 600 700 800"
+    assert html =~ "PL44 1140 2004 0000 3002 0135 5362"
+    assert html =~ "Payroll Project"
+    assert html =~ "3 godz."
+    assert html =~ "Wynagrodzenie"
+    assert html =~ "EWIDENCJA"
+    assert html =~ "April Session"
+  end
+
+  test "admin can restore archived employee from employee detail page", %{conn: conn} do
+    admin = admin_fixture()
+    employee = user_in_org_fixture(admin.organization_id, %{role: :employee, name: "Restore Me"})
+
+    Core.archive_user!(employee, %{}, scope: current_scope(admin))
+
+    conn = log_in_user(conn, admin)
+    {:ok, lv, html} = live(conn, ~p"/zarzadzanie/pracownicy/#{employee.id}")
+
+    assert html =~ "zarchiwizowany"
+    assert html =~ "Przywróć pracownika"
+
+    lv
+    |> element("button[phx-click='unarchive_employee']")
+    |> render_click()
+
+    updated_html = render(lv)
+    refute updated_html =~ "zarchiwizowany"
+    assert updated_html =~ "Archiwizuj"
+
+    assert {:ok, _active_lv, active_html} = live(conn, ~p"/zarzadzanie/pracownicy")
+    assert active_html =~ to_string(employee.email)
+  end
+
   defp current_scope(admin) do
     %Scope{actor: admin, tenant: admin.organization_id}
+  end
+
+  defp seed_hours_record!(user_id, organization_id, month, year, hours) do
+    blob =
+      Ash.Seed.seed!(Blob, %{
+        blob_path: "/test/path/hours_record_#{System.unique_integer([:positive])}.pdf",
+        blob_checksum: "hr-checksum-#{System.unique_integer([:positive])}",
+        original_filename: "hours_record.pdf",
+        organization_id: organization_id
+      })
+
+    Repo.insert!(
+      %AshHoursRecord{
+        id: Ash.UUIDv7.generate(),
+        user_id: user_id,
+        blob_id: blob.id,
+        month: month,
+        year: year,
+        number_of_hours: hours,
+        organization_id: organization_id
+      },
+      skip_organization_id: true
+    )
   end
 
   defp assert_eventually(fun, attempts \\ 20)

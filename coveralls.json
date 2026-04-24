@@ -1,0 +1,7 @@
+{
+  "skip_files": [
+    "deps/",
+    "lib/test/",
+    ".*_test\\.exs$"
+  ]
+}

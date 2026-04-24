@@ -19,25 +19,23 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
 
   require Logger
 
+  @invoice_loads [
+    :net_value,
+    :vat_value,
+    :gross_value,
+    sales_invoice_items: [:net_value, :vat_value, :gross_value],
+    corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+    corrected_invoice: :corrections,
+    latest_correction: [sales_invoice_items: [:net_value, :vat_value, :gross_value]]
+  ]
+
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     current_user = socket.assigns.current_user
 
     scope = socket.assigns.ash_scope
 
-    invoice =
-      SalesInvoice.by_id!(id,
-        load: [
-          :net_value,
-          :vat_value,
-          :gross_value,
-          sales_invoice_items: [:net_value, :vat_value, :gross_value],
-          corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-          corrected_invoice: :corrections,
-          latest_correction: [sales_invoice_items: [:net_value, :vat_value, :gross_value]]
-        ],
-        scope: scope
-      )
+    invoice = load_invoice!(id, scope)
 
     logo_url = Invoicing.get_logo_url(invoice.organization_id, scope: scope)
 
@@ -303,20 +301,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   end
 
   def handle_info({:ksef_invoice_status, %{invoice_id: invoice_id, status: status}}, socket) do
-    invoice =
-      SalesInvoice.by_id!(
-        invoice_id,
-        load: [
-          :net_value,
-          :vat_value,
-          :gross_value,
-          sales_invoice_items: [:net_value, :vat_value, :gross_value],
-          corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
-          corrected_invoice: :corrections,
-          latest_correction: [sales_invoice_items: [:net_value, :vat_value, :gross_value]]
-        ],
-        scope: socket.assigns.ash_scope
-      )
+    invoice = load_invoice!(invoice_id, socket.assigns.ash_scope)
 
     handle_existing_invoice_status(socket, invoice, invoice_id, status)
   end
@@ -325,6 +310,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
     submission_info = Ksef.get_submission_info(invoice)
 
     {previous_invoices, invoice} = get_previous_invoices(invoice, socket.assigns.ash_scope)
+
+    invoice = ensure_template_ready_invoice(invoice, socket.assigns.ash_scope)
+
+    previous_invoices =
+      Enum.map(previous_invoices, &ensure_template_ready_invoice(&1, socket.assigns.ash_scope))
 
     socket =
       socket
@@ -385,6 +375,25 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   end
 
   defp get_previous_invoices(%{ksef_invoice_kind: :vat} = invoice, _scope), do: {[], invoice}
+
+  defp load_invoice!(id, scope) do
+    id
+    |> SalesInvoice.by_id!(load: @invoice_loads, scope: scope)
+    |> Ash.load!(@invoice_loads, scope: scope)
+  end
+
+  defp ensure_template_ready_invoice(invoice, scope) do
+    Ash.load!(
+      invoice,
+      [
+        :net_value,
+        :vat_value,
+        :gross_value,
+        sales_invoice_items: [:net_value, :vat_value, :gross_value]
+      ],
+      scope: scope
+    )
+  end
 
   defp safe_timestamp(record) do
     case record do

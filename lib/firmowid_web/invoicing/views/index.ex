@@ -387,18 +387,9 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {:noreply, socket}
   end
 
-  def handle_event(
-        "toggle-skip-invoicing-group",
-        %{"transaction_ids" => transaction_ids},
-        %{assigns: %{params: %{filter: :unmatched}}} = socket
-      ) do
-    Enum.each(transaction_ids, &do_toggle_skip(socket, &1, "transaction"))
-    {:noreply, refetch_invoicing_entries(socket)}
-  end
-
   def handle_event("toggle-skip-invoicing-group", %{"transaction_ids" => transaction_ids}, socket) do
-    Enum.each(transaction_ids, &do_toggle_skip(socket, &1, "transaction"))
-    {:noreply, refetch_invoicing_entries(socket)}
+    socket = Enum.reduce(transaction_ids, socket, &do_toggle_skip(&2, &1, "transaction"))
+    {:noreply, socket}
   end
 
   def handle_event("open-search", _params, socket) do

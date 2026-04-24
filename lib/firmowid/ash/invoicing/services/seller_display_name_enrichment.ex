@@ -102,7 +102,11 @@ defmodule Firmowid.Ash.Invoicing.Services.SellerDisplayNameEnrichment do
 
   @spec generate_via_llm(String.t(), String.t() | nil, [map()], [candidate()]) :: String.t() | nil
   defp generate_via_llm(seller, seller_nip, items_list, historical_candidates) do
-    openai = :firmowid |> Application.get_env(:openai_api_key) |> OpenaiEx.new()
+    openai =
+      :firmowid
+      |> Application.get_env(:openai_api_key)
+      |> OpenaiEx.new()
+      |> configure_openai_client()
 
     request =
       Chat.Completions.new(
@@ -131,6 +135,16 @@ defmodule Firmowid.Ash.Invoicing.Services.SellerDisplayNameEnrichment do
     error ->
       Logger.warning("Failed to generate seller display name via OpenAI: #{inspect(error)}")
       nil
+  end
+
+  defp configure_openai_client(openai) do
+    case Application.get_env(:firmowid, :openai_ex, [])[:base_url] do
+      base_url when is_binary(base_url) and base_url != "" ->
+        OpenaiEx.with_base_url(openai, base_url)
+
+      _ ->
+        openai
+    end
   end
 
   defp developer_prompt do

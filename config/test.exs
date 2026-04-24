@@ -55,6 +55,9 @@ config :firmowid, :bank_data_api_client,
     plug: {Req.Test, :bank_data_transactions}
   ]
 
+config :firmowid, :openai_api_key, "test-openai-api-key"
+config :firmowid, :reducto_api_key, "test-reducto-api-key"
+
 config :firmowid, :s3,
   scheme: System.get_env("S3_SCHEME", "http://"),
   host: System.get_env("S3_HOST", "localhost"),
@@ -63,8 +66,10 @@ config :firmowid, :s3,
   access_key_id: System.get_env("AWS_ACCESS_KEY_ID", "test"),
   secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY", "test")
 
-# Print only warnings and errors during test
-config :logger, level: :warning
+config :firmowid, :start_gocardless_token_manager, false
+
+# Keep expected warning noise out of CI test logs.
+config :logger, level: :error
 
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime
@@ -72,6 +77,8 @@ config :phoenix, :plug_init_mode, :runtime
 # Enable helpful, but potentially expensive runtime checks
 config :phoenix_live_view,
   enable_expensive_runtime_checks: true
+
+config :req_llm, openai_api_key: "test-openai-api-key"
 
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false

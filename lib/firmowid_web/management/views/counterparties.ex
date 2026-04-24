@@ -73,7 +73,7 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
        |> stream_delete(:counterparties, counterparty)
        |> assign(
          :counterparties_empty?,
-         map_size(socket.assigns.streams.counterparties.inserts) == 1
+         length(socket.assigns.streams.counterparties.inserts) == 1
        )}
     else
       _ -> {:noreply, put_flash(socket, :error, "Nie udało się przywrócić kontrahenta")}

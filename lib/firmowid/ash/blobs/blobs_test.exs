@@ -4,6 +4,7 @@ defmodule Firmowid.Ash.Blobs.BlobsTest do
   import Firmowid.AccountsFixtures
 
   alias Firmowid.Ash.Blobs
+  alias Firmowid.Ash.Blobs.Blob
 
   setup do
     user = admin_fixture()
@@ -82,4 +83,69 @@ defmodule Firmowid.Ash.Blobs.BlobsTest do
       assert blob_with_url.url =~ "X-Amz-Signature"
     end
   end
+
+  describe "create_or_retry_cost_invoice_blob" do
+    test "requeues processing for a duplicate failed cost invoice blob", %{scope: scope} do
+      previous_extract_result = Application.get_env(:firmowid, :reducto_extract_result)
+      previous_reducto_config = Application.get_env(:firmowid, :reducto_api_client)
+
+      configure_reducto_test_client()
+
+      on_exit(fn ->
+        restore_env(:reducto_extract_result, previous_extract_result)
+        restore_env(:reducto_api_client, previous_reducto_config)
+      end)
+
+      {:ok, path} = Briefly.create()
+      File.write!(path, "requeue me")
+
+      Application.put_env(
+        :firmowid,
+        :reducto_extract_result,
+        {:ok, %{"document_type" => "invalid"}}
+      )
+
+      assert {:ok, %Blob{} = blob} =
+               Blobs.create_or_retry_cost_invoice_blob(path, "text/plain", "retry-me.txt", scope: scope)
+
+      failed_blob = Blobs.get_blob!(blob.id, scope: scope)
+      assert failed_blob.processing_state == :failed
+
+      assert {:ok, :blob_reprocessing_started} =
+               Blobs.create_or_retry_cost_invoice_blob(
+                 path,
+                 "text/plain",
+                 "retry-me-again.txt",
+                 scope: scope
+               )
+    end
+  end
+
+  defp configure_reducto_test_client do
+    Application.put_env(
+      :firmowid,
+      :reducto_api_client,
+      upload: [plug: {Req.Test, :reducto_api_client}],
+      extract: [plug: {Req.Test, :reducto_api_client}]
+    )
+
+    Req.Test.stub(:reducto_api_client, &stub_reducto_request/1)
+  end
+
+  defp stub_reducto_request(%{request_path: "/upload"} = conn) do
+    Req.Test.json(conn, %{"file_id" => "test-file-id"})
+  end
+
+  defp stub_reducto_request(%{request_path: "/extract"} = conn) do
+    case Application.fetch_env!(:firmowid, :reducto_extract_result) do
+      {:ok, result} ->
+        Req.Test.json(conn, %{"result" => result})
+
+      {:error, reason} ->
+        Req.Test.json(conn, %{"error" => inspect(reason)})
+    end
+  end
+
+  defp restore_env(key, nil), do: Application.delete_env(:firmowid, key)
+  defp restore_env(key, value), do: Application.put_env(:firmowid, key, value)
 end

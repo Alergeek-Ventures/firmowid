@@ -21,6 +21,12 @@ defmodule Firmowid.Ash.Finances.GoCardless.TokenManagerTest do
   # (they don't go through the mock_data path), we test the logic by
   # inspecting state.
 
+  setup do
+    start_supervised!(TokenManager)
+    assert is_binary(TokenManager.refresh_now())
+    :ok
+  end
+
   describe "state management" do
     test "initial state has nil tokens and zero fetch_failures" do
       state = :sys.get_state(TokenManager)

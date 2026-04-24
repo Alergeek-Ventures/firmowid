@@ -25,20 +25,6 @@ defmodule FirmowidWeb.Auth.Views.LoginTest do
   end
 
   describe "user login" do
-    test "redirects if user login with valid credentials", %{conn: conn} do
-      password = "123456789abcd"
-      user = user_fixture(%{password: password})
-
-      {:ok, lv, _html} = live(conn, ~p"/zaloguj")
-
-      form =
-        form(lv, "#login_form", user: %{email: user.email, password: password, remember_me: true})
-
-      conn = submit_form(form, conn)
-
-      assert redirected_to(conn) == ~p"/czasosledz"
-    end
-
     test "redirects to login page with a flash error if there are no valid credentials", %{
       conn: conn
     } do

@@ -6,6 +6,7 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
   import Phoenix.LiveViewTest
 
   alias Firmowid.Ash.Finances
+  alias Firmowid.Ash.Finances.Requisition
   alias Firmowid.Ash.Scope
 
   test "bank accounts are sorted by IBAN and keep order after rename", %{conn: conn} do
@@ -61,6 +62,27 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
 
     assert iban_position(html_after_second_rename, "PL44 1140 2004 0000 3002 0135 5362") <
              iban_position(html_after_second_rename, "PL44 1140 2004 0000 3002 0135 5363")
+  end
+
+  test "bank accounts page shows pending bank connection state", %{conn: conn} do
+    admin = admin_fixture()
+
+    {:ok, _requisition} =
+      Requisition
+      |> Ash.Changeset.for_create(:persist, %{id: Ecto.UUID.generate()},
+        tenant: admin.organization_id,
+        actor: admin,
+        authorize?: false
+      )
+      |> Ash.create(tenant: admin.organization_id, actor: admin, authorize?: false)
+
+    conn = log_in_user(conn, admin)
+
+    assert {:ok, _view, html} = live(conn, ~p"/ustawienia/konta-bankowe")
+
+    assert html =~ "Trwa konfiguracja połączenia bankowego."
+    assert html =~ "Konto pojawi się na liście"
+    assert html =~ "po zakończeniu autoryzacji"
   end
 
   test "account deletion modal warns organization owner about deleting the organization", %{

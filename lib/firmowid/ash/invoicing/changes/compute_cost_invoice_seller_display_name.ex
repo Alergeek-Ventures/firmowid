@@ -23,7 +23,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName do
 
   defp assign_seller_display_name(changeset, context) do
     seller_display_name =
-      SellerDisplayNameEnrichment.generate_display_name(document(changeset),
+      seller_display_name_generator().generate_display_name(document(changeset),
         current_cost_invoice_id: changeset.data.id,
         ash_opts: Ash.Context.to_opts(context)
       )
@@ -35,6 +35,14 @@ defmodule Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName do
       _ ->
         changeset
     end
+  end
+
+  defp seller_display_name_generator do
+    Application.get_env(
+      :firmowid,
+      :seller_display_name_enrichment_module,
+      SellerDisplayNameEnrichment
+    )
   end
 
   defp document(changeset) do

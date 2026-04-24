@@ -118,7 +118,11 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessCostInvoiceBlob do
   end
 
   defp extract_metadata(blob_url) do
-    ReductoApiClient.extract(blob_url, @cost_invoice_schema, system_prompt: @cost_invoice_system_prompt)
+    reducto_client().extract(blob_url, @cost_invoice_schema, system_prompt: @cost_invoice_system_prompt)
+  end
+
+  defp reducto_client do
+    Application.get_env(:firmowid, :reducto_api_client_module, ReductoApiClient)
   end
 
   defp ensure_cost_invoice_document(%{"document_type" => "cost_invoice"}), do: :ok

@@ -1,0 +1,12 @@
+coverage:
+  paths:
+    - cover/lcov.info
+
+summary:
+  if: true
+  hideFooterLink: true
+
+comment:
+  if: is_pull_request
+  updatePrevious: true
+  hideFooterLink: true

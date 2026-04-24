@@ -52,6 +52,12 @@ jobs:
     # end
 
     needs: extract-versions
+    permissions:
+      actions: write
+      contents: read
+      packages: read
+      pull-requests: write
+
     env:
       MIX_ENV: test
       KSEF_ENV: test
@@ -84,9 +90,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
+          --health-cmd pg_isready --health-interval 10s --health-timeout 5s
           --health-retries 5
 
       seaweedfs:
@@ -111,5 +115,23 @@ jobs:
       - name: Create and migrate database
         run: mix ash.setup
 
-      - name: Run Tests
-        run: mix test
+      - name: Run tests with LCOV coverage report
+        run: |
+          if mix coveralls.lcov > coveralls.log 2>&1; then
+            echo "Tests passed and LCOV coverage report was generated in cover/lcov.info."
+          else
+            echo "mix coveralls.lcov failed. Full log:"
+            cat coveralls.log
+            exit 1
+          fi
+
+      - name: Publish coverage summary and PR comment
+        uses: k1LoW/octocov-action@v1
+
+      - name: Upload coverage LCOV report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: excoveralls-lcov-report
+          path: cover/lcov.info
+          if-no-files-found: error

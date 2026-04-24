@@ -16,13 +16,17 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
   alias Firmowid.Ash.Ksef.Services.Encryption
 
   defp request do
-    Req.new(
-      base_url: Application.fetch_env!(:firmowid, :ksef)[:base_url],
+    ksef_config = Application.fetch_env!(:firmowid, :ksef)
+
+    [
+      base_url: ksef_config[:base_url],
       user_agent: "Firmowid",
       compressed: true,
       retry: :transient,
       max_retries: 3
-    )
+    ]
+    |> Req.new()
+    |> Req.Request.merge_options(ksef_config[:request_options] || [])
   end
 
   defp request(access_token) when is_binary(access_token) do

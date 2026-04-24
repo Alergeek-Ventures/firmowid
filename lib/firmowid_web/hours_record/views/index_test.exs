@@ -69,7 +69,7 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
     |> element("button[phx-click='sign']")
     |> render_click()
 
-    upload_fixture = Path.expand("../../../../test/fixtures/receipt.png", __DIR__)
+    upload_fixture = Path.expand("../../../test/fixtures/receipt.png", __DIR__)
 
     lv
     |> file_input("#upload-form", :hours_record, [

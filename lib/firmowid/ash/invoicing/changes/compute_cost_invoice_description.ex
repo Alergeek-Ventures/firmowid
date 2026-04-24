@@ -26,7 +26,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceDescription do
   defp assign_description(changeset, seller, items_list) do
     description =
       %{"seller" => seller, "items_list" => items_list}
-      |> OpenAIEnrichment.generate_description()
+      |> description_generator().generate_description()
       |> String.trim()
 
     if description == "" do
@@ -34,6 +34,10 @@ defmodule Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceDescription do
     else
       Ash.Changeset.force_change_attribute(changeset, :description, description)
     end
+  end
+
+  defp description_generator do
+    Application.get_env(:firmowid, :openai_enrichment_module, OpenAIEnrichment)
   end
 
   defp value(changeset, field) do

@@ -14,6 +14,7 @@ defmodule Firmowid.MixProject do
       listeners: [Phoenix.CodeReloader],
       test_paths: ["lib"],
       test_pattern: "*_test.exs",
+      test_coverage: [tool: ExCoveralls],
 
       # TEMP: remove this once https://github.com/jeremyjh/dialyxir/issues/561 is resolved
       dialyzer: [
@@ -28,7 +29,16 @@ defmodule Firmowid.MixProject do
 
   def cli do
     [
-      preferred_envs: [check: :test]
+      preferred_envs: [
+        check: :test,
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.html": :test,
+        "coveralls.json": :test,
+        "coveralls.xml": :test,
+        "coveralls.cobertura": :test,
+        "coveralls.lcov": :test
+      ]
     ]
   end
 
@@ -43,7 +53,7 @@ defmodule Firmowid.MixProject do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["lib", "test"]
+  defp elixirc_paths(:test), do: ["lib"]
   defp elixirc_paths(_), do: ["lib"]
 
   # Specifies your project dependencies.
@@ -121,7 +131,9 @@ defmodule Firmowid.MixProject do
       {:mdex, "~> 0.7"},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:excoveralls, "~> 0.18", only: :test},
       {:openai_ex, "~> 0.9.19"},
+      {:req_llm, "~> 1.10"},
       {:live_debugger, "~> 0.4", only: [:dev], runtime: Mix.env() == :dev},
       {:oban_web, "~> 2.11"},
       {:igniter, "~> 0.5", only: [:dev]},

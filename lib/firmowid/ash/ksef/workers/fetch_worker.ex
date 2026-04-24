@@ -235,19 +235,22 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
   # not user-controlled. Req.request!/1 requires an atom for the :method option.
   defp download_part(part) do
     method = part["method"] |> String.downcase() |> String.to_atom()
+    request_options = Application.get_env(:firmowid, :ksef, [])[:request_options] || []
 
     checksum =
       part["encryptedPartHash"]
       |> Base.decode64!()
       |> Base.encode16(case: :lower)
 
-    Req.request!(
+    [
       url: part["url"],
       method: method,
       checksum: "sha256:#{checksum}",
       http_errors: :raise,
       retry: :transient
-    ).body
+    ]
+    |> Req.request!(request_options)
+    |> Map.fetch!(:body)
   end
 
   defp validate_part_checksum!(data, part) do

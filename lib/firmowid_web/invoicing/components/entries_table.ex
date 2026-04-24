@@ -730,25 +730,49 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   defp render_group_cell(%{column: "status"} = assigns) do
     # Check if we're in unmatched filter by checking columns
-    assigns = assign(assigns, :is_unmatched, "status" in assigns.columns)
+    assigns =
+      assigns
+      |> assign(:is_unmatched, "status" in assigns.columns)
+      |> assign(:all_skipped, Enum.all?(assigns.group.transactions, & &1.skip_invoicing))
 
     ~H"""
-    <%= if @is_unmatched do %>
-      <div class="flex w-32 flex-row gap-2 overflow-hidden">
-        <div class="bg-redBg text-redText flex h-6 w-10 flex-row items-center justify-center rounded-md p-2 text-xs transition-all duration-500">
-          <.icon name="hero-credit-card-mini" class="size-4" />
+    <%= cond do %>
+      <% not @is_unmatched -> %>
+      <% @all_skipped -> %>
+        <div class="flex w-32 flex-row gap-2 overflow-hidden">
+          <div
+            id={"#{@group.id}-label"}
+            class="bg-greenBg text-greenText flex h-6 w-20 flex-row items-center justify-center rounded-md p-2 text-xs transition-all duration-500"
+          >
+            <.icon name="hero-credit-card-mini" class="size-4" />
+          </div>
+          <.status_button
+            id={"#{@group.id}-button"}
+            phx-click={
+              JS.push("toggle-skip-invoicing-group",
+                value: %{transaction_ids: Enum.map(@group.transactions, & &1.id)}
+              )
+            }
+            icon="hero-arrow-uturn-left-micro"
+            class="transition-all duration-500"
+          />
         </div>
-        <.status_button
-          id={"#{@group.id}-button"}
-          phx-click={
-            JS.push("toggle-skip-invoicing-group",
-              value: %{transaction_ids: Enum.map(@group.transactions, & &1.id)}
-            )
-          }
-          label="Pomiń"
-          class="transition-all duration-500"
-        />
-      </div>
+      <% true -> %>
+        <div class="flex w-32 flex-row gap-2 overflow-hidden">
+          <div class="bg-redBg text-redText flex h-6 w-10 flex-row items-center justify-center rounded-md p-2 text-xs transition-all duration-500">
+            <.icon name="hero-credit-card-mini" class="size-4" />
+          </div>
+          <.status_button
+            id={"#{@group.id}-button"}
+            phx-click={
+              JS.push("toggle-skip-invoicing-group",
+                value: %{transaction_ids: Enum.map(@group.transactions, & &1.id)}
+              )
+            }
+            label="Pomiń"
+            class="transition-all duration-500"
+          />
+        </div>
     <% end %>
     """
   end

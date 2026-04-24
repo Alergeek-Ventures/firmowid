@@ -39,13 +39,13 @@ defmodule Firmowid.Application do
         Supervisor.child_spec({Cachex, name: :currencies}, id: :currencies_cache),
         Supervisor.child_spec({Cachex, name: :institutions}, id: :institutions_cache),
         Supervisor.child_spec({Cachex, name: :ksef}, id: :ksef_cache),
-        Firmowid.Ash.Finances.GoCardless.TokenManager,
         Firmowid.Vault,
         {Oban, Application.fetch_env!(:firmowid, Oban)},
         Firmowid.Ash.Invoicing.Matching.Assistant.MessagesStorage,
         Firmowid.Ash.Currencies.Converter,
         {AshAuthentication.Supervisor, otp_app: :firmowid}
       ] ++
+        maybe_gocardless_token_manager() ++
         maybe_posthog_supervisor() ++
         [
           # Start to serve requests, typically the last entry
@@ -73,6 +73,14 @@ defmodule Firmowid.Application do
         |> PostHog.Config.validate!()
 
       [{PostHog.Supervisor, posthog_config}]
+    else
+      []
+    end
+  end
+
+  defp maybe_gocardless_token_manager do
+    if Application.get_env(:firmowid, :start_gocardless_token_manager, true) do
+      [Firmowid.Ash.Finances.GoCardless.TokenManager]
     else
       []
     end

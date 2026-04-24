@@ -516,7 +516,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
   end
 
   defp load_example_fixture(name) do
-    ["test", "fixtures", "ksef", "fa3_examples", name]
+    ["lib", "test", "fixtures", "ksef", "fa3_examples", name]
     |> Path.join()
     |> File.read!()
   end

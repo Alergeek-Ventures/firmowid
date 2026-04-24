@@ -68,4 +68,68 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
       # No manual job insertion needed.
     end
   end
+
+  describe "institution_selected" do
+    setup %{conn: conn} do
+      user = Firmowid.AccountsFixtures.admin_fixture()
+
+      Req.Test.stub(:bank_data_institutions, fn conn ->
+        Req.Test.json(conn, [
+          %{
+            id: "N26",
+            name: "N26 Bank",
+            logo: "https://example.test/n26.svg",
+            dominant_color_rgb: "255 255 255",
+            transaction_total_days: 90
+          }
+        ])
+      end)
+
+      %{conn: log_in_user(conn, user), user: user}
+    end
+
+    test "shows GoCardless confirmation link and persists pending requisition", %{
+      conn: conn,
+      user: user
+    } do
+      requisition_id = Ecto.UUID.generate()
+      requisition_link = "https://bankaccountdata.gocardless.com/link/#{requisition_id}"
+
+      stub_calls = :counters.new(1, [])
+
+      Req.Test.stub(:bank_data_requisition, fn conn ->
+        :counters.add(stub_calls, 1, 1)
+
+        case :counters.get(stub_calls, 1) do
+          1 ->
+            Req.Test.json(conn, %{id: "agreement-1"})
+
+          2 ->
+            Req.Test.json(conn, %{id: requisition_id, link: requisition_link})
+        end
+      end)
+
+      {:ok, view, _html} = live(conn, ~p"/ustawienia/bank/dodaj")
+
+      view
+      |> element("#institution-N26")
+      |> render_submit()
+
+      assert has_element?(
+               view,
+               "a[href='#{requisition_link}']",
+               "Kliknij, aby potwierdzić połączenie"
+             )
+
+      assert {:ok, requisition} =
+               Ash.get(Requisition, requisition_id,
+                 tenant: user.organization_id,
+                 actor: user
+               )
+
+      assert requisition.status == :pending
+      assert requisition.id == requisition_id
+      assert :counters.get(stub_calls, 1) == 2
+    end
+  end
 end

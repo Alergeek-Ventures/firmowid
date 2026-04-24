@@ -6,6 +6,8 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClient do
 
   require Logger
 
+  @default_base_url "https://platform.reducto.ai"
+
   @type extract_options :: [
           extraction_mode: :hybrid | :ocr | :metadata,
           system_prompt: String.t() | nil
@@ -66,11 +68,13 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClient do
     }
 
     case Req.post(
-           "https://platform.reducto.ai/extract",
-           auth: get_auth_token(),
-           json: request_body,
-           receive_timeout: 120_000,
-           connect_options: [timeout: 120_000]
+           reducto_url("/extract"),
+           extract_request_options(
+             auth: get_auth_token(),
+             json: request_body,
+             receive_timeout: 120_000,
+             connect_options: [timeout: 120_000]
+           )
          ) do
       {:ok, response} ->
         body = Map.get(response, :body)
@@ -143,7 +147,7 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClient do
     # Validate dest_path to prevent directory traversal
     dest_path = Path.expand(dest_path)
 
-    %{status: 200, body: body} = Req.get!(file_url)
+    %{status: 200, body: body} = Req.get!(file_url, download_request_options())
     File.write(dest_path, body)
   end
 
@@ -172,12 +176,35 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClient do
 
     %{status: 200, body: %{"file_id" => file_url}} =
       Req.post!(
-        "https://platform.reducto.ai/upload",
-        auth: get_auth_token(),
-        headers: headers,
-        body: Multipart.body_stream(multipart)
+        reducto_url("/upload"),
+        upload_request_options(
+          auth: get_auth_token(),
+          headers: headers,
+          body: Multipart.body_stream(multipart)
+        )
       )
 
     file_url
+  end
+
+  defp reducto_url(path), do: base_url() <> path
+
+  defp base_url do
+    :firmowid
+    |> Application.get_env(:reducto_api_client, [])
+    |> Keyword.get(:base_url, @default_base_url)
+  end
+
+  defp extract_request_options(options), do: merge_request_options(:extract, options)
+
+  defp upload_request_options(options), do: merge_request_options(:upload, options)
+
+  defp download_request_options, do: merge_request_options(:download, [])
+
+  defp merge_request_options(key, options) do
+    options ++
+      (:firmowid
+       |> Application.get_env(:reducto_api_client, [])
+       |> Keyword.get(key, []))
   end
 end

@@ -1,7 +1,7 @@
 # The directory Mix will write compiled artifacts to.
 /_build/
 
-# If you run "mix test --cover", coverage assets end up here.
+# If you run "mix test --cover" or "mix coveralls.html", coverage assets end up here.
 /cover/
 
 # The directory Mix downloads your dependencies sources to.
@@ -67,4 +67,3 @@ priv/static/.DS_Store
 # E2E test artifacts
 /e2e/screenshots/
 /playwright-*.log
-
