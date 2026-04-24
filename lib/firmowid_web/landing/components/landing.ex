@@ -115,18 +115,46 @@ defmodule FirmowidWeb.Landing.Components.Landing do
     assigns = assign(assigns, :container_class, @container_class)
 
     ~H"""
-    <section class={["flex min-h-screen flex-col", @class]}>
-      <div class="flex h-screen w-full flex-1 flex-col px-6 lg:px-10">
+    <section class={["flex flex-col md:min-h-screen", @class]}>
+      <div class="flex w-full flex-col px-5 pt-20 pb-4 md:h-screen md:flex-1 md:px-6 md:py-0 lg:px-10">
         <div class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-0 md:pl-6">
           <%!-- Scrollable container for main hero content --%>
-          <div class="flex flex-1 items-center justify-center overflow-y-auto">
-            <div class="grid w-full items-center gap-8 md:grid-cols-2 md:gap-[22px]">
+          <div class="flex items-start justify-center md:flex-1 md:items-center md:overflow-y-auto">
+            <div class="grid w-full items-start gap-6 md:grid-cols-2 md:items-center md:gap-[22px]">
               <%!-- Left column: copy and CTAs, vertically centered --%>
-              <div class="flex min-w-[408px] flex-col gap-[25px] pt-32">
-                <div class="flex flex-col gap-[30px]">
+              <div class="flex min-w-0 flex-col gap-5 pt-0 md:min-w-[408px] md:gap-[25px] md:pt-32">
+                <div class="md:hidden">
+                  <div class="relative px-0">
+                    <div class="grid grid-cols-[168px_118px] items-start justify-between gap-x-2">
+                      <h1 class="col-start-1 row-start-1 text-[38px] leading-[1.02] font-bold tracking-tight text-black uppercase">
+                        prowadź <br />firmę <br />z lżejszą <br />głową
+                      </h1>
+
+                      <div class="col-start-2 row-start-1 flex justify-end pt-0">
+                        <img
+                          src={~p"/images/hero_mobile_figure.png"}
+                          alt="Firmowid"
+                          class="h-[327px] w-[118px] shrink-0 max-w-none object-cover object-top object-[52%_0%]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="space-y-4 px-1 pt-7 text-[16px] leading-[1.3] font-normal text-black">
+                    <p>
+                      Firmowid automatyzuje fakturowanie, integruje się z KSeF, pilnuje budżetów <br />i czasu pracy Twoich pracowników.
+                    </p>
+                    <p>
+                      A Ty? <span class="font-semibold">Ty skupiasz się na swoim biznesie.</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div class="hidden md:flex md:flex-col md:gap-[30px]">
                   <h1 class="text-[54px] leading-normal font-bold tracking-tight text-black uppercase">
                     prowadź firmę <br />z lżejszą głową
                   </h1>
+
                   <div class="space-y-4 text-[20px] leading-normal font-medium text-black">
                     <p>
                       Firmowid automatyzuje fakturowanie, integruje się z KSeF,
@@ -137,7 +165,18 @@ defmodule FirmowidWeb.Landing.Components.Landing do
                     </p>
                   </div>
                 </div>
-                <div class="flex items-center gap-[25px]">
+
+                <div class="md:hidden">
+                  <.link
+                    kind="unstyled"
+                    navigate={~p"/zarejestruj"}
+                    class="disabled:bg-grey-800 disabled:text-grey-400 flex w-full items-center justify-center rounded bg-black px-8 py-4 text-base font-medium text-nowrap text-white transition-colors duration-400 hover:bg-orange-700 disabled:cursor-default"
+                  >
+                    Wypróbuj Firmowida
+                  </.link>
+                </div>
+
+                <div class="hidden items-center gap-[25px] md:flex">
                   <.link
                     kind="unstyled"
                     navigate={~p"/zaloguj"}
@@ -161,7 +200,7 @@ defmodule FirmowidWeb.Landing.Components.Landing do
               </div>
 
               <%!-- Right column: image only --%>
-              <div class="flex max-h-[90vh] items-center justify-center self-stretch overflow-hidden">
+              <div class="hidden max-h-[90vh] items-center justify-center self-stretch overflow-hidden md:flex">
                 <img
                   src={~p"/images/figurine.png"}
                   alt="Firmowid"
@@ -172,10 +211,10 @@ defmodule FirmowidWeb.Landing.Components.Landing do
           </div>
 
           <%!-- Sticky button at bottom of scroll context --%>
-          <div class="bottom-0 flex items-center justify-center">
+          <div class="bottom-0 flex items-center justify-center pt-3 md:pt-0">
             <a
               href="#ksef"
-              class="bg-grey-100 text-darkGrey mb-2 inline-flex flex-col items-center rounded-md px-8 pt-4 text-base font-medium transition-colors duration-500 hover:text-black"
+              class="bg-grey-100 text-darkGrey mb-2 inline-flex flex-col items-center rounded-md px-6 pt-3 text-sm font-medium transition-colors duration-500 hover:text-black md:px-8 md:pt-4 md:text-base"
             >
               Dowiedz się więcej
               <svg
@@ -249,35 +288,47 @@ defmodule FirmowidWeb.Landing.Components.Landing do
     assigns = assign(assigns, :container_class, @container_class)
 
     ~H"""
-    <section id={@id} class={["py-16 md:py-4", @class]}>
+    <section id={@id} class={["py-8 md:py-4", @class]}>
       <div class={@container_class}>
         <div class={[
-          "flex flex-col gap-6 rounded-2xl bg-white p-6",
+          "flex flex-col gap-6 rounded-2xl bg-white p-5 md:p-6",
           @reverse && "lg:[&>*:first-child]:order-2"
         ]}>
           <%!-- Header with title and tags in horizontal layout --%>
-          <div :if={@title != []} class="flex items-center justify-between gap-6">
-            <h2 class="min-w-0 flex-auto text-[40px] font-bold text-black lg:line-clamp-2">
+          <div
+            :if={@title != []}
+            class="flex flex-col items-start gap-3 md:gap-6 lg:flex-row lg:items-center lg:justify-between"
+          >
+            <h2 class="min-w-0 flex-auto text-[25px] leading-[1.05] font-semibold text-black md:text-[40px] md:font-bold lg:line-clamp-2">
               {render_slot(@title)}
             </h2>
-            <div :if={@tags != []} class="flex flex-wrap justify-end gap-2 lg:shrink-0">
+            <div :if={@tags != []} class="flex flex-wrap gap-2 lg:shrink-0 lg:justify-end">
               {render_slot(@tags)}
             </div>
           </div>
 
           <%!-- Main content grid --%>
-          <div class="grid items-start gap-10 md:gap-6 lg:grid-cols-[1fr_2fr]">
-            <%!-- Left column: description and solutions --%>
-            <div class="flex min-w-[378px] flex-col gap-10">
+          <div class="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_2fr] lg:items-start lg:gap-10">
+            <%!-- Left column becomes contents on mobile so image can sit between description and solutions --%>
+            <div class="contents lg:flex lg:min-w-[378px] lg:flex-col lg:gap-10">
               <%!-- Description text --%>
-              <div :if={@description != []} class="space-y-4 text-base/relaxed text-black">
+              <div
+                :if={@description != []}
+                class="order-1 space-y-3 text-[14px]/[1.5] text-black lg:space-y-4 lg:text-base/relaxed"
+              >
                 {render_slot(@description)}
               </div>
 
               <%!-- Solution section --%>
-              <div :if={@solution_title != [] || @solutions != []} class="flex flex-col gap-4">
+              <div
+                :if={@solution_title != [] || @solutions != []}
+                class="order-3 flex flex-col gap-4"
+              >
                 <div class="gap-1">
-                  <h4 :if={@solution_title != []} class="text-xl font-medium text-black">
+                  <h4
+                    :if={@solution_title != []}
+                    class="text-[20px] font-medium text-black lg:text-xl"
+                  >
                     {render_slot(@solution_title)}
                   </h4>
                   <span :if={@solution_subtitle != []} class="text-grey-500 text-[14px]">
@@ -293,7 +344,7 @@ defmodule FirmowidWeb.Landing.Components.Landing do
             <%!-- Right column: image --%>
             <div
               :if={@image != []}
-              class="flex size-full flex-1 items-center justify-center md:justify-end"
+              class="order-2 flex size-full flex-1 items-center justify-center overflow-hidden md:justify-end lg:order-0"
             >
               {render_slot(@image)}
             </div>
@@ -335,7 +386,7 @@ defmodule FirmowidWeb.Landing.Components.Landing do
       data-solution-index={@index}
     >
       <.animated_arrow_static />
-      <p class="text-grey-900 text-[16px] leading-normal font-normal transition-all duration-500 group-hover:translate-x-2.5 group-hover:text-orange-700">
+      <p class="text-grey-900 text-[15px] leading-normal font-normal transition-all duration-500 group-hover:translate-x-2.5 group-hover:text-orange-700 md:text-[16px]">
         {render_slot(@inner_block)}
       </p>
     </div>
@@ -390,22 +441,22 @@ defmodule FirmowidWeb.Landing.Components.Landing do
     assigns = assign(assigns, :container_class, @container_class)
 
     ~H"""
-    <section id={@id} class={["mt-[72px] pt-16 md:pt-4", @class]}>
+    <section id={@id} class={["mt-[32px] pt-8 md:mt-[72px] md:pt-4", @class]}>
       <div class={@container_class}>
         <%!-- Header with title, description and tags --%>
         <div class="flex flex-col gap-6">
           <%!-- Title row with tags --%>
-          <div class="flex items-start justify-between py-0 pr-0 pl-4">
-            <h2 class="max-w-[563px] text-[32px] font-semibold text-black">
+          <div class="flex flex-col items-start gap-3 p-0 md:pl-4 lg:flex-row lg:justify-between">
+            <h2 class="max-w-[563px] text-[25px] leading-[1.05] font-semibold text-black md:text-[32px] md:leading-normal">
               {render_slot(@title)}
             </h2>
-            <div :if={@tags != []} class="flex items-center gap-2">
+            <div :if={@tags != []} class="flex flex-wrap items-center gap-2">
               {render_slot(@tags)}
             </div>
           </div>
 
           <%!-- Description --%>
-          <div class="flex max-w-[579px] flex-col gap-4 py-0 pr-0 pl-4 text-base/normal text-black">
+          <div class="flex max-w-[579px] flex-col gap-3 p-0 text-[14px]/[1.5] text-black md:gap-4 md:pl-4 md:text-base/normal">
             <p>
               {render_slot(@description_one)}
             </p>
@@ -415,20 +466,20 @@ defmodule FirmowidWeb.Landing.Components.Landing do
           </div>
 
           <%!-- Two column cards --%>
-          <div class="flex w-full items-stretch gap-5">
+          <div class="flex w-full flex-col items-stretch gap-5 lg:flex-row">
             <%!-- Left card: Monitorowanie czasu pracowników --%>
-            <div class="group flex flex-1 flex-col items-center justify-center gap-6 rounded-2xl bg-white p-8 transition-all duration-500 hover:shadow-[0_4px_12px_0_rgba(0,0,0,0.15)]">
+            <div class="group flex flex-1 flex-col items-center justify-center gap-6 rounded-2xl bg-white p-4 transition-all duration-500 hover:shadow-[0_4px_12px_0_rgba(0,0,0,0.15)] md:p-8">
               <div class="flex w-full flex-col items-start gap-4">
                 <div class="flex w-full items-center gap-3">
                   <div class="size-6 shrink-0 overflow-hidden">
                     <.animated_arrow />
                   </div>
-                  <p class="text-2xl font-medium text-black">
+                  <p class="text-[20px] font-medium text-black md:text-2xl">
                     {render_slot(@left_title)}
                   </p>
                 </div>
                 <div class="w-full">
-                  <p class="text-grey-700 text-base/normal">
+                  <p class="text-grey-700 text-[14px]/[1.5] md:text-base/normal">
                     {render_slot(@left_description)}
                   </p>
                 </div>
@@ -437,22 +488,22 @@ defmodule FirmowidWeb.Landing.Components.Landing do
             </div>
 
             <%!-- Right card: Ewidencja --%>
-            <div class="group relative flex flex-1 flex-col items-center gap-14 rounded-2xl bg-white p-8 transition-all duration-500 hover:shadow-[0_4px_12px_0_rgba(0,0,0,0.15)]">
+            <div class="group relative flex flex-1 flex-col items-center gap-8 rounded-2xl bg-white p-4 transition-all duration-500 hover:shadow-[0_4px_12px_0_rgba(0,0,0,0.15)] md:gap-14 md:p-8">
               <img
                 src={~p"/images/clock.png"}
                 alt="Decorative clock"
-                class="pointer-events-none absolute bottom-full h-[224px] w-[224px] -translate-x-6 rotate-[12.591deg] opacity-20"
+                class="pointer-events-none absolute top-8 right-4 h-[132px] w-[132px] rotate-[12.591deg] opacity-20 md:top-auto md:right-auto md:bottom-full md:h-[224px] md:w-[224px] md:-translate-x-6"
               />
               <div class="flex w-full flex-col items-start gap-4">
                 <div class="flex w-full items-center gap-3">
                   <div class="size-6 shrink-0">
                     <.animated_arrow />
                   </div>
-                  <p class="text-2xl font-medium text-black">
+                  <p class="text-[20px] font-medium text-black md:text-2xl">
                     {render_slot(@right_title)}
                   </p>
                 </div>
-                <p class="text-grey-700 w-full text-base/normal">
+                <p class="text-grey-700 w-full pr-16 text-[14px]/[1.5] md:pr-0 md:text-base/normal">
                   {render_slot(@right_description)}
                 </p>
               </div>
@@ -602,55 +653,58 @@ defmodule FirmowidWeb.Landing.Components.Landing do
     ~H"""
     <section
       id="cta-footer"
-      class={["relative mt-[104px] overflow-clip bg-black py-20 text-white", @class]}
+      class={[
+        "relative mt-[48px] overflow-clip bg-black py-12 text-white md:mt-[104px] md:py-20",
+        @class
+      ]}
     >
-      <div class="mx-auto max-w-7xl px-6 lg:px-10">
+      <div class="mx-auto max-w-7xl px-5 md:px-6 lg:px-10">
         <%!-- Main heading --%>
-        <h2 class="mx-auto mb-[104px] max-w-[1090px] text-center text-[56px] leading-normal font-bold">
+        <h2 class="mx-auto mb-10 max-w-[1090px] text-center text-[18px] leading-[1.2] font-bold md:mb-[104px] md:text-[56px] md:leading-normal">
           <span class="font-extralight">To jak? Chcesz wypróbować </span>Firmowida?
         </h2>
 
         <%!-- Two column layout --%>
-        <div class="mx-auto grid max-w-[1248px] shrink grid-rows-[auto_auto] items-center gap-1 md:grid-cols-[auto_auto] xl:gap-18">
+        <div class="mx-auto grid max-w-[1248px] shrink grid-rows-[auto_auto] items-center gap-8 md:grid-cols-[auto_auto] md:gap-1 xl:gap-18">
           <%!-- Left: Benefits list --%>
           <div class="relative flex-1 space-y-2">
             <%!-- Subheading --%>
             <img
               src={~p"/images/booking_text.svg"}
               alt="Umów spotkanie, a otrzymasz:"
-              class="mx-auto"
+              class="mx-auto w-full max-w-[260px] md:max-w-none"
             />
 
-            <div class="relative z-10 mx-auto flex flex-col items-center gap-2 px-2 pt-10 lg:max-w-[667px] lg:min-w-[530px]">
-              <div class="inline-flex flex-row flex-wrap gap-3 gap-y-0 self-center lg:min-w-[566px]">
+            <div class="relative z-10 mx-auto flex flex-col items-center gap-3 px-0 pt-6 md:gap-2 md:px-2 md:pt-10 lg:max-w-[667px] lg:min-w-[530px]">
+              <div class="inline-flex flex-row flex-wrap gap-3 gap-y-0 self-center md:justify-center lg:min-w-[566px]">
                 <img
                   src={~p"/images/dot.svg"}
                   alt=""
                 />
-                <p class="text-[24px] leading-normal font-extralight text-balance">
+                <p class="text-[14px]/[1.5] font-extralight text-balance md:text-[24px]">
                   dostęp do Firmowida<br class="hidden md:block lg:hidden" /> na
                   <span class="font-bold">3 miesiące</span>
                   <br class="md:hidden" />
-                  <span class="ml-2 inline-flex shrink-0 items-center rounded-full bg-[rgba(226,139,88,0.3)] px-4 py-1 align-middle text-sm text-[#f0eae6]">
+                  <span class="ml-2 inline-flex shrink-0 items-center rounded-full bg-[rgba(226,139,88,0.3)] px-3 py-1 align-middle text-[11px] text-[#f0eae6] md:px-4 md:text-sm">
                     za darmo
                   </span>
                 </p>
               </div>
-              <div class="inline-flex flex-row flex-wrap gap-3 gap-y-0 self-center px-3">
+              <div class="inline-flex flex-row flex-wrap gap-3 gap-y-0 self-center px-0 md:px-3">
                 <img
                   src={~p"/images/dot.svg"}
                   alt=""
                 />
-                <p class="shrink text-[24px] leading-normal font-extralight text-nowrap">
+                <p class="shrink text-[14px]/[1.5] font-extralight md:text-[24px] md:text-nowrap">
                   dostosowanie Firmowida<br class="lg:hidden" /> do Twoich potrzeb
                 </p>
               </div>
-              <div class="inline-flex flex-row flex-wrap gap-3 gap-y-0 self-center px-4">
+              <div class="inline-flex flex-row flex-wrap gap-3 gap-y-0 self-center px-0 md:px-4">
                 <img
                   src={~p"/images/dot.svg"}
                   alt=""
                 />
-                <p class="text-[24px] leading-normal font-extralight">
+                <p class="text-[14px]/[1.5] font-extralight md:text-[24px]">
                   pomoc z onboardingiem
                 </p>
               </div>
@@ -664,14 +718,14 @@ defmodule FirmowidWeb.Landing.Components.Landing do
           </div>
 
           <%!-- Right: CTA button with decorative elements --%>
-          <div class="mt-12 flex size-full items-center justify-center">
-            <span class="shrink-0 pt-14 pr-6 pb-7 pl-40">
+          <div class="mt-0 flex size-full items-center justify-center md:mt-12">
+            <span class="shrink-0 px-0 pt-2 pb-0 md:pt-14 md:pr-6 md:pb-7 md:pl-40">
               <.link
                 kind="unstyled"
                 external="https://cal.com/franek-madej/firmowid"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="group relative inline-flex items-center justify-center rounded px-8 py-4 text-[20px] font-medium text-white transition-colors duration-500"
+                class="group relative inline-flex items-center justify-center rounded px-6 py-3 text-[14px] font-medium text-white transition-colors duration-500 md:px-8 md:py-4 md:text-[20px]"
               >
                 <img
                   src={~p"/images/button.svg"}
@@ -686,17 +740,17 @@ defmodule FirmowidWeb.Landing.Components.Landing do
                 <img
                   src={~p"/images/arrow_pair.svg"}
                   alt="A pair of decorative arrows"
-                  class="pointer-events-none absolute right-full -bottom-2 transition-all duration-500 md:-translate-x-[25.46px] md:group-hover:translate-x-[-17.46px] xl:-translate-x-[33.46px] xl:group-hover:translate-x-[-25.46px]"
+                  class="pointer-events-none absolute right-full -bottom-2 hidden transition-all duration-500 md:block md:-translate-x-[25.46px] md:group-hover:translate-x-[-17.46px] xl:-translate-x-[33.46px] xl:group-hover:translate-x-[-25.46px]"
                 />
                 <img
                   src={~p"/images/shine.svg"}
                   alt="A pair of decorative arrows"
-                  class="pointer-events-none absolute right-[-21.616px] bottom-full translate-y-[-3px] transition-opacity duration-500 group-hover:opacity-0"
+                  class="pointer-events-none absolute right-[-21.616px] bottom-full hidden translate-y-[-3px] transition-opacity duration-500 group-hover:opacity-0 md:block"
                 />
                 <img
                   src={~p"/images/shine_emphasis.svg"}
                   alt="A pair of decorative arrows"
-                  class="pointer-events-none absolute right-[-25.616px] bottom-full translate-y-[-3px] opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                  class="pointer-events-none absolute right-[-25.616px] bottom-full hidden translate-y-[-3px] opacity-0 transition-opacity duration-500 group-hover:opacity-100 md:block"
                 />
               </.link>
             </span>
@@ -706,11 +760,11 @@ defmodule FirmowidWeb.Landing.Components.Landing do
         <img
           src={~p"/images/divider.svg"}
           alt="Decorative elements"
-          class="pointer-events-none relative mt-[134px] h-auto w-full"
+          class="pointer-events-none relative mt-10 h-auto w-full md:mt-[134px]"
         />
 
         <%!-- Footer info --%>
-        <div class="mt-10 mb-[29px] flex items-start justify-between">
+        <div class="mt-8 mb-[29px] flex flex-col gap-8 md:mt-10 md:flex-row md:items-start md:justify-between">
           <div class="gap-1">
             <p class="mb-3 text-base font-bold">Firmowid</p>
             <p class="text-sm font-light">
@@ -731,7 +785,7 @@ defmodule FirmowidWeb.Landing.Components.Landing do
           </div>
 
           <%!-- Footer columns --%>
-          <div class="flex gap-16 lg:gap-32">
+          <div class="flex flex-wrap gap-8 md:gap-16 lg:gap-32">
             <div class="flex flex-col gap-3 text-base font-bold text-white">
               <a href="#ksef" class="hover:text-grey-300 hidden">
                 O Firmowidzie
