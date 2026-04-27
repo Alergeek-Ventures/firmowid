@@ -89,6 +89,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
       |> Enum.map(&Map.put(&1, :bank_account_id, bank_account.id))
       |> filter_transactions_for_replay(bank_account, previous_successful_sync_at)
       |> dedupe_against_existing_transactions(bank_account, scope)
+      |> dedupe_final_upsert_batch(bank_account)
 
     cond do
       transactions == [] and parse_errors == [] ->
@@ -277,6 +278,35 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
           )
       end
     end)
+  end
+
+  defp dedupe_final_upsert_batch(transactions, bank_account) do
+    {deduped_transactions, _seen_keys, duplicate_count} =
+      Enum.reduce(transactions, {[], MapSet.new(), 0}, fn transaction, {kept, seen_keys, dropped} ->
+        key = final_upsert_key(transaction, bank_account.organization_id)
+
+        if MapSet.member?(seen_keys, key) do
+          {kept, seen_keys, dropped + 1}
+        else
+          {[transaction | kept], MapSet.put(seen_keys, key), dropped}
+        end
+      end)
+
+    if duplicate_count > 0 do
+      Logger.warning(
+        "Dropped #{duplicate_count} duplicate transactions from sync batch for bank account #{bank_account.id}"
+      )
+    end
+
+    Enum.reverse(deduped_transactions)
+  end
+
+  defp final_upsert_key(transaction, organization_id) do
+    {
+      Map.get(transaction, :internal_transaction_id),
+      Map.get(transaction, :bank_account_id),
+      organization_id
+    }
   end
 
   defp load_existing_transactions_for_dedupe(bank_account, transactions, scope) do

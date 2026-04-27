@@ -8,6 +8,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
   alias Firmowid.Ash.Events.Event
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.BankAccount
+  alias Firmowid.Ash.Finances.DuplicateTransactionMatcher
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.SystemActor
 
@@ -222,6 +223,117 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
       assert length(persisted) == 1
       assert hd(persisted).id == existing_transaction.id
       assert hd(persisted).internal_transaction_id == "original-internal-id"
+    end
+
+    test "keeps first transaction when multiple incoming rows collapse to the same existing identity",
+         ctx do
+      previous_sync_at = DateTime.add(DateTime.utc_now(), -10, :day)
+      seed_successful_sync_event(ctx.bank_account_1, ctx.org_id, previous_sync_at)
+
+      assert {:ok, existing_transaction} =
+               ctx.bank_account_1.id
+               |> transaction_attrs("original-internal-id")
+               |> Map.merge(%{
+                 transaction_id: "original-provider-id",
+                 booking_date: ~D[2026-04-20],
+                 value_date: ~D[2026-04-20],
+                 remittance_information_unstructured: "Usługi informatyczne Faktura 07/02/2026"
+               })
+               |> Finances.upsert_transaction_from_sync(
+                 actor: ctx.actor,
+                 tenant: ctx.org_id
+               )
+
+      stub_booked_transactions([
+        %{
+          "internalTransactionId" => "changed-internal-id-1",
+          "transactionId" => "changed-provider-id-1",
+          "debtorName" => "Example Debtor",
+          "debtorAccount" => %{"iban" => "PL001"},
+          "creditorName" => "Example Creditor",
+          "creditorAccount" => %{"iban" => "PL002"},
+          "transactionAmount" => %{"amount" => "100.00", "currency" => "PLN"},
+          "bookingDate" => "2026-04-21",
+          "valueDate" => "2026-04-20",
+          "remittanceInformationUnstructured" => "PRZYKŁADOWY NADAWCA, Usługi informatyczne Faktura 07/02/2026"
+        },
+        %{
+          "internalTransactionId" => "changed-internal-id-2",
+          "transactionId" => "changed-provider-id-2",
+          "debtorName" => "Example Debtor",
+          "debtorAccount" => %{"iban" => "PL001"},
+          "creditorName" => "Example Creditor",
+          "creditorAccount" => %{"iban" => "PL002"},
+          "transactionAmount" => %{"amount" => "100.00", "currency" => "PLN"},
+          "bookingDate" => "2026-04-21",
+          "valueDate" => "2026-04-20",
+          "remittanceInformationUnstructured" => "PRZYKŁADOWY NADAWCA, Usługi informatyczne Faktura 07/02/2026"
+        }
+      ])
+
+      assert {:ok, _bank_account} =
+               ctx.bank_account_1
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      persisted =
+        Transaction
+        |> Ash.read!(actor: ctx.actor, tenant: ctx.org_id)
+        |> Enum.filter(&(&1.bank_account_id == ctx.bank_account_1.id))
+
+      assert length(persisted) == 1
+      assert hd(persisted).id == existing_transaction.id
+      assert hd(persisted).internal_transaction_id == "original-internal-id"
+      assert hd(persisted).transaction_id == "original-provider-id"
+    end
+
+    test "prefers the exact-date duplicate candidate when repeated transactions create ambiguous matches" do
+      older_transaction = %{
+        booking_date: ~D[2026-04-22],
+        value_date: ~D[2026-04-22],
+        internal_transaction_id: "older-internal-id",
+        transaction_amount: Decimal.new("-35.56"),
+        transaction_currency: "EUR",
+        debtor_name: "N/A",
+        debtor_account: "N/A",
+        creditor_name: "Liam Brown",
+        creditor_account: "GB49BARC20040478743951",
+        remittance_information_unstructured: "Water invoice #5678"
+      }
+
+      exact_date_transaction = %{
+        booking_date: ~D[2026-04-23],
+        value_date: ~D[2026-04-23],
+        internal_transaction_id: "exact-date-internal-id",
+        transaction_amount: Decimal.new("-35.56"),
+        transaction_currency: "EUR",
+        debtor_name: "N/A",
+        debtor_account: "N/A",
+        creditor_name: "Liam Brown",
+        creditor_account: "GB49BARC20040478743951",
+        remittance_information_unstructured: "Water invoice #5678"
+      }
+
+      incoming_transaction = %{
+        booking_date: "2026-04-23",
+        value_date: "2026-04-23",
+        internal_transaction_id: "changed-internal-id",
+        transaction_amount: "-35.56",
+        transaction_currency: "EUR",
+        debtor_name: "N/A",
+        debtor_account: "N/A",
+        creditor_name: "Liam Brown",
+        creditor_account: "GB49BARC20040478743951",
+        remittance_information_unstructured: "Water invoice #5678"
+      }
+
+      assert DuplicateTransactionMatcher.unique_match(
+               incoming_transaction,
+               [older_transaction, exact_date_transaction]
+             ) == exact_date_transaction
     end
   end
 

@@ -25,10 +25,30 @@ defmodule Firmowid.Ash.Finances.DuplicateTransactionMatcher do
   def unique_match(transaction, candidates, opts \\ []) do
     transaction
     |> matching_candidates(candidates, opts)
+    |> narrow_by_exact_date_pair(transaction)
     |> case do
       [matched_transaction] -> matched_transaction
       _ -> nil
     end
+  end
+
+  defp narrow_by_exact_date_pair([], _transaction), do: []
+  defp narrow_by_exact_date_pair([candidate], _transaction), do: [candidate]
+
+  defp narrow_by_exact_date_pair(candidates, transaction) do
+    exact_matches =
+      Enum.filter(candidates, &same_exact_date_pair?(&1, transaction))
+
+    case exact_matches do
+      [] -> candidates
+      [_single_match] -> exact_matches
+      _multiple_matches -> candidates
+    end
+  end
+
+  defp same_exact_date_pair?(left, right) do
+    parse_date(get_field(left, :booking_date)) == parse_date(get_field(right, :booking_date)) and
+      parse_date(get_field(left, :value_date)) == parse_date(get_field(right, :value_date))
   end
 
   @spec candidate_match?(transaction_like(), transaction_like(), keyword()) :: boolean()
