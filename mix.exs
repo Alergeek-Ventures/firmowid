@@ -148,7 +148,7 @@ defmodule Firmowid.MixProject do
       {:ex_dna, "~> 1.3.1", only: [:dev, :test], runtime: false},
       {:cachex, "~> 4.0"},
       {:resend, "~> 0.4.5"},
-      {:humanids, "~> 0.1.1"},
+      {:humanids, "~> 0.2.0"},
       {:websockex, "~> 0.5"},
       {:csv, "~> 3.2"},
       {:lucide_icons, "~> 2.0"},
