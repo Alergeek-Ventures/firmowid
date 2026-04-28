@@ -12,6 +12,8 @@ defmodule Firmowid.Ash.Blobs do
   alias Ash.Error.Changes.InvalidChanges
   alias Ash.Error.Invalid
   alias Firmowid.Ash.Blobs.Blob
+<<<<<<< ours — module `Firmowid.Ash.Blobs` (S+F, confidence: low)
+// hint: Structural and logic conflict. Both design and behavior differ.
   alias Firmowid.Ash.Blobs.UploadFingerprint
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
@@ -114,6 +116,106 @@ defmodule Firmowid.Ash.Blobs do
             {:ok, blob} -> {:ok, blob}
             {:error, :not_found} -> {:error, error}
           end
+=======
+  alias Firmowid.Ash.Invoicing
+  alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Scope
+
+  require Ash.Query
+
+  resources do
+    resource Blob do
+      define :get_blob, action: :read, get_by: [:id]
+
+      define :create_blob, args: [:upload_path, :content_type, :original_filename]
+
+      define :create_blob_for_processing,
+        action: :create_blob,
+        args: [
+          :upload_path,
+          :content_type,
+          :original_filename,
+          :processing_target,
+          :processing_metadata
+        ]
+
+      define :process_blob_as_cost_invoice, action: :process_cost_invoice
+      define :destroy_blob, action: :destroy
+    end
+  end
+
+  authorization do
+    authorize :by_default
+    require_actor? true
+  end
+
+  @doc """
+  Finds an existing blob by checksum within the given scope, along with its linked CostInvoice (if any).
+
+  Used by both manual upload and KSeF flows to resolve duplicate blob conflicts.
+  The query is scoped to the organization via the scope's tenant.
+  """
+  @spec find_blob_with_cost_invoice(String.t(), keyword()) ::
+          {:ok, Blob.t(), CostInvoice.t() | nil} | {:error, :not_found}
+  def find_blob_with_cost_invoice(checksum, opts) do
+    blob_query =
+      Blob
+      |> Ash.Query.filter(blob_checksum == ^checksum)
+      |> Ash.Query.for_read(:read, %{}, opts)
+
+    case Ash.read_one(blob_query, opts) do
+      {:ok, %Blob{} = blob} ->
+        cost_invoice =
+          case Invoicing.get_cost_invoice_by_blob_id(blob.id, opts) do
+            {:ok, invoice} -> invoice
+            {:error, _} -> nil
+          end
+
+        {:ok, blob, cost_invoice}
+
+      _ ->
+        {:error, :not_found}
+    end
+  end
+
+  @doc """
+  Finds an existing blob by checksum within the given scope.
+
+  Used by avatar uploads to safely reuse an existing organization-scoped blob
+  instead of failing on duplicate checksum uploads.
+  """
+  @spec find_blob_by_checksum(String.t(), keyword()) :: {:ok, Blob.t()} | {:error, :not_found}
+  def find_blob_by_checksum(checksum, opts) do
+    blob_query =
+      Blob
+      |> Ash.Query.filter(blob_checksum == ^checksum)
+      |> Ash.Query.for_read(:read, %{}, opts)
+
+    case Ash.read_one(blob_query, opts) do
+      {:ok, %Blob{} = blob} -> {:ok, blob}
+      _ -> {:error, :not_found}
+    end
+  end
+
+  @doc """
+  Creates an avatar blob or reuses an existing one with the same checksum.
+
+  This makes avatar uploads idempotent within an organization, including when
+  the same image was uploaded previously and is no longer the current avatar.
+  """
+  @spec create_or_reuse_avatar_blob(String.t(), String.t(), String.t(), keyword()) ::
+          {:ok, Blob.t()} | {:error, term()}
+  def create_or_reuse_avatar_blob(path, content_type, original_filename, opts) do
+    case create_blob(path, content_type, original_filename, opts) do
+      {:ok, blob} ->
+        {:ok, blob}
+
+      {:error, %Invalid{} = error} ->
+        if blob_checksum_conflict?(error) do
+          path
+          |> compute_checksum()
+          |> find_blob_by_checksum(opts)
+>>>>>>> theirs — module `Firmowid.Ash.Blobs` (S+F, confidence: low)
         else
           {:error, error}
         end
