@@ -257,6 +257,9 @@ defmodule Firmowid.Ash.Core.User do
 
     update :update_avatar do
       accept [:avatar_blob_id]
+      require_atomic? false
+
+      change Firmowid.Ash.Core.Changes.CleanupOldAvatarBlob
     end
 
     destroy :destroy do

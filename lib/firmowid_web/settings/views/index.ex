@@ -188,12 +188,19 @@ defmodule FirmowidWeb.Settings.Views.Index do
     scope = socket.assigns.ash_scope
 
     case consume_uploaded_entry(socket, entry, fn %{path: path} ->
-           Blobs.create_blob(path, entry.client_type, entry.client_name, scope: scope)
+           {:ok,
+            Blobs.create_or_reuse_avatar_blob(
+              path,
+              entry.client_type,
+              entry.client_name,
+              scope: scope
+            )}
          end) do
-      {:ok, blob} ->
+      {:ok, %Firmowid.Ash.Blobs.Blob{} = blob} ->
         handle_avatar_upload(name, blob.id, socket)
 
-      {:error, _err} ->
+      {:error, err} ->
+        Logger.warning("Avatar upload failed for #{name}: #{inspect(err)}")
         LiveToast.send_toast(:error, "Wystąpił błąd podczas aktualizacji zdjęcia.")
         {:noreply, socket}
     end

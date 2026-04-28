@@ -12,6 +12,7 @@ defmodule Firmowid.Ash.Blobs do
   alias Ash.Error.Changes.InvalidChanges
   alias Ash.Error.Invalid
   alias Firmowid.Ash.Blobs.Blob
+  alias Firmowid.Ash.Blobs.UploadFingerprint
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Scope
@@ -70,6 +71,55 @@ defmodule Firmowid.Ash.Blobs do
 
       _ ->
         {:error, :not_found}
+    end
+  end
+
+  @doc """
+  Finds an existing blob by checksum within the given scope.
+
+  Used by avatar uploads to safely reuse an existing organization-scoped blob
+  instead of failing on duplicate checksum uploads.
+  """
+  @spec find_blob_by_checksum(String.t(), keyword()) :: {:ok, Blob.t()} | {:error, :not_found}
+  def find_blob_by_checksum(checksum, opts) do
+    blob_query =
+      Blob
+      |> Ash.Query.filter(blob_checksum == ^checksum)
+      |> Ash.Query.for_read(:read, %{}, opts)
+
+    case Ash.read_one(blob_query, opts) do
+      {:ok, %Blob{} = blob} -> {:ok, blob}
+      _ -> {:error, :not_found}
+    end
+  end
+
+  @doc """
+  Creates an avatar blob or reuses an existing one with the same checksum.
+
+  This makes avatar uploads idempotent within an organization, including when
+  the same image was uploaded previously and is no longer the current avatar.
+  """
+  @spec create_or_reuse_avatar_blob(String.t(), String.t(), String.t(), keyword()) ::
+          {:ok, Blob.t()} | {:error, term()}
+  def create_or_reuse_avatar_blob(path, content_type, original_filename, opts) do
+    case create_blob(path, content_type, original_filename, opts) do
+      {:ok, blob} ->
+        {:ok, blob}
+
+      {:error, %Invalid{} = error} ->
+        if blob_checksum_conflict?(error) do
+          checksum = UploadFingerprint.normalized_checksum(path, content_type)
+
+          case find_blob_by_checksum(checksum, opts) do
+            {:ok, blob} -> {:ok, blob}
+            {:error, :not_found} -> {:error, error}
+          end
+        else
+          {:error, error}
+        end
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 

@@ -6,12 +6,12 @@
 copy_ignored = "wt step copy-ignored"
 
 # Phase 2: Everything else in parallel
-[[pre-start]]
-remove_build = """
-if [[ "$OSTYPE" != "darwin"* ]]; then
-  rm -rf _build
-fi
-"""
+# [[pre-start]]
+# remove_build = """
+# if [[ "$OSTYPE" != "darwin"* ]]; then
+#   rm -rf _build
+# fi
+# """
 
 [[pre-start]]
 deps = "mix deps.get"
