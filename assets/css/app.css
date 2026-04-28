@@ -1,7 +1,42 @@
 @import url("https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Nothing+You+Could+Do&display=swap");
 
 @import "tailwindcss";
+
+.landing-nav__panel,
+.landing-nav__text,
+.landing-nav__trial {
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease;
+}
+
+.landing-nav--dark .landing-nav__panel {
+  background: rgb(245 241 234 / 0.1);
+  border-color: rgb(245 241 234 / 0.28);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.18);
+}
+
+.landing-nav--dark .landing-nav__text {
+  color: #f5f1ea;
+}
+
+.landing-nav--dark .landing-nav__text:hover {
+  color: #d2936d;
+}
+
+.landing-nav--dark .landing-nav__trial {
+  border-color: rgb(245 241 234 / 0.75);
+  background: rgb(245 241 234 / 0.05);
+}
+
+.landing-nav--dark .landing-nav__trial:hover {
+  border-color: #d2936d;
+  background: rgb(210 147 109 / 0.12);
+}
 
 /* ── Source paths for template scanning ─────────────────────────────── */
 @source "../../lib/firmowid_web.ex";
@@ -216,6 +251,53 @@ html {
   --color-light-grey-bg: var(--color-lightGreyBg);
   --navbar-height: 64px;
   --navbar-height-management: 122px;
+  --digit-dur: 500ms;
+  --digit-distance: 8px;
+  --digit-stagger: 70ms;
+  --digit-blur: 2px;
+  --digit-ease: cubic-bezier(0.34, 1.45, 0.64, 1);
+  --digit-dir-x: 0;
+  --digit-dir-y: 1;
+}
+
+@keyframes t-digit-pop-in {
+  0% {
+    transform: translate(
+      calc(var(--digit-distance) * var(--digit-dir-x)),
+      calc(var(--digit-distance) * var(--digit-dir-y))
+    );
+    opacity: 0;
+    filter: blur(var(--digit-blur));
+  }
+
+  100% {
+    transform: translate(0, 0);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.t-digit-group {
+  display: inline-flex;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.t-digit {
+  display: inline-block;
+  will-change: transform, opacity, filter;
+}
+
+.t-digit-group.is-animating .t-digit {
+  animation: t-digit-pop-in var(--digit-dur) var(--digit-ease) both;
+  animation-delay: calc(var(--digit-stagger) * var(--digit-stagger-index, 0));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-digit-group .t-digit {
+    animation: none !important;
+  }
 }
 
 /* ── Air Datepicker ─────────────────────────────────────────────────── */

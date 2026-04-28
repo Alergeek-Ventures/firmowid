@@ -8,21 +8,21 @@ defmodule FirmowidWeb.Landing.Components.LegalPage do
 
   use FirmowidWeb, :html
 
-  import FirmowidWeb.Landing.Components.CookieConsent, only: [cookie_consent_banner: 1]
-  import FirmowidWeb.Landing.Components.Landing, only: [cta_footer: 1, landing_navbar: 1]
+  import FirmowidWeb.Landing.Components.Primitives, only: [cta_footer: 1, landing_navbar: 1]
   import Phoenix.Component, except: [link: 1]
 
   @doc """
-  Renders legal-page shell with shared navbar, footer and cookie banner.
+  Renders legal-page shell with the shared navbar and footer.
 
   The function accepts arbitrary legal content via `:inner_block`.
   """
+  @spec legal_page(map()) :: Phoenix.LiveView.Rendered.t()
   slot :inner_block, required: true
   attr :class, :string, default: "prose prose-neutral mx-auto max-w-3xl px-6 pt-32 pb-20 lg:px-10"
 
   def legal_page(assigns) do
     ~H"""
-    <div class="bg-grey-100 flex min-h-screen flex-col">
+    <div id="top" class="bg-grey-100 flex min-h-screen flex-col">
       <.landing_navbar />
 
       <article class={@class}>
@@ -30,7 +30,6 @@ defmodule FirmowidWeb.Landing.Components.LegalPage do
       </article>
 
       <.cta_footer />
-      <.cookie_consent_banner />
     </div>
     """
   end

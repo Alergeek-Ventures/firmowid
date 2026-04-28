@@ -11,12 +11,12 @@ import Popover from "./popover";
 import { ConfirmLeave } from "./confirm_leave";
 import { CollapsibleNavbar } from "./collapsible_navbar";
 import { CopyToClipboard } from "./copy_to_clipboard";
-import { SolutionItemImageSwitcher } from "./solution_item_image_switcher";
-import { NavbarScroll } from "./navbar_scroll";
 import { PaperPlane } from "./paper_plane";
 import { FloatingUIError } from "./floating_error";
 import { CookieConsent } from "./cookie_consent";
 import { DownloadPdf } from "./download_pdf";
+import { LandingNavbarTheme } from "./landing_navbar_theme";
+import { NumberPopIn } from "./number_pop_in";
 
 export const Hooks = {
   Confetti,
@@ -33,10 +33,10 @@ export const Hooks = {
   CollapsibleNavbar,
   ConfirmLeave,
   CopyToClipboard,
-  SolutionItemImageSwitcher,
-  NavbarScroll,
   PaperPlane,
   FloatingUIError,
   CookieConsent,
-  DownloadPdf
+  DownloadPdf,
+  LandingNavbarTheme,
+  NumberPopIn
 };

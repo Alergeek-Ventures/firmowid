@@ -1,0 +1,160 @@
+defmodule FirmowidWeb.Landing.Components.Hero do
+  @moduledoc """
+  Hero and top-metrics components for the redesigned landing page.
+  """
+
+  use FirmowidWeb, :html
+
+  import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
+
+  alias Phoenix.LiveView.Rendered
+
+  @benefits [
+    "30 dni za darmo",
+    "Synchronizacja z KSeF",
+    "Bezpieczne przechowywanie danych",
+    "Integracja z bankami"
+  ]
+
+  @desktop_metrics [
+    %{label: "Rozwijany przez Alergeek Ventures przez", value: "2 lata", width: "257px"},
+    %{label: "Zgodność z KSeF:", value: "100%", width: "112px"},
+    %{label: "Średni czas onboardingu:", value: "15 min", width: "160px"}
+  ]
+
+  @mobile_metrics [
+    %{label: "Zgodność z KSeF", value: "100%"},
+    %{label: "Średni czas onboardingu", value: "15 min"},
+    %{label: "Rozwijany przez Alergeek Ventures", value: "2 lata"}
+  ]
+
+  @doc """
+  Renders the landing-page hero.
+  """
+  @spec hero_section(map()) :: Rendered.t()
+  def hero_section(assigns) do
+    assigns = assign(assigns, :benefits, @benefits)
+
+    ~H"""
+    <section class="px-4 py-8 sm:px-6 lg:min-h-[calc(100vh-96px)] lg:px-10 lg:py-0">
+      <div class="mx-auto max-w-[1416px]">
+        <div class="flex items-end justify-between gap-8 px-0 lg:h-[730px] lg:px-[140px] lg:py-20">
+          <div class="relative w-full lg:max-w-[501px]">
+            <h1 class="relative text-[53px] leading-[0.98] font-bold tracking-[-0.04em] text-[#0f0f0f] sm:max-w-[620px] sm:text-[64px] lg:text-[72px] lg:leading-[1.02]">
+              Fakturowanie z KSeF <br />
+              <span class="relative inline-block">
+                <img
+                  src={~p"/images/hero_price_scribble.svg"}
+                  alt=""
+                  aria-hidden="true"
+                  class="pointer-events-none absolute bottom-[0.06em] left-[-0.04em] h-[0.24em] w-[4.1em] max-w-none sm:bottom-[0.05em] lg:bottom-[0.07em]"
+                />
+                <span class="relative">od 10 zł</span>
+              </span>
+              <br /> miesięcznie
+            </h1>
+
+            <p class="mt-6 max-w-[500px] text-[18px] leading-[1.4] text-[#4e4e4e] lg:mt-8 lg:text-[20px]">
+              Wszystko w jednym miejscu: faktury, bank, godziny pracy i płace. Bez stresu,
+              bez chaosu.
+            </p>
+
+            <div class="mt-8 flex flex-col gap-4 sm:max-w-[344px] lg:mt-8 lg:max-w-none lg:flex-row lg:flex-wrap lg:gap-[25px]">
+              <.hero_action_button navigate={~p"/zarejestruj"} variant={:filled}>
+                Zacznij za darmo
+              </.hero_action_button>
+              <.hero_action_button navigate={~p"/zaloguj"} variant={:outline}>
+                Zaloguj się
+              </.hero_action_button>
+            </div>
+
+            <ul class="mt-8 grid gap-3 text-[14px] leading-[19.5px] text-[#707070] sm:grid-cols-2 sm:gap-x-4 sm:gap-y-2 lg:mt-10 lg:flex lg:flex-wrap lg:gap-x-4 lg:gap-y-2 lg:text-[13px]">
+              <li :for={benefit <- @benefits} class="flex items-center gap-1.5 whitespace-nowrap">
+                <span class="text-[18px] leading-none font-bold text-[#699166]">✓</span>
+                <span>{benefit}</span>
+              </li>
+            </ul>
+          </div>
+          <div class="relative size-full">
+            <img
+              src={~p"/images/landing_hero_screenshot.png"}
+              alt="zrzut ekranu z Firmowida - kilka transakcji i transakcji do dopasowania"
+              class="absolute bottom-4 left-16 z-10 hidden h-full w-auto rotate-2 rounded border-4 border-[#dea785] object-cover shadow hover:z-30 motion-safe:transition-all motion-safe:duration-150 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] motion-safe:hover:-translate-y-3 motion-safe:hover:scale-[1.2] motion-safe:hover:rotate-0 motion-safe:hover:shadow-[0_24px_55px_rgba(87,54,35,0.22)] motion-safe:hover:saturate-[1.04] lg:block"
+            />
+            <img
+              src={~p"/images/landing_hero_screenshot_invoice.png"}
+              alt="zrzut ekranu z Firmowida - wygenerowana faktura z podglądem PDF"
+              class="absolute -bottom-2 -left-2 z-20 hidden h-full w-auto rounded border-4 border-[#dea785] object-cover shadow hover:scale-[1.2] motion-safe:transition-all motion-safe:duration-150 lg:block"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+    """
+  end
+
+  @doc """
+  Renders the top metrics section below the hero.
+  """
+  @spec top_metrics_section(map()) :: Rendered.t()
+  def top_metrics_section(assigns) do
+    assigns =
+      assigns
+      |> assign(:desktop_metrics, @desktop_metrics)
+      |> assign(:mobile_metrics, @mobile_metrics)
+
+    ~H"""
+    <section class="border-y border-[#e6d7ce] bg-[#dea785] px-4 py-8 sm:px-6 lg:flex lg:h-24 lg:items-center lg:bg-[#fafafa] lg:px-10 lg:py-0">
+      <div class="mx-auto w-full max-w-[1416px] lg:px-[140px]">
+        <div class="grid gap-8 text-center lg:hidden">
+          <div :for={metric <- @mobile_metrics} class="flex flex-col items-center gap-2">
+            <p class="text-[14px]/4 font-normal text-[#303030]">{metric.label}</p>
+            <p class="text-[44px] leading-[1.08] font-bold text-[#0f0f0f]">{metric.value}</p>
+          </div>
+        </div>
+
+        <div class="hidden h-8 w-full flex-wrap items-baseline justify-between gap-y-4 text-left lg:flex">
+          <div
+            :for={metric <- @desktop_metrics}
+            class="flex items-baseline gap-2"
+          >
+            <p
+              class="text-right text-[13px]/4 font-normal text-[#4e4e4e]"
+              style={"width: #{metric.width}"}
+            >
+              {metric.label}
+            </p>
+            <p class="text-[22px] leading-[1.24] font-bold text-[#0f0f0f]">
+              {metric.value}
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+    """
+  end
+
+  @doc false
+  attr :navigate, :string, required: true
+  attr :variant, :atom, values: [:filled, :outline], required: true
+  slot :inner_block, required: true
+
+  defp hero_action_button(assigns) do
+    ~H"""
+    <.link
+      kind="unstyled"
+      navigate={@navigate}
+      class={[
+        "relative inline-flex min-h-[56px] items-center justify-center overflow-hidden rounded-[4px] px-8 py-4 text-base font-medium transition-transform duration-150 hover:-translate-y-0.5",
+        @variant == :filled &&
+          "bg-[#0f0f0f] text-white shadow-[0_2px_0_rgba(15,15,15,0.18)] before:absolute before:inset-0 before:bg-[url('/images/button_hover.svg')] before:bg-size-[100%_100%] before:bg-no-repeat before:opacity-70 before:content-['']",
+        @variant == :outline &&
+          "text-[#1a1a1a] before:absolute before:inset-0 before:bg-[url('/images/button_login.svg')] before:bg-size-[100%_100%] before:bg-no-repeat before:content-[''] hover:bg-black/3"
+      ]}
+    >
+      <span class="relative z-10">{render_slot(@inner_block)}</span>
+    </.link>
+    """
+  end
+end
