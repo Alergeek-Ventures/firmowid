@@ -28,7 +28,7 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
       %{conn: log_in_user(conn, user), user: user}
     end
 
-    test "redirects to bank accounts with success toast for pending requisition", %{
+    test "redirects to company settings with success toast for pending requisition", %{
       conn: conn,
       user: user
     } do
@@ -55,11 +55,11 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
 
       assert requisition.status == :pending
 
-      # When user returns from GoCardless, they get redirected to bank accounts
+      # When user returns from GoCardless, they get redirected to company settings
       {:error,
        {:live_redirect,
         %{
-          to: "/ustawienia/konta-bankowe",
+          to: "/ustawienia/firma",
           flash: %{"success" => "Konto bankowe zostało poprawnie połączone."}
         }}} =
         live(conn, "/ustawienia/bank/dodaj?ref=#{requisition_id}")

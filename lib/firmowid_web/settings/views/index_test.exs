@@ -33,7 +33,7 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
 
     conn = log_in_user(conn, admin)
 
-    assert {:ok, _view, html} = live(conn, ~p"/ustawienia/konta-bankowe")
+    assert {:ok, _view, html} = live(conn, ~p"/ustawienia/firma")
 
     assert iban_position(html, "PL44 1140 2004 0000 3002 0135 5361") <
              iban_position(html, "PL44 1140 2004 0000 3002 0135 5362")
@@ -44,7 +44,7 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     assert {:ok, _updated} =
              Finances.update_bank_account(account_1, %{name: "ZZZ renamed"}, scope: scope)
 
-    assert {:ok, _view, html_after_rename} = live(conn, ~p"/ustawienia/konta-bankowe")
+    assert {:ok, _view, html_after_rename} = live(conn, ~p"/ustawienia/firma")
 
     assert iban_position(html_after_rename, "PL44 1140 2004 0000 3002 0135 5361") <
              iban_position(html_after_rename, "PL44 1140 2004 0000 3002 0135 5362")
@@ -55,7 +55,7 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     assert {:ok, _updated} =
              Finances.update_bank_account(account_3, %{name: "AAA renamed"}, scope: scope)
 
-    assert {:ok, _view, html_after_second_rename} = live(conn, ~p"/ustawienia/konta-bankowe")
+    assert {:ok, _view, html_after_second_rename} = live(conn, ~p"/ustawienia/firma")
 
     assert iban_position(html_after_second_rename, "PL44 1140 2004 0000 3002 0135 5361") <
              iban_position(html_after_second_rename, "PL44 1140 2004 0000 3002 0135 5362")
@@ -78,7 +78,7 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
 
     conn = log_in_user(conn, admin)
 
-    assert {:ok, _view, html} = live(conn, ~p"/ustawienia/konta-bankowe")
+    assert {:ok, _view, html} = live(conn, ~p"/ustawienia/firma")
 
     assert html =~ "Trwa konfiguracja połączenia bankowego."
     assert html =~ "Konto pojawi się na liście"

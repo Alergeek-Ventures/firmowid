@@ -4,17 +4,18 @@ defmodule FirmowidWeb.Settings.Views.Index do
   @moduledoc """
   Settings page LiveView.
 
-  TODO: This view handles ~15 distinct responsibilities (company settings,
-  user profile, email/password change, account deletion, bank accounts,
-  KSeF auth, inbound email, marketing consent, Google linking, avatars,
-  requisition PubSub). Split into focused LiveComponents per section.
+   TODO: This view handles ~15 distinct responsibilities (company settings,
+   user profile, email/password change, account deletion, bank accounts,
+   KSeF auth, inbound email, Google linking, avatars,
+   requisition PubSub). Split into focused LiveComponents per section.
   """
   use FirmowidWeb, :live_view
 
-  import FirmowidWeb.DesignSystem.Components.Button
-  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Link
-  import FirmowidWeb.Settings.Components.EditButton
+  import FirmowidWeb.Settings.Components.AccountTab
+  import FirmowidWeb.Settings.Components.CompanyTab
+  import FirmowidWeb.Settings.Components.InvoicesTab
+  import FirmowidWeb.Settings.Components.ProfileTab
+  import FirmowidWeb.Settings.Components.SettingsPage
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Error.Forbidden
@@ -27,8 +28,17 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Ash.Finances.Requisition
   alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Core.Endpoint
-  alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias FirmowidWeb.Settings.Navigation
   alias Phoenix.Socket.Broadcast
+
+  @role_params %{
+    "employee" => :employee,
+    "invoicing" => :invoicing,
+    "accountant" => :accountant,
+    "admin" => :admin
+  }
+
+  @invite_load [issued_by: [:email], consumed_by: [:email]]
 
   def form_basic_info_form(organization, scope) do
     organization
@@ -59,6 +69,16 @@ defmodule FirmowidWeb.Settings.Views.Index do
     |> to_form()
   end
 
+  def form_password_form(current_user) do
+    current_user
+    |> AshPhoenix.Form.for_update(:change_password,
+      domain: Core,
+      as: "user",
+      actor: current_user
+    )
+    |> to_form()
+  end
+
   def mount(_params, _session, socket) do
     current_user = socket.assigns.current_user
     current_org = socket.assigns.current_org
@@ -68,6 +88,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
     # Use Ash native code interface for listing bank accounts
     bank_accounts = if(admin?, do: list_bank_accounts(scope), else: [])
     pending_requisitions = if(admin?, do: list_pending_requisitions(scope), else: [])
+    organization_users = if(admin?, do: list_organization_users(scope), else: [])
+    organization_invites = if(admin?, do: list_organization_invites(scope), else: [])
+
+    bank_institutions =
+      if(admin?, do: list_bank_institutions(current_user, bank_accounts), else: %{})
 
     # Subscribe to requisition updates for real-time bank account sync
     if connected?(socket) and admin? do
@@ -94,15 +119,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     socket = assign(socket, :user_form, form_user_form(current_user))
 
-    password_form =
-      current_user
-      |> AshPhoenix.Form.for_update(:change_password,
-        domain: Core,
-        as: "user",
-        actor: current_user
-      )
-      |> to_form()
-
     # Load avatars using Ash.load!
     org_with_avatar =
       Ash.load!(current_org, [avatar_blob: [:url]], scope: scope)
@@ -120,16 +136,26 @@ defmodule FirmowidWeb.Settings.Views.Index do
      socket
      |> assign(:editing_basic_info, false)
      |> assign(:editing_correspondence, false)
-     |> assign(:editing_personal_info, false)
+     |> assign(:editing_account_name, false)
+     |> assign(:editing_profile_employment, false)
+     |> assign(:editing_profile_finance, false)
+     |> assign(:editing_profile_contact, false)
+     |> assign(:editing_credentials, false)
+     |> assign(:show_active_invites, false)
+     |> assign(:settings_tab, :account)
      |> assign(:trigger_submit, false)
      |> assign(:delete_account_form, to_form(%{"current_password" => ""}, as: "user"))
      |> assign(:current_password, nil)
-     |> assign(:password_form, password_form)
+     |> assign(:password_form, form_password_form(current_user))
      |> assign(:bank_accounts, bank_accounts)
+     |> assign(:bank_institutions, bank_institutions)
      |> assign(:pending_requisitions, pending_requisitions)
+     |> assign(:organization_users, organization_users)
+     |> assign(:organization_invites, organization_invites)
      |> assign(:bank_account_statuses, derive_statuses(bank_accounts))
      |> assign(:google_connected?, google_connected?)
      |> assign(:uploaded_files, [])
+     |> assign(:no_padding, true)
      |> allow_upload(:user_avatar,
        accept: ~w(.jpg .jpeg .png),
        max_entries: 1,
@@ -140,8 +166,18 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:main_class, "bg-white")}
   end
 
-  def handle_params(_params, _uri, socket) do
-    {:noreply, socket}
+  def handle_params(params, _uri, socket) when map_size(params) == 0 do
+    {:noreply, push_patch(socket, to: Navigation.default_path())}
+  end
+
+  def handle_params(%{"section" => section}, _uri, socket) do
+    case Navigation.resolve_section(section) do
+      {:ok, %{id: tab} = resolved} ->
+        handle_resolved_section(tab, resolved, socket)
+
+      :error ->
+        {:noreply, push_patch(socket, to: Navigation.default_path())}
+    end
   end
 
   def handle_avatar_upload(:user_avatar, blob_id, socket) do
@@ -206,6 +242,14 @@ defmodule FirmowidWeb.Settings.Views.Index do
     end
   end
 
+  defp list_organization_users(scope) do
+    Core.list_users!(%{status: :active}, load: [avatar_blob: [:url]], scope: scope)
+  end
+
+  defp list_organization_invites(scope) do
+    Core.list_invites!(load: @invite_load, scope: scope)
+  end
+
   def handle_event("validate_upload", _params, socket) do
     {:noreply, socket}
   end
@@ -238,29 +282,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
     {:noreply, socket}
   end
 
-  def handle_event("update_marketing_consent", params, socket) do
-    consent =
-      case params do
-        %{"value" => _} ->
-          true
-
-        _ ->
-          false
-      end
-
-    case Core.update_profile(
-           socket.assigns.current_user,
-           %{marketing_consent: consent},
-           scope: socket.assigns.ash_scope
-         ) do
-      {:ok, user} ->
-        {:noreply, assign(socket, :current_user, user)}
-
-      {:error, _error} ->
-        {:noreply, socket}
-    end
-  end
-
   def handle_event("delete_bank_account", %{"account_id" => account_id}, socket) do
     scope = socket.assigns.ash_scope
     bank_account = Finances.get_bank_account!(account_id, scope: scope)
@@ -274,6 +295,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
         {:noreply,
          socket
          |> assign(:bank_accounts, bank_accounts)
+         |> assign(
+           :bank_institutions,
+           list_bank_institutions(socket.assigns.current_user, bank_accounts)
+         )
          |> assign(:pending_requisitions, list_pending_requisitions(scope))
          |> assign(:bank_account_statuses, derive_statuses(bank_accounts))}
 
@@ -295,6 +320,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
         {:noreply,
          socket
          |> assign(:bank_accounts, bank_accounts)
+         |> assign(
+           :bank_institutions,
+           list_bank_institutions(socket.assigns.current_user, bank_accounts)
+         )
          |> assign(:pending_requisitions, list_pending_requisitions(scope))
          |> assign(:bank_account_statuses, derive_statuses(bank_accounts))}
 
@@ -352,18 +381,83 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("save", %{"user" => user_params}, socket) do
+    user_params = merge_user_name_params(user_params)
     form = socket.assigns.user_form
 
     case AshPhoenix.Form.submit(form, params: user_params) do
       {:ok, updated_user} ->
         {:noreply,
          socket
-         |> assign(:editing_personal_info, false)
+         |> close_user_editing()
          |> assign(:current_user, updated_user)
          |> assign(:user_form, form_user_form(updated_user))}
 
       {:error, form} ->
         {:noreply, assign(socket, :user_form, form)}
+    end
+  end
+
+  def handle_event("update_user_role", %{"user_id" => user_id, "role" => role_param}, socket) do
+    current_user = socket.assigns.current_user
+
+    if current_user.role != :admin do
+      raise Forbidden, message: "Tylko administrator może zmieniać role użytkowników."
+    end
+
+    with {:ok, role} <- parse_role(role_param),
+         {:ok, user} <- find_loaded_organization_user(socket.assigns.organization_users, user_id),
+         :ok <- prevent_self_role_change(current_user, user),
+         {:ok, _updated_user} <-
+           Core.update_role(user, %{role: role}, scope: socket.assigns.ash_scope) do
+      LiveToast.send_toast(:info, "Rola użytkownika została zmieniona.")
+
+      {:noreply, assign(socket, :organization_users, list_organization_users(socket.assigns.ash_scope))}
+    else
+      {:error, :self_role_change} ->
+        LiveToast.send_toast(:error, "Nie możesz zmienić własnej roli w tym miejscu.")
+        {:noreply, socket}
+
+      {:error, :unknown_role} ->
+        LiveToast.send_toast(:error, "Nieznana rola użytkownika.")
+        {:noreply, socket}
+
+      {:error, :unknown_user} ->
+        LiveToast.send_toast(:error, "Nie znaleziono użytkownika w organizacji.")
+        {:noreply, socket}
+
+      {:error, error} ->
+        Logger.error("Failed to update user role: #{inspect(error)}")
+        LiveToast.send_toast(:error, "Nie udało się zmienić roli użytkownika.")
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("archive_organization_user", %{"user_id" => user_id}, socket) do
+    current_user = socket.assigns.current_user
+
+    if current_user.role != :admin do
+      raise Forbidden, message: "Tylko administrator może archiwizować użytkowników."
+    end
+
+    with {:ok, user} <- find_loaded_organization_user(socket.assigns.organization_users, user_id),
+         :ok <- prevent_self_user_management(current_user, user),
+         {:ok, _archived_user} <- Core.archive_user(user, %{}, scope: socket.assigns.ash_scope) do
+      LiveToast.send_toast(:info, "Użytkownik został zarchiwizowany.")
+
+      {:noreply, assign(socket, :organization_users, list_organization_users(socket.assigns.ash_scope))}
+    else
+      {:error, :self_user_management} ->
+        LiveToast.send_toast(:error, "Nie możesz zarchiwizować własnego konta z tego miejsca.")
+        {:noreply, socket}
+
+      {:error, :unknown_user} ->
+        LiveToast.send_toast(:error, "Nie znaleziono użytkownika w organizacji.")
+        {:noreply, socket}
+
+      {:error, error} ->
+        Logger.error("Failed to archive organization user: #{inspect(error)}")
+        LiveToast.send_toast(:error, "Nie udało się zarchiwizować użytkownika.")
+        {:noreply, socket}
     end
   end
 
@@ -380,8 +474,16 @@ defmodule FirmowidWeb.Settings.Views.Index do
         {:noreply,
          socket
          |> assign(:bank_accounts, accounts)
+         |> assign(
+           :bank_institutions,
+           list_bank_institutions(socket.assigns.current_user, accounts)
+         )
          |> assign(:pending_requisitions, list_pending_requisitions(scope))
-         |> assign(:bank_account_statuses, derive_statuses(accounts))}
+         |> assign(:bank_account_statuses, derive_statuses(accounts))
+         |> push_event("js-exec", %{
+           to: "#manual_bank_account_modal_company",
+           attr: "data-cancel"
+         })}
 
       {:error, _} ->
         LiveToast.send_toast(:error, "Wystąpił błąd podczas zmiany nazwy konta.")
@@ -446,6 +548,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
         {:noreply,
          socket
          |> assign(:bank_accounts, accounts)
+         |> assign(
+           :bank_institutions,
+           list_bank_institutions(socket.assigns.current_user, accounts)
+         )
          |> assign(:pending_requisitions, list_pending_requisitions(scope))
          |> assign(:bank_account_statuses, derive_statuses(accounts))}
 
@@ -476,6 +582,13 @@ defmodule FirmowidWeb.Settings.Views.Index do
         LiveToast.send_toast(:error, "Wystąpił błąd podczas generowania nowego adresu.")
         {:noreply, socket}
     end
+  end
+
+  def handle_event("copy_inbound_email", %{"email" => email}, socket) do
+    {:noreply,
+     socket
+     |> push_event("copy-to-clipboard", %{text: email})
+     |> LiveToast.put_toast(:success, "Skopiowano adres odbiorczy")}
   end
 
   def handle_event("add_allowed_email", %{"email" => email}, socket) do
@@ -572,8 +685,63 @@ defmodule FirmowidWeb.Settings.Views.Index do
     {:noreply, assign(socket, :editing_correspondence, !socket.assigns.editing_correspondence)}
   end
 
-  def handle_event("toggle_editing_personal_info", _params, socket) do
-    {:noreply, assign(socket, :editing_personal_info, !socket.assigns.editing_personal_info)}
+  def handle_event("toggle_editing_account_name", _params, socket) do
+    {:noreply, assign(socket, :editing_account_name, !socket.assigns.editing_account_name)}
+  end
+
+  def handle_event("toggle_editing_profile_employment", _params, socket) do
+    {:noreply, toggle_profile_editing(socket, :editing_profile_employment)}
+  end
+
+  def handle_event("toggle_editing_profile_finance", _params, socket) do
+    {:noreply, toggle_profile_editing(socket, :editing_profile_finance)}
+  end
+
+  def handle_event("toggle_editing_profile_contact", _params, socket) do
+    {:noreply, toggle_profile_editing(socket, :editing_profile_contact)}
+  end
+
+  def handle_event("toggle_active_invites", _params, socket) do
+    {:noreply, assign(socket, :show_active_invites, !socket.assigns.show_active_invites)}
+  end
+
+  def handle_event("create_organization_invite", _params, socket) do
+    current_user = socket.assigns.current_user
+    scope = socket.assigns.ash_scope
+
+    if current_user.role != :admin do
+      raise Forbidden, message: "Tylko administrator może tworzyć zaproszenia."
+    end
+
+    invite = Core.create_invite!(%{issued_by_id: current_user.id}, scope: scope)
+    LiveToast.send_toast(:success, "Kod zaproszenia został wygenerowany i skopiowany do schowka.")
+
+    {:noreply,
+     socket
+     |> assign(:organization_invites, list_organization_invites(scope))
+     |> assign(:show_active_invites, true)
+     |> push_event("copy-to-clipboard", %{text: invite.invite_code})}
+  end
+
+  def handle_event("copy_organization_invite", %{"code" => invite_code}, socket) do
+    LiveToast.send_toast(:info, "Kod zaproszenia został skopiowany do schowka.")
+
+    {:noreply, push_event(socket, "copy-to-clipboard", %{text: invite_code})}
+  end
+
+  def handle_event("toggle_editing_credentials", _params, socket) do
+    editing_credentials? = !socket.assigns.editing_credentials
+
+    socket = assign(socket, :editing_credentials, editing_credentials?)
+
+    if editing_credentials? do
+      {:noreply, socket}
+    else
+      {:noreply,
+       socket
+       |> assign(:current_password, nil)
+       |> assign(:password_form, form_password_form(socket.assigns.current_user))}
+    end
   end
 
   def handle_event("validate_password", params, socket) do
@@ -593,7 +761,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         {:noreply,
          socket
          |> put_flash(:info, "Hasło zostało zmienione pomyślnie.")
-         |> push_navigate(to: ~p"/ustawienia/bezpieczenstwo")}
+         |> push_navigate(to: password_return_path(socket.assigns.settings_tab))}
 
       {:error, form} ->
         {:noreply, assign(socket, password_form: form)}
@@ -644,6 +812,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
     socket =
       socket
       |> assign(:bank_accounts, bank_accounts)
+      |> assign(
+        :bank_institutions,
+        list_bank_institutions(socket.assigns.current_user, bank_accounts)
+      )
       |> assign(:pending_requisitions, list_pending_requisitions(scope))
       |> assign(:bank_account_statuses, derive_statuses(bank_accounts))
 
@@ -668,6 +840,58 @@ defmodule FirmowidWeb.Settings.Views.Index do
     {:noreply, socket}
   end
 
+  def render(assigns) do
+    ~H"""
+    <.settings_page
+      current_user={@current_user}
+      current_tab={@settings_tab}
+      user_avatar_upload={@uploads.user_avatar}
+    >
+      <%= case @settings_tab do %>
+        <% :organization -> %>
+          <.company_tab
+            current_user={@current_user}
+            current_org={@current_org}
+            company_form={@company_form}
+            correspondence_form={@correspondence_form}
+            editing_basic_info={@editing_basic_info}
+            editing_correspondence={@editing_correspondence}
+            ksef_credential={@ksef_credential}
+            bank_accounts={@bank_accounts}
+            bank_institutions={@bank_institutions}
+            pending_requisitions={@pending_requisitions}
+            organization_users={@organization_users}
+            organization_invites={@organization_invites}
+            show_active_invites={@show_active_invites}
+            bank_account_statuses={@bank_account_statuses}
+            uploads={@uploads}
+          />
+        <% :invoices -> %>
+          <.invoices_tab current_org={@current_org} current_user={@current_user} />
+        <% :account -> %>
+          <.account_tab
+            current_user={@current_user}
+            current_org={@current_org}
+            delete_account_form={@delete_account_form}
+            editing_account_name={@editing_account_name}
+            editing_credentials={@editing_credentials}
+            google_connected?={@google_connected?}
+            password_form={@password_form}
+            current_password={@current_password}
+          />
+        <% :profile -> %>
+          <.profile_tab
+            current_user={@current_user}
+            user_form={@user_form}
+            editing_profile_employment={@editing_profile_employment}
+            editing_profile_finance={@editing_profile_finance}
+            editing_profile_contact={@editing_profile_contact}
+          />
+      <% end %>
+    </.settings_page>
+    """
+  end
+
   defp derive_statuses(bank_accounts) do
     Map.new(bank_accounts, fn account ->
       requisition_status = account.requisition && account.requisition.status
@@ -677,6 +901,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
       {account.id, status}
     end)
   end
+
+  defp derive_bank_account_status(%{institution_name: "Manual"}, _requisition_status), do: :manual
 
   defp derive_bank_account_status(account, _requisition_status) when is_nil(account.gocardless_id), do: :disconnected
 
@@ -702,16 +928,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
     end
   end
 
-  defp grouped_bank_accounts(bank_accounts) do
-    bank_accounts
-    |> Enum.group_by(& &1.institution_name)
-    |> Enum.sort_by(fn {_institution, accounts} ->
-      accounts
-      |> List.first()
-      |> bank_account_sort_key()
-    end)
-  end
-
   defp bank_account_sort_key(account) do
     {normalize_iban(account.iban), account.id}
   end
@@ -731,14 +947,104 @@ defmodule FirmowidWeb.Settings.Views.Index do
     end
   end
 
-  defp format_last_sync_info(nil), do: "jeszcze nie zsynchronizowano"
+  defp list_bank_institutions(_current_user, []), do: %{}
 
-  defp format_last_sync_info(%DateTime{} = datetime), do: TimeFormatter.format_relative_time(datetime)
+  defp list_bank_institutions(current_user, bank_accounts) do
+    institution_ids =
+      bank_accounts
+      |> Enum.map(& &1.institution_id)
+      |> Enum.reject(&is_nil/1)
+      |> MapSet.new()
 
-  defp format_last_sync_info(_), do: "jeszcze nie zsynchronizowano"
+    if MapSet.size(institution_ids) == 0 do
+      %{}
+    else
+      case Finances.list_institutions("pl", actor: current_user) do
+        {:ok, institutions} ->
+          institutions
+          |> Enum.filter(&MapSet.member?(institution_ids, &1.id))
+          |> Map.new(&{&1.id, &1})
 
-  defp status_label(:connected), do: "Połączone"
-  defp status_label(:broken), do: "Wymaga ponownego połączenia"
-  defp status_label(:disconnected), do: "Rozłączone"
-  defp status_label(:processing), do: "Połączone, oczekuje na synchronizację"
+        {:error, error} ->
+          Logger.warning("Failed to load bank institution metadata: #{inspect(error)}")
+          %{}
+      end
+    end
+  end
+
+  defp password_return_path(_settings_tab), do: ~p"/ustawienia/konto"
+
+  defp handle_resolved_section(tab, %{canonical?: canonical?, canonical_path: canonical_path}, socket) do
+    cond do
+      not Navigation.visible?(tab, socket.assigns.current_user) ->
+        {:noreply, push_patch(socket, to: Navigation.default_path())}
+
+      not canonical? ->
+        {:noreply, push_patch(socket, to: canonical_path)}
+
+      true ->
+        {:noreply, assign(socket, :settings_tab, tab)}
+    end
+  end
+
+  defp parse_role(role_param) do
+    case Map.fetch(@role_params, role_param) do
+      {:ok, role} -> {:ok, role}
+      :error -> {:error, :unknown_role}
+    end
+  end
+
+  defp find_loaded_organization_user(users, user_id) do
+    case Enum.find(users, &(to_string(&1.id) == user_id)) do
+      nil -> {:error, :unknown_user}
+      user -> {:ok, user}
+    end
+  end
+
+  defp prevent_self_user_management(current_user, user) do
+    if current_user.id == user.id do
+      {:error, :self_user_management}
+    else
+      :ok
+    end
+  end
+
+  defp prevent_self_role_change(current_user, user) do
+    case prevent_self_user_management(current_user, user) do
+      :ok -> :ok
+      {:error, :self_user_management} -> {:error, :self_role_change}
+    end
+  end
+
+  defp close_user_editing(socket) do
+    socket
+    |> assign(:editing_account_name, false)
+    |> assign(:editing_profile_employment, false)
+    |> assign(:editing_profile_finance, false)
+    |> assign(:editing_profile_contact, false)
+  end
+
+  defp toggle_profile_editing(socket, section_assign) do
+    next_value = !Map.fetch!(socket.assigns, section_assign)
+
+    socket
+    |> assign(:editing_profile_employment, false)
+    |> assign(:editing_profile_finance, false)
+    |> assign(:editing_profile_contact, false)
+    |> assign(section_assign, next_value)
+  end
+
+  defp merge_user_name_params(%{"first_name" => first_name, "last_name" => last_name} = params) do
+    full_name =
+      [String.trim(first_name || ""), String.trim(last_name || "")]
+      |> Enum.reject(&(&1 == ""))
+      |> Enum.join(" ")
+
+    params
+    |> Map.put("name", full_name)
+    |> Map.delete("first_name")
+    |> Map.delete("last_name")
+  end
+
+  defp merge_user_name_params(params), do: params
 end

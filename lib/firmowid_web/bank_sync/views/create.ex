@@ -136,7 +136,7 @@ defmodule FirmowidWeb.BankSync.Views.Create do
            "Konto bankowe zostało poprawnie połączone.",
            title: "Gotowe"
          )
-         |> push_navigate(to: ~p"/ustawienia/konta-bankowe")}
+         |> push_navigate(to: ~p"/ustawienia/firma")}
       else
         details = params["details"]
 

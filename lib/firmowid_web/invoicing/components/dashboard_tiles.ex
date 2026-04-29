@@ -584,7 +584,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
       </p>
 
       <.link
-        navigate={~p"/ustawienia/organizacja"}
+        navigate={~p"/ustawienia/firma"}
         kind="button"
         variant="secondary"
         size="small"

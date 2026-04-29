@@ -205,16 +205,13 @@ defmodule Firmowid.Ash.Core.User do
       accept [
         :name,
         :employment_date,
-        :marketing_consent,
         :avatar_blob_id,
         :phone,
         :slack_url,
         :slack_id,
         :bank_account_number,
         :birthday,
-        :employment_contract_type,
         :position,
-        :student_status_until,
         :correspondence_street,
         :correspondence_city,
         :correspondence_code,
@@ -433,12 +430,6 @@ defmodule Firmowid.Ash.Core.User do
     attribute :bank_account_number, :string, public?: true
     attribute :birthday, :date, public?: true
     attribute :position, :string, public?: true
-    attribute :student_status_until, :date, public?: true
-    attribute :marketing_consent, :boolean, public?: true, default: false, allow_nil?: false
-
-    attribute :employment_contract_type, :atom,
-      public?: true,
-      constraints: [one_of: [:umowa_o_prace, :umowa_zlecenie, :umowa_o_dzielo, :b2b]]
 
     attribute :correspondence_street, :string, public?: true
     attribute :correspondence_city, :string, public?: true

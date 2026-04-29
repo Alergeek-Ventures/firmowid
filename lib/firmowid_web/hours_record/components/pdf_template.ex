@@ -16,9 +16,9 @@ defmodule FirmowidWeb.HoursRecord.Components.PdfTemplate do
       <div class="flex justify-between">
         <div>
           <%= if @avatar_data_uri do %>
-            <img src={@avatar_data_uri} class="h-[200px] w-[200px]" />
+            <img src={@avatar_data_uri} class="size-[200px]" />
           <% else %>
-            <img :if={@avatar_url} src={@avatar_url} class="h-[200px] w-[200px]" />
+            <img :if={@avatar_url} src={@avatar_url} class="size-[200px]" />
           <% end %>
         </div>
         <div class="mt-10 mr-9 flex flex-col items-end">

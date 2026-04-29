@@ -17,7 +17,7 @@ defmodule FirmowidWeb.Settings.Components.EditButton do
     <.dynamic_tag
       tag_name={@tag_name}
       class={[
-        "active:bg-lightGreyBg active:text-darkGrey/60 hover:border-darkGrey phx-click-loading:bg-lightGreyBg phx-click-loading:cursor-default phx-click-loading:opacity-75 phx-submit-loading:opacity-75 text-darkGrey flex size-8 cursor-pointer items-center justify-center rounded border border-none bg-white p-0 leading-6 transition-all duration-200 disabled:pointer-events-none disabled:opacity-40",
+        "hover:bg-grey-100 hover:text-grey-900 phx-click-loading:bg-grey-100 phx-click-loading:cursor-default phx-click-loading:opacity-75 phx-submit-loading:opacity-75 text-grey-700 flex size-10 cursor-pointer items-center justify-center rounded-lg border border-transparent bg-white p-0 leading-6 transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 disabled:pointer-events-none disabled:opacity-40",
         @class
       ]}
       {@rest}

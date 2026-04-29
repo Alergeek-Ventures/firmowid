@@ -107,7 +107,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
             size="small"
             class="inline-flex items-center gap-1.5"
             target="_blank"
-            redirect={~p"/ustawienia/konta-bankowe"}
+            redirect={~p"/ustawienia/firma"}
           >
             <Lucideicons.plus class="inline-flex size-4" /> Podepnij konto
           </.link>

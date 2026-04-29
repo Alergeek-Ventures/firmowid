@@ -564,7 +564,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
 
       <div
         id={"arrow_#{@target}"}
-        class="absolute -bottom-[5px] left-1/2 size-2.5 -translate-x-1/2 rotate-45 bg-[#A22A2A]"
+        class="absolute bottom-[-5px] left-1/2 size-2.5 -translate-x-1/2 rotate-45 bg-[#A22A2A]"
       >
       </div>
     </div>

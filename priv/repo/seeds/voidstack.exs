@@ -44,7 +44,6 @@ defmodule Firmowid.Seeds.Voidstack do
       role: :admin,
       name: "Dragan Krypt",
       position: "CEO & Chief Chaos Officer",
-      employment_contract_type: :b2b,
       phone: "+421 902 555 666"
     })
   end

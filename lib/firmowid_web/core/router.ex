@@ -183,11 +183,8 @@ defmodule FirmowidWeb.Core.Router do
 
       live "/czasosledz/ewidencja", HoursRecord.Views.Index, :index
 
-      live "/ustawienia", Settings.Views.Index, :account
-      live "/ustawienia/konto", Settings.Views.Index, :account
-      live "/ustawienia/bezpieczenstwo", Settings.Views.Index, :security
-      live "/ustawienia/organizacja", Settings.Views.Index, :organization
-      live "/ustawienia/konta-bankowe", Settings.Views.Index, :bank_accounts
+      live "/ustawienia", Settings.Views.Index, :index
+      live "/ustawienia/:section", Settings.Views.Index, :index
     end
   end
 

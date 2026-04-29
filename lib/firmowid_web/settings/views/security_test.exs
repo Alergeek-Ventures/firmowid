@@ -5,11 +5,18 @@ defmodule FirmowidWeb.Settings.Views.SecurityTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
-  test "security settings page renders without missing assigns", %{conn: conn} do
+  test "account settings renders password editor inline", %{conn: conn} do
     admin = admin_fixture()
     conn = log_in_user(conn, admin)
 
-    assert {:ok, _view, html} = live(conn, ~p"/ustawienia/bezpieczenstwo")
-    assert html =~ "Zmiana hasła"
+    assert {:ok, view, html} = live(conn, ~p"/ustawienia/konto")
+    assert html =~ "Dane dostępowe"
+
+    html =
+      view
+      |> element("button[aria-label='Edytuj dane dostępowe']")
+      |> render_click()
+
+    assert html =~ "Nowe hasło"
   end
 end

@@ -35,8 +35,6 @@ defmodule Firmowid.Ash.Core.Organization do
         :name,
         :nip,
         :address,
-        :phone_number,
-        :organization_type,
         :is_vat_payer
       ]
 
@@ -55,8 +53,6 @@ defmodule Firmowid.Ash.Core.Organization do
         :name,
         :nip,
         :address,
-        :phone_number,
-        :organization_type,
         :correspondence_name,
         :correspondence_address,
         :is_vat_payer,
@@ -73,8 +69,6 @@ defmodule Firmowid.Ash.Core.Organization do
         :nip,
         :address,
         :name,
-        :phone_number,
-        :organization_type,
         :is_vat_payer
       ]
 
@@ -167,8 +161,6 @@ defmodule Firmowid.Ash.Core.Organization do
     attribute :name, :string, public?: true, allow_nil?: false
     attribute :nip, :string, public?: true, allow_nil?: false
     attribute :address, :string, public?: true
-    attribute :phone_number, :string, public?: true
-    attribute :organization_type, :string, public?: true
     attribute :correspondence_name, :string, public?: true
     attribute :correspondence_address, :string, public?: true
     attribute :is_vat_payer, :boolean, public?: true, default: true

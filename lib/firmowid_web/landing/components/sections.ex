@@ -354,7 +354,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           </div>
 
           <div class="relative mt-16 hidden grid-cols-3 items-start lg:grid">
-            <div class="pointer-events-none absolute top-7 right-[16.666667%] left-[16.666667%] h-[3px] bg-[repeating-linear-gradient(to_right,#d3d3d3_0_8px,transparent_8px_16px)]" />
+            <div class="pointer-events-none absolute inset-x-[16.666667%] top-7 h-[3px] bg-[repeating-linear-gradient(to_right,#d3d3d3_0_8px,transparent_8px_16px)]" />
             <article
               :for={step <- @steps}
               class="relative z-10 mx-auto flex w-full max-w-[352px] flex-col items-center text-center"

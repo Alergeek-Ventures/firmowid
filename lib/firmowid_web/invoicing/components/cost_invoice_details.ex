@@ -302,7 +302,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
             data-pdf-url={@preview_url}
             phx-update="ignore"
             phx-hook="PDFViewer"
-            class="h-fit max-h-[80vh] w-full overflow-x-hidden overflow-y-hidden bg-white"
+            class="h-fit max-h-[80vh] w-full overflow-hidden bg-white"
           >
             <div class="flex w-full items-center justify-center p-8 font-bold">
               Ładowanie dokumentu...
