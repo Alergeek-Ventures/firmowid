@@ -121,6 +121,7 @@ config :firmowid,
   ecto_repos: [Firmowid.Repo],
   generators: [timestamp_type: :utc_datetime],
   ash_domains: [
+    Firmowid.Ash.Assistant,
     Firmowid.Ash.Analysis,
     Firmowid.Ash.Blobs,
     Firmowid.Ash.Core,
@@ -141,6 +142,13 @@ config :fun_with_flags, :cache_bust_notifications,
 config :fun_with_flags, :persistence,
   adapter: FunWithFlags.Store.Persistent.Ecto,
   repo: Firmowid.Repo
+
+config :jido_ai,
+  model_aliases: %{
+    fast: "openai:gpt-5-nano",
+    capable: "openai:gpt-5-mini",
+    reasoning: "openai:gpt-5"
+  }
 
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",

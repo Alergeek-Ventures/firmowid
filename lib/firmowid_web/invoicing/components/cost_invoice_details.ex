@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.Ash.Assistant.InvoiceMatching
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
@@ -263,7 +264,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
               />
             <% @chat -> %>
               <.live_component
-                module={FirmowidWeb.Invoicing.CostInvoices.Components.Assistant}
+                module={FirmowidWeb.Invoicing.Components.InvoiceAssistant}
                 id="invoice-assistant"
                 invoice={@invoice}
                 current_user={@current_user}
@@ -412,7 +413,8 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
     {:noreply, assign(socket, chat: true)}
   end
 
-  def handle_event("close_chat", _params, socket) do
+  def handle_event("close_chat", params, socket) do
+    maybe_close_assistant_session(params, socket)
     {:noreply, assign(socket, chat: false)}
   end
 
@@ -444,4 +446,12 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
         {:noreply, put_flash(socket, :error, "Nie udało się zapisać komentarza")}
     end
   end
+
+  defp maybe_close_assistant_session(%{"session_id" => session_id}, socket)
+       when is_binary(session_id) and session_id != "" do
+    _ = InvoiceMatching.close_session(session_id, socket.assigns.scope)
+    :ok
+  end
+
+  defp maybe_close_assistant_session(_params, _socket), do: :ok
 end

@@ -238,12 +238,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   end
 
   def handle_info(event, socket) do
-    # Forward events to the assistant component
-    send_update(FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant,
-      id: "invoice-assistant",
-      event: event
-    )
-
+    _ = event
     {:noreply, socket}
   end
 

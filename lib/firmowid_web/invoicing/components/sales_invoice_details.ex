@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.Ash.Assistant.InvoiceMatching
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef
@@ -425,7 +426,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
               />
             <% @chat -> %>
               <.live_component
-                module={FirmowidWeb.Invoicing.SalesInvoices.Components.Assistant}
+                module={FirmowidWeb.Invoicing.Components.InvoiceAssistant}
                 id="invoice-assistant"
                 invoice={@invoice}
                 current_user={@current_user}
@@ -449,7 +450,8 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
     {:noreply, assign(socket, chat: true)}
   end
 
-  def handle_event("close_chat", _params, socket) do
+  def handle_event("close_chat", params, socket) do
+    maybe_close_assistant_session(params, socket)
     {:noreply, assign(socket, chat: false)}
   end
 
@@ -486,6 +488,14 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   defp ksef_error_message({:invalid_for_ksef, _}), do: "Faktura zawiera błędy uniemożliwiające wysyłkę do KSeF"
 
   defp ksef_error_message(_), do: "Nie udało się wysłać faktury do KSeF"
+
+  defp maybe_close_assistant_session(%{"session_id" => session_id}, socket)
+       when is_binary(session_id) and session_id != "" do
+    _ = InvoiceMatching.close_session(session_id, socket.assigns.scope)
+    :ok
+  end
+
+  defp maybe_close_assistant_session(_params, _socket), do: :ok
 
   defp show_timeline_button?(submission_info), do: SubmissionInfo.attempted?(submission_info)
 end

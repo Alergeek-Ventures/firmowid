@@ -39,11 +39,16 @@ defmodule Firmowid.Application do
         Supervisor.child_spec({Cachex, name: :currencies}, id: :currencies_cache),
         Supervisor.child_spec({Cachex, name: :institutions}, id: :institutions_cache),
         Supervisor.child_spec({Cachex, name: :ksef}, id: :ksef_cache),
+        {Finch,
+         name: Firmowid.Ash.Assistant.Finch,
+         pools: %{
+           default: [protocols: [:http1], size: 1, count: 16]
+         }},
         Firmowid.Vault,
         {Oban, Application.fetch_env!(:firmowid, Oban)},
-        Firmowid.Ash.Invoicing.Matching.Assistant.MessagesStorage,
         Firmowid.Ash.Currencies.Converter,
-        {AshAuthentication.Supervisor, otp_app: :firmowid}
+        {AshAuthentication.Supervisor, otp_app: :firmowid},
+        {Jido, name: Jido, otp_app: :firmowid}
       ] ++
         maybe_gocardless_token_manager() ++
         maybe_posthog_supervisor() ++

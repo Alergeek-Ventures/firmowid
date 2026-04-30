@@ -99,6 +99,9 @@ config :firmowid,
   # use DATABASE_URL if set
   google_client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
 
+config :req_llm,
+  openai_api_key: System.get_env("OPENAI_API_KEY") || Application.get_env(:firmowid, :openai_api_key)
+
 if System.get_env("DATABASE_URL") do
   database_url = System.get_env("DATABASE_URL")
 

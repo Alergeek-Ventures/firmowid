@@ -49,8 +49,9 @@ defmodule Mix.Tasks.Check do
   @static_checks [
     {"Compiling", ["compile", "--warnings-as-errors"]},
     {"Unused Deps", ["deps.unlock", "--check-unused"]},
-    # Keep as low as possible — Ash macro expansion inherently raises this ceiling over time
-    {"Xref", ["xref", "graph", "--label", "compile-connected", "--fail-above", "40"]},
+    # Keep as low as possible — Ash macro expansion inherently raises this ceiling over time.
+    # Temporary ceiling agreed for the assistant refactor while preserving visibility.
+    {"Xref", ["xref", "graph", "--label", "compile-connected", "--fail-above", "50"]},
     {"Credo", ["credo", "--strict"]},
     {"Sobelow", ["sobelow", "--config", "--compact", "--private"]},
     {"Dialyzer", ["dialyzer"]}

@@ -43,7 +43,6 @@ defmodule Firmowid.Ash.Invoicing do
       define :get_cost_invoice, action: :by_id, args: [:id]
       define :get_cost_invoice_by_checksum, action: :by_checksum, args: [:blob_checksum]
       define :get_cost_invoice_by_blob_id, action: :read, get_by: [:blob_id]
-      define :search_cost_invoices, action: :search
       define :toggle_cost_invoice_skip, action: :toggle_skip
 
       define :update_cost_invoice_internal_note,
@@ -97,7 +96,6 @@ defmodule Firmowid.Ash.Invoicing do
         args: [:invoice_number, :issue_date, {:optional, :omit_invoice_id}]
 
       define :list_sales_invoice_series, action: :list_series
-      define :search_sales_invoices, action: :search
 
       define :connect_sales_invoice_transactions,
         action: :connect_transactions,
@@ -137,7 +135,7 @@ defmodule Firmowid.Ash.Invoicing do
   @doc """
   Searches across cost and sales invoices, merging results by relevance.
 
-  Calls the `:search` read actions on CostInvoice and SalesInvoice
+  Calls the primary `:read` actions on CostInvoice and SalesInvoice
   independently, then merges, sorts (by BM25 score when a query is present,
   by issue_date otherwise), and limits to 50 results.
 
@@ -165,14 +163,14 @@ defmodule Firmowid.Ash.Invoicing do
 
     cost_results =
       if include_cost do
-        search_cost_invoices!(search_args(params, :cost), opts)
+        list_cost_invoices!(search_args(params, :cost), opts)
       else
         []
       end
 
     sales_results =
       if include_sales do
-        search_sales_invoices!(
+        list_sales_invoices!(
           search_args(params, :sales),
           Keyword.put(opts, :load, [:gross_value, :sales_invoice_items])
         )
@@ -188,31 +186,47 @@ defmodule Firmowid.Ash.Invoicing do
   end
 
   defp search_args(params, :cost) do
-    Map.take(params, [
+    params
+    |> Map.take([
       :query,
       :currency,
       :amount_gt,
       :amount_lt,
       :date_from,
       :date_to,
+      :limit,
+      :reconciliation,
       :only_unmatched
     ])
+    |> map_only_unmatched()
   end
 
   defp search_args(params, :sales) do
-    Map.take(params, [
+    params
+    |> Map.take([
       :query,
       :currency,
       :amount_gt,
       :amount_lt,
       :date_from,
       :date_to,
+      :limit,
+      :reconciliation,
       :only_unmatched,
       :buyer_type,
       :is_cash,
       :is_reverse_charge
     ])
+    |> map_only_unmatched()
   end
+
+  defp map_only_unmatched(%{only_unmatched: true} = params) do
+    params
+    |> Map.delete(:only_unmatched)
+    |> Map.put_new(:reconciliation, :pending)
+  end
+
+  defp map_only_unmatched(params), do: Map.delete(params, :only_unmatched)
 
   defp sort_search_results(results, query) when query in [nil, ""] do
     Enum.sort_by(results, & &1.issue_date, {:desc, Date})

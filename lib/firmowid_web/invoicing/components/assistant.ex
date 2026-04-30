@@ -10,6 +10,23 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
   attr :input, :string, default: ""
   attr :myself, :any, default: nil
 
+  attr :error, :string, default: nil
+
+  def error_banner(assigns) do
+    ~H"""
+    <div
+      :if={assistant_error_message(@error)}
+      class="mx-16 mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
+      role="alert"
+    >
+      <div class="flex items-start gap-3">
+        <.icon name="hero-exclamation-triangle-mini" class="mt-0.5 size-5 shrink-0" />
+        <p>{assistant_error_message(@error)}</p>
+      </div>
+    </div>
+    """
+  end
+
   def input(assigns) do
     ~H"""
     <form
@@ -41,6 +58,42 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
         <% end %>
       </FirmowidWeb.DesignSystem.Components.Button.button>
     </form>
+    """
+  end
+
+  def message(%{"role" => "user", "content" => text}, _myself, opts) do
+    current_user = Keyword.fetch!(opts, :current_user)
+    assigns = %{text: text, current_user: current_user}
+
+    ~H"""
+    <div class="flex flex-row justify-end gap-3">
+      <p class="bg-grey-200 max-w-2xl rounded px-4 py-2">{@text}</p>
+      <div class="size-10">
+        <.avatar class="size-10">
+          <.avatar_image
+            :if={@current_user.avatar_blob && @current_user.avatar_blob.url}
+            src={@current_user.avatar_blob && @current_user.avatar_blob.url}
+            alt="Avatar"
+          />
+          <.avatar_fallback>
+            {to_string(@current_user.email) |> String.slice(0, 1) |> String.upcase()}
+          </.avatar_fallback>
+        </.avatar>
+      </div>
+    </div>
+    """
+  end
+
+  def message(%{"role" => "assistant", "content" => text}, _myself, _opts) do
+    assigns = %{text: text}
+
+    ~H"""
+    <div class="flex flex-row gap-3">
+      <img src="/images/logo_firmowid.png" class="mt-2 size-10" />
+      <div class="prose prose-p:p-2 prose-p:text-black prose-p:whitespace-pre-wrap max-w-2xl">
+        {render_content(@text)}
+      </div>
+    </div>
     """
   end
 
@@ -266,6 +319,13 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
       """
     end
   end
+
+  def assistant_error_message(nil), do: nil
+
+  def assistant_error_message(error) when is_binary(error),
+    do: if(error == "", do: nil, else: "Wystąpił nieoczekiwany błąd. Spróbuj ponownie.")
+
+  def assistant_error_message(error), do: error |> inspect() |> assistant_error_message()
 
   defp render_content(nil), do: "failed to render content"
 

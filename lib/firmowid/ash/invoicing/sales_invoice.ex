@@ -43,7 +43,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     domain: Firmowid.Ash.Invoicing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshEvents.Events],
+    extensions: [AshEvents.Events, AshJido],
     notifiers: [Ash.Notifier.PubSub],
     primary_read_warning?: false
 
@@ -72,6 +72,26 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   events do
     event_log Firmowid.Ash.Events.Event
     only_actions [:connect_transactions, :disconnect_transactions]
+  end
+
+  jido do
+    action :read,
+      name: "list_sales_invoices",
+      description: "Listuje faktury sprzedażowe z bezpiecznymi filtrami Ash.",
+      category: "ash.invoicing.read",
+      tags: ["assistant", "sales_invoice"]
+
+    action :by_id,
+      name: "get_sales_invoice_by_id",
+      description: "Pobiera fakturę sprzedażową po identyfikatorze.",
+      category: "ash.invoicing.read",
+      tags: ["assistant", "sales_invoice"]
+
+    action :connect_transactions,
+      name: "connect_sales_invoice_transactions",
+      description: "Łączy fakturę sprzedażową z podanymi transakcjami.",
+      category: "ash.invoicing.write",
+      tags: ["assistant", "sales_invoice", "matching"]
   end
 
   code_interface do
@@ -115,6 +135,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
       argument :date_from, :date
       argument :date_to, :date
+      argument :query, :string
+      argument :currency, :string
+      argument :amount_gt, :decimal
+      argument :amount_lt, :decimal
 
       argument :date_field, :atom do
         constraints one_of: [:issue_date, :sale_date, :due_date, :any]
@@ -134,6 +158,9 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
 
       argument :ids, {:array, :uuid_v7}
+      argument :buyer_type, :atom, constraints: [one_of: [:company, :individual]]
+      argument :is_cash, :boolean
+      argument :is_reverse_charge, :boolean
 
       argument :limit, :integer do
         constraints min: 1
@@ -142,9 +169,25 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       # Date filtering — conditional on date_field
       prepare {Firmowid.Ash.Invoicing.Preparations.FilterByDateField, []}
 
+      prepare {Firmowid.Ash.Preparations.ParadeDBSearch,
+               columns:
+                 ~w(buyer_full_name buyer_given_name buyer_surname invoice_number buyer_email buyer_description buyer_id item_names)}
+
       # Kind filter
       prepare build(filter: expr(ksef_invoice_kind == ^arg(:kind))) do
         where present(:kind)
+      end
+
+      prepare build(filter: expr(currency == ^arg(:currency))) do
+        where present(:currency)
+      end
+
+      prepare build(filter: expr(gross_value >= ^arg(:amount_gt))) do
+        where present(:amount_gt)
+      end
+
+      prepare build(filter: expr(gross_value <= ^arg(:amount_lt))) do
+        where present(:amount_lt)
       end
 
       # :pending — no linked transactions, not skipped
@@ -189,68 +232,6 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         where present(:ids)
       end
 
-      prepare build(sort: [issue_date: :desc])
-
-      prepare build(limit: arg(:limit)) do
-        where present(:limit)
-      end
-    end
-
-    read :by_id do
-      get_by [:id]
-    end
-
-    read :search do
-      description "Full-text BM25 search for sales invoices with optional filters."
-
-      argument :query, :string
-      argument :currency, :string
-      argument :amount_gt, :decimal
-      argument :amount_lt, :decimal
-      argument :date_from, :date
-      argument :date_to, :date
-      argument :only_unmatched, :boolean
-      argument :buyer_type, :atom, constraints: [one_of: [:company, :individual]]
-      argument :is_cash, :boolean
-      argument :is_reverse_charge, :boolean
-
-      # ParadeDB BM25 search
-      prepare {Firmowid.Ash.Preparations.ParadeDBSearch,
-               columns:
-                 ~w(buyer_full_name buyer_given_name buyer_surname invoice_number buyer_email buyer_description buyer_id item_names)}
-
-      # Conditional filters
-      prepare build(filter: expr(currency == ^arg(:currency))) do
-        where present(:currency)
-      end
-
-      prepare build(filter: expr(gross_value >= ^arg(:amount_gt))) do
-        where present(:amount_gt)
-      end
-
-      prepare build(filter: expr(gross_value <= ^arg(:amount_lt))) do
-        where present(:amount_lt)
-      end
-
-      prepare build(filter: expr(issue_date >= ^arg(:date_from))) do
-        where present(:date_from)
-      end
-
-      prepare build(filter: expr(issue_date <= ^arg(:date_to))) do
-        where present(:date_to)
-      end
-
-      # Unmatched: no linked transactions and not skipped
-      prepare build(
-                filter:
-                  expr(
-                    not exists(transactions, true) and
-                      skip_invoicing == false
-                  )
-              ) do
-        where argument_equals(:only_unmatched, true)
-      end
-
       prepare build(filter: expr(buyer_type == ^arg(:buyer_type))) do
         where present(:buyer_type)
       end
@@ -263,8 +244,17 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         where argument_equals(:is_reverse_charge, true)
       end
 
-      prepare build(sort: [issue_date: :desc])
-      prepare build(limit: 50)
+      prepare build(sort: [issue_date: :desc]) do
+        where absent(:query)
+      end
+
+      prepare build(limit: arg(:limit)) do
+        where present(:limit)
+      end
+    end
+
+    read :by_id do
+      get_by [:id]
     end
 
     action :by_share_token, :struct do

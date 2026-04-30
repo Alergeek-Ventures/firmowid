@@ -35,7 +35,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     domain: Firmowid.Ash.Invoicing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshOban, AshEvents.Events],
+    extensions: [AshOban, AshEvents.Events, AshJido],
     notifiers: [Ash.Notifier.PubSub],
     primary_read_warning?: false
 
@@ -87,6 +87,26 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     only_actions [:connect_transactions, :disconnect_transactions]
   end
 
+  jido do
+    action :read,
+      name: "list_cost_invoices",
+      description: "Listuje faktury kosztowe z bezpiecznymi filtrami Ash.",
+      category: "ash.invoicing.read",
+      tags: ["assistant", "cost_invoice"]
+
+    action :by_id,
+      name: "get_cost_invoice_by_id",
+      description: "Pobiera fakturę kosztową po identyfikatorze.",
+      category: "ash.invoicing.read",
+      tags: ["assistant", "cost_invoice"]
+
+    action :connect_transactions,
+      name: "connect_cost_invoice_transactions",
+      description: "Łączy fakturę kosztową z podanymi transakcjami.",
+      category: "ash.invoicing.write",
+      tags: ["assistant", "cost_invoice", "matching"]
+  end
+
   code_interface do
     define :by_id, args: [:id], action: :by_id
     define :get, args: [:id], action: :by_id
@@ -112,6 +132,10 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
       argument :date_from, :date
       argument :date_to, :date
+      argument :query, :string
+      argument :currency, :string
+      argument :amount_gt, :decimal
+      argument :amount_lt, :decimal
 
       argument :date_field, :atom do
         constraints one_of: [:issue_date, :sale_date, :due_date, :any]
@@ -126,6 +150,10 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       argument :inserted_from, :utc_datetime
       argument :inserted_to, :utc_datetime
 
+      argument :limit, :integer do
+        constraints min: 1
+      end
+
       argument :source, :atom do
         constraints one_of: [:manual_import, :ksef]
       end
@@ -137,6 +165,21 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       # Date filtering — conditional on date_field
       prepare {Firmowid.Ash.Invoicing.Preparations.FilterByDateField, []}
       prepare {Firmowid.Ash.Invoicing.Preparations.FilterBySourceAndDigestState, []}
+
+      prepare {Firmowid.Ash.Preparations.ParadeDBSearch,
+               columns: ~w(seller seller_display_name description invoice_identifier)}
+
+      prepare build(filter: expr(currency == ^arg(:currency))) do
+        where present(:currency)
+      end
+
+      prepare build(filter: expr(total_amount >= ^arg(:amount_gt))) do
+        where present(:amount_gt)
+      end
+
+      prepare build(filter: expr(total_amount <= ^arg(:amount_lt))) do
+        where present(:amount_lt)
+      end
 
       # :pending — no linked transactions, not skipped
       prepare build(
@@ -178,7 +221,13 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
         where present(:inserted_to)
       end
 
-      prepare build(sort: [issue_date: :desc])
+      prepare build(sort: [issue_date: :desc]) do
+        where absent(:query)
+      end
+
+      prepare build(limit: arg(:limit)) do
+        where present(:limit)
+      end
 
       argument :corrections, :atom do
         constraints one_of: [:include, :exclude]
@@ -212,57 +261,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       argument :blob_checksum, :string, allow_nil?: false
 
       filter expr(exists(blob, blob_checksum == ^arg(:blob_checksum)))
-    end
-
-    read :search do
-      description "Full-text BM25 search for cost invoices with optional filters."
-
-      argument :query, :string
-      argument :currency, :string
-      argument :amount_gt, :decimal
-      argument :amount_lt, :decimal
-      argument :date_from, :date
-      argument :date_to, :date
-      argument :only_unmatched, :boolean
-
-      # ParadeDB BM25 search
-      prepare {Firmowid.Ash.Preparations.ParadeDBSearch,
-               columns: ~w(seller seller_display_name description invoice_identifier)}
-
-      # Conditional filters
-      prepare build(filter: expr(currency == ^arg(:currency))) do
-        where present(:currency)
-      end
-
-      prepare build(filter: expr(total_amount >= ^arg(:amount_gt))) do
-        where present(:amount_gt)
-      end
-
-      prepare build(filter: expr(total_amount <= ^arg(:amount_lt))) do
-        where present(:amount_lt)
-      end
-
-      prepare build(filter: expr(issue_date >= ^arg(:date_from))) do
-        where present(:date_from)
-      end
-
-      prepare build(filter: expr(issue_date <= ^arg(:date_to))) do
-        where present(:date_to)
-      end
-
-      # Unmatched: no linked transactions and not skipped
-      prepare build(
-                filter:
-                  expr(
-                    not exists(transactions, true) and
-                      skip_invoicing == false
-                  )
-              ) do
-        where argument_equals(:only_unmatched, true)
-      end
-
-      prepare build(sort: [issue_date: :desc])
-      prepare build(limit: 50)
     end
 
     read :read_global do
