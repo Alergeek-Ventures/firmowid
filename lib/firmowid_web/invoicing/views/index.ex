@@ -1206,7 +1206,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     args = Map.merge(%{date_from: from, date_to: to}, extra_args)
 
     Finances.list_transactions!(args,
-      load: [:cost_invoices, :sales_invoices],
+      load: [:cost_invoices, :sales_invoices, :bank_account],
       query: [sort: [booking_date: :desc]],
       scope: scope
     )

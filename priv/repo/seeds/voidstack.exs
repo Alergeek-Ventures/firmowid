@@ -117,7 +117,7 @@ defmodule Firmowid.Seeds.Voidstack do
       Helpers.seed_bank_account!(
         %{
           iban: "PL98109024020000000142345678",
-          institution_id: "SANTANDER_PL",
+          institution_id: "SANTANDER_PL_CORP_WBKPPLPP",
           institution_name: "Santander Bank Polska",
           owner_name: "VoidStack Labs sp. z o.o.",
           currency: "PLN",

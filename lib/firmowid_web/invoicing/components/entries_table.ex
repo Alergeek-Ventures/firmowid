@@ -3,6 +3,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   use FirmowidWeb, :html
 
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.InvoicingBadges
   import FirmowidWeb.DesignSystem.Components.Link
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
@@ -33,6 +34,18 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     status: "Status",
     amount: "Kwota"
   ]
+
+  @bank_badges_by_institution_id %{
+    "SANDBOXFINANCE_SFIN0000" => "Default",
+    "BANK_MILLENNIUM_BIGBPLPW" => "Millenium",
+    "ING_PL_INGBPLPW" => "ING",
+    "MBANK_CORPORATE_BREXPLPW" => "mBank",
+    "MBANK_RETAIL_BREXPLPW" => "mBank",
+    "NEST_BANK_CORPORATE_NESBPLPW" => "Nest Bank",
+    "NEST_BANK_NESBPLPW" => "Nest Bank",
+    "SANTANDER_PL_CORP_WBKPPLPP" => "Santander",
+    "SANTANDER_PL_WBKPPLPP" => "Santander"
+  }
 
   # Using map pattern match to avoid Dialyzer false positive about
   # LiveView internal assign fields (:__given__, etc.)
@@ -517,6 +530,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     assigns =
       assigns
       |> assign(:party, party)
+      |> assign(:bank_badge, bank_badge_for_transaction(transaction))
+      |> assign(:invoice_source_badge, nil)
       |> assign(:description, transaction.remittance_information_unstructured)
       |> assign(
         :navigate,
@@ -529,17 +544,33 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         end
       )
 
-    ~H"<.render_cell party={@party} navigate={@navigate} description={@description} column={@column} />"
+    ~H"<.render_cell
+  party={@party}
+  navigate={@navigate}
+  description={@description}
+  bank_badge={@bank_badge}
+  invoice_source_badge={@invoice_source_badge}
+  column={@column}
+/>"
   end
 
   defp render_cell(%{invoicing_entry: %CostInvoice{} = invoice, column: "party"} = assigns) do
     assigns =
       assigns
       |> assign(:party, invoice.effective_seller_display_name)
+      |> assign(:bank_badge, nil)
+      |> assign(:invoice_source_badge, invoice_source_badge_for_invoice(invoice))
       |> assign(:description, invoice.description)
       |> assign(:navigate, ~p"/kosztowe/#{invoice.id}")
 
-    ~H"<.render_cell party={@party} navigate={@navigate} description={@description} column={@column} />"
+    ~H"<.render_cell
+  party={@party}
+  navigate={@navigate}
+  description={@description}
+  bank_badge={@bank_badge}
+  invoice_source_badge={@invoice_source_badge}
+  column={@column}
+/>"
   end
 
   defp render_cell(%{invoicing_entry: %SalesInvoice{} = invoice, column: "party"} = assigns) do
@@ -548,6 +579,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     assigns =
       assigns
       |> assign(:party, party)
+      |> assign(:bank_badge, nil)
+      |> assign(:invoice_source_badge, invoice_source_badge_for_invoice(invoice))
       |> assign(
         :description,
         case {
@@ -562,26 +595,41 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       )
       |> assign(:navigate, ~p"/sprzedazowe/#{invoice.id}")
 
-    ~H"<.render_cell party={@party} navigate={@navigate} description={@description} column={@column} />"
+    ~H"<.render_cell
+  party={@party}
+  navigate={@navigate}
+  description={@description}
+  bank_badge={@bank_badge}
+  invoice_source_badge={@invoice_source_badge}
+  column={@column}
+/>"
   end
 
-  defp render_cell(%{navigate: nil, party: _, description: _, column: "party"} = assigns) do
+  defp render_cell(
+         %{navigate: nil, party: _, description: _, bank_badge: _, invoice_source_badge: _, column: "party"} = assigns
+       ) do
     ~H"""
-    <.render_cell party={@party} description={@description} column={@column} />
+    <.party_cell_content
+      party={@party}
+      description={@description}
+      bank_badge={@bank_badge}
+      invoice_source_badge={@invoice_source_badge}
+    />
     """
   end
 
-  defp render_cell(%{navigate: _, party: _, description: _, column: "party"} = assigns) do
+  defp render_cell(
+         %{navigate: _, party: _, description: _, bank_badge: _, invoice_source_badge: _, column: "party"} = assigns
+       ) do
     ~H"""
     <.link kind="unstyled" navigate={@navigate} class="hover:underline">
-      <.render_cell party={@party} description={@description} column={@column} />
+      <.party_cell_content
+        party={@party}
+        description={@description}
+        bank_badge={@bank_badge}
+        invoice_source_badge={@invoice_source_badge}
+      />
     </.link>
-    """
-  end
-
-  defp render_cell(%{party: _, description: _, column: "party"} = assigns) do
-    ~H"""
-    {@party} <span class="text-darkGrey text-sm opacity-50">{@description}</span>
     """
   end
 
@@ -625,6 +673,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   attr :columns, :list, required: true
 
   defp group_row(assigns) do
+    assigns = assign(assigns, :bank_badge, bank_badge_for_group(assigns.group))
+
     ~H"""
     <tr
       id={"#{@group.id}-row"}
@@ -655,16 +705,21 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           column != "amount" && "w-full truncate"
         ]}>
           <%= if column == "party" do %>
-            <span>{@group.party}</span>
-            <span
-              id={"chevron-#{@group.id}"}
-              class="mx-1 inline-flex size-4 items-center justify-center transition-transform"
-            >
-              <.icon name="hero-chevron-right" class="size-3" />
-            </span>
-            <span class="text-darkGrey text-sm opacity-50">
-              {pluralize_transaction_count(@group.count)}
-            </span>
+            <div class="flex min-w-0 items-center gap-2.5">
+              <.bank_badge bank={@bank_badge} size="mini" class="shrink-0" />
+              <span class="min-w-0 truncate">
+                <span>{@group.party}</span>
+                <span
+                  id={"chevron-#{@group.id}"}
+                  class="mx-1 inline-flex size-4 items-center justify-center transition-transform"
+                >
+                  <.icon name="hero-chevron-right" class="size-3" />
+                </span>
+                <span class="text-darkGrey text-sm opacity-50">
+                  {pluralize_transaction_count(@group.count)}
+                </span>
+              </span>
+            </div>
           <% else %>
             <.render_group_cell column={column} group={@group} columns={@columns} />
           <% end %>
@@ -782,7 +837,58 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     """
   end
 
+  attr :party, :string, default: nil
+  attr :description, :string, default: nil
+  attr :bank_badge, :string, default: nil
+  attr :invoice_source_badge, :string, default: nil
+
+  defp party_cell_content(assigns) do
+    ~H"""
+    <div class="flex min-w-0 items-center gap-2.5">
+      <.bank_badge :if={@bank_badge} bank={@bank_badge} size="mini" class="shrink-0" />
+      <.invoice_source_badge
+        :if={@invoice_source_badge}
+        source={@invoice_source_badge}
+        class="shrink-0"
+      />
+      <span class="min-w-0 truncate">
+        {@party}
+        <span :if={@description not in [nil, ""]} class="text-darkGrey text-sm opacity-50">
+          {@description}
+        </span>
+      </span>
+    </div>
+    """
+  end
+
   defp pluralize_transaction_count(1), do: "1 transakcja"
   defp pluralize_transaction_count(n) when n in 2..4, do: "#{n} transakcje"
   defp pluralize_transaction_count(n), do: "#{n} transakcji"
+
+  defp bank_badge_for_transaction(%Transaction{bank_account: %{institution_id: institution_id}})
+       when is_binary(institution_id) do
+    Map.get(@bank_badges_by_institution_id, String.trim(institution_id), "Default")
+  end
+
+  defp bank_badge_for_transaction(%Transaction{}), do: "Default"
+
+  defp bank_badge_for_group(%TransactionGroup{transactions: transactions}) do
+    case transactions |> Enum.map(&bank_badge_for_transaction/1) |> Enum.uniq() do
+      [bank_badge] -> bank_badge
+      _ -> "Default"
+    end
+  end
+
+  defp invoice_source_badge_for_invoice(%CostInvoice{ksef_number: ksef_number}) when is_binary(ksef_number), do: "ksef"
+
+  defp invoice_source_badge_for_invoice(%CostInvoice{blob_id: blob_id}) when not is_nil(blob_id), do: "document"
+
+  defp invoice_source_badge_for_invoice(%SalesInvoice{ksef_number: ksef_number}) when is_binary(ksef_number), do: "ksef"
+
+  defp invoice_source_badge_for_invoice(%SalesInvoice{ksef_session_reference_number: reference})
+       when is_binary(reference), do: "ksef"
+
+  defp invoice_source_badge_for_invoice(%SalesInvoice{}), do: "draft"
+
+  defp invoice_source_badge_for_invoice(_), do: nil
 end

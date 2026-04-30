@@ -315,7 +315,7 @@ defmodule Firmowid.Seeds.Bytecraft do
       Helpers.seed_requisition!("b42a914c-d658-46bb-ab4c-950967fbebe1", tenant)
 
     ing_base = %{
-      institution_id: "ING_BANK_SLASKI_PL",
+      institution_id: "ING_PL_INGBPLPW",
       institution_name: "ING Bank Śląski",
       owner_name: "Bytecraft Collective sp. z o.o.",
       requisition_id: mock_requisition.id
@@ -369,7 +369,7 @@ defmodule Firmowid.Seeds.Bytecraft do
       Helpers.seed_bank_account!(
         %{
           iban: "PL73116022020000000512345678",
-          institution_id: "MILLENNIUM_BANK_PL",
+          institution_id: "BANK_MILLENNIUM_BIGBPLPW",
           institution_name: "Bank Millennium",
           owner_name: "Bytecraft Collective sp. z o.o.",
           gocardless_id: "c5831186-ca3e-4edc-a4f5-a48b1d1ead55",
