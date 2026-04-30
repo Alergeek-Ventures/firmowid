@@ -24,7 +24,7 @@ defmodule FirmowidWeb.DesignSystem.Components.MonthPicker do
       size="big"
       class={
         [
-          "group has-disabled:bg-grey-100 has-disabled:text-grey-600 pr-4 max-md:hidden",
+          "group has-disabled:bg-grey-100 has-disabled:text-grey-600 min-w-42 pr-4 max-md:hidden",
           # icon has "spacing" in it, we have to compensate
           @class
         ]
@@ -33,7 +33,7 @@ defmodule FirmowidWeb.DesignSystem.Components.MonthPicker do
       <Lucideicons.calendar_1 />
       <input
         type="button"
-        class="min-w-0 cursor-pointer bg-transparent text-left outline-none"
+        class="flex-1 cursor-pointer bg-transparent text-left outline-none"
         phx-hook="AirDatepicker"
         value={@value}
         data-enabled-months={
