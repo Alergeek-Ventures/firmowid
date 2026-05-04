@@ -135,6 +135,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
     ~H"""
     <div id="invoice-show" class="flex flex-col">
       <InvoiceDetails.invoice_header
+        source={InvoiceDetails.invoice_source(@invoice)}
         is_cost_invoice={false}
         issue_date={@invoice.issue_date}
         party_display_name={@party_display_name}

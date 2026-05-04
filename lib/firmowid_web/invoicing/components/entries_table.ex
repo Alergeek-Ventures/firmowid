@@ -849,6 +849,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       <.invoice_source_badge
         :if={@invoice_source_badge}
         source={@invoice_source_badge}
+        size="small"
         class="shrink-0"
       />
       <span class="min-w-0 truncate">

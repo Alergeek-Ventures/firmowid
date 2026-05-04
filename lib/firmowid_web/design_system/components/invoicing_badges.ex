@@ -43,6 +43,7 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
 
   @bank_sizes ["full", "mini"]
   @invoice_sources ["document", "ksef", "draft"]
+  @invoice_source_sizes ["small", "big"]
 
   @doc """
   Renders a Figma-faithful bank badge.
@@ -1009,13 +1010,18 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
   end
 
   @doc """
-  Renders a compact invoice source badge.
+  Renders an invoice source badge.
   """
   @spec invoice_source_badge(map()) :: Rendered.t()
   attr :source, :string,
     required: true,
     values: @invoice_sources,
     doc: "Visual source variant from the Figma badge set."
+
+  attr :size, :string,
+    required: true,
+    values: @invoice_source_sizes,
+    doc: "Size modifier for compact table and larger header contexts."
 
   attr :class, :any, default: nil, doc: "Additional classes merged into the badge root."
 
@@ -1025,23 +1031,41 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
     ~H"""
     <div
       class={[
-        "relative inline-flex h-6 w-9 shrink-0 items-center justify-center rounded-[2.286px] border border-[#dddddd]",
-        @source in ["document", "draft"] && "bg-[#dddddd]",
-        @source == "ksef" && "bg-[#f5f5f5]",
+        "relative inline-flex shrink-0 items-center justify-center",
+        @size == "small" && "h-6 w-9 rounded-[2.286px] border border-[#dddddd]",
+        @size == "big" && "border-grey-400 h-8 w-12 rounded-[3px] border-[1.5px]",
+        @size == "small" && @source in ["document", "draft"] && "bg-[#dddddd]",
+        @size == "big" && @source in ["document", "draft"] && "bg-grey-300",
+        @size == "small" && @source == "ksef" && "bg-[#f5f5f5]",
+        @size == "big" && @source == "ksef" && "bg-grey-200",
         @source == "draft" && "border-dotted",
         @class
       ]}
+      data-size={@size}
       data-source={@source}
       {@rest}
     >
       <span class="sr-only">{@source}</span>
-      <Lucideicons.file_input :if={@source in ["document", "draft"]} class="size-4 text-[#737373]" />
-      <span :if={@source == "ksef"} class="text-[10px] leading-[1.55] font-semibold tracking-tight">
+      <Lucideicons.file_input
+        :if={@source in ["document", "draft"]}
+        class={invoice_source_icon_styles(@size)}
+      />
+      <span
+        :if={@source == "ksef"}
+        class={invoice_source_ksef_styles(@size)}
+      >
         <span class="text-[#013066]">KS</span><span class="text-[#e70012]">e</span><span class="text-[#013066]">F</span>
       </span>
     </div>
     """
   end
+
+  defp invoice_source_icon_styles("small"), do: "size-4 text-[#737373]"
+  defp invoice_source_icon_styles("big"), do: "text-grey-900 size-5"
+
+  defp invoice_source_ksef_styles("small"), do: "text-[10px] leading-[1.55] font-semibold tracking-tight"
+
+  defp invoice_source_ksef_styles("big"), do: "text-xs leading-[1.4] font-semibold tracking-tight"
 
   attr :bg, :string, required: true
   attr :indicator, :string, required: true
