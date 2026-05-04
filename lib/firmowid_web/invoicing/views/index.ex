@@ -1069,6 +1069,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     |> order_entries_for_display()
   end
 
+  defp groupable_transaction?(%Transaction{creditor_name: "N/A"}), do: false
   defp groupable_transaction?(%Transaction{creditor_name: ""}), do: false
   defp groupable_transaction?(%Transaction{creditor_name: nil}), do: false
 
