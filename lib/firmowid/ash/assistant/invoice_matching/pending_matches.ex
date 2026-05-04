@@ -3,6 +3,7 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatching.PendingMatches do
   Validates, loads, and atomically applies typed pending assistant matches.
   """
 
+  alias Ash.Error.Query.NotFound
   alias Firmowid.Ash.Assistant.PendingMatch
   alias Firmowid.Ash.Assistant.PendingMatch.InvoiceRef
   alias Firmowid.Ash.Finances
@@ -42,7 +43,7 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatching.PendingMatches do
   Loads transactions for a pending proposal without raising on stale references.
   """
   @spec load_transactions(PendingMatch.t() | nil, struct()) ::
-          {:ok, [struct()]} | {:error, :stale_pending_match}
+          {:ok, [struct()]} | {:error, term()}
   def load_transactions(nil, _current_user), do: {:ok, []}
 
   def load_transactions(%PendingMatch{transaction_ids: transaction_ids}, current_user) do
@@ -52,11 +53,36 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatching.PendingMatches do
     |> Enum.reduce_while({:ok, []}, fn transaction_id, {:ok, transactions} ->
       case Finances.get_transaction(transaction_id, scope: scope) do
         {:ok, transaction} -> {:cont, {:ok, [transaction | transactions]}}
-        {:error, _reason} -> {:halt, {:error, :stale_pending_match}}
+        {:error, %NotFound{}} -> {:halt, {:error, :stale_pending_match}}
+        {:error, reason} -> {:halt, {:error, reason}}
       end
     end)
     |> case do
       {:ok, transactions} -> {:ok, Enum.reverse(transactions)}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Loads invoices for a pending proposal without raising on stale references.
+  """
+  @spec load_invoices(PendingMatch.t() | nil, struct()) ::
+          {:ok, [struct()]} | {:error, term()}
+  def load_invoices(nil, _current_user), do: {:ok, []}
+
+  def load_invoices(%PendingMatch{invoice_refs: invoice_refs}, current_user) do
+    scope = %Scope{actor: current_user, tenant: current_user.organization_id}
+
+    invoice_refs
+    |> Enum.reduce_while({:ok, []}, fn invoice_ref, {:ok, invoices} ->
+      case fetch_invoice_for_preview(invoice_ref, scope) do
+        {:ok, invoice} -> {:cont, {:ok, [invoice | invoices]}}
+        {:error, %NotFound{}} -> {:halt, {:error, :stale_pending_match}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+    |> case do
+      {:ok, invoices} -> {:ok, Enum.reverse(invoices)}
       {:error, reason} -> {:error, reason}
     end
   end
@@ -153,6 +179,20 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatching.PendingMatches do
   defp fetch_invoice(%{type: :cost_invoice, id: id}, scope), do: Invoicing.get_cost_invoice(id, scope: scope)
 
   defp fetch_invoice(%{type: :sales_invoice, id: id}, scope), do: Invoicing.get_sales_invoice(id, scope: scope)
+
+  defp fetch_invoice_for_preview(%{type: :cost_invoice, id: id}, scope) do
+    Invoicing.get_cost_invoice(id,
+      load: [:effective_total_amount, :effective_currency, :effective_seller_display_name],
+      scope: scope
+    )
+  end
+
+  defp fetch_invoice_for_preview(%{type: :sales_invoice, id: id}, scope) do
+    Invoicing.get_sales_invoice(id,
+      load: [:gross_value, :buyer_display_name_label],
+      scope: scope
+    )
+  end
 
   defp connect_invoice(%InvoiceRef{type: :cost_invoice, id: id}, transaction_ids, scope) do
     with {:ok, invoice} <- Invoicing.get_cost_invoice(id, scope: scope) do

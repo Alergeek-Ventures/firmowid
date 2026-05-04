@@ -14,6 +14,7 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Invoicing.Components.DashboardTiles
+  alias FirmowidWeb.Invoicing.Navigation
 
   attr :unpaid_invoices, :list, default: []
   attr :unpaid_invoices_count, :integer, default: 0
@@ -24,6 +25,7 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
   attr :suggestions, :list, default: []
   attr :suggestions_count, :integer, default: 0
   attr :month, :any, required: true
+  attr :return_to, :string, default: nil
 
   def dashboard(assigns) do
     ~H"""
@@ -33,7 +35,12 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
         count={@unpaid_invoices_count}
         variant={:orange}
         see_all_url={
-          ~p"/fakturowanie?month=#{Date.to_iso8601(@month)}&filter=invoices&subfilter=nieoplacone&view=list"
+          Navigation.invoicing_index_path(%{
+            month: @month,
+            filter: :invoices,
+            subfilter: :nieoplacone,
+            view_mode: :list
+          })
         }
       >
         <%= for invoice <- @unpaid_invoices do %>
@@ -47,11 +54,20 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
         count={@unmatched_transactions_count}
         variant={:orange}
         see_all_url={
-          ~p"/fakturowanie?month=#{Date.to_iso8601(@month)}&filter=transactions&subfilter=bez_dokumentu&view=list"
+          Navigation.invoicing_index_path(%{
+            month: @month,
+            filter: :transactions,
+            subfilter: :bez_dokumentu,
+            view_mode: :list
+          })
         }
       >
         <%= for transaction <- @unmatched_transactions do %>
-          <DashboardTiles.tile entry={transaction} type={:unmatched_transaction} />
+          <DashboardTiles.tile
+            entry={transaction}
+            type={:unmatched_transaction}
+            return_to={@return_to}
+          />
         <% end %>
         <.zero_state :if={@unmatched_transactions == []} message="Brak transakcji bez dokumentu." />
       </.column>
@@ -62,7 +78,7 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
         variant={:turquoise}
       >
         <%= for entry <- @matched_entries do %>
-          <DashboardTiles.tile entry={entry} type={:matched} />
+          <DashboardTiles.tile entry={entry} type={:matched} return_to={@return_to} />
         <% end %>
         <.zero_state :if={@matched_entries == []} message="Brak dopasowanych pozycji." />
         <%!-- TODO: add activity log view and restore a dedicated CTA for matched entries. --%>

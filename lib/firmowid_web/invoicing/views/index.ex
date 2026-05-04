@@ -26,6 +26,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias Firmowid.Ash.Invoicing.TransactionGroup
   alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Core.Endpoint
+  alias FirmowidWeb.Invoicing.Navigation
   alias Phoenix.Socket.Broadcast
 
   require Ash.Query
@@ -250,6 +251,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             suggestions={@dashboard_suggestions}
             suggestions_count={@dashboard_suggestions_count}
             month={@params.month}
+            return_to={build_invoicing_url(@params)}
           />
         <% @is_month_closed and @params.filter == :unmatched -> %>
           <.live_component
@@ -261,6 +263,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           <FirmowidWeb.Invoicing.Components.EntriesTable.table
             mode={@params.filter}
             invoicing_entries={@invoicing_entries}
+            return_to={build_invoicing_url(@params)}
           />
       <% end %>
     </div>
@@ -426,8 +429,11 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   def handle_event("goto-invoice", %{"id" => id, "type" => type}, socket) do
     path =
       case type do
-        "cost" -> ~p"/kosztowe/#{id}"
-        "sales" -> ~p"/sprzedazowe/#{id}"
+        "cost" ->
+          Navigation.cost_invoice_show_path(id, build_invoicing_url(socket.assigns.params))
+
+        "sales" ->
+          Navigation.sales_invoice_show_path(id, build_invoicing_url(socket.assigns.params))
       end
 
     {:noreply, push_navigate(socket, to: path)}
@@ -517,14 +523,21 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           assign(
             assigns,
             :issue_date,
-            cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601()
+            Date.beginning_of_month(cost_invoice.issue_date)
           )
 
         ~H"""
         <.link
           kind="unstyled"
           class="text-bold text-sm underline"
-          navigate={~p"/fakturowanie?month=#{@issue_date}&filter=invoices"}
+          navigate={
+            Navigation.invoicing_index_path(%{
+              month: @issue_date,
+              filter: :invoices,
+              subfilter: nil,
+              view_mode: :dashboard
+            })
+          }
         >
           Wyświetl <.icon name="hero-arrow-right-solid" class="size-3" />
         </.link>
@@ -553,14 +566,21 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
           assign(
             assigns,
             :issue_date,
-            cost_invoice.issue_date |> Date.beginning_of_month() |> Date.to_iso8601()
+            Date.beginning_of_month(cost_invoice.issue_date)
           )
 
         ~H"""
         <.link
           kind="unstyled"
           class="text-bold text-sm underline"
-          navigate={~p"/fakturowanie?month=#{@issue_date}&filter=invoices"}
+          navigate={
+            Navigation.invoicing_index_path(%{
+              month: @issue_date,
+              filter: :invoices,
+              subfilter: nil,
+              view_mode: :dashboard
+            })
+          }
         >
           Wyświetl <.icon name="hero-arrow-right-solid" class="size-3" />
         </.link>
@@ -650,26 +670,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp build_invoicing_url(params) do
-    query_parts = [
-      "month=#{params.month |> Date.beginning_of_month() |> Date.to_iso8601()}",
-      "filter=#{Atom.to_string(params.filter)}"
-    ]
-
-    query_parts =
-      if params.subfilter do
-        query_parts ++ ["subfilter=#{Atom.to_string(params.subfilter)}"]
-      else
-        query_parts
-      end
-
-    query_parts =
-      if params.view_mode == :list do
-        query_parts ++ ["view=list"]
-      else
-        query_parts
-      end
-
-    "/fakturowanie?" <> Enum.join(query_parts, "&")
+    Navigation.invoicing_index_path(params)
   end
 
   defp handle_progress(:file, _, socket) do

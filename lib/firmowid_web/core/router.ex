@@ -134,6 +134,7 @@ defmodule FirmowidWeb.Core.Router do
       live "/sprzedazowe/:id/podsumowanie", Invoicing.SalesInvoices.Views.Summary, :summary
       live "/sprzedazowe/:id/edytuj", Invoicing.SalesInvoices.Views.Edit, :edit
       live "/sprzedazowe/:id", Invoicing.SalesInvoices.Views.Show, :show
+      live "/transakcje/:id", Invoicing.Transactions.Views.Show, :show
 
       live "/ustawienia/bank/dodaj", BankSync.Views.Create, :index
 

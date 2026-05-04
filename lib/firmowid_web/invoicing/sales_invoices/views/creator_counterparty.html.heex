@@ -298,7 +298,7 @@
                   <div class="flex flex-row gap-2.5">
                     <.link
                       navigate={
-                        ~p"/sprzedazowe/#{invoice.id}?#{[return_to: "/sprzedazowe?tab=last_invoices"]}"
+                        ~p"/sprzedazowe/#{invoice.id}?#{[return_to: FirmowidWeb.Invoicing.Navigation.last_sales_invoices_path()]}"
                       }
                       kind="button"
                       variant="outline"

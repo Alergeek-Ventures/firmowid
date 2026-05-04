@@ -19,20 +19,22 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.RecommendationThresholds
+  alias FirmowidWeb.Invoicing.Navigation
 
   attr :entry, :any, required: true
   attr :type, :atom, required: true
+  attr :return_to, :string, default: nil
 
   def tile(assigns) do
     ~H"""
     <div class="bg-lightGreyBg min-h-24 rounded-lg p-2.5 transition-shadow hover:shadow-sm">
       <%= case @type do %>
         <% :unpaid_invoice -> %>
-          <.unpaid_invoice_tile entry={@entry} />
+          <.unpaid_invoice_tile entry={@entry} return_to={@return_to} />
         <% :unmatched_transaction -> %>
-          <.unmatched_transaction_tile entry={@entry} />
+          <.unmatched_transaction_tile entry={@entry} return_to={@return_to} />
         <% :matched -> %>
-          <.matched_entry_tile entry={@entry} />
+          <.matched_entry_tile entry={@entry} return_to={@return_to} />
         <% :suggestion -> %>
           <.suggestion_tile entry={@entry} />
       <% end %>
@@ -44,9 +46,10 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
   defp unpaid_invoice_tile(assigns) do
     entry = assigns.entry
+    return_to = Map.get(assigns, :return_to)
 
     {party, invoice_number, amount, currency, navigate, issue_date} =
-      extract_invoice_details(entry)
+      extract_invoice_details(entry, return_to)
 
     {overdue_label, is_overdue} = format_due_date_status(entry)
 
@@ -62,7 +65,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
       |> assign(:is_overdue, is_overdue)
 
     ~H"""
-    <.link :if={@navigate} kind="unstyled" navigate={@navigate} class="block">
+    <.maybe_link navigate={@navigate} class="block">
       <div class="flex min-h-full flex-col gap-2">
         <div class="flex items-start justify-between gap-2">
           <span class="truncate text-sm font-medium">{@party}</span>
@@ -89,53 +92,28 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
           </span>
         </div>
       </div>
-    </.link>
-
-    <div :if={is_nil(@navigate)} class="flex min-h-full flex-col gap-2">
-      <div class="flex items-start justify-between gap-2">
-        <span class="truncate text-sm font-medium">{@party}</span>
-        <span class="text-sm font-semibold whitespace-nowrap">
-          {format_money(@currency, @amount)}
-        </span>
-      </div>
-      <div class="text-darkGrey text-xs">{@invoice_number}</div>
-      <div class="mt-auto flex items-center justify-between gap-2 text-xs">
-        <span class="text-grey-500">{format_date(@issue_date)}</span>
-
-        <span
-          :if={@overdue_label}
-          class={[
-            "flex items-center gap-1 font-medium",
-            @is_overdue && "text-redText",
-            not @is_overdue && "text-grey-600"
-          ]}
-        >
-          <.icon :if={@is_overdue} name="hero-clock" class="size-3" />
-          {@overdue_label}
-        </span>
-      </div>
-    </div>
+    </.maybe_link>
     """
   end
 
-  defp extract_invoice_details(%CostInvoice{} = entry) do
+  defp extract_invoice_details(%CostInvoice{} = entry, return_to) do
     {
       entry.effective_seller_display_name,
       entry.invoice_identifier,
       entry.effective_total_amount,
       entry.effective_currency,
-      ~p"/kosztowe/#{entry.id}",
+      Navigation.cost_invoice_show_path(entry, return_to),
       entry.issue_date
     }
   end
 
-  defp extract_invoice_details(%SalesInvoice{} = entry) do
+  defp extract_invoice_details(%SalesInvoice{} = entry, return_to) do
     {
       entry.buyer_display_name_label,
       entry.invoice_number,
       entry.gross_value,
       entry.currency,
-      ~p"/sprzedazowe/#{entry.id}",
+      Navigation.sales_invoice_show_path(entry, return_to),
       entry.issue_date
     }
   end
@@ -164,7 +142,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     currency = entry.transaction_currency
     is_income = amount_positive?(amount)
 
-    navigate = transaction_match_url(entry)
+    navigate = Navigation.transaction_show_path(entry, assigns.return_to)
 
     assigns =
       assigns
@@ -197,35 +175,9 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   attr :is_income, :boolean, required: true
   attr :description, :string, default: nil
 
-  defp transaction_tile_content(%{navigate: nil} = assigns) do
-    ~H"""
-    <div class="flex min-h-full flex-col gap-2">
-      <div class="flex items-start justify-between gap-2">
-        <span class="truncate text-sm font-medium">{@party}</span>
-        <span class={[
-          "flex items-center gap-1 text-sm font-semibold whitespace-nowrap",
-          @is_income && "text-greenText",
-          not @is_income && "text-redText"
-        ]}>
-          <.icon name={if @is_income, do: "hero-arrow-up", else: "hero-arrow-down"} class="size-3" />
-          {format_money(@currency, decimal_abs(@amount))}
-        </span>
-      </div>
-
-      <div :if={@description} class="text-darkGrey truncate text-xs">
-        {@description}
-      </div>
-
-      <div class="mt-auto flex items-center text-xs">
-        <span class="text-grey-500">{format_date(@booking_date)}</span>
-      </div>
-    </div>
-    """
-  end
-
   defp transaction_tile_content(assigns) do
     ~H"""
-    <.link kind="unstyled" navigate={@navigate} class="block">
+    <.maybe_link navigate={@navigate} class="block">
       <div class="flex min-h-full flex-col gap-2">
         <div class="flex items-start justify-between gap-2">
           <span class="truncate text-sm font-medium">{@party}</span>
@@ -247,7 +199,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
           <span class="text-grey-500">{format_date(@booking_date)}</span>
         </div>
       </div>
-    </.link>
+    </.maybe_link>
     """
   end
 
@@ -269,7 +221,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     entry = assigns.entry
 
     {party, invoice_number, amount, currency, navigate, description} =
-      matched_entry_details(entry)
+      matched_entry_details(entry, assigns.return_to)
 
     {badge_type, confidence_percent} = compute_confidence_badge(entry)
 
@@ -298,51 +250,39 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     """
   end
 
-  defp matched_entry_details(%CostInvoice{} = entry) do
+  defp matched_entry_details(%CostInvoice{} = entry, return_to) do
     {
       entry.effective_seller_display_name,
       entry.invoice_identifier,
       entry.effective_total_amount,
       entry.effective_currency,
-      ~p"/kosztowe/#{entry.id}",
+      Navigation.cost_invoice_show_path(entry, return_to),
       nil
     }
   end
 
-  defp matched_entry_details(%{entry: entry}), do: matched_entry_details(entry)
+  defp matched_entry_details(%{entry: entry}, return_to), do: matched_entry_details(entry, return_to)
 
-  defp matched_entry_details(%SalesInvoice{} = entry) do
+  defp matched_entry_details(%SalesInvoice{} = entry, return_to) do
     {
       entry.buyer_display_name_label,
       entry.invoice_number,
       entry.gross_value,
       entry.currency,
-      ~p"/sprzedazowe/#{entry.id}",
+      Navigation.sales_invoice_show_path(entry, return_to),
       nil
     }
   end
 
-  defp matched_entry_details(%Transaction{} = entry) do
+  defp matched_entry_details(%Transaction{} = entry, return_to) do
     {
       transaction_party(entry),
       nil,
       entry.transaction_amount,
       entry.transaction_currency,
-      match_invoice_url(entry),
+      Navigation.transaction_show_path(entry, return_to),
       entry.remittance_information_unstructured
     }
-  end
-
-  defp match_invoice_url(%Transaction{} = entry) do
-    transaction_match_url(entry)
-  end
-
-  defp transaction_match_url(%Transaction{} = entry) do
-    cond do
-      match = List.first(entry.sales_invoices || []) -> ~p"/sprzedazowe/#{match.id}"
-      match = List.first(entry.cost_invoices || []) -> ~p"/kosztowe/#{match.id}"
-      true -> nil
-    end
   end
 
   attr :party, :string, required: true
@@ -354,30 +294,9 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   attr :confidence_percent, :integer, default: nil
   attr :description, :string, default: nil
 
-  defp matched_tile_content(%{navigate: nil} = assigns) do
-    ~H"""
-    <div class="flex min-h-full flex-col gap-1">
-      <div class="flex items-start justify-between gap-2">
-        <span class="truncate text-sm font-medium">{@party}</span>
-        <span class="text-sm font-semibold whitespace-nowrap">
-          {format_money(@currency, @amount)}
-        </span>
-      </div>
-
-      <div :if={@invoice_number} class="text-darkGrey mt-1 text-xs">{@invoice_number}</div>
-
-      <div :if={@description} class="text-darkGrey mt-1 truncate text-xs">{@description}</div>
-
-      <div :if={@badge_type} class="mt-auto">
-        <.confidence_chip badge_type={@badge_type} confidence_percent={@confidence_percent} />
-      </div>
-    </div>
-    """
-  end
-
   defp matched_tile_content(assigns) do
     ~H"""
-    <.link kind="unstyled" navigate={@navigate} class="block">
+    <.maybe_link navigate={@navigate} class="block">
       <div class="flex min-h-full flex-col gap-1">
         <div class="flex items-start justify-between gap-2">
           <span class="truncate text-sm font-medium">{@party}</span>
@@ -394,7 +313,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
           <.confidence_chip badge_type={@badge_type} confidence_percent={@confidence_percent} />
         </div>
       </div>
-    </.link>
+    </.maybe_link>
     """
   end
 
@@ -614,6 +533,22 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   end
 
   # ── Shared helpers ────────────────────────────────────────────────
+
+  attr :navigate, :string, default: nil
+  attr :class, :string, default: nil
+  slot :inner_block, required: true
+
+  defp maybe_link(assigns) do
+    ~H"""
+    <.link :if={@navigate} kind="unstyled" navigate={@navigate} class={@class}>
+      {render_slot(@inner_block)}
+    </.link>
+
+    <div :if={is_nil(@navigate)} class={@class}>
+      {render_slot(@inner_block)}
+    </div>
+    """
+  end
 
   defp format_money(_currency, amount) when is_nil(amount), do: "—"
 

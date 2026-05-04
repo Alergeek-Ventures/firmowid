@@ -85,6 +85,14 @@ defmodule Firmowid.Ash.Events.Decoder do
     )
   end
 
+  defp decode_payload(%{resource: CostInvoice, action: :disconnect_all_transactions} = event) do
+    cast_payload(
+      :cost_invoice_transactions_disconnected,
+      InvoiceTransactionsDisconnected,
+      invoice_transaction_payload(event)
+    )
+  end
+
   defp decode_payload(%{resource: SalesInvoice, action: :connect_transactions} = event) do
     cast_payload(
       :sales_invoice_transactions_connected,
@@ -94,6 +102,14 @@ defmodule Firmowid.Ash.Events.Decoder do
   end
 
   defp decode_payload(%{resource: SalesInvoice, action: :disconnect_transactions} = event) do
+    cast_payload(
+      :sales_invoice_transactions_disconnected,
+      InvoiceTransactionsDisconnected,
+      invoice_transaction_payload(event)
+    )
+  end
+
+  defp decode_payload(%{resource: SalesInvoice, action: :disconnect_all_transactions} = event) do
     cast_payload(
       :sales_invoice_transactions_disconnected,
       InvoiceTransactionsDisconnected,
@@ -127,7 +143,7 @@ defmodule Firmowid.Ash.Events.Decoder do
 
   defp invoice_transaction_payload(event) do
     %{
-      transaction_ids: Map.get(event.data, :transaction_ids, []),
+      transaction_ids: Map.get(event.data, :transaction_ids) || Map.get(event.metadata, :transaction_ids, []),
       source: normalize_source(Map.get(event.metadata, :source)),
       confidence_score: normalize_confidence_score(Map.get(event.metadata, :confidence_score)),
       matched_by: Map.get(event.metadata, :matched_by)
@@ -166,6 +182,7 @@ defmodule Firmowid.Ash.Events.Decoder do
       "mark_sync_failed" -> :mark_sync_failed
       "connect_transactions" -> :connect_transactions
       "disconnect_transactions" -> :disconnect_transactions
+      "disconnect_all_transactions" -> :disconnect_all_transactions
       _ -> nil
     end
   end

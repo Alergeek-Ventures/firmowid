@@ -14,9 +14,12 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   alias Firmowid.Ash.Invoicing.TransactionGroup
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
+  alias FirmowidWeb.Invoicing.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.BankBadges
 
   attr :invoicing_entries, :list, required: true
   attr :mode, :atom, required: true
+  attr :return_to, :string, default: nil
 
   @default_columns ["party", "issue_or_value_date", "due_or_booking_date", "status", "amount"]
 
@@ -34,18 +37,6 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     status: "Status",
     amount: "Kwota"
   ]
-
-  @bank_badges_by_institution_id %{
-    "SANDBOXFINANCE_SFIN0000" => "Default",
-    "BANK_MILLENNIUM_BIGBPLPW" => "Millenium",
-    "ING_PL_INGBPLPW" => "ING",
-    "MBANK_CORPORATE_BREXPLPW" => "mBank",
-    "MBANK_RETAIL_BREXPLPW" => "mBank",
-    "NEST_BANK_CORPORATE_NESBPLPW" => "Nest Bank",
-    "NEST_BANK_NESBPLPW" => "Nest Bank",
-    "SANTANDER_PL_CORP_WBKPPLPP" => "Santander",
-    "SANTANDER_PL_WBKPPLPP" => "Santander"
-  }
 
   # Using map pattern match to avoid Dialyzer false positive about
   # LiveView internal assign fields (:__given__, etc.)
@@ -69,8 +60,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   def table(assigns) do
     assigns =
-      assign(
-        assigns,
+      assigns
+      |> assign_new(:return_to, fn -> nil end)
+      |> assign(
         :columns,
         case assigns.mode do
           :invoices -> @invoice_columns
@@ -121,9 +113,13 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         <%= for entry <- @invoicing_entries do %>
           <%= case entry do %>
             <% %TransactionGroup{} = group -> %>
-              <.group_row group={group} columns={@columns} />
+              <.group_row group={group} columns={@columns} return_to={@return_to} />
             <% invoicing_entry -> %>
-              <.table_row columns={@columns} invoicing_entry={invoicing_entry} />
+              <.table_row
+                columns={@columns}
+                invoicing_entry={invoicing_entry}
+                return_to={@return_to}
+              />
           <% end %>
         <% end %>
       </tbody>
@@ -223,7 +219,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             column != "amount" && "w-full truncate"
           ]
         }>
-          <.render_cell column={column} invoicing_entry={@invoicing_entry} />
+          <.render_cell column={column} invoicing_entry={@invoicing_entry} return_to={@return_to} />
         </div>
       </td>
     </tr>
@@ -530,18 +526,12 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     assigns =
       assigns
       |> assign(:party, party)
-      |> assign(:bank_badge, bank_badge_for_transaction(transaction))
+      |> assign(:bank_badge, BankBadges.badge_for_transaction(transaction))
       |> assign(:invoice_source_badge, nil)
       |> assign(:description, transaction.remittance_information_unstructured)
       |> assign(
         :navigate,
-        if transaction.sales_invoices == [] do
-          if transaction.cost_invoices != [] do
-            ~p"/kosztowe/#{List.first(transaction.cost_invoices).id}"
-          end
-        else
-          ~p"/sprzedazowe/#{List.first(transaction.sales_invoices).id}"
-        end
+        Navigation.transaction_show_path(transaction, Map.get(assigns, :return_to))
       )
 
     ~H"<.render_cell
@@ -561,7 +551,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       |> assign(:bank_badge, nil)
       |> assign(:invoice_source_badge, invoice_source_badge_for_invoice(invoice))
       |> assign(:description, invoice.description)
-      |> assign(:navigate, ~p"/kosztowe/#{invoice.id}")
+      |> assign(
+        :navigate,
+        Navigation.cost_invoice_show_path(invoice, Map.get(assigns, :return_to))
+      )
 
     ~H"<.render_cell
   party={@party}
@@ -593,7 +586,10 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           {_party, description} -> description
         end
       )
-      |> assign(:navigate, ~p"/sprzedazowe/#{invoice.id}")
+      |> assign(
+        :navigate,
+        Navigation.sales_invoice_show_path(invoice, Map.get(assigns, :return_to))
+      )
 
     ~H"<.render_cell
   party={@party}
@@ -671,6 +667,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   attr :group, TransactionGroup, required: true
   attr :columns, :list, required: true
+  attr :return_to, :string, default: nil
 
   defp group_row(assigns) do
     assigns = assign(assigns, :bank_badge, bank_badge_for_group(assigns.group))
@@ -751,10 +748,18 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             <%= if column == "party" do %>
               <div class="flex items-center gap-2">
                 <.icon name="hero-arrow-turn-down-right" class="text-darkGrey size-3 opacity-50" />
-                <.render_cell column={column} invoicing_entry={transaction} />
+                <.render_cell
+                  column={column}
+                  invoicing_entry={transaction}
+                  return_to={@return_to}
+                />
               </div>
             <% else %>
-              <.render_cell column={column} invoicing_entry={transaction} />
+              <.render_cell
+                column={column}
+                invoicing_entry={transaction}
+                return_to={@return_to}
+              />
             <% end %>
           </div>
         </td>
@@ -866,15 +871,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   defp pluralize_transaction_count(n) when n in 2..4, do: "#{n} transakcje"
   defp pluralize_transaction_count(n), do: "#{n} transakcji"
 
-  defp bank_badge_for_transaction(%Transaction{bank_account: %{institution_id: institution_id}})
-       when is_binary(institution_id) do
-    Map.get(@bank_badges_by_institution_id, String.trim(institution_id), "Default")
-  end
-
-  defp bank_badge_for_transaction(%Transaction{}), do: "Default"
-
   defp bank_badge_for_group(%TransactionGroup{transactions: transactions}) do
-    case transactions |> Enum.map(&bank_badge_for_transaction/1) |> Enum.uniq() do
+    case transactions |> Enum.map(&BankBadges.badge_for_transaction/1) |> Enum.uniq() do
       [bank_badge] -> bank_badge
       _ -> "Default"
     end

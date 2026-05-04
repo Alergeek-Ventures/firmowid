@@ -95,7 +95,11 @@ defmodule Firmowid.Ash.Invoicing.Services.RecentMatchedEntries do
       |> Ash.Query.for_read(:read, %{}, scope: scope)
       |> Ash.Query.filter(
         resource == ^resource and
-          action in [:connect_transactions, :disconnect_transactions]
+          action in [
+            :connect_transactions,
+            :disconnect_transactions,
+            :disconnect_all_transactions
+          ]
       )
       |> Ash.Query.sort(record_id: :asc, occurred_at: :desc)
       |> Ash.Query.distinct(:record_id)

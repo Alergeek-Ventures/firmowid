@@ -8,9 +8,18 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceAssistant do
 
   alias Firmowid.Ash.Assistant.InvoiceMatching
   alias Firmowid.Ash.Assistant.InvoiceMatching.PendingMatches
-  alias Firmowid.Ash.Invoicing.CostInvoice
-  alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias FirmowidWeb.Invoicing.Assistant.Components.PendingMatch
   alias FirmowidWeb.Invoicing.Components.Assistant, as: Components
+
+  @default_ui_config %{
+    container_class: "assistant-chat relative mx-auto flex size-full flex-col",
+    close_button_variant: "unstyled",
+    close_button_class:
+      "bg-lightGreyBg hover:border-grey-400 hover:text-grey-400 text-grey-700 absolute top-0 right-0 z-10 mb-4 inline-flex cursor-pointer items-center justify-center self-end rounded border border-transparent p-2 text-sm transition",
+    close_icon_class: nil,
+    messages_class: "flex grow flex-col gap-12 overflow-y-auto py-4 pr-4",
+    zero_state_class: "flex flex-row flex-wrap items-center justify-center gap-3 py-4"
+  }
 
   @impl true
   def mount(socket) do
@@ -19,20 +28,25 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceAssistant do
      |> assign(:session_id, nil)
      |> assign(:waiting_for_decision, false)
      |> assign(:pending_match_message, nil)
+     |> assign(:pending_invoices, [])
      |> assign(:pending_transactions, [])
      |> stream(:messages, [])}
   end
 
   @impl true
-  def update(%{invoice: invoice, current_user: current_user, scope: scope}, socket) do
+  def update(%{current_user: current_user, scope: scope} = assigns, socket) do
     current_user = Ash.load!(current_user, [avatar_blob: [:url]], scope: scope)
+
+    assistant_config = Map.merge(@default_ui_config, Map.get(assigns, :assistant_config, %{}))
 
     {:ok,
      socket
-     |> assign(:invoice, invoice)
-     |> assign(match_config(invoice))
+     |> assign(:entry_context, Map.fetch!(assigns, :entry_context))
+     |> assign(assistant_config)
      |> assign(:scope, scope)
      |> assign(:current_user, current_user)
+     |> assign(:return_path, Map.fetch!(assigns, :return_path))
+     |> assign(:close_target, Map.get(assigns, :close_target, "#invoice-show"))
      |> assign(:input, socket.assigns[:input] || "")
      |> assign(:assistant_error, socket.assigns[:assistant_error] || nil)
      |> assign(:loading, socket.assigns[:loading] || false)
@@ -70,13 +84,13 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceAssistant do
 
         socket =
           socket
-          |> LiveToast.put_toast(:success, "Transakcje zostały dopasowane do faktury")
-          |> push_navigate(to: socket.assigns.invoice_path)
+          |> LiveToast.put_toast(:success, "Dopasowanie zostało zapisane")
+          |> push_navigate(to: socket.assigns.return_path)
 
         {:noreply, socket}
 
       {:error, _reason} ->
-        {:noreply, LiveToast.put_toast(socket, :error, "Nie udało się dopasować transakcji do faktury")}
+        {:noreply, LiveToast.put_toast(socket, :error, "Nie udało się zapisać dopasowania")}
     end
   end
 
@@ -117,7 +131,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceAssistant do
         phx-hook="Tippy"
         data-tippy-content="Zamknij czat"
         phx-click="close_chat"
-        phx-target="#invoice-show"
+        phx-target={@close_target}
         phx-value-session_id={@session_id}
         type="button"
         variant={@close_button_variant}
@@ -136,11 +150,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceAssistant do
         </div>
         <%= if @zero_state do %>
           <div class={@zero_state_class}>
-            <%= for possible_message <- [
-              "Ta faktura pokrywa wszystkie transakcje z poprzedniego miesiąca",
-              "Transakcja za tę fakturę ma inną nazwę kontrahenta",
-              "Opłata została wykonana znacznie później niż faktura została wystawiona"
-            ] do %>
+            <%= for possible_message <- @suggested_messages do %>
               <FirmowidWeb.DesignSystem.Components.Button.button
                 phx-click="send"
                 variant="secondary"
@@ -163,25 +173,25 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceAssistant do
 
       <div :if={@waiting_for_decision} class="mb-8 flex flex-col items-center gap-3">
         <p>{@pending_match_message}</p>
-        <ul class="flex w-full max-w-2xl flex-col gap-2">
-          <li
-            :for={transaction <- @pending_transactions}
-            class="bg-grey-50 flex flex-row items-start justify-between gap-4 rounded px-3 py-1"
-          >
-            <div class="grid grid-cols-[min-content_1fr] gap-x-3">
-              <span class="text-grey-700 text-sm">{@displayed_party_label}</span>
-              <span class="truncate text-black">
-                {displayed_party(transaction, @displayed_party_label)}
-              </span>
-              <span class="text-grey-700 text-sm">Zaksięgowano</span>
-              <span class="text-black">{transaction.booking_date}</span>
-            </div>
-            <div class="flex flex-row items-center gap-3">
-              {transaction.amount}
-              <.icon name="hero-credit-card-micro" class="text-grey-700" />
-            </div>
-          </li>
-        </ul>
+        <div class="flex w-full max-w-2xl flex-col gap-4">
+          <section :if={@pending_invoices != []} class="space-y-2">
+            <p class="text-grey-700 text-sm font-medium">Faktury do połączenia</p>
+            <ul class="flex flex-col gap-2">
+              <PendingMatch.invoice_item :for={invoice <- @pending_invoices} invoice={invoice} />
+            </ul>
+          </section>
+
+          <section :if={@pending_transactions != []} class="space-y-2">
+            <p class="text-grey-700 text-sm font-medium">Transakcje do połączenia</p>
+            <ul class="flex flex-col gap-2">
+              <PendingMatch.transaction_item
+                :for={transaction <- @pending_transactions}
+                transaction={transaction}
+                displayed_party_label={@displayed_party_label}
+              />
+            </ul>
+          </section>
+        </div>
         <div class="grid grid-cols-2 gap-3">
           <.button
             phx-click="reject"
@@ -201,14 +211,15 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceAssistant do
   end
 
   defp assign_session(socket, session) do
-    {pending_transactions, pending_transactions_error} =
-      load_pending_transactions(session.pending_match, socket.assigns.current_user)
+    {pending_transactions, pending_invoices, pending_match_error} =
+      load_pending_match_entries(session.pending_match, socket.assigns.current_user)
 
     socket
     |> assign(:session_id, session.id)
-    |> assign(:assistant_error, session.last_error || pending_transactions_error)
+    |> assign(:assistant_error, session.last_error || pending_match_error)
     |> assign(:waiting_for_decision, not is_nil(session.pending_match))
     |> assign(:pending_match_message, session.pending_match && session.pending_match.message)
+    |> assign(:pending_invoices, pending_invoices)
     |> assign(:pending_transactions, pending_transactions)
     |> stream(:messages, filter_visible_messages(session.messages), reset: true)
   end
@@ -220,7 +231,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceAssistant do
   defp ensure_session(socket) do
     case InvoiceMatching.start_session(
            socket.assigns.scope,
-           InvoiceMatching.entry_context_for_invoice(socket.assigns.invoice)
+           socket.assigns.entry_context
          ) do
       {:ok, session} -> {:ok, assign_session(socket, session), session.id}
       error -> error
@@ -240,12 +251,15 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceAssistant do
     end)
   end
 
-  defp load_pending_transactions(nil, _current_user), do: {[], nil}
+  defp load_pending_match_entries(nil, _current_user), do: {[], [], nil}
 
-  defp load_pending_transactions(pending_match, current_user) do
-    case PendingMatches.load_transactions(pending_match, current_user) do
-      {:ok, transactions} -> {transactions, nil}
-      {:error, :stale_pending_match} -> {[], nil}
+  defp load_pending_match_entries(pending_match, current_user) do
+    with {:ok, transactions} <- PendingMatches.load_transactions(pending_match, current_user),
+         {:ok, invoices} <- PendingMatches.load_invoices(pending_match, current_user) do
+      {transactions, invoices, nil}
+    else
+      {:error, :stale_pending_match} -> {[], [], nil}
+      {:error, reason} -> {[], [], reason}
     end
   end
 
@@ -269,34 +283,4 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceAssistant do
         |> LiveToast.put_toast(:error, "Nie udało się uzyskać odpowiedzi asystenta")
     end
   end
-
-  defp match_config(%CostInvoice{id: id}) do
-    %{
-      invoice_path: ~p"/kosztowe/#{id}",
-      displayed_party_label: "Odbiorca",
-      container_class: "assistant-chat relative mx-auto flex size-full flex-col",
-      close_button_variant: "unstyled",
-      close_button_class:
-        "bg-lightGreyBg hover:border-grey-400 hover:text-grey-400 text-grey-700 absolute top-0 right-0 z-10 mb-4 inline-flex cursor-pointer items-center justify-center self-end rounded border border-transparent p-2 text-sm transition",
-      close_icon_class: nil,
-      messages_class: "flex grow flex-col gap-12 overflow-y-auto py-4 pr-4",
-      zero_state_class: "flex flex-row flex-wrap items-center justify-center gap-3 py-4"
-    }
-  end
-
-  defp match_config(%SalesInvoice{id: id}) do
-    %{
-      invoice_path: ~p"/sprzedazowe/#{id}",
-      displayed_party_label: "Nadawca",
-      container_class: "assistant-chat relative flex size-full flex-col px-14.5 pt-8",
-      close_button_variant: "ghost",
-      close_button_class: "absolute top-0 right-0 z-10 mb-4 h-auto p-0",
-      close_icon_class: "size-6",
-      messages_class: "flex grow flex-col gap-12 overflow-y-auto pr-4",
-      zero_state_class: "flex flex-row flex-wrap items-center justify-center gap-4 py-4"
-    }
-  end
-
-  defp displayed_party(transaction, "Nadawca"), do: transaction.debtor_name
-  defp displayed_party(transaction, "Odbiorca"), do: transaction.creditor_name
 end

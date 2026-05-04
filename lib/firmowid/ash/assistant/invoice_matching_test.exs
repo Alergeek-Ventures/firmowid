@@ -72,6 +72,15 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
       assert [%{"role" => "assistant", "content" => intro_message}] = session.messages
       assert intro_message =~ "Cześć, tu Firmowid."
     end
+
+    test "stores only focused transaction refs in transaction entry context", %{user: user} do
+      transaction = create_transaction!(user, %{})
+
+      assert InvoiceMatching.entry_context_for_transaction(transaction) == %{
+               "focused_entities" => [%{type: :transaction, id: transaction.id}],
+               "title" => "Dopasowanie transakcji do faktur"
+             }
+    end
   end
 
   describe "tool registration" do
@@ -294,6 +303,52 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
         Invoicing.get_cost_invoice!(cost_invoice.id, load: [:transactions], scope: scope)
 
       assert Enum.map(connected_invoice.transactions, & &1.id) == [transaction.id]
+    end
+
+    test "rejects a pending proposal when transaction currencies do not match", %{
+      scope: scope,
+      user: user
+    } do
+      transaction =
+        create_transaction!(user, %{
+          creditor_name: unique_string("Assistant Mismatch Creditor"),
+          remittance_information_unstructured: unique_string("assistant-mismatch"),
+          transaction_amount: Decimal.new("50.00"),
+          transaction_currency: "USD"
+        })
+
+      cost_invoice =
+        create_cost_invoice!(user, %{
+          invoice_identifier: unique_string("CI-MISMATCH"),
+          currency: "PLN"
+        })
+
+      assert {:ok, session} =
+               InvoiceMatching.start_session(
+                 scope,
+                 InvoiceMatching.entry_context_for_invoice(cost_invoice)
+               )
+
+      message = "Proponuję połączyć tę fakturę z wybraną transakcją."
+
+      assert {:ok, %{status: "waiting_confirmation"}} =
+               ProposeInvoiceTransactionMatch.run(
+                 %{
+                   message: message,
+                   transaction_ids: [transaction.id],
+                   cost_invoice_ids: [cost_invoice.id]
+                 },
+                 %{session_id: session.id, scope: scope}
+               )
+
+      assert {:error, error} = InvoiceMatching.accept_pending_match(session.id, scope)
+      assert Exception.message(error) =~ "Nie można połączyć faktury w walucie PLN"
+      assert Exception.message(error) =~ "USD"
+
+      disconnected_invoice =
+        Invoicing.get_cost_invoice!(cost_invoice.id, load: [:transactions], scope: scope)
+
+      assert disconnected_invoice.transactions == []
     end
   end
 

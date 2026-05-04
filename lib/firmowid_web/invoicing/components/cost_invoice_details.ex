@@ -5,21 +5,40 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Assistant.InvoiceMatching
+  alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Ksef
+  alias FirmowidWeb.Invoicing.Assistant.Utilities.SessionCloser
+  alias FirmowidWeb.Invoicing.Components.InvoiceAssistant
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Components.InvoiceDownloadModal
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
+  alias FirmowidWeb.Invoicing.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.InvoiceDetailsAssistantSubject
   alias Phoenix.LiveView.JS
+
+  @invoice_suggested_messages [
+    "Ta faktura pokrywa wszystkie transakcje z poprzedniego miesiąca",
+    "Transakcja za tę fakturę ma inną nazwę kontrahenta",
+    "Opłata została wykonana znacznie później niż faktura została wystawiona"
+  ]
+
+  @transaction_suggested_messages [
+    "Ta transakcja opłaciła kilka faktur z poprzedniego miesiąca",
+    "To był przelew zbiorczy za kilka dokumentów",
+    "Na fakturach kontrahent może występować pod inną nazwą"
+  ]
 
   @impl true
   def mount(socket) do
     {:ok,
      assign(socket,
        chat: false,
+       chat_subject: nil,
        show_timeline: false,
        is_cost_invoice: true
      )}
@@ -46,6 +65,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
   attr :invoice, CostInvoice, required: true
   attr :potential_transactions, :list, default: []
   attr :current_user, :map, required: true
+  attr :return_to, :string, default: nil
   attr :scope, :map, required: true
 
   @impl true
@@ -58,6 +78,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
         issue_date={@invoice.issue_date}
         party_display_name={@invoice.effective_seller_display_name}
         description={@invoice.description}
+        return_to={@return_to}
       />
 
       <div class="flex min-w-0 flex-col bg-white lg:flex-row">
@@ -258,19 +279,43 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
           <%= cond do %>
             <% @invoice.skip_invoicing -> %>
               <InvoiceDetails.invoice_skipped_view is_cost_invoice={@is_cost_invoice} />
+            <% @chat -> %>
+              <.live_component
+                module={InvoiceAssistant}
+                id="invoice-assistant"
+                entry_context={assistant_entry_context(@chat_subject || @invoice)}
+                assistant_config={assistant_config(@chat_subject || @invoice)}
+                current_user={@current_user}
+                scope={@scope}
+                return_path={@return_to || Navigation.cost_invoice_show_path(@invoice)}
+              />
             <% not Enum.empty?(@invoice.transactions) -> %>
               <InvoiceDetails.transaction_match
                 is_cost_invoice={@is_cost_invoice}
                 transactions={@invoice.transactions}
-              />
-            <% @chat -> %>
-              <.live_component
-                module={FirmowidWeb.Invoicing.Components.InvoiceAssistant}
-                id="invoice-assistant"
-                invoice={@invoice}
-                current_user={@current_user}
-                scope={@scope}
-              />
+              >
+                <:status_action>
+                  <.status_button
+                    type="button"
+                    phx-click="disconnect"
+                    icon="hero-arrow-uturn-left-micro"
+                  />
+                </:status_action>
+
+                <:assistant_action :let={transaction}>
+                  <.button
+                    phx-click="show_chat"
+                    phx-target={@myself}
+                    phx-value-assistant_subject_ref={InvoiceDetailsAssistantSubject.ref(transaction)}
+                    class="w-full"
+                    variant="primary"
+                    accent="orange"
+                    size="small"
+                  >
+                    Zapytaj
+                  </.button>
+                </:assistant_action>
+              </InvoiceDetails.transaction_match>
             <% true -> %>
               <InvoiceDetails.potential_transactions
                 potential_transactions={@potential_transactions}
@@ -410,13 +455,19 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
   defp downloadable_as_pdf?(_invoice), do: false
 
   @impl true
-  def handle_event("show_chat", _params, socket) do
-    {:noreply, assign(socket, chat: true)}
+  def handle_event("show_chat", params, socket) do
+    {:noreply,
+     socket
+     |> assign(:chat, true)
+     |> assign(
+       :chat_subject,
+       InvoiceDetailsAssistantSubject.resolve(socket.assigns.invoice, params)
+     )}
   end
 
   def handle_event("close_chat", params, socket) do
-    maybe_close_assistant_session(params, socket)
-    {:noreply, assign(socket, chat: false)}
+    SessionCloser.close(params, socket.assigns.scope)
+    {:noreply, socket |> assign(:chat, false) |> assign(:chat_subject, nil)}
   end
 
   def handle_event("show_timeline", _params, socket) do
@@ -448,11 +499,26 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
     end
   end
 
-  defp maybe_close_assistant_session(%{"session_id" => session_id}, socket)
-       when is_binary(session_id) and session_id != "" do
-    _ = InvoiceMatching.close_session(session_id, socket.assigns.scope)
-    :ok
+  defp assistant_entry_context(%Transaction{} = transaction),
+    do: InvoiceMatching.entry_context_for_transaction(transaction)
+
+  defp assistant_entry_context(%CostInvoice{} = invoice), do: InvoiceMatching.entry_context_for_invoice(invoice)
+
+  defp assistant_config(%Transaction{} = transaction) do
+    %{
+      displayed_party_label: transaction_displayed_party_label(transaction),
+      suggested_messages: @transaction_suggested_messages
+    }
   end
 
-  defp maybe_close_assistant_session(_params, _socket), do: :ok
+  defp assistant_config(%CostInvoice{}) do
+    %{
+      displayed_party_label: "Odbiorca",
+      suggested_messages: @invoice_suggested_messages
+    }
+  end
+
+  defp transaction_displayed_party_label(%Transaction{transaction_amount: amount}) do
+    if Decimal.compare(amount, 0) == :gt, do: "Nadawca", else: "Odbiorca"
+  end
 end

@@ -10,6 +10,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.ShowTest do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Scope
+  alias FirmowidWeb.Invoicing.Navigation
 
   test "shows recommendation, links transaction, and allows unlinking", %{conn: conn} do
     admin = admin_fixture()
@@ -77,6 +78,22 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.ShowTest do
       Invoicing.get_cost_invoice!(invoice.id, scope: scope_for(admin))
 
     assert skipped_invoice.skip_invoicing
+  end
+
+  test "preserves transaction return context for back navigation", %{conn: conn} do
+    admin = admin_fixture()
+    invoice = cost_invoice_fixture!(admin)
+    conn = log_in_user(conn, admin)
+
+    origin_return_to =
+      Navigation.return_to_path("/fakturowanie?month=2026-01-15&filter=invoices&view=list")
+
+    transaction_return_to = Navigation.transaction_show_path("tx-123", origin_return_to)
+
+    {:ok, _view, html} =
+      live(conn, Navigation.cost_invoice_show_path(invoice, transaction_return_to))
+
+    assert html =~ ~s(href="#{transaction_return_to}")
   end
 
   defp cost_invoice_fixture!(admin) do

@@ -71,7 +71,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
   events do
     event_log Firmowid.Ash.Events.Event
-    only_actions [:connect_transactions, :disconnect_transactions]
+    only_actions [:connect_transactions, :disconnect_transactions, :disconnect_all_transactions]
   end
 
   jido do
@@ -927,15 +927,27 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       require_atomic? false
       argument :transaction_ids, {:array, :uuid}, allow_nil?: false
 
+      change Changes.RequireTransactionIds
+      change Changes.ValidateTransactionCurrencies
       change manage_relationship(:transaction_ids, :transactions, type: :append)
     end
 
     update :disconnect_transactions do
+      description "Disconnect the provided transactions from this sales invoice."
+      require_atomic? false
+      argument :transaction_ids, {:array, :uuid}, allow_nil?: false
+
+      change Changes.RequireTransactionIds
+      change manage_relationship(:transaction_ids, :transactions, type: :remove)
+    end
+
+    update :disconnect_all_transactions do
       description "Disconnect all transactions from this sales invoice."
       require_atomic? false
-      argument :transaction_ids, {:array, :uuid}, default: []
 
-      change manage_relationship(:transaction_ids, :transactions, type: :append_and_remove)
+      change fn changeset, _context ->
+        Ash.Changeset.manage_relationship(changeset, :transactions, [], on_missing: :unrelate)
+      end
     end
   end
 
@@ -950,7 +962,12 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
 
       policy {SystemActorRole, roles: [:invoice_matcher]} do
-        authorize_if action([:connect_transactions, :disconnect_transactions])
+        authorize_if action([
+                       :connect_transactions,
+                       :disconnect_transactions,
+                       :disconnect_all_transactions
+                     ])
+
         authorize_if action_type(:read)
       end
 
@@ -969,7 +986,12 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
 
       policy action_type([:create, :update, :destroy, :action]) do
-        authorize_if action([:connect_transactions, :disconnect_transactions])
+        authorize_if action([
+                       :connect_transactions,
+                       :disconnect_transactions,
+                       :disconnect_all_transactions
+                     ])
+
         authorize_if {AtLeastRole, role: :accountant}
       end
     end
@@ -988,6 +1010,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     publish :attach_suggested_counterparty, ["updated", :_tenant]
     publish :connect_transactions, ["updated", :_tenant]
     publish :disconnect_transactions, ["updated", :_tenant]
+    publish :disconnect_all_transactions, ["updated", :_tenant]
   end
 
   multitenancy do

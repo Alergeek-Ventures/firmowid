@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Core.Endpoint
+  alias FirmowidWeb.Invoicing.Navigation
 
   @item_calcs [:net_value, :vat_value, :gross_value]
   @detail_loads [
@@ -38,10 +39,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
             queryable: SalesInvoice
       end
 
+    return_to = Navigation.return_to_path(params["return_to"])
+
     if sales_invoice.ksef_invoice_kind == :kor do
-      # ensure `return_to` is preserved when redirecting to the corrected invoice
-      params = Map.delete(params, "id")
-      redirect_path = ~p"/sprzedazowe/#{sales_invoice.corrected_invoice_id}?#{params}"
+      redirect_path =
+        Navigation.sales_invoice_show_path(sales_invoice.corrected_invoice_id, return_to)
 
       {:ok, redirect(socket, to: redirect_path)}
     else
@@ -66,7 +68,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
         |> assign(:preview_url, "")
         |> assign(:preview_type, :html)
         |> assign(:no_padding, true)
-        |> assign(:return_to, params["return_to"])
+        |> assign(:return_to, return_to)
         |> assign(:ksef_connected?, Ksef.get_credential(socket.assigns.ash_scope) != nil)
 
       {:ok, socket}
@@ -113,7 +115,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
         {:noreply,
          socket
          |> put_flash(:info, "Faktura została usunięta")
-         |> push_navigate(to: ~p"/fakturowanie?month=#{Date.to_iso8601(socket.assigns.invoice.issue_date)}")}
+         |> push_navigate(
+           to:
+             socket.assigns.return_to ||
+               Navigation.default_invoicing_path(socket.assigns.invoice.issue_date)
+         )}
 
       {:error, _error} ->
         {:noreply,
@@ -132,7 +138,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
         {:noreply,
          socket
          |> put_flash(:info, "Wystawiono korektę anulującą")
-         |> push_navigate(to: ~p"/sprzedazowe/#{correction.id}/podsumowanie")}
+         |> push_navigate(to: Navigation.sales_invoice_summary_path(correction, socket.assigns.return_to))}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "Nie udało się anulować faktury")}
@@ -160,9 +166,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
 
   @impl true
   def handle_event("disconnect", _params, socket) do
-    case Invoicing.disconnect_sales_invoice_transactions_manual(
+    case Invoicing.disconnect_all_sales_invoice_transactions_manual(
            socket.assigns.invoice,
-           [],
            socket.assigns.ash_scope
          ) do
       {:ok, _invoice} ->

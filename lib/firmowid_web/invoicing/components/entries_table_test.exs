@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTableTest do
 
   import Phoenix.LiveViewTest
 
+  alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias FirmowidWeb.Invoicing.Components.EntriesTable
 
@@ -32,5 +33,32 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTableTest do
     assert html =~ "Szkic"
     refute html =~ "toggle-skip-invoicing"
     refute html =~ "Pomiń"
+  end
+
+  test "transaction rows preserve return_to navigation context" do
+    transaction = %Transaction{
+      id: "transaction-row-test",
+      creditor_name: "Supplier Sp. z o.o.",
+      debtor_name: "Firmowid Sp. z o.o.",
+      remittance_information_unstructured: "Payment January",
+      transaction_amount: Decimal.new("-100.00"),
+      transaction_currency: "PLN",
+      booking_date: ~D[2026-01-10],
+      value_date: ~D[2026-01-10],
+      skip_invoicing: false,
+      cost_invoices: [],
+      sales_invoices: []
+    }
+
+    html =
+      render_component(&EntriesTable.table/1,
+        invoicing_entries: [transaction],
+        has_connected_bank_account: true,
+        mode: :transactions,
+        return_to: "/fakturowanie?month=2026-01-01&filter=transactions"
+      )
+
+    assert html =~
+             "/transakcje/transaction-row-test?return_to=%2Ffakturowanie%3Fmonth%3D2026-01-01%26filter%3Dtransactions"
   end
 end

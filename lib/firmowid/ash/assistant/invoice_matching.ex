@@ -14,6 +14,7 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatching do
   alias Firmowid.Ash.Assistant.InvoiceMatchingAgent
   alias Firmowid.Ash.Assistant.PendingMatch
   alias Firmowid.Ash.Assistant.Session, as: AssistantSession
+  alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Scope
@@ -166,8 +167,19 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatching do
   @spec entry_context_for_invoice(struct()) :: map()
   def entry_context_for_invoice(invoice) do
     %{
-      "focused_entities" => [invoice_ref(invoice)],
+      "focused_entities" => [subject_ref(invoice)],
       "title" => "Dopasowanie faktury do transakcji"
+    }
+  end
+
+  @doc """
+  Builds a reusable entry context for a focused transaction launch point.
+  """
+  @spec entry_context_for_transaction(Transaction.t()) :: map()
+  def entry_context_for_transaction(%Transaction{} = transaction) do
+    %{
+      "focused_entities" => [subject_ref(transaction)],
+      "title" => "Dopasowanie transakcji do faktur"
     }
   end
 
@@ -354,7 +366,9 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatching do
 
   defp append_message(messages, message), do: (messages || []) ++ [message]
 
-  defp invoice_ref(%CostInvoice{id: id}), do: %{type: :cost_invoice, id: id}
+  defp subject_ref(%CostInvoice{id: id}), do: %{type: :cost_invoice, id: id}
 
-  defp invoice_ref(%SalesInvoice{id: id}), do: %{type: :sales_invoice, id: id}
+  defp subject_ref(%SalesInvoice{id: id}), do: %{type: :sales_invoice, id: id}
+
+  defp subject_ref(%Transaction{id: id}), do: %{type: :transaction, id: id}
 end

@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.SummaryTest do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef.Credential
+  alias FirmowidWeb.Invoicing.Navigation
 
   describe "Invoice page works" do
     setup do
@@ -137,6 +138,26 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.SummaryTest do
 
       assert remounted_html =~ "Faktura wysłana do KSeF"
       assert remounted_html =~ "Wysłano do KSeF!"
+    end
+
+    test "preserves return_to in summary navigation links", %{conn: conn} do
+      admin = admin_fixture()
+      invoice = sales_invoice_fixture!(admin)
+      conn = log_in_user(conn, admin)
+
+      origin_return_to =
+        Navigation.return_to_path("/fakturowanie?month=2026-01-15&filter=invoices&view=list")
+
+      transaction_return_to = Navigation.transaction_show_path("tx-123", origin_return_to)
+
+      {:ok, _view, html} =
+        live(conn, Navigation.sales_invoice_summary_path(invoice, transaction_return_to))
+
+      assert html =~
+               ~s(href="#{Navigation.sales_invoice_edit_path(invoice, transaction_return_to)}")
+
+      assert html =~
+               ~s(href="#{Navigation.sales_invoice_show_path(invoice, transaction_return_to)}")
     end
   end
 

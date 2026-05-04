@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.InvoiceMatching
+  alias FirmowidWeb.Invoicing.Navigation
 
   @detail_loads [
     :is_deletable,
@@ -23,9 +24,10 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
   ]
 
   @impl true
-  def mount(%{"id" => id}, _session, socket) do
+  def mount(%{"id" => id} = params, _session, socket) do
     current_user = socket.assigns.current_user
     scope = socket.assigns.ash_scope
+    return_to = Navigation.return_to_path(params["return_to"])
 
     cost_invoice = CostInvoice.by_id!(id, load: @detail_loads, scope: scope)
 
@@ -40,11 +42,15 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
         |> assign(:invoice, cost_invoice)
         |> assign(:potential_transactions, potential_transactions)
         |> assign(:current_user, current_user)
+        |> assign(:return_to, return_to)
         |> assign(:no_padding, true)
 
       {:ok, socket}
     else
-      {:ok, redirect(socket, to: ~p"/kosztowe/#{cost_invoice.original_invoice.id}")}
+      {:ok,
+       redirect(socket,
+         to: Navigation.cost_invoice_show_path(cost_invoice.original_invoice.id, return_to)
+       )}
     end
   end
 
@@ -57,6 +63,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
       invoice={@invoice}
       potential_transactions={@potential_transactions}
       current_user={@current_user}
+      return_to={@return_to}
       scope={@ash_scope}
     />
     """
@@ -83,7 +90,11 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
     {:noreply,
      socket
      |> put_flash(:info, "Faktura została usunięta")
-     |> push_navigate(to: ~p"/fakturowanie?month=#{Date.to_iso8601(socket.assigns.invoice.issue_date)}")}
+     |> push_navigate(
+       to:
+         socket.assigns.return_to ||
+           Navigation.default_invoicing_path(socket.assigns.invoice.issue_date)
+     )}
   end
 
   @impl true
@@ -111,9 +122,8 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
 
   @impl true
   def handle_event("disconnect", _params, socket) do
-    case Invoicing.disconnect_cost_invoice_transactions_manual(
+    case Invoicing.disconnect_all_cost_invoice_transactions_manual(
            socket.assigns.invoice,
-           [],
            socket.assigns.ash_scope
          ) do
       {:ok, _invoice} ->

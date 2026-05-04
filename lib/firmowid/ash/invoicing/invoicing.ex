@@ -7,6 +7,8 @@ defmodule Firmowid.Ash.Invoicing do
 
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Currencies.NbpApiClient
+  alias Firmowid.Ash.Finances
+  alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.Services.RecentMatchedEntries
@@ -57,7 +59,10 @@ defmodule Firmowid.Ash.Invoicing do
 
       define :disconnect_cost_invoice_transactions,
         action: :disconnect_transactions,
-        args: [{:optional, :transaction_ids}]
+        args: [:transaction_ids]
+
+      define :disconnect_all_cost_invoice_transactions,
+        action: :disconnect_all_transactions
     end
 
     resource Firmowid.Ash.Invoicing.KsefInvoiceDigest
@@ -103,7 +108,10 @@ defmodule Firmowid.Ash.Invoicing do
 
       define :disconnect_sales_invoice_transactions,
         action: :disconnect_transactions,
-        args: [{:optional, :transaction_ids}]
+        args: [:transaction_ids]
+
+      define :disconnect_all_sales_invoice_transactions,
+        action: :disconnect_all_transactions
     end
 
     resource Firmowid.Ash.Invoicing.SalesInvoiceTransaction
@@ -278,10 +286,27 @@ defmodule Firmowid.Ash.Invoicing do
           Scope.t()
         ) :: {:ok, struct()} | {:error, term()}
   def disconnect_cost_invoice_transactions_manual(cost_invoice, transaction_ids, scope) do
-    disconnect_cost_invoice_transactions(cost_invoice, transaction_ids,
+    disconnect_cost_invoice_transactions(
+      cost_invoice,
+      transaction_ids,
       scope: scope,
       context: manual_match_context(scope)
     )
+  end
+
+  @doc """
+  Manually disconnects all transactions from a cost invoice and records manual match metadata.
+  """
+  @spec disconnect_all_cost_invoice_transactions_manual(struct(), Scope.t()) ::
+          {:ok, struct()} | {:error, term()}
+  def disconnect_all_cost_invoice_transactions_manual(cost_invoice, scope) do
+    with {:ok, transaction_ids} <- current_transaction_ids(cost_invoice, scope) do
+      disconnect_all_cost_invoice_transactions(
+        cost_invoice,
+        scope: scope,
+        context: manual_match_context(scope, %{transaction_ids: transaction_ids})
+      )
+    end
   end
 
   @doc """
@@ -309,10 +334,44 @@ defmodule Firmowid.Ash.Invoicing do
           Scope.t()
         ) :: {:ok, struct()} | {:error, term()}
   def disconnect_sales_invoice_transactions_manual(sales_invoice, transaction_ids, scope) do
-    disconnect_sales_invoice_transactions(sales_invoice, transaction_ids,
+    disconnect_sales_invoice_transactions(
+      sales_invoice,
+      transaction_ids,
       scope: scope,
       context: manual_match_context(scope)
     )
+  end
+
+  @doc """
+  Manually disconnects all transactions from a sales invoice and records manual match metadata.
+  """
+  @spec disconnect_all_sales_invoice_transactions_manual(struct(), Scope.t()) ::
+          {:ok, struct()} | {:error, term()}
+  def disconnect_all_sales_invoice_transactions_manual(sales_invoice, scope) do
+    with {:ok, transaction_ids} <- current_transaction_ids(sales_invoice, scope) do
+      disconnect_all_sales_invoice_transactions(
+        sales_invoice,
+        scope: scope,
+        context: manual_match_context(scope, %{transaction_ids: transaction_ids})
+      )
+    end
+  end
+
+  @doc """
+  Manually disconnects a transaction from every linked sales and cost invoice atomically.
+  """
+  @spec disconnect_transaction_from_all_invoices_manual(Transaction.t(), Scope.t()) ::
+          {:ok, Transaction.t()} | {:error, term()}
+  def disconnect_transaction_from_all_invoices_manual(%Transaction{id: transaction_id} = transaction, scope) do
+    Ash.transact([Transaction, CostInvoice, SalesInvoice], fn ->
+      with {:ok, loaded_transaction} <-
+             load_transaction_with_linked_invoices(transaction_id, scope),
+           {:ok, _results} <-
+             disconnect_transaction_from_sales_invoices(loaded_transaction, scope),
+           {:ok, _results} <- disconnect_transaction_from_cost_invoices(loaded_transaction, scope) do
+        transaction
+      end
+    end)
   end
 
   @doc """
@@ -349,14 +408,14 @@ defmodule Firmowid.Ash.Invoicing do
     )
   end
 
-  defp manual_match_context(%Scope{} = scope) do
+  defp manual_match_context(%Scope{} = scope, metadata \\ %{}) do
     matched_by = actor_matcher_id(scope.actor)
 
     %{
-      ash_events_metadata: %{
-        source: :manual,
-        matched_by: matched_by
-      }
+      ash_events_metadata:
+        metadata
+        |> Map.put(:source, :manual)
+        |> Map.put(:matched_by, matched_by)
     }
   end
 
@@ -368,6 +427,46 @@ defmodule Firmowid.Ash.Invoicing do
   defp actor_matcher_id(%{id: id}) when is_binary(id), do: id
   defp actor_matcher_id(%{user_id: user_id}) when is_binary(user_id), do: user_id
   defp actor_matcher_id(_actor), do: nil
+
+  defp load_transaction_with_linked_invoices(transaction_id, scope) do
+    Finances.get_transaction(transaction_id,
+      load: [:sales_invoices, :cost_invoices],
+      scope: scope
+    )
+  end
+
+  defp disconnect_transaction_from_sales_invoices(transaction, scope) do
+    reduce_invoices(transaction.sales_invoices, fn invoice ->
+      disconnect_sales_invoice_transactions_manual(invoice, [transaction.id], scope)
+    end)
+  end
+
+  defp disconnect_transaction_from_cost_invoices(transaction, scope) do
+    reduce_invoices(transaction.cost_invoices, fn invoice ->
+      disconnect_cost_invoice_transactions_manual(invoice, [transaction.id], scope)
+    end)
+  end
+
+  defp reduce_invoices(invoices, callback) do
+    Enum.reduce_while(invoices, {:ok, []}, fn invoice, {:ok, results} ->
+      case callback.(invoice) do
+        {:ok, result} -> {:cont, {:ok, [result | results]}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp current_transaction_ids(invoice, scope) do
+    with {:ok, invoice} <- ensure_transactions_loaded(invoice, scope) do
+      {:ok, Enum.map(invoice.transactions, & &1.id)}
+    end
+  end
+
+  defp ensure_transactions_loaded(%{transactions: %Ash.NotLoaded{}} = invoice, scope) do
+    Ash.load(invoice, [:transactions], scope: scope)
+  end
+
+  defp ensure_transactions_loaded(invoice, _scope), do: {:ok, invoice}
 
   # ── Cost invoice orchestration ──────────────────────────────────────
 

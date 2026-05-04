@@ -46,6 +46,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   alias Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceDescription
   alias Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName
   alias Firmowid.Ash.Invoicing.Changes.EnqueueMissingCostInvoiceDescriptionRefresh
+  alias Firmowid.Ash.Invoicing.Changes.RequireTransactionIds
+  alias Firmowid.Ash.Invoicing.Changes.ValidateTransactionCurrencies
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Resource
 
@@ -84,7 +86,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
   events do
     event_log Firmowid.Ash.Events.Event
-    only_actions [:connect_transactions, :disconnect_transactions]
+    only_actions [:connect_transactions, :disconnect_transactions, :disconnect_all_transactions]
   end
 
   jido do
@@ -374,15 +376,27 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       require_atomic? false
       argument :transaction_ids, {:array, :uuid}, allow_nil?: false
 
+      change RequireTransactionIds
+      change ValidateTransactionCurrencies
       change manage_relationship(:transaction_ids, :transactions, type: :append)
     end
 
     update :disconnect_transactions do
+      description "Disconnect the provided transactions from this cost invoice."
+      require_atomic? false
+      argument :transaction_ids, {:array, :uuid}, allow_nil?: false
+
+      change RequireTransactionIds
+      change manage_relationship(:transaction_ids, :transactions, type: :remove)
+    end
+
+    update :disconnect_all_transactions do
       description "Disconnect all transactions from this cost invoice."
       require_atomic? false
-      argument :transaction_ids, {:array, :uuid}, default: []
 
-      change manage_relationship(:transaction_ids, :transactions, type: :append_and_remove)
+      change fn changeset, _context ->
+        Ash.Changeset.manage_relationship(changeset, :transactions, [], on_missing: :unrelate)
+      end
     end
   end
 
@@ -408,11 +422,15 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     end
 
     bypass {SystemActorRole, roles: [:invoice_matcher]} do
-      authorize_if action([:connect_transactions, :disconnect_transactions])
+      authorize_if action([
+                     :connect_transactions,
+                     :disconnect_transactions,
+                     :disconnect_all_transactions
+                   ])
     end
 
     policy [
-      action([:connect_transactions, :disconnect_transactions]),
+      action([:connect_transactions, :disconnect_transactions, :disconnect_all_transactions]),
       {AtLeastRole, role: :invoicing}
     ] do
       authorize_if always()
@@ -453,6 +471,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     publish :refresh_description, ["updated", :_tenant]
     publish :connect_transactions, ["updated", :_tenant]
     publish :disconnect_transactions, ["updated", :_tenant]
+    publish :disconnect_all_transactions, ["updated", :_tenant]
   end
 
   multitenancy do

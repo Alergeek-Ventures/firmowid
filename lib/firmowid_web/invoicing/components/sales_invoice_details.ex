@@ -5,22 +5,49 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Assistant.InvoiceMatching
+  alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
+  alias FirmowidWeb.Invoicing.Assistant.Utilities.SessionCloser
+  alias FirmowidWeb.Invoicing.Components.InvoiceAssistant
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Components.InvoiceDownloadModal
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
+  alias FirmowidWeb.Invoicing.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.InvoiceDetailsAssistantSubject
 
   require Logger
 
+  @invoice_suggested_messages [
+    "Ta faktura pokrywa wszystkie transakcje z poprzedniego miesiąca",
+    "Transakcja za tę fakturę ma inną nazwę kontrahenta",
+    "Opłata została wykonana znacznie później niż faktura została wystawiona"
+  ]
+
+  @transaction_suggested_messages [
+    "Ta transakcja opłaciła kilka faktur z poprzedniego miesiąca",
+    "To był przelew zbiorczy za kilka dokumentów",
+    "Na fakturach kontrahent może występować pod inną nazwą"
+  ]
+
+  @sales_assistant_overrides %{
+    container_class: "assistant-chat relative flex size-full flex-col px-14.5 pt-8",
+    close_button_variant: "ghost",
+    close_button_class: "absolute top-0 right-0 z-10 mb-4 h-auto p-0",
+    close_icon_class: "size-6",
+    messages_class: "flex grow flex-col gap-12 overflow-y-auto pr-4",
+    zero_state_class: "flex flex-row flex-wrap items-center justify-center gap-4 py-4"
+  }
+
   @impl true
   def mount(socket) do
-    {:ok, assign(socket, chat: false, show_timeline: false, is_cost_invoice: false)}
+    {:ok, assign(socket, chat: false, chat_subject: nil, show_timeline: false, is_cost_invoice: false)}
   end
 
   @impl true
@@ -172,7 +199,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                       else: "Edytuj fakturę"
                   }
                   data-tippy-delay="100"
-                  navigate={~p"/sprzedazowe/#{@latest_invoice_snapshot.id}/edytuj"}
+                  navigate={Navigation.sales_invoice_edit_path(@latest_invoice_snapshot, @return_to)}
                   kind="button"
                   variant="secondary"
                   size="small"
@@ -420,19 +447,43 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
           <%= cond do %>
             <% @invoice.skip_invoicing -> %>
               <InvoiceDetails.invoice_skipped_view is_cost_invoice={false} />
+            <% @chat -> %>
+              <.live_component
+                module={InvoiceAssistant}
+                id="invoice-assistant"
+                entry_context={assistant_entry_context(@chat_subject || @invoice)}
+                assistant_config={assistant_config(@chat_subject || @invoice)}
+                current_user={@current_user}
+                scope={@scope}
+                return_path={@return_to || Navigation.sales_invoice_show_path(@invoice)}
+              />
             <% not Enum.empty?(@invoice.transactions) -> %>
               <InvoiceDetails.transaction_match
                 is_cost_invoice={false}
                 transactions={@invoice.transactions}
-              />
-            <% @chat -> %>
-              <.live_component
-                module={FirmowidWeb.Invoicing.Components.InvoiceAssistant}
-                id="invoice-assistant"
-                invoice={@invoice}
-                current_user={@current_user}
-                scope={@scope}
-              />
+              >
+                <:status_action>
+                  <.status_button
+                    type="button"
+                    phx-click="disconnect"
+                    icon="hero-arrow-uturn-left-micro"
+                  />
+                </:status_action>
+
+                <:assistant_action :let={transaction}>
+                  <.button
+                    phx-click="show_chat"
+                    phx-target={@myself}
+                    phx-value-assistant_subject_ref={InvoiceDetailsAssistantSubject.ref(transaction)}
+                    class="w-full"
+                    variant="primary"
+                    accent="turquoise"
+                    size="small"
+                  >
+                    Zapytaj
+                  </.button>
+                </:assistant_action>
+              </InvoiceDetails.transaction_match>
             <% true -> %>
               <InvoiceDetails.potential_transactions
                 potential_transactions={@potential_transactions}
@@ -447,13 +498,19 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   end
 
   @impl true
-  def handle_event("show_chat", _params, socket) do
-    {:noreply, assign(socket, chat: true)}
+  def handle_event("show_chat", params, socket) do
+    {:noreply,
+     socket
+     |> assign(:chat, true)
+     |> assign(
+       :chat_subject,
+       InvoiceDetailsAssistantSubject.resolve(socket.assigns.invoice, params)
+     )}
   end
 
   def handle_event("close_chat", params, socket) do
-    maybe_close_assistant_session(params, socket)
-    {:noreply, assign(socket, chat: false)}
+    SessionCloser.close(params, socket.assigns.scope)
+    {:noreply, socket |> assign(:chat, false) |> assign(:chat_subject, nil)}
   end
 
   def handle_event("show_timeline", _params, socket) do
@@ -490,13 +547,28 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
 
   defp ksef_error_message(_), do: "Nie udało się wysłać faktury do KSeF"
 
-  defp maybe_close_assistant_session(%{"session_id" => session_id}, socket)
-       when is_binary(session_id) and session_id != "" do
-    _ = InvoiceMatching.close_session(session_id, socket.assigns.scope)
-    :ok
+  defp show_timeline_button?(submission_info), do: SubmissionInfo.attempted?(submission_info)
+
+  defp assistant_entry_context(%Transaction{} = transaction),
+    do: InvoiceMatching.entry_context_for_transaction(transaction)
+
+  defp assistant_entry_context(%SalesInvoice{} = invoice), do: InvoiceMatching.entry_context_for_invoice(invoice)
+
+  defp assistant_config(%Transaction{} = transaction) do
+    %{
+      displayed_party_label: transaction_displayed_party_label(transaction),
+      suggested_messages: @transaction_suggested_messages
+    }
   end
 
-  defp maybe_close_assistant_session(_params, _socket), do: :ok
+  defp assistant_config(%SalesInvoice{}) do
+    Map.merge(
+      %{displayed_party_label: "Nadawca", suggested_messages: @invoice_suggested_messages},
+      @sales_assistant_overrides
+    )
+  end
 
-  defp show_timeline_button?(submission_info), do: SubmissionInfo.attempted?(submission_info)
+  defp transaction_displayed_party_label(%Transaction{transaction_amount: amount}) do
+    if Decimal.compare(amount, 0) == :gt, do: "Nadawca", else: "Odbiorca"
+  end
 end

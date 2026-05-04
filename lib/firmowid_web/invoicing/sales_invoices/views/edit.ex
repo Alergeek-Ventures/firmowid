@@ -23,14 +23,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   alias Firmowid.Ash.Invoicing.Services.CorrectionReason
   alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Invoicing.FormHelpers
+  alias FirmowidWeb.Invoicing.Navigation
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
   alias FirmowidWeb.Invoicing.SalesInvoices.Views.Creator
 
   require Logger
 
   @impl true
-  def mount(%{"id" => id}, _session, socket) do
+  def mount(%{"id" => id} = params, _session, socket) do
     scope = socket.assigns.ash_scope
+    return_to = Navigation.return_to_path(params["return_to"])
 
     invoice =
       case SalesInvoice.by_id(id,
@@ -66,14 +68,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
         {:ok,
          socket
          |> put_flash(:error, not_editable_message(invoice))
-         |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}")}
+         |> push_navigate(to: Navigation.sales_invoice_show_path(invoice, return_to))}
 
       true ->
-        {:ok, mount_editable_invoice(socket, invoice)}
+        {:ok, mount_editable_invoice(socket, invoice, return_to)}
     end
   end
 
-  defp mount_editable_invoice(socket, invoice) do
+  defp mount_editable_invoice(socket, invoice, return_to) do
     scope = socket.assigns.ash_scope
     organization = Core.get_organization!(scope.tenant, scope: scope)
     bank_accounts = Finances.list_bank_accounts!(scope: scope)
@@ -86,6 +88,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
     socket
     |> assign(:invoice, invoice)
+    |> assign(:return_to, return_to)
     |> assign(:logo_url, logo_url)
     |> assign(:organization, organization)
     |> assign(:reference_invoice, reference_invoice)
@@ -295,7 +298,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     socket =
       socket
       |> push_event("unsaved-changed", %{value: false})
-      |> push_navigate(to: ~p"/sprzedazowe/#{socket.assigns.invoice.id}")
+      |> push_navigate(to: Navigation.sales_invoice_show_path(socket.assigns.invoice, socket.assigns.return_to))
 
     {:noreply, socket}
   end
@@ -328,7 +331,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
            socket
            |> push_event("unsaved-changed", %{value: false})
            |> put_flash(:info, "Wersja robocza faktury została zapisana")
-           |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}")}
+           |> push_navigate(to: Navigation.sales_invoice_show_path(invoice, socket.assigns.return_to))}
 
         {:error, form} ->
           Logger.error("Failed to save draft: #{inspect(form.source.errors)}")
@@ -374,7 +377,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
          :info,
          "Faktura została wystawiona, ale nie można jej wysłać do KSeF — brak połączenia z KSeF"
        )
-       |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
+       |> push_navigate(to: Navigation.sales_invoice_summary_path(invoice, socket.assigns.return_to))}
     else
       send_invoice_to_ksef(socket, invoice)
     end
@@ -400,7 +403,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
         {:noreply,
          socket
          |> push_event("unsaved-changed", %{value: false})
-         |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
+         |> push_navigate(to: Navigation.sales_invoice_summary_path(invoice, socket.assigns.return_to))}
 
       {:error, reason} ->
         Logger.error("Failed to submit invoice to KSeF: #{inspect(reason)}")
@@ -416,7 +419,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
          socket
          |> push_event("unsaved-changed", %{value: false})
          |> put_flash(:error, Ksef.failed_correction_message(reason))
-         |> push_navigate(to: ~p"/sprzedazowe/#{original_invoice_id}/edytuj")}
+         |> push_navigate(to: Navigation.sales_invoice_edit_path(original_invoice_id, socket.assigns.return_to))}
 
       {:error, destroy_error} ->
         Logger.error("Failed to clean up correction invoice #{invoice.id}: #{inspect(destroy_error)}")
@@ -425,7 +428,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
          socket
          |> push_event("unsaved-changed", %{value: false})
          |> put_flash(:error, "Nie udało się wysłać korekty do KSeF")
-         |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
+         |> push_navigate(to: Navigation.sales_invoice_summary_path(invoice, socket.assigns.return_to))}
 
       _ ->
         # Correction already submitted or doesn't exist — shouldn't happen, fallback to summary
@@ -433,7 +436,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
          socket
          |> push_event("unsaved-changed", %{value: false})
          |> put_flash(:error, "Nie udało się wysłać korekty do KSeF")
-         |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
+         |> push_navigate(to: Navigation.sales_invoice_summary_path(invoice, socket.assigns.return_to))}
     end
   end
 
@@ -442,7 +445,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
      socket
      |> push_event("unsaved-changed", %{value: false})
      |> put_flash(:error, "Faktura została wystawiona, ale wysyłka do KSeF nie powiodła się")
-     |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
+     |> push_navigate(to: Navigation.sales_invoice_summary_path(invoice, socket.assigns.return_to))}
   end
 
   defp create_confirmed_invoice(organization, form_params, scope, ash_form) do

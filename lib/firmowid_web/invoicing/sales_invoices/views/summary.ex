@@ -16,6 +16,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
+  alias FirmowidWeb.Invoicing.Navigation
 
   require Logger
 
@@ -30,10 +31,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   ]
 
   @impl true
-  def mount(%{"id" => id}, _session, socket) do
+  def mount(%{"id" => id} = params, _session, socket) do
     current_user = socket.assigns.current_user
 
     scope = socket.assigns.ash_scope
+    return_to = Navigation.return_to_path(params["return_to"])
 
     invoice = load_invoice!(id, scope)
 
@@ -57,6 +59,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
       |> assign(:previous_invoices, previous_invoices)
       |> assign(:submission_info, submission_info)
       |> assign(:currency_rate, currency_rate)
+      |> assign(:return_to, return_to)
       |> assign(:ksef_connected?, Ksef.get_credential(socket.assigns.ash_scope) != nil)
 
     {:ok, socket}
@@ -94,7 +97,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
           <.link
-            navigate={~p"/sprzedazowe/#{@invoice.id}/edytuj"}
+            navigate={Navigation.sales_invoice_edit_path(@invoice, @return_to)}
             kind="button"
             variant="secondary"
             size="small"
@@ -127,7 +130,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
         <div class="flex items-center gap-4">
           <.link
             kind="unstyled"
-            navigate={~p"/sprzedazowe/#{@invoice.id}"}
+            navigate={Navigation.sales_invoice_show_path(@invoice, @return_to)}
             class="hover:text-grey-900 text-grey-600 text-sm"
           >
             Przejdź do faktury
@@ -154,7 +157,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             A tę usuń.
           </p>
           <.link
-            navigate={~p"/sprzedazowe/#{@invoice.id}"}
+            navigate={Navigation.sales_invoice_show_path(@invoice, @return_to)}
             kind="button"
             variant="primary"
             accent="turquoise"
@@ -255,7 +258,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
         {:noreply,
          socket
          |> put_flash(:error, Ksef.failed_correction_message(reason))
-         |> push_navigate(to: ~p"/sprzedazowe/#{original_invoice_id}/edytuj")}
+         |> push_navigate(to: Navigation.sales_invoice_edit_path(original_invoice_id, socket.assigns.return_to))}
 
       {:error, destroy_error} ->
         Logger.error("Failed to clean up correction invoice #{invoice.id} from summary: #{inspect(destroy_error)}")
@@ -291,7 +294,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
         {:noreply,
          socket
          |> put_flash(:error, Ksef.failed_correction_deleted_message())
-         |> push_navigate(to: ~p"/sprzedazowe/#{corrected_invoice_id}/edytuj")}
+         |> push_navigate(to: Navigation.sales_invoice_edit_path(corrected_invoice_id, socket.assigns.return_to))}
     end
   end
 

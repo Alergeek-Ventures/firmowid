@@ -11,6 +11,8 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
+  alias FirmowidWeb.Invoicing.Navigation
+
   attr :params, :map, required: true
   attr :pending_count, :integer, default: 0
   attr :is_month_closed, :boolean, default: false
@@ -131,7 +133,14 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
 
   defp sub_filters(assigns), do: ~H""
 
-  defp dashboard_url(month), do: ~p"/fakturowanie?month=#{Date.to_iso8601(month)}&filter=all"
+  defp dashboard_url(month) do
+    Navigation.invoicing_index_path(%{
+      month: month,
+      filter: :all,
+      subfilter: nil,
+      view_mode: :dashboard
+    })
+  end
 
   defp filter_url(params, filter), do: build_url(params.month, filter, nil)
 
@@ -141,20 +150,12 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
   end
 
   defp build_url(month, filter, subfilter) do
-    query_parts = [
-      "month=#{Date.to_iso8601(month)}",
-      "filter=#{Atom.to_string(filter)}",
-      "view=list"
-    ]
-
-    query_parts =
-      if subfilter do
-        query_parts ++ ["subfilter=#{Atom.to_string(subfilter)}"]
-      else
-        query_parts
-      end
-
-    "/fakturowanie?" <> Enum.join(query_parts, "&")
+    Navigation.invoicing_index_path(%{
+      month: month,
+      filter: filter,
+      subfilter: subfilter,
+      view_mode: :list
+    })
   end
 
   defp top_level_filter_styles(active?) do

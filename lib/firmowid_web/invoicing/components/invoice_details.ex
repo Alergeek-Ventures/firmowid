@@ -19,6 +19,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.RecommendationThresholds
+  alias FirmowidWeb.Invoicing.Navigation
 
   attr :is_cost_invoice, :boolean
   attr :source, :string, required: true
@@ -36,7 +37,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
     ]}>
       <.link
         kind="unstyled"
-        navigate={@return_to || ~p"/fakturowanie?month=#{@issue_date |> Date.to_iso8601()}"}
+        navigate={@return_to || default_return_path(@issue_date)}
       >
         <.icon name="hero-arrow-left-circle-solid" class="size-7" />
       </.link>
@@ -381,27 +382,34 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   attr :is_cost_invoice, :boolean, required: true
   attr :transactions, :list, required: true
+  slot :status_action, required: true
+  slot :assistant_action, required: true
 
   def transaction_match(assigns) do
     transactions = assigns.transactions
-    single_transaction? = length(assigns.transactions) == 1
-
-    assigns = assign(assigns, :single_transaction?, single_transaction?)
+    single_transaction? = length(transactions) == 1
+    currencies = transactions |> Enum.map(& &1.transaction_currency) |> Enum.uniq()
+    show_total? = not single_transaction? and length(currencies) == 1
 
     assigns =
-      if single_transaction? do
-        assigns
-      else
+      assigns
+      |> assign(:single_transaction?, single_transaction?)
+      |> assign(:show_total?, show_total?)
+
+    assigns =
+      if show_total? do
         assigns
         |> assign(
           :total,
           Enum.reduce(transactions, Decimal.new(0), &Decimal.add(&1.transaction_amount, &2))
         )
-        |> assign(:currency, hd(transactions).transaction_currency)
+        |> assign(:currency, List.first(currencies))
+      else
+        assigns
       end
 
     ~H"""
-    <div class="flex flex-col gap-4">
+    <section class="space-y-8">
       <div class="flex flex-row items-center justify-between">
         <p class="text-lg/tight font-medium">Dopasowanie</p>
 
@@ -409,48 +417,67 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           <div class="flex flex-row items-center self-stretch rounded-md bg-green-200 px-[14.5px]">
             <p class="text-sm/tight font-medium text-green-700">Komplet</p>
           </div>
-          <.status_button
-            type="button"
-            phx-click="disconnect"
-            icon="hero-arrow-uturn-left-micro"
-          />
+          {render_slot(@status_action)}
         </div>
       </div>
 
-      <div
-        :for={transaction <- @transactions}
-        class="grid grid-flow-col grid-cols-[2fr_1fr_1fr] grid-rows-2 gap-x-4 gap-y-6 rounded-md bg-[#D0E6CE66] p-4"
-      >
-        <%= for {label, val} <- [
-            {"Kontrahent", if(@is_cost_invoice, do: transaction.creditor_name, else: transaction.debtor_name)},
-            {"Wierzyciel", if(not @is_cost_invoice, do: transaction.creditor_name, else: transaction.debtor_name)},
-            {"Zaksięgowano", transaction.booking_date},
-            transaction.value_date && {"Przewalutowano", transaction.value_date},
-          ] do %>
-          <div class="space-y-1">
-            <p class="text-grey-700 text-sm/snug">{label}</p>
-            <p class="leading-snug">{val}</p>
-          </div>
-        <% end %>
+      <div class="flex flex-col gap-4">
+        <div
+          :for={transaction <- @transactions}
+          class="grid grid-flow-col grid-cols-[2fr_1fr_1fr] grid-rows-2 gap-x-4 gap-y-6 rounded-md bg-[#D0E6CE66] p-4"
+        >
+          <%= for {label, val} <- [
+              {"Kontrahent", if(@is_cost_invoice, do: transaction.creditor_name, else: transaction.debtor_name)},
+              {"Wierzyciel", if(not @is_cost_invoice, do: transaction.creditor_name, else: transaction.debtor_name)},
+              {"Zaksięgowano", transaction.booking_date},
+              transaction.value_date && {"Przewalutowano", transaction.value_date},
+            ] do %>
+            <div class="space-y-1">
+              <p class="text-grey-700 text-sm/snug">{label}</p>
+              <p class="leading-snug">{val}</p>
+            </div>
+          <% end %>
 
-        <div class="row-span-2 flex items-end justify-end text-right">
-          <p class={["leading-snug text-green-700", @single_transaction? && "text-lg"]}>
-            {Money.new(transaction.transaction_amount, transaction.transaction_currency)}
+          <div class="row-span-2 flex items-end justify-end text-right">
+            <p class={["leading-snug text-green-700", @single_transaction? && "text-lg"]}>
+              {Money.new(transaction.transaction_amount, transaction.transaction_currency)}
+            </p>
+          </div>
+        </div>
+
+        <div
+          :if={@show_total?}
+          class="flex flex-row items-center justify-between rounded-md bg-[#D0E6CE66] p-4"
+        >
+          <p class="text-grey-700 text-sm">Suma</p>
+
+          <p class="text-lg/tight text-green-700">
+            {if @is_cost_invoice, do: "-", else: ""}{Money.new(@total, @currency)}
           </p>
         </div>
       </div>
 
-      <div
-        :if={not @single_transaction?}
-        class="flex flex-row items-center justify-between rounded-md bg-[#D0E6CE66] p-4"
-      >
-        <p class="text-grey-700 text-sm">Suma</p>
+      <div class="space-y-6">
+        <h3 class="leading-tight font-medium">Co jeszcze możesz zrobić?</h3>
 
-        <p class="text-lg/tight text-green-700">
-          {if @is_cost_invoice, do: "-", else: ""}{Money.new(@total, @currency)}
-        </p>
+        <div class="grid grid-cols-[1fr_8rem] gap-6 lg:gap-x-10">
+          <div
+            :for={transaction <- @transactions}
+            class="col-span-full grid grid-cols-subgrid items-center"
+          >
+            <p class="text-grey-700 text-sm/snug text-balance">
+              <%= if @single_transaction? do %>
+                Poproś Firmowida o pomoc w znalezieniu kolejnych faktur dla tej transakcji.
+              <% else %>
+                Poproś Firmowida o pomoc w znalezieniu kolejnych faktur dla transakcji zaksięgowanej {transaction.booking_date}.
+              <% end %>
+            </p>
+
+            {render_slot(@assistant_action, transaction)}
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
     """
   end
 
@@ -461,8 +488,8 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
     <div class="space-y-4">
       <div class="flex flex-row items-center justify-between">
         <p class="text-lg/tight font-medium">Transakcja pominięta</p>
-        <div class="flex w-32 flex-row gap-2">
-          <div class="flex h-8 flex-1 items-center justify-center rounded-md bg-green-200 p-2 text-green-700">
+        <div class="flex w-32 flex-row gap-1">
+          <div class="flex flex-1 items-center justify-center rounded-md bg-green-200 px-2 text-green-700">
             <.icon name="hero-document-text-micro" class="size-4" />
           </div>
           <.status_button
@@ -529,18 +556,18 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
         </.button>
       </div>
 
-      <div class="col-span-full grid grid-cols-subgrid">
+      <div class="col-span-full grid grid-cols-subgrid items-center">
         <p class="text-grey-700 text-sm/snug text-balance">
           A może żadna transakcja nie pasuje, bo zapłacono gotówką, lub na inne konto?
           Pomiń jej szukanie. Firmowid oznaczy ją jako rozliczoną poza systemem.
         </p>
-        <div class="flex w-full flex-row items-start gap-2">
+        <div class="flex h-8 w-full flex-row items-start gap-2">
           <div class="bg-grey-200 text-grey-700 flex items-center justify-center rounded-md p-2">
             <.icon name="hero-document-text-solid" class="size-4" />
           </div>
           <.button
             phx-click="toggle-invoicing"
-            class="w-full"
+            class="size-full"
             variant="secondary"
             size="small"
           >
@@ -706,5 +733,9 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       };
     </script>
     """
+  end
+
+  defp default_return_path(issue_date) do
+    Navigation.default_invoicing_path(issue_date)
   end
 end
