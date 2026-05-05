@@ -60,10 +60,4 @@ up = "mix dev.up"
 down = "mix dev.down"
 
 [list]
-url = """
-if [[ "$HOME" == "kosciak"* ]]; then
-  echo https://{{ branch | sanitize }}.firmowid.localhost
-else
-  echo "http://{{ branch | sanitize }}.firmowid.localhost:8080"
-fi
-"""
+url = "https://{% if branch == 'main' %}main{% else %}{{ branch | sanitize }}{% endif %}.firmowid.localhost"

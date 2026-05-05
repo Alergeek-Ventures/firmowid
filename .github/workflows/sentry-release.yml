@@ -46,9 +46,6 @@ jobs:
     needs: extract-versions
     env:
       MIX_ENV: prod
-      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-      SENTRY_ORG: ${{ vars.SENTRY_ORG || 'alergeek' }}
-      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'firmowid' }}
 
     steps:
       - name: Checkout repository
@@ -71,7 +68,11 @@ jobs:
           mix phx.digest
 
       - name: Create and finalize Sentry release
-        uses: getsentry/action-release@v3
+        uses: getsentry/action-release@5657c9e888b4e2cc85f4d29143ea4131fde4a73a # v3
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG || 'alergeek' }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'firmowid' }}
         with:
           environment: production
           release: ${{ github.sha }}

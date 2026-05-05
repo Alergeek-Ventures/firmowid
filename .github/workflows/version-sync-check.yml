@@ -22,44 +22,25 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       # ── Elixir / Erlang: .tool-versions ↔ Containerfile.app ────────
-      - name: Extract versions from .tool-versions
-        id: tool_versions
+      - name: Compare Elixir/Erlang versions
         run: |
-          ELIXIR_FULL=$(grep "^elixir " .tool-versions | awk '{print $2}')
-          ERLANG=$(grep "^erlang " .tool-versions | awk '{print $2}')
-          ELIXIR=$(echo "$ELIXIR_FULL" | sed 's/-otp-.*//')
+          TOOL_ELIXIR_FULL=$(grep "^elixir " .tool-versions | awk '{print $2}')
+          TOOL_ERLANG=$(grep "^erlang " .tool-versions | awk '{print $2}')
+          TOOL_ELIXIR=$(echo "$TOOL_ELIXIR_FULL" | sed 's/-otp-.*//')
 
-          echo "elixir=$ELIXIR" >> $GITHUB_OUTPUT
-          echo "erlang=$ERLANG" >> $GITHUB_OUTPUT
-
-          echo "From .tool-versions:"
-          echo "  Elixir: $ELIXIR"
-          echo "  Erlang: $ERLANG"
-
-      - name: Extract versions from Containerfile
-        id: dockerfile_versions
-        run: |
           # Strip the @sha256:... digest before parsing version components
           BUILDER_IMAGE=$(grep '^ARG BUILDER_IMAGE=' deployment/Containerfile.app | sed 's/.*hexpm\/elixir:\([^"@]*\).*/\1/')
-
           DOCKERFILE_ELIXIR=$(echo "$BUILDER_IMAGE" | sed 's/-erlang.*//')
           DOCKERFILE_ERLANG=$(echo "$BUILDER_IMAGE" | sed 's/.*erlang-\([0-9.]*\)-.*/\1/')
 
-          echo "dockerfile_elixir=$DOCKERFILE_ELIXIR" >> $GITHUB_OUTPUT
-          echo "dockerfile_erlang=$DOCKERFILE_ERLANG" >> $GITHUB_OUTPUT
-
+          echo "=== Elixir / Erlang ==="
+          echo ""
+          echo "From .tool-versions:"
+          echo "  Elixir: $TOOL_ELIXIR"
+          echo "  Erlang: $TOOL_ERLANG"
           echo "From Containerfile.app:"
           echo "  Elixir: $DOCKERFILE_ELIXIR"
           echo "  Erlang: $DOCKERFILE_ERLANG"
-
-      - name: Compare Elixir/Erlang versions
-        run: |
-          TOOL_ELIXIR="${{ steps.tool_versions.outputs.elixir }}"
-          TOOL_ERLANG="${{ steps.tool_versions.outputs.erlang }}"
-          DOCKERFILE_ELIXIR="${{ steps.dockerfile_versions.outputs.dockerfile_elixir }}"
-          DOCKERFILE_ERLANG="${{ steps.dockerfile_versions.outputs.dockerfile_erlang }}"
-
-          echo "=== Elixir / Erlang ==="
           echo ""
 
           MISMATCH=0

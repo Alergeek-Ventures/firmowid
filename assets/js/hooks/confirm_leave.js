@@ -1,6 +1,8 @@
 export const ConfirmLeave = {
   mounted() {
-    this.unsaved = false;
+    this.unsaved = this.el.dataset.unsaved === "true";
+    this.confirmMessage =
+      "Masz niezapisane zmiany. Czy na pewno chcesz opuścić stronę?";
 
     this.beforeUnloadHandler = (event) => {
       if (this.unsaved) {
@@ -10,24 +12,33 @@ export const ConfirmLeave = {
     };
 
     this.unsavedChangedHandler = (e) => {
-      this.unsaved = e.detail.value;
+      this.unsaved = Boolean(e.detail.value);
     };
 
-    // Intercept LiveView navigation (browser back, internal links)
-    this.navigateHandler = (event) => {
-      if (this.unsaved) {
-        const confirmed = window.confirm(
-          "Masz niezapisane zmiany. Czy na pewno chcesz opuścić stronę?",
-        );
-        if (!confirmed) {
-          event.preventDefault();
-        }
+    this.clickHandler = (event) => {
+      if (!this.unsaved) return;
+
+      const guardedTarget =
+        event.target instanceof Element
+          ? event.target.closest("[data-confirm-leave]")
+          : null;
+
+      if (!guardedTarget || !this.el.contains(guardedTarget)) return;
+
+      const confirmed = window.confirm(
+        guardedTarget.dataset.confirmLeaveMessage || this.confirmMessage,
+      );
+
+      if (!confirmed) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        event.stopPropagation();
       }
     };
 
     window.addEventListener("beforeunload", this.beforeUnloadHandler);
     window.addEventListener("phx:unsaved-changed", this.unsavedChangedHandler);
-    window.addEventListener("phx:navigate", this.navigateHandler);
+    this.el.addEventListener("click", this.clickHandler, true);
   },
 
   destroyed() {
@@ -36,6 +47,6 @@ export const ConfirmLeave = {
       "phx:unsaved-changed",
       this.unsavedChangedHandler,
     );
-    window.removeEventListener("phx:navigate", this.navigateHandler);
+    this.el.removeEventListener("click", this.clickHandler, true);
   },
 };
