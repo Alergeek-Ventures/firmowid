@@ -581,6 +581,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   end
 
   attr :id, :string, required: true
+  attr :class, :string, required: false
   slot :inner_block, required: true
   slot :trigger, required: true, doc: "the slot for the trigger element"
 

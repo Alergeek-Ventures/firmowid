@@ -526,7 +526,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     assigns =
       assigns
       |> assign(:party, party)
-      |> assign(:bank_badge, BankBadges.badge_for_transaction(transaction))
+      |> assign(:bank_badge, Map.get(transaction, :bank_account))
       |> assign(:invoice_source_badge, nil)
       |> assign(:description, transaction.remittance_information_unstructured)
       |> assign(
@@ -844,13 +844,13 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   attr :party, :string, default: nil
   attr :description, :string, default: nil
-  attr :bank_badge, :string, default: nil
+  attr :bank_badge, :any, default: nil
   attr :invoice_source_badge, :string, default: nil
 
   defp party_cell_content(assigns) do
     ~H"""
     <div class="flex min-w-0 items-center gap-2.5">
-      <.bank_badge :if={@bank_badge} bank={@bank_badge} size="mini" class="shrink-0" />
+      <.bank_badge :if={@bank_badge} institution={@bank_badge} size="mini" class="shrink-0" />
       <.invoice_source_badge
         :if={@invoice_source_badge}
         source={@invoice_source_badge}

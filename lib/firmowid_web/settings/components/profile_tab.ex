@@ -25,7 +25,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
   def profile_tab(assigns) do
     ~H"""
-    <div class="grid items-start gap-8 lg:grid-cols-2 lg:gap-x-12 lg:gap-y-8">
+    <div class="grid items-start gap-8 lg:grid-cols-2 lg:gap-16">
       <.employment_section
         current_user={@current_user}
         user_form={@user_form}

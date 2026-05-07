@@ -826,5 +826,57 @@
         </div>
       </div>
     </div>
+
+    <%!-- 9. Preview odznak bankowych --%>
+    <div class="border-grey-200 overflow-hidden rounded-lg border bg-white">
+      <.button
+        phx-click={toggle_section("bank-badges")}
+        type="button"
+        id="section-trigger-bank-badges"
+        aria-controls="section-panel-bank-badges"
+        variant="unstyled"
+        class="flex w-full items-center justify-between px-5 py-4 text-left [&_.section-chevron]:aria-expanded:rotate-180"
+      >
+        <div class="flex items-center gap-3">
+          <.icon name="hero-credit-card-mini" class="text-darkGrey size-5" />
+          <span class="font-semibold">Preview odznak bankowych</span>
+          <span class="text-darkGrey text-xs">Figma 11701:17853 · full + mini</span>
+        </div>
+        <.icon
+          name="hero-chevron-down"
+          class="section-chevron text-darkGrey size-4 transition-transform duration-300 ease-in-out"
+        />
+      </.button>
+      <div
+        id="section-panel-bank-badges"
+        role="region"
+        class="grid grid-rows-[0fr] transition-all duration-300 ease-in-out data-expanded:grid-rows-[1fr]"
+      >
+        <div class="overflow-hidden">
+          <div class="border-grey-100 border-t px-5 pb-5">
+            <p class="text-darkGrey my-4 text-sm">
+              Zestaw do manualnej weryfikacji zgodności z Figmą. Zawiera też poprawione,
+              jednoznacznie rozpoznawalne duplikaty z eksportu (`Neteller`, `Skrill`, `Vivid`).
+            </p>
+
+            <div class="grid grid-cols-1 gap-3 xl:grid-cols-2">
+              <div
+                :for={bank <- @bank_badges}
+                class="border-grey-100 flex items-center justify-between gap-4 rounded-lg border bg-[#fafafa] p-4"
+              >
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-medium">{bank}</p>
+                </div>
+
+                <div class="flex shrink-0 items-center gap-3">
+                  <.bank_badge bank={bank} size="full" />
+                  <.bank_badge bank={bank} size="mini" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

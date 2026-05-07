@@ -12,12 +12,19 @@ defmodule FirmowidWeb.Development.Views.Index do
 
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.InvoicingBadges
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
+  alias FirmowidWeb.DesignSystem.Components.InvoicingBadges
+
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, page_title: "Przewodnik deweloperski")}
+    {:ok,
+     assign(socket,
+       page_title: "Przewodnik deweloperski",
+       bank_badges: InvoicingBadges.bank_badge_variants()
+     )}
   end
 
   @doc false

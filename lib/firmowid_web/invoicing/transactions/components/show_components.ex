@@ -19,7 +19,6 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   alias FirmowidWeb.Invoicing.Components.InvoiceAssistant
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Navigation
-  alias FirmowidWeb.Invoicing.Utilities.BankBadges
 
   @transaction_suggested_messages [
     "Ta transakcja opłaciła kilka faktur z poprzedniego miesiąca",
@@ -49,7 +48,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
           <p class="text-darkGrey text-sm/snug">{header_account_label(@transaction)}</p>
           <p class="text-darkGrey text-sm/snug">{bank_name(@transaction)}</p>
         </div>
-        <.bank_badge bank={BankBadges.badge_for_transaction(@transaction)} size="full" />
+        <.bank_badge institution={Map.get(@transaction, :bank_account)} size="full" />
       </div>
     </header>
     """

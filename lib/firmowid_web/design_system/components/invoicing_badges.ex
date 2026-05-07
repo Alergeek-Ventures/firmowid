@@ -9,6 +9,7 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
 
   use FirmowidWeb, :html
 
+  alias FirmowidWeb.Invoicing.Utilities.BankBadges
   alias Phoenix.LiveView.Rendered
 
   @banks [
@@ -18,6 +19,7 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
     "Paribas",
     "ING",
     "mBank",
+    "mBank (firma)",
     "PKO BP",
     "Default",
     "Citi Bank",
@@ -38,7 +40,14 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
     "Monese",
     "N26",
     "Neteller",
-    "PayPal"
+    "PayPal",
+    "Paysera",
+    "Revolut",
+    "Skrill",
+    "Soldo",
+    "Stripe",
+    "Vivid",
+    "Wise"
   ]
 
   @bank_sizes ["full", "mini"]
@@ -46,13 +55,31 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
   @invoice_source_sizes ["small", "big"]
 
   @doc """
+  Returns all supported bank badge variants in preview order.
+  """
+  @spec bank_badge_variants() :: [String.t()]
+  def bank_badge_variants, do: @banks
+
+  @doc """
   Renders a Figma-faithful bank badge.
+
+  Input may be a badge name directly (`:bank`) or a GoCardless institution
+  struct/map (`:institution`) / institution id (`:institution_id`).
+  The input is normalized to one of supported badge variants, with a safe
+  fallback to `"Default"`.
   """
   @spec bank_badge(map()) :: Rendered.t()
   attr :bank, :string,
-    required: true,
-    values: @banks,
-    doc: "Institution variant from the Figma bank badge set."
+    default: nil,
+    doc: "Bank name or explicit badge variant candidate."
+
+  attr :institution, :any,
+    default: nil,
+    doc: "GoCardless institution struct/map used for resolution."
+
+  attr :institution_id, :string,
+    default: nil,
+    doc: "GoCardless institution id used for resolution."
 
   attr :size, :string,
     default: "full",
@@ -63,7 +90,30 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
 
   attr :rest, :global, include: ~w(aria-label title phx-click phx-hook id data-test-id)
 
-  def bank_badge(assigns), do: bank_badge_variant(assigns)
+  def bank_badge(assigns) do
+    assigns
+    |> assign(:bank, resolve_bank_badge(assigns))
+    |> bank_badge_variant()
+  end
+
+  defp resolve_bank_badge(assigns) do
+    cond do
+      assigns[:institution] not in [nil] ->
+        BankBadges.badge_for_institution(assigns[:institution])
+
+      is_binary(assigns[:institution_id]) ->
+        BankBadges.badge_for_institution(assigns[:institution_id])
+
+      is_binary(assigns[:bank]) and assigns[:bank] in @banks ->
+        assigns[:bank]
+
+      is_binary(assigns[:bank]) ->
+        BankBadges.badge_for(assigns[:bank])
+
+      true ->
+        "Default"
+    end
+  end
 
   defp bank_badge_variant(%{bank: "Alior Bank", size: "full"} = assigns) do
     ~H"""
@@ -367,6 +417,24 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
     """
   end
 
+  defp bank_badge_variant(%{bank: "Citi Bank", size: "mini"} = assigns) do
+    ~H"""
+    <.mini_bank_shell
+      bg="bg-[#004888]"
+      root_class="content-stretch flex h-[24px] items-center justify-center px-[10px] py-[4px] relative rounded-[2px] w-[36px]"
+      bank={@bank}
+      class={@class}
+      rest={@rest}
+    >
+      <div class="relative size-[16px] shrink-0 overflow-clip">
+        <div class="absolute top-[3.38px] left-0 h-[9.205px] w-[16px]">
+          <img alt="" class="absolute inset-0 block size-full max-w-none" src={asset("cd2.svg")} />
+        </div>
+      </div>
+    </.mini_bank_shell>
+    """
+  end
+
   defp bank_badge_variant(%{bank: "Raiffeisen Bank", size: "full"} = assigns) do
     ~H"""
     <.full_bank_shell
@@ -380,6 +448,16 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
         <img alt="" class="absolute inset-0 block size-full max-w-none" src={asset("logo.svg")} />
       </div>
     </.full_bank_shell>
+    """
+  end
+
+  defp bank_badge_variant(%{bank: "Raiffeisen Bank", size: "mini"} = assigns) do
+    ~H"""
+    <.mini_bank_shell bg="bg-[#fff21f]" bank={@bank} class={@class} rest={@rest}>
+      <div class="relative size-[16px] shrink-0">
+        <img alt="" class="absolute inset-0 block size-full max-w-none" src={asset("logo1.svg")} />
+      </div>
+    </.mini_bank_shell>
     """
   end
 
@@ -439,6 +517,22 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
     """
   end
 
+  defp bank_badge_variant(%{bank: "Velo Bank", size: "mini"} = assigns) do
+    ~H"""
+    <.mini_bank_shell bg="bg-[#00b341]" bank={@bank} class={@class} rest={@rest}>
+      <div class="relative size-[16px] shrink-0">
+        <div class="pointer-events-none absolute inset-0 overflow-hidden">
+          <img
+            alt=""
+            class="absolute top-[-58.33%] left-[-58.33%] size-[216.67%] max-w-none"
+            src={asset("bank_account_image.png")}
+          />
+        </div>
+      </div>
+    </.mini_bank_shell>
+    """
+  end
+
   defp bank_badge_variant(%{bank: "Credit Agricole", size: "full"} = assigns) do
     ~H"""
     <.full_bank_shell
@@ -452,6 +546,18 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
         <img alt="" class="absolute inset-0 block size-full max-w-none" src={asset("frame4242.svg")} />
       </div>
     </.full_bank_shell>
+    """
+  end
+
+  # Figma labels this mini badge as a duplicate Raiffeisen variant,
+  # but the exported asset and colors clearly belong to Credit Agricole.
+  defp bank_badge_variant(%{bank: "Credit Agricole", size: "mini"} = assigns) do
+    ~H"""
+    <.mini_bank_shell bg="bg-[#00848c]" bank={@bank} class={@class} rest={@rest}>
+      <div class="relative size-[16px] shrink-0">
+        <img alt="" class="absolute inset-0 block size-full max-w-none" src={asset("frame4243.svg")} />
+      </div>
+    </.mini_bank_shell>
     """
   end
 
@@ -970,20 +1076,18 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
   defp bank_badge_variant(%{bank: "PayPal", size: "full"} = assigns) do
     ~H"""
     <.full_bank_shell
-      bg="bg-[#0373fd]"
-      indicator="vector.svg"
+      bg="bg-[#d4e8ed]"
+      indicator="vector9.svg"
       bank={@bank}
       class={@class}
       rest={@rest}
     >
-      <div class="relative size-[26px] shrink-0">
-        <div class="pointer-events-none absolute inset-0 overflow-hidden">
-          <img
-            alt=""
-            class="absolute top-[-26.5%] left-[-26.5%] size-[153%] max-w-none"
-            src={asset("image15.png")}
-          />
-        </div>
+      <div class="relative h-[24.226px] w-[26px] shrink-0">
+        <img
+          alt=""
+          class="pointer-events-none absolute inset-0 size-full max-w-none object-cover"
+          src={asset("image17.png")}
+        />
       </div>
     </.full_bank_shell>
     """
@@ -991,15 +1095,303 @@ defmodule FirmowidWeb.DesignSystem.Components.InvoicingBadges do
 
   defp bank_badge_variant(%{bank: "PayPal", size: "mini"} = assigns) do
     ~H"""
-    <.mini_bank_shell bg="bg-[#0373fd]" bank={@bank} class={@class} rest={@rest}>
-      <div class="relative size-[16px] shrink-0">
+    <.mini_bank_shell bg="bg-[#d4e8ed]" bank={@bank} class={@class} rest={@rest}>
+      <div class="relative h-[14.908px] w-[16px] shrink-0">
+        <img
+          alt=""
+          class="pointer-events-none absolute inset-0 size-full max-w-none object-cover"
+          src={asset("image17.png")}
+        />
+      </div>
+    </.mini_bank_shell>
+    """
+  end
+
+  defp bank_badge_variant(%{bank: "Paysera", size: "full"} = assigns) do
+    ~H"""
+    <.full_bank_shell
+      bg="bg-[#009]"
+      indicator="vector.svg"
+      bank={@bank}
+      class={@class}
+      rest={@rest}
+    >
+      <div class="relative size-[26px] shrink-0 overflow-clip">
+        <div class="absolute top-0 left-[3px] h-[26px] w-[20.345px] overflow-clip">
+          <img alt="" class="absolute inset-0 block size-full max-w-none" src={asset("group1.svg")} />
+        </div>
+      </div>
+    </.full_bank_shell>
+    """
+  end
+
+  defp bank_badge_variant(%{bank: "Paysera", size: "mini"} = assigns) do
+    ~H"""
+    <.mini_bank_shell bg="bg-[#009]" bank={@bank} class={@class} rest={@rest}>
+      <div class="relative h-[12px] w-[9.39px] shrink-0 overflow-clip">
+        <img alt="" class="absolute inset-0 block size-full max-w-none" src={asset("group.svg")} />
+      </div>
+    </.mini_bank_shell>
+    """
+  end
+
+  defp bank_badge_variant(%{bank: "mBank (firma)", size: "full"} = assigns) do
+    ~H"""
+    <.full_bank_shell
+      bg="bg-[#26221e]"
+      indicator="vector.svg"
+      bank={@bank}
+      class={@class}
+      rest={@rest}
+    >
+      <div class="relative h-[42px] w-[26px] shrink-0">
+        <img alt="" class="absolute inset-0 block size-full max-w-none" src={asset("mbk_wa_3.svg")} />
+      </div>
+    </.full_bank_shell>
+    """
+  end
+
+  defp bank_badge_variant(%{bank: "mBank (firma)", size: "mini"} = assigns) do
+    ~H"""
+    <.mini_bank_shell bg="bg-[#26221e]" bank={@bank} class={@class} rest={@rest}>
+      <div class="relative h-[24px] w-[14.857px] shrink-0">
+        <img alt="" class="absolute inset-0 block size-full max-w-none" src={asset("mbk_wa_4.svg")} />
+      </div>
+    </.mini_bank_shell>
+    """
+  end
+
+  defp bank_badge_variant(%{bank: "Revolut", size: "full"} = assigns) do
+    ~H"""
+    <.full_bank_shell
+      bg="bg-black"
+      indicator="vector.svg"
+      bank={@bank}
+      class={@class}
+      rest={@rest}
+    >
+      <div class="relative size-[24px] shrink-0">
+        <img
+          alt=""
+          class="absolute inset-0 block size-full max-w-none"
+          src={asset("revolut_streamline_simple_icons.svg")}
+        />
+      </div>
+    </.full_bank_shell>
+    """
+  end
+
+  defp bank_badge_variant(%{bank: "Revolut", size: "mini"} = assigns) do
+    ~H"""
+    <.mini_bank_shell
+      bg="bg-black"
+      root_class="content-stretch flex h-[24px] items-center justify-center px-[10px] py-[4px] relative rounded-[2px] w-[36px]"
+      bank={@bank}
+      class={@class}
+      rest={@rest}
+    >
+      <div class="relative size-[12px] shrink-0">
+        <img
+          alt=""
+          class="absolute inset-0 block size-full max-w-none"
+          src={asset("revolut_streamline_simple_icons1.svg")}
+        />
+      </div>
+    </.mini_bank_shell>
+    """
+  end
+
+  # Figma exports these visuals as duplicate PKO BP variants,
+  # but the exported slice is clearly Skrill.
+  defp bank_badge_variant(%{bank: "Skrill", size: "full"} = assigns) do
+    ~H"""
+    <.full_bank_shell
+      bg="bg-[#862565]"
+      indicator="vector.svg"
+      bank={@bank}
+      class={@class}
+      rest={@rest}
+    >
+      <div class="relative h-[12.268px] w-[34px] shrink-0">
+        <img
+          alt=""
+          class="pointer-events-none absolute inset-0 size-full max-w-none object-cover"
+          src={asset("skrill_logo1.svg")}
+        />
+      </div>
+    </.full_bank_shell>
+    """
+  end
+
+  defp bank_badge_variant(%{bank: "Skrill", size: "mini"} = assigns) do
+    ~H"""
+    <.mini_bank_shell
+      bg="bg-[#862565]"
+      root_class="content-stretch flex h-[24px] items-center justify-center px-[10px] py-[4px] relative rounded-[2px] w-[36px]"
+      bank={@bank}
+      class={@class}
+      rest={@rest}
+    >
+      <div class="relative h-[7.216px] w-[20px] shrink-0">
+        <img
+          alt=""
+          class="pointer-events-none absolute inset-0 size-full max-w-none object-cover"
+          src={asset("skrill_logo1.svg")}
+        />
+      </div>
+    </.mini_bank_shell>
+    """
+  end
+
+  defp bank_badge_variant(%{bank: "Soldo", size: "full"} = assigns) do
+    ~H"""
+    <.full_bank_shell
+      bg="bg-[#191919]"
+      indicator="vector10.svg"
+      bank={@bank}
+      class={@class}
+      rest={@rest}
+    >
+      <div class="relative h-[21px] w-[36px] shrink-0">
         <div class="pointer-events-none absolute inset-0 overflow-hidden">
           <img
             alt=""
-            class="absolute top-[-26.5%] left-[-26.5%] size-[153%] max-w-none"
-            src={asset("image15.png")}
+            class="absolute top-[-38.89%] left-[-3.23%] h-[177.78%] w-[103.23%] max-w-none"
+            src={asset("image18.png")}
           />
         </div>
+      </div>
+    </.full_bank_shell>
+    """
+  end
+
+  defp bank_badge_variant(%{bank: "Soldo", size: "mini"} = assigns) do
+    ~H"""
+    <.mini_bank_shell
+      bg="bg-[#191919]"
+      root_class="content-stretch flex h-[24px] items-center justify-center px-[10px] py-[4px] relative rounded-[2px] w-[36px]"
+      bank={@bank}
+      class={@class}
+      rest={@rest}
+    >
+      <div class="relative h-[14px] w-[24.111px] shrink-0">
+        <div class="pointer-events-none absolute inset-0 overflow-hidden">
+          <img
+            alt=""
+            class="absolute top-[-38.89%] left-[-3.23%] h-[177.78%] w-[103.23%] max-w-none"
+            src={asset("image18.png")}
+          />
+        </div>
+      </div>
+    </.mini_bank_shell>
+    """
+  end
+
+  defp bank_badge_variant(%{bank: "Stripe", size: "full"} = assigns) do
+    ~H"""
+    <.full_bank_shell
+      bg="bg-[#635bff]"
+      indicator="vector.svg"
+      bank={@bank}
+      class={@class}
+      rest={@rest}
+    >
+      <div class="relative h-[14.983px] w-[36px] shrink-0 overflow-clip">
+        <div class="absolute inset-[0_0_0.02%_0]">
+          <img alt="" class="absolute inset-0 block size-full max-w-none" src={asset("group2.svg")} />
+        </div>
+      </div>
+    </.full_bank_shell>
+    """
+  end
+
+  defp bank_badge_variant(%{bank: "Stripe", size: "mini"} = assigns) do
+    ~H"""
+    <.mini_bank_shell
+      bg="bg-[#635bff]"
+      root_class="content-stretch flex h-[24px] items-center justify-center px-[10px] py-[4px] relative rounded-[2px] w-[36px]"
+      bank={@bank}
+      class={@class}
+      rest={@rest}
+    >
+      <div class="relative h-[8.324px] w-[20px] shrink-0 overflow-clip">
+        <div class="absolute inset-[0_0_0.02%_0]">
+          <img alt="" class="absolute inset-0 block size-full max-w-none" src={asset("group3.svg")} />
+        </div>
+      </div>
+    </.mini_bank_shell>
+    """
+  end
+
+  # Figma exports these visuals as duplicate Soldo variants,
+  # but the exported slices are clearly Vivid.
+  defp bank_badge_variant(%{bank: "Vivid", size: "full"} = assigns) do
+    ~H"""
+    <.full_bank_shell
+      bg="bg-[#6b1ee7]"
+      indicator="vector7.svg"
+      bank={@bank}
+      class={@class}
+      rest={@rest}
+    >
+      <div class="relative h-[12.522px] w-[36px] shrink-0">
+        <img
+          alt=""
+          class="absolute inset-0 block size-full max-w-none"
+          src={asset("vivid_money_seeklogo2.svg")}
+        />
+      </div>
+    </.full_bank_shell>
+    """
+  end
+
+  defp bank_badge_variant(%{bank: "Vivid", size: "mini"} = assigns) do
+    ~H"""
+    <.mini_bank_shell
+      bg="bg-[#6b1ee7]"
+      root_class="content-stretch flex h-[24px] items-center justify-center px-[10px] py-[4px] relative rounded-[2px] w-[36px]"
+      bank={@bank}
+      class={@class}
+      rest={@rest}
+    >
+      <div class="relative h-[6.957px] w-[20px] shrink-0">
+        <img
+          alt=""
+          class="absolute inset-0 block size-full max-w-none"
+          src={asset("vivid_money_seeklogo3.svg")}
+        />
+      </div>
+    </.mini_bank_shell>
+    """
+  end
+
+  defp bank_badge_variant(%{bank: "Wise", size: "full"} = assigns) do
+    ~H"""
+    <.full_bank_shell
+      bg="bg-[#9ee56f]"
+      indicator="vector11.svg"
+      bank={@bank}
+      class={@class}
+      rest={@rest}
+    >
+      <div class="relative size-[26px] shrink-0">
+        <img alt="" class="absolute inset-0 block size-full max-w-none" src={asset("frame4326.svg")} />
+      </div>
+    </.full_bank_shell>
+    """
+  end
+
+  defp bank_badge_variant(%{bank: "Wise", size: "mini"} = assigns) do
+    ~H"""
+    <.mini_bank_shell
+      bg="bg-[#9ee56f]"
+      root_class="content-stretch flex h-[24px] items-center justify-center px-[10px] py-[4px] relative rounded-[2px] w-[36px]"
+      bank={@bank}
+      class={@class}
+      rest={@rest}
+    >
+      <div class="relative size-[16px] shrink-0">
+        <img alt="" class="absolute inset-0 block size-full max-w-none" src={asset("frame4327.svg")} />
       </div>
     </.mini_bank_shell>
     """

@@ -27,7 +27,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
 
   def account_tab(assigns) do
     ~H"""
-    <div class="grid w-full grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-x-12 lg:gap-y-8">
+    <div class="grid w-full grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-16">
       <.name_section
         current_user={@current_user}
         editing_account_name={@editing_account_name}
@@ -246,7 +246,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   defp google_login_section(assigns) do
     ~H"""
     <.account_section title="Logowanie przez Google">
-      <div class="flex flex-col gap-4 md:flex-row">
+      <div class="flex flex-col gap-4">
         <Helpers.settings_display_field label="Powiązane konto" class="w-full">
           <%= if @google_connected? do %>
             <div class="flex items-center gap-2">
@@ -309,19 +309,18 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   defp account_closure_section(assigns) do
     ~H"""
     <.account_section title="Zamykanie konta">
-      <div class="flex flex-col gap-4 md:flex-row">
+      <div class="flex flex-col gap-4">
         <.detail_row label="Nazwa konta">{@current_user.email}</.detail_row>
 
-        <div class="flex items-center justify-start sm:justify-end">
-          <.button
-            type="button"
-            variant="destructive"
-            size="big"
-            phx-click={show_modal("confirm_modal")}
-          >
-            Zamknij konto
-          </.button>
-        </div>
+        <.button
+          class="max-w-[200px]"
+          type="button"
+          variant="destructive"
+          size="small"
+          phx-click={show_modal("confirm_modal")}
+        >
+          Zamknij konto
+        </.button>
       </div>
 
       <.modal id="confirm_modal">

@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.InvoicingBadges
   import FirmowidWeb.DesignSystem.Components.Link
   import FirmowidWeb.Settings.Components.EditButton
   import Phoenix.Component, except: [link: 1]
@@ -38,7 +39,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   def company_tab(assigns) do
     ~H"""
-    <div class="grid items-start gap-8 lg:grid-cols-2 lg:gap-x-12 lg:gap-y-8">
+    <div class="grid items-start gap-8 lg:grid-cols-2 lg:gap-16">
       <.company_basic_info_section
         current_org={@current_org}
         company_form={@company_form}
@@ -51,13 +52,13 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         organization_avatar_upload={@uploads.organization_avatar}
       />
 
-      <.ksef_section ksef_credential={@ksef_credential} />
-
       <.correspondence_section
         current_org={@current_org}
         correspondence_form={@correspondence_form}
         editing_correspondence={@editing_correspondence}
       />
+
+      <.ksef_section ksef_credential={@ksef_credential} />
 
       <.bank_accounts_section
         bank_accounts={@bank_accounts}
@@ -187,7 +188,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       title="Dane firmy"
       action="toggle_editing_basic_info"
       action_label="Edytuj dane firmy"
-      class="row-span-4"
     >
       <%= if @editing_basic_info do %>
         <.form for={@company_form} phx-submit="save" class="space-y-4">
@@ -308,7 +308,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     ~H"""
     <.company_section title="Integracja z KSeF">
       <%= if @ksef_credential do %>
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div class="flex flex-col gap-4">
           <.detail_row label="Status" wide>
             <span class="inline-flex items-center gap-2">
               <span>Połączono z KSeF</span>
@@ -321,15 +321,15 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             {present_auth_type(@ksef_credential.auth_type)}
           </.detail_row>
 
-          <div>
-            <.button
-              type="button"
-              variant="destructive"
-              phx-click={show_modal("confirm_disconnect_ksef")}
-            >
-              Rozłącz
-            </.button>
-          </div>
+          <.button
+            class="max-w-[250px]"
+            size="small"
+            type="button"
+            variant="destructive"
+            phx-click={show_modal("confirm_disconnect_ksef")}
+          >
+            Rozłącz
+          </.button>
         </div>
       <% else %>
         <form phx-submit="save_ksef_token" id="ksef-token-form" class="space-y-4">
@@ -401,23 +401,22 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         <h2 class="text-grey-900 text-base leading-none font-semibold">Konta bankowe</h2>
 
         <div class="flex flex-wrap items-center gap-2.5">
-          <.link
-            kind="button"
-            variant="secondary"
-            size="small"
-            navigate={~p"/ustawienia/bank/dodaj"}
-          >
-            Nowe konto
-          </.link>
-
           <.button
             type="button"
-            variant="outline"
+            variant="secondary"
             size="small"
             phx-click={show_modal("manual_bank_account_modal_company")}
           >
             Dodaj ręcznie
           </.button>
+          <.link
+            kind="button"
+            variant="primary"
+            size="small"
+            navigate={~p"/ustawienia/bank/dodaj"}
+          >
+            Nowe konto
+          </.link>
         </div>
       </div>
 
@@ -640,36 +639,27 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   defp bank_card(assigns) do
     ~H"""
-    <article class="border-grey-200 relative rounded-lg border bg-white p-4 shadow-sm">
-      <div class="flex items-start justify-between gap-3 pr-8">
-        <div class="flex min-w-0 items-start gap-4">
-          <Helpers.bank_logo
-            account={@account}
-            bank_institutions={@bank_institutions}
-            class="shrink-0"
-          />
-
-          <div class="flex min-w-0 flex-wrap gap-2.5">
+    <article class="border-grey-200 relative flex flex-col gap-4 rounded-lg border bg-white p-4">
+      <div class="flex items-center justify-start gap-4">
+        <.bank_badge institution={@account.institution_id} />
+        <div class="flex items-start gap-4">
+          <div class="flex flex-wrap gap-2.5">
             <span
               :if={@account.is_default}
-              class="rounded-full bg-green-200 px-3 py-1 text-sm/tight text-green-700"
+              class="text/tight rounded-full bg-green-200 px-3 py-1 text-green-700"
             >
               Domyślne {present(@account.currency)}
             </span>
             <span
               :if={!@account.is_default}
-              class="bg-grey-100 text-grey-700 rounded-full px-3 py-1 text-sm/tight"
+              class="bg-grey-100 text-grey-700 text/tight rounded-full px-3 py-1"
             >
               {present(@account.currency)}
-            </span>
-
-            <span class={status_chip_styles(@status)} title={status_label(@status)}>
-              {status_label(@status)}
             </span>
           </div>
         </div>
 
-        <div class="absolute top-3 right-3">
+        <div class="flex flex-1 justify-end">
           <.dropdown id={"bank_account_#{@account.id}"}>
             <:trigger>
               <span class="hover:bg-grey-100 text-grey-700 inline-flex size-8 items-center justify-center rounded-lg transition">
@@ -723,31 +713,39 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         </div>
       </div>
 
-      <div class="mt-3 space-y-1.5">
-        <.compact_detail_row label="Nazwa">{present(@account.name)}</.compact_detail_row>
-        <.compact_detail_row label="Bank">{present(@account.institution_name)}</.compact_detail_row>
-        <.compact_detail_row label="Numer">
+      <div class="grid grid-cols-[max-content_1fr] items-center gap-x-6 gap-y-3">
+        <.bank_detail_row :if={!is_nil(@account.name)} label="Nazwa">
+          {present(@account.name)}
+        </.bank_detail_row>
+        <.bank_detail_row label="Bank">{present(@account.institution_name)}</.bank_detail_row>
+        <.bank_detail_row label="Numer">
           <span class="break-all">{present(@account.iban)}</span>
-        </.compact_detail_row>
-        <.compact_detail_row label="Synchronizacja">
-          <span class="inline-flex items-center gap-2">
-            <.status_icon status={@status} />
+        </.bank_detail_row>
+        <.bank_detail_row :if={@status} label="Status">
+          <span :if={@status in [:broken, :disconnected]} class="inline-flex items-center gap-1.5">
+            <span class="font-bold text-red-900">Konto rozłączone</span>
+          </span>
+
+          <span :if={@status not in [:broken, :disconnected]} class="inline-flex items-center gap-2">
             {format_last_sync_info(@status, @account.latest_successful_sync_at)}
           </span>
-        </.compact_detail_row>
-      </div>
+        </.bank_detail_row>
 
-      <.button
-        :if={@status in [:broken, :disconnected]}
-        type="button"
-        variant="outline"
-        size="small"
-        phx-click="reconnect_bank_account"
-        phx-value-account_id={@account.id}
-        class="mt-4 w-full"
-      >
-        <.icon name="hero-arrow-path" class="mr-1 size-4" /> Powiąż
-      </.button>
+        <div class="col-span-2 pt-2">
+          <.button
+            :if={@status in [:broken, :disconnected]}
+            variant="outline"
+            size="big"
+            class="w-full"
+            phx-click="reconnect_bank_account"
+            phx-value-account_id={@account.id}
+            aria-label="Połącz ponownie konto"
+          >
+            <Lucideicons.unplug class="size-4" />
+            <span class="inline-flex">Połącz ponownie</span>
+          </.button>
+        </div>
+      </div>
     </article>
 
     <.modal id={"rename_bank_account_#{@account.id}"}>
@@ -864,11 +862,12 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :label, :string, required: true
   slot :inner_block, required: true
 
-  defp compact_detail_row(assigns) do
+  defp bank_detail_row(assigns) do
     ~H"""
-    <Helpers.settings_display_field label={@label} class="w-full">
+    <label class="text-grey-700 text-sm font-medium uppercase">{@label}</label>
+    <div class="text-grey-900 text-base leading-[1.35]">
       {render_slot(@inner_block)}
-    </Helpers.settings_display_field>
+    </div>
     """
   end
 
@@ -920,18 +919,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   attr :status, :atom, default: nil
 
-  defp status_icon(assigns) do
-    ~H"""
-    <span
-      class={status_icon_styles(@status)}
-      aria-label={status_label(@status)}
-      title={status_label(@status)}
-    >
-      <.icon name={status_icon_name(@status)} class="size-4" />
-    </span>
-    """
-  end
-
   defp status_chip_styles(:connected) do
     "bg-green-200 text-green-700 rounded-full px-3 py-1 text-sm leading-tight"
   end
@@ -952,37 +939,14 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     "bg-grey-100 text-grey-700 rounded-full px-3 py-1 text-sm leading-tight"
   end
 
-  defp status_icon_styles(:connected),
-    do: "bg-green-200 text-green-700 inline-flex size-5 items-center justify-center rounded-full"
-
-  defp status_icon_styles(:processing),
-    do: "bg-blueBg text-blueText inline-flex size-5 items-center justify-center rounded-full"
-
-  defp status_icon_styles(status) when status in [:broken, :disconnected] do
-    "bg-red-200 text-red-800 inline-flex size-5 items-center justify-center rounded-full"
-  end
-
-  defp status_icon_styles(_status),
-    do: "bg-grey-100 text-grey-700 inline-flex size-5 items-center justify-center rounded-full"
-
-  defp status_icon_name(:connected), do: "hero-check-circle-solid"
-  defp status_icon_name(:processing), do: "hero-ellipsis-horizontal"
-  defp status_icon_name(status) when status in [:broken, :disconnected], do: "hero-x-mark-solid"
-  defp status_icon_name(_status), do: "hero-minus"
-
-  defp status_label(:connected), do: "Połączone"
-  defp status_label(:broken), do: "Wymaga ponownego połączenia"
-  defp status_label(:disconnected), do: "Rozłączone"
-  defp status_label(:processing), do: "Oczekuje na synchronizację"
-  defp status_label(:manual), do: "Ręczne"
-  defp status_label(_status), do: "Brak statusu"
-
   defp format_last_sync_info(:manual, _datetime), do: "konto dodane ręcznie"
   defp format_last_sync_info(_status, nil), do: "jeszcze nie zsynchronizowano"
 
-  defp format_last_sync_info(_status, %DateTime{} = datetime), do: TimeFormatter.format_relative_time(datetime)
+  defp format_last_sync_info(_status, %DateTime{} = datetime),
+    do: "aktualizacja: #{TimeFormatter.format_relative_time(datetime)}"
 
-  defp format_last_sync_info(_status, %NaiveDateTime{} = datetime), do: TimeFormatter.format_relative_time(datetime)
+  defp format_last_sync_info(_status, %NaiveDateTime{} = datetime),
+    do: "aktualizacja: #{TimeFormatter.format_relative_time(datetime)}"
 
   defp format_last_sync_info(_status, _datetime), do: "jeszcze nie zsynchronizowano"
 
