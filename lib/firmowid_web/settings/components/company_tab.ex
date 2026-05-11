@@ -917,28 +917,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     "text-grey-700 hover:bg-grey-100 hover:text-grey-900 w-full justify-start rounded-none px-3 py-2 text-left text-sm font-medium transition"
   end
 
-  attr :status, :atom, default: nil
-
-  defp status_chip_styles(:connected) do
-    "bg-green-200 text-green-700 rounded-full px-3 py-1 text-sm leading-tight"
-  end
-
-  defp status_chip_styles(:processing) do
-    "bg-blueBg text-blueText rounded-full px-3 py-1 text-sm leading-tight"
-  end
-
-  defp status_chip_styles(status) when status in [:broken, :disconnected] do
-    "bg-red-200 text-red-800 rounded-full px-3 py-1 text-sm leading-tight"
-  end
-
-  defp status_chip_styles(:manual) do
-    "bg-grey-100 text-grey-700 rounded-full px-3 py-1 text-sm leading-tight"
-  end
-
-  defp status_chip_styles(_status) do
-    "bg-grey-100 text-grey-700 rounded-full px-3 py-1 text-sm leading-tight"
-  end
-
   defp format_last_sync_info(:manual, _datetime), do: "konto dodane ręcznie"
   defp format_last_sync_info(_status, nil), do: "jeszcze nie zsynchronizowano"
 

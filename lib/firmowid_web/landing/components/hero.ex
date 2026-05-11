@@ -76,16 +76,24 @@ defmodule FirmowidWeb.Landing.Components.Hero do
               </li>
             </ul>
           </div>
-          <div class="relative size-full">
-            <img
-              src={~p"/images/landing_hero_screenshot.png"}
-              alt="zrzut ekranu z Firmowida - kilka transakcji i transakcji do dopasowania"
-              class="absolute bottom-4 left-16 z-10 hidden h-full w-auto rotate-2 rounded border-4 border-[#dea785] object-cover shadow hover:z-30 motion-safe:transition-all motion-safe:duration-150 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] motion-safe:hover:-translate-y-3 motion-safe:hover:scale-[1.2] motion-safe:hover:rotate-0 motion-safe:hover:shadow-[0_24px_55px_rgba(87,54,35,0.22)] motion-safe:hover:saturate-[1.04] lg:block"
+          <div class="relative hidden h-[520px] flex-1 lg:block xl:h-[580px]">
+            <.hero_screenshot_card
+              src={~p"/images/landing_screenshots/timetracker.png"}
+              alt="zrzut ekranu z Firmowida - ewidencja czasu pracy i lista ostatnich wpisów"
+              card_class="top-[3.75rem] left-10 z-10 w-[252px] -rotate-[11deg] xl:left-14 xl:w-[286px]"
+              image_class="h-full w-auto max-w-none origin-center scale-[1.24] -translate-x-[23%] group-hover:scale-100 group-hover:-translate-x-[6%]"
             />
-            <img
-              src={~p"/images/landing_hero_screenshot_invoice.png"}
-              alt="zrzut ekranu z Firmowida - wygenerowana faktura z podglądem PDF"
-              class="absolute -bottom-2 -left-2 z-20 hidden h-full w-auto rounded border-4 border-[#dea785] object-cover shadow hover:scale-[1.2] motion-safe:transition-all motion-safe:duration-150 lg:block"
+            <.hero_screenshot_card
+              src={~p"/images/landing_screenshots/invoicing_1.png"}
+              alt="zrzut ekranu z Firmowida - nieopłacone faktury i transakcje do dopasowania"
+              card_class="top-3 right-10 z-20 w-[278px] rotate-[9deg] xl:right-10 xl:w-[310px]"
+              image_class="h-full w-auto max-w-none origin-center scale-[1.12] -translate-x-[7%] group-hover:scale-100 group-hover:translate-x-0"
+            />
+            <.hero_screenshot_card
+              src={~p"/images/landing_screenshots/invoicing_2.png"}
+              alt="zrzut ekranu z Firmowida - podgląd i edycja faktury z wysyłką do KSeF"
+              card_class="bottom-4 left-24 z-30 w-[350px] -rotate-[5deg] xl:left-28 xl:w-[395px]"
+              image_class="h-full w-auto max-w-none origin-center scale-[1.22] -translate-x-[8%] -translate-y-[1%] group-hover:scale-100 group-hover:translate-x-[2%]"
             />
           </div>
         </div>
@@ -132,6 +140,30 @@ defmodule FirmowidWeb.Landing.Components.Hero do
         </div>
       </div>
     </section>
+    """
+  end
+
+  @doc false
+  attr :src, :string, required: true
+  attr :alt, :string, required: true
+  attr :card_class, :string, required: true
+  attr :image_class, :string, required: true
+
+  defp hero_screenshot_card(assigns) do
+    ~H"""
+    <div class={[
+      "group absolute hidden aspect-square overflow-hidden rounded-[28px] border-4 border-[#dea785] bg-[#f7f0eb] shadow-[0_20px_45px_rgba(87,54,35,0.16)] motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] motion-safe:hover:z-40 motion-safe:hover:-translate-y-7 motion-safe:hover:scale-[1.45] motion-safe:hover:rotate-0 motion-safe:hover:shadow-[0_46px_96px_rgba(87,54,35,0.3)] lg:block",
+      @card_class
+    ]}>
+      <img
+        src={@src}
+        alt={@alt}
+        class={[
+          "absolute top-0 left-0 motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]",
+          @image_class
+        ]}
+      />
+    </div>
     """
   end
 

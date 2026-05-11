@@ -114,14 +114,14 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       name: "Start",
       audience: "Polecany dla: wszystkich osób korzystających z KSeF",
       monthly_price: 10.0,
-      yearly_monthly_price: "8zł",
-      yearly_regular_price: "60zł",
-      yearly_price: "51zł",
+      yearly_monthly_price: "8 zł",
+      yearly_regular_price: "120 zł",
+      yearly_price: "96 zł",
+      included_usage: [],
       features: [
         "Integracja z KSeF",
         "Przejrzysty kreator faktur",
-        "Baza kontrahentów",
-        "E-mail support"
+        "Baza kontrahentów"
       ],
       highlighted: false
     },
@@ -130,14 +130,18 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       name: "Przedsiębiorca",
       audience: "Polecany dla: jednoosobowych działalności i freelancerów",
       monthly_price: 29.0,
-      yearly_monthly_price: "24,60zł",
-      yearly_regular_price: "348zł",
-      yearly_price: "295zł",
+      yearly_monthly_price: "24,58 zł",
+      yearly_regular_price: "348 zł",
+      yearly_price: "295 zł",
+      included_usage: [
+        "10 faktur spoza KSeF / mies.",
+        "3 konta bankowe / mies."
+      ],
       features: [
-        "Funkcjonalności z pakietu START",
-        "Integracja do 3 kont bankowych",
-        "Powiadomienia o fakturach zakupowych na email",
-        "Możliwość dodania faktur spoza KSeF"
+        "Integracja z KSeF",
+        "Przejrzysty kreator faktur",
+        "Baza kontrahentów",
+        "Powiadomienia e-mail"
       ],
       highlighted: true
     },
@@ -146,15 +150,20 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       name: "Firma",
       audience: "Polecany dla: zespołów, firm powyżej 15 osób",
       monthly_price: 69.0,
-      yearly_monthly_price: "58,60zł",
-      yearly_regular_price: "828zł",
-      yearly_price: "703zł",
+      yearly_monthly_price: "58,58 zł",
+      yearly_regular_price: "828 zł",
+      yearly_price: "703 zł",
+      included_usage: [
+        "50 faktur spoza KSeF / mies.",
+        "10 kont bankowych / mies."
+      ],
       features: [
-        "Funkcjonalności z pakietu START i PRZEDSIĘBIORCA",
-        "Czasośledź",
-        "Baza pracowników i projektów",
-        "Nielimitowana integracja kont bankowych",
-        "Rozliczanie czasu pracy i wynagrodzeń w jednym miejscu"
+        "Integracja z KSeF",
+        "Przejrzysty kreator faktur",
+        "Baza kontrahentów",
+        "Powiadomienia e-mail",
+        "Czasośledzenie",
+        "Zarządzanie pracownikami i projektami"
       ],
       highlighted: false
     }
@@ -202,6 +211,12 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       id: "faq-cancel",
       question: "Czy mogę anulować w każdej chwili?",
       answer: "Tak. Możesz zrezygnować w dowolnym momencie, a konto usunąć bez długoterminowych zobowiązań."
+    },
+    %{
+      id: "faq-overage",
+      question: "Jak działają dodatkowe opłaty za faktury spoza KSeF i konta bankowe?",
+      answer:
+        "W pakiecie Start każda faktura spoza KSeF kosztuje 1 zł netto + VAT, a każde konto bankowe 5 zł netto + VAT miesięcznie. W pakiecie Przedsiębiorca masz w cenie 10 faktur spoza KSeF i 3 konta bankowe miesięcznie, a w pakiecie Firma 50 faktur i 10 kont bankowych miesięcznie. Po wykorzystaniu limitu obowiązują te same stawki dodatkowe we wszystkich planach."
     },
     %{
       id: "faq-banks",
@@ -406,7 +421,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
 
     ~H"""
     <section id="cennik" class="bg-white px-4 py-16 sm:px-6 lg:px-10 lg:py-[100px]">
-      <div class="mx-auto max-w-[1419px] lg:px-[140px]">
+      <div class="mx-auto max-w-[1419px] lg:px-8 xl:px-[140px]">
         <div class="mx-auto max-w-[588px] text-center">
           <.section_eyebrow>Cennik</.section_eyebrow>
           <h2 class="mt-2 text-[38px] leading-[1.08] font-bold tracking-[-0.03em] text-[#0f0f0f] lg:text-[48px] lg:leading-[50px]">
@@ -416,6 +431,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
             Płacisz za to, z czego rzeczywiście korzystasz. Wybierz pakiet i rodzaj rozliczenia,
             które najlepiej do Ciebie pasują.
           </p>
+          <p class="mt-2 text-sm font-medium text-[#8b3f13]">Wszystkie ceny netto + VAT.</p>
         </div>
 
         <div class="mt-10 hidden justify-center md:flex">
@@ -450,13 +466,13 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                 @billing_period == "yearly" && "bg-[#dea785] text-[#8b3f13]",
                 @billing_period != "yearly" && "bg-[#8b3f13] text-white"
               ]}>
-                -15%
+                Taniej
               </span>
             </button>
           </div>
         </div>
 
-        <div class="mt-8 grid gap-8 lg:mt-10 lg:grid-cols-3 lg:gap-8">
+        <div class="mt-8 grid gap-8 lg:mt-10 xl:grid-cols-3 xl:gap-8">
           <.pricing_card :for={plan <- @plans} plan={plan} billing_period={@billing_period} />
         </div>
       </div>
@@ -902,11 +918,11 @@ defmodule FirmowidWeb.Landing.Components.Sections do
 
     ~H"""
     <article class={[
-      "flex h-full flex-col justify-between rounded-2xl p-8 lg:h-[588px]",
+      "h-full min-w-0 rounded-2xl p-6 md:p-7 xl:p-8",
       @plan.highlighted && "bg-[#1a1a1a] text-white",
       !@plan.highlighted && "bg-[#f0eae6] text-[#1a1a1a]"
     ]}>
-      <div>
+      <div class="flex h-full flex-col gap-8">
         <p class={[
           "text-xs font-bold tracking-[0.08em] uppercase",
           @plan.highlighted && "text-[#d2936d]",
@@ -922,9 +938,9 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           {@plan.audience}
         </p>
 
-        <div class="mt-8">
+        <div class="rounded-2xl">
           <p class={[
-            "text-[44px] leading-[66px] font-bold",
+            "mt-3 text-[38px] leading-[1.1] font-bold sm:text-[44px] sm:leading-[1.15]",
             @plan.highlighted && "text-[#fafafa]",
             !@plan.highlighted && "text-[#1a1a1a]"
           ]}>
@@ -944,109 +960,146 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                 {digit}
               </span>
             </span>
-            <span class="sr-only">{@price}</span><span class={[
-              "ml-1 text-base font-normal",
-              @plan.highlighted && "text-[#b5b5b5]",
-              !@plan.highlighted && "text-[#707070]"
-            ]}>/ miesiąc</span>
+            <span class="sr-only">{@price}</span>
+          </p>
+          <p class={[
+            "mt-2 text-sm/6",
+            @plan.highlighted && "text-[#b5b5b5]",
+            !@plan.highlighted && "text-[#5f5f5f]"
+          ]}>
+            {if @billing_period == "yearly",
+              do: "netto + VAT / mies. przy płatności za rok",
+              else: "netto + VAT / mies."}
           </p>
           <p
-            aria-hidden={@billing_period != "yearly"}
+            :if={@billing_period == "yearly"}
             class={[
-              "mt-1 text-[16px] leading-[21px] font-normal",
-              @billing_period != "yearly" && "invisible",
+              "mt-3 text-[15px]/6 font-normal",
               @plan.highlighted && "text-[#b5b5b5]",
-              !@plan.highlighted && "text-[#707070]"
+              !@plan.highlighted && "text-[#5f5f5f]"
             ]}
           >
-            Rozliczenie roczne: <span class="line-through">{@plan.yearly_regular_price}</span>
+            Płatność z góry za rok:<br />
+            <span class="line-through">
+              {@plan.yearly_regular_price}
+            </span>
             <span class={[
               "ml-1 font-bold no-underline",
               @plan.highlighted && "text-[#d2936d]",
               !@plan.highlighted && "text-[#8b3f13]"
             ]}>
-              {@plan.yearly_price}
+              {@plan.yearly_price} netto + VAT
             </span>
           </p>
         </div>
 
-        <ul class="mt-8 space-y-2">
-          <li
-            :for={feature <- @plan.features}
-            class="flex items-start gap-1 text-[14px] leading-[19.5px]"
-          >
-            <span class={[
-              "font-bold",
+        <div class="space-y-4">
+          <div :if={@plan.included_usage != []}>
+            <p class={[
+              "text-[12px] font-semibold tracking-[0.08em] uppercase",
               @plan.highlighted && "text-[#d2936d]",
               !@plan.highlighted && "text-[#8b3f13]"
             ]}>
-              ✓
-            </span>
-            <span>{feature}</span>
-          </li>
-        </ul>
-      </div>
+              Limity w pakiecie
+            </p>
+            <ul class="mt-3 space-y-2 text-[14px]/6">
+              <li :for={usage <- @plan.included_usage} class="flex items-start gap-2">
+                <span class={[
+                  "mt-0.5 font-bold",
+                  @plan.highlighted && "text-[#d2936d]",
+                  !@plan.highlighted && "text-[#8b3f13]"
+                ]}>
+                  ✓
+                </span>
+                <span>{usage}</span>
+              </li>
+            </ul>
+          </div>
 
-      <div class="mt-8 space-y-6 lg:mt-10">
-        <div class={[
-          "inline-flex w-full rounded md:hidden",
-          @plan.highlighted && "border-2 border-white",
-          !@plan.highlighted && "border-2 border-[#8b3f13]"
-        ]}>
-          <button
-            type="button"
-            phx-click="set_billing_period"
-            phx-value-period="monthly"
-            class={[
-              "flex flex-1 items-center justify-center rounded-l-[4px] px-6 py-2 text-xs font-medium",
-              @plan.highlighted && @billing_period == "monthly" && "bg-white text-black",
-              @plan.highlighted && @billing_period != "monthly" && "bg-transparent text-white",
-              !@plan.highlighted && @billing_period == "monthly" && "bg-[#8b3f13] text-white",
-              !@plan.highlighted && @billing_period != "monthly" && "bg-transparent text-[#1a1a1a]"
-            ]}
-            aria-pressed={@billing_period == "monthly"}
-          >
-            Miesięcznie
-          </button>
-          <button
-            type="button"
-            phx-click="set_billing_period"
-            phx-value-period="yearly"
-            class={[
-              "flex flex-1 items-center justify-center gap-2 rounded-r-[4px] px-4 py-2 text-xs font-medium",
-              @plan.highlighted && @billing_period == "yearly" && "bg-white text-black",
-              @plan.highlighted && @billing_period != "yearly" && "bg-transparent text-white",
-              !@plan.highlighted && @billing_period == "yearly" && "bg-[#8b3f13] text-white",
-              !@plan.highlighted && @billing_period != "yearly" && "bg-transparent text-[#1a1a1a]"
-            ]}
-            aria-pressed={@billing_period == "yearly"}
-          >
-            Rocznie
-            <span class={[
-              "rounded-2xl px-2 py-1 text-[10px]",
-              @plan.highlighted && @billing_period == "yearly" && "bg-[#dea785] text-[#8b3f13]",
-              @plan.highlighted && @billing_period != "yearly" && "bg-[#dea785] text-[#8b3f13]",
-              !@plan.highlighted && @billing_period == "yearly" && "bg-white/20 text-white",
-              !@plan.highlighted && @billing_period != "yearly" && "bg-[#8b3f13] text-white"
+          <div>
+            <p class={[
+              "text-[12px] font-semibold tracking-[0.08em] uppercase",
+              @plan.highlighted && "text-[#d2936d]",
+              !@plan.highlighted && "text-[#8b3f13]"
             ]}>
-              -15%
-            </span>
-          </button>
+              Dostępne funkcje
+            </p>
+            <ul class="mt-3 space-y-2 text-[14px]/6">
+              <li :for={feature <- @plan.features} class="flex items-start gap-2">
+                <span class={[
+                  "mt-0.5 font-bold",
+                  @plan.highlighted && "text-[#d2936d]",
+                  !@plan.highlighted && "text-[#8b3f13]"
+                ]}>
+                  ✓
+                </span>
+                <span>{feature}</span>
+              </li>
+            </ul>
+          </div>
         </div>
 
-        <.link
-          kind="unstyled"
-          navigate={~p"/zarejestruj"}
-          class={[
-            "relative flex min-h-[56px] w-full items-center justify-center overflow-hidden rounded-[4px] px-8 py-4 text-base font-medium transition-transform duration-150 hover:-translate-y-0.5",
-            @plan.highlighted &&
-              "border-2 border-[#d2936d] bg-[#d2936d] text-black hover:bg-[#dea785]",
-            !@plan.highlighted &&
-              "text-[#1a1a1a] before:absolute before:inset-0 before:bg-[url('/images/button_login.svg')] before:bg-size-[100%_100%] before:bg-no-repeat before:content-[''] hover:bg-black/3"
-          ]}
-        >
-          <span class="relative z-10">Zacznij za darmo</span>
-        </.link>
+        <div class="mt-auto space-y-6 pt-2">
+          <div class={[
+            "inline-flex w-full rounded md:hidden",
+            @plan.highlighted && "border-2 border-white",
+            !@plan.highlighted && "border-2 border-[#8b3f13]"
+          ]}>
+            <button
+              type="button"
+              phx-click="set_billing_period"
+              phx-value-period="monthly"
+              class={[
+                "flex flex-1 items-center justify-center rounded-l-[4px] px-5 py-2 text-xs font-medium",
+                @plan.highlighted && @billing_period == "monthly" && "bg-white text-black",
+                @plan.highlighted && @billing_period != "monthly" && "bg-transparent text-white",
+                !@plan.highlighted && @billing_period == "monthly" && "bg-[#8b3f13] text-white",
+                !@plan.highlighted && @billing_period != "monthly" && "bg-transparent text-[#1a1a1a]"
+              ]}
+              aria-pressed={@billing_period == "monthly"}
+            >
+              Miesięcznie
+            </button>
+            <button
+              type="button"
+              phx-click="set_billing_period"
+              phx-value-period="yearly"
+              class={[
+                "flex flex-1 items-center justify-center gap-2 rounded-r-[4px] px-3 py-2 text-xs font-medium",
+                @plan.highlighted && @billing_period == "yearly" && "bg-white text-black",
+                @plan.highlighted && @billing_period != "yearly" && "bg-transparent text-white",
+                !@plan.highlighted && @billing_period == "yearly" && "bg-[#8b3f13] text-white",
+                !@plan.highlighted && @billing_period != "yearly" && "bg-transparent text-[#1a1a1a]"
+              ]}
+              aria-pressed={@billing_period == "yearly"}
+            >
+              Rocznie
+              <span class={[
+                "rounded-2xl px-2 py-1 text-[10px]",
+                @plan.highlighted && @billing_period == "yearly" && "bg-[#dea785] text-[#8b3f13]",
+                @plan.highlighted && @billing_period != "yearly" && "bg-[#dea785] text-[#8b3f13]",
+                !@plan.highlighted && @billing_period == "yearly" && "bg-white/20 text-white",
+                !@plan.highlighted && @billing_period != "yearly" && "bg-[#8b3f13] text-white"
+              ]}>
+                Taniej
+              </span>
+            </button>
+          </div>
+
+          <.link
+            kind="unstyled"
+            navigate={~p"/zarejestruj"}
+            class={[
+              "relative flex min-h-[56px] w-full items-center justify-center overflow-hidden rounded-[4px] px-8 py-4 text-base font-medium transition-transform duration-150 hover:-translate-y-0.5",
+              @plan.highlighted &&
+                "border-2 border-[#d2936d] bg-[#d2936d] text-black hover:bg-[#dea785]",
+              !@plan.highlighted &&
+                "text-[#1a1a1a] before:absolute before:inset-0 before:bg-[url('/images/button_login.svg')] before:bg-size-[100%_100%] before:bg-no-repeat before:content-[''] hover:bg-black/3"
+            ]}
+          >
+            <span class="relative z-10">Zacznij za darmo</span>
+          </.link>
+        </div>
       </div>
     </article>
     """
@@ -1060,9 +1113,9 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     monthly_price = plan.monthly_price
 
     if trunc(monthly_price) == monthly_price do
-      "#{trunc(monthly_price)}zł"
+      "#{trunc(monthly_price)} zł"
     else
-      "#{monthly_price}zł"
+      "#{monthly_price} zł"
     end
   end
 
