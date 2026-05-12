@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={meta_description(assigns)} />
     <meta name="csrf-token" content={get_csrf_token()} />
     <.live_title suffix=" · Firmowid">
       {assigns[:page_title] || "Firmowid"}
@@ -11,9 +12,25 @@
     {Application.get_env(:live_debugger, :live_debugger_tags)}
     <link rel="icon" type="image/png" href={~p"/images/favicon.png"} />
     <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/air-datepicker@3.5.3/air-datepicker.min.css"
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href={~p"/fonts/lexend-latin.woff2"}
+      crossorigin
     />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href={~p"/fonts/lexend-latin-ext.woff2"}
+      crossorigin
+    />
+    <%= if load_full_browser_assets?(assigns) do %>
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/air-datepicker@3.5.3/air-datepicker.min.css"
+      />
+    <% end %>
     <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
     <script
       defer
@@ -21,6 +38,7 @@
       type="text/javascript"
       src={~p"/assets/app.js"}
       data-telemetry-config="true"
+      data-public-marketing={to_string(assigns[:public_marketing?] == true)}
       data-posthog-enabled={
         to_string(
           Keyword.get(
@@ -67,39 +85,34 @@
       }
     >
     </script>
-    <script
-      src="https://browser.sentry-cdn.com/10.22.0/bundle.tracing.replay.min.js"
-      crossorigin="anonymous"
-    >
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/posthog-js@1.296.0/dist/array.full.no-external.min.js">
-    </script>
   </head>
   <body class="h-full">
     {@inner_content}
     <FirmowidWeb.Landing.Components.CookieConsent.cookie_consent_banner />
   </body>
-  <script src="https://cdn.jsdelivr.net/npm/air-datepicker@3.5.3/air-datepicker.min.js">
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js">
-  </script>
-  <script
-    type="module"
-    src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.min.mjs"
-  >
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js">
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/tippy.js@4.3.5/umd/index.all.min.js">
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/@floating-ui/core@1.7.3">
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.7.4">
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js">
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/modern-screenshot/dist/index.js">
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/@tarekraafat/autocomplete.js@10.2.9/dist/autoComplete.min.js">
-  </script>
+  <%= if load_full_browser_assets?(assigns) do %>
+    <script src="https://cdn.jsdelivr.net/npm/air-datepicker@3.5.3/air-datepicker.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js">
+    </script>
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.min.mjs"
+    >
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/tippy.js@4.3.5/umd/index.all.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@floating-ui/core@1.7.3">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.7.4">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/modern-screenshot/dist/index.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@tarekraafat/autocomplete.js@10.2.9/dist/autoComplete.min.js">
+    </script>
+  <% end %>
 </html>

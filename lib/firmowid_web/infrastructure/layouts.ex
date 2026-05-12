@@ -18,6 +18,8 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
 
   alias FirmowidWeb.Core.Endpoint
 
+  @default_meta_description "Firmowid pomaga polskim firmom wystawiać faktury zgodne z KSeF, synchronizować bank, ewidencjonować czas pracy i rozliczać zespół w jednym miejscu."
+
   embed_templates "layouts/*"
 
   @doc """
@@ -42,5 +44,13 @@ defmodule FirmowidWeb.Infrastructure.Layouts do
             "/"
         end
     end
+  end
+
+  defp meta_description(assigns) do
+    assigns[:meta_description] || @default_meta_description
+  end
+
+  defp load_full_browser_assets?(assigns) do
+    assigns[:public_marketing?] != true
   end
 end

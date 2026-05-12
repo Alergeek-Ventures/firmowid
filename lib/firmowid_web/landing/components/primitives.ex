@@ -108,8 +108,15 @@ defmodule FirmowidWeb.Landing.Components.Primitives do
 
           <div class="hidden lg:block lg:pr-[33px]">
             <img
+              id="cta-footer-figurine"
               src={~p"/images/figurine.png"}
               alt="Ilustracja Firmowida"
+              width="905"
+              height="1280"
+              loading="lazy"
+              decoding="async"
+              data-image-reveal
+              phx-hook="ImageLoadReveal"
               class="h-auto w-[427px] object-contain object-bottom"
             />
           </div>

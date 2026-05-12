@@ -12,7 +12,13 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, page_title: "Polityka Prywatności"), layout: false}
+    {:ok,
+     assign(socket,
+       page_title: "Polityka Prywatności",
+       meta_description:
+         "Polityka prywatności Firmowida opisuje zasady przetwarzania danych, cookies i prawa użytkowników usługi.",
+       public_marketing?: true
+     ), layout: false}
   end
 
   @impl true

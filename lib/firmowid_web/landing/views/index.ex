@@ -20,6 +20,11 @@ defmodule FirmowidWeb.Landing.Views.Index do
       {:ok,
        socket
        |> assign(page_title: "Firmowid")
+       |> assign(
+         meta_description:
+           "Firmowid to fakturowanie zgodne z KSeF, synchronizacja banku, ewidencja czasu pracy i rozliczenia zespołu dla polskich firm."
+       )
+       |> assign(public_marketing?: true)
        |> assign(billing_period: "monthly")
        |> assign(open_faq: nil), layout: false}
     end

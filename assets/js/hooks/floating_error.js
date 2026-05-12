@@ -1,4 +1,6 @@
-const { computePosition, flip, arrow, offset } = window.FloatingUIDOM;
+function getFloatingUi() {
+  return window.FloatingUIDOM;
+}
 
 export const FloatingUIError = {
   mounted() {
@@ -23,6 +25,14 @@ export const FloatingUIError = {
   },
 
   update() {
+    const floatingUi = getFloatingUi();
+
+    if (!floatingUi) {
+      return;
+    }
+
+    const { computePosition, flip, arrow, offset } = floatingUi;
+
     computePosition(this.targetElement, this.floatingEl, {
       placement: "top",
       middleware: [

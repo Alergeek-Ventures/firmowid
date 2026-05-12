@@ -12,7 +12,13 @@ defmodule FirmowidWeb.Landing.Views.TermsOfService do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, page_title: "Regulamin"), layout: false}
+    {:ok,
+     assign(socket,
+       page_title: "Regulamin",
+       meta_description:
+         "Regulamin Firmowida określa zasady korzystania z usługi do fakturowania, obsługi KSeF, banku i ewidencji pracy.",
+       public_marketing?: true
+     ), layout: false}
   end
 
   @impl true

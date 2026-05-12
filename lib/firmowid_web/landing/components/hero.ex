@@ -48,6 +48,9 @@ defmodule FirmowidWeb.Landing.Components.Hero do
                   src={~p"/images/hero_price_scribble.svg"}
                   alt=""
                   aria-hidden="true"
+                  width="287"
+                  height="22"
+                  decoding="async"
                   class="pointer-events-none absolute bottom-[0.06em] left-[-0.04em] h-[0.24em] w-[4.1em] max-w-none sm:bottom-[0.05em] lg:bottom-[0.07em]"
                 />
                 <span class="relative">od 10 zł</span>
@@ -69,29 +72,51 @@ defmodule FirmowidWeb.Landing.Components.Hero do
               </.hero_action_button>
             </div>
 
-            <ul class="mt-8 grid gap-3 text-[14px] leading-[19.5px] text-[#707070] sm:grid-cols-2 sm:gap-x-4 sm:gap-y-2 lg:mt-10 lg:flex lg:flex-wrap lg:gap-x-4 lg:gap-y-2 lg:text-[13px]">
+            <ul class="mt-8 grid gap-3 text-[14px] leading-[19.5px] text-[#4e4e4e] sm:grid-cols-2 sm:gap-x-4 sm:gap-y-2 lg:mt-10 lg:flex lg:flex-wrap lg:gap-x-4 lg:gap-y-2 lg:text-[13px]">
               <li :for={benefit <- @benefits} class="flex items-center gap-1.5 whitespace-nowrap">
-                <span class="text-[18px] leading-none font-bold text-[#699166]">✓</span>
+                <span class="text-[18px] leading-none font-bold text-[#475e45]">✓</span>
                 <span>{benefit}</span>
               </li>
             </ul>
           </div>
           <div class="relative hidden h-[520px] flex-1 lg:block xl:h-[580px]">
             <.hero_screenshot_card
+              id="hero-screenshot-timetracker"
               src={~p"/images/landing_screenshots/timetracker.png"}
+              webp_srcset={
+                "#{~p"/images/landing_screenshots/timetracker-560.webp"} 560w, #{~p"/images/landing_screenshots/timetracker-1120.webp"} 1120w"
+              }
+              sizes="(min-width: 1280px) 560px, 500px"
               alt="zrzut ekranu z Firmowida - ewidencja czasu pracy i lista ostatnich wpisów"
+              width="1923"
+              height="963"
               card_class="top-[3.75rem] left-10 z-10 w-[252px] -rotate-[11deg] xl:left-14 xl:w-[286px]"
               image_class="h-full w-auto max-w-none origin-center scale-[1.24] -translate-x-[23%] group-hover:scale-100 group-hover:-translate-x-[6%]"
             />
             <.hero_screenshot_card
+              id="hero-screenshot-invoicing-list"
               src={~p"/images/landing_screenshots/invoicing_1.png"}
+              webp_srcset={
+                "#{~p"/images/landing_screenshots/invoicing_1-420.webp"} 420w, #{~p"/images/landing_screenshots/invoicing_1-840.webp"} 840w"
+              }
+              sizes="(min-width: 1280px) 420px, 370px"
               alt="zrzut ekranu z Firmowida - nieopłacone faktury i transakcje do dopasowania"
+              width="1021"
+              height="834"
               card_class="top-3 right-10 z-20 w-[278px] rotate-[9deg] xl:right-10 xl:w-[310px]"
               image_class="h-full w-auto max-w-none origin-center scale-[1.12] -translate-x-[7%] group-hover:scale-100 group-hover:translate-x-0"
             />
             <.hero_screenshot_card
+              id="hero-screenshot-invoicing-editor"
               src={~p"/images/landing_screenshots/invoicing_2.png"}
+              webp_srcset={
+                "#{~p"/images/landing_screenshots/invoicing_2-700.webp"} 700w, #{~p"/images/landing_screenshots/invoicing_2-1400.webp"} 1400w"
+              }
+              sizes="(min-width: 1280px) 700px, 620px"
               alt="zrzut ekranu z Firmowida - podgląd i edycja faktury z wysyłką do KSeF"
+              width="1711"
+              height="948"
+              fetchpriority="high"
               card_class="bottom-4 left-24 z-30 w-[350px] -rotate-[5deg] xl:left-28 xl:w-[395px]"
               image_class="h-full w-auto max-w-none origin-center scale-[1.22] -translate-x-[8%] -translate-y-[1%] group-hover:scale-100 group-hover:translate-x-[2%]"
             />
@@ -144,8 +169,14 @@ defmodule FirmowidWeb.Landing.Components.Hero do
   end
 
   @doc false
+  attr :id, :string, required: true
   attr :src, :string, required: true
+  attr :webp_srcset, :string, required: true
+  attr :sizes, :string, required: true
   attr :alt, :string, required: true
+  attr :width, :string, required: true
+  attr :height, :string, required: true
+  attr :fetchpriority, :string, default: nil
   attr :card_class, :string, required: true
   attr :image_class, :string, required: true
 
@@ -155,14 +186,25 @@ defmodule FirmowidWeb.Landing.Components.Hero do
       "group absolute hidden aspect-square overflow-hidden rounded-[28px] border-4 border-[#dea785] bg-[#f7f0eb] shadow-[0_20px_45px_rgba(87,54,35,0.16)] motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)] motion-safe:hover:z-40 motion-safe:hover:-translate-y-7 motion-safe:hover:scale-[1.45] motion-safe:hover:rotate-0 motion-safe:hover:shadow-[0_46px_96px_rgba(87,54,35,0.3)] lg:block",
       @card_class
     ]}>
-      <img
-        src={@src}
-        alt={@alt}
-        class={[
-          "absolute top-0 left-0 motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]",
-          @image_class
-        ]}
-      />
+      <picture>
+        <source type="image/webp" srcset={@webp_srcset} sizes={@sizes} />
+        <img
+          id={@id}
+          src={@src}
+          alt={@alt}
+          width={@width}
+          height={@height}
+          loading="eager"
+          decoding="async"
+          fetchpriority={@fetchpriority}
+          data-image-reveal
+          phx-hook="ImageLoadReveal"
+          class={[
+            "absolute top-0 left-0 motion-safe:transition-transform motion-safe:duration-300 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]",
+            @image_class
+          ]}
+        />
+      </picture>
     </div>
     """
   end

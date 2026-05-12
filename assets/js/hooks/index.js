@@ -17,6 +17,7 @@ import { CookieConsent } from "./cookie_consent";
 import { DownloadPdf } from "./download_pdf";
 import { LandingNavbarTheme } from "./landing_navbar_theme";
 import { NumberPopIn } from "./number_pop_in";
+import { ImageLoadReveal } from "./image_load_reveal";
 
 export const Hooks = {
   Confetti,
@@ -38,5 +39,6 @@ export const Hooks = {
   CookieConsent,
   DownloadPdf,
   LandingNavbarTheme,
-  NumberPopIn
+  NumberPopIn,
+  ImageLoadReveal
 };

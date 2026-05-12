@@ -173,16 +173,20 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     %{
       name: "Franek Madej",
       role: "CEO · Alergeek Ventures",
-      portrait_src: "/images/team-franek-madej.png",
       portrait_alt: "Portret Franka Madeja",
+      portrait_id: "team-portrait-franek",
+      portrait_width: "832",
+      portrait_height: "1248",
       bio:
         "Od dekady doradza firmom w tworzeniu oprogramowania, pracując m.in. ze startupami z ekosystemu Y Combinator. Ma obsesję na punkcie produktów dopracowanych w każdym szczególe i przekładania złożonych procesów na proste narzędzia."
     },
     %{
       name: "Stanisław Madej",
       role: "COO · Alergeek Ventures",
-      portrait_src: "/images/team-stanislaw-madej.png",
       portrait_alt: "Portret Stanisława Madeja",
+      portrait_id: "team-portrait-stanislaw",
+      portrait_width: "2731",
+      portrait_height: "4096",
       bio:
         "W firmie Alergeek Ventures dba o logistykę firmy, zarządzanie 20-osobowym zespołem. Szczęśliwy użytkownik Firmowida, którego wykorzystuje do codziennych zadań; dzięki czemu więcej czasu na zarządzanie a coraz mniej czasu poświęca na faktury oraz rozliczenia."
     }
@@ -335,7 +339,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                   <p class="text-[15px] font-semibold text-[#1a1a1a]">
                     Prezes spółki produkcji telewizyjnej
                   </p>
-                  <p class="mt-1 text-[13px] text-[#707070]">
+                  <p class="mt-1 text-[13px] text-[#4e4e4e]">
                     uczestnik programu beta
                   </p>
                 </div>
@@ -463,7 +467,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               Rocznie
               <span class={[
                 "rounded-2xl px-2 py-1 text-xs font-medium",
-                @billing_period == "yearly" && "bg-[#dea785] text-[#8b3f13]",
+                @billing_period == "yearly" && "bg-[#dea785] text-[#4e2005]",
                 @billing_period != "yearly" && "bg-[#8b3f13] text-white"
               ]}>
                 Taniej
@@ -517,8 +521,15 @@ defmodule FirmowidWeb.Landing.Components.Sections do
                 person.name != "Franek Madej" && "bg-[#578383]"
               ]}>
                 <img
-                  src={person.portrait_src}
+                  id={person.portrait_id}
+                  src={portrait_src(person.name)}
                   alt={person.portrait_alt}
+                  width={person.portrait_width}
+                  height={person.portrait_height}
+                  loading="lazy"
+                  decoding="async"
+                  data-image-reveal
+                  phx-hook="ImageLoadReveal"
                   class={[
                     "pointer-events-none absolute max-w-none object-cover",
                     person.name == "Franek Madej" &&
@@ -544,6 +555,10 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     </section>
     """
   end
+
+  defp portrait_src("Franek Madej"), do: ~p"/images/team-franek-madej.png"
+
+  defp portrait_src("Stanisław Madej"), do: ~p"/images/team-stanislaw-madej.png"
 
   @doc """
   Renders the FAQ section.
@@ -593,8 +608,10 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               </span>
             </button>
             <div
-              :if={@open_faq == faq.id}
               id={faq.id <> "-panel"}
+              role="region"
+              aria-labelledby={faq.id}
+              hidden={@open_faq != faq.id}
               class="border-t border-[#f0dfd3] p-5 text-[15px] leading-normal text-[#4e4e4e]"
             >
               {faq.answer}
@@ -745,7 +762,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       <div
         :if={@badge}
         class={[
-          "absolute rotate-[4deg] rounded-[6px] border-2 border-[#699166] bg-[#e8efe5] font-bold tracking-[0.08em] text-[#699166] uppercase",
+          "absolute rotate-[4deg] rounded-[6px] border-2 border-[#475e45] bg-[#e8efe5] font-bold tracking-[0.08em] text-[#475e45] uppercase",
           @compact && "top-3 right-3 px-2 py-1 text-[8px]",
           !@compact && "top-4 right-5 px-[10px] py-[4px] text-[10px]"
         ]}
@@ -765,7 +782,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           KOWALSKI CONSULTING
         </p>
         <div class={[
-          "mt-0.5 flex items-center justify-between gap-4 text-[#707070]",
+          "mt-0.5 flex items-center justify-between gap-4 text-[#4e4e4e]",
           @compact && "text-[6.8px] leading-[10px]",
           !@compact && "text-[10px] leading-[15px]"
         ]}>
@@ -805,11 +822,11 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         <div class="flex items-center justify-between border-b border-[#e9ddd2] pb-3">
           <div>
             <p class="text-sm font-bold text-[#1a1a1a]">Powiązane płatności</p>
-            <p class="mt-1 text-[10px] text-[#707070]">
+            <p class="mt-1 text-[10px] text-[#4e4e4e]">
               Automatyczne dopasowanie faktur do przelewów
             </p>
           </div>
-          <span class="rounded-full bg-[#e8efe5] px-3 py-1 text-[10px] font-bold text-[#699166]">
+          <span class="rounded-full bg-[#e8efe5] px-3 py-1 text-[10px] font-bold text-[#475e45]">
             Bank ✓
           </span>
         </div>
@@ -817,14 +834,14 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           <div class="flex items-center justify-between rounded-lg bg-white p-3 shadow-[0_4px_16px_rgba(80,50,30,0.08)]">
             <div>
               <p class="text-xs font-semibold text-[#1a1a1a]">FV 10/2026</p>
-              <p class="text-[11px] text-[#707070]">Kowalski Consulting</p>
+              <p class="text-[11px] text-[#4e4e4e]">Kowalski Consulting</p>
             </div>
             <p class="text-sm font-bold text-[#1a1a1a]">19 408,00 zł</p>
           </div>
           <div class="flex items-center justify-between rounded-lg border border-dashed border-[#d8c7bb] p-3">
             <div>
               <p class="text-xs font-semibold text-[#1a1a1a]">mBank • 01.10.2026</p>
-              <p class="text-[11px] text-[#707070]">Przelew dopasowany automatycznie</p>
+              <p class="text-[11px] text-[#4e4e4e]">Przelew dopasowany automatycznie</p>
             </div>
             <p class="text-sm font-bold text-[#699166]">✓</p>
           </div>
@@ -844,7 +861,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         <div class="flex items-center justify-between border-b border-[#e9ddd2] pb-3">
           <div>
             <p class="text-sm font-bold text-[#1a1a1a]">Ewidencja czasu</p>
-            <p class="mt-1 text-[10px] text-[#707070]">Koszty i godziny w czasie rzeczywistym</p>
+            <p class="mt-1 text-[10px] text-[#4e4e4e]">Koszty i godziny w czasie rzeczywistym</p>
           </div>
           <span class="rounded-full bg-[#f0eae6] px-3 py-1 text-[10px] font-bold text-[#8b3f13]">
             40h
@@ -883,9 +900,9 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         <div class="flex items-center justify-between border-b border-[#e9ddd2] pb-3">
           <div>
             <p class="text-sm font-bold text-[#1a1a1a]">Rozliczenia płac</p>
-            <p class="mt-1 text-[10px] text-[#707070]">Od ewidencji do wypłaty z jednego miejsca</p>
+            <p class="mt-1 text-[10px] text-[#4e4e4e]">Od ewidencji do wypłaty z jednego miejsca</p>
           </div>
-          <span class="rounded-full bg-[#e8efe5] px-3 py-1 text-[10px] font-bold text-[#699166]">
+          <span class="rounded-full bg-[#e8efe5] px-3 py-1 text-[10px] font-bold text-[#475e45]">
             Gotowe
           </span>
         </div>
@@ -893,7 +910,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
           <div class="flex items-center justify-between rounded-lg bg-white p-3 shadow-[0_4px_16px_rgba(80,50,30,0.08)]">
             <div>
               <p class="text-xs font-semibold text-[#1a1a1a]">Jan Nowak</p>
-              <p class="text-[11px] text-[#707070]">Umowa B2B • 160h</p>
+              <p class="text-[11px] text-[#4e4e4e]">Umowa B2B • 160h</p>
             </div>
             <p class="text-sm font-bold text-[#1a1a1a]">12 800 zł</p>
           </div>
@@ -933,7 +950,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
         <p class={[
           "mt-2 text-[13px]",
           @plan.highlighted && "text-[#b5b5b5]",
-          !@plan.highlighted && "text-[#707070]"
+          !@plan.highlighted && "text-[#4e4e4e]"
         ]}>
           {@plan.audience}
         </p>
@@ -1076,8 +1093,8 @@ defmodule FirmowidWeb.Landing.Components.Sections do
               Rocznie
               <span class={[
                 "rounded-2xl px-2 py-1 text-[10px]",
-                @plan.highlighted && @billing_period == "yearly" && "bg-[#dea785] text-[#8b3f13]",
-                @plan.highlighted && @billing_period != "yearly" && "bg-[#dea785] text-[#8b3f13]",
+                @plan.highlighted && @billing_period == "yearly" && "bg-[#dea785] text-[#4e2005]",
+                @plan.highlighted && @billing_period != "yearly" && "bg-[#dea785] text-[#4e2005]",
                 !@plan.highlighted && @billing_period == "yearly" && "bg-white/20 text-white",
                 !@plan.highlighted && @billing_period != "yearly" && "bg-[#8b3f13] text-white"
               ]}>
