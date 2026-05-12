@@ -172,10 +172,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
                 data-tippy-content="Pliki są przetwarzane i za kilka chwil będą dostępne w Firmowidzie"
                 class="bg-lightGreyBg absolute -top-3 -right-3 flex size-7 items-center justify-center overflow-hidden rounded-full"
               >
-                <span class="absolute block size-full animate-[spin_2s_linear_infinite] bg-linear-to-r from-orange-200 to-orange-400" />
+                <span class="absolute block size-full animate-pulse bg-orange-600" />
                 <span class="bg-lightGreyBg z-10 flex size-5 items-center justify-center rounded-full">
                   <%= if @currently_uploading_count > 0 do %>
-                    <.icon name="hero-arrow-up-circle-solid" class="size-5 leading-none text-white" />
+                    <Lucideicons.arrow_up class="size-4 leading-none text-orange-900" />
                   <% else %>
                     <%= case @processing_blobs_count do %>
                       <% 1 -> %>
