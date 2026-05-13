@@ -109,6 +109,7 @@ config :firmowid, Oban,
     {Oban.Plugins.Cron,
      timezone: "Europe/Warsaw",
      crontab: [
+       {"0 6 1 * *", Firmowid.Ash.Billing.Workers.MonthlySnapshotDispatcher, args: %{}},
        {"0 13 * * *", Firmowid.Ash.Invoicing.Workers.MatchingWorker, args: %{name: "matching"}},
        {"0 */2 * * *", Firmowid.Ash.Ksef.Workers.FetchDispatcher, args: %{}}
      ]}
@@ -124,6 +125,7 @@ config :firmowid,
     Firmowid.Ash.Assistant,
     Firmowid.Ash.Analysis,
     Firmowid.Ash.Blobs,
+    Firmowid.Ash.Billing,
     Firmowid.Ash.Core,
     Firmowid.Ash.Currencies,
     Firmowid.Ash.Finances,

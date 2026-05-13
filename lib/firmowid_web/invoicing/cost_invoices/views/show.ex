@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
   alias FirmowidWeb.Invoicing.Navigation
 
   @detail_loads [
+    :invoice_source,
     :is_deletable,
     :internal_note,
     :transactions,
@@ -74,7 +75,8 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
   @impl true
   def handle_event("toggle-invoicing", _params, socket) do
     scope = socket.assigns.ash_scope
-    invoice = Invoicing.toggle_cost_invoice_skip!(socket.assigns.invoice, scope: scope)
+    Invoicing.toggle_cost_invoice_skip!(socket.assigns.invoice, scope: scope)
+    invoice = CostInvoice.by_id!(socket.assigns.invoice.id, load: @detail_loads, scope: scope)
     {:noreply, assign(socket, :invoice, invoice)}
   end
 

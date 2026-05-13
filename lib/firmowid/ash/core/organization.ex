@@ -11,6 +11,7 @@ defmodule Firmowid.Ash.Core.Organization do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Billing.PlanCatalog
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core.Changes.CleanupOldAvatarBlob
   alias Firmowid.Ash.Core.Changes.GenerateNickname
@@ -80,6 +81,10 @@ defmodule Firmowid.Ash.Core.Organization do
       accept [:correspondence_name, :correspondence_address]
     end
 
+    update :update_billing_plan do
+      accept [:billing_plan]
+    end
+
     update :update_avatar do
       accept [:avatar_blob_id]
       require_atomic? false
@@ -146,8 +151,20 @@ defmodule Firmowid.Ash.Core.Organization do
       authorize_if always()
     end
 
-    policy action_type(:update) do
+    policy action([
+             :update,
+             :update_basic_info,
+             :update_correspondence,
+             :update_avatar,
+             :add_sender_email,
+             :remove_sender_email,
+             :regenerate_nickname
+           ]) do
       authorize_if actor_attribute_equals(:role, :admin)
+    end
+
+    policy action(:update_billing_plan) do
+      authorize_if actor_attribute_equals(:system_role, :superuser)
     end
 
     policy action_type(:destroy) do
@@ -167,6 +184,12 @@ defmodule Firmowid.Ash.Core.Organization do
     attribute :allowed_sender_emails, {:array, :string}, public?: true, default: []
     attribute :inbound_email_nickname, :string, public?: true, allow_nil?: false
     attribute :avatar_blob_id, :uuid, public?: true
+
+    attribute :billing_plan, :atom,
+      public?: true,
+      allow_nil?: false,
+      default: :przedsiebiorca,
+      constraints: [one_of: PlanCatalog.plans()]
 
     Resource.firmowid_timestamps()
   end

@@ -328,17 +328,21 @@ defmodule Firmowid.Ash.Core.User do
     bypass action(:read) do
       authorize_if expr(id == ^actor(:id))
       authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if actor_attribute_equals(:system_role, :superuser)
     end
 
-    # :list action — admin-only user listing, plus ksef_digest system actor
+    # :list action — admin-only user listing, plus system actors that need
+    # organization-wide factual user counts.
     bypass action(:list) do
       authorize_if actor_attribute_equals(:role, :admin)
-      authorize_if {SystemActorRole, roles: [:ksef_digest]}
+      authorize_if actor_attribute_equals(:system_role, :superuser)
+      authorize_if {SystemActorRole, roles: [:ksef_digest, :billing_snapshotter]}
     end
 
     # :get_org_user — admin-only, tenant-scoped user lookup
     bypass action(:get_org_user) do
       authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if actor_attribute_equals(:system_role, :superuser)
     end
 
     bypass action(:update_profile) do

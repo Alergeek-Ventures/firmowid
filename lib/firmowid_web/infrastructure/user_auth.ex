@@ -12,6 +12,16 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
 
   alias Firmowid.Ash.Scope
 
+  @expired_subscription_path "/abonament-wygasl"
+  @disabled_account_path "/konto-wylaczone"
+
+  @type blocked_page :: :disabled_account | :expired_subscription | nil
+  @type blocked_access :: %{
+          page: blocked_page(),
+          path: String.t() | nil,
+          message: String.t() | nil
+        }
+
   @doc """
   Builds a Scope, loads avatars for user and organization.
 
@@ -25,6 +35,8 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
     org = Ash.load!(user.organization, [avatar_blob: [:url]], scope: scope)
     {user, org, scope}
   end
+
+  @type billing_block_status :: :owner | :member | nil
 
   @doc """
   Plug: Requires authenticated user with organization (browser).
@@ -48,16 +60,18 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
       true ->
         {user, org, ash_scope} = load_scope_and_avatars(conn.assigns[:current_user])
 
-        if archived_user?(user) do
-          conn
-          |> LiveToast.put_toast(:error, "To konto zostało wyłączone.")
-          |> redirect(to: ~p"/konto-wylaczone")
-          |> halt()
-        else
-          conn
-          |> assign(:current_user, user)
-          |> assign(:current_org, org)
-          |> assign(:ash_scope, ash_scope)
+        case blocked_access(user, org) do
+          %{path: nil} ->
+            conn
+            |> assign(:current_user, user)
+            |> assign(:current_org, org)
+            |> assign(:ash_scope, ash_scope)
+
+          %{path: path, message: message} ->
+            conn
+            |> LiveToast.put_toast(:error, message)
+            |> redirect(to: path)
+            |> halt()
         end
     end
   end
@@ -143,15 +157,138 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
 
   Users with invoicing permissions (`:invoicing`, `:accountant`, `:admin`) are
   redirected to invoicing hub, while other users land on time tracking.
+
+  When the user belongs to an organization, the organization relationship is
+  loaded on demand so blocked-account routing stays consistent across browser
+  plugs, LiveView hooks, and auth controller redirects.
   """
   @spec signed_in_path_for_user(map() | nil) :: String.t()
   def signed_in_path_for_user(%{archived_at: archived_at}) when not is_nil(archived_at), do: ~p"/konto-wylaczone"
 
-  def signed_in_path_for_user(%{role: role}) when role in [:invoicing, :accountant, :admin], do: ~p"/fakturowanie"
+  def signed_in_path_for_user(user) do
+    user = maybe_load_organization_for_signed_in_path(user)
 
-  def signed_in_path_for_user(_user), do: ~p"/czasosledz"
+    case user do
+      %{organization: organization} = loaded_user
+      when not is_nil(organization) and not is_struct(organization, Ash.NotLoaded) ->
+        case blocked_access(loaded_user, organization) do
+          %{path: nil} -> signed_in_path_for_active_user(loaded_user)
+          %{path: path} -> path
+        end
+
+      %{role: role} when role in [:invoicing, :accountant, :admin] ->
+        ~p"/fakturowanie"
+
+      _user ->
+        ~p"/czasosledz"
+    end
+  end
 
   @spec archived_user?(map()) :: boolean()
   def archived_user?(%{archived_at: archived_at}), do: not is_nil(archived_at)
   def archived_user?(_), do: false
+
+  @doc """
+  Returns the blocked-access decision for the user in an organization context.
+  """
+  @spec blocked_access(map() | nil, map() | nil) :: blocked_access()
+  def blocked_access(nil, _org), do: %{page: nil, path: nil, message: nil}
+
+  def blocked_access(user, org) do
+    case blocked_page_for(user, org) do
+      :disabled_account ->
+        %{
+          page: :disabled_account,
+          path: @disabled_account_path,
+          message: "To konto zostało wyłączone."
+        }
+
+      :expired_subscription ->
+        %{
+          page: :expired_subscription,
+          path: @expired_subscription_path,
+          message: "Abonament organizacji wygasł."
+        }
+
+      nil ->
+        %{page: nil, path: nil, message: nil}
+    end
+  end
+
+  @spec blocked_path_for_user(map(), map()) :: String.t() | nil
+  def blocked_path_for_user(user, org), do: blocked_access(user, org).path
+
+  @doc """
+  Returns whether a blocked page should render or redirect away.
+  """
+  @spec blocked_page_action(:disabled_account | :expired_subscription, map() | nil, map() | nil) ::
+          :ok | {:redirect, String.t()}
+  def blocked_page_action(:disabled_account, nil, _org), do: :ok
+  def blocked_page_action(_page, nil, _org), do: {:redirect, ~p"/"}
+
+  def blocked_page_action(page, user, org) do
+    case blocked_access(user, org) do
+      %{page: ^page} -> :ok
+      _ -> {:redirect, signed_in_path_for_user(user)}
+    end
+  end
+
+  @spec blocked_owner?(map(), map()) :: boolean()
+  def blocked_owner?(user, org), do: billing_block_status(user, org) == :owner
+
+  @spec blocked_member?(map(), map()) :: boolean()
+  def blocked_member?(user, org), do: billing_block_status(user, org) == :member
+
+  @spec billing_block_status(map(), map()) :: billing_block_status()
+  # Deliberate temporary coupling:
+  # pre-Stripe we still manage subscription lifecycle outside the app, so until
+  # we introduce a first-class subscription status, `:no_plan` intentionally
+  # serves both as the zero-plan catalog entry and as the signal that
+  # organization access should be blocked here.
+  #
+  # This is not accidental. Keep access checks aligned with this convention and
+  # only split the concepts once lifecycle state moves into application data.
+  def billing_block_status(user, org) do
+    cond do
+      superuser?(user) -> nil
+      Map.get(org, :billing_plan) != :no_plan -> nil
+      Map.get(user, :id) == Map.get(org, :owner_id) -> :owner
+      true -> :member
+    end
+  end
+
+  @spec superuser?(map()) :: boolean()
+  def superuser?(%{system_role: :superuser}), do: true
+  def superuser?(_), do: false
+
+  defp blocked_page_for(user, org) do
+    cond do
+      archived_user?(user) -> :disabled_account
+      superuser?(user) -> nil
+      is_nil(org) -> nil
+      true -> blocked_page_for_billing_status(billing_block_status(user, org))
+    end
+  end
+
+  defp blocked_page_for_billing_status(:owner), do: :expired_subscription
+  defp blocked_page_for_billing_status(:member), do: :disabled_account
+  defp blocked_page_for_billing_status(nil), do: nil
+
+  defp maybe_load_organization_for_signed_in_path(nil), do: nil
+  defp maybe_load_organization_for_signed_in_path(%{organization_id: nil} = user), do: user
+
+  defp maybe_load_organization_for_signed_in_path(%{organization: organization} = user)
+       when not is_nil(organization) and not is_struct(organization, Ash.NotLoaded), do: user
+
+  defp maybe_load_organization_for_signed_in_path(%{organization_id: organization_id} = user)
+       when not is_nil(organization_id) do
+    scope = %Scope{actor: user, tenant: organization_id}
+    Ash.load!(user, [:organization], scope: scope)
+  end
+
+  defp maybe_load_organization_for_signed_in_path(user), do: user
+
+  defp signed_in_path_for_active_user(%{role: role}) when role in [:invoicing, :accountant, :admin], do: ~p"/fakturowanie"
+
+  defp signed_in_path_for_active_user(_user), do: ~p"/czasosledz"
 end

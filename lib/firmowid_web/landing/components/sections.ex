@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.Ash.Billing.PlanCatalog
   alias Phoenix.LiveView.Rendered
 
   @problems [
@@ -108,16 +109,11 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     }
   ]
 
-  @plans [
-    %{
+  @plan_marketing %{
+    start: %{
       key: "start",
       name: "Start",
       audience: "Polecany dla: wszystkich osób korzystających z KSeF",
-      monthly_price: 10.0,
-      yearly_monthly_price: "8 zł",
-      yearly_regular_price: "120 zł",
-      yearly_price: "96 zł",
-      included_usage: [],
       features: [
         "Integracja z KSeF",
         "Przejrzysty kreator faktur",
@@ -125,18 +121,10 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       ],
       highlighted: false
     },
-    %{
+    przedsiebiorca: %{
       key: "przedsiebiorca",
       name: "Przedsiębiorca",
       audience: "Polecany dla: jednoosobowych działalności i freelancerów",
-      monthly_price: 29.0,
-      yearly_monthly_price: "24,58 zł",
-      yearly_regular_price: "348 zł",
-      yearly_price: "295 zł",
-      included_usage: [
-        "10 faktur spoza KSeF / mies.",
-        "3 konta bankowe / mies."
-      ],
       features: [
         "Integracja z KSeF",
         "Przejrzysty kreator faktur",
@@ -145,18 +133,10 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       ],
       highlighted: true
     },
-    %{
+    firma: %{
       key: "firma",
       name: "Firma",
       audience: "Polecany dla: zespołów, firm powyżej 15 osób",
-      monthly_price: 69.0,
-      yearly_monthly_price: "58,58 zł",
-      yearly_regular_price: "828 zł",
-      yearly_price: "703 zł",
-      included_usage: [
-        "50 faktur spoza KSeF / mies.",
-        "10 kont bankowych / mies."
-      ],
       features: [
         "Integracja z KSeF",
         "Przejrzysty kreator faktur",
@@ -167,7 +147,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       ],
       highlighted: false
     }
-  ]
+  }
 
   @team [
     %{
@@ -220,7 +200,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
       id: "faq-overage",
       question: "Jak działają dodatkowe opłaty za faktury spoza KSeF i konta bankowe?",
       answer:
-        "W pakiecie Start każda faktura spoza KSeF kosztuje 1 zł netto + VAT, a każde konto bankowe 5 zł netto + VAT miesięcznie. W pakiecie Przedsiębiorca masz w cenie 10 faktur spoza KSeF i 3 konta bankowe miesięcznie, a w pakiecie Firma 50 faktur i 10 kont bankowych miesięcznie. Po wykorzystaniu limitu obowiązują te same stawki dodatkowe we wszystkich planach."
+        "W pakiecie Start nie ma w cenie faktur spoza KSeF, a każde dodatkowe konto bankowe kosztuje 10 zł netto + VAT miesięcznie. W pakiecie Przedsiębiorca masz w cenie 20 faktur spoza KSeF, 3 konta bankowe i 5 pracowników miesięcznie, a w pakiecie Firma 100 faktur, 10 kont bankowych i 20 pracowników. Po wykorzystaniu limitu naliczamy opłaty zgodnie z cennikiem pakietu."
     },
     %{
       id: "faq-banks",
@@ -421,7 +401,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   attr :billing_period, :string, required: true
 
   def pricing_section(assigns) do
-    assigns = assign(assigns, :plans, @plans)
+    assigns = assign(assigns, :plans, pricing_plans())
 
     ~H"""
     <section id="cennik" class="bg-white px-4 py-16 sm:px-6 lg:px-10 lg:py-[100px]">
@@ -1127,16 +1107,65 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   end
 
   defp display_price(plan, _period) do
-    monthly_price = plan.monthly_price
-
-    if trunc(monthly_price) == monthly_price do
-      "#{trunc(monthly_price)} zł"
-    else
-      "#{monthly_price} zł"
-    end
+    plan.monthly_price
   end
 
   defp price_graphemes(price) do
     String.graphemes(price)
+  end
+
+  defp pricing_plans do
+    Enum.map([:start, :przedsiebiorca, :firma], fn plan ->
+      rules = PlanCatalog.plan!(plan)
+
+      @plan_marketing
+      |> Map.fetch!(plan)
+      |> Map.merge(%{
+        monthly_price: money_with_currency(rules.monthly_price_pln),
+        yearly_monthly_price: yearly_monthly_price(rules.yearly_price_pln),
+        yearly_regular_price: yearly_regular_price(rules.monthly_price_pln),
+        yearly_price: money_with_currency(rules.yearly_price_pln),
+        included_usage: included_usage(rules)
+      })
+    end)
+  end
+
+  defp yearly_monthly_price(nil), do: nil
+
+  defp yearly_monthly_price(yearly_price_pln) do
+    yearly_price_pln
+    |> Decimal.div(Decimal.new(12))
+    |> Decimal.round(2)
+    |> Decimal.normalize()
+    |> money_with_currency()
+  end
+
+  defp yearly_regular_price(monthly_price_pln) do
+    monthly_price_pln
+    |> Decimal.mult(Decimal.new(12))
+    |> money_with_currency()
+  end
+
+  defp included_usage(rules) do
+    Enum.reject(
+      [
+        included_usage_line(rules.manual_external_invoices, "faktur spoza KSeF / mies."),
+        included_usage_line(rules.synced_bank_accounts, "kont bankowych / mies."),
+        included_usage_line(rules.active_non_owner_users, "pracowników / mies.")
+      ],
+      &is_nil/1
+    )
+  end
+
+  defp included_usage_line(%{included_units: 0}, _label), do: nil
+
+  defp included_usage_line(%{included_units: included_units}, label) do
+    "#{included_units} #{label}"
+  end
+
+  defp money_with_currency(nil), do: nil
+
+  defp money_with_currency(value) do
+    "#{Decimal.to_string(value, :normal)} zł"
   end
 end

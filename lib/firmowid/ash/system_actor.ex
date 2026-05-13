@@ -42,6 +42,10 @@ defmodule Firmowid.Ash.SystemActor do
   - `:ksef_digest` — builds and delivers scheduled KSeF cost-invoice digests.
     Can read invoice and admin-user data required for digest delivery.
 
+  - `:billing_snapshotter` — creates monthly billing snapshots from factual
+    organization usage data. Can read billing-related records and persist
+    snapshot rows.
+
   - `:anonymous` — unauthenticated share-token access. Can only read the specific
     invoice identified by the share token.
   """
@@ -58,6 +62,7 @@ defmodule Firmowid.Ash.SystemActor do
           | :project_tag_manager
           | :cross_tenant_reader
           | :ksef_digest
+          | :billing_snapshotter
           | :anonymous
 
   @enforce_keys [:org_id, :role]

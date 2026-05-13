@@ -1147,6 +1147,24 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   calculations do
     EffectiveFields.effective_correction_calculations()
 
+    calculate :invoice_source,
+              :string,
+              expr(
+                cond do
+                  not is_nil(ksef_number) ->
+                    "ksef"
+
+                  not is_nil(ksef_session_reference_number) ->
+                    "ksef"
+
+                  is_nil(invoice_number) ->
+                    "draft"
+
+                  true ->
+                    "document"
+                end
+              )
+
     calculate :effective_items,
               {:array, :struct},
               Firmowid.Ash.Invoicing.Calculations.EffectiveItems

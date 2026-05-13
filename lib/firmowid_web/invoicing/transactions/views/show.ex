@@ -17,14 +17,12 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
     :amount,
     :bank_account,
     cost_invoices: [
+      :invoice_source,
       :effective_total_amount,
       :effective_currency,
       :effective_seller_display_name,
       :issue_date,
-      :invoice_identifier,
-      :ksef_number,
-      :ksef_downloaded_at,
-      :ksef_permanent_storage_date
+      :invoice_identifier
     ],
     sales_invoices: [
       :gross_value,
@@ -32,8 +30,6 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
       :buyer_display_name_label,
       :issue_date,
       :invoice_number,
-      :ksef_number,
-      :ksef_session_reference_number,
       sales_invoice_items: [:name]
     ]
   ]

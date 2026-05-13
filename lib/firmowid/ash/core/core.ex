@@ -27,6 +27,7 @@ defmodule Firmowid.Ash.Core do
       define :update_organization, action: :update
       define :update_basic_info, action: :update_basic_info
       define :update_correspondence, action: :update_correspondence
+      define :update_organization_billing_plan, action: :update_billing_plan
       define :update_organization_avatar, action: :update_avatar
       define :add_sender_email, action: :add_sender_email
       define :remove_sender_email, action: :remove_sender_email

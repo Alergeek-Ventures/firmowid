@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Core.Router do
   alias FirmowidWeb.Infrastructure.Hooks.RequireAdmin
   alias FirmowidWeb.Infrastructure.Hooks.RequireNoOrganization
   alias FirmowidWeb.Infrastructure.Hooks.RequireOrganization
+  alias FirmowidWeb.Infrastructure.Hooks.RequireSuperuser
   alias FirmowidWeb.Infrastructure.Hooks.Timezone
   alias Invoicing.CostInvoices.Controllers.Pdf, as: CostInvoicePdf
   alias Invoicing.SalesInvoices.Controllers.Pdf
@@ -72,6 +73,16 @@ defmodule FirmowidWeb.Core.Router do
     forward "/flags", FunWithFlags.UI.Router, namespace: "admin/flags"
 
     forward "/mailbox", Plug.Swoosh.MailboxPreview
+
+    ash_authentication_live_session :admin,
+      on_mount: [
+        {RequireOrganization, :default},
+        {RequireSuperuser, :default},
+        {CurrentPath, :save_request_uri},
+        Timezone
+      ] do
+      live "/rozliczenie", FirmowidWeb.Admin.Views.Settlement, :index
+    end
   end
 
   ## Webhook routes
@@ -224,6 +235,7 @@ defmodule FirmowidWeb.Core.Router do
         {CurrentPath, :save_request_uri},
         Timezone
       ] do
+      live "/abonament-wygasl", Auth.Views.ExpiredSubscription
       live "/konto-wylaczone", Auth.Views.DisabledAccount
       live "/", Landing.Views.Index
       live "/polityka-prywatnosci", Landing.Views.PrivacyPolicy

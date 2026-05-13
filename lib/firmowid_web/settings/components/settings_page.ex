@@ -16,12 +16,21 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
   """
   @spec settings_page(map()) :: Phoenix.LiveView.Rendered.t()
   attr :current_user, :map, required: true
+  attr :current_org, :map, required: true
   attr :current_tab, :atom, required: true
   attr :user_avatar_upload, :any, required: true
   slot :inner_block, required: true
 
   def settings_page(assigns) do
-    assigns = assign(assigns, :tabs, Navigation.tabs_for(assigns.current_user))
+    assigns =
+      assign(
+        assigns,
+        :tabs,
+        Navigation.tabs_for(%{
+          current_user: assigns.current_user,
+          current_org: assigns.current_org
+        })
+      )
 
     ~H"""
     <section class="container flex max-w-5xl flex-col gap-6 py-8 lg:gap-10 lg:py-10">

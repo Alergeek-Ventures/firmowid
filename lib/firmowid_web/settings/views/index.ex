@@ -16,10 +16,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
   import FirmowidWeb.Settings.Components.InvoicesTab
   import FirmowidWeb.Settings.Components.ProfileTab
   import FirmowidWeb.Settings.Components.SettingsPage
+  import FirmowidWeb.Settings.Components.SubscriptionTab
   import Phoenix.Component, except: [link: 1]
 
   alias Ash.Error.Forbidden
   alias Ash.Notifier.Notification
+  alias Firmowid.Ash.Billing.Month
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Argon2Provider
@@ -27,6 +29,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Ash.Finances.GoCardless.ApiClient
   alias Firmowid.Ash.Finances.Requisition
   alias Firmowid.Ash.Ksef
+  alias FirmowidWeb.Billing.Utilities.MonthContext
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Settings.Navigation
   alias Phoenix.Socket.Broadcast
@@ -143,6 +146,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:editing_credentials, false)
      |> assign(:show_active_invites, false)
      |> assign(:settings_tab, :account)
+     |> assign(:subscription_month, nil)
+     |> assign(:subscription_worksheet, nil)
      |> assign(:trigger_submit, false)
      |> assign(:delete_account_form, to_form(%{"current_password" => ""}, as: "user"))
      |> assign(:current_password, nil)
@@ -207,7 +212,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     LiveToast.send_toast(:info, "Zdjęcie zostało zaktualizowane.")
 
-    {:noreply, assign(socket, :current_org, updated_with_avatar)}
+    {:noreply,
+     socket
+     |> assign(:current_org, updated_with_avatar)
+     |> assign_subscription_preview_if_visible()}
   end
 
   defp handle_progress(name, %{done?: false}, socket) when name in [:organization_avatar, :user_avatar] do
@@ -300,7 +308,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
            list_bank_institutions(socket.assigns.current_user, bank_accounts)
          )
          |> assign(:pending_requisitions, list_pending_requisitions(scope))
-         |> assign(:bank_account_statuses, derive_statuses(bank_accounts))}
+         |> assign(:bank_account_statuses, derive_statuses(bank_accounts))
+         |> assign_subscription_preview_if_visible()}
 
       {:error, _} ->
         LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania konta bankowego.")
@@ -325,7 +334,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
            list_bank_institutions(socket.assigns.current_user, bank_accounts)
          )
          |> assign(:pending_requisitions, list_pending_requisitions(scope))
-         |> assign(:bank_account_statuses, derive_statuses(bank_accounts))}
+         |> assign(:bank_account_statuses, derive_statuses(bank_accounts))
+         |> assign_subscription_preview_if_visible()}
 
       {:error, _} ->
         LiveToast.send_toast(
@@ -373,7 +383,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
          |> assign(:editing_correspondence, false)
          |> assign(:correspondence_form, form_correspondence_form(updated_with_avatar, scope))
          |> assign(:company_form, form_basic_info_form(updated_with_avatar, scope))
-         |> assign(:current_org, updated_with_avatar)}
+         |> assign(:current_org, updated_with_avatar)
+         |> assign_subscription_preview_if_visible()}
 
       {:error, form} ->
         {:noreply, assign(socket, form_key, form)}
@@ -411,7 +422,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
            Core.update_role(user, %{role: role}, scope: socket.assigns.ash_scope) do
       LiveToast.send_toast(:info, "Rola użytkownika została zmieniona.")
 
-      {:noreply, assign(socket, :organization_users, list_organization_users(socket.assigns.ash_scope))}
+      {:noreply,
+       socket
+       |> assign(:organization_users, list_organization_users(socket.assigns.ash_scope))
+       |> assign_subscription_preview_if_visible()}
     else
       {:error, :self_role_change} ->
         LiveToast.send_toast(:error, "Nie możesz zmienić własnej roli w tym miejscu.")
@@ -444,7 +458,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
          {:ok, _archived_user} <- Core.archive_user(user, %{}, scope: socket.assigns.ash_scope) do
       LiveToast.send_toast(:info, "Użytkownik został zarchiwizowany.")
 
-      {:noreply, assign(socket, :organization_users, list_organization_users(socket.assigns.ash_scope))}
+      {:noreply,
+       socket
+       |> assign(:organization_users, list_organization_users(socket.assigns.ash_scope))
+       |> assign_subscription_preview_if_visible()}
     else
       {:error, :self_user_management} ->
         LiveToast.send_toast(:error, "Nie możesz zarchiwizować własnego konta z tego miejsca.")
@@ -480,6 +497,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
          )
          |> assign(:pending_requisitions, list_pending_requisitions(scope))
          |> assign(:bank_account_statuses, derive_statuses(accounts))
+         |> assign_subscription_preview_if_visible()
          |> push_event("js-exec", %{
            to: "#manual_bank_account_modal_company",
            attr: "data-cancel"
@@ -553,7 +571,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
            list_bank_institutions(socket.assigns.current_user, accounts)
          )
          |> assign(:pending_requisitions, list_pending_requisitions(scope))
-         |> assign(:bank_account_statuses, derive_statuses(accounts))}
+         |> assign(:bank_account_statuses, derive_statuses(accounts))
+         |> assign_subscription_preview_if_visible()}
 
       {:error, _} ->
         LiveToast.send_toast(:error, "Nie udało się dodać konta.")
@@ -576,7 +595,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
           Ash.load!(updated_org, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
         LiveToast.send_toast(:info, "Nowy adres e-mail został wygenerowany.")
-        {:noreply, assign(socket, :current_org, updated_with_avatar)}
+
+        {:noreply,
+         socket
+         |> assign(:current_org, updated_with_avatar)
+         |> assign_subscription_preview_if_visible()}
 
       {:error, _} ->
         LiveToast.send_toast(:error, "Wystąpił błąd podczas generowania nowego adresu.")
@@ -606,7 +629,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
           Ash.load!(updated_org, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
         LiveToast.send_toast(:info, "Adres e-mail został dodany do listy dozwolonych.")
-        {:noreply, assign(socket, :current_org, updated_with_avatar)}
+
+        {:noreply,
+         socket
+         |> assign(:current_org, updated_with_avatar)
+         |> assign_subscription_preview_if_visible()}
 
       {:error, _} ->
         LiveToast.send_toast(:error, "Wystąpił błąd podczas dodawania adresu e-mail.")
@@ -629,7 +656,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
           Ash.load!(updated_org, [avatar_blob: [:url]], scope: socket.assigns.ash_scope)
 
         LiveToast.send_toast(:info, "Adres e-mail został usunięty z listy dozwolonych.")
-        {:noreply, assign(socket, :current_org, updated_with_avatar)}
+
+        {:noreply,
+         socket
+         |> assign(:current_org, updated_with_avatar)
+         |> assign_subscription_preview_if_visible()}
 
       {:error, _} ->
         LiveToast.send_toast(:error, "Wystąpił błąd podczas usuwania adresu e-mail.")
@@ -818,6 +849,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
       )
       |> assign(:pending_requisitions, list_pending_requisitions(scope))
       |> assign(:bank_account_statuses, derive_statuses(bank_accounts))
+      |> assign_subscription_preview_if_visible()
 
     # Show toast notification
     {toast_type, message} =
@@ -844,6 +876,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     ~H"""
     <.settings_page
       current_user={@current_user}
+      current_org={@current_org}
       current_tab={@settings_tab}
       user_avatar_upload={@uploads.user_avatar}
     >
@@ -868,6 +901,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
           />
         <% :invoices -> %>
           <.invoices_tab current_org={@current_org} current_user={@current_user} />
+        <% :subscription -> %>
+          <.subscription_tab month={@subscription_month} worksheet={@subscription_worksheet} />
         <% :account -> %>
           <.account_tab
             current_user={@current_user}
@@ -976,15 +1011,44 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   defp handle_resolved_section(tab, %{canonical?: canonical?, canonical_path: canonical_path}, socket) do
     cond do
-      not Navigation.visible?(tab, socket.assigns.current_user) ->
+      not Navigation.visible?(tab, %{
+        current_user: socket.assigns.current_user,
+        current_org: socket.assigns.current_org
+      }) ->
         {:noreply, push_patch(socket, to: Navigation.default_path())}
 
       not canonical? ->
         {:noreply, push_patch(socket, to: canonical_path)}
 
       true ->
-        {:noreply, assign(socket, :settings_tab, tab)}
+        {:noreply,
+         socket
+         |> assign(:settings_tab, tab)
+         |> assign_subscription_preview_if_visible()}
     end
+  end
+
+  defp assign_subscription_preview_if_visible(%{assigns: %{settings_tab: :subscription}} = socket) do
+    assign_subscription_preview(socket)
+  end
+
+  defp assign_subscription_preview_if_visible(socket), do: socket
+
+  defp assign_subscription_preview(socket) do
+    month = Month.current()
+    current_org = socket.assigns.current_org
+    current_user = socket.assigns.current_user
+
+    worksheet =
+      if current_org.owner_id == current_user.id do
+        current_org
+        |> MonthContext.load(month, current_user, current_month: month)
+        |> Map.fetch!(:worksheet)
+      end
+
+    socket
+    |> assign(:subscription_month, month)
+    |> assign(:subscription_worksheet, worksheet)
   end
 
   defp parse_role(role_param) do

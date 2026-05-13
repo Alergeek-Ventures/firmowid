@@ -11,6 +11,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
 
   @item_calcs [:net_value, :vat_value, :gross_value]
   @detail_loads [
+    :invoice_source,
     :net_value,
     :vat_value,
     :gross_value,

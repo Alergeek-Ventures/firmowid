@@ -413,7 +413,14 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       authorize_if always()
     end
 
-    bypass {SystemActorRole, roles: [:ksef_session, :invoice_matcher, :analysis_reader, :ksef_digest]} do
+    bypass {SystemActorRole,
+            roles: [
+              :ksef_session,
+              :invoice_matcher,
+              :analysis_reader,
+              :ksef_digest,
+              :billing_snapshotter
+            ]} do
       authorize_if action_type(:read)
     end
 
@@ -588,6 +595,16 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
               expr(
                 not (is_nil(ksef_downloaded_at) and is_nil(ksef_permanent_storage_date) and
                        is_nil(ksef_number))
+              )
+
+    calculate :invoice_source,
+              :string,
+              expr(
+                if is_ksef_imported do
+                  "ksef"
+                else
+                  "document"
+                end
               )
 
     calculate :is_in_ksef_digest,

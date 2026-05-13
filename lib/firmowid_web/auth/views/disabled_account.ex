@@ -12,29 +12,36 @@ defmodule FirmowidWeb.Auth.Views.DisabledAccount do
           socket
 
         user ->
-          loaded_user =
-            Ash.load!(user, [avatar_blob: [:url]],
-              actor: user,
-              tenant: user.organization_id
-            )
+          if is_nil(user.organization_id) do
+            loaded_user =
+              Ash.load!(user, [avatar_blob: [:url]], actor: user, tenant: user.organization_id)
 
-          assign(socket, :current_user, loaded_user)
+            assign(socket, :current_user, loaded_user)
+          else
+            {loaded_user, org, _scope} = UserAuth.load_scope_and_avatars(user)
+
+            socket
+            |> assign(:current_user, loaded_user)
+            |> assign(:current_org, org)
+          end
       end
 
-    # If a non-archived user somehow reached this page, redirect them to their
-    # normal signed-in path.
     socket = assign(socket, :page_title, "Konto wyłączone")
 
-    if socket.assigns[:current_user] && not UserAuth.archived_user?(socket.assigns.current_user) do
-      target = UserAuth.signed_in_path_for_user(socket.assigns.current_user)
+    case UserAuth.blocked_page_action(
+           :disabled_account,
+           socket.assigns[:current_user],
+           socket.assigns[:current_org]
+         ) do
+      :ok ->
+        {:ok, socket}
 
-      if connected?(socket) do
-        {:ok, push_navigate(socket, to: target)}
-      else
-        {:ok, Phoenix.LiveView.redirect(socket, to: target)}
-      end
-    else
-      {:ok, socket}
+      {:redirect, target} ->
+        if connected?(socket) do
+          {:ok, push_navigate(socket, to: target)}
+        else
+          {:ok, Phoenix.LiveView.redirect(socket, to: target)}
+        end
     end
   end
 
@@ -48,8 +55,8 @@ defmodule FirmowidWeb.Auth.Views.DisabledAccount do
         </div>
         <h1 class="mb-2 text-2xl/tight font-semibold">Konto wyłączone</h1>
         <p class="text-grey-700 text-base/snug">
-          To konto zostało wyłączone. Skontaktuj się z administratorem organizacji,
-          aby je odblokować.
+          To konto jest obecnie niedostępne. Skontaktuj się z administratorem organizacji,
+          aby potwierdzić, czy konto zostało wyłączone lub dostęp został zablokowany.
         </p>
       </div>
     </div>
