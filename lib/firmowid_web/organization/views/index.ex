@@ -115,7 +115,13 @@ defmodule FirmowidWeb.Organization.Views.Index do
               <div class="mt-8 mb-2.5 text-center">
                 <p>
                   Nie to konto?
-                  <.form for={%{}} action={~p"/wyloguj"} method="delete" class="inline">
+                  <.form
+                    for={%{}}
+                    action={~p"/wyloguj"}
+                    method="delete"
+                    class="inline"
+                    data-posthog-reset-on-submit="true"
+                  >
                     <.button
                       type="submit"
                       variant="ghost"

@@ -53,6 +53,7 @@ function consentAccepted() {
 
 let sentryInitialized = false;
 let posthogInitialized = false;
+let logoutResetInstalled = false;
 
 function loadScript(src, options = {}) {
   const existingScript = document.querySelector(`script[src="${src}"]`);
@@ -92,6 +93,14 @@ async function ensurePosthogScript() {
   return posthogScriptPromise;
 }
 
+function telemetryResetForm(element) {
+  if (!(element instanceof HTMLFormElement)) {
+    return null;
+  }
+
+  return element.dataset.posthogResetOnSubmit === "true" ? element : null;
+}
+
 function runWhenIdle(callback) {
   if ("requestIdleCallback" in window) {
     window.requestIdleCallback(callback, { timeout: 3000 });
@@ -107,6 +116,17 @@ function pageviewProperties(mode) {
     title: document.title,
     analytics_mode: mode
   };
+}
+
+function analyticsContextProperties(config) {
+  return {
+    surface: config.publicMarketing ? "landing" : "app",
+    auth_state: config.currentUserId ? "identified" : "anonymous"
+  };
+}
+
+function registerAnalyticsContext(posthogInstance, config) {
+  posthogInstance.register(analyticsContextProperties(config));
 }
 
 function clickedElement(event) {
@@ -225,8 +245,12 @@ function initAnonymousLandingTelemetry(config) {
       "landing"
     );
 
+    if (posthog.landing) {
+      registerAnalyticsContext(posthog.landing, config);
+    }
+
     posthog.landing?.capture(
-      "pageview",
+      "$pageview",
       pageviewProperties("anonymous_memory")
     );
 
@@ -289,9 +313,7 @@ export async function initTelemetry() {
       persistence: "localStorage"
     });
 
-    posthog.capture("pageview", {
-      ...pageviewProperties("consented")
-    });
+    registerAnalyticsContext(posthog, config);
 
     if (config.currentUserId) {
       posthog.identify(config.currentUserId, {
@@ -299,12 +321,43 @@ export async function initTelemetry() {
       });
     }
 
+    posthog.capture("$pageview", {
+      ...pageviewProperties("consented")
+    });
+
     window.addEventListener("phx:page-loading-stop", () => {
-      posthog.capture("pageview", {
+      posthog.capture("$pageview", {
         ...pageviewProperties("consented")
       });
     });
 
     posthogInitialized = true;
   }
+}
+
+export function resetTelemetry() {
+  const posthog = window.posthog;
+
+  posthog?.reset?.();
+  posthog?.landing?.reset?.();
+}
+
+export function installTelemetryLogoutReset() {
+  if (logoutResetInstalled) {
+    return;
+  }
+
+  document.addEventListener(
+    "submit",
+    (event) => {
+      const form = telemetryResetForm(event.target);
+
+      if (form) {
+        resetTelemetry();
+      }
+    },
+    true
+  );
+
+  logoutResetInstalled = true;
 }

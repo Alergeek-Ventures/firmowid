@@ -160,7 +160,13 @@
                 Konta bankowe
               </.link>
             <% end %>
-            <.form for={%{}} action={~p"/wyloguj"} method="delete" class="w-full">
+            <.form
+              for={%{}}
+              action={~p"/wyloguj"}
+              method="delete"
+              class="w-full"
+              data-posthog-reset-on-submit="true"
+            >
               <FirmowidWeb.DesignSystem.Components.Button.button
                 type="submit"
                 variant="unstyled"
