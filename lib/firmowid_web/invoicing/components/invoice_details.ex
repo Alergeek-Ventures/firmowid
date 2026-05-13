@@ -16,13 +16,12 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.RecommendationThresholds
   alias FirmowidWeb.Invoicing.Navigation
 
   attr :is_cost_invoice, :boolean
-  attr :source, :string, required: true
+  attr :variant, :string, required: true
   attr :issue_date, Date, required: true
   attr :party_display_name, :string, required: true
   attr :description, :string
@@ -46,39 +45,12 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
         <h2 class="text-darkGrey">{@description}</h2>
       </div>
       <div class="ml-auto flex flex-row items-center gap-4">
-        <h2 class="text-darkGrey">
-          <%= case @source do %>
-            <% "draft" -> %>
-              Szkic wewnątrz Firmowida
-            <% "ksef" -> %>
-              Faktura z Krajowego Systemu e-Faktur
-            <% "document" -> %>
-              Faktura dodana przez użytkownika
-          <% end %>
-        </h2>
-        <.invoice_source_badge source={@source} size="big" />
+        <h2 class="text-darkGrey">{invoice_source_badge_label(@variant)}</h2>
+        <.invoice_source_badge variant={@variant} size="big" />
       </div>
     </header>
     """
   end
-
-  @doc """
-  Returns the invoice source badge variant for invoice details views.
-  """
-  @spec invoice_source(CostInvoice.t() | SalesInvoice.t()) :: String.t()
-  def invoice_source(%CostInvoice{ksef_number: ksef_number}) when is_binary(ksef_number), do: "ksef"
-
-  def invoice_source(%CostInvoice{ksef_downloaded_at: downloaded_at}) when not is_nil(downloaded_at), do: "ksef"
-
-  def invoice_source(%CostInvoice{ksef_permanent_storage_date: storage_date}) when not is_nil(storage_date), do: "ksef"
-
-  def invoice_source(%CostInvoice{}), do: "document"
-
-  def invoice_source(%SalesInvoice{ksef_number: ksef_number}) when is_binary(ksef_number), do: "ksef"
-
-  def invoice_source(%SalesInvoice{ksef_session_reference_number: reference}) when is_binary(reference), do: "ksef"
-
-  def invoice_source(%SalesInvoice{}), do: "draft"
 
   slot :inner_block, required: false
 

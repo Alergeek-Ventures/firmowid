@@ -43,7 +43,8 @@ defmodule Mix.Tasks.Check do
   # the running mix check process. Running as a subprocess gives us the real OS
   # exit code and prevents false "Tests OK" results.
   @cmd_checks [
-    {"Format", ["format"]}
+    {"Format", ["format"]},
+    {"Sobelow", ["sobelow", "--config", "--compact", "--private"]}
   ]
 
   @static_checks [
@@ -53,7 +54,6 @@ defmodule Mix.Tasks.Check do
     # Temporary ceiling agreed for the assistant refactor while preserving visibility.
     {"Xref", ["xref", "graph", "--label", "compile-connected", "--fail-above", "50"]},
     {"Credo", ["credo", "--strict"]},
-    {"Sobelow", ["sobelow", "--config", "--compact", "--private"]},
     {"Dialyzer", ["dialyzer"]}
   ]
 

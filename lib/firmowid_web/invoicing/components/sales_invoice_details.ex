@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
 
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.InvoicingBadges
   import FirmowidWeb.DesignSystem.Components.Link
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
@@ -162,7 +163,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
     ~H"""
     <div id="invoice-show" class="flex flex-col">
       <InvoiceDetails.invoice_header
-        source={InvoiceDetails.invoice_source(@invoice)}
+        variant={invoice_source_badge_variant(@invoice)}
         is_cost_invoice={false}
         issue_date={@invoice.issue_date}
         party_display_name={@party_display_name}

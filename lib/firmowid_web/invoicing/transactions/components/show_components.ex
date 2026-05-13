@@ -244,7 +244,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   def linked_invoice_card(assigns) do
     ~H"""
     <div class="flex flex-col gap-4 rounded-md bg-[#D0E6CE66] p-4">
-      <div :if={@card.badge_source} class="flex flex-row items-center justify-between">
+      <div :if={@card.badge_variant} class="flex flex-row items-center justify-between">
         <div class="space-y-1">
           <p class="text-grey-700 text-sm/snug">{@card.type_label}</p>
           <.link kind="unstyled" navigate={@card.navigate} class="leading-snug hover:underline">
@@ -252,11 +252,11 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
           </.link>
         </div>
 
-        <.invoice_source_badge source={@card.badge_source} size="small" />
+        <.invoice_source_badge variant={@card.badge_variant} size="small" />
       </div>
 
       <div class="grid grid-flow-col grid-cols-[2fr_1fr_1fr] grid-rows-2 gap-x-4 gap-y-6">
-        <div :if={is_nil(@card.badge_source)} class="space-y-1">
+        <div :if={is_nil(@card.badge_variant)} class="space-y-1">
           <p class="text-grey-700 text-sm/snug">{@card.type_label}</p>
           <.link kind="unstyled" navigate={@card.navigate} class="leading-snug hover:underline">
             {@card.number}
@@ -429,7 +429,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
       type_label: "Faktura sprzedażowa",
       number: present(invoice.invoice_number),
       amount: safe_money(invoice.currency, invoice.gross_value),
-      badge_source: nil,
+      badge_variant: nil,
       metadata: [
         {"Na fakturze", first_sales_item_name(invoice)},
         {"Kontrahent", present(invoice.buyer_display_name_label)},
@@ -439,17 +439,17 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   end
 
   defp cost_invoice_card(%CostInvoice{} = invoice, return_to) do
-    source = InvoiceDetails.invoice_source(invoice)
+    variant = invoice_source_badge_variant(invoice)
 
     %{
       navigate: Navigation.cost_invoice_show_path(invoice, return_to),
       type_label: "Faktura kosztowa",
       number: present(invoice.invoice_identifier),
       amount: safe_money(invoice.effective_currency, invoice.effective_total_amount),
-      badge_source: source,
+      badge_variant: variant,
       metadata: [
         {"Kontrahent", present(invoice.effective_seller_display_name)},
-        {"Źródło", invoice_source_label(source)},
+        {"Źródło", invoice_source_badge_label(variant)},
         {"Wystawiono", invoice.issue_date},
         {"Typ", "Faktura kosztowa"}
       ]
@@ -459,11 +459,6 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   defp present(nil), do: "—"
   defp present(""), do: "—"
   defp present(value), do: value
-
-  defp invoice_source_label("draft"), do: "Szkic"
-  defp invoice_source_label("ksef"), do: "KSeF"
-  defp invoice_source_label("document"), do: "Dokument"
-  defp invoice_source_label(_source), do: "—"
 
   defp first_sales_item_name(%SalesInvoice{sales_invoice_items: [%{name: name} | _]})
        when is_binary(name) and name != "" do

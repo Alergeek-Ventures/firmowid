@@ -527,7 +527,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       assigns
       |> assign(:party, party)
       |> assign(:bank_badge, Map.get(transaction, :bank_account))
-      |> assign(:invoice_source_badge, nil)
+      |> assign(:invoice_source_badge_variant, nil)
       |> assign(:description, transaction.remittance_information_unstructured)
       |> assign(
         :navigate,
@@ -539,7 +539,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   navigate={@navigate}
   description={@description}
   bank_badge={@bank_badge}
-  invoice_source_badge={@invoice_source_badge}
+  invoice_source_badge_variant={@invoice_source_badge_variant}
   column={@column}
 />"
   end
@@ -549,7 +549,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       assigns
       |> assign(:party, invoice.effective_seller_display_name)
       |> assign(:bank_badge, nil)
-      |> assign(:invoice_source_badge, invoice_source_badge_for_invoice(invoice))
+      |> assign(:invoice_source_badge_variant, invoice_source_badge_variant(invoice))
       |> assign(:description, invoice.description)
       |> assign(
         :navigate,
@@ -561,7 +561,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   navigate={@navigate}
   description={@description}
   bank_badge={@bank_badge}
-  invoice_source_badge={@invoice_source_badge}
+  invoice_source_badge_variant={@invoice_source_badge_variant}
   column={@column}
 />"
   end
@@ -573,7 +573,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       assigns
       |> assign(:party, party)
       |> assign(:bank_badge, nil)
-      |> assign(:invoice_source_badge, invoice_source_badge_for_invoice(invoice))
+      |> assign(:invoice_source_badge_variant, invoice_source_badge_variant(invoice))
       |> assign(
         :description,
         case {
@@ -596,26 +596,28 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   navigate={@navigate}
   description={@description}
   bank_badge={@bank_badge}
-  invoice_source_badge={@invoice_source_badge}
+  invoice_source_badge_variant={@invoice_source_badge_variant}
   column={@column}
 />"
   end
 
   defp render_cell(
-         %{navigate: nil, party: _, description: _, bank_badge: _, invoice_source_badge: _, column: "party"} = assigns
+         %{navigate: nil, party: _, description: _, bank_badge: _, invoice_source_badge_variant: _, column: "party"} =
+           assigns
        ) do
     ~H"""
     <.party_cell_content
       party={@party}
       description={@description}
       bank_badge={@bank_badge}
-      invoice_source_badge={@invoice_source_badge}
+      invoice_source_badge_variant={@invoice_source_badge_variant}
     />
     """
   end
 
   defp render_cell(
-         %{navigate: _, party: _, description: _, bank_badge: _, invoice_source_badge: _, column: "party"} = assigns
+         %{navigate: _, party: _, description: _, bank_badge: _, invoice_source_badge_variant: _, column: "party"} =
+           assigns
        ) do
     ~H"""
     <.link kind="unstyled" navigate={@navigate} class="hover:underline">
@@ -623,7 +625,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         party={@party}
         description={@description}
         bank_badge={@bank_badge}
-        invoice_source_badge={@invoice_source_badge}
+        invoice_source_badge_variant={@invoice_source_badge_variant}
       />
     </.link>
     """
@@ -845,15 +847,15 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   attr :party, :string, default: nil
   attr :description, :string, default: nil
   attr :bank_badge, :any, default: nil
-  attr :invoice_source_badge, :string, default: nil
+  attr :invoice_source_badge_variant, :string, default: nil
 
   defp party_cell_content(assigns) do
     ~H"""
     <div class="flex min-w-0 items-center gap-2.5">
       <.bank_badge :if={@bank_badge} institution={@bank_badge} size="mini" class="shrink-0" />
       <.invoice_source_badge
-        :if={@invoice_source_badge}
-        source={@invoice_source_badge}
+        :if={@invoice_source_badge_variant}
+        variant={@invoice_source_badge_variant}
         size="small"
         class="shrink-0"
       />
@@ -877,17 +879,4 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       _ -> "Default"
     end
   end
-
-  defp invoice_source_badge_for_invoice(%CostInvoice{ksef_number: ksef_number}) when is_binary(ksef_number), do: "ksef"
-
-  defp invoice_source_badge_for_invoice(%CostInvoice{blob_id: blob_id}) when not is_nil(blob_id), do: "document"
-
-  defp invoice_source_badge_for_invoice(%SalesInvoice{ksef_number: ksef_number}) when is_binary(ksef_number), do: "ksef"
-
-  defp invoice_source_badge_for_invoice(%SalesInvoice{ksef_session_reference_number: reference})
-       when is_binary(reference), do: "ksef"
-
-  defp invoice_source_badge_for_invoice(%SalesInvoice{}), do: "draft"
-
-  defp invoice_source_badge_for_invoice(_), do: nil
 end
