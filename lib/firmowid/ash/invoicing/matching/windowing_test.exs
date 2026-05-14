@@ -32,34 +32,28 @@ defmodule Firmowid.Ash.Invoicing.Matching.WindowingTest do
 
       transactions = [
         %Transaction{
-          transaction_amount: Decimal.new("-95.0"),
-          transaction_currency: "PLN",
+          amount: Money.new!("PLN", Decimal.new("-95.0")),
           booking_date: ~D[2025-01-14]
         },
         %Transaction{
-          transaction_amount: Decimal.new("-110.0"),
-          transaction_currency: "PLN",
+          amount: Money.new!("PLN", Decimal.new("-110.0")),
           booking_date: ~D[2025-03-20]
         },
         %Transaction{
           # changed from -105.0 to -120.0 (outside amount window)
-          transaction_amount: Decimal.new("-120.0"),
-          transaction_currency: "PLN",
+          amount: Money.new!("PLN", Decimal.new("-120.0")),
           booking_date: ~D[2025-02-10]
         },
         %Transaction{
-          transaction_amount: Decimal.new("-85.0"),
-          transaction_currency: "PLN",
+          amount: Money.new!("PLN", Decimal.new("-85.0")),
           booking_date: ~D[2025-02-10]
         },
         %Transaction{
-          transaction_amount: Decimal.new("-85.0"),
-          transaction_currency: "PLN",
+          amount: Money.new!("PLN", Decimal.new("-85.0")),
           booking_date: ~D[2026-02-10]
         },
         %Transaction{
-          transaction_amount: Decimal.new("-95.0"),
-          transaction_currency: "EUR",
+          amount: Money.new!("EUR", Decimal.new("-95.0")),
           booking_date: ~D[2025-01-14]
         }
       ]
@@ -77,8 +71,12 @@ defmodule Firmowid.Ash.Invoicing.Matching.WindowingTest do
     } do
       result = Windowing.pre_filter_invoice_transactions(cost_invoice, transactions)
       # Only PLN transactions in the right time and amount window
-      assert Enum.all?(result, &(&1.transaction_currency == "PLN"))
-      assert Enum.all?(result, &(Decimal.cmp(&1.transaction_amount, 0) == :lt))
+      assert Enum.all?(
+               result,
+               &(&1.amount |> Money.to_currency_code() |> Atom.to_string() == "PLN")
+             )
+
+      assert Enum.all?(result, &Money.negative?(&1.amount))
       assert length(result) == 2
     end
 
@@ -88,7 +86,10 @@ defmodule Firmowid.Ash.Invoicing.Matching.WindowingTest do
     } do
       result = Windowing.pre_filter_invoice_transactions(cost_invoice_eur, transactions)
       # Only EUR transactions in the right time and amount window
-      assert Enum.any?(result, &(&1.transaction_currency == "EUR"))
+      assert Enum.any?(
+               result,
+               &(&1.amount |> Money.to_currency_code() |> Atom.to_string() == "EUR")
+             )
     end
 
     test "filters transactions for SalesInvoice" do
@@ -117,28 +118,23 @@ defmodule Firmowid.Ash.Invoicing.Matching.WindowingTest do
       transactions = [
         %Transaction{
           booking_date: ~D[2023-01-15],
-          transaction_amount: Decimal.new("10.0"),
-          transaction_currency: "PLN"
+          amount: Money.new!("PLN", Decimal.new("10.0"))
         },
         %Transaction{
           booking_date: ~D[2024-12-01],
-          transaction_amount: Decimal.new("10.0"),
-          transaction_currency: "PLN"
+          amount: Money.new!("PLN", Decimal.new("10.0"))
         },
         %Transaction{
           booking_date: ~D[2025-01-15],
-          transaction_amount: Decimal.new("12.3"),
-          transaction_currency: "PLN"
+          amount: Money.new!("PLN", Decimal.new("12.3"))
         },
         %Transaction{
           booking_date: ~D[2025-03-15],
-          transaction_amount: Decimal.new("10.0"),
-          transaction_currency: "PLN"
+          amount: Money.new!("PLN", Decimal.new("10.0"))
         },
         %Transaction{
           booking_date: ~D[2027-01-15],
-          transaction_amount: Decimal.new("10.0"),
-          transaction_currency: "PLN"
+          amount: Money.new!("PLN", Decimal.new("10.0"))
         }
       ]
 
@@ -149,8 +145,12 @@ defmodule Firmowid.Ash.Invoicing.Matching.WindowingTest do
         )
 
       assert length(result) == 1
-      assert Enum.all?(result, &(&1.transaction_amount == Decimal.new("12.3")))
-      assert Enum.all?(result, &(&1.transaction_currency == "PLN"))
+      assert Enum.all?(result, &(Money.to_decimal(&1.amount) == Decimal.new("12.3")))
+
+      assert Enum.all?(
+               result,
+               &(&1.amount |> Money.to_currency_code() |> Atom.to_string() == "PLN")
+             )
     end
   end
 end

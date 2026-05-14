@@ -138,7 +138,6 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       user = admin_fixture()
       tx1 = transaction_fixture!(user, "Grouped Party", ~D[2026-01-10], "PAYMENT-A")
       tx2 = transaction_fixture!(user, "Grouped Party", ~D[2026-01-10], "PAYMENT-B")
-      group_id = "group-#{:erlang.phash2("Grouped Party")}"
 
       {:ok, view, _html} =
         conn
@@ -147,17 +146,26 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
 
       html = render(view)
 
+      [group_button_id] =
+        Regex.run(
+          ~r/id="([^"]+-button)"[^>]*phx-click="[^"]*toggle-skip-invoicing-group/s,
+          html,
+          capture: :all_but_first
+        )
+
       assert html =~ "Grouped Party"
       assert html =~ "2 transakcje"
 
-      updated_html =
+      _updated_html =
         view
-        |> element("##{group_id}-button")
+        |> element("##{group_button_id}")
         |> render_click()
+
+      updated_html = render(view)
 
       assert updated_html =~ "Grouped Party"
       assert updated_html =~ "2 transakcje"
-      refute updated_html =~ ~s(#{group_id}-button">Pomiń)
+      refute updated_html =~ ~s(#{group_button_id}">Pomiń)
 
       skipped_tx1 = Finances.get_transaction!(tx1.id, scope: scope_for(user))
       skipped_tx2 = Finances.get_transaction!(tx2.id, scope: scope_for(user))
@@ -358,8 +366,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       creditor_account: "PL02114020040000300201355387",
       debtor_name: "Bytecraft",
       debtor_account: "PL61109010140000071219812874",
-      transaction_amount: Decimal.new("-50.00"),
-      transaction_currency: "EUR",
+      amount: Money.new!("EUR", Decimal.new("-50.00")),
       booking_date: booking_date,
       value_date: booking_date,
       remittance_information_unstructured: "#{suffix}",

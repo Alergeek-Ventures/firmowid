@@ -360,8 +360,7 @@ defmodule Firmowid.Ash.Finances.DuplicateTransactionMatcherTest do
     Map.merge(
       %{
         internal_transaction_id: "default-id",
-        transaction_amount: Decimal.new("100.00"),
-        transaction_currency: "PLN",
+        amount: Money.new!("PLN", Decimal.new("100.00")),
         debtor_name: "Example Debtor",
         debtor_account: "PL001",
         creditor_name: "Example Creditor",
@@ -386,8 +385,7 @@ defmodule Firmowid.Ash.Finances.DuplicateTransactionMatcherTest do
         creditor_account: @subscription_card_creditor_account,
         debtor_name: @subscription_card_debtor_name,
         debtor_account: @subscription_card_debtor_account,
-        transaction_amount: Decimal.new(amount),
-        transaction_currency: "PLN",
+        amount: Money.new!("PLN", Decimal.new(amount)),
         booking_date: booking_date,
         value_date: value_date,
         remittance_information_unstructured: subscription_card_remittance(amount),
@@ -402,8 +400,7 @@ defmodule Firmowid.Ash.Finances.DuplicateTransactionMatcherTest do
       %{
         booking_date: booking_date,
         value_date: value_date,
-        transaction_amount: Decimal.new(amount),
-        transaction_currency: "PLN",
+        amount: Money.new!("PLN", Decimal.new(amount)),
         creditor_name: @subscription_card_creditor_name,
         remittance_information_unstructured: subscription_card_remittance(amount)
       }
@@ -424,7 +421,7 @@ defmodule Firmowid.Ash.Finances.DuplicateTransactionMatcherTest do
 
   defp format_subscription_amount_counts(transactions) do
     transactions
-    |> Enum.group_by(&normalize_subscription_amount(&1.transaction_amount))
+    |> Enum.group_by(&normalize_subscription_amount(Money.to_decimal(&1.amount)))
     |> Enum.sort_by(fn {amount, _transactions} -> amount end)
     |> Enum.map_join("\n", fn {amount, grouped_transactions} ->
       "- amount=#{amount} count=#{length(grouped_transactions)}"
@@ -451,8 +448,8 @@ defmodule Firmowid.Ash.Finances.DuplicateTransactionMatcherTest do
 
   defp subscription_signature(transaction) do
     {
-      normalize_subscription_amount(transaction.transaction_amount),
-      transaction.transaction_currency,
+      normalize_subscription_amount(Money.to_decimal(transaction.amount)),
+      transaction.amount |> Money.to_currency_code() |> Atom.to_string(),
       transaction.creditor_name,
       transaction.remittance_information_unstructured
     }

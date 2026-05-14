@@ -25,6 +25,7 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
     unmatched_transactions =
       Finances.list_transactions!(
         %{date_from: ~D[2000-01-01], date_to: ~D[2100-12-30], reconciliation: :pending},
+        load: [:amount],
         scope: scope
       )
 

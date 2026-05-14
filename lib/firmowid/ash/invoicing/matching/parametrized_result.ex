@@ -79,7 +79,8 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResult do
           get_transaction_side_account(invoice, transaction),
           get_invoice_account_number(invoice)
         ),
-      is_same_currency: boolean_to_float(invoice.currency == transaction.transaction_currency),
+      is_same_currency:
+        boolean_to_float(invoice.currency == transaction.amount |> Money.to_currency_code() |> Atom.to_string()),
       amount_present_in_remittance_information_unstructured:
         amount_present_in_remittance_information_unstructured(
           transaction.remittance_information_unstructured,
@@ -176,8 +177,8 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResult do
 
     tx_pln =
       Currencies.normalize_amount_to_pln(
-        transaction.transaction_amount,
-        transaction.transaction_currency,
+        Money.to_decimal(transaction.amount),
+        transaction.amount |> Money.to_currency_code() |> Atom.to_string(),
         RateDate.normalize_rate_date(transaction.booking_date)
       )
 
@@ -250,8 +251,8 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResult do
 
     tx_amount_pln =
       Currencies.normalize_amount_to_pln(
-        transaction.transaction_amount,
-        transaction.transaction_currency,
+        Money.to_decimal(transaction.amount),
+        transaction.amount |> Money.to_currency_code() |> Atom.to_string(),
         RateDate.normalize_rate_date(transaction.booking_date)
       )
 
@@ -277,8 +278,8 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResult do
 
     tx_amount_pln =
       Currencies.normalize_amount_to_pln(
-        transaction.transaction_amount,
-        transaction.transaction_currency,
+        Money.to_decimal(transaction.amount),
+        transaction.amount |> Money.to_currency_code() |> Atom.to_string(),
         RateDate.normalize_rate_date(transaction.booking_date)
       )
 

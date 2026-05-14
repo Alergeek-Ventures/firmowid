@@ -11,7 +11,6 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
     :invoice_source,
     :is_deletable,
     :internal_note,
-    :transactions,
     :original_invoice,
     :correction_invoices,
     :latest_correction_invoice,
@@ -20,6 +19,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
     :effective_seller_display_name,
     :effective_seller_address,
     :effective_account_number,
+    transactions: [:amount],
     blob: [:url],
     correction_invoices: [:internal_note, blob: [:url]]
   ]

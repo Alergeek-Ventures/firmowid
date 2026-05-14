@@ -176,8 +176,9 @@ defmodule Firmowid.Ash.Analysis do
 
   defp get_amount_and_currency(%CostInvoice{}), do: :skip
 
-  defp get_amount_and_currency(%Transaction{} = entity),
-    do: {:ok, {entity.transaction_amount, entity.transaction_currency}}
+  defp get_amount_and_currency(%Transaction{} = entity) do
+    {:ok, {Money.to_decimal(entity.amount), entity.amount |> Money.to_currency_code() |> Atom.to_string()}}
+  end
 
   defp accumulate_amount(:skip, acc, _today), do: acc
 

@@ -341,8 +341,8 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
 
   defp transaction_match_key(transaction) do
     {
-      normalized_amount(transaction),
-      normalized_text(Map.get(transaction, :transaction_currency)),
+      transaction.amount |> Money.to_decimal() |> normalized_amount(),
+      transaction.amount |> Money.to_currency_code() |> Atom.to_string() |> normalized_text(),
       normalized_text(Map.get(transaction, :debtor_name)),
       normalized_text(Map.get(transaction, :debtor_account)),
       normalized_text(Map.get(transaction, :creditor_name)),
@@ -350,18 +350,10 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
     }
   end
 
-  defp normalized_amount(nil), do: nil
-
   defp normalized_amount(value) do
-    case Decimal.cast(value) do
-      {:ok, decimal} ->
-        decimal
-        |> Decimal.normalize()
-        |> Decimal.to_string()
-
-      :error ->
-        nil
-    end
+    value
+    |> Decimal.normalize()
+    |> Decimal.to_string()
   end
 
   defp normalized_text(nil), do: ""

@@ -13,8 +13,8 @@ defmodule Firmowid.Ash.Finances.GoCardless.TransactionParserTest do
                  })
                )
 
-      assert parsed.transaction_amount == "-29247.00"
-      assert parsed.transaction_currency == "PLN"
+      assert Money.to_decimal(parsed.amount) == Decimal.new("-29247.00")
+      assert parsed.amount |> Money.to_currency_code() |> Atom.to_string() == "PLN"
       assert parsed.transaction_id == "tx-1"
       assert parsed.internal_transaction_id == "int-1"
     end
@@ -27,7 +27,7 @@ defmodule Firmowid.Ash.Finances.GoCardless.TransactionParserTest do
                  })
                )
 
-      assert parsed.transaction_amount == "-29247.00"
+      assert Money.to_decimal(parsed.amount) == Decimal.new("-29247.00")
     end
   end
 
@@ -43,7 +43,9 @@ defmodule Firmowid.Ash.Finances.GoCardless.TransactionParserTest do
           })
         ])
 
-      assert [%{transaction_id: "tx-valid", transaction_amount: "-120.00"}] = result.transactions
+      assert [%{transaction_id: "tx-valid"} = parsed_transaction] = result.transactions
+      assert Money.to_decimal(parsed_transaction.amount) == Decimal.new("-120.00")
+      assert parsed_transaction.amount |> Money.to_currency_code() |> Atom.to_string() == "PLN"
 
       assert [error] = result.errors
       assert %InvalidTransactionAmountError{} = error

@@ -332,14 +332,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
     ]
   end
 
-  defp transaction_amount(transaction) do
-    transaction.transaction_currency
-    |> safe_money(transaction.transaction_amount)
-    |> case do
-      %Money{} = money -> money
-      _ -> "—"
-    end
-  end
+  defp transaction_amount(transaction), do: transaction.amount
 
   defp counterparty_name(transaction) do
     transaction
@@ -407,14 +400,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
   defp bank_name(_transaction), do: "—"
 
-  defp incoming?(%Transaction{transaction_amount: amount}), do: Decimal.compare(amount, 0) == :gt
-
-  defp safe_money(currency, amount) do
-    case Money.new(currency, amount) do
-      %Money{} = money -> money
-      _ -> nil
-    end
-  end
+  defp incoming?(%Transaction{} = transaction), do: Money.positive?(transaction.amount)
 
   defp linked_invoice_cards(transaction, return_to) do
     invoice_return_to = Navigation.transaction_show_path(transaction, return_to)
@@ -428,7 +414,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
       navigate: Navigation.sales_invoice_show_path(invoice, return_to),
       type_label: "Faktura sprzedażowa",
       number: present(invoice.invoice_number),
-      amount: safe_money(invoice.currency, invoice.gross_value),
+      amount: Money.new!(invoice.currency, invoice.gross_value),
       badge_variant: nil,
       metadata: [
         {"Na fakturze", first_sales_item_name(invoice)},
@@ -445,7 +431,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
       navigate: Navigation.cost_invoice_show_path(invoice, return_to),
       type_label: "Faktura kosztowa",
       number: present(invoice.invoice_identifier),
-      amount: safe_money(invoice.effective_currency, invoice.effective_total_amount),
+      amount: Money.new!(invoice.effective_currency, invoice.effective_total_amount),
       badge_variant: variant,
       metadata: [
         {"Kontrahent", present(invoice.effective_seller_display_name)},

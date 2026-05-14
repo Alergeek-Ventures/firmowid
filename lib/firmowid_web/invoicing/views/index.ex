@@ -985,18 +985,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   defp group_cost_transactions_by_party(entries) do
     # Separate transactions from other entries (invoices)
-    # TODO: re-add Transaction struct constraints once legacy Ecto schema is removed
     {transactions, other_entries} =
-      Enum.split_with(entries, fn
-        %{__struct__: _, transaction_amount: _} -> true
-        _ -> false
-      end)
+      Enum.split_with(entries, &match?(%Transaction{}, &1))
 
     # Split into cost (negative) and income (positive) transactions
     {cost_transactions, income_transactions} =
-      Enum.split_with(transactions, fn %{transaction_amount: amount} ->
-        Decimal.lt?(amount, 0)
-      end)
+      Enum.split_with(transactions, &Money.negative?(&1.amount))
 
     # Group cost transactions by creditor_name
     cost_by_party = Enum.group_by(cost_transactions, & &1.creditor_name)
@@ -1008,14 +1002,16 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {cost_groups, ungrouped_cost} =
       Enum.split_with(cost_by_party, fn {_party, txns} ->
         length(txns) >= 2 &&
-          Enum.all?(txns, &groupable_transaction?/1)
+          Enum.all?(txns, &groupable_transaction?/1) &&
+          same_currency_transactions?(txns)
       end)
 
     # Process income transaction groups
     {income_groups, ungrouped_income} =
       Enum.split_with(income_by_party, fn {_party, txns} ->
         length(txns) >= 2 &&
-          Enum.all?(txns, &groupable_transaction?/1)
+          Enum.all?(txns, &groupable_transaction?/1) &&
+          same_currency_transactions?(txns)
       end)
 
     # Build group structs
@@ -1054,11 +1050,23 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   defp groupable_transaction?(_), do: false
 
+  defp same_currency_transactions?([]), do: true
+
+  defp same_currency_transactions?([first | rest]) do
+    currency = first.amount |> Money.to_currency_code() |> Atom.to_string()
+    Enum.all?(rest, &(&1.amount |> Money.to_currency_code() |> Atom.to_string() == currency))
+  end
+
   defp build_transaction_group(party, transactions) do
     total =
       Enum.reduce(transactions, Decimal.new(0), fn t, acc ->
-        Decimal.add(acc, t.transaction_amount)
+        Decimal.add(acc, Money.to_decimal(t.amount))
       end)
+
+    currency =
+      transactions
+      |> List.first()
+      |> then(&(&1.amount |> Money.to_currency_code() |> Atom.to_string()))
 
     # Use LATEST date for sorting
     latest_transaction = Enum.max_by(transactions, & &1.booking_date, Date)
@@ -1071,7 +1079,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       party: party,
       total: total,
       count: length(transactions),
-      currency: latest_transaction.transaction_currency,
+      currency: currency,
       date: latest_transaction.booking_date,
       transactions: transactions
     }
@@ -1182,7 +1190,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     args = Map.merge(%{date_from: from, date_to: to}, extra_args)
 
     Finances.list_transactions!(args,
-      load: [:cost_invoices, :sales_invoices, :bank_account],
+      load: [:amount, :cost_invoices, :sales_invoices, :bank_account],
       query: [sort: [booking_date: :desc]],
       scope: scope
     )

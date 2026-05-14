@@ -519,7 +519,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
     }
   end
 
-  defp transaction_displayed_party_label(%Transaction{transaction_amount: amount}) do
-    if Decimal.compare(amount, 0) == :gt, do: "Nadawca", else: "Odbiorca"
+  defp transaction_displayed_party_label(%Transaction{} = transaction) do
+    if Money.positive?(transaction.amount), do: "Nadawca", else: "Odbiorca"
   end
 end

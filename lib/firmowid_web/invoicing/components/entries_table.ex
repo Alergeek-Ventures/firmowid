@@ -174,7 +174,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       |> assign(
         :amount,
         case assigns.invoicing_entry do
-          %Transaction{} -> assigns.invoicing_entry.transaction_amount
+          %Transaction{} -> Money.to_decimal(assigns.invoicing_entry.amount)
           %CostInvoice{} -> assigns.invoicing_entry.effective_total_amount
           %SalesInvoice{} -> assigns.invoicing_entry.gross_value
         end
@@ -228,7 +228,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   # amount is differently rendered (has a background color that fills the cell)
   defp render_cell(%{column: "amount", invoicing_entry: %Transaction{} = transaction} = assigns) do
-    amount = Money.new(transaction.transaction_currency, transaction.transaction_amount)
+    amount = transaction.amount
 
     assigns = assign(assigns, :amount, amount)
 
@@ -517,7 +517,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   defp render_cell(%{invoicing_entry: %Transaction{} = transaction, column: "party"} = assigns) do
     party =
-      if Decimal.compare(assigns.invoicing_entry.transaction_amount, 0) == :gt do
+      if Money.positive?(assigns.invoicing_entry.amount) do
         transaction.debtor_name
       else
         transaction.creditor_name
@@ -735,11 +735,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             column == "party" && "rounded-l-md px-5 text-ellipsis max-xl:max-w-72",
             String.ends_with?(column, "date") && "font-light",
             column == "amount" && "rounded-r-md",
-            column == "amount" &&
-              Decimal.gte?(transaction.transaction_amount, 0) &&
-              "bg-blueBg! text-blueText",
-            column == "amount" &&
-              Decimal.lt?(transaction.transaction_amount, 0) &&
+            column == "amount" && Money.positive?(transaction.amount) && "bg-blueBg! text-blueText",
+            column == "amount" && Money.negative?(transaction.amount) &&
               "bg-orangeBg! text-orangeText"
           ]}
         >

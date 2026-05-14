@@ -23,7 +23,7 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
           debtor_name: "Pending Debtor",
           creditor_name: "Pending Creditor",
           remittance_information_unstructured: "pending payment",
-          transaction_currency: "PLN",
+          amount: Money.new!("PLN", Decimal.new("100.00")),
           booking_date: ~D[2024-01-10],
           value_date: ~D[2024-01-10],
           skip_invoicing: false
@@ -39,7 +39,7 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
           debtor_name: "Skipped Debtor",
           creditor_name: "Skipped Creditor",
           remittance_information_unstructured: "skipped payment",
-          transaction_currency: "PLN",
+          amount: Money.new!("PLN", Decimal.new("200.00")),
           booking_date: ~D[2024-01-11],
           value_date: ~D[2024-01-11],
           skip_invoicing: true
@@ -55,7 +55,7 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
           debtor_name: "Matched Debtor",
           creditor_name: "Matched Creditor",
           remittance_information_unstructured: "matched payment",
-          transaction_currency: "PLN",
+          amount: Money.new!("PLN", Decimal.new("-100.00")),
           booking_date: ~D[2024-01-12],
           value_date: ~D[2024-01-12],
           skip_invoicing: false
@@ -171,7 +171,7 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
           debtor_name: "Other Org Debtor",
           creditor_name: "Other Org Creditor",
           remittance_information_unstructured: "other org payment",
-          transaction_currency: "PLN",
+          amount: Money.new!("PLN", Decimal.new("300.00")),
           booking_date: ~D[2024-01-13],
           value_date: ~D[2024-01-13]
         },

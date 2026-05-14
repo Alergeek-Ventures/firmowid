@@ -149,12 +149,12 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   defp entries_for_section(%{expanded_section: :income} = assigns) do
     assigns.sales_invoices ++
-      Enum.filter(assigns.transactions, &Decimal.positive?(&1.transaction_amount))
+      Enum.filter(assigns.transactions, &Money.positive?(&1.amount))
   end
 
   defp entries_for_section(%{expanded_section: :expenses} = assigns) do
     assigns.cost_invoices ++
-      Enum.filter(assigns.transactions, &Decimal.negative?(&1.transaction_amount))
+      Enum.filter(assigns.transactions, &Money.negative?(&1.amount))
   end
 
   defp entries_for_section(_assigns), do: []

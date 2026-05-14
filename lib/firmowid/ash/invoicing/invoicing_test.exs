@@ -336,8 +336,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           creditor_account: "ACC123",
           debtor_name: "Our Company",
           debtor_account: "ACC456",
-          transaction_amount: Decimal.new("100.00"),
-          transaction_currency: "USD",
+          amount: Money.new!("USD", Decimal.new("100.00")),
           booking_date: ~D[2024-04-10],
           value_date: ~D[2024-04-10],
           remittance_information_unstructured: "Payment for SI-MATCHED-1",
@@ -352,8 +351,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           creditor_account: "ACC456",
           debtor_name: "Matched Cost Transaction",
           debtor_account: "ACC789",
-          transaction_amount: Decimal.new("20.00"),
-          transaction_currency: "USD",
+          amount: Money.new!("USD", Decimal.new("20.00")),
           booking_date: ~D[2024-04-15],
           value_date: ~D[2024-04-15],
           remittance_information_unstructured: "Payment for CI-MATCHED-1",
@@ -626,7 +624,9 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       sales_invoice = seed_sales_disconnect_invoice!(organization_id)
 
       transaction =
-        seed_sales_disconnect_transaction!(organization_id, %{transaction_currency: "EUR"})
+        seed_sales_disconnect_transaction!(organization_id, %{
+          amount: Money.new!("EUR", Decimal.new("100.00"))
+        })
 
       assert {:error, error} =
                Invoicing.connect_sales_invoice_transactions_manual(
@@ -652,7 +652,9 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       cost_invoice = seed_cost_disconnect_invoice!(organization_id)
 
       transaction =
-        seed_cost_disconnect_transaction!(organization_id, %{transaction_currency: "EUR"})
+        seed_cost_disconnect_transaction!(organization_id, %{
+          amount: Money.new!("EUR", Decimal.new("50.00"))
+        })
 
       assert {:error, error} =
                Invoicing.connect_cost_invoice_transactions_manual(
@@ -1086,8 +1088,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           creditor_account: "ACC123",
           debtor_name: "Our Company",
           debtor_account: "ACC456",
-          transaction_amount: Decimal.new("150.00"),
-          transaction_currency: "EUR",
+          amount: Money.new!("EUR", Decimal.new("150.00")),
           booking_date: ~D[2024-08-20],
           value_date: ~D[2024-08-20],
           remittance_information_unstructured: "Payment for SI-ALREADY-MATCHED",
@@ -1196,8 +1197,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           creditor_account: "ACC123",
           debtor_name: "Our Company",
           debtor_account: "ACC456",
-          transaction_amount: Decimal.new("100.00"),
-          transaction_currency: "PLN",
+          amount: Money.new!("PLN", Decimal.new("100.00")),
           booking_date: ~D[2024-06-10],
           value_date: ~D[2024-06-10],
           remittance_information_unstructured: "Payment for disconnect test sales invoice",
@@ -1247,8 +1247,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           creditor_account: "ACC456",
           debtor_name: "Disconnect Supplier",
           debtor_account: "ACC789",
-          transaction_amount: Decimal.new("50.00"),
-          transaction_currency: "PLN",
+          amount: Money.new!("PLN", Decimal.new("50.00")),
           booking_date: ~D[2024-06-12],
           value_date: ~D[2024-06-12],
           remittance_information_unstructured: "Payment for disconnect test cost invoice",

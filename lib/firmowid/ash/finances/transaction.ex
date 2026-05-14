@@ -11,7 +11,6 @@ defmodule Firmowid.Ash.Finances.Transaction do
     primary_read_warning?: false
 
   alias Firmowid.Ash.Checks.SystemActorRole
-  alias Firmowid.Ash.Finances.Calculations.TransactionAmount
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.Ash.Preparations.ParadeDBSearch
@@ -41,13 +40,14 @@ defmodule Firmowid.Ash.Finances.Transaction do
 
       All arguments are optional:
       - `date_from`, `date_to` — date range on `booking_date`.
+      - `currency` — exact ISO currency code filter on `amount`.
       - `reconciliation`:
         - `:matched` (linked to an invoice)
         - `:pending` (unmatched, not skipped)
         - `:skipped` (unmatched, skipped)
         - `nil` - omit for all transactions
       - `query` — ParadeDB full-text search across debtor_name, creditor_name,
-        remittance_information_unstructured, and transaction_currency. When provided,
+        and remittance_information_unstructured. When provided,
         results are sorted by relevance score.
 
       Sorting and relationship loading are controlled at the callsite.
@@ -56,6 +56,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
       argument :date_from, :date
       argument :date_to, :date
       argument :query, :string
+      argument :currency, :string
 
       argument :reconciliation, :atom do
         constraints one_of: [:matched, :skipped, :pending]
@@ -67,6 +68,10 @@ defmodule Firmowid.Ash.Finances.Transaction do
 
       prepare build(filter: expr(booking_date <= ^arg(:date_to))) do
         where present(:date_to)
+      end
+
+      prepare build(filter: expr(amount[:currency_code] == ^arg(:currency))) do
+        where present(:currency)
       end
 
       # :pending — unmatched and not skipped
@@ -104,8 +109,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
         where argument_equals(:reconciliation, :skipped)
       end
 
-      prepare {ParadeDBSearch,
-               columns: ~w(debtor_name creditor_name remittance_information_unstructured transaction_currency)}
+      prepare {ParadeDBSearch, columns: ~w(debtor_name creditor_name remittance_information_unstructured)}
     end
 
     create :upsert_from_sync do
@@ -118,8 +122,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
         :creditor_account,
         :debtor_name,
         :debtor_account,
-        :transaction_amount,
-        :transaction_currency,
+        :amount,
         :booking_date,
         :value_date,
         :remittance_information_unstructured,
@@ -136,8 +139,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
         :creditor_account,
         :debtor_name,
         :debtor_account,
-        :transaction_amount,
-        :transaction_currency,
+        :amount,
         :booking_date,
         :value_date,
         :remittance_information_unstructured,
@@ -207,8 +209,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
     attribute :creditor_account, :string, public?: true
     attribute :debtor_name, :string, public?: true
     attribute :debtor_account, :string, public?: true
-    attribute :transaction_amount, :decimal, public?: true
-    attribute :transaction_currency, :string, public?: true
+    attribute :amount, AshMoney.Types.Money, public?: true, allow_nil?: false
     attribute :booking_date, :date, public?: true, allow_nil?: false
     attribute :value_date, :date, public?: true, allow_nil?: false
     attribute :remittance_information_unstructured, :string, public?: true
@@ -243,13 +244,6 @@ defmodule Firmowid.Ash.Finances.Transaction do
 
   calculations do
     calculate :date, :date, expr(booking_date)
-
-    calculate :amount, :struct, TransactionAmount do
-      constraints instance_of: Money
-      public? true
-
-      description "Transaction amount as a Money struct."
-    end
   end
 
   identities do

@@ -128,11 +128,18 @@ defmodule Firmowid.Seeds.Helpers do
   end
 
   def seed_transaction!(attrs, org_id) do
-    Ash.Seed.upsert!(AshTransaction, attrs |> normalize_transaction_dates() |> Map.put(:organization_id, org_id),
+    Ash.Seed.upsert!(
+      AshTransaction,
+      attrs
+      |> normalize_transaction_dates()
+      |> normalize_transaction_money()
+      |> Map.put(:organization_id, org_id),
       identity: :unique_internal_tx_per_account,
       tenant: org_id
     )
   end
+
+  def money!(currency, amount), do: Money.new!(currency, normalize_decimal(amount))
 
   defp normalize_transaction_dates(attrs) do
     booking_date = Map.get(attrs, :booking_date)
@@ -151,6 +158,22 @@ defmodule Firmowid.Seeds.Helpers do
       _present -> attrs
     end
   end
+
+  defp normalize_transaction_money(attrs) do
+    case Map.get(attrs, :amount) do
+      %Money{} -> attrs
+      {currency, amount} -> Map.put(attrs, :amount, money!(currency, amount))
+      %{currency: currency, amount: amount} -> Map.put(attrs, :amount, money!(currency, amount))
+      nil -> attrs
+      _ -> attrs
+    end
+  end
+
+  defp normalize_decimal(%Decimal{} = value), do: value
+  defp normalize_decimal(value) when is_integer(value), do: Decimal.new(value)
+  defp normalize_decimal(value) when is_float(value), do: Decimal.from_float(value)
+  defp normalize_decimal(value) when is_binary(value), do: Decimal.new(value)
+  defp normalize_decimal(_), do: nil
 
   # ---------------------------------------------------------------------------
   # Invoice seed helpers — Ash.Seed (bypasses actions, goes to data layer)

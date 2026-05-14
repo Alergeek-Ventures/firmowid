@@ -138,9 +138,9 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   defp unmatched_transaction_tile(assigns) do
     entry = assigns.entry
     party = transaction_party(entry)
-    amount = entry.transaction_amount
-    currency = entry.transaction_currency
-    is_income = amount_positive?(amount)
+    amount = Money.to_decimal(entry.amount)
+    currency = entry.amount |> Money.to_currency_code() |> Atom.to_string()
+    is_income = Money.positive?(entry.amount)
 
     navigate = Navigation.transaction_show_path(entry, assigns.return_to)
 
@@ -204,9 +204,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   end
 
   defp transaction_party(%Transaction{} = tx) do
-    amount = tx.transaction_amount
-
-    if amount_positive?(amount) do
+    if Money.positive?(tx.amount) do
       tx.debtor_name || "—"
     else
       tx.creditor_name || "—"
@@ -278,8 +276,8 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     {
       transaction_party(entry),
       nil,
-      entry.transaction_amount,
-      entry.transaction_currency,
+      Money.to_decimal(entry.amount),
+      entry.amount |> Money.to_currency_code() |> Atom.to_string(),
       Navigation.transaction_show_path(entry, return_to),
       entry.remittance_information_unstructured
     }
@@ -563,12 +561,6 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   rescue
     _ -> "—"
   end
-
-  defp amount_positive?(nil), do: false
-
-  defp amount_positive?(amount) when is_integer(amount), do: amount > 0
-
-  defp amount_positive?(%Decimal{} = amount), do: Decimal.gt?(amount, 0)
 
   defp decimal_abs(nil), do: nil
 

@@ -57,7 +57,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
       |> assign(:party, invoice.buyer_display_name_label || "")
       |> assign(:description, Enum.map_join(invoice.sales_invoice_items, ", ", & &1.name))
       |> assign(:date, invoice.sale_date || invoice.issue_date)
-      |> assign(:amount, safe_money(invoice.currency, invoice.gross_value))
+      |> assign(:amount, Money.new!(invoice.currency, invoice.gross_value))
       |> assign(:amount_decimal, invoice.gross_value)
       |> assign(:navigate, ~p"/sprzedazowe/#{invoice.id}")
       |> assign_entity_fields(invoice, :sales_invoice)
@@ -75,7 +75,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
       )
       |> assign(:description, invoice.description)
       |> assign(:date, invoice.effective_sale_date || invoice.sale_date)
-      |> assign(:amount, safe_money(invoice.effective_currency, invoice.effective_total_amount))
+      |> assign(:amount, Money.new!(invoice.effective_currency, invoice.effective_total_amount))
       |> assign(:amount_decimal, Decimal.mult(invoice.effective_total_amount, Decimal.new("-1")))
       |> assign(:navigate, ~p"/kosztowe/#{invoice.id}")
       |> assign_entity_fields(invoice, :cost_invoice)
@@ -83,9 +83,9 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
     ~H"<.entry_row {assigns} />"
   end
 
-  defp row(%{entry: %Transaction{} = transaction} = assigns) do
+  defp row(%{entry: %Transaction{amount: %Money{} = amount} = transaction} = assigns) do
     party =
-      if Decimal.compare(transaction.transaction_amount, 0) == :gt do
+      if Money.positive?(amount) do
         transaction.debtor_name
       else
         transaction.creditor_name
@@ -96,11 +96,8 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
       |> assign(:party, party || "")
       |> assign(:description, transaction.remittance_information_unstructured)
       |> assign(:date, transaction.booking_date)
-      |> assign(
-        :amount,
-        safe_money(transaction.transaction_currency, transaction.transaction_amount)
-      )
-      |> assign(:amount_decimal, transaction.transaction_amount)
+      |> assign(:amount, amount)
+      |> assign(:amount_decimal, Money.to_decimal(amount))
       |> assign(:navigate, nil)
       |> assign(:entity_tags, Map.get(transaction, :entity_tags, []))
       |> assign(:entity_type, :transaction)
@@ -166,7 +163,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
         )
       ]}>
         <div class="py-1 pr-5 text-right">
-          {if is_nil(@amount), do: "—", else: @amount}
+          {@amount}
         </div>
       </td>
     </tr>
@@ -325,12 +322,5 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
     entity_tags
     |> Enum.filter(&(&1.kind == :project))
     |> MapSet.new(& &1.tag_definition_id)
-  end
-
-  defp safe_money(currency, amount) do
-    case Money.new(currency, amount) do
-      %Money{} = money -> money
-      _ -> nil
-    end
   end
 end

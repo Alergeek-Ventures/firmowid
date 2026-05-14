@@ -21,8 +21,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         creditor_name: "Test Company Limited",
         creditor_account: "PL61109010140000071219812874",
         booking_date: ~D[2025-01-20],
-        transaction_amount: Decimal.new("1000.00"),
-        transaction_currency: "PLN",
+        amount: Money.new!("PLN", Decimal.new("1000.00")),
         remittance_information_unstructured: "Payment for invoice PLN 1000"
       }
 
@@ -63,8 +62,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         creditor_name: "Foreign Company",
         creditor_account: "DE89370400440532013000",
         booking_date: ~D[2025-01-10],
-        transaction_amount: Decimal.new("2000.00"),
-        transaction_currency: "PLN",
+        amount: Money.new!("PLN", Decimal.new("2000.00")),
         remittance_information_unstructured: "Payment for services"
       }
 
@@ -104,8 +102,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         creditor_name: "Exact Match Corp",
         creditor_account: "PL61109010140000071219812874",
         booking_date: ~D[2025-01-15],
-        transaction_amount: Decimal.new("1000.00"),
-        transaction_currency: "PLN",
+        amount: Money.new!("PLN", Decimal.new("1000.00")),
         remittance_information_unstructured: "Invoice PLN 1000 payment"
       }
 
@@ -140,8 +137,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         creditor_name: "Completely Different XYZ",
         creditor_account: "DE89370400440532013000",
         booking_date: ~D[2025-01-15],
-        transaction_amount: Decimal.new("1000.00"),
-        transaction_currency: "PLN",
+        amount: Money.new!("PLN", Decimal.new("1000.00")),
         remittance_information_unstructured: "Random payment"
       }
 
@@ -174,8 +170,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         creditor_name: "",
         creditor_account: "",
         booking_date: ~D[2025-01-15],
-        transaction_amount: Decimal.new("1000.00"),
-        transaction_currency: "PLN",
+        amount: Money.new!("PLN", Decimal.new("1000.00")),
         remittance_information_unstructured: ""
       }
 
@@ -203,8 +198,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         creditor_name: nil,
         creditor_account: nil,
         booking_date: ~D[2025-01-15],
-        transaction_amount: Decimal.new("1000.00"),
-        transaction_currency: "PLN",
+        amount: Money.new!("PLN", Decimal.new("1000.00")),
         remittance_information_unstructured: nil
       }
 
@@ -229,8 +223,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         creditor_name: "Test Company",
         creditor_account: "PL61109010140000071219812874",
         booking_date: ~D[2025-01-15],
-        transaction_amount: Decimal.new("1234.56"),
-        transaction_currency: "PLN",
+        amount: Money.new!("PLN", Decimal.new("1234.56")),
         remittance_information_unstructured: "Payment PLN 1234"
       }
 
@@ -242,8 +235,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         creditor_name: "Test Company",
         creditor_account: "PL61109010140000071219812874",
         booking_date: ~D[2025-01-15],
-        transaction_amount: Decimal.new("1234.56"),
-        transaction_currency: "PLN",
+        amount: Money.new!("PLN", Decimal.new("1234.56")),
         remittance_information_unstructured: "Payment PLN"
       }
 
@@ -255,8 +247,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         creditor_name: "Test Company",
         creditor_account: "PL61109010140000071219812874",
         booking_date: ~D[2025-01-15],
-        transaction_amount: Decimal.new("1234.56"),
-        transaction_currency: "PLN",
+        amount: Money.new!("PLN", Decimal.new("1234.56")),
         remittance_information_unstructured: "Payment 1234"
       }
 
@@ -268,8 +259,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         creditor_name: "Test Company",
         creditor_account: "PL61109010140000071219812874",
         booking_date: ~D[2025-01-15],
-        transaction_amount: Decimal.new("1234.56"),
-        transaction_currency: "PLN",
+        amount: Money.new!("PLN", Decimal.new("1234.56")),
         remittance_information_unstructured: "Payment for services"
       }
 
@@ -281,8 +271,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         creditor_name: "Test Company",
         creditor_account: "PL61109010140000071219812874",
         booking_date: ~D[2025-01-15],
-        transaction_amount: Decimal.new("1234.56"),
-        transaction_currency: "EUR",
+        amount: Money.new!("EUR", Decimal.new("1234.56")),
         remittance_information_unstructured: "Payment EUR 1234"
       }
 
@@ -307,8 +296,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         creditor_name: "Test Company",
         creditor_account: "PL61109010140000071219812874",
         booking_date: ~D[2025-01-15],
-        transaction_amount: Decimal.new("1000.00"),
-        transaction_currency: "PLN",
+        amount: Money.new!("PLN", Decimal.new("1000.00")),
         remittance_information_unstructured: "Payment"
       }
 
@@ -333,8 +321,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         creditor_name: "Test Company",
         creditor_account: "PL61109010140000071219812874",
         booking_date: ~D[2025-12-15],
-        transaction_amount: Decimal.new("1000.00"),
-        transaction_currency: "PLN",
+        amount: Money.new!("PLN", Decimal.new("1000.00")),
         remittance_information_unstructured: "Payment"
       }
 
@@ -362,8 +349,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         creditor_name: "Test Company",
         creditor_account: "PL61109010140000071219812874",
         booking_date: ~D[2025-01-15],
-        transaction_amount: Decimal.new("100.00"),
-        transaction_currency: "PLN",
+        amount: Money.new!("PLN", Decimal.new("100.00")),
         remittance_information_unstructured: "Payment"
       }
 
@@ -408,8 +394,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         debtor_name: "Acme Corp",
         debtor_account: "PL61109010140000071219812874",
         booking_date: ~D[2025-01-02],
-        transaction_amount: Decimal.new("246.00"),
-        transaction_currency: "PLN",
+        amount: Money.new!("PLN", Decimal.new("246.00")),
         remittance_information_unstructured: "FV/2025/01/01 PLN 246"
       }
 

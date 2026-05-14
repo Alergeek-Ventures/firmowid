@@ -360,7 +360,13 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   def transaction_match(assigns) do
     transactions = assigns.transactions
     single_transaction? = length(transactions) == 1
-    currencies = transactions |> Enum.map(& &1.transaction_currency) |> Enum.uniq()
+
+    currencies =
+      transactions
+      |> Enum.map(&(&1.amount |> Money.to_currency_code() |> Atom.to_string()))
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+
     show_total? = not single_transaction? and length(currencies) == 1
 
     assigns =
@@ -373,7 +379,9 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
         assigns
         |> assign(
           :total,
-          Enum.reduce(transactions, Decimal.new(0), &Decimal.add(&1.transaction_amount, &2))
+          Enum.reduce(transactions, Decimal.new(0), fn transaction, acc ->
+            Decimal.add(Money.to_decimal(transaction.amount), acc)
+          end)
         )
         |> assign(:currency, List.first(currencies))
       else
@@ -412,7 +420,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
           <div class="row-span-2 flex items-end justify-end text-right">
             <p class={["leading-snug text-green-700", @single_transaction? && "text-lg"]}>
-              {Money.new(transaction.transaction_amount, transaction.transaction_currency)}
+              {transaction.amount}
             </p>
           </div>
         </div>
@@ -424,7 +432,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           <p class="text-grey-700 text-sm">Suma</p>
 
           <p class="text-lg/tight text-green-700">
-            {if @is_cost_invoice, do: "-", else: ""}{Money.new(@total, @currency)}
+            {if @is_cost_invoice, do: "-", else: ""}{Money.new(@currency, @total)}
           </p>
         </div>
       </div>
@@ -635,7 +643,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
               </div>
               <div class="text-right text-nowrap">{tx.booking_date}</div>
               <div class="text-right text-nowrap">
-                {Money.new(tx.transaction_currency, tx.transaction_amount)}
+                {tx.amount}
               </div>
               <div class="flex items-center gap-2">
                 <.prediction_score_indicator

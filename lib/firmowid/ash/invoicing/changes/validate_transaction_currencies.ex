@@ -70,7 +70,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.ValidateTransactionCurrencies do
 
   defp mismatched_currencies(transactions, invoice_currency) do
     transactions
-    |> Enum.map(& &1.transaction_currency)
+    |> Enum.map(&(&1.amount |> Money.to_currency_code() |> Atom.to_string()))
     |> Enum.reject(&(&1 == invoice_currency))
     |> Enum.uniq()
   end

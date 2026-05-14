@@ -62,7 +62,10 @@ defmodule Firmowid.Ash.Invoicing.Matching.Windowing do
 
   @spec within_amount_window(CostInvoice.t() | SalesInvoice.t(), map()) :: boolean()
   defp within_amount_window(%CostInvoice{} = cost_invoice, transaction) do
-    is_transaction_a_cost = Decimal.lt?(transaction.transaction_amount, 0)
+    transaction_amount = Money.to_decimal(transaction.amount)
+    transaction_currency = transaction.amount |> Money.to_currency_code() |> Atom.to_string()
+
+    is_transaction_a_cost = Decimal.lt?(transaction_amount, 0)
 
     total_amount =
       cost_invoice.total_amount
@@ -73,10 +76,10 @@ defmodule Firmowid.Ash.Invoicing.Matching.Windowing do
       )
 
     normalized_transaction_amount =
-      transaction.transaction_amount
+      transaction_amount
       |> Decimal.abs()
       |> Currencies.normalize_amount_to_pln(
-        transaction.transaction_currency,
+        transaction_currency,
         RateDate.normalize_rate_date(transaction.booking_date)
       )
 
@@ -91,7 +94,10 @@ defmodule Firmowid.Ash.Invoicing.Matching.Windowing do
   end
 
   defp within_amount_window(%SalesInvoice{} = sales_invoice, transaction) do
-    is_transaction_a_sale = Decimal.gt?(transaction.transaction_amount, 0)
+    transaction_amount = Money.to_decimal(transaction.amount)
+    transaction_currency = transaction.amount |> Money.to_currency_code() |> Atom.to_string()
+
+    is_transaction_a_sale = Decimal.gt?(transaction_amount, 0)
 
     total_amount =
       sales_invoice.gross_value
@@ -102,10 +108,10 @@ defmodule Firmowid.Ash.Invoicing.Matching.Windowing do
       )
 
     normalized_transaction_amount =
-      transaction.transaction_amount
+      transaction_amount
       |> Decimal.abs()
       |> Currencies.normalize_amount_to_pln(
-        transaction.transaction_currency,
+        transaction_currency,
         RateDate.normalize_rate_date(transaction.booking_date)
       )
 

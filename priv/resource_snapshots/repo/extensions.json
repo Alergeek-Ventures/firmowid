@@ -3,6 +3,7 @@
   "installed": [
     "ash-functions",
     "uuid-ossp",
-    "citext"
+    "citext",
+    "ash_money_v5"
   ]
 }

@@ -124,17 +124,24 @@ defmodule Firmowid.Ash.Finances.DuplicateTransactionMatcher do
   end
 
   defp same_amount?(left, right) do
-    Decimal.eq?(
-      to_decimal(get_field(left, :transaction_amount)),
-      to_decimal(get_field(right, :transaction_amount))
-    )
-  rescue
-    _error -> false
+    case {get_field(left, :amount), get_field(right, :amount)} do
+      {%Money{} = left_amount, %Money{} = right_amount} ->
+        Decimal.eq?(Money.to_decimal(left_amount), Money.to_decimal(right_amount))
+
+      _other ->
+        false
+    end
   end
 
   defp same_currency?(left, right) do
-    normalize_text(get_field(left, :transaction_currency)) ==
-      normalize_text(get_field(right, :transaction_currency))
+    case {get_field(left, :amount), get_field(right, :amount)} do
+      {%Money{} = left_amount, %Money{} = right_amount} ->
+        left_amount |> Money.to_currency_code() |> Atom.to_string() |> normalize_text() ==
+          right_amount |> Money.to_currency_code() |> Atom.to_string() |> normalize_text()
+
+      _other ->
+        false
+    end
   end
 
   defp same_counterparty_fields?(left, right) do
@@ -340,9 +347,6 @@ defmodule Firmowid.Ash.Finances.DuplicateTransactionMatcher do
       _other -> ""
     end
   end
-
-  defp to_decimal(%Decimal{} = decimal), do: decimal
-  defp to_decimal(value), do: Decimal.new(to_string(value))
 
   defp parse_date(%Date{} = date), do: date
 

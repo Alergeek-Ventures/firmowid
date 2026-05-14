@@ -146,16 +146,14 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
         create_transaction!(user, %{
           creditor_name: unique_string("Assistant Matched Creditor"),
           remittance_information_unstructured: unique_string("assistant-matched"),
-          transaction_amount: Decimal.new("123.45"),
-          transaction_currency: "PLN"
+          amount: Money.new!("PLN", Decimal.new("123.45"))
         })
 
       _pending_transaction =
         create_transaction!(user, %{
           creditor_name: unique_string("Assistant Pending Creditor"),
           remittance_information_unstructured: unique_string("assistant-pending"),
-          transaction_amount: Decimal.new("33.33"),
-          transaction_currency: "PLN"
+          amount: Money.new!("PLN", Decimal.new("33.33"))
         })
 
       cost_invoice =
@@ -254,8 +252,7 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
         create_transaction!(user, %{
           creditor_name: unique_string("Assistant Proposal Creditor"),
           remittance_information_unstructured: unique_string("assistant-proposal"),
-          transaction_amount: Decimal.new("50.00"),
-          transaction_currency: "PLN"
+          amount: Money.new!("PLN", Decimal.new("50.00"))
         })
 
       cost_invoice =
@@ -313,8 +310,7 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
         create_transaction!(user, %{
           creditor_name: unique_string("Assistant Mismatch Creditor"),
           remittance_information_unstructured: unique_string("assistant-mismatch"),
-          transaction_amount: Decimal.new("50.00"),
-          transaction_currency: "USD"
+          amount: Money.new!("USD", Decimal.new("50.00"))
         })
 
       cost_invoice =
@@ -424,8 +420,7 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
           creditor_account: "PL02114020040000300201355387",
           debtor_name: "Bytecraft",
           debtor_account: "PL61109010140000071219812874",
-          transaction_amount: Decimal.new("-50.00"),
-          transaction_currency: "EUR",
+          amount: Money.new!("EUR", Decimal.new("-50.00")),
           booking_date: ~D[2026-01-10],
           value_date: ~D[2026-01-10],
           remittance_information_unstructured: "assistant-#{suffix}",

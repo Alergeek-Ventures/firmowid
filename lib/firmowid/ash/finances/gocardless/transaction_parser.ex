@@ -37,6 +37,37 @@ defmodule Firmowid.Ash.Finances.GoCardless.TransactionParser do
     end
   end
 
+  defmodule InvalidTransactionCurrencyError do
+    @moduledoc false
+
+    defexception [:message, :transaction_id, :internal_transaction_id, :raw_currency]
+
+    @type t :: %__MODULE__{
+            message: String.t(),
+            transaction_id: String.t() | nil,
+            internal_transaction_id: String.t() | nil,
+            raw_currency: term()
+          }
+
+    @impl true
+    def exception(opts) do
+      raw_currency = Keyword.get(opts, :raw_currency)
+      transaction_id = Keyword.get(opts, :transaction_id)
+      internal_transaction_id = Keyword.get(opts, :internal_transaction_id)
+
+      message =
+        "Unsupported GoCardless transaction currency format #{inspect(raw_currency)} " <>
+          "for transaction #{inspect(transaction_id || internal_transaction_id)}"
+
+      %__MODULE__{
+        message: message,
+        transaction_id: transaction_id,
+        internal_transaction_id: internal_transaction_id,
+        raw_currency: raw_currency
+      }
+    end
+  end
+
   @valid_amount_pattern ~r/^-?(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{1,3})?$/
 
   @doc """
@@ -57,8 +88,9 @@ defmodule Firmowid.Ash.Finances.GoCardless.TransactionParser do
       |> flatten_api_response()
       |> normalize_nest_bank_card_transaction()
 
-    with {:ok, normalized_data} <- normalize_transaction_amount(data) do
-      {:ok, extract_fields(normalized_data)}
+    with {:ok, normalized_data} <- normalize_transaction_amount(data),
+         {:ok, money_data} <- normalize_money(normalized_data) do
+      {:ok, extract_fields(money_data)}
     end
   end
 
@@ -87,13 +119,10 @@ defmodule Firmowid.Ash.Finances.GoCardless.TransactionParser do
 
   defp flatten_api_response(data) do
     data
-    |> Map.put("transaction_currency", get_in(data, ["transaction_amount", "currency"]))
+    |> Map.put("currency", get_in(data, ["transaction_amount", "currency"]))
+    |> Map.put("amount", get_in(data, ["transaction_amount", "amount"]))
     |> Map.update("creditor_account", "N/A", &extract_iban_or_bban/1)
     |> Map.update("debtor_account", "N/A", &extract_iban_or_bban/1)
-    |> Map.update("transaction_amount", nil, fn
-      %{"amount" => amount} -> amount
-      other -> other
-    end)
   end
 
   defp extract_iban_or_bban(nil), do: "N/A"
@@ -128,7 +157,7 @@ defmodule Firmowid.Ash.Finances.GoCardless.TransactionParser do
   end
 
   defp normalize_transaction_amount(data) do
-    amount = Map.get(data, "transaction_amount")
+    amount = Map.get(data, "amount")
 
     cond do
       is_nil(amount) ->
@@ -141,10 +170,20 @@ defmodule Firmowid.Ash.Finances.GoCardless.TransactionParser do
         normalized_amount = String.trim(amount)
 
         if Regex.match?(@valid_amount_pattern, normalized_amount) do
-          {:ok, Map.put(data, "transaction_amount", String.replace(normalized_amount, ",", ""))}
+          {:ok, Map.put(data, "amount", Decimal.new(String.replace(normalized_amount, ",", "")))}
         else
           {:error, invalid_transaction_amount_error(data, amount)}
         end
+    end
+  end
+
+  defp normalize_money(data) do
+    currency = Map.get(data, "currency")
+    amount = Map.get(data, "amount")
+
+    case Money.new(currency, amount) do
+      %Money{} = money -> {:ok, Map.put(data, "amount", money)}
+      _ -> {:error, invalid_transaction_currency_error(data, currency)}
     end
   end
 
@@ -156,9 +195,17 @@ defmodule Firmowid.Ash.Finances.GoCardless.TransactionParser do
     )
   end
 
+  defp invalid_transaction_currency_error(data, raw_currency) do
+    InvalidTransactionCurrencyError.exception(
+      raw_currency: raw_currency,
+      transaction_id: Map.get(data, "transaction_id"),
+      internal_transaction_id: Map.get(data, "internal_transaction_id")
+    )
+  end
+
   @fields ~w(
     transaction_id internal_transaction_id debtor_name debtor_account
-    creditor_name creditor_account transaction_amount transaction_currency
+    creditor_name creditor_account amount
     booking_date value_date remittance_information_unstructured
   )
 
