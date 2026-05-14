@@ -39,7 +39,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   embed_templates "creator_*"
 
-  # Step definitions - 1-indexed for display and URL
+  # Creator steps, the definitions - 1-indexed for display and URL
   @steps %{
     1 => :counterparty,
     2 => :items,
