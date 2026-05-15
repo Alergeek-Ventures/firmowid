@@ -4,6 +4,7 @@
   "private": true,
   "description": "deepsec scanning workspace",
   "type": "module",
+  "packageManager": "pnpm@11.1.2",
   "workspaces": [],
   "dependencies": {
     "deepsec": "^1.1.13"
