@@ -117,7 +117,7 @@ defmodule Firmowid.MixProject do
       {:packmatic, "~> 2.0.0"},
       {:image, "~> 0.37"},
       {:briefly, "~> 0.5.0"},
-      {:sentry, "~> 12.0"},
+      {:sentry, "~> 13.0"},
       {:recase, "~> 0.9.0"},
       {:oban, "~> 2.21"},
       {:ecto_psql_extras, "~> 0.6"},
