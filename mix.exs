@@ -135,7 +135,7 @@ defmodule Firmowid.MixProject do
       {:excoveralls, "~> 0.18", only: :test},
       {:openai_ex, "~> 0.9.19"},
       {:req_llm, "~> 1.10"},
-      {:live_debugger, "~> 0.4", only: [:dev], runtime: Mix.env() == :dev},
+      {:live_debugger, "~> 1.0", only: [:dev], runtime: Mix.env() == :dev},
       {:oban_web, "~> 2.11"},
       {:igniter, "~> 0.5", only: [:dev]},
       {:dotenv, "~> 3.1", only: [:dev, :test]},
