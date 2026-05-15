@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.Services.SalesInvoicePdf
+  alias FirmowidWeb.Invoicing.Utilities.InvoiceDownloadParams
 
   require Logger
 
@@ -59,7 +60,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
   end
 
   def pdf(conn, %{"id" => id}) do
-    include_internal_note = Map.get(conn.params, "include_internal_note", "true") == "true"
+    include_internal_note = InvoiceDownloadParams.parse_include_internal_note(conn.params)
     opts = [scope: conn.assigns.ash_scope, load: @pdf_loads]
 
     case SalesInvoice.by_id(id, opts) do

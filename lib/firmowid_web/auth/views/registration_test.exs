@@ -77,7 +77,7 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
 
       assert redirected_to(conn) == ~p"/czasosledz"
 
-      {:ok, organization_lv, organization_html} = live(conn, ~p"/organization")
+      {:ok, organization_lv, organization_html} = live(conn, ~p"/organizacja")
 
       assert organization_html =~ "Czas na przypisanie organizacji do Twojego konta"
 
@@ -142,7 +142,7 @@ defmodule FirmowidWeb.Auth.Views.RegistrationTest do
 
       assert redirected_to(conn) == ~p"/czasosledz"
 
-      {:ok, organization_lv, organization_html} = live(conn, ~p"/organization")
+      {:ok, organization_lv, organization_html} = live(conn, ~p"/organizacja")
 
       assert organization_html =~ "Czas na przypisanie organizacji do Twojego konta"
 

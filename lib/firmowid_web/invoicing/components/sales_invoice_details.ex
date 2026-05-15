@@ -20,8 +20,8 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Components.InvoiceDownloadModal
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
-  alias FirmowidWeb.Invoicing.Navigation
   alias FirmowidWeb.Invoicing.Utilities.InvoiceDetailsAssistantSubject
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   require Logger
 
@@ -183,7 +183,9 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
             <div class="flex flex-row justify-between gap-4">
               <div class="flex flex-row gap-3 xl:gap-4">
                 <.link
-                  navigate={~p"/sprzedazowe?skopiuj=#{@latest_invoice_snapshot.id}"}
+                  navigate={
+                    Navigation.sales_invoice_creator_path(%{skopiuj: @latest_invoice_snapshot.id})
+                  }
                   kind="button"
                   variant="secondary"
                   size="small"
@@ -239,7 +241,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                 <.live_component
                   module={InvoiceDownloadModal}
                   id={"sales-download-#{@invoice.id}"}
-                  download_path={~p"/sprzedazowe/#{@invoice.id}/pobierz"}
+                  download_path={Navigation.sales_invoice_pdf_path(@invoice)}
                   trigger_variant="secondary"
                   trigger_size="small"
                   button_label="Pobierz"
@@ -426,7 +428,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
               :for={invoice <- @invoices_for_preview}
               invoice_number_label={invoice.invoice_number}
             >
-              <Phoenix.Component.link href={~p"/sprzedazowe/#{invoice.id}/pobierz"} download>
+              <Phoenix.Component.link href={Navigation.sales_invoice_pdf_path(invoice)} download>
                 <InvoiceDetails.scalable_invoice_preview
                   id={"preview-#{invoice.id}"}
                   class="max-w-full min-w-0"

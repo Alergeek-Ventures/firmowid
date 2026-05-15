@@ -46,7 +46,7 @@ defmodule FirmowidWeb.HoursRecord.Views.IndexTest do
     })
 
     april = ~D[2026-04-01]
-    {:ok, lv, html} = live(conn, ~p"/czasosledz/ewidencja?month=#{Date.to_iso8601(april)}")
+    {:ok, lv, html} = live(conn, ~p"/czasosledz/ewidencja?miesiac=#{Date.to_iso8601(april)}")
 
     assert html =~ "Hours Project"
     assert html =~ "Ewidencja godzin"

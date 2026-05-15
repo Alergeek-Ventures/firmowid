@@ -5,6 +5,8 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
+
   attr :month, :any, required: true
 
   @impl true
@@ -163,16 +165,6 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
   end
 
   defp download_href(month, assigns) do
-    params =
-      URI.encode_query(
-        month: month,
-        include_digital: assigns.include_digital,
-        include_ksef: assigns.include_ksef,
-        include_photos: assigns.include_photos,
-        include_sales: assigns.include_sales,
-        include_internal_note: assigns.include_internal_note
-      )
-
-    "/pobierz-miesiac?#{params}"
+    Navigation.month_download_path(month, assigns)
   end
 end

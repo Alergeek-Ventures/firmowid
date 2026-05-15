@@ -18,7 +18,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias FirmowidWeb.Invoicing.Components.InvoiceAssistant
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
-  alias FirmowidWeb.Invoicing.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   @transaction_suggested_messages [
     "Ta transakcja opłaciła kilka faktur z poprzedniego miesiąca",

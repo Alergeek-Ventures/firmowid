@@ -12,7 +12,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     draft = payment_step_draft!(admin)
     conn = log_in_user(conn, admin)
 
-    {:ok, view, _html} = live(conn, ~p"/sprzedazowe?creator_draft=#{draft.id}&step=3")
+    {:ok, view, _html} = live(conn, ~p"/sprzedazowe?szkic_kreatora=#{draft.id}&krok=3")
 
     view
     |> element("button[phx-click='suggest_payment_date'][phx-value-field='due_date'][phx-value-suggestion='days_7']")
@@ -26,7 +26,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     draft = items_step_draft!(admin)
     conn = log_in_user(conn, admin)
 
-    {:ok, _view, html} = live(conn, ~p"/sprzedazowe?creator_draft=#{draft.id}&step=2")
+    {:ok, _view, html} = live(conn, ~p"/sprzedazowe?szkic_kreatora=#{draft.id}&krok=2")
 
     assert html =~ "Wprowadź nazwę"
   end
@@ -55,7 +55,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     assert updated_draft.currency == "EUR"
     assert updated_draft.is_reverse_charge == true
 
-    {:ok, _view, _html} = live(conn, ~p"/sprzedazowe?creator_draft=#{updated_draft.id}&step=2")
+    {:ok, _view, _html} = live(conn, ~p"/sprzedazowe?szkic_kreatora=#{updated_draft.id}&krok=2")
   end
 
   defp payment_step_draft!(admin) do

@@ -19,7 +19,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.RecommendationThresholds
-  alias FirmowidWeb.Invoicing.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   attr :entry, :any, required: true
   attr :type, :atom, required: true

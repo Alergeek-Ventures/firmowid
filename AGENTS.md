@@ -115,6 +115,19 @@ All checks must pass before changes can be merged.
 - Keep these conventions enforceable in practice (Credo + code review), and
   always finish refactors with `mix check`.
 
+### User-facing URL language
+
+- User-facing pathnames, query param keys, and human-readable query values must be
+  **Polish**.
+- Technical/internal endpoints may stay technical when they are not part of the
+  product UX (for example auth internals, admin routes, health checks, or external
+  callback payloads).
+- Keep canonical feature URLs in feature-owned navigation modules (for example
+  `FirmowidWeb.Invoicing.Navigation`).
+- Put shared parsing/encoding mechanics in `FirmowidWeb.Infrastructure.Utilities.*`.
+- Do not add compatibility aliases or English fallbacks unless the user explicitly
+  asks for a staged migration.
+
 ### Pure Elixir Files Preference
 
 Avoid writing `.heex` templates. Sometimes, it's unavoidable, but prefer Elixir

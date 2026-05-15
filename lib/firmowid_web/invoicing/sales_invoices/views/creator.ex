@@ -28,7 +28,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.WizardDraft
   alias Firmowid.Ash.Ksef
+  alias FirmowidWeb.Infrastructure.Utilities.PolishValues
+  alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.CreatorQueryParams
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.QueryCodec
+  alias FirmowidWeb.Management.Utilities.Navigation, as: ManagementNavigation
 
   require Logger
 
@@ -93,7 +98,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     scope = socket.assigns.ash_scope
 
     case params do
-      %{"creator_draft" => creator_draft_id} ->
+      %{"szkic_kreatora" => creator_draft_id} ->
         handle_existing_draft(socket, scope, creator_draft_id, params)
 
       %{"skopiuj" => invoice_id} ->
@@ -142,7 +147,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         {:noreply,
          socket
          |> put_flash(:error, "Faktura nie została znaleziona")
-         |> push_patch(to: ~p"/sprzedazowe", replace: true)}
+         |> push_patch(to: Navigation.sales_invoice_creator_path(), replace: true)}
 
       {:ok, base_invoice} ->
         create_and_populate_draft_from_copy(socket, scope, org_id, base_invoice)
@@ -256,7 +261,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     # just update step-specific params (tab, search) without refetching
     current_creator_draft_id = socket.assigns[:creator_draft_id]
     current_step = socket.assigns[:step]
-    requested_step = parse_step_param(params["step"])
+    requested_step = parse_step_param(params["krok"])
 
     if current_creator_draft_id == creator_draft_id and current_step == requested_step do
       {:noreply, maybe_setup_step(socket, requested_step, params)}
@@ -274,13 +279,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         {:noreply,
          socket
          |> put_flash(:info, "Szkic kreatora nie został znaleziony, rozpoczynamy od nowa")
-         |> push_patch(to: ~p"/sprzedazowe", replace: true)}
+         |> push_patch(to: Navigation.sales_invoice_creator_path(), replace: true)}
     end
   end
 
   defp restore_draft(socket, scope, draft, params) do
     org_id = scope.tenant
-    requested_step = parse_step_param(params["step"])
+    requested_step = parse_step_param(params["krok"])
 
     # Load items for calculate_max_step and for @invoice assign
     draft = Ash.load!(draft, [:items], scope: scope)
@@ -323,7 +328,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   # Parse step from URL param (number string) to step name atom
   defp parse_step_param(nil), do: :counterparty
-  defp parse_step_param(step) when is_binary(step), do: number_to_step(String.to_integer(step))
+
+  defp parse_step_param(step) when is_binary(step) do
+    case Integer.parse(step) do
+      {parsed_step, ""} -> number_to_step(parsed_step)
+      _error -> :counterparty
+    end
+  end
+
   defp parse_step_param(step) when is_integer(step), do: number_to_step(step)
   defp parse_step_param(step) when is_atom(step), do: step
 
@@ -354,19 +366,21 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   defp maybe_setup_step(socket, :counterparty, params) do
     # Counterparty selection - setup search/tabs
     last_counterparties = socket.assigns.last_counterparties
-    tab = parse_tab(params["tab"], last_counterparties)
-    {search, no_search?} = parse_search(params["search"])
-    filter = parse_filter(params["filter"])
-    sort_order = parse_sort_order(params["sort_order"])
-    query_params = %{tab: tab, search: search, filter: filter, sort_order: sort_order}
+    query_params = CreatorQueryParams.parse_query_params(params, last_counterparties)
+    no_search? = is_nil(query_params.search)
 
     # Always populate the stream when entering counterparty step.
     # Even if search hasn't changed, the stream container may have been destroyed
     # when switching to a different step's template, so we need to re-send the data.
     socket
     |> assign(:query_params, query_params)
-    |> assign(:tab, tab)
-    |> update_counterparty_stream(search, no_search?, filter, sort_order)
+    |> assign(:tab, query_params.tab)
+    |> update_counterparty_stream(
+      query_params.search,
+      no_search?,
+      query_params.filter,
+      query_params.sort_order
+    )
     |> maybe_init_counterparty_form()
   end
 
@@ -585,9 +599,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       :params,
       to_form(
         %{
-          "search" => search,
-          "filter" => filter_to_string(filter),
-          "sort_order" => Atom.to_string(sort_order)
+          "szukaj" => search,
+          "typ" => filter_to_string(filter),
+          "kolejnosc" => PolishValues.encode_sort_order(sort_order)
         },
         as: "search_form"
       )
@@ -598,50 +612,76 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   defp filter_to_string(nil), do: ""
-  defp filter_to_string(filter), do: Atom.to_string(filter)
-
-  defp parse_tab("last_counterparties", _last_counterparties), do: :last_counterparties
-  defp parse_tab("last_invoices", _last_counterparties), do: :last_invoices
-  defp parse_tab(_invalid_or_nil, last_counterparties), do: default_tab(last_counterparties)
-
-  defp default_tab([]), do: :last_invoices
-  defp default_tab(_counterparties), do: :last_counterparties
+  defp filter_to_string(filter), do: QueryCodec.encode_counterparty_type(filter)
 
   # Navigation helpers
 
   defp creator_draft_url(creator_draft_id, step) when is_atom(step) do
-    ~p"/sprzedazowe?creator_draft=#{creator_draft_id}&step=#{step_to_number(step)}"
+    creator_draft_id
+    |> CreatorQueryParams.draft_step_params(step_to_number(step))
+    |> Navigation.sales_invoice_creator_path()
+  end
+
+  defp counterparty_management_new_path(assigns) do
+    return_to =
+      CreatorQueryParams.draft_step_params(
+        assigns.creator_draft_id,
+        step_to_number(:counterparty),
+        assigns.query_params
+      )
+
+    ManagementNavigation.counterparty_new_path(%{
+      powrot_do: Navigation.sales_invoice_creator_path(return_to)
+    })
+  end
+
+  defp counterparty_tabs(assigns) do
+    assigns.last_counterparties
+    |> counterparty_tab_definitions(assigns.last_invoices)
+    |> Enum.map(fn {tab, label} ->
+      %{
+        tab: tab,
+        label: label,
+        patch: counterparty_tab_patch(assigns, tab)
+      }
+    end)
+  end
+
+  defp counterparty_tab_definitions([], []), do: []
+  defp counterparty_tab_definitions([], _last_invoices), do: [last_invoices: "Ostatnie faktury"]
+
+  defp counterparty_tab_definitions(_last_counterparties, _last_invoices) do
+    [last_counterparties: "Ostatnio wybierani", last_invoices: "Ostatnie faktury"]
+  end
+
+  defp counterparty_tab_patch(assigns, tab) do
+    params =
+      CreatorQueryParams.draft_step_params(
+        assigns.creator_draft_id,
+        assigns.step_number,
+        Map.put(assigns.query_params, :tab, tab)
+      )
+
+    Navigation.sales_invoice_creator_path(params)
   end
 
   # Query params management (for step 0 tabs/search)
 
-  defp parse_search(nil), do: {nil, true}
-  defp parse_search(""), do: {nil, true}
-  defp parse_search(value) when is_binary(value), do: {value, false}
+  defp parse_filter(raw_filter), do: QueryCodec.parse_counterparty_type(raw_filter)
 
-  defp parse_filter("company"), do: :company
-  defp parse_filter("individual"), do: :individual
-  defp parse_filter(_), do: nil
-
-  defp parse_sort_order("desc"), do: :desc
-  defp parse_sort_order(_), do: :asc
+  defp parse_sort_order(raw_sort_order), do: PolishValues.parse_sort_order(raw_sort_order) || :asc
 
   defp update_counterparty_query_params(socket, updates) do
     query_params = Map.merge(socket.assigns.query_params, Map.new(updates))
 
     params =
-      Map.merge(
-        %{creator_draft: socket.assigns.creator_draft_id, step: step_to_number(:counterparty)},
-        encode_query_params(query_params)
+      CreatorQueryParams.draft_step_params(
+        socket.assigns.creator_draft_id,
+        step_to_number(:counterparty),
+        query_params
       )
 
-    push_patch(socket, to: ~p"/sprzedazowe?#{params}")
-  end
-
-  def encode_query_params(query_params) do
-    query_params
-    |> Enum.reject(fn {_key, value} -> is_nil(value) end)
-    |> Map.new()
+    push_patch(socket, to: Navigation.sales_invoice_creator_path(params))
   end
 
   @impl true
@@ -726,15 +766,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     end
   end
 
-  def handle_event("change_tab", %{"tab" => tab}, socket) do
-    {:noreply, update_counterparty_query_params(socket, tab: tab)}
-  end
-
   def handle_event("search_counterparties", %{"search_form" => params}, socket) do
     updates = [
-      search: params["search"],
-      filter: parse_filter(params["filter"]),
-      sort_order: parse_sort_order(params["sort_order"])
+      search: params["szukaj"],
+      filter: parse_filter(params["typ"]),
+      sort_order: parse_sort_order(params["kolejnosc"])
     ]
 
     {:noreply, update_counterparty_query_params(socket, updates)}
@@ -939,7 +975,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         {:noreply,
          socket
          |> put_flash(:info, "Faktura zapisana jako szkic")
-         |> redirect(to: ~p"/sprzedazowe/#{invoice.id}")}
+         |> redirect(to: Navigation.sales_invoice_show_path(invoice))}
 
       {:error, error} ->
         Logger.error("Failed to save invoice as draft: #{inspect(error)}")
@@ -955,7 +991,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     with :ok <- validate_organization_for_invoicing(organization),
          {:ok, invoice} <- create_invoice_from_draft(draft, invoice_number, organization, scope) do
-      {:noreply, push_navigate(socket, to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
+      {:noreply, push_navigate(socket, to: Navigation.sales_invoice_summary_path(invoice))}
     else
       {:error, error} ->
         Logger.error("Failed to confirm invoice: #{inspect(error)}")
@@ -1047,7 +1083,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   defp submit_to_ksef_and_navigate(socket, invoice) do
     case Ksef.submit_sales_invoice(invoice.id, socket.assigns.ash_scope) do
       {:ok, _job} ->
-        {:noreply, push_navigate(socket, to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
+        {:noreply, push_navigate(socket, to: Navigation.sales_invoice_summary_path(invoice))}
 
       {:error, reason} ->
         Logger.error("Failed to submit invoice to KSeF: #{inspect(reason)}")
@@ -1055,7 +1091,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         {:noreply,
          socket
          |> put_flash(:error, "Faktura została wystawiona, ale wysyłka do KSeF nie powiodła się")
-         |> push_navigate(to: ~p"/sprzedazowe/#{invoice.id}/podsumowanie")}
+         |> push_navigate(to: Navigation.sales_invoice_summary_path(invoice))}
     end
   end
 

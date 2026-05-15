@@ -17,6 +17,8 @@ defmodule FirmowidWeb.Management.Views.Project do
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias FirmowidWeb.Management.Utilities.Navigation
+  alias FirmowidWeb.Timetracker.Utilities.Navigation, as: TimetrackerNavigation
 
   @impl true
   def mount(_params, _session, socket) do
@@ -26,12 +28,9 @@ defmodule FirmowidWeb.Management.Views.Project do
   @impl true
   def handle_params(%{"id" => project_id} = params, _url, socket) do
     scope = socket.assigns.ash_scope
+    params = Navigation.project_params(params)
 
-    selected_date =
-      case params do
-        %{"month" => month} -> Date.from_iso8601!(month)
-        _ -> Date.utc_today()
-      end
+    selected_date = Navigation.parse_month(params)
 
     active_months = months_with_sessions(%{project_id: project_id}, scope)
 
@@ -48,7 +47,7 @@ defmodule FirmowidWeb.Management.Views.Project do
 
   @impl true
   def handle_event("change-month", %{"month" => month}, %{assigns: %{project: project}} = socket) do
-    {:noreply, push_patch(socket, to: ~p"/zarzadzanie/projekty/#{project.id}?month=#{month}")}
+    {:noreply, push_patch(socket, to: Navigation.project_path(project.id, %{miesiac: month}))}
   end
 
   def handle_event("pdf-download-error", _params, socket) do
@@ -125,7 +124,7 @@ defmodule FirmowidWeb.Management.Views.Project do
     {:noreply,
      socket
      |> put_flash(:info, "Projekt został usunięty.")
-     |> push_navigate(to: ~p"/zarzadzanie/projekty?#{%{month: socket.assigns.selected_date}}")}
+     |> push_navigate(to: Navigation.projects_path(:index, %{miesiac: socket.assigns.selected_date}))}
   end
 
   # ── Archived project: all-time totals ─────────────────────────────────

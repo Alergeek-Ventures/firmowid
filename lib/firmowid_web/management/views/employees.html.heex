@@ -16,7 +16,7 @@
         >
           <.input
             type="text"
-            name="q"
+            name="szukaj"
             value={@search}
             placeholder="Szukaj pracownika"
             phx-change="search"
@@ -44,9 +44,7 @@
           variant="secondary"
           size="big"
           download
-          redirect={
-            ~p"/czasosledz/projekty/csv?month=#{@selected_date.month}&year=#{@selected_date.year}"
-          }
+          redirect={TimetrackerNavigation.salaries_csv_path(@selected_date)}
         >
           <Lucideicons.file_text /> Raport wypłat
         </.link>
@@ -64,8 +62,8 @@
       <.link
         :for={
           {path, live_action, label} <- [
-            {~p"/zarzadzanie/pracownicy?#{@params}", :index, "Aktywni"},
-            {~p"/zarzadzanie/pracownicy/archiwum?#{@params}", :archive, "Zarchiwizowani"}
+            {Navigation.employees_path(:index, @params), :index, "Aktywni"},
+            {Navigation.employees_path(:archive, @params), :archive, "Zarchiwizowani"}
           ]
         }
         patch={path}
@@ -200,9 +198,7 @@
             <%= if @can_export_csv do %>
               <.link
                 kind="unstyled"
-                navigate={
-                  ~p"/zarzadzanie/pracownicy/#{employee.user.id}?month=#{Date.to_iso8601(@selected_date)}"
-                }
+                navigate={Navigation.employee_path(employee.user.id, %{miesiac: @selected_date})}
                 class="hover:underline"
               >
                 {employee.user.name || employee.user.email}
@@ -262,9 +258,7 @@
             <%= if @can_export_csv do %>
               <.link
                 kind="unstyled"
-                navigate={
-                  ~p"/zarzadzanie/pracownicy/#{employee.user.id}?month=#{Date.to_iso8601(@selected_date)}"
-                }
+                navigate={Navigation.employee_path(employee.user.id, %{miesiac: @selected_date})}
                 class="flex items-center"
               >
                 <Lucideicons.chevron_right class="text-grey-700 size-4 shrink-0" />

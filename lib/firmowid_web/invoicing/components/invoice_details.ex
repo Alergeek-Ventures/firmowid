@@ -18,7 +18,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
 
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.RecommendationThresholds
-  alias FirmowidWeb.Invoicing.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   attr :is_cost_invoice, :boolean
   attr :variant, :string, required: true

@@ -14,8 +14,8 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   alias Firmowid.Ash.Invoicing.TransactionGroup
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
-  alias FirmowidWeb.Invoicing.Navigation
   alias FirmowidWeb.Invoicing.Utilities.BankBadges
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   attr :invoicing_entries, :list, required: true
   attr :mode, :atom, required: true

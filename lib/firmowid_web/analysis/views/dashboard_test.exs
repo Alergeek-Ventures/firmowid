@@ -12,7 +12,7 @@ defmodule FirmowidWeb.Analysis.Views.DashboardTest do
     assert {:ok, _view, _html} =
              live(
                conn,
-               ~p"/analiza?month=#{Date.to_iso8601(Date.beginning_of_month(Date.utc_today()))}&tags=company,foo,project"
+               ~p"/analiza?miesiac=#{Date.to_iso8601(Date.beginning_of_month(Date.utc_today()))}&tagi=firma,foo,projekt"
              )
   end
 end

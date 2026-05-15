@@ -3,8 +3,8 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   LiveView for the financial analysis dashboard.
 
   Displays monthly income, expenses, and net profit with tag-based filtering.
-  URL params control the active month (`?month=YYYY-MM-DD`) and tag filters
-  (`?tags=company,project:<id>`).
+  URL params control the active month (`?miesiac=YYYY-MM-DD`) and tag filters
+  (`?tagi=firma,projekt:<id>`).
   """
   use FirmowidWeb, :live_view
 
@@ -13,6 +13,8 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   alias Firmowid.Ash.Analysis
   alias Firmowid.Ash.Analysis.EntityTag
   alias Firmowid.Ash.Analysis.TagDefinition
+  alias FirmowidWeb.Analysis.Utilities.Navigation
+  alias FirmowidWeb.Infrastructure.Utilities.QueryParams
 
   @impl true
   def mount(_params, _session, socket) do
@@ -35,13 +37,9 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    month =
-      case Map.get(params, "month") do
-        nil -> Date.beginning_of_month(Date.utc_today())
-        date_string -> Date.from_iso8601!(date_string)
-      end
+    month = QueryParams.parse_date(params, "miesiac", Date.beginning_of_month(Date.utc_today()))
 
-    tag_filters = parse_tag_filters(params, socket.assigns.tag_definitions)
+    tag_filters = Navigation.parse_tag_filters(params, socket.assigns.tag_definitions)
 
     socket =
       socket
@@ -71,16 +69,22 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
   @impl true
   def handle_event("toggle-tag", %{"tag" => tag_key}, socket) do
     current = socket.assigns.tag_filters
-    filter = decode_tag_key(tag_key)
+    filter = Navigation.parse_tag_filter(tag_key)
 
-    updated =
-      if filter in current do
-        List.delete(current, filter)
-      else
-        [filter | current]
-      end
+    case filter do
+      :invalid ->
+        {:noreply, socket}
 
-    {:noreply, push_patch(socket, to: build_path(socket, tag_filters: updated))}
+      _valid_filter ->
+        updated =
+          if filter in current do
+            List.delete(current, filter)
+          else
+            [filter | current]
+          end
+
+        {:noreply, push_patch(socket, to: build_path(socket, tag_filters: updated))}
+    end
   end
 
   @impl true
@@ -180,56 +184,11 @@ defmodule FirmowidWeb.Analysis.Views.Dashboard do
     |> assign(:cost_invoices, totals.cost_invoices)
   end
 
-  # ---------------------------------------------------------------------------
-  # URL param helpers for tag filters
-  # ---------------------------------------------------------------------------
-
-  # Encodes a tag filter tuple into a URL-safe string key.
-  defp encode_tag_key({:company}), do: "company"
-  defp encode_tag_key({:project, id}), do: "project:#{id}"
-
-  # Decodes a URL string key back into a tag filter tuple.
-  defp decode_tag_key("company"), do: {:company}
-
-  defp decode_tag_key("project:" <> id), do: {:project, id}
-
-  defp decode_tag_key(_), do: :invalid
-
-  # Parses tag filters from URL query params.
-  # Tags are stored as `tags=company,project:<id>,project:<id>`.
-  defp parse_tag_filters(%{"tags" => tags_param}, tag_definitions) when is_binary(tags_param) do
-    valid_project_ids = MapSet.new(tag_definitions, & &1.id)
-
-    tags_param
-    |> String.split(",", trim: true)
-    |> Enum.map(&decode_tag_key/1)
-    |> Enum.reject(&(&1 == :invalid))
-    |> Enum.filter(fn
-      {:company} -> true
-      {:project, id} -> MapSet.member?(valid_project_ids, id)
-    end)
-  end
-
-  defp parse_tag_filters(_params, _tag_definitions), do: []
-
-  # Builds a path with current assigns, overriding specific params.
   defp build_path(socket, overrides) do
     month = Keyword.get(overrides, :month, socket.assigns.params.month)
     tag_filters = Keyword.get(overrides, :tag_filters, socket.assigns.tag_filters)
 
-    query_params = %{month: Date.to_iso8601(month)}
-
-    query_params =
-      case tag_filters do
-        [] ->
-          query_params
-
-        filters ->
-          tags_value = Enum.map_join(filters, ",", &encode_tag_key/1)
-          Map.put(query_params, :tags, tags_value)
-      end
-
-    ~p"/analiza?#{query_params}"
+    Navigation.dashboard_path(month, tag_filters)
   end
 
   # Finds entity_tags for a specific entity from the current assigns.

@@ -23,16 +23,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   alias Firmowid.Ash.Invoicing.Services.CorrectionReason
   alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Invoicing.FormHelpers
-  alias FirmowidWeb.Invoicing.Navigation
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
   alias FirmowidWeb.Invoicing.SalesInvoices.Views.Creator
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   require Logger
 
   @impl true
   def mount(%{"id" => id} = params, _session, socket) do
     scope = socket.assigns.ash_scope
-    return_to = Navigation.return_to_path(params["return_to"])
+    return_to = Navigation.return_to_path(params["powrot_do"])
 
     invoice =
       case SalesInvoice.by_id(id,
@@ -62,7 +62,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
         {:ok,
          socket
          |> put_flash(:error, "Nie znaleziono faktury")
-         |> push_navigate(to: ~p"/sprzedazowe")}
+         |> push_navigate(to: Navigation.sales_invoice_creator_path())}
 
       not invoice.is_editable ->
         {:ok,

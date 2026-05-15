@@ -1,7 +1,7 @@
 <div class="mx-auto my-4 grid w-full max-w-7xl grid-cols-[max-content_1fr] grid-rows-[repeat(2,min-content)] gap-x-10">
   <.link
     kind="unstyled"
-    navigate={~p"/zarzadzanie/pracownicy?month=#{Date.to_iso8601(@projects_filter_date)}"}
+    navigate={Navigation.employees_path(:index, %{miesiac: @projects_filter_date})}
     class="mb-8 flex items-center gap-2 justify-self-start"
   >
     <.icon name="hero-arrow-left-circle-solid" class="size-8" />
@@ -93,7 +93,7 @@
         <.link
           :for={project <- @employee.projects}
           kind="unstyled"
-          navigate={~p"/zarzadzanie/projekty/#{project.id}"}
+          navigate={Navigation.project_path(project.id, %{miesiac: @projects_filter_date})}
           class="bg-turquoise-200 hover:bg-turquoise-300 hover:text-turquoise-800 text-turquoise-700 rounded-full px-4 py-1 text-sm/snug transition"
         >
           {project.name}

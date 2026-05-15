@@ -6,7 +6,7 @@
           <Lucideicons.search class="text-grey-500 size-6 shrink-0" />
           <.input
             type="text"
-            name="q"
+            name="szukaj"
             value={@search}
             placeholder="Wyszukaj kontrahenta"
             phx-change="search"
@@ -17,7 +17,15 @@
         </div>
       </form>
 
-      <.link navigate={~p"/zarzadzanie/kontrahenci/dodaj"} kind="button" variant="special">
+      <.link
+        navigate={
+          Navigation.counterparty_new_path(%{
+            powrot_do: Navigation.counterparties_path(@live_action, @params)
+          })
+        }
+        kind="button"
+        variant="special"
+      >
         <Lucideicons.plus /> Dodaj kontrahenta
       </.link>
     </div>
@@ -28,8 +36,8 @@
           <.link
             :for={
               {path, live_action, label} <- [
-                {~p"/zarzadzanie/kontrahenci?#{@params}", :index, "Aktywni"},
-                {~p"/zarzadzanie/kontrahenci/archiwum?#{@params}", :archive, "Zarchiwizowani"}
+                {Navigation.counterparties_path(:index, @params), :index, "Aktywni"},
+                {Navigation.counterparties_path(:archive, @params), :archive, "Zarchiwizowani"}
               ]
             }
             patch={path}
@@ -55,7 +63,7 @@
               variant="unstyled"
               class={subfilter_styles(@type_filter == :individual)}
               phx-click="toggle_type"
-              phx-value-type="individual"
+              phx-value-typ={Navigation.encode_counterparty_type(:individual)}
             >
               <Lucideicons.user class="size-4" /> Osoby fizyczne
             </.button>
@@ -65,7 +73,7 @@
               variant="unstyled"
               class={subfilter_styles(@type_filter == :company)}
               phx-click="toggle_type"
-              phx-value-type="company"
+              phx-value-typ={Navigation.encode_counterparty_type(:company)}
             >
               <Lucideicons.building_2 class="size-4" /> Firma
             </.button>
@@ -118,7 +126,11 @@
               <.counterparty_icon counterparty={counterparty} />
               <.link
                 kind="unstyled"
-                navigate={~p"/zarzadzanie/kontrahenci/#{counterparty.id}"}
+                navigate={
+                  Navigation.counterparty_path(counterparty.id, %{
+                    powrot_do: Navigation.counterparties_path(@live_action, @params)
+                  })
+                }
                 class="truncate hover:underline"
               >
                 {counterparty.display_label}
@@ -129,7 +141,11 @@
             </p>
             <.link
               kind="unstyled"
-              navigate={~p"/zarzadzanie/kontrahenci/#{counterparty.id}"}
+              navigate={
+                Navigation.counterparty_path(counterparty.id, %{
+                  powrot_do: Navigation.counterparties_path(@live_action, @params)
+                })
+              }
               class="hover:text-grey-700 text-grey-500"
             >
               <Lucideicons.chevron_right class="size-4" />
@@ -168,7 +184,11 @@
               <.counterparty_icon counterparty={counterparty} />
               <.link
                 kind="unstyled"
-                navigate={~p"/zarzadzanie/kontrahenci/#{counterparty.id}"}
+                navigate={
+                  Navigation.counterparty_path(counterparty.id, %{
+                    powrot_do: Navigation.counterparties_path(@live_action, @params)
+                  })
+                }
                 class="truncate hover:underline"
               >
                 {counterparty.display_label}
@@ -192,7 +212,11 @@
               </.button>
               <.link
                 kind="unstyled"
-                navigate={~p"/zarzadzanie/kontrahenci/#{counterparty.id}"}
+                navigate={
+                  Navigation.counterparty_path(counterparty.id, %{
+                    powrot_do: Navigation.counterparties_path(@live_action, @params)
+                  })
+                }
                 class="hover:text-grey-700 text-grey-500"
               >
                 <Lucideicons.chevron_right class="size-4" />
@@ -215,7 +239,11 @@
   </p>
 
   <.link
-    navigate={~p"/zarzadzanie/kontrahenci/dodaj"}
+    navigate={
+      Navigation.counterparty_new_path(%{
+        powrot_do: Navigation.counterparties_path(@live_action, @params)
+      })
+    }
     kind="button"
     variant="secondary"
     class="mt-6"

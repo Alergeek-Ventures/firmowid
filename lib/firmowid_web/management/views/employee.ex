@@ -15,6 +15,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias FirmowidWeb.Management.Utilities.Navigation
 
   @impl true
   def mount(_params, _session, socket) do
@@ -25,12 +26,9 @@ defmodule FirmowidWeb.Management.Views.Employee do
   def handle_params(%{"id" => id} = params, _uri, socket) do
     if socket.assigns.current_user.role == :admin do
       scope = socket.assigns.ash_scope
+      params = Navigation.employee_params(params)
 
-      selected_date =
-        case params do
-          %{"month" => month} -> Date.from_iso8601!(month)
-          _ -> Date.utc_today()
-        end
+      selected_date = Navigation.parse_month(params)
 
       user =
         %{id: id}
@@ -43,7 +41,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
       socket =
         if is_nil(user) do
           push_navigate(socket,
-            to: ~p"/zarzadzanie/pracownicy?month=#{Date.to_iso8601(Date.utc_today())}"
+            to: Navigation.employees_path(:index, %{miesiac: Navigation.current_month()})
           )
         else
           employee = build_employee(user, id, selected_date, scope)
@@ -60,7 +58,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
     else
       {:noreply,
        push_navigate(socket,
-         to: ~p"/zarzadzanie/pracownicy?month=#{Date.to_iso8601(Date.utc_today())}"
+         to: Navigation.employees_path(:index, %{miesiac: Navigation.current_month()})
        )}
     end
   end
@@ -134,7 +132,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
   def handle_event("change-month", %{"month" => month}, socket) do
     employee = socket.assigns.employee
 
-    {:noreply, push_patch(socket, to: ~p"/zarzadzanie/pracownicy/#{employee.id}?month=#{month}")}
+    {:noreply, push_patch(socket, to: Navigation.employee_path(employee.id, %{miesiac: month}))}
   end
 
   def handle_event("archive_employee", _params, socket) do

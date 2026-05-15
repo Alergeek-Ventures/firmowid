@@ -12,18 +12,22 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   alias Firmowid.Ash.Invoicing.CountryCodes
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.Services.CounterpartyInvoiceSuggestions
+  alias FirmowidWeb.Invoicing.Utilities.Navigation, as: InvoicingNavigation
   alias FirmowidWeb.Management.Utilities.CounterpartyHelpers
+  alias FirmowidWeb.Management.Utilities.Navigation
 
   require Ash.Query
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, socket}
+    {:ok, assign(socket, :params, %{})}
   end
 
   @impl true
   def handle_params(%{"id" => id} = params, _uri, socket) do
     scope = socket.assigns.ash_scope
+    params = Navigation.counterparty_params(params)
+    return_path = Navigation.counterparty_return_path(params)
 
     case Invoicing.get_counterparty(id,
            load: [:display_label],
@@ -31,17 +35,21 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
            not_found_error?: false
          ) do
       {:ok, nil} ->
-        {:noreply, push_navigate(socket, to: ~p"/zarzadzanie/kontrahenci")}
+        {:noreply, push_navigate(socket, to: return_path)}
 
       {:ok, counterparty} ->
-        invoice_filter = parse_invoice_filter(params["invoice_filter"])
-        {:noreply, assign_counterparty_page(socket, counterparty, invoice_filter)}
+        invoice_filter = parse_invoice_filter(params["filtr_faktur"])
+
+        {:noreply,
+         socket
+         |> assign(:params, params)
+         |> assign_counterparty_page(counterparty, invoice_filter)}
 
       {:error, _error} ->
         {:noreply,
          socket
          |> put_flash(:error, "Nie udało się wczytać kontrahenta")
-         |> push_navigate(to: ~p"/zarzadzanie/kontrahenci")}
+         |> push_navigate(to: return_path)}
     end
   end
 
@@ -107,13 +115,13 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     <div class="mx-auto my-4 grid w-full max-w-screen-2xl grid-cols-[96px_minmax(0,1fr)_96px] grid-rows-[repeat(5,max-content)] gap-x-10 gap-y-8">
       <.link
         kind="unstyled"
-        navigate={~p"/zarzadzanie/kontrahenci"}
+        navigate={Navigation.counterparty_return_path(@params)}
         class="col-start-1 row-start-1 flex items-center gap-2 self-center text-sm"
       >
         <Lucideicons.circle_chevron_left /> Wróć
       </.link>
 
-      <.page_header counterparty={@counterparty} class="col-start-2 row-start-1" />
+      <.page_header counterparty={@counterparty} params={@params} class="col-start-2 row-start-1" />
 
       <.archive_notice
         :if={@counterparty.archived_at}
@@ -136,6 +144,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
       <.invoices_section
         counterparty={@counterparty}
+        params={@params}
         invoice_filter={@invoice_filter}
         invoices={@invoices}
         class={["col-start-2", if(@counterparty.archived_at, do: "row-start-5", else: "row-start-4")]}
@@ -145,6 +154,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   end
 
   attr :counterparty, :map, required: true
+  attr :params, :map, default: %{}
   attr :class, :any, default: nil
 
   defp page_header(assigns) do
@@ -172,7 +182,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
         <% end %>
 
         <.link
-          navigate={~p"/zarzadzanie/kontrahenci/#{@counterparty.id}/edycja"}
+          navigate={Navigation.counterparty_edit_path(@counterparty.id, @params)}
           kind="button"
           variant="outline"
         >
@@ -331,6 +341,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   end
 
   attr :counterparty, :map, required: true
+  attr :params, :map, default: %{}
   attr :invoice_filter, :atom, required: true
   attr :invoices, :list, required: true
   attr :class, :any, default: nil
@@ -346,7 +357,12 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
             :for={
               {value, label} <- [{:all, "Wszystkie"}, {:unpaid, "Nieopłacone"}, {:paid, "Opłacone"}]
             }
-            patch={~p"/zarzadzanie/kontrahenci/#{@counterparty.id}?invoice_filter=#{value}"}
+            patch={
+              Navigation.counterparty_path(@counterparty.id, %{
+                filtr_faktur: encode_invoice_filter(value),
+                powrot_do: @params["powrot_do"]
+              })
+            }
             kind="button"
             variant="ghost"
             size="small"
@@ -378,7 +394,12 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
             >
               <.link
                 kind="unstyled"
-                navigate={~p"/sprzedazowe/#{invoice.id}"}
+                navigate={
+                  InvoicingNavigation.sales_invoice_show_path(
+                    invoice.id,
+                    Navigation.counterparty_path(@counterparty.id, @params)
+                  )
+                }
                 class="hover:underline"
               >
                 {invoice.invoice_number}
@@ -388,7 +409,12 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
               <div class="flex justify-center"><.invoice_status_badge invoice={invoice} /></div>
               <.link
                 kind="unstyled"
-                navigate={~p"/sprzedazowe/#{invoice.id}"}
+                navigate={
+                  InvoicingNavigation.sales_invoice_show_path(
+                    invoice.id,
+                    Navigation.counterparty_path(@counterparty.id, @params)
+                  )
+                }
                 class="hover:text-grey-700 text-grey-500"
               >
                 <Lucideicons.chevron_right class="size-4" />
@@ -434,7 +460,12 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
           >
             <.link
               kind="unstyled"
-              navigate={~p"/sprzedazowe/#{invoice.id}"}
+              navigate={
+                InvoicingNavigation.sales_invoice_show_path(
+                  invoice.id,
+                  Navigation.counterparty_path(@counterparty.id, @params)
+                )
+              }
               class="hover:underline"
             >
               {invoice_label(invoice)}
@@ -489,9 +520,9 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   defp maybe_put_reconciliation(args, :paid), do: Map.put(args, :reconciliation, :matched)
   defp maybe_put_reconciliation(args, :all), do: args
 
-  defp parse_invoice_filter(filter) when filter in ["all", "paid", "unpaid"], do: String.to_existing_atom(filter)
+  defp parse_invoice_filter(filter), do: Navigation.parse_counterparty_invoice_filter(filter) || :all
 
-  defp parse_invoice_filter(_), do: :all
+  defp encode_invoice_filter(filter), do: Navigation.encode_counterparty_invoice_filter(filter)
 
   defp build_stats(invoices) do
     currencies = invoices |> Enum.map(& &1.currency) |> Enum.uniq()

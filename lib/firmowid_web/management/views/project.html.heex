@@ -144,9 +144,7 @@
           variant="secondary"
           size="small"
           phx-hook="DownloadPdf"
-          data-download-url={
-            ~p"/czasosledz/projekty/#{@project.id}/csv?month=#{@selected_date.month}&year=#{@selected_date.year}"
-          }
+          data-download-url={TimetrackerNavigation.project_csv_path(@project.id, @selected_date)}
         >
           <span data-download-idle class="inline-flex items-center gap-1.5">
             <Lucideicons.cloud_download /> Pobierz raport

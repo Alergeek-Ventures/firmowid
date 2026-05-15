@@ -7,7 +7,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Core.Endpoint
-  alias FirmowidWeb.Invoicing.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   @item_calcs [:net_value, :vat_value, :gross_value]
   @detail_loads [
@@ -40,7 +40,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
             queryable: SalesInvoice
       end
 
-    return_to = Navigation.return_to_path(params["return_to"])
+    return_to = Navigation.return_to_path(params["powrot_do"])
 
     if sales_invoice.ksef_invoice_kind == :kor do
       redirect_path =

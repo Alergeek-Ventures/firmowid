@@ -39,7 +39,9 @@
                 <div :if={invoice.invoice_type == :foreign} class="flex gap-1">
                   <.link
                     kind="unstyled"
-                    navigate={~p"/faktura/#{@conn.params["token"]}?lang=pl"}
+                    navigate={
+                      ~p"/faktura/#{@conn.params["token"]}?jezyk=#{QueryCodec.encode_invoice_language(:pl)}"
+                    }
                     class={[
                       "rounded px-2 py-1 text-xs font-medium transition-colors",
                       if(@lang == :pl,
@@ -52,7 +54,9 @@
                   </.link>
                   <.link
                     kind="unstyled"
-                    navigate={~p"/faktura/#{@conn.params["token"]}?lang=en"}
+                    navigate={
+                      ~p"/faktura/#{@conn.params["token"]}?jezyk=#{QueryCodec.encode_invoice_language(:en)}"
+                    }
                     class={[
                       "rounded px-2 py-1 text-xs font-medium transition-colors",
                       if(@lang == :en,

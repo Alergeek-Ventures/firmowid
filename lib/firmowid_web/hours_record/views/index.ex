@@ -9,7 +9,9 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
   alias Firmowid.Ash.Timetracker.Session
+  alias FirmowidWeb.Infrastructure.Utilities.QueryParams
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias FirmowidWeb.Timetracker.Utilities.Navigation
 
   @impl true
   def mount(_params, _session, socket) do
@@ -32,11 +34,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
 
   @impl true
   def handle_params(params, _url, socket) do
-    month =
-      case Map.get(params, "month") do
-        nil -> Date.beginning_of_month(Date.utc_today())
-        date_string -> Date.from_iso8601!(date_string)
-      end
+    month = QueryParams.parse_date(params, "miesiac", Date.beginning_of_month(Date.utc_today()))
 
     {:noreply, socket |> assign(selected_date: month) |> refetch_data()}
   end
@@ -61,7 +59,7 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
     socket =
       socket
       |> assign(:selected_date, month)
-      |> push_patch(to: ~p"/czasosledz/ewidencja?month=#{Date.to_iso8601(month)}")
+      |> push_patch(to: Navigation.hours_record_index_path(month))
 
     {:noreply, socket}
   end

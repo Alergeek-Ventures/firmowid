@@ -22,7 +22,7 @@ defmodule FirmowidWeb.Timetracker.Controllers.CsvTest do
 
     conn = log_in_user(conn, admin)
 
-    conn = get(conn, ~p"/czasosledz/projekty/#{project.id}/csv?month=4&year=2026")
+    conn = get(conn, ~p"/czasosledz/projekty/#{project.id}/csv?miesiac=4&rok=2026")
 
     assert conn.status == 200
     assert conn |> get_resp_header("content-type") |> Enum.join(";") =~ "text/csv"

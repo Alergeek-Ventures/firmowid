@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.Settings.Navigation do
+defmodule FirmowidWeb.Settings.Utilities.Navigation do
   @moduledoc """
   Central navigation contract for settings routes.
   """

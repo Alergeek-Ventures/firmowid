@@ -6,11 +6,7 @@ export const DownloadPdf = {
       const btn = this.el;
       const idle = btn.querySelector("[data-download-idle]");
       const loading = btn.querySelector("[data-download-loading]");
-      const url =
-        btn.dataset.downloadUrl ||
-        btn.dataset.downloadPath +
-          "?include_internal_note=" +
-          btn.dataset.includeNote;
+      const url = btn.dataset.downloadUrl;
       const modalId = btn.dataset.modalId;
       const successEvent = btn.dataset.downloadSuccessEvent;
       const successTarget = btn.dataset.downloadTarget;

@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTableTest do
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias FirmowidWeb.Invoicing.Components.EntriesTable
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   test "draft sales invoice renders szkic label instead of skip button" do
     draft_invoice = %SalesInvoice{
@@ -55,10 +56,13 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTableTest do
         invoicing_entries: [transaction],
         has_connected_bank_account: true,
         mode: :transactions,
-        return_to: "/fakturowanie?month=2026-01-01&filter=transactions"
+        return_to: "/fakturowanie?miesiac=2026-01-01&filtr=transakcje"
       )
 
     assert html =~
-             "/transakcje/transaction-row-test?return_to=%2Ffakturowanie%3Fmonth%3D2026-01-01%26filter%3Dtransactions"
+             Navigation.transaction_show_path(
+               transaction.id,
+               "/fakturowanie?miesiac=2026-01-01&filtr=transakcje"
+             )
   end
 end

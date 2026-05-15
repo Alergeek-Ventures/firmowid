@@ -23,7 +23,7 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModalTest do
     assert rendered =~ "Pobierz dokumenty"
 
     assert rendered =~ "/pobierz-miesiac?"
-    assert rendered =~ "include_sales=true"
+    assert rendered =~ "dolacz_sprzedazowe=tak"
   end
 
   defp seed_cost_invoice!(organization_id, issue_date) do

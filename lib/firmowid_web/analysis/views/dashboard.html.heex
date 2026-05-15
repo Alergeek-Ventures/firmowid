@@ -44,7 +44,7 @@
                   type="checkbox"
                   checked={tag_filter_active?(@tag_filters, {:company})}
                   phx-click="toggle-tag"
-                  phx-value-tag="company"
+                  phx-value-tag="firma"
                   class="border-darkGrey text-darkGrey size-4 rounded-[3px] border focus:ring-0"
                 />
                 <span class="text-darkGrey text-sm">Firma</span>
@@ -64,7 +64,7 @@
                   type="checkbox"
                   checked={tag_filter_active?(@tag_filters, {:project, tag_def.id})}
                   phx-click="toggle-tag"
-                  phx-value-tag={"project:#{tag_def.id}"}
+                  phx-value-tag={"projekt:#{tag_def.id}"}
                   class="border-darkGrey size-4 rounded-[3px] border focus:ring-0"
                   style={"color: #{tag_def.color}"}
                 />

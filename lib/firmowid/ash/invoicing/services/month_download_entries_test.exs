@@ -11,7 +11,7 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntriesTest do
   alias Firmowid.Ash.Invoicing.Services.MonthDownloadEntries
   alias Firmowid.Ash.Scope
 
-  test "build/5 selects invoices from selected month using :any date field" do
+  test "build/3 selects invoices from selected month using :any date field" do
     admin = admin_fixture()
     org_id = admin.organization_id
     scope = %Scope{actor: admin, tenant: org_id}
@@ -90,21 +90,19 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntriesTest do
       MonthDownloadEntries.build(
         ~D[2026-03-01],
         %{include_digital: true, include_ksef: false, include_photos: false, include_sales: true},
-        scope,
-        "session-cookie",
-        "http://localhost:4000"
+        scope
       )
 
-    assert Enum.any?(entries, &String.starts_with?(Keyword.fetch!(&1, :path), "kosztowe/"))
-    assert Enum.any?(entries, &String.starts_with?(Keyword.fetch!(&1, :path), "sprzedazowe/"))
+    assert Enum.any?(entries, &String.starts_with?(&1.path, "kosztowe/"))
+    assert Enum.any?(entries, &String.starts_with?(&1.path, "sprzedazowe/"))
 
     refute Enum.any?(entries, fn entry ->
-             path = Keyword.fetch!(entry, :path)
+             path = entry.path
              String.contains?(path, "outside") or String.ends_with?(path, ".xml")
            end)
   end
 
-  test "build/5 respects file-type filters for cost invoices" do
+  test "build/3 respects file-type filters for cost invoices" do
     admin = admin_fixture()
     org_id = admin.organization_id
     scope = %Scope{actor: admin, tenant: org_id}
@@ -122,15 +120,13 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntriesTest do
       MonthDownloadEntries.build(
         ~D[2026-03-01],
         %{include_digital: false, include_ksef: true, include_photos: true, include_sales: false},
-        scope,
-        "session-cookie",
-        "http://localhost:4000"
+        scope
       )
 
-    refute Enum.any?(entries, &String.ends_with?(Keyword.fetch!(&1, :path), ".pdf"))
-    assert Enum.any?(entries, &String.ends_with?(Keyword.fetch!(&1, :path), ".xml"))
-    assert Enum.any?(entries, &String.ends_with?(Keyword.fetch!(&1, :path), ".jpg"))
-    refute Enum.any?(entries, &String.starts_with?(Keyword.fetch!(&1, :path), "sprzedazowe/"))
+    refute Enum.any?(entries, &String.ends_with?(&1.path, ".pdf"))
+    assert Enum.any?(entries, &String.ends_with?(&1.path, ".xml"))
+    assert Enum.any?(entries, &String.ends_with?(&1.path, ".jpg"))
+    refute Enum.any?(entries, &String.starts_with?(&1.path, "sprzedazowe/"))
   end
 
   defp seed_blob!(organization_id, filename, checksum) do

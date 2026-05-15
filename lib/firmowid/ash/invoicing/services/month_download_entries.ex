@@ -16,8 +16,12 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntries do
           required(:include_digital) => boolean(),
           required(:include_ksef) => boolean(),
           required(:include_photos) => boolean(),
-          required(:include_sales) => boolean(),
-          optional(:include_internal_note) => boolean()
+          required(:include_sales) => boolean()
+        }
+  @type download_source :: {:generated_pdf, :cost | :sales, binary()} | {:remote_url, String.t()}
+  @type download_descriptor :: %{
+          required(:source) => download_source(),
+          required(:path) => String.t()
         }
 
   @doc """
@@ -25,8 +29,8 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntries do
 
   Returns a list of entries in the format expected by `Packmatic.build_stream/2`.
   """
-  @spec build(Date.t(), include_options(), Scope.t(), binary(), binary()) :: [keyword()]
-  def build(month, include_opts, %Scope{} = scope, session_cookie, endpoint_url) do
+  @spec build(Date.t(), include_options(), Scope.t()) :: [download_descriptor()]
+  def build(month, include_opts, %Scope{} = scope) do
     date_range_from = Date.beginning_of_month(month)
     date_range_to = Date.end_of_month(month)
     ash_opts = [scope: scope]
@@ -52,7 +56,7 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntries do
             "#{document.issue_date}_#{document.effective_seller_display_name}_#{String.slice(document.blob.blob_checksum, 0, 8)}"
           )
 
-        cost_download_entry(document, include_opts, session_cookie, endpoint_url, file_name)
+        cost_download_entry(document, file_name)
       end)
 
     sales_invoices =
@@ -63,15 +67,7 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntries do
           file_name =
             clean_filename("#{invoice.invoice_number}_#{invoice.buyer_display_name_label}")
 
-          query = URI.encode_query(include_internal_note: include_internal_note?(include_opts))
-          download_path = "/sprzedazowe/#{invoice.id}/pobierz?#{query}"
-
-          base_url = String.trim_trailing(endpoint_url, "/")
-
-          [
-            source: {:url, {"#{base_url}#{download_path}", [headers: [{"cookie", "_firmowid_key=#{session_cookie}"}]]}},
-            path: "sprzedazowe/#{file_name}.pdf"
-          ]
+          %{source: {:generated_pdf, :sales, invoice.id}, path: "sprzedazowe/#{file_name}.pdf"}
         end)
       else
         []
@@ -111,18 +107,9 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntries do
     end
   end
 
-  defp cost_download_entry(document, include_opts, session_cookie, endpoint_url, file_name) do
+  defp cost_download_entry(document, file_name) do
     if pdf_downloadable?(document) do
-      query = URI.encode_query(include_internal_note: include_internal_note?(include_opts))
-      base_url = String.trim_trailing(endpoint_url, "/")
-
-      [
-        source:
-          {:url,
-           {"#{base_url}/kosztowe/#{document.id}/pobierz?#{query}",
-            [headers: [{"cookie", "_firmowid_key=#{session_cookie}"}]]}},
-        path: "kosztowe/#{file_name}.pdf"
-      ]
+      %{source: {:generated_pdf, :cost, document.id}, path: "kosztowe/#{file_name}.pdf"}
     else
       blob_url = document.blob.url
 
@@ -132,10 +119,7 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntries do
         |> hd()
         |> Path.extname()
 
-      [
-        source: {:url, blob_url},
-        path: "kosztowe/#{file_name}#{file_extension}"
-      ]
+      %{source: {:remote_url, blob_url}, path: "kosztowe/#{file_name}#{file_extension}"}
     end
   end
 
@@ -151,6 +135,4 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntries do
 
     extension == ".pdf"
   end
-
-  defp include_internal_note?(include_opts), do: Map.get(include_opts, :include_internal_note, true)
 end

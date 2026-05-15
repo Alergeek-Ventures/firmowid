@@ -11,6 +11,7 @@ defmodule FirmowidWeb.Management.Views.Projects do
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.Ash.Timetracker.Session
+  alias FirmowidWeb.Management.Utilities.Navigation
 
   require Ash.Query
 
@@ -32,13 +33,8 @@ defmodule FirmowidWeb.Management.Views.Projects do
 
   @impl true
   def handle_params(params, _url, socket) do
-    params = Map.take(params, ["month", "q"])
-
-    selected_date =
-      case params do
-        %{"month" => month} -> Date.from_iso8601!(month)
-        _ -> Date.utc_today()
-      end
+    params = Navigation.projects_params(params)
+    selected_date = Navigation.parse_month(params)
 
     socket =
       socket
@@ -51,12 +47,12 @@ defmodule FirmowidWeb.Management.Views.Projects do
 
   @impl true
   def handle_event("change-month", %{"month" => month}, socket) do
-    params = Map.put(socket.assigns.params, "month", month)
+    params = Map.put(socket.assigns.params, "miesiac", month)
     {:noreply, refresh_page(socket, params)}
   end
 
-  def handle_event("search", %{"q" => search}, socket) do
-    params = Map.put(socket.assigns.params, "q", String.trim(search))
+  def handle_event("search", %{"szukaj" => search}, socket) do
+    params = Map.put(socket.assigns.params, "szukaj", String.trim(search))
     {:noreply, refresh_page(socket, params)}
   end
 
@@ -75,7 +71,7 @@ defmodule FirmowidWeb.Management.Views.Projects do
   defp assign_projects(socket) do
     scope = socket.assigns.ash_scope
     date = socket.assigns.selected_date
-    search = socket.assigns.params["q"] || ""
+    search = socket.assigns.params["szukaj"] || ""
 
     {filter_args, all_time?} =
       case socket.assigns.live_action do
@@ -130,13 +126,7 @@ defmodule FirmowidWeb.Management.Views.Projects do
         {_k, v} -> is_nil(v)
       end)
 
-    path =
-      case socket.assigns.live_action do
-        :index -> ~p"/zarzadzanie/projekty?#{params}"
-        :archive -> ~p"/zarzadzanie/projekty/archiwum?#{params}"
-      end
-
-    push_patch(socket, to: path)
+    push_patch(socket, to: Navigation.projects_path(socket.assigns.live_action, params))
   end
 
   # Distinct months (as naive_datetime) that have sessions, newest first.

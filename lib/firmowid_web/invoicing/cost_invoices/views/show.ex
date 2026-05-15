@@ -5,7 +5,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.InvoiceMatching
-  alias FirmowidWeb.Invoicing.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   @detail_loads [
     :invoice_source,
@@ -28,7 +28,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
   def mount(%{"id" => id} = params, _session, socket) do
     current_user = socket.assigns.current_user
     scope = socket.assigns.ash_scope
-    return_to = Navigation.return_to_path(params["return_to"])
+    return_to = Navigation.return_to_path(params["powrot_do"])
 
     cost_invoice = CostInvoice.by_id!(id, load: @detail_loads, scope: scope)
 

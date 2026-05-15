@@ -11,7 +11,7 @@ defmodule FirmowidWeb.Invoicing.Components.FilterBar do
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
-  alias FirmowidWeb.Invoicing.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   attr :params, :map, required: true
   attr :pending_count, :integer, default: 0

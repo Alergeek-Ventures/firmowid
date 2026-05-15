@@ -17,7 +17,7 @@
           kind="button"
           size="small"
           variant="secondary"
-          navigate={~p"/zarzadzanie/kontrahenci/dodaj"}
+          navigate={counterparty_management_new_path(assigns)}
         >
           <Lucideicons.plus /> Dodaj nowego
         </.link>
@@ -38,7 +38,7 @@
           kind="button"
           variant="secondary"
           accent="turquoise"
-          navigate={~p"/zarzadzanie/kontrahenci/dodaj"}
+          navigate={counterparty_management_new_path(assigns)}
         >
           Dodaj kontrahenta
         </.link>
@@ -58,7 +58,7 @@
             <Lucideicons.search class="text-grey-900 absolute inset-y-0 top-0.5 left-3 my-auto size-4" />
 
             <.input
-              field={@params[:search]}
+              field={@params[:szukaj]}
               placeholder="Wyszukaj kontrahenta"
               input_class="pl-9 bg-grey-100 border min-w-[250px]"
               phx-debounce
@@ -67,18 +67,24 @@
           </div>
 
           <div class="space-x-2">
-            <.input type="hidden" field={@params[:filter]} />
-            <% filter_id = "#" <> @params[:filter].id %>
+            <.input type="hidden" field={@params[:typ]} />
+            <% filter_id = "#" <> @params[:typ].id %>
 
             <.button
               type="button"
               phx-click={
-                JS.toggle_attribute({"value", "company", ""}, to: filter_id)
+                JS.toggle_attribute(
+                  {"value", QueryCodec.encode_counterparty_type(:company), ""},
+                  to: filter_id
+                )
                 |> JS.dispatch("change", to: filter_id)
               }
               size="small"
               variant="ghost"
-              class={[@params[:filter].value == "company" && "bg-grey-200"]}
+              class={[
+                @params[:typ].value == QueryCodec.encode_counterparty_type(:company) &&
+                  "bg-grey-200"
+              ]}
             >
               <Lucideicons.building_2 />
             </.button>
@@ -86,12 +92,18 @@
             <.button
               type="button"
               phx-click={
-                JS.toggle_attribute({"value", "individual", ""}, to: filter_id)
+                JS.toggle_attribute(
+                  {"value", QueryCodec.encode_counterparty_type(:individual), ""},
+                  to: filter_id
+                )
                 |> JS.dispatch("change", to: filter_id)
               }
               size="small"
               variant="ghost"
-              class={[@params[:filter].value == "individual" && "bg-grey-200"]}
+              class={[
+                @params[:typ].value == QueryCodec.encode_counterparty_type(:individual) &&
+                  "bg-grey-200"
+              ]}
             >
               <Lucideicons.user />
             </.button>
@@ -99,19 +111,19 @@
 
           <div class="grow" />
 
-          <.input type="hidden" field={@params[:sort_order]} />
-          <% sort_id = "#" <> @params[:sort_order].id %>
+          <.input type="hidden" field={@params[:kolejnosc]} />
+          <% sort_id = "#" <> @params[:kolejnosc].id %>
 
           <.button
             type="button"
             phx-click={
-              JS.toggle_attribute({"value", "desc", "asc"}, to: sort_id)
+              JS.toggle_attribute({"value", "malejaco", "rosnaco"}, to: sort_id)
               |> JS.dispatch("change", to: sort_id)
             }
             size="small"
             variant="ghost"
           >
-            <%= if @params[:sort_order].value == "desc" do %>
+            <%= if @params[:kolejnosc].value == "malejaco" do %>
               <Lucideicons.arrow_down_a_z />
             <% else %>
               <Lucideicons.arrow_up_a_z />
@@ -191,33 +203,16 @@
       >
         <div id="tabs" class="flex flex-row justify-around px-2 leading-tight font-medium">
           <.link
-            :for={
-              {tab, label} <-
-                cond do
-                  @last_counterparties == [] and @last_invoices == [] ->
-                    []
-
-                  @last_counterparties == [] ->
-                    [last_invoices: "Ostatnie faktury"]
-
-                  true ->
-                    [
-                      last_counterparties: "Ostatnio wybierani",
-                      last_invoices: "Ostatnie faktury"
-                    ]
-                end
-            }
-            id={"tab_#{tab}"}
+            :for={tab_option <- counterparty_tabs(assigns)}
+            id={"tab_#{tab_option.tab}"}
             kind="unstyled"
-            patch={
-              ~p"/sprzedazowe?#{Map.merge(%{creator_draft: @creator_draft_id, step: @step_number}, encode_query_params(Map.put(@query_params, :tab, tab)))}"
-            }
+            patch={tab_option.patch}
             class={[
               "text-grey-700 rounded-t-lg px-4 py-3 transition-colors",
-              tab == @tab && "bg-grey-50 text-grey-900 pointer-events-none"
+              tab_option.tab == @tab && "bg-grey-50 text-grey-900 pointer-events-none"
             ]}
           >
-            {label}
+            {tab_option.label}
           </.link>
         </div>
 
@@ -297,9 +292,7 @@
 
                   <div class="flex flex-row gap-2.5">
                     <.link
-                      navigate={
-                        ~p"/sprzedazowe/#{invoice.id}?#{[return_to: FirmowidWeb.Invoicing.Navigation.last_sales_invoices_path()]}"
-                      }
+                      navigate={Navigation.sales_invoice_show_path(invoice, :last_sales_invoices)}
                       kind="button"
                       variant="outline"
                       size="small"

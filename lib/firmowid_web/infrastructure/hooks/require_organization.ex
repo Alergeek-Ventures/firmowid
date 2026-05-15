@@ -4,7 +4,7 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
 
   After ash_authentication_live_session populates `current_user`, this hook:
   1. Redirects to /zaloguj if no user
-  2. Redirects to /organization if user has no org
+  2. Redirects to /organizacja if user has no org
   3. Loads avatar on user and organization via shared `UserAuth.load_scope_and_avatars/1`
   4. Assigns current_user, current_org, ash_scope
   """
@@ -15,6 +15,7 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
   import Phoenix.LiveView
 
   alias FirmowidWeb.Infrastructure.UserAuth
+  alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
 
   def on_mount(:default, _params, _session, socket) do
     case socket.assigns[:current_user] do
@@ -28,7 +29,7 @@ defmodule FirmowidWeb.Infrastructure.Hooks.RequireOrganization do
         {:halt,
          socket
          |> LiveToast.put_toast(:notice, "Aby przejść dalej, przypisz sobie organizację.")
-         |> redirect(to: ~p"/organization")}
+         |> redirect(to: OrganizationNavigation.onboarding_path())}
 
       user ->
         {user, org, scope} = UserAuth.load_scope_and_avatars(user)

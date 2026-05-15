@@ -5,9 +5,10 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Controllers.Pdf do
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.Services.CostInvoicePdf
   alias Firmowid.Ash.Invoicing.Services.MonthDownloadEntries
+  alias FirmowidWeb.Invoicing.Utilities.InvoiceDownloadParams
 
   def pdf(conn, %{"id" => id}) do
-    include_internal_note = Map.get(conn.params, "include_internal_note", "true") == "true"
+    include_internal_note = InvoiceDownloadParams.parse_include_internal_note(conn.params)
 
     case CostInvoice.by_id(id, scope: conn.assigns.ash_scope) do
       {:ok, invoice} ->

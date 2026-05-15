@@ -13,6 +13,8 @@ defmodule FirmowidWeb.Management.Views.Employees do
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Core.Endpoint
+  alias FirmowidWeb.Management.Utilities.Navigation
+  alias FirmowidWeb.Timetracker.Utilities.Navigation, as: TimetrackerNavigation
   alias Phoenix.Socket.Broadcast
 
   @impl true
@@ -42,19 +44,14 @@ defmodule FirmowidWeb.Management.Views.Employees do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    params = Map.take(params, ["month", "q"])
-
-    selected_date =
-      case params do
-        %{"month" => month} -> Date.from_iso8601!(month)
-        _ -> Date.utc_today()
-      end
+    params = Navigation.employees_params(params)
+    selected_date = Navigation.parse_month(params)
 
     socket =
       socket
       |> assign(:params, params)
       |> assign(:selected_date, selected_date)
-      |> assign(:search, params["q"] || "")
+      |> assign(:search, params["szukaj"] || "")
       |> assign_employees()
 
     {:noreply, socket}
@@ -180,28 +177,16 @@ defmodule FirmowidWeb.Management.Views.Employees do
     end
   end
 
-  def handle_event("search", %{"q" => search}, socket) do
-    params = Map.put(socket.assigns.params, "q", search)
+  def handle_event("search", %{"szukaj" => search}, socket) do
+    params = Map.put(socket.assigns.params, "szukaj", search)
 
-    path =
-      case socket.assigns.live_action do
-        :index -> ~p"/zarzadzanie/pracownicy?#{params}"
-        :archive -> ~p"/zarzadzanie/pracownicy/archiwum?#{params}"
-      end
-
-    {:noreply, push_patch(socket, to: path)}
+    {:noreply, push_patch(socket, to: Navigation.employees_path(socket.assigns.live_action, params))}
   end
 
   def handle_event("change-month", %{"month" => month}, socket) do
-    params = Map.put(socket.assigns.params, "month", month)
+    params = Map.put(socket.assigns.params, "miesiac", month)
 
-    path =
-      case socket.assigns.live_action do
-        :index -> ~p"/zarzadzanie/pracownicy?#{params}"
-        :archive -> ~p"/zarzadzanie/pracownicy/archiwum?#{params}"
-      end
-
-    {:noreply, push_patch(socket, to: path)}
+    {:noreply, push_patch(socket, to: Navigation.employees_path(socket.assigns.live_action, params))}
   end
 
   def handle_event("unarchive_employee", %{"id" => id}, socket) do

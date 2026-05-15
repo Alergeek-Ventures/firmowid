@@ -10,7 +10,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Scope
-  alias FirmowidWeb.Invoicing.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   test "shows recommendation, links transaction, and allows unlinking", %{conn: conn} do
     admin = admin_fixture()
@@ -86,7 +86,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
     conn = log_in_user(conn, admin)
 
     origin_return_to =
-      Navigation.return_to_path("/fakturowanie?month=2026-01-15&filter=invoices&view=list")
+      Navigation.return_to_path("/fakturowanie?miesiac=2026-01-15&filtr=faktury&widok=lista")
 
     transaction_return_to = Navigation.transaction_show_path("tx-123", origin_return_to)
 

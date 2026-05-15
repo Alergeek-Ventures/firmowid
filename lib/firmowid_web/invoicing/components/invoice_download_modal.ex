@@ -2,6 +2,8 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDownloadModal do
   @moduledoc false
   use FirmowidWeb, :live_component
 
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
+
   attr :download_path, :string, required: true
   attr :button_label, :string, required: true
   attr :trigger_variant, :string, default: "secondary"
@@ -54,8 +56,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDownloadModal do
               type="button"
               id={"download-btn-#{@id}"}
               phx-hook="DownloadPdf"
-              data-download-path={@download_path}
-              data-include-note={to_string(@include_internal_note)}
+              data-download-url={Navigation.pdf_download_path(@download_path, @include_internal_note)}
               data-modal-id={@modal_id}
             >
               <span data-download-idle>Pobierz</span>

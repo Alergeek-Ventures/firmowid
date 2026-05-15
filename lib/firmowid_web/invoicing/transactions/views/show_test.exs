@@ -9,7 +9,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
-  alias FirmowidWeb.Invoicing.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   test "shows zero state for an unmatched transaction", %{conn: conn} do
     admin = admin_fixture()
@@ -90,15 +90,16 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
       })
 
     conn = log_in_user(conn, admin)
+    raw_return_to = "/fakturowanie?miesiac=2026-01-15&filtr=faktury&widok=lista"
+    origin_return_to = Navigation.return_to_path(raw_return_to)
 
     {:ok, _view, html} =
       live(
         conn,
-        ~p"/transakcje/#{transaction.id}?#{[return_to: "/fakturowanie?month=2026-01-15&filter=invoices&view=list"]}"
+        ~p"/transakcje/#{transaction.id}?#{[powrot_do: raw_return_to]}"
       )
 
-    assert html =~
-             ~s(href="/fakturowanie?month=2026-01-01&amp;filter=invoices&amp;view=list")
+    assert html =~ ~s(href="#{String.replace(origin_return_to, "&", "&amp;")}")
   end
 
   test "preserves transaction return context in linked invoice navigation", %{conn: conn} do
@@ -111,13 +112,13 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
     link_transaction_to_cost_invoice!(admin, transaction, invoice)
     conn = log_in_user(conn, admin)
 
-    raw_origin_return_to = "/fakturowanie?month=2026-01-15&filter=invoices&view=list"
+    raw_origin_return_to = "/fakturowanie?miesiac=2026-01-15&filtr=faktury&widok=lista"
     origin_return_to = Navigation.return_to_path(raw_origin_return_to)
     transaction_return_to = Navigation.transaction_show_path(transaction, origin_return_to)
     expected_invoice_path = Navigation.cost_invoice_show_path(invoice, transaction_return_to)
 
     {:ok, _view, html} =
-      live(conn, ~p"/transakcje/#{transaction.id}?#{[return_to: raw_origin_return_to]}")
+      live(conn, ~p"/transakcje/#{transaction.id}?#{[powrot_do: raw_origin_return_to]}")
 
     assert html =~ ~s(href="#{expected_invoice_path}")
   end
@@ -128,9 +129,14 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
     conn = log_in_user(conn, admin)
 
     {:ok, _view, html} =
-      live(conn, ~p"/transakcje/#{transaction.id}?#{[return_to: "https://example.com"]}")
+      live(conn, ~p"/transakcje/#{transaction.id}?#{[powrot_do: "https://example.com"]}")
 
-    assert html =~ ~s(href="/fakturowanie?month=2026-01-01&amp;filter=all")
+    default_return_to =
+      ~D[2026-01-10]
+      |> Navigation.default_invoicing_path()
+      |> String.replace("&", "&amp;")
+
+    assert html =~ ~s(href="#{default_return_to}")
     refute html =~ "https://example.com"
   end
 

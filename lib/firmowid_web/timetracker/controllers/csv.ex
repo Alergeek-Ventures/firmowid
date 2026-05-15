@@ -12,23 +12,30 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Infrastructure.Controllers.FileDownload
+  alias FirmowidWeb.Infrastructure.Utilities.QueryParams
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
   action_fallback FirmowidWeb.Infrastructure.Controllers.Fallback
 
-  def salaries(conn, %{"month" => month_str, "year" => year_str}) do
+  def salaries(conn, %{"miesiac" => month_str, "rok" => year_str}) do
     case conn.assigns.current_user.role do
       :admin ->
-        scope = conn.assigns.ash_scope
-        month = String.to_integer(month_str)
-        year = String.to_integer(year_str)
-        csv_content = build_salaries_csv(month, year, scope)
+        case parse_export_period(%{"miesiac" => month_str, "rok" => year_str}) do
+          {:ok, month, year} ->
+            scope = conn.assigns.ash_scope
+            csv_content = build_salaries_csv(month, year, scope)
 
-        send_download(conn, {:binary, csv_content},
-          filename: "wyplaty_#{month}_#{year}.csv",
-          content_type: "text/csv",
-          disposition: :attachment
-        )
+            send_download(conn, {:binary, csv_content},
+              filename: "wyplaty_#{month}_#{year}.csv",
+              content_type: "text/csv",
+              disposition: :attachment
+            )
+
+          :error ->
+            conn
+            |> put_flash(:error, "Podaj prawidłowy miesiąc i rok dla eksportu CSV.")
+            |> redirect(to: ~p"/zarzadzanie/pracownicy")
+        end
 
       _ ->
         {:error, :unauthorized}
@@ -41,12 +48,11 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
     |> redirect(to: ~p"/zarzadzanie/pracownicy")
   end
 
-  def project(conn, %{"id" => project_id, "month" => month_str, "year" => year_str}) do
+  def project(conn, %{"id" => project_id, "miesiac" => month_str, "rok" => year_str}) do
     scope = conn.assigns.ash_scope
-    month = String.to_integer(month_str)
-    year = String.to_integer(year_str)
 
     with :admin <- conn.assigns.current_user.role,
+         {:ok, month, year} <- parse_export_period(%{"miesiac" => month_str, "rok" => year_str}),
          {:ok, project} when not is_nil(project) <-
            AshProject.get(project_id, scope: scope, not_found_error?: false) do
       csv_content = build_project_tasks_csv(project_id, month, year, scope)
@@ -58,7 +64,13 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
         disposition: :attachment
       )
     else
-      _ -> {:error, :unauthorized}
+      :error ->
+        conn
+        |> put_flash(:error, "Podaj prawidłowy miesiąc i rok dla eksportu CSV.")
+        |> redirect(to: ~p"/zarzadzanie/projekty/#{project_id}")
+
+      _ ->
+        {:error, :unauthorized}
     end
   end
 
@@ -130,5 +142,21 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
 
   defp salary_amount(rate, hours) do
     Decimal.mult(rate, Decimal.new(hours))
+  end
+
+  defp parse_export_period(params) do
+    month = QueryParams.parse_integer(params, "miesiac", nil)
+    year = QueryParams.parse_integer(params, "rok", nil)
+
+    case {month, year} do
+      {month, year} when is_integer(month) and is_integer(year) ->
+        case Date.new(year, month, 1) do
+          {:ok, _date} -> {:ok, month, year}
+          {:error, _reason} -> :error
+        end
+
+      _other ->
+        :error
+    end
   end
 end

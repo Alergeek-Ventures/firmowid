@@ -11,6 +11,7 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
 
   alias Firmowid.Ash.Invoicing
   alias FirmowidWeb.Management.Utilities.CounterpartyHelpers
+  alias FirmowidWeb.Management.Utilities.Navigation
 
   @impl true
   def mount(_params, _session, socket) do
@@ -29,34 +30,37 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    params = Map.take(params, ["q", "type"])
+    params = Navigation.counterparties_params(params)
 
     socket =
       socket
       |> assign(:params, params)
-      |> assign(:search, params["q"] || "")
-      |> assign(:type_filter, parse_type(params["type"]))
+      |> assign(:search, params["szukaj"] || "")
+      |> assign(:type_filter, Navigation.parse_counterparty_type(params["typ"]))
       |> assign_counterparties()
 
     {:noreply, socket}
   end
 
   @impl true
-  def handle_event("search", %{"q" => search}, socket) do
-    {:noreply, refresh_page(socket, Map.put(socket.assigns.params, "q", String.trim(search)))}
+  def handle_event("search", %{"szukaj" => search}, socket) do
+    {:noreply, refresh_page(socket, Map.put(socket.assigns.params, "szukaj", String.trim(search)))}
   end
 
-  def handle_event("toggle_type", %{"type" => type}, socket) do
+  def handle_event("toggle_type", %{"typ" => type}, socket) do
     next_type =
-      case {socket.assigns.type_filter, parse_type(type)} do
+      case {socket.assigns.type_filter, Navigation.parse_counterparty_type(type)} do
         {current, current} -> nil
         {_current, parsed} -> parsed
       end
 
     params =
       case next_type do
-        nil -> Map.delete(socket.assigns.params, "type")
-        value -> Map.put(socket.assigns.params, "type", Atom.to_string(value))
+        nil ->
+          Map.delete(socket.assigns.params, "typ")
+
+        value ->
+          Map.put(socket.assigns.params, "typ", Navigation.encode_counterparty_type(value))
       end
 
     {:noreply, refresh_page(socket, params)}
@@ -113,18 +117,8 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
         _other -> false
       end)
 
-    path =
-      case socket.assigns.live_action do
-        :index -> ~p"/zarzadzanie/kontrahenci?#{params}"
-        :archive -> ~p"/zarzadzanie/kontrahenci/archiwum?#{params}"
-      end
-
-    push_patch(socket, to: path)
+    push_patch(socket, to: Navigation.counterparties_path(socket.assigns.live_action, params))
   end
-
-  defp parse_type("company"), do: :company
-  defp parse_type("individual"), do: :individual
-  defp parse_type(_), do: nil
 
   defp blank_to_nil(""), do: nil
   defp blank_to_nil(value), do: value

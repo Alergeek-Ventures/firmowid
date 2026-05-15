@@ -121,7 +121,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       {:ok, view, _html} =
         conn
         |> log_in_user(user)
-        |> live(~p"/fakturowanie?month=2026-01-01&filter=unmatched&view=list")
+        |> live(~p"/fakturowanie?miesiac=2026-01-01&filtr=nieprzypisane&widok=lista")
 
       updated_html =
         view
@@ -143,7 +143,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       {:ok, view, _html} =
         conn
         |> log_in_user(user)
-        |> live(~p"/fakturowanie?month=2026-01-01&filter=unmatched&view=list")
+        |> live(~p"/fakturowanie?miesiac=2026-01-01&filtr=nieprzypisane&widok=lista")
 
       html = render(view)
 
@@ -215,7 +215,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       {:ok, view, html} =
         conn
         |> log_in_user(user)
-        |> live(~p"/fakturowanie?month=2026-04-01&filter=invoices&view=list")
+        |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury&widok=lista")
 
       assert html =~ "Brak transakcji i dokumentów dla wybranej daty"
       subscribe_to_upload_notifications(user)
@@ -248,7 +248,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       {:ok, view, _html} =
         conn
         |> log_in_user(user)
-        |> live(~p"/fakturowanie?month=2026-04-01&filter=invoices&view=list")
+        |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury&widok=lista")
 
       subscribe_to_upload_notifications(user)
       upload_invoice(view, "upload-invalid.png")
@@ -275,7 +275,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       {:ok, view, _html} =
         conn
         |> log_in_user(user)
-        |> live(~p"/fakturowanie?month=2026-04-01&filter=invoices&view=list")
+        |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury&widok=lista")
 
       subscribe_to_upload_notifications(user)
       upload_invoice(view, "upload-success.png")

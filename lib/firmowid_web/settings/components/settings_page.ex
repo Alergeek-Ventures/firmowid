@@ -9,7 +9,7 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
-  alias FirmowidWeb.Settings.Navigation
+  alias FirmowidWeb.Settings.Utilities.Navigation
 
   @doc """
   Renders the shared settings header and route navigation.

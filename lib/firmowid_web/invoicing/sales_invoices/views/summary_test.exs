@@ -7,7 +7,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.SummaryTest do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef.Credential
-  alias FirmowidWeb.Invoicing.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   describe "Invoice page works" do
     setup do
@@ -34,7 +34,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.SummaryTest do
       conn = log_in_user(conn, admin_fixture())
 
       # Creator creates a WizardDraft in process-local ETS on connect,
-      # then push_patches to ?creator_draft=<id>&step=1
+      # then push_patches to ?szkic_kreatora=<id>&krok=1
       {:ok, lv, _html} = live(conn, ~p"/sprzedazowe")
       html = render(lv)
 
@@ -146,7 +146,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.SummaryTest do
       conn = log_in_user(conn, admin)
 
       origin_return_to =
-        Navigation.return_to_path("/fakturowanie?month=2026-01-15&filter=invoices&view=list")
+        Navigation.return_to_path("/fakturowanie?miesiac=2026-01-15&filtr=faktury&widok=lista")
 
       transaction_return_to = Navigation.transaction_show_path("tx-123", origin_return_to)
 

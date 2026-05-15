@@ -31,7 +31,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Billing.Utilities.MonthContext
   alias FirmowidWeb.Core.Endpoint
-  alias FirmowidWeb.Settings.Navigation
+  alias FirmowidWeb.Settings.Utilities.Navigation
   alias Phoenix.Socket.Broadcast
 
   @role_params %{

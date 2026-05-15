@@ -8,7 +8,8 @@ defmodule Checks.CheckModulePlacement do
   2. Files in `*/components/` must contain `use FirmowidWeb, :live_component`
      or `use FirmowidWeb, :html` (direct `Phoenix.Component` or `Phoenix.LiveComponent` is forbidden)
   3. Files in `*/controllers/` must contain `use FirmowidWeb, :controller` (direct `Phoenix.Controller` is forbidden)
-  4. Files in `*/utilities/` must NOT contain any `use FirmowidWeb, :*` macro or direct Phoenix macros
+  4. Files in `*/utilities/` must NOT contain any `use FirmowidWeb, :*` macro or direct Phoenix macros,
+     except `*/utilities/navigation.ex`, which may use `use FirmowidWeb, :verified_routes`
 
   ## Exemptions
 
@@ -65,6 +66,9 @@ defmodule Checks.CheckModulePlacement do
 
       String.contains?(filename, "/controllers/") ->
         validate_controllers_folder(source_file, issue_meta)
+
+      navigation_utility?(filename) ->
+        validate_navigation_utility_file(source_file, issue_meta)
 
       String.contains?(filename, "/utilities/") ->
         validate_utilities_folder(source_file, issue_meta)
@@ -231,6 +235,85 @@ defmodule Checks.CheckModulePlacement do
 
   # --- Utilities folder: must NOT use any FirmowidWeb or Phoenix macros ---
 
+  defp validate_navigation_utility_file(source_file, issue_meta) do
+    uses = extract_uses(source_file)
+
+    firmowid_issues =
+      uses
+      |> Enum.filter(fn
+        {:firmowid_web, :verified_routes, _line_no} -> false
+        {:firmowid_web, _type, _line_no} -> true
+        _other -> false
+      end)
+      |> Enum.map(fn {:firmowid_web, type, line_no} ->
+        format_issue(
+          issue_meta,
+          message: """
+          Files matching `utilities/navigation.ex` may only use `use FirmowidWeb, :verified_routes`.
+          Rendering helpers and other Phoenix web macros still belong in views/, components/, or controllers/.
+          """,
+          line_no: line_no,
+          trigger: "use FirmowidWeb, :#{type}"
+        )
+      end)
+
+    phoenix_issues =
+      uses
+      |> Enum.filter(&match?({:phoenix, _, _}, &1))
+      |> Enum.map(fn
+        {:phoenix, :live_view, line_no} ->
+          format_issue(
+            issue_meta,
+            message: """
+            Files matching `utilities/navigation.ex` must stay route-focused helpers.
+            Do not use `Phoenix.LiveView` here.
+            """,
+            line_no: line_no,
+            trigger: "Phoenix.LiveView"
+          )
+
+        {:phoenix, :controller, line_no} ->
+          format_issue(
+            issue_meta,
+            message: """
+            Files matching `utilities/navigation.ex` must stay route-focused helpers.
+            Do not use `Phoenix.Controller` here.
+            """,
+            line_no: line_no,
+            trigger: "Phoenix.Controller"
+          )
+
+        {:phoenix, type, line_no} ->
+          format_issue(
+            issue_meta,
+            message: """
+            Files matching `utilities/navigation.ex` must stay route-focused helpers.
+            Do not use Phoenix UI macros here.
+            Detected: Phoenix.#{Macro.camelize(to_string(type))}
+            """,
+            line_no: line_no,
+            trigger: "Phoenix.#{Macro.camelize(to_string(type))}"
+          )
+      end)
+
+    sigil_h_issues =
+      source_file
+      |> extract_sigil_h_lines()
+      |> Enum.map(fn line_no ->
+        format_issue(
+          issue_meta,
+          message: """
+          Files matching `utilities/navigation.ex` must not render HEEx templates.
+          Move `~H` usage to components/ or views/.
+          """,
+          line_no: line_no,
+          trigger: "~H"
+        )
+      end)
+
+    firmowid_issues ++ phoenix_issues ++ sigil_h_issues
+  end
+
   defp validate_utilities_folder(source_file, issue_meta) do
     uses = extract_uses(source_file)
 
@@ -298,11 +381,22 @@ defmodule Checks.CheckModulePlacement do
 
   # --- AST Extraction Helpers ---
 
+  defp navigation_utility?(filename), do: String.ends_with?(filename, "/utilities/navigation.ex")
+
   defp extract_uses(source_file) do
     source_file
     |> Credo.Code.prewalk(&find_use_statements/2, [])
     |> Enum.reverse()
   end
+
+  defp extract_sigil_h_lines(source_file) do
+    source_file
+    |> Credo.Code.prewalk(&find_sigil_h/2, [])
+    |> Enum.reverse()
+  end
+
+  defp find_sigil_h({:sigil_H, meta, _args} = ast, acc), do: {ast, [meta[:line] | acc]}
+  defp find_sigil_h(ast, acc), do: {ast, acc}
 
   # Pattern: use FirmowidWeb, :type (e.g., :live_view, :controller)
   defp find_use_statements({:use, meta, [{:__aliases__, _, [:FirmowidWeb]}, type]} = ast, acc) when is_atom(type) do

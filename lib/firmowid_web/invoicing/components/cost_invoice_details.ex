@@ -18,8 +18,8 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Components.InvoiceDownloadModal
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
-  alias FirmowidWeb.Invoicing.Navigation
   alias FirmowidWeb.Invoicing.Utilities.InvoiceDetailsAssistantSubject
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
   alias Phoenix.LiveView.JS
 
   @invoice_suggested_messages [
@@ -96,7 +96,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   :if={downloadable_as_pdf?(@invoice)}
                   module={InvoiceDownloadModal}
                   id={"cost-download-#{@invoice.id}"}
-                  download_path={~p"/kosztowe/#{@invoice.id}/pobierz"}
+                  download_path={Navigation.cost_invoice_pdf_path(@invoice)}
                   trigger_variant="secondary"
                   trigger_size="small"
                   button_label="Pobierz PDF do druku"

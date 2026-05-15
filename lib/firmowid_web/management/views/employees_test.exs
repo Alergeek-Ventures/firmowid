@@ -165,7 +165,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     conn = log_in_user(conn, admin)
 
     assert {:ok, _lv, html} =
-             live(conn, ~p"/zarzadzanie/pracownicy/#{employee.id}?month=2026-04-01")
+             live(conn, ~p"/zarzadzanie/pracownicy/#{employee.id}?miesiac=2026-04-01")
 
     assert html =~ "Jan Kowalski"
     assert html =~ "+48 600 700 800"

@@ -11,12 +11,12 @@
 
         <div
           id="search-container"
-          data-expanded={to_string(@params["q"] != nil and @params["q"] != "")}
+          data-expanded={to_string(@params["szukaj"] != nil and @params["szukaj"] != "")}
           class="bg-greyButtonBg group flex min-w-10 items-center justify-center rounded-lg transition-shadow data-[expanded=true]:focus-within:ring-2"
         >
           <.input
-            name="q"
-            value={@params["q"] || ""}
+            name="szukaj"
+            value={@params["szukaj"] || ""}
             placeholder="Szukaj projektu"
             phx-change={JS.push("search", loading: "#projects-list")}
             phx-debounce="300"
@@ -49,8 +49,8 @@
       <.link
         :for={
           {path, live_action, label} <- [
-            {~p"/zarzadzanie/projekty?#{@params}", :index, "Aktywne"},
-            {~p"/zarzadzanie/projekty/archiwum?#{@params}", :archive, "Zarchiwizowane"}
+            {Navigation.projects_path(:index, @params), :index, "Aktywne"},
+            {Navigation.projects_path(:archive, @params), :archive, "Zarchiwizowane"}
           ]
         }
         patch={path}
@@ -67,7 +67,7 @@
   <%= cond do %>
     <% Enum.empty?(@projects) -> %>
       <div class="border-grey-200 flex flex-1 flex-col items-center justify-center gap-4 rounded-lg border p-6">
-        <%= if @params["q"] do %>
+        <%= if @params["szukaj"] do %>
           <Lucideicons.file_x class="text-grey-300 size-26" />
           <p class="text-grey-700 text-sm/snug">
             Nie znaleźliśmy szukanego przez Ciebie projektu.
@@ -110,7 +110,7 @@
             <div class="space-y-1 truncate">
               <.link
                 kind="unstyled"
-                navigate={~p"/zarzadzanie/projekty/#{project.id}?#{Map.take(@params, ["month"])}"}
+                navigate={Navigation.project_path(project.id, Map.take(@params, ["miesiac"]))}
                 class="hover:underline"
               >
                 <p class="text-base/snug">{project.name}</p>
@@ -129,7 +129,7 @@
             <p class="text-right">{project.hours} h</p>
             <.link
               kind="unstyled"
-              navigate={~p"/zarzadzanie/projekty/#{project.id}?#{Map.take(@params, ["month"])}"}
+              navigate={Navigation.project_path(project.id, Map.take(@params, ["miesiac"]))}
               class="hover:text-grey-700 text-grey-500"
             >
               <Lucideicons.chevron_right class="size-4" />
@@ -166,7 +166,7 @@
             <div class="space-y-1 truncate">
               <.link
                 kind="unstyled"
-                navigate={~p"/zarzadzanie/projekty/#{project.id}?#{Map.take(@params, ["month"])}"}
+                navigate={Navigation.project_path(project.id, Map.take(@params, ["miesiac"]))}
                 class="hover:underline"
               >
                 <p class="text-base/snug">{project.name}</p>
@@ -199,7 +199,7 @@
               </.button>
               <.link
                 kind="unstyled"
-                navigate={~p"/zarzadzanie/projekty/#{project.id}?#{Map.take(@params, ["month"])}"}
+                navigate={Navigation.project_path(project.id, Map.take(@params, ["miesiac"]))}
                 class="hover:text-grey-700 text-grey-500"
               >
                 <Lucideicons.chevron_right class="size-4" />

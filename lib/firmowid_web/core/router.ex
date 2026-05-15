@@ -114,7 +114,7 @@ defmodule FirmowidWeb.Core.Router do
 
     ash_authentication_live_session :without_org,
       on_mount: [{RequireNoOrganization, :default}] do
-      live "/organization", Organization.Views.Index, :index
+      live "/organizacja", Organization.Views.Index, :index
     end
   end
 

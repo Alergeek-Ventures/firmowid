@@ -14,7 +14,7 @@ defmodule FirmowidWeb.Invoicing.Components.Dashboard do
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Invoicing.Components.DashboardTiles
-  alias FirmowidWeb.Invoicing.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   attr :unpaid_invoices, :list, default: []
   attr :unpaid_invoices_count, :integer, default: 0

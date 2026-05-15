@@ -11,6 +11,7 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
   import Plug.Conn
 
   alias Firmowid.Ash.Scope
+  alias FirmowidWeb.Organization.Utilities.Navigation, as: OrganizationNavigation
 
   @expired_subscription_path "/abonament-wygasl"
   @disabled_account_path "/konto-wylaczone"
@@ -54,7 +55,7 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
         conn
         |> maybe_store_return_to()
         |> LiveToast.put_toast(:notice, "Aby przejść dalej, przypisz sobie organizację.")
-        |> redirect(to: ~p"/organization")
+        |> redirect(to: OrganizationNavigation.onboarding_path())
         |> halt()
 
       true ->
@@ -127,7 +128,7 @@ defmodule FirmowidWeb.Infrastructure.UserAuth do
       |> redirect(
         to:
           if(is_nil(conn.assigns[:current_user].organization_id),
-            do: ~p"/organization",
+            do: OrganizationNavigation.onboarding_path(),
             else: signed_in_path(conn)
           )
       )

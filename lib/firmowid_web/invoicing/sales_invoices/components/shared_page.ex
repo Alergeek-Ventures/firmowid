@@ -5,6 +5,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.SharedPage do
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
+  alias FirmowidWeb.Invoicing.Utilities.QueryCodec
+
   embed_templates "shared_page/*"
 
   attr :title, :string, required: true

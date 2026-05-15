@@ -10,8 +10,8 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
   alias Firmowid.Ash.Invoicing
   alias FirmowidWeb.Invoicing.Assistant.Utilities.SessionCloser
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
-  alias FirmowidWeb.Invoicing.Navigation
   alias FirmowidWeb.Invoicing.Transactions.Components.ShowComponents
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   @transaction_loads [
     :amount,
@@ -47,7 +47,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
   def handle_params(%{"id" => id} = params, _url, socket) do
     scope = socket.assigns.ash_scope
     transaction = Finances.get_transaction!(id, load: @transaction_loads, scope: scope)
-    return_to = Navigation.return_to_path(params["return_to"])
+    return_to = Navigation.return_to_path(params["powrot_do"])
 
     {:noreply,
      socket

@@ -16,7 +16,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
-  alias FirmowidWeb.Invoicing.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   require Logger
 
@@ -35,7 +35,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
     current_user = socket.assigns.current_user
 
     scope = socket.assigns.ash_scope
-    return_to = Navigation.return_to_path(params["return_to"])
+    return_to = Navigation.return_to_path(params["powrot_do"])
 
     invoice = load_invoice!(id, scope)
 
@@ -108,7 +108,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             kind="button"
             variant="secondary"
             size="small"
-            redirect={~p"/sprzedazowe/#{@invoice.id}/pobierz"}
+            redirect={Navigation.sales_invoice_pdf_download_path(@invoice, true)}
             download
           >
             <Lucideicons.download /> Pobierz
@@ -136,7 +136,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
             Przejdź do faktury
           </.link>
           <.link
-            navigate={~p"/sprzedazowe"}
+            navigate={Navigation.sales_invoice_creator_path()}
             kind="button"
             variant="primary"
             accent="turquoise"

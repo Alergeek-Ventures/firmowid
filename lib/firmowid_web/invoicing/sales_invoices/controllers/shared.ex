@@ -17,6 +17,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
   alias Firmowid.Ash.Invoicing.Services.SalesInvoicePdf
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
+  alias FirmowidWeb.Invoicing.Utilities.QueryCodec
 
   require Logger
 
@@ -131,8 +132,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
     {invoice, logo_url, org}
   end
 
-  defp resolve_lang(%{"lang" => "pl"}, _invoice), do: :pl
-  defp resolve_lang(%{"lang" => "en"}, _invoice), do: :en
+  defp resolve_lang(%{"jezyk" => raw_language}, invoice),
+    do: QueryCodec.parse_invoice_language(raw_language) || resolve_lang(%{}, invoice)
+
   defp resolve_lang(_params, %{invoice_type: :foreign}), do: :en
   defp resolve_lang(_params, _invoice), do: :pl
 end

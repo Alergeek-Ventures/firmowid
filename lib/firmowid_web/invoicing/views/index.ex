@@ -26,7 +26,8 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias Firmowid.Ash.Invoicing.TransactionGroup
   alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Core.Endpoint
-  alias FirmowidWeb.Invoicing.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.QueryCodec
   alias Phoenix.Socket.Broadcast
 
   require Ash.Query
@@ -208,7 +209,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         </form>
         <.link
           :if={@current_user.role == :admin}
-          navigate={~p"/sprzedazowe"}
+          navigate={Navigation.sales_invoice_creator_path()}
           kind="button"
           variant="secondary"
           accent="turquoise"
@@ -305,40 +306,11 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp parse_url_params(params) do
-    view_mode = parse_view_mode(Map.get(params, "view"))
-
-    %{
-      month: parse_month(Map.get(params, "month")),
-      filter: parse_filter(Map.get(params, "filter")),
-      subfilter: parse_subfilter(Map.get(params, "subfilter")),
-      view_mode: view_mode
-    }
+    Navigation.parse_invoicing_index_params(params)
   end
 
-  defp parse_month(nil), do: Date.beginning_of_month(Date.utc_today())
-  defp parse_month(date_string), do: Date.from_iso8601!(date_string)
-
-  defp parse_filter(nil), do: :invoices
-  defp parse_filter(filter_string), do: parse_filter_value(filter_string) || :invoices
-
-  defp parse_filter_value("all"), do: :all
-  defp parse_filter_value("invoices"), do: :invoices
-  defp parse_filter_value("transactions"), do: :transactions
-  defp parse_filter_value("unmatched"), do: :unmatched
-  defp parse_filter_value(_filter_string), do: nil
-
-  defp parse_view_mode("list"), do: :list
-  defp parse_view_mode(nil), do: :dashboard
-  defp parse_view_mode(_), do: :dashboard
-
-  defp parse_subfilter(nil), do: nil
-  defp parse_subfilter(subfilter_string), do: parse_subfilter_value(subfilter_string)
-
-  defp parse_subfilter_value("oplacone"), do: :oplacone
-  defp parse_subfilter_value("nieoplacone"), do: :nieoplacone
-  defp parse_subfilter_value("dopasowane"), do: :dopasowane
-  defp parse_subfilter_value("bez_dokumentu"), do: :bez_dokumentu
-  defp parse_subfilter_value(_subfilter_string), do: nil
+  defp parse_filter_value(filter_string), do: QueryCodec.parse_filter(filter_string)
+  defp parse_subfilter_value(subfilter_string), do: QueryCodec.parse_subfilter(subfilter_string)
 
   @impl true
   def handle_event("change-month", %{"month" => month}, socket) do
@@ -721,7 +693,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
         <.link
           kind="unstyled"
           class="text-bold text-sm underline"
-          navigate={~p"/kosztowe/#{@cost_invoice_id}"}
+          navigate={Navigation.cost_invoice_show_path(@cost_invoice_id)}
         >
           Wyświetl <.icon name="hero-arrow-right-solid" class="size-3" />
         </.link>
