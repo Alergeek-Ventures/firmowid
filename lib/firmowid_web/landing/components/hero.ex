@@ -53,7 +53,7 @@ defmodule FirmowidWeb.Landing.Components.Hero do
                   decoding="async"
                   class="pointer-events-none absolute bottom-[0.06em] left-[-0.04em] h-[0.24em] w-[4.1em] max-w-none sm:bottom-[0.05em] lg:bottom-[0.07em]"
                 />
-                <span class="relative">od 10 zł</span>
+                <span class="relative">od 5 zł</span>
               </span>
               <br /> miesięcznie
             </h1>
