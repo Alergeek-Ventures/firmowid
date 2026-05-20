@@ -1,3 +1,4 @@
+# credo:disable-for-this-file AshCredo.Check.Refactor.LargeResource
 defmodule Firmowid.Ash.Invoicing.CostInvoice do
   @moduledoc """
   Ash resource for cost (purchase) invoices.
@@ -124,6 +125,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   actions do
     # No `defaults [:read]` — the explicit `:read` below serves as primary
     read :read do
+      description "List cost invoices with search and reconciliation filters."
       primary? true
 
       pagination do
@@ -252,6 +254,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     end
 
     read :by_id do
+      description "Fetch a cost invoice by ID."
       get_by [:id]
     end
 
@@ -282,6 +285,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     # -- Write actions --------------------------------------------------------
 
     create :create do
+      description "Create a cost invoice from imported or extracted metadata."
+
       accept [
         :blob_id,
         :inbound_email_id,
@@ -336,6 +341,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     end
 
     update :toggle_skip do
+      description "Toggle whether this cost invoice is skipped during invoicing workflows."
       require_atomic? false
 
       change fn changeset, _context ->
@@ -345,11 +351,14 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     end
 
     update :update_blob_id do
+      description "Attach or replace the source blob for this cost invoice."
       accept [:blob_id]
       require_atomic? false
     end
 
     update :update_internal_note do
+      description "Update the internal note stored on this cost invoice."
+      primary? true
       accept [:internal_note]
       require_atomic? false
 
@@ -359,12 +368,14 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     end
 
     update :refresh_description do
+      description "Recompute the generated description for this cost invoice."
       require_atomic? false
 
       change ComputeCostInvoiceDescription
     end
 
     update :refresh_seller_display_name do
+      description "Recompute the seller display name for this cost invoice."
       require_atomic? false
 
       change ComputeCostInvoiceSellerDisplayName
@@ -538,12 +549,14 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     end
 
     belongs_to :blob, Firmowid.Ash.Blobs.Blob do
+      allow_nil? true
       attribute_writable? true
       define_attribute? false
       source_attribute :blob_id
     end
 
     belongs_to :inbound_email, Firmowid.Ash.Invoicing.InboundEmail do
+      allow_nil? true
       attribute_writable? true
       define_attribute? false
       source_attribute :inbound_email_id
@@ -570,6 +583,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     end
 
     belongs_to :original_invoice, __MODULE__ do
+      allow_nil? true
       attribute_writable? true
       define_attribute? false
       source_attribute :original_invoice_ksef_number

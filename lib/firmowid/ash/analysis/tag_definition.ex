@@ -44,6 +44,7 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
 
     create :create_tag_definition do
       description "Creates a new tag definition with a name and optional color."
+      primary? true
       accept [:name, :color]
     end
 

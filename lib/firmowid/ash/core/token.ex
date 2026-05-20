@@ -1,3 +1,4 @@
+# credo:disable-for-this-file AshCredo.Check.Design.MissingPrimaryAction
 defmodule Firmowid.Ash.Core.Token do
   @moduledoc """
   Token resource for `ash_authentication`.
@@ -15,6 +16,10 @@ defmodule Firmowid.Ash.Core.Token do
     extensions: [AshAuthentication.TokenResource],
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Resource
+
+  require Resource
+
   postgres do
     table "tokens"
     repo Firmowid.Repo
@@ -28,5 +33,17 @@ defmodule Firmowid.Ash.Core.Token do
     bypass AshAuthentication.Checks.AshAuthenticationInteraction do
       authorize_if always()
     end
+  end
+
+  attributes do
+    attribute :jti, :string,
+      primary_key?: true,
+      allow_nil?: false,
+      sensitive?: true,
+      writable?: true,
+      public?: true
+
+    create_timestamp :inserted_at, type: :utc_datetime_usec, public?: false
+    update_timestamp :updated_at, type: :utc_datetime_usec, public?: false
   end
 end

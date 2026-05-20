@@ -39,19 +39,28 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
   end
 
   actions do
-    defaults [:read, :destroy, update: :*]
+    defaults [:read, :destroy]
+
+    update :update do
+      description "Update the hourly rate for an existing salary record."
+      primary? true
+      accept [:hourly_rate]
+    end
 
     create :create do
+      description "Create a salary record for a user."
       accept [:hourly_rate, :user_id]
     end
 
     update :retire do
+      description "Retire a salary record by setting its deleted date."
       accept []
       change set_attribute(:deleted_at, &Date.utc_today/0)
     end
 
     create :create_with_retire do
       description "Retires any existing active salary for the user, then creates the new one."
+      primary? true
       accept [:hourly_rate, :user_id]
       change Firmowid.Ash.Payroll.Changes.RetireExistingSalary
     end

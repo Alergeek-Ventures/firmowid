@@ -1,3 +1,4 @@
+# credo:disable-for-this-file AshCredo.Check.Refactor.LargeResource
 defmodule Firmowid.Ash.Core.User do
   @moduledoc """
   User resource — the sole owner of the `users` table.
@@ -99,6 +100,7 @@ defmodule Firmowid.Ash.Core.User do
     defaults [:read]
 
     read :list do
+      description "List organization users with search, status, and role filters."
       argument :search, :string
 
       argument :status, :atom do
@@ -138,6 +140,7 @@ defmodule Firmowid.Ash.Core.User do
     end
 
     read :get_org_user do
+      description "Fetch a single user scoped to the current organization tenant."
       get_by [:id]
 
       prepare fn query, _context ->
@@ -155,6 +158,8 @@ defmodule Firmowid.Ash.Core.User do
 
     # ── Google OAuth action ─────────────────────────────────────────
     create :register_with_google do
+      description "Register or sign in a user through the Google OAuth strategy."
+      primary? true
       argument :user_info, :map, allow_nil?: false
       argument :oauth_tokens, :map, allow_nil?: false
       upsert? true
@@ -202,6 +207,9 @@ defmodule Firmowid.Ash.Core.User do
 
     # ── Profile management ──────────────────────────────────────────
     update :update_profile do
+      description "Update the current user's profile fields."
+      primary? true
+
       accept [
         :name,
         :employment_date,
@@ -224,21 +232,25 @@ defmodule Firmowid.Ash.Core.User do
     end
 
     update :update_role do
+      description "Update a user's organization role."
       accept [:role]
     end
 
     update :set_organization do
+      description "Assign a user to an organization."
       accept []
       argument :organization_id, :uuid, allow_nil?: false
       change set_attribute(:organization_id, arg(:organization_id))
     end
 
     update :clear_organization do
+      description "Remove a user from their current organization."
       accept []
       change set_attribute(:organization_id, nil)
     end
 
     update :archive do
+      description "Archive a user without deleting their record."
       accept []
 
       validate {Firmowid.Ash.Core.Validations.NotSelfArchive, []}
@@ -247,12 +259,14 @@ defmodule Firmowid.Ash.Core.User do
     end
 
     update :unarchive do
+      description "Restore an archived user."
       accept []
 
       change set_attribute(:archived_at, nil)
     end
 
     update :update_avatar do
+      description "Replace the user's avatar blob and clean up the previous one."
       accept [:avatar_blob_id]
       require_atomic? false
 
@@ -260,12 +274,14 @@ defmodule Firmowid.Ash.Core.User do
     end
 
     destroy :destroy do
+      description "Delete a user record after callsite-level verification."
       # Password verification is handled at the callsite (domain function)
       # before invoking this action, matching the existing pattern.
       require_atomic? false
     end
 
     update :change_password do
+      description "Change a user's password after verifying the current password."
       accept []
       require_atomic? false
       argument :current_password, :string, sensitive?: true, allow_nil?: false
@@ -281,6 +297,7 @@ defmodule Firmowid.Ash.Core.User do
     end
 
     update :unlink_google do
+      description "Remove the linked Google identity from a user account."
       accept []
       require_atomic? false
 
@@ -452,6 +469,7 @@ defmodule Firmowid.Ash.Core.User do
     end
 
     belongs_to :avatar_blob, Firmowid.Ash.Blobs.Blob do
+      allow_nil? true
       attribute_writable? true
       define_attribute? false
       source_attribute :avatar_blob_id

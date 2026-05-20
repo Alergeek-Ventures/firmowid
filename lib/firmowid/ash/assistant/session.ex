@@ -63,15 +63,18 @@ defmodule Firmowid.Ash.Assistant.Session do
     defaults []
 
     read :read do
+      description "List assistant sessions ordered by most recently updated."
       primary? true
       prepare build(sort: [updated_at: :desc])
     end
 
     read :by_id do
+      description "Fetch an assistant session by ID."
       get_by [:id]
     end
 
     create :start_invoice_matching do
+      description "Start a new invoice-matching assistant session."
       accept [:entry_context]
 
       change relate_actor(:user)
@@ -97,12 +100,15 @@ defmodule Firmowid.Ash.Assistant.Session do
     end
 
     update :claim_processing do
+      description "Claim a session for processing and switch it to the processing state."
       accept []
       change optimistic_lock(:lock_version)
       change transition_state(:processing)
     end
 
     update :complete_turn do
+      description "Complete a processed turn and return the session to the active state."
+      primary? true
       accept [:messages]
       require_atomic? false
 
@@ -113,6 +119,7 @@ defmodule Firmowid.Ash.Assistant.Session do
     end
 
     update :propose_match do
+      description "Store a proposed invoice match and wait for user confirmation."
       accept [:messages, :pending_match]
 
       change optimistic_lock(:lock_version)
@@ -121,6 +128,7 @@ defmodule Firmowid.Ash.Assistant.Session do
     end
 
     update :sync_pending_turn do
+      description "Update messages while keeping the session in waiting-confirmation state."
       accept [:messages]
 
       change optimistic_lock(:lock_version)
@@ -129,6 +137,7 @@ defmodule Firmowid.Ash.Assistant.Session do
     end
 
     update :reject_match do
+      description "Reject the pending match and return the session to the active state."
       accept [:messages]
       require_atomic? false
 
@@ -139,6 +148,7 @@ defmodule Firmowid.Ash.Assistant.Session do
     end
 
     update :accept_match do
+      description "Accept the pending match and return the session to the active state."
       accept [:messages]
       require_atomic? false
 
@@ -149,6 +159,7 @@ defmodule Firmowid.Ash.Assistant.Session do
     end
 
     update :fail_session do
+      description "Mark a session as errored and store the last error details."
       accept [:last_error]
       require_atomic? false
 
@@ -158,6 +169,7 @@ defmodule Firmowid.Ash.Assistant.Session do
     end
 
     update :close do
+      description "Close an assistant session and clear transient matching state."
       accept []
       require_atomic? false
 

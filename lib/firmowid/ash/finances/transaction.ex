@@ -148,6 +148,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
     end
 
     update :set_skip_invoicing do
+      description "Set whether this transaction should be skipped during matching and invoicing."
       accept [:skip_invoicing]
     end
   end
@@ -222,6 +223,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
 
   relationships do
     belongs_to :bank_account, Firmowid.Ash.Finances.BankAccount do
+      allow_nil? false
       attribute_writable? true
     end
 

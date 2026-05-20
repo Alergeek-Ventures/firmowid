@@ -99,6 +99,7 @@ defmodule Firmowid.Ash.Blobs.Blob do
     end
 
     update :mark_processing do
+      description "Mark a blob as currently being processed."
       require_atomic? false
       accept []
       change {ValidateProcessingStateTransition, to: :processing}
@@ -106,6 +107,7 @@ defmodule Firmowid.Ash.Blobs.Blob do
     end
 
     update :mark_processing_pending do
+      description "Mark a blob as pending processing."
       require_atomic? false
       accept []
       change {ValidateProcessingStateTransition, to: :pending}
@@ -113,6 +115,7 @@ defmodule Firmowid.Ash.Blobs.Blob do
     end
 
     update :mark_processing_succeeded do
+      description "Mark a blob as successfully processed and clear processing metadata."
       require_atomic? false
       accept []
       change {ValidateProcessingStateTransition, to: :succeeded}
@@ -121,6 +124,7 @@ defmodule Firmowid.Ash.Blobs.Blob do
     end
 
     update :mark_processing_failed do
+      description "Mark a blob as failed and store processing error metadata."
       require_atomic? false
       argument :error, :string
       argument :error_code, :string
@@ -144,6 +148,8 @@ defmodule Firmowid.Ash.Blobs.Blob do
     end
 
     update :process_cost_invoice do
+      description "Process a blob as a cost invoice import."
+      primary? true
       require_atomic? false
 
       change ProcessCostInvoiceBlob
@@ -151,6 +157,7 @@ defmodule Firmowid.Ash.Blobs.Blob do
 
     destroy :destroy do
       description "Delete a blob record and clean up the S3 object."
+      primary? true
       require_atomic? false
 
       change DeleteFromS3

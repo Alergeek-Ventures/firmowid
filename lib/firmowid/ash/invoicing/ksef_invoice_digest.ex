@@ -66,10 +66,12 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
     end
 
     read :read_for_delivery do
+      description "Load a digest with all data required for email delivery."
       prepare build(load: [:organization, :cost_invoices])
     end
 
     create :create_digest do
+      description "Create a KSeF digest from a set of cost invoices."
       accept []
 
       argument :cost_invoice_ids, {:array, :uuid}, allow_nil?: false
@@ -83,6 +85,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
     end
 
     update :send_digest do
+      description "Send a prepared KSeF digest to recipient admins."
       require_atomic? false
       accept []
       argument :admin_user_ids, {:array, :uuid}

@@ -33,16 +33,20 @@ defmodule Firmowid.Ash.Ksef.Credential do
     defaults [:read, :destroy]
 
     create :create do
+      description "Create or replace KSeF credentials for an organization."
       accept [:organization_id, :auth_type, :credentials]
     end
 
     read :by_organization do
+      description "Fetch the KSeF credential for a specific organization."
       argument :organization_id, :uuid, allow_nil?: false
       get? true
       filter expr(organization_id == ^arg(:organization_id))
     end
 
     read :all_organization_ids do
+      description "List organization IDs that currently have stored KSeF credentials."
+
       prepare fn query, _context ->
         Ash.Query.select(query, [:organization_id])
       end

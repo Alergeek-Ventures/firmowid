@@ -11,10 +11,12 @@ defmodule Firmowid.Ash.Assistant.PendingMatch.InvoiceRef do
     defaults create: [:type, :id]
 
     read :read do
+      description "Read an embedded invoice reference inside a pending match."
       primary? true
     end
 
     destroy :destroy do
+      description "Delete an embedded invoice reference from a pending match."
       primary? true
     end
   end

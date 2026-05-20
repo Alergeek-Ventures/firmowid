@@ -65,6 +65,7 @@ defmodule Firmowid.Ash.Finances.BankAccount do
     defaults [:destroy]
 
     read :read do
+      description "List bank accounts for the current organization."
       primary? true
 
       # Required for AshOban trigger support
@@ -76,6 +77,7 @@ defmodule Firmowid.Ash.Finances.BankAccount do
     end
 
     create :sync_from_bank do
+      description "Create or upsert a bank account discovered through GoCardless sync."
       # :name is accepted for initial insert but not in upsert_fields —
       # on conflict, user-set name is preserved.
       accept [
@@ -103,6 +105,8 @@ defmodule Firmowid.Ash.Finances.BankAccount do
     end
 
     create :create_manual do
+      description "Create a manually managed bank account."
+      primary? true
       accept [:iban, :name, :currency, :is_default, :owner_name]
 
       change set_attribute(:institution_name, "Manual")
@@ -112,6 +116,8 @@ defmodule Firmowid.Ash.Finances.BankAccount do
     end
 
     update :update do
+      description "Update editable bank account settings."
+      primary? true
       require_atomic? false
       accept [:name, :is_default]
 
@@ -120,6 +126,7 @@ defmodule Firmowid.Ash.Finances.BankAccount do
     end
 
     update :clear_default do
+      description "Clear the default flag for this bank account."
       require_atomic? false
       accept []
       change set_attribute(:is_default, false)
@@ -226,6 +233,7 @@ defmodule Firmowid.Ash.Finances.BankAccount do
     end
 
     belongs_to :requisition, Firmowid.Ash.Finances.Requisition do
+      allow_nil? true
       attribute_writable? true
 
       description "The requisition that created this bank account (GoCardless-linked accounts only)."

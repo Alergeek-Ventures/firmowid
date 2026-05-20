@@ -41,14 +41,18 @@ defmodule Firmowid.Ash.Invoicing.InboundEmail do
     defaults [:read]
 
     read :by_id do
+      description "Fetch an inbound email by ID."
       get_by [:id]
     end
 
     read :list_all do
+      description "List inbound emails ordered from newest to oldest."
       prepare build(sort: [received_at: :desc])
     end
 
     create :create do
+      description "Create an inbound email record before processing attachments."
+
       accept [
         :resend_email_id,
         :sender_email,
@@ -59,6 +63,7 @@ defmodule Firmowid.Ash.Invoicing.InboundEmail do
     end
 
     update :mark_processed do
+      description "Mark an inbound email as processed with an optional failure reason."
       require_atomic? false
       accept []
 

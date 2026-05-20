@@ -29,6 +29,7 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
     defaults [:read]
 
     create :create do
+      description "Create a new invitation for joining an organization."
       accept []
 
       argument :issued_by_id, :uuid, allow_nil?: false
@@ -52,6 +53,7 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
     end
 
     read :read_by_code do
+      description "Fetch an active, unconsumed invite by its public code."
       argument :invite_code, :string, allow_nil?: false
       multitenancy :allow_global
 
@@ -64,6 +66,7 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
     end
 
     update :consume do
+      description "Consume an invite and assign the invited user to the organization."
       accept []
       require_atomic? false
 
@@ -123,6 +126,7 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
     end
 
     destroy :destroy do
+      description "Delete an organization invite."
     end
   end
 
@@ -177,6 +181,7 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
     end
 
     belongs_to :consumed_by, User do
+      allow_nil? true
       attribute_writable? true
     end
   end

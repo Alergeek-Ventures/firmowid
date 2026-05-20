@@ -25,7 +25,13 @@ defmodule Firmowid.Ash.Timetracker.ProjectUser do
   end
 
   actions do
-    defaults [:read, :destroy, create: :*, update: :*]
+    defaults [:read, :destroy]
+
+    create :create do
+      description "Create a project membership linking a user to a project."
+      primary? true
+      accept [:project_id, :user_id]
+    end
   end
 
   policies do

@@ -106,6 +106,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
 
     # Generic action: calls GoCardless API, persists record, returns redirect link.
     action :create_requisition, :string do
+      description "Create a GoCardless requisition and return its redirect URL."
       argument :institution_id, :string, allow_nil?: false
       argument :max_transaction_days, :integer, allow_nil?: false
       argument :redirect_url, :string, allow_nil?: false
@@ -116,6 +117,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
     # Internal create action used by CreateRequisition generic action.
     # Protected by policy — never exposed through domain.
     create :persist do
+      description "Persist a requisition record created by the external requisition flow."
       accept [:id]
     end
 
@@ -124,6 +126,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
     update :check_status do
       require_atomic? false
       description "AshOban trigger action — polls GoCardless API and transitions state."
+      primary? true
       change Firmowid.Ash.Finances.Changes.CheckRequisitionStatus
     end
 
@@ -131,6 +134,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
     # Called by CheckRequisitionStatus when GoCardless returns "LN".
     # Not exposed through domain.
     update :accept do
+      description "Accept a requisition and create the linked bank accounts."
       require_atomic? false
       change transition_state(:accepted)
       change Firmowid.Ash.Finances.Changes.CreateBankAccounts
@@ -140,6 +144,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
     # Called by CheckRequisitionStatus when GoCardless returns "RJ".
     # Not exposed through domain.
     update :reject do
+      description "Reject a requisition that cannot proceed."
       require_atomic? false
       change transition_state(:rejected)
     end

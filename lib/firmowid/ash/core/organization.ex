@@ -32,6 +32,8 @@ defmodule Firmowid.Ash.Core.Organization do
 
     # ── Create ──────────────────────────────────────────────────────
     create :create do
+      description "Create a new organization and assign its owner."
+
       accept [
         :name,
         :nip,
@@ -50,6 +52,9 @@ defmodule Firmowid.Ash.Core.Organization do
 
     # ── General update ──────────────────────────────────────────────
     update :update do
+      description "Update general organization settings."
+      primary? true
+
       accept [
         :name,
         :nip,
@@ -66,6 +71,8 @@ defmodule Firmowid.Ash.Core.Organization do
 
     # ── Scoped updates ──────────────────────────────────────────────
     update :update_basic_info do
+      description "Update the basic business details for an organization."
+
       accept [
         :nip,
         :address,
@@ -78,14 +85,17 @@ defmodule Firmowid.Ash.Core.Organization do
     end
 
     update :update_correspondence do
+      description "Update the correspondence name and address for an organization."
       accept [:correspondence_name, :correspondence_address]
     end
 
     update :update_billing_plan do
+      description "Update the billing plan assigned to an organization."
       accept [:billing_plan]
     end
 
     update :update_avatar do
+      description "Replace the organization's avatar blob."
       accept [:avatar_blob_id]
       require_atomic? false
 
@@ -94,6 +104,7 @@ defmodule Firmowid.Ash.Core.Organization do
 
     # ── Sender email management ─────────────────────────────────────
     update :add_sender_email do
+      description "Add an allowed sender email for organization email workflows."
       accept []
       require_atomic? false
       argument :email, :string, allow_nil?: false
@@ -111,6 +122,7 @@ defmodule Firmowid.Ash.Core.Organization do
     end
 
     update :remove_sender_email do
+      description "Remove an allowed sender email from the organization."
       accept []
       require_atomic? false
       argument :email, :string, allow_nil?: false
@@ -129,6 +141,7 @@ defmodule Firmowid.Ash.Core.Organization do
 
     # ── Nickname regeneration ───────────────────────────────────────
     update :regenerate_nickname do
+      description "Regenerate the inbound-email nickname for the organization."
       accept []
       require_atomic? false
 
@@ -137,6 +150,7 @@ defmodule Firmowid.Ash.Core.Organization do
 
     # ── Destroy ─────────────────────────────────────────────────────
     destroy :destroy do
+      description "Delete an organization and its dependent data."
       require_atomic? false
     end
   end
@@ -201,6 +215,7 @@ defmodule Firmowid.Ash.Core.Organization do
     end
 
     belongs_to :avatar_blob, Blob do
+      allow_nil? true
       attribute_writable? true
       define_attribute? false
       source_attribute :avatar_blob_id

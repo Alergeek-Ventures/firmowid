@@ -54,10 +54,12 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
     defaults [:read, :destroy]
 
     read :by_id do
+      description "Fetch a counterparty by ID."
       get_by [:id]
     end
 
     read :list do
+      description "List counterparties with search, status, and type filters."
       argument :search, :string
       argument :type, :atom, constraints: [one_of: [:individual, :company]]
 
@@ -102,6 +104,8 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
     end
 
     create :create do
+      description "Create a reusable counterparty for invoicing."
+
       accept [
         :type,
         :tax_id,
@@ -142,6 +146,9 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
     end
 
     update :update do
+      description "Update counterparty details and validations."
+      primary? true
+
       accept [
         :type,
         :tax_id,

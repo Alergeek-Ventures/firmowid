@@ -1,4 +1,5 @@
 # credo:disable-for-this-file ExDNA.Credo
+# credo:disable-for-this-file AshCredo.Check.Refactor.LargeResource
 # This resource centralizes invoice lifecycle, numbering, and KSeF behaviors; reducing
 # duplication requires extracting multiple actions/helpers into shared modules across boundaries.
 defmodule Firmowid.Ash.Invoicing.SalesInvoice do
@@ -131,6 +132,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     defaults []
 
     read :read do
+      description "List sales invoices with search, status, and reconciliation filters."
       primary? true
 
       argument :date_from, :date
@@ -254,10 +256,12 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     end
 
     read :by_id do
+      description "Fetch a sales invoice by ID."
       get_by [:id]
     end
 
     action :by_share_token, :struct do
+      description "Fetch a shared invoice or correction by public share token."
       constraints instance_of: __MODULE__
       argument :token, :string, allow_nil?: false
 
@@ -332,6 +336,9 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     # -- Write actions ---------------------------------------------------------
 
     create :create do
+      description "Create a sales invoice with its line items."
+      primary? true
+
       accept [
         :invoice_type,
         :invoice_number,
@@ -401,6 +408,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     end
 
     update :update do
+      description "Update an existing sales invoice and its editable fields."
+      primary? true
       require_atomic? false
 
       accept [
@@ -519,6 +528,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     end
 
     create :create_correction do
+      description "Create a correction invoice for an existing sales invoice."
+
       accept [
         :invoice_number,
         :issue_date,
@@ -573,6 +584,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     end
 
     destroy :destroy do
+      description "Delete a sales invoice when deletion is allowed."
       require_atomic? false
 
       validate {Validations.CheckIfLocked, []}
@@ -587,6 +599,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     end
 
     update :toggle_skip do
+      description "Toggle whether this sales invoice is skipped during matching workflows."
       require_atomic? false
       accept []
 
@@ -597,6 +610,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     end
 
     update :generate_share_token do
+      description "Generate or return the public share token for this sales invoice."
       require_atomic? false
       accept []
       change {Changes.GenerateShareToken, []}
@@ -609,18 +623,21 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     end
 
     update :lock_for_ksef do
+      description "Lock a sales invoice for KSeF submission processing."
       require_atomic? false
       accept []
       change set_attribute(:locked_at, &DateTime.utc_now/0)
     end
 
     update :unlock_for_ksef do
+      description "Unlock a sales invoice after KSeF processing finishes or fails."
       require_atomic? false
       accept []
       change set_attribute(:locked_at, nil)
     end
 
     update :update_ksef_fields do
+      description "Update KSeF tracking fields stored on this sales invoice."
       require_atomic? false
       accept [:ksef_number, :ksef_session_reference_number, :ksef_invoice_checksum, :locked_at]
     end
@@ -630,6 +647,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     # TODO: Extract the ~100-line inline `run fn` below into a named module
     # implementing `Ash.Resource.Actions.Implementation` (e.g. Actions.CancelInvoice).
     action :cancel, :struct do
+      description "Cancel a KSeF-submitted VAT invoice by creating a zero-value correction."
       constraints instance_of: __MODULE__
       argument :invoice_id, :uuid_v7, allow_nil?: false
 
@@ -737,6 +755,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     end
 
     action :confirm_from_draft, :struct do
+      description "Create a sales invoice from a completed wizard draft."
+      primary? true
       constraints instance_of: __MODULE__
 
       argument :draft_id, :uuid_v7, allow_nil?: false
@@ -806,6 +826,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     end
 
     action :get_next_number, :string do
+      description "Return the next available invoice number for a date and optional series."
       argument :date, :date, allow_nil?: false
       argument :series, :string
       argument :omit_invoice_id, :uuid
@@ -836,6 +857,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     end
 
     action :validate_number, {:array, :term} do
+      description "Validate an invoice number and return any warnings about format, duplicates, or gaps."
       argument :invoice_number, :string, allow_nil?: false
       argument :issue_date, :date, allow_nil?: false
       argument :omit_invoice_id, :uuid
@@ -903,6 +925,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     end
 
     action :list_series, {:array, :string} do
+      description "List all detected invoice number series visible in the current scope."
+
       run fn _input, context ->
         opts = Ash.Context.to_opts(context)
 
@@ -1109,10 +1133,12 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     end
 
     belongs_to :counterparty, Counterparty do
+      allow_nil? true
       attribute_writable? true
     end
 
     belongs_to :corrected_invoice, __MODULE__ do
+      allow_nil? true
       attribute_writable? true
     end
 

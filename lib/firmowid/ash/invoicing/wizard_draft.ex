@@ -61,17 +61,21 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
     defaults [:read]
 
     destroy :destroy do
+      description "Delete a wizard draft and its items."
       primary? true
       require_atomic? false
       change cascade_destroy(:items)
     end
 
     create :create do
+      description "Create a new wizard draft for the current organization."
       primary? true
       accept [:organization_id]
     end
 
     update :update_counterparty do
+      description "Update counterparty fields and move the wizard to the items step."
+      primary? true
       require_atomic? false
 
       accept [
@@ -117,6 +121,7 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
     end
 
     update :update_items do
+      description "Update draft items and move the wizard to the payment step."
       require_atomic? false
 
       accept [:currency, :is_reverse_charge]
@@ -133,6 +138,7 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
     end
 
     update :update_payment do
+      description "Update payment details and move the wizard to the preview step."
       require_atomic? false
 
       accept [:sale_date, :due_date, :payment_method, :seller_account_number]
@@ -147,6 +153,7 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
     end
 
     update :update_notes do
+      description "Update invoice and internal notes for the draft."
       require_atomic? false
 
       accept [:invoice_note, :internal_note]
@@ -155,11 +162,13 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
     # Purposefully bypasses payment validations; currency can change before sale_date,
     # due_date, and payment_method are filled, but we still need to clear stale IBAN.
     update :reset_bank_account do
+      description "Clear the selected seller bank account on the draft."
       require_atomic? false
       change set_attribute(:seller_account_number, nil)
     end
 
     update :populate_from_invoice do
+      description "Populate a draft from an existing invoice snapshot."
       require_atomic? false
 
       accept [

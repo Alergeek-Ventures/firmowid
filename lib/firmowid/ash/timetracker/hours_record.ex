@@ -51,6 +51,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
     end
 
     read :list do
+      description "List monthly hour records with optional user and period filters."
       argument :user_id, :uuid
       argument :month, :integer
       argument :year, :integer

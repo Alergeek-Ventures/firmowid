@@ -41,12 +41,14 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceItem do
     defaults [:read, :destroy]
 
     create :create do
+      description "Create a sales invoice line item."
       primary? true
       accept [:index, :name, :quantity, :unit, :unit_price, :vat_rate]
       validate {ValidateVatRate, []}
     end
 
     update :update do
+      description "Update a sales invoice line item."
       primary? true
       require_atomic? false
       accept [:index, :name, :quantity, :unit, :unit_price, :vat_rate]

@@ -31,6 +31,7 @@ defmodule Firmowid.Ash.Core.UserIdentity do
     defaults [:read]
 
     read :read_for_user_and_strategy do
+      description "Fetch a user identity for a specific user and auth strategy."
       argument :user_id, :uuid, allow_nil?: false
       argument :strategy, :string, allow_nil?: false
 
@@ -39,6 +40,7 @@ defmodule Firmowid.Ash.Core.UserIdentity do
   end
 
   attributes do
+    uuid_primary_key :id
     Resource.firmowid_timestamps()
   end
 end

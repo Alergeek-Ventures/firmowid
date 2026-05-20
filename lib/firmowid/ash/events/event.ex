@@ -1,3 +1,6 @@
+# credo:disable-for-this-file AshCredo.Check.Warning.MissingPrimaryKey
+# credo:disable-for-this-file AshCredo.Check.Design.MissingTimestamps
+# AshEvents.EventLog injects the `:id` primary key via extension transformer.
 defmodule Firmowid.Ash.Events.Event do
   @moduledoc """
   Centralized event log resource for AshEvents.
@@ -13,6 +16,10 @@ defmodule Firmowid.Ash.Events.Event do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshEvents.EventLog]
+
+  alias Firmowid.Ash.Resource
+
+  require Resource
 
   postgres do
     table "ash_events"

@@ -152,6 +152,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
     create :start do
       description "Start a new time tracking session (auto-sets start_datetime to now)."
+      primary? true
       accept [:title, :project_id, :is_remote]
 
       change set_attribute(:start_datetime, &DateTime.utc_now/0)
@@ -173,6 +174,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
     update :update do
       description "Update session attributes."
+      primary? true
       accept [:title, :start_datetime, :end_datetime, :project_id, :is_remote]
       require_atomic? false
     end

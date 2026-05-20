@@ -21,6 +21,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestItem do
     defaults [:read, :destroy]
 
     create :create do
+      description "Create a digest item linking a cost invoice to a KSeF digest."
       primary? true
       accept [:digest_id, :cost_invoice_id]
       change SetOrganizationIdFromTenant

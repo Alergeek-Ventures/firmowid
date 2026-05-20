@@ -80,6 +80,7 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
 
     create :tag_sales_invoice do
       description "Create an entity tag in the sales_invoice_entity_tags table."
+      primary? true
       accept [:kind, :resource_id, :tag_definition_id]
       change set_context(%{data_layer: %{table: "sales_invoice_entity_tags"}})
     end
@@ -137,6 +138,8 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
       Sets project tags on an entity, replacing any existing tags.
       Pass an empty list of tag_definition_ids to remove all tags.
       """
+
+      primary? true
 
       argument :entity_type, :atom,
         allow_nil?: false,

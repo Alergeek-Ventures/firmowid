@@ -19,6 +19,9 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft.Item do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Invoicing.Validations.ValidateVatRate
+  alias Firmowid.Ash.Resource
+
+  require Resource
 
   ets do
     private? false
@@ -29,12 +32,14 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft.Item do
     defaults [:read, :destroy]
 
     create :create do
+      description "Create a line item inside a wizard draft."
       primary? true
       accept [:index, :name, :quantity, :unit, :unit_price, :vat_rate, :wizard_draft_id]
       validate {ValidateVatRate, []}
     end
 
     update :update do
+      description "Update a line item inside a wizard draft."
       primary? true
       require_atomic? false
       accept [:index, :name, :quantity, :unit, :unit_price, :vat_rate]
@@ -65,6 +70,7 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft.Item do
 
   attributes do
     uuid_v7_primary_key :id
+    Resource.firmowid_timestamps()
     attribute :organization_id, :uuid_v7, public?: true
     attribute :wizard_draft_id, :uuid_v7, allow_nil?: false, public?: true
 

@@ -31,12 +31,14 @@ defmodule Firmowid.Ash.Billing.Snapshot do
     defaults [:read]
 
     read :by_month do
+      description "Fetch the billing snapshot for a specific month."
       get? true
       argument :month, :date, allow_nil?: false
       filter expr(month == ^arg(:month))
     end
 
     read :read_global do
+      description "List billing snapshots across organizations for background jobs."
       multitenancy :allow_global
 
       pagination do
@@ -46,6 +48,8 @@ defmodule Firmowid.Ash.Billing.Snapshot do
     end
 
     create :create do
+      description "Create a frozen monthly billing snapshot."
+
       accept [
         :month,
         :billing_plan,

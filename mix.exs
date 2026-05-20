@@ -146,6 +146,7 @@ defmodule Firmowid.MixProject do
       {:erlsom, "~> 1.5", only: [:dev, :test]},
       {:styler, "~> 1.5", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:ash_credo, "~> 0.12", only: [:dev, :test], runtime: false},
       {:credo_naming, "~> 2.1", only: [:dev, :test], runtime: false},
       {:ex_slop, "~> 0.4.0", only: [:dev, :test], runtime: false},
       {:ex_dna, "~> 1.5.1", only: [:dev, :test], runtime: false},

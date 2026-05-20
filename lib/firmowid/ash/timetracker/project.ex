@@ -96,6 +96,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
 
     update :update do
       description "Update project attributes and sync the associated tag definition name."
+      primary? true
       accept [:name, :counterparty_id]
       argument :user_ids, {:array, :uuid}, allow_nil?: true
       require_atomic? false

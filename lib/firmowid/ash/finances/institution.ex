@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Finances.Institution do
 
   actions do
     read :for_country do
+      description "List GoCardless institutions available for a given country code."
       argument :country, :string, allow_nil?: false
 
       manual Firmowid.Ash.Finances.Institution.ForCountry

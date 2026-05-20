@@ -13,10 +13,12 @@ defmodule Firmowid.Ash.Assistant.PendingMatch do
     defaults create: [:message, :transaction_ids, :invoice_refs]
 
     read :read do
+      description "Read embedded pending-match payloads."
       primary? true
     end
 
     destroy :destroy do
+      description "Delete an embedded pending-match payload."
       primary? true
     end
   end
