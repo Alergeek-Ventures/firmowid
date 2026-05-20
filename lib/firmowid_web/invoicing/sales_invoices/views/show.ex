@@ -148,21 +148,28 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
 
   @impl true
   def handle_event("connect", %{"transaction_id" => tx_id}, socket) do
-    Invoicing.connect_sales_invoice_transactions_manual(
-      socket.assigns.invoice,
-      [tx_id],
-      socket.assigns.ash_scope
-    )
+    case Invoicing.connect_sales_invoice_transactions_manual(
+           socket.assigns.invoice,
+           [tx_id],
+           socket.assigns.ash_scope
+         ) do
+      {:ok, _connected_invoice} ->
+        invoice = refresh_invoice(socket.assigns.invoice.id, socket.assigns.ash_scope)
 
-    invoice = refresh_invoice(socket.assigns.invoice.id, socket.assigns.ash_scope)
+        potential_transactions =
+          InvoiceMatching.get_potential_transactions_for_invoice(
+            invoice,
+            socket.assigns.ash_scope
+          )
 
-    potential_transactions =
-      InvoiceMatching.get_potential_transactions_for_invoice(invoice, socket.assigns.ash_scope)
+        {:noreply,
+         socket
+         |> assign(:invoice, invoice)
+         |> assign(:potential_transactions, potential_transactions)}
 
-    {:noreply,
-     socket
-     |> assign(:invoice, invoice)
-     |> assign(:potential_transactions, potential_transactions)}
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "Nie udało się połączyć transakcji")}
+    end
   end
 
   @impl true

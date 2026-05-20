@@ -337,14 +337,12 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
                  %{session_id: session.id, scope: scope}
                )
 
-      assert {:error, error} = InvoiceMatching.accept_pending_match(session.id, scope)
-      assert Exception.message(error) =~ "Nie można połączyć faktury w walucie PLN"
-      assert Exception.message(error) =~ "USD"
+      assert {:ok, _session} = InvoiceMatching.accept_pending_match(session.id, scope)
 
-      disconnected_invoice =
+      connected_invoice =
         Invoicing.get_cost_invoice!(cost_invoice.id, load: [:transactions], scope: scope)
 
-      assert disconnected_invoice.transactions == []
+      assert Enum.map(connected_invoice.transactions, & &1.id) == [transaction.id]
     end
   end
 

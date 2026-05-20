@@ -58,6 +58,31 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
     assert unlinked_invoice.transactions == []
   end
 
+  test "shows flash when transaction connect fails", %{conn: conn} do
+    admin = admin_fixture()
+    invoice = sales_invoice_fixture!(admin)
+    transaction = matching_transaction_fixture!(admin, invoice)
+    conn = log_in_user(conn, admin)
+
+    {:ok, view, _html} = live(conn, ~p"/sprzedazowe/#{invoice.id}")
+
+    failed_html =
+      view
+      |> element("button[phx-click='connect']")
+      |> render_click(%{"transaction_id" => Ash.UUID.generate()})
+
+    assert failed_html =~ "Nie udało się połączyć transakcji"
+
+    reloaded_invoice =
+      Invoicing.get_sales_invoice!(invoice.id,
+        load: [:transactions],
+        scope: scope_for(admin)
+      )
+
+    assert reloaded_invoice.transactions == []
+    assert transaction.id
+  end
+
   test "allows skipping invoice from details", %{conn: conn} do
     admin = admin_fixture()
     invoice = sales_invoice_fixture!(admin)

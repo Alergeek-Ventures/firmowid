@@ -47,7 +47,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   alias Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName
   alias Firmowid.Ash.Invoicing.Changes.EnqueueMissingCostInvoiceDescriptionRefresh
   alias Firmowid.Ash.Invoicing.Changes.RequireTransactionIds
-  alias Firmowid.Ash.Invoicing.Changes.ValidateTransactionCurrencies
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Resource
 
@@ -377,7 +376,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       argument :transaction_ids, {:array, :uuid}, allow_nil?: false
 
       change RequireTransactionIds
-      change ValidateTransactionCurrencies
       change manage_relationship(:transaction_ids, :transactions, type: :append)
     end
 

@@ -616,7 +616,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       assert disconnected_invoice.transactions == []
     end
 
-    test "connect_sales_invoice_transactions_manual/3 rejects transactions with a different currency" do
+    test "connect_sales_invoice_transactions_manual/3 allows transactions with a different currency" do
       user = admin_fixture()
       scope = scope_for(user)
       organization_id = user.organization_id
@@ -628,23 +628,20 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           amount: Money.new!("EUR", Decimal.new("100.00"))
         })
 
-      assert {:error, error} =
+      assert {:ok, _invoice} =
                Invoicing.connect_sales_invoice_transactions_manual(
                  sales_invoice,
                  [transaction.id],
                  scope
                )
 
-      assert Exception.message(error) =~ "Nie można połączyć faktury w walucie PLN"
-      assert Exception.message(error) =~ "EUR"
-
-      disconnected_invoice =
+      connected_invoice =
         Invoicing.get_sales_invoice!(sales_invoice.id, load: [:transactions], scope: scope)
 
-      assert disconnected_invoice.transactions == []
+      assert Enum.map(connected_invoice.transactions, & &1.id) == [transaction.id]
     end
 
-    test "connect_cost_invoice_transactions_manual/3 rejects transactions with a different currency" do
+    test "connect_cost_invoice_transactions_manual/3 allows transactions with a different currency" do
       user = admin_fixture()
       scope = scope_for(user)
       organization_id = user.organization_id
@@ -656,20 +653,17 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           amount: Money.new!("EUR", Decimal.new("50.00"))
         })
 
-      assert {:error, error} =
+      assert {:ok, _invoice} =
                Invoicing.connect_cost_invoice_transactions_manual(
                  cost_invoice,
                  [transaction.id],
                  scope
                )
 
-      assert Exception.message(error) =~ "Nie można połączyć faktury w walucie PLN"
-      assert Exception.message(error) =~ "EUR"
-
-      disconnected_invoice =
+      connected_invoice =
         Invoicing.get_cost_invoice!(cost_invoice.id, load: [:transactions], scope: scope)
 
-      assert disconnected_invoice.transactions == []
+      assert Enum.map(connected_invoice.transactions, & &1.id) == [transaction.id]
     end
 
     test "connect_sales_invoice_transactions_manual/3 rejects missing transactions" do
@@ -686,7 +680,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
                  scope
                )
 
-      assert Exception.message(error) =~ "Nie udało się pobrać transakcji do walidacji waluty."
+      assert Exception.message(error) =~ "transaction_ids"
 
       disconnected_invoice =
         Invoicing.get_sales_invoice!(sales_invoice.id, load: [:transactions], scope: scope)
