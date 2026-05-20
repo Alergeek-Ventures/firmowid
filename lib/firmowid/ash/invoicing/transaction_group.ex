@@ -1,6 +1,6 @@
 defmodule Firmowid.Ash.Invoicing.TransactionGroup do
   @moduledoc """
-  Represents a group of cost transactions from the same party.
+  Represents a group of transactions from the same party.
   Used for display purposes in the invoicing entries table.
   """
 

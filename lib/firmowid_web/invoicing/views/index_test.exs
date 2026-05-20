@@ -180,6 +180,34 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       refute html_after_debounce =~ "Grouped Party"
       refute html_after_debounce =~ "2 transakcje"
     end
+
+    test "renders distinct income and cost group ids for the same party", %{conn: conn} do
+      user = admin_fixture()
+
+      transaction_fixture!(user, "Shared Party", ~D[2026-05-10], "COST-A")
+      transaction_fixture!(user, "Shared Party", ~D[2026-05-10], "COST-B")
+      income_transaction_fixture!(user, "Shared Party", ~D[2026-05-10], "INCOME-A")
+      income_transaction_fixture!(user, "Shared Party", ~D[2026-05-10], "INCOME-B")
+
+      {:ok, view, _html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/fakturowanie?miesiac=2026-05-01&filtr=nieprzypisane&widok=lista")
+
+      html = render(view)
+
+      group_row_ids =
+        ~r/<tr id="(group-[^"]+)-row" class="cursor-pointer duration-200"/
+        |> Regex.scan(html,
+          capture: :all_but_first
+        )
+        |> List.flatten()
+
+      assert length(group_row_ids) == 2
+      assert Enum.uniq(group_row_ids) == group_row_ids
+      assert Enum.any?(group_row_ids, &String.starts_with?(&1, "group-cost-"))
+      assert Enum.any?(group_row_ids, &String.starts_with?(&1, "group-income-"))
+    end
   end
 
   describe "cost invoice upload with mocked Reducto" do
@@ -367,6 +395,23 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       debtor_name: "Bytecraft",
       debtor_account: "PL61109010140000071219812874",
       amount: Money.new!("EUR", Decimal.new("-50.00")),
+      booking_date: booking_date,
+      value_date: booking_date,
+      remittance_information_unstructured: "#{suffix}",
+      organization_id: user.organization_id,
+      skip_invoicing: false
+    })
+  end
+
+  defp income_transaction_fixture!(user, debtor_name, booking_date, suffix) do
+    Ash.Seed.seed!(Transaction, %{
+      transaction_id: "TX-#{suffix}",
+      internal_transaction_id: "INT-#{suffix}",
+      creditor_name: "Bytecraft",
+      creditor_account: "PL02114020040000300201355387",
+      debtor_name: debtor_name,
+      debtor_account: "PL61109010140000071219812874",
+      amount: Money.new!("EUR", Decimal.new("50.00")),
       booking_date: booking_date,
       value_date: booking_date,
       remittance_information_unstructured: "#{suffix}",

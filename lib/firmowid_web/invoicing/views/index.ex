@@ -1017,12 +1017,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     # Build group structs
     cost_group_structs =
       Enum.map(cost_groups, fn {party, txns} ->
-        build_transaction_group(party, txns)
+        build_transaction_group(:cost, party, txns)
       end)
 
     income_group_structs =
       Enum.map(income_groups, fn {party, txns} ->
-        build_transaction_group(party, txns)
+        build_transaction_group(:income, party, txns)
       end)
 
     # Flatten ungrouped transactions
@@ -1057,7 +1057,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     Enum.all?(rest, &(&1.amount |> Money.to_currency_code() |> Atom.to_string() == currency))
   end
 
-  defp build_transaction_group(party, transactions) do
+  defp build_transaction_group(kind, party, transactions) do
     total =
       Enum.reduce(transactions, Decimal.new(0), fn t, acc ->
         Decimal.add(acc, Money.to_decimal(t.amount))
@@ -1071,8 +1071,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     # Use LATEST date for sorting
     latest_transaction = Enum.max_by(transactions, & &1.booking_date, Date)
 
-    # Generate stable ID from party name
-    id = "group-#{:erlang.phash2(party)}"
+    id = transaction_group_id(kind, party)
 
     %TransactionGroup{
       id: id,
@@ -1083,6 +1082,10 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       date: latest_transaction.booking_date,
       transactions: transactions
     }
+  end
+
+  defp transaction_group_id(kind, party) do
+    "group-#{kind}-#{:erlang.phash2({kind, party})}"
   end
 
   # ── Entries — direct resource calls ─────────────────────────────────
