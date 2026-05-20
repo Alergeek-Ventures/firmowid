@@ -6,10 +6,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
+  alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Scope
+  alias Firmowid.Test.Support.InvoicingCopyAssertions
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   test "shows recommendation, links transaction, and allows unlinking", %{conn: conn} do
@@ -122,6 +125,97 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
 
     assert html =~
              ~s(href="#{Navigation.sales_invoice_edit_path(invoice, transaction_return_to)}")
+  end
+
+  test "copy link targets the effective snapshot and copied draft matches latest correction", %{
+    conn: conn
+  } do
+    admin = admin_fixture()
+    scope = scope_for(admin)
+
+    {:ok, default_eur_account} =
+      Finances.create_manual_bank_account(
+        %{
+          iban: "DE99120300000000909090909090",
+          name: "EUR default",
+          currency: "EUR",
+          is_default: true
+        },
+        scope: scope
+      )
+
+    original_invoice = sales_invoice_fixture!(admin)
+
+    correction =
+      Ash.Seed.seed!(SalesInvoice, %{
+        invoice_number: "KOR/#{System.unique_integer([:positive])}",
+        issue_date: ~D[2026-01-12],
+        sale_date: ~D[2026-01-12],
+        due_date: ~D[2026-01-20],
+        payment_method: :card,
+        invoice_type: :foreign,
+        currency: "EUR",
+        seller_nip: original_invoice.seller_nip,
+        seller_display_name: original_invoice.seller_display_name,
+        seller_address: original_invoice.seller_address,
+        seller_account_number: "DE00111111111111111111",
+        buyer_type: :company,
+        buyer_id: "DE987654321",
+        buyer_full_name: "Corrected Buyer GmbH",
+        buyer_display_name: "Corrected Buyer Display",
+        buyer_address: "Corrected Buyer address",
+        buyer_country: "DE",
+        buyer_email: "corrected@example.com",
+        buyer_phone: "+49 999 999 999",
+        buyer_description: "Corrected description",
+        invoice_note: "Corrected invoice note",
+        internal_note: "Corrected internal note",
+        corrected_invoice_id: original_invoice.id,
+        organization_id: admin.organization_id,
+        is_reverse_charge: false,
+        ksef_invoice_kind: :kor
+      })
+
+    Ash.Seed.seed!(SalesInvoiceItem, %{
+      organization_id: admin.organization_id,
+      sales_invoice_id: correction.id,
+      index: 0,
+      name: "Corrected line",
+      quantity: Decimal.new("4"),
+      unit: "szt.",
+      unit_price: Decimal.new("50.00"),
+      vat_rate: "23"
+    })
+
+    correction = Ash.load!(correction, [:sales_invoice_items], scope: scope)
+
+    conn = log_in_user(conn, admin)
+
+    {:ok, _show_view, html} = live(conn, ~p"/sprzedazowe/#{original_invoice.id}")
+
+    copy_path = Navigation.sales_invoice_creator_path(%{skopiuj: correction.id})
+    assert html =~ ~s(href="#{copy_path}")
+
+    {:ok, _copy_view, _copy_html} = live(conn, copy_path)
+
+    copied_draft =
+      scope
+      |> then(&Invoicing.list_wizard_drafts!(scope: &1))
+      |> List.first()
+      |> Ash.load!([:items], scope: scope)
+
+    assert InvoicingCopyAssertions.assert_preserved_fields!(correction, copied_draft)
+    assert InvoicingCopyAssertions.assert_cleared_dates!(copied_draft)
+
+    assert InvoicingCopyAssertions.assert_derived_seller_account!(
+             copied_draft,
+             default_eur_account.iban
+           )
+
+    assert InvoicingCopyAssertions.assert_line_items_match!(
+             correction.sales_invoice_items,
+             copied_draft.items
+           )
   end
 
   defp sales_invoice_fixture!(admin) do

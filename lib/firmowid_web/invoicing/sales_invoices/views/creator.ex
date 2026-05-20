@@ -216,6 +216,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       invoice_type: base_invoice.invoice_type,
       is_reverse_charge: base_invoice.is_reverse_charge,
       currency: base_invoice.currency,
+      payment_method: base_invoice.payment_method,
       seller_account_number: if(default_bank_account, do: default_bank_account.iban),
       invoice_note: base_invoice.invoice_note,
       internal_note: base_invoice.internal_note,
