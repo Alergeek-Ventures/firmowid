@@ -181,13 +181,8 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
       <div class="flex min-h-full flex-col gap-2">
         <div class="flex items-start justify-between gap-2">
           <span class="truncate text-sm font-medium">{@party}</span>
-          <span class={[
-            "flex items-center gap-1 text-sm font-semibold whitespace-nowrap",
-            @is_income && "text-greenText",
-            not @is_income && "text-redText"
-          ]}>
-            <.icon name={if @is_income, do: "hero-arrow-up", else: "hero-arrow-down"} class="size-3" />
-            {format_money(@currency, decimal_abs(@amount))}
+          <span class="text-sm font-semibold whitespace-nowrap text-zinc-900">
+            <span :if={!@is_income}>-</span>{format_money(@currency, decimal_abs(@amount))}
           </span>
         </div>
 
