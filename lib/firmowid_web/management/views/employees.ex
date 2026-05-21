@@ -31,6 +31,12 @@ defmodule FirmowidWeb.Management.Views.Employees do
       |> assign(:page_title, "Zarządzanie pracownikami")
       |> assign(:view, :standard)
       |> assign(:active_months, active_months)
+      |> assign(
+        :editable_months,
+        [List.first(active_months)]
+        |> Enum.filter(&(&1 != nil))
+        |> Enum.map(&Date.beginning_of_month/1)
+      )
       |> assign(:can_export_csv, socket.assigns.current_user.role == :admin)
       |> assign_form()
 
@@ -47,12 +53,22 @@ defmodule FirmowidWeb.Management.Views.Employees do
     params = Navigation.employees_params(params)
     selected_date = Navigation.parse_month(params)
 
+    disable_editing =
+      selected_date not in socket.assigns.editable_months and socket.assigns.view == :wage_editor
+
     socket =
       socket
       |> assign(:params, params)
       |> assign(:selected_date, selected_date)
       |> assign(:search, params["szukaj"] || "")
       |> assign_employees()
+      |> assign(
+        :view,
+        if(disable_editing,
+          do: :wages,
+          else: socket.assigns.view
+        )
+      )
 
     {:noreply, socket}
   end
@@ -152,11 +168,14 @@ defmodule FirmowidWeb.Management.Views.Employees do
     scope = socket.assigns.ash_scope
 
     entries =
-      Enum.map(socket.assigns.employees, fn employee ->
-        %{
-          user_id: employee.user.id,
-          hourly_rate: Decimal.new(employees_params[employee.user.id]["wage"])
-        }
+      Enum.flat_map(socket.assigns.employees, fn employee ->
+        hourly_rate = Decimal.new(employees_params[employee.user.id]["wage"])
+
+        if employee.hourly_rate == hourly_rate do
+          []
+        else
+          [%{user_id: employee.user.id, hourly_rate: hourly_rate}]
+        end
       end)
 
     case AshUserSalary.bulk_update_salaries(entries, scope: scope) do

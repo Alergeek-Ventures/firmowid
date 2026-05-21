@@ -114,15 +114,19 @@
       <%= if @view in [:wages, :wage_editor] do %>
         <%= case @view do %>
           <% :wages -> %>
-            <.button
-              phx-click="toggle_wage_editor"
-              type="button"
-              variant="ghost"
-              size="small"
-              class="justify-self-end"
-            >
-              Stawka <.icon name="hero-pencil-square-solid" class="size-4" />
-            </.button>
+            <%= if @selected_date in @editable_months do %>
+              <.button
+                phx-click="toggle_wage_editor"
+                type="button"
+                variant="ghost"
+                size="small"
+                class="justify-self-end"
+              >
+                Stawka <.icon name="hero-pencil-square-solid" class="size-4" />
+              </.button>
+            <% else %>
+              <p class="text-right text-nowrap">Stawka</p>
+            <% end %>
           <% :wage_editor -> %>
             <div class="flex gap-2 justify-self-end">
               <.button
