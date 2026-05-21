@@ -34,6 +34,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
     define :create_with_retire
     define :retire
     define :get_latest, args: [:user_id]
+    define :get_history, args: [:user_id]
     define :as_of, args: [:date]
     define :bulk_update_salaries, args: [:entries]
   end
@@ -77,6 +78,22 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
       prepare fn query, _context ->
         user_id = Ash.Query.get_argument(query, :user_id)
         Ash.Query.do_filter(query, user_id: user_id, deleted_at: [is_nil: true])
+      end
+    end
+
+    read :get_history do
+      description "Returns all salary records for a given user, including retired ones."
+
+      argument :user_id, :uuid do
+        allow_nil? false
+      end
+
+      prepare fn query, _context ->
+        user_id = Ash.Query.get_argument(query, :user_id)
+
+        query
+        |> Ash.Query.do_filter(user_id: user_id)
+        |> Ash.Query.sort(deleted_at: :desc_nils_first)
       end
     end
 

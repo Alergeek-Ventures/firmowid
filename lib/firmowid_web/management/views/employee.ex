@@ -96,11 +96,12 @@ defmodule FirmowidWeb.Management.Views.Employee do
       end)
 
     # 4. Salary as of this month
-    salaries = AshUserSalary.as_of!(date, scope: scope)
+    salaries = AshUserSalary.as_of!(date, %{user_id: user.id}, scope: scope)
+    salary_history = AshUserSalary.get_history!(user_id, scope: scope)
 
     hourly_rate =
       salaries
-      |> Enum.find(&(&1.user_id == user_id))
+      |> List.first()
       |> case do
         nil -> Decimal.new(0)
         salary -> salary.hourly_rate
@@ -120,6 +121,10 @@ defmodule FirmowidWeb.Management.Views.Employee do
     |> Map.put(:hourly_rate, hourly_rate)
     |> Map.put(:hours_record, hours_record)
     |> Map.put(:time_worked, total_time)
+    |> Map.put(
+      :salary_history,
+      salary_history
+    )
   end
 
   defp get_employee_display_name(employee), do: employee.name || employee.email
@@ -368,6 +373,29 @@ defmodule FirmowidWeb.Management.Views.Employee do
           </.card_header>
           <div class="flex gap-3">
             <.hours_record_status hours_record={@employee.hours_record} user={@employee} />
+          </div>
+        </.card>
+        <.card gap_size="4">
+          <.card_header>
+            Historia stawek
+          </.card_header>
+          <div class="flex flex-col gap-2">
+            <%= if Enum.empty?(@employee.salary_history) do %>
+              <p class="text-grey-700">Brak danych</p>
+            <% else %>
+              <div :for={salary <- @employee.salary_history} class="flex items-end gap-2">
+                <span>
+                  {:PLN
+                  |> Money.new(salary.hourly_rate)
+                  |> Money.to_string!(no_fraction_if_integer: true)}/godz.
+                </span>
+                <span class="text-grey-500 text-sm">
+                  ({TimeFormatter.format_date(salary.updated_at)} - {if salary.deleted_at,
+                    do: TimeFormatter.format_date(salary.deleted_at),
+                    else: "obecnie"})
+                </span>
+              </div>
+            <% end %>
           </div>
         </.card>
       </div>

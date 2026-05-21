@@ -33,9 +33,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
       |> assign(:active_months, active_months)
       |> assign(
         :editable_months,
-        [List.first(active_months)]
-        |> Enum.filter(&(&1 != nil))
-        |> Enum.map(&Date.beginning_of_month/1)
+        [Date.beginning_of_month(Date.utc_today())]
       )
       |> assign(:can_export_csv, socket.assigns.current_user.role == :admin)
       |> assign_form()
