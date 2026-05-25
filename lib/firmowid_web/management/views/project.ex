@@ -12,7 +12,7 @@ defmodule FirmowidWeb.Management.Views.Project do
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary
+  alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.Ash.Timetracker.Session
@@ -142,7 +142,7 @@ defmodule FirmowidWeb.Management.Views.Project do
     total_time_worked = sessions |> Enum.map(& &1.duration) |> Enum.sum()
 
     # All salaries for cost computation — use most recent salary per user (as_of today)
-    salaries = AshUserSalary.as_of!(Date.utc_today(), scope: scope)
+    salaries = Payroll.list_salaries!(%{active_at: Date.utc_today()}, scope: scope)
     salary_by_user = Map.new(salaries, &{&1.user_id, &1.hourly_rate})
 
     users = build_users_with_cost(project, sessions, salary_by_user, %{}, scope)
@@ -191,11 +191,22 @@ defmodule FirmowidWeb.Management.Views.Project do
     prev_total_time = prev_sessions |> Enum.map(& &1.duration) |> Enum.sum()
 
     # Salaries as of each month
-    current_salaries = AshUserSalary.as_of!(date, scope: scope)
-    current_salary_by_user = Map.new(current_salaries, &{&1.user_id, &1.hourly_rate})
 
-    prev_salaries = AshUserSalary.as_of!(previous_month, scope: scope)
+    current_date = Date.end_of_month(date)
+    previous_date = Date.end_of_month(previous_month)
+
+    current_salaries =
+      Payroll.list_salaries!(%{active_at: current_date},
+        scope: scope
+      )
+
+    prev_salaries =
+      Payroll.list_salaries!(%{active_at: previous_date},
+        scope: scope
+      )
+
     prev_salary_by_user = Map.new(prev_salaries, &{&1.user_id, &1.hourly_rate})
+    current_salary_by_user = Map.new(current_salaries, &{&1.user_id, &1.hourly_rate})
 
     # Hours records for current month (for lockdown display)
     hours_records =

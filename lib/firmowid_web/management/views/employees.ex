@@ -9,7 +9,7 @@ defmodule FirmowidWeb.Management.Views.Employees do
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary
+  alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Core.Endpoint
@@ -100,8 +100,10 @@ defmodule FirmowidWeb.Management.Views.Employees do
         |> Enum.group_by(& &1.user_id)
         |> Map.new(fn {uid, ss} -> {uid, ss |> Enum.map(& &1.duration) |> Enum.sum()} end)
 
-      # 3. Salaries as of this month
-      salaries = AshUserSalary.as_of!(date, scope: scope)
+      # 3. Salaries as of this month]
+      salaries =
+        Payroll.list_salaries!(%{active_at: Date.end_of_month(date)}, scope: scope)
+
       salary_by_user = Map.new(salaries, &{&1.user_id, &1.hourly_rate})
 
       # 4. Hours records for this month
@@ -169,14 +171,14 @@ defmodule FirmowidWeb.Management.Views.Employees do
       Enum.flat_map(socket.assigns.employees, fn employee ->
         hourly_rate = Decimal.new(employees_params[employee.user.id]["wage"])
 
-        if employee.hourly_rate == hourly_rate do
+        if employee.hourly_rate != nil and Decimal.equal?(employee.hourly_rate, hourly_rate) do
           []
         else
           [%{user_id: employee.user.id, hourly_rate: hourly_rate}]
         end
       end)
 
-    case AshUserSalary.bulk_update_salaries(entries, scope: scope) do
+    case Payroll.bulk_create_salaries(entries, scope: scope) do
       {:ok, _} ->
         {:noreply,
          socket

@@ -16,7 +16,8 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
   use Ash.Resource,
     domain: Firmowid.Ash.Payroll,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    primary_read_warning?: false
 
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Resource
@@ -26,115 +27,50 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
   postgres do
     table "user_salaries"
     repo Firmowid.Repo
-    identity_wheres_to_sql active_user_salary: "deleted_at IS NULL"
-  end
-
-  code_interface do
-    define :create
-    define :create_with_retire
-    define :retire
-    define :get_latest, args: [:user_id]
-    define :get_history, args: [:user_id]
-    define :as_of, args: [:date]
-    define :bulk_update_salaries, args: [:entries]
   end
 
   actions do
-    defaults [:read, :destroy]
-
-    update :update do
-      description "Update the hourly rate for an existing salary record."
-      primary? true
-      accept [:hourly_rate]
-    end
+    defaults [:destroy]
 
     create :create do
       description "Create a salary record for a user."
-      accept [:hourly_rate, :user_id]
-    end
-
-    update :retire do
-      description "Retire a salary record by setting its deleted date."
-      accept []
-      change set_attribute(:deleted_at, &Date.utc_today/0)
-    end
-
-    create :create_with_retire do
-      description "Retires any existing active salary for the user, then creates the new one."
       primary? true
       accept [:hourly_rate, :user_id]
-      change Firmowid.Ash.Payroll.Changes.RetireExistingSalary
     end
 
-    read :get_latest do
-      description "Returns the active (non-retired) salary for a given user."
-      get? true
-      prepare build(limit: 1)
+    read :read do
+      description """
+      Returns all salaries for all users.
+      Can be filter by active_at (date) to return salaries active on a specific date and by user_id to return salaries for a specific user.
+      """
 
-      argument :user_id, :uuid do
-        allow_nil? false
-      end
-
-      prepare fn query, _context ->
-        user_id = Ash.Query.get_argument(query, :user_id)
-        Ash.Query.do_filter(query, user_id: user_id, deleted_at: [is_nil: true])
-      end
-    end
-
-    read :get_history do
-      description "Returns all salary records for a given user, including retired ones."
-
-      argument :user_id, :uuid do
-        allow_nil? false
-      end
-
-      prepare fn query, _context ->
-        user_id = Ash.Query.get_argument(query, :user_id)
-
-        query
-        |> Ash.Query.do_filter(user_id: user_id)
-        |> Ash.Query.sort(deleted_at: :desc_nils_first)
-      end
-    end
-
-    read :as_of do
-      description "Returns salaries active on a given date (end-of-month lookup). Optionally filter to a single user."
-
-      argument :date, :date do
-        allow_nil? false
-      end
+      primary? true
 
       argument :user_id, :uuid
+      argument :active_at, :date
 
-      prepare fn query, _context ->
-        date = Ash.Query.get_argument(query, :date)
-        as_of_date = Date.end_of_month(date)
-        as_of_end_dt = DateTime.new!(as_of_date, ~T[23:59:59], "Etc/UTC")
+      prepare build(sort: [starts_at: :desc])
 
-        query
-        |> Ash.Query.do_filter(
-          updated_at: [less_than_or_equal: as_of_end_dt],
-          or: [
-            [deleted_at: [is_nil: true]],
-            [deleted_at: [greater_than: as_of_date]]
-          ]
-        )
-        |> Ash.Query.sort(user_id: :asc, deleted_at: :desc_nils_first)
-        |> Ash.Query.distinct([:user_id])
-        |> then(fn query ->
-          case Ash.Query.get_argument(query, :user_id) do
-            nil -> query
-            uid -> Ash.Query.do_filter(query, user_id: uid)
-          end
-        end)
+      prepare build(filter: expr(user == ^arg(:user_id))) do
+        where present(:user_id)
+      end
+
+      prepare build(
+                filter:
+                  expr(
+                    starts_at <= ^arg(:active_at) and
+                      (is_nil(ends_at) or
+                         ends_at > ^arg(:active_at))
+                  )
+              ) do
+        where present(:active_at)
       end
     end
 
-    action :bulk_update_salaries, {:array, :struct} do
+    action :bulk_create_salaries, {:array, :struct} do
       description """
-      Admin-only. Creates new salaries (retiring existing ones) for multiple
-      employees in a single atomic transaction. Uses Ash.bulk_create for
-      proper transaction management.
+      Admin-only. Creates new salaries for multiple employees in a single atomic transaction.
+      Uses Ash.bulk_create for proper transaction management.
       """
 
       argument :entries, {:array, :map}, allow_nil?: false
@@ -144,7 +80,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
           Ash.bulk_create(
             input.arguments.entries,
             __MODULE__,
-            :create_with_retire,
+            :create,
             actor: context.actor,
             tenant: context.tenant,
             transaction: :all,
@@ -173,14 +109,6 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
     policy Firmowid.Ash.Checks.IsSystemActor do
       forbid_if always()
     end
-
-    policy action_type(:read) do
-      authorize_if actor_attribute_equals(:role, :admin)
-    end
-
-    policy action_type(:action) do
-      authorize_if actor_attribute_equals(:role, :admin)
-    end
   end
 
   multitenancy do
@@ -197,7 +125,11 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
       constraints min: 0
     end
 
-    attribute :deleted_at, :date, public?: true
+    attribute :starts_at, :utc_datetime do
+      public? true
+      allow_nil? false
+      default &Date.utc_today/0
+    end
 
     Resource.firmowid_timestamps()
   end
@@ -213,11 +145,14 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
     end
   end
 
+  calculations do
+    calculate :ends_at, :date, Firmowid.Ash.Payroll.Calculations.EndsAt
+  end
+
   identities do
-    identity :active_user_salary, [:user_id, :organization_id] do
+    identity :unique_starts_at_per_user, [:user_id, :organization_id, :starts_at] do
       nils_distinct? false
-      where expr(is_nil(deleted_at))
-      message "User already has an active salary record"
+      message "User already has salary record with the same start date"
     end
   end
 end

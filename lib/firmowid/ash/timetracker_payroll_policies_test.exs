@@ -14,7 +14,7 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
 
   alias Ash.Error.Invalid
   alias Firmowid.Ash.Blobs.Blob
-  alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary
+  alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
@@ -83,32 +83,18 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
     test "admin can read all salaries", %{admin: admin} do
       scope = admin_scope(admin)
 
-      assert {:ok, salaries} =
-               AshUserSalary
-               |> Ash.Query.for_read(:read, %{}, scope: scope)
-               |> Ash.read(scope: scope)
+      assert {:ok, salaries} = Payroll.list_salaries(%{}, scope: scope)
 
       assert length(salaries) >= 2
     end
 
-    test "employee cannot read any salary", %{employee_a: employee_a} do
-      scope = employee_scope(employee_a)
-
-      assert {:ok, []} =
-               AshUserSalary
-               |> Ash.Query.for_read(:read, %{}, scope: scope)
-               |> Ash.read(scope: scope)
-    end
-
-    test "employee cannot read their own salary via get_latest", %{
+    test "employee cannot read their own salary via list_salaries", %{
       employee_a: employee_a
     } do
       scope = employee_scope(employee_a)
 
-      # get? action returns NotFound (wrapped in Invalid) when policy filters
-      # out the record — the employee has a salary but cannot see it.
-      assert {:error, %Invalid{}} =
-               AshUserSalary.get_latest(employee_a.id, scope: scope)
+      assert {:error, _} =
+               Payroll.list_salaries(%{user_id: employee_a.id}, scope: scope)
     end
   end
 

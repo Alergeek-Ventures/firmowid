@@ -61,7 +61,8 @@ defmodule Firmowid.Seeds.Timetracker do
       %{
         hourly_rate: hourly_rate,
         user_id: user_id,
-        organization_id: org_id
+        organization_id: org_id,
+        starts_at: DateTime.utc_now()
       },
       tenant: org_id
     )
@@ -78,7 +79,7 @@ defmodule Firmowid.Seeds.Timetracker do
       UserSalary,
       %{
         hourly_rate: hourly_rate,
-        deleted_at: Date.beginning_of_month(one_month_ago),
+        starts_at: Date.beginning_of_month(one_month_ago),
         user_id: user_id,
         organization_id: org_id,
         inserted_at: started,

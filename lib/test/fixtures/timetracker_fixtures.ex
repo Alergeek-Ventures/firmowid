@@ -7,7 +7,7 @@ defmodule Firmowid.TimetrackerFixtures do
   """
 
   alias Firmowid.AccountsFixtures
-  alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary
+  alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.Ash.Timetracker.ProjectUser, as: AshProjectUser
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
@@ -73,7 +73,7 @@ defmodule Firmowid.TimetrackerFixtures do
 
     opts = admin_opts(tenant)
 
-    {:ok, salary} = AshUserSalary.create_with_retire(params, opts)
+    {:ok, salary} = Payroll.create_salary(params, opts)
 
     salary
   end

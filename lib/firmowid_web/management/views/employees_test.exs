@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
 
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary
+  alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
   alias Firmowid.Repo
@@ -75,7 +75,8 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     })
     |> render_submit()
 
-    salaries = AshUserSalary.as_of!(Date.utc_today(), scope: current_scope(admin))
+    salaries = Payroll.list_salaries!(%{active_at: Date.utc_today()}, scope: current_scope(admin))
+
     salary = Enum.find(salaries, &(&1.user_id == invited_user.id))
 
     assert salary

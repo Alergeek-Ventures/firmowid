@@ -11,7 +11,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary
+  alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
@@ -96,8 +96,11 @@ defmodule FirmowidWeb.Management.Views.Employee do
       end)
 
     # 4. Salary as of this month
-    salaries = AshUserSalary.as_of!(date, %{user_id: user.id}, scope: scope)
-    salary_history = AshUserSalary.get_history!(user_id, scope: scope)
+    before_date = Date.end_of_month(date)
+
+    salaries = Payroll.list_salaries!(%{user_id: user.id, active_at: before_date}, scope: scope)
+
+    salary_history = Payroll.list_salaries!(%{user_id: user.id}, scope: scope, load: [:ends_at])
 
     hourly_rate =
       salaries
@@ -390,8 +393,8 @@ defmodule FirmowidWeb.Management.Views.Employee do
                   |> Money.to_string!(no_fraction_if_integer: true)}/godz.
                 </span>
                 <span class="text-grey-500 text-sm">
-                  ({TimeFormatter.format_date(salary.updated_at)} - {if salary.deleted_at,
-                    do: TimeFormatter.format_date(salary.deleted_at),
+                  ({TimeFormatter.format_date(salary.starts_at)} - {if salary.ends_at,
+                    do: TimeFormatter.format_date(salary.ends_at),
                     else: "obecnie"})
                 </span>
               </div>

@@ -7,7 +7,7 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
   use FirmowidWeb, :controller
 
   alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Payroll.UserSalary, as: AshUserSalary
+  alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
   alias Firmowid.Ash.Timetracker.Session
@@ -77,8 +77,6 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
   # ── Private helpers ───────────────────────────────────────────────────
 
   defp build_salaries_csv(month, year, scope) do
-    as_of_date = Date.new!(year, month, 1)
-
     hours_records = Timetracker.list_hours_records!(%{month: month, year: year}, scope: scope)
     hr_by_user = Map.new(hours_records, &{&1.user_id, &1})
 
@@ -92,7 +90,11 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
         end
       end)
 
-    salaries = AshUserSalary.as_of!(as_of_date, scope: scope)
+    date = Date.end_of_month(Date.new!(year, month, 1))
+
+    salaries =
+      Payroll.list_salaries!(%{active_at: date}, scope: scope)
+
     salary_by_user = Map.new(salaries, &{&1.user_id, &1.hourly_rate})
 
     users

@@ -10,7 +10,11 @@ defmodule Firmowid.Ash.Payroll do
   use Ash.Domain
 
   resources do
-    resource Firmowid.Ash.Payroll.UserSalary
+    resource Firmowid.Ash.Payroll.UserSalary do
+      define :create_salary, action: :create
+      define :bulk_create_salaries, action: :bulk_create_salaries, args: [:entries]
+      define :list_salaries, action: :read
+    end
   end
 
   authorization do
