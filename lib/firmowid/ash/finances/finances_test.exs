@@ -3,6 +3,7 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
   use Firmowid.DataCase
 
   import Firmowid.AccountsFixtures
+  import Firmowid.FinancesFixtures
 
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Transaction
@@ -14,6 +15,7 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
     user = admin_fixture()
     org_id = user.organization_id
     seed_opts = [tenant: org_id]
+    bank_account_id = bank_account_fixture!(user).id
 
     # Pending: no invoices, not skipped
     pending_tx =
@@ -26,6 +28,7 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
           amount: Money.new!("PLN", Decimal.new("100.00")),
           booking_date: ~D[2024-01-10],
           value_date: ~D[2024-01-10],
+          bank_account_id: bank_account_id,
           skip_invoicing: false
         },
         seed_opts
@@ -42,6 +45,7 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
           amount: Money.new!("PLN", Decimal.new("200.00")),
           booking_date: ~D[2024-01-11],
           value_date: ~D[2024-01-11],
+          bank_account_id: bank_account_id,
           skip_invoicing: true
         },
         seed_opts
@@ -58,6 +62,7 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
           amount: Money.new!("PLN", Decimal.new("-100.00")),
           booking_date: ~D[2024-01-12],
           value_date: ~D[2024-01-12],
+          bank_account_id: bank_account_id,
           skip_invoicing: false
         },
         seed_opts
@@ -164,6 +169,7 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
     test "does not find transactions across organizations", ctx do
       user2 = user_fixture()
       org2_id = user2.organization_id
+      other_org_bank_account_id = bank_account_fixture!(user2).id
 
       Ash.Seed.seed!(
         Transaction,
@@ -173,7 +179,8 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
           remittance_information_unstructured: "other org payment",
           amount: Money.new!("PLN", Decimal.new("300.00")),
           booking_date: ~D[2024-01-13],
-          value_date: ~D[2024-01-13]
+          value_date: ~D[2024-01-13],
+          bank_account_id: other_org_bank_account_id
         },
         tenant: org2_id
       )

@@ -4,6 +4,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
   use FirmowidWeb.ConnCase
 
   import Firmowid.AccountsFixtures
+  import Firmowid.FinancesFixtures
   import Phoenix.LiveViewTest
 
   alias Firmowid.Ash.Finances
@@ -271,6 +272,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
       booking_date: invoice.issue_date,
       value_date: invoice.issue_date,
       remittance_information_unstructured: "Payment January",
+      bank_account_id: bank_account_fixture!(admin).id,
       organization_id: admin.organization_id
     })
   end

@@ -3,6 +3,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
   use Firmowid.DataCase
 
   import Firmowid.AccountsFixtures
+  import Firmowid.FinancesFixtures
 
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core
@@ -243,6 +244,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       user = admin_fixture()
       organization_id = user.organization_id
       scope = scope_for(user)
+      bank_account_id = bank_account_fixture!(user).id
 
       # Unmatched invoices
       unmatched_sales_invoice =
@@ -340,6 +342,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           booking_date: ~D[2024-04-10],
           value_date: ~D[2024-04-10],
           remittance_information_unstructured: "Payment for SI-MATCHED-1",
+          bank_account_id: bank_account_id,
           organization_id: organization_id
         })
 
@@ -355,6 +358,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           booking_date: ~D[2024-04-15],
           value_date: ~D[2024-04-15],
           remittance_information_unstructured: "Payment for CI-MATCHED-1",
+          bank_account_id: bank_account_id,
           organization_id: organization_id
         })
 
@@ -976,6 +980,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       user = admin_fixture()
       organization_id = user.organization_id
       scope = scope_for(user)
+      bank_account_id = bank_account_fixture!(user).id
 
       # Matching Sales Invoice
       sales_invoice_combined_match =
@@ -1086,6 +1091,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           booking_date: ~D[2024-08-20],
           value_date: ~D[2024-08-20],
           remittance_information_unstructured: "Payment for SI-ALREADY-MATCHED",
+          bank_account_id: bank_account_id,
           organization_id: organization_id
         })
 
@@ -1180,6 +1186,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
 
   defp seed_sales_disconnect_transaction!(organization_id, attrs \\ %{}) do
     unique = System.unique_integer([:positive])
+    bank_account_id = bank_account_fixture_for_organization!(organization_id).id
 
     Ash.Seed.seed!(
       Transaction,
@@ -1195,6 +1202,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           booking_date: ~D[2024-06-10],
           value_date: ~D[2024-06-10],
           remittance_information_unstructured: "Payment for disconnect test sales invoice",
+          bank_account_id: bank_account_id,
           organization_id: organization_id
         },
         attrs
@@ -1230,6 +1238,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
 
   defp seed_cost_disconnect_transaction!(organization_id, attrs \\ %{}) do
     unique = System.unique_integer([:positive])
+    bank_account_id = bank_account_fixture_for_organization!(organization_id).id
 
     Ash.Seed.seed!(
       Transaction,
@@ -1245,6 +1254,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           booking_date: ~D[2024-06-12],
           value_date: ~D[2024-06-12],
           remittance_information_unstructured: "Payment for disconnect test cost invoice",
+          bank_account_id: bank_account_id,
           organization_id: organization_id
         },
         attrs

@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
   use FirmowidWeb.ConnCase
 
   import Firmowid.AccountsFixtures
+  import Firmowid.FinancesFixtures
   import Firmowid.Test.Support.OpenAIEnrichmentTestHelpers
   import Phoenix.LiveViewTest
 
@@ -398,6 +399,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       booking_date: booking_date,
       value_date: booking_date,
       remittance_information_unstructured: "#{suffix}",
+      bank_account_id: bank_account_fixture!(user).id,
       organization_id: user.organization_id,
       skip_invoicing: false
     })
@@ -415,6 +417,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
       booking_date: booking_date,
       value_date: booking_date,
       remittance_information_unstructured: "#{suffix}",
+      bank_account_id: bank_account_fixture!(user).id,
       organization_id: user.organization_id,
       skip_invoicing: false
     })

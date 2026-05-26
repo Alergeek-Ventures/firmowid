@@ -3,6 +3,7 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
   use Firmowid.DataCase
 
   import Firmowid.AccountsFixtures
+  import Firmowid.FinancesFixtures
 
   alias Firmowid.Ash.Assistant
   alias Firmowid.Ash.Assistant.Actions.Calculate
@@ -422,6 +423,7 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
           booking_date: ~D[2026-01-10],
           value_date: ~D[2026-01-10],
           remittance_information_unstructured: "assistant-#{suffix}",
+          bank_account_id: bank_account_fixture!(user).id,
           organization_id: user.organization_id,
           skip_invoicing: false
         },
