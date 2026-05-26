@@ -44,18 +44,23 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     domain: Firmowid.Ash.Invoicing,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshEvents.Events, AshJido],
+    extensions: [AshEvents.Events, AshJido, AshOban],
     notifiers: [Ash.Notifier.PubSub],
     primary_read_warning?: false
 
+  alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Invoicing, as: InvoicingDomain
+  alias Firmowid.Ash.Invoicing.Actions
+  alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
   alias Firmowid.Ash.Invoicing.Changes
   alias Firmowid.Ash.Invoicing.Counterparty
   alias Firmowid.Ash.Invoicing.CountryCodes
+  alias Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
+  alias Firmowid.Ash.Invoicing.Services.SalesInvoiceChain
   alias Firmowid.Ash.Invoicing.Validations
   alias Firmowid.Ash.Resource
 
@@ -95,6 +100,17 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       tags: ["assistant", "sales_invoice", "matching"]
   end
 
+  oban do
+    scheduled_actions do
+      schedule :send_overdue_reminders, "15 7 * * *" do
+        action :send_overdue_reminders
+        queue :invoicing
+        list_tenants {Firmowid.Ash.Invoicing.SalesInvoice.OrganizationTenantList, []}
+        worker_module_name Firmowid.Ash.Invoicing.SalesInvoice.Worker.SendOverdueReminders
+      end
+    end
+  end
+
   code_interface do
     # Reads
     define :by_id, args: [:id], action: :by_id
@@ -120,12 +136,19 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     define :update_ksef_fields, action: :update_ksef_fields
 
     # Wizard
-    define :confirm_from_draft, args: [:draft_id, {:optional, :invoice_number}, :organization]
+    define :confirm_from_draft,
+      args: [
+        :draft_id,
+        {:optional, :invoice_number},
+        :organization,
+        {:optional, :should_send_emails}
+      ]
 
     # Invoice numbering
     define :get_next_number, args: [:date, {:optional, :series}, {:optional, :omit_invoice_id}]
     define :validate_number, args: [:invoice_number, :issue_date, {:optional, :omit_invoice_id}]
     define :list_series, args: []
+    define :send_overdue_reminders, action: :send_overdue_reminders
   end
 
   actions do
@@ -260,9 +283,23 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       get_by [:id]
     end
 
+    read :public_shared_chain do
+      description "Fetch the root shared invoice and its corrections authorized by the root share token."
+
+      argument :root_invoice_id, :uuid_v7, allow_nil?: false
+      argument :root_share_token, :string, allow_nil?: false
+
+      filter expr(
+               (id == ^arg(:root_invoice_id) and share_token == ^arg(:root_share_token)) or
+                 (corrected_invoice_id == ^arg(:root_invoice_id) and
+                    corrected_invoice.share_token == ^arg(:root_share_token))
+             )
+    end
+
     action :by_share_token, :struct do
-      description "Fetch a shared invoice or correction by public share token."
+      description "Fetch the shared root invoice and its correction chain by public share token."
       constraints instance_of: __MODULE__
+      allow_nil? true
       argument :token, :string, allow_nil?: false
 
       run fn input, context ->
@@ -273,62 +310,33 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         # then the full read uses the standard :by_id action with proper tenant.
         import Ecto.Query
 
-        token = input.arguments.token
+        share_token = input.arguments.token
         opts = Ash.Context.to_opts(context)
 
-        {share_token, correction_id} =
-          case String.split(token, ".", parts: 2) do
-            [share_token] -> {share_token, nil}
-            [share_token, correction_id] -> {share_token, correction_id}
-          end
+        root_invoice_row =
+          __MODULE__
+          |> where([i], i.share_token == ^share_token and i.ksef_invoice_kind == :vat)
+          |> select([i], {i.id, i.organization_id})
+          |> Firmowid.Repo.one(skip_organization_id: true)
 
-        invoice_row =
-          if correction_id do
-            case Ecto.UUID.dump(correction_id) do
-              {:ok, _uuid} ->
-                __MODULE__
-                |> join(:inner, [correction], shared_invoice in __MODULE__,
-                  on:
-                    shared_invoice.share_token == ^share_token and
-                      correction.corrected_invoice_id == shared_invoice.id
-                )
-                |> where(
-                  [correction, _shared_invoice],
-                  correction.id == ^correction_id and correction.ksef_invoice_kind == :kor
-                )
-                |> select(
-                  [correction, _shared_invoice],
-                  {correction.id, correction.organization_id}
-                )
-                |> Firmowid.Repo.one(skip_organization_id: true)
-
-              :error ->
-                nil
-            end
-          else
-            __MODULE__
-            |> where([i], i.share_token == ^share_token)
-            |> select([i], {i.id, i.organization_id})
-            |> Firmowid.Repo.one(skip_organization_id: true)
-          end
-
-        case invoice_row do
+        case root_invoice_row do
           nil ->
             {:ok, nil}
 
-          {id, org_id} ->
+          {root_invoice_id, org_id} ->
             read_opts =
               opts
               |> Keyword.delete(:tenant)
               |> Keyword.put(:tenant, org_id)
 
-            result =
-              __MODULE__
-              |> Ash.Query.for_read(:by_id, %{id: id}, read_opts)
-              |> Ash.Query.load([:organization])
-              |> Ash.read_one!(read_opts)
+            chain =
+              SalesInvoiceChain.fetch_public_shared_chain!(
+                root_invoice_id,
+                share_token,
+                read_opts
+              )
 
-            {:ok, result}
+            {:ok, List.first(chain)}
         end
       end
     end
@@ -375,6 +383,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         :buyer_email,
         :buyer_phone,
         :buyer_description,
+        :should_send_emails,
         :invoice_note,
         :internal_note
       ]
@@ -446,6 +455,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         :buyer_email,
         :buyer_phone,
         :buyer_description,
+        :should_send_emails,
         :invoice_note,
         :internal_note
       ]
@@ -551,6 +561,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         :buyer_email,
         :buyer_phone,
         :buyer_description,
+        :should_send_emails,
         :is_reverse_charge
       ]
 
@@ -762,6 +773,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       argument :draft_id, :uuid_v7, allow_nil?: false
       argument :invoice_number, :string
       argument :organization, :map, allow_nil?: false
+      argument :should_send_emails, :boolean, default: false
 
       run fn input, context ->
         opts = Ash.Context.to_opts(context)
@@ -811,6 +823,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
           is_cash_account: draft.payment_method == :cash,
           invoice_note: draft.invoice_note,
           internal_note: draft.internal_note,
+          should_send_emails: input.arguments.should_send_emails,
           sales_invoice_items: items
         }
 
@@ -946,6 +959,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
     end
 
+    action :send_overdue_reminders, :integer do
+      description "Send payment reminder emails for overdue sales invoices in the current tenant."
+      run Actions.SendOverdueReminders
+    end
+
     update :connect_transactions do
       description "Connect transactions to this sales invoice via the join table."
       require_atomic? false
@@ -980,6 +998,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         authorize_if always()
       end
 
+      policy AshObanInteraction do
+        authorize_if action(:send_overdue_reminders)
+      end
+
       policy {SystemActorRole, roles: [:analysis_reader]} do
         authorize_if action_type(:read)
       end
@@ -999,7 +1021,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
 
       policy {SystemActorRole, roles: [:anonymous]} do
-        authorize_if action([:by_id, :by_share_token])
+        authorize_if action([:by_share_token, :public_shared_chain])
       end
     end
 
@@ -1016,6 +1038,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
                      ])
 
         authorize_if {AtLeastRole, role: :accountant}
+      end
+
+      # Only system actors/AshOban may run scheduled reminder scans - users have no UI for this.
+      policy action(:send_overdue_reminders) do
+        forbid_if always()
       end
     end
   end
@@ -1099,6 +1126,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     attribute :is_reverse_charge, :boolean, default: false, public?: true
 
     attribute :skip_invoicing, :boolean, default: false, public?: true
+    attribute :should_send_emails, :boolean, default: false, public?: true
 
     attribute :item_names, :string, public?: true
 
@@ -1157,6 +1185,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       sort index: :asc
     end
 
+    has_many :email_deliveries, SalesInvoiceEmailDelivery do
+      source_attribute :id
+      destination_attribute :sales_invoice_id
+    end
+
     many_to_many :transactions, Firmowid.Ash.Finances.Transaction do
       through SalesInvoiceTransaction
       source_attribute_on_join_resource :sales_invoice_id
@@ -1209,7 +1242,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
     calculate :annotated_corrections,
               {:array, :struct},
-              Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections do
+              AnnotatedCorrections do
       constraints items: [instance_of: __MODULE__]
     end
 
@@ -1299,8 +1332,6 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       nils_distinct?: false,
       message: "numer faktury już istnieje dla tej organizacji"
   end
-
-  # Private helpers -----------------------------------------------------------
 
   # Invoice numbering helpers -------------------------------------------------
 

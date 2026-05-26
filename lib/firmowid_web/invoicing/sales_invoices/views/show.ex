@@ -5,8 +5,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.InvoiceMatching
   alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Invoicing.Services.SalesInvoiceSharing
   alias Firmowid.Ash.Ksef
-  alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   @item_calcs [:net_value, :vat_value, :gross_value]
@@ -19,8 +19,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
     :buyer_display_name_label,
     transactions: [:amount],
     sales_invoice_items: @item_calcs,
-    corrections: [sales_invoice_items: @item_calcs],
+    corrections: [:email_deliveries, sales_invoice_items: @item_calcs],
     corrected_invoice: :corrections,
+    email_deliveries: [],
     latest_correction: [sales_invoice_items: @item_calcs]
   ]
 
@@ -200,24 +201,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
   @impl true
   def handle_event("create_share_link", _params, socket) do
     invoice = socket.assigns.invoice
+    scope = socket.assigns.ash_scope
 
-    case SalesInvoice.generate_share_token(invoice, scope: socket.assigns.ash_scope) do
-      {:ok, updated_invoice} ->
-        url = share_url(updated_invoice.share_token)
+    {:ok, url} = SalesInvoiceSharing.get_share_url_for_sales_invoice(invoice, scope)
+    updated_invoice = refresh_invoice(invoice.id, scope)
 
-        {:noreply,
-         socket
-         |> assign(:invoice, updated_invoice)
-         |> push_event("copy-to-clipboard", %{text: url})
-         |> put_flash(:info, "Link skopiowany do schowka")}
-
-      {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Nie udało się utworzyć linku")}
-    end
-  end
-
-  defp share_url(token) when is_binary(token) do
-    Endpoint.url() <> "/faktura/" <> token
+    {:noreply,
+     socket
+     |> assign(:invoice, updated_invoice)
+     |> push_event("copy-to-clipboard", %{text: url})
+     |> put_flash(:info, "Link skopiowany do schowka")}
   end
 
   defp refresh_invoice(id, scope) do

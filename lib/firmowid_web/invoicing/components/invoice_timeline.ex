@@ -150,6 +150,90 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     """
   end
 
+  defp event(%{event: %{event: :email_sent}} = assigns) do
+    ~H"""
+    <.timeline_item event={@event}>
+      <:label>
+        Faktura wysłana e-mailem
+      </:label>
+      <:content>
+        Do kontrahenta wysłano wiadomość e-mail z fakturą.
+        <.email_target email={@event.metadata.recipient_email} />
+      </:content>
+    </.timeline_item>
+    """
+  end
+
+  defp event(%{event: %{event: :email_failed}} = assigns) do
+    ~H"""
+    <.timeline_item event={@event}>
+      <:label>
+        Błąd wysyłki e-maila
+      </:label>
+      <:content>
+        <span>{@event.metadata.error_message || "Nie udało się wysłać wiadomości email"}</span>
+        <.email_target email={@event.metadata.recipient_email} />
+      </:content>
+    </.timeline_item>
+    """
+  end
+
+  defp event(%{event: %{event: :reminder_sent}} = assigns) do
+    ~H"""
+    <.timeline_item event={@event}>
+      <:label>
+        Wysłano przypomnienie o płatności
+      </:label>
+      <:content>
+        Do kontrahenta wysłano wiadomość e-mail z przypomnieniem o opłaceniu zaległej faktury.
+        <.email_target email={@event.metadata.recipient_email} />
+      </:content>
+    </.timeline_item>
+    """
+  end
+
+  defp event(%{event: %{event: :reminder_failed}} = assigns) do
+    ~H"""
+    <.timeline_item event={@event}>
+      <:label>
+        Błąd wysyłki przypomnienia
+      </:label>
+      <:content>
+        <span>{@event.metadata.error_message || "Nie udało się wysłać wiadomości email"}</span>
+        <.email_target email={@event.metadata.recipient_email} />
+      </:content>
+    </.timeline_item>
+    """
+  end
+
+  defp event(%{event: %{event: :correction_email_sent}} = assigns) do
+    ~H"""
+    <.timeline_item event={@event}>
+      <:label>
+        Wysłano e-mail z korektą faktury
+      </:label>
+      <:content>
+        Do kontrahenta wysłano wiadomość e-mail z fakturą korygującą.
+        <.email_target email={@event.metadata.recipient_email} />
+      </:content>
+    </.timeline_item>
+    """
+  end
+
+  defp event(%{event: %{event: :correction_email_failed}} = assigns) do
+    ~H"""
+    <.timeline_item event={@event}>
+      <:label>
+        Błąd wysyłki e-maila z korektą faktury
+      </:label>
+      <:content>
+        <span>{@event.metadata.error_message || "Nie udało się wysłać wiadomości email"}</span>
+        <.email_target email={@event.metadata.recipient_email} />
+      </:content>
+    </.timeline_item>
+    """
+  end
+
   defp event(%{event: %{event: :downloaded}} = assigns) do
     ~H"""
     <.timeline_item event={@event}>
@@ -248,6 +332,18 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
     """
   end
 
+  attr :email, :string, default: nil
+
+  defp email_target(assigns) do
+    ~H"""
+    <%= if @email do %>
+      <span>
+        Adres docelowy: <span class="text-turquoise-700 font-bold">{@email}</span>
+      </span>
+    <% end %>
+    """
+  end
+
   defp event_dot_styles(:confirmed), do: "bg-greenText"
   defp event_dot_styles(:failed), do: "bg-redText"
   defp event_dot_styles(:submitted), do: "bg-blueText"
@@ -256,6 +352,12 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceTimeline do
   defp event_dot_styles(:correction_confirmed), do: "bg-greenText"
   defp event_dot_styles(:correction_failed), do: "bg-redText"
   defp event_dot_styles(:correction_submitted), do: "bg-blueText"
+  defp event_dot_styles(:email_sent), do: "bg-blueText"
+  defp event_dot_styles(:email_failed), do: "bg-redText"
+  defp event_dot_styles(:reminder_sent), do: "bg-blueText"
+  defp event_dot_styles(:reminder_failed), do: "bg-redText"
+  defp event_dot_styles(:correction_email_sent), do: "bg-blueText"
+  defp event_dot_styles(:correction_email_failed), do: "bg-redText"
   defp event_dot_styles(_), do: "bg-grey-200"
 
   defp format_datetime(nil), do: ""

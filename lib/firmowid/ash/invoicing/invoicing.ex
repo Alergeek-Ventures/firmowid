@@ -88,7 +88,12 @@ defmodule Firmowid.Ash.Invoicing do
 
       define :confirm_sales_invoice_from_draft,
         action: :confirm_from_draft,
-        args: [:draft_id, {:optional, :invoice_number}, :organization]
+        args: [
+          :draft_id,
+          {:optional, :invoice_number},
+          :organization,
+          {:optional, :should_send_emails}
+        ]
 
       define :get_next_sales_invoice_number,
         action: :get_next_number,
@@ -128,6 +133,12 @@ defmodule Firmowid.Ash.Invoicing do
       define :reset_wizard_draft_bank_account, action: :reset_bank_account
       define :populate_wizard_draft_from_invoice, action: :populate_from_invoice
       define :destroy_wizard_draft, action: :destroy
+    end
+
+    resource Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery do
+      define :send_sales_invoice_email,
+        action: :send_for_invoice,
+        args: [:sales_invoice_id, :delivery_type]
     end
   end
 

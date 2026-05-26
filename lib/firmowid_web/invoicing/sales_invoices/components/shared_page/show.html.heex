@@ -2,10 +2,12 @@
   lang={to_string(@lang)}
   title={"#{if @lang == :en, do: "Invoice", else: "Faktura"} #{@invoice.invoice_number || ""} — #{@buyer_display_name}"}
 >
+  <% invoices = Enum.reverse(@invoice.corrections) ++ [@invoice] %>
+
   <div class="grid grid-cols-[min-content_1fr] justify-center">
     <div class="sticky top-0 left-0 hidden h-min flex-col gap-2 p-4 xl:flex">
       <.link
-        :for={invoice <- [@invoice | @invoice.corrections]}
+        :for={invoice <- invoices}
         kind="unstyled"
         redirect={"#invoice-#{invoice.id}"}
         data-active={false}
@@ -16,7 +18,7 @@
     </div>
     <div>
       <div
-        :for={invoice <- [@invoice | @invoice.corrections]}
+        :for={invoice <- invoices}
         id={"invoice-#{invoice.id}"}
         class="mx-auto my-4 flex w-full max-w-6xl flex-1 flex-col"
       >

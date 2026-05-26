@@ -37,6 +37,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice.EffectiveFields do
     buyer_email: :string,
     buyer_phone: :string,
     buyer_description: :string,
+    should_send_emails: :boolean,
     is_cash_account: :boolean,
     is_reverse_charge: :boolean
   ]

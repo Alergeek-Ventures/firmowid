@@ -26,6 +26,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   alias Firmowid.Ash.Invoicing.Counterparty
   alias Firmowid.Ash.Invoicing.CountryCodes
   alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoice.EmailRecipientEligibility
   alias Firmowid.Ash.Invoicing.WizardDraft
   alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Infrastructure.Utilities.PolishValues
@@ -469,6 +470,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     logo_url = Invoicing.get_logo_url(org_id, scope: socket.assigns.ash_scope)
 
     preview_invoice = build_preview_map(invoice, organization, invoice_number, issue_date)
+    counterparty_check = counterparty_check(invoice.counterparty_id, scope)
 
     # Get currency rate for non-PLN invoices
     currency_rate = Invoicing.get_currency_rate(preview_invoice)
@@ -481,10 +483,20 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     |> assign(:currency_rate, currency_rate)
     |> assign(:series_suggestions, series_suggestions)
     |> assign(:invoice_warnings, invoice_warnings)
+    |> assign(:counterparty_check, counterparty_check)
+    |> assign_new(:should_send_emails, fn -> false end)
+    |> maybe_clear_should_send_emails(counterparty_check)
   end
 
   defp maybe_setup_step(socket, _step, _params) do
     socket
+  end
+
+  defp counterparty_check(counterparty_id, scope) do
+    case EmailRecipientEligibility.fetch_valid_counterparty_email(counterparty_id, scope) do
+      {:ok, _email} -> %{valid: true, tooltip: nil}
+      {:error, reason, _email} -> %{valid: false, tooltip: reason}
+    end
   end
 
   defp initial_item_params([]), do: [%{}]
@@ -972,7 +984,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     organization = socket.assigns.organization
     draft = socket.assigns.draft
 
-    case create_invoice_from_draft(draft, nil, organization, scope) do
+    case create_invoice_from_draft(draft, nil, organization, false, scope) do
       {:ok, invoice} ->
         {:noreply,
          socket
@@ -990,9 +1002,17 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     organization = socket.assigns.organization
     draft = socket.assigns.draft
     invoice_number = socket.assigns.invoice_number
+    should_send_emails = socket.assigns.should_send_emails
 
     with :ok <- validate_organization_for_invoicing(organization),
-         {:ok, invoice} <- create_invoice_from_draft(draft, invoice_number, organization, scope) do
+         {:ok, invoice} <-
+           create_invoice_from_draft(
+             draft,
+             invoice_number,
+             organization,
+             should_send_emails,
+             scope
+           ) do
       {:noreply, push_navigate(socket, to: Navigation.sales_invoice_summary_path(invoice))}
     else
       {:error, error} ->
@@ -1006,15 +1026,31 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     organization = socket.assigns.organization
     draft = socket.assigns.draft
     invoice_number = socket.assigns.invoice_number
+    should_send_emails = socket.assigns.should_send_emails
 
     with :ok <- validate_organization_for_invoicing(organization),
-         {:ok, invoice} <- create_invoice_from_draft(draft, invoice_number, organization, scope) do
+         {:ok, invoice} <-
+           create_invoice_from_draft(
+             draft,
+             invoice_number,
+             organization,
+             should_send_emails,
+             scope
+           ) do
       submit_to_ksef_and_navigate(socket, invoice)
     else
       {:error, error} ->
         Logger.error("Failed to confirm invoice: #{inspect(error)}")
         {:noreply, put_flash(socket, :error, get_error_message(error))}
     end
+  end
+
+  def handle_event("toggle_should_send_emails", %{"should_send_emails" => value}, socket) do
+    {:noreply, assign(socket, :should_send_emails, to_boolean(value))}
+  end
+
+  def handle_event("toggle_should_send_emails", _params, socket) do
+    {:noreply, assign(socket, :should_send_emails, false)}
   end
 
   defp handle_counterparty_selection(socket, counterparty_id) do
@@ -1097,9 +1133,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     end
   end
 
-  defp create_invoice_from_draft(draft, invoice_number, organization, scope) do
+  defp create_invoice_from_draft(draft, invoice_number, organization, should_send_emails, scope) do
     org_data = %{name: organization.name, address: organization.address, nip: organization.nip}
-    SalesInvoice.confirm_from_draft(draft.id, invoice_number, org_data, scope: scope)
+
+    SalesInvoice.confirm_from_draft(
+      draft.id,
+      invoice_number,
+      org_data,
+      should_send_emails,
+      scope: scope
+    )
   end
 
   defp get_error_message(%Ash.Error.Invalid{} = error) do
@@ -1153,6 +1196,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   def to_boolean(bool) when is_boolean(bool), do: bool
   def to_boolean("true"), do: true
   def to_boolean("false"), do: false
+
+  defp maybe_clear_should_send_emails(socket, %{valid: true}), do: socket
+
+  defp maybe_clear_should_send_emails(socket, _check), do: assign(socket, :should_send_emails, false)
 
   # Extract suggestions from invoice number warnings for display in template
   def warning_suggestions({:invalid_format, suggestions}), do: suggestions

@@ -26,17 +26,7 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
 
     invoice =
       invoice
-      |> Ash.load!(
-        [
-          :net_value,
-          :vat_value,
-          :gross_value,
-          :internal_note,
-          sales_invoice_items: @item_calcs,
-          corrections: [sales_invoice_items: @item_calcs]
-        ],
-        ash_opts
-      )
+      |> Ash.load!(base_loads(invoice), ash_opts)
       |> maybe_load_reference_invoice(ash_opts)
       |> then(fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)
 
@@ -60,6 +50,13 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
 
   defp maybe_load_reference_invoice(%{ksef_invoice_kind: kind} = invoice, _ash_opts) when kind != :kor, do: invoice
 
+  defp maybe_load_reference_invoice(
+         %{reference_invoice: %SalesInvoice{}, corrected_invoice: %SalesInvoice{}} = invoice,
+         _ash_opts
+       ) do
+    invoice
+  end
+
   defp maybe_load_reference_invoice(invoice, ash_opts) do
     invoice = Ash.load!(invoice, [:reference_invoice, :corrected_invoice], ash_opts)
 
@@ -76,6 +73,19 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
   defp footer_logo_path do
     Path.join(:code.priv_dir(:firmowid), "static/images/invoice_firmowid_logo.png")
   end
+
+  defp base_loads(invoice) do
+    loads = [:net_value, :vat_value, :gross_value, sales_invoice_items: @item_calcs]
+
+    if loaded?(invoice.corrections) do
+      loads
+    else
+      loads ++ [corrections: [sales_invoice_items: @item_calcs]]
+    end
+  end
+
+  defp loaded?(%Ash.NotLoaded{}), do: false
+  defp loaded?(_value), do: true
 
   defp ash_opts(invoice, nil), do: [tenant: invoice.organization_id]
   defp ash_opts(_invoice, scope), do: [scope: scope]

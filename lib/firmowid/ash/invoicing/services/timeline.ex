@@ -10,6 +10,10 @@ defmodule Firmowid.Ash.Invoicing.Services.Timeline do
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
 
+  defguardp is_loaded(value)
+            when not is_struct(value, Ecto.Association.NotLoaded) and
+                   not is_struct(value, Ash.NotLoaded)
+
   @type event :: %{
           occurred_at: DateTime.t() | NaiveDateTime.t() | nil,
           event: atom(),
@@ -22,8 +26,9 @@ defmodule Firmowid.Ash.Invoicing.Services.Timeline do
     []
     |> maybe_add_created_event(invoice)
     |> maybe_add_submission_events(submission_info)
+    |> maybe_add_email_delivery_events(invoice)
     |> maybe_add_correction_events(invoice)
-    |> Enum.sort_by(&event_sort_key/1, DateTime)
+    |> Enum.sort_by(&event_sort_key/1)
   end
 
   @doc "Builds a timeline of events for a cost invoice."
@@ -32,7 +37,7 @@ defmodule Firmowid.Ash.Invoicing.Services.Timeline do
     []
     |> maybe_add_downloaded_event(invoice)
     |> maybe_add_correction_events(invoice)
-    |> Enum.sort_by(&event_sort_key/1, DateTime)
+    |> Enum.sort_by(&event_sort_key/1)
   end
 
   defp maybe_add_created_event(events, %SalesInvoice{inserted_at: inserted_at, invoice_number: number}) do
@@ -107,9 +112,12 @@ defmodule Firmowid.Ash.Invoicing.Services.Timeline do
     [event | events]
   end
 
-  defguardp is_loaded(corrections)
-            when not is_struct(corrections, Ecto.Association.NotLoaded) and
-                   not is_struct(corrections, Ash.NotLoaded)
+  defp maybe_add_email_delivery_events(events, %SalesInvoice{email_deliveries: deliveries}) when is_loaded(deliveries) do
+    delivery_events = Enum.map(deliveries, &delivery_to_event/1)
+    delivery_events ++ events
+  end
+
+  defp maybe_add_email_delivery_events(events, _invoice), do: events
 
   defp maybe_add_correction_events(events, %SalesInvoice{corrections: corrections}) when is_loaded(corrections) do
     correction_events =
@@ -121,9 +129,10 @@ defmodule Firmowid.Ash.Invoicing.Services.Timeline do
         }
       end)
 
+    delivery_events = Enum.flat_map(corrections, &correction_delivery_events/1)
     submission_events = correction_submission_events(corrections)
 
-    correction_events ++ submission_events ++ events
+    correction_events ++ delivery_events ++ submission_events ++ events
   end
 
   defp maybe_add_correction_events(events, %CostInvoice{correction_invoices: corrections}) when is_loaded(corrections) do
@@ -139,6 +148,12 @@ defmodule Firmowid.Ash.Invoicing.Services.Timeline do
   end
 
   defp maybe_add_correction_events(events, _invoice), do: events
+
+  defp correction_delivery_events(%{email_deliveries: deliveries}) when is_loaded(deliveries) do
+    Enum.map(deliveries, &delivery_to_event/1)
+  end
+
+  defp correction_delivery_events(_), do: []
 
   defp correction_submission_events(corrections) do
     corrections
@@ -177,10 +192,53 @@ defmodule Firmowid.Ash.Invoicing.Services.Timeline do
     }
   end
 
+  defp delivery_to_event(delivery) do
+    %{
+      occurred_at: delivery_occurred_at(delivery),
+      event: delivery_event_name(delivery.delivery_type, delivery.status),
+      metadata: %{
+        recipient_email: delivery.recipient_email,
+        error_message: delivery.error_message
+      }
+    }
+  end
+
+  defp delivery_event_name(:basic, :sent), do: :email_sent
+  defp delivery_event_name(:basic, :failed), do: :email_failed
+  defp delivery_event_name(:reminder, :sent), do: :reminder_sent
+  defp delivery_event_name(:reminder, :failed), do: :reminder_failed
+  defp delivery_event_name(:invoice_correction, :sent), do: :correction_email_sent
+  defp delivery_event_name(:invoice_correction, :failed), do: :correction_email_failed
+
+  defp delivery_occurred_at(%{status: :sent, sent_at: sent_at, inserted_at: inserted_at}) do
+    to_datetime(sent_at || inserted_at)
+  end
+
+  defp delivery_occurred_at(%{status: :failed, failed_at: failed_at, inserted_at: inserted_at}) do
+    to_datetime(failed_at || inserted_at)
+  end
+
   defp to_datetime(nil), do: nil
   defp to_datetime(%DateTime{} = dt), do: dt
   defp to_datetime(%NaiveDateTime{} = dt), do: DateTime.from_naive!(dt, "Etc/UTC")
 
-  defp event_sort_key(%{occurred_at: nil}), do: DateTime.from_unix!(0)
-  defp event_sort_key(%{occurred_at: dt}), do: dt
+  # sort by occurence time, resolve ties by event keys
+  defp event_sort_key(%{occurred_at: nil, event: event}), do: {0, email_event_order(event), 0}
+
+  defp event_sort_key(%{occurred_at: dt, event: event}) do
+    {DateTime.to_unix(dt, :second), email_event_order(event), DateTime.to_unix(dt, :microsecond)}
+  end
+
+  # email deliveries should always show up later in timeline (in case of time ties)
+  defp email_event_order(event)
+       when event in [
+              :email_sent,
+              :email_failed,
+              :reminder_sent,
+              :reminder_failed,
+              :correction_email_sent,
+              :correction_email_failed
+            ], do: 1
+
+  defp email_event_order(_event), do: 0
 end

@@ -78,6 +78,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
             :vat_value,
             :gross_value,
             :internal_note,
+            :email_deliveries,
             sales_invoice_items: [:net_value, :vat_value, :gross_value]
           ]
         ],

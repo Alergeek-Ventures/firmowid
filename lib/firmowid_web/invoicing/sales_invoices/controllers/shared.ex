@@ -28,10 +28,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
   plug :put_root_layout, html: false
 
   def show(conn, %{"token" => token_string} = params) do
-    case SalesInvoice.by_share_token(token_string, scope: anonymous_lookup_scope()) do
-      {:ok, nil} ->
-        conn |> put_status(404) |> render(:not_found, layout: false)
+    # we dont need correction_id - this view uses root token to show all invoices including related corrections
+    # but we need to split it to keep the old link format root_token.correction_id working
+    {root_token, _correction_id} = split_pdf_token(token_string)
 
+    case shared_invoice(root_token) do
       {:ok, invoice} ->
         scope = build_anonymous_scope(invoice)
         {invoice, logo_url, org} = prepare_invoice_with_org_context(invoice, scope)
@@ -47,41 +48,59 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
           show_vat: org.is_vat_payer
         )
 
-      {:error, _} ->
+      :not_found ->
         conn |> put_status(404) |> render(:not_found, layout: false)
     end
   end
 
+  # pdf download needs to know the correction_id unlike the view
   def pdf(conn, %{"token" => token_string}) do
-    case SalesInvoice.by_share_token(token_string, scope: anonymous_lookup_scope()) do
-      {:ok, nil} ->
-        conn |> put_status(404) |> render(:not_found, layout: false)
+    {root_token, correction_id} = split_pdf_token(token_string)
 
-      {:ok, invoice} ->
-        scope = build_anonymous_scope(invoice)
-        {invoice, logo_url, org} = prepare_invoice_with_org_context(invoice, scope)
+    with {:ok, invoice} <- shared_invoice(root_token),
+         scope = build_anonymous_scope(invoice),
+         {invoice, logo_url, org} = prepare_invoice_with_org_context(invoice, scope),
+         {:ok, target_invoice} <- target_pdf_invoice(invoice, correction_id),
+         {:ok, pdf_binary} <-
+           SalesInvoicePdf.generate(target_invoice,
+             show_vat: org.is_vat_payer,
+             logo_url: logo_url,
+             include_internal_note: false,
+             scope: scope
+           ) do
+      filename = (target_invoice.invoice_number || "faktura") <> ".pdf"
 
-        case SalesInvoicePdf.generate(invoice,
-               show_vat: org.is_vat_payer,
-               logo_url: logo_url,
-               include_internal_note: false,
-               scope: scope
-             ) do
-          {:ok, pdf_binary} ->
-            filename = (invoice.invoice_number || "faktura") <> ".pdf"
+      conn
+      |> put_resp_content_type("application/pdf")
+      |> put_resp_header("content-disposition", ~s(attachment; filename="#{filename}"))
+      |> send_resp(200, pdf_binary)
+    else
+      :not_found -> conn |> put_status(404) |> render(:not_found, layout: false)
+      {:error, _reason} -> conn |> put_status(500) |> render(:error, layout: false)
+    end
+  end
 
-            conn
-            |> put_resp_content_type("application/pdf")
-            |> put_resp_header("content-disposition", ~s(attachment; filename="#{filename}"))
-            |> send_resp(200, pdf_binary)
+  defp shared_invoice(root_token) do
+    case SalesInvoice.by_share_token(root_token, scope: anonymous_lookup_scope()) do
+      {:ok, nil} -> :not_found
+      {:ok, invoice} -> {:ok, invoice}
+      {:error, _reason} -> :not_found
+    end
+  end
 
-          {:error, reason} ->
-            Logger.error("PDF generation failed for shared invoice: #{inspect(reason)}")
-            conn |> put_status(500) |> render(:error, layout: false)
-        end
+  defp split_pdf_token(token) do
+    case String.split(token, ".", parts: 2) do
+      [root, id] -> {root, id}
+      [root] -> {root, nil}
+    end
+  end
 
-      {:error, _} ->
-        conn |> put_status(404) |> render(:not_found, layout: false)
+  defp target_pdf_invoice(invoice, nil), do: {:ok, invoice}
+
+  defp target_pdf_invoice(invoice, correction_id) do
+    case Enum.find(invoice.corrections, &(&1.id == correction_id)) do
+      nil -> :not_found
+      correction -> {:ok, correction}
     end
   end
 
@@ -98,36 +117,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Shared do
     %Scope{actor: %SystemActor{org_id: nil, role: :anonymous}, tenant: nil}
   end
 
-  # Loads the invoice with all calculations required for display.
-  # Authorization was already performed by share token lookup, so we skip it
-  # here to ensure aggregates and calculations are fully accessible.
   defp prepare_invoice_with_org_context(invoice, scope) do
-    alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
-
     org = invoice.organization
-
     logo_url = Invoicing.get_logo_url(invoice.organization_id, scope: scope)
-
-    invoice =
-      invoice
-      |> Ash.load!(
-        [
-          :net_value,
-          :vat_value,
-          :gross_value,
-          :buyer_display_name_label,
-          sales_invoice_items: [:net_value, :vat_value, :gross_value],
-          corrections: [
-            :net_value,
-            :vat_value,
-            :gross_value,
-            sales_invoice_items: [:net_value, :vat_value, :gross_value]
-          ],
-          reference_invoice: []
-        ],
-        scope: scope
-      )
-      |> then(fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)
 
     {invoice, logo_url, org}
   end

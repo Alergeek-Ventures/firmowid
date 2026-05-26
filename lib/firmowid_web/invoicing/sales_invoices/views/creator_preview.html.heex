@@ -120,6 +120,23 @@
           ><%= @invoice.internal_note || "" %></textarea>
         </form>
 
+        <form phx-change="toggle_should_send_emails">
+          <label
+            class="text-grey-700 flex items-center gap-3 text-sm font-medium"
+            title={@counterparty_check.tooltip}
+          >
+            <input
+              type="checkbox"
+              name="should_send_emails"
+              value="true"
+              checked={@should_send_emails}
+              disabled={!@counterparty_check.valid}
+              class="border-grey-300 focus:ring-turquoise-500 text-turquoise-600 size-4 rounded disabled:cursor-not-allowed disabled:opacity-60"
+            />
+            <span>Wyślij fakturę e-mailem do kontrahenta po otrzymaniu numeru KSeF</span>
+          </label>
+        </form>
+
         <%!-- Action buttons --%>
         <div class="flex flex-row gap-4 pt-4">
           <.button

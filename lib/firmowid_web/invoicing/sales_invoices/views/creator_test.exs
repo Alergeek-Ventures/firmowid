@@ -269,11 +269,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
         scope: scope
       )
 
+    should_send_emails = false
+
     {:ok, copied_invoice} =
       SalesInvoice.confirm_from_draft(
         copied_draft.id,
         "FV/COPY/#{System.unique_integer([:positive])}",
         %{name: "Test Organization", address: "ul. Organizacyjna 1, Warszawa", nip: "1234567890"},
+        should_send_emails,
         scope: scope
       )
 

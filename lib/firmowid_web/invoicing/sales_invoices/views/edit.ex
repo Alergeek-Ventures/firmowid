@@ -19,6 +19,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoice.EmailRecipientEligibility
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
   alias Firmowid.Ash.Invoicing.Services.CorrectionReason
   alias Firmowid.Ash.Ksef
@@ -85,6 +86,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     reference_invoice = load_reference_invoice(invoice, scope)
 
     ash_form = build_ash_form(invoice, socket.assigns.ash_scope)
+    counterparty_check = counterparty_check(ash_form, invoice, scope)
 
     socket
     |> assign(:invoice, invoice)
@@ -94,6 +96,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     |> assign(:reference_invoice, reference_invoice)
     |> assign(:correction_reason_touched, false)
     |> assign(:last_auto_reason, "")
+    |> assign(:counterparty_check, counterparty_check)
     |> assign_form_with_preview(ash_form)
     |> assign(:bank_accounts, bank_accounts)
     |> assign(
@@ -183,6 +186,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
             :buyer_display_name,
             :buyer_address,
             :buyer_country,
+            :counterparty_id,
+            :should_send_emails,
             :buyer_email,
             :buyer_phone,
             :buyer_description,
@@ -223,6 +228,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
         "buyer_email" => latest.buyer_email,
         "buyer_phone" => latest.buyer_phone,
         "buyer_description" => latest.buyer_description,
+        "should_send_emails" => to_string(latest.should_send_emails || false),
         "is_reverse_charge" => to_string(latest.is_reverse_charge || false),
         "sales_invoice_items" =>
           latest.sales_invoice_items
@@ -600,9 +606,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
       invoice_number: AshPhoenix.Form.value(ash_form, :invoice_number) || invoice.invoice_number,
       invoice_type: form_value_atom(ash_form, :invoice_type) || invoice.invoice_type,
       counterparty_id: AshPhoenix.Form.value(ash_form, :counterparty_id) || invoice.counterparty_id,
+      should_send_emails: parse_boolean(AshPhoenix.Form.value(ash_form, :should_send_emails)),
       is_cash_account: parse_boolean(AshPhoenix.Form.value(ash_form, :is_cash_account)),
       is_reverse_charge: parse_boolean(AshPhoenix.Form.value(ash_form, :is_reverse_charge))
     }
+  end
+
+  defp counterparty_check(ash_form, invoice, scope) do
+    counterparty_id = AshPhoenix.Form.value(ash_form, :counterparty_id) || invoice.counterparty_id
+
+    case EmailRecipientEligibility.fetch_valid_counterparty_email(counterparty_id, scope) do
+      {:ok, _email} -> %{valid: true, tooltip: nil}
+      {:error, reason, _email} -> %{valid: false, tooltip: reason}
+    end
   end
 
   defp build_preview_dates_and_payment(ash_form, invoice) do
