@@ -83,6 +83,12 @@
       data-current-user-email={
         if assigns[:current_user], do: assigns.current_user.email, else: ""
       }
+      data-current-user-role={
+        if assigns[:current_user], do: to_string(assigns.current_user.role), else: ""
+      }
+      data-current-organization-id={
+        if assigns[:current_user], do: assigns.current_user.organization_id || "", else: ""
+      }
     >
     </script>
   </head>

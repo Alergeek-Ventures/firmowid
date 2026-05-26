@@ -116,6 +116,10 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
           W przypadku braku zgody na cookies analityczne, dane są anonimizowane.
         </li>
         <li>
+          <strong>Sentry</strong> — monitoring błędów aplikacji i, po uzyskaniu
+          zgody, nagrania sesji diagnostycznych (Replay).
+        </li>
+        <li>
           <strong>Plus Five Five, Inc.</strong> (Resend) — wysyłka i odbiór wiadomości
           e-mail (powiadomienia transakcyjne oraz przetwarzanie faktur przychodzących).
         </li>
@@ -176,9 +180,18 @@ defmodule FirmowidWeb.Landing.Views.PrivacyPolicy do
         </li>
         <li>
           <strong>Cookies analityczne (PostHog)</strong> — wykorzystywane do analizy
-          korzystania z usługi w celu jej ulepszania. Wymagają zgody użytkownika.
-          W przypadku braku zgody analityka działa w trybie anonimowym
-          (bez identyfikacji użytkownika).
+          korzystania z usługi w celu jej ulepszania. Wymagają zgody użytkownika,
+          zanim zapiszemy trwałe identyfikatory analityczne w przeglądarce.
+          Do momentu podjęcia decyzji analityka działa wyłącznie w trybie
+          anonimowym i pamięciowym (bez identyfikacji użytkownika i bez
+          utrwalania identyfikatorów PostHog w przeglądarce). Po odmowie dalsza
+          analityka przestaje działać.
+        </li>
+        <li>
+          <strong>Monitoring błędów (Sentry)</strong> — działa stale w celu
+          zapewnienia bezpieczeństwa i niezawodności usługi. Po wyrażeniu zgody
+          możemy dodatkowo uruchomić nagrywanie sesji diagnostycznych (Replay),
+          które pomaga odtworzyć kroki prowadzące do błędu.
         </li>
         <li>
           <strong>Cookie preferencji (cookie_consent)</strong> — przechowuje informację

@@ -45,8 +45,6 @@ config :firmowid, Firmowid.Vault,
       {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: Base.decode64!("REMOVED_DEV_VAULT_KEY")}
   ]
 
-config :firmowid, :analytics, posthog_enabled: false
-
 config :firmowid, :s3,
   host: "localhost",
   scheme: "http://",

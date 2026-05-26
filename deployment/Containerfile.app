@@ -18,7 +18,7 @@ ARG RUNNER_IMAGE="alpine:3.22@sha256:55ae5d250caebc548793f321534bc6a8ef1d116f334
 FROM ${BUILDER_IMAGE} AS builder
 
 # Install build dependencies
-RUN apk add --no-cache build-base git
+RUN apk add --no-cache build-base git nodejs npm
 
 # prepare build dir
 WORKDIR /app
@@ -38,6 +38,7 @@ RUN mkdir config
 # to be re-compiled.
 COPY config/config.exs config/${MIX_ENV}.exs config/
 COPY assets assets
+RUN npm ci --prefix assets
 
 # Enable parallel compilation
 

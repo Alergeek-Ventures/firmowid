@@ -220,8 +220,6 @@ if System.get_env("SENTRY_DSN") == "disabled" do
   System.delete_env("SENTRY_DSN")
 end
 
-config :firmowid, :analytics, posthog_enabled: posthog_enabled
-
 if posthog_enabled do
   posthog_api_key =
     System.get_env("POSTHOG_API_KEY") ||
@@ -238,6 +236,8 @@ if posthog_enabled do
     sentry_release: sentry_release || ""
 
   config :posthog,
+    enable: true,
+    enable_error_tracking: false,
     api_key: posthog_api_key,
     api_host: posthog_api_host
 else
@@ -248,6 +248,10 @@ else
     sentry_dsn: frontend_sentry,
     sentry_environment: System.get_env("SENTRY_FRONTEND_ENV", to_string(config_env())),
     sentry_release: sentry_release || ""
+
+  config :posthog,
+    enable: false,
+    enable_error_tracking: false
 end
 
 # server-side Sentry DSN

@@ -56,6 +56,3 @@ else
   # — Evil org: VoidStack Labs —
   Voidstack.seed!()
 end
-
-# — Feature flags (always runs, idempotent) —
-FunWithFlags.enable(:analysis_dashboard, for_group: "domain:bytecraft.collective")

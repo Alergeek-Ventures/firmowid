@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Core.Router do
 
   alias Auth.Controllers.AuthController
   alias FirmowidWeb.Infrastructure.Hooks.CurrentPath
+  alias FirmowidWeb.Infrastructure.Hooks.FeatureFlags
   alias FirmowidWeb.Infrastructure.Hooks.RedirectAuthenticated
   alias FirmowidWeb.Infrastructure.Hooks.RequireAdmin
   alias FirmowidWeb.Infrastructure.Hooks.RequireNoOrganization
@@ -70,14 +71,13 @@ defmodule FirmowidWeb.Core.Router do
 
     oban_dashboard("/oban", oban_name: Oban)
 
-    forward "/flags", FunWithFlags.UI.Router, namespace: "admin/flags"
-
     forward "/mailbox", Plug.Swoosh.MailboxPreview
 
     ash_authentication_live_session :admin,
       on_mount: [
         {RequireOrganization, :default},
         {RequireSuperuser, :default},
+        {FeatureFlags, :default},
         {CurrentPath, :save_request_uri},
         Timezone
       ] do
@@ -113,7 +113,7 @@ defmodule FirmowidWeb.Core.Router do
     pipe_through [:browser, :require_authenticated_user_without_organization]
 
     ash_authentication_live_session :without_org,
-      on_mount: [{RequireNoOrganization, :default}] do
+      on_mount: [{RequireNoOrganization, :default}, {FeatureFlags, :default}] do
       live "/organizacja", Organization.Views.Index, :index
     end
   end
@@ -134,6 +134,7 @@ defmodule FirmowidWeb.Core.Router do
     ash_authentication_live_session :with_org,
       on_mount: [
         {RequireOrganization, :default},
+        {FeatureFlags, :default},
         {CurrentPath, :save_request_uri},
         Timezone
       ] do
@@ -160,6 +161,7 @@ defmodule FirmowidWeb.Core.Router do
       on_mount: [
         {RequireOrganization, :default},
         {RequireAdmin, :default},
+        {FeatureFlags, :default},
         {CurrentPath, :save_request_uri},
         Timezone
       ] do
@@ -188,6 +190,7 @@ defmodule FirmowidWeb.Core.Router do
     ash_authentication_live_session :with_org_extended,
       on_mount: [
         {RequireOrganization, :default},
+        {FeatureFlags, :default},
         {CurrentPath, :save_request_uri},
         Timezone
       ] do

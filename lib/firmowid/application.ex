@@ -51,7 +51,6 @@ defmodule Firmowid.Application do
         {Jido, name: Jido, otp_app: :firmowid}
       ] ++
         maybe_gocardless_token_manager() ++
-        maybe_posthog_supervisor() ++
         [
           # Start to serve requests, typically the last entry
           Endpoint
@@ -63,24 +62,6 @@ defmodule Firmowid.Application do
     result = Supervisor.start_link(children, opts)
 
     result
-  end
-
-  defp maybe_posthog_supervisor do
-    analytics_config = Application.get_env(:firmowid, :analytics, [])
-
-    if analytics_config[:posthog_enabled] do
-      # PostHog.Supervisor expects a validated config map
-      # Filter out convenience options (enable, enable_error_tracking) that are only for auto-start
-      posthog_config =
-        :posthog
-        |> Application.get_all_env()
-        |> Keyword.drop([:enable, :enable_error_tracking])
-        |> PostHog.Config.validate!()
-
-      [{PostHog.Supervisor, posthog_config}]
-    else
-      []
-    end
   end
 
   defp maybe_gocardless_token_manager do

@@ -6,8 +6,9 @@ defmodule FirmowidWeb.Landing.Components.CookieConsent do
   analytics cookies. The preference is stored in a `cookie_consent` cookie used
   by frontend telemetry initialization.
 
-  - **Accepted** — frontend PostHog and Sentry initialization is allowed.
-  - **Rejected** — frontend analytics/monitoring SDKs are not initialized.
+  - **Accepted** — PostHog switches to persistent analytics, identified users
+    can be associated with their account and Sentry Replay may be enabled.
+  - **Rejected** — browser analytics and Replay remain disabled for future page loads.
 
   The banner auto-hides when a preference has already been set.
   """
@@ -34,7 +35,10 @@ defmodule FirmowidWeb.Landing.Components.CookieConsent do
           <div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex-1 text-sm text-white/80">
               <p>
-                Używamy plików cookies do analityki, aby ulepszać Firmowida.
+                Zawsze monitorujemy błędy aplikacji, aby utrzymywać niezawodność
+                usługi. Po akceptacji możemy dodatkowo zapisywać cookies
+                analityczne, uruchomić nagrywanie sesji diagnostycznych i
+                powiązać dane z zalogowanym użytkownikiem.
                 Szczegóły w naszej <.link
                   kind="unstyled"
                   navigate={~p"/polityka-prywatnosci"}

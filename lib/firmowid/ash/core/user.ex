@@ -483,16 +483,3 @@ defmodule Firmowid.Ash.Core.User do
   # Use a dedicated validation module placed next to the resource file.
   # See lib/firmowid/ash/core/validations/not_self_archive.ex
 end
-
-# ── FunWithFlags protocol implementations ─────────────────────────
-# These enable feature flag targeting by user email and email domain.
-defimpl FunWithFlags.Actor, for: Firmowid.Ash.Core.User do
-  def id(%{email: email}), do: "user:#{email}"
-end
-
-defimpl FunWithFlags.Group, for: Firmowid.Ash.Core.User do
-  def in?(%{email: email}, group) do
-    [_local, domain] = String.split(to_string(email), "@", parts: 2)
-    group == "domain:#{domain}"
-  end
-end

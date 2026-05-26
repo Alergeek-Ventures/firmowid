@@ -1,4 +1,9 @@
-import { initTelemetry } from "../telemetry";
+import {
+  acceptConsent,
+  consentStatus,
+  rejectConsent
+} from "../telemetry/consent";
+import { acceptTelemetry, optOutTelemetry } from "../telemetry";
 
 /**
  * CookieConsent Hook
@@ -13,7 +18,7 @@ import { initTelemetry } from "../telemetry";
  */
 export const CookieConsent = {
   mounted() {
-    const existing = getCookie("cookie_consent");
+    const existing = consentStatus();
 
     if (!existing) {
       this.el.classList.remove("hidden");
@@ -22,28 +27,17 @@ export const CookieConsent = {
     this.el
       .querySelector("#cookie-consent-accept")
       .addEventListener("click", () => {
-        setCookie("cookie_consent", "accepted", 365);
-        initTelemetry();
+        acceptConsent();
+        acceptTelemetry();
         this.el.classList.add("hidden");
       });
 
     this.el
       .querySelector("#cookie-consent-reject")
       .addEventListener("click", () => {
-        setCookie("cookie_consent", "rejected", 365);
+        rejectConsent();
+        optOutTelemetry();
         this.el.classList.add("hidden");
       });
   },
 };
-
-function getCookie(name) {
-  const match = document.cookie.match(
-    new RegExp("(^| )" + name + "=([^;]+)")
-  );
-  return match ? match[2] : null;
-}
-
-function setCookie(name, value, days) {
-  const maxAge = days * 24 * 60 * 60;
-  document.cookie = `${name}=${value};path=/;max-age=${maxAge};SameSite=Lax`;
-}

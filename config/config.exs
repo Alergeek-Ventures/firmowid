@@ -137,15 +137,6 @@ config :firmowid,
     Firmowid.Ash.Ksef
   ]
 
-config :fun_with_flags, :cache_bust_notifications,
-  enabled: true,
-  adapter: FunWithFlags.Notifications.PhoenixPubSub,
-  client: Firmowid.PubSub
-
-config :fun_with_flags, :persistence,
-  adapter: FunWithFlags.Store.Persistent.Ecto,
-  repo: Firmowid.Repo
-
 config :jido_ai,
   model_aliases: %{
     fast: "openai:gpt-5-nano",
@@ -170,8 +161,9 @@ config :logger, :console,
 
 config :phoenix, :json_library, Jason
 
-# Disable PostHog auto-start - we control it via application.ex based on POSTHOG_ENABLED env var
-config :posthog, enable: false
+config :posthog,
+  enable: false,
+  enable_error_tracking: false
 
 config :spark,
   formatter: [

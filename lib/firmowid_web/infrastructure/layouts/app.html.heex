@@ -40,7 +40,7 @@
             <.icon name="hero-clipboard-document-list" class="size-5" /> Fakturowanie
           </.link>
         <% end %>
-        <%= if flag_enabled?(:analysis_dashboard, @current_user) and @current_user.role == :admin do %>
+        <%= if flag_enabled?(:analysis_dashboard, assigns) and @current_user.role == :admin do %>
           <.link
             kind="unstyled"
             navigate={~p"/analiza"}
