@@ -10,7 +10,14 @@ defmodule Firmowid.Repo.Migrations.UserSalaryStartsAddAndRemoveDeletedAt do
   def up do
     alter table(:user_salaries) do
       remove :deleted_at
-      add :starts_at, :utc_datetime, null: false, default: fragment("CURRENT_DATE")
+      add :starts_at, :utc_datetime, null: true
+    end
+
+    # Set starts_at to inserted_at for existing records
+    execute("UPDATE user_salaries SET starts_at = inserted_at WHERE starts_at IS NULL")
+
+    alter table(:user_salaries) do
+      modify :starts_at, :utc_datetime, null: false, default: fragment("CURRENT_DATE")
     end
 
     drop_if_exists unique_index(:user_salaries, [:organization_id, :user_id],
