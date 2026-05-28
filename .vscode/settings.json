@@ -25,6 +25,7 @@
     "HTML (EEx)": "html",
     "phoenix-heex": "html"
   },
+  "tailwindCSS.experimental.configFile": "assets/css/app.css",
   "[phoenix-heex]": {
     "editor.foldingStrategy": "indentation",
     "editor.formatOnSave": true,

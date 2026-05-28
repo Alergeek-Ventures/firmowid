@@ -2,6 +2,7 @@
   "dependencies": {
     "@sentry/browser": "^10.54.0",
     "posthog-js": "^1.376.1",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "tailwindcss": "^4.3.0"
   }
 }
