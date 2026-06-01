@@ -5,6 +5,7 @@ defmodule Firmowid.Ash.Finances.RequisitionTest do
   import Firmowid.AccountsFixtures
 
   alias Firmowid.Ash.Finances.Requisition
+  alias Firmowid.Ash.SystemActor
 
   describe "check_status" do
     test "transitions to rejected when GoCardless returns not_found" do
@@ -51,6 +52,31 @@ defmodule Firmowid.Ash.Finances.RequisitionTest do
                |> Ash.update(tenant: user.organization_id, actor: user)
 
       assert rejected.status == :rejected
+    end
+  end
+
+  describe "expire" do
+    test "allows the bank sync system actor to expire an accepted requisition" do
+      user = admin_fixture()
+      actor = %SystemActor{org_id: user.organization_id, role: :bank_sync}
+
+      requisition =
+        Ash.Seed.seed!(
+          Requisition,
+          %{
+            id: Ecto.UUID.generate(),
+            status: :accepted
+          },
+          tenant: user.organization_id
+        )
+
+      assert {:ok, expired} =
+               Requisition.expire(requisition,
+                 actor: actor,
+                 tenant: user.organization_id
+               )
+
+      assert expired.status == :expired
     end
   end
 

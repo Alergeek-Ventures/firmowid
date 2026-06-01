@@ -54,8 +54,9 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
       {:ok, bank_account}
     else
       {:error, :expired_eua} ->
-        expire_parent_requisition(bank_account, scope)
-        {:error, :requisition_expired}
+        with :ok <- expire_parent_requisition(bank_account, scope) do
+          {:ok, bank_account}
+        end
 
       error ->
         error
@@ -69,14 +70,59 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
   end
 
   defp expire_parent_requisition(bank_account, scope) do
-    case Requisition.expire(bank_account.requisition_id, scope: scope) do
-      {:ok, _} ->
-        Logger.info("Expired requisition #{bank_account.requisition_id} during sync")
+    case bank_account.requisition_id do
+      nil ->
+        Logger.warning("Cannot expire missing requisition during sync for bank account #{bank_account.id}")
 
-      {:error, reason} ->
-        Logger.warning("Could not expire requisition #{bank_account.requisition_id}: #{inspect(reason)}")
+        :ok
+
+      requisition_id ->
+        requisition_id
+        |> fetch_parent_requisition(scope)
+        |> expire_parent_requisition_record(requisition_id, scope)
     end
   end
+
+  defp fetch_parent_requisition(requisition_id, scope) do
+    Ash.get(Requisition, requisition_id,
+      actor: scope.actor,
+      tenant: scope.tenant
+    )
+  end
+
+  defp expire_parent_requisition_record({:ok, nil}, requisition_id, _scope) do
+    Logger.warning("Cannot expire missing requisition #{requisition_id} during sync")
+    :ok
+  end
+
+  defp expire_parent_requisition_record({:ok, requisition}, requisition_id, scope) do
+    case Requisition.expire(requisition, actor: scope.actor, tenant: scope.tenant) do
+      {:ok, _} ->
+        Logger.info("Expired requisition #{requisition_id} during sync")
+        :ok
+
+      {:error, reason} ->
+        Logger.warning("Could not expire requisition #{requisition_id}: #{inspect(reason)}")
+        {:error, reason}
+    end
+  end
+
+  defp expire_parent_requisition_record({:error, reason}, requisition_id, _scope) do
+    if not_found_error?(reason) do
+      Logger.warning("Cannot expire missing requisition #{requisition_id} during sync")
+      :ok
+    else
+      Logger.warning("Could not load requisition #{requisition_id} during sync: #{inspect(reason)}")
+
+      {:error, reason}
+    end
+  end
+
+  defp not_found_error?(%Ash.Error.Invalid{errors: errors}) do
+    Enum.any?(errors, &match?(%Ash.Error.Query.NotFound{}, &1))
+  end
+
+  defp not_found_error?(_reason), do: false
 
   defp upsert_transactions(booked_transactions, bank_account, previous_successful_sync_at, scope) do
     %{transactions: parsed_transactions, errors: parse_errors} =

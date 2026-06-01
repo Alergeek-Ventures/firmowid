@@ -9,6 +9,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.BankAccount
   alias Firmowid.Ash.Finances.DuplicateTransactionMatcher
+  alias Firmowid.Ash.Finances.Requisition
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.SystemActor
 
@@ -169,6 +170,45 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
         |> Enum.sort()
 
       assert persisted_ids == ["kept-cutoff", "kept-window"]
+    end
+  end
+
+  describe "expired requisition handling" do
+    test "expires the parent requisition when GoCardless reports an expired EUA", ctx do
+      requisition = seed_requisition(ctx.org_id, :accepted)
+      bank_account = seed_bank_account_with_requisition(ctx.org_id, requisition.id)
+
+      assert bank_account.requisition_id == requisition.id
+
+      stub_expired_eua()
+
+      assert {:ok, _bank_account} =
+               bank_account
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      assert {:ok, refreshed} =
+               Ash.get(Requisition, requisition.id,
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+
+      assert refreshed.status == :expired
+    end
+
+    test "does not fail with forbidden when an expired EUA has no parent requisition", ctx do
+      stub_expired_eua()
+
+      assert {:ok, _bank_account} =
+               ctx.bank_account_1
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
     end
   end
 
@@ -376,6 +416,49 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
         }
       })
     end)
+  end
+
+  defp stub_expired_eua do
+    Req.Test.stub(:bank_data_transactions, fn conn ->
+      conn
+      |> Plug.Conn.put_resp_content_type("application/json")
+      |> Plug.Conn.send_resp(
+        401,
+        Jason.encode!(%{
+          summary: "End User Agreement (EUA) abc123 has expired",
+          detail: "EUA was valid for 90 days",
+          status_code: 401
+        })
+      )
+    end)
+  end
+
+  defp seed_requisition(org_id, status) do
+    Ash.Seed.seed!(
+      Requisition,
+      %{
+        id: Ecto.UUID.generate(),
+        status: status
+      },
+      tenant: org_id
+    )
+  end
+
+  defp seed_bank_account_with_requisition(org_id, requisition_id) do
+    Ash.Seed.seed!(
+      BankAccount,
+      %{
+        iban: "PL33333333333333333333333333",
+        currency: "PLN",
+        name: "Requisition account",
+        owner_name: "Firmowid",
+        institution_id: "NEST_BANK_CORPORATE_NESBPLPW",
+        institution_name: "Test Bank",
+        gocardless_id: "gc-account-with-requisition",
+        requisition_id: requisition_id
+      },
+      tenant: org_id
+    )
   end
 
   defp seed_successful_sync_event(bank_account, org_id, occurred_at) do

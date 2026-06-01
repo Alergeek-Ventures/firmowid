@@ -192,6 +192,7 @@ defmodule Firmowid.Ash.Finances.Requisition do
     end
 
     bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:bank_sync]} do
+      authorize_if action(:read)
       authorize_if action(:expire)
     end
 

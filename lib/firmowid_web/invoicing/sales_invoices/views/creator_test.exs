@@ -145,11 +145,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
         scope: scope
       )
 
+    issue_date =
+      Date.utc_today()
+      |> Map.put(:day, 1)
+      |> Date.shift(month: -1, day: 14)
+
     source_invoice =
       sales_invoice_fixture!(admin, %{
-        issue_date: ~D[2026-03-15],
-        sale_date: ~D[2026-03-15],
-        due_date: ~D[2026-03-29],
+        issue_date: issue_date,
+        sale_date: issue_date,
+        due_date: Date.add(issue_date, 14),
         payment_method: :transfer,
         seller_account_number: "DE66123456781234567812",
         buyer_display_name: "Buyer GmbH Copy",
