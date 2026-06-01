@@ -26,7 +26,7 @@ services:
       retries: 5
 
   s3:
-    image: docker.io/chrislusf/seaweedfs:4.17@sha256:186de7ef977a20343ee9a5544073f081976a29e2d29ecf8379891e7bf177fbe9
+    image: docker.io/chrislusf/seaweedfs:4.30@sha256:20fb6eabf1468d3e53fb7b8bd05d929f8b01ae8ceccc2668b501176b2366940f
     container_name: ${COMPOSE_PROJECT_NAME:-firmowid}-s3
     command: server -s3
     ports:
