@@ -123,15 +123,6 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
   defp blank_to_nil(""), do: nil
   defp blank_to_nil(value), do: value
 
-  defp subfilter_styles(active?) do
-    [
-      "bg-lightGreyBg border-greyButtonBg text-darkGrey inline-flex
-      items-center justify-center gap-2 rounded-full border px-2 py-1 text-sm/tight font-medium transition-colors",
-      active? && "bg-darkGrey! border-darkGrey text-white!",
-      not active? && "hover:bg-greyButtonBg"
-    ]
-  end
-
   attr :counterparty, :map, required: true
 
   defp counterparty_identifier(assigns) do

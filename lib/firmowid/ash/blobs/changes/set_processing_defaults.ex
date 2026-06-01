@@ -4,6 +4,7 @@ defmodule Firmowid.Ash.Blobs.Changes.SetProcessingDefaults do
 
   - target :none => state :succeeded
   - target :cost_invoice => state :pending
+  - target :employment_contract => state :pending
   """
   use Ash.Resource.Change
 
@@ -13,9 +14,10 @@ defmodule Firmowid.Ash.Blobs.Changes.SetProcessingDefaults do
     metadata = Ash.Changeset.get_argument(changeset, :processing_metadata) || %{}
 
     state =
-      case target do
-        :cost_invoice -> :pending
-        _ -> :succeeded
+      if target in [:cost_invoice, :employment_contract] do
+        :pending
+      else
+        :succeeded
       end
 
     changeset

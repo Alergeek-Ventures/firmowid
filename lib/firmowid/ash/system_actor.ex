@@ -46,6 +46,9 @@ defmodule Firmowid.Ash.SystemActor do
     organization usage data. Can read billing-related records and persist
     snapshot rows.
 
+  - `:employment_contract_processor` — processes uploaded employment contracts
+    via OCR extraction. Can create employment contracts and user salaries.
+
   - `:anonymous` — unauthenticated share-token access. Can only read the specific
     invoice identified by the share token.
   """
@@ -63,6 +66,7 @@ defmodule Firmowid.Ash.SystemActor do
           | :cross_tenant_reader
           | :ksef_digest
           | :billing_snapshotter
+          | :employment_contract_processor
           | :anonymous
 
   @enforce_keys [:org_id, :role]

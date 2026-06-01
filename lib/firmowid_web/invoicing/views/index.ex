@@ -425,13 +425,27 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   # Blob created — file is being processed, refresh list
   @impl true
-  def handle_info(%Broadcast{payload: %Notification{resource: Blob, action: %{type: :create}}}, socket) do
+  def handle_info(
+        %Broadcast{
+          payload: %Notification{resource: Blob, data: %{processing_target: :cost_invoice}, action: %{type: :create}}
+        },
+        socket
+      ) do
     {:noreply, refetch_invoicing_entries(socket)}
   end
 
   # Blob updated — processing state transitions
   @impl true
-  def handle_info(%Broadcast{payload: %Notification{resource: Blob, action: %{type: :update}, data: blob}}, socket) do
+  def handle_info(
+        %Broadcast{
+          payload: %Notification{
+            resource: Blob,
+            action: %{type: :update},
+            data: %{processing_target: :cost_invoice} = blob
+          }
+        },
+        socket
+      ) do
     if blob.processing_state == :failed do
       show_blob_processing_failure_toast(blob)
     end
@@ -444,8 +458,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   def handle_info(
         %Broadcast{
           payload:
-            %Notification{resource: Blob, action: %{type: :destroy}, metadata: %{reason: :processing_failed}} =
-              notification
+            %Notification{
+              resource: Blob,
+              data: %{processing_target: :cost_invoice},
+              action: %{type: :destroy},
+              metadata: %{reason: :processing_failed}
+            } = notification
         },
         socket
       ) do
@@ -459,8 +477,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   def handle_info(
         %Broadcast{
           payload:
-            %Notification{resource: Blob, action: %{type: :destroy}, metadata: %{reason: :invalid_document}} =
-              notification
+            %Notification{
+              resource: Blob,
+              data: %{processing_target: :cost_invoice},
+              action: %{type: :destroy},
+              metadata: %{reason: :invalid_document}
+            } = notification
         },
         socket
       ) do
@@ -475,7 +497,12 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   # Blob destroyed — normal cleanup (delete invoice, etc.)
   @impl true
-  def handle_info(%Broadcast{payload: %Notification{resource: Blob, action: %{type: :destroy}}}, socket) do
+  def handle_info(
+        %Broadcast{
+          payload: %Notification{resource: Blob, data: %{processing_target: :cost_invoice}, action: %{type: :destroy}}
+        },
+        socket
+      ) do
     {:noreply, refetch_invoicing_entries(socket)}
   end
 

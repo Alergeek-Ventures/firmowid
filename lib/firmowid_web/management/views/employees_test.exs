@@ -75,7 +75,8 @@ defmodule FirmowidWeb.Management.Views.EmployeesTest do
     })
     |> render_submit()
 
-    salaries = Payroll.list_salaries!(%{active_at: Date.utc_today()}, scope: current_scope(admin))
+    salaries =
+      Payroll.list_salaries!(%{active_at: DateTime.utc_now()}, scope: current_scope(admin))
 
     salary = Enum.find(salaries, &(&1.user_id == invited_user.id))
 

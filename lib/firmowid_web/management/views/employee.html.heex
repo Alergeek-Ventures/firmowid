@@ -8,34 +8,52 @@
     <span class="text-darkGrey">Pracownicy</span>
   </.link>
 
-  <div class="col-start-2 mb-8 flex min-h-12 items-center justify-end gap-4">
-    <span
-      :if={@employee.archived_at}
-      class="bg-grey-200 text-grey-700 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm/snug font-normal"
-    >
-      <Lucideicons.archive class="size-4" /> zarchiwizowany
-    </span>
+  <div class="col-start-2 flex items-end justify-between gap-4">
+    <div class="-mb-2 flex gap-6 px-6">
+      <.tab
+        patch={~p"/zarzadzanie/pracownicy/#{@employee.id}"}
+        active={@live_action == :projects}
+      >
+        Projekty i ewidencja
+      </.tab>
 
-    <FirmowidWeb.DesignSystem.Components.Button.button
-      :if={!@employee.archived_at}
-      type="button"
-      variant="special"
-      phx-click="archive_employee"
-    >
-      <.icon name="hero-archive-box-mini" class="size-5" /> Archiwizuj
-    </FirmowidWeb.DesignSystem.Components.Button.button>
+      <.tab
+        patch={~p"/zarzadzanie/pracownicy/#{@employee.id}/dokumenty"}
+        active={@live_action == :documents}
+      >
+        Dokumenty
+      </.tab>
+    </div>
 
-    <FirmowidWeb.DesignSystem.Components.Button.button
-      :if={@employee.archived_at}
-      type="button"
-      variant="special"
-      phx-click="unarchive_employee"
-    >
-      <.icon name="hero-arrow-uturn-left-mini" class="size-5" /> Przywróć pracownika
-    </FirmowidWeb.DesignSystem.Components.Button.button>
+    <div class="mb-8 flex min-h-12 items-center justify-end gap-4">
+      <span
+        :if={@employee.archived_at}
+        class="bg-grey-200 text-grey-700 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm/snug font-normal"
+      >
+        <Lucideicons.archive class="size-4" /> zarchiwizowany
+      </span>
+
+      <.button
+        :if={!@employee.archived_at}
+        type="button"
+        variant="special"
+        phx-click="archive_employee"
+      >
+        <.icon name="hero-archive-box-mini" class="size-5" /> Archiwizuj
+      </.button>
+
+      <.button
+        :if={@employee.archived_at}
+        type="button"
+        variant="special"
+        phx-click="unarchive_employee"
+      >
+        <.icon name="hero-arrow-uturn-left-mini" class="size-5" /> Przywróć pracownika
+      </.button>
+    </div>
   </div>
 
-  <.card class="row-start-2 min-h-[689px] w-full max-w-[380px]">
+  <.card class="row-start-2 min-h-[172px] w-full max-w-[95%]">
     <div class="flex gap-3">
       <.avatar class="ring-greyButtonBg/50 size-20 shrink-0 ring-1">
         <.avatar_image
@@ -51,7 +69,10 @@
       </.avatar>
       <div>
         <h2 class="text-lg font-bold">{get_employee_display_name(@employee)}</h2>
-        <div :if={@employee.slack_id != nil} class="text-darkGrey flex items-center gap-2 text-sm">
+        <div
+          :if={@employee.slack_id != nil}
+          class="text-darkGrey flex items-center gap-2 text-sm"
+        >
           <img src="/images/slack.png" alt="slack logo" width={24} height={24} />
           <.link
             kind="unstyled"
@@ -70,7 +91,7 @@
     <.user_card_info label="Adres e-mail">{@employee.email}</.user_card_info>
     <.user_card_info :if={@employee.bank_account_number != nil} label="Numer konta bankowego">
       <span>{@employee.bank_account_number}</span>
-      <FirmowidWeb.DesignSystem.Components.Button.button
+      <.button
         id="copy-bank-account-number"
         phx-hook="CopyToClipboard"
         phx-click="copy-bank-account-number"
@@ -85,7 +106,7 @@
         ]}
       >
         <.icon name="hero-document-duplicate" class="size-5" />
-      </FirmowidWeb.DesignSystem.Components.Button.button>
+      </.button>
     </.user_card_info>
 
     <.user_card_info :if={not Enum.empty?(@employee.projects)} label="Projekty">
@@ -131,7 +152,7 @@
     </.link>
   </div>
 
-  <div class="col-start-2 row-start-2 w-full space-y-6">
+  <div class="relative z-10 col-start-2 row-start-2 w-full space-y-6">
     <div
       :if={@employee.archived_at}
       class="bg-grey-200 text-grey-700 flex flex-row items-center gap-4 rounded-lg p-4 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]"
@@ -147,10 +168,20 @@
 
     <%= case @live_action do %>
       <% :projects -> %>
-        <.employee_projects_tab
-          employee={@employee}
-          projects_filter_date={@projects_filter_date}
+        <.live_component
+          module={FirmowidWeb.Management.Components.ProjectsTab}
+          id="projects-tab"
+          user={@employee}
+          date={@projects_filter_date}
           active_months={@active_months}
+          scope={@ash_scope}
+        />
+      <% :documents -> %>
+        <.live_component
+          module={FirmowidWeb.Management.Components.DocumentsTab}
+          id="documents-tab"
+          employee_id={@employee.id}
+          scope={@ash_scope}
         />
     <% end %>
   </div>

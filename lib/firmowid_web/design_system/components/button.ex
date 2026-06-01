@@ -58,7 +58,8 @@ defmodule FirmowidWeb.DesignSystem.Components.Button do
       "outline",
       "ghost",
       "destructive",
-      "success"
+      "success",
+      "filter"
     ],
     doc: "Figma-aligned button variant."
 
@@ -96,6 +97,13 @@ defmodule FirmowidWeb.DesignSystem.Components.Button do
 
   defp button_classes(%{variant: "unstyled", class: class}), do: class
 
+  defp button_classes(%{variant: "filter", class: class}) do
+    [
+      ButtonStyles.variant_classes("filter", nil),
+      class
+    ]
+  end
+
   defp button_classes(assigns) do
     [
       "phx-click-loading:cursor-default phx-click-loading:opacity-75 phx-submit-loading:opacity-75 inline-flex cursor-pointer items-center justify-center border whitespace-nowrap transition duration-100 ease-out select-none disabled:pointer-events-none disabled:cursor-default",
@@ -106,6 +114,13 @@ defmodule FirmowidWeb.DesignSystem.Components.Button do
   end
 
   defp label_classes(%{variant: "unstyled", class: class}), do: class
+
+  defp label_classes(%{variant: "filter", class: class}) do
+    [
+      ButtonStyles.variant_classes("filter", nil),
+      class
+    ]
+  end
 
   defp label_classes(assigns) do
     [

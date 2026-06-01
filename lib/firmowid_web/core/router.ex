@@ -19,8 +19,10 @@ defmodule FirmowidWeb.Core.Router do
   alias Invoicing.CostInvoices.Controllers.Pdf, as: CostInvoicePdf
   alias Invoicing.SalesInvoices.Controllers.Pdf
   alias Invoicing.SalesInvoices.Controllers.Shared
+  alias Management.Controllers.EmploymentContract
   alias Management.Views.Counterparties
   alias Management.Views.CounterpartyForm
+  alias Management.Views.Employee
   alias Management.Views.Employees
   alias Management.Views.ProjectForm
   alias Management.Views.Projects
@@ -130,6 +132,7 @@ defmodule FirmowidWeb.Core.Router do
     get "/pobierz-miesiac", Infrastructure.Controllers.FileDownload, :batch
     get "/czasosledz/projekty/csv", Csv, :salaries
     get "/czasosledz/projekty/:id/csv", Csv, :project
+    get "/zarzadzanie/umowy/:id", EmploymentContract, :download
 
     ash_authentication_live_session :with_org,
       on_mount: [
@@ -167,7 +170,8 @@ defmodule FirmowidWeb.Core.Router do
       ] do
       live "/zarzadzanie/pracownicy", Employees, :index
       live "/zarzadzanie/pracownicy/archiwum", Employees, :archive
-      live "/zarzadzanie/pracownicy/:id", Management.Views.Employee, :projects
+      live "/zarzadzanie/pracownicy/:id", Employee, :projects
+      live "/zarzadzanie/pracownicy/:id/dokumenty", Employee, :documents
       live "/zarzadzanie/kontrahenci", Counterparties, :index
       live "/zarzadzanie/kontrahenci/archiwum", Counterparties, :archive
       live "/zarzadzanie/kontrahenci/dodaj", CounterpartyForm, :new

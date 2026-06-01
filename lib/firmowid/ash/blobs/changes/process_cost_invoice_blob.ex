@@ -4,13 +4,11 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessCostInvoiceBlob do
   """
   use Ash.Resource.Change
 
-  alias Firmowid.Ash.Blobs.Blob
+  alias Firmowid.Ash.Blobs.Changes.ProcessBlobHelpers
   alias Firmowid.Ash.Invoicing
-  alias Firmowid.Ash.Invoicing.Services.ReductoApiClient
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
 
-  require Ash.Query
   require Logger
 
   @cost_invoice_system_prompt """
@@ -93,12 +91,12 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessCostInvoiceBlob do
   end
 
   defp run_processing(blob, opts) do
-    with {:ok, blob} <- ensure_processing(blob, opts),
-         {:ok, blob_url} <- load_blob_url(blob, opts),
+    with {:ok, blob} <- ProcessBlobHelpers.ensure_processing(blob, opts),
+         {:ok, blob_url} <- ProcessBlobHelpers.load_blob_url(blob, opts),
          {:ok, extracted_metadata} <- extract_metadata(blob_url),
          :ok <- ensure_cost_invoice_document(extracted_metadata),
          :ok <- create_invoice(extracted_metadata, blob, opts),
-         {:ok, _updated_blob} <- mark_succeeded(blob, opts) do
+         {:ok, _updated_blob} <- ProcessBlobHelpers.mark_succeeded(blob, opts) do
       :ok
     end
   rescue
@@ -106,23 +104,10 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessCostInvoiceBlob do
       {:error, error}
   end
 
-  defp ensure_processing(blob, opts) do
-    blob
-    |> Ash.Changeset.for_update(:mark_processing, %{}, opts)
-    |> Ash.update(opts)
-  end
-
-  defp load_blob_url(blob, opts) do
-    loaded = Ash.load!(blob, [:url], opts)
-    {:ok, loaded.url}
-  end
-
   defp extract_metadata(blob_url) do
-    reducto_client().extract(blob_url, @cost_invoice_schema, system_prompt: @cost_invoice_system_prompt)
-  end
-
-  defp reducto_client do
-    Application.get_env(:firmowid, :reducto_api_client_module, ReductoApiClient)
+    ProcessBlobHelpers.reducto_client().extract(blob_url, @cost_invoice_schema,
+      system_prompt: @cost_invoice_system_prompt
+    )
   end
 
   defp ensure_cost_invoice_document(%{"document_type" => "cost_invoice"}), do: :ok
@@ -147,49 +132,13 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessCostInvoiceBlob do
     end
   end
 
-  defp mark_succeeded(blob, opts) do
-    blob
-    |> Ash.Changeset.for_update(:mark_processing_succeeded, %{}, opts)
-    |> Ash.update(opts)
-  end
-
   defp handle_failure(blob, reason, opts) do
-    %{error: error, error_code: error_code, error_message: error_message} =
-      normalize_failure(reason)
-
-    Blob
-    |> Ash.Query.filter(id == ^blob.id)
-    |> Ash.read_one!(opts)
-    |> Ash.Changeset.for_update(
-      :mark_processing_failed,
-      %{error: error, error_code: error_code, error_message: error_message},
-      opts
+    ProcessBlobHelpers.handle_failure(
+      blob,
+      reason,
+      opts,
+      "Plik nie zawiera danych wymaganych dla faktury kosztowej."
     )
-    |> Ash.update(opts)
-  end
-
-  defp normalize_failure(:invalid_document) do
-    %{
-      error: ":invalid_document",
-      error_code: "invalid_document",
-      error_message: "Plik nie zawiera danych wymaganych dla faktury kosztowej."
-    }
-  end
-
-  defp normalize_failure(%Ash.Error.Invalid{} = error) do
-    %{
-      error: Exception.message(error),
-      error_code: "invalid_document",
-      error_message: "Plik nie zawiera danych wymaganych dla faktury kosztowej."
-    }
-  end
-
-  defp normalize_failure(reason) do
-    %{
-      error: inspect(reason),
-      error_code: "processing_failed",
-      error_message: "Nie udało się przetworzyć pliku. Spróbuj ponownie za chwilę."
-    }
   end
 
   defp maybe_put_inbound_email_id(attrs, nil), do: attrs

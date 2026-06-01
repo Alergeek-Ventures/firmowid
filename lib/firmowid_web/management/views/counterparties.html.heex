@@ -60,8 +60,8 @@
           <div class="flex flex-wrap items-center gap-2">
             <.button
               type="button"
-              variant="unstyled"
-              class={subfilter_styles(@type_filter == :individual)}
+              variant="filter"
+              data-active={@type_filter == :individual}
               phx-click="toggle_type"
               phx-value-typ={Navigation.encode_counterparty_type(:individual)}
             >
@@ -70,8 +70,8 @@
 
             <.button
               type="button"
-              variant="unstyled"
-              class={subfilter_styles(@type_filter == :company)}
+              variant="filter"
+              data-active={@type_filter == :company}
               phx-click="toggle_type"
               phx-value-typ={Navigation.encode_counterparty_type(:company)}
             >

@@ -4,11 +4,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
 
   Attribute multitenancy via `organization_id`. Supports CRUD plus:
 
-  - `retire` — soft-delete that sets `deleted_at`
-  - `create_with_retire` — retires any existing active salary, then creates the new one
-  - `get_latest` — returns the single active (non-retired) salary for a user
-  - `as_of` — returns salaries that were active on a given date (end-of-month lookup)
-  - `salaries_csv` — generic action producing a payroll CSV string for a month/year
+  - `bulk_create_salaries` — admin-only action creating new salaries for multiple employees atomically
 
   The partial unique index `user_salaries_active_unique_index` ensures only one
   active (non-retired) salary per user per organization.
@@ -19,6 +15,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
     authorizers: [Ash.Policy.Authorizer],
     primary_read_warning?: false
 
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Resource
 
@@ -35,7 +32,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
     create :create do
       description "Create a salary record for a user."
       primary? true
-      accept [:hourly_rate, :user_id]
+      accept [:hourly_rate, :user_id, :starts_at]
     end
 
     read :read do
@@ -47,7 +44,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
       primary? true
 
       argument :user_id, :uuid
-      argument :active_at, :date
+      argument :active_at, :utc_datetime
 
       prepare build(sort: [starts_at: :desc])
 
@@ -105,8 +102,8 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
       authorize_if always()
     end
 
-    # System actors have no access to payroll data
-    policy Firmowid.Ash.Checks.IsSystemActor do
+    policy action_type(:create) do
+      authorize_if {SystemActorRole, roles: [:employment_contract_processor]}
       forbid_if always()
     end
   end
@@ -128,7 +125,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
     attribute :starts_at, :utc_datetime do
       public? true
       allow_nil? false
-      default &Date.utc_today/0
+      default &DateTime.utc_now/0
     end
 
     Resource.firmowid_timestamps()

@@ -102,6 +102,7 @@ config :firmowid, Oban,
     ksef_submissions: 2,
     ksef_sessions: 5,
     ksef_fetch: 2,
+    employment_contracts: 1,
     default: 1
   ],
   plugins: [

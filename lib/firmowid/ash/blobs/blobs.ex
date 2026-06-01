@@ -36,6 +36,7 @@ defmodule Firmowid.Ash.Blobs do
         ]
 
       define :process_blob_as_cost_invoice, action: :process_cost_invoice
+      define :process_blob_as_employment_contract, action: :process_employment_contract
       define :destroy_blob, action: :destroy
     end
   end

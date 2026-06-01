@@ -1,3 +1,7 @@
+alias FirmowidWeb.Management.Components.DocumentsTab
+
+require Logger
+
 # credo:disable-for-this-file ExDNA.Credo
 # Employee detail view duplicates monthly aggregation/cost assembly paths; resolving this
 # cleanly requires extracting shared timetracker/payroll query helpers across LiveViews.
@@ -5,20 +9,33 @@ defmodule FirmowidWeb.Management.Views.Employee do
   @moduledoc false
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.Link
-  import FirmowidWeb.DesignSystem.Components.MonthPicker
-  import FirmowidWeb.Management.Views.Employees, only: [hours_record_status: 1]
+  import FirmowidWeb.Management.Components.Card
+  import FirmowidWeb.Management.Components.Tab
   import Phoenix.Component, except: [link: 1]
 
+  alias Ash.Notifier.Notification
+  alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker
-  alias Firmowid.Ash.Timetracker.Session
+  alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Management.Utilities.Navigation
+  alias Phoenix.Socket.Broadcast
 
   @impl true
   def mount(_params, _session, socket) do
+    user = socket.assigns.current_user
+    organization_id = user.organization_id
+
+    if connected?(socket) do
+      # Ash PubSub — blobs
+      Endpoint.subscribe("blob:created:#{organization_id}")
+      Endpoint.subscribe("blob:updated:#{organization_id}")
+      Endpoint.subscribe("blob:destroyed:#{organization_id}")
+    end
+
     {:ok, socket}
   end
 
@@ -44,14 +61,13 @@ defmodule FirmowidWeb.Management.Views.Employee do
             to: Navigation.employees_path(:index, %{miesiac: Navigation.current_month()})
           )
         else
-          employee = build_employee(user, id, selected_date, scope)
           active_months = months_with_sessions(%{user_id: id}, scope)
 
           socket
-          |> assign(:employee, employee)
+          |> assign(:employee, with_projects(user, scope))
           |> assign(:active_months, active_months)
           |> assign(:projects_filter_date, selected_date)
-          |> assign(:page_title, get_employee_display_name(employee))
+          |> assign(:page_title, get_employee_display_name(user))
         end
 
       {:noreply, socket}
@@ -63,73 +79,6 @@ defmodule FirmowidWeb.Management.Views.Employee do
     end
   end
 
-  defp build_employee(user, user_id, date, scope) do
-    # 1. Sessions for this user+month, grouped by project+title
-    sessions =
-      Session
-      |> Ash.Query.for_read(:list, %{user_id: user_id, month: date.month, year: date.year}, scope: scope)
-      |> Ash.Query.load(:duration)
-      |> Ash.read!(scope: scope)
-
-    # 2. Group sessions by project_id, then by project+title for display
-    sessions_by_project =
-      sessions
-      |> Enum.group_by(& &1.project_id)
-      |> Map.new(fn {pid, ss} ->
-        grouped =
-          ss
-          |> Enum.group_by(& &1.title)
-          |> Enum.map(fn {title, title_sessions} ->
-            %{title: title, duration: title_sessions |> Enum.map(& &1.duration) |> Enum.sum()}
-          end)
-          |> Enum.sort_by(& &1.duration, :desc)
-
-        {pid, grouped}
-      end)
-
-    # 3. Projects this user belongs to, with grouped sessions attached
-    projects =
-      %{user_id: user_id}
-      |> Timetracker.list_projects!(scope: scope)
-      |> Enum.map(fn project ->
-        Map.put(project, :sessions, Map.get(sessions_by_project, project.id, []))
-      end)
-
-    # 4. Salary as of this month
-    before_date = Date.end_of_month(date)
-
-    salaries = Payroll.list_salaries!(%{user_id: user.id, active_at: before_date}, scope: scope)
-
-    salary_history = Payroll.list_salaries!(%{user_id: user.id}, scope: scope, load: [:ends_at])
-
-    hourly_rate =
-      salaries
-      |> List.first()
-      |> case do
-        nil -> Decimal.new(0)
-        salary -> salary.hourly_rate
-      end
-
-    # 5. Hours record for this month
-    hours_record =
-      %{user_id: user_id, month: date.month, year: date.year}
-      |> Timetracker.list_hours_records!(scope: scope)
-      |> List.first()
-
-    # 6. Total time worked
-    total_time = sessions |> Enum.map(& &1.duration) |> Enum.sum()
-
-    user
-    |> Map.put(:projects, projects)
-    |> Map.put(:hourly_rate, hourly_rate)
-    |> Map.put(:hours_record, hours_record)
-    |> Map.put(:time_worked, total_time)
-    |> Map.put(
-      :salary_history,
-      salary_history
-    )
-  end
-
   defp get_employee_display_name(employee), do: employee.name || employee.email
 
   defp get_employee_slack_url(employee) do
@@ -139,13 +88,11 @@ defmodule FirmowidWeb.Management.Views.Employee do
   @impl true
   def handle_event("change-month", %{"month" => month}, socket) do
     employee = socket.assigns.employee
-
     {:noreply, push_patch(socket, to: Navigation.employee_path(employee.id, %{miesiac: month}))}
   end
 
   def handle_event("archive_employee", _params, socket) do
     scope = socket.assigns.ash_scope
-    date = socket.assigns.projects_filter_date
 
     with {:ok, user} <-
            Core.get_org_user(%{id: socket.assigns.employee.id},
@@ -154,12 +101,11 @@ defmodule FirmowidWeb.Management.Views.Employee do
            ),
          {:ok, archived_user} <- Core.archive_user(user, %{}, scope: scope) do
       loaded_user = Ash.load!(archived_user, [avatar_blob: [:url]], scope: scope)
-      employee = build_employee(loaded_user, loaded_user.id, date, scope)
 
       {:noreply,
        socket
-       |> assign(:employee, employee)
-       |> assign(:page_title, get_employee_display_name(employee))}
+       |> assign(:employee, with_projects(loaded_user, scope))
+       |> assign(:page_title, get_employee_display_name(loaded_user))}
     else
       {:error, %Ash.Error.Forbidden{}}
       when socket.assigns.current_user.id == socket.assigns.employee.id ->
@@ -175,7 +121,6 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
   def handle_event("unarchive_employee", _params, socket) do
     scope = socket.assigns.ash_scope
-    date = socket.assigns.projects_filter_date
 
     with {:ok, user} <-
            Core.get_org_user(%{id: socket.assigns.employee.id},
@@ -184,12 +129,11 @@ defmodule FirmowidWeb.Management.Views.Employee do
            ),
          {:ok, unarchived_user} <- Core.unarchive_user(user, %{}, scope: scope) do
       loaded_user = Ash.load!(unarchived_user, [avatar_blob: [:url]], scope: scope)
-      employee = build_employee(loaded_user, loaded_user.id, date, scope)
 
       {:noreply,
        socket
-       |> assign(:employee, employee)
-       |> assign(:page_title, get_employee_display_name(employee))}
+       |> assign(:employee, with_projects(loaded_user, scope))
+       |> assign(:page_title, get_employee_display_name(loaded_user))}
     else
       _ ->
         {:noreply, put_flash(socket, :error, "Nie udało się przywrócić pracownika")}
@@ -203,209 +147,158 @@ defmodule FirmowidWeb.Management.Views.Employee do
      |> LiveToast.put_toast(:success, "Skopiowano numer konta")}
   end
 
+  defp with_projects(user, scope) do
+    Map.put(user, :projects, Timetracker.list_projects!(%{user_id: user.id}, scope: scope))
+  end
+
   defp humanize_ash_error(%Ash.Error.Invalid{errors: [first_error | _]}) do
     Exception.message(first_error)
   end
 
   defp humanize_ash_error(error), do: Exception.message(error)
 
-  attr :label, :string, required: true
-  attr :class, :any, default: ""
-  slot :inner_block
-
-  defp user_card_info(assigns) do
-    ~H"""
-    <div class={["space-y-1", @class]}>
-      <div class="text-grey-700 text-sm/snug">{@label}</div>
-      <div class="flex items-center gap-2 text-base/snug">{render_slot(@inner_block)}</div>
-    </div>
-    """
-  end
-
-  attr :class, :any, default: ""
-  attr :gap_size, :string, default: "6"
-  slot :inner_block, required: true
-
-  defp card(assigns) do
-    ~H"""
-    <section class={[
-      "flex flex-col rounded-md bg-white p-6 text-black shadow",
-      @gap_size && "gap-y-#{@gap_size}",
-      @class
-    ]}>
-      {render_slot(@inner_block)}
-    </section>
-    """
-  end
-
-  slot :inner_block
-
-  defp card_header(assigns) do
-    ~H"""
-    <h3 class="text-grey-900 text-base/tight font-medium">{render_slot(@inner_block)}</h3>
-    """
-  end
-
-  attr :project, :map, required: true
-
-  defp project_accordion(assigns) do
-    ~H"""
-    <div
-      id={"project-accordion-#{@project.id}"}
-      class="group grid grid-cols-[1fr_min-content_min-content] gap-x-6 overflow-hidden"
-    >
-      <FirmowidWeb.DesignSystem.Components.Button.button
-        type="button"
-        variant="unstyled"
-        phx-click={toggle_project_accordion(@project.id)}
-        class="group col-span-full grid w-full cursor-pointer grid-cols-subgrid items-center gap-x-6 py-4 text-left"
-      >
-        <span class="text-start text-nowrap">{@project.name}</span>
-        <span class="text-nowrap">
-          {@project.sessions
-          |> Enum.map(& &1.duration)
-          |> Enum.sum()
-          |> Timetracker.seconds_to_hours()} h
-        </span>
-        <.icon
-          name="hero-chevron-down"
-          class="size-4 transition-transform duration-200 ease-in-out group-data-expanded:rotate-180"
-        />
-      </FirmowidWeb.DesignSystem.Components.Button.button>
-      <div
-        class="col-span-2 grid grid-rows-[0fr] overflow-hidden transition-[grid-template-rows] duration-300 ease-in-out group-data-expanded:grid-rows-[1fr]"
-        role="region"
-      >
-        <div class="ml-4 flex flex-col gap-y-2 overflow-hidden *:last:mb-4">
-          <%= if Enum.empty?(@project.sessions) do %>
-            <p class="text-grey-700">
-              Brak sesji w tym miesiącu
-            </p>
-          <% else %>
-            <div
-              :for={session <- @project.sessions}
-              class="text-grey-700 flex justify-between text-base/snug"
-            >
-              <p class="truncate text-nowrap">{session.title}</p>
-              <p>
-                {Timetracker.seconds_to_hours(session.duration)} h
-              </p>
-            </div>
-          <% end %>
-        </div>
-      </div>
-    </div>
-    """
-  end
-
-  defp toggle_project_accordion(js \\ %JS{}, project_id) do
-    JS.toggle_attribute(js, {"data-expanded", "true"}, to: "#project-accordion-#{project_id}")
-  end
-
-  attr :employee, :map, required: true
-  attr :projects_filter_date, :any, required: true
-  attr :active_months, :list, required: true
-
-  defp employee_projects_tab(assigns) do
-    ~H"""
-    <.card>
-      <%!-- TODO: allow editing the user wage --%>
-      <.card_header>
-        Dane do przelewu
-      </.card_header>
-      <div class="grid grid-cols-[minmax(min-content,1fr)_minmax(min-content,2fr)] gap-4">
-        <.user_card_info label="Stawka">
-          {:PLN
-          |> Money.new(@employee.hourly_rate)
-          |> Money.to_string!(no_fraction_if_integer: true)}/godz.
-        </.user_card_info>
-        <.user_card_info label="Numer konta bankowego">
-          {@employee.bank_account_number || "Brak danych"}
-        </.user_card_info>
-      </div>
-    </.card>
-
-    <div class="flex items-start gap-6">
-      <.card class="grow">
-        <div class="flex items-center justify-between">
-          <.card_header>
-            Projekty pracownika
-          </.card_header>
-          <.month_picker
-            id="projects_filter_month"
-            selected_date={@projects_filter_date}
-            active_months={@active_months}
-          />
-        </div>
-        <div class="divide-lightGreyBg divide-y">
-          <%= if Enum.empty?(@employee.projects) do %>
-            <div class="text-darkGrey mt-4 text-sm">Brak projektów</div>
-          <% else %>
-            <.project_accordion :for={project <- @employee.projects} project={project} />
-          <% end %>
-        </div>
-      </.card>
-      <div class="flex flex-col gap-4">
-        <.card>
-          <.card_header>
-            Podsumowanie miesiąca
-          </.card_header>
-          <div class="flex flex-col gap-4">
-            <.user_card_info label="Przepracowano">
-              <span class="text-turquoise-700 font-medium">
-                {Timetracker.seconds_to_hours(@employee.time_worked)} godz.
-              </span>
-            </.user_card_info>
-            <.user_card_info label="Wynagrodzenie">
-              <span class="text-turquoise-700 font-medium">
-                {:PLN
-                |> Money.new(
-                  Decimal.mult(
-                    @employee.hourly_rate,
-                    Decimal.new(Timetracker.seconds_to_hours(@employee.time_worked))
-                  )
-                )
-                |> Money.to_string!(no_fraction_if_integer: true, currency_symbol: "PLN")}
-              </span>
-            </.user_card_info>
-          </div>
-        </.card>
-        <.card gap_size="4">
-          <.card_header>
-            Ewidencja
-          </.card_header>
-          <div class="flex gap-3">
-            <.hours_record_status hours_record={@employee.hours_record} user={@employee} />
-          </div>
-        </.card>
-        <.card gap_size="4">
-          <.card_header>
-            Historia stawek
-          </.card_header>
-          <div class="flex flex-col gap-2">
-            <%= if Enum.empty?(@employee.salary_history) do %>
-              <p class="text-grey-700">Brak danych</p>
-            <% else %>
-              <div :for={salary <- @employee.salary_history} class="flex items-end gap-2">
-                <span>
-                  {:PLN
-                  |> Money.new(salary.hourly_rate)
-                  |> Money.to_string!(no_fraction_if_integer: true)}/godz.
-                </span>
-                <span class="text-grey-500 text-sm">
-                  ({TimeFormatter.format_date(salary.starts_at)} - {if salary.ends_at,
-                    do: TimeFormatter.format_date(salary.ends_at),
-                    else: "obecnie"})
-                </span>
-              </div>
-            <% end %>
-          </div>
-        </.card>
-      </div>
-    </div>
-    """
-  end
-
   # Distinct months (as naive_datetime) that have sessions, newest first.
   defp months_with_sessions(filters, scope), do: Timetracker.months_with_sessions(filters, scope)
+
+  # Blob created — file is being processed, refresh list
+  @impl true
+  def handle_info(
+        %Broadcast{
+          payload: %Notification{
+            resource: Blob,
+            action: %{type: :create},
+            data: %{processing_target: :employment_contract}
+          }
+        },
+        socket
+      ) do
+    send_update(DocumentsTab,
+      id: "documents-tab",
+      refetch: true
+    )
+
+    {:noreply, socket}
+  end
+
+  # Blob updated — processing state transitions
+  @impl true
+  def handle_info(
+        %Broadcast{
+          payload: %Notification{
+            resource: Blob,
+            action: %{type: :update},
+            data: %{processing_target: :employment_contract} = blob
+          }
+        },
+        socket
+      ) do
+    if blob.processing_state == :failed do
+      show_blob_processing_failure_toast(blob)
+    end
+
+    send_update(DocumentsTab,
+      id: "documents-tab",
+      refetch: true
+    )
+
+    {:noreply, socket}
+  end
+
+  # Blob destroyed — processing failed
+  @impl true
+  def handle_info(
+        %Broadcast{
+          payload:
+            %Notification{
+              resource: Blob,
+              action: %{type: :destroy},
+              data: %{processing_target: :employment_contract},
+              metadata: %{reason: :processing_failed}
+            } = notification
+        },
+        socket
+      ) do
+    LiveToast.send_toast(:error, notification.data.original_filename, title: "Nie udało się wgrać pliku")
+
+    send_update(DocumentsTab,
+      id: "documents-tab",
+      refetch: true
+    )
+
+    {:noreply, socket}
+  end
+
+  # Blob destroyed — invalid document uploaded
+  @impl true
+  def handle_info(
+        %Broadcast{
+          payload:
+            %Notification{
+              resource: Blob,
+              action: %{type: :destroy},
+              data: %{processing_target: :employment_contract},
+              metadata: %{reason: :invalid_document}
+            } = notification
+        },
+        socket
+      ) do
+    LiveToast.send_toast(
+      :error,
+      "Plik #{notification.data.original_filename} nie zawiera wymaganych danych. Upewnij się, że wgrywasz umowe.",
+      title: "Nieprawidłowy dokument"
+    )
+
+    send_update(DocumentsTab,
+      id: "documents-tab",
+      refetch: true
+    )
+
+    {:noreply, socket}
+  end
+
+  # Blob destroyed — normal cleanup (delete invoice, etc.)
+  @impl true
+  def handle_info(
+        %Broadcast{
+          payload: %Notification{
+            resource: Blob,
+            data: %{processing_target: :employment_contract},
+            action: %{type: :destroy}
+          }
+        },
+        socket
+      ) do
+    send_update(DocumentsTab,
+      id: "documents-tab",
+      refetch: true
+    )
+
+    {:noreply, socket}
+  end
+
+  defp show_blob_processing_failure_toast(%Blob{original_filename: filename, processing_metadata: metadata}) do
+    case processing_failure_reason(metadata) do
+      :invalid_document ->
+        LiveToast.send_toast(
+          :error,
+          processing_failure_message(metadata, filename),
+          title: "Nieprawidłowy dokument"
+        )
+
+      _ ->
+        LiveToast.send_toast(:error, processing_failure_message(metadata, filename), title: "Nie udało się wgrać pliku")
+    end
+  end
+
+  defp processing_failure_reason(%{"error_code" => "invalid_document"}), do: :invalid_document
+  defp processing_failure_reason(%{error_code: "invalid_document"}), do: :invalid_document
+  defp processing_failure_reason(%{"error" => ":invalid_document"}), do: :invalid_document
+  defp processing_failure_reason(%{error: ":invalid_document"}), do: :invalid_document
+  defp processing_failure_reason(_), do: :processing_failed
+
+  defp processing_failure_message(%{"error_message" => message}, _filename) when is_binary(message), do: message
+
+  defp processing_failure_message(%{error_message: message}, _filename) when is_binary(message), do: message
+
+  defp processing_failure_message(_metadata, filename), do: filename
 end

@@ -9,16 +9,34 @@ defmodule Firmowid.Ash.Payroll do
   """
   use Ash.Domain
 
+  require Ash.Query
+
   resources do
     resource Firmowid.Ash.Payroll.UserSalary do
       define :create_salary, action: :create
       define :bulk_create_salaries, action: :bulk_create_salaries, args: [:entries]
       define :list_salaries, action: :read
     end
+
+    resource Firmowid.Ash.Payroll.UserEmploymentContract do
+      define :create_employment_contract, action: :create
+      define :list_employment_contracts, action: :read, args: [:user_id]
+      define :get_employment_contract, action: :get_by_id, args: [:id]
+    end
   end
 
   authorization do
     authorize :by_default
     require_actor? true
+  end
+
+  def get_processing_employment_contracts_count(scope) do
+    Firmowid.Ash.Blobs.Blob
+    |> Ash.Query.for_read(:read, %{}, scope: scope)
+    |> Ash.Query.filter(
+      processing_target == :employment_contract and
+        (processing_state == :pending or processing_state == :processing)
+    )
+    |> Ash.count!(scope: scope)
   end
 end

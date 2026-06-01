@@ -74,6 +74,16 @@ defmodule FirmowidWeb.DesignSystem.Utilities.ButtonStyles do
     ]
   end
 
+  def variant_classes("filter", _accent) do
+    [
+      "h-fit",
+      "bg-lightGreyBg border-greyButtonBg text-darkGrey inline-flex
+      items-center justify-center gap-2 rounded-full border px-2 py-1 text-sm/tight font-medium transition-colors",
+      "data-active:bg-darkGrey data-active:border-darkGrey data-active:text-white",
+      "data-active:hover:bg-darkGrey hover:bg-greyButtonBg"
+    ]
+  end
+
   def variant_classes("tertiary", _accent) do
     [
       "border-transparent",
