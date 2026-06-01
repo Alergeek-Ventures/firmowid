@@ -19,7 +19,7 @@ deps = "mix deps.get"
 [[pre-start]]
 env = """
 {% if branch == 'main' %}
-cat > .env.local << 'EOF'
+cat > .env.worktree << 'EOF'
 PORT=4000
 DB_PORT=5433
 S3_PORT=4566
@@ -33,7 +33,7 @@ AWS_ACCESS_KEY_ID=test
 AWS_SECRET_ACCESS_KEY=test
 EOF
 {% else %}
-cat > .env.local << 'EOF'
+cat > .env.worktree << 'EOF'
 PORT={{ branch | hash_port }}
 DB_PORT={{ ('db-' ~ branch) | hash_port }}
 S3_PORT={{ ('s3-' ~ branch) | hash_port }}

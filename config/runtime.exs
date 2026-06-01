@@ -1,12 +1,9 @@
 import Config
 
-# Only load dotenv in dev/test when .env files exist (skip in CI)
-# Load both .env and .env.local (worktree-specific overrides)
 alias FirmowidWeb.Core.Endpoint
 
-if config_env() in [:dev, :test] and File.exists?(".env") do
-  files = if File.exists?(".env.local"), do: [".env", ".env.local"], else: [".env"]
-  Dotenv.load!(files)
+if config_env() in [:dev, :test] do
+  Firmowid.Config.LocalEnv.load!()
 end
 
 # config/runtime.exs is executed for all environments, including

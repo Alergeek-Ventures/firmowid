@@ -56,7 +56,7 @@ config :firmowid, :s3,
 config :firmowid,
   uploads_bucket: "firmowid-uploads"
 
-# LiveDebugger default port (overridable via DEBUGGER_PORT in .env.local for worktrees)
+# LiveDebugger default port (overridable via DEBUGGER_PORT in .env.worktree for worktrees)
 config :live_debugger,
   ip: {127, 0, 0, 1},
   port: 4007

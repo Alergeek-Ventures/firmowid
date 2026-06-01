@@ -10,7 +10,7 @@ and other tasks related to company management, like payroll or client's billing.
 When running, assume that the whole application - with all required services -
 is properly running. We use `wt` (`worktrunk`) to maintain each worktree.
 Parallel worktrees are running on the same host, so we use different ports.
-They are stored in `.env.local` and `.server.port` files and are used by
+They are stored in `.env.worktree` and `.server.port` files and are used by
 development scripts.
 
 **Accessing the dev server:**
@@ -22,9 +22,9 @@ development scripts.
 
 **Local setup:**
 
-- `mix dev.up` - starts services, reads config from `.env.local` (or uses defaults)
+- `mix dev.up` - starts services, reads config from `.env.worktree` (or uses defaults)
 - `mix dev.down` - stops services
-- Worktrunk generates `.env.local` with hashed ports for feature branches
+- Worktrunk generates `.env.worktree` with hashed ports for feature branches
 
 Tidewave MCP should be available, allowing you to inspect the running system.
 If not - flag that instantly. It's the best way to debug so if it's missing

@@ -10,7 +10,7 @@ Currently configured project: `firmowid.security-audit` (target: `..`).
 ## Setup
 
 1. `pnpm install` — installs deepsec.
-2. Add an AI Gateway / Anthropic / OpenAI token to `.env.local`. If
+2. Add an AI Gateway / Anthropic / OpenAI token to `.env.worktree`. If
    you already have `claude` or `codex` CLI logged in on this
    machine, you can skip the token for non-sandbox runs (`process` /
    `revalidate` / `triage`); deepsec auto-detects and reuses the
@@ -60,7 +60,7 @@ data/firmowid.security-audit/
   runs/                  Run metadata (gitignored)
   reports/               Generated markdown reports (gitignored)
 AGENTS.md                Pointer for coding agents
-.env.local               Tokens (gitignored)
+.env.worktree            Tokens (gitignored)
 ```
 
 ## Docs

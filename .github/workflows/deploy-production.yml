@@ -1,0 +1,37 @@
+name: Deploy production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  packages: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    container:
+      image: ghcr.io/alergeek-ventures/infrastructure/cicd-image:5b1d7150888c47322a6b5cda04796dfd1dbfb34c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.github_token }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Deploy to Coolify
+        uses: Alergeek-Ventures/av-secret-service/coolify-deploy@c163dd842d80e029cb02039cde021427918197c8
+        with:
+          infisical-identity-id: ${{ vars.INFISICAL_MACHINE_IDENTITY_ID }}
+          infisical-project-slug: firmowid-z-hq-c
+          coolify-token: ${{ secrets.COOLIFY_TOKEN }}
+          coolify-app-uuid: ${{ vars.COOLIFY_APP_UUID }}

@@ -11,8 +11,10 @@
 
 ### 2. Konfiguracja zmiennych środowiskowych
 
-- skopiuj `env.template` do `.env` (domyślne wartości działają od razu w środowisku deweloperskim)
-- szczegóły w pliku `env.template`
+- zainstaluj Infisical CLI zgodnie z [instrukcją dla swojego systemu](https://infisical.com/docs/cli/overview)
+- zaloguj się jednorazowo: `infisical login --domain="https://infisical.alergeek.me"`
+- upewnij się, że istnieje lokalny plik nadpisań: `touch .env.worktree`
+- wspólne wartości dla środowiska deweloperskiego są pobierane z Infisical (`dev`), a `.env.worktree` służy tylko do lokalnych/worktree-specific nadpisań
 
 ### 3. W głównym folderze `firmowid`
 
@@ -118,7 +120,37 @@ sudo apt-get install -y build-essential git libstdc++6 openssl libncurses5 local
 
 ## Zmienne środowiskowe
 
-Aplikacja używa zmiennych środowiskowych do konfiguracji. Skopiuj `env.template` do `.env` - domyślne wartości działają od razu z lokalnym docker-compose.
+Aplikacja używa Infisical jako źródła wspólnych zmiennych środowiskowych. W środowiskach `dev` i `test` konfiguracja importowana przez `config/dev.exs` i `config/test.exs` automatycznie pobiera wartości z Infisical `dev` ze ścieżki `/app`, a następnie nakłada lokalne nadpisania z `.env.worktree`.
+
+Jednorazowe logowanie do Infisical:
+
+```bash
+infisical login --domain="https://infisical.alergeek.me"
+```
+
+Lokalny plik nadpisań:
+
+```bash
+touch .env.worktree
+```
+
+Uruchamiaj zwykłe komendy Mix, bez wrapperów:
+
+```bash
+mix setup
+mix dev.up
+mix phx.server
+mix test
+mix check
+```
+
+`.env.worktree` wygrywa z wartościami z Infisical i jest przeznaczony na lokalne porty, nazwy baz, tymczasowe flagi lub inne worktree-specific ustawienia. Długoterminowe osobiste nadpisania najlepiej trzymać w Infisical jako personal overrides na ścieżce `/app`.
+
+Awaryjnie lub offline można pominąć pobieranie z Infisical:
+
+```bash
+AV_SKIP_INFISICAL=1 mix phx.server
+```
 
 ### Wymagane
 
@@ -238,7 +270,7 @@ wt remove feature-auth
 ### Jak to działa
 
 1. `wt switch --create` wywołuje hooki z `.config/wt.toml`:
-   - generuje `.env.local` z deterministycznymi portami (hash z nazwy brancha)
+   - generuje `.env.worktree` z deterministycznymi portami (hash z nazwy brancha)
    - `mix deps.get` / `mix setup` - instaluje zależności, migruje bazę
    - `mix dev.up` - uruchamia Compose + rejestruje route w Caddy
 

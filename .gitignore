@@ -51,7 +51,7 @@ npm-debug.log
 .playwright-mcp
 
 .env
-.env.local
+.env.*
 .server.port
 tmp/
 priv/static/images/.DS_Store
