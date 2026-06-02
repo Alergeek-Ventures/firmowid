@@ -97,12 +97,11 @@ config :firmowid, Oban,
     bank_data: 1,
     requisition_checks: 1,
     invoicing: 1,
-    cost_invoices: 5,
+    document_blobs: 5,
     inbound_emails: 3,
     ksef_submissions: 2,
     ksef_sessions: 5,
     ksef_fetch: 2,
-    employment_contracts: 1,
     default: 1
   ],
   plugins: [

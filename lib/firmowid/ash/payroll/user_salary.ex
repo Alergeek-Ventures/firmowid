@@ -103,7 +103,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
     end
 
     policy action_type(:create) do
-      authorize_if {SystemActorRole, roles: [:employment_contract_processor]}
+      authorize_if {SystemActorRole, roles: [:document_blob_processor]}
       forbid_if always()
     end
   end

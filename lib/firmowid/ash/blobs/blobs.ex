@@ -35,8 +35,6 @@ defmodule Firmowid.Ash.Blobs do
           :processing_metadata
         ]
 
-      define :process_blob_as_cost_invoice, action: :process_cost_invoice
-      define :process_blob_as_employment_contract, action: :process_employment_contract
       define :destroy_blob, action: :destroy
     end
   end
@@ -185,7 +183,7 @@ defmodule Firmowid.Ash.Blobs do
            blob
            |> Ash.Changeset.for_update(:mark_processing_pending, %{}, opts)
            |> Ash.update(opts) do
-      AshOban.run_trigger(pending_blob, :process_cost_invoice, tenant: pending_blob.organization_id)
+      AshOban.run_trigger(pending_blob, :process_document_blobs, tenant: pending_blob.organization_id)
 
       {:ok, :blob_reprocessing_started}
     end

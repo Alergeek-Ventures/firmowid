@@ -1,15 +1,10 @@
-defmodule Firmowid.Ash.Blobs.Changes.ProcessEmploymentContractBlob do
+defmodule Firmowid.Ash.Blobs.Utils.ProcessEmploymentContractBlob do
   @moduledoc """
   Processes a pending blob into an employment contract by extracting metadata.
   """
-  use Ash.Resource.Change
 
-  alias Firmowid.Ash.Blobs.Changes.ProcessBlobHelpers
+  alias Firmowid.Ash.Blobs.Utils.ProcessBlobHelpers
   alias Firmowid.Ash.Payroll
-  alias Firmowid.Ash.Scope
-  alias Firmowid.Ash.SystemActor
-
-  require Logger
 
   @employment_contract_system_prompt """
   Extract data from this employment contract.
@@ -46,39 +41,10 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessEmploymentContractBlob do
     }
   }
 
-  @impl true
-  def change(changeset, _opts, _context) do
-    Ash.Changeset.after_action(changeset, fn _changeset, blob ->
-      actor = %SystemActor{
-        org_id: blob.organization_id,
-        role: :employment_contract_processor,
-        blob_id: blob.id
-      }
-
-      scope = %Scope{actor: actor, tenant: blob.organization_id}
-      opts = [actor: actor, tenant: blob.organization_id, scope: scope]
-
-      case run_processing(blob, opts) do
-        :ok ->
-          {:ok, blob}
-
-        {:error, reason} ->
-          Logger.warning("Failed to process employment contract blob #{blob.id}: #{inspect(reason)}")
-
-          _ = handle_failure(blob, reason, opts)
-          {:ok, blob}
-      end
-    end)
-  end
-
-  defp run_processing(blob, opts) do
-    with {:ok, blob} <- ProcessBlobHelpers.ensure_processing(blob, opts),
-         {:ok, blob_url} <- ProcessBlobHelpers.load_blob_url(blob, opts),
-         {:ok, extracted_metadata} <- extract_metadata(blob_url),
-         :ok <- ensure_employment_contract_document(extracted_metadata),
-         :ok <- create_employment_contract(extracted_metadata, blob, opts),
-         {:ok, _updated_blob} <- ProcessBlobHelpers.mark_succeeded(blob, opts) do
-      :ok
+  def run_processing(blob_url, blob, opts) do
+    with {:ok, extracted_metadata} <- extract_metadata(blob_url),
+         :ok <- ensure_employment_contract_document(extracted_metadata) do
+      create_employment_contract(extracted_metadata, blob, opts)
     end
   rescue
     error ->
@@ -111,14 +77,5 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessEmploymentContractBlob do
       {:ok, _contract} -> :ok
       {:error, reason} -> {:error, reason}
     end
-  end
-
-  defp handle_failure(blob, reason, opts) do
-    ProcessBlobHelpers.handle_failure(
-      blob,
-      reason,
-      opts,
-      "Plik nie zawiera danych wymaganych dla umowy."
-    )
   end
 end

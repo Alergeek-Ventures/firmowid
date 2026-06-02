@@ -14,10 +14,8 @@ defmodule Firmowid.Ash.Blobs.Blob do
 
   alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Ash.Blobs.Changes.DeleteFromS3
-  alias Firmowid.Ash.Blobs.Changes.EnqueueCostInvoiceBlobProcessing
-  alias Firmowid.Ash.Blobs.Changes.EnqueueEmploymentContractBlobProcessing
-  alias Firmowid.Ash.Blobs.Changes.ProcessCostInvoiceBlob
-  alias Firmowid.Ash.Blobs.Changes.ProcessEmploymentContractBlob
+  alias Firmowid.Ash.Blobs.Changes.EnqueueDocumentBlobProcessing
+  alias Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob
   alias Firmowid.Ash.Blobs.Changes.UploadToS3
   alias Firmowid.Ash.Blobs.Changes.ValidateProcessingStateTransition
   alias Firmowid.Ash.Checks.ActorBlobIdMatches
@@ -35,42 +33,31 @@ defmodule Firmowid.Ash.Blobs.Blob do
     use_tenant_from_record? true
 
     triggers do
-      trigger :cleanup_failed_cost_invoice do
-        action :cleanup_failed_cost_invoice
+      trigger :cleanup_failed_document_blobs do
+        action :cleanup_failed_document_blob
         read_action :read_global
 
         where expr(
-                processing_target == :cost_invoice and processing_state == :failed and
+                processing_target != :none and processing_state == :failed and
                   inserted_at < ago(1, "hour")
               )
 
         scheduler_cron "0 * * * *"
-        queue :cost_invoices
+        queue :document_blobs
 
-        worker_module_name Firmowid.Ash.Blobs.Blob.Worker.CleanupFailedCostInvoice
-        scheduler_module_name Firmowid.Ash.Blobs.Blob.Scheduler.CleanupFailedCostInvoice
+        worker_module_name Firmowid.Ash.Blobs.Blob.Worker.CleanupFailedDocumentBlob
+        scheduler_module_name Firmowid.Ash.Blobs.Blob.Scheduler.CleanupFailedDocumentBlob
       end
 
-      trigger :process_cost_invoice do
-        action :process_cost_invoice
+      trigger :process_document_blobs do
+        action :process_document_blob
         read_action :read_global
-        where expr(processing_target == :cost_invoice and processing_state == :pending)
+        where expr(processing_target != :none and processing_state == :pending)
         scheduler_cron "0 * * * *"
-        queue :cost_invoices
+        queue :document_blobs
 
-        worker_module_name Firmowid.Ash.Blobs.Blob.Worker.ProcessCostInvoice
-        scheduler_module_name Firmowid.Ash.Blobs.Blob.Scheduler.ProcessCostInvoice
-      end
-
-      trigger :process_employment_contract do
-        action :process_employment_contract
-        read_action :read_global
-        where expr(processing_target == :employment_contract and processing_state == :pending)
-        scheduler_cron false
-        queue :employment_contracts
-
-        worker_module_name Firmowid.Ash.Blobs.Blob.Worker.ProcessEmploymentContract
-        scheduler_module_name Firmowid.Ash.Blobs.Blob.Scheduler.ProcessEmploymentContract
+        worker_module_name Firmowid.Ash.Blobs.Blob.Worker.ProcessDocumentBlob
+        scheduler_module_name Firmowid.Ash.Blobs.Blob.Scheduler.ProcessDocumentBlob
       end
     end
   end
@@ -82,15 +69,6 @@ defmodule Firmowid.Ash.Blobs.Blob do
       description "Unscoped read for AshOban schedulers — reads across all organizations."
       multitenancy :allow_global
       pagination keyset?: true
-    end
-
-    read :read_pending_cost_invoice_processing do
-      description "Scoped scheduler read for pending cost-invoice blob processing."
-
-      pagination do
-        required? false
-        keyset? true
-      end
     end
 
     create :create_blob do
@@ -109,12 +87,8 @@ defmodule Firmowid.Ash.Blobs.Blob do
       change UploadToS3
       change Firmowid.Ash.Blobs.Changes.SetProcessingDefaults
 
-      change EnqueueCostInvoiceBlobProcessing do
-        where [attribute_equals(:processing_target, :cost_invoice)]
-      end
-
-      change EnqueueEmploymentContractBlobProcessing do
-        where [attribute_equals(:processing_target, :employment_contract)]
+      change EnqueueDocumentBlobProcessing do
+        where [attribute_does_not_equal(:processing_target, :none)]
       end
     end
 
@@ -168,22 +142,13 @@ defmodule Firmowid.Ash.Blobs.Blob do
       end
     end
 
-    update :process_cost_invoice do
-      description "Process a blob as a cost invoice import."
+    update :process_document_blob do
+      description "Process a blob."
       require_atomic? false
       # Need to update blob processing state in case of processing failures.
       transaction? false
 
-      change ProcessCostInvoiceBlob
-    end
-
-    update :process_employment_contract do
-      description "Process a blob as an employment contract import."
-      require_atomic? false
-      # Need to update blob processing state in case of processing failures.
-      transaction? false
-
-      change ProcessEmploymentContractBlob
+      change ProcessDocumentBlob
     end
 
     destroy :destroy do
@@ -194,7 +159,7 @@ defmodule Firmowid.Ash.Blobs.Blob do
       change DeleteFromS3
     end
 
-    destroy :cleanup_failed_cost_invoice do
+    destroy :cleanup_failed_document_blob do
       description "Scheduled trigger — deletes failed cost-invoice blobs older than 1 hour."
       require_atomic? false
 
@@ -215,7 +180,7 @@ defmodule Firmowid.Ash.Blobs.Blob do
     bypass {SystemActorRole,
             roles: [
               :cost_invoice_processor,
-              :employment_contract_processor,
+              :document_blob_processor,
               :sales_invoice_processor
             ]} do
       authorize_if action(:read)
@@ -225,14 +190,13 @@ defmodule Firmowid.Ash.Blobs.Blob do
       authorize_if action(:create_blob)
     end
 
-    bypass {SystemActorRole, roles: [:cost_invoice_processor, :employment_contract_processor]} do
+    bypass {SystemActorRole, roles: [:cost_invoice_processor, :document_blob_processor]} do
       authorize_if action([
                      :mark_processing,
                      :mark_processing_pending,
                      :mark_processing_succeeded,
                      :mark_processing_failed,
-                     :process_cost_invoice,
-                     :process_employment_contract
+                     :process_document_blob
                    ])
     end
 
@@ -240,7 +204,7 @@ defmodule Firmowid.Ash.Blobs.Blob do
     # Both conditions must be true: action is :destroy AND the actor's blob_id matches.
     policy [
       action(:destroy),
-      {SystemActorRole, roles: [:cost_invoice_processor, :employment_contract_processor, :sales_invoice_processor]}
+      {SystemActorRole, roles: [:cost_invoice_processor, :document_blob_processor, :sales_invoice_processor]}
     ] do
       authorize_if ActorBlobIdMatches
     end
@@ -259,7 +223,7 @@ defmodule Firmowid.Ash.Blobs.Blob do
       authorize_if ActorBlobIdMatches
     end
 
-    bypass {SystemActorRole, roles: [:cost_invoice_processor, :employment_contract_processor]} do
+    bypass {SystemActorRole, roles: [:cost_invoice_processor, :document_blob_processor]} do
       authorize_if action(:read_global)
     end
 
@@ -297,8 +261,7 @@ defmodule Firmowid.Ash.Blobs.Blob do
     publish :mark_processing_pending, ["updated", :_tenant]
     publish :mark_processing_succeeded, ["updated", :_tenant]
     publish :mark_processing_failed, ["updated", :_tenant]
-    publish :process_cost_invoice, ["updated", :_tenant]
-    publish :process_employment_contract, ["updated", :_tenant]
+    publish :process_document_blob, ["updated", :_tenant]
   end
 
   multitenancy do

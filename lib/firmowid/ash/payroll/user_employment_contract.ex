@@ -52,7 +52,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
 
   policies do
     policy action_type(:create) do
-      authorize_if {SystemActorRole, roles: [:employment_contract_processor]}
+      authorize_if {SystemActorRole, roles: [:document_blob_processor]}
       forbid_if always()
     end
 
