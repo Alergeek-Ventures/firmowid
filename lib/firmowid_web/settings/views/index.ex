@@ -63,9 +63,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
     |> to_form()
   end
 
-  def form_user_form(user) do
+  def form_user_form(user, scope) do
     user
     |> AshPhoenix.Form.for_update(:update_profile,
+      scope: scope,
       domain: Core,
       as: "user"
     )
@@ -120,7 +121,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         socket
       end
 
-    socket = assign(socket, :user_form, form_user_form(current_user))
+    socket = assign(socket, :user_form, form_user_form(current_user, scope))
 
     # Load avatars using Ash.load!
     org_with_avatar =
@@ -401,7 +402,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
          socket
          |> close_user_editing()
          |> assign(:current_user, updated_user)
-         |> assign(:user_form, form_user_form(updated_user))}
+         |> assign(:user_form, form_user_form(updated_user, socket.assigns.ash_scope))}
 
       {:error, form} ->
         {:noreply, assign(socket, :user_form, form)}
