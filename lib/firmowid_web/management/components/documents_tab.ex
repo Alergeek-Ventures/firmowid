@@ -240,7 +240,7 @@ defmodule FirmowidWeb.Management.Components.DocumentsTab do
           0
       end
 
-    count = Payroll.get_processing_employment_contracts_count(socket.assigns.scope)
+    count = Blobs.get_processing_blobs_count(:employment_contract, socket.assigns.scope)
 
     socket
     |> assign(:processing_blobs_count, count)

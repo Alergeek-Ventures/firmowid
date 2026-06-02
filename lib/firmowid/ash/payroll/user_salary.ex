@@ -44,7 +44,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
       primary? true
 
       argument :user_id, :uuid
-      argument :active_at, :utc_datetime
+      argument :active_at, :date
 
       prepare build(sort: [starts_at: :desc])
 
@@ -55,9 +55,9 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
       prepare build(
                 filter:
                   expr(
-                    starts_at <= ^arg(:active_at) and
+                    type(starts_at, :date) <= ^arg(:active_at) and
                       (is_nil(ends_at) or
-                         ends_at > ^arg(:active_at))
+                         type(ends_at, :date) > ^arg(:active_at))
                   )
               ) do
         where present(:active_at)
@@ -139,6 +139,12 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
 
     belongs_to :organization, Firmowid.Ash.Core.Organization do
       allow_nil? false
+    end
+
+    belongs_to :employment_contract, Firmowid.Ash.Payroll.UserEmploymentContract do
+      # dla istniejących rekordów bez kontraktu
+      allow_nil? true
+      attribute_writable? true
     end
   end
 

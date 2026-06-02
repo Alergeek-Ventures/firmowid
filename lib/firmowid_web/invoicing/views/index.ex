@@ -886,7 +886,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     socket
     |> assign(
       :processing_blobs_count,
-      Invoicing.get_processing_cost_invoices_count(socket.assigns.ash_scope)
+      Blobs.get_processing_blobs_count(:cost_invoice, socket.assigns.ash_scope)
     )
     |> assign(:currently_uploading_count, currently_uploading_count)
   end

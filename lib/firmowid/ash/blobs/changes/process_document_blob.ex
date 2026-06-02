@@ -57,7 +57,9 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob do
   defp process_document_blob(_, _blob_url, _blob, _opts), do: {:error, :unsupported_processing_target}
 
   defp get_error_message(:cost_invoice), do: "Plik nie zawiera danych wymaganych dla faktury kosztowej."
+
   defp get_error_message(:employment_contract), do: "Plik nie zawiera danych wymaganych dla umowy o pracę."
+
   defp get_error_message(_), do: "Nie udało się przetworzyć dokumentu."
 
   defp ensure_processing(blob, opts) do

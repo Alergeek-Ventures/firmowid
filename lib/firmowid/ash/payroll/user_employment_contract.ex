@@ -45,8 +45,21 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
       description "Create an employment contract record for a user."
       primary? true
       accept [:worker_full_name, :starts_at, :salary, :user_id, :blob_id]
+      argument :user_salary, :map
 
-      change Firmowid.Ash.Payroll.Changes.CreateSalary
+      change fn changeset, _context ->
+        salary = Ash.Changeset.get_attribute(changeset, :salary)
+        user_id = Ash.Changeset.get_attribute(changeset, :user_id)
+        starts_at = Ash.Changeset.get_attribute(changeset, :starts_at)
+
+        Ash.Changeset.set_argument(changeset, :user_salary, %{
+          hourly_rate: Money.to_decimal(salary),
+          user_id: user_id,
+          starts_at: starts_at
+        })
+      end
+
+      change manage_relationship(:user_salary, type: :create)
     end
   end
 
@@ -90,6 +103,10 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
     belongs_to :blob, Firmowid.Ash.Blobs.Blob do
       allow_nil? false
       attribute_writable? true
+    end
+
+    has_one :user_salary, Firmowid.Ash.Payroll.UserSalary do
+      destination_attribute :employment_contract_id
     end
   end
 

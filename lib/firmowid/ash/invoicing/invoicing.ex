@@ -596,23 +596,6 @@ defmodule Firmowid.Ash.Invoicing do
 
   def hydrate_invoice_with_fa3_blob(invoice), do: invoice
 
-  @doc """
-  Returns the count of Oban jobs pending cost invoice extraction.
-
-  Uses raw Ecto query on `Oban.Job` because Oban provides no public count API.
-  This is the only justified raw Ecto usage remaining in the invoicing domain.
-  """
-  @spec get_processing_cost_invoices_count(Scope.t()) :: non_neg_integer()
-  def get_processing_cost_invoices_count(scope) do
-    Firmowid.Ash.Blobs.Blob
-    |> Ash.Query.for_read(:read, %{}, scope: scope)
-    |> Ash.Query.filter(
-      processing_target == :cost_invoice and
-        (processing_state == :pending or processing_state == :processing)
-    )
-    |> Ash.count!(scope: scope)
-  end
-
   # ---------------------------------------------------------------------------
   # Logo / currency / numbering orchestration
   # (moved from SalesInvoice — crosses context boundaries)

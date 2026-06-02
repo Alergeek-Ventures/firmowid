@@ -71,6 +71,22 @@ defmodule Firmowid.Ash.Blobs.Blob do
       pagination keyset?: true
     end
 
+    read :list_processing do
+      description "Returns blobs with processing state pending or processing for a given target."
+
+      argument :processing_target, :atom,
+        constraints: [one_of: [:cost_invoice, :employment_contract]],
+        allow_nil?: false
+
+      prepare build(
+                filter:
+                  expr(
+                    processing_target == ^arg(:processing_target) and
+                      (processing_state == :pending or processing_state == :processing)
+                  )
+              )
+    end
+
     create :create_blob do
       description "Upload a file to S3 and create a blob record."
 
@@ -225,9 +241,14 @@ defmodule Firmowid.Ash.Blobs.Blob do
 
     bypass {SystemActorRole, roles: [:cost_invoice_processor, :document_blob_processor]} do
       authorize_if action(:read_global)
+      authorize_if action(:list_processing)
     end
 
     policy action(:read_global) do
+      forbid_if always()
+    end
+
+    policy action(:list_processing) do
       forbid_if always()
     end
 

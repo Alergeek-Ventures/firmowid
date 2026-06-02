@@ -29,14 +29,4 @@ defmodule Firmowid.Ash.Payroll do
     authorize :by_default
     require_actor? true
   end
-
-  def get_processing_employment_contracts_count(scope) do
-    Firmowid.Ash.Blobs.Blob
-    |> Ash.Query.for_read(:read, %{}, scope: scope)
-    |> Ash.Query.filter(
-      processing_target == :employment_contract and
-        (processing_state == :pending or processing_state == :processing)
-    )
-    |> Ash.count!(scope: scope)
-  end
 end
