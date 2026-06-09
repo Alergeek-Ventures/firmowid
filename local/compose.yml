@@ -26,9 +26,10 @@ services:
       retries: 5
 
   s3:
-    image: docker.io/chrislusf/seaweedfs:4.30@sha256:20fb6eabf1468d3e53fb7b8bd05d929f8b01ae8ceccc2668b501176b2366940f
+    build:
+      context: ..
+      dockerfile: deployment/Containerfile.seaweedfs
     container_name: ${COMPOSE_PROJECT_NAME:-firmowid}-s3
-    command: server -s3
     ports:
       - "${S3_PORT:-4566}:8333"
     environment:

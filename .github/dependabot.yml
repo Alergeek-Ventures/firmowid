@@ -44,6 +44,10 @@ updates:
       timezone: "Europe/Warsaw"
     cooldown:
       default-days: 7
+    groups:
+      container-base-images:
+        patterns:
+          - "*"
 
   # ── Docker Compose service images (paradedb, seaweedfs) ─────────────
   - package-ecosystem: "docker-compose"
@@ -55,6 +59,12 @@ updates:
       timezone: "Europe/Warsaw"
     cooldown:
       default-days: 7
+    allow:
+      - dependency-name: "paradedb/paradedb"
+    groups:
+      local-compose-images:
+        patterns:
+          - "paradedb/paradedb"
 
   # ── GitHub Actions ──────────────────────────────────────────────────
   - package-ecosystem: "github-actions"

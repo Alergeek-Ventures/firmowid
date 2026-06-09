@@ -13,8 +13,11 @@ concurrency:
 
 jobs:
   extract-versions:
-    name: Extract versions from .tool-versions
+    name: Extract versions and service images
     runs-on: self-hosted
+    permissions:
+      contents: read
+      pull-requests: read
     container:
       image: ghcr.io/alergeek-ventures/infrastructure/cicd-image:5b1d7150888c47322a6b5cda04796dfd1dbfb34c
       credentials:
@@ -23,6 +26,11 @@ jobs:
     outputs:
       elixir: ${{ steps.versions.outputs.elixir }}
       otp: ${{ steps.versions.outputs.otp }}
+      paradedb_image: ${{ steps.images.outputs.paradedb_image }}
+      seaweedfs_image: ${{ steps.images.outputs.seaweedfs_image }}
+      seaweedfs_pr_image_required: ${{ steps.images.outputs.seaweedfs_pr_image_required }}
+      seaweedfs_pr_number: ${{ steps.images.outputs.seaweedfs_pr_number }}
+      seaweedfs_pr_head_sha: ${{ steps.images.outputs.seaweedfs_pr_head_sha }}
     steps:
       - name: Checkout code
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
@@ -39,6 +47,100 @@ jobs:
           echo "  Elixir: $ELIXIR"
           echo "  OTP: $OTP"
 
+      - name: Extract service images
+        id: images
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_API_URL: ${{ github.api_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          PARADEDB_IMAGE=$(grep 'image:.*paradedb/paradedb' local/compose.yml | sed 's/.*image: *//')
+          SEAWEEDFS_VERSION=$(grep '^FROM' deployment/Containerfile.seaweedfs | sed 's/.*seaweedfs://' | sed 's/@.*//')
+          SEAWEEDFS_IMAGE="ghcr.io/alergeek-ventures/firmowid/seaweedfs-s3:${SEAWEEDFS_VERSION}"
+          SEAWEEDFS_PR_IMAGE_REQUIRED="false"
+
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            PR_FILES_URL="$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files?per_page=100"
+
+            if curl --fail --silent --show-error \
+              --header "Authorization: Bearer $GITHUB_TOKEN" \
+              --header "X-GitHub-Api-Version: 2022-11-28" \
+              "$PR_FILES_URL" | grep '"filename": "deployment/Containerfile.seaweedfs"' >/dev/null; then
+              SEAWEEDFS_IMAGE="ghcr.io/alergeek-ventures/firmowid/seaweedfs-s3:pr-${PR_NUMBER}-${PR_HEAD_SHA}"
+              SEAWEEDFS_PR_IMAGE_REQUIRED="true"
+            fi
+          fi
+
+          echo "paradedb_image=$PARADEDB_IMAGE" >> $GITHUB_OUTPUT
+          echo "seaweedfs_image=$SEAWEEDFS_IMAGE" >> $GITHUB_OUTPUT
+          echo "seaweedfs_pr_image_required=$SEAWEEDFS_PR_IMAGE_REQUIRED" >> $GITHUB_OUTPUT
+          echo "seaweedfs_pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "seaweedfs_pr_head_sha=$PR_HEAD_SHA" >> $GITHUB_OUTPUT
+          echo "Detected from local/compose.yml:"
+          echo "  ParadeDB: $PARADEDB_IMAGE"
+          echo "Selected SeaweedFS image:"
+          echo "  SeaweedFS: $SEAWEEDFS_IMAGE"
+
+  verify-service-images:
+    name: Verify service images are available
+    runs-on: self-hosted
+    needs: extract-versions
+    permissions:
+      packages: read
+    container:
+      image: ghcr.io/alergeek-ventures/infrastructure/cicd-image:5b1d7150888c47322a6b5cda04796dfd1dbfb34c
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.github_token }}
+
+    steps:
+      - name: Log in to GHCR
+        run: |
+          printf '%s' "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify SeaweedFS image exists
+        env:
+          SEAWEEDFS_IMAGE: ${{ needs.extract-versions.outputs.seaweedfs_image }}
+          SEAWEEDFS_PR_IMAGE_REQUIRED: ${{ needs.extract-versions.outputs.seaweedfs_pr_image_required }}
+          SEAWEEDFS_PR_NUMBER: ${{ needs.extract-versions.outputs.seaweedfs_pr_number }}
+          SEAWEEDFS_PR_HEAD_SHA: ${{ needs.extract-versions.outputs.seaweedfs_pr_head_sha }}
+        run: |
+          if docker manifest inspect "$SEAWEEDFS_IMAGE" >/dev/null 2>&1; then
+            echo "✅ SeaweedFS image is available: $SEAWEEDFS_IMAGE"
+            exit 0
+          fi
+
+          echo "❌ SeaweedFS image is not available: $SEAWEEDFS_IMAGE"
+          echo ""
+
+          if [ "$SEAWEEDFS_PR_IMAGE_REQUIRED" = "true" ]; then
+            echo "This PR changes deployment/Containerfile.seaweedfs, so Build/Test requires a PR-scoped SeaweedFS image."
+            echo ""
+            echo "Publish it from your machine with GitHub CLI:"
+            echo ""
+            echo "  gh workflow run \"Build SeaweedFS S3 PR Image\" --ref main -f pr-number=$SEAWEEDFS_PR_NUMBER -f head-sha=$SEAWEEDFS_PR_HEAD_SHA"
+            echo ""
+            echo "Expected tag:"
+            echo ""
+            echo "  $SEAWEEDFS_IMAGE"
+            echo ""
+            echo "After the publisher workflow succeeds, rerun this Build and Test workflow."
+          else
+            echo "Build/Test expected the main SeaweedFS image tag to already exist."
+            echo "Run the main publisher workflow or check GHCR package availability."
+            echo ""
+            echo "Expected tag:"
+            echo ""
+            echo "  $SEAWEEDFS_IMAGE"
+          fi
+
+          exit 1
+
   build:
     name: Build and test
 
@@ -51,7 +153,9 @@ jobs:
         password: ${{ secrets.github_token }}
     # end
 
-    needs: extract-versions
+    needs:
+      - extract-versions
+      - verify-service-images
     permissions:
       contents: read
       packages: read
@@ -80,7 +184,7 @@ jobs:
 
     services:
       db:
-        image: paradedb/paradedb:v0.23.5@sha256:c3efc689b6ebd2fb396d7f50d68735b2dcff3e03f3bf51a926258d942201da2d
+        image: ${{ needs.extract-versions.outputs.paradedb_image }}
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -90,7 +194,7 @@ jobs:
           --health-retries 5
 
       seaweedfs:
-        image: ghcr.io/alergeek-ventures/firmowid/seaweedfs-s3:latest
+        image: ${{ needs.extract-versions.outputs.seaweedfs_image }}
         credentials:
           username: ${{ github.actor }}
           password: ${{ secrets.github_token }}

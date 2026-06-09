@@ -75,52 +75,98 @@ jobs:
           echo ""
           echo "✅ Elixir/Erlang versions in sync"
 
-      # ── ParadeDB: compose.yml (source of truth) ↔ CI workflow ──────
-      - name: Compare ParadeDB image across compose and CI
+      # ── ParadeDB: compose.yml owns the image, CI derives from it ───
+      - name: Validate ParadeDB image ownership
         run: |
           echo "=== ParadeDB ==="
           echo ""
 
-          # Extract full image ref (tag@sha256:digest) from each file
           COMPOSE_PARADEDB=$(grep 'image:.*paradedb/paradedb' local/compose.yml | sed 's/.*image: *//')
-          CI_PARADEDB=$(grep 'image:.*paradedb/paradedb' .github/workflows/elixir-build-and-test.yml | sed 's/.*image: *//')
+          CI_HARDCODED_PARADEDB=$(grep 'image:.*paradedb/paradedb' .github/workflows/elixir-build-and-test.yml || true)
+          CI_DERIVED_PARADEDB=$(grep 'image:.*needs.extract-versions.outputs.paradedb_image' .github/workflows/elixir-build-and-test.yml || true)
 
-          echo "  compose.yml:             $COMPOSE_PARADEDB"
-          echo "  elixir-build-and-test:   $CI_PARADEDB"
+          echo "  owner (local/compose.yml): $COMPOSE_PARADEDB"
 
-          if [ "$COMPOSE_PARADEDB" != "$CI_PARADEDB" ]; then
+          if [ -z "$COMPOSE_PARADEDB" ]; then
             echo ""
-            echo "❌ ParadeDB image mismatch!"
-            echo "   Source of truth (local/compose.yml): $COMPOSE_PARADEDB"
-            echo "   Out of sync (.github/workflows/elixir-build-and-test.yml): $CI_PARADEDB"
+            echo "❌ ParadeDB image owner missing!"
+            echo "   Expected local/compose.yml to contain the pinned paradedb/paradedb image."
             echo ""
-            echo "Please update the service image in elixir-build-and-test.yml to match compose.yml."
+            echo "Dependabot should update local/compose.yml; CI derives the service image from it."
             exit 1
           fi
 
-          echo "✅ ParadeDB image in sync"
+          if [ -n "$CI_HARDCODED_PARADEDB" ]; then
+            echo ""
+            echo "❌ ParadeDB image duplicated in CI!"
+            echo "   local/compose.yml is the owner. CI must use needs.extract-versions.outputs.paradedb_image."
+            echo ""
+            echo "$CI_HARDCODED_PARADEDB"
+            exit 1
+          fi
 
-      # ── SeaweedFS: compose.yml (source of truth) ↔ Containerfile ───
-      - name: Compare SeaweedFS image across compose and Containerfile
+          if [ -z "$CI_DERIVED_PARADEDB" ]; then
+            echo ""
+            echo "❌ ParadeDB image is not derived in CI!"
+            echo "   Expected elixir-build-and-test.yml services.db.image to use:"
+            printf '%s%s\n' '   $' '{{ needs.extract-versions.outputs.paradedb_image }}'
+            exit 1
+          fi
+
+          echo "✅ ParadeDB image ownership is correct"
+
+      # ── SeaweedFS: Containerfile owns the upstream image ───────────
+      - name: Validate SeaweedFS image ownership
         run: |
           echo "=== SeaweedFS ==="
           echo ""
 
-          # Extract the image ref after "image:" or "FROM"
-          COMPOSE_SEAWEEDFS=$(grep 'image:.*seaweedfs' local/compose.yml | sed 's/.*image: *//')
+          COMPOSE_SEAWEEDFS=$(grep 'image:.*chrislusf/seaweedfs' local/compose.yml || true)
           CONTAINERFILE_SEAWEEDFS=$(grep '^FROM.*seaweedfs' deployment/Containerfile.seaweedfs | sed 's/^FROM *//')
+          CI_LATEST_SEAWEEDFS=$(grep 'seaweedfs-s3:latest' .github/workflows/*.yml || true)
+          CI_MAIN_SEAWEEDFS=$(grep 'seaweedfs-s3:main' .github/workflows/build-seaweedfs.yml || true)
+          CI_SHA_SEAWEEDFS=$(grep 'seaweedfs-s3:sha-' .github/workflows/build-seaweedfs.yml || true)
+          CI_DERIVED_SEAWEEDFS=$(grep 'image:.*needs.extract-versions.outputs.seaweedfs_image' .github/workflows/elixir-build-and-test.yml || true)
 
-          echo "  compose.yml:               $COMPOSE_SEAWEEDFS"
-          echo "  Containerfile.seaweedfs:   $CONTAINERFILE_SEAWEEDFS"
+          echo "  owner (Containerfile.seaweedfs): $CONTAINERFILE_SEAWEEDFS"
 
-          if [ "$COMPOSE_SEAWEEDFS" != "$CONTAINERFILE_SEAWEEDFS" ]; then
+          if [ -n "$COMPOSE_SEAWEEDFS" ]; then
             echo ""
-            echo "❌ SeaweedFS image mismatch!"
-            echo "   Source of truth (local/compose.yml): $COMPOSE_SEAWEEDFS"
-            echo "   Out of sync (deployment/Containerfile.seaweedfs): $CONTAINERFILE_SEAWEEDFS"
+            echo "❌ SeaweedFS upstream image duplicated in compose!"
+            echo "   deployment/Containerfile.seaweedfs owns the upstream chrislusf/seaweedfs ref."
             echo ""
-            echo "Please update the FROM line in Containerfile.seaweedfs to match compose.yml."
+            echo "$COMPOSE_SEAWEEDFS"
             exit 1
           fi
 
-          echo "✅ SeaweedFS image in sync"
+          if [ -z "$CONTAINERFILE_SEAWEEDFS" ]; then
+            echo ""
+            echo "❌ SeaweedFS owner missing!"
+            echo "   Expected deployment/Containerfile.seaweedfs to contain the upstream FROM image."
+            exit 1
+          fi
+
+          if [ -n "$CI_LATEST_SEAWEEDFS" ]; then
+            echo ""
+            echo "❌ SeaweedFS CI still references the floating latest tag!"
+            echo "   Use a version/main tag for current main or a pr-<number>-<sha> tag for PR wrapper changes."
+            echo ""
+            echo "$CI_LATEST_SEAWEEDFS"
+            exit 1
+          fi
+
+          if [ -z "$CI_MAIN_SEAWEEDFS" ] || [ -z "$CI_SHA_SEAWEEDFS" ]; then
+            echo ""
+            echo "❌ SeaweedFS main publisher tags are incomplete!"
+            echo "   build-seaweedfs.yml should publish :main and :sha-<github.sha>."
+            exit 1
+          fi
+
+          if [ -z "$CI_DERIVED_SEAWEEDFS" ]; then
+            echo ""
+            echo "❌ SeaweedFS image is not derived in Build/Test!"
+            echo "   Expected elixir-build-and-test.yml services.seaweedfs.image to use needs.extract-versions.outputs.seaweedfs_image."
+            exit 1
+          fi
+
+          echo "✅ SeaweedFS image ownership is correct"
