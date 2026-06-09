@@ -82,8 +82,8 @@ jobs:
           echo ""
 
           COMPOSE_PARADEDB=$(grep 'image:.*paradedb/paradedb' local/compose.yml | sed 's/.*image: *//')
-          CI_HARDCODED_PARADEDB=$(grep 'image:.*paradedb/paradedb' .github/workflows/elixir-build-and-test.yml || true)
-          CI_DERIVED_PARADEDB=$(grep 'image:.*needs.extract-versions.outputs.paradedb_image' .github/workflows/elixir-build-and-test.yml || true)
+          CI_HARDCODED_PARADEDB=$(grep -E '^[[:space:]]*image:[[:space:]]*.*paradedb/paradedb' .github/workflows/elixir-build-and-test.yml || true)
+          CI_DERIVED_PARADEDB=$(grep -E '^[[:space:]]*image:[[:space:]]*.*needs\.extract-versions\.outputs\.paradedb_image' .github/workflows/elixir-build-and-test.yml || true)
 
           echo "  owner (local/compose.yml): $COMPOSE_PARADEDB"
 
@@ -121,12 +121,15 @@ jobs:
           echo "=== SeaweedFS ==="
           echo ""
 
-          COMPOSE_SEAWEEDFS=$(grep 'image:.*chrislusf/seaweedfs' local/compose.yml || true)
+          COMPOSE_SEAWEEDFS=$(grep -E '^[[:space:]]*image:[[:space:]]*.*chrislusf/seaweedfs' local/compose.yml || true)
           CONTAINERFILE_SEAWEEDFS=$(grep '^FROM.*seaweedfs' deployment/Containerfile.seaweedfs | sed 's/^FROM *//')
-          CI_LATEST_SEAWEEDFS=$(grep 'seaweedfs-s3:latest' .github/workflows/*.yml || true)
+          CI_LATEST_SEAWEEDFS=$(grep 'seaweedfs-s3:latest' \
+            .github/workflows/build-seaweedfs.yml \
+            .github/workflows/build-seaweedfs-pr.yml \
+            .github/workflows/elixir-build-and-test.yml || true)
           CI_MAIN_SEAWEEDFS=$(grep 'seaweedfs-s3:main' .github/workflows/build-seaweedfs.yml || true)
           CI_SHA_SEAWEEDFS=$(grep 'seaweedfs-s3:sha-' .github/workflows/build-seaweedfs.yml || true)
-          CI_DERIVED_SEAWEEDFS=$(grep 'image:.*needs.extract-versions.outputs.seaweedfs_image' .github/workflows/elixir-build-and-test.yml || true)
+          CI_DERIVED_SEAWEEDFS=$(grep -E '^[[:space:]]*image:[[:space:]]*.*needs\.extract-versions\.outputs\.seaweedfs_image' .github/workflows/elixir-build-and-test.yml || true)
 
           echo "  owner (Containerfile.seaweedfs): $CONTAINERFILE_SEAWEEDFS"
 

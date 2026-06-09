@@ -1,4 +1,3 @@
-# credo:disable-for-this-file AshCredo.Check.Warning.MissingPrimaryKey
 # credo:disable-for-this-file AshCredo.Check.Design.MissingTimestamps
 # AshEvents.EventLog injects the `:id` primary key via extension transformer.
 defmodule Firmowid.Ash.Events.Event do
