@@ -241,8 +241,6 @@ defmodule FirmowidWeb.BankSync.Views.Create do
       Enum.any?(socket.assigns.available_institutions, &is_nil(&1.dominant_color_rgb))
   end
 
-  defp institution_button_text_color(nil), do: "inherit"
-
   defp institution_button_text_color(color_rgb) do
     [red, green, blue] = color_rgb |> String.split(" ") |> Enum.map(&String.to_integer/1)
 

@@ -30,7 +30,6 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
   alias Firmowid.Ash.Invoicing.Validations.ValidateTaxId
   alias Firmowid.Ash.Resource
 
-  require Ash.Query
   require Resource
 
   @eu_countries CountryCodes.eu_countries_with_aliases()

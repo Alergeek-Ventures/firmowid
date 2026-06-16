@@ -17,8 +17,6 @@ defmodule Firmowid.Ash.Invoicing do
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
 
-  require Ash.Query
-
   resources do
     resource Firmowid.Ash.Invoicing.Counterparty do
       define :list_counterparties, action: :list

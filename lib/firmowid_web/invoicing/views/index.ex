@@ -30,8 +30,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias FirmowidWeb.Invoicing.Utilities.QueryCodec
   alias Phoenix.Socket.Broadcast
 
-  require Ash.Query
-
   # Load definitions for invoice queries
   @cost_invoice_loads [
     :invoice_source,
@@ -1076,8 +1074,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   end
 
   defp groupable_transaction?(_), do: false
-
-  defp same_currency_transactions?([]), do: true
 
   defp same_currency_transactions?([first | rest]) do
     currency = first.amount |> Money.to_currency_code() |> Atom.to_string()

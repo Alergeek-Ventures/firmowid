@@ -12,8 +12,6 @@ defmodule FirmowidWeb.Admin.Views.Settlement do
   alias FirmowidWeb.Admin.Components.SettlementComponents
   alias FirmowidWeb.Billing.Utilities.MonthContext
 
-  require Ash.Query
-
   @impl true
   def mount(_params, _session, socket) do
     {:ok,

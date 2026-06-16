@@ -11,8 +11,6 @@ defmodule Firmowid.Ash.Timetracker do
 
   alias Firmowid.Ash.Timetracker.Session
 
-  require Ash.Query
-
   resources do
     resource Firmowid.Ash.Timetracker.HoursRecord do
       define :list_hours_records, action: :list

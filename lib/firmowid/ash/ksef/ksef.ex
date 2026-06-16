@@ -533,8 +533,6 @@ defmodule Firmowid.Ash.Ksef do
     end
   end
 
-  defp get_job_failed_at(nil), do: nil
-
   defp get_job_failed_at(%Oban.Job{errors: errors}) when is_list(errors) and errors != [] do
     case List.last(errors) do
       %{"at" => at_string} ->
@@ -550,7 +548,6 @@ defmodule Firmowid.Ash.Ksef do
 
   defp get_job_failed_at(%Oban.Job{}), do: nil
 
-  defp format_job_error(nil), do: nil
   defp format_job_error(%Oban.Job{errors: []}), do: nil
   defp format_job_error(%Oban.Job{errors: nil}), do: nil
 

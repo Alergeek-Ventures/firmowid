@@ -8,8 +8,6 @@ defmodule FirmowidWeb.Core.RequestLogMetadata do
 
   @behaviour Plug
 
-  require Logger
-
   @health_path "/health"
 
   @impl Plug

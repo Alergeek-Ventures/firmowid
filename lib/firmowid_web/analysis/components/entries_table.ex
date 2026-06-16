@@ -99,7 +99,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
       |> assign(:amount, amount)
       |> assign(:amount_decimal, Money.to_decimal(amount))
       |> assign(:navigate, nil)
-      |> assign(:entity_tags, Map.get(transaction, :entity_tags, []))
+      |> assign(:entity_tags, [])
       |> assign(:entity_type, :transaction)
       |> assign(:entity_id, transaction.id)
       |> assign(:taggable, transaction.skip_invoicing)

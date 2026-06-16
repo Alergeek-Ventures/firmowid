@@ -22,7 +22,6 @@ defmodule Firmowid.Ash.Timetracker.Project do
   alias Firmowid.Ash.Timetracker.ProjectUser
   alias Firmowid.Ash.Timetracker.Session
 
-  require Ash.Query
   require Resource
 
   postgres do

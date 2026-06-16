@@ -7,8 +7,6 @@ defmodule Firmowid.Ash.Invoicing.Services.NipApiClient do
 
   alias Firmowid.Ash.Invoicing.Services.NipResponse
 
-  require Logger
-
   @type organization :: %{
           name: String.t(),
           nip: String.t(),

@@ -52,9 +52,8 @@ defmodule Firmowid.TimetrackerFixtures do
     end
   end
 
-  def user_project_fixture(user_id, project_id, organization_id \\ nil) do
-    # organization_id can be passed explicitly; if not, it must be set via test context
-    tenant = organization_id || raise "organization_id is required for user_project_fixture"
+  def user_project_fixture(user_id, project_id, organization_id) do
+    tenant = organization_id
     opts = admin_opts(tenant)
 
     {:ok, pu} = AshProjectUser.create(%{user_id: user_id, project_id: project_id}, opts)

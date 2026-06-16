@@ -19,7 +19,7 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
     show_vat = Keyword.get(opts, :show_vat, true)
     ash_scope = Keyword.get(opts, :scope)
     ash_opts = ash_opts(invoice, ash_scope)
-    logo_url = Keyword.get(opts, :logo_url, Map.get(invoice, :logo_url))
+    logo_url = Keyword.get(opts, :logo_url)
 
     logo_data_uri = PdfHelpers.url_to_data_uri(logo_url)
     footer_logo_data_uri = PdfHelpers.file_to_data_uri(footer_logo_path())

@@ -16,10 +16,6 @@ defmodule Firmowid.Ash.Core.Token do
     extensions: [AshAuthentication.TokenResource],
     authorizers: [Ash.Policy.Authorizer]
 
-  alias Firmowid.Ash.Resource
-
-  require Resource
-
   postgres do
     table "tokens"
     repo Firmowid.Repo

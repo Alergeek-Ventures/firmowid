@@ -1,7 +1,5 @@
 alias FirmowidWeb.Management.Components.DocumentsTab
 
-require Logger
-
 # credo:disable-for-this-file ExDNA.Credo
 # Employee detail view duplicates monthly aggregation/cost assembly paths; resolving this
 # cleanly requires extracting shared timetracker/payroll query helpers across LiveViews.

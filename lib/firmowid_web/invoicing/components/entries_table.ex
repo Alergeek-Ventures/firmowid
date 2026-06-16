@@ -580,7 +580,6 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           party,
           Enum.map_join(invoice.sales_invoice_items, ", ", & &1.name)
         } do
-          {nil, ""} -> "szkic faktury sprzedażowej"
           {"", ""} -> "szkic faktury sprzedażowej"
           {_party, ""} -> ""
           {_party, description} -> description

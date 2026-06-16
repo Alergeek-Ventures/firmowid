@@ -9,8 +9,6 @@ defmodule Firmowid.Ash.Payroll do
   """
   use Ash.Domain
 
-  require Ash.Query
-
   resources do
     resource Firmowid.Ash.Payroll.UserSalary do
       define :create_salary, action: :create

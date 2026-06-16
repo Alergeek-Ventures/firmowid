@@ -57,8 +57,8 @@
     <div class="flex gap-3">
       <.avatar class="ring-greyButtonBg/50 size-20 shrink-0 ring-1">
         <.avatar_image
-          :if={@employee.avatar_blob && @employee.avatar_blob.url}
-          src={@employee.avatar_blob && @employee.avatar_blob.url}
+          :if={@employee.avatar_blob.url}
+          src={@employee.avatar_blob.url}
           alt="Avatar"
         />
         <.avatar_fallback class="bg-blueBg text-blueText text-2xl">

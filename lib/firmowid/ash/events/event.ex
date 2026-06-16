@@ -16,10 +16,6 @@ defmodule Firmowid.Ash.Events.Event do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshEvents.EventLog]
 
-  alias Firmowid.Ash.Resource
-
-  require Resource
-
   postgres do
     table "ash_events"
     repo Firmowid.Repo

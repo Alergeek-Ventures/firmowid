@@ -182,8 +182,8 @@
         >
           <.avatar class={["size-[50px]", entry.removed_from_project && "opacity-50"]}>
             <.avatar_image
-              :if={entry.user.avatar_blob && entry.user.avatar_blob.url}
-              src={entry.user.avatar_blob && entry.user.avatar_blob.url}
+              :if={entry.user.avatar_blob.url}
+              src={entry.user.avatar_blob.url}
               alt="Avatar"
             />
             <.avatar_fallback bg_color="blueBg" class="text-blueText">

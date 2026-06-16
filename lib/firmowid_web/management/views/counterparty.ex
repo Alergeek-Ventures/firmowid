@@ -576,7 +576,6 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   defp format_date(nil), do: "—"
   defp format_date(date), do: Calendar.strftime(date, "%d.%m.%Y")
 
-  defp maybe_country(nil), do: "—"
   defp maybe_country(""), do: "—"
   defp maybe_country(code), do: CountryCodes.country_name(code)
 

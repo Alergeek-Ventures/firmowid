@@ -51,7 +51,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Resource
 
-  require Ash.Query
   require Resource
 
   @correction_invoice_types [:kor, :kor_zal, :kor_roz]

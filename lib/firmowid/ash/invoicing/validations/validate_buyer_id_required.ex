@@ -29,7 +29,7 @@ defmodule Firmowid.Ash.Invoicing.Validations.ValidateBuyerIdRequired do
     country = Ash.Changeset.get_attribute(changeset, opts[:country_field] || :buyer_country)
     pesel = Ash.Changeset.get_attribute(changeset, opts[:pesel_field] || :buyer_pesel)
     type_field = opts[:type_field] || :buyer_type
-    type = if type_field, do: Ash.Changeset.get_attribute(changeset, type_field)
+    type = Ash.Changeset.get_attribute(changeset, type_field)
 
     CountryCodes.tax_id_type(country, pesel, type)
   end

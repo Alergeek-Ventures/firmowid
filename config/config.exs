@@ -190,7 +190,7 @@ config :spark,
   ]
 
 config :tailwind,
-  version: "4.2.4",
+  version: "4.3.0",
   firmowid: [
     args: ~w(
       --input=css/app.css

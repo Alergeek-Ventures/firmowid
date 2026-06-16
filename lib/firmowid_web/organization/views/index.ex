@@ -10,8 +10,6 @@ defmodule FirmowidWeb.Organization.Views.Index do
   alias Firmowid.Ash.Core.Organization
   alias Firmowid.Ash.Core.OrganizationInvite
 
-  require Logger
-
   @impl true
   def render(assigns) do
     ~H"""

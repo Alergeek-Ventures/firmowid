@@ -109,7 +109,6 @@ defmodule Firmowid.MixProject do
       {:ash_money, "~> 0.2.5"},
       {:ex_money, "~> 5.0"},
       {:ex_money_sql, "~> 1.0"},
-      {:faker, "~> 0.18"},
       {:req, "~> 0.5.17"},
       {:req_s3, "~> 0.2.3"},
       {:sweet_xml, "~> 0.6"},

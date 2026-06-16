@@ -44,8 +44,8 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
 
           <.avatar class="bg-grey-100 border-grey-100 hidden size-24 rounded-full border lg:block">
             <.avatar_image
-              :if={@current_user.avatar_blob && @current_user.avatar_blob.url}
-              src={@current_user.avatar_blob && @current_user.avatar_blob.url}
+              :if={@current_user.avatar_blob.url}
+              src={@current_user.avatar_blob.url}
               alt={@current_user.name || @current_user.email}
             />
             <.avatar_fallback class="text-grey-700 text-2xl font-medium">
