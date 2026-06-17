@@ -34,7 +34,8 @@ defmodule Firmowid.Repo.Migrations.AddSalesInvoiceEmailDelivery do
             name: "sales_invoice_email_deliveries_sales_invoice_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
 
       add :organization_id,
           references(:organizations,
@@ -42,7 +43,8 @@ defmodule Firmowid.Repo.Migrations.AddSalesInvoiceEmailDelivery do
             name: "sales_invoice_email_deliveries_organization_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
     end
 
     create index(:sales_invoice_email_deliveries, [:organization_id, :sales_invoice_id])

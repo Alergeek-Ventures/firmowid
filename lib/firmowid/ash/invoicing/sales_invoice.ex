@@ -52,7 +52,6 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Invoicing, as: InvoicingDomain
-  alias Firmowid.Ash.Invoicing.Actions
   alias Firmowid.Ash.Invoicing.Calculations.AnnotatedCorrections
   alias Firmowid.Ash.Invoicing.Changes
   alias Firmowid.Ash.Invoicing.Counterparty
@@ -102,11 +101,12 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
   oban do
     scheduled_actions do
-      schedule :send_overdue_reminders, "15 7 * * *" do
-        action :send_overdue_reminders
+      schedule :dispatch_overdue_sales_invoice_reminders, "15 7 * * *" do
+        action :dispatch_overdue_sales_invoice_reminders
         queue :invoicing
         list_tenants {Firmowid.Ash.Invoicing.SalesInvoice.OrganizationTenantList, []}
-        worker_module_name Firmowid.Ash.Invoicing.SalesInvoice.Worker.SendOverdueReminders
+
+        worker_module_name Firmowid.Ash.Invoicing.SalesInvoice.Worker.DispatchOverdueSalesInvoiceReminders
       end
     end
   end
@@ -148,7 +148,9 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     define :get_next_number, args: [:date, {:optional, :series}, {:optional, :omit_invoice_id}]
     define :validate_number, args: [:invoice_number, :issue_date, {:optional, :omit_invoice_id}]
     define :list_series, args: []
-    define :send_overdue_reminders, action: :send_overdue_reminders
+
+    define :dispatch_overdue_sales_invoice_reminders,
+      action: :dispatch_overdue_sales_invoice_reminders
   end
 
   actions do
@@ -959,9 +961,9 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
     end
 
-    action :send_overdue_reminders, :integer do
-      description "Send payment reminder emails for overdue sales invoices in the current tenant."
-      run Actions.SendOverdueReminders
+    action :dispatch_overdue_sales_invoice_reminders, :integer do
+      description "Scan overdue sales invoices and enqueue payment reminder emails for eligible invoices."
+      run __MODULE__.Scanners.OverdueReminders
     end
 
     update :connect_transactions do
@@ -999,7 +1001,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
 
       policy AshObanInteraction do
-        authorize_if action(:send_overdue_reminders)
+        authorize_if action(:dispatch_overdue_sales_invoice_reminders)
       end
 
       policy {SystemActorRole, roles: [:analysis_reader]} do
@@ -1041,7 +1043,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       end
 
       # Only system actors/AshOban may run scheduled reminder scans - users have no UI for this.
-      policy action(:send_overdue_reminders) do
+      policy action(:dispatch_overdue_sales_invoice_reminders) do
         forbid_if always()
       end
     end

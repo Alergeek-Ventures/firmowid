@@ -12,8 +12,8 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     queue: :ksef_submissions,
     max_attempts: 3
 
-  alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Invoicing.SalesInvoice.Dispatchers.Communication
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.Services.ApiClient
   alias Firmowid.Ash.Ksef.Services.InvoiceRenderer
@@ -321,9 +321,8 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
         opts
       )
 
-    maybe_send_email_after_ksef_confirmation(updated_invoice, scope)
-
     Logger.info("Invoice #{invoice.id} received KSeF number: #{ksef_number}")
+    dispatch_after_ksef_confirmation(updated_invoice, scope)
     Ksef.broadcast_ksef_status(scope.tenant, invoice.id, :submitted)
   end
 
@@ -396,22 +395,10 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     error
   end
 
-  defp maybe_send_email_after_ksef_confirmation(%{should_send_emails: true} = invoice, scope) do
-    case Invoicing.send_sales_invoice_email(invoice.id, ksef_confirmation_delivery_type(invoice), scope: scope) do
-      {:ok, _delivery} ->
-        :ok
-
-      {:error, reason} ->
-        Logger.error("Automatic email send after KSeF confirmation failed for invoice #{invoice.id}: #{inspect(reason)}")
-
-        :ok
-    end
+  defp dispatch_after_ksef_confirmation(invoice, scope) do
+    _ = Communication.dispatch(invoice, :ksef_confirmed, scope)
+    :ok
   end
-
-  defp maybe_send_email_after_ksef_confirmation(_invoice, _scope), do: :ok
-
-  defp ksef_confirmation_delivery_type(%{ksef_invoice_kind: :kor}), do: :invoice_correction
-  defp ksef_confirmation_delivery_type(_invoice), do: :basic
 
   defp fail_invoice(invoice, error, scope) do
     Logger.error("Invoice #{invoice.id} verification failed: #{inspect(error)}")

@@ -41,8 +41,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery do
       ]
     end
 
-    action :send_for_invoice, :struct do
-      description "Send a sales invoice email and persist the delivery outcome."
+    action :enqueue_for_sales_invoice, :atom do
+      description "Enqueue a sales invoice email delivery job."
 
       argument :sales_invoice_id, :uuid_v7, allow_nil?: false
 
@@ -50,7 +50,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery do
         allow_nil?: false,
         constraints: [one_of: [:basic, :reminder, :invoice_correction]]
 
-      run Firmowid.Ash.Invoicing.Actions.SendSalesInvoiceEmail
+      run Firmowid.Ash.Invoicing.Actions.EnqueueSalesInvoiceEmail
     end
   end
 
@@ -59,7 +59,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery do
     bypass {SystemActorRole, roles: [:sales_invoice_processor]} do
       authorize_if action_type(:read)
       authorize_if action(:record_delivery)
-      authorize_if action(:send_for_invoice)
+      authorize_if action(:enqueue_for_sales_invoice)
     end
 
     # Allowed when loading through a SalesInvoice relationship.

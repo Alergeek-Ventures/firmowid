@@ -136,8 +136,8 @@ defmodule Firmowid.Ash.Invoicing do
     end
 
     resource Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery do
-      define :send_sales_invoice_email,
-        action: :send_for_invoice,
+      define :enqueue_sales_invoice_email,
+        action: :enqueue_for_sales_invoice,
         args: [:sales_invoice_id, :delivery_type]
     end
   end
