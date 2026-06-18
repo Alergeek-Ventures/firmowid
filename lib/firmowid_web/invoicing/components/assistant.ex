@@ -71,8 +71,8 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
       <div class="size-10">
         <.avatar class="size-10">
           <.avatar_image
-            :if={@current_user.avatar_blob.url}
-            src={@current_user.avatar_blob.url}
+            :if={Map.get(@current_user.avatar_blob || %{}, :url)}
+            src={Map.get(@current_user.avatar_blob || %{}, :url)}
             alt="Avatar"
           />
           <.avatar_fallback>
@@ -107,8 +107,8 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
       <div class="size-10">
         <.avatar class="size-10">
           <.avatar_image
-            :if={@current_user.avatar_blob.url}
-            src={@current_user.avatar_blob.url}
+            :if={Map.get(@current_user.avatar_blob || %{}, :url)}
+            src={Map.get(@current_user.avatar_blob || %{}, :url)}
             alt="Avatar"
           />
           <.avatar_fallback>
