@@ -589,6 +589,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     counterparties =
       case Invoicing.list_counterparties(
              %{search: search, type: filter, status: :active, sort_order: sort_order, limit: 25},
+             load: [:display_label],
              scope: socket.assigns.ash_scope
            ) do
         {:ok, results} -> results

@@ -255,7 +255,7 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
     attribute :pesel, :string, public?: true
     attribute :display_name, :string, public?: true
     attribute :address, :string, public?: true
-    attribute :country, :string, public?: true
+    attribute :country, :string, public?: true, allow_nil?: false
     attribute :archived_at, :date, public?: true
     attribute :is_different_mail_address, :boolean, public?: true, default: false
     attribute :mail_address, :string, public?: true

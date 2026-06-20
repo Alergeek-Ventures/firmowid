@@ -389,9 +389,18 @@ defmodule Firmowid.Seeds.Bytecraft do
         Ash.Seed.seed!(AshCounterparty, Map.put(attrs, :organization_id, org_id), tenant: org_id)
 
       counterparty ->
-        counterparty
+        ensure_counterparty_country!(counterparty, attrs[:country], org_id)
     end
   end
+
+  defp ensure_counterparty_country!(%{country: nil} = counterparty, country, org_id)
+       when is_binary(country) do
+    counterparty
+    |> Ash.Changeset.for_update(:update, %{country: country}, tenant: org_id, actor: @seed_actor)
+    |> Ash.update!()
+  end
+
+  defp ensure_counterparty_country!(counterparty, _country, _org_id), do: counterparty
 
   defp find_counterparty(org_id, attrs) do
     query =
