@@ -278,8 +278,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           data-tippy-content="Ten dokument właśnie został dodany!"
           class="absolute top-[-10px] right-[-4px] flex size-3"
         >
-          <span class="bg-blueText absolute inline-flex size-full animate-ping rounded-full opacity-75">
-          </span>
+          <span class="bg-blueText absolute inline-flex size-full animate-ping rounded-full opacity-75"></span>
           <span class="bg-blueText relative inline-flex size-3 rounded-full"></span>
         </span>
       <% end %>

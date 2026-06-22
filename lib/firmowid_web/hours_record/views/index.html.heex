@@ -50,7 +50,7 @@
             {TimeFormatter.format_duration(@total_duration, :with_days)}
           </p>
         </div>
-        <div :if={most_demanding = Enum.max_by(@projects, & &1.duration, fn -> nil end)} }>
+        <div :if={most_demanding = Enum.max_by(@projects, & &1.duration, fn -> nil end)}>
           <p class="mb-3">Najbardziej wymagający projekt:</p>
           <p class="text-xl font-bold">
             {TimeFormatter.format_duration(most_demanding.duration)}

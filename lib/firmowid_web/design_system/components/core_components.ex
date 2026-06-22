@@ -632,6 +632,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
 
   attr :class, :any, default: nil
   attr :src, :string
+  attr :alt, :string, default: ""
   attr :rest, :global
 
   def avatar_image(assigns) do
@@ -643,6 +644,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         @class
       ]}
       src={@src}
+      alt={@alt}
       {@rest}
     />
     """
@@ -692,7 +694,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
     ~H"""
     <div class={["flex gap-2", @class]}>
       {render_slot(@inner_block)}
-      <div :for={{%{value: value} = rad, idx} <- Enum.with_index(@radio)} }>
+      <div :for={{%{value: value} = rad, idx} <- Enum.with_index(@radio)}>
         <label
           for={"#{@field.id}-#{idx}"}
           class="relative flex cursor-pointer items-center has-disabled:cursor-default has-disabled:opacity-50"

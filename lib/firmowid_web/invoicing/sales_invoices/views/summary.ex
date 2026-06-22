@@ -77,10 +77,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
           <h1 class="flex items-baseline gap-1 text-[27px]/tight font-medium">
             Faktura w trakcie wysyłania
             <span class="inline-flex gap-1">
-              <span class="bg-grey-400 size-1.5 animate-bounce rounded-full [animation-delay:-0.3s]">
-              </span>
-              <span class="bg-grey-400 size-1.5 animate-bounce rounded-full [animation-delay:-0.15s]">
-              </span>
+              <span class="bg-grey-400 size-1.5 animate-bounce rounded-full [animation-delay:-0.3s]"></span>
+              <span class="bg-grey-400 size-1.5 animate-bounce rounded-full [animation-delay:-0.15s]"></span>
               <span class="bg-grey-400 size-1.5 animate-bounce rounded-full"></span>
             </span>
           </h1>

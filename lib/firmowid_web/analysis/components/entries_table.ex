@@ -253,8 +253,7 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
             <span
               class="inline-block size-2 shrink-0 rounded-full"
               style={"background-color: #{tag_def.color}"}
-            >
-            </span>
+            ></span>
             <span class="text-darkGrey truncate text-sm">{tag_def.name}</span>
           </label>
         </li>

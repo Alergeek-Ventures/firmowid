@@ -53,7 +53,6 @@
           {AshCredo.Check.Warning.AuthorizerWithoutPolicies, []},
           {AshCredo.Check.Warning.EmptyDomain, []},
           {AshCredo.Check.Warning.MissingDomain, []},
-          {AshCredo.Check.Warning.NoActions, []},
           {AshCredo.Check.Warning.OverlyPermissivePolicy, []},
           {AshCredo.Check.Warning.SensitiveAttributeExposed, []},
           {AshCredo.Check.Warning.SensitiveFieldInAccept, []},
