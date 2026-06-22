@@ -332,6 +332,6 @@ defmodule FirmowidWeb.Invoicing.Components.Assistant do
   # sobelow_skip ["XSS.Raw"]
   # This is safe because MDEx outputs typography tags, not script tags
   defp render_content(content) do
-    content |> MDEx.to_html!() |> raw()
+    content |> MDEx.to_html!(syntax_highlight: false) |> raw()
   end
 end
