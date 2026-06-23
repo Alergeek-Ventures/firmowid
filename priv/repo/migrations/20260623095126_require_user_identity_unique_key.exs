@@ -8,6 +8,33 @@ defmodule Firmowid.Repo.Migrations.RequireUserIdentityUniqueKey do
   use Ecto.Migration
 
   def up do
+    # AshAuthentication 4.14 resolves OAuth identities by provider identity only.
+    # Older versions allowed the same provider uid to be linked to more than one
+    # local user because `user_id` was part of the unique key. Keep the most
+    # recently updated non-orphaned identity row and remove only duplicate links
+    # before creating the stricter unique index.
+    execute("""
+    DELETE FROM user_identities AS duplicate_identity
+    USING (
+      SELECT id
+      FROM (
+        SELECT
+          id,
+          row_number() OVER (
+            PARTITION BY strategy, uid
+            ORDER BY
+              (user_id IS NULL) ASC,
+              updated_at DESC NULLS LAST,
+              inserted_at DESC NULLS LAST,
+              id DESC
+          ) AS identity_rank
+        FROM user_identities
+      ) AS ranked_identities
+      WHERE identity_rank > 1
+    ) AS duplicate_identities
+    WHERE duplicate_identity.id = duplicate_identities.id
+    """)
+
     drop_if_exists unique_index(:user_identities, [:strategy, :uid, :user_id],
                      name: "user_identities_unique_on_strategy_and_uid_and_user_id_index"
                    )
