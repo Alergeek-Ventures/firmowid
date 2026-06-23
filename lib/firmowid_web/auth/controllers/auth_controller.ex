@@ -8,10 +8,14 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   use FirmowidWeb, :controller
   use AshAuthentication.Phoenix.Controller
 
+  alias Ash.Error.Forbidden
+  alias Ash.Error.Invalid
   alias AshAuthentication.Errors.AuthenticationFailed
   alias AshAuthentication.Strategy.RememberMe.Plug.Helpers
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Infrastructure.UserAuth
+
+  require Logger
 
   @doc """
   Success callback after authentication (password sign-in, Google OAuth, etc.)
@@ -54,6 +58,8 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   def failure(conn, activity, reason) do
     {message, path} = failure_message_and_path(activity, reason)
 
+    log_auth_failure(conn, activity, reason)
+
     conn
     |> put_flash(:error, message)
     |> redirect(to: path)
@@ -61,7 +67,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
 
   defp failure_message_and_path({:password, :register}, reason) do
     case reason do
-      %Ash.Error.Invalid{errors: errors} when is_list(errors) ->
+      %Invalid{errors: errors} when is_list(errors) ->
         duplicate_email? =
           Enum.any?(errors, fn
             %Ash.Error.Changes.InvalidAttribute{field: :email} -> true
@@ -105,6 +111,52 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
 
   defp failure_message_and_path(_activity, _reason), do: {"Niewłaściwy email lub hasło.", ~p"/zaloguj"}
 
+  defp log_auth_failure(conn, {:google, phase}, reason) do
+    Logger.warning(
+      "Google authentication failed phase=#{phase} path=#{conn.request_path} reason=#{auth_failure_reason(reason)}"
+    )
+  end
+
+  defp log_auth_failure(_conn, _activity, _reason), do: :ok
+
+  defp auth_failure_reason(nil), do: "nil"
+
+  defp auth_failure_reason(%AuthenticationFailed{caused_by: caused_by}) do
+    "#{inspect(AuthenticationFailed)}/#{auth_failure_reason(caused_by)}"
+  end
+
+  defp auth_failure_reason(%Invalid{errors: errors}) when is_list(errors) do
+    "#{inspect(Invalid)}/#{auth_failure_errors(errors)}"
+  end
+
+  defp auth_failure_reason(%Forbidden{errors: errors}) when is_list(errors) do
+    "#{inspect(Forbidden)}/#{auth_failure_errors(errors)}"
+  end
+
+  defp auth_failure_reason(%Postgrex.Error{postgres: %{code: code}}) do
+    "#{inspect(Postgrex.Error)}/#{code}"
+  end
+
+  defp auth_failure_reason(%{__struct__: struct}), do: inspect(struct)
+  defp auth_failure_reason(reason), do: reason |> term_type() |> to_string()
+
+  defp auth_failure_errors(errors) do
+    errors
+    |> Enum.map(&auth_failure_reason/1)
+    |> Enum.uniq()
+    |> Enum.join(",")
+  end
+
+  defp term_type(reason) when is_boolean(reason), do: :boolean
+  defp term_type(reason) when is_atom(reason), do: :atom
+  defp term_type(reason) when is_binary(reason), do: :binary
+  defp term_type(reason) when is_integer(reason), do: :integer
+  defp term_type(reason) when is_float(reason), do: :float
+  defp term_type(reason) when is_list(reason), do: :list
+  defp term_type(reason) when is_map(reason), do: :map
+  defp term_type(reason) when is_tuple(reason), do: :tuple
+  defp term_type(_reason), do: :term
+
   # Detects confirmation-related errors in both the password and OAuth failure shapes.
   #
   # Password sign-in: AuthenticationFailed wrapping UnconfirmedUser directly in caused_by.
@@ -112,8 +164,7 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
   # contains CannotConfirmUnconfirmedUser.
   defp unconfirmed_user_error?(%AuthenticationFailed{caused_by: %AshAuthentication.Errors.UnconfirmedUser{}}), do: true
 
-  defp unconfirmed_user_error?(%AuthenticationFailed{caused_by: %Ash.Error.Forbidden{errors: errors}})
-       when is_list(errors) do
+  defp unconfirmed_user_error?(%AuthenticationFailed{caused_by: %Forbidden{errors: errors}}) when is_list(errors) do
     Enum.any?(errors, &match?(%AshAuthentication.Errors.CannotConfirmUnconfirmedUser{}, &1))
   end
 
