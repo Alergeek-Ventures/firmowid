@@ -139,6 +139,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
         :if={@suggested_invoices != []}
         counterparty={@counterparty}
         suggested_invoices={@suggested_invoices}
+        params={@params}
         class={["col-start-2", if(@counterparty.archived_at, do: "row-start-4", else: "row-start-3")]}
       />
 
@@ -429,6 +430,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
   attr :counterparty, :map, required: true
   attr :suggested_invoices, :list, required: true
+  attr :params, :map, default: %{}
   attr :class, :any, default: nil
 
   defp suggested_invoices_section(assigns) do
