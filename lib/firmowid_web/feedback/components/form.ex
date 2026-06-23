@@ -33,7 +33,7 @@ defmodule FirmowidWeb.Feedback.Components.Form do
             Twoja opinia pomaga nam rozwijać Firmowida. Napisz co możemy poprawić,
             co działa dobrze, albo czego Ci brakuje.
           </p>
-          <form phx-submit="save" phx-target={"##{@id}"} class="space-y-6">
+          <form id={"#{@id}-form"} phx-submit="save" phx-target={"##{@id}"} class="space-y-6">
             <div>
               <label for="feedback-content" class="mb-2 block text-sm font-medium">
                 Co możemy poprawić?

@@ -44,7 +44,12 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDownloadModal do
             </p>
           </div>
 
-          <.form for={@switch_form} phx-change="toggle-note-filter" phx-target={@myself}>
+          <.form
+            for={@switch_form}
+            id={"#{@modal_id}-note-filter-form"}
+            phx-change="toggle-note-filter"
+            phx-target={@myself}
+          >
             <.switch
               field={@switch_form[:include_internal_note]}
               label="Dołącz komentarz wewnętrzny"

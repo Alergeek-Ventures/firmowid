@@ -89,7 +89,12 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModal do
           </div>
 
           <div class="border-lightGreyBg border-t pt-4">
-            <.form for={@switch_form} phx-change="toggle-note-filter" phx-target={@myself}>
+            <.form
+              for={@switch_form}
+              id="download-modal-note-filter-form"
+              phx-change="toggle-note-filter"
+              phx-target={@myself}
+            >
               <.switch
                 field={@switch_form[:include_internal_note]}
                 label="Dołącz komentarze wewnętrzne do generowanych PDF-ów"

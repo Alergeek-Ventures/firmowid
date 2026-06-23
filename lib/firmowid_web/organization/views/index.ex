@@ -115,6 +115,7 @@ defmodule FirmowidWeb.Organization.Views.Index do
                   Nie to konto?
                   <.form
                     for={%{}}
+                    id="organization-logout-form"
                     action={~p"/wyloguj"}
                     method="delete"
                     class="inline"
