@@ -111,6 +111,7 @@ defmodule Firmowid.MixProject do
       {:ex_money_sql, "~> 1.0"},
       {:req, "~> 0.5.17"},
       {:req_s3, "~> 0.2.3"},
+      {:sign_core, "~> 0.1.4"},
       {:sweet_xml, "~> 0.6"},
       {:mime, "~> 2.0"},
       {:akin, "~> 0.2.0"},
