@@ -9,8 +9,9 @@
   ]}>
     <div
       class={[
+        if(String.starts_with?(@current_uri.path, "/zarzadzanie"), do: "pb-2", else: "pb-4"),
         "flex text-white",
-        "h-navbar items-center justify-between py-6",
+        "h-navbar items-center justify-between pt-4",
         "text-sm transition-all"
       ]}
       id="navbar-main"
@@ -23,8 +24,8 @@
       <.navbar_logo navigate={~p"/"} class="mt-0.5 flex-1" />
       <div class={[
         String.starts_with?(@current_uri.path, "/zarzadzanie") &&
-          "border-b py-[18px]",
-        "border-darkGrey flex items-center gap-10 uppercase max-md:hidden"
+          "border-b px-4 py-4.5",
+        "border-darkGrey flex items-center gap-16 uppercase max-md:hidden"
       ]}>
         <%= if @current_user.role == :admin do %>
           <.link
@@ -34,7 +35,7 @@
               !String.starts_with?(@current_uri.path, "/analiza") &&
                 !String.starts_with?(@current_uri.path, "/czasosledz") &&
                 !String.starts_with?(@current_uri.path, "/zarzadzanie") && "opacity-90",
-              "flex items-center gap-2 opacity-50 transition-all hover:opacity-100"
+              "flex items-center gap-1 opacity-50 transition-all hover:opacity-100"
             ]}
           >
             <.icon name="hero-clipboard-document-list" class="size-5" /> Fakturowanie
@@ -46,7 +47,7 @@
             navigate={~p"/analiza"}
             class={[
               String.starts_with?(@current_uri.path, "/analiza") && "opacity-90",
-              "flex items-center gap-2 opacity-50 transition-all hover:opacity-100"
+              "flex items-center gap-1 opacity-50 transition-all hover:opacity-100"
             ]}
           >
             <.icon name="hero-scale" class="size-5" /> Analiza
@@ -65,7 +66,7 @@
           navigate={~p"/czasosledz"}
           class={[
             String.starts_with?(@current_uri.path, "/czasosledz") && "opacity-90",
-            "flex items-center gap-2 opacity-50 transition-all hover:opacity-100"
+            "flex items-center gap-1 opacity-50 transition-all hover:opacity-100"
           ]}
         >
           <.icon name="hero-clock" class="size-5" /> Czasośledź
@@ -76,7 +77,7 @@
             navigate={~p"/zarzadzanie/pracownicy"}
             class={[
               String.starts_with?(@current_uri.path, "/zarzadzanie") && "opacity-90",
-              "flex items-center gap-2 opacity-50 transition-all hover:opacity-100"
+              "flex items-center gap-1 opacity-50 transition-all hover:opacity-100"
             ]}
           >
             <.icon
@@ -183,10 +184,10 @@
       </div>
     </div>
     <%= if String.starts_with?(@current_uri.path, "/zarzadzanie") do %>
-      <div class="grid w-full grid-cols-3 items-center gap-4 py-2.5 font-semibold text-white/50">
+      <div class="grid h-10.5 w-full grid-cols-3 items-center gap-4 text-white/50">
         <.navbar_logo
           navigate={~p"/"}
-          class="mt-0.5 mr-auto opacity-0 transition-opacity"
+          class="invisible mt-0.5 mr-auto opacity-0 transition-opacity"
           id="firmowid-logo-management"
           phx-hook="CollapsibleNavbar"
           data-classes="opacity-100"

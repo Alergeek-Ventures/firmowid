@@ -1,6 +1,6 @@
 <div :if={not @zero_state?} class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 pb-4">
   <% # top -> collapsed navbar height (56px) / TODO: refactor %>
-  <div class="bg-lightGreyBg sticky top-14 z-10 flex flex-col gap-4 py-3">
+  <div class="bg-lightGreyBg sticky top-10.5 z-10 flex flex-col gap-4 py-3">
     <div class="flex flex-row justify-between">
       <form class="flex gap-4">
         <.month_picker
@@ -89,7 +89,7 @@
       >
         <div
           id="projects-list-header-active"
-          class="bg-lightGreyBg text-grey-700 sticky top-[166px] z-1 col-span-full grid grid-cols-subgrid px-4 py-3 text-sm/snug"
+          class="bg-lightGreyBg text-grey-700 sticky top-[157px] z-1 col-span-full grid grid-cols-subgrid px-4 py-3 text-sm/snug"
           phx-hook="ScrollStyle"
           data-classes="border-b-4 border-solid border-darkGrey/40"
           data-scroll-offset="90"
@@ -144,7 +144,7 @@
       >
         <div
           id="projects-list-header-archive"
-          class="bg-lightGreyBg sticky top-[166px] z-1 -order-1 col-span-full grid grid-cols-subgrid px-4 py-3 text-sm/snug"
+          class="bg-lightGreyBg sticky top-[157px] z-1 -order-1 col-span-full grid grid-cols-subgrid px-4 py-3 text-sm/snug"
           phx-hook="ScrollStyle"
           data-classes="border-b-4 border-solid border-darkGrey/40"
           data-scroll-offset="90"

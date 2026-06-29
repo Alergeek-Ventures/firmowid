@@ -326,8 +326,8 @@ html {
   --color-grey-button-bg: var(--color-greyButtonBg);
   --color-dark-grey: var(--color-darkGrey);
   --color-light-grey-bg: var(--color-lightGreyBg);
-  --navbar-height: 64px;
-  --navbar-height-management: 122px;
+  --navbar-height: 66px;
+  --navbar-height-management: 108px;
   --digit-dur: 500ms;
   --digit-distance: 8px;
   --digit-stagger: 70ms;
