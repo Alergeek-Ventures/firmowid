@@ -51,14 +51,13 @@ defmodule Firmowid.Ash.Ksef.Services.XadesSigner do
          {:ok, sign_core_certificate} <- SignCoreX509.from_der(certificate_der),
          {:ok, private_key} <- decode_private_key(private_key_pem, private_key_password),
          {:ok, algorithm} <- validate_key(private_key),
-         :ok <- validate_key_pair(hd(certificate_ders), private_key, algorithm),
-         {:ok, signed_xml} <- build_signature(xml, certificate_ders, leaf, private_key, algorithm) do
-      {:ok, signed_xml}
+         :ok <- validate_key_pair(certificate, private_key) do
+      build_signature(xml, certificate_der, sign_core_certificate, private_key, algorithm)
     end
   end
 
-  def sign(_xml, _certificate_pem, _private_key_pem, _private_key_password),
-    do: {:error, :invalid_private_key}
+  defp decode_private_key(pem, password) do
+    encrypted? = encrypted_private_key_pem?(pem)
 
     result =
       cond do
@@ -104,21 +103,18 @@ defmodule Firmowid.Ash.Ksef.Services.XadesSigner do
          {:RSAPrivateKey, _version, modulus, _public_exponent, _private_exponent, _prime1, _prime2, _exponent1,
           _exponent2, _coefficient, _other_prime_infos}
        ) do
-    if integer_bit_size(modulus) >= 2048 do
+    modulus_bit_size = modulus |> :binary.encode_unsigned() |> bit_size()
+
+    if modulus_bit_size >= 2048 do
       {:ok, :rsa}
     else
       {:error, :rsa_key_too_short}
     end
   end
 
-  defp validate_key(
-         {:ECPrivateKey, _version, _key, {:namedCurve, @p256_oid}, _public_key, _attributes}
-       ),
-    do: {:ok, :ec}
+  defp validate_key({:ECPrivateKey, _version, _key, {:namedCurve, @p256_oid}, _public_key, _attributes}), do: {:ok, :ec}
 
-  defp validate_key(
-         {:ECPrivateKey, _version, _key, _parameters, _public_key, _attributes}
-       ),
+  defp validate_key({:ECPrivateKey, _version, _key, _parameters, _public_key, _attributes}),
     do: {:error, :unsupported_ec_curve}
 
   defp validate_key(_private_key), do: {:error, :unsupported_key_algorithm}
@@ -159,15 +155,16 @@ defmodule Firmowid.Ash.Ksef.Services.XadesSigner do
            ),
          {:ok, signed_info_root} <- Canonicalizer.parse(signed_info),
          {:ok, signed_info_canonical} <- Canonicalizer.canonicalize(signed_info_root),
-         {:ok, signature_value} <- sign_xml_dsig(signed_info_canonical, private_key, algorithm),
-         signature =
-           Builder.signature(
-             signed_info,
-             Base.encode64(signature_value),
-             Enum.map(certificate_ders, &Base.encode64/1),
-             qualifying_properties,
-             signature_id: signature_id
-           ) do
+         {:ok, signature_value} <- sign_xml_dsig(signed_info_canonical, private_key, algorithm) do
+      signature =
+        Builder.signature(
+          signed_info,
+          Base.encode64(signature_value),
+          [Base.encode64(certificate_der)],
+          qualifying_properties,
+          signature_id: signature_id
+        )
+
       splice_signature(xml, root, signature)
     end
   end
@@ -248,13 +245,8 @@ defmodule Firmowid.Ash.Ksef.Services.XadesSigner do
     _error -> {:error, :invalid_ecdsa_signature}
   end
 
-  defp take_der_value(_expected_tag, _der), do: {:error, :invalid_der}
-
-  defp take_der_length(<<length, rest::binary>>) when length < 128,
-    do: {:ok, length, rest}
-
-  defp take_der_length(<<0x81, length, rest::binary>>), do: {:ok, length, rest}
-  defp take_der_length(_der), do: {:error, :invalid_der}
+  defp encode_fixed_width_integer(integer, width) do
+    encoded = :binary.encode_unsigned(integer)
 
     if byte_size(encoded) <= width do
       {:ok, :binary.copy(<<0>>, width - byte_size(encoded)) <> encoded}
@@ -263,16 +255,11 @@ defmodule Firmowid.Ash.Ksef.Services.XadesSigner do
     end
   end
 
-  defp trim_leading_zeroes(<<0, rest::binary>>) when byte_size(rest) > 0,
-    do: trim_leading_zeroes(rest)
-
-  defp trim_leading_zeroes(integer), do: integer
-
   defp splice_signature(xml, root, signature) do
     root_name = root |> elem(1) |> Atom.to_string()
     closing_tag = "</#{root_name}>"
 
-    case :binary.matches(xml, closing_tag) |> List.last() do
+    case xml |> :binary.matches(closing_tag) |> List.last() do
       {position, length} ->
         prefix = binary_part(xml, 0, position)
         suffix_position = position + length

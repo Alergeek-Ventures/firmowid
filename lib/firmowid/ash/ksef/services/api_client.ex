@@ -13,7 +13,9 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
   `Application.get_env(:firmowid, :ksef)[:base_url]`.
   """
 
+  alias Firmowid.Ash.Core.Nip
   alias Firmowid.Ash.Ksef.Services.Encryption
+  alias Firmowid.Ash.Ksef.Services.XadesSigner
 
   defp request do
     ksef_config = Application.fetch_env!(:firmowid, :ksef)
@@ -130,31 +132,113 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
   end
 
   @doc "Authenticates with KSeF using a NIP and encrypted token. Returns access and refresh tokens."
-  @spec auth(String.t(), String.t()) ::
+  @spec auth_with_token(String.t(), String.t()) ::
           {:ok, %{access_token: String.t(), refresh_token: String.t()}} | {:error, term()}
-  def auth(context_nip, ksef_token) do
-    with {:ok, %{body: %{"challenge" => challenge, "timestamp" => timestamp}}} <-
-           Req.post(request(), url: "/auth/challenge"),
+  def auth_with_token(context_nip, ksef_token) do
+    with {:ok, %{challenge: challenge, timestamp: timestamp}} <- get_auth_challenge(),
+         encrypted_token = prepare_encrypted_token(ksef_token, timestamp),
          {:ok, %{body: %{"referenceNumber" => reference_number, "authenticationToken" => auth_token}}} <-
            Req.post(request(),
              url: "/auth/ksef-token",
              json: %{
                "challenge" => challenge,
-               "encryptedToken" => prepare_encrypted_token(ksef_token, timestamp),
+               "encryptedToken" => encrypted_token,
                "contextIdentifier" => %{
                  "type" => "Nip",
                  "value" => context_nip
                }
              }
            ),
-         :success <- get_auth_status(reference_number, auth_token["token"]),
-         {:ok, %{body: body}} <-
-           Req.post(request(auth_token["token"]), url: "/auth/token/redeem") do
+         :success <- get_auth_status(reference_number, auth_token["token"]) do
+      redeem_authentication_token(auth_token["token"])
+    end
+  end
+
+  @doc """
+  Authenticates with KSeF using an XAdES-signed certificate request.
+
+  Returns access and refresh JWTs after the asynchronous KSeF authentication
+  operation completes.
+  """
+  @spec auth_with_ksef_certificate(String.t(), String.t(), String.t(), String.t() | nil) ::
+          {:ok, %{access_token: String.t(), refresh_token: String.t()}} | {:error, term()}
+  def auth_with_ksef_certificate(context_nip, certificate, private_key, private_key_password) do
+    with :ok <- validate_context_nip(context_nip),
+         {:ok, %{challenge: challenge}} <- get_auth_challenge(),
+         auth_token_request = prepare_auth_token_request(context_nip, challenge),
+         {:ok, signed_auth_token_request} <-
+           XadesSigner.sign(
+             auth_token_request,
+             certificate,
+             private_key,
+             private_key_password
+           ),
+         {:ok, %{body: %{"referenceNumber" => reference_number, "authenticationToken" => auth_token}}} <-
+           Req.post(request(),
+             url: "/auth/xades-signature",
+             params: %{"verifyCertificateChain" => "false"},
+             body: signed_auth_token_request,
+             headers: [{"content-type", "application/xml"}, {"accept", "application/json"}]
+           ),
+         :success <- get_auth_status(reference_number, auth_token["token"]) do
+      redeem_authentication_token(auth_token["token"])
+    end
+  end
+
+  defp validate_context_nip(context_nip) do
+    if is_binary(context_nip) and String.match?(context_nip, ~r/^\d{10}$/) and
+         Nip.valid?(context_nip) do
+      :ok
+    else
+      {:error, :invalid_context_nip}
+    end
+  end
+
+  @doc "Builds an unsigned KSeF AuthTokenRequest XML for a NIP context."
+  @spec prepare_auth_token_request(String.t(), String.t()) :: String.t()
+  def prepare_auth_token_request(context_nip, challenge) do
+    """
+    <?xml version="1.0" encoding="utf-8"?>
+    <AuthTokenRequest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://ksef.mf.gov.pl/auth/token/2.0">
+        <Challenge>#{challenge}</Challenge>
+        <ContextIdentifier>
+            <Nip>#{context_nip}</Nip>
+        </ContextIdentifier>
+        <SubjectIdentifierType>certificateSubject</SubjectIdentifierType>
+    </AuthTokenRequest>
+    """
+  end
+
+  defp get_auth_challenge do
+    case Req.post(request(), url: "/auth/challenge") do
+      {:ok, %{status: 200, body: %{"challenge" => challenge, "timestamp" => timestamp}}} ->
+        {:ok, %{challenge: challenge, timestamp: timestamp}}
+
+      {:ok, %{status: status, body: body}} ->
+        {:error, {:unexpected_status, status, body}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp redeem_authentication_token(authentication_token) do
+    case Req.post(request(authentication_token), url: "/auth/token/redeem") do
       {:ok,
        %{
-         access_token: body["accessToken"]["token"],
-         refresh_token: body["refreshToken"]["token"]
-       }}
+         status: 200,
+         body: %{
+           "accessToken" => %{"token" => access_token},
+           "refreshToken" => %{"token" => refresh_token}
+         }
+       }} ->
+        {:ok, %{access_token: access_token, refresh_token: refresh_token}}
+
+      {:ok, %{status: status}} ->
+        {:error, {:unexpected_status, status}}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -184,21 +268,32 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
   @doc "Polls the authentication status for a given reference number."
   @spec get_auth_status(String.t(), String.t()) :: :success | {:error, term()}
   def get_auth_status(reference_number, auth_token) do
-    auth_token
-    |> request()
-    |> retry_request()
-    |> Req.get(
-      url: "/auth/#{reference_number}",
-      retry: fn
-        # status code 100 means "in progress"
-        _req, res ->
-          match?(%Req.Response{status: 200, body: %{"status" => %{"code" => 100}}}, res)
-      end
-    )
-    |> case do
-      {:ok, %{body: %{"status" => %{"code" => 200}}}} -> :success
-      {:ok, %{body: body}} -> {:error, body}
-      {:error, _reason} = error -> error
+    config = Application.fetch_env!(:firmowid, :ksef)
+    max_attempts = config[:auth_status_max_attempts] || 30
+    interval = config[:auth_status_poll_interval_ms] || 1_000
+
+    poll_auth_status(reference_number, auth_token, max_attempts, interval)
+  end
+
+  defp poll_auth_status(_reference_number, _auth_token, 0, _interval), do: {:error, :auth_status_timeout}
+
+  defp poll_auth_status(reference_number, auth_token, attempts_left, interval) do
+    case Req.get(request(auth_token), url: "/auth/#{reference_number}") do
+      {:ok, %{status: 200, body: %{"status" => %{"code" => 200}}}} ->
+        :success
+
+      {:ok, %{status: 200, body: %{"status" => %{"code" => 100}}}} ->
+        if interval > 0, do: Process.sleep(interval)
+        poll_auth_status(reference_number, auth_token, attempts_left - 1, interval)
+
+      {:ok, %{status: 200, body: body}} ->
+        {:error, body}
+
+      {:ok, %{status: status, body: body}} ->
+        {:error, {:unexpected_status, status, body}}
+
+      {:error, _reason} = error ->
+        error
     end
   end
 
@@ -450,14 +545,5 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
       {:error, reason} ->
         {:error, reason}
     end
-  end
-
-  # Moves retry step to the end of the response steps in order
-  # to have access to decoded response body in the retry function.
-  defp retry_request(request) do
-    Req.Request.append_response_steps(
-      %{request | response_steps: Enum.reject(request.response_steps, &match?({:retry, _}, &1))},
-      retry: &Req.Steps.retry/1
-    )
   end
 end

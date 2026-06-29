@@ -6,6 +6,7 @@ defmodule Firmowid.Ash.Ksef.Services.XadesSignerTest do
   alias Firmowid.Ash.Ksef.Services.XadesSigner
   alias SignCore.XML.Builder
   alias SignCore.XML.Canonicalizer
+  alias X509.Certificate.Validity
 
   @password "test-private-key-password"
   @xml """
@@ -27,7 +28,12 @@ defmodule Firmowid.Ash.Ksef.Services.XadesSignerTest do
 
   test "creates a cryptographically valid RSA-SHA256 XAdES signature", %{rsa: credential} do
     assert {:ok, signed_xml} =
-             XadesSigner.sign(@xml, credential.certificate_pem, credential.private_key_pem, @password)
+             XadesSigner.sign(
+               @xml,
+               credential.certificate_pem,
+               credential.private_key_pem,
+               @password
+             )
 
     assert signed_xml =~ "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
     assert_xades_structure(signed_xml)
@@ -40,7 +46,12 @@ defmodule Firmowid.Ash.Ksef.Services.XadesSignerTest do
 
   test "creates a cryptographically valid P-256 ECDSA XAdES signature", %{ec: credential} do
     assert {:ok, signed_xml} =
-             XadesSigner.sign(@xml, credential.certificate_pem, credential.private_key_pem, @password)
+             XadesSigner.sign(
+               @xml,
+               credential.certificate_pem,
+               credential.private_key_pem,
+               @password
+             )
 
     assert signed_xml =~ "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256"
     assert_xades_structure(signed_xml)
@@ -92,7 +103,7 @@ defmodule Firmowid.Ash.Ksef.Services.XadesSignerTest do
       credential_fixture(
         :ec,
         validity:
-          X509.Certificate.Validity.new(
+          Validity.new(
             DateTime.add(DateTime.utc_now(), -86_400, :second),
             DateTime.add(DateTime.utc_now(), -60, :second)
           )
@@ -138,7 +149,7 @@ defmodule Firmowid.Ash.Ksef.Services.XadesSignerTest do
       X509.Certificate.self_signed(
         private_key,
         "/C=PL/O=Firmowid Test/CN=KSeF Test",
-        validity: Keyword.get(opts, :validity, X509.Certificate.Validity.days_from_now(1))
+        validity: Keyword.get(opts, :validity, Validity.days_from_now(1))
       )
 
     %{
@@ -169,7 +180,9 @@ defmodule Firmowid.Ash.Ksef.Services.XadesSignerTest do
 
   defp signature_parts(signed_xml) do
     [_, signed_info_xml] = Regex.run(~r/(<ds:SignedInfo.*?<\/ds:SignedInfo>)/s, signed_xml)
-    [_, signature_base64] = Regex.run(~r/<ds:SignatureValue>([^<]+)<\/ds:SignatureValue>/, signed_xml)
+
+    [_, signature_base64] =
+      Regex.run(~r/<ds:SignatureValue>([^<]+)<\/ds:SignatureValue>/, signed_xml)
 
     {:ok, signed_info_root} = Canonicalizer.parse(signed_info_xml)
     {:ok, signed_info} = Canonicalizer.canonicalize(signed_info_root)

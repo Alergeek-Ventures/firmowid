@@ -108,6 +108,55 @@ defmodule Firmowid.Ash.Ksef do
     end
   end
 
+  @doc """
+  Authenticates the current organization with a KSeF certificate.
+
+  The credentials are persisted only after KSeF accepts the XAdES
+  authentication request. Certificate material is stored in the encrypted
+  `Credential.credentials` field so the session worker can re-authenticate
+  after the refresh token expires.
+  """
+  @spec authenticate_with_ksef_certificate(
+          String.t(),
+          String.t(),
+          String.t() | nil,
+          Scope.t()
+        ) :: {:ok, Credential.t()} | {:error, term()}
+  def authenticate_with_ksef_certificate(certificate, private_key, private_key_password, scope) do
+    org_id = scope.tenant
+    opts = [scope: scope]
+    organization = Core.get_organization!(org_id, opts)
+
+    with :ok <- validate_no_existing_credential(scope),
+         {:ok, tokens} <-
+           ApiClient.auth_with_ksef_certificate(
+             organization.nip,
+             certificate,
+             private_key,
+             private_key_password
+           ) do
+      credentials =
+        Jason.encode!(%{
+          "certificate" => certificate,
+          "private_key" => private_key,
+          "private_key_password" => private_key_password
+        })
+
+      with {:ok, credential} <-
+             Credential.create(
+               %{
+                 organization_id: org_id,
+                 auth_type: :certificate,
+                 credentials: credentials
+               },
+               opts
+             ),
+           {:ok, _cached?} <- SessionWorker.establish_session(tokens, org_id, scope) do
+        {:ok, credential}
+      end
+    end
+  end
+
   defp extract_nip_from_token(token) do
     case String.split(token, "|") do
       [_id, "nip-" <> nip, _hash] when byte_size(nip) > 0 ->

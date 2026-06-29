@@ -36,12 +36,8 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
     Logger.info("Starting KSeF authentication for organization #{organization_id}")
 
     with %Credential{} = credential <- Ksef.get_credential(scope),
-         {:ok, %{access_token: access_token, refresh_token: refresh_token}} <-
-           perform_authentication(credential) do
-      Ksef.fetch_cost_invoices(DateTime.shift(DateTime.utc_now(), day: -30), scope)
-      schedule_reauthentication!(refresh_token, organization_id)
-
-      Cachex.put(:ksef, {:access_token, organization_id}, access_token, expire: access_token_ttl(access_token))
+         {:ok, tokens} <- perform_authentication(credential) do
+      establish_session(tokens, organization_id, scope)
     else
       nil ->
         Logger.error("No KSeF credentials found for organization #{organization_id}")
@@ -56,7 +52,54 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
   defp perform_authentication(%Credential{organization_id: org_id, auth_type: :token, credentials: token}) do
     organization = Core.get_organization!(org_id)
 
-    ApiClient.auth(organization.nip, token)
+    ApiClient.auth_with_token(organization.nip, token)
+  end
+
+  defp perform_authentication(%Credential{organization_id: org_id, auth_type: :certificate, credentials: credentials}) do
+    organization = Core.get_organization!(org_id)
+
+    case Jason.decode(credentials) do
+      {:ok,
+       %{
+         "certificate" => certificate,
+         "private_key" => private_key,
+         "private_key_password" => private_key_password
+       }} ->
+        ApiClient.auth_with_ksef_certificate(
+          organization.nip,
+          certificate,
+          private_key,
+          private_key_password
+        )
+
+      _error ->
+        {:error, :invalid_certificate_credentials}
+    end
+  end
+
+  @doc """
+  Caches a KSeF access token and schedules refresh-token-backed renewal.
+
+  A cost-invoice fetch is also enqueued after the session is established.
+  """
+  @spec establish_session(
+          %{access_token: String.t(), refresh_token: String.t()},
+          Ash.UUID.t(),
+          Scope.t()
+        ) :: {:ok, boolean()} | {:error, term()}
+  def establish_session(%{access_token: access_token, refresh_token: refresh_token}, organization_id, scope) do
+    schedule_reauthentication!(refresh_token, organization_id)
+
+    with {:ok, cached?} <-
+           Cachex.put(
+             :ksef,
+             {:access_token, organization_id},
+             access_token,
+             expire: access_token_ttl(access_token)
+           ) do
+      Ksef.fetch_cost_invoices(DateTime.shift(DateTime.utc_now(), day: -30), scope)
+      {:ok, cached?}
+    end
   end
 
   defp schedule_reauthentication!(refresh_token, organization_id) do
