@@ -117,6 +117,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
           auto_upload: true,
           progress: &handle_progress/3
         )
+        |> allow_upload(:ksef_credentials, accept: ~w(.crt .key), max_entries: 2)
       else
         socket
       end
@@ -689,6 +690,50 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
       {:error, :already_connected} ->
         LiveToast.send_toast(:error, "Organizacja jest już połączona z KSeF.")
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("validate_ksef_certificate", _params, socket), do: {:noreply, socket}
+
+  # LiveView supplies upload paths from its managed temporary directory; they
+  # are not derived from client-provided filenames or other user input.
+  # sobelow_skip ["Traversal.FileModule"]
+  def handle_event("save_ksef_certificate", %{"private_key_password" => private_key_password}, socket) do
+    if socket.assigns.current_user.role != :admin do
+      raise Forbidden, message: "Tylko administrator może zarządzać KSeF."
+    end
+
+    files =
+      consume_uploaded_entries(socket, :ksef_credentials, fn %{path: path}, entry ->
+        with {:ok, contents} <- File.read(path) do
+          {:ok, {Path.extname(entry.client_name), contents}}
+        end
+      end)
+
+    with {".crt", certificate} <- List.keyfind(files, ".crt", 0),
+         {".key", private_key} <- List.keyfind(files, ".key", 0) do
+      case Ksef.authenticate_with_ksef_certificate(
+             certificate,
+             private_key,
+             private_key_password,
+             socket.assigns.ash_scope
+           ) do
+        {:ok, credential} ->
+          LiveToast.send_toast(:info, "Połączono z KSeF.")
+          {:noreply, assign(socket, :ksef_credential, credential)}
+
+        {:error, _reason} ->
+          LiveToast.send_toast(
+            :error,
+            "Nie udało się zalogować do KSeF. Sprawdź pliki i hasło do klucza."
+          )
+
+          {:noreply, socket}
+      end
+    else
+      _ ->
+        LiveToast.send_toast(:error, "Wybierz certyfikat i klucz prywatny.")
         {:noreply, socket}
     end
   end

@@ -58,7 +58,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         editing_correspondence={@editing_correspondence}
       />
 
-      <.ksef_section ksef_credential={@ksef_credential} />
+      <.ksef_section ksef_credential={@ksef_credential} uploads={@uploads} />
 
       <.bank_accounts_section
         bank_accounts={@bank_accounts}
@@ -303,6 +303,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   end
 
   attr :ksef_credential, :any, required: true
+  attr :uploads, :map, required: true
 
   defp ksef_section(assigns) do
     ~H"""
@@ -354,6 +355,75 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             </.button>
           </div>
         </form>
+
+        <div class="my-6 flex w-full max-w-lg items-center gap-3">
+          <div class="bg-grey-200 h-px flex-1"></div>
+          <span class="text-grey-500 text-xs font-medium uppercase">lub</span>
+          <div class="bg-grey-200 h-px flex-1"></div>
+        </div>
+
+        <form
+          phx-change="validate_ksef_certificate"
+          phx-submit="save_ksef_certificate"
+          id="ksef-certificate-form"
+          class="space-y-4"
+        >
+          <Helpers.settings_field
+            label="Certyfikat i klucz prywatny (.crt, .key)"
+            class="w-full max-w-lg"
+          >
+            <label
+              class="border-orangeText flex w-full cursor-pointer justify-center rounded-md border-2 border-dashed px-6 py-8"
+              phx-drop-target={@uploads.ksef_credentials.ref}
+            >
+              <div class="text-orangeText text-center text-sm">
+                <div
+                  :if={Enum.empty?(@uploads.ksef_credentials.entries)}
+                  class="font-medium"
+                >
+                  Dodaj certyfikat i klucz prywatny
+                </div>
+                <.live_file_input
+                  upload={@uploads.ksef_credentials}
+                  class="sr-only"
+                />
+                <div :if={!Enum.empty?(@uploads.ksef_credentials.entries)}>
+                  <%= for entry <- @uploads.ksef_credentials.entries do %>
+                    <p>{entry.client_name}</p>
+                    <%= for error <- upload_errors(@uploads.ksef_credentials, entry) do %>
+                      <p>{present_upload_error(error)}</p>
+                    <% end %>
+                  <% end %>
+                </div>
+                <%= for error <- upload_errors(@uploads.ksef_credentials) do %>
+                  <p>{present_upload_error(error)}</p>
+                <% end %>
+              </div>
+            </label>
+          </Helpers.settings_field>
+
+          <Helpers.settings_field label="Hasło do klucza prywatnego" class="w-full max-w-lg">
+            <.input
+              type="password"
+              name="private_key_password"
+              value=""
+              required
+              new
+              input_class="w-full"
+            />
+          </Helpers.settings_field>
+
+          <div class="flex w-full max-w-lg justify-end">
+            <.button
+              type="submit"
+              variant="secondary"
+              size="small"
+              phx-disable-with="Łączenie..."
+            >
+              Połącz certyfikatem
+            </.button>
+          </div>
+        </form>
       <% end %>
 
       <.modal id="confirm_disconnect_ksef">
@@ -385,6 +455,10 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     </.company_section>
     """
   end
+
+  defp present_upload_error(:too_large), do: "Plik jest za duży."
+  defp present_upload_error(:too_many_files), do: "Wybierz dokładnie dwa pliki."
+  defp present_upload_error(:not_accepted), do: "Dozwolone są tylko pliki .crt i .key."
 
   attr :bank_accounts, :list, required: true
   attr :bank_institutions, :map, required: true

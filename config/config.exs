@@ -160,6 +160,11 @@ config :logger, :console,
     :organization_name
   ]
 
+config :mime, :types, %{
+  "application/pkix-cert" => ["crt"],
+  "application/pkcs8" => ["key"]
+}
+
 config :phoenix, :json_library, Jason
 
 config :posthog,
