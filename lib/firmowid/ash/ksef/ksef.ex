@@ -193,7 +193,7 @@ defmodule Firmowid.Ash.Ksef do
   def get_credential(scope) do
     org_id = scope.tenant
 
-    case Credential.get_by_organization(org_id, scope: scope) do
+    case Credential.get_by_organization(org_id, scope: scope, load: [:expires_on]) do
       {:ok, credential} -> credential
       # Ash wraps NotFound inside Ash.Error.Invalid for get? actions
       {:error, %Ash.Error.Invalid{errors: [%NotFound{} | _]}} -> nil

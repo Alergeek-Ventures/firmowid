@@ -321,6 +321,9 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           <.detail_row label="Typ autoryzacji" wide>
             {present_auth_type(@ksef_credential.auth_type)}
           </.detail_row>
+          <.detail_row label="Data wygaśnięcia" wide>
+            {TimeFormatter.format_date(@ksef_credential.expires_on)}
+          </.detail_row>
 
           <.button
             class="max-w-[250px]"
@@ -983,6 +986,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   end
 
   defp format_invite_expiration(expires_at), do: TimeFormatter.format_date(expires_at)
+
 
   defp invite_issuer(%{issued_by: %{email: email}}) when is_binary(email), do: email
   defp invite_issuer(_invite), do: "administratora"

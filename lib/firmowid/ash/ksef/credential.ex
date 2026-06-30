@@ -16,6 +16,7 @@ defmodule Firmowid.Ash.Ksef.Credential do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Checks.SystemActorRole
+  alias Firmowid.Ash.Ksef.Calculations.CredentialExpiresOn
 
   postgres do
     table "ksef_credentials"
@@ -96,6 +97,12 @@ defmodule Firmowid.Ash.Ksef.Credential do
     belongs_to :organization, Firmowid.Ash.Core.Organization do
       allow_nil? false
       attribute_writable? true
+    end
+  end
+
+  calculations do
+    calculate :expires_on, :date, CredentialExpiresOn do
+      public? true
     end
   end
 
