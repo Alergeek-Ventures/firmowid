@@ -45,114 +45,124 @@ defmodule FirmowidWeb.Management.Components.DocumentsTab do
   @impl true
   def render(assigns) do
     ~H"""
-    <div>
-      <.card class="relative z-10">
-        <.card_header>
-          <div class="flex items-center justify-between">
-            Przesłane dokumenty
-            <div class="flex items-center gap-4">
-              <form class="flex gap-4" phx-submit="search" phx-target={@myself}>
-                <div
-                  id="search-container"
-                  data-expanded={to_string(@search != "")}
-                  class="data-[expanded=true]:bg-greyButtonBg group flex items-center justify-center rounded-lg transition-shadow data-[expanded=true]:focus-within:ring-2"
-                >
-                  <.input
-                    type="text"
-                    name="szukaj"
-                    value={@search}
-                    placeholder="Szukaj dokumentu"
-                    phx-change="search"
-                    phx-debounce="300"
-                    phx-target={@myself}
-                    input_class="py-0 px-1 bg-transparent border-none"
-                    class="w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-64 group-data-[expanded=true]:px-2 group-data-[expanded=true]:py-1 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden"
-                  />
-                  <.button
-                    type="button"
-                    size="small"
-                    phx-click={
-                      JS.toggle_attribute({"data-expanded", "true", "false"}, to: "#search-container")
-                      |> JS.focus(to: "#search-container input")
-                    }
-                    variant="outline"
-                    class="py-2"
+    <div class="flex h-full min-h-0 flex-col">
+      <.card class="relative z-10 flex h-full min-h-0 flex-col" dimmed={@employee.archived_at}>
+        <div class="shrink-0">
+          <.card_header>
+            <div class="flex items-center justify-between">
+              Przesłane dokumenty
+              <div class="flex items-center gap-4">
+                <form class="flex gap-4" phx-submit="search" phx-target={@myself}>
+                  <div
+                    id="search-container"
+                    data-expanded={to_string(@search != "")}
+                    class="data-[expanded=true]:bg-greyButtonBg group flex items-center justify-center rounded-lg transition-shadow data-[expanded=true]:focus-within:ring-2"
                   >
-                    <Lucideicons.search />
+                    <.input
+                      type="text"
+                      name="szukaj"
+                      value={@search}
+                      placeholder="Szukaj dokumentu"
+                      phx-change="search"
+                      phx-debounce="300"
+                      phx-target={@myself}
+                      input_class="py-0 px-1 bg-transparent border-none"
+                      class="w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-64 group-data-[expanded=true]:px-2 group-data-[expanded=true]:py-1 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden"
+                    />
+                    <.button
+                      type="button"
+                      size="small"
+                      phx-click={
+                        JS.toggle_attribute({"data-expanded", "true", "false"},
+                          to: "#search-container"
+                        )
+                        |> JS.focus(to: "#search-container input")
+                      }
+                      variant="outline"
+                      class="py-2"
+                    >
+                      <Lucideicons.search />
+                    </.button>
+                  </div>
+                </form>
+                <form class="relative" phx-submit="upload" phx-change="upload" phx-target={@myself}>
+                  <.live_file_input
+                    upload={@uploads.document_upload}
+                    class="peer sr-only"
+                    aria-label="Wgraj dokument"
+                  />
+
+                  <.button
+                    as="label"
+                    variant="secondary"
+                    size="small"
+                    class="relative py-1.75"
+                    type="button"
+                    for={@uploads.document_upload.ref}
+                  >
+                    <.upload_indicator
+                      currently_uploading_count={@currently_uploading_count}
+                      processing_blobs_count={@processing_blobs_count}
+                    />
+                    <.icon name="hero-plus" class="size-4" /> Dodaj umowe
                   </.button>
-                </div>
-              </form>
-              <form class="relative" phx-submit="upload" phx-change="upload" phx-target={@myself}>
-                <.live_file_input
-                  upload={@uploads.document_upload}
-                  class="peer sr-only"
-                  aria-label="Wgraj dokument"
-                />
+                </form>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 pt-6">
+              <span class="text-darkGrey/70 text-sm font-normal">Filtry:</span>
+
+              <div class="flex flex-wrap items-center gap-2">
+                <.button
+                  class="font-normal"
+                  type="button"
+                  variant="filter"
+                  data-active={@type_filter == "hours_record"}
+                  phx-click="toggle_type"
+                  phx-value-typ={:hours_record}
+                  phx-target={@myself}
+                >
+                  <.icon name="hero-clock" class="size-4" /> ewidencja
+                </.button>
 
                 <.button
-                  as="label"
-                  variant="secondary"
-                  size="small"
-                  class="relative py-1.75"
+                  class="font-normal"
                   type="button"
-                  for={@uploads.document_upload.ref}
+                  variant="filter"
+                  data-active={@type_filter == "employment_contract"}
+                  phx-click="toggle_type"
+                  phx-value-typ={:employment_contract}
+                  phx-target={@myself}
                 >
-                  <.upload_indicator
-                    currently_uploading_count={@currently_uploading_count}
-                    processing_blobs_count={@processing_blobs_count}
-                  />
-                  <.icon name="hero-plus" class="size-4" /> Dodaj umowe
+                  <.icon name="hero-document" class="size-4" /> umowa
                 </.button>
-              </form>
+
+                <.button
+                  class="font-normal"
+                  type="button"
+                  variant="filter"
+                  data-active={@type_filter == "other"}
+                  phx-click="toggle_type"
+                  phx-value-typ={:other}
+                  phx-target={@myself}
+                >
+                  <.icon name="hero-ellipsis-horizontal" class="size-4" /> inne
+                </.button>
+              </div>
             </div>
-          </div>
-          <div class="flex items-center gap-3">
-            <span class="text-darkGrey/70 text-sm font-normal">Filtry:</span>
+          </.card_header>
+        </div>
 
-            <div class="flex flex-wrap items-center gap-2">
-              <.button
-                type="button"
-                variant="filter"
-                data-active={@type_filter == "hours_record"}
-                phx-click="toggle_type"
-                phx-value-typ={:hours_record}
-                phx-target={@myself}
-              >
-                <.icon name="hero-clock" class="size-4" /> ewidencja
-              </.button>
-
-              <.button
-                type="button"
-                variant="filter"
-                data-active={@type_filter == "employment_contract"}
-                phx-click="toggle_type"
-                phx-value-typ={:employment_contract}
-                phx-target={@myself}
-              >
-                <.icon name="hero-document" class="size-4" /> umowa
-              </.button>
-
-              <.button
-                type="button"
-                variant="filter"
-                data-active={@type_filter == "other"}
-                phx-click="toggle_type"
-                phx-value-typ={:other}
-                phx-target={@myself}
-              >
-                <.icon name="hero-ellipsis-horizontal" class="size-4" /> inne
-              </.button>
-            </div>
-          </div>
-        </.card_header>
-        <div>
-          <%= if Enum.empty?(@documents) do %>
-            <div class="text-darkGrey mt-4 text-sm">Brak dokumentów</div>
-          <% else %>
-            <%= for document <- @documents do %>
-              <.document_element document={document} />
+        <div class="relative w-full flex-1">
+          <div class="absolute inset-0 space-y-2 overflow-y-auto pr-2">
+            <%= if Enum.empty?(@documents) do %>
+              <div class="text-darkGrey mt-4 text-sm">Brak dokumentów</div>
+            <% else %>
+              <%= for document <- @documents do %>
+                <.document_element document={document} />
+              <% end %>
             <% end %>
-          <% end %>
+          </div>
         </div>
       </.card>
     </div>
@@ -178,7 +188,7 @@ defmodule FirmowidWeb.Management.Components.DocumentsTab do
               <.icon name="hero-ellipsis-horizontal" class="text-darkGrey size-5" />
           <% end %>
         </div>
-        <div class="font-medium group-hover:underline">
+        <div class="group-hover:underline">
           {@document.name}
         </div>
       </div>
@@ -219,7 +229,7 @@ defmodule FirmowidWeb.Management.Components.DocumentsTab do
   defp refetch_documents(socket) do
     documents =
       build_documents(
-        socket.assigns.employee_id,
+        socket.assigns.employee.id,
         socket.assigns.scope,
         %{
           search: socket.assigns.search,

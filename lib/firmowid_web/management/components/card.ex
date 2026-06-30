@@ -17,15 +17,21 @@ defmodule FirmowidWeb.Management.Components.Card do
 
   attr :class, :any, default: ""
   attr :gap_size, :string, default: "6"
+  attr :dimmed, :boolean, default: false
   slot :inner_block, required: true
 
   def card(assigns) do
     ~H"""
     <section class={[
-      "flex flex-col rounded-md bg-white p-6 text-black shadow",
+      "relative flex flex-col rounded-md bg-white p-6 text-black shadow",
       @gap_size && "gap-y-#{@gap_size}",
       @class
     ]}>
+      <div
+        :if={@dimmed}
+        class="absolute inset-0 z-10 rounded-md bg-white/60"
+      >
+      </div>
       {render_slot(@inner_block)}
     </section>
     """

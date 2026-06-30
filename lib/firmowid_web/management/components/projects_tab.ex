@@ -93,8 +93,8 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="space-y-6">
-      <.card class="relative z-10">
+    <div class="flex h-full min-h-0 flex-col gap-6">
+      <.card class="relative z-10" dimmed={@user.archived_at}>
         <%!-- TODO: allow editing the user wage --%>
         <.card_header>
           Dane do przelewu
@@ -111,9 +111,9 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
         </div>
       </.card>
 
-      <div class="flex items-start gap-6">
-        <.card class="grow">
-          <div class="flex items-center justify-between">
+      <div class="flex min-h-0 flex-1 gap-6">
+        <.card :if={!@user.archived_at} class="flex min-h-0 grow flex-col">
+          <div class="flex shrink-0 items-center justify-between">
             <.card_header>
               Projekty pracownika
             </.card_header>
@@ -123,15 +123,19 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
               active_months={@active_months}
             />
           </div>
-          <div class="divide-lightGreyBg divide-y">
-            <%= if Enum.empty?(@projects) do %>
-              <div class="text-darkGrey mt-4 text-sm">Brak projektów</div>
-            <% else %>
-              <.project_accordion :for={project <- @projects} project={project} />
-            <% end %>
+
+          <div class="relative w-full flex-1">
+            <div class="divide-lightGreyBg absolute inset-0 divide-y overflow-y-auto pr-2">
+              <%= if Enum.empty?(@projects) do %>
+                <div class="text-darkGrey mt-4 text-sm">Brak projektów</div>
+              <% else %>
+                <.project_accordion :for={project <- @projects} project={project} />
+              <% end %>
+            </div>
           </div>
         </.card>
-        <div class="flex flex-col gap-4">
+
+        <div class="flex w-[350px] shrink-0 flex-col gap-4">
           <.card>
             <.card_header>
               Podsumowanie miesiąca
@@ -156,6 +160,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
               </.user_card_info>
             </div>
           </.card>
+
           <.card gap_size="4">
             <.card_header>
               Ewidencja
@@ -164,6 +169,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
               <.hours_record_status hours_record={@hours_record} user={@user} />
             </div>
           </.card>
+
           <.card gap_size="4">
             <.card_header>
               Historia stawek

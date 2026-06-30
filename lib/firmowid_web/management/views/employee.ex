@@ -145,6 +145,13 @@ defmodule FirmowidWeb.Management.Views.Employee do
      |> LiveToast.put_toast(:success, "Skopiowano numer konta")}
   end
 
+  def handle_event("copy-email", %{"email" => email}, socket) do
+    {:noreply,
+     socket
+     |> push_event("copy-to-clipboard", %{text: email})
+     |> LiveToast.put_toast(:success, "Skopiowano adres e-mail")}
+  end
+
   defp with_projects(user, scope) do
     Map.put(user, :projects, Timetracker.list_projects!(%{user_id: user.id}, scope: scope))
   end

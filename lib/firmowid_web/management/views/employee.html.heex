@@ -1,4 +1,4 @@
-<div class="mx-auto my-4 grid w-full max-w-7xl grid-cols-[max-content_1fr] grid-rows-[repeat(2,min-content)] gap-x-10">
+<div class="mx-auto my-4 grid size-full max-h-240 min-h-0 max-w-7xl flex-1 grid-cols-[max-content_1fr] grid-rows-[min-content_1fr] gap-x-10">
   <.link
     kind="unstyled"
     navigate={Navigation.employees_path(:index, %{miesiac: @projects_filter_date})}
@@ -24,36 +24,9 @@
         Dokumenty
       </.tab>
     </div>
-
-    <div class="mb-8 flex min-h-12 items-center justify-end gap-4">
-      <span
-        :if={@employee.archived_at}
-        class="bg-grey-200 text-grey-700 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm/snug font-normal"
-      >
-        <Lucideicons.archive class="size-4" /> zarchiwizowany
-      </span>
-
-      <.button
-        :if={!@employee.archived_at}
-        type="button"
-        variant="special"
-        phx-click="archive_employee"
-      >
-        <.icon name="hero-archive-box-mini" class="size-5" /> Archiwizuj
-      </.button>
-
-      <.button
-        :if={@employee.archived_at}
-        type="button"
-        variant="special"
-        phx-click="unarchive_employee"
-      >
-        <.icon name="hero-arrow-uturn-left-mini" class="size-5" /> Przywróć pracownika
-      </.button>
-    </div>
   </div>
 
-  <.card class="row-start-2 min-h-[172px] w-full max-w-[95%]">
+  <.card class="row-start-2 w-[373px]">
     <div class="flex gap-3">
       <.avatar class="ring-greyButtonBg/50 size-20 shrink-0 ring-1">
         <.avatar_image
@@ -68,7 +41,7 @@
         </.avatar_fallback>
       </.avatar>
       <div>
-        <h2 class="text-lg font-bold">{get_employee_display_name(@employee)}</h2>
+        <h2 class="text-lg font-medium">{get_employee_display_name(@employee)}</h2>
         <div
           :if={@employee.slack_id != nil}
           class="text-darkGrey flex items-center gap-2 text-sm"
@@ -83,12 +56,66 @@
           </.link>
         </div>
       </div>
+      <.dropdown id="employee-dropdown" class="ml-auto">
+        <:trigger>
+          <span class="hover:bg-grey-100 text-darkGrey cursor-pointer rounded-full transition-colors">
+            <.icon name="hero-ellipsis-vertical" />
+          </span>
+        </:trigger>
+        <div class="mt-2 flex flex-col rounded border border-gray-100 bg-white p-2 shadow-md">
+          <.button
+            disabled={@employee.archived_at}
+            type="button"
+            variant="ghost"
+            size="small"
+            phx-click="archive_employee"
+          >
+            <.icon name="hero-archive-box-mini" class="size-5" /> Archiwizuj
+          </.button>
+        </div>
+      </.dropdown>
     </div>
+    <div
+      :if={@employee.archived_at}
+      class="bg-grey-200 text-grey-700 flex flex-col items-center gap-4 rounded-lg p-4 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]"
+    >
+      <p class="text-sm/snug text-balance">
+        Pracownik został zarchiwizowany {Firmowid.Cldr.Date.to_string!(@employee.archived_at,
+          format: :long
+        )}. Konto jest wyłączone do czasu przywrócenia przez administratora.
+      </p>
 
-    <.user_card_info :if={@employee.phone != nil} label="Numer telefonu">
+      <.button
+        type="button"
+        variant="tertiary"
+        size="small"
+        phx-click="unarchive_employee"
+      >
+        Przywróć pracownika
+      </.button>
+    </div>
+    <.user_card_info :if={@employee.phone} label="Numer telefonu">
       {@employee.phone}
     </.user_card_info>
-    <.user_card_info label="Adres e-mail">{@employee.email}</.user_card_info>
+    <.user_card_info label="Adres e-mail">
+      <span>{@employee.email}</span>
+      <.button
+        id="copy-email"
+        phx-hook="CopyToClipboard"
+        phx-click="copy-email"
+        phx-value-email={@employee.email}
+        type="button"
+        variant="unstyled"
+        class={[
+          "text-darkGrey inline-flex h-6 w-7 items-center justify-center self-center justify-self-end rounded-[3px]",
+          "hover:border-darkGrey border border-transparent",
+          "active:bg-darkGrey active:text-lightGreyBg",
+          "transition-all duration-300"
+        ]}
+      >
+        <.icon name="hero-document-duplicate" class="size-5" />
+      </.button>
+    </.user_card_info>
     <.user_card_info :if={@employee.bank_account_number != nil} label="Numer konta bankowego">
       <span>{@employee.bank_account_number}</span>
       <.button
@@ -152,20 +179,7 @@
     </.link>
   </div>
 
-  <div class="relative z-10 col-start-2 row-start-2 w-full space-y-6">
-    <div
-      :if={@employee.archived_at}
-      class="bg-grey-200 text-grey-700 flex flex-row items-center gap-4 rounded-lg p-4 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]"
-    >
-      <Lucideicons.info class="size-4" />
-
-      <p class="text-sm/snug text-balance">
-        Pracownik został zarchiwizowany {Firmowid.Cldr.Date.to_string!(@employee.archived_at,
-          format: :long
-        )}. Konto jest wyłączone do czasu przywrócenia przez administratora.
-      </p>
-    </div>
-
+  <div class="relative z-10 col-start-2 row-start-2 size-full space-y-6">
     <%= case @live_action do %>
       <% :projects -> %>
         <.live_component
@@ -180,7 +194,7 @@
         <.live_component
           module={FirmowidWeb.Management.Components.DocumentsTab}
           id="documents-tab"
-          employee_id={@employee.id}
+          employee={@employee}
           scope={@ash_scope}
         />
     <% end %>

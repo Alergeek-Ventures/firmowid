@@ -581,13 +581,13 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   end
 
   attr :id, :string, required: true
-  attr :class, :string, required: false
+  attr :class, :any, default: nil
   slot :inner_block, required: true
   slot :trigger, required: true, doc: "the slot for the trigger element"
 
   def dropdown(assigns) do
     ~H"""
-    <div class="relative">
+    <div class={["relative", @class]}>
       <button
         phx-click={
           JS.toggle(
