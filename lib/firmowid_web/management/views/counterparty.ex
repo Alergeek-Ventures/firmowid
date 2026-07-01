@@ -237,10 +237,10 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
                   <.button
                     :if={CounterpartyHelpers.identifier(@counterparty) != "—"}
                     type="button"
-                    variant="unstyled"
+                    variant="icon"
                     phx-click="copy_identifier"
                     phx-value-value={CounterpartyHelpers.identifier(@counterparty)}
-                    class="active:bg-darkGrey active:text-lightGreyBg hover:border-darkGrey text-darkGrey inline-flex h-6 w-7 items-center justify-center rounded-[3px] border border-transparent transition-all duration-300"
+                    class="h-6 w-7 duration-300"
                   >
                     <.icon name="hero-document-duplicate" class="size-5" />
                   </.button>

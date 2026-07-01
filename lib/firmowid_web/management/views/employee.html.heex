@@ -1,4 +1,4 @@
-<div class="mx-auto my-4 grid size-full max-h-240 min-h-0 max-w-7xl flex-1 grid-cols-[max-content_1fr] grid-rows-[min-content_1fr] gap-x-10">
+<div class="mx-auto my-4 grid size-full max-h-240 min-h-0 max-w-7xl flex-1 grid-cols-[minmax(min-content,373px)_minmax(0,1fr)] grid-rows-[min-content_1fr] gap-x-10">
   <.link
     kind="unstyled"
     navigate={Navigation.employees_path(:index, %{miesiac: @projects_filter_date})}
@@ -26,7 +26,7 @@
     </div>
   </div>
 
-  <.card class="row-start-2 w-[373px]">
+  <.card class="row-start-2 w-full">
     <div class="flex gap-3">
       <.avatar class="ring-greyButtonBg/50 size-20 shrink-0 ring-1">
         <.avatar_image
@@ -105,13 +105,8 @@
         phx-click="copy-email"
         phx-value-email={@employee.email}
         type="button"
-        variant="unstyled"
-        class={[
-          "text-darkGrey inline-flex h-6 w-7 items-center justify-center self-center justify-self-end rounded-[3px]",
-          "hover:border-darkGrey border border-transparent",
-          "active:bg-darkGrey active:text-lightGreyBg",
-          "transition-all duration-300"
-        ]}
+        variant="icon"
+        class="h-6 w-7 duration-300"
       >
         <.icon name="hero-document-duplicate" class="size-5" />
       </.button>
@@ -124,13 +119,8 @@
         phx-click="copy-bank-account-number"
         phx-value-number={@employee.bank_account_number}
         type="button"
-        variant="unstyled"
-        class={[
-          "text-darkGrey inline-flex h-6 w-7 items-center justify-center self-center justify-self-end rounded-[3px]",
-          "hover:border-darkGrey border border-transparent",
-          "active:bg-darkGrey active:text-lightGreyBg",
-          "transition-all duration-300"
-        ]}
+        variant="icon"
+        class="h-6 w-7 duration-300"
       >
         <.icon name="hero-document-duplicate" class="size-5" />
       </.button>

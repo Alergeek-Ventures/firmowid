@@ -51,6 +51,7 @@ defmodule FirmowidWeb.DesignSystem.Components.Button do
     values: [
       "unstyled",
       "plain",
+      "icon",
       "special",
       "primary",
       "secondary",
@@ -100,6 +101,13 @@ defmodule FirmowidWeb.DesignSystem.Components.Button do
   defp button_classes(%{variant: "filter", class: class}) do
     [
       ButtonStyles.variant_classes("filter", nil),
+      class
+    ]
+  end
+
+  defp button_classes(%{variant: "icon", class: class}) do
+    [
+      ButtonStyles.variant_classes("icon", nil),
       class
     ]
   end

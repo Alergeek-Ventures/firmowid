@@ -29,6 +29,15 @@ defmodule FirmowidWeb.DesignSystem.Utilities.ButtonStyles do
     ]
   end
 
+  def variant_classes("icon", _accent) do
+    [
+      "border border-transparent",
+      "bg-transparent text-darkGrey",
+      "inline-flex items-center justify-center rounded-[3px] transitions-colors",
+      "hover:border-darkGrey active:text-lightGreyBg active:bg-darkGrey"
+    ]
+  end
+
   def variant_classes("primary", "orange") do
     [
       "border-transparent",
