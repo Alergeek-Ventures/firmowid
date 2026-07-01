@@ -16,6 +16,7 @@ defmodule Firmowid.Ash.Ksef do
   use Ash.Domain
 
   import Ecto.Query, warn: false
+  import SweetXml
 
   alias Ash.Error.Query.NotFound
   alias Firmowid.Ash.Core
@@ -24,6 +25,7 @@ defmodule Firmowid.Ash.Ksef do
   alias Firmowid.Ash.Ksef.Credential
   alias Firmowid.Ash.Ksef.Services.ApiClient
   alias Firmowid.Ash.Ksef.SubmissionInfo
+  alias Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker
   alias Firmowid.Ash.Ksef.Workers.FetchWorker
   alias Firmowid.Ash.Ksef.Workers.SessionWorker
   alias Firmowid.Ash.Ksef.Workers.SubmissionWorker
@@ -36,6 +38,7 @@ defmodule Firmowid.Ash.Ksef do
   end
 
   @ksef_broadcast_topic "ksef_status"
+  @ksef_certificate_topic "ksef_certificate_status"
 
   # PubSub for KSeF status updates
 
@@ -62,6 +65,23 @@ defmodule Firmowid.Ash.Ksef do
       Firmowid.PubSub,
       "#{@ksef_broadcast_topic}:#{organization_id}",
       {:ksef_invoice_status, %{invoice_id: invoice_id, status: status}}
+    )
+  end
+
+  @doc "Subscribes to certificate-enrollment status updates for an organization."
+  @spec subscribe_ksef_certificate_status(Ash.UUID.t()) :: :ok | {:error, term()}
+  def subscribe_ksef_certificate_status(organization_id) do
+    Phoenix.PubSub.subscribe(Firmowid.PubSub, "#{@ksef_certificate_topic}:#{organization_id}")
+  end
+
+  @doc "Broadcasts a certificate-enrollment status update."
+  @spec broadcast_ksef_certificate_status(Ash.UUID.t(), atom(), term() | nil) ::
+          :ok | {:error, term()}
+  def broadcast_ksef_certificate_status(organization_id, status, reason \\ nil) do
+    Phoenix.PubSub.broadcast(
+      Firmowid.PubSub,
+      "#{@ksef_certificate_topic}:#{organization_id}",
+      {:ksef_certificate_status, %{status: status, reason: reason}}
     )
   end
 
@@ -134,28 +154,109 @@ defmodule Firmowid.Ash.Ksef do
              certificate,
              private_key,
              private_key_password
+           ),
+         credentials =
+           Jason.encode!(%{
+             "certificate" => certificate,
+             "private_key" => private_key,
+             "private_key_password" => private_key_password
+           }),
+         {:ok, credential} <-
+           Credential.create(
+             %{
+               organization_id: org_id,
+               auth_type: :certificate,
+               credentials: credentials
+             },
+             opts
            ) do
-      credentials =
-        Jason.encode!(%{
-          "certificate" => certificate,
-          "private_key" => private_key,
-          "private_key_password" => private_key_password
-        })
-
-      with {:ok, credential} <-
-             Credential.create(
-               %{
-                 organization_id: org_id,
-                 auth_type: :certificate,
-                 credentials: credentials
-               },
-               opts
-             ),
-           {:ok, _cached?} <- SessionWorker.establish_session(tokens, org_id, scope) do
-        {:ok, credential}
-      end
+      establish_session_with_credential(credential, tokens, org_id, scope, opts)
     end
   end
+
+  defp establish_session_with_credential(credential, tokens, organization_id, scope, opts) do
+    case SessionWorker.establish_session(tokens, organization_id, scope) do
+      {:ok, _cached?} ->
+        {:ok, credential}
+
+      {:error, _reason} = error ->
+        Credential.destroy!(credential, opts)
+        error
+    end
+  rescue
+    exception ->
+      Credential.destroy!(credential, opts)
+      reraise exception, __STACKTRACE__
+  catch
+    kind, reason ->
+      Credential.destroy!(credential, opts)
+      :erlang.raise(kind, reason, __STACKTRACE__)
+  end
+
+  @doc "Enqueues externally signed XAdES authentication and KSeF certificate enrollment."
+  @spec enroll_ksef_certificate(String.t(), String.t(), Scope.t()) ::
+          {:ok, Oban.Job.t()} | {:error, term()}
+  def enroll_ksef_certificate(signed_auth_token_request, challenge, scope) do
+    organization = Core.get_organization!(scope.tenant, scope: scope)
+
+    with :ok <- validate_no_existing_credential(scope),
+         :ok <-
+           validate_signed_auth_token_request(
+             signed_auth_token_request,
+             challenge,
+             organization.nip
+           ) do
+      CertificateEnrollmentWorker.enqueue(signed_auth_token_request, scope.tenant)
+    end
+  end
+
+  @doc "Creates an unsigned AuthTokenRequest for the current organization."
+  @spec prepare_external_auth_token_request(Scope.t()) ::
+          {:ok, %{xml: String.t(), challenge: String.t(), expires_at: DateTime.t()}}
+          | {:error, term()}
+  def prepare_external_auth_token_request(scope) do
+    organization = Core.get_organization!(scope.tenant, scope: scope)
+
+    with :ok <- validate_no_existing_credential(scope),
+         {:ok, %{challenge: challenge}} <- ApiClient.get_auth_challenge() do
+      {:ok,
+       %{
+         xml: ApiClient.prepare_auth_token_request(organization.nip, challenge),
+         challenge: challenge,
+         expires_at: DateTime.add(DateTime.utc_now(), 10, :minute)
+       }}
+    end
+  end
+
+  defp validate_signed_auth_token_request(xml, expected_challenge, expected_nip)
+       when is_binary(xml) and is_binary(expected_challenge) and is_binary(expected_nip) do
+    valid_document_type? = not Regex.match?(~r/<!DOCTYPE|<!ENTITY/i, xml)
+
+    if valid_document_type? do
+      document = SweetXml.parse(xml, dtd: :none, quiet: true)
+
+      with ^expected_challenge <- xpath(document, ~x"//*[local-name()='Challenge']/text()"s),
+           ^expected_nip <-
+             xpath(
+               document,
+               ~x"//*[local-name()='ContextIdentifier']/*[local-name()='Nip']/text()"s
+             ),
+           "certificateSubject" <-
+             xpath(document, ~x"//*[local-name()='SubjectIdentifierType']/text()"s),
+           [_signature | _] <- xpath(document, ~x"//*[local-name()='Signature']"l) do
+        :ok
+      else
+        _mismatch -> {:error, :auth_token_request_mismatch}
+      end
+    else
+      {:error, :unsafe_xml}
+    end
+  catch
+    :exit, _reason -> {:error, :invalid_xml}
+  end
+
+  defp validate_signed_auth_token_request(_xml, _expected_challenge, _expected_nip),
+    do: {:error, :auth_token_request_mismatch}
 
   defp extract_nip_from_token(token) do
     case String.split(token, "|") do
@@ -224,6 +325,7 @@ defmodule Firmowid.Ash.Ksef do
               where:
                 j.worker in [
                   "Firmowid.Ash.Ksef.Workers.SessionWorker",
+                  "Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker",
                   "Firmowid.Ash.Ksef.Workers.FetchWorker",
                   "Firmowid.Ash.Ksef.Workers.SubmissionWorker"
                 ],

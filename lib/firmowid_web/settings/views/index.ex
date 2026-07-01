@@ -103,6 +103,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
       Endpoint.subscribe("requisition:linked:#{current_org.id}")
       Endpoint.subscribe("requisition:rejected:#{current_org.id}")
       Endpoint.subscribe("requisition:expired:#{current_org.id}")
+      Ksef.subscribe_ksef_certificate_status(current_org.id)
     end
 
     socket =
@@ -111,6 +112,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
         |> assign(:company_form, form_basic_info_form(current_org, scope))
         |> assign(:correspondence_form, form_correspondence_form(current_org, scope))
         |> assign(:ksef_credential, Ksef.get_credential(scope))
+        |> assign(:ksef_auth_challenge, nil)
+        |> assign(:ksef_auth_challenge_expires_at, nil)
+        |> assign(:ksef_certificate_status, :idle)
         |> allow_upload(:organization_avatar,
           accept: ~w(.jpg .jpeg .png),
           max_entries: 1,
@@ -118,6 +122,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
           progress: &handle_progress/3
         )
         |> allow_upload(:ksef_credentials, accept: ~w(.crt .key), max_entries: 2)
+        |> allow_upload(:signed_auth_token_request, accept: ~w(.xml), max_entries: 1)
       else
         socket
       end
@@ -696,6 +701,86 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   def handle_event("validate_ksef_certificate", _params, socket), do: {:noreply, socket}
 
+  def handle_event("download_ksef_auth_token_request", _params, socket) do
+    if socket.assigns.current_user.role != :admin do
+      raise Forbidden, message: "Tylko administrator może zarządzać KSeF."
+    end
+
+    case Ksef.prepare_external_auth_token_request(socket.assigns.ash_scope) do
+      {:ok, request} ->
+        socket =
+          socket
+          |> assign(:ksef_auth_challenge, request.challenge)
+          |> assign(:ksef_auth_challenge_expires_at, request.expires_at)
+          |> assign(:ksef_certificate_status, :awaiting_signature)
+
+        {:noreply,
+         push_event(socket, "download-ksef-auth-token-request", %{
+           content: request.xml,
+           filename: "AuthTokenRequest.xml"
+         })}
+
+      {:error, :already_connected} ->
+        LiveToast.send_toast(:error, "Organizacja jest już połączona z KSeF.")
+        {:noreply, socket}
+
+      {:error, _reason} ->
+        LiveToast.send_toast(:error, "Nie udało się pobrać dokumentu z KSeF.")
+        {:noreply, socket}
+    end
+  end
+
+  # LiveView requires a phx-change handler to initialize and track uploaded files.
+  def handle_event("validate_signed_auth_token_request", _params, socket), do: {:noreply, socket}
+
+  # LiveView supplies upload paths from its managed temporary directory; they
+  # are not derived from client-provided filenames or other user input.
+  # sobelow_skip ["Traversal.FileModule"]
+  def handle_event("upload_signed_auth_token_request", _params, socket) do
+    if socket.assigns.current_user.role != :admin do
+      raise Forbidden, message: "Tylko administrator może zarządzać KSeF."
+    end
+
+    challenge = socket.assigns.ksef_auth_challenge
+    challenge_expires_at = socket.assigns.ksef_auth_challenge_expires_at
+
+    challenge_fresh? = DateTime.before?(DateTime.utc_now(), challenge_expires_at)
+
+    uploaded_xml =
+      consume_uploaded_entries(socket, :signed_auth_token_request, fn %{path: path}, _entry ->
+        File.read(path)
+      end)
+
+    if challenge_fresh? do
+      with [signed_xml] <- uploaded_xml,
+           {:ok, _job} <-
+             Ksef.enroll_ksef_certificate(
+               signed_xml,
+               challenge,
+               socket.assigns.ash_scope
+             ) do
+        LiveToast.send_toast(:info, "Rozpoczęto generowanie certyfikatu KSeF.")
+
+        {:noreply,
+         socket
+         |> assign(:ksef_auth_challenge, nil)
+         |> assign(:ksef_auth_challenge_expires_at, nil)
+         |> assign(:ksef_certificate_status, :authenticating)}
+      else
+        _error ->
+          LiveToast.send_toast(
+            :error,
+            "Podpisany dokument nie zgadza się z pobranym AuthTokenRequest."
+          )
+
+          {:noreply, socket}
+      end
+    else
+      LiveToast.send_toast(:error, "Dokument wygasł. Pobierz nowy AuthTokenRequest.")
+      {:noreply, assign(socket, :ksef_certificate_status, :idle)}
+    end
+  end
+
   # LiveView supplies upload paths from its managed temporary directory; they
   # are not derived from client-provided filenames or other user input.
   # sobelow_skip ["Traversal.FileModule"]
@@ -869,6 +954,17 @@ defmodule FirmowidWeb.Settings.Views.Index do
     end
   end
 
+  def handle_info({:ksef_certificate_status, %{status: status, reason: reason}}, socket) do
+    socket = assign(socket, :ksef_certificate_status, status)
+
+    if status == :connected do
+      LiveToast.send_toast(:success, "Wygenerowano certyfikat i połączono z KSeF.")
+      {:noreply, assign(socket, :ksef_credential, Ksef.get_credential(socket.assigns.ash_scope))}
+    else
+      {:noreply, socket}
+    end
+  end
+
   # Handle Ash native PubSub broadcasts for requisition status changes
   def handle_info(
         %Broadcast{topic: "requisition:" <> _, payload: %Notification{resource: Requisition, action: action}},
@@ -936,6 +1032,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
             editing_basic_info={@editing_basic_info}
             editing_correspondence={@editing_correspondence}
             ksef_credential={@ksef_credential}
+            ksef_certificate_status={@ksef_certificate_status}
             bank_accounts={@bank_accounts}
             bank_institutions={@bank_institutions}
             pending_requisitions={@pending_requisitions}

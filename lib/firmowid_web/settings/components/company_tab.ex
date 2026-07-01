@@ -28,6 +28,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :editing_basic_info, :boolean, required: true
   attr :editing_correspondence, :boolean, required: true
   attr :ksef_credential, :any, required: true
+  attr :ksef_certificate_status, :atom, required: true
   attr :bank_accounts, :list, required: true
   attr :bank_institutions, :map, required: true
   attr :pending_requisitions, :list, required: true
@@ -58,7 +59,11 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         editing_correspondence={@editing_correspondence}
       />
 
-      <.ksef_section ksef_credential={@ksef_credential} uploads={@uploads} />
+      <.ksef_section
+        ksef_credential={@ksef_credential}
+        ksef_certificate_status={@ksef_certificate_status}
+        uploads={@uploads}
+      />
 
       <.bank_accounts_section
         bank_accounts={@bank_accounts}
@@ -303,6 +308,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   end
 
   attr :ksef_credential, :any, required: true
+  attr :ksef_certificate_status, :atom, required: true
   attr :uploads, :map, required: true
 
   defp ksef_section(assigns) do
@@ -358,6 +364,97 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             </.button>
           </div>
         </form>
+
+        <div class="my-6 flex w-full max-w-lg items-center gap-3">
+          <div class="bg-grey-200 h-px flex-1"></div>
+          <span class="text-grey-500 text-xs font-medium uppercase">lub</span>
+          <div class="bg-grey-200 h-px flex-1"></div>
+        </div>
+
+        <div id="ksef-external-signature-flow" class="w-full max-w-lg space-y-4">
+          <Helpers.settings_field
+            label="Profil Zaufany lub podpis kwalifikowany"
+            class="w-full"
+          >
+            <p class="text-grey-600 text-sm">
+              Pobierz dokument XML, podpisz go poza Firmowidem i wgraj podpisany plik w ciągu
+              10 minut.
+            </p>
+          </Helpers.settings_field>
+
+          <div
+            :if={@ksef_certificate_status != :idle}
+            id="ksef-certificate-enrollment-status"
+            class="bg-grey-50 text-grey-700 rounded-md px-4 py-3 text-sm"
+          >
+            {present_certificate_status(@ksef_certificate_status)}
+          </div>
+
+          <.button
+            id="download-ksef-auth-token-request"
+            phx-hook=".KsefAuthDownload"
+            type="button"
+            variant="secondary"
+            size="small"
+            phx-click="download_ksef_auth_token_request"
+          >
+            Pobierz AuthTokenRequest
+          </.button>
+          <script :type={Phoenix.LiveView.ColocatedHook} name=".KsefAuthDownload">
+            export default {
+              mounted() {
+                this.handleEvent("download-ksef-auth-token-request", ({ content, filename }) => {
+                  const blob = new Blob([content], { type: "application/xml;charset=utf-8" })
+                  const url = URL.createObjectURL(blob)
+                  const link = document.createElement("a")
+                  link.href = url
+                  link.download = filename
+                  link.click()
+                  URL.revokeObjectURL(url)
+                })
+              }
+            }
+          </script>
+
+          <form
+            :if={@ksef_certificate_status == :awaiting_signature}
+            phx-change="validate_signed_auth_token_request"
+            phx-submit="upload_signed_auth_token_request"
+            id="ksef-signed-auth-token-request-form"
+            class="space-y-4"
+          >
+            <label
+              class="border-orangeText flex w-full cursor-pointer justify-center rounded-md border-2 border-dashed px-6 py-8"
+              phx-drop-target={@uploads.signed_auth_token_request.ref}
+            >
+              <div class="text-orangeText text-center text-sm">
+                <div
+                  :if={Enum.empty?(@uploads.signed_auth_token_request.entries)}
+                  class="font-medium"
+                >
+                  Dodaj podpisany AuthTokenRequest (.xml)
+                </div>
+                <.live_file_input upload={@uploads.signed_auth_token_request} class="sr-only" />
+                <div :if={!Enum.empty?(@uploads.signed_auth_token_request.entries)}>
+                  <p :for={entry <- @uploads.signed_auth_token_request.entries}>
+                    {entry.client_name}
+                  </p>
+                </div>
+              </div>
+            </label>
+
+            <div class="flex justify-end">
+              <.button
+                type="submit"
+                variant="secondary"
+                size="small"
+                phx-disable-with="Wysyłanie..."
+              >
+                Wyślij podpisany dokument
+              </.button>
+            </div>
+          </form>
+        </div>
 
         <div class="my-6 flex w-full max-w-lg items-center gap-3">
           <div class="bg-grey-200 h-px flex-1"></div>
@@ -1021,6 +1118,14 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   defp present_auth_type(:token), do: "Token"
   defp present_auth_type(:certificate), do: "Certyfikat"
   defp present_auth_type(other), do: present(other)
+
+  defp present_certificate_status(:awaiting_signature), do: "Oczekiwanie na podpisany dokument."
+  defp present_certificate_status(:authenticating), do: "Trwa uwierzytelnianie w KSeF."
+
+  defp present_certificate_status(:preparing_certificate), do: "Trwa przygotowanie wniosku o certyfikat."
+
+  defp present_certificate_status(:waiting_for_certificate), do: "KSeF wystawia certyfikat."
+  defp present_certificate_status(_status), do: ""
 
   defp role_label(:admin), do: "admin"
   defp role_label(:employee), do: "pracownik"

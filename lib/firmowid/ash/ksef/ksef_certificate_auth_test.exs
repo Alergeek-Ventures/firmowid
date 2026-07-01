@@ -4,7 +4,9 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
   use Firmowid.DataCase, async: false
 
   import Firmowid.AccountsFixtures
+  import Firmowid.Ash.Ksef.KsefTestHelpers, only: [jwt: 1]
 
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.Workers.SessionWorker
   alias Firmowid.Ash.Scope
@@ -79,7 +81,7 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
     refute raw_credentials =~ credentials.private_key
     refute raw_credentials =~ credentials.password
 
-    assert {:ok, access_token} = Cachex.get(:ksef, {:access_token, admin.organization_id})
+    assert {:ok, _access_token} = Cachex.get(:ksef, {:access_token, admin.organization_id})
   end
 
   test "session worker re-authenticates using stored certificate credentials", %{
@@ -123,6 +125,66 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
     assert Ksef.get_credential(scope) == nil
   end
 
+  test "removes credentials when session establishment raises", %{
+    scope: scope,
+    credentials: credentials
+  } do
+    Req.Test.stub(:ksef_domain_certificate_api, fn
+      %{request_path: "/auth/token/redeem"} = conn ->
+        Req.Test.json(conn, %{
+          "accessToken" => %{"token" => "invalid-access-token"},
+          "refreshToken" => %{"token" => jwt(7 * 86_400)}
+        })
+
+      conn ->
+        successful_ksef_response(conn)
+    end)
+
+    assert_raise FunctionClauseError, fn ->
+      Oban.Testing.with_testing_mode(:manual, fn ->
+        Ksef.authenticate_with_uploaded_certificate(
+          credentials.certificate,
+          credentials.private_key,
+          credentials.password,
+          scope
+        )
+      end)
+    end
+
+    assert Ksef.get_credential(scope) == nil
+  end
+
+  test "validates an externally signed request before enqueueing it", %{
+    admin: admin,
+    scope: scope
+  } do
+    organization = Core.get_organization!(admin.organization_id, scope: scope)
+    signed_xml = signed_auth_token_request("expected-challenge", organization.nip)
+
+    assert {:error, :auth_token_request_mismatch} =
+             Ksef.enroll_ksef_certificate(signed_xml, "different-challenge", scope)
+
+    assert {:error, :auth_token_request_mismatch} =
+             Ksef.enroll_ksef_certificate(signed_xml, nil, scope)
+
+    assert {:error, :invalid_xml} =
+             Ksef.enroll_ksef_certificate("<AuthTokenRequest>", "expected-challenge", scope)
+
+    assert {:error, :unsafe_xml} =
+             Ksef.enroll_ksef_certificate(
+               "<!DOCTYPE AuthTokenRequest [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]>#{signed_xml}",
+               "expected-challenge",
+               scope
+             )
+
+    assert {:ok, job} =
+             Oban.Testing.with_testing_mode(:manual, fn ->
+               Ksef.enroll_ksef_certificate(signed_xml, "expected-challenge", scope)
+             end)
+
+    assert job.args["action"] == "authenticate"
+  end
+
   defp certificate_credentials do
     password = "certificate-password"
     private_key = X509.PrivateKey.new_ec(:secp256r1)
@@ -157,6 +219,18 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
     }
   end
 
+  defp signed_auth_token_request(challenge, nip) do
+    """
+    <AuthTokenRequest xmlns="http://ksef.mf.gov.pl/auth/token/2.0"
+                      xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+      <Challenge>#{challenge}</Challenge>
+      <ContextIdentifier><Nip>#{nip}</Nip></ContextIdentifier>
+      <SubjectIdentifierType>certificateSubject</SubjectIdentifierType>
+      <ds:Signature><ds:SignedInfo /></ds:Signature>
+    </AuthTokenRequest>
+    """
+  end
+
   defp successful_ksef_response(conn) do
     case conn.request_path do
       "/auth/challenge" ->
@@ -185,17 +259,6 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
       path ->
         Plug.Conn.send_resp(conn, 404, "unexpected request: #{path}")
     end
-  end
-
-  defp jwt(seconds_from_now) do
-    header = Base.url_encode64(Jason.encode!(%{"alg" => "none"}), padding: false)
-
-    payload =
-      Base.url_encode64(Jason.encode!(%{"exp" => System.os_time(:second) + seconds_from_now}),
-        padding: false
-      )
-
-    "#{header}.#{payload}.signature"
   end
 
   defp raw_credentials(organization_id) do

@@ -39,6 +39,19 @@ defmodule Firmowid.Ash.Ksef.KsefTestHelpers do
     "#{prefix}#{id}/01/2026"
   end
 
+  @doc "Builds an unsigned JWT-shaped token with a configurable expiration for KSeF tests."
+  @spec jwt(pos_integer()) :: String.t()
+  def jwt(seconds_from_now) do
+    header = Base.url_encode64(Jason.encode!(%{"alg" => "none"}), padding: false)
+
+    payload =
+      Base.url_encode64(Jason.encode!(%{"exp" => System.os_time(:second) + seconds_from_now}),
+        padding: false
+      )
+
+    "#{header}.#{payload}.signature"
+  end
+
   @doc "Downloads and caches external XSD schemas from gov.pl for FA(3) validation."
   @spec ensure_schemas_cached!() :: :ok
   # sobelow_skip ["Traversal.FileModule"]

@@ -173,13 +173,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
              private_key,
              private_key_password
            ),
-         {:ok, %{body: %{"referenceNumber" => reference_number, "authenticationToken" => auth_token}}} <-
-           Req.post(request(),
-             url: "/auth/xades-signature",
-             params: %{"verifyCertificateChain" => "false"},
-             body: signed_auth_token_request,
-             headers: [{"content-type", "application/xml"}, {"accept", "application/json"}]
-           ),
+         {:ok, %{body: %{reference_number: reference_number, authentication_token: auth_token}}} <-
+           submit_xades_auth_request(signed_auth_token_request),
          :success <- get_auth_status(reference_number, auth_token["token"]) do
       redeem_authentication_token(auth_token["token"])
     end
@@ -209,7 +204,10 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
     """
   end
 
-  defp get_auth_challenge do
+  @doc "Fetches a fresh KSeF authentication challenge."
+  @spec get_auth_challenge() ::
+          {:ok, %{challenge: String.t(), timestamp: String.t()}} | {:error, term()}
+  def get_auth_challenge do
     case Req.post(request(), url: "/auth/challenge") do
       {:ok, %{status: 200, body: %{"challenge" => challenge, "timestamp" => timestamp}}} ->
         {:ok, %{challenge: challenge, timestamp: timestamp}}
@@ -222,7 +220,64 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
     end
   end
 
-  defp redeem_authentication_token(authentication_token) do
+  @doc "Submits an externally signed XAdES AuthTokenRequest."
+  @spec submit_xades_auth_request(String.t()) ::
+          {:ok, %{reference_number: String.t(), authentication_token: String.t()}}
+          | {:error, term()}
+  def submit_xades_auth_request(signed_xml) when is_binary(signed_xml) do
+    case Req.post(request(),
+           url: "/auth/xades-signature",
+           body: signed_xml,
+           headers: [{"content-type", "application/xml"}, {"accept", "application/json"}]
+         ) do
+      {:ok,
+       %{
+         status: 202,
+         body: %{
+           "referenceNumber" => reference_number,
+           "authenticationToken" => %{"token" => authentication_token}
+         }
+       }} ->
+        {:ok,
+         %{
+           reference_number: reference_number,
+           authentication_token: authentication_token
+         }}
+
+      {:ok, %{status: status, body: body}} ->
+        {:error, {:unexpected_status, status, body}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc "Fetches one authentication operation status without polling."
+  @spec fetch_auth_status(String.t(), String.t()) ::
+          :pending | :success | {:error, term()}
+  def fetch_auth_status(reference_number, authentication_token) do
+    case Req.get(request(authentication_token), url: "/auth/#{reference_number}") do
+      {:ok, %{status: 200, body: %{"status" => %{"code" => 100}}}} ->
+        :pending
+
+      {:ok, %{status: 200, body: %{"status" => %{"code" => 200}}}} ->
+        :success
+
+      {:ok, %{status: 200, body: %{"status" => status}}} ->
+        {:error, {:authentication_failed, status}}
+
+      {:ok, %{status: status, body: body}} ->
+        {:error, {:unexpected_status, status, body}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc "Redeems a completed authentication operation for access and refresh tokens."
+  @spec redeem_authentication_token(String.t()) ::
+          {:ok, %{access_token: String.t(), refresh_token: String.t()}} | {:error, term()}
+  def redeem_authentication_token(authentication_token) do
     case Req.post(request(authentication_token), url: "/auth/token/redeem") do
       {:ok,
        %{
@@ -278,22 +333,122 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
   defp poll_auth_status(_reference_number, _auth_token, 0, _interval), do: {:error, :auth_status_timeout}
 
   defp poll_auth_status(reference_number, auth_token, attempts_left, interval) do
-    case Req.get(request(auth_token), url: "/auth/#{reference_number}") do
-      {:ok, %{status: 200, body: %{"status" => %{"code" => 200}}}} ->
+    case fetch_auth_status(reference_number, auth_token) do
+      :success ->
         :success
 
-      {:ok, %{status: 200, body: %{"status" => %{"code" => 100}}}} ->
+      :pending ->
         if interval > 0, do: Process.sleep(interval)
         poll_auth_status(reference_number, auth_token, attempts_left - 1, interval)
 
-      {:ok, %{status: 200, body: body}} ->
-        {:error, body}
+      {:error, _reason} = error ->
+        error
+    end
+  end
+
+  @doc "Returns KSeF certificate and enrollment limits."
+  @spec get_certificate_limits(String.t()) :: {:ok, map()} | {:error, term()}
+  def get_certificate_limits(access_token) do
+    authenticated_get(access_token, "/certificates/limits")
+  end
+
+  @doc "Returns the exact distinguished-name data required for a certificate CSR."
+  @spec get_certificate_enrollment_data(String.t()) :: {:ok, map()} | {:error, term()}
+  def get_certificate_enrollment_data(access_token) do
+    authenticated_get(access_token, "/certificates/enrollments/data")
+  end
+
+  @doc "Submits a KSeF authentication-certificate enrollment."
+  @spec submit_certificate_enrollment(String.t(), String.t(), String.t()) ::
+          {:ok, String.t()} | {:error, term()}
+  def submit_certificate_enrollment(access_token, certificate_name, csr) do
+    case Req.post(request(access_token),
+           url: "/certificates/enrollments",
+           json: %{
+             "certificateName" => certificate_name,
+             "certificateType" => "Authentication",
+             "csr" => csr
+           }
+         ) do
+      {:ok, %{status: 202, body: %{"referenceNumber" => reference_number}}} ->
+        {:ok, reference_number}
 
       {:ok, %{status: status, body: body}} ->
         {:error, {:unexpected_status, status, body}}
 
-      {:error, _reason} = error ->
-        error
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc "Fetches one certificate enrollment status without polling."
+  @spec get_certificate_enrollment_status(String.t(), String.t()) ::
+          :pending | {:ok, String.t()} | {:error, term()}
+  def get_certificate_enrollment_status(access_token, reference_number) do
+    case Req.get(request(access_token), url: "/certificates/enrollments/#{reference_number}") do
+      {:ok, %{status: 200, body: %{"status" => %{"code" => 100}}}} ->
+        :pending
+
+      {:ok,
+       %{
+         status: 200,
+         body: %{
+           "status" => %{"code" => 200},
+           "certificateSerialNumber" => serial_number
+         }
+       }} ->
+        {:ok, serial_number}
+
+      {:ok, %{status: 200, body: %{"status" => status}}} ->
+        {:error, {:certificate_enrollment_failed, status}}
+
+      {:ok, %{status: status, body: body}} ->
+        {:error, {:unexpected_status, status, body}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc "Retrieves one issued KSeF certificate as PEM."
+  @spec retrieve_certificate(String.t(), String.t()) :: {:ok, String.t()} | {:error, term()}
+  def retrieve_certificate(access_token, serial_number) do
+    case Req.post(request(access_token),
+           url: "/certificates/retrieve",
+           json: %{"certificateSerialNumbers" => [serial_number]}
+         ) do
+      {:ok,
+       %{
+         status: 200,
+         body: %{"certificates" => [%{"certificate" => certificate_der} | _]}
+       }} ->
+        with {:ok, der} <- Base.decode64(certificate_der) do
+          {:ok, der |> X509.Certificate.from_der!() |> X509.Certificate.to_pem()}
+        end
+
+      {:ok, %{status: 200, body: %{"certificates" => []}}} ->
+        {:error, :certificate_not_returned}
+
+      {:ok, %{status: status, body: body}} ->
+        {:error, {:unexpected_status, status, body}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  rescue
+    _error -> {:error, :invalid_certificate}
+  end
+
+  defp authenticated_get(access_token, url) do
+    case Req.get(request(access_token), url: url) do
+      {:ok, %{status: 200, body: body}} ->
+        {:ok, body}
+
+      {:ok, %{status: status, body: body}} ->
+        {:error, {:unexpected_status, status, body}}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
