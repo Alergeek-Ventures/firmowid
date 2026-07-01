@@ -5,7 +5,7 @@
     class="pointer-events-none fixed top-[20%] left-0 z-0 hidden h-[135vh] lg:block"
   />
 
-  <div class="bg-lightGreyBg sticky top-16 z-30 -mt-4 flex items-center justify-between gap-4 pt-12 pb-9">
+  <div class="bg-lightGreyBg top-navbar sticky z-30 -mt-4 flex items-center justify-between gap-4 pt-12 pb-9">
     <div class="flex shrink-0 gap-2">
       <Lucideicons.calendar_1 />
       <p class="text-grey-900 line-clamp-1">{format_current_day_header(Date.utc_today())}</p>
@@ -44,9 +44,9 @@
         <.form
           id="session_form"
           phx-change={if @current_session, do: "validate_and_update", else: "validate"}
-          phx-submit="save"
+          phx-submit={if @current_session, do: "end_session", else: "save"}
           for={@form}
-          class="sticky top-[12.1rem] flex w-full flex-col"
+          class="sticky top-[12.2rem] z-40 flex w-full flex-col"
         >
           <div class="flex flex-col gap-4">
             <% is_hours_record_submitted = @is_hours_record_submitted %>
