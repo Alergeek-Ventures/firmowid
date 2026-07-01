@@ -35,6 +35,14 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
     Req.Request.merge_options(request(), auth: {:bearer, access_token})
   end
 
+  defp handle_response({:ok, %{status: 401}}), do: {:error, :unauthorized}
+  defp handle_response({:ok, %{status: 403}}), do: {:error, :forbidden}
+  defp handle_response({:ok, %{status: 429}}), do: {:error, :rate_limited}
+
+  defp handle_response({:ok, %{status: status, body: body}}), do: {:error, {:unexpected_response, status, body}}
+
+  defp handle_response({:error, reason}), do: {:error, reason}
+
   @doc "Parses an ISO 8601 datetime string. Raises on invalid input."
   @spec parse_datetime!(String.t()) :: DateTime.t()
   def parse_datetime!(iso8601) do
@@ -93,7 +101,7 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
   end
 
   defp fetch_and_parse_public_key(target_usage) do
-    with {:ok, %{body: certificates}} <-
+    with {:ok, %{status: 200, body: certificates}} <-
            Req.get(request(), url: "/security/public-key-certificates"),
          {cert_b64, valid_to} <- find_valid_certificate(certificates, target_usage) do
       cert_b64
@@ -102,7 +110,7 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
       |> then(&{:ok, &1, valid_to})
     else
       nil -> {:error, :no_valid_certificate_found}
-      {:error, _} = error -> error
+      response -> handle_response(response)
     end
   end
 
@@ -137,7 +145,11 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
   def auth_with_token(context_nip, ksef_token) do
     with {:ok, %{challenge: challenge, timestamp: timestamp}} <- get_auth_challenge(),
          encrypted_token = prepare_encrypted_token(ksef_token, timestamp),
-         {:ok, %{body: %{"referenceNumber" => reference_number, "authenticationToken" => auth_token}}} <-
+         {:ok,
+          %{
+            status: 202,
+            body: %{"referenceNumber" => reference_number, "authenticationToken" => auth_token}
+          }} <-
            Req.post(request(),
              url: "/auth/ksef-token",
              json: %{
@@ -151,6 +163,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
            ),
          :success <- get_auth_status(reference_number, auth_token["token"]) do
       redeem_authentication_token(auth_token["token"])
+    else
+      response -> handle_response(response)
     end
   end
 
@@ -173,10 +187,10 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
              private_key,
              private_key_password
            ),
-         {:ok, %{body: %{reference_number: reference_number, authentication_token: auth_token}}} <-
+         {:ok, %{reference_number: reference_number, authentication_token: auth_token}} <-
            submit_xades_auth_request(signed_auth_token_request),
-         :success <- get_auth_status(reference_number, auth_token["token"]) do
-      redeem_authentication_token(auth_token["token"])
+         :success <- get_auth_status(reference_number, auth_token) do
+      redeem_authentication_token(auth_token)
     end
   end
 
@@ -212,11 +226,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
       {:ok, %{status: 200, body: %{"challenge" => challenge, "timestamp" => timestamp}}} ->
         {:ok, %{challenge: challenge, timestamp: timestamp}}
 
-      {:ok, %{status: status, body: body}} ->
-        {:error, {:unexpected_status, status, body}}
-
-      {:error, reason} ->
-        {:error, reason}
+      response ->
+        handle_response(response)
     end
   end
 
@@ -227,6 +238,7 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
   def submit_xades_auth_request(signed_xml) when is_binary(signed_xml) do
     case Req.post(request(),
            url: "/auth/xades-signature",
+           params: [verifyCertificateChain: false],
            body: signed_xml,
            headers: [{"content-type", "application/xml"}, {"accept", "application/json"}]
          ) do
@@ -244,11 +256,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
            authentication_token: authentication_token
          }}
 
-      {:ok, %{status: status, body: body}} ->
-        {:error, {:unexpected_status, status, body}}
-
-      {:error, reason} ->
-        {:error, reason}
+      response ->
+        handle_response(response)
     end
   end
 
@@ -266,11 +275,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
       {:ok, %{status: 200, body: %{"status" => status}}} ->
         {:error, {:authentication_failed, status}}
 
-      {:ok, %{status: status, body: body}} ->
-        {:error, {:unexpected_status, status, body}}
-
-      {:error, reason} ->
-        {:error, reason}
+      response ->
+        handle_response(response)
     end
   end
 
@@ -289,11 +295,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
        }} ->
         {:ok, %{access_token: access_token, refresh_token: refresh_token}}
 
-      {:ok, %{status: status}} ->
-        {:error, {:unexpected_status, status}}
-
-      {:error, reason} ->
-        {:error, reason}
+      response ->
+        handle_response(response)
     end
   end
 
@@ -314,8 +317,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
         {:ok, %{status: 401}} ->
           {:error, :refresh_token_expired}
 
-        {:error, _reason} = result ->
-          result
+        response ->
+          handle_response(response)
       end
     end
   end
@@ -373,11 +376,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
       {:ok, %{status: 202, body: %{"referenceNumber" => reference_number}}} ->
         {:ok, reference_number}
 
-      {:ok, %{status: status, body: body}} ->
-        {:error, {:unexpected_status, status, body}}
-
-      {:error, reason} ->
-        {:error, reason}
+      response ->
+        handle_response(response)
     end
   end
 
@@ -402,11 +402,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
       {:ok, %{status: 200, body: %{"status" => status}}} ->
         {:error, {:certificate_enrollment_failed, status}}
 
-      {:ok, %{status: status, body: body}} ->
-        {:error, {:unexpected_status, status, body}}
-
-      {:error, reason} ->
-        {:error, reason}
+      response ->
+        handle_response(response)
     end
   end
 
@@ -422,18 +419,19 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
          status: 200,
          body: %{"certificates" => [%{"certificate" => certificate_der} | _]}
        }} ->
-        with {:ok, der} <- Base.decode64(certificate_der) do
-          {:ok, der |> X509.Certificate.from_der!() |> X509.Certificate.to_pem()}
-        end
+        parse_certificate(certificate_der)
 
       {:ok, %{status: 200, body: %{"certificates" => []}}} ->
         {:error, :certificate_not_returned}
 
-      {:ok, %{status: status, body: body}} ->
-        {:error, {:unexpected_status, status, body}}
+      response ->
+        handle_response(response)
+    end
+  end
 
-      {:error, reason} ->
-        {:error, reason}
+  defp parse_certificate(certificate_der) do
+    with {:ok, der} <- Base.decode64(certificate_der) do
+      {:ok, der |> X509.Certificate.from_der!() |> X509.Certificate.to_pem()}
     end
   rescue
     _error -> {:error, :invalid_certificate}
@@ -444,11 +442,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
       {:ok, %{status: 200, body: body}} ->
         {:ok, body}
 
-      {:ok, %{status: status, body: body}} ->
-        {:error, {:unexpected_status, status, body}}
-
-      {:error, reason} ->
-        {:error, reason}
+      response ->
+        handle_response(response)
     end
   end
 
@@ -474,11 +469,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
       {:ok, %{status: 201, body: %{"referenceNumber" => reference_number}}} ->
         {:ok, reference_number}
 
-      {:ok, %{status: status}} ->
-        {:error, {:unexpected_status, status}}
-
-      {:error, reason} ->
-        {:error, reason}
+      response ->
+        handle_response(response)
     end
   end
 
@@ -498,11 +490,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
           _ -> {:error, body["status"]}
         end
 
-      {:ok, %{status: status}} ->
-        {:error, {:unexpected_status, status}}
-
-      {:error, reason} ->
-        {:error, reason}
+      response ->
+        handle_response(response)
     end
   end
 
@@ -518,17 +507,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
       {:ok, %{status: 200, body: body}} ->
         {:ok, body}
 
-      {:ok, %{status: 401}} ->
-        {:error, :unauthorized}
-
-      {:ok, %{status: 403}} ->
-        {:error, :forbidden}
-
-      {:ok, %{status: status}} ->
-        {:error, {:unexpected_status, status}}
-
-      {:error, reason} ->
-        {:error, reason}
+      response ->
+        handle_response(response)
     end
   end
 
@@ -574,11 +554,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
            encryption_iv: encryption_data.iv
          }}
 
-      {:ok, %{status: status, body: body}} ->
-        {:error, {:unexpected_status, status, body}}
-
-      {:error, reason} ->
-        {:error, reason}
+      response ->
+        handle_response(response)
     end
   end
 
@@ -625,11 +602,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
       {:ok, %{status: 202, body: %{"referenceNumber" => invoice_reference}}} ->
         {:ok, invoice_reference}
 
-      {:ok, %{status: status, body: body}} ->
-        {:error, {:unexpected_status, status, body}}
-
-      {:error, reason} ->
-        {:error, reason}
+      response ->
+        handle_response(response)
     end
   end
 
@@ -675,11 +649,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
       {:ok, %{status: 200, body: %{"status" => %{"code" => code} = status}}} ->
         {:error, {:invoice_processing_failed, code, status}}
 
-      {:ok, %{status: status, body: body}} ->
-        {:error, {:unexpected_status, status, body}}
-
-      {:error, reason} ->
-        {:error, reason}
+      response ->
+        handle_response(response)
     end
   end
 
@@ -694,11 +665,8 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
       {:ok, %{status: 204}} ->
         :ok
 
-      {:ok, %{status: status, body: body}} ->
-        {:error, {:unexpected_status, status, body}}
-
-      {:error, reason} ->
-        {:error, reason}
+      response ->
+        handle_response(response)
     end
   end
 end

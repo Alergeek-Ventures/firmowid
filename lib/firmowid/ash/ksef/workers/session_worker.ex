@@ -198,7 +198,5 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
   defp terminal_auth_failure?(:refresh_token_expired), do: true
   defp terminal_auth_failure?(:unauthorized), do: true
   defp terminal_auth_failure?(:forbidden), do: true
-  defp terminal_auth_failure?({:unexpected_status, 401, _body}), do: true
-  defp terminal_auth_failure?({:unexpected_status, 403, _body}), do: true
   defp terminal_auth_failure?(_reason), do: false
 end

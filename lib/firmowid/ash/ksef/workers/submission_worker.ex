@@ -387,6 +387,11 @@ defmodule Firmowid.Ash.Ksef.Workers.SubmissionWorker do
     fail_invoice(invoice, error, scope)
   end
 
+  defp handle_verification_result({:error, error}, invoice, _job, scope, _verification_context)
+       when error in [:unauthorized, :forbidden, :rate_limited] do
+    fail_invoice(invoice, error, scope)
+  end
+
   defp handle_verification_result({:error, reason} = error, invoice, job, scope, _verification_context) do
     Logger.error("Failed to verify invoice #{invoice.id}: #{inspect(reason)}")
 
