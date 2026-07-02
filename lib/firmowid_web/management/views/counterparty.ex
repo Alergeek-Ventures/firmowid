@@ -134,7 +134,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
         stats={@stats}
         class={[
           "col-start-2",
-          if(@counterparty.archived_at, do: "row-start-3 mt-5", else: "row-start-2 mt-3")
+          if(@counterparty.archived_at, do: "mt-5", else: "mt-3")
         ]}
       />
 
@@ -143,7 +143,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
         counterparty={@counterparty}
         suggested_invoices={@suggested_invoices}
         params={@params}
-        class={["col-start-2", if(@counterparty.archived_at, do: "row-start-4", else: "row-start-3")]}
+        class="col-start-2"
       />
 
       <.invoices_section
@@ -151,7 +151,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
         params={@params}
         invoice_filter={@invoice_filter}
         invoices={@invoices}
-        class={["col-start-2", if(@counterparty.archived_at, do: "row-start-5", else: "row-start-4")]}
+        class="col-start-2"
       />
     </div>
     """
@@ -354,7 +354,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     ~H"""
     <section class={["rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]", @class]}>
       <div class="mb-4 flex items-center justify-between gap-4">
-        <h3 class="text-grey-900 text-xl/tight font-medium">Faktury</h3>
+        <h3 class="text-grey-700 text-lg font-medium">Faktury</h3>
 
         <div class="flex gap-2">
           <.link
@@ -368,9 +368,12 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
               })
             }
             kind="button"
-            variant="ghost"
+            variant="outline"
             size="small"
-            class={[if(@invoice_filter == value, do: "bg-grey-200")]}
+            class={[
+              "bg-grey-100 rounded-2xl! px-4",
+              if(@invoice_filter == value, do: invoice_filter_class_names(value))
+            ]}
           >
             {label}
           </.link>
@@ -441,7 +444,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     <section class={["rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]", @class]}>
       <div class="mb-4 flex items-start justify-between gap-4">
         <div class="space-y-1">
-          <h3 class="text-grey-900 text-xl/tight font-medium">Sugerowane faktury do połączenia</h3>
+          <h3 class="text-grey-700 text-lg font-medium">Sugerowane faktury do połączenia</h3>
           <p class="text-grey-700 text-sm/snug">
             Wyszukane po NIP / VAT-ID:
             <span class="font-medium text-black">{@counterparty.tax_id}</span>
@@ -565,8 +568,15 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
   defp invoice_status(:pending), do: {"nieopłacona", "bg-orange-100 text-orange-700"}
   defp invoice_status(:skipped), do: {"pominięta", "bg-grey-200 text-grey-700"}
-  defp invoice_status(:matched), do: {"opłacona", "bg-green-100 text-green-700"}
-  defp invoice_status(_), do: {"opłacona", "bg-green-100 text-green-700"}
+  defp invoice_status(:matched), do: {"opłacona", "bg-turquoise-100 text-turquoise-700"}
+  defp invoice_status(_), do: {"opłacona", "bg-turquoise-100 text-turquoise-700"}
+
+  defp invoice_filter_class_names(:all), do: "bg-grey-200 text-grey-700 border-transparent"
+
+  defp invoice_filter_class_names(:unpaid), do: "bg-orange-200 text-orange-700 border-transparent hover:bg-orange-200"
+
+  defp invoice_filter_class_names(:paid),
+    do: "bg-turquoise-200 text-turquoise-700 border-transparent hover:bg-turquoise-200"
 
   defp money_to_string(nil, _currency), do: "—"
 
