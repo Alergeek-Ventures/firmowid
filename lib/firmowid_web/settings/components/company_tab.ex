@@ -28,6 +28,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :editing_basic_info, :boolean, required: true
   attr :editing_correspondence, :boolean, required: true
   attr :ksef_credential, :any, required: true
+  attr :ksef_auth_method, :atom, required: true
   attr :ksef_certificate_status, :atom, required: true
   attr :bank_accounts, :list, required: true
   attr :bank_institutions, :map, required: true
@@ -61,6 +62,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
       <.ksef_section
         ksef_credential={@ksef_credential}
+        ksef_auth_method={@ksef_auth_method}
         ksef_certificate_status={@ksef_certificate_status}
         uploads={@uploads}
       />
@@ -308,24 +310,26 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   end
 
   attr :ksef_credential, :any, required: true
+  attr :ksef_auth_method, :atom, required: true
   attr :ksef_certificate_status, :atom, required: true
   attr :uploads, :map, required: true
 
   defp ksef_section(assigns) do
     ~H"""
-    <.company_section title="Integracja z KSeF">
+    <.company_section title="Integracja z KSeF" class="col-span-2">
       <%= if @ksef_credential do %>
         <div class="flex flex-col gap-4">
           <.detail_row label="Status" wide>
             <span class="inline-flex items-center gap-2">
               <span>Połączono z KSeF</span>
-              <span class="text-green-700">
-                <.icon name="hero-check-circle-solid" class="size-5" />
-              </span>
+              <.icon name="hero-check-circle-solid" class="size-5 text-green-700" />
             </span>
           </.detail_row>
           <.detail_row label="Typ autoryzacji" wide>
-            {present_auth_type(@ksef_credential.auth_type)}
+            {case @ksef_credential.auth_type do
+              :token -> "Token"
+              :certificate -> "Certyfikat"
+            end}
           </.detail_row>
           <.detail_row label="Data wygaśnięcia" wide>
             {TimeFormatter.format_date(@ksef_credential.expires_on)}
@@ -342,64 +346,199 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           </.button>
         </div>
       <% else %>
-        <form phx-submit="save_ksef_token" id="ksef-token-form" class="space-y-4">
-          <div class="space-y-2">
-            <Helpers.settings_display_field label="Status" class="w-full">
-              Nie połączono z KSeF
-            </Helpers.settings_display_field>
-          </div>
+        <.detail_row label="Status" wide>
+          <span class="inline-flex items-center gap-2">
+            <span>Niepołączono z KSeF</span>
+            <.icon name="hero-x-circle-solid text-red-700" class="size-5" />
+          </span>
+        </.detail_row>
 
-          <Helpers.settings_field label="Token KSeF" class="w-full max-w-lg">
-            <.input type="password" name="ksef_token" value="" required new input_class="w-full" />
-          </Helpers.settings_field>
-
-          <div class="flex w-full max-w-lg justify-end">
-            <.button
-              type="submit"
-              variant="secondary"
-              size="small"
-              phx-disable-with="Łączenie..."
-            >
-              Połącz z KSeF
-            </.button>
-          </div>
-        </form>
-
-        <div class="my-6 flex w-full max-w-lg items-center gap-3">
-          <div class="bg-grey-200 h-px flex-1"></div>
-          <span class="text-grey-500 text-xs font-medium uppercase">lub</span>
-          <div class="bg-grey-200 h-px flex-1"></div>
+        <div class="text-grey-800 mt-8 mb-3">
+          Połącz KSeF jedną z trzech metod
         </div>
 
-        <div id="ksef-external-signature-flow" class="w-full max-w-lg space-y-4">
-          <Helpers.settings_field
-            label="Profil Zaufany lub podpis kwalifikowany"
-            class="w-full"
-          >
-            <p class="text-grey-600 text-sm">
-              Pobierz dokument XML, podpisz go poza Firmowidem i wgraj podpisany plik w ciągu
-              10 minut.
-            </p>
-          </Helpers.settings_field>
+        <div
+          class="mb-4 grid w-full max-w-lg grid-cols-1 gap-2 sm:grid-cols-3"
+          role="tablist"
+          aria-label="Metoda uwierzytelnienia KSeF"
+        >
+          <.ksef_auth_tab
+            method={:trusted_profile}
+            current_method={@ksef_auth_method}
+            label="Profil Zaufany"
+            panel_id="ksef-external-signature-flow"
+          />
+          <.ksef_auth_tab
+            method={:certificate}
+            current_method={@ksef_auth_method}
+            label="Certyfikat KSeF"
+            panel_id="ksef-certificate-auth-flow"
+          />
+          <.ksef_auth_tab
+            method={:token}
+            current_method={@ksef_auth_method}
+            label="Token"
+            panel_id="ksef-token-auth-flow"
+          />
+        </div>
 
-          <div
-            :if={@ksef_certificate_status != :idle}
-            id="ksef-certificate-enrollment-status"
-            class="bg-grey-50 text-grey-700 rounded-md px-4 py-3 text-sm"
-          >
-            {present_certificate_status(@ksef_certificate_status)}
+        <div
+          :if={@ksef_auth_method == :token}
+          id="ksef-token-auth-flow"
+          role="tabpanel"
+          aria-labelledby="ksef-auth-tab-token"
+          class="w-full max-w-lg space-y-5"
+        >
+          <div class="text-grey-900 flex gap-3 rounded-lg border border-orange-700 bg-orange-200 p-4 text-sm">
+            <.icon
+              name="hero-exclamation-triangle-solid"
+              class="mt-0.5 size-5 shrink-0 text-orange-800"
+            />
+            <div class="text-orange-800">
+              <p class="font-semibold">Metoda wygaszana</p>
+              <p class="mt-1">
+                Tokeny KSeF będą obsługiwane tylko do 1 stycznia 2027 roku. Zalecamy
+                uwierzytelnienie Profilem Zaufanym lub certyfikatem KSeF.
+              </p>
+            </div>
           </div>
 
-          <.button
-            id="download-ksef-auth-token-request"
-            phx-hook=".KsefAuthDownload"
-            type="button"
-            variant="secondary"
-            size="small"
-            phx-click="download_ksef_auth_token_request"
-          >
-            Pobierz AuthTokenRequest
-          </.button>
+          <p class="text-grey-600 text-sm">
+            Wykonaj poniższe kroki, aby połączyć Firmowid z KSeF.
+          </p>
+
+          <ol class="space-y-6">
+            <.ksef_step number={1}>
+              <:title>Wygeneruj token</:title>
+              <:content>
+                Wejdź na stronę <.link
+                  kind="unstyled"
+                  external="https://ap.ksef.mf.gov.pl/web/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-orangeText inline-flex items-center gap-1 text-sm underline underline-offset-4"
+                >
+                  KSeF
+                </.link>, zaloguj się i wygeneruj token z uprawnieniami do wystawiania i przeglądania faktur.
+              </:content>
+            </.ksef_step>
+
+            <.ksef_step number={2} content_class="mt-3">
+              <:title><label for="ksef_token">Wklej token</label></:title>
+              <:content>
+                <form phx-submit="save_ksef_token" id="ksef-token-form" class="space-y-4">
+                  <.input
+                    type="password"
+                    id="ksef_token"
+                    name="ksef_token"
+                    value=""
+                    required
+                    new
+                    input_class="w-full"
+                  />
+
+                  <div class="flex justify-end">
+                    <.button
+                      type="submit"
+                      variant="secondary"
+                      size="small"
+                      phx-disable-with="Łączenie..."
+                    >
+                      Połącz z KSeF
+                    </.button>
+                  </div>
+                </form>
+              </:content>
+            </.ksef_step>
+          </ol>
+        </div>
+
+        <div
+          :if={@ksef_auth_method == :trusted_profile}
+          id="ksef-external-signature-flow"
+          role="tabpanel"
+          aria-labelledby="ksef-auth-tab-trusted_profile"
+          class="w-full max-w-lg space-y-5"
+        >
+          <p class="text-grey-600 text-sm">
+            Wykonaj poniższe kroki, aby połączyć Firmowid z KSeF.
+          </p>
+
+          <ol class="space-y-6">
+            <.ksef_step number={1} class="justify-items-start">
+              <:title>
+                <.button
+                  id="download-ksef-auth-token-request"
+                  phx-hook=".KsefAuthDownload"
+                  type="button"
+                  variant="unstyled"
+                  class="cursor-pointer underline"
+                  phx-click="download_ksef_auth_token_request"
+                >
+                  Pobierz wniosek
+                </.button>
+              </:title>
+            </.ksef_step>
+
+            <.ksef_step number={2}>
+              <:title>Podpisz plik</:title>
+              <:content>
+                Podpisz pobrany plik
+                <.link
+                  kind="unstyled"
+                  external="https://podpis.gov.pl/podpisz-dokument-elektronicznie/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-orangeText inline-flex items-center gap-1 text-sm underline underline-offset-4"
+                >
+                  Profilem Zaufanym
+                </.link>
+                lub podpisem kwalifikowanym.
+              </:content>
+            </.ksef_step>
+
+            <.ksef_step number={3} content_class="mt-3">
+              <:title>
+                <label for={@uploads.signed_auth_token_request.ref}>Wgraj podpisany plik</label>
+              </:title>
+              <:content>
+                <form
+                  phx-change="validate_signed_auth_token_request"
+                  phx-submit="upload_signed_auth_token_request"
+                  id="ksef-signed-auth-token-request-form"
+                  class="space-y-4"
+                >
+                  <.file_upload
+                    upload={@uploads.signed_auth_token_request}
+                    prompt="Dodaj podpisany plik (.xml)"
+                    error_formatter={&present_upload_error/1}
+                    show_errors={false}
+                  />
+
+                  <%= if @ksef_certificate_status not in [:idle, :awaiting_signature, :connected, :failed] do %>
+                    <div class="text-grey-700 flex items-center gap-2 rounded-md py-2 text-sm">
+                      <.icon name="hero-arrow-path" class="size-5 animate-spin" />
+                      <span class="w-full">
+                        {present_certificate_status(@ksef_certificate_status)}
+                      </span>
+                    </div>
+                  <% else %>
+                    <div class="flex justify-end">
+                      <.button
+                        type="submit"
+                        variant="secondary"
+                        size="small"
+                        phx-disable-with="Wysyłanie..."
+                      >
+                        Wyślij plik
+                      </.button>
+                    </div>
+                  <% end %>
+                </form>
+              </:content>
+            </.ksef_step>
+          </ol>
+
           <script :type={Phoenix.LiveView.ColocatedHook} name=".KsefAuthDownload">
             export default {
               mounted() {
@@ -415,115 +554,78 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               }
             }
           </script>
-
-          <form
-            :if={@ksef_certificate_status == :awaiting_signature}
-            phx-change="validate_signed_auth_token_request"
-            phx-submit="upload_signed_auth_token_request"
-            id="ksef-signed-auth-token-request-form"
-            class="space-y-4"
-          >
-            <label
-              class="border-orangeText flex w-full cursor-pointer justify-center rounded-md border-2 border-dashed px-6 py-8"
-              phx-drop-target={@uploads.signed_auth_token_request.ref}
-            >
-              <div class="text-orangeText text-center text-sm">
-                <div
-                  :if={Enum.empty?(@uploads.signed_auth_token_request.entries)}
-                  class="font-medium"
-                >
-                  Dodaj podpisany AuthTokenRequest (.xml)
-                </div>
-                <.live_file_input upload={@uploads.signed_auth_token_request} class="sr-only" />
-                <div :if={!Enum.empty?(@uploads.signed_auth_token_request.entries)}>
-                  <p :for={entry <- @uploads.signed_auth_token_request.entries}>
-                    {entry.client_name}
-                  </p>
-                </div>
-              </div>
-            </label>
-
-            <div class="flex justify-end">
-              <.button
-                type="submit"
-                variant="secondary"
-                size="small"
-                phx-disable-with="Wysyłanie..."
-              >
-                Wyślij podpisany dokument
-              </.button>
-            </div>
-          </form>
         </div>
 
-        <div class="my-6 flex w-full max-w-lg items-center gap-3">
-          <div class="bg-grey-200 h-px flex-1"></div>
-          <span class="text-grey-500 text-xs font-medium uppercase">lub</span>
-          <div class="bg-grey-200 h-px flex-1"></div>
-        </div>
-
-        <form
-          phx-change="validate_ksef_certificate"
-          phx-submit="save_ksef_certificate"
-          id="ksef-certificate-form"
-          class="space-y-4"
+        <div
+          :if={@ksef_auth_method == :certificate}
+          id="ksef-certificate-auth-flow"
+          role="tabpanel"
+          aria-labelledby="ksef-auth-tab-certificate"
+          class="w-full max-w-lg space-y-5"
         >
-          <Helpers.settings_field
-            label="Certyfikat i klucz prywatny (.crt, .key)"
-            class="w-full max-w-lg"
-          >
-            <label
-              class="border-orangeText flex w-full cursor-pointer justify-center rounded-md border-2 border-dashed px-6 py-8"
-              phx-drop-target={@uploads.ksef_credentials.ref}
-            >
-              <div class="text-orangeText text-center text-sm">
-                <div
-                  :if={Enum.empty?(@uploads.ksef_credentials.entries)}
-                  class="font-medium"
+          <p class="text-grey-600 text-sm">
+            Wykonaj poniższe kroki, aby połączyć Firmowid z KSeF.
+          </p>
+
+          <ol class="space-y-6">
+            <.ksef_step number={1}>
+              <:title>Wygeneruj certyfikat KSeF</:title>
+              <:content>
+                Wejdź na stronę <.link
+                  kind="unstyled"
+                  external="https://ap.ksef.mf.gov.pl/web/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-orangeText inline-flex items-center gap-1 text-sm underline underline-offset-4"
                 >
-                  Dodaj certyfikat i klucz prywatny
-                </div>
-                <.live_file_input
-                  upload={@uploads.ksef_credentials}
-                  class="sr-only"
-                />
-                <div :if={!Enum.empty?(@uploads.ksef_credentials.entries)}>
-                  <%= for entry <- @uploads.ksef_credentials.entries do %>
-                    <p>{entry.client_name}</p>
-                    <%= for error <- upload_errors(@uploads.ksef_credentials, entry) do %>
-                      <p>{present_upload_error(error)}</p>
-                    <% end %>
-                  <% end %>
-                </div>
-                <%= for error <- upload_errors(@uploads.ksef_credentials) do %>
-                  <p>{present_upload_error(error)}</p>
-                <% end %>
-              </div>
-            </label>
-          </Helpers.settings_field>
+                  KSeF
+                </.link>, zaloguj się i wygeneruj certyfikat o przeznaczeniu <span class="font-medium">„Uwierzytelnienie w systemie KSeF”</span>.
+              </:content>
+            </.ksef_step>
 
-          <Helpers.settings_field label="Hasło do klucza prywatnego" class="w-full max-w-lg">
-            <.input
-              type="password"
-              name="private_key_password"
-              value=""
-              required
-              new
-              input_class="w-full"
-            />
-          </Helpers.settings_field>
+            <.ksef_step number={2}>
+              <:title>Wgraj certyfikat i klucz prywatny</:title>
+              <:content>
+                Dodaj pobrane pliki .crt i .key, a następnie podaj hasło do klucza prywatnego.
+                <form
+                  phx-change="validate_ksef_certificate"
+                  phx-submit="save_ksef_certificate"
+                  id="ksef-certificate-form"
+                  class="mt-3 space-y-4"
+                >
+                  <.file_upload
+                    upload={@uploads.ksef_credentials}
+                    prompt="Dodaj certyfikat i klucz prywatny"
+                    prompt_class="font-medium"
+                    error_formatter={&present_upload_error/1}
+                  />
 
-          <div class="flex w-full max-w-lg justify-end">
-            <.button
-              type="submit"
-              variant="secondary"
-              size="small"
-              phx-disable-with="Łączenie..."
-            >
-              Połącz certyfikatem
-            </.button>
-          </div>
-        </form>
+                  <Helpers.settings_field label="Hasło do klucza prywatnego" class="w-full">
+                    <.input
+                      type="password"
+                      name="private_key_password"
+                      value=""
+                      required
+                      new
+                      input_class="w-full"
+                    />
+                  </Helpers.settings_field>
+
+                  <div class="flex justify-end">
+                    <.button
+                      type="submit"
+                      variant="secondary"
+                      size="small"
+                      phx-disable-with="Łączenie..."
+                    >
+                      Wyślij certyfikat
+                    </.button>
+                  </div>
+                </form>
+              </:content>
+            </.ksef_step>
+          </ol>
+        </div>
       <% end %>
 
       <.modal id="confirm_disconnect_ksef">
@@ -553,6 +655,52 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         </div>
       </.modal>
     </.company_section>
+    """
+  end
+
+  attr :number, :integer, required: true
+  attr :class, :string, default: nil
+  attr :content_class, :string, default: nil
+  slot :title, required: true
+  slot :content
+
+  defp ksef_step(assigns) do
+    ~H"""
+    <li class={["grid grid-cols-[min-content_1fr] items-center gap-x-3", @class]}>
+      <span class="bg-orangeText flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white">
+        {@number}
+      </span>
+      <div class="text-grey-900 text-sm font-semibold">
+        {render_slot(@title)}
+      </div>
+      <div :for={content <- @content} class={["text-grey-600 col-start-2 text-sm", @content_class]}>
+        {render_slot(content)}
+      </div>
+    </li>
+    """
+  end
+
+  attr :method, :atom, required: true
+  attr :current_method, :atom, required: true
+  attr :label, :string, required: true
+  attr :panel_id, :string, required: true
+
+  defp ksef_auth_tab(assigns) do
+    ~H"""
+    <.button
+      id={"ksef-auth-tab-#{@method}"}
+      type="button"
+      role="tab"
+      aria-selected={if(@current_method == @method, do: "true", else: "false")}
+      aria-controls={@panel_id}
+      variant={if(@current_method == @method, do: "secondary", else: "outline")}
+      size="small"
+      phx-click="select_ksef_auth_method"
+      phx-value-method={@method}
+      class="w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
+    >
+      {@label}
+    </.button>
     """
   end
 
@@ -1084,7 +1232,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   defp format_invite_expiration(expires_at), do: TimeFormatter.format_date(expires_at)
 
-
   defp invite_issuer(%{issued_by: %{email: email}}) when is_binary(email), do: email
   defp invite_issuer(_invite), do: "administratora"
 
@@ -1115,11 +1262,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   defp yes_no(false), do: "Nie"
   defp yes_no(_), do: "—"
 
-  defp present_auth_type(:token), do: "Token"
-  defp present_auth_type(:certificate), do: "Certyfikat"
-  defp present_auth_type(other), do: present(other)
-
-  defp present_certificate_status(:awaiting_signature), do: "Oczekiwanie na podpisany dokument."
   defp present_certificate_status(:authenticating), do: "Trwa uwierzytelnianie w KSeF."
 
   defp present_certificate_status(:preparing_certificate), do: "Trwa przygotowanie wniosku o certyfikat."

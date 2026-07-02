@@ -272,6 +272,55 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   end
 
   @doc """
+  Renders a visually hidden live file input inside a drag-and-drop area.
+  """
+  attr :upload, :any, required: true
+  attr :prompt, :string, required: true
+  attr :class, :string, default: nil
+  attr :content_class, :string, default: "text-center"
+  attr :prompt_class, :string, default: nil
+  attr :error_formatter, :any, default: nil
+  attr :show_errors, :boolean, default: true
+  attr :disabled, :boolean, default: false
+
+  def file_upload(assigns) do
+    ~H"""
+    <label
+      class={[
+        "border-orangeText flex w-full cursor-pointer justify-center rounded-md border-2 border-dashed px-6 py-8",
+        @disabled && "border-grey-200 cursor-not-allowed",
+        @class
+      ]}
+      phx-drop-target={unless @disabled, do: @upload.ref}
+    >
+      <div class={["text-orangeText text-sm", @disabled && "text-grey-200", @content_class]}>
+        <div :if={Enum.empty?(@upload.entries)} class={@prompt_class}>
+          {@prompt}
+        </div>
+
+        <Phoenix.Component.live_file_input upload={@upload} class="sr-only" disabled={@disabled} />
+
+        <div :if={!Enum.empty?(@upload.entries)}>
+          <%= for entry <- @upload.entries do %>
+            <p>{entry.client_name}</p>
+            <p :for={error <- if(@show_errors, do: upload_errors(@upload, entry), else: [])}>
+              {format_upload_error(error, @error_formatter)}
+            </p>
+          <% end %>
+        </div>
+
+        <p :for={error <- if(@show_errors, do: upload_errors(@upload), else: [])}>
+          {format_upload_error(error, @error_formatter)}
+        </p>
+      </div>
+    </label>
+    """
+  end
+
+  defp format_upload_error(error, nil), do: to_string(error)
+  defp format_upload_error(error, formatter), do: formatter.(error)
+
+  @doc """
   Renders an input with label and error messages.
 
   A `Phoenix.HTML.FormField` may be passed as argument,

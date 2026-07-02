@@ -106,25 +106,13 @@ defmodule FirmowidWeb.HoursRecord.Components.UploadForm do
             phx-target={@myself}
             class="flex flex-col items-end gap-6"
           >
-            <label
-              class="border-orangeText flex w-full cursor-pointer justify-center rounded-md border-2 border-dashed px-6 py-8"
-              phx-drop-target={@uploads.hours_record.ref}
-            >
-              <div class="text-orangeText flex text-sm">
-                <div :if={Enum.empty?(@uploads.hours_record.entries)} class="font-medium">
-                  Dodaj podpisaną ewidencję godzin
-                </div>
-                <.live_file_input upload={@uploads.hours_record} class="sr-only" />
-                <div :if={!Enum.empty?(@uploads.hours_record.entries)}>
-                  <%= for entry <- @uploads.hours_record.entries do %>
-                    <p>{entry.client_name}</p>
-                    <%= for err <- upload_errors(@uploads.hours_record, entry) do %>
-                      <p>{error_to_string(err)}</p>
-                    <% end %>
-                  <% end %>
-                </div>
-              </div>
-            </label>
+            <.file_upload
+              upload={@uploads.hours_record}
+              prompt="Dodaj podpisaną ewidencję godzin"
+              content_class="flex"
+              prompt_class="font-medium"
+              error_formatter={&error_to_string/1}
+            />
             <.button disabled={value == :upload} class="w-full max-w-32">
               Wyślij
             </.button>

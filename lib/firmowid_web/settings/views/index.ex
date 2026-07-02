@@ -113,7 +113,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         |> assign(:correspondence_form, form_correspondence_form(current_org, scope))
         |> assign(:ksef_credential, Ksef.get_credential(scope))
         |> assign(:ksef_auth_challenge, nil)
-        |> assign(:ksef_auth_challenge_expires_at, nil)
+        |> assign(:ksef_auth_method, :trusted_profile)
         |> assign(:ksef_certificate_status, :idle)
         |> allow_upload(:organization_avatar,
           accept: ~w(.jpg .jpeg .png),
@@ -699,6 +699,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
     end
   end
 
+  def handle_event("select_ksef_auth_method", %{"method" => method}, socket)
+      when method in ~w(token trusted_profile certificate) do
+    {:noreply, assign(socket, :ksef_auth_method, String.to_existing_atom(method))}
+  end
+
   def handle_event("validate_ksef_certificate", _params, socket), do: {:noreply, socket}
 
   def handle_event("download_ksef_auth_token_request", _params, socket) do
@@ -711,13 +716,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
         socket =
           socket
           |> assign(:ksef_auth_challenge, request.challenge)
-          |> assign(:ksef_auth_challenge_expires_at, request.expires_at)
           |> assign(:ksef_certificate_status, :awaiting_signature)
 
         {:noreply,
          push_event(socket, "download-ksef-auth-token-request", %{
            content: request.xml,
-           filename: "AuthTokenRequest.xml"
+           filename: "wniosek.xml"
          })}
 
       {:error, :already_connected} ->
@@ -742,42 +746,33 @@ defmodule FirmowidWeb.Settings.Views.Index do
     end
 
     challenge = socket.assigns.ksef_auth_challenge
-    challenge_expires_at = socket.assigns.ksef_auth_challenge_expires_at
-
-    challenge_fresh? = DateTime.before?(DateTime.utc_now(), challenge_expires_at)
 
     uploaded_xml =
       consume_uploaded_entries(socket, :signed_auth_token_request, fn %{path: path}, _entry ->
         File.read(path)
       end)
 
-    if challenge_fresh? do
-      with [signed_xml] <- uploaded_xml,
-           {:ok, _job} <-
-             Ksef.enroll_ksef_certificate(
-               signed_xml,
-               challenge,
-               socket.assigns.ash_scope
-             ) do
-        LiveToast.send_toast(:info, "Rozpoczęto generowanie certyfikatu KSeF.")
+    with [signed_xml] <- uploaded_xml,
+         {:ok, _job} <-
+           Ksef.enroll_ksef_certificate(
+             signed_xml,
+             challenge,
+             socket.assigns.ash_scope
+           ) do
+      LiveToast.send_toast(:info, "Rozpoczęto generowanie certyfikatu KSeF.")
 
-        {:noreply,
-         socket
-         |> assign(:ksef_auth_challenge, nil)
-         |> assign(:ksef_auth_challenge_expires_at, nil)
-         |> assign(:ksef_certificate_status, :authenticating)}
-      else
-        _error ->
-          LiveToast.send_toast(
-            :error,
-            "Podpisany dokument nie zgadza się z pobranym AuthTokenRequest."
-          )
-
-          {:noreply, socket}
-      end
+      {:noreply,
+       socket
+       |> assign(:ksef_auth_challenge, nil)
+       |> assign(:ksef_certificate_status, :authenticating)}
     else
-      LiveToast.send_toast(:error, "Dokument wygasł. Pobierz nowy AuthTokenRequest.")
-      {:noreply, assign(socket, :ksef_certificate_status, :idle)}
+      _error ->
+        LiveToast.send_toast(
+          :error,
+          "Podpisany dokument nie zgadza się z pobranym wnioskiem."
+        )
+
+        {:noreply, socket}
     end
   end
 
@@ -957,11 +952,22 @@ defmodule FirmowidWeb.Settings.Views.Index do
   def handle_info({:ksef_certificate_status, %{status: status, reason: reason}}, socket) do
     socket = assign(socket, :ksef_certificate_status, status)
 
-    if status == :connected do
-      LiveToast.send_toast(:success, "Wygenerowano certyfikat i połączono z KSeF.")
-      {:noreply, assign(socket, :ksef_credential, Ksef.get_credential(socket.assigns.ash_scope))}
-    else
-      {:noreply, socket}
+    case status do
+      :connected ->
+        LiveToast.send_toast(:success, "Certyfikat KSeF został wygenerowany i połączono z KSeF.")
+
+        {:noreply, assign(socket, :ksef_credential, Ksef.get_credential(socket.assigns.ash_scope))}
+
+      :failed when reason == :certificate_limit_exhausted ->
+        LiveToast.send_toast(:error, "Osiągnięto limit certyfikatów KSeF.")
+        {:noreply, socket}
+
+      :failed ->
+        LiveToast.send_toast(:error, "Wystąpił błąd podczas generowania certyfikatu KSeF.")
+        {:noreply, socket}
+
+      _ ->
+        {:noreply, socket}
     end
   end
 
@@ -1032,6 +1038,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
             editing_basic_info={@editing_basic_info}
             editing_correspondence={@editing_correspondence}
             ksef_credential={@ksef_credential}
+            ksef_auth_method={@ksef_auth_method}
             ksef_certificate_status={@ksef_certificate_status}
             bank_accounts={@bank_accounts}
             bank_institutions={@bank_institutions}
