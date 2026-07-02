@@ -9,10 +9,9 @@
   ]}>
     <div
       class={[
-        if(String.starts_with?(@current_uri.path, "/zarzadzanie"), do: "pb-2", else: "pb-4"),
         "flex text-white",
-        "h-navbar items-center justify-between pt-4",
-        "text-sm transition-all"
+        "h-navbar items-center justify-between py-4",
+        "text-sm transition-all duration-75"
       ]}
       id="navbar-main"
       phx-hook="CollapsibleNavbar"
