@@ -1,6 +1,6 @@
 <div :if={not @zero_state?} class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 pb-4">
   <% # top -> collapsed navbar height (56px) / TODO: refactor %>
-  <div class="bg-lightGreyBg sticky top-10.5 z-10 flex flex-col gap-4 py-3">
+  <div class="bg-lightGreyBg sticky top-10.5 z-10 flex flex-col gap-6 py-3">
     <div class="flex flex-row justify-between">
       <form class="flex gap-4">
         <.month_picker
@@ -89,9 +89,9 @@
       >
         <div
           id="projects-list-header-active"
-          class="bg-lightGreyBg text-grey-700 sticky top-[157px] z-1 col-span-full grid grid-cols-subgrid px-4 py-3 text-sm/snug"
+          class="bg-lightGreyBg text-grey-700 sticky top-41 z-1 col-span-full grid grid-cols-subgrid px-4 pb-3 text-sm/snug transition-all duration-75"
           phx-hook="ScrollStyle"
-          data-classes="border-b-4 border-solid border-darkGrey/40"
+          data-classes="border-b-4 border-solid border-darkGrey/40 pt-3"
           data-scroll-offset="90"
         >
           <p>Projekt</p>
@@ -144,9 +144,9 @@
       >
         <div
           id="projects-list-header-archive"
-          class="bg-lightGreyBg sticky top-[157px] z-1 -order-1 col-span-full grid grid-cols-subgrid px-4 py-3 text-sm/snug"
+          class="bg-lightGreyBg sticky top-41 z-1 -order-1 col-span-full grid grid-cols-subgrid px-4 pb-3 text-sm/snug transition-all duration-75"
           phx-hook="ScrollStyle"
-          data-classes="border-b-4 border-solid border-darkGrey/40"
+          data-classes="border-b-4 border-solid border-darkGrey/40 pt-3"
           data-scroll-offset="90"
         >
           <p>Projekt</p>

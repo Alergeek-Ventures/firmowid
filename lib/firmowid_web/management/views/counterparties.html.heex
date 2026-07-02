@@ -1,5 +1,5 @@
 <div :if={not @zero_state?} class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 pb-4">
-  <div class="bg-lightGreyBg sticky top-10.5 z-10 flex flex-col gap-4 py-3">
+  <div class="bg-lightGreyBg sticky top-10.5 z-10 flex flex-col gap-6 py-3">
     <div class="flex items-center justify-between gap-4">
       <form class="flex gap-4" phx-submit="search">
         <div class="bg-lightGreyBg border-greyButtonBg flex h-11 w-[360px] items-center gap-2 rounded-lg border p-1 focus-within:ring-2">
@@ -103,9 +103,9 @@
       <div class="grid grid-cols-[3fr_1.2fr_min-content] gap-x-6 gap-y-2" id="counterparties-list">
         <div
           id="counterparties-list-header-active"
-          class="bg-lightGreyBg text-grey-700 sticky top-[157px] z-1 col-span-full grid grid-cols-subgrid px-4 py-3 text-sm/snug"
+          class="bg-lightGreyBg text-grey-700 sticky top-41 z-1 col-span-full grid grid-cols-subgrid px-4 pb-3 text-sm/snug transition-all duration-75"
           phx-hook="ScrollStyle"
-          data-classes="border-b-4 border-solid border-darkGrey/40"
+          data-classes="border-b-4 border-solid border-darkGrey/40 pt-3"
           data-scroll-offset="90"
         >
           <p>Kontrahent</p>
@@ -120,7 +120,7 @@
           <div
             :for={{dom_id, counterparty} <- @streams.counterparties}
             id={dom_id}
-            class="col-span-full grid grid-cols-subgrid items-center rounded-sm bg-white px-4 py-3"
+            class="col-span-full grid h-14 grid-cols-subgrid items-center rounded-sm bg-white px-4 py-3"
           >
             <div class="flex items-center gap-4 truncate">
               <.counterparty_icon counterparty={counterparty} />
@@ -160,9 +160,9 @@
       >
         <div
           id="counterparties-list-header-archive"
-          class="bg-lightGreyBg text-grey-700 sticky top-[166px] z-1 col-span-full grid grid-cols-subgrid px-4 py-3 text-sm/snug"
+          class="bg-lightGreyBg text-grey-700 sticky top-41 z-1 col-span-full grid grid-cols-subgrid px-4 pb-3 text-sm/snug transition-all duration-75"
           phx-hook="ScrollStyle"
-          data-classes="border-b-4 border-solid border-darkGrey/40"
+          data-classes="border-b-4 border-solid border-darkGrey/40 pt-3"
           data-scroll-offset="90"
         >
           <p>Kontrahent</p>
@@ -178,7 +178,7 @@
           <div
             :for={{dom_id, counterparty} <- @streams.counterparties}
             id={dom_id}
-            class="col-span-full grid grid-cols-subgrid items-center rounded-sm bg-white px-4 py-3"
+            class="col-span-full grid h-14 grid-cols-subgrid items-center rounded-sm bg-white px-4 py-3"
           >
             <div class="flex items-center gap-4 truncate">
               <.counterparty_icon counterparty={counterparty} />

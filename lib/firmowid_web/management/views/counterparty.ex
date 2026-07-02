@@ -112,7 +112,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="mx-auto my-4 grid w-full max-w-screen-2xl grid-cols-[96px_minmax(0,1fr)_96px] grid-rows-[repeat(5,max-content)] gap-x-10 gap-y-8">
+    <div class="mx-auto my-4 grid w-full max-w-screen-2xl grid-cols-[96px_minmax(0,1fr)_96px] grid-rows-[repeat(5,max-content)] gap-x-10 gap-y-5">
       <.link
         kind="unstyled"
         navigate={Navigation.counterparty_return_path(@params)}
@@ -126,13 +126,16 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
       <.archive_notice
         :if={@counterparty.archived_at}
         counterparty={@counterparty}
-        class="col-start-2 row-start-2"
+        class="col-start-2 row-start-2 mt-3"
       />
 
       <.details_and_stats
         counterparty={@counterparty}
         stats={@stats}
-        class={["col-start-2", if(@counterparty.archived_at, do: "row-start-3", else: "row-start-2")]}
+        class={[
+          "col-start-2",
+          if(@counterparty.archived_at, do: "row-start-3 mt-5", else: "row-start-2 mt-3")
+        ]}
       />
 
       <.suggested_invoices_section
@@ -172,12 +175,8 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
       </p>
 
       <div class="flex gap-4">
-        <%= if @counterparty.archived_at do %>
-          <.button variant="special" type="button" phx-click="unarchive_counterparty">
-            <.icon name="hero-arrow-uturn-left-mini" class="size-5" /> Przywróć kontrahenta
-          </.button>
-        <% else %>
-          <.button variant="special" type="button" phx-click="archive_counterparty">
+        <%= if !@counterparty.archived_at do %>
+          <.button variant="outline" type="button" phx-click="archive_counterparty">
             <.icon name="hero-archive-box-mini" class="size-5" /> Archiwizuj
           </.button>
         <% end %>
@@ -213,6 +212,16 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
         )}.
         Dane pozostają dostępne historycznie, ale kontrahent nie pojawi się w nowych wyborach.
       </p>
+
+      <.button
+        variant="tertiary"
+        size="small"
+        type="button"
+        phx-click="unarchive_counterparty"
+        class="ml-auto"
+      >
+        Przywróć kontrahenta
+      </.button>
     </div>
     """
   end
@@ -223,8 +232,8 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
   defp details_and_stats(assigns) do
     ~H"""
-    <div class={["grid grid-cols-[1.5fr_0.95fr] gap-10", @class]}>
-      <div class="space-y-4">
+    <div class={["grid grid-cols-[1.5fr_0.95fr] gap-5", @class]}>
+      <div class="space-y-5">
         <section class="rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]">
           <div class="grid grid-cols-[minmax(0,265px)_minmax(0,322px)] gap-x-12 gap-y-6">
             <div class="space-y-6">
@@ -249,9 +258,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
               <div class="space-y-1">
                 <p class="text-grey-700 text-sm/snug">Adres</p>
-                <p class="text-base/snug whitespace-pre-line text-black">
-                  {formatted_multiline(@counterparty.address)}
-                </p>
+                <p class="text-base/snug whitespace-pre-line text-black" phx-no-format>{formatted_multiline(@counterparty.address)}</p>
               </div>
 
               <div class="space-y-1">
@@ -284,9 +291,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
               <div :if={@counterparty.is_different_mail_address} class="space-y-1">
                 <p class="text-grey-700 text-sm/snug">Adres korespondencyjny</p>
-                <p class="text-base/snug whitespace-pre-line text-black">
-                  {formatted_multiline(@counterparty.mail_address)}
-                </p>
+                <p class="text-base/snug whitespace-pre-line text-black" phx-no-format>{formatted_multiline(@counterparty.mail_address)}</p>
               </div>
             </div>
           </div>
@@ -294,9 +299,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
         <section class="rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]">
           <p class="text-grey-700 mb-2 text-sm/snug">Notatki</p>
-          <p class="text-base/snug whitespace-pre-line text-black">
-            {@counterparty.description || "—"}
-          </p>
+          <p class="text-base/snug whitespace-pre-line text-black" phx-no-format>{@counterparty.description || "—"}</p>
         </section>
       </div>
 
@@ -608,6 +611,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
   defp formatted_multiline(value) when is_binary(value) do
     value
+    |> String.trim()
     |> String.split("\n")
     |> Enum.map(&String.trim/1)
     |> Enum.reject(&(&1 == ""))

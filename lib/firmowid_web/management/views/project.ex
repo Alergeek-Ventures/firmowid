@@ -343,7 +343,7 @@ defmodule FirmowidWeb.Management.Views.Project do
     hours = div(seconds, 60 * 60)
 
     cond do
-      seconds == 0 -> "—"
+      seconds == 0 -> "0 h"
       hours > 0 -> "#{hours} h"
       true -> TimeFormatter.format_duration(seconds)
     end

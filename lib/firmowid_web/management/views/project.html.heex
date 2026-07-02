@@ -20,7 +20,7 @@
     </div>
 
     <div :if={!@project.archived_at} class="flex flex-row gap-4">
-      <.button variant="special" type="button" phx-click="archive_project">
+      <.button variant="outline" type="button" phx-click="archive_project">
         Archiwizuj
       </.button>
       <.link
@@ -54,7 +54,7 @@
 
     <.button
       :if={@current_user.role == :admin}
-      variant="special"
+      variant="tertiary"
       size="small"
       type="button"
       phx-click="unarchive_project"
@@ -72,7 +72,7 @@
     </.button>
   </div>
 
-  <div class="flex flex-col gap-12">
+  <div class="flex flex-col gap-8">
     <div class="grid grid-cols-4 gap-4">
       <div class="rounded-sm bg-white p-4">
         <p class="text-grey-500 mb-6 leading-snug">Przepracowane godziny</p>
@@ -141,7 +141,7 @@
         <.button
           :if={!@project.archived_at}
           type="button"
-          variant="secondary"
+          variant="ghost"
           size="small"
           phx-hook="DownloadPdf"
           data-download-url={TimetrackerNavigation.project_csv_path(@project.id, @selected_date)}
