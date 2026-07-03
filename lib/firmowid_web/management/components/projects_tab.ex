@@ -135,7 +135,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
           </div>
         </.card>
 
-        <div class="flex w-[350px] shrink-0 flex-col gap-4">
+        <div class="flex h-full min-h-0 w-[350px] shrink-0 flex-col gap-4">
           <.card>
             <.card_header>
               Podsumowanie miesiąca
@@ -170,27 +170,29 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
             </div>
           </.card>
 
-          <.card gap_size="4">
+          <.card gap_size="4" class="flex min-h-0 flex-1 flex-col">
             <.card_header>
               Historia stawek
             </.card_header>
-            <div class="flex flex-col gap-2">
-              <%= if Enum.empty?(@salary_history) do %>
-                <p class="text-grey-700">Brak danych</p>
-              <% else %>
-                <div :for={salary <- @salary_history} class="flex items-end gap-2">
-                  <span>
-                    {:PLN
-                    |> Money.new(salary.hourly_rate)
-                    |> Money.to_string!(no_fraction_if_integer: true)}/godz.
-                  </span>
-                  <span class="text-grey-500 text-sm">
-                    ({TimeFormatter.format_date(salary.starts_at)} - {if salary.ends_at,
-                      do: TimeFormatter.format_date(salary.ends_at),
-                      else: "obecnie"})
-                  </span>
-                </div>
-              <% end %>
+            <div class="relative w-full flex-1">
+              <div class="absolute inset-0 flex flex-col gap-2 overflow-y-auto pr-2">
+                <%= if Enum.empty?(@salary_history) do %>
+                  <p class="text-grey-700">Brak danych</p>
+                <% else %>
+                  <div :for={salary <- @salary_history} class="flex items-end gap-2">
+                    <span>
+                      {:PLN
+                      |> Money.new(salary.hourly_rate)
+                      |> Money.to_string!(no_fraction_if_integer: true)}/godz.
+                    </span>
+                    <span class="text-grey-500 text-sm">
+                      ({TimeFormatter.format_date(salary.starts_at)} - {if salary.ends_at,
+                        do: TimeFormatter.format_date(salary.ends_at),
+                        else: "obecnie"})
+                    </span>
+                  </div>
+                <% end %>
+              </div>
             </div>
           </.card>
         </div>

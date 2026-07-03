@@ -259,6 +259,16 @@
           <% end %>
 
           <div class="flex items-center justify-end gap-3">
+            <.button
+              :if={@current_user.role == :admin and @live_action == :archive}
+              type="button"
+              variant="secondary"
+              size="small"
+              phx-click="unarchive_employee"
+              phx-value-id={employee.user.id}
+            >
+              Przywróć
+            </.button>
             <%= if @can_export_csv do %>
               <.link
                 kind="unstyled"
