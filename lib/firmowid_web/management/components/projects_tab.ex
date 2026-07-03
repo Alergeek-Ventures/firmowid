@@ -2,6 +2,8 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   @moduledoc "LiveComponent for displaying employee projects, sessions, and salary summary."
   use FirmowidWeb, :live_component
 
+  import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.MonthPicker
   import FirmowidWeb.Management.Components.Card
   import FirmowidWeb.Management.Components.HoursRecordStatus, only: [hours_record_status: 1]
@@ -99,15 +101,26 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
         <.card_header>
           Dane do przelewu
         </.card_header>
-        <div class="grid grid-cols-[minmax(min-content,1fr)_minmax(min-content,2fr)] gap-4">
-          <.user_card_info label="Stawka">
-            {:PLN
-            |> Money.new(@hourly_rate)
-            |> Money.to_string!(no_fraction_if_integer: true)}/godz.
-          </.user_card_info>
+        <div class="grid grid-cols-[minmax(min-content,2fr)_minmax(min-content,1fr)] gap-4">
           <.user_card_info label="Numer konta bankowego">
             {@user.bank_account_number || "Brak danych"}
           </.user_card_info>
+          <div class="flex items-end gap-4">
+            <.user_card_info label="Stawka" class="text-nowrap">
+              {:PLN
+              |> Money.new(@hourly_rate)
+              |> Money.to_string!(no_fraction_if_integer: true)}/godz.
+            </.user_card_info>
+            <.button
+              type="button"
+              variant="outline"
+              size="small"
+              phx-click={show_modal("salary-history-modal")}
+              disabled={Enum.empty?(@salary_history)}
+            >
+              Historia stawek
+            </.button>
+          </div>
         </div>
       </.card>
 
@@ -121,6 +134,8 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
               id="projects_filter_month"
               selected_date={@date}
               active_months={@active_months}
+              size="small"
+              variant="outline"
             />
           </div>
 
@@ -135,7 +150,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
           </div>
         </.card>
 
-        <div class="flex h-full min-h-0 w-[350px] shrink-0 flex-col gap-4">
+        <div class="flex h-full min-h-0 shrink-0 flex-col gap-4">
           <.card>
             <.card_header>
               Podsumowanie miesiąca
@@ -169,34 +184,30 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
               <.hours_record_status hours_record={@hours_record} user={@user} />
             </div>
           </.card>
-
-          <.card gap_size="4" class="flex min-h-0 flex-1 flex-col">
-            <.card_header>
-              Historia stawek
-            </.card_header>
-            <div class="relative w-full flex-1">
-              <div class="absolute inset-0 flex flex-col gap-2 overflow-y-auto pr-2">
-                <%= if Enum.empty?(@salary_history) do %>
-                  <p class="text-grey-700">Brak danych</p>
-                <% else %>
-                  <div :for={salary <- @salary_history} class="flex items-end gap-2">
-                    <span>
-                      {:PLN
-                      |> Money.new(salary.hourly_rate)
-                      |> Money.to_string!(no_fraction_if_integer: true)}/godz.
-                    </span>
-                    <span class="text-grey-500 text-sm">
-                      ({TimeFormatter.format_date(salary.starts_at)} - {if salary.ends_at,
-                        do: TimeFormatter.format_date(salary.ends_at),
-                        else: "obecnie"})
-                    </span>
-                  </div>
-                <% end %>
-              </div>
-            </div>
-          </.card>
         </div>
       </div>
+
+      <.modal id="salary-history-modal" class="max-h-[800px] overflow-y-auto">
+        <h2 class="mb-4 text-xl font-medium">Historia stawek</h2>
+        <div class="divide-lightGreyBg flex flex-col gap-2">
+          <%= if Enum.empty?(@salary_history) do %>
+            <p class="text-grey-700">Brak danych</p>
+          <% else %>
+            <div :for={salary <- @salary_history} class="flex items-end gap-2">
+              <span>
+                {:PLN
+                |> Money.new(salary.hourly_rate)
+                |> Money.to_string!(no_fraction_if_integer: true)}/godz.
+              </span>
+              <span class="text-grey-500 text-sm">
+                ({TimeFormatter.format_date(salary.starts_at)} - {if salary.ends_at,
+                  do: TimeFormatter.format_date(salary.ends_at),
+                  else: "obecnie"})
+              </span>
+            </div>
+          <% end %>
+        </div>
+      </.modal>
     </div>
     """
   end
@@ -209,7 +220,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
       id={"project-accordion-#{@project.id}"}
       class="group grid grid-cols-[1fr_min-content_min-content] gap-x-6 overflow-hidden"
     >
-      <FirmowidWeb.DesignSystem.Components.Button.button
+      <.button
         type="button"
         variant="unstyled"
         phx-click={toggle_project_accordion(@project.id)}
@@ -226,7 +237,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
           name="hero-chevron-down"
           class="size-4 transition-transform duration-200 ease-in-out group-data-expanded:rotate-180"
         />
-      </FirmowidWeb.DesignSystem.Components.Button.button>
+      </.button>
       <div
         class="col-span-2 grid grid-rows-[0fr] overflow-hidden transition-[grid-template-rows] duration-300 ease-in-out group-data-expanded:grid-rows-[1fr]"
         role="region"

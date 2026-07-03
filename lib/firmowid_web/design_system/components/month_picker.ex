@@ -5,6 +5,9 @@ defmodule FirmowidWeb.DesignSystem.Components.MonthPicker do
 
   use FirmowidWeb, :html
 
+  @sizes ~w(big small)
+  @variants ~w(secondary outline)
+
   @doc """
   Renders a month picker trigger styled like a secondary button.
   """
@@ -15,13 +18,15 @@ defmodule FirmowidWeb.DesignSystem.Components.MonthPicker do
   attr :rest, :global
   attr :class, :any, default: nil
   attr :value, :string, default: nil
+  attr :size, :string, values: @sizes, default: "big"
+  attr :variant, :string, values: @variants, default: "secondary"
 
   def month_picker(assigns) do
     ~H"""
     <FirmowidWeb.DesignSystem.Components.Button.button
       as="label"
-      variant="secondary"
-      size="big"
+      variant={@variant}
+      size={@size}
       class={
         [
           "group has-disabled:bg-grey-100 has-disabled:text-grey-600 min-w-42 pr-4 max-md:hidden",
