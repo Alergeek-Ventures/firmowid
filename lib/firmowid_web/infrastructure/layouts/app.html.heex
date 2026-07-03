@@ -1,17 +1,35 @@
 <%= if @current_user && !is_nil(@current_user.organization_id) do %>
   <%!-- simulates the navbar height, so the content does not jump when the navbar collapses --%>
   <%= if String.starts_with?(@current_uri.path, "/zarzadzanie") do %>
-    <div class="bg-lightGreyBg h-navbar-management w-full" />
+    <div class={[
+      "bg-lightGreyBg w-full",
+      cond do
+        String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/") and
+            not String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/archiwum") ->
+          "h-10.5"
+
+        true ->
+          "h-navbar-management"
+      end
+    ]} />
   <% end %>
   <.navbar class={[
     if(String.starts_with?(@current_uri.path, "/zarzadzanie"), do: "fixed", else: "sticky"),
-    "inset-x-0 top-0 z-50"
+    "group inset-x-0 top-0 z-50"
   ]}>
     <div
       class={[
+        cond do
+          String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/") and
+              not String.starts_with?(@current_uri.path, "/zarzadzanie/pracownicy/archiwum") ->
+            "group-hover:h-navbar h-0 overflow-hidden py-0 opacity-0 group-hover:py-4 group-hover:opacity-100"
+
+          true ->
+            "h-navbar flex py-4 opacity-100"
+        end,
         "flex text-white",
-        "h-navbar items-center justify-between py-4",
-        "text-sm transition-all duration-75"
+        "items-center justify-between",
+        "text-sm transition-all duration-150"
       ]}
       id="navbar-main"
       phx-hook="CollapsibleNavbar"

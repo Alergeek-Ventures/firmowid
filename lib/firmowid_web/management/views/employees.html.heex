@@ -260,7 +260,10 @@
 
           <div class="flex items-center justify-end gap-3">
             <.button
-              :if={@current_user.role == :admin and @live_action == :archive}
+              :if={
+                Ash.can?({Firmowid.Ash.Core.User, :unarchive}, @current_user) and
+                  @live_action == :archive
+              }
               type="button"
               variant="secondary"
               size="small"
