@@ -2,8 +2,8 @@ defmodule Firmowid.Ash.Ksef.Credential do
   @moduledoc """
   Ash resource for storing KSeF authentication credentials per organization.
 
-  Credentials are stored encrypted and support both token-based and
-  certificate-based authentication methods.
+  Credentials are stored encrypted and support token-based, uploaded-certificate,
+  and Firmowid-generated certificate authentication methods.
 
   Table: `ksef_credentials` (already exists, `migrate?: false`).
   No multitenancy — queried by explicit `organization_id` filter, not tenant.
@@ -79,7 +79,7 @@ defmodule Firmowid.Ash.Ksef.Credential do
     uuid_v7_primary_key :id
 
     attribute :auth_type, :atom do
-      constraints one_of: [:token, :certificate]
+      constraints one_of: [:token, :certificate, :generated_certificate]
       allow_nil? false
       public? true
     end

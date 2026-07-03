@@ -55,7 +55,8 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
     ApiClient.auth_with_token(organization.nip, token)
   end
 
-  defp perform_authentication(%Credential{organization_id: org_id, auth_type: :certificate, credentials: credentials}) do
+  defp perform_authentication(%Credential{organization_id: org_id, auth_type: auth_type, credentials: credentials})
+       when auth_type in [:certificate, :generated_certificate] do
     organization = Core.get_organization!(org_id)
 
     case Jason.decode(credentials) do

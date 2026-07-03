@@ -142,8 +142,13 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
 
   defp persist_certificate(serial_number, access_token, private_key, scope, job) do
     with {:ok, certificate} <- ApiClient.retrieve_certificate(access_token, serial_number),
+         :ok <- ApiClient.revoke_refresh_token(access_token),
          {:ok, credential} <-
-           Ksef.authenticate_with_ksef_certificate(certificate, private_key, nil, scope) do
+           Ksef.authenticate_with_generated_certificate(
+             certificate,
+             private_key,
+             scope
+           ) do
       Ksef.broadcast_ksef_certificate_status(scope.tenant, :connected)
       {:ok, credential}
     else

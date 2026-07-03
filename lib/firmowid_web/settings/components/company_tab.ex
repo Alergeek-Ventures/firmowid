@@ -329,6 +329,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             {case @ksef_credential.auth_type do
               :token -> "Token"
               :certificate -> "Certyfikat"
+              :generated_certificate -> "Certyfikat wygenerowany przez Firmowid"
             end}
           </.detail_row>
           <.detail_row label="Data wygaśnięcia" wide>

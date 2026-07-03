@@ -323,6 +323,15 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
     end
   end
 
+  @doc "Invalidates the KSeF authentication session associated with the provided token. Token can be either access or refresh token."
+  @spec revoke_refresh_token(String.t()) :: :ok | {:error, term()}
+  def revoke_refresh_token(token) when is_binary(token) do
+    case Req.delete(request(token), url: "/auth/sessions/current") do
+      {:ok, %{status: status}} when status in [204, 401] -> :ok
+      response -> handle_response(response)
+    end
+  end
+
   @doc "Polls the authentication status for a given reference number."
   @spec get_auth_status(String.t(), String.t()) :: :success | {:error, term()}
   def get_auth_status(reference_number, auth_token) do
@@ -423,6 +432,38 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
 
       {:ok, %{status: 200, body: %{"certificates" => []}}} ->
         {:error, :certificate_not_returned}
+
+      response ->
+        handle_response(response)
+    end
+  end
+
+  @doc "Revokes a KSeF certificate by its hexadecimal serial number."
+  @spec revoke_certificate(String.t(), String.t(), :unspecified | :superseded) ::
+          :ok | {:error, term()}
+  def revoke_certificate(access_token, serial_number, reason) do
+    body = %{
+      "revocationReason" =>
+        case reason do
+          :unspecified -> "Unspecified"
+          :superseded -> "Superseded"
+        end
+    }
+
+    case Req.post(request(access_token),
+           url: "/certificates/#{serial_number}/revoke",
+           json: body
+         ) do
+      {:ok, %{status: 204}} ->
+        :ok
+
+      {:ok,
+       %{
+         status: 400,
+         body: %{"exception" => %{"exceptionDetailList" => [%{"exceptionCode" => 25_009}]}}
+       }} ->
+        # 25009 = Certificate is already revoked
+        :ok
 
       response ->
         handle_response(response)

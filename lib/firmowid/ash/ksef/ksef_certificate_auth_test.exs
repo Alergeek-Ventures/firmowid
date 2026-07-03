@@ -55,7 +55,7 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
 
     assert {:ok, credential} =
              Oban.Testing.with_testing_mode(:manual, fn ->
-               Ksef.authenticate_with_ksef_certificate(
+               Ksef.authenticate_with_uploaded_certificate(
                  credentials.certificate,
                  credentials.private_key,
                  credentials.password,
@@ -91,7 +91,7 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
   } do
     assert {:ok, _credential} =
              Oban.Testing.with_testing_mode(:manual, fn ->
-               Ksef.authenticate_with_ksef_certificate(
+               Ksef.authenticate_with_uploaded_certificate(
                  credentials.certificate,
                  credentials.private_key,
                  credentials.password,
@@ -115,7 +115,7 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
     credentials: credentials
   } do
     assert {:error, :invalid_private_key} =
-             Ksef.authenticate_with_ksef_certificate(
+             Ksef.authenticate_with_uploaded_certificate(
                credentials.certificate,
                credentials.private_key,
                "incorrect",

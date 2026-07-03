@@ -793,7 +793,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     with {".crt", certificate} <- List.keyfind(files, ".crt", 0),
          {".key", private_key} <- List.keyfind(files, ".key", 0) do
-      case Ksef.authenticate_with_ksef_certificate(
+      case Ksef.authenticate_with_uploaded_certificate(
              certificate,
              private_key,
              private_key_password,
