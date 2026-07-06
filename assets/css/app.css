@@ -294,6 +294,27 @@
   padding-inline: 2rem;
 }
 
+/* ── Custom Scrollbar (used inside cards) ──────────────────────────────── */
+@utility scrollbar-card {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-lightGreyBg, #d3d3d3) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background-color: transparent;
+    border-radius: 0.25rem;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--color-lightGreyBg, #d3d3d3); 
+    border-radius: 0.25rem;
+  }
+}
+
 /* ── Native-feel defaults ───────────────────────────────────────────── */
 html,
 body {

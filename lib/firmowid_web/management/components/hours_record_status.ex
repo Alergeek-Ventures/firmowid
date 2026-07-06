@@ -12,7 +12,7 @@ defmodule FirmowidWeb.Management.Components.HoursRecordStatus do
 
   def hours_record_status(%{hours_record: nil} = assigns) do
     ~H"""
-    <span class="bg-grey-200 text-caps-sm/tight text-grey-700 flex w-[111px] items-center justify-between gap-2.5 rounded-sm px-2 py-1 font-medium uppercase">
+    <span class="bg-grey-200 text-caps-sm/tight text-grey-700 flex w-full min-w-[111px] items-center justify-between gap-2.5 rounded-sm px-2 py-1 font-medium uppercase">
       Brak <.icon name="hero-x-mark-micro" class="size-4" />
     </span>
     <Lucideicons.file_x class="text-grey-400 shrink-0" />

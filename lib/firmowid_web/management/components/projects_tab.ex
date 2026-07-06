@@ -48,13 +48,22 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
         {pid, grouped}
       end)
 
-    # 3. Projects this user belongs to, with grouped sessions attached
+    # 3. Projects this user belongs to, sorted by duration, with grouped sessions attached
     projects =
       %{user_id: user_id}
       |> Timetracker.list_projects!(scope: scope)
       |> Enum.map(fn project ->
         Map.put(project, :sessions, Map.get(sessions_by_project, project.id, []))
       end)
+      |> Enum.filter(fn project ->
+        is_nil(project.archived_at) or Date.after?(project.archived_at, date)
+      end)
+      |> Enum.sort_by(
+        fn project ->
+          project.sessions |> Enum.map(& &1.duration) |> Enum.sum()
+        end,
+        :desc
+      )
 
     # 4. Salary as of this month
     before_date = Date.end_of_month(date)
@@ -105,7 +114,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
           <.user_card_info label="Numer konta bankowego">
             {@user.bank_account_number || "Brak danych"}
           </.user_card_info>
-          <div class="flex items-end gap-4">
+          <div class="flex items-end justify-between gap-4">
             <.user_card_info label="Stawka" class="text-nowrap">
               {:PLN
               |> Money.new(@hourly_rate)
@@ -140,7 +149,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
           </div>
 
           <div class="relative w-full flex-1">
-            <div class="divide-lightGreyBg absolute inset-0 divide-y overflow-y-auto pr-2">
+            <div class="divide-lightGreyBg scrollbar-card absolute inset-0 divide-y overflow-y-auto pr-4">
               <%= if Enum.empty?(@projects) do %>
                 <div class="text-darkGrey mt-4 text-sm">Brak projektów</div>
               <% else %>
@@ -187,9 +196,9 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
         </div>
       </div>
 
-      <.modal id="salary-history-modal" class="max-h-[800px] overflow-y-auto">
+      <.modal id="salary-history-modal">
         <h2 class="mb-4 text-xl font-medium">Historia stawek</h2>
-        <div class="divide-lightGreyBg flex flex-col gap-2">
+        <div class="divide-lightGreyBg scrollbar-card flex max-h-[400px] flex-col gap-2 overflow-y-auto">
           <%= if Enum.empty?(@salary_history) do %>
             <p class="text-grey-700">Brak danych</p>
           <% else %>

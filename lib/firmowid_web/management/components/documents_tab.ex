@@ -154,7 +154,7 @@ defmodule FirmowidWeb.Management.Components.DocumentsTab do
         </div>
 
         <div class="relative w-full flex-1">
-          <div class="absolute inset-0 space-y-2 overflow-y-auto pr-2">
+          <div class="scrollbar-card absolute inset-0 space-y-2 overflow-y-auto pr-2">
             <%= if Enum.empty?(@documents) do %>
               <div class="text-darkGrey mt-4 text-sm">Brak dokumentów</div>
             <% else %>
