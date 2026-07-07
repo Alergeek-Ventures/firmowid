@@ -1,4 +1,4 @@
-<div class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 pt-3">
+<div class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 pt-4">
   <.form
     for={@form}
     phx-change="validate"
@@ -85,13 +85,23 @@
             type="search"
             value={nil}
             placeholder="Wyszukaj pracownika, aby dodać"
-            input_class="pl-9 bg-grey-100 placeholder:text-grey-400 border max-w-sm w-full"
+            input_class="pl-9 !bg-transparent placeholder:text-grey-400 border max-w-sm w-full"
             autocomplete="off"
             new={true}
             phx-hook=".Autocomplete"
             data-autocomplete-data={
               @available_users
-              |> Enum.map(fn user -> %{id: user.id, name: user.name || user.email} end)
+              |> Enum.map(fn user ->
+                %{
+                  id: user.id,
+                  name: user.name || user.email,
+                  avatar_url: Map.get(user.avatar_blob || %{}, :url),
+                  initials:
+                    to_string(user.name || user.email || "")
+                    |> String.slice(0, 1)
+                    |> String.upcase()
+                }
+              end)
               |> Jason.encode!()
             }
           />
@@ -114,12 +124,12 @@
             },
             threshold: 0,
             resultsList: {
-              class: "bg-white p-1 rounded shadow-lg absolute w-full max-h-60 overflow-y-auto z-10",
+              class: "bg-white p-2 mt-1 rounded shadow-lg absolute w-full max-h-60 overflow-y-auto z-10",
               element: (list, data) => {
                 if (data.results.length === 0) {
                   const info = document.createElement("p");
                   info.innerHTML = `Nie znaleziono pracowników pasujących do zapytania`;
-                  info.className = "p-1 text-sm/snug";
+                  info.className = "p-2 text-sm/snug";
                   list.appendChild(info);
                 }
               },
@@ -128,10 +138,15 @@
               tabSelect: true,
             },
             resultItem: {
-              class: "px-2 py-1 cursor-pointer rounded hover:bg-grey-100 text-sm/snug truncate text-nowrap",
+              class: "p-2 cursor-pointer rounded hover:bg-grey-100 text-sm/snug truncate text-nowrap",
               selected: "bg-grey-100",
               element: (item, data) => {
-                item.innerHTML = data.match
+                const {avatar_url, initials} = data.value;
+                const avatarHtml = avatar_url
+                  ? `<img src="${avatar_url}" class="size-8 rounded-full object-cover" alt=""/>`
+                  : `<span class="flex size-6 items-center justify-center rounded-full bg-blueBg text-xs font-medium text-blueText">${initials}</span>`;
+
+                item.innerHTML = `<div class="flex items-center gap-2">${avatarHtml}<span>${data.match}</span></div>`;
               },
             },
 

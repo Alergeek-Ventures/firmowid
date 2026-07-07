@@ -271,6 +271,8 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
     belongs_to :organization, Firmowid.Ash.Core.Organization do
       allow_nil? false
     end
+
+    has_many :sales_invoices, Firmowid.Ash.Invoicing.SalesInvoice
   end
 
   calculations do
@@ -314,6 +316,8 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
               )
 
     calculate :list_all_order, :string, expr(fragment("COALESCE(?, ?)", display_name, surname))
+
+    calculate :cooperation_value, :map, calculation: Firmowid.Ash.Invoicing.Calculations.CooperationValue
   end
 
   identities do

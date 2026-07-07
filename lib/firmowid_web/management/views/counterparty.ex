@@ -385,10 +385,10 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
           Brak faktur dla wybranego filtra.
         </div>
       <% else %>
-        <div class="grid grid-cols-[1fr_140px_140px_123px_min-content] gap-x-6 gap-y-2">
+        <div class="grid grid-cols-[220px_1fr_140px_123px_min-content] gap-x-6 gap-y-2">
           <div class="text-grey-500 col-span-full grid grid-cols-subgrid px-2 py-1 text-sm/snug">
             <p>Numer faktury</p>
-            <p class="text-right">Data wystawienia</p>
+            <p class="text-left">Data wystawienia</p>
             <p class="text-right">Kwota</p>
             <p class="text-center">Status</p>
           </div>
@@ -411,7 +411,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
               >
                 {invoice.invoice_number}
               </.link>
-              <p class="text-right">{format_date(invoice.issue_date)}</p>
+              <p class="text-left">{format_date(invoice.issue_date)}</p>
               <p class="text-right">{money_to_string(invoice.gross_value, invoice.currency)}</p>
               <div class="flex justify-center"><.invoice_status_badge invoice={invoice} /></div>
               <.link

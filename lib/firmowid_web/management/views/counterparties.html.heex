@@ -1,5 +1,5 @@
 <div :if={not @zero_state?} class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 pb-4">
-  <div class="bg-lightGreyBg sticky top-10.5 z-10 flex flex-col gap-6 py-3">
+  <div class="bg-lightGreyBg sticky top-10.5 z-10 flex flex-col gap-6 py-4">
     <div class="flex items-center justify-between gap-4">
       <form class="flex gap-4" phx-submit="search">
         <div class="bg-lightGreyBg border-greyButtonBg flex h-11 w-[360px] items-center gap-2 rounded-lg border p-1 focus-within:ring-2">
@@ -80,6 +80,12 @@
           </div>
         </div>
       </div>
+      <.switch
+        class="ml-auto flex-row-reverse gap-4 select-none"
+        label="Wartość współpracy"
+        field={@form[:view_cooperation_value]}
+        phx-click="toggle_cooperation_value_view"
+      />
     </div>
   </div>
 
@@ -100,7 +106,17 @@
         <% end %>
       </div>
     <% @live_action == :index -> %>
-      <div class="grid grid-cols-[3fr_1.2fr_min-content] gap-x-6 gap-y-2" id="counterparties-list">
+      <div
+        id="counterparties-list"
+        data-view={@view}
+        class={[
+          "group grid gap-x-6 gap-y-2",
+          if(@view == :cooperation_value,
+            do: "grid-cols-[3fr_1.2fr_1.2fr_min-content]",
+            else: "grid-cols-[3fr_1.2fr_min-content]"
+          )
+        ]}
+      >
         <div
           id="counterparties-list-header-active"
           class="bg-lightGreyBg text-grey-700 sticky top-41 z-1 col-span-full grid grid-cols-subgrid px-4 pb-3 text-sm/snug transition-all duration-75"
@@ -109,7 +125,12 @@
           data-scroll-offset="90"
         >
           <p>Kontrahent</p>
+
           <p class="text-right">Identyfikator</p>
+
+          <%= if @view == :cooperation_value do %>
+            <p class="text-right">Wartość współpracy</p>
+          <% end %>
         </div>
 
         <div
@@ -139,6 +160,9 @@
             <p class="text-right text-black">
               <.counterparty_identifier counterparty={counterparty} />
             </p>
+            <p class="hidden text-right text-black group-data-[view=cooperation\_value]:block">
+              {cooperation_value_cell(counterparty.cooperation_value)}
+            </p>
             <.link
               kind="unstyled"
               navigate={
@@ -155,7 +179,14 @@
       </div>
     <% true -> %>
       <div
-        class="grid grid-cols-[3fr_1.2fr_1fr_min-content] gap-x-6 gap-y-2"
+        data-view={@view}
+        class={[
+          "group grid gap-x-6 gap-y-2",
+          if(@view == :cooperation_value,
+            do: "grid-cols-[3fr_1.2fr_1fr_1.2fr_min-content]",
+            else: "grid-cols-[3fr_1.2fr_1fr_min-content]"
+          )
+        ]}
         id="counterparties-list"
       >
         <div
@@ -168,6 +199,9 @@
           <p>Kontrahent</p>
           <p class="text-right">Identyfikator</p>
           <p class="text-right text-nowrap">Data archiwizacji</p>
+          <%= if @view == :cooperation_value do %>
+            <p class="text-right">Wartość współpracy</p>
+          <% end %>
         </div>
 
         <div
@@ -199,6 +233,9 @@
             </p>
             <p class="text-right text-black">
               {Calendar.strftime(counterparty.archived_at, "%d.%m.%Y")}
+            </p>
+            <p class="hidden text-right text-black group-data-[view=cooperation\_value]:block">
+              {cooperation_value_cell(counterparty.cooperation_value)}
             </p>
             <div class="flex items-center gap-3 justify-self-end">
               <.button

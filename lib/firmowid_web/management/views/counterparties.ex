@@ -25,6 +25,7 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
      |> assign(:page_title, "Zarządzanie kontrahentami")
      |> assign(:zero_state?, zero_state?)
      |> assign(:counterparties_empty?, true)
+     |> assign(:view, :standard)
      |> stream(:counterparties, [])}
   end
 
@@ -38,6 +39,7 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
       |> assign(:search, params["szukaj"] || "")
       |> assign(:type_filter, Navigation.parse_counterparty_type(params["typ"]))
       |> assign_counterparties()
+      |> assign_form()
 
     {:noreply, socket}
   end
@@ -84,6 +86,16 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
     end
   end
 
+  def handle_event("toggle_cooperation_value_view", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(
+       :view,
+       if(socket.assigns.view == :standard, do: :cooperation_value, else: :standard)
+     )
+     |> assign_form()}
+  end
+
   defp assign_counterparties(socket) do
     scope = socket.assigns.ash_scope
 
@@ -100,13 +112,21 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
 
     counterparties =
       Invoicing.list_counterparties!(filters,
-        load: [:display_label],
+        load: [:display_label, :cooperation_value],
         scope: scope
       )
 
     socket
     |> assign(:counterparties_empty?, counterparties == [])
     |> stream(:counterparties, counterparties, reset: true)
+  end
+
+  defp assign_form(socket) do
+    assign(
+      socket,
+      :form,
+      to_form(%{"view_cooperation_value" => socket.assigns.view != :standard})
+    )
   end
 
   defp refresh_page(socket, params) do
@@ -137,5 +157,13 @@ defmodule FirmowidWeb.Management.Views.Counterparties do
     ~H"""
     <.icon name={CounterpartyHelpers.type_icon_name(@counterparty)} class="text-grey-500 size-5" />
     """
+  end
+
+  defp cooperation_value_cell(nil), do: "—"
+
+  defp cooperation_value_cell(%{total: total, currency: currency}) do
+    total
+    |> Money.new(currency)
+    |> Money.to_string!(fractional_digits: 2)
   end
 end
