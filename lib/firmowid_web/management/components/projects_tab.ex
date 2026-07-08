@@ -97,6 +97,8 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
       |> assign(:hours_record, hours_record)
       |> assign(:time_worked, total_time)
       |> assign(:salary_history, salary_history)
+      |> assign(:editing_wage, false)
+      |> assign(:wage_form, to_form(%{"hourly_rate" => hourly_rate}))
 
     {:ok, socket}
   end
@@ -106,29 +108,86 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
     ~H"""
     <div class="flex h-full min-h-0 flex-col gap-6">
       <.card class="relative z-10" dimmed={@user.archived_at}>
-        <%!-- TODO: allow editing the user wage --%>
-        <.card_header>
-          Dane do przelewu
-        </.card_header>
+        <div class="flex min-h-8.5 flex-row items-center gap-2">
+          <.card_header>
+            Dane do przelewu
+          </.card_header>
+          <%= if @editing_wage do %>
+            <.button
+              class="ml-2"
+              form="wage-form"
+              type="submit"
+              variant="secondary"
+              size="small"
+              accent="orange"
+            >
+              Zapisz
+            </.button>
+            <.button
+              type="button"
+              variant="ghost"
+              size="small"
+              phx-click="toggle_wage_editor"
+              phx-target={@myself}
+            >
+              <.icon name="hero-arrow-uturn-left-micro" class="size-4" />
+            </.button>
+          <% else %>
+            <.button
+              type="button"
+              variant="ghost"
+              size="small"
+              phx-click="toggle_wage_editor"
+              phx-target={@myself}
+            >
+              <.icon name="hero-pencil-square" class="size-5" />
+            </.button>
+          <% end %>
+        </div>
+
         <div class="grid grid-cols-[minmax(min-content,2fr)_minmax(min-content,1fr)] gap-4">
           <.user_card_info label="Numer konta bankowego">
             {@user.bank_account_number || "Brak danych"}
           </.user_card_info>
           <div class="flex items-end justify-between gap-4">
-            <.user_card_info label="Stawka" class="text-nowrap">
-              {:PLN
-              |> Money.new(@hourly_rate)
-              |> Money.to_string!(no_fraction_if_integer: true)}/godz.
-            </.user_card_info>
-            <.button
-              type="button"
-              variant="outline"
-              size="small"
-              phx-click={show_modal("salary-history-modal")}
-              disabled={Enum.empty?(@salary_history)}
-            >
-              Historia stawek
-            </.button>
+            <%= if @editing_wage do %>
+              <.form
+                id="wage-form"
+                for={@wage_form}
+                phx-target={@myself}
+                phx-submit="save_wage"
+              >
+                <.user_card_info label="Nowa stawka" class="text-nowrap">
+                  <div class="flex items-center gap-2">
+                    <.input
+                      field={@wage_form[:hourly_rate]}
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      new={true}
+                      input_class="max-w-20 text-right"
+                    />
+                    <p>zł/godz.</p>
+                  </div>
+                </.user_card_info>
+              </.form>
+            <% else %>
+              <.user_card_info label="Stawka" class="text-nowrap">
+                <div class="min-h-8.5">
+                  {Money.new(:PLN, @hourly_rate) |> Money.to_string!(no_fraction_if_integer: true)}/godz.
+                </div>
+              </.user_card_info>
+              <.button
+                type="button"
+                variant="outline"
+                size="small"
+                phx-click={show_modal("salary-history-modal")}
+                disabled={Enum.empty?(@salary_history)}
+                class="self-center"
+              >
+                Historia stawek
+              </.button>
+            <% end %>
           </div>
         </div>
       </.card>
@@ -219,6 +278,41 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
       </.modal>
     </div>
     """
+  end
+
+  @impl true
+  def handle_event("toggle_wage_editor", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:editing_wage, not socket.assigns.editing_wage)
+     |> assign(:wage_form, to_form(%{"hourly_rate" => socket.assigns.hourly_rate}))}
+  end
+
+  def handle_event("save_wage", %{"hourly_rate" => hourly_rate}, socket) do
+    scope = socket.assigns.scope
+    user = socket.assigns.user
+
+    case Payroll.create_salary(
+           %{hourly_rate: hourly_rate, user_id: user.id},
+           scope: scope
+         ) do
+      {:ok, salary} ->
+        salary_history =
+          Payroll.list_salaries!(%{user_id: user.id}, scope: scope, load: [:ends_at])
+
+        {:noreply,
+         socket
+         |> assign(:editing_wage, false)
+         |> assign(:hourly_rate, salary.hourly_rate)
+         |> assign(:wage_form, to_form(%{"hourly_rate" => salary.hourly_rate}))
+         |> assign(:salary_history, salary_history)}
+
+      {:error, _error} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Nie udało się zapisać stawki. Spróbuj ponownie.")
+         |> assign(:editing_wage, true)}
+    end
   end
 
   attr :project, :map, required: true
