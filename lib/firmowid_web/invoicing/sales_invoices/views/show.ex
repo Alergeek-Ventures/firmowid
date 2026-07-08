@@ -71,7 +71,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
         |> assign(:preview_type, :html)
         |> assign(:no_padding, true)
         |> assign(:return_to, return_to)
-        |> assign(:ksef_connected?, Ksef.get_credential(socket.assigns.ash_scope) != nil)
+        |> assign(:ksef_connected?, Ksef.connected?(socket.assigns.ash_scope))
 
       {:ok, socket}
     end

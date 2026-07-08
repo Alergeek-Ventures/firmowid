@@ -992,7 +992,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       end
 
     # Check KSeF connection
-    has_ksef = Ksef.get_credential(scope) != nil
+    has_ksef = Ksef.connected?(scope)
 
     suggestions =
       if has_ksef do

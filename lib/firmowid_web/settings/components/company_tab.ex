@@ -333,7 +333,9 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             end}
           </.detail_row>
           <.detail_row label="Data wygaśnięcia" wide>
-            {TimeFormatter.format_date(@ksef_credential.expires_on)}
+            {if @ksef_credential.expires_on,
+              do: TimeFormatter.format_date(@ksef_credential.expires_on),
+              else: "-"}
           </.detail_row>
 
           <.button
@@ -516,7 +518,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                     show_errors={false}
                   />
 
-                  <%= if @ksef_certificate_status not in [:idle, :awaiting_signature, :connected, :failed] do %>
+                  <%= if @ksef_certificate_status not in [:idle, :awaiting_signature, :working, :failed] do %>
                     <div class="text-grey-700 flex items-center gap-2 rounded-md py-2 text-sm">
                       <.icon name="hero-arrow-path" class="size-5 animate-spin" />
                       <span class="w-full">
@@ -1265,9 +1267,11 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   defp present_certificate_status(:authenticating), do: "Trwa uwierzytelnianie w KSeF."
 
-  defp present_certificate_status(:preparing_certificate), do: "Trwa przygotowanie wniosku o certyfikat."
+  defp present_certificate_status(:authenticating_epuap), do: "Trwa uwierzytelnianie w KSeF."
 
-  defp present_certificate_status(:waiting_for_certificate), do: "KSeF wystawia certyfikat."
+  defp present_certificate_status(:preparing_enrollment), do: "Trwa przygotowanie wniosku o certyfikat."
+
+  defp present_certificate_status(:wait_for_certificate), do: "KSeF wystawia certyfikat."
   defp present_certificate_status(_status), do: ""
 
   defp role_label(:admin), do: "admin"

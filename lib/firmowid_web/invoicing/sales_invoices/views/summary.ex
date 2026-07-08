@@ -60,7 +60,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
       |> assign(:submission_info, submission_info)
       |> assign(:currency_rate, currency_rate)
       |> assign(:return_to, return_to)
-      |> assign(:ksef_connected?, Ksef.get_credential(socket.assigns.ash_scope) != nil)
+      |> assign(:ksef_connected?, Ksef.connected?(socket.assigns.ash_scope))
 
     {:ok, socket}
   end

@@ -6,8 +6,8 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
   import Firmowid.AccountsFixtures
   import Firmowid.Ash.Ksef.KsefTestHelpers, only: [jwt: 1]
 
-  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Ksef
+  alias Firmowid.Ash.Ksef.Credential
   alias Firmowid.Ash.Ksef.Workers.SessionWorker
   alias Firmowid.Ash.Scope
   alias Firmowid.Repo
@@ -46,24 +46,27 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
     %{admin: admin, scope: scope, credentials: credentials}
   end
 
-  test "persists encrypted certificate credentials only after successful authentication", %{
-    admin: admin,
-    scope: scope,
-    credentials: credentials
-  } do
-    assert Ksef.get_credential(scope) == nil
+  test "persists encrypted certificate credentials as authenticating before session worker runs",
+       %{
+         admin: admin,
+         scope: scope,
+         credentials: credentials
+       } do
+    assert Ksef.get_credential!(scope: scope) == nil
 
     assert {:ok, credential} =
              Oban.Testing.with_testing_mode(:manual, fn ->
-               Ksef.authenticate_with_uploaded_certificate(
+               Credential.authenticate_with_uploaded_certificate(
                  credentials.certificate,
                  credentials.private_key,
                  credentials.password,
-                 scope
+                 scope: scope
                )
              end)
 
     assert credential.auth_type == :certificate
+    assert credential.status == :authenticating
+    assert Ksef.get_credential!(scope: scope) == nil
 
     assert {:ok,
             %{
@@ -72,8 +75,8 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
               "private_key_password" => password
             }} = Jason.decode(credential.credentials)
 
-    assert certificate == credentials.certificate
-    assert private_key == credentials.private_key
+    assert String.trim_trailing(certificate) == String.trim_trailing(credentials.certificate)
+    assert String.trim_trailing(private_key) == String.trim_trailing(credentials.private_key)
     assert password == credentials.password
 
     raw_credentials = raw_credentials(admin.organization_id)
@@ -81,77 +84,52 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
     refute raw_credentials =~ credentials.private_key
     refute raw_credentials =~ credentials.password
 
-    assert {:ok, _access_token} = Cachex.get(:ksef, {:access_token, admin.organization_id})
+    assert {:ok, nil} = Cachex.get(:ksef, {:access_token, admin.organization_id})
   end
 
-  test "session worker re-authenticates using stored certificate credentials", %{
+  test "session worker authenticates stored certificate credentials and marks them working", %{
     admin: admin,
     scope: scope,
     credentials: credentials
   } do
     assert {:ok, _credential} =
              Oban.Testing.with_testing_mode(:manual, fn ->
-               Ksef.authenticate_with_uploaded_certificate(
+               Credential.authenticate_with_uploaded_certificate(
                  credentials.certificate,
                  credentials.private_key,
                  credentials.password,
-                 scope
+                 scope: scope
                )
              end)
 
-    Cachex.del(:ksef, {:access_token, admin.organization_id})
-
-    assert {:ok, true} =
+    assert :ok =
              Oban.Testing.with_testing_mode(:manual, fn ->
                perform_job(SessionWorker, %{"organization_id" => admin.organization_id})
              end)
 
     assert {:ok, access_token} = Cachex.get(:ksef, {:access_token, admin.organization_id})
     assert access_token == jwt(3_600)
+    assert %Credential{status: :working} = Ksef.get_credential!(scope: scope)
   end
 
-  test "does not persist credentials when the private key password is wrong", %{
-    scope: scope,
-    credentials: credentials
-  } do
-    assert {:error, :invalid_private_key} =
-             Ksef.authenticate_with_uploaded_certificate(
+  test "removes authenticating credentials when the private key password is wrong on final attempt",
+       %{
+         scope: scope,
+         credentials: credentials
+       } do
+    assert {:ok, %Credential{status: :authenticating}} =
+             Credential.authenticate_with_uploaded_certificate(
                credentials.certificate,
                credentials.private_key,
                "incorrect",
-               scope
+               scope: scope
              )
 
-    assert Ksef.get_credential(scope) == nil
-  end
+    assert {:error, :invalid_private_key} =
+             perform_job(SessionWorker, %{"organization_id" => scope.tenant}, attempt: 3)
 
-  test "removes credentials when session establishment raises", %{
-    scope: scope,
-    credentials: credentials
-  } do
-    Req.Test.stub(:ksef_domain_certificate_api, fn
-      %{request_path: "/auth/token/redeem"} = conn ->
-        Req.Test.json(conn, %{
-          "accessToken" => %{"token" => "invalid-access-token"},
-          "refreshToken" => %{"token" => jwt(7 * 86_400)}
-        })
-
-      conn ->
-        successful_ksef_response(conn)
-    end)
-
-    assert_raise FunctionClauseError, fn ->
-      Oban.Testing.with_testing_mode(:manual, fn ->
-        Ksef.authenticate_with_uploaded_certificate(
-          credentials.certificate,
-          credentials.private_key,
-          credentials.password,
-          scope
-        )
-      end)
-    end
-
-    assert Ksef.get_credential(scope) == nil
+    assert Credential.get_internal!(scope: scope) == nil
+    assert Ksef.get_credential!(scope: scope) == nil
   end
 
   test "validates an externally signed request before enqueueing it", %{
@@ -161,28 +139,41 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
     organization = Core.get_organization!(admin.organization_id, scope: scope)
     signed_xml = signed_auth_token_request("expected-challenge", organization.nip)
 
-    assert {:error, :auth_token_request_mismatch} =
-             Ksef.enroll_ksef_certificate(signed_xml, "different-challenge", scope)
+    assert {:error, %Invalid{}} =
+             Credential.enroll_ksef_certificate(signed_xml, "different-challenge", scope: scope)
 
-    assert {:error, :auth_token_request_mismatch} =
-             Ksef.enroll_ksef_certificate(signed_xml, nil, scope)
+    assert {:error, %Invalid{}} =
+             Credential.enroll_ksef_certificate(signed_xml, nil, scope: scope)
 
-    assert {:error, :invalid_xml} =
-             Ksef.enroll_ksef_certificate("<AuthTokenRequest>", "expected-challenge", scope)
-
-    assert {:error, :unsafe_xml} =
-             Ksef.enroll_ksef_certificate(
-               "<!DOCTYPE AuthTokenRequest [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]>#{signed_xml}",
+    assert {:error, %Invalid{}} =
+             Credential.enroll_ksef_certificate(
+               "<AuthTokenRequest>",
                "expected-challenge",
-               scope
+               scope: scope
              )
 
-    assert {:ok, job} =
+    assert {:error, %Invalid{}} =
+             Credential.enroll_ksef_certificate(
+               "<!DOCTYPE AuthTokenRequest [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]>#{signed_xml}",
+               "expected-challenge",
+               scope: scope
+             )
+
+    assert {:ok, _credential} =
              Oban.Testing.with_testing_mode(:manual, fn ->
-               Ksef.enroll_ksef_certificate(signed_xml, "expected-challenge", scope)
+               Credential.enroll_ksef_certificate(signed_xml, "expected-challenge", scope: scope)
              end)
 
-    assert job.args["action"] == "authenticate"
+    assert %Credential{status: :authenticating_epuap} = Credential.get_internal!(scope: scope)
+    assert Ksef.get_credential!(scope: scope) == nil
+
+    assert_enqueued(
+      worker: "Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker",
+      args: %{
+        "action" => "authenticate",
+        "organization_id" => admin.organization_id
+      }
+    )
   end
 
   defp certificate_credentials do

@@ -27,6 +27,14 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
 
   require Logger
 
+  @doc "Enqueues a KSeF session authentication worker for the given organization."
+  @spec enqueue(Ash.UUID.t()) :: {:ok, Oban.Job.t()} | {:error, term()}
+  def enqueue(organization_id) do
+    %{"organization_id" => organization_id}
+    |> new()
+    |> Firmowid.Oban.insert(skip_organization_id: true)
+  end
+
   @impl Oban.Worker
   @spec perform(Oban.Job.t()) :: Oban.Worker.result()
   def perform(%Oban.Job{args: %{"organization_id" => organization_id}} = job) do
@@ -35,17 +43,36 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
 
     Logger.info("Starting KSeF authentication for organization #{organization_id}")
 
-    with %Credential{} = credential <- Ksef.get_credential(scope),
+    with {:ok, %Credential{} = credential} <- get_credential(scope),
          {:ok, tokens} <- perform_authentication(credential) do
-      establish_session(tokens, organization_id, scope)
+      establish_session(tokens, credential, scope)
     else
-      nil ->
-        Logger.error("No KSeF credentials found for organization #{organization_id}")
-        {:cancel, :no_credentials}
+      {:error, :no_credential} ->
+        Logger.error("No authenticating or working KSeF credentials found for organization #{organization_id}")
+
+        {:cancel, :no_credential}
+
+      {:error, {:invalid_credential_status, message}} ->
+        Logger.error("Invalid KSeF credential status for organization #{organization_id}: #{message}")
+
+        {:cancel, :invalid_credential_status}
 
       {:error, reason} = error ->
         maybe_unauthenticate(scope, reason, job)
         error
+    end
+  end
+
+  defp get_credential(scope) do
+    case Credential.get_internal!(scope: scope) do
+      %Credential{status: status} = credential when status in [:authenticating, :working] ->
+        {:ok, credential}
+
+      %Credential{status: status} ->
+        {:error, {:invalid_credential_status, "Credential status is #{status}, expected :authenticating or :working"}}
+
+      nil ->
+        {:error, :no_credential}
     end
   end
 
@@ -78,28 +105,25 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
     end
   end
 
-  @doc """
-  Caches a KSeF access token and schedules refresh-token-backed renewal.
-
-  A cost-invoice fetch is also enqueued after the session is established.
-  """
   @spec establish_session(
           %{access_token: String.t(), refresh_token: String.t()},
-          Ash.UUID.t(),
+          Credential.t(),
           Scope.t()
         ) :: {:ok, boolean()} | {:error, term()}
-  def establish_session(%{access_token: access_token, refresh_token: refresh_token}, organization_id, scope) do
+  defp establish_session(
+         %{access_token: access_token, refresh_token: refresh_token},
+         %Credential{organization_id: organization_id, status: status} = credential,
+         scope
+       ) do
     schedule_reauthentication!(refresh_token, organization_id)
 
-    with {:ok, cached?} <-
-           Cachex.put(
-             :ksef,
-             {:access_token, organization_id},
-             access_token,
-             expire: access_token_ttl(access_token)
-           ) do
-      Ksef.fetch_cost_invoices(DateTime.shift(DateTime.utc_now(), day: -30), scope)
-      {:ok, cached?}
+    with {:ok, _cached?} <- put_access_token!(organization_id, access_token),
+         {:ok, _credential} <- Credential.mark_working(credential, scope: scope) do
+      if status == :authenticating do
+        Ksef.fetch_cost_invoices(DateTime.shift(DateTime.utc_now(), day: -30), scope)
+      end
+
+      :ok
     end
   end
 
@@ -161,9 +185,7 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
         {:error, :refresh_token_expired} ->
           Logger.info("Refresh token expired, re-authenticating")
 
-          %{"organization_id" => organization_id}
-          |> new()
-          |> Firmowid.Oban.insert!(skip_organization_id: true)
+          {:ok, _job} = enqueue(organization_id)
 
           raise RuntimeError, "Refresh token expired, re-authentication scheduled"
 
@@ -172,6 +194,11 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
           raise RuntimeError, "KSeF session renewal failed: #{inspect(reason)}"
       end
     end)
+  end
+
+  defp put_access_token!(organization_id, access_token) do
+    expire = access_token_ttl(access_token)
+    Cachex.put(:ksef, {:access_token, organization_id}, access_token, expire: expire)
   end
 
   @doc "Invalidates the cached KSeF access token for the given organization."
@@ -192,12 +219,17 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
 
   defp maybe_unauthenticate(scope, reason, job) do
     if final_attempt?(job) and terminal_auth_failure?(reason) do
-      Ksef.unauthenticate(scope)
+      if credential = Credential.get_internal!(scope: scope) do
+        Credential.delete_failed!(credential, scope: scope)
+      end
     end
   end
 
   defp terminal_auth_failure?(:refresh_token_expired), do: true
   defp terminal_auth_failure?(:unauthorized), do: true
   defp terminal_auth_failure?(:forbidden), do: true
+  defp terminal_auth_failure?(:invalid_private_key), do: true
+  defp terminal_auth_failure?(:invalid_certificate_credentials), do: true
+  defp terminal_auth_failure?({:authentication_failed, _message}), do: true
   defp terminal_auth_failure?(_reason), do: false
 end

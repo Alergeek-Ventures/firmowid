@@ -18,16 +18,25 @@ defmodule Firmowid.Ash.Ksef.Calculations.CredentialExpiresOn do
 
   defp expiration_date(%{auth_type: :token}), do: ~D[2027-01-01]
 
+  defp expiration_date(%{credentials: nil}), do: nil
+
   defp expiration_date(%{auth_type: auth_type, credentials: credentials})
        when auth_type in [:certificate, :generated_certificate] do
-    with {:ok, %{"certificate" => certificate_pem}} <- Jason.decode(credentials),
-         {:ok, certificate} <- X509.Certificate.from_pem(certificate_pem),
-         {:Validity, _not_before, not_after} <- X509.Certificate.validity(certificate) do
-      not_after
-      |> X509.DateTime.to_datetime()
-      |> DateTime.to_date()
-    else
-      _error -> nil
+    certificate = credentials |> Jason.decode!() |> Map.get("certificate")
+
+    case certificate do
+      nil ->
+        nil
+
+      _ ->
+        certificate
+        |> X509.Certificate.from_pem!()
+        |> X509.Certificate.validity()
+        |> then(fn {:Validity, _not_before, not_after} ->
+          not_after
+          |> X509.DateTime.to_datetime()
+          |> DateTime.to_date()
+        end)
     end
   end
 end

@@ -350,6 +350,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
   defp seed_ksef_credential!(organization_id) do
     Ash.Seed.seed!(Credential, %{
       organization_id: organization_id,
+      status: :working,
       auth_type: :token,
       credentials: "token-#{System.unique_integer([:positive])}"
     })

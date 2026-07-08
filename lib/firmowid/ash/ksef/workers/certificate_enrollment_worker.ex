@@ -10,8 +10,9 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
     queue: :ksef_sessions,
     max_attempts: 5
 
-  alias Firmowid.Ash.Ksef
+  alias Firmowid.Ash.Ksef.Credential
   alias Firmowid.Ash.Ksef.Services.ApiClient
+  alias Firmowid.Ash.Ksef.Workers.SessionWorker
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
 
@@ -39,29 +40,24 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
       tenant: organization_id
     }
 
-    if Ksef.get_credential(scope) do
-      {:cancel, :already_connected}
-    else
-      perform_action(action, args, scope, job)
-    end
+    perform_action(action, args, scope, job)
   end
 
   defp perform_action("authenticate", args, scope, job) do
-    Ksef.broadcast_ksef_certificate_status(scope.tenant, :authenticating)
+    case Credential.get_internal!(scope: scope) do
+      %Credential{status: :authenticating_epuap} = credential ->
+        authenticate(args, credential, scope, job)
 
-    case ApiClient.submit_xades_auth_request(args["signed_xml"]) do
-      {:ok, operation} ->
-        enqueue_stage("poll_authentication", scope.tenant, %{
-          "reference_number" => operation.reference_number,
-          "authentication_token" => encrypt!(operation.authentication_token)
-        })
+      nil ->
+        {:cancel, :no_credentials}
 
-      {:error, reason} ->
-        retry_or_fail(scope, reason, job)
+      %Credential{} ->
+        {:cancel, :already_connected}
     end
   end
 
   defp perform_action("poll_authentication", args, scope, job) do
+    credential = get_stage_credential!(args, scope, :authenticating_epuap)
     authentication_token = decrypt!(args["authentication_token"])
 
     case ApiClient.fetch_auth_status(args["reference_number"], authentication_token) do
@@ -71,21 +67,23 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
       :success ->
         case ApiClient.redeem_authentication_token(authentication_token) do
           {:ok, tokens} ->
-            enqueue_stage("submit_certificate_enrollment", scope.tenant, %{
+            credential = Credential.prepare_enrollment!(credential, scope: scope)
+
+            enqueue_stage("submit_certificate_enrollment", credential, scope.tenant, %{
               "tokens" => encrypt_json!(tokens)
             })
 
           {:error, reason} ->
-            retry_or_fail(scope, reason, job)
+            retry_or_fail(credential, scope, reason, job)
         end
 
       {:error, reason} ->
-        retry_or_fail(scope, reason, job)
+        retry_or_fail(credential, scope, reason, job)
     end
   end
 
   defp perform_action("submit_certificate_enrollment", args, scope, job) do
-    Ksef.broadcast_ksef_certificate_status(scope.tenant, :preparing_certificate)
+    credential = get_stage_credential!(args, scope, :preparing_enrollment)
 
     tokens = decrypt_json!(args["tokens"])
 
@@ -101,29 +99,26 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
              certificate_name(),
              csr
            ) do
-      enqueue_stage("poll_certificate_enrollment", scope.tenant, %{
+      credential = Credential.wait_for_certificate!(credential, scope: scope)
+
+      enqueue_stage("poll_certificate_enrollment", credential, scope.tenant, %{
         "reference_number" => reference_number,
         "tokens" => args["tokens"],
         "private_key" => encrypt!(private_key)
       })
     else
       {:error, :certificate_limit_exhausted} ->
-        Ksef.broadcast_ksef_certificate_status(
-          scope.tenant,
-          :failed,
-          :certificate_limit_exhausted
-        )
-
+        Credential.delete_failed!(credential, scope: scope)
         {:cancel, :certificate_limit_exhausted}
 
       {:error, reason} ->
-        retry_or_fail(scope, reason, job)
+        retry_or_fail(credential, scope, reason, job)
     end
   end
 
   defp perform_action("poll_certificate_enrollment", args, scope, job) do
-    Ksef.broadcast_ksef_certificate_status(scope.tenant, :waiting_for_certificate)
-
+    credential = get_stage_credential!(args, scope, :wait_for_certificate)
+    organization_id = scope.tenant
     access_token = decrypt_json!(args["tokens"])["access_token"]
     reference_number = args["reference_number"]
     private_key = decrypt!(args["private_key"])
@@ -133,34 +128,62 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
         {:snooze, @poll_interval_seconds}
 
       {:ok, serial_number} ->
-        persist_certificate(serial_number, access_token, private_key, scope, job)
+        with {:ok, certificate} <- ApiClient.retrieve_certificate(access_token, serial_number),
+             :ok <- ApiClient.revoke_refresh_token(access_token),
+             credentials =
+               Jason.encode!(%{
+                 "certificate" => certificate,
+                 "private_key" => private_key,
+                 "private_key_password" => nil
+               }),
+             {:ok, _credential} <-
+               Credential.complete_certificate_enrollment(credential, credentials, scope: scope) do
+          SessionWorker.enqueue(organization_id)
+        else
+          {:error, reason} -> retry_or_fail(credential, scope, reason, job)
+        end
 
       {:error, reason} ->
-        retry_or_fail(scope, reason, job)
+        retry_or_fail(credential, scope, reason, job)
     end
   end
 
-  defp persist_certificate(serial_number, access_token, private_key, scope, job) do
-    with {:ok, certificate} <- ApiClient.retrieve_certificate(access_token, serial_number),
-         :ok <- ApiClient.revoke_refresh_token(access_token),
-         {:ok, credential} <-
-           Ksef.authenticate_with_generated_certificate(
-             certificate,
-             private_key,
-             scope
-           ) do
-      Ksef.broadcast_ksef_certificate_status(scope.tenant, :connected)
-      {:ok, credential}
-    else
-      {:error, reason} -> retry_or_fail(scope, reason, job)
+  defp authenticate(args, credential, scope, job) do
+    case ApiClient.submit_xades_auth_request(args["signed_xml"]) do
+      {:ok, operation} ->
+        enqueue_stage("poll_authentication", credential, scope.tenant, %{
+          "reference_number" => operation.reference_number,
+          "authentication_token" => encrypt!(operation.authentication_token)
+        })
+
+      {:error, reason} ->
+        retry_or_fail(credential, scope, reason, job)
     end
   end
 
   defp enqueue_stage(action, organization_id, stage_args) do
     stage_args
-    |> Map.merge(%{"action" => action, "organization_id" => organization_id})
+    |> Map.merge(%{
+      "action" => action,
+      "organization_id" => organization_id
+    })
     |> new()
     |> Firmowid.Oban.insert(skip_organization_id: true)
+  end
+
+  defp enqueue_stage(action, credential, organization_id, stage_args) do
+    enqueue_stage(action, organization_id, Map.put(stage_args, "credential_id", credential.id))
+  end
+
+  defp get_stage_credential!(%{"credential_id" => credential_id}, scope, expected_status) do
+    credential = Credential.get_internal!(scope: scope)
+    expected_statuses = List.wrap(expected_status)
+
+    if credential.id == credential_id and credential.status in expected_statuses do
+      credential
+    else
+      raise "KSeF certificate enrollment credential mismatch"
+    end
   end
 
   defp validate_limits(%{
@@ -231,13 +254,22 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
 
   defp decrypt_json!(value), do: value |> decrypt!() |> Jason.decode!()
 
-  defp retry_or_fail(_scope, reason, %Oban.Job{attempt: attempt, max_attempts: max_attempts}) when attempt < max_attempts,
-    do: {:error, reason}
+  defp retry_or_fail(_credential, _scope, reason, %Oban.Job{attempt: attempt, max_attempts: max_attempts})
+       when attempt < max_attempts, do: {:error, reason}
 
-  defp retry_or_fail(scope, reason, %Oban.Job{}) do
+  defp retry_or_fail(nil, scope, reason, %Oban.Job{}) do
+    Logger.error(
+      "KSeF certificate enrollment failed before credential creation for organization #{scope.tenant}: #{inspect(reason)}"
+    )
+
+    {:cancel, reason}
+  end
+
+  defp retry_or_fail(credential, scope, reason, %Oban.Job{}) do
     Logger.error("KSeF certificate enrollment failed for organization #{scope.tenant}: #{inspect(reason)}")
 
-    Ksef.broadcast_ksef_certificate_status(scope.tenant, :failed, reason)
+    Credential.delete_failed!(credential, scope: scope)
+
     {:cancel, reason}
   end
 end

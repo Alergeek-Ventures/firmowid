@@ -87,7 +87,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         )
       )
       |> assign(:last_invoices, recent_invoices(socket.assigns.ash_scope))
-      |> assign(:ksef_connected?, Ksef.get_credential(socket.assigns.ash_scope) != nil)
+      |> assign(:ksef_connected?, Ksef.connected?(socket.assigns.ash_scope))
       |> assign(:open_counterparty_modal, false)
       |> assign(:can_manage_counterparties, socket.assigns.current_user.role == :admin)
 

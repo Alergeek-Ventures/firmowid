@@ -297,6 +297,7 @@ defmodule Firmowid.Seeds.Bytecraft do
       Credential,
       %{
         organization_id: bytecraft.id,
+        status: :working,
         auth_type: :token,
         credentials: @ksef_token
       },
@@ -393,8 +394,7 @@ defmodule Firmowid.Seeds.Bytecraft do
     end
   end
 
-  defp ensure_counterparty_country!(%{country: nil} = counterparty, country, org_id)
-       when is_binary(country) do
+  defp ensure_counterparty_country!(%{country: nil} = counterparty, country, org_id) when is_binary(country) do
     counterparty
     |> Ash.Changeset.for_update(:update, %{country: country}, tenant: org_id, actor: @seed_actor)
     |> Ash.update!()
@@ -406,10 +406,16 @@ defmodule Firmowid.Seeds.Bytecraft do
     query =
       cond do
         attrs[:tax_id] && attrs[:tax_id] != "" ->
-          Ash.Query.filter(AshCounterparty, tax_id == ^attrs[:tax_id] and organization_id == ^org_id)
+          Ash.Query.filter(
+            AshCounterparty,
+            tax_id == ^attrs[:tax_id] and organization_id == ^org_id
+          )
 
         attrs[:display_name] ->
-          Ash.Query.filter(AshCounterparty, display_name == ^attrs[:display_name] and organization_id == ^org_id)
+          Ash.Query.filter(
+            AshCounterparty,
+            display_name == ^attrs[:display_name] and organization_id == ^org_id
+          )
 
         true ->
           nil
@@ -439,9 +445,12 @@ defmodule Firmowid.Seeds.Bytecraft do
       )
 
     project_attrs =
-      then(%{name: name, organization_id: tenant, tag_definition_id: tag_definition.id}, fn attrs ->
-        if counterparty_id, do: Map.put(attrs, :counterparty_id, counterparty_id), else: attrs
-      end)
+      then(
+        %{name: name, organization_id: tenant, tag_definition_id: tag_definition.id},
+        fn attrs ->
+          if counterparty_id, do: Map.put(attrs, :counterparty_id, counterparty_id), else: attrs
+        end
+      )
 
     case find_project(tenant, name) do
       nil -> Ash.Seed.seed!(AshProject, project_attrs, tenant: tenant)

@@ -108,7 +108,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
       :counterparties,
       Invoicing.list_counterparties!(%{status: :active}, scope: socket.assigns.ash_scope)
     )
-    |> assign(:ksef_connected?, Ksef.get_credential(socket.assigns.ash_scope) != nil)
+    |> assign(:ksef_connected?, Ksef.connected?(socket.assigns.ash_scope))
   end
 
   defp load_reference_invoice(%{ksef_invoice_kind: :vat}, _scope), do: nil
@@ -375,7 +375,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   end
 
   defp handle_submit_result({:ok, invoice}, socket) do
-    if Ksef.get_credential(socket.assigns.ash_scope) == nil do
+    if Ksef.connected?(socket.assigns.ash_scope) do
+      send_invoice_to_ksef(socket, invoice)
+    else
       {:noreply,
        socket
        |> push_event("unsaved-changed", %{value: false})
@@ -384,8 +386,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
          "Faktura została wystawiona, ale nie można jej wysłać do KSeF — brak połączenia z KSeF"
        )
        |> push_navigate(to: Navigation.sales_invoice_summary_path(invoice, socket.assigns.return_to))}
-    else
-      send_invoice_to_ksef(socket, invoice)
     end
   end
 

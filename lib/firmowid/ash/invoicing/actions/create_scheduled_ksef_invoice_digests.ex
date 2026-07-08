@@ -120,7 +120,7 @@ defmodule Firmowid.Ash.Invoicing.Actions.CreateScheduledKsefInvoiceDigests do
       actor: %SystemActor{org_id: organization_id, role: :ksef_session}
     }
 
-    case Ksef.get_credential(scope) do
+    case Ksef.get_credential!(scope: scope) do
       nil -> false
       _ -> true
     end
