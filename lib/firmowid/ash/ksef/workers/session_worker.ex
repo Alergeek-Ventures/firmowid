@@ -115,9 +115,8 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
          %Credential{organization_id: organization_id, status: status} = credential,
          scope
        ) do
-    schedule_reauthentication!(refresh_token, organization_id)
-
     with {:ok, _cached?} <- put_access_token!(organization_id, access_token),
+         {:ok, _job} <- schedule_reauthentication(refresh_token, organization_id),
          {:ok, _credential} <- Credential.mark_working(credential, scope: scope) do
       if status == :authenticating do
         Ksef.fetch_cost_invoices(DateTime.shift(DateTime.utc_now(), day: -30), scope)
@@ -127,20 +126,33 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
     end
   end
 
-  defp schedule_reauthentication!(refresh_token, organization_id) do
+  defp schedule_reauthentication(refresh_token, organization_id) do
     schedule_at =
       refresh_token
       |> ApiClient.token_expire_time()
       |> DateTime.shift(minute: -15)
 
     refresh_token = refresh_token |> Firmowid.Vault.encrypt!() |> Base.encode64()
+    cancel_scheduled_reauthentication_jobs(organization_id)
 
     %{
       "organization_id" => organization_id,
       "refresh_token" => refresh_token
     }
     |> new(scheduled_at: schedule_at)
-    |> Firmowid.Oban.insert!(skip_organization_id: true)
+    |> Firmowid.Oban.insert(skip_organization_id: true)
+  end
+
+  defp cancel_scheduled_reauthentication_jobs(organization_id) do
+    Firmowid.Oban.cancel_all_jobs(
+      from(j in Oban.Job,
+        where:
+          j.worker == "Firmowid.Ash.Ksef.Workers.SessionWorker" and
+            j.state in ["available", "scheduled"] and
+            fragment("?->>'organization_id' = ?::text", j.args, ^organization_id) and
+            not is_nil(fragment("?->>'refresh_token'", j.args))
+      )
+    )
   end
 
   # Oban.Job is not an Ash resource — raw Ecto query is required here.

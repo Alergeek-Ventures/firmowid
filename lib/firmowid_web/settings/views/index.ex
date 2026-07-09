@@ -112,10 +112,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
       Endpoint.subscribe("credential:failed:#{current_org.id}")
     end
 
-    ksef_internal_credential = Credential.get_internal!(scope: scope)
-
     socket =
       if admin? do
+        ksef_internal_credential = Credential.get_internal!(scope: scope)
+
         socket
         |> assign(:company_form, form_basic_info_form(current_org, scope))
         |> assign(:correspondence_form, form_correspondence_form(current_org, scope))
@@ -727,10 +727,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
            content: request.xml,
            filename: "wniosek.xml"
          })}
-
-      {:error, :already_connected} ->
-        LiveToast.send_toast(:error, "Organizacja jest już połączona z KSeF.")
-        {:noreply, socket}
 
       {:error, _reason} ->
         LiveToast.send_toast(:error, "Nie udało się pobrać dokumentu z KSeF.")

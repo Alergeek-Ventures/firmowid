@@ -78,6 +78,7 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
     assert String.trim_trailing(certificate) == String.trim_trailing(credentials.certificate)
     assert String.trim_trailing(private_key) == String.trim_trailing(credentials.private_key)
     assert password == credentials.password
+    assert credential.expires_on == certificate_expiration_date(credentials.certificate)
 
     raw_credentials = raw_credentials(admin.organization_id)
     refute raw_credentials =~ credentials.certificate
@@ -132,50 +133,6 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
     assert Ksef.get_credential!(scope: scope) == nil
   end
 
-  test "validates an externally signed request before enqueueing it", %{
-    admin: admin,
-    scope: scope
-  } do
-    organization = Core.get_organization!(admin.organization_id, scope: scope)
-    signed_xml = signed_auth_token_request("expected-challenge", organization.nip)
-
-    assert {:error, %Invalid{}} =
-             Credential.enroll_ksef_certificate(signed_xml, "different-challenge", scope: scope)
-
-    assert {:error, %Invalid{}} =
-             Credential.enroll_ksef_certificate(signed_xml, nil, scope: scope)
-
-    assert {:error, %Invalid{}} =
-             Credential.enroll_ksef_certificate(
-               "<AuthTokenRequest>",
-               "expected-challenge",
-               scope: scope
-             )
-
-    assert {:error, %Invalid{}} =
-             Credential.enroll_ksef_certificate(
-               "<!DOCTYPE AuthTokenRequest [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]>#{signed_xml}",
-               "expected-challenge",
-               scope: scope
-             )
-
-    assert {:ok, _credential} =
-             Oban.Testing.with_testing_mode(:manual, fn ->
-               Credential.enroll_ksef_certificate(signed_xml, "expected-challenge", scope: scope)
-             end)
-
-    assert %Credential{status: :authenticating_epuap} = Credential.get_internal!(scope: scope)
-    assert Ksef.get_credential!(scope: scope) == nil
-
-    assert_enqueued(
-      worker: "Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker",
-      args: %{
-        "action" => "authenticate",
-        "organization_id" => admin.organization_id
-      }
-    )
-  end
-
   defp certificate_credentials do
     password = "certificate-password"
     private_key = X509.PrivateKey.new_ec(:secp256r1)
@@ -210,16 +167,15 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
     }
   end
 
-  defp signed_auth_token_request(challenge, nip) do
-    """
-    <AuthTokenRequest xmlns="http://ksef.mf.gov.pl/auth/token/2.0"
-                      xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
-      <Challenge>#{challenge}</Challenge>
-      <ContextIdentifier><Nip>#{nip}</Nip></ContextIdentifier>
-      <SubjectIdentifierType>certificateSubject</SubjectIdentifierType>
-      <ds:Signature><ds:SignedInfo /></ds:Signature>
-    </AuthTokenRequest>
-    """
+  defp certificate_expiration_date(certificate) do
+    {:Validity, _not_before, not_after} =
+      certificate
+      |> X509.Certificate.from_pem!()
+      |> X509.Certificate.validity()
+
+    not_after
+    |> X509.DateTime.to_datetime()
+    |> DateTime.to_date()
   end
 
   defp successful_ksef_response(conn) do

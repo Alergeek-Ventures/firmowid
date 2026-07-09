@@ -22,6 +22,7 @@ defmodule Firmowid.Ash.Ksef do
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Ksef.Credential
+  alias Firmowid.Ash.Ksef.CredentialMetadata
   alias Firmowid.Ash.Ksef.Services.ApiClient
   alias Firmowid.Ash.Ksef.SubmissionInfo
   alias Firmowid.Ash.Ksef.Workers.FetchWorker
@@ -142,19 +143,8 @@ defmodule Firmowid.Ash.Ksef do
     end
   end
 
-  defp maybe_revoke_generated_certificate(
-         %Credential{auth_type: :generated_certificate, credentials: credentials},
-         access_token
-       ) do
-    serial_number =
-      credentials
-      |> Jason.decode!()
-      |> Map.fetch!("certificate")
-      |> X509.Certificate.from_pem!()
-      |> X509.Certificate.serial()
-      |> Integer.to_string(16)
-      |> String.upcase()
-      |> String.pad_leading(16, "0")
+  defp maybe_revoke_generated_certificate(%Credential{auth_type: :generated_certificate} = credential, access_token) do
+    serial_number = CredentialMetadata.certificate_serial_number(credential)
 
     ApiClient.revoke_certificate(access_token, serial_number, :unspecified)
   end

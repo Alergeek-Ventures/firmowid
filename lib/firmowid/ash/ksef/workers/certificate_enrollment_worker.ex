@@ -4,6 +4,16 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
 
   Each asynchronous boundary is represented by a separate Oban job. Sensitive
   XML, authentication tokens and private keys are encrypted in job arguments.
+
+  Enrollment flow:
+      -> authenticate
+      -> poll_authentication
+      -> submit_certificate_enrollment
+      -> poll_certificate_enrollment
+
+  Certificate refresh flow:
+      -> refresh_certificate
+      -> poll_certificate_refresh
   """
 
   use Oban.Worker,
@@ -26,7 +36,18 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
     %{
       "action" => "authenticate",
       "organization_id" => organization_id,
-      "signed_xml" => signed_xml
+      "signed_xml" => encrypt!(signed_xml)
+    }
+    |> new()
+    |> Firmowid.Oban.insert(skip_organization_id: true)
+  end
+
+  @doc "Enqueues automatic rollover for an existing working KSeF certificate credential."
+  @spec enqueue_refresh(Credential.t()) :: {:ok, Oban.Job.t()} | {:error, term()}
+  def enqueue_refresh(%Credential{organization_id: organization_id}) do
+    %{
+      "action" => "refresh_certificate",
+      "organization_id" => organization_id
     }
     |> new()
     |> Firmowid.Oban.insert(skip_organization_id: true)
@@ -46,7 +67,18 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
   defp perform_action("authenticate", args, scope, job) do
     case Credential.get_internal!(scope: scope) do
       %Credential{status: :authenticating_epuap} = credential ->
-        authenticate(args, credential, scope, job)
+        signed_xml = decrypt!(args["signed_xml"])
+
+        case ApiClient.submit_xades_auth_request(signed_xml) do
+          {:ok, operation} ->
+            enqueue_stage("poll_authentication", scope.tenant, %{
+              "reference_number" => operation.reference_number,
+              "authentication_token" => encrypt!(operation.authentication_token)
+            })
+
+          {:error, reason} ->
+            handle_enrollment_failure(credential, scope, reason, job)
+        end
 
       nil ->
         {:cancel, :no_credentials}
@@ -57,7 +89,7 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
   end
 
   defp perform_action("poll_authentication", args, scope, job) do
-    credential = get_stage_credential!(args, scope, :authenticating_epuap)
+    credential = Credential.get_internal!(scope: scope)
     authentication_token = decrypt!(args["authentication_token"])
 
     case ApiClient.fetch_auth_status(args["reference_number"], authentication_token) do
@@ -67,97 +99,115 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
       :success ->
         case ApiClient.redeem_authentication_token(authentication_token) do
           {:ok, tokens} ->
-            credential = Credential.prepare_enrollment!(credential, scope: scope)
+            Credential.prepare_enrollment!(credential, scope: scope)
 
-            enqueue_stage("submit_certificate_enrollment", credential, scope.tenant, %{
-              "tokens" => encrypt_json!(tokens)
+            enqueue_stage("submit_certificate_enrollment", scope.tenant, %{
+              "access_token" => encrypt!(tokens.access_token)
             })
 
           {:error, reason} ->
-            retry_or_fail(credential, scope, reason, job)
+            handle_enrollment_failure(credential, scope, reason, job)
         end
 
       {:error, reason} ->
-        retry_or_fail(credential, scope, reason, job)
+        handle_enrollment_failure(credential, scope, reason, job)
     end
   end
 
   defp perform_action("submit_certificate_enrollment", args, scope, job) do
-    credential = get_stage_credential!(args, scope, :preparing_enrollment)
+    credential = Credential.get_internal!(scope: scope)
+    access_token = decrypt!(args["access_token"])
 
-    tokens = decrypt_json!(args["tokens"])
+    case request_certificate(access_token) do
+      {:ok, %{reference_number: reference_number, private_key: private_key}} ->
+        Credential.wait_for_certificate!(credential, scope: scope)
 
-    with {:ok, limits} <- ApiClient.get_certificate_limits(tokens["access_token"]),
-         :ok <- validate_limits(limits),
-         {:ok, enrollment_data} <-
-           ApiClient.get_certificate_enrollment_data(tokens["access_token"]),
-         {:ok, %{csr: csr, private_key: private_key}} <-
-           generate_certificate_enrollment(enrollment_data),
-         {:ok, reference_number} <-
-           ApiClient.submit_certificate_enrollment(
-             tokens["access_token"],
-             certificate_name(),
-             csr
-           ) do
-      credential = Credential.wait_for_certificate!(credential, scope: scope)
+        enqueue_stage("poll_certificate_enrollment", scope.tenant, %{
+          "reference_number" => reference_number,
+          "access_token" => args["access_token"],
+          "private_key" => encrypt!(private_key)
+        })
 
-      enqueue_stage("poll_certificate_enrollment", credential, scope.tenant, %{
-        "reference_number" => reference_number,
-        "tokens" => args["tokens"],
-        "private_key" => encrypt!(private_key)
-      })
-    else
       {:error, :certificate_limit_exhausted} ->
         Credential.delete_failed!(credential, scope: scope)
         {:cancel, :certificate_limit_exhausted}
 
       {:error, reason} ->
-        retry_or_fail(credential, scope, reason, job)
+        handle_enrollment_failure(credential, scope, reason, job)
+    end
+  end
+
+  defp perform_action("refresh_certificate", _args, scope, job) do
+    credential = Credential.get_internal!(scope: scope)
+
+    if credential.auth_type in [:certificate, :generated_certificate] do
+      access_token = SessionWorker.get_access_token!(scope.tenant)
+
+      with {:ok, %{reference_number: reference_number, private_key: private_key}} <-
+             request_certificate(access_token),
+           {:ok, _job} <-
+             enqueue_stage("poll_certificate_refresh", scope.tenant, %{
+               "reference_number" => reference_number,
+               "private_key" => encrypt!(private_key)
+             }) do
+        :ok
+      else
+        {:error, reason} -> handle_refresh_failure(credential, scope, reason, job)
+      end
+    else
+      Credential.recover_certificate_refresh!(credential, scope: scope)
+
+      {:cancel, :not_certificate_credential}
     end
   end
 
   defp perform_action("poll_certificate_enrollment", args, scope, job) do
-    credential = get_stage_credential!(args, scope, :wait_for_certificate)
-    organization_id = scope.tenant
-    access_token = decrypt_json!(args["tokens"])["access_token"]
+    credential = Credential.get_internal!(scope: scope)
+    access_token = decrypt!(args["access_token"])
     reference_number = args["reference_number"]
     private_key = decrypt!(args["private_key"])
 
-    case ApiClient.get_certificate_enrollment_status(access_token, reference_number) do
+    case retrieve_certificate(access_token, reference_number) do
       :pending ->
         {:snooze, @poll_interval_seconds}
 
-      {:ok, serial_number} ->
-        with {:ok, certificate} <- ApiClient.retrieve_certificate(access_token, serial_number),
-             :ok <- ApiClient.revoke_refresh_token(access_token),
-             credentials =
-               Jason.encode!(%{
-                 "certificate" => certificate,
-                 "private_key" => private_key,
-                 "private_key_password" => nil
-               }),
-             {:ok, _credential} <-
-               Credential.complete_certificate_enrollment(credential, credentials, scope: scope) do
-          SessionWorker.enqueue(organization_id)
+      {:ok, certificate} ->
+        credentials = certificate_credentials(certificate, private_key)
+
+        with {:ok, _credential} <-
+               Credential.complete_certificate_enrollment(credential, credentials, scope: scope),
+             :ok <- ApiClient.revoke_refresh_token(access_token) do
+          :ok
         else
-          {:error, reason} -> retry_or_fail(credential, scope, reason, job)
+          {:error, reason} -> handle_enrollment_failure(credential, scope, reason, job)
         end
 
       {:error, reason} ->
-        retry_or_fail(credential, scope, reason, job)
+        handle_enrollment_failure(credential, scope, reason, job)
     end
   end
 
-  defp authenticate(args, credential, scope, job) do
-    case ApiClient.submit_xades_auth_request(args["signed_xml"]) do
-      {:ok, operation} ->
-        enqueue_stage("poll_authentication", credential, scope.tenant, %{
-          "reference_number" => operation.reference_number,
-          "authentication_token" => encrypt!(operation.authentication_token)
-        })
+  defp perform_action("poll_certificate_refresh", args, scope, job) do
+    credential = Credential.get_internal!(scope: scope)
+
+    access_token = SessionWorker.get_access_token!(scope.tenant)
+    reference_number = args["reference_number"]
+    private_key = decrypt!(args["private_key"])
+
+    case retrieve_certificate(access_token, reference_number) do
+      :pending ->
+        {:snooze, @poll_interval_seconds}
+
+      {:ok, certificate} ->
+        credentials = certificate_credentials(certificate, private_key)
+
+        case Credential.supersede_certificate(credential, credentials, scope: scope) do
+          {:ok, _credential} -> :ok
+          {:error, reason} -> handle_refresh_failure(credential, scope, reason, job)
+        end
 
       {:error, reason} ->
-        retry_or_fail(credential, scope, reason, job)
+        handle_refresh_failure(credential, scope, reason, job)
     end
   end
 
@@ -171,19 +221,36 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
     |> Firmowid.Oban.insert(skip_organization_id: true)
   end
 
-  defp enqueue_stage(action, credential, organization_id, stage_args) do
-    enqueue_stage(action, organization_id, Map.put(stage_args, "credential_id", credential.id))
+  defp request_certificate(access_token) do
+    with {:ok, limits} <- ApiClient.get_certificate_limits(access_token),
+         :ok <- validate_limits(limits),
+         {:ok, enrollment_data} <- ApiClient.get_certificate_enrollment_data(access_token),
+         {:ok, %{csr: csr, private_key: private_key}} <-
+           generate_certificate_enrollment(enrollment_data),
+         {:ok, reference_number} <-
+           ApiClient.submit_certificate_enrollment(
+             access_token,
+             certificate_name(),
+             csr
+           ) do
+      {:ok, %{reference_number: reference_number, private_key: private_key}}
+    end
   end
 
-  defp get_stage_credential!(%{"credential_id" => credential_id}, scope, expected_status) do
-    credential = Credential.get_internal!(scope: scope)
-    expected_statuses = List.wrap(expected_status)
-
-    if credential.id == credential_id and credential.status in expected_statuses do
-      credential
-    else
-      raise "KSeF certificate enrollment credential mismatch"
+  defp retrieve_certificate(access_token, reference_number) do
+    case ApiClient.get_certificate_enrollment_status(access_token, reference_number) do
+      :pending -> :pending
+      {:ok, serial_number} -> ApiClient.retrieve_certificate(access_token, serial_number)
+      {:error, reason} -> {:error, reason}
     end
+  end
+
+  defp certificate_credentials(certificate, private_key) do
+    Jason.encode!(%{
+      "certificate" => certificate,
+      "private_key" => private_key,
+      "private_key_password" => nil
+    })
   end
 
   defp validate_limits(%{
@@ -250,26 +317,29 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
 
   defp decrypt!(value), do: value |> Base.decode64!() |> Firmowid.Vault.decrypt!()
 
-  defp encrypt_json!(value), do: value |> Jason.encode!() |> encrypt!()
+  defp retrying?(%Oban.Job{attempt: attempt, max_attempts: max_attempts}), do: attempt < max_attempts
 
-  defp decrypt_json!(value), do: value |> decrypt!() |> Jason.decode!()
+  defp handle_refresh_failure(credential, scope, reason, job) do
+    if retrying?(job) do
+      {:error, reason}
+    else
+      Logger.error("KSeF certificate refresh failed for organization #{scope.tenant}: #{inspect(reason)}")
 
-  defp retry_or_fail(_credential, _scope, reason, %Oban.Job{attempt: attempt, max_attempts: max_attempts})
-       when attempt < max_attempts, do: {:error, reason}
+      Credential.recover_certificate_refresh!(credential, scope: scope)
 
-  defp retry_or_fail(nil, scope, reason, %Oban.Job{}) do
-    Logger.error(
-      "KSeF certificate enrollment failed before credential creation for organization #{scope.tenant}: #{inspect(reason)}"
-    )
-
-    {:cancel, reason}
+      {:cancel, reason}
+    end
   end
 
-  defp retry_or_fail(credential, scope, reason, %Oban.Job{}) do
-    Logger.error("KSeF certificate enrollment failed for organization #{scope.tenant}: #{inspect(reason)}")
+  defp handle_enrollment_failure(credential, scope, reason, job) do
+    if retrying?(job) do
+      {:error, reason}
+    else
+      Logger.error("KSeF certificate enrollment failed for organization #{scope.tenant}: #{inspect(reason)}")
 
-    Credential.delete_failed!(credential, scope: scope)
+      Credential.delete_failed!(credential, scope: scope)
 
-    {:cancel, reason}
+      {:cancel, reason}
+    end
   end
 end

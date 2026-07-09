@@ -14,11 +14,13 @@ defmodule Firmowid.Ash.Ksef.Credential do
     domain: Firmowid.Ash.Ksef,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshStateMachine],
+    extensions: [AshStateMachine, AshOban],
     notifiers: [Ash.Notifier.PubSub]
 
+  alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Ash.Checks.SystemActorRole
-  alias Firmowid.Ash.Ksef.Calculations.CredentialExpiresOn
+  alias Firmowid.Ash.Ksef.Changes.RevokeSupersededCertificate
+  alias Firmowid.Ash.Ksef.Changes.SetCredentialExpiration
   alias Firmowid.Ash.Ksef.Validations.ValidateKsefToken
   alias Firmowid.Ash.Ksef.Validations.ValidateSignedAuthTokenRequest
   alias Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker
@@ -43,6 +45,30 @@ defmodule Firmowid.Ash.Ksef.Credential do
         to: :authenticating
 
       transition :mark_working, from: [:authenticating, :working], to: :working
+      transition :refresh_certificate, from: :working, to: :refreshing
+      transition :supersede_certificate, from: :refreshing, to: :working
+      transition :recover_certificate_refresh, from: :refreshing, to: :working
+    end
+  end
+
+  oban do
+    triggers do
+      trigger :refresh_certificate do
+        action :refresh_certificate
+        read_action :refreshable_certificates
+
+        where expr(
+                status == :working and auth_type in [:certificate, :generated_certificate] and
+                  expires_on <= from_now(30, :day)
+              )
+
+        scheduler_cron "0 3 * * *"
+        max_attempts 3
+        queue :ksef_sessions
+
+        worker_module_name Firmowid.Ash.Ksef.Credential.Worker.RefreshCertificate
+        scheduler_module_name Firmowid.Ash.Ksef.Credential.Scheduler.RefreshCertificate
+      end
     end
   end
 
@@ -52,10 +78,14 @@ defmodule Firmowid.Ash.Ksef.Credential do
     define :wait_for_certificate
     define :complete_certificate_enrollment, args: [:credentials]
     define :mark_working
+    define :refresh_certificate
+    define :supersede_certificate, args: [:credentials]
+    define :recover_certificate_refresh
     define :delete_failed
     define :get, get?: true, not_found_error?: false
     define :get_internal, action: :internal, get?: true, not_found_error?: false
     define :all_organization_ids, action: :all_organization_ids
+    define :refreshable_certificates, action: :refreshable_certificates
     define :authenticate_with_token, args: [:ksef_token]
 
     define :authenticate_with_uploaded_certificate,
@@ -71,12 +101,14 @@ defmodule Firmowid.Ash.Ksef.Credential do
     update :prepare_enrollment do
       description "Mark generated-certificate enrollment as ready to submit a certificate request."
       require_atomic? false
+      public? false
       change transition_state(:preparing_enrollment)
     end
 
     update :wait_for_certificate do
       description "Mark generated-certificate enrollment as waiting for KSeF certificate issuance."
       require_atomic? false
+      public? false
       change transition_state(:wait_for_certificate)
     end
 
@@ -84,14 +116,68 @@ defmodule Firmowid.Ash.Ksef.Credential do
       description "Persist generated certificate material and mark the credential ready for KSeF authentication."
       primary? true
       require_atomic? false
+      public? false
       accept [:credentials]
       change transition_state(:authenticating)
+
+      change after_action(fn changeset, credential, _context ->
+               case SessionWorker.enqueue(credential.organization_id) do
+                 {:ok, _job} -> {:ok, credential}
+                 {:error, _reason} = error -> error
+               end
+             end)
     end
 
     update :mark_working do
       description "Mark a credential as connected and ready to use."
       require_atomic? false
+      public? false
       change transition_state(:working)
+    end
+
+    update :refresh_certificate do
+      description "AshOban trigger action — enqueue rollover for a KSeF certificate near expiration."
+      require_atomic? false
+      public? false
+
+      validate attribute_in(:auth_type, [:certificate, :generated_certificate])
+
+      change transition_state(:refreshing)
+
+      change after_action(fn _changeset, credential, _context ->
+               case CertificateEnrollmentWorker.enqueue_refresh(credential) do
+                 {:ok, _job} -> {:ok, credential}
+                 {:error, _reason} = error -> error
+               end
+             end)
+    end
+
+    update :supersede_certificate do
+      description "Replace a working KSeF certificate after successful rollover."
+      require_atomic? false
+      public? false
+      accept [:credentials]
+
+      validate attribute_in(:auth_type, [:certificate, :generated_certificate])
+      change set_attribute(:auth_type, :generated_certificate)
+      change transition_state(:working)
+      change {RevokeSupersededCertificate, []}
+    end
+
+    update :recover_certificate_refresh do
+      description "Return a credential to working after its certificate rollover cannot continue."
+      require_atomic? false
+      public? false
+      change transition_state(:working)
+
+      # maybe send a email?
+      # refresh can fail if KSeF limit of certificates is reached
+    end
+
+    update :backfill_expiration_metadata do
+      description "Persist certificate expiration metadata for an existing credential."
+      require_atomic? false
+      public? false
     end
 
     destroy :delete_failed do
@@ -101,7 +187,7 @@ defmodule Firmowid.Ash.Ksef.Credential do
     read :get do
       description "Fetch the active KSeF credential for the current organization."
       get? true
-      filter expr(organization_id == ^tenant() and status == :working)
+      filter expr(organization_id == ^tenant() and status in [:working, :refreshing])
       prepare build(load: [:expires_on])
     end
 
@@ -114,12 +200,19 @@ defmodule Firmowid.Ash.Ksef.Credential do
 
     read :all_organization_ids do
       description "List organization IDs that currently have stored KSeF credentials."
-      filter expr(status == :working)
+      filter expr(status in [:working, :refreshing])
       prepare build(select: [:organization_id])
+    end
+
+    read :refreshable_certificates do
+      description "List working certificate credentials for automatic KSeF certificate rollover."
+      filter expr(status == :working and auth_type in [:certificate, :generated_certificate])
+      pagination keyset?: true
     end
 
     create :authenticate_with_token do
       description "Authenticate the organization with KSeF using a token."
+      primary? true
       argument :ksef_token, :string, allow_nil?: false
 
       validate {ValidateKsefToken, []}
@@ -192,6 +285,10 @@ defmodule Firmowid.Ash.Ksef.Credential do
   end
 
   policies do
+    bypass AshObanInteraction do
+      authorize_if always()
+    end
+
     bypass actor_attribute_equals(:role, :admin) do
       authorize_if always()
     end
@@ -204,6 +301,10 @@ defmodule Firmowid.Ash.Ksef.Credential do
                      :wait_for_certificate,
                      :complete_certificate_enrollment,
                      :mark_working,
+                     :refresh_certificate,
+                     :supersede_certificate,
+                     :recover_certificate_refresh,
+                     :backfill_expiration_metadata,
                      :delete_failed,
                      :get,
                      :internal
@@ -212,7 +313,7 @@ defmodule Firmowid.Ash.Ksef.Credential do
 
     # cross_tenant_reader: enumerate org ids only
     bypass {SystemActorRole, roles: [:cross_tenant_reader]} do
-      authorize_if action(:all_organization_ids)
+      authorize_if action([:all_organization_ids, :refreshable_certificates])
     end
 
     # Other actors: no access
@@ -233,7 +334,14 @@ defmodule Firmowid.Ash.Ksef.Credential do
     publish :wait_for_certificate, ["wait_for_certificate", :organization_id]
     publish :complete_certificate_enrollment, ["authenticating", :organization_id]
     publish :mark_working, ["working", :organization_id]
+    publish :refresh_certificate, ["refreshing", :organization_id]
+    publish :supersede_certificate, ["working", :organization_id]
+    publish :recover_certificate_refresh, ["working", :organization_id]
     publish :delete_failed, ["failed", :organization_id]
+  end
+
+  changes do
+    change {SetCredentialExpiration, []}
   end
 
   attributes do
@@ -246,6 +354,7 @@ defmodule Firmowid.Ash.Ksef.Credential do
           :preparing_enrollment,
           :wait_for_certificate,
           :authenticating,
+          :refreshing,
           :working
         ]
       ],
@@ -265,6 +374,12 @@ defmodule Firmowid.Ash.Ksef.Credential do
       public? false
     end
 
+    # Persisted rather than calculated: the AshOban rollover trigger filters it in Postgres.
+    attribute :expires_on, :date do
+      allow_nil? true
+      public? true
+    end
+
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
@@ -273,12 +388,6 @@ defmodule Firmowid.Ash.Ksef.Credential do
     belongs_to :organization, Firmowid.Ash.Core.Organization do
       allow_nil? false
       attribute_writable? true
-    end
-  end
-
-  calculations do
-    calculate :expires_on, :date, CredentialExpiresOn do
-      public? true
     end
   end
 
