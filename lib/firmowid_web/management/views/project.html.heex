@@ -140,7 +140,7 @@
           <% end %>
         </div>
       </div>
-      <div :if={not Enum.empty?(@project.users)} class="space-y-4 rounded-sm bg-white p-4">
+      <div class="space-y-4 rounded-sm bg-white p-4">
         <div class="flex flex-row items-center justify-between">
           <p class="text-lg/tight">
             Pracownicy
@@ -148,6 +148,7 @@
 
           <.button
             :if={!@project.archived_at}
+            disabled={Enum.empty?(@project.users)}
             type="button"
             variant="ghost"
             size="small"
@@ -165,118 +166,134 @@
           </.button>
         </div>
 
-        <div class="grid grid-cols-[1fr_repeat(3,minmax(min-content,6rem))_min-content] items-center gap-x-4 gap-y-2">
-          <div class="text-grey-500 col-span-full grid grid-cols-subgrid px-2 py-1 text-sm">
-            <p>Imię i nazwisko</p>
-            <p class="text-right">Stawka</p>
+        <%= if not Enum.empty?(@project.users) do %>
+          <div class="grid grid-cols-[1fr_repeat(3,minmax(min-content,6rem))_min-content] items-center gap-x-4 gap-y-2">
+            <div class="text-grey-500 col-span-full grid grid-cols-subgrid px-2 py-1 text-sm">
+              <p>Imię i nazwisko</p>
+              <p class="text-right">Stawka</p>
 
-            <p class="text-right">Godziny</p>
-            <p class="text-right">Koszt</p>
-            <div></div>
-          </div>
+              <p class="text-right">Godziny</p>
+              <p class="text-right">Koszt</p>
+              <div></div>
+            </div>
 
-          <div class="divide-grey-100 col-span-full grid grid-cols-subgrid gap-y-0 divide-y-2">
-            <div
-              :for={user <- @users}
-              class="border-grey-100 col-span-full grid grid-cols-subgrid items-center py-3 pr-4 pl-2 first:border-t-2 last:border-b-2"
-            >
-              <div class="flex flex-row items-center gap-4">
-                <.avatar class="ring-greyButtonBg/50 size-8 ring-1">
-                  <.avatar_image
-                    :if={Map.get(user.avatar_blob || %{}, :url)}
-                    src={Map.get(user.avatar_blob || %{}, :url)}
-                    alt="Avatar"
-                  />
-                  <.avatar_fallback class="bg-blueBg text-blueText">
-                    {to_string(user.name || user.email || "")
-                    |> String.slice(0, 1)
-                    |> String.upcase()}
-                  </.avatar_fallback>
-                </.avatar>
-                <p class="leading-snug">
-                  {user.name || user.email}
+            <div class="divide-grey-100 col-span-full grid grid-cols-subgrid gap-y-0 divide-y-2">
+              <div
+                :for={user <- @users}
+                class="border-grey-100 col-span-full grid grid-cols-subgrid items-center py-3 pr-4 pl-2 first:border-t-2 last:border-b-2"
+              >
+                <div class="flex flex-row items-center gap-4">
+                  <.avatar class="ring-greyButtonBg/50 size-8 ring-1">
+                    <.avatar_image
+                      :if={Map.get(user.avatar_blob || %{}, :url)}
+                      src={Map.get(user.avatar_blob || %{}, :url)}
+                      alt="Avatar"
+                    />
+                    <.avatar_fallback class="bg-blueBg text-blueText">
+                      {to_string(user.name || user.email || "")
+                      |> String.slice(0, 1)
+                      |> String.upcase()}
+                    </.avatar_fallback>
+                  </.avatar>
+                  <p class="leading-snug">
+                    {user.name || user.email}
+                  </p>
+                </div>
+
+                <p class="text-grey-500 text-right">
+                  <%= if user.hourly_rate do %>
+                    {:PLN
+                    |> Money.new(user.hourly_rate)
+                    |> Money.to_string!(fractional_digits: 0)}/godz.
+                  <% else %>
+                    —
+                  <% end %>
                 </p>
+
+                <p class="text-grey-900 text-right">
+                  {format_hours(user.time_worked)}
+                </p>
+
+                <p class="text-grey-900 text-right">
+                  <%= if user.cost do %>
+                    {:PLN
+                    |> Money.new(user.cost)
+                    |> Money.to_string!(fractional_digits: 0)}
+                  <% else %>
+                    —
+                  <% end %>
+                </p>
+                <.button
+                  :if={!@project.archived_at}
+                  phx-click="toggle-user"
+                  type="button"
+                  variant="unstyled"
+                  phx-value-id={user.id}
+                  disabled={user.time_worked == 0}
+                  class="inline-flex items-center justify-center disabled:opacity-50"
+                >
+                  <%= if user.expanded do %>
+                    <Lucideicons.chevron_up class="text-grey-900 size-4" />
+                  <% else %>
+                    <Lucideicons.chevron_down class="text-grey-900 size-4" />
+                  <% end %>
+                </.button>
+
+                <div
+                  :if={user.expanded}
+                  class="col-span-full grid grid-cols-subgrid gap-y-4 pt-4 pb-3"
+                >
+                  <div
+                    :for={session <- user.sessions_with_duration}
+                    class="text-grey-700 col-span-full grid grid-cols-subgrid pl-12 leading-snug"
+                  >
+                    <p>{session.title}</p>
+                    <p class="col-start-3 text-right">
+                      {TimeFormatter.format_duration(session.duration)}
+                    </p>
+                  </div>
+                </div>
               </div>
+            </div>
 
-              <p class="text-grey-500 text-right">
-                <%= if user.hourly_rate do %>
-                  {:PLN
-                  |> Money.new(user.hourly_rate)
-                  |> Money.to_string!(fractional_digits: 0)}/godz.
-                <% else %>
-                  —
-                <% end %>
+            <div class="col-span-full grid grid-cols-subgrid items-center p-2 leading-snug">
+              <p class="text-grey-500 text-sm">
+                Suma
               </p>
 
-              <p class="text-grey-900 text-right">
-                {format_hours(user.time_worked)}
-              </p>
+              <div />
 
-              <p class="text-grey-900 text-right">
-                <%= if user.cost do %>
+              <p class="text-right font-bold">
+                {format_hours(@total_time_worked)}
+              </p>
+              <p class="text-right font-bold">
+                <%= if @total_cost do %>
                   {:PLN
-                  |> Money.new(user.cost)
+                  |> Money.new(@total_cost)
                   |> Money.to_string!(fractional_digits: 0)}
                 <% else %>
                   —
                 <% end %>
               </p>
-              <.button
-                :if={!@project.archived_at}
-                phx-click="toggle-user"
-                type="button"
-                variant="unstyled"
-                phx-value-id={user.id}
-                disabled={user.time_worked == 0}
-                class="inline-flex items-center justify-center disabled:opacity-50"
-              >
-                <%= if user.expanded do %>
-                  <Lucideicons.chevron_up class="text-grey-900 size-4" />
-                <% else %>
-                  <Lucideicons.chevron_down class="text-grey-900 size-4" />
-                <% end %>
-              </.button>
 
-              <div
-                :if={user.expanded}
-                class="col-span-full grid grid-cols-subgrid gap-y-4 pt-4 pb-3"
-              >
-                <div
-                  :for={session <- user.sessions_with_duration}
-                  class="text-grey-700 col-span-full grid grid-cols-subgrid pl-12 leading-snug"
-                >
-                  <p>{session.title}</p>
-                  <p class="col-start-3 text-right">
-                    {TimeFormatter.format_duration(session.duration)}
-                  </p>
-                </div>
-              </div>
+              <div />
             </div>
           </div>
-
-          <div class="col-span-full grid grid-cols-subgrid items-center p-2 leading-snug">
-            <p class="text-grey-500 text-sm">
-              Suma
+        <% else %>
+          <div class="flex flex-col items-center justify-center gap-4 py-8">
+            <p class="text-grey-700 text-center text-sm">
+              Żaden pracownik nie jest przypisany do projektu. <br />Dodaj członków zespołu.
             </p>
-
-            <div />
-
-            <p class="text-right font-bold">
-              {format_hours(@total_time_worked)}
-            </p>
-            <p class="text-right font-bold">
-              <%= if @total_cost do %>
-                {:PLN
-                |> Money.new(@total_cost)
-                |> Money.to_string!(fractional_digits: 0)}
-              <% else %>
-                —
-              <% end %>
-            </p>
-
-            <div />
+            <.link
+              navigate={~p"/zarzadzanie/projekty/#{@project.id}/edycja"}
+              kind="button"
+              size="small"
+              variant="tertiary"
+            >
+              Dodaj pracowników
+            </.link>
           </div>
-        </div>
+        <% end %>
       </div>
     </div>
   </div>
