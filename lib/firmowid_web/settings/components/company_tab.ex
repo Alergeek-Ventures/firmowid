@@ -29,7 +29,8 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :editing_correspondence, :boolean, required: true
   attr :ksef_credential, :any, required: true
   attr :ksef_auth_method, :atom, required: true
-  attr :ksef_certificate_status, :atom, required: true
+  attr :ksef_auth_status, :atom, required: true
+  attr :ksef_failure, :any, default: nil
   attr :bank_accounts, :list, required: true
   attr :bank_institutions, :map, required: true
   attr :pending_requisitions, :list, required: true
@@ -63,7 +64,8 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       <.ksef_section
         ksef_credential={@ksef_credential}
         ksef_auth_method={@ksef_auth_method}
-        ksef_certificate_status={@ksef_certificate_status}
+        ksef_auth_status={@ksef_auth_status}
+        ksef_failure={@ksef_failure}
         uploads={@uploads}
       />
 
@@ -311,7 +313,8 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   attr :ksef_credential, :any, required: true
   attr :ksef_auth_method, :atom, required: true
-  attr :ksef_certificate_status, :atom, required: true
+  attr :ksef_auth_status, :atom, required: true
+  attr :ksef_failure, :any, default: nil
   attr :uploads, :map, required: true
 
   defp ksef_section(assigns) do
@@ -451,6 +454,11 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                     </.button>
                   </div>
                 </form>
+
+                <.ksef_auth_status
+                  status={@ksef_auth_status}
+                  failure={@ksef_failure}
+                />
               </:content>
             </.ksef_step>
           </ol>
@@ -518,26 +526,25 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                     show_errors={false}
                   />
 
-                  <%= if @ksef_certificate_status not in [:idle, :awaiting_signature, :working, :failed] do %>
-                    <div class="text-grey-700 flex items-center gap-2 rounded-md py-2 text-sm">
-                      <.icon name="hero-arrow-path" class="size-5 animate-spin" />
-                      <span class="w-full">
-                        {present_certificate_status(@ksef_certificate_status)}
-                      </span>
-                    </div>
-                  <% else %>
-                    <div class="flex justify-end">
-                      <.button
-                        type="submit"
-                        variant="secondary"
-                        size="small"
-                        phx-disable-with="Wysyłanie..."
-                      >
-                        Wyślij plik
-                      </.button>
-                    </div>
-                  <% end %>
+                  <div
+                    :if={@ksef_auth_status in [:idle, :working, :failed]}
+                    class="flex justify-end"
+                  >
+                    <.button
+                      type="submit"
+                      variant="secondary"
+                      size="small"
+                      phx-disable-with="Wysyłanie..."
+                    >
+                      Wyślij plik
+                    </.button>
+                  </div>
                 </form>
+
+                <.ksef_auth_status
+                  status={@ksef_auth_status}
+                  failure={@ksef_failure}
+                />
               </:content>
             </.ksef_step>
           </ol>
@@ -625,6 +632,11 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                     </.button>
                   </div>
                 </form>
+
+                <.ksef_auth_status
+                  status={@ksef_auth_status}
+                  failure={@ksef_failure}
+                />
               </:content>
             </.ksef_step>
           </ol>
@@ -704,6 +716,46 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     >
       {@label}
     </.button>
+    """
+  end
+
+  attr :status, :atom, required: true
+  attr :failure, :any, default: nil
+
+  defp ksef_auth_status(assigns) do
+    ~H"""
+    <div
+      :if={
+        @status in [
+          :authenticating_epuap,
+          :preparing_enrollment,
+          :wait_for_certificate,
+          :authenticating,
+          :failed
+        ] || @failure
+      }
+      role="status"
+      class={[
+        "mt-4 flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm",
+        if(@status == :failed,
+          do: "border-red-200 bg-red-50 text-red-900",
+          else: "bg-grey-50 border-grey-200 text-grey-700"
+        )
+      ]}
+    >
+      <.icon
+        :if={@status == :failed}
+        name="hero-x-circle-solid"
+        class="mt-0.5 size-5 shrink-0 text-red-700"
+      />
+      <.icon
+        :if={@status != :failed}
+        name="hero-arrow-path"
+        class="mt-0.5 size-5 shrink-0 animate-spin"
+      />
+
+      <span>{failure_message(@failure) || present_ksef_auth_status(@status)}</span>
+    </div>
     """
   end
 
@@ -1265,14 +1317,38 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   defp yes_no(false), do: "Nie"
   defp yes_no(_), do: "—"
 
-  defp present_certificate_status(:authenticating), do: "Trwa uwierzytelnianie w KSeF."
+  defp failure_message(nil), do: nil
+  defp failure_message(%{reason: reason}), do: credential_failure_message(reason)
 
-  defp present_certificate_status(:authenticating_epuap), do: "Trwa uwierzytelnianie w KSeF."
+  defp credential_failure_message(:certificate_limit_exhausted) do
+    "Osiągnięto limit certyfikatów KSeF."
+  end
 
-  defp present_certificate_status(:preparing_enrollment), do: "Trwa przygotowanie wniosku o certyfikat."
+  defp credential_failure_message(:invalid_credentials) do
+    "Nie udało się uwierzytelnić w KSeF. Sprawdź certyfikat, klucz oraz hasło i spróbuj ponownie."
+  end
 
-  defp present_certificate_status(:wait_for_certificate), do: "KSeF wystawia certyfikat."
-  defp present_certificate_status(_status), do: ""
+  defp credential_failure_message(:authentication_failed) do
+    "Uwierzytelnienie w KSeF nie powiodło się."
+  end
+
+  defp credential_failure_message(_reason) do
+    "Wystąpił błąd podczas generowania certyfikatu KSeF."
+  end
+
+  defp present_ksef_auth_status(:authenticating), do: "Trwa uwierzytelnianie w KSeF."
+
+  defp present_ksef_auth_status(:authenticating_epuap), do: "Trwa uwierzytelnianie w KSeF."
+
+  defp present_ksef_auth_status(:preparing_enrollment) do
+    "Trwa przygotowanie wniosku o certyfikat."
+  end
+
+  defp present_ksef_auth_status(:wait_for_certificate), do: "KSeF wystawia certyfikat."
+
+  defp present_ksef_auth_status(:failed) do
+    "Nie udało się połączyć z KSeF. Spróbuj ponownie."
+  end
 
   defp role_label(:admin), do: "admin"
   defp role_label(:employee), do: "pracownik"

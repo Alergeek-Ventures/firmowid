@@ -122,7 +122,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
         |> assign(:ksef_credential, Ksef.get_credential!(scope: scope))
         |> assign(:ksef_auth_challenge, nil)
         |> assign(:ksef_auth_method, :trusted_profile)
-        |> assign(:ksef_certificate_status, ksef_workflow_status(ksef_internal_credential))
+        |> assign(:ksef_auth_status, ksef_connection_status(ksef_internal_credential))
+        |> assign(:ksef_failure, nil)
         |> allow_upload(:organization_avatar,
           accept: ~w(.jpg .jpeg .png),
           max_entries: 1,
@@ -695,7 +696,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
         {:noreply,
          socket
          |> assign(:ksef_credential, Ksef.get_credential!(scope: socket.assigns.ash_scope))
-         |> assign(:ksef_certificate_status, credential.status)}
+         |> assign(:ksef_auth_status, credential.status)
+         |> assign(:ksef_failure, nil)}
 
       {:error, %Ash.Error.Invalid{errors: [%{message: message} | _]}} ->
         LiveToast.send_toast(:error, message)
@@ -705,7 +707,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   def handle_event("select_ksef_auth_method", %{"method" => method}, socket)
       when method in ~w(token trusted_profile certificate) do
-    {:noreply, assign(socket, :ksef_auth_method, String.to_existing_atom(method))}
+    {:noreply,
+     socket
+     |> assign(:ksef_auth_method, String.to_existing_atom(method))
+     |> assign(:ksef_failure, nil)}
   end
 
   def handle_event("validate_ksef_certificate", _params, socket), do: {:noreply, socket}
@@ -717,10 +722,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     case Ksef.prepare_external_auth_token_request(socket.assigns.ash_scope) do
       {:ok, request} ->
-        socket =
-          socket
-          |> assign(:ksef_auth_challenge, request.challenge)
-          |> assign(:ksef_certificate_status, :awaiting_signature)
+        socket = assign(socket, :ksef_auth_challenge, request.challenge)
 
         {:noreply,
          push_event(socket, "download-ksef-auth-token-request", %{
@@ -764,7 +766,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
       {:noreply,
        socket
        |> assign(:ksef_auth_challenge, nil)
-       |> assign(:ksef_certificate_status, :authenticating_epuap)}
+       |> assign(:ksef_auth_status, :authenticating_epuap)
+       |> assign(:ksef_failure, nil)}
     else
       _error ->
         LiveToast.send_toast(
@@ -805,7 +808,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
           {:noreply,
            socket
            |> assign(:ksef_credential, Ksef.get_credential!(scope: socket.assigns.ash_scope))
-           |> assign(:ksef_certificate_status, credential.status)}
+           |> assign(:ksef_auth_status, credential.status)
+           |> assign(:ksef_failure, nil)}
 
         {:error, _reason} ->
           LiveToast.send_toast(
@@ -954,22 +958,31 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_info(
-        %Broadcast{topic: "credential:" <> topic, payload: %Notification{resource: Credential, data: credential}},
+        %Broadcast{
+          topic: "credential:" <> topic,
+          payload: %Notification{resource: Credential, data: credential} = notification
+        },
         socket
       ) do
     status = credential_status_from_topic(topic, credential)
-    socket = assign(socket, :ksef_certificate_status, status)
+    socket = assign(socket, :ksef_auth_status, status)
 
     case status do
       :working ->
         LiveToast.send_toast(:success, "Połączono z KSeF.")
 
-        {:noreply, assign(socket, :ksef_credential, Ksef.get_credential!(scope: socket.assigns.ash_scope))}
+        {:noreply,
+         socket
+         |> assign(:ksef_failure, nil)
+         |> assign(:ksef_credential, Ksef.get_credential!(scope: socket.assigns.ash_scope))}
 
       :failed ->
-        LiveToast.send_toast(:error, "Wystąpił błąd podczas generowania certyfikatu KSeF.")
+        reason = Ash.Changeset.get_argument(notification.changeset, :reason)
 
-        {:noreply, assign(socket, :ksef_credential, Ksef.get_credential!(scope: socket.assigns.ash_scope))}
+        {:noreply,
+         socket
+         |> assign(:ksef_failure, %{reason: reason, auth_type: credential.auth_type})
+         |> assign(:ksef_credential, Ksef.get_credential!(scope: socket.assigns.ash_scope))}
 
       _ ->
         {:noreply, socket}
@@ -1056,7 +1069,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
             editing_correspondence={@editing_correspondence}
             ksef_credential={@ksef_credential}
             ksef_auth_method={@ksef_auth_method}
-            ksef_certificate_status={@ksef_certificate_status}
+            ksef_auth_status={@ksef_auth_status}
+            ksef_failure={@ksef_failure}
             bank_accounts={@bank_accounts}
             bank_institutions={@bank_institutions}
             pending_requisitions={@pending_requisitions}

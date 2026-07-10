@@ -232,10 +232,15 @@ defmodule Firmowid.Ash.Ksef.Workers.SessionWorker do
   defp maybe_unauthenticate(scope, reason, job) do
     if final_attempt?(job) and terminal_auth_failure?(reason) do
       if credential = Credential.get_internal!(scope: scope) do
-        Credential.delete_failed!(credential, scope: scope)
+        Credential.delete_failed!(credential, credential_failure_reason(reason), scope: scope)
       end
     end
   end
+
+  defp credential_failure_reason(reason) when reason in [:invalid_private_key, :invalid_certificate_credentials],
+    do: :invalid_credentials
+
+  defp credential_failure_reason(_reason), do: :authentication_failed
 
   defp terminal_auth_failure?(:refresh_token_expired), do: true
   defp terminal_auth_failure?(:unauthorized), do: true

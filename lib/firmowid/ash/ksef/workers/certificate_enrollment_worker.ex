@@ -129,7 +129,7 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
         })
 
       {:error, :certificate_limit_exhausted} ->
-        Credential.delete_failed!(credential, scope: scope)
+        Credential.delete_failed!(credential, :certificate_limit_exhausted, scope: scope)
         {:cancel, :certificate_limit_exhausted}
 
       {:error, reason} ->
@@ -337,9 +337,12 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
     else
       Logger.error("KSeF certificate enrollment failed for organization #{scope.tenant}: #{inspect(reason)}")
 
-      Credential.delete_failed!(credential, scope: scope)
+      Credential.delete_failed!(credential, enrollment_failure_reason(reason), scope: scope)
 
       {:cancel, reason}
     end
   end
+
+  defp enrollment_failure_reason(:certificate_limit_exhausted), do: :certificate_limit_exhausted
+  defp enrollment_failure_reason(_reason), do: :enrollment_failed
 end

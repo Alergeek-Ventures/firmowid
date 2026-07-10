@@ -26,6 +26,8 @@ defmodule Firmowid.Ash.Ksef.Credential do
   alias Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker
   alias Firmowid.Ash.Ksef.Workers.SessionWorker
 
+  @failure_reasons ~w(authentication_failed certificate_limit_exhausted enrollment_failed invalid_credentials)a
+
   postgres do
     table "ksef_credentials"
     repo Firmowid.Repo
@@ -81,7 +83,7 @@ defmodule Firmowid.Ash.Ksef.Credential do
     define :refresh_certificate
     define :supersede_certificate, args: [:credentials]
     define :recover_certificate_refresh
-    define :delete_failed
+    define :delete_failed, args: [:reason]
     define :get, get?: true, not_found_error?: false
     define :get_internal, action: :internal, get?: true, not_found_error?: false
     define :all_organization_ids, action: :all_organization_ids
@@ -182,6 +184,7 @@ defmodule Firmowid.Ash.Ksef.Credential do
 
     destroy :delete_failed do
       description "Delete a credential workflow after final authentication or enrollment failure."
+      argument :reason, :atom, allow_nil?: false, constraints: [one_of: @failure_reasons]
     end
 
     read :get do
