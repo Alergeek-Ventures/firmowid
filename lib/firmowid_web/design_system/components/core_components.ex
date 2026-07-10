@@ -548,6 +548,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         ]}
         {@rest}
       />
+      <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
   end
