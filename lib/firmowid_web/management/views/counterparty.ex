@@ -109,6 +109,11 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     end
   end
 
+  def handle_event("increase_invoice_limit", _params, socket) do
+    new_limit = socket.assigns.invoice_limit + invoice_limit()
+    {:noreply, assign(socket, :invoice_limit, new_limit)}
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -151,6 +156,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
         params={@params}
         invoice_filter={@invoice_filter}
         invoices={@invoices}
+        limit={@invoice_limit}
         class="col-start-2"
       />
     </div>
@@ -349,10 +355,14 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   attr :invoice_filter, :atom, required: true
   attr :invoices, :list, required: true
   attr :class, :any, default: nil
+  attr :limit, :integer
 
   defp invoices_section(assigns) do
     ~H"""
-    <section class={["rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]", @class]}>
+    <section class={[
+      "flex flex-col rounded-lg bg-white p-6 shadow-[0px_1px_6px_0px_rgba(0,0,0,0.1)]",
+      @class
+    ]}>
       <div class="mb-4 flex items-center justify-between gap-4">
         <h3 class="text-grey-700 text-lg font-medium">Faktury</h3>
 
@@ -395,7 +405,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
           <div class="col-span-full grid grid-cols-subgrid gap-y-2">
             <div
-              :for={invoice <- @invoices}
+              :for={invoice <- Enum.take(@invoices, @limit)}
               :key={invoice.id}
               class="bg-grey-50 col-span-full grid grid-cols-subgrid items-center rounded-sm px-2 py-3"
             >
@@ -429,6 +439,15 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
             </div>
           </div>
         </div>
+        <.button
+          :if={length(@invoices) > @limit}
+          variant="ghost"
+          size="small"
+          phx-click="increase_invoice_limit"
+          class="mt-4 self-center"
+        >
+          Załaduj więcej faktur
+        </.button>
       <% end %>
     </section>
     """
@@ -500,7 +519,8 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   defp assign_counterparty_page(socket, counterparty, invoice_filter \\ nil) do
     scope = socket.assigns.ash_scope
     invoice_filter = invoice_filter || socket.assigns[:invoice_filter] || :all
-    counterparty = Ash.load!(counterparty, [:display_label], scope: scope)
+    invoice_limit = socket.assigns[:invoice_limit] || invoice_limit()
+    counterparty = Ash.load!(counterparty, [:display_label, :cooperation_value], scope: scope)
     stats_invoices = list_counterparty_invoices(counterparty.id, :all, scope)
     visible_invoices = list_counterparty_invoices(counterparty.id, invoice_filter, scope)
     suggested_invoices = CounterpartyInvoiceSuggestions.list_for_counterparty(counterparty, scope)
@@ -509,9 +529,10 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     |> assign(:counterparty, counterparty)
     |> assign(:invoice_filter, invoice_filter)
     |> assign(:suggested_invoices, suggested_invoices)
-    |> assign(:stats, build_stats(stats_invoices))
-    |> assign(:invoices, Enum.take(visible_invoices, 10))
+    |> assign(:stats, build_stats(counterparty, stats_invoices))
+    |> assign(:invoices, visible_invoices)
     |> assign(:page_title, counterparty.display_label)
+    |> assign(:invoice_limit, invoice_limit)
   end
 
   defp list_counterparty_invoices(counterparty_id, invoice_filter, scope) do
@@ -532,33 +553,32 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
   defp encode_invoice_filter(filter), do: Navigation.encode_counterparty_invoice_filter(filter)
 
-  defp build_stats(invoices) do
-    currencies = invoices |> Enum.map(& &1.currency) |> Enum.uniq()
+  defp build_stats(counterparty, invoices) do
+    paid_invoices = Enum.filter(invoices, &(&1.reconciliation_status == :matched))
 
-    {total_value, average_value, currency} =
-      case currencies do
-        [currency] ->
-          gross_values = Enum.map(invoices, &(&1.gross_value || Decimal.new(0)))
-          total_value = Enum.reduce(gross_values, Decimal.new(0), &Decimal.add/2)
+    count = length(paid_invoices)
 
-          average_value =
-            case invoices do
-              [] -> nil
-              _ -> Decimal.div(total_value, Decimal.new(length(invoices)))
-            end
+    {total, currency} =
+      case counterparty.cooperation_value do
+        %{total: total, currency: currency} -> {total, currency}
+        _ -> {nil, nil}
+      end
 
-          {total_value, average_value, currency}
+    average_value =
+      case total do
+        total when not is_nil(total) and count > 0 ->
+          Decimal.div(total, Decimal.new(count))
 
         _ ->
-          {nil, nil, nil}
+          nil
       end
 
     %{
-      cooperation_value: total_value,
+      cooperation_value: total,
       currency: currency,
-      invoices_count: length(invoices),
+      invoices_count: count,
       average_value: average_value,
-      last_invoice_date: invoices |> Enum.map(& &1.issue_date) |> Enum.max(Date, fn -> nil end)
+      last_invoice_date: paid_invoices |> Enum.map(& &1.issue_date) |> Enum.max(Date, fn -> nil end)
     }
   end
 
@@ -631,6 +651,8 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
       formatted -> formatted
     end
   end
+
+  defp invoice_limit, do: 6
 
   attr :invoice, :map, required: true
 
