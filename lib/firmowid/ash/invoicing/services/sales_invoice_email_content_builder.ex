@@ -16,42 +16,57 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceEmailContentBuilder do
     {sender_en, sender_pl} = sender_organization_line(invoice)
     invoice_number = invoice.invoice_number
     due_date = format_date(invoice.due_date)
+    lang = content_language(invoice)
 
-    subject = "Invoice #{invoice_number} / Faktura #{invoice_number}"
+    subject =
+      case lang do
+        :pl -> "Faktura #{invoice_number}"
+        :en -> "Invoice #{invoice_number}"
+      end
 
     text =
-      """
-      Hello,
+      case lang do
+        :pl ->
+          """
+          Dzień dobry,
 
-      #{sender_en}
-      Attached is your invoice #{invoice_number}.
-      Due date: #{due_date}.
-      #{share_en}
+          #{sender_pl}
+          w załączniku przesyłamy fakturę #{invoice_number}.
+          Termin płatności: #{due_date}.
+          #{share_pl}
+          """
 
-      ---
+        :en ->
+          """
+          Hello,
 
-      Dzień dobry,
-
-      #{sender_pl}
-      w załączniku przesyłamy fakturę #{invoice_number}.
-      Termin płatności: #{due_date}.
-      #{share_pl}
-      """
+          #{sender_en}
+          Attached is your invoice #{invoice_number}.
+          Due date: #{due_date}.
+          #{share_en}
+          """
+      end
 
     html =
-      """
-      <p>Hello,</p>
-      <p>#{sender_en}</p>
-      <p>Attached is your invoice <strong>#{invoice_number}</strong>.</p>
-      <p>Due date: <strong>#{due_date}</strong>.</p>
-      <p>#{share_en}</p>
-      <hr>
-      <p>Dzień dobry,</p>
-      <p>#{sender_pl}</p>
-      <p>w załączniku przesyłamy fakturę <strong>#{invoice_number}</strong>.</p>
-      <p>Termin płatności: <strong>#{due_date}</strong>.</p>
-      <p>#{share_pl}</p>
-      """
+      case lang do
+        :pl ->
+          """
+          <p>Dzień dobry,</p>
+          <p>#{sender_pl}</p>
+          <p>w załączniku przesyłamy fakturę <strong>#{invoice_number}</strong>.</p>
+          <p>Termin płatności: <strong>#{due_date}</strong>.</p>
+          <p>#{share_pl}</p>
+          """
+
+        :en ->
+          """
+          <p>Hello,</p>
+          <p>#{sender_en}</p>
+          <p>Attached is your invoice <strong>#{invoice_number}</strong>.</p>
+          <p>Due date: <strong>#{due_date}</strong>.</p>
+          <p>#{share_en}</p>
+          """
+      end
 
     {subject, text, html}
   end
@@ -61,42 +76,57 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceEmailContentBuilder do
     {sender_en, sender_pl} = sender_organization_line(invoice)
     invoice_number = invoice.invoice_number
     due_date = format_date(invoice.due_date)
+    lang = content_language(invoice)
 
-    subject = "Payment Reminder: #{invoice_number} / Przypomnienie o płatności: #{invoice_number}"
+    subject =
+      case lang do
+        :pl -> "Przypomnienie o płatności: #{invoice_number}"
+        :en -> "Payment Reminder: #{invoice_number}"
+      end
 
     text =
-      """
-      Hello,
+      case lang do
+        :pl ->
+          """
+          Dzień dobry,
 
-      #{sender_en}
-      this is a payment reminder for invoice #{invoice_number}.
-      Due date: #{due_date}.
-      #{share_en}
+          #{sender_pl}
+          przypominamy o płatności dla faktury #{invoice_number}.
+          Termin płatności: #{due_date}.
+          #{share_pl}
+          """
 
-      ---
+        :en ->
+          """
+          Hello,
 
-      Dzień dobry,
-
-      #{sender_pl}
-      przypominamy o płatności dla faktury #{invoice_number}.
-      Termin płatności: #{due_date}.
-      #{share_pl}
-      """
+          #{sender_en}
+          this is a payment reminder for invoice #{invoice_number}.
+          Due date: #{due_date}.
+          #{share_en}
+          """
+      end
 
     html =
-      """
-      <p>Hello,</p>
-      <p>#{sender_en}</p>
-      <p>this is a payment reminder for invoice <strong>#{invoice_number}</strong>.</p>
-      <p>Due date: <strong>#{due_date}</strong>.</p>
-      <p>#{share_en}</p>
-      <hr>
-      <p>Dzień dobry,</p>
-      <p>#{sender_pl}</p>
-      <p>przypominamy o płatności dla faktury <strong>#{invoice_number}</strong>.</p>
-      <p>Termin płatności: <strong>#{due_date}</strong>.</p>
-      <p>#{share_pl}</p>
-      """
+      case lang do
+        :pl ->
+          """
+          <p>Dzień dobry,</p>
+          <p>#{sender_pl}</p>
+          <p>przypominamy o płatności dla faktury <strong>#{invoice_number}</strong>.</p>
+          <p>Termin płatności: <strong>#{due_date}</strong>.</p>
+          <p>#{share_pl}</p>
+          """
+
+        :en ->
+          """
+          <p>Hello,</p>
+          <p>#{sender_en}</p>
+          <p>this is a payment reminder for invoice <strong>#{invoice_number}</strong>.</p>
+          <p>Due date: <strong>#{due_date}</strong>.</p>
+          <p>#{share_en}</p>
+          """
+      end
 
     {subject, text, html}
   end
@@ -111,41 +141,57 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceEmailContentBuilder do
     invoice_number = invoice.invoice_number
     due_date = format_date(invoice.due_date)
 
-    subject = "Invoice Correction: #{prev_number_en} / Korekta faktury #{prev_number_pl}"
+    lang = content_language(invoice)
+
+    subject =
+      case lang do
+        :pl -> "Korekta faktury #{prev_number_pl}"
+        :en -> "Invoice Correction: #{prev_number_en}"
+      end
 
     text =
-      """
-      Hello,
+      case lang do
+        :pl ->
+          """
+          Dzień dobry,
 
-      #{sender_en}
-      we have corrected invoice #{prev_number_en}. Attached is correcting invoice #{invoice_number}.
-      Due date: #{due_date}.
-      #{share_en}
+          #{sender_pl}
+          skorygowaliśmy fakturę #{prev_number_pl}. W załączniku przesyłamy fakturę korygującą #{invoice_number}.
+          Termin płatności: #{due_date}.
+          #{share_pl}
+          """
 
-      ---
+        :en ->
+          """
+          Hello,
 
-      Dzień dobry,
-
-      #{sender_pl}
-      skorygowaliśmy fakturę #{prev_number_pl}. W załączniku przesyłamy fakturę korygującą #{invoice_number}.
-      Termin płatności: #{due_date}.
-      #{share_pl}
-      """
+          #{sender_en}
+          we have corrected invoice #{prev_number_en}. Attached is correcting invoice #{invoice_number}.
+          Due date: #{due_date}.
+          #{share_en}
+          """
+      end
 
     html =
-      """
-      <p>Hello,</p>
-      <p>#{sender_en}</p>
-      <p>we have corrected invoice <strong>#{prev_number_en}</strong>. Attached is correcting invoice <strong>#{invoice_number}</strong>.</p>
-      <p>Due date: <strong>#{due_date}</strong>.</p>
-      <p>#{share_en}</p>
-      <hr>
-      <p>Dzień dobry,</p>
-      <p>#{sender_pl}</p>
-      <p>skorygowaliśmy fakturę <strong>#{prev_number_pl}</strong>. W załączniku przesyłamy fakturę korygującą <strong>#{invoice_number}</strong>.</p>
-      <p>Termin płatności: <strong>#{due_date}</strong>.</p>
-      <p>#{share_pl}</p>
-      """
+      case lang do
+        :pl ->
+          """
+          <p>Dzień dobry,</p>
+          <p>#{sender_pl}</p>
+          <p>skorygowaliśmy fakturę <strong>#{prev_number_pl}</strong>. W załączniku przesyłamy fakturę korygującą <strong>#{invoice_number}</strong>.</p>
+          <p>Termin płatności: <strong>#{due_date}</strong>.</p>
+          <p>#{share_pl}</p>
+          """
+
+        :en ->
+          """
+          <p>Hello,</p>
+          <p>#{sender_en}</p>
+          <p>we have corrected invoice <strong>#{prev_number_en}</strong>. Attached is correcting invoice <strong>#{invoice_number}</strong>.</p>
+          <p>Due date: <strong>#{due_date}</strong>.</p>
+          <p>#{share_en}</p>
+          """
+      end
 
     {subject, text, html}
   end
@@ -180,4 +226,7 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceEmailContentBuilder do
 
   defp format_date(%Date{} = date), do: Date.to_iso8601(date)
   defp format_date(_), do: "-"
+
+  defp content_language(%{buyer_country: "PL"}), do: :pl
+  defp content_language(_), do: :en
 end
