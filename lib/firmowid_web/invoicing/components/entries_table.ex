@@ -546,7 +546,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   defp render_cell(%{invoicing_entry: %CostInvoice{} = invoice, column: "party"} = assigns) do
     assigns =
       assigns
-      |> assign(:party, invoice.effective_seller_display_name)
+      |> assign(:party, invoice.effective_seller_display_name || invoice.seller)
       |> assign(:bank_badge, nil)
       |> assign(:invoice_source_badge_variant, invoice_source_badge_variant(invoice))
       |> assign(:description, invoice.description)
