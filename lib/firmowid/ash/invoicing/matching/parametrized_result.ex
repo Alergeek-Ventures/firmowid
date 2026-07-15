@@ -207,7 +207,16 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResult do
 
   defp get_invoice_amount(%SalesInvoice{} = si), do: si.gross_value
 
-  @spec calculate_transaction_side_similarity(String.t(), String.t()) :: float()
+  @spec calculate_transaction_side_similarity(String.t() | nil, String.t() | nil) :: float()
+
+  defp calculate_transaction_side_similarity("", ""), do: calculate_transaction_side_similarity(nil, nil)
+
+  defp calculate_transaction_side_similarity(nil, ""), do: calculate_transaction_side_similarity(nil, nil)
+
+  defp calculate_transaction_side_similarity("", nil), do: calculate_transaction_side_similarity(nil, nil)
+
+  defp calculate_transaction_side_similarity(nil, nil), do: 0.0
+
   defp calculate_transaction_side_similarity(transaction_side_name, seller_display_name) do
     transaction_side_name
     |> Akin.compare(seller_display_name, algorithms: ["jaro_winkler"])

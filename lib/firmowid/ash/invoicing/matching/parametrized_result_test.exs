@@ -203,9 +203,10 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
       }
 
       # Should not crash when encountering nil values
-      assert_raise FunctionClauseError, fn ->
-        ParametrizedResult.generate_parametrized_result(cost_invoice, transaction)
-      end
+      result = ParametrizedResult.generate_parametrized_result(cost_invoice, transaction)
+
+      assert result.transaction_side_similarity == 0.0
+      assert result.bank_account_similarity == 0.0
     end
 
     test "amount_present_in_remittance_information_unstructured with various scenarios" do
