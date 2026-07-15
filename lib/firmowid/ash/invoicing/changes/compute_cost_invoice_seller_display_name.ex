@@ -33,7 +33,19 @@ defmodule Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName do
         Ash.Changeset.force_change_attribute(changeset, :seller_display_name, value)
 
       _ ->
-        changeset
+        maybe_fallback_to_seller(changeset, seller_display_name)
+    end
+  end
+
+  defp maybe_fallback_to_seller(changeset, seller_display_name) do
+    if is_binary(seller_display_name) and String.trim(seller_display_name) == "" do
+      Ash.Changeset.force_change_attribute(
+        changeset,
+        :seller_display_name,
+        value(changeset, :seller)
+      )
+    else
+      changeset
     end
   end
 
