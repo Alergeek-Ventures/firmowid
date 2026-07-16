@@ -238,7 +238,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     <div
       :if={@current_user.role == :admin}
-      class="mt-2 flex flex-col gap-4 max-md:hidden"
+      class="relative mt-2 flex flex-col gap-4 max-md:hidden"
     >
       <%= cond do %>
         <% @params.view_mode == :dashboard -> %>
@@ -267,24 +267,25 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
             return_to={build_invoicing_url(@params)}
           />
       <% end %>
-    </div>
 
-    <div
-      :if={@current_user.role == :admin}
-      id="file-drop-overlay"
-      class="fixed top-[10lvw] left-[5lvw] z-20 hidden h-[80lvh] w-[90lvw] items-center justify-center rounded-lg bg-[#CEE6E666] opacity-0 transition-opacity"
-      phx-hook="FileUploadDragNDrop"
-      phx-drop-target={@current_user.role == :admin && @uploads.file.ref}
-    >
-      <div class="border-blueBg absolute top-0 left-0 size-full rounded-lg border-2 opacity-100" />
-      <div class="bg-blueText flex flex-col items-center justify-center gap-8 rounded-xl p-4 py-8 text-white">
-        <.icon name="hero-cloud-arrow-up" class="size-16" />
-        <p class="max-w-[25lvw] text-center text-xl opacity-100">
-          Przeciągnij faktury, aby załadować je do Firmowida.
-        </p>
-        <p class="max-w-[25lvw] text-center text-sm opacity-80">
-          (max 50 plików, PDF, JPG oraz PNG)
-        </p>
+      <div
+        :if={@current_user.role == :admin}
+        id="file-drop-overlay"
+        class="border-turquoise-200 absolute -inset-3 z-20 hidden rounded-lg border-2 bg-[#EDF5F599] opacity-60 transition-opacity"
+        phx-hook="FileUploadDragNDrop"
+        phx-drop-target={@current_user.role == :admin && @uploads.file.ref}
+      >
+        <div class="sticky top-0 flex size-full max-h-dvh items-center justify-center">
+          <div class="bg-turquoise-200 text-turquoise-700 flex w-fit flex-col items-center gap-6 rounded-4xl px-10 pt-6 pb-8">
+            <.icon name="hero-cloud-arrow-up" class="size-16" />
+            <p class="text-center text-xl font-medium">
+              Przeciągnij faktury, aby<br /> załadować je do Firmowida.
+            </p>
+            <p class="text-turquoise-600 max-w-sm text-center text-sm">
+              (max 50 plików, PDF, JPG oraz PNG)
+            </p>
+          </div>
+        </div>
       </div>
     </div>
     """

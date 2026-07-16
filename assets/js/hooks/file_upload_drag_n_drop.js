@@ -12,13 +12,16 @@ export const FileUploadDragNDrop = {
 
         const showDropArea = () => {
             dropArea.classList.remove("hidden");
-            dropArea.classList.add("opacity-100");
+            dropArea.classList.add("flex", "opacity-100");
         };
 
         let hideDropAreaTimeout = null;
 
         const hideDropArea = () => {
-            setTimeout(() => dropArea.classList.add("hidden"), 160);
+            setTimeout(() => {
+                dropArea.classList.add("hidden");
+                dropArea.classList.remove("flex");
+            }, 160);
             dropArea.classList.remove("opacity-100");
         };
 
