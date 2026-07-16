@@ -35,7 +35,7 @@
       <section class="flex flex-col gap-8">
         <div class="flex flex-col gap-4">
           <h2 class="text-grey-900 mb-6 text-base/tight font-medium">Informacje podstawowe</h2>
-          <div class="grid grid-cols-[min-content_1fr] items-center gap-x-5 gap-y-3">
+          <div class="grid grid-cols-[min-content_1fr] items-start gap-x-5 gap-y-3">
             <label class="text-grey-700 text-sm text-nowrap" for={@form[:type].id}>Typ</label>
             <.input
               field={@form[:type]}
@@ -44,33 +44,35 @@
               new={true}
             />
 
-            <label class="text-grey-700 text-sm text-nowrap" for={@form[:display_name].id}>
+            <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:display_name].id}>
               Nazwa wyświetlana
             </label>
             <.input field={@form[:display_name]} new={true} />
 
             <%= if to_string(@form[:type].value) == "company" do %>
-              <label class="text-grey-700 text-sm text-nowrap" for={@form[:tax_id].id}>
+              <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:tax_id].id}>
                 NIP / ID
               </label>
               <.input field={@form[:tax_id]} new={true} />
 
-              <label class="text-grey-700 text-sm text-nowrap" for={@form[:full_name].id}>
-                Pełna nazwa
+              <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:full_name].id}>
+                Pełna nazwa*
               </label>
               <.input field={@form[:full_name]} new={true} />
             <% else %>
-              <label class="text-grey-700 text-sm text-nowrap" for={@form[:given_name].id}>
-                Imię
+              <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:given_name].id}>
+                Imię*
               </label>
-              <.input field={@form[:given_name]} new={true} />
+              <div>
+                <.input field={@form[:given_name]} new={true} />
+              </div>
 
-              <label class="text-grey-700 text-sm text-nowrap" for={@form[:surname].id}>
-                Nazwisko
+              <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:surname].id}>
+                Nazwisko*
               </label>
               <.input field={@form[:surname]} new={true} />
 
-              <label class="text-grey-700 text-sm text-nowrap" for={@form[:pesel].id}>PESEL</label>
+              <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:pesel].id}>PESEL</label>
               <.input field={@form[:pesel]} new={true} />
             <% end %>
           </div>
@@ -81,7 +83,13 @@
             <label class="text-grey-700 text-sm text-nowrap" for={@form[:description].id}>
               Notatki
             </label>
-            <.input field={@form[:description]} type="textarea" new={true} class="h-24" />
+            <.input
+              field={@form[:description]}
+              type="textarea"
+              new={true}
+              is_tooltip={true}
+              class="h-24"
+            />
           </div>
         </div>
       </section>
@@ -91,24 +99,25 @@
           <h2 class="text-grey-900 mb-6 text-base/tight font-medium">
             Dane kontaktowe i adresowe
           </h2>
-          <div class="grid grid-cols-[min-content_1fr] items-center gap-x-5 gap-y-3">
-            <label class="text-grey-700 text-sm text-nowrap" for={@form[:email].id}>Email</label>
-            <.input field={@form[:email]} new={true} />
+          <div class="grid grid-cols-[min-content_1fr] items-start gap-x-5 gap-y-3">
+            <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:email].id}>Email</label>
+            <.input field={@form[:email]} new={true} is_tooltip={true} />
 
-            <label class="text-grey-700 text-sm text-nowrap" for={@form[:phone].id}>Telefon</label>
-            <.input field={@form[:phone]} new={true} />
+            <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:phone].id}>Telefon</label>
+            <.input field={@form[:phone]} new={true} is_tooltip={true} />
 
-            <label class="text-grey-700 text-sm text-nowrap" for={@form[:address].id}>
+            <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:address].id}>
               Adres
             </label>
             <.input
               field={@form[:address]}
               type="textarea"
               new={true}
+              is_tooltip={true}
               placeholder="Ulica, nr budynku i/lub mieszkania, kod pocztowy, miasto"
             />
 
-            <label class="text-grey-700 text-sm text-nowrap" for={@form[:country].id}>Kraj</label>
+            <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:country].id}>Kraj*</label>
             <.input
               field={@form[:country]}
               type="select"
@@ -121,7 +130,7 @@
             <label class="text-grey-700 text-sm" for={@form[:is_different_mail_address].id}>Inny adres korespondencyjny</label>
             <.switch
               field={@form[:is_different_mail_address]}
-              class="w-12 gap-3!"
+              class="w-12 gap-3! self-center"
               color="turquoise"
             />
 
@@ -133,6 +142,7 @@
                 field={@form[:mail_address]}
                 type="textarea"
                 new={true}
+                is_tooltip={true}
               />
               <label class="text-grey-700 text-sm" for={@form[:mail_country].id}>
                 Kraj

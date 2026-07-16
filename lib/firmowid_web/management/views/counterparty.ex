@@ -576,7 +576,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     %{
       cooperation_value: total,
       currency: currency,
-      invoices_count: count,
+      invoices_count: length(invoices),
       average_value: average_value,
       last_invoice_date: paid_invoices |> Enum.map(& &1.issue_date) |> Enum.max(Date, fn -> nil end)
     }

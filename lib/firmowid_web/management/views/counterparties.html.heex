@@ -157,10 +157,10 @@
                 {counterparty.display_label}
               </.link>
             </div>
-            <p class="text-right text-black">
+            <p class="text-grey-700 text-right">
               <.counterparty_identifier counterparty={counterparty} />
             </p>
-            <p class="hidden text-right text-black group-data-[view=cooperation\_value]:block">
+            <p class="text-grey-700 hidden text-right group-data-[view=cooperation\_value]:block">
               {cooperation_value_cell(counterparty.cooperation_value)}
             </p>
             <.link
@@ -228,13 +228,13 @@
                 {counterparty.display_label}
               </.link>
             </div>
-            <p class="text-right text-black">
+            <p class="text-grey-700 text-right">
               <.counterparty_identifier counterparty={counterparty} />
             </p>
-            <p class="text-right text-black">
+            <p class="text-grey-700 text-right">
               {Calendar.strftime(counterparty.archived_at, "%d.%m.%Y")}
             </p>
-            <p class="hidden text-right text-black group-data-[view=cooperation\_value]:block">
+            <p class="text-grey-700 hidden text-right group-data-[view=cooperation\_value]:block">
               {cooperation_value_cell(counterparty.cooperation_value)}
             </p>
             <div class="flex items-center gap-3 justify-self-end">

@@ -46,8 +46,8 @@
         <p class="text-grey-900 py-1 font-medium">
           Informacje ogólne
         </p>
-        <div class="grid grid-cols-[min-content_1fr] items-center gap-x-5 gap-y-2">
-          <label class="text-grey-700 text-sm text-nowrap" for={@form[:name].id}>
+        <div class="grid grid-cols-[min-content_1fr] items-start gap-x-5 gap-y-2">
+          <label class="text-grey-700 pt-1.5 text-sm text-nowrap" for={@form[:name].id}>
             Nazwa projektu
           </label>
           <.input field={@form[:name]} class="max-w-90" new={true} />
@@ -144,7 +144,7 @@
                 const {avatar_url, initials} = data.value;
                 const avatarHtml = avatar_url
                   ? `<img src="${avatar_url}" class="size-8 rounded-full object-cover" alt=""/>`
-                  : `<span class="flex size-6 items-center justify-center rounded-full bg-blueBg text-xs font-medium text-blueText">${initials}</span>`;
+                  : `<span class="flex size-8 items-center justify-center rounded-full bg-blueBg text-xs font-medium text-blueText">${initials}</span>`;
 
                 item.innerHTML = `<div class="flex items-center gap-2">${avatarHtml}<span>${data.match}</span></div>`;
               },

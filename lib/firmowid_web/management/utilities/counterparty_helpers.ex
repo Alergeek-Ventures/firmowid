@@ -29,4 +29,14 @@ defmodule FirmowidWeb.Management.Utilities.CounterpartyHelpers do
   end
 
   def full_name(_counterparty), do: "—"
+
+  def party_label(nil, org), do: format_label(org.name)
+
+  def party_label(%{display_label: label}, org) when label in [nil, ""], do: format_label(org.name)
+
+  def party_label(%{display_label: label}, _org), do: format_label(label)
+
+  defp format_label(label) do
+    String.replace(label, ~r/spółka z ograniczoną odpowiedzialnością/iu, "sp. z o.o.")
+  end
 end

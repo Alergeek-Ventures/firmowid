@@ -10,11 +10,7 @@
     <div class="flex flex-row items-start justify-between">
       <div class="space-y-1">
         <p class="text-grey-500 text-sm/snug">
-          {case @project.counterparty && @project.counterparty.display_label do
-            "" -> @current_org.name
-            nil -> @current_org.name
-            label -> label
-          end}
+          {CounterpartyHelpers.party_label(@project.counterparty, @current_org)}
         </p>
         <p class="flex flex-row items-center gap-4 text-2xl/tight font-medium">
           {@project.name}

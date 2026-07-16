@@ -281,7 +281,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             class="w-full"
             input_class={[item[:name].errors != [] && "border-redText"]}
             new={true}
-            is_tooltip={true}
+            show_error={false}
           />
           <.input
             field={item[:quantity]}
@@ -293,7 +293,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             class="w-16"
             input_class={["text-center", item[:quantity].errors != [] && "border-redText"]}
             new={true}
-            is_tooltip={true}
+            show_error={false}
           />
           <.input
             field={item[:vat_rate]}
@@ -324,7 +324,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
               class="w-30"
               input_class={["text-center", item[:unit_price].errors != [] && "border-redText"]}
               new={true}
-              is_tooltip={true}
+              show_error={false}
             />
             <p class="text-grey-500 text-sm">{@items_form[:currency].value}</p>
           </div>

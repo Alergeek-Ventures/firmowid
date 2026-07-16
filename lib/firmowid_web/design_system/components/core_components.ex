@@ -381,6 +381,11 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
 
   attr :is_tooltip, :boolean, default: false
 
+  attr :show_error, :boolean,
+    default: true,
+    doc:
+      "when set to false, error messages will not be displayed, but the input will still be marked as invalid (useful for custom error message)"
+
   attr :rest, :global, include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
                 multiple pattern placeholder readonly required rows size step)
 
@@ -436,7 +441,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         />
         <span class="text-darkGrey ml-1 text-sm">{@label}</span>
       </label>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <.error :for={msg <- @errors} :if={@show_error}>{msg}</.error>
     </div>
     """
   end
@@ -461,7 +466,9 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         </select>
         <Lucideicons.chevron_down class="peer-disabled:text-grey-300 text-grey-700 pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
       </div>
-      <.error :for={msg <- @errors} is_tooltip={@is_tooltip} target={@id}>{msg}</.error>
+      <.error :for={msg <- @errors} :if={@show_error} is_tooltip={@is_tooltip} target={@id}>
+        {msg}
+      </.error>
     </div>
     """
   end
@@ -485,7 +492,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         <option :if={@prompt} value="">{@prompt}</option>
         {Form.options_for_select(@options, @value)}
       </select>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <.error :for={msg <- @errors} :if={@show_error}>{msg}</.error>
     </div>
     """
   end
@@ -503,7 +510,9 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         aria-invalid={to_string(not Enum.empty?(@errors))}
         {@rest}
       ><%= Form.normalize_value("textarea", @value) %></textarea>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <.error :for={msg <- @errors} :if={@show_error} is_tooltip={@is_tooltip} target={@id}>
+        {msg}
+      </.error>
     </div>
     """
   end
@@ -523,7 +532,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         ]}
         {@rest}
       ><%= Form.normalize_value("textarea", @value) %></textarea>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <.error :for={msg <- @errors} :if={@show_error}>{msg}</.error>
     </div>
     """
   end
@@ -541,14 +550,16 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         value={Form.normalize_value(@type, @value)}
         aria-invalid={to_string(not Enum.empty?(@errors))}
         class={[
-          "border-grey-200 focus:border-grey-400 placeholder:text-grey-500 text-grey-900 w-full rounded-lg border bg-white px-3 py-1.5 leading-tight aria-invalid:border-rose-400",
+          "border-grey-200 focus:border-grey-400 placeholder:text-grey-500 text-grey-900 w-full rounded-lg border bg-white px-3 py-1.5 leading-tight aria-invalid:border-red-700",
           @type == "number" &&
             "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
           @input_class
         ]}
         {@rest}
       />
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <.error :for={msg <- @errors} :if={@show_error} is_tooltip={@is_tooltip} target={@id}>
+        {msg}
+      </.error>
     </div>
     """
   end
@@ -571,7 +582,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
         ]}
         {@rest}
       />
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <.error :for={msg <- @errors} :if={@show_error}>{msg}</.error>
     </div>
     """
   end
@@ -605,7 +616,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
       id={"error_msg_#{@target}"}
       phx-hook="FloatingUIError"
       data-for={@target}
-      class="absolute top-0 left-0 flex h-18 w-40 items-center justify-center rounded bg-[#A22A2A] px-3 py-1.5 text-sm font-normal text-[#FBF4F4] shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
+      class="absolute top-0 left-0 z-10 flex items-center justify-center rounded bg-red-700 px-4 py-3 text-sm font-normal text-red-100 shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
     >
       <div class="flex items-center gap-2">
         <.icon name="hero-information-circle" class="mt-0.5 size-5 flex-none" />
@@ -614,7 +625,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
 
       <div
         id={"arrow_#{@target}"}
-        class="absolute bottom-[-5px] left-1/2 size-2.5 -translate-x-1/2 rotate-45 bg-[#A22A2A]"
+        class="absolute bottom-[-5px] left-1/2 size-2.5 -translate-x-1/2 rotate-45 bg-red-700"
       >
       </div>
     </div>
@@ -623,7 +634,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
 
   def error(assigns) do
     ~H"""
-    <p class="mt-3 flex gap-3 text-sm/6 text-rose-600">
+    <p class="mt-3 flex gap-3 text-sm/6 text-red-600">
       <.icon name="hero-exclamation-circle-mini" class="mt-0.5 size-5 flex-none" />
       {render_slot(@inner_block)}
     </p>
@@ -1030,7 +1041,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
       </div>
       <span :if={@label} class="text-grey-900">{@label}</span>
       <%!-- hack: label_slot is a list of slots --%>
-      <span :if={Enum.any?(@label_slot)} class="text-grey-900 flex flex-row">
+      <span :if={Enum.any?(@label_slot)} class="text-grey-900 flex flex-row items-center">
         {render_slot(@label_slot)}
       </span>
     </label>
@@ -1124,6 +1135,7 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
     localize_common_error(translated, opts)
   end
 
+  defp localize_common_error("is required", _opts), do: "jest wymagane"
   defp localize_common_error("can't be blank", _opts), do: "nie może być puste"
   defp localize_common_error("is invalid", _opts), do: "jest nieprawidłowe"
   defp localize_common_error("has invalid format", _opts), do: "ma nieprawidłowy format"

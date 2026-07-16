@@ -193,7 +193,7 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
       </.card>
 
       <div class="flex min-h-0 flex-1 gap-6">
-        <.card :if={!@user.archived_at} class="flex min-h-0 grow flex-col">
+        <.card class="flex min-h-0 grow flex-col">
           <div class="flex shrink-0 items-center justify-between">
             <.card_header>
               Projekty pracownika
