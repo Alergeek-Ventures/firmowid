@@ -244,6 +244,10 @@ defmodule Firmowid.Ash.Blobs.Blob do
       authorize_if action(:list_processing)
     end
 
+    bypass {SystemActorRole, roles: [:avatar_cleanup]} do
+      authorize_if action([:read, :destroy])
+    end
+
     policy action(:read_global) do
       forbid_if always()
     end
