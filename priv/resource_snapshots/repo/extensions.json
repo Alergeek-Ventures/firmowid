@@ -4,6 +4,7 @@
     "ash-functions",
     "uuid-ossp",
     "citext",
+    "btree_gist",
     "ash_money_v5"
   ]
 }

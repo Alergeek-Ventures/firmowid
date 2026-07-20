@@ -30,6 +30,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Ash.Finances.Requisition
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.Credential
+  alias Firmowid.Ash.Timetracker
   alias FirmowidWeb.Billing.Utilities.MonthContext
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Settings.Utilities.Navigation
@@ -89,6 +90,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
     current_org = socket.assigns.current_org
     admin? = current_user.role == :admin
     scope = socket.assigns.ash_scope
+    current_year = Date.utc_today().year
 
     # Use Ash native code interface for listing bank accounts
     bank_accounts = if(admin?, do: list_bank_accounts(scope), else: [])
@@ -98,6 +100,13 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     bank_institutions =
       if(admin?, do: list_bank_institutions(current_user, bank_accounts), else: %{})
+
+    leave_requests = Timetracker.list_leave_requests_for_user!(current_user.id, scope: scope)
+
+    leave_days =
+      current_user
+      |> Ash.load!([accepted_leave_days_for_year: %{year: current_year}], scope: scope)
+      |> Map.fetch!(:accepted_leave_days_for_year)
 
     # Subscribe to requisition updates for real-time bank account sync
     if connected?(socket) and admin? do
@@ -182,6 +191,17 @@ defmodule FirmowidWeb.Settings.Views.Index do
        max_entries: 1,
        auto_upload: true,
        progress: &handle_progress/3
+     )
+     |> assign(:leave_requests, leave_requests)
+     |> assign(:leave_days, leave_days || 0)
+     |> assign(:leave_search, "")
+     |> assign(:leave_request_form, leave_request_form(current_user, scope))
+     |> assign(:selected_leave_reason, default_leave_reason())
+     |> allow_upload(:leave_request_attachment,
+       accept: ~w(.pdf .jpg .jpeg .png),
+       max_entries: 1,
+       max_file_size: 10_000_000,
+       auto_upload: true
      )
      |> assign(:current_org, org_with_avatar)
      |> assign(:main_class, "bg-white")}
@@ -957,6 +977,104 @@ defmodule FirmowidWeb.Settings.Views.Index do
     end
   end
 
+  def handle_event("search_leave_requests", %{"szukaj" => search}, socket) do
+    {:noreply, assign(socket, :leave_search, search)}
+  end
+
+  def handle_event("select_leave_reason", %{"reason" => reason}, socket) do
+    {:noreply, assign(socket, :selected_leave_reason, reason)}
+  end
+
+  def handle_event("create_leave_request", %{"leave_request" => params}, socket) do
+    params = Map.put(params, "reason", socket.assigns.selected_leave_reason)
+    scope = socket.assigns.ash_scope
+
+    blob_id =
+      case uploaded_entries(socket, :leave_request_attachment) do
+        {[%{client_name: _} | _], _} ->
+          socket
+          |> consume_uploaded_entries(:leave_request_attachment, fn %{path: path}, entry ->
+            case Blobs.create_blob(
+                   path,
+                   entry.client_type || "application/pdf",
+                   entry.client_name,
+                   scope: scope
+                 ) do
+              {:ok, blob} -> {:ok, blob.id}
+              {:error, error} -> {:ok, {:error, error}}
+            end
+          end)
+          |> List.first()
+
+        _ ->
+          nil
+      end
+
+    params = if blob_id, do: Map.put(params, "blob_id", blob_id), else: params
+
+    case AshPhoenix.Form.submit(socket.assigns.leave_request_form.source, params: params) do
+      {:ok, _request} ->
+        leave_requests =
+          Timetracker.list_leave_requests_for_user!(socket.assigns.current_user.id, scope: scope)
+
+            {:noreply,
+             socket
+             |> assign(:leave_requests, leave_requests)
+             |> assign(
+               :leave_request_form,
+               leave_request_form(socket.assigns.current_user, scope)
+             )
+             |> assign(:selected_leave_reason, default_leave_reason())
+             |> push_event("js-exec", %{to: "#leave-request-modal", attr: "data-cancel"})}
+
+          {:error, form} ->
+            {:noreply, assign(socket, :leave_request_form, to_form(form))}
+        end
+    end
+  end
+
+  def handle_event("refresh_leave_request_attachment", _params, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("cancel_leave_request_attachment", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :leave_request_attachment, ref)}
+  end
+
+  defp maybe_upload_leave_request_attachment(socket, scope) do
+    case uploaded_entries(socket, :leave_request_attachment) do
+      {[], _} ->
+        {:ok, nil}
+
+      {[_entry | _], []} ->
+        results =
+          consume_uploaded_entries(socket, :leave_request_attachment, fn %{path: path}, entry ->
+            case create_or_reuse_blob(path, entry, scope) do
+              {:ok, blob} -> {:ok, {:ok, blob.id}}
+              {:error, error} -> {:ok, {:error, error}}
+            end
+          end)
+
+        case List.first(results) do
+          {:ok, blob_id} when is_binary(blob_id) -> {:ok, blob_id}
+          {:error, error} -> {:error, error}
+          other -> {:error, other}
+        end
+
+      _ ->
+        {:ok, nil}
+    end
+  end
+
+  defp create_or_reuse_blob(path, entry, scope) do
+    Blobs.create_or_reuse_avatar_blob(
+      path,
+      entry.client_type || "application/octet-stream",
+      entry.client_name,
+      scope: scope
+    )
+  end
+
   def handle_info(
         %Broadcast{
           topic: "credential:" <> topic,
@@ -1102,6 +1220,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
             editing_profile_employment={@editing_profile_employment}
             editing_profile_finance={@editing_profile_finance}
             editing_profile_contact={@editing_profile_contact}
+            leave_requests={@leave_requests}
+            leave_request_form={@leave_request_form}
+            leave_request_upload={@uploads.leave_request_attachment}
+            selected_leave_reason={@selected_leave_reason}
+            leave_search={@leave_search}
+            leave_days={@leave_days}
           />
       <% end %>
     </.settings_page>
@@ -1292,4 +1416,21 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   defp merge_user_name_params(params), do: params
+
+  defp leave_request_form(current_user, scope) do
+    Timetracker.LeaveRequest
+    |> AshPhoenix.Form.for_create(:create,
+      domain: Timetracker,
+      as: "leave_request",
+      scope: scope,
+      actor: current_user
+    )
+    |> AshPhoenix.Form.validate(%{"reason" => to_string(default_leave_reason())})
+    |> to_form()
+  end
+
+  # TODO: Branch on employment contract (UoP leave vs absence reasons).
+  defp leave_reasons, do: [:indisposition, :rest, :other]
+
+  defp default_leave_reason, do: List.first(leave_reasons())
 end

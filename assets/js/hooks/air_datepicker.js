@@ -2,6 +2,7 @@ export const AirDatepicker = {
   mounted() {
     this.picker = this.mountDatepicker();
     this.enabledMonths = this.getEnabledMonths();
+    this.enabledYears = this.getEnabledYears();
     this.picker.setViewDate(this.el.dataset.initialDate);
   },
 
@@ -10,6 +11,7 @@ export const AirDatepicker = {
       this.picker = this.mountDatepicker();
     } else {
       this.enabledMonths = this.getEnabledMonths();
+      this.enabledYears = this.getEnabledYears();
       this.picker.selectDate(this.el.dataset.initialDate, { silent: true });
     }
   },
@@ -31,12 +33,21 @@ export const AirDatepicker = {
     });
   },
 
+  /**
+   * @returns {Array<number>}
+   */
+  getEnabledYears() {
+    return this.el.dataset.enabledYears?.split(",").map(Number);
+  },
+
   mountDatepicker() {
+    const mode = this.el.dataset.mode || "months";
+
     return new window.AirDatepicker(this.el, {
       selectedDates: [this.el.dataset.initialDate],
       toggleSelected: false,
-      view: "months",
-      minView: "months",
+      view: mode,
+      minView: mode,
       locale: {
         days: [
           "Niedziela",
@@ -83,11 +94,20 @@ export const AirDatepicker = {
         timeFormat: "hh:mm:aa",
         firstDay: 1,
       },
-      dateFormat: "MMMM yyyy",
+      dateFormat: mode === "months" ? "MMMM yyyy" : "yyyy",
       onSelect: ({ date }) => {
-        // 'sv' is the Swedish locale - Sweden date formatting uses ISO 8601
-        const newDate = date.toLocaleDateString("sv");
-        this.pushEvent("change-month", { month: newDate });
+        switch (mode) {
+          case "months":
+            // 'sv' is the Swedish locale - Sweden date formatting uses ISO 8601
+            const newDate = date.toLocaleDateString("sv");
+            this.pushEvent("change-month", { month: newDate });   
+            break;
+          case "years":
+            this.pushEvent("change-year", { year: String(date.getFullYear())});
+            break;
+          default:
+            break;
+        }
       },
       onRenderCell: function ({ date, cellType }) {
         if (cellType === "month" && this.enabledMonths) {
@@ -100,6 +120,18 @@ export const AirDatepicker = {
           return isDisabled
             ? {
                 disabled: isDisabled,
+                classes: "cursor-not-allowed opacity-30 pointer-events-none",
+              }
+            : {};
+        }
+
+        if (cellType === "year" && this.enabledYears) {
+          const year = date.getFullYear();
+          const isDisabled = !this.enabledYears.includes(year);
+          
+          return isDisabled
+            ? {
+                disabled: true,
                 classes: "cursor-not-allowed opacity-30 pointer-events-none",
               }
             : {};

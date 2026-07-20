@@ -22,6 +22,12 @@
       >
         Dokumenty
       </.tab>
+      <.tab
+        patch={~p"/zarzadzanie/pracownicy/#{@employee.id}/urlopy"}
+        active={@live_action == :leaves}
+      >
+        Urlopy
+      </.tab>
     </div>
   </div>
 
@@ -183,6 +189,13 @@
         <.live_component
           module={FirmowidWeb.Management.Components.DocumentsTab}
           id="documents-tab"
+          employee={@employee}
+          scope={@ash_scope}
+        />
+      <% :leaves -> %>
+        <.live_component
+          module={FirmowidWeb.Management.Components.LeavesTab}
+          id="leaves-tab"
           employee={@employee}
           scope={@ash_scope}
         />

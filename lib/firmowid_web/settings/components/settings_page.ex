@@ -33,7 +33,7 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
       )
 
     ~H"""
-    <section class="container flex max-w-5xl flex-col gap-6 py-8 lg:gap-10 lg:py-10">
+    <section class="container flex max-w-7xl flex-col gap-6 py-8 lg:gap-10 lg:py-10">
       <div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
         <form class="relative" phx-submit="upload" phx-change="upload">
           <.live_file_input

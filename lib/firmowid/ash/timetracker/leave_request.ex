@@ -1,0 +1,266 @@
+# credo:disable-for-this-file AshCredo.Check.Design.MissingPrimaryAction
+defmodule Firmowid.Ash.Timetracker.LeaveRequest do
+  @moduledoc "Represents a leave or absence request submitted by an employee.
+  The request can be accepted or declined by an admin."
+
+  use Ash.Resource,
+    otp_app: :firmowid,
+    domain: Firmowid.Ash.Timetracker,
+    data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: [AshStateMachine],
+    primary_read_warning?: false
+
+  alias Firmowid.Ash.Blobs
+  alias Firmowid.Ash.Core.User
+  alias Firmowid.Ash.Resource
+  alias Firmowid.Ash.Timetracker.Workers.LeaveRequestEmailWorker
+
+  require Resource
+
+  postgres do
+    table "leave_requests"
+    repo Firmowid.Repo
+
+    exclusion_constraint_names [
+      {:starts_on, "no_overlapping_leave_requests", "nachodzi na inny wniosek urlopowy"}
+    ]
+
+    custom_statements do
+      statement :no_overlapping_leave_requests do
+        up """
+        ALTER TABLE leave_requests
+        ADD CONSTRAINT no_overlapping_leave_requests
+        EXCLUDE USING gist (
+          user_id WITH =,
+          daterange(starts_on, ends_on, '[]') WITH &&
+        )
+        WHERE (status IN ('accepted', 'pending'));
+        """
+
+        down """
+        ALTER TABLE leave_requests
+        DROP CONSTRAINT no_overlapping_leave_requests;
+        """
+      end
+    end
+  end
+
+  state_machine do
+    state_attribute :status
+    initial_states [:pending]
+    default_initial_state :pending
+
+    transitions do
+      transition :accept, from: :pending, to: :accepted
+      transition :decline, from: :pending, to: :declined
+    end
+  end
+
+  actions do
+    defaults [:read]
+
+    read :list_for_user do
+      description "Leave requests for a given user."
+      argument :user_id, :uuid, allow_nil?: false
+      argument :start_date, :date, allow_nil?: true
+      argument :end_date, :date, allow_nil?: true
+
+      prepare build(filter: expr(user_id == ^arg(:user_id)), sort: [inserted_at: :desc])
+
+      prepare build(filter: expr(ends_on >= ^arg(:start_date))) do
+        where present(:start_date)
+      end
+
+      prepare build(filter: expr(starts_on <= ^arg(:end_date))) do
+        where present(:end_date)
+      end
+    end
+
+    create :create do
+      description "Employee submits a leave/absence request."
+      primary? true
+      accept [:starts_on, :ends_on, :reason, :note]
+
+      argument :upload_path, :string do
+        allow_nil? true
+        description "Temporary file path of the uploaded attachment."
+      end
+
+      argument :upload_filename, :string do
+        allow_nil? true
+        description "Original filename of the uploaded attachment."
+      end
+
+      change set_attribute(:user_id, actor(:id))
+
+      change fn changeset, _context ->
+        # TODO: Determine category based on employment contract
+        category = :absence
+
+        Ash.Changeset.change_attribute(changeset, :category, category)
+      end
+
+      change fn changeset, context ->
+        case Ash.Changeset.get_argument(changeset, :upload_path) do
+          nil ->
+            changeset
+
+          upload_path ->
+            upload_filename =
+              Ash.Changeset.get_argument(changeset, :upload_filename) || "zalacznik"
+
+            case Blobs.create_or_reuse_blob(
+                   upload_path,
+                   "binary/octet-stream",
+                   upload_filename,
+                   tenant: context.tenant,
+                   actor: context.actor
+                 ) do
+              {:ok, blob} ->
+                Ash.Changeset.force_change_attribute(changeset, :blob_id, blob.id)
+
+              {:error, error} ->
+                Ash.Changeset.add_error(changeset, error)
+            end
+        end
+      end
+
+      validate one_of(:reason, [:sick, :vacation, :unpaid]) do
+        where [attribute_equals(:category, :leave)]
+        message "is not valid for this leave category"
+      end
+
+      validate one_of(:reason, [:indisposition, :rest, :other]) do
+        where [attribute_equals(:category, :absence)]
+        message "is not valid for this leave category"
+      end
+
+      validate compare(:starts_on, greater_than_or_equal_to: &Date.utc_today/0) do
+        message "must be today or a future date"
+      end
+
+      validate compare(:ends_on, greater_than_or_equal_to: :starts_on) do
+        message "must be on or after the start date"
+      end
+
+      change after_transaction(fn
+               _changeset, {:ok, leave_request}, _context ->
+                 LeaveRequestEmailWorker.enqueue(leave_request.id, leave_request.organization_id)
+                 {:ok, leave_request}
+
+               _changeset, {:error, reason}, _context ->
+                 {:error, reason}
+             end)
+    end
+
+    update :accept do
+      description "Admin accepts a pending leave request."
+      require_atomic? false
+      accept []
+      change transition_state(:accepted)
+    end
+
+    update :decline do
+      description "Admin declines a pending leave request."
+      require_atomic? false
+      accept []
+      change transition_state(:declined)
+    end
+  end
+
+  policies do
+    bypass actor_attribute_equals(:role, :admin) do
+      authorize_if always()
+    end
+
+    policy action(:create) do
+      authorize_if actor_present()
+    end
+
+    policy action_type(:read) do
+      authorize_if expr(user_id == ^actor(:id))
+    end
+
+    policy action([:accept, :decline]) do
+      forbid_if always()
+    end
+  end
+
+  multitenancy do
+    strategy :attribute
+    attribute :organization_id
+  end
+
+  attributes do
+    uuid_v7_primary_key :id
+    attribute :starts_on, :date, allow_nil?: false, public?: true
+    attribute :ends_on, :date, allow_nil?: false, public?: true
+    attribute :note, :string, public?: true, allow_nil?: true
+
+    attribute :category, :atom do
+      allow_nil? false
+      public? true
+      constraints one_of: [:leave, :absence]
+    end
+
+    attribute :reason, :atom do
+      allow_nil? false
+      public? true
+
+      constraints one_of: [
+                    :sick,
+                    :vacation,
+                    :unpaid,
+                    :indisposition,
+                    :rest,
+                    :other
+                  ]
+    end
+
+    attribute :status, :atom do
+      allow_nil? false
+      public? true
+      default :pending
+      constraints one_of: [:pending, :accepted, :declined]
+    end
+
+    Resource.firmowid_timestamps()
+  end
+
+  relationships do
+    belongs_to :user, User do
+      allow_nil? false
+      attribute_writable? true
+    end
+
+    belongs_to :organization, Firmowid.Ash.Core.Organization do
+      allow_nil? false
+    end
+
+    belongs_to :blob, Firmowid.Ash.Blobs.Blob do
+      allow_nil? true
+      attribute_writable? true
+    end
+  end
+
+  calculations do
+    calculate :days_count, :integer, expr(ends_on - starts_on + 1) do
+      public? true
+    end
+
+    calculate :clamped_days_in_year,
+              :integer,
+              expr(
+                if starts_on > ^arg(:year_end) or ends_on < ^arg(:year_start) do
+                  0
+                else
+                  if(ends_on > ^arg(:year_end), do: ^arg(:year_end), else: ends_on) -
+                    if(starts_on < ^arg(:year_start), do: ^arg(:year_start), else: starts_on) + 1
+                end
+              ) do
+      argument :year_start, :date, allow_nil?: false
+      argument :year_end, :date, allow_nil?: false
+    end
+  end
+end

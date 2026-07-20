@@ -20,6 +20,7 @@ defmodule Firmowid.Ash.Core.User do
     notifiers: [Ash.Notifier.PubSub]
 
   alias Firmowid.Ash.Checks.SystemActorRole
+  alias Firmowid.Ash.Core.Calculations.AcceptedLeaveDaysForYear
   alias Firmowid.Ash.Core.Secrets
   alias Firmowid.Ash.Core.Services.GoogleAvatarImporter
   alias Firmowid.Ash.Core.UserIdentity
@@ -487,6 +488,17 @@ defmodule Firmowid.Ash.Core.User do
       attribute_writable? true
       define_attribute? false
       source_attribute :avatar_blob_id
+    end
+
+    has_many :leave_requests, Firmowid.Ash.Timetracker.LeaveRequest
+  end
+
+  calculations do
+    calculate :accepted_leave_days_for_year,
+              :integer,
+              {AcceptedLeaveDaysForYear, []} do
+      public? true
+      argument :year, :integer, allow_nil?: false
     end
   end
 

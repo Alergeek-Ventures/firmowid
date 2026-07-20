@@ -1,5 +1,3 @@
-alias FirmowidWeb.Management.Components.DocumentsTab
-
 # credo:disable-for-this-file ExDNA.Credo
 # Employee detail view duplicates monthly aggregation/cost assembly paths; resolving this
 # cleanly requires extracting shared timetracker/payroll query helpers across LiveViews.
@@ -19,6 +17,8 @@ defmodule FirmowidWeb.Management.Views.Employee do
   alias Firmowid.Ash.Timetracker
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias FirmowidWeb.Management.Components.DocumentsTab
+  alias FirmowidWeb.Management.Components.LeavesTab
   alias FirmowidWeb.Management.Utilities.Navigation
   alias Phoenix.Socket.Broadcast
 
@@ -87,6 +87,11 @@ defmodule FirmowidWeb.Management.Views.Employee do
   def handle_event("change-month", %{"month" => month}, socket) do
     employee = socket.assigns.employee
     {:noreply, push_patch(socket, to: Navigation.employee_path(employee.id, %{miesiac: month}))}
+  end
+
+  def handle_event("change-year", %{"year" => year}, socket) do
+    send_update(LeavesTab, id: "leaves-tab", year: String.to_integer(year))
+    {:noreply, socket}
   end
 
   def handle_event("archive_employee", _params, socket) do

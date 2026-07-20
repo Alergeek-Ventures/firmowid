@@ -6,11 +6,13 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   use FirmowidWeb, :html
 
   import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.Settings.Components.EditButton
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Settings.Components.Helpers
+  alias FirmowidWeb.Timetracker.Utilities.LeavePresentation
   alias Phoenix.LiveView.Rendered
 
   @doc """
@@ -22,6 +24,11 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   attr :editing_profile_employment, :boolean, required: true
   attr :editing_profile_finance, :boolean, required: true
   attr :editing_profile_contact, :boolean, required: true
+  attr :leave_requests, :list, required: true
+  attr :leave_request_form, :map, required: true
+  attr :leave_request_upload, :map, required: true
+  attr :leave_search, :string, required: true
+  attr :leave_days, :integer, required: true
 
   def profile_tab(assigns) do
     ~H"""
@@ -42,6 +49,16 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         user_form={@user_form}
         editing_profile_contact={@editing_profile_contact}
       />
+
+      <div class="grid gap-8 lg:col-span-2 lg:grid-cols-2 lg:gap-16">
+        <.leave_section
+          leave_requests={@leave_requests}
+          leave_request_form={@leave_request_form}
+          leave_request_upload={@leave_request_upload}
+          leave_search={@leave_search}
+          leave_days={@leave_days}
+        />
+      </div>
     </div>
     """
   end
@@ -244,6 +261,241 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
     """
   end
 
+  attr :leave_requests, :list, required: true
+  attr :leave_request_form, :map, required: true
+  attr :leave_request_upload, :map, required: true
+  attr :leave_search, :string, required: true
+  attr :leave_days, :integer, required: true
+
+  defp leave_section(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :filtered_leave_requests,
+        LeavePresentation.filter_by_search(assigns.leave_requests, assigns.leave_search)
+      )
+
+    ~H"""
+    <section class="flex w-full flex-col gap-6 rounded-lg bg-white p-6 shadow">
+      <div class="flex items-start justify-between gap-3">
+        <h2 class="text-grey-900 text-base leading-none font-medium">Nieobecności</h2>
+        <div class="flex items-center gap-2">
+          <form class="flex gap-4" phx-submit="search_leave_requests">
+            <div
+              id="profile-leave-search-container"
+              data-expanded={to_string(@leave_search != "")}
+              class="data-[expanded=true]:bg-greyButtonBg group flex items-center justify-center rounded-lg transition-shadow data-[expanded=true]:focus-within:ring-2"
+            >
+              <.input
+                type="text"
+                name="szukaj"
+                value={@leave_search}
+                placeholder="Szukaj wniosku"
+                phx-change="search_leave_requests"
+                phx-debounce="300"
+                input_class="py-0 px-1 bg-transparent border-none"
+                class="group w-0 border-transparent px-0 opacity-0 transition-[width,opacity,padding] duration-200 ease-in-out group-data-[expanded=true]:w-42 group-data-[expanded=true]:px-2 group-data-[expanded=true]:opacity-100 focus:border-none focus:ring-0 focus:outline-hidden lg:group-data-[expanded=true]:w-56"
+              />
+              <.button
+                type="button"
+                size="small"
+                variant="outline"
+                class="py-2"
+                phx-click={
+                  JS.toggle_attribute({"data-expanded", "true", "false"},
+                    to: "#profile-leave-search-container"
+                  )
+                  |> JS.focus(to: "#profile-leave-search-container input")
+                }
+              >
+                <Lucideicons.search />
+              </.button>
+            </div>
+          </form>
+          <.button
+            type="button"
+            variant="secondary"
+            size="small"
+            phx-click={show_modal("leave-request-modal")}
+          >
+            <.icon name="hero-paper-airplane" class="size-4" /> Złóż wniosek
+          </.button>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="bg-grey-50 text-grey-500 rounded px-3 py-1 text-sm">
+          Wykorzystane w tym roku:
+          <span class="text-grey-700 pl-1 font-medium">{@leave_days} dni</span>
+        </div>
+      </div>
+      <ul class="divide-grey-100 divide-y">
+        <li
+          :for={request <- @filtered_leave_requests}
+          class="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+        >
+          <span class="bg-grey-100 text-grey-700 flex size-6.5 items-center justify-center rounded">
+            <.reason_icon reason={request.reason} />
+          </span>
+          <span class="min-w-0 flex-1 truncate">
+            {LeavePresentation.reason_label(request.reason, :short)}
+          </span>
+          <span class="shrink-0 tabular-nums">
+            {LeavePresentation.format_range(request.starts_on, request.ends_on)}
+          </span>
+          <span class={leave_status_badge_styles(request.status)}>
+            {LeavePresentation.status_label(request.status)}
+          </span>
+        </li>
+      </ul>
+      <p :if={Enum.empty?(@filtered_leave_requests)} class="text-grey-500 text-sm">
+        Brak wniosków o nieobecności.
+      </p>
+
+      <.modal id="leave-request-modal" class="max-w-xl">
+        <h2 class="mb-8 text-xl font-medium">
+          Zgłoszenie nieobecności
+        </h2>
+        <.form
+          for={@leave_request_form}
+          id="leave-request-form"
+          phx-submit="create_leave_request"
+          phx-change="validate_leave_request_attachment"
+          class="space-y-8"
+        >
+          <div>
+            <p class="text-grey-700 mb-2 text-sm">
+              Rodzaj nieobecności:
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <.button
+                :for={reason <- leave_reasons()}
+                type="button"
+                variant="outline"
+                size="small"
+                phx-click="select_leave_reason"
+                data-active={to_string(@leave_request_form[:reason].value) == to_string(reason)}
+                phx-value-reason={reason}
+                class="bg-grey-100 border-grey-100 text-grey-700 inline-flex items-center gap-2 rounded-2xl! px-4 py-1 text-sm transition data-active:border-orange-200 data-active:bg-orange-200 data-active:text-orange-700"
+              >
+                {String.downcase(LeavePresentation.reason_label(reason, :short))}
+                <.reason_icon reason={reason} />
+              </.button>
+            </div>
+            <.input
+              type="hidden"
+              name="leave_request[reason]"
+              value={@leave_request_form[:reason].value}
+            />
+          </div>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <.label
+              for={@leave_request_form[:starts_on].id}
+              class="text-grey-700 flex items-center gap-2 text-sm"
+            >
+              Od: <.input new={true} field={@leave_request_form[:starts_on]} type="date" />
+            </.label>
+            <.label
+              for={@leave_request_form[:ends_on].id}
+              class="text-grey-700 flex items-center gap-2 text-sm"
+            >
+              Do: <.input new={true} field={@leave_request_form[:ends_on]} type="date" />
+            </.label>
+          </div>
+          <div>
+            <.label
+              for={@leave_request_form[:note].id}
+              class="text-grey-700 flex flex-col gap-2 text-sm"
+            >
+              Dodatkowe informacje:
+              <.input
+                field={@leave_request_form[:note]}
+                type="textarea"
+                new={true}
+                rows="8"
+                class="mb-4"
+              />
+            </.label>
+            <.button
+              as="label"
+              for={@leave_request_upload.ref}
+              variant="secondary"
+              size="small"
+              type="button"
+            >
+              <.icon name="hero-cloud-arrow-up" class="size-4" /> Wgraj załącznik
+              <.live_file_input upload={@leave_request_upload} class="sr-only" />
+            </.button>
+            <div
+              :for={entry <- @leave_request_upload.entries}
+              class="text-grey-600 mt-2 space-y-1 text-sm"
+            >
+              <div class="flex items-center gap-2">
+                <span class="min-w-0 truncate">{entry.client_name}</span>
+                <span :if={!entry.done?} class="shrink-0 tabular-nums">{entry.progress}%</span>
+                <.button
+                  variant="unstyled"
+                  type="button"
+                  class="hover:text-grey-700 text-grey-500 shrink-0"
+                  phx-click="cancel_leave_request_attachment"
+                  phx-value-ref={entry.ref}
+                >
+                  Usuń
+                </.button>
+              </div>
+              <p
+                :for={error <- upload_errors(@leave_request_upload, entry)}
+                class="text-sm text-red-600"
+              >
+                {leave_upload_error_to_string(error)}
+              </p>
+            </div>
+            <p
+              :for={error <- upload_errors(@leave_request_upload)}
+              class="mt-2 text-sm text-red-600"
+            >
+              {leave_upload_error_to_string(error)}
+            </p>
+          </div>
+          <div class="flex justify-end">
+            <.button
+              type="submit"
+              variant="primary"
+              size="big"
+              phx-disable-with="Wysyłanie..."
+              disabled={leave_attachment_submit_disabled?(@leave_request_upload)}
+            >
+              Wyślij
+            </.button>
+          </div>
+        </.form>
+      </.modal>
+    </section>
+    """
+  end
+
+  attr :reason, :atom, required: true
+  attr :class, :string, default: "size-4"
+
+  defp reason_icon(assigns) do
+    ~H"""
+    <%= cond do %>
+      <% @reason in [:sick, :indisposition] -> %>
+        <Lucideicons.cross class={@class} />
+      <% @reason in [:rest, :vacation] -> %>
+        <Lucideicons.sun class={@class} />
+      <% @reason in [:unpaid, :other] -> %>
+        <Lucideicons.slash class={@class} />
+    <% end %>
+    """
+  end
+
+  defp leave_status_badge_styles(status) do
+    [
+      "w-31 shrink-0 rounded-full px-3 py-1 text-center text-sm",
+      LeavePresentation.status_badge_styles(status)
+    ]
+  end
+
   attr :field, :map, required: true
   attr :label, :string, required: true
   attr :type, :string, required: true
@@ -299,4 +551,17 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   end
 
   defp blank?(value), do: value in [nil, ""]
+
+  defp leave_attachment_submit_disabled?(upload) do
+    Enum.any?(upload.entries, &(not &1.done?)) or upload_errors(upload) != []
+  end
+
+  defp leave_upload_error_to_string(:too_large), do: "Plik jest za duży (max 10 MB)."
+  defp leave_upload_error_to_string(:too_many_files), do: "Można wgrać tylko jeden plik."
+
+  defp leave_upload_error_to_string(:not_accepted), do: "Dozwolone są pliki PDF oraz obrazy (JPG, JPEG, PNG)."
+
+  defp leave_upload_error_to_string(other), do: "Błąd wgrywania: #{inspect(other)}"
+
+  defp leave_reasons, do: [:indisposition, :rest, :other]
 end
