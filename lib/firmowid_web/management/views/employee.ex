@@ -281,6 +281,10 @@ defmodule FirmowidWeb.Management.Views.Employee do
     {:noreply, socket}
   end
 
+  def handle_info({:employee_updated, user}, socket) do
+    {:noreply, assign(socket, :employee, with_projects(user, socket.assigns.ash_scope))}
+  end
+
   defp show_blob_processing_failure_toast(%Blob{original_filename: filename, processing_metadata: metadata}) do
     case processing_failure_reason(metadata) do
       :invalid_document ->

@@ -33,6 +33,7 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
       description "Create a salary record for a user."
       primary? true
       accept [:hourly_rate, :user_id, :starts_at]
+      change {Firmowid.Ash.Payroll.Changes.SkipUnchangedRate, []}
     end
 
     read :read do

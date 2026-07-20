@@ -209,6 +209,7 @@ defmodule Firmowid.Ash.Core.User do
     update :update_profile do
       description "Update the current user's profile fields."
       primary? true
+      require_atomic? false
 
       accept [
         :name,
@@ -228,7 +229,19 @@ defmodule Firmowid.Ash.Core.User do
         :residence_code
       ]
 
-      validate present(:name)
+      validate present(:name), where: [changing(:name)]
+
+      change update_change(:bank_account_number, fn
+               nil ->
+                 nil
+
+               value ->
+                 case String.trim(value) do
+                   "" -> nil
+                   trimmed -> trimmed
+                 end
+             end),
+             where: [changing(:bank_account_number)]
     end
 
     update :update_role do
@@ -363,6 +376,7 @@ defmodule Firmowid.Ash.Core.User do
     end
 
     bypass action(:update_profile) do
+      authorize_if actor_attribute_equals(:role, :admin)
       authorize_if expr(id == ^actor(:id))
     end
 
