@@ -195,8 +195,8 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
       }
 
       transaction = %Transaction{
-        creditor_name: nil,
-        creditor_account: nil,
+        creditor_name: "Test Company",
+        creditor_account: "PL61109010140000071219812874",
         booking_date: ~D[2025-01-15],
         amount: Money.new!("PLN", Decimal.new("1000.00")),
         remittance_information_unstructured: nil

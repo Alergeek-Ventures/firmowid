@@ -209,15 +209,10 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResult do
 
   @spec calculate_transaction_side_similarity(String.t() | nil, String.t() | nil) :: float()
 
-  defp calculate_transaction_side_similarity("", ""), do: calculate_transaction_side_similarity(nil, nil)
+  defp calculate_transaction_side_similarity(left, right) when left in [nil, ""] or right in [nil, ""], do: 0.0
 
-  defp calculate_transaction_side_similarity(nil, ""), do: calculate_transaction_side_similarity(nil, nil)
-
-  defp calculate_transaction_side_similarity("", nil), do: calculate_transaction_side_similarity(nil, nil)
-
-  defp calculate_transaction_side_similarity(nil, nil), do: 0.0
-
-  defp calculate_transaction_side_similarity(transaction_side_name, seller_display_name) do
+  defp calculate_transaction_side_similarity(transaction_side_name, seller_display_name)
+       when is_binary(transaction_side_name) and is_binary(seller_display_name) do
     transaction_side_name
     |> Akin.compare(seller_display_name, algorithms: ["jaro_winkler"])
     |> Map.get(:jaro_winkler, 0.0)
