@@ -174,6 +174,10 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
       authorize_if always()
     end
 
+    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:leave_notifier]} do
+      authorize_if action_type(:read)
+    end
+
     policy action(:create) do
       authorize_if actor_present()
     end

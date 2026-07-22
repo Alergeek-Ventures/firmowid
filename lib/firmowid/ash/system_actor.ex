@@ -49,6 +49,9 @@ defmodule Firmowid.Ash.SystemActor do
   - `:document_blob_processor` — processes document blobs for various use cases.
     Can read/write blobs and read related records as needed for blob processing.
 
+  - `:leave_notifier` — emails org admins about new leave/absence requests.
+    Can read leave requests and list/read users needed for delivery.
+
   - `:anonymous` — unauthenticated share-token access. Can only read the specific
     invoice identified by the share token.
 
@@ -71,6 +74,7 @@ defmodule Firmowid.Ash.SystemActor do
           | :ksef_digest
           | :billing_snapshotter
           | :document_blob_processor
+          | :leave_notifier
           | :anonymous
           | :avatar_cleanup
 

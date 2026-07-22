@@ -360,6 +360,7 @@ defmodule Firmowid.Ash.Core.User do
       authorize_if expr(id == ^actor(:id))
       authorize_if actor_attribute_equals(:role, :admin)
       authorize_if actor_attribute_equals(:system_role, :superuser)
+      authorize_if {SystemActorRole, roles: [:leave_notifier]}
     end
 
     # :list action — admin-only user listing, plus system actors that need
@@ -367,7 +368,7 @@ defmodule Firmowid.Ash.Core.User do
     bypass action(:list) do
       authorize_if actor_attribute_equals(:role, :admin)
       authorize_if actor_attribute_equals(:system_role, :superuser)
-      authorize_if {SystemActorRole, roles: [:ksef_digest, :billing_snapshotter]}
+      authorize_if {SystemActorRole, roles: [:ksef_digest, :billing_snapshotter, :leave_notifier]}
     end
 
     # :get_org_user — admin-only, tenant-scoped user lookup
