@@ -3,6 +3,10 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestEmails do
   Emails for leave/absence requests. Dispatches notifications to org admins when a new request is submitted.
   """
 
+  use Phoenix.VerifiedRoutes,
+    endpoint: FirmowidWeb.Core.Endpoint,
+    router: FirmowidWeb.Core.Router
+
   import Swoosh.Email
 
   alias Firmowid.Ash.Core.User
@@ -23,19 +27,20 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestEmails do
   }
 
   @spec deliver_new_leave_request(
-          User.t() | map(),
+          [User.t() | map()],
           LeaveRequest.t(),
           Swoosh.Attachment.t() | nil,
           User.t() | map()
         ) ::
           {:ok, Swoosh.Email.t()} | {:error, term()}
-  def deliver_new_leave_request(admin, leave_request, employee) do
+  def deliver_new_leave_request(admins, leave_request, attachment, employee) do
     employee_name = employee_name(employee)
     url = leave_tab_url(employee.id)
+    recipients = Enum.map(admins, &to_string(&1.email))
 
     email =
       new()
-      |> to(to_string(admin.email))
+      |> to(recipients)
       |> from({"Firmowid", "piotr@firmowid.pl"})
       |> subject("Nowy wniosek: #{employee_name}")
       |> html_body(html_body(employee_name, leave_request, url))
@@ -156,7 +161,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestEmails do
   defp employee_name(%{email: email}), do: to_string(email)
 
   defp leave_tab_url(employee_id) do
-    "#{Endpoint.url()}/zarzadzanie/pracownicy/#{employee_id}/urlopy"
+    url(~p"/zarzadzanie/pracownicy/#{employee_id}/urlopy")
   end
 
   defp category_label(:leave), do: "Urlop"

@@ -235,6 +235,10 @@ defmodule Firmowid.Ash.Blobs.Blob do
       authorize_if action(:read)
     end
 
+    bypass {SystemActorRole, roles: [:leave_notifier]} do
+      authorize_if action(:read)
+    end
+
     policy [action(:destroy), {SystemActorRole, roles: [:ksef_session]}] do
       authorize_if ActorBlobIdMatches
     end

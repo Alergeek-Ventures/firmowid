@@ -76,8 +76,8 @@ defmodule Firmowid.Ash.Blobs do
   @doc """
   Finds an existing blob by checksum within the given scope.
 
-  Used by avatar uploads to safely reuse an existing organization-scoped blob
-  instead of failing on duplicate checksum uploads.
+  Used to safely reuse an existing organization-scoped blob instead of failing
+  on duplicate checksum uploads.
   """
   @spec find_blob_by_checksum(String.t(), keyword()) :: {:ok, Blob.t()} | {:error, :not_found}
   def find_blob_by_checksum(checksum, opts) do
@@ -93,14 +93,14 @@ defmodule Firmowid.Ash.Blobs do
   end
 
   @doc """
-  Creates an avatar blob or reuses an existing one with the same checksum.
+  Creates a blob or reuses an existing one with the same checksum.
 
-  This makes avatar uploads idempotent within an organization, including when
-  the same image was uploaded previously and is no longer the current avatar.
+  Makes uploads idempotent within an organization (avatars, leave attachments,
+  etc.), including when the same file was uploaded previously.
   """
-  @spec create_or_reuse_avatar_blob(String.t(), String.t(), String.t(), keyword()) ::
+  @spec create_or_reuse_blob(String.t(), String.t(), String.t(), keyword()) ::
           {:ok, Blob.t()} | {:error, term()}
-  def create_or_reuse_avatar_blob(path, content_type, original_filename, opts) do
+  def create_or_reuse_blob(path, content_type, original_filename, opts) do
     case create_blob(path, content_type, original_filename, opts) do
       {:ok, blob} ->
         {:ok, blob}

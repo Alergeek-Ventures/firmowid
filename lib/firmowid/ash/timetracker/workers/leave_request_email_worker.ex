@@ -4,7 +4,7 @@ defmodule Firmowid.Ash.Timetracker.Workers.LeaveRequestEmailWorker do
   """
 
   use Oban.Worker,
-    queue: :leave_request_emails,
+    queue: :default,
     max_attempts: 3
 
   alias Firmowid.Ash.Core
@@ -44,7 +44,7 @@ defmodule Firmowid.Ash.Timetracker.Workers.LeaveRequestEmailWorker do
 
       {:ok, leave_request} ->
         attachment = fetch_attachment(leave_request.blob)
-        notify_admins(leave_request, attachment, scope, job)
+        notify_admins(leave_request, attachment, scope)
 
       {:error, reason} ->
         Logger.error("Failed to load leave request leave_request_id=#{leave_request_id} reason=#{inspect(reason)}")
@@ -60,50 +60,23 @@ defmodule Firmowid.Ash.Timetracker.Workers.LeaveRequestEmailWorker do
     }
   end
 
-  defp notify_admins(leave_request, attachment, scope, job) do
+  defp notify_admins(leave_request, attachment, scope) do
     admins =
       Core.list_users!(%{status: :active, role: :admin},
         query: [filter: [id: [not_eq: leave_request.user_id]]],
         scope: scope
       )
 
-    if admins == [] do
+    if Enum.empty?(admins) do
       Logger.info("No admin recipients for leave request leave_request_id=#{leave_request.id}")
       :ok
     else
-      failures =
-        Enum.reduce(admins, [], fn admin, acc ->
-          case LeaveRequestEmails.deliver_new_leave_request(
-                 admin,
-                 leave_request,
-                 attachment,
-                 leave_request.user
-               ) do
-            {:ok, _} -> acc
-            {:error, reason} -> [{admin.id, reason} | acc]
-          end
-        end)
-
-      handle_delivery_failures(leave_request.id, failures, job)
-    end
-  end
-
-  defp handle_delivery_failures(_leave_request_id, [], _job), do: :ok
-
-  defp handle_delivery_failures(leave_request_id, failures, %Oban.Job{} = job) do
-    if job.attempt >= job.max_attempts do
-      Logger.error(
-        "Leave request admin email exhausted retries leave_request_id=#{leave_request_id} failures=#{inspect(failures)}"
+      LeaveRequestEmails.deliver_new_leave_request(
+        admins,
+        leave_request,
+        attachment,
+        leave_request.user
       )
-
-      {:cancel, :delivery_failed}
-    else
-      Logger.warning(
-        "Leave request admin email attempt failed leave_request_id=#{leave_request_id} " <>
-          "attempt=#{job.attempt}/#{job.max_attempts} failures=#{inspect(failures)}"
-      )
-
-      {:error, :delivery_failed}
     end
   end
 

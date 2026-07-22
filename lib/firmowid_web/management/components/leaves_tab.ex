@@ -12,6 +12,8 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
   alias Firmowid.Ash.Timetracker
   alias FirmowidWeb.Timetracker.Utilities.LeavePresentation
 
+  require Ash.Expr
+
   @impl true
   def update(assigns, socket) do
     year = Map.get(assigns, :year) || socket.assigns[:year] || Date.utc_today().year
@@ -40,31 +42,20 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
         scope: scope
       )
 
-    pending = Enum.filter(requests, &(&1.status == :pending))
+    {pending, others} = Enum.split_with(requests, &(&1.status == :pending))
 
-    others =
-      requests
-      |> Enum.reject(&(&1.status == :pending))
-      |> LeavePresentation.filter_by_search(socket.assigns.search)
-      |> filter_by_year(year)
-
-    active_years =
-      requests
-      |> Enum.reject(&(&1.status == :pending))
-      |> Enum.flat_map(fn r -> [r.starts_on.year, r.ends_on.year] end)
-      |> Enum.uniq()
-      |> Enum.sort(:desc)
+    others = LeavePresentation.filter_by_search(others, socket.assigns.search)
 
     leave_days =
       socket.assigns.employee
       |> Ash.load!([accepted_leave_days_for_year: %{year: year}], scope: scope)
-      |> Map.fetch!(:accepted_leave_days_for_year)
+      |> Map.get(:accepted_leave_days_for_year, 0)
 
     socket
     |> assign(:pending_requests, pending)
     |> assign(:other_requests, others)
     |> assign(:active_years, active_years)
-    |> assign(:leave_days, leave_days || 0)
+    |> assign(:leave_days, leave_days)
   end
 
   @impl true
@@ -392,6 +383,5 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
   defp attachment_url(%{blob: %{url: url}}) when is_binary(url), do: url
   defp attachment_url(_), do: nil
 
-  defp attachment_filename(%{blob: %{original_filename: name}}) when is_binary(name), do: name
-  defp attachment_filename(_), do: "zalacznik"
+  defp attachment_filename(%{blob: %{original_filename: name}}), do: name
 end

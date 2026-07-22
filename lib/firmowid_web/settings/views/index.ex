@@ -1,3 +1,5 @@
+alias Ash.Error.Invalid
+
 require Logger
 
 defmodule FirmowidWeb.Settings.Views.Index do
@@ -269,7 +271,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     case consume_uploaded_entry(socket, entry, fn %{path: path} ->
            {:ok,
-            Blobs.create_or_reuse_avatar_blob(
+            Blobs.create_or_reuse_blob(
               path,
               entry.client_type,
               entry.client_name,
@@ -719,7 +721,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
          |> assign(:ksef_auth_status, credential.status)
          |> assign(:ksef_failure, nil)}
 
-      {:error, %Ash.Error.Invalid{errors: [%{message: message} | _]}} ->
+      {:error, %Invalid{errors: [%{message: message} | _]}} ->
         LiveToast.send_toast(:error, message)
         {:noreply, socket}
     end
@@ -982,97 +984,72 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("select_leave_reason", %{"reason" => reason}, socket) do
-    {:noreply, assign(socket, :selected_leave_reason, reason)}
+    form =
+      AshPhoenix.Form.validate(
+        socket.assigns.leave_request_form.source,
+        Map.put(
+          AshPhoenix.Form.params(socket.assigns.leave_request_form.source),
+          "reason",
+          reason
+        )
+      )
+
+    {:noreply, assign(socket, :leave_request_form, to_form(form))}
   end
 
   def handle_event("create_leave_request", %{"leave_request" => params}, socket) do
-    params = Map.put(params, "reason", socket.assigns.selected_leave_reason)
     scope = socket.assigns.ash_scope
 
-    blob_id =
-      case uploaded_entries(socket, :leave_request_attachment) do
-        {[%{client_name: _} | _], _} ->
-          socket
-          |> consume_uploaded_entries(:leave_request_attachment, fn %{path: path}, entry ->
-            case Blobs.create_blob(
-                   path,
-                   entry.client_type || "application/pdf",
-                   entry.client_name,
-                   scope: scope
-                 ) do
-              {:ok, blob} -> {:ok, blob.id}
-              {:error, error} -> {:ok, {:error, error}}
-            end
-          end)
-          |> List.first()
+    attrs = %{
+      starts_on: params["starts_on"],
+      ends_on: params["ends_on"],
+      reason: params["reason"],
+      note: params["note"]
+    }
 
-        _ ->
-          nil
+    result =
+      case uploaded_entries(socket, :leave_request_attachment) do
+        {[], []} ->
+          Timetracker.create_leave_request(attrs, scope: scope)
+
+        {[entry], []} ->
+          create_leave_request_with_upload(socket, entry, attrs, scope)
+
+        {_, [_ | _]} ->
+          {:error, :upload_in_progress}
       end
 
-    params = if blob_id, do: Map.put(params, "blob_id", blob_id), else: params
-
-    case AshPhoenix.Form.submit(socket.assigns.leave_request_form.source, params: params) do
+    case result do
       {:ok, _request} ->
         leave_requests =
-          Timetracker.list_leave_requests_for_user!(socket.assigns.current_user.id, scope: scope)
+          Timetracker.list_leave_requests_for_user!(
+            socket.assigns.current_user.id,
+            scope: scope
+          )
 
-            {:noreply,
-             socket
-             |> assign(:leave_requests, leave_requests)
-             |> assign(
-               :leave_request_form,
-               leave_request_form(socket.assigns.current_user, scope)
-             )
-             |> assign(:selected_leave_reason, default_leave_reason())
-             |> push_event("js-exec", %{to: "#leave-request-modal", attr: "data-cancel"})}
+        {:noreply,
+         socket
+         |> assign(:leave_requests, leave_requests)
+         |> assign(:leave_request_form, leave_request_form(socket.assigns.current_user, scope))
+         |> push_event("js-exec", %{to: "#leave-request-modal", attr: "data-cancel"})}
 
-          {:error, form} ->
-            {:noreply, assign(socket, :leave_request_form, to_form(form))}
-        end
+      {:error, %Invalid{} = error} ->
+        form =
+          socket.assigns.leave_request_form.source
+          |> AshPhoenix.Form.validate(params)
+          |> AshPhoenix.Form.add_error(error)
+
+        {:noreply, assign(socket, :leave_request_form, to_form(form))}
     end
   end
 
-  def handle_event("refresh_leave_request_attachment", _params, socket) do
+  # LiveView requires a phx-change handler to initialize and track uploaded files.
+  def handle_event("validate_leave_request_attachment", _params, socket) do
     {:noreply, socket}
   end
 
   def handle_event("cancel_leave_request_attachment", %{"ref" => ref}, socket) do
     {:noreply, cancel_upload(socket, :leave_request_attachment, ref)}
-  end
-
-  defp maybe_upload_leave_request_attachment(socket, scope) do
-    case uploaded_entries(socket, :leave_request_attachment) do
-      {[], _} ->
-        {:ok, nil}
-
-      {[_entry | _], []} ->
-        results =
-          consume_uploaded_entries(socket, :leave_request_attachment, fn %{path: path}, entry ->
-            case create_or_reuse_blob(path, entry, scope) do
-              {:ok, blob} -> {:ok, {:ok, blob.id}}
-              {:error, error} -> {:ok, {:error, error}}
-            end
-          end)
-
-        case List.first(results) do
-          {:ok, blob_id} when is_binary(blob_id) -> {:ok, blob_id}
-          {:error, error} -> {:error, error}
-          other -> {:error, other}
-        end
-
-      _ ->
-        {:ok, nil}
-    end
-  end
-
-  defp create_or_reuse_blob(path, entry, scope) do
-    Blobs.create_or_reuse_avatar_blob(
-      path,
-      entry.client_type || "application/octet-stream",
-      entry.client_name,
-      scope: scope
-    )
   end
 
   def handle_info(
@@ -1156,6 +1133,19 @@ defmodule FirmowidWeb.Settings.Views.Index do
     {:noreply, socket}
   end
 
+  defp create_leave_request_with_upload(socket, entry, attrs, scope) do
+    consume_uploaded_entry(socket, entry, fn %{path: path} ->
+      {:ok,
+       Timetracker.create_leave_request(
+         Map.merge(attrs, %{
+           upload_path: path,
+           upload_filename: entry.client_name
+         }),
+         scope: scope
+       )}
+    end)
+  end
+
   defp ksef_connection_status(nil), do: :idle
   defp ksef_connection_status(%Credential{status: status}), do: status
 
@@ -1223,7 +1213,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
             leave_requests={@leave_requests}
             leave_request_form={@leave_request_form}
             leave_request_upload={@uploads.leave_request_attachment}
-            selected_leave_reason={@selected_leave_reason}
             leave_search={@leave_search}
             leave_days={@leave_days}
           />
