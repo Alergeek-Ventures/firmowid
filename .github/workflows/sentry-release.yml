@@ -12,12 +12,7 @@ concurrency:
 jobs:
   extract-versions:
     name: Extract versions from .tool-versions
-    runs-on: self-hosted
-    container:
-      image: ghcr.io/alergeek-ventures/infrastructure/cicd-image:5b1d7150888c47322a6b5cda04796dfd1dbfb34c
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.github_token }}
+    runs-on: ubuntu-latest
     outputs:
       elixir: ${{ steps.versions.outputs.elixir }}
       otp: ${{ steps.versions.outputs.otp }}

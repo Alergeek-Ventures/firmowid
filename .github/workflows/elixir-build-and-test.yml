@@ -14,16 +14,11 @@ concurrency:
 jobs:
   extract-versions:
     name: Extract versions and service images
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: read
       pull-requests: read
-    container:
-      image: ghcr.io/alergeek-ventures/infrastructure/cicd-image:5b1d7150888c47322a6b5cda04796dfd1dbfb34c
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.github_token }}
     outputs:
       elixir: ${{ steps.versions.outputs.elixir }}
       otp: ${{ steps.versions.outputs.otp }}
@@ -85,19 +80,6 @@ jobs:
           echo "Selected SeaweedFS image:"
           echo "  SeaweedFS: $SEAWEEDFS_IMAGE"
 
-  verify-service-images:
-    name: Verify service images are available
-    runs-on: self-hosted
-    needs: extract-versions
-    permissions:
-      packages: read
-    container:
-      image: ghcr.io/alergeek-ventures/infrastructure/cicd-image:5b1d7150888c47322a6b5cda04796dfd1dbfb34c
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.github_token }}
-
-    steps:
       - name: Log in to GHCR
         run: |
           printf '%s' "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
@@ -106,10 +88,10 @@ jobs:
 
       - name: Verify SeaweedFS image exists
         env:
-          SEAWEEDFS_IMAGE: ${{ needs.extract-versions.outputs.seaweedfs_image }}
-          SEAWEEDFS_PR_IMAGE_REQUIRED: ${{ needs.extract-versions.outputs.seaweedfs_pr_image_required }}
-          SEAWEEDFS_PR_NUMBER: ${{ needs.extract-versions.outputs.seaweedfs_pr_number }}
-          SEAWEEDFS_PR_HEAD_SHA: ${{ needs.extract-versions.outputs.seaweedfs_pr_head_sha }}
+          SEAWEEDFS_IMAGE: ${{ steps.images.outputs.seaweedfs_image }}
+          SEAWEEDFS_PR_IMAGE_REQUIRED: ${{ steps.images.outputs.seaweedfs_pr_image_required }}
+          SEAWEEDFS_PR_NUMBER: ${{ steps.images.outputs.seaweedfs_pr_number }}
+          SEAWEEDFS_PR_HEAD_SHA: ${{ steps.images.outputs.seaweedfs_pr_head_sha }}
         run: |
           if docker manifest inspect "$SEAWEEDFS_IMAGE" >/dev/null 2>&1; then
             echo "✅ SeaweedFS image is available: $SEAWEEDFS_IMAGE"
@@ -156,7 +138,6 @@ jobs:
 
     needs:
       - extract-versions
-      - verify-service-images
     permissions:
       contents: read
       packages: read
@@ -191,8 +172,8 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: firmowid_test
         options: >-
-          --health-cmd pg_isready --health-interval 10s --health-timeout 5s
-          --health-retries 5
+          --health-cmd "pg_isready -U postgres -d firmowid_test" --health-interval 2s
+          --health-timeout 5s --health-retries 30
 
       seaweedfs:
         image: ${{ needs.extract-versions.outputs.seaweedfs_image }}

@@ -11,12 +11,7 @@ on:
 jobs:
   version-sync:
     name: Validate image and tool versions are in sync
-    runs-on: self-hosted
-    container:
-      image: ghcr.io/alergeek-ventures/infrastructure/cicd-image:5b1d7150888c47322a6b5cda04796dfd1dbfb34c
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.github_token }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

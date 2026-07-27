@@ -52,6 +52,7 @@ runs:
 
     - name: Get deps cache
       uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+      id: deps-cache
       with:
         path: deps/
         key: deps-${{ inputs.cache-key }}-${{ runner.os }}-${{ hashFiles('mix.lock') }}
@@ -68,6 +69,7 @@ runs:
     - name: Get Hex cache
       uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
       id: hex-cache
+      if: steps.deps-cache.outputs.cache-hit != 'true'
       with:
         path: ~/.hex
         key: build-${{ runner.os }}-${{ inputs.otp-version }}-${{ inputs.elixir-version }}-${{ hashFiles('mix.lock') }}
