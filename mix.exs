@@ -138,7 +138,6 @@ defmodule Firmowid.MixProject do
       {:live_debugger, "~> 1.0", only: [:dev], runtime: Mix.env() == :dev},
       {:oban_web, "~> 2.11"},
       {:igniter, "~> 0.5", only: [:dev]},
-      {:dotenv, "~> 3.1", only: [:dev, :test]},
       {:tidewave, "~> 0.2", only: :dev},
       {:lazy_html, ">= 0.1.0"},
       {:erlsom, "~> 1.5", only: [:dev, :test]},
