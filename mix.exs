@@ -115,7 +115,7 @@ defmodule Firmowid.MixProject do
       {:sweet_xml, "~> 0.6"},
       {:mime, "~> 2.0"},
       {:akin, "~> 0.2.0"},
-      {:live_toast, "~> 0.8.0"},
+      {:live_toast, "~> 0.9.0"},
       {:packmatic, "~> 2.0.0"},
       {:image, "~> 0.37"},
       {:briefly, "~> 0.5.0"},
