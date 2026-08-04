@@ -392,13 +392,20 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
               for={@leave_request_form[:starts_on].id}
               class="text-grey-700 flex items-center gap-2 text-sm"
             >
-              Od: <.input new={true} field={@leave_request_form[:starts_on]} type="date" />
+              Od:
+              <.input
+                new={true}
+                field={@leave_request_form[:starts_on]}
+                is_tooltip={true}
+                type="date"
+              />
             </.label>
             <.label
               for={@leave_request_form[:ends_on].id}
               class="text-grey-700 flex items-center gap-2 text-sm"
             >
-              Do: <.input new={true} field={@leave_request_form[:ends_on]} type="date" />
+              Do:
+              <.input new={true} field={@leave_request_form[:ends_on]} is_tooltip={true} type="date" />
             </.label>
           </div>
           <div>

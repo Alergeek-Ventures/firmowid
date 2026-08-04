@@ -1040,12 +1040,22 @@ defmodule FirmowidWeb.Settings.Views.Index do
           |> AshPhoenix.Form.add_error(error)
 
         {:noreply, assign(socket, :leave_request_form, to_form(form))}
+
+      {:error, _reason} ->
+        LiveToast.send_toast(:error, "Nie udało się wysłać wniosku.")
+        {:noreply, socket}
     end
   end
 
   # LiveView requires a phx-change handler to initialize and track uploaded files.
-  def handle_event("validate_leave_request_attachment", _params, socket) do
-    {:noreply, socket}
+  def handle_event("validate_leave_request_attachment", %{"leave_request" => params}, socket) do
+    form =
+      AshPhoenix.Form.validate(
+        socket.assigns.leave_request_form.source,
+        params
+      )
+
+    {:noreply, assign(socket, :leave_request_form, to_form(form))}
   end
 
   def handle_event("cancel_leave_request_attachment", %{"ref" => ref}, socket) do

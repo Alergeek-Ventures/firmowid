@@ -128,20 +128,20 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
 
       validate one_of(:reason, [:sick, :vacation, :unpaid]) do
         where [attribute_equals(:category, :leave)]
-        message "is not valid for this leave category"
+        message "nie jest prawidłowy dla tej kategorii urlopu"
       end
 
       validate one_of(:reason, [:indisposition, :rest, :other]) do
         where [attribute_equals(:category, :absence)]
-        message "is not valid for this leave category"
+        message "nie jest prawidłowy dla tej kategorii nieobecności"
       end
 
       validate compare(:starts_on, greater_than_or_equal_to: &Date.utc_today/0) do
-        message "must be today or a future date"
+        message "musi być dzisiejsza lub późniejsza"
       end
 
       validate compare(:ends_on, greater_than_or_equal_to: :starts_on) do
-        message "must be on or after the start date"
+        message "musi być na lub po dacie rozpoczęcia"
       end
 
       change after_transaction(fn

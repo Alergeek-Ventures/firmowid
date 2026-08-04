@@ -12,8 +12,6 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
   alias Firmowid.Ash.Timetracker
   alias FirmowidWeb.Timetracker.Utilities.LeavePresentation
 
-  require Ash.Expr
-
   @impl true
   def update(assigns, socket) do
     year = Map.get(assigns, :year) || socket.assigns[:year] || Date.utc_today().year
