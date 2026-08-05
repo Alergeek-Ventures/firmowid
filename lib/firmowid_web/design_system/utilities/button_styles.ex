@@ -121,9 +121,9 @@ defmodule FirmowidWeb.DesignSystem.Utilities.ButtonStyles do
   def variant_classes("destructive", _accent) do
     [
       "border-transparent",
-      "bg-redText text-white",
-      "hover:bg-red-700 active:bg-red-800",
-      "disabled:bg-red-300 disabled:text-white"
+      "bg-red-200 text-red-800",
+      "hover:bg-red-300 active:bg-red-400",
+      "disabled:text-red-500"
     ]
   end
 

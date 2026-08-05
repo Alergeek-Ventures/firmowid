@@ -28,11 +28,12 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
 
   def account_tab(assigns) do
     ~H"""
-    <div class="grid w-full grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-16">
-      <.name_section
-        current_user={@current_user}
-        editing_account_name={@editing_account_name}
-      />
+    <div class="grid w-full grid-cols-1 lg:grid-cols-2">
+      <div class="flex flex-col gap-14">
+        <.name_section
+          current_user={@current_user}
+          editing_account_name={@editing_account_name}
+        />
 
       <.credentials_section
         current_user={@current_user}
@@ -42,16 +43,18 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
         current_password={@current_password}
       />
 
-      <.google_login_section
-        google_connected?={@google_connected?}
-        current_user={@current_user}
-      />
+        <.google_login_section
+          google_connected?={@google_connected?}
+          current_user={@current_user}
+        />
 
-      <.account_closure_section
-        current_user={@current_user}
-        current_org={@current_org}
-        delete_account_form={@delete_account_form}
-      />
+        <.account_closure_section
+          current_user={@current_user}
+          current_org={@current_org}
+          delete_account_form={@delete_account_form}
+        />
+      </div>
+      <div></div>
     </div>
     """
   end
@@ -64,9 +67,9 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
 
   defp account_section(assigns) do
     ~H"""
-    <section class={["space-y-3", @class]}>
+    <section class={["space-y-4", @class]}>
       <div class="flex min-h-8 items-center gap-2.5">
-        <h2 class="text-grey-900 text-base leading-none font-semibold">{@title}</h2>
+        <h2 class="text-grey-900 text-base leading-none font-medium">{@title}</h2>
 
         <span
           :if={@action}
@@ -96,7 +99,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
     ~H"""
     <Helpers.settings_display_field
       label={@label}
-      class="w-full"
+      class="justify-center"
       value_class={["break-words", @value_class]}
     >
       {render_slot(@inner_block)}
@@ -293,9 +296,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           type="button"
           variant="outline"
           size="small"
-          phx-click={
-            if(@google_connected?, do: "replace_google_account", else: "link_google_account")
-          }
+          phx-click="link_google_account"
           class="gap-2 self-start"
         >
           <svg class="size-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -316,18 +317,20 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
               fill="#EA4335"
             />
           </svg>
-          {if @google_connected?, do: "Zmień konto Google", else: "Połącz z Google"}
+          {if @google_connected?, do: "Powiąż inne", else: "Połącz z Google"}
         </.button>
 
-        <.button
-          :if={@google_connected?}
-          type="button"
-          variant="destructive"
-          size="small"
-          phx-click="unlink_google_account"
-        >
-          Rozłącz
-        </.button>
+            <.button
+              :if={@google_connected?}
+              type="button"
+              variant="destructive"
+              size="small"
+              phx-click="unlink_google_account"
+            >
+              Rozłącz
+            </.button>
+          </div>
+        </Helpers.settings_display_field>
       </div>
     </.account_section>
     """
@@ -342,16 +345,17 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
     <.account_section title="Zamykanie konta">
       <div class="flex flex-col gap-4">
         <.detail_row label="Nazwa konta">{@current_user.email}</.detail_row>
-
-        <.button
-          class="max-w-[200px]"
-          type="button"
-          variant="destructive"
-          size="small"
-          phx-click={show_modal("confirm_modal")}
-        >
-          Zamknij konto
-        </.button>
+        <Helpers.settings_display_field label="">
+          <.button
+            class="max-w-[200px]"
+            type="button"
+            variant="destructive"
+            size="small"
+            phx-click={show_modal("confirm_modal")}
+          >
+            Zamknij konto
+          </.button>
+        </Helpers.settings_display_field>
       </div>
 
       <.modal id="confirm_modal">

@@ -26,7 +26,7 @@ defmodule FirmowidWeb.Settings.Components.Helpers do
   end
 
   @doc """
-  Renders a read-only settings value with the label above the displayed content.
+  Renders a read-only settings value with the label next to the displayed content.
   """
   @spec settings_display_field(map()) :: Rendered.t()
   attr :label, :string, required: true
@@ -37,8 +37,10 @@ defmodule FirmowidWeb.Settings.Components.Helpers do
 
   def settings_display_field(assigns) do
     ~H"""
-    <div class={["flex flex-col gap-1", @class]}>
-      <div class={["text-grey-700 text-sm leading-[1.35]", @label_class]}>{@label}</div>
+    <div class={["grid grid-cols-2 items-start gap-x-5", @class]}>
+      <div class={["text-grey-700 text-right text-sm leading-[1.35]", @label_class]}>
+        {@label}
+      </div>
       <div class={["text-grey-900 text-base leading-[1.35]", @value_class]}>
         {render_slot(@inner_block)}
       </div>

@@ -34,45 +34,61 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
 
     ~H"""
     <section class="container flex max-w-7xl flex-col gap-6 py-8 lg:gap-10 lg:py-10">
-      <div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
-        <form class="relative" phx-submit="upload" phx-change="upload">
-          <.live_file_input
-            upload={@user_avatar_upload}
-            class="peer sr-only"
-            aria-label="Zmień zdjęcie profilowe"
-          />
-
-          <.avatar class="bg-grey-100 border-grey-100 hidden size-24 rounded-full border lg:block">
-            <.avatar_image
-              :if={Map.get(@current_user.avatar_blob || %{}, :url)}
-              src={Map.get(@current_user.avatar_blob || %{}, :url)}
-              alt={@current_user.name || @current_user.email}
+      <div class="flex items-center justify-between">
+        <div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
+          <form class="relative" phx-submit="upload" phx-change="upload">
+            <.live_file_input
+              upload={@user_avatar_upload}
+              class="peer sr-only"
+              aria-label="Zmień zdjęcie profilowe"
             />
-            <.avatar_fallback class="text-grey-700 text-2xl font-medium">
-              {initial(@current_user.name || @current_user.email)}
-            </.avatar_fallback>
-          </.avatar>
 
-          <.button
-            as="label"
-            id="settings-user-avatar-upload-tooltip"
-            for={@user_avatar_upload.ref}
-            type="button"
-            variant="outline"
-            size="small"
-            aria-label="Zmień zdjęcie profilowe"
-            phx-hook="Tippy"
-            data-tippy-content="Zmień zdjęcie profilowe"
-            data-tippy-delay="100"
-            class="absolute -right-1 -bottom-1 hidden size-10 rounded-full p-0 shadow-sm lg:flex"
-          >
-            <Lucideicons.square_pen class="size-[18px]" />
-          </.button>
-        </form>
+            <.avatar class="bg-grey-100 border-grey-100 hidden size-32 rounded-full border lg:block">
+              <.avatar_image
+                :if={Map.get(@current_user.avatar_blob || %{}, :url)}
+                src={Map.get(@current_user.avatar_blob || %{}, :url)}
+                alt={@current_user.name || @current_user.email}
+              />
+              <.avatar_fallback class="text-grey-700 text-2xl font-medium">
+                {initial(@current_user.name || @current_user.email)}
+              </.avatar_fallback>
+            </.avatar>
 
-        <h1 class="text-grey-900 text-2xl font-medium">
-          Cześć, <span class="font-bold">{@current_user.name || "użytkowniku"}</span>!
-        </h1>
+            <.button
+              as="label"
+              id="settings-user-avatar-upload-tooltip"
+              for={@user_avatar_upload.ref}
+              type="button"
+              variant="outline"
+              size="small"
+              aria-label="Zmień zdjęcie profilowe"
+              phx-hook="Tippy"
+              data-tippy-content="Zmień zdjęcie profilowe"
+              data-tippy-delay="100"
+              class="absolute -right-1 -bottom-1 hidden size-10 rounded-full p-0 shadow-sm lg:flex"
+            >
+              <Lucideicons.square_pen class="size-6!" />
+            </.button>
+          </form>
+
+          <div class="flex flex-col gap-2">
+            <h1 class="text-grey-900 text-2xl font-medium">
+              Cześć, <span class="font-bold">{@current_user.name || "użytkowniku"}</span>!
+            </h1>
+            <p class="text-grey-700">{@current_user.email}</p>
+          </div>
+        </div>
+        <.avatar class="bg-grey-100 border-grey-100 hidden size-32 rounded-2xl! border lg:block">
+          <.avatar_image
+            :if={@current_org.avatar_blob && @current_org.avatar_blob.url}
+            src={@current_org.avatar_blob.url}
+            alt={@current_org.name}
+            class="rounded-2xl! object-contain"
+          />
+          <.avatar_fallback class="text-grey-700 rounded-2xl! text-center text-2xl font-medium">
+            {initial(@current_org.name)}
+          </.avatar_fallback>
+        </.avatar>
       </div>
 
       <nav
