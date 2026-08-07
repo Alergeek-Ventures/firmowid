@@ -68,6 +68,11 @@ defmodule Firmowid.Ash.Core do
       define :consume_invite, action: :consume
       define :destroy_invite, action: :destroy
     end
+
+    resource Firmowid.Ash.Core.OauthClient
+    resource Firmowid.Ash.Core.OauthAuthorizationCode
+    resource Firmowid.Ash.Core.OauthRefreshToken
+    resource Firmowid.Ash.Core.OauthConsent
   end
 
   authorization do

@@ -23,10 +23,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   alias Ash.Error.Forbidden
   alias Ash.Notifier.Notification
+  alias AshAuthentication.Argon2Provider
   alias Firmowid.Ash.Billing.Month
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Core
-  alias Firmowid.Ash.Core.Argon2Provider
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.GoCardless.ApiClient
   alias Firmowid.Ash.Finances.Requisition

@@ -46,7 +46,7 @@ defmodule Firmowid.Ash.Core.User do
       password :password do
         identity_field :email
         hashed_password_field :hashed_password
-        hash_provider Firmowid.Ash.Core.Argon2Provider
+        hash_provider AshAuthentication.Argon2Provider
         confirmation_required? false
 
         resettable do
@@ -107,6 +107,7 @@ defmodule Firmowid.Ash.Core.User do
     define :sign_in_with_token, action: :sign_in_with_token
     define :sign_in_with_password, action: :sign_in_with_password
     define :get_by_subject, action: :get_by_subject
+    define :get_by_email, action: :get_by_email
     define :register_with_google, action: :register_with_google, args: [:user_info, :oauth_tokens]
   end
 

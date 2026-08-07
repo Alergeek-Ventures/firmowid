@@ -26,6 +26,7 @@ defmodule Firmowid.Ash.Core.Token do
   end
 
   code_interface do
+    define :read, action: :read
     define :get_token, action: :get_token
     define :store_token, action: :store_token
     define :store_confirmation_changes, action: :store_confirmation_changes
@@ -34,8 +35,14 @@ defmodule Firmowid.Ash.Core.Token do
     define :revoke_all_stored_for_subject, action: :revoke_all_stored_for_subject
     define :revoke_jti, action: :revoke_jti
     define :revoke_token, action: :revoke_token
+    define :revoke_token_insert, action: :revoke_token_insert
+    define :revoke_jti_insert, action: :revoke_jti_insert
     define :read_expired, action: :read_expired
     define :expunge_expired, action: :expunge_expired
+  end
+
+  actions do
+    defaults [:read]
   end
 
   policies do
