@@ -96,6 +96,11 @@ config :firmowid,
   # use DATABASE_URL if set
   google_client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
 
+# OAuth2 AS access-token signing secret. Prefer a dedicated env var in prod;
+# fall back to SECRET_KEY_BASE so existing deploys keep working.
+config :firmowid,
+  oauth2_signing_secret: System.get_env("OAUTH2_SIGNING_SECRET") || secret_key_base
+
 config :req_llm,
   openai_api_key: System.get_env("OPENAI_API_KEY") || Application.get_env(:firmowid, :openai_api_key)
 
@@ -259,7 +264,11 @@ config :sentry, release: sentry_release
 
 # Phoenix HTTP port - only override if PORT is set (worktree)
 if config_env() == :dev and System.get_env("PORT") do
-  config :firmowid, Endpoint, http: [port: String.to_integer(System.get_env("PORT"))]
+  port = String.to_integer(System.get_env("PORT"))
+
+  config :firmowid, Endpoint,
+    http: [port: port],
+    url: [host: "localhost", port: port]
 end
 
 # LiveDebugger port - only override if DEBUGGER_PORT is set (worktree)
@@ -302,8 +311,7 @@ if config_env() == :prod do
     config :firmowid, Firmowid.Repo, ssl: database_ssl_config
   end
 
-  # PHX_HOST depends on the machine you deploy to, so you need to set it in runtime
-  # also only production uses https
+  # PHX_HOST depends on the machine you deploy to, so we use https
   config :firmowid, Endpoint,
     url: [
       host: System.get_env("PHX_HOST") || raise("PHX_HOST environment variable is not set"),

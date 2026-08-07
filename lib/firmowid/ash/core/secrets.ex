@@ -1,6 +1,6 @@
 defmodule Firmowid.Ash.Core.Secrets do
   @moduledoc """
-  Secret resolver for `ash_authentication` strategies.
+  Secret resolver for `ash_authentication` strategies and the OAuth2 AS.
 
   Reads Google OAuth credentials and token signing secret from application
   config (populated by runtime.exs from environment variables).
@@ -38,6 +38,18 @@ defmodule Firmowid.Ash.Core.Secrets do
       :error ->
         :error
     end
+  end
+
+  def secret_for([:issuer_url], Firmowid.Oauth2Server, _opts, _context) do
+    {:ok, Endpoint.url()}
+  end
+
+  def secret_for([:resource_url], Firmowid.Oauth2Server, _opts, _context) do
+    {:ok, Endpoint.url() <> "/mcp"}
+  end
+
+  def secret_for([:signing_secret], Firmowid.Oauth2Server, _opts, _context) do
+    fetch_env(:oauth2_signing_secret)
   end
 
   defp fetch_env(key) do

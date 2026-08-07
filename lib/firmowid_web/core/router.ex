@@ -1,6 +1,7 @@
 defmodule FirmowidWeb.Core.Router do
   use FirmowidWeb, :router
   use AshAuthentication.Phoenix.Router
+  use AshAuthentication.Phoenix.Oauth2Server.Router
 
   import FirmowidWeb.Infrastructure.Plugs.RedirectTrailing
   import FirmowidWeb.Infrastructure.UserAuth
@@ -39,11 +40,16 @@ defmodule FirmowidWeb.Core.Router do
 
     plug :sign_in_with_remember_me
     plug :load_from_session
+    plug :set_actor, :user
   end
 
   pipeline :api do
     plug :accepts, ["json"]
     plug :load_from_bearer
+  end
+
+  pipeline :oauth_api do
+    plug :accepts, ["json"]
   end
 
   pipeline :webhook do
@@ -55,10 +61,54 @@ defmodule FirmowidWeb.Core.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :mcp do
+    plug AshAuthentication.Phoenix.Oauth2Server.BearerPlug,
+      oauth2_server: Firmowid.Oauth2Server,
+      required?: true,
+      scope: "mcp"
+
+    plug AshAuthentication.Phoenix.Oauth2Server.RequireScopePlug,
+      oauth2_server: Firmowid.Oauth2Server,
+      scope: "mcp"
+
+    plug FirmowidWeb.Mcp.Utilities.Authenticate
+  end
+
   scope "/", FirmowidWeb do
     pipe_through :health
 
     get "/health", Infrastructure.Controllers.Health, :check
+  end
+
+  ## Authentication routes (Ash Authentication)
+  # Consent must be registered before `forward "/oauth"` below. Phoenix
+  # first-match-wins, and the protocol router would 404 `/oauth/authorize`.
+
+  scope "/", FirmowidWeb do
+    pipe_through :browser
+
+    auth_routes(AuthController, Firmowid.Ash.Core.User, path: "/auth")
+    delete "/wyloguj", AuthController, :sign_out
+
+    oauth2_server_consent_routes(
+      oauth2_server: Firmowid.Oauth2Server,
+      consent_view: FirmowidWeb.Mcp.Components.Consent
+    )
+  end
+
+  scope "/" do
+    pipe_through :oauth_api
+    oauth2_server_protocol_routes(oauth2_server: Firmowid.Oauth2Server)
+  end
+
+  ## MCP resource server
+
+  scope "/mcp" do
+    pipe_through :mcp
+
+    forward "/", AshAi.Mcp.Router,
+      tools: [:list_sessions, :get_current_session, :stop_current_session],
+      otp_app: :firmowid
   end
 
   scope "/admin" do
@@ -93,15 +143,6 @@ defmodule FirmowidWeb.Core.Router do
     pipe_through :webhook
 
     post "/kosztowe/skrzynka", Invoicing.CostInvoices.Controllers.Inbound, :handle_webhook
-  end
-
-  ## Authentication routes (Ash Authentication)
-
-  scope "/", FirmowidWeb do
-    pipe_through :browser
-
-    auth_routes(AuthController, Firmowid.Ash.Core.User, path: "/auth")
-    delete "/wyloguj", AuthController, :sign_out
   end
 
   # Canonical policy: Google accounts auto-link only when provider email is verified

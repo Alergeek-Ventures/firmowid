@@ -95,6 +95,35 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
     end
   end
 
+  describe "stop_current/1" do
+    test "stops the actor's running session without a client-supplied id", %{
+      user: user,
+      project: project,
+      scope: scope
+    } do
+      {:ok, session} =
+        AshSession.create(
+          %{
+            title: "Running",
+            project_id: project.id,
+            user_id: user.id,
+            start_datetime: DateTime.utc_now()
+          },
+          scope: scope
+        )
+
+      {:ok, stopped} = AshSession.stop_current(scope: scope)
+
+      assert stopped.id == session.id
+      assert stopped.end_datetime
+      assert is_nil(AshSession.get_current!(scope: scope))
+    end
+
+    test "returns nil when the actor has no running session", %{scope: scope} do
+      assert {:ok, nil} = AshSession.stop_current(scope: scope)
+    end
+  end
+
   describe "update/3" do
     test "updates session title", %{user: user, project: project, scope: scope} do
       session =

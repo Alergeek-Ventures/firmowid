@@ -7,7 +7,7 @@ defmodule Firmowid.Ash.Timetracker do
   authorization and attribute multitenancy via `organization_id`.
   """
   use Ash.Domain,
-    extensions: [Ash.Policy.Authorizer]
+    extensions: [Ash.Policy.Authorizer, AshAi]
 
   alias Firmowid.Ash.Timetracker.LeaveRequest
   alias Firmowid.Ash.Timetracker.Session
@@ -38,6 +38,22 @@ defmodule Firmowid.Ash.Timetracker do
       define :list_sessions, action: :list
       define :get_session_by_id, action: :read, get_by: [:id]
     end
+  end
+
+  tools do
+    tool :list_sessions, Session, :list_user_sessions do
+      description "List the authenticated user's previous work sessions, newest first, optionally filtered to those starting on or after a given date"
+      action_parameters [:sort, :limit]
+
+      argument :after_date, :date do
+        description "Only return sessions starting on or after this date (UTC)"
+      end
+    end
+
+    tool :get_current_session, Session, :get_current, description: "Get the user's currently running session, if any"
+
+    tool :stop_current_session, Session, :stop_current,
+      description: "End the authenticated user's currently running work session"
   end
 
   policies do

@@ -48,7 +48,8 @@ defmodule Firmowid.Application do
         {Oban, Application.fetch_env!(:firmowid, Oban)},
         Firmowid.Ash.Currencies.Converter,
         {AshAuthentication.Supervisor, otp_app: :firmowid},
-        {Jido, name: Jido, otp_app: :firmowid}
+        {Jido, name: Jido, otp_app: :firmowid},
+        {AshAuthentication.Oauth2Server.Supervisor, [otp_app: :firmowid]}
       ] ++
         maybe_gocardless_token_manager() ++
         [

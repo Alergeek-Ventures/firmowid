@@ -3,9 +3,10 @@ defmodule Firmowid.Ash.Timetracker.Session do
   Ash resource wrapping the existing `sessions` table.
 
   Attribute multitenancy via `organization_id`. Write actions include `start`
-  (begins a new session), `stop` (ends a running session), `create` (full attrs),
-  `update`, and `destroy`. Overlap is enforced by a DB trigger — the resulting
-  Postgrex error is surfaced as-is by AshPostgres.
+  (begins a new session), `stop` (ends a running session), `stop_current`
+  (ends the actor's running session without a client-supplied id), `create`
+  (full attrs), `update`, and `destroy`. Overlap is enforced by a DB trigger —
+  the resulting Postgrex error is surfaced as-is by AshPostgres.
   """
   use Ash.Resource,
     domain: Firmowid.Ash.Timetracker,
@@ -35,6 +36,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
     define :list_overlapping, args: [:user_id, :start_datetime]
     define :start
     define :stop
+    define :stop_current
     define :create
     define :update
     define :destroy
@@ -173,6 +175,33 @@ defmodule Firmowid.Ash.Timetracker.Session do
       change set_attribute(:end_datetime, &DateTime.utc_now/0)
     end
 
+    action :stop_current, :struct do
+      description """
+      Stop the acting user's currently running session, if any.
+
+      Used by MCP so clients never supply a session id. Returns nil when
+      there is no active session.
+      """
+
+      constraints instance_of: __MODULE__
+      allow_nil? true
+
+      run fn _input, context ->
+        opts = Ash.Context.to_opts(context)
+
+        case get_current(opts) do
+          {:ok, nil} ->
+            {:ok, nil}
+
+          {:ok, session} ->
+            stop(session, opts)
+
+          {:error, reason} ->
+            {:error, reason}
+        end
+      end
+    end
+
     update :update do
       description "Update session attributes."
       primary? true
@@ -198,6 +227,10 @@ defmodule Firmowid.Ash.Timetracker.Session do
     policy action_type([:update, :destroy]) do
       forbid_unless HoursRecordNotSubmitted
       authorize_if relates_to_actor_via(:user)
+    end
+
+    policy action(:stop_current) do
+      authorize_if actor_present()
     end
   end
 
