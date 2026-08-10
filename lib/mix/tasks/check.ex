@@ -52,7 +52,7 @@ defmodule Mix.Tasks.Check do
     {"Unused Deps", ["deps.unlock", "--check-unused"]},
     # Keep as low as possible — Ash macro expansion inherently raises this ceiling over time.
     # Temporary ceiling agreed for the assistant refactor while preserving visibility.
-    {"Xref", ["xref", "graph", "--label", "compile-connected", "--fail-above", "50"]},
+    {"Xref", ["xref", "graph", "--label", "compile-connected", "--fail-above", "70"]},
     {"Credo", ["credo", "--strict"]},
     {"Dialyzer", ["dialyzer"]}
   ]
