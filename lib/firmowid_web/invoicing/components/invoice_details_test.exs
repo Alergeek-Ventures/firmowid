@@ -10,7 +10,6 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetailsTest do
     html =
       render_component(&InvoiceDetails.invoice_amount/1,
         is_cost_invoice: true,
-        is_refund: true,
         total_amount: Money.new!("PLN", "100.00")
       )
 

@@ -132,11 +132,12 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   end
 
   attr :is_cost_invoice, :boolean
-  attr :is_refund, :boolean, default: false
   attr :total_amount, :any, required: true
   attr :lang, :atom, default: :pl
 
   def invoice_amount(assigns) do
+    assigns = assign(assigns, :is_refund, Decimal.gt?(Money.to_decimal(assigns.total_amount), 0))
+
     ~H"""
     <div class="flex flex-col items-end justify-between gap-2 pl-1">
       <label class="text-grey-700 text-sm/snug" for="total-amount">
