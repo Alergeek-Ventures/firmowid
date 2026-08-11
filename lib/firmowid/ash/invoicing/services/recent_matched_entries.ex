@@ -12,6 +12,7 @@ defmodule Firmowid.Ash.Invoicing.Services.RecentMatchedEntries do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
+  alias Firmowid.Ash.Invoicing.Services.SalesInvoiceChain
   alias Firmowid.Ash.Scope
 
   require Ash.Query
@@ -73,6 +74,7 @@ defmodule Firmowid.Ash.Invoicing.Services.RecentMatchedEntries do
         build_matched_entry(event, cost_invoices_by_id, sales_invoices_by_id)
       end)
       |> Enum.reject(&is_nil/1)
+      |> Enum.uniq_by(& &1.entry.id)
 
     %{
       entries: Enum.take(matched_entries, limit),
@@ -165,9 +167,16 @@ defmodule Firmowid.Ash.Invoicing.Services.RecentMatchedEntries do
   defp load_sales_invoices_by_id([], _scope, _loads), do: %{}
 
   defp load_sales_invoices_by_id(ids, scope, loads) do
-    %{ids: Enum.uniq(ids)}
-    |> Invoicing.list_sales_invoices!(load: loads, scope: scope)
-    |> Map.new(&{&1.id, &1})
+    invoices = Invoicing.list_sales_invoices!(%{ids: Enum.uniq(ids)}, load: loads, scope: scope)
+
+    Map.new(invoices, fn invoice ->
+      root_invoice =
+        invoice
+        |> SalesInvoiceChain.root_invoice(scope: scope)
+        |> Ash.load!(loads, scope: scope)
+
+      {invoice.id, root_invoice}
+    end)
   end
 
   defp month_range_as_naive_datetimes(from, to) do
