@@ -13,7 +13,7 @@ defmodule Firmowid.Ash.Invoicing.Services.NipApiClientTest do
                "ALERGEEK VENTURES SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ"
 
       assert org.nip == "6793209719"
-      assert org.address == "JANA KANTEGO FEDEROWICZA 5/96, 30-392 KRAKÓW"
+      assert org.address == "WŁADYSŁAWA SYROKOMLI 24/10, 30-102 KRAKÓW"
     end
 
     test "returns not found when the nip is not found" do
