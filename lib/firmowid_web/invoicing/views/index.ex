@@ -513,31 +513,20 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
       ) do
     socket = refetch_invoicing_entries(socket)
     cost_invoice = notification.data
+    cost_invoice_path = Navigation.cost_invoice_show_path(cost_invoice)
 
     LiveToast.send_toast(
       :success,
       "#{cost_invoice.issue_date} / #{cost_invoice.seller_display_name}",
       title: "Faktura załadowana",
       action: fn assigns ->
-        assigns =
-          assign(
-            assigns,
-            :issue_date,
-            Date.beginning_of_month(cost_invoice.issue_date)
-          )
+        assigns = assign(assigns, :cost_invoice_path, cost_invoice_path)
 
         ~H"""
         <.link
           kind="unstyled"
           class="text-bold text-sm underline"
-          navigate={
-            Navigation.invoicing_index_path(%{
-              month: @issue_date,
-              filter: :invoices,
-              subfilter: nil,
-              view_mode: :dashboard
-            })
-          }
+          navigate={@cost_invoice_path}
         >
           Wyświetl <.icon name="hero-arrow-right-solid" class="size-3" />
         </.link>

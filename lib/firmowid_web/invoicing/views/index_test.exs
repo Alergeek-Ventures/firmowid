@@ -272,6 +272,7 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
           scope: scope_for(user)
         )
 
+      assert rendered =~ ~s(href="/kosztowe/#{invoice.id}")
       assert invoice.invoice_identifier == "FV/UPLOAD/001"
       assert invoice.seller == "Upload Supplier Sp. z o.o."
     end
