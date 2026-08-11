@@ -15,6 +15,7 @@ copy_ignored = "wt step copy-ignored"
 
 [[pre-start]]
 deps = "mix deps.get"
+deps-js = "npm ci --prefix assets"
 
 [[pre-start]]
 env = """
