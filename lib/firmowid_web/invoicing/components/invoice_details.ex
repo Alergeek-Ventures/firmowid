@@ -132,6 +132,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   end
 
   attr :is_cost_invoice, :boolean
+  attr :is_refund, :boolean, default: false
   attr :total_amount, :any, required: true
   attr :lang, :atom, default: :pl
 
@@ -139,7 +140,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
     ~H"""
     <div class="flex flex-col items-end justify-between gap-2 pl-1">
       <label class="text-grey-700 text-sm/snug" for="total-amount">
-        {if @lang == :en, do: "Total to pay", else: "Razem do zapłaty"}
+        {invoice_amount_label(@lang, @is_refund)}
       </label>
       <p
         id="total-amount"
@@ -154,6 +155,11 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
     </div>
     """
   end
+
+  defp invoice_amount_label(:en, true), do: "Total to refund"
+  defp invoice_amount_label(:en, false), do: "Total to pay"
+  defp invoice_amount_label(:pl, true), do: "Razem do zwrotu"
+  defp invoice_amount_label(:pl, false), do: "Razem do zapłaty"
 
   attr :internal_notes, :list, required: true
 

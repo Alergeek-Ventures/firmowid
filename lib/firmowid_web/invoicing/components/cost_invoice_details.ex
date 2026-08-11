@@ -221,6 +221,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
 
               <InvoiceDetails.invoice_amount
                 is_cost_invoice={true}
+                is_refund={Decimal.gt?(@invoice.effective_total_amount, 0)}
                 total_amount={Money.new(@invoice.effective_currency, @invoice.effective_total_amount)}
               />
 
