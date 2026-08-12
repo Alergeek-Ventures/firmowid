@@ -130,8 +130,7 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatching.PendingMatches do
 
   defp normalize_ids(ids) when is_list(ids) do
     ids
-    |> Enum.map(&to_string/1)
-    |> Enum.map(&String.trim/1)
+    |> Enum.map(&(&1 |> to_string() |> String.trim()))
     |> Enum.reject(&(&1 == ""))
     |> Enum.uniq()
   end

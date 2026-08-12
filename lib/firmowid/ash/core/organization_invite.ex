@@ -82,7 +82,7 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
         |> Ash.Changeset.change_attribute(:consumed_by_id, user_id)
         |> Ash.Changeset.change_attribute(
           :consumed_at,
-          DateTime.truncate(DateTime.utc_now(), :second)
+          DateTime.utc_now(:second)
         )
       end
 

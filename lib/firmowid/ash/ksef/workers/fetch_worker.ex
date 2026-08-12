@@ -230,11 +230,8 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     end
   end
 
-  # sobelow_skip ["DOS.StringToAtom"]
-  # Value is part["method"] from the KSeF API response — always "GET" or "POST",
-  # not user-controlled. Req.request!/1 requires an atom for the :method option.
   defp download_part(part) do
-    method = part["method"] |> String.downcase() |> String.to_atom()
+    method = download_method(part["method"])
     request_options = Application.get_env(:firmowid, :ksef, [])[:request_options] || []
 
     checksum =
@@ -252,6 +249,9 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
     |> Req.request!(request_options)
     |> Map.fetch!(:body)
   end
+
+  defp download_method("GET"), do: :get
+  defp download_method("POST"), do: :post
 
   defp validate_part_checksum!(data, part) do
     checksum = :crypto.hash(:sha256, data)

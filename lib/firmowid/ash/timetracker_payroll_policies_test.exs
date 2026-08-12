@@ -41,7 +41,7 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
   end
 
   defp insert_hours_record!(user, month, year) do
-    now = NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
+    now = NaiveDateTime.utc_now(:second)
     id = Ash.UUIDv7.generate()
 
     blob =

@@ -16,7 +16,7 @@ defmodule FirmowidWeb.Infrastructure.Utilities.FormErrorReporter do
   @doc """
   Reports an Ash policy denial that happened during an AshPhoenix form submit.
   """
-  @spec report_policy_denial(%Policy{}) ::
+  @spec report_policy_denial(Policy.t()) ::
           {:_form, String.t(), Keyword.t()}
   def report_policy_denial(%Policy{} = error) do
     message = "AshPhoenix form submission forbidden for #{resource_action(error)}"
