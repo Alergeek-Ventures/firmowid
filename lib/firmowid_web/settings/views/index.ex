@@ -198,16 +198,18 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:main_class, "bg-white")}
   end
 
-  defp subscribe_to_admin_updates(socket, organization_id, true) when connected?(socket) do
-    Endpoint.subscribe("requisition:linked:#{organization_id}")
-    Endpoint.subscribe("requisition:rejected:#{organization_id}")
-    Endpoint.subscribe("requisition:expired:#{organization_id}")
-    Endpoint.subscribe("credential:authenticating:#{organization_id}")
-    Endpoint.subscribe("credential:authenticating_epuap:#{organization_id}")
-    Endpoint.subscribe("credential:preparing_enrollment:#{organization_id}")
-    Endpoint.subscribe("credential:wait_for_certificate:#{organization_id}")
-    Endpoint.subscribe("credential:working:#{organization_id}")
-    Endpoint.subscribe("credential:failed:#{organization_id}")
+  defp subscribe_to_admin_updates(socket, organization_id, true) do
+    if connected?(socket) do
+      Endpoint.subscribe("requisition:linked:#{organization_id}")
+      Endpoint.subscribe("requisition:rejected:#{organization_id}")
+      Endpoint.subscribe("requisition:expired:#{organization_id}")
+      Endpoint.subscribe("credential:authenticating:#{organization_id}")
+      Endpoint.subscribe("credential:authenticating_epuap:#{organization_id}")
+      Endpoint.subscribe("credential:preparing_enrollment:#{organization_id}")
+      Endpoint.subscribe("credential:wait_for_certificate:#{organization_id}")
+      Endpoint.subscribe("credential:working:#{organization_id}")
+      Endpoint.subscribe("credential:failed:#{organization_id}")
+    end
   end
 
   defp subscribe_to_admin_updates(_socket, _organization_id, _admin?), do: :ok
