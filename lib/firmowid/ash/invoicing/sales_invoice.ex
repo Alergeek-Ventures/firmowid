@@ -290,6 +290,14 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
       get_by [:id]
     end
 
+    read :dashboard_matched_entries do
+      description "Fetch matched sales invoices with their correction roots for the dashboard."
+
+      argument :ids, {:array, :uuid_v7}, allow_nil?: false
+
+      filter expr(id in ^arg(:ids))
+    end
+
     read :public_shared_chain do
       description "Fetch the root shared invoice and its corrections authorized by the root share token."
 

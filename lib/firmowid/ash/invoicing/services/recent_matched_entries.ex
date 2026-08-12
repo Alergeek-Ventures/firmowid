@@ -12,7 +12,6 @@ defmodule Firmowid.Ash.Invoicing.Services.RecentMatchedEntries do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoice
-  alias Firmowid.Ash.Invoicing.Services.SalesInvoiceChain
   alias Firmowid.Ash.Scope
 
   require Ash.Query
@@ -167,15 +166,14 @@ defmodule Firmowid.Ash.Invoicing.Services.RecentMatchedEntries do
   defp load_sales_invoices_by_id([], _scope, _loads), do: %{}
 
   defp load_sales_invoices_by_id(ids, scope, loads) do
-    invoices = Invoicing.list_sales_invoices!(%{ids: Enum.uniq(ids)}, load: loads, scope: scope)
+    invoices =
+      Invoicing.list_dashboard_matched_sales_invoices!(Enum.uniq(ids),
+        load: loads ++ [corrected_invoice: loads],
+        scope: scope
+      )
 
     Map.new(invoices, fn invoice ->
-      root_invoice =
-        invoice
-        |> SalesInvoiceChain.root_invoice(scope: scope)
-        |> Ash.load!(loads, scope: scope)
-
-      {invoice.id, root_invoice}
+      {invoice.id, invoice.corrected_invoice || invoice}
     end)
   end
 
