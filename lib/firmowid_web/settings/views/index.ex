@@ -110,18 +110,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
       |> Ash.load!([accepted_leave_days_for_year: %{year: current_year}], scope: scope)
       |> Map.fetch!(:accepted_leave_days_for_year)
 
-    # Subscribe to requisition updates for real-time bank account sync
-    if connected?(socket) and admin? do
-      Endpoint.subscribe("requisition:linked:#{current_org.id}")
-      Endpoint.subscribe("requisition:rejected:#{current_org.id}")
-      Endpoint.subscribe("requisition:expired:#{current_org.id}")
-      Endpoint.subscribe("credential:authenticating:#{current_org.id}")
-      Endpoint.subscribe("credential:authenticating_epuap:#{current_org.id}")
-      Endpoint.subscribe("credential:preparing_enrollment:#{current_org.id}")
-      Endpoint.subscribe("credential:wait_for_certificate:#{current_org.id}")
-      Endpoint.subscribe("credential:working:#{current_org.id}")
-      Endpoint.subscribe("credential:failed:#{current_org.id}")
-    end
+    subscribe_to_admin_updates(socket, current_org.id, admin?)
 
     socket =
       if admin? do
@@ -208,6 +197,20 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:current_org, org_with_avatar)
      |> assign(:main_class, "bg-white")}
   end
+
+  defp subscribe_to_admin_updates(socket, organization_id, true) when connected?(socket) do
+    Endpoint.subscribe("requisition:linked:#{organization_id}")
+    Endpoint.subscribe("requisition:rejected:#{organization_id}")
+    Endpoint.subscribe("requisition:expired:#{organization_id}")
+    Endpoint.subscribe("credential:authenticating:#{organization_id}")
+    Endpoint.subscribe("credential:authenticating_epuap:#{organization_id}")
+    Endpoint.subscribe("credential:preparing_enrollment:#{organization_id}")
+    Endpoint.subscribe("credential:wait_for_certificate:#{organization_id}")
+    Endpoint.subscribe("credential:working:#{organization_id}")
+    Endpoint.subscribe("credential:failed:#{organization_id}")
+  end
+
+  defp subscribe_to_admin_updates(_socket, _organization_id, _admin?), do: :ok
 
   def handle_params(params, _uri, socket) when map_size(params) == 0 do
     {:noreply, push_patch(socket, to: Navigation.default_path())}
