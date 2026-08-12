@@ -157,10 +157,14 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
     """
   end
 
-  defp invoice_amount_label(:en, true), do: "Total to refund"
-  defp invoice_amount_label(:en, false), do: "Total to pay"
-  defp invoice_amount_label(:pl, true), do: "Razem do zwrotu"
-  defp invoice_amount_label(:pl, false), do: "Razem do zapłaty"
+  defp invoice_amount_label(lang, is_refund) do
+    case {lang, is_refund} do
+      {:en, true} -> "Total to refund"
+      {:en, false} -> "Total to pay"
+      {:pl, true} -> "Razem do zwrotu"
+      {:pl, false} -> "Razem do zapłaty"
+    end
+  end
 
   attr :internal_notes, :list, required: true
 
