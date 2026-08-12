@@ -25,6 +25,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       for={GroupedSessionForm.from_sessions(@sessions)}
       phx-submit="validate_and_update_list_onsubmit"
       phx-change="validate_and_update_list_onchange"
+      phx-auto-recover="ignore"
       class="flex w-full min-w-0 flex-row items-center py-1 pl-1"
     >
       <input :for={s <- @sessions} type="hidden" name="sessions_form[ids][]" value={s.id} />
