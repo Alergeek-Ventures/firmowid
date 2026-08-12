@@ -7,12 +7,14 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
+  import FirmowidWeb.DesignSystem.Components.Link
   import FirmowidWeb.Settings.Components.EditButton
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Settings.Components.Helpers
   alias FirmowidWeb.Timetracker.Utilities.LeavePresentation
+  alias FirmowidWeb.Timetracker.Utilities.Navigation
   alias Phoenix.LiveView.Rendered
 
   @doc """
@@ -30,26 +32,35 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   attr :leave_request_upload, :map, required: true
   attr :leave_search, :string, required: true
   attr :leave_days, :integer, required: true
+  attr :projects, :list, required: true
+  attr :projects_total, :integer, required: true
+  attr :projects_date, :any, required: true
 
   def profile_tab(assigns) do
     ~H"""
     <div class="grid items-start gap-8 lg:grid-cols-2 lg:gap-16">
-      <.employment_section
-        current_user={@current_user}
-        user_form={@user_form}
-        editing_profile_employment={@editing_profile_employment}
-      />
-      <div>PROJEKTY</div>
-      <.finance_section
-        current_user={@current_user}
-        user_form={@user_form}
-        editing_profile_finance={@editing_profile_finance}
-      />
-      <div></div>
-      <.contact_section
-        current_user={@current_user}
-        user_form={@user_form}
-        editing_profile_contact={@editing_profile_contact}
+      <div class="space-y-14">
+        <.employment_section
+          current_user={@current_user}
+          user_form={@user_form}
+          editing_profile_employment={@editing_profile_employment}
+        />
+        <.finance_section
+          current_user={@current_user}
+          user_form={@user_form}
+          editing_profile_finance={@editing_profile_finance}
+        />
+        <.contact_section
+          current_user={@current_user}
+          user_form={@user_form}
+          editing_profile_contact={@editing_profile_contact}
+        />
+      </div>
+
+      <.projects_section
+        projects={@projects}
+        total_duration={@projects_total}
+        date={@projects_date}
       />
 
       <div class="grid items-start gap-5 lg:col-span-2 lg:grid-cols-2">
@@ -487,6 +498,60 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       </.modal>
     </section>
     """
+  end
+
+  attr :projects, :list, required: true
+  attr :total_duration, :integer, required: true
+  attr :date, :integer, required: true
+
+  defp projects_section(assigns) do
+    ~H"""
+    <div class="flex flex-col items-end gap-4">
+      <section class="flex w-full flex-col gap-6 rounded-lg bg-white p-6 shadow">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+            <h2 class="text-grey-900 text-base leading-none font-medium">Twoje projekty</h2>
+            <span class="text-grey-500 text-sm">
+              {TimeFormatter.format_date(@date, "MMMM y")}
+            </span>
+          </div>
+          <span class="text-grey-700 shrink-0 tabular-nums">
+            {format_project_duration(@total_duration)}
+          </span>
+        </div>
+
+        <ul :if={@projects != []} class="space-y-3">
+          <li :for={project <- @projects} class="flex items-center justify-between gap-3">
+            <span class="bg-turquoise-200 text-turquoise-700 rounded-full px-3 py-1 text-sm/snug font-medium">
+              {project.name}
+            </span>
+            <span class="text-grey-500 shrink-0 text-sm tabular-nums">
+              {format_project_duration(project.duration)}
+            </span>
+          </li>
+        </ul>
+
+        <p :if={@projects == []} class="text-grey-500 text-sm">
+          Brak przepracowanego czasu w tym miesiącu.
+        </p>
+      </section>
+      <.link
+        kind="unstyled"
+        navigate={Navigation.hours_record_index_path(@date)}
+        class="hover:text-grey-900 text-grey-700 inline-flex items-center gap-1 text-sm font-medium"
+      >
+        Zobacz ewidencję <.icon name="hero-chevron-right-mini" class="size-4" />
+      </.link>
+    </div>
+    """
+  end
+
+  defp format_project_duration(seconds) when seconds < 60, do: "0h 0min"
+
+  defp format_project_duration(seconds) do
+    hours = div(seconds, 3600)
+    minutes = div(rem(seconds, 3600), 60)
+    "#{hours}h #{minutes}min"
   end
 
   attr :reason, :atom, required: true

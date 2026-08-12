@@ -123,6 +123,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
       |> Ash.load!([accepted_leave_days_for_year: %{year: current_year}], scope: scope)
       |> Map.fetch!(:accepted_leave_days_for_year)
 
+    {profile_projects, profile_projects_total, profile_projects_date} =
+      load_profile_projects(current_user.id, scope)
+
     subscribe_to_admin_updates(socket, current_org.id, admin?)
 
     if connected?(socket) do
@@ -214,6 +217,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
        max_file_size: 10_000_000,
        auto_upload: true
      )
+     |> assign(:projects, profile_projects)
+     |> assign(:projects_total, profile_projects_total)
+     |> assign(:projects_date, profile_projects_date)
      |> assign(:current_org, org_with_avatar)
      |> assign(:main_class, "bg-white")}
   end
@@ -1339,6 +1345,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
       current_org={@current_org}
       current_tab={@settings_tab}
       user_avatar_upload={@uploads.user_avatar}
+      organization_avatar_upload={Map.get(@uploads, :organization_avatar)}
     >
       <%= case @settings_tab do %>
         <% :organization -> %>
@@ -1391,6 +1398,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
             leave_request_upload={@uploads.leave_request_attachment}
             leave_search={@leave_search}
             leave_days={@leave_days}
+            projects={@projects}
+            projects_total={@projects_total}
+            projects_date={@projects_date}
           />
       <% end %>
     </.settings_page>
@@ -1598,4 +1608,17 @@ defmodule FirmowidWeb.Settings.Views.Index do
   defp leave_reasons, do: [:indisposition, :rest, :other]
 
   defp default_leave_reason, do: List.first(leave_reasons())
+
+  defp load_profile_projects(user_id, scope) do
+    date = Date.utc_today()
+
+    projects =
+      user_id
+      |> Timetracker.projects_duration_for_month(date, scope)
+      |> Enum.filter(&(&1.duration > 0))
+
+    total = Enum.reduce(projects, 0, fn project, acc -> acc + project.duration end)
+
+    {projects, total, date}
+  end
 end
