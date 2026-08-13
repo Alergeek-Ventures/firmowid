@@ -45,7 +45,7 @@ defmodule Firmowid.Ash.Currencies.DatabaseCache do
       cache_date: date,
       rates: rates,
       retrieved_at: retrieved_at,
-      expires_at: DateTime.add(DateTime.utc_now(), 30, :day)
+      expires_at: DateTime.shift(DateTime.utc_now(), day: 30)
     }
 
     Currencies.upsert_exchange_rate!(attrs, @cache_opts)

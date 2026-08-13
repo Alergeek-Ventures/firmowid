@@ -67,7 +67,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailDeliveryFailureFlowTest do
             should_send_emails: true
           })
 
-        failed_at = DateTime.add(DateTime.utc_now(:second), -60, :second)
+        failed_at = DateTime.shift(DateTime.utc_now(:second), minute: -1)
 
         seed_email_delivery!(invoice, %{
           delivery_type: :reminder,

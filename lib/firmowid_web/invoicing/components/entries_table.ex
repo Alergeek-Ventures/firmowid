@@ -256,7 +256,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       invoice.transactions == [] &&
         DateTime.after?(
           invoice.inserted_at,
-          DateTime.add(DateTime.utc_now(), -120, :second)
+          DateTime.shift(DateTime.utc_now(), minute: -2)
         )
 
     amount = Money.new(invoice.effective_currency, invoice.effective_total_amount)

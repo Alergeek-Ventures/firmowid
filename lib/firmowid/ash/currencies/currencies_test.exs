@@ -156,7 +156,7 @@ defmodule Firmowid.Ash.Currencies.CurrenciesTest do
         cache_date: ~D[2023-01-01],
         rates: %{"EUR" => Decimal.new("0.85")},
         retrieved_at: DateTime.utc_now(),
-        expires_at: DateTime.add(DateTime.utc_now(), -1, :day)
+        expires_at: DateTime.shift(DateTime.utc_now(), day: -1)
       })
 
       # Create non-expired entry
@@ -164,7 +164,7 @@ defmodule Firmowid.Ash.Currencies.CurrenciesTest do
         cache_date: ~D[2024-01-01],
         rates: %{"EUR" => Decimal.new("0.90")},
         retrieved_at: DateTime.utc_now(),
-        expires_at: DateTime.add(DateTime.utc_now(), 30, :day)
+        expires_at: DateTime.shift(DateTime.utc_now(), day: 30)
       })
 
       assert {:ok, 2} = Ash.count(ExchangeRate, @bridge_opts)

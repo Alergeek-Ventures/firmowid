@@ -213,7 +213,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.SummaryTest do
   end
 
   defp seed_ksef_access_token!(organization_id) do
-    token = build_jwt_with_exp(DateTime.add(DateTime.utc_now(), 5, :minute))
+    token = build_jwt_with_exp(DateTime.shift(DateTime.utc_now(), minute: 5))
     Cachex.put(:ksef, {:access_token, organization_id}, token, expire: to_timeout(minute: 5))
   end
 

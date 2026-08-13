@@ -93,8 +93,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
             due_date: Date.add(Date.utc_today(), -10)
           })
 
-        seed_sent_reminder!(recent_invoice, DateTime.add(DateTime.utc_now(:second), -6, :day))
-        seed_sent_reminder!(due_invoice, DateTime.add(DateTime.utc_now(:second), -7, :day))
+        seed_sent_reminder!(recent_invoice, DateTime.shift(DateTime.utc_now(:second), day: -6))
+        seed_sent_reminder!(due_invoice, DateTime.shift(DateTime.utc_now(:second), week: -1))
 
         assert 1 == run_reminder_scan!(processor_scope)
         refute_enqueued_email_job(recent_invoice, :reminder)
@@ -210,7 +210,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
             due_date: Date.add(Date.utc_today(), -10)
           })
 
-        seed_sent_reminder!(original, DateTime.add(DateTime.utc_now(:second), -1, :day))
+        seed_sent_reminder!(original, DateTime.shift(DateTime.utc_now(:second), day: -1))
 
         correction =
           admin
@@ -309,7 +309,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceReminderEmailFlowTest do
   end
 
   defp correction_locked_at do
-    DateTime.add(DateTime.utc_now(:second), 10, :second)
+    DateTime.shift(DateTime.utc_now(:second), second: 10)
   end
 
   defp run_reminder_scan!(scope) do

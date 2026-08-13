@@ -97,14 +97,14 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
       insert_cost_invoice!(organization_id, %{
         invoice_identifier: "CI-KSEF-INCLUDED-1",
         ksef_number: "KSEF-#{System.unique_integer([:positive])}",
-        inserted_at: DateTime.add(now, -1200, :second)
+        inserted_at: DateTime.shift(now, minute: -20)
       })
 
     _future_invoice =
       insert_cost_invoice!(organization_id, %{
         invoice_identifier: "CI-KSEF-FUTURE-1",
         ksef_number: "KSEF-#{System.unique_integer([:positive])}",
-        inserted_at: DateTime.add(now, 600, :second)
+        inserted_at: DateTime.shift(now, minute: 10)
       })
 
     _manual_invoice =
@@ -155,14 +155,14 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
       insert_cost_invoice!(organization_id, %{
         invoice_identifier: "CI-KSEF-R1",
         ksef_number: "KSEF-#{System.unique_integer([:positive])}",
-        inserted_at: DateTime.add(now, -4000, :second)
+        inserted_at: DateTime.shift(now, second: -4_000)
       })
 
     invoice_b =
       insert_cost_invoice!(organization_id, %{
         invoice_identifier: "CI-KSEF-R1-B",
         ksef_number: "KSEF-#{System.unique_integer([:positive])}",
-        inserted_at: DateTime.add(now, -3900, :second)
+        inserted_at: DateTime.shift(now, minute: -65)
       })
 
     assert {:ok, 1} =
@@ -178,7 +178,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
       insert_cost_invoice!(organization_id, %{
         invoice_identifier: "CI-KSEF-R2",
         ksef_number: "KSEF-#{System.unique_integer([:positive])}",
-        inserted_at: DateTime.add(now, -700, :second)
+        inserted_at: DateTime.shift(now, second: -700)
       })
 
     assert {:ok, 1} =
@@ -215,7 +215,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
       insert_cost_invoice!(organization_id, %{
         invoice_identifier: "CI-KSEF-DUP",
         ksef_number: "KSEF-#{System.unique_integer([:positive])}",
-        inserted_at: DateTime.add(now, -3500, :second)
+        inserted_at: DateTime.shift(now, second: -3_500)
       })
 
     assert {:ok, 1} =
@@ -251,14 +251,14 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
       insert_cost_invoice!(with_credentials_org_id, %{
         invoice_identifier: "CI-KSEF-WITH-CRED",
         ksef_number: "KSEF-#{System.unique_integer([:positive])}",
-        inserted_at: DateTime.add(now, -3000, :second)
+        inserted_at: DateTime.shift(now, minute: -50)
       })
 
     _without_credentials_invoice =
       insert_cost_invoice!(without_credentials_org_id, %{
         invoice_identifier: "CI-KSEF-WITHOUT-CRED",
         ksef_number: "KSEF-#{System.unique_integer([:positive])}",
-        inserted_at: DateTime.add(now, -3000, :second)
+        inserted_at: DateTime.shift(now, minute: -50)
       })
 
     assert {:ok, 1} =
@@ -292,7 +292,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
     insert_cost_invoice!(without_credentials_org_id, %{
       invoice_identifier: "CI-KSEF-NO-CRED-ONLY",
       ksef_number: "KSEF-#{System.unique_integer([:positive])}",
-      inserted_at: DateTime.add(now, -900, :second)
+      inserted_at: DateTime.shift(now, minute: -15)
     })
 
     assert {:ok, 0} =
@@ -320,7 +320,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
       insert_cost_invoice!(organization_id, %{
         invoice_identifier: "CI-KSEF-ENQUEUE",
         ksef_number: "KSEF-#{System.unique_integer([:positive])}",
-        inserted_at: DateTime.add(now, -300, :second)
+        inserted_at: DateTime.shift(now, minute: -5)
       })
 
     assert {:ok, 1} =

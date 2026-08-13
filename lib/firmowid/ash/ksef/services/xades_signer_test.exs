@@ -104,8 +104,8 @@ defmodule Firmowid.Ash.Ksef.Services.XadesSignerTest do
         :ec,
         validity:
           Validity.new(
-            DateTime.add(DateTime.utc_now(), -86_400, :second),
-            DateTime.add(DateTime.utc_now(), -60, :second)
+            DateTime.shift(DateTime.utc_now(), day: -1),
+            DateTime.shift(DateTime.utc_now(), minute: -1)
           )
       )
 
@@ -124,8 +124,8 @@ defmodule Firmowid.Ash.Ksef.Services.XadesSignerTest do
         :ec,
         validity:
           Validity.new(
-            DateTime.add(DateTime.utc_now(), 60, :second),
-            DateTime.add(DateTime.utc_now(), 86_400, :second)
+            DateTime.shift(DateTime.utc_now(), minute: 1),
+            DateTime.shift(DateTime.utc_now(), day: 1)
           )
       )
 

@@ -702,7 +702,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     |> assign(:month_stats, %{
       hours: hours,
       minutes: minutes,
-      elapsed: DateTime.add(now, -total_seconds),
+      elapsed: DateTime.shift(now, second: -total_seconds),
       percentage: percentage,
       month: current_month
     })

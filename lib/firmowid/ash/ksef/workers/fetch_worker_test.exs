@@ -220,7 +220,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
       "ordinalNumber" => 1,
       "url" => url,
       "method" => "GET",
-      "expirationDate" => DateTime.utc_now() |> DateTime.add(3600, :second) |> DateTime.to_iso8601(),
+      "expirationDate" => DateTime.utc_now() |> DateTime.shift(hour: 1) |> DateTime.to_iso8601(),
       "partHash" => Base.encode64(part_hash),
       "encryptedPartHash" => Base.encode64(encrypted_hash)
     }

@@ -43,7 +43,7 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
 
         expires_at =
           DateTime.utc_now()
-          |> DateTime.add(7, :day)
+          |> DateTime.shift(week: 1)
           |> DateTime.truncate(:second)
 
         changeset

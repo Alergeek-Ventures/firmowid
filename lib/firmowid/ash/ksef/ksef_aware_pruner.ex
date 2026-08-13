@@ -145,7 +145,7 @@ defmodule Firmowid.Ash.Ksef.KsefAwarePruner do
   end
 
   defp prune_jobs(conf, limit, max_age) do
-    time = DateTime.add(DateTime.utc_now(), -max_age)
+    time = DateTime.shift(DateTime.utc_now(), second: -max_age)
 
     subquery =
       Job

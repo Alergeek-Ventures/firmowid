@@ -143,7 +143,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
     end
 
     test "filters transactions older than dynamic replay cutoff after prior success", ctx do
-      last_success_at = DateTime.add(DateTime.utc_now(), -20, :day)
+      last_success_at = DateTime.shift(DateTime.utc_now(), day: -20)
       cutoff_date = Date.add(Date.utc_today(), -27)
 
       seed_successful_sync_event(ctx.bank_account_1, ctx.org_id, last_success_at)
@@ -215,7 +215,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
   describe "fallback dedupe" do
     test "merges changed provider ids when remittance differs by payer prefix and dates align across booking/value pairs",
          ctx do
-      previous_sync_at = DateTime.add(DateTime.utc_now(), -10, :day)
+      previous_sync_at = DateTime.shift(DateTime.utc_now(), day: -10)
       seed_successful_sync_event(ctx.bank_account_1, ctx.org_id, previous_sync_at)
 
       assert {:ok, existing_transaction} =
@@ -267,7 +267,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
 
     test "keeps first transaction when multiple incoming rows collapse to the same existing identity",
          ctx do
-      previous_sync_at = DateTime.add(DateTime.utc_now(), -10, :day)
+      previous_sync_at = DateTime.shift(DateTime.utc_now(), day: -10)
       seed_successful_sync_event(ctx.bank_account_1, ctx.org_id, previous_sync_at)
 
       assert {:ok, existing_transaction} =
