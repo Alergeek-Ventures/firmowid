@@ -14,6 +14,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Resource
+  alias Firmowid.Ash.Timetracker.Changes.NormalizeSessionBoundaries
   alias Firmowid.Ash.Timetracker.Checks.HoursRecordNotSubmitted
   alias Firmowid.Ash.Timetracker.HoursRecord
   alias Firmowid.Ash.Timetracker.Project
@@ -159,12 +160,14 @@ defmodule Firmowid.Ash.Timetracker.Session do
       accept [:title, :project_id, :is_remote]
 
       change set_attribute(:start_datetime, &DateTime.utc_now/0)
+      change NormalizeSessionBoundaries
       change relate_actor(:user)
     end
 
     create :create do
       description "Create a session with explicit attributes (for import or admin use)."
       accept [:title, :start_datetime, :end_datetime, :project_id, :is_remote, :user_id]
+      change NormalizeSessionBoundaries
     end
 
     update :stop do
@@ -173,6 +176,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
       require_atomic? false
 
       change set_attribute(:end_datetime, &DateTime.utc_now/0)
+      change NormalizeSessionBoundaries
     end
 
     action :stop_current, :struct do
@@ -207,6 +211,8 @@ defmodule Firmowid.Ash.Timetracker.Session do
       primary? true
       accept [:title, :start_datetime, :end_datetime, :project_id, :is_remote]
       require_atomic? false
+
+      change NormalizeSessionBoundaries
     end
   end
 

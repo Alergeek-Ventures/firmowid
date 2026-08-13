@@ -55,6 +55,27 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
       assert session.end_datetime == ~U[2025-04-01 10:00:00Z]
     end
 
+    test "normalizes explicit boundaries to minutes", %{
+      user: user,
+      project: project,
+      scope: scope
+    } do
+      {:ok, session} =
+        AshSession.create(
+          %{
+            title: "Completed task",
+            project_id: project.id,
+            user_id: user.id,
+            start_datetime: ~U[2025-04-01 09:00:42Z],
+            end_datetime: ~U[2025-04-01 10:00:17Z]
+          },
+          scope: scope
+        )
+
+      assert session.start_datetime == ~U[2025-04-01 09:00:00Z]
+      assert session.end_datetime == ~U[2025-04-01 10:00:00Z]
+    end
+
     test "rejects session with end before start", %{user: user, project: project, scope: scope} do
       assert {:error, _} =
                AshSession.create(
@@ -72,17 +93,14 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
 
   describe "stop/2" do
     test "stops a running session by setting end_datetime", %{
-      user: user,
       project: project,
       scope: scope
     } do
       {:ok, session} =
-        AshSession.create(
+        AshSession.start(
           %{
             title: "Running",
-            project_id: project.id,
-            user_id: user.id,
-            start_datetime: DateTime.utc_now()
+            project_id: project.id
           },
           scope: scope
         )
@@ -91,7 +109,8 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
 
       {:ok, stopped} = AshSession.stop(session, scope: scope)
 
-      assert stopped.end_datetime
+      assert stopped.start_datetime.second == 0
+      assert stopped.end_datetime.second == 0
     end
   end
 
@@ -137,6 +156,46 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
       {:ok, updated} = AshSession.update(session, %{title: "New Title"}, scope: scope)
 
       assert updated.title == "New Title"
+    end
+
+    test "keeps adjacent sessions editable with minute-only boundaries", %{
+      user: user,
+      project: project,
+      scope: scope
+    } do
+      first_session =
+        session_fixture(%{
+          user_id: user.id,
+          project_id: project.id,
+          title: "First",
+          start_datetime: ~U[2025-04-01 09:00:42Z],
+          end_datetime: ~U[2025-04-01 10:00:17Z],
+          organization_id: user.organization_id
+        })
+
+      second_session =
+        session_fixture(%{
+          user_id: user.id,
+          project_id: project.id,
+          title: "Second",
+          start_datetime: ~U[2025-04-01 10:00:00Z],
+          end_datetime: ~U[2025-04-01 11:00:00Z],
+          organization_id: user.organization_id
+        })
+
+      {:ok, updated} =
+        AshSession.update(
+          second_session,
+          %{
+            title: "Edited second",
+            start_datetime: ~U[2025-04-01 10:00:00Z],
+            end_datetime: ~U[2025-04-01 11:00:00Z]
+          },
+          scope: scope
+        )
+
+      assert first_session.end_datetime == updated.start_datetime
+      assert updated.title == "Edited second"
     end
   end
 

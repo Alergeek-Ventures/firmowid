@@ -222,6 +222,61 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
       assert updated_session.title == new_title
     end
 
+    test "edits an adjacent session through the minute-only form", %{
+      conn: conn,
+      user: user,
+      project: project
+    } do
+      date = Date.utc_today()
+
+      session_fixture(%{
+        user_id: user.id,
+        project_id: project.id,
+        title: "First session",
+        start_datetime: DateTime.new!(date, ~T[09:00:42], "Etc/UTC"),
+        end_datetime: DateTime.new!(date, ~T[10:00:17], "Etc/UTC"),
+        organization_id: user.organization_id
+      })
+
+      session =
+        session_fixture(%{
+          user_id: user.id,
+          project_id: project.id,
+          title: "Second session",
+          start_datetime: DateTime.new!(date, ~T[10:00:00], "Etc/UTC"),
+          end_datetime: DateTime.new!(date, ~T[11:00:00], "Etc/UTC"),
+          organization_id: user.organization_id
+        })
+
+      {:ok, lv, _html} = live(conn, ~p"/czasosledz")
+
+      local_start_datetime = DateTime.shift_zone!(session.start_datetime, "Europe/Warsaw")
+      local_end_datetime = DateTime.shift_zone!(session.end_datetime, "Europe/Warsaw")
+
+      result =
+        lv
+        |> form("#edit-session-form-#{session.id}", %{
+          sessions_form: %{
+            "ids" => [session.id],
+            "title" => "Edited second session",
+            "project_id" => project.id,
+            "start_end_times" => %{
+              "0" => %{
+                "id" => session.id,
+                "date" => Date.to_iso8601(DateTime.to_date(local_start_datetime)),
+                "start_time" => Calendar.strftime(local_start_datetime, "%H:%M"),
+                "end_time" => Calendar.strftime(local_end_datetime, "%H:%M")
+              }
+            }
+          }
+        })
+        |> render_submit()
+
+      assert result =~ "Edited second session"
+
+      assert Repo.get!(Session, session.id).start_datetime == session.start_datetime
+    end
+
     test "suggest previous project", %{conn: conn, user: user, project: project} do
       session_fixture(%{
         user_id: user.id,
