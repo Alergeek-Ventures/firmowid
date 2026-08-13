@@ -27,7 +27,8 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob do
           {:ok, blob}
 
         {:error, reason} ->
-          Logger.warning("Failed to process cost invoice blob #{blob.id}: #{inspect(reason)}")
+          Logger.error("Failed to process document blob #{blob.id}: #{inspect(reason)}")
+          report_failure(reason, blob)
           _ = handle_failure(blob, reason, opts)
           {:ok, blob}
       end
@@ -56,11 +57,14 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob do
 
   defp process_document_blob(_, _blob_url, _blob, _opts), do: {:error, :unsupported_processing_target}
 
-  defp get_error_message(:cost_invoice), do: "Plik nie zawiera danych wymaganych dla faktury kosztowej."
+  defp get_error_message(:invalid_document, :cost_invoice),
+    do: "Plik nie zawiera danych wymaganych dla faktury kosztowej."
 
-  defp get_error_message(:employment_contract), do: "Plik nie zawiera danych wymaganych dla umowy o pracę."
+  defp get_error_message(:invalid_document, :employment_contract),
+    do: "Plik nie zawiera danych wymaganych dla umowy o pracę."
 
-  defp get_error_message(_), do: "Nie udało się przetworzyć dokumentu."
+  defp get_error_message(_reason, _target),
+    do: "Wystąpił problem po naszej stronie podczas przetwarzania pliku. Został zgłoszony - spróbuj ponownie później."
 
   defp ensure_processing(blob, opts) do
     blob
@@ -83,7 +87,7 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob do
     failure = %{
       error: normalize_error(reason),
       error_code: normalize_error_code(reason),
-      error_message: get_error_message(blob.processing_target)
+      error_message: get_error_message(reason, blob.processing_target)
     }
 
     case Blob
@@ -108,6 +112,25 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob do
   defp normalize_error(reason), do: inspect(reason)
 
   defp normalize_error_code(:invalid_document), do: "invalid_document"
-  defp normalize_error_code(%Invalid{}), do: "invalid_document"
   defp normalize_error_code(_reason), do: "processing_failed"
+
+  defp report_failure(:invalid_document, _blob), do: :ok
+
+  defp report_failure(reason, blob) do
+    Sentry.capture_exception(RuntimeError.exception("Document blob processing failed"),
+      tags: %{
+        processing_target: blob.processing_target,
+        source: "document_blob_processing"
+      },
+      extra: %{
+        blob_id: blob.id,
+        error: inspect(reason),
+        organization_id: blob.organization_id,
+        original_filename: blob.original_filename
+      }
+    )
+  rescue
+    sentry_error ->
+      Logger.warning("Failed to report document blob processing error to Sentry: #{Exception.message(sentry_error)}")
+  end
 end

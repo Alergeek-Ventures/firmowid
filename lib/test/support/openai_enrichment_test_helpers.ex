@@ -133,6 +133,9 @@ defmodule Firmowid.Test.Support.OpenAIEnrichmentTestHelpers.ReductoHttpStub do
 
       {:error, reason} ->
         json(conn, %{"error" => inspect(reason)})
+
+      {:http_error, status, body} ->
+        json(conn, status, body)
     end
   end
 
@@ -140,9 +143,11 @@ defmodule Firmowid.Test.Support.OpenAIEnrichmentTestHelpers.ReductoHttpStub do
     send_resp(conn, 404, "not found")
   end
 
-  defp json(conn, body) do
+  defp json(conn, body), do: json(conn, 200, body)
+
+  defp json(conn, status, body) do
     conn
     |> put_resp_content_type("application/json")
-    |> send_resp(200, Jason.encode!(body))
+    |> send_resp(status, Jason.encode!(body))
   end
 end
