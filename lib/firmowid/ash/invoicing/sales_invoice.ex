@@ -732,8 +732,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
           # Get next FK-series number
           {:ok, invoice_number} =
-            %{date: issue_date, series: "FK"}
-            |> __MODULE__.input_to_get_next_number(opts)
+            issue_date
+            |> __MODULE__.input_to_get_next_number("FK", nil, opts)
             |> Ash.run_action(opts)
 
           zeroed_items =

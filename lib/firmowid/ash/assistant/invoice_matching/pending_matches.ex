@@ -1,3 +1,5 @@
+# credo:disable-for-this-file AshCredo.Check.Refactor.UseCodeInterface
+# PendingMatch is embedded, so its code interface does not generate a create function.
 defmodule Firmowid.Ash.Assistant.InvoiceMatching.PendingMatches do
   @moduledoc """
   Validates, loads, and atomically applies typed pending assistant matches.
@@ -109,11 +111,12 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatching.PendingMatches do
   end
 
   defp cast_pending_match(message, transaction_ids, invoice_refs) do
-    %{
+    PendingMatch
+    |> Ash.Changeset.for_create(:create, %{
       message: message,
       transaction_ids: transaction_ids,
       invoice_refs: invoice_refs
-    }
+    })
     |> Ash.create([])
     |> case do
       {:ok, pending_match} -> {:ok, pending_match}

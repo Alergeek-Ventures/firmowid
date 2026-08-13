@@ -1,3 +1,5 @@
+# credo:disable-for-this-file AshCredo.Check.Refactor.LargeResource
+# Credential's actions, state machine, policies, and code interfaces form one cohesive resource.
 defmodule Firmowid.Ash.Ksef.Credential do
   @moduledoc """
   Ash resource for storing KSeF authentication credentials per organization.
