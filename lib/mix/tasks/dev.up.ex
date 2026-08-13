@@ -218,7 +218,8 @@ defmodule Mix.Tasks.Dev.Up do
           # Start phoenix inside a detached tmux session. Keep TERM set so
           # Phoenix/emitted tools will produce ANSI color sequences. Use tee
           # inside the session to append output (including ANSI) to the log file.
-          cmd = "tmux new -d -s #{session} \"sh -lc 'env TERM=xterm-256color mix phx.server'\""
+          cmd =
+            "tmux new -d -s #{session} \"sh -lc 'env TERM=xterm-256color mix phx.server 2>&1 | tee #{log_file}'\""
 
           case System.cmd("sh", ["-c", cmd], stderr_to_stdout: true) do
             {_output, 0} ->

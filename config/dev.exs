@@ -61,8 +61,9 @@ config :live_debugger,
   ip: {127, 0, 0, 1},
   port: 4007
 
-# Do not include metadata nor timestamps in development logs
-config :logger, :console, format: "[$level] $message\n"
+# Do not include metadata nor timestamps in development logs. Explicitly enable
+# colors because `mix dev.up` pipes Phoenix output through `tee` into its log.
+config :logger, :console, format: "[$level] $message\n", colors: [enabled: true]
 
 config :phoenix, :plug_init_mode, :runtime
 config :phoenix, :stacktrace_depth, 20
