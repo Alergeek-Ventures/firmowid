@@ -462,20 +462,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("save", %{"user" => user_params}, socket) do
-    user_params = merge_user_name_params(user_params)
-    form = socket.assigns.user_form
+    save_user_form(socket, user_params, :editing_account_name)
+  end
 
-    case AshPhoenix.Form.submit(form, params: user_params) do
-      {:ok, updated_user} ->
-        {:noreply,
-         socket
-         |> close_user_editing()
-         |> assign(:current_user, updated_user)
-         |> assign(:user_form, form_user_form(updated_user, socket.assigns.ash_scope))}
-
-      {:error, form} ->
-        {:noreply, assign(socket, :user_form, form)}
-    end
+  def handle_event("save_profile_" <> section, %{"user" => user_params}, socket) do
+    save_user_form(socket, user_params, profile_section_assign(section))
   end
 
   def handle_event("change_email", %{"user" => user_params}, socket) do
@@ -928,15 +919,15 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   def handle_event("toggle_editing_profile_employment", _params, socket) do
-    {:noreply, toggle_profile_editing(socket, :editing_profile_employment)}
+    {:noreply, assign(socket, :editing_profile_employment, !socket.assigns.editing_profile_employment)}
   end
 
   def handle_event("toggle_editing_profile_finance", _params, socket) do
-    {:noreply, toggle_profile_editing(socket, :editing_profile_finance)}
+    {:noreply, assign(socket, :editing_profile_finance, !socket.assigns.editing_profile_finance)}
   end
 
   def handle_event("toggle_editing_profile_contact", _params, socket) do
-    {:noreply, toggle_profile_editing(socket, :editing_profile_contact)}
+    {:noreply, assign(socket, :editing_profile_contact, !socket.assigns.editing_profile_contact)}
   end
 
   def handle_event("toggle_active_invites", _params, socket) do
@@ -1560,23 +1551,26 @@ defmodule FirmowidWeb.Settings.Views.Index do
     end
   end
 
-  defp close_user_editing(socket) do
-    socket
-    |> assign(:editing_account_name, false)
-    |> assign(:editing_profile_employment, false)
-    |> assign(:editing_profile_finance, false)
-    |> assign(:editing_profile_contact, false)
+  defp save_user_form(socket, user_params, section_assign) do
+    user_params = merge_user_name_params(user_params)
+    form = socket.assigns.user_form
+
+    case AshPhoenix.Form.submit(form, params: user_params) do
+      {:ok, updated_user} ->
+        {:noreply,
+         socket
+         |> assign(section_assign, false)
+         |> assign(:current_user, updated_user)
+         |> assign(:user_form, form_user_form(updated_user, socket.assigns.ash_scope))}
+
+      {:error, form} ->
+        {:noreply, assign(socket, :user_form, form)}
+    end
   end
 
-  defp toggle_profile_editing(socket, section_assign) do
-    next_value = !Map.fetch!(socket.assigns, section_assign)
-
-    socket
-    |> assign(:editing_profile_employment, false)
-    |> assign(:editing_profile_finance, false)
-    |> assign(:editing_profile_contact, false)
-    |> assign(section_assign, next_value)
-  end
+  defp profile_section_assign("employment"), do: :editing_profile_employment
+  defp profile_section_assign("finance"), do: :editing_profile_finance
+  defp profile_section_assign("contact"), do: :editing_profile_contact
 
   defp merge_user_name_params(%{"first_name" => first_name, "last_name" => last_name} = params) do
     full_name =

@@ -90,9 +90,9 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
   defp profile_section(assigns) do
     ~H"""
-    <section class="space-y-3">
-      <div class="flex min-h-8 items-center gap-2.5">
-        <h2 class="text-grey-900 text-base leading-none font-semibold">{@title}</h2>
+    <section class="space-y-4">
+      <div class="flex min-h-8 items-center gap-1">
+        <h2 class="text-grey-900 text-base leading-none font-medium">{@title}</h2>
 
         <span
           :if={@action}
@@ -100,6 +100,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           phx-hook="Tippy"
           data-tippy-content={@action_label || "Edytuj #{@title}"}
           data-tippy-delay="100"
+          data-tippy-size="small"
         >
           <.edit_button
             type="button"
@@ -121,7 +122,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
     ~H"""
     <Helpers.settings_display_field
       label={@label}
-      class="w-full"
+      class="justify-center"
       value_class="break-words"
     >
       {render_slot(@inner_block)}
@@ -141,23 +142,23 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       action_label="Edytuj informacje o zatrudnieniu"
     >
       <%= if @editing_profile_employment do %>
-        <.form for={@user_form} phx-submit="save" class="space-y-4">
+        <.form for={@user_form} phx-submit="save_profile_employment" class="space-y-4">
           <div class="space-y-2">
-            <.stacked_input field={@user_form[:position]} label="Stanowisko" type="text" />
-            <.stacked_input field={@user_form[:employment_date]} label="Obowiązuje od" type="date" />
+            <.row_input field={@user_form[:position]} label="Stanowisko" type="text" />
+            <.row_input field={@user_form[:employment_date]} label="Obowiązuje od" type="date" />
           </div>
 
-          <div class="flex w-full justify-start gap-5 sm:justify-end">
+          <div class="flex w-full justify-end gap-3">
             <.button
               type="button"
-              variant="secondary"
+              variant="ghost"
               size="small"
               phx-click="toggle_editing_profile_employment"
             >
               Anuluj
             </.button>
 
-            <.button type="submit" variant="primary" size="small">
+            <.button type="submit" variant="success" size="small">
               Zapisz
             </.button>
           </div>
@@ -186,18 +187,21 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       action_label="Edytuj finanse"
     >
       <%= if @editing_profile_finance do %>
-        <.form for={@user_form} phx-submit="save" class="w-full space-y-2">
-          <.stacked_input field={@user_form[:bank_account_number]} label="Nr konta" type="text" />
-          <div class="flex w-full justify-start gap-5 sm:justify-end">
+        <.form for={@user_form} phx-submit="save_profile_finance" class="space-y-4">
+          <div class="space-y-2">
+            <.row_input field={@user_form[:bank_account_number]} label="Nr konta" type="text" />
+          </div>
+
+          <div class="flex w-full justify-end gap-3">
             <.button
               type="button"
-              variant="secondary"
+              variant="ghost"
               phx-click="toggle_editing_profile_finance"
               size="small"
             >
               Anuluj
             </.button>
-            <.button type="submit" variant="primary" size="small">Zapisz</.button>
+            <.button type="submit" variant="success" size="small">Zapisz</.button>
           </div>
         </.form>
       <% else %>
@@ -221,45 +225,44 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       action_label="Edytuj dane korespondencyjne"
     >
       <%= if @editing_profile_contact do %>
-        <.form for={@user_form} phx-submit="save" class="space-y-6">
-          <div class="w-full space-y-2">
-            <.stacked_input field={@user_form[:phone]} label="Numer telefonu" type="tel" />
-
-            <.stacked_input field={@user_form[:slack_id]} label="Slack" type="text" />
-            <.stacked_input
+        <.form for={@user_form} phx-submit="save_profile_contact" class="space-y-4">
+          <div class="space-y-2">
+            <.row_input field={@user_form[:phone]} label="Numer telefonu" type="tel" />
+            <.row_input field={@user_form[:slack_id]} label="Slack" type="text" />
+            <.row_input
               field={@user_form[:residence_street]}
               label="Adres zamieszkania"
               type="text"
             />
-            <.stacked_input field={@user_form[:residence_code]} label="Kod pocztowy" type="text" />
-            <.stacked_input field={@user_form[:residence_city]} label="Miasto" type="text" />
-            <.stacked_input
+            <.row_input field={@user_form[:residence_code]} label="Kod pocztowy" type="text" />
+            <.row_input field={@user_form[:residence_city]} label="Miasto" type="text" />
+            <.row_input
               field={@user_form[:correspondence_street]}
               label="Adres korespondencyjny"
               type="text"
             />
-            <.stacked_input
+            <.row_input
               field={@user_form[:correspondence_code]}
               label="Kod korespondencyjny"
               type="text"
             />
-            <.stacked_input
+            <.row_input
               field={@user_form[:correspondence_city]}
               label="Miasto korespondencyjne"
               type="text"
             />
           </div>
 
-          <div class="flex w-full justify-start gap-5 sm:justify-end">
+          <div class="flex w-full justify-end gap-3">
             <.button
               type="button"
-              variant="secondary"
+              variant="ghost"
               size="small"
               phx-click="toggle_editing_profile_contact"
             >
               Anuluj
             </.button>
-            <.button type="submit" variant="primary" size="small">Zapisz</.button>
+            <.button type="submit" variant="success" size="small">Zapisz</.button>
           </div>
         </.form>
       <% else %>
@@ -581,10 +584,10 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   attr :label, :string, required: true
   attr :type, :string, required: true
 
-  defp stacked_input(assigns) do
+  defp row_input(assigns) do
     ~H"""
-    <Helpers.settings_field label={@label} class="w-full">
-      <.input type={@type} name={@field.name} value={@field.value} />
+    <Helpers.settings_field label={@label} layout={:row} for={@field.id}>
+      <.input field={@field} type={@type} new input_class="w-full" />
     </Helpers.settings_field>
     """
   end

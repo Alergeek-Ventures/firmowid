@@ -68,7 +68,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   defp account_section(assigns) do
     ~H"""
     <section class={["space-y-4", @class]}>
-      <div class="flex min-h-8 items-center gap-2.5">
+      <div class="flex min-h-8 items-center gap-1">
         <h2 class="text-grey-900 text-base leading-none font-medium">{@title}</h2>
 
         <span
@@ -77,9 +77,11 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           phx-hook="Tippy"
           data-tippy-content={@action_label || @title}
           data-tippy-delay="100"
+          data-tippy-size="small"
         >
           <.edit_button
             type="button"
+            class="size-8!"
             phx-click={@action}
             aria-label={@action_label || @title}
           />
@@ -99,7 +101,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
     ~H"""
     <Helpers.settings_display_field
       label={@label}
-      class="justify-center"
+      class="justfy-center"
       value_class={["break-words", @value_class]}
     >
       {render_slot(@inner_block)}
@@ -122,34 +124,40 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           <input type="hidden" name="user[name]" value={@current_user.name || ""} />
 
           <div class="space-y-2">
-            <Helpers.settings_field label="Imię" class="w-full">
+            <Helpers.settings_field label="Imię" layout={:row} for="user_first_name">
               <.input
                 type="text"
                 name="user[first_name]"
+                id="user_first_name"
                 value={first_name(@current_user.name)}
+                new
+                input_class="w-full"
               />
             </Helpers.settings_field>
 
-            <Helpers.settings_field label="Nazwisko" class="w-full">
+            <Helpers.settings_field label="Nazwisko" layout={:row} for="user_last_name">
               <.input
                 type="text"
                 name="user[last_name]"
+                id="user_last_name"
                 value={last_name(@current_user.name)}
+                new
+                input_class="w-full"
               />
             </Helpers.settings_field>
           </div>
 
-          <div class="flex w-full justify-start gap-5 lg:justify-end">
+          <div class="flex w-full justify-end gap-3">
             <.button
               type="button"
-              variant="secondary"
+              variant="ghost"
               phx-click="toggle_editing_account_name"
               size="small"
             >
               Anuluj
             </.button>
 
-            <.button type="submit" variant="primary" size="small">
+            <.button type="submit" variant="success" size="small">
               Zapisz
             </.button>
           </div>
@@ -184,16 +192,26 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
         phx-submit="change_email"
         class="space-y-4"
       >
-        <Helpers.settings_field label="Nowy adres email" class="w-full">
-          <.input field={@email_form[:email]} type="email" required />
-        </Helpers.settings_field>
+        <div class="space-y-2">
+          <Helpers.settings_display_field label="Zmiana e-maila:" label_class="text-grey-900">
+          </Helpers.settings_display_field>
 
-        <p class="text-grey-600 text-sm">
-          Wyślemy link potwierdzający na nowy adres. Po jego otwarciu potwierdź zmianę przyciskiem na wyświetlonej stronie.
-        </p>
-
+          <Helpers.settings_field
+            label="Nowy adres email"
+            class="w-full"
+            for={@email_form[:email].id}
+            layout={:row}
+          >
+            <.input field={@email_form[:email]} type="email" new required />
+          </Helpers.settings_field>
+          <Helpers.settings_display_field
+            label="Wyślemy link potwierdzający na nowy adres. Po jego otwarciu potwierdź zmianę przyciskiem na wyświetlonej stronie"
+            label_class="order-2 text-start"
+          >
+          </Helpers.settings_display_field>
+        </div>
         <div class="flex w-full justify-start gap-5 sm:justify-end">
-          <.button type="submit" variant="primary" size="small">
+          <.button type="submit" variant="success" size="small">
             Zapisz adres email
           </.button>
         </div>
@@ -210,39 +228,59 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
         class="space-y-4"
       >
         <div class="space-y-2">
-          <Helpers.settings_field label="Twoje hasło" class="w-full">
+          <Helpers.settings_display_field label="Zmiana hasła:" label_class="text-grey-900">
+          </Helpers.settings_display_field>
+          <Helpers.settings_field
+            label="Twoje hasło"
+            layout={:row}
+            class="pb-6"
+            for="current_password_for_password"
+          >
             <.input
               type="password"
               name="current_password"
               id="current_password_for_password"
               value={@current_password}
               required
+              new
+              input_class="w-full"
             />
           </Helpers.settings_field>
 
-          <Helpers.settings_field label="Nowe hasło" class="w-full">
+          <Helpers.settings_field label="Nowe hasło" layout={:row} for={@password_form[:password].id}>
             <.input
+              field={@password_form[:password]}
               type="password"
-              name={@password_form[:password].name}
-              value={@password_form[:password].value}
               required
+              new
+              input_class="w-full"
             />
           </Helpers.settings_field>
 
-          <Helpers.settings_field label="Powtórz hasło" class="w-full">
+          <Helpers.settings_field
+            label="Powtórz hasło"
+            layout={:row}
+            for={@password_form[:password_confirmation].id}
+          >
             <.input
+              field={@password_form[:password_confirmation]}
               type="password"
-              name={@password_form[:password_confirmation].name}
-              value={@password_form[:password_confirmation].value}
               required
+              new
+              input_class="w-full"
             />
           </Helpers.settings_field>
+          <Helpers.settings_display_field
+            label='Wpisz nowe hasło w obu okienkach, a następnie kliknij "zapisz"'
+            label_class="order-2 text-start"
+          >
+          </Helpers.settings_display_field>
         </div>
 
-        <div class="flex w-full justify-start gap-5 sm:justify-end">
+        <div class="flex w-full justify-end gap-3">
           <.button
             type="button"
-            variant="secondary"
+            variant="ghost"
             size="small"
             phx-click="toggle_editing_credentials"
           >
@@ -251,11 +289,11 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
 
           <.button
             type="submit"
-            variant="primary"
+            variant="success"
             size="small"
             phx-disable-with="Zapisywanie..."
           >
-            Zapisz
+            Zapisz hasło
           </.button>
         </div>
       </.form>
@@ -288,47 +326,47 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           <% end %>
         </Helpers.settings_display_field>
 
-        <p :if={@google_connected?} class="text-grey-600 text-sm">
-          Aby zmienić konto Google, najpierw zmień i potwierdź powyższy adres email.
-        </p>
+        <Helpers.settings_display_field>
+          <div class="flex items-center gap-5">
+            <.button
+              type="button"
+              variant="outline"
+              size="small"
+              phx-click="link_google_account"
+              class="gap-2 self-start"
+            >
+              <svg class="size-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  fill="#4285F4"
+                />
+                <path
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  fill="#34A853"
+                />
+                <path
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  fill="#FBBC05"
+                />
+                <path
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  fill="#EA4335"
+                />
+              </svg>
+              {if @google_connected?, do: "Powiąż inne", else: "Połącz z Google"}
+            </.button>
 
-        <.button
-          type="button"
-          variant="outline"
-          size="small"
-          phx-click="link_google_account"
-          class="gap-2 self-start"
-        >
-          <svg class="size-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-              fill="#4285F4"
-            />
-            <path
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              fill="#34A853"
-            />
-            <path
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-              fill="#FBBC05"
-            />
-            <path
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-              fill="#EA4335"
-            />
-          </svg>
-          {if @google_connected?, do: "Powiąż inne", else: "Połącz z Google"}
-        </.button>
-
-        <.button
-          :if={@google_connected?}
-          type="button"
-          variant="destructive"
-          size="small"
-          phx-click="unlink_google_account"
-        >
-          Rozłącz
-        </.button>
+            <.button
+              :if={@google_connected?}
+              type="button"
+              variant="destructive"
+              size="small"
+              phx-click="unlink_google_account"
+            >
+              Rozłącz
+            </.button>
+          </div>
+        </Helpers.settings_display_field>
       </div>
     </.account_section>
     """
@@ -343,7 +381,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
     <.account_section title="Zamykanie konta">
       <div class="flex flex-col gap-4">
         <.detail_row label="Nazwa konta">{@current_user.email}</.detail_row>
-        <Helpers.settings_display_field label="">
+        <Helpers.settings_display_field>
           <.button
             class="max-w-[200px]"
             type="button"
@@ -372,12 +410,15 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           <.input
             field={@delete_account_form[:current_password]}
             type="password"
-            label="Twoje hasło"
             required
+            new
+            input_class="w-full mb-0"
+            class="text-grey-700 flex items-center gap-5 text-sm [&>label]:mb-0"
+            label="Hasło"
           />
 
           <:actions>
-            <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <div class="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <.button
                 type="button"
                 variant="secondary"

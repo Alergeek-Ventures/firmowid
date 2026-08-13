@@ -130,9 +130,9 @@ defmodule FirmowidWeb.DesignSystem.Utilities.ButtonStyles do
   def variant_classes("success", _accent) do
     [
       "border-transparent",
-      "bg-blueText text-white",
-      "hover:bg-blue-700 active:bg-blue-800",
-      "disabled:bg-blue-300 disabled:text-white"
+      "bg-green-200 text-green-800",
+      "hover:bg-green-300 active:bg-green-400",
+      "disabled:text-green-500"
     ]
   end
 end

@@ -126,11 +126,12 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
         </div>
 
         <form :if={@admin?} phx-submit="add_allowed_email" class="space-y-3">
-          <.settings_row label="Dodaj nowy adres">
+          <.settings_row label="Dodaj nowy adres" for="allowed_sender_email">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
               <.input
                 type="email"
                 name="email"
+                id="allowed_sender_email"
                 value=""
                 required
                 placeholder="np. faktury@dostawca.pl"
@@ -158,12 +159,13 @@ defmodule FirmowidWeb.Settings.Components.InvoicesTab do
   end
 
   attr :label, :string, required: true
+  attr :for, :any, default: nil
   slot :inner_block, required: true
 
   defp settings_row(assigns) do
     ~H"""
     <div class="flex flex-col gap-1">
-      <div class="text-grey-700 text-sm leading-[1.35]">{@label}</div>
+      <label for={@for} class="text-grey-700 text-sm leading-[1.35]">{@label}</label>
       <div class="min-w-0">{render_slot(@inner_block)}</div>
     </div>
     """

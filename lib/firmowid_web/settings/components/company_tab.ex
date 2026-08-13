@@ -43,25 +43,27 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   def company_tab(assigns) do
     ~H"""
-    <div class="grid items-start gap-8 lg:grid-cols-2 lg:gap-16">
-      <.company_basic_info_section
-        current_org={@current_org}
-        company_form={@company_form}
-        editing_basic_info={@editing_basic_info}
-      />
+    <div class="grid items-start gap-8 lg:grid-cols-2 lg:gap-14">
+      <div class="space-y-14">
+        <.company_basic_info_section
+          current_org={@current_org}
+          company_form={@company_form}
+          editing_basic_info={@editing_basic_info}
+        />
+
+        <.ksef_section
+          ksef_credential={@ksef_credential}
+          ksef_auth_method={@ksef_auth_method}
+          ksef_auth_status={@ksef_auth_status}
+          ksef_failure={@ksef_failure}
+          uploads={@uploads}
+        />
+      </div>
 
       <.correspondence_section
         current_org={@current_org}
         correspondence_form={@correspondence_form}
         editing_correspondence={@editing_correspondence}
-      />
-
-      <.ksef_section
-        ksef_credential={@ksef_credential}
-        ksef_auth_method={@ksef_auth_method}
-        ksef_auth_status={@ksef_auth_status}
-        ksef_failure={@ksef_failure}
-        uploads={@uploads}
       />
 
       <.bank_accounts_section
@@ -90,9 +92,9 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   defp company_section(assigns) do
     ~H"""
-    <section class={["space-y-3", @class]}>
-      <div class="flex min-h-8 items-center gap-2.5">
-        <h2 class="text-grey-900 text-base leading-none font-semibold">{@title}</h2>
+    <section class={["space-y-4", @class]}>
+      <div class="flex min-h-8 items-center gap-1">
+        <h2 class="text-grey-900 text-base leading-none font-medium">{@title}</h2>
 
         <span
           :if={@action}
@@ -100,6 +102,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           phx-hook="Tippy"
           data-tippy-content={@action_label || "Edytuj #{@title}"}
           data-tippy-delay="100"
+          data-tippy-size="small"
         >
           <.edit_button
             type="button"
@@ -122,7 +125,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     ~H"""
     <Helpers.settings_display_field
       label={@label}
-      class={detail_row_styles(@wide)}
+      class="justify-center"
       value_class="break-words"
     >
       {render_slot(@inner_block)}
@@ -138,7 +141,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     ~H"""
     <.company_section
       title="Dane firmy"
-      action="toggle_editing_basic_info"
+      action={if(!@editing_basic_info, do: "toggle_editing_basic_info")}
       action_label="Edytuj dane firmy"
     >
       <%= if @editing_basic_info do %>
@@ -152,21 +155,20 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             <.row_input field={@company_form[:name]} label="Nazwa" type="text" />
             <.row_input field={@company_form[:nip]} label="NIP" type="text" />
 
-            <Helpers.settings_field label="Płatnik VAT" class="w-full max-w-sm">
-              <span class="inline-flex items-center gap-3">
-                <input type="hidden" name={@company_form[:is_vat_payer].name} value="false" />
-                <input
-                  type="checkbox"
-                  value="true"
-                  name={@company_form[:is_vat_payer].name}
-                  checked={@company_form[:is_vat_payer].value in [true, "true"]}
-                  class="border-grey-200 size-4 rounded text-orange-700"
-                />
-                <span class="text-grey-900 text-base">Tak</span>
-              </span>
+            <Helpers.settings_field
+              label="Płatnik VAT"
+              layout={:row}
+              block_class="items-center"
+              for={@company_form[:is_vat_payer].id}
+            >
+              <.switch field={@company_form[:is_vat_payer]} color="turquoise" />
             </Helpers.settings_field>
             <%= if @company_form[:is_vat_payer].value not in [true, "true"] do %>
-              <Helpers.settings_field label="Zwolnienie z VAT" class="w-full max-w-sm">
+              <Helpers.settings_field
+                label="Zwolnienie z VAT"
+                layout={:row}
+                for={@company_form[:vat_exemption_type].id}
+              >
                 <.input
                   type="select"
                   field={@company_form[:vat_exemption_type]}
@@ -179,12 +181,15 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               <%= if to_string(@company_form[:vat_exemption_type].value) == "other" do %>
                 <Helpers.settings_field
                   label="Podstawa prawna zwolnienia z VAT"
-                  class="w-full max-w-sm"
+                  layout={:row}
+                  for={@company_form[:vat_exemption_basis].id}
                 >
                   <.input
                     type="text"
                     field={@company_form[:vat_exemption_basis]}
                     new
+                    required
+                    show_error={false}
                     input_class="w-full"
                   />
                 </Helpers.settings_field>
@@ -198,7 +203,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             <.row_input field={@company_form[:address]} label="Adres" type="text" />
           </div>
 
-          <div class="flex w-full max-w-sm justify-end gap-3">
+          <div class="flex w-full justify-end gap-3">
             <.button
               type="button"
               variant="ghost"
@@ -245,7 +250,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       title="Dane korespondencyjne"
       action="toggle_editing_correspondence"
       action_label="Dodaj dane korespondencyjne"
-      class="row-span-2"
     >
       <div class="text-grey-700 text-sm">
         Nie dodano jeszcze danych korespondencyjnych. Jeżeli adres jest inny
@@ -259,7 +263,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     ~H"""
     <.company_section
       title="Dane korespondencyjne"
-      action="toggle_editing_correspondence"
+      action={if(!@editing_correspondence, do: "toggle_editing_correspondence")}
       action_label="Edytuj dane korespondencyjne"
     >
       <%= if @editing_correspondence do %>
@@ -273,7 +277,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             />
           </div>
 
-          <div class="flex w-full max-w-sm justify-end gap-3">
+          <div class="flex w-full justify-end gap-3">
             <.button
               type="button"
               variant="ghost"
@@ -305,7 +309,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   defp ksef_section(assigns) do
     ~H"""
-    <.company_section title="Integracja z KSeF" class="col-span-2">
+    <.company_section title="Integracja z KSeF">
       <%= if @ksef_credential do %>
         <div class="flex flex-col gap-4">
           <.detail_row label="Status" wide>
@@ -333,16 +337,16 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               do: TimeFormatter.format_date(@ksef_credential.expires_on),
               else: "-"}
           </.detail_row>
-
-          <.button
-            class="max-w-[250px]"
-            size="small"
-            type="button"
-            variant="destructive"
-            phx-click={show_modal("confirm_disconnect_ksef")}
-          >
-            Rozłącz
-          </.button>
+          <Helpers.settings_display_field>
+            <.button
+              size="small"
+              type="button"
+              variant="destructive"
+              phx-click={show_modal("confirm_disconnect_ksef")}
+            >
+              Rozłącz
+            </.button>
+          </Helpers.settings_display_field>
         </div>
       <% else %>
         <.detail_row label="Status" wide>
@@ -603,10 +607,15 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                     error_formatter={&present_upload_error/1}
                   />
 
-                  <Helpers.settings_field label="Hasło do klucza prywatnego" class="w-full">
+                  <Helpers.settings_field
+                    label="Hasło do klucza prywatnego"
+                    class="w-full"
+                    for="private_key_password"
+                  >
                     <.input
                       type="password"
                       name="private_key_password"
+                      id="private_key_password"
                       value=""
                       required
                       new
@@ -852,7 +861,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             phx-click="toggle_active_invites"
             role="switch"
             aria-checked={to_string(@show_active_invites)}
-            class="border-grey-200 hover:bg-grey-100 text-grey-700 inline-flex min-h-11 items-center justify-between gap-3 rounded-lg border bg-white px-3 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 sm:min-h-10"
+            class="border-grey-200 hover:bg-grey-100 text-grey-700 inline-flex h-11 items-center justify-between gap-3 rounded-lg border bg-white px-3 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
           >
             <span>Aktywne zaproszenia</span>
             <span class={invite_toggle_track_styles(@show_active_invites)}>
@@ -866,6 +875,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             data-tippy-delay="100"
             type="button"
             variant="primary"
+            size="big"
             phx-click="create_organization_invite"
           >
             Wygeneruj zaproszenie
@@ -995,6 +1005,8 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                   </.button>
                 </div>
               </.dropdown>
+
+              <span :if={user.id == @current_user.id} class="size-10 shrink-0" aria-hidden="true" />
             </div>
           </div>
         </div>
@@ -1121,7 +1133,12 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     <.modal id={"rename_bank_account_#{@account.id}"}>
       <.form for={%{}} phx-submit="rename_bank_account" id={"rename_form_#{@account.id}"}>
         <input type="hidden" name="account_id" value={@account.id} />
-        <.input name="name" label="Nowa nazwa" value={@account.name} />
+        <.input
+          name="name"
+          id={"rename_bank_account_name_#{@account.id}"}
+          label="Nowa nazwa"
+          value={@account.name}
+        />
 
         <div class="mt-4 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <.button
@@ -1199,10 +1216,10 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           id="manual_bank_account_form_company"
           class="space-y-4"
         >
-          <.input name="name" label="Nazwa konta" value="" />
-          <.input name="owner_name" label="Właściciel" value="" />
-          <.input name="iban" label="IBAN" value="" />
-          <.input name="currency" label="Waluta" value="" />
+          <.input name="name" id="manual_bank_account_name" label="Nazwa konta" value="" />
+          <.input name="owner_name" id="manual_bank_account_owner_name" label="Właściciel" value="" />
+          <.input name="iban" id="manual_bank_account_iban" label="IBAN" value="" />
+          <.input name="currency" id="manual_bank_account_currency" label="Waluta" value="" />
 
           <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <.button
@@ -1247,14 +1264,11 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   defp row_input(assigns) do
     ~H"""
-    <Helpers.settings_field label={@label} class="w-full max-w-sm">
-      <.input type={@type} name={@field.name} value={@field.value} new input_class="w-full" />
+    <Helpers.settings_field label={@label} layout={:row} for={@field.id}>
+      <.input field={@field} type={@type} new input_class="w-full" />
     </Helpers.settings_field>
     """
   end
-
-  defp detail_row_styles(true), do: "w-full"
-  defp detail_row_styles(false), do: "w-full max-w-sm"
 
   defp invite_toggle_track_styles(true), do: "bg-turquoise-700 relative inline-flex h-[24px] w-[44px] rounded-full"
 
