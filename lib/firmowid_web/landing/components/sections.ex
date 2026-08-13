@@ -9,6 +9,7 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Billing.PlanCatalog
+  alias FirmowidWeb.Infrastructure.Utilities.PolishQuantity
   alias Phoenix.LiveView.Rendered
 
   @problems [
@@ -1149,18 +1150,33 @@ defmodule FirmowidWeb.Landing.Components.Sections do
   defp included_usage(rules) do
     Enum.reject(
       [
-        included_usage_line(rules.manual_external_invoices, "faktur spoza KSeF / mies."),
-        included_usage_line(rules.synced_bank_accounts, "kont bankowych / mies."),
-        included_usage_line(rules.active_non_owner_users, "pracowników / mies.")
+        included_usage_line(
+          rules.manual_external_invoices,
+          "faktura spoza KSeF",
+          "faktury spoza KSeF",
+          "faktur spoza KSeF"
+        ),
+        included_usage_line(
+          rules.synced_bank_accounts,
+          "konto bankowe",
+          "konta bankowe",
+          "kont bankowych"
+        ),
+        included_usage_line(
+          rules.active_non_owner_users,
+          "pracownik",
+          "pracowników",
+          "pracowników"
+        )
       ],
       &is_nil/1
     )
   end
 
-  defp included_usage_line(%{included_units: 0}, _label), do: nil
+  defp included_usage_line(%{included_units: 0}, _singular, _plural_few, _plural_many), do: nil
 
-  defp included_usage_line(%{included_units: included_units}, label) do
-    "#{included_units} #{label}"
+  defp included_usage_line(%{included_units: included_units}, singular, plural_few, plural_many) do
+    "#{PolishQuantity.quantity(included_units, singular, plural_few, plural_many)} / mies."
   end
 
   defp money_with_currency(nil), do: nil

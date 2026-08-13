@@ -14,6 +14,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   alias Firmowid.Ash.Invoicing.TransactionGroup
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
+  alias FirmowidWeb.Infrastructure.Utilities.PolishQuantity
   alias FirmowidWeb.Invoicing.Utilities.BankBadges
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
@@ -864,9 +865,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     """
   end
 
-  defp pluralize_transaction_count(1), do: "1 transakcja"
-  defp pluralize_transaction_count(n) when n in 2..4, do: "#{n} transakcje"
-  defp pluralize_transaction_count(n), do: "#{n} transakcji"
+  defp pluralize_transaction_count(count) do
+    PolishQuantity.quantity(count, "transakcja", "transakcje", "transakcji")
+  end
 
   defp bank_badge_for_group(%TransactionGroup{transactions: transactions}) do
     case transactions |> Enum.map(&BankBadges.badge_for_transaction/1) |> Enum.uniq() do
