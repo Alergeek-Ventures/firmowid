@@ -30,7 +30,7 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClient do
 
   Returns {:ok, response} or {:error, reason}.
   """
-  @spec extract(String.t(), map(), extract_options) :: {:ok, map()} | {:error, String.t()}
+  @spec extract(String.t(), map(), extract_options) :: {:ok, map()} | {:error, :invalid_document | String.t()}
   def extract(file_url, json_schema, options \\ []) do
     extraction_mode =
       options
@@ -93,7 +93,14 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClient do
           nil ->
             Logger.error("Reducto API response missing 'result' field. Response body: #{inspect(body)}")
 
-            {:error, "Reducto API response missing 'result' field"}
+            case Map.get(body, "error") do
+              %{"code" => 415, "name" => "DOCUMENT_CORRUPT"} ->
+                {:error, :invalid_document}
+
+              error ->
+                {:error,
+                 "Reducto API response missing 'result' field: #{inspect(Map.get(body, "detail"))} --- #{inspect(error)}"}
+            end
         end
 
       {:error, err} ->

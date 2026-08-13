@@ -304,6 +304,34 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
                )
     end
 
+    test "shows an invalid document toast when Reducto cannot process the file", %{conn: conn, user: user} do
+      put_reducto_extract_result(
+        {:http_error, 415,
+         %{
+           "error" => %{
+             "code" => 415,
+             "message" => "The document could not be processed. Verify the file is valid or try re-exporting it.",
+             "name" => "DOCUMENT_CORRUPT"
+           }
+         }}
+      )
+
+      {:ok, view, _html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/fakturowanie?miesiac=2026-04-01&filtr=faktury&widok=lista")
+
+      subscribe_to_upload_notifications(user)
+      upload_invoice(view, "upload-corrupt.svg")
+      assert_cost_invoice_blob_failed(user)
+
+      rendered = render(view)
+
+      assert rendered =~ "Nieprawidłowy dokument"
+      assert rendered =~ "Plik nie zawiera danych wymaganych dla faktury kosztowej."
+      refute rendered =~ "Wystąpił problem po naszej stronie"
+    end
+
     test "shows a processing error toast when Reducto is unavailable", %{conn: conn, user: user} do
       put_reducto_extract_result({:http_error, 401, %{"error" => "Invalid API key"}})
 
