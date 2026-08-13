@@ -50,12 +50,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         editing_basic_info={@editing_basic_info}
       />
 
-      <.organization_avatar
-        current_org={@current_org}
-        current_user={@current_user}
-        organization_avatar_upload={@uploads.organization_avatar}
-      />
-
       <.correspondence_section
         current_org={@current_org}
         correspondence_form={@correspondence_form}
@@ -85,58 +79,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         current_user={@current_user}
       />
     </div>
-    """
-  end
-
-  attr :current_org, :map, required: true
-  attr :current_user, :map, required: true
-  attr :organization_avatar_upload, :any, default: nil
-
-  def organization_avatar(assigns) do
-    ~H"""
-    <.company_section title="Logo organizacji">
-      <div class="flex flex-row items-center gap-4">
-        <.avatar class="size-16 rounded-full bg-white">
-          <.avatar_image
-            :if={@current_org.avatar_blob && @current_org.avatar_blob.url}
-            src={@current_org.avatar_blob.url}
-            alt={@current_org.name}
-            class="object-contain"
-          />
-          <.avatar_fallback class="border-grey-100 text-grey-700 rounded-2xl border bg-white text-center text-lg font-semibold">
-            {initial(@current_org.name)}
-          </.avatar_fallback>
-        </.avatar>
-
-        <form
-          :if={@current_user.role == :admin && @organization_avatar_upload}
-          phx-submit="upload"
-          phx-change="upload"
-        >
-          <.live_file_input
-            upload={@organization_avatar_upload}
-            class="peer sr-only"
-            aria-label="Zmień logo organizacji"
-          />
-
-          <.button
-            as="label"
-            id="settings-organization-avatar-upload-tooltip"
-            for={@organization_avatar_upload.ref}
-            type="button"
-            variant="outline"
-            size="small"
-            aria-label="Zmień logo organizacji"
-            phx-hook="Tippy"
-            data-tippy-content="Zmień logo organizacji"
-            data-tippy-delay="100"
-            class="size-10 rounded-full p-0"
-          >
-            <Lucideicons.square_pen />
-          </.button>
-        </form>
-      </div>
-    </.company_section>
     """
   end
 

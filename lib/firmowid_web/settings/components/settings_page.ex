@@ -19,6 +19,7 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
   attr :current_org, :map, required: true
   attr :current_tab, :atom, required: true
   attr :user_avatar_upload, :any, required: true
+  attr :organization_avatar_upload, :any, default: nil
   slot :inner_block, required: true
 
   def settings_page(assigns) do
@@ -78,17 +79,49 @@ defmodule FirmowidWeb.Settings.Components.SettingsPage do
             <p class="text-grey-700">{@current_user.email}</p>
           </div>
         </div>
-        <.avatar class="bg-grey-100 border-grey-100 hidden size-32 rounded-2xl! border lg:block">
-          <.avatar_image
-            :if={@current_org.avatar_blob && @current_org.avatar_blob.url}
-            src={@current_org.avatar_blob.url}
-            alt={@current_org.name}
-            class="rounded-2xl! object-contain"
-          />
-          <.avatar_fallback class="text-grey-700 rounded-2xl! text-center text-2xl font-medium">
-            {initial(@current_org.name)}
-          </.avatar_fallback>
-        </.avatar>
+
+        <div class="relative hidden lg:block">
+          <form
+            :if={@current_user.role == :admin && @organization_avatar_upload}
+            phx-submit="upload"
+            phx-change="upload"
+          >
+            <.live_file_input
+              upload={@organization_avatar_upload}
+              class="peer sr-only"
+              aria-label="Zmień logo organizacji"
+            />
+          </form>
+
+          <.avatar class="bg-grey-100 border-grey-100 size-32 rounded-2xl! border">
+            <.avatar_image
+              :if={@current_org.avatar_blob && @current_org.avatar_blob.url}
+              src={@current_org.avatar_blob.url}
+              alt={@current_org.name}
+              class="rounded-2xl! object-contain"
+            />
+            <.avatar_fallback class="text-grey-700 rounded-2xl! text-center text-2xl font-medium">
+              {initial(@current_org.name)}
+            </.avatar_fallback>
+          </.avatar>
+
+          <.button
+            :if={@current_user.role == :admin && @organization_avatar_upload}
+            as="label"
+            id="settings-organization-avatar-upload-tooltip"
+            for={@organization_avatar_upload.ref}
+            type="button"
+            variant="outline"
+            size="small"
+            aria-label="Zmień logo organizacji"
+            phx-hook="Tippy"
+            data-tippy-content="Zmień logo organizacji"
+            data-tippy-delay="100"
+            class="absolute -right-4 -bottom-2 size-10 rounded-full p-0 shadow-sm"
+          >
+            <Lucideicons.square_pen class="size-6!" />
+          </.button>
+        </div>
       </div>
 
       <nav
