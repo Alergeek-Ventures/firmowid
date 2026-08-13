@@ -304,7 +304,10 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
                )
     end
 
-    test "shows an invalid document toast when Reducto cannot process the file", %{conn: conn, user: user} do
+    test "shows an invalid document toast when Reducto cannot process the file", %{
+      conn: conn,
+      user: user
+    } do
       put_reducto_extract_result(
         {:http_error, 415,
          %{

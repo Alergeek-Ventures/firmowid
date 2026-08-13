@@ -30,7 +30,8 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClient do
 
   Returns {:ok, response} or {:error, reason}.
   """
-  @spec extract(String.t(), map(), extract_options) :: {:ok, map()} | {:error, :invalid_document | String.t()}
+  @spec extract(String.t(), map(), extract_options) ::
+          {:ok, map()} | {:error, :invalid_document | String.t()}
   def extract(file_url, json_schema, options \\ []) do
     extraction_mode =
       options
