@@ -68,11 +68,6 @@ defmodule Firmowid.Ash.Invoicing do
 
     resource SalesInvoice do
       define :list_sales_invoices, action: :read
-
-      define :list_dashboard_matched_sales_invoices,
-        action: :dashboard_matched_entries,
-        args: [:ids]
-
       define :get_sales_invoice, action: :by_id, args: [:id]
       define :get_sales_invoice_by_share_token, action: :by_share_token, args: [:token]
       define :create_sales_invoice, action: :create

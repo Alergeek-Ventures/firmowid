@@ -166,15 +166,12 @@ defmodule Firmowid.Ash.Invoicing.Services.RecentMatchedEntries do
   defp load_sales_invoices_by_id([], _scope, _loads), do: %{}
 
   defp load_sales_invoices_by_id(ids, scope, loads) do
-    invoices =
-      Invoicing.list_dashboard_matched_sales_invoices!(Enum.uniq(ids),
-        load: loads ++ [corrected_invoice: loads],
-        scope: scope
-      )
-
-    Map.new(invoices, fn invoice ->
-      {invoice.id, invoice.corrected_invoice || invoice}
-    end)
+    %{ids: Enum.uniq(ids)}
+    |> Invoicing.list_sales_invoices!(
+      load: loads ++ [corrected_invoice: loads],
+      scope: scope
+    )
+    |> Map.new(&{&1.id, &1.corrected_invoice || &1})
   end
 
   defp month_range_as_naive_datetimes(from, to) do
