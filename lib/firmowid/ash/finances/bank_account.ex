@@ -61,6 +61,11 @@ defmodule Firmowid.Ash.Finances.BankAccount do
     end
   end
 
+  code_interface do
+    define :sync_from_gocardless, action: :sync_from_gocardless
+    define :mark_sync_failed, action: :mark_sync_failed
+  end
+
   actions do
     defaults [:destroy]
 

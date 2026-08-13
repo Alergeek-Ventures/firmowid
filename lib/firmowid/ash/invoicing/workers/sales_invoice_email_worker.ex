@@ -63,8 +63,8 @@ defmodule Firmowid.Ash.Invoicing.Workers.SalesInvoiceEmailWorker do
   end
 
   defp record_delivery(attrs, scope) do
-    SalesInvoiceEmailDelivery
-    |> Ash.Changeset.for_create(:record_delivery, attrs, scope: scope)
+    attrs
+    |> SalesInvoiceEmailDelivery.changeset_to_record_delivery(scope: scope)
     |> Ash.create(scope: scope)
   end
 end

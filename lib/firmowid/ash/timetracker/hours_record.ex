@@ -22,6 +22,7 @@ defmodule Firmowid.Ash.Timetracker.HoursRecord do
   end
 
   code_interface do
+    define :read, action: :read
     define :get, get_by: [:id]
     define :by_month, args: [:user_id, :month, :year]
     define :create

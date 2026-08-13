@@ -100,8 +100,8 @@ defmodule FirmowidWeb.Management.Views.Projects do
     default_sort = if search in [nil, ""], do: [name: :asc], else: []
 
     projects =
-      AshProject
-      |> Ash.Query.for_read(:list, args, scope: scope)
+      args
+      |> Timetracker.query_to_list_projects(scope: scope)
       |> Ash.Query.aggregate(:duration, :sum, :sessions,
         field: :duration,
         default: 0,

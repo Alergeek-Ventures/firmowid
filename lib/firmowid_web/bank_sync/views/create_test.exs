@@ -38,8 +38,8 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
       # In production, the requisition is created during the institution_selection event
       # and the redirect back from GoCardless includes the ref param
       {:ok, _requisition} =
-        Requisition
-        |> Ash.Changeset.for_create(:persist, %{id: requisition_id},
+        %{id: requisition_id}
+        |> Requisition.changeset_to_persist(
           tenant: user.organization_id,
           actor: user,
           authorize?: false
@@ -48,7 +48,7 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
 
       # Verify requisition exists with pending status
       assert {:ok, requisition} =
-               Ash.get(Requisition, requisition_id,
+               Finances.get_requisition(requisition_id,
                  tenant: user.organization_id,
                  actor: user
                )
@@ -122,7 +122,7 @@ defmodule FirmowidWeb.BankSync.Views.CreateTest do
              )
 
       assert {:ok, requisition} =
-               Ash.get(Requisition, requisition_id,
+               Finances.get_requisition(requisition_id,
                  tenant: user.organization_id,
                  actor: user
                )

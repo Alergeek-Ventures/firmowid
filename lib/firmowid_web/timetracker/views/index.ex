@@ -91,8 +91,8 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     timezone = socket.assigns.timezone
 
     weeks =
-      AshSession
-      |> Ash.Query.for_read(:list, %{user_id: user_id}, scope: scope)
+      %{user_id: user_id}
+      |> Timetracker.query_to_list_sessions(scope: scope)
       |> Ash.Query.distinct(:week_start)
       |> Ash.Query.distinct_sort(week_start: :desc)
       |> Ash.Query.sort(week_start: :desc)
@@ -134,8 +134,8 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     before_dt = DateTime.new!(after_date, ~T[00:00:00])
 
     next_weeks =
-      AshSession
-      |> Ash.Query.for_read(:list, %{user_id: user_id}, scope: scope)
+      %{user_id: user_id}
+      |> Timetracker.query_to_list_sessions(scope: scope)
       |> Ash.Query.filter(start_datetime < ^before_dt)
       |> Ash.Query.distinct(:week_start)
       |> Ash.Query.distinct_sort(week_start: :desc)
@@ -581,7 +581,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
 
   def handle_event("delete_session", %{"id" => id}, socket) do
     scope = socket.assigns.ash_scope
-    session = Ash.get!(AshSession, id, scope: scope)
+    session = Timetracker.get_session_by_id!(id, scope: scope)
 
     case AshSession.destroy(session, scope: scope) do
       :ok ->
@@ -674,9 +674,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     now = DateTime.now!(socket.assigns.timezone)
 
     total_query =
-      Ash.Query.for_read(
-        AshSession,
-        :list,
+      Timetracker.query_to_list_sessions(
         %{month: now.month, year: now.year, user_id: socket.assigns.current_user.id},
         scope: scope
       )

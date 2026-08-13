@@ -118,6 +118,10 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     define :read, action: :read
     define :by_share_token, args: [:token]
 
+    define :public_shared_chain,
+      action: :public_shared_chain,
+      args: [:root_invoice_id, :root_share_token]
+
     # Writes
     define :create, action: :create
     define :update, action: :update
@@ -134,6 +138,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     define :lock_for_ksef, action: :lock_for_ksef
     define :unlock_for_ksef, action: :unlock_for_ksef
     define :update_ksef_fields, action: :update_ksef_fields
+    define :denormalize_item_names, action: :denormalize_item_names
 
     # Wizard
     define :confirm_from_draft,
@@ -727,12 +732,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
           # Get next FK-series number
           {:ok, invoice_number} =
-            __MODULE__
-            |> Ash.ActionInput.for_action(
-              :get_next_number,
-              %{date: issue_date, series: "FK"},
-              opts
-            )
+            %{date: issue_date, series: "FK"}
+            |> __MODULE__.input_to_get_next_number(opts)
             |> Ash.run_action(opts)
 
           zeroed_items =
@@ -915,12 +916,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
           case parsed do
             {:ok, %{num: current_num, series: parsed_series}} ->
               {:ok, expected} =
-                __MODULE__
-                |> Ash.ActionInput.for_action(
-                  :get_next_number,
-                  %{date: issue_date, series: parsed_series, omit_invoice_id: omit_invoice_id},
-                  opts
-                )
+                %{date: issue_date, series: parsed_series, omit_invoice_id: omit_invoice_id}
+                |> __MODULE__.input_to_get_next_number(opts)
                 |> Ash.run_action(opts)
 
               case parse_invoice_number(expected) do

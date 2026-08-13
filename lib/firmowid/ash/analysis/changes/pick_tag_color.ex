@@ -19,8 +19,8 @@ defmodule Firmowid.Ash.Analysis.Changes.PickTagColor do
     }
 
     count =
-      Firmowid.Ash.Analysis.TagDefinition
-      |> Ash.Query.for_read(:read, %{}, scope: scope)
+      %{}
+      |> Firmowid.Ash.Analysis.TagDefinition.query_to_read(scope: scope)
       |> Ash.count!(scope: scope)
 
     color = Enum.at(@palette, rem(count, length(@palette)))

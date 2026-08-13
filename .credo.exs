@@ -14,9 +14,7 @@ alias ExSlop.Check.Warning.PathExpandPriv
           {Credo.Check.Warning.LazyLogging, []},
 
           # These require broad architectural rewrites rather than enforcing local style.
-          {AshCredo.Check.Design.MissingCodeInterface, []},
           {AshCredo.Check.Refactor.RaisingCall, []},
-          {AshCredo.Check.Refactor.UseCodeInterface, []},
           {Credo.Check.Consistency.UnusedVariableNames, []},
           {Credo.Check.Design.AliasUsage, []},
           {Credo.Check.Readability.Specs, []},
@@ -182,6 +180,8 @@ alias ExSlop.Check.Warning.PathExpandPriv
           {AshCredo.Check.Warning.WildcardAcceptOnAction, []},
           {AshCredo.Check.Refactor.DirectiveInFunctionBody, []},
           {AshCredo.Check.Refactor.LargeResource, []},
+          {AshCredo.Check.Refactor.UseCodeInterface, []},
+          {AshCredo.Check.Design.MissingCodeInterface, []},
           {AshCredo.Check.Design.MissingIdentity, [identity_candidates: []]},
           {AshCredo.Check.Design.MissingPrimaryAction, []},
           {AshCredo.Check.Design.MissingTimestamps, []},

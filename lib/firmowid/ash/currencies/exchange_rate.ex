@@ -37,6 +37,12 @@ defmodule Firmowid.Ash.Currencies.ExchangeRate do
     end
   end
 
+  code_interface do
+    define :read, action: :read
+    define :read_expired, action: :read_expired
+    define :cleanup_expired, action: :cleanup_expired
+  end
+
   actions do
     defaults [:read]
 

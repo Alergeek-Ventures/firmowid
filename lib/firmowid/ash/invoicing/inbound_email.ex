@@ -31,6 +31,7 @@ defmodule Firmowid.Ash.Invoicing.InboundEmail do
   end
 
   code_interface do
+    define :read, action: :read
     define :list_all, action: :list_all
     define :get, args: [:id], action: :by_id
     define :create

@@ -8,7 +8,7 @@ defmodule Firmowid.Ash.Finances.Changes.CreateBankAccounts do
   """
   use Ash.Resource.Change
 
-  alias Firmowid.Ash.Finances.BankAccount
+  alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.GoCardless.ApiClient
 
   require Logger
@@ -38,12 +38,9 @@ defmodule Firmowid.Ash.Finances.Changes.CreateBankAccounts do
           opts =
             ash_opts |> Keyword.delete(:tenant) |> Keyword.put(:tenant, record.organization_id)
 
-          BankAccount
-          |> Ash.Changeset.for_create(
-            :sync_from_bank,
-            account_params(account, record.id),
-            opts
-          )
+          account
+          |> account_params(record.id)
+          |> Finances.changeset_to_sync_bank_account(opts)
           |> Ash.create!(opts)
         end)
 

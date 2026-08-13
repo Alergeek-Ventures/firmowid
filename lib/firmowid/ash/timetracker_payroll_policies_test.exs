@@ -119,8 +119,8 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
       scope = admin_scope(admin)
 
       assert {:ok, records} =
-               AshHoursRecord
-               |> Ash.Query.for_read(:read, %{}, scope: scope)
+               %{}
+               |> AshHoursRecord.query_to_read(scope: scope)
                |> Ash.read(scope: scope)
 
       assert length(records) >= 2
@@ -133,8 +133,8 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
       scope = employee_scope(employee_a)
 
       assert {:ok, records} =
-               AshHoursRecord
-               |> Ash.Query.for_read(:read, %{}, scope: scope)
+               %{}
+               |> AshHoursRecord.query_to_read(scope: scope)
                |> Ash.read(scope: scope)
 
       assert length(records) == 1
@@ -172,8 +172,8 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
       scope = admin_scope(admin)
 
       assert {:ok, projects} =
-               AshProject
-               |> Ash.Query.for_read(:read, %{}, scope: scope)
+               %{}
+               |> AshProject.query_to_read(scope: scope)
                |> Ash.read(scope: scope)
 
       assert length(projects) >= 2
@@ -186,8 +186,8 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
       scope = employee_scope(employee_a)
 
       assert {:ok, projects} =
-               AshProject
-               |> Ash.Query.for_read(:read, %{}, scope: scope)
+               %{}
+               |> AshProject.query_to_read(scope: scope)
                |> Ash.read(scope: scope)
 
       project_ids = Enum.map(projects, & &1.id)
@@ -224,8 +224,8 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
       scope = admin_scope(admin)
 
       assert {:ok, pus} =
-               AshProjectUser
-               |> Ash.Query.for_read(:read, %{}, scope: scope)
+               %{}
+               |> AshProjectUser.query_to_read(scope: scope)
                |> Ash.read(scope: scope)
 
       assert length(pus) >= 2
@@ -238,8 +238,8 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
       scope = employee_scope(employee_a)
 
       assert {:ok, pus} =
-               AshProjectUser
-               |> Ash.Query.for_read(:read, %{}, scope: scope)
+               %{}
+               |> AshProjectUser.query_to_read(scope: scope)
                |> Ash.read(scope: scope)
 
       assert length(pus) == 1

@@ -90,6 +90,13 @@ defmodule Firmowid.Ash.Finances.Requisition do
   end
 
   code_interface do
+    define :destroy, action: :destroy
+    define :read_global, action: :read_global
+    define :persist, action: :persist
+    define :check_status, action: :check_status
+    define :auto_reject, action: :auto_reject
+    define :cleanup_orphan, action: :cleanup_orphan
+    define :delete_remote, action: :delete_remote
     define :accept
     define :reject
     define :expire

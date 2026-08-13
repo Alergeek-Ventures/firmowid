@@ -8,7 +8,6 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
 
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
-  alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Infrastructure.Utilities.QueryParams
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Timetracker.Utilities.Navigation
@@ -78,12 +77,15 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
 
     # User's projects with month duration, sorted by time descending
     projects =
-      Firmowid.Ash.Timetracker.Project
-      |> Ash.Query.for_read(:list, %{user_id: user_id}, scope: scope)
+      %{user_id: user_id}
+      |> Timetracker.query_to_list_projects(scope: scope)
       |> Ash.Query.aggregate(:duration, :sum, :sessions,
         field: :duration,
         default: 0,
-        query: Ash.Query.for_read(Session, :list, %{user_id: user_id, month: month, year: year}, scope: scope)
+        query:
+          Timetracker.query_to_list_sessions(%{user_id: user_id, month: month, year: year},
+            scope: scope
+          )
       )
       |> Ash.read!(scope: scope)
       |> Enum.map(fn project ->
@@ -91,12 +93,8 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
 
         # Eagerly fetch sessions grouped by title for this user+project+month
         grouped_sessions =
-          Session
-          |> Ash.Query.for_read(
-            :list,
-            %{user_id: user_id, project_id: project.id, month: month, year: year},
-            scope: scope
-          )
+          %{user_id: user_id, project_id: project.id, month: month, year: year}
+          |> Timetracker.query_to_list_sessions(scope: scope)
           |> Ash.Query.load(:duration)
           |> Ash.read!(scope: scope)
           |> Enum.group_by(& &1.title)
@@ -114,7 +112,9 @@ defmodule FirmowidWeb.HoursRecord.Views.Index do
 
     # Total duration for this user this month
     total_query =
-      Ash.Query.for_read(Session, :list, %{user_id: user_id, month: month, year: year}, scope: scope)
+      Timetracker.query_to_list_sessions(%{user_id: user_id, month: month, year: year},
+        scope: scope
+      )
 
     %{total: total_duration} =
       Ash.aggregate!(total_query, {:total, :sum, field: :duration, default: 0}, scope: scope)

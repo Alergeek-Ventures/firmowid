@@ -27,6 +27,12 @@ defmodule Firmowid.Ash.Core.UserIdentity do
     user_resource Firmowid.Ash.Core.User
   end
 
+  code_interface do
+    define :read, action: :read
+    define :destroy, action: :destroy
+    define :upsert, action: :upsert
+  end
+
   actions do
     defaults [:read]
 

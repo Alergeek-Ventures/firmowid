@@ -3,12 +3,12 @@ defmodule Firmowid.Ash.Billing.SnapshotCalculator do
   Builds factual monthly billing snapshot attributes for one organization.
   """
 
+  alias Firmowid.Ash.Billing
   alias Firmowid.Ash.Billing.Month
   alias Firmowid.Ash.Billing.Snapshot
-  alias Firmowid.Ash.Core.Organization
-  alias Firmowid.Ash.Core.User
-  alias Firmowid.Ash.Finances.BankAccount
-  alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Finances
+  alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
 
@@ -25,7 +25,7 @@ defmodule Firmowid.Ash.Billing.SnapshotCalculator do
   def build_snapshot_attrs!(organization_id, month) do
     month = normalize_month(month)
     scope = org_scope(organization_id)
-    organization = Ash.get!(Organization, organization_id, scope: scope)
+    organization = Core.get_organization!(organization_id, scope: scope)
     {inserted_from, inserted_to} = warsaw_month_utc_bounds(month)
 
     %{
@@ -68,8 +68,8 @@ defmodule Firmowid.Ash.Billing.SnapshotCalculator do
   def existing_snapshot(organization_id, month) do
     scope = org_scope(organization_id)
 
-    Snapshot
-    |> Ash.Query.for_read(:by_month, %{month: normalize_month(month)}, scope: scope)
+    %{month: normalize_month(month)}
+    |> Billing.query_to_get_billing_snapshot_for_month(scope: scope)
     |> Ash.read_one!(scope: scope)
   end
 
@@ -85,26 +85,22 @@ defmodule Firmowid.Ash.Billing.SnapshotCalculator do
   end
 
   defp manual_external_invoices_count(scope, inserted_from, inserted_to) do
-    CostInvoice
-    |> Ash.Query.for_read(
-      :read,
-      %{inserted_from: inserted_from, inserted_to: inserted_to, source: :manual_import},
-      scope: scope
-    )
+    %{inserted_from: inserted_from, inserted_to: inserted_to, source: :manual_import}
+    |> Invoicing.query_to_list_cost_invoices(scope: scope)
     |> Ash.Query.filter(is_ksef_imported == false)
     |> Ash.count!(scope: scope)
   end
 
   defp synced_bank_accounts_count(scope) do
-    BankAccount
-    |> Ash.Query.for_read(:read, %{}, scope: scope)
+    %{}
+    |> Finances.query_to_list_bank_accounts(scope: scope)
     |> Ash.Query.filter(not is_nil(gocardless_id))
     |> Ash.count!(scope: scope)
   end
 
   defp active_non_owner_users_count(scope, owner_id) do
-    User
-    |> Ash.Query.for_read(:list, %{status: :active}, scope: scope)
+    %{status: :active}
+    |> Core.query_to_list_users(scope: scope)
     |> Ash.Query.filter(id != ^owner_id)
     |> Ash.count!(scope: scope)
   end

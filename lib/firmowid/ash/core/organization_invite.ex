@@ -13,6 +13,7 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Organization
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Resource
@@ -112,10 +113,9 @@ defmodule Firmowid.Ash.Core.OrganizationInvite do
                      ]
                  end
 
-               User
-               |> Ash.get!(user_id, bridge_opts)
-               |> Ash.Changeset.for_update(
-                 :set_organization,
+               user_id
+               |> Core.get_user!(bridge_opts)
+               |> Core.changeset_to_set_organization(
                  %{organization_id: organization_id},
                  bridge_opts
                )

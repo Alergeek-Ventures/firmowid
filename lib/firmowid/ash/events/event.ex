@@ -27,6 +27,16 @@ defmodule Firmowid.Ash.Events.Event do
     public_fields [:id, :record_id, :resource, :action, :occurred_at, :metadata]
   end
 
+  code_interface do
+    define :create, action: :create
+
+    define :latest_successful_sync,
+      action: :latest_successful_sync,
+      args: [:organization_id, :record_id, :resource]
+
+    define :replay, action: :replay
+  end
+
   actions do
     defaults [:read]
 

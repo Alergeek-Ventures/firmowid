@@ -40,6 +40,7 @@ defmodule Firmowid.Ash.Invoicing.Counterparty do
   end
 
   code_interface do
+    define :read, action: :read
     define :list, action: :list
     define :get, args: [:id], action: :by_id
     define :create

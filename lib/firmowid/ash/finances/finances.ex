@@ -56,8 +56,8 @@ defmodule Firmowid.Ash.Finances do
   @spec get_default_bank_account_for_currency(String.t(), Scope.t()) ::
           {:ok, BankAccount.t() | nil} | {:error, term()}
   def get_default_bank_account_for_currency(currency, %Scope{} = scope) do
-    BankAccount
-    |> Ash.Query.for_read(:read, %{}, scope: scope)
+    %{}
+    |> query_to_list_bank_accounts(scope: scope)
     |> Ash.Query.filter(is_default == true and currency == ^currency)
     |> Ash.Query.select([:id, :iban, :currency, :is_default])
     |> Ash.read_one(scope: scope)

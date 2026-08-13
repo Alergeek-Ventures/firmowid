@@ -112,6 +112,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     define :by_id, args: [:id], action: :by_id
     define :get, args: [:id], action: :by_id
     define :read, action: :read
+    define :read_global, action: :read_global
+    define :read_missing_description, action: :read_missing_description
     define :by_checksum, args: [:blob_checksum]
     define :create, action: :create
     define :toggle_skip, action: :toggle_skip

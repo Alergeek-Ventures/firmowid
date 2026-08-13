@@ -10,7 +10,6 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
   alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
-  alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Infrastructure.Controllers.FileDownload
   alias FirmowidWeb.Infrastructure.Utilities.QueryParams
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
@@ -122,8 +121,8 @@ defmodule FirmowidWeb.Timetracker.Controllers.Csv do
   end
 
   defp build_project_tasks_csv(project_id, month, year, scope) do
-    Session
-    |> Ash.Query.for_read(:list, %{project_id: project_id, month: month, year: year}, scope: scope)
+    %{project_id: project_id, month: month, year: year}
+    |> Timetracker.query_to_list_sessions(scope: scope)
     |> Ash.Query.load(:duration)
     |> Ash.Query.load(:user)
     |> Ash.Query.sort(start_datetime: :asc)

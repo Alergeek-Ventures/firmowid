@@ -37,6 +37,13 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceItem do
     repo Firmowid.Repo
   end
 
+  code_interface do
+    define :read, action: :read
+    define :create, action: :create
+    define :update, action: :update
+    define :destroy, action: :destroy
+  end
+
   actions do
     defaults [:read, :destroy]
 

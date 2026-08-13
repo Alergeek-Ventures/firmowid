@@ -26,6 +26,8 @@ defmodule Firmowid.Ash.Analysis.TagDefinition do
   end
 
   code_interface do
+    define :read, action: :read
+    define :destroy, action: :destroy
     define :create_tag_definition
     define :update_tag_definition
     define :destroy_tag_definition

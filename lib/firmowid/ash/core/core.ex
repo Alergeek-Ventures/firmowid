@@ -32,6 +32,7 @@ defmodule Firmowid.Ash.Core do
       define :add_sender_email, action: :add_sender_email
       define :remove_sender_email, action: :remove_sender_email
       define :regenerate_nickname, action: :regenerate_nickname
+      define :list_organizations, action: :read
     end
 
     resource User do

@@ -51,6 +51,9 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigest do
   end
 
   code_interface do
+    define :read, action: :read
+    define :read_global, action: :read_global
+    define :read_for_delivery, action: :read_for_delivery
     define :create_digest, action: :create_digest
     define :create_scheduled_digests, action: :create_scheduled_digests
     define :send_digest, action: :send_digest

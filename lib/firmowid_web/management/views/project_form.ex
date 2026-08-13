@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
 
   @impl true
@@ -113,8 +114,8 @@ defmodule FirmowidWeb.Management.Views.ProjectForm do
 
           # Users with sessions for this project (may include removed members)
           session_user_ids =
-            Firmowid.Ash.Timetracker.Session
-            |> Ash.Query.for_read(:list, %{project_id: project.id}, scope: scope)
+            %{project_id: project.id}
+            |> Timetracker.query_to_list_sessions(scope: scope)
             |> Ash.read!(scope: scope)
             |> MapSet.new(& &1.user_id)
 

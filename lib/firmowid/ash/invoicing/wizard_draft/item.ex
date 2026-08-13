@@ -28,6 +28,13 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft.Item do
     table :wizard_draft_items
   end
 
+  code_interface do
+    define :read, action: :read
+    define :create, action: :create
+    define :update, action: :update
+    define :destroy, action: :destroy
+  end
+
   actions do
     defaults [:read, :destroy]
 

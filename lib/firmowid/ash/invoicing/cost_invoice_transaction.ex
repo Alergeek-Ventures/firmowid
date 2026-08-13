@@ -21,6 +21,12 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTransaction do
     repo Firmowid.Repo
   end
 
+  code_interface do
+    define :read, action: :read
+    define :create, action: :create
+    define :destroy, action: :destroy
+  end
+
   actions do
     defaults [:read, :destroy, create: [:cost_invoice_id, :transaction_id]]
   end

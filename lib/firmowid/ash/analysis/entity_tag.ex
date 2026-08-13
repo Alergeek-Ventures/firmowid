@@ -48,12 +48,17 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
   end
 
   code_interface do
+    define :read, action: :read
+    define :destroy, action: :destroy
     define :for_sales_invoices
     define :for_cost_invoices
     define :for_transactions
     define :set_entity_category
     define :set_entity_project_tags
     define :clear_entity_tags
+    define :tag_sales_invoice, action: :tag_sales_invoice
+    define :tag_cost_invoice, action: :tag_cost_invoice
+    define :tag_transaction, action: :tag_transaction
   end
 
   actions do
@@ -292,12 +297,10 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
       |> Ash.Query.filter(resource_id == ^resource_id)
 
     %Ash.BulkResult{} =
-      Ash.bulk_destroy(query, :destroy, %{},
+      __MODULE__.destroy(query, %{},
         scope: scope,
         context: %{data_layer: %{table: table}},
-        strategy: :stream,
-        return_errors?: true,
-        stop_on_error?: true
+        bulk_options: [strategy: :stream, return_errors?: true, stop_on_error?: true]
       )
   end
 end

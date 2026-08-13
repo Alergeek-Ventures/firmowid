@@ -7,6 +7,7 @@ defmodule Firmowid.Ash.Core.Changes.SetOwnerOrganization do
   # (duplicated in OrganizationInvite and other changes)
   use Ash.Resource.Change
 
+  alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.SystemActor
 
@@ -29,15 +30,14 @@ defmodule Firmowid.Ash.Core.Changes.SetOwnerOrganization do
 
       owner =
         owner
-        |> Ash.Changeset.for_update(
-          :set_organization,
+        |> Core.changeset_to_set_organization(
           %{organization_id: organization.id},
           bridge_opts
         )
         |> Ash.update!()
 
       owner
-      |> Ash.Changeset.for_update(:update_role, %{role: :admin}, bridge_opts)
+      |> Core.changeset_to_update_role(%{role: :admin}, bridge_opts)
       |> Ash.update!()
 
       {:ok, organization}

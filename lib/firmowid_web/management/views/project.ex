@@ -15,7 +15,6 @@ defmodule FirmowidWeb.Management.Views.Project do
   alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Project, as: AshProject
-  alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Management.Utilities.CounterpartyHelpers
   alias FirmowidWeb.Management.Utilities.Navigation
@@ -66,12 +65,8 @@ defmodule FirmowidWeb.Management.Views.Project do
           user
           |> Map.put(:expanded, !user.expanded)
           |> Map.put_new_lazy(:sessions_with_duration, fn ->
-            Session
-            |> Ash.Query.for_read(
-              :list,
-              %{user_id: user_id, project_id: project.id, month: date.month, year: date.year},
-              scope: scope
-            )
+            %{user_id: user_id, project_id: project.id, month: date.month, year: date.year}
+            |> Timetracker.query_to_list_sessions(scope: scope)
             |> Ash.Query.load(:duration)
             |> Ash.read!(scope: scope)
             |> group_sessions_by_title()
@@ -135,8 +130,8 @@ defmodule FirmowidWeb.Management.Views.Project do
     scope = socket.assigns.ash_scope
 
     sessions =
-      Session
-      |> Ash.Query.for_read(:list, %{project_id: project.id}, scope: scope)
+      %{project_id: project.id}
+      |> Timetracker.query_to_list_sessions(scope: scope)
       |> Ash.Query.load(:duration)
       |> Ash.read!(scope: scope)
 
@@ -171,8 +166,8 @@ defmodule FirmowidWeb.Management.Views.Project do
 
     # Current month sessions
     current_sessions =
-      Session
-      |> Ash.Query.for_read(:list, %{project_id: project.id, month: date.month, year: date.year}, scope: scope)
+      %{project_id: project.id, month: date.month, year: date.year}
+      |> Timetracker.query_to_list_sessions(scope: scope)
       |> Ash.Query.load(:duration)
       |> Ash.read!(scope: scope)
 
@@ -180,12 +175,8 @@ defmodule FirmowidWeb.Management.Views.Project do
 
     # Previous month sessions (for delta)
     prev_sessions =
-      Session
-      |> Ash.Query.for_read(
-        :list,
-        %{project_id: project.id, month: previous_month.month, year: previous_month.year},
-        scope: scope
-      )
+      %{project_id: project.id, month: previous_month.month, year: previous_month.year}
+      |> Timetracker.query_to_list_sessions(scope: scope)
       |> Ash.Query.load(:duration)
       |> Ash.read!(scope: scope)
 

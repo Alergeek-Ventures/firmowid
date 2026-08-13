@@ -12,7 +12,6 @@ defmodule FirmowidWeb.Management.Views.Employees do
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker
-  alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Core.Endpoint
   alias FirmowidWeb.Management.Utilities.Navigation
   alias FirmowidWeb.Timetracker.Utilities.Navigation, as: TimetrackerNavigation
@@ -91,8 +90,8 @@ defmodule FirmowidWeb.Management.Views.Employees do
 
       # 2. Time worked per user this month
       sessions =
-        Session
-        |> Ash.Query.for_read(:list, %{month: date.month, year: date.year}, scope: scope)
+        %{month: date.month, year: date.year}
+        |> Timetracker.query_to_list_sessions(scope: scope)
         |> Ash.Query.load(:duration)
         |> Ash.read!(scope: scope)
 

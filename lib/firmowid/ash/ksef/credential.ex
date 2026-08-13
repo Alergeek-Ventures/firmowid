@@ -75,6 +75,7 @@ defmodule Firmowid.Ash.Ksef.Credential do
   end
 
   code_interface do
+    define :read, action: :read
     define :destroy
     define :prepare_enrollment
     define :wait_for_certificate
@@ -88,6 +89,7 @@ defmodule Firmowid.Ash.Ksef.Credential do
     define :get_internal, action: :internal, get?: true, not_found_error?: false
     define :all_organization_ids, action: :all_organization_ids
     define :refreshable_certificates, action: :refreshable_certificates
+    define :backfill_expiration_metadata, action: :backfill_expiration_metadata
     define :authenticate_with_token, args: [:ksef_token]
 
     define :authenticate_with_uploaded_certificate,

@@ -3,6 +3,7 @@ defmodule FirmowidWeb.Billing.Utilities.MonthContext do
   Builds shared billing month context for admin and settings screens.
   """
 
+  alias Firmowid.Ash.Billing
   alias Firmowid.Ash.Billing.Month
   alias Firmowid.Ash.Billing.Snapshot
   alias Firmowid.Ash.Billing.SnapshotCalculator
@@ -47,8 +48,8 @@ defmodule FirmowidWeb.Billing.Utilities.MonthContext do
   """
   @spec list_snapshots(binary(), map()) :: [Snapshot.t()]
   def list_snapshots(organization_id, current_user) do
-    Snapshot
-    |> Ash.Query.for_read(:read_global, %{}, actor: current_user)
+    %{}
+    |> Billing.query_to_list_billing_snapshots_global(actor: current_user)
     |> Ash.Query.filter(organization_id == ^organization_id)
     |> Ash.Query.sort(month: :desc)
     |> Ash.read!(actor: current_user)

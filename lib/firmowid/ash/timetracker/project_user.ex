@@ -20,6 +20,7 @@ defmodule Firmowid.Ash.Timetracker.ProjectUser do
   end
 
   code_interface do
+    define :read, action: :read
     define :create
     define :destroy
   end

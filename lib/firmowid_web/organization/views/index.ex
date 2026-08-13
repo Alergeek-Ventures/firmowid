@@ -8,7 +8,6 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.Organization
-  alias Firmowid.Ash.Core.OrganizationInvite
 
   @impl true
   def render(assigns) do
@@ -199,8 +198,8 @@ defmodule FirmowidWeb.Organization.Views.Index do
 
     # Find invite by code (unscoped read - invite codes are unique)
     invite =
-      OrganizationInvite
-      |> Ash.Query.for_read(:read_by_code, %{invite_code: trimmed_code}, actor: user)
+      %{invite_code: trimmed_code}
+      |> Core.query_to_read_invite_by_code(actor: user)
       |> Ash.Query.load([:organization])
       |> Ash.read_one!(actor: user)
 

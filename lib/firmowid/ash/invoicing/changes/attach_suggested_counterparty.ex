@@ -30,8 +30,8 @@ defmodule Firmowid.Ash.Invoicing.Changes.AttachSuggestedCounterparty do
   end
 
   defp get_counterparty(counterparty_id, actor, tenant) do
-    Counterparty
-    |> Ash.Query.for_read(:by_id, %{id: counterparty_id}, actor: actor, tenant: tenant)
+    %{id: counterparty_id}
+    |> Counterparty.query_to_get(actor: actor, tenant: tenant)
     |> Ash.read_one(actor: actor, tenant: tenant)
   end
 

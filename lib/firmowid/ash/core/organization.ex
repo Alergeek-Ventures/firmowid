@@ -27,6 +27,10 @@ defmodule Firmowid.Ash.Core.Organization do
     repo Firmowid.Repo
   end
 
+  code_interface do
+    define :destroy, action: :destroy
+  end
+
   actions do
     defaults [:read]
 

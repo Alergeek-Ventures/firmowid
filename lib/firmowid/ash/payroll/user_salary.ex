@@ -26,6 +26,10 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
     repo Firmowid.Repo
   end
 
+  code_interface do
+    define :destroy, action: :destroy
+  end
+
   actions do
     defaults [:destroy]
 
@@ -75,16 +79,16 @@ defmodule Firmowid.Ash.Payroll.UserSalary do
 
       run fn input, context ->
         result =
-          Ash.bulk_create(
+          Firmowid.Ash.Payroll.create_salary(
             input.arguments.entries,
-            __MODULE__,
-            :create,
             actor: context.actor,
             tenant: context.tenant,
-            transaction: :all,
-            return_records?: true,
-            return_errors?: true,
-            stop_on_error?: true
+            bulk_options: [
+              transaction: :all,
+              return_records?: true,
+              return_errors?: true,
+              stop_on_error?: true
+            ]
           )
 
         case result do

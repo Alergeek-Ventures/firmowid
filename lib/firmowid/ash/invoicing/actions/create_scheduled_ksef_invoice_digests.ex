@@ -4,7 +4,6 @@ defmodule Firmowid.Ash.Invoicing.Actions.CreateScheduledKsefInvoiceDigests do
   """
   use Ash.Resource.Actions.Implementation
 
-  alias Firmowid.Ash.Core.Organization
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.KsefInvoiceDigest
   alias Firmowid.Ash.Invoicing.Workers.SendKsefInvoiceDigestWorker
@@ -31,8 +30,8 @@ defmodule Firmowid.Ash.Invoicing.Actions.CreateScheduledKsefInvoiceDigests do
     cross_tenant_actor = %SystemActor{org_id: nil, role: :cross_tenant_reader}
 
     created_count =
-      Organization
-      |> Ash.read!(actor: cross_tenant_actor)
+      [actor: cross_tenant_actor]
+      |> Firmowid.Ash.Core.list_organizations!()
       |> filter_organizations(organization_ids)
       |> Enum.reduce(0, fn organization, acc ->
         case create_digest_for_organization(

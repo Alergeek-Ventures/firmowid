@@ -17,6 +17,10 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
     repo Firmowid.Repo
   end
 
+  code_interface do
+    define :destroy, action: :destroy
+  end
+
   actions do
     defaults [:destroy]
 

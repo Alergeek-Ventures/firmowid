@@ -233,8 +233,8 @@ defmodule Firmowid.Ash.Blobs do
   end
 
   def get_processing_blobs_count(processing_target, scope) do
-    Blob
-    |> Ash.Query.for_read(:list_processing, %{processing_target: processing_target}, scope: scope)
+    %{processing_target: processing_target}
+    |> Blob.query_to_list_processing(scope: scope)
     |> Ash.count!(scope: scope)
   end
 end

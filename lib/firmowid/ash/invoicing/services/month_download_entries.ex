@@ -6,7 +6,7 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntries do
   while keeping HTTP streaming concerns in the web controller.
   """
 
-  alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Scope
 
@@ -36,16 +36,12 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntries do
     ash_opts = [scope: scope]
 
     cost_invoices =
-      CostInvoice
-      |> Ash.Query.for_read(
-        :read,
-        %{
-          date_from: date_range_from,
-          date_to: date_range_to,
-          date_field: :any
-        },
-        ash_opts
-      )
+      %{
+        date_from: date_range_from,
+        date_to: date_range_to,
+        date_field: :any
+      }
+      |> Invoicing.query_to_list_cost_invoices(ash_opts)
       |> Ash.Query.filter(not is_nil(blob_id))
       |> Ash.Query.load([:effective_seller_display_name, blob: [:url]])
       |> Ash.read!(ash_opts)

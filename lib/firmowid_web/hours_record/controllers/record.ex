@@ -4,7 +4,6 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
 
   alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
-  alias Firmowid.Ash.Timetracker.Session, as: AshSession
   alias FirmowidWeb.Infrastructure.Utilities.PdfHelpers
 
   @dialyzer {:no_return, pdf: 2}
@@ -31,9 +30,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
     end_date = Date.end_of_month(date_parsed)
 
     session_query =
-      Ash.Query.for_read(
-        AshSession,
-        :list,
+      Timetracker.query_to_list_sessions(
         %{
           month: date_parsed.month,
           year: date_parsed.year,
@@ -101,9 +98,7 @@ defmodule FirmowidWeb.HoursRecord.Controllers.Record do
     end_date = Date.end_of_month(date)
 
     session_query =
-      Ash.Query.for_read(
-        AshSession,
-        :list,
+      Timetracker.query_to_list_sessions(
         %{month: date.month, year: date.year, user_id: conn.assigns.current_user.id},
         scope: scope
       )

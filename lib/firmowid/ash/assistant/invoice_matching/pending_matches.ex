@@ -109,13 +109,12 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatching.PendingMatches do
   end
 
   defp cast_pending_match(message, transaction_ids, invoice_refs) do
-    PendingMatch
-    |> Ash.Changeset.for_create(:create, %{
+    %{
       message: message,
       transaction_ids: transaction_ids,
       invoice_refs: invoice_refs
-    })
-    |> Ash.create()
+    }
+    |> Ash.create([])
     |> case do
       {:ok, pending_match} -> {:ok, pending_match}
       {:error, _error} -> {:error, "Nie udało się zbudować propozycji dopasowania."}

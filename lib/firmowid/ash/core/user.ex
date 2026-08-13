@@ -97,6 +97,19 @@ defmodule Firmowid.Ash.Core.User do
     end
   end
 
+  code_interface do
+    define :destroy, action: :destroy
+    define :log_out_everywhere, action: :log_out_everywhere
+    define :confirm, action: :confirm
+    define :sign_in_with_remember_me, action: :sign_in_with_remember_me
+    define :password_reset_with_password, action: :password_reset_with_password
+    define :request_password_reset_with_password, action: :request_password_reset_with_password
+    define :sign_in_with_token, action: :sign_in_with_token
+    define :sign_in_with_password, action: :sign_in_with_password
+    define :get_by_subject, action: :get_by_subject
+    define :register_with_google, action: :register_with_google, args: [:user_info, :oauth_tokens]
+  end
+
   actions do
     defaults [:read]
 

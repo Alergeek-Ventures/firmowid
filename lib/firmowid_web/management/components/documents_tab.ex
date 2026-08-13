@@ -10,7 +10,7 @@ defmodule FirmowidWeb.Management.Components.DocumentsTab do
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Payroll
-  alias Firmowid.Ash.Timetracker.HoursRecord
+  alias Firmowid.Ash.Timetracker
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
   require Logger
@@ -261,8 +261,8 @@ defmodule FirmowidWeb.Management.Components.DocumentsTab do
     %{search: search, type_filter: type_filter} = filters
 
     hours_record_docs =
-      HoursRecord
-      |> Ash.Query.for_read(:list, %{user_id: user_id}, scope: scope)
+      %{user_id: user_id}
+      |> Timetracker.query_to_list_hours_records(scope: scope)
       |> Ash.read!(scope: scope)
       |> Enum.map(fn doc ->
         %{

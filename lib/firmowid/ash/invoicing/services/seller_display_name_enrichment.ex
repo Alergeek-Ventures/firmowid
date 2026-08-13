@@ -65,8 +65,8 @@ defmodule Firmowid.Ash.Invoicing.Services.SellerDisplayNameEnrichment do
 
   @spec historical_candidates_query(Ash.UUID.t() | nil, keyword()) :: Ash.Query.t()
   defp historical_candidates_query(current_cost_invoice_id, ash_opts) do
-    CostInvoice
-    |> Ash.Query.for_read(:read, %{}, ash_opts)
+    %{}
+    |> CostInvoice.query_to_read(ash_opts)
     |> Ash.Query.select([:id, :seller, :seller_display_name, :seller_nip, :inserted_at])
     |> Ash.Query.filter(Ash.Expr.expr(not is_nil(seller_display_name) and seller_display_name != ""))
     |> maybe_exclude_current_invoice(current_cost_invoice_id)

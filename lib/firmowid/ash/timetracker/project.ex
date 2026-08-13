@@ -30,6 +30,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
   end
 
   code_interface do
+    define :read, action: :read
     define :get, get_by: [:id]
     define :list
     define :create
@@ -37,6 +38,7 @@ defmodule Firmowid.Ash.Timetracker.Project do
     define :archive
     define :unarchive
     define :destroy
+    define :link_tag, action: :link_tag
   end
 
   actions do

@@ -341,8 +341,8 @@ defmodule FirmowidWeb.Invoicing.Views.IndexTest do
   end
 
   defp create_requisition(user, requisition_id) do
-    Requisition
-    |> Ash.Changeset.for_create(:persist, %{id: requisition_id},
+    %{id: requisition_id}
+    |> Requisition.changeset_to_persist(
       tenant: user.organization_id,
       actor: user,
       authorize?: false

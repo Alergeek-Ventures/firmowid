@@ -36,6 +36,7 @@ defmodule Firmowid.Ash.Timetracker do
 
     resource Session do
       define :list_sessions, action: :list
+      define :get_session_by_id, action: :read, get_by: [:id]
     end
   end
 
@@ -64,8 +65,8 @@ defmodule Firmowid.Ash.Timetracker do
   """
   @spec months_with_sessions(map(), keyword()) :: [NaiveDateTime.t()]
   def months_with_sessions(filters, scope) do
-    Session
-    |> Ash.Query.for_read(:list, filters, scope: scope)
+    filters
+    |> query_to_list_sessions(scope: scope)
     |> Ash.Query.distinct(:month_start)
     |> Ash.Query.distinct_sort(month_start: :desc)
     |> Ash.Query.sort(month_start: :desc)
@@ -75,8 +76,8 @@ defmodule Firmowid.Ash.Timetracker do
   end
 
   def years_with_leave_requests(user_id, scope) do
-    LeaveRequest
-    |> Ash.Query.for_read(:list_for_user, %{user_id: user_id}, scope: scope)
+    %{user_id: user_id}
+    |> query_to_list_leave_requests_for_user(scope: scope)
     |> Ash.Query.filter(status != :pending)
     |> Ash.Query.select([:starts_on, :ends_on])
     |> Ash.read!(scope: scope)

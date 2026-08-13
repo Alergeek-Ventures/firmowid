@@ -135,8 +135,8 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
                |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
 
       persisted =
-        Transaction
-        |> Ash.read!(actor: ctx.actor, tenant: ctx.org_id)
+        %{}
+        |> Finances.list_transactions!(actor: ctx.actor, tenant: ctx.org_id)
         |> Enum.filter(&(&1.bank_account_id == ctx.bank_account_1.id))
 
       assert Enum.sort(Enum.map(persisted, & &1.internal_transaction_id)) == ["hist-1", "hist-2"]
@@ -163,8 +163,8 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
                |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
 
       persisted_ids =
-        Transaction
-        |> Ash.read!(actor: ctx.actor, tenant: ctx.org_id)
+        %{}
+        |> Finances.list_transactions!(actor: ctx.actor, tenant: ctx.org_id)
         |> Enum.filter(&(&1.bank_account_id == ctx.bank_account_1.id))
         |> Enum.map(& &1.internal_transaction_id)
         |> Enum.sort()
@@ -191,7 +191,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
                |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
 
       assert {:ok, refreshed} =
-               Ash.get(Requisition, requisition.id,
+               Finances.get_requisition(requisition.id,
                  actor: ctx.user,
                  tenant: ctx.org_id
                )
@@ -256,8 +256,8 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
                |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
 
       persisted =
-        Transaction
-        |> Ash.read!(actor: ctx.actor, tenant: ctx.org_id)
+        %{}
+        |> Finances.list_transactions!(actor: ctx.actor, tenant: ctx.org_id)
         |> Enum.filter(&(&1.bank_account_id == ctx.bank_account_1.id))
 
       assert length(persisted) == 1
@@ -320,8 +320,8 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
                |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
 
       persisted =
-        Transaction
-        |> Ash.read!(actor: ctx.actor, tenant: ctx.org_id)
+        %{}
+        |> Finances.list_transactions!(actor: ctx.actor, tenant: ctx.org_id)
         |> Enum.filter(&(&1.bank_account_id == ctx.bank_account_1.id))
 
       assert length(persisted) == 1

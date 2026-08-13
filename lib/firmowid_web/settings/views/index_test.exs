@@ -68,8 +68,8 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
     admin = admin_fixture()
 
     {:ok, _requisition} =
-      Requisition
-      |> Ash.Changeset.for_create(:persist, %{id: Ecto.UUID.generate()},
+      %{id: Ecto.UUID.generate()}
+      |> Requisition.changeset_to_persist(
         tenant: admin.organization_id,
         actor: admin,
         authorize?: false

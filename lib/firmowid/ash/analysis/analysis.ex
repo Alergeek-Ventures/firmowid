@@ -29,6 +29,7 @@ defmodule Firmowid.Ash.Analysis do
 
   resources do
     resource TagDefinition
+
     resource EntityTag
   end
 

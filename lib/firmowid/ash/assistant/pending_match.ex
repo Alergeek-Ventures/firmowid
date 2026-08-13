@@ -9,6 +9,10 @@ defmodule Firmowid.Ash.Assistant.PendingMatch do
 
   alias Firmowid.Ash.Assistant.PendingMatch.InvoiceRef
 
+  code_interface do
+    define :create, action: :create
+  end
+
   actions do
     defaults create: [:message, :transaction_ids, :invoice_refs]
 

@@ -11,7 +11,6 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker
-  alias Firmowid.Ash.Timetracker.Session
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
 
   @impl true
@@ -28,8 +27,8 @@ defmodule FirmowidWeb.Management.Components.ProjectsTab do
 
     # 1. Sessions for this user+month, grouped by project+title
     sessions =
-      Session
-      |> Ash.Query.for_read(:list, %{user_id: user_id, month: date.month, year: date.year}, scope: scope)
+      %{user_id: user_id, month: date.month, year: date.year}
+      |> Timetracker.query_to_list_sessions(scope: scope)
       |> Ash.Query.load(:duration)
       |> Ash.read!(scope: scope)
 

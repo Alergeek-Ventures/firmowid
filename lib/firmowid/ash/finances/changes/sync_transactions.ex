@@ -17,6 +17,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
   import Ash.Expr
 
   alias Firmowid.Ash.Events
+  alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.DuplicateTransactionMatcher
   alias Firmowid.Ash.Finances.GoCardless.ApiClient
   alias Firmowid.Ash.Finances.GoCardless.TransactionParser
@@ -84,9 +85,10 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
   end
 
   defp fetch_parent_requisition(requisition_id, scope) do
-    Ash.get(Requisition, requisition_id,
+    Finances.get_requisition(requisition_id,
       actor: scope.actor,
-      tenant: scope.tenant
+      tenant: scope.tenant,
+      not_found_error?: false
     )
   end
 
@@ -157,17 +159,17 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
 
   defp do_upsert_transactions(transactions, bank_account, scope) do
     result =
-      Ash.bulk_create(
+      Finances.upsert_transaction_from_sync(
         transactions,
-        Transaction,
-        :upsert_from_sync,
         scope: scope,
         upsert?: true,
-        return_errors?: true,
-        stop_on_error?: false,
-        batch_size: 100,
-        notify?: true,
-        actor: %SystemActor{org_id: bank_account.organization_id, role: :bank_sync}
+        actor: %SystemActor{org_id: bank_account.organization_id, role: :bank_sync},
+        bulk_options: [
+          return_errors?: true,
+          stop_on_error?: false,
+          batch_size: 100,
+          notify?: true
+        ]
       )
 
     case result do

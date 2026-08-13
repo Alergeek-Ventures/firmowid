@@ -10,7 +10,6 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CountryCodes
-  alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.Services.CounterpartyInvoiceSuggestions
   alias FirmowidWeb.Invoicing.Utilities.Navigation, as: InvoicingNavigation
   alias FirmowidWeb.Management.Utilities.CounterpartyHelpers
@@ -538,8 +537,8 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   defp list_counterparty_invoices(counterparty_id, invoice_filter, scope) do
     args = maybe_put_reconciliation(%{submission: :confirmed}, invoice_filter)
 
-    SalesInvoice
-    |> Ash.Query.for_read(:read, args, scope: scope)
+    args
+    |> Invoicing.query_to_list_sales_invoices(scope: scope)
     |> Ash.Query.filter(counterparty_id == ^counterparty_id)
     |> Ash.Query.load([:gross_value, :reconciliation_status])
     |> Ash.read!(scope: scope)

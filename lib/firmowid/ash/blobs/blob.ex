@@ -62,6 +62,21 @@ defmodule Firmowid.Ash.Blobs.Blob do
     end
   end
 
+  code_interface do
+    define :read_global, action: :read_global
+    define :list_processing, action: :list_processing, args: [:processing_target]
+    define :mark_processing, action: :mark_processing
+    define :mark_processing_pending, action: :mark_processing_pending
+    define :mark_processing_succeeded, action: :mark_processing_succeeded
+
+    define :mark_processing_failed,
+      action: :mark_processing_failed,
+      args: [:error, :error_code, :error_message]
+
+    define :process_document_blob, action: :process_document_blob
+    define :cleanup_failed_document_blob, action: :cleanup_failed_document_blob
+  end
+
   actions do
     defaults [:read]
 

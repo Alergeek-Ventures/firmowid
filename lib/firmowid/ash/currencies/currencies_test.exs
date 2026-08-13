@@ -171,8 +171,8 @@ defmodule Firmowid.Ash.Currencies.CurrenciesTest do
 
       # Read expired entries — should find only the expired one
       %{results: expired} =
-        Ash.read!(ExchangeRate,
-          action: :read_expired,
+        ExchangeRate.read_expired!(
+          %{},
           authorize?: false,
           actor: %{},
           page: [limit: 100]

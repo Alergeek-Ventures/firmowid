@@ -24,7 +24,7 @@ defmodule Firmowid.Ash.Assistant.Actions.ReadTransactions do
   import Ash.Expr
 
   alias Firmowid.Ash.Assistant.Actions.SearchSupport
-  alias Firmowid.Ash.Finances.Transaction
+  alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Scope
 
   require Ash.Query
@@ -64,8 +64,8 @@ defmodule Firmowid.Ash.Assistant.Actions.ReadTransactions do
         })
 
       transactions =
-        Transaction
-        |> Ash.Query.for_read(:read, args, scope: scope)
+        args
+        |> Finances.query_to_list_transactions(scope: scope)
         |> maybe_filter_amount(:amount_gt, amount_gt)
         |> maybe_filter_amount(:amount_lt, amount_lt)
         |> Ash.Query.limit(SearchSupport.normalized_limit(params[:limit], @max_limit))

@@ -27,7 +27,7 @@ defmodule Firmowid.Ash.Finances.RequisitionTest do
                |> Ash.update(tenant: user.organization_id, actor: user)
 
       assert {:ok, refreshed} =
-               Ash.get(Requisition, requisition.id,
+               Firmowid.Ash.Finances.get_requisition(requisition.id,
                  tenant: user.organization_id,
                  actor: user
                )
@@ -97,8 +97,8 @@ defmodule Firmowid.Ash.Finances.RequisitionTest do
   end
 
   defp create_requisition(user) do
-    Requisition
-    |> Ash.Changeset.for_create(:persist, %{id: Ecto.UUID.generate()},
+    %{id: Ecto.UUID.generate()}
+    |> Requisition.changeset_to_persist(
       tenant: user.organization_id,
       actor: user,
       authorize?: false

@@ -23,6 +23,11 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceEmailDelivery do
     end
   end
 
+  code_interface do
+    define :read, action: :read
+    define :record_delivery, action: :record_delivery
+  end
+
   actions do
     defaults [:read]
 

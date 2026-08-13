@@ -28,6 +28,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
   end
 
   code_interface do
+    define :read, action: :read
     define :list_user_sessions
     define :get_current, not_found_error?: false
     define :most_recent

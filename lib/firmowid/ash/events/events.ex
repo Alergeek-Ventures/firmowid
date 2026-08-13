@@ -31,12 +31,8 @@ defmodule Firmowid.Ash.Events do
     read_opts = Keyword.delete(opts, :before)
 
     query =
-      Event
-      |> Ash.Query.for_read(
-        :latest_successful_sync,
-        %{organization_id: organization_id, record_id: record_id, resource: resource},
-        read_opts
-      )
+      organization_id
+      |> Event.query_to_latest_successful_sync(record_id, resource, read_opts)
       |> apply_sync_before_filter(Keyword.get(opts, :before))
       |> Ash.Query.limit(1)
 
@@ -58,6 +54,10 @@ defmodule Firmowid.Ash.Events do
   resources do
     resource Event do
       define :list_events, action: :read
+
+      define :latest_successful_sync,
+        action: :latest_successful_sync,
+        args: [:organization_id, :record_id, :resource]
     end
   end
 

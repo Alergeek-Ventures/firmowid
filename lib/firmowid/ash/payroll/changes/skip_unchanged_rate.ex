@@ -4,7 +4,7 @@ defmodule Firmowid.Ash.Payroll.Changes.SkipUnchangedRate do
   """
   use Ash.Resource.Change
 
-  alias Firmowid.Ash.Payroll.UserSalary
+  alias Firmowid.Ash.Payroll
 
   @impl true
   def change(changeset, _opts, context) do
@@ -25,8 +25,8 @@ defmodule Firmowid.Ash.Payroll.Changes.SkipUnchangedRate do
   defp current_salary(user_id, context) do
     opts = Ash.Context.to_opts(context)
 
-    UserSalary
-    |> Ash.Query.for_read(:read, %{user_id: user_id, active_at: Date.utc_today()}, opts)
+    %{user_id: user_id, active_at: Date.utc_today()}
+    |> Payroll.query_to_list_salaries(opts)
     |> Ash.Query.limit(1)
     |> Ash.read_one!(opts)
   end
