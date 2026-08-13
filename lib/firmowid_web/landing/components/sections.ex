@@ -1173,10 +1173,10 @@ defmodule FirmowidWeb.Landing.Components.Sections do
     )
   end
 
-  defp included_usage_line(%{included_units: 0}, _singular, _plural_few, _plural_many), do: nil
+  defp included_usage_line(%{included_units: 0}, _singular, _paucal, _plural), do: nil
 
-  defp included_usage_line(%{included_units: included_units}, singular, plural_few, plural_many) do
-    "#{PolishQuantity.quantity(included_units, singular, plural_few, plural_many)} / mies."
+  defp included_usage_line(%{included_units: included_units}, singular, paucal, plural) do
+    "#{PolishQuantity.quantity(included_units, singular, paucal, plural)} / mies."
   end
 
   defp money_with_currency(nil), do: nil

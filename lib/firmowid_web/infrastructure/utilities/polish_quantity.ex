@@ -4,7 +4,7 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PolishQuantity do
   """
 
   @doc """
-  Formats a quantity with its singular, plural-few, or plural-many noun form.
+  Formats a quantity with its singular, paucal, or plural noun form.
 
   ## Examples
 
@@ -15,15 +15,15 @@ defmodule FirmowidWeb.Infrastructure.Utilities.PolishQuantity do
       "22 jabłka"
   """
   @spec quantity(integer(), String.t(), String.t(), String.t()) :: String.t()
-  def quantity(value, singular, plural_few, plural_many) when is_integer(value) do
-    "#{value} #{noun_form(value, singular, plural_few, plural_many)}"
+  def quantity(value, singular, paucal, plural) when is_integer(value) do
+    "#{value} #{noun_form(value, singular, paucal, plural)}"
   end
 
-  defp noun_form(value, singular, _plural_few, _plural_many) when abs(value) == 1, do: singular
+  defp noun_form(value, singular, _paucal, _plural) when abs(value) == 1, do: singular
 
-  defp noun_form(value, _singular, _plural_few, plural_many) when rem(abs(value), 100) in 12..14, do: plural_many
+  defp noun_form(value, _singular, _paucal, plural) when rem(abs(value), 100) in 12..14, do: plural
 
-  defp noun_form(value, _singular, plural_few, _plural_many) when rem(abs(value), 10) in 2..4, do: plural_few
+  defp noun_form(value, _singular, paucal, _plural) when rem(abs(value), 10) in 2..4, do: paucal
 
-  defp noun_form(_value, _singular, _plural_few, plural_many), do: plural_many
+  defp noun_form(_value, _singular, _paucal, plural), do: plural
 end
