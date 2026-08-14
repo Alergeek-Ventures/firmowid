@@ -18,8 +18,8 @@ defmodule Firmowid.Ash.Invoicing.Workers.SendKsefInvoiceDigestWorker do
     actor = %SystemActor{org_id: organization_id, role: :ksef_digest}
 
     digest =
-      [tenant: organization_id, actor: actor]
-      |> KsefInvoiceDigest.query_to_read_for_delivery()
+      %{}
+      |> KsefInvoiceDigest.query_to_read_for_delivery(tenant: organization_id, actor: actor)
       |> Ash.Query.filter(id == ^digest_id)
       |> Ash.read_one(tenant: organization_id, actor: actor)
 
