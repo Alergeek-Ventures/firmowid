@@ -48,17 +48,17 @@ defmodule Firmowid.Ash.Analysis.EntityTag do
   end
 
   code_interface do
-    define :read, action: :read
-    define :destroy, action: :destroy
+    define :read
+    define :destroy
     define :for_sales_invoices
     define :for_cost_invoices
     define :for_transactions
     define :set_entity_category
     define :set_entity_project_tags
     define :clear_entity_tags
-    define :tag_sales_invoice, action: :tag_sales_invoice
-    define :tag_cost_invoice, action: :tag_cost_invoice
-    define :tag_transaction, action: :tag_transaction
+    define :tag_sales_invoice
+    define :tag_cost_invoice
+    define :tag_transaction
   end
 
   actions do
