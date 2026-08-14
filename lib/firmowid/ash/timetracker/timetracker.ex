@@ -92,7 +92,7 @@ defmodule Firmowid.Ash.Timetracker do
   end
 
   def years_with_leave_requests(user_id, scope) do
-    %{user_id: user_id}
+    user_id
     |> query_to_list_leave_requests_for_user(scope: scope)
     |> Ash.Query.filter(status != :pending)
     |> Ash.Query.select([:starts_on, :ends_on])

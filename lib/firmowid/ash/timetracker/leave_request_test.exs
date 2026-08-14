@@ -159,4 +159,17 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestTest do
       assert loaded.accepted_leave_days_for_year == 3
     end
   end
+
+  describe "years_with_leave_requests/2" do
+    test "lists years for an employee", %{
+      user: user,
+      employee_scope: employee_scope,
+      admin_scope: admin_scope
+    } do
+      request = create_request!(employee_scope, %{})
+      assert {:ok, _} = Timetracker.accept_leave_request(request.id, scope: admin_scope)
+
+      assert Timetracker.years_with_leave_requests(user.id, admin_scope) == [today().year]
+    end
+  end
 end
