@@ -2,13 +2,11 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob do
   @moduledoc false
   use Ash.Resource.Change
 
-  alias Ash.Error.Invalid
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
 
   require Ash.Query
-  require Logger
 
   @impl true
   def change(changeset, _opts, _context) do
@@ -26,11 +24,14 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob do
         :ok ->
           {:ok, blob}
 
+        {:error, :invalid_document} ->
+          case handle_invalid_document(blob, opts) do
+            {:ok, _updated_blob} -> {:ok, blob}
+            {:error, reason} -> {:error, reason}
+          end
+
         {:error, reason} ->
-          Logger.error("Failed to process document blob #{blob.id}: #{inspect(reason)}")
-          report_failure(reason, blob)
-          _ = handle_failure(blob, reason, opts)
-          {:ok, blob}
+          {:error, reason}
       end
     end)
   end
@@ -42,12 +43,9 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob do
          {:ok, _updated_blob} <- mark_succeeded(blob, opts) do
       :ok
     end
-  rescue
-    error ->
-      {:error, error}
   end
 
-  # Register new processing targets in process_document_blob and get_error_message functions
+  # Register new processing targets in process_document_blob and invalid_document_error_message functions
 
   defp process_document_blob(:cost_invoice, blob_url, blob, opts),
     do: Firmowid.Ash.Blobs.Utils.ProcessCostInvoiceBlob.run_processing(blob_url, blob, opts)
@@ -57,14 +55,9 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob do
 
   defp process_document_blob(_, _blob_url, _blob, _opts), do: {:error, :unsupported_processing_target}
 
-  defp get_error_message(:invalid_document, :cost_invoice),
-    do: "Plik nie zawiera danych wymaganych dla faktury kosztowej."
+  defp invalid_document_error_message(:cost_invoice), do: "Plik nie zawiera danych wymaganych dla faktury kosztowej."
 
-  defp get_error_message(:invalid_document, :employment_contract),
-    do: "Plik nie zawiera danych wymaganych dla umowy o pracę."
-
-  defp get_error_message(_reason, _target),
-    do: "Wystąpił problem po naszej stronie podczas przetwarzania pliku. Został zgłoszony - spróbuj ponownie później."
+  defp invalid_document_error_message(:employment_contract), do: "Plik nie zawiera danych wymaganych dla umowy o pracę."
 
   defp ensure_processing(blob, opts) do
     blob
@@ -83,19 +76,18 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob do
     |> Ash.update(opts)
   end
 
-  defp handle_failure(blob, reason, opts) do
+  defp handle_invalid_document(blob, opts) do
     failure = %{
-      error: normalize_error(reason),
-      error_code: normalize_error_code(reason),
-      error_message: get_error_message(reason, blob.processing_target)
+      error: ":invalid_document",
+      error_code: "invalid_document",
+      error_message: invalid_document_error_message(blob.processing_target)
     }
 
     case Blob
          |> Ash.Query.filter(id == ^blob.id)
          |> Ash.read_one(opts) do
       {:ok, nil} ->
-        Logger.warning("Blob #{blob.id} not found when trying to mark processing as failed")
-        {:ok, nil}
+        {:error, :blob_not_found}
 
       {:ok, blob_record} ->
         blob_record
@@ -105,32 +97,5 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob do
       {:error, error} ->
         {:error, error}
     end
-  end
-
-  defp normalize_error(:invalid_document), do: ":invalid_document"
-  defp normalize_error(%Invalid{} = error), do: Exception.message(error)
-  defp normalize_error(reason), do: inspect(reason)
-
-  defp normalize_error_code(:invalid_document), do: "invalid_document"
-  defp normalize_error_code(_reason), do: "processing_failed"
-
-  defp report_failure(:invalid_document, _blob), do: :ok
-
-  defp report_failure(reason, blob) do
-    Sentry.capture_exception(RuntimeError.exception("Document blob processing failed"),
-      tags: %{
-        processing_target: blob.processing_target,
-        source: "document_blob_processing"
-      },
-      extra: %{
-        blob_id: blob.id,
-        error: inspect(reason),
-        organization_id: blob.organization_id,
-        original_filename: blob.original_filename
-      }
-    )
-  rescue
-    sentry_error ->
-      Logger.warning("Failed to report document blob processing error to Sentry: #{Exception.message(sentry_error)}")
   end
 end
