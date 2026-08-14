@@ -136,7 +136,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   attr :lang, :atom, default: :pl
 
   def invoice_amount(assigns) do
-    assigns = assign(assigns, :is_refund, Decimal.gt?(Money.to_decimal(assigns.total_amount), 0))
+    assigns = assign(assigns, :is_refund, refund?(assigns))
 
     ~H"""
     <div class="flex flex-col items-end justify-between gap-2 pl-1">
@@ -165,6 +165,12 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       {:pl, false} -> "Razem do zapłaty"
     end
   end
+
+  defp refund?(%{is_cost_invoice: true, total_amount: total_amount}) do
+    Decimal.gt?(Money.to_decimal(total_amount), 0)
+  end
+
+  defp refund?(_assigns), do: false
 
   attr :internal_notes, :list, required: true
 

@@ -27,4 +27,15 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetailsTest do
     assert html =~ "Razem do zapłaty"
     refute html =~ "Razem do zwrotu"
   end
+
+  test "renders payment label for a buyer-facing invoice with a positive total" do
+    html =
+      render_component(&InvoiceDetails.invoice_amount/1,
+        is_cost_invoice: false,
+        total_amount: Money.new!("PLN", "100.00")
+      )
+
+    assert html =~ "Razem do zapłaty"
+    refute html =~ "Razem do zwrotu"
+  end
 end
