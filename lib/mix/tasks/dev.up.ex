@@ -66,7 +66,9 @@ defmodule Mix.Tasks.Dev.Up do
     Mix.shell().info("")
     Mix.shell().info("Environment ready:")
 
-    Mix.shell().info("  Phoenix:   http://#{sanitize_branch(branch)}.firmowid.localhost (or localhost:#{port})")
+    Mix.shell().info(
+      "  Phoenix:   http://#{branch |> sanitize_branch() |> dev_hostname() |> caddy_host(caddy_port())} (or http://localhost:#{port})"
+    )
 
     Mix.shell().info("  Tidewave:  https://localhost:#{port}/tidewave/mcp")
     Mix.shell().info("  Postgres:  localhost:#{db_port}")
@@ -276,7 +278,7 @@ defmodule Mix.Tasks.Dev.Up do
 
       case Req.post("http://localhost:11190/api/routes", json: route_config) do
         {:ok, %{status: status}} when status in 200..299 ->
-          Mix.shell().info("Caddy route registered: https://#{branch}.firmowid.localhost -> localhost:#{port}")
+          Mix.shell().info("Caddy route registered: https://#{branch}.firmowid.localhost -> http://localhost:#{port}")
 
         {:ok, %{status: status, body: body}} ->
           Mix.shell().error("Warning: Failed to register Caddy route (status #{status})")
@@ -292,7 +294,7 @@ defmodule Mix.Tasks.Dev.Up do
 
       case ensure_wt_server_exists(admin_base_url, branch, port) do
         :ok ->
-          Mix.shell().info("Caddy route registered: http://#{hostname}:8080 -> localhost:#{port}")
+          Mix.shell().info("Caddy route registered: http://#{caddy_host(hostname, caddy_port())} -> localhost:#{port}")
 
         {:error, reason} ->
           Mix.shell().error("Warning: Failed to register Caddy route")
@@ -309,30 +311,64 @@ defmodule Mix.Tasks.Dev.Up do
     "#{branch}.firmowid.localhost"
   end
 
+  defp caddy_port do
+    System.get_env("CADDY_PORT") || "8080"
+  end
+
+  defp caddy_host(hostname, port) when port in ["80", "443"] do
+    hostname
+  end
+
+  defp caddy_host(hostname, port) do
+    "#{hostname}:#{port}"
+  end
+
   defp ensure_wt_server_exists(admin_base_url, branch, port) do
     wt_server_config = %{
-      "listen" => [":8080"],
+      "listen" => [":#{caddy_port()}"],
       "automatic_https" => %{"disable" => true},
       "routes" => []
     }
 
-    maybe_create_wt_server(admin_base_url, wt_server_config)
+    with :ok <- ensure_http_app_exists(admin_base_url),
+         :ok <- maybe_create_wt_server(admin_base_url, wt_server_config) do
+      _ = Req.delete("#{admin_base_url}/id/wt:firmowid:#{branch}")
 
-    _ = Req.delete("#{admin_base_url}/id/wt:firmowid:#{branch}")
+      route_config = %{
+        "@id" => "wt:firmowid:#{branch}",
+        "match" => [%{"host" => [dev_hostname(branch)]}],
+        "handle" => [
+          %{"handler" => "reverse_proxy", "upstreams" => [%{"dial" => "127.0.0.1:#{port}"}]}
+        ]
+      }
 
-    route_config = %{
-      "@id" => "wt:firmowid:#{branch}",
-      "match" => [%{"host" => [dev_hostname(branch)]}],
-      "handle" => [
-        %{"handler" => "reverse_proxy", "upstreams" => [%{"dial" => "127.0.0.1:#{port}"}]}
-      ]
-    }
+      caddy_put(
+        admin_base_url <> "/config/apps/http/servers/wt/routes/0",
+        route_config,
+        "register Caddy route"
+      )
+    end
+  end
 
-    caddy_put(
-      admin_base_url <> "/config/apps/http/servers/wt/routes/0",
-      route_config,
-      "register Caddy route"
-    )
+  defp ensure_http_app_exists(admin_base_url) do
+    http_url = admin_base_url <> "/config/apps/http"
+
+    case Req.get(http_url, connect_options: [timeout: 200], receive_timeout: 300) do
+      {:ok, %{status: status, body: body}}
+      when (status == 200 and body in [nil, %{}]) or
+             (status == 400 and
+                body == %{"error" => "invalid traversal path at: config/apps/http"}) ->
+        caddy_put(http_url, %{"servers" => %{}}, "create Caddy HTTP app")
+
+      {:ok, %{status: status}} when status in 200..299 ->
+        :ok
+
+      {:ok, %{status: status, body: body}} ->
+        {:error, "Failed to read Caddy HTTP app (status #{status}): #{inspect(body)}"}
+
+      {:error, reason} ->
+        {:error, "Failed to read Caddy HTTP app: #{inspect(reason)}"}
+    end
   end
 
   defp maybe_create_wt_server(admin_base_url, wt_server_config) do
