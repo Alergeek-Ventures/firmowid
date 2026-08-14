@@ -94,14 +94,39 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
 
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
-          <.link
-            navigate={Navigation.sales_invoice_edit_path(@invoice, @return_to)}
-            kind="button"
-            variant="secondary"
-            size="small"
-          >
-            <Lucideicons.pencil /> Edytuj
-          </.link>
+          <%= if SubmissionInfo.submitting?(@submission_info) do %>
+            <span
+              id="edit-invoice-button-tooltip"
+              phx-hook="Tippy"
+              data-tippy-content="Faktura jest wysyłana do KSeF. Edycja będzie dostępna po zakończeniu wysyłki."
+              data-tippy-delay="100"
+              class="inline-flex"
+              tabindex="0"
+            >
+              <FirmowidWeb.DesignSystem.Components.Button.button
+                id="edit-invoice-button"
+                type="button"
+                variant="secondary"
+                size="small"
+                disabled
+                aria-describedby="edit-invoice-button-description"
+              >
+                <Lucideicons.pencil /> Edytuj
+              </FirmowidWeb.DesignSystem.Components.Button.button>
+            </span>
+            <span id="edit-invoice-button-description" class="sr-only">
+              Edycja jest niedostępna podczas wysyłania faktury do KSeF.
+            </span>
+          <% else %>
+            <.link
+              navigate={Navigation.sales_invoice_edit_path(@invoice, @return_to)}
+              kind="button"
+              variant="secondary"
+              size="small"
+            >
+              <Lucideicons.pencil /> Edytuj
+            </.link>
+          <% end %>
           <.link
             kind="button"
             variant="secondary"

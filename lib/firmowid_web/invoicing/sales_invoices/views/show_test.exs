@@ -12,7 +12,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
+  alias Firmowid.Ash.Ksef.Workers.SubmissionWorker
   alias Firmowid.Ash.Scope
+  alias Firmowid.Repo
   alias Firmowid.Test.Support.InvoicingCopyAssertions
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
@@ -126,6 +128,31 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
 
     assert html =~
              ~s(href="#{Navigation.sales_invoice_edit_path(invoice, transaction_return_to)}")
+  end
+
+  test "does not expose an active edit control while KSeF submission is in progress", %{
+    conn: conn
+  } do
+    admin = admin_fixture()
+    invoice = sales_invoice_fixture!(admin)
+
+    {:ok, _job} =
+      %{
+        "action" => "submit",
+        "organization_id" => admin.organization_id,
+        "sales_invoice_id" => invoice.id
+      }
+      |> SubmissionWorker.new(scheduled_at: DateTime.shift(DateTime.utc_now(), hour: 1))
+      |> Repo.insert(prefix: "oban")
+
+    conn = log_in_user(conn, admin)
+
+    {:ok, _view, html} = live(conn, ~p"/sprzedazowe/#{invoice.id}")
+
+    assert html =~ ~s(id="edit-invoice-button")
+    assert html =~ ~s(disabled)
+    refute html =~ ~s(id="edit-invoice-link")
+    refute html =~ ~s(href="/sprzedazowe/#{invoice.id}/edytuj")
   end
 
   test "copy link targets the effective snapshot and copied draft matches latest correction", %{

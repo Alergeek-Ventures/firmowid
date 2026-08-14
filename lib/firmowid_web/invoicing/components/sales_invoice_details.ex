@@ -194,25 +194,51 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
                   <Lucideicons.copy /><span class="hidden xl:inline">Kopiuj</span>
                 </.link>
 
-                <.link
-                  id="edit-invoice-link"
-                  phx-hook="Tippy"
-                  data-tippy-content={
-                    if @invoice.ksef_number,
-                      do: "Wystaw fakturę korygującą",
-                      else: "Edytuj fakturę"
-                  }
-                  data-tippy-delay="100"
-                  navigate={Navigation.sales_invoice_edit_path(@latest_invoice_snapshot, @return_to)}
-                  kind="button"
-                  variant="secondary"
-                  size="small"
-                >
-                  <.icon name="hero-pencil-square" class="size-4" />
-                  <span class="hidden xl:inline">
-                    Edytuj
+                <%= if SubmissionInfo.submitting?(@submission_info) do %>
+                  <span
+                    id="edit-invoice-button-tooltip"
+                    phx-hook="Tippy"
+                    data-tippy-content="Faktura jest wysyłana do KSeF. Edycja będzie dostępna po zakończeniu wysyłki."
+                    data-tippy-delay="100"
+                    class="inline-flex"
+                    tabindex="0"
+                  >
+                    <.button
+                      id="edit-invoice-button"
+                      type="button"
+                      variant="secondary"
+                      size="small"
+                      disabled
+                      aria-describedby="edit-invoice-button-description"
+                    >
+                      <.icon name="hero-pencil-square" class="size-4" />
+                      <span class="hidden xl:inline">Edytuj</span>
+                    </.button>
                   </span>
-                </.link>
+                  <span id="edit-invoice-button-description" class="sr-only">
+                    Edycja jest niedostępna podczas wysyłania faktury do KSeF.
+                  </span>
+                <% else %>
+                  <.link
+                    id="edit-invoice-link"
+                    phx-hook="Tippy"
+                    data-tippy-content={
+                      if @invoice.ksef_number,
+                        do: "Wystaw fakturę korygującą",
+                        else: "Edytuj fakturę"
+                    }
+                    data-tippy-delay="100"
+                    navigate={
+                      Navigation.sales_invoice_edit_path(@latest_invoice_snapshot, @return_to)
+                    }
+                    kind="button"
+                    variant="secondary"
+                    size="small"
+                  >
+                    <.icon name="hero-pencil-square" class="size-4" />
+                    <span class="hidden xl:inline">Edytuj</span>
+                  </.link>
+                <% end %>
 
                 <.button
                   :if={@invoice.is_deletable}

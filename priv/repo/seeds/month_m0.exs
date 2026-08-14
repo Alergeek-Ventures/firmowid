@@ -304,39 +304,33 @@ defmodule Firmowid.Seeds.MonthM0 do
     )
   end
 
-  # 02/ — confirmed draft (locked), not submitted to KSeF
+  # 02/ — confirmed invoice, not submitted to KSeF
   defp seed_ksef_confirmed_not_sent(bytecraft, prefix) do
     inv_number = "BC/02/#{prefix}"
 
-    existing = find_sales_invoice(inv_number, bytecraft.id)
+    invoice =
+      Helpers.get_or_create_sales_invoice(
+        inv_number,
+        bytecraft.id,
+        Map.merge(@ksef_buyer, %{
+          "invoice_type" => "poland",
+          "issue_date" => Helpers.date_this_month(10),
+          "sale_date" => Helpers.date_this_month(10),
+          "due_date" => Helpers.date_this_month(24),
+          "currency" => "PLN",
+          "sales_invoice_items" => [
+            %{
+              "name" => "Prototyp MVP — panel analityczny NexaTech",
+              "quantity" => 10,
+              "unit" => "godz.",
+              "unit_price" => 200.00,
+              "vat_rate" => "23"
+            }
+          ]
+        })
+      )
 
-    if is_nil(existing) do
-      invoice =
-        Helpers.get_or_create_sales_invoice(
-          inv_number,
-          bytecraft.id,
-          Map.merge(@ksef_buyer, %{
-            "invoice_type" => "poland",
-            "issue_date" => Helpers.date_this_month(10),
-            "sale_date" => Helpers.date_this_month(10),
-            "due_date" => Helpers.date_this_month(24),
-            "currency" => "PLN",
-            "sales_invoice_items" => [
-              %{
-                "name" => "Prototyp MVP — panel analityczny NexaTech",
-                "quantity" => 10,
-                "unit" => "godz.",
-                "unit_price" => 200.00,
-                "vat_rate" => "23"
-              }
-            ]
-          })
-        )
-
-      Ash.Seed.update!(invoice, %{
-        locked_at: DateTime.truncate(DateTime.utc_now(), :second)
-      })
-    end
+    Ash.Seed.update!(invoice, %{locked_at: nil})
   end
 
   # — S08 deterministic assistant scenario (current month invoice) —

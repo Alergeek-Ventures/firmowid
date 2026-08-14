@@ -16,6 +16,10 @@
       field={@form[:original_invoice_id]}
     />
 
+    <.error :for={{error, _} <- Keyword.get_values(@form.errors, :base)}>
+      {error}
+    </.error>
+
     <div class="col-start-2 col-end-9">
       <FirmowidWeb.Invoicing.SalesInvoices.Views.Creator.render_header
         invoice={@invoice}
