@@ -690,9 +690,7 @@ defmodule Firmowid.Ash.Invoicing do
 
     Map.new(all_series, fn series ->
       {:ok, number} =
-        %{date: date, series: series, omit_invoice_id: extra_opts[:omit_invoice_id]}
-        |> SalesInvoice.input_to_get_next_number(opts)
-        |> Ash.run_action(opts)
+        SalesInvoice.get_next_number(date, series, extra_opts[:omit_invoice_id], opts)
 
       {series, number}
     end)

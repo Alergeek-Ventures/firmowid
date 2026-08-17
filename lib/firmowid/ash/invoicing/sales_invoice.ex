@@ -916,9 +916,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
           case parsed do
             {:ok, %{num: current_num, series: parsed_series}} ->
               {:ok, expected} =
-                %{date: issue_date, series: parsed_series, omit_invoice_id: omit_invoice_id}
-                |> __MODULE__.input_to_get_next_number(opts)
-                |> Ash.run_action(opts)
+                __MODULE__.get_next_number(issue_date, parsed_series, omit_invoice_id, opts)
 
               case parse_invoice_number(expected) do
                 {:ok, %{num: expected_num}} when current_num > expected_num ->

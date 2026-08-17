@@ -423,6 +423,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   defp maybe_setup_step(socket, :payment, _params) do
     draft = socket.assigns.draft
     scope = socket.assigns.ash_scope
+    actor = socket.assigns.current_user
     bank_accounts = socket.assigns.bank_accounts
 
     # Find selected bank account: match by IBAN if set, otherwise find default for currency
@@ -439,7 +440,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     form =
       draft
-      |> AshPhoenix.Form.for_update(:update_payment, scope: scope)
+      |> AshPhoenix.Form.for_update(:update_payment,
+        actor: actor,
+        scope: scope
+      )
       |> AshPhoenix.Form.validate(defaults)
       |> to_form()
 
@@ -457,14 +461,27 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     # Generate preview data
     issue_date = Date.utc_today()
     scope = socket.assigns.ash_scope
-    invoice_number = SalesInvoice.get_next_number!(issue_date, nil, nil, scope: scope)
+    actor = socket.assigns.current_user
+
+    invoice_number =
+      SalesInvoice.get_next_number!(issue_date, nil, nil,
+        actor: actor,
+        scope: scope
+      )
 
     # Get all series suggestions (nil = default, "A" = always shown, plus any existing)
-    series_suggestions = Invoicing.get_next_numbers_for_series(issue_date, scope: scope)
+    series_suggestions =
+      Invoicing.get_next_numbers_for_series(issue_date,
+        actor: actor,
+        scope: scope
+      )
 
     # Validate initial invoice number
     invoice_warnings =
-      SalesInvoice.validate_number!(invoice_number, issue_date, nil, scope: scope)
+      SalesInvoice.validate_number!(invoice_number, issue_date, nil,
+        actor: actor,
+        scope: scope
+      )
 
     # Build preview invoice map with seller data from organization
     logo_url = Invoicing.get_logo_url(org_id, scope: socket.assigns.ash_scope)
@@ -921,9 +938,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     issue_date = socket.assigns.preview_invoice.issue_date
 
     scope = socket.assigns.ash_scope
+    actor = socket.assigns.current_user
 
     invoice_warnings =
-      SalesInvoice.validate_number!(invoice_number, issue_date, nil, scope: scope)
+      SalesInvoice.validate_number!(invoice_number, issue_date, nil,
+        actor: actor,
+        scope: scope
+      )
 
     {:noreply,
      socket
@@ -968,9 +989,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
     # Validate (should be empty for suggestions, but check anyway)
     scope = socket.assigns.ash_scope
+    actor = socket.assigns.current_user
 
     invoice_warnings =
-      SalesInvoice.validate_number!(invoice_number, issue_date, nil, scope: scope)
+      SalesInvoice.validate_number!(invoice_number, issue_date, nil,
+        actor: actor,
+        scope: scope
+      )
 
     {:noreply,
      socket
