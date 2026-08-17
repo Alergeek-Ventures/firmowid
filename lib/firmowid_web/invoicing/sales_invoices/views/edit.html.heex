@@ -5,7 +5,13 @@
     phx-submit="send_to_ksef"
     phx-hook="ConfirmLeave"
     id="invoice-form"
-    class="grid grid-cols-[min-content_1fr_repeat(7,min-content)] gap-x-2"
+    class={[
+      "grid gap-x-2",
+      if(@current_org.is_vat_payer,
+        do: "grid-cols-[min-content_1fr_repeat(7,min-content)]",
+        else: "grid-cols-[min-content_1fr_repeat(6,min-content)]"
+      )
+    ]}
   >
     <.input type="hidden" field={@form[:invoice_number]} />
     <.input type="hidden" field={@form[:issue_date]} />
@@ -41,6 +47,7 @@
           item_price_input_modes={@item_price_input_modes}
           gross_item_price_inputs={@gross_item_price_inputs}
           focused_item_price_input_index={@focused_item_price_input_index}
+          show_vat={@current_org.is_vat_payer}
         />
       </div>
 

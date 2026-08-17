@@ -17,9 +17,18 @@
     phx-change="validate_items"
     phx-submit="submit_items"
     id="invoice-form"
-    class="grid grid-cols-[min-content_1fr_repeat(7,min-content)] gap-x-2"
+    class={[
+      "grid gap-x-2",
+      if(@current_org.is_vat_payer,
+        do: "grid-cols-[min-content_1fr_repeat(7,min-content)]",
+        else: "grid-cols-[min-content_1fr_repeat(6,min-content)]"
+      )
+    ]}
   >
-    <div class="col-start-2 col-end-9 mb-8">
+    <div class={[
+      "mb-8",
+      if(@current_org.is_vat_payer, do: "col-start-2 col-end-9", else: "col-start-2 col-end-8")
+    ]}>
       <.render_header
         invoice={@invoice}
         step={@step_number}
@@ -34,12 +43,16 @@
       item_price_input_modes={@item_price_input_modes}
       gross_item_price_inputs={@gross_item_price_inputs}
       focused_item_price_input_index={@focused_item_price_input_index}
+      show_vat={@current_org.is_vat_payer}
     />
 
     <.button
       type="submit"
       phx-disable-with="Przetwarzanie..."
-      class="col-start-1 col-end-9 mt-20 ml-auto h-11 w-full max-w-44"
+      class={[
+        "mt-20 ml-auto h-11 w-full max-w-44",
+        if(@current_org.is_vat_payer, do: "col-start-1 col-end-9", else: "col-start-1 col-end-8")
+      ]}
       variant="primary"
       accent="turquoise"
       disabled={not @items_form.source.valid?}

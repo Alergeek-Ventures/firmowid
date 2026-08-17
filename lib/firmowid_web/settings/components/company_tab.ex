@@ -206,8 +206,10 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
             <Helpers.settings_field label="Płatnik VAT" class="w-full max-w-sm">
               <span class="inline-flex items-center gap-3">
+                <input type="hidden" name={@company_form[:is_vat_payer].name} value="false" />
                 <input
                   type="checkbox"
+                  value="true"
                   name={@company_form[:is_vat_payer].name}
                   checked={@company_form[:is_vat_payer].value in [true, "true"]}
                   class="border-grey-200 size-4 rounded text-orange-700"

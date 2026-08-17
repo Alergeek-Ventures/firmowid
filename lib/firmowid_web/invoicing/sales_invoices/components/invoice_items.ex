@@ -128,7 +128,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     end
   end
 
-  defp compute_vat_options(invoice, is_reverse_charge) do
+  defp compute_vat_options(_invoice, _is_reverse_charge, false) do
+    {VatRate.select_options_short(["zw"]), true}
+  end
+
+  defp compute_vat_options(invoice, is_reverse_charge, true) do
     if is_reverse_charge do
       {VatRate.select_options_short(["oo"]), true}
     else
@@ -209,8 +213,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   attr :item_price_input_modes, :map, default: %{}
   attr :gross_item_price_inputs, :map, default: %{}
   attr :focused_item_price_input_index, :any, default: nil
+  attr :show_vat, :boolean, default: true
 
-  def invoice_items(%{invoice_changeset: source, invoice: invoice, items_field: items_field} = input_assigns) do
+  def invoice_items(%{invoice_changeset: source, invoice: invoice, items_field: items_field} = assigns = input_assigns) do
     items = extract_items_as_structs(source, items_field)
 
     single_item? =
@@ -222,8 +227,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     # Ensure at least one item exists for the form
     {source, items} = ensure_minimum_item(source, items, items_field)
 
+    show_vat = Map.get(assigns, :show_vat, true)
     is_reverse_charge = get_reverse_charge(source)
-    {vat_options, vat_disabled?} = compute_vat_options(invoice, is_reverse_charge)
+    {vat_options, vat_disabled?} = compute_vat_options(invoice, is_reverse_charge, show_vat)
 
     currency = get_currency(source) || "PLN"
     items_form = build_form(source)
@@ -252,6 +258,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       quantity_error: quantity_error,
       unit_price_error: unit_price_error,
       valid?: form_valid?(source),
+      show_vat: show_vat,
       item_price_input_modes: input_assigns.item_price_input_modes,
       gross_item_price_inputs: input_assigns.gross_item_price_inputs,
       focused_item_price_input_index: input_assigns.focused_item_price_input_index,
@@ -261,7 +268,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     }
 
     ~H"""
-    <div class="col-start-2 col-end-9 mb-8 space-y-8">
+    <div class={[
+      "mb-8 space-y-8",
+      if(@show_vat, do: "col-start-2 col-end-9", else: "col-start-2 col-end-8")
+    ]}>
       <div class="mb-2 flex flex-row items-center gap-5">
         <label class="text-grey-700 mr-auto flex flex-row items-center gap-5">
           <span><strong>1.</strong> Wybrana waluta</span>
@@ -346,7 +356,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       <p id="quantity">
         Ilość
       </p>
-      <p>VAT</p>
+      <p :if={@show_vat}>VAT</p>
       <p>Jednostka</p>
       <.button
         id="price"
@@ -360,7 +370,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
         Cena netto
       </.button>
 
-      <%= if to_boolean(@items_form[:is_reverse_charge].value) do %>
+      <%= if to_boolean(@items_form[:is_reverse_charge].value) or not @show_vat do %>
         <p class="col-span-2 text-end">Wartość</p>
       <% else %>
         <p class="text-end">Wartość VAT</p>
@@ -410,15 +420,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             new={true}
             show_error={false}
           />
-          <.input
-            field={item[:vat_rate]}
-            type="select"
-            options={@vat_options}
-            phx-debounce
-            container_class="w-24"
-            new={true}
-            readonly={@vat_disabled?}
-          />
+          <%= if @show_vat do %>
+            <.input
+              field={item[:vat_rate]}
+              type="select"
+              options={@vat_options}
+              phx-debounce
+              container_class="w-24"
+              new={true}
+              readonly={@vat_disabled?}
+            />
+          <% else %>
+            <input type="hidden" name={item[:vat_rate].name} value="zw" />
+          <% end %>
           <.input
             field={item[:unit]}
             type="select"
@@ -467,7 +481,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             </div>
           <% end %>
 
-          <%= if to_boolean(@items_form[:is_reverse_charge].value) do %>
+          <%= if to_boolean(@items_form[:is_reverse_charge].value) or not @show_vat do %>
             <% gross_value =
               Money.new(@items_form[:currency].value, item_gross_value(item)) %>
 
@@ -556,10 +570,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     </.button>
 
     <div class={[
-      "col-start-1 col-end-9 mt-3 ml-auto grid w-72 min-w-min grid-cols-[1fr_repeat(2,min-content)] items-center gap-2 leading-snug whitespace-nowrap",
+      "mt-3 ml-auto grid w-72 min-w-min grid-cols-[1fr_repeat(2,min-content)] items-center gap-2 leading-snug whitespace-nowrap",
+      if(@show_vat, do: "col-start-1 col-end-9", else: "col-start-1 col-end-8"),
       if(Money.zero?(@summary.net_value), do: "text-grey-500", else: "text-black")
     ]}>
-      <%= if to_boolean(@items_form[:is_reverse_charge].value) do %>
+      <%= if to_boolean(@items_form[:is_reverse_charge].value) or not @show_vat do %>
         <p class="text-grey-500 text-left text-sm">Suma</p>
         <p class="text-right text-[27px]/tight font-medium">
           {Money.to_string!(@summary.gross_value, currency_symbol: "")}
