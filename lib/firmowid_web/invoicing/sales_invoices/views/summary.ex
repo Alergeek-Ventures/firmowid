@@ -94,11 +94,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
 
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
-          <%= if SubmissionInfo.submitting?(@submission_info) do %>
+          <%= if SubmissionInfo.editing_blocked?(@invoice, @submission_info) do %>
             <span
               id="edit-invoice-button-tooltip"
               phx-hook="Tippy"
-              data-tippy-content="Faktura jest wysyłana do KSeF. Edycja będzie dostępna po zakończeniu wysyłki."
+              data-tippy-content="Faktura jest zablokowana. Edycja będzie dostępna po zakończeniu wysyłki do KSeF."
               data-tippy-delay="100"
               class="inline-flex"
               tabindex="0"
@@ -115,7 +115,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
               </FirmowidWeb.DesignSystem.Components.Button.button>
             </span>
             <span id="edit-invoice-button-description" class="sr-only">
-              Edycja jest niedostępna podczas wysyłania faktury do KSeF.
+              Edycja jest niedostępna, ponieważ faktura jest zablokowana.
             </span>
           <% else %>
             <.link

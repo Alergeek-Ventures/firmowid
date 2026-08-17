@@ -155,6 +155,23 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
     refute html =~ ~s(href="/sprzedazowe/#{invoice.id}/edytuj")
   end
 
+  test "does not expose an active edit control for a locked invoice without a KSeF number", %{
+    conn: conn
+  } do
+    admin = admin_fixture()
+    invoice = sales_invoice_fixture!(admin)
+    Ash.Seed.update!(invoice, %{locked_at: DateTime.utc_now()})
+
+    conn = log_in_user(conn, admin)
+
+    {:ok, _view, html} = live(conn, ~p"/sprzedazowe/#{invoice.id}")
+
+    assert html =~ ~s(id="edit-invoice-button")
+    assert html =~ ~s(disabled)
+    refute html =~ ~s(id="edit-invoice-link")
+    refute html =~ ~s(href="/sprzedazowe/#{invoice.id}/edytuj")
+  end
+
   test "copy link targets the effective snapshot and copied draft matches latest correction", %{
     conn: conn
   } do

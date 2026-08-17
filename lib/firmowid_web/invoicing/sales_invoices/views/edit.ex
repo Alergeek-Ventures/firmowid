@@ -66,8 +66,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
          |> put_flash(:error, "Nie znaleziono faktury")
          |> push_navigate(to: Navigation.sales_invoice_creator_path())}
 
-      SubmissionInfo.submitting?(Ksef.get_submission_info(invoice)) ->
-        {:ok, push_navigate(socket, to: Navigation.sales_invoice_show_path(invoice, return_to))}
+      SubmissionInfo.editing_blocked?(invoice, Ksef.get_submission_info(invoice)) ->
+        {:ok,
+         socket
+         |> put_flash(
+           :error,
+           "Nie można edytować tej faktury — jest zablokowana podczas wysyłki do KSeF."
+         )
+         |> push_navigate(to: Navigation.sales_invoice_show_path(invoice, return_to))}
 
       not invoice.is_editable ->
         {:ok,
@@ -772,10 +778,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   defp parse_boolean(_), do: false
 
   defp parse_decimal(value), do: FormHelpers.parse_decimal(value)
-
-  defp not_editable_message(%SalesInvoice{ksef_number: nil, locked_at: %DateTime{}}) do
-    "Nie można edytować tej faktury — jest zablokowana podczas wysyłki do KSeF."
-  end
 
   defp not_editable_message(%SalesInvoice{ksef_invoice_kind: :vat}) do
     "Nie można edytować tej faktury — posiada korekty. Edytuj ostatnią korektę."

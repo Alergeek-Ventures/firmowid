@@ -98,7 +98,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
     assert render(view) =~ ~s(value="2026-01-17")
   end
 
-  test "confirmed invoice not submitted to KSeF opens the edit form", %{conn: conn} do
+  test "confirmed invoice opens the edit form unless it is locked", %{conn: conn} do
     admin = admin_fixture()
 
     {:ok, invoice} =
@@ -139,5 +139,17 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.EditTest do
 
     assert {:ok, _view, html} = live(conn, ~p"/sprzedazowe/#{invoice.id}/edytuj")
     assert html =~ "Edycja faktury"
+
+    Ash.Seed.update!(invoice, %{locked_at: DateTime.utc_now()})
+    show_path = "/sprzedazowe/#{invoice.id}"
+
+    assert {:error,
+            {:live_redirect,
+             %{
+               to: ^show_path,
+               flash: %{
+                 "error" => "Nie można edytować tej faktury — jest zablokowana podczas wysyłki do KSeF."
+               }
+             }}} = live(conn, ~p"/sprzedazowe/#{invoice.id}/edytuj")
   end
 end

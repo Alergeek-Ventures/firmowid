@@ -69,6 +69,12 @@ defmodule Firmowid.Ash.Ksef.SubmissionInfo do
   def submitting?(%__MODULE__{status: :submitting}), do: true
   def submitting?(%__MODULE__{}), do: false
 
+  @doc "Returns whether normal invoice editing must be blocked."
+  @spec editing_blocked?(map(), t()) :: boolean()
+  def editing_blocked?(%{ksef_number: nil, locked_at: locked_at}, _submission_info) when not is_nil(locked_at), do: true
+
+  def editing_blocked?(_invoice, submission_info), do: submitting?(submission_info)
+
   @doc "Returns `true` if the submission failed."
   @spec failed?(t()) :: boolean()
   def failed?(%__MODULE__{status: :failed}), do: true
