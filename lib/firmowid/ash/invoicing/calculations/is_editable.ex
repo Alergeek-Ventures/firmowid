@@ -7,11 +7,11 @@ defmodule Firmowid.Ash.Invoicing.Calculations.IsEditable do
   corrections. Cannot be expressed in pure `expr()`.
 
   Rules:
-   1. KOR → true only if this is the latest correction of the corrected invoice
-   2. VAT with corrections → false
-   3. Draft (no invoice_number) → true
-   4. Not locked → true
-   5. Otherwise → false
+  1. KOR → true only if this is the latest correction of the corrected invoice
+  2. VAT with corrections → false
+  3. Draft (no invoice_number) → true
+  4. Not locked → true
+  5. Otherwise → false
   """
   use Ash.Resource.Calculation
 
