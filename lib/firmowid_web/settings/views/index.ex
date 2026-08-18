@@ -207,6 +207,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
       Endpoint.subscribe("credential:authenticating_epuap:#{organization_id}")
       Endpoint.subscribe("credential:preparing_enrollment:#{organization_id}")
       Endpoint.subscribe("credential:wait_for_certificate:#{organization_id}")
+      Endpoint.subscribe("credential:refreshing:#{organization_id}")
       Endpoint.subscribe("credential:working:#{organization_id}")
       Endpoint.subscribe("credential:failed:#{organization_id}")
     end
@@ -1079,7 +1080,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     case status do
       :working ->
-        LiveToast.send_toast(:success, "Połączono z KSeF.")
+        if notification.action != :recover_certificate_refresh do
+          LiveToast.send_toast(:success, "Połączono z KSeF.")
+        end
 
         {:noreply,
          socket
@@ -1093,6 +1096,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
          socket
          |> assign(:ksef_failure, %{reason: reason, auth_type: credential.auth_type})
          |> assign(:ksef_credential, Ksef.get_credential!(scope: socket.assigns.ash_scope))}
+
+      :refreshing ->
+        {:noreply, assign(socket, :ksef_credential, Ksef.get_credential!(scope: socket.assigns.ash_scope))}
 
       _ ->
         {:noreply, socket}

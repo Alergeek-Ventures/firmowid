@@ -325,10 +325,17 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       <%= if @ksef_credential do %>
         <div class="flex flex-col gap-4">
           <.detail_row label="Status" wide>
-            <span class="inline-flex items-center gap-2">
-              <span>Połączono z KSeF</span>
-              <.icon name="hero-check-circle-solid" class="size-5 text-green-700" />
-            </span>
+            <%= if @ksef_auth_status == :refreshing do %>
+              <span class="inline-flex items-center gap-2">
+                <span>Trwa odnawianie certyfikatu KSeF</span>
+                <.icon name="hero-arrow-path" class="text-grey-700 size-5 animate-spin" />
+              </span>
+            <% else %>
+              <span class="inline-flex items-center gap-2">
+                <span>Połączono z KSeF</span>
+                <.icon name="hero-check-circle-solid" class="size-5 text-green-700" />
+              </span>
+            <% end %>
           </.detail_row>
           <.detail_row label="Typ autoryzacji" wide>
             {case @ksef_credential.auth_type do

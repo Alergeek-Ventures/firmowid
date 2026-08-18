@@ -138,26 +138,24 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
   end
 
   defp perform_action("refresh_certificate", _args, scope, job) do
-    credential = Credential.get_internal!(scope: scope)
+    case refreshing_credential(scope) do
+      {:ok, credential} ->
+        access_token = SessionWorker.get_access_token!(scope.tenant)
 
-    if credential.auth_type in [:certificate, :generated_certificate] do
-      access_token = SessionWorker.get_access_token!(scope.tenant)
+        with {:ok, %{reference_number: reference_number, private_key: private_key}} <-
+               request_certificate(access_token),
+             {:ok, _job} <-
+               enqueue_stage("poll_certificate_refresh", scope.tenant, %{
+                 "reference_number" => reference_number,
+                 "private_key" => encrypt!(private_key)
+               }) do
+          :ok
+        else
+          {:error, reason} -> handle_refresh_failure(credential, scope, reason, job)
+        end
 
-      with {:ok, %{reference_number: reference_number, private_key: private_key}} <-
-             request_certificate(access_token),
-           {:ok, _job} <-
-             enqueue_stage("poll_certificate_refresh", scope.tenant, %{
-               "reference_number" => reference_number,
-               "private_key" => encrypt!(private_key)
-             }) do
-        :ok
-      else
-        {:error, reason} -> handle_refresh_failure(credential, scope, reason, job)
-      end
-    else
-      Credential.recover_certificate_refresh!(credential, scope: scope)
-
-      {:cancel, :not_certificate_credential}
+      {:error, reason} ->
+        {:cancel, reason}
     end
   end
 
@@ -188,26 +186,30 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
   end
 
   defp perform_action("poll_certificate_refresh", args, scope, job) do
-    credential = Credential.get_internal!(scope: scope)
+    case refreshing_credential(scope) do
+      {:ok, credential} ->
+        access_token = SessionWorker.get_access_token!(scope.tenant)
+        reference_number = args["reference_number"]
+        private_key = decrypt!(args["private_key"])
 
-    access_token = SessionWorker.get_access_token!(scope.tenant)
-    reference_number = args["reference_number"]
-    private_key = decrypt!(args["private_key"])
+        case retrieve_certificate(access_token, reference_number) do
+          :pending ->
+            {:snooze, @poll_interval_seconds}
 
-    case retrieve_certificate(access_token, reference_number) do
-      :pending ->
-        {:snooze, @poll_interval_seconds}
+          {:ok, certificate} ->
+            credentials = certificate_credentials(certificate, private_key)
 
-      {:ok, certificate} ->
-        credentials = certificate_credentials(certificate, private_key)
+            case Credential.supersede_certificate(credential, credentials, scope: scope) do
+              {:ok, _credential} -> :ok
+              {:error, reason} -> handle_refresh_failure(credential, scope, reason, job)
+            end
 
-        case Credential.supersede_certificate(credential, credentials, scope: scope) do
-          {:ok, _credential} -> :ok
-          {:error, reason} -> handle_refresh_failure(credential, scope, reason, job)
+          {:error, reason} ->
+            handle_refresh_failure(credential, scope, reason, job)
         end
 
       {:error, reason} ->
-        handle_refresh_failure(credential, scope, reason, job)
+        {:cancel, reason}
     end
   end
 
@@ -319,16 +321,47 @@ defmodule Firmowid.Ash.Ksef.Workers.CertificateEnrollmentWorker do
 
   defp retrying?(%Oban.Job{attempt: attempt, max_attempts: max_attempts}), do: attempt < max_attempts
 
+  defp refreshing_credential(scope) do
+    case Credential.get_internal!(scope: scope) do
+      %Credential{status: :refreshing, auth_type: auth_type} = credential
+      when auth_type in [:certificate, :generated_certificate] ->
+        {:ok, credential}
+
+      %Credential{status: :refreshing} = credential ->
+        Credential.recover_certificate_refresh!(credential, scope: scope)
+        {:error, :not_certificate_credential}
+
+      %Credential{} ->
+        {:error, :refresh_not_in_progress}
+
+      nil ->
+        {:error, :no_credentials}
+    end
+  end
+
   defp handle_refresh_failure(credential, scope, reason, job) do
     if retrying?(job) do
       {:error, reason}
     else
       Logger.error("KSeF certificate refresh failed for organization #{scope.tenant}: #{inspect(reason)}")
 
+      report_refresh_failure(reason, scope.tenant)
+
       Credential.recover_certificate_refresh!(credential, scope: scope)
 
       {:cancel, reason}
     end
+  end
+
+  defp report_refresh_failure(reason, organization_id) do
+    Sentry.capture_exception(
+      RuntimeError.exception("KSeF certificate refresh failed"),
+      tags: %{source: "ksef_certificate_refresh"},
+      extra: %{organization_id: organization_id, reason: inspect(reason)}
+    )
+  rescue
+    sentry_error ->
+      Logger.warning("Failed to report KSeF certificate refresh error to Sentry: #{Exception.message(sentry_error)}")
   end
 
   defp handle_enrollment_failure(credential, scope, reason, job) do

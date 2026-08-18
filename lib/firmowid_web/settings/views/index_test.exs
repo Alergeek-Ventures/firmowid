@@ -7,6 +7,7 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
 
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.Requisition
+  alias Firmowid.Ash.Ksef.Credential
   alias Firmowid.Ash.Scope
 
   test "bank accounts are sorted by IBAN and keep order after rename", %{conn: conn} do
@@ -110,6 +111,22 @@ defmodule FirmowidWeb.Settings.Views.IndexTest do
 
     assert html =~ "Usuniemy Twoje konto i wszystkie przypisane do niego dane."
     refute html =~ "Usuniemy też całą organizację i wszystkie jej dane."
+  end
+
+  test "company settings shows when a connected KSeF certificate is being renewed", %{conn: conn} do
+    admin = admin_fixture()
+
+    Ash.Seed.seed!(Credential, %{
+      organization_id: admin.organization_id,
+      status: :refreshing,
+      auth_type: :generated_certificate,
+      expires_on: Date.add(Date.utc_today(), 7)
+    })
+
+    conn = log_in_user(conn, admin)
+
+    assert {:ok, view, _html} = live(conn, ~p"/ustawienia/firma")
+    assert has_element?(view, "section", "Trwa odnawianie certyfikatu KSeF")
   end
 
   defp iban_position(html, iban) do
