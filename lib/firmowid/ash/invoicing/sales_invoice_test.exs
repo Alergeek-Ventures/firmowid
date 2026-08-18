@@ -9,6 +9,26 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
   alias Firmowid.Ash.Invoicing.Counterparty
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
+
+  describe "by_share_token/2" do
+    test "reads a shared invoice with the anonymous actor" do
+      user = admin_fixture()
+      token = "shared-#{System.unique_integer([:positive])}"
+
+      invoice = locked_sales_invoice_fixture(user.organization_id, token)
+
+      anonymous_scope = %Scope{
+        actor: %SystemActor{org_id: nil, role: :anonymous},
+        tenant: nil
+      }
+
+      assert {:ok, %SalesInvoice{id: invoice_id}} =
+               SalesInvoice.by_share_token(token, scope: anonymous_scope)
+
+      assert invoice_id == invoice.id
+    end
+  end
 
   describe "reverse charge VAT normalization" do
     test "normalizes item vat_rate to oo on create when reverse charge is enabled" do
@@ -244,7 +264,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
     })
   end
 
-  defp locked_sales_invoice_fixture(organization_id) do
+  defp locked_sales_invoice_fixture(organization_id, share_token \\ nil) do
     Ash.Seed.seed!(SalesInvoice, %{
       invoice_number: "FV/01/2026",
       sale_date: ~D[2026-01-01],
@@ -261,7 +281,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
       seller_nip: "1234567890",
       seller_address: "ul. Sprzedawcy 2",
       organization_id: organization_id,
-      locked_at: DateTime.utc_now(:second)
+      locked_at: DateTime.utc_now(:second),
+      share_token: share_token
     })
   end
 

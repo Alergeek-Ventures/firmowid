@@ -59,8 +59,8 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceChain do
   """
   @spec fetch_public_shared_chain!(Ash.UUID.t(), String.t(), keyword()) :: [SalesInvoice.t()]
   def fetch_public_shared_chain!(root_invoice_id, root_share_token, opts) do
-    %{root_invoice_id: root_invoice_id, root_share_token: root_share_token}
-    |> SalesInvoice.query_to_public_shared_chain(opts)
+    root_invoice_id
+    |> SalesInvoice.query_to_public_shared_chain(root_share_token, opts)
     |> Ash.Query.load([
       :organization,
       :net_value,
