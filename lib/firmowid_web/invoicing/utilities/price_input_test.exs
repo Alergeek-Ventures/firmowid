@@ -105,4 +105,36 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInputTest do
       assert PriceInput.gross_value_param_indexes(params, :items) == MapSet.new(["1", "2"])
     end
   end
+
+  describe "update_gross_value_inputs/4" do
+    test "keeps submitted gross line values that cannot yet be normalized" do
+      params = %{
+        "items" => %{
+          "0" => %{"gross_value" => "100.00", "quantity" => ""}
+        }
+      }
+
+      assert PriceInput.update_gross_value_inputs(%{}, params, :items, [
+               "items",
+               "0",
+               "gross_value"
+             ]) == %{
+               "0" => "100.00"
+             }
+    end
+
+    test "clears stale gross line values when the net price is edited" do
+      params = %{
+        "items" => %{
+          "0" => %{"unit_price" => "10.00"}
+        }
+      }
+
+      assert PriceInput.update_gross_value_inputs(%{"0" => "100.00"}, params, :items, [
+               "items",
+               "0",
+               "unit_price"
+             ]) == %{}
+    end
+  end
 end

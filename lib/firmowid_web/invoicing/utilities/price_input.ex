@@ -90,6 +90,14 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInput do
 
   def gross_value_param_indexes(_params, _items_field), do: MapSet.new()
 
+  @doc "Updates transient gross line input values from submitted form params."
+  @spec update_gross_value_inputs(map(), map(), String.t() | atom(), term()) :: map()
+  def update_gross_value_inputs(gross_value_inputs, params, items_field, target) do
+    gross_value_inputs
+    |> put_submitted_gross_values(params, items_field)
+    |> delete_targeted_net_values(target, items_field)
+  end
+
   defp normalize_items(items, parse_decimal, indexes) when is_map(items) do
     Map.new(items, fn {key, item} -> {key, normalize_item(key, item, parse_decimal, indexes)} end)
   end
@@ -103,6 +111,43 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInput do
   end
 
   defp normalize_items(items, _parse_decimal, _indexes), do: items
+
+  defp put_submitted_gross_values(gross_value_inputs, params, items_field) do
+    params
+    |> Map.get(to_string(items_field), %{})
+    |> case do
+      items when is_map(items) ->
+        Enum.reduce(items, gross_value_inputs, fn
+          {index, %{} = item}, acc when is_map_key(item, "gross_value") ->
+            Map.put(acc, index, Map.get(item, "gross_value", ""))
+
+          {_index, _item}, acc ->
+            acc
+        end)
+
+      _items ->
+        gross_value_inputs
+    end
+  end
+
+  defp delete_targeted_net_values(gross_value_inputs, target, items_field) when is_list(target) do
+    target
+    |> target_indexes(items_field, "unit_price")
+    |> Enum.reduce(gross_value_inputs, &Map.delete(&2, &1))
+  end
+
+  defp delete_targeted_net_values(gross_value_inputs, _target, _items_field), do: gross_value_inputs
+
+  defp target_indexes(target, items_field, field_name) do
+    field = to_string(items_field)
+
+    target
+    |> Enum.chunk_every(3, 1, :discard)
+    |> Enum.reduce(MapSet.new(), fn
+      [^field, index, ^field_name], indexes -> MapSet.put(indexes, index)
+      _chunk, indexes -> indexes
+    end)
+  end
 
   defp normalize_item(index, item, parse_decimal, indexes) do
     if indexes == :all or MapSet.member?(indexes, index) do

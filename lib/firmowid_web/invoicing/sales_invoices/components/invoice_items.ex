@@ -58,7 +58,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     Decimal.mult(net, Decimal.div(vat_rate_numeric, 100))
   end
 
-  defp displayed_item_gross_value(item_form) do
+  defp displayed_item_gross_value(item_form, gross_value_inputs) do
+    case Map.fetch(gross_value_inputs, to_string(item_form.index)) do
+      {:ok, value} -> value
+      :error -> computed_item_gross_value(item_form)
+    end
+  end
+
+  defp computed_item_gross_value(item_form) do
     value = item_gross_value(item_form)
 
     if Decimal.eq?(value, Decimal.new(0)) do
@@ -112,6 +119,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       "price"
     end
   end
+
+  defp field_errors(field) do
+    if submitted_form?(field.form.source) and Phoenix.Component.used_input?(field) do
+      field.errors
+    else
+      []
+    end
+  end
+
+  defp invalid_field_class(field), do: field_errors(field) != [] && "border-redText"
+
+  defp submitted_form?(%AshPhoenix.Form{just_submitted?: true}), do: true
+  defp submitted_form?(_source), do: false
 
   defp displayed_item_unit_price_text(item_form) do
     item_form[:unit_price].value
@@ -167,8 +187,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
 
   defp get_first_error_for_items(items_forms, field_name) do
     items_forms
-    |> Enum.flat_map(fn item_form -> item_form.errors end)
-    |> Keyword.get_values(field_name)
+    |> Enum.flat_map(fn item_form -> field_errors(item_form[field_name]) end)
     |> List.first()
     |> case do
       nil -> nil
@@ -202,6 +221,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   attr :invoice_changeset, :any, required: true
   attr :items_field, :atom, default: :sales_invoice_items
   attr :price_input_modes, :map, default: %{}
+  attr :gross_value_inputs, :map, default: %{}
   attr :focused_price_input_index, :any, default: nil
 
   def invoice_items(%{invoice_changeset: source, invoice: invoice, items_field: items_field} = input_assigns) do
@@ -247,6 +267,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       unit_price_error: unit_price_error,
       valid?: form_valid?(source),
       price_input_modes: input_assigns.price_input_modes,
+      gross_value_inputs: input_assigns.gross_value_inputs,
       focused_price_input_index: input_assigns.focused_price_input_index,
       sort_param: sort_param,
       drop_param: drop_param,
@@ -379,7 +400,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             placeholder="Wprowadź nazwę"
             phx-debounce
             class="w-full"
-            input_class={[item[:name].errors != [] && "border-redText"]}
+            input_class={[invalid_field_class(item[:name])]}
             new={true}
             show_error={false}
           />
@@ -391,7 +412,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             step=".000001"
             min="0"
             class="w-16"
-            input_class={["text-center", item[:quantity].errors != [] && "border-redText"]}
+            input_class={["text-center", invalid_field_class(item[:quantity])]}
             new={true}
             show_error={false}
           />
@@ -416,7 +437,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
           <% price_input_mode = price_input_mode(@price_input_modes, item) %>
           <% focus_price_input? = focus_price_input?(@focused_price_input_index, item) %>
           <%= if price_input_mode == :net do %>
-            <div class="flex flex-row items-center gap-1">
+            <div class="flex w-30 flex-row items-center gap-1">
               <.input
                 field={item[:unit_price]}
                 type="number"
@@ -427,7 +448,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                 min="0"
                 placeholder="0,00"
                 class="w-30"
-                input_class={["text-center", item[:unit_price].errors != [] && "border-redText"]}
+                input_class={["text-center", invalid_field_class(item[:unit_price])]}
                 new={true}
                 show_error={false}
               />
@@ -439,7 +460,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
               <.button
                 type="button"
                 variant="unstyled"
-                class="hover:bg-grey-200 rounded p-1 text-center transition"
+                class="hover:bg-grey-200 w-24 rounded p-1 text-center transition"
                 phx-click="set_price_input_mode"
                 phx-value-index={item.index}
                 phx-value-mode="net"
@@ -478,14 +499,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                   type="number"
                   id={gross_value_input_id(item)}
                   name={gross_value_input_name(item)}
-                  value={displayed_item_gross_value(item)}
+                  value={displayed_item_gross_value(item, @gross_value_inputs)}
                   phx-mounted={focus_price_input? && JS.focus()}
                   phx-debounce
                   step=".01"
                   min="0"
                   placeholder="0.00"
                   class="w-28"
-                  input_class={["text-right", item[:unit_price].errors != [] && "border-redText"]}
+                  input_class={["text-right", invalid_field_class(item[:unit_price])]}
                   new={true}
                   show_error={false}
                 />

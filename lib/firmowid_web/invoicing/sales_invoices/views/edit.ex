@@ -109,6 +109,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     |> assign(:last_auto_reason, "")
     |> assign(:counterparty_check, counterparty_check)
     |> assign(:price_input_modes, %{})
+    |> assign(:gross_value_inputs, %{})
     |> assign(:focused_price_input_index, nil)
     |> assign_form_with_preview(ash_form)
     |> assign(:bank_accounts, bank_accounts)
@@ -277,6 +278,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   def handle_event("validate", params, socket) do
     # AshPhoenix.Form uses "form" as default form name
     form_params = params["form"] || params["sales_invoice"] || %{}
+
+    gross_value_inputs =
+      PriceInput.update_gross_value_inputs(
+        socket.assigns.gross_value_inputs,
+        form_params,
+        :sales_invoice_items,
+        params["_target"]
+      )
+
     form_params = normalize_price_input_params(form_params, params["_target"])
     socket = detect_correction_reason_touched(form_params, socket)
 
@@ -285,6 +295,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     socket =
       socket
       |> assign_form_with_preview(ash_form)
+      |> assign(:gross_value_inputs, gross_value_inputs)
       |> push_event("unsaved-changed", %{value: true})
 
     {:noreply, socket}
@@ -373,6 +384,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
   def handle_event("send_to_ksef", params, socket) do
     form_params = params["form"] || params["sales_invoice"] || %{}
+
+    gross_value_inputs =
+      PriceInput.update_gross_value_inputs(
+        socket.assigns.gross_value_inputs,
+        form_params,
+        :sales_invoice_items,
+        :all
+      )
+
+    socket = assign(socket, :gross_value_inputs, gross_value_inputs)
 
     result = submit_invoice(form_params, socket)
 

@@ -79,7 +79,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
       })
       |> render_change()
 
-    assert html =~ ~s(data-for="gross-price")
+    refute html =~ ~s(data-for="gross-price")
 
     view
     |> form("#invoice-form", %{
@@ -109,6 +109,105 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
              Decimal.round(Decimal.mult(item.unit_price, Decimal.new("1.23")), 2),
              Decimal.new("100.00")
            )
+  end
+
+  test "items step keeps typed gross line value while required fields are invalid", %{conn: conn} do
+    admin = admin_fixture()
+    draft = items_step_draft!(admin)
+    conn = log_in_user(conn, admin)
+
+    {:ok, view, _html} = live(conn, ~p"/sprzedazowe?szkic_kreatora=#{draft.id}&krok=2")
+
+    view
+    |> element("button[phx-click='set_price_input_mode'][phx-value-mode='gross'][phx-value-index='0']")
+    |> render_click()
+
+    html =
+      view
+      |> form("#invoice-form", %{
+        "form" => %{
+          "currency" => "PLN",
+          "items" => %{
+            "0" => %{
+              "index" => "0",
+              "name" => "",
+              "quantity" => "",
+              "unit" => "szt.",
+              "unit_price" => "",
+              "gross_value" => "100.00",
+              "vat_rate" => "23"
+            }
+          }
+        }
+      })
+      |> render_change()
+
+    assert html =~ ~s(name="form[items][0][gross_value]")
+    assert html =~ ~s(value="100.00")
+
+    view
+    |> element("button[phx-click='set_price_input_mode'][phx-value-mode='net'][phx-value-index='0']")
+    |> render_click()
+
+    html =
+      view
+      |> element("button[phx-click='set_price_input_mode'][phx-value-mode='gross'][phx-value-index='0']")
+      |> render_click()
+
+    assert html =~ ~s(name="form[items][0][gross_value]")
+    assert html =~ ~s(value="100.00")
+  end
+
+  test "items step only shows required errors after invalid submit", %{conn: conn} do
+    admin = admin_fixture()
+    draft = items_step_draft!(admin)
+    conn = log_in_user(conn, admin)
+
+    {:ok, view, html} = live(conn, ~p"/sprzedazowe?szkic_kreatora=#{draft.id}&krok=2")
+
+    refute html =~ "jest wymagane"
+
+    html =
+      view
+      |> form("#invoice-form", %{
+        "form" => %{
+          "currency" => "PLN",
+          "items" => %{
+            "0" => %{
+              "index" => "0",
+              "name" => "",
+              "quantity" => "",
+              "unit" => "szt.",
+              "unit_price" => "",
+              "vat_rate" => "23"
+            }
+          }
+        }
+      })
+      |> render_change()
+
+    refute html =~ "jest wymagane"
+
+    html =
+      view
+      |> form("#invoice-form", %{
+        "form" => %{
+          "currency" => "PLN",
+          "items" => %{
+            "0" => %{
+              "index" => "0",
+              "name" => "",
+              "quantity" => "",
+              "unit" => "szt.",
+              "unit_price" => "",
+              "vat_rate" => "23"
+            }
+          }
+        }
+      })
+      |> render_submit()
+
+    assert html =~ "jest wymagane"
   end
 
   test "counterparty step derives invoice defaults in wizard action", %{conn: conn} do

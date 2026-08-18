@@ -420,6 +420,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     |> assign(:items_form, to_form(ash_form))
     |> assign(:items_field, :items)
     |> assign_new(:price_input_modes, fn -> %{} end)
+    |> assign_new(:gross_value_inputs, fn -> %{} end)
     |> assign_new(:focused_price_input_index, fn -> nil end)
   end
 
@@ -764,6 +765,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   def handle_event("validate_items", %{"form" => params} = event, socket) do
+    gross_value_inputs =
+      PriceInput.update_gross_value_inputs(
+        socket.assigns.gross_value_inputs,
+        params,
+        socket.assigns.items_field,
+        event["_target"]
+      )
+
     params = normalize_price_input_params(params, socket.assigns.items_field, event["_target"])
 
     form =
@@ -771,11 +780,23 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       |> AshPhoenix.Form.validate(params)
       |> to_form()
 
-    {:noreply, assign(socket, :items_form, form)}
+    {:noreply,
+     socket
+     |> assign(:items_form, form)
+     |> assign(:gross_value_inputs, gross_value_inputs)}
   end
 
   def handle_event("submit_items", %{"form" => params}, socket) do
     old_currency = socket.assigns.draft.currency
+
+    gross_value_inputs =
+      PriceInput.update_gross_value_inputs(
+        socket.assigns.gross_value_inputs,
+        params,
+        socket.assigns.items_field,
+        :all
+      )
+
     params = normalize_price_input_params(params, socket.assigns.items_field)
 
     case AshPhoenix.Form.submit(socket.assigns.items_form.source, params: params) do
@@ -802,7 +823,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         {:noreply, push_patch(socket, to: creator_draft_url(socket.assigns.creator_draft_id, :payment))}
 
       {:error, form} ->
-        {:noreply, assign(socket, items_form: to_form(form))}
+        {:noreply,
+         socket
+         |> assign(:items_form, to_form(form))
+         |> assign(:gross_value_inputs, gross_value_inputs)}
     end
   end
 
