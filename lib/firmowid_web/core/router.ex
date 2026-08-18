@@ -52,6 +52,10 @@ defmodule FirmowidWeb.Core.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :oauth_loopback_fix do
+    plug FirmowidWeb.Mcp.Utilities.RewriteLoopbackRedirectUri
+  end
+
   pipeline :webhook do
     plug :accepts, ["json"]
     plug FirmowidWeb.Infrastructure.Plugs.WebhookAuth
@@ -89,6 +93,10 @@ defmodule FirmowidWeb.Core.Router do
 
     auth_routes(AuthController, Firmowid.Ash.Core.User, path: "/auth")
     delete "/wyloguj", AuthController, :sign_out
+  end
+
+  scope "/", FirmowidWeb do
+    pipe_through [:browser, :oauth_loopback_fix]
 
     oauth2_server_consent_routes(
       oauth2_server: Firmowid.Oauth2Server,
@@ -97,7 +105,7 @@ defmodule FirmowidWeb.Core.Router do
   end
 
   scope "/" do
-    pipe_through :oauth_api
+    pipe_through [:oauth_api, :oauth_loopback_fix]
     oauth2_server_protocol_routes(oauth2_server: Firmowid.Oauth2Server)
   end
 
