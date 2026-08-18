@@ -42,142 +42,93 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInput do
   def normalize_gross_value_params(params, items_field, parse_decimal, indexes \\ :all) when is_map(params) do
     field = to_string(items_field)
 
-    Map.update(params, field, %{}, &normalize_items(&1, parse_decimal, indexes))
-  end
+    Map.update(params, field, %{}, fn items ->
+      Map.new(items, fn {index, item} ->
+        gross_value = Map.get(item, "gross_value") || Map.get(item, :gross_value)
 
-  @doc "Returns item indexes targeted by a gross-value form change."
-  @spec gross_value_target_indexes(term(), String.t() | atom()) :: MapSet.t()
-  def gross_value_target_indexes(target, items_field) when is_list(target) do
-    field = to_string(items_field)
+        item =
+          if indexes == :all or MapSet.member?(indexes, index) do
+            case parse_decimal.(gross_value) do
+              nil ->
+                item
 
-    target
-    |> Enum.chunk_every(3, 1, :discard)
-    |> Enum.reduce(MapSet.new(), fn
-      [^field, index, "gross_value"], indexes -> MapSet.put(indexes, index)
-      _chunk, indexes -> indexes
+              gross_value ->
+                vat_rate = Map.get(item, "vat_rate") || Map.get(item, :vat_rate) || "0"
+                net_unit_price = net_unit_price_from_gross(gross_value, vat_rate)
+
+                if Map.has_key?(item, "unit_price") do
+                  Map.put(item, "unit_price", net_unit_price)
+                else
+                  Map.put(item, :unit_price, net_unit_price)
+                end
+            end
+          else
+            item
+          end
+
+        {index, Map.drop(item, ["gross_value", :gross_value])}
+      end)
     end)
   end
 
-  def gross_value_target_indexes(_target, _items_field), do: MapSet.new()
+  @doc "Returns item indexes whose gross price should be converted."
+  @spec gross_value_indexes(map(), String.t() | atom(), term()) :: :all | MapSet.t()
+  def gross_value_indexes(_params, _items_field, :all), do: :all
 
-  @doc "Returns item indexes that submitted a gross-value field."
-  @spec gross_value_param_indexes(map(), String.t() | atom()) :: MapSet.t()
-  def gross_value_param_indexes(params, items_field) when is_map(params) do
+  def gross_value_indexes(params, items_field, target) do
     field = to_string(items_field)
 
-    params
-    |> Map.get(field, %{})
-    |> case do
-      items when is_map(items) ->
-        MapSet.new(items, fn
-          {index, %{} = item} -> if get_value(item, :gross_value), do: index
-          {index, _item} -> index
+    targeted_indexes =
+      if is_list(target) do
+        target
+        |> Enum.chunk_every(3, 1, :discard)
+        |> Enum.reduce(MapSet.new(), fn
+          [^field, index, "gross_value"], indexes -> MapSet.put(indexes, index)
+          _chunk, indexes -> indexes
         end)
-
-      _items ->
+      else
         MapSet.new()
-    end
-    |> MapSet.delete(nil)
-  end
+      end
 
-  def gross_value_param_indexes(_params, _items_field), do: MapSet.new()
+    submitted_indexes =
+      params
+      |> Map.get(field, %{})
+      |> Enum.reduce(MapSet.new(), fn
+        {index, %{} = item}, indexes when is_map_key(item, "gross_value") ->
+          MapSet.put(indexes, index)
+
+        _item, indexes ->
+          indexes
+      end)
+
+    MapSet.union(targeted_indexes, submitted_indexes)
+  end
 
   @doc "Updates transient gross line input values from submitted form params."
   @spec update_gross_value_inputs(map(), map(), String.t() | atom(), term()) :: map()
-  def update_gross_value_inputs(gross_value_inputs, params, items_field, target) do
-    gross_value_inputs
-    |> put_submitted_gross_values(params, items_field)
-    |> delete_targeted_net_values(target, items_field)
-  end
-
-  defp normalize_items(items, parse_decimal, indexes) when is_map(items) do
-    Map.new(items, fn {key, item} -> {key, normalize_item(key, item, parse_decimal, indexes)} end)
-  end
-
-  defp normalize_items(items, parse_decimal, indexes) when is_list(items) do
-    items
-    |> Enum.with_index()
-    |> Enum.map(fn {item, index} ->
-      normalize_item(to_string(index), item, parse_decimal, indexes)
-    end)
-  end
-
-  defp normalize_items(items, _parse_decimal, _indexes), do: items
-
-  defp put_submitted_gross_values(gross_value_inputs, params, items_field) do
-    params
-    |> Map.get(to_string(items_field), %{})
-    |> case do
-      items when is_map(items) ->
-        Enum.reduce(items, gross_value_inputs, fn
-          {index, %{} = item}, acc when is_map_key(item, "gross_value") ->
-            Map.put(acc, index, Map.get(item, "gross_value", ""))
-
-          {_index, _item}, acc ->
-            acc
-        end)
-
-      _items ->
-        gross_value_inputs
-    end
-  end
-
-  defp delete_targeted_net_values(gross_value_inputs, target, items_field) when is_list(target) do
-    target
-    |> target_indexes(items_field, "unit_price")
-    |> Enum.reduce(gross_value_inputs, &Map.delete(&2, &1))
-  end
-
-  defp delete_targeted_net_values(gross_value_inputs, _target, _items_field), do: gross_value_inputs
-
-  defp target_indexes(target, items_field, field_name) do
+  def update_gross_value_inputs(gross_item_price_inputs, params, items_field, target) do
     field = to_string(items_field)
 
-    target
-    |> Enum.chunk_every(3, 1, :discard)
-    |> Enum.reduce(MapSet.new(), fn
-      [^field, index, ^field_name], indexes -> MapSet.put(indexes, index)
-      _chunk, indexes -> indexes
-    end)
-  end
+    submitted_values =
+      params
+      |> Map.get(field, %{})
+      |> Enum.reduce(gross_item_price_inputs, fn
+        {index, %{} = item}, inputs when is_map_key(item, "gross_value") ->
+          Map.put(inputs, index, Map.fetch!(item, "gross_value"))
 
-  defp normalize_item(index, item, parse_decimal, indexes) do
-    if indexes == :all or MapSet.member?(indexes, index) do
-      do_normalize_item(item, parse_decimal)
+        _item, inputs ->
+          inputs
+      end)
+
+    if is_list(target) do
+      target
+      |> Enum.chunk_every(3, 1, :discard)
+      |> Enum.reduce(submitted_values, fn
+        [^field, index, "unit_price"], inputs -> Map.delete(inputs, index)
+        _chunk, inputs -> inputs
+      end)
     else
-      strip_gross_value(item)
-    end
-  end
-
-  defp do_normalize_item(%{} = item, parse_decimal) do
-    case item |> get_value(:gross_value) |> parse_decimal.() do
-      gross_value when not is_nil(gross_value) ->
-        vat_rate = get_value(item, :vat_rate) || "0"
-
-        item
-        |> put_value(:unit_price, net_unit_price_from_gross(gross_value, vat_rate))
-        |> strip_gross_value()
-
-      _ ->
-        strip_gross_value(item)
-    end
-  end
-
-  defp do_normalize_item(item, _parse_decimal), do: item
-
-  defp strip_gross_value(%{} = item) do
-    item
-    |> Map.delete("gross_value")
-    |> Map.delete(:gross_value)
-  end
-
-  defp get_value(map, key), do: Map.get(map, to_string(key)) || Map.get(map, key)
-
-  defp put_value(map, key, value) do
-    if Map.has_key?(map, to_string(key)) do
-      Map.put(map, to_string(key), value)
-    else
-      Map.put(map, key, value)
+      submitted_values
     end
   end
 end

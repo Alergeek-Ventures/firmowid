@@ -108,9 +108,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     |> assign(:correction_reason_touched, false)
     |> assign(:last_auto_reason, "")
     |> assign(:counterparty_check, counterparty_check)
-    |> assign(:price_input_modes, %{})
-    |> assign(:gross_value_inputs, %{})
-    |> assign(:focused_price_input_index, nil)
+    |> assign(:item_price_input_modes, %{})
+    |> assign(:gross_item_price_inputs, %{})
+    |> assign(:focused_item_price_input_index, nil)
     |> assign_form_with_preview(ash_form)
     |> assign(:bank_accounts, bank_accounts)
     |> assign(
@@ -279,9 +279,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     # AshPhoenix.Form uses "form" as default form name
     form_params = params["form"] || params["sales_invoice"] || %{}
 
-    gross_value_inputs =
+    gross_item_price_inputs =
       PriceInput.update_gross_value_inputs(
-        socket.assigns.gross_value_inputs,
+        socket.assigns.gross_item_price_inputs,
         form_params,
         :sales_invoice_items,
         params["_target"]
@@ -295,19 +295,20 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     socket =
       socket
       |> assign_form_with_preview(ash_form)
-      |> assign(:gross_value_inputs, gross_value_inputs)
+      |> assign(:gross_item_price_inputs, gross_item_price_inputs)
       |> push_event("unsaved-changed", %{value: true})
 
     {:noreply, socket}
   end
 
   def handle_event("set_price_input_mode", %{"index" => index, "mode" => mode}, socket) do
-    price_input_modes = set_price_input_mode(socket.assigns.price_input_modes, index, mode)
+    item_price_input_modes =
+      set_price_input_mode(socket.assigns.item_price_input_modes, index, mode)
 
     {:noreply,
      socket
-     |> assign(:price_input_modes, price_input_modes)
-     |> assign(:focused_price_input_index, price_input_focus_index(index))}
+     |> assign(:item_price_input_modes, item_price_input_modes)
+     |> assign(:focused_item_price_input_index, item_price_input_focus_index(index))}
   end
 
   def handle_event("suggest_payment_date", %{"field" => field, "suggestion" => suggestion}, socket) do
@@ -385,15 +386,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   def handle_event("send_to_ksef", params, socket) do
     form_params = params["form"] || params["sales_invoice"] || %{}
 
-    gross_value_inputs =
+    gross_item_price_inputs =
       PriceInput.update_gross_value_inputs(
-        socket.assigns.gross_value_inputs,
+        socket.assigns.gross_item_price_inputs,
         form_params,
         :sales_invoice_items,
         :all
       )
 
-    socket = assign(socket, :gross_value_inputs, gross_value_inputs)
+    socket = assign(socket, :gross_item_price_inputs, gross_item_price_inputs)
 
     result = submit_invoice(form_params, socket)
 
@@ -815,16 +816,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   defp parse_decimal(value), do: FormHelpers.parse_decimal(value)
 
   defp normalize_price_input_params(params, target \\ :all) do
-    indexes =
-      case target do
-        :all ->
-          :all
-
-        target ->
-          target
-          |> PriceInput.gross_value_target_indexes(:sales_invoice_items)
-          |> MapSet.union(PriceInput.gross_value_param_indexes(params, :sales_invoice_items))
-      end
+    indexes = PriceInput.gross_value_indexes(params, :sales_invoice_items, target)
 
     PriceInput.normalize_gross_value_params(
       params,
@@ -834,14 +826,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     )
   end
 
-  defp set_price_input_mode(_price_input_modes, "all", mode), do: %{"all" => mode}
+  defp set_price_input_mode(_item_price_input_modes, "all", mode), do: %{"all" => mode}
 
-  defp set_price_input_mode(price_input_modes, index, mode) do
-    Map.put(price_input_modes, index, mode)
+  defp set_price_input_mode(item_price_input_modes, item_index, mode) do
+    Map.put(item_price_input_modes, item_index, mode)
   end
 
-  defp price_input_focus_index("all"), do: nil
-  defp price_input_focus_index(index), do: index
+  defp item_price_input_focus_index("all"), do: nil
+  defp item_price_input_focus_index(item_index), do: item_index
 
   defp not_editable_message(%SalesInvoice{ksef_invoice_kind: :vat}) do
     "Nie można edytować tej faktury — posiada korekty. Edytuj ostatnią korektę."

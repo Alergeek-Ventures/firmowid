@@ -51,12 +51,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
 
   defp parse_decimal(value), do: FormHelpers.parse_decimal(value)
 
-  defp item_vat_value(item_form) do
-    net = item_net_value(item_form)
+  defp item_unit_vat_value(item_form) do
+    unit_price = parse_decimal(item_form[:unit_price].value) || Decimal.new(0)
     vat_rate = to_string(item_form[:vat_rate].value || "0")
     vat_rate_numeric = VatRate.to_numeric(vat_rate)
 
-    Decimal.mult(net, Decimal.div(vat_rate_numeric, 100))
+    Decimal.mult(unit_price, Decimal.div(vat_rate_numeric, 100))
   end
 
   defp displayed_item_gross_value(item_form, gross_value_inputs) do
@@ -82,23 +82,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     end
   end
 
-  defp displayed_item_unit_price(item_form) do
-    item_form[:unit_price].value
-    |> parse_decimal()
-    |> case do
-      nil -> nil
-      unit_price -> unit_price |> Decimal.round(2) |> Decimal.to_string(:normal)
-    end
-  end
-
-  defp gross_value_input_name(item_form) do
-    String.replace(item_form[:unit_price].name, ~r/\[unit_price\]$/, "[gross_value]")
-  end
-
-  defp gross_value_input_id(item_form) do
-    String.replace(item_form[:unit_price].id, ~r/_unit_price$/, "_gross_value")
-  end
-
   defp price_input_mode(price_input_modes, item_form) do
     row_mode =
       Map.get(
@@ -111,10 +94,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       "gross" -> :gross
       _ -> :net
     end
-  end
-
-  defp focus_price_input?(focused_price_input_index, item_form) do
-    to_string(focused_price_input_index) == to_string(item_form.index)
   end
 
   defp price_error_target(_price_input_modes, true), do: "price"
@@ -227,9 +206,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   attr :invoice, :any, required: true
   attr :invoice_changeset, :any, required: true
   attr :items_field, :atom, default: :sales_invoice_items
-  attr :price_input_modes, :map, default: %{}
-  attr :gross_value_inputs, :map, default: %{}
-  attr :focused_price_input_index, :any, default: nil
+  attr :item_price_input_modes, :map, default: %{}
+  attr :gross_item_price_inputs, :map, default: %{}
+  attr :focused_item_price_input_index, :any, default: nil
 
   def invoice_items(%{invoice_changeset: source, invoice: invoice, items_field: items_field} = input_assigns) do
     items = extract_items_as_structs(source, items_field)
@@ -273,9 +252,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       quantity_error: quantity_error,
       unit_price_error: unit_price_error,
       valid?: form_valid?(source),
-      price_input_modes: input_assigns.price_input_modes,
-      gross_value_inputs: input_assigns.gross_value_inputs,
-      focused_price_input_index: input_assigns.focused_price_input_index,
+      item_price_input_modes: input_assigns.item_price_input_modes,
+      gross_item_price_inputs: input_assigns.gross_item_price_inputs,
+      focused_item_price_input_index: input_assigns.focused_item_price_input_index,
       sort_param: sort_param,
       drop_param: drop_param,
       add_param: add_param
@@ -353,7 +332,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
         :if={@unit_price_error}
         is_tooltip={true}
         target={
-          price_error_target(@price_input_modes, to_boolean(@items_form[:is_reverse_charge].value))
+          price_error_target(
+            @item_price_input_modes,
+            to_boolean(@items_form[:is_reverse_charge].value)
+          )
         }
       >
         {@unit_price_error}
@@ -398,6 +380,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
 
     <div class="col-span-full grid grid-cols-subgrid gap-y-2" id="items_list" phx-hook=".Sortable">
       <.inputs_for :let={item} field={@items_form[@items_field]}>
+        <% gross_value_input_name =
+          String.replace(item[:unit_price].name, ~r/\[unit_price\]$/, "[gross_value]") %>
+        <% gross_value_input_id =
+          String.replace(item[:unit_price].id, ~r/_unit_price$/, "_gross_value") %>
+        <% focus_price_input? = to_string(@focused_item_price_input_index) == to_string(item.index) %>
         <div class="col-span-full grid grid-cols-subgrid items-center">
           <input type="hidden" name={@sort_param} value={item.index} />
           <input type="hidden" name={item[:index].name} value={item.index} />
@@ -441,14 +428,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             options={["szt.", "godz."]}
             new={true}
           />
-          <% price_input_mode = price_input_mode(@price_input_modes, item) %>
-          <% focus_price_input? = focus_price_input?(@focused_price_input_index, item) %>
+          <% price_input_mode = price_input_mode(@item_price_input_modes, item) %>
           <%= if price_input_mode == :net do %>
             <div class="flex w-30 flex-row items-center gap-1">
               <.input
                 field={item[:unit_price]}
                 type="number"
-                value={displayed_item_unit_price(item)}
+                value={item[:unit_price].value}
                 phx-mounted={focus_price_input? && JS.focus()}
                 phx-debounce
                 step=".01"
@@ -493,8 +479,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             </p>
           <% else %>
             <% vat_value =
-              Money.new(@items_form[:currency].value, item_vat_value(item)) %>
-            <% gross_unit_price = displayed_item_gross_value(item, @gross_value_inputs) %>
+              Money.new(@items_form[:currency].value, item_unit_vat_value(item)) %>
+            <% gross_unit_price = displayed_item_gross_value(item, @gross_item_price_inputs) %>
 
             <p class={[
               "w-28 truncate text-end",
@@ -506,9 +492,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
               <div class="flex w-28 flex-row items-center justify-end">
                 <.input
                   type="number"
-                  id={gross_value_input_id(item)}
-                  name={gross_value_input_name(item)}
-                  value={displayed_item_gross_value(item, @gross_value_inputs)}
+                  id={gross_value_input_id}
+                  name={gross_value_input_name}
+                  value={displayed_item_gross_value(item, @gross_item_price_inputs)}
                   phx-mounted={focus_price_input? && JS.focus()}
                   phx-debounce
                   step=".01"

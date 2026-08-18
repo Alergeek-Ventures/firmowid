@@ -69,6 +69,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
 
     assert has_element?(view, selector, "123.00")
     refute has_element?(view, selector, "246,00")
+    assert has_element?(view, "p.w-28", "23,00")
+    refute has_element?(view, "p.w-28", "46,00")
   end
 
   test "items step can submit gross unit price while storing high-precision net", %{conn: conn} do

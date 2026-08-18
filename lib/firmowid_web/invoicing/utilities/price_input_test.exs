@@ -70,7 +70,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInputTest do
         }
       }
 
-      indexes = PriceInput.gross_value_target_indexes(["items", "1", "gross_value"], :items)
+      indexes = MapSet.new(["1"])
 
       normalized =
         PriceInput.normalize_gross_value_params(
@@ -92,8 +92,8 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInputTest do
     end
   end
 
-  describe "gross_value_param_indexes/2" do
-    test "returns indexes for rows that submitted gross line values" do
+  describe "gross_value_indexes/3" do
+    test "returns indexes for rows that submitted or targeted gross line values" do
       params = %{
         "items" => %{
           "0" => %{"unit_price" => "10.00"},
@@ -102,7 +102,8 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInputTest do
         }
       }
 
-      assert PriceInput.gross_value_param_indexes(params, :items) == MapSet.new(["1", "2"])
+      assert PriceInput.gross_value_indexes(params, :items, ["items", "0", "gross_value"]) ==
+               MapSet.new(["0", "1", "2"])
     end
   end
 

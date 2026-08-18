@@ -419,9 +419,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     |> assign(:draft, draft)
     |> assign(:items_form, to_form(ash_form))
     |> assign(:items_field, :items)
-    |> assign_new(:price_input_modes, fn -> %{} end)
-    |> assign_new(:gross_value_inputs, fn -> %{} end)
-    |> assign_new(:focused_price_input_index, fn -> nil end)
+    |> assign_new(:item_price_input_modes, fn -> %{} end)
+    |> assign_new(:gross_item_price_inputs, fn -> %{} end)
+    |> assign_new(:focused_item_price_input_index, fn -> nil end)
   end
 
   defp maybe_setup_step(socket, :payment, _params) do
@@ -705,28 +705,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   defp parse_filter(raw_filter), do: QueryCodec.parse_counterparty_type(raw_filter)
 
   defp normalize_price_input_params(params, items_field, target \\ :all) do
-    indexes =
-      case target do
-        :all ->
-          :all
-
-        target ->
-          target
-          |> PriceInput.gross_value_target_indexes(items_field)
-          |> MapSet.union(PriceInput.gross_value_param_indexes(params, items_field))
-      end
+    indexes = PriceInput.gross_value_indexes(params, items_field, target)
 
     PriceInput.normalize_gross_value_params(params, items_field, &parse_decimal/1, indexes)
   end
 
-  defp set_price_input_mode(_price_input_modes, "all", mode), do: %{"all" => mode}
+  defp set_price_input_mode(_item_price_input_modes, "all", mode), do: %{"all" => mode}
 
-  defp set_price_input_mode(price_input_modes, index, mode) do
-    Map.put(price_input_modes, index, mode)
+  defp set_price_input_mode(item_price_input_modes, item_index, mode) do
+    Map.put(item_price_input_modes, item_index, mode)
   end
 
-  defp price_input_focus_index("all"), do: nil
-  defp price_input_focus_index(index), do: index
+  defp item_price_input_focus_index("all"), do: nil
+  defp item_price_input_focus_index(item_index), do: item_index
 
   defp parse_decimal(value), do: FirmowidWeb.Invoicing.FormHelpers.parse_decimal(value)
 
@@ -756,18 +747,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   def handle_event("set_price_input_mode", %{"index" => index, "mode" => mode}, socket) do
-    price_input_modes = set_price_input_mode(socket.assigns.price_input_modes, index, mode)
+    item_price_input_modes =
+      set_price_input_mode(socket.assigns.item_price_input_modes, index, mode)
 
     {:noreply,
      socket
-     |> assign(:price_input_modes, price_input_modes)
-     |> assign(:focused_price_input_index, price_input_focus_index(index))}
+     |> assign(:item_price_input_modes, item_price_input_modes)
+     |> assign(:focused_item_price_input_index, item_price_input_focus_index(index))}
   end
 
   def handle_event("validate_items", %{"form" => params} = event, socket) do
-    gross_value_inputs =
+    gross_item_price_inputs =
       PriceInput.update_gross_value_inputs(
-        socket.assigns.gross_value_inputs,
+        socket.assigns.gross_item_price_inputs,
         params,
         socket.assigns.items_field,
         event["_target"]
@@ -783,15 +775,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     {:noreply,
      socket
      |> assign(:items_form, form)
-     |> assign(:gross_value_inputs, gross_value_inputs)}
+     |> assign(:gross_item_price_inputs, gross_item_price_inputs)}
   end
 
   def handle_event("submit_items", %{"form" => params}, socket) do
     old_currency = socket.assigns.draft.currency
 
-    gross_value_inputs =
+    gross_item_price_inputs =
       PriceInput.update_gross_value_inputs(
-        socket.assigns.gross_value_inputs,
+        socket.assigns.gross_item_price_inputs,
         params,
         socket.assigns.items_field,
         :all
@@ -826,7 +818,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         {:noreply,
          socket
          |> assign(:items_form, to_form(form))
-         |> assign(:gross_value_inputs, gross_value_inputs)}
+         |> assign(:gross_item_price_inputs, gross_item_price_inputs)}
     end
   end
 
