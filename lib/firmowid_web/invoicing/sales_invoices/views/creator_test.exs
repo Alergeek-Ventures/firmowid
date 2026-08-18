@@ -36,6 +36,50 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     assert html =~ "Wprowadź nazwę"
   end
 
+  test "items step can submit gross unit price while storing high-precision net", %{conn: conn} do
+    admin = admin_fixture()
+    draft = items_step_draft!(admin)
+    scope = scope_for(admin)
+    conn = log_in_user(conn, admin)
+
+    {:ok, view, _html} = live(conn, ~p"/sprzedazowe?szkic_kreatora=#{draft.id}&krok=2")
+
+    view
+    |> element("button[phx-click='toggle_price_input_mode']")
+    |> render_click()
+
+    assert render(view) =~ "Cena brutto"
+
+    view
+    |> form("#invoice-form", %{
+      "form" => %{
+        "price_input_mode" => "gross",
+        "currency" => "PLN",
+        "items" => %{
+          "0" => %{
+            "index" => "0",
+            "name" => "Usługa brutto",
+            "quantity" => "1",
+            "unit" => "szt.",
+            "unit_price" => "100.00",
+            "vat_rate" => "23"
+          }
+        }
+      }
+    })
+    |> render_submit()
+
+    [item] =
+      draft.id |> Invoicing.get_wizard_draft!(load: [:items], scope: scope) |> Map.fetch!(:items)
+
+    refute Decimal.eq?(item.unit_price, Decimal.new("81.30"))
+
+    assert Decimal.eq?(
+             Decimal.round(Decimal.mult(item.unit_price, Decimal.new("1.23")), 2),
+             Decimal.new("100.00")
+           )
+  end
+
   test "counterparty step derives invoice defaults in wizard action", %{conn: conn} do
     admin = admin_fixture()
     conn = log_in_user(conn, admin)

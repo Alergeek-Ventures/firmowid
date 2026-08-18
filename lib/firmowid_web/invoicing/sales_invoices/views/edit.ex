@@ -28,6 +28,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
   alias FirmowidWeb.Invoicing.SalesInvoices.Views.Creator
   alias FirmowidWeb.Invoicing.Utilities.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.PriceInput
 
   require Logger
 
@@ -107,6 +108,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     |> assign(:correction_reason_touched, false)
     |> assign(:last_auto_reason, "")
     |> assign(:counterparty_check, counterparty_check)
+    |> assign(:price_input_mode, :net)
     |> assign_form_with_preview(ash_form)
     |> assign(:bank_accounts, bank_accounts)
     |> assign(
@@ -274,12 +276,15 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   def handle_event("validate", params, socket) do
     # AshPhoenix.Form uses "form" as default form name
     form_params = params["form"] || params["sales_invoice"] || %{}
+    price_input_mode = price_input_mode(form_params, socket)
+    form_params = normalize_price_input_params(form_params, price_input_mode)
     socket = detect_correction_reason_touched(form_params, socket)
 
     ash_form = AshPhoenix.Form.validate(socket.assigns.form.source, form_params)
 
     socket =
       socket
+      |> assign(:price_input_mode, price_input_mode)
       |> assign_form_with_preview(ash_form)
       |> push_event("unsaved-changed", %{value: true})
 
@@ -358,6 +363,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     end
   end
 
+  def handle_event("toggle_price_input_mode", %{"mode" => mode}, socket) do
+    {:noreply, assign(socket, :price_input_mode, PriceInput.parse_mode(mode))}
+  end
+
   def handle_event("send_to_ksef", params, socket) do
     form_params = params["form"] || params["sales_invoice"] || %{}
 
@@ -371,6 +380,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     invoice = socket.assigns.invoice
     scope = socket.assigns.ash_scope
     ash_form = socket.assigns.form.source
+    form_params = normalize_price_input_params(form_params, socket.assigns.price_input_mode)
 
     cond do
       is_nil(invoice.invoice_number) ->
@@ -778,6 +788,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   defp parse_boolean(_), do: false
 
   defp parse_decimal(value), do: FormHelpers.parse_decimal(value)
+
+  defp price_input_mode(params, socket) do
+    PriceInput.parse_mode(params["price_input_mode"] || socket.assigns.price_input_mode)
+  end
+
+  defp normalize_price_input_params(params, price_input_mode) do
+    PriceInput.normalize_items_params(
+      params,
+      :sales_invoice_items,
+      price_input_mode,
+      &parse_decimal/1
+    )
+  end
 
   defp not_editable_message(%SalesInvoice{ksef_invoice_kind: :vat}) do
     "Nie można edytować tej faktury — posiada korekty. Edytuj ostatnią korektę."

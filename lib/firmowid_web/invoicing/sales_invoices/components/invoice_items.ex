@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   alias Firmowid.Ash.Currencies.NbpApiClient
   alias Firmowid.Ash.Ksef.VatRate
   alias FirmowidWeb.Invoicing.FormHelpers
+  alias FirmowidWeb.Invoicing.Utilities.PriceInput
   alias Phoenix.HTML.FormData
 
   defp currency_options do
@@ -49,6 +50,22 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   end
 
   defp parse_decimal(value), do: FormHelpers.parse_decimal(value)
+
+  defp price_input_label(:gross), do: "Cena brutto"
+  defp price_input_label(_mode), do: "Cena netto"
+
+  defp opposite_price_input_mode(:gross), do: "net"
+  defp opposite_price_input_mode(_mode), do: "gross"
+
+  defp price_input_mode_label(:gross), do: "brutto"
+  defp price_input_mode_label(_mode), do: "netto"
+
+  defp displayed_unit_price(item_form, price_input_mode) do
+    unit_price = parse_decimal(item_form[:unit_price].value)
+    vat_rate = to_string(item_form[:vat_rate].value || "0")
+
+    PriceInput.display_unit_price(unit_price, vat_rate, price_input_mode)
+  end
 
   defp compute_vat_options(invoice, is_reverse_charge) do
     if is_reverse_charge do
@@ -129,8 +146,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   attr :invoice, :any, required: true
   attr :invoice_changeset, :any, required: true
   attr :items_field, :atom, default: :sales_invoice_items
+  attr :price_input_mode, :atom, default: :net
 
-  def invoice_items(%{invoice_changeset: source, invoice: invoice, items_field: items_field}) do
+  def invoice_items(%{invoice_changeset: source, invoice: invoice, items_field: items_field} = input_assigns) do
     items = extract_items_as_structs(source, items_field)
 
     single_item? =
@@ -164,6 +182,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       invoice: invoice,
       items_form: items_form,
       items_field: items_field,
+      price_input_mode: input_assigns.price_input_mode,
       summary: invoice_summary(items, currency),
       single_item?: single_item?,
       vat_options: vat_options,
@@ -239,6 +258,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       </div>
     </div>
     <div class="text-grey-700 col-start-2 col-end-9 mb-1 grid grid-cols-subgrid py-1 pl-2 text-sm/snug">
+      <input type="hidden" name={"#{@items_form.name}[price_input_mode]"} value={@price_input_mode} />
       <.error :if={@name_error} is_tooltip={true} target="name">
         {@name_error}
       </.error>
@@ -257,7 +277,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       <p>VAT</p>
       <p>Jednostka</p>
       <p id="price">
-        Cena netto
+        <.button
+          type="button"
+          phx-click="toggle_price_input_mode"
+          phx-value-mode={opposite_price_input_mode(@price_input_mode)}
+          variant="unstyled"
+          class="hover:text-grey-900 underline decoration-dotted underline-offset-2"
+          title="Przełącz między wpisywaniem ceny netto i brutto"
+        >
+          {price_input_label(@price_input_mode)}
+        </.button>
       </p>
 
       <%= if to_boolean(@items_form[:is_reverse_charge].value) do %>
@@ -317,6 +346,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             <.input
               field={item[:unit_price]}
               type="number"
+              value={displayed_unit_price(item, @price_input_mode)}
               phx-debounce
               step=".01"
               min="0"
@@ -326,7 +356,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
               new={true}
               show_error={false}
             />
-            <p class="text-grey-500 text-sm">{@items_form[:currency].value}</p>
+            <p class="text-grey-500 text-sm">
+              {@items_form[:currency].value} {price_input_mode_label(@price_input_mode)}
+            </p>
           </div>
 
           <%= if to_boolean(@items_form[:is_reverse_charge].value) do %>
