@@ -59,9 +59,9 @@ jobs:
           otp-version: ${{ needs.extract-versions.outputs.otp }}
           build-app: false
 
-      # Install tailwindcss binary required by canonical_tailwind formatter
-      - name: Install Tailwind CSS
-        run: mix tailwind.install
+      # Install npm asset dependencies, including the Tailwind CLI
+      - name: Install npm asset dependencies
+        run: npm ci --prefix assets
 
       # Cache key based on Erlang/Elixir version and the mix.lock hash
       - name: Restore PLT cache

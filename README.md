@@ -226,7 +226,7 @@ Sprawdzaj je **co tydzień** przy okazji przeglądania PR-ów Dependabota:
 |----|-------|-----------------|
 | Elixir | `.tool-versions` | <https://github.com/elixir-lang/elixir/releases> |
 | Erlang/OTP | `.tool-versions` | <https://github.com/erlang/otp/releases> |
-| Tailwind CSS CLI | `config/config.exs` (`:tailwind, version:`) | <https://github.com/tailwindlabs/tailwindcss/releases> |
+| Tailwind CSS CLI i core | `assets/package.json` (`@tailwindcss/cli`, `tailwindcss`) oraz `config/config.exs` (`:tailwind, version:`) | <https://github.com/tailwindlabs/tailwindcss/releases> |
 | esbuild | `config/config.exs` (`:esbuild, version:`) | <https://github.com/evanw/esbuild/releases> |
 
 > **Prompt dla agenta do cotygodniowego sprawdzenia:**
@@ -235,7 +235,8 @@ Sprawdzaj je **co tydzień** przy okazji przeglądania PR-ów Dependabota:
 > Check for new stable releases of Elixir, Erlang/OTP, Tailwind CSS,
 > and esbuild. Only consider releases that are at least 7 days old
 > (supply chain attack mitigation). Compare with versions pinned in
-> .tool-versions and config/config.exs. If any are outdated, bump them
+> .tool-versions, assets/package.json, and config/config.exs. Keep the Tailwind
+> CLI and core versions synchronized; if any are outdated, bump them
 > and run mix check. For Elixir/Erlang, also update the hexpm/elixir
 > image tag in deployment/Containerfile.app to match.
 > ```

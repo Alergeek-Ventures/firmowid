@@ -197,7 +197,9 @@ config :spark,
   ]
 
 config :tailwind,
-  version: "4.3.0",
+  version: "4.3.3",
+  version_check: false,
+  path: Path.expand("../assets/node_modules/.bin/tailwindcss", __DIR__),
   firmowid: [
     args: ~w(
       --input=css/app.css
