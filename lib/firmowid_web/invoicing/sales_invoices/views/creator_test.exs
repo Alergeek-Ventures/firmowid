@@ -47,7 +47,39 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     html = render(view)
 
     assert html =~ "Wartość VAT"
+    assert html =~ ~s(name="form[items][0][unit_price]")
+    refute html =~ ~s(name="form[items][0][gross_value]")
+
+    html =
+      view
+      |> element("button[phx-click='set_price_input_mode'][phx-value-mode='gross'][phx-value-index='0']")
+      |> render_click()
+
     assert html =~ ~s(name="form[items][0][gross_value]")
+    assert html =~ ~s(placeholder="0.00")
+    assert html =~ ~s(value="")
+
+    html =
+      view
+      |> form("#invoice-form", %{
+        "form" => %{
+          "currency" => "PLN",
+          "items" => %{
+            "0" => %{
+              "index" => "0",
+              "name" => "Usługa brutto",
+              "quantity" => "1",
+              "unit" => "szt.",
+              "unit_price" => "",
+              "gross_value" => "",
+              "vat_rate" => "23"
+            }
+          }
+        }
+      })
+      |> render_change()
+
+    assert html =~ ~s(data-for="gross-price")
 
     view
     |> form("#invoice-form", %{
@@ -59,7 +91,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
             "name" => "Usługa brutto",
             "quantity" => "1",
             "unit" => "szt.",
-            "unit_price" => "0",
+            "unit_price" => "",
             "gross_value" => "100.00",
             "vat_rate" => "23"
           }

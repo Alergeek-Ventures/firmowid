@@ -91,4 +91,18 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInputTest do
       refute Map.has_key?(normalized["items"]["1"], "gross_value")
     end
   end
+
+  describe "gross_value_param_indexes/2" do
+    test "returns indexes for rows that submitted gross line values" do
+      params = %{
+        "items" => %{
+          "0" => %{"unit_price" => "10.00"},
+          "1" => %{"gross_value" => "123.00"},
+          "2" => %{"gross_value" => ""}
+        }
+      }
+
+      assert PriceInput.gross_value_param_indexes(params, :items) == MapSet.new(["1", "2"])
+    end
+  end
 end

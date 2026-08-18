@@ -68,6 +68,28 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInput do
 
   def gross_value_target_indexes(_target, _items_field), do: MapSet.new()
 
+  @doc "Returns item indexes that submitted a gross-value field."
+  @spec gross_value_param_indexes(map(), String.t() | atom()) :: MapSet.t()
+  def gross_value_param_indexes(params, items_field) when is_map(params) do
+    field = to_string(items_field)
+
+    params
+    |> Map.get(field, %{})
+    |> case do
+      items when is_map(items) ->
+        MapSet.new(items, fn
+          {index, %{} = item} -> if get_value(item, :gross_value), do: index
+          {index, _item} -> index
+        end)
+
+      _items ->
+        MapSet.new()
+    end
+    |> MapSet.delete(nil)
+  end
+
+  def gross_value_param_indexes(_params, _items_field), do: MapSet.new()
+
   defp normalize_items(items, parse_decimal, indexes) when is_map(items) do
     Map.new(items, fn {key, item} -> {key, normalize_item(key, item, parse_decimal, indexes)} end)
   end

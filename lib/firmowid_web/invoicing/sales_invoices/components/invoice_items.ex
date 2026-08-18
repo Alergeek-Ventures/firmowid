@@ -59,14 +59,67 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   end
 
   defp displayed_item_gross_value(item_form) do
-    item_form
-    |> item_gross_value()
-    |> Decimal.round(2)
-    |> Decimal.to_string(:normal)
+    value = item_gross_value(item_form)
+
+    if Decimal.eq?(value, Decimal.new(0)) do
+      ""
+    else
+      value |> Decimal.round(2) |> Decimal.to_string(:normal)
+    end
+  end
+
+  defp displayed_item_unit_price(item_form) do
+    item_form[:unit_price].value
+    |> parse_decimal()
+    |> case do
+      nil -> nil
+      unit_price -> unit_price |> Decimal.round(2) |> Decimal.to_string(:normal)
+    end
   end
 
   defp gross_value_input_name(item_form) do
     String.replace(item_form[:unit_price].name, ~r/\[unit_price\]$/, "[gross_value]")
+  end
+
+  defp gross_value_input_id(item_form) do
+    String.replace(item_form[:unit_price].id, ~r/_unit_price$/, "_gross_value")
+  end
+
+  defp price_input_mode(price_input_modes, item_form) do
+    row_mode =
+      Map.get(
+        price_input_modes,
+        to_string(item_form.index),
+        Map.get(price_input_modes, "all", :net)
+      )
+
+    case to_string(row_mode) do
+      "gross" -> :gross
+      _ -> :net
+    end
+  end
+
+  defp focus_price_input?(focused_price_input_index, item_form) do
+    to_string(focused_price_input_index) == to_string(item_form.index)
+  end
+
+  defp price_error_target(_price_input_modes, true), do: "price"
+
+  defp price_error_target(price_input_modes, false) do
+    if Enum.any?(price_input_modes, fn {_index, mode} -> to_string(mode) == "gross" end) do
+      "gross-price"
+    else
+      "price"
+    end
+  end
+
+  defp displayed_item_unit_price_text(item_form) do
+    item_form[:unit_price].value
+    |> parse_decimal()
+    |> case do
+      nil -> "0.00"
+      unit_price -> unit_price |> Decimal.round(2) |> Decimal.to_string(:normal)
+    end
   end
 
   defp compute_vat_options(invoice, is_reverse_charge) do
@@ -148,8 +201,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   attr :invoice, :any, required: true
   attr :invoice_changeset, :any, required: true
   attr :items_field, :atom, default: :sales_invoice_items
+  attr :price_input_modes, :map, default: %{}
+  attr :focused_price_input_index, :any, default: nil
 
-  def invoice_items(%{invoice_changeset: source, invoice: invoice, items_field: items_field}) do
+  def invoice_items(%{invoice_changeset: source, invoice: invoice, items_field: items_field} = input_assigns) do
     items = extract_items_as_structs(source, items_field)
 
     single_item? =
@@ -191,6 +246,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       quantity_error: quantity_error,
       unit_price_error: unit_price_error,
       valid?: form_valid?(source),
+      price_input_modes: input_assigns.price_input_modes,
+      focused_price_input_index: input_assigns.focused_price_input_index,
       sort_param: sort_param,
       drop_param: drop_param,
       add_param: add_param
@@ -264,7 +321,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       <.error :if={@quantity_error} is_tooltip={true} target="quantity">
         {@quantity_error}
       </.error>
-      <.error :if={@unit_price_error} is_tooltip={true} target="price">
+      <.error
+        :if={@unit_price_error}
+        is_tooltip={true}
+        target={
+          price_error_target(@price_input_modes, to_boolean(@items_form[:is_reverse_charge].value))
+        }
+      >
         {@unit_price_error}
       </.error>
       <p id="name">
@@ -275,15 +338,33 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       </p>
       <p>VAT</p>
       <p>Jednostka</p>
-      <p id="price">
+      <.button
+        id="price"
+        type="button"
+        variant="unstyled"
+        class="cursor-pointer text-left"
+        phx-click="set_price_input_mode"
+        phx-value-index="all"
+        phx-value-mode="net"
+      >
         Cena netto
-      </p>
+      </.button>
 
       <%= if to_boolean(@items_form[:is_reverse_charge].value) do %>
         <p class="col-span-2 text-end">Wartość</p>
       <% else %>
         <p class="text-end">Wartość VAT</p>
-        <p class="text-end">Wartość brutto</p>
+        <.button
+          id="gross-price"
+          type="button"
+          variant="unstyled"
+          class="cursor-pointer text-right"
+          phx-click="set_price_input_mode"
+          phx-value-index="all"
+          phx-value-mode="gross"
+        >
+          Wartość brutto
+        </.button>
       <% end %>
     </div>
 
@@ -332,21 +413,42 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             options={["szt.", "godz."]}
             new={true}
           />
-          <div class="flex flex-row items-center gap-1">
-            <.input
-              field={item[:unit_price]}
-              type="number"
-              phx-debounce
-              step=".01"
-              min="0"
-              placeholder="0,00"
-              class="w-30"
-              input_class={["text-center", item[:unit_price].errors != [] && "border-redText"]}
-              new={true}
-              show_error={false}
-            />
-            <p class="text-grey-500 text-sm">{@items_form[:currency].value}</p>
-          </div>
+          <% price_input_mode = price_input_mode(@price_input_modes, item) %>
+          <% focus_price_input? = focus_price_input?(@focused_price_input_index, item) %>
+          <%= if price_input_mode == :net do %>
+            <div class="flex flex-row items-center gap-1">
+              <.input
+                field={item[:unit_price]}
+                type="number"
+                value={displayed_item_unit_price(item)}
+                phx-mounted={focus_price_input? && JS.focus()}
+                phx-debounce
+                step=".01"
+                min="0"
+                placeholder="0,00"
+                class="w-30"
+                input_class={["text-center", item[:unit_price].errors != [] && "border-redText"]}
+                new={true}
+                show_error={false}
+              />
+              <p class="text-grey-500 text-sm">{@items_form[:currency].value}</p>
+            </div>
+          <% else %>
+            <div class="flex w-30 flex-row items-center justify-center gap-1">
+              <input type="hidden" name={item[:unit_price].name} value={item[:unit_price].value} />
+              <.button
+                type="button"
+                variant="unstyled"
+                class="hover:bg-grey-200 rounded p-1 text-center transition"
+                phx-click="set_price_input_mode"
+                phx-value-index={item.index}
+                phx-value-mode="net"
+              >
+                {displayed_item_unit_price_text(item)}
+              </.button>
+              <p class="text-grey-500 text-sm">{@items_form[:currency].value}</p>
+            </div>
+          <% end %>
 
           <%= if to_boolean(@items_form[:is_reverse_charge].value) do %>
             <% gross_value =
@@ -370,21 +472,39 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             ]}>
               {Money.to_string!(vat_value, currency_symbol: "")}
             </p>
-            <div class="flex w-28 flex-row items-center justify-end">
-              <input
-                type="number"
-                name={gross_value_input_name(item)}
-                value={displayed_item_gross_value(item)}
-                phx-debounce
-                step=".01"
-                min="0"
-                placeholder="0,00"
+            <%= if price_input_mode == :gross do %>
+              <div class="flex w-28 flex-row items-center justify-end">
+                <.input
+                  type="number"
+                  id={gross_value_input_id(item)}
+                  name={gross_value_input_name(item)}
+                  value={displayed_item_gross_value(item)}
+                  phx-mounted={focus_price_input? && JS.focus()}
+                  phx-debounce
+                  step=".01"
+                  min="0"
+                  placeholder="0.00"
+                  class="w-28"
+                  input_class={["text-right", item[:unit_price].errors != [] && "border-redText"]}
+                  new={true}
+                  show_error={false}
+                />
+              </div>
+            <% else %>
+              <.button
+                type="button"
+                variant="unstyled"
                 class={[
-                  "border-grey-200 focus:border-grey-400 placeholder:text-grey-500 text-grey-900 w-full [appearance:textfield] rounded-lg border bg-white px-3 py-1.5 text-right leading-tight [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
+                  "hover:bg-grey-200 w-28 truncate rounded p-1 text-right transition",
                   Money.zero?(gross_value) && "text-grey-500"
                 ]}
-              />
-            </div>
+                phx-click="set_price_input_mode"
+                phx-value-index={item.index}
+                phx-value-mode="gross"
+              >
+                {Money.to_string!(gross_value, currency_symbol: "")}
+              </.button>
+            <% end %>
           <% end %>
 
           <.button
