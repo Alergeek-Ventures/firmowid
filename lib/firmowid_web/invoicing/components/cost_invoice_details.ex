@@ -20,7 +20,6 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
   alias FirmowidWeb.Invoicing.Utilities.InvoiceDetailsAssistantSubject
   alias FirmowidWeb.Invoicing.Utilities.Navigation
-  alias Phoenix.LiveView.JS
 
   @invoice_suggested_messages [
     "Ta faktura pokrywa wszystkie transakcje z poprzedniego miesiąca",
@@ -251,15 +250,8 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                       "min-height: 6rem;"
                     }
                     value={@invoice.internal_note}
-                    phx-click={JS.remove_attribute("readonly")}
-                    phx-focus={JS.remove_attribute("readonly")}
-                    phx-blur={JS.set_attribute({"readonly", true})}
-                    phx-click-away={JS.set_attribute({"readonly", true})}
-                    phx-keydown={JS.set_attribute({"readonly", true})}
-                    phx-key="enter"
                     phx-debounce="300"
                     class="min-h-24"
-                    readonly
                   />
                 </.form>
               </div>
