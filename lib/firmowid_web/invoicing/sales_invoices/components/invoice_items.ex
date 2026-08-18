@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   alias Firmowid.Ash.Currencies.NbpApiClient
   alias Firmowid.Ash.Ksef.VatRate
   alias FirmowidWeb.Invoicing.FormHelpers
+  alias FirmowidWeb.Invoicing.Utilities.PriceInput
   alias Phoenix.HTML.FormData
 
   defp currency_options do
@@ -61,12 +62,18 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   defp displayed_item_gross_value(item_form, gross_value_inputs) do
     case Map.fetch(gross_value_inputs, to_string(item_form.index)) do
       {:ok, value} -> value
-      :error -> computed_item_gross_value(item_form)
+      :error -> computed_item_gross_unit_price(item_form)
     end
   end
 
-  defp computed_item_gross_value(item_form) do
-    value = item_gross_value(item_form)
+  defp computed_item_gross_unit_price(item_form) do
+    value =
+      item_form[:unit_price].value
+      |> parse_decimal()
+      |> case do
+        nil -> Decimal.new(0)
+        unit_price -> PriceInput.gross_unit_price_from_net(unit_price, item_form[:vat_rate].value)
+      end
 
     if Decimal.eq?(value, Decimal.new(0)) do
       ""
@@ -128,7 +135,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     end
   end
 
-  defp invalid_field_class(field), do: field_errors(field) != [] && "border-redText"
+  defp invalid_field?(field), do: field_errors(field) != []
 
   defp submitted_form?(%AshPhoenix.Form{just_submitted?: true}), do: true
   defp submitted_form?(_source), do: false
@@ -400,7 +407,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             placeholder="Wprowadź nazwę"
             phx-debounce
             class="w-full"
-            input_class={[invalid_field_class(item[:name])]}
+            input_class={[if(invalid_field?(item[:name]), do: "border-redText")]}
             new={true}
             show_error={false}
           />
@@ -412,7 +419,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             step=".000001"
             min="0"
             class="w-16"
-            input_class={["text-center", invalid_field_class(item[:quantity])]}
+            input_class={["text-center", if(invalid_field?(item[:quantity]), do: "border-redText")]}
             new={true}
             show_error={false}
           />
@@ -448,7 +455,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                 min="0"
                 placeholder="0,00"
                 class="w-30"
-                input_class={["text-center", invalid_field_class(item[:unit_price])]}
+                input_class={[
+                  "text-center",
+                  if(invalid_field?(item[:unit_price]), do: "border-redText")
+                ]}
                 new={true}
                 show_error={false}
               />
@@ -506,7 +516,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                   min="0"
                   placeholder="0.00"
                   class="w-28"
-                  input_class={["text-right", invalid_field_class(item[:unit_price])]}
+                  input_class={[
+                    "text-right",
+                    if(invalid_field?(item[:unit_price]), do: "border-redText")
+                  ]}
                   new={true}
                   show_error={false}
                 />

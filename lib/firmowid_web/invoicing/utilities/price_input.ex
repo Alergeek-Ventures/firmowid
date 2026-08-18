@@ -3,7 +3,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInput do
   Decimal helpers for invoice line-item gross price input.
 
   Sales invoice items persist `unit_price` as a net amount. These helpers allow
-  forms to accept gross line totals while converting them to a high-precision net
+  forms to accept gross unit prices while converting them to a high-precision net
   unit price before Ash validation/submission.
   """
 
@@ -31,15 +31,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInput do
     Decimal.div(gross_unit_price, gross_multiplier(vat_rate))
   end
 
-  @doc "Converts a gross line total to net unit price without currency-style rounding."
-  @spec net_unit_price_from_gross_total(Decimal.t(), Decimal.t(), String.t() | nil) :: Decimal.t()
-  def net_unit_price_from_gross_total(%Decimal{} = gross_total, %Decimal{} = quantity, vat_rate) do
-    gross_total
-    |> Decimal.div(quantity)
-    |> net_unit_price_from_gross(vat_rate)
-  end
-
-  @doc "Converts nested line gross totals to net unit prices and strips UI-only fields."
+  @doc "Converts nested gross unit prices to net unit prices and strips UI-only fields."
   @spec normalize_gross_value_params(
           map(),
           String.t() | atom(),
@@ -158,17 +150,16 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInput do
   end
 
   defp do_normalize_item(%{} = item, parse_decimal) do
-    with gross_value when not is_nil(gross_value) <-
-           item |> get_value(:gross_value) |> parse_decimal.(),
-         quantity when not is_nil(quantity) <- item |> get_value(:quantity) |> parse_decimal.(),
-         false <- Decimal.eq?(quantity, 0) do
-      vat_rate = get_value(item, :vat_rate) || "0"
+    case item |> get_value(:gross_value) |> parse_decimal.() do
+      gross_value when not is_nil(gross_value) ->
+        vat_rate = get_value(item, :vat_rate) || "0"
 
-      item
-      |> put_value(:unit_price, net_unit_price_from_gross_total(gross_value, quantity, vat_rate))
-      |> strip_gross_value()
-    else
-      _ -> strip_gross_value(item)
+        item
+        |> put_value(:unit_price, net_unit_price_from_gross(gross_value, vat_rate))
+        |> strip_gross_value()
+
+      _ ->
+        strip_gross_value(item)
     end
   end
 

@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     assert html =~ "Wprowadź nazwę"
   end
 
-  test "items step can submit gross line value while storing high-precision net", %{conn: conn} do
+  test "items step can submit gross unit price while storing high-precision net", %{conn: conn} do
     admin = admin_fixture()
     draft = items_step_draft!(admin)
     scope = scope_for(admin)
@@ -68,7 +68,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
             "0" => %{
               "index" => "0",
               "name" => "Usługa brutto",
-              "quantity" => "1",
+              "quantity" => "2",
               "unit" => "szt.",
               "unit_price" => "",
               "gross_value" => "",
@@ -89,10 +89,10 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
           "0" => %{
             "index" => "0",
             "name" => "Usługa brutto",
-            "quantity" => "1",
+            "quantity" => "2",
             "unit" => "szt.",
             "unit_price" => "",
-            "gross_value" => "100.00",
+            "gross_value" => "123.00",
             "vat_rate" => "23"
           }
         }
@@ -107,7 +107,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
 
     assert Decimal.eq?(
              Decimal.round(Decimal.mult(item.unit_price, Decimal.new("1.23")), 2),
-             Decimal.new("100.00")
+             Decimal.new("123.00")
            )
   end
 

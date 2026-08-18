@@ -26,11 +26,11 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInputTest do
   end
 
   describe "normalize_gross_value_params/4" do
-    test "converts gross line values to net unit prices and strips UI-only values" do
+    test "converts gross unit prices to net unit prices and strips UI-only values" do
       params = %{
         "items" => %{
           "0" => %{
-            "quantity" => "1",
+            "quantity" => "2",
             "unit_price" => "0",
             "gross_value" => "100.00",
             "vat_rate" => "23"
@@ -52,7 +52,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInputTest do
              )
     end
 
-    test "only converts targeted gross line values during validation" do
+    test "only converts targeted gross unit prices during validation" do
       params = %{
         "items" => %{
           "0" => %{
@@ -62,7 +62,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInputTest do
             "vat_rate" => "23"
           },
           "1" => %{
-            "quantity" => "1",
+            "quantity" => "2",
             "unit_price" => "20.00",
             "gross_value" => "246.00",
             "vat_rate" => "23"
@@ -107,7 +107,7 @@ defmodule FirmowidWeb.Invoicing.Utilities.PriceInputTest do
   end
 
   describe "update_gross_value_inputs/4" do
-    test "keeps submitted gross line values that cannot yet be normalized" do
+    test "keeps submitted gross unit values for display" do
       params = %{
         "items" => %{
           "0" => %{"gross_value" => "100.00", "quantity" => ""}
