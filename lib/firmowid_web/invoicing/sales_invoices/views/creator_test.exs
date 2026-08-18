@@ -36,6 +36,41 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     assert html =~ "Wprowadź nazwę"
   end
 
+  test "items step gross price display uses unit price in net mode", %{conn: conn} do
+    admin = admin_fixture()
+    draft = items_step_draft!(admin)
+    scope = [tenant: admin.organization_id, actor: admin]
+
+    {:ok, draft} =
+      WizardDraft.update_items(
+        draft,
+        %{
+          currency: "PLN",
+          items: [
+            %{
+              index: 0,
+              name: "Usługa brutto",
+              quantity: Decimal.new("2"),
+              unit: "szt.",
+              unit_price: Decimal.new("100.00"),
+              vat_rate: "23"
+            }
+          ]
+        },
+        scope
+      )
+
+    conn = log_in_user(conn, admin)
+
+    {:ok, view, _html} = live(conn, ~p"/sprzedazowe?szkic_kreatora=#{draft.id}&krok=2")
+
+    selector =
+      "button[phx-click='set_price_input_mode'][phx-value-mode='gross'][phx-value-index='0']"
+
+    assert has_element?(view, selector, "123.00")
+    refute has_element?(view, selector, "246,00")
+  end
+
   test "items step can submit gross unit price while storing high-precision net", %{conn: conn} do
     admin = admin_fixture()
     draft = items_step_draft!(admin)

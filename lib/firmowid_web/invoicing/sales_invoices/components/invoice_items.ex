@@ -494,8 +494,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
           <% else %>
             <% vat_value =
               Money.new(@items_form[:currency].value, item_vat_value(item)) %>
-            <% gross_value =
-              Money.new(@items_form[:currency].value, item_gross_value(item)) %>
+            <% gross_unit_price = displayed_item_gross_value(item, @gross_value_inputs) %>
 
             <p class={[
               "w-28 truncate text-end",
@@ -530,13 +529,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
                 variant="unstyled"
                 class={[
                   "hover:bg-grey-200 w-28 truncate rounded p-1 text-right transition",
-                  Money.zero?(gross_value) && "text-grey-500"
+                  gross_unit_price == "" && "text-grey-500"
                 ]}
                 phx-click="set_price_input_mode"
                 phx-value-index={item.index}
                 phx-value-mode="gross"
               >
-                {Money.to_string!(gross_value, currency_symbol: "")}
+                {gross_unit_price}
               </.button>
             <% end %>
           <% end %>
