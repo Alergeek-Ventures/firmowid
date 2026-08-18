@@ -13,7 +13,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   alias Firmowid.Ash.Currencies.NbpApiClient
   alias Firmowid.Ash.Ksef.VatRate
   alias FirmowidWeb.Invoicing.FormHelpers
-  alias FirmowidWeb.Invoicing.Utilities.PriceInput
   alias Phoenix.HTML.FormData
 
   defp currency_options do
@@ -51,20 +50,23 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
 
   defp parse_decimal(value), do: FormHelpers.parse_decimal(value)
 
-  defp price_input_label(:gross), do: "Cena brutto"
-  defp price_input_label(_mode), do: "Cena netto"
-
-  defp opposite_price_input_mode(:gross), do: "net"
-  defp opposite_price_input_mode(_mode), do: "gross"
-
-  defp price_input_mode_label(:gross), do: "brutto"
-  defp price_input_mode_label(_mode), do: "netto"
-
-  defp displayed_unit_price(item_form, price_input_mode) do
-    unit_price = parse_decimal(item_form[:unit_price].value)
+  defp item_vat_value(item_form) do
+    net = item_net_value(item_form)
     vat_rate = to_string(item_form[:vat_rate].value || "0")
+    vat_rate_numeric = VatRate.to_numeric(vat_rate)
 
-    PriceInput.display_unit_price(unit_price, vat_rate, price_input_mode)
+    Decimal.mult(net, Decimal.div(vat_rate_numeric, 100))
+  end
+
+  defp displayed_item_gross_value(item_form) do
+    item_form
+    |> item_gross_value()
+    |> Decimal.round(2)
+    |> Decimal.to_string(:normal)
+  end
+
+  defp gross_value_input_name(item_form) do
+    String.replace(item_form[:unit_price].name, ~r/\[unit_price\]$/, "[gross_value]")
   end
 
   defp compute_vat_options(invoice, is_reverse_charge) do
@@ -146,9 +148,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   attr :invoice, :any, required: true
   attr :invoice_changeset, :any, required: true
   attr :items_field, :atom, default: :sales_invoice_items
-  attr :price_input_mode, :atom, default: :net
 
-  def invoice_items(%{invoice_changeset: source, invoice: invoice, items_field: items_field} = input_assigns) do
+  def invoice_items(%{invoice_changeset: source, invoice: invoice, items_field: items_field}) do
     items = extract_items_as_structs(source, items_field)
 
     single_item? =
@@ -182,7 +183,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       invoice: invoice,
       items_form: items_form,
       items_field: items_field,
-      price_input_mode: input_assigns.price_input_mode,
       summary: invoice_summary(items, currency),
       single_item?: single_item?,
       vat_options: vat_options,
@@ -258,7 +258,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       </div>
     </div>
     <div class="text-grey-700 col-start-2 col-end-9 mb-1 grid grid-cols-subgrid py-1 pl-2 text-sm/snug">
-      <input type="hidden" name={"#{@items_form.name}[price_input_mode]"} value={@price_input_mode} />
       <.error :if={@name_error} is_tooltip={true} target="name">
         {@name_error}
       </.error>
@@ -277,22 +276,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       <p>VAT</p>
       <p>Jednostka</p>
       <p id="price">
-        <.button
-          type="button"
-          phx-click="toggle_price_input_mode"
-          phx-value-mode={opposite_price_input_mode(@price_input_mode)}
-          variant="unstyled"
-          class="hover:text-grey-900 underline decoration-dotted underline-offset-2"
-          title="Przełącz między wpisywaniem ceny netto i brutto"
-        >
-          {price_input_label(@price_input_mode)}
-        </.button>
+        Cena netto
       </p>
 
       <%= if to_boolean(@items_form[:is_reverse_charge].value) do %>
         <p class="col-span-2 text-end">Wartość</p>
       <% else %>
-        <p class="text-end">Wartość netto</p>
+        <p class="text-end">Wartość VAT</p>
         <p class="text-end">Wartość brutto</p>
       <% end %>
     </div>
@@ -346,7 +336,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             <.input
               field={item[:unit_price]}
               type="number"
-              value={displayed_unit_price(item, @price_input_mode)}
               phx-debounce
               step=".01"
               min="0"
@@ -356,9 +345,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
               new={true}
               show_error={false}
             />
-            <p class="text-grey-500 text-sm">
-              {@items_form[:currency].value} {price_input_mode_label(@price_input_mode)}
-            </p>
+            <p class="text-grey-500 text-sm">{@items_form[:currency].value}</p>
           </div>
 
           <%= if to_boolean(@items_form[:is_reverse_charge].value) do %>
@@ -372,23 +359,32 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
               {Money.to_string!(gross_value, currency_symbol: "")}
             </p>
           <% else %>
-            <% net_value =
-              Money.new(@items_form[:currency].value, item_net_value(item)) %>
+            <% vat_value =
+              Money.new(@items_form[:currency].value, item_vat_value(item)) %>
             <% gross_value =
               Money.new(@items_form[:currency].value, item_gross_value(item)) %>
 
             <p class={[
               "w-28 truncate text-end",
-              if(Money.zero?(net_value), do: "text-grey-500")
+              if(Money.zero?(vat_value), do: "text-grey-500")
             ]}>
-              {Money.to_string!(net_value, currency_symbol: "")}
+              {Money.to_string!(vat_value, currency_symbol: "")}
             </p>
-            <p class={[
-              "w-28 truncate text-end",
-              if(Money.zero?(gross_value), do: "text-grey-500")
-            ]}>
-              {Money.to_string!(gross_value, currency_symbol: "")}
-            </p>
+            <div class="flex w-28 flex-row items-center justify-end">
+              <input
+                type="number"
+                name={gross_value_input_name(item)}
+                value={displayed_item_gross_value(item)}
+                phx-debounce
+                step=".01"
+                min="0"
+                placeholder="0,00"
+                class={[
+                  "border-grey-200 focus:border-grey-400 placeholder:text-grey-500 text-grey-900 w-full [appearance:textfield] rounded-lg border bg-white px-3 py-1.5 text-right leading-tight [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
+                  Money.zero?(gross_value) && "text-grey-500"
+                ]}
+              />
+            </div>
           <% end %>
 
           <.button

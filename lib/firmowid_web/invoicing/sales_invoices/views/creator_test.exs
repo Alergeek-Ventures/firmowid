@@ -36,7 +36,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     assert html =~ "Wprowadź nazwę"
   end
 
-  test "items step can submit gross unit price while storing high-precision net", %{conn: conn} do
+  test "items step can submit gross line value while storing high-precision net", %{conn: conn} do
     admin = admin_fixture()
     draft = items_step_draft!(admin)
     scope = scope_for(admin)
@@ -44,16 +44,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
 
     {:ok, view, _html} = live(conn, ~p"/sprzedazowe?szkic_kreatora=#{draft.id}&krok=2")
 
-    view
-    |> element("button[phx-click='toggle_price_input_mode']")
-    |> render_click()
+    html = render(view)
 
-    assert render(view) =~ "Cena brutto"
+    assert html =~ "Wartość VAT"
+    assert html =~ ~s(name="form[items][0][gross_value]")
 
     view
     |> form("#invoice-form", %{
       "form" => %{
-        "price_input_mode" => "gross",
         "currency" => "PLN",
         "items" => %{
           "0" => %{
@@ -61,7 +59,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
             "name" => "Usługa brutto",
             "quantity" => "1",
             "unit" => "szt.",
-            "unit_price" => "100.00",
+            "unit_price" => "0",
+            "gross_value" => "100.00",
             "vat_rate" => "23"
           }
         }

@@ -108,7 +108,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     |> assign(:correction_reason_touched, false)
     |> assign(:last_auto_reason, "")
     |> assign(:counterparty_check, counterparty_check)
-    |> assign(:price_input_mode, :net)
     |> assign_form_with_preview(ash_form)
     |> assign(:bank_accounts, bank_accounts)
     |> assign(
@@ -276,15 +275,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   def handle_event("validate", params, socket) do
     # AshPhoenix.Form uses "form" as default form name
     form_params = params["form"] || params["sales_invoice"] || %{}
-    price_input_mode = price_input_mode(form_params, socket)
-    form_params = normalize_price_input_params(form_params, price_input_mode)
+    form_params = normalize_price_input_params(form_params, params["_target"])
     socket = detect_correction_reason_touched(form_params, socket)
 
     ash_form = AshPhoenix.Form.validate(socket.assigns.form.source, form_params)
 
     socket =
       socket
-      |> assign(:price_input_mode, price_input_mode)
       |> assign_form_with_preview(ash_form)
       |> push_event("unsaved-changed", %{value: true})
 
@@ -363,10 +360,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     end
   end
 
-  def handle_event("toggle_price_input_mode", %{"mode" => mode}, socket) do
-    {:noreply, assign(socket, :price_input_mode, PriceInput.parse_mode(mode))}
-  end
-
   def handle_event("send_to_ksef", params, socket) do
     form_params = params["form"] || params["sales_invoice"] || %{}
 
@@ -380,7 +373,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     invoice = socket.assigns.invoice
     scope = socket.assigns.ash_scope
     ash_form = socket.assigns.form.source
-    form_params = normalize_price_input_params(form_params, socket.assigns.price_input_mode)
+    form_params = normalize_price_input_params(form_params)
 
     cond do
       is_nil(invoice.invoice_number) ->
@@ -789,16 +782,18 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
 
   defp parse_decimal(value), do: FormHelpers.parse_decimal(value)
 
-  defp price_input_mode(params, socket) do
-    PriceInput.parse_mode(params["price_input_mode"] || socket.assigns.price_input_mode)
-  end
+  defp normalize_price_input_params(params, target \\ :all) do
+    indexes =
+      case target do
+        :all -> :all
+        target -> PriceInput.gross_value_target_indexes(target, :sales_invoice_items)
+      end
 
-  defp normalize_price_input_params(params, price_input_mode) do
-    PriceInput.normalize_items_params(
+    PriceInput.normalize_gross_value_params(
       params,
       :sales_invoice_items,
-      price_input_mode,
-      &parse_decimal/1
+      &parse_decimal/1,
+      indexes
     )
   end
 

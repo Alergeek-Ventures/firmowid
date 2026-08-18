@@ -91,7 +91,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       |> assign(:ksef_connected?, Ksef.connected?(socket.assigns.ash_scope))
       |> assign(:open_counterparty_modal, false)
       |> assign(:can_manage_counterparties, socket.assigns.current_user.role == :admin)
-      |> assign(:price_input_mode, :net)
 
     {:ok, socket}
   end
@@ -702,12 +701,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   defp parse_filter(raw_filter), do: QueryCodec.parse_counterparty_type(raw_filter)
 
-  defp price_input_mode(params, socket) do
-    PriceInput.parse_mode(params["price_input_mode"] || socket.assigns.price_input_mode)
-  end
+  defp normalize_price_input_params(params, items_field, target \\ :all) do
+    indexes =
+      case target do
+        :all -> :all
+        target -> PriceInput.gross_value_target_indexes(target, items_field)
+      end
 
-  defp normalize_price_input_params(params, items_field, price_input_mode) do
-    PriceInput.normalize_items_params(params, items_field, price_input_mode, &parse_decimal/1)
+    PriceInput.normalize_gross_value_params(params, items_field, &parse_decimal/1, indexes)
   end
 
   defp parse_decimal(value), do: FirmowidWeb.Invoicing.FormHelpers.parse_decimal(value)
@@ -737,25 +738,20 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     {:noreply, assign(socket, :items_form, form)}
   end
 
-  def handle_event("validate_items", %{"form" => params}, socket) do
-    price_input_mode = price_input_mode(params, socket)
-    params = normalize_price_input_params(params, socket.assigns.items_field, price_input_mode)
+  def handle_event("validate_items", %{"form" => params} = event, socket) do
+    params = normalize_price_input_params(params, socket.assigns.items_field, event["_target"])
 
     form =
       socket.assigns.items_form.source
       |> AshPhoenix.Form.validate(params)
       |> to_form()
 
-    {:noreply,
-     socket
-     |> assign(:price_input_mode, price_input_mode)
-     |> assign(:items_form, form)}
+    {:noreply, assign(socket, :items_form, form)}
   end
 
   def handle_event("submit_items", %{"form" => params}, socket) do
     old_currency = socket.assigns.draft.currency
-    price_input_mode = price_input_mode(params, socket)
-    params = normalize_price_input_params(params, socket.assigns.items_field, price_input_mode)
+    params = normalize_price_input_params(params, socket.assigns.items_field)
 
     case AshPhoenix.Form.submit(socket.assigns.items_form.source, params: params) do
       {:ok, updated_draft} ->
@@ -781,15 +777,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         {:noreply, push_patch(socket, to: creator_draft_url(socket.assigns.creator_draft_id, :payment))}
 
       {:error, form} ->
-        {:noreply,
-         socket
-         |> assign(:price_input_mode, price_input_mode)
-         |> assign(items_form: to_form(form))}
+        {:noreply, assign(socket, items_form: to_form(form))}
     end
-  end
-
-  def handle_event("toggle_price_input_mode", %{"mode" => mode}, socket) do
-    {:noreply, assign(socket, :price_input_mode, PriceInput.parse_mode(mode))}
   end
 
   def handle_event("select_counterparty", %{"counterparty_id" => counterparty_id}, socket) do
