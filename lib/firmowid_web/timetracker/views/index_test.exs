@@ -142,6 +142,37 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
       assert ended_session.end_datetime
     end
 
+    test "ends a legacy active session without a self-conflict", %{
+      conn: conn,
+      user: user,
+      project: project
+    } do
+      session =
+        session_fixture(%{
+          user_id: user.id,
+          project_id: project.id,
+          title: "Legacy active session",
+          start_datetime: ~U[2025-04-01 09:00:00Z],
+          organization_id: user.organization_id
+        })
+
+      Repo.query!(
+        "UPDATE sessions SET start_datetime = $1 WHERE id::text = $2",
+        [~U[2025-04-01 09:00:42Z], session.id]
+      )
+
+      {:ok, lv, _html} = live(conn, ~p"/czasosledz")
+
+      lv
+      |> form("#session_form", %{session_form: %{}})
+      |> render_submit()
+
+      ended_session = Repo.get!(Session, session.id)
+      assert ended_session.end_datetime
+      assert ended_session.start_datetime.second == 0
+      assert ended_session.end_datetime.second == 0
+    end
+
     test "ignores stale validate_and_update after current session ends", %{
       conn: conn,
       user: user,
