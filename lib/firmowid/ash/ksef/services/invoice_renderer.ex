@@ -333,16 +333,19 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   Returns the buyer name for KSeF invoice.
 
   Priority:
-  1. buyer_display_name (if set) - user's preferred short name
-  2. For companies: buyer_full_name (legal name)
-  3. For individuals: buyer_given_name + buyer_surname
+  1. For companies: buyer_full_name (legal name), then buyer_display_name
+     (short name) if the legal name is unavailable
+  2. For individuals: buyer_display_name (if set), then buyer_given_name +
+     buyer_surname
 
   Returns nil if no name is available (optional in simplified invoices per art. 106e ust. 5 pkt 3).
   """
   @spec buyer_name(map()) :: String.t() | nil
-  def buyer_name(%{buyer_display_name: name}) when is_binary(name) and name != "", do: name
-
   def buyer_name(%{buyer_type: :company, buyer_full_name: name}) when is_binary(name) and name != "", do: name
+
+  def buyer_name(%{buyer_type: :company, buyer_display_name: name}) when is_binary(name) and name != "", do: name
+
+  def buyer_name(%{buyer_display_name: name}) when is_binary(name) and name != "", do: name
 
   def buyer_name(%{buyer_type: :individual, buyer_given_name: given_name, buyer_surname: surname})
       when is_binary(given_name) and is_binary(surname) do

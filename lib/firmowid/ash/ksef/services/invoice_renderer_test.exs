@@ -73,6 +73,26 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRendererTest do
 
       assert :ok = validate_xml(xml, model)
     end
+
+    test "company buyer name prefers the full legal name over display name", %{
+      model: model,
+      org_id: org_id
+    } do
+      invoice = build_domestic_invoice(org_id: org_id)
+
+      invoice =
+        Ash.Seed.update!(invoice, %{
+          buyer_full_name: "Buyer Full Legal Name Sp. z o.o.",
+          buyer_display_name: "Buyer Short Label"
+        })
+
+      xml = InvoiceRenderer.render_fa3(invoice)
+      [buyer_section] = Regex.run(~r/<Podmiot2>.*?<\/Podmiot2>/s, xml, capture: :first)
+
+      assert buyer_section =~ "<Nazwa>Buyer Full Legal Name Sp. z o.o.</Nazwa>"
+      refute buyer_section =~ "<Nazwa>Buyer Short Label</Nazwa>"
+      assert :ok = validate_xml(xml, model)
+    end
   end
 
   # ---------------------------------------------------------------------------
