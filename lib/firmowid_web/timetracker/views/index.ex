@@ -11,6 +11,7 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   alias Ash.Error.Unknown
   alias Ash.Error.Unknown.UnknownError
   alias Firmowid.Ash.Timetracker
+  alias Firmowid.Ash.Timetracker.Changes.NormalizeSessionBoundaries
   alias Firmowid.Ash.Timetracker.HoursRecord, as: AshHoursRecord
   alias Firmowid.Ash.Timetracker.OverlapResolver
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
@@ -298,8 +299,9 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
     scope = socket.assigns.ash_scope
     user_id = socket.assigns.current_user.id
 
-    # Determine the effective time range for the new session.
-    # Quick-start (no explicit times) uses now → infinity.
+    attrs = normalize_session_attrs(attrs)
+
+    # The overlap plan must use the exact boundaries persisted by Session.
     {new_start, new_end} = effective_time_range(attrs)
 
     case AshSession.list_overlapping(user_id, new_start, %{end_datetime: new_end}, scope: scope) do
@@ -341,9 +343,16 @@ defmodule FirmowidWeb.Timetracker.Views.Index do
   end
 
   defp effective_time_range(attrs) do
-    start_dt = attrs[:start_datetime] || DateTime.utc_now()
+    start_dt = attrs[:start_datetime]
     end_dt = attrs[:end_datetime]
     {start_dt, end_dt}
+  end
+
+  defp normalize_session_attrs(attrs) do
+    attrs
+    |> Map.put_new_lazy(:start_datetime, fn -> DateTime.utc_now() end)
+    |> Map.update!(:start_datetime, &NormalizeSessionBoundaries.datetime/1)
+    |> Map.update(:end_datetime, nil, &NormalizeSessionBoundaries.datetime/1)
   end
 
   defp save_session_directly(attrs, socket) do

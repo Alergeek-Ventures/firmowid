@@ -158,6 +158,35 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
       assert updated.title == "New Title"
     end
 
+    test "normalizes legacy second-precision boundaries when editing", %{
+      user: user,
+      project: project,
+      scope: scope
+    } do
+      session =
+        session_fixture(%{
+          user_id: user.id,
+          project_id: project.id,
+          organization_id: user.organization_id
+        })
+
+      Repo.query!(
+        """
+        UPDATE sessions
+        SET start_datetime = '2025-04-01 09:00:42Z', end_datetime = '2025-04-01 10:00:17Z'
+        WHERE id::text = $1
+        """,
+        [session.id]
+      )
+
+      session = Repo.get!(AshSession, session.id)
+
+      {:ok, updated} = AshSession.update(session, %{title: "Edited legacy session"}, scope: scope)
+
+      assert updated.start_datetime == ~U[2025-04-01 09:00:00Z]
+      assert updated.end_datetime == ~U[2025-04-01 10:00:00Z]
+    end
+
     test "keeps adjacent sessions editable with minute-only boundaries", %{
       user: user,
       project: project,

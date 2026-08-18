@@ -274,7 +274,11 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
 
       assert result =~ "Edited second session"
 
-      assert Repo.get!(Session, session.id).start_datetime == session.start_datetime
+      updated_session = Repo.get!(Session, session.id)
+
+      assert updated_session.title == "Edited second session"
+      assert updated_session.start_datetime == session.start_datetime
+      assert updated_session.end_datetime == session.end_datetime
     end
 
     test "suggest previous project", %{conn: conn, user: user, project: project} do

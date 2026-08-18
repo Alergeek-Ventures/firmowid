@@ -27,6 +27,29 @@ defmodule Firmowid.Ash.Timetracker.Session do
   postgres do
     table "sessions"
     repo Firmowid.Repo
+
+    custom_statements do
+      statement :normalize_session_boundaries_to_minutes do
+        up """
+        DO $$
+        BEGIN
+          ALTER TABLE sessions DISABLE TRIGGER no_session_overlap_trigger;
+
+          UPDATE sessions
+          SET
+            start_datetime = date_trunc('minute', start_datetime),
+            end_datetime = date_trunc('minute', end_datetime)
+          WHERE
+            start_datetime IS DISTINCT FROM date_trunc('minute', start_datetime)
+            OR end_datetime IS DISTINCT FROM date_trunc('minute', end_datetime);
+
+          ALTER TABLE sessions ENABLE TRIGGER no_session_overlap_trigger;
+        END $$;
+        """
+
+        down "SELECT 1;"
+      end
+    end
   end
 
   code_interface do
