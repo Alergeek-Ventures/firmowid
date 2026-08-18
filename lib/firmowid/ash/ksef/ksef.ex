@@ -318,7 +318,8 @@ defmodule Firmowid.Ash.Ksef do
   defp invoice_url(seller_nip, issue_date, checksum) do
     base_url = Application.get_env(:firmowid, :ksef)[:qr_code_base_url]
     issue_date = Calendar.strftime(issue_date, "%d-%m-%Y")
-    path = "/invoice/#{seller_nip}/#{issue_date}/#{checksum}"
+    safe_checksum = URI.encode_www_form(checksum)
+    path = "/invoice/#{seller_nip}/#{issue_date}/#{safe_checksum}"
 
     base_url
     |> URI.new!()
