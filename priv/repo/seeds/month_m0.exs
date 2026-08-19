@@ -8,7 +8,7 @@ defmodule Firmowid.Seeds.MonthM0 do
 
   Unmatched cost invoice: OVH Cloud (current month).
 
-  KSeF showcase invoices (2 states):
+  KSeF showcase invoices for Północny Kod (2 states):
     01/ — plain invoice, no KSeF
     02/ — confirmed draft (locked), not submitted to KSeF
 
@@ -42,7 +42,7 @@ defmodule Firmowid.Seeds.MonthM0 do
     seed_thb_fee(bytecraft, banks)
     seed_matched_ghostpet(bytecraft, banks, projects, cps, prefix)
     seed_unmatched_cost_invoice(bytecraft, prefix)
-    seed_ksef_scenarios(bytecraft, prefix)
+    seed_ksef_scenarios(bytecraft, cps, prefix)
     seed_s08_current_month_invoice(bytecraft, prefix)
     seed_counterparty_suggestion_invoices(bytecraft, cps)
   end
@@ -253,28 +253,28 @@ defmodule Firmowid.Seeds.MonthM0 do
   end
 
   # — KSeF test scenarios —
-  # All 4 invoices are domestic (PLN, VAT 23%) to a fictional but in-domain
-  # Polish startup that Bytecraft helped with a short consulting gig.
+  # Two domestic PLN invoices for the Polish seed counterparty cover the four
+  # VAT rates available in the invoice form: 23%, 8%, 5%, and zw.
 
   @ksef_buyer %{
-    "buyer_display_name" => "NexaTech",
-    "buyer_full_name" => "NexaTech Sp. z o.o.",
-    "buyer_address" => "ul. Mokotowska 15/3, 00-640 Warszawa",
+    "buyer_display_name" => "Północny Kod",
+    "buyer_full_name" => "Północny Kod spółka z ograniczoną odpowiedzialnością",
+    "buyer_address" => "ul. Warmińska 18/4, 80-857 Gdańsk",
     "buyer_country" => "PL",
-    "buyer_id" => "5213843765",
+    "buyer_id" => "9876543210",
     "buyer_type" => "company",
     "payment_method" => "transfer",
     "is_reverse_charge" => false,
     "is_cash_account" => false
   }
 
-  defp seed_ksef_scenarios(bytecraft, prefix) do
-    seed_ksef_plain(bytecraft, prefix)
-    seed_ksef_confirmed_not_sent(bytecraft, prefix)
+  defp seed_ksef_scenarios(bytecraft, cps, prefix) do
+    seed_ksef_plain(bytecraft, cps, prefix)
+    seed_ksef_confirmed_not_sent(bytecraft, cps, prefix)
   end
 
   # 01/ — plain domestic invoice, no KSeF interaction
-  defp seed_ksef_plain(bytecraft, prefix) do
+  defp seed_ksef_plain(bytecraft, cps, prefix) do
     Helpers.get_or_create_sales_invoice(
       "BC/01/#{prefix}",
       bytecraft.id,
@@ -284,6 +284,7 @@ defmodule Firmowid.Seeds.MonthM0 do
         "sale_date" => Helpers.date_this_month(15),
         "due_date" => Helpers.date_this_month(28),
         "currency" => "PLN",
+        "counterparty_id" => cps.polnocny_kod.id,
         "sales_invoice_items" => [
           %{
             "name" => "Audyt architektury — migracja do mikroserwisów",
@@ -293,11 +294,11 @@ defmodule Firmowid.Seeds.MonthM0 do
             "vat_rate" => "23"
           },
           %{
-            "name" => "Konsultacje DevOps — konfiguracja CI/CD",
+            "name" => "Konsultacje DevOps — konfiguracja CI/CD dla systemu tras",
             "quantity" => 8,
             "unit" => "godz.",
             "unit_price" => 300.00,
-            "vat_rate" => "23"
+            "vat_rate" => "8"
           }
         ]
       })
@@ -305,7 +306,7 @@ defmodule Firmowid.Seeds.MonthM0 do
   end
 
   # 02/ — confirmed invoice, not submitted to KSeF
-  defp seed_ksef_confirmed_not_sent(bytecraft, prefix) do
+  defp seed_ksef_confirmed_not_sent(bytecraft, cps, prefix) do
     inv_number = "BC/02/#{prefix}"
 
     invoice =
@@ -318,13 +319,21 @@ defmodule Firmowid.Seeds.MonthM0 do
           "sale_date" => Helpers.date_this_month(10),
           "due_date" => Helpers.date_this_month(24),
           "currency" => "PLN",
+          "counterparty_id" => cps.polnocny_kod.id,
           "sales_invoice_items" => [
             %{
-              "name" => "Prototyp MVP — panel analityczny NexaTech",
+              "name" => "Prototyp MVP — panel analityczny Północnego Kodu",
               "quantity" => 10,
               "unit" => "godz.",
               "unit_price" => 200.00,
-              "vat_rate" => "23"
+              "vat_rate" => "5"
+            },
+            %{
+              "name" => "Konsultacje dostępności cyfrowej",
+              "quantity" => 4,
+              "unit" => "godz.",
+              "unit_price" => 180.00,
+              "vat_rate" => "zw"
             }
           ]
         })

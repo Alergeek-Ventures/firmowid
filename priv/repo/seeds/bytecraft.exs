@@ -234,7 +234,26 @@ defmodule Firmowid.Seeds.Bytecraft do
         description: "Koreański kontrahent testowy do scenariuszy dopasowywania po znormalizowanym NIP/VAT-ID."
       })
 
-    %{ghostpet: ghostpet, flatearth: flatearth, taco: taco, samsung: samsung}
+    polnocny_kod =
+      get_or_seed_counterparty!(bytecraft.id, %{
+        type: :company,
+        tax_id: "9876543210",
+        full_name: "Północny Kod spółka z ograniczoną odpowiedzialnością",
+        display_name: "Północny Kod",
+        address: "ul. Warmińska 18/4\n80-857 Gdańsk",
+        country: "PL",
+        email: "faktury@polnocnykod.example",
+        phone: "+48 58 555 01 42",
+        description: "Polska firma technologiczna tworząca oprogramowanie dla logistyki miejskiej."
+      })
+
+    %{
+      ghostpet: ghostpet,
+      flatearth: flatearth,
+      taco: taco,
+      samsung: samsung,
+      polnocny_kod: polnocny_kod
+    }
   end
 
   # ===========================================================================
