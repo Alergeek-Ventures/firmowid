@@ -215,7 +215,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   attr :focused_item_price_input_index, :any, default: nil
   attr :show_vat, :boolean, default: true
 
-  def invoice_items(%{invoice_changeset: source, invoice: invoice, items_field: items_field} = assigns = input_assigns) do
+  def invoice_items(%{invoice_changeset: source, invoice: invoice, items_field: items_field} = input_assigns = assigns) do
     items = extract_items_as_structs(source, items_field)
 
     single_item? =
