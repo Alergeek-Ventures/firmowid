@@ -215,7 +215,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   attr :focused_item_price_input_index, :any, default: nil
   attr :show_vat, :boolean, default: true
 
-  def invoice_items(%{invoice_changeset: source, invoice: invoice, items_field: items_field} = input_assigns = assigns) do
+  def invoice_items(%{invoice_changeset: source, invoice: invoice, items_field: items_field} = input_assigns) do
     items = extract_items_as_structs(source, items_field)
 
     single_item? =
@@ -227,7 +227,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
     # Ensure at least one item exists for the form
     {source, items} = ensure_minimum_item(source, items, items_field)
 
-    show_vat = Map.get(assigns, :show_vat, true)
+    show_vat = Map.get(input_assigns, :show_vat, true)
     is_reverse_charge = get_reverse_charge(source)
     {vat_options, vat_disabled?} = compute_vat_options(invoice, is_reverse_charge, show_vat)
 
