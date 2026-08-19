@@ -4,6 +4,8 @@ defmodule FirmowidWeb.Infrastructure.Controllers.Health do
 
   require Logger
 
+  @doc "Returns the health status of the database and Oban checks."
+  @spec check(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def check(conn, _params) do
     checks = %{
       database: check_database(),
@@ -32,7 +34,7 @@ defmodule FirmowidWeb.Infrastructure.Controllers.Health do
 
       {:error, reason} ->
         Logger.error("Database health check failed: #{inspect(reason)}")
-        %{status: "error", message: "Database query failed", error: inspect(reason)}
+        %{status: "error", message: "Database query failed"}
     end
   end
 
@@ -43,6 +45,6 @@ defmodule FirmowidWeb.Infrastructure.Controllers.Health do
   rescue
     error ->
       Logger.error("Oban health check failed: #{inspect(error)}")
-      %{status: "error", message: "Oban is not running", error: inspect(error)}
+      %{status: "error", message: "Oban is not running"}
   end
 end

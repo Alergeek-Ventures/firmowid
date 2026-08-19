@@ -21,6 +21,16 @@ defmodule FirmowidWeb.Infrastructure.Controllers.HealthTest do
       assert json["checks"]["oban"]["message"] == "Oban is running"
     end
 
+    test "exposes only stable status and message fields for public checks", %{conn: conn} do
+      conn = get(conn, ~p"/health")
+
+      json = json_response(conn, 200)
+
+      assert Enum.all?(json["checks"], fn {_check_name, check} ->
+               check |> Map.keys() |> Enum.sort() == ["message", "status"]
+             end)
+    end
+
     test "includes ISO 8601 timestamp", %{conn: conn} do
       conn = get(conn, ~p"/health")
 
