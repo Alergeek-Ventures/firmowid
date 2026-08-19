@@ -23,6 +23,7 @@ defmodule Firmowid.Ash.Core.User do
   alias Firmowid.Ash.Core.Calculations.AcceptedLeaveDaysForYear
   alias Firmowid.Ash.Core.Secrets
   alias Firmowid.Ash.Core.Services.GoogleAvatarImporter
+  alias Firmowid.Ash.Core.User.Actions.UpdateCurrentProfile
   alias Firmowid.Ash.Core.UserIdentity
   alias Firmowid.Ash.Resource
 
@@ -277,13 +278,7 @@ defmodule Firmowid.Ash.Core.User do
       argument :residence_city, :string
       argument :residence_code, :string
 
-      run fn input, context ->
-        Ash.update(context.actor, current_profile_attributes(input.arguments),
-          action: :update_profile,
-          actor: context.actor,
-          tenant: context.tenant
-        )
-      end
+      run &UpdateCurrentProfile.run/2
     end
 
     update :update_role do
@@ -423,7 +418,7 @@ defmodule Firmowid.Ash.Core.User do
       authorize_if expr(id == ^actor(:id))
     end
 
-    bypass action(:update_current_profile) do
+    policy action(:update_current_profile) do
       authorize_if actor_present()
     end
 
@@ -462,12 +457,6 @@ defmodule Firmowid.Ash.Core.User do
     bypass action_type(:destroy) do
       authorize_if expr(id == ^actor(:id))
       authorize_if actor_attribute_equals(:role, :admin)
-    end
-
-    # Catch-all: deny anything not explicitly covered above. Prevents newly
-    # added or auto-generated actions from being accidentally open.
-    policy always() do
-      forbid_if always()
     end
   end
 
@@ -550,26 +539,6 @@ defmodule Firmowid.Ash.Core.User do
 
   identities do
     identity :unique_email, [:email]
-  end
-
-  defp current_profile_attributes(arguments) do
-    arguments
-    |> Map.take([
-      :name,
-      :employment_date,
-      :phone,
-      :slack_id,
-      :bank_account_number,
-      :position,
-      :correspondence_street,
-      :correspondence_city,
-      :correspondence_code,
-      :residence_street,
-      :residence_city,
-      :residence_code
-    ])
-    |> Enum.reject(fn {_field, value} -> is_nil(value) end)
-    |> Map.new()
   end
 
   # Use a dedicated validation module placed next to the resource file.

@@ -379,4 +379,8 @@ defmodule Firmowid.Ash.Timetracker.Session do
       description "Whether an hours record has been submitted for this session's month, locking edits."
     end
   end
+
+  identities do
+    identity :current_session, [:id, :user_id]
+  end
 end

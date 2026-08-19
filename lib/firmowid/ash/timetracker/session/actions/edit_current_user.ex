@@ -11,7 +11,7 @@ defmodule Firmowid.Ash.Timetracker.Session.Actions.EditCurrentUser do
   def run(input, context) do
     opts = Ash.Context.to_opts(context)
 
-    with {:ok, session} <- current_user_session(input.arguments.id, context.actor.id, opts) do
+    with {:ok, session} <- current_session(input.arguments.id, context.actor.id, opts) do
       Ash.update(
         session,
         editable_attributes(input.arguments),
@@ -20,7 +20,7 @@ defmodule Firmowid.Ash.Timetracker.Session.Actions.EditCurrentUser do
     end
   end
 
-  defp current_user_session(id, user_id, opts) do
+  defp current_session(id, user_id, opts) do
     Session
     |> Ash.Query.filter(id == ^id and user_id == ^user_id)
     |> Ash.read_one(opts)
