@@ -187,11 +187,11 @@
       "code?": false,
       "down": "SELECT 1;",
       "name": "normalize_session_boundaries_to_minutes",
-      "up": "DO $$\nBEGIN\n  ALTER TABLE sessions DISABLE TRIGGER no_session_overlap_trigger;\n\n  UPDATE sessions\n  SET\n    start_datetime = date_trunc('minute', start_datetime),\n    end_datetime = date_trunc('minute', end_datetime)\n  WHERE\n    start_datetime IS DISTINCT FROM date_trunc('minute', start_datetime)\n    OR end_datetime IS DISTINCT FROM date_trunc('minute', end_datetime);\n\n  ALTER TABLE sessions ENABLE TRIGGER no_session_overlap_trigger;\nEND $$;\n"
+      "up": "DO $$\nBEGIN\n  ALTER TABLE sessions DISABLE TRIGGER no_session_overlap_trigger;\n\n  UPDATE sessions\n  SET\n    start_datetime = date_trunc('minute', start_datetime),\n    end_datetime = date_trunc('minute', end_datetime)\n  WHERE\n    start_datetime >= TIMESTAMPTZ '2026-08-01 00:00:00Z'\n    AND start_datetime < TIMESTAMPTZ '2026-09-01 00:00:00Z'\n    AND (\n      start_datetime IS DISTINCT FROM date_trunc('minute', start_datetime)\n      OR end_datetime IS DISTINCT FROM date_trunc('minute', end_datetime)\n    );\n\n  ALTER TABLE sessions ENABLE TRIGGER no_session_overlap_trigger;\nEND $$;\n"
     }
   ],
   "has_create_action": true,
-  "hash": "D85B437FA74A304F02E4A607F57D4F0B9C19B13CAEC16D98B78E247CD85B8913",
+  "hash": "74ED288F6924165290A90EA306B40625DE2057D44B47A1ECD75BEDC0C7B6B96D",
   "identities": [],
   "multitenancy": {
     "attribute": "organization_id",

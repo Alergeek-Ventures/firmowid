@@ -18,8 +18,12 @@ defmodule Firmowid.Repo.Migrations.NormalizeSessionBoundariesToMinutes do
         start_datetime = date_trunc('minute', start_datetime),
         end_datetime = date_trunc('minute', end_datetime)
       WHERE
-        start_datetime IS DISTINCT FROM date_trunc('minute', start_datetime)
-        OR end_datetime IS DISTINCT FROM date_trunc('minute', end_datetime);
+        start_datetime >= TIMESTAMPTZ '2026-08-01 00:00:00Z'
+        AND start_datetime < TIMESTAMPTZ '2026-09-01 00:00:00Z'
+        AND (
+          start_datetime IS DISTINCT FROM date_trunc('minute', start_datetime)
+          OR end_datetime IS DISTINCT FROM date_trunc('minute', end_datetime)
+        );
 
       ALTER TABLE sessions ENABLE TRIGGER no_session_overlap_trigger;
     END $$;
