@@ -68,7 +68,7 @@ defmodule Firmowid.MixProject do
       {:ash_postgres, "~> 2.8"},
       {:ash_phoenix, "~> 2.3"},
       {:ash_oban, "~> 0.8.7"},
-      {:ash_jido, git: "https://github.com/agentjido/ash_jido.git", ref: "6dead35a47d60cfc508d0c1ec7863271e14f39fd"},
+      {:ash_jido, "== 1.0.0"},
       {:ash_authentication, "~> 5.0.0-rc"},
       {:assent, "~> 0.3.0"},
       {:nimble_totp, "~> 1.0"},
