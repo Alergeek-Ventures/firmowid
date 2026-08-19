@@ -28,11 +28,11 @@ defmodule Firmowid.Ash.Ksef.Services.ApiClient do
       max_retries: 3
     ]
     |> Req.new()
-    |> Req.Request.merge_options(ksef_config[:request_options] || [])
+    |> Req.merge(ksef_config[:request_options] || [])
   end
 
   defp request(access_token) when is_binary(access_token) do
-    Req.Request.merge_options(request(), auth: {:bearer, access_token})
+    Req.merge(request(), auth: {:bearer, access_token})
   end
 
   defp handle_response({:ok, %{status: 401}}), do: {:error, :unauthorized}

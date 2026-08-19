@@ -28,8 +28,7 @@ defmodule Firmowid.Ash.Invoicing.Services.OpenAIEnrichment do
       )
 
     request
-    |> Req.Request.merge_options(request_options())
-    |> Req.request!()
+    |> Req.request!(request_options())
     |> Map.fetch!(:body)
     |> ReqLLM.Response.text()
   end
