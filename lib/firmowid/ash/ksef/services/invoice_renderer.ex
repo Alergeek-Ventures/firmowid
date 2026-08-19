@@ -16,6 +16,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
   using `EEx.function_from_file/5`.
   """
   alias Firmowid.Ash.Invoicing.Utilities.SafeTimestamp
+  alias Firmowid.Ash.Invoicing.VatExemption
   alias Firmowid.Ash.Ksef.VatRate
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
@@ -398,7 +399,9 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
         invoice.seller_display_name != corrected.seller_display_name or
         invoice.seller_name != corrected.seller_name or
         invoice.seller_surname != corrected.seller_surname or
-        invoice.seller_address != corrected.seller_address
+        invoice.seller_address != corrected.seller_address or
+        invoice.vat_exemption_type != corrected.vat_exemption_type or
+        invoice.vat_exemption_basis != corrected.vat_exemption_basis
 
     if seller_data_changed? do
       raise ArgumentError,
@@ -495,5 +498,21 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceRenderer do
     |> Map.put(:corrections, annotated)
     |> Map.put(:reference_invoice, my_ref)
     |> Map.put(:corrected_invoice, original)
+  end
+
+  @doc "Returns true when the invoice has at least one VAT-exempt (zw) line item."
+  @spec has_exempt_items?(map()) :: boolean()
+  def has_exempt_items?(%{sales_invoice_items: items}) do
+    Enum.any?(items, &(VatRate.summary_type(&1.vat_rate) == :exempt))
+  end
+
+  @doc """
+  Returns the legal-basis label for an exemption type.
+
+  Delegates to `VatExemption.basis_label/2`.
+  """
+  @spec exemption_basis_label(atom(), map()) :: String.t()
+  def exemption_basis_label(type, invoice) do
+    VatExemption.basis_label(type, invoice)
   end
 end

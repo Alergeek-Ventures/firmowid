@@ -108,8 +108,20 @@
 			<P_18><%= if @invoice.is_reverse_charge, do: 1, else: 2 %></P_18>
 			<P_18A>2</P_18A>
 			<Zwolnienie>
-				<%!-- Zwolnienia requires deeper analysis --%>
-				<P_19N>1</P_19N>
+    			<%= if T.has_exempt_items?(@invoice) do %>
+        			<% type = @invoice.vat_exemption_type || :art_113 %>
+        			<P_19>1</P_19>
+        			<%= case type do %>
+            			<% :directive_2006_112 -> %>
+                			<P_19B><%= T.exemption_basis_label(type, @invoice) %></P_19B>
+            			<% :other -> %>
+                			<P_19C><%= T.exemption_basis_label(type, @invoice) %></P_19C>
+            			<% _ -> %>
+                			<P_19A><%= T.exemption_basis_label(type, @invoice) %></P_19A>
+        			<% end %>
+    			<% else %>
+        			<P_19N>1</P_19N>
+    			<% end %>
 			</Zwolnienie>
 			<NoweSrodkiTransportu>
 				<P_22N>1</P_22N>

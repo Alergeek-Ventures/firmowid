@@ -14,10 +14,12 @@ defmodule Firmowid.Ash.Core.Organization do
   alias Firmowid.Ash.Billing.PlanCatalog
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core.Changes.CleanupOldAvatarBlob
+  alias Firmowid.Ash.Core.Changes.ClearVatExemptionFields
   alias Firmowid.Ash.Core.Changes.GenerateNickname
   alias Firmowid.Ash.Core.Changes.SetOwnerOrganization
   alias Firmowid.Ash.Core.User
   alias Firmowid.Ash.Core.Validations.ValidateNip
+  alias Firmowid.Ash.Invoicing.VatExemption
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -58,6 +60,7 @@ defmodule Firmowid.Ash.Core.Organization do
     update :update do
       description "Update general organization settings."
       primary? true
+      require_atomic? false
 
       accept [
         :name,
@@ -66,8 +69,12 @@ defmodule Firmowid.Ash.Core.Organization do
         :correspondence_name,
         :correspondence_address,
         :is_vat_payer,
-        :allowed_sender_emails
+        :allowed_sender_emails,
+        :vat_exemption_type,
+        :vat_exemption_basis
       ]
+
+      change {ClearVatExemptionFields, []}
 
       validate match(:nip, ~r/^[0-9]{10}$/)
       validate {ValidateNip, field: :nip}
@@ -76,13 +83,18 @@ defmodule Firmowid.Ash.Core.Organization do
     # ── Scoped updates ──────────────────────────────────────────────
     update :update_basic_info do
       description "Update the basic business details for an organization."
+      require_atomic? false
 
       accept [
         :nip,
         :address,
         :name,
-        :is_vat_payer
+        :is_vat_payer,
+        :vat_exemption_type,
+        :vat_exemption_basis
       ]
+
+      change {ClearVatExemptionFields, []}
 
       validate match(:nip, ~r/^[0-9]{10}$/)
       validate {ValidateNip, field: :nip}
@@ -190,6 +202,13 @@ defmodule Firmowid.Ash.Core.Organization do
     end
   end
 
+  validations do
+    validate present(:vat_exemption_basis) do
+      where [attribute_equals(:vat_exemption_type, :other)]
+      message "Podaj podstawę prawną zwolnienia z VAT."
+    end
+  end
+
   attributes do
     uuid_v7_primary_key :id
 
@@ -208,6 +227,16 @@ defmodule Firmowid.Ash.Core.Organization do
       allow_nil?: false,
       default: :przedsiebiorca,
       constraints: [one_of: PlanCatalog.plans()]
+
+    attribute :vat_exemption_type, :atom,
+      public?: true,
+      allow_nil?: true,
+      constraints: [one_of: VatExemption.valid_types()]
+
+    attribute :vat_exemption_basis, :string,
+      public?: true,
+      allow_nil?: true,
+      constraints: [max_length: 256, trim?: true, allow_empty?: false]
 
     Resource.firmowid_timestamps()
   end

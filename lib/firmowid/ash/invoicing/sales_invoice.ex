@@ -61,6 +61,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.Ash.Invoicing.Services.SalesInvoiceChain
   alias Firmowid.Ash.Invoicing.Validations
+  alias Firmowid.Ash.Invoicing.VatExemption
   alias Firmowid.Ash.Resource
 
   require Ash.Query
@@ -375,6 +376,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         :seller_name,
         :seller_surname,
         :seller_account_number,
+        :vat_exemption_type,
+        :vat_exemption_basis,
         :buyer_type,
         :buyer_id,
         :buyer_full_name,
@@ -447,6 +450,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         :seller_name,
         :seller_surname,
         :seller_account_number,
+        :vat_exemption_type,
+        :vat_exemption_basis,
         :buyer_type,
         :buyer_id,
         :buyer_full_name,
@@ -556,6 +561,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
         :payment_method,
         :currency,
         :seller_account_number,
+        :vat_exemption_type,
+        :vat_exemption_basis,
         :buyer_type,
         :buyer_id,
         :buyer_full_name,
@@ -823,6 +830,8 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
           seller_display_name: org[:name] || org["name"],
           seller_address: org[:address] || org["address"],
           seller_nip: org[:nip] || org["nip"],
+          vat_exemption_type: draft.vat_exemption_type || org[:vat_exemption_type] || org["vat_exemption_type"],
+          vat_exemption_basis: draft.vat_exemption_basis || org[:vat_exemption_basis] || org["vat_exemption_basis"],
           is_cash_account: draft.payment_method == :cash,
           invoice_note: draft.invoice_note,
           internal_note: draft.internal_note,
@@ -1060,6 +1069,17 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     publish :disconnect_all_transactions, ["updated", :_tenant]
   end
 
+  changes do
+    change {Changes.ClearVatExemptionBasis, []}
+  end
+
+  validations do
+    validate present(:vat_exemption_basis) do
+      where attribute_equals(:vat_exemption_type, :other)
+      message "Podaj podstawę prawną zwolnienia z VAT."
+    end
+  end
+
   multitenancy do
     strategy :attribute
     attribute :organization_id
@@ -1148,6 +1168,16 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     attribute :internal_note, :string, public?: false
     # Validate internal_note length (DB will allow large text but enforce here)
     # Use an action-level validation instead of a bare validate/1 call inside attributes
+
+    attribute :vat_exemption_type, :atom,
+      public?: true,
+      allow_nil?: true,
+      constraints: [one_of: VatExemption.valid_types()]
+
+    attribute :vat_exemption_basis, :string,
+      public?: true,
+      allow_nil?: true,
+      constraints: [max_length: 256, trim?: true, allow_empty?: false]
 
     Resource.firmowid_timestamps()
   end

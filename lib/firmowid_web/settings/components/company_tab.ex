@@ -13,6 +13,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
+  alias FirmowidWeb.Invoicing.Utilities.VatExemption
   alias FirmowidWeb.Settings.Components.Helpers
   alias Phoenix.LiveView.JS
   alias Phoenix.LiveView.Rendered
@@ -199,7 +200,12 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
       action_label="Edytuj dane firmy"
     >
       <%= if @editing_basic_info do %>
-        <.form for={@company_form} phx-submit="save" class="space-y-4">
+        <.form
+          for={@company_form}
+          phx-submit="save"
+          phx-change="validate_company_form"
+          class="space-y-4"
+        >
           <div class="space-y-2">
             <.row_input field={@company_form[:name]} label="Nazwa" type="text" />
             <.row_input field={@company_form[:nip]} label="NIP" type="text" />
@@ -217,7 +223,36 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
                 <span class="text-grey-900 text-base">Tak</span>
               </span>
             </Helpers.settings_field>
+            <%= if @company_form[:is_vat_payer].value not in [true, "true"] do %>
+              <Helpers.settings_field label="Zwolnienie z VAT" class="w-full max-w-sm">
+                <.input
+                  type="select"
+                  field={@company_form[:vat_exemption_type]}
+                  options={VatExemption.options()}
+                  input_class="w-full"
+                  new
+                />
+              </Helpers.settings_field>
 
+              <%= if to_string(@company_form[:vat_exemption_type].value) == "other" do %>
+                <Helpers.settings_field
+                  label="Podstawa prawna zwolnienia z VAT"
+                  class="w-full max-w-sm"
+                >
+                  <.input
+                    type="text"
+                    field={@company_form[:vat_exemption_basis]}
+                    new
+                    input_class="w-full"
+                  />
+                </Helpers.settings_field>
+              <% else %>
+                <input type="hidden" name={@company_form[:vat_exemption_basis].name} value="" />
+              <% end %>
+            <% else %>
+              <input type="hidden" name={@company_form[:vat_exemption_type].name} value="" />
+              <input type="hidden" name={@company_form[:vat_exemption_basis].name} value="" />
+            <% end %>
             <.row_input field={@company_form[:address]} label="Adres" type="text" />
           </div>
 
@@ -238,6 +273,13 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           <.detail_row label="Nazwa" wide>{present(@current_org.name)}</.detail_row>
           <.detail_row label="NIP" wide>{present(@current_org.nip)}</.detail_row>
           <.detail_row label="Płatnik VAT" wide>{yes_no(@current_org.is_vat_payer)}</.detail_row>
+          <.detail_row
+            :if={exemption = present_vat_exemption(@current_org)}
+            label="Zwolnienie z VAT"
+            wide
+          >
+            {exemption}
+          </.detail_row>
           <.detail_row label="Adres" wide>{multiline_address(@current_org.address)}</.detail_row>
         </div>
       <% end %>
@@ -265,7 +307,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     >
       <div class="text-grey-700 text-sm">
         Nie dodano jeszcze danych korespondencyjnych. Jeżeli adres jest inny
-        niż organizacji - dodaj je tutaj.
+        niż organizacji - dodaj je tutaj.
       </div>
     </.company_section>
     """
@@ -1403,5 +1445,17 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     |> to_string()
     |> String.slice(0, 1)
     |> String.upcase()
+  end
+
+  defp present_vat_exemption(%{vat_exemption_type: nil}), do: nil
+
+  defp present_vat_exemption(%{vat_exemption_type: type} = org) do
+    case type do
+      :other ->
+        org.vat_exemption_basis
+
+      _ ->
+        VatExemption.label(type)
+    end
   end
 end

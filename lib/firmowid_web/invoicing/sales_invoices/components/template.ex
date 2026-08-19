@@ -6,6 +6,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Ksef
+  alias Firmowid.Ash.Ksef.Services.InvoiceRenderer
   alias Firmowid.Ash.Ksef.VatRate
   alias FirmowidWeb.Invoicing.Components.Print
 
@@ -864,6 +865,20 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
               <br />
               Exchange rate according to average exchange rate table No. {@currency_rate.table_number} of {@currency_rate.effective_date}
             </div>
+          </div>
+        </div>
+      <% end %>
+      <%= if InvoiceRenderer.has_exempt_items?(@sales_invoice) do %>
+        <div class="mb-3">
+          <h3 class="text-darkGrey/70 mb-2 text-[8px] font-bold uppercase">Zwolnienie z VAT</h3>
+          <div class="text-[10px]/[14px]">
+            Podstawa zwolnienia z VAT:
+            <span class="font-bold">
+              {InvoiceRenderer.exemption_basis_label(
+                Map.get(@sales_invoice, :vat_exemption_type) || :art_113,
+                @sales_invoice
+              )}
+            </span>
           </div>
         </div>
       <% end %>

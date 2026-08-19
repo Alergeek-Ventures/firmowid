@@ -17,6 +17,8 @@ defmodule Firmowid.Ash.Invoicing.Changes.PrepareCorrection do
     :seller_name,
     :seller_surname,
     :seller_account_number,
+    :vat_exemption_type,
+    :vat_exemption_basis,
     :counterparty_id,
     :buyer_type,
     :buyer_id,

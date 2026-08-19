@@ -39,6 +39,7 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
   alias Firmowid.Ash.Invoicing.Changes
   alias Firmowid.Ash.Invoicing.CountryCodes
   alias Firmowid.Ash.Invoicing.Validations
+  alias Firmowid.Ash.Invoicing.VatExemption
   alias Firmowid.Ash.Invoicing.WizardDraft
 
   @eu_countries CountryCodes.eu_countries_with_aliases()
@@ -124,7 +125,7 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
       description "Update draft items and move the wizard to the payment step."
       require_atomic? false
 
-      accept [:currency, :is_reverse_charge]
+      accept [:currency, :is_reverse_charge, :vat_exemption_type, :vat_exemption_basis]
 
       argument :items, {:array, :map}
 
@@ -193,7 +194,9 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
         :due_date,
         :payment_method,
         :invoice_note,
-        :internal_note
+        :internal_note,
+        :vat_exemption_type,
+        :vat_exemption_basis
       ]
 
       argument :items, {:array, :map}
@@ -218,6 +221,17 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
     # :accountant and above: all actions
     policy {Firmowid.Ash.Checks.AtLeastRole, role: :accountant} do
       authorize_if always()
+    end
+  end
+
+  changes do
+    change {Changes.ClearVatExemptionBasis, []}
+  end
+
+  validations do
+    validate present(:vat_exemption_basis) do
+      where attribute_equals(:vat_exemption_type, :other)
+      message "Podaj podstawę prawną zwolnienia z VAT."
     end
   end
 
@@ -255,6 +269,16 @@ defmodule Firmowid.Ash.Invoicing.WizardDraft do
     attribute :buyer_description, :string, public?: true
     attribute :invoice_note, :string, public?: true
     attribute :internal_note, :string, public?: true
+
+    attribute :vat_exemption_type, :atom,
+      public?: true,
+      allow_nil?: true,
+      constraints: [one_of: VatExemption.valid_types()]
+
+    attribute :vat_exemption_basis, :string,
+      public?: true,
+      allow_nil?: true,
+      constraints: [max_length: 256, trim?: true, allow_empty?: false]
 
     attribute :invoice_type, :atom,
       constraints: [one_of: [:poland, :foreign]],

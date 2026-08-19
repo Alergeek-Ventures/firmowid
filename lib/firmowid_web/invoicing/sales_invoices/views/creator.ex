@@ -222,6 +222,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       seller_account_number: if(default_bank_account, do: default_bank_account.iban),
       invoice_note: base_invoice.invoice_note,
       internal_note: base_invoice.internal_note,
+      vat_exemption_type: base_invoice.vat_exemption_type,
+      vat_exemption_basis: base_invoice.vat_exemption_basis,
       items: items
     }
 
@@ -396,6 +398,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     # If items aren't loaded, on_missing: :destroy would wipe all items.
     draft = Ash.load!(draft, [:items], scope: scope)
 
+    organization = Core.get_organization!(socket.assigns.org_id, scope: scope)
+
     ash_form =
       AshPhoenix.Form.for_update(draft, :update_items, scope: scope, forms: [auto?: true])
 
@@ -410,6 +414,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     initial_params = %{
       "currency" => draft.currency,
       "is_reverse_charge" => draft.is_reverse_charge,
+      "vat_exemption_type" => draft.vat_exemption_type || organization.vat_exemption_type,
+      "vat_exemption_basis" => draft.vat_exemption_basis || organization.vat_exemption_basis,
       "items" => initial_item_params(draft.items || [])
     }
 
@@ -580,6 +586,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
       vat_value: draft.vat_value,
       gross_value: draft.gross_value,
       sales_invoice_items: items,
+      vat_exemption_type: draft.vat_exemption_type || organization.vat_exemption_type,
+      vat_exemption_basis: draft.vat_exemption_basis || organization.vat_exemption_basis,
       invoice_note: draft.invoice_note,
       internal_note: draft.internal_note,
       # Fields the template checks but aren't relevant for new invoices
@@ -1216,7 +1224,13 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   end
 
   defp create_invoice_from_draft(draft, invoice_number, organization, should_send_emails, scope) do
-    org_data = %{name: organization.name, address: organization.address, nip: organization.nip}
+    org_data = %{
+      name: organization.name,
+      address: organization.address,
+      nip: organization.nip,
+      vat_exemption_type: draft.vat_exemption_type || organization.vat_exemption_type,
+      vat_exemption_basis: draft.vat_exemption_basis || organization.vat_exemption_basis
+    }
 
     SalesInvoice.confirm_from_draft(
       draft.id,

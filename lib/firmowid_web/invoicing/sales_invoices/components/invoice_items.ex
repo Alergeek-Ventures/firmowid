@@ -14,6 +14,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
   alias Firmowid.Ash.Ksef.VatRate
   alias FirmowidWeb.Invoicing.FormHelpers
   alias FirmowidWeb.Invoicing.Utilities.PriceInput
+  alias FirmowidWeb.Invoicing.Utilities.VatExemption
   alias Phoenix.HTML.FormData
 
   defp currency_options do
@@ -252,6 +253,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
       items_field: items_field,
       summary: invoice_summary(items, currency),
       single_item?: single_item?,
+      show_exemption?: show_vat and Enum.any?(items, &(&1.vat_rate == "zw")),
       vat_options: vat_options,
       vat_disabled?: vat_disabled?,
       name_error: name_error,
@@ -269,7 +271,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
 
     ~H"""
     <div class={[
-      "mb-8 space-y-8",
+      "mb-8",
       if(@show_vat, do: "col-start-2 col-end-9", else: "col-start-2 col-end-8")
     ]}>
       <div class="mb-2 flex flex-row items-center gap-5">
@@ -320,8 +322,44 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
           </div>
         </div>
       </div>
-      <div class="flex flex-row items-end gap-4">
-        <p class="text-grey-700 mr-auto"><strong>2.</strong> Pozycje na fakturze</p>
+
+      <div
+        :if={@show_exemption?}
+        class="mb-4 flex flex-col items-start gap-4"
+      >
+        <div class="text-grey-700">
+          <strong>2.</strong> Zwolnienie z VAT
+        </div>
+
+        <div class="flex w-full gap-3 space-y-2">
+          <.input
+            type="select"
+            field={@items_form[:vat_exemption_type]}
+            label="Podstawa zwolnienia"
+            options={VatExemption.options()}
+            new
+            input_class="w-full"
+          />
+
+          <%= if to_string(@items_form[:vat_exemption_type].value) == "other" do %>
+            <.input
+              type="text"
+              field={@items_form[:vat_exemption_basis]}
+              label="Podstawa prawna zwolnienia z VAT"
+              new
+              input_class="w-full"
+              class="text-grey-700"
+            />
+          <% else %>
+            <input type="hidden" name={@items_form[:vat_exemption_basis].name} value="" />
+          <% end %>
+        </div>
+      </div>
+
+      <div class="items-star flex flex-row gap-4">
+        <p class="text-grey-700 mr-auto">
+          <strong>{if @show_exemption?, do: "3.", else: "2."}</strong> Pozycje na fakturze
+        </p>
 
         <.button :if={false} type="button" size="small" variant="secondary">
           <Lucideicons.copy /> Skopiuj poprzednie pozycje

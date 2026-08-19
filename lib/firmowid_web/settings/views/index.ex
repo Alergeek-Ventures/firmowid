@@ -1115,6 +1115,16 @@ defmodule FirmowidWeb.Settings.Views.Index do
     {:noreply, cancel_upload(socket, :leave_request_attachment, ref)}
   end
 
+  def handle_event("validate_company_form", %{"organization" => params}, socket) do
+    form =
+      AshPhoenix.Form.validate(
+        socket.assigns.company_form.source,
+        params
+      )
+
+    {:noreply, assign(socket, :company_form, to_form(form))}
+  end
+
   def handle_info(
         %Broadcast{
           topic: "credential:" <> topic,
