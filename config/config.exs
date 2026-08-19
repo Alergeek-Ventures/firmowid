@@ -53,7 +53,6 @@ config :ex_cldr,
   default_locale: "pl"
 
 config :ex_money,
-  default_cldr_backend: Firmowid.Cldr,
   auto_start_exchange_rate_service: true,
   exchange_rates_retrieve_every: :never,
   exchange_rates_cache_module: Firmowid.Ash.Currencies.DatabaseCache
@@ -145,6 +144,8 @@ config :jido_ai,
     capable: "openai:gpt-5-mini",
     reasoning: "openai:gpt-5"
   }
+
+config :localize, default_locale: :pl
 
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
