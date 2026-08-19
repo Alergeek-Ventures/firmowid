@@ -60,6 +60,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
     define :read, action: :read
     define :list_user_sessions
     define :get_current, not_found_error?: false
+    define :current_session, args: [:id]
     define :most_recent
     define :list_overlapping, args: [:user_id, :start_datetime]
     define :start
@@ -142,6 +143,16 @@ defmodule Firmowid.Ash.Timetracker.Session do
       get? true
 
       filter expr(is_nil(end_datetime))
+      filter expr(user_id == ^actor(:id))
+    end
+
+    read :current_session do
+      description "Get a session by ID only when it belongs to the acting user."
+      get? true
+
+      argument :id, :uuid, allow_nil?: false
+
+      filter expr(id == ^arg(:id))
       filter expr(user_id == ^actor(:id))
     end
 

@@ -248,6 +248,8 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
                )
 
       assert updated.title == "Updated"
+      assert {:ok, current_session} = AshSession.current_session(session.id, scope: scope)
+      assert current_session.id == session.id
     end
 
     test "does not let an admin edit another user's session", %{user: user, project: project} do
