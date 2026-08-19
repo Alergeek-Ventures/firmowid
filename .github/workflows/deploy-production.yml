@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
 
       - name: Deploy to Coolify
-        uses: Alergeek-Ventures/av-secret-service/coolify-deploy@ea8fff7af0477771243477bf292adcd2a8476c19
+        uses: Alergeek-Ventures/av-secret-service/coolify-deploy@17c852d6fda8206c131cc90ee8ba92f2b7133ef6
         with:
           infisical-identity-id: ${{ vars.INFISICAL_MACHINE_IDENTITY_ID }}
           infisical-project-slug: firmowid-z-hq-c
