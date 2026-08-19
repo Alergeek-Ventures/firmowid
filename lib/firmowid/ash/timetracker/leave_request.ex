@@ -97,7 +97,14 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
     create :create do
       description "Employee submits a leave/absence request."
       primary? true
-      accept [:starts_on, :ends_on, :reason, :note]
+      accept [:starts_on, :ends_on, :note]
+
+      argument :reason, :atom do
+        allow_nil? false
+        constraints one_of: [:indisposition, :rest, :other]
+
+        description "Request reason: indisposition, rest, or other. This action only creates absence requests."
+      end
 
       argument :upload_path, :string do
         allow_nil? true
@@ -110,6 +117,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
       end
 
       change set_attribute(:user_id, actor(:id))
+      change set_attribute(:reason, arg(:reason))
 
       change fn changeset, _context ->
         # TODO: Determine category based on employment contract

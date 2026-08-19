@@ -131,6 +131,50 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestTest do
     end
   end
 
+  describe "create action input" do
+    test "only accepts absence reasons", %{employee_scope: employee_scope} do
+      assert {:ok, request} =
+               Timetracker.create_leave_request(
+                 %{
+                   starts_on: days_from_today(30),
+                   ends_on: days_from_today(30),
+                   reason: :rest
+                 },
+                 scope: employee_scope
+               )
+
+      assert request.category == :absence
+      assert request.reason == :rest
+      assert request.status == :pending
+
+      assert {:error, _} =
+               Timetracker.create_leave_request(
+                 %{
+                   starts_on: days_from_today(32),
+                   ends_on: days_from_today(32),
+                   reason: :vacation
+                 },
+                 scope: employee_scope
+               )
+    end
+
+    test "publishes the requestable reasons in the MCP tool schema" do
+      tool =
+        Timetracker
+        |> AshAi.Info.tools()
+        |> Enum.find(&(&1.name == :create_leave_request))
+        |> then(&%{&1 | domain: Timetracker, action: Ash.Resource.Info.action(&1.resource, &1.action)})
+
+      schema = AshAi.Tool.Schema.for_tool(tool)
+
+      assert get_in(schema, ["properties", "input", "properties", "reason", "enum"]) == [
+               "indisposition",
+               "rest",
+               "other"
+             ]
+    end
+  end
+
   describe "accepted_leave_days_for_year" do
     test "clamps requests that span year boundaries", %{
       user: user,

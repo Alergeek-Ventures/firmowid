@@ -75,7 +75,8 @@ defmodule Firmowid.Ash.Timetracker do
     end
 
     tool :create_leave_request, LeaveRequest, :create,
-      description: "Submit a leave or absence request for the authenticated user"
+      description:
+        "Submit an absence request for the authenticated user. Use reason indisposition, rest, or other; this action does not support sick, vacation, or unpaid leave. New requests always start with pending status."
   end
 
   policies do
