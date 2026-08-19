@@ -4,6 +4,11 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessCostInvoiceBlob do
   """
   alias Firmowid.Ash.Blobs.Utils.ProcessBlobHelpers
   alias Firmowid.Ash.Invoicing
+  alias Firmowid.Ash.Invoicing.CostInvoice
+  alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.SystemActor
+
+  require Ash.Query
 
   @cost_invoice_system_prompt """
   Extract data from this cost invoice, receipt, or bill document.
@@ -12,6 +17,7 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessCostInvoiceBlob do
   - Dates should be in YYYY-MM-DD format
   - Currency should be a 3-letter ISO 4217 code (e.g., PLN, USD, EUR)
   - For Polish invoices: "Sprzedawca" = seller, "Data wystawienia" = issue date, "Data sprzedaży/dostawy" = sale date
+  - If the invoice includes a KSeF number, extract it exactly as printed
   - If present, extract the seller tax identifier (for Polish invoices usually NIP)
   - Total amount should be the gross/brutto amount (including VAT/tax)
   - If the document is not an invoice, receipt, or bill (e.g., it's a contract, report, or unrelated document), set document_type to "invalid"
@@ -27,6 +33,7 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessCostInvoiceBlob do
       seller: %{type: "string"},
       seller_nip: %{type: "string"},
       seller_address: %{type: "string"},
+      ksef_number: %{type: "string"},
       total_amount: %{type: "number"},
       currency: %{type: "string"},
       invoice_identifier: %{type: "string"},
@@ -92,10 +99,32 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessCostInvoiceBlob do
       |> Map.put("blob_id", blob.id)
       |> maybe_put_inbound_email_id(inbound_email_id)
 
-    case Invoicing.create_cost_invoice(attrs) do
-      {:ok, _job} -> :ok
-      {:error, reason} -> {:error, reason}
+    case existing_ksef_invoice(extracted_metadata["ksef_number"], blob.organization_id) do
+      {:ok, %CostInvoice{id: id}} ->
+        {:error, {:duplicate_ksef_invoice, id}}
+
+      {:ok, nil} ->
+        case Invoicing.create_cost_invoice(attrs) do
+          {:ok, _job} -> :ok
+          {:error, reason} -> {:error, reason}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
     end
+  end
+
+  defp existing_ksef_invoice(nil, _organization_id), do: {:ok, nil}
+
+  defp existing_ksef_invoice(ksef_number, organization_id) do
+    scope = %Scope{
+      actor: %SystemActor{org_id: organization_id, role: :cost_invoice_processor},
+      tenant: organization_id
+    }
+
+    CostInvoice
+    |> Ash.Query.filter(ksef_number == ^ksef_number)
+    |> Ash.read_one(scope: scope)
   end
 
   defp maybe_put_inbound_email_id(attrs, nil), do: attrs

@@ -5,6 +5,7 @@ defmodule Firmowid.Ash.Blobs.BlobsTest do
 
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Blobs.Blob
+  alias Firmowid.Ash.Invoicing.CostInvoice
 
   setup do
     user = admin_fixture()
@@ -119,6 +120,77 @@ defmodule Firmowid.Ash.Blobs.BlobsTest do
                  scope: scope
                )
     end
+
+    test "marks a PDF matching an imported KSeF invoice as a duplicate", %{
+      user: user,
+      scope: scope
+    } do
+      previous_extract_result = Application.get_env(:firmowid, :reducto_extract_result)
+      previous_reducto_config = Application.get_env(:firmowid, :reducto_api_client)
+      ksef_number = "1234567890-20260819-ABCDEF123456-01"
+
+      configure_reducto_test_client()
+
+      on_exit(fn ->
+        restore_env(:reducto_extract_result, previous_extract_result)
+        restore_env(:reducto_api_client, previous_reducto_config)
+      end)
+
+      existing_invoice =
+        Ash.Seed.seed!(CostInvoice, %{
+          seller: "KSeF Supplier Sp. z o.o.",
+          seller_display_name: "KSeF Supplier",
+          seller_address: "ul. Testowa 1, 00-001 Warszawa",
+          sale_date: ~D[2026-08-01],
+          issue_date: ~D[2026-08-01],
+          due_date: ~D[2026-08-15],
+          total_amount: Decimal.new("-50.00"),
+          currency: "PLN",
+          description: "Imported KSeF invoice",
+          invoice_identifier: "KSEF/2026/001",
+          skip_invoicing: false,
+          organization_id: user.organization_id,
+          ksef_number: ksef_number,
+          ksef_permanent_storage_date: ~N[2026-08-01 08:00:00],
+          ksef_downloaded_at: DateTime.utc_now()
+        })
+
+      Application.put_env(
+        :firmowid,
+        :reducto_extract_result,
+        {:ok, extracted_cost_invoice(ksef_number)}
+      )
+
+      {:ok, path} = Briefly.create()
+      File.write!(path, "matching KSeF invoice")
+
+      assert {:ok, %Blob{} = blob} =
+               Blobs.create_or_retry_cost_invoice_blob(path, "application/pdf", "invoice.pdf", scope: scope)
+
+      failed_blob = Blobs.get_blob!(blob.id, scope: scope)
+      assert failed_blob.processing_state == :failed
+      assert failed_blob.processing_metadata["error_code"] == "duplicate_ksef_invoice"
+      assert failed_blob.processing_metadata["cost_invoice_id"] == existing_invoice.id
+
+      assert failed_blob.processing_metadata["error_message"] ==
+               "Ta faktura z KSeF jest już w systemie."
+    end
+  end
+
+  defp extracted_cost_invoice(ksef_number) do
+    %{
+      "document_type" => "cost_invoice",
+      "seller" => "KSeF Supplier Sp. z o.o.",
+      "seller_address" => "ul. Testowa 1, 00-001 Warszawa",
+      "sale_date" => "2026-08-01",
+      "issue_date" => "2026-08-01",
+      "due_date" => "2026-08-15",
+      "total_amount" => 50.0,
+      "currency" => "PLN",
+      "invoice_identifier" => "KSEF/2026/001",
+      "items_list" => [%{"name" => "Usługa", "quantity" => 1, "price" => 50.0}],
+      "ksef_number" => ksef_number
+    }
   end
 
   defp configure_reducto_test_client do

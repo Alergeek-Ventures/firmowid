@@ -30,6 +30,12 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob do
             {:error, reason} -> {:error, reason}
           end
 
+        {:error, {:duplicate_ksef_invoice, cost_invoice_id}} ->
+          case handle_duplicate_ksef_invoice(blob, cost_invoice_id, opts) do
+            {:ok, _updated_blob} -> {:ok, blob}
+            {:error, reason} -> {:error, reason}
+          end
+
         {:error, reason} ->
           {:error, reason}
       end
@@ -83,6 +89,21 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob do
       error_message: invalid_document_error_message(blob.processing_target)
     }
 
+    update_failed_blob(blob, failure, opts)
+  end
+
+  defp handle_duplicate_ksef_invoice(blob, cost_invoice_id, opts) do
+    failure = %{
+      error: ":duplicate_ksef_invoice",
+      error_code: "duplicate_ksef_invoice",
+      error_message: "Ta faktura z KSeF jest już w systemie.",
+      cost_invoice_id: cost_invoice_id
+    }
+
+    update_failed_blob(blob, failure, opts)
+  end
+
+  defp update_failed_blob(blob, failure, opts) do
     case Blob
          |> Ash.Query.filter(id == ^blob.id)
          |> Ash.read_one(opts) do

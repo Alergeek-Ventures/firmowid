@@ -71,7 +71,7 @@ defmodule Firmowid.Ash.Blobs.Blob do
 
     define :mark_processing_failed,
       action: :mark_processing_failed,
-      args: [:error, :error_code, :error_message]
+      args: [:error, :error_code, :error_message, :cost_invoice_id]
 
     define :process_document_blob, action: :process_document_blob
     define :cleanup_failed_document_blob, action: :cleanup_failed_document_blob
@@ -155,6 +155,7 @@ defmodule Firmowid.Ash.Blobs.Blob do
       argument :error, :string
       argument :error_code, :string
       argument :error_message, :string
+      argument :cost_invoice_id, :uuid_v7
       change {ValidateProcessingStateTransition, to: :failed}
       change set_attribute(:processing_state, :failed)
 
@@ -162,12 +163,18 @@ defmodule Firmowid.Ash.Blobs.Blob do
         error = Ash.Changeset.get_argument(changeset, :error)
         error_code = Ash.Changeset.get_argument(changeset, :error_code)
         error_message = Ash.Changeset.get_argument(changeset, :error_message)
+        cost_invoice_id = Ash.Changeset.get_argument(changeset, :cost_invoice_id)
 
         metadata = %{
           error: error || "unknown_error",
           error_code: error_code || "processing_failed",
           error_message: error_message || "Nie udało się przetworzyć pliku."
         }
+
+        metadata =
+          if cost_invoice_id,
+            do: Map.put(metadata, :cost_invoice_id, cost_invoice_id),
+            else: metadata
 
         Ash.Changeset.force_change_attribute(changeset, :processing_metadata, metadata)
       end
