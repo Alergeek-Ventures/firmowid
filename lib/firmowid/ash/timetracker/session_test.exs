@@ -5,6 +5,7 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
   import Firmowid.TimetrackerFixtures
 
   alias Firmowid.Ash.Scope
+  alias Firmowid.Ash.Timetracker
   alias Firmowid.Ash.Timetracker.Session, as: AshSession
 
   setup do
@@ -226,6 +227,58 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
       assert first_session.end_datetime == updated.start_datetime
       assert updated.title == "Edited second"
     end
+  end
+
+  describe "edit_current_user_session/2" do
+    test "updates the acting user's running session", %{
+      user: user,
+      project: project,
+      scope: scope
+    } do
+      session =
+        session_fixture(%{
+          user_id: user.id,
+          project_id: project.id,
+          organization_id: user.organization_id
+        })
+
+      assert {:ok, updated} =
+               AshSession.edit_current_user_session(%{id: session.id, title: "Updated"},
+                 scope: scope
+               )
+
+      assert updated.title == "Updated"
+    end
+
+    test "does not let an admin edit another user's session", %{user: user, project: project} do
+      session =
+        session_fixture(%{
+          user_id: user.id,
+          project_id: project.id,
+          organization_id: user.organization_id
+        })
+
+      admin = admin_fixture(%{organization_id: user.organization_id})
+      admin_scope = %Scope{actor: admin, tenant: user.organization_id}
+
+      assert {:error, _} =
+               AshSession.edit_current_user_session(%{id: session.id, title: "Unauthorized"},
+                 scope: admin_scope
+               )
+
+      assert Timetracker.get_session_by_id!(session.id,
+               scope: %Scope{actor: user, tenant: user.organization_id}
+             ).title == "Test Session"
+    end
+  end
+
+  test "exposes self-scoped session and leave tools" do
+    tool_names = Timetracker |> AshAi.Info.tools() |> Enum.map(& &1.name)
+
+    assert :start_session in tool_names
+    assert :edit_session in tool_names
+    assert :list_leave_requests in tool_names
+    assert :create_leave_request in tool_names
   end
 
   describe "destroy/2" do

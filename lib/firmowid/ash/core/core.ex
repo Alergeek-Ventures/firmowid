@@ -9,7 +9,7 @@ defmodule Firmowid.Ash.Core do
   Organization is fully writable with create, update, and destroy actions.
   OrganizationInvite handles invite creation, consumption, and expiry.
   """
-  use Ash.Domain, extensions: [AshPhoenix]
+  use Ash.Domain, extensions: [AshPhoenix, AshAi]
 
   alias Firmowid.Ash.Analysis.TagDefinition
   alias Firmowid.Ash.Core.Organization
@@ -18,6 +18,11 @@ defmodule Firmowid.Ash.Core do
   alias Firmowid.Ash.Timetracker.Project
 
   require Ash.Query
+
+  tools do
+    tool :update_profile, User, :update_current_profile,
+      description: "Update the authenticated user's profile information"
+  end
 
   resources do
     resource Organization do
@@ -42,6 +47,7 @@ defmodule Firmowid.Ash.Core do
       define :list_users, action: :list
       define :get_org_user, action: :get_org_user
       define :update_profile, action: :update_profile
+      define :update_current_profile, action: :update_current_profile
       define :update_role, action: :update_role
       define :archive_user, action: :archive
       define :unarchive_user, action: :unarchive

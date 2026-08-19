@@ -259,6 +259,33 @@ defmodule Firmowid.Ash.Core.User do
              where: [changing(:bank_account_number)]
     end
 
+    action :update_current_profile, :struct do
+      description "Update profile fields for the acting user."
+
+      constraints instance_of: __MODULE__
+
+      argument :name, :string
+      argument :employment_date, :date
+      argument :phone, :string
+      argument :slack_id, :string
+      argument :bank_account_number, :string
+      argument :position, :string
+      argument :correspondence_street, :string
+      argument :correspondence_city, :string
+      argument :correspondence_code, :string
+      argument :residence_street, :string
+      argument :residence_city, :string
+      argument :residence_code, :string
+
+      run fn input, context ->
+        Ash.update(context.actor, current_profile_attributes(input.arguments),
+          action: :update_profile,
+          actor: context.actor,
+          tenant: context.tenant
+        )
+      end
+    end
+
     update :update_role do
       description "Update a user's organization role."
       accept [:role]
@@ -396,6 +423,10 @@ defmodule Firmowid.Ash.Core.User do
       authorize_if expr(id == ^actor(:id))
     end
 
+    bypass action(:update_current_profile) do
+      authorize_if actor_present()
+    end
+
     bypass action(:update_avatar) do
       authorize_if expr(id == ^actor(:id))
     end
@@ -519,6 +550,26 @@ defmodule Firmowid.Ash.Core.User do
 
   identities do
     identity :unique_email, [:email]
+  end
+
+  defp current_profile_attributes(arguments) do
+    arguments
+    |> Map.take([
+      :name,
+      :employment_date,
+      :phone,
+      :slack_id,
+      :bank_account_number,
+      :position,
+      :correspondence_street,
+      :correspondence_city,
+      :correspondence_code,
+      :residence_street,
+      :residence_city,
+      :residence_code
+    ])
+    |> Enum.reject(fn {_field, value} -> is_nil(value) end)
+    |> Map.new()
   end
 
   # Use a dedicated validation module placed next to the resource file.

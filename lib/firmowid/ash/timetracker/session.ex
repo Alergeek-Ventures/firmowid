@@ -65,6 +65,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
     define :start
     define :stop
     define :stop_current
+    define :edit_current_user_session
     define :create
     define :update
     define :destroy
@@ -233,6 +234,19 @@ defmodule Firmowid.Ash.Timetracker.Session do
       end
     end
 
+    action :edit_current_user_session, :struct do
+      description "Update one of the acting user's unfrozen sessions."
+      constraints instance_of: __MODULE__
+      argument :id, :uuid, allow_nil?: false
+      argument :title, :string
+      argument :start_datetime, :utc_datetime
+      argument :end_datetime, :utc_datetime
+      argument :project_id, :uuid
+      argument :is_remote, :boolean
+
+      run &Firmowid.Ash.Timetracker.Session.Actions.EditCurrentUser.run/2
+    end
+
     update :update do
       description "Update session attributes."
       primary? true
@@ -263,6 +277,10 @@ defmodule Firmowid.Ash.Timetracker.Session do
     end
 
     policy action(:stop_current) do
+      authorize_if actor_present()
+    end
+
+    policy action(:edit_current_user_session) do
       authorize_if actor_present()
     end
   end

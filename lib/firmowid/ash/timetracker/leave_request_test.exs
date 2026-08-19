@@ -172,4 +172,21 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestTest do
       assert Timetracker.years_with_leave_requests(user.id, admin_scope) == [today().year]
     end
   end
+
+  describe "list_current_user/1" do
+    test "only returns the acting user's requests", %{user: user, employee_scope: employee_scope} do
+      own_request = create_request!(employee_scope, %{})
+      other_user = user_in_org_fixture(user.organization_id)
+      other_scope = %Scope{actor: other_user, tenant: user.organization_id}
+
+      _other_request =
+        create_request!(other_scope, %{
+          starts_on: days_from_today(30),
+          ends_on: days_from_today(32)
+        })
+
+      assert [request] = Timetracker.list_current_user_leave_requests!(scope: employee_scope)
+      assert request.id == own_request.id
+    end
+  end
 end

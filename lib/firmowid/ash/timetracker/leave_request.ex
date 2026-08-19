@@ -77,6 +77,23 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
       end
     end
 
+    read :list_current_user do
+      description "Leave requests submitted by the acting user."
+
+      argument :start_date, :date, allow_nil?: true
+      argument :end_date, :date, allow_nil?: true
+
+      prepare build(filter: expr(user_id == ^actor(:id)), sort: [inserted_at: :desc])
+
+      prepare build(filter: expr(ends_on >= ^arg(:start_date))) do
+        where present(:start_date)
+      end
+
+      prepare build(filter: expr(starts_on <= ^arg(:end_date))) do
+        where present(:end_date)
+      end
+    end
+
     create :create do
       description "Employee submits a leave/absence request."
       primary? true

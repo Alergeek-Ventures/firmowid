@@ -115,7 +115,16 @@ defmodule FirmowidWeb.Core.Router do
     pipe_through :mcp
 
     forward "/", AshAi.Mcp.Router,
-      tools: [:list_sessions, :get_current_session, :stop_current_session],
+      tools: [
+        :list_sessions,
+        :get_current_session,
+        :stop_current_session,
+        :start_session,
+        :edit_session,
+        :list_leave_requests,
+        :create_leave_request,
+        :update_profile
+      ],
       otp_app: :firmowid
   end
 
