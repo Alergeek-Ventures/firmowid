@@ -1,12 +1,27 @@
 defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
   @moduledoc false
-  use Firmowid.DataCase
+  use Firmowid.DataCase, async: false
 
   import Firmowid.AccountsFixtures
+  import Firmowid.Test.Support.OpenAIEnrichmentTestHelpers
 
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Scope
+
+  setup do
+    original_openai_enrichment = Application.get_env(:firmowid, :openai_enrichment)
+
+    Application.put_env(
+      :firmowid,
+      :openai_enrichment,
+      request_options: [plug: {Req.Test, :openai_enrichment}]
+    )
+
+    stub_openai_enrichment_request()
+
+    on_exit(fn -> restore_env(:openai_enrichment, original_openai_enrichment) end)
+  end
 
   describe "delete_cost_invoice/1" do
     test "returns error for KSeF-imported invoice and does not delete it" do
@@ -185,6 +200,9 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
       ksef_downloaded_at: DateTime.utc_now()
     })
   end
+
+  defp restore_env(key, nil), do: Application.delete_env(:firmowid, key)
+  defp restore_env(key, value), do: Application.put_env(:firmowid, key, value)
 
   defp insert_cost_invoice!(organization_id, attrs) do
     base_attrs = %{
