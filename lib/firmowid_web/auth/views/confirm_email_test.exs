@@ -68,6 +68,7 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
     end)
 
     assert_receive {:email_change_confirmation, email}
+    assert email.text_body =~ "Jeśli nie prosiłeś o zmianę adresu email, zignoruj tę wiadomość."
 
     [confirmation_token] =
       Regex.run(~r{/potwierdz-email/([^\s]+)}, email.text_body, capture: :all_but_first)

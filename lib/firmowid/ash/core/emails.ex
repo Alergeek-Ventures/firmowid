@@ -13,14 +13,43 @@ defmodule Firmowid.Ash.Core.Emails do
   @doc """
   Deliver account confirmation instructions to the given user.
   """
-  @spec deliver_confirmation_instructions(user :: map(), url :: String.t()) ::
+  @spec deliver_confirmation_instructions(
+          user :: map(),
+          url :: String.t(),
+          email_change? :: boolean()
+        ) ::
           {:ok, Swoosh.Email.t()} | {:error, term()}
-  def deliver_confirmation_instructions(user, url) do
-    deliver(to_string(user.email), "Potwierdź adres email", """
+  def deliver_confirmation_instructions(user, url, email_change? \\ false) do
+    deliver(
+      to_string(user.email),
+      "Potwierdź adres email",
+      confirmation_body(user.email, url, email_change?)
+    )
+  end
+
+  defp confirmation_body(email, url, true) do
+    """
 
     ==============================
 
-    Cześć #{user.email},
+    Cześć #{email},
+
+    Otwórz poniższy adres, a następnie na wyświetlonej stronie kliknij przycisk potwierdzenia adresu email:
+
+    #{url}
+
+    Jeśli nie prosiłeś o zmianę adresu email, zignoruj tę wiadomość.
+
+    ==============================
+    """
+  end
+
+  defp confirmation_body(email, url, false) do
+    """
+
+    ==============================
+
+    Cześć #{email},
 
     Otwórz poniższy adres, a następnie na wyświetlonej stronie kliknij przycisk potwierdzenia adresu email:
 
@@ -29,7 +58,7 @@ defmodule Firmowid.Ash.Core.Emails do
     Jeśli nie zakładałeś konta, zignoruj tę wiadomość.
 
     ==============================
-    """)
+    """
   end
 
   @doc """
