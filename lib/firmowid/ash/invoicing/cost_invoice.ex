@@ -61,6 +61,88 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     table "cost_invoices"
     repo Firmowid.Repo
 
+    check_constraints do
+      check_constraint :amount,
+                       "cost_invoices_amount_matches_legacy",
+                       check: "amount IS NULL OR ((amount).amount = total_amount AND (amount).currency_code = currency)",
+                       message: "must match total amount and currency"
+    end
+
+    custom_statements do
+      statement :backfill_cost_invoice_amount do
+        up """
+        distinct_currency_codes =
+          repo().query!(~S|
+          SELECT DISTINCT currency_code
+          FROM (
+            SELECT currency AS currency_code
+            FROM cost_invoices
+            WHERE currency IS NOT NULL
+
+            UNION
+
+            SELECT (amount).currency_code AS currency_code
+            FROM cost_invoices
+            WHERE amount IS NOT NULL
+          ) currencies
+          ORDER BY currency_code
+          |).rows
+          |> List.flatten()
+          |> Enum.reject(&is_nil/1)
+
+        invalid_currency_codes =
+          Enum.reject(distinct_currency_codes, fn currency_code ->
+            match?({:ok, _currency}, Money.validate_currency(currency_code))
+          end)
+
+        if invalid_currency_codes != [] do
+          raise "Cost invoice money backfill failed because some historical currencies are invalid for ash_money: \#{Enum.join(invalid_currency_codes, ", ")}. Normalize those rows first and rerun the migration."
+        end
+
+        execute(~S|
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1
+            FROM cost_invoices
+            WHERE (total_amount IS NULL) <> (currency IS NULL)
+          ) THEN
+            RAISE EXCEPTION
+              'Cost invoice money backfill failed: split money fields must both be present or absent';
+          END IF;
+        END
+        $$;
+        |)
+
+        execute(~S|
+        UPDATE cost_invoices
+        SET amount = ROW(currency, total_amount)::public.money_with_currency
+        WHERE amount IS NULL
+          AND currency IS NOT NULL
+          AND total_amount IS NOT NULL;
+        |)
+
+        execute(~S|
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1
+            FROM cost_invoices
+            WHERE amount IS NULL
+          ) THEN
+            RAISE EXCEPTION
+              'Cost invoice money backfill failed: some rows have no composite amount';
+          END IF;
+        END
+        $$;
+        |)
+        """
+
+        down ":ok"
+        code? true
+      end
+    end
+
     references do
       reference :original_invoice, ignore?: true
     end
