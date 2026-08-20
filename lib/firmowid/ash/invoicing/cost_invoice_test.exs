@@ -142,6 +142,30 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
     end
   end
 
+  describe "create" do
+    test "persists amount from the legacy total and currency input" do
+      user = admin_fixture()
+      scope = %Scope{actor: user, tenant: user.organization_id}
+
+      assert {:ok, invoice} =
+               CostInvoice.create(
+                 %{
+                   seller: "Supplier Sp. z o.o.",
+                   sale_date: ~D[2026-02-01],
+                   issue_date: ~D[2026-02-01],
+                   items_list: [],
+                   total_amount: Decimal.new("-123.45"),
+                   currency: "PLN",
+                   invoice_identifier: "FV/2026/02/AMOUNT"
+                 },
+                 scope: scope
+               )
+
+      assert Money.to_decimal(invoice.amount) == Decimal.new("-123.45")
+      assert Money.to_currency_code(invoice.amount) == :PLN
+    end
+  end
+
   defp insert_ksef_cost_invoice!(organization_id) do
     Ash.Seed.seed!(CostInvoice, %{
       seller: "KSeF Supplier Sp. z o.o.",

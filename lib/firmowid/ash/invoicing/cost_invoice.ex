@@ -49,6 +49,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   alias Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName
   alias Firmowid.Ash.Invoicing.Changes.EnqueueMissingCostInvoiceDescriptionRefresh
   alias Firmowid.Ash.Invoicing.Changes.RequireTransactionIds
+  alias Firmowid.Ash.Invoicing.Changes.SetCostInvoiceAmount
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Resource
 
@@ -331,6 +332,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       change ComputeCostInvoiceSellerDisplayName
 
       change ComputeCostInvoiceDescription
+
+      change SetCostInvoiceAmount
 
       change EnqueueMissingCostInvoiceDescriptionRefresh
 
