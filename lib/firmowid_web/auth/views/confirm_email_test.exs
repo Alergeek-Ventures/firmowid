@@ -55,7 +55,7 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
       |> live(~p"/ustawienia/konto")
 
     view
-    |> element("button[aria-label='Edytuj adres email']")
+    |> element("button[aria-label='Edytuj dane dostępowe']")
     |> render_click()
 
     drain_sent_emails()

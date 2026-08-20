@@ -166,7 +166,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:editing_basic_info, false)
      |> assign(:editing_correspondence, false)
      |> assign(:editing_account_name, false)
-     |> assign(:editing_email, false)
      |> assign(:editing_profile_employment, false)
      |> assign(:editing_profile_finance, false)
      |> assign(:editing_profile_contact, false)
@@ -471,8 +470,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
         {:noreply,
          socket
-         |> assign(:editing_email, false)
+         |> assign(:editing_credentials, false)
          |> assign(:current_user, user)
+         |> assign(:current_password, nil)
+         |> assign(:password_form, form_password_form(user))
          |> assign(:email_form, form_email_form(user, socket.assigns.ash_scope))}
 
       {:error, form} ->
@@ -910,18 +911,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
     {:noreply, assign(socket, :editing_account_name, !socket.assigns.editing_account_name)}
   end
 
-  def handle_event("toggle_editing_email", _params, socket) do
-    editing_email? = !socket.assigns.editing_email
-
-    {:noreply,
-     socket
-     |> assign(:editing_email, editing_email?)
-     |> assign(
-       :email_form,
-       form_email_form(socket.assigns.current_user, socket.assigns.ash_scope)
-     )}
-  end
-
   def handle_event("toggle_editing_profile_employment", _params, socket) do
     {:noreply, toggle_profile_editing(socket, :editing_profile_employment)}
   end
@@ -968,7 +957,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
     socket = assign(socket, :editing_credentials, editing_credentials?)
 
     if editing_credentials? do
-      {:noreply, socket}
+      {:noreply,
+       assign(
+         socket,
+         :email_form,
+         form_email_form(socket.assigns.current_user, socket.assigns.ash_scope)
+       )}
     else
       {:noreply,
        socket
@@ -1272,7 +1266,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
             current_org={@current_org}
             delete_account_form={@delete_account_form}
             editing_account_name={@editing_account_name}
-            editing_email={@editing_email}
             editing_credentials={@editing_credentials}
             email_form={@email_form}
             google_connected?={@google_connected?}
