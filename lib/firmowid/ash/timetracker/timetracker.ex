@@ -45,13 +45,16 @@ defmodule Firmowid.Ash.Timetracker do
     tool :list_sessions, Session, :list_user_sessions do
       description "List the authenticated user's previous work sessions, newest first, optionally filtered to those starting on or after a given date"
       action_parameters [:sort, :limit]
+      load [:project]
 
       argument :after_date, :date do
         description "Only return sessions starting on or after this date (UTC)"
       end
     end
 
-    tool :get_current_session, Session, :get_current, description: "Get the user's currently running session, if any"
+    tool :get_current_session, Session, :get_current,
+      load: [:project],
+      description: "Get the user's currently running session, if any"
 
     tool :stop_current_session, Session, :stop_current,
       description: "End the authenticated user's currently running work session"
