@@ -43,7 +43,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
               id={sessions_form[:title].id}
               name={sessions_form[:title].name}
               value={sessions_form[:title].value}
-              class="bg-grey-200 hover:bg-grey-200 -ml-1 max-w-full min-w-0 truncate rounded border-none p-1 transition focus:ring-0"
+              class="focus:bg-grey-200 hover:bg-grey-200 -ml-1 max-w-full min-w-0 truncate rounded border-none bg-transparent p-1 transition focus:ring-0"
               style="field-sizing: content;"
               phx-debounce="300"
             />
