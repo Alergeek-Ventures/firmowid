@@ -123,7 +123,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
       argument :after_date, :date
 
-      prepare build(sort: [start_datetime: :desc], load: [:lockdown])
+      prepare build(sort: [start_datetime: :desc], load: [:lockdown, :project])
       filter expr(user_id == ^actor(:id))
 
       prepare fn query, _context ->
@@ -142,6 +142,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
       description "Get the currently running session (no end_datetime) for the acting user."
       get? true
 
+      prepare build(load: [:project])
       filter expr(is_nil(end_datetime))
       filter expr(user_id == ^actor(:id))
     end

@@ -144,6 +144,43 @@ defmodule Firmowid.Ash.Timetracker.SessionTest do
     end
   end
 
+  describe "MCP session reads" do
+    test "load the linked project for previous and current sessions", %{
+      user: user,
+      project: project,
+      scope: scope
+    } do
+      completed_session =
+        session_fixture(%{
+          user_id: user.id,
+          project_id: project.id,
+          organization_id: user.organization_id,
+          start_datetime: ~U[2025-04-01 09:00:00Z],
+          end_datetime: ~U[2025-04-01 10:00:00Z]
+        })
+
+      current_session =
+        session_fixture(%{
+          user_id: user.id,
+          project_id: project.id,
+          organization_id: user.organization_id
+        })
+
+      assert [listed_current, listed_completed] = AshSession.list_user_sessions!(scope: scope)
+      assert listed_current.id == current_session.id
+      assert listed_completed.id == completed_session.id
+      assert listed_current.project.name == project.name
+      assert listed_completed.project.name == project.name
+
+      assert %{id: current_id, project: %{id: project_id, name: project_name}} =
+               AshSession.get_current!(scope: scope)
+
+      assert current_id == current_session.id
+      assert project_id == project.id
+      assert project_name == project.name
+    end
+  end
+
   describe "update/3" do
     test "updates session title", %{user: user, project: project, scope: scope} do
       session =
