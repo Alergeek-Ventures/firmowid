@@ -47,12 +47,10 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
   test "user confirms an email change from account settings", %{conn: conn} do
     user = user_fixture()
     new_email = unique_user_email()
+    authenticated_conn = log_in_user(conn, user)
     drain_sent_emails()
 
-    {:ok, view, _html} =
-      conn
-      |> log_in_user(user)
-      |> live(~p"/ustawienia/konto")
+    {:ok, view, _html} = live(authenticated_conn, ~p"/ustawienia/konto")
 
     view
     |> element("button[aria-label='Edytuj dane dostępowe']")
@@ -74,13 +72,17 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
     [confirmation_token] =
       Regex.run(~r{/potwierdz-email/([^\s]+)}, email.text_body, capture: :all_but_first)
 
-    assert {:ok, confirm_lv, _html} =
-             live(build_conn(), ~p"/potwierdz-email/#{confirmation_token}")
+    assert {:ok, confirm_lv, html} =
+             live(authenticated_conn, ~p"/potwierdz-email/#{confirmation_token}")
 
-    confirm_lv
-    |> form("#confirm_email_form", user: %{"confirm" => confirmation_token})
-    |> submit_form(build_conn())
+    assert html =~ "Aby potwierdzić adres email, kliknij poniższy przycisk."
 
+    confirm_conn =
+      confirm_lv
+      |> form("#confirm_email_form", user: %{"confirm" => confirmation_token})
+      |> submit_form(authenticated_conn)
+
+    assert redirected_to(confirm_conn) == ~p"/czasosledz"
     assert to_string(Core.get_user!(user.id, authorize?: false).email) == new_email
   end
 end

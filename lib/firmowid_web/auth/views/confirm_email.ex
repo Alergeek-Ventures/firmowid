@@ -7,10 +7,16 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmail do
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
+  alias FirmowidWeb.Infrastructure.UserAuth
+
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
       <.header class="text-center">Potwierdź adres email</.header>
+
+      <p class="text-grey-600 mt-2 text-center text-sm">
+        Aby potwierdzić adres email, kliknij poniższy przycisk.
+      </p>
 
       <%!-- Form posts to ash_authentication confirmation endpoint (require_interaction? true
            means GET links are rejected — a button-click POST is required). --%>
@@ -37,6 +43,8 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmail do
   end
 
   def mount(%{"token" => token}, _session, socket) do
+    socket = load_current_user(socket)
+
     case verify_confirmation_token(token) do
       {:ok, _token} ->
         form = to_form(%{"confirm" => token}, as: "user")
@@ -56,6 +64,20 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmail do
     case AshAuthentication.Jwt.verify(token, :firmowid) do
       {:ok, %{"act" => "confirm"}, _resource} -> {:ok, token}
       _ -> :error
+    end
+  end
+
+  defp load_current_user(socket) do
+    case socket.assigns[:current_user] do
+      nil ->
+        socket
+
+      user when is_nil(user.organization_id) ->
+        assign(socket, :current_user, Ash.load!(user, [avatar_blob: [:url]], actor: user))
+
+      user ->
+        {loaded_user, _org, _scope} = UserAuth.load_scope_and_avatars(user)
+        assign(socket, :current_user, loaded_user)
     end
   end
 end

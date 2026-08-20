@@ -22,7 +22,7 @@ defmodule Firmowid.Ash.Core.Emails do
 
     Cześć #{user.email},
 
-    Potwierdź swój adres email odwiedzając poniższy adres:
+    Otwórz poniższy adres, a następnie na wyświetlonej stronie kliknij przycisk potwierdzenia adresu email:
 
     #{url}
 

@@ -40,6 +40,19 @@ defmodule FirmowidWeb.Auth.Controllers.AuthController do
     |> redirect(to: ~p"/zaloguj")
   end
 
+  def success(conn, {:confirm, :confirm}, user, _token) do
+    return_to = get_session(conn, :return_to) || UserAuth.signed_in_path_for_user(user)
+
+    conn
+    |> renew_session()
+    |> delete_session(:return_to)
+    |> store_in_session(user)
+    |> Helpers.maybe_put_remember_me_cookies(conn.private[:ash_authentication])
+    |> assign(:current_user, user)
+    |> LiveToast.put_toast(:success, "Adres email został potwierdzony.")
+    |> redirect(to: return_to)
+  end
+
   def success(conn, _activity, user, _token) do
     return_to = get_session(conn, :return_to) || UserAuth.signed_in_path_for_user(user)
 

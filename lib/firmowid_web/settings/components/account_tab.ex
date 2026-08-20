@@ -186,7 +186,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
         </Helpers.settings_field>
 
         <p class="text-grey-600 text-sm">
-          Wyślemy link potwierdzający na nowy adres. Zmiana nastąpi po jego otwarciu.
+          Wyślemy link potwierdzający na nowy adres. Po jego otwarciu potwierdź zmianę przyciskiem na wyświetlonej stronie.
         </p>
 
         <div class="flex w-full justify-start gap-5 sm:justify-end">

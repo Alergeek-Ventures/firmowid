@@ -280,7 +280,6 @@ defmodule FirmowidWeb.Core.Router do
       live "/zaloguj", Auth.Views.Login, :new
       live "/resetuj-haslo", Auth.Views.ForgotPassword, :new
       live "/resetuj-haslo/:token", Auth.Views.ResetPassword, :edit
-      live "/potwierdz-email/:token", Auth.Views.ConfirmEmail, :edit
     end
   end
 
@@ -304,6 +303,7 @@ defmodule FirmowidWeb.Core.Router do
       ] do
       live "/abonament-wygasl", Auth.Views.ExpiredSubscription
       live "/konto-wylaczone", Auth.Views.DisabledAccount
+      live "/potwierdz-email/:token", Auth.Views.ConfirmEmail, :edit
       live "/", Landing.Views.Index
       live "/polityka-prywatnosci", Landing.Views.PrivacyPolicy
       live "/regulamin", Landing.Views.TermsOfService

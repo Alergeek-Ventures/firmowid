@@ -477,6 +477,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
          |> assign(:email_form, form_email_form(user, socket.assigns.ash_scope))}
 
       {:error, form} ->
+        LiveToast.send_toast(:error, "Nie udało się wysłać wiadomości email. Spróbuj ponownie.")
         {:noreply, assign(socket, :email_form, form)}
     end
   end
