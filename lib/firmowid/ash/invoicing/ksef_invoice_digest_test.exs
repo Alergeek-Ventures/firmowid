@@ -453,7 +453,13 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
         ksef_downloaded_at: DateTime.utc_now()
       )
 
-    Map.merge(base_attrs, attrs)
+    invoice_attrs = Map.merge(base_attrs, attrs)
+
+    Map.put(
+      invoice_attrs,
+      :amount,
+      Money.new!(invoice_attrs.currency, invoice_attrs.total_amount)
+    )
   end
 
   defp digest_item_count_for_invoice(invoice_id, organization_id) do

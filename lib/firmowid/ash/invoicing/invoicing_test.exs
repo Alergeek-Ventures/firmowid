@@ -50,6 +50,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           due_date: ~D[2024-02-05],
           total_amount: Decimal.new("-100.00"),
           currency: "USD",
+          amount: Money.new!("USD", Decimal.new("-100.00")),
           skip_invoicing: false,
           organization_id: organization_id,
           blob_id: blob1.id
@@ -82,6 +83,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           due_date: ~D[2024-03-10],
           total_amount: Decimal.new("-50.00"),
           currency: "USD",
+          amount: Money.new!("USD", Decimal.new("-50.00")),
           skip_invoicing: false,
           organization_id: organization_id,
           blob_id: blob2.id
@@ -137,6 +139,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           due_date: ~D[2024-04-05],
           total_amount: Decimal.new("-200.00"),
           currency: "USD",
+          amount: Money.new!("USD", Decimal.new("-200.00")),
           skip_invoicing: false,
           organization_id: organization_id,
           blob_id: blob3.id
@@ -178,6 +181,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           due_date: ~D[2024-02-05],
           total_amount: Decimal.new("-100.00"),
           currency: "PLN",
+          amount: Money.new!("PLN", Decimal.new("-100.00")),
           skip_invoicing: false,
           organization_id: org1_id,
           blob_id: blob4.id
@@ -214,6 +218,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           due_date: ~D[2024-03-05],
           total_amount: Decimal.new("-200.00"),
           currency: "PLN",
+          amount: Money.new!("PLN", Decimal.new("-200.00")),
           skip_invoicing: false,
           organization_id: org2_id,
           blob_id: blob5.id
@@ -291,6 +296,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           due_date: ~D[2024-05-05],
           total_amount: Decimal.new("-10.00"),
           currency: "USD",
+          amount: Money.new!("USD", Decimal.new("-10.00")),
           skip_invoicing: false,
           organization_id: organization_id,
           blob_id: blob6.id
@@ -324,6 +330,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           due_date: ~D[2024-05-15],
           total_amount: Decimal.new("-20.00"),
           currency: "USD",
+          amount: Money.new!("USD", Decimal.new("-20.00")),
           skip_invoicing: false,
           organization_id: organization_id,
           blob_id: blob7.id
@@ -429,6 +436,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           due_date: ~D[2024-06-10],
           total_amount: Decimal.new("-50.00"),
           currency: "USD",
+          amount: Money.new!("USD", Decimal.new("-50.00")),
           skip_invoicing: false,
           organization_id: organization_id,
           blob_id: blob8.id
@@ -870,6 +878,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           due_date: ~D[2024-07-05],
           total_amount: Decimal.new("-75.00"),
           currency: "USD",
+          amount: Money.new!("USD", Decimal.new("-75.00")),
           skip_invoicing: false,
           organization_id: organization_id,
           blob_id: blob9.id
@@ -1024,6 +1033,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           due_date: ~D[2024-08-15],
           total_amount: Decimal.new("-200.00"),
           currency: "EUR",
+          amount: Money.new!("EUR", Decimal.new("-200.00")),
           skip_invoicing: false,
           organization_id: organization_id,
           blob_id: blob_combined_match.id
@@ -1059,6 +1069,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           due_date: ~D[2024-10-01],
           total_amount: Decimal.new("-200.00"),
           currency: "EUR",
+          amount: Money.new!("EUR", Decimal.new("-200.00")),
           skip_invoicing: false,
           organization_id: organization_id,
           blob_id: blob_diff_date.id
@@ -1116,6 +1127,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
           due_date: ~D[2024-09-25],
           total_amount: Decimal.new("-300.00"),
           currency: "EUR",
+          amount: Money.new!("EUR", Decimal.new("-300.00")),
           skip_invoicing: false,
           organization_id: organization_id,
           blob_id: blob_low_amount.id
@@ -1230,6 +1242,7 @@ defmodule Firmowid.Ash.Invoicing.InvoicingTest do
       due_date: ~D[2024-06-26],
       total_amount: Decimal.new("-50.00"),
       currency: "PLN",
+      amount: Money.new!("PLN", Decimal.new("-50.00")),
       skip_invoicing: false,
       organization_id: organization_id,
       blob_id: blob.id

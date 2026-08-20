@@ -174,6 +174,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.ShowTest do
       due_date: ~D[2026-01-24],
       total_amount: Decimal.new("-100.00"),
       currency: "PLN",
+      amount: Money.new!("PLN", Decimal.new("-100.00")),
       skip_invoicing: false,
       organization_id: admin.organization_id
     })

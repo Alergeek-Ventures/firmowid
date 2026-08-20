@@ -351,8 +351,7 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
   defp scope_for(user), do: %Scope{actor: user, tenant: user.organization_id}
 
   defp create_cost_invoice!(user, attrs) do
-    Ash.Seed.seed!(
-      CostInvoice,
+    invoice_attrs =
       Map.merge(
         %{
           seller: "Supplier Sp. z o.o.",
@@ -369,6 +368,14 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
           organization_id: user.organization_id
         },
         attrs
+      )
+
+    Ash.Seed.seed!(
+      CostInvoice,
+      Map.put(
+        invoice_attrs,
+        :amount,
+        Money.new!(invoice_attrs.currency, invoice_attrs.total_amount)
       )
     )
   end

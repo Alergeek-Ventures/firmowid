@@ -244,6 +244,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
       due_date: ~D[2026-03-15],
       total_amount: Decimal.new("-50.00"),
       currency: "PLN",
+      amount: Money.new!("PLN", Decimal.new("-50.00")),
       description: "Existing imported invoice",
       invoice_identifier: "EXISTING/#{System.unique_integer([:positive])}",
       skip_invoicing: false,

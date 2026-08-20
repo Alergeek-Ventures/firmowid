@@ -81,6 +81,7 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
           due_date: ~D[2024-02-01],
           total_amount: Decimal.new("-100.00"),
           currency: "PLN",
+          amount: Money.new!("PLN", Decimal.new("-100.00")),
           invoice_identifier: "CI-TEST-001",
           description: "Test invoice"
         },

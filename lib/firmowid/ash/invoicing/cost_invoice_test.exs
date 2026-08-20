@@ -191,6 +191,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
       due_date: ~D[2026-02-14],
       total_amount: Decimal.new("-123.45"),
       currency: "PLN",
+      amount: Money.new!("PLN", Decimal.new("-123.45")),
       description: "Import z KSeF",
       invoice_identifier: "FV/2026/02/001",
       skip_invoicing: false,
@@ -220,6 +221,15 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
       organization_id: organization_id
     }
 
-    Ash.Seed.seed!(CostInvoice, Map.merge(base_attrs, attrs))
+    invoice_attrs = Map.merge(base_attrs, attrs)
+
+    Ash.Seed.seed!(
+      CostInvoice,
+      Map.put(
+        invoice_attrs,
+        :amount,
+        Money.new!(invoice_attrs.currency, invoice_attrs.total_amount)
+      )
+    )
   end
 end
