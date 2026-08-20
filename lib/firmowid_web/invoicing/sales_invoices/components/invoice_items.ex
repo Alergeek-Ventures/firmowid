@@ -481,43 +481,46 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             new={true}
           />
           <% price_input_mode = price_input_mode(@item_price_input_modes, item) %>
-          <%= if price_input_mode == :net do %>
-            <div class="flex w-30 flex-row items-center gap-1">
-              <.input
-                field={item[:unit_price]}
-                type="number"
-                value={item[:unit_price].value}
-                phx-mounted={focus_price_input? && JS.focus()}
-                phx-debounce
-                step=".01"
-                min="0"
-                placeholder="0,00"
-                class="w-30"
-                input_class={[
-                  "text-center",
-                  if(invalid_field?(item[:unit_price]), do: "border-redText")
-                ]}
-                new={true}
-                show_error={false}
-              />
-              <p class="text-grey-500 text-sm">{@items_form[:currency].value}</p>
-            </div>
-          <% else %>
-            <div class="flex w-30 flex-row items-center justify-center gap-1">
-              <input type="hidden" name={item[:unit_price].name} value={item[:unit_price].value} />
-              <.button
-                type="button"
-                variant="unstyled"
-                class="hover:bg-grey-200 w-24 rounded p-1 text-center transition"
-                phx-click="set_price_input_mode"
-                phx-value-index={item.index}
-                phx-value-mode="net"
-              >
-                {displayed_item_unit_price_text(item)}
-              </.button>
-              <p class="text-grey-500 text-sm">{@items_form[:currency].value}</p>
-            </div>
-          <% end %>
+          <.hidden_input show={price_input_mode == :net}>
+            <:input>
+              <div class="flex w-30 flex-row items-center gap-1">
+                <.input
+                  field={item[:unit_price]}
+                  type="number"
+                  value={item[:unit_price].value}
+                  phx-mounted={focus_price_input? && JS.focus()}
+                  phx-debounce
+                  step=".01"
+                  min="0"
+                  placeholder="0,00"
+                  class="w-30"
+                  input_class={[
+                    "text-center",
+                    if(invalid_field?(item[:unit_price]), do: "border-redText")
+                  ]}
+                  new={true}
+                  show_error={false}
+                />
+                <p class="text-grey-500 text-sm">{@items_form[:currency].value}</p>
+              </div>
+            </:input>
+            <:fallback>
+              <div class="flex w-30 flex-row items-center justify-center gap-1">
+                <input type="hidden" name={item[:unit_price].name} value={item[:unit_price].value} />
+                <.button
+                  type="button"
+                  variant="unstyled"
+                  class="hover:bg-grey-200 w-24 rounded p-1 text-center transition"
+                  phx-click="set_price_input_mode"
+                  phx-value-index={item.index}
+                  phx-value-mode="net"
+                >
+                  {displayed_item_unit_price_text(item)}
+                </.button>
+                <p class="text-grey-500 text-sm">{@items_form[:currency].value}</p>
+              </div>
+            </:fallback>
+          </.hidden_input>
 
           <%= if to_boolean(@items_form[:is_reverse_charge].value) or not @show_vat do %>
             <% gross_value =
@@ -540,42 +543,45 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             ]}>
               {Money.to_string!(vat_value, currency_symbol: "")}
             </p>
-            <%= if price_input_mode == :gross do %>
-              <div class="flex w-28 flex-row items-center justify-end">
-                <.input
-                  type="number"
-                  id={gross_value_input_id}
-                  name={gross_value_input_name}
-                  value={displayed_item_gross_value(item, @gross_item_price_inputs)}
-                  phx-mounted={focus_price_input? && JS.focus()}
-                  phx-debounce
-                  step=".01"
-                  min="0"
-                  placeholder="0.00"
-                  class="w-28"
-                  input_class={[
-                    "text-right",
-                    if(invalid_field?(item[:unit_price]), do: "border-redText")
+            <.hidden_input show={price_input_mode == :gross}>
+              <:input>
+                <div class="flex w-28 flex-row items-center justify-end">
+                  <.input
+                    type="number"
+                    id={gross_value_input_id}
+                    name={gross_value_input_name}
+                    value={displayed_item_gross_value(item, @gross_item_price_inputs)}
+                    phx-mounted={focus_price_input? && JS.focus()}
+                    phx-debounce
+                    step=".01"
+                    min="0"
+                    placeholder="0.00"
+                    class="w-28"
+                    input_class={[
+                      "text-right",
+                      if(invalid_field?(item[:unit_price]), do: "border-redText")
+                    ]}
+                    new={true}
+                    show_error={false}
+                  />
+                </div>
+              </:input>
+              <:fallback>
+                <.button
+                  type="button"
+                  variant="unstyled"
+                  class={[
+                    "hover:bg-grey-200 w-28 truncate rounded p-1 text-right transition",
+                    gross_unit_price == "" && "text-grey-500"
                   ]}
-                  new={true}
-                  show_error={false}
-                />
-              </div>
-            <% else %>
-              <.button
-                type="button"
-                variant="unstyled"
-                class={[
-                  "hover:bg-grey-200 w-28 truncate rounded p-1 text-right transition",
-                  gross_unit_price == "" && "text-grey-500"
-                ]}
-                phx-click="set_price_input_mode"
-                phx-value-index={item.index}
-                phx-value-mode="gross"
-              >
-                {gross_unit_price}
-              </.button>
-            <% end %>
+                  phx-click="set_price_input_mode"
+                  phx-value-index={item.index}
+                  phx-value-mode="gross"
+                >
+                  {gross_unit_price}
+                </.button>
+              </:fallback>
+            </.hidden_input>
           <% end %>
 
           <.button

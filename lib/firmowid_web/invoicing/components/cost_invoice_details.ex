@@ -239,20 +239,24 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   phx-change="save_internal_note"
                   class="min-h-24"
                 >
-                  <.input
-                    id="internal-note-input"
-                    name="internal_note"
-                    type="textarea"
-                    placeholder="Komentarz do faktury widoczny tylko dla Twojej firmy"
-                    new={true}
-                    style={
-                      # TODO: fix this during refactor of core components
-                      "min-height: 6rem;"
-                    }
-                    value={@invoice.internal_note}
-                    phx-debounce="300"
-                    class="min-h-24"
-                  />
+                  <.hidden_input>
+                    <:input>
+                      <.input
+                        id="internal-note-input"
+                        name="internal_note"
+                        type="textarea"
+                        placeholder="Komentarz do faktury widoczny tylko dla Twojej firmy"
+                        new={true}
+                        style={
+                          # TODO: fix this during refactor of core components
+                          "min-height: 6rem;"
+                        }
+                        value={@invoice.internal_note}
+                        phx-debounce="300"
+                        class="min-h-24"
+                      />
+                    </:input>
+                  </.hidden_input>
                 </.form>
               </div>
             <% end %>

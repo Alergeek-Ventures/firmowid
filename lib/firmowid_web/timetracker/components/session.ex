@@ -37,20 +37,18 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
       />
 
       <div class="group mr-4 flex min-w-0 flex-1 flex-row items-center gap-1">
-        <input
-          id={sessions_form[:title].id}
-          name={sessions_form[:title].name}
-          value={sessions_form[:title].value}
-          class="bg-grey-200 hover:bg-grey-200 -ml-1 max-w-full min-w-0 truncate rounded border-none p-1 transition read-only:bg-transparent focus:ring-0"
-          style="field-sizing: content;"
-          phx-click={JS.remove_attribute("readonly")}
-          phx-blur={JS.set_attribute({"readonly", true})}
-          phx-click-away={JS.set_attribute({"readonly", true})}
-          phx-keydown={JS.set_attribute({"readonly", true})}
-          phx-key="enter"
-          phx-debounce="300"
-          readonly
-        />
+        <.hidden_input>
+          <:input>
+            <input
+              id={sessions_form[:title].id}
+              name={sessions_form[:title].name}
+              value={sessions_form[:title].value}
+              class="bg-grey-200 hover:bg-grey-200 -ml-1 max-w-full min-w-0 truncate rounded border-none p-1 transition focus:ring-0"
+              style="field-sizing: content;"
+              phx-debounce="300"
+            />
+          </:input>
+        </.hidden_input>
 
         <span :if={length(@sessions) > 1} class="text-grey-600 line-clamp-1 shrink-0">
           | {length(@sessions)} sesji
@@ -58,10 +56,7 @@ defmodule FirmowidWeb.Timetracker.Components.Session do
 
         <.button
           type="button"
-          phx-click={
-            JS.remove_attribute("readonly", to: "##{sessions_form[:title].id}")
-            |> JS.focus(to: "##{sessions_form[:title].id}")
-          }
+          phx-click={JS.focus(to: "##{sessions_form[:title].id}")}
           variant="unstyled"
           class="opacity-0 transition group-hover:opacity-100 focus:outline-hidden"
         >

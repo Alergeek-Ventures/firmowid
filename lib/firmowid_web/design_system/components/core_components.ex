@@ -588,6 +588,28 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   end
 
   @doc """
+  Renders an editable control or its fallback, but never both.
+
+  Use this for inline-editing patterns where an input is replaced by a display
+  control. Both slots accept arbitrary markup so callers can use the native
+  input type and form behavior they require.
+  """
+  attr :show, :boolean, default: true, doc: "whether to render the editable control"
+
+  slot :input, required: true, doc: "the editable control"
+  slot :fallback, doc: "the control shown while the editable control is hidden"
+
+  def hidden_input(assigns) do
+    ~H"""
+    <%= if @show do %>
+      {render_slot(@input)}
+    <% else %>
+      {render_slot(@fallback)}
+    <% end %>
+    """
+  end
+
+  @doc """
   Renders a label.
   """
   attr :for, :string, default: nil

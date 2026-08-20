@@ -122,6 +122,24 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.ShowTest do
     assert html =~ ~s(href="#{transaction_return_to}")
   end
 
+  test "saves an immediately editable internal note", %{conn: conn} do
+    admin = admin_fixture()
+    invoice = cost_invoice_fixture!(admin)
+    conn = log_in_user(conn, admin)
+
+    {:ok, view, html} = live(conn, ~p"/kosztowe/#{invoice.id}")
+
+    assert has_element?(view, "#internal-note-input")
+    refute html =~ ~s(id="internal-note-input" readonly)
+
+    view
+    |> form("#internal-note-form", %{"internal_note" => "Notatka zespołu"})
+    |> render_change()
+
+    updated_invoice = Invoicing.get_cost_invoice!(invoice.id, scope: scope_for(admin))
+    assert updated_invoice.internal_note == "Notatka zespołu"
+  end
+
   defp cost_invoice_fixture!(admin) do
     Ash.Seed.seed!(CostInvoice, %{
       seller: "Supplier Sp. z o.o.",

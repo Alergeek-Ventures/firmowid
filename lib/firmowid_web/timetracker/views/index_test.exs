@@ -235,7 +235,14 @@ defmodule FirmowidWeb.Timetracker.Views.IndexTest do
           organization_id: user.organization_id
         })
 
-      {:ok, lv, _html} = live(conn, ~p"/czasosledz")
+      {:ok, lv, html} = live(conn, ~p"/czasosledz")
+
+      assert has_element?(
+               lv,
+               "#edit-session-form-#{session.id} input[name='sessions_form[title]']"
+             )
+
+      refute html =~ ~s(id="edit-session-form-#{session.id}_title" readonly)
 
       new_title = "Updated Title"
 

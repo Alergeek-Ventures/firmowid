@@ -86,6 +86,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     assert html =~ "Wartość VAT"
     assert html =~ ~s(name="form[items][0][unit_price]")
     refute html =~ ~s(name="form[items][0][gross_value]")
+    assert has_element?(view, "input[type='number'][name='form[items][0][unit_price]']")
+    refute has_element?(view, "input[type='number'][name='form[items][0][gross_value]']")
 
     html =
       view
@@ -95,6 +97,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
     assert html =~ ~s(name="form[items][0][gross_value]")
     assert html =~ ~s(placeholder="0.00")
     assert html =~ ~s(value="")
+    assert has_element?(view, "input[type='number'][name='form[items][0][gross_value]']")
+    refute has_element?(view, "input[type='number'][name='form[items][0][unit_price]']")
 
     html =
       view
