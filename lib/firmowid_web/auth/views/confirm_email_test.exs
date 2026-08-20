@@ -31,7 +31,8 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
     assert {:ok, confirm_lv, html} =
              live(build_conn(), ~p"/potwierdz-email/#{confirmation_token}")
 
-    assert html =~ "Potwierdź adres email"
+    assert html =~ "Potwierdź założenie konta"
+    assert html =~ "Zaloguj się"
 
     confirm_conn =
       confirm_lv
@@ -76,7 +77,9 @@ defmodule FirmowidWeb.Auth.Views.ConfirmEmailTest do
     assert {:ok, confirm_lv, html} =
              live(authenticated_conn, ~p"/potwierdz-email/#{confirmation_token}")
 
-    assert html =~ "Aby potwierdzić adres email, kliknij poniższy przycisk."
+    assert html =~ "Aby zmienić adres email, kliknij poniższy przycisk."
+    assert html =~ "Potwierdź zmianę adresu email"
+    refute html =~ "Zaloguj się"
 
     confirm_conn =
       confirm_lv
