@@ -571,6 +571,9 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     attribute :total_amount, :decimal, public?: true
     attribute :currency, :string, public?: true
 
+    # Nullable while the legacy total_amount/currency pair is backfilled.
+    attribute :amount, AshMoney.Types.Money, public?: true
+
     attribute :description, :string, public?: true, allow_nil?: false, default: ""
     attribute :invoice_identifier, :string, public?: true
     attribute :internal_note, :string, public?: true
