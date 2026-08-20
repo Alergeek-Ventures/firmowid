@@ -47,6 +47,7 @@ defmodule Firmowid.Ash.Core do
       define :list_users, action: :list
       define :get_org_user, action: :get_org_user
       define :update_profile, action: :update_profile
+      define :change_email, action: :change_email
       define :update_current_profile, action: :update_current_profile
       define :update_role, action: :update_role
       define :archive_user, action: :archive

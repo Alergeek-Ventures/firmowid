@@ -87,6 +87,16 @@ defmodule FirmowidWeb.Settings.Views.Index do
     |> to_form()
   end
 
+  def form_email_form(current_user, scope) do
+    current_user
+    |> AshPhoenix.Form.for_update(:change_email,
+      scope: scope,
+      domain: Core,
+      as: "user"
+    )
+    |> to_form()
+  end
+
   def mount(_params, _session, socket) do
     current_user = socket.assigns.current_user
     current_org = socket.assigns.current_org
@@ -156,6 +166,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:editing_basic_info, false)
      |> assign(:editing_correspondence, false)
      |> assign(:editing_account_name, false)
+     |> assign(:editing_email, false)
      |> assign(:editing_profile_employment, false)
      |> assign(:editing_profile_finance, false)
      |> assign(:editing_profile_contact, false)
@@ -168,6 +179,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:delete_account_form, to_form(%{"current_password" => ""}, as: "user"))
      |> assign(:current_password, nil)
      |> assign(:password_form, form_password_form(current_user))
+     |> assign(:email_form, form_email_form(current_user, scope))
      |> assign(:bank_accounts, bank_accounts)
      |> assign(:bank_institutions, bank_institutions)
      |> assign(:pending_requisitions, pending_requisitions)
@@ -449,6 +461,22 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
       {:error, form} ->
         {:noreply, assign(socket, :user_form, form)}
+    end
+  end
+
+  def handle_event("change_email", %{"user" => user_params}, socket) do
+    case AshPhoenix.Form.submit(socket.assigns.email_form, params: user_params) do
+      {:ok, user} ->
+        LiveToast.send_toast(:info, "Wysłaliśmy link potwierdzający na nowy adres email.")
+
+        {:noreply,
+         socket
+         |> assign(:editing_email, false)
+         |> assign(:current_user, user)
+         |> assign(:email_form, form_email_form(user, socket.assigns.ash_scope))}
+
+      {:error, form} ->
+        {:noreply, assign(socket, :email_form, form)}
     end
   end
 
@@ -882,6 +910,18 @@ defmodule FirmowidWeb.Settings.Views.Index do
     {:noreply, assign(socket, :editing_account_name, !socket.assigns.editing_account_name)}
   end
 
+  def handle_event("toggle_editing_email", _params, socket) do
+    editing_email? = !socket.assigns.editing_email
+
+    {:noreply,
+     socket
+     |> assign(:editing_email, editing_email?)
+     |> assign(
+       :email_form,
+       form_email_form(socket.assigns.current_user, socket.assigns.ash_scope)
+     )}
+  end
+
   def handle_event("toggle_editing_profile_employment", _params, socket) do
     {:noreply, toggle_profile_editing(socket, :editing_profile_employment)}
   end
@@ -963,6 +1003,19 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   def handle_event("link_google_account", _params, socket) do
     {:noreply, redirect(socket, to: ~p"/auth/user/google")}
+  end
+
+  def handle_event("replace_google_account", _params, socket) do
+    user = socket.assigns.current_user
+
+    case Core.unlink_google_account(user, scope: socket.assigns.ash_scope) do
+      {:ok, _updated_user} ->
+        {:noreply, redirect(socket, to: ~p"/auth/user/google")}
+
+      {:error, _error} ->
+        LiveToast.send_toast(:error, "Nie udało się zmienić konta Google.")
+        {:noreply, socket}
+    end
   end
 
   def handle_event("unlink_google_account", _params, socket) do
@@ -1219,7 +1272,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
             current_org={@current_org}
             delete_account_form={@delete_account_form}
             editing_account_name={@editing_account_name}
+            editing_email={@editing_email}
             editing_credentials={@editing_credentials}
+            email_form={@email_form}
             google_connected?={@google_connected?}
             password_form={@password_form}
             current_password={@current_password}

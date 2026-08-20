@@ -20,7 +20,9 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
   attr :current_org, :map, required: true
   attr :delete_account_form, :map, required: true
   attr :editing_account_name, :boolean, required: true
+  attr :editing_email, :boolean, required: true
   attr :editing_credentials, :boolean, required: true
+  attr :email_form, :map, required: true
   attr :google_connected?, :boolean, required: true
   attr :password_form, :map, required: true
   attr :current_password, :string, default: nil
@@ -31,6 +33,12 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
       <.name_section
         current_user={@current_user}
         editing_account_name={@editing_account_name}
+      />
+
+      <.email_section
+        current_user={@current_user}
+        editing_email={@editing_email}
+        email_form={@email_form}
       />
 
       <.credentials_section
@@ -51,6 +59,47 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
         delete_account_form={@delete_account_form}
       />
     </div>
+    """
+  end
+
+  attr :current_user, :map, required: true
+  attr :editing_email, :boolean, required: true
+  attr :email_form, :map, required: true
+
+  defp email_section(assigns) do
+    ~H"""
+    <.account_section
+      title="Adres email"
+      action={if(!@editing_email, do: "toggle_editing_email")}
+      action_label="Edytuj adres email"
+    >
+      <.form
+        :if={@editing_email}
+        for={@email_form}
+        id="email_form"
+        phx-submit="change_email"
+        class="space-y-4"
+      >
+        <Helpers.settings_field label="Nowy adres email" class="w-full">
+          <.input field={@email_form[:email]} type="email" required />
+        </Helpers.settings_field>
+
+        <p class="text-grey-600 text-sm">
+          Wyślemy link potwierdzający na nowy adres. Zmiana nastąpi po jego otwarciu.
+        </p>
+
+        <div class="flex w-full justify-start gap-5 lg:justify-end">
+          <.button type="button" variant="secondary" phx-click="toggle_editing_email" size="small">
+            Anuluj
+          </.button>
+          <.button type="submit" variant="primary" size="small">
+            Zapisz
+          </.button>
+        </div>
+      </.form>
+
+      <.detail_row :if={!@editing_email} label="E-mail">{@current_user.email}</.detail_row>
+    </.account_section>
     """
   end
 
@@ -260,11 +309,17 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           <% end %>
         </Helpers.settings_display_field>
 
+        <p :if={@google_connected?} class="text-grey-600 text-sm">
+          Aby zmienić konto Google, najpierw zmień i potwierdź powyższy adres email.
+        </p>
+
         <.button
           type="button"
           variant="outline"
           size="small"
-          phx-click="link_google_account"
+          phx-click={
+            if(@google_connected?, do: "replace_google_account", else: "link_google_account")
+          }
           class="gap-2 self-start"
         >
           <svg class="size-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -285,7 +340,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
               fill="#EA4335"
             />
           </svg>
-          {if @google_connected?, do: "Powiąż inne", else: "Połącz z Google"}
+          {if @google_connected?, do: "Zmień konto Google", else: "Połącz z Google"}
         </.button>
 
         <.button

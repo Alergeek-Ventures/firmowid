@@ -78,9 +78,8 @@ defmodule Firmowid.Ash.Core.User do
         # flow and set confirmed_at immediately on registration.
         auto_confirm_actions [:register_with_google]
 
-        # Only send confirmation on create (new registrations). We don't send a
-        # re-confirmation email on email change for now.
-        confirm_on_update? false
+        # Keep the existing address until the new owner confirms the change.
+        confirm_on_update? true
 
         # Required since GHSA-3988-q8q7-p787: prevents email clients / security
         # scanners from auto-confirming accounts by pre-fetching confirmation links.
@@ -260,6 +259,12 @@ defmodule Firmowid.Ash.Core.User do
              where: [changing(:bank_account_number)]
     end
 
+    update :change_email do
+      description "Request a change to the current user's email address."
+      accept [:email]
+      require_atomic? false
+    end
+
     action :update_current_profile, :struct do
       description "Update profile fields for the acting user."
 
@@ -415,6 +420,10 @@ defmodule Firmowid.Ash.Core.User do
 
     bypass action(:update_profile) do
       authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if expr(id == ^actor(:id))
+    end
+
+    bypass action(:change_email) do
       authorize_if expr(id == ^actor(:id))
     end
 

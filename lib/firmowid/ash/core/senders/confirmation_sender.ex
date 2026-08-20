@@ -12,9 +12,19 @@ defmodule Firmowid.Ash.Core.Senders.ConfirmationSender do
   alias FirmowidWeb.Core.Endpoint
 
   @impl true
-  def send(user, token, _opts) do
+  def send(user, token, opts) do
     url = Endpoint.url() <> "/potwierdz-email/#{token}"
-    _ = Emails.deliver_confirmation_instructions(user, url)
+    recipient = proposed_email(opts) || user.email
+    _ = Emails.deliver_confirmation_instructions(%{user | email: recipient}, url)
     :ok
+  end
+
+  defp proposed_email(opts) do
+    opts
+    |> Keyword.get(:changeset)
+    |> case do
+      nil -> nil
+      changeset -> Ash.Changeset.get_attribute(changeset, :email)
+    end
   end
 end
