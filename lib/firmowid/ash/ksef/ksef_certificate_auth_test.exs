@@ -16,6 +16,8 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
     admin = admin_fixture()
     scope = %Scope{actor: admin, tenant: admin.organization_id}
     credentials = certificate_credentials()
+    access_token = jwt(3_600)
+    refresh_token = jwt(7 * 86_400)
     original_config = Application.fetch_env!(:firmowid, :ksef)
 
     Application.put_env(
@@ -35,7 +37,10 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
       credentials.ksef_public_key
     )
 
-    Req.Test.stub(:ksef_domain_certificate_api, &successful_ksef_response/1)
+    Req.Test.stub(
+      :ksef_domain_certificate_api,
+      &successful_ksef_response(&1, access_token, refresh_token)
+    )
 
     on_exit(fn ->
       Application.put_env(:firmowid, :ksef, original_config)
@@ -43,7 +48,7 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
       Cachex.del(:ksef, {:public_key, "SymmetricKeyEncryption"})
     end)
 
-    %{admin: admin, scope: scope, credentials: credentials}
+    %{admin: admin, scope: scope, credentials: credentials, access_token: access_token}
   end
 
   test "persists encrypted certificate credentials as authenticating before session worker runs",
@@ -91,7 +96,8 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
   test "session worker authenticates stored certificate credentials and marks them working", %{
     admin: admin,
     scope: scope,
-    credentials: credentials
+    credentials: credentials,
+    access_token: expected_access_token
   } do
     assert {:ok, _credential} =
              Oban.Testing.with_testing_mode(:manual, fn ->
@@ -109,7 +115,7 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
              end)
 
     assert {:ok, access_token} = Cachex.get(:ksef, {:access_token, admin.organization_id})
-    assert access_token == jwt(3_600)
+    assert access_token == expected_access_token
     assert %Credential{status: :working} = Ksef.get_credential!(scope: scope)
   end
 
@@ -178,7 +184,7 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
     |> DateTime.to_date()
   end
 
-  defp successful_ksef_response(conn) do
+  defp successful_ksef_response(conn, access_token, refresh_token) do
     case conn.request_path do
       "/auth/challenge" ->
         Req.Test.json(conn, %{"challenge" => "challenge", "timestamp" => "2026-01-01T00:00:00Z"})
@@ -196,8 +202,8 @@ defmodule Firmowid.Ash.Ksef.CertificateAuthTest do
 
       "/auth/token/redeem" ->
         Req.Test.json(conn, %{
-          "accessToken" => %{"token" => jwt(3_600)},
-          "refreshToken" => %{"token" => jwt(7 * 86_400)}
+          "accessToken" => %{"token" => access_token},
+          "refreshToken" => %{"token" => refresh_token}
         })
 
       "/invoices/exports" ->
