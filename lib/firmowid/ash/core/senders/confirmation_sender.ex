@@ -11,25 +11,16 @@ defmodule Firmowid.Ash.Core.Senders.ConfirmationSender do
   alias Firmowid.Ash.Core.Emails
   alias FirmowidWeb.Core.Endpoint
 
-  require Logger
-
   @impl true
   def send(user, token, opts) do
     url = Endpoint.url() <> "/potwierdz-email/#{token}"
     recipient = proposed_email(opts) || user.email
 
-    case Emails.deliver_confirmation_instructions(
-           %{user | email: recipient},
-           url,
-           email_change?(opts)
-         ) do
-      {:ok, _email} ->
-        :ok
-
-      {:error, reason} ->
-        report_delivery_failure(reason)
-        {:error, reason}
-    end
+    Emails.deliver_confirmation_instructions(
+      %{user | email: recipient},
+      url,
+      email_change?(opts)
+    )
   end
 
   defp proposed_email(opts) do
@@ -46,15 +37,5 @@ defmodule Firmowid.Ash.Core.Senders.ConfirmationSender do
       %{action: %{name: :change_email}} -> true
       _ -> false
     end
-  end
-
-  defp report_delivery_failure(reason) do
-    Sentry.capture_exception(RuntimeError.exception("Confirmation email delivery failed"),
-      tags: %{source: "confirmation_email"},
-      extra: %{reason: inspect(reason)}
-    )
-  rescue
-    error ->
-      Logger.warning("Failed to report confirmation email delivery failure: #{Exception.message(error)}")
   end
 end
