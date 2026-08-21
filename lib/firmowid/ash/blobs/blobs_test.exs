@@ -2,6 +2,7 @@ defmodule Firmowid.Ash.Blobs.BlobsTest do
   use Firmowid.DataCase
 
   import Firmowid.AccountsFixtures
+  import Firmowid.Test.Support.OpenAIEnrichmentTestHelpers
 
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Blobs.Blob
@@ -127,13 +128,18 @@ defmodule Firmowid.Ash.Blobs.BlobsTest do
     } do
       previous_extract_result = Application.get_env(:firmowid, :reducto_extract_result)
       previous_reducto_config = Application.get_env(:firmowid, :reducto_api_client)
+      previous_openai = Application.get_env(:firmowid, :openai_enrichment)
       ksef_number = "1234567890-20260819-ABCDEF123456-01"
 
       configure_reducto_test_client()
+      {:ok, openai_base_url} = start_openai_ex_http_stub()
+
+      Application.put_env(:firmowid, :openai_enrichment, base_url: openai_base_url)
 
       on_exit(fn ->
         restore_env(:reducto_extract_result, previous_extract_result)
         restore_env(:reducto_api_client, previous_reducto_config)
+        restore_env(:openai_enrichment, previous_openai)
       end)
 
       existing_invoice =
