@@ -45,8 +45,8 @@ defmodule Firmowid.Ash.Timetracker do
 
   tools do
     tool :list_sessions, Session, :list_user_sessions do
-      description "List the authenticated user's previous work sessions, newest first, optionally filtered to those starting on or after a given date"
-      action_parameters [:sort, :limit]
+      description "Paginated work sessions for the authenticated user, newest first. Default limit is 25 - results are truncated. For whole-month or multi-month analysis paginate with limit+offset (e.g. offset 0, 25, 50) or increase limit. If the returned count equals your limit, fetch the next page with offset+limit. Optionally filter with after_date (UTC, sessions starting on or after that date). Use result_type count to get the total number of matching sessions."
+      action_parameters [:sort, :limit, :offset, :filter, :result_type]
       load [:project]
 
       argument :after_date, :date do
@@ -67,8 +67,8 @@ defmodule Firmowid.Ash.Timetracker do
       description: "Edit an unfrozen work session belonging to the authenticated user"
 
     tool :list_leave_requests, LeaveRequest, :list_current_user do
-      description "List leave and absence requests submitted by the authenticated user"
-      action_parameters [:sort, :limit]
+      description "Paginated leave and absence requests for the authenticated user, newest first. Default limit is 25 - results are truncated. Paginate with limit+offset (e.g. offset 0, 25, 50) or increase limit. If returned count equals your limit, fetch next page. Supports start_date (requests ending on/after) and end_date (starting on/before) filters. Use result_type count to get total matching requests."
+      action_parameters [:sort, :limit, :offset, :filter, :result_type]
 
       argument :start_date, :date do
         description "Only return requests ending on or after this date"
