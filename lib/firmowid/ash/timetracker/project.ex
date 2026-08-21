@@ -85,6 +85,25 @@ defmodule Firmowid.Ash.Timetracker.Project do
       prepare {Firmowid.Ash.Preparations.ParadeDBSearch, columns: ~w(name), argument: :search}
     end
 
+    read :list_current_user do
+      description "List projects assigned to the authenticated user."
+
+      argument :status, :atom do
+        description "Filter by status: active or archived. Omit to list all projects."
+        constraints one_of: [:active, :archived]
+      end
+
+      prepare build(filter: expr(exists(project_users, user_id == ^actor(:id))))
+
+      prepare build(filter: expr(is_nil(archived_at))) do
+        where argument_equals(:status, :active)
+      end
+
+      prepare build(filter: expr(not is_nil(archived_at))) do
+        where argument_equals(:status, :archived)
+      end
+    end
+
     create :create do
       description "Create a project with automatic TagDefinition creation for analysis tagging."
 

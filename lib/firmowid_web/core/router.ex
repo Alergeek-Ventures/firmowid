@@ -123,7 +123,8 @@ defmodule FirmowidWeb.Core.Router do
         :edit_session,
         :list_leave_requests,
         :create_leave_request,
-        :update_profile
+        :update_profile,
+        :list_projects
       ],
       otp_app: :firmowid
   end

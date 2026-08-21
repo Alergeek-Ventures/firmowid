@@ -10,6 +10,7 @@ defmodule Firmowid.Ash.Timetracker do
     extensions: [Ash.Policy.Authorizer, AshAi]
 
   alias Firmowid.Ash.Timetracker.LeaveRequest
+  alias Firmowid.Ash.Timetracker.Project
   alias Firmowid.Ash.Timetracker.Session
 
   require Ash.Query
@@ -28,9 +29,10 @@ defmodule Firmowid.Ash.Timetracker do
       define :decline_leave_request, action: :decline, get_by: [:id]
     end
 
-    resource Firmowid.Ash.Timetracker.Project do
+    resource Project do
       define :list_projects, action: :list
       define :get_project, action: :get
+      define :list_current_user_projects, action: :list_current_user
     end
 
     resource Firmowid.Ash.Timetracker.ProjectUser
@@ -80,6 +82,10 @@ defmodule Firmowid.Ash.Timetracker do
     tool :create_leave_request, LeaveRequest, :create,
       description:
         "Submit an absence request for the authenticated user. Use reason indisposition, rest, or other; this action does not support sick, vacation, or unpaid leave. New requests always start with pending status."
+
+    tool :list_projects, Project, :list_current_user do
+      description "List all projects of the authenticated user"
+    end
   end
 
   policies do
