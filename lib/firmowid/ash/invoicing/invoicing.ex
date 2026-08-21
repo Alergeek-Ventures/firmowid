@@ -17,6 +17,8 @@ defmodule Firmowid.Ash.Invoicing do
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
 
+  require Ash.Query
+
   resources do
     resource Firmowid.Ash.Invoicing.Counterparty do
       define :list_counterparties, action: :list
@@ -561,6 +563,60 @@ defmodule Firmowid.Ash.Invoicing do
       |> Firmowid.Oban.insert(skip_organization_id: true)
     end
   end
+
+  @doc """
+  Creates a cost invoice with KSeF-number deduplication.
+  """
+  @spec create_cost_invoice_with_ksef_dedup(map()) ::
+          {:ok, Oban.Job.t()} | {:error, {:duplicate_ksef_invoice, Ash.UUID.t()}} | {:error, term()}
+  def create_cost_invoice_with_ksef_dedup(extracted_metadata) do
+    ksef_number =
+      Map.get(extracted_metadata, "ksef_number") ||
+        Map.get(extracted_metadata, :ksef_number)
+
+    case create_cost_invoice(extracted_metadata) do
+      {:ok, job} ->
+        {:ok, job}
+
+      {:error, %Ash.Error.Invalid{} = error} = original_error ->
+        if ksef_number_conflict?(error) and not is_nil(ksef_number) and ksef_number != "" do
+          organization_id =
+            Map.get(extracted_metadata, "organization_id") ||
+              Map.get(extracted_metadata, :organization_id)
+
+          scope = %Scope{
+            actor: %SystemActor{org_id: organization_id, role: :cost_invoice_processor},
+            tenant: organization_id
+          }
+
+          case CostInvoice
+               |> Ash.Query.filter(ksef_number == ^ksef_number)
+               |> Ash.read_one(scope: scope) do
+            {:ok, %CostInvoice{id: id}} -> {:error, {:duplicate_ksef_invoice, id}}
+            _ -> original_error
+          end
+        else
+          original_error
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp ksef_number_conflict?(%Ash.Error.Invalid{errors: errors}) do
+    Enum.any?(errors, &ksef_number_conflict_error?/1)
+  end
+
+  defp ksef_number_conflict?(_), do: false
+
+  defp ksef_number_conflict_error?(%Ash.Error.Changes.InvalidAttribute{field: :ksef_number}), do: true
+
+  defp ksef_number_conflict_error?(%Ash.Error.Changes.InvalidChanges{fields: fields})
+       when is_list(fields),
+       do: :ksef_number in fields
+
+  defp ksef_number_conflict_error?(_), do: false
 
   @doc """
   Fetches the KSeF FA(3) XML for a cost invoice missing a blob, creates a blob
