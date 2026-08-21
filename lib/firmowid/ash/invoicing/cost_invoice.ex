@@ -14,6 +14,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   ## Write Actions
 
     * `:create` — create from AI-extracted or KSeF-parsed metadata
+    * `:create_dedup` — create with KSeF-number deduplication via upsert
     * `:toggle_skip` — toggle the skip_invoicing flag
     * `:update_blob_id` — attach a blob to an existing invoice
 
@@ -287,6 +288,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
     create :create do
       description "Create a cost invoice from imported or extracted metadata."
+      primary? true
 
       accept [
         :blob_id,
@@ -331,6 +333,64 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       change ComputeCostInvoiceDescription
 
       change EnqueueMissingCostInvoiceDescriptionRefresh
+
+      change fn changeset, _context ->
+        validate_non_correction_total_amount_sign(changeset)
+      end
+
+      validate string_length(:internal_note, max: 10_000) do
+        where present(:internal_note)
+      end
+    end
+
+    create :create_dedup do
+      description "Create a cost invoice, detecting KSeF number duplicates via upsert."
+
+      accept [
+        :blob_id,
+        :inbound_email_id,
+        :seller,
+        :seller_address,
+        :seller_display_name,
+        :account_number,
+        :sale_date,
+        :issue_date,
+        :due_date,
+        :items_list,
+        :total_amount,
+        :currency,
+        :invoice_identifier,
+        :skip_invoicing,
+        :ksef_number,
+        :ksef_permanent_storage_date,
+        :ksef_downloaded_at,
+        :seller_nip,
+        :seller_country_code,
+        :seller_email,
+        :seller_phone,
+        :invoice_type,
+        :original_invoice_ksef_number,
+        :payment_method,
+        :internal_note
+      ]
+
+      upsert? true
+      upsert_identity :ksef_number
+      upsert_fields []
+
+      validate present([
+                 :seller,
+                 :sale_date,
+                 :issue_date,
+                 :items_list,
+                 :total_amount,
+                 :currency,
+                 :invoice_identifier
+               ])
+
+      change ComputeCostInvoiceSellerDisplayName
+
+      change ComputeCostInvoiceDescription
 
       change fn changeset, _context ->
         validate_non_correction_total_amount_sign(changeset)
