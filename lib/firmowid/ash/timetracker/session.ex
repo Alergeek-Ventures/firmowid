@@ -123,7 +123,11 @@ defmodule Firmowid.Ash.Timetracker.Session do
 
       argument :after_date, :date
 
-      pagination offset?: true, countable: true, default_limit: 25, max_page_size: 100
+      pagination offset?: true,
+                 countable: true,
+                 default_limit: 25,
+                 max_page_size: 100,
+                 required?: false
 
       prepare build(sort: [start_datetime: :desc], load: [:lockdown, :project])
       filter expr(user_id == ^actor(:id))

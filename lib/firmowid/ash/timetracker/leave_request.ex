@@ -83,7 +83,11 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
       argument :start_date, :date, allow_nil?: true
       argument :end_date, :date, allow_nil?: true
 
-      pagination offset?: true, countable: true, default_limit: 25, max_page_size: 100
+      pagination offset?: true,
+                 countable: true,
+                 default_limit: 25,
+                 max_page_size: 100,
+                 required?: false
 
       prepare build(filter: expr(user_id == ^actor(:id)), sort: [inserted_at: :desc])
 
