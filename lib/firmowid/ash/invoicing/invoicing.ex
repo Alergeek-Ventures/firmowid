@@ -5,6 +5,7 @@ defmodule Firmowid.Ash.Invoicing do
   """
   use Ash.Domain
 
+  alias Ash.Error.Invalid
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Currencies.NbpApiClient
   alias Firmowid.Ash.Finances
@@ -568,7 +569,9 @@ defmodule Firmowid.Ash.Invoicing do
   Creates a cost invoice with KSeF-number deduplication.
   """
   @spec create_cost_invoice_with_ksef_dedup(map()) ::
-          {:ok, Oban.Job.t()} | {:error, {:duplicate_ksef_invoice, Ash.UUID.t()}} | {:error, term()}
+          {:ok, Oban.Job.t()}
+          | {:error, {:duplicate_ksef_invoice, Ash.UUID.t()}}
+          | {:error, term()}
   def create_cost_invoice_with_ksef_dedup(extracted_metadata) do
     ksef_number =
       Map.get(extracted_metadata, "ksef_number") ||
@@ -578,43 +581,48 @@ defmodule Firmowid.Ash.Invoicing do
       {:ok, job} ->
         {:ok, job}
 
-      {:error, %Ash.Error.Invalid{} = error} = original_error ->
-        if ksef_number_conflict?(error) and not is_nil(ksef_number) and ksef_number != "" do
-          organization_id =
-            Map.get(extracted_metadata, "organization_id") ||
-              Map.get(extracted_metadata, :organization_id)
-
-          scope = %Scope{
-            actor: %SystemActor{org_id: organization_id, role: :cost_invoice_processor},
-            tenant: organization_id
-          }
-
-          case CostInvoice
-               |> Ash.Query.filter(ksef_number == ^ksef_number)
-               |> Ash.read_one(scope: scope) do
-            {:ok, %CostInvoice{id: id}} -> {:error, {:duplicate_ksef_invoice, id}}
-            _ -> original_error
-          end
-        else
-          original_error
-        end
+      {:error, %Invalid{} = error} = original_error ->
+        maybe_resolve_ksef_duplicate(error, ksef_number, extracted_metadata, original_error)
 
       {:error, reason} ->
         {:error, reason}
     end
   end
 
-  defp ksef_number_conflict?(%Ash.Error.Invalid{errors: errors}) do
+  defp maybe_resolve_ksef_duplicate(error, ksef_number, extracted_metadata, original_error) do
+    if ksef_number_conflict?(error) and is_binary(ksef_number) and ksef_number != "" do
+      resolve_ksef_duplicate(ksef_number, extracted_metadata, original_error)
+    else
+      original_error
+    end
+  end
+
+  defp resolve_ksef_duplicate(ksef_number, extracted_metadata, original_error) do
+    organization_id =
+      Map.get(extracted_metadata, "organization_id") ||
+        Map.get(extracted_metadata, :organization_id)
+
+    scope = %Scope{
+      actor: %SystemActor{org_id: organization_id, role: :cost_invoice_processor},
+      tenant: organization_id
+    }
+
+    case CostInvoice
+         |> Ash.Query.filter(ksef_number == ^ksef_number)
+         |> Ash.read_one(scope: scope) do
+      {:ok, %CostInvoice{id: id}} -> {:error, {:duplicate_ksef_invoice, id}}
+      _ -> original_error
+    end
+  end
+
+  defp ksef_number_conflict?(%Invalid{errors: errors}) do
     Enum.any?(errors, &ksef_number_conflict_error?/1)
   end
 
-  defp ksef_number_conflict?(_), do: false
-
   defp ksef_number_conflict_error?(%Ash.Error.Changes.InvalidAttribute{field: :ksef_number}), do: true
 
-  defp ksef_number_conflict_error?(%Ash.Error.Changes.InvalidChanges{fields: fields})
-       when is_list(fields),
-       do: :ksef_number in fields
+  defp ksef_number_conflict_error?(%Ash.Error.Changes.InvalidChanges{fields: fields}) when is_list(fields),
+    do: :ksef_number in fields
 
   defp ksef_number_conflict_error?(_), do: false
 
