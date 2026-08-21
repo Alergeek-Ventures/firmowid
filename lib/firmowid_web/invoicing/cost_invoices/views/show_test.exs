@@ -122,15 +122,14 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.ShowTest do
     assert html =~ ~s(href="#{transaction_return_to}")
   end
 
-  test "saves an immediately editable internal note", %{conn: conn} do
+  test "renders the internal note as readonly text and saves changes", %{conn: conn} do
     admin = admin_fixture()
     invoice = cost_invoice_fixture!(admin)
     conn = log_in_user(conn, admin)
 
-    {:ok, view, html} = live(conn, ~p"/kosztowe/#{invoice.id}")
+    {:ok, view, _html} = live(conn, ~p"/kosztowe/#{invoice.id}")
 
-    assert has_element?(view, "#internal-note-input")
-    refute html =~ ~s(id="internal-note-input" readonly)
+    assert has_element?(view, "#internal-note-input[readonly]")
 
     view
     |> form("#internal-note-form", %{"internal_note" => "Notatka zespołu"})

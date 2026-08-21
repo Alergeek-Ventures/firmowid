@@ -20,6 +20,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
   alias FirmowidWeb.Invoicing.Components.InvoiceTimeline
   alias FirmowidWeb.Invoicing.Utilities.InvoiceDetailsAssistantSubject
   alias FirmowidWeb.Invoicing.Utilities.Navigation
+  alias Phoenix.LiveView.JS
 
   @invoice_suggested_messages [
     "Ta faktura pokrywa wszystkie transakcje z poprzedniego miesiąca",
@@ -237,24 +238,21 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
                   phx-target={@myself}
                   as={:invoice_internal_note}
                   phx-change="save_internal_note"
-                  class="min-h-24"
                 >
                   <.hidden_input>
                     <:input>
-                      <.input
+                      <textarea
                         id="internal-note-input"
                         name="internal_note"
-                        type="textarea"
+                        class={text_like_input_styles(["w-full", "resize-none", "leading-snug"])}
+                        style="field-sizing: content; min-height: 1.5rem;"
                         placeholder="Komentarz do faktury widoczny tylko dla Twojej firmy"
-                        new={true}
-                        style={
-                          # TODO: fix this during refactor of core components
-                          "min-height: 6rem;"
-                        }
-                        value={@invoice.internal_note}
+                        phx-focus={JS.remove_attribute("readonly")}
+                        phx-click={JS.remove_attribute("readonly")}
+                        phx-blur={JS.set_attribute({"readonly", true})}
                         phx-debounce="300"
-                        class="min-h-24"
-                      />
+                        readonly
+                      ><%= @invoice.internal_note %></textarea>
                     </:input>
                   </.hidden_input>
                 </.form>

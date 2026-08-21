@@ -458,19 +458,19 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             new={true}
             show_error={false}
           />
-          <%= if @show_vat do %>
-            <.input
-              field={item[:vat_rate]}
-              type="select"
-              options={@vat_options}
-              phx-debounce
-              container_class="w-24"
-              new={true}
-              readonly={@vat_disabled?}
-            />
-          <% else %>
-            <input type="hidden" name={item[:vat_rate].name} value="zw" />
-          <% end %>
+          <.hidden_input show={@show_vat} field={item[:vat_rate]} value="zw">
+            <:input>
+              <.input
+                field={item[:vat_rate]}
+                type="select"
+                options={@vat_options}
+                phx-debounce
+                container_class="w-24"
+                new={true}
+                readonly={@vat_disabled?}
+              />
+            </:input>
+          </.hidden_input>
           <.input
             field={item[:unit]}
             type="select"
@@ -481,7 +481,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             new={true}
           />
           <% price_input_mode = price_input_mode(@item_price_input_modes, item) %>
-          <.hidden_input show={price_input_mode == :net}>
+          <.hidden_input show={price_input_mode == :net} field={item[:unit_price]}>
             <:input>
               <div class="flex w-30 flex-row items-center gap-1">
                 <.input
@@ -506,7 +506,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoiceItems do
             </:input>
             <:fallback>
               <div class="flex w-30 flex-row items-center justify-center gap-1">
-                <input type="hidden" name={item[:unit_price].name} value={item[:unit_price].value} />
                 <.button
                   type="button"
                   variant="unstyled"

@@ -588,25 +588,63 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   end
 
   @doc """
-  Renders an editable control or its fallback, but never both.
+  Renders an editable control, or a value-preserving fallback, but never both.
 
-  Use this for inline-editing patterns where an input is replaced by a display
-  control. Both slots accept arbitrary markup so callers can use the native
-  input type and form behavior they require.
+  The essence of the component is a form control that presents as normal-looking
+  content while its editability is conditional. When hidden, a carrier input is
+  rendered automatically (from `field`, or `value` override) so the field's value
+  still reaches the surrounding form. Both slots accept arbitrary markup so
+  callers can use the native input type and form behavior they require.
   """
   attr :show, :boolean, default: true, doc: "whether to render the editable control"
+
+  attr :field, FormField,
+    default: nil,
+    doc: "form field whose value must be submitted even while the control is hidden"
+
+  attr :value, :any,
+    default: nil,
+    doc: "overrides the field's value in the carrier input"
 
   slot :input, required: true, doc: "the editable control"
   slot :fallback, doc: "the control shown while the editable control is hidden"
 
+  def hidden_input(%{show: false} = assigns) do
+    carrier_value =
+      if assigns.field, do: assigns[:value] || assigns.field.value, else: assigns[:value]
+
+    assigns =
+      assign(assigns,
+        carrier_name: assigns.field && assigns.field.name,
+        carrier_value: carrier_value
+      )
+
+    ~H"""
+    <input :if={@field} type="hidden" name={@carrier_name} value={@carrier_value} />
+    {render_slot(@fallback)}
+    """
+  end
+
   def hidden_input(assigns) do
     ~H"""
-    <%= if @show do %>
-      {render_slot(@input)}
-    <% else %>
-      {render_slot(@fallback)}
-    <% end %>
+    {render_slot(@input)}
     """
+  end
+
+  @doc """
+  Classes that make an input read as normal text until interacted with.
+
+  Pair with `readonly` toggling or transparent styling to implement
+  inline-editable fields that blend into surrounding content. Add `truncate`
+  via `extra` for single-line inputs; leave it off for multiline textareas.
+  """
+  @spec text_like_input_styles(extra :: [String.t()]) :: [String.t()]
+  def text_like_input_styles(extra \\ []) do
+    [
+      "-ml-1 min-w-0 rounded border-none p-1 transition",
+      "bg-transparent hover:bg-grey-200 focus:bg-grey-200 focus:ring-0"
+      | extra
+    ]
   end
 
   @doc """
