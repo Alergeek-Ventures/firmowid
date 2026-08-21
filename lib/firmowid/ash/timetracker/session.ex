@@ -18,6 +18,7 @@ defmodule Firmowid.Ash.Timetracker.Session do
   alias Firmowid.Ash.Timetracker.Checks.HoursRecordNotSubmitted
   alias Firmowid.Ash.Timetracker.HoursRecord
   alias Firmowid.Ash.Timetracker.Project
+  alias Firmowid.Ash.Timetracker.Session.Calculations
   alias Firmowid.Ash.Timetracker.Session.Overlap
   alias Firmowid.Ash.Timetracker.Validations.DatetimeOrder
   alias Firmowid.Ash.Timetracker.Validations.ProjectAccess
@@ -365,33 +366,19 @@ defmodule Firmowid.Ash.Timetracker.Session do
   end
 
   calculations do
-    calculate :duration,
-              :integer,
-              expr(
-                if is_nil(end_datetime) do
-                  fragment("EXTRACT(EPOCH FROM (NOW() - ?))::integer", start_datetime)
-                else
-                  fragment("EXTRACT(EPOCH FROM (? - ?))::integer", end_datetime, start_datetime)
-                end
-              ) do
+    calculate :duration, :integer, Calculations.Duration do
       public? true
     end
 
-    calculate :month_start,
-              :naive_datetime,
-              expr(fragment("date_trunc('month', ?)", start_datetime)) do
+    calculate :month_start, :naive_datetime, Calculations.MonthStart do
       description "First day of the month this session belongs to (truncated start_datetime)."
     end
 
-    calculate :week_start,
-              :naive_datetime,
-              expr(fragment("date_trunc('week', ?)", start_datetime)) do
+    calculate :week_start, :naive_datetime, Calculations.WeekStart do
       description "Monday of the week this session belongs to (ISO week, truncated start_datetime)."
     end
 
-    calculate :lockdown,
-              :boolean,
-              expr(exists(hours_records, true)) do
+    calculate :lockdown, :boolean, Calculations.Lockdown do
       public? true
 
       description "Whether an hours record has been submitted for this session's month, locking edits."
