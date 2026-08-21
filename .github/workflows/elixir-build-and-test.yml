@@ -26,6 +26,10 @@ jobs:
 
       - name: Scan repository with Betterleaks
         uses: docker://ghcr.io/betterleaks/betterleaks@sha256:8b9d12db5e11ca798029da44923503de5d8cfff6992cffaaa6722fbeb9fc7797 # v1.8.1
+        env:
+          GIT_CONFIG_COUNT: "1"
+          GIT_CONFIG_KEY_0: safe.directory
+          GIT_CONFIG_VALUE_0: /github/workspace
         with:
           args: git . --validation=false --redact --no-banner --no-color
 
