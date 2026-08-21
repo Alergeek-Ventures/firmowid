@@ -3,6 +3,10 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceEmailContentBuilder do
   Builds subject, text body, and HTML body for sales invoice emails.
   """
 
+  use Phoenix.Component
+
+  import Firmowid.Mailer.Components
+
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.Services.SalesInvoiceChain
 
@@ -48,25 +52,7 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceEmailContentBuilder do
       end
 
     html =
-      case lang do
-        :pl ->
-          """
-          <p>Dzień dobry,</p>
-          <p>#{sender_pl}</p>
-          <p>w załączniku przesyłamy fakturę <strong>#{invoice_number}</strong>.</p>
-          <p>Termin płatności: <strong>#{due_date}</strong>.</p>
-          <p>#{share_pl}</p>
-          """
-
-        :en ->
-          """
-          <p>Hello,</p>
-          <p>#{sender_en}</p>
-          <p>Attached is your invoice <strong>#{invoice_number}</strong>.</p>
-          <p>Due date: <strong>#{due_date}</strong>.</p>
-          <p>#{share_en}</p>
-          """
-      end
+      render_basic_html(lang, sender_pl, sender_en, invoice_number, due_date, share_pl, share_en)
 
     {subject, text, html}
   end
@@ -108,25 +94,15 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceEmailContentBuilder do
       end
 
     html =
-      case lang do
-        :pl ->
-          """
-          <p>Dzień dobry,</p>
-          <p>#{sender_pl}</p>
-          <p>przypominamy o płatności dla faktury <strong>#{invoice_number}</strong>.</p>
-          <p>Termin płatności: <strong>#{due_date}</strong>.</p>
-          <p>#{share_pl}</p>
-          """
-
-        :en ->
-          """
-          <p>Hello,</p>
-          <p>#{sender_en}</p>
-          <p>this is a payment reminder for invoice <strong>#{invoice_number}</strong>.</p>
-          <p>Due date: <strong>#{due_date}</strong>.</p>
-          <p>#{share_en}</p>
-          """
-      end
+      render_reminder_html(
+        lang,
+        sender_pl,
+        sender_en,
+        invoice_number,
+        due_date,
+        share_pl,
+        share_en
+      )
 
     {subject, text, html}
   end
@@ -173,27 +149,189 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceEmailContentBuilder do
       end
 
     html =
-      case lang do
-        :pl ->
-          """
-          <p>Dzień dobry,</p>
-          <p>#{sender_pl}</p>
-          <p>skorygowaliśmy fakturę <strong>#{prev_number_pl}</strong>. W załączniku przesyłamy fakturę korygującą <strong>#{invoice_number}</strong>.</p>
-          <p>Termin płatności: <strong>#{due_date}</strong>.</p>
-          <p>#{share_pl}</p>
-          """
-
-        :en ->
-          """
-          <p>Hello,</p>
-          <p>#{sender_en}</p>
-          <p>we have corrected invoice <strong>#{prev_number_en}</strong>. Attached is correcting invoice <strong>#{invoice_number}</strong>.</p>
-          <p>Due date: <strong>#{due_date}</strong>.</p>
-          <p>#{share_en}</p>
-          """
-      end
+      render_correction_html(%{
+        lang: lang,
+        sender_pl: sender_pl,
+        sender_en: sender_en,
+        prev_number_pl: prev_number_pl,
+        prev_number_en: prev_number_en,
+        invoice_number: invoice_number,
+        due_date: due_date,
+        share_pl: share_pl,
+        share_en: share_en
+      })
 
     {subject, text, html}
+  end
+
+  defp render_basic_html(:pl, sender_pl, _sender_en, invoice_number, due_date, share_pl, _share_en) do
+    assigns = %{
+      sender: sender_pl,
+      invoice_number: invoice_number,
+      due_date: due_date,
+      share_url: share_pl
+    }
+
+    to_html(~H"""
+    <.email preheader={"Faktura #{@invoice_number}"}>
+      <.greeting>Faktura</.greeting>
+      <.paragraph>
+        {@sender}
+      </.paragraph>
+      <.paragraph>
+        w załączniku przesyłamy fakturę <strong>{@invoice_number}</strong>.
+      </.paragraph>
+      <.paragraph>
+        Termin płatności: <strong>{@due_date}</strong>.
+      </.paragraph>
+      <.paragraph :if={@share_url != ""}>
+        {@share_url}
+      </.paragraph>
+      <.signature />
+    </.email>
+    """)
+  end
+
+  defp render_basic_html(:en, _sender_pl, sender_en, invoice_number, due_date, _share_pl, share_en) do
+    assigns = %{
+      sender: sender_en,
+      invoice_number: invoice_number,
+      due_date: due_date,
+      share_url: share_en
+    }
+
+    to_html(~H"""
+    <.email preheader={"Invoice #{@invoice_number}"}>
+      <.greeting>Invoice</.greeting>
+      <.paragraph>
+        {@sender}
+      </.paragraph>
+      <.paragraph>
+        Attached is your invoice <strong>{@invoice_number}</strong>.
+      </.paragraph>
+      <.paragraph>
+        Due date: <strong>{@due_date}</strong>.
+      </.paragraph>
+      <.paragraph :if={@share_url != ""}>
+        {@share_url}
+      </.paragraph>
+      <.signature />
+    </.email>
+    """)
+  end
+
+  defp render_reminder_html(:pl, sender_pl, _sender_en, invoice_number, due_date, share_pl, _share_en) do
+    assigns = %{
+      sender: sender_pl,
+      invoice_number: invoice_number,
+      due_date: due_date,
+      share_url: share_pl
+    }
+
+    to_html(~H"""
+    <.email preheader={"Przypomnienie o płatności: #{@invoice_number}"}>
+      <.greeting>Przypomnienie o płatności</.greeting>
+      <.paragraph>
+        {@sender}
+      </.paragraph>
+      <.paragraph>
+        przypominamy o płatności dla faktury <strong>{@invoice_number}</strong>.
+      </.paragraph>
+      <.paragraph>
+        Termin płatności: <strong>{@due_date}</strong>.
+      </.paragraph>
+      <.paragraph :if={@share_url != ""}>
+        {@share_url}
+      </.paragraph>
+      <.signature />
+    </.email>
+    """)
+  end
+
+  defp render_reminder_html(:en, _sender_pl, sender_en, invoice_number, due_date, _share_pl, share_en) do
+    assigns = %{
+      sender: sender_en,
+      invoice_number: invoice_number,
+      due_date: due_date,
+      share_url: share_en
+    }
+
+    to_html(~H"""
+    <.email preheader={"Payment Reminder: #{@invoice_number}"}>
+      <.greeting>Payment Reminder</.greeting>
+      <.paragraph>
+        {@sender}
+      </.paragraph>
+      <.paragraph>
+        this is a payment reminder for invoice <strong>{@invoice_number}</strong>.
+      </.paragraph>
+      <.paragraph>
+        Due date: <strong>{@due_date}</strong>.
+      </.paragraph>
+      <.paragraph :if={@share_url != ""}>
+        {@share_url}
+      </.paragraph>
+      <.signature />
+    </.email>
+    """)
+  end
+
+  defp render_correction_html(%{lang: :pl} = params) do
+    assigns = %{
+      sender: params.sender_pl,
+      prev_number: params.prev_number_pl,
+      invoice_number: params.invoice_number,
+      due_date: params.due_date,
+      share_url: params.share_pl
+    }
+
+    to_html(~H"""
+    <.email preheader={"Korekta faktury #{@prev_number}"}>
+      <.greeting>Korekta faktury</.greeting>
+      <.paragraph>
+        {@sender}
+      </.paragraph>
+      <.paragraph>
+        skorygowaliśmy fakturę <strong>{@prev_number}</strong>. W załączniku przesyłamy fakturę korygującą <strong>{@invoice_number}</strong>.
+      </.paragraph>
+      <.paragraph>
+        Termin płatności: <strong>{@due_date}</strong>.
+      </.paragraph>
+      <.paragraph :if={@share_url != ""}>
+        {@share_url}
+      </.paragraph>
+      <.signature />
+    </.email>
+    """)
+  end
+
+  defp render_correction_html(%{lang: :en} = params) do
+    assigns = %{
+      sender: params.sender_en,
+      prev_number: params.prev_number_en,
+      invoice_number: params.invoice_number,
+      due_date: params.due_date,
+      share_url: params.share_en
+    }
+
+    to_html(~H"""
+    <.email preheader={"Invoice Correction: #{@prev_number}"}>
+      <.greeting>Invoice Correction</.greeting>
+      <.paragraph>
+        {@sender}
+      </.paragraph>
+      <.paragraph>
+        we have corrected invoice <strong>{@prev_number}</strong>. Attached is correcting invoice <strong>{@invoice_number}</strong>.
+      </.paragraph>
+      <.paragraph>
+        Due date: <strong>{@due_date}</strong>.
+      </.paragraph>
+      <.paragraph :if={@share_url != ""}>
+        {@share_url}
+      </.paragraph>
+      <.signature />
+    </.email>
+    """)
   end
 
   defp previous_invoice_number(%{invoice_number: invoice_number}) when is_binary(invoice_number),

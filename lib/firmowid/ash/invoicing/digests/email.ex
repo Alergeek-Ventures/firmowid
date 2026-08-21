@@ -5,6 +5,9 @@ defmodule Firmowid.Ash.Invoicing.Digests.Email do
   Uses HTML email with inline styles for predictable client rendering.
   """
 
+  use Phoenix.Component
+
+  import Firmowid.Mailer.Components
   import Swoosh.Email
 
   alias Firmowid.Ash.Core.User
@@ -79,69 +82,59 @@ defmodule Firmowid.Ash.Invoicing.Digests.Email do
   defp digest_subject(count), do: "#{count} nowe faktury w Firmowidzie"
 
   defp html_email(_digest, invoices, invoice_summaries) do
-    logo_url = "#{Endpoint.url()}/images/logo_firmowid.png"
     app_url = Endpoint.url()
     visible_invoices = Enum.take(invoices, @max_visible_invoices)
     remaining = length(invoices) - length(visible_invoices)
     single_invoice? = length(visible_invoices) == 1
 
-    """
-    <!DOCTYPE html>
-    <html lang="pl">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Nowe faktury KSeF</title>
-      <link rel="preconnect" href="https://fonts.googleapis.com">
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    </head>
-    <body style="margin:0; padding:0; background-color: #{@colors.light_grey}; font-family:'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #{@colors.dark};">
-      <table role="presentation" style="width:100%; border-collapse:collapse;">
-        <tr>
-          <td align="center" style="padding:40px 20px;">
-            <table role="presentation" style="width:100%; max-width:640px; border-collapse:collapse; background-color: #{@colors.white}; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-              <tr>
-                <td style="padding:32px 40px 20px 40px; text-align:center;">
-                  <img src="#{logo_url}" alt="Firmowid" style="height:40px; width:auto;">
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:8px 40px 12px 40px;">
-                  <h1 style="margin:0; font-size:28px; line-height:1.2; font-weight:600; color: #{@colors.dark};">
-                    #{headline(length(invoices))}
-                  </h1>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:12px 40px 36px 40px;">
-                  <p style="margin:0; max-width:420px; font-size:16px; line-height:1.7; color: #{@colors.grey};">
-                    W Firmowidzie czekają nowe faktury z KSeF. Poniżej zobaczysz najważniejsze informacje,
-                    a resztę sprawdzisz po wejściu do aplikacji.
-                  </p>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:0 40px 12px 40px;">
-                  #{Enum.map_join(visible_invoices, "", &invoice_card_html(&1, invoice_summary(invoice_summaries, &1), app_url, single_invoice?))}
-                </td>
-              </tr>
-              #{remaining_html(remaining)}
-              <tr>
-                <td align="center" style="padding:8px 40px 40px 40px;">
-                  <a href="#{app_url}/fakturowanie" style="display:inline-block; background-color: #{@colors.dark}; color: #{@colors.white}; text-decoration:none; padding:14px 20px; font-size:16px; font-weight:500;">
-                    Otwórz faktury w Firmowidzie
-                  </a>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-    </body>
-    </html>
-    """
+    invoice_cards_html =
+      Enum.map_join(visible_invoices, "", fn invoice ->
+        summary = invoice_summary(invoice_summaries, invoice)
+        invoice_card_html(invoice, summary, app_url, single_invoice?)
+      end)
+
+    remaining_html = remaining_html(remaining)
+
+    assigns = %{
+      headline: headline(length(invoices)),
+      invoice_cards_html: invoice_cards_html,
+      remaining_html: remaining_html,
+      app_url: app_url
+    }
+
+    to_html(~H"""
+    <.email preheader={@headline}>
+      <.greeting>{@headline}</.greeting>
+      <.paragraph>
+        W Firmowidzie czekają nowe faktury z KSeF. Poniżej zobaczysz najważniejsze informacje,
+        a resztę sprawdzisz po wejściu do aplikacji.
+      </.paragraph>
+      {Phoenix.HTML.raw(@invoice_cards_html)}
+      {Phoenix.HTML.raw(@remaining_html)}
+      <.button href={"#{@app_url}/fakturowanie"}>Otwórz faktury w Firmowidzie</.button>
+      <.signature />
+    </.email>
+    """)
   end
+
+  defp invoice_summary(invoice_summaries, invoice), do: Map.get(invoice_summaries, invoice.id, %{})
+
+  defp headline(1), do: "Masz nową fakturę z KSeF"
+  defp headline(count), do: "Masz #{count} #{new_invoice_phrase(count)} z KSeF"
+
+  defp new_invoice_phrase(1), do: "nową fakturę"
+  defp new_invoice_phrase(n) when n in 2..4, do: "nowe faktury"
+  defp new_invoice_phrase(_n), do: "nowych faktur"
+
+  defp text_invoice_noun(1), do: "faktura więcej"
+  defp text_invoice_noun(n) when n in 2..4, do: "faktury więcej"
+  defp text_invoice_noun(_n), do: "faktur więcej"
+
+  defp transaction_match_noun(1), do: "możliwe dopasowanie transakcji"
+  defp transaction_match_noun(n) when n in 2..4, do: "możliwe dopasowania transakcji"
+  defp transaction_match_noun(_n), do: "możliwych dopasowań transakcji"
+
+  defp invoice_seller(invoice), do: invoice.seller_display_name || invoice.seller || "(bez nazwy)"
 
   defp invoice_card_html(invoice, summary, app_url, single_invoice?) do
     table_width = if single_invoice?, do: "540px", else: "100%"
@@ -305,11 +298,9 @@ defmodule Firmowid.Ash.Invoicing.Digests.Email do
 
   defp remaining_html(remaining) when remaining > 0 do
     """
-    <tr>
-      <td align="center" style="padding:0 40px 32px 40px; font-size:15px; line-height:1.6; color: #{@colors.grey};">
-        + #{remaining} #{text_invoice_noun(remaining)} czeka w Firmowidzie.
-      </td>
-    </tr>
+    <div style="padding:0 40px 32px 40px; text-align:center; font-size:15px; line-height:1.6; color: #{@colors.grey};">
+      + #{remaining} #{text_invoice_noun(remaining)} czeka w Firmowidzie.
+    </div>
     """
   end
 
@@ -382,23 +373,4 @@ defmodule Firmowid.Ash.Invoicing.Digests.Email do
   defp text_recommendation(_summary), do: nil
 
   defp text_amounts(_summary), do: nil
-
-  defp invoice_summary(invoice_summaries, invoice), do: Map.get(invoice_summaries, invoice.id, %{})
-
-  defp headline(1), do: "Masz nową fakturę z KSeF"
-  defp headline(count), do: "Masz #{count} #{new_invoice_phrase(count)} z KSeF"
-
-  defp new_invoice_phrase(1), do: "nową fakturę"
-  defp new_invoice_phrase(n) when n in 2..4, do: "nowe faktury"
-  defp new_invoice_phrase(_n), do: "nowych faktur"
-
-  defp text_invoice_noun(1), do: "faktura więcej"
-  defp text_invoice_noun(n) when n in 2..4, do: "faktury więcej"
-  defp text_invoice_noun(_n), do: "faktur więcej"
-
-  defp transaction_match_noun(1), do: "możliwe dopasowanie transakcji"
-  defp transaction_match_noun(n) when n in 2..4, do: "możliwe dopasowania transakcji"
-  defp transaction_match_noun(_n), do: "możliwych dopasowań transakcji"
-
-  defp invoice_seller(invoice), do: invoice.seller_display_name || invoice.seller || "(bez nazwy)"
 end
