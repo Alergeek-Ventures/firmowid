@@ -5,6 +5,8 @@ defmodule Firmowid.Ash.Invoicing do
   """
   use Ash.Domain
 
+  import Ash.Expr, only: [expr: 1]
+
   alias Firmowid.Ash.Blobs
   alias Firmowid.Ash.Currencies.NbpApiClient
   alias Firmowid.Ash.Finances
@@ -16,6 +18,8 @@ defmodule Firmowid.Ash.Invoicing do
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
+
+  require Ash.Query
 
   resources do
     resource Firmowid.Ash.Invoicing.Counterparty do
@@ -593,6 +597,10 @@ defmodule Firmowid.Ash.Invoicing do
         Map.get(extracted_metadata, :organization_id) ||
         raise "organization_id is required in extracted_metadata"
 
+    ksef_number =
+      Map.get(extracted_metadata, "ksef_number") ||
+        Map.get(extracted_metadata, :ksef_number)
+
     sanitized_metadata =
       Map.drop(extracted_metadata, [
         "organization_id",
@@ -602,26 +610,37 @@ defmodule Firmowid.Ash.Invoicing do
     actor = %SystemActor{org_id: organization_id, role: :cost_invoice_processor}
     scope = %Scope{actor: actor, tenant: organization_id}
 
-    case __MODULE__.create_cost_invoice_dedup(sanitized_metadata,
-           return_skipped_upsert?: true,
-           scope: scope
-         ) do
-      {:ok, record} ->
-        if Ash.Resource.get_metadata(record, :upsert_skipped) do
-          {:error, {:duplicate_ksef_invoice, record.id}}
-        else
-          %{
-            name: "match_cost_invoice",
-            cost_invoice_id: record.id,
-            organization_id: organization_id
-          }
-          |> MatchingWorker.new()
-          |> Firmowid.Oban.insert(skip_organization_id: true)
-        end
+    case find_duplicate_ksef_invoice(ksef_number, scope) do
+      {:ok, %CostInvoice{id: existing_id}} ->
+        {:error, {:duplicate_ksef_invoice, existing_id}}
 
-      {:error, reason} ->
-        {:error, reason}
+      _ ->
+        case __MODULE__.create_cost_invoice_dedup(sanitized_metadata, scope: scope) do
+          {:ok, record} ->
+            %{
+              name: "match_cost_invoice",
+              cost_invoice_id: record.id,
+              organization_id: organization_id
+            }
+            |> MatchingWorker.new()
+            |> Firmowid.Oban.insert(skip_organization_id: true)
+
+          {:error, reason} ->
+            {:error, reason}
+        end
     end
+  end
+
+  defp find_duplicate_ksef_invoice(nil, _scope), do: nil
+  defp find_duplicate_ksef_invoice("", _scope), do: nil
+
+  defp find_duplicate_ksef_invoice(ksef_number, scope) do
+    CostInvoice
+    |> Ash.Query.new()
+    |> Ash.Query.filter(expr(ksef_number == ^ksef_number))
+    |> Ash.Query.select([:id])
+    |> Ash.Query.limit(1)
+    |> Ash.read_one(scope: scope)
   end
 
   @doc """
