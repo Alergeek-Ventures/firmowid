@@ -20,6 +20,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   """
   @spec profile_tab(map()) :: Rendered.t()
   attr :current_user, :map, required: true
+  attr :ash_scope, :map, required: true
   attr :user_form, :map, required: true
   attr :editing_profile_employment, :boolean, required: true
   attr :editing_profile_finance, :boolean, required: true
@@ -38,19 +39,27 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         user_form={@user_form}
         editing_profile_employment={@editing_profile_employment}
       />
+      <div>PROJEKTY</div>
       <.finance_section
         current_user={@current_user}
         user_form={@user_form}
         editing_profile_finance={@editing_profile_finance}
       />
-
+      <div></div>
       <.contact_section
         current_user={@current_user}
         user_form={@user_form}
         editing_profile_contact={@editing_profile_contact}
       />
 
-      <div class="grid gap-8 lg:col-span-2 lg:grid-cols-2 lg:gap-16">
+      <div class="grid items-start gap-5 lg:col-span-2 lg:grid-cols-2">
+        <.live_component
+          module={FirmowidWeb.Documents.Components.DocumentsSection}
+          id="profile-documents"
+          user={@current_user}
+          scope={@ash_scope}
+          variant={:profile}
+        />
         <.leave_section
           leave_requests={@leave_requests}
           leave_request_form={@leave_request_form}

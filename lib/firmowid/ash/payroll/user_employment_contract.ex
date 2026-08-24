@@ -39,9 +39,14 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
       description "Returns all employment contracts given user_id."
 
       argument :user_id, :uuid
+      argument :search, :string
 
       prepare build(filter: expr(user_id == ^arg(:user_id))) do
         where present(:user_id)
+      end
+
+      prepare build(filter: expr(contains(worker_full_name, ^arg(:search)))) do
+        where present(:search)
       end
     end
 
@@ -75,7 +80,7 @@ defmodule Firmowid.Ash.Payroll.UserEmploymentContract do
 
     policy action_type(:read) do
       authorize_if actor_attribute_equals(:role, :admin)
-      forbid_if always()
+      authorize_if expr(user_id == ^actor(:id))
     end
   end
 

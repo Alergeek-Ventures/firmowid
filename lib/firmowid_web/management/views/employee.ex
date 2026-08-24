@@ -16,8 +16,9 @@ defmodule FirmowidWeb.Management.Views.Employee do
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Timetracker
   alias FirmowidWeb.Core.Endpoint
+  alias FirmowidWeb.Documents.Components.DocumentsSection, as: DocumentsTab
+  alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
-  alias FirmowidWeb.Management.Components.DocumentsTab
   alias FirmowidWeb.Management.Components.LeavesTab
   alias FirmowidWeb.Management.Utilities.Navigation
   alias Phoenix.Socket.Broadcast
@@ -203,7 +204,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
         socket
       ) do
     if blob.processing_state == :failed do
-      show_blob_processing_failure_toast(blob)
+      BlobProcessingToasts.show_failure_toast(blob)
     end
 
     send_update(DocumentsTab,
@@ -289,30 +290,4 @@ defmodule FirmowidWeb.Management.Views.Employee do
   def handle_info({:employee_updated, user}, socket) do
     {:noreply, assign(socket, :employee, with_projects(user, socket.assigns.ash_scope))}
   end
-
-  defp show_blob_processing_failure_toast(%Blob{original_filename: filename, processing_metadata: metadata}) do
-    case processing_failure_reason(metadata) do
-      :invalid_document ->
-        LiveToast.send_toast(
-          :error,
-          processing_failure_message(metadata, filename),
-          title: "Nieprawidłowy dokument"
-        )
-
-      _ ->
-        LiveToast.send_toast(:error, processing_failure_message(metadata, filename), title: "Nie udało się wgrać pliku")
-    end
-  end
-
-  defp processing_failure_reason(%{"error_code" => "invalid_document"}), do: :invalid_document
-  defp processing_failure_reason(%{error_code: "invalid_document"}), do: :invalid_document
-  defp processing_failure_reason(%{"error" => ":invalid_document"}), do: :invalid_document
-  defp processing_failure_reason(%{error: ":invalid_document"}), do: :invalid_document
-  defp processing_failure_reason(_), do: :processing_failed
-
-  defp processing_failure_message(%{"error_message" => message}, _filename) when is_binary(message), do: message
-
-  defp processing_failure_message(%{error_message: message}, _filename) when is_binary(message), do: message
-
-  defp processing_failure_message(_metadata, filename), do: filename
 end

@@ -18,7 +18,7 @@ defmodule Firmowid.Ash.Payroll do
 
     resource Firmowid.Ash.Payroll.UserEmploymentContract do
       define :create_employment_contract, action: :create
-      define :list_employment_contracts, action: :read, args: [:user_id]
+      define :list_employment_contracts, action: :read, args: [:user_id, :search]
       define :get_employment_contract, action: :get_by_id, args: [:id]
     end
   end

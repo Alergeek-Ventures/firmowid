@@ -35,13 +35,13 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           editing_account_name={@editing_account_name}
         />
 
-      <.credentials_section
-        current_user={@current_user}
-        editing_credentials={@editing_credentials}
-        email_form={@email_form}
-        password_form={@password_form}
-        current_password={@current_password}
-      />
+        <.credentials_section
+          current_user={@current_user}
+          editing_credentials={@editing_credentials}
+          email_form={@email_form}
+          password_form={@password_form}
+          current_password={@current_password}
+        />
 
         <.google_login_section
           google_connected?={@google_connected?}
@@ -320,17 +320,15 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           {if @google_connected?, do: "Powiąż inne", else: "Połącz z Google"}
         </.button>
 
-            <.button
-              :if={@google_connected?}
-              type="button"
-              variant="destructive"
-              size="small"
-              phx-click="unlink_google_account"
-            >
-              Rozłącz
-            </.button>
-          </div>
-        </Helpers.settings_display_field>
+        <.button
+          :if={@google_connected?}
+          type="button"
+          variant="destructive"
+          size="small"
+          phx-click="unlink_google_account"
+        >
+          Rozłącz
+        </.button>
       </div>
     </.account_section>
     """

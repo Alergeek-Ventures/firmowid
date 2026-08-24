@@ -187,10 +187,12 @@
         />
       <% :documents -> %>
         <.live_component
-          module={FirmowidWeb.Management.Components.DocumentsTab}
+          module={FirmowidWeb.Documents.Components.DocumentsSection}
           id="documents-tab"
-          employee={@employee}
+          user={@employee}
           scope={@ash_scope}
+          variant={:management}
+          dimmed={@employee.archived_at != nil}
         />
       <% :leaves -> %>
         <.live_component

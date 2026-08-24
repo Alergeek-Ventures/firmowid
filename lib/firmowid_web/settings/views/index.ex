@@ -26,6 +26,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias AshAuthentication.Argon2Provider
   alias Firmowid.Ash.Billing.Month
   alias Firmowid.Ash.Blobs
+  alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.GoCardless.ApiClient
@@ -35,6 +36,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Ash.Timetracker
   alias FirmowidWeb.Billing.Utilities.MonthContext
   alias FirmowidWeb.Core.Endpoint
+  alias FirmowidWeb.Documents.Components.DocumentsSection
+  alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
   alias FirmowidWeb.Settings.Utilities.Navigation
   alias Phoenix.Socket.Broadcast
 
@@ -121,6 +124,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
       |> Map.fetch!(:accepted_leave_days_for_year)
 
     subscribe_to_admin_updates(socket, current_org.id, admin?)
+
+    if connected?(socket) do
+      Endpoint.subscribe("blob:created:#{current_org.id}")
+      Endpoint.subscribe("blob:updated:#{current_org.id}")
+      Endpoint.subscribe("blob:destroyed:#{current_org.id}")
+    end
 
     socket =
       if admin? do
@@ -295,7 +304,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
               scope: scope
             )}
          end) do
-      {:ok, %Firmowid.Ash.Blobs.Blob{} = blob} ->
+      {:ok, %Blob{} = blob} ->
         handle_avatar_upload(name, blob.id, socket)
 
       {:error, err} ->
@@ -1212,6 +1221,92 @@ defmodule FirmowidWeb.Settings.Views.Index do
     {:noreply, socket}
   end
 
+  def handle_info(
+        %Broadcast{
+          payload: %Notification{
+            resource: Blob,
+            action: %{type: :create},
+            data: %{processing_target: :employment_contract}
+          }
+        },
+        socket
+      ) do
+    send_update(DocumentsSection, id: "profile-documents", refetch: true)
+    {:noreply, socket}
+  end
+
+  def handle_info(
+        %Broadcast{
+          payload: %Notification{
+            resource: Blob,
+            action: %{type: :update},
+            data: %{processing_target: :employment_contract} = blob
+          }
+        },
+        socket
+      ) do
+    if blob.processing_state == :failed do
+      BlobProcessingToasts.show_failure_toast(blob)
+    end
+
+    send_update(DocumentsSection, id: "profile-documents", refetch: true)
+    {:noreply, socket}
+  end
+
+  def handle_info(
+        %Broadcast{
+          payload:
+            %Notification{
+              resource: Blob,
+              action: %{type: :destroy},
+              data: %{processing_target: :employment_contract},
+              metadata: %{reason: :processing_failed}
+            } = notification
+        },
+        socket
+      ) do
+    LiveToast.send_toast(:error, notification.data.original_filename, title: "Nie udało się wgrać pliku")
+
+    send_update(DocumentsSection, id: "profile-documents", refetch: true)
+    {:noreply, socket}
+  end
+
+  def handle_info(
+        %Broadcast{
+          payload:
+            %Notification{
+              resource: Blob,
+              action: %{type: :destroy},
+              data: %{processing_target: :employment_contract},
+              metadata: %{reason: :invalid_document}
+            } = notification
+        },
+        socket
+      ) do
+    LiveToast.send_toast(
+      :error,
+      "Plik #{notification.data.original_filename} nie zawiera wymaganych danych. Upewnij się, że wgrywasz umowe.",
+      title: "Nieprawidłowy dokument"
+    )
+
+    send_update(DocumentsSection, id: "profile-documents", refetch: true)
+    {:noreply, socket}
+  end
+
+  def handle_info(
+        %Broadcast{
+          payload: %Notification{
+            resource: Blob,
+            data: %{processing_target: :employment_contract},
+            action: %{type: :destroy}
+          }
+        },
+        socket
+      ) do
+    send_update(DocumentsSection, id: "profile-documents", refetch: true)
+    {:noreply, socket}
+  end
+
   defp create_leave_request_with_upload(socket, entry, attrs, scope) do
     consume_uploaded_entry(socket, entry, fn %{path: path} ->
       {:ok,
@@ -1286,6 +1381,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
         <% :profile -> %>
           <.profile_tab
             current_user={@current_user}
+            ash_scope={@ash_scope}
             user_form={@user_form}
             editing_profile_employment={@editing_profile_employment}
             editing_profile_finance={@editing_profile_finance}
