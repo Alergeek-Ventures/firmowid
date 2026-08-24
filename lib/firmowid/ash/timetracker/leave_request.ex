@@ -125,12 +125,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
       change set_attribute(:user_id, actor(:id))
       change set_attribute(:reason, arg(:reason))
 
-      change fn changeset, _context ->
-        # TODO: Determine category based on employment contract
-        category = :absence
-
-        Ash.Changeset.change_attribute(changeset, :category, category)
-      end
+      # TODO: Determine category based on employment contract
 
       change fn changeset, context ->
         case Ash.Changeset.get_argument(changeset, :upload_path) do
@@ -196,6 +191,10 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
       description "Admin declines a pending leave request."
       require_atomic? false
       accept []
+
+      validate attribute_equals(:category, :leave),
+        message: "można odrzucać tylko wnioski urlopowe"
+
       change transition_state(:declined)
     end
   end
@@ -236,6 +235,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
     attribute :category, :atom do
       allow_nil? false
       public? true
+      default :absence
       constraints one_of: [:leave, :absence]
     end
 

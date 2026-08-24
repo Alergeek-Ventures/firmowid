@@ -194,6 +194,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
             </.link>
             <div :if={@selected_request.status == :pending} class="ml-auto flex justify-end gap-4">
               <.button
+                :if={@selected_request.category == :leave}
                 type="button"
                 variant="secondary"
                 size="small"

@@ -107,14 +107,22 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestTest do
     end
 
     test "allows overlapping a declined request", %{
+      user: user,
       employee_scope: employee_scope,
       admin_scope: admin_scope
     } do
+      # Seed directly - decline is restricted to leave-category requests,
+      # which the create action cannot produce yet.
       declined =
-        create_request!(employee_scope, %{
+        Ash.Seed.seed!(LeaveRequest, %{
+          id: Ash.UUIDv7.generate(),
+          user_id: user.id,
+          organization_id: user.organization_id,
           starts_on: days_from_today(20),
           ends_on: days_from_today(25),
-          reason: :rest
+          category: :leave,
+          reason: :vacation,
+          status: :pending
         })
 
       assert {:ok, _} = Timetracker.decline_leave_request(declined.id, scope: admin_scope)
