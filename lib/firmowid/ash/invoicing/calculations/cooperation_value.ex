@@ -11,7 +11,7 @@ defmodule Firmowid.Ash.Invoicing.Calculations.CooperationValue do
 
   @impl true
   def load(_query, _opts, _context) do
-    [sales_invoices: [:gross_value, :currency, :sale_date, :reconciliation_status]]
+    [sales_invoices: [:effective_amount, :sale_date, :reconciliation_status]]
   end
 
   @impl true
@@ -20,7 +20,7 @@ defmodule Firmowid.Ash.Invoicing.Calculations.CooperationValue do
       confirmed_invoices =
         Enum.filter(counterparty.sales_invoices, &(&1.reconciliation_status == :matched))
 
-      confirmed_currencies = Enum.map(confirmed_invoices, & &1.currency)
+      confirmed_currencies = Enum.map(confirmed_invoices, &invoice_currency/1)
 
       case Enum.uniq(confirmed_currencies) do
         [] ->
@@ -28,20 +28,31 @@ defmodule Firmowid.Ash.Invoicing.Calculations.CooperationValue do
 
         [currency] ->
           %{
-            total: Enum.reduce(confirmed_invoices, Decimal.new(0), &Decimal.add(&1.gross_value, &2)),
+            total:
+              confirmed_invoices
+              |> Enum.map(& &1.effective_amount)
+              |> Enum.reduce(Money.new!(currency, 0), &Money.add!/2)
+              |> Money.to_decimal(),
             currency: currency
           }
 
         _ ->
           total_in_pln =
             Enum.reduce(confirmed_invoices, Decimal.new(0), fn invoice, acc ->
-              invoice.gross_value
-              |> Converter.normalize_amount_to_pln(invoice.currency, invoice.sale_date)
+              invoice.effective_amount
+              |> Money.to_decimal()
+              |> Converter.normalize_amount_to_pln(invoice_currency(invoice), invoice.sale_date)
               |> Decimal.add(acc)
             end)
 
           %{total: total_in_pln, currency: "PLN"}
       end
     end)
+  end
+
+  defp invoice_currency(invoice) do
+    invoice.effective_amount
+    |> Money.to_currency_code()
+    |> Atom.to_string()
   end
 end

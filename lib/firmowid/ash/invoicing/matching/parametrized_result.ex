@@ -80,12 +80,15 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResult do
           get_invoice_account_number(invoice)
         ),
       is_same_currency:
-        boolean_to_float(invoice.currency == transaction.amount |> Money.to_currency_code() |> Atom.to_string()),
+        boolean_to_float(
+          invoice_currency(invoice) ==
+            transaction.amount |> Money.to_currency_code() |> Atom.to_string()
+        ),
       amount_present_in_remittance_information_unstructured:
         amount_present_in_remittance_information_unstructured(
           transaction.remittance_information_unstructured,
           get_invoice_amount(invoice),
-          invoice.currency
+          invoice_currency(invoice)
         ),
       invoice_identifier_present_in_remittance_information_unstructured:
         invoice_identifier_present_in_remittance_information_unstructured(
@@ -119,7 +122,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResult do
 
   @spec amount_present_in_remittance_information_unstructured(
           String.t() | nil,
-          Decimal.t(),
+          Money.t(),
           String.t()
         ) ::
           float()
@@ -130,7 +133,12 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResult do
       String.contains?(remittance_information_unstructured, currency) and
         String.contains?(
           remittance_information_unstructured,
-          amount |> Decimal.abs() |> Decimal.to_float() |> trunc() |> to_string()
+          amount
+          |> Money.to_decimal()
+          |> Decimal.abs()
+          |> Decimal.to_float()
+          |> trunc()
+          |> to_string()
         )
     )
   end
@@ -169,9 +177,11 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResult do
   defp calculate_relative_amount_difference(invoice, transaction) do
     # 1. Bring both amounts to PLN
     inv_pln =
-      Currencies.normalize_amount_to_pln(
-        get_invoice_amount(invoice),
-        invoice.currency,
+      invoice
+      |> get_invoice_amount()
+      |> Money.to_decimal()
+      |> Currencies.normalize_amount_to_pln(
+        invoice_currency(invoice),
         invoice |> get_invoice_date() |> RateDate.normalize_rate_date()
       )
 
@@ -203,9 +213,11 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResult do
     rel |> Nx.clip(0.0, 5.0) |> Nx.to_number()
   end
 
-  defp get_invoice_amount(%CostInvoice{} = ci), do: ci.total_amount
+  defp get_invoice_amount(%CostInvoice{} = ci), do: ci.effective_amount
 
-  defp get_invoice_amount(%SalesInvoice{} = si), do: si.gross_value
+  defp get_invoice_amount(%SalesInvoice{} = si), do: si.effective_amount
+
+  defp invoice_currency(invoice), do: invoice |> get_invoice_amount() |> Money.to_currency_code() |> Atom.to_string()
 
   @spec calculate_transaction_side_similarity(String.t() | nil, String.t() | nil) :: float()
 
@@ -245,39 +257,14 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResult do
 
   @spec calculate_signed_amount_match(CostInvoice.t() | SalesInvoice.t(), map()) ::
           float()
-  defp calculate_signed_amount_match(%CostInvoice{} = cost_invoice, transaction) do
+  defp calculate_signed_amount_match(invoice, transaction) do
     inv_amount_pln =
-      Currencies.normalize_amount_to_pln(
-        get_invoice_amount(cost_invoice),
-        cost_invoice.currency,
-        cost_invoice |> get_invoice_date() |> RateDate.normalize_rate_date()
-      )
-
-    tx_amount_pln =
-      Currencies.normalize_amount_to_pln(
-        Money.to_decimal(transaction.amount),
-        transaction.amount |> Money.to_currency_code() |> Atom.to_string(),
-        RateDate.normalize_rate_date(transaction.booking_date)
-      )
-
-    ratio =
-      if Decimal.lt?(Decimal.abs(inv_amount_pln), Decimal.new("0.01")) do
-        0.0
-      else
-        tx_amount_pln
-        |> Decimal.div(inv_amount_pln)
-        |> Decimal.to_float()
-      end
-
-    ratio |> Nx.clip(-5.0, 5.0) |> Nx.to_number()
-  end
-
-  defp calculate_signed_amount_match(%SalesInvoice{} = sales_invoice, transaction) do
-    inv_amount_pln =
-      Currencies.normalize_amount_to_pln(
-        get_invoice_amount(sales_invoice),
-        sales_invoice.currency,
-        sales_invoice |> get_invoice_date() |> RateDate.normalize_rate_date()
+      invoice
+      |> get_invoice_amount()
+      |> Money.to_decimal()
+      |> Currencies.normalize_amount_to_pln(
+        invoice_currency(invoice),
+        invoice |> get_invoice_date() |> RateDate.normalize_rate_date()
       )
 
     tx_amount_pln =

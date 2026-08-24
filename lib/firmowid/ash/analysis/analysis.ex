@@ -71,7 +71,7 @@ defmodule Firmowid.Ash.Analysis do
     sales_invoices =
       %{date_from: date_from, date_to: date_to, date_field: :sale_date}
       |> Invoicing.list_sales_invoices!(
-        load: [:buyer_display_name_label, :gross_value, :sales_invoice_items, :transactions],
+        load: [:buyer_display_name_label, :effective_amount, :sales_invoice_items, :transactions],
         scope: analysis_scope
       )
       |> Enum.filter(&analysis_relevant_invoice?(&1, own_account_ibans))
@@ -81,10 +81,9 @@ defmodule Firmowid.Ash.Analysis do
       |> Invoicing.list_cost_invoices!(
         load: [
           :transactions,
-          :effective_currency,
           :effective_seller_display_name,
           :effective_sale_date,
-          :effective_total_amount
+          :effective_amount
         ],
         scope: analysis_scope
       )
@@ -180,30 +179,31 @@ defmodule Firmowid.Ash.Analysis do
     |> Enum.map(&Date.beginning_of_month(Map.fetch!(&1, date_field)))
   end
 
-  defp get_amount_and_currency(%SalesInvoice{gross_value: %Decimal{} = gross_value, currency: currency}) do
-    {:ok, {Decimal.abs(gross_value), currency}}
+  defp get_amount_and_currency(%SalesInvoice{effective_amount: %Money{} = amount}) do
+    {:ok, Money.abs(amount)}
   end
 
   defp get_amount_and_currency(%SalesInvoice{}), do: :skip
 
-  defp get_amount_and_currency(%CostInvoice{
-         effective_total_amount: %Decimal{} = total_amount,
-         effective_currency: currency
-       }) do
-    value = total_amount |> Decimal.abs() |> Decimal.mult(Decimal.new("-1"))
-    {:ok, {value, currency}}
+  defp get_amount_and_currency(%CostInvoice{effective_amount: %Money{} = amount}) do
+    {:ok, amount |> Money.abs() |> Money.negate!()}
   end
 
   defp get_amount_and_currency(%CostInvoice{}), do: :skip
 
   defp get_amount_and_currency(%Transaction{} = entity) do
-    {:ok, {Money.to_decimal(entity.amount), entity.amount |> Money.to_currency_code() |> Atom.to_string()}}
+    {:ok, entity.amount}
   end
 
   defp accumulate_amount(:skip, acc, _today), do: acc
 
-  defp accumulate_amount({:ok, {amount, currency}}, acc, today) do
-    normalized_amount = Currencies.normalize_amount_to_pln(amount, currency, today)
+  defp accumulate_amount({:ok, amount}, acc, today) do
+    normalized_amount =
+      Currencies.normalize_amount_to_pln(
+        Money.to_decimal(amount),
+        amount |> Money.to_currency_code() |> Atom.to_string(),
+        today
+      )
 
     if Decimal.negative?(normalized_amount) do
       Map.update!(acc, :expenses, &Decimal.add(&1, normalized_amount))

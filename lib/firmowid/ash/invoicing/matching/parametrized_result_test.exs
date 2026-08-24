@@ -12,8 +12,9 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         seller_display_name: "Test Company Ltd",
         account_number: "PL61109010140000071219812874",
         due_date: ~D[2025-01-15],
-        total_amount: Decimal.new("1000.00"),
+        total_amount: Decimal.new("1.00"),
         currency: "PLN",
+        effective_amount: Money.new!("PLN", Decimal.new("1000.00")),
         issue_date: ~D[2025-01-01]
       }
 
@@ -55,6 +56,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         due_date: ~D[2025-01-15],
         total_amount: Decimal.new("500.00"),
         currency: "EUR",
+        effective_amount: Money.new!("EUR", Decimal.new("500.00")),
         issue_date: ~D[2025-01-01]
       }
 
@@ -95,6 +97,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         due_date: ~D[2025-01-15],
         total_amount: Decimal.new("1000.00"),
         currency: "PLN",
+        effective_amount: Money.new!("PLN", Decimal.new("1000.00")),
         issue_date: ~D[2025-01-01]
       }
 
@@ -130,6 +133,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         due_date: ~D[2025-01-15],
         total_amount: Decimal.new("1000.00"),
         currency: "PLN",
+        effective_amount: Money.new!("PLN", Decimal.new("1000.00")),
         issue_date: ~D[2025-01-01]
       }
 
@@ -163,6 +167,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         due_date: ~D[2025-01-15],
         total_amount: Decimal.new("1000.00"),
         currency: "PLN",
+        effective_amount: Money.new!("PLN", Decimal.new("1000.00")),
         issue_date: ~D[2025-01-01]
       }
 
@@ -191,6 +196,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         due_date: ~D[2025-01-15],
         total_amount: Decimal.new("1000.00"),
         currency: "PLN",
+        effective_amount: Money.new!("PLN", Decimal.new("1000.00")),
         issue_date: ~D[2025-01-01]
       }
 
@@ -216,6 +222,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         due_date: ~D[2025-01-15],
         total_amount: Decimal.new("1234.56"),
         currency: "PLN",
+        effective_amount: Money.new!("PLN", Decimal.new("1234.56")),
         issue_date: ~D[2025-01-01]
       }
 
@@ -290,6 +297,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         due_date: ~D[2025-01-15],
         total_amount: Decimal.new("1000.00"),
         currency: "PLN",
+        effective_amount: Money.new!("PLN", Decimal.new("1000.00")),
         issue_date: ~D[2025-01-01]
       }
 
@@ -315,6 +323,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         due_date: ~D[2025-01-15],
         total_amount: Decimal.new("1000.00"),
         currency: "PLN",
+        effective_amount: Money.new!("PLN", Decimal.new("1000.00")),
         issue_date: ~D[2025-01-01]
       }
 
@@ -343,6 +352,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         due_date: ~D[2025-01-15],
         total_amount: Decimal.new("1000000.00"),
         currency: "PLN",
+        effective_amount: Money.new!("PLN", Decimal.new("1000000.00")),
         issue_date: ~D[2025-01-01]
       }
 
@@ -388,7 +398,8 @@ defmodule Firmowid.Ash.Invoicing.Matching.ParametrizedResultTest do
         currency: "PLN",
         invoice_number: "FV/2025/01/01",
         sales_invoice_items: [item],
-        gross_value: gross_value
+        gross_value: gross_value,
+        effective_amount: Money.new!("PLN", gross_value)
       }
 
       transaction = %Transaction{

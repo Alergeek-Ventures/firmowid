@@ -63,7 +63,9 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
   @spec match_cost_invoice(String.t(), Scope.t()) :: :ok
   def match_cost_invoice(cost_invoice_id, scope) do
     org_id = scope.tenant
-    cost_invoice = Invoicing.get_cost_invoice!(cost_invoice_id, scope: scope)
+
+    cost_invoice =
+      Invoicing.get_cost_invoice!(cost_invoice_id, load: [:effective_amount], scope: scope)
 
     Logger.info("Matching cost invoice #{cost_invoice.id} for organization #{org_id}")
 
@@ -120,7 +122,7 @@ defmodule Firmowid.Ash.Invoicing.InvoiceMatching do
 
     sales_invoice =
       Invoicing.get_sales_invoice!(sales_invoice_id,
-        load: [:buyer_display_name_label, :gross_value],
+        load: [:buyer_display_name_label, :effective_amount],
         scope: scope
       )
 
