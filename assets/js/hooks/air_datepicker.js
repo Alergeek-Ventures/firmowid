@@ -44,6 +44,7 @@ export const AirDatepicker = {
     const mode = this.el.dataset.mode || "months";
 
     return new window.AirDatepicker(this.el, {
+      position: this.el.dataset.position || "bottom left",
       selectedDates: [this.el.dataset.initialDate],
       toggleSelected: false,
       view: mode,

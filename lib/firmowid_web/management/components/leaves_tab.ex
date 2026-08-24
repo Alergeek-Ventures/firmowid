@@ -125,6 +125,7 @@ defmodule FirmowidWeb.Management.Components.LeavesTab do
               size="small"
               variant="outline"
               active_years={@active_years}
+              data-position="bottom right"
             />
           </div>
         </div>
