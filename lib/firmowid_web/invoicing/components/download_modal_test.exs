@@ -43,8 +43,6 @@ defmodule FirmowidWeb.Invoicing.Components.DownloadModalTest do
       sale_date: issue_date,
       issue_date: issue_date,
       due_date: issue_date,
-      total_amount: Decimal.new("-100.00"),
-      currency: "PLN",
       amount: Money.new!("PLN", Decimal.new("-100.00")),
       organization_id: organization_id,
       blob_id: blob.id

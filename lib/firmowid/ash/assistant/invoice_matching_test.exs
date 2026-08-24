@@ -368,8 +368,7 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
           sale_date: ~D[2026-02-01],
           issue_date: ~D[2026-02-01],
           due_date: ~D[2026-02-14],
-          total_amount: Decimal.new("-123.45"),
-          currency: "PLN",
+          amount: Money.new!("PLN", "-123.45"),
           description: "Assistant test invoice",
           invoice_identifier: unique_string("CI-DEFAULT"),
           skip_invoicing: false,
@@ -378,14 +377,7 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
         attrs
       )
 
-    Ash.Seed.seed!(
-      CostInvoice,
-      Map.put(
-        invoice_attrs,
-        :amount,
-        Money.new!(invoice_attrs.currency, invoice_attrs.total_amount)
-      )
-    )
+    Ash.Seed.seed!(CostInvoice, invoice_attrs)
   end
 
   defp create_sales_invoice!(user, attrs) do

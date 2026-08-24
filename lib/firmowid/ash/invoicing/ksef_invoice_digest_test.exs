@@ -442,8 +442,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
         sale_date: ~D[2026-01-01],
         issue_date: ~D[2026-01-01],
         due_date: ~D[2026-01-30],
-        total_amount: Decimal.new("-100.00"),
-        currency: "PLN",
+        amount: Money.new!("PLN", "-100.00"),
         description: "Invoice for scheduled KSeF digest tests",
         invoice_identifier: attrs[:invoice_identifier] || "CI-KSEF-#{System.unique_integer([:positive])}",
         skip_invoicing: false,
@@ -453,13 +452,7 @@ defmodule Firmowid.Ash.Invoicing.KsefInvoiceDigestTest do
         ksef_downloaded_at: DateTime.utc_now()
       )
 
-    invoice_attrs = Map.merge(base_attrs, attrs)
-
-    Map.put(
-      invoice_attrs,
-      :amount,
-      Money.new!(invoice_attrs.currency, invoice_attrs.total_amount)
-    )
+    Map.merge(base_attrs, attrs)
   end
 
   defp digest_item_count_for_invoice(invoice_id, organization_id) do

@@ -150,8 +150,6 @@ defmodule Firmowid.Ash.Blobs.BlobsTest do
           sale_date: ~D[2026-08-01],
           issue_date: ~D[2026-08-01],
           due_date: ~D[2026-08-15],
-          total_amount: Decimal.new("-50.00"),
-          currency: "PLN",
           amount: Money.new!("PLN", Decimal.new("-50.00")),
           description: "Imported KSeF invoice",
           invoice_identifier: "KSEF/2026/001",

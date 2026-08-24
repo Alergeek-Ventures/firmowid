@@ -205,7 +205,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
                  scope: scope
                )
 
-      assert Exception.message(error) =~ "must match the original invoice currency"
+      assert Exception.message(error) =~ "must match linked invoice currency"
     end
 
     test "allows an orphan correction" do
@@ -228,6 +228,62 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
                )
 
       assert Money.to_currency_code(invoice.amount) == :EUR
+    end
+
+    test "rejects an original with a different currency than an orphan correction" do
+      user = admin_fixture()
+      scope = %Scope{actor: user, tenant: user.organization_id}
+
+      assert {:ok, _orphan} =
+               CostInvoice.create(
+                 %{
+                   seller: "Supplier Sp. z o.o.",
+                   sale_date: ~D[2026-02-01],
+                   issue_date: ~D[2026-02-01],
+                   items_list: [],
+                   amount: Money.new!("EUR", "10.00"),
+                   invoice_identifier: "FV/2026/02/ORPHAN-CORRECTION",
+                   invoice_type: :kor,
+                   original_invoice_ksef_number: "KSEF-LATE-ORIGINAL"
+                 },
+                 scope: scope
+               )
+
+      assert {:error, error} =
+               CostInvoice.create(
+                 %{
+                   seller: "Supplier Sp. z o.o.",
+                   sale_date: ~D[2026-02-01],
+                   issue_date: ~D[2026-02-01],
+                   items_list: [],
+                   amount: Money.new!("PLN", "-100.00"),
+                   invoice_identifier: "FV/2026/02/LATE-ORIGINAL",
+                   ksef_number: "KSEF-LATE-ORIGINAL"
+                 },
+                 scope: scope
+               )
+
+      assert Exception.message(error) =~ "must match linked invoice currency"
+    end
+
+    test "rejects a positive non-correction amount" do
+      user = admin_fixture()
+      scope = %Scope{actor: user, tenant: user.organization_id}
+
+      assert {:error, error} =
+               CostInvoice.create(
+                 %{
+                   seller: "Supplier Sp. z o.o.",
+                   sale_date: ~D[2026-02-01],
+                   issue_date: ~D[2026-02-01],
+                   items_list: [],
+                   amount: Money.new!("PLN", "100.00"),
+                   invoice_identifier: "FV/2026/02/POSITIVE"
+                 },
+                 scope: scope
+               )
+
+      assert Exception.message(error) =~ "must be <= 0 for non-correction invoices"
     end
   end
 

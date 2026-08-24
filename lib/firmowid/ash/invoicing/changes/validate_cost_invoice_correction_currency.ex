@@ -1,6 +1,6 @@
 defmodule Firmowid.Ash.Invoicing.Changes.ValidateCostInvoiceCorrectionCurrency do
   @moduledoc """
-  Ensures a linked cost invoice correction uses its original invoice currency.
+  Ensures linked cost invoice corrections and originals use the same currency.
 
   Corrections received before their original invoice remain valid orphans.
   """
@@ -13,12 +13,9 @@ defmodule Firmowid.Ash.Invoicing.Changes.ValidateCostInvoiceCorrectionCurrency d
   @impl true
   def change(changeset, _opts, context) do
     Ash.Changeset.before_action(changeset, fn changeset ->
-      case original_invoice(changeset, context) do
-        {:ok, nil} ->
-          changeset
-
-        {:ok, original_invoice} ->
-          validate_currency(changeset, original_invoice)
+      case linked_invoices(changeset, context) do
+        {:ok, linked_invoices} ->
+          validate_currency(changeset, linked_invoices)
 
         {:error, error} ->
           Ash.Changeset.add_error(changeset, error)
@@ -26,30 +23,50 @@ defmodule Firmowid.Ash.Invoicing.Changes.ValidateCostInvoiceCorrectionCurrency d
     end)
   end
 
-  defp original_invoice(changeset, context) do
+  defp linked_invoices(changeset, context) do
     invoice_type = Ash.Changeset.get_attribute(changeset, :invoice_type)
 
     original_invoice_ksef_number =
       Ash.Changeset.get_attribute(changeset, :original_invoice_ksef_number)
 
-    if invoice_type in @correction_invoice_types and is_binary(original_invoice_ksef_number) do
-      CostInvoice
-      |> Ash.Query.filter(ksef_number == ^original_invoice_ksef_number)
-      |> Ash.read_one(Ash.Context.to_opts(context))
-    else
-      {:ok, nil}
+    ksef_number = Ash.Changeset.get_attribute(changeset, :ksef_number)
+
+    cond do
+      invoice_type in @correction_invoice_types and is_binary(original_invoice_ksef_number) ->
+        original_invoice(original_invoice_ksef_number, context)
+
+      is_binary(ksef_number) ->
+        CostInvoice
+        |> Ash.Query.filter(original_invoice_ksef_number == ^ksef_number)
+        |> Ash.read(Ash.Context.to_opts(context))
+
+      true ->
+        {:ok, []}
     end
   end
 
-  defp validate_currency(changeset, original_invoice) do
+  defp original_invoice(ksef_number, context) do
+    case CostInvoice
+         |> Ash.Query.filter(ksef_number == ^ksef_number)
+         |> Ash.read_one(Ash.Context.to_opts(context)) do
+      {:ok, nil} -> {:ok, []}
+      {:ok, invoice} -> {:ok, [invoice]}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp validate_currency(changeset, linked_invoices) do
     amount = Ash.Changeset.get_attribute(changeset, :amount)
 
-    if Money.to_currency_code(amount) == Money.to_currency_code(original_invoice.amount) do
+    if Enum.all?(
+         linked_invoices,
+         &(Money.to_currency_code(amount) == Money.to_currency_code(&1.amount))
+       ) do
       changeset
     else
       Ash.Changeset.add_error(changeset,
         field: :amount,
-        message: "must match the original invoice currency"
+        message: "must match linked invoice currency"
       )
     end
   end

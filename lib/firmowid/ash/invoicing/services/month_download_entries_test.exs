@@ -28,8 +28,6 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntriesTest do
         sale_date: ~D[2026-03-28],
         issue_date: ~D[2026-04-01],
         due_date: ~D[2026-04-10],
-        total_amount: Decimal.new("-120.00"),
-        currency: "PLN",
         amount: Money.new!("PLN", Decimal.new("-120.00")),
         organization_id: org_id,
         blob_id: blob_pdf.id
@@ -46,8 +44,6 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntriesTest do
         sale_date: ~D[2026-03-10],
         issue_date: ~D[2026-03-10],
         due_date: ~D[2026-03-20],
-        total_amount: Decimal.new("-80.00"),
-        currency: "PLN",
         amount: Money.new!("PLN", Decimal.new("-80.00")),
         organization_id: org_id,
         blob_id: blob_xml.id
@@ -64,8 +60,6 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntriesTest do
         sale_date: ~D[2026-04-12],
         issue_date: ~D[2026-04-12],
         due_date: ~D[2026-04-20],
-        total_amount: Decimal.new("-60.00"),
-        currency: "PLN",
         amount: Money.new!("PLN", Decimal.new("-60.00")),
         organization_id: org_id,
         blob_id: blob_outside.id
@@ -150,8 +144,6 @@ defmodule Firmowid.Ash.Invoicing.Services.MonthDownloadEntriesTest do
       sale_date: issue_date,
       issue_date: issue_date,
       due_date: issue_date,
-      total_amount: Decimal.new("-100.00"),
-      currency: "PLN",
       amount: Money.new!("PLN", Decimal.new("-100.00")),
       skip_invoicing: false,
       organization_id: organization_id,

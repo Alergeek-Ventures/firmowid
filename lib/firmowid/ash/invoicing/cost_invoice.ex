@@ -62,6 +62,41 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     table "cost_invoices"
     repo Firmowid.Repo
 
+    custom_statements do
+      statement :validate_cost_invoice_correction_currencies do
+        up """
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1
+            FROM cost_invoices correction
+            JOIN cost_invoices original
+              ON original.ksef_number = correction.original_invoice_ksef_number
+            WHERE correction.invoice_type IN ('kor', 'kor_zal', 'kor_roz')
+              AND (correction.amount).currency_code IS DISTINCT FROM (original.amount).currency_code
+          ) THEN
+            RAISE EXCEPTION
+              'Cost invoice money migration failed: linked corrections must use the original invoice currency';
+          END IF;
+
+        END
+        $$;
+        """
+
+        down "SELECT 1;"
+      end
+    end
+
+    check_constraints do
+      check_constraint :amount,
+                       "cost_invoices_non_correction_amount_non_positive",
+                       check: """
+                       COALESCE((invoice_type)::text = ANY ((ARRAY['kor'::character varying, 'kor_zal'::character varying, 'kor_roz'::character varying])::text[]), false)
+                       OR (amount).amount <= (0)::numeric
+                       """,
+                       message: "must be <= 0 for non-correction invoices"
+    end
+
     references do
       reference :original_invoice, ignore?: true
     end
