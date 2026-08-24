@@ -73,7 +73,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestEmails do
       <.detail_row label="Powód" value={@reason_label} />
       <.detail_row label="Okres" value={"#{@starts_on} – #{@ends_on}"} />
       <.note :if={@note != ""}>
-        {@note}
+        {Phoenix.HTML.raw(@note)}
       </.note>
       <.button href={@url}>Otwórz wniosek w Firmowidzie</.button>
       <.signature />

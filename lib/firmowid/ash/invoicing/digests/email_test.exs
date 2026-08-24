@@ -29,6 +29,9 @@ defmodule Firmowid.Ash.Invoicing.Digests.EmailTest do
                )
 
       assert email.subject == "Nowa faktura w Firmowidzie"
+      assert email.html_body =~ "<!doctype html>"
+      assert email.html_body =~ "alt=\"Firmowid\""
+      assert email.html_body =~ "Pozdrawiamy,<br>Zespół Firmowid"
 
       bodies = [email.html_body, email.text_body]
 
