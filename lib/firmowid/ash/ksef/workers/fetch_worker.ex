@@ -373,7 +373,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorker do
 
   defp enrich_cost_invoice_with_metadata(attrs, ksef_number, ksef_metadata, organization_id) do
     attrs
-    |> Map.update!(:total_amount, &Decimal.negate(&1))
+    |> Map.update!(:amount, &Money.negate!/1)
     |> Map.put(:ksef_number, ksef_number)
     |> Map.put(
       :ksef_permanent_storage_date,

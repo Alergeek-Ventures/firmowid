@@ -89,7 +89,9 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessCostInvoiceBlob do
     attrs =
       extracted_metadata
       |> Map.delete("document_type")
-      |> Map.put("total_amount", -extracted_metadata["total_amount"])
+      |> Map.delete("total_amount")
+      |> Map.delete("currency")
+      |> Map.put("amount", extracted_amount(extracted_metadata))
       |> Map.put("organization_id", blob.organization_id)
       |> Map.put("blob_id", blob.id)
       |> maybe_put_inbound_email_id(inbound_email_id)
@@ -104,4 +106,12 @@ defmodule Firmowid.Ash.Blobs.Utils.ProcessCostInvoiceBlob do
   defp maybe_put_inbound_email_id(attrs, nil), do: attrs
 
   defp maybe_put_inbound_email_id(attrs, inbound_email_id), do: Map.put(attrs, "inbound_email_id", inbound_email_id)
+
+  defp extracted_amount(%{"currency" => currency, "total_amount" => total_amount}) do
+    Money.new!(currency, total_amount |> decimal_amount() |> Decimal.negate())
+  end
+
+  defp decimal_amount(%Decimal{} = amount), do: amount
+  defp decimal_amount(amount) when is_float(amount), do: Decimal.from_float(amount)
+  defp decimal_amount(amount), do: Decimal.new(amount)
 end

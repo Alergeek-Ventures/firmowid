@@ -253,7 +253,6 @@ defmodule Firmowid.Seeds.Helpers do
         Ash.Seed.seed!(
           AshCostInvoice,
           attrs
-          |> normalize_cost_invoice_money()
           |> Map.merge(%{
             invoice_identifier: invoice_identifier,
             organization_id: org_id,
@@ -278,14 +277,6 @@ defmodule Firmowid.Seeds.Helpers do
       _ -> nil
     end
   end
-
-  defp normalize_cost_invoice_money(%{amount: %Money{}} = attrs), do: attrs
-
-  defp normalize_cost_invoice_money(%{currency: currency, total_amount: total_amount} = attrs) do
-    Map.put(attrs, :amount, money!(currency, total_amount))
-  end
-
-  defp normalize_cost_invoice_money(attrs), do: attrs
 
   defp find_cost_invoice(invoice_identifier, org_id) do
     query =

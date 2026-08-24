@@ -164,7 +164,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.ShowTest do
       creditor_account: "PL02114020040000300201355387",
       debtor_name: "Our Company",
       debtor_account: "PL61109010140000071219812874",
-      amount: Money.new!(invoice.currency, invoice.total_amount),
+      amount: invoice.amount,
       booking_date: invoice.issue_date,
       value_date: invoice.issue_date,
       remittance_information_unstructured: "Supplier payment January",

@@ -66,6 +66,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceParser do
         nil -> attrs.issue_date
         date -> date
       end)
+      |> put_amount()
 
     {:ok, attrs}
   rescue
@@ -81,6 +82,13 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceParser do
 
   defp parse_decimal(nil), do: nil
   defp parse_decimal(amount), do: Decimal.new(amount)
+
+  defp put_amount(%{currency: currency, total_amount: total_amount} = attrs) do
+    attrs
+    |> Map.delete(:currency)
+    |> Map.delete(:total_amount)
+    |> Map.put(:amount, Money.new!(currency, total_amount))
+  end
 
   defp parse_invoice_type("VAT"), do: :vat
   defp parse_invoice_type("KOR"), do: :kor

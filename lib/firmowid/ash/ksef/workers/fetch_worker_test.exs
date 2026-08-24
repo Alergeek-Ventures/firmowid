@@ -95,7 +95,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
 
     assert invoice.ksef_number == ksef_number
     assert invoice.invoice_identifier == "FETCH/2026/001"
-    assert Decimal.equal?(invoice.total_amount, Decimal.new("-123.45"))
+    assert Decimal.equal?(Money.to_decimal(invoice.amount), Decimal.new("-123.45"))
     assert {:ok, permanent_storage_date, 0} = DateTime.from_iso8601(storage_date)
     assert invoice.ksef_permanent_storage_date == DateTime.to_naive(permanent_storage_date)
     assert %DateTime{} = invoice.ksef_downloaded_at
@@ -161,7 +161,7 @@ defmodule Firmowid.Ash.Ksef.Workers.FetchWorkerTest do
     imported_invoice = Enum.find(invoices, &(&1.ksef_number == new_ksef_number))
     assert imported_invoice
     assert imported_invoice.invoice_identifier == "FETCH/NEW/002"
-    assert Decimal.equal?(imported_invoice.total_amount, Decimal.new("-75.50"))
+    assert Decimal.equal?(Money.to_decimal(imported_invoice.amount), Decimal.new("-75.50"))
   end
 
   defp ksef_scope(organization_id) do

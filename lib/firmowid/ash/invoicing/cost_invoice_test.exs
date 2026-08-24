@@ -61,7 +61,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
           invoice_identifier: "VISIBLE-CORRECTION",
           invoice_type: :kor,
           original_invoice_ksef_number: nil,
-          total_amount: Decimal.new("10.00")
+          amount: Money.new!("PLN", "10.00")
         })
 
       _hidden_correction =
@@ -69,7 +69,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
           invoice_identifier: "HIDDEN-CORRECTION",
           invoice_type: :kor,
           original_invoice_ksef_number: "KSEF-ORIGINAL-123",
-          total_amount: Decimal.new("10.00")
+          amount: Money.new!("PLN", "10.00")
         })
 
       orphaned_correction =
@@ -77,7 +77,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
           invoice_identifier: "ORPHANED-CORRECTION",
           invoice_type: :kor,
           original_invoice_ksef_number: "KSEF-MISSING-ORIGINAL-123",
-          total_amount: Decimal.new("10.00")
+          amount: Money.new!("PLN", "10.00")
         })
 
       invoices =
@@ -118,7 +118,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
           invoice_identifier: "VISIBLE-UNMATCHED-CORRECTION",
           invoice_type: :kor,
           original_invoice_ksef_number: nil,
-          total_amount: Decimal.new("12.34")
+          amount: Money.new!("PLN", "12.34")
         })
 
       _hidden_correction =
@@ -126,7 +126,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
           invoice_identifier: "HIDDEN-UNMATCHED-CORRECTION",
           invoice_type: :kor,
           original_invoice_ksef_number: "KSEF-ORIGINAL-456",
-          total_amount: Decimal.new("12.34")
+          amount: Money.new!("PLN", "12.34")
         })
 
       orphaned_correction =
@@ -134,7 +134,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
           invoice_identifier: "ORPHANED-UNMATCHED-CORRECTION",
           invoice_type: :kor,
           original_invoice_ksef_number: "KSEF-MISSING-ORIGINAL-456",
-          total_amount: Decimal.new("12.34")
+          amount: Money.new!("PLN", "12.34")
         })
 
       invoices =
@@ -160,7 +160,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
   end
 
   describe "create" do
-    test "persists amount from the legacy total and currency input" do
+    test "persists a Money amount" do
       user = admin_fixture()
       scope = %Scope{actor: user, tenant: user.organization_id}
 
@@ -171,8 +171,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
                    sale_date: ~D[2026-02-01],
                    issue_date: ~D[2026-02-01],
                    items_list: [],
-                   total_amount: Decimal.new("-123.45"),
-                   currency: "PLN",
+                   amount: Money.new!("PLN", "-123.45"),
                    invoice_identifier: "FV/2026/02/AMOUNT"
                  },
                  scope: scope
@@ -188,8 +187,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
 
       original =
         insert_cost_invoice!(user.organization_id, %{
-          ksef_number: "KSEF-ORIGINAL-CURRENCY",
-          currency: "PLN"
+          ksef_number: "KSEF-ORIGINAL-CURRENCY"
         })
 
       assert {:error, error} =
@@ -199,8 +197,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
                    sale_date: ~D[2026-02-01],
                    issue_date: ~D[2026-02-01],
                    items_list: [],
-                   total_amount: Decimal.new("10.00"),
-                   currency: "EUR",
+                   amount: Money.new!("EUR", "10.00"),
                    invoice_identifier: "FV/2026/02/WRONG-CURRENCY",
                    invoice_type: :kor,
                    original_invoice_ksef_number: original.ksef_number
@@ -222,8 +219,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
                    sale_date: ~D[2026-02-01],
                    issue_date: ~D[2026-02-01],
                    items_list: [],
-                   total_amount: Decimal.new("10.00"),
-                   currency: "EUR",
+                   amount: Money.new!("EUR", "10.00"),
                    invoice_identifier: "FV/2026/02/ORPHAN",
                    invoice_type: :kor,
                    original_invoice_ksef_number: "KSEF-MISSING-ORIGINAL"
@@ -243,19 +239,19 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
       original =
         insert_cost_invoice!(user.organization_id, %{
           ksef_number: "KSEF-EFFECTIVE-AMOUNT",
-          total_amount: Decimal.new("-100.00")
+          amount: Money.new!("PLN", "-100.00")
         })
 
       insert_cost_invoice!(user.organization_id, %{
         invoice_type: :kor,
         original_invoice_ksef_number: original.ksef_number,
-        total_amount: Decimal.new("20.00")
+        amount: Money.new!("PLN", "20.00")
       })
 
       insert_cost_invoice!(user.organization_id, %{
         invoice_type: :kor,
         original_invoice_ksef_number: original.ksef_number,
-        total_amount: Decimal.new("-5.00")
+        amount: Money.new!("PLN", "-5.00")
       })
 
       invoice = Ash.load!(original, [:corrections_amount, :effective_amount], scope: scope)
@@ -270,12 +266,12 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
       scope = %Scope{actor: user, tenant: user.organization_id}
 
       original =
-        insert_cost_invoice!(user.organization_id, %{total_amount: Decimal.new("-100.00")})
+        insert_cost_invoice!(user.organization_id, %{amount: Money.new!("PLN", "-100.00")})
 
       insert_cost_invoice!(user.organization_id, %{
         invoice_type: :kor,
         original_invoice_ksef_number: "KSEF-NOT-PRESENT",
-        total_amount: Decimal.new("20.00")
+        amount: Money.new!("PLN", "20.00")
       })
 
       invoice = Ash.load!(original, [:effective_amount], scope: scope)
@@ -290,25 +286,25 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
       first_invoice =
         insert_cost_invoice!(user.organization_id, %{
           ksef_number: "KSEF-EFFECTIVE-QUERY-FIRST",
-          total_amount: Decimal.new("-100.00")
+          amount: Money.new!("PLN", "-100.00")
         })
 
       second_invoice =
         insert_cost_invoice!(user.organization_id, %{
           ksef_number: "KSEF-EFFECTIVE-QUERY-SECOND",
-          total_amount: Decimal.new("-100.00")
+          amount: Money.new!("PLN", "-100.00")
         })
 
       insert_cost_invoice!(user.organization_id, %{
         invoice_type: :kor,
         original_invoice_ksef_number: first_invoice.ksef_number,
-        total_amount: Decimal.new("15.00")
+        amount: Money.new!("PLN", "15.00")
       })
 
       insert_cost_invoice!(user.organization_id, %{
         invoice_type: :kor,
         original_invoice_ksef_number: second_invoice.ksef_number,
-        total_amount: Decimal.new("25.00")
+        amount: Money.new!("PLN", "25.00")
       })
 
       invoices =
@@ -338,8 +334,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
       sale_date: ~D[2026-02-01],
       issue_date: ~D[2026-02-01],
       due_date: ~D[2026-02-14],
-      total_amount: Decimal.new("-123.45"),
-      currency: "PLN",
       amount: Money.new!("PLN", Decimal.new("-123.45")),
       description: "Import z KSeF",
       invoice_identifier: "FV/2026/02/001",
@@ -362,23 +356,13 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
       sale_date: ~D[2026-02-01],
       issue_date: ~D[2026-02-01],
       due_date: ~D[2026-02-14],
-      total_amount: Decimal.new("-123.45"),
-      currency: "PLN",
+      amount: Money.new!("PLN", "-123.45"),
       description: "Test invoice",
       invoice_identifier: "FV/2026/02/#{System.unique_integer([:positive])}",
       skip_invoicing: false,
       organization_id: organization_id
     }
 
-    invoice_attrs = Map.merge(base_attrs, attrs)
-
-    Ash.Seed.seed!(
-      CostInvoice,
-      Map.put(
-        invoice_attrs,
-        :amount,
-        Money.new!(invoice_attrs.currency, invoice_attrs.total_amount)
-      )
-    )
+    Ash.Seed.seed!(CostInvoice, Map.merge(base_attrs, attrs))
   end
 end

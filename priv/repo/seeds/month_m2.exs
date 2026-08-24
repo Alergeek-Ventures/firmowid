@@ -417,8 +417,7 @@ defmodule Firmowid.Seeds.MonthM2 do
         sale_date: sale_date,
         issue_date: issue_date,
         due_date: due_date,
-        total_amount: -2_400.00,
-        currency: "PLN",
+        amount: Helpers.money!("PLN", -2_400.00),
         description: "Serwery dedykowane — środowisko produkcyjne + staging",
         skip_invoicing: false
       })
@@ -431,8 +430,7 @@ defmodule Firmowid.Seeds.MonthM2 do
         sale_date: sale_date,
         issue_date: issue_date,
         due_date: due_date,
-        total_amount: -250.00,
-        currency: "USD",
+        amount: Helpers.money!("USD", -250.00),
         description: "GitHub Actions CI/CD minuty + Copilot Business — 5 stanowisk",
         skip_invoicing: false
       })
@@ -445,8 +443,7 @@ defmodule Firmowid.Seeds.MonthM2 do
         sale_date: sale_date,
         issue_date: issue_date,
         due_date: due_date,
-        total_amount: -4_500.00,
-        currency: "PLN",
+        amount: Helpers.money!("PLN", -4_500.00),
         description: "Wynajem biura — open space + sala konferencyjna",
         skip_invoicing: false
       })
@@ -459,8 +456,7 @@ defmodule Firmowid.Seeds.MonthM2 do
         sale_date: Helpers.date_months_ago(2, 8),
         issue_date: Helpers.date_months_ago(2, 8),
         due_date: Helpers.date_months_ago(2, 22),
-        total_amount: -18_000.00,
-        currency: "PLN",
+        amount: Helpers.money!("PLN", -18_000.00),
         description: "MacBook Pro 14\" M3 Pro × 3 szt. — onboarding nowych pracowników",
         skip_invoicing: false
       })
@@ -473,8 +469,7 @@ defmodule Firmowid.Seeds.MonthM2 do
         sale_date: Helpers.date_months_ago(2, 12),
         issue_date: Helpers.date_months_ago(2, 12),
         due_date: Helpers.date_months_ago(2, 26),
-        total_amount: -4_500.00,
-        currency: "PLN",
+        amount: Helpers.money!("PLN", -4_500.00),
         description: "Dell U2723QE 27\" 4K USB-C × 3 szt.",
         skip_invoicing: false
       })

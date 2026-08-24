@@ -11,8 +11,6 @@ defmodule Firmowid.Ash.Invoicing.Matching.WindowingTest do
   describe "pre_filter_invoice_transactions/2" do
     setup do
       cost_invoice = %CostInvoice{
-        total_amount: Decimal.new("100.0"),
-        currency: "PLN",
         effective_amount: Money.new!("PLN", Decimal.new("100.0")),
         issue_date: ~D[2025-01-15],
         sale_date: ~D[2025-01-15],
@@ -22,8 +20,6 @@ defmodule Firmowid.Ash.Invoicing.Matching.WindowingTest do
       }
 
       cost_invoice_eur = %CostInvoice{
-        total_amount: Decimal.new("100.0"),
-        currency: "EUR",
         effective_amount: Money.new!("EUR", Decimal.new("100.0")),
         issue_date: ~D[2025-01-15],
         sale_date: ~D[2025-01-15],

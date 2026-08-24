@@ -52,7 +52,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceParserTest do
       assert attrs.seller_nip == "1234567890"
       assert attrs.seller == "Test Seller"
       assert attrs.invoice_identifier == "TEST/001"
-      assert Decimal.equal?(attrs.total_amount, Decimal.new("100.00"))
+      assert Decimal.equal?(Money.to_decimal(attrs.amount), Decimal.new("100.00"))
     end
 
     test "parses namespaced input with tns prefix" do
@@ -94,7 +94,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceParserTest do
       assert attrs.seller == "Namespaced Seller"
       assert attrs.invoice_identifier == "NS/2026/001"
       assert attrs.issue_date == ~D[2026-03-06]
-      assert Decimal.equal?(attrs.total_amount, Decimal.new("123.45"))
+      assert Decimal.equal?(Money.to_decimal(attrs.amount), Decimal.new("123.45"))
       assert attrs.payment_method == :bank_transfer
       assert [%{name: "Service A", quantity: 2.0, price: 10.0}] = attrs.items_list
     end
@@ -132,7 +132,7 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceParserTest do
       assert attrs.seller == "Other Prefix Seller"
       assert attrs.invoice_identifier == "RND/2026/002"
       assert attrs.issue_date == ~D[2026-02-10]
-      assert Decimal.equal?(attrs.total_amount, Decimal.new("50.00"))
+      assert Decimal.equal?(Money.to_decimal(attrs.amount), Decimal.new("50.00"))
       assert attrs.payment_method == :cash
     end
 
@@ -226,10 +226,10 @@ defmodule Firmowid.Ash.Ksef.Services.InvoiceParserTest do
 
       # Core fields work
       assert attrs.seller_nip == "9999999999"
-      assert attrs.currency == "EUR"
+      assert Money.to_currency_code(attrs.amount) == :EUR
       assert attrs.issue_date == ~D[2025-06-15]
       assert attrs.sale_date == ~D[2025-06-15]
-      assert Decimal.equal?(attrs.total_amount, Decimal.new("250.50"))
+      assert Decimal.equal?(Money.to_decimal(attrs.amount), Decimal.new("250.50"))
     end
 
     test "extracts explicit sale_date from P_6" do

@@ -48,7 +48,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.ValidateCostInvoiceCorrectionCurrency d
       changeset
     else
       Ash.Changeset.add_error(changeset,
-        field: :currency,
+        field: :amount,
         message: "must match the original invoice currency"
       )
     end

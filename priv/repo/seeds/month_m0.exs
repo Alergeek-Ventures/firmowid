@@ -245,8 +245,7 @@ defmodule Firmowid.Seeds.MonthM0 do
       sale_date: Helpers.date_this_month(1),
       issue_date: Helpers.date_this_month(5),
       due_date: Helpers.date_this_month(19),
-      total_amount: -2_400.00,
-      currency: "PLN",
+      amount: Helpers.money!("PLN", -2_400.00),
       description: "Serwery dedykowane — środowisko produkcyjne + staging",
       skip_invoicing: false
     })

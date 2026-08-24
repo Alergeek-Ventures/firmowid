@@ -23,13 +23,11 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     * `:is_ksef_imported` — whether the invoice was imported from KSeF
     * `:is_deletable` — whether the invoice can be deleted (not KSeF-imported)
     * `:effective_amount` — Money total including correction deltas
-    * `:effective_total_amount` — legacy decimal total including corrections
-    * `:effective_currency`, `:effective_seller_display_name`, etc. — latest correction snapshot fields
+    * `:effective_seller_display_name`, etc. — latest correction snapshot fields
 
   ## Aggregates
 
     * `:corrections_amount` — Money sum of correction invoice deltas
-    * `:corrections_total_amount` — legacy decimal sum of correction invoice amounts
     * `:latest_correction_*` — latest correction's snapshot fields (seller, dates, etc.)
 
   Orchestration functions (delete, upload, create, hydrate) live on the
@@ -43,7 +41,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     notifiers: [Ash.Notifier.PubSub],
     primary_read_warning?: false
 
-  alias AshMoney.Types.Money
+  alias AshMoney.Types.Money, as: MoneyType
   alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Checks.IsSystemActor
@@ -52,7 +50,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   alias Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName
   alias Firmowid.Ash.Invoicing.Changes.EnqueueMissingCostInvoiceDescriptionRefresh
   alias Firmowid.Ash.Invoicing.Changes.RequireTransactionIds
-  alias Firmowid.Ash.Invoicing.Changes.SetCostInvoiceAmount
   alias Firmowid.Ash.Invoicing.Changes.ValidateCostInvoiceCorrectionCurrency
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Resource
@@ -64,88 +61,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   postgres do
     table "cost_invoices"
     repo Firmowid.Repo
-
-    check_constraints do
-      check_constraint :amount,
-                       "cost_invoices_amount_matches_legacy",
-                       check: "amount IS NULL OR ((amount).amount = total_amount AND (amount).currency_code = currency)",
-                       message: "must match total amount and currency"
-    end
-
-    custom_statements do
-      statement :backfill_cost_invoice_amount do
-        up """
-        distinct_currency_codes =
-          repo().query!(~S|
-          SELECT DISTINCT currency_code
-          FROM (
-            SELECT currency AS currency_code
-            FROM cost_invoices
-            WHERE currency IS NOT NULL
-
-            UNION
-
-            SELECT (amount).currency_code AS currency_code
-            FROM cost_invoices
-            WHERE amount IS NOT NULL
-          ) currencies
-          ORDER BY currency_code
-          |).rows
-          |> List.flatten()
-          |> Enum.reject(&is_nil/1)
-
-        invalid_currency_codes =
-          Enum.reject(distinct_currency_codes, fn currency_code ->
-            match?({:ok, _currency}, Money.validate_currency(currency_code))
-          end)
-
-        if invalid_currency_codes != [] do
-          raise "Cost invoice money backfill failed because some historical currencies are invalid for ash_money: \#{Enum.join(invalid_currency_codes, ", ")}. Normalize those rows first and rerun the migration."
-        end
-
-        execute(~S|
-        DO $$
-        BEGIN
-          IF EXISTS (
-            SELECT 1
-            FROM cost_invoices
-            WHERE (total_amount IS NULL) <> (currency IS NULL)
-          ) THEN
-            RAISE EXCEPTION
-              'Cost invoice money backfill failed: split money fields must both be present or absent';
-          END IF;
-        END
-        $$;
-        |)
-
-        execute(~S|
-        UPDATE cost_invoices
-        SET amount = ROW(currency, total_amount)::public.money_with_currency
-        WHERE amount IS NULL
-          AND currency IS NOT NULL
-          AND total_amount IS NOT NULL;
-        |)
-
-        execute(~S|
-        DO $$
-        BEGIN
-          IF EXISTS (
-            SELECT 1
-            FROM cost_invoices
-            WHERE amount IS NULL
-          ) THEN
-            RAISE EXCEPTION
-              'Cost invoice money backfill failed: some rows have no composite amount';
-          END IF;
-        END
-        $$;
-        |)
-        """
-
-        down ":ok"
-        code? true
-      end
-    end
 
     references do
       reference :original_invoice, ignore?: true
@@ -261,15 +176,15 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       prepare {Firmowid.Ash.Preparations.ParadeDBSearch,
                columns: ~w(seller seller_display_name description invoice_identifier)}
 
-      prepare build(filter: expr(currency == ^arg(:currency))) do
+      prepare build(filter: expr(amount[:currency_code] == ^arg(:currency))) do
         where present(:currency)
       end
 
-      prepare build(filter: expr(total_amount >= ^arg(:amount_gt))) do
+      prepare build(filter: expr(amount[:amount] >= ^arg(:amount_gt))) do
         where present(:amount_gt)
       end
 
-      prepare build(filter: expr(total_amount <= ^arg(:amount_lt))) do
+      prepare build(filter: expr(amount[:amount] <= ^arg(:amount_lt))) do
         where present(:amount_lt)
       end
 
@@ -388,8 +303,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
         :issue_date,
         :due_date,
         :items_list,
-        :total_amount,
-        :currency,
+        :amount,
         :invoice_identifier,
         :skip_invoicing,
         :ksef_number,
@@ -410,8 +324,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
                  :sale_date,
                  :issue_date,
                  :items_list,
-                 :total_amount,
-                 :currency,
+                 :amount,
                  :invoice_identifier
                ])
 
@@ -419,14 +332,12 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
       change ComputeCostInvoiceDescription
 
-      change SetCostInvoiceAmount
-
       change ValidateCostInvoiceCorrectionCurrency
 
       change EnqueueMissingCostInvoiceDescriptionRefresh
 
       change fn changeset, _context ->
-        validate_non_correction_total_amount_sign(changeset)
+        validate_non_correction_amount_sign(changeset)
       end
 
       validate string_length(:internal_note, max: 10_000) do
@@ -448,8 +359,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
         :issue_date,
         :due_date,
         :items_list,
-        :total_amount,
-        :currency,
+        :amount,
         :invoice_identifier,
         :skip_invoicing,
         :ksef_number,
@@ -474,8 +384,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
                  :sale_date,
                  :issue_date,
                  :items_list,
-                 :total_amount,
-                 :currency,
+                 :amount,
                  :invoice_identifier
                ])
 
@@ -483,12 +392,10 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
       change ComputeCostInvoiceDescription
 
-      change SetCostInvoiceAmount
-
       change ValidateCostInvoiceCorrectionCurrency
 
       change fn changeset, _context ->
-        validate_non_correction_total_amount_sign(changeset)
+        validate_non_correction_amount_sign(changeset)
       end
 
       validate string_length(:internal_note, max: 10_000) do
@@ -663,10 +570,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     attribute :issue_date, :date, public?: true
     attribute :due_date, :date, public?: true
 
-    attribute :total_amount, :decimal, public?: true
-    attribute :currency, :string, public?: true
-
-    attribute :amount, Money, public?: true, allow_nil?: false
+    attribute :amount, MoneyType, public?: true, allow_nil?: false
 
     attribute :description, :string, public?: true, allow_nil?: false, default: ""
     attribute :invoice_identifier, :string, public?: true
@@ -790,7 +694,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     calculate :has_corrections, :boolean, expr(not is_nil(corrections_amount))
 
     calculate :effective_amount,
-              Money,
+              MoneyType,
               expr(
                 if is_nil(corrections_amount) do
                   amount
@@ -798,27 +702,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
                   amount + corrections_amount
                 end
               )
-
-    calculate :effective_total_amount,
-              :decimal,
-              expr(
-                cond do
-                  # No corrections
-                  is_nil(corrections_total_amount) ->
-                    total_amount
-
-                  # Currency changed in correction — keep original amount
-                  not is_nil(latest_correction_currency) and
-                      latest_correction_currency != currency ->
-                    total_amount
-
-                  # Sum original + corrections
-                  true ->
-                    total_amount + corrections_total_amount
-                end
-              )
-
-    calculate :effective_currency, :string, expr(currency)
 
     calculate :effective_sale_date, :date, expr(latest_correction_sale_date || sale_date)
 
@@ -859,12 +742,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
   aggregates do
     sum :corrections_amount, :correction_invoices, :amount
-
-    sum :corrections_total_amount, :correction_invoices, :total_amount
-
-    first :latest_correction_currency, :correction_invoices, :currency do
-      sort ksef_permanent_storage_date: :desc
-    end
 
     first :latest_correction_sale_date, :correction_invoices, :sale_date do
       sort ksef_permanent_storage_date: :desc
@@ -915,20 +792,20 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     identity :ksef_number, [:ksef_number], nils_distinct?: true
   end
 
-  # Cost invoices represent money going out, so total_amount is stored as negative
-  # (convention matching bank transaction sign). A positive total_amount on a
+  # Cost invoices represent money going out, so amount is stored as negative
+  # (convention matching bank transaction sign). A positive amount on a
   # non-correction invoice is invalid — only corrections may flip the sign.
-  defp validate_non_correction_total_amount_sign(changeset) do
+  defp validate_non_correction_amount_sign(changeset) do
     invoice_type = Ash.Changeset.get_attribute(changeset, :invoice_type)
-    total_amount = Ash.Changeset.get_attribute(changeset, :total_amount)
+    amount = Ash.Changeset.get_attribute(changeset, :amount)
 
     cond do
       invoice_type in @correction_invoice_types ->
         changeset
 
-      is_nil(total_amount) or Decimal.gt?(total_amount, 0) ->
+      is_nil(amount) or Money.positive?(amount) ->
         Ash.Changeset.add_error(changeset,
-          field: :total_amount,
+          field: :amount,
           message: "must be <= 0 for non-correction invoices"
         )
 
