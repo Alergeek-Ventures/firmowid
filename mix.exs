@@ -205,7 +205,14 @@ defmodule Firmowid.MixProject do
 
   defp aliases do
     [
-      setup: ["deps.get", "db.setup", "usage_rules.sync --yes", "assets.setup", "assets.build"],
+      setup: [
+        "deps.get",
+        "localize.download_locales pl",
+        "db.setup",
+        "usage_rules.sync --yes",
+        "assets.setup",
+        "assets.build"
+      ],
       "db.setup": ["ash.setup", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ash_postgres.drop --force --force-drop", "db.setup"],
       test: ["ash_postgres.drop --force --force-drop --quiet", "ash.setup --quiet", "test"],

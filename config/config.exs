@@ -145,7 +145,11 @@ config :jido_ai,
     reasoning: "openai:gpt-5"
   }
 
-config :localize, default_locale: :pl
+config :localize,
+  otp_app: :firmowid,
+  default_locale: :pl,
+  supported_locales: [:en, :pl],
+  allow_runtime_locale_download: false
 
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
