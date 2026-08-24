@@ -82,7 +82,7 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestEmails do
               <tr>
                 <td style="padding:8px 40px 12px 40px;">
                   <h1 style="margin:0; font-size:28px; line-height:1.2; font-weight:600; color: #{@colors.dark};">
-                    Nowy wniosek urlopowy
+                    Nowy wniosek o #{category_label(leave_request.category)}
                   </h1>
                 </td>
               </tr>
@@ -97,7 +97,6 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestEmails do
                 <td style="padding:0 40px 32px 40px;">
                   <table role="presentation" style="width:100%; border-collapse:collapse; border-top:1px solid #ECECEC;">
                     #{detail_row("Pracownik", employee_name)}
-                    #{detail_row("Kategoria", category_label(leave_request.category))}
                     #{detail_row("Powód", reason_label(leave_request.reason))}
                     #{detail_row("Okres", "#{format_date(leave_request.starts_on)} – #{format_date(leave_request.ends_on)}")}
                     #{note_html}
@@ -147,9 +146,8 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestEmails do
 
   defp text_body(employee_name, leave_request, url) do
     """
-    Nowy wniosek urlopowy / o nieobecność
+    Nowy wniosek o #{category_label(leave_request.category)}
     Pracownik: #{employee_name}
-    Kategoria: #{category_label(leave_request.category)}
     Powód: #{reason_label(leave_request.reason)}
     Okres: #{format_date(leave_request.starts_on)} - #{format_date(leave_request.ends_on)}
     #{note_block(leave_request.note)}Otwórz w Firmowidzie:
