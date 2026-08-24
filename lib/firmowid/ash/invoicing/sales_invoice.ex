@@ -48,6 +48,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     notifiers: [Ash.Notifier.PubSub],
     primary_read_warning?: false
 
+  alias AshMoney.Types.Money
   alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Checks.SystemActorRole
@@ -1231,6 +1232,26 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
 
   calculations do
     EffectiveFields.effective_correction_calculations()
+
+    calculate :amount,
+              Money,
+              expr(
+                if is_nil(gross_value) or is_nil(currency) do
+                  nil
+                else
+                  composite_type(%{currency: currency, amount: gross_value}, Money)
+                end
+              )
+
+    calculate :effective_amount,
+              Money,
+              expr(
+                if exists(latest_correction, true) do
+                  ^ref([:latest_correction], :amount)
+                else
+                  amount
+                end
+              )
 
     calculate :invoice_source,
               :string,

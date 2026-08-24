@@ -11,6 +11,105 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
 
+  require Ash.Query
+
+  describe "Money amounts" do
+    test "derives the invoice amount from its Decimal item total and currency" do
+      user = admin_fixture()
+
+      invoice =
+        create_sales_invoice!(
+          user,
+          Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{})])
+        )
+
+      invoice = Ash.load!(invoice, [:gross_value, :amount], scope: scope_for(user))
+
+      assert Decimal.equal?(invoice.gross_value, Decimal.new("123.00"))
+      assert Decimal.equal?(Money.to_decimal(invoice.amount), Decimal.new("123.00"))
+      assert Money.to_currency_code(invoice.amount) == :EUR
+    end
+
+    test "uses the latest correction amount and currency as the effective amount" do
+      user = admin_fixture()
+      scope = scope_for(user)
+
+      invoice =
+        create_sales_invoice!(
+          user,
+          Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{})])
+        )
+
+      assert {:ok, _correction} =
+               SalesInvoice.create_correction(
+                 %{
+                   original_invoice_id: invoice.id,
+                   invoice_number: "FK/#{System.unique_integer([:positive])}",
+                   issue_date: ~D[2026-01-11],
+                   currency: "PLN",
+                   sales_invoice_items: [base_item_attrs(%{unit_price: Decimal.new("50")})]
+                 },
+                 scope: scope
+               )
+
+      invoice = Ash.load!(invoice, [:effective_amount], scope: scope)
+
+      assert Decimal.equal?(Money.to_decimal(invoice.effective_amount), Decimal.new("61.50"))
+      assert Money.to_currency_code(invoice.effective_amount) == :PLN
+    end
+
+    test "keeps a zero-value invoice as Money" do
+      user = admin_fixture()
+
+      invoice =
+        create_sales_invoice!(
+          user,
+          Map.put(base_invoice_attrs(), :sales_invoice_items, [
+            base_item_attrs(%{quantity: Decimal.new(0)})
+          ])
+        )
+
+      invoice = Ash.load!(invoice, [:amount], scope: scope_for(user))
+
+      assert Decimal.equal?(Money.to_decimal(invoice.amount), Decimal.new(0))
+      assert Money.to_currency_code(invoice.amount) == :EUR
+    end
+
+    test "filters and sorts derived Money amounts in PostgreSQL" do
+      user = admin_fixture()
+      scope = scope_for(user)
+
+      lower_amount_invoice =
+        create_sales_invoice!(
+          user,
+          Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{})])
+        )
+
+      higher_amount_invoice =
+        create_sales_invoice!(
+          user,
+          Map.put(
+            base_invoice_attrs(),
+            :sales_invoice_items,
+            [base_item_attrs(%{unit_price: Decimal.new("200")})]
+          )
+        )
+
+      invoices =
+        SalesInvoice
+        |> Ash.Query.filter(amount > ^Money.new!("EUR", Decimal.new("100")))
+        |> Ash.Query.sort(amount: :desc)
+        |> Ash.Query.load(:amount)
+        |> Ash.read!(scope: scope)
+
+      assert Enum.map(invoices, & &1.id) == [higher_amount_invoice.id, lower_amount_invoice.id]
+
+      assert Enum.all?(Enum.zip(invoices, ["246.00", "123.00"]), fn {invoice, expected_amount} ->
+               Decimal.equal?(Money.to_decimal(invoice.amount), Decimal.new(expected_amount))
+             end)
+    end
+  end
+
   describe "by_share_token/2" do
     test "reads a shared invoice with the anonymous actor" do
       user = admin_fixture()
