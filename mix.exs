@@ -205,9 +205,10 @@ defmodule Firmowid.MixProject do
 
   defp aliases do
     [
+      "localize.setup": ["localize.download_locales pl"],
       setup: [
         "deps.get",
-        "localize.download_locales pl",
+        "localize.setup",
         "db.setup",
         "usage_rules.sync --yes",
         "assets.setup",

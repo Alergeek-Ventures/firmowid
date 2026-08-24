@@ -59,6 +59,9 @@ COPY lib lib
 # Compile the app first (generates phoenix-colocated hooks needed by esbuild)
 RUN mix compile
 
+# Download configured locale data before assembling the release.
+RUN mix localize.setup
+
 # compile assets (must come after mix compile for phoenix-colocated hooks)
 RUN mix assets.sentry.deploy
 

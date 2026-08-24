@@ -103,7 +103,7 @@ runs:
       shell: sh
 
     - name: Download Locales
-      run: mix localize.download_locales pl
+      run: mix localize.setup
       shell: sh
 
     # Normally we'd use `mix deps.compile` here, however that incurs a large
