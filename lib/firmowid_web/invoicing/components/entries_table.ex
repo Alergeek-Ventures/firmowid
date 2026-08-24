@@ -175,14 +175,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
       |> assign(
         :amount,
         case assigns.invoicing_entry do
-          %Transaction{} ->
-            Money.to_decimal(assigns.invoicing_entry.signed_amount)
-
-          %CostInvoice{} ->
-            assigns.invoicing_entry.effective_total_amount
-
-          %SalesInvoice{} ->
-            assigns.invoicing_entry.gross_value
+          %Transaction{} -> Money.to_decimal(assigns.invoicing_entry.amount)
+          %CostInvoice{} -> Money.to_decimal(assigns.invoicing_entry.effective_amount)
+          %SalesInvoice{} -> Money.to_decimal(assigns.invoicing_entry.amount)
         end
       )
       |> assign(
@@ -244,7 +239,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   end
 
   defp render_cell(%{column: "amount", invoicing_entry: %SalesInvoice{} = invoice} = assigns) do
-    amount = Money.new(invoice.currency, invoice.gross_value)
+    amount = invoice.amount
 
     assigns = assign(assigns, :amount, amount)
 
@@ -263,7 +258,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
           DateTime.shift(DateTime.utc_now(), minute: -2)
         )
 
-    amount = Money.new(invoice.effective_currency, invoice.effective_total_amount)
+    amount = invoice.effective_amount
 
     assigns =
       assigns
@@ -877,7 +872,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   defp income_for_entry(%Transaction{} = transaction), do: transaction.direction == :income
 
-  defp income_for_entry(%CostInvoice{effective_total_amount: amount}), do: Decimal.gte?(amount, 0)
-  defp income_for_entry(%SalesInvoice{gross_value: amount}), do: Decimal.gte?(amount, 0)
+  defp income_for_entry(%CostInvoice{effective_amount: amount}), do: Money.positive?(amount)
+  defp income_for_entry(%SalesInvoice{effective_amount: amount}), do: Money.positive?(amount)
   defp income_for_entry(%{amount: amount}), do: Money.positive?(amount)
 end

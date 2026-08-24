@@ -268,7 +268,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       <.invoice_amount
         is_cost_invoice={false}
         lang={@lang}
-        total_amount={Money.new(@invoice.currency, @invoice.gross_value)}
+        total_amount={@invoice.amount}
       />
     </div>
     """

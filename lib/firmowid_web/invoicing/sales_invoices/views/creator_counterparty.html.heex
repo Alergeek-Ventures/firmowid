@@ -279,11 +279,7 @@
 
                   <p class="text-grey-700">Kwota</p>
                   <p class="text-grey-500">
-                    {Money.new(
-                      invoice.currency,
-                      invoice.gross_value
-                    )
-                    |> Money.to_string!()}
+                    {Money.to_string!(invoice.amount)}
                   </p>
                 </div>
 

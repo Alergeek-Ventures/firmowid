@@ -22,7 +22,7 @@ defmodule Firmowid.Ash.Invoicing.Changes.SendKsefInvoiceDigest do
       actor = %SystemActor{org_id: digest.organization_id, role: :ksef_digest}
 
       digest =
-        Ash.load!(digest, [:organization, cost_invoices: [:transactions]],
+        Ash.load!(digest, [:organization, cost_invoices: [:effective_amount, :transactions]],
           tenant: digest.organization_id,
           actor: actor
         )
@@ -221,11 +221,10 @@ defmodule Firmowid.Ash.Invoicing.Changes.SendKsefInvoiceDigest do
 
   defp invoice_currency(invoice) do
     invoice
-    |> Map.get(:effective_currency)
+    |> Map.get(:effective_amount)
     |> case do
-      %Ash.NotLoaded{} -> Map.get(invoice, :currency)
-      nil -> Map.get(invoice, :currency)
-      value -> value
+      %Money{currency: currency} -> to_string(currency)
+      _ -> nil
     end
   end
 

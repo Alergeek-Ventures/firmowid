@@ -17,15 +17,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Show do
     :net_value,
     :vat_value,
     :gross_value,
+    :amount,
     :effective_amount,
     :is_deletable,
     :buyer_display_name_label,
     transactions: [:amount],
     sales_invoice_items: @item_calcs,
-    corrections: [:email_deliveries, sales_invoice_items: @item_calcs],
+    corrections: [:amount, :email_deliveries, sales_invoice_items: @item_calcs],
     corrected_invoice: :corrections,
     email_deliveries: [],
-    latest_correction: [sales_invoice_items: @item_calcs]
+    latest_correction: [:amount, sales_invoice_items: @item_calcs]
   ]
 
   @impl true

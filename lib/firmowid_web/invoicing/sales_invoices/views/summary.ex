@@ -24,10 +24,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
     :net_value,
     :vat_value,
     :gross_value,
+    :amount,
     sales_invoice_items: [:net_value, :vat_value, :gross_value],
-    corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+    corrections: [:amount, sales_invoice_items: [:net_value, :vat_value, :gross_value]],
     corrected_invoice: :corrections,
-    latest_correction: [sales_invoice_items: [:net_value, :vat_value, :gross_value]]
+    latest_correction: [:amount, sales_invoice_items: [:net_value, :vat_value, :gross_value]]
   ]
 
   @impl true
@@ -371,8 +372,9 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
           :net_value,
           :vat_value,
           :gross_value,
+          :amount,
           sales_invoice_items: [:net_value, :vat_value, :gross_value],
-          corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]]
+          corrections: [:amount, sales_invoice_items: [:net_value, :vat_value, :gross_value]]
         ]
       )
       |> then(fn inv -> %{inv | corrections: AnnotatedCorrections.annotate(inv)} end)
@@ -415,6 +417,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Summary do
         :net_value,
         :vat_value,
         :gross_value,
+        :amount,
         sales_invoice_items: [:net_value, :vat_value, :gross_value]
       ],
       scope: scope

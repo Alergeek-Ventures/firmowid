@@ -1324,7 +1324,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
         submission: :confirmed,
         limit: 10
       },
-      load: [:buyer_display_name_label, :gross_value],
+      load: [:buyer_display_name_label, :amount],
       scope: scope
     )
   end

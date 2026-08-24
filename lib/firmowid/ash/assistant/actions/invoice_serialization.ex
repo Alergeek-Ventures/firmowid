@@ -18,8 +18,7 @@ defmodule Firmowid.Ash.Assistant.Actions.InvoiceSerialization do
       issue_date: invoice.issue_date,
       sale_date: invoice.sale_date,
       due_date: invoice.due_date,
-      currency: invoice.currency,
-      total_amount: invoice.total_amount,
+      amount: serialize_money(invoice.effective_amount),
       skip_invoicing: invoice.skip_invoicing
     }
   end
@@ -39,9 +38,12 @@ defmodule Firmowid.Ash.Assistant.Actions.InvoiceSerialization do
       issue_date: invoice.issue_date,
       sale_date: invoice.sale_date,
       due_date: invoice.due_date,
-      currency: invoice.currency,
-      gross_value: invoice.gross_value,
+      amount: serialize_money(invoice.amount),
       skip_invoicing: invoice.skip_invoicing
     }
+  end
+
+  defp serialize_money(%Money{} = money) do
+    %{amount: Decimal.to_string(money.amount, :normal), currency: to_string(money.currency)}
   end
 end

@@ -520,10 +520,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
           <div class="flex items-center justify-between">
             <span>Razem do zapłaty:</span>
             <span class="text-sm/tight font-bold">
-              {Money.new(
-                @sales_invoice.currency,
-                @sales_invoice.gross_value
-              )}
+              {@sales_invoice.amount}
             </span>
           </div>
         <% end %>

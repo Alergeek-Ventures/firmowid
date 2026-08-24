@@ -63,7 +63,7 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
     reference_invoice =
       Ash.load!(
         invoice.reference_invoice,
-        [:net_value, :vat_value, :gross_value, sales_invoice_items: @item_calcs],
+        [:net_value, :vat_value, :gross_value, :amount, sales_invoice_items: @item_calcs],
         ash_opts
       )
 
@@ -75,12 +75,12 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceBasePdf do
   end
 
   defp base_loads(invoice) do
-    loads = [:net_value, :vat_value, :gross_value, sales_invoice_items: @item_calcs]
+    loads = [:net_value, :vat_value, :gross_value, :amount, sales_invoice_items: @item_calcs]
 
     if loaded?(invoice.corrections) do
       loads
     else
-      loads ++ [corrections: [sales_invoice_items: @item_calcs]]
+      loads ++ [corrections: [:amount, sales_invoice_items: @item_calcs]]
     end
   end
 

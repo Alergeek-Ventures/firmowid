@@ -20,15 +20,13 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
     :counterparty_display_name,
     cost_invoices: [
       :invoice_source,
-      :effective_total_amount,
-      :effective_currency,
+      :effective_amount,
       :effective_seller_display_name,
       :issue_date,
       :invoice_identifier
     ],
     sales_invoices: [
-      :gross_value,
-      :currency,
+      :amount,
       :buyer_display_name_label,
       :issue_date,
       :invoice_number,

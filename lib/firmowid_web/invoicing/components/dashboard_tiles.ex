@@ -100,8 +100,8 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     {
       entry.effective_seller_display_name,
       entry.invoice_identifier,
-      entry.effective_total_amount,
-      entry.effective_currency,
+      Money.to_decimal(entry.effective_amount),
+      entry.effective_amount |> Money.to_currency_code() |> Atom.to_string(),
       Navigation.cost_invoice_show_path(entry, return_to),
       entry.issue_date
     }
@@ -111,8 +111,8 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     {
       entry.buyer_display_name_label,
       entry.invoice_number,
-      entry.gross_value,
-      entry.currency,
+      Money.to_decimal(entry.amount),
+      entry.amount |> Money.to_currency_code() |> Atom.to_string(),
       Navigation.sales_invoice_show_path(entry, return_to),
       entry.issue_date
     }
@@ -238,8 +238,8 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     {
       entry.effective_seller_display_name,
       entry.invoice_identifier,
-      entry.effective_total_amount,
-      entry.effective_currency,
+      Money.to_decimal(entry.effective_amount),
+      entry.effective_amount |> Money.to_currency_code() |> Atom.to_string(),
       Navigation.cost_invoice_show_path(entry, return_to),
       nil
     }
@@ -251,8 +251,8 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     {
       entry.buyer_display_name_label,
       entry.invoice_number,
-      entry.gross_value,
-      entry.currency,
+      Money.to_decimal(entry.amount),
+      entry.amount |> Money.to_currency_code() |> Atom.to_string(),
       Navigation.sales_invoice_show_path(entry, return_to),
       nil
     }

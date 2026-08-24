@@ -71,12 +71,14 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
           :net_value,
           :vat_value,
           :gross_value,
+          :amount,
           :internal_note,
           sales_invoice_items: [:net_value, :vat_value, :gross_value],
           corrections: [
             :net_value,
             :vat_value,
             :gross_value,
+            :amount,
             :internal_note,
             :email_deliveries,
             sales_invoice_items: [:net_value, :vat_value, :gross_value]
@@ -91,13 +93,12 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
       |> Ash.load!(
         [
           :effective_snapshot,
-          :gross_value,
-          :currency,
+          :amount,
           latest_correction: [
             :net_value,
             :vat_value,
             :gross_value,
-            :currency,
+            :amount,
             :sale_date,
             :due_date,
             :buyer_display_name_label,
@@ -112,14 +113,14 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
           :net_value,
           :vat_value,
           :gross_value,
-          :currency,
+          :amount,
           :buyer_display_name_label,
           sales_invoice_items: [:net_value, :vat_value, :gross_value]
         ],
         scope: assigns.scope
       )
 
-    cancelled? = Decimal.eq?(latest_invoice_snapshot.gross_value, 0)
+    cancelled? = Decimal.eq?(Money.to_decimal(latest_invoice_snapshot.amount), 0)
 
     description =
       latest_invoice_snapshot.sales_invoice_items
@@ -437,12 +438,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
 
             <InvoiceDetails.invoice_amount
               is_cost_invoice={false}
-              total_amount={
-                Money.new(
-                  @latest_invoice_snapshot.currency,
-                  @latest_invoice_snapshot.gross_value
-                )
-              }
+              total_amount={@latest_invoice_snapshot.amount}
             />
           <% end %>
 

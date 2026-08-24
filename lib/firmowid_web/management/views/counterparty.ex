@@ -419,7 +419,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
                 {invoice.invoice_number}
               </.link>
               <p class="text-left">{format_date(invoice.issue_date)}</p>
-              <p class="text-right">{money_to_string(invoice.gross_value, invoice.currency)}</p>
+              <p class="text-right">{money_to_string(invoice.amount)}</p>
               <div class="flex justify-center"><.invoice_status_badge invoice={invoice} /></div>
               <.link
                 kind="unstyled"
@@ -496,7 +496,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
             </.link>
             <p class="truncate">{invoice.buyer_id || "—"}</p>
             <p class="text-right">{format_date(invoice.issue_date)}</p>
-            <p class="text-right">{money_to_string(invoice.gross_value, invoice.currency)}</p>
+            <p class="text-right">{money_to_string(invoice.amount)}</p>
             <.button
               type="button"
               variant="outline"
@@ -538,7 +538,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
     args
     |> Invoicing.query_to_list_sales_invoices(scope: scope)
     |> Ash.Query.filter(counterparty_id == ^counterparty_id)
-    |> Ash.Query.load([:gross_value, :reconciliation_status])
+    |> Ash.Query.load([:amount, :reconciliation_status])
     |> Ash.read!(scope: scope)
   end
 
@@ -594,6 +594,9 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
 
   defp invoice_filter_class_names(:paid),
     do: "bg-turquoise-200 text-turquoise-700 border-transparent hover:bg-turquoise-200"
+
+  defp money_to_string(nil), do: "—"
+  defp money_to_string(%Money{} = amount), do: Money.to_string!(amount)
 
   defp money_to_string(nil, _currency), do: "—"
 

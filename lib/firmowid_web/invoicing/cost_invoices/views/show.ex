@@ -15,8 +15,6 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Show do
     :correction_invoices,
     :latest_correction_invoice,
     :effective_amount,
-    :effective_total_amount,
-    :effective_currency,
     :effective_seller_display_name,
     :effective_seller_address,
     :effective_account_number,

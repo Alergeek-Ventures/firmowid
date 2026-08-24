@@ -68,14 +68,8 @@ defmodule FirmowidWeb.Invoicing.Components.SearchOverlay do
                         end %>
                       <% amount =
                         case invoice do
-                          %Firmowid.Ash.Invoicing.CostInvoice{} ->
-                            Money.new(invoice.currency, invoice.total_amount)
-
-                          %Firmowid.Ash.Invoicing.SalesInvoice{} ->
-                            Money.new(
-                              invoice.currency,
-                              invoice.gross_value
-                            )
+                          %Firmowid.Ash.Invoicing.CostInvoice{} -> invoice.amount
+                          %Firmowid.Ash.Invoicing.SalesInvoice{} -> invoice.amount
                         end %>
                       <li>
                         <FirmowidWeb.DesignSystem.Components.Button.button

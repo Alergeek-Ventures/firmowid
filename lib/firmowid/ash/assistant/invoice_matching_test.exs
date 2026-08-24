@@ -199,6 +199,9 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
       assert serialized.id == matching_invoice.id
       assert serialized.type == "cost_invoice"
       assert serialized.invoice_identifier == matching_identifier
+      assert serialized.amount == %{amount: "-123.45", currency: "PLN"}
+      refute Map.has_key?(serialized, :total_amount)
+      refute Map.has_key?(serialized, :currency)
     end
   end
 
@@ -216,6 +219,9 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
       assert serialized.id == matching_invoice.id
       assert serialized.type == "sales_invoice"
       assert serialized.invoice_number == matching_number
+      assert serialized.amount == %{amount: "123.0000", currency: "EUR"}
+      refute Map.has_key?(serialized, :gross_value)
+      refute Map.has_key?(serialized, :currency)
     end
   end
 
@@ -230,6 +236,7 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
       assert serialized.id == invoice.id
       assert serialized.type == "cost_invoice"
       assert serialized.invoice_identifier == invoice_identifier
+      assert serialized.amount == %{amount: "-123.45", currency: "PLN"}
     end
 
     test "returns a serialized sales invoice payload", %{scope: scope, user: user} do
@@ -242,6 +249,7 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
       assert serialized.id == invoice.id
       assert serialized.type == "sales_invoice"
       assert serialized.invoice_number == invoice_number
+      assert serialized.amount == %{amount: "123.0000", currency: "EUR"}
     end
   end
 

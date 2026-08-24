@@ -8,7 +8,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
   def mount(_params, _session, socket) do
     scope = socket.assigns.ash_scope
 
-    emails = InboundEmail.list_all!(scope: scope)
+    emails = InboundEmail.list_all!(load: [cost_invoices: [:amount]], scope: scope)
 
     socket =
       socket
@@ -126,10 +126,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
           navigate={~p"/kosztowe/#{@invoice.id}"}
           class="text-blueText hover:underline"
         >
-          {@invoice.seller_display_name || @invoice.seller} - {Money.new(
-            @invoice.currency,
-            Decimal.abs(@invoice.total_amount)
-          )}
+          {@invoice.seller_display_name || @invoice.seller} - {Money.abs(@invoice.amount)}
         </FirmowidWeb.DesignSystem.Components.Link.link>
         """
 
@@ -155,10 +152,7 @@ defmodule FirmowidWeb.Invoicing.CostInvoices.Views.Inbox do
                 navigate={~p"/kosztowe/#{invoice.id}"}
                 class="block px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-100"
               >
-                {invoice.seller_display_name || invoice.seller} - {Money.new(
-                  invoice.currency,
-                  Decimal.abs(invoice.total_amount)
-                )}
+                {invoice.seller_display_name || invoice.seller} - {Money.abs(invoice.amount)}
               </FirmowidWeb.DesignSystem.Components.Link.link>
             </div>
           </div>

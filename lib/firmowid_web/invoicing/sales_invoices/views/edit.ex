@@ -44,16 +44,20 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
                :net_value,
                :vat_value,
                :gross_value,
+               :amount,
                :is_editable,
                :buyer_id_type,
                :reference_invoice,
                sales_invoice_items: [:net_value, :vat_value, :gross_value],
-               corrections: [sales_invoice_items: [:net_value, :vat_value, :gross_value]],
+               corrections: [:amount, sales_invoice_items: [:net_value, :vat_value, :gross_value]],
                corrected_invoice: [
                  :sales_invoice_items,
                  corrections: :sales_invoice_items
                ],
-               latest_correction: [sales_invoice_items: [:net_value, :vat_value, :gross_value]]
+               latest_correction: [
+                 :amount,
+                 sales_invoice_items: [:net_value, :vat_value, :gross_value]
+               ]
              ],
              scope: scope
            ) do
@@ -139,6 +143,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
             :net_value,
             :vat_value,
             :gross_value,
+            :amount,
             sales_invoice_items: [:net_value, :vat_value, :gross_value]
           ],
           scope: scope

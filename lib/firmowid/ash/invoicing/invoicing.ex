@@ -186,7 +186,7 @@ defmodule Firmowid.Ash.Invoicing do
 
     cost_results =
       if include_cost do
-        list_cost_invoices!(search_args(params, :cost), opts)
+        list_cost_invoices!(search_args(params, :cost), Keyword.put(opts, :load, [:amount]))
       else
         []
       end
@@ -195,7 +195,7 @@ defmodule Firmowid.Ash.Invoicing do
       if include_sales do
         list_sales_invoices!(
           search_args(params, :sales),
-          Keyword.put(opts, :load, [:gross_value, :sales_invoice_items])
+          Keyword.put(opts, :load, [:amount, :sales_invoice_items])
         )
       else
         []

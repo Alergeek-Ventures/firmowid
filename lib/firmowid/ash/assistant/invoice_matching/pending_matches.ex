@@ -183,14 +183,14 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatching.PendingMatches do
 
   defp fetch_invoice_for_preview(%{type: :cost_invoice, id: id}, scope) do
     Invoicing.get_cost_invoice(id,
-      load: [:effective_total_amount, :effective_currency, :effective_seller_display_name],
+      load: [:effective_amount, :effective_seller_display_name],
       scope: scope
     )
   end
 
   defp fetch_invoice_for_preview(%{type: :sales_invoice, id: id}, scope) do
     Invoicing.get_sales_invoice(id,
-      load: [:gross_value, :buyer_display_name_label],
+      load: [:amount, :buyer_display_name_label],
       scope: scope
     )
   end

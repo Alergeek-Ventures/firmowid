@@ -14,10 +14,7 @@ defmodule FirmowidWeb.Invoicing.Assistant.Components.PendingMatch do
       assigns
       |> assign(:number, invoice.invoice_identifier || "—")
       |> assign(:party, invoice.effective_seller_display_name || invoice.seller || "—")
-      |> assign(
-        :amount,
-        display_money(invoice.effective_currency, invoice.effective_total_amount)
-      )
+      |> assign(:amount, invoice.effective_amount)
 
     ~H"""
     <li class="bg-grey-50 flex flex-row items-start justify-between gap-4 rounded px-3 py-2">
@@ -42,7 +39,7 @@ defmodule FirmowidWeb.Invoicing.Assistant.Components.PendingMatch do
       assigns
       |> assign(:number, invoice.invoice_number || "—")
       |> assign(:party, invoice.buyer_display_name_label || invoice.buyer_full_name || "—")
-      |> assign(:amount, display_money(invoice.currency, invoice.gross_value))
+      |> assign(:amount, invoice.amount)
 
     ~H"""
     <li class="bg-grey-50 flex flex-row items-start justify-between gap-4 rounded px-3 py-2">
@@ -86,11 +83,4 @@ defmodule FirmowidWeb.Invoicing.Assistant.Components.PendingMatch do
 
   defp displayed_party(transaction, "Nadawca"), do: transaction.debtor_name
   defp displayed_party(transaction, "Odbiorca"), do: transaction.creditor_name
-
-  defp display_money(currency, amount) do
-    case Money.new(currency, amount) do
-      %Money{} = money -> money
-      _ -> "—"
-    end
-  end
 end

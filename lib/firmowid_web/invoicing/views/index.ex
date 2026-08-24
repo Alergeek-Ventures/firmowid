@@ -34,14 +34,13 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   # Load definitions for invoice queries
   @cost_invoice_loads [
     :invoice_source,
-    :effective_total_amount,
-    :effective_currency,
-    :effective_seller_display_name,
-    :transactions
+    :transactions,
+    :effective_amount,
+    :effective_seller_display_name
   ]
   @sales_invoice_loads [
     :invoice_source,
-    :gross_value,
+    :amount,
     :sales_invoice_items,
     :buyer_display_name_label,
     :transactions,

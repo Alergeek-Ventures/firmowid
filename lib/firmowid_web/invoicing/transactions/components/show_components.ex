@@ -414,7 +414,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
       navigate: Navigation.sales_invoice_show_path(invoice, return_to),
       type_label: "Faktura sprzedażowa",
       number: present(invoice.invoice_number),
-      amount: Money.new!(invoice.currency, invoice.gross_value),
+      amount: invoice.amount,
       badge_variant: nil,
       metadata: [
         {"Na fakturze", first_sales_item_name(invoice)},
@@ -431,7 +431,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
       navigate: Navigation.cost_invoice_show_path(invoice, return_to),
       type_label: "Faktura kosztowa",
       number: present(invoice.invoice_identifier),
-      amount: Money.new!(invoice.effective_currency, invoice.effective_total_amount),
+      amount: invoice.effective_amount,
       badge_variant: variant,
       metadata: [
         {"Kontrahent", present(invoice.effective_seller_display_name)},

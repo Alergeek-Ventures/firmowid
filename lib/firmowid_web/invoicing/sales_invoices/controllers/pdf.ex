@@ -17,11 +17,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Controllers.Pdf do
 
   @item_calcs [:net_value, :vat_value, :gross_value]
   @pdf_loads [
+    :amount,
     :internal_note,
     sales_invoice_items: @item_calcs,
-    corrections: [sales_invoice_items: @item_calcs],
+    corrections: [:amount, sales_invoice_items: @item_calcs],
     reference_invoice: [],
-    latest_correction: [sales_invoice_items: @item_calcs]
+    latest_correction: [:amount, sales_invoice_items: @item_calcs]
   ]
 
   def index(conn, %{"id" => id}) do

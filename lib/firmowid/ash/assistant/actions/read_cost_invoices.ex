@@ -77,7 +77,7 @@ defmodule Firmowid.Ash.Assistant.Actions.ReadCostInvoices do
 
       serialized_invoices =
         args
-        |> Invoicing.list_cost_invoices!(scope: scope)
+        |> Invoicing.list_cost_invoices!(load: [:effective_amount], scope: scope)
         |> Enum.map(&InvoiceSerialization.serialize_cost_invoice/1)
 
       {:ok, %{cost_invoices: serialized_invoices, count: length(serialized_invoices)}}

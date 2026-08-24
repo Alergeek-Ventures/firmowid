@@ -81,7 +81,7 @@ defmodule Firmowid.Ash.Invoicing.Services.CounterpartyInvoiceSuggestions do
     invoices_by_id =
       %{ids: invoice_ids}
       |> SalesInvoice.query_to_read(scope: scope)
-      |> Ash.Query.load([:gross_value, :transactions])
+      |> Ash.Query.load([:amount, :transactions])
       |> Ash.read!(scope: scope)
       |> Map.new(&{&1.id, &1})
 

@@ -57,8 +57,8 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
       |> assign(:party, invoice.buyer_display_name_label || "")
       |> assign(:description, Enum.map_join(invoice.sales_invoice_items, ", ", & &1.name))
       |> assign(:date, invoice.sale_date || invoice.issue_date)
-      |> assign(:amount, Money.new!(invoice.currency, invoice.gross_value))
-      |> assign(:amount_decimal, invoice.gross_value)
+      |> assign(:amount, invoice.effective_amount)
+      |> assign(:amount_decimal, Money.to_decimal(invoice.effective_amount))
       |> assign(:navigate, ~p"/sprzedazowe/#{invoice.id}")
       |> assign_entity_fields(invoice, :sales_invoice)
 
@@ -75,8 +75,11 @@ defmodule FirmowidWeb.Analysis.Components.EntriesTable do
       )
       |> assign(:description, invoice.description)
       |> assign(:date, invoice.effective_sale_date || invoice.sale_date)
-      |> assign(:amount, Money.new!(invoice.effective_currency, invoice.effective_total_amount))
-      |> assign(:amount_decimal, Decimal.mult(invoice.effective_total_amount, Decimal.new("-1")))
+      |> assign(:amount, invoice.effective_amount)
+      |> assign(
+        :amount_decimal,
+        invoice.effective_amount |> Money.to_decimal() |> Decimal.negate()
+      )
       |> assign(:navigate, ~p"/kosztowe/#{invoice.id}")
       |> assign_entity_fields(invoice, :cost_invoice)
 

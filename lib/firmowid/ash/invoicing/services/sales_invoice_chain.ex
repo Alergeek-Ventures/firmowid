@@ -65,7 +65,7 @@ defmodule Firmowid.Ash.Invoicing.Services.SalesInvoiceChain do
       :organization,
       :net_value,
       :vat_value,
-      :gross_value,
+      :amount,
       :buyer_display_name_label,
       sales_invoice_items: [:net_value, :vat_value, :gross_value]
     ])

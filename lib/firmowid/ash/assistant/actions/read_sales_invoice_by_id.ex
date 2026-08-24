@@ -19,7 +19,7 @@ defmodule Firmowid.Ash.Assistant.Actions.ReadSalesInvoiceById do
 
   @impl true
   def run(%{id: id}, %{scope: %Scope{} = scope}) do
-    with {:ok, invoice} <- Invoicing.get_sales_invoice(id, load: [:gross_value], scope: scope) do
+    with {:ok, invoice} <- Invoicing.get_sales_invoice(id, load: [:amount], scope: scope) do
       {:ok, %{result: [InvoiceSerialization.serialize_sales_invoice(invoice)]}}
     end
   end
