@@ -535,10 +535,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
         <div class="flex items-center justify-between font-bold">
           <span>Razem do zapłaty / Total:</span>
           <span class="text-sm/snug">
-            {Money.new!(
-              @sales_invoice.currency,
-              @sales_invoice.net_value
-            )}
+            {@sales_invoice.amount}
           </span>
         </div>
       <% end %>
@@ -553,32 +550,26 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
   defp correction_summary(assigns) do
     invoice = assigns.sales_invoice
     reference = assigns.reference_invoice
-    currency = invoice.currency
 
     before_net = reference.net_value
     before_vat = reference.vat_value
-    before_gross = reference.gross_value
 
     after_net = invoice.net_value
     after_vat = invoice.vat_value
-    after_gross = invoice.gross_value
 
     delta_net = Decimal.sub(after_net, before_net)
     delta_vat = Decimal.sub(after_vat, before_vat)
-    delta_gross = Decimal.sub(after_gross, before_gross)
 
     assigns =
       assigns
-      |> assign(:currency, currency)
+      |> assign(:before_currency, reference.currency)
+      |> assign(:after_currency, invoice.currency)
       |> assign(:before_net, before_net)
       |> assign(:before_vat, before_vat)
-      |> assign(:before_gross, before_gross)
       |> assign(:after_net, after_net)
       |> assign(:after_vat, after_vat)
-      |> assign(:after_gross, after_gross)
       |> assign(:delta_net, delta_net)
       |> assign(:delta_vat, delta_vat)
-      |> assign(:delta_gross, delta_gross)
 
     ~H"""
     <div class="bg-greyButtonBg/30 rounded-md px-4 py-2 text-[10px]/[14px]">
@@ -613,11 +604,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
                 Wartość{if @show_vat, do: " netto"}:
               </td>
               <td class="text-grey-600 px-2 py-0.5 text-right line-through">
-                {Money.new(@currency, @before_net)}
+                {Money.new(@before_currency, @before_net)}
               </td>
-              <td class="px-2 py-0.5 text-right">{Money.new(@currency, @after_net)}</td>
+              <td class="px-2 py-0.5 text-right">{Money.new(@after_currency, @after_net)}</td>
               <td class="py-0.5 pl-2 text-right font-medium">
-                {signed_money(@currency, @delta_net)}
+                {signed_money_difference(
+                  @before_currency,
+                  @before_net,
+                  @after_currency,
+                  @after_net
+                )}
               </td>
             </tr>
             <%= if @show_vat do %>
@@ -627,11 +623,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
                 </td>
 
                 <td class="text-grey-600 px-2 py-0.5 text-right line-through">
-                  {Money.new(@currency, @before_vat)}
+                  {Money.new(@before_currency, @before_vat)}
                 </td>
-                <td class="px-2 py-0.5 text-right">{Money.new(@currency, @after_vat)}</td>
+                <td class="px-2 py-0.5 text-right">{Money.new(@after_currency, @after_vat)}</td>
                 <td class="py-0.5 pl-2 text-right font-medium">
-                  {signed_money(@currency, @delta_vat)}
+                  {signed_money_difference(
+                    @before_currency,
+                    @before_vat,
+                    @after_currency,
+                    @after_vat
+                  )}
                 </td>
               </tr>
 
@@ -640,10 +641,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
                   Razem do zapłaty:
                 </td>
                 <td class="text-grey-600 px-2 pt-0.5 text-right line-through">
-                  {Money.new(@currency, @before_gross)}
+                  {@reference_invoice.amount}
                 </td>
-                <td class="px-2 pt-0.5 text-right">{Money.new(@currency, @after_gross)}</td>
-                <td class="pt-0.5 pl-2 text-right">{signed_money(@currency, @delta_gross)}</td>
+                <td class="px-2 pt-0.5 text-right">{@sales_invoice.amount}</td>
+                <td class="pt-0.5 pl-2 text-right">
+                  {signed_money_difference(@reference_invoice.amount, @sales_invoice.amount)}
+                </td>
               </tr>
             <% end %>
           <% end %>
@@ -662,10 +665,12 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
                 Razem do zapłaty / Total:
               </td>
               <td class="text-grey-600 px-2 pt-0.5 text-right line-through">
-                {Money.new(@currency, @before_net)}
+                {@reference_invoice.amount}
               </td>
-              <td class="px-2 pt-0.5 text-right">{Money.new(@currency, @after_net)}</td>
-              <td class="pt-0.5 pl-2 text-right">{signed_money(@currency, @delta_net)}</td>
+              <td class="px-2 pt-0.5 text-right">{@sales_invoice.amount}</td>
+              <td class="pt-0.5 pl-2 text-right">
+                {signed_money_difference(@reference_invoice.amount, @sales_invoice.amount)}
+              </td>
             </tr>
           <% end %>
         </tbody>
@@ -683,6 +688,16 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.Template do
       to_string(money)
     end
   end
+
+  defp signed_money_difference(currency, before, currency, corrected),
+    do: signed_money(currency, Decimal.sub(corrected, before))
+
+  defp signed_money_difference(_before_currency, _before, _after_currency, _after), do: "—"
+
+  defp signed_money_difference(%Money{currency: currency, amount: before}, %Money{currency: currency, amount: corrected}),
+    do: signed_money(currency, Decimal.sub(corrected, before))
+
+  defp signed_money_difference(%Money{}, %Money{}), do: "—"
 
   attr :sales_invoice, :map, required: true
 
