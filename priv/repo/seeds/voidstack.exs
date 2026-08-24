@@ -197,6 +197,7 @@ defmodule Firmowid.Seeds.Voidstack do
         due_date: Helpers.date_this_month(19),
         total_amount: Decimal.new("-1200.00"),
         currency: "PLN",
+        amount: Helpers.money!("PLN", -1_200.00),
         invoice_identifier: "ALG/#{today.year}/#{String.pad_leading("#{today.month}", 2, "0")}/001",
         description: "Fotel biurowy ergonomiczny — Dragan upierał się przy modelu wyścigowym",
         skip_invoicing: false,

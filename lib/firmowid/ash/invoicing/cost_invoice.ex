@@ -22,12 +22,14 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
     * `:is_ksef_imported` — whether the invoice was imported from KSeF
     * `:is_deletable` — whether the invoice can be deleted (not KSeF-imported)
-    * `:effective_total_amount` — total including corrections (same-currency sum)
+    * `:effective_amount` — Money total including correction deltas
+    * `:effective_total_amount` — legacy decimal total including corrections
     * `:effective_currency`, `:effective_seller_display_name`, etc. — latest correction snapshot fields
 
   ## Aggregates
 
-    * `:corrections_total_amount` — sum of correction invoice amounts
+    * `:corrections_amount` — Money sum of correction invoice deltas
+    * `:corrections_total_amount` — legacy decimal sum of correction invoice amounts
     * `:latest_correction_*` — latest correction's snapshot fields (seller, dates, etc.)
 
   Orchestration functions (delete, upload, create, hydrate) live on the
@@ -41,6 +43,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     notifiers: [Ash.Notifier.PubSub],
     primary_read_warning?: false
 
+  alias AshMoney.Types.Money
   alias AshOban.Checks.AshObanInteraction
   alias Firmowid.Ash.Checks.AtLeastRole
   alias Firmowid.Ash.Checks.IsSystemActor
@@ -50,6 +53,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   alias Firmowid.Ash.Invoicing.Changes.EnqueueMissingCostInvoiceDescriptionRefresh
   alias Firmowid.Ash.Invoicing.Changes.RequireTransactionIds
   alias Firmowid.Ash.Invoicing.Changes.SetCostInvoiceAmount
+  alias Firmowid.Ash.Invoicing.Changes.ValidateCostInvoiceCorrectionCurrency
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Resource
 
@@ -417,6 +421,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
       change SetCostInvoiceAmount
 
+      change ValidateCostInvoiceCorrectionCurrency
+
       change EnqueueMissingCostInvoiceDescriptionRefresh
 
       change fn changeset, _context ->
@@ -476,6 +482,10 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       change ComputeCostInvoiceSellerDisplayName
 
       change ComputeCostInvoiceDescription
+
+      change SetCostInvoiceAmount
+
+      change ValidateCostInvoiceCorrectionCurrency
 
       change fn changeset, _context ->
         validate_non_correction_total_amount_sign(changeset)
@@ -656,7 +666,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     attribute :total_amount, :decimal, public?: true
     attribute :currency, :string, public?: true
 
-    attribute :amount, AshMoney.Types.Money, public?: true, allow_nil?: false
+    attribute :amount, Money, public?: true, allow_nil?: false
 
     attribute :description, :string, public?: true, allow_nil?: false, default: ""
     attribute :invoice_identifier, :string, public?: true
@@ -777,7 +787,17 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
     # Effective fields — coalesce latest correction snapshot with original.
     # DB-pushable, filterable, sortable.
-    calculate :has_corrections, :boolean, expr(not is_nil(corrections_total_amount))
+    calculate :has_corrections, :boolean, expr(not is_nil(corrections_amount))
+
+    calculate :effective_amount,
+              Money,
+              expr(
+                if is_nil(corrections_amount) do
+                  amount
+                else
+                  amount + corrections_amount
+                end
+              )
 
     calculate :effective_total_amount,
               :decimal,
@@ -798,7 +818,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
                 end
               )
 
-    calculate :effective_currency, :string, expr(latest_correction_currency || currency)
+    calculate :effective_currency, :string, expr(currency)
 
     calculate :effective_sale_date, :date, expr(latest_correction_sale_date || sale_date)
 
@@ -838,6 +858,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   end
 
   aggregates do
+    sum :corrections_amount, :correction_invoices, :amount
+
     sum :corrections_total_amount, :correction_invoices, :total_amount
 
     first :latest_correction_currency, :correction_invoices, :currency do

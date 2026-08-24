@@ -9,6 +9,8 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Scope
 
+  require Ash.Query
+
   setup do
     original_openai_enrichment = Application.get_env(:firmowid, :openai_enrichment)
 
@@ -178,6 +180,153 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
 
       assert Money.to_decimal(invoice.amount) == Decimal.new("-123.45")
       assert Money.to_currency_code(invoice.amount) == :PLN
+    end
+
+    test "rejects a linked correction with a different currency" do
+      user = admin_fixture()
+      scope = %Scope{actor: user, tenant: user.organization_id}
+
+      original =
+        insert_cost_invoice!(user.organization_id, %{
+          ksef_number: "KSEF-ORIGINAL-CURRENCY",
+          currency: "PLN"
+        })
+
+      assert {:error, error} =
+               CostInvoice.create(
+                 %{
+                   seller: "Supplier Sp. z o.o.",
+                   sale_date: ~D[2026-02-01],
+                   issue_date: ~D[2026-02-01],
+                   items_list: [],
+                   total_amount: Decimal.new("10.00"),
+                   currency: "EUR",
+                   invoice_identifier: "FV/2026/02/WRONG-CURRENCY",
+                   invoice_type: :kor,
+                   original_invoice_ksef_number: original.ksef_number
+                 },
+                 scope: scope
+               )
+
+      assert Exception.message(error) =~ "must match the original invoice currency"
+    end
+
+    test "allows an orphan correction" do
+      user = admin_fixture()
+      scope = %Scope{actor: user, tenant: user.organization_id}
+
+      assert {:ok, invoice} =
+               CostInvoice.create(
+                 %{
+                   seller: "Supplier Sp. z o.o.",
+                   sale_date: ~D[2026-02-01],
+                   issue_date: ~D[2026-02-01],
+                   items_list: [],
+                   total_amount: Decimal.new("10.00"),
+                   currency: "EUR",
+                   invoice_identifier: "FV/2026/02/ORPHAN",
+                   invoice_type: :kor,
+                   original_invoice_ksef_number: "KSEF-MISSING-ORIGINAL"
+                 },
+                 scope: scope
+               )
+
+      assert Money.to_currency_code(invoice.amount) == :EUR
+    end
+  end
+
+  describe "effective amount" do
+    test "sums same-currency correction deltas as Money" do
+      user = admin_fixture()
+      scope = %Scope{actor: user, tenant: user.organization_id}
+
+      original =
+        insert_cost_invoice!(user.organization_id, %{
+          ksef_number: "KSEF-EFFECTIVE-AMOUNT",
+          total_amount: Decimal.new("-100.00")
+        })
+
+      insert_cost_invoice!(user.organization_id, %{
+        invoice_type: :kor,
+        original_invoice_ksef_number: original.ksef_number,
+        total_amount: Decimal.new("20.00")
+      })
+
+      insert_cost_invoice!(user.organization_id, %{
+        invoice_type: :kor,
+        original_invoice_ksef_number: original.ksef_number,
+        total_amount: Decimal.new("-5.00")
+      })
+
+      invoice = Ash.load!(original, [:corrections_amount, :effective_amount], scope: scope)
+
+      assert Money.to_decimal(invoice.corrections_amount) == Decimal.new("15.00")
+      assert Money.to_decimal(invoice.effective_amount) == Decimal.new("-85.00")
+      assert Money.to_currency_code(invoice.effective_amount) == :PLN
+    end
+
+    test "keeps an orphan correction out of an invoice effective amount" do
+      user = admin_fixture()
+      scope = %Scope{actor: user, tenant: user.organization_id}
+
+      original =
+        insert_cost_invoice!(user.organization_id, %{total_amount: Decimal.new("-100.00")})
+
+      insert_cost_invoice!(user.organization_id, %{
+        invoice_type: :kor,
+        original_invoice_ksef_number: "KSEF-NOT-PRESENT",
+        total_amount: Decimal.new("20.00")
+      })
+
+      invoice = Ash.load!(original, [:effective_amount], scope: scope)
+
+      assert Money.to_decimal(invoice.effective_amount) == Decimal.new("-100.00")
+    end
+
+    test "filters and sorts effective amounts in PostgreSQL" do
+      user = admin_fixture()
+      scope = %Scope{actor: user, tenant: user.organization_id}
+
+      first_invoice =
+        insert_cost_invoice!(user.organization_id, %{
+          ksef_number: "KSEF-EFFECTIVE-QUERY-FIRST",
+          total_amount: Decimal.new("-100.00")
+        })
+
+      second_invoice =
+        insert_cost_invoice!(user.organization_id, %{
+          ksef_number: "KSEF-EFFECTIVE-QUERY-SECOND",
+          total_amount: Decimal.new("-100.00")
+        })
+
+      insert_cost_invoice!(user.organization_id, %{
+        invoice_type: :kor,
+        original_invoice_ksef_number: first_invoice.ksef_number,
+        total_amount: Decimal.new("15.00")
+      })
+
+      insert_cost_invoice!(user.organization_id, %{
+        invoice_type: :kor,
+        original_invoice_ksef_number: second_invoice.ksef_number,
+        total_amount: Decimal.new("25.00")
+      })
+
+      invoices =
+        CostInvoice
+        |> Ash.Query.filter(
+          is_nil(original_invoice_ksef_number) and
+            effective_amount > ^Money.new!("PLN", Decimal.new("-90.00"))
+        )
+        |> Ash.Query.sort(effective_amount: :desc)
+        |> Ash.Query.load(:effective_amount)
+        |> Ash.read!(scope: scope)
+
+      assert Enum.map(invoices, & &1.id) == [second_invoice.id, first_invoice.id]
+
+      assert Enum.map(invoices, &Money.to_decimal(&1.effective_amount)) == [
+               Decimal.new("-75.00"),
+               Decimal.new("-85.00")
+             ]
     end
   end
 
