@@ -68,10 +68,11 @@ defmodule Firmowid.Ash.Invoicing.Matching.Windowing do
     is_transaction_a_cost = Decimal.lt?(transaction_amount, 0)
 
     total_amount =
-      cost_invoice.total_amount
+      cost_invoice.effective_amount
+      |> Money.to_decimal()
       |> Decimal.abs()
       |> Currencies.normalize_amount_to_pln(
-        cost_invoice.currency,
+        cost_invoice.effective_amount |> Money.to_currency_code() |> Atom.to_string(),
         RateDate.normalize_rate_date(cost_invoice.issue_date)
       )
 
@@ -100,10 +101,11 @@ defmodule Firmowid.Ash.Invoicing.Matching.Windowing do
     is_transaction_a_sale = Decimal.gt?(transaction_amount, 0)
 
     total_amount =
-      sales_invoice.gross_value
+      sales_invoice.effective_amount
+      |> Money.to_decimal()
       |> Decimal.abs()
       |> Currencies.normalize_amount_to_pln(
-        sales_invoice.currency,
+        sales_invoice.effective_amount |> Money.to_currency_code() |> Atom.to_string(),
         RateDate.normalize_rate_date(sales_invoice.issue_date)
       )
 

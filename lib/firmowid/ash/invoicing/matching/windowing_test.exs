@@ -13,6 +13,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.WindowingTest do
       cost_invoice = %CostInvoice{
         total_amount: Decimal.new("100.0"),
         currency: "PLN",
+        effective_amount: Money.new!("PLN", Decimal.new("100.0")),
         issue_date: ~D[2025-01-15],
         sale_date: ~D[2025-01-15],
         due_date: ~D[2025-02-15],
@@ -23,6 +24,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.WindowingTest do
       cost_invoice_eur = %CostInvoice{
         total_amount: Decimal.new("100.0"),
         currency: "EUR",
+        effective_amount: Money.new!("EUR", Decimal.new("100.0")),
         issue_date: ~D[2025-01-15],
         sale_date: ~D[2025-01-15],
         due_date: ~D[2025-02-15],
@@ -112,7 +114,8 @@ defmodule Firmowid.Ash.Invoicing.Matching.WindowingTest do
         due_date: ~D[2025-01-31],
         currency: "PLN",
         sales_invoice_items: [item],
-        gross_value: gross_value
+        gross_value: gross_value,
+        effective_amount: Money.new!("PLN", gross_value)
       }
 
       transactions = [
