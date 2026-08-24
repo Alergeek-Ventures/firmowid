@@ -1282,7 +1282,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
       ) do
     LiveToast.send_toast(
       :error,
-      "Plik #{notification.data.original_filename} nie zawiera wymaganych danych. Upewnij się, że wgrywasz umowe.",
+      "Plik #{notification.data.original_filename} nie zawiera wymaganych danych. Upewnij się, że wgrywasz umowę.",
       title: "Nieprawidłowy dokument"
     )
 

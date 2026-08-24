@@ -196,7 +196,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
             currently_uploading_count={@currently_uploading_count}
             processing_blobs_count={@processing_blobs_count}
           />
-          <.icon name="hero-plus" class="size-4" /> Dodaj umowe
+          <.icon name="hero-plus" class="size-4" /> Dodaj umowę
         </.button>
       </form>
     </div>
