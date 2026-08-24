@@ -49,8 +49,7 @@ defmodule FirmowidWeb.DesignSystem.Components.Link do
   @spec link(map()) :: Phoenix.LiveView.Rendered.t()
   attr :class, :any, default: nil, doc: "Additional classes merged into the component."
 
-  attr :rest, :global,
-    include: ~w(aria-label target rel download phx-click phx-disable-with referrerpolicy style)
+  attr :rest, :global, include: ~w(aria-label target rel download phx-click phx-disable-with referrerpolicy style)
 
   attr :kind, :string,
     values: @kinds,

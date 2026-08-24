@@ -4,6 +4,7 @@ defmodule Firmowid.Mailer.Components do
   use Phoenix.Component
 
   import FirmowidWeb.DesignSystem.Components.Link
+  import Phoenix.Component, except: [link: 1]
 
   @dark "#292929"
   @light_grey "#F5F5F5"
