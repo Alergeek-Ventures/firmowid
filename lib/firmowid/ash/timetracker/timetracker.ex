@@ -9,6 +9,7 @@ defmodule Firmowid.Ash.Timetracker do
   use Ash.Domain,
     extensions: [Ash.Policy.Authorizer, AshAi]
 
+  alias Firmowid.Ash.Timetracker.Delegation
   alias Firmowid.Ash.Timetracker.LeaveRequest
   alias Firmowid.Ash.Timetracker.Project
   alias Firmowid.Ash.Timetracker.Session
@@ -16,6 +17,14 @@ defmodule Firmowid.Ash.Timetracker do
   require Ash.Query
 
   resources do
+    resource Delegation do
+      define :create_delegation, action: :create
+      define :get_delegation, action: :read, get_by: [:id]
+      define :list_delegations_for_user, action: :list_for_user, args: [:user_id]
+      define :approve_delegation, action: :approve, get_by: [:id]
+      define :complete_delegation, action: :complete, get_by: [:id]
+    end
+
     resource Firmowid.Ash.Timetracker.HoursRecord do
       define :list_hours_records, action: :list
     end
