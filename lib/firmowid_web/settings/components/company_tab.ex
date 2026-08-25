@@ -1023,7 +1023,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     ~H"""
     <article class="border-grey-200 relative flex flex-col gap-4 rounded-lg border bg-white p-4">
       <div class="flex items-center justify-start gap-4">
-        <.bank_badge institution={@account.institution_id} />
+        <.bank_badge institution={@account} />
         <div class="flex items-start gap-4">
           <div class="flex flex-wrap gap-2.5">
             <span

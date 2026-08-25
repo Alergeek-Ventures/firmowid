@@ -83,7 +83,8 @@ defmodule FirmowidWeb.Invoicing.Utilities.BankBadges do
     "mbank" => "mBank",
     "nestbank" => "Nest Bank",
     "erste" => "Erste",
-    "airwallex" => "Airwallex"
+    "airwallex" => "Airwallex",
+    "revolut" => "Revolut"
   }
 
   @institution_badges_by_name_aliases Map.put(@badges_by_name_aliases, "mbank", "mBank (firma)")
@@ -120,6 +121,15 @@ defmodule FirmowidWeb.Invoicing.Utilities.BankBadges do
   @spec badge_for(map() | String.t() | nil) :: String.t()
   def badge_for(%Transaction{bank_account: bank_account}) when is_map(bank_account), do: badge_for(bank_account)
 
+  def badge_for(%{institution_id: institution_id, institution_name: institution_name})
+      when is_binary(institution_id) and is_binary(institution_name) do
+    resolve_badge(%{id: institution_id, name: institution_name})
+  end
+
+  def badge_for(%{id: id, name: name}) when is_binary(id) and is_binary(name) do
+    resolve_badge(%{id: id, name: name})
+  end
+
   def badge_for(%{institution_id: institution_id}) when is_binary(institution_id) do
     resolve_badge(%{id: institution_id})
   end
@@ -154,6 +164,15 @@ defmodule FirmowidWeb.Invoicing.Utilities.BankBadges do
   def badge_for_institution(%Transaction{bank_account: bank_account}) when is_map(bank_account),
     do: badge_for_institution(bank_account)
 
+  def badge_for_institution(%{institution_id: institution_id, institution_name: institution_name})
+      when is_binary(institution_id) and is_binary(institution_name) do
+    resolve_institution_badge(%{id: institution_id, name: institution_name})
+  end
+
+  def badge_for_institution(%{id: id, name: name}) when is_binary(id) and is_binary(name) do
+    resolve_institution_badge(%{id: id, name: name})
+  end
+
   def badge_for_institution(%{institution_id: institution_id}) when is_binary(institution_id) do
     resolve_institution_badge(%{id: institution_id})
   end
@@ -177,6 +196,13 @@ defmodule FirmowidWeb.Invoicing.Utilities.BankBadges do
   def badge_for_institution(nil), do: "Default"
 
   def badge_for_institution(_), do: "Default"
+
+  defp resolve_badge(%{id: id, name: name}) when is_binary(id) and is_binary(name) do
+    case id |> String.trim() |> resolve_id() do
+      "Default" -> name |> normalize_bank_name() |> resolve_bank_name()
+      badge -> badge
+    end
+  end
 
   defp resolve_badge(%{id: id}), do: id |> String.trim() |> resolve_id()
 
