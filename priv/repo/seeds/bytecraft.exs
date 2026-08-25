@@ -68,12 +68,8 @@ defmodule Firmowid.Seeds.Bytecraft do
         bank_account_number: "PL61 1050 0099 7603 1234 5678 9012",
         birthday: ~D[1991-11-07],
         position: "Lead Architect",
-        correspondence_street: "ul. Marszałkowska 11/4",
-        correspondence_city: "Warszawa",
-        correspondence_code: "00-624",
-        residence_street: "ul. Marszałkowska 11/4",
-        residence_city: "Warszawa",
-        residence_code: "00-624"
+        correspondence_address: "ul. Marszałkowska 11/4, 00-624 Warszawa",
+        residence_address: "ul. Marszałkowska 11/4, 00-624 Warszawa"
       })
 
     tomek =
@@ -87,12 +83,8 @@ defmodule Firmowid.Seeds.Bytecraft do
         bank_account_number: "PL27 1140 2004 0000 3002 0135 5387",
         birthday: ~D[1994-04-22],
         position: "Backend Engineer",
-        correspondence_street: "ul. Świdnicka 36/8",
-        correspondence_city: "Wrocław",
-        correspondence_code: "50-068",
-        residence_street: "ul. Świdnicka 36/8",
-        residence_city: "Wrocław",
-        residence_code: "50-068"
+        correspondence_address: "ul. Świdnicka 36/8, 50-068 Wrocław",
+        residence_address: "ul. Świdnicka 36/8, 50-068 Wrocław"
       })
 
     sable =
@@ -105,12 +97,8 @@ defmodule Firmowid.Seeds.Bytecraft do
         slack_id: "U_SABLE_003",
         birthday: ~D[1996-08-14],
         position: "Product Designer",
-        correspondence_street: "ul. Floriańska 22/10",
-        correspondence_city: "Kraków",
-        correspondence_code: "31-021",
-        residence_street: "ul. Floriańska 22/10",
-        residence_city: "Kraków",
-        residence_code: "31-021"
+        correspondence_address: "ul. Floriańska 22/10, 31-021 Kraków",
+        residence_address: "ul. Floriańska 22/10, 31-021 Kraków"
       })
 
     jules =
@@ -123,12 +111,8 @@ defmodule Firmowid.Seeds.Bytecraft do
         slack_id: "U_JULES_004",
         birthday: ~D[1989-12-03],
         position: "DevOps Lead",
-        correspondence_street: "ul. Piotrkowska 80/15",
-        correspondence_city: "Łódź",
-        correspondence_code: "90-265",
-        residence_street: "ul. Piotrkowska 80/15",
-        residence_city: "Łódź",
-        residence_code: "90-265"
+        correspondence_address: "ul. Piotrkowska 80/15, 90-265 Łódź",
+        residence_address: "ul. Piotrkowska 80/15, 90-265 Łódź"
       })
 
     maren =
@@ -141,12 +125,8 @@ defmodule Firmowid.Seeds.Bytecraft do
         slack_id: "U_MAREN_005",
         birthday: ~D[1997-02-28],
         position: "Frontend Engineer",
-        correspondence_street: "ul. Długa 45/2",
-        correspondence_city: "Gdańsk",
-        correspondence_code: "80-831",
-        residence_street: "ul. Długa 45/2",
-        residence_city: "Gdańsk",
-        residence_code: "80-831"
+        correspondence_address: "ul. Długa 45/2, 80-831 Gdańsk",
+        residence_address: "ul. Długa 45/2, 80-831 Gdańsk"
       })
 
     %{kira: kira, tomek: tomek, sable: sable, jules: jules, maren: maren}

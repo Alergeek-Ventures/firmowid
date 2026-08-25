@@ -225,32 +225,44 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       action_label="Edytuj dane korespondencyjne"
     >
       <%= if @editing_profile_contact do %>
-        <.form for={@user_form} phx-submit="save_profile_contact" class="space-y-4">
+        <.form
+          for={@user_form}
+          phx-submit="save_profile_contact"
+          phx-change="validate_profile_contact"
+          class="space-y-4"
+        >
           <div class="space-y-2">
             <.row_input field={@user_form[:phone]} label="Numer telefonu" type="tel" />
             <.row_input field={@user_form[:slack_id]} label="Slack" type="text" />
             <.row_input
-              field={@user_form[:residence_street]}
+              field={@user_form[:residence_address]}
               label="Adres zamieszkania"
-              type="text"
+              type="textarea"
+              label_class="pt-1.5 self-start"
             />
-            <.row_input field={@user_form[:residence_code]} label="Kod pocztowy" type="text" />
-            <.row_input field={@user_form[:residence_city]} label="Miasto" type="text" />
-            <.row_input
-              field={@user_form[:correspondence_street]}
-              label="Adres korespondencyjny"
-              type="text"
-            />
-            <.row_input
-              field={@user_form[:correspondence_code]}
-              label="Kod korespondencyjny"
-              type="text"
-            />
-            <.row_input
-              field={@user_form[:correspondence_city]}
-              label="Miasto korespondencyjne"
-              type="text"
-            />
+
+            <Helpers.settings_field
+              label_class="max-w-56 ml-auto"
+              label="Adres korespondencyjny jest taki sam jak adres zamieszkania"
+              layout={:row}
+              block_class="flex items-center"
+              for={@user_form[:is_same_correspondence_address].id}
+            >
+              <.switch
+                field={@user_form[:is_same_correspondence_address]}
+                class="w-12"
+                color="turquoise"
+              />
+            </Helpers.settings_field>
+
+            <%= if not Phoenix.HTML.Form.normalize_value("switch", @user_form[:is_same_correspondence_address].value) do %>
+              <.row_input
+                field={@user_form[:correspondence_address]}
+                label="Adres korespondencyjny"
+                type="textarea"
+                label_class="pt-1.5 self-start"
+              />
+            <% end %>
           </div>
 
           <div class="flex w-full justify-end gap-3">
@@ -273,10 +285,13 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             <span :if={!slack_present?(@current_user)}>—</span>
           </.detail_row>
           <.detail_row label="Adres zamieszkania">
-            {present_address(@current_user, :residence)}
+            {present(@current_user.residence_address)}
           </.detail_row>
-          <.detail_row label="Adres korespondencyjny">
-            {present_address(@current_user, :correspondence)}
+          <.detail_row
+            :if={@current_user.correspondence_address not in [nil, ""]}
+            label="Adres korespondencyjny"
+          >
+            {present(@current_user.correspondence_address)}
           </.detail_row>
         </div>
       <% end %>
@@ -584,10 +599,16 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   attr :field, :map, required: true
   attr :label, :string, required: true
   attr :type, :string, required: true
+  attr :label_class, :string, default: nil
 
   defp row_input(assigns) do
     ~H"""
-    <Helpers.settings_field label={@label} layout={:row} for={@field.id}>
+    <Helpers.settings_field
+      label={@label}
+      layout={:row}
+      for={@field.id}
+      label_class={@label_class}
+    >
       <.input field={@field} type={@type} new input_class="w-full" />
     </Helpers.settings_field>
     """
@@ -609,33 +630,6 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
   defp slack_present?(%{slack_id: slack_id}) when slack_id in [nil, ""], do: false
   defp slack_present?(_user), do: true
-
-  defp present_address(user, type) do
-    parts =
-      case type do
-        :residence ->
-          [user.residence_street, postal_line(user.residence_code, user.residence_city)]
-
-        :correspondence ->
-          [
-            user.correspondence_street,
-            postal_line(user.correspondence_code, user.correspondence_city)
-          ]
-      end
-
-    case Enum.reject(parts, &blank?/1) do
-      [] -> "—"
-      filled -> Enum.join(filled, ", ")
-    end
-  end
-
-  defp postal_line(code, city) do
-    [code, city]
-    |> Enum.reject(&blank?/1)
-    |> Enum.join(" ")
-  end
-
-  defp blank?(value), do: value in [nil, ""]
 
   defp leave_attachment_submit_disabled?(upload) do
     Enum.any?(upload.entries, &(not &1.done?)) or upload_errors(upload) != []

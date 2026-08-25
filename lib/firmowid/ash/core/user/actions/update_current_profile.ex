@@ -23,12 +23,9 @@ defmodule Firmowid.Ash.Core.User.Actions.UpdateCurrentProfile do
       :slack_id,
       :bank_account_number,
       :position,
-      :correspondence_street,
-      :correspondence_city,
-      :correspondence_code,
-      :residence_street,
-      :residence_city,
-      :residence_code
+      :correspondence_address,
+      :residence_address,
+      :is_same_correspondence_address
     ])
     |> Enum.reject(fn {_field, value} -> is_nil(value) end)
     |> Map.new()

@@ -25,9 +25,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :current_user, :map, required: true
   attr :current_org, :map, required: true
   attr :company_form, :map, required: true
-  attr :correspondence_form, :map, required: true
   attr :editing_basic_info, :boolean, required: true
-  attr :editing_correspondence, :boolean, required: true
   attr :ksef_credential, :any, required: true
   attr :ksef_auth_method, :atom, required: true
   attr :ksef_auth_status, :atom, required: true
@@ -59,12 +57,6 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
           uploads={@uploads}
         />
       </div>
-
-      <.correspondence_section
-        current_org={@current_org}
-        correspondence_form={@correspondence_form}
-        editing_correspondence={@editing_correspondence}
-      />
 
       <.bank_accounts_section
         bank_accounts={@bank_accounts}
@@ -158,7 +150,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             <Helpers.settings_field
               label="Płatnik VAT"
               layout={:row}
-              block_class="items-center"
+              block_class="flex items-center my-1"
               for={@company_form[:is_vat_payer].id}
             >
               <.switch field={@company_form[:is_vat_payer]} color="turquoise" />
@@ -167,6 +159,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               <Helpers.settings_field
                 label="Zwolnienie z VAT"
                 layout={:row}
+                block_class="flex items-center"
                 for={@company_form[:vat_exemption_type].id}
               >
                 <.input
@@ -200,7 +193,37 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               <input type="hidden" name={@company_form[:vat_exemption_type].name} value="" />
               <input type="hidden" name={@company_form[:vat_exemption_basis].name} value="" />
             <% end %>
-            <.row_input field={@company_form[:address]} label="Adres" type="text" />
+            <.row_input
+              field={@company_form[:address]}
+              label="Adres"
+              type="textarea"
+              label_class="pt-1.5 self-start"
+            />
+
+            <Helpers.settings_field
+              label="Adres korespondencyjny jest taki sam jak adres firmy"
+              label_class="max-w-50 ml-auto"
+              layout={:row}
+              for={@company_form[:is_same_correspondence_address].id}
+            >
+              <.switch
+                field={@company_form[:is_same_correspondence_address]}
+                class="w-12"
+                color="turquoise"
+              />
+            </Helpers.settings_field>
+
+            <%= if not Phoenix.HTML.Form.normalize_value(
+                  "switch",
+                  @company_form[:is_same_correspondence_address].value
+                ) do %>
+              <.row_input
+                field={@company_form[:correspondence_address]}
+                label="Adres korespondencyjny"
+                type="textarea"
+                label_class="pt-1.5 self-start"
+              />
+            <% end %>
           </div>
 
           <div class="flex w-full justify-end gap-3">
@@ -228,71 +251,11 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             {exemption}
           </.detail_row>
           <.detail_row label="Adres" wide>{multiline_address(@current_org.address)}</.detail_row>
-        </div>
-      <% end %>
-    </.company_section>
-    """
-  end
-
-  attr :current_org, :map, required: true
-  attr :correspondence_form, :map, required: true
-  attr :editing_correspondence, :boolean, required: true
-
-  defp correspondence_section(
-         %{
-           editing_correspondence: false,
-           current_org: %{correspondence_name: correspondence_name, correspondence_address: correspondence_address}
-         } = assigns
-       )
-       when is_nil(correspondence_name) and is_nil(correspondence_address) do
-    ~H"""
-    <.company_section
-      title="Dane korespondencyjne"
-      action="toggle_editing_correspondence"
-      action_label="Dodaj dane korespondencyjne"
-    >
-      <div class="text-grey-700 text-sm">
-        Nie dodano jeszcze danych korespondencyjnych. Jeżeli adres jest inny
-        niż organizacji - dodaj je tutaj.
-      </div>
-    </.company_section>
-    """
-  end
-
-  defp correspondence_section(assigns) do
-    ~H"""
-    <.company_section
-      title="Dane korespondencyjne"
-      action={if(!@editing_correspondence, do: "toggle_editing_correspondence")}
-      action_label="Edytuj dane korespondencyjne"
-    >
-      <%= if @editing_correspondence do %>
-        <.form for={@correspondence_form} phx-submit="save" class="space-y-4">
-          <div class="space-y-2">
-            <.row_input field={@correspondence_form[:correspondence_name]} label="Nazwa" type="text" />
-            <.row_input
-              field={@correspondence_form[:correspondence_address]}
-              label="Adres"
-              type="text"
-            />
-          </div>
-
-          <div class="flex w-full justify-end gap-3">
-            <.button
-              type="button"
-              variant="ghost"
-              size="small"
-              phx-click="toggle_editing_correspondence"
-            >
-              Anuluj
-            </.button>
-            <.button type="submit" variant="success" size="small">Zapisz</.button>
-          </div>
-        </.form>
-      <% else %>
-        <div class="space-y-2">
-          <.detail_row label="Nazwa">{present(@current_org.correspondence_name)}</.detail_row>
-          <.detail_row label="Adres">
+          <.detail_row
+            :if={@current_org.correspondence_address not in [nil, ""]}
+            label="Adres korespondencyjny"
+            wide
+          >
             {multiline_address(@current_org.correspondence_address)}
           </.detail_row>
         </div>
@@ -1261,10 +1224,11 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   attr :field, :map, required: true
   attr :label, :string, required: true
   attr :type, :string, required: true
+  attr :label_class, :string, default: nil
 
   defp row_input(assigns) do
     ~H"""
-    <Helpers.settings_field label={@label} layout={:row} for={@field.id}>
+    <Helpers.settings_field label={@label} layout={:row} for={@field.id} label_class={@label_class}>
       <.input field={@field} type={@type} new input_class="w-full" />
     </Helpers.settings_field>
     """

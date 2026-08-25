@@ -236,13 +236,11 @@ defmodule Firmowid.Ash.Core.User do
         :bank_account_number,
         :birthday,
         :position,
-        :correspondence_street,
-        :correspondence_city,
-        :correspondence_code,
-        :residence_street,
-        :residence_city,
-        :residence_code
+        :correspondence_address,
+        :residence_address
       ]
+
+      argument :is_same_correspondence_address, :boolean
 
       validate present(:name), where: [changing(:name)]
 
@@ -257,6 +255,9 @@ defmodule Firmowid.Ash.Core.User do
                  end
              end),
              where: [changing(:bank_account_number)]
+
+      change set_attribute(:correspondence_address, nil),
+        where: [argument_equals(:is_same_correspondence_address, true)]
     end
 
     update :change_email do
@@ -276,12 +277,9 @@ defmodule Firmowid.Ash.Core.User do
       argument :slack_id, :string
       argument :bank_account_number, :string
       argument :position, :string
-      argument :correspondence_street, :string
-      argument :correspondence_city, :string
-      argument :correspondence_code, :string
-      argument :residence_street, :string
-      argument :residence_city, :string
-      argument :residence_code, :string
+      argument :correspondence_address, :string
+      argument :residence_address, :string
+      argument :is_same_correspondence_address, :boolean
 
       run &UpdateCurrentProfile.run/2
     end
@@ -511,12 +509,8 @@ defmodule Firmowid.Ash.Core.User do
     attribute :birthday, :date, public?: true
     attribute :position, :string, public?: true
 
-    attribute :correspondence_street, :string, public?: true
-    attribute :correspondence_city, :string, public?: true
-    attribute :correspondence_code, :string, public?: true
-    attribute :residence_street, :string, public?: true
-    attribute :residence_city, :string, public?: true
-    attribute :residence_code, :string, public?: true
+    attribute :correspondence_address, :string, public?: true
+    attribute :residence_address, :string, public?: true
 
     Resource.firmowid_timestamps()
   end

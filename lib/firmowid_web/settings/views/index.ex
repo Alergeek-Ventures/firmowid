@@ -55,17 +55,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
     |> AshPhoenix.Form.for_update(:update_basic_info,
       scope: scope,
       domain: Core,
-      as: "organization"
-    )
-    |> to_form()
-  end
-
-  def form_correspondence_form(organization, scope) do
-    organization
-    |> AshPhoenix.Form.for_update(:update_correspondence,
-      scope: scope,
-      domain: Core,
-      as: "organization"
+      as: "organization",
+      params: %{
+        "is_same_correspondence_address" => to_string(organization.correspondence_address in [nil, ""])
+      }
     )
     |> to_form()
   end
@@ -75,7 +68,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
     |> AshPhoenix.Form.for_update(:update_profile,
       scope: scope,
       domain: Core,
-      as: "user"
+      as: "user",
+      params: %{
+        "is_same_correspondence_address" => to_string(user.correspondence_address in [nil, ""])
+      }
     )
     |> to_form()
   end
@@ -140,7 +136,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
         socket
         |> assign(:company_form, form_basic_info_form(current_org, scope))
-        |> assign(:correspondence_form, form_correspondence_form(current_org, scope))
         |> assign(:ksef_credential, Ksef.get_credential!(scope: scope))
         |> assign(:ksef_auth_challenge, nil)
         |> assign(:ksef_auth_method, :trusted_profile)
@@ -176,7 +171,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
     {:ok,
      socket
      |> assign(:editing_basic_info, false)
-     |> assign(:editing_correspondence, false)
      |> assign(:editing_account_name, false)
      |> assign(:editing_profile_employment, false)
      |> assign(:editing_profile_finance, false)
@@ -419,29 +413,13 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
   def handle_event("save", %{"organization" => org_params}, socket) do
     current_user = socket.assigns.current_user
-    _current_org = socket.assigns.current_org
     scope = socket.assigns.ash_scope
 
     if current_user.role != :admin do
       raise Forbidden, message: "Tylko administrator może aktualizować organizację."
     end
 
-    # Determine which form to submit based on which fields are present
-    {form_key, _action} =
-      cond do
-        Map.has_key?(org_params, "correspondence_name") ->
-          {:correspondence_form, :update_correspondence}
-
-        Map.has_key?(org_params, "name") or Map.has_key?(org_params, "nip") ->
-          {:company_form, :update_basic_info}
-
-        true ->
-          {:company_form, :update_organization}
-      end
-
-    form = socket.assigns[form_key]
-
-    case AshPhoenix.Form.submit(form, params: org_params, scope: scope) do
+    case AshPhoenix.Form.submit(socket.assigns.company_form, params: org_params, scope: scope) do
       {:ok, updated_org} ->
         # Load avatar using Ash.load!
         updated_with_avatar =
@@ -450,14 +428,12 @@ defmodule FirmowidWeb.Settings.Views.Index do
         {:noreply,
          socket
          |> assign(:editing_basic_info, false)
-         |> assign(:editing_correspondence, false)
-         |> assign(:correspondence_form, form_correspondence_form(updated_with_avatar, scope))
          |> assign(:company_form, form_basic_info_form(updated_with_avatar, scope))
          |> assign(:current_org, updated_with_avatar)
          |> assign_subscription_preview_if_visible()}
 
       {:error, form} ->
-        {:noreply, assign(socket, form_key, form)}
+        {:noreply, assign(socket, :company_form, form)}
     end
   end
 
@@ -465,8 +441,21 @@ defmodule FirmowidWeb.Settings.Views.Index do
     save_user_form(socket, user_params, :editing_account_name)
   end
 
+  def handle_event("save_profile_contact", %{"user" => user_params}, socket) do
+    save_user_form(socket, user_params, :editing_profile_contact)
+  end
+
   def handle_event("save_profile_" <> section, %{"user" => user_params}, socket) do
     save_user_form(socket, user_params, profile_section_assign(section))
+  end
+
+  def handle_event("validate_profile_contact", %{"user" => user_params}, socket) do
+    form =
+      socket.assigns.user_form
+      |> AshPhoenix.Form.validate(user_params)
+      |> to_form()
+
+    {:noreply, assign(socket, :user_form, form)}
   end
 
   def handle_event("change_email", %{"user" => user_params}, socket) do
@@ -910,10 +899,6 @@ defmodule FirmowidWeb.Settings.Views.Index do
     {:noreply, assign(socket, :editing_basic_info, !socket.assigns.editing_basic_info)}
   end
 
-  def handle_event("toggle_editing_correspondence", _params, socket) do
-    {:noreply, assign(socket, :editing_correspondence, !socket.assigns.editing_correspondence)}
-  end
-
   def handle_event("toggle_editing_account_name", _params, socket) do
     {:noreply, assign(socket, :editing_account_name, !socket.assigns.editing_account_name)}
   end
@@ -1344,9 +1329,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
             current_user={@current_user}
             current_org={@current_org}
             company_form={@company_form}
-            correspondence_form={@correspondence_form}
             editing_basic_info={@editing_basic_info}
-            editing_correspondence={@editing_correspondence}
             ksef_credential={@ksef_credential}
             ksef_auth_method={@ksef_auth_method}
             ksef_auth_status={@ksef_auth_status}

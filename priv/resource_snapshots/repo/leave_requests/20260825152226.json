@@ -21,7 +21,43 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "name",
+      "source": "starts_on",
+      "type": "date"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "ends_on",
+      "type": "date"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "note",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "\"absence\"",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "category",
       "type": "text"
     },
     {
@@ -33,137 +69,19 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "nip",
+      "source": "reason",
       "type": "text"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "address",
-      "type": "text"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "correspondence_address",
-      "type": "text"
-    },
-    {
-      "allow_nil?": true,
-      "default": "true",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "is_vat_payer",
-      "type": "boolean"
-    },
-    {
-      "allow_nil?": true,
-      "default": "[]",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "allowed_sender_emails",
-      "type": [
-        "array",
-        "text"
-      ]
     },
     {
       "allow_nil?": false,
-      "default": "nil",
+      "default": "\"pending\"",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "inbound_email_nickname",
-      "type": "text"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": {
-        "deferrable": false,
-        "destination_attribute": "id",
-        "destination_attribute_default": null,
-        "destination_attribute_generated": null,
-        "index?": false,
-        "match_type": null,
-        "match_with": null,
-        "multitenancy": {
-          "attribute": "organization_id",
-          "global": false,
-          "strategy": "attribute"
-        },
-        "name": "organizations_avatar_blob_id_fkey",
-        "on_delete": null,
-        "on_update": null,
-        "primary_key?": true,
-        "schema": "public",
-        "table": "blobs"
-      },
-      "scale": null,
-      "size": null,
-      "source": "avatar_blob_id",
-      "type": "uuid"
-    },
-    {
-      "allow_nil?": false,
-      "default": "\"przedsiebiorca\"",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "billing_plan",
-      "type": "text"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "vat_exemption_type",
-      "type": "text"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "vat_exemption_basis",
+      "source": "status",
       "type": "text"
     },
     {
@@ -202,6 +120,8 @@
         "destination_attribute_default": null,
         "destination_attribute_generated": null,
         "index?": false,
+        "index_where": null,
+        "match_tenant?": false,
         "match_type": null,
         "match_with": null,
         "multitenancy": {
@@ -209,7 +129,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "organizations_owner_id_fkey",
+        "name": "leave_requests_user_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
@@ -218,7 +138,73 @@
       },
       "scale": null,
       "size": null,
-      "source": "owner_id",
+      "source": "user_id",
+      "type": "uuid"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "index_where": null,
+        "match_tenant?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": null,
+          "global": null,
+          "strategy": null
+        },
+        "name": "leave_requests_organization_id_fkey",
+        "on_delete": null,
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "organizations"
+      },
+      "scale": null,
+      "size": null,
+      "source": "organization_id",
+      "type": "uuid"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "index_where": null,
+        "match_tenant?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": "organization_id",
+          "global": false,
+          "strategy": "attribute"
+        },
+        "name": "leave_requests_blob_id_fkey",
+        "on_delete": null,
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "blobs"
+      },
+      "scale": null,
+      "size": null,
+      "source": "blob_id",
       "type": "uuid"
     }
   ],
@@ -226,31 +212,25 @@
   "check_constraints": [],
   "create_table_options": null,
   "custom_indexes": [],
-  "custom_statements": [],
-  "has_create_action": true,
-  "hash": "3F747C5D9F383D2D40867D92399DDD517A7F34C9BB7DD60AF146F82AC8A3979A",
-  "identities": [
+  "custom_statements": [
     {
-      "all_tenants?": false,
-      "base_filter": null,
-      "index_name": "organizations_unique_nickname_index",
-      "keys": [
-        {
-          "type": "atom",
-          "value": "inbound_email_nickname"
-        }
-      ],
-      "name": "unique_nickname",
-      "nils_distinct?": true,
-      "where": null
+      "after_tables": [],
+      "code?": false,
+      "down": "ALTER TABLE leave_requests\nDROP CONSTRAINT no_overlapping_leave_requests;\n",
+      "global?": false,
+      "name": "no_overlapping_leave_requests",
+      "up": "ALTER TABLE leave_requests\nADD CONSTRAINT no_overlapping_leave_requests\nEXCLUDE USING gist (\n  user_id WITH =,\n  daterange(starts_on, ends_on, '[]') WITH &&\n)\nWHERE (status IN ('accepted', 'pending'));\n"
     }
   ],
+  "has_create_action": true,
+  "hash": "5A9E0735EBECC71C443DC3A89819551299A163D76FDB35C8CD78006B52C18063",
+  "identities": [],
   "multitenancy": {
-    "attribute": null,
-    "global": null,
-    "strategy": null
+    "attribute": "organization_id",
+    "global": false,
+    "strategy": "attribute"
   },
   "repo": "Elixir.Firmowid.Repo",
   "schema": null,
-  "table": "organizations"
+  "table": "leave_requests"
 }

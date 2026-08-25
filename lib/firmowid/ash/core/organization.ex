@@ -66,7 +66,6 @@ defmodule Firmowid.Ash.Core.Organization do
         :name,
         :nip,
         :address,
-        :correspondence_name,
         :correspondence_address,
         :is_vat_payer,
         :allowed_sender_emails,
@@ -88,21 +87,22 @@ defmodule Firmowid.Ash.Core.Organization do
       accept [
         :nip,
         :address,
+        :correspondence_address,
         :name,
         :is_vat_payer,
         :vat_exemption_type,
         :vat_exemption_basis
       ]
 
+      argument :is_same_correspondence_address, :boolean
+
       change {ClearVatExemptionFields, []}
+
+      change set_attribute(:correspondence_address, nil),
+        where: [argument_equals(:is_same_correspondence_address, true)]
 
       validate match(:nip, ~r/^[0-9]{10}$/)
       validate {ValidateNip, field: :nip}
-    end
-
-    update :update_correspondence do
-      description "Update the correspondence name and address for an organization."
-      accept [:correspondence_name, :correspondence_address]
     end
 
     update :update_billing_plan do
@@ -184,7 +184,6 @@ defmodule Firmowid.Ash.Core.Organization do
     policy action([
              :update,
              :update_basic_info,
-             :update_correspondence,
              :update_avatar,
              :add_sender_email,
              :remove_sender_email,
@@ -215,7 +214,6 @@ defmodule Firmowid.Ash.Core.Organization do
     attribute :name, :string, public?: true, allow_nil?: false
     attribute :nip, :string, public?: true, allow_nil?: false
     attribute :address, :string, public?: true
-    attribute :correspondence_name, :string, public?: true
     attribute :correspondence_address, :string, public?: true
     attribute :is_vat_payer, :boolean, public?: true, default: true
     attribute :allowed_sender_emails, {:array, :string}, public?: true, default: []
