@@ -22,6 +22,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
   alias FirmowidWeb.Management.Components.LeavesTab
   alias FirmowidWeb.Management.Components.ProfileTab
   alias FirmowidWeb.Management.Utilities.Navigation
+  alias FirmowidWeb.Timetracker.Components.DelegationsList
   alias Phoenix.Socket.Broadcast
 
   @impl true
@@ -107,6 +108,19 @@ defmodule FirmowidWeb.Management.Views.Employee do
     {:noreply, socket}
   end
 
+  def handle_event("approve_delegation", %{"id" => id}, socket) do
+    case Timetracker.approve_delegation(id, scope: socket.assigns.ash_scope) do
+      {:ok, _delegation} ->
+        {:noreply,
+         socket
+         |> assign(:employee, with_projects(socket.assigns.employee, socket.assigns.ash_scope))
+         |> put_flash(:info, "Delegacja została zatwierdzona.")}
+
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "Nie udało się zatwierdzić delegacji.")}
+    end
+  end
+
   def handle_event("archive_employee", _params, socket) do
     scope = socket.assigns.ash_scope
 
@@ -173,7 +187,9 @@ defmodule FirmowidWeb.Management.Views.Employee do
   end
 
   defp with_projects(user, scope) do
-    Map.put(user, :projects, Timetracker.list_projects!(%{user_id: user.id}, scope: scope))
+    user
+    |> Map.put(:projects, Timetracker.list_projects!(%{user_id: user.id}, scope: scope))
+    |> Map.put(:delegations, Timetracker.list_delegations_for_user!(user.id, scope: scope))
   end
 
   defp humanize_ash_error(%Ash.Error.Invalid{errors: [first_error | _]}) do

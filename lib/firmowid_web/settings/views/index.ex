@@ -109,6 +109,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
       if(admin?, do: list_bank_institutions(current_user, bank_accounts), else: %{})
 
     leave_requests = Timetracker.list_leave_requests_for_user!(current_user.id, scope: scope)
+    delegations = Timetracker.list_delegations_for_user!(current_user.id, scope: scope)
 
     leave_days =
       current_user
@@ -201,6 +202,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
        progress: &handle_progress/3
      )
      |> assign(:leave_requests, leave_requests)
+     |> assign(:delegations, delegations)
      |> assign(:leave_days, leave_days || 0)
      |> assign(:leave_search, "")
      |> assign(:leave_request_form, leave_request_form(current_user, scope))
@@ -1488,6 +1490,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
             pending_contract={@pending_contract}
             latest_contract={@latest_contract}
             signed_contract_upload={@uploads.signed_contract}
+            delegations={@delegations}
           />
       <% end %>
     </.settings_page>
