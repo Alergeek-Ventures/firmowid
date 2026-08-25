@@ -1101,7 +1101,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         </.bank_detail_row>
         <.bank_detail_row label="Bank">{present(@account.institution_name)}</.bank_detail_row>
         <.bank_detail_row label="Numer">
-          <span class="break-all">{present(@account.iban)}</span>
+          <span class="break-all">{format_iban(@account.iban)}</span>
         </.bank_detail_row>
         <.bank_detail_row :if={@status} label="Status">
           <span :if={@status in [:broken, :disconnected]} class="inline-flex items-center gap-1.5">
@@ -1319,6 +1319,15 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
   defp present(nil), do: "—"
   defp present(""), do: "—"
   defp present(value), do: to_string(value)
+
+  defp format_iban(nil), do: ""
+
+  defp format_iban(iban) do
+    iban
+    |> String.graphemes()
+    |> Enum.chunk_every(4)
+    |> Enum.map_join(" ", &Enum.join/1)
+  end
 
   defp yes_no(true), do: "Tak"
   defp yes_no(false), do: "Nie"

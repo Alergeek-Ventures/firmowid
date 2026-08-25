@@ -1,5 +1,10 @@
 defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
-  @moduledoc false
+  @moduledoc """
+  Renders and supports the payment section of the sales invoice form.
+
+  Bank-account selection is kept here because it is shared by the creator and
+  edit views.
+  """
   use FirmowidWeb, :html
 
   import FirmowidWeb.DesignSystem.Components.Button
@@ -7,7 +12,32 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
+  alias Firmowid.Ash.Finances.BankAccount
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
+
+  @doc """
+  Finds the account matching an IBAN and currency, falling back to the default
+  account for the currency only when no IBAN is supplied.
+  """
+  @spec find_selected_bank_account([map()], String.t() | nil, String.t() | nil) :: map() | nil
+  def find_selected_bank_account(bank_accounts, iban, currency) do
+    canonical_iban = BankAccount.normalize_iban(iban)
+    canonical_currency = BankAccount.normalize_currency(currency)
+
+    case Enum.find(bank_accounts, fn account ->
+           BankAccount.normalize_iban(account.iban) == canonical_iban and
+             BankAccount.normalize_currency(account.currency) == canonical_currency
+         end) do
+      nil when canonical_iban in [nil, ""] ->
+        Enum.find(bank_accounts, fn account ->
+          account.is_default and
+            BankAccount.normalize_currency(account.currency) == canonical_currency
+        end)
+
+      selected_bank_account ->
+        selected_bank_account
+    end
+  end
 
   attr :invoice, :map, required: true
   attr :bank_accounts, :list, required: true
@@ -193,25 +223,30 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment do
 
           <div class="space-y-3">
             <%= for account <- @bank_accounts do %>
-              <div class={[
-                "grid grid-cols-[min-content_min-content_1fr_min-content_min-content] items-center gap-2 rounded-lg border p-4 transition-colors",
-                if(@selected_bank_account && @selected_bank_account.id == account.id,
-                  do: "bg-grey-50 border-grey-400",
-                  else: "border-grey-200 hover:border-grey-300"
-                )
-              ]}>
+              <div
+                id={"bank-account-option-#{account.id}"}
+                class={[
+                  "grid grid-cols-[min-content_min-content_1fr_min-content_min-content] items-center gap-2 rounded-lg border p-4 transition-colors",
+                  if(@selected_bank_account && @selected_bank_account.id == account.id,
+                    do: "bg-grey-50 border-grey-400",
+                    else: "border-grey-200 hover:border-grey-300"
+                  )
+                ]}
+              >
                 <Lucideicons.landmark class="text-grey-600 mr-4 size-10 shrink-0" />
 
                 <div class="flex flex-col gap-2 text-sm">
                   <span :if={account.name} class="text-grey-500 block">Nazwa</span>
                   <span class="text-grey-500 block">Bank</span>
                   <span class="text-grey-500 block">Numer</span>
+                  <span class="text-grey-500 block">Waluta</span>
                 </div>
 
                 <div class="flex flex-col gap-2 text-sm">
                   <span :if={account.name} class="text-grey-700 block truncate">{account.name}</span>
                   <span class="text-grey-700 block truncate">{account.institution_name}</span>
                   <span class="text-grey-700 block">{account.iban}</span>
+                  <span class="text-grey-700 block">{account.currency}</span>
                 </div>
 
                 <p

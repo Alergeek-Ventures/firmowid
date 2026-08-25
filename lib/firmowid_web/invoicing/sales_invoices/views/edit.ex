@@ -25,6 +25,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.SubmissionInfo
   alias FirmowidWeb.Invoicing.FormHelpers
+  alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
   alias FirmowidWeb.Invoicing.SalesInvoices.Views.Creator
   alias FirmowidWeb.Invoicing.Utilities.Navigation
@@ -115,8 +116,11 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
     |> assign(:bank_accounts, bank_accounts)
     |> assign(
       :selected_bank_account,
-      Enum.find(bank_accounts, &(&1.iban == invoice.seller_account_number)) ||
-        Enum.find(bank_accounts, &(&1.is_default and &1.currency == invoice.currency))
+      InvoicePayment.find_selected_bank_account(
+        bank_accounts,
+        invoice.seller_account_number,
+        invoice.currency
+      )
     )
     |> assign(
       :counterparties,

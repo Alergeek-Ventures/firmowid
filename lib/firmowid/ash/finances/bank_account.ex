@@ -97,7 +97,7 @@ defmodule Firmowid.Ash.Finances.BankAccount do
       ]
 
       upsert? true
-      upsert_identity :unique_iban_per_org
+      upsert_identity :unique_iban_currency
 
       upsert_fields [
         :gocardless_id,
@@ -107,12 +107,28 @@ defmodule Firmowid.Ash.Finances.BankAccount do
         :currency,
         :requisition_id
       ]
+
+      change update_change(:iban, &normalize_iban/1)
+      change update_change(:currency, &normalize_currency/1)
+      validate match(:iban, ~r/.+/), message: "IBAN jest wymagany", before_action?: true
+
+      validate match(:currency, ~r/^[A-Z]{3}$/),
+        message: "Nieprawidłowy kod waluty",
+        before_action?: true
     end
 
     create :create_manual do
       description "Create a manually managed bank account."
       primary? true
       accept [:iban, :name, :currency, :is_default, :owner_name]
+
+      change update_change(:iban, &normalize_iban/1)
+      change update_change(:currency, &normalize_currency/1)
+      validate match(:iban, ~r/.+/), message: "IBAN jest wymagany", before_action?: true
+
+      validate match(:currency, ~r/^[A-Z]{3}$/),
+        message: "Nieprawidłowy kod waluty",
+        before_action?: true
 
       change set_attribute(:institution_name, "Manual")
       change set_attribute(:gocardless_id, nil)
@@ -225,7 +241,7 @@ defmodule Firmowid.Ash.Finances.BankAccount do
     attribute :institution_id, :string, public?: true
     attribute :institution_name, :string, public?: true
     attribute :owner_name, :string, public?: true
-    attribute :currency, :string, public?: true
+    attribute :currency, :string, public?: true, allow_nil?: false
     attribute :name, :string, public?: true
     attribute :is_default, :boolean, public?: true, default: false
 
@@ -291,7 +307,7 @@ defmodule Firmowid.Ash.Finances.BankAccount do
   end
 
   identities do
-    identity :unique_iban_per_org, [:iban, :organization_id]
+    identity :unique_iban_currency, [:iban, :currency]
 
     # Partial unique index: only one default account per currency per org.
     # The DB index is `bank_accounts_organization_id_currency_is_default_index`
@@ -299,5 +315,31 @@ defmodule Firmowid.Ash.Finances.BankAccount do
     identity :unique_default_per_currency, [:currency] do
       where expr(is_default == true)
     end
+  end
+
+  @doc """
+  Removes all Unicode whitespace from an IBAN and uppercases the result.
+  """
+  @spec normalize_iban(String.t() | nil) :: String.t() | nil
+  def normalize_iban(nil), do: nil
+
+  def normalize_iban(value) do
+    value
+    |> to_string()
+    |> String.replace(~r/\p{White_Space}/u, "")
+    |> String.upcase()
+  end
+
+  @doc """
+  Trims surrounding whitespace from a currency code and uppercases it.
+  """
+  @spec normalize_currency(String.t() | nil) :: String.t() | nil
+  def normalize_currency(nil), do: nil
+
+  def normalize_currency(value) do
+    value
+    |> to_string()
+    |> String.trim()
+    |> String.upcase()
   end
 end

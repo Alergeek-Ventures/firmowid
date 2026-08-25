@@ -30,6 +30,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   alias Firmowid.Ash.Invoicing.WizardDraft
   alias Firmowid.Ash.Ksef
   alias FirmowidWeb.Infrastructure.Utilities.PolishValues
+  alias FirmowidWeb.Invoicing.SalesInvoices.Components.InvoicePayment
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.CreatorQueryParams
   alias FirmowidWeb.Invoicing.SalesInvoices.Utilities.PaymentDateSuggestions
   alias FirmowidWeb.Invoicing.Utilities.Navigation
@@ -187,7 +188,7 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
 
   defp populate_draft_from_invoice(draft, base_invoice, bank_accounts, scope) do
     default_bank_account =
-      Enum.find(bank_accounts, &(&1.is_default and &1.currency == base_invoice.currency))
+      InvoicePayment.find_selected_bank_account(bank_accounts, nil, base_invoice.currency)
 
     items =
       Enum.map(base_invoice.sales_invoice_items, fn item ->
@@ -436,9 +437,14 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
     actor = socket.assigns.current_user
     bank_accounts = socket.assigns.bank_accounts
 
-    # Find selected bank account: match by IBAN if set, otherwise find default for currency
+    # An IBAN can be shared by accounts in different currencies. Prefer the exact
+    # invoice-currency pair and only use the currency default as a fallback.
     selected_bank_account =
-      find_selected_bank_account(bank_accounts, draft.seller_account_number, draft.currency)
+      InvoicePayment.find_selected_bank_account(
+        bank_accounts,
+        draft.seller_account_number,
+        draft.currency
+      )
 
     defaults =
       %{
@@ -1301,12 +1307,6 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Creator do
   def warning_suggestions({:invalid_format, suggestions}), do: suggestions
   def warning_suggestions({:duplicate, suggestions}), do: suggestions
   def warning_suggestions({:gap, expected}), do: [expected]
-
-  # Find the selected bank account: first try matching IBAN, then default for currency
-  defp find_selected_bank_account(bank_accounts, iban, currency) do
-    Enum.find(bank_accounts, &(&1.iban == iban)) ||
-      Enum.find(bank_accounts, &(&1.is_default and &1.currency == currency))
-  end
 
   # Confirmed VAT invoices from the previous 2 months (replaces list_recent action).
   # The range covers [first_of_month - 2 months, last day of previous month].

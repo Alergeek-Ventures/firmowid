@@ -122,7 +122,7 @@ defmodule Firmowid.Seeds.Helpers do
 
   def seed_bank_account!(attrs, org_id) do
     Ash.Seed.upsert!(AshBankAccount, Map.put(attrs, :organization_id, org_id),
-      identity: :unique_iban_per_org,
+      identity: :unique_iban_currency,
       tenant: org_id
     )
   end

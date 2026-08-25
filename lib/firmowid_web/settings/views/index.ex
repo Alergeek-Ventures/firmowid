@@ -1435,15 +1435,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   end
 
   defp bank_account_sort_key(account) do
-    {normalize_iban(account.iban), account.id}
-  end
-
-  defp normalize_iban(nil), do: ""
-
-  defp normalize_iban(iban) do
-    iban
-    |> String.upcase()
-    |> String.replace(~r/\s+/, "")
+    {account.iban, account.id}
   end
 
   defp list_pending_requisitions(scope) do

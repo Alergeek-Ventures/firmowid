@@ -12,6 +12,85 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.CreatorTest do
   alias Firmowid.Ash.Scope
   alias Firmowid.Test.Support.InvoicingCopyAssertions
 
+  test "payment step restores the bank account matching the draft currency", %{conn: conn} do
+    admin = admin_fixture()
+    scope = scope_for(admin)
+    iban = "DE02120300000000202020202020"
+
+    {:ok, pln_account} =
+      Finances.create_manual_bank_account(
+        %{iban: iban, name: "Rachunek PLN", currency: "PLN", is_default: false},
+        scope: scope
+      )
+
+    {:ok, eur_account} =
+      Finances.create_manual_bank_account(
+        %{iban: iban, name: "Rachunek EUR", currency: "EUR", is_default: true},
+        scope: scope
+      )
+
+    draft = payment_step_draft!(admin)
+
+    formatted_iban = "de02 1203 0000 0000 2020 2020 2020"
+
+    {:ok, draft} =
+      WizardDraft.update_payment(
+        draft,
+        %{
+          seller_account_number: formatted_iban,
+          sale_date: Date.utc_today(),
+          due_date: Date.add(Date.utc_today(), 14),
+          payment_method: :transfer
+        },
+        scope: scope
+      )
+
+    conn = log_in_user(conn, admin)
+    {:ok, view, _html} = live(conn, ~p"/sprzedazowe?szkic_kreatora=#{draft.id}&krok=3")
+
+    assert has_element?(view, "#bank-account-option-#{pln_account.id}", "PLN")
+    assert has_element?(view, "#bank-account-option-#{eur_account.id}", "EUR")
+    assert has_element?(view, "#bank-account-option-#{pln_account.id} button", "Odznacz")
+    assert has_element?(view, "#bank-account-option-#{eur_account.id} button", "Wybierz")
+  end
+
+  test "payment step does not replace an unmatched IBAN with the currency default", %{
+    conn: conn
+  } do
+    admin = admin_fixture()
+    scope = scope_for(admin)
+
+    {:ok, default_account} =
+      Finances.create_manual_bank_account(
+        %{
+          iban: "PL61109010140000071219812874",
+          name: "Rachunek PLN",
+          currency: "PLN",
+          is_default: true
+        },
+        scope: scope
+      )
+
+    draft = payment_step_draft!(admin)
+
+    {:ok, draft} =
+      WizardDraft.update_payment(
+        draft,
+        %{
+          seller_account_number: "PL16109010140000071219812875",
+          sale_date: Date.utc_today(),
+          due_date: Date.add(Date.utc_today(), 14),
+          payment_method: :transfer
+        },
+        scope: scope
+      )
+
+    conn = log_in_user(conn, admin)
+    {:ok, view, _html} = live(conn, ~p"/sprzedazowe?szkic_kreatora=#{draft.id}&krok=3")
+
+    assert has_element?(view, "#bank-account-option-#{default_account.id} button", "Wybierz")
+  end
+
   test "payment suggestions set due date from issue date in creator", %{conn: conn} do
     admin = admin_fixture()
     draft = payment_step_draft!(admin)
