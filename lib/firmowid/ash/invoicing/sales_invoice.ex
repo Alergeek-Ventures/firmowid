@@ -1236,10 +1236,16 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoice do
     calculate :amount,
               Money,
               expr(
-                if is_nil(gross_value) or is_nil(currency) do
+                if is_nil(currency) do
                   nil
                 else
-                  composite_type(%{currency: currency, amount: gross_value}, Money)
+                  composite_type(
+                    %{
+                      currency: currency,
+                      amount: if(is_nil(gross_value), do: 0, else: gross_value)
+                    },
+                    Money
+                  )
                 end
               )
 
