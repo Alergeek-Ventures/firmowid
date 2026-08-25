@@ -120,6 +120,7 @@ defmodule Firmowid.Ash.Assistant.InvoiceMatchingTest do
 
       assert :ok =
                DatabaseCache.store_historic_rates(
+                 nil,
                  %{
                    "USD" => Decimal.new("1.0"),
                    "EUR" => Decimal.new("1.0"),

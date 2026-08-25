@@ -16,16 +16,16 @@ defmodule Firmowid.Ash.Currencies.DatabaseCache do
   @cache_opts [actor: @cache_actor]
 
   @impl true
-  def init, do: :ok
+  def init(_name), do: :ok
 
   @impl true
-  def latest_rates do
+  def latest_rates(_cache) do
     error_message = "Latest rates caching not implemented"
     {:error, {Money.ExchangeRateError.exception(message: error_message), error_message}}
   end
 
   @impl true
-  def historic_rates(date) do
+  def historic_rates(_cache, date) do
     case get_cache_entry(date) do
       nil ->
         error_message = "No rates available for #{date}"
@@ -37,14 +37,14 @@ defmodule Firmowid.Ash.Currencies.DatabaseCache do
   end
 
   @impl true
-  def store_latest_rates(_rates, _retrieved_at), do: :ok
+  def store_latest_rates(_cache, _rates, _retrieved_at), do: :ok
 
   @impl true
-  def store_historic_rates(rates, date, retrieved_at \\ DateTime.utc_now()) do
+  def store_historic_rates(_cache, rates, date) do
     attrs = %{
       cache_date: date,
       rates: rates,
-      retrieved_at: retrieved_at,
+      retrieved_at: DateTime.utc_now(),
       expires_at: DateTime.shift(DateTime.utc_now(), day: 30)
     }
 
@@ -53,7 +53,7 @@ defmodule Firmowid.Ash.Currencies.DatabaseCache do
   end
 
   @impl true
-  def terminate, do: :ok
+  def terminate(_cache), do: :ok
 
   @spec get_cache_entry(Date.t()) :: struct() | nil
   def get_cache_entry(cache_date) do

@@ -37,11 +37,11 @@ defmodule Firmowid.Ash.Currencies.CurrenciesTest do
         "PLN" => Decimal.new("4.05")
       }
 
-      assert :ok = DatabaseCache.store_historic_rates(rates, date)
+      assert :ok = DatabaseCache.store_historic_rates(nil, rates, date)
 
       assert {:ok, 1} = Ash.count(ExchangeRate, @bridge_opts)
 
-      assert {:ok, fetched_rates} = DatabaseCache.historic_rates(date)
+      assert {:ok, fetched_rates} = DatabaseCache.historic_rates(nil, date)
 
       assert fetched_rates["EUR"] == Decimal.new("0.85")
       assert fetched_rates["GBP"] == Decimal.new("0.73")
@@ -60,7 +60,7 @@ defmodule Firmowid.Ash.Currencies.CurrenciesTest do
         "PLN" => Decimal.new("4.05")
       }
 
-      DatabaseCache.store_historic_rates(seeded_rates, date)
+      DatabaseCache.store_historic_rates(nil, seeded_rates, date)
 
       assert {:ok, 1} = Ash.count(ExchangeRate, @bridge_opts)
 
@@ -83,7 +83,7 @@ defmodule Firmowid.Ash.Currencies.CurrenciesTest do
         "PLN" => Decimal.new("2.0")
       }
 
-      DatabaseCache.store_historic_rates(seeded_rates, date)
+      DatabaseCache.store_historic_rates(nil, seeded_rates, date)
 
       # credo:disable-for-next-line
       {:ok, rates} = Money.ExchangeRates.historic_rates(date)
@@ -103,7 +103,7 @@ defmodule Firmowid.Ash.Currencies.CurrenciesTest do
         "PLN" => Decimal.new("2.0")
       }
 
-      DatabaseCache.store_historic_rates(seeded_rates, date)
+      DatabaseCache.store_historic_rates(nil, seeded_rates, date)
 
       amount_eur = Decimal.new("100")
       amount_pln = Converter.normalize_amount_to_pln(amount_eur, "EUR", date)
@@ -116,18 +116,18 @@ defmodule Firmowid.Ash.Currencies.CurrenciesTest do
     end
   end
 
-  describe "historic_rates/1" do
+  describe "historic_rates/2" do
     test "returns error when no rates for date" do
       date = ~D[2024-01-15]
-      assert {:error, {%Money.ExchangeRateError{}, _}} = DatabaseCache.historic_rates(date)
+      assert {:error, {%Money.ExchangeRateError{}, _}} = DatabaseCache.historic_rates(nil, date)
     end
 
     test "returns rates when cached for date" do
       date = ~D[2024-01-15]
       rates = %{"EUR" => Decimal.new("0.85"), "GBP" => Decimal.new("0.73")}
-      DatabaseCache.store_historic_rates(rates, date)
+      DatabaseCache.store_historic_rates(nil, rates, date)
 
-      assert {:ok, fetched_rates} = DatabaseCache.historic_rates(date)
+      assert {:ok, fetched_rates} = DatabaseCache.historic_rates(nil, date)
       assert fetched_rates["EUR"] == Decimal.new("0.85")
       assert fetched_rates["GBP"] == Decimal.new("0.73")
     end
@@ -138,13 +138,13 @@ defmodule Firmowid.Ash.Currencies.CurrenciesTest do
       rates1 = %{"EUR" => Decimal.new("0.85")}
       rates2 = %{"EUR" => Decimal.new("0.90")}
 
-      DatabaseCache.store_historic_rates(rates1, date1)
-      DatabaseCache.store_historic_rates(rates2, date2)
+      DatabaseCache.store_historic_rates(nil, rates1, date1)
+      DatabaseCache.store_historic_rates(nil, rates2, date2)
 
-      assert {:ok, fetched_rates1} = DatabaseCache.historic_rates(date1)
+      assert {:ok, fetched_rates1} = DatabaseCache.historic_rates(nil, date1)
       assert fetched_rates1["EUR"] == Decimal.new("0.85")
 
-      assert {:ok, fetched_rates2} = DatabaseCache.historic_rates(date2)
+      assert {:ok, fetched_rates2} = DatabaseCache.historic_rates(nil, date2)
       assert fetched_rates2["EUR"] == Decimal.new("0.90")
     end
   end
