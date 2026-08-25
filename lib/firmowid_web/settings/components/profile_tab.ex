@@ -302,7 +302,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
     <section class="flex w-full flex-col gap-6 rounded-lg bg-white p-6 shadow">
       <div class="flex items-start justify-between gap-3">
         <h2 class="text-grey-900 text-base leading-none font-medium">Nieobecności</h2>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-3">
           <form class="flex gap-4" phx-submit="search_leave_requests">
             <div
               id="profile-leave-search-container"
@@ -323,7 +323,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
                 type="button"
                 size="small"
                 variant="outline"
-                class="py-2"
+                class="py-2 group-data-[expanded=true]:rounded-r-lg"
                 phx-click={
                   JS.toggle_attribute({"data-expanded", "true", "false"},
                     to: "#profile-leave-search-container"
@@ -340,6 +340,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
             variant="secondary"
             size="small"
             phx-click={show_modal("leave-request-modal")}
+            class="py-1.75"
           >
             <.icon name="hero-paper-airplane" class="size-4" /> Złóż wniosek
           </.button>

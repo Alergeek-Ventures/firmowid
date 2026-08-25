@@ -137,7 +137,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   defp toolbar(assigns) do
     ~H"""
     <div class="flex items-center gap-4">
-      <form class="flex gap-4" phx-submit="search" phx-target={@myself}>
+      <form class="flex gap-3" phx-submit="search" phx-target={@myself}>
         <div
           id={"#{@id}-search-container"}
           data-expanded={to_string(@search != "")}
@@ -151,7 +151,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
             phx-change="search"
             phx-debounce="300"
             phx-target={@myself}
-            input_class="py-0 px-1 bg-transparent border-none"
+            input_class="py-0 px-1 bg-transparent border-none z-10 font-normal"
             class={@search_input_styles}
           />
           <.button
@@ -164,7 +164,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
               |> JS.focus(to: "##{@id}-search-container input")
             }
             variant="outline"
-            class="py-2"
+            class="py-2 group-data-[expanded=true]:rounded-r-lg"
           >
             <Lucideicons.search />
           </.button>
