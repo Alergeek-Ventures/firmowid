@@ -29,14 +29,8 @@ defmodule Firmowid.Mailer.Components do
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="color-scheme" content="light only" />
         <title>Firmowid</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
       </head>
-      <body style={"margin:0; padding:0; background:#{@background}; color:#{@ink}; font-family:'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"}>
+      <body style={"margin:0; padding:0; background:#{@background}; color:#{@ink}; font-family:Arial, Helvetica, sans-serif;"}>
         <div style="display:none; max-height:0; overflow:hidden; opacity:0;">{@preheader}</div>
         <table
           role="presentation"
@@ -44,7 +38,7 @@ defmodule Firmowid.Mailer.Components do
           cellspacing="0"
           cellpadding="0"
           border="0"
-          style={"width:100%; background:#{@background}; border-collapse:collapse; font-family:'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"}
+          style={"width:100%; background:#{@background}; border-collapse:collapse; font-family:Arial, Helvetica, sans-serif;"}
         >
           <tr>
             <td align="center">
