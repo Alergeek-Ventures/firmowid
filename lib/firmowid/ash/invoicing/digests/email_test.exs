@@ -46,7 +46,7 @@ defmodule Firmowid.Ash.Invoicing.Digests.EmailTest do
         refute body =~ invoice.invoice_identifier
         refute body =~ invoice.ksef_number
         refute body =~ invoice.seller_nip
-        refute body =~ Decimal.to_string(invoice.total_amount)
+        refute body =~ Decimal.to_string(Money.to_decimal(invoice.amount))
       end
     end
 
@@ -69,7 +69,7 @@ defmodule Firmowid.Ash.Invoicing.Digests.EmailTest do
         assert body =~ "(bez nazwy)"
         refute body =~ invoice.ksef_number
         refute body =~ invoice.seller_nip
-        refute body =~ Decimal.to_string(invoice.total_amount)
+        refute body =~ Decimal.to_string(Money.to_decimal(invoice.amount))
       end
     end
 
@@ -166,12 +166,12 @@ defmodule Firmowid.Ash.Invoicing.Digests.EmailTest do
         refute email.html_body =~ invoice.invoice_identifier
         refute email.html_body =~ invoice.ksef_number
         refute email.html_body =~ invoice.seller_nip
-        refute email.html_body =~ Decimal.to_string(invoice.total_amount)
+        refute email.html_body =~ Decimal.to_string(Money.to_decimal(invoice.amount))
 
         refute email.text_body =~ invoice.invoice_identifier
         refute email.text_body =~ invoice.ksef_number
         refute email.text_body =~ invoice.seller_nip
-        refute email.text_body =~ Decimal.to_string(invoice.total_amount)
+        refute email.text_body =~ Decimal.to_string(Money.to_decimal(invoice.amount))
       end
     end
   end
@@ -185,7 +185,7 @@ defmodule Firmowid.Ash.Invoicing.Digests.EmailTest do
         invoice_identifier: "FV-KSEF-SECRET-987654",
         ksef_number: "KSEF-SECRET-123456",
         seller_nip: "1234567890",
-        total_amount: Decimal.new("9876.54"),
+        amount: Money.new!("PLN", "9876.54"),
         items_list: [
           %{name: "Abonament workspace", quantity: 1},
           %{name: "Integracja KSeF", quantity: 2}

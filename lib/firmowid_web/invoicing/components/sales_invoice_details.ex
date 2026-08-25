@@ -438,7 +438,7 @@ defmodule FirmowidWeb.Invoicing.Components.SalesInvoiceDetails do
 
             <InvoiceDetails.invoice_amount
               is_cost_invoice={false}
-              total_amount={@latest_invoice_snapshot.amount}
+              amount={@latest_invoice_snapshot.amount}
             />
           <% end %>
 

@@ -14,6 +14,35 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTest do
   require Ash.Query
 
   describe "Money amounts" do
+    test "read action filters invoice amounts through Money" do
+      user = admin_fixture()
+      scope = scope_for(user)
+
+      eur_invoice =
+        create_sales_invoice!(
+          user,
+          Map.put(base_invoice_attrs(), :sales_invoice_items, [base_item_attrs(%{})])
+        )
+
+      _pln_invoice =
+        create_sales_invoice!(
+          user,
+          Map.merge(base_invoice_attrs(), %{
+            invoice_number: "FV/#{System.unique_integer([:positive])}",
+            currency: "PLN",
+            sales_invoice_items: [base_item_attrs(%{unit_price: Decimal.new("200.00")})]
+          })
+        )
+
+      invoices =
+        Invoicing.list_sales_invoices!(
+          %{currency: "EUR", amount_gt: Decimal.new("100.00"), amount_lt: Decimal.new("150.00")},
+          scope: scope
+        )
+
+      assert Enum.map(invoices, & &1.id) == [eur_invoice.id]
+    end
+
     test "derives the invoice amount from its Decimal item total and currency" do
       user = admin_fixture()
 

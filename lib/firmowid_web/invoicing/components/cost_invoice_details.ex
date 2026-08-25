@@ -221,7 +221,7 @@ defmodule FirmowidWeb.Invoicing.Components.CostInvoiceDetails do
 
               <InvoiceDetails.invoice_amount
                 is_cost_invoice={true}
-                total_amount={@invoice.effective_amount}
+                amount={@invoice.effective_amount}
               />
 
               <div class="group flex flex-col gap-2 py-2 pl-1">

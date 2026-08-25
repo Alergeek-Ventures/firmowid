@@ -67,7 +67,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.Windowing do
 
     is_transaction_a_cost = Decimal.lt?(transaction_amount, 0)
 
-    total_amount =
+    invoice_amount =
       cost_invoice.effective_amount
       |> Money.to_decimal()
       |> Decimal.abs()
@@ -84,8 +84,8 @@ defmodule Firmowid.Ash.Invoicing.Matching.Windowing do
         RateDate.normalize_rate_date(transaction.booking_date)
       )
 
-    lower_boundary = Decimal.mult(total_amount, Decimal.new("0.9"))
-    upper_boundary = Decimal.mult(total_amount, Decimal.new("1.1"))
+    lower_boundary = Decimal.mult(invoice_amount, Decimal.new("0.9"))
+    upper_boundary = Decimal.mult(invoice_amount, Decimal.new("1.1"))
 
     is_between_amount_window =
       Decimal.gte?(normalized_transaction_amount, lower_boundary) and
@@ -100,7 +100,7 @@ defmodule Firmowid.Ash.Invoicing.Matching.Windowing do
 
     is_transaction_a_sale = Decimal.gt?(transaction_amount, 0)
 
-    total_amount =
+    invoice_amount =
       sales_invoice.effective_amount
       |> Money.to_decimal()
       |> Decimal.abs()
@@ -117,8 +117,8 @@ defmodule Firmowid.Ash.Invoicing.Matching.Windowing do
         RateDate.normalize_rate_date(transaction.booking_date)
       )
 
-    lower_boundary = Decimal.mult(total_amount, Decimal.new("0.9"))
-    upper_boundary = Decimal.mult(total_amount, Decimal.new("1.1"))
+    lower_boundary = Decimal.mult(invoice_amount, Decimal.new("0.9"))
+    upper_boundary = Decimal.mult(invoice_amount, Decimal.new("1.1"))
 
     is_between_amount_window =
       Decimal.gte?(normalized_transaction_amount, lower_boundary) and

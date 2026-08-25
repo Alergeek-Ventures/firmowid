@@ -10,7 +10,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetailsTest do
     html =
       render_component(&InvoiceDetails.invoice_amount/1,
         is_cost_invoice: true,
-        total_amount: Money.new!("PLN", "100.00")
+        amount: Money.new!("PLN", "100.00")
       )
 
     assert html =~ "Razem do zwrotu"
@@ -21,7 +21,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetailsTest do
     html =
       render_component(&InvoiceDetails.invoice_amount/1,
         is_cost_invoice: true,
-        total_amount: Money.new!("PLN", "-100.00")
+        amount: Money.new!("PLN", "-100.00")
       )
 
     assert html =~ "Razem do zapłaty"
@@ -32,7 +32,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetailsTest do
     html =
       render_component(&InvoiceDetails.invoice_amount/1,
         is_cost_invoice: false,
-        total_amount: Money.new!("PLN", "100.00")
+        amount: Money.new!("PLN", "100.00")
       )
 
     assert html =~ "Razem do zapłaty"

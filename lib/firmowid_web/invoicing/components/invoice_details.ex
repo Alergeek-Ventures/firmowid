@@ -129,7 +129,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   end
 
   attr :is_cost_invoice, :boolean
-  attr :total_amount, :any, required: true
+  attr :amount, :any, required: true
   attr :lang, :atom, default: :pl
 
   def invoice_amount(assigns) do
@@ -148,7 +148,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
           !@is_cost_invoice && "text-turquoise-700"
         ]}
       >
-        {@total_amount}
+        {@amount}
       </p>
     </div>
     """
@@ -163,8 +163,8 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
     end
   end
 
-  defp refund?(%{is_cost_invoice: true, total_amount: total_amount}) do
-    Decimal.gt?(Money.to_decimal(total_amount), 0)
+  defp refund?(%{is_cost_invoice: true, amount: amount}) do
+    Decimal.gt?(Money.to_decimal(amount), 0)
   end
 
   defp refund?(_assigns), do: false
@@ -268,7 +268,7 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       <.invoice_amount
         is_cost_invoice={false}
         lang={@lang}
-        total_amount={@invoice.amount}
+        amount={@invoice.amount}
       />
     </div>
     """
