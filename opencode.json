@@ -14,13 +14,6 @@
     }
   },
   "mcp": {
-    "livebook": {
-      "type": "local",
-      "enabled": false,
-      "command": [
-        "/var/home/kosciak/projects/alergeek/firmowid/lib/firmowid/invoicing/matching/training/mcp-wrapper.sh"
-      ]
-    },
     "tidewave": {
       "type": "remote",
       "url": "http://localhost:{file:.server.port}/tidewave/mcp",
