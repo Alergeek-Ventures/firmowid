@@ -206,7 +206,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           </Helpers.settings_field>
           <Helpers.settings_display_field
             label="Wyślemy link potwierdzający na nowy adres. Po jego otwarciu potwierdź zmianę przyciskiem na wyświetlonej stronie"
-            label_class="order-2 text-start"
+            label_class="order-2 text-start px-1"
           >
           </Helpers.settings_display_field>
         </div>
@@ -272,7 +272,7 @@ defmodule FirmowidWeb.Settings.Components.AccountTab do
           </Helpers.settings_field>
           <Helpers.settings_display_field
             label='Wpisz nowe hasło w obu okienkach, a następnie kliknij "zapisz"'
-            label_class="order-2 text-start"
+            label_class="order-2 text-start px-1"
           >
           </Helpers.settings_display_field>
         </div>
