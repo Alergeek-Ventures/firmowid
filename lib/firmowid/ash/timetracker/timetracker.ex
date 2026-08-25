@@ -9,6 +9,7 @@ defmodule Firmowid.Ash.Timetracker do
   use Ash.Domain,
     extensions: [Ash.Policy.Authorizer, AshAi]
 
+
   alias Firmowid.Ash.Timetracker.LeaveRequest
   alias Firmowid.Ash.Timetracker.Project
   alias Firmowid.Ash.Timetracker.Session

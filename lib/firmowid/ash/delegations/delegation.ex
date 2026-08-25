@@ -116,7 +116,8 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     end
 
     policy action([:approve, :complete]) do
-      forbid_if always()
+      authorize_if action(:approve)
+      authorize_if expr(status == :in_progress and user_id == ^actor(:id))
     end
   end
 
@@ -163,5 +164,9 @@ defmodule Firmowid.Ash.Delegations.Delegation do
     belongs_to :organization, Firmowid.Ash.Core.Organization do
       allow_nil? false
     end
+
+    has_many :transport_expenses, Firmowid.Ash.Timetracker.DelegationExpenseTransport
+    has_many :accommodation_expenses, Firmowid.Ash.Timetracker.DelegationExpenseAccommodation
+    has_many :other_expenses, Firmowid.Ash.Timetracker.DelegationExpenseOther
   end
 end
