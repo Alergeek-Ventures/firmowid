@@ -12,6 +12,7 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTransaction do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Checks.SystemActorRole
   alias Firmowid.Ash.Resource
 
   require Resource
@@ -37,8 +38,12 @@ defmodule Firmowid.Ash.Invoicing.SalesInvoiceTransaction do
     end
 
     # Matcher and invoice processors: full access
-    bypass {Firmowid.Ash.Checks.SystemActorRole, roles: [:invoice_matcher, :sales_invoice_processor]} do
+    bypass {SystemActorRole, roles: [:invoice_matcher, :sales_invoice_processor]} do
       authorize_if always()
+    end
+
+    bypass {SystemActorRole, roles: [:analysis_reader]} do
+      authorize_if action_type(:read)
     end
 
     # Other system actors: no access

@@ -50,6 +50,7 @@ defmodule Firmowid.Ash.Analysis do
 
   Invoices are assigned to the month of sale (not issue). Only truly standalone
   transactions (skipped AND not matched) are included to prevent double-counting.
+  Transfers between the organization's own bank accounts are excluded.
 
   Entities tagged as `:internal` are always excluded from totals.
 
@@ -65,6 +66,7 @@ defmodule Firmowid.Ash.Analysis do
     tag_filters = Keyword.get(opts, :tag_filters, [])
 
     analysis_scope = analysis_scope(scope)
+    own_account_ibans = own_account_ibans(scope)
 
     sales_invoices =
       %{date_from: date_from, date_to: date_to, date_field: :sale_date}
@@ -72,7 +74,7 @@ defmodule Firmowid.Ash.Analysis do
         load: [:buyer_display_name_label, :gross_value, :sales_invoice_items, :transactions],
         scope: analysis_scope
       )
-      |> Enum.filter(&matched_or_skipped?/1)
+      |> Enum.filter(&analysis_relevant_invoice?(&1, own_account_ibans))
 
     cost_invoices =
       %{date_from: date_from, date_to: date_to, date_field: :sale_date, corrections: :exclude}
@@ -86,13 +88,12 @@ defmodule Firmowid.Ash.Analysis do
         ],
         scope: analysis_scope
       )
-      |> Enum.filter(&matched_or_skipped?/1)
+      |> Enum.filter(&analysis_relevant_invoice?(&1, own_account_ibans))
 
     transactions =
-      Finances.list_transactions!(
-        %{date_from: date_from, date_to: date_to, reconciliation: :skipped},
-        scope: analysis_scope
-      )
+      %{date_from: date_from, date_to: date_to, reconciliation: :skipped}
+      |> Finances.list_transactions!(scope: analysis_scope)
+      |> Enum.reject(&own_account_transfer?(&1, own_account_ibans))
 
     all_entities = build_entity_id_list(sales_invoices, cost_invoices, transactions)
     entity_tags_map = load_entity_tags_map(all_entities, scope)
@@ -129,22 +130,39 @@ defmodule Firmowid.Ash.Analysis do
   entries. Uses `sale_date` for invoices and `booking_date` for standalone
   (skipped, unmatched) transactions.
 
-  Only includes invoices that are matched or marked `skip_invoicing`.
+  Only includes invoices that are matched to an external transaction or marked
+  `skip_invoicing`.
+  Excludes transfers between the organization's own bank accounts.
   Excludes entities tagged as `:internal`.
   """
   @spec get_months_with_entries(Scope.t()) :: [Date.t()]
   def get_months_with_entries(scope) do
     opts = [scope: analysis_scope(scope)]
+    own_account_ibans = own_account_ibans(scope)
 
     tx_months =
       %{reconciliation: :skipped}
       |> Finances.list_transactions!(opts)
+      |> Enum.reject(&own_account_transfer?(&1, own_account_ibans))
       |> Enum.map(&Date.beginning_of_month(&1.booking_date))
 
-    si_months = invoice_months(&Invoicing.list_sales_invoices!/2, :sale_date, %{}, opts)
+    si_months =
+      invoice_months(
+        &Invoicing.list_sales_invoices!/2,
+        :sale_date,
+        %{},
+        opts,
+        own_account_ibans
+      )
 
     ci_months =
-      invoice_months(&Invoicing.list_cost_invoices!/2, :sale_date, %{corrections: :exclude}, opts)
+      invoice_months(
+        &Invoicing.list_cost_invoices!/2,
+        :sale_date,
+        %{corrections: :exclude},
+        opts,
+        own_account_ibans
+      )
 
     (tx_months ++ si_months ++ ci_months)
     |> Enum.uniq()
@@ -153,12 +171,13 @@ defmodule Firmowid.Ash.Analysis do
 
   # ── Private helpers ──────────────────────────────────────────────────
 
-  defp invoice_months(list_fn, date_field, base_args, opts) do
-    Enum.map(
-      list_fn.(Map.put(base_args, :reconciliation, :matched), opts) ++
-        list_fn.(Map.put(base_args, :reconciliation, :skipped), opts),
-      &Date.beginning_of_month(Map.fetch!(&1, date_field))
-    )
+  defp invoice_months(list_fn, date_field, base_args, opts, own_account_ibans) do
+    opts = Keyword.put(opts, :load, [:transactions])
+
+    (list_fn.(Map.put(base_args, :reconciliation, :matched), opts) ++
+       list_fn.(Map.put(base_args, :reconciliation, :skipped), opts))
+    |> Enum.filter(&analysis_relevant_invoice?(&1, own_account_ibans))
+    |> Enum.map(&Date.beginning_of_month(Map.fetch!(&1, date_field)))
   end
 
   defp get_amount_and_currency(%SalesInvoice{gross_value: %Decimal{} = gross_value, currency: currency}) do
@@ -194,13 +213,50 @@ defmodule Firmowid.Ash.Analysis do
   end
 
   # An invoice is analysis-relevant when it has been matched to at least one
-  # bank transaction or explicitly marked `skip_invoicing`.
+  # external bank transaction or explicitly marked `skip_invoicing`.
   #
   # IMPORTANT: This rule is also used in `get_months_with_entries/1` above.
   # If you change this logic, update both places.
-  defp matched_or_skipped?(%{skip_invoicing: true}), do: true
-  defp matched_or_skipped?(%{transactions: txs}) when is_list(txs) and txs != [], do: true
-  defp matched_or_skipped?(_), do: false
+  defp analysis_relevant_invoice?(%{skip_invoicing: true}, _own_account_ibans), do: true
+
+  defp analysis_relevant_invoice?(%{transactions: transactions}, own_account_ibans) when is_list(transactions) do
+    Enum.any?(transactions, &(not own_account_transfer?(&1, own_account_ibans)))
+  end
+
+  defp analysis_relevant_invoice?(_, _own_account_ibans), do: false
+
+  defp own_account_ibans(scope) do
+    %{}
+    |> Finances.list_bank_accounts!(scope: scope)
+    |> MapSet.new(&normalize_iban(&1.iban))
+    |> MapSet.delete(nil)
+  end
+
+  # Incoming transfers identify their origin in debtor_account; outgoing
+  # transfers identify their destination in creditor_account.
+  defp own_account_transfer?(%Transaction{amount: amount} = transaction, own_account_ibans) do
+    account =
+      cond do
+        Money.positive?(amount) -> transaction.debtor_account
+        Money.negative?(amount) -> transaction.creditor_account
+        true -> nil
+      end
+
+    MapSet.member?(own_account_ibans, normalize_iban(account))
+  end
+
+  defp normalize_iban(account) when is_binary(account) do
+    account
+    |> String.replace(~r/[^[:alnum:]]/, "")
+    |> String.upcase()
+    |> case do
+      "" -> nil
+      "NA" -> nil
+      iban -> iban
+    end
+  end
+
+  defp normalize_iban(_account), do: nil
 
   defp build_entity_id_list(sales_invoices, cost_invoices, transactions) do
     si = Enum.map(sales_invoices, &{:sales_invoice, &1.id})
