@@ -274,7 +274,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     ~H"""
     <.company_section title="Integracja z KSeF">
       <%= if @ksef_credential do %>
-        <div class="flex flex-col gap-4">
+        <div class="flex flex-col gap-2">
           <.detail_row label="Status" wide>
             <%= if @ksef_auth_status == :refreshing do %>
               <span class="inline-flex items-center gap-2">
@@ -300,7 +300,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
               do: TimeFormatter.format_date(@ksef_credential.expires_on),
               else: "-"}
           </.detail_row>
-          <Helpers.settings_display_field>
+          <Helpers.settings_display_field class="mt-2">
             <.button
               size="small"
               type="button"
