@@ -328,6 +328,70 @@ defmodule Firmowid.Ash.Finances.DuplicateTransactionMatcherTest do
       assert DuplicateTransactionMatcher.matching_candidates(incoming, [candidate_1, candidate_2]) ==
                [candidate_1, candidate_2]
     end
+
+    test "keeps strict all-side comparison by default" do
+      existing = transaction(%{internal_transaction_id: "existing-id", creditor_name: "N/A"})
+
+      incoming =
+        transaction(%{internal_transaction_id: "incoming-id", creditor_name: "Own account"})
+
+      assert DuplicateTransactionMatcher.unique_match(incoming, [existing]) == nil
+    end
+
+    test "can compare only the external debtor for a positive amount" do
+      existing = transaction(%{internal_transaction_id: "existing-id", creditor_name: "N/A"})
+
+      incoming =
+        transaction(%{internal_transaction_id: "incoming-id", creditor_name: "Own account"})
+
+      assert DuplicateTransactionMatcher.unique_match(incoming, [existing], external_counterparty_only?: true) == existing
+    end
+
+    test "uses the connected account to compare the external creditor for contradictory positive signs" do
+      existing =
+        transaction(%{
+          internal_transaction_id: "existing-id",
+          debtor_account: "PL999",
+          debtor_name: "Own account",
+          creditor_account: "PL111",
+          creditor_name: "External creditor"
+        })
+
+      incoming =
+        transaction(%{
+          internal_transaction_id: "incoming-id",
+          debtor_account: "PL 999",
+          debtor_name: "N/A",
+          creditor_account: "PL111",
+          creditor_name: "External creditor"
+        })
+
+      assert DuplicateTransactionMatcher.unique_match(incoming, [existing],
+               external_counterparty_only?: true,
+               connected_account_iban: "PL999"
+             ) == existing
+    end
+
+    test "does not collapse contradictory positive-sign transactions with different creditors" do
+      existing =
+        transaction(%{
+          internal_transaction_id: "existing-id",
+          debtor_account: "PL999",
+          creditor_account: "PL111"
+        })
+
+      incoming =
+        transaction(%{
+          internal_transaction_id: "incoming-id",
+          debtor_account: "PL999",
+          creditor_account: "PL222"
+        })
+
+      assert DuplicateTransactionMatcher.unique_match(incoming, [existing],
+               external_counterparty_only?: true,
+               connected_account_iban: "PL999"
+             ) == nil
+    end
   end
 
   describe "within_candidate_date_bounds?/3" do

@@ -6,6 +6,8 @@ defmodule Firmowid.Ash.Finances.DuplicateTransactionMatcher do
   is exactly one confident candidate.
   """
 
+  alias Firmowid.Ash.Finances.TransactionDirection
+
   @date_tolerance_days 1
   @plain_card_replay_inserted_at_gap_days 7
   @nest_bank_institution_id "NEST_BANK_CORPORATE_NESBPLPW"
@@ -55,7 +57,7 @@ defmodule Firmowid.Ash.Finances.DuplicateTransactionMatcher do
   def candidate_match?(left, right, opts \\ []) do
     same_amount?(left, right) and
       same_currency?(left, right) and
-      same_counterparty_fields?(left, right) and
+      same_counterparty_fields?(left, right, opts) and
       dates_within_tolerance?(left, right, opts) and
       remittance_matches?(left, right, opts)
   end
@@ -144,11 +146,78 @@ defmodule Firmowid.Ash.Finances.DuplicateTransactionMatcher do
     end
   end
 
-  defp same_counterparty_fields?(left, right) do
+  defp same_counterparty_fields?(left, right, opts) do
+    if Keyword.get(opts, :external_counterparty_only?, false) do
+      same_external_counterparty_fields?(left, right, opts)
+    else
+      same_all_counterparty_fields?(left, right)
+    end
+  end
+
+  defp same_all_counterparty_fields?(left, right) do
     comparable_field?(get_field(left, :debtor_name), get_field(right, :debtor_name)) and
       comparable_field?(get_field(left, :debtor_account), get_field(right, :debtor_account)) and
       comparable_field?(get_field(left, :creditor_name), get_field(right, :creditor_name)) and
       comparable_field?(get_field(left, :creditor_account), get_field(right, :creditor_account))
+  end
+
+  defp same_external_counterparty_fields?(left, right, opts) do
+    case account_aware_directions(left, right, opts) do
+      {:available, direction, direction} when direction in [:income, :expense] ->
+        same_external_counterparty_fields_for_direction?(left, right, direction)
+
+      {:available, _left_direction, _right_direction} ->
+        false
+
+      :unavailable ->
+        same_external_counterparty_fields_by_sign?(left, right)
+    end
+  end
+
+  defp same_external_counterparty_fields_for_direction?(left, right, :income) do
+    comparable_field?(get_field(left, :debtor_name), get_field(right, :debtor_name)) and
+      comparable_field?(get_field(left, :debtor_account), get_field(right, :debtor_account))
+  end
+
+  defp same_external_counterparty_fields_for_direction?(left, right, :expense) do
+    comparable_field?(get_field(left, :creditor_name), get_field(right, :creditor_name)) and
+      comparable_field?(get_field(left, :creditor_account), get_field(right, :creditor_account))
+  end
+
+  defp same_external_counterparty_fields_by_sign?(left, right) do
+    case transaction_side(left) do
+      :debtor ->
+        comparable_field?(get_field(left, :debtor_name), get_field(right, :debtor_name)) and
+          comparable_field?(get_field(left, :debtor_account), get_field(right, :debtor_account))
+
+      :creditor ->
+        comparable_field?(get_field(left, :creditor_name), get_field(right, :creditor_name)) and
+          comparable_field?(
+            get_field(left, :creditor_account),
+            get_field(right, :creditor_account)
+          )
+
+      :both ->
+        same_all_counterparty_fields?(left, right)
+    end
+  end
+
+  defp account_aware_directions(left, right, opts) do
+    case Keyword.get(opts, :connected_account_iban) do
+      iban when is_binary(iban) and iban != "" ->
+        {:available, TransactionDirection.direction(left, iban), TransactionDirection.direction(right, iban)}
+
+      _other ->
+        :unavailable
+    end
+  end
+
+  defp transaction_side(transaction) do
+    case Decimal.compare(Money.to_decimal(get_field(transaction, :amount)), Decimal.new(0)) do
+      :gt -> :debtor
+      :lt -> :creditor
+      :eq -> :both
+    end
   end
 
   defp comparable_field?(left, right), do: normalize_text(left) == normalize_text(right)

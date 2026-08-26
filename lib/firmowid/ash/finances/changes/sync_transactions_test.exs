@@ -118,6 +118,50 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
   end
 
   describe "sync replay window" do
+    test "canonicalizes a sparse Revolut TOPUP transaction", ctx do
+      today = Date.utc_today()
+
+      stub_booked_transactions([
+        %{
+          "internalTransactionId" => "revolut-topup-internal-id",
+          "transactionId" => "revolut-topup-provider-id",
+          "debtorName" => "Revolut Payments UAB",
+          "debtorAccount" => %{"iban" => "LT123456789012345678"},
+          "creditorName" => nil,
+          "creditorAccount" => nil,
+          "transactionAmount" => %{"amount" => "42.00", "currency" => "PLN"},
+          "bookingDate" => Date.to_iso8601(today),
+          "valueDate" => Date.to_iso8601(today),
+          "remittanceInformationUnstructured" => nil,
+          "remittanceInformationUnstructuredArray" => ["Card top up", "January balance"],
+          "proprietaryBankTransactionCode" => "TOPUP"
+        }
+      ])
+
+      assert {:ok, _bank_account} =
+               ctx.bank_account_1
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      persisted =
+        %{}
+        |> Finances.list_transactions!(actor: ctx.actor, tenant: ctx.org_id)
+        |> Enum.filter(&(&1.internal_transaction_id == "revolut-topup-internal-id"))
+
+      assert [transaction] = persisted
+      assert transaction.amount == Money.new!("PLN", Decimal.new("42.00"))
+      assert transaction.remittance_information_unstructured == "Card top up | January balance"
+
+      assert {transaction.debtor_name, transaction.debtor_account} ==
+               {"Revolut Payments UAB", "LT123456789012345678"}
+
+      assert {transaction.creditor_name, transaction.creditor_account} ==
+               {ctx.bank_account_1.owner_name, ctx.bank_account_1.iban}
+    end
+
     test "imports full history on first successful sync", ctx do
       old_booking_date = Date.add(Date.utc_today(), -80)
 
@@ -213,6 +257,119 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactionsTest do
   end
 
   describe "fallback dedupe" do
+    test "dedupes sparse legacy own-side fields against completed parser fields", ctx do
+      previous_sync_at = DateTime.shift(DateTime.utc_now(), day: -10)
+      seed_successful_sync_event(ctx.bank_account_1, ctx.org_id, previous_sync_at)
+
+      assert {:ok, existing_transaction} =
+               ctx.bank_account_1.id
+               |> transaction_attrs("legacy-internal-id")
+               |> Map.merge(%{
+                 transaction_id: "legacy-provider-id",
+                 creditor_name: "N/A",
+                 creditor_account: "N/A",
+                 booking_date: Date.utc_today(),
+                 value_date: Date.utc_today(),
+                 remittance_information_unstructured: "legacy remittance"
+               })
+               |> Finances.upsert_transaction_from_sync(
+                 actor: ctx.actor,
+                 tenant: ctx.org_id
+               )
+
+      today = Date.utc_today()
+
+      stub_booked_transactions([
+        %{
+          "internalTransactionId" => "current-internal-id",
+          "transactionId" => "current-provider-id",
+          "debtorName" => "Example Debtor",
+          "debtorAccount" => %{"iban" => "PL001"},
+          "creditorName" => ctx.bank_account_1.owner_name,
+          "creditorAccount" => %{"iban" => ctx.bank_account_1.iban},
+          "transactionAmount" => %{"amount" => "100.00", "currency" => "PLN"},
+          "bookingDate" => Date.to_iso8601(today),
+          "valueDate" => Date.to_iso8601(today),
+          "remittanceInformationUnstructured" => "legacy remittance"
+        }
+      ])
+
+      assert {:ok, _bank_account} =
+               ctx.bank_account_1
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      persisted =
+        %{}
+        |> Finances.list_transactions!(actor: ctx.actor, tenant: ctx.org_id)
+        |> Enum.filter(&(&1.bank_account_id == ctx.bank_account_1.id))
+
+      assert [transaction] = persisted
+      assert transaction.id == existing_transaction.id
+      assert transaction.internal_transaction_id == "legacy-internal-id"
+    end
+
+    test "uses account-aware buckets for contradictory positive-signed expenses", ctx do
+      previous_sync_at = DateTime.shift(DateTime.utc_now(), day: -10)
+      seed_successful_sync_event(ctx.bank_account_1, ctx.org_id, previous_sync_at)
+
+      assert {:ok, existing_transaction} =
+               ctx.bank_account_1.id
+               |> transaction_attrs("legacy-expense-id")
+               |> Map.merge(%{
+                 transaction_id: "legacy-provider-id",
+                 debtor_name: "Legacy own name",
+                 debtor_account: ctx.bank_account_1.iban,
+                 creditor_name: "External creditor",
+                 creditor_account: "PL999",
+                 booking_date: Date.utc_today(),
+                 value_date: Date.utc_today(),
+                 remittance_information_unstructured: "expense remittance"
+               })
+               |> Finances.upsert_transaction_from_sync(
+                 actor: ctx.actor,
+                 tenant: ctx.org_id
+               )
+
+      today = Date.utc_today()
+
+      stub_booked_transactions([
+        %{
+          "internalTransactionId" => "incoming-expense-id",
+          "transactionId" => "incoming-provider-id",
+          "debtorName" => "Provider own name",
+          "debtorAccount" => %{"iban" => ctx.bank_account_1.iban},
+          "creditorName" => "External creditor",
+          "creditorAccount" => %{"iban" => "PL999"},
+          "transactionAmount" => %{"amount" => "100.00", "currency" => "PLN"},
+          "bookingDate" => Date.to_iso8601(today),
+          "valueDate" => Date.to_iso8601(today),
+          "remittanceInformationUnstructured" => "expense remittance"
+        }
+      ])
+
+      assert {:ok, _bank_account} =
+               ctx.bank_account_1
+               |> Ash.Changeset.for_update(:sync_from_gocardless, %{},
+                 actor: ctx.user,
+                 tenant: ctx.org_id
+               )
+               |> Ash.update(actor: ctx.user, tenant: ctx.org_id)
+
+      persisted =
+        %{}
+        |> Finances.list_transactions!(actor: ctx.actor, tenant: ctx.org_id)
+        |> Enum.filter(&(&1.bank_account_id == ctx.bank_account_1.id))
+
+      assert [transaction] = persisted
+      assert transaction.id == existing_transaction.id
+      assert transaction.internal_transaction_id == "legacy-expense-id"
+      assert transaction.transaction_id == "legacy-provider-id"
+    end
+
     test "merges changed provider ids when remittance differs by payer prefix and dates align across booking/value pairs",
          ctx do
       previous_sync_at = DateTime.shift(DateTime.utc_now(), day: -10)

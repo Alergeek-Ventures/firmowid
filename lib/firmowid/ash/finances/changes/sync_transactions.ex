@@ -23,6 +23,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
   alias Firmowid.Ash.Finances.GoCardless.TransactionParser
   alias Firmowid.Ash.Finances.Requisition
   alias Firmowid.Ash.Finances.Transaction
+  alias Firmowid.Ash.Finances.TransactionDirection
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
 
@@ -128,7 +129,7 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
 
   defp upsert_transactions(booked_transactions, bank_account, previous_successful_sync_at, scope) do
     %{transactions: parsed_transactions, errors: parse_errors} =
-      TransactionParser.parse_all(booked_transactions)
+      TransactionParser.parse_all(booked_transactions, bank_account)
 
     report_parse_errors(parse_errors, bank_account)
 
@@ -297,12 +298,20 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
     existing_transactions =
       load_existing_transactions_for_dedupe(bank_account, transactions, scope)
 
-    candidate_map = build_candidate_transaction_buckets(existing_transactions)
+    connected_account_iban = bank_account.iban
 
-    matcher_opts = [institution_id: bank_account.institution_id]
+    candidate_map =
+      build_candidate_transaction_buckets(existing_transactions, connected_account_iban)
+
+    matcher_opts = [
+      institution_id: bank_account.institution_id,
+      external_counterparty_only?: true,
+      connected_account_iban: connected_account_iban
+    ]
 
     Enum.map(transactions, fn transaction ->
-      candidates = Map.get(candidate_map, transaction_match_key(transaction), [])
+      candidates =
+        Map.get(candidate_map, transaction_match_key(transaction, connected_account_iban), [])
 
       case DuplicateTransactionMatcher.unique_match(
              transaction,
@@ -383,19 +392,31 @@ defmodule Firmowid.Ash.Finances.Changes.SyncTransactions do
     )
   end
 
-  defp build_candidate_transaction_buckets(transactions) do
-    Enum.group_by(transactions, &transaction_match_key/1)
+  defp build_candidate_transaction_buckets(transactions, connected_account_iban) do
+    Enum.group_by(transactions, &transaction_match_key(&1, connected_account_iban))
   end
 
-  defp transaction_match_key(transaction) do
-    {
+  defp transaction_match_key(transaction, connected_account_iban) do
+    base_key = [
       transaction.amount |> Money.to_decimal() |> normalized_amount(),
-      transaction.amount |> Money.to_currency_code() |> Atom.to_string() |> normalized_text(),
-      normalized_text(Map.get(transaction, :debtor_name)),
-      normalized_text(Map.get(transaction, :debtor_account)),
-      normalized_text(Map.get(transaction, :creditor_name)),
-      normalized_text(Map.get(transaction, :creditor_account))
-    }
+      transaction.amount |> Money.to_currency_code() |> Atom.to_string() |> normalized_text()
+    ]
+
+    case TransactionDirection.direction(transaction, connected_account_iban) do
+      :income ->
+        base_key ++
+          [
+            normalized_text(Map.get(transaction, :debtor_name)),
+            normalized_text(Map.get(transaction, :debtor_account))
+          ]
+
+      :expense ->
+        base_key ++
+          [
+            normalized_text(Map.get(transaction, :creditor_name)),
+            normalized_text(Map.get(transaction, :creditor_account))
+          ]
+    end
   end
 
   defp normalized_amount(value) do
