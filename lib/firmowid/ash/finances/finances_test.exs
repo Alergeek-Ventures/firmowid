@@ -9,13 +9,15 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
   alias Firmowid.Ash.Finances.Transaction
   alias Firmowid.Ash.Invoicing.CostInvoice
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
+  alias Firmowid.Ash.Scope
 
   setup do
     # Admin user required — transactions are not accessible to :employee role
     user = admin_fixture()
     org_id = user.organization_id
     seed_opts = [tenant: org_id]
-    bank_account_id = bank_account_fixture!(user).id
+    bank_account = bank_account_fixture!(user)
+    bank_account_id = bank_account.id
 
     # Pending: no invoices, not skipped
     pending_tx =
@@ -94,6 +96,7 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
     %{
       user: user,
       org_id: org_id,
+      bank_account: bank_account,
       pending_tx: pending_tx,
       skipped_tx: skipped_tx,
       matched_tx: matched_tx
@@ -195,4 +198,96 @@ defmodule Firmowid.Ash.Finances.FinancesTest do
       assert ctx.matched_tx.id in org1_ids
     end
   end
+
+  describe "transaction calculations" do
+    test "calculation chain uses account ownership before amount sign", ctx do
+      transaction =
+        Ash.Seed.seed!(
+          Transaction,
+          %{
+            creditor_account: "PL00999999999999999999999999",
+            debtor_account: ctx.bank_account.iban,
+            creditor_name: "Creditor counterparty",
+            debtor_name: "Firmowid",
+            amount: Money.new!("PLN", Decimal.new("100.00")),
+            booking_date: ~D[2024-02-01],
+            value_date: ~D[2024-02-01],
+            bank_account_id: ctx.bank_account.id
+          },
+          tenant: ctx.org_id
+        )
+
+      loaded =
+        Ash.load!(
+          transaction,
+          [
+            :direction,
+            :signed_amount,
+            :counterparty_name,
+            :counterparty_display_name,
+            :groupable?
+          ],
+          scope: scope_for(ctx.user)
+        )
+
+      assert loaded.direction == :expense
+      assert loaded.signed_amount == Money.new!("PLN", Decimal.new("-100.00"))
+      assert loaded.counterparty_name == "Creditor counterparty"
+      assert loaded.counterparty_display_name == "Creditor counterparty"
+      assert loaded.groupable?
+    end
+
+    test "falls back to amount sign without an account match", ctx do
+      transaction =
+        Ash.Seed.seed!(
+          Transaction,
+          %{
+            creditor_account: "PL00111111111111111111111111",
+            debtor_account: "PL00222222222222222222222222",
+            amount: Money.new!("PLN", Decimal.new("100.00")),
+            booking_date: ~D[2024-02-02],
+            value_date: ~D[2024-02-02],
+            bank_account_id: ctx.bank_account.id
+          },
+          tenant: ctx.org_id
+        )
+
+      loaded = Ash.load!(transaction, [:direction, :signed_amount], scope: scope_for(ctx.user))
+
+      assert loaded.direction == :income
+      assert loaded.signed_amount == Money.new!("PLN", Decimal.new("100.00"))
+    end
+
+    test "missing and N/A counterparties fall back for display and cannot group", ctx do
+      transaction =
+        Ash.Seed.seed!(
+          Transaction,
+          %{
+            creditor_name: "N/A",
+            debtor_name: nil,
+            amount: Money.new!("PLN", Decimal.new("-10.00")),
+            booking_date: ~D[2024-02-03],
+            value_date: ~D[2024-02-03],
+            bank_account_id: ctx.bank_account.id
+          },
+          tenant: ctx.org_id
+        )
+
+      loaded =
+        Ash.load!(transaction, [:counterparty_name, :counterparty_display_name, :groupable?], scope: scope_for(ctx.user))
+
+      assert loaded.counterparty_name == "N/A"
+      assert loaded.counterparty_display_name == "Transakcja bankowa"
+      refute loaded.groupable?
+    end
+
+    test "skipped and matched transactions cannot group", ctx do
+      loaded =
+        Ash.load!([ctx.skipped_tx, ctx.matched_tx], :groupable?, scope: scope_for(ctx.user))
+
+      assert Enum.all?(loaded, &(not &1.groupable?))
+    end
+  end
+
+  defp scope_for(user), do: %Scope{actor: user, tenant: user.organization_id}
 end

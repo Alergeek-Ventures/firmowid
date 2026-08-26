@@ -43,8 +43,13 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTableTest do
       debtor_name: "Firmowid Sp. z o.o.",
       remittance_information_unstructured: "Payment January",
       amount: Money.new!("PLN", Decimal.new("-100.00")),
+      signed_amount: Money.new!("PLN", Decimal.new("-100.00")),
+      counterparty_name: "Supplier Sp. z o.o.",
+      counterparty_display_name: "Supplier Sp. z o.o.",
+      groupable?: true,
       booking_date: ~D[2026-01-10],
       value_date: ~D[2026-01-10],
+      direction: :expense,
       skip_invoicing: false,
       cost_invoices: [],
       sales_invoices: []

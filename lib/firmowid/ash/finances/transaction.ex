@@ -10,7 +10,9 @@ defmodule Firmowid.Ash.Finances.Transaction do
     notifiers: [Ash.Notifier.PubSub],
     primary_read_warning?: false
 
+  alias AshMoney.Types.Money
   alias Firmowid.Ash.Checks.SystemActorRole
+  alias Firmowid.Ash.Finances.Transaction.Calculations
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Invoicing.SalesInvoiceTransaction
   alias Firmowid.Ash.Preparations.ParadeDBSearch
@@ -210,7 +212,7 @@ defmodule Firmowid.Ash.Finances.Transaction do
     attribute :creditor_account, :string, public?: true
     attribute :debtor_name, :string, public?: true
     attribute :debtor_account, :string, public?: true
-    attribute :amount, AshMoney.Types.Money, public?: true, allow_nil?: false
+    attribute :amount, Money, public?: true, allow_nil?: false
     attribute :booking_date, :date, public?: true, allow_nil?: false
     attribute :value_date, :date, public?: true, allow_nil?: false
     attribute :remittance_information_unstructured, :string, public?: true
@@ -246,6 +248,45 @@ defmodule Firmowid.Ash.Finances.Transaction do
 
   calculations do
     calculate :date, :date, expr(booking_date)
+
+    calculate :direction, :atom, Calculations.Direction do
+      public? true
+      constraints one_of: [:income, :expense]
+
+      description "Canonical transaction direction, preferring connected account ownership over amount sign."
+    end
+
+    calculate :signed_amount, Money, Calculations.SignedAmount do
+      public? true
+      description "Transaction amount signed according to its canonical direction."
+    end
+
+    calculate :counterparty_name, :string, Calculations.CounterpartyName do
+      public? true
+      description "Raw counterparty name selected according to transaction direction."
+    end
+
+    calculate :counterparty_display_name, :string, Calculations.CounterpartyDisplayName do
+      public? true
+      description "Useful counterparty name, with a Polish fallback when unavailable."
+    end
+
+    calculate :groupable?, :boolean, Calculations.Groupable do
+      public? true
+      description "Whether the transaction can be grouped for invoicing."
+    end
+  end
+
+  aggregates do
+    exists :has_cost_invoices?, :cost_invoices do
+      public? false
+      description "Whether the transaction has linked cost invoices."
+    end
+
+    exists :has_sales_invoices?, :sales_invoices do
+      public? false
+      description "Whether the transaction has linked sales invoices."
+    end
   end
 
   identities do

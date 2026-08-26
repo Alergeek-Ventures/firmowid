@@ -29,16 +29,15 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
   alias FirmowidWeb.Invoicing.Utilities.Navigation
   alias FirmowidWeb.Invoicing.Utilities.QueryCodec
-  alias FirmowidWeb.Invoicing.Utilities.TransactionPresentation
   alias Phoenix.Socket.Broadcast
 
   # Load definitions for invoice queries
   @cost_invoice_loads [
     :invoice_source,
-    :transactions,
     :effective_total_amount,
     :effective_currency,
-    :effective_seller_display_name
+    :effective_seller_display_name,
+    :transactions
   ]
   @sales_invoice_loads [
     :invoice_source,
@@ -925,7 +924,11 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp fetch_unmatched_transactions(from, to, scope) do
     transactions =
       Finances.list_transactions!(%{date_from: from, date_to: to, reconciliation: :pending},
-        load: [:cost_invoices, :sales_invoices, :bank_account],
+        load: [
+          :direction,
+          :signed_amount,
+          :counterparty_display_name
+        ],
         query: [sort: [booking_date: :desc]],
         scope: scope
       )
@@ -981,18 +984,18 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
     # Split transactions according to the direction used by the display layer.
     {cost_transactions, income_transactions} =
-      Enum.split_with(transactions, &(not TransactionPresentation.income?(&1)))
+      Enum.split_with(transactions, &(&1.direction == :expense))
 
     # Group by the raw counterparty for each direction. The display fallback is
     # intentionally not used here, as unrelated transactions must not share a group.
-    cost_by_party = Enum.group_by(cost_transactions, & &1.creditor_name)
-    income_by_party = Enum.group_by(income_transactions, & &1.debtor_name)
+    cost_by_party = Enum.group_by(cost_transactions, & &1.counterparty_name)
+    income_by_party = Enum.group_by(income_transactions, & &1.counterparty_name)
 
     # Process cost transaction groups
     {cost_groups, ungrouped_cost} =
       Enum.split_with(cost_by_party, fn {_party, txns} ->
         length(txns) >= 2 &&
-          Enum.all?(txns, &groupable_transaction?/1) &&
+          Enum.all?(txns, & &1.groupable?) &&
           same_currency_transactions?(txns)
       end)
 
@@ -1000,7 +1003,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {income_groups, ungrouped_income} =
       Enum.split_with(income_by_party, fn {_party, txns} ->
         length(txns) >= 2 &&
-          Enum.all?(txns, &groupable_transaction?/1) &&
+          Enum.all?(txns, & &1.groupable?) &&
           same_currency_transactions?(txns)
       end)
 
@@ -1030,27 +1033,6 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     |> order_entries_for_display()
   end
 
-  defp groupable_transaction?(%Transaction{} = transaction) do
-    counterparty =
-      if TransactionPresentation.income?(transaction),
-        do: transaction.debtor_name,
-        else: transaction.creditor_name
-
-    useful_counterparty?(counterparty) and
-      not transaction.skip_invoicing and
-      transaction.cost_invoices == [] and
-      transaction.sales_invoices == []
-  end
-
-  defp groupable_transaction?(_), do: false
-
-  defp useful_counterparty?(value) when is_binary(value) do
-    value = String.trim(value)
-    value != "" and String.upcase(value) != "N/A"
-  end
-
-  defp useful_counterparty?(_), do: false
-
   defp same_currency_transactions?([first | rest]) do
     currency = first.amount |> Money.to_currency_code() |> Atom.to_string()
     Enum.all?(rest, &(&1.amount |> Money.to_currency_code() |> Atom.to_string() == currency))
@@ -1059,7 +1041,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp build_transaction_group(kind, party, transactions) do
     total =
       Enum.reduce(transactions, Decimal.new(0), fn transaction, acc ->
-        signed_amount = TransactionPresentation.signed_amount(transaction)
+        signed_amount = transaction.signed_amount
         Decimal.add(acc, Money.to_decimal(signed_amount))
       end)
 
@@ -1193,7 +1175,17 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     args = Map.merge(%{date_from: from, date_to: to}, extra_args)
 
     Finances.list_transactions!(args,
-      load: [:amount, :cost_invoices, :sales_invoices, :bank_account],
+      load: [
+        :amount,
+        :cost_invoices,
+        :sales_invoices,
+        :bank_account,
+        :direction,
+        :signed_amount,
+        :counterparty_name,
+        :counterparty_display_name,
+        :groupable?
+      ],
       query: [sort: [booking_date: :desc]],
       scope: scope
     )

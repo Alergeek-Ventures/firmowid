@@ -17,7 +17,6 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
   alias FirmowidWeb.Infrastructure.Utilities.PolishQuantity
   alias FirmowidWeb.Invoicing.Utilities.BankBadges
   alias FirmowidWeb.Invoicing.Utilities.Navigation
-  alias FirmowidWeb.Invoicing.Utilities.TransactionPresentation
 
   attr :invoicing_entries, :list, required: true
   attr :mode, :atom, required: true
@@ -177,9 +176,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
         :amount,
         case assigns.invoicing_entry do
           %Transaction{} ->
-            assigns.invoicing_entry
-            |> TransactionPresentation.signed_amount()
-            |> Money.to_decimal()
+            Money.to_decimal(assigns.invoicing_entry.signed_amount)
 
           %CostInvoice{} ->
             assigns.invoicing_entry.effective_total_amount
@@ -235,7 +232,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   # amount is differently rendered (has a background color that fills the cell)
   defp render_cell(%{column: "amount", invoicing_entry: %Transaction{} = transaction} = assigns) do
-    amount = TransactionPresentation.signed_amount(transaction)
+    amount = transaction.signed_amount
 
     assigns = assign(assigns, :amount, amount)
 
@@ -522,7 +519,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     do: assigns |> assign(:column, "issue_date") |> render_cell()
 
   defp render_cell(%{invoicing_entry: %Transaction{} = transaction, column: "party"} = assigns) do
-    party = TransactionPresentation.counterparty_name(transaction)
+    party = transaction.counterparty_display_name
 
     assigns =
       assigns
@@ -735,9 +732,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
             column == "party" && "rounded-l-md px-5 text-ellipsis max-xl:max-w-72",
             String.ends_with?(column, "date") && "font-light",
             column == "amount" && "rounded-r-md",
-            column == "amount" && TransactionPresentation.income?(transaction) &&
+            column == "amount" && transaction.direction == :income &&
               "bg-blueBg! text-blueText",
-            column == "amount" && !TransactionPresentation.income?(transaction) &&
+            column == "amount" && transaction.direction != :income &&
               "bg-orangeBg! text-orangeText"
           ]}
         >
@@ -878,7 +875,7 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
     end
   end
 
-  defp income_for_entry(%Transaction{} = transaction), do: TransactionPresentation.income?(transaction)
+  defp income_for_entry(%Transaction{} = transaction), do: transaction.direction == :income
 
   defp income_for_entry(%CostInvoice{effective_total_amount: amount}), do: Decimal.gte?(amount, 0)
   defp income_for_entry(%SalesInvoice{gross_value: amount}), do: Decimal.gte?(amount, 0)

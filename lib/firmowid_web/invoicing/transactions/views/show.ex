@@ -14,8 +14,10 @@ defmodule FirmowidWeb.Invoicing.Transactions.Views.Show do
   alias FirmowidWeb.Invoicing.Utilities.Navigation
 
   @transaction_loads [
-    :amount,
     :bank_account,
+    :direction,
+    :signed_amount,
+    :counterparty_display_name,
     cost_invoices: [
       :invoice_source,
       :effective_total_amount,

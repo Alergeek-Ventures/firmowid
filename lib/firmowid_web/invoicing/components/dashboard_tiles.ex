@@ -20,7 +20,6 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.RecommendationThresholds
   alias FirmowidWeb.Invoicing.Utilities.Navigation
-  alias FirmowidWeb.Invoicing.Utilities.TransactionPresentation
 
   attr :entry, :any, required: true
   attr :type, :atom, required: true
@@ -138,11 +137,11 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
   defp unmatched_transaction_tile(assigns) do
     entry = assigns.entry
-    party = TransactionPresentation.counterparty_name(entry)
-    signed_amount = TransactionPresentation.signed_amount(entry)
+    party = entry.counterparty_display_name
+    signed_amount = entry.signed_amount
     amount = Money.to_decimal(signed_amount)
     currency = signed_amount |> Money.to_currency_code() |> Atom.to_string()
-    is_income = TransactionPresentation.income?(entry)
+    is_income = entry.direction == :income
 
     navigate = Navigation.transaction_show_path(entry, assigns.return_to)
 
@@ -260,10 +259,10 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   end
 
   defp matched_entry_details(%Transaction{} = entry, return_to) do
-    amount = TransactionPresentation.signed_amount(entry)
+    amount = entry.signed_amount
 
     {
-      TransactionPresentation.counterparty_name(entry),
+      entry.counterparty_display_name,
       nil,
       Money.to_decimal(amount),
       amount |> Money.to_currency_code() |> Atom.to_string(),
