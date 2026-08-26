@@ -19,6 +19,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   alias FirmowidWeb.Invoicing.Components.InvoiceAssistant
   alias FirmowidWeb.Invoicing.Components.InvoiceDetails
   alias FirmowidWeb.Invoicing.Utilities.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.TransactionPresentation
 
   @transaction_suggested_messages [
     "Ta transakcja opłaciła kilka faktur z poprzedniego miesiąca",
@@ -57,6 +58,9 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   attr :transaction, Transaction, required: true
 
   def details_sidebar(assigns) do
+    {incoming, amount} = transaction_presentation(assigns.transaction)
+    assigns = assign(assigns, incoming: incoming, amount: amount)
+
     ~H"""
     <InvoiceDetails.aside>
       <div class="flex h-full flex-col gap-8">
@@ -105,8 +109,8 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
         <div class="pt-2">
           <.transaction_amount_summary
-            incoming={incoming?(@transaction)}
-            amount={transaction_amount(@transaction)}
+            incoming={@incoming}
+            amount={@amount}
           />
         </div>
       </div>
@@ -332,16 +336,13 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
     ]
   end
 
-  defp transaction_amount(transaction), do: transaction.amount
-
-  defp counterparty_name(transaction) do
-    transaction
-    |> counterparty_raw_name()
-    |> present()
+  defp transaction_presentation(transaction) do
+    amount = TransactionPresentation.signed_amount(transaction)
+    {Money.positive?(amount), amount}
   end
 
-  defp counterparty_raw_name(transaction) do
-    if incoming?(transaction), do: transaction.debtor_name, else: transaction.creditor_name
+  defp counterparty_name(transaction) do
+    TransactionPresentation.counterparty_name(transaction)
   end
 
   defp transaction_summary(transaction) do
@@ -357,7 +358,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
   defp assistant_config(%Transaction{} = transaction) do
     %{
-      displayed_party_label: if(incoming?(transaction), do: "Nadawca", else: "Odbiorca"),
+      displayed_party_label: if(TransactionPresentation.income?(transaction), do: "Nadawca", else: "Odbiorca"),
       suggested_messages: @transaction_suggested_messages
     }
   end
@@ -400,7 +401,7 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
 
   defp bank_name(_transaction), do: "—"
 
-  defp incoming?(%Transaction{} = transaction), do: Money.positive?(transaction.amount)
+  defp incoming?(%Transaction{} = transaction), do: TransactionPresentation.income?(transaction)
 
   defp linked_invoice_cards(transaction, return_to) do
     invoice_return_to = Navigation.transaction_show_path(transaction, return_to)

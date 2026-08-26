@@ -20,6 +20,7 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Invoicing.RecommendationThresholds
   alias FirmowidWeb.Invoicing.Utilities.Navigation
+  alias FirmowidWeb.Invoicing.Utilities.TransactionPresentation
 
   attr :entry, :any, required: true
   attr :type, :atom, required: true
@@ -137,10 +138,11 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
 
   defp unmatched_transaction_tile(assigns) do
     entry = assigns.entry
-    party = transaction_party(entry)
-    amount = Money.to_decimal(entry.amount)
-    currency = entry.amount |> Money.to_currency_code() |> Atom.to_string()
-    is_income = Money.positive?(entry.amount)
+    party = TransactionPresentation.counterparty_name(entry)
+    signed_amount = TransactionPresentation.signed_amount(entry)
+    amount = Money.to_decimal(signed_amount)
+    currency = signed_amount |> Money.to_currency_code() |> Atom.to_string()
+    is_income = TransactionPresentation.income?(entry)
 
     navigate = Navigation.transaction_show_path(entry, assigns.return_to)
 
@@ -197,16 +199,6 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
     </.maybe_link>
     """
   end
-
-  defp transaction_party(%Transaction{} = tx) do
-    if Money.positive?(tx.amount) do
-      tx.debtor_name || "—"
-    else
-      tx.creditor_name || "—"
-    end
-  end
-
-  defp transaction_party(_tx), do: "—"
 
   # ── Matched Entry Tile ────────────────────────────────────────────
 
@@ -268,11 +260,13 @@ defmodule FirmowidWeb.Invoicing.Components.DashboardTiles do
   end
 
   defp matched_entry_details(%Transaction{} = entry, return_to) do
+    amount = TransactionPresentation.signed_amount(entry)
+
     {
-      transaction_party(entry),
+      TransactionPresentation.counterparty_name(entry),
       nil,
-      Money.to_decimal(entry.amount),
-      entry.amount |> Money.to_currency_code() |> Atom.to_string(),
+      Money.to_decimal(amount),
+      amount |> Money.to_currency_code() |> Atom.to_string(),
       Navigation.transaction_show_path(entry, return_to),
       entry.remittance_information_unstructured
     }

@@ -29,6 +29,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
   alias FirmowidWeb.Invoicing.Utilities.Navigation
   alias FirmowidWeb.Invoicing.Utilities.QueryCodec
+  alias FirmowidWeb.Invoicing.Utilities.TransactionPresentation
   alias Phoenix.Socket.Broadcast
 
   # Load definitions for invoice queries
@@ -924,7 +925,7 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
   defp fetch_unmatched_transactions(from, to, scope) do
     transactions =
       Finances.list_transactions!(%{date_from: from, date_to: to, reconciliation: :pending},
-        load: [:cost_invoices, :sales_invoices],
+        load: [:cost_invoices, :sales_invoices, :bank_account],
         query: [sort: [booking_date: :desc]],
         scope: scope
       )
@@ -978,14 +979,13 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     {transactions, other_entries} =
       Enum.split_with(entries, &match?(%Transaction{}, &1))
 
-    # Split into cost (negative) and income (positive) transactions
+    # Split transactions according to the direction used by the display layer.
     {cost_transactions, income_transactions} =
-      Enum.split_with(transactions, &Money.negative?(&1.amount))
+      Enum.split_with(transactions, &(not TransactionPresentation.income?(&1)))
 
-    # Group cost transactions by creditor_name
+    # Group by the raw counterparty for each direction. The display fallback is
+    # intentionally not used here, as unrelated transactions must not share a group.
     cost_by_party = Enum.group_by(cost_transactions, & &1.creditor_name)
-
-    # Group income transactions by debtor_name
     income_by_party = Enum.group_by(income_transactions, & &1.debtor_name)
 
     # Process cost transaction groups
@@ -1030,15 +1030,26 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
     |> order_entries_for_display()
   end
 
-  defp groupable_transaction?(%Transaction{creditor_name: "N/A"}), do: false
-  defp groupable_transaction?(%Transaction{creditor_name: ""}), do: false
-  defp groupable_transaction?(%Transaction{creditor_name: nil}), do: false
+  defp groupable_transaction?(%Transaction{} = transaction) do
+    counterparty =
+      if TransactionPresentation.income?(transaction),
+        do: transaction.debtor_name,
+        else: transaction.creditor_name
 
-  defp groupable_transaction?(%Transaction{skip_invoicing: skip, cost_invoices: cost, sales_invoices: sales}) do
-    not skip and cost == [] and sales == []
+    useful_counterparty?(counterparty) and
+      not transaction.skip_invoicing and
+      transaction.cost_invoices == [] and
+      transaction.sales_invoices == []
   end
 
   defp groupable_transaction?(_), do: false
+
+  defp useful_counterparty?(value) when is_binary(value) do
+    value = String.trim(value)
+    value != "" and String.upcase(value) != "N/A"
+  end
+
+  defp useful_counterparty?(_), do: false
 
   defp same_currency_transactions?([first | rest]) do
     currency = first.amount |> Money.to_currency_code() |> Atom.to_string()
@@ -1047,8 +1058,9 @@ defmodule FirmowidWeb.Invoicing.Views.Index do
 
   defp build_transaction_group(kind, party, transactions) do
     total =
-      Enum.reduce(transactions, Decimal.new(0), fn t, acc ->
-        Decimal.add(acc, Money.to_decimal(t.amount))
+      Enum.reduce(transactions, Decimal.new(0), fn transaction, acc ->
+        signed_amount = TransactionPresentation.signed_amount(transaction)
+        Decimal.add(acc, Money.to_decimal(signed_amount))
       end)
 
     currency =
