@@ -12,6 +12,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
   alias Firmowid.Ash.Invoicing
   alias Firmowid.Ash.Invoicing.SalesInvoice
   alias Firmowid.Ash.Invoicing.SalesInvoiceItem
+  alias Firmowid.Ash.Ksef.Credential
+  alias Firmowid.Ash.Ksef.KsefTestHelpers
   alias Firmowid.Ash.Ksef.Workers.SubmissionWorker
   alias Firmowid.Ash.Scope
   alias Firmowid.Repo
@@ -263,6 +265,87 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
            )
   end
 
+  describe "cancellation" do
+    setup do
+      original_ksef_config = Application.fetch_env!(:firmowid, :ksef)
+
+      Application.put_env(
+        :firmowid,
+        :ksef,
+        Keyword.merge(original_ksef_config,
+          base_url: "https://ksef.example",
+          request_options: [plug: {Req.Test, :ksef_api}]
+        )
+      )
+
+      on_exit(fn ->
+        Application.put_env(:firmowid, :ksef, original_ksef_config)
+        Cachex.clear(:ksef)
+      end)
+
+      :ok
+    end
+
+    test "submits the cancellation correction and navigates to its summary", %{conn: conn} do
+      admin = admin_fixture()
+      seed_ksef_submission_state!(admin.organization_id)
+      invoice = sales_invoice_fixture!(admin)
+
+      Ash.Seed.update!(invoice, %{
+        ksef_number: "KSEF-ORIGINAL",
+        ksef_invoice_checksum: "original-hash",
+        locked_at: DateTime.utc_now()
+      })
+
+      Req.Test.stub(:ksef_api, fn conn ->
+        case {conn.method, conn.request_path} do
+          {"POST", "/sessions/online"} ->
+            Req.Test.json(Plug.Conn.put_status(conn, 201), %{"referenceNumber" => "SESSION-REF-1"})
+
+          {"POST", "/sessions/online/SESSION-REF-1/invoices"} ->
+            Req.Test.json(Plug.Conn.put_status(conn, 202), %{"referenceNumber" => "INVOICE-REF-1"})
+
+          {"POST", "/sessions/online/SESSION-REF-1/close"} ->
+            Plug.Conn.send_resp(conn, 204, "")
+
+          {"GET", "/sessions/SESSION-REF-1/invoices/INVOICE-REF-1"} ->
+            Req.Test.json(conn, %{
+              "status" => %{"code" => 200},
+              "ksefNumber" => "KSEF-CANCELLATION",
+              "acquisitionDate" => "2026-01-10T12:00:00Z",
+              "invoiceHash" => "cancellation-hash"
+            })
+
+          _ ->
+            Plug.Conn.send_resp(
+              conn,
+              404,
+              "unexpected request: #{conn.method} #{conn.request_path}"
+            )
+        end
+      end)
+
+      conn = log_in_user(conn, admin)
+      {:ok, view, html} = live(conn, ~p"/sprzedazowe/#{invoice.id}")
+      assert html =~ "Anuluj fakturę"
+
+      view
+      |> element("#cancel-invoice-modal button", "Anuluj fakturę")
+      |> render_click()
+
+      cancelled_invoice =
+        Invoicing.get_sales_invoice!(invoice.id,
+          load: [:corrections],
+          scope: scope_for(admin)
+        )
+
+      correction = List.first(cancelled_invoice.corrections)
+      assert correction.ksef_number == "KSEF-CANCELLATION"
+      assert correction.ksef_invoice_checksum == "cancellation-hash"
+      assert_redirect(view, Navigation.sales_invoice_summary_path(correction))
+    end
+  end
+
   defp sales_invoice_fixture!(admin) do
     {:ok, invoice} =
       SalesInvoice.create(
@@ -323,5 +406,21 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.ShowTest do
 
   defp scope_for(user) do
     %Scope{actor: user, tenant: user.organization_id}
+  end
+
+  defp seed_ksef_submission_state!(organization_id) do
+    Ash.Seed.seed!(Credential, %{
+      organization_id: organization_id,
+      status: :working,
+      auth_type: :token,
+      credentials: "token-#{System.unique_integer([:positive])}"
+    })
+
+    Cachex.put(:ksef, {:access_token, organization_id}, KsefTestHelpers.jwt(300), expire: to_timeout(minute: 5))
+
+    private_key = X509.PrivateKey.new_rsa(2048)
+    certificate = X509.Certificate.self_signed(private_key, "/CN=KSeF Test")
+
+    Cachex.put(:ksef, {:public_key, "SymmetricKeyEncryption"}, certificate)
   end
 end
