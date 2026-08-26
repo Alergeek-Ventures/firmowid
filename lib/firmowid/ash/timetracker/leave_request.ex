@@ -280,7 +280,15 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
   end
 
   calculations do
-    calculate :days_count, :integer, expr(ends_on - starts_on + 1) do
+    calculate :days_count,
+              :integer,
+              expr(
+                fragment(
+                  "(SELECT count(*)::integer FROM generate_series(?::date, ?::date, '1 day'::interval) AS gs(date) WHERE EXTRACT(isodow FROM gs.date) < 6)",
+                  starts_on,
+                  ends_on
+                )
+              ) do
       public? true
     end
 
@@ -290,8 +298,11 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequest do
                 if starts_on > ^arg(:year_end) or ends_on < ^arg(:year_start) do
                   0
                 else
-                  if(ends_on > ^arg(:year_end), do: ^arg(:year_end), else: ends_on) -
-                    if(starts_on < ^arg(:year_start), do: ^arg(:year_start), else: starts_on) + 1
+                  fragment(
+                    "(SELECT count(*)::integer FROM generate_series(?::date, ?::date, '1 day'::interval) AS gs(date) WHERE EXTRACT(isodow FROM gs.date) < 6)",
+                    if(starts_on < ^arg(:year_start), do: ^arg(:year_start), else: starts_on),
+                    if(ends_on > ^arg(:year_end), do: ^arg(:year_end), else: ends_on)
+                  )
                 end
               ) do
       argument :year_start, :date, allow_nil?: false

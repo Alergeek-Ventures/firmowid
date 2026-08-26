@@ -207,8 +207,8 @@ defmodule Firmowid.Ash.Timetracker.LeaveRequestTest do
       loaded =
         Ash.load!(user, [accepted_leave_days_for_year: %{year: year}], scope: admin_scope)
 
-      # Jan 1..Jan 3 inclusive = 3 days in the selected year
-      assert loaded.accepted_leave_days_for_year == 3
+      # Jan 1..Jan 3 inclusive = 2 days in the selected year (exclude weekends)
+      assert loaded.accepted_leave_days_for_year == 2
     end
   end
 
