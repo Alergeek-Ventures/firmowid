@@ -987,17 +987,17 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
     <article class="border-grey-200 relative flex flex-col gap-4 rounded-lg border bg-white p-4">
       <div class="flex items-center justify-start gap-4">
         <.bank_badge institution={@account} />
-        <div class="flex items-start gap-4">
+        <div class="flex items-start gap-4 self-start">
           <div class="flex flex-wrap gap-2.5">
             <span
               :if={@account.is_default}
-              class="text/tight rounded-full bg-green-200 px-3 py-1 text-green-700"
+              class="rounded-full bg-green-100 px-4 py-1 text-sm text-green-700"
             >
-              Domyślne {present(@account.currency)}
+              Domyślne <span class="font-semibold">{present(@account.currency)}</span>
             </span>
             <span
               :if={!@account.is_default}
-              class="bg-grey-100 text-grey-700 text/tight rounded-full px-3 py-1"
+              class="bg-grey-100 text-grey-700 rounded-full px-4 py-1 font-semibold"
             >
               {present(@account.currency)}
             </span>
@@ -1068,7 +1068,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
         </.bank_detail_row>
         <.bank_detail_row :if={@status} label="Status">
           <span :if={@status in [:broken, :disconnected]} class="inline-flex items-center gap-1.5">
-            <span class="font-bold text-red-900">Konto rozłączone</span>
+            <span class="font-medium text-red-800">Konto rozłączone</span>
           </span>
 
           <span :if={@status not in [:broken, :disconnected]} class="inline-flex items-center gap-2">
@@ -1214,8 +1214,8 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
   defp bank_detail_row(assigns) do
     ~H"""
-    <label class="text-grey-700 text-sm font-medium uppercase">{@label}</label>
-    <div class="text-grey-900 text-base leading-[1.35]">
+    <label class="text-grey-700 text-sm">{@label}</label>
+    <div class="text-base leading-[1.35]">
       {render_slot(@inner_block)}
     </div>
     """
