@@ -314,7 +314,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       )
 
     ~H"""
-    <section class="flex w-full flex-col gap-6 rounded-lg bg-white p-6 shadow">
+    <section class="flex size-full flex-col gap-6 rounded-lg bg-white p-6 shadow">
       <div class="flex items-start justify-between gap-3">
         <h2 class="text-grey-900 text-base leading-none font-medium">Nieobecności</h2>
         <div class="flex items-center gap-3">
@@ -367,7 +367,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
           <span class="text-grey-700 pl-1 font-medium">{@leave_days} dni</span>
         </div>
       </div>
-      <ul class="divide-grey-100 divide-y">
+      <ul class="divide-grey-100 scrollbar-card max-h-80 divide-y overflow-y-auto">
         <li
           :for={request <- @filtered_leave_requests}
           class="flex items-center gap-3 py-3 first:pt-0 last:pb-0"

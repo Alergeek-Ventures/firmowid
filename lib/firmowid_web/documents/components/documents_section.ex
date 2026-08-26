@@ -281,10 +281,10 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
     """
   end
 
-  defp outer_styles(:profile), do: "flex w-full flex-col"
+  defp outer_styles(:profile), do: "flex h-full w-full flex-col"
   defp outer_styles(_), do: "flex h-full min-h-0 flex-col"
 
-  defp section_styles(:profile), do: "flex w-full flex-col gap-6 rounded-lg bg-white p-6 shadow"
+  defp section_styles(:profile), do: "flex w-full h-full flex-col gap-6 rounded-lg bg-white p-6 shadow"
 
   defp section_styles(_), do: "relative flex h-full min-h-0 flex-col gap-y-6 rounded-md bg-white p-6 text-black shadow"
 

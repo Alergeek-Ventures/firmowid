@@ -824,7 +824,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
             phx-click="toggle_active_invites"
             role="switch"
             aria-checked={to_string(@show_active_invites)}
-            class="border-grey-200 hover:bg-grey-100 text-grey-700 inline-flex h-11 items-center justify-between gap-3 rounded-lg border bg-white px-3 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
+            class="hover:bg-grey-100 text-grey-700 inline-flex h-11 items-center justify-between gap-3 rounded-lg bg-white px-3 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
           >
             <span>Aktywne zaproszenia</span>
             <span class={invite_toggle_track_styles(@show_active_invites)}>
@@ -848,7 +848,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
       <div
         :if={@show_active_invites}
-        class="bg-grey-50 border-grey-200 rounded-lg border p-4"
+        class="bg-grey-50 border-grey-200 scrollbar-card h-151 overflow-y-auto rounded-lg border p-4"
       >
         <div
           :if={@active_invites == []}
@@ -894,7 +894,7 @@ defmodule FirmowidWeb.Settings.Components.CompanyTab do
 
       <div
         :if={not @show_active_invites}
-        class="border-grey-200 rounded-lg border bg-white p-6 shadow-sm"
+        class="border-grey-200 scrollbar-card h-151 overflow-y-auto rounded-lg border bg-white p-6 shadow-sm"
       >
         <div class="flex flex-col gap-6">
           <div
