@@ -5,9 +5,8 @@ defmodule FirmowidWeb.Timetracker.Components.DelegationsList do
 
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidWeb.Timetracker.Components.Delegation
   import Phoenix.Component, except: [link: 1]
-
-  alias FirmowidWeb.Timetracker.Utilities.DelegationPresentation
 
   attr :delegations, :list, required: true
   attr :management?, :boolean, default: false
@@ -23,19 +22,15 @@ defmodule FirmowidWeb.Timetracker.Components.DelegationsList do
           navigate={~p"/delegacje/#{delegation.id}"}
           class="min-w-0 flex-1 hover:underline"
         >
-          {delegation.title}
-          <span class="text-grey-500 ml-2 text-xs uppercase">WERSJA ROBOCZA</span>
+          <.delegation_title delegation={delegation} />
         </.link>
-        <span :if={delegation.status != :in_progress || @management?} class="min-w-0 flex-1 truncate">
-          {delegation.title}
-          <span :if={delegation.status == :in_progress} class="text-grey-500 ml-2 text-xs uppercase">WERSJA ROBOCZA</span>
-        </span>
-        <span class="shrink-0 text-sm tabular-nums">
-          {DelegationPresentation.format_range(delegation.start_date, delegation.end_date)}
-        </span>
-        <span class={badge_styles(delegation.status)}>
-          {DelegationPresentation.status_label(delegation.status)}
-        </span>
+        <p :if={delegation.status != :in_progress || @management?} class="min-w-0 flex-1 truncate">
+          <.delegation_title delegation={delegation} />
+        </p>
+        <p class="shrink-0 text-sm tabular-nums">
+          <.date_range start_date={delegation.start_date} end_date={delegation.end_date} />
+        </p>
+        <.status_badge status={delegation.status} />
         <.button
           :if={@management? && delegation.status == :pending}
           type="button"
@@ -53,10 +48,14 @@ defmodule FirmowidWeb.Timetracker.Components.DelegationsList do
     """
   end
 
-  defp badge_styles(status) do
-    [
-      "shrink-0 rounded-full px-3 py-1 text-center text-sm"
-      | DelegationPresentation.status_badge_styles(status)
-    ]
+  attr :delegation, :map, required: true
+
+  defp delegation_title(assigns) do
+    ~H"""
+    <span class="truncate">{@delegation.title}</span>
+    <span :if={@delegation.status == :in_progress} class="text-grey-500 ml-2 text-xs uppercase">
+      Wersja robocza
+    </span>
+    """
   end
 end
