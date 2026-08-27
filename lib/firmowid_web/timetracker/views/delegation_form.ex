@@ -4,7 +4,9 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
   use FirmowidWeb, :live_view
 
   import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
+  import FirmowidWeb.DesignSystem.Components.MonthPicker
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Timetracker
@@ -21,24 +23,25 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
      |> assign(:page_title, "Planowanie delegacji")
      |> assign(:months, months)
      |> assign(:default_month, default_month)
+     |> assign(:billing_month, default_month)
      |> assign(:error, nil)}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen">
+    <div class="relative mt-4 min-h-screen font-[340]">
       <.link
         kind="unstyled"
-        navigate={~p"/ustawienia/konto"}
-        class="m-3 inline-flex items-center gap-2"
+        navigate={~p"/ustawienia/profil"}
+        class="absolute top-0 left-0.5 inline-flex items-center gap-2 text-sm"
       >
-        <span class="flex size-7 items-center justify-center rounded-full bg-black text-white"><Lucideicons.chevron_left class="size-4" /></span>
+        <span class="flex size-6 items-center justify-center rounded-full bg-black text-white"><Lucideicons.chevron_left class="size-4" /></span>
         Wróć
       </.link>
-      <main class="mx-auto max-w-4xl px-6 pb-12">
-        <h1 class="text-2xl font-medium">Planowanie delegacji</h1>
-        <p class="text-grey-700 mt-3 max-w-2xl text-balance">
+      <main class="ml-32 max-w-366 pb-12">
+        <h1 class="text-2xl/tight font-normal">Planowanie delegacji</h1>
+        <p class="text-grey-700 mt-6 max-w-3xl text-base text-balance">
           Wypełnij poniższy wniosek. Po wysłaniu zostanie on przesłany do Twojego pracodawcy. Gdy zostanie zaakceptowany otrzymasz maila z potwierdzeniem.
         </p>
         <.form
@@ -46,59 +49,89 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
           as={:delegation}
           id="delegation-form"
           phx-submit="save"
-          class="mt-10 space-y-5"
+          class="mt-19"
         >
-          <div class="grid gap-2 sm:grid-cols-[max-content_minmax(0,1fr)] sm:items-center sm:gap-x-8">
-            <label for="delegation_billing_month">Miesiąc rozliczeniowy</label>
-            <select id="delegation_billing_month" name="delegation[billing_month]" class="input">
-              <option
-                :for={month <- @months}
-                value={Date.to_iso8601(month)}
-                selected={month == @default_month}
-              >
-                {Firmowid.Cldr.Date.to_string!(month, format: "MMMM y", locale: "pl")
-                |> String.capitalize()}
-              </option>
-            </select>
-            <span>Imię i nazwisko</span><span>{@current_user.name || @current_user.email}</span>
-            <span>Stanowisko</span><span>{@current_user.position || "—"}</span>
-            <label for="delegation_start_date">Data wyjazdu</label>
-            <div class="flex items-center gap-2">
+          <div class="grid max-w-216 grid-cols-[auto_1fr] items-center gap-x-5 gap-y-4">
+            <label class="text-grey-700 text-base" for="delegation_billing_month">
+              Miesiąc rozliczeniowy
+            </label>
+            <div class="relative w-57">
+              <.month_picker
+                id="delegation_billing_month"
+                selected_date={Date.to_iso8601(@billing_month)}
+                active_months={@months}
+                variant="outline"
+                size="small"
+                class="bg-grey-50 w-full pr-10"
+              />
+              <Lucideicons.chevron_down class="text-grey-700 pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
               <input
+                type="hidden"
+                name="delegation[billing_month]"
+                value={Date.to_iso8601(@billing_month)}
+              />
+            </div>
+            <span class="text-grey-700 text-base">Imię i nazwisko</span><span class="text-base text-black">{@current_user.name ||
+              @current_user.email}</span>
+            <span class="text-grey-700 text-base">Stanowisko</span><span class="text-base text-black">{@current_user.position ||
+              "—"}</span>
+            <label class="text-grey-700 text-base" for="delegation_start_date">Data wyjazdu</label>
+            <div class="flex items-center gap-2">
+              <.input
                 id="delegation_start_date"
                 name="delegation[start_date]"
-                type="date"
+                type="text"
+                new
+                value={nil}
                 required
-                class="input"
+                placeholder="__.__.____"
+                pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}"
+                input_class="placeholder:text-grey-300"
               />
               <span>-</span>
-              <input name="delegation[end_date]" type="date" required class="input" />
+              <.input
+                id="delegation_end_date"
+                name="delegation[end_date]"
+                type="text"
+                new
+                value={nil}
+                required
+                placeholder="__.__.____"
+                pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}"
+                input_class="placeholder:text-grey-300"
+              />
             </div>
-            <label for="delegation_purpose">Cel wyjazdu</label>
-            <input
+            <label class="text-grey-700 text-base" for="delegation_purpose">Cel wyjazdu</label>
+            <.input
               id="delegation_purpose"
               name="delegation[purpose]"
               type="text"
+              new
+              value={nil}
               required
               placeholder="np. Wyjazd na Elixir Conf"
-              class="input"
+              input_class="placeholder:text-grey-300"
             />
-            <label for="delegation_amount">Przewidywana kwota</label>
+            <label class="text-grey-700 text-base" for="delegation_amount">Przewidywana kwota</label>
             <div class="flex items-center gap-2">
-              <input
+              <.input
                 id="delegation_amount"
                 name="delegation[advance_payment_amount]"
                 type="number"
+                new
+                value={nil}
                 min="0"
                 step="0.01"
                 required
-                class="input"
-              /><span>PLN</span>
+                placeholder="0.00"
+                input_class="w-25 text-right placeholder:text-grey-300"
+              />
+              <span>PLN</span>
             </div>
           </div>
           <p :if={@error} class="text-sm text-red-600">{@error}</p>
-          <div class="flex justify-end">
-            <.button type="submit" variant="primary" accent="turquoise" size="big">Zaplanuj</.button>
+          <div class="mt-24 flex justify-end">
+            <.button type="submit" variant="primary" accent="turquoise" size="big" class="w-54">Zaplanuj</.button>
           </div>
         </.form>
       </main>
@@ -107,10 +140,15 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
   end
 
   @impl true
+  def handle_event("change-month", %{"month" => month}, socket) do
+    {:noreply, assign(socket, :billing_month, Date.from_iso8601!(month))}
+  end
+
+  @impl true
   def handle_event("save", %{"delegation" => params}, socket) do
     with {:ok, billing_month} <- Date.from_iso8601(params["billing_month"]),
-         {:ok, start_date} <- Date.from_iso8601(params["start_date"]),
-         {:ok, end_date} <- Date.from_iso8601(params["end_date"]),
+         {:ok, start_date} <- parse_date(params["start_date"]),
+         {:ok, end_date} <- parse_date(params["end_date"]),
          {:ok, amount} <- Decimal.cast(params["advance_payment_amount"]),
          true <- Date.compare(end_date, start_date) != :lt,
          {:ok, _delegation} <-
@@ -141,5 +179,15 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
     first = Date.beginning_of_month(employment_date)
     last = today |> Date.beginning_of_month() |> Date.add(32) |> Date.beginning_of_month()
     first |> Stream.iterate(&Date.add(&1, 1)) |> Enum.take_while(&(Date.compare(&1, last) != :gt))
+  end
+
+  defp parse_date(date) do
+    with [day, month, year] <- String.split(date, "."),
+         formatted_date = Enum.join([year, month, day], "-"),
+         {:ok, parsed_date} <- Date.from_iso8601(formatted_date) do
+      {:ok, parsed_date}
+    else
+      _ -> :error
+    end
   end
 end

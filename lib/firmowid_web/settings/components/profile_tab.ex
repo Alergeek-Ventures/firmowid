@@ -102,9 +102,10 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       <div class="flex items-start justify-between gap-3">
         <h2 class="text-grey-900 text-base leading-none font-medium">Delegacje</h2>
         <.link
-          kind="unstyled"
+          kind="button"
           navigate={~p"/delegacje/dodaj"}
-          class="text-turquoise-700 inline-flex items-center gap-2 text-sm font-medium"
+          variant="secondary"
+          size="small"
         >
           <.icon name="hero-map" class="size-4" /> Zaplanuj delegację
         </.link>
