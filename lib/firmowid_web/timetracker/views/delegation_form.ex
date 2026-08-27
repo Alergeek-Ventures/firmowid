@@ -5,8 +5,8 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
 
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.DesignSystem.Components.Link
   import FirmowidWeb.DesignSystem.Components.MonthPicker
+  import FirmowidWeb.Timetracker.Components.Delegation
   import Phoenix.Component, except: [link: 1]
 
   alias Firmowid.Ash.Timetracker
@@ -30,16 +30,9 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="relative mt-4 min-h-screen font-[340]">
-      <.link
-        kind="unstyled"
-        navigate={~p"/ustawienia/profil"}
-        class="absolute top-0 left-0.5 inline-flex items-center gap-2 text-sm"
-      >
-        <span class="flex size-6 items-center justify-center rounded-full bg-black text-white"><Lucideicons.chevron_left class="size-4" /></span>
-        Wróć
-      </.link>
-      <main class="ml-32 max-w-366 pb-12">
+    <main class="mx-auto mt-4 max-w-6xl px-6 pb-12 font-[340]">
+      <.back_link navigate={~p"/ustawienia/profil"} />
+      <div class="mt-10 max-w-4xl">
         <h1 class="text-2xl/tight font-normal">Planowanie delegacji</h1>
         <p class="text-grey-700 mt-6 max-w-3xl text-base text-balance">
           Wypełnij poniższy wniosek. Po wysłaniu zostanie on przesłany do Twojego pracodawcy. Gdy zostanie zaakceptowany otrzymasz maila z potwierdzeniem.
@@ -51,91 +44,99 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
           phx-submit="save"
           class="mt-19"
         >
-          <div class="grid max-w-216 grid-cols-[auto_1fr] items-center gap-x-5 gap-y-4">
-            <label class="text-grey-700 text-base" for="delegation_billing_month">
-              Miesiąc rozliczeniowy
-            </label>
-            <div class="relative w-57">
-              <.month_picker
-                id="delegation_billing_month"
-                selected_date={Date.to_iso8601(@billing_month)}
-                active_months={@months}
-                variant="outline"
-                size="small"
-                class="bg-grey-50 w-full pr-10"
-              />
-              <Lucideicons.chevron_down class="text-grey-700 pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
-              <input
-                type="hidden"
-                name="delegation[billing_month]"
-                value={Date.to_iso8601(@billing_month)}
-              />
-            </div>
-            <span class="text-grey-700 text-base">Imię i nazwisko</span><span class="text-base text-black">{@current_user.name ||
-              @current_user.email}</span>
-            <span class="text-grey-700 text-base">Stanowisko</span><span class="text-base text-black">{@current_user.position ||
-              "—"}</span>
-            <label class="text-grey-700 text-base" for="delegation_start_date">Data wyjazdu</label>
-            <div class="flex items-center gap-2">
+          <fieldset class="max-w-3xl space-y-4">
+            <legend class="sr-only">Dane delegacji</legend>
+            <.form_row label="Miesiąc rozliczeniowy" for="delegation_billing_month">
+              <div class="relative w-57">
+                <.month_picker
+                  id="delegation_billing_month"
+                  selected_date={Date.to_iso8601(@billing_month)}
+                  active_months={@months}
+                  variant="outline"
+                  size="small"
+                  class="bg-grey-50 w-full pr-10"
+                />
+                <Lucideicons.chevron_down class="text-grey-700 pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
+                <input
+                  type="hidden"
+                  name="delegation[billing_month]"
+                  value={Date.to_iso8601(@billing_month)}
+                />
+              </div>
+            </.form_row>
+            <dl class="space-y-4">
+              <.detail_row label="Imię i nazwisko">
+                {@current_user.name || @current_user.email}
+              </.detail_row>
+              <.detail_row label="Stanowisko">{@current_user.position || "—"}</.detail_row>
+            </dl>
+            <.form_row label="Daty wyjazdu" for="delegation_start_date">
+              <div class="flex items-center gap-2">
+                <.input
+                  id="delegation_start_date"
+                  name="delegation[start_date]"
+                  type="text"
+                  new
+                  value={nil}
+                  required
+                  placeholder="__.__.____"
+                  pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}"
+                  aria-label="Data wyjazdu"
+                  input_class="placeholder:text-grey-300"
+                />
+                <span aria-hidden="true">-</span>
+                <.input
+                  id="delegation_end_date"
+                  name="delegation[end_date]"
+                  type="text"
+                  new
+                  value={nil}
+                  required
+                  placeholder="__.__.____"
+                  pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}"
+                  aria-label="Data powrotu"
+                  input_class="placeholder:text-grey-300"
+                />
+              </div>
+            </.form_row>
+            <.form_row label="Cel wyjazdu" for="delegation_purpose">
               <.input
-                id="delegation_start_date"
-                name="delegation[start_date]"
+                id="delegation_purpose"
+                name="delegation[purpose]"
                 type="text"
                 new
                 value={nil}
                 required
-                placeholder="__.__.____"
-                pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}"
+                placeholder="np. Wyjazd na Elixir Conf"
                 input_class="placeholder:text-grey-300"
               />
-              <span>-</span>
-              <.input
-                id="delegation_end_date"
-                name="delegation[end_date]"
-                type="text"
-                new
-                value={nil}
-                required
-                placeholder="__.__.____"
-                pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}"
-                input_class="placeholder:text-grey-300"
-              />
-            </div>
-            <label class="text-grey-700 text-base" for="delegation_purpose">Cel wyjazdu</label>
-            <.input
-              id="delegation_purpose"
-              name="delegation[purpose]"
-              type="text"
-              new
-              value={nil}
-              required
-              placeholder="np. Wyjazd na Elixir Conf"
-              input_class="placeholder:text-grey-300"
-            />
-            <label class="text-grey-700 text-base" for="delegation_amount">Przewidywana kwota</label>
-            <div class="flex items-center gap-2">
-              <.input
-                id="delegation_amount"
-                name="delegation[advance_payment_amount]"
-                type="number"
-                new
-                value={nil}
-                min="0"
-                step="0.01"
-                required
-                placeholder="0.00"
-                input_class="w-25 text-right placeholder:text-grey-300"
-              />
-              <span>PLN</span>
-            </div>
-          </div>
-          <p :if={@error} class="text-sm text-red-600">{@error}</p>
+            </.form_row>
+            <.form_row label="Przewidywana kwota" for="delegation_amount">
+              <div class="flex items-center gap-2">
+                <.input
+                  id="delegation_amount"
+                  name="delegation[advance_payment_amount]"
+                  type="number"
+                  new
+                  value={nil}
+                  min="0"
+                  step="0.01"
+                  required
+                  placeholder="0.00"
+                  aria-describedby="delegation_amount_currency"
+                  input_class="w-25 text-right placeholder:text-grey-300"
+                />
+                <span id="delegation_amount_currency">PLN</span>
+              </div>
+            </.form_row>
+          </fieldset>
+          <p :if={@error} role="alert" class="mt-4 text-sm text-red-600">{@error}</p>
           <div class="mt-24 flex justify-end">
             <.button type="submit" variant="primary" accent="turquoise" size="big" class="w-54">Zaplanuj</.button>
           </div>
         </.form>
-      </main>
-    </div>
+      </div>
+    </main>
     """
   end
 
