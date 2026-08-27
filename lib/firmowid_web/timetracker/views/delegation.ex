@@ -32,9 +32,13 @@ defmodule FirmowidWeb.Timetracker.Views.Delegation do
           <.status_badge status={@delegation.status} />
         </header>
         <dl class="border-grey-100 mt-8 border-t pt-6">
-          <.detail_row label="Termin wyjazdu" class="tabular-nums">
-            <.date_range start_date={@delegation.start_date} end_date={@delegation.end_date} />
-          </.detail_row>
+          <div class="grid gap-1 sm:grid-cols-2 sm:gap-4">
+            <.detail_row label="Termin wyjazdu">
+              <span class="tabular-nums">
+                <.date_range start_date={@delegation.start_date} end_date={@delegation.end_date} />
+              </span>
+            </.detail_row>
+          </div>
         </dl>
       </article>
     </main>
