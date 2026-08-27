@@ -25,6 +25,15 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   end
 
   @impl true
+  def update(%{refetch: true} = _assigns, socket) do
+    socket =
+      socket
+      |> refetch_documents()
+      |> refetch_upload_counts()
+
+    {:ok, socket}
+  end
+
   def update(assigns, socket) do
     can_upload? = admin_actor?(assigns.scope)
 
@@ -328,7 +337,8 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
         </div>
       </div>
 
-      <div class="text-darkGrey text-sm">
+      <div class="text-darkGrey flex items-center gap-4 text-sm">
+        {contract_status_badge(@document)}
         {TimeFormatter.format_date(@document.date)}
       </div>
     </.link>
@@ -387,6 +397,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
         |> maybe_add_month(parsed.month)
         |> maybe_add_year(parsed.year)
         |> Timetracker.query_to_list_hours_records(scope: scope)
+        |> Ash.Query.load([:blob], scope: scope)
         |> Ash.read!(scope: scope)
         |> Enum.map(fn doc ->
           %{
@@ -395,7 +406,7 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
             name: "Ewidencja #{String.pad_leading(Integer.to_string(doc.month), 2, "0")}.#{doc.year}",
             date: DateTime.to_date(doc.inserted_at),
             url: ~p"/czasosledz/ewidencja/#{doc.id}",
-            file_name: "Ewidencja_#{doc.year}_#{doc.month}.pdf"
+            file_name: doc.blob.original_filename
           }
         end)
       else
@@ -404,19 +415,21 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
 
     employment_contract_docs =
       if type_filter in [nil, "employment_contract"] do
-        search_arg = if parsed.text != "", do: parsed.text
-
-        user_id
-        |> Payroll.query_to_list_employment_contracts(search_arg, scope: scope)
+        %{user_id: user_id}
+        |> maybe_add_month(parsed.month)
+        |> maybe_add_year(parsed.year)
+        |> Payroll.query_to_list_employment_contracts(scope: scope)
+        |> Ash.Query.load([:blob], scope: scope)
         |> Ash.read!(scope: scope)
         |> Enum.map(fn doc ->
           %{
             id: doc.id,
             type: :employment_contract,
-            name: "Umowa o pracę #{doc.starts_at}",
+            status: doc.status,
+            name: "Umowa #{String.pad_leading(Integer.to_string(doc.starts_at.month), 2, "0")}.#{doc.starts_at.year}",
             date: doc.starts_at,
             url: ~p"/zarzadzanie/umowy/#{doc.id}",
-            file_name: "Umowa_#{doc.worker_full_name}_#{doc.starts_at}.pdf"
+            file_name: doc.blob.original_filename
           }
         end)
       else
@@ -577,6 +590,37 @@ defmodule FirmowidWeb.Documents.Components.DocumentsSection do
   defp upload_indicator_icon(assigns) do
     ~H"""
     <span>{@processing_blobs_count}</span>
+    """
+  end
+
+  attr :status, :atom, required: true
+
+  defp contract_status_badge(%{status: :pending_signature} = assigns) do
+    ~H"""
+    <span class="bg-turquoise-100 text-turquoise-700 rounded-2xl px-4 py-1 text-sm">
+      oczekiwanie
+    </span>
+    """
+  end
+
+  defp contract_status_badge(%{status: :signed} = assigns) do
+    ~H"""
+    <span class="bg-turquoise-100 text-turquoise-700 rounded-2xl px-4 py-1 text-sm">
+      podpisana
+    </span>
+    """
+  end
+
+  defp contract_status_badge(%{status: :active} = assigns) do
+    ~H"""
+    <span class="rounded-2xl bg-green-100 px-4 py-1 text-sm text-green-700">
+      obowiązująca umowa
+    </span>
+    """
+  end
+
+  defp contract_status_badge(assigns) do
+    ~H"""
     """
   end
 end

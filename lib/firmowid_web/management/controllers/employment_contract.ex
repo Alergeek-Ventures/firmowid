@@ -13,7 +13,7 @@ defmodule FirmowidWeb.Management.Controllers.EmploymentContract do
 
     case Payroll.get_employment_contract(id,
            scope: scope,
-           load: [blob: [:url]]
+           load: [:user, blob: [:url]]
          ) do
       {:ok, nil} ->
         conn
@@ -26,7 +26,7 @@ defmodule FirmowidWeb.Management.Controllers.EmploymentContract do
         case Req.get(url) do
           {:ok, %{status: 200, body: body}} ->
             safe_filename =
-              sanitize_filename("Umowa_#{record.worker_full_name}_#{record.starts_at}.pdf")
+              sanitize_filename("Umowa_#{record.user.name || "pracownik"}_#{record.starts_at}.pdf")
 
             conn
             |> put_resp_header(

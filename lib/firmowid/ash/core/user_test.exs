@@ -14,13 +14,12 @@ defmodule Firmowid.Ash.Core.UserTest do
 
       assert {:ok, updated} =
                Core.update_current_profile(
-                 %{name: "Ada Lovelace", position: "Engineer", phone: "+48123456789"},
+                 %{name: "Ada Lovelace", phone: "+48123456789"},
                  scope: scope
                )
 
       assert updated.id == admin.id
       assert updated.name == "Ada Lovelace"
-      assert updated.position == "Engineer"
       assert updated.phone == "+48123456789"
 
       assert Core.get_user!(employee.id, actor: employee).name != "Ada Lovelace"

@@ -9,6 +9,8 @@ defmodule Firmowid.Ash.Payroll do
   """
   use Ash.Domain
 
+  alias Firmowid.Ash.Payroll.UserEmploymentContract
+
   resources do
     resource Firmowid.Ash.Payroll.UserSalary do
       define :create_salary, action: :create
@@ -16,10 +18,26 @@ defmodule Firmowid.Ash.Payroll do
       define :list_salaries, action: :read
     end
 
-    resource Firmowid.Ash.Payroll.UserEmploymentContract do
+    resource UserEmploymentContract do
       define :create_employment_contract, action: :create
-      define :list_employment_contracts, action: :read, args: [:user_id, :search]
+      define :list_employment_contracts, action: :read
       define :get_employment_contract, action: :get_by_id, args: [:id]
+
+      define :load_pending_contract,
+        action: :load_pending_contract,
+        args: [:user_id],
+        get?: true,
+        not_found_error?: false
+
+      define :load_latest_contract,
+        action: :load_latest_contract,
+        args: [:user_id],
+        get?: true,
+        not_found_error?: false
+
+      define :update_employment_contract, action: :update
+      define :submit_signed, action: :submit_signed, args: [:upload_path, :upload_filename]
+      define :activate, action: :activate
     end
   end
 

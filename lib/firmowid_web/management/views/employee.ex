@@ -20,6 +20,7 @@ defmodule FirmowidWeb.Management.Views.Employee do
   alias FirmowidWeb.Infrastructure.Components.BlobProcessingToasts
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter
   alias FirmowidWeb.Management.Components.LeavesTab
+  alias FirmowidWeb.Management.Components.ProfileTab
   alias FirmowidWeb.Management.Utilities.Navigation
   alias Phoenix.Socket.Broadcast
 
@@ -205,6 +206,11 @@ defmodule FirmowidWeb.Management.Views.Employee do
 
     send_update(DocumentsTab,
       id: "documents-tab",
+      refetch: true
+    )
+
+    send_update(ProfileTab,
+      id: "profile-tab",
       refetch: true
     )
 

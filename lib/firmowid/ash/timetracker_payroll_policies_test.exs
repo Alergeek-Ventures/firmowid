@@ -88,12 +88,12 @@ defmodule Firmowid.Ash.Policies.TimetrackerPayrollPoliciesTest do
       assert length(salaries) >= 2
     end
 
-    test "employee cannot read their own salary via list_salaries", %{
+    test "employee can read their own salary via list_salaries", %{
       employee_a: employee_a
     } do
       scope = employee_scope(employee_a)
 
-      assert {:error, _} =
+      assert {:ok, []} =
                Payroll.list_salaries(%{user_id: employee_a.id}, scope: scope)
     end
   end

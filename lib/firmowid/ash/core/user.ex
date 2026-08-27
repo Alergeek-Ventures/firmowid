@@ -234,7 +234,6 @@ defmodule Firmowid.Ash.Core.User do
         :slack_url,
         :bank_account_number,
         :birthday,
-        :position,
         :correspondence_address,
         :residence_address
       ]
@@ -275,7 +274,6 @@ defmodule Firmowid.Ash.Core.User do
       argument :phone, :string
       argument :slack_url, :string
       argument :bank_account_number, :string
-      argument :position, :string
       argument :correspondence_address, :string
       argument :residence_address, :string
       argument :is_same_correspondence_address, :boolean
@@ -398,7 +396,13 @@ defmodule Firmowid.Ash.Core.User do
       authorize_if expr(id == ^actor(:id))
       authorize_if actor_attribute_equals(:role, :admin)
       authorize_if actor_attribute_equals(:system_role, :superuser)
-      authorize_if {SystemActorRole, roles: [:leave_notifier]}
+
+      authorize_if {SystemActorRole,
+                    roles: [
+                      :leave_notifier,
+                      :document_blob_processor,
+                      :employment_contract_notifier
+                    ]}
     end
 
     # :list action — admin-only user listing, plus system actors that need
@@ -418,6 +422,7 @@ defmodule Firmowid.Ash.Core.User do
     bypass action(:update_profile) do
       authorize_if actor_attribute_equals(:role, :admin)
       authorize_if expr(id == ^actor(:id))
+      authorize_if {SystemActorRole, roles: [:document_blob_processor]}
     end
 
     bypass action(:change_email) do
@@ -505,7 +510,6 @@ defmodule Firmowid.Ash.Core.User do
     attribute :slack_url, :string, public?: true
     attribute :bank_account_number, :string, public?: true
     attribute :birthday, :date, public?: true
-    attribute :position, :string, public?: true
 
     attribute :correspondence_address, :string, public?: true
     attribute :residence_address, :string, public?: true

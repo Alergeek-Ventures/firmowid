@@ -67,7 +67,6 @@ defmodule Firmowid.Seeds.Bytecraft do
         slack_url: "https://example.slack.com/team/U_KIRA_001",
         bank_account_number: "PL61 1050 0099 7603 1234 5678 9012",
         birthday: ~D[1991-11-07],
-        position: "Lead Architect",
         correspondence_address: "ul. Marszałkowska 11/4, 00-624 Warszawa",
         residence_address: "ul. Marszałkowska 11/4, 00-624 Warszawa"
       })
@@ -82,7 +81,6 @@ defmodule Firmowid.Seeds.Bytecraft do
         slack_url: "https://example.slack.com/team/U_TOMEK_002",
         bank_account_number: "PL27 1140 2004 0000 3002 0135 5387",
         birthday: ~D[1994-04-22],
-        position: "Backend Engineer",
         correspondence_address: "ul. Świdnicka 36/8, 50-068 Wrocław",
         residence_address: "ul. Świdnicka 36/8, 50-068 Wrocław"
       })
@@ -96,7 +94,6 @@ defmodule Firmowid.Seeds.Bytecraft do
         phone: "+48 503 400 500",
         slack_url: "https://example.slack.com/team/U_SABLE_003",
         birthday: ~D[1996-08-14],
-        position: "Product Designer",
         correspondence_address: "ul. Floriańska 22/10, 31-021 Kraków",
         residence_address: "ul. Floriańska 22/10, 31-021 Kraków"
       })
@@ -110,7 +107,6 @@ defmodule Firmowid.Seeds.Bytecraft do
         phone: "+48 504 500 600",
         slack_url: "https://example.slack.com/team/U_JULES_004",
         birthday: ~D[1989-12-03],
-        position: "DevOps Lead",
         correspondence_address: "ul. Piotrkowska 80/15, 90-265 Łódź",
         residence_address: "ul. Piotrkowska 80/15, 90-265 Łódź"
       })
@@ -124,7 +120,6 @@ defmodule Firmowid.Seeds.Bytecraft do
         phone: "+48 505 600 700",
         slack_url: "https://example.slack.com/team/U_MAREN_005",
         birthday: ~D[1997-02-28],
-        position: "Frontend Engineer",
         correspondence_address: "ul. Długa 45/2, 80-831 Gdańsk",
         residence_address: "ul. Długa 45/2, 80-831 Gdańsk"
       })

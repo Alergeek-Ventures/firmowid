@@ -33,6 +33,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Ash.Finances.Requisition
   alias Firmowid.Ash.Ksef
   alias Firmowid.Ash.Ksef.Credential
+  alias Firmowid.Ash.Payroll
   alias Firmowid.Ash.Timetracker
   alias Firmowid.ErrorKind
   alias FirmowidWeb.Billing.Utilities.MonthContext
@@ -212,11 +213,18 @@ defmodule FirmowidWeb.Settings.Views.Index do
        max_file_size: 10_000_000,
        auto_upload: true
      )
+     |> allow_upload(:signed_contract,
+       accept: ~w(.pdf),
+       max_entries: 1,
+       max_file_size: 10_000_000,
+       auto_upload: true
+     )
      |> assign(:projects, profile_projects)
      |> assign(:projects_total, profile_projects_total)
      |> assign(:projects_date, profile_projects_date)
      |> assign(:current_org, org_with_avatar)
-     |> assign(:main_class, "bg-white")}
+     |> assign(:pending_contract, load_pending_contract(current_user, scope))}
+     |> assign(:main_class, "bg-white")
   end
 
   defp subscribe_to_admin_updates(socket, organization_id, true) do
@@ -1113,6 +1121,45 @@ defmodule FirmowidWeb.Settings.Views.Index do
     {:noreply, cancel_upload(socket, :leave_request_attachment, ref)}
   end
 
+  def handle_event("submit_signed_contract", _params, socket) do
+    scope = socket.assigns.ash_scope
+    pending_contract = socket.assigns.pending_contract
+
+    case uploaded_entries(socket, :signed_contract) do
+      {[entry], []} ->
+        case consume_uploaded_entry(socket, entry, fn %{path: path} ->
+               Payroll.submit_signed(pending_contract.id, path, entry.client_name,
+                 scope: scope,
+                 actor: socket.assigns.current_user
+               )
+             end) do
+          {:ok, _contract} ->
+            LiveToast.send_toast(:success, "Podpisana umowa została przesłana.")
+            {:noreply, assign(socket, :pending_contract, nil)}
+
+          {:error, _reason} ->
+            LiveToast.send_toast(:error, "Nie udało się przesłać umowy.")
+            {:noreply, socket}
+        end
+
+      {_, [_ | _]} ->
+        LiveToast.send_toast(:error, "Plik jest jeszcze przesyłany.")
+        {:noreply, socket}
+
+      {[], []} ->
+        LiveToast.send_toast(:error, "Wybierz plik do przesłania.")
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("validate_signed_contract", _params, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("cancel_signed_contract", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :signed_contract, ref)}
+  end
+
   def handle_event("validate_company_form", %{"organization" => params}, socket) do
     form =
       AshPhoenix.Form.validate(
@@ -1381,6 +1428,8 @@ defmodule FirmowidWeb.Settings.Views.Index do
             projects={@projects}
             projects_total={@projects_total}
             projects_date={@projects_date}
+            pending_contract={@pending_contract}
+            signed_contract_upload={@uploads.signed_contract}
           />
       <% end %>
     </.settings_page>

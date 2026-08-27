@@ -640,4 +640,19 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   defp leave_upload_error_to_string(other), do: "Błąd wgrywania: #{inspect(other)}"
 
   defp leave_reasons, do: [:indisposition, :rest, :other]
+
+  defp contract_type_label(nil), do: "—"
+  defp contract_type_label(:uop), do: "Umowa o pracę"
+  defp contract_type_label(:b2b), do: "Kontrakt B2B"
+  defp contract_type_label(:uz), do: "Umowa zlecenie"
+  defp contract_type_label(:uod), do: "Umowa o dzieło"
+  defp contract_type_label(other), do: to_string(other)
+
+  defp format_money(nil), do: "—"
+  defp format_money(money), do: Money.to_string!(money)
+
+  defp upload_error_to_string(:too_large), do: "Plik jest za duży (max 10 MB)."
+  defp upload_error_to_string(:too_many_files), do: "Można wgrać tylko jeden plik."
+  defp upload_error_to_string(:not_accepted), do: "Dozwolone są tylko pliki PDF."
+  defp upload_error_to_string(other), do: "Błąd wgrywania: #{inspect(other)}"
 end

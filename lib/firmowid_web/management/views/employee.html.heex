@@ -14,6 +14,13 @@
       </.tab>
 
       <.tab
+        patch={~p"/zarzadzanie/pracownicy/#{@employee.id}/profil"}
+        active={@live_action == :profile}
+      >
+        Profil pracownika
+      </.tab>
+
+      <.tab
         patch={~p"/zarzadzanie/pracownicy/#{@employee.id}/dokumenty"}
         active={@live_action == :documents}
       >
@@ -181,6 +188,13 @@
           user={@employee}
           date={@projects_filter_date}
           active_months={@active_months}
+          scope={@ash_scope}
+        />
+      <% :profile -> %>
+        <.live_component
+          module={FirmowidWeb.Management.Components.ProfileTab}
+          id="profile-tab"
+          user={@employee}
           scope={@ash_scope}
         />
       <% :documents -> %>

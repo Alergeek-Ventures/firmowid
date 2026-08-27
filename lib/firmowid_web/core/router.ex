@@ -230,6 +230,7 @@ defmodule FirmowidWeb.Core.Router do
       live "/zarzadzanie/pracownicy", Employees, :index
       live "/zarzadzanie/pracownicy/archiwum", Employees, :archive
       live "/zarzadzanie/pracownicy/:id", Employee, :projects
+      live "/zarzadzanie/pracownicy/:id/profil", Employee, :profile
       live "/zarzadzanie/pracownicy/:id/dokumenty", Employee, :documents
       live "/zarzadzanie/pracownicy/:id/urlopy", Employee, :leaves
       live "/zarzadzanie/kontrahenci", Counterparties, :index

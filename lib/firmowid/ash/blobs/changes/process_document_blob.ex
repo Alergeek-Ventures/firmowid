@@ -20,27 +20,36 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob do
       scope = %Scope{actor: actor, tenant: blob.organization_id}
       opts = [scope: scope]
 
-      case run_processing(blob, opts) do
-        :ok ->
-          {:ok, blob}
-
-        {:error, :invalid_document} ->
-          case handle_invalid_document(blob, opts) do
-            {:ok, _updated_blob} -> {:ok, blob}
-            {:error, reason} -> {:error, reason}
-          end
-
-        {:error, {:duplicate_ksef_invoice, cost_invoice_id}} ->
-          case handle_duplicate_ksef_invoice(blob, cost_invoice_id, opts) do
-            {:ok, _updated_blob} -> {:ok, blob}
-            {:error, reason} -> {:error, reason}
-          end
-
-        {:error, reason} ->
-          {:error, reason}
-      end
+      blob
+      |> run_processing(opts)
+      |> handle_processing_result(blob, opts)
     end)
   end
+
+  defp handle_processing_result(:ok, blob, _opts), do: {:ok, blob}
+
+  defp handle_processing_result({:error, :invalid_document}, blob, opts) do
+    case handle_invalid_document(blob, opts) do
+      {:ok, _updated_blob} -> {:ok, blob}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp handle_processing_result({:error, {:duplicate_ksef_invoice, cost_invoice_id}}, blob, opts) do
+    case handle_duplicate_ksef_invoice(blob, cost_invoice_id, opts) do
+      {:ok, _updated_blob} -> {:ok, blob}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp handle_processing_result({:error, :missing_salary_metadata}, blob, opts) do
+    case handle_missing_salary_metadata(blob, opts) do
+      {:ok, _updated_blob} -> {:ok, blob}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp handle_processing_result({:error, reason}, _blob, _opts), do: {:error, reason}
 
   defp run_processing(blob, opts) do
     with {:ok, blob} <- ensure_processing(blob, opts),
@@ -98,6 +107,16 @@ defmodule Firmowid.Ash.Blobs.Changes.ProcessDocumentBlob do
       error_code: "duplicate_ksef_invoice",
       error_message: "Ta faktura z KSeF jest już w systemie.",
       cost_invoice_id: cost_invoice_id
+    }
+
+    update_failed_blob(blob, failure, opts)
+  end
+
+  defp handle_missing_salary_metadata(blob, opts) do
+    failure = %{
+      error: ":missing_salary_metadata",
+      error_code: "missing_salary_metadata",
+      error_message: "Nie udało się wyekstrahować danych wynagrodzenia z umowy."
     }
 
     update_failed_blob(blob, failure, opts)

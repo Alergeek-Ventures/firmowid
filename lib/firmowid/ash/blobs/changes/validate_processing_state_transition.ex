@@ -25,6 +25,7 @@ defmodule Firmowid.Ash.Blobs.Changes.ValidateProcessingStateTransition do
   defp allowed_transition?(:processing, :failed), do: true
   defp allowed_transition?(:processing, :pending), do: true
   defp allowed_transition?(:failed, :pending), do: true
+  defp allowed_transition?(:succeeded, :pending), do: true
   defp allowed_transition?(same, same), do: true
   defp allowed_transition?(_, _), do: false
 end
