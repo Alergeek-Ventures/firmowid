@@ -164,8 +164,7 @@ defmodule Firmowid.Ash.Analysis.AnalysisTest do
       sale_date: sale_date,
       issue_date: sale_date,
       due_date: sale_date,
-      total_amount: Decimal.new("-100.00"),
-      currency: "PLN",
+      amount: Money.new!("PLN", Decimal.new("-100.00")),
       organization_id: organization_id
     })
   end

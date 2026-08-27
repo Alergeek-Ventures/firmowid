@@ -872,7 +872,9 @@ defmodule FirmowidWeb.Invoicing.Components.EntriesTable do
 
   defp income_for_entry(%Transaction{} = transaction), do: transaction.direction == :income
 
-  defp income_for_entry(%CostInvoice{effective_amount: amount}), do: Money.positive?(amount)
-  defp income_for_entry(%SalesInvoice{effective_amount: amount}), do: Money.positive?(amount)
+  defp income_for_entry(%CostInvoice{effective_amount: %Money{} = amount}), do: Money.positive?(amount)
+
+  defp income_for_entry(%CostInvoice{amount: amount}), do: Money.positive?(amount)
+  defp income_for_entry(%SalesInvoice{amount: amount}), do: Money.positive?(amount)
   defp income_for_entry(%{amount: amount}), do: Money.positive?(amount)
 end
