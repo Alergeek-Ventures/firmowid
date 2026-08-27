@@ -13,11 +13,12 @@ defmodule FirmowidWeb.Timetracker.Components.Delegation do
   @spec back_link(map()) :: Rendered.t()
   attr :navigate, :string, required: true
   attr :label, :string, default: "Wróć"
+  attr :kind, :string, values: ["unstyled", "text"], default: "text"
   attr :class, :any, default: nil
 
   def back_link(assigns) do
     ~H"""
-    <.link kind="text" navigate={@navigate} size="small" class={["gap-2", @class]}>
+    <.link kind={@kind} navigate={@navigate} size="small" class={["gap-2", @class]}>
       <span class="flex size-6 items-center justify-center rounded-full bg-black text-white">
         <Lucideicons.chevron_left aria-hidden="true" class="size-4" />
       </span>
@@ -30,30 +31,26 @@ defmodule FirmowidWeb.Timetracker.Components.Delegation do
   @spec form_row(map()) :: Rendered.t()
   attr :label, :string, required: true
   attr :for, :string, required: true
-  attr :class, :any, default: nil
   slot :inner_block, required: true
 
   def form_row(assigns) do
     ~H"""
-    <div class={["grid gap-x-5 gap-y-2 sm:grid-cols-[12rem_minmax(0,1fr)] sm:items-center", @class]}>
-      <label for={@for} class="text-grey-700 text-base">{@label}</label>
-      <div>{render_slot(@inner_block)}</div>
-    </div>
+    <label for={@for} class="text-grey-700 text-base">{@label}</label>
+    <div>{render_slot(@inner_block)}</div>
     """
   end
 
   @doc "Renders a read-only delegation detail in a definition list."
   @spec detail_row(map()) :: Rendered.t()
   attr :label, :string, required: true
-  attr :class, :any, default: nil
+  attr :dt_class, :any, default: nil, doc: "Additional classes for the definition term."
+  attr :dd_class, :any, default: nil, doc: "Additional classes for the definition description."
   slot :inner_block, required: true
 
   def detail_row(assigns) do
     ~H"""
-    <div class={["grid gap-1 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-x-5", @class]}>
-      <dt class="text-grey-700 text-base">{@label}</dt>
-      <dd class="text-base text-black">{render_slot(@inner_block)}</dd>
-    </div>
+    <dt class={["text-grey-700 text-base", @dt_class]}>{@label}</dt>
+    <dd class={["text-base text-black", @dd_class]}>{render_slot(@inner_block)}</dd>
     """
   end
 
