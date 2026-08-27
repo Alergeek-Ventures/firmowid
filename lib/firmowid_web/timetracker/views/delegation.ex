@@ -3,11 +3,9 @@ defmodule FirmowidWeb.Timetracker.Views.Delegation do
 
   use FirmowidWeb, :live_view
 
-  import FirmowidWeb.DesignSystem.Components.Link
-  import Phoenix.Component, except: [link: 1]
+  import FirmowidWeb.Timetracker.Components.Delegation
 
   alias Firmowid.Ash.Timetracker
-  alias FirmowidWeb.Timetracker.Utilities.DelegationPresentation
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -23,14 +21,22 @@ defmodule FirmowidWeb.Timetracker.Views.Delegation do
   @impl true
   def render(assigns) do
     ~H"""
-    <main class="mx-auto max-w-3xl space-y-6 px-6 py-10">
-      <.link kind="unstyled" navigate={~p"/ustawienia/konto"}>Wróć</.link>
-      <h1 class="text-2xl font-medium">{@delegation.title}</h1>
-      <p>{@delegation.purpose}</p>
-      <p>{DelegationPresentation.format_range(@delegation.start_date, @delegation.end_date)}</p>
-      <span class="rounded-full px-3 py-1 text-sm">{DelegationPresentation.status_label(
-        @delegation.status
-      )}</span>
+    <main class="mx-auto max-w-3xl space-y-10 px-6 py-10">
+      <.back_link navigate={~p"/ustawienia/konto"} />
+      <article class="rounded-lg bg-white p-6 shadow">
+        <header class="flex flex-wrap items-start justify-between gap-4">
+          <div class="space-y-2">
+            <h1 class="text-2xl/tight font-normal">{@delegation.title}</h1>
+            <p class="text-grey-700">{@delegation.purpose}</p>
+          </div>
+          <.status_badge status={@delegation.status} />
+        </header>
+        <dl class="border-grey-100 mt-8 border-t pt-6">
+          <.detail_row label="Termin wyjazdu" class="tabular-nums">
+            <.date_range start_date={@delegation.start_date} end_date={@delegation.end_date} />
+          </.detail_row>
+        </dl>
+      </article>
     </main>
     """
   end
