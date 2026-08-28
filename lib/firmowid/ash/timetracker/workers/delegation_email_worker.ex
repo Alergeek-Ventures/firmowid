@@ -1,7 +1,7 @@
 defmodule Firmowid.Ash.Timetracker.Workers.DelegationEmailWorker do
   @moduledoc "Sends delegation submission notifications to organization admins."
 
-  use Oban.Worker, queue: :mailers, max_attempts: 3
+  use Oban.Worker, queue: :notification_emails, max_attempts: 3
 
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Scope

@@ -103,7 +103,7 @@ config :firmowid, Oban,
     ksef_submissions: 2,
     ksef_sessions: 5,
     ksef_fetch: 2,
-    leave_request_emails: 2,
+    notification_emails: 2,
     default: 1
   ],
   plugins: [
