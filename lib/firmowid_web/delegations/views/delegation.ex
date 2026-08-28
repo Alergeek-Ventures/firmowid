@@ -27,11 +27,15 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   @impl true
   def render(assigns) do
     ~H"""
-    <main class="mx-auto mt-4 max-w-7xl px-6 pb-12">
-      <.back navigate={~p"/ustawienia/profil"} />
-      <div class="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
+    <div class="relative mt-4">
+      <.back
+        navigate={~p"/ustawienia/profil"}
+        class="absolute top-0 left-0.5 inline-flex text-sm"
+      />
+      <main class="grid gap-10 px-32 pr-34 pb-12 font-[340] lg:grid-cols-[auto_22.5rem]">
         <section aria-labelledby="delegation-settlement-title">
-          <p class="text-grey-500">Cel: <span class="text-grey-700">{@delegation.purpose}</span></p>
+          <small class="text-grey-500 text-sm">Cel:
+          <span class="text-grey-700">{@delegation.purpose}</span></small>
           <h1 id="delegation-settlement-title" class="mt-1 text-2xl font-medium">
             Rozliczenie delegacji
           </h1>
@@ -41,64 +45,64 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
           <.expense_section
             title="Przejazdy"
-            icon="hero-paper-airplane"
             expenses={@delegation.transport_expenses}
             upload={Map.get(@uploads, :transport)}
             kind="transport"
             editable?={@editable?}
             sort_active?={@sort_active?}
-          />
+          >
+            <:icon><Lucideicons.plane class="size-5" /></:icon>
+          </.expense_section>
           <.expense_section
             title="Nocleg"
-            icon="hero-home-modern"
             expenses={@delegation.accommodation_expenses}
             upload={Map.get(@uploads, :accommodation)}
             kind="accommodation"
             editable?={@editable?}
             sort_active?={false}
-          />
+          >
+            <:icon><Lucideicons.bed_double class="size-5" /></:icon>
+          </.expense_section>
           <.expense_section
             title="Inne wydatki"
-            icon="hero-wallet"
             expenses={@delegation.other_expenses}
             upload={Map.get(@uploads, :other)}
             kind="other"
             editable?={@editable?}
             sort_active?={false}
-          />
+          >
+            <:icon><Lucideicons.wallet class="size-5" /></:icon>
+          </.expense_section>
         </section>
-
         <aside class="lg:pt-1">
-          <dl class="text-grey-500 space-y-1">
-            <div>
+          <dl class="text-grey-500 flex justify-end gap-4">
+            <small>
               <dt class="inline">Termin:</dt>
               <dd class="text-grey-700 inline tabular-nums">
                 <.date_range start_date={@delegation.start_date} end_date={@delegation.end_date} />
               </dd>
-            </div>
-            <div>
+            </small>
+            <small>
               <dt class="inline">Zaliczka:</dt>
               <dd class="text-grey-700 inline">
                 {Money.to_string!(@delegation.advance_payment_amount)}
               </dd>
-            </div>
+            </small>
           </dl>
-          <div class="mt-6 rounded-lg bg-white p-6 shadow-sm">
-            <h2 class="text-lg font-medium">Podsumowanie</h2>
+          <div class="mt-6 rounded-lg bg-white px-6 py-4 shadow-sm lg:mt-47">
+            <h2 class="text-grey-500 font-normal">Podsumowanie</h2>
             <dl class="mt-6 space-y-3 text-sm">
               <.summary_row label="Przejazdy" value={sum(@delegation.transport_expenses)} />
               <.summary_row label="Nocleg" value={sum(@delegation.accommodation_expenses)} />
               <.summary_row label="Inne" value={sum(@delegation.other_expenses)} />
-              <div class="border-grey-200 border-t pt-3">
-                <.summary_row label="Razem koszty" value={@total} />
+              <div class="border-grey-100 my-5 space-y-3 border-y py-5">
+                <.summary_row label="Razem koszty" value={@total} class="font-medium" />
+                <.summary_row
+                  label="Pobrana zaliczka"
+                  value={@delegation.advance_payment_amount}
+                />
               </div>
-              <.summary_row
-                label="Pobrana zaliczka"
-                value={Money.to_string!(@delegation.advance_payment_amount)}
-              />
-              <div class="border-grey-200 border-t pt-3">
-                <.summary_row label={@balance_label} value={@balance} />
-              </div>
+              <.summary_row label={@balance_label} value={@balance} />
             </dl>
           </div>
           <.button
@@ -110,13 +114,13 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             phx-click="submit"
           >Wyślij</.button>
         </aside>
-      </div>
-    </main>
+      </main>
+    </div>
     """
   end
 
   attr :title, :string, required: true
-  attr :icon, :string, required: true
+  slot :icon, required: true
   attr :expenses, :list, required: true
   attr :upload, :any, required: true
   attr :kind, :string, required: true
@@ -127,8 +131,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     ~H"""
     <section class="mt-10">
       <header class="mb-3 flex items-center justify-between">
-        <h2 class="flex items-center gap-2 text-lg font-medium">
-          <.icon name={@icon} class="size-5" />{@title}
+        <h2 class="flex items-center gap-2 font-normal">
+          {render_slot(@icon)}{@title}
         </h2>
         <.button
           :if={@kind == "transport"}
@@ -223,8 +227,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           <.file_upload
             upload={@upload}
             prompt="Przeciągnij tu fakturę/rachunek lub wybierz plik z komputera"
-            content_class="text-grey-500 py-2"
-            class="border-grey-300"
+            content_class="text-grey-700!"
+            class="border-grey-200! justify-between! rounded-lg! border! px-4! py-7!"
           />
           <.button
             as="label"
@@ -241,12 +245,15 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   end
 
   attr :label, :string, required: true
-  attr :value, :string, required: true
+  attr :value, Money, required: true
+  attr :class, :string, default: ""
 
   defp summary_row(assigns) do
     ~H"""
-    <div class="flex justify-between gap-4">
-      <dt>{@label}</dt><dd class="font-medium">{@value}</dd>
+    <div class={["flex justify-between gap-4", @class]}>
+      <dt>{@label}</dt><dd class={[Money.zero?(@value) && "text-grey-500"]}>
+        {Money.to_string!(@value)}
+      </dd>
     </div>
     """
   end
@@ -439,14 +446,13 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         else: {"Pomniejszenie wypłaty", Money.sub!(advance, total)}
 
     assign(socket,
-      total: Money.to_string!(total),
+      total: total,
       balance_label: label,
-      balance: Money.to_string!(balance)
+      balance: balance
     )
   end
 
-  defp sum(expenses),
-    do: expenses |> Enum.reduce(Money.new(:PLN, 0), &Money.add!(&2, &1.expense_amount)) |> Money.to_string!()
+  defp sum(expenses), do: Enum.reduce(expenses, Money.new(:PLN, 0), &Money.add!(&2, &1.expense_amount))
 
   defp transport_label("railway"), do: "Kolej"
   defp transport_label("airplane"), do: "Samolot"
