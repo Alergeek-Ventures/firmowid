@@ -596,7 +596,8 @@ defmodule FirmowidWeb.Invoicing.SalesInvoices.Views.Edit do
           sales_invoice_items: items,
           net_value: net_value,
           vat_value: vat_value,
-          gross_value: gross_value
+          gross_value: gross_value,
+          amount: Money.new(AshPhoenix.Form.value(ash_form, :currency) || invoice.currency, gross_value)
         })
       )
 
