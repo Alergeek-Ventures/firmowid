@@ -50,6 +50,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             kind="transport"
             editable?={@editable?}
             sort_active?={@sort_active?}
+            description_visible?={@description_visible?}
           >
             <:icon><Lucideicons.plane class="size-5" /></:icon>
           </.expense_section>
@@ -60,6 +61,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             kind="accommodation"
             editable?={@editable?}
             sort_active?={false}
+            description_visible?={@description_visible?}
           >
             <:icon><Lucideicons.bed_double class="size-5" /></:icon>
           </.expense_section>
@@ -70,6 +72,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             kind="other"
             editable?={@editable?}
             sort_active?={false}
+            description_visible?={@description_visible?}
           >
             <:icon><Lucideicons.wallet class="size-5" /></:icon>
           </.expense_section>
@@ -126,6 +129,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   attr :kind, :string, required: true
   attr :editable?, :boolean, required: true
   attr :sort_active?, :boolean, required: true
+  attr :description_visible?, :map, default: %{}
 
   defp expense_section(assigns) do
     ~H"""
@@ -310,7 +314,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       <.button
         type="button"
         variant="unstyled"
-        class={[@visible? && "text-red-700", "text-sm"]}
+        class={["text-sm", @visible? && "text-red-700"]}
         phx-click="toggle-description"
         phx-value-id={@expense.id}
       >{if @visible?, do: "Usuń opis", else: "Dodaj opis"}</.button>
