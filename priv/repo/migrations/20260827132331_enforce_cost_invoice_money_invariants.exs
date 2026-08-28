@@ -15,32 +15,9 @@ defmodule Firmowid.Repo.Migrations.EnforceCostInvoiceMoneyInvariants do
 
              """
            )
-
-    execute("""
-    DO $$
-    BEGIN
-      IF EXISTS (
-        SELECT 1
-        FROM cost_invoices correction
-        JOIN cost_invoices original
-          ON original.ksef_number = correction.original_invoice_ksef_number
-        WHERE correction.invoice_type IN ('kor', 'kor_zal', 'kor_roz')
-          AND (correction.amount).currency_code IS DISTINCT FROM (original.amount).currency_code
-      ) THEN
-        RAISE EXCEPTION
-          'Cost invoice money migration failed: linked corrections must use the original invoice currency';
-      END IF;
-
-    END
-    $$;
-    """)
   end
 
   def down do
-    execute("""
-    SELECT 1;
-    """)
-
     drop_if_exists constraint(:cost_invoices, :cost_invoices_non_correction_amount_non_positive)
   end
 end

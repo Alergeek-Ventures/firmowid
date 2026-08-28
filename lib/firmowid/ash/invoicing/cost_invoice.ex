@@ -27,7 +27,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
   ## Aggregates
 
-    * `:corrections_amount` — Money sum of correction invoice deltas
+    * `:corrections_amount` — decimal sum of correction invoice deltas
     * `:latest_correction_*` — latest correction's snapshot fields (seller, dates, etc.)
 
   Orchestration functions (delete, upload, create, hydrate) live on the
@@ -50,7 +50,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   alias Firmowid.Ash.Invoicing.Changes.ComputeCostInvoiceSellerDisplayName
   alias Firmowid.Ash.Invoicing.Changes.EnqueueMissingCostInvoiceDescriptionRefresh
   alias Firmowid.Ash.Invoicing.Changes.RequireTransactionIds
-  alias Firmowid.Ash.Invoicing.Changes.ValidateCostInvoiceCorrectionCurrency
   alias Firmowid.Ash.Invoicing.CostInvoiceTransaction
   alias Firmowid.Ash.Resource
 
@@ -61,31 +60,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   postgres do
     table "cost_invoices"
     repo Firmowid.Repo
-
-    custom_statements do
-      statement :validate_cost_invoice_correction_currencies do
-        up """
-        DO $$
-        BEGIN
-          IF EXISTS (
-            SELECT 1
-            FROM cost_invoices correction
-            JOIN cost_invoices original
-              ON original.ksef_number = correction.original_invoice_ksef_number
-            WHERE correction.invoice_type IN ('kor', 'kor_zal', 'kor_roz')
-              AND (correction.amount).currency_code IS DISTINCT FROM (original.amount).currency_code
-          ) THEN
-            RAISE EXCEPTION
-              'Cost invoice money migration failed: linked corrections must use the original invoice currency';
-          END IF;
-
-        END
-        $$;
-        """
-
-        down "SELECT 1;"
-      end
-    end
 
     check_constraints do
       check_constraint :amount,
@@ -367,8 +341,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
 
       change ComputeCostInvoiceDescription
 
-      change ValidateCostInvoiceCorrectionCurrency
-
       change EnqueueMissingCostInvoiceDescriptionRefresh
 
       change fn changeset, _context ->
@@ -426,8 +398,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
       change ComputeCostInvoiceSellerDisplayName
 
       change ComputeCostInvoiceDescription
-
-      change ValidateCostInvoiceCorrectionCurrency
 
       change fn changeset, _context ->
         validate_non_correction_amount_sign(changeset)
@@ -724,6 +694,10 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
               :boolean,
               expr(not is_ksef_imported)
 
+    calculate :amount_value, :decimal, expr(amount[:amount])
+
+    calculate :amount_currency, :string, expr(amount[:currency_code])
+
     # Effective fields — coalesce latest correction snapshot with original.
     # DB-pushable, filterable, sortable.
     calculate :has_corrections, :boolean, expr(not is_nil(corrections_amount))
@@ -731,10 +705,13 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
     calculate :effective_amount,
               MoneyType,
               expr(
-                if is_nil(corrections_amount) do
+                if is_nil(corrections_amount) or latest_correction_currency != amount_currency do
                   amount
                 else
-                  amount + corrections_amount
+                  composite_type(
+                    %{currency: amount_currency, amount: amount_value + corrections_amount},
+                    MoneyType
+                  )
                 end
               )
 
@@ -776,7 +753,11 @@ defmodule Firmowid.Ash.Invoicing.CostInvoice do
   end
 
   aggregates do
-    sum :corrections_amount, :correction_invoices, :amount
+    sum :corrections_amount, :correction_invoices, :amount_value
+
+    first :latest_correction_currency, :correction_invoices, :amount_currency do
+      sort ksef_permanent_storage_date: :desc
+    end
 
     first :latest_correction_sale_date, :correction_invoices, :sale_date do
       sort ksef_permanent_storage_date: :desc

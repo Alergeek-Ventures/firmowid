@@ -181,7 +181,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
       assert Money.to_currency_code(invoice.amount) == :PLN
     end
 
-    test "rejects a linked correction with a different currency" do
+    test "keeps the original amount when the latest correction changes currency" do
       user = admin_fixture()
       scope = %Scope{actor: user, tenant: user.organization_id}
 
@@ -190,7 +190,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
           ksef_number: "KSEF-ORIGINAL-CURRENCY"
         })
 
-      assert {:error, error} =
+      assert {:ok, _correction} =
                CostInvoice.create(
                  %{
                    seller: "Supplier Sp. z o.o.",
@@ -205,7 +205,10 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
                  scope: scope
                )
 
-      assert Exception.message(error) =~ "must match linked invoice currency"
+      invoice = Ash.load!(original, [:effective_amount], scope: scope)
+
+      assert Money.to_decimal(invoice.effective_amount) == Decimal.new("-123.45")
+      assert Money.to_currency_code(invoice.effective_amount) == :PLN
     end
 
     test "allows an orphan correction" do
@@ -230,7 +233,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
       assert Money.to_currency_code(invoice.amount) == :EUR
     end
 
-    test "rejects an original with a different currency than an orphan correction" do
+    test "allows an original after an orphan correction with a different currency" do
       user = admin_fixture()
       scope = %Scope{actor: user, tenant: user.organization_id}
 
@@ -249,7 +252,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
                  scope: scope
                )
 
-      assert {:error, error} =
+      assert {:ok, _original} =
                CostInvoice.create(
                  %{
                    seller: "Supplier Sp. z o.o.",
@@ -262,8 +265,6 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
                  },
                  scope: scope
                )
-
-      assert Exception.message(error) =~ "must match linked invoice currency"
     end
 
     test "rejects a positive non-correction amount" do
@@ -312,7 +313,7 @@ defmodule Firmowid.Ash.Invoicing.CostInvoiceTest do
 
       invoice = Ash.load!(original, [:corrections_amount, :effective_amount], scope: scope)
 
-      assert Money.to_decimal(invoice.corrections_amount) == Decimal.new("15.00")
+      assert invoice.corrections_amount == Decimal.new("15.00")
       assert Money.to_decimal(invoice.effective_amount) == Decimal.new("-85.00")
       assert Money.to_currency_code(invoice.effective_amount) == :PLN
     end
