@@ -105,6 +105,7 @@ config :firmowid, Oban,
     ksef_fetch: 2,
     leave_request_emails: 2,
     analysis_classification: 1,
+    notification_emails: 2,
     default: 1
   ],
   plugins: [
