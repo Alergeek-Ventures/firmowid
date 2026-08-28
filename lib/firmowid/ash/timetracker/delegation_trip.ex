@@ -14,6 +14,10 @@ defmodule Firmowid.Ash.Timetracker.DelegationTrip do
   postgres do
     table "delegation_trip"
     repo Firmowid.Repo
+
+    references do
+      reference :delegation_expense_transport, on_delete: :delete
+    end
   end
 
   code_interface do
@@ -76,9 +80,9 @@ defmodule Firmowid.Ash.Timetracker.DelegationTrip do
   attributes do
     uuid_v7_primary_key :id
     attribute :departure_city, :string, allow_nil?: false, default: "", public?: true
-    attribute :departure_datetime, :utc_datetime, allow_nil?: false, public?: true
+    attribute :departure_datetime, :utc_datetime, public?: true
     attribute :arrival_city, :string, allow_nil?: false, default: "", public?: true
-    attribute :arrival_datetime, :utc_datetime, allow_nil?: false, public?: true
+    attribute :arrival_datetime, :utc_datetime, public?: true
     attribute :description, :string, public?: true
     Resource.firmowid_timestamps()
   end

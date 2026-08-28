@@ -1,0 +1,193 @@
+{
+  "attributes": [
+    {
+      "allow_nil?": false,
+      "default": "fragment(\"uuid_generate_v7()\")",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": true,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "id",
+      "type": "uuid"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "original_filename",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "\"\"",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "document_number",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "fragment(\"('PLN', 0)\")",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "expense_amount",
+      "type": "money_with_currency"
+    },
+    {
+      "allow_nil?": false,
+      "default": "\"other\"",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "transport_type",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "description",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "inserted_at",
+      "type": "utc_datetime"
+    },
+    {
+      "allow_nil?": false,
+      "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "updated_at",
+      "type": "utc_datetime"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "index_where": null,
+        "match_tenant?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": "organization_id",
+          "global": false,
+          "strategy": "attribute"
+        },
+        "name": "delegation_expense_transport_delegation_id_fkey",
+        "on_delete": null,
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "delegations"
+      },
+      "scale": null,
+      "size": null,
+      "source": "delegation_id",
+      "type": "uuid"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "index_where": null,
+        "match_tenant?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": null,
+          "global": null,
+          "strategy": null
+        },
+        "name": "delegation_expense_transport_organization_id_fkey",
+        "on_delete": null,
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "organizations"
+      },
+      "scale": null,
+      "size": null,
+      "source": "organization_id",
+      "type": "uuid"
+    }
+  ],
+  "base_filter": null,
+  "check_constraints": [],
+  "create_table_options": null,
+  "custom_indexes": [],
+  "custom_statements": [
+    {
+      "after_tables": [
+        "delegation_trip"
+      ],
+      "code?": true,
+      "down": "execute(\"DROP TRIGGER delegation_trip_requires_transport_expense_sibling ON delegation_trip\")\nexecute(\"DROP TRIGGER delegation_expense_transport_requires_trip ON delegation_expense_transport\")\nexecute(\"DROP FUNCTION require_transport_expense_trip()\")\n",
+      "global?": false,
+      "name": "require_trip",
+      "up": "execute(~S|CREATE FUNCTION require_transport_expense_trip() RETURNS trigger AS $$\nDECLARE\n  transport_expense_id uuid;\nBEGIN\n  transport_expense_id := CASE\n    WHEN TG_TABLE_NAME = 'delegation_expense_transport' THEN NEW.id\n    ELSE OLD.delegation_expense_transport_id\n  END;\n\n  IF EXISTS (SELECT 1 FROM delegation_expense_transport WHERE id = transport_expense_id)\n     AND NOT EXISTS (\n       SELECT 1 FROM delegation_trip\n       WHERE delegation_expense_transport_id = transport_expense_id\n     ) THEN\n    RAISE EXCEPTION 'transport expense must contain at least one trip';\n  END IF;\n\n  RETURN NULL;\nEND;\n$$ LANGUAGE plpgsql;|)\n\nexecute(~S|INSERT INTO delegation_trip (\n  id,\n  departure_city,\n  arrival_city,\n  delegation_expense_transport_id,\n  organization_id,\n  inserted_at,\n  updated_at\n)\nSELECT\n  uuid_generate_v7(),\n  '',\n  '',\n  transport_expense.id,\n  transport_expense.organization_id,\n  NOW() AT TIME ZONE 'utc',\n  NOW() AT TIME ZONE 'utc'\nFROM delegation_expense_transport AS transport_expense\nWHERE NOT EXISTS (\n  SELECT 1\n  FROM delegation_trip\n  WHERE delegation_trip.delegation_expense_transport_id = transport_expense.id\n);|)\n\nexecute(~S|CREATE CONSTRAINT TRIGGER delegation_expense_transport_requires_trip\nAFTER INSERT ON delegation_expense_transport\nDEFERRABLE INITIALLY DEFERRED\nFOR EACH ROW EXECUTE FUNCTION require_transport_expense_trip();|)\n\nexecute(~S|CREATE CONSTRAINT TRIGGER delegation_trip_requires_transport_expense_sibling\nAFTER DELETE ON delegation_trip\nDEFERRABLE INITIALLY DEFERRED\nFOR EACH ROW EXECUTE FUNCTION require_transport_expense_trip();|)\n"
+    }
+  ],
+  "has_create_action": true,
+  "hash": "D51D3E32CA7AFE97D4B6EEA083FBDCC0DEC4A8466C8022AEEC7601655EAB7304",
+  "identities": [],
+  "multitenancy": {
+    "attribute": "organization_id",
+    "global": false,
+    "strategy": "attribute"
+  },
+  "repo": "Elixir.Firmowid.Repo",
+  "schema": null,
+  "table": "delegation_expense_transport"
+}
