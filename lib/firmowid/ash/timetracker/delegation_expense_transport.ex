@@ -8,6 +8,7 @@ defmodule Firmowid.Ash.Timetracker.DelegationExpenseTransport do
     authorizers: [Ash.Policy.Authorizer]
 
   alias Firmowid.Ash.Resource
+  alias Firmowid.Ash.Timetracker.DelegationTrip
 
   require Resource
 
@@ -106,11 +107,24 @@ defmodule Firmowid.Ash.Timetracker.DelegationExpenseTransport do
         :description
       ]
 
-      argument :trips, {:array, :map},
-        allow_nil?: false,
-        default: [%{departure_city: "", arrival_city: ""}]
+      change after_action(fn _changeset, expense, context ->
+               now = DateTime.utc_now(:second)
 
-      change manage_relationship(:trips, type: :direct_control)
+               trip = %DelegationTrip{
+                 id: Ash.UUID.generate(),
+                 departure_city: "",
+                 arrival_city: "",
+                 delegation_expense_transport_id: expense.id,
+                 organization_id: expense.organization_id,
+                 inserted_at: now,
+                 updated_at: now
+               }
+
+               case Firmowid.Repo.insert(trip) do
+                 {:ok, _trip} -> {:ok, expense}
+                 {:error, _reason} = error -> error
+               end
+             end)
     end
 
     update :update do
@@ -166,7 +180,7 @@ defmodule Firmowid.Ash.Timetracker.DelegationExpenseTransport do
       attribute_writable? true
     end
 
-    has_many :trips, Firmowid.Ash.Timetracker.DelegationTrip
+    has_many :trips, DelegationTrip
 
     belongs_to :organization, Firmowid.Ash.Core.Organization do
       allow_nil? false
