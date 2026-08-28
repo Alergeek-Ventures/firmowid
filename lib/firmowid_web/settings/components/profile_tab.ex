@@ -24,6 +24,7 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   attr :current_user, :map, required: true
   attr :ash_scope, :map, required: true
   attr :user_form, :map, required: true
+  attr :contract_form, :map, default: nil
   attr :editing_profile_employment, :boolean, required: true
   attr :editing_profile_finance, :boolean, required: true
   attr :editing_profile_contact, :boolean, required: true
@@ -35,6 +36,9 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   attr :projects, :list, required: true
   attr :projects_total, :integer, required: true
   attr :projects_date, :any, required: true
+  attr :pending_contract, :map, default: nil
+  attr :latest_contract, :map, default: nil
+  attr :signed_contract_upload, :map, default: nil
 
   def profile_tab(assigns) do
     ~H"""
@@ -42,8 +46,12 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
       <div class="space-y-14">
         <.employment_section
           current_user={@current_user}
-          user_form={@user_form}
+          contract_form={@contract_form}
           editing_profile_employment={@editing_profile_employment}
+          pending_contract={@pending_contract}
+          latest_contract={@latest_contract}
+          signed_contract_upload={@signed_contract_upload}
+          ash_scope={@ash_scope}
         />
         <.finance_section
           current_user={@current_user}
@@ -131,21 +139,203 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
   end
 
   attr :current_user, :map, required: true
-  attr :user_form, :map, required: true
+  attr :contract_form, :map, default: nil
   attr :editing_profile_employment, :boolean, required: true
+  attr :pending_contract, :map, default: nil
+  attr :latest_contract, :map, default: nil
+  attr :signed_contract_upload, :map, default: nil
+  attr :ash_scope, :map, default: nil
 
   defp employment_section(assigns) do
     ~H"""
+    <div
+      :if={@pending_contract}
+      id="contract-signing-box"
+      data-expanded="false"
+      class="group space-y-4"
+    >
+      <div class="border-turquoise-200 flex-col gap-2 rounded-lg border p-4 group-data-[expanded=false]:flex group-data-[expanded=true]:hidden">
+        <h3 class="text-turquoise-700 flex items-center gap-1 text-sm font-medium">
+          <Lucideicons.file_text class="size-4" /> Nowa umowa
+        </h3>
+        <p class="text-grey-700 text-sm">
+          Czeka na ciebie nowa umowa. Podpisz ją profilem zaufanym, aby sfinalizować formalności.
+        </p>
+        <div class="flex items-center justify-between">
+          <p class="text-grey-700 text-sm">
+            Podpisz do: {present_date(@pending_contract.signed_at)}
+          </p>
+          <.button
+            type="button"
+            variant="primary"
+            accent="turquoise"
+            size="small"
+            phx-click={
+              JS.toggle_attribute({"data-expanded", "true", "false"},
+                to: "#contract-signing-box"
+              )
+            }
+          >
+            Rozpocznij
+          </.button>
+        </div>
+      </div>
+
+      <div class="border-turquoise-200 flex flex-col gap-3 rounded-lg border p-4 group-data-[expanded=false]:hidden group-data-[expanded=true]:flex">
+        <div class="flex items-center justify-between">
+          <h3 class="text-turquoise-700 flex items-center gap-1 text-sm font-medium">
+            <Lucideicons.file_text class="size-4" /> Nowa umowa
+          </h3>
+          <p class="text-grey-500 text-sm">
+            Podpisz do: {present_date(@pending_contract.starts_at)}
+          </p>
+        </div>
+
+        <ol class="text-grey-700 list-decimal space-y-2 pl-4 text-sm">
+          <li>
+            <span class="pr-2">Zapoznaj się z dokumentem</span>
+            <.link
+              kind="button"
+              variant="outline"
+              size="small"
+              redirect={~p"/zarzadzanie/umowy/#{@pending_contract.id}"}
+              download
+            >
+              <Lucideicons.file_text class="size-4" /> <span class="font-medium">Umowa</span>
+            </.link>
+          </li>
+          <li>
+            <span>Podpisz dokument</span>
+            <.link
+              kind="button"
+              size="small"
+              variant="plain"
+              class="text-turquoise-700 pl-0"
+              external="https://podpis.gov.pl/podpisz-dokument-elektronicznie/"
+              target="_blank"
+            >
+              <span class="font-medium">Profilem Zaufanym</span>
+              <Lucideicons.external_link class="size-4" />
+            </.link>
+          </li>
+          <li>
+            <p>Wgraj podpisaną umowę</p>
+            <form phx-change="validate_signed_contract">
+              <label
+                id={"signed-contract-drop-#{@signed_contract_upload.ref}"}
+                phx-drop-target={@signed_contract_upload.ref}
+                phx-hook="FileUploadDragState"
+                data-dragging="false"
+                class={[
+                  "border-turquoise-200 data-[dragging=true]:bg-turquoise-100 data-[dragging=true]:border-turquoise-400 group mt-4 flex w-full flex-col items-center justify-center gap-2 rounded-md border-dashed py-6 transition-colors",
+                  if(Enum.empty?(@signed_contract_upload.entries),
+                    do: "cursor-pointer border-2 border-dashed px-10",
+                    else: "bg-turquoise-100 px-8"
+                  )
+                ]}
+              >
+                <span
+                  :if={Enum.empty?(@signed_contract_upload.entries)}
+                  class="text-grey-700 flex items-center gap-1 text-sm font-medium group-data-[dragging=true]:hidden"
+                >
+                  Przeciągnij PDF lub <span class="text-turquoise-700">Wybierz plik</span>
+                </span>
+                <span
+                  :if={Enum.empty?(@signed_contract_upload.entries)}
+                  class="text-turquoise-700 hidden group-data-[dragging=true]:flex"
+                >
+                  Upuść plik
+                </span>
+                <.live_file_input upload={@signed_contract_upload} class="sr-only" />
+
+                <div
+                  :for={entry <- @signed_contract_upload.entries}
+                  class="text-turquoise-700 z-10 w-full text-sm"
+                >
+                  <div class="flex items-center justify-between">
+                    <span class="flex min-w-0 items-center gap-1 truncate font-medium"><Lucideicons.file_text class="size-4" /> {entry.client_name}</span>
+                    <span :if={!entry.done?} class="shrink-0 tabular-nums">{entry.progress}%</span>
+                    <.button
+                      variant="unstyled"
+                      type="button"
+                      class="hover:text-grey-700 text-grey-500 shrink-0"
+                      phx-click="cancel_signed_contract"
+                      phx-value-ref={entry.ref}
+                    >
+                      <Lucideicons.x class="size-4" />
+                    </.button>
+                  </div>
+                </div>
+              </label>
+            </form>
+            <p
+              :for={error <- upload_errors(@signed_contract_upload)}
+              class="mt-2 text-sm text-red-600"
+            >
+              {upload_error_to_string(error)}
+            </p>
+          </li>
+        </ol>
+        <div class="mt-1 flex w-fit gap-3 self-end">
+          <.button
+            type="button"
+            variant="ghost"
+            size="small"
+            phx-click={
+              JS.toggle_attribute({"data-expanded", "true", "false"},
+                to: "#contract-signing-box"
+              )
+            }
+          >
+            Wróć później
+          </.button>
+          <.button
+            type="button"
+            accent="turquoise"
+            size="small"
+            phx-click="submit_signed_contract"
+            phx-disable-with="Przesyłanie..."
+            disabled={contract_upload_submit_disabled?(@signed_contract_upload)}
+          >
+            Prześlij umowę
+          </.button>
+        </div>
+      </div>
+    </div>
+
     <.profile_section
       title="Informacje o zatrudnieniu"
-      action={if(!@editing_profile_employment, do: "toggle_editing_profile_employment")}
+      action={
+        if(!@editing_profile_employment and can_edit_contract?(@latest_contract, @ash_scope),
+          do: "toggle_editing_profile_employment"
+        )
+      }
       action_label="Edytuj informacje o zatrudnieniu"
     >
       <%= if @editing_profile_employment do %>
-        <.form for={@user_form} phx-submit="save_profile_employment" class="space-y-4">
+        <.form for={@contract_form} phx-submit="save_contract_employment" class="space-y-4">
           <div class="space-y-2">
-            <.row_input field={@user_form[:position]} label="Stanowisko" type="text" />
-            <.row_input field={@user_form[:employment_date]} label="Obowiązuje od" type="date" />
+            <.row_input field={@contract_form[:position]} label="Stanowisko" type="text" />
+            <Helpers.settings_field
+              label="Rodzaj umowy"
+              layout={:row}
+              block_class="flex items-center"
+              for={@contract_form[:contract_type].id}
+            >
+              <.input
+                type="select"
+                field={@contract_form[:contract_type]}
+                options={[
+                  {"Umowa o pracę", :uop},
+                  {"B2B", :b2b},
+                  {"Umowa zlecenie", :uz},
+                  {"Umowa o dzieło", :uod}
+                ]}
+                container_class="w-full"
+                new
+              />
+            </Helpers.settings_field>
+            <.row_input field={@contract_form[:starts_at]} label="Obowiązuje od" type="date" />
           </div>
 
           <div class="flex w-full justify-end gap-3">
@@ -165,9 +355,25 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
         </.form>
       <% else %>
         <div class="space-y-2">
-          <.detail_row label="Stanowisko">{present(@current_user.position)}</.detail_row>
+          <.detail_row :if={@latest_contract} label="Umowa">
+            <.link
+              kind="button"
+              variant="outline"
+              size="small"
+              redirect={~p"/zarzadzanie/umowy/#{@latest_contract.id}"}
+              download
+            >
+              <Lucideicons.file_text class="size-4" /> <span class="font-medium">Pobierz umowę</span>
+            </.link>
+          </.detail_row>
+          <.detail_row label="Stanowisko">
+            {present(@latest_contract && @latest_contract.position)}
+          </.detail_row>
+          <.detail_row label="Rodzaj umowy">
+            {format_contract_type(@latest_contract && @latest_contract.contract_type)}
+          </.detail_row>
           <.detail_row label="Obowiązuje od">
-            {present_date(@current_user.employment_date)}
+            {present_date(@latest_contract && @latest_contract.starts_at)}
           </.detail_row>
         </div>
       <% end %>
@@ -632,6 +838,11 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
     Enum.any?(upload.entries, &(not &1.done?)) or upload_errors(upload) != []
   end
 
+  defp contract_upload_submit_disabled?(upload) do
+    upload.entries == [] or Enum.any?(upload.entries, &(not &1.done?)) or
+      upload_errors(upload) != []
+  end
+
   defp leave_upload_error_to_string(:too_large), do: "Plik jest za duży (max 10 MB)."
   defp leave_upload_error_to_string(:too_many_files), do: "Można wgrać tylko jeden plik."
 
@@ -641,18 +852,22 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
   defp leave_reasons, do: [:indisposition, :rest, :other]
 
-  defp contract_type_label(nil), do: "—"
-  defp contract_type_label(:uop), do: "Umowa o pracę"
-  defp contract_type_label(:b2b), do: "Kontrakt B2B"
-  defp contract_type_label(:uz), do: "Umowa zlecenie"
-  defp contract_type_label(:uod), do: "Umowa o dzieło"
-  defp contract_type_label(other), do: to_string(other)
-
-  defp format_money(nil), do: "—"
-  defp format_money(money), do: Money.to_string!(money)
-
   defp upload_error_to_string(:too_large), do: "Plik jest za duży (max 10 MB)."
   defp upload_error_to_string(:too_many_files), do: "Można wgrać tylko jeden plik."
   defp upload_error_to_string(:not_accepted), do: "Dozwolone są tylko pliki PDF."
   defp upload_error_to_string(other), do: "Błąd wgrywania: #{inspect(other)}"
+
+  defp format_contract_type(nil), do: "Nieokreślona"
+  defp format_contract_type(:uop), do: "Umowa o pracę"
+  defp format_contract_type(:b2b), do: "B2B"
+  defp format_contract_type(:uz), do: "Umowa zlecenie"
+  defp format_contract_type(:uod), do: "Umowa o dzieło"
+
+  defp can_edit_contract?(nil, _scope), do: false
+
+  defp can_edit_contract?(contract, scope) do
+    contract
+    |> Ash.Changeset.for_update(:update, %{}, scope: scope)
+    |> Ash.can?(scope)
+  end
 end

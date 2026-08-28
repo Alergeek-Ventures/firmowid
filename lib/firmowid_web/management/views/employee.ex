@@ -200,8 +200,15 @@ defmodule FirmowidWeb.Management.Views.Employee do
         },
         socket
       ) do
-    if blob.processing_state == :failed do
-      BlobProcessingToasts.show_failure_toast(blob)
+    cond do
+      blob.processing_state == :failed ->
+        BlobProcessingToasts.show_failure_toast(blob)
+
+      blob.processing_state == :succeeded ->
+        BlobProcessingToasts.show_success_toast(blob, :employment_contract)
+
+      true ->
+        :ok
     end
 
     send_update(DocumentsTab,
@@ -286,6 +293,11 @@ defmodule FirmowidWeb.Management.Views.Employee do
       refetch: true
     )
 
+    {:noreply, socket}
+  end
+
+  # Ignore other blob broadcasts (e.g., signed contract uploads with processing_target :none)
+  def handle_info(%Broadcast{payload: %Notification{resource: Blob}}, socket) do
     {:noreply, socket}
   end
 

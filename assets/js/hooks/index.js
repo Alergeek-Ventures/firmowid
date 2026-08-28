@@ -1,6 +1,7 @@
 import { Confetti } from "./confetti";
 import { ScrollStyle } from "./scroll_style";
 import { FileUploadDragNDrop } from "./file_upload_drag_n_drop";
+import { FileUploadDragState } from "./file_upload_drag_state";
 import { PDFViewer } from "./pdf_viewer";
 import { Tippy, TippyWhenTruncated } from "./tippy";
 import { AirDatepicker } from "./air_datepicker";
@@ -23,6 +24,7 @@ export const Hooks = {
   Confetti,
   ScrollStyle,
   FileUploadDragNDrop,
+  FileUploadDragState,
   PDFViewer,
   Tippy,
   TippyWhenTruncated,

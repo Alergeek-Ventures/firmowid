@@ -170,6 +170,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     google_connected? = google_identities != []
 
+    {:ok, pending_contract} = Payroll.load_pending_contract(current_user.id, scope: scope)
+    {:ok, latest_contract} = Payroll.load_latest_contract(current_user.id, scope: scope)
+
     {:ok,
      socket
      |> assign(:editing_basic_info, false)
@@ -223,8 +226,10 @@ defmodule FirmowidWeb.Settings.Views.Index do
      |> assign(:projects_total, profile_projects_total)
      |> assign(:projects_date, profile_projects_date)
      |> assign(:current_org, org_with_avatar)
-     |> assign(:pending_contract, load_pending_contract(current_user, scope))}
-     |> assign(:main_class, "bg-white")
+     |> assign(:latest_contract, latest_contract)
+     |> assign(:pending_contract, pending_contract)
+     |> assign(:contract_form, form_contract_form(latest_contract, scope))
+     |> assign(:main_class, "bg-white")}
   end
 
   defp subscribe_to_admin_updates(socket, organization_id, true) do
@@ -1128,26 +1133,34 @@ defmodule FirmowidWeb.Settings.Views.Index do
     case uploaded_entries(socket, :signed_contract) do
       {[entry], []} ->
         case consume_uploaded_entry(socket, entry, fn %{path: path} ->
-               Payroll.submit_signed(pending_contract.id, path, entry.client_name,
-                 scope: scope,
-                 actor: socket.assigns.current_user
-               )
+               {:ok,
+                Payroll.submit_signed(pending_contract, path, entry.client_name,
+                  scope: scope,
+                  actor: socket.assigns.current_user
+                )}
              end) do
           {:ok, _contract} ->
-            LiveToast.send_toast(:success, "Podpisana umowa została przesłana.")
-            {:noreply, assign(socket, :pending_contract, nil)}
+            LiveToast.send_toast(:success, "Umowa została pomyślnie podpisana.")
 
-          {:error, _reason} ->
-            LiveToast.send_toast(:error, "Nie udało się przesłać umowy.")
+            current_user =
+              Core.get_user!(socket.assigns.current_user.id,
+                scope: scope,
+                actor: socket.assigns.current_user
+              )
+
+            {:noreply, refresh_profile_assigns(socket, current_user)}
+
+          {:error, _error} ->
+            LiveToast.send_toast(:error, "Nie udało się przesłać umowy. Spróbuj ponownie.")
             {:noreply, socket}
         end
 
       {_, [_ | _]} ->
-        LiveToast.send_toast(:error, "Plik jest jeszcze przesyłany.")
+        LiveToast.send_toast(:error, "Plik jest jeszcze przesyłany.", title: "Błąd przesyłania")
         {:noreply, socket}
 
       {[], []} ->
-        LiveToast.send_toast(:error, "Wybierz plik do przesłania.")
+        LiveToast.send_toast(:error, "Wybierz plik do przesłania.", title: "Brak pliku")
         {:noreply, socket}
     end
   end
@@ -1168,6 +1181,22 @@ defmodule FirmowidWeb.Settings.Views.Index do
       )
 
     {:noreply, assign(socket, :company_form, to_form(form))}
+  end
+
+  def handle_event("save_contract_employment", %{"contract" => params}, socket) do
+    case AshPhoenix.Form.submit(socket.assigns.contract_form,
+           params: params,
+           scope: socket.assigns.ash_scope
+         ) do
+      {:ok, _updated} ->
+        {:noreply,
+         socket
+         |> assign(:editing_profile_employment, false)
+         |> refresh_profile_assigns(socket.assigns.current_user)}
+
+      {:error, form} ->
+        {:noreply, assign(socket, :contract_form, form)}
+    end
   end
 
   def handle_info(
@@ -1280,12 +1309,20 @@ defmodule FirmowidWeb.Settings.Views.Index do
         },
         socket
       ) do
-    if blob.processing_state == :failed do
-      BlobProcessingToasts.show_failure_toast(blob)
+    cond do
+      blob.processing_state == :failed ->
+        BlobProcessingToasts.show_failure_toast(blob)
+
+      blob.processing_state == :succeeded ->
+        BlobProcessingToasts.show_success_toast(blob, :employment_contract)
+
+      true ->
+        :ok
     end
 
     send_update(DocumentsSection, id: "profile-documents", refetch: true)
-    {:noreply, socket}
+
+    {:noreply, refresh_profile_assigns(socket, socket.assigns.current_user)}
   end
 
   def handle_info(
@@ -1339,6 +1376,11 @@ defmodule FirmowidWeb.Settings.Views.Index do
         socket
       ) do
     send_update(DocumentsSection, id: "profile-documents", refetch: true)
+    {:noreply, socket}
+  end
+
+  # Ignore other blob broadcasts (e.g., signed contract uploads with processing_target :none)
+  def handle_info(%Broadcast{payload: %Notification{resource: Blob}}, socket) do
     {:noreply, socket}
   end
 
@@ -1417,6 +1459,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
             current_user={@current_user}
             ash_scope={@ash_scope}
             user_form={@user_form}
+            contract_form={@contract_form}
             editing_profile_employment={@editing_profile_employment}
             editing_profile_finance={@editing_profile_finance}
             editing_profile_contact={@editing_profile_contact}
@@ -1429,6 +1472,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
             projects_total={@projects_total}
             projects_date={@projects_date}
             pending_contract={@pending_contract}
+            latest_contract={@latest_contract}
             signed_contract_upload={@uploads.signed_contract}
           />
       <% end %>
@@ -1593,12 +1637,26 @@ defmodule FirmowidWeb.Settings.Views.Index do
         {:noreply,
          socket
          |> assign(section_assign, false)
-         |> assign(:current_user, updated_user)
-         |> assign(:user_form, form_user_form(updated_user, socket.assigns.ash_scope))}
+         |> refresh_profile_assigns(updated_user)}
 
       {:error, form} ->
         {:noreply, assign(socket, :user_form, form)}
     end
+  end
+
+  defp refresh_profile_assigns(socket, user) do
+    scope = socket.assigns.ash_scope
+    current_user = Ash.load!(user, [avatar_blob: [:url]], scope: scope)
+
+    {:ok, pending_contract} = Payroll.load_pending_contract(current_user.id, scope: scope)
+    {:ok, latest_contract} = Payroll.load_latest_contract(current_user.id, scope: scope)
+
+    socket
+    |> assign(:current_user, current_user)
+    |> assign(:user_form, form_user_form(current_user, scope))
+    |> assign(:pending_contract, pending_contract)
+    |> assign(:latest_contract, latest_contract)
+    |> assign(:contract_form, form_contract_form(latest_contract, scope))
   end
 
   defp profile_section_assign("employment"), do: :editing_profile_employment
@@ -1648,4 +1706,9 @@ defmodule FirmowidWeb.Settings.Views.Index do
 
     {projects, total, date}
   end
+
+  defp form_contract_form(nil, _scope), do: nil
+
+  defp form_contract_form(contract, scope),
+    do: contract |> AshPhoenix.Form.for_update(:update, domain: Payroll, scope: scope, as: "contract") |> to_form()
 end

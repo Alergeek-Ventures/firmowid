@@ -44,6 +44,13 @@ defmodule FirmowidWeb.Infrastructure.Components.BlobProcessingToasts do
           title: "Nieprawidłowy dokument"
         )
 
+      :missing_salary_metadata ->
+        LiveToast.send_toast(
+          :error,
+          processing_failure_message(metadata, filename),
+          title: "Brak danych wynagrodzenia"
+        )
+
       _ ->
         LiveToast.send_toast(
           :error,
@@ -51,6 +58,20 @@ defmodule FirmowidWeb.Infrastructure.Components.BlobProcessingToasts do
           title: "Nie udało się wgrać pliku"
         )
     end
+  end
+
+  @doc """
+  Shows a success toast for a successfully processed blob.
+  """
+  @spec show_success_toast(Blob.t(), atom() | nil) :: any()
+  def show_success_toast(blob, type \\ nil)
+
+  def show_success_toast(%Blob{}, :employment_contract) do
+    LiveToast.send_toast(:success, "Umowa została pomyślnie dodana.")
+  end
+
+  def show_success_toast(%Blob{}, _) do
+    LiveToast.send_toast(:success, "Plik został pomyślnie przesłany.")
   end
 
   defp processing_failure_reason(%{"error_code" => "invalid_document"}), do: :invalid_document
@@ -61,6 +82,14 @@ defmodule FirmowidWeb.Infrastructure.Components.BlobProcessingToasts do
   defp processing_failure_reason(%{"error_code" => "duplicate_ksef_invoice"}), do: :duplicate_ksef_invoice
 
   defp processing_failure_reason(%{error_code: "duplicate_ksef_invoice"}), do: :duplicate_ksef_invoice
+
+  defp processing_failure_reason(%{"error_code" => "missing_salary_metadata"}), do: :missing_salary_metadata
+
+  defp processing_failure_reason(%{error_code: "missing_salary_metadata"}), do: :missing_salary_metadata
+
+  defp processing_failure_reason(%{"error" => ":missing_salary_metadata"}), do: :missing_salary_metadata
+
+  defp processing_failure_reason(%{error: ":missing_salary_metadata"}), do: :missing_salary_metadata
 
   defp processing_failure_reason(_), do: :processing_failed
 
