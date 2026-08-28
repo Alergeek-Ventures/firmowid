@@ -24,7 +24,8 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
      |> assign(:months, months)
      |> assign(:default_month, default_month)
      |> assign(:billing_month, default_month)
-     |> assign(:error, nil)}
+     |> assign(:delegation, %{})
+     |> assign(:errors, %{})}
   end
 
   @impl true
@@ -67,6 +68,7 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
                     name="delegation[billing_month]"
                     value={Date.to_iso8601(@billing_month)}
                   />
+                  <.field_errors errors={Map.get(@errors, "billing_month", [])} />
                 </div>
               </.form_row>
               <dl class="contents">
@@ -76,26 +78,28 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
                 <.detail_row label="Stanowisko">{@current_user.position || "—"}</.detail_row>
               </dl>
               <.form_row label="Data wyjazdu" for="delegation_start_date">
-                <div class="flex items-center gap-2">
+                <div class="flex items-start gap-2">
                   <.input
                     id="delegation_start_date"
                     name="delegation[start_date]"
                     type="date"
                     new
-                    value={nil}
+                    value={@delegation["start_date"]}
+                    errors={Map.get(@errors, "start_date", [])}
                     required
                     placeholder="__.__.____"
                     pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}"
                     aria-label="Data wyjazdu"
                     input_class="placeholder:text-grey-300 max-w-48"
                   />
-                  <span aria-hidden="true">-</span>
+                  <span aria-hidden="true" class="mt-2">-</span>
                   <.input
                     id="delegation_end_date"
                     name="delegation[end_date]"
                     type="date"
                     new
-                    value={nil}
+                    value={@delegation["end_date"]}
+                    errors={Map.get(@errors, "end_date", [])}
                     required
                     placeholder="__.__.____"
                     pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}"
@@ -110,7 +114,8 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
                   name="delegation[purpose]"
                   type="text"
                   new
-                  value={nil}
+                  value={@delegation["purpose"]}
+                  errors={Map.get(@errors, "purpose", [])}
                   required
                   placeholder="np. Wyjazd na Elixir Conf"
                   input_class="placeholder:text-grey-300 max-w-125"
@@ -123,7 +128,8 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
                     name="delegation[advance_payment_amount]"
                     type="number"
                     new
-                    value={nil}
+                    value={@delegation["advance_payment_amount"]}
+                    errors={Map.get(@errors, "advance_payment_amount", [])}
                     min="0"
                     step="0.01"
                     required
@@ -136,7 +142,6 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
               </.form_row>
             </div>
           </fieldset>
-          <p :if={@error} role="alert" class="text-sm text-red-600">{@error}</p>
           <.button
             type="submit"
             variant="primary"
@@ -156,30 +161,18 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
 
   @impl true
   def handle_event("save", %{"delegation" => params}, socket) do
-    with {:ok, billing_month} <- Date.from_iso8601(params["billing_month"]),
-         {:ok, start_date} <- parse_date(params["start_date"]),
-         {:ok, end_date} <- parse_date(params["end_date"]),
-         {:ok, amount} <- Decimal.cast(params["advance_payment_amount"]),
-         true <- Date.compare(end_date, start_date) != :lt,
-         {:ok, _delegation} <-
-           Timetracker.create_delegation(
-             %{
-               title: params["purpose"],
-               billing_month: billing_month,
-               purpose: params["purpose"],
-               advance_payment_amount: Money.new(:PLN, amount),
-               start_date: start_date,
-               end_date: end_date
-             },
-             scope: socket.assigns.ash_scope
-           ) do
-      {:noreply, push_navigate(socket, to: ~p"/ustawienia/konto")}
-    else
-      false ->
-        {:noreply, assign(socket, :error, "Data zakończenia nie może być wcześniejsza niż data wyjazdu.")}
+    case delegation_attributes(params) do
+      {:ok, attributes} ->
+        case Timetracker.create_delegation(attributes, scope: socket.assigns.ash_scope) do
+          {:ok, _delegation} ->
+            {:noreply, push_navigate(socket, to: ~p"/ustawienia/profil")}
 
-      _ ->
-        {:noreply, assign(socket, :error, "Nie udało się zaplanować delegacji. Sprawdź dane formularza.")}
+          {:error, error} ->
+            {:noreply, assign_submission_errors(socket, params, ash_errors(error))}
+        end
+
+      {:error, errors} ->
+        {:noreply, assign_submission_errors(socket, params, errors)}
     end
   end
 
@@ -191,13 +184,90 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
     first |> Stream.iterate(&Date.add(&1, 1)) |> Enum.take_while(&(Date.compare(&1, last) != :gt))
   end
 
-  defp parse_date(date) do
-    with [day, month, year] <- String.split(date, "."),
-         formatted_date = Enum.join([year, month, day], "-"),
-         {:ok, parsed_date} <- Date.from_iso8601(formatted_date) do
-      {:ok, parsed_date}
-    else
-      _ -> :error
+  defp delegation_attributes(params) do
+    with {:ok, billing_month} <- parse_date(params["billing_month"], "billing_month"),
+         {:ok, start_date} <- parse_date(params["start_date"], "start_date"),
+         {:ok, end_date} <- parse_date(params["end_date"], "end_date"),
+         {:ok, amount} <- parse_amount(params["advance_payment_amount"]),
+         :ok <- validate_date_range(start_date, end_date),
+         :ok <- validate_purpose(params["purpose"]) do
+      {:ok,
+       %{
+         title: params["purpose"],
+         billing_month: billing_month,
+         purpose: params["purpose"],
+         advance_payment_amount: Money.new(:PLN, amount),
+         start_date: start_date,
+         end_date: end_date
+       }}
     end
+  end
+
+  defp parse_date(date, field) do
+    case Date.from_iso8601(date || "") do
+      {:ok, parsed_date} -> {:ok, parsed_date}
+      _ -> {:error, %{field => ["Podaj prawidłową datę."]}}
+    end
+  end
+
+  defp parse_amount(amount) do
+    case Decimal.cast(amount || "") do
+      {:ok, amount} -> validate_amount(amount)
+      _ -> {:error, %{"advance_payment_amount" => ["Podaj kwotę równą lub większą od 0."]}}
+    end
+  end
+
+  defp validate_amount(amount) do
+    if Decimal.compare(amount, 0) == :lt do
+      {:error, %{"advance_payment_amount" => ["Podaj kwotę równą lub większą od 0."]}}
+    else
+      {:ok, amount}
+    end
+  end
+
+  defp validate_date_range(start_date, end_date) do
+    if Date.before?(end_date, start_date) do
+      {:error, %{"end_date" => ["Data powrotu nie może być wcześniejsza niż data wyjazdu."]}}
+    else
+      :ok
+    end
+  end
+
+  defp validate_purpose(purpose) when is_binary(purpose) do
+    if String.trim(purpose) == "" do
+      {:error, %{"purpose" => ["Podaj cel wyjazdu."]}}
+    else
+      :ok
+    end
+  end
+
+  defp validate_purpose(_purpose), do: {:error, %{"purpose" => ["Podaj cel wyjazdu."]}}
+
+  defp assign_submission_errors(socket, params, errors) do
+    socket
+    |> assign(:delegation, params)
+    |> assign(:errors, errors)
+  end
+
+  defp ash_errors(%Ash.Error.Invalid{errors: errors}) do
+    Enum.reduce(errors, %{}, fn error, field_errors ->
+      message = Map.get(error, :message, Exception.message(error))
+
+      error
+      |> Map.get(:fields, [Map.get(error, :field)])
+      |> List.wrap()
+      |> Enum.reject(&is_nil/1)
+      |> Enum.reduce(field_errors, fn field, errors ->
+        Map.update(errors, to_string(field), [message], &[message | &1])
+      end)
+    end)
+  end
+
+  defp ash_errors(_error), do: %{"purpose" => ["Nie udało się zaplanować delegacji. Spróbuj ponownie."]}
+
+  defp field_errors(assigns) do
+    ~H"""
+    <p :for={error <- @errors} role="alert" class="mt-1 text-sm text-red-600">{error}</p>
+    """
   end
 end
