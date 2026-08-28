@@ -16,17 +16,10 @@ defmodule FirmowidWeb.Timetracker.Components.DelegationsList do
     ~H"""
     <ul :if={@delegations != []} class="divide-grey-100 divide-y">
       <li :for={delegation <- @delegations} class="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-        <.link
-          :if={delegation.status == :in_progress && !@management?}
-          kind="unstyled"
-          navigate={~p"/delegacje/#{delegation.id}"}
-          class="min-w-0 flex-1 hover:underline"
-        >
-          <.delegation_title delegation={delegation} />
-        </.link>
-        <p :if={delegation.status != :in_progress || @management?} class="min-w-0 flex-1 truncate">
-          <.delegation_title delegation={delegation} />
-        </p>
+        <.delegation_title
+          delegation={delegation}
+          is_link={delegation.status == :in_progress && !@management?}
+        />
         <p class="shrink-0 text-sm tabular-nums">
           <.date_range start_date={delegation.start_date} end_date={delegation.end_date} />
         </p>
@@ -49,13 +42,26 @@ defmodule FirmowidWeb.Timetracker.Components.DelegationsList do
   end
 
   attr :delegation, :map, required: true
+  attr :is_link, :boolean, required: true
 
   defp delegation_title(assigns) do
     ~H"""
-    <span class="truncate">{@delegation.title}</span>
-    <span :if={@delegation.status == :in_progress} class="text-grey-500 ml-2 text-xs uppercase">
-      Wersja robocza
-    </span>
+    <div class="flex flex-1 items-center gap-2">
+      <.link
+        :if={@is_link}
+        kind="unstyled"
+        navigate={~p"/delegacje/#{@delegation.id}"}
+        class="hover:underline"
+      >
+        <span class="truncate">{@delegation.title}</span>
+      </.link>
+      <p :if={!@is_link} class="truncate">
+        <span class="truncate">{@delegation.title}</span>
+      </p>
+      <span :if={@delegation.status == :in_progress} class="text-grey-500 ml-2 text-xs uppercase">
+        Wersja robocza
+      </span>
+    </div>
     """
   end
 end

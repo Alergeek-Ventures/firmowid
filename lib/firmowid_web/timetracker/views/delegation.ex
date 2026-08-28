@@ -11,7 +11,7 @@ defmodule FirmowidWeb.Timetracker.Views.Delegation do
   def mount(%{"id" => id}, _session, socket) do
     case Timetracker.get_delegation(id, scope: socket.assigns.ash_scope, not_found_error?: false) do
       {:ok, nil} ->
-        {:ok, push_navigate(socket, to: ~p"/ustawienia/konto")}
+        {:ok, push_navigate(socket, to: ~p"/ustawienia/profil")}
 
       {:ok, delegation} ->
         {:ok, assign(socket, delegation: delegation, page_title: delegation.title)}
@@ -22,7 +22,7 @@ defmodule FirmowidWeb.Timetracker.Views.Delegation do
   def render(assigns) do
     ~H"""
     <main class="mx-auto max-w-3xl space-y-10 px-6 py-10">
-      <.back_link navigate={~p"/ustawienia/konto"} />
+      <.back_link navigate={~p"/ustawienia/profil"} />
       <article class="rounded-lg bg-white p-6 shadow">
         <header class="flex flex-wrap items-start justify-between gap-4">
           <div class="space-y-2">
