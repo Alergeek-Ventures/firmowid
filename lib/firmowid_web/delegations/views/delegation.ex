@@ -165,6 +165,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           </div>
           <form
             :if={@editable?}
+            id={"#{@kind}-expense-#{expense.id}"}
             phx-change="update"
             phx-value-kind={@kind}
             phx-value-id={expense.id}
@@ -216,12 +217,16 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             >{expense.description}</textarea></label>
           </form>
         </article>
+        <.pending_expense
+          :for={entry <- if(@upload, do: @upload.entries, else: [])}
+          entry={entry}
+          kind={@kind}
+        />
         <form
           :if={@editable? && @upload}
           id={"#{@kind}-upload-form"}
           phx-change="upload"
           phx-submit="upload"
-          phx-value-kind={@kind}
           class="relative"
         >
           <.file_upload
@@ -244,6 +249,30 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     """
   end
 
+  attr :entry, :any, required: true
+  attr :kind, :string, required: true
+
+  defp pending_expense(assigns) do
+    ~H"""
+    <article
+      :if={!@entry.done?}
+      id={"#{@kind}-pending-expense-#{@entry.ref}"}
+      aria-busy="true"
+      class="border-grey-200 rounded-lg border p-4"
+    >
+      <div class="text-grey-500 flex items-center justify-between gap-3 text-sm">
+        <span class="flex min-w-0 items-center gap-2 truncate">
+          <Lucideicons.loader_circle class="size-5 shrink-0 animate-spin" />
+          {@entry.client_name}
+        </span>
+        <span class="shrink-0 tabular-nums">{@entry.progress}%</span>
+      </div>
+      <div class="bg-grey-100 mt-4 h-9 animate-pulse rounded" />
+      <div class="bg-grey-100 mt-3 h-9 animate-pulse rounded" />
+    </article>
+    """
+  end
+
   attr :label, :string, required: true
   attr :value, Money, required: true
   attr :class, :string, default: ""
@@ -259,11 +288,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   end
 
   @impl true
-  def handle_event("upload", _params, %{assigns: %{editable?: false}} = socket), do: {:noreply, socket}
-
-  def handle_event("upload", %{"kind" => kind}, socket) do
-    {:noreply, consume_upload(socket, String.to_existing_atom(kind))}
-  end
+  def handle_event("upload", _params, socket), do: {:noreply, socket}
 
   def handle_event("update", %{"kind" => kind, "id" => id} = params, socket) do
     attrs = update_attrs(kind, params)
@@ -280,7 +305,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     result = destroy_expense(kind, id, socket.assigns.ash_scope)
 
     {:noreply,
-     if(match?({:ok, _}, result),
+     if(result == :ok,
        do: reload(socket),
        else: put_flash(socket, :error, "Nie udało się usunąć dokumentu.")
      )}
@@ -310,7 +335,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           allow_upload(socket, :transport,
             accept: ~w(.pdf .png .jpg .jpeg),
             max_entries: 1,
-            auto_upload: true
+            auto_upload: true,
+            progress: &handle_upload_progress/3
           )
 
     socket = if transport, do: transport, else: socket
@@ -323,12 +349,14 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
           |> allow_upload(:accommodation,
             accept: ~w(.pdf .png .jpg .jpeg),
             max_entries: 1,
-            auto_upload: true
+            auto_upload: true,
+            progress: &handle_upload_progress/3
           )
           |> allow_upload(:other,
             accept: ~w(.pdf .png .jpg .jpeg),
             max_entries: 1,
-            auto_upload: true
+            auto_upload: true,
+            progress: &handle_upload_progress/3
           )
 
     socket
@@ -345,7 +373,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     do:
       Delegations.get_delegation(id,
         scope: socket.assigns.ash_scope,
-        load: [:transport_expenses, :accommodation_expenses, :other_expenses],
+        load: [:accommodation_expenses, :other_expenses, transport_expenses: [:trips]],
         not_found_error?: false
       )
 
@@ -353,27 +381,47 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   defp reload(socket), do: setup_socket(socket, load_delegation!(socket.assigns.delegation.id, socket))
 
-  defp consume_upload(socket, kind) do
-    consume_uploaded_entries(socket, kind, fn %{path: _path}, entry ->
-      create_expense(
-        kind,
-        socket.assigns.delegation.id,
-        entry.client_name,
-        socket.assigns.ash_scope
-      )
-    end)
+  defp refresh_delegation(socket) do
+    socket
+    |> assign(:delegation, load_delegation!(socket.assigns.delegation.id, socket))
+    |> assign_summary()
+  end
 
-    reload(socket)
+  defp handle_upload_progress(_kind, %{done?: false}, socket), do: {:noreply, socket}
+
+  defp handle_upload_progress(kind, entry, socket) do
+    socket =
+      case consume_uploaded_entry(socket, entry, fn %{path: _path} ->
+             {:ok,
+              create_expense(
+                kind,
+                socket.assigns.delegation.id,
+                entry.client_name,
+                socket.assigns.ash_scope
+              )}
+           end) do
+        {:ok, _expense} -> refresh_delegation(socket)
+        {:error, _reason} -> put_flash(socket, :error, "Nie udało się dodać dokumentu.")
+      end
+
+    {:noreply, socket}
   end
 
   defp create_expense(:transport, id, filename, scope),
-    do: Delegations.create_transport_expense(%{delegation_id: id, original_filename: filename}, scope: scope)
+    do:
+      Delegations.create_transport_expense(%{delegation_id: id, original_filename: filename, document_number: "-"},
+        scope: scope
+      )
 
   defp create_expense(:accommodation, id, filename, scope),
-    do: Delegations.create_accommodation_expense(%{delegation_id: id, original_filename: filename}, scope: scope)
+    do:
+      Delegations.create_accommodation_expense(
+        %{delegation_id: id, original_filename: filename, document_number: "-", locality: "-"}, scope: scope)
 
   defp create_expense(:other, id, filename, scope),
-    do: Delegations.create_other_expense(%{delegation_id: id, original_filename: filename, description: ""}, scope: scope)
+    do:
+      Delegations.create_other_expense(
+        %{delegation_id: id, original_filename: filename, document_number: "-", description: "-"}, scope: scope)
 
   defp update_expense(kind, id, attrs, scope) do
     with {:ok, expense} <- get_expense(kind, id, scope) do
