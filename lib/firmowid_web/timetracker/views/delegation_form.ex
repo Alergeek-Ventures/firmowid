@@ -9,7 +9,7 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
   import FirmowidWeb.Timetracker.Components.Delegation
   import Phoenix.Component, except: [link: 1]
 
-  alias Firmowid.Ash.Timetracker
+  alias Firmowid.Ash.Timetracker.Delegation
 
   @impl true
   def mount(_params, _session, socket) do
@@ -17,6 +17,7 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
     today = Date.utc_today()
     default_month = Date.beginning_of_month(today)
     months = billing_months(user.employment_date, today)
+    form = delegation_form(socket.assigns.ash_scope, default_month)
 
     {:ok,
      socket
@@ -24,8 +25,7 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
      |> assign(:months, months)
      |> assign(:default_month, default_month)
      |> assign(:billing_month, default_month)
-     |> assign(:delegation, %{})
-     |> assign(:errors, %{})}
+     |> assign(:form, form)}
   end
 
   @impl true
@@ -43,9 +43,9 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
           Wypełnij poniższy wniosek. Po wysłaniu zostanie on przesłany do Twojego pracodawcy. Gdy zostanie zaakceptowany otrzymasz maila z potwierdzeniem.
         </p>
         <.form
-          for={%{}}
-          as={:delegation}
+          for={@form}
           id="delegation-form"
+          phx-change="validate"
           phx-submit="save"
           class="mt-19"
         >
@@ -65,10 +65,9 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
                   <Lucideicons.chevron_down class="text-grey-700 pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
                   <input
                     type="hidden"
-                    name="delegation[billing_month]"
-                    value={Date.to_iso8601(@billing_month)}
+                    name={@form[:billing_month].name}
+                    value={@form[:billing_month].value}
                   />
-                  <.field_errors errors={Map.get(@errors, "billing_month", [])} />
                 </div>
               </.form_row>
               <dl class="contents">
@@ -80,12 +79,10 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
               <.form_row label="Data wyjazdu" for="delegation_start_date">
                 <div class="flex items-start gap-2">
                   <.input
+                    field={@form[:start_date]}
                     id="delegation_start_date"
-                    name="delegation[start_date]"
                     type="date"
                     new
-                    value={@delegation["start_date"]}
-                    errors={Map.get(@errors, "start_date", [])}
                     required
                     placeholder="__.__.____"
                     pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}"
@@ -94,12 +91,10 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
                   />
                   <span aria-hidden="true" class="mt-2">-</span>
                   <.input
+                    field={@form[:end_date]}
                     id="delegation_end_date"
-                    name="delegation[end_date]"
                     type="date"
                     new
-                    value={@delegation["end_date"]}
-                    errors={Map.get(@errors, "end_date", [])}
                     required
                     placeholder="__.__.____"
                     pattern="[0-9]{2}\.[0-9]{2}\.[0-9]{4}"
@@ -110,12 +105,10 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
               </.form_row>
               <.form_row label="Cel wyjazdu" for="delegation_purpose">
                 <.input
+                  field={@form[:purpose]}
                   id="delegation_purpose"
-                  name="delegation[purpose]"
                   type="text"
                   new
-                  value={@delegation["purpose"]}
-                  errors={Map.get(@errors, "purpose", [])}
                   required
                   placeholder="np. Wyjazd na Elixir Conf"
                   input_class="placeholder:text-grey-300 max-w-125"
@@ -124,12 +117,10 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
               <.form_row label="Przewidywana kwota" for="delegation_amount">
                 <div class="flex items-center gap-2">
                   <.input
+                    field={@form[:advance_payment_amount]}
                     id="delegation_amount"
-                    name="delegation[advance_payment_amount]"
                     type="number"
                     new
-                    value={@delegation["advance_payment_amount"]}
-                    errors={Map.get(@errors, "advance_payment_amount", [])}
                     min="0"
                     step="0.01"
                     required
@@ -156,23 +147,34 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
 
   @impl true
   def handle_event("change-month", %{"month" => month}, socket) do
-    {:noreply, assign(socket, :billing_month, Date.from_iso8601!(month))}
+    form =
+      socket.assigns.form.source
+      |> AshPhoenix.Form.validate(Map.put(AshPhoenix.Form.params(socket.assigns.form.source), "billing_month", month))
+      |> to_form()
+
+    {:noreply,
+     socket
+     |> assign(:billing_month, Date.from_iso8601!(month))
+     |> assign(:form, form)}
   end
 
   @impl true
+  def handle_event("validate", %{"delegation" => params}, socket) do
+    form =
+      socket.assigns.form.source
+      |> AshPhoenix.Form.validate(params)
+      |> to_form()
+
+    {:noreply, assign(socket, :form, form)}
+  end
+
   def handle_event("save", %{"delegation" => params}, socket) do
-    case delegation_attributes(params) do
-      {:ok, attributes} ->
-        case Timetracker.create_delegation(attributes, scope: socket.assigns.ash_scope) do
-          {:ok, _delegation} ->
-            {:noreply, push_navigate(socket, to: ~p"/ustawienia/profil")}
+    case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
+      {:ok, _delegation} ->
+        {:noreply, push_navigate(socket, to: ~p"/ustawienia/profil")}
 
-          {:error, error} ->
-            {:noreply, assign_submission_errors(socket, params, ash_errors(error))}
-        end
-
-      {:error, errors} ->
-        {:noreply, assign_submission_errors(socket, params, errors)}
+      {:error, form} ->
+        {:noreply, assign(socket, :form, to_form(form))}
     end
   end
 
@@ -184,90 +186,14 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationForm do
     first |> Stream.iterate(&Date.add(&1, 1)) |> Enum.take_while(&(Date.compare(&1, last) != :gt))
   end
 
-  defp delegation_attributes(params) do
-    with {:ok, billing_month} <- parse_date(params["billing_month"], "billing_month"),
-         {:ok, start_date} <- parse_date(params["start_date"], "start_date"),
-         {:ok, end_date} <- parse_date(params["end_date"], "end_date"),
-         {:ok, amount} <- parse_amount(params["advance_payment_amount"]),
-         :ok <- validate_date_range(start_date, end_date),
-         :ok <- validate_purpose(params["purpose"]) do
-      {:ok,
-       %{
-         title: params["purpose"],
-         billing_month: billing_month,
-         purpose: params["purpose"],
-         advance_payment_amount: Money.new(:PLN, amount),
-         start_date: start_date,
-         end_date: end_date
-       }}
-    end
-  end
-
-  defp parse_date(date, field) do
-    case Date.from_iso8601(date || "") do
-      {:ok, parsed_date} -> {:ok, parsed_date}
-      _ -> {:error, %{field => ["Podaj prawidłową datę."]}}
-    end
-  end
-
-  defp parse_amount(amount) do
-    case Decimal.cast(amount || "") do
-      {:ok, amount} -> validate_amount(amount)
-      _ -> {:error, %{"advance_payment_amount" => ["Podaj kwotę równą lub większą od 0."]}}
-    end
-  end
-
-  defp validate_amount(amount) do
-    if Decimal.compare(amount, 0) == :lt do
-      {:error, %{"advance_payment_amount" => ["Podaj kwotę równą lub większą od 0."]}}
-    else
-      {:ok, amount}
-    end
-  end
-
-  defp validate_date_range(start_date, end_date) do
-    if Date.before?(end_date, start_date) do
-      {:error, %{"end_date" => ["Data powrotu nie może być wcześniejsza niż data wyjazdu."]}}
-    else
-      :ok
-    end
-  end
-
-  defp validate_purpose(purpose) when is_binary(purpose) do
-    if String.trim(purpose) == "" do
-      {:error, %{"purpose" => ["Podaj cel wyjazdu."]}}
-    else
-      :ok
-    end
-  end
-
-  defp validate_purpose(_purpose), do: {:error, %{"purpose" => ["Podaj cel wyjazdu."]}}
-
-  defp assign_submission_errors(socket, params, errors) do
-    socket
-    |> assign(:delegation, params)
-    |> assign(:errors, errors)
-  end
-
-  defp ash_errors(%Ash.Error.Invalid{errors: errors}) do
-    Enum.reduce(errors, %{}, fn error, field_errors ->
-      message = Map.get(error, :message, Exception.message(error))
-
-      error
-      |> Map.get(:fields, [Map.get(error, :field)])
-      |> List.wrap()
-      |> Enum.reject(&is_nil/1)
-      |> Enum.reduce(field_errors, fn field, errors ->
-        Map.update(errors, to_string(field), [message], &[message | &1])
-      end)
-    end)
-  end
-
-  defp ash_errors(_error), do: %{"purpose" => ["Nie udało się zaplanować delegacji. Spróbuj ponownie."]}
-
-  defp field_errors(assigns) do
-    ~H"""
-    <p :for={error <- @errors} role="alert" class="mt-1 text-sm text-red-600">{error}</p>
-    """
+  defp delegation_form(scope, billing_month) do
+    Delegation
+    |> AshPhoenix.Form.for_create(:create,
+      scope: scope,
+      as: "delegation",
+      params: %{"billing_month" => Date.to_iso8601(billing_month)},
+      transform_params: fn params, _type -> Map.put(params, "title", params["purpose"]) end
+    )
+    |> to_form()
   end
 end
