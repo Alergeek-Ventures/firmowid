@@ -14,6 +14,76 @@ defmodule Firmowid.Ash.Timetracker.DelegationExpenseTransport do
   postgres do
     table "delegation_expense_transport"
     repo Firmowid.Repo
+
+    custom_statements do
+      statement :require_trip do
+        after_tables ["delegation_trip"]
+        code? true
+
+        up """
+        execute(~S|CREATE FUNCTION require_transport_expense_trip() RETURNS trigger AS $$
+        DECLARE
+          transport_expense_id uuid;
+        BEGIN
+          transport_expense_id := CASE
+            WHEN TG_TABLE_NAME = 'delegation_expense_transport' THEN NEW.id
+            ELSE OLD.delegation_expense_transport_id
+          END;
+
+          IF EXISTS (SELECT 1 FROM delegation_expense_transport WHERE id = transport_expense_id)
+             AND NOT EXISTS (
+               SELECT 1 FROM delegation_trip
+               WHERE delegation_expense_transport_id = transport_expense_id
+             ) THEN
+            RAISE EXCEPTION 'transport expense must contain at least one trip';
+          END IF;
+
+          RETURN NULL;
+        END;
+        $$ LANGUAGE plpgsql;|)
+
+        execute(~S|INSERT INTO delegation_trip (
+          id,
+          departure_city,
+          arrival_city,
+          delegation_expense_transport_id,
+          organization_id,
+          inserted_at,
+          updated_at
+        )
+        SELECT
+          uuid_generate_v7(),
+          '',
+          '',
+          transport_expense.id,
+          transport_expense.organization_id,
+          NOW() AT TIME ZONE 'utc',
+          NOW() AT TIME ZONE 'utc'
+        FROM delegation_expense_transport AS transport_expense
+        WHERE NOT EXISTS (
+          SELECT 1
+          FROM delegation_trip
+          WHERE delegation_trip.delegation_expense_transport_id = transport_expense.id
+        );|)
+
+        execute(~S|CREATE CONSTRAINT TRIGGER delegation_expense_transport_requires_trip
+        AFTER INSERT ON delegation_expense_transport
+        DEFERRABLE INITIALLY DEFERRED
+        FOR EACH ROW EXECUTE FUNCTION require_transport_expense_trip();|)
+
+        execute(~S|CREATE CONSTRAINT TRIGGER delegation_trip_requires_transport_expense_sibling
+        AFTER DELETE ON delegation_trip
+        DEFERRABLE INITIALLY DEFERRED
+        FOR EACH ROW EXECUTE FUNCTION require_transport_expense_trip();|)
+        """
+
+        down """
+        execute("DROP TRIGGER delegation_trip_requires_transport_expense_sibling ON delegation_trip")
+        execute("DROP TRIGGER delegation_expense_transport_requires_trip ON delegation_expense_transport")
+        execute("DROP FUNCTION require_transport_expense_trip()")
+        """
+      end
+    end
   end
 
   code_interface do
@@ -32,14 +102,21 @@ defmodule Firmowid.Ash.Timetracker.DelegationExpenseTransport do
         :original_filename,
         :document_number,
         :expense_amount,
-        :transport_type
+        :transport_type,
+        :description
       ]
+
+      argument :trips, {:array, :map},
+        allow_nil?: false,
+        default: [%{departure_city: "", arrival_city: ""}]
+
+      change manage_relationship(:trips, type: :direct_control)
     end
 
     update :update do
       description "Update a transport expense while settling a delegation."
       primary? true
-      accept [:document_number, :expense_amount, :transport_type]
+      accept [:document_number, :expense_amount, :transport_type, :description]
     end
   end
 
@@ -77,6 +154,8 @@ defmodule Firmowid.Ash.Timetracker.DelegationExpenseTransport do
       default: :other,
       public?: true,
       constraints: [one_of: [:railway, :airplane, :bus, :other]]
+
+    attribute :description, :string, public?: true
 
     Resource.firmowid_timestamps()
   end

@@ -169,52 +169,62 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             phx-change="update"
             phx-value-kind={@kind}
             phx-value-id={expense.id}
-            class="mt-4 grid gap-3 sm:grid-cols-2"
+            class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
           >
-            <label>Nr dokumentu<input
-              class="input"
-              name="document_number"
-              value={expense.document_number}
-            /></label>
-            <label>Kwota<input
-              class="input"
-              name="expense_amount"
-              type="number"
-              min="0"
-              step="0.01"
-              value={Money.to_decimal(expense.expense_amount)}
-            /></label>
-            <label :if={@kind == "transport"}>Środek lokomocji<select
-              class="input"
+            <.document_fields expense={expense} />
+            <.input
+              :if={@kind == "transport"}
+              id={"#{@kind}-transport-type-#{expense.id}"}
               name="transport_type"
-            ><option
-              :for={type <- ~w(railway airplane bus other)}
-              value={type}
-              selected={expense.transport_type == String.to_existing_atom(type)}
-            >
-              {transport_label(type)}
-            </option></select></label>
-            <label :if={@kind == "accommodation"}>Miejscowość<input
-              class="input"
+              value={expense.transport_type}
+              type="select"
+              new
+              label="Środek lokomocji"
+              options={transport_options()}
+            />
+            <.input
+              :if={@kind == "accommodation"}
+              id={"#{@kind}-locality-#{expense.id}"}
               name="locality"
               value={expense.locality}
-            /></label>
-            <label :if={@kind == "accommodation"}>Zameldowanie<input
-              class="input"
-              type="date"
+              type="text"
+              new
+              label="Miejscowość"
+            />
+            <.input
+              :if={@kind == "accommodation"}
+              id={"#{@kind}-arrival-date-#{expense.id}"}
               name="arrival_date"
               value={expense.arrival_date}
-            /></label>
-            <label :if={@kind == "accommodation"}>Wymeldowanie<input
-              class="input"
               type="date"
+              new
+              label="Zameldowanie"
+            />
+            <.input
+              :if={@kind == "accommodation"}
+              id={"#{@kind}-departure-date-#{expense.id}"}
               name="departure_date"
               value={expense.departure_date}
-            /></label>
-            <label :if={@kind == "other" or @kind == "accommodation"} class="sm:col-span-2">Opis<textarea
-              class="input"
+              type="date"
+              new
+              label="Wymeldowanie"
+            />
+            <.expense_description
+              :if={@kind in ["transport", "accommodation"]}
+              expense={expense}
+              kind={@kind}
+              visible?={Map.get(@description_visible?, expense.id, false)}
+            />
+            <.input
+              :if={@kind == "other"}
+              id={"#{@kind}-description-#{expense.id}"}
               name="description"
-            >{expense.description}</textarea></label>
+              value={expense.description}
+              type="textarea"
+              new
+              label="Opis"
+              class="col-span-full"
+            />
           </form>
         </article>
         <.pending_expense
@@ -246,6 +256,65 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         </form>
       </div>
     </section>
+    """
+  end
+
+  attr :expense, :any, required: true
+
+  defp document_fields(assigns) do
+    ~H"""
+    <.input
+      id={"document-number-#{@expense.id}"}
+      name="document_number"
+      value={@expense.document_number}
+      type="text"
+      new
+      label="Nr dokumentu"
+    />
+    <div>
+      <.input
+        id={"expense-amount-#{@expense.id}"}
+        name="expense_amount"
+        value={Money.to_decimal(@expense.expense_amount)}
+        type="number"
+        new
+        min="0"
+        step="0.01"
+        label="Kwota"
+        aria-describedby={"expense-amount-currency-#{@expense.id}"}
+      />
+      <span id={"expense-amount-currency-#{@expense.id}"} class="text-grey-500 mt-1 block text-sm">
+        PLN
+      </span>
+    </div>
+    """
+  end
+
+  attr :expense, :any, required: true
+  attr :kind, :string, required: true
+  attr :visible?, :boolean, required: true
+
+  defp expense_description(assigns) do
+    ~H"""
+    <div class="col-span-full flex flex-col items-end gap-2">
+      <.input
+        :if={@visible?}
+        id={"#{@kind}-description-#{@expense.id}"}
+        name="description"
+        value={@expense.description}
+        type="textarea"
+        new
+        label="Opis"
+        class="w-full"
+      />
+      <.button
+        type="button"
+        variant="unstyled"
+        class={[@visible? && "text-red-700", "text-sm"]}
+        phx-click="toggle-description"
+        phx-value-id={@expense.id}
+      >{if @visible?, do: "Usuń opis", else: "Dodaj opis"}</.button>
+    </div>
     """
   end
 
@@ -311,6 +380,13 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
      )}
   end
 
+  def handle_event("toggle-description", %{"id" => id}, socket) do
+    description_visible? =
+      Map.update(socket.assigns.description_visible?, id, true, &not/1)
+
+    {:noreply, assign(socket, :description_visible?, description_visible?)}
+  end
+
   def handle_event("sort", _params, socket), do: {:noreply, assign(socket, :sort_active?, true)}
 
   def handle_event("submit", _params, %{assigns: %{editable?: false}} = socket), do: {:noreply, socket}
@@ -366,6 +442,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       page_title: "Rozliczenie delegacji",
       sort_active?: false
     )
+    |> assign_new(:description_visible?, fn -> %{} end)
     |> assign_summary()
   end
 
@@ -506,4 +583,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   defp transport_label("airplane"), do: "Samolot"
   defp transport_label("bus"), do: "Autobus"
   defp transport_label("other"), do: "Inne"
+
+  defp transport_options do
+    Enum.map(~w(railway airplane bus other), &{transport_label(&1), &1})
+  end
 end
