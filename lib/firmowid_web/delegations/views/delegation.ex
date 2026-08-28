@@ -47,7 +47,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             kind="transport"
             editable?={@editable?}
             sort_active?={@sort_active?}
-            myself={@myself}
           />
           <.expense_section
             title="Nocleg"
@@ -57,7 +56,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             kind="accommodation"
             editable?={@editable?}
             sort_active?={false}
-            myself={@myself}
           />
           <.expense_section
             title="Inne wydatki"
@@ -67,7 +65,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             kind="other"
             editable?={@editable?}
             sort_active?={false}
-            myself={@myself}
           />
         </section>
 
@@ -82,7 +79,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             <div>
               <dt class="inline">Zaliczka:</dt>
               <dd class="text-grey-700 inline">
-                {Money.to_string(@delegation.advance_payment_amount)}
+                {Money.to_string!(@delegation.advance_payment_amount)}
               </dd>
             </div>
           </dl>
@@ -97,7 +94,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
               </div>
               <.summary_row
                 label="Pobrana zaliczka"
-                value={Money.to_string(@delegation.advance_payment_amount)}
+                value={Money.to_string!(@delegation.advance_payment_amount)}
               />
               <div class="border-grey-200 border-t pt-3">
                 <.summary_row label={@balance_label} value={@balance} />
@@ -125,7 +122,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   attr :kind, :string, required: true
   attr :editable?, :boolean, required: true
   attr :sort_active?, :boolean, required: true
-  attr :myself, :any, required: true
 
   defp expense_section(assigns) do
     ~H"""
@@ -300,8 +296,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   end
 
   defp setup_socket(socket, delegation) do
-    socket = assign_new(socket, :uploads, fn -> %{} end)
-
     transport =
       if delegation.status == :complete,
         do: nil,
@@ -445,14 +439,14 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         else: {"Pomniejszenie wypłaty", Money.sub!(advance, total)}
 
     assign(socket,
-      total: Money.to_string(total),
+      total: Money.to_string!(total),
       balance_label: label,
-      balance: Money.to_string(balance)
+      balance: Money.to_string!(balance)
     )
   end
 
   defp sum(expenses),
-    do: expenses |> Enum.reduce(Money.new(:PLN, 0), &Money.add!(&2, &1.expense_amount)) |> Money.to_string()
+    do: expenses |> Enum.reduce(Money.new(:PLN, 0), &Money.add!(&2, &1.expense_amount)) |> Money.to_string!()
 
   defp transport_label("railway"), do: "Kolej"
   defp transport_label("airplane"), do: "Samolot"
