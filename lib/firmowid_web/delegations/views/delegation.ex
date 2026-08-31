@@ -275,6 +275,107 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     """
   end
 
+  attr :kind, :string, required: true
+
+  defp pending_expense_form(%{kind: "transport"} = assigns) do
+    ~H"""
+    <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <.skeleton_field label="Środek lokomocji" />
+      <.skeleton_field label="Nr dokumentu" shimmer? />
+      <.skeleton_amount_field />
+    </div>
+    <div class="border-grey-100 mt-4 border-t pt-4">
+      <table class="border-separate border-spacing-y-3 text-left text-sm">
+        <thead class="text-grey-500">
+          <tr>
+            <th scope="col"></th>
+            <th scope="col" class="font-normal">Miejscowość</th>
+            <th scope="col" class="font-normal">Data</th>
+            <th scope="col" class="font-normal">Godzina</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row" class="text-grey-700 pr-3 font-normal">Wyjazd</th>
+            <td class="pr-3"><.skeleton_blob class="w-[237px] min-w-[237px]" /></td>
+            <td class="pr-3"><.skeleton_blob class="w-[172px] min-w-[172px]" /></td>
+            <td><.skeleton_blob class="w-[91px] min-w-[91px]" /></td>
+          </tr>
+          <tr>
+            <th scope="row" class="text-grey-700 pr-3 font-normal">Przyjazd</th>
+            <td class="pr-3"><.skeleton_blob class="w-[237px] min-w-[237px]" /></td>
+            <td class="pr-3"><.skeleton_blob class="w-[172px] min-w-[172px]" /></td>
+            <td><.skeleton_blob class="w-[91px] min-w-[91px]" /></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    """
+  end
+
+  defp pending_expense_form(%{kind: "accommodation"} = assigns) do
+    ~H"""
+    <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <.skeleton_field label="Miejscowość" />
+      <.skeleton_field label="Nr dokumentu" shimmer? />
+      <.skeleton_amount_field />
+      <.skeleton_field label="Zameldowanie" />
+      <.skeleton_field label="Wymeldowanie" />
+    </div>
+    """
+  end
+
+  defp pending_expense_form(%{kind: "other"} = assigns) do
+    ~H"""
+    <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <.skeleton_field label="Nr dokumentu" shimmer? />
+      <.skeleton_amount_field />
+      <.skeleton_field label="Opis" class="col-span-full" />
+    </div>
+    """
+  end
+
+  attr :label, :string, required: true
+  attr :class, :any, default: nil
+  attr :shimmer?, :boolean, default: false
+
+  defp skeleton_field(assigns) do
+    ~H"""
+    <div class={["w-full min-w-0", @class]}>
+      <div class="text-grey-700 mb-2 flex items-center gap-1 text-sm/6">
+        <Lucideicons.sparkles :if={@shimmer?} class="size-4" aria-hidden="true" />
+        {@label}
+      </div>
+      <.skeleton_blob />
+    </div>
+    """
+  end
+
+  defp skeleton_amount_field(assigns) do
+    ~H"""
+    <div class="w-full min-w-0">
+      <div class="text-grey-700 mb-2 flex items-center gap-1 text-sm/6">
+        <Lucideicons.sparkles class="size-4" aria-hidden="true" /> Kwota
+      </div>
+      <div class="flex items-end gap-2">
+        <.skeleton_blob class="flex-1" />
+        <span class="text-grey-500 shrink-0 pb-2 text-sm whitespace-nowrap">PLN</span>
+      </div>
+    </div>
+    """
+  end
+
+  attr :class, :any, default: nil
+
+  defp skeleton_blob(assigns) do
+    ~H"""
+    <div class={[
+      "bg-grey-200 border-grey-200 block h-9 min-h-9 w-full min-w-0 animate-pulse rounded-lg border",
+      @class
+    ]} />
+    """
+  end
+
   attr :expense, :any, required: true
 
   defp document_fields(assigns) do
@@ -494,8 +595,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
         </span>
         <span class="shrink-0 tabular-nums">{@entry.progress}%</span>
       </div>
-      <div class="bg-grey-100 mt-4 h-9 animate-pulse rounded" />
-      <div class="bg-grey-100 mt-3 h-9 animate-pulse rounded" />
+      <.pending_expense_form kind={@kind} />
     </article>
     """
   end
