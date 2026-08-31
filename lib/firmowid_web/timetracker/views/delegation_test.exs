@@ -37,6 +37,54 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationTest do
     assert [%{trips: [%{departure_city: "-", arrival_city: "-"}]}] = delegation.transport_expenses
   end
 
+  test "updates a transport trip", %{conn: conn} do
+    {view, _html, delegation, scope} = approved_delegation_view(conn)
+
+    upload =
+      file_input(view, "#transport-upload-form", :transport, [
+        %{name: "bilet.pdf", content: "PDF content", type: "application/pdf"}
+      ])
+
+    render_upload(upload, "bilet.pdf")
+
+    {:ok, delegation} =
+      Timetracker.get_delegation(delegation.id,
+        scope: scope,
+        load: [transport_expenses: [:trips]]
+      )
+
+    [trip] = List.first(delegation.transport_expenses).trips
+
+    assert has_element?(view, "#transport-trip-#{trip.id} th", "Miejscowość")
+    assert has_element?(view, "#transport-trip-#{trip.id} th", "Data")
+    assert has_element?(view, "#transport-trip-#{trip.id} th", "Godzina")
+    refute has_element?(view, "#transport-trip-#{trip.id}", "Trasa")
+
+    view
+    |> element("#transport-trip-#{trip.id} button", "Dodaj opis")
+    |> render_click()
+
+    assert has_element?(view, "#trip-description-#{trip.id}")
+
+    view
+    |> element("#transport-trip-#{trip.id}")
+    |> render_change(%{
+      "departure_city" => "Warszawa",
+      "departure_date" => "2026-08-10",
+      "departure_time" => "10:00",
+      "arrival_city" => "Gdańsk",
+      "arrival_date" => "2026-08-10",
+      "arrival_time" => "13:00"
+    })
+
+    {:ok, trip} = Timetracker.get_delegation_trip(trip.id, scope: scope)
+
+    assert trip.departure_city == "Warszawa"
+    assert trip.arrival_city == "Gdańsk"
+    assert trip.departure_datetime
+    assert trip.arrival_datetime
+  end
+
   test "shows a pending expense while its file uploads", %{conn: conn} do
     {view, _html, _delegation, _scope} = approved_delegation_view(conn)
 
