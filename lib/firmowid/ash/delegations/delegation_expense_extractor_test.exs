@@ -1,7 +1,7 @@
-defmodule Firmowid.Ash.Timetracker.DelegationExpenseExtractorTest do
+defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractorTest do
   use ExUnit.Case, async: false
 
-  alias Firmowid.Ash.Timetracker.DelegationExpenseExtractor
+  alias Firmowid.Ash.Delegations.DelegationExpenseExtractor
 
   defmodule UnavailableReductoClient do
     @moduledoc false

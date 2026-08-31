@@ -1,4 +1,4 @@
-defmodule Firmowid.Ash.Timetracker.DelegationExpenseExtractor do
+defmodule Firmowid.Ash.Delegations.DelegationExpenseExtractor do
   @moduledoc """
   Extracts document number and amount from delegation expense uploads.
   """

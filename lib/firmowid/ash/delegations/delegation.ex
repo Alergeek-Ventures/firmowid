@@ -165,8 +165,8 @@ defmodule Firmowid.Ash.Delegations.Delegation do
       allow_nil? false
     end
 
-    has_many :transport_expenses, Firmowid.Ash.Timetracker.DelegationExpenseTransport
-    has_many :accommodation_expenses, Firmowid.Ash.Timetracker.DelegationExpenseAccommodation
-    has_many :other_expenses, Firmowid.Ash.Timetracker.DelegationExpenseOther
+    has_many :transport_expenses, Firmowid.Ash.Delegations.DelegationExpenseTransport
+    has_many :accommodation_expenses, Firmowid.Ash.Delegations.DelegationExpenseAccommodation
+    has_many :other_expenses, Firmowid.Ash.Delegations.DelegationExpenseOther
   end
 end
