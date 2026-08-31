@@ -181,7 +181,13 @@ end
 #   POSTHOG_ENABLED - enable PostHog analytics, defaults to "false"
 #   POSTHOG_API_KEY - PostHog project API key (required if PostHog enabled)
 #   POSTHOG_API_HOST - PostHog API host, defaults to "https://i.alergeek.workers.dev"
+#   SENTRY_ENVIRONMENT - Sentry environment name, defaults to "production" in prod
 posthog_enabled = System.get_env("POSTHOG_ENABLED", "false") == "true"
+
+sentry_environment =
+  System.get_env("SENTRY_ENVIRONMENT") ||
+    if config_env() == :prod, do: "production", else: to_string(config_env())
+
 sentry_release = System.get_env("SENTRY_RELEASE") || System.get_env("SOURCE_COMMIT")
 
 defmodule RuntimeSentry do
@@ -234,7 +240,7 @@ if posthog_enabled do
     posthog_api_key: posthog_api_key,
     posthog_api_host: posthog_api_host,
     sentry_dsn: frontend_sentry,
-    sentry_environment: System.get_env("SENTRY_FRONTEND_ENV", to_string(config_env())),
+    sentry_environment: sentry_environment,
     sentry_release: sentry_release || ""
 
   config :posthog,
@@ -248,7 +254,7 @@ else
     posthog_api_key: "",
     posthog_api_host: "",
     sentry_dsn: frontend_sentry,
-    sentry_environment: System.get_env("SENTRY_FRONTEND_ENV", to_string(config_env())),
+    sentry_environment: sentry_environment,
     sentry_release: sentry_release || ""
 
   config :posthog,
@@ -257,10 +263,10 @@ else
 end
 
 # server-side Sentry DSN
-config :sentry, dsn: server_sentry
-
-# Keep release separately configured
-config :sentry, release: sentry_release
+config :sentry,
+  dsn: server_sentry,
+  environment_name: sentry_environment,
+  release: sentry_release
 
 # Phoenix HTTP port - only override if PORT is set (worktree)
 if config_env() == :dev and System.get_env("PORT") do
