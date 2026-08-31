@@ -1,9 +1,9 @@
-defmodule Firmowid.Ash.Timetracker.DelegationExpenseAccommodation do
-  @moduledoc "Accommodation expense attached to a delegation."
+defmodule Firmowid.Ash.Delegations.DelegationExpenseOther do
+  @moduledoc "Other expense attached to a delegation."
 
   use Ash.Resource,
     otp_app: :firmowid,
-    domain: Firmowid.Ash.Timetracker,
+    domain: Firmowid.Ash.Delegations,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
@@ -12,7 +12,7 @@ defmodule Firmowid.Ash.Timetracker.DelegationExpenseAccommodation do
   require Resource
 
   postgres do
-    table "delegation_expense_accommodation"
+    table "delegation_expense_other"
     repo Firmowid.Repo
   end
 
@@ -24,33 +24,15 @@ defmodule Firmowid.Ash.Timetracker.DelegationExpenseAccommodation do
     defaults [:read, :destroy]
 
     create :create do
-      description "Create an accommodation expense for a delegation."
+      description "Create another expense for a delegation."
       primary? true
-
-      accept [
-        :delegation_id,
-        :original_filename,
-        :document_number,
-        :expense_amount,
-        :description,
-        :locality,
-        :arrival_date,
-        :departure_date
-      ]
+      accept [:delegation_id, :original_filename, :document_number, :expense_amount, :description]
     end
 
     update :update do
-      description "Update an accommodation expense while settling a delegation."
+      description "Update another expense while settling a delegation."
       primary? true
-
-      accept [
-        :document_number,
-        :expense_amount,
-        :description,
-        :locality,
-        :arrival_date,
-        :departure_date
-      ]
+      accept [:document_number, :expense_amount, :description]
     end
   end
 
@@ -83,21 +65,17 @@ defmodule Firmowid.Ash.Timetracker.DelegationExpenseAccommodation do
       public?: true,
       default: Money.new(:PLN, 0)
 
-    attribute :description, :string, public?: true
-
-    attribute :locality, :string,
+    attribute :description, :string,
       allow_nil?: false,
       default: "",
       constraints: [allow_empty?: true],
       public?: true
 
-    attribute :arrival_date, :date, public?: true
-    attribute :departure_date, :date, public?: true
     Resource.firmowid_timestamps()
   end
 
   relationships do
-    belongs_to :delegation, Firmowid.Ash.Timetracker.Delegation do
+    belongs_to :delegation, Firmowid.Ash.Delegations.Delegation do
       allow_nil? false
       attribute_writable? true
     end

@@ -3,12 +3,12 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   use FirmowidWeb, :live_view
 
+  import FirmowidWeb.Delegations.Components.Delegation
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
-  import FirmowidWeb.Delegations.Components.Delegation
 
   alias Firmowid.Ash.Delegations
-  alias Firmowid.Ash.Timetracker.DelegationExpenseExtractor
+  alias Firmowid.Ash.Delegations.DelegationExpenseExtractor
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -691,8 +691,8 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   defp get_expense("other", id, scope), do: Delegations.get_other_expense(id, scope: scope, not_found_error?: false)
 
   defp update_trip(id, attrs, scope) do
-    with {:ok, trip} <- Timetracker.get_delegation_trip(id, scope: scope, not_found_error?: false) do
-      Timetracker.update_delegation_trip(trip, attrs, scope: scope)
+    with {:ok, trip} <- Delegations.get_delegation_trip(id, scope: scope, not_found_error?: false) do
+      Delegations.update_delegation_trip(trip, attrs, scope: scope)
     end
   end
 
