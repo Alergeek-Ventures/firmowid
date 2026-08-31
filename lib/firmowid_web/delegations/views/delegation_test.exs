@@ -135,6 +135,9 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
 
     assert html =~
              ~r/id="expense-amount-[^"]+"[\s\S]*id="expense-amount-currency-[^"]+"[^>]*class="[^"]*whitespace-nowrap/
+
+    assert has_element?(view, "textarea[id^='other-description-'].w-full")
+    refute has_element?(view, "textarea[id^='other-description-'].size-full")
   end
 
   test "leaves unextracted accommodation and other fields blank", %{conn: conn} do
@@ -181,6 +184,38 @@ defmodule FirmowidWeb.Delegations.Views.DelegationTest do
     |> render_upload("bilet.pdf", 50)
 
     assert has_element?(view, "[id^='transport-pending-expense-']", "bilet.pdf")
+    assert has_element?(view, "[id^='transport-pending-expense-']", "Środek lokomocji")
+    assert has_element?(view, "[id^='transport-pending-expense-']", "Wyjazd")
+    assert has_element?(view, "[id^='transport-pending-expense-']", "Przyjazd")
+    assert has_element?(view, "[id^='transport-pending-expense-'] .bg-grey-200.border.w-full")
+    assert has_element?(view, "[id^='transport-pending-expense-']", "PLN")
+    assert has_element?(view, "[id^='transport-pending-expense-'] .w-\\[237px\\]")
+    assert has_element?(view, "[id^='transport-pending-expense-'] .w-\\[172px\\]")
+    assert has_element?(view, "[id^='transport-pending-expense-'] .w-\\[91px\\]")
+  end
+
+  test "shows personalized pending forms for accommodation and other expenses", %{conn: conn} do
+    {view, _html, _delegation, _scope} = approved_delegation_view(conn)
+
+    view
+    |> file_input("#accommodation-upload-form", :accommodation, [
+      %{name: "nocleg.pdf", content: "PDF content", type: "application/pdf"}
+    ])
+    |> render_upload("nocleg.pdf", 50)
+
+    assert has_element?(view, "[id^='accommodation-pending-expense-']", "Miejscowość")
+    assert has_element?(view, "[id^='accommodation-pending-expense-']", "Zameldowanie")
+    assert has_element?(view, "[id^='accommodation-pending-expense-']", "Wymeldowanie")
+
+    view
+    |> file_input("#other-upload-form", :other, [
+      %{name: "inne.pdf", content: "PDF content", type: "application/pdf"}
+    ])
+    |> render_upload("inne.pdf", 50)
+
+    assert has_element?(view, "[id^='other-pending-expense-']", "Nr dokumentu")
+    assert has_element?(view, "[id^='other-pending-expense-']", "Kwota")
+    assert has_element?(view, "[id^='other-pending-expense-']", "Opis")
   end
 
   test "removes an existing transport expense", %{conn: conn} do
