@@ -111,6 +111,32 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationTest do
     assert trip.arrival_datetime
   end
 
+  test "orders expense fields by document type and keeps the currency next to the amount", %{
+    conn: conn
+  } do
+    {view, _html, _delegation, _scope} = approved_delegation_view(conn)
+
+    for {kind, filename} <- [
+          transport: "bilet.pdf",
+          accommodation: "nocleg.pdf",
+          other: "inne.pdf"
+        ] do
+      view
+      |> file_input("##{kind}-upload-form", kind, [
+        %{name: filename, content: "PDF content", type: "application/pdf"}
+      ])
+      |> render_upload(filename)
+    end
+
+    html = render(view)
+
+    assert html =~ ~r/id="transport-transport-type-[^"]+"[\s\S]*id="document-number-[^"]+"/
+    assert html =~ ~r/id="accommodation-locality-[^"]+"[\s\S]*id="document-number-[^"]+"/
+
+    assert html =~
+             ~r/id="expense-amount-[^"]+"[\s\S]*id="expense-amount-currency-[^"]+"[^>]*class="[^"]*whitespace-nowrap/
+  end
+
   test "leaves unextracted accommodation and other fields blank", %{conn: conn} do
     {view, _html, delegation, scope} = approved_delegation_view(conn)
 

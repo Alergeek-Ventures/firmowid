@@ -180,7 +180,6 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
             phx-value-id={expense.id}
             class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
           >
-            <.document_fields expense={expense} />
             <.input
               :if={@kind == "transport"}
               id={"#{@kind}-transport-type-#{expense.id}"}
@@ -200,6 +199,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
               new
               label="Miejscowość"
             />
+            <.document_fields expense={expense} />
             <.input
               :if={@kind == "accommodation"}
               id={"#{@kind}-arrival-date-#{expense.id}"}
@@ -287,19 +287,24 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
       new
       label="Nr dokumentu"
     />
-    <div>
-      <.input
-        id={"expense-amount-#{@expense.id}"}
-        name="expense_amount"
-        value={Money.to_decimal(@expense.expense_amount)}
-        type="number"
-        new
-        min="0"
-        step="0.01"
-        label="Kwota"
-        aria-describedby={"expense-amount-currency-#{@expense.id}"}
-      />
-      <span id={"expense-amount-currency-#{@expense.id}"} class="text-grey-500 mt-1 block text-sm">
+    <div class="flex items-end gap-2">
+      <div class="min-w-0 flex-1">
+        <.input
+          id={"expense-amount-#{@expense.id}"}
+          name="expense_amount"
+          value={Money.to_decimal(@expense.expense_amount)}
+          type="number"
+          new
+          min="0"
+          step="0.01"
+          label="Kwota"
+          aria-describedby={"expense-amount-currency-#{@expense.id}"}
+        />
+      </div>
+      <span
+        id={"expense-amount-currency-#{@expense.id}"}
+        class="text-grey-500 shrink-0 pb-2 text-sm whitespace-nowrap"
+      >
         PLN
       </span>
     </div>
