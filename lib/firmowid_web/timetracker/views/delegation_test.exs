@@ -8,14 +8,14 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationTest do
   alias Firmowid.Ash.Timetracker
 
   test "renders an approved delegation settlement page", %{conn: conn} do
-    {_view, html} = approved_delegation_view(conn)
+    {_view, html, _delegation, _scope} = approved_delegation_view(conn)
 
     assert html =~ "Rozliczenie delegacji"
     assert html =~ "100,00"
   end
 
   test "adds an expense after its file upload completes", %{conn: conn} do
-    {view, _html} = approved_delegation_view(conn)
+    {view, _html, delegation, scope} = approved_delegation_view(conn)
 
     upload =
       file_input(view, "#transport-upload-form", :transport, [
@@ -24,11 +24,21 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationTest do
 
     render_upload(upload, "bilet.pdf")
 
+    Firmowid.Repo.query!("SET CONSTRAINTS delegation_expense_transport_requires_trip IMMEDIATE")
+
     assert has_element?(view, "article", "bilet.pdf")
+
+    {:ok, delegation} =
+      Timetracker.get_delegation(delegation.id,
+        scope: scope,
+        load: [transport_expenses: [:trips]]
+      )
+
+    assert [%{trips: [%{departure_city: "-", arrival_city: "-"}]}] = delegation.transport_expenses
   end
 
   test "shows a pending expense while its file uploads", %{conn: conn} do
-    {view, _html} = approved_delegation_view(conn)
+    {view, _html, _delegation, _scope} = approved_delegation_view(conn)
 
     view
     |> file_input("#transport-upload-form", :transport, [
@@ -109,6 +119,6 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationTest do
       |> log_in_user(user)
       |> live(~p"/delegacje/#{delegation.id}")
 
-    {view, html}
+    {view, html, delegation, scope}
   end
 end
