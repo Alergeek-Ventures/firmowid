@@ -1,9 +1,9 @@
-defmodule Firmowid.Ash.Timetracker.DelegationTrip do
+defmodule Firmowid.Ash.Delegations.DelegationTrip do
   @moduledoc "A single departure and arrival pair from a transport expense."
 
   use Ash.Resource,
     otp_app: :firmowid,
-    domain: Firmowid.Ash.Timetracker,
+    domain: Firmowid.Ash.Delegations,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
@@ -101,7 +101,7 @@ defmodule Firmowid.Ash.Timetracker.DelegationTrip do
 
   relationships do
     belongs_to :delegation_expense_transport,
-               Firmowid.Ash.Timetracker.DelegationExpenseTransport do
+               Firmowid.Ash.Delegations.DelegationExpenseTransport do
       allow_nil? false
       attribute_writable? true
     end

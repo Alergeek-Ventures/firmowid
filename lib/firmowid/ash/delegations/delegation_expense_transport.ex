@@ -1,14 +1,14 @@
-defmodule Firmowid.Ash.Timetracker.DelegationExpenseTransport do
+defmodule Firmowid.Ash.Delegations.DelegationExpenseTransport do
   @moduledoc "Transport expense attached to a delegation."
 
   use Ash.Resource,
     otp_app: :firmowid,
-    domain: Firmowid.Ash.Timetracker,
+    domain: Firmowid.Ash.Delegations,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias Firmowid.Ash.Delegations.DelegationTrip
   alias Firmowid.Ash.Resource
-  alias Firmowid.Ash.Timetracker.DelegationTrip
 
   require Resource
 
@@ -223,7 +223,7 @@ defmodule Firmowid.Ash.Timetracker.DelegationExpenseTransport do
   end
 
   relationships do
-    belongs_to :delegation, Firmowid.Ash.Timetracker.Delegation do
+    belongs_to :delegation, Firmowid.Ash.Delegations.Delegation do
       allow_nil? false
       attribute_writable? true
     end

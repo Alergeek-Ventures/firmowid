@@ -1,11 +1,11 @@
-defmodule FirmowidWeb.Timetracker.Views.DelegationTest do
+defmodule FirmowidWeb.Delegations.Views.DelegationTest do
   use FirmowidWeb.ConnCase, async: false
 
   import Firmowid.AccountsFixtures
   import Phoenix.LiveViewTest
 
+  alias Firmowid.Ash.Delegations
   alias Firmowid.Ash.Scope
-  alias Firmowid.Ash.Timetracker
 
   defmodule ReductoClient do
     @moduledoc false
@@ -48,7 +48,7 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationTest do
     assert has_element?(view, "article", "bilet.pdf")
 
     {:ok, delegation} =
-      Timetracker.get_delegation(delegation.id,
+      Delegations.get_delegation(delegation.id,
         scope: scope,
         load: [transport_expenses: [:trips]]
       )
@@ -74,7 +74,7 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationTest do
     render_upload(upload, "bilet.pdf")
 
     {:ok, delegation} =
-      Timetracker.get_delegation(delegation.id,
+      Delegations.get_delegation(delegation.id,
         scope: scope,
         load: [transport_expenses: [:trips]]
       )
@@ -103,7 +103,7 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationTest do
       "arrival_time" => "13:00"
     })
 
-    {:ok, trip} = Timetracker.get_delegation_trip(trip.id, scope: scope)
+    {:ok, trip} = Delegations.get_delegation_trip(trip.id, scope: scope)
 
     assert trip.departure_city == "Warszawa"
     assert trip.arrival_city == "Gdańsk"
@@ -153,7 +153,7 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationTest do
     |> render_upload("inne.pdf")
 
     {:ok, delegation} =
-      Timetracker.get_delegation(delegation.id,
+      Delegations.get_delegation(delegation.id,
         scope: scope,
         load: [:accommodation_expenses, :other_expenses]
       )
@@ -189,7 +189,7 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationTest do
     scope = %Scope{actor: user, tenant: user.organization_id}
 
     {:ok, delegation} =
-      Timetracker.create_delegation(
+      Delegations.create_delegation(
         %{
           title: "Wyjazd służbowy",
           billing_month: ~D[2026-08-01],
@@ -202,12 +202,12 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationTest do
       )
 
     {:ok, delegation} =
-      Timetracker.approve_delegation(delegation.id,
+      Delegations.approve_delegation(delegation.id,
         scope: %Scope{actor: admin, tenant: user.organization_id}
       )
 
     {:ok, _expense} =
-      Timetracker.create_transport_expense(
+      Delegations.create_transport_expense(
         %{delegation_id: delegation.id, original_filename: "bilet.pdf", document_number: "-"},
         scope: scope
       )
@@ -231,7 +231,7 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationTest do
     scope = %Scope{actor: user, tenant: user.organization_id}
 
     {:ok, delegation} =
-      Timetracker.create_delegation(
+      Delegations.create_delegation(
         %{
           title: "Wyjazd służbowy",
           billing_month: ~D[2026-08-01],
@@ -244,7 +244,7 @@ defmodule FirmowidWeb.Timetracker.Views.DelegationTest do
       )
 
     {:ok, delegation} =
-      Timetracker.approve_delegation(delegation.id,
+      Delegations.approve_delegation(delegation.id,
         scope: %Scope{actor: admin, tenant: user.organization_id}
       )
 
