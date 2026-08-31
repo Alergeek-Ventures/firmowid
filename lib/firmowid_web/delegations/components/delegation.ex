@@ -3,29 +3,8 @@ defmodule FirmowidWeb.Delegations.Components.Delegation do
 
   use FirmowidWeb, :html
 
-  import FirmowidWeb.DesignSystem.Components.Link
-  import Phoenix.Component, except: [link: 1]
-
   alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
   alias Phoenix.LiveView.Rendered
-
-  @doc "Renders a consistently styled return link for delegation screens."
-  @spec back_link(map()) :: Rendered.t()
-  attr :navigate, :string, required: true
-  attr :label, :string, default: "Wróć"
-  attr :kind, :string, values: ["unstyled", "text"], default: "text"
-  attr :class, :any, default: nil
-
-  def back_link(assigns) do
-    ~H"""
-    <.link kind={@kind} navigate={@navigate} size="small" class={["gap-2", @class]}>
-      <span class="flex size-6 items-center justify-center rounded-full bg-black text-white">
-        <Lucideicons.chevron_left aria-hidden="true" class="size-4" />
-      </span>
-      {@label}
-    </.link>
-    """
-  end
 
   @doc "Renders a labeled form control row in the delegation form."
   @spec form_row(map()) :: Rendered.t()

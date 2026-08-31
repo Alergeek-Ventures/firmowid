@@ -22,7 +22,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   def render(assigns) do
     ~H"""
     <main class="mx-auto max-w-3xl space-y-10 px-6 py-10">
-      <.back_link navigate={~p"/ustawienia/profil"} />
+      <.back navigate={~p"/ustawienia/profil"} />
       <article class="rounded-lg bg-white p-6 shadow">
         <header class="flex flex-wrap items-start justify-between gap-4">
           <div class="space-y-2">
