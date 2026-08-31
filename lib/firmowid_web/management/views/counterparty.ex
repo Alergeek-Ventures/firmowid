@@ -5,6 +5,7 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   use FirmowidWeb, :live_view
 
   import FirmowidWeb.DesignSystem.Components.Button
+  import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
@@ -117,13 +118,13 @@ defmodule FirmowidWeb.Management.Views.Counterparty do
   def render(assigns) do
     ~H"""
     <div class="mx-auto my-4 grid w-full max-w-screen-2xl grid-cols-[96px_minmax(0,1fr)_96px] grid-rows-[repeat(5,max-content)] gap-x-10 gap-y-5">
-      <.link
-        kind="unstyled"
+      <.back
         navigate={Navigation.counterparty_return_path(@params)}
         class="col-start-1 row-start-1 flex items-center gap-2 self-center text-sm"
+        variant={:circle_chevron}
       >
-        <Lucideicons.circle_chevron_left /> Wróć
-      </.link>
+        Wróć
+      </.back>
 
       <.page_header counterparty={@counterparty} params={@params} class="col-start-2 row-start-1" />
 

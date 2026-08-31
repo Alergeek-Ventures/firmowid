@@ -1,11 +1,11 @@
 <div class="mx-auto my-4 grid w-full max-w-screen-2xl grid-cols-[96px_minmax(0,1fr)_96px] items-start gap-x-10">
-  <.link
-    kind="unstyled"
+  <.back
     navigate={Navigation.projects_path(:index, %{miesiac: @selected_date})}
     class="flex items-center gap-2 pt-0.5 text-sm"
+    variant={:circle_chevron}
   >
-    <Lucideicons.circle_chevron_left /> Wróć
-  </.link>
+    Wróć
+  </.back>
   <div class="mx-auto w-full max-w-7xl space-y-8">
     <div class="flex flex-row items-start justify-between">
       <div class="space-y-1">

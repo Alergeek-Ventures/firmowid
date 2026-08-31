@@ -12,7 +12,6 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.InvoicingBadges
-  import FirmowidWeb.DesignSystem.Components.Link
   import FirmowidWeb.Invoicing.Components.StatusButton
   import Phoenix.Component, except: [link: 1]
 
@@ -34,12 +33,11 @@ defmodule FirmowidWeb.Invoicing.Components.InvoiceDetails do
       @is_cost_invoice && "bg-orange-200",
       !@is_cost_invoice && "bg-turquoise-200"
     ]}>
-      <.link
-        kind="unstyled"
+      <.back
         navigate={@return_to || default_return_path(@issue_date)}
-      >
-        <.icon name="hero-arrow-left-circle-solid" class="size-7" />
-      </.link>
+        variant={:circle_arrow}
+        icon_class="size-7"
+      />
       <div class="flex flex-col gap-2">
         <h1 class="text-lg/tight font-medium lg:text-2xl">{@party_display_name}</h1>
         <h2 class="text-darkGrey">{@description}</h2>

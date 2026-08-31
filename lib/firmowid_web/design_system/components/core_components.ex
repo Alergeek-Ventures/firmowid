@@ -970,23 +970,67 @@ defmodule FirmowidWeb.DesignSystem.Components.CoreComponents do
   end
 
   @doc """
-  Renders a back navigation link.
+  Renders a back navigation link in one of the supported visual variants.
 
   ## Examples
 
-      <.back navigate={~p"/posts"}>Back to posts</.back>
+      <.back navigate={~p"/posts"} variant={:circle_chevron}>Wróć</.back>
+      <.back patch={~p"/faktury/kreator?krok=1"} variant={:circle_chevron}>Wróć</.back>
   """
-  attr :navigate, :any, required: true
-  slot :inner_block, required: true
+  attr :variant, :atom,
+    default: :plain,
+    values: [:plain, :circle_chevron, :circle_arrow, :delegation]
+
+  attr :navigate, :any, default: nil
+  attr :patch, :any, default: nil
+  attr :class, :any, default: nil
+  attr :icon_class, :any, default: nil
+  attr :aria_label, :string, default: "Wróć"
+  slot :inner_block
 
   def back(assigns) do
     ~H"""
-    <div class="mt-16">
-      <.link navigate={@navigate} class="hover:text-darkGrey text-sm/6 font-semibold">
-        <.icon name="hero-arrow-left-solid" class="size-3" />
+    <div :if={@variant == :plain} class="mt-16">
+      <.link
+        navigate={@navigate}
+        patch={@patch}
+        class={["hover:text-darkGrey text-sm/6 font-semibold", @class]}
+      >
+        <.icon name="hero-arrow-left-solid" class={["size-3", @icon_class]} />
         {render_slot(@inner_block)}
       </.link>
     </div>
+
+    <.link
+      :if={@variant == :circle_chevron}
+      navigate={@navigate}
+      patch={@patch}
+      class={@class}
+    >
+      <Lucideicons.circle_chevron_left class={@icon_class} /> {render_slot(@inner_block)}
+    </.link>
+
+    <.link
+      :if={@variant == :circle_arrow}
+      navigate={@navigate}
+      patch={@patch}
+      aria-label={@aria_label}
+      class={@class}
+    >
+      <.icon name="hero-arrow-left-circle-solid" class={@icon_class} />
+    </.link>
+
+    <.link
+      :if={@variant == :delegation}
+      navigate={@navigate}
+      patch={@patch}
+      class={["inline-flex items-center gap-2", @class]}
+    >
+      <span class="inline-flex size-6 items-center justify-center rounded-full bg-black text-white">
+        <Lucideicons.chevron_left class={["size-4", @icon_class]} />
+      </span>
+      {render_slot(@inner_block)}
+    </.link>
     """
   end
 

@@ -1,6 +1,5 @@
 <div class="relative mx-auto my-4 flex w-full max-w-6xl flex-1 flex-col">
-  <.link
-    kind="unstyled"
+  <.back
     patch={
       Navigation.sales_invoice_creator_path(%{
         szkic_kreatora: @creator_draft_id,
@@ -8,9 +7,10 @@
       })
     }
     class="absolute top-[-2.5px] -left-[calc(68px+1.5rem)] flex items-center gap-2 text-sm"
+    variant={:circle_chevron}
   >
-    <Lucideicons.circle_chevron_left /> Wróć
-  </.link>
+    Wróć
+  </.back>
 
   <.form
     for={@payment_form}

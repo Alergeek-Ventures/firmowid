@@ -32,9 +32,11 @@ defmodule FirmowidWeb.Invoicing.Transactions.Components.ShowComponents do
   def header(assigns) do
     ~H"""
     <header class={header_styles(@transaction)}>
-      <.link kind="unstyled" navigate={@return_to || default_return_path(@transaction)}>
-        <.icon name="hero-arrow-left-circle-solid" class="size-7" />
-      </.link>
+      <.back
+        navigate={@return_to || default_return_path(@transaction)}
+        variant={:circle_arrow}
+        icon_class="size-7"
+      />
 
       <div class="flex min-w-0 flex-col gap-2">
         <h1 class="truncate text-lg/tight font-medium lg:text-2xl">
