@@ -35,19 +35,29 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClient do
   @spec extract(String.t(), map(), extract_options) ::
           {:ok, map()} | {:error, :invalid_document | String.t()}
   def extract(file_url, json_schema, options \\ []) do
+    file_url
+    |> upload_to_reducto(s3_host())
+    |> extract_input(json_schema, options)
+  end
+
+  @doc """
+  Uploads a local file to Reducto and extracts metadata from it.
+  """
+  @spec extract_file(Path.t(), map(), extract_options) ::
+          {:ok, map()} | {:error, :invalid_document | String.t()}
+  def extract_file(file_path, json_schema, options \\ []) do
+    with {:ok, file_id} <- upload_file(file_path) do
+      extract_input(file_id, json_schema, options)
+    end
+  end
+
+  defp extract_input(file_url, json_schema, options) do
     extraction_mode =
       options
       |> Keyword.get(:extraction_mode, :hybrid)
       |> Atom.to_string()
 
     system_prompt = Keyword.get(options, :system_prompt)
-
-    host =
-      :firmowid
-      |> Application.get_env(:s3)
-      |> Keyword.get(:host)
-
-    file_url = upload_to_reducto(file_url, host)
 
     instructions = maybe_add_system_prompt(%{schema: json_schema}, system_prompt)
 
@@ -137,12 +147,18 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClient do
 
   defp unwrap_citation_value(value), do: value
 
+  defp s3_host do
+    :firmowid
+    |> Application.get_env(:s3)
+    |> Keyword.get(:host)
+  end
+
   defp upload_to_reducto(file_url, "localhost") do
     case Briefly.create() do
       {:ok, temp_path} ->
         download_file(file_url, temp_path)
-        file_url = upload_file(file_url, temp_path)
-        file_url
+        {:ok, file_id} = upload_file(temp_path)
+        file_id
 
       _ ->
         raise "Failed to upload file to Reducto"
@@ -162,15 +178,14 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClient do
   end
 
   # sobelow_skip ["Traversal.FileModule"]
-  # file_path is constructed internally from Briefly temp paths, not user input.
-  defp upload_file(file_url, file_path) do
+  # file_path comes from Phoenix or Briefly temporary uploads, not raw web input.
+  defp upload_file(file_path) do
     # Validate file_path to prevent directory traversal
     file_path = Path.expand(file_path)
 
     {:ok, file_contents} = File.read(file_path)
 
-    filename =
-      Path.basename(file_path) <> (file_url |> String.split("?") |> hd() |> Path.extname())
+    filename = Path.basename(file_path)
 
     multipart =
       Multipart.add_part(
@@ -184,17 +199,23 @@ defmodule Firmowid.Ash.Invoicing.Services.ReductoApiClient do
       {"Content-Type", content_type}
     ]
 
-    %{status: 200, body: %{"file_id" => file_url}} =
-      Req.post!(
-        reducto_url("/upload"),
-        upload_request_options(
-          auth: get_auth_token(),
-          headers: headers,
-          body: Multipart.body_stream(multipart)
-        )
-      )
+    case Req.post(
+           reducto_url("/upload"),
+           upload_request_options(
+             auth: get_auth_token(),
+             headers: headers,
+             body: Multipart.body_stream(multipart)
+           )
+         ) do
+      {:ok, %{status: 200, body: %{"file_id" => file_id}}} ->
+        {:ok, file_id}
 
-    file_url
+      {:ok, response} ->
+        {:error, "Reducto upload failed: #{inspect(response.body)}"}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   defp reducto_url(path), do: base_url() <> path
