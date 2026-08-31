@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.Timetracker.Components.Delegation do
+defmodule FirmowidWeb.Delegations.Components.Delegation do
   @moduledoc "Reusable presentation components for business trip delegations."
 
   use FirmowidWeb, :html
@@ -6,7 +6,7 @@ defmodule FirmowidWeb.Timetracker.Components.Delegation do
   import FirmowidWeb.DesignSystem.Components.Link
   import Phoenix.Component, except: [link: 1]
 
-  alias FirmowidWeb.Timetracker.Utilities.DelegationPresentation
+  alias FirmowidWeb.Delegations.Utilities.DelegationPresentation
   alias Phoenix.LiveView.Rendered
 
   @doc "Renders a consistently styled return link for delegation screens."

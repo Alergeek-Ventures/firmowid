@@ -1,15 +1,15 @@
-defmodule FirmowidWeb.Timetracker.Views.Delegation do
+defmodule FirmowidWeb.Delegations.Views.Delegation do
   @moduledoc "Overview of an employee's delegation draft."
 
   use FirmowidWeb, :live_view
 
-  import FirmowidWeb.Timetracker.Components.Delegation
+  import FirmowidWeb.Delegations.Components.Delegation
 
-  alias Firmowid.Ash.Timetracker
+  alias Firmowid.Ash.Delegations
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
-    case Timetracker.get_delegation(id, scope: socket.assigns.ash_scope, not_found_error?: false) do
+    case Delegations.get_delegation(id, scope: socket.assigns.ash_scope, not_found_error?: false) do
       {:ok, nil} ->
         {:ok, push_navigate(socket, to: ~p"/ustawienia/profil")}
 

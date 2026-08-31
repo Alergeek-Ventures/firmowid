@@ -5,11 +5,11 @@ defmodule FirmowidWeb.Settings.Components.ProfileTab do
 
   use FirmowidWeb, :html
 
+  import FirmowidWeb.Delegations.Components.DelegationsList
   import FirmowidWeb.DesignSystem.Components.Button
   import FirmowidWeb.DesignSystem.Components.CoreComponents, except: [button: 1]
   import FirmowidWeb.DesignSystem.Components.Link
   import FirmowidWeb.Settings.Components.EditButton
-  import FirmowidWeb.Timetracker.Components.DelegationsList
   import Phoenix.Component, except: [link: 1]
 
   alias FirmowidWeb.Infrastructure.Utilities.TimeFormatter

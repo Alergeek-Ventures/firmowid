@@ -1,4 +1,4 @@
-defmodule FirmowidWeb.Timetracker.Utilities.DelegationPresentation do
+defmodule FirmowidWeb.Delegations.Utilities.DelegationPresentation do
   @moduledoc "Presentation helpers shared by employee and management delegation lists."
 
   @spec status_label(atom()) :: String.t()
