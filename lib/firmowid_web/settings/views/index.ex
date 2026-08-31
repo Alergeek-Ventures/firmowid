@@ -29,6 +29,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
   alias Firmowid.Ash.Blobs.Blob
   alias Firmowid.Ash.Core
   alias Firmowid.Ash.Core.UserRole
+  alias Firmowid.Ash.Delegations
   alias Firmowid.Ash.Finances
   alias Firmowid.Ash.Finances.GoCardless.ApiClient
   alias Firmowid.Ash.Finances.Requisition
@@ -109,7 +110,7 @@ defmodule FirmowidWeb.Settings.Views.Index do
       if(admin?, do: list_bank_institutions(current_user, bank_accounts), else: %{})
 
     leave_requests = Timetracker.list_leave_requests_for_user!(current_user.id, scope: scope)
-    delegations = Timetracker.list_delegations_for_user!(current_user.id, scope: scope)
+    delegations = Delegations.list_delegations_for_user!(current_user.id, scope: scope)
 
     leave_days =
       current_user

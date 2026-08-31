@@ -1,4 +1,4 @@
-defmodule Firmowid.Ash.Timetracker.DelegationEmails do
+defmodule Firmowid.Ash.Delegations.DelegationEmails do
   @moduledoc "Templated notification emails for delegation submissions."
 
   use Phoenix.Component
@@ -8,7 +8,7 @@ defmodule Firmowid.Ash.Timetracker.DelegationEmails do
   import Swoosh.Email
 
   alias Firmowid.Ash.Core.User
-  alias Firmowid.Ash.Timetracker.Delegation
+  alias Firmowid.Ash.Delegations.Delegation
   alias Firmowid.Mailer
 
   @spec deliver_new_delegation([User.t() | map()], Delegation.t(), User.t() | map()) ::

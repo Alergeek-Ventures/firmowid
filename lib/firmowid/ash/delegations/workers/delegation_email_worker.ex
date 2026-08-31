@@ -1,13 +1,13 @@
-defmodule Firmowid.Ash.Timetracker.Workers.DelegationEmailWorker do
+defmodule Firmowid.Ash.Delegations.Workers.DelegationEmailWorker do
   @moduledoc "Sends delegation submission notifications to organization admins."
 
   use Oban.Worker, queue: :notification_emails, max_attempts: 3
 
   alias Firmowid.Ash.Core
+  alias Firmowid.Ash.Delegations
+  alias Firmowid.Ash.Delegations.DelegationEmails
   alias Firmowid.Ash.Scope
   alias Firmowid.Ash.SystemActor
-  alias Firmowid.Ash.Timetracker
-  alias Firmowid.Ash.Timetracker.DelegationEmails
 
   @spec enqueue(String.t(), String.t()) :: {:ok, Oban.Job.t()} | {:error, term()}
   def enqueue(delegation_id, organization_id) do
@@ -24,7 +24,7 @@ defmodule Firmowid.Ash.Timetracker.Workers.DelegationEmailWorker do
     }
 
     with {:ok, delegation} <-
-           Timetracker.get_delegation(delegation_id, scope: scope, load: [:user]),
+           Delegations.get_delegation(delegation_id, scope: scope, load: [:user]),
          admins = Core.list_users!(%{status: :active, role: :admin}, scope: scope),
          {:ok, _email} <-
            DelegationEmails.deliver_new_delegation(admins, delegation, delegation.user) do
