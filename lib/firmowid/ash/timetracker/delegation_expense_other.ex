@@ -65,7 +65,12 @@ defmodule Firmowid.Ash.Timetracker.DelegationExpenseOther do
       public?: true,
       default: Money.new(:PLN, 0)
 
-    attribute :description, :string, allow_nil?: false, default: "", public?: true
+    attribute :description, :string,
+      allow_nil?: false,
+      default: "",
+      constraints: [allow_empty?: true],
+      public?: true
+
     Resource.firmowid_timestamps()
   end
 
