@@ -162,8 +162,8 @@ defmodule Firmowid.Ash.Timetracker.DelegationExpenseTransport do
                case Ash.create(
                       DelegationTrip,
                       %{
-                        departure_city: "-",
-                        arrival_city: "-",
+                        departure_city: "",
+                        arrival_city: "",
                         delegation_expense_transport_id: expense.id
                       },
                       actor: context.actor,

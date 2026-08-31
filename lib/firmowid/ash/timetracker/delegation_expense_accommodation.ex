@@ -84,7 +84,13 @@ defmodule Firmowid.Ash.Timetracker.DelegationExpenseAccommodation do
       default: Money.new(:PLN, 0)
 
     attribute :description, :string, public?: true
-    attribute :locality, :string, allow_nil?: false, default: "", public?: true
+
+    attribute :locality, :string,
+      allow_nil?: false,
+      default: "",
+      constraints: [allow_empty?: true],
+      public?: true
+
     attribute :arrival_date, :date, public?: true
     attribute :departure_date, :date, public?: true
     Resource.firmowid_timestamps()

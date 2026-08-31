@@ -8,6 +8,7 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
   import FirmowidWeb.Delegations.Components.Delegation
 
   alias Firmowid.Ash.Delegations
+  alias Firmowid.Ash.Timetracker.DelegationExpenseExtractor
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -621,12 +622,13 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
 
   defp handle_upload_progress(kind, entry, socket) do
     socket =
-      case consume_uploaded_entry(socket, entry, fn %{path: _path} ->
+      case consume_uploaded_entry(socket, entry, fn %{path: path} ->
              {:ok,
               create_expense(
                 kind,
                 socket.assigns.delegation.id,
                 entry.client_name,
+                path,
                 socket.assigns.ash_scope
               )}
            end) do
@@ -637,21 +639,23 @@ defmodule FirmowidWeb.Delegations.Views.Delegation do
     {:noreply, socket}
   end
 
-  defp create_expense(:transport, id, filename, scope),
-    do:
-      Delegations.create_transport_expense(%{delegation_id: id, original_filename: filename, document_number: "-"},
-        scope: scope
-      )
+  defp create_expense(:transport, id, filename, path, scope) do
+    %{delegation_id: id, original_filename: filename}
+    |> Map.merge(DelegationExpenseExtractor.extract(path, :transport))
+    |> Delegations.create_transport_expense(scope: scope)
+  end
 
-  defp create_expense(:accommodation, id, filename, scope),
+  defp create_expense(:accommodation, id, filename, path, scope),
     do:
-      Delegations.create_accommodation_expense(
-        %{delegation_id: id, original_filename: filename, document_number: "-", locality: "-"}, scope: scope)
+      %{delegation_id: id, original_filename: filename}
+      |> Map.merge(DelegationExpenseExtractor.extract(path, :accommodation))
+      |> Delegations.create_accommodation_expense(scope: scope)
 
-  defp create_expense(:other, id, filename, scope),
+  defp create_expense(:other, id, filename, path, scope),
     do:
-      Delegations.create_other_expense(
-        %{delegation_id: id, original_filename: filename, document_number: "-", description: "-"}, scope: scope)
+      %{delegation_id: id, original_filename: filename}
+      |> Map.merge(DelegationExpenseExtractor.extract(path, :other))
+      |> Delegations.create_other_expense(scope: scope)
 
   defp update_expense(kind, id, attrs, scope) do
     with {:ok, expense} <- get_expense(kind, id, scope) do

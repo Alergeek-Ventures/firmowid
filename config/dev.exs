@@ -33,6 +33,10 @@ config :firmowid, Firmowid.Repo,
   show_sensitive_data_on_connection_error: true,
   log: false
 
+# Local development does not require Reducto credentials. Use deterministic
+# sample details for delegation uploads unless extraction is explicitly enabled.
+config :firmowid, :delegation_expense_extraction_enabled, false
+
 config :firmowid, :s3,
   host: "localhost",
   scheme: "http://",
