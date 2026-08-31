@@ -570,7 +570,7 @@ defmodule Firmowid.Ash.Core.User do
     end
 
     has_many :leave_requests, Firmowid.Ash.Timetracker.LeaveRequest
-    has_many :delegations, Firmowid.Ash.Timetracker.Delegation
+    has_many :delegations, Firmowid.Ash.Delegations.Delegation
   end
 
   calculations do

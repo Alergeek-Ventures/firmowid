@@ -1,11 +1,11 @@
-defmodule Firmowid.Ash.Timetracker.Workers.DelegationEmailWorkerTest do
+defmodule Firmowid.Ash.Delegations.Workers.DelegationEmailWorkerTest do
   use Firmowid.DataCase, async: true
 
   import Firmowid.AccountsFixtures
   import Swoosh.TestAssertions
 
-  alias Firmowid.Ash.Timetracker.Delegation
-  alias Firmowid.Ash.Timetracker.Workers.DelegationEmailWorker
+  alias Firmowid.Ash.Delegations.Delegation
+  alias Firmowid.Ash.Delegations.Workers.DelegationEmailWorker
   alias Firmowid.Test.Support.AuthEmailHelpers
 
   test "delivers a delegation notification to organization admins" do
